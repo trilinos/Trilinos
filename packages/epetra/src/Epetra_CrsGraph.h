@@ -44,25 +44,49 @@ class Epetra_RowMatrix;
 
 //! Epetra_CrsGraph: A class for constructing and using sparse compressed row graphs.
 
-/*! The Epetra_CrsGraph enable the piecewise construction and use of sparse matrix graphs (the integer structure without
+/*! Epetra_CrsGraph enables the piecewise construction and use of sparse matrix graphs (the integer structure without
     values) where entries are intended for row access.  
 
-    Epetra_CrsGraph is a base class for all row-based matrix classes.
+    Epetra_CrsGraph is an attribute of all Epetra row-based matrix classes, defining their nonzero structure and also
+    holding their Epetra_Map attributes.
 
 <b>Constructing Epetra_CrsGraph objects</b>
 
 Constructing Epetra_CrsGraph objects is a multi-step process.  The basic steps are as follows:
 <ol>
-  <li> Create Epetra_CrsGraph instance, including storage,  via constructor.
-  <li> Enter row and column entry information via calls to the InsertIndices function.
-  <li> Complete construction via FillComplete call.
+  <li> Create Epetra_CrsGraph instance, including some initial storage,  via constructor.
+  <li> Enter row and column entry information via calls to the InsertGlobalIndices method.
+  <li> Complete construction via FillComplete call, which performs the following tasks:
+    <ol>
+     <li>Transform indices to local index space (after this, IndicesAreLocal()==true)
+     <li>Sort column-indices within each row
+     <li>Compress out any redundant indices within rows (after this, IndicesAreContiguous()==true)
+     <li>Compute global data such as num-nonzeros, maximum row-lengths, etc.
+    </ol>
   <li> (Optional) Optimize the graph storage via a call to OptimizeStorage.
 </ol>
 
-Note that, even after a matrix is constructed, it is possible to add or remove entries.  However, 
-FillComplete must be
-called again before the graph is used for subsequent operations.
+<b>Global versus Local indices</b>
 
+After creation and before FillComplete() has been called, the column-indices of the graph are in
+the global space as received from the user. One of the tasks performed by FillComplete() is to
+transform the indices to a local index space. The query methods IndicesAreGlobal() and IndicesAreLocal()
+return true or false depending on whether this transformation has been performed or not.
+
+Note the behavior of several graph methods:
+<ul>
+ <li>InsertGlobalIndices() returns an error if IndicesAreLocal()==true or IndicesAreContiguous()==true
+ <li>InsertMyIndices() returns an error if IndicesAreGlobal()==true or IndicesAreContiguous()==true
+ <li>RemoveGlobalIndices() returns an error if IndicesAreLocal()==true or if graph was constructed in View mode
+ <li>RemoveMyIndices() returns an error if IndicesAreGlobal()==true or if graph was constructed in View mode
+ <li>ExtractGlobalRowCopy() works regardless of state of indices
+ <li>ExtractMyRowCopy() returns an error if IndicesAreGlobal()==true
+ <li>ExtractGlobalRowView() returns an error if IndicesAreLocal()==true
+ <li>ExtractMyRowView() returns an error if IndicesAreGlobal()==true
+</ul>
+
+Note that even after a graph is constructed, it is possible to add or remove entries.  However, 
+FillComplete must then be called again to restore the graph to a consistent state.
 
 
 */    
@@ -117,7 +141,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	   such that NumIndicesPerRow[i] indicates the (approximate) number of entries in the ith row.
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-									const Epetra_BlockMap& ColMap, int* NumIndicesPerRow);
+		  const Epetra_BlockMap& ColMap, int* NumIndicesPerRow);
   
   //! Epetra_CrsGraph constuctor with fixed number of indices per row.
   /*! Creates a Epetra_CrsGraph object and allocates storage.  
@@ -136,7 +160,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	   
   */
   Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, 
-									const Epetra_BlockMap& ColMap, int NumIndicesPerRow);
+		  const Epetra_BlockMap& ColMap, int NumIndicesPerRow);
   
   //! Copy constructor. 
 	/*! This will create a Level 1 deep copy. This Graph will share ownership
@@ -149,7 +173,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //@}
   
   //@{ \name Insertion/Removal methods.
-  //! Enter a list of elements in a specified global row of the matrix.
+  //! Enter a list of elements in a specified global row of the graph.
   /*!
     \param In
            Row - Global row number of indices.
@@ -162,7 +186,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int InsertGlobalIndices(int GlobalRow, int NumIndices, int* Indices);
   
-  //! Remove a list of elements from a specified global row of the matrix.
+  //! Remove a list of elements from a specified global row of the graph.
   /*!
     \param In
            Row - Global row number of indices.
@@ -175,7 +199,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int RemoveGlobalIndices(int GlobalRow, int NumIndices, int* Indices);
   
-  //! Remove all indices from a specified global row of the matrix.
+  //! Remove all indices from a specified global row of the graph.
   /*!
     \param In
            Row - Global row number of indices.
@@ -185,7 +209,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   int RemoveGlobalIndices(int Row);
 
   
-  //! Enter a list of elements in a specified local row of the matrix.
+  //! Enter a list of elements in a specified local row of the graph.
   /*!
     \param In
            Row - Local row number of indices.
@@ -198,7 +222,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int InsertMyIndices(int LocalRow, int NumIndices, int* Indices);
   
-  //! Remove a list of elements from a specified local row of the matrix.
+  //! Remove a list of elements from a specified local row of the graph.
   /*!
     \param In
            Row - Local row number of indices.
@@ -211,7 +235,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int RemoveMyIndices(int LocalRow, int NumIndices, int* Indices);
   
-  //! Remove all indices from a specified local row of the matrix.
+  //! Remove all indices from a specified local row of the graph.
   /*!
     \param In
            Row - Local row number of indices.
@@ -223,29 +247,43 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //@{ \name Transformation methods
   
-  //! Tranform matrix representation to local index space.  Perform other operations to allow optimal matrix operations.
-  /*!
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+  //! Tranform to local index space.  Perform other operations to allow optimal matrix operations.
+  /*! This overloading of the FillComplete method assumes that the domain-map and range-map both equal
+    the row-map, and simply calls FillComplete(RowMap(), RowMap()).
+    \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
+    object has a reference-count greater than 1).
   */
   int FillComplete();
 
-  //! Tranform to local index space using specified Domain/Range maps.  Perform other operations to allow optimal matrix operations.
-  /*!
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+  //! Transform to local index space using specified Domain/Range maps.  Perform other operations to allow optimal matrix operations.
+  /*! Performs this sequence of operations:
+    <ol>
+     <li>Transform indices to local index space
+     <li>Sort column-indices within each row
+     <li>Compress out any redundant indices within rows
+     <li>Compute global data such as num-nonzeros, maximum row-lengths, etc.
+    </ol>
+    \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
+    object has a reference-count greater than 1).
   */
   int FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 
-	//! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
-  /*!
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
+  //! Make consecutive row index sections contiguous.
+  /*! After construction and during initialization (when indices are being added via InsertGlobalIndices() etc.), the column-
+    indices for each row are held in a separate piece of allocated memory. This method moves the column-indices for all rows
+    into one large contiguous array.
+    If this object was constructed in View mode then this method can't make non-contiguous indices contiguous and will
+    return a warning code of 1 if the viewed data isn't already contiguous.
+    \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
+    object has a reference-count greater than 1).
   */
-	int OptimizeStorage();
+  int OptimizeStorage();
 
-	//@}
+  //@}
 
   //@{ \name Extraction methods.
 
-  //! Extract a list of elements in a specified global row of the matrix. Put into storage allocated by calling routine.
+  //! Extract a list of elements in a specified global row of the graph. Put into storage allocated by calling routine.
   /*!
     \param In
            Row - Global row number to get indices.
@@ -260,7 +298,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int ExtractGlobalRowCopy(int GlobalRow, int LenOfIndices, int& NumIndices, int* Indices) const;
 
-  //! Extract a list of elements in a specified local row of the matrix. Put into storage allocated by calling routine.
+  //! Extract a list of elements in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param In
            Row - Local row number to get indices.
@@ -275,7 +313,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
   int ExtractMyRowCopy(int LocalRow, int LenOfIndices, int& NumIndices, int* Indices) const;
 
-  //! Get a view of the elements in a specified global row of the matrix.
+  //! Get a view of the elements in a specified global row of the graph.
   /*!
     This function requires that the graph not be completed (FillComplete() was \e not called).
     \param In
@@ -289,7 +327,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   */
 	int ExtractGlobalRowView(int GlobalRow, int& NumIndices, int*& Indices) const;
 
-  //! Get a view of the elements in a specified local row of the matrix.
+  //! Get a view of the elements in a specified local row of the graph.
   /*!
     This function requires that the graph be completed FillComplete() was called).
     \param In
@@ -306,97 +344,97 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
   //@{ \name Graph Properties Query Methods.
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-	bool Filled() const {return(CrsGraphData_->Filled_);};
+	bool Filled() const {return(CrsGraphData_->Filled_);}
 	
 	//! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
-	bool StorageOptimized() const {return(CrsGraphData_->StorageOptimized_);};
+	bool StorageOptimized() const {return(CrsGraphData_->StorageOptimized_);}
 	
 	//! If column indices are in global range, this query returns true, otherwise it returns false.
-	bool IndicesAreGlobal() const {return(CrsGraphData_->IndicesAreGlobal_);};
+	bool IndicesAreGlobal() const {return(CrsGraphData_->IndicesAreGlobal_);}
 	
 	//! If column indices are in local range, this query returns true, otherwise it returns false.
-	bool IndicesAreLocal() const {return(CrsGraphData_->IndicesAreLocal_);};
+	bool IndicesAreLocal() const {return(CrsGraphData_->IndicesAreLocal_);}
 	
 	//! If graph is lower triangular in local index space, this query returns true, otherwise it returns false.
-	bool LowerTriangular() const {return(CrsGraphData_->LowerTriangular_);};
+	bool LowerTriangular() const {return(CrsGraphData_->LowerTriangular_);}
 	
 	//! If graph is upper triangular in local index space, this query returns true, otherwise it returns false.
-	bool UpperTriangular() const {return(CrsGraphData_->UpperTriangular_);};
+	bool UpperTriangular() const {return(CrsGraphData_->UpperTriangular_);}
 	
 	//! If graph has no diagonal entries in global index space, this query returns true, otherwise it returns false.
-	bool NoDiagonal() const {return(CrsGraphData_->NoDiagonal_);};
+	bool NoDiagonal() const {return(CrsGraphData_->NoDiagonal_);}
 	
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
-	bool MyGlobalRow(int GID) const {return(RowMap().MyGID(GID));};
+	bool MyGlobalRow(int GID) const {return(RowMap().MyGID(GID));}
 
 	//! Returns true if we have a well-defined ColMap, and returns false otherwise.
 	/*! We have a well-defined ColMap if a) a ColMap was passed in at construction, 
 		or b) the MakeColMap function has been called. (Calling either of the FillComplete functions
 		will result in MakeColMap being called.) 
 	*/
-	bool HaveColMap() const {return(CrsGraphData_->HaveColMap_);};
+	bool HaveColMap() const {return(CrsGraphData_->HaveColMap_);}
   //@}
   
   //@{ \name Atribute access functions
     
 	//! Returns the number of matrix rows on this processor.
-	int NumMyRows() const {return(CrsGraphData_->NumMyRows_);};
+	int NumMyRows() const {return(CrsGraphData_->NumMyRows_);}
 	
 	//! Returns the number of matrix rows in global matrix.
-	int NumGlobalRows() const {return(CrsGraphData_->NumGlobalRows_);};
+	int NumGlobalRows() const {return(CrsGraphData_->NumGlobalRows_);}
 	
 	//! Returns the number of matrix columns on this processor.
-	int NumMyCols() const {return(CrsGraphData_->NumMyCols_);};
+	int NumMyCols() const {return(CrsGraphData_->NumMyCols_);}
 	
 	//! Returns the number of matrix columns in global matrix.
-	int NumGlobalCols() const {return(CrsGraphData_->NumGlobalCols_);};
+	int NumGlobalCols() const {return(CrsGraphData_->NumGlobalCols_);}
 	
 	//! Returns the number of indices in the global graph.
-	int NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);};
+	int NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);}
 	
 	//! Returns the number of diagonal entries in the global graph, based on global row/column index comparisons.
-	int NumGlobalDiagonals() const {return(CrsGraphData_->NumGlobalDiagonals_);};
+	int NumGlobalDiagonals() const {return(CrsGraphData_->NumGlobalDiagonals_);}
 	
 	//! Returns the number of diagonal entries in the local graph, based on global row/column index comparisons.
-	int NumMyDiagonals() const {return(CrsGraphData_->NumMyDiagonals_);};
+	int NumMyDiagonals() const {return(CrsGraphData_->NumMyDiagonals_);}
 	
 	//! Returns the number of block matrix rows on this processor.
-	int NumMyBlockRows() const {return(CrsGraphData_->NumMyBlockRows_);};
+	int NumMyBlockRows() const {return(CrsGraphData_->NumMyBlockRows_);}
 	
 	//! Returns the number of Block matrix rows in global matrix.
-	int NumGlobalBlockRows() const {return(CrsGraphData_->NumGlobalBlockRows_);};
+	int NumGlobalBlockRows() const {return(CrsGraphData_->NumGlobalBlockRows_);}
 	
 	//! Returns the number of Block matrix columns on this processor.
-	int NumMyBlockCols() const {return(CrsGraphData_->NumMyBlockCols_);};
+	int NumMyBlockCols() const {return(CrsGraphData_->NumMyBlockCols_);}
 	
 	//! Returns the number of Block matrix columns in global matrix.
-	int NumGlobalBlockCols() const {return(CrsGraphData_->NumGlobalBlockCols_);};
+	int NumGlobalBlockCols() const {return(CrsGraphData_->NumGlobalBlockCols_);}
 	
 	//! Returns the number of Block diagonal entries in the local graph, based on global row/column index comparisons.
-	int NumMyBlockDiagonals() const {return(CrsGraphData_->NumMyBlockDiagonals_);};
+	int NumMyBlockDiagonals() const {return(CrsGraphData_->NumMyBlockDiagonals_);}
 	
 	//! Returns the number of Block diagonal entries in the global graph, based on global row/column index comparisons.
-	int NumGlobalBlockDiagonals() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);};
+	int NumGlobalBlockDiagonals() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);}
 	
 	//! Returns the number of entries in the global graph.
-	int NumGlobalEntries() const {return(CrsGraphData_->NumGlobalEntries_);};
+	int NumGlobalEntries() const {return(CrsGraphData_->NumGlobalEntries_);}
 	
 	//! Returns the number of entries on this processor.
-	int NumMyEntries() const {return(CrsGraphData_->NumMyEntries_);};
+	int NumMyEntries() const {return(CrsGraphData_->NumMyEntries_);}
 	//! Returns the max row dimension of block entries on the processor.
-	int MaxRowDim() const {return(CrsGraphData_->MaxRowDim_);};
+	int MaxRowDim() const {return(CrsGraphData_->MaxRowDim_);}
 	
 	//! Returns the max row dimension of block entries across all processors.
-	int GlobalMaxRowDim() const {return(CrsGraphData_->GlobalMaxRowDim_);};
+	int GlobalMaxRowDim() const {return(CrsGraphData_->GlobalMaxRowDim_);}
 	
 	//! Returns the max column dimension of block entries on the processor.
-	int MaxColDim() const {return(CrsGraphData_->MaxColDim_);};
+	int MaxColDim() const {return(CrsGraphData_->MaxColDim_);}
 	
 	//! Returns the max column dimension of block entries across all processors.
-	int GlobalMaxColDim() const {return(CrsGraphData_->GlobalMaxColDim_);};
+	int GlobalMaxColDim() const {return(CrsGraphData_->GlobalMaxColDim_);}
 	
 	//! Returns the number of indices in the local graph.
-	int NumMyNonzeros() const {return(CrsGraphData_->NumMyNonzeros_);};
+	int NumMyNonzeros() const {return(CrsGraphData_->NumMyNonzeros_);}
 	
 	//! Returns the current number of nonzero entries in specified global row on this processor.
 	int NumGlobalIndices(int Row) const;
@@ -405,10 +443,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	int NumAllocatedGlobalIndices(int Row) const;
 	
 	//! Returns the maximum number of nonzero entries across all rows on this processor.
-	int MaxNumIndices() const {return(CrsGraphData_->MaxNumIndices_);};
+	int MaxNumIndices() const {return(CrsGraphData_->MaxNumIndices_);}
 	
 	//! Returns the maximun number of nonzero entries across all rows across all processors.
-	int GlobalMaxNumIndices() const {return(CrsGraphData_->GlobalMaxNumIndices_);};
+	int GlobalMaxNumIndices() const {return(CrsGraphData_->GlobalMaxNumIndices_);}
 	
 	//! Returns the maximum number of nonzero points across all rows on this processor.
 	/*! For each entry in the graph, let i = the GRID of the entry and j = the CGID of the entry.  Then
@@ -418,24 +456,24 @@ class Epetra_CrsGraph: public Epetra_DistObject {
             if the ith block row had 5 block entries and the element size of each entry was 4-by-4, ki would be 80.
 	    Then this function return the max over all ki for all row on this processor.
 	*/
-	int MaxNumNonzeros() const {return(CrsGraphData_->MaxNumNonzeros_);};
+	int MaxNumNonzeros() const {return(CrsGraphData_->MaxNumNonzeros_);}
 	
 	//! Returns the maximun number of nonzero points across all rows across all processors.
 	/*! This function returns the max over all processor of MaxNumNonzeros().
 	 */
-	int GlobalMaxNumNonzeros() const {return(CrsGraphData_->GlobalMaxNumNonzeros_);};
+	int GlobalMaxNumNonzeros() const {return(CrsGraphData_->GlobalMaxNumNonzeros_);}
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.
-	int NumMyIndices(int Row) const {return(CrsGraphData_->NumIndicesPerRow_[Row]);};
+	int NumMyIndices(int Row) const {return(CrsGraphData_->NumIndicesPerRow_[Row]);}
 	
 	//! Returns the allocated number of nonzero entries in specified local row on this processor.
-	int NumAllocatedMyIndices(int Row) const {return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);};
+	int NumAllocatedMyIndices(int Row) const {return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);}
 	
 	//! Returns the index base for row and column indices for this graph.
-	int IndexBase() const {return(CrsGraphData_->IndexBase_);};
+	int IndexBase() const {return(CrsGraphData_->IndexBase_);}
 	
 	//! Returns the RowMap associated with this matrix.
-	const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());};
+	const Epetra_BlockMap& RowMap() const {return(Epetra_DistObject::Map());}
     
 	/** Replaces the current RowMap with the user-specified map object, but only
 	    if currentmap->PointSameAs(newmap) is true. This is a collective function.
@@ -450,31 +488,31 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	int ReplaceColMap(const Epetra_BlockMap& newmap);
 
 	//! Returns the Column Map associated with this matrix.
-	const Epetra_BlockMap& ColMap() const {return(CrsGraphData_->ColMap_);};
+	const Epetra_BlockMap& ColMap() const {return(CrsGraphData_->ColMap_);}
 	
 	//! Returns the DomainMap associated with this matrix.
-	const Epetra_BlockMap& DomainMap() const {return(CrsGraphData_->DomainMap_);};
+	const Epetra_BlockMap& DomainMap() const {return(CrsGraphData_->DomainMap_);}
 	
 	//! Returns the RangeMap associated with this matrix.
-	const Epetra_BlockMap& RangeMap() const {return(CrsGraphData_->RangeMap_);};
+	const Epetra_BlockMap& RangeMap() const {return(CrsGraphData_->RangeMap_);}
 	
 	//! Returns the Importer associated with this matrix.
-	const Epetra_Import* Importer() const {return(CrsGraphData_->Importer_);};
+	const Epetra_Import* Importer() const {return(CrsGraphData_->Importer_);}
 	
 	//! Returns the Exporter associated with this matrix.
-	const Epetra_Export* Exporter() const {return(CrsGraphData_->Exporter_);};
+	const Epetra_Export* Exporter() const {return(CrsGraphData_->Exporter_);}
 	
 	//! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-	const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());};
+	const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());}
   //@}
   
   //@{ \name Local/Global ID methods
 
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-	int LRID(int GRID) const {return(RowMap().LID(GRID));};
+	int LRID(int GRID) const {return(RowMap().LID(GRID));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID(int LRID) const {return(RowMap().GID(LRID));};
+	int GRID(int LRID) const {return(RowMap().GID(LRID));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	int LCID(int GCID) const
@@ -489,16 +527,16 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	  }
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGRID(int GRID) const {return(LRID(GRID) != -1);};
+	bool MyGRID(int GRID) const {return(LRID(GRID) != -1);}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyLRID(int LRID) const {return(GRID(LRID) != IndexBase() - 1);};
+	bool MyLRID(int LRID) const {return(GRID(LRID) != IndexBase() - 1);}
 	
 	//! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGCID(int GCID) const {return(LCID(GCID) != -1);};
+	bool MyGCID(int GCID) const {return(LCID(GCID) != -1);}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyLCID(int LCID) const {return(GCID(LCID) != IndexBase() - 1);};
+	bool MyLCID(int LCID) const {return(GCID(LCID) != IndexBase() - 1);}
   //@}
   
   //@{ \name Inlined Operator Methods.
@@ -535,14 +573,14 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //! Print method
   virtual void Print(ostream& os) const;
 
-	void PrintGraphData(ostream& os) const {CrsGraphData_->Print(os);};
-	void PrintGraphData(ostream& os, int level) const {CrsGraphData_->Print(os, level);};
+	void PrintGraphData(ostream& os) const {CrsGraphData_->Print(os);}
+	void PrintGraphData(ostream& os, int level) const {CrsGraphData_->Print(os, level);}
   //@}
 
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 
 	//! Use ColMap() instead. 
-	const Epetra_BlockMap& ImportMap() const {return(CrsGraphData_->ColMap_);};
+	const Epetra_BlockMap& ImportMap() const {return(CrsGraphData_->ColMap_);}
 	
 	//! Use FillComplete() instead.
 	int TransformToLocal();
@@ -600,7 +638,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   int SortIndices();
 
   //! If SortIndices() has been called, this query returns true, otherwise it returns false.
-  bool Sorted() const {return(CrsGraphData_->Sorted_);};
+  bool Sorted() const {return(CrsGraphData_->Sorted_);}
 	
   //! Removes any redundant column indices in the rows of the graph.
   /*!

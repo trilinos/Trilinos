@@ -45,6 +45,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
@@ -61,6 +63,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
@@ -77,6 +81,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
@@ -94,6 +100,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_Map& RowMa
     Graph_(0),
     Allocated_(false),
     StaticGraph_(false),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
     NumMyRows_(RowMap.NumMyPoints()),
     CV_(CV)
 {
@@ -109,9 +117,12 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph& 
     Graph_((Epetra_CrsGraph*) &Graph),
     Allocated_(false),
     StaticGraph_(true),
+    constructedWithFilledGraph_(false),
+    matrixFillCompleteCalled_(false),
     NumMyRows_(Graph.NumMyRows()),
     CV_(CV)
 {
+  constructedWithFilledGraph_ = Graph.Filled();
   InitializeDefaults();
   Allocate();
 }
@@ -125,6 +136,8 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix& Matrix)
     Allocated_(Matrix.Allocated_),
     StaticGraph_(false),
     UseTranspose_(Matrix.UseTranspose_),
+    constructedWithFilledGraph_(Matrix.constructedWithFilledGraph_),
+    matrixFillCompleteCalled_(Matrix.matrixFillCompleteCalled_),
     Values_(0),
     All_Values_(0),
     NormInf_(-1.0),
@@ -187,7 +200,7 @@ void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that 
 int Epetra_CrsMatrix::Allocate() {
 
   int i, j;
-  
+
   // Set direct access pointers to graph info (needed for speed)
   NumEntriesPerRow_ = Graph_->NumIndicesPerRow();
   NumAllocatedEntriesPerRow_ = Graph_->NumAllocatedIndicesPerRow();
@@ -613,7 +626,17 @@ int Epetra_CrsMatrix::FillComplete() {
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap) {
+int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap,
+				   const Epetra_Map& RangeMap)
+{
+  if (Graph_->Filled()) {
+    if (!constructedWithFilledGraph_ && !matrixFillCompleteCalled_) {
+      cerr << "Epetra_CrsMatrix::FillComplete WARNING, graph.FillComplete has been "
+	   << "called since matrix construction, matrix data may now be out of sync "
+	   << "with graph" <<endl;
+    }
+  }
+
   if (!StaticGraph()) {
     if (Graph_->MakeIndicesLocal(DomainMap, RangeMap) < 0) {
       return(-1);
@@ -626,6 +649,8 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap, const Epetra_Map
       return(-2);
     }
   }
+
+  matrixFillCompleteCalled_ = true;
 
   return(0);
 }
