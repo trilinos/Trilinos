@@ -29,6 +29,9 @@
 #include "Amesos_config.h"
 #include "Amesos.h"
 #include "Amesos_Klu.h"
+#ifdef HAVE_AMESOS_LAPACK
+#include "Amesos_Lapack.h"
+#endif
 #ifdef HAVE_AMESOS_MUMPS
 #include "Amesos_Mumps.h"
 #endif
@@ -53,109 +56,120 @@ bool verbose = false ;
 
 
 
-Amesos_BaseSolver* Amesos::Create( char* ClassType, 
-				   const Epetra_LinearProblem& LinearProblem ) { 
-
+Amesos_BaseSolver* Amesos::Create(const char* ClassType, 
+				  const Epetra_LinearProblem& LinearProblem ) 
+{ 
   string CT = ClassType; 
+  return(Create(CT,LinearProblem));
+}
 
-  if ( CT == "Amesos_Mumps" ) { 
-#ifdef HAVE_AMESOS_MUMPS
-    return new Amesos_Mumps(LinearProblem); 
+Amesos_BaseSolver* Amesos::Create(const string CT,
+				  const Epetra_LinearProblem& LinearProblem )
+{
+
+  if ((CT == "Amesos_Lapack") || (CT == "Lapack")) { 
+#ifdef HAVE_AMESOS_LAPACK
+    return new Amesos_Lapack(LinearProblem); 
 #else
-    if ( verbose ) cerr << "Amesos_Mumps is not implemented" << endl ; 
-    return 0 ; 
+    if (verbose) cerr << "Amesos_Lapack is not implemented" << endl ; 
+    return(0); 
 #endif
-  } else   if ( CT == "Amesos_Scalapack" ) { 
-#ifdef HAVE_AMESOS_SCALAPACK
-    return new Amesos_Scalapack(LinearProblem); 
-#else
-    if ( verbose ) cerr << "Amesos_Scalapack is not implemented" << endl ; 
-    return 0 ; 
-#endif
-  } else   if ( CT == "Amesos_Umfpack" ) { 
-#ifdef HAVE_AMESOS_UMFPACK
-    return new Amesos_Umfpack(LinearProblem); 
-#else
-    if ( verbose ) cerr << "Amesos_Umfpack is not implemented" << endl ; 
-    return 0 ; 
-#endif
-  } else   if ( CT == "Amesos_Dscpack" ) { 
-#ifdef HAVE_AMESOS_DSCPACK
-    return new Amesos_Dscpack(LinearProblem); 
-#else
-    if ( verbose ) cerr << "Amesos_Dscpack is not implemented" << endl ; 
-    return 0 ; 
-#endif
-  } else   if ( CT == "Amesos_Klu" ) { 
+  } 
+  
+  if ((CT == "Amesos_Klu") || (CT == "Klu")) { 
 #ifdef HAVE_AMESOS_KLU
     return new Amesos_Klu(LinearProblem); 
 #else
-    if ( verbose ) cerr << "Amesos_Klu is not implemented" << endl ; 
-    return 0 ; 
+    if (verbose) cerr << "Amesos_Klu is not implemented" << endl ; 
+    return(0); 
 #endif
-  } else   if ( CT == "Amesos_Superludist" ) { 
-#ifdef HAVE_AMESOS_SUPERLUDIST
-    return new Amesos_Superludist(LinearProblem); 
+  } 
+  
+  if ((CT == "Amesos_Umfpack") || (CT == "UmfpacK")) { 
+#ifdef HAVE_AMESOS_UMFPACK
+    return new Amesos_Umfpack(LinearProblem); 
 #else
-    if ( verbose ) cerr << "Amesos_Superludist is not implemented" << endl ; 
-    return 0 ; 
+    if (verbose) cerr << "Amesos_Umfpack is not implemented" << endl ; 
+    return(0); 
 #endif
-  } else   if ( CT == "Amesos_Superlu" ) { 
+  } 
+  
+  if ((CT == "Amesos_Superlu") || (CT == "Superlu")) { 
 #ifdef HAVE_AMESOS_SUPERLU
     return new Amesos_Superlu(LinearProblem); 
 #else
-    if ( verbose ) cerr << "Amesos_Superlu is not implemented" << endl ; 
-    return 0 ; 
+    if (verbose) cerr << "Amesos_Superlu is not implemented" << endl ; 
+    return(0); 
 #endif
-  } else {
-    if ( verbose ) cerr << "Unknown class type:" << ClassType << endl ; 
-    return 0 ; 
-  }
+  } 
+  
+  if ((CT == "Amesos_Superludist") || (CT == "Superludist")) { 
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    return new Amesos_Superludist(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Superludist is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
+  if ((CT == "Amesos_Mumps") || (CT == "Mumps")) { 
+#ifdef HAVE_AMESOS_MUMPS
+    return new Amesos_Mumps(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Mumps is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
+  if ((CT == "Amesos_Dscpack") || (CT == "Dscpack")) { 
+#ifdef HAVE_AMESOS_DSCPACK
+    return new Amesos_Dscpack(LinearProblem); 
+#else
+    if (verbose) cerr << "Amesos_Dscpack is not implemented" << endl ; 
+    return(0); 
+#endif
+  } 
+  
+  if (verbose) cerr << "Unknown class type:" << CT << endl ; 
+  return(0); 
 }
 
 // ====================================================================
+bool Amesos::Query(const char* ClassType)
+{
+  string CT = ClassType;
+  return(Query(CT));
+}
 
-bool Amesos::Query( char* ClassType ) { 
+// ====================================================================
+bool Amesos::Query(const string CT) 
+{ 
 
-  string CT = ClassType; 
-
-  if ( CT == "Amesos_Mumps" ) { 
-#ifdef HAVE_AMESOS_MUMPS
+  if ((CT == "Amesos_Lapack") || (CT == "Lapack")) { 
+#ifdef HAVE_AMESOS_LAPACK
     return true;
 #else
     return false;
 #endif
-  } else   if ( CT == "Amesos_Scalapack" ) { 
-#ifdef HAVE_AMESOS_SCALAPACK
-    return true;
-#else
-    return false;
-#endif
-  } else   if ( CT == "Amesos_Umfpack" ) { 
-#ifdef HAVE_AMESOS_UMFPACK
-    return true;
-#else
-    return false;
-#endif
-  } else   if ( CT == "Amesos_Dscpack" ) { 
-#ifdef HAVE_AMESOS_DSCPACK
-    return true;
-#else
-    return false;
-#endif
-  } else   if ( CT == "Amesos_Klu" ) { 
+  } 
+  
+  if ((CT == "Amesos_Klu") || (CT == "Klu")) { 
 #ifdef HAVE_AMESOS_KLU
     return true; 
 #else
     return false;
 #endif
-  } else   if ( CT == "Amesos_Superludist" ) { 
-#ifdef HAVE_AMESOS_SUPERLUDIST
+  } 
+  
+  if ((CT == "Amesos_Umfpack") || (CT == "Umfpack")) { 
+#ifdef HAVE_AMESOS_UMFPACK
     return true;
 #else
     return false;
 #endif
-  } else   if ( CT == "Amesos_Superlu" ) { 
+  } 
+  
+  if ((CT == "Amesos_Superlu") || ( CT == "Superlu")) { 
 #ifdef HAVE_AMESOS_SUPERLU
     return true; 
 #else
@@ -163,4 +177,31 @@ bool Amesos::Query( char* ClassType ) {
 #endif
   }
   return false;
+
+  if ((CT == "Amesos_Superludist") || (CT == "Superludist")) { 
+#ifdef HAVE_AMESOS_SUPERLUDIST
+    return true;
+#else
+    return false;
+#endif
+  } 
+
+  if ((CT == "Amesos_Mumps") || (CT == "Mumps")) { 
+#ifdef HAVE_AMESOS_MUMPS
+    return true;
+#else
+    return false;
+#endif
+  } 
+
+  if ((CT == "Amesos_Dscpack") || (CT == "Dscpack")) { 
+#ifdef HAVE_AMESOS_DSCPACK
+    return true;
+#else
+    return false;
+#endif
+  } 
+  
+  return(false);
+
 }

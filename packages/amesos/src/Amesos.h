@@ -41,7 +41,8 @@ SymbolicFactrozation(), Solve() and support functions.)
 //
 class Amesos { 
 
-  //@{ \name Creation method
+public: 
+  //@{ \name Creation method for char*.
   //! Amesos Create method
   /*! Creates an instance of the Amesos_BaseSolver class specified by 
     ClassType.
@@ -65,16 +66,21 @@ Amesos solver.
       </li>
       </ul>
   */
-public: 
-  Amesos_BaseSolver *Create( char *ClassType, 
-			     const Epetra_LinearProblem& LinearProblem );
+  Amesos_BaseSolver *Create(const char *ClassType, 
+			    const Epetra_LinearProblem& LinearProblem );
 
+  //! Creation method for string input.
+  Amesos_BaseSolver *Create(const string CT,
+			    const Epetra_LinearProblem& LinearProblem );
   // @}
   
   // @{ Query methods
-  /*! Queries whether a given interface is avaiable or not. */
 
-  bool Query( char * ClassType );
+  //! Queries whether a given interface is avaiable or not.
+  bool Query(const char * ClassType);
+
+  //! Queries whether a given interface is avaiable or not.
+  bool Query(const string CT);
   
 };  // End of  class Amesos  
 #endif /* _AMESOS_FACTORY_H_ */
