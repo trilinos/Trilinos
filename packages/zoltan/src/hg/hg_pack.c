@@ -238,7 +238,7 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 int i, j, k, *vertices = NULL, *del_edges = NULL, vertex, edge, size;
 int number, best_edge, best_size, best_neighbors, random;
-float best_ewgt;
+double best_ewgt;
 char  *yo = "packing_rhp";
 
    if (!(vertices  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
@@ -435,7 +435,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 int i, j, k, side, vertex, edge, *Pack[2], limits[2], cur_edge, best_edge;
 int *taken_edge = NULL, *taken_vertex = NULL, *size = NULL;
-float best_weight, w[2];
+double best_weight, w[2];
 char *yo = "packing_pgp";
 
   w[0] = w[1] = 0.0;
@@ -528,7 +528,7 @@ static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 int i, j, edge, other_edge, vertex, next_vertex, intersecting_size;
 int *covered_by = NULL, *intersecting = NULL;
-float intersecting_weight;
+double intersecting_weight;
 char  *yo = "packing_aug2";
 
   if (!(covered_by   = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))

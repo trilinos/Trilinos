@@ -231,7 +231,7 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
 int   i, j, *vertices = NULL, *del_edges = NULL, vertex, first_vertex, edge,
  number, best_edge, best_size, best_neighbors, random, size;
-float best_ewgt;
+double best_ewgt;
 char  *yo = "grouping_rhg";
 
    if (!(vertices  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))

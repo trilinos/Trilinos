@@ -92,7 +92,7 @@ int vertex, j, edge;
 
 
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
- int *part, int **cut, float *gain, HEAP *heap)
+ int *part, int **cut, double *gain, HEAP *heap)
 {
 int i, j, edge, v;
 
@@ -158,7 +158,7 @@ static int local_fm (
 )
 {
 int    i, j, vertex, edge, *cut[2], *locked = 0, *locked_list = 0, round = 0;
-float  total_weight, max_weight, max, best_max_weight, *gain = 0,
+double  total_weight, max_weight, max, best_max_weight, *gain = 0,
  part_weight[2], cutsize, best_cutsize;
 HEAP   heap[2];
 char   *yo="local_fm";
@@ -182,16 +182,16 @@ char   *yo="local_fm";
         }
      }
   else {
-     total_weight = (float)(hg->nVtx);
+     total_weight = (double)(hg->nVtx);
      for (i = 0; i < hg->nVtx; i++)
         part_weight[part[i]] += 1.0;
      }
-  max_weight = (total_weight / (float)p) * bal_tol;
+  max_weight = (total_weight / (double)p) * bal_tol;
 
   if (!(cut[0]      = (int*)  ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
    || !(locked      = (int*)  ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
    || !(locked_list = (int*)  ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
-   || !(gain        = (float*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(float))) ) {
+   || !(gain        = (double*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(double))) ) {
          Zoltan_Multifree(__FILE__,__LINE__, 4, &cut[0], &locked, &locked_list,
           &gain);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -230,7 +230,7 @@ char   *yo="local_fm";
   do {
      int step = 0, no_better_steps = 0, number_locked = 0, best_locked = 0;
      int sour, dest;
-     float akt_cutsize=best_cutsize;
+     double akt_cutsize=best_cutsize;
 
      round++;
      cutsize = best_cutsize;

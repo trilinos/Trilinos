@@ -150,9 +150,9 @@ int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
 int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
 void Zoltan_HG_Print(ZZ*, HGraph*);
 
-unsigned long Zoltan_HG_Rand (void);
-void          Zoltan_HG_Srand (unsigned long);
-void          Zoltan_HG_Rand_Perm_Int (int*, int);
+unsigned int Zoltan_HG_Rand (void);
+void         Zoltan_HG_Srand (unsigned int);
+void         Zoltan_HG_Rand_Perm_Int (int*, int);
 
 /* Hypergraph read from file */
 int Zoltan_HG_Readfile (ZZ*, int, FILE*, int*, int*, int*, int**, int**, int*,
@@ -223,7 +223,7 @@ typedef struct HGPartParamsStruct HGPartParams;
 int Zoltan_HG_Set_Part_Options  (ZZ*, HGPartParams*);
 int Zoltan_HG_HPart_Lib    (ZZ*, HGraph*, int, Partition, HGPartParams*);
 int Zoltan_HG_HPart_Info   (ZZ*, HGraph*, int, Partition, HGPartParams*);
-float Zoltan_HG_hcut_size_total (HGraph*, Partition);
+double Zoltan_HG_hcut_size_total (HGraph*, Partition);
 
 /* Scale Edge Weight */
 int Zoltan_HG_Scale_HGraph_Weight (ZZ*, HGraph*, float*, int);
@@ -281,7 +281,7 @@ int  Zoltan_HG_heap_make         (HEAP*);
 int  Zoltan_HG_heap_change_value (HEAP*, int, float);
 int  Zoltan_HG_heap_extract_max  (HEAP*);
 
-int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, float*, HEAP*);
+int  Zoltan_HG_move_vertex (HGraph*, int, int, int, int*, int**, double*, HEAP*);
 void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 

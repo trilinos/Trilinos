@@ -7,7 +7,6 @@
 #include "hypergraph.h"
 
 
-
 /* =========== TIME */
 /* This is used to measure the time of the stand-alone program hg_test. */
 #ifdef WITHTIME
@@ -59,6 +58,7 @@ HGraph hg;
 HGPartParams hgp;
 ZZ     zz;
 int    base;   /* minimum vertex number in input file; usually 0 or 1. */
+
 
 /* Pre-set parameter values */
   hgp.check_graph = 1;

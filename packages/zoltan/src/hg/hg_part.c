@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 #include "hypergraph.h"
-static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
+static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
 
 
 
@@ -241,10 +241,10 @@ End:
 
 /* Calculates the cutsize of a partition by summing the weight of all edges
    which span more than one part. Time O(|I|). */
-float Zoltan_HG_hcut_size_total (HGraph *hg, Partition part)
+double Zoltan_HG_hcut_size_total (HGraph *hg, Partition part)
 {
 int i, j, hpart;
-float cut = 0.0;
+double cut = 0.0;
 
   for (i = 0; i < hg->nEdge; i++) {
      hpart = part[hg->hvertex[hg->hindex[i]]];
@@ -264,10 +264,10 @@ float cut = 0.0;
    the number of parts it spans across. This value minus one is the
    cutsize of this edge and the total cutsize is the sum of the single
    cutsizes. Time O(|I|). */
-static float hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 {
 int i, j, *parts, nparts;
-float cut = 0.0;
+double cut = 0.0;
 char *yo = "hcut_size_links";
 
   if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
@@ -305,7 +305,7 @@ static int hmin_max (ZZ *zz, int P, int *q, HGPartParams *hgp)
         values[1] = MAX(values[1], q[i]);
         }
      if (hgp->output_level >= HG_DEBUG_LIST)
-        printf("%9d    %12.2f %9d    %9d\n", values[0], (float)(values[2]) / P,
+        printf("%9d    %12.2f %9d    %9d\n", values[0], (double)(values[2]) / P,
          values[1],values[2]);
      if (hgp->output_level > HG_DEBUG_LIST) {
         for (i = 0; i < P; i++)
@@ -318,9 +318,9 @@ static int hmin_max (ZZ *zz, int P, int *q, HGPartParams *hgp)
 
 
 
-static float hmin_max_float (ZZ *zz, int P, float *q, HGPartParams *hgp)
+static double hmin_max_float (ZZ *zz, int P, double *q, HGPartParams *hgp)
 { int i;
-  float values[3];
+  double values[3];
 
   if (P > 0) {
      values[0] = INT_MAX;
@@ -374,12 +374,12 @@ char *yo = "Zoltan_HG_HPart_Info";
      }
   printf (" Size               :");
   max_size = hmin_max (zz, p, size, hgp);
-  printf (" Balance            : %.3f\n", (float) max_size * p / hg->nVtx);
+  printf (" Balance            : %.3f\n", (double) max_size * p / hg->nVtx);
   ZOLTAN_FREE ((void **) &size);
 
   if (hg->vwgt) {
-     float *size_w, max_size_w, tot_w = 0.0;
-     if (!(size_w = (float*) ZOLTAN_CALLOC (p, sizeof(float)))) {
+     double *size_w, max_size_w, tot_w = 0.0;
+     if (!(size_w = (double*) ZOLTAN_CALLOC (p, sizeof(double)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
         }

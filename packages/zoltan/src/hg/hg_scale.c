@@ -53,7 +53,7 @@ static char *yo = "Zoltan_HG_Scale_HGraph_Weight";
         int size;
         for (i = 0; i < hg->nEdge; i++) {
            size = hg->hindex[i+1] - hg->hindex[i];
-           new_ewgt[i] =(hg->ewgt ? hg->ewgt[i] : 1.0)/(float)(size*(size-1)/2);
+           new_ewgt[i] =(hg->ewgt ? hg->ewgt[i] : 1.0)/(double)(size*(size-1)/2);
            }
         }
      }
@@ -87,11 +87,11 @@ static char *yo = "Zoltan_HG_Scale_HGraph_Weight";
      else
         for (i = 0; i < hg->nEdge; i++)
            new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0)/
-            (float)(hg->hindex[i+1] - hg->hindex[i]);
+            (double)(hg->hindex[i+1] - hg->hindex[i]);
      }
   else if (scale == 4) {
      if (hg->vwgt) {
-        float max_weight;
+        double max_weight;
         for (i = 0; i < hg->nEdge; i++) {
            max_weight = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
@@ -105,7 +105,7 @@ static char *yo = "Zoltan_HG_Scale_HGraph_Weight";
      }
   else if (scale == 5) {
      if (hg->vwgt) {
-        float min_weight;
+        double min_weight;
         for (i = 0; i < hg->nEdge; i++) {
            min_weight = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
@@ -134,7 +134,7 @@ static char *yo = "Zoltan_HG_Scale_HGraph_Weight";
 int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 {
 int   i, j;
-float vwgt_j;
+double vwgt_j;
 
   if (!g->vwgt)
      return ZOLTAN_FATAL;

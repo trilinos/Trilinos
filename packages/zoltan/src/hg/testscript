@@ -10,8 +10,8 @@ set redm = (mxm rrm rem rhm grm lhm pgm gm2 rm2 gm3 gm4 mxp rep rhp grp lhp rrp 
 #set testname = (avqlar baluu biomed bm1u golem3 ind2u ind3u prim1u prim2u s13207 s15850 s35932\
 # s38417 s38584 s9234u struct t2u t3u t4u t5u t6u)
 
-#set testname = (ibm01 ibm02)
-#set redm = (rhm)
+#set testname = (ibm01)
+#set redm = (rrm)
 set greedy = (gr0)
 
 set ext = "hg"
@@ -25,7 +25,7 @@ foreach test($testname)
    foreach method ($redm)
       foreach global ($greedy)
          echo "Running test case $test.$ext using method $method global $global"
-         hg_exec -f ../test/hg_test/$test.$ext -redm $method >> answers/$test-$global.$method
+         ./hg_exec -f ../test/hg_test/$test.$ext -redm $method > answers/$test-$global.$method
 #         hg_exec -f ../test/hg_test/umit/chip/$test.$ext -redm $method  >> answers/$test-$global.$method
          end
       end
@@ -36,7 +36,7 @@ rm -f reportfile reportfile.*
 foreach test($testname)
    foreach method ($redm)
       foreach global ($greedy)
-         /home/rheaphy/report $test-$global.$method
+         ./tools/report $test-$global.$method
          end
       end
    end

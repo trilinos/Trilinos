@@ -764,16 +764,19 @@ char *yo = "Zoltan_HG_Print";
    Currently, for use in the hypergraph library only. Needed because different
    random number implimentations on different machines produced different
    answers! Hence this is a single portable, fast, algorithm with adequate
-   random number generation. */
+   random number generation. NOTE: this assumes 32 bit ints, previously
+   these variables were unsigned long (as was the return value) which
+   gave problems on stratus (which assumed 64 bit longs.) */
 
-static unsigned long idum = 123456789;
+static unsigned int idum = 123456789U;
 
-unsigned long Zoltan_HG_Rand (void) {
-   return idum = 1664525L * idum + 1013904223L;
+unsigned Zoltan_HG_Rand (void) {
+   return idum = (1664525U * idum) + 1013904223U;
    }
 
-
-void Zoltan_HG_Srand (unsigned long seed) {
+   
+   
+void Zoltan_HG_Srand (unsigned int seed) {
    idum = seed;
    }
 

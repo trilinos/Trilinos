@@ -584,7 +584,7 @@ static int greedy_order (
   int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
   int ierr=ZOLTAN_OK;
   double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
-  float *gain = NULL, *edge_sum = NULL, delta;
+  double *gain = NULL, *edge_sum = NULL, delta;
   double damp_factor;
   char msg[128];
   HEAP h[2];
@@ -595,7 +595,7 @@ static int greedy_order (
 
   /* Allocate arrays. */
   if (!(rank  = (int *)     ZOLTAN_CALLOC (hg->nVtx, sizeof (int))) ||
-      !(gain  = (float *)   ZOLTAN_CALLOC (hg->nVtx, sizeof (float))) ) {
+      !(gain  = (double *)   ZOLTAN_CALLOC (hg->nVtx, sizeof (double))) ) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ierr =  ZOLTAN_MEMERR;
     goto error;
@@ -604,7 +604,7 @@ static int greedy_order (
     rank[i] = -1;  /* -1 means this vtx has not yet been numbered */
 
   if (priority_mode && (!(priority_mode&1))){ /* 2,4,6,... */
-    if (!(edge_sum = (float *)  ZOLTAN_CALLOC (hg->nVtx, sizeof (float)))){
+    if (!(edge_sum = (double *)  ZOLTAN_CALLOC (hg->nVtx, sizeof (double)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr =  ZOLTAN_MEMERR;
       goto error;
