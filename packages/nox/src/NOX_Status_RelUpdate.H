@@ -51,7 +51,7 @@ namespace Status {
   Convergence test that checks whether or not the following holds:
 
   \f[
-  \frac{1}{N} \sum_{i=1}^N \frac {\| s_i \|}{\epsilon_r x_i + \epsilon_a} < 1
+  \frac{1}{N} \sum_{i=1}^N \frac {| x_i - x_{i-1}|}{\epsilon_r |x_i| + \epsilon_a} < 1
   \f]
 
   Here, \f$\epsilon_r\f$ and \f$\epsilon_a\f$ are specified in the constructor,
