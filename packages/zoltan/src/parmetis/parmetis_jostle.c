@@ -79,7 +79,7 @@ int LB_ParMetis(
 {
 #ifndef LB_PARMETIS
   char *yo="LB_ParMetis";
-  LB_PRINT_ERROR(lb->Proc, yo, 
+  ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
      "ParMetis requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
@@ -153,7 +153,7 @@ int LB_Jostle(
 {
 #ifndef LB_JOSTLE
   char *yo = "LB_Jostle";
-  LB_PRINT_ERROR(lb->Proc, yo, 
+  ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
      "Jostle requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
@@ -279,7 +279,7 @@ int LB_Jostle(
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
   { \
-  LB_PRINT_ERROR(lb->Proc, yo, "ParMETIS/Jostle error."); \
+  ZOLTAN_PRINT_ERROR(lb->Proc, yo, "ParMETIS/Jostle error."); \
   LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
   LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
   LB_FREE(&float_vwgt); LB_FREE(&ewgts); LB_FREE(&xyz); \
@@ -353,7 +353,7 @@ static int LB_ParMetis_Jostle(
   int network[4] = {0, 1, 1, 1};
 #endif
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   /* Set default return values (in case of early exit) */
   *num_exp = -1;
@@ -380,7 +380,7 @@ static int LB_ParMetis_Jostle(
     sprintf(msg, "Object weight dimension is %d, "
             "but should be >= 0. Using Obj_Weight_Dim = 0.",
             lb->Obj_Weight_Dim);
-    LB_PRINT_WARN(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
     obj_wgt_dim = 0;
   }
   else {
@@ -390,11 +390,11 @@ static int LB_ParMetis_Jostle(
     sprintf(msg, "Communication weight dimension is %d, "
             "but should be >= 0. Using Comm_Weight_Dim = 0.",
             lb->Comm_Weight_Dim);
-    LB_PRINT_WARN(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
     comm_wgt_dim = 0;
   }
   else if (lb->Comm_Weight_Dim>1){
-    LB_PRINT_WARN(lb->Proc, yo, "This method does not support "
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "This method does not support "
         "multidimensional communication weights. Using Comm_Weight_Dim = 1.");
     comm_wgt_dim = 1;
   }
@@ -444,7 +444,7 @@ static int LB_ParMetis_Jostle(
   if (ierr){
     /* Return error code */
     FREE_MY_MEMORY;
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   
@@ -462,14 +462,14 @@ static int LB_ParMetis_Jostle(
         (obj_wgt_dim && !float_vwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     LB_Get_Obj_List(lb, global_ids, local_ids, obj_wgt_dim, float_vwgt, &ierr);
     if (ierr){
       /* Return error */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
@@ -500,7 +500,7 @@ static int LB_ParMetis_Jostle(
   
   if (lb->Debug_Level){
      if ((lb->Proc ==0) && (vtxdist[lb->Num_Proc]==0))
-        LB_PRINT_WARN(lb->Proc, yo, "No objects to balance.");
+        ZOLTAN_PRINT_WARN(lb->Proc, yo, "No objects to balance.");
   }
 
   if (get_graph_data){
@@ -516,7 +516,7 @@ static int LB_ParMetis_Jostle(
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       num_edges += nedges;
@@ -536,7 +536,7 @@ static int LB_ParMetis_Jostle(
         (num_edges && comm_wgt_dim && !adjwgt)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if (lb->Debug_Level >= LB_DEBUG_ALL)
@@ -553,7 +553,7 @@ static int LB_ParMetis_Jostle(
     if (num_obj && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     
@@ -602,7 +602,7 @@ static int LB_ParMetis_Jostle(
                        (comm_wgt_dim && !tmp_ewgts))) || (!plist)){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     for (i=0; i<lb->Num_Proc; i++)
@@ -630,7 +630,7 @@ static int LB_ParMetis_Jostle(
       if (!proc_list || !proc_list_nbor){
         /* Not enough memory */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
@@ -675,7 +675,7 @@ static int LB_ParMetis_Jostle(
       if (ierr){
         /* Return error */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
   
@@ -732,7 +732,7 @@ static int LB_ParMetis_Jostle(
             if (!proc_list){
               /* Not enough memory */
               FREE_MY_MEMORY;
-              LB_TRACE_EXIT(lb, yo);
+              ZOLTAN_LB_TRACE_EXIT(lb, yo);
               return ZOLTAN_MEMERR;
             }
           }
@@ -780,17 +780,17 @@ static int LB_ParMetis_Jostle(
       if ((lb->Proc==0) && (tmp>0) && (lb->Debug_Level>0)){
           sprintf(msg, "Found and removed %d self edges in the graph.\n", 
                   tmp);
-          LB_PRINT_WARN(lb->Proc, yo, msg);
+          ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
       }
     }
 
     /* Sanity check */
     if ((check_graph >= 1) && (xadj[num_obj] + nself != num_edges)){
-      LB_PRINT_ERROR(lb->Proc, yo, "Invalid graph. "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Invalid graph. "
               "Something may be wrong with the edges in the graph, "
               "or perhaps you found a bug in Zoltan.\n"); 
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
@@ -806,7 +806,7 @@ static int LB_ParMetis_Jostle(
     if (nsend && (!sendbuf || !plist) ){
       /* Not enough space */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
@@ -840,7 +840,7 @@ static int LB_ParMetis_Jostle(
     if (ierr != COMM_OK && ierr != COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
 
@@ -849,7 +849,7 @@ static int LB_ParMetis_Jostle(
     if (nrecv && (!sendbuf || !plist) ){
       /* Not enough space */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if (lb->Debug_Level >= LB_DEBUG_ALL)
@@ -861,7 +861,7 @@ static int LB_ParMetis_Jostle(
     if (ierr != COMM_OK && ierr != COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
 
@@ -884,7 +884,7 @@ static int LB_ParMetis_Jostle(
     if (nrecv && ((!hash_nodes) || (!hashtab))){
       /* Not enough memory */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     
@@ -914,10 +914,10 @@ static int LB_ParMetis_Jostle(
                            nrecv)) <0){
         /* Error: Global ID is not in hash table. 
            This only happens if the graph is invalid. */
-        LB_PRINT_ERROR(lb->Proc, yo,"Invalid graph. Please check that "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo,"Invalid graph. Please check that "
            "your graph query functions are correct.\n");
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_FATAL;
       }
       else{
@@ -950,7 +950,7 @@ static int LB_ParMetis_Jostle(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
 
@@ -978,7 +978,7 @@ static int LB_ParMetis_Jostle(
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
         /* Return error code */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
 
@@ -999,7 +999,7 @@ static int LB_ParMetis_Jostle(
     if (ierr){
       /* Return error */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     /* Allocate space for the geometry data */
@@ -1007,7 +1007,7 @@ static int LB_ParMetis_Jostle(
     if (ndims && num_obj && !xyz){
       /* Not enough space */
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     /* Get the geometry data */
@@ -1020,7 +1020,7 @@ static int LB_ParMetis_Jostle(
       if (ierr) {
         /* Return error code */
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
       for (j=0; j<ndims; j++)
@@ -1053,7 +1053,7 @@ static int LB_ParMetis_Jostle(
               lb, &comm_plan);
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ierr;
     }
     tmp_num_obj = vtxdist[lb->Proc+1]-vtxdist[lb->Proc];
@@ -1067,7 +1067,7 @@ static int LB_ParMetis_Jostle(
   if (!part){
     /* Not enough memory */
     FREE_MY_MEMORY;
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   if (obj_wgt_dim>0){
@@ -1093,17 +1093,17 @@ static int LB_ParMetis_Jostle(
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
                       "Jostle will likely crash. "
                       "Please use a different load balancing method.");
       } else { /* ParMETIS */
-        LB_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No edges on this processor; "
                       "ParMETIS will likely crash. "
                       "Please use a different load balancing method.");
       }
       ierr = ZOLTAN_FATAL;
       FREE_MY_MEMORY; 
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
   }
@@ -1115,12 +1115,12 @@ static int LB_ParMetis_Jostle(
 
 #ifndef BETA_PARMETIS
   if ((obj_wgt_dim >= 2) && strcmp(alg, "JOSTLE")) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
       "You need the newest beta version of ParMETIS to use multi-weights.\n"
       "If you have this installed, please define BETA_PARMETIS and "
       "recompile Zoltan.");
     FREE_MY_MEMORY;
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 #endif /* !BETA_PARMETIS */
@@ -1139,7 +1139,7 @@ static int LB_ParMetis_Jostle(
     for (i=0; i<lb->Num_Proc; i++){
       vtxdist[i] = vtxdist[i+1] - vtxdist[i];
     }
-    LB_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the Jostle library");
     jostle_env("format = contiguous");
     if (check_graph >= 2){
       jostle_env("check = on");
@@ -1147,21 +1147,21 @@ static int LB_ParMetis_Jostle(
     pjostle(&nnodes, &offset, &(vtxdist[lb->Proc]), &j, vtxdist, 
        xadj, vwgt, part, &num_edges, adjncy, adjwgt, network,
        NULL, options, &ndims, NULL); 
-    LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the Jostle library");
 #else
     /* We don't know about Jostle */
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
       "Sorry, Jostle is not available on this system.\n"
       "If you have Jostle, please set the JOSTLE_XXXPATHs appropriately "
       "in the Zoltan configuration files and recompile Zoltan. Otherwise, "
       "use a different method, for example ParMETIS.");
     FREE_MY_MEMORY;
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
 #endif
   }
   else if (strcmp(alg, "PARTKWAY") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     if (obj_wgt_dim <= 1)
       ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, &num_proc, options, &edgecut, part, &comm);
@@ -1173,34 +1173,34 @@ static int LB_ParMetis_Jostle(
         &comm, (lb->Proc +1));
     }
 #endif /* BETA_PARMETIS */
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
       &numflag, &ndims, xyz, &num_proc, options, &edgecut, 
       part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     if (obj_wgt_dim <= 1)
       ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
         &numflag, options, &edgecut, part, &comm);
@@ -1212,26 +1212,26 @@ static int LB_ParMetis_Jostle(
         (lb->Proc+1));
     }
 #endif /* BETA_PARMETIS */
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
-    LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &comm);
-    LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else {
     /* This should never happen! */
     sprintf(msg, "Unknown ParMetis or Jostle algorithm %s.", alg);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     FREE_MY_MEMORY;
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -1260,7 +1260,7 @@ static int LB_ParMetis_Jostle(
     part2 = (idxtype *) LB_MALLOC(num_obj*sizeof(idxtype)); 
     if (num_obj && !part2){
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     /* Use reverse communication to compute the partition array under the 
@@ -1270,7 +1270,7 @@ static int LB_ParMetis_Jostle(
                               NULL, (char *) part2);
     if ((ierr == COMM_FATAL) || (ierr == COMM_MEMERR)){
       FREE_MY_MEMORY;
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
@@ -1292,20 +1292,20 @@ static int LB_ParMetis_Jostle(
     if (nsend > 0) {
       if (!LB_Special_Malloc(lb,(void **)exp_gids,nsend,LB_SPECIAL_MALLOC_GID)) {
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       if (!LB_Special_Malloc(lb,(void **)exp_lids,nsend,LB_SPECIAL_MALLOC_LID)) {
         LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       if (!LB_Special_Malloc(lb,(void **)exp_procs,nsend,LB_SPECIAL_MALLOC_INT)) {
         LB_Special_Free(lb,(void **)exp_lids,LB_SPECIAL_MALLOC_LID);
         LB_Special_Free(lb,(void **)exp_gids,LB_SPECIAL_MALLOC_GID);
         FREE_MY_MEMORY;
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       j = 0;
@@ -1348,7 +1348,7 @@ static int LB_ParMetis_Jostle(
     if (lb->Proc==0) printf("\n");
   }
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 
@@ -1392,7 +1392,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       max_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
       if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local
            && max_wgt && max_wgt_local)){
-        LB_PRINT_ERROR(proc, yo, "Out of memory.");
+        ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
         LB_FREE(&nonint);
         LB_FREE(&nonint_local);
         LB_FREE(&scale);
@@ -1442,7 +1442,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
             ierr = ZOLTAN_WARN;
             if (proc == 0){
               sprintf(msg, "All weights are zero in component %1d", j);
-              LB_PRINT_WARN(proc, yo, msg);
+              ZOLTAN_PRINT_WARN(proc, yo, msg);
             }
           }
           else /* sum_wgt[j] != 0) */

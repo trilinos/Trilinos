@@ -44,8 +44,8 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
                         MIGMIGREGCommCreate, &n_import);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   *c2 = n_import;
@@ -55,16 +55,16 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
     import_lids = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, n_import);
 
     if (!import_objs || !import_gids || (num_lid_entries && !import_lids)) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
   ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     LB_FREE(&import_objs);
     LB_FREE(&import_gids);
     LB_FREE(&import_lids);
@@ -74,8 +74,8 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-1, (char *) gids, 
                     sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *) import_gids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     LB_FREE(&import_objs);
     LB_FREE(&import_gids);
     LB_FREE(&import_lids);
@@ -86,8 +86,8 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
     ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-2, (char *) lids, 
                       sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) import_lids);
     if (ierr != COMM_OK && ierr != COMM_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       LB_FREE(&import_objs);
       LB_FREE(&import_gids);
       LB_FREE(&import_lids);
@@ -108,7 +108,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
 
   ierr = LB_Comm_Destroy(&comm_plan);
   if(ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
   return ierr;
@@ -157,7 +157,7 @@ static int LB_insert_orphan(LB *lb, Region reg) {
     }
   }
   ierr = ZOLTAN_WARN;
-  LB_TRACE_DETAIL(lb, yo, "could not insert region");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "could not insert region");
   
   fprintf(stderr,"%s failed to insert %f %f %f on proc %d\n",yo, reg.Coord[0], reg.Coord[1], reg.Coord[2], lb->Proc);
 
@@ -199,13 +199,13 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
     /* Array = (Message *) LB_MALLOC(nregions * sizeof(Message)); */
     
     if((regions = (pRegion *) LB_MALLOC(nregions * sizeof(pRegion))) == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if((npids = (int *) LB_MALLOC(nregions * sizeof(int))) == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       LB_FREE(&regions);
       return ZOLTAN_MEMERR;
     }
@@ -267,7 +267,7 @@ int LB_migreg_migrate_orphans(LB *lb, pRegion RegionList, int nregions,
    * then there is an error
    */
   if (nreg!=nregions) {
-    LB_PRINT_ERROR(lb->Proc, yo, "regions found != to expected number of regions");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "regions found != to expected number of regions");
     return ZOLTAN_FATAL;
   }
 
@@ -322,13 +322,13 @@ static int LB_copy_info(LB *lb, pRegion src, pRegion *dest) {
   /* mallloc space for destination */
   copy = (pRegion) LB_MALLOC(sizeof(Region));
   if(copy == NULL) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   copy->Global_ID = ZOLTAN_LB_MALLOC_GID(lb);
   copy->Local_ID  = ZOLTAN_LB_MALLOC_LID(lb);
   if (copy->Global_ID == NULL || (lb->Num_LID && copy->Local_ID == NULL)) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   

@@ -282,12 +282,12 @@ void LB_dfs_migrate(LB *lb, int *nsentags,
   if(LB_Oct_nOctants()) {        /* allocate space for octants being migrated */
     docts = (pOctant *) LB_MALLOC(LB_Oct_nOctants() * sizeof(pOctant));
     if(!docts) {
-      LB_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
       abort();
     }
     dpids = (int *) LB_MALLOC(LB_Oct_nOctants() * sizeof(int));
     if(!dpids) {
-      LB_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
       LB_FREE(&docts);
       abort();
     }

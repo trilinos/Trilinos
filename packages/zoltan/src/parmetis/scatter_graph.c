@@ -54,7 +54,7 @@ int LB_Scatter_Graph(
   int vwgt_dim= lb->Obj_Weight_Dim, ewgt_dim= lb->Comm_Weight_Dim;
   struct Comm_Obj *plan2;
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   /* Save pointers to "old" data distribution */
   old_vtxdist = *vtxdist;
@@ -113,10 +113,10 @@ int LB_Scatter_Graph(
   if (nrecv != num_obj){
     sprintf(msg,"Proc %d received %d object but expected %d.",
       lb->Proc, nrecv, num_obj);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     /* Free data */
     LB_FREE(&proclist);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -169,11 +169,11 @@ int LB_Scatter_Graph(
     if (nrecv != num_edges){
       sprintf(msg,"Proc %d received %d edges but expected %d.",
         lb->Proc, nrecv, num_edges);
-      LB_PRINT_ERROR(lb->Proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
       /* Free data */
       LB_FREE(&proclist);
       LB_FREE(&proclist2);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
   
@@ -204,6 +204,6 @@ int LB_Scatter_Graph(
   LB_FREE(&old_adjwgt);
   LB_FREE(&old_xyz);
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }

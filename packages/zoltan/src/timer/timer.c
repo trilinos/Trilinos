@@ -56,7 +56,7 @@ int *timer)                     /* output: timer type */
 #if (defined(_CLOCK_T) && ! defined(SMOS))
           (*timer) = LB_TIME_CPU;
 #else  /* SMOS or !_CLOCK_T */
-          LB_PRINT_WARN(-1, yo, "CPU time not available;"
+          ZOLTAN_PRINT_WARN(-1, yo, "CPU time not available;"
                         " Wall clock time will be used.");
 #endif /* SMOS or !_CLOCK_T */
         }
@@ -64,7 +64,7 @@ int *timer)                     /* output: timer type */
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           (*timer) = LB_TIME_USER;
 #else
-          LB_PRINT_WARN(-1, yo, "User time not available;"
+          ZOLTAN_PRINT_WARN(-1, yo, "User time not available;"
                           " Wall clock time will be used.");
 #endif
         }
@@ -72,14 +72,14 @@ int *timer)                     /* output: timer type */
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
           (*timer) = LB_TIME_USERSYS;
 #else
-          LB_PRINT_WARN(-1, yo, "Usersys time not "
+          ZOLTAN_PRINT_WARN(-1, yo, "Usersys time not "
                         "available; Wall clock time will be used.");
 #endif
         }
         else{
           char msg[256];
           sprintf(msg, "Unknown timer option %s.", result.sval);
-          LB_PRINT_WARN(-1, yo, msg);
+          ZOLTAN_PRINT_WARN(-1, yo, msg);
           status = 2; /* Illegal parameter */
         }
     }

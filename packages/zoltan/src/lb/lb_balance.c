@@ -28,7 +28,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Balance(
+int Zoltan_LB_Balance(
   LB *lb, 
   int *changes,                  /* Set to zero or one depending on if 
                                     Zoltan determines a new
@@ -93,7 +93,7 @@ int LB_Balance(
  *   Return one otherwise.
  */
 
-char *yo = "LB_Balance";
+char *yo = "Zoltan_LB_Balance";
 int gmax;    /* Maximum number of imported/exported objects 
                 over all processors.                       */
 int error;    /* Error code */
@@ -102,7 +102,7 @@ double lb_time[2] = {0.0,0.0};
 char msg[256];
 int comm[3],gcomm[3]; 
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS)
     LB_Print_Key_Params(lb);
@@ -111,7 +111,7 @@ int comm[3],gcomm[3];
 
   /* 
    * Compute Max number of array entries per ID over all processors.
-   * Compute Max number of return arguments for LB_Balance.
+   * Compute Max number of return arguments for Zoltan_LB_Balance.
    * This is a sanity-maintaining step; we don't want different
    * processors to have different values for these numbers.
    */
@@ -140,7 +140,7 @@ int comm[3],gcomm[3];
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_OK);
   }
 
@@ -149,7 +149,7 @@ int comm[3],gcomm[3];
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_WARN);
   }
 
@@ -160,11 +160,11 @@ int comm[3],gcomm[3];
   error = LB_Build_Machine_Desc(lb);
 
   if (error == ZOLTAN_FATAL){
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (error);
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done machine description");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done machine description");
 
   /*
    * Call the actual load-balancing function.
@@ -176,16 +176,16 @@ int comm[3],gcomm[3];
 
   if (error == ZOLTAN_FATAL){
     sprintf(msg, "Balancing routine returned error code %d.", error);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (error);
   }
   else if (error){
     sprintf(msg, "Balancing routine returned error code %d.", error);
-    LB_PRINT_WARN(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done load balancing");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done load balancing");
 
   if (*num_import_objs >= 0)
     MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
@@ -212,7 +212,7 @@ int comm[3],gcomm[3];
 
     *num_import_objs = *num_export_objs = 0;
 
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_OK);
   }
 
@@ -236,33 +236,33 @@ int comm[3],gcomm[3];
         /* This condition should never happen!! */
         /* Methods should not return arrays if no lists are requested. */
         *num_import_objs = *num_export_objs = -1;
-        LB_Free_Data(import_global_ids, import_local_ids, import_procs,
-                     export_global_ids, export_local_ids, export_procs);
-        LB_PRINT_WARN(lb->Proc, yo, 
+        Zoltan_LB_Free_Data(import_global_ids, import_local_ids, import_procs,
+                            export_global_ids, export_local_ids, export_procs);
+        ZOLTAN_PRINT_WARN(lb->Proc, yo, 
                       "Method returned lists, but no lists requested.");
       }
     }
     else if (lb->Return_Lists == LB_ALL_LISTS || 
              lb->Return_Lists == LB_EXPORT_LISTS) {
       /* Export lists are requested; compute export map */
-      error = LB_Compute_Destinations(lb,
+      error = Zoltan_Compute_Destinations(lb,
                                       *num_import_objs, *import_global_ids, 
                                       *import_local_ids, *import_procs,
                                       num_export_objs, export_global_ids,
                                       export_local_ids, export_procs);
       if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
         sprintf(msg, "Error building return arguments; "
-                     "%d returned by LB_Compute_Destinations\n", error);
-        LB_PRINT_ERROR(lb->Proc, yo, msg);
-        LB_TRACE_EXIT(lb, yo);
+                     "%d returned by Zoltan_Compute_Destinations\n", error);
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return error;
       }
       if (lb->Return_Lists == LB_EXPORT_LISTS) {
         /* Method returned import lists, but only export lists were desired. */
         /* Import lists not needed; free them. */
         *num_import_objs = -1;
-        LB_Free_Data(import_global_ids, import_local_ids, import_procs,
-                     NULL, NULL, NULL);
+        Zoltan_LB_Free_Data(import_global_ids, import_local_ids, import_procs,
+                            NULL, NULL, NULL);
       }
     }
   }
@@ -272,7 +272,7 @@ int comm[3],gcomm[3];
       if (lb->Return_Lists == LB_ALL_LISTS || 
           lb->Return_Lists == LB_IMPORT_LISTS) {
         /* Compute import map */
-        error = LB_Compute_Destinations(lb, 
+        error = Zoltan_Compute_Destinations(lb, 
                                         *num_export_objs, *export_global_ids, 
                                         *export_local_ids, *export_procs,
                                         num_import_objs, import_global_ids,
@@ -280,32 +280,32 @@ int comm[3],gcomm[3];
 
         if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
           sprintf(msg, "Error building return arguments; "
-                       "%d returned by LB_Compute_Destinations\n", error);
-          LB_PRINT_ERROR(lb->Proc, yo, msg);
-          LB_TRACE_EXIT(lb, yo);
+                       "%d returned by Zoltan_Compute_Destinations\n", error);
+          ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+          ZOLTAN_LB_TRACE_EXIT(lb, yo);
           return error;
         }
         if (lb->Return_Lists == LB_IMPORT_LISTS) {
           /* Method returned export lists, but only import lists are desired. */
           /* Export lists not needed; free them. */
           *num_export_objs = -1;
-          LB_Free_Data(NULL, NULL, NULL, 
-                       export_global_ids, export_local_ids, export_procs);
+          Zoltan_LB_Free_Data(NULL, NULL, NULL, 
+                             export_global_ids, export_local_ids, export_procs);
         }
       }
     }
     else {  /* *num_export_objs < 0 && *num_import_objs < 0) */
       if (lb->Return_Lists) {
         /* No map at all available */
-        LB_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned "
                "neither import nor export data.");
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_WARN;
       }
     }
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done building return arguments");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done building return arguments");
 
   end_time = LB_Time(lb->Timer);
   lb_time[0] = end_time - start_time;
@@ -334,25 +334,25 @@ int comm[3],gcomm[3];
    */
 
   if (lb->Migrate.Auto_Migrate) {
-    LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
 
     start_time = LB_Time(lb->Timer);
-    error = LB_Help_Migrate(lb,
+    error = Zoltan_Help_Migrate(lb,
                             *num_import_objs, *import_global_ids,
                             *import_local_ids, *import_procs,
                             *num_export_objs, *export_global_ids,
                             *export_local_ids, *export_procs);
     if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
       sprintf(msg, "Error in auto-migration; %d returned from "
-                    "LB_Help_Migrate\n", error);
-      LB_PRINT_ERROR(lb->Proc, yo, msg);
-      LB_TRACE_EXIT(lb, yo);
+                    "Zoltan_Help_Migrate\n", error);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return error;
     }
     end_time = LB_Time(lb->Timer);
     lb_time[1] = end_time - start_time;
 
-    LB_TRACE_DETAIL(lb, yo, "Done auto-migration");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done auto-migration");
   }
   
   /* Print timing info */
@@ -369,7 +369,7 @@ int comm[3],gcomm[3];
 
   *changes = 1;
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   if (error)
     return (error);
   else
@@ -380,7 +380,7 @@ int comm[3],gcomm[3];
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Free_Data(
+int Zoltan_LB_Free_Data(
   ZOLTAN_ID_PTR *import_global_ids, /* Array of global IDs for non-local objects 
                                     assigned to this processor in the new
                                     decomposition.                           */

@@ -24,7 +24,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Initialize(int argc, char **argv, float *ver)
+int Zoltan_Initialize(int argc, char **argv, float *ver)
 {
 /*
  *  Function to initialize values needed in load balancing tools.

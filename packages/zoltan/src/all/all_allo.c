@@ -56,7 +56,7 @@ char *val)			/* value of variable */
  * LB_Register_Fort_Malloc is called by the wrappers for the Fortran
  * interface to provide pointers to the Fortran allocation/free routines.
  *
- * int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
+ * int LB_Special_Malloc(LB *lb, void **array, int size,
  *                       LB_SPECIAL_MALLOC_TYPE type)
  *
  *   lb    -- the load balancing structure in use
@@ -68,7 +68,7 @@ char *val)			/* value of variable */
  *
  * The return value is 1 if the allocation succeeded, 0 if it failed.
  *
- * int LB_Special_Free(struct LB_Struct *lb, void **array,
+ * int LB_Special_Free(LB *lb, void **array,
                        LB_SPECIAL_MALLOC_TYPE type)
  *
  *****************************************************************************/
@@ -80,7 +80,7 @@ void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
    LB_Fort_Free_int = fort_free_int;
 }
 
-int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
+int LB_Special_Malloc(LB *lb, void **array, int size,
                       LB_SPECIAL_MALLOC_TYPE type)
 {
    int *ret_addr, success;
@@ -131,7 +131,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
          if (ret_addr==0) success=0;
          break;
       default:
-	 LB_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
          success = 0;
       }
       if (success) {
@@ -158,7 +158,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
          if (lb->Num_LID > 0 && *array==NULL) success = 0;
          break;
       default:
-	 LB_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
          *array = NULL;
          success = 0;
       }
@@ -170,7 +170,7 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Special_Free(struct LB_Struct *lb, void **array,
+int LB_Special_Free(LB *lb, void **array,
                     LB_SPECIAL_MALLOC_TYPE type)
 {
    int success;
@@ -216,7 +216,7 @@ int LB_Special_Free(struct LB_Struct *lb, void **array,
 #endif
          break;
       default:
-	 LB_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
          success = 0;
       }
 

@@ -23,7 +23,7 @@
 #include <strings.h>
 #endif  /* __STDC__ */
 
-#include "lbi_const.h"
+#include "zoltan.h"
 #include "lb_id_const.h"
 #include "zoltan_util.h"
 #include "mem_const.h"
@@ -67,7 +67,7 @@ typedef struct LB_Param {
 #define TRUE  (1)
 #endif /* !TRUE */
 
-typedef struct LB_Struct LB;
+typedef struct Zoltan_Struct LB;
 
 typedef int LB_FN(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
                         int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **);
@@ -114,7 +114,7 @@ typedef enum LB_Method {
 
 /*
  * Values indicating which lists (import, export, both, or none) should
- * be returned by LB_Balance.  LB_NO_LISTS must always be zero; other
+ * be returned by Zoltan_LB_Balance.  LB_NO_LISTS must always be zero; other
  * values should always be greater than zero.
  */
 #define LB_NO_LISTS 0
@@ -150,7 +150,7 @@ typedef enum LB_Method {
  *  communication library.
  */
 
-struct LB_Migrate_Struct {
+struct Zoltan_Migrate_Struct {
   int Auto_Migrate;                   /*  Flag indicating whether the load
                                           balancer should automatically
                                           help the application
@@ -160,47 +160,53 @@ struct LB_Migrate_Struct {
    *  Pointers to routines that depend on the application.
    */
 
-  LB_PRE_MIGRATE_FN *Pre_Migrate;      /* Function that performs application
+  ZOLTAN_PRE_MIGRATE_FN *Pre_Migrate;  /* Function that performs application
                                           specific pre-processing.  Optional
                                           for help-migration.                */
-  LB_PRE_MIGRATE_FORT_FN *Pre_Migrate_Fort; /* Fortran version               */
+  ZOLTAN_PRE_MIGRATE_FORT_FN *Pre_Migrate_Fort; 
+                                       /* Fortran version               */
   void *Pre_Migrate_Data;              /* Ptr to user defined data to be
                                           passed to Pre_Migrate()            */
-  LB_MID_MIGRATE_FN *Mid_Migrate;      /* Function that performs application
+  ZOLTAN_MID_MIGRATE_FN *Mid_Migrate;  /* Function that performs application
                                           specific processing between packing
                                           and unpacking.  Optional
                                           for help-migration.                */
-  LB_MID_MIGRATE_FORT_FN *Mid_Migrate_Fort; /* Fortran version               */
+  ZOLTAN_MID_MIGRATE_FORT_FN *Mid_Migrate_Fort; 
+                                       /* Fortran version               */
   void *Mid_Migrate_Data;              /* Ptr to user defined data to be
                                           passed to Mid_Migrate()            */
-  LB_POST_MIGRATE_FN *Post_Migrate;    /* Function that performs application
+  ZOLTAN_POST_MIGRATE_FN *Post_Migrate;/* Function that performs application
                                           specific post-processing.  Optional
                                           for help-migration.                */
-  LB_POST_MIGRATE_FORT_FN *Post_Migrate_Fort; /* Fortran version             */
+  ZOLTAN_POST_MIGRATE_FORT_FN *Post_Migrate_Fort; 
+                                       /* Fortran version             */
   void *Post_Migrate_Data;             /* Ptr to user defined data to be
                                           passed to Post_Migrate()           */
-  LB_OBJ_SIZE_FN *Get_Obj_Size;        /* Function that returns the size of
+  ZOLTAN_OBJ_SIZE_FN *Get_Obj_Size;    /* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
                                           migration.                         */
-  LB_OBJ_SIZE_FORT_FN *Get_Obj_Size_Fort; /* Fortran version                 */
+  ZOLTAN_OBJ_SIZE_FORT_FN *Get_Obj_Size_Fort; 
+                                       /* Fortran version                 */
   void *Get_Obj_Size_Data;             /* Ptr to user defined data to be
                                           passed to Get_Obj_Size()           */
-  LB_PACK_OBJ_FN *Pack_Obj;            /* Routine that packs object data for
+  ZOLTAN_PACK_OBJ_FN *Pack_Obj;        /* Routine that packs object data for
                                           a given object into contiguous 
                                           memory for migration.              */
-  LB_PACK_OBJ_FORT_FN *Pack_Obj_Fort;  /* Fortran version                    */
+  ZOLTAN_PACK_OBJ_FORT_FN *Pack_Obj_Fort;  
+                                       /* Fortran version                    */
   void *Pack_Obj_Data;                 /* Ptr to user defined data to be
                                           passed to Pack_Obj()               */
-  LB_UNPACK_OBJ_FN *Unpack_Obj;        /* Routine that unpacks object data for
+  ZOLTAN_UNPACK_OBJ_FN *Unpack_Obj;    /* Routine that unpacks object data for
                                           a given object from contiguous 
                                           memory after migration.            */
-  LB_UNPACK_OBJ_FORT_FN *Unpack_Obj_Fort; /* Fortran version                 */
+  ZOLTAN_UNPACK_OBJ_FORT_FN *Unpack_Obj_Fort; 
+                                       /* Fortran version                 */
   void *Unpack_Obj_Data;               /* Ptr to user defined data to be
                                           passed to Unpack_Obj()             */
 };
 
-typedef struct LB_Migrate_Struct LB_MIGRATE;
+typedef struct Zoltan_Migrate_Struct ZOLTAN_MIGRATE;
 
 
 /*****************************************************************************/
@@ -273,7 +279,7 @@ typedef struct {
  *  pointers to the data structure used for load balancing.
  */
 
-struct LB_Struct {
+struct Zoltan_Struct {
   MPI_Comm Communicator;          /*  The MPI Communicator.                  */
   int Proc;                       /*  The processor's ID within the MPI
                                       Communicator.                          */
@@ -288,7 +294,7 @@ struct LB_Struct {
                                       processor.                             */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
   int Return_Lists;               /*  Flag indicating which lists (if any)
-                                      should be returned by LB_Balance.      */
+                                      should be returned by Zoltan_LB_Balance.*/
   int Tflops_Special;             /*  Flag to indicate if we should use some
                                       MPI constructs (0) or not (1) on tflops*/
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
@@ -311,130 +317,147 @@ struct LB_Struct {
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
-  LB_NUM_EDGES_FN *Get_Num_Edges;              /* Fn ptr to get an object's
+  ZOLTAN_NUM_EDGES_FN *Get_Num_Edges;          /* Fn ptr to get an object's
                                                   number of edges.           */
-  LB_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;    /* Fortran version            */
+  ZOLTAN_NUM_EDGES_FORT_FN *Get_Num_Edges_Fort;/* Fortran version            */
   void *Get_Num_Edges_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Edges()            */
-  LB_EDGE_LIST_FN *Get_Edge_List;              /* Fn ptr to get an object's
+  ZOLTAN_EDGE_LIST_FN *Get_Edge_List;          /* Fn ptr to get an object's
                                                   edge list.                 */
-  LB_EDGE_LIST_FORT_FN *Get_Edge_List_Fort;    /* Fortran version            */
+  ZOLTAN_EDGE_LIST_FORT_FN *Get_Edge_List_Fort;/* Fortran version            */
   void *Get_Edge_List_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Edge_List()            */
-  LB_NUM_GEOM_FN *Get_Num_Geom;                /* Fn ptr to get an object's
+  ZOLTAN_NUM_GEOM_FN *Get_Num_Geom;            /* Fn ptr to get an object's
                                                   number of geometry values. */
-  LB_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;      /* Fortran version            */
+  ZOLTAN_NUM_GEOM_FORT_FN *Get_Num_Geom_Fort;  /* Fortran version            */
   void *Get_Num_Geom_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Geom()             */
-  LB_GEOM_FN *Get_Geom;                        /* Fn ptr to get an object's
+  ZOLTAN_GEOM_FN *Get_Geom;                    /* Fn ptr to get an object's
                                                   geometry values.           */
-  LB_GEOM_FORT_FN *Get_Geom_Fort;              /* Fortran version            */
+  ZOLTAN_GEOM_FORT_FN *Get_Geom_Fort;          /* Fortran version            */
   void *Get_Geom_Data;                         /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Geom()                 */
-  LB_NUM_OBJ_FN *Get_Num_Obj;                  /* Fn ptr to get a proc's  
+  ZOLTAN_NUM_OBJ_FN *Get_Num_Obj;              /* Fn ptr to get a proc's  
                                                   number of local objects.   */
-  LB_NUM_OBJ_FORT_FN *Get_Num_Obj_Fort;        /* Fortran version            */
+  ZOLTAN_NUM_OBJ_FORT_FN *Get_Num_Obj_Fort;    /* Fortran version            */
   void *Get_Num_Obj_Data;                      /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Obj()              */
-  LB_OBJ_LIST_FN *Get_Obj_List;                /* Fn ptr to get all local
+  ZOLTAN_OBJ_LIST_FN *Get_Obj_List;            /* Fn ptr to get all local
                                                   objects on a proc.         */
-  LB_OBJ_LIST_FORT_FN *Get_Obj_List_Fort;      /* Fortran version            */
+  ZOLTAN_OBJ_LIST_FORT_FN *Get_Obj_List_Fort;  /* Fortran version            */
   void *Get_Obj_List_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Obj_List()             */
-  LB_FIRST_OBJ_FN *Get_First_Obj;              /* Fn ptr to get the first   
+  ZOLTAN_FIRST_OBJ_FN *Get_First_Obj;          /* Fn ptr to get the first   
                                                   local obj on a proc.       */
-  LB_FIRST_OBJ_FORT_FN *Get_First_Obj_Fort;    /* Fortran version            */
+  ZOLTAN_FIRST_OBJ_FORT_FN *Get_First_Obj_Fort;/* Fortran version            */
   void *Get_First_Obj_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_First_Obj()            */
-  LB_NEXT_OBJ_FN *Get_Next_Obj;                /* Fn ptr to get the next   
+  ZOLTAN_NEXT_OBJ_FN *Get_Next_Obj;            /* Fn ptr to get the next   
                                                   local obj on a proc.       */
-  LB_NEXT_OBJ_FORT_FN *Get_Next_Obj_Fort;      /* Fortran version            */
+  ZOLTAN_NEXT_OBJ_FORT_FN *Get_Next_Obj_Fort;  /* Fortran version            */
   void *Get_Next_Obj_Data;                     /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Obj()             */
-  LB_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;    /* Fn ptr to get a proc's 
+  ZOLTAN_NUM_BORDER_OBJ_FN *Get_Num_Border_Obj;/* Fn ptr to get a proc's 
                                                   number of border objs wrt
                                                   a given processor.         */
-  LB_NUM_BORDER_OBJ_FORT_FN *Get_Num_Border_Obj_Fort; /* Fortran version     */ 
+  ZOLTAN_NUM_BORDER_OBJ_FORT_FN *Get_Num_Border_Obj_Fort; 
+                                               /* Fortran version     */ 
   void *Get_Num_Border_Obj_Data;               /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Border_Obj()       */
-  LB_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  /* Fn ptr to get all objects
+  ZOLTAN_BORDER_OBJ_LIST_FN *Get_Border_Obj_List;  
+                                               /* Fn ptr to get all objects
                                                   sharing a border with a
                                                   given processor.           */
-  LB_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; /* Fortran version   */
+  ZOLTAN_BORDER_OBJ_LIST_FORT_FN *Get_Border_Obj_List_Fort; 
+                                               /* Fortran version   */
   void *Get_Border_Obj_List_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Border_Obj_List()      */
-  LB_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;/* Fn ptr to get the first 
+  ZOLTAN_FIRST_BORDER_OBJ_FN *Get_First_Border_Obj;
+                                               /* Fn ptr to get the first 
                                                   object sharing a border 
                                                   with a given processor.    */
-  LB_FIRST_BORDER_OBJ_FORT_FN *Get_First_Border_Obj_Fort; /* Fortran version */
+  ZOLTAN_FIRST_BORDER_OBJ_FORT_FN *Get_First_Border_Obj_Fort; 
+                                               /* Fortran version */
   void *Get_First_Border_Obj_Data;             /* Ptr to user defined data
                                                   to be passed to
                                                   Get_First_Border_Obj()     */
-  LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
+  ZOLTAN_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  
+                                               /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */
-  LB_NEXT_BORDER_OBJ_FORT_FN *Get_Next_Border_Obj_Fort; /* Fortran version   */
+  ZOLTAN_NEXT_BORDER_OBJ_FORT_FN *Get_Next_Border_Obj_Fort; 
+                                               /* Fortran version   */
   void *Get_Next_Border_Obj_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Border_Obj()      */
-  LB_NUM_COARSE_OBJ_FN *Get_Num_Coarse_Obj;    /* Fn ptr to get the number of
+  ZOLTAN_NUM_COARSE_OBJ_FN *Get_Num_Coarse_Obj;/* Fn ptr to get the number of
                                                   elements in the coarse grid*/
-  LB_NUM_COARSE_OBJ_FORT_FN *Get_Num_Coarse_Obj_Fort; /* Fortran version     */
+  ZOLTAN_NUM_COARSE_OBJ_FORT_FN *Get_Num_Coarse_Obj_Fort; 
+                                               /* Fortran version     */
   void *Get_Num_Coarse_Obj_Data;               /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Coarse_Obj()       */
-  LB_COARSE_OBJ_LIST_FN *Get_Coarse_Obj_List;  /* Fn ptr to get all
+  ZOLTAN_COARSE_OBJ_LIST_FN *Get_Coarse_Obj_List;  
+                                               /* Fn ptr to get all
                                                   elements in the coarse grid*/
-  LB_COARSE_OBJ_LIST_FORT_FN *Get_Coarse_Obj_List_Fort; /* Fortran version   */
+  ZOLTAN_COARSE_OBJ_LIST_FORT_FN *Get_Coarse_Obj_List_Fort; 
+                                               /* Fortran version   */
   void *Get_Coarse_Obj_List_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Coarse_Obj_List()      */
-  LB_FIRST_COARSE_OBJ_FN *Get_First_Coarse_Obj;/* Fn ptr to get the first coarse
+  ZOLTAN_FIRST_COARSE_OBJ_FN *Get_First_Coarse_Obj;
+                                               /* Fn ptr to get the first coarse
                                                   obj on a proc.             */
-  LB_FIRST_COARSE_OBJ_FORT_FN *Get_First_Coarse_Obj_Fort; /* Fortran version */
+  ZOLTAN_FIRST_COARSE_OBJ_FORT_FN *Get_First_Coarse_Obj_Fort; 
+                                               /* Fortran version */
   void *Get_First_Coarse_Obj_Data;             /* Ptr to user defined data
                                                   to be passed to
                                                   Get_First_Coarse_Obj()     */
-  LB_NEXT_COARSE_OBJ_FN *Get_Next_Coarse_Obj;  /* Fn ptr to get the next coarse
+  ZOLTAN_NEXT_COARSE_OBJ_FN *Get_Next_Coarse_Obj;  
+                                               /* Fn ptr to get the next coarse
                                                   obj on a proc.             */
-  LB_NEXT_COARSE_OBJ_FORT_FN *Get_Next_Coarse_Obj_Fort; /* Fortran version   */
+  ZOLTAN_NEXT_COARSE_OBJ_FORT_FN *Get_Next_Coarse_Obj_Fort; 
+                                               /* Fortran version   */
   void *Get_Next_Coarse_Obj_Data;              /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Next_Coarse_Obj()      */
-  LB_NUM_CHILD_FN *Get_Num_Child;              /* Fn ptr to get the number of
+  ZOLTAN_NUM_CHILD_FN *Get_Num_Child;          /* Fn ptr to get the number of
                                                   children of an element     */
-  LB_NUM_CHILD_FORT_FN *Get_Num_Child_Fort;    /* Fortran version            */
+  ZOLTAN_NUM_CHILD_FORT_FN *Get_Num_Child_Fort;/* Fortran version            */
   void *Get_Num_Child_Data;                    /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Num_Child()            */
-  LB_CHILD_LIST_FN *Get_Child_List;            /* Fn ptr to get all
+  ZOLTAN_CHILD_LIST_FN *Get_Child_List;        /* Fn ptr to get all
                                                   children of an element     */
-  LB_CHILD_LIST_FORT_FN *Get_Child_List_Fort;  /* Fortran version            */
+  ZOLTAN_CHILD_LIST_FORT_FN *Get_Child_List_Fort;  
+                                               /* Fortran version            */
   void *Get_Child_List_Data;                   /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Child_List()           */
-  LB_CHILD_WEIGHT_FN *Get_Child_Weight;        /* Fn ptr to get the weight
+  ZOLTAN_CHILD_WEIGHT_FN *Get_Child_Weight;    /* Fn ptr to get the weight
                                                   of an element              */
-  LB_CHILD_WEIGHT_FORT_FN *Get_Child_Weight_Fort; /* Fortran version         */
+  ZOLTAN_CHILD_WEIGHT_FORT_FN *Get_Child_Weight_Fort; 
+                                               /* Fortran version         */
   void *Get_Child_Weight_Data;                 /* Ptr to user defined data
                                                   to be passed to
                                                   Get_Child_Weight()         */
-  LB_MIGRATE Migrate;                          /* Struct with info for helping
+  ZOLTAN_MIGRATE Migrate;                      /* Struct with info for helping
                                                   with migration.            */
   void *Migrate_Data;                          /* Ptr to user defined data
                                                   to be passed to
                                                   Migrate()                  */
-  LB_GET_PROCESSOR_NAME_FN *Get_Processor_Name; /* Fn ptr to get proc name   */
+  ZOLTAN_GET_PROCESSOR_NAME_FN *Get_Processor_Name; 
+                                               /* Fn ptr to get proc name   */
   void *Get_Processor_Name_Data;               /* Ptr to user defined data   */
 };
 /*****************************************************************************/
@@ -450,32 +473,22 @@ struct LB_Struct {
 
 #define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
 
-/*
- *  Macros for consistently printing error and warning messages.
- */
-
-#define LB_PRINT_ERROR(proc,yo,str) \
-  ZOLTAN_PRINT_ERROR(proc, yo, str)
-
-#define LB_PRINT_WARN(proc,yo,str) \
-  ZOLTAN_PRINT_WARN(proc, yo, str)
-
 /*  
  *  Print trace information.
  */
-#define LB_TRACE_ENTER(lb,yo) \
+#define ZOLTAN_LB_TRACE_ENTER(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
       (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
     ZOLTAN_TRACE_ENTER((lb)->Proc, (yo), NULL);
 
-#define LB_TRACE_EXIT(lb,yo) \
+#define ZOLTAN_LB_TRACE_EXIT(lb,yo) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
       (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
     ZOLTAN_TRACE_EXIT((lb)->Proc, (yo), NULL);
 
-#define LB_TRACE_DETAIL(lb,yo,string) \
+#define ZOLTAN_LB_TRACE_DETAIL(lb,yo,string) \
   if ((lb)->Debug_Level >= LB_DEBUG_TRACE_DETAIL) \
     ZOLTAN_PRINT_INFO((lb)->Proc, (yo), (string));
 

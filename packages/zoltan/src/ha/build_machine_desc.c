@@ -81,7 +81,7 @@ int LB_Build_Machine_Desc(
        * on which this LB structure is running. 
        * Broadcast the machine structure to all procs.
        */
-      LB_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "
                                   "is still under development!");
       ierr = ZOLTAN_WARN;
     }

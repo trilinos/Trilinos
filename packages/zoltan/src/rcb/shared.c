@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "rcb_const.h"
@@ -74,11 +73,11 @@ int i, ierr = 0;
     sprintf(msg, "Number of geometry fields %d is "
                   "invalid; valid range is 1-3\n",
                   *num_geom);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     return(ZOLTAN_FATAL);
   }
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned from user function Get_Num_Geom.");
     return(ierr);
   }
@@ -90,7 +89,7 @@ int i, ierr = 0;
 
   *num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned from user function Get_Num_Obj.");
     return(ierr);
   }
@@ -101,7 +100,7 @@ int i, ierr = 0;
   *dots = (struct Dot_Struct *)LB_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (lb->Num_LID && !(*local_ids)) || !(*dots)) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
@@ -115,7 +114,7 @@ int i, ierr = 0;
 
       objs_wgt    = (float *) LB_MALLOC((*num_obj)*sizeof(float));
       if (!objs_wgt) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < *num_obj; i++) objs_wgt[i] = 0.;
@@ -127,7 +126,7 @@ int i, ierr = 0;
 
     LB_Get_Obj_List(lb, *global_ids, *local_ids, wgtflag, objs_wgt, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user function LB_Get_Obj_List.");
       LB_FREE(&objs_wgt);
       return(ierr);
@@ -136,7 +135,7 @@ int i, ierr = 0;
     ierr = initialize_dot(lb, *global_ids, *local_ids, *dots,
                           *num_obj, wgtflag, objs_wgt);
     if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user function initialize_dot.");
       LB_FREE(&objs_wgt);
       return(ierr);
@@ -184,7 +183,7 @@ char *yo = "initialize_dot";
                  &(gid[i*num_gid_entries]), &(lid[i*num_lid_entries]),
                  dot->X, &ierr);
     if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user defined Get_Geom function.");
       return(ierr);
     }
@@ -249,16 +248,16 @@ int LB_RB_Send_Outgoing(
 
   if (outgoing)
     if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
   ierr = LB_Create_Proc_List(lb, set, *dotnum, outgoing, proc_list, local_comm,
                              proclower, numprocs);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Create_Proc_List.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Create_Proc_List.");
     LB_FREE(&proc_list);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
 
@@ -323,9 +322,9 @@ int LB_RB_Send_Dots(
   ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                         &incoming);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
     LB_FREE(&proc_list);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
@@ -341,14 +340,14 @@ int LB_RB_Send_Dots(
       *gidpt = ZOLTAN_LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
       *lidpt = ZOLTAN_LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
     *dotpt = (struct Dot_Struct *) 
              LB_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
     if (!*dotpt) {
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     if (stats) counters[6]++;
@@ -368,21 +367,21 @@ int LB_RB_Send_Dots(
       gidbuf = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, outgoing);
       lidbuf = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, outgoing);
       if (!gidbuf || (num_lid_entries && !lidbuf)) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         LB_FREE(&gidbuf);
         LB_FREE(&lidbuf);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
     dotbuf = (struct Dot_Struct *)
               LB_MALLOC(outgoing * sizeof(struct Dot_Struct));
     if (!dotbuf) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&gidbuf);
       LB_FREE(&lidbuf);
       LB_FREE(&dotbuf);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -422,11 +421,11 @@ int LB_RB_Send_Dots(
                       sizeof(ZOLTAN_ID_TYPE)*num_gid_entries,
                       (char *) &((*gidpt)[keep*num_gid_entries]));
     if (ierr != COMM_OK && ierr != COMM_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
       LB_FREE(&gidbuf);
       LB_FREE(&lidbuf);
       LB_FREE(&dotbuf);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
 
@@ -437,11 +436,11 @@ int LB_RB_Send_Dots(
                         sizeof(ZOLTAN_ID_TYPE)*num_lid_entries,
                         (char *) &((*lidpt)[keep*num_lid_entries]));
       if (ierr != COMM_OK && ierr != COMM_WARN) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
         LB_FREE(&gidbuf);
         LB_FREE(&lidbuf);
         LB_FREE(&dotbuf);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
       }
     }
@@ -452,11 +451,11 @@ int LB_RB_Send_Dots(
   ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
                     sizeof(struct Dot_Struct), (char *) &((*dotpt)[keep]));
   if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
     LB_FREE(&gidbuf);
     LB_FREE(&lidbuf);
     LB_FREE(&dotbuf);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
@@ -537,20 +536,20 @@ int num_lid_entries = lb->Num_LID;
 
   if (!LB_Special_Malloc(lb,(void **)import_global_ids,num_import,
                          LB_SPECIAL_MALLOC_GID)) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   if (!LB_Special_Malloc(lb,(void **)import_local_ids,num_import,
                          LB_SPECIAL_MALLOC_LID)) {
     LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
   if (!LB_Special_Malloc(lb,(void **)import_procs,num_import,
                          LB_SPECIAL_MALLOC_INT)) {
     LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
     LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -605,7 +604,7 @@ int LB_RB_check_geom_input(
   MPI_Allreduce(&j,&k,1,MPI_INT,MPI_SUM,lb->Communicator);
   if (k > 0 && proc == 0) {
      sprintf(msg, "%d dot weights are equal to 0.", k);
-     LB_PRINT_WARN(proc, yo, msg);
+     ZOLTAN_PRINT_WARN(proc, yo, msg);
      ierr = ZOLTAN_WARN;
   }
 
@@ -614,7 +613,7 @@ int LB_RB_check_geom_input(
   if (k > 0) {
     if (proc == 0) {
       sprintf(msg, "%d dot weights are < 0.",k);
-      LB_PRINT_ERROR(proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(proc, yo, msg);
     }
     ierr = ZOLTAN_FATAL;
   }
@@ -653,7 +652,7 @@ int LB_RB_check_geom_output(
       sprintf(msg, "Points before partitioning = %d, "
                    "Points after partitioning = %d.",
                     total1,total2);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
       ierr = ZOLTAN_WARN;
     }
   }
@@ -680,18 +679,18 @@ int LB_RB_check_geom_output(
     if (proc == 0) {
       sprintf(msg, "Load-imbalance > tolerance of %g.",
               tolerance);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
       ierr = ZOLTAN_WARN;
     }
     MPI_Barrier(lb->Communicator);
     if (weight == wtmin) {
       sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
       ierr = ZOLTAN_WARN;
     }
     if (weight == wtmax) {
       sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
       ierr = ZOLTAN_WARN;
     }
   }
@@ -711,7 +710,7 @@ int LB_RB_check_geom_output(
     }
     if (iflag > 0) {
       sprintf(msg, "%d points are out-of-box on proc %d.", iflag, proc);
-      LB_PRINT_ERROR(proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(proc, yo, msg);
       ierr = ZOLTAN_FATAL;
     }
   

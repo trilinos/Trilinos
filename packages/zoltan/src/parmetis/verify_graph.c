@@ -74,7 +74,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   if ((proc==0) && (global_sum==0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0)
-      LB_PRINT_WARN(proc, yo, "No vertices in graph.");
+      ZOLTAN_PRINT_WARN(proc, yo, "No vertices in graph.");
   }
 
   /* Verify that vertex weights are non-negative */
@@ -86,7 +86,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
          if (vwgt[i*vwgt_dim+k] < 0) {
             sprintf(msg, "Negative object weight of %d for object %d.", 
                     vwgt[i*vwgt_dim+k], i);
-            LB_PRINT_ERROR(proc, yo, msg);
+            ZOLTAN_PRINT_ERROR(proc, yo, msg);
             ierr = ZOLTAN_FATAL;
             goto barrier1;
          }
@@ -96,7 +96,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           num_zeros++;
           if (output_level>1) {
             sprintf(msg, "Zero vertex (object) weights for object %d.", i);
-            LB_PRINT_WARN(proc, yo, msg);
+            ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
           ierr = ZOLTAN_WARN;
        }
@@ -106,7 +106,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       ierr = ZOLTAN_WARN;
       if (output_level>0){
         sprintf(msg, "%d objects have zero weights.", global_sum);
-        LB_PRINT_WARN(proc, yo, msg);
+        ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
   }
@@ -117,7 +117,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   if ((proc==0) && (global_sum==0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0)
-      LB_PRINT_WARN(proc, yo, "No edges in graph.");
+      ZOLTAN_PRINT_WARN(proc, yo, "No edges in graph.");
   }
 
   /* Verify that edge weights are non-negative */
@@ -129,7 +129,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         if (adjwgt[j*ewgt_dim+k] < 0) {
           sprintf(msg, "Negative communication weight of %d in edge %d.", 
                   adjwgt[j*ewgt_dim+k], j);
-          LB_PRINT_ERROR(proc, yo, msg);
+          ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
           goto barrier1;
         }
@@ -139,7 +139,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         num_zeros++;
         if (output_level>1) {
           sprintf(msg, "Zero edge (communication) weights for edge %d.", j);
-          LB_PRINT_WARN(proc, yo, msg);
+          ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
         ierr = ZOLTAN_WARN;
       }
@@ -150,7 +150,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       ierr = ZOLTAN_WARN;
       if (output_level>0){
         sprintf(msg, "%d edges have zero weights.", global_sum);
-        LB_PRINT_WARN(proc, yo, msg);
+        ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
   }
@@ -170,7 +170,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       num_singletons++;
       if (output_level>1){
         sprintf(msg, "Vertex %d has no edges.", global_i);
-        LB_PRINT_WARN(proc, yo, msg);
+        ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
@@ -178,7 +178,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       /* Valid vertex number? */
       if ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])){
         sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
-        LB_PRINT_ERROR(proc, yo, msg);
+        ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = ZOLTAN_FATAL;
         goto barrier1;
       }
@@ -187,7 +187,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         num_selfs++;
         if (output_level>1){
           sprintf(msg, "Self edge for vertex %d detected.", global_i);
-          LB_PRINT_WARN(proc, yo, msg);
+          ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
       }
       /* Duplicate edge? */
@@ -196,7 +196,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           num_duplicates++;
           if (output_level>1){
             sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
-            LB_PRINT_WARN(proc, yo, msg);
+            ZOLTAN_PRINT_WARN(proc, yo, msg);
           }
         }
       }
@@ -222,7 +222,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           sprintf(msg, "Graph is not symmetric. "
                   "Edge (%d,%d) exists, but no edge (%d,%d).", 
                   global_i, global_j, global_j, global_i);
-          LB_PRINT_ERROR(proc, yo, msg);
+          ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
           goto barrier1;
         }
@@ -240,7 +240,7 @@ barrier1:
     ierr = ZOLTAN_WARN;
     if (output_level>0){
       sprintf(msg, "%d self-edges in graph.", global_sum);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
   MPI_Reduce(&num_duplicates, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
@@ -248,7 +248,7 @@ barrier1:
     ierr = ZOLTAN_WARN;
     if (output_level>0){
       sprintf(msg, "%d duplicate edges in graph.", global_sum);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
   MPI_Reduce(&num_singletons, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
@@ -256,7 +256,7 @@ barrier1:
     ierr = ZOLTAN_WARN;
     if (output_level>0){
       sprintf(msg, "%d vertices in the graph are singletons (have no edges).", global_sum);
-      LB_PRINT_WARN(proc, yo, msg);
+      ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
   
@@ -285,7 +285,7 @@ barrier1:
     proclist = (int *) LB_MALLOC(cross_edges*sizeof(int));
 
     if (cross_edges && !(sendbuf && recvbuf && proclist)){
-       LB_PRINT_ERROR(proc, yo, "Out of memory.");
+       ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
        ierr = ZOLTAN_MEMERR;
     }
 
@@ -318,13 +318,13 @@ barrier1:
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       sprintf(msg, "Error %s returned from LB_Comm_Create.", 
               (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-      LB_PRINT_ERROR(proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(proc, yo, msg);
       ierr = (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
     else {
       if (k != cross_edges){
         sprintf(msg, "Incorrect number of edges to/from proc %d.", proc);
-        LB_PRINT_ERROR(proc, yo, msg);
+        ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = ZOLTAN_FATAL;
       }
 
@@ -333,7 +333,7 @@ barrier1:
       if (ierr != COMM_OK && ierr != COMM_WARN) {
         sprintf(msg, "Error %s returned from LB_Comm_Do.",
                 (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-        LB_PRINT_ERROR(proc, yo, msg);
+        ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
       }
       else {
@@ -356,7 +356,7 @@ barrier1:
                 if (ptr1[2+k] != ptr2[2+k]){
                   sprintf(msg, "Edge weight (%d,%d) is not symmetric: %d != %d",
                            ptr1[0], ptr1[1], ptr1[2+k], ptr2[2+k]);
-                  LB_PRINT_ERROR(proc, yo, msg);
+                  ZOLTAN_PRINT_ERROR(proc, yo, msg);
                   ierr = ZOLTAN_FATAL;
                 }
               }
@@ -366,7 +366,7 @@ barrier1:
             sprintf(msg, "Graph is not symmetric.  "
                     "Edge (%d,%d) exists, but not (%d,%d).", 
                     ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
-            LB_PRINT_ERROR(proc, yo, msg);
+            ZOLTAN_PRINT_ERROR(proc, yo, msg);
             ierr = ZOLTAN_FATAL;
           }
         }

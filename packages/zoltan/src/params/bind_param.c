@@ -18,7 +18,6 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "params_const.h"
@@ -61,7 +60,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
     /* If we reach this point, the parameter name must be invalid */
     sprintf(msg, "Parameter name %s not found; it will"
                  "not be bound to any variable.", name2);
-    LB_PRINT_WARN(-1, yo, msg);
+    ZOLTAN_PRINT_WARN(-1, yo, msg);
     LB_FREE(&name2);
     return (ZOLTAN_WARN);
 }

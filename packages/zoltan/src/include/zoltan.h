@@ -22,17 +22,17 @@ extern "C" {
 #include <mpi.h>
 #include "zoltan_types.h"
 
-/*
+/*****************************************************************************
  *  Data types and functions describing the interface between the
- *  application and the load balancing tool.
+ *  application and Zoltan.
  */
 
-/*
+/*****************************************************************************
  *  Enumerated type used to indicate which function is to be set by
  *  ZOLTAN_Set_Fn.
  */
 
-enum ZOLTAN_Fn_Type {
+enum Zoltan_Fn_Type {
   ZOLTAN_NUM_EDGES_FN_TYPE,
   ZOLTAN_EDGE_LIST_FN_TYPE,
   ZOLTAN_NUM_GEOM_FN_TYPE,
@@ -62,14 +62,14 @@ enum ZOLTAN_Fn_Type {
   ZOLTAN_MAX_FN_TYPES               /*  This entry should always be last. */
 };
 
-typedef enum ZOLTAN_Fn_Type ZOLTAN_FN_TYPE;
+typedef enum Zoltan_Fn_Type ZOLTAN_FN_TYPE;
 
-/*
+/*****************************************************************************
  * Enumerated type used to indicate what type of refinement was used when
  * building a refinement tree.
  */
 
-enum ZOLTAN_Ref_Type {
+enum Zoltan_Ref_Type {
   ZOLTAN_OTHER_REF,      /* unspecified type of refinement */
   ZOLTAN_IN_ORDER,       /* user provides the order of the children */
   ZOLTAN_TRI_BISECT,     /* bisection of triangles */
@@ -77,13 +77,13 @@ enum ZOLTAN_Ref_Type {
   ZOLTAN_HEX3D_OCT       /* octasection of hexahedra */
 };
 
-typedef enum ZOLTAN_Ref_Type ZOLTAN_REF_TYPE;
+typedef enum Zoltan_Ref_Type ZOLTAN_REF_TYPE;
 
-/*
+/*****************************************************************************
  *  Other common definitions:
  */
 
-struct ZOLTAN_Struct;
+struct Zoltan_Struct;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1292,7 +1292,7 @@ typedef void ZOLTAN_CHILD_WEIGHT_FORT_FN(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Initialize(
+extern int Zoltan_Initialize(
   int argc,
   char **argv,
   float *ver
@@ -1312,7 +1312,7 @@ extern int ZOLTAN_Initialize(
  *                            considered fatal.
  */
 
-extern struct ZOLTAN_Struct *ZOLTAN_Create(
+extern struct Zoltan_Struct *Zoltan_Create(
   MPI_Comm communicator
 );
 
@@ -1324,8 +1324,8 @@ extern struct ZOLTAN_Struct *ZOLTAN_Create(
  *    lb                  --  Pointer to a Zoltan structure.
  */
 
-extern void ZOLTAN_Destroy(
-  struct ZOLTAN_Struct **lb
+extern void Zoltan_Destroy(
+  struct Zoltan_Struct **lb
 );
 
 /*****************************************************************************/
@@ -1344,8 +1344,8 @@ extern void ZOLTAN_Destroy(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Set_Fn(
-  struct ZOLTAN_Struct *lb,
+extern int Zoltan_Set_Fn(
+  struct Zoltan_Struct *lb,
   ZOLTAN_FN_TYPE fn_type,
   void (*fn_ptr)(),
   void *data_ptr
@@ -1353,7 +1353,7 @@ extern int ZOLTAN_Set_Fn(
 
 /*
  *  Functions to initialize specific Zoltan callback functions.  One function
- *  exists for each callback function type, as listed in ZOLTAN_Fn_Type above.
+ *  exists for each callback function type, as listed in Zoltan_Fn_Type above.
  *  Use of these specific functions enables stricter type checking of the
  *  callback function types.
  *  Input:
@@ -1368,152 +1368,152 @@ extern int ZOLTAN_Set_Fn(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Set_Num_Edges_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Edges_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_EDGES_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Edge_List_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Edge_List_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_EDGE_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Num_Geom_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Geom_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_GEOM_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Geom_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Geom_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_GEOM_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Num_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Obj_List_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Obj_List_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_First_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_First_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_FIRST_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Next_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Next_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NEXT_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Num_Border_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Border_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_BORDER_OBJ_FN *fn_ptr,
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Border_Obj_List_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Border_Obj_List_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_BORDER_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_First_Border_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_First_Border_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_FIRST_BORDER_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Next_Border_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Next_Border_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NEXT_BORDER_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Pre_Migrate_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Pre_Migrate_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_PRE_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Mid_Migrate_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Mid_Migrate_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_MID_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Post_Migrate_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Post_Migrate_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_POST_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Obj_Size_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Obj_Size_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_OBJ_SIZE_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Pack_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Pack_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_PACK_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Unpack_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Unpack_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_UNPACK_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Num_Coarse_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Coarse_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Coarse_Obj_List_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Coarse_Obj_List_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_COARSE_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_First_Coarse_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_First_Coarse_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_FIRST_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Next_Coarse_Obj_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Next_Coarse_Obj_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NEXT_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Num_Child_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Num_Child_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_NUM_CHILD_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Child_List_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Child_List_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_CHILD_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
-extern int ZOLTAN_Set_Child_Weight_Fn(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Child_Weight_Fn(
+  struct Zoltan_Struct *lb, 
   ZOLTAN_CHILD_WEIGHT_FN *fn_ptr, 
   void *data_ptr
 );
@@ -1531,14 +1531,14 @@ extern int ZOLTAN_Set_Child_Weight_Fn(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Set_Method(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_LB_Set_Method(
+  struct Zoltan_Struct *lb, 
   char *string
 );
 
 /*****************************************************************************/
 /*
- *  Function to change a parameter value within the bowels of Zoltan.
+ *  Function to change a parameter value within Zoltan.
  *  Default values will be used for all parameters not explicitly altered
  *  by a call to this routine.
  *
@@ -1552,8 +1552,8 @@ extern int ZOLTAN_Set_Method(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Set_Param(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Set_Param(
+  struct Zoltan_Struct *lb, 
   char *name, 
   char *val
 );
@@ -1607,8 +1607,8 @@ extern int ZOLTAN_Set_Param(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Balance(
-  struct ZOLTAN_Struct *lb,
+extern int Zoltan_LB_Balance(
+  struct Zoltan_Struct *lb,
   int *changes,
   int *num_gid_entries,
   int *num_lid_entries,
@@ -1660,8 +1660,8 @@ extern int ZOLTAN_Balance(
  */
 
 
-extern int ZOLTAN_Compute_Destinations(
-  struct ZOLTAN_Struct *lb,
+extern int Zoltan_Compute_Destinations(
+  struct Zoltan_Struct *lb,
   int num_import, 
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
@@ -1679,7 +1679,7 @@ extern int ZOLTAN_Compute_Destinations(
  *  It then calls a function to obtain the size of the migrating objects
  *  (ZOLTAN_OBJ_SIZE_FN).  The routine next calls an application-specified
  *  object packing routine (ZOLTAN_PACK_OBJ_FN) for each object
- *  to be exported.  ZOLTAN_Help_Migrate then develops the needed communication 
+ *  to be exported.  Zoltan_Help_Migrate then develops the needed communication 
  *  map to move the objects to other processors.  It performs the communication 
  *  according to the map. It then calls a mid-migration processing routine
  *  (ZOLTAN_MID_MIGRATE_FN) if specified, allowing the application to process 
@@ -1719,8 +1719,8 @@ extern int ZOLTAN_Compute_Destinations(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Help_Migrate(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_Help_Migrate(
+  struct Zoltan_Struct *lb, 
   int num_import,
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids,
@@ -1732,7 +1732,7 @@ extern int ZOLTAN_Help_Migrate(
 
 /*****************************************************************************/
 /*
- *  Routine to free the data arrays returned by ZOLTAN_Balance.  The arrays
+ *  Routine to free the data arrays returned by Zoltan_Balance.  The arrays
  *  are freed and the pointers are set to NULL.
  *
  *  Input:
@@ -1750,7 +1750,7 @@ extern int ZOLTAN_Help_Migrate(
  *                            IDs of exported objects.
  *  Returned value:       --  Error code
  */
-extern int ZOLTAN_Free_Data(
+extern int Zoltan_LB_Free_Data(
   ZOLTAN_ID_PTR *import_global_ids, 
   ZOLTAN_ID_PTR *import_local_ids,
   int **import_procs,
@@ -1775,8 +1775,8 @@ extern int ZOLTAN_Free_Data(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Point_Assign(
-  struct ZOLTAN_Struct *lb,
+extern int Zoltan_LB_Point_Assign(
+  struct Zoltan_Struct *lb,
   double *coords,
   int *proc
 );
@@ -1801,8 +1801,8 @@ extern int ZOLTAN_Point_Assign(
  *  Returned value:       --  Error code
  */
 
-extern int ZOLTAN_Box_Assign(
-  struct ZOLTAN_Struct *lb,
+extern int Zoltan_LB_Box_Assign(
+  struct Zoltan_Struct *lb,
   double xmin,
   double ymin,
   double zmin,
@@ -1832,8 +1832,8 @@ extern int ZOLTAN_Box_Assign(
  * Returned value:        -- error code
  */
 
-extern int ZOLTAN_Eval(
-  struct ZOLTAN_Struct *lb, 
+extern int Zoltan_LB_Eval(
+  struct Zoltan_Struct *lb, 
   int print_stats, 
   int *nobj,
   float *obj_wgt,

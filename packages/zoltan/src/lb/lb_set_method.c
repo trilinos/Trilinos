@@ -26,7 +26,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Set_Method(LB *lb, char *method_name)
+int Zoltan_LB_Set_Method(LB *lb, char *method_name)
 {
 /*
  *  Function to set the load balancing method to be used.
@@ -39,7 +39,7 @@ int LB_Set_Method(LB *lb, char *method_name)
  *    lbf*               --  Appropriate fields set to designated values.
  */
 
-  char *yo = "LB_Set_Method";
+  char *yo = "Zoltan_LB_Set_Method";
   char msg[256];
   char *method_upper;
   int error;
@@ -59,7 +59,7 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   error = LB_clean_string(method_name, &method_upper);
   if (error) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
       "Error returned from LB_clean_string; No method set.");
     LB_FREE(&method_upper);
     return error;
@@ -104,7 +104,7 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   else {  
     sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&method_upper);
     return (ZOLTAN_FATAL);
   }

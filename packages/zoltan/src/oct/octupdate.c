@@ -210,7 +210,7 @@ static int lb_oct_init(
 
   int createpartree = 0;
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   MPI_Barrier(lb->Communicator);
   timestart = MPI_Wtime();
@@ -246,7 +246,7 @@ static int lb_oct_init(
   /* create the octree structure */
   time1 = MPI_Wtime();
 
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_gen_tree_from_input_data");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_gen_tree_from_input_data");
   LB_oct_gen_tree_from_input_data(lb, oct_wgtflag, &counters[1], &counters[2], 
 			          &counters[3], &c[0], createpartree);
 
@@ -255,7 +255,7 @@ static int lb_oct_init(
 /*   LB_POct_printResults(OCT_info); */
   /* partition the octree structure */
   time1 = MPI_Wtime();
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_partition");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_partition");
   LB_dfs_partition(lb, &counters[0], &c[1]);
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
@@ -274,12 +274,12 @@ static int lb_oct_init(
     }
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_migrate");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_dfs_migrate");
   LB_dfs_migrate(lb, &nsentags, &import_regs, &nrectags, 
 	         &c[2], &c[3], &counters[3], &counters[5]);
 
 
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_fix_tags");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_fix_tags");
   if (lb->Return_Lists) {
     *num_import = nrectags;
     if (nrectags > 0)
@@ -308,7 +308,7 @@ static int lb_oct_init(
   timestop = MPI_Wtime();
 
   if (oct_output_level > 0) {
-    LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_print_stats");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_print_stats");
     LB_oct_print_stats(lb, timestop-timestart, timers, counters, c, 
                        oct_output_level);
   }
@@ -319,7 +319,7 @@ static int lb_oct_init(
   }
   LB_FREE(&import_regs);
 
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_global_clear");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_oct_global_clear");
   LB_oct_global_clear(OCT_info);
   /* KDDKDD Don't understand how re-used octree will work, especially without
    * KDDKDD the LB_Bounds_Geom function.  For now, we'll delete everything;
@@ -329,7 +329,7 @@ static int lb_oct_init(
   /* KDDKDD END */
 
   /* Temporary return value until error codes are fully implemented. */
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return(ZOLTAN_OK);
 }
 
@@ -380,7 +380,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 
   OCT_Global_Info *OCT_info = (OCT_Global_Info *) (lb->Data_Structure);
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
   /*
    * If there are no objects on this processor, do not create a root octant.
    * The partitioner will probably assign objects to this processor
@@ -398,7 +398,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
   }
   ptr1 = NULL;
 
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_get_bounds");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_get_bounds");
   /* Need A Function To Get The Bounds Of The Local Objects */
   LB_get_bounds(lb, &ptr1, &num_objs, min, max, oct_wgtflag, c0);
   
@@ -456,7 +456,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
       }
       level--;
     }
-  LB_TRACE_DETAIL(lb, yo, "Before createpartree");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Before createpartree");
 
   if(createpartree) {
     /* create the global root octant */
@@ -487,7 +487,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 	  fprintf(stderr, "child %d exists\n", i);
 #endif
 
-  LB_TRACE_DETAIL(lb, yo, "Before create map array");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Before create map array");
     /* this part creates the map array */
     if(OCT_info->OCT_dimension == 2) {
       hold = (int)POW(4, level);                  /* ignoring the z+ octants */
@@ -575,7 +575,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
    */    
   num_extra = LB_oct_fix(lb, ptr1, num_objs);
  
-  LB_TRACE_DETAIL(lb, yo, "Calling LB_migreg_migrate_orphans");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Calling LB_migreg_migrate_orphans");
   LB_migreg_migrate_orphans(lb, ptr1, num_extra, level, OCT_info->map, c1, c2);
 
 /*   LB_FREE(&array); */
@@ -586,7 +586,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
     LB_FREE(&ptr1);
     ptr1 = ptr;
   }
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
 }
 
 /*****************************************************************************/

@@ -47,9 +47,9 @@ typedef enum LB_Special_Malloc_Type LB_SPECIAL_MALLOC_TYPE;
 
 /* function declarations for special malloc */
 
-extern int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
+extern int LB_Special_Malloc(LB *lb, void **array, int size,
                       LB_SPECIAL_MALLOC_TYPE type);
-extern int LB_Special_Free(struct LB_Struct *lb, void **array,
+extern int LB_Special_Free(LB *lb, void **array,
                       LB_SPECIAL_MALLOC_TYPE type);
 extern void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
                              LB_FORT_FREE_INT_FN *fort_free_int);

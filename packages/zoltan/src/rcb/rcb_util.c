@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lbi_const.h"
 #include "lb_const.h"
 #include "rcb_const.h"
 
@@ -41,7 +40,7 @@ int num_geom;
   if (lb->Data_Structure == NULL) {
     rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));
     if (rcb == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
     lb->Data_Structure = (void *) rcb;
@@ -55,7 +54,7 @@ int num_geom;
       LB_MALLOC(lb->Num_Proc* sizeof(struct rcb_tree));
     rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct rcb_box));
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RCB_Free_Structure(lb);
       return(ZOLTAN_MEMERR);
     }
@@ -79,7 +78,7 @@ int num_geom;
                                &(rcb->Dots), num_obj, max_obj, &num_geom,
                                wgtflag, use_ids);
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
     LB_RCB_Free_Structure(lb);
     return(ierr);
   }

@@ -75,7 +75,7 @@ double time0, time1, time2, time3, time4;
     if (lb->Debug_Level >= LB_DEBUG_ATIME) time0 = LB_Time(lb->Timer);
     ierr = LB_Reftree_Init(lb);
     if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned by LB_Reftree_Init.");
       return(ierr);
     }
@@ -94,7 +94,7 @@ double time0, time1, time2, time3, time4;
 
   ierr = LB_Reftree_Build(lb);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Build.");
     return(ierr);
   }
@@ -107,7 +107,7 @@ double time0, time1, time2, time3, time4;
 
   ierr = LB_Reftree_Sum_Weights(lb);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Sum_Weights.");
     return(ierr);
   }
@@ -121,7 +121,7 @@ double time0, time1, time2, time3, time4;
   ierr = LB_Reftree_Partition(lb, num_export, export_global_ids,
                               export_local_ids, export_procs);
   if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Partition.");
     return(ierr);
   }
@@ -218,7 +218,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -254,7 +254,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
   else
     leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
@@ -280,7 +280,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
   reqsize_all = (int *)LB_MALLOC(nproc*sizeof(int));
   displs = (int *)LB_MALLOC(nproc*sizeof(int));
   if (reqsize_all == NULL || displs == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&displs);
     LB_FREE(&reqsize_all);
     LB_FREE(&leaf_list);
@@ -311,7 +311,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
     all_leaflist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, sum_reqsize);
     if (all_leaflist == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&all_leaflist);
       LB_FREE(&displs);
       LB_FREE(&reqsize_all);
@@ -342,7 +342,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
     send_float = (float *) LB_MALLOC(sizeof(float)*wdim*sum_reqsize);
     if (send_float == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
       LB_FREE(&reqsize_all);
@@ -368,7 +368,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
     else
       req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
     if (req_weights == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&req_weights);
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
@@ -457,7 +457,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -493,7 +493,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   else
     leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
@@ -545,7 +545,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     else
       newlist = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, (reqsize+newsize));
     if (newlist == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&leaf_list);
       return(ZOLTAN_MEMERR);
     }
@@ -594,7 +594,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
   if (send_float == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
     return(ZOLTAN_MEMERR);
   }
@@ -614,7 +614,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   req_weights = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
   if (req_weights == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
     LB_FREE(&send_float);
     return(ZOLTAN_MEMERR);
@@ -693,7 +693,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
     return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
@@ -729,7 +729,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
   else
     leaf_list = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
 
@@ -769,7 +769,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
       if (myproc != comm_loop) {
         recv_gid = ZOLTAN_LB_MALLOC_GID_ARRAY(lb, reqsize);
         if (recv_gid == NULL) {
-          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+          ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
         }
@@ -796,7 +796,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
         send_float = (float *) LB_MALLOC(sizeof(float)*wdim*reqsize);
         if (send_float == NULL) {
-          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+          ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&recv_gid);
           LB_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
@@ -825,7 +825,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
       if (myproc == comm_loop) {
         recv_float = (float *)LB_MALLOC(sizeof(float)*wdim*reqsize);
         if (recv_float == NULL) {
-          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+          ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
           return(ZOLTAN_MEMERR);
         }
@@ -1095,7 +1095,7 @@ int num_part;         /* number of partitions */
   if (num_exp != *num_export) {
     sprintf(msg, "num_exp = %d not equal to num_export = %d.",
             num_exp,*num_export);
-    LB_PRINT_WARN(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
     return(ZOLTAN_WARN);
   }
 

@@ -354,7 +354,7 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
 
   entry = (pRegion) LB_MALLOC(sizeof(Region));   /* malloc space for region */
   if(entry == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Cannot allocated memory for region.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Cannot allocated memory for region.");
     return ZOLTAN_MEMERR;
   }
 

@@ -63,7 +63,7 @@ char *val)			/* value of variable */
 	if (result.dval < 1.0) {
 	    sprintf(msg, "Invalid Imbalance_Tol value (%g) "
 		"being set to %g.", result.dval, LB_IMBALANCE_TOL_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.dval = LB_IMBALANCE_TOL_DEF;
 	}
 	lb->Imbalance_Tol = result.dval;
@@ -83,7 +83,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Obj_Weight_Dim value (%d) "
 		"being set to %d.", result.ival, LB_OBJ_WEIGHT_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_OBJ_WEIGHT_DEF;
 	}
 	lb->Obj_Weight_Dim = result.ival;
@@ -96,7 +96,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Comm_Weight_Dim value (%d) "
 		"being set to %d.", result.ival, LB_COMM_WEIGHT_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_COMM_WEIGHT_DEF;
 	}
 	lb->Comm_Weight_Dim = result.ival;
@@ -109,7 +109,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Debug_Level value (%d) "
 		"being set to %d.", result.ival, LB_DEBUG_LEVEL_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_DEBUG_LEVEL_DEF;
 	}
 	lb->Debug_Level = result.ival;
@@ -122,7 +122,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0 || result.ival > lb->Num_Proc) {
 	    sprintf(msg, "Invalid Debug_Processor value (%d) "
 		"being set to %d.", result.ival, LB_DEBUG_PROC_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_DEBUG_PROC_DEF;
 	}
 	lb->Debug_Proc = result.ival;
@@ -135,7 +135,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Deterministic value (%d) "
 		"being set to %d.", result.ival, LB_DETERMINISTIC_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_DETERMINISTIC_DEF;
 	}
 	lb->Deterministic = result.ival;
@@ -155,7 +155,7 @@ char *val)			/* value of variable */
         if (result.ival < 1) {
 	    sprintf(msg, "Invalid Num_GID_Entries value (%d); "
 		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
             result.ival = LB_NUM_ID_ENTRIES_DEF;
         }
         lb->Num_GID = result.ival;
@@ -168,7 +168,7 @@ char *val)			/* value of variable */
         if (result.ival < 0) {
 	    sprintf(msg, "Invalid Num_LID_Entries value (%d); "
 		"being set to %d.", result.ival, LB_NUM_ID_ENTRIES_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
             result.ival = LB_NUM_ID_ENTRIES_DEF;
         }
         lb->Num_LID = result.ival;
@@ -195,7 +195,7 @@ char *val)			/* value of variable */
         else{
           tmp = LB_RETURN_LISTS_DEF;
           sprintf(msg, "Unknown return_lists option %s.", result.sval);
-          LB_PRINT_WARN(lb->Proc, yo, msg);
+          ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
           status = 2; /* Illegal parameter */
         }
 	lb->Return_Lists = tmp;
@@ -207,7 +207,7 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Tflops Special value (%d) "
 		"being set to %d.", result.ival, LB_TFLOPS_SPECIAL_DEF);
-            LB_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	    result.ival = LB_TFLOPS_SPECIAL_DEF;
 	}
 	lb->Tflops_Special = result.ival;

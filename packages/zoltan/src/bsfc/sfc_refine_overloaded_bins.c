@@ -45,13 +45,13 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   int* overloaded_bin_flag;
 
   if(size_of_unsigned != sizeof(unsigned)) {
-    LB_PRINT_ERROR(lb->Proc, yo, "The size of an unsigned integer is smaller on another processor. Cannot use this routine. Try increasing max_cuts_in_bin.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "The size of an unsigned integer is smaller on another processor. Cannot use this routine. Try increasing max_cuts_in_bin.");
     return(ZOLTAN_FATAL);
   }      
 
   overloaded_bin_flag = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
   if(overloaded_bin_flag == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<lb->Num_Proc;i++)
@@ -65,7 +65,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
     
   istore = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
   if(istore == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   
@@ -85,7 +85,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   }
 
   if(istore[lb->Proc])
-    LB_PRINT_WARN(0, yo,
+    ZOLTAN_PRINT_WARN(0, yo,
       "A coarse bin has too many cuts in it and it is being refined globally.");
   
   /* since we need to refine some coarse bins... */
@@ -108,7 +108,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   /* figure out which coarse bins to refine */
   istore2 = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(istore2 == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<number_of_bins_to_refine;i++)
@@ -128,7 +128,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   
   bins_to_refine = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(bins_to_refine == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   i = MPI_Allreduce(istore2, bins_to_refine, number_of_bins_to_refine, 
@@ -175,7 +175,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 				 total_weight_array, actual_work_allocated, 
 				 max_cuts_in_bin, 0);
     if(ierr!= ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin function.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin function.");
       return(ierr);
     }
   }
@@ -226,7 +226,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 
   /* check that we haven't used all of the bits already */
   if(prev_used_bits >= 8*sizeof(unsigned) * SFC_KEYLENGTH) {
-    LB_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
     return(ZOLTAN_OK);
   }
   if(prev_used_bits + number_of_bits > 8*sizeof(unsigned) * SFC_KEYLENGTH) 
@@ -239,7 +239,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   
   binned_wgt_array = (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim); 
   if(binned_wgt_array == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   for(i=0;i<my_bins_per_proc*wgt_dim;i++)
@@ -264,7 +264,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   if((int) gl_check_bin[SFC_KEYLENGTH] == 1) {
     ierr = MPI_Allreduce(&j, &i, 1, MPI_INT, MPI_SUM, lb->Communicator);
     if(i == 1) {
-      LB_PRINT_WARN(lb->Proc, yo, 
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, 
          "A coarse bin has too many cuts in it and the cuts are all from one object.");
       LB_FREE(&binned_wgt_array);
       return(ZOLTAN_OK);
@@ -283,7 +283,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   i = MPI_Allreduce((check_bin+SFC_KEYLENGTH), (gl_check_bin+SFC_KEYLENGTH), 1,
 		    MPI_UNSIGNED, MPI_SUM, lb->Communicator);
   if((int) gl_check_bin[SFC_KEYLENGTH] == 0) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 	"All objects have the same sfc key in a coarse bin with too many cuts in it.");
     /* go through all of the objects with the same key and give them 
        random, non-repeating keys for the bits that haven't been used yet */
@@ -299,7 +299,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
     summed_binned_wgt_array = 
       (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim);
     if(summed_binned_wgt_array == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }  
   }
@@ -310,14 +310,14 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   
   bin_proc_array = (int*) LB_MALLOC(sizeof(int)*(number_of_cuts+1));
   if(bin_proc_array == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<=number_of_cuts;i++)
     bin_proc_array[i] = my_bins_per_proc;
   number_of_cuts_in_bin = (int*) LB_MALLOC(sizeof(int) * my_bins_per_proc);
   if(number_of_cuts_in_bin == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<my_bins_per_proc;i++)
@@ -406,7 +406,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 				 work_percent_array, total_weight_array, 
 				 actual_work_allocated, max_cuts_in_bin, level_flag+1);
       if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-	LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin.");
+	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin.");
 	return(ZOLTAN_FATAL);
       } 
     } 
@@ -436,7 +436,7 @@ int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[],
   char yo[] = "sfc_create_compare_key";
 
   if(prev_used_bits/(size_of_unsigned*8) >= SFC_KEYLENGTH) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Too many previously used bits.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Too many previously used bits.");
     return(ZOLTAN_FATAL);
   }
     

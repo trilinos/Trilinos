@@ -27,7 +27,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_Compute_Destinations(
+int Zoltan_Compute_Destinations(
   LB *lb,                      /* Load balancing structure.                  */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
@@ -61,7 +61,7 @@ int LB_Compute_Destinations(
  *  decomposition.
  */
 
-char *yo = "LB_Compute_Destinations";
+char *yo = "Zoltan_Compute_Destinations";
 char msg[256];
 int *proc_list = NULL;      /* List of processors from which objs are to be 
                                imported.                                    */
@@ -74,14 +74,14 @@ int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
 int i;
 int ierr = ZOLTAN_OK;
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
   /*
    *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_OK);
   }
 
@@ -94,8 +94,8 @@ int ierr = ZOLTAN_OK;
   if (lb->Num_GID != num_gid_entries){
     sprintf(msg, "Inconsistent global id sizes: Num_GID = %d "
       "but global max is %d\n", lb->Num_GID, num_gid_entries);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -104,8 +104,8 @@ int ierr = ZOLTAN_OK;
   if (lb->Num_LID != num_lid_entries){
     sprintf(msg, "Inconsistent local id sizes: Num_LID = %d "
       "but global max is %d\n", lb->Num_LID, num_lid_entries);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -116,15 +116,15 @@ int ierr = ZOLTAN_OK;
   if (num_import > 0) {
     proc_list = (int *) LB_MALLOC(num_import*sizeof(int));
     if (!proc_list) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_MEMERR);
     }
     import_proc_list = (int *) LB_MALLOC(num_import * sizeof(int));
     if (!import_proc_list) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_MEMERR);
     }
 
@@ -145,14 +145,14 @@ int ierr = ZOLTAN_OK;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Create.",
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
   
 
-  LB_TRACE_DETAIL(lb, yo, "Done comm create");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done comm create");
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -162,26 +162,26 @@ int ierr = ZOLTAN_OK;
   if (*num_export > 0) {
     if (!LB_Special_Malloc(lb,(void **)export_global_ids,*num_export,
                            LB_SPECIAL_MALLOC_GID)) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_local_ids,*num_export,
                            LB_SPECIAL_MALLOC_LID)) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_procs,*num_export,
                            LB_SPECIAL_MALLOC_INT)) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_MEMERR);
     }
   }
@@ -205,10 +205,10 @@ int ierr = ZOLTAN_OK;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_Comm_Destroy(&comm_plan);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
@@ -220,10 +220,10 @@ int ierr = ZOLTAN_OK;
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       sprintf(msg, "Error %s returned from LB_Comm_Do.", 
               (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-      LB_PRINT_ERROR(lb->Proc, yo, msg);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
       LB_FREE(&proc_list);
       LB_Comm_Destroy(&comm_plan);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
   }
@@ -234,22 +234,22 @@ int ierr = ZOLTAN_OK;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_Comm_Destroy(&comm_plan);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
-  LB_TRACE_DETAIL(lb, yo, "Done comm_do");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done comm_do");
 
   LB_FREE(&proc_list);
   LB_FREE(&import_proc_list);
   
   LB_Comm_Destroy(&comm_plan);
 
-  LB_TRACE_DETAIL(lb, yo, "Done comm destroy");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done comm destroy");
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return (ierr);
 }
 
@@ -257,7 +257,7 @@ int ierr = ZOLTAN_OK;
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Help_Migrate(
+int Zoltan_Help_Migrate(
   LB *lb,                      /* Load balancing structure.                  */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
@@ -290,17 +290,17 @@ int LB_Help_Migrate(
 {
 /*
  *  Routine to help perform migration.  If migration pre-processing routine
- *  (LB_PRE_MIGRATE_FN) is specified, this routine first calls that function.
+ *  (ZOLTAN_PRE_MIGRATE_FN) is specified, this routine first calls that fn.
  *  It then calls a function to obtain the size of the migrating objects
- *  (LB_OBJ_SIZE_FN).  The routine next calls an application-specified
- *  object packing routine (LB_PACK_OBJ_FN) for each object
+ *  (ZOLTAN_OBJ_SIZE_FN).  The routine next calls an application-specified
+ *  object packing routine (ZOLTAN_PACK_OBJ_FN) for each object
  *  to be exported.  It develops the needed communication map to move the
  *  objects to other processors.  It performs the communication according
  *  to the map, and then calls an application-specified object unpacking
- *  routine (LB_UNPACK_OBJ_FN) for each object imported.
+ *  routine (ZOLTAN_UNPACK_OBJ_FN) for each object imported.
  */
 
-char *yo = "LB_Help_Migrate";
+char *yo = "Zoltan_Help_Migrate";
 char msg[256];
 int num_gid_entries, num_lid_entries;  /* lengths of global & local ids */
 int *sizes = NULL;       /* sizes (in bytes) of the object data for export. */
@@ -324,7 +324,7 @@ int size;                /* size (in bytes) of an object                    */
 int aligned_int;         /* size of an int padded for alignment             */
 int ierr = 0;
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   /*
    *  Return if this processor is not in the load-balancing structure's
@@ -332,7 +332,7 @@ int ierr = 0;
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_OK);
   }
 
@@ -342,9 +342,9 @@ int ierr = 0;
    */
 
   if (num_export == -1 || num_import == -1) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Both export and import lists must be "
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Both export and import lists must be "
                                  "provided; change RETURN_LISTS parameter.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ZOLTAN_FATAL);
   }
 
@@ -357,8 +357,8 @@ int ierr = 0;
   if (lb->Num_GID != num_gid_entries){
     sprintf(msg, "Inconsistent global id sizes: Num_GID = %d "
       "but global max is %d\n", lb->Num_GID, num_gid_entries);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -367,8 +367,8 @@ int ierr = 0;
   if (lb->Num_LID != num_lid_entries){
     sprintf(msg, "Inconsistent local id sizes: Num_LID = %d "
       "but global max is %d\n", lb->Num_LID, num_lid_entries);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ZOLTAN_FATAL;
   }
 
@@ -377,23 +377,23 @@ int ierr = 0;
    */
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
-           "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Must register an "
+           "ZOLTAN_OBJ_SIZE_FN_TYPE function to use the migration-help tools.");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
-           "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Must register an "
+           "ZOLTAN_PACK_OBJ_FN_TYPE function to use the migration-help tools.");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
-         "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Must register an "
+         "ZOLTAN_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.");
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ZOLTAN_FATAL);
   }
 
@@ -405,14 +405,14 @@ int ierr = 0;
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Pre_Migrate function.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done pre-migration processing");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done pre-migration processing");
 
   /*
    * For each object, allow space for its global ID and its data plus 
@@ -427,8 +427,8 @@ int ierr = 0;
   if (num_export > 0) {
     sizes = (int *) LB_MALLOC(num_export * sizeof(int));
     if (!sizes) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
   }
@@ -447,9 +447,9 @@ int ierr = 0;
                  &(export_global_ids[i*num_gid_entries]), 
                  lid, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Get_Obj_Size function.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
     sizes[i] = size + LB_pad_for_alignment(size);
@@ -460,18 +460,18 @@ int ierr = 0;
   if (num_export > 0) {
     export_buf = (char *) LB_MALLOC(total_send_size);
     if (!export_buf) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&sizes);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
 
     proc_list = (int *) LB_MALLOC(num_export*sizeof(int));
     if (!proc_list) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&export_buf);
       LB_FREE(&sizes);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
 
@@ -506,19 +506,19 @@ int ierr = 0;
                            &(export_global_ids[i*num_gid_entries]),
                            lid, export_procs[i], sizes[i], tmp, &ierr);
       if (ierr) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                         "Migrate.Pack_Obj function.");
         LB_FREE(&sizes);
         LB_FREE(&export_buf);
         LB_FREE(&proc_list);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ZOLTAN_FATAL);
       }
       tmp += sizes[i];
     }
   }
 
-  LB_TRACE_DETAIL(lb, yo, "Done packing objects");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done packing objects");
 
   /*
    *  Compute communication map and tmp_import, the number of objs this
@@ -531,16 +531,16 @@ int ierr = 0;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Create.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&sizes);
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
   if (tmp_import != num_import) {
     sprintf(msg, "tmp_import %d != num_import %d.", tmp_import, num_import);
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
   }
 
   /* Modify sizes[] to contain message sizes, not object sizes */
@@ -551,22 +551,22 @@ int ierr = 0;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Create.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&sizes);
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   if (num_import > 0) {
     import_buf = (char *) LB_MALLOC(total_recv_size);
     if (!import_buf) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&sizes);
       LB_FREE(&export_buf);
       LB_FREE(&proc_list);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
 
@@ -581,13 +581,13 @@ int ierr = 0;
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
             (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&sizes);
     LB_FREE(&proc_list);
     LB_FREE(&export_buf);
     LB_FREE(&import_buf);
     LB_Comm_Destroy(&comm_plan);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
@@ -600,7 +600,7 @@ int ierr = 0;
   LB_FREE(&export_buf);
   LB_FREE(&sizes);
 
-  LB_TRACE_DETAIL(lb, yo, "Done communication");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done communication");
 
   /* 
    *  Perform application-specified processing before unpacking the data.
@@ -613,13 +613,13 @@ int ierr = 0;
                             num_export, export_global_ids,
                             export_local_ids, export_procs, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Mid_Migrate function.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
 
-    LB_TRACE_DETAIL(lb, yo, "Done mid-migration processing");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done mid-migration processing");
   }
 
   /*
@@ -647,10 +647,10 @@ int ierr = 0;
     lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, num_gid_entries,
                            tmp_id, size, tmp, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Unpack_Obj function.");
       LB_FREE(&import_buf);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
     tmp += size;
@@ -658,7 +658,7 @@ int ierr = 0;
 
   LB_FREE(&import_buf);
 
-  LB_TRACE_DETAIL(lb, yo, "Done unpacking objects");
+  ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done unpacking objects");
 
   if (lb->Migrate.Post_Migrate != NULL) {
     lb->Migrate.Post_Migrate(lb->Migrate.Post_Migrate_Data,
@@ -668,15 +668,15 @@ int ierr = 0;
                              num_export, export_global_ids,
                              export_local_ids, export_procs, &ierr);
     if (ierr) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Post_Migrate function.");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ZOLTAN_FATAL);
     }
 
-    LB_TRACE_DETAIL(lb, yo, "Done post-migration processing");
+    ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done post-migration processing");
   }
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return (ZOLTAN_OK);
 }

@@ -28,7 +28,7 @@
 
 #define NUM_STATS 4 /* Number of graph statistics other than vertex/edge weights */
 
-int LB_Eval (LB *lb, int print_stats, 
+int Zoltan_LB_Eval (LB *lb, int print_stats, 
      int *nobj, float *obj_wgt, 
      int *ncuts, float *cut_wgt, 
      int *nboundary, int *nadj)
@@ -51,8 +51,7 @@ int LB_Eval (LB *lb, int print_stats,
  */
 
 {
-  char *yo = "LB_Eval";
-  char *yo2 = "ZOLTAN LB_Eval";
+  char *yo = "Zoltan_LB_Eval";
   int i, j, k, num_obj, max_edges, nedges, cuts, flag;
   int num_adj, num_boundary, ierr;
   int stats[4*NUM_STATS];
@@ -67,7 +66,7 @@ int LB_Eval (LB *lb, int print_stats,
   int gid_off, lid_off;
   char msg[256];
   
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   /* Set default error code */
   ierr = ZOLTAN_OK;
@@ -95,7 +94,7 @@ int LB_Eval (LB *lb, int print_stats,
     if ((!global_ids) || (num_lid_entries && !local_ids)){
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -109,7 +108,7 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
       LB_FREE(&tmp_vwgt);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   } 
@@ -118,7 +117,7 @@ int LB_Eval (LB *lb, int print_stats,
   if (ierr == ZOLTAN_FATAL){
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return ierr;
   }
   
@@ -156,12 +155,12 @@ int LB_Eval (LB *lb, int print_stats,
                                  lid, &ierr);
       if (ierr){
         sprintf(msg, "Get_Num_Edges returned error code %d.", ierr);
-        LB_PRINT_ERROR(lb->Proc, yo, msg);
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
         LB_FREE(&tmp_vwgt);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
       if (nedges>max_edges) max_edges = nedges;
@@ -189,7 +188,7 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&ewgts);
       LB_FREE(&tmp_cutwgt);
       LB_FREE(&proc);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
@@ -217,7 +216,7 @@ int LB_Eval (LB *lb, int print_stats,
         LB_FREE(&ewgts);
         LB_FREE(&tmp_cutwgt);
         LB_FREE(&proc);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, 
@@ -235,7 +234,7 @@ int LB_Eval (LB *lb, int print_stats,
         LB_FREE(&ewgts);
         LB_FREE(&tmp_cutwgt);
         LB_FREE(&proc);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ierr;
       }
       /* Check for cut edges */
@@ -297,10 +296,10 @@ int LB_Eval (LB *lb, int print_stats,
     /* Print max-sum of results */
     nproc = lb->Num_Proc; /* convert to float */
     if (lb->Proc == lb->Debug_Proc){
-      printf("\n%s  Statistics for current partitioning/balance:\n", yo2);
+      printf("\n%s  Statistics for current partitioning/balance:\n", yo);
       printf("%s  No. of objects   :  Max = %7d, Min = %7d, "
              "Sum = %7d, Imbal. = %5.3f\n",
-        yo2, stats[NUM_STATS], 
+        yo, stats[NUM_STATS], 
         stats[3*NUM_STATS],
         stats[2*NUM_STATS], 
         (stats[2*NUM_STATS] > 0
@@ -310,7 +309,7 @@ int LB_Eval (LB *lb, int print_stats,
       for (i=0; i<lb->Obj_Weight_Dim; i++){
         printf("%s  Object weight #%1d :  Max =%8.3g, Min =%8.3g, "
           "Sum =%8.3g, Imbal. = %5.3f\n",
-          yo2, i+1, tmp_vwgt[lb->Obj_Weight_Dim+i], 
+          yo, i+1, tmp_vwgt[lb->Obj_Weight_Dim+i], 
           tmp_vwgt[3*lb->Obj_Weight_Dim+i], 
           tmp_vwgt[2*lb->Obj_Weight_Dim+i], 
           (tmp_vwgt[2*lb->Obj_Weight_Dim+i] > 0 
@@ -322,7 +321,7 @@ int LB_Eval (LB *lb, int print_stats,
         for (i=0; i<lb->Comm_Weight_Dim; i++){
           printf("%s  Comm. weight  #%1d :  Max =%8.3g, Min =%8.3g, "
             "Sum =%8.3g, Imbal. = %5.3f\n",
-            yo2, i+1, tmp_cutwgt[(lb->Comm_Weight_Dim)+i], 
+            yo, i+1, tmp_cutwgt[(lb->Comm_Weight_Dim)+i], 
             tmp_cutwgt[3*(lb->Comm_Weight_Dim)+i], 
             tmp_cutwgt[2*(lb->Comm_Weight_Dim)+i], 
             (tmp_cutwgt[2*(lb->Comm_Weight_Dim)+i] > 0 
@@ -343,7 +342,7 @@ int LB_Eval (LB *lb, int print_stats,
           }
 
           printf("%s  %s Max = %7d, Min = %7d, Sum = %7d, Imbal. = %5.3f\n",
-            yo2, msg, stats[NUM_STATS+i], 
+            yo, msg, stats[NUM_STATS+i], 
             stats[3*NUM_STATS+i],
             stats[2*NUM_STATS+i], 
             (stats[2*NUM_STATS+i] > 0 
@@ -379,7 +378,7 @@ int LB_Eval (LB *lb, int print_stats,
   LB_FREE(&nbors_global);
   LB_FREE(&nbors_proc);
   LB_FREE(&proc);
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
 
   return ierr;
 }

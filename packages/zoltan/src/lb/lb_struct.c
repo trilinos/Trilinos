@@ -27,7 +27,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-LB *LB_Create(MPI_Comm communicator)
+LB *Zoltan_Create(MPI_Comm communicator)
 {
 /*
  *  Function to create a load balancing structure.  May want more than one
@@ -38,7 +38,7 @@ LB *LB_Create(MPI_Comm communicator)
  *
  */
 
-char *yo = "LB_Create";
+char *yo = "Zoltan_Create";
 LB *lb;
 
   /*
@@ -49,7 +49,7 @@ LB *lb;
   if (!lb) {
     int proc;
     MPI_Comm_rank(communicator, &proc);
-    LB_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
+    ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
     return NULL;
   }
 
@@ -160,7 +160,7 @@ LB *lb;
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Destroy(LB **lb)
+void Zoltan_Destroy(LB **lb)
 {
 /*
  *  Function to free a load balancing structure.

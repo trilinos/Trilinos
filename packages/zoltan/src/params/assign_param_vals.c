@@ -19,7 +19,6 @@
 #include <strings.h>
 #endif  /* __STDC__ */
 #include "lb_const.h"
-#include "lbi_const.h"
 #include "params_const.h"
 
 /*****************************************************************************/
@@ -73,7 +72,7 @@ int print_proc                  /* processor that should perform printing */
                 sprintf(msg, "Parameter %s is not bound "
                        "to any variable.  Parameter ignored.\n", 
                         param_ptr->name);
-                LB_PRINT_WARN(proc, yo, msg);
+                ZOLTAN_PRINT_WARN(proc, yo, msg);
              }
           }
           else {

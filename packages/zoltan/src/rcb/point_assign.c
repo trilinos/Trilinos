@@ -17,7 +17,7 @@
 #include "rib_const.h"
 
 
-int LB_Point_Assign(
+int Zoltan_LB_Point_Assign(
 LB       *lb,                   /* The load-balancing structure */
 double   *coords,               /* vector of point coordinates */
 int      *proc)                 /* processor that point lands in */
@@ -25,7 +25,7 @@ int      *proc)                 /* processor that point lands in */
 /* Locate which processor a point is inside within the tree defined
    by the recursive bisection algorithm chosen. */
 
-     char             *yo = "LB_Point_Assign";
+     char             *yo = "Zoltan_LB_Point_Assign";
      int               procmid; /* 1st processor in upper half */
      RCB_STRUCT        *rcb;    /* Pointer to data structures for RCB.  */
      struct rcb_tree   *treept; /* tree of RCB cuts */
@@ -33,8 +33,8 @@ int      *proc)                 /* processor that point lands in */
      struct rib_tree   *itree;  /* tree of RIB cuts */
 
      if (lb->Data_Structure == NULL) {
-        LB_PRINT_ERROR(-1, yo, 
-                       "No LB_Data_Structure available for LB_Point_Assign");
+        ZOLTAN_PRINT_ERROR(-1, yo, 
+                       "No LB_Data_Structure available.");
         *proc = -1;
         return(ZOLTAN_FATAL);
      }
@@ -43,7 +43,7 @@ int      *proc)                 /* processor that point lands in */
         rcb = (RCB_STRUCT *) (lb->Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) { /* RCB tree was never created. */
-           LB_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved for Point_Assign; "
+           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved; "
                                         "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(ZOLTAN_FATAL);
@@ -65,7 +65,7 @@ int      *proc)                 /* processor that point lands in */
         rib = (RIB_STRUCT *) (lb->Data_Structure);
         itree = rib->Tree_Ptr;
         if ((procmid = itree[0].right_leaf) < 0) { /* RIB tree never created */
-           LB_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved for Point_Assign; "
+           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved; "
                                      "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(ZOLTAN_FATAL);
@@ -105,7 +105,7 @@ int      *proc)                 /* processor that point lands in */
         return(ZOLTAN_OK);
      }
      else {
-        LB_PRINT_ERROR(lb->Proc, yo, "LB_Point_Assign valid only when method "
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Valid only when method "
                                      "is RCB or RIB.");
         *proc = -1;
         return(ZOLTAN_FATAL);

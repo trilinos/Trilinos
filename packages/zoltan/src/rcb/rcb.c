@@ -247,7 +247,7 @@ static int rcb_fn(
   MPI_Datatype box_type;
   MPI_User_function LB_rcb_box_merge;
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
   if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) {
     MPI_Barrier(lb->Communicator);
     timestart = time1 = LB_Time(lb->Timer);
@@ -274,9 +274,9 @@ static int rcb_fn(
   start_time = LB_Time(lb->Timer);
   ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
   if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-    LB_PRINT_ERROR(proc, yo, 
+    ZOLTAN_PRINT_ERROR(proc, yo, 
                    "Error returned from LB_RCB_Build_Structure.");
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return(ierr);
   }
 
@@ -313,20 +313,20 @@ static int rcb_fn(
   if (dotmax > 0) {
     dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL) {
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     coord = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (coord == NULL) {
       LB_FREE(&dotmark);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       LB_FREE(&dotmark);
       LB_FREE(&coord);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
     dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
@@ -334,7 +334,7 @@ static int rcb_fn(
       LB_FREE(&wgts);
       LB_FREE(&dotmark);
       LB_FREE(&coord);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -353,7 +353,7 @@ static int rcb_fn(
     if (treept[0].dim != -1) {
       /* find previous location of dots */
       for (outgoing = i = 0; i < dotnum; i++) {
-        ierr = LB_Point_Assign(lb, dotpt[i].X, &dotmark[i]);
+        ierr = Zoltan_LB_Point_Assign(lb, dotpt[i].X, &dotmark[i]);
         if (dotmark[i] != proc) outgoing++;
       }
 
@@ -362,7 +362,7 @@ static int rcb_fn(
           LB_FREE(&dotmark);
           LB_FREE(&coord);
           LB_FREE(&wgts);
-          LB_TRACE_EXIT(lb, yo);
+          ZOLTAN_LB_TRACE_EXIT(lb, yo);
           return ZOLTAN_MEMERR;
         }
 
@@ -379,12 +379,12 @@ static int rcb_fn(
                              overalloc, stats, reuse_count, use_ids,
                              lb->Communicator);
       if (ierr) {
-        LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
+        ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
         LB_FREE(&proc_list);
         LB_FREE(&dotmark);
         LB_FREE(&coord);
         LB_FREE(&wgts);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return (ierr);
       }
 
@@ -428,8 +428,8 @@ static int rcb_fn(
   if (check_geom) {
     ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
     if (ierr == ZOLTAN_FATAL) {
-      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return(ierr);
     }
   }
@@ -487,7 +487,7 @@ static int rcb_fn(
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
     
@@ -514,20 +514,20 @@ static int rcb_fn(
       LB_FREE(&dotlist);
       dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       coord = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (coord == NULL) {
         LB_FREE(&dotmark);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&coord);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
       dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
@@ -535,7 +535,7 @@ static int rcb_fn(
         LB_FREE(&wgts);
         LB_FREE(&dotmark);
         LB_FREE(&coord);
-        LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_LB_TRACE_EXIT(lb, yo);
         return ZOLTAN_MEMERR;
       }
     }
@@ -562,11 +562,11 @@ static int rcb_fn(
                         nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
                         rcbbox->hi[dim], weight, &weightlo, &weighthi,
                         dotlist)) {
-      LB_PRINT_ERROR(proc, yo, "Error returned from LB_find_median.");
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_find_median.");
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return ZOLTAN_FATAL;
     }
 
@@ -606,11 +606,11 @@ static int rcb_fn(
                                stats, counters, use_ids, local_comm, proclower,
                                old_nprocs);
     if (ierr) {
-      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return (ierr);
     }
 
@@ -670,8 +670,8 @@ static int rcb_fn(
   if (check_geom) {
     ierr = LB_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,rcbbox);
     if (ierr == ZOLTAN_FATAL) {
-      LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
-      LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
+      ZOLTAN_LB_TRACE_EXIT(lb, yo);
       return(ierr);
     }
   }
@@ -697,8 +697,8 @@ static int rcb_fn(
                                     import_global_ids, import_local_ids,
                                     import_procs, dottop);
       if (ierr) {
-         LB_PRINT_ERROR(proc,yo,"Error returned from LB_RB_Return_Arguments.");
-         LB_TRACE_EXIT(lb, yo);
+         ZOLTAN_PRINT_ERROR(proc,yo,"Error returned from LB_RB_Return_Arguments.");
+         ZOLTAN_LB_TRACE_EXIT(lb, yo);
          return ierr;
       }
     }
@@ -753,7 +753,7 @@ static int rcb_fn(
     LB_FREE(&(rcb->Dots));
   }
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(ZOLTAN_OK);  
 }

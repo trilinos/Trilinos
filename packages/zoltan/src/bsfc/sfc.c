@@ -168,7 +168,7 @@ int LB_sfc(
     subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
   double* coords; /* array for objects coordinates */
 
-  LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
   /* set the of parameters */
   LB_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
@@ -189,27 +189,27 @@ int LB_sfc(
 
   /* make sure that all parameters have feasible values */
   if(bins_per_proc <= 0) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 		  "SFC_BINS_PER_PROC parameter must be greater than 0.");
     bins_per_proc = BINS_PER_PROC;
   }
   if(hashtable_divider <= 0) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 		  "SFC_HASH_TABLE_DIVIDER parameter must be greater than 0.");
     hashtable_divider = HASHTABLE_DIVIDER;
   }
   if(max_cuts_in_bin <= 0) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 		  "SFC_MAX_CUTS_IN_BIN parameter must be greater than 0.");
     max_cuts_in_bin = MAX_CUTS_IN_BIN;
   }
   if(subbins_per_bin <= 1) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 		  "SFC_SUBBINS_PER_BIN parameter must be greater than 1.");
     subbins_per_bin = BINS_PER_PROC;
   }
   if(bin_refinement_method != 0 && bin_refinement_method != 1) {
-    LB_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
 		  "SFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
     bin_refinement_method = BIN_REFINEMENT_METHOD;
   }
@@ -221,13 +221,13 @@ int LB_sfc(
   /* get the dimension of the problem and make sure that it is either 2 or 3 */
   num_dims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
   if(ierr != 0) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned from user function Get_Num_Geom.");
     return(ierr);
   }
 
   if(num_dims != 2 && num_dims != 3) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Incompatible space dimension for SFC. Space dimension must be 2 or 3.");
     return(ZOLTAN_FATAL);
   }
@@ -242,7 +242,7 @@ int LB_sfc(
   num_local_objects = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned from user function Get_Num_Obj.");
     return(ierr);
   }
@@ -252,7 +252,7 @@ int LB_sfc(
     local_ids  = ZOLTAN_LB_MALLOC_LID_ARRAY(lb, num_local_objects);
 
     if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
   }
@@ -270,7 +270,7 @@ int LB_sfc(
       objs_wgt    = 
 	(float *) LB_MALLOC(wgt_dim*(num_local_objects)*sizeof(float));
       if (!objs_wgt) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < wgt_dim*num_local_objects; i++) objs_wgt[i] = 0.;
@@ -279,7 +279,7 @@ int LB_sfc(
   LB_Get_Obj_List(lb, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
 
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
 		   "Error returned from user function LB_Get_Obj_List.");
     return(ierr);
   }
@@ -288,7 +288,7 @@ int LB_sfc(
     if (num_local_objects > 0) {
       objs_wgt    = (float *) LB_MALLOC((num_local_objects)*sizeof(float));
       if (!objs_wgt) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < num_local_objects; i++) objs_wgt[i] = 1.;
@@ -298,12 +298,12 @@ int LB_sfc(
   
   sfc_vert_ptr = (SFC_VERTEX_PTR) LB_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
   if(num_local_objects != 0 && sfc_vert_ptr == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
   }
   coords = (double*) LB_MALLOC(sizeof(double) * num_local_objects * num_dims);
   if(num_local_objects != 0 && coords == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   /* get the geometric coordinates of the objects */
@@ -313,7 +313,7 @@ int LB_sfc(
 		 (coords+i*num_dims), &ierr);
     
     if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user defined Get_Geom function.");
       return(ierr);
     }  
@@ -362,17 +362,17 @@ int LB_sfc(
 
   global_actual_work_allocated=(float*) LB_MALLOC(sizeof(float)*wgt_dim* lb->Num_Proc);
   if(!global_actual_work_allocated) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   work_percent_array = (float*) LB_MALLOC(sizeof(float) * lb->Num_Proc);
   if(!work_percent_array) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   total_weight_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
   if(!total_weight_array) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   /*create bins, fill global weight vector and perform initial partition of the bins*/
@@ -384,7 +384,7 @@ int LB_sfc(
 			 bins_per_proc, hashtable_divider, &plan,
 			 &num_vert_sent, max_cuts_in_bin); 
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_create_bins function.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_create_bins function.");
       return(ierr);
   }
  
@@ -408,13 +408,13 @@ int LB_sfc(
 				      num_vert_in_cut, vert_in_cut_ptr, 
 				      wgts_in_cut_ptr, &work_prev_allocated);
     if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Error in create_refinement_info function.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in create_refinement_info function.");
       return(ierr);
     }    
 
     ll_bins_head = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
     if(ll_bins_head == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
       return(ZOLTAN_MEMERR);
     }
     max_cuts_in_bin= number_of_cuts;
@@ -429,7 +429,7 @@ int LB_sfc(
    
     local_balanced_flag_array = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
     if(local_balanced_flag_array == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
       return(ZOLTAN_MEMERR);
     }
     for(i=0;i<number_of_cuts;i++)
@@ -455,7 +455,7 @@ int LB_sfc(
 				    subbins_per_bin, local_balanced_flag_array,
 				    bin_refinement_method);
 	if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-	  LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
+	  ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
 	  return(ierr);
 	}
       }
@@ -480,21 +480,21 @@ int LB_sfc(
     if (num_vert_sent > 0) {
       recv_buf = (SFC_VERTEX_PTR) LB_MALLOC(sizeof(SFC_VERTEX)*num_vert_sent);
       if(recv_buf==NULL) {
-        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
     }
     ierr = LB_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
 			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
     if(ierr == COMM_WARN) {
-      LB_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do_Reverse.");
     }
     else if(ierr == COMM_FATAL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do_Reverse.");
       return(ZOLTAN_FATAL);
     }      
     else if(ierr == COMM_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do_Reverse.");
       return(ZOLTAN_MEMERR);
     }
     /* put objects back in sfc_vert_ptr array the way they 
@@ -508,14 +508,14 @@ int LB_sfc(
     LB_FREE(&recv_buf);
     ierr = LB_Comm_Destroy(&plan);
     if(ierr == COMM_WARN) {
-      LB_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Destroy.");
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Destroy.");
     }
     else if(ierr == COMM_FATAL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Destroy.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Destroy.");
       return(ZOLTAN_FATAL);
     }      
     else if(ierr == COMM_MEMERR) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Destroy.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Destroy.");
       return(ZOLTAN_MEMERR);
     }
   }
@@ -535,19 +535,19 @@ int LB_sfc(
   ierr = LB_Special_Malloc(lb, (void**) export_global_ids,
 			   *num_export, LB_SPECIAL_MALLOC_GID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   ierr = LB_Special_Malloc(lb, (void**) export_local_ids,
 			   *num_export, LB_SPECIAL_MALLOC_LID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   ierr = LB_Special_Malloc(lb, (void**) export_procs,
 			   *num_export, LB_SPECIAL_MALLOC_INT);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   
@@ -567,7 +567,7 @@ int LB_sfc(
   LB_FREE(&local_ids);
   LB_FREE(&sfc_vert_ptr);
 
-  LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_LB_TRACE_EXIT(lb, yo);
   return ZOLTAN_OK;
 }
 
@@ -609,7 +609,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
      bins with higher keys than this bin */
   work_array = (float*) LB_MALLOC(sizeof(float) * wgt_dim);
   if(work_array == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   
@@ -622,7 +622,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
   *work_prev_allocated_ptr = 
     (float*) LB_MALLOC(sizeof(float) * wgt_dim * (*number_of_cuts+1));
   if(*work_prev_allocated_ptr == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
       

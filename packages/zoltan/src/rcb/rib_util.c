@@ -11,7 +11,6 @@
  *    $Revision$
  ****************************************************************************/
 
-#include "lbi_const.h"
 #include "lb_const.h"
 #include "rib_const.h"
 
@@ -35,7 +34,7 @@ int            i, ierr = 0;
   if (lb->Data_Structure == NULL) {
     rib = (RIB_STRUCT *) LB_MALLOC(sizeof(RIB_STRUCT));
     if (rib == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
     lb->Data_Structure = (void *) rib;
@@ -47,7 +46,7 @@ int            i, ierr = 0;
     rib->Tree_Ptr = (struct rib_tree *)
                     LB_MALLOC(lb->Num_Proc* sizeof(struct rib_tree));
     if (rib->Tree_Ptr == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RIB_Free_Structure(lb);
       return(ZOLTAN_MEMERR);
     }
@@ -71,7 +70,7 @@ int            i, ierr = 0;
                                &(rib->Dots), num_obj, max_obj, &(rib->Num_Geom),
                                wgtflag, use_ids);
   if (ierr) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
     LB_RIB_Free_Structure(lb);
     return(ierr);
   }

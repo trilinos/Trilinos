@@ -9,11 +9,11 @@
  *
  * sets up global variables for the octree partitioner
  */
-OCT_Global_Info *LB_POct_init(struct LB_Struct *lb, int pid, int dim) {
+OCT_Global_Info *LB_POct_init(LB *lb, int pid, int dim) {
   char *yo = "LB_POct_init";
   OCT_Global_Info *OCT_info;
   if((OCT_info = (OCT_Global_Info *) LB_MALLOC(sizeof(OCT_Global_Info))) == NULL) {
-    LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return NULL;
   }
   lb->Data_Structure = (void *) OCT_info;

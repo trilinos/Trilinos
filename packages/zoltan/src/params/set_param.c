@@ -17,7 +17,6 @@
 #else
 #include <strings.h>
 #endif  /* __STDC__ */
-#include "lbi_const.h"
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "params_const.h"
@@ -49,7 +48,7 @@ static LB_SET_PARAM_FN * Param_func[] = {
         NULL /* Last entry _must_ be NULL! */
 };
 
-int       LB_Set_Param(
+int Zoltan_Set_Param(
 LB *lb,				/* load balance structure */
 char *name1,			/* parameter name */
 char *val1)			/* value to set this parameter to */
@@ -63,7 +62,7 @@ char *val1)			/* value to set this parameter to */
  *    ZOLTAN_FATAL signals something more serious.
  */
 
-    char     *yo = "LB_Set_Param";
+    char     *yo = "Zoltan_Set_Param";
     char      msg[256];
     char     *name, *val;	/* clean versions of name1, val1 */
     int       flag;		/* return value from function */
@@ -100,7 +99,7 @@ char *val1)			/* value to set this parameter to */
     if (status == 1) {		/* Parameter name never found */
 	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
                 name, val);
-        LB_PRINT_WARN(lb->Proc, yo, msg);
+        ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
 	LB_FREE(&name);
     	LB_FREE(&val);
     }

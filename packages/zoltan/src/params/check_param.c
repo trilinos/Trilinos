@@ -117,7 +117,7 @@ int *matched_index)		/* where in struct the match occurs */
 	else {
 	    sprintf(msg, "Bad type for parameter `%s'", 
                     params->name);
-            LB_PRINT_WARN(-1, yo, msg);
+            ZOLTAN_PRINT_WARN(-1, yo, msg);
 	    status = 2;
 	}
       }
