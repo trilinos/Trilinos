@@ -132,12 +132,10 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     ML_CHK_ERR(-1);
   }
 
-  string Prefix = Prefix_;
-
   int NumDimensions = 0;
-  double * x_coord = List_.get(Prefix+"viz: x-coordinates", (double *)0);
-  double * y_coord = List_.get(Prefix+"viz: y-coordinates", (double *)0);
-  double * z_coord = List_.get(Prefix+"viz: z-coordinates", (double *)0);
+  double * x_coord = List_.get("viz: x-coordinates", (double *)0);
+  double * y_coord = List_.get("viz: y-coordinates", (double *)0);
+  double * z_coord = List_.get("viz: z-coordinates", (double *)0);
 
   if( x_coord ) NumDimensions++;
   if( y_coord ) NumDimensions++;
@@ -178,7 +176,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // - XD3D (2D only)
 
   int Format;
-  string FileFormat = List_.get(Prefix+"viz: output format", "xyz");
+  string FileFormat = List_.get("viz: output format", "xyz");
   // you are a cool guy if you plot with "xyz"
   if( FileFormat == "xyz" ) Format = 1;
   // you are a poor man if you need "dx". God bless you.
@@ -190,9 +188,9 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     exit( EXIT_FAILURE );
   }
 
-  int ieqn             = List_.get(Prefix+"viz: equation to plot", -1);
+  int ieqn             = List_.get("viz: equation to plot", -1);
   if( ieqn >= NumPDEEqns_ ) ieqn = 0;
-  bool PrintStarting   = List_.get(Prefix+"viz: print starting solution", false);
+  bool PrintStarting   = List_.get("viz: print starting solution", false);
 
   ML_Smoother * ptr;
   double * tmp_rhs = new double[NumMyRows()]; 

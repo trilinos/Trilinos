@@ -1,3 +1,26 @@
+/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
+ * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+ * work by or on behalf of the U.S. Government.  Export of this program
+ * may require a license from the United States Government. */
+
+
+/* NOTICE:  The United States Government is granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+ * license in ths data to reproduce, prepare derivative works, and
+ * perform publicly and display publicly.  Beginning five (5) years from
+ * July 25, 2001, the United States Government is granted for itself and
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable
+ * worldwide license in this data to reproduce, prepare derivative works,
+ * distribute copies to the public, perform publicly and display
+ * publicly, and to permit others to do so.
+ * 
+ * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+ * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+ * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+ * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+ * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+ * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+
 /*!
  * \file ml_MultiLevelPreconditioner.h
  *
@@ -5,22 +28,6 @@
  *
  * \brief ML black-box preconditioner for Epetra_RowMatrix derived classes.
  *
- * ML offers two preconditioners suitable for the solution of 
- * Epetra_LinearProblem objects. This file define one the two, called
- * MultiLevelOperator (in the ML_Epetra namespace). This preconditioner is
- * simple wrapper of the ML_Solve() function, so that ML can be applied to
- * Epetra_MultiVector's. 
- *
- * When you should use MultiLevelOperator:
- * - when your code already defines the required ML objects, with the optimal
- *   choice of parameters, and you want to use ML for Epetra_LinearProblem or
- *   AztecOO problems;
- *
- * When you should use MultiLevelPreconditioner:  
- * - when you have an Epetra_RowMatrix, and you don't want to code the
- *   conversion to ML_Operator, the creation of the hierarchy and the
- *   aggregates, and/or you want to experiment various combinations of the
- *   parameters, simply changing some parameters in a Teuchos::ParameterList.
  *  \date Last update do Doxygen: 22-Jul-04
  *
  */
@@ -32,7 +39,6 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) 
 // define the following to allow compilation without AztecOO
-// *this disables some smoothers)
 #ifndef HAVE_ML_AZTECOO
 #ifndef AZ_PROC_SIZE
 #define AZ_PROC_SIZE 1
@@ -84,6 +90,7 @@ class Epetra_VbrMatrix;
 #include "Trilinos_Util_CommandLineParser.h"
 #endif
 
+#include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
@@ -109,63 +116,54 @@ namespace ML_Epetra
     responsibility of the user to free this memory.
     \param params (Out) : double array, of size \c AZ_PARAMS_SIZE. See comments
     for \c options.    
-    \param Prefix (In) : a string value, defaulted to "". All parameters will have
-    \c Prefix as prefix. For example, the maximum number of level is defined as
-    \c "aggregation: max levels". If \c Prefix == "vel prob: ", than the maximum
-    number of levels will be inserted as \c "vel prob: aggregation: max levels".
-    An ML_Epetra::MultiLevelPreconditioner can be created with a specified
-    prefix. This is useful when more than one preconditioner must be created, and
-    the user wants to put all the parameters in the same parameters list.
    */
   int SetDefaults(string ProblemType, Teuchos::ParameterList & List,
-		  int * options = 0, double * params = 0, const string Prefix = "");
+		  int * options = 0, double * params = 0);
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
-  int SetDefaultsDD(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsDD(Teuchos::ParameterList & List, 
 		    int * options = 0, double * params = 0);
   
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners, using LU on each subdomain
-  int SetDefaultsDD_LU(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsDD_LU(Teuchos::ParameterList & List, 
 		       int * options = 0, double * params = 0);
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
-  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, 
 			    int * options = 0, double * params = 0);
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners with LU.
-  int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsDD_3Levels_LU(Teuchos::ParameterList & List, 
 			       int * options = 0, double * params = 0);
 
   //! Sets default parameters for Maxwell's equations.
-  int SetDefaultsMaxwell(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsMaxwell(Teuchos::ParameterList & List, 
 			 int * options = 0, double * params = 0);
   
   //! Sets classical smoothed aggregation.
-  int SetDefaultsSA(Teuchos::ParameterList & List, const string Prefix = "",
+  int SetDefaultsSA(Teuchos::ParameterList & List, 
 		    int * options = 0, double * params = 0);
 
   //! Sets parameters in the given list from the command line.
   int SetParameters(int argc, char* argv[],
                     Teuchos::ParameterList& List);
 
-//! MultiLevelPreconditioner: An implementation of the Epetra_RowMatrix class.
-/*! MultiLevelPreconditioner class implements Epetra_RowMatrix using a
-    an Epetra_RowMatrix, and possibly a Teuchos parameters list, that
-    specifies how to construct the preconditioner.
-    The resulting preconditioner is completely black-box. The user needs
-    to prive the linear system matrix, and specify in the parameters list 
-    the required options.
-
-    The code accepts any Epetra_RowMatrix-derived class. Some code can take
-    advantage if Epetra_RowMatrix is an Epetra_CrsMatrix, or and 
-    Epetra_VbrMatrix.
-
+/* Class ML_Epetra::MultiLevelPreconditioner defined black-box algebraic
+   multilevel preconditioners of matrices defined as Epetra_RowMatrix derived
+   objects. The resulting preconditioner can be used in AztecOO, and in any
+   other solver that accepts Epetra_Operator derived objects, and apply the
+   action of the given Epetra_Operator using ApplyInverse(). 
+  
+   Please refer to the user's guide for a detailed introduction to
+   this class, examples, and description of input parameters.
+  
     This file requires ML to be configured with the following options:
     - \c --enable-epetra
     - \c --enable-teuchos
     
     The following option is suggested:
     - \c --enable-amesos
+    - \c --enable-ifpack
 
     Some part of this class needs the following options:
     - \c --enable-aztecoo
@@ -176,30 +174,37 @@ namespace ML_Epetra
     to OperatorRangeMap(). This is because ML needs to perform matrix-vector
     product, as well as getrow() functions, on the same data distribution.
     
-    Also, for square matrices, OperatorDomainMap() 
-    must be as OperatorRangeMap(). 
+    Also, for square matrices, OperatorDomainMap() must be as 
+    OperatorRangeMap(). 
 
     Several examples are provided in the \c examples subdirectories:
-    - ml_example_epetra_preconditioner.cpp is an introductory 
+    - \ref ml_preconditioner_cpp is an introductory 
       example;
-    - ml_example_epetra_preconditioner_2level.cpp shows how to
+    - \ref ml_2level_DD_cpp shows how to
       define a 2-level domain decomposition preconditioner using 
       this class;
-    - ml_example_epetra_preconditioner_viz.cpp details how to
-      visualize the aggregates;
-    - ml_example_epetra_preconditioner_vbr.cpp is an example for
-      VBR matrices;
-    - ml_example_epetra_preconditioner_Maxwell.cpp reports how to
+    - \ref ml ml_viz_cpp details how to visualize the aggregates;
+    - \ref ml_maxwell_cpp reports how to
       use this class for Maxwell problems.
-    - ml_example_epetra_preconditioner_AztecMSR.cpp shows how to
-      convert an Aztec matrix (in MSR format, but the example can be
-      easily modified for VBR matrix formats) into Epetra matrices.
       
+   \note
+   Namespace ML_Epetra contains another Epetra_Operator derived class, 
+   ML_Epetra::MultiLevelOperator. 
+   - you should use MultiLevelOperator
+     when your code already defines the required ML objects, with the optimal
+     choice of parameters, and you just want to wrap the already defined ML 
+     preconditioners for AztecOO problems;
+   - you should use MultiLevelPreconditioner
+     when you have an Epetra_RowMatrix, and you don't want to code the
+     conversion to ML_Operator, the creation of the hierarchy and the
+     aggregates, and/or you want to experiment various combinations of the
+     parameters, simply changing some parameters in a Teuchos::ParameterList.
+  
     \warning The Maxwell interface is still under development. 
 
     \author Marzio Sala, SNL 9214
 */  
-class MultiLevelPreconditioner : public virtual Epetra_RowMatrix {
+class MultiLevelPreconditioner : public virtual Epetra_Operator {
       
 public:  
 
@@ -208,31 +213,29 @@ public:
   //! Constructs an MultiLevelPreconditioner with default values.
 
   MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-                           const bool ComputePrec );
+                           const bool ComputePrec);
 
-  //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
+  //! Constructs an MultiLevelPreconditioner. Retrives parameters from \c List.
   
-  MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-			    const Teuchos::ParameterList & List,
-			    const bool ComputePrec=true, const char Prefix[]="");
+  MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
+			   const Teuchos::ParameterList & List,
+			   const bool ComputePrec = true);
 
   //! Constructs an MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
   
-  MultiLevelPreconditioner( ML_Operator * Operator,
-			    const Teuchos::ParameterList & List,
-			    const bool ComputePrec=true,
-			    const char Prefix[]="" );
+  MultiLevelPreconditioner(ML_Operator* Operator,
+			   const Teuchos::ParameterList& List,
+			   const bool ComputePrec = true);
   
   //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
   /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
     requires the edge matrix, the connectivity matrix T, the nodal matrix.
   */
-  MultiLevelPreconditioner( const Epetra_RowMatrix & EdgeMatrix,
-			    const Epetra_RowMatrix & TMatrix,
-			    const Epetra_RowMatrix & NodeMatrix,
-			    const Teuchos::ParameterList & List,
-			    const bool ComputePrec=true,
-			    const char Prefix[]="");
+  MultiLevelPreconditioner(const Epetra_RowMatrix& EdgeMatrix,
+			   const Epetra_RowMatrix& TMatrix,
+			   const Epetra_RowMatrix& NodeMatrix,
+			   const Teuchos::ParameterList& List,
+			   const bool ComputePrec = true);
 
   //@}
   
@@ -248,7 +251,7 @@ public:
   //@{ \name Query functions
 
   //! Prints label associated to this object.
-  const char * Label() const{return(Label_);};  
+  const char* Label() const{return(Label_);};  
   
   //! Prints unused parameters in the input ParameterList on standard output. */
   void PrintUnused() const
@@ -271,7 +274,7 @@ public:
   void PrintUnused(const int MyPID) const;
 
   //! Gets a reference to the internally stored parameters' list.
-  Teuchos::ParameterList & GetList() 
+  Teuchos::ParameterList& GetList() 
   {
     return List_;
   }
@@ -286,7 +289,7 @@ public:
   void PrintList(int MyPID);
 
   //! Copies \c List into the internally stored parameter list object.
-  int SetParameterList(const Teuchos::ParameterList & List);
+  int SetParameterList(const Teuchos::ParameterList& List);
 
   //@}
   
@@ -326,17 +329,13 @@ public:
   
   int ComputePreconditioner(const bool CheckFiltering = false);
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS
-  int ComputeFilteringPreconditioner();
-#endif
-  
   int ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
                                     double* TentativeNullSpace);
 
   //! Queries whether multilevel hierarchy has been computed or not.
   int IsPreconditionerComputed()  const
   {
-    return( IsComputePreconditionerOK_ );
+    return(IsComputePreconditionerOK_);
   }
 
   // following functions are required to derive Epetra_RowMatrix objects.
@@ -355,157 +354,46 @@ public:
   
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
   bool HasNormInf() const{return(false);};
-
   
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-  const Epetra_Comm & Comm() const{return(*Comm_);};
+  const Epetra_Comm& Comm() const{return(*Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
+  const Epetra_Map& OperatorDomainMap() const {return(*DomainMap_);};
   
   //! Returns the Epetra_Map object associated with the range of this operator.
-  const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
+  const Epetra_Map& OperatorRangeMap() const {return(*RangeMap_);};
   //@}
 
   //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
   int DestroyPreconditioner();
 
   //!  Returns a reference to RowMatrix->Map().
-  const Epetra_BlockMap & Map() const
+  const Epetra_BlockMap& Map() const
   {
-    return RowMatrix_->Map();
+    return(RowMatrix_->Map());
   }
 
-  int NumMyRowEntries(int row, int &rows) const
-  {
-    return( RowMatrix_->NumMyRowEntries(row,rows) );
-  }
-
-  int MaxNumEntries() const
-  {
-    return( RowMatrix_->MaxNumEntries() );
-  }
-
-  int ExtractMyRowCopy(int i, int j, int & k, double * vals, int * indices) const
-  {
-    return( RowMatrix_->ExtractMyRowCopy(i,j,k,vals,indices) );
-  }
-
-  int ExtractDiagonalCopy(Epetra_Vector & v) const 
-  {
-    return( RowMatrix_->ExtractDiagonalCopy(v) );
-  }
-
-   int Multiply(bool flag, const Epetra_MultiVector & x,
-		Epetra_MultiVector & y) const
-  {
-    return( RowMatrix_->Multiply(flag,x,y) );
-  }
-  
-  int Solve(bool f1, bool f2, bool f3, const Epetra_MultiVector & x,
-	    Epetra_MultiVector & y) const
-  {
-    return( RowMatrix_->Solve(f1,f2,f3,x,y) );
-  }
-  
-  int InvRowSums(Epetra_Vector & x) const
-  {
-    return( RowMatrix_->InvRowSums(x) );;
-  }
-
-  int LeftScale(const Epetra_Vector & x)
-  {
-    //return( RowMatrix_->LeftScale(x) );
-    return -1;
-    
-  }
-
-  int InvColSums(Epetra_Vector & x) const
-  {
-    return( RowMatrix_->InvColSums(x) );
-  }
-
-  int  RightScale(const Epetra_Vector & x)
-  {
-    //    return( RowMatrix_->RightScale(x) );
-    return -1;
-  }
-  
-  bool Filled() const 
-  {
-    return( RowMatrix_->Filled() );
-  }
-  
-  double NormOne() const 
-  {
-    return( RowMatrix_->NormOne() );
-  }
-  
-  int NumGlobalNonzeros() const
-  {
-    return( RowMatrix_->NumGlobalNonzeros() );
-  }
-  
   int NumGlobalRows() const
   {
-    return( RowMatrix_->NumGlobalRows() );
+    return(RowMatrix_->NumGlobalRows());
   }
   
   int NumGlobalCols() const
   {
-    return( RowMatrix_->NumGlobalCols() );
-  }
-  
-  int NumGlobalDiagonals() const
-  {
-    return( RowMatrix_->NumGlobalDiagonals() );
-  }
-
-  int NumMyNonzeros() const
-  {
-    return( RowMatrix_->NumMyNonzeros() );
+    return(RowMatrix_->NumGlobalCols());
   }
   
   int NumMyRows() const
   {
-    return( RowMatrix_->NumMyRows() );
+    return(RowMatrix_->NumMyRows());
   }
   
   int NumMyCols() const
   {
-    return( RowMatrix_->NumMyCols() );
+    return(RowMatrix_->NumMyCols());
   }
   
-  int NumMyDiagonals() const
-  {
-    return( RowMatrix_->NumMyDiagonals() );
-  }
-  
-  bool UpperTriangular() const
-  {
-    return( RowMatrix_->UpperTriangular() );
-  }
-  
-  bool LowerTriangular() const
-  {
-    return( RowMatrix_->LowerTriangular());
-  }
-
-  const Epetra_Import * RowMatrixImporter() const
-  {
-    return RowMatrix_->RowMatrixImporter();
-  }
-  
-  const Epetra_Map& RowMatrixRowMap() const
-  {
-    return RowMatrix_->RowMatrixRowMap();
-  }
-  
-  const Epetra_Map& RowMatrixColMap() const
-  {
-    return RowMatrix_->RowMatrixColMap();
-  }
-
   //@{ \name debugging and other utilities
 
   //! Stops the code, waiting for a debugger to attach
@@ -602,11 +490,11 @@ public:
 
 private:
 
-  //! Copy constructor, should not be used
+  //! Copy constructor (NOT DEFINED)
   MultiLevelPreconditioner(const MultiLevelPreconditioner & rhs) 
   {};
 
-  //! operator =, should not be used.
+  //! operator = (NOT DEFINED)
   MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & rhs)
   {
     return *this;
@@ -637,9 +525,6 @@ private:
   //! Sets the null space for Maxwell equations.
   int SetNullSpaceMaxwell();
 
-  //! Set parameters for eigen-computations.
-  int SetEigenList();
-
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
 
@@ -659,15 +544,7 @@ private:
 
   int SetFiltering();
 
-  int SetScaling();
-
   void RandomAndZero(double *, double *, int);
-  
-  //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
-  /*! Used only when \c "adaptive: enable" is false and \c "filtering: enable" is true.
-   * \warning: still under development
-   */
-  bool CheckPreconditionerFiltering();
   
   //! Checks whether the previously computed preconditioner is still valuable for the newly available linear system.
   /*! Used only when \c "adaptive: enable" is \c true, and
@@ -683,25 +560,25 @@ private:
   //@{ \name Internal data
   
   //! Pointer to ML_Struct
-  ML * ml_;
+  ML* ml_;
   //! ML_Aggregate, contains aggregate information
-  ML_Aggregate *agg_;
+  ML_Aggregate* agg_;
   //! Label for this object
-  char * Label_;
+  char* Label_;
 
   //! pointer to linear system matrix
-  const Epetra_RowMatrix * RowMatrix_;
+  const Epetra_RowMatrix* RowMatrix_;
   //! specifies whether a hierarchy already exists or not.
   bool IsComputePreconditionerOK_;
   
   //! Number of levels
   int NumLevels_;
   //! Domain Map
-  const Epetra_Map * DomainMap_;
+  const Epetra_Map* DomainMap_;
   //! Range Map
-  const Epetra_Map * RangeMap_;
+  const Epetra_Map* RangeMap_;
   //! Epetra communicator object
-  const Epetra_Comm * Comm_;
+  const Epetra_Comm* Comm_;
   bool  ownership_;
   //! proc_config for Aztec smoothers
   int   ProcConfig_[AZ_PROC_SIZE];
@@ -716,8 +593,6 @@ private:
   Teuchos::ParameterList List_;
   //! List containing all output parameters
   Teuchos::ParameterList OutputList_;      
-  //! List containing all the parameters for eigen-computations.
-  Teuchos::ParameterList EigenList_;       
 
   //! Maximum number of levels
   int MaxLevels_;
@@ -728,13 +603,11 @@ private:
     In this interface, all levels move from 0 to MaxLevels-1.
     ML's level for interface's level i is LevelID_[i]
   */
-  int * LevelID_;
+  vector<int> LevelID_;
 
   //! If not NULL, contains the allocated null space vector 
-  double * NullSpaceToFree_;              
+  double* NullSpaceToFree_;              
 
-  //! All user's defined input data have this prefix
-  string Prefix_;
   //! all cout's have this prefix (default'd in Initialize() )
   string PrintMsg_;
   //! all cerr's have this prefix (default'd in Initialize() )
@@ -751,19 +624,19 @@ private:
   //! true if Maxwell equations are used
   bool SolvingMaxwell_;
   //! Main matrix for Maxwell
-  const Epetra_RowMatrix * EdgeMatrix_;
+  const Epetra_RowMatrix* EdgeMatrix_;
   //! aux matrix for Maxwell
-  const Epetra_RowMatrix * NodeMatrix_;
+  const Epetra_RowMatrix* NodeMatrix_;
   //! T matrix for Maxwell
-  const Epetra_RowMatrix * TMatrix_;
-  ML_Operator * TMatrixML_;
-  ML_Operator * TMatrixTransposeML_;
-  ML_Operator ** Tmat_array, ** Tmat_trans_array;
+  const Epetra_RowMatrix* TMatrix_;
+  ML_Operator* TMatrixML_;
+  ML_Operator* TMatrixTransposeML_;
+  ML_Operator** Tmat_array, ** Tmat_trans_array;
   //! ML structures for Maxwell
-  ML * ml_edges_, * ml_nodes_;
-  ML_Aggregate *agg_edge_;
+  ML* ml_edges_,* ml_nodes_;
+  ML_Aggregate* agg_edge_;
 
-  void ** nodal_args_, ** edge_args_;
+  void** nodal_args_,** edge_args_;
 
   //@}
 
@@ -783,31 +656,22 @@ private:
   //@}
   
   // other stuff for old ML's compatibility
-  Epetra_CrsMatrix * RowMatrixAllocated_;
+  Epetra_CrsMatrix* RowMatrixAllocated_;
 
   bool AnalyzeMemory_;
   
   int memory_[ML_MEM_SIZE];
 
   // filtering stuff
+#ifdef DELETE_FLT
   Epetra_MultiVector * flt_R_;
-  mutable Epetra_SerialDenseMatrix flt_A_;
-  mutable Epetra_SerialDenseVector flt_rhs_, flt_lhs_;
-  mutable Epetra_SerialDenseSolver flt_solver_;
-  double * flt_NullSpace_;
-  struct ML_CSR_MSRdata * flt_MatrixData_;
-  ML * flt_ml_;
-  ML_Aggregate * flt_agg_;
+#endif
+  vector<double> flt_NullSpace_;
+  ML* flt_ml_;
+  ML_Aggregate* flt_agg_;
   
-  // CheckPreconditioner related stuff
-  Epetra_MultiVector       * SchurDecomposition_;
-  Epetra_SerialDenseMatrix SchurMatrix_;
-  Epetra_SerialDenseSolver SchurSolver_;
+  // for reuse of preconditioning
   double RateOfConvergence_;
-
-  // scaling
-  Epetra_Vector* Scaling_;
-  Epetra_Vector* InvScaling_;
 
 }; // class MultiLevelPreconditioner
  

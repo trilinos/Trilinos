@@ -587,8 +587,8 @@ AnalyzeMatrixEigenvaluesDense(char* MatVec,
       }
     }
 
-    Epetra_Vector x(RowMatrixRowMap());
-    Epetra_Vector y(RowMatrixRowMap());
+    Epetra_Vector x(Map());
+    Epetra_Vector y(Map());
 
 
     for (int j = 0 ; j < n ; ++j) {

@@ -1,3 +1,26 @@
+/* Copyright (2001) Sandia Corportation. Under the terms of Contract 
+ * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
+ * work by or on behalf of the U.S. Government.  Export of this program
+ * may require a license from the United States Government. */
+
+
+/* NOTICE:  The United States Government is granted for itself and others
+ * acting on its behalf a paid-up, nonexclusive, irrevocable worldwide
+ * license in ths data to reproduce, prepare derivative works, and
+ * perform publicly and display publicly.  Beginning five (5) years from
+ * July 25, 2001, the United States Government is granted for itself and
+ * others acting on its behalf a paid-up, nonexclusive, irrevocable
+ * worldwide license in this data to reproduce, prepare derivative works,
+ * distribute copies to the public, perform publicly and display
+ * publicly, and to permit others to do so.
+ * 
+ * NEITHER THE UNITED STATES GOVERNMENT, NOR THE UNITED STATES DEPARTMENT
+ * OF ENERGY, NOR SANDIA CORPORATION, NOR ANY OF THEIR EMPLOYEES, MAKES
+ * ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR
+ * RESPONSIBILITY FOR THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY
+ * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
+ * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
+
 /*!
  *  \file ml_MultiLevelPreconditioner.cpp
  *
@@ -143,33 +166,15 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     Label_ = 0; 
   }
   
-  if (LevelID_) { 
-    delete [] LevelID_; 
-    LevelID_ = 0; 
-  }
-  
-  if (Scaling_) {
-    delete Scaling_;
-    Scaling_ = 0;
-  }
-
-  if (InvScaling_) {
-    delete InvScaling_;
-    InvScaling_ = 0;
-  }
   // stick data in OutputList
 
-  OutputList_.set(Prefix_ + "time: total",
-		  FirstApplicationTime_+ApplicationTime_);
+  OutputList_.set("time: total", FirstApplicationTime_+ApplicationTime_);
 
-  OutputList_.set(Prefix_ + "time: first application",
-		  FirstApplicationTime_);
+  OutputList_.set("time: first application", FirstApplicationTime_);
 
-  OutputList_.set(Prefix_ + "time: construction",
-		  ConstructionTime_);
+  OutputList_.set("time: construction", ConstructionTime_);
 
-  OutputList_.set(Prefix_ + "number of applications",
-		  NumApplications_);
+  OutputList_.set("number of applications", NumApplications_);
 
   int min[ML_MEM_SIZE], max[ML_MEM_SIZE], sum[ML_MEM_SIZE];
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) sum[i] = 0;
@@ -266,21 +271,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 
   // filtering stuff
 
-  if (flt_R_) { 
-    delete flt_R_; 
-    flt_R_ = 0; 
-  }
-  
-  if (flt_NullSpace_) { 
-    delete [] flt_NullSpace_; 
-    flt_NullSpace_ = 0; 
-  }
-  
-  if (flt_MatrixData_) { 
-    delete flt_MatrixData_; 
-    flt_MatrixData_ = 0; 
-  }
-  
   if (flt_ml_) { 
     ML_Destroy(&flt_ml_); 
     flt_ml_ = 0; 
@@ -291,12 +281,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     flt_agg_ = 0; 
   }
   
-  // CheckPreconditioner stuff
-  if( SchurDecomposition_ ) { 
-    delete SchurDecomposition_; 
-    SchurDecomposition_ = 0; 
-  }
-
   IsComputePreconditionerOK_ = false;
 
 #ifdef ML_MEM_CHECK
@@ -320,11 +304,9 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
   RowMatrixAllocated_(0)
 {
 
-  Prefix_ = "";
-  
   ParameterList NewList;
   List_ = NewList;
-  ML_Epetra::SetDefaults("SA",List_,(int *)0, (double *)0, Prefix_);
+  ML_Epetra::SetDefaults("SA",List_,(int *)0, (double *)0);
     
   ML_CHK_ERRV(Initialize());
 
@@ -337,12 +319,10 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 
 ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-			 const ParameterList & List, const bool ComputePrec,
-			 const char Prefix[] ) :
+			 const ParameterList & List, const bool ComputePrec) :
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
-  Prefix_ = Prefix;
 
   List_ = List;
 
@@ -365,8 +345,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 			 const Epetra_RowMatrix & TMatrix,
 			 const Epetra_RowMatrix & NodeMatrix,
 			 const ParameterList & List,
-			 const bool ComputePrec,
-			 const char Prefix[] ) :
+			 const bool ComputePrec) :
   RowMatrix_(&EdgeMatrix),
   RowMatrixAllocated_(0)
 {
@@ -381,8 +360,6 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
     cerr << ErrorMsg_ << "discrete grad RangeMap != edge DomainMap..." <<endl;
     ML_CHK_ERRV(-2); // error on discrete grad
   }
-
-  Prefix_ = Prefix;
 
   List_ = List;
 
@@ -405,8 +382,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 // FIXME: should I be deleted??
 ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner(ML_Operator * Operator,
-			 const ParameterList & List, const bool ComputePrec,
-			 const char Prefix[] )
+			 const ParameterList & List, const bool ComputePrec)
 {
 
   // need to wrap an Epetra_RowMatrix around Operator.
@@ -423,9 +399,6 @@ MultiLevelPreconditioner(ML_Operator * Operator,
   RowMatrix_ = RowMatrixAllocated_;
 
   // from now on as for the other constructors
-  
-  Prefix_ = Prefix;
-
   List_ = List;
 
   ML_CHK_ERRV(Initialize());
@@ -456,7 +429,6 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   NullSpaceToFree_ = 0;
 
   Label_ = 0;
-  LevelID_ = 0;
 
   ml_ = 0;
   agg_ = 0;
@@ -505,65 +477,13 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
     memory_[i] = 0;
 
   // filtering vectors
-  flt_R_ = 0;
-  flt_NullSpace_ = 0;
-  flt_MatrixData_ = 0;
   flt_ml_ = 0;
   flt_agg_ = 0;
 
   // CheckPreconditioner stuff
-  SchurDecomposition_ = 0;
   RateOfConvergence_ = -1.0;
 
-  // scaling stuff
-  Scaling_ = 0;
-  InvScaling_ = 0;
-
   return 0;
-}
-
-
-// ================================================ ====== ==== ==== == =
-// FIXME: test me of delete me??
-int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
-{
-
-  if (IsComputePreconditionerOK_ == true) {
-    DestroyPreconditioner();
-  }
-
-  // 1.- disable filtering in ComputePreconditioner()
-  List_.set(Prefix_ + "filtering: enable", false);
-
-  ComputePreconditioner();
-
-  // 2.- now enable, and call the function to compute the "bad-modes"
-  List_.set(Prefix_ + "filtering: enable", true);
-  List_.set(Prefix_ + "filtering: type", "let ML be my master");
-
-  if (NullSpaceToFree_) {
-    delete [] NullSpaceToFree_;
-    NullSpaceToFree_ = 0;
-  }
-
-  int NullSpaceDim = SetFiltering();
-  assert (NullSpaceDim > 0);
-  
-  List_.set(Prefix_ + "null space: type", "pre-computed");
-  List_.set(Prefix_ + "null space: dimension", NullSpaceDim);
-  List_.set(Prefix_ + "null space: vectors", NullSpaceToFree_);
-
-  NullSpaceToFree_ = 0;
-  
-  DestroyPreconditioner();
-
-  // 4.- recompute preconditioner with new options
-  List_.set(Prefix_ + "filtering: enable", false);
-
-  ComputePreconditioner();
-
-  return 0;
-
 }
 
 // ================================================ ====== ==== ==== == =
@@ -593,20 +513,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
     else                                       
       return 0;
     
-  } else if( CheckPreconditioner == true && SchurDecomposition_ ) {
- 
-    // If the previous preconditioner was computed with option
-    // "filtering: enable" == true, we have some eigen-information to use.
-    // In this case, we
-    // check whether the old preconditioner is still ok for the new matrix
-    
-    if (CheckPreconditionerFiltering() == false) {
-      ML_CHK_ERR(DestroyPreconditioner());
-    }
-    else
-      return 0;
-    
-  } else if( CheckPreconditioner == false && IsComputePreconditionerOK_ == true ) {
+  } else if (CheckPreconditioner == false && 
+             IsComputePreconditionerOK_ == true) {
   
     // get rid of what done before 
     ML_CHK_ERR(DestroyPreconditioner());
@@ -633,11 +541,11 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
 
   // user's defined output message
-  PrintMsg_ = List_.get(Prefix_ + "output prefix",PrintMsg_);
+  PrintMsg_ = List_.get("output prefix",PrintMsg_);
   
-  NumLevels_ = List_.get(Prefix_ + "max levels",10);  
+  NumLevels_ = List_.get("max levels",10);  
 
-  int OutputLevel = List_.get(Prefix_ + "output", 10);  
+  int OutputLevel = List_.get("output", 10);  
   ML_Set_PrintLevel(OutputLevel);
 
   verbose_ = (5 < ML_Get_PrintLevel() && Comm().MyPID() == 0);
@@ -652,7 +560,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   int call1_malloc = 0, call2_malloc = 0;
 #endif
 
-  AnalyzeMemory_ = List_.get(Prefix_ + "analyze memory", false);  
+  AnalyzeMemory_ = List_.get("analyze memory", false);  
 
   if( AnalyzeMemory_ ) {
     memory_[ML_MEM_INITIAL] = ML_MaxMemorySize();
@@ -671,14 +579,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
-  string IsIncreasing = List_.get(Prefix_ + "increasing or decreasing",
-				  "increasing");
+  string IsIncreasing = List_.get("increasing or decreasing", "increasing");
 
   if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
   
   int FinestLevel;
 
-  LevelID_ = new int[NumLevels_];
+  LevelID_.resize(NumLevels_);
   if( IsIncreasing == "increasing" ) {
     FinestLevel = 0;
     for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel+i;
@@ -688,13 +595,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   // check no levels are negative
-  for( int i=0 ; i<NumLevels_ ; ++i )
-    if( LevelID_[i] <0 ) {
+  for (int i = 0 ; i < NumLevels_ ; ++i)
+    if (LevelID_[i] < 0) {
       cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << endl;
-      exit( EXIT_FAILURE );
+      ML_EXIT(EXIT_FAILURE);
     }  
 
-  if( verbose_ ) {
+  if (verbose_) {
     cout << PrintMsg_ << "*** " << endl;
     cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner" << endl;
     cout << PrintMsg_ << "***" << endl;
@@ -833,23 +740,23 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // check whether coarse grid operators should be repartitioned among
     // processors
-    bool ShouldRepartition = List_.get(Prefix_ + "repartition: enable",false);
+    bool ShouldRepartition = List_.get("repartition: enable",false);
 
     if (ShouldRepartition) {
 
-      string Repartitioner = List_.get(Prefix_ + "repartition: partitioner","Zoltan");
+      string Repartitioner = List_.get("repartition: partitioner","Zoltan");
 
       ML_Repartition_Activate(ml_edges_);
       ML_Repartition_Activate(ml_nodes_);
 
-      double minmax = List_.get(Prefix_ + "repartition: node min max ratio", 1.1);
+      double minmax = List_.get("repartition: node min max ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
-      int minperproc = List_.get(Prefix_ + "repartition: node min per proc", 20);
+      int minperproc = List_.get("repartition: node min per proc", 20);
       ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
 
-      minmax = List_.get(Prefix_ + "repartition: edge min max ratio", 1.1);
+      minmax = List_.get("repartition: edge min max ratio", 1.1);
       ML_Repartition_Set_LargestMinMaxRatio(ml_edges_,minmax);
-      minperproc = List_.get(Prefix_ + "repartition: edge min per proc", 20);
+      minperproc = List_.get("repartition: edge min per proc", 20);
       ML_Repartition_Set_MinPerProc(ml_edges_,minperproc);
 
       if (Repartitioner == "Zoltan") {
@@ -861,18 +768,15 @@ ComputePreconditioner(const bool CheckPreconditioner)
         // of at least one level is Zoltan. Coordinates will be
         // projected for ALL levels independently of the 
         // aggregation scheme.
-        double * coord = List_.get(Prefix_ +
-               "repartition: Zoltan node coordinates", (double *)0);
+        double * coord = List_.get("repartition: Zoltan node coordinates", (double *)0);
         ML_Aggregate_Set_NodalCoordinates(ml_nodes_, agg_, coord);
-        int NumDimensions = List_.get(Prefix_ +
-               "repartition: Zoltan dimensions", 0);
+        int NumDimensions = List_.get("repartition: Zoltan dimensions", 0);
         ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
 
         ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
 
         //edges
-        coord = List_.get(Prefix_ +
-               "repartition: Zoltan edge coordinates", (double *)0);
+        coord = List_.get("repartition: Zoltan edge coordinates", (double *)0);
         //FIXME JJH this would be a bug if increasing is ever supported
         agg_edge_->begin_level = MaxCreationLevels-1; 
         ML_Aggregate_Set_NodalCoordinates(ml_edges_, agg_edge_, coord);
@@ -901,7 +805,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
    * visualize aggregate shape and other statistics. 
    * ********************************************************************** */
   
-  bool viz = List_.get(Prefix_ + "viz: enable",false);
+  bool viz = List_.get("viz: enable",false);
   if( viz == true )
     ML_Aggregate_VizAndStats_Setup(agg_,NumLevels_);
 
@@ -917,7 +821,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* ********************************************************************** */
 
   double Threshold = 0.0;
-  Threshold = List_.get(Prefix_ + "aggregation: threshold", Threshold);
+  Threshold = List_.get("aggregation: threshold", Threshold);
   if (Threshold < 0.0) {
     // if negative, it means that METIS has to use this threshold
     // for the edge weighting. This is recognized by METIS only
@@ -933,16 +837,16 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
    
   int MaxCoarseSize = 128;
-  MaxCoarseSize = List_.get(Prefix_ + "coarse: max size", MaxCoarseSize);
+  MaxCoarseSize = List_.get("coarse: max size", MaxCoarseSize);
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   int ReqAggrePerProc = 128;
   // FIXME: delete me???
   // compatibility with an older version
-  if( List_.isParameter(Prefix_ + "aggregation: req aggregates per process") ) 
-    ReqAggrePerProc = List_.get(Prefix_ + "aggregation: req aggregates per proces", ReqAggrePerProc);
+  if( List_.isParameter("aggregation: req aggregates per process") ) 
+    ReqAggrePerProc = List_.get("aggregation: req aggregates per proces", ReqAggrePerProc);
   else {
-    ReqAggrePerProc = List_.get(Prefix_ + "aggregation: next-level aggregates per process", ReqAggrePerProc);
+    ReqAggrePerProc = List_.get("aggregation: next-level aggregates per process", ReqAggrePerProc);
   }
 
   if( SolvingMaxwell_ == false ) { 
@@ -966,7 +870,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
      
   if (SolvingMaxwell_ == false) {
     bool UseSymmetrize = false;
-    UseSymmetrize = List_.get(Prefix_ + "aggregation: symmetrize",
+    UseSymmetrize = List_.get("aggregation: symmetrize",
 			      UseSymmetrize);
     if (UseSymmetrize == true) ML_Set_Symmetrize(ml_, ML_YES);
     else                       ML_Set_Symmetrize(ml_, ML_NO);  
@@ -982,15 +886,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   else 
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
-
-
-  /* ********************************************************************** */
-  /* set scaling                                                            */
-  /* ********************************************************************** */
-
-  if (SolvingMaxwell_ == false) {
-    ML_CHK_ERR(SetScaling());
-  }
 
   /* ********************************************************************** */
   /* set null space                                                         */
@@ -1018,7 +913,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if (SolvingMaxwell_ == false) {
 
     bool CreateFakeProblem = 
-      List_.get(Prefix_ + "aggregation: use auxiliary matrix", false);
+      List_.get("aggregation: use auxiliary matrix", false);
 
     // west claims attentions, the VBR junk is a small gift for him
     Epetra_FECrsMatrix* FakeCrsMatrix = 0;
@@ -1246,7 +1141,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* MATLAB, for instance).                                                 */
   /* ********************************************************************** */
 
-  bool PrintHierarchy = List_.get(Prefix_ + "print hierarchy", false);
+  bool PrintHierarchy = List_.get("print hierarchy", false);
   
   if( Comm().NumProc() > 1 && PrintHierarchy == true ) {
     if( Comm().MyPID() == 0 ) {
@@ -1291,17 +1186,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   /* ********************************************************************** */
-  /* Scaling was used on the matrix, need to scale back                     */
-  /* ********************************************************************** */
-
-  if (Scaling_) {
-    // need to do the worst to get the best?
-    // is C++ ethically correct?
-    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
-    RM->RightScale(*InvScaling_);
-  }
-
-  /* ********************************************************************** */
   /* Other minor settings                                                   */
   /* ********************************************************************** */
   
@@ -1316,7 +1200,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // Compute the rate of convergence (for reuse preconditioners)            //
   // ====================================================================== //
 
-  if( List_.get(Prefix_ + "reuse: enable", false) == true ) 
+  if( List_.get("reuse: enable", false) == true ) 
     CheckPreconditionerKrylov();
   
   if (AnalyzeMemory_) {
@@ -1329,8 +1213,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   // print unused parameters
-  if( List_.isParameter(Prefix_ + "print unused") ) {
-    int ProcID = List_.get(Prefix_ + "print unused",-2);
+  if( List_.isParameter("print unused") ) {
+    int ProcID = List_.get("print unused",-2);
     if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
   }
 
@@ -1340,9 +1224,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ===================================================================== //
  
   if (viz == true) {
-    double * x_coord = List_.get(Prefix_ + "viz: x-coordinates", (double *)0);
-    double * y_coord = List_.get(Prefix_ + "viz: y-coordinates", (double *)0);
-    double * z_coord = List_.get(Prefix_ + "viz: z-coordinates", (double *)0);
+    double * x_coord = List_.get("viz: x-coordinates", (double *)0);
+    double * y_coord = List_.get("viz: y-coordinates", (double *)0);
+    double * z_coord = List_.get("viz: z-coordinates", (double *)0);
     ML_Aggregate_Stats_ComputeCoordinates(ml_, agg_,
 					  x_coord, y_coord, z_coord);
   }
@@ -1460,12 +1344,6 @@ ApplyInverse(const Epetra_MultiVector& X,
 	     Epetra_MultiVector& Y) const
 {
 
-  // FIXME: What the hell am I doing here?
-  if (Scaling_) {
-    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
-    RM->RightScale(*Scaling_);
-  }
-
   int before = 0, after = 0;
 #ifdef ML_MALLOC
   int before_malloc = 0, after_malloc = 0;
@@ -1496,9 +1374,6 @@ ApplyInverse(const Epetra_MultiVector& X,
   // input multi-vectors with different number of vectors
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
-
-  if (Scaling_ && false)
-    xtmp.Multiply(1.0,xtmp,*Scaling_,0.0);
 
   Y.PutScalar(0.0); // Always start with Y = 0
 
@@ -1549,23 +1424,16 @@ ApplyInverse(const Epetra_MultiVector& X,
       ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
     
-    if( flt_ml_ ) {
+    // filtering (requires suitable setup first). Note that the
+    // resulting preconditioner is always non-symmetric
+    if (flt_ml_) {
       ML_Cycle_MG(&(flt_ml_->SingleLevel[flt_ml_->ML_finest_level]),
 		  yvectors[i], xvectors[i],
 		  ML_NONZERO, flt_ml_->comm, ML_NO_RES_NORM, flt_ml_);
     }
   }
 
-  if (Scaling_)
-    Y.Multiply(1.0,*Scaling_,Y,0.0);
-
-  if (Scaling_) {
-    // need to do the worst to get the best?
-    // is C++ ethically correct?
-    Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
-    RM->RightScale(*InvScaling_);
-  }
-
+#ifdef DELETE_ME
   /* ********************************************************************** */
   /* filtering stuff if required                                            */
   /* ********************************************************************** */
@@ -1614,6 +1482,7 @@ ApplyInverse(const Epetra_MultiVector& X,
     Y.Update(1.0,xtmp,1.0);
     
   }
+#endif
   
   /* ********************************************************************** */
   /* track timing                                                           */
@@ -1666,11 +1535,11 @@ ApplyInverse(const Epetra_MultiVector& X,
 int ML_Epetra::MultiLevelPreconditioner::SetCoarse() 
 {
 
-  string CoarseSolution = List_.get(Prefix_ + "coarse: type", "Amesos-KLU");
-  int NumSmootherSteps = List_.get(Prefix_ + "coarse: sweeps", 1);
-  double Omega = List_.get(Prefix_ + "coarse: damping factor", 0.67);
+  string CoarseSolution = List_.get("coarse: type", "Amesos-KLU");
+  int NumSmootherSteps = List_.get("coarse: sweeps", 1);
+  double Omega = List_.get("coarse: damping factor", 0.67);
     
-  int MaxProcs = List_.get(Prefix_ + "coarse: max processes", -1);
+  int MaxProcs = List_.get("coarse: max processes", -1);
 
   ML * ml_ptr;
   
@@ -1723,15 +1592,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
   char parameter[80];
   
   int value = -777; /* pagina 777 di televideo */
-  string CoarsenScheme = List_.get(Prefix_ + "aggregation: type","Uncoupled");
+  string CoarsenScheme = List_.get("aggregation: type","Uncoupled");
 
   if (CoarsenScheme == "Uncoupled-MIS")
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
    
-       sprintf(parameter,"%saggregation: type (level %d)",
-           Prefix_.c_str(),LevelID_[level]);
+       sprintf(parameter,"aggregation: type (level %d)",
+           LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
 
        if (CoarsenScheme == "METIS")
@@ -1773,10 +1642,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          // projected for ALL levels independently of the 
          // aggregation scheme.
 
-         double * coord = List_.get(Prefix_ + "aggregation: coordinates",
+         double * coord = List_.get("aggregation: coordinates",
                         (double *)0);
-         int NumDimensions = List_.get(Prefix_ +
-                              "aggregation: dimensions", 0);
+         int NumDimensions = List_.get("aggregation: dimensions", 0);
 
          ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);
          ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
@@ -1790,8 +1658,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // first look for parameters without any level specification
 
-         sprintf(parameter,"%saggregation: global aggregates", 
-             Prefix_.c_str());
+         sprintf(parameter,"aggregation: global aggregates"); 
          if( List_.isParameter(parameter) ){
            value = -777; // simply means not set
            value = List_.get(parameter,value);
@@ -1801,8 +1668,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"%saggregation: local aggregates", 
-             Prefix_.c_str());
+         sprintf(parameter,"aggregation: local aggregates");
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -1812,8 +1678,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
              }
 
-         sprintf(parameter,"%saggregation: nodes per aggregate", 
-             Prefix_.c_str());
+         sprintf(parameter,"aggregation: nodes per aggregate");
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -1825,8 +1690,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          // now for level-specific data
 
-         sprintf(parameter,"%saggregation: global aggregates (level %d)", 
-             Prefix_.c_str(), LevelID_[level]);
+         sprintf(parameter,"aggregation: global aggregates (level %d)", 
+                 LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777; // simply means not set
            value = List_.get(parameter,value);
@@ -1836,8 +1701,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"%saggregation: local aggregates (level %d)", 
-             Prefix_.c_str(), LevelID_[level]);
+         sprintf(parameter,"aggregation: local aggregates (level %d)", 
+                 LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -1847,8 +1712,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
            }
          }
 
-         sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", 
-             Prefix_.c_str(), LevelID_[level]);
+         sprintf(parameter,"aggregation: nodes per aggregate (level %d)", 
+                 LevelID_[level]);
          if( List_.isParameter(parameter) ){
            value = -777;
            value = List_.get(parameter,value);
@@ -1860,8 +1725,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 
          if( isSet == false ) {
            // put default values
-           sprintf(parameter,"%saggregation: local aggregates (level %d)", 
-               Prefix_.c_str(), LevelID_[level]);
+           sprintf(parameter,"aggregation: local aggregates (level %d)", 
+                   LevelID_[level]);
            value = List_.get(parameter,1);
            ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
          }
@@ -1879,7 +1744,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
 {
 
-  string str = List_.get(Prefix_ + "prec type","MGV");
+  string str = List_.get("prec type","MGV");
 
   if( str == "one-level-postsmoothing" ) {
     
@@ -1951,8 +1816,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
   /* almost everything here is experimental ;)                              */
   /* ********************************************************************** */
 
-  string RandPSmoothing = List_.get(Prefix_ + "R and P smoothing: type", 
-				    "classic");
+  string RandPSmoothing = List_.get("R and P smoothing: type", "classic");
 
   /* start looping over different options */
 
@@ -1973,10 +1837,21 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     //    if( verbose_ )
     //      cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
     agg_->Restriction_smoothagg_transpose = ML_TRUE;
-    
-    SetEigenList();
-    
-    struct ML_Field_Of_Values * field_of_values;
+
+    // fix default values in List_
+    List_.set("eigen-analysis: use symmetric algorithm",false);
+    List_.set("eigen-analysis: tolerance", 1e-2);
+    List_.set("eigen-analysis: use diagonal scaling", true);
+    List_.set("eigen-analysis: restart", 100);
+    List_.set("eigen-analysis: length", 20);
+    List_.set("field-of-values: tolerance", 1e-2);
+    List_.set("field-of-values: use diagonal scaling", true);
+    List_.set("field-of-values: restart", 100);
+    List_.set("field-of-values: ", 20);
+    List_.set("field-of-values: print current status", false);
+    List_.set("output",10);
+
+    struct ML_Field_Of_Values* field_of_values;
 
     // stick default values (undefined)
     field_of_values = (struct ML_Field_Of_Values *) ML_allocate( sizeof(struct ML_Field_Of_Values) );
@@ -1985,12 +1860,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     field_of_values->imag_max= -1.0;
     field_of_values->poly_order = 0;
 
-    if( List_.get(Prefix_ + "aggregation: compute field of values",true) )
+    if( List_.get("aggregation: compute field of values",true) )
       field_of_values->compute_field_of_values = ML_YES;
     else
       field_of_values->compute_field_of_values = ML_NO;
     
-    if( List_.get(Prefix_ + "aggreation: compute field of values for non-scaled",false) )
+    if( List_.get("aggreation: compute field of values for non-scaled",false) )
       field_of_values->compute_field_of_values_non_scaled = ML_YES;
     else
       field_of_values->compute_field_of_values_non_scaled = ML_NO;
@@ -2002,8 +1877,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     //  2 : compute ||lambda_max|| (eta = sqrt(imag_max^2 + real_max^2))
     field_of_values->choice     = -1;
     // and this is a pointer for the object's interal ParameterList
-    // That's stilistically hugly, but I need this because ML is mainly C-coded
-    field_of_values->EigenList = (void *) &EigenList_;
+    field_of_values->EigenList = (void *) &List_;
 
     // still to set up polynomial coeffiecients
     string DampingType =  List_.get("R and P smoothing: damping", "default");
@@ -2245,7 +2119,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
   double DampingFactor = 1.333;
   if( SolvingMaxwell_ ) DampingFactor = 0.0;
 
-  DampingFactor = List_.get(Prefix_ + "aggregation: damping factor", 
+  DampingFactor = List_.get("aggregation: damping factor", 
 			    DampingFactor);
   ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
   
@@ -2254,7 +2128,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     cout << PrintMsg_ << "R and P smoothing : \\omega = " << DampingFactor << "/lambda_max" <<endl;
   }
     
-  string str = List_.get(Prefix_ + "eigen-analysis: type","Anorm");
+  string str = List_.get("eigen-analysis: type","Anorm");
   
   if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
   

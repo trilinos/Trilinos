@@ -84,9 +84,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
   }
 
   // build the preconditioner for the first time
-  List_.set(Prefix_ + "null space: type", "pre-computed");
-  List_.set(Prefix_ + "null space: dimension", OldNullSpaceSize);
-  List_.set(Prefix_ + "null space: vectors", OldNullSpace);
+  List_.set("null space: type", "pre-computed");
+  List_.set("null space: dimension", OldNullSpaceSize);
+  List_.set("null space: vectors", OldNullSpace);
   ComputePreconditioner();
 
   // ====================== //
@@ -192,9 +192,9 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
     // build the new preconditioner with the new null space //
     // ==================================================== //
 
-    List_.set(Prefix_ + "null space: type", "pre-computed");
-    List_.set(Prefix_ + "null space: dimension", NewNullSpaceSize);
-    List_.set(Prefix_ + "null space: vectors", NewNullSpace);
+    List_.set("null space: type", "pre-computed");
+    List_.set("null space: dimension", NewNullSpaceSize);
+    List_.set("null space: vectors", NewNullSpace);
 
     ML_CHK_ERR(ComputePreconditioner());
 
@@ -216,12 +216,12 @@ ComputeAdaptivePreconditioner(int TentativeNullSpaceSize,
 
 }
 
-#endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
+#endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS*/
 #if NOT_DEFINED
     else if (AdaptType == "Anasazi") {
 
       // FIXME: right now it works for symmetric problems only
-      double tol = List_.get(Prefix_ + "eigen-analysis: tolerance", 1e-5);
+      double tol = List_.get("eigen-analysis: tolerance", 1e-5);
 
       Teuchos::ParameterList AnasaziList;
       AnasaziList.set("eigen-analysis: matrix operation", "I-ML^{-1}A");

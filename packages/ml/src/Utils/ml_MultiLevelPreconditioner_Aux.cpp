@@ -64,8 +64,7 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
 
   int NumDimensions = 0;
 
-  double* x_coord = List_.get(Prefix_ + "aggregation: x-coordinates",
-			      (double *)0);
+  double* x_coord = List_.get("aggregation: x-coordinates", (double *)0);
   if (x_coord != 0) ++NumDimensions;
 
   // at least x-coordinates must be not null
@@ -78,12 +77,10 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
     ML_CHK_ERR(-2); // wrong parameters
   }
 
-  double* y_coord = List_.get(Prefix_ + "aggregation: y-coordinates",
-			       (double *)0);
+  double* y_coord = List_.get("aggregation: y-coordinates", (double *)0);
   if (y_coord != 0) ++NumDimensions;
 
-  double* z_coord = List_.get(Prefix_ + "aggregation: z-coordinates",
-                               (double *)0);
+  double* z_coord = List_.get("aggregation: z-coordinates", (double *)0);
   if (z_coord != 0) ++NumDimensions;
 
   // small check to avoid strange behavior
@@ -93,9 +90,9 @@ CreateAuxiliaryMatrixCrs(Epetra_FECrsMatrix* &FakeMatrix)
     ML_CHK_ERR(-3); // something went wrong
   }
 
-  double theta = List_.get(Prefix_ + "aggregation: theta",0.0);
+  double theta = List_.get("aggregation: theta",0.0);
 
-  bool SymmetricPattern = List_.get(Prefix_ + "aggregation: use symmetric pattern",false);
+  bool SymmetricPattern = List_.get("aggregation: use symmetric pattern",false);
 
   // usual crap to clutter the output
   if( verbose_ ) {
@@ -303,8 +300,7 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
 
   int NumDimensions = 0;
 
-  double* x_coord = List_.get(Prefix_ + "aggregation: x-coordinates",
-			      (double *)0);
+  double* x_coord = List_.get("aggregation: x-coordinates", (double *)0);
   if (x_coord != 0) ++NumDimensions;
 
   // at least x-coordinates must be not null
@@ -317,12 +313,10 @@ CreateAuxiliaryMatrixVbr(Epetra_VbrMatrix* &FakeMatrix)
     ML_CHK_ERR(-2); // wrong parameters
   }
 
-  double* y_coord = List_.get(Prefix_ + "aggregation: y-coordinates",
-			       (double *)0);
+  double* y_coord = List_.get("aggregation: y-coordinates", (double *)0);
   if (y_coord != 0) ++NumDimensions;
 
-  double* z_coord = List_.get(Prefix_ + "aggregation: z-coordinates",
-                               (double *)0);
+  double* z_coord = List_.get("aggregation: z-coordinates", (double *)0);
   if (z_coord != 0) ++NumDimensions;
 
   // small check to avoid strange behavior

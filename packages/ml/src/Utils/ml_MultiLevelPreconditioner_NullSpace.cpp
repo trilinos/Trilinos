@@ -1,44 +1,23 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
-/* ******************************************************************** */
-
-/************************************************************************/
-/*          Utilities for Trilinos/ML users                             */
-/*----------------------------------------------------------------------*/
-/* Author :  Marzio Sala (SNL)                                          */
-/************************************************************************/
+/*
+ * Methods to set and/or compute the null space.
+ * 
+ * \author Marzio Sala, SNL 9214
+ * 
+ * \date Last updated on 19-Jan-05
+ */
 
 #include "ml_common.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
-#include "Epetra_FECrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
-#include "Epetra_SerialDenseMatrix.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_SerialDenseSolver.h"
-#include "Epetra_Import.h"
 #include "Epetra_Time.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
-#ifdef ML_MPI
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-
-//#include <cstring>
-#include "ml_amesos_wrap.h"
-#include "ml_ifpack_wrap.h"
-#include "ml_agg_METIS.h"
-#include "ml_epetra_utils.h"
-
+#include "Epetra_VbrMatrix.h"
 #include "ml_epetra.h"
+#include "ml_epetra_utils.h"
 #include "ml_MultiLevelPreconditioner.h"
-#include "ml_agg_ParMETIS.h"
-
 #include "ml_anasazi.h"
 
 using namespace Teuchos;
@@ -48,8 +27,8 @@ using namespace Teuchos;
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 {
 
-  // FIXME...
-  return(0);
+  cout << "NULL SPACE FOR MAXWELL???" << endl;
+  ML_EXIT(-1);
 }
 
 // ================================================ ====== ==== ==== == =
@@ -57,9 +36,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
 
-  const Epetra_VbrMatrix * VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
-  if( VbrMatrix == 0 ) {
-    NumPDEEqns_ = List_.get(Prefix_ + "PDE equations", 1);
+  const Epetra_VbrMatrix* VbrMatrix;
+  VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+  if (VbrMatrix == 0) {
+    NumPDEEqns_ = List_.get("PDE equations", 1);
   }
   else {
     int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
@@ -77,7 +57,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   int NullSpaceDim = NumPDEEqns_;
   double * NullSpacePtr = NULL;
 
-  string option = List_.get(Prefix_ + "null space: type", "default vectors");
+  string option = List_.get("null space: type", "default vectors");
 
   // to save time, the 1-level case will always use "default vectors"
   if( NumLevels_ == 1 ) option = "default vectors";
@@ -90,45 +70,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   //    lowest of A, or the largest of I-A). Default space can be added
   //    if required.
   
-  // FIXME: null space scaling now works only with default vectors...
-
-  if (option != "default vectors" && Scaling_) {
-    cerr << ErrorMsg_ << "Scaling the null spaceworks only" << endl
-         << ErrorMsg_ << "for `default vectors' (at present)..." << endl;
-  }
-
   if (option == "default vectors") {
 
-    if (Scaling_) {
+    // sanity check for default null-space
+    if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
+    ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
+                               RowMatrix_->NumMyRows());
 
-      if (verbose_)
-	cout << PrintMsg_ << "Scaling default null space..." << endl;
-
-      NullSpaceToFree_ = new double[NumPDEEqns_*NumMyRows()];
-      // fill it with normal 0's and 1's for standard vectors
-      for( int i=0 ; i<NumPDEEqns_ ; ++i )
-	for( int j=0 ; j<NumMyRows() ; ++j )
-	  if (j%NumPDEEqns_ == i) 
-	    NullSpaceToFree_[j + i * NumMyRows()] = 1.0 * (*InvScaling_)[j];
-	  else                     
-	    NullSpaceToFree_[j + i * NumMyRows()] = 0.0;
-
-      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,
-				 NullSpaceToFree_,
-				 RowMatrix_->NumMyRows());
-
-    }
-    else {
-      // sanity check for default null-space
-      if( NullSpacePtr == NULL ) NullSpaceDim = NumPDEEqns_;
-      ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,NumPDEEqns_,NULL,
-				 RowMatrix_->NumMyRows());
-    }
-    
   } else if (option == "pre-computed") {
 
-    NullSpaceDim = List_.get(Prefix_ + "null space: dimension", NumPDEEqns_);
-    NullSpacePtr = List_.get(Prefix_ + "null space: vectors", NullSpacePtr);
+    NullSpaceDim = List_.get("null space: dimension", NumPDEEqns_);
+    NullSpacePtr = List_.get("null space: vectors", NullSpacePtr);
 
     if (verbose_) {
       cout << PrintMsg_ << "Using pre-computed null space of dimension "
@@ -145,7 +97,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   
   } else if (option == "enriched") {
 
-    NullSpaceDim = List_.get(Prefix_ + "null space: vectors to compute", 1);
+    NullSpaceDim = List_.get("null space: vectors to compute", 1);
 
     // by default, 0 means to compute one eigenvector per equation.
     // This number can be doubled if the imaginary part is added.
@@ -156,11 +108,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     Epetra_Time Time(Comm());
     
-    bool UseDefaultVectors = List_.get(Prefix_ + "null space: add default vectors", true);
+    bool UseDefaultVectors = List_.get("null space: add default vectors", true);
 
     // NOTE: NullSpaceDim always refers to the number of eigenvectors,
     //       if this flag is true we will keep also the imaginary part
-    bool UseImaginaryComponents = List_.get(Prefix_ + "null space: add imaginary components", true);
+    bool UseImaginaryComponents = List_.get("null space: add imaginary components", true);
     
     if( verbose_ ) {
       cout << PrintMsg_ << "Enriching null space with " << NullSpaceDim << " vector(s)";
@@ -209,7 +161,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     
     {
       
-      string opt = List_.get(Prefix_ + "null space: matrix operation", "I-A");
+      string opt = List_.get("null space: matrix operation", "I-A");
       if( opt == "I-A" ) {
 	AnasaziList.set("eigen-analysis: matrix operation", opt);
 	AnasaziList.set("eigen-analysis: action", "LM");
@@ -318,7 +270,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   
   // May need to scale the null space ??
 
-  double * NullSpaceScaling = List_.get(Prefix_ + "null space: scaling", (double *)0);
+  double * NullSpaceScaling = List_.get("null space: scaling", (double *)0);
 
   if( NullSpaceScaling != 0 ) {
     if( verbose_ ) cout << PrintMsg_ << "Scaling Null Space..." << endl;
@@ -328,65 +280,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   return(0);
 }
 
-// ================================================ ====== ==== ==== == =
-
-int ML_Epetra::MultiLevelPreconditioner::SetEigenList() 
-{
-
-  char parameter[80];
-  
-  // eigen-analysis:
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithm", Prefix_.c_str());
-  bool IsSymmetric = List_.get(parameter,false);
-    
-  if( IsSymmetric ) EigenList_.set("eigen-analysis: symmetric problem",true);
-  else              EigenList_.set("eigen-analysis: symmetric problem",false);
-
-  sprintf(parameter,"%seigen-analysis: tolerance", Prefix_.c_str());
-  EigenList_.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
-
-  sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_.c_str());    
-  EigenList_.set("eigen-analysis: use diagonal scaling", List_.get(parameter,true));
-    
-  sprintf(parameter,"%seigen-analysis: restart", Prefix_.c_str());
-  int itemp = List_.get(parameter, 100);
-  EigenList_.set("eigen-analysis: restart", itemp);
-
-  sprintf(parameter,"%seigen-analysis: length", Prefix_.c_str());
-  itemp =  List_.get(parameter, 20);
-  EigenList_.set("eigen-analysis: length", itemp);
-
-  // field of values:
-
-  sprintf(parameter,"%sfield-of-values: tolerance", Prefix_.c_str());
-  EigenList_.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
-
-  sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_.c_str());    
-  EigenList_.set("field-of-values: use diagonal scaling", List_.get(parameter,true));
-    
-  sprintf(parameter,"%sfield-of-values: restart", Prefix_.c_str());
-  itemp = List_.get(parameter, 100);
-  EigenList_.set("field-of-values: restart", itemp);
-
-  sprintf(parameter,"%sfield-of-values: length", Prefix_.c_str());
-  itemp =  List_.get(parameter, 20);
-  EigenList_.set("field-of-values: ", itemp);
-
-  sprintf(parameter,"%sfield-of-values: print current status", Prefix_.c_str());
-  bool btemp =  List_.get(parameter, false);
-  EigenList_.set("field-of-values: print current status", btemp);
-
-  // general output
-  
-  sprintf(parameter,"%soutput", Prefix_.c_str());
-  itemp =  List_.get(parameter, 10);
-  EigenList_.set("output",itemp);
-    
-  return(0);
-}
-
-int ML_Operator_GetDiagonal(ML_Operator* Amat,
-			    double* diagonal)
+// FIXME: I believe that this already exists somewhere..
+static int ML_Operator_GetDiagonal(ML_Operator* Amat,
+                                   double* diagonal)
 {
 
   int allocated = 100;
@@ -428,85 +324,4 @@ int ML_Operator_GetDiagonal(ML_Operator* Amat,
   return(0);
 }
 
-// ================================================ ====== ==== ==== == =
-
-int ML_Epetra::MultiLevelPreconditioner::SetScaling() 
-{
-  
-  int ierr;
-  string ScalingType;
- 
-  ScalingType = List_.get("scaling: type", "none");
-
-  if (ScalingType == "none") 
-    return(0);
-
-  Scaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
-  InvScaling_ = new Epetra_Vector(RowMatrix_->RowMatrixRowMap());
-  assert(InvScaling_ != 0);
-
-  if (ScalingType == "col sum") {
-
-    ierr = RowMatrix_->InvColSums(*Scaling_);
-    if (ierr) {
-      cerr << endl;
-      cerr << ErrorMsg_ << "Method InvColSums() returns "
-	<< ierr << "." << endl
-	<< ErrorMsg_ << "Is this method implemented in your"
-	<< " Epetra_RowMatrix-derived class?" << endl;
-      cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
-      cerr << endl;
-      ML_CHK_ERR(-1);
-    }
-
-    ierr = InvScaling_->Reciprocal(*Scaling_);
-    assert (ierr == 0);
-
-  }
-  else if (ScalingType == "diagonal" ) {
-
-    InvScaling_->PutScalar(1.0);
-
-    ierr = ML_Operator_GetDiagonal(&(ml_->Amat[LevelID_[0]]),
-				   InvScaling_->Values());
-
-    // FIXME: only for non-VBR matrices??
-    /* ierr = RowMatrix_->ExtractDiagonalCopy(*InvScaling_); */
-
-    if (ierr) {
-      cerr << endl;
-      cerr << ErrorMsg_ << "Method ExtractDiagonalCopy() returns "
-	<< ierr << "." << endl
-	<< ErrorMsg_ << "Is this method implemented in your"
-	<< " Epetra_RowMatrix-derived class?" << endl;
-      cerr << ErrorMsg_ << "Sorry, I must skip the scaling..." << endl;
-      cerr << endl;
-      return(-2);
-    }
-
-    ierr = Scaling_->Reciprocal(*InvScaling_);
-    assert (ierr == 0);
-
-  }
-  else {
-    cerr << ErrorMsg_ << "Parameter `scaling type' as an incorrect" << endl
-         << ErrorMsg_ << "value (" << ScalingType << "). It can be:" << endl
-	 << ErrorMsg_ << "<none> / <col sum>" << endl;
-    return(-2);
-  }
-
-  if (verbose_)
-    cout << "Scaling type = " << ScalingType << endl;
-
-  // I scale the matrix right now, it will be scaled back
-  // as I return from ComputePreconditioner().
-  // If Scaling_ is different from 0, in SetNullSpace() I
-  // will take care of creating (or scaling) the null space
-  Epetra_RowMatrix* RM = const_cast<Epetra_RowMatrix*>(RowMatrix_);
-  ierr = RM->RightScale(*Scaling_);
-  assert(ierr == 0);
-
-  return(0);
-}
- 
-#endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
+#endif /*ifdef HAVE_ML_EPETRA && HAVE_ML_TEUCHOS*/
