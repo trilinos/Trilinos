@@ -42,7 +42,11 @@ void lb_rcb(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
   int *pdotnum,               /* # of dots - decomposition changes it */
-  int *pdottop                /* dots >= this index are new */
+  int *pdottop,               /* dots >= this index are new */
+  int *num_non_local,         /* Number of non-local objects assigned to this
+                                 processor in the new decomposition.         */
+  LB_TAG **non_local_objs     /* Array of returned non-local obj info for the
+                                 new decomposition.                          */
 )
 {
   int    proc,nprocs;              /* my proc id, total # of procs */
@@ -688,14 +692,33 @@ void lb_rcb(
   *pdotnum = dotnum;
   *pdottop = dottop;
 
+  /*  build return arguments */
+
+  *num_non_local = dotnum - dottop;
+  *non_local_objs = (LB_TAG *) LB_array_alloc(1, *num_non_local,
+                                              sizeof(LB_TAG));
+
+  for (i = 0; i < *num_non_local; i++) {
+    memcpy(&((*non_local_objs)[i]), &(dotpt[i+dottop].Tag), sizeof(LB_TAG));
+  }
+
+
 {
 int i;
 LB_print_sync_start(TRUE);
-  printf("RCB Proc %d  Num_Obj=%d  Num_Keep=%d\n", LB_Proc, *pdotnum, *pdottop);
+  printf("RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
+         LB_Proc, *pdotnum, *pdottop, *num_non_local);
+  printf("  Assigned objects:\n");
   for (i = 0; i < *pdotnum; i++) {
-    printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Global_ID,
-           rcb->Dots[i].Orig_Proc);
+    printf("    Obj:  %10d      Orig: %4d\n", rcb->Dots[i].Tag.Global_ID,
+           rcb->Dots[i].Tag.Proc);
   }
+  printf("  Non_locals:\n");
+  for (i = 0; i < *num_non_local; i++) {
+    printf("    Obj:  %10d      Orig: %4d\n",
+           (*non_local_objs)[i].Global_ID, (*non_local_objs)[i].Proc);
+  }
+
 LB_print_sync_end(TRUE);
 }
 

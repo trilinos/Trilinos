@@ -122,9 +122,9 @@ void initialize_dot(LB *lb, struct rcb_dot *dot, int local_id, LB_ID global_id)
 
 int object_type = lb->Object_Type;
 
-  dot->Local_ID = local_id;
-  dot->Global_ID = global_id;
-  dot->Orig_Proc = LB_Proc;
+  dot->Tag.Local_ID = local_id;
+  dot->Tag.Global_ID = global_id;
+  dot->Tag.Proc = LB_Proc;
   dot->X[0] = dot->X[1] = dot->X[2] = 0.0;
   lb->Get_Obj_Geom(global_id, object_type, dot->X);
   if (lb->Get_Obj_Weight != NULL)

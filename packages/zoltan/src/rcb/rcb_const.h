@@ -21,9 +21,7 @@
 struct rcb_dot {	        /* dot = point in 3-space */
   double    X[3];		/* location of dot */
   double    Weight;             /* weight of dot - if used must be > 0 */
-  int       Orig_Proc;
-  int       Local_ID;
-  LB_ID     Global_ID;
+  LB_TAG    Tag;                /* Tag containing IDs for the object.  */
 };
 
 struct rcb_tree {	     /* tree of RCB cuts */
