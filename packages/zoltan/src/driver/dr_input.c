@@ -61,6 +61,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
 {
 /* local declarations */
   FILE  *file_cmd;
+  char  *yo = "read_cmd_file";
   char   cmesg[256]; /* for error messages */
   char   inp_line[MAX_INPUT_STR_LN + 1];
   char   inp_copy[MAX_INPUT_STR_LN + 1];
@@ -119,18 +120,14 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
       }
 
       /****** The Debug reporting level ******/
-/* not sure about this yet ------------->
-      else if (token_compare(cptr, "debug")) {
-        if (Debug_Flag < 0) {
-          cptr = strtok(NULL, "\t=");
-          strip_string(cptr, " \t\n");
-          if(sscanf(cptr, "%d", &Debug_Flag) != 1) {
-            Gen_Error(0, "fatal: can\'t interp int for Debug_Flag");
-            return 0;
-          }
+      else if (token_compare(cptr, "zdrive debug level")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Debug_Driver) != 1) {
+          Gen_Error(0, "fatal: can\'t interp int for Debug_Driver");
+          return 0;
         }
       }
-<-----------------------------------------*/
 
       /****** Parallel Disk Information ******/
       else if (token_compare(cptr, "parallel disk info")) {
@@ -469,6 +466,8 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   int ctrl_id;
   int size;
 /***************************** BEGIN EXECUTION ******************************/
+
+  MPI_Bcast(&Debug_Driver, sizeof(int), MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 

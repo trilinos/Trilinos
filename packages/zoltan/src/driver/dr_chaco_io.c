@@ -40,6 +40,7 @@ static char *cvs_dr_chaco_io = "$Id$";
 #include "dr_err_const.h"
 #include "dr_output_const.h"
 #include "dr_elem_util_const.h"
+#include "dr_maps_const.h"
 #include "ch_input_const.h"
 #include "ch_input.h"
 
@@ -58,6 +59,7 @@ int read_chaco_mesh(int Proc,
                     ELEM_INFO **elements)
 {
   /* Local declarations. */
+  char  *yo = "read_chaco_mesh";
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
@@ -70,6 +72,8 @@ int read_chaco_mesh(int Proc,
 
   FILE  *fp;
 /***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
 
   if (Proc == 0) {
 
@@ -183,6 +187,8 @@ int read_chaco_mesh(int Proc,
   if (x != NULL) free(x);
   if (y != NULL) free(y);
   if (z != NULL) free(z);
+
+  DEBUG_TRACE_END(Proc, yo);
   return 1;
 }
 
@@ -210,7 +216,10 @@ static int fill_elements(
   /* Local declarations. */
   int i, j, k, start_id, elem_id, local_id;
   char cmesg[256];
+  char *yo = "fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
+
+  DEBUG_TRACE_START(Proc, yo);
 
   start_id = vtxdist[Proc]+1;  /* global ids start at 1 */
 
@@ -295,9 +304,14 @@ static int fill_elements(
     } /* End: "if (elem[i].nadj > 0)" */
   } /* End: "for (i = 0; i < Mesh.num_elems; i++)" */
 
- /*
-  print_distributed_mesh(Proc, Num_Proc, elem);
-  */
+  if (!build_elem_comm_maps(Proc, elem)) {
+    Gen_Error(0, "Fatal: error building initial elem comm maps");
+    return 0;
+  }
 
+  if (Debug_Driver > 3)
+    print_distributed_mesh(Proc, Num_Proc, elem);
+
+  DEBUG_TRACE_END(Proc, yo);
   return 1;
 }

@@ -46,6 +46,7 @@ static char *cvs_dr_main = "$Id$";
 
 /* global mesh information struct variable */
 MESH_INFO Mesh;
+int Debug_Driver = 1;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, ELEM_INFO_PTR *);
 
