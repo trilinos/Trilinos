@@ -121,6 +121,7 @@ const bool Epetra_FormatStdout = true; // Set true if the ostream << operator sh
 // Make error report silent by defining EPETRA_NO_ERROR_REPORTS
 
 #ifdef EPETRA_NO_ERROR_REPORTS
+const int DefaultTracebackMode = 0;
 #define EPETRA_CHK_ERR(a) { int epetra_err = a; if (epetra_err != 0)  return(epetra_err);}
 #define EPETRA_CHK_PTR(a) { return(a);}
 #define EPETRA_CHK_REF(a) { return(a);}
