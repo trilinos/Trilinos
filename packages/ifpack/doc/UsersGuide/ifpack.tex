@@ -41,8 +41,9 @@ multi-vectors, is often achieved using iterative solvers of Krylov type (see for
 instance~\cite{barret93templates}).
 It is well known that the convergence of Krylov methods depends on 
 the spectral properties of the linear system matrix
-$A$~\cite{axelsson94iterative,saad96iterative,QSS}. Hence, the
-original system~(\ref{eq:linear_sys}) is often replaced by
+$A$~\cite{axelsson94iterative,saad96iterative,QSS}. Often, $A$ is very
+ill-conditioned, so the
+original system~(\ref{eq:linear_sys}) is replaced by
 \[
 P^{-1} A{u} = P^{-1} {b}
 \]
@@ -53,7 +54,7 @@ A P^{-1} P {u} = {b}
 (right-preconditioning), using a linear transformation $P^{-1}$,
 called {\sl preconditioner}, in order to improve the spectral properties of
 the linear system matrix. In general terms, a preconditioner is any
-kind of transformation applied to the original system which makes it
+kind of transformation applied to (\ref{eq:linear_sys}) which makes it
 easier to solve, in terms of iterations and CPU time.
 
 The general (and challenging) problem of finding an efficient
@@ -91,15 +92,13 @@ Single-level algebraic preconditioners can be classified as follows:
   multilevel methods (like, for example, ML~\cite{ml-guide});
 \item {\bf Polynomial preconditioner}, like Neumann, Least-Square, and
 Chebyshev~\cite{saad96iterative}.
-\item {\bf Incomplete Factorizations preconditioner}, like ILU(k), RILU(k);
+\item {\bf Incomplete Factorizations preconditioner}, like IC($k$), ILU($k$), 
+  ILUT($k$);
 \item {\bf One-level domain decomposition preconditioners of Schwarz type},
   with minimal or wider overlap among the subdomains~\cite{smith96parallel,
     QV2}. The local linear problems
   can be solved with exact factorizations, incomplete factorizations, or
-  {\sl any} other \ifpack\ preconditioner documented in this manual. 
-  For example, each subdomain matrix
-  can be furtherly decomposed into subdomains, and block preconditioner can be
-  applied to solve the local problem. 
+  other techniques.
 \item {\bf Sparse Approximate Inverses} (like SPAI, AINV).
 \end{enumerate}
 \ifpack\ aims to define preconditioners belonging to groups 1, 3 and 4.
@@ -113,7 +112,7 @@ conjunction with multilevel preconditioners. In this latter case, the
 single-level preconditioner is reinterpreted as a smoother for the multilevel
 hierarchy. Two families of methods have been
 proposed in the literature:
-the classical Ruge-Stuben multigrid (AMG), or smoothed aggregation (SA).
+the classical Ruge-St\"uben multigrid (AMG), or smoothed aggregation (SA).
 The preconditioning package Hypre can be used to define AMG preconditioners,
   while the Trilinos package ML can be used to build SA preconditioners.
 \end{remark}
@@ -124,13 +123,13 @@ The goal of this document is to provide an overview of all \ifpack\
   preconditioners. Several examples are reported to illustrate how to define
   and use \ifpack\ objects. Further details can be found on the Doxygen
   documentation.
-The manuscript is organized as follows. Section\ref{sec:theo} briefly outlines
+The manuscript is organized as follows. Section~\ref{sec:theo} briefly outlines
 the theoretical background. A general description of \ifpack\
   preconditioners is reported in Section~\ref{sec:prec}.
-Parameters for \ifpack~preconditioners are reported in
-Section~\ref{sec:parameters}. The \ifpack\ factory class is detailed in
+The \ifpack\ factory class is detailed in
 Section~\ref{sec:factory}. Several examples of usage are reported in
-Section~\ref{sec:usage}. The analysis tools of \ifpack\ are reported in
+Section~\ref{sec:usage}. Parameters for \ifpack~preconditioners are reported in
+Section~\ref{sec:parameters}. The analysis tools of \ifpack\ are reported in
 Section~\ref{sec:analysis}. Configuration and building are detailed in
 Section~\ref{sec:config}.
 
@@ -157,7 +156,7 @@ Beginning with a given approximate solution, these methods modify the
 components of the approximation, one or a few at a time and in a certain order,
 until convergence is reached. Although still popular in some application
 areas, these preconditioners are now
-rarely used; however, they can provide successful smoothers for multilevel
+rarely used as stand-alone preconditioner; however, they can provide successful smoothers for multilevel
 methods. 
 
 All \ifpack\ point preconditioners are based on the decomposition
@@ -385,8 +384,6 @@ A general (damped) block Jacobi iteration can be defined as follows:
 && \label{eq:gen_b_jacobi}
 x^{(k)} = x^{(k-1)} + \omega V_i^T A_{i,i}^{-1} V_i(b - A x^{(k-1)}).
 \end{eqnarray}
-In Equation (\ref{eq:gen_b_jacobi}), it is understood that the $x$ vectors
-refer to the local components.
 Figure~\ref{fig:bj} graphically describes the block Jacobi with variable
 overlap among blocks.
 
@@ -406,90 +403,6 @@ compute the residual. The algorithm is as follows:
 && \label{eq:gen_b_gs}
 x^{(k)} = x^{(k-1)} + \omega V_i^T A_{i,i}^{-1} V_i(b - A x^{(k)}).
 \end{eqnarray}
-
-%-----------------------------------------------------------------------------
-\subsection{Additive Schwarz Preconditioners}
-\label{sec:additive}
-%-----------------------------------------------------------------------------
-
-\ifpack\ makes very easy to define and use domain decomposition
-preconditioners of (overlapping) Schwarz type.
-
-The basic idea of DD methods is to decompose the
-computational domain $\Omega$ into $M$ smaller parts $\Omega_i$,
-$i=1,\ldots,M$, called subdomains, such that $\cup_{i=1}^{M}
-\overline{\Omega_i} = \overline{\Omega}$.  Next, the original problem can
-be reformulated within each subdomain $\Omega_i$, of smaller size. This
-family of subproblems is coupled one to another through the values of the
-unknown solution at subdomain interface. This coupling is then removed at
-the expense of introducing an iterative process which involves, at each
-step, solutions on the $\Omega_i$ with additional interface conditions on
-$\partial \Omega_i \setminus \partial \Omega$.
-
-In overlapping Schwarz preconditioner, the computational domain is
-subdivided into {\sl overlapping} subdomains, and local Dirichlet-type
-problems are then solved on each subdomain.  The communication between the
-solutions on the different subdomains is here guaranteed by the overlapping
-region. 
-
-The additive Schwarz preconditioner can be written as:
-\begin{equation}
-\label{eq:as}
-P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i ,
-\end{equation}
-where $M$ is the number of subdomains (that is, the number of processors in
-the computation), $R_i$ is an operator that restricts the global 
-vector to the vector lying on subdomain $\Omega_i$, $P_i$ is an operator that
-prolongate from subdomain $\Omega_i$ to $\Omega$, and
-\begin{equation}
-\label{eq:Ai}
-A_i = R_i A P_i.
-\end{equation}
-
-\ifpack\ supports two major cases:
-\begin{itemize}
-\item Minimal-overlap (here referred to as "zero-overlap"): each subdomain
-is identified by the set of local rows of the preconditioned matrix;
-\item General overlap: each subdomain is identified by the set of local rows
-of a suitable overlapping matrix.
-\end{itemize}
-In both cases, each processor is responsible for exactly one subdomain.
-
-In the minimal overlap case, the $R_i$'s and $P_i$'s are not implemented, since the
-required components of the residual vector are already local. Besides, matrix
-(\ref{eq:Ai}) can be easily extracted from the local matrix, by dropping all
-nonzeros corresponding to non-local columns.
-communications between processors. If a wider overlap
-is used, instead, each application of $R_i$ and $P_i$ may require the
-importing or exporting of
-off-process data, and the construction of (\ref{eq:Ai}) requires
-communications.
-
-\smallskip
-
-Once matrices (\ref{eq:Ai}) have been formed, the user still need to define a
-strategy to apply the inverse of $A_i$ in (\ref{eq:as}). At this purpose,
-any \ifpack\ preconditioner can be adopted. Common choices can be:
-\begin{itemize}
-\item To solve exactly on each subdomain with an complete LU factorization, using the \verb!Ifpack_Amesos!
-preconditioner. This is shown in Section~\ref{sec:as_amesos}.
-\item To solve using an incomplete LU factorization, as presented in
-Section~\ref{sec:as_ilu}.
-\item To furtherly decompose the local domain into smaller subdomains,
-  then apply a block Jacobi or block Gauss-Seidel preconditioner. This is
-  outlined in Section~\ref{sec:as_b_ov}.
-\end{itemize}
-
-\begin{remark}
-Additive Schwarz preconditioners as reported in equation~(\ref{eq:as}) 
-are not scalable: their convergence rate
-deteriorates as the number of subdomains (that is, of the processors)
-increases. Algebraic techniques
-exist to add an algebraic coarse level correction to~(\ref{eq:as}) to make the
-preconditioner scalable; 
-see for example the documentation of the ML
-package~\cite{ml-guide}.
-\end{remark}
 
 %-----------------------------------------------------------------------------
 \subsection{Incomplete Factorization Preconditioners}
@@ -545,13 +458,97 @@ be the same for each linear system and the overhead of computing the
 pattern is amortized.
 
 %-----------------------------------------------------------------------------
+\subsection{Additive Schwarz Preconditioners}
+\label{sec:additive}
+%-----------------------------------------------------------------------------
+
+\ifpack\ makes very easy to define and use domain decomposition
+preconditioners of (overlapping) Schwarz type.
+
+The basic idea of DD methods is to decompose the
+computational domain $\Omega$ into $M$ smaller parts $\Omega_i$,
+$i=1,\ldots,M$, called subdomains, such that $\cup_{i=1}^{M}
+\overline{\Omega_i} = \overline{\Omega}$.  Next, the original problem can
+be reformulated within each subdomain $\Omega_i$, of smaller size. This
+family of subproblems is coupled one to another through the values of the
+unknown solution at subdomain interface. This coupling is then removed at
+the expense of introducing an iterative process which involves, at each
+step, solutions on the $\Omega_i$ with additional interface conditions on
+$\partial \Omega_i \setminus \partial \Omega$.
+
+In overlapping Schwarz preconditioner, the computational domain is
+subdivided into {\sl overlapping} subdomains, and local Dirichlet-type
+problems are then solved on each subdomain.  The communication between the
+solutions on the different subdomains is here guaranteed by the overlapping
+region. 
+
+The additive Schwarz preconditioner can be written as:
+\begin{equation}
+\label{eq:as}
+P_{AS}^{-1} = \sum_{i=1}^M P_i A_i^{-1} R_i ,
+\end{equation}
+where $M$ is the number of subdomains (that is, the number of processors in
+the computation), $R_i$ is an operator that restricts the global 
+vector to the vector lying on subdomain $\Omega_i$, $P_i$ is an operator that
+prolongate from subdomain $\Omega_i$ to $\Omega$, and
+\begin{equation}
+\label{eq:Ai}
+A_i = R_i A P_i.
+\end{equation}
+
+\ifpack\ supports two major cases:
+\begin{itemize}
+\item Minimal-overlap (here referred to as "zero-overlap"): each subdomain
+is identified by the set of local rows of the preconditioned matrix;
+\item Wider overlap: each subdomain is identified by the set of local rows
+of a suitable overlapping matrix.
+\end{itemize}
+In both cases, each processor is responsible for exactly one subdomain.
+
+In the minimal overlap case, the $R_i$'s and $P_i$'s are not implemented, since the
+required components of the residual vector are already local. Besides, matrix
+(\ref{eq:Ai}) can be easily extracted from the local matrix, by dropping all
+nonzeros corresponding to non-local columns with no 
+communications between processors. If a wider overlap
+is used, instead, each application of $R_i$ and $P_i$ may require the
+importing or exporting of
+off-process data, and the construction of (\ref{eq:Ai}) requires
+communications.
+
+\smallskip
+
+Once matrices (\ref{eq:Ai}) have been formed, the user still need to define a
+strategy to apply the inverse of $A_i$ in (\ref{eq:as}). At this purpose,
+any \ifpack\ preconditioner can be adopted. Common choices are:
+\begin{itemize}
+\item To solve exactly on each subdomain with an complete LU factorization, using the \verb!Ifpack_Amesos!
+preconditioner. This is shown in Section~\ref{sec:as_amesos}.
+\item To solve using an incomplete LU factorization, as presented in
+Section~\ref{sec:as_ilu}.
+\item To furtherly decompose the local domain into smaller subdomains,
+  then apply a block Jacobi or block Gauss-Seidel preconditioner. This is
+  outlined in Section~\ref{sec:as_b_ov}.
+\end{itemize}
+
+\begin{remark}
+Additive Schwarz preconditioners as reported in equation~(\ref{eq:as}) 
+are not scalable: their convergence rate
+deteriorates as the number of subdomains (that is, of the processors)
+increases. Algebraic techniques
+exist to add an algebraic coarse level correction to~(\ref{eq:as}) to make the
+preconditioner scalable; 
+see for example the documentation of the ML
+package~\cite{ml-guide}.
+\end{remark}
+
+%-----------------------------------------------------------------------------
 \section{General Description of \ifpack\ Preconditioners}
 \label{sec:prec}
 %-----------------------------------------------------------------------------
 
 All \ifpack\ preconditioners described in this document
 are reported in Table~\ref{tab:all_prec}. They are all derived from the 
-\verb!Ifpack_Preconditioner.h!
+\verb!Ifpack_Preconditioner!
 class.
 
 %\begin{figure}
@@ -607,14 +604,18 @@ on threshold. \\
 \end{center}
 \end{sidewaystable}
 
-\verb!Ifpack_Preconditioner.h! is a pure virtual class, derived from
-\verb!Epetra_Operator!, that standarizes the construction of \ifpack\
+\verb!Ifpack_Preconditioner! is a pure virtual class, derived from
+\verb!Epetra_Operator!, that standarizes the construction and usage of \ifpack\
 preconditioners. In fact, all \ifpack\ preconditioners are supposed to behave
 as follows:
 \begin{enumerate}
 \item The object is constructed, passing as only input argument the
 pointer of the matrix to be preconditioned, say {\tt A}. {\tt A} has already
-been {\tt FillComplete()}'d.
+been {\tt FillComplete()}'d\footnote{It is supposed that the {\tt OperatorDomainMap()}, {\tt the OperatorRangeMap()}
+and
+the {\tt RowMatrixRowMap()} of the matrix all coincide, and that each row is ass
+igned
+to exactly one process..}.
 %
 \item All the parameters, stored in a \teuchos\ parameters list, are
 set using method \verb!SetParameters()!. If \verb!SetParameters()! is not
@@ -715,7 +716,7 @@ Ifpack_Preconditioner* Prec;
 string PrecType = "ILU";
 int OverlapLevel = 0;
 // create the preconditioner using Create()
-Prec = Factory.Create(PrecType, OverlapLevel);
+Prec = Factory.Create(PrecType, A, OverlapLevel);
 assert (Prec != 0);
 
 // specify parameters for ILU
@@ -756,7 +757,7 @@ has to be changed to define, for instance, the Gauss-Seidel preconditioner.
 \hline
 \tt IC & Incomplete Cholesky factorization on each subdomain. \\
 \hline
-\tt ICT & Incomplete Cholesky with threshold on each subdomain. \\
+\tt ICT & Incomplete Cholesky factorization with threshold on each subdomain. \\
 \hline
 \tt ILU & Incomplete LU factorization on each subdomain. \\
 \hline
@@ -792,17 +793,14 @@ follows:
 #include "Ifpack_PointRelaxation.h"
 \end{verbatim}
 Let \verb!A! be a pointer to an \verb!Epetra_RowMatrix! derived object,
-  and let \verb!Problem! be a pointer to an \verb!Epetra_LinearMatrix!.
-\begin{verbatim}
-Epetra_RowMatrix* A;  
-Epetra_LinearProblem* Problem;
-\end{verbatim}
+  and let \verb!Problem! be a pointer to an \verb!Epetra_LinearProblem!.
 We suppose that \verb!A! and 
 \verb!Problem! are properly set, and
 method \verb~FillComplete()~ has been called. At this point, we can create the
 preconditioner as
 \begin{verbatim}
 Teuchos::ParameterList List;
+List.set("relaxation: type", "Gauss-Seidel");
 
 Ifpack_PointRelaxation Prec(A);
 
@@ -852,7 +850,7 @@ Let us start with the definition of the blocks.
 It is important to note that all blocks are {\sl local} -- that is, 
   all partitioner schemes will {\sl always} decompose the local graph 
   only\footnote{If used in conjuction with class {\tt Ifpack\_AdditiveSchwarz},
-    blocks can span more than one processor. }
+    blocks can span more than one processor.}.
 
 All \ifpack\ partitioners are derived from the pure virtual class
 \verb!Ifpack_Partitioner!, and all require in the constructor phase
@@ -895,7 +893,7 @@ Ifpack_Graph* Graph;
 
 Teuchos::ParameterList List;
 List.set("partitioner: local parts", 4);
-Ifpack_Partitioner Partitioner = new Ifpack_GreedyPartitioner(Graph);
+Ifpack_Partitioner* Partitioner = new Ifpack_GreedyPartitioner(Graph);
 
 // set the parameters (in this case the # of blocks only)
 Partitioner->SetParameters(List);
@@ -966,6 +964,7 @@ Teuchos::ParameterList List;
 List.set("relaxation: sweeps", 2);
 List.set("amesos: solver type", "Amesos_Klu");
 Prec->SetParameters(List);
+Prec->Initialize();
 Prec->Compute();
 \end{verbatim}
 
@@ -1000,11 +999,12 @@ Epetra_RowMatrix* A;
 // Here the elements of A are filled, and FillComplete() is called.
 
 int OverlapLevel = 0;
-Ifpack_Preconditioner Prec = 
+Ifpack_Preconditioner* Prec = 
   new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A, OverlapLevel);
 
 Teuchos::ParameterList List;
 IFPACK_CHK_ERR(Prec->SetParameters(List));
+IFPACK_CHK_ERR(Prec->Initialize());
 IFPACK_CHK_ERR(Prec->Compute());
 \end{verbatim}
 
@@ -1035,6 +1035,7 @@ Ifpack_Preconditioner* Prec =
   new Ifpack_AdditiveSchwarz<Ifpack_ILU>(A, OverlapLevel);
 
 Teuchos::ParameterList List;
+List.set("fact: level of fill", 2);
 IFPACK_CHK_ERR(Prec->SetParameters(List));
 IFPACK_CHK_ERR(Prec->Initialize());
 IFPACK_CHK_ERR(Prec->Compute());
@@ -1073,8 +1074,8 @@ The L and U factors are stored as \verb!Epetra_CrsMatrix!'s, whose pointers
 can be obtained as follows\footnote{For classes {\tt Ifpack\_IC} and {\tt
   Ifpack\_ICT} the user shall use method {\tt H()}.}:
 \begin{verbatim}
-const Epetra_CrsMatrix* L = Inverse->L();
-const Epetra_CrsMatrix* U = Inverse->U();
+const Epetra_CrsMatrix& L = Inverse->L();
+const Epetra_CrsMatrix& U = Inverse->U();
 \end{verbatim}
 
 %-----------------------------------------------------------------------------
@@ -1107,8 +1108,9 @@ Teuchos::ParameterList List;
 \end{verbatim}
 At this point we can create the block Jacobi preconditioner as follows:
 \begin{verbatim}
-Ifpack_Preconditioner Prec = 
-  new Ifpack_AdditiveSchwarz<Ifpack_BlockPreconditioner<Ifpack_DenseContainer> >(A);
+Ifpack_Preconditioner* Prec = 
+  new Ifpack_AdditiveSchwarz<
+    Ifpack_BlockPreconditioner<Ifpack_DenseContainer> >(A);
 
 Prec->SetParameters(List);
 Prec->Initialize();
@@ -1123,7 +1125,7 @@ Sparse containers can be used with minor modifications. The only difference is
 that we also have to specify how to apply the inverse of each block, for
 instance using the exact factorizations of \amesos:
 \begin{verbatim}
-Ifpack_Preconditioner Prec = 
+Ifpack_Preconditioner* Prec = 
   new Ifpack_AdditiveSchwarz<Ifpack_BlockPreconditioner
     <Ifpack_SparseContainer<Ifpack_Amesos> > >(A);
 \end{verbatim}
@@ -1204,19 +1206,18 @@ specified parameter value, whose type can be any C++ object or pointer.
   values whose absolute value is less than the specified value by this value
     (for point relaxation methods only). Default: {\tt 1e-9}.}
 
-\choicebox{\tt relaxation: zero starting solution}{[{\tt bool}] If {\tt true},
-  the starting solution is always the zero vector. If {\tt true},
-  then the input values in the preconditioned vector will be used as starting solution.
-  Default: {\tt true}.}
+\choicebox{\tt relaxation: zero starting solution}{[{\tt bool}] 
+  If {\tt true}, the input values in the preconditioned vector will be used as
+    starting solution (for relaxation methods only).  Default: {\tt true}.}
 
 \choicebox{\tt partitioner: type}{[{\tt string}] Defines how to build the
-  local blocks for block relaxation methods only. Valid choices are:
+  local blocks (for block relaxation methods). Valid choices are:
   {\tt linear} (use a simple linear decomposition), {\tt greedy} 
   (use a greedy algorithm to partition the local graph), 
   or {\tt METIS} (call METIS on the local graph). Default: {\tt linear}.}
 
 \choicebox{\tt partitioner: local parts}{[{\tt int}] Number of (local)
-  subgraphs, for block relaxation methods only. Default: 4.}
+  subgraphs (for block relaxation methods only). Default: 4.}
 
 \choicebox{\tt partitioner: overlap}{[{\tt int}] Overlap among blocks. Only
   for block Jacobi methods. Default: 0.}
@@ -1225,9 +1226,7 @@ specified parameter value, whose type can be any C++ object or pointer.
   algorithm only. Default: 0}
 
 \choicebox{\tt schwarz: combine mode}{[{\tt Epetra\_CombineMode}].
-Default: {\tt Zero}\footnote{Note that, for non-zero overlap values, the preconditioner is in general
-  non-symmetric, due to the handling of the overlapping region. Set this parameter to {\tt Insert} if a
-    symmetric preconditioner is required.}.
+Default: {\tt Zero}.
 It can assume one of the following values:
 {\tt Add}: Components on the receiving processor will be added together;
 {\tt Zero}: Off-processor components will be ignored;
@@ -1236,7 +1235,9 @@ receiving processor replacing existing values.
 {\tt Average}: Off-processor components will be averaged with existing;
 {\tt AbsMax}: Magnitudes of Off-processor components will be
 maxed with magnitudes of existing components on the receiving
-processor.}
+processor. Note that, for non-zero overlap values, the preconditioner is in general
+  non-symmetric, due to the handling of the overlapping region. Set this parameter to {\tt Insert} if a
+    symmetric preconditioner is required.}
 
 \choicebox{\tt amesos: solver type}{[{\tt string}]. Defines the Amesos solver to be
   used by class Ifpack\_Amesos. Valid values are:
@@ -1245,7 +1246,7 @@ processor.}
 {\tt Amesos\_Umfpack},
 {\tt Amesos\_Superlu},
 {\tt Amesos\_Mumps},
-{\tt Amesos\_Dscpack}.}
+{\tt Amesos\_Dscpack}. Default: {\tt Amesos\_Klu} Default: {\tt Amesos\_Klu}.}
 
 \choicebox{\tt fact: level-of-fill}{[{\tt int}] Level-of-fill for IC and ILU.}
 
@@ -1253,6 +1254,8 @@ processor.}
 
 \choicebox{\tt fact: ilut level-of-fill}{[{\tt double}] Level-of-fill for
   ILUT.}
+
+\choicebox{\tt fact: relax value}{[{\tt double}] Relaxation value.}
 
 \smallskip
 
@@ -1272,14 +1275,14 @@ B_{i,i} = \alpha \; \; sgn(A_{i,i}) + \rho A_{i,i},
 where $\alpha$ and $\rho$ are two real parameters, to be determined by the
 user. $\alpha$ represents and absolute threshold added to the matrix, while
 $\rho$ is a relative threshold (that is, the actual diagonal value of the matrix to
-be factored is $\rho$ times the original value).. 
+be factored is $\rho$ times the original value). 
 
-\choicebox{\tt fact: absolute threshold}{[{\tt double}] Value $\bar\rho$ in equation (\ref{eq:B}). }
+\smallskip
+
+\choicebox{\tt fact: absolute threshold}{[{\tt double}] Value $\alpha$ in equation (\ref{eq:B}). }
 
 \choicebox{\tt fact: relative threshold}{[{\tt double}] Value $\rho$ in
   equation (\ref{eq:B}). }
-
-\choicebox{\tt fact: relax value}{[{\tt double}] Relaxation value.}
 
 
 %-----------------------------------------------------------------------------
