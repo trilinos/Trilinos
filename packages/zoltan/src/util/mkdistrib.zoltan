@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# This script works for SunOS
+#
+TIME="`date +%H%M`"
+DATE="`date +%d%h%y`"
+#
+# Get rid of blanks in the date
+TAGVAL="distrib_${TIME}_${DATE}"
+CURDIR="`pwd`"
+#
+# Get rid of space when day of the month is a single digit
+ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
+rm -rf Zoltan
+rm -f zoltan_distrib.tar.Z
+cvs checkout Zoltan
+find . -name 'CVS' -exec rm -rf {} \;
+find . -name '*.sh' -exec rm -f {} \;
+find . -name '.cvsignore' -exec rm -f {} \;
+chmod -R ogu+r *
+tar cvf zoltan_distrib.tar Zoltan
+compress zoltan_distrib.tar
+cvs rtag ${ACT_TAG} Zoltan
+exit 0
