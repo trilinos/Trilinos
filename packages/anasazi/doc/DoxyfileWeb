@@ -53,3 +53,4 @@
 ############################################################################
 
 INPUT                  = ../../../../Trilinos/packages/anasazi/src
+INPUT                 += ../../../../Trilinos/packages/anasazi/doc/index.doc
