@@ -196,7 +196,64 @@ extern void AZ_block_matvec(double *, double *, AZ_MATRIX *, int *);
 
 extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
 
+/* The following definition and function declaration as used by
+   MLAZ_iterate, which is supposed to replace AZ_iterate in code
+   currently developed for Aztec (one-level prec), to test ML
+   preconditioners (based on aggregation). Only a small part
+   of ML's functionalities is currently supported. */
+  
+#define MLAZ_OPTIONS_SIZE 50
+#define MLAZ_PARAMS_SIZE 50
 
+/* options */
+#define MLAZ_max_iter               0
+#define MLAZ_smoother               1
+#define MLAZ_max_num_levels         2
+#define MLAZ_num_pre_smooth_steps   3
+#define MLAZ_num_post_smooth_steps  4
+#define MLAZ_coarse_solver          5
+#define MLAZ_refinement_factor      6
+#define MLAZ_output                 7
+#define MLAZ_coarsen_scheme         8
+#define MLAZ_aggregate_property     9
+#define MLAZ_max_coarse_size       10
+#define MLAZ_solver                11
+#define MLAZ_aggregates            30
+
+/* values for options */
+/*  MLAZ_smoother and MLAZ_coarse_solve */
+#define MLAZ_Jacobi                 0 /* ML's Jacobi smoother */
+#define MLAZ_GaussSeidel            1 /* ML's GS smoother */
+#define MLAZ_Aztec                  2
+#define MLAZ_BlockGaussSeidel       3
+#define MLAZ_MLS                    4
+#define MLAZ_SuperLU                -1
+/* MLAZ_aggregates */
+#define MLAZ_METIS                  0
+#define MLAZ_ParMETIS               1
+#define MLAZ_Uncoupled              2
+#define MLAZ_MIS                    3
+/* MLAZ_aggregate_property */
+#define MLAZ_NumLocalAggregates        0
+#define MLAZ_NumGlobalAggregates       1
+#define MLAZ_NumNodesPerAggregate 2
+
+/* params */
+#define MLAZ_tol                    0
+#define MLAZ_smoothP_damping_factor 1
+#define MLAZ_omega                  2
+#define MLAZ_threshold              3
+#define MLAZ_dumping_factor         4
+
+extern void MLAZ_defaults( int mlaz_options[MLAZ_OPTIONS_SIZE],
+			   double mlaz_params[MLAZ_PARAMS_SIZE] );
+extern void MLAZ_iterate( double delta_x[], double resid_vector[],
+			  int options[], double params[],
+			  double status[], int proc_config[],
+			  AZ_MATRIX *Amat, struct AZ_SCALING *scaling,
+			  int mlaz_options[MLAZ_OPTIONS_SIZE],
+			  double mlaz_params[MLAZ_PARAMS_SIZE] );
+  
 #endif
 
 #ifndef ML_CPP
