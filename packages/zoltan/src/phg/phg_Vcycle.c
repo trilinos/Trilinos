@@ -271,13 +271,13 @@ int Zoltan_PHG_Partition (
         MPI_Allgatherv (finer->LevelData, each_size[hgc->myProc_x], MPI_INT,
          rbuffer, each_size, displs, MPI_INT, hgc->row_comm);
                 
-        ip = (int*) rbuffer;  
-        for (i = 0; i < size; i += 2)   {
+        for (ip = (int*) rbuffer; ip < (int*) rbuffer + size; )   {
           gno   = *ip++;
           lpart = *ip++;
           if (VTX_TO_PROC_X (finer->hg, gno) == hgc->myProc_x)
             finer->part[VTX_GNO_TO_LNO (finer->hg, gno)] = lpart;
         }
+        ZOLTAN_FREE (&rbuffer);
       }          
     }
   vcycle = finer;
@@ -287,11 +287,14 @@ End:
   vcycle = del;
   while (vcycle) {
     if (vcycle->finer) {   /* cleanup by level */
+/*  ZOLTAN_FREE (&vcycle->LevelData);  */
+ 
       Zoltan_HG_HGraph_Free (vcycle->hg);
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->part, &vcycle->LevelMap);     
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->part, &vcycle->LevelMap);
     }
     else                   /* cleanup top level */
-      ZOLTAN_FREE(&vcycle->LevelMap);    
+      ZOLTAN_FREE(&vcycle->LevelMap);
+/* ZOLTAN_FREE (&vcycle->LevelData); */
       del = vcycle;
       vcycle = vcycle->finer;
       ZOLTAN_FREE(&del);
