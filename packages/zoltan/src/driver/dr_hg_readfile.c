@@ -93,7 +93,7 @@ static int old_readfile (
     int count, err = ZOLTAN_OK;
     char errstr[200];
     int Hedge=0, code=0, pin, i;
-    char string[BUF_LEN], *s;
+    char string[BUF_LEN], *s, ch;
     char *yo = "old_readfile";
 
     /* TODO: edge weights, multiple edge/vertex weights */
@@ -131,12 +131,25 @@ static int old_readfile (
     Hedge = 0;
     for (i = 0; i < *nEdge; i++) {
        (*index)[i] = Hedge;
-       if (!(fgets (string, BUF_LEN, f))) {
-          sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
-          fprintf(stderr, errstr);
-          err = ZOLTAN_FATAL;
-          goto End;
+       count = 0;
+       /* NOTE: the following code replaces an apparently simplier fgets() */
+       /* however, fgets() can not read the long lines of circuit hyperedges */
+       /* and silently truncates the read! - Bob (setvbuf didn't work either) */
+
+       while (1) {
+          ch = getc(f);
+          if (ch == EOF) {
+             sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
+             fprintf(stderr, errstr);
+             err = ZOLTAN_FATAL;
+             goto End;
+             }
+          else if (ch == '\n')
+             break;
+          else
+             string[count++] = ch;
           }
+
        s = strtok(string," \n");
        while (s) {
           pin = atoi(s);
