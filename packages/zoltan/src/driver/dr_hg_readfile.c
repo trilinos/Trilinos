@@ -486,7 +486,7 @@ char *yo = "MM_readfile";
         }
     }
 
-    if (f !=stdin) fclose(f);
+    /* if (f !=stdin) fclose(f); */
 
     /************************/
     /* sort indices         */
@@ -497,10 +497,14 @@ char *yo = "MM_readfile";
     /* Debug: write out matrix */
     /************************/
 
-    mm_write_banner(stdout, matcode);
-    mm_write_mtx_crd_size(stdout, M, N, nz);
-    for (k=0; k<nz; k++)
-        fprintf(stdout, "%d %d %20.19g\n", mat[k].i+1, mat[k].j+1, mat[k].val);
+    /* if ((Proc==0) && (Debug_Driver > 3)) { */
+    if (0){ /* We don't know the debug level, so don't print. */
+      printf("Debug: Sparse matrix in %s is:\n", yo);
+      mm_write_banner(stdout, matcode);
+      mm_write_mtx_crd_size(stdout, M, N, nz);
+      for (k=0; k<nz; k++)
+          printf("%d %d %20.19g\n", mat[k].i+1, mat[k].j+1, mat[k].val);
+    }
 
     /************************/
     /* Populate Zoltan hg data structs. */
