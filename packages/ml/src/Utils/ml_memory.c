@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #endif
 
+#include "ml_utils.h"
 #include "ml_comm.h"
 #include "ml_memory.h"
 
@@ -88,7 +89,7 @@ TAKING THIS OUT TO HANDLE CASE WHEN THERE ARE NO POINTS ON PROC
 #ifdef ML_MPI
          MPI_Comm_rank(MPI_COMM_WORLD,&mypid);
 #endif
-         pr_error("(%d) %s: unable to allocate %d bytes to %s.\n",mypid, ML_FUNCTION_NAME,leng, name );
+	 pr_error("(%d) %s: unable to allocate %d bytes to %s.\n",mypid, ML_FUNCTION_NAME, leng, name );
       }
 
       /* -------------------------------------------------------------- */
