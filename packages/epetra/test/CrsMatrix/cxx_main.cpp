@@ -614,59 +614,65 @@ cout << A2;
     if (verbose) cout << endl << "LeftScale and RightScale tests PASSED" << endl << endl;
   }
 
-/*
-  if (verbose) cout << "\n\n*****Testing InvRowSums" << endl << endl;
+  Comm.Barrier();
 
+  if (verbose) cout << "\n\n*****Testing InvRowSums" << endl << endl;
+  bool InvSumsBroke = false;
+// Works!
   EPETRA_TEST_ERR(A2.InvRowSums(xRow),ierr);
   cout << xRow;
-//  EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
+  EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
   float A2infNormFloat = A2.NormInf();
-//cout << A2;
-  bool InvSumsBroke = false;
-//  if (1.0!=A2infNormFloat) {
-//    EPETRA_TEST_ERR(-41,ierr);
-//    InvSumsBroke = true;
-//  }
+cout << A2<< endl << "Inf Norm = " << A2infNormFloat << endl;
+  if (1.0!=A2infNormFloat) {
+    EPETRA_TEST_ERR(-41,ierr);
+    InvSumsBroke = true;
+  }
 
-//  EPETRA_TEST_ERR(A2.InvColSums(xCol),ierr);
-//cout << xCol;
-//  EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
-//  float A2oneNormFloat = A2.NormOne();
-//cout << A2;
-//  if (1.0!=A2oneNormFloat) {
-//    EPETRA_TEST_ERR(-42,ierr);
-//    InvSumsBroke = true;
-//  }
+  // Works
+  EPETRA_TEST_ERR(A2.InvColSums(xDomain),ierr);
+  cout << xDomain << endl;
+  EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
+  float A2oneNormFloat2 = A2.NormOne();
+cout << A2;
+  if (1.0!=A2oneNormFloat2) {
+    EPETRA_TEST_ERR(-42,ierr)
+    InvSumsBroke = true;
+  }
 
+// Works!
   EPETRA_TEST_ERR(A2.InvRowSums(xRange),ierr);
+  cout << "ierr = " << ierr << endl;
 cout << xRange;
   if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl;
   EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
   float A2infNormFloat2 = A2.NormInf(); // We use a float so that rounding error
 	// will not prevent the sum from being 1.0.
-//cout << A2;
+cout << A2;
   if (1.0!=A2infNormFloat2) {
+    cout << "InfNorm should be = 1, but InfNorm = " << A2infNormFloat2 << endl;
     EPETRA_TEST_ERR(-43,ierr)
     InvSumsBroke = true;
   }
 
-//  EPETRA_TEST_ERR(A2.InvColSums(xDomain),ierr);
-//  if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl; 
-//  EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
-//  float A2oneNormFloat2 = A2.NormOne();
-//cout << A2;
-//  if (1.0!=A2oneNormFloat2) {
-//    EPETRA_TEST_ERR(-44,ierr)
-//    InvSumsBroke = true;
-//  }
+  // Doesn't work - may not need this test because column ownership is not unique
+  /*  EPETRA_TEST_ERR(A2.InvColSums(xCol),ierr);
+cout << xCol;
+  EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
+  float A2oneNormFloat = A2.NormOne();
+cout << A2;
+  if (1.0!=A2oneNormFloat) {
+    EPETRA_TEST_ERR(-44,ierr);
+    InvSumsBroke = true;
+  }
+  */
 
   if (InvSumsBroke) {
     if (verbose) cout << endl << "InvRowSums tests FAILED" << endl << endl;
   }
   else
     if (verbose) cout << endl << "InvRowSums tests PASSED" << endl << endl;
-*/
-  //cout << A2;
+
 delete [] Values2;
 delete [] Indices2;
 
