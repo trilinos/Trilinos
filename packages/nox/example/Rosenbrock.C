@@ -58,7 +58,7 @@ public:
     solution(2)
   {
     initialGuess(0) = -1.2;
-    initialGuess(1) = -1;
+    initialGuess(1) = 1;
     solution(0) = 1;
     solution(1) = 1;
   };
@@ -110,10 +110,10 @@ int main()
 
   // Set up the status tests
   NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
-  NOX::StatusTest::MaxIters statusTestB(10);
+  NOX::StatusTest::MaxIters statusTestB(20);
   NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
-  // Set up the solver parameters
+  // Create the list of solver parameters
   NOX::Parameter::List solverParameters;
 
   // Set the level of output (this is the default)
@@ -123,11 +123,13 @@ int main()
 		     NOX::Utils::InnerIteration + 
 		     NOX::Utils::Parameters);
 
-  // Choose the solver itself (this is the default)
+  // Set the solver (this is the default)
   solverParameters.setParameter("Solver", "Line Search");
 
-  // Set up the line search parameters
+  // Create the line search parameters sublist
   NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+
+  // Set the line search method
   lineSearchParameters.setParameter("Method","More'-Thuente");
 
   // Create the solver
@@ -135,6 +137,8 @@ int main()
 
   // Solve the nonlinesar system
   NOX::StatusTest::StatusType status = solver.solve();
+
+  // 
 
   // Get the answer
   grp = solver.getSolutionGroup();
