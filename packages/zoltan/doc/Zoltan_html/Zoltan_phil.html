@@ -9,11 +9,11 @@
    <meta name="sandia.approved" content="SAND99-1375">
    <meta name="sandia.create_date" content="05/28/99">
    <meta name="keywords" content="Zoltan, project description, dynamic load balancing, parallel computing">
-   <meta name="description" content="Project description page for the Zoltan Dynamic Load-Balancing project">
+   <meta name="description" content="Project description page for the Zoltan project">
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title>Zoltan Project Description</title>
 <!-----------------------------------------------------------------------------
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Zoltan Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -203,23 +203,20 @@ Zoltan</a></font></b></td>
 </td>
 
 <td VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><b><font face="Verdana, Arial, Helvetica"><font size=+2>Zoltan:&nbsp;</font></font></b>
-<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>A Dynamic Load-Balancing
-Library for Parallel Applications</font></font></b>
+<br><b><font face="Verdana, Arial, Helvetica"><font size=+2>Data Management Services
+for Parallel Applications</font></font></b>
 <p><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
-<b><font face="Verdana, Arial, Helvetica"><font size=+2>Philosophy and Project 
+<b><font face="Verdana, Arial, Helvetica"><font size=+2>Project 
 Description</font></font></b><br>
 <hr>
 <ul>
 <li>
-<a href="Zoltan_phil.html#Typical">Typical Approach to Dynamic Load Balancing</a
-></li>
-
+<a href="Zoltan_phil.html#Overview">Overview</a></li>
 <li>
-<a href="Zoltan_phil.html#Harder">Why Dynamic Load Balancing is Harder
-than Static Partitioning</a></li>
-
+Design Considerations
+<ul>
 <li>
-<a href="Zoltan_phil.html#Design">Design of Dynamic Load-Balancing Libraries</a>
+<a href="Zoltan_phil.html#Design">Design of Toolkits and Libraries</a>
 </li>
 
 <li>
@@ -227,10 +224,198 @@ than Static Partitioning</a></li>
 
 <li>
 <a href="Zoltan_phil.html#ZExamples">Zoltan Examples</a></li>
+</ul>
+</li>
 
 <li>
-<a href="Zoltan_phil.html#Future">Future Work</a></li>
+Dynamic Load-Balancing and Data Migration Tools
+<ul>
+<li>
+<a href="Zoltan_phil.html#Typical">Typical Approach to Dynamic Load Balancing</a
+></li>
+<li>
+<a href="Zoltan_phil.html#Harder">Why Dynamic Load Balancing is Harder
+than Static Partitioning</a></li>
+<li>
+<a href="Zoltan_phil.html#ZLB">Zoltan's Load-Balancing Suite</a></li>
+<li>
+<a href="Zoltan_phil.html#Mig">Data Migration Tools</a></li>
 </ul>
+</li>
+
+<li>
+Communication Tools
+<ul>
+<li>
+<a href="Zoltan_phil.html#UComm">Unstructured Communication Library</a>
+</li>
+<li>
+<a href="Zoltan_phil.html#DD">Distributed Data Directories</a>
+</li>
+</ul>
+</li>
+
+<li>
+<a href="Zoltan_phil.html#MemTools">Memory Management Tools</a></li>
+
+
+</ul>
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="Overview"><b>Overview</b><p>
+The Zoltan library is a collection of data management services for parallel, 
+unstructured, adaptive, and dynamic applications.  It simplifies the
+load-balancing, data movement, unstructured communication, and memory usage
+difficulties that arise in dynamic applications such as adaptive
+finite-element methods, particle methods, and crash simulations.
+Zoltan's data-structure neutral design also lets a wide range of applications
+use it without imposing restrictions on application data structures.
+Its object-based interface provides a simple and inexpensive way for
+application developers to use the library and researchers to make new
+capabilities available under a common interface.
+<p>
+Zoltan provides tools that help developers of parallel applications.
+<ul>
+<li>
+A suite of <a href="ug_html/ug_alg.html">parallel partitioning algorithms</a> 
+and <a href="ug_html/ug_interface_mig.html">data migration tools</a>
+dynamically redistribute data to reflect, say, changing processor workloads.
+</li>
+<li>
+<a href="dev_html/dev_util_dd.html">Distributed data directories</a> and 
+<a href="dev_html/dev_util_comm.html">unstructured communication</a> 
+services let
+applications perform complication communication using only a few simple
+primitives.
+</li>
+<li>
+<a href="dev_html/dev_util_mem.html">Dynamic memory management tools</a>
+enhance common memory allocation functions to
+simplify debugging of dynamic memory usage.
+</li>
+</ul>
+These tools are provided in an easy-to-use toolkit that is callable from C,
+C++, and Fortran90.
+
+
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="Design"><b> Design of Toolkits and Libraries</b><p>
+Using general-purpose libraries allows
+algorithms to be shared among and compared within many applications.  The
+close dependence of libraries on application data, however,
+requires careful design to maintain separation between the
+libraries and application data structures.
+<p>
+
+One way to provide this separation is to use object-based software design.
+Instead of requiring the application to build data structures
+required by the library, the application could pass functions that access
+the application data structure to the libraries.
+For example, rather than require an application to build a complicated graph
+description, the library can require an application to provide a
+function returning graph vertices and a function returning edge 
+connectivity for a given vertex.  
+Using these functions, the 
+library can build the data structures it needs.
+<p>
+
+This object-based design has a number of advantages.
+<ul>
+<li>
+Changes in the library's data structures need not
+propagate back to the application.  As long as the set of required functions
+does not change, the application does not need to change to use new versions
+of the library.
+</li>
+<li>
+Once the set of required functions is implemented, the application can use all
+the algorithms in the library.
+</li>
+
+<li>
+The required functions are generally easy for
+an application to implement, as most applications need to
+access their data objects and the interactions between objects 
+for their own computations.  
+</li>
+<li>
+Memory usage is lower as 
+an application does not have to build an intermediate data structure
+that is later converted to appropriate data structures for the library.
+</li>
+<li>
+The constructor for library data structures is called only when it
+is needed, and only the data needed for a particular algorithm is obtained.
+</li>
+</ul>
+<p>
+There are a few disadvantages to this object-based approach as well.
+<ul>
+<li>
+Additional overhead is incurred as the library calls the functions to 
+build its data structures.
+In experiments, however, this cost has been very low
+relative to the cost of actual computation in the library.
+</li>
+<li>
+A general-purposes tool can
+provide only limited support for manipulations of application data
+structures (e.g., data movement).
+</li>
+</ul>
+<p>
+For more detailed information, see 
+[<a href="ftp://ftp.cs.sandia.gov/pub/papers/kddevin/cmame.ps.gz">Hendrickson
+and Devine</a>].
+<p>
+
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="ZDesign"><b> Zoltan's Design</b><p>
+We have chosen an object-based, callback function design.  An application
+provides a number of simple callback functions that access the application
+data structures.  Zoltan then calls these functions to obtain data it needs.
+Geometric algorithms are
+supported via callback functions returning objects to be balanced and the
+weights and coordinates of those objects.  
+Graph-based algorithms are
+supported by callback functions returning objects to be
+balanced, edges between objects, and object and edge weights.
+For refinement-tree algorithms, additional callback functions return
+parent-child relationships.
+<p>
+Support for data migration (the movement of data to establish a new
+decomposition) is also provided through a similar callback
+function interface.  An application provides callback functions that pack
+object data into and unpack data from communication buffers provided by 
+Zoltan.  Zoltan calls the packing function to load communication buffers,
+performs the communication necessary to move the data, and calls the unpacking
+function to unload the communication buffers. 
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="ZExamples"><b> Zoltan Examples</b><p>
+Several examples of Zoltan's use can be found in the 
+<a href="ug_html/ug.html">Zoltan User's Guide</a>.
+<ul>
+<li>
+<a href="ug_html/ug_intro.html#Load-Balancing Tools">General 
+examples of library usage</a>.
+</li>
+<li>
+<a href="ug_html/ug_examples.html">Specific examples</a>
+for each phase of balancing 
+(<a href="ug_html/ug_examples_init.html">initialization</a>, 
+<a href="ug_html/ug_examples_lb.html">load balancing</a>, and 
+<a href="ug_html/ug_examples_mig.html">data migration</a>).
+</li>
+<li>
+<a href="ug_html/ug_examples_query.html">Examples of callback function 
+implementations</a>.
+</li>
+</ul>
+<p>
+<!---------------------------------------------------------------------------->
 <hr>
 <a name="Typical"><b> Typical Approach to Dynamic Load Balancing</b><p>
 Dynamic load balancing has been used in many applications, ranging from
@@ -256,6 +441,7 @@ severely impaired.
 <p>
 
 
+<!---------------------------------------------------------------------------->
 <hr>
 <a name="Harder"><b> Why Dynamic Load Balancing is Harder than Static Partitioning</b><p>
 Many high-quality static partitioning tools exist; examples include
@@ -309,181 +495,135 @@ costs.</td>
 </tr>
 </table>
 <p>
+<!---------------------------------------------------------------------------->
 <hr>
-<a name="Design"><b> Design of Dynamic Load-Balancing Libraries</b><p>
-While the typical approach to dynamic load balancing limits code reuse and 
-the ability to compare algorithms, using a general-purpose library allows
-algorithms to be shared among and compare within many applications.  The
-close dependence of dynamic load balancing on application data, however,
-requires careful design of libraries to maintain separation between the
-load balancing and application data structures.
+<a name="ZLB"><b>Zoltan's Load-Balancing Suite</b></a>
 <p>
-
-One way to provide this separation is to use object-oriented software design.
-Instead of requiring the application to build data structures
-required by the load-balancing algorithm (e.g., graph or geometry
-descriptions), the load-balancing tool could be passed functions that access
-the application data structure to obtain data needed for load balancing.
-For example, rather than require an application to build a complicated graph
-description, the load-balancing library can require an application to provide a
-function returning graph vertices and a function returning edge 
-connectivity for a given vertex.  
-Using these functions, the load-balancing
-library can build the data structures it needs to compute new partitions.
+In our experience, no single partitioning strategy is effective for all
+parallel computations.  Some application require partitions based only on the
+problem's workloads and geometry; others benefit from explicit consideration
+of dependencies between data.  Some applications require the highest quality
+partitions possible, regardless of the cost to generate them; others can
+sacrifice some quality so long as new partitions can be generated quickly.
+For some applications, the cost to relocate data is prohibitively high, so
+incremental partitioning algorithms are needed; other applications can
+tolerate greater remapping costs.  Most important, application developers
+might not know in advance which strategies work best in their applications, so
+the need a convenient means of comparing algorithms.
 <p>
-
-This object-oriented design has a number of advantages.
+We provide three classes of parallel partitioning algorithms in the Zoltan
+library:
 <ul>
-<li>
-Changes in the load-balancing library's data structures need not
-propagate back to the application.  As long as the set of required functions
-does not change, the application does not need to change to use new versions
-of the library.
+<li>Geometric bisection 
+(<a href="ug_html/ug_alg_rcb.html">Recursive Coordinate Bisection</a>, 
+<a href="ug_html/ug_alg_rib.html">Recursive Inertial Bisection</a>)
 </li>
-<li>
-Once the set of required functions is implemented, the application can use all
-the load-balancing algorithms in the library.
+<li>Space-filling curve partitioning
+(<a href="ug_html/ug_alg_hsfc.html">Hilbert Space-Filling Curve Partitioning</a>, 
+<a href="ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>, 
+<a href="ug_html/ug_alg_oct.html">Octree Partitioning</a>)
 </li>
-
-<li>
-The required functions are generally easy for
-an application to implement, as most applications need to
-access their objects to be balanced (vertices) 
-and the interactions between objects (edges)
-for their own computations.  
-</li>
-<li>
-Memory usage is lower as 
-an application does not have to build an intermediate data structure
-that is later converted to appropriate data structures for the load-balancing
-algorithms.
-</li>
-<li>
-The constructor for load-balancing data structures is called only when it
-is needed, and only the data needed for a particular algorithm is obtained.
+<li>Graph partitioning (through interfaces to
+<a href="ug_html/ug_alg_parmetis.html">ParMETIS</a> (U. Minn.) and
+<a href="ug_html/ug_alg_jostle.html">Jostle</a> (U. Greenwich))
 </li>
 </ul>
+
+Once the Zoltan callback functions are implemented, an application can switch
+between partitioning algorithms through one simple function call to 
+<a href="ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method"><b>Zoltan_LB_Set_Method</b></a>.  
+Thus, comparisons of different algorithms within a single application are easy
+to obtain, enabling users to try several algorithms and find
+the best ones for their applications.
 <p>
-There are a few disadvantages to this object-oriented approach as well.
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="Mig"><b>Data Migration Tools</b></a>
+<p>
+A complicated part of dynamic repartitioning is the need to move data from old
+processors to new ones.  This data migration requires deletions and insertions
+from the application data structures as well as communication between the
+processors.
+<p>
+To help an application with 
+<a href="ug_html/ug_interface_mig.html">data migration</a>, Zoltan requires an application to
+supply callback functions that pack data into communication buffers and unpack
+data from communication buffers.  Zoltan
+calls the packing function to load communication buffers with objects to be
+exported, performs all communication needed to move the data, and calls the
+unpacking function to load the objects in the data structures on the new
+processors.  This mechanism eliminates the need for the application developer
+to implement complicated communication for data migration.
+<p>
+<!---------------------------------------------------------------------------->
+<hr>
+<a name="UComm"><b>Unstructured Communication Library</b></a>
+<p>
+Unlike static applications, where communication patterns remain fixed
+throughout the computation, dynamic applications can have complicated,
+changing communication patterns.  For example:
 <ul>
-<li>
-Additional overhead is incurred as the library calls the functions to 
-build its data structures.
-In experiments, however, this cost has been very low
-relative to the cost of actually computing new partitions.  
+<li>After adaptive mesh refinement,
+new communication patterns must reflect dependencies between newly created
+elements.  
 </li>
 <li>
-Load-balancing algorithms that focus on specific applications can provide
-greater levels of support for data movement.  A general-purpose tool can
-provide only limited support for data movement.
+Multiphysics simulations, such as crash simulations, might require complicated
+communication to transfer data between decompositions for different simulation
+phases.
 </li>
 </ul>
+Zoltan provides an 
+<a href="dev_html/dev_util_comm.html">unstructured communication package</a>
+to simplify
+communication.  The package builds a communication plan, including information
+about both message sends and receives for a given processor.  The plan can be
+reused throughout the application, or destroyed and rebuilt when communication
+patterns change.  The package also includes simple communication primitives that
+insulate the user from details of message sends and receives.  
 <p>
-For more detailed information, see 
-[<a href="ftp://ftp.cs.sandia.gov/pub/papers/kddevin/cmame.ps.gz">Hendrickson
-and Devine</a>].
-<p>
-
+<!---------------------------------------------------------------------------->
 <hr>
-<a name="ZDesign"><b> Zoltan's Design</b><p>
-We have chosen an object-oriented, callback function design.  An application
-provides a number of simple callback functions that access the application
-data structures.  Zoltan then calls these functions to obtain data it needs
-for load balancing.  Geometric algorithms (such as Recursive Coordinate
-Bisection, Recursive Inertial Bisection, and Space-Filling Curves) are
-supported via callback functions returning objects to be balanced and the
-weights and coordinates of those objects.  
-Graph-based algorithms are
-provided through interfaces to the 
-<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-and
-<a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>
-packages; these
-algorithms are supported by callback functions returning objects to be
-balanced, edges between objects, and object and edge weights.
-For refinement-tree algorithms, additional callback functions return
-parent-child relationships.
+<a name="DD"><b>Distributed Data Directories</b></a>
 <p>
-Support for data migration (the movement of data to establish a new
-decomposition) is also provided through a similar callback
-function interface.  Because Zoltan does not directly access an application's
-data structures, it cannot perform insertions and deletions of data required
-for data migration.  It can, however, perform the communication necessary 
-for data migration, as it knows the objects to be moved and their
-destinations.  Thus, an application can provide callback functions that pack
-object data into and unpack data from communication buffers provided by 
-Zoltan.  Zoltan can call the packing function to load communication buffers,
-perform the communication necessary to move the data, and call the unpacking
-function to unload the communication buffers.  This support frees the
-application developer from writing complicated communication routines to
-perform the data migration.
+Dynamic applications often need to locate off-processor information.  After
+repartitioning, for example, a processor might need to rebuild ghost cells and
+lists of data to be communicated.  It might know which data it needs, but not
+where the data are located.
+<p>
+To help locate off-processor data, Zoltan includes a 
+<a href="dev_html/dev_util_dd.html">distributed data
+directory</a> tool that is scalable with respect to both memory usage and
+computation time.  Processors register their owned objects with the directory.
+Then, through a rendezvous algorithm, other processors can look up the
+location of data they need. 
+<p>
+<!---------------------------------------------------------------------------->
 <hr>
-<a name="ZExamples"><b> Zoltan Examples</b><p>
-Several examples of Zoltan's use can be found in the 
-<a href="ug_html/ug.html">Zoltan User's Guide</a>.
-<ul>
-<li>
-<a href="ug_html/ug_intro.html#Load-Balancing Tools">General 
-examples of library usage</a>.
-</li>
-<li>
-<a href="ug_html/ug_examples.html">Specific examples</a>
-for each phase of balancing 
-(<a href="ug_html/ug_examples_init.html">initialization</a>, 
-<a href="ug_html/ug_examples_lb.html">load balancing</a>, and 
-<a href="ug_html/ug_examples_mig.html">data migration</a>).
-</li>
-<li>
-<a href="ug_html/ug_examples_query.html">Examples of callback function 
-implementations</a>.
-</li>
-</ul>
+<a name="MemTools"><b>Memory Management Tools</b></a>
 <p>
-<hr>
-<a name="Future"><b> Future Work</b><p>
+Dynamic applications rely heavily on the ability to allocate and free memory
+as needed.  Memory leaks and invalid memory accesses are common to developing
+software.  Although many software development tools let users track memory
+bugs, these tools are often not available on state-of-the-art parallel
+computers.  
 <p>
-
-Static partitioning algorithms are compared based on their execution times and
-partition quality. Comparisons of dynamic load-balancing algorithms, however, 
-must also account for the data movement costs of a new decomposition.
-We will investigate the relative importance of partition quality, time to
-compute new partitions, and data movement costs
-in a number of applications. For some applications, lower-quality
-partitions may be acceptable if data movement can be
-minimized. Other applications may perform better with high-quality
-partitions, regardless of their cost. 
-In the past, characterizations of this nature
-were difficult to perform because of the 
-<a href="#Typical">typical way dynamic load balancing was implemented</a>.
-With Zoltan, comparisons of algorithms within applications are easy to
-perform, as an application has access to all algorithms in Zoltan once its
-callback functions are implemented.  
+Zoltan's <a href="dev_html/dev_util_mem.html">memory management package</a> 
+provides simple in-application debugging
+tools that are beneficial on state-of-the-art computing platforms.  The
+package includes wrappers around malloc and free that record the location of
+all memory
+allocation operations.  Thus, tracking memory leaks is simplified, as 
+source-code locations of unfreed-memory allocations can be printed.
+Statistics about memory allocations and frees are also available.
 <p>
-Heterogeneous computing systems present a new challenge to dynamic
-load-balancing software.
-On heterogeneous computing architectures, partitioning algorithms must
-account for widely varying processor powers,
-memory capacities, and network connections to correctly balance load,
-prevent memory overflows, and reduce
-communication over slow network links. To address these needs, we are
-designing and implementing a hierarchical
-heterogeneous computing model in Zoltan (work with 
-<a href="http://www-users.cs.umn.edu/~karypis">Karypis</a> and 
-<a href="http://www-users.cs.umn.edu/~kumar">Kumar</a>). 
-Using this model, we will
-partition both the machine and the application data
-in an attempt to balance work loads and reduce communication over slow
-networks. 
-
+<!---------------------------------------------------------------------------->
 
 <hr>
 <b>For more information, contact:</b>
 <ul>
 <li>
 <a href="mailto: kddevin@cs.sandia.gov">Karen Devine</a></li>
-
-<li>
-<a href="mailto: bah@cs.sandia.gov">Bruce Hendrickson</a></li>
 </ul>
 <!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
 </tr>
