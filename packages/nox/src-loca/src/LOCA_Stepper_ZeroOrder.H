@@ -33,12 +33,17 @@
 #ifndef LOCA_SOLVER_ZERO_ORDER_H
 #define LOCA_SOLVER_ZERO_ORDER_H
 
-#include "LOCA_Solver_Generic.H"    // base class
-#include "NOX_Solver_Manager.H"     // class data element
-#include "NOX_Parameter_List.H"	    // class data element
+#include "LOCA_Stepper_Generic.H"    // base class
 
 namespace LOCA {
-namespace Solver {
+
+  namespace Solver {
+    class Generic;
+  }
+
+namespace Stepper {
+
+  using namespace NOX::StatusTest;
 
 /*!
   \brief %Zero Order continuation method for LOCA.
@@ -64,29 +69,33 @@ class ZeroOrder : public Generic {
 public:
 
   //! %ZeroOrder method constructor. 
-  ZeroOrder(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
+  ZeroOrder(Solver::Generic& s);
 
   //! Destructor
   virtual ~ZeroOrder();
 
-  virtual bool reset(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p);
-  virtual Status::StatusType getStatus();
-  virtual Status::StatusType iterate();
-  virtual Status::StatusType solve();
+  virtual bool reset(Solver::Generic& s);
+
+  virtual bool resetFromFailedStep();
+
+  virtual StatusType getStatus();
+
+  virtual StatusType solve();
+
+  virtual StatusType step();
+
   virtual const Abstract::Group& getSolutionGroup() const;
+
   virtual const Abstract::Group& getPreviousSolutionGroup() const;
-  virtual int getNumIterations() const;
-  virtual const Parameter::List& getOutputParameters() const;
-  virtual bool getStepLength(double& stepLength);
+
+  virtual int getNumContinuationSteps() const;
+
+  virtual const NOX::Parameter::List& getParameterList() const;
 
 protected:
-
-  //! NOX Manager class for calling a zero order nonlinear solve.
-  NOX::Solver::Manager* solverPtr;
 
 };
 } // namespace Solver
 } // namespace NOX
 
 #endif
-

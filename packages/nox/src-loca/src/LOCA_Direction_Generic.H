@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,17 +30,63 @@
 // ************************************************************************
 //@HEADER
 
-// Primary LOCA Objects
-#include "NOX.H"
-#include "LOCA_Abstract_Vector.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Stepper_Generic.H"
-#include "LOCA_Stepper_Manager.H"
-#include "LOCA_Stepper_ZeroOrder.H"
-#include "LOCA_Solver_Generic.H"
-#include "LOCA_Solver_NoxSolver.H"
-//#include "LOCA_Direction_Generic.H"
-//#include "LOCA_Direction_Manager.H"
-#include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
-#include "NOX.H"
+#ifndef NOX_DIRECTION_GENERIC_H
+#define NOX_DIRECTION_GENERIC_H
+
+// Forward declarations
+namespace NOX {
+namespace Abstract {
+class Vector;
+class Group;
+}
+namespace Solver {
+class Generic;
+}
+namespace Parameter {
+class List;
+}
+}
+
+namespace NOX {
+
+//! Search direction strategies
+namespace Direction {
+
+//! %Generic direction interface
+/*!
+  %Generic interface for calculating a search direction.
+ */
+class Generic {
+
+public:
+
+  //! Default constructor. 
+  /*! 
+    Constructors of derived objects should look like reset.
+   */
+  Generic() {};
+
+  //! Destructor
+  virtual ~Generic() {};
+
+  //! Reset parameters
+  virtual bool reset(Parameter::List& params) = 0;
+  
+  /*!
+    \brief Compute the direction vector, \c d, for a specific method given
+    the current group, \c grp. 
+
+    The \c grp is not const so that we can compute the F vector, the
+    Jacobian matrix, the Newton vector, and so on.
+
+    Const access to the solver is used for getting additional
+    information such as the past solution, the iteration number, and
+    so on.
+  */
+  virtual bool compute(Abstract::Vector& d, Abstract::Group& g, const Solver::Generic& s) = 0;
+
+};
+} // namespace Direction
+} // namespace NOX
+
+#endif

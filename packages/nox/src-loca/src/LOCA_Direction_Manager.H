@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,17 +30,59 @@
 // ************************************************************************
 //@HEADER
 
-// Primary LOCA Objects
-#include "NOX.H"
-#include "LOCA_Abstract_Vector.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Stepper_Generic.H"
-#include "LOCA_Stepper_Manager.H"
-#include "LOCA_Stepper_ZeroOrder.H"
-#include "LOCA_Solver_Generic.H"
-#include "LOCA_Solver_NoxSolver.H"
-//#include "LOCA_Direction_Generic.H"
-//#include "LOCA_Direction_Manager.H"
-#include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
-#include "NOX.H"
+#ifndef NOX_DIRECTION_MANAGER_H
+#define NOX_DIRECTION_MANAGER_H
+
+#include "NOX_Direction_Generic.H" // base class
+#include "NOX_Common.H"            // class data element (string)
+
+namespace NOX {
+namespace Direction {
+
+//! %Manager for all direction computations
+/*! 
+   The parameters passed to the constructor or reset should specify
+   the "Method", as described below, as well as any additional
+   parameters for that particular method.
+ 
+   <ul>
+   <li> "Method" - Name of the direction method. Valid choices are
+   <ul> 
+   <li> "%Newton" (NOX::Direction::Newton) [Default]
+   <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
+   </ul>
+   </ul>
+ */  
+class Manager : public Generic {
+
+public:
+
+  //! Empty Constructor
+  Manager();
+
+  //! Constructor
+  Manager(Parameter::List& params);
+
+  //! Destructor
+  ~Manager();
+
+  // derived
+  bool reset(Parameter::List& params);
+
+  // derived
+  bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
+	       const Solver::Generic& solver);
+
+private:
+
+  //! Method name
+  string method;
+
+  //! Pointer to actual direction calculation method
+  Direction::Generic* ptr;
+
+};
+} // namespace Direction
+} // namespace NOX
+
+#endif

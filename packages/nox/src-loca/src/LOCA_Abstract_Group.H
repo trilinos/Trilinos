@@ -33,19 +33,25 @@
 #ifndef LOCA_ABSTRACT_GROUP_H
 #define LOCA_ABSTRACT_GROUP_H
 
-#include "LOCA_Abstract_Vector.H" // for LOCA::CopyType
-#include "NOX_Common.H" // for string 
+#include "NOX_Abstract_Group.H"    // base class
+
+#include "LOCA_Abstract_Vector.H"  // for NOX::CopyType
+#include "NOX_Common.H"            // for string 
 
 namespace NOX {
-namespace Parameter {
-class List;
-}
+  namespace Parameter {
+    class List;
+  }
 }
 
-namespace NOX { 
+namespace LOCA {
+  class ParameterVector;
+}
+
+namespace LOCA { 
 namespace Abstract { 
 
-/*!  \brief %LOCA pure abstract interface to a "group"; i.e., a
+/*!  \brief %NOX pure abstract interface to a "group"; i.e., a
   solution vector and the corresponding F-vector, Jacobian matrix,
   gradient vector, and Newton vector.
 */
@@ -77,7 +83,7 @@ namespace Abstract {
   
 */
 
-class Group {
+class Group : public NOX::Abstract::Group {
 
 public:
   
@@ -93,169 +99,7 @@ public:
     source group.)
   */
   virtual Group& operator=(const Group& source) = 0;
-      
-  //@{ \name "Compute" functions.
-
-  //! Set the solution vector, x, to y.
-  virtual bool setX(const Vector& y) = 0;
-
-  //! Compute and return solution vector, x, where this.x = grp.x + step * d.
-  /*! Let \f$x\f$ denote this group's solution and \f$\hat x\f$ denote
-    the solution associated with group \c grp. Then we compute 
-    \f[ x = \hat x + \mbox{step} \; d. \f]
-  */
-  virtual bool computeX(const Group& grp, const Vector& d, double step) = 0;
-
-  //! Compute and return F(x). 
-  /*! In other words, return \f$F \equiv F(x)\f$. It's generally
-    useful to also compute and stores norm of F(x) at this point for
-    later access by the getNormF function. */
-  virtual bool computeF() = 0;
-
-  //! Compute Jacobian.
-  /*! In other words, compute \f$  J_{ij} = \frac{\partial F_i}{\partial x_j} (x)\f$.
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool computeJacobian();
-
-  //! Compute and return gradient.
-  //! Returns \c false if either F or the Jacobian have not been computed.
-  /*! In other words, compute \f$g = J^T F\f$. 
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool computeGradient();
-
-  //! Compute and return Newton direction, using parameters for nonlinear solve.
-  //! Returns \c false if F and/or the Jacobian have not been computed.
-  /*! Solve \f$Js = -F\f$ for \f$s\f$.  
-
-  The parameters are from the "Linear Solver" sublist of the
-  "Direction" sublist that is passed to solver during construction.
-
-  The parameter "Tolerance" may be added/modified in the list of
-  parameters - this is the ideal solution tolerance for an iterative
-  linear solve.
-
-  \note If not defined in derived object, returns \c false.
-  */
-  virtual bool computeNewton(Parameter::List& params) = 0;
-
-  //@}
-
-  /** @name Jacobian operations.
-   
-    Operations using the Jacobian matrix. These may not be defined in
-    matrix-free scenarios.
-  */
-
-  //@{
-  
-  //! Applies Jacobian to the given input vector and puts the answer in the result.
-  /*! 
-    Computes 
-    \f[ \mbox{result} = J \; \mbox{input}, \f]
-    and returns \c true.
-
-    Returns \c false if any errors are encountered.
-
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool applyJacobian(const Vector& input, Vector& result) const;
-
-  //! Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
-
-  /*!  
-    Computes 
-    \f[ \mbox{result} = J^T \; \mbox{input}, \f]
-    and returns \c true.
-
-    Returns \c false if any errors are encountered.
-
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const;
-
-  /*!
-    \brief Applies the inverse of the Jacobian matrix to the given input vector.
-  */
-  /*! 
-    Computes 
-    \f[ \mbox{result} = J^{-1} \; \mbox{input}, \f]
-    and returns \c true.
-
-    Returns \c false if any errors are encountered.
-
-  The parameters are from the "Linear Solver" sublist of the
-  "Direction" sublist that is passed to solver during construction.
-
-  The parameter "Tolerance" may be added/modified in the list of
-  parameters - this is the ideal solution tolerance for an iterative
-  linear solve.
-
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool applyJacobianInverse(Parameter::List& params, const Vector& input, Vector& result) const;
-
-  //! Applies the inverse of the diagonal of the Jacobian to the given input vector.
-  /*! 
-    Only necessary if using NOX::Solver::NonlinearCG.
-    \note If not defined in derived object, returns \c false.
-  */
-  virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const;
-
-  //@}
-
-  /** @name "Is" functions.
-   
-    Checks to see if various objects have been computed. Returns \c true
-    if the corresponding "compute" function has been called since the
-    last update to the solution vector (via instantiation or
-    computeX).
-  */
-
-  //@{
-  
-  //! Return \c true if F is valid.
-  virtual bool isF() const = 0;
-  //! Return \c true if the Jacobian is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isJacobian() const;
-  //! Return \c true if the gradient is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isGradient() const;
-  //! Return \c true if the Newton direction is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isNewton() const;
-  //@}
-
-  /** @name "Get" functions.
-   
-    Note that these function do not check whether or not the vectors
-    are valid. Must use the "Is" functions for that purpose.
-  */
-  //@{ 
-
-  //! Return solution vector.  
-  virtual const Vector& getX() const = 0;
-
-  //! Return F(x)
-  virtual const Vector& getF() const = 0;
-
-  //! Return 2-norm of F(x). 
-  /*! In other words, \f[ \sqrt{\sum_{i=1}^n F_i^2} \f] */
-  virtual double getNormF() const = 0;
-
-  //! Return gradient.
-  virtual const Vector& getGradient() const = 0;
-
-  //! Return Newton direction.
-  virtual const Vector& getNewton() const = 0;
-
-  //@}
-
-
-  //@{ \name Creating new Groups.
-
+     
   /*! 
     \brief Create a new %Group of the same derived type as this one by
     cloning this one, and return a pointer to the new group.  
@@ -264,12 +108,21 @@ public:
     "this". Otherwise, if type is \c ShapeCopy, we need only replicate
     the shape of "this". Returns \c NULL if clone is not supported.
   */
-  virtual Group* clone(CopyType type = DeepCopy) const = 0;
+  virtual Group* clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
-  //@}
+  //! Set the parameter list in the group to p (pVector = p).  
+  virtual bool setParams(const ParameterVector& p) = 0;
+
+  //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
+  virtual bool computeParams(const ParameterVector& oldParams, 
+			     const ParameterVector& direction, 
+			     double step) = 0;
+
+  //! Return a const reference to the ParameterVector owned by the group. 
+  virtual const ParameterVector& getParams() const = 0;
 
 };
 } // namespace Abstract
-} // namespace NOX
+} // namespace LOCA
 
 #endif

@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,17 +30,26 @@
 // ************************************************************************
 //@HEADER
 
-// Primary LOCA Objects
-#include "NOX.H"
-#include "LOCA_Abstract_Vector.H"
-#include "LOCA_Abstract_Group.H"
-#include "LOCA_Stepper_Generic.H"
-#include "LOCA_Stepper_Manager.H"
-#include "LOCA_Stepper_ZeroOrder.H"
-#include "LOCA_Solver_Generic.H"
-#include "LOCA_Solver_NoxSolver.H"
-//#include "LOCA_Direction_Generic.H"
-//#include "LOCA_Direction_Manager.H"
-#include "LOCA_Parameter_Vector.H"
-#include "LOCA_Utils.H"
-#include "NOX.H"
+#include "LOCA_Solver_Generic.H"    // class definition
+
+#include "LOCA_Utils.H"		    // for standard utilities
+
+using namespace LOCA;
+using namespace LOCA::Solver;
+
+Generic::Generic()
+{
+  
+}
+
+Generic::Generic(const NOX::Parameter::List& params_) :
+  params(params_)
+{
+  // initialize the utilities structure
+  Utils::setUtils(params.sublist("Utilities"));
+}
+
+Generic::~Generic() 
+{ 
+
+}
