@@ -270,7 +270,9 @@ extern void MLAZ_Set_LevelAztecSmoother( int level, int options[], double value[
 extern int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 			       int proc_config[AZ_PROC_SIZE],
 				      ML *ml, ML_Aggregate *ag);
-  
+void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
+			       AZ_MATRIX * Amat, int proc_config[],
+			       int choice, int max_procs );
 #endif
 
 #ifndef ML_CPP

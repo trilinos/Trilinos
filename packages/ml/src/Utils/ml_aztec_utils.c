@@ -3321,7 +3321,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   case -1111:
     ml->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
     break;
-  default:
+    /*   default: */
     /* do nothing */
   }
   
@@ -3578,17 +3578,18 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
 			       AZ_MATRIX * Amat, int proc_config[],
 			       int choice, int max_procs ) 
 {
-
-  int          MaxMgLevels = 1;
+  int i;
+  
   ML           *ml = NULL;
   int N_update, Nlevels;
+  void * Amesos_Handle;
   
   N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
   
-  ML_Create(&ml, MaxMgLevels);
+  ML_Create(&ml, 1);
 
   ML_Set_PrintLevel(10);  
-  AZ_ML_Set_Amat(ml, MaxMgLevels-1, N_update, 
+  AZ_ML_Set_Amat(ml, 0, N_update, 
 		 N_update, Amat, proc_config);
 
   switch( choice ) {
@@ -3608,15 +3609,13 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
     exit( EXIT_FAILURE);
   }
   
-  ML_Gen_Smoother_Amesos( ml, 0, choice, max_procs);  
-  
-  ML_Smoother_Amesos(&(ml->post_smoother[0]),
-		     ml->Amat[0].invec_leng,delta_x,
-		     ml->Amat[0].outvec_leng,resid_vector);
+  ML_Amesos_Gen(ml,0,choice,max_procs,&Amesos_Handle);
 
-  //ML_Smoother_Clean_Amesos((ml->post_smoother[0]).smoother->data);
+  ML_Amesos_Solve(Amesos_Handle, delta_x, resid_vector );
 
-  ML_Destroy(&ml);
+  ML_Amesos_Destroy(Amesos_Handle);
+
+  //  ML_Destroy(&ml);
   
   return;
   
