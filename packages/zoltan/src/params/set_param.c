@@ -57,6 +57,9 @@ char *val1)			/* value to set this parameter to */
     if (status == 1)
         status = LB_RCB_Set_Param(name, val);
 
+    if (status == 1)
+        status = LB_ParMetis_Set_Param(name, val);
+
 /*
     if (status == 1)
 	status = LB_SFC_Set_Param(name, val);
