@@ -73,6 +73,8 @@ int LB_ParMetis_Part(
   */
 
   /* Get options. */
+/* BAH: This stuff is now obsolete.  Need to replace it. */
+/*
   if (lb->Params == NULL) { 
     /*  No application-specified parameters; use defaults. */ 
     pmethod = 0;
@@ -93,6 +95,7 @@ int LB_ParMetis_Part(
     else
       ewgt_dim = lb->Params[2];
   }
+*/
   /* Convert pmethod from integer to a string. Rationale: 
      We want the user to set the string alg directly with 
      LB_Set_Param() in future versions. */
@@ -396,9 +399,9 @@ int LB_ParMetis_Part(
             printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", myproc, 
               ptr->my_gid, ptr->my_gno, i);
 #endif
-            memcpy(&sendbuf[offset], &(ptr->my_gid), sizeof(LB_GID)); 
+            memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
             offset += sizeof(LB_GID);
-            memcpy(&sendbuf[offset], &(ptr->my_gno), sizeof(int)); 
+            memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
             offset += sizeof(int);
           }
           MPI_Rsend(sendbuf, proc_list[i]->length *size,
@@ -605,11 +608,11 @@ int LB_ParMetis_Part(
     for (i=0; i<num_obj; i++){
       if (part[i] != lb->Proc){
         /* Need to send this data to another proc */
-        memcpy(&sendbuf[j], &global_ids[i], sizeof(LB_GID));
+        memcpy(&sendbuf[j], (char *) &global_ids[i], sizeof(LB_GID));
         j += sizeof(LB_GID);
-        memcpy(&sendbuf[j], &local_ids[i], sizeof(LB_LID));
+        memcpy(&sendbuf[j], (char *) &local_ids[i], sizeof(LB_LID));
         j += sizeof(LB_LID);
-        memcpy(&sendbuf[j], &lb->Proc, sizeof(int));
+        memcpy(&sendbuf[j], (char *) &lb->Proc, sizeof(int));
         j += sizeof(int);
       }
     }
@@ -645,11 +648,11 @@ int LB_ParMetis_Part(
 #endif
     j = 0;
     for (i=0; i<nrecv; i++){
-        memcpy(&((*imp_gids)[i]), &recvbuf[j], sizeof(LB_GID));
+        memcpy(&((*imp_gids)[i]), (char *) &recvbuf[j], sizeof(LB_GID));
         j += sizeof(LB_GID);
-        memcpy(&((*imp_lids)[i]), &recvbuf[j], sizeof(LB_LID));
+        memcpy(&((*imp_lids)[i]), (char *) &recvbuf[j], sizeof(LB_LID));
         j += sizeof(LB_LID);
-        memcpy(&((*imp_procs)[i]), &recvbuf[j], sizeof(int));
+        memcpy(&((*imp_procs)[i]), (char *) &recvbuf[j], sizeof(int));
         j += sizeof(int);
     }
 #ifdef LB_DEBUG
