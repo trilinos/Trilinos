@@ -488,6 +488,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
        ML_memory_free( (void**)&(Pmatrix->getrow) );
        Pmatrix->getrow = ml->Pmat[clevel].getrow;
        ml->Pmat[clevel].getrow = NULL;
+       Pmatrix->label = ml->Pmat[clevel].label;
+       ml->Pmat[clevel].label = NULL;
 
        ML_Operator_Clean(&(ml->Pmat[clevel]));
        ML_memory_alloc((void**)&(ml->Pmat[clevel].getrow),
@@ -495,6 +497,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 
        ml->Pmat[clevel].matvec = Pmatrix->matvec;
        Pmatrix->matvec = NULL;
+       ml->Pmat[clevel].label = Pmatrix->label;
        Pmatrix->label = NULL;
        Ncoarse = Pmatrix->invec_leng;
      }
