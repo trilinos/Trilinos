@@ -24,6 +24,8 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   int * bindx, * pntr, * indx1, * pntr1;
   double * val, * val1, * hbx, * hbxexact, * hbb;
 
+  hbb = 0; hbxexact = 0; hbb = 0;
+
   if(comm.MyPID() == 0)  { 
       in_file = fopen( data_file, "r");
       if (in_file == NULL)
@@ -200,6 +202,9 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
   if (comm.MyPID()==0) cout << "Norm of difference between computed b and given b for xexact = " << residual << endl;
   
   /* Release unneeded space */
+  if (hbb!=0) free((void *) hbb);
+  if (hbx!=0) free((void *) hbx);
+  if (hbxexact!=0) free((void *) hbxexact);
   if (comm.MyPID()==0) {
     free((void *) val);
     free((void *) bindx);

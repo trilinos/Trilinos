@@ -1000,8 +1000,10 @@ int Epetra_CrsMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epe
 	int      NumEntries = *NumEntriesPerRow-- - j0;
 	int *    RowIndices = *Indices--;
 	double * RowValues  = *Values--;
+	for (k=0; k<NumVectors; k++) {
 	if (!UnitDiagonal)  Yp[k][i] = Yp[k][i]/Xp[k][i];
 	for (j=0; j < NumEntries; j++) Yp[k][RowIndices[j]] -= RowValues[j] * Yp[k][i];
+      }
       }
     }
   }
