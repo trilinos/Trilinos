@@ -46,6 +46,8 @@
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside NOX. The first is
+# the list of all source and any other header files.
+# ------------------------------------------------------------------------
 
 SHELL = @SHELL@
 
@@ -115,53 +117,31 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-# ------------------------------------------------------------------------
-NOX_BLAS_H = \
-	$(srcdir)/blas.h \
-	$(srcdir)/lapack.h \
-	$(srcdir)/NOX_BLAS.H \
-	$(srcdir)/NOX_BLAS_Vector.H \
-	$(srcdir)/NOX_BLAS_Matrix.H \
-	$(srcdir)/NOX_BLAS_Group.H \
-	$(srcdir)/NOX_BLAS_Interface.H 
+LOCA_LAPACK_H = \
+	$(srcdir)/LOCA_LAPACK.H \
+	$(srcdir)/LOCA_LAPACK_Group.H \
+	$(srcdir)/LOCA_LAPACK_Interface.H \
+	$(srcdir)/LOCA_LAPACK_DataOutput.H \
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.H \
+	$(srcdir)/LOCA_LAPACK_AlDataOutput.H
 
 
-NOX_BLAS = \
-	$(srcdir)/NOX_BLAS_Vector.C \
-	$(srcdir)/NOX_BLAS_Matrix.C \
-	$(srcdir)/NOX_BLAS_Group.C 
-
-
-LOCA_BLAS_H = \
-	$(srcdir)/LOCA_BLAS.H \
-	$(srcdir)/LOCA_BLAS_Group.H \
-	$(srcdir)/LOCA_BLAS_Interface.H \
-	$(srcdir)/LOCA_BLAS_DataOutput.H \
-	$(srcdir)/LOCA_BLAS_TPDataOutput.H
-
-
-LOCA_BLAS = \
-	$(srcdir)/LOCA_BLAS_Group.C \
-	$(srcdir)/LOCA_BLAS_DataOutput.C \
-	$(srcdir)/LOCA_BLAS_TPDataOutput.C 
+LOCA_LAPACK = \
+	$(srcdir)/LOCA_LAPACK_Group.C \
+	$(srcdir)/LOCA_LAPACK_DataOutput.C \
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.C \
+	$(srcdir)/LOCA_LAPACK_AlDataOutput.C 
 
 
 
 # ------------------------------------------------------------------------
-# Noxblas library specifications
+# localapack library specifications
 # ------------------------------------------------------------------------
-libnoxblas_a_SOURCES = $(NOX_BLAS) $(NOX_BLAS_H)
+liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
-libnoxblas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+liblocalapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
-                           $(TRILINOS_CXXFLAGS) 
-
-
-liblocablas_a_SOURCES = $(LOCA_BLAS) $(LOCA_BLAS_H)
-
-liblocablas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                           -I$(top_srcdir)/src \
-                           $(TRILINOS_CXXFLAGS) 
+			   -I$(top_srcdir)/src-lapack
 
 
 
@@ -170,11 +150,11 @@ liblocablas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 # ------------------------------------------------------------------------
 
 # List of all libraries to install in $(libexecdir)
-@BUILD_LIBLOCABLAS_TRUE@lib_LIBRARIES = libnoxblas.a liblocablas.a
+@BUILD_LIBLOCALAPACK_TRUE@lib_LIBRARIES = liblocalapack.a
 
 
 # List of all headers to install in $(pkgincludedir)
-@BUILD_LIBLOCABLAS_TRUE@pkginclude_HEADERS = $(NOX_BLAS_H) $(LOCA_BLAS_H)
+@BUILD_LIBLOCALAPACK_TRUE@pkginclude_HEADERS = $(LOCA_LAPACK_H)
 
 
 # ------------------------------------------------------------------------
@@ -184,40 +164,33 @@ liblocablas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libnoxblas_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libnoxblas_a_AR = $(AR) cru
-@USE_ALTERNATE_AR_TRUE@liblocablas_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@liblocablas_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@liblocalapack_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@liblocalapack_a_AR = $(AR) cru
 
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libnoxblas_a_LIBADD = $(CXXREPOS)
-liblocablas_a_LIBADD = $(CXXREPOS)
+liblocalapack_a_LIBADD = $(CXXREPOS)
 
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-subdir = src-loca/src-blas
+subdir = src-loca/src-lapack
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
-liblocablas_a_DEPENDENCIES =
-am_liblocablas_a_OBJECTS = liblocablas_a-LOCA_BLAS_Group.$(OBJEXT) \
-	liblocablas_a-LOCA_BLAS_DataOutput.$(OBJEXT) \
-	liblocablas_a-LOCA_BLAS_TPDataOutput.$(OBJEXT)
-liblocablas_a_OBJECTS = $(am_liblocablas_a_OBJECTS)
-libnoxblas_a_DEPENDENCIES =
-am_libnoxblas_a_OBJECTS = libnoxblas_a-NOX_BLAS_Vector.$(OBJEXT) \
-	libnoxblas_a-NOX_BLAS_Matrix.$(OBJEXT) \
-	libnoxblas_a-NOX_BLAS_Group.$(OBJEXT)
-libnoxblas_a_OBJECTS = $(am_libnoxblas_a_OBJECTS)
+liblocalapack_a_DEPENDENCIES =
+am_liblocalapack_a_OBJECTS = liblocalapack_a-LOCA_LAPACK_Group.$(OBJEXT) \
+	liblocalapack_a-LOCA_LAPACK_DataOutput.$(OBJEXT) \
+	liblocalapack_a-LOCA_LAPACK_TPDataOutput.$(OBJEXT) \
+	liblocalapack_a-LOCA_LAPACK_AlDataOutput.$(OBJEXT)
+liblocalapack_a_OBJECTS = $(am_liblocalapack_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)/src
@@ -225,12 +198,11 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.Po \
-@AMDEP_TRUE@	$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.Po
+@AMDEP_TRUE@DEP_FILES = \
+@AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po \
+@AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po \
+@AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -242,11 +214,11 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(liblocablas_a_SOURCES) $(libnoxblas_a_SOURCES)
+DIST_SOURCES = $(liblocalapack_a_SOURCES)
 HEADERS = $(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkginclude_HEADERS) Makefile.am Makefile.in
-SOURCES = $(liblocablas_a_SOURCES) $(libnoxblas_a_SOURCES)
+SOURCES = $(liblocalapack_a_SOURCES)
 
 all: all-am
 
@@ -254,7 +226,7 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-loca/src-blas/Makefile
+	  $(AUTOMAKE) --foreign  src-loca/src-lapack/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
@@ -287,22 +259,18 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-liblocablas_a-LOCA_BLAS_Group.$(OBJEXT): $(srcdir)/LOCA_BLAS_Group.C
-liblocablas_a-LOCA_BLAS_DataOutput.$(OBJEXT): \
-	$(srcdir)/LOCA_BLAS_DataOutput.C
-liblocablas_a-LOCA_BLAS_TPDataOutput.$(OBJEXT): \
-	$(srcdir)/LOCA_BLAS_TPDataOutput.C
-liblocablas.a: $(liblocablas_a_OBJECTS) $(liblocablas_a_DEPENDENCIES) 
-	-rm -f liblocablas.a
-	$(liblocablas_a_AR) liblocablas.a $(liblocablas_a_OBJECTS) $(liblocablas_a_LIBADD)
-	$(RANLIB) liblocablas.a
-libnoxblas_a-NOX_BLAS_Vector.$(OBJEXT): $(srcdir)/NOX_BLAS_Vector.C
-libnoxblas_a-NOX_BLAS_Matrix.$(OBJEXT): $(srcdir)/NOX_BLAS_Matrix.C
-libnoxblas_a-NOX_BLAS_Group.$(OBJEXT): $(srcdir)/NOX_BLAS_Group.C
-libnoxblas.a: $(libnoxblas_a_OBJECTS) $(libnoxblas_a_DEPENDENCIES) 
-	-rm -f libnoxblas.a
-	$(libnoxblas_a_AR) libnoxblas.a $(libnoxblas_a_OBJECTS) $(libnoxblas_a_LIBADD)
-	$(RANLIB) libnoxblas.a
+liblocalapack_a-LOCA_LAPACK_Group.$(OBJEXT): \
+	$(srcdir)/LOCA_LAPACK_Group.C
+liblocalapack_a-LOCA_LAPACK_DataOutput.$(OBJEXT): \
+	$(srcdir)/LOCA_LAPACK_DataOutput.C
+liblocalapack_a-LOCA_LAPACK_TPDataOutput.$(OBJEXT): \
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.C
+liblocalapack_a-LOCA_LAPACK_AlDataOutput.$(OBJEXT): \
+	$(srcdir)/LOCA_LAPACK_AlDataOutput.C
+liblocalapack.a: $(liblocalapack_a_OBJECTS) $(liblocalapack_a_DEPENDENCIES) 
+	-rm -f liblocalapack.a
+	$(liblocalapack_a_AR) liblocalapack.a $(liblocalapack_a_OBJECTS) $(liblocalapack_a_LIBADD)
+	$(RANLIB) liblocalapack.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -310,12 +278,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -332,77 +298,53 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-liblocablas_a-LOCA_BLAS_Group.o: $(srcdir)/LOCA_BLAS_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_Group.C' object='liblocablas_a-LOCA_BLAS_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_Group.o: $(srcdir)/LOCA_LAPACK_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='liblocalapack_a-LOCA_LAPACK_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_Group.o `test -f $(srcdir)/LOCA_BLAS_Group.C || echo '$(srcdir)/'`$(srcdir)/LOCA_BLAS_Group.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_Group.o `test -f $(srcdir)/LOCA_LAPACK_Group.C || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_Group.C
 
-liblocablas_a-LOCA_BLAS_Group.obj: $(srcdir)/LOCA_BLAS_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_Group.C' object='liblocablas_a-LOCA_BLAS_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_Group.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_Group.obj: $(srcdir)/LOCA_LAPACK_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_Group.C' object='liblocalapack_a-LOCA_LAPACK_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_Group.obj `cygpath -w $(srcdir)/LOCA_BLAS_Group.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_Group.obj `cygpath -w $(srcdir)/LOCA_LAPACK_Group.C`
 
-liblocablas_a-LOCA_BLAS_DataOutput.o: $(srcdir)/LOCA_BLAS_DataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_DataOutput.C' object='liblocablas_a-LOCA_BLAS_DataOutput.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_DataOutput.o: $(srcdir)/LOCA_LAPACK_DataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_DataOutput.C' object='liblocalapack_a-LOCA_LAPACK_DataOutput.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_DataOutput.o `test -f $(srcdir)/LOCA_BLAS_DataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_BLAS_DataOutput.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_DataOutput.o `test -f $(srcdir)/LOCA_LAPACK_DataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_DataOutput.C
 
-liblocablas_a-LOCA_BLAS_DataOutput.obj: $(srcdir)/LOCA_BLAS_DataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_DataOutput.C' object='liblocablas_a-LOCA_BLAS_DataOutput.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_DataOutput.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_DataOutput.obj: $(srcdir)/LOCA_LAPACK_DataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_DataOutput.C' object='liblocalapack_a-LOCA_LAPACK_DataOutput.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_DataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_DataOutput.obj `cygpath -w $(srcdir)/LOCA_BLAS_DataOutput.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_DataOutput.obj `cygpath -w $(srcdir)/LOCA_LAPACK_DataOutput.C`
 
-liblocablas_a-LOCA_BLAS_TPDataOutput.o: $(srcdir)/LOCA_BLAS_TPDataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_TPDataOutput.C' object='liblocablas_a-LOCA_BLAS_TPDataOutput.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_TPDataOutput.o: $(srcdir)/LOCA_LAPACK_TPDataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_TPDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_TPDataOutput.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_TPDataOutput.o `test -f $(srcdir)/LOCA_BLAS_TPDataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_BLAS_TPDataOutput.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_TPDataOutput.o `test -f $(srcdir)/LOCA_LAPACK_TPDataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_TPDataOutput.C
 
-liblocablas_a-LOCA_BLAS_TPDataOutput.obj: $(srcdir)/LOCA_BLAS_TPDataOutput.C
-@AMDEP_TRUE@	source='$(srcdir)/LOCA_BLAS_TPDataOutput.C' object='liblocablas_a-LOCA_BLAS_TPDataOutput.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocablas_a-LOCA_BLAS_TPDataOutput.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_TPDataOutput.obj: $(srcdir)/LOCA_LAPACK_TPDataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_TPDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_TPDataOutput.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_TPDataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocablas_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocablas_a-LOCA_BLAS_TPDataOutput.obj `cygpath -w $(srcdir)/LOCA_BLAS_TPDataOutput.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_TPDataOutput.obj `cygpath -w $(srcdir)/LOCA_LAPACK_TPDataOutput.C`
 
-libnoxblas_a-NOX_BLAS_Vector.o: $(srcdir)/NOX_BLAS_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Vector.C' object='libnoxblas_a-NOX_BLAS_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_AlDataOutput.o: $(srcdir)/LOCA_LAPACK_AlDataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_AlDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_AlDataOutput.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Vector.o `test -f $(srcdir)/NOX_BLAS_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_BLAS_Vector.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_AlDataOutput.o `test -f $(srcdir)/LOCA_LAPACK_AlDataOutput.C || echo '$(srcdir)/'`$(srcdir)/LOCA_LAPACK_AlDataOutput.C
 
-libnoxblas_a-NOX_BLAS_Vector.obj: $(srcdir)/NOX_BLAS_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Vector.C' object='libnoxblas_a-NOX_BLAS_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Vector.TPo' @AMDEPBACKSLASH@
+liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj: $(srcdir)/LOCA_LAPACK_AlDataOutput.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_LAPACK_AlDataOutput.C' object='liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.Po' tmpdepfile='$(DEPDIR)/liblocalapack_a-LOCA_LAPACK_AlDataOutput.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Vector.obj `cygpath -w $(srcdir)/NOX_BLAS_Vector.C`
-
-libnoxblas_a-NOX_BLAS_Matrix.o: $(srcdir)/NOX_BLAS_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Matrix.C' object='libnoxblas_a-NOX_BLAS_Matrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Matrix.o `test -f $(srcdir)/NOX_BLAS_Matrix.C || echo '$(srcdir)/'`$(srcdir)/NOX_BLAS_Matrix.C
-
-libnoxblas_a-NOX_BLAS_Matrix.obj: $(srcdir)/NOX_BLAS_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Matrix.C' object='libnoxblas_a-NOX_BLAS_Matrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Matrix.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Matrix.obj `cygpath -w $(srcdir)/NOX_BLAS_Matrix.C`
-
-libnoxblas_a-NOX_BLAS_Group.o: $(srcdir)/NOX_BLAS_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Group.C' object='libnoxblas_a-NOX_BLAS_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Group.o `test -f $(srcdir)/NOX_BLAS_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_BLAS_Group.C
-
-libnoxblas_a-NOX_BLAS_Group.obj: $(srcdir)/NOX_BLAS_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_BLAS_Group.C' object='libnoxblas_a-NOX_BLAS_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.Po' tmpdepfile='$(DEPDIR)/libnoxblas_a-NOX_BLAS_Group.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxblas_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxblas_a-NOX_BLAS_Group.obj `cygpath -w $(srcdir)/NOX_BLAS_Group.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(liblocalapack_a_CXXFLAGS) $(CXXFLAGS) -c -o liblocalapack_a-LOCA_LAPACK_AlDataOutput.obj `cygpath -w $(srcdir)/LOCA_LAPACK_AlDataOutput.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)
@@ -558,8 +500,7 @@ uninstall-am: uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-am uninstall-info-am uninstall-libLIBRARIES \
 	uninstall-pkgincludeHEADERS
 
-
-:q# the list of all source and any other header files.
+                           $(TRILINOS_CXXFLAGS) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

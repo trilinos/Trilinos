@@ -30,18 +30,18 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BLAS_GROUP_H
-#define LOCA_BLAS_GROUP_H
+#ifndef LOCA_LAPACK_GROUP_H
+#define LOCA_LAPACK_GROUP_H
 
 #include "LOCA_Abstract_Group.H"	// base class
-#include "NOX_BLAS_Group.H"
-#include "LOCA_Parameter_Vector.H"
-#include "LOCA_BLAS_Interface.H"
+#include "NOX_LAPACK_Group.H"           // base class
+#include "LOCA_Parameter_Vector.H"      // class data element
+#include "LOCA_LAPACK_Interface.H"      // class data element
 
 namespace LOCA {
-  namespace BLAS {
+  namespace LAPACK {
 
-    class Group : public NOX::BLAS::Group, public LOCA::Abstract::Group {
+    class Group : public NOX::LAPACK::Group, public LOCA::Abstract::Group {
 
     public:
 
@@ -49,48 +49,53 @@ namespace LOCA {
       Group(Interface& i);
 
       //! Copy constructor
-      Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
+      Group(const LOCA::LAPACK::Group& source, 
+	    NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       ~Group();
 
-      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
-      virtual Abstract::Group& operator=(const Abstract::Group& source);
-      virtual Group& operator=(const Group& source);
+      NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+      LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+      NOX::LAPACK::Group& operator=(const NOX::LAPACK::Group& source);
+      LOCA::LAPACK::Group& operator=(const LOCA::LAPACK::Group& source);
 
-      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-      virtual bool computeF();
+      NOX::Abstract::Group::ReturnType computeF();
 
-      virtual bool computeJacobian();
+      NOX::Abstract::Group::ReturnType computeJacobian();
 
-      virtual bool computeTangent(NOX::Parameter::List& params, int paramId);
+      NOX::Abstract::Group::ReturnType computeTangent(NOX::Parameter::List& params, int paramId);
 
       //! Set the bifurcation/continuation parameter list in the group.
-      virtual bool setParams(const ParameterVector& p);
+      void setParams(const LOCA::ParameterVector& p);
 
       //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-      virtual bool computeParams(const ParameterVector& oldParams, 
-				 const ParameterVector& direction, 
-				 double step);
+      void computeParams(const LOCA::ParameterVector& oldParams, 
+			 const LOCA::ParameterVector& direction, double step);
 
       //! Return a const reference to the ParameterVector owned by the group. 
-      virtual const ParameterVector& getParams() const;
+      const LOCA::ParameterVector& getParams() const;
 
       //! Return Tangent vector (for predictor).
-      virtual const NOX::Abstract::Vector& getTangent() const;
+      const NOX::Abstract::Vector& getTangent() const;
 
       //! Print out the group
-      virtual bool print() const;
+      void print() const;
+
+    protected:
+      //! resets the isValid flags to false
+      void resetIsValid();
 
     protected:
       Interface& locaProblemInterface; 
       ParameterVector params;
-      NOX::BLAS::Vector tangentVec;
+      NOX::LAPACK::Vector tangentVec;
       bool isValidTangent;
     };
 
-  } // namespace BLAS
+  } // namespace LAPACK
 } // namespace LOCA
 
 

@@ -110,7 +110,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = src src-epetra src-blas example-epetra example-blas
+SUBDIRS = src src-epetra src-lapack example-epetra example-lapack
 subdir = src-loca
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h

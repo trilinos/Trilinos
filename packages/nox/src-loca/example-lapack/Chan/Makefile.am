@@ -29,7 +29,7 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_LOCA_BLAS_EXAMPLES
+if BUILD_LOCA_LAPACK_EXAMPLES
 
 CHANCONT = chanContinuation
 CHANALCONT = chanAlContinuation
@@ -58,9 +58,9 @@ chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
+	$(top_builddir)/src-lapack/libnoxlapack.a \
 	$(top_builddir)/src-loca/src/libloca.a \
-	$(top_builddir)/src-loca/src-blas/libnoxblas.a \
-        $(top_builddir)/src-loca/src-blas/liblocablas.a
+        $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
 chanAlContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
@@ -70,8 +70,9 @@ chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
+		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
-                   -I$(top_srcdir)/src-loca/src-blas
+                   -I$(top_srcdir)/src-loca/src-lapack
 
 chanAlContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
@@ -81,9 +82,10 @@ chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanContinuation_LDADD = \
 		-L$(top_builddir)/src \
+		-L$(top_builddir)/src-lapack \
                 -L$(top_builddir)/src-loca/src \
-                -L$(top_builddir)/src-loca/src-blas \
-                -llocablas -lloca -lnoxblas -lnox
+                -L$(top_builddir)/src-loca/src-lapack \
+                -llocalapack -lloca -lnoxlapack -lnox
 
 chanAlContinuation_LDADD = $(chanContinuation_LDADD)
 

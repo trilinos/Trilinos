@@ -30,40 +30,45 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_BLAS_DataOutput.H"
-#include "LOCA_BLAS_Group.H"
+#include "LOCA_LAPACK_AlDataOutput.H"
+#include "LOCA_Parameter_Vector.H"
+#include "LOCA_Bifurcation_ArcLengthGroup.H"
+#include "NOX_LAPACK_Vector.H"
 
-LOCA::BLAS::DataOutput::DataOutput(fstream& fs) : file(fs) {}
+LOCA::LAPACK::AlDataOutput::AlDataOutput(fstream& fs) : file(fs) {}
 
-LOCA::BLAS::DataOutput::~DataOutput() {}
+LOCA::LAPACK::AlDataOutput::~AlDataOutput() {}
 
 LOCA::Abstract::DataOutput&
-LOCA::BLAS::DataOutput::operator = (const LOCA::Abstract::DataOutput& source) {
-  return operator = (dynamic_cast<const LOCA::BLAS::DataOutput&>(source));
+LOCA::LAPACK::AlDataOutput::operator = (const LOCA::Abstract::DataOutput& source) {
+  return operator = (dynamic_cast<const LOCA::LAPACK::AlDataOutput&>(source));
 }
 
-LOCA::BLAS::DataOutput&
-LOCA::BLAS::DataOutput::operator = (const LOCA::BLAS::DataOutput& source) {
+LOCA::LAPACK::AlDataOutput&
+LOCA::LAPACK::AlDataOutput::operator = (const LOCA::LAPACK::AlDataOutput& source) {
   return *this;
 }
 
 void
-LOCA::BLAS::DataOutput::saveGroupData(const LOCA::Abstract::Group& grp) {
-  saveGroupData(dynamic_cast<const LOCA::BLAS::Group&>(grp));
+LOCA::LAPACK::AlDataOutput::saveGroupData(const LOCA::Abstract::Group& grp) {
+  saveGroupData(dynamic_cast<const LOCA::Bifurcation::ArcLengthGroup&>(grp));
   return;
 }
 
 void
-LOCA::BLAS::DataOutput::saveGroupData(const LOCA::BLAS::Group& grp) {
-  const NOX::BLAS::Vector& x = 
-    dynamic_cast<const NOX::BLAS::Vector&>(grp.getX());
+LOCA::LAPACK::AlDataOutput::saveGroupData(const LOCA::Bifurcation::ArcLengthGroup& grp) {
+  const LOCA::Bifurcation::ArcLengthVector& alx = 
+    dynamic_cast<const LOCA::Bifurcation::ArcLengthVector&>(grp.getX());
+  const NOX::LAPACK::Vector& x = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(alx.getXVec());
   const LOCA::ParameterVector& p = grp.getParams();
+  double alParam = alx.getArcParam();
 
   for (int i=0; i<x.length(); i++)
     file << x(i) << " ";
-
   for (int i=0; i<p.length(); i++)
     file << p[i] << " ";
+  file << alParam;
 
   file << endl;
 

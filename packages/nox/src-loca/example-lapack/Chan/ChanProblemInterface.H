@@ -29,7 +29,43 @@
 // 
 // ************************************************************************
 //@HEADER
-//LOCA::BLAS Objects
-#include "NOX_BLAS.H"
-#include "LOCA_BLAS_Group.H"
-#include "LOCA_BLAS_Interface.H"
+
+#ifndef CHANPROBLEMINTERFACE_H
+#define CHANPROBLEMINTERFACE_H
+
+#include "LOCA_LAPACK_Group.H"
+
+class ChanProblemInterface : public LOCA::LAPACK::Interface {
+
+public:
+ 
+  ChanProblemInterface(int N, double a, double b);
+
+  ~ChanProblemInterface() {};
+
+  const NOX::LAPACK::Vector& getInitialGuess();
+
+  bool
+  computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
+  
+  bool
+  computeJacobian(NOX::LAPACK::Matrix& J, const NOX::LAPACK::Vector & x);
+
+  void setParams(const LOCA::ParameterVector& p);
+
+private:
+
+  double source_term(double x);
+
+  double source_deriv(double x);
+
+private:
+
+  NOX::LAPACK::Vector initialGuess;
+  double alpha;
+  double beta;
+  int n;
+
+};
+
+#endif

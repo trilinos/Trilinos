@@ -110,8 +110,8 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_LOCA_BLAS_EXAMPLES_TRUE@SUBDIRS = Chan
-subdir = src-loca/example-blas
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@SUBDIRS = Chan
+subdir = src-loca/example-lapack
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
@@ -128,7 +128,7 @@ all: all-recursive
 .SUFFIXES:
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  src-loca/example-blas/Makefile
+	  $(AUTOMAKE) --foreign  src-loca/example-lapack/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \

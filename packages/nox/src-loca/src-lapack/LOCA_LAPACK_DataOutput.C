@@ -30,55 +30,42 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_BLAS_MATRIX_H
-#define NOX_BLAS_MATRIX_H
+#include "LOCA_LAPACK_DataOutput.H"
+#include "LOCA_LAPACK_Group.H"
 
-#include "NOX_Common.H"
-#include "NOX_Abstract_Vector.H" // for CopyType
-#include "NOX_BLAS_Vector.H"
+LOCA::LAPACK::DataOutput::DataOutput(fstream& fs) : file(fs) {}
 
-namespace NOX {
-  namespace BLAS {
+LOCA::LAPACK::DataOutput::~DataOutput() {}
 
-    //! A simple square matrix class for use by NOX::BLAS::Group.
-    /*! The matrix is stored as a vector<double> array. */
-    class Matrix {
+LOCA::Abstract::DataOutput&
+LOCA::LAPACK::DataOutput::operator = (const LOCA::Abstract::DataOutput& source) {
+  return operator = (dynamic_cast<const LOCA::LAPACK::DataOutput&>(source));
+}
 
-    public:
-      //! Create a m x n matrix with all entries zero
-      Matrix(int m, int n);
+LOCA::LAPACK::DataOutput&
+LOCA::LAPACK::DataOutput::operator = (const LOCA::LAPACK::DataOutput& source) {
+  return *this;
+}
 
-      //! Copy constructor
-      Matrix(const Matrix& a, CopyType type = NOX::DeepCopy);
+void
+LOCA::LAPACK::DataOutput::saveGroupData(const LOCA::Abstract::Group& grp) {
+  saveGroupData(dynamic_cast<const LOCA::LAPACK::Group&>(grp));
+  return;
+}
 
-      //! Destructor
-      ~Matrix();
+void
+LOCA::LAPACK::DataOutput::saveGroupData(const LOCA::LAPACK::Group& grp) {
+  const NOX::LAPACK::Vector& x = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(grp.getX());
+  const LOCA::ParameterVector& p = grp.getParams();
 
-      //! Access the (i,j) entry of A
-      double& operator()(int i, int j);
+  for (int i=0; i<x.length(); i++)
+    file << x(i) << " ";
 
-      //! Access the (i,j) entry of A
-      const double& operator()(int i, int j) const;
+  for (int i=0; i<p.length(); i++)
+    file << p[i] << " ";
 
-      ostream& leftshift(ostream& stream) const;
+  file << endl;
 
-      //! Prints out the matrix to the cout stream. 
-      bool print() const;
-
-    private:
-
-      //! This is a p x q matrix
-      int p, q;
-
-      //! Entries of the matrix
-      Vector entries;
-  
-    };
-
-  } // namespace BLAS
-} // namespace NOX
-
-ostream& operator<<(ostream& stream, const NOX::BLAS::Matrix& v);
-
-
-#endif
+  return;
+}

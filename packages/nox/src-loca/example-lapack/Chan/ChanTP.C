@@ -32,7 +32,7 @@
 
 #include <iomanip>
 #include "LOCA.H"
-#include "LOCA_BLAS.H"
+#include "LOCA_LAPACK.H"
 #include "LOCA_Bifurcation_TPBordGroup.H"
 #include "ChanProblemInterface.H"
 
@@ -54,14 +54,14 @@ int main()
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  LOCA::BLAS::Group grp(tp);
+  LOCA::LAPACK::Group grp(tp);
   grp.setParams(p);
 
   // Create initial guess for the null vector of jacobian
-  NOX::BLAS::Vector nullVec(n);  // length 1
+  NOX::LAPACK::Vector nullVec(n);  // length 1
   nullVec.init(1.0);             // initial value 1.0
 
-  // Create a turning point group that uses the blas group
+  // Create a turning point group that uses the lapack group
   LOCA::DerivUtils du;
   LOCA::Bifurcation::TPBordGroup tpgrp(grp, nullVec, 0, du);
 

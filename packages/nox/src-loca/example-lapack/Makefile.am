@@ -29,7 +29,7 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_LOCA_BLAS_EXAMPLES
+if BUILD_LOCA_LAPACK_EXAMPLES
 
 SUBDIRS = Chan
 

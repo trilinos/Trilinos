@@ -34,64 +34,47 @@
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside NOX. The first is
-:q# the list of all source and any other header files.
+# the list of all source and any other header files.
 # ------------------------------------------------------------------------
 
-NOX_BLAS_H = \
-	$(srcdir)/blas.h \
-	$(srcdir)/lapack.h \
-	$(srcdir)/NOX_BLAS.H \
-	$(srcdir)/NOX_BLAS_Vector.H \
-	$(srcdir)/NOX_BLAS_Matrix.H \
-	$(srcdir)/NOX_BLAS_Group.H \
-	$(srcdir)/NOX_BLAS_Interface.H 
+LOCA_LAPACK_H = \
+	$(srcdir)/LOCA_LAPACK.H \
+	$(srcdir)/LOCA_LAPACK_Group.H \
+	$(srcdir)/LOCA_LAPACK_Interface.H \
+	$(srcdir)/LOCA_LAPACK_DataOutput.H \
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.H \
+	$(srcdir)/LOCA_LAPACK_AlDataOutput.H
 
-NOX_BLAS = \
-	$(srcdir)/NOX_BLAS_Vector.C \
-	$(srcdir)/NOX_BLAS_Matrix.C \
-	$(srcdir)/NOX_BLAS_Group.C 
-
-LOCA_BLAS_H = \
-	$(srcdir)/LOCA_BLAS.H \
-	$(srcdir)/LOCA_BLAS_Group.H \
-	$(srcdir)/LOCA_BLAS_Interface.H \
-	$(srcdir)/LOCA_BLAS_DataOutput.H \
-	$(srcdir)/LOCA_BLAS_TPDataOutput.H
-
-LOCA_BLAS = \
-	$(srcdir)/LOCA_BLAS_Group.C \
-	$(srcdir)/LOCA_BLAS_DataOutput.C \
-	$(srcdir)/LOCA_BLAS_TPDataOutput.C 
+LOCA_LAPACK = \
+	$(srcdir)/LOCA_LAPACK_Group.C \
+	$(srcdir)/LOCA_LAPACK_DataOutput.C \
+	$(srcdir)/LOCA_LAPACK_TPDataOutput.C \
+	$(srcdir)/LOCA_LAPACK_AlDataOutput.C 
 
 # ------------------------------------------------------------------------
-# Noxblas library specifications
+# localapack library specifications
 # ------------------------------------------------------------------------
 
-libnoxblas_a_SOURCES = $(NOX_BLAS) $(NOX_BLAS_H)
+liblocalapack_a_SOURCES = $(LOCA_LAPACK) $(LOCA_LAPACK_H)
 
-libnoxblas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
+liblocalapack_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
                            -I$(top_srcdir)/src \
-                           $(TRILINOS_CXXFLAGS) 
-
-liblocablas_a_SOURCES = $(LOCA_BLAS) $(LOCA_BLAS_H)
-
-liblocablas_a_CXXFLAGS = -I$(top_srcdir)/src-loca/src \
-                           -I$(top_srcdir)/src \
+			   -I$(top_srcdir)/src-lapack
                            $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # When to turn it on
 # ------------------------------------------------------------------------
 
-if BUILD_LIBLOCABLAS
+if BUILD_LIBLOCALAPACK
 
 # List of all libraries to install in $(libexecdir)
 
-lib_LIBRARIES = libnoxblas.a liblocablas.a
+lib_LIBRARIES = liblocalapack.a
 
 # List of all headers to install in $(pkgincludedir)
 
-pkginclude_HEADERS = $(NOX_BLAS_H) $(LOCA_BLAS_H)
+pkginclude_HEADERS = $(LOCA_LAPACK_H)
 
 endif
 
@@ -105,13 +88,11 @@ endif
 
 if USE_ALTERNATE_AR
 
-libnoxblas_a_AR = $(ALTERNATE_AR)
-liblocablas_a_AR = $(ALTERNATE_AR)
+liblocalapack_a_AR = $(ALTERNATE_AR)
 
 else
 
-libnoxblas_a_AR = $(AR) cru
-liblocablas_a_AR = $(AR) cru
+liblocalapack_a_AR = $(AR) cru
 
 endif
 
@@ -120,8 +101,7 @@ endif
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libnoxblas_a_LIBADD = $(CXXREPOS)
-liblocablas_a_LIBADD = $(CXXREPOS)
+liblocalapack_a_LIBADD = $(CXXREPOS)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

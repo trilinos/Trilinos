@@ -31,8 +31,8 @@
 //@HEADER
 
 #include "LOCA.H"
-#include "LOCA_BLAS.H"
-#include "LOCA_BLAS_DataOutput.H"
+#include "LOCA_LAPACK.H"
+#include "LOCA_LAPACK_DataOutput.H"
 #include "ChanProblemInterface.H"
 
 int main()
@@ -50,14 +50,14 @@ int main()
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  LOCA::BLAS::Group grp(chan);
+  LOCA::LAPACK::Group grp(chan);
   grp.setParams(p);
 
   // Create DataOutput object to save intermediate continuation points
   fstream file("chan_eqcont.dat", ios::out); 
   file.setf(ios::scientific, ios::floatfield);
   file.precision(15);
-  LOCA::BLAS::DataOutput dataOut(file);
+  LOCA::LAPACK::DataOutput dataOut(file);
 
    // Create parameter list
   NOX::Parameter::List locaParamsList;
@@ -100,7 +100,7 @@ int main()
 
   // Set up the status tests
   NOX::StatusTest::NormF statusTestA(grp, 1.0e-8);
-  NOX::StatusTest::MaxIters statusTestB(2);
+  NOX::StatusTest::MaxIters statusTestB(20);
   NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
   // Create the stepper  
@@ -113,8 +113,8 @@ int main()
     cout << "Stepper failed to converge!" << endl;
 
   // Get the final solution from the solver
-  const LOCA::BLAS::Group& finalGroup = dynamic_cast<const LOCA::BLAS::Group&>(stepper.getSolutionGroup());
-  const NOX::BLAS::Vector& finalSolution = dynamic_cast<const NOX::BLAS::Vector&>(finalGroup.getX());
+  const LOCA::LAPACK::Group& finalGroup = dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
+  const NOX::LAPACK::Vector& finalSolution = dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
 
   // Output the parameter list
   if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {

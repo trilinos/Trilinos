@@ -29,4 +29,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = src src-epetra src-blas example-epetra example-blas
+SUBDIRS = src src-epetra src-lapack example-epetra example-lapack

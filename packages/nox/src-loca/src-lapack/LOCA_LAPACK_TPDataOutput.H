@@ -30,40 +30,40 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BLAS_DATAOUTPUT_H
-#define LOCA_BLAS_DATAOUTPUT_H
+#ifndef LOCA_LAPACK_TPDATAOUTPUT_H
+#define LOCA_LAPACK_TPDATAOUTPUT_H
 
 #include <fstream>
 
 #include "LOCA_Abstract_DataOutput.H"
 
 namespace LOCA {
-  namespace BLAS {
-    class Group;
+  namespace Bifurcation {
+    class TPBordGroup;
   }
 }
 
 namespace LOCA {
-  namespace BLAS {
+  namespace LAPACK {
 
-    class DataOutput : public LOCA::Abstract::DataOutput {
+    class TPDataOutput : public LOCA::Abstract::DataOutput {
 
     public: 
       //! Constructor
-      DataOutput(fstream& fs);
+      TPDataOutput(fstream& fs);
 
       //! Destructor
-      virtual ~DataOutput();
+      virtual ~TPDataOutput();
       
       virtual Abstract::DataOutput& operator = (const Abstract::DataOutput& source);
-      virtual DataOutput& operator = (const DataOutput& source);
+      virtual TPDataOutput& operator = (const TPDataOutput& source);
       virtual void saveGroupData(const Abstract::Group& grp);
-      virtual void saveGroupData(const Group& grp);
+      virtual void saveGroupData(const LOCA::Bifurcation::TPBordGroup& grp);
 
     protected:
       fstream& file;
     };
-  } // namespace BLAS
+  } // namespace LAPACK
 } // namespace LOCA
 
 #endif

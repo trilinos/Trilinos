@@ -30,36 +30,40 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_BLAS_INTERFACE_H
-#define LOCA_BLAS_INTERFACE_H
+#ifndef LOCA_LAPACK_DATAOUTPUT_H
+#define LOCA_LAPACK_DATAOUTPUT_H
 
-#include "NOX_BLAS_Interface.H"
+#include <fstream>
 
-// Forward declarations
+#include "LOCA_Abstract_DataOutput.H"
+
 namespace LOCA {
-  class ParameterVector;
+  namespace LAPACK {
+    class Group;
+  }
 }
 
 namespace LOCA {
-  namespace BLAS {
+  namespace LAPACK {
 
-    /*! \brief Virtual interface for NOX::BLAS::Group to provide a
-      link to the external code for RHS and Jacobian fills. */
-    class Interface : public NOX::BLAS::Interface {
+    class DataOutput : public LOCA::Abstract::DataOutput {
 
-    public:
- 
+    public: 
       //! Constructor
-      Interface() {}
+      DataOutput(fstream& fs);
 
       //! Destructor
-      virtual ~Interface() {}
+      virtual ~DataOutput();
+      
+      virtual Abstract::DataOutput& operator = (const Abstract::DataOutput& source);
+      virtual DataOutput& operator = (const DataOutput& source);
+      virtual void saveGroupData(const Abstract::Group& grp);
+      virtual void saveGroupData(const Group& grp);
 
-      //! Set the bifurcation/continuation parameter list in the group.
-      virtual bool setParams(const ParameterVector& p) = 0;
-
+    protected:
+      fstream& file;
     };
-  } // namespace BLAS
+  } // namespace LAPACK
 } // namespace LOCA
 
 #endif

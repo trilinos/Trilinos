@@ -30,39 +30,39 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_BLAS_TPDataOutput.H"
+#include "LOCA_LAPACK_TPDataOutput.H"
 #include "LOCA_Parameter_Vector.H"
 #include "LOCA_Bifurcation_TPBordGroup.H"
-#include "NOX_BLAS_Vector.H"
+#include "NOX_LAPACK_Vector.H"
 
-LOCA::BLAS::TPDataOutput::TPDataOutput(fstream& fs) : file(fs) {}
+LOCA::LAPACK::TPDataOutput::TPDataOutput(fstream& fs) : file(fs) {}
 
-LOCA::BLAS::TPDataOutput::~TPDataOutput() {}
+LOCA::LAPACK::TPDataOutput::~TPDataOutput() {}
 
 LOCA::Abstract::DataOutput&
-LOCA::BLAS::TPDataOutput::operator = (const LOCA::Abstract::DataOutput& source) {
-  return operator = (dynamic_cast<const LOCA::BLAS::TPDataOutput&>(source));
+LOCA::LAPACK::TPDataOutput::operator = (const LOCA::Abstract::DataOutput& source) {
+  return operator = (dynamic_cast<const LOCA::LAPACK::TPDataOutput&>(source));
 }
 
-LOCA::BLAS::TPDataOutput&
-LOCA::BLAS::TPDataOutput::operator = (const LOCA::BLAS::TPDataOutput& source) {
+LOCA::LAPACK::TPDataOutput&
+LOCA::LAPACK::TPDataOutput::operator = (const LOCA::LAPACK::TPDataOutput& source) {
   return *this;
 }
 
 void
-LOCA::BLAS::TPDataOutput::saveGroupData(const LOCA::Abstract::Group& grp) {
+LOCA::LAPACK::TPDataOutput::saveGroupData(const LOCA::Abstract::Group& grp) {
   saveGroupData(dynamic_cast<const LOCA::Bifurcation::TPBordGroup&>(grp));
   return;
 }
 
 void
-LOCA::BLAS::TPDataOutput::saveGroupData(const LOCA::Bifurcation::TPBordGroup& grp) {
+LOCA::LAPACK::TPDataOutput::saveGroupData(const LOCA::Bifurcation::TPBordGroup& grp) {
   const LOCA::Bifurcation::TPBordVector& tpx = 
     dynamic_cast<const LOCA::Bifurcation::TPBordVector&>(grp.getX());
-  const NOX::BLAS::Vector& x = 
-    dynamic_cast<const NOX::BLAS::Vector&>(tpx.getXVec());
-  const NOX::BLAS::Vector& y = 
-    dynamic_cast<const NOX::BLAS::Vector&>(tpx.getNullVec());
+  const NOX::LAPACK::Vector& x = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(tpx.getXVec());
+  const NOX::LAPACK::Vector& y = 
+    dynamic_cast<const NOX::LAPACK::Vector&>(tpx.getNullVec());
   const LOCA::ParameterVector& p = grp.getParams();
 
   for (int i=0; i<x.length(); i++)

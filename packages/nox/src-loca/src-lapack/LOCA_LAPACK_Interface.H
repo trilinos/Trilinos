@@ -30,40 +30,36 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef CHANPROBLEMINTERFACE_H
-#define CHANPROBLEMINTERFACE_H
+#ifndef LOCA_LAPACK_INTERFACE_H
+#define LOCA_LAPACK_INTERFACE_H
 
-#include "LOCA_BLAS_Group.H"
+#include "NOX_LAPACK_Interface.H"
 
-class ChanProblemInterface : public LOCA::BLAS::Interface {
+// Forward declarations
+namespace LOCA {
+  class ParameterVector;
+}
 
-public:
+namespace LOCA {
+  namespace LAPACK {
+
+    /*! \brief Virtual interface for NOX::LAPACK::Group to provide a
+      link to the external code for RHS and Jacobian fills. */
+    class Interface : public NOX::LAPACK::Interface {
+
+    public:
  
-  ChanProblemInterface(int N, double a, double b);
+      //! Constructor
+      Interface() {}
 
-  ~ChanProblemInterface() {};
+      //! Destructor
+      virtual ~Interface() {}
 
-  const NOX::BLAS::Vector& getInitialGuess();
+      //! Set the bifurcation/continuation parameter list in the group.
+      virtual void setParams(const ParameterVector& p) = 0;
 
-  bool computeF(NOX::BLAS::Vector& f, const NOX::BLAS::Vector &x);
-  
-  bool computeJacobian(NOX::BLAS::Matrix& J, const NOX::BLAS::Vector & x);
-
-  bool setParams(const LOCA::ParameterVector& p);
-
-private:
-
-  double source_term(double x);
-
-  double source_deriv(double x);
-
-private:
-
-  NOX::BLAS::Vector initialGuess;
-  double alpha;
-  double beta;
-  int n;
-
-};
+    };
+  } // namespace LAPACK
+} // namespace LOCA
 
 #endif
