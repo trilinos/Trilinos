@@ -1242,6 +1242,11 @@ bool Group::createIfpackPreconditioner(Parameter::List& p) const
     ifpackGraph->ConstructFilledGraph();
     ifpackPreconditioner = new Ifpack_CrsRiluk(*ifpackGraph);
     ifpackPreconditioner->InitValues(*vbr);
+
+    // set diagonal perturbations
+    ifpackPreconditioner->SetAbsoluteThreshold(p.getParameter("Absolute Threshold", 0.0));
+    ifpackPreconditioner->SetRelativeThreshold(p.getParameter("Relative Threshold", 1.0));
+
     ifpackPreconditioner->Factor();
     return true;
   }
@@ -1260,6 +1265,10 @@ bool Group::createIfpackPreconditioner(Parameter::List& p) const
     ifpackGraph->ConstructFilledGraph();
     ifpackPreconditioner = new Ifpack_CrsRiluk(*ifpackGraph);
     ifpackPreconditioner->InitValues(*crs);
+
+    ifpackPreconditioner->SetAbsoluteThreshold(p.getParameter("Absolute Threshold", 0.0));
+    ifpackPreconditioner->SetRelativeThreshold(p.getParameter("Relative Threshold", 1.0));
+
     ifpackPreconditioner->Factor();
     return true;
   }
