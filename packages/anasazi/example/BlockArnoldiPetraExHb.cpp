@@ -1,3 +1,12 @@
+//
+//  File : BlockArnoldiPetraExHb.cpp
+//
+//  This example compute the eigenvalues of a Harwell-Boeing matrix using the block Arnoldi
+//  method.  The matrix is passed to the example routine through the command line, and 
+//  converted to an Epetra matrix through some utilty routines.  This matrix is passed to the
+//  eigensolver and then used to construct the Krylov decomposition.  The specifics of the 
+//  block Arnoldi method can be set by the user.
+
 #include "AnasaziPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
 #include "AnasaziCommon.hpp"
@@ -5,8 +14,7 @@
 
 #include "Trilinos_Util.h"
 #include "Util.h"
-//
-//
+
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -101,20 +109,23 @@ int main(int argc, char *argv[]) {
 	//
         //  Variables used for the Block Arnoldi Method
         // 
-        int block = 3;
-        int length = 8;
-        int nev = 10;
+        int block = 5;
+        int length = 10;
+        int nev = 5;
         double tol = 1.0e-8;
         string which="LM";
-        int step = 1;
+        int step = 5;
         int restarts = 10;
 	//
         // create a PetraAnasaziVec. Note that the decision to make a view or
         // or copy is determined by the petra constructor called by AnasaziPetraVec.
         // This is possible because I pass in arguements needed by petra.
+
         AnasaziPetraVec<double> ivec(Map, block);
         ivec.MvRandom();
+
         // call the ctor that calls the petra ctor for a matrix
+
         AnasaziPetraMat<double> Amat(A);
         AnasaziEigenproblem<double> MyProblem(&Amat, &ivec);
 	//
@@ -143,19 +154,27 @@ int main(int argc, char *argv[]) {
 
         // obtain results directly
         double* resids = MyBlockArnoldi.getResiduals();
-        double* evals = MyBlockArnoldi.getEvals();
-        
-        AnasaziPetraVec<double> evecs(Map, nev);
-        MyBlockArnoldi.getEvecs( evecs );
-	
-	
+        double* evalr = MyBlockArnoldi.getEvals();
+        double* evali = MyBlockArnoldi.getiEvals();
+
+        // retrieve eigenvectors
+        AnasaziPetraVec<double> evecr(Map, nev);
+        MyBlockArnoldi.getEvecs( evecr );
+        AnasaziPetraVec<double> eveci(Map, nev);
+        MyBlockArnoldi.getiEvecs( eveci );
+
         // output results to screen
-        //MyBlockArnoldi.currentStatus();
+        MyBlockArnoldi.currentStatus();
 
-// Release all objects  
+#ifdef UNIX
+        if (verbose)
+                cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time <<endl;
+#endif
 
-  delete [] NumNz;
-	
-  return 0;
-  //
-} // end test_bl_pgmrs_hb.cpp
+        // Release all objects
+        delete [] resids, evalr, evali;
+        delete [] NumNz;
+
+  	return 0;
+
+} // end BlockArnoldiPetraExHb.cpp

@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
 			NumNz[i] = 3;
 	}
 
-	// Create a Epetra_Matrix
+	// Create an Epetra_Matrix
 
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
 	// Diffusion coefficient, can be set by user.
-	double rho = 0.0;  
+	double rho = 1.0;  
 
 	// Add  rows one-at-a-time
 	// Need some vectors to help
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
 	double tol = 1.0e-8;
 	string which="LM";
 	int step = 1;
-	int restarts = 1;
+	int restarts = 10;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
 	
 	// inform the solver that the problem is symmetric
 	//MyBlockArnoldi.setSymmetric(true);
-	MyBlockArnoldi.setDebugLevel(3);
+	MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// obtain results directly
-	//double* resids = MyBlockArnoldi.getResiduals();
+	double* resids = MyBlockArnoldi.getResiduals();
 	double* evalr = MyBlockArnoldi.getEvals(); 
 	double* evali = MyBlockArnoldi.getiEvals();
 
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 	MyBlockArnoldi.getiEvecs( eveci );
 
 	// output results to screen
-	//MyBlockArnoldi.currentStatus();
+	MyBlockArnoldi.currentStatus();
 
 #ifdef UNIX
 	if (verbose)
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-	//delete [] resids, evals;
+	delete [] resids, evalr, evali;
 	delete [] NumNz;
 	delete [] Values;
 	delete [] Indices;
