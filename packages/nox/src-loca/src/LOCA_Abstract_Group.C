@@ -280,3 +280,9 @@ LOCA::Abstract::Group::computeDfDp(int paramID, NOX::Abstract::Vector& result)
 {
   return derivPtr->computeDfDp(*this,paramID, result);
 }
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Abstract::Group::augmentJacobianForHomotopy(double conParamValue)
+{
+  return NOX::Abstract::Group::NotDefined;
+}

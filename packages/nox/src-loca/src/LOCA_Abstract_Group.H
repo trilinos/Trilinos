@@ -176,6 +176,16 @@ namespace LOCA {
       //! Get scale vector
       virtual const NOX::Abstract::Vector& getScaleVec() const = 0;
   
+      //! This is an EVIL, EVIL, EVIL routine!  It breaks the concept of a group, but until we construct a better solution, it is necessary to get homotopy up and running quickly.
+      /*! This routine augments the Jacobian so that it can be used for homotopy algorithms.  After the Jacobian is calculated normally, the it can be augmented by this routine:
+
+      augmented Jacobian = \f$ \lambda J + (1 - \lambda)I \f$
+
+      where \f$ \lambda \f$ is the homotopy continuation parameter, \f$ J \f$ is the Jacobian, and \f$ I \f$ is the identity matrix.
+      */
+      virtual NOX::Abstract::Group::ReturnType 
+      augmentJacobianForHomotopy(double conParamValue);
+
     protected:
       //! Pointer to current DerivUtils derivative computation object
       DerivUtils* derivPtr;
