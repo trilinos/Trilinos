@@ -324,7 +324,7 @@ int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
 		if(verbose) cout << "Assignment operator, post construction" << endl;
 		Epetra_LocalMap m3(NumMyElements, IndexBase+1, Comm);
 		int m3count = m3.ReferenceCount();
-		int m3addr = (size_t) m3.DataPtr(); // cast int* to int
+		size_t m3addr = (size_t) m3.DataPtr(); // cast int* to int
 		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
 		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
 		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
