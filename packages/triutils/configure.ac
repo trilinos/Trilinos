@@ -252,6 +252,8 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		test/Makefile
+		test/Read/Makefile
 		])
 
 AC_OUTPUT()

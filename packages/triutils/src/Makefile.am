@@ -39,6 +39,10 @@
 
 CORE_H = \
 	$(srcdir)/Trilinos_Util.h \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.h \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.h \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.h \
+	$(srcdir)/Trilinos_Util_CountTriples.h \
 	$(srcdir)/Trilinos_Util_MatrixGallery.h \
 	$(srcdir)/Trilinos_Util_ShellOptions.h
 
@@ -61,6 +65,10 @@ CORE = \
 	$(srcdir)/Trilinos_Util_csrmsr.cpp \
 	$(srcdir)/Trilinos_Util_ssrcsr.cpp \
 	$(srcdir)/Trilinos_Util_coocsr.cpp \
+	$(srcdir)/Trilinos_Util_ReadMatrixMarket2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_ReadTriples2Epetra.cpp \
+	$(srcdir)/Trilinos_Util_CountMatrixMarket.cpp \
+	$(srcdir)/Trilinos_Util_CountTriples.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHpc2Epetra.cpp \
 	$(srcdir)/Trilinos_Util_ReadHb2EpetraVbr.cpp \
