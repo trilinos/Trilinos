@@ -38,6 +38,15 @@ static char *cvs_lbconsth_id = "$Id$";
  */
 
 /*
+ * Strings to define the library name, and the version number
+ * so that it is easier to keep track of what code each user
+ * has.
+ */
+#define UTIL_NAME "zoltan"
+#define DLB_VER   1.00
+
+
+/*
  *  Value used to initialize the parameters when the
  *  load-balancer allocates the parameters array.
  */

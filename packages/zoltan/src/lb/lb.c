@@ -34,7 +34,7 @@ static char *cvs_lbc_id = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Initialize(int argc, char **argv)
+void LB_Initialize(int argc, char **argv, float *ver)
 {
 /*
  *  Function to initialize values needed in load balancing tools.
@@ -53,6 +53,13 @@ int mpi_flag;
   if (!mpi_flag) {
     MPI_Init(&argc, &argv);
   }
+
+  /*
+   * Now return the version so that the user knows which version of
+   * the libarary is being used without having to get the source
+   * code.
+   */
+  *ver = DLB_VER;
 }
 
 

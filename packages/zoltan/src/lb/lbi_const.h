@@ -372,14 +372,15 @@ typedef void LB_UNPACK_OBJ_FN(LB_GID global_id, int size, char *buf);
 /*****************************************************************************/
 
 /*
- *  Function to initialize values needed in load balancing tools.
- *  This function must be called with the argc, argv arguments from main.
- *  If the application uses MPI, call this function after calling MPI_Init.
- *  If the application does not use MPI, this function calls MPI_Init for
+ *  Function to initialize values needed in load balancing tools, and
+ *  returns which version of the library this is. This function must
+ *  be called with the argc, argv arguments from main. If the application
+ *  uses MPI, call this function after calling MPI_Init. If the
+ *  application does not use MPI, this function calls MPI_Init for
  *  use by the load balancer.
  */
 
-extern void LB_Initialize(int argc, char **argv);
+extern void LB_Initialize(int argc, char **argv, float *ver);
 
 /*****************************************************************************/
 /*
