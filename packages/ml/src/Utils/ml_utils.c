@@ -2942,4 +2942,5 @@ int ML_Operator_Lump(ML_Operator *A, ML_Operator **B)
                   ML_INTERNAL, csr_data, nn, MSR_matvec, 0);
 
   ML_free(vin);
+  return 0;
 }

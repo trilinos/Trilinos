@@ -828,7 +828,7 @@ void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Stru
 
 extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, int ncols2)
 { 
-  double     *tau, *work, *A, *S ,*U, *VT;
+  double     *tau, *work, *A, *S ,U, VT;
   double     *tau1, *work1, *A1, *B;
   double     theta;
 
@@ -974,7 +974,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   work     = (double *)  ML_allocate(lwork* sizeof(double));
 
   /* SVD */
-  DGESVD_F77(jobu, jobvt, &ncols1, &ncols2, B, &lda, S, U, &ldu, VT, &ldvt, 
+  DGESVD_F77(jobu, jobvt, &ncols1, &ncols2, B, &lda, S, &U, &ldu, &VT, &ldvt, 
 	  work, &lwork, &info);
 
   if (info !=0 )  {
