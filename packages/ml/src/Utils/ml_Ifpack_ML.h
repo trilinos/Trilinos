@@ -38,7 +38,7 @@
 #define ML_IFPACK_ML_H
 
 #include "ml_include.h"
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_AZTECOO) && defined(HAVE_MPI) && defined(HAVE_ML_IFPACK)
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_IFPACK)
 
 #include "ml_epetra.h"
 #include "Ifpack_Preconditioner.h"
@@ -47,27 +47,42 @@
 
 namespace ML_Epetra {
 
+/*!
+ * \class Ifpack_ML
+ * 
+ * \brief Wraps an ML preconditioner as an Ifpack_Preconditioner
+ *
+ * \author Marzio Sala, SNL 9214
+ *
+ * \date Last updated on 14-Mar-05.
+ *
+ */
+
 class Ifpack_ML : public Ifpack_Preconditioner {
 
 public:
 
+  //! Constructor.
   Ifpack_ML(Epetra_RowMatrix* A) :
     A_(A),
     MLPrec_(0)
   {};
  
+  //! Destructor.
   virtual ~Ifpack_ML() 
   {
     if (MLPrec_)
       delete MLPrec_;
   }
 
+  //! Sets all the parameters for the preconditioner from the list.
   virtual int SetParameters(Teuchos::ParameterList& MLList)
   {
     MLList_ = MLList;
     return(0);
   }
 
+  //! Initialize the preconditioner.
   virtual int Initialize() 
   {
     return(0);
@@ -188,54 +203,66 @@ public:
     return(os);
   }
 
+  //! Sets the use of transpose 9NOT SUPPORTED)
   int SetUseTranspose(bool)
   {
     ML_CHK_ERR(-1);
   }
 
+  //! Applies the matrix to a vector (NOT SUPPORTED)
   int Apply(const Epetra_MultiVector&, Epetra_MultiVector&) const
   {
     ML_CHK_ERR(-1);
   }
 
+  //! Returns the norm inf (NOT SUPPORTED)
   double NormInf() const
   {
     return(-1.0);
   }
 
+  //! Returns the label of \c this object.
   const char* Label() const
   {
     return("Ifpack_ML");
   }
 
+  //! Returns \c true if the transpose is used.
   bool UseTranspose() const
   {
     ML_CHK_ERR(-1);
   }
 
+  //! Returns \c true if the class furnishes an infinite norm.
   bool HasNormInf() const 
   {
     return(false);
   }
 
+  //! Returns a reference to the communicator of \c this object.
   const Epetra_Comm& Comm() const
   {
     return(A_->Comm());
   }
 
+  //! Returns a reference to the operator domain map.
   const Epetra_Map& OperatorDomainMap() const
   {
     return(A_->OperatorDomainMap());
   }
 
+  //! Returns a reference to the operator range map.
   const Epetra_Map& OperatorRangeMap() const
   {
     return(A_->OperatorRangeMap());
   }
 
 private:
+  //! Pointer to the matrix used to build the preconditioner.
   Epetra_RowMatrix* A_;
+  //! Pointer to the ML preconditioner.
   ML_Epetra::MultiLevelPreconditioner* MLPrec_;
+  //! Copy of the input parameter list.
   Teuchos::ParameterList MLList_;
 }; // class Ifpack_ML
 
