@@ -141,7 +141,10 @@ namespace Teuchos {
     //! Returns representation of one for this scalar type.
     static inline T one()                      { throw(unsupportedType()); };
 
-    //! Returns a random number of this scalar type.
+    //! Seed the random number generator returned by <tt>random()</tt>.
+    static inline void seedrandom(unsigned int s) { throw(unsupportedType()); };
+
+    //! Returns a random number (between -one() and +one()) of this scalar type.
     static inline T random()                   { throw(unsupportedType()); };
 
     //! Returns the name of this scalar type.
@@ -180,11 +183,12 @@ namespace Teuchos {
     static inline magnitudeType magnitude(int a) { return abs(a); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
-    static inline int random() { return rand(); };
+    static inline void seedrandom(unsigned int s) { srand(s); };
+    //static inline int random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
+    static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
     static inline const char * name() { return "int"; };
     static inline int squareroot(int x) { return (int) sqrt((double) x); };
   };
-  
   
   template<>
   struct ScalarTraits<float>
@@ -204,6 +208,7 @@ namespace Teuchos {
     static inline magnitudeType magnitude(float a) { return fabs(a); };    
     static inline float zero()  { return(0.0); };
     static inline float one()   { return(1.0); };    
+    static inline void seedrandom(unsigned int s) { srand(s); };
     static inline float random() { float rnd = (float) rand() / RAND_MAX; return (float)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "float"; };
     static inline float squareroot(float x) { return sqrt(x); };
@@ -228,6 +233,7 @@ namespace Teuchos {
     static inline double rmin()  { LAPACK<int, double> lp; return lp.LAMCH('U'); };
     static inline double emax()  { LAPACK<int, double> lp; return lp.LAMCH('L'); };
     static inline double rmax()  { LAPACK<int, double> lp; return lp.LAMCH('O'); };
+    static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline const char* name() { return "double"; };
     static inline double squareroot(double x) { return sqrt(x); };
@@ -253,6 +259,7 @@ namespace Teuchos {
     static magnitudeType magnitude(ComplexFloat a) { return std::abs(a); };
     static inline ComplexFloat zero()  { return ComplexFloat(0.0, 0.0); };
     static inline ComplexFloat one()   { return ComplexFloat(1.0, 0.0); };
+    static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
     static inline ComplexFloat random()
     {
       float rnd1 = ScalarTraits<magnitudeType>::random();
@@ -292,6 +299,7 @@ namespace Teuchos {
     static magnitudeType magnitude(ComplexDouble a) { return std::abs(a); };
     static inline ComplexDouble zero()  {return ComplexDouble(0.0,0.0); };
     static inline ComplexDouble one()   {return ComplexDouble(1.0,0.0); };    
+    static inline void seedrandom(unsigned int s) { ScalarTraits<magnitudeType>::seedrandom(s); };
     static inline ComplexDouble random()
     {
       double rnd1 = ScalarTraits<magnitudeType>::random();
@@ -344,6 +352,7 @@ namespace Teuchos {
     static magnitudeType magnitude(mp_real a) { return abs(a); };
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
     static inline mp_real one() { mp_real one = 1.0; return one; };    
+    static inline void seedrandom(unsigned int s) { mp_rand(s); };
     static inline mp_real random() { return mp_rand(); };
     static inline const char* name() { return "mp_real"; };
     static inline mp_real squareroot(mp_real x) { return sqrt(x); };
