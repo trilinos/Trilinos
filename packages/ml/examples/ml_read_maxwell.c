@@ -938,13 +938,13 @@ int main(int argc, char *argv[])
   if (Tmat_transbc != NULL)
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmatbc,
-                                 Tmat_transbc,
-						         &Tmat_array, &Tmat_trans_array);
+                                 Tmat_transbc, &Tmat_array, &Tmat_trans_array,
+                                 ML_YES, ML_DDEFAULT);
   else
      coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
 						         N_levels-1, ML_DECREASING, ag, Tmat,
-                                 Tmat_trans,
-						         &Tmat_array, &Tmat_trans_array);
+                                 Tmat_trans, &Tmat_array, &Tmat_trans_array,
+                                 ML_YES, ML_DDEFAULT);
 
 #ifdef ReuseOps
   {printf("Starting reuse\n"); fflush(stdout);}
