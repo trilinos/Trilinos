@@ -48,7 +48,7 @@
 #include "Newp_Jambo.h"
 #endif
 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
   int exit_value = 0 ; 
 
@@ -69,7 +69,7 @@ main(int argc, char **argv)
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
-  exit( exit_value ) ; 
+  return( exit_value ) ; 
 }
 
   
