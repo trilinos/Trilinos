@@ -21,9 +21,9 @@ extern "C" {
 #include "params_const.h"
 #include "all_allo_const.h"
 
-
-static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
+/* static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
 static double hcut_size_total (HGraph *hg, Partition part);
+*/
 
 /*
  *  Main routines for Zoltan interface to hypergraph partitioning.
@@ -177,8 +177,8 @@ for (i = 0; i < zz->LB.Num_Global_Parts; i++)
    if (subtotal[i] > top)
       top = subtotal[i];
    }
-cuts = (int) hcut_size_links (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts);
-tcuts = (int)hcut_size_total (&zoltan_hg->HG, output_parts);
+cuts = (int) Zoltan_HG_hcut_size_links (zz, &zoltan_hg->HG, output_parts);
+tcuts = (int)Zoltan_HG_hcut_size_total (&zoltan_hg->HG, output_parts);
 
 printf ("RTHRTHp=%d, cuts %5d%c %5d tol %.3f:  ", zz->LB.Num_Global_Parts, cuts,
  hgp.orphan_flag ? '*' : ' ', tcuts, top*zz->LB.Num_Global_Parts);
@@ -411,8 +411,7 @@ char *yo = "Zoltan_HG_HGraph_Print";
 
 
 
-
-static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+/* static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 {
 int i, j, *parts, nparts;
 double cut = 0.0;
@@ -435,9 +434,9 @@ char *yo = "hcut_size_links";
   ZOLTAN_FREE ((void**) &parts);
   return cut;
 }
+*/
 
-
-static double hcut_size_total (HGraph *hg, Partition part)
+/* static double hcut_size_total (HGraph *hg, Partition part)
 {
 int i, j, hpart;
 double cut = 0.0;
@@ -451,7 +450,7 @@ double cut = 0.0;
      }
   return cut;
 }
-
+*/
 
 /*****************************************************************************/
 #ifdef __cplusplus

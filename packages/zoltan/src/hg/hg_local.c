@@ -46,12 +46,12 @@ static ZOLTAN_HG_LOCAL_REF_FN local_grkway;
 
 ZOLTAN_HG_LOCAL_REF_FN *Zoltan_HG_Set_Local_Ref_Fn(char *str)
 {
-  if      (!strcasecmp(str, "fm2"))    return local_fm2;
-  else if (!strcasecmp(str, "fm2new")) return local_fm2new;
-  else if (!strcasecmp(str, "fmkway")) return local_fmkway;
-  else if (!strcasecmp(str, "grkway")) return local_grkway;
-  else if (!strcasecmp(str, "no"))     return local_no;
-  else                                 return NULL;
+  if      (!strcasecmp(str, "fm2baseline")) return local_fm2baseline;
+  else if (!strcasecmp(str, "fm2"))         return local_fm2;
+  else if (!strcasecmp(str, "fmkway"))      return local_fmkway;
+  else if (!strcasecmp(str, "grkway"))      return local_grkway;
+  else if (!strcasecmp(str, "no"))          return local_no;
+  else                                      return NULL;
 }
 
 /****************************************************************************/
@@ -290,13 +290,13 @@ double cutsize, best_cutsize, *gain = 0;
 float  junk;
 HEAP   heap[2];
 int    steplimit;
-char   *yo="local_fm2";
+char   *yo="local_fm2baseline";
 
 double ratio = hg->ratio, error, best_error;
 int imbalance;
 
   if (p != 2) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for local_fm2.");
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for local_fm2baseline.");
      return ZOLTAN_FATAL;
      }
 
@@ -502,13 +502,13 @@ double cutsize, best_cutsize, *gain = 0;
 float  junk;
 HEAP   heap[2];
 int    steplimit;
-char   *yo="local_fm2new";
+char   *yo="local_fm2";
 
 double ratio = hg->ratio, error, best_error;
 int    best_imbalance, imbalance;
 
   if (p != 2) {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for local_fm2new.");
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for local_fm2.");
      return ZOLTAN_FATAL;
      }
 

@@ -8,8 +8,10 @@
 #include "hypergraph.h"
 #include <math.h>
 
+/*
 static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part);
 static double hcut_size_total (HGraph *hg, Partition part);
+*/
 int hg_readfile (ZZ*, HGraph*, char*, int*);
 
 
@@ -209,8 +211,8 @@ for (i = 0; i < p; i++)
    if (subtotal[i] > top)
       top = subtotal[i];
    }
-cuts = (int) hcut_size_links (&zz, &hg, p, part);
-tcuts = (int) hcut_size_total (&hg, part);
+cuts = (int) Zoltan_HG_hcut_size_links (&zz, &hg, part);
+tcuts = (int) Zoltan_HG_hcut_size_total (&hg, part);
 
 printf ("RTHRTHp=%d, cuts %5d%c %5d tol %.3f:  ", p, cuts, hgp.orphan_flag ? '*' : ' ', tcuts, top*p);
 temp = ((p > 8) ? 8 : p);
@@ -249,8 +251,7 @@ printf ("\n");
   return 0;
 }
 
-
-static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+/* static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
 {
 int i, j, *parts, nparts;
 double cut = 0.0;
@@ -273,8 +274,9 @@ char *yo = "hcut_size_links";
   ZOLTAN_FREE ((void**) &parts);
   return cut;
 }
+*/
 
-static double hcut_size_total (HGraph *hg, Partition part)
+/* static double hcut_size_total (HGraph *hg, Partition part)
 {
 int i, j, hpart;
 double cut = 0.0;
@@ -288,3 +290,4 @@ double cut = 0.0;
      }
   return cut;
 }
+*/

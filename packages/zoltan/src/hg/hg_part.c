@@ -17,7 +17,8 @@ extern "C" {
 #endif
 
 #include "hypergraph.h"
-static double hcut_size_links (ZZ*, HGraph*, int p, Partition);
+/* static double hcut_size_links (ZZ*, HGraph*, int p, Partition);
+*/
 /*
 static int orphan (ZZ*, HGraph*, int p, Partition, HGPartParams*);
 static double calc_bal (ZZ*, HGraph*, Partition);
@@ -239,7 +240,7 @@ t = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int));
 
 while (pass++ < hgp->cleanuprepeat)
    {
-   best = hcut_size_links (zz, hg, p, part);
+   best = Zoltan_HG_hcut_size_links (zz, hg, part);
    for (i = 0; i < hg->nVtx; i++)
       t[i] = part[i];
 
@@ -278,7 +279,7 @@ while (pass++ < hgp->cleanuprepeat)
       printf ("RTHRTH: total %d\n", total);
       }
 
-   if (hcut_size_links(zz, hg, p, part) > best)
+   if (Zoltan_HG_hcut_size_links(zz, hg, part) > best)
       {
       printf ("RTHRTH: final optimizer is worse!\n");
       for (i = 0; i < hg->nVtx; i++)
@@ -297,9 +298,11 @@ ZOLTAN_FREE (&t);
         goto End;
      }
   if (hgp->output_level >= HG_DEBUG_LIST)
-    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d cutl=%.2f\n",
+    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
-     hgp->global_str, hgp->local_str, p, hcut_size_links(zz, hg, p, part));
+     hgp->redmo_str, hgp->global_str, hgp->local_str, p,
+     Zoltan_HG_HPart_balance(zz, hg, p, part),
+     Zoltan_HG_hcut_size_links(zz, hg, part));
 
   if (hgp->output_level >= HG_DEBUG_PLOT)
      Zoltan_HG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part,
@@ -339,11 +342,16 @@ double cut = 0.0;
    the number of parts it spans across. This value minus one is the
    cutsize of this edge and the total cutsize is the sum of the single
    cutsizes. Time O(|I|). */
-static double hcut_size_links (ZZ *zz, HGraph *hg, int p, Partition part)
+
+double Zoltan_HG_hcut_size_links (ZZ *zz, HGraph *hg, Partition part)
 {
-int i, j, *parts, nparts;
+int i, j, p=0, *parts, nparts;
 double cut = 0.0;
 char *yo = "hcut_size_links";
+
+  for (i=0; i<hg->nVtx; i++)
+    p = MAX(p,part[i]);
+  p++;
 
   if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -471,11 +479,147 @@ char *yo = "Zoltan_HG_HPart_Info";
 
   printf ("EDGE-based:\n");
   printf (" Cuts(total/links)  : %.3f %.3f\n",
-   Zoltan_HG_hcut_size_total(hg,part),hcut_size_links(zz,hg,p,part));
+   Zoltan_HG_hcut_size_total(hg,part),Zoltan_HG_hcut_size_links(zz,hg,part));
   printf ("----------------------------------------------------------------\n");
 
   return ZOLTAN_OK;
 }
+
+
+/****************************************************************************/
+
+double Zoltan_HG_HPart_balance (
+  ZZ *zz,
+  HGraph *hg,
+  int p,
+  Partition part
+)
+{
+int i;
+char *yo = "Zoltan_HG_HPart_balance";
+double *size_w, max_size_w=0.0, tot_w = 0.0;
+
+  if (!(size_w = (double*) ZOLTAN_CALLOC (p, sizeof(double))))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
+  for (i=0; i<hg->nVtx; i++)
+    size_w[part[i]] += (hg->vwgt?hg->vwgt[i]:1.0);
+
+  for (i=0; i<p; i++)
+    max_size_w = MAX(max_size_w, size_w[i]);
+
+  if (hg->vwgt)
+    for (i=0; i<p; i++)
+      tot_w += size_w[i];
+  else
+    tot_w = (double)(hg->nVtx);
+
+  ZOLTAN_FREE ((void**) &size_w);
+
+  return (max_size_w * p / tot_w);
+}
+
+/****************************************************************************/
+
+/* counts and fixes orphans, points that have no hyperedges in their partition */
+
+/*
+static int orphan (ZZ *zz, HGraph *hg, int p, Partition part,HGPartParams *hgp)
+{
+int total;
+int i, j;
+int part0, part1, vertex, edge;
+int source, dest;
+
+double part_weight[2], total_weight, max_weight[2], weight;
+double bal_tol, ratio;
+
+bal_tol = hgp->bal_tol;
+ratio = hg->ratio;
+
+  * Calculate the weights in each partition and total, then maxima *
+  part_weight[0] = 0.0;
+  part_weight[1] = 0.0;
+  if (hg->vwgt)  {
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += hg->vwgt[i];
+     total_weight = part_weight[0] + part_weight[1];
+     }
+  else  {
+     total_weight = (double)(hg->nVtx);
+     for (i = 0; i < hg->nVtx; i++)
+        part_weight[part[i]] += 1.0;
+     }
+  max_weight[0] = total_weight * bal_tol *      ratio;
+  max_weight[1] = total_weight * bal_tol * (1 - ratio);
+
+   total = 0;
+   for (vertex = 0; vertex < hg->nVtx; vertex++)
+      {
+      part0 = part1 = 0;
+      for (i = hg->vindex[vertex]; i < hg->vindex[vertex+1]; i++)
+         {
+         edge = hg->vedge[i];
+         for (j = hg->hindex[edge]; j < hg->hindex[edge+1]; j++)
+            {
+            if      (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 0) part0++;
+            else if (hg->hvertex[j] != vertex && part[hg->hvertex[j]] == 1) part1++;
+            }
+         }
+
+      if (part0 + part1 == 0)
+         continue;
+      if ((part1 == 0 && part[vertex] == 1) || (part0 == 0 && part[vertex] == 0))
+          {
+          source = part[vertex];
+          dest   = 1 - source;
+          weight = (hg->vwgt) ? hg->vwgt[vertex] : 1.0;
+#ifdef RTHRTH
+          if (part_weight[dest] + weight <= max_weight[dest])
+#endif
+             {
+#ifdef RTHRTH
+             part[vertex] = 1 - part[vertex];    * fixes orphans *
+             part_weight[source] -= weight;
+             part_weight[dest]   += weight;
+#endif
+             total++;  * only counts "fixable" orphans *
+             }
+          }
+      }
+   return total;
+}
+
+
+
+static double calc_bal (ZZ *zz, HGraph *hg, Partition part)
+{
+double total, subtotal[2];
+int i;
+
+subtotal[0] = subtotal[1] = 0.0;
+total = 0.0;
+for (i = 0; i < hg->nVtx; i++)
+   subtotal[part[i]] += ((hg->vwgt == NULL) ? 1.0 : hg->vwgt[i]);
+total = subtotal[0] + subtotal[1];
+if (subtotal[0] > subtotal[1])
+   return 2.0 * subtotal[0]/total;
+else
+   return 2.0 * subtotal[1]/total;
+}
+*/
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
+
+
+
+
+
+
+
 
 /****************************************************************************/
 

@@ -178,6 +178,8 @@ int Zoltan_HG_Set_Part_Options  (ZZ*, HGPartParams*);
 int Zoltan_HG_HPart_Lib    (ZZ*, HGraph*, int, Partition, HGPartParams*, int);
 int Zoltan_HG_HPart_Info   (ZZ*, HGraph*, int, Partition, HGPartParams*);
 double Zoltan_HG_hcut_size_total (HGraph*, Partition);
+double Zoltan_HG_hcut_size_links (ZZ*, HGraph*, Partition);
+double Zoltan_HG_HPart_balance   (ZZ*, HGraph*, int, Partition);
 
 /* Scale Edge Weight */
 int Zoltan_HG_Scale_HGraph_Weight (ZZ*, HGraph*, float*, int);
