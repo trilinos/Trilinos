@@ -33,6 +33,7 @@
 #include "AztecOO.h"
 #include "ml_epetra_utils.h"
 #include "ml_epetra_preconditioner.h"
+#include "Teuchos_ParameterList.hpp"
 
 /*****************************************************************************/
 /* All functions/structures starting with the word 'user' denote things that */
