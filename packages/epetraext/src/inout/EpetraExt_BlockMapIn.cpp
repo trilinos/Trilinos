@@ -27,11 +27,13 @@
 //@HEADER
 #include "EpetraExt_BlockMapIn.h"
 #include "Epetra_Comm.h"
+#include "Epetra_Util.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_Import.h"
+#include "EpetraExt_mmio.h"
 
 using namespace EpetraExt;
 namespace EpetraExt {
@@ -147,4 +149,104 @@ int MatrixMarketFileToBlockMap( const char *filename, const Epetra_Comm & comm, 
     map = new Epetra_BlockMap(-1, NumMyElements, v1.Values(), v2.Values(), IndexBase, comm);
   return(0);
 }
+
+int MatrixMarketFileToRowMap(const char* filename,
+                             const Epetra_Comm& comm,
+                             Epetra_BlockMap*& rowmap)
+{
+  FILE* infile = fopen(filename, "r");
+  MM_typecode matcode;
+
+  int err = mm_read_banner(infile, &matcode);
+  if (err != 0) return(err);
+
+  if (!mm_is_matrix(matcode) || !mm_is_coordinate(matcode) ||
+      !mm_is_real(matcode)   || !mm_is_general(matcode)) {
+    return(-1);
+  }
+
+  int numrows, numcols;
+  err = mm_read_mtx_array_size(infile, &numrows, &numcols);
+  if (err != 0) return(err);
+
+  fclose(infile);
+
+  rowmap = new Epetra_BlockMap(numrows, 1, 0, comm);
+  return(0);
+}
+
+int MatrixMarketFileToBlockMaps(const char* filename,
+                                const Epetra_Comm& comm,
+                                Epetra_BlockMap*& rowmap,
+                                Epetra_BlockMap*& colmap,
+                                Epetra_BlockMap*& rangemap,
+                                Epetra_BlockMap*& domainmap)
+{
+  FILE* infile = fopen(filename, "r");
+  if (infile == NULL) {
+    return(-1);
+  }
+
+  MM_typecode matcode;
+
+  int err = mm_read_banner(infile, &matcode);
+  if (err != 0) return(err);
+
+  if (!mm_is_matrix(matcode) || !mm_is_coordinate(matcode) ||
+      !mm_is_real(matcode)   || !mm_is_general(matcode)) {
+    return(-1);
+  }
+
+  int numrows, numcols, nnz;
+  err = mm_read_mtx_crd_size(infile, &numrows, &numcols, &nnz);
+  if (err != 0) return(err);
+
+  //for this case, we'll assume that the row-map is the same as
+  //the range-map.
+  //create row-map and range-map with linear distributions.
+
+  rowmap = new Epetra_BlockMap(numrows, 1, 0, comm);
+  rangemap = new Epetra_BlockMap(numrows, 1, 0, comm);
+
+  int I, J;
+  double val, imag;
+
+  int num_map_cols = 0, insertPoint, foundOffset;
+  int allocLen = numcols;
+  int* map_cols = new int[allocLen];
+
+  //read through all matrix data and construct a list of the column-
+  //indices that occur in rows that are local to this processor.
+ 
+  for(int i=0; i<nnz; ++i) {
+    err = mm_read_mtx_crd_entry(infile, &I, &J, &val,
+                                &imag, matcode);
+
+    if (err == 0) {
+      --I;
+      --J;
+      if (rowmap->MyGID(I)) {
+        foundOffset = Epetra_Util_binary_search(J, map_cols, num_map_cols,
+                                                insertPoint);
+        if (foundOffset < 0) {
+          Epetra_Util_insert(J, insertPoint, map_cols,
+                             num_map_cols, allocLen);
+        }
+      }
+    } 
+  }
+
+  //create colmap with the list of columns associated with rows that are
+  //local to this processor.
+  colmap = new Epetra_Map(-1, num_map_cols, map_cols, 0, comm);
+
+  //create domainmap which has a linear distribution
+  domainmap = new Epetra_BlockMap(numcols, 1, 0, comm);
+
+  delete [] map_cols;
+
+  return(0);
+}
+
 } // namespace EpetraExt
+

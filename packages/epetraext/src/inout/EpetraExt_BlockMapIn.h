@@ -89,4 +89,14 @@ namespace EpetraExt {
   */
   int MatrixMarketFileToMap( const char *filename, const Epetra_Comm & comm, Epetra_Map * & map);
 
+
+  /** Constructs row,col,range and domain maps from a matrix-market matrix file.
+  */
+  int MatrixMarketFileToBlockMaps(const char* filename,
+                                  const Epetra_Comm& comm,
+                                  Epetra_BlockMap*& rowmap,
+                                  Epetra_BlockMap*& colmap,
+                                  Epetra_BlockMap*& rangemap,
+                                  Epetra_BlockMap*& domainmap);
 } // namespace EpetraExt
+

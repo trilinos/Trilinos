@@ -48,8 +48,22 @@ int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap
   return(MatrixMarketFileToCrsMatrixHandle(filename, A));
 }
 
-int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * A) {
+int MatrixMarketFileToCrsMatrix(const char *filename,
+                                const Epetra_Map & rowMap,
+                                const Epetra_Map & colMap,
+                                const Epetra_Map& rangeMap,
+                                const Epetra_Map& domainMap,
+                                Epetra_CrsMatrix * & A)
+{
+  A = new Epetra_CrsMatrix(Copy, rowMap, colMap, 0);
+  return(MatrixMarketFileToCrsMatrixHandle(filename, A, &rangeMap, &domainMap));
+}
 
+int MatrixMarketFileToCrsMatrixHandle(const char *filename,
+                                      Epetra_CrsMatrix * A,
+                                      const Epetra_Map* rangeMap,
+                                      const Epetra_Map* domainMap)
+{
   const int lineLength = 1025;
   const int tokenLength = 35;
   char line[lineLength];
@@ -94,7 +108,12 @@ int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * 
       A->InsertGlobalValues(I, 1, &V, &J);
   }
 
-  A->FillComplete();
+  if (rangeMap != NULL && domainMap != NULL) {
+    A->FillComplete(*domainMap, *rangeMap);
+  }
+  else {
+    A->FillComplete();
+  }
 
   return(0);
 }

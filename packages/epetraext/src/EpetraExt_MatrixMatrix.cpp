@@ -80,7 +80,8 @@ class CrsMatrixStruct {
 public:
   CrsMatrixStruct()
     : numRows(0), numEntriesPerRow(NULL), indices(NULL), values(NULL),
-      remote(NULL), numRemote(0), rowMap(NULL)
+      remote(NULL), numRemote(0), rowMap(NULL), colMap(NULL),
+      domainMap(NULL), importColMap(NULL), importMatrix(NULL)
   {}
 
   virtual ~CrsMatrixStruct()
@@ -96,6 +97,7 @@ public:
     delete [] values; values = NULL;
     delete [] remote; remote = NULL;
     numRemote = 0;
+    delete importMatrix;
   }
 
   int numRows;
@@ -109,6 +111,7 @@ public:
   const Epetra_Map* colMap;
   const Epetra_Map* domainMap;
   const Epetra_Map* importColMap;
+  Epetra_CrsMatrix* importMatrix;
 };
 
 int dumpCrsMatrixStruct(const CrsMatrixStruct& M)
@@ -191,7 +194,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
     //result matrix C.
 
     for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
-      int Ak = Aindices_i[k];
+      int Ak = Bview.rowMap->LID(Aview.colMap->GID(Aindices_i[k]));
       double Aval = Aval_i[k];
 
       int* Bcol_inds = Bview.indices[Ak];
@@ -488,8 +491,8 @@ int mult_Atrans_B(CrsMatrixStruct& Aview,
 	global_row = Aview.colMap->GID(Ai);
       }
 
-      if (!Aview.domainMap->MyGID(global_row)) {
-	continue;
+      if (!C.RowMap().MyGID(global_row)) {
+        continue;
       }
 
       if (Bview.remote[Bk]) {
@@ -734,15 +737,14 @@ int mult_Atrans_Btrans(CrsMatrixStruct& Aview,
 
 int import_and_extract_views(const Epetra_CrsMatrix& M,
 			     const Epetra_Map& targetMap,
-			     Epetra_CrsMatrix*& importM,
 			     CrsMatrixStruct& Mview)
 {
   //The goal of this method is to populate the 'Mview' struct with views of the
   //rows of M, including all rows that correspond to elements in 'targetMap'.
   //
   //If targetMap includes local elements that correspond to remotely-owned rows
-  //of M, then those remotely-owned rows will be imported into 'importM', and
-  //views of them will be included in 'Mview'.
+  //of M, then those remotely-owned rows will be imported into
+  //'Mview.importMatrix', and views of them will be included in 'Mview'.
 
   Mview.deleteContents();
 
@@ -822,25 +824,25 @@ int import_and_extract_views(const Epetra_CrsMatrix& M,
 
     //Now create a new matrix into which we can import the remote rows of M
     //that we need.
-    importM = new Epetra_CrsMatrix(Copy, MremoteRowMap, 1);
+    Mview.importMatrix = new Epetra_CrsMatrix(Copy, MremoteRowMap, 1);
 
-    EPETRA_CHK_ERR( importM->Import(M, importer, Insert) );
+    EPETRA_CHK_ERR( Mview.importMatrix->Import(M, importer, Insert) );
 
-    EPETRA_CHK_ERR( importM->FillComplete(M.DomainMap(), M.RangeMap()) );
+    EPETRA_CHK_ERR( Mview.importMatrix->FillComplete(M.DomainMap(), M.RangeMap()) );
 
     //Finally, use the freshly imported data to fill in the gaps in our views
     //of rows of M.
     for(i=0; i<Mview.numRows; ++i) {
       if (Mview.remote[i]) {
 	int importLID = MremoteRowMap.LID(Mrows[i]);
-	EPETRA_CHK_ERR( importM->ExtractMyRowView(importLID,
+	EPETRA_CHK_ERR( Mview.importMatrix->ExtractMyRowView(importLID,
 						  Mview.numEntriesPerRow[i],
 						  Mview.values[i],
 						  Mview.indices[i]) );
       }
     }
 
-    Mview.importColMap = &(importM->ColMap());
+    Mview.importColMap = &(Mview.importMatrix->ColMap());
 
     delete [] MremoteRows;
   }
@@ -917,9 +919,74 @@ Epetra_Map* create_map_from_imported_rows(const Epetra_Map* map,
   return( import_rows );
 }
 
+int form_map_union(const Epetra_Map* map1,
+		   const Epetra_Map* map2,
+		   const Epetra_Map*& mapunion)
+{
+  //form the union of two maps
+
+  if (map1 == NULL) {
+    mapunion = new Epetra_Map(*map2);
+    return(0);
+  }
+
+  if (map2 == NULL) {
+    mapunion = new Epetra_Map(*map1);
+    return(0);
+  }
+
+  int map1_len       = map1->NumMyElements();
+  int* map1_elements = map1->MyGlobalElements();
+  int map2_len       = map2->NumMyElements();
+  int* map2_elements = map2->MyGlobalElements();
+
+  int* union_elements = new int[map1_len+map2_len];
+
+  int map1_offset = 0, map2_offset = 0, union_offset = 0;
+
+  while(map1_offset < map1_len && map2_offset < map2_len) {
+    int map1_elem = map1_elements[map1_offset];
+    int map2_elem = map2_elements[map2_offset];
+
+    if (map1_elem < map2_elem) {
+      union_elements[union_offset++] = map1_elem;
+      ++map1_offset;
+    }
+    else if (map1_elem > map2_elem) {
+      union_elements[union_offset++] = map2_elem;
+      ++map2_offset;
+    }
+    else {
+      union_elements[union_offset++] = map1_elem;
+      ++map1_offset;
+      ++map2_offset;
+    }
+  }
+
+  int i;
+  for(i=map1_offset; i<map1_len; ++i) {
+    union_elements[union_offset++] = map1_elements[i];
+  }
+
+  for(i=map2_offset; i<map2_len; ++i) {
+    union_elements[union_offset++] = map2_elements[i];
+  }
+
+  mapunion = new Epetra_Map(-1, union_offset, union_elements,
+			    map1->IndexBase(), map1->Comm());
+
+  delete [] union_elements;
+
+  return(0);
+}
+
 Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
                                       const Epetra_Map* colmap)
 {
+  //The goal of this function is to find all rows in the matrix M that contain
+  //column-indices which are in 'colmap'. A map containing those rows is
+  //returned.
+
   int numProcs = colmap->Comm().NumProc();
   int localProc = colmap->Comm().MyPID();
 
@@ -1010,73 +1077,20 @@ Epetra_Map* find_rows_containing_cols(const Epetra_CrsMatrix& M,
     create_map_from_imported_rows(&Mrowmap, totalNumSend,
                                   procRows_1D, numProcs, procNumRows);
 
+  Epetra_Map* result_map = NULL;
+
+  err = form_map_union(&(M.RowMap()), recvd_rows, (const Epetra_Map*&)result_map);
+  if (err != 0) {
+    return(NULL);
+  }
+
   delete [] iwork;
   delete [] procCols;
   delete [] procRows;
   delete [] all_proc_cols;
+  delete recvd_rows;
 
-  return(recvd_rows);
-}
-
-int form_map_union(const Epetra_Map* map1,
-		   const Epetra_Map* map2,
-		   const Epetra_Map*& mapunion)
-{
-  //form the union of two maps
-
-  if (map1 == NULL) {
-    mapunion = new Epetra_Map(*map2);
-    return(0);
-  }
-
-  if (map2 == NULL) {
-    mapunion = new Epetra_Map(*map1);
-    return(0);
-  }
-
-  int map1_len       = map1->NumMyElements();
-  int* map1_elements = map1->MyGlobalElements();
-  int map2_len       = map2->NumMyElements();
-  int* map2_elements = map2->MyGlobalElements();
-
-  int* union_elements = new int[map1_len+map2_len];
-
-  int map1_offset = 0, map2_offset = 0, union_offset = 0;
-
-  while(map1_offset < map1_len && map2_offset < map2_len) {
-    int map1_elem = map1_elements[map1_offset];
-    int map2_elem = map2_elements[map2_offset];
-
-    if (map1_elem < map2_elem) {
-      union_elements[union_offset++] = map1_elem;
-      ++map1_offset;
-    }
-    else if (map1_elem > map2_elem) {
-      union_elements[union_offset++] = map2_elem;
-      ++map2_offset;
-    }
-    else {
-      union_elements[union_offset++] = map1_elem;
-      ++map1_offset;
-      ++map2_offset;
-    }
-  }
-
-  int i;
-  for(i=map1_offset; i<map1_len; ++i) {
-    union_elements[union_offset++] = map1_elements[i];
-  }
-
-  for(i=map2_offset; i<map2_len; ++i) {
-    union_elements[union_offset++] = map2_elements[i];
-  }
-
-  mapunion = new Epetra_Map(-1, union_offset, union_elements,
-			    map1->IndexBase(), map1->Comm());
-
-  delete [] union_elements;
-
-  return(0);
+  return(result_map);
 }
 
 int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
@@ -1092,11 +1106,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //and similarly for op(B).
   //
 
-  //A and B should already be Filled. It doesn't matter whether C is
-  //already Filled, but if it is, then its graph must already contain
-  //all nonzero locations that will be referenced in forming the
-  //product.
-
+  //A and B should already be Filled.
+  //(Should we go ahead and call FillComplete() on them if necessary?
+  // or error out? For now, we choose to error out.)
   if (!A.Filled() || !B.Filled()) {
     EPETRA_CHK_ERR(-1);
   }
@@ -1121,83 +1133,88 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     return(-1);
   }
 
+  //The result matrix C must at least have a row-map that reflects the
+  //correct row-size. Don't check the number of columns because rectangular
+  //matrices which were constructed with only one map can still end up
+  //having the correct capacity and dimensions when filled.
+  if (Aouter > C.NumGlobalRows()) {
+    cerr << "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
+         << "match dimensions of op(A) * op(B). C has "<<C.NumGlobalRows()
+         << " rows, should have at least "<<Aouter << endl;
+    return(-1);
+  }
+
+  //It doesn't matter whether C is already Filled or not. If it is already
+  //Filled, it must have space allocated for the positions that will be
+  //referenced in forming C = op(A)*op(B). If it doesn't have enough space,
+  //we'll error out later when trying to store result values.
+
   //We're going to need to import remotely-owned sections of A and/or B
   //if more than 1 processor is performing this run, depending on the scenario.
-  //So next we'll create maps that describe which rows of A and B we'll need to
-  //access during the calculations.
+  int numProcs = A.Comm().NumProc();
 
-  const Epetra_Map* targetMap_A = NULL;
-  const Epetra_Map* targetMap_B = NULL;
+  //If we are to use the transpose of A and/or B, we'll need to be able to 
+  //access, on the local processor, all rows that contain column-indices in
+  //the domain-map.
+  const Epetra_Map* domainMap_A = &(A.DomainMap());
+  const Epetra_Map* domainMap_B = &(B.DomainMap());
 
   const Epetra_Map* rowmap_A = &(A.RowMap());
   const Epetra_Map* rowmap_B = &(B.RowMap());
 
-  const Epetra_Map* colmap_A = &(A.ColMap());
-  const Epetra_Map* colmap_B = &(B.ColMap());
-
-  const Epetra_Map* domainmap_A = &(A.DomainMap());
-
-  const Epetra_Map* colmap_op_A = colmap_A;
-
+  //Declare some 'work-space' maps which may be created depending on
+  //the scenario, and which will be deleted before exiting this function.
+  const Epetra_Map* workmap1 = NULL;
+  const Epetra_Map* workmap2 = NULL;
   const Epetra_Map* mapunion1 = NULL;
-  const Epetra_Map* mapunion2 = NULL;
-  const Epetra_Map* mapunion3 = NULL;
-  const Epetra_Map* import_rows = NULL;
 
-  Epetra_CrsMatrix* importA = NULL;
+  //Declare a couple of structs that will be used to hold views of the data
+  //of A and B, to be used for fast access during the matrix-multiplication.
   CrsMatrixStruct Aview;
-
-  Epetra_CrsMatrix* importB = NULL;
   CrsMatrixStruct Bview;
-  Epetra_CrsMatrix* importB2 = NULL;
-  CrsMatrixStruct Bview2;
 
-  //The function 'find_rows_containing_cols' is potentially expensive.
-  //We will avoid calling it if this is a serial run.
+  const Epetra_Map* targetMap_A = rowmap_A;
+  const Epetra_Map* targetMap_B = rowmap_B;
 
-  int numProcs = A.Comm().NumProc();
-  if (numProcs < 2) {
-    targetMap_A = &(A.RowMap());
-    targetMap_B = &(B.RowMap());
-    EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A,
-                                             importA, Aview) );
-    EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
-                                             importB, Bview) );
-  }
-  else {
+  if (numProcs > 1) {
+    //If op(A) = A^T, find all rows of A that contain column-indices in the
+    //local portion of the domain-map. (We'll import any remote rows
+    //that fit this criteria onto the local processor.)
     if (transposeA) {
-      import_rows = find_rows_containing_cols(A, colmap_A);
-      EPETRA_CHK_ERR( form_map_union(rowmap_A, import_rows, mapunion1) );
-      targetMap_A = mapunion1;
-      delete import_rows; import_rows = NULL;
-      targetMap_B = targetMap_A;
-    }
-    else {
-      targetMap_A = rowmap_A;
-      targetMap_B = colmap_A;
-    }
-
-    EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A,
-                                             importA, Aview) );
-
-    if (!transposeB) {
-      EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
-                                               importB, Bview) );
-    }
-    else {
-      //figure out which rows are needed to form the transpose of B
-      import_rows = find_rows_containing_cols(B, colmap_B);
-      EPETRA_CHK_ERR( form_map_union(rowmap_B, import_rows, mapunion2) );
-
-      delete import_rows;
-      import_rows = find_rows_containing_cols(B, colmap_A);
-      EPETRA_CHK_ERR( form_map_union(import_rows, mapunion2, mapunion3) );
-      targetMap_B = mapunion3;
-
-      EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B,
-                                               importB, Bview) );
+      workmap1 = find_rows_containing_cols(A, domainMap_A);
+      targetMap_A = workmap1;
     }
   }
+
+  //Now import any needed remote rows and populate the Aview struct.
+  EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview) );
+
+  //We will also need local access to all rows of B that correspond to the
+  //column-map of op(A).
+  if (numProcs > 1) {
+    const Epetra_Map* colmap_op_A = NULL;
+    if (transposeA) {
+      colmap_op_A = targetMap_A;
+    }
+    else {
+      colmap_op_A = &(A.ColMap());
+    }
+
+    targetMap_B = colmap_op_A;
+
+    //If op(B) = B^T, find all rows of B that contain column-indices in the
+    //local-portion of the domain-map, or in the column-map of op(A).
+    //We'll import any remote rows that fit this criteria onto the
+    //local processor.
+    if (transposeB) {
+      EPETRA_CHK_ERR( form_map_union(colmap_op_A, domainMap_B, mapunion1) );
+      workmap2 = find_rows_containing_cols(B, mapunion1);
+      targetMap_B = workmap2;
+    }
+  }
+
+  //Now import any needed remote rows and populate the Bview struct.
+  EPETRA_CHK_ERR( import_and_extract_views(B, *targetMap_B, Bview) );
 
   //zero the result matrix before we start the calculations.
   EPETRA_CHK_ERR( C.PutScalar(0.0) );
@@ -1238,13 +1255,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   //Finally, delete the objects that were potentially created
   //during the course of importing remote sections of A and B.
 
-  delete importA;
-  delete importB;
-
   delete mapunion1; mapunion1 = NULL;
-  delete mapunion2; mapunion2 = NULL;
-  delete mapunion3; mapunion3 = NULL;
-  delete import_rows;
+  delete workmap1; workmap1 = NULL;
+  delete workmap2; workmap2 = NULL;
 
   return(0);
 }

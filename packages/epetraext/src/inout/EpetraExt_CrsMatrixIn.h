@@ -64,7 +64,21 @@ namespace EpetraExt {
   */
   int MatrixMarketFileToCrsMatrix( const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap, Epetra_CrsMatrix * & A);
 
+  /** Reads an Epetra_CrsMatrix object from a matrix-market file, but
+     uses the specified maps for constructing and 'FillComplete()'ing the
+     matrix. Successfully creates rectangular matrices.
+  */
+  int MatrixMarketFileToCrsMatrix(const char *filename,
+                                const Epetra_Map & rowMap,
+                                const Epetra_Map & colMap,
+                                const Epetra_Map& rangeMap,
+                                const Epetra_Map& domainMap,
+                                Epetra_CrsMatrix * & A);
+
   // Internal function
-  int MatrixMarketFileToCrsMatrixHandle( const char *filename, Epetra_CrsMatrix * A);
+  int MatrixMarketFileToCrsMatrixHandle( const char *filename,
+                                         Epetra_CrsMatrix * A,
+                                         const Epetra_Map* rangeMap = NULL,
+                                         const Epetra_Map* domainMap = NULL);
 
 } // namespace EpetraExt
