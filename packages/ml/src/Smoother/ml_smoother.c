@@ -3955,7 +3955,6 @@ void ML_Smoother_Clean_OrderedSGS(void *data)
 #ifdef PARASAILS
 #include "Matrix.h"
 #include "ParaSails.h"
-extern int parasails_factorized;
 
 int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
                         double rhs[])
@@ -3964,10 +3963,14 @@ int ML_Smoother_ParaSails(void *sm,int inlen,double x[],int outlen,
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp;
+   struct widget { int parasails_factorized; ParaSails *ps;} *tptr;
+   int            parasails_factorized;
 
    ParaSails      *ps;
 	 
-   ps = (ParaSails *) smooth_ptr->smoother->data;
+   tptr = (struct widget *) smooth_ptr->smoother->data;
+   parasails_factorized = tptr->parasails_factorized;
+   ps = tptr->ps;
 
    temp = (double *) ML_allocate(n*sizeof(double));
    res  = (double *) ML_allocate(n*sizeof(double));
@@ -4003,10 +4006,14 @@ int ML_Smoother_ParaSailsTrans(void *sm,int inlen,double x[],int outlen,
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp;
+   struct widget { int parasails_factorized; ParaSails *ps;} *tptr;
+   int            parasails_factorized;
 
    ParaSails      *ps;
 	 
-   ps = (ParaSails *) smooth_ptr->smoother->data;
+   tptr = (struct widget *) smooth_ptr->smoother->data;
+   parasails_factorized = tptr->parasails_factorized;
+   ps = tptr->ps;
 
    temp = (double *) ML_allocate(n*sizeof(double));
    res  = (double *) ML_allocate(n*sizeof(double));
@@ -4042,10 +4049,14 @@ int ML_Smoother_ParaSailsSym(void *sm,int inlen,double x[],int outlen,
    ML_Operator    *Amat = smooth_ptr->my_level->Amat;
    int            n = outlen, i;
    double         *res, *temp, *temp2;
+   struct widget { int parasails_factorized; ParaSails *ps;} *tptr;
+   int            parasails_factorized;
 
    ParaSails      *ps;
 	 
-   ps = (ParaSails *) smooth_ptr->smoother->data;
+   tptr = (struct widget *) smooth_ptr->smoother->data;
+   parasails_factorized = tptr->parasails_factorized;
+   ps = tptr->ps;
 
    temp = (double *) ML_allocate(n*sizeof(double));
    temp2= (double *) ML_allocate(n*sizeof(double));
@@ -4079,6 +4090,10 @@ int ML_Smoother_ParaSailsSym(void *sm,int inlen,double x[],int outlen,
 
 void ML_Smoother_Clean_ParaSails(void *data)
 {
-   ParaSailsDestroy((ParaSails *) data);
+   struct widget { int parasails_factorized; ParaSails *ps;} *tptr;
+
+   tptr = (struct widget *) data;
+   ParaSailsDestroy(tptr->ps);
+   ML_free(tptr);
 }
 #endif
