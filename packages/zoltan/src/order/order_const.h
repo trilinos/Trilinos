@@ -44,7 +44,10 @@ typedef int ZOLTAN_ORDER_FN(ZZ *,
 /*****************************************************************************/
 /* PROTOTYPES */
 
-/* ORDERING FUNCTIONS */
+/* Ordering functions */
 extern ZOLTAN_ORDER_FN Zoltan_ParMetis_Order;
+
+/* Parameter routine */
+extern int Zoltan_Order_Set_Param(char *, char *);
 
 #endif

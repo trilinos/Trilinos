@@ -12,7 +12,9 @@
  ****************************************************************************/
 
 #include "zz_const.h"
+#include "order_const.h"
 #include "key_params.h"
+#include "params_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
 
@@ -26,6 +28,12 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
+
+/**********  parameters structure for ordering **********/
+static PARAM_VARS Order_params[] = {
+        { "ORDER_METHOD", NULL, "STRING" },
+        { "USE_ORDER_INFO", NULL, "BOOLEAN" },
+        { NULL, NULL, NULL } };
 
 int Zoltan_Order(
   ZZ *zz,               /* Zoltan structure */
@@ -53,13 +61,12 @@ int Zoltan_Order(
  */
 
   char *yo = "Zoltan_Order";
-  int error; 
+  int error, use_order_info; 
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
-  char msg[256];
-  char *method;
+  char msg[256], method[256];
   int comm[2],gcomm[2]; 
-  ZOLTAN_ORDER_FN Order_fn = NULL;
+  ZOLTAN_ORDER_FN *Order_fn;
 
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -92,10 +99,23 @@ int Zoltan_Order(
 
   /*
    *  Get ordering method from parameter list.
-   *  EB: Temporary hack; Assume ParMetis/NodeND.
    */
 
-  method = "PARMETIS";
+  /* Set default parameter values */
+  use_order_info = 0;
+  strcpy(method, "PARMETIS");
+
+  Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) &method);
+  Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &use_order_info);
+
+  Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level, 
+                           zz->Proc, zz->Debug_Proc);
+
+  if (use_order_info == 0) order_info = NULL;
+
+  /*
+   *  Find the selected method.
+   */
 
   if (!strcmp(method, "NONE")) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
@@ -106,7 +126,9 @@ int Zoltan_Order(
     return (ZOLTAN_WARN);
   }
   else if (!strcmp(method, "PARMETIS")) {
-    Order_fn = Zoltan_Parmetis_Order;
+    Order_fn = Zoltan_ParMetis_Order;
+    /* Set PARMETIS_METHOD to NODEND; needed by Zoltan_ParMetis_Jostle */
+    Zoltan_Set_Param(zz, "PARMETIS_METHOD", "NODEND");
   }
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
@@ -131,7 +153,7 @@ int Zoltan_Order(
    * Call the actual ordering function.
    */
 
-  error = Order_fn(zz, gids, lids, order, order_info);
+  error = (*Order_fn)(zz, gids, lids, order_info);
 
   if (error == ZOLTAN_FATAL){
     sprintf(msg, "Ordering routine returned error code %d.", error);
@@ -153,9 +175,9 @@ int Zoltan_Order(
     int i, nobjs;
     nobjs = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &i);
     Zoltan_Print_Sync_Start(zz->Communicator, TRUE);
-    printf("ZOLTAN: Ordering on Proc %d\n", zz->Proc);
+    printf("ZOLTAN: GID ordering on Proc %d\n", zz->Proc);
     for (i = 0; i < nobjs; i++) {
-      printf(" %3d", order[i]);
+      ZOLTAN_PRINT_GID(zz, &gids[i*(zz->Num_GID)]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);
@@ -177,3 +199,19 @@ int Zoltan_Order(
   else
     return (ZOLTAN_OK);
 }
+
+
+/****************** Parameter routine *************************/
+int Zoltan_Order_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+    int status;
+    PARAM_UTYPE result;         /* value returned from Check_Param */
+    int index;                  /* index returned from Check_Param */
+
+    status = Zoltan_Check_Param(name, val, Order_params, &result, &index);
+
+    return(status);
+}
+

@@ -499,7 +499,7 @@ static int Zoltan_ParMetis_Jostle(
 
   /* Allocate space for separator sizes */
   if (compute_order){
-    sep_sizes = (int *) ZOLTAN_MALLOC(2*(zz->Num_Proc)*sizeof(int));
+    sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
     if (!sep_sizes){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -684,7 +684,7 @@ static int Zoltan_ParMetis_Jostle(
       j = 0;
     MPI_Allreduce(&j, &tmp, 1, MPI_INT, MPI_SUM, zz->Communicator);
     if (scatter == 1){
-      if (tmp < zz->Num_Proc-1)
+      if (tmp < num_proc-1)
         scatter = 0;
     }
     else if (scatter==2){
