@@ -536,7 +536,7 @@ float frac_x, frac_y;
     goto End;
   }
 
-  if (zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS && phg->comm->nProc_y > 1) {
+  if (zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS && phg->comm->nProc_x > 1) {
 
     /*
      *  Create plan mapping GIDs to their GNOs' processors

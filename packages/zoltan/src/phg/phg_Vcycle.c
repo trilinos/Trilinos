@@ -297,28 +297,31 @@ double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, in
    cutsizes. Time O(|I|). */
 double Zoltan_PHG_hcut_size_links (PHGComm *hgc, PHGraph *hg, Partition part, int p)
 {
-    int i, j, *cuts, *rescuts, *parts, nparts;
+    int i, j, *cuts=NULL, *rescuts=NULL, *parts, nparts;
     double cut = 0.0, totalcut=0.0;
     char *yo = "Zoltan_PHG_hcut_size_links";
     
-    if (!(cuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
-        ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-    }   
-    if (!hgc->myProc_x)
-        if (!(rescuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
+    if (hg->nEdge) {
+        if (!(cuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
             return ZOLTAN_MEMERR;
+        }   
+        if (!hgc->myProc_x)
+            if (!(rescuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
+                ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
+                return ZOLTAN_MEMERR;
+            }
+    
+        for (i = 0; i < hg->nEdge; ++i) {
+            parts = &cuts[i*p];
+            for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j) 
+                ++parts[part[hg->hvertex[j]]];
         }
     
-    for (i = 0; i < hg->nEdge; ++i) {
-        parts = &cuts[i*p];
-        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j) 
-            ++parts[part[hg->hvertex[j]]];
+        MPI_Reduce(cuts, rescuts, p*hg->nEdge, MPI_INT, MPI_SUM, 0, 
+                   hgc->row_comm);
+        ZOLTAN_FREE ((void**) &cuts);
     }
-    
-    MPI_Reduce(cuts, rescuts, p*hg->nEdge, MPI_INT, MPI_SUM, 0, hgc->row_comm);
-    ZOLTAN_FREE ((void**) &cuts);
 
     if (!hgc->myProc_x) {
         for (i = 0; i < hg->nEdge; ++i) {

@@ -21,7 +21,7 @@ static int split_hypergraph (int *pins[2], PHGraph*, PHGraph*, Partition, int, Z
 int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
                         PHGPartParams *hgp, int level)
 {
-    int i, j, mid, err, *pins[2], *lpins[2];
+    int i, j, mid, err, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
     Partition part;
     PHGraph *new;
     PHGComm *hgc=hg->comm;
@@ -63,23 +63,27 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         return ZOLTAN_OK;
     }
 
+    if (hg->nEdge) {
+        if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+            || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))) {
+            Zoltan_Multifree(__FILE__,__LINE__, 3, &part, &pins[0], &lpins[0]);
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
+        pins[1] = &(pins[0][hg->nEdge]);
+        lpins[1] = &(lpins[0][hg->nEdge]);
 
-    if (!(pins[0]     = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
-        || !(lpins[0] = (int*) ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int))) ) {
-        Zoltan_Multifree(__FILE__,__LINE__, 3, &part, &pins[0], &lpins[0]);
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
+        /* Initial calculation of the local pin distribution 
+         * (sigma in UVC's papers)  
+         */
+        for (i = 0; i < hg->nEdge; ++i)
+            for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+                ++(lpins[part[hg->hvertex[j]]][i]);
+        /* now compute global pin distribution */
+        MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, 
+                      hgc->row_comm);
+        ZOLTAN_FREE (&lpins[0]); /* we don't need lpins */
     }
-    pins[1] = &(pins[0][hg->nEdge]);
-    lpins[1] = &(lpins[0][hg->nEdge]);
-
-    /* Initial calculation of the local pin distribution (sigma in UVC's papers)  */
-    for (i = 0; i < hg->nEdge; ++i)
-        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
-            ++(lpins[part[hg->hvertex[j]]][i]);
-    /* now compute global pin distribution */
-    MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
-    ZOLTAN_FREE (&lpins[0]); /* we don't need lpins */
     
     if (!(new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph))))  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
@@ -162,7 +166,8 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     new->vmap    = (int*) ZOLTAN_REALLOC (new->vmap, new->nVtx * sizeof (int));
     new->hindex  = (int*) ZOLTAN_MALLOC ((old->nEdge+1) * sizeof (int));
     new->hvertex = (int*) ZOLTAN_MALLOC (old->nNonZero * sizeof (int));
-    if (new->vmap == NULL || new->hindex == NULL || new->hvertex == NULL)  {
+    if ((new->nVtx && new->vmap == NULL) || new->hindex == NULL || 
+        (old->nNonZero && new->hvertex == NULL))  {
         Zoltan_Multifree (__FILE__, __LINE__, 5, &new->vmap, &new->hindex,
                           &new->hvertex, &new->vmap, &tmap);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 2.");
