@@ -58,10 +58,12 @@ LOCA_PARAMETER_VECTOR = \
         $(srcdir)/LOCA_Parameter_Vector.C
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper.H
+	$(srcdir)/LOCA_Stepper.H \
+	$(srcdir)/LOCA_StepperArclength.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper.C
+	$(srcdir)/LOCA_Stepper.C \
+	$(srcdir)/LOCA_StepperArclength.C
 
 LOCA_BIFURCATION_H = \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \

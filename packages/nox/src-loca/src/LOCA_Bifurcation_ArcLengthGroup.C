@@ -38,17 +38,16 @@ using namespace Bifurcation;
 using NOX::Abstract::Vector;
 
 LOCA::Bifurcation::ArcLengthGroup::ArcLengthGroup(const Abstract::Group& g,
-					    const Vector& xVec,
 					    int paramId,
 					    double param,
                                             const DerivUtils& d)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group *>(g.clone(NOX::DeepCopy))), 
-    alXVec(xVec, param),
-    alFVec(xVec, 0.0),
-    alNewtonVec(xVec, 0.0),
-    alPrevXVec(xVec, param),
-    alTangentVec(xVec, 0.0),
-    derivResidualParamPtr(xVec.clone(NOX::ShapeCopy)),
+    alXVec(g.getX(), param),
+    alFVec(g.getX(), 0.0),
+    alNewtonVec(g.getX(), 0.0),
+    alPrevXVec(g.getX(), param),
+    alTangentVec(g.getX(), 0.0),
+    derivResidualParamPtr(g.getX().clone(NOX::ShapeCopy)),
     derivPtr(d.clone()),
     arcParamId(paramId), 
     arclengthStep(0.0),
@@ -64,7 +63,7 @@ LOCA::Bifurcation::ArcLengthGroup::ArcLengthGroup(const ArcLengthGroup& source)
     alNewtonVec(source.alNewtonVec),
     alPrevXVec(source.alPrevXVec),
     alTangentVec(source.alTangentVec),
-    derivResidualParamPtr(source.derivResidualParamPtr),
+    derivResidualParamPtr(source.grpPtr->getX().clone(NOX::ShapeCopy)),
     derivPtr(source.derivPtr->clone()),
     arcParamId(source.arcParamId),
     arclengthStep(source.arclengthStep),
@@ -262,6 +261,8 @@ LOCA::Bifurcation::ArcLengthGroup::computeF()
   if (isValidF == false) {
     res = res && grpPtr->computeF();
 
+    alFVec.getXVec() = grpPtr->getF();
+
     // Construct residual of arclength equation
     ArcLengthVector *tmpVec =
         dynamic_cast<ArcLengthVector *>(alPrevXVec.clone(NOX::DeepCopy));
@@ -329,7 +330,7 @@ LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
 
   bool res = grpPtr->computeJacobian();
 
-  res = res && grpPtr->computeDfDp(paramId, *dfdpVec);
+  res = res && grpPtr->computeDfDp(arcParamId, *dfdpVec);
 
   res = res && grpPtr->applyJacobianInverse(params, *dfdpVec, tangent_x);
 
@@ -538,7 +539,7 @@ LOCA::Bifurcation::ArcLengthGroup::getNewton() const
   return alNewtonVec;
 }
 
-const Vector&
+const LOCA::Bifurcation::ArcLengthVector&
 LOCA::Bifurcation::ArcLengthGroup::getTangent() const 
 {
   return alTangentVec;
@@ -557,6 +558,26 @@ LOCA::Bifurcation::ArcLengthGroup::getNormNewtonSolveResidual() const
 bool
 LOCA::Bifurcation::ArcLengthGroup::print() const
 {
+  cout << "Beginning ArcLengthGroup.print:" << endl;
+  cout << "Underlying Group = " << endl;
+  grpPtr->print();
+
+  cout << endl;
+
+  cout << "alXVec = " << endl;
+  alXVec.print();
+
+  cout << endl;
+
+  if (isValidF) {
+    cout << "alFVec = " << endl;
+    alFVec.print();
+  }
+  else
+    cout << "alFVec not computed" << endl;
+
+  cout << endl;
+
   return true;
 }
 

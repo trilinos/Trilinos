@@ -60,8 +60,7 @@ class ArcLengthGroup : public LOCA::Abstract::Group {
 public:
   
   //! Constructor to set the base group, and derivative objects.
-  ArcLengthGroup(const Abstract::Group& g, 
-	      const NOX::Abstract::Vector& xVec, int paramId,
+  ArcLengthGroup(const Abstract::Group& g, int paramId,
               double param, const DerivUtils& d = DerivUtils());
 
   //! Copy constructor.
@@ -295,7 +294,7 @@ public:
   virtual const NOX::Abstract::Vector& getNewton() const;
 
   //! Return Tangent vector (for predictor).
-  virtual const NOX::Abstract::Vector& getTangent() const;
+  virtual const LOCA::Bifurcation::ArcLengthVector& getTangent() const;
 
   /*!
     \brief Return the norm of the Newton solve residual.

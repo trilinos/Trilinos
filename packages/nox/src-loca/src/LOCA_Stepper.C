@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "LOCA_Stepper.H"    // class definition
+#include "LOCA_StepperArclength.H"    // derived class definition
 
 // LOCA Includes
 #include "LOCA_Utils.H"		      // for static function doPrint
@@ -38,7 +39,7 @@
 #include "LOCA_Abstract_Vector.H"     // class data element
 #include "LOCA_Bifurcation_ArcLengthGroup.H"   //
 
-using namespace LOCA;;
+using namespace LOCA;
 using namespace NOX::StatusTest;
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
@@ -74,6 +75,45 @@ Stepper::Stepper(LOCA::Abstract::Group& initialGuess,
   init();
 }
 
+Stepper::Stepper(const Stepper& s) :
+  dataOutput(s.dataOutput),
+  solver(s.solver)
+{ //Copy constructor declared private since it is not expected to be neeeded.
+}
+
+Stepper::Stepper(const Stepper& s, LOCA::Abstract::Group& grp) :
+  curGroupPtr(&grp),
+  prevGroupPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone())),
+  dataOutput(s.dataOutput),
+  statusTestPtr(s.statusTestPtr),
+  paramList(s.paramList),
+  conParams(s.conParams),
+  solver(grp, *(s.statusTestPtr), s.paramList.sublist("Solver")),
+  stepperMethod(s.stepperMethod),
+  solverMethod(s.solverMethod),
+  conParamID(s.conParamID),
+  startValue(s.startValue),
+  finalValue(s.finalValue),
+  prevValue(s.prevValue),
+  curValue(s.curValue),
+  startStepSize(s.startStepSize),
+  minStepSize(s.minStepSize),
+  maxStepSize(s.maxStepSize),
+  prevStepSize(s.prevStepSize),
+  curStepSize(s.curStepSize),
+  stepNumber(s.stepNumber),
+  numFailedSteps(s.numFailedSteps),
+  numTotalSteps(s.numTotalSteps),
+  agrValue(s.agrValue),
+  maxNonlinearSteps(s.maxNonlinearSteps),
+  maxConSteps(s.maxConSteps),
+  doArclength(s.doArclength),
+  doFirstOrderPredictor(s.doFirstOrderPredictor),
+  stepperStatus(s.stepperStatus),
+  solverStatus(s.solverStatus)
+{
+}
+
 Stepper::~Stepper() 
 { 
   delete prevGroupPtr;
@@ -101,13 +141,27 @@ StatusType Stepper::getStatus()
 
 StatusType Stepper::solve()
 {
+  // Perform solve of initial conditions
   stepperStatus = nonlinearSolve();
 
-  if (stepperStatus == Unconverged && doArclength) beginArclength();
+  if (stepperStatus != Unconverged) return stepperStatus;
 
-  while (stepperStatus == Unconverged) {
-    stepperStatus = step();
+  if (!doArclength) {
+
+    while (stepperStatus == Unconverged) {
+      stepperStatus = step();
+    }
   }
+
+  else {
+    //! Form arclength stepper from currunt one, including
+    //! augmented group and vector, and then solve.
+    LOCA::Bifurcation::ArcLengthGroup alGroup(getSolutionGroup(),
+                             conParams.getIndex(conParamID), curValue);
+    StepperArclength arclengthStepper(this, alGroup);
+    stepperStatus = arclengthStepper.solve();
+  }
+
   return stepperStatus;
 }
 
@@ -124,11 +178,14 @@ StatusType Stepper::step()
 
   }
   else {
+
+    // Save previous successful step information
+    *prevGroupPtr = *curGroupPtr;
+
     // Set initial guess for next step equal to last step's final solution 
     *curGroupPtr = getSolutionGroup();
  
     // COMPUTE TANGENT VECTOR FOR PREDICTOR
-    // Change param values to arclength values... conParamId=-1?
     
     if (doFirstOrderPredictor)
       curGroupPtr->computeTangent(paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"),
@@ -246,20 +303,6 @@ double Stepper::computeStepSize(StatusType solverStatus)
     predStepSize = finalValue - prevValue;
 
   return predStepSize;
-}
-
-bool Stepper::beginArclength()
-{
-  const  LOCA::Abstract::Group& oldGroup = getSolutionGroup();
-  LOCA::Bifurcation::ArcLengthGroup
-         alGroup(oldGroup, oldGroup.getX(),
-                 conParams.getIndex(conParamID), curValue);
-
-  solver.reset(alGroup, *statusTestPtr, paramList.sublist("Solver"));
-
-// Change param values to arclength values??... conParamId=-1?
-
-  return true;
 }
 
 const Abstract::Group& Stepper::getSolutionGroup() const

@@ -142,14 +142,17 @@ public:
 
 protected:
 
+  //! Constructor for Stepper base class components of SAtepperArclength derived class
+  Stepper(const Stepper& s, LOCA::Abstract::Group& grp);
+
+  //! Copy Constructor: Not implemented, but put here to prevent compiler form generating one
+  Stepper(const Stepper& s);
+
   //! Reset the objects in the base class
   virtual bool init();
 
   //! Compute a new step size based on results from the previous step
   virtual double computeStepSize(NOX::StatusTest::StatusType solverStatus);
-
-  //! Creates augmented ArclengthGroup from current group, resets solver
-  virtual bool beginArclength();
 
   //! Checks to see if convergence of the stepper algorithm is achieved.  
   /*! Convergence is achieved if the stepper has either hit the max number of steps or has reached the final parameter value
