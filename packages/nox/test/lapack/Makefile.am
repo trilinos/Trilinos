@@ -39,7 +39,11 @@ LOCA_PYTHON_SUBDIRS = LOCA_python
 else
 LOCA_PYTHON_SUBDIRS = 
 endif
-LOCA_SUBDIRS = LOCA_TestProblems LOCA_ChanProblem $(LOCA_PYTHON_SUBDIRS)
+LOCA_SUBDIRS = \
+	LOCA_TestProblems \
+	LOCA_UnitTests \
+	LOCA_ChanProblem \
+	$(LOCA_PYTHON_SUBDIRS)
 else
 LOCA_SUBDIRS =
 endif
