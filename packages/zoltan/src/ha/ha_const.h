@@ -16,9 +16,9 @@
 
 /* Function prototypes */
 
-extern int LB_Get_Processor_Name(LB *, char *);
-extern int LB_Build_Machine_Desc(LB *);
-extern int LB_divide_machine(LB *, int, MPI_Comm, int *, int *, int *, int *,
+extern int Zoltan_Get_Processor_Name(LB *, char *);
+extern int Zoltan_Build_Machine_Desc(LB *);
+extern int Zoltan_Divide_Machine(LB *, int, MPI_Comm, int *, int *, int *, int *,
                       double *);
 
 /* Misc. constants */

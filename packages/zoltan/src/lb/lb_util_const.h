@@ -11,17 +11,17 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __LB_UTIL_CONST_H
-#define __LB_UTIL_CONST_H
+#ifndef __ZOLTAN_UTIL_CONST_H
+#define __ZOLTAN_UTIL_CONST_H
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-extern void LB_Get_Obj_List(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
+extern void Zoltan_Get_Obj_List(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
 extern int LB_pad_for_alignment(int);
-extern unsigned int LB_Hash(ZOLTAN_ID_PTR, int, unsigned int);
-extern int LB_clean_string(char *, char **);
+extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
+extern int Zoltan_Clean_String(char *, char **);
 
 /*****************************************************************************/
 /*****************************************************************************/

@@ -24,8 +24,14 @@
  * i.e., by calling either Get_Obj_List or Get_First_Obj+Get_Next_Obj.
  */
 
-void LB_Get_Obj_List(LB *lb, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
-     int wdim, float *objwgts, int *ierr)
+void Zoltan_Get_Obj_List(
+  LB *lb, 
+  ZOLTAN_ID_PTR global_ids, 
+  ZOLTAN_ID_PTR local_ids, 
+  int wdim, 
+  float *objwgts, 
+  int *ierr
+)
 {
   int i, n;
   int num_gid_entries = lb->Num_GID;
@@ -78,7 +84,7 @@ void LB_Get_Obj_List(LB *lb, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
 /*****************************************************************************/
 /*****************************************************************************/
 
-/* LB_Hash is a hash function for Zoltan ids (local or global). 
+/* Zoltan_Hash is a hash function for Zoltan ids (local or global). 
  *
  * Input:
  *   key: a key to hash of type ZOLTAN_ID_PTR
@@ -102,7 +108,7 @@ void LB_Get_Obj_List(LB *lb, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
  */
 
 
-unsigned int LB_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
+unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;
@@ -150,7 +156,7 @@ int LB_pad_for_alignment(int num_bytes)
 
 /* Remove leading & trailing white space and convert to upper case. */
 
-int LB_clean_string(
+int Zoltan_Clean_String(
 char *string1,			/* original string */
 char **pstring2) 		/* cleaned string to return */
 {

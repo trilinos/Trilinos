@@ -14,7 +14,7 @@
 #include "lb_const.h"
 
 
-int LB_divide_machine(
+int Zoltan_Divide_Machine(
    LB *lb,             /* The load-balancing structure (not used now, will be
                           used for pointer to machine details */
    int proc,           /* my processor number in global sense */

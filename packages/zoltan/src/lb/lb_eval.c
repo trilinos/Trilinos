@@ -66,7 +66,7 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   int gid_off, lid_off;
   char msg[256];
   
-  ZOLTAN_LB_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(lb, yo);
 
   /* Set default error code */
   ierr = ZOLTAN_OK;
@@ -88,13 +88,13 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   if (num_obj>0){
 
     /* Allocate space for object data */
-    global_ids = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
-    local_ids  = ZOLTAN_ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
+    global_ids = ZOLTAN_MALLOC_GID_ARRAY(lb, num_obj);
+    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(lb, num_obj);
       
     if ((!global_ids) || (num_lid_entries && !local_ids)){
       ZOLTAN_FREE(&global_ids);
       ZOLTAN_FREE(&local_ids);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   }
@@ -108,16 +108,17 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
       ZOLTAN_FREE(&local_ids);
       ZOLTAN_FREE(&vwgts);
       ZOLTAN_FREE(&tmp_vwgt);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
   } 
   
-  LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, &ierr);
+  Zoltan_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, 
+    &ierr);
   if (ierr == ZOLTAN_FATAL){
     ZOLTAN_FREE(&global_ids);
     ZOLTAN_FREE(&local_ids);
-    ZOLTAN_LB_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(lb, yo);
     return ierr;
   }
   
@@ -160,14 +161,14 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
         ZOLTAN_FREE(&local_ids);
         ZOLTAN_FREE(&vwgts);
         ZOLTAN_FREE(&tmp_vwgt);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ierr;
       }
       if (nedges>max_edges) max_edges = nedges;
     }
 
     /* Allocate edge list space */
-    nbors_global = ZOLTAN_ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
+    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(lb, max_edges);
     nbors_proc = (int *)ZOLTAN_MALLOC(max_edges * sizeof(int));
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)ZOLTAN_MALLOC((lb->Num_Proc)* sizeof(int));
@@ -188,7 +189,7 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
       ZOLTAN_FREE(&ewgts);
       ZOLTAN_FREE(&tmp_cutwgt);
       ZOLTAN_FREE(&proc);
-      ZOLTAN_LB_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(lb, yo);
       return ZOLTAN_MEMERR;
     }
 
@@ -216,7 +217,7 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
         ZOLTAN_FREE(&ewgts);
         ZOLTAN_FREE(&tmp_cutwgt);
         ZOLTAN_FREE(&proc);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ierr;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, 
@@ -234,7 +235,7 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
         ZOLTAN_FREE(&ewgts);
         ZOLTAN_FREE(&tmp_cutwgt);
         ZOLTAN_FREE(&proc);
-        ZOLTAN_LB_TRACE_EXIT(lb, yo);
+        ZOLTAN_TRACE_EXIT(lb, yo);
         return ierr;
       }
       /* Check for cut edges */
@@ -378,7 +379,7 @@ int Zoltan_LB_Eval (LB *lb, int print_stats,
   ZOLTAN_FREE(&nbors_global);
   ZOLTAN_FREE(&nbors_proc);
   ZOLTAN_FREE(&proc);
-  ZOLTAN_LB_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(lb, yo);
 
   return ierr;
 }

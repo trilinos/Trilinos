@@ -11,8 +11,8 @@
  *    $Revision$
  ****************************************************************************/
 
-#ifndef __LB_CONST_H
-#define __LB_CONST_H
+#ifndef __ZOLTAN_CONST_H
+#define __ZOLTAN_CONST_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,18 +47,18 @@
  * has.
  */
 #define UTIL_NAME "zoltan"
-#define LB_VER   1.241
+#define ZOLTAN_VER   1.241
 
 
 /*
  * Type used to store linked list of new values for parameters.
  */
    
-typedef struct LB_Param {
+typedef struct Zoltan_Param {
   char *name;
   char *new_val;
-  struct LB_Param *next;
-} LB_PARAM;
+  struct Zoltan_Param *next;
+} ZOLTAN_PARAM;
 	  
 
 
@@ -69,14 +69,14 @@ typedef struct LB_Param {
 
 typedef struct Zoltan_Struct LB;
 
-typedef int LB_FN(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
+typedef int ZOLTAN_LB_FN(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
                         int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
  */
 
-typedef enum LB_Method {
+typedef enum Zoltan_LB_Method {
   NONE = -1,
   RCB,
   OCTPART,
@@ -85,42 +85,42 @@ typedef enum LB_Method {
   REFTREE,
   RIB,
   SFC,
-  LB_MAX_METHODS                  /*  This entry should always be last.      */
-} LB_METHOD;
+  ZOLTAN_LB_MAX_METHODS          /*  This entry should always be last.      */
+} ZOLTAN_LB_METHOD;
 
 /*
  *  Define the debug levels allowed.
- *    LB_DEBUG_NONE = 0           - quiet mode; no debugging information.
- *    LB_DEBUG_PARAMS = 1         - print values of all parameters used.
- *    LB_DEBUG_ZTIME = 2          - print Zoltan timing information.
- *    LB_DEBUG_ATIME = 3          - print algorithm's timing info, if the
+ *    ZOLTAN_DEBUG_NONE = 0           - quiet mode; no debugging information.
+ *    ZOLTAN_DEBUG_PARAMS = 1         - print values of all parameters used.
+ *    ZOLTAN_DEBUG_ZTIME = 2          - print Zoltan timing information.
+ *    ZOLTAN_DEBUG_ATIME = 3          - print algorithm's timing info, if the
  *                                  algorithm supports this level.
- *    LB_DEBUG_TRACE_ZERO = 5     - print trace info on processor 0 only.
- *    LB_DEBUG_TRACE_ALL = 6      - print trace info on all processors.
- *    LB_DEBUG_TRACE_DETAIL = 7   - print detailed trace info on all processors.
- *    LB_DEBUG_LIST = 8           - print lists of objects to be imported 
+ *    ZOLTAN_DEBUG_TRACE_ZERO = 5     - print trace info on processor 0 only.
+ *    ZOLTAN_DEBUG_TRACE_ALL = 6      - print trace info on all processors.
+ *    ZOLTAN_DEBUG_TRACE_DETAIL = 7   - print detailed trace info on all processors.
+ *    ZOLTAN_DEBUG_LIST = 8           - print lists of objects to be imported 
  *                                  and exported.
- *    LB_DEBUG_ALL = 10           - print all debug information available.
+ *    ZOLTAN_DEBUG_ALL = 10           - print all debug information available.
  */
-#define LB_DEBUG_NONE 0     
-#define LB_DEBUG_PARAMS 1
-#define LB_DEBUG_ZTIME 2
-#define LB_DEBUG_ATIME 3
-#define LB_DEBUG_TRACE_SINGLE 5
-#define LB_DEBUG_TRACE_ALL 6
-#define LB_DEBUG_TRACE_DETAIL 7 
-#define LB_DEBUG_LIST 8
-#define LB_DEBUG_ALL 10
+#define ZOLTAN_DEBUG_NONE 0     
+#define ZOLTAN_DEBUG_PARAMS 1
+#define ZOLTAN_DEBUG_ZTIME 2
+#define ZOLTAN_DEBUG_ATIME 3
+#define ZOLTAN_DEBUG_TRACE_SINGLE 5
+#define ZOLTAN_DEBUG_TRACE_ALL 6
+#define ZOLTAN_DEBUG_TRACE_DETAIL 7 
+#define ZOLTAN_DEBUG_LIST 8
+#define ZOLTAN_DEBUG_ALL 10
 
 /*
  * Values indicating which lists (import, export, both, or none) should
- * be returned by Zoltan_LB_Balance.  LB_NO_LISTS must always be zero; other
- * values should always be greater than zero.
+ * be returned by Zoltan_LB_Balance.  ZOLTAN_LB_NO_LISTS must always be zero; 
+ * other values should always be greater than zero.
  */
-#define LB_NO_LISTS 0
-#define LB_IMPORT_LISTS 1
-#define LB_EXPORT_LISTS 2
-#define LB_ALL_LISTS 3
+#define ZOLTAN_LB_NO_LISTS 0
+#define ZOLTAN_LB_IMPORT_LISTS 1
+#define ZOLTAN_LB_EXPORT_LISTS 2
+#define ZOLTAN_LB_ALL_LISTS 3
 
 /*
  ******************************************************
@@ -128,17 +128,17 @@ typedef enum LB_Method {
  * These are used in both lb.c and key_params.c.
  ******************************************************
  */
-#define LB_IMBALANCE_TOL_DEF  1.1
-#define LB_DEBUG_LEVEL_DEF    LB_DEBUG_PARAMS
-#define LB_DEBUG_PROC_DEF     0
-#define LB_OBJ_WEIGHT_DEF     0
-#define LB_COMM_WEIGHT_DEF    0
-#define LB_AUTO_MIGRATE_DEF   FALSE
-#define LB_DETERMINISTIC_DEF  TRUE
-#define LB_NUM_ID_ENTRIES_DEF 1
-#define LB_RETURN_LISTS_DEF   LB_ALL_LISTS
-#define LB_TIMER_DEF          LB_TIME_WALL
-#define LB_TFLOPS_SPECIAL_DEF FALSE
+#define ZOLTAN_LB_IMBALANCE_TOL_DEF  1.1
+#define ZOLTAN_DEBUG_LEVEL_DEF    ZOLTAN_DEBUG_PARAMS
+#define ZOLTAN_DEBUG_PROC_DEF     0
+#define ZOLTAN_OBJ_WEIGHT_DEF     0
+#define ZOLTAN_COMM_WEIGHT_DEF    0
+#define ZOLTAN_AUTO_MIGRATE_DEF   FALSE
+#define ZOLTAN_DETERMINISTIC_DEF  TRUE
+#define ZOLTAN_NUM_ID_ENTRIES_DEF 1
+#define ZOLTAN_LB_RETURN_LISTS_DEF   ZOLTAN_LB_ALL_LISTS
+#define ZOLTAN_TIMER_DEF          ZOLTAN_TIME_WALL
+#define ZOLTAN_TFLOPS_SPECIAL_DEF FALSE
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -293,16 +293,16 @@ struct Zoltan_Struct {
                                       info that is printed from only one 
                                       processor.                             */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
-  int Return_Lists;               /*  Flag indicating which lists (if any)
+  int LB_Return_Lists;               /*  Flag indicating which lists (if any)
                                       should be returned by Zoltan_LB_Balance.*/
   int Tflops_Special;             /*  Flag to indicate if we should use some
                                       MPI constructs (0) or not (1) on tflops*/
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
-  LB_METHOD Method;               /*  Method to be used for load balancing.  */
-  LB_FN *LB_Fn;                   /*  Pointer to the function that performs
+  ZOLTAN_LB_METHOD Method;        /*  Method to be used for load balancing.  */
+  ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  LB_PARAM *Params;               /*  List of parameter names & new vals     */
+  ZOLTAN_PARAM *Params;           /*  List of parameter names & new vals     */
   double Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     */
@@ -471,44 +471,45 @@ struct Zoltan_Struct {
  *  that are not included in the load-balancing communicator.
  */
 
-#define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
+#define ZOLTAN_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
 
 /*  
  *  Print trace information.
  */
-#define ZOLTAN_LB_TRACE_ENTER(lb,yo) \
-  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
+#define ZOLTAN_TRACE_ENTER(lb,yo) \
+  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_ENTER((lb)->Proc, (yo), NULL);
+      (lb)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
+    ZOLTAN_TRACE_IN((lb)->Proc, (yo), NULL);
 
-#define ZOLTAN_LB_TRACE_EXIT(lb,yo) \
-  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
+#define ZOLTAN_TRACE_EXIT(lb,yo) \
+  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
      ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == LB_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_EXIT((lb)->Proc, (yo), NULL);
+      (lb)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
+    ZOLTAN_TRACE_OUT((lb)->Proc, (yo), NULL);
 
-#define ZOLTAN_LB_TRACE_DETAIL(lb,yo,string) \
-  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_DETAIL) \
+#define ZOLTAN_TRACE_DETAIL(lb,yo,string) \
+  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_DETAIL) \
     ZOLTAN_PRINT_INFO((lb)->Proc, (yo), (string));
 
 /*
  *  Debugging macro for Tflop architecture.
- *  LB_HEAP_INFO(proc_number, string) prints information about the heap,
+ *  ZOLTAN_HEAP_INFO(proc_number, string) prints information about the heap,
  *  such as number of fragments, total free memory, largest free chunk 
  *  of memory, and total used memory.  The processor number and provided
  *  string are printed to help instrument the code.
- *  On architectures other than Tflop, LB_HEAP_INFO compiles but has no effect.
+ *  On architectures other than Tflop, ZOLTAN_HEAP_INFO compiles 
+ *  but has no effect.
  */
 #ifdef TFLOP
-#define LB_HEAP_INFO(Proc,a) \
+#define ZOLTAN_HEAP_INFO(Proc,a) \
  {int frag, tfree, lfree, tused; \
   heap_info(&frag,&tfree,&lfree,&tused); \
   printf("HI%d %s frags = %d  tot free = %d  lar free = %d  tot used = %d\n", \
          Proc, a, frag, tfree, lfree, tused); \
  }
 #else
-#define LB_HEAP_INFO(Proc,a) ;
+#define ZOLTAN_HEAP_INFO(Proc,a) ;
 #endif
 
 /*****************************************************************************/
@@ -516,13 +517,13 @@ struct Zoltan_Struct {
 /*****************************************************************************/
 /* PROTOTYPES */
 
-extern LB_FN LB_rcb;
-extern LB_FN LB_octpart;
-extern LB_FN LB_ParMetis;
-extern LB_FN LB_Jostle;
-extern LB_FN LB_Reftree_Part;
-extern LB_FN LB_rib;
-extern LB_FN LB_sfc;
+extern ZOLTAN_LB_FN Zoltan_RCB;
+extern ZOLTAN_LB_FN Zoltan_Octpart;
+extern ZOLTAN_LB_FN Zoltan_ParMetis;
+extern ZOLTAN_LB_FN Zoltan_Jostle;
+extern ZOLTAN_LB_FN Zoltan_Reftree_Part;
+extern ZOLTAN_LB_FN Zoltan_RIB;
+extern ZOLTAN_LB_FN Zoltan_SFC;
 
 
 #endif

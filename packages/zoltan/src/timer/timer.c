@@ -31,7 +31,7 @@
 
 /* Interpret and set timer parameters */
 
-int LB_Set_Timer_Param(
+int Zoltan_Set_Timer_Param(
 char *name,                     /* input:  name of variable */
 char *val,                      /* input:  value of variable */
 int *timer)                     /* output: timer type */
@@ -43,18 +43,18 @@ int *timer)                     /* output: timer type */
         { "TIMER", NULL, "STRING" },
         { NULL, NULL, NULL }
 };
-    char *yo = "LB_Set_Timer_Param";
+    char *yo = "Zoltan_Set_Timer_Param";
 
-    (*timer) = LB_TIME_WALL;  /* default timer value */
+    (*timer) = ZOLTAN_TIME_WALL;  /* default timer value */
 
-    status = LB_Check_Param(name, val, Timer_params, &result, &index);
+    status = Zoltan_Check_Param(name, val, Timer_params, &result, &index);
 
     if (status == 0 && index == 0) {
         if (!strcmp(result.sval, "WALL"))
-          (*timer) = LB_TIME_WALL;
+          (*timer) = ZOLTAN_TIME_WALL;
         else if (strcmp(result.sval, "CPU")==0) {
 #if (defined(_CLOCK_T) && ! defined(SMOS))
-          (*timer) = LB_TIME_CPU;
+          (*timer) = ZOLTAN_TIME_CPU;
 #else  /* SMOS or !_CLOCK_T */
           ZOLTAN_PRINT_WARN(-1, yo, "CPU time not available;"
                         " Wall clock time will be used.");
@@ -62,7 +62,7 @@ int *timer)                     /* output: timer type */
         }
         else if (strcmp(result.sval, "USER")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
-          (*timer) = LB_TIME_USER;
+          (*timer) = ZOLTAN_TIME_USER;
 #else
           ZOLTAN_PRINT_WARN(-1, yo, "User time not available;"
                           " Wall clock time will be used.");
@@ -70,7 +70,7 @@ int *timer)                     /* output: timer type */
         }
         else if (strcmp(result.sval, "USERSYS")==0){
 #if (defined(HAVE_TIMES) || defined(HAVE_RUSAGE))
-          (*timer) = LB_TIME_USERSYS;
+          (*timer) = ZOLTAN_TIME_USERSYS;
 #else
           ZOLTAN_PRINT_WARN(-1, yo, "Usersys time not "
                         "available; Wall clock time will be used.");
@@ -92,7 +92,7 @@ int *timer)                     /* output: timer type */
    so we try to determine the number of rollovers.
 */
 
-double LB_Time(int timer)
+double Zoltan_Time(int timer)
 {
   double t = -1.;
 
@@ -108,10 +108,10 @@ double LB_Time(int timer)
   static double  inv_clk_tck = 1./(double)CLK_TCK;
 #endif
 
-  if (timer==LB_TIME_WALL)
+  if (timer==ZOLTAN_TIME_WALL)
     /* Wall clock */
     t = MPI_Wtime();
-  else if (timer==LB_TIME_CPU) {
+  else if (timer==ZOLTAN_TIME_CPU) {
     /* CPU time */
 #if (defined(_CLOCK_T) && ! defined(SMOS))
     num_ticks = clock();
@@ -122,23 +122,23 @@ double LB_Time(int timer)
 #endif /* !SMOS */
   }
 #if defined(HAVE_TIMES)
-  else if (timer==LB_TIME_USER) {
+  else if (timer==ZOLTAN_TIME_USER) {
     struct tms tms;
     times(&tms);
     t = tms.tms_utime * inv_clk_tck;
   }
-  else if (timer==LB_TIME_USERSYS) {
+  else if (timer==ZOLTAN_TIME_USERSYS) {
     struct tms tms;
     times(&tms);
     t = (tms.tms_utime + tms.tms_stime) * inv_clk_tck;
   }
 #elif defined(HAVE_RUSAGE)
-  else if (timer==LB_TIME_USER) {
+  else if (timer==ZOLTAN_TIME_USER) {
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     t = (rusage.ru_utime.tv_sec + 1.0e-6 * rusage.ru_utime.tv_usec);
   }
-  else if (timer==LB_TIME_USERSYS) {
+  else if (timer==ZOLTAN_TIME_USERSYS) {
     struct rusage rusage;
     getrusage(RUSAGE_SELF, &rusage);
     t = ((rusage.ru_utime.tv_sec + rusage.ru_stime.tv_sec) +
@@ -151,20 +151,20 @@ double LB_Time(int timer)
 
 /* Resolution (precision) of timer. If the precision is unknown, -1 is returned.  */
 
-double LB_Time_Resolution(int timer)
+double Zoltan_Time_Resolution(int timer)
 {
   double t = -1.;
 
-  if (timer==LB_TIME_WALL)
+  if (timer==ZOLTAN_TIME_WALL)
     t = MPI_Wtick();
-  else if (timer==LB_TIME_CPU)
+  else if (timer==ZOLTAN_TIME_CPU)
     t = 1.0/(double)CLOCKS_PER_SEC;
 #if defined(HAVE_TIMES)
-  else if ((timer==LB_TIME_USER)||(timer==LB_TIME_USERSYS)) {
+  else if ((timer==ZOLTAN_TIME_USER)||(timer==ZOLTAN_TIME_USERSYS)) {
     t = 1.0/(double)CLK_TCK;
   }
 #elif defined(HAVE_RUSAGE)
-  else if ((timer==LB_TIME_USER)||(timer==LB_TIME_USERSYS)) {
+  else if ((timer==ZOLTAN_TIME_USER)||(timer==ZOLTAN_TIME_USERSYS)) {
 #ifdef SUN
     /* Use Sun-specific variable */
     extern int usec_per_tick; 

@@ -56,14 +56,14 @@ extern int getrusage(); /* Should be in sys/resource.h, but isn't always */
 #endif
 
 /* Constants used in LB timer routines */
-#define LB_TIME_WALL 1
-#define LB_TIME_CPU  2
-#define LB_TIME_USER 3
-#define LB_TIME_USERSYS 4
+#define ZOLTAN_TIME_WALL 1
+#define ZOLTAN_TIME_CPU  2
+#define ZOLTAN_TIME_USER 3
+#define ZOLTAN_TIME_USERSYS 4
 
 /* Function prototypes */
-extern double LB_Time(int);
-extern double LB_Time_Resolution(int);
-extern int LB_Set_Timer_Param(char *, char *, int *);
+extern double Zoltan_Time(int);
+extern double Zoltan_Time_Resolution(int);
+extern int Zoltan_Set_Timer_Param(char *, char *, int *);
 
 #endif

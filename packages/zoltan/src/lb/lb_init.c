@@ -49,7 +49,7 @@ int mpi_flag;
    * the libarary is being used without having to get the source
    * code.
    */
-  *ver = LB_VER;
+  *ver = ZOLTAN_VER;
 
   return (ZOLTAN_OK);
 }

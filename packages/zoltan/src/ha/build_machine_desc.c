@@ -35,7 +35,7 @@ static PARAM_VARS Mach_params[] = {
 /*******************************************************************/
 /*******************************************************************/
 
-int LB_Set_Machine_Param(
+int Zoltan_Set_Machine_Param(
 char *name,                     /* name of variable */
 char *val)                      /* value of variable */
 {
@@ -43,7 +43,7 @@ char *val)                      /* value of variable */
   PARAM_UTYPE result;         /* value returned from Check_Param */
   int index;                  /* index returned from Check_Param */
 
-  status = LB_Check_Param(name, val, Mach_params, &result, &index);
+  status = Zoltan_Check_Param(name, val, Mach_params, &result, &index);
 
   return(status);
 }
@@ -52,22 +52,22 @@ char *val)                      /* value of variable */
 /*******************************************************************/
 /*******************************************************************/
 
-int LB_Build_Machine_Desc(
+int Zoltan_Build_Machine_Desc(
    LB *lb              /* The load-balancing structure.                */
 )
 {
-  char *yo = "LB_Build_Machine_Desc";
+  char *yo = "Zoltan_Build_Machine_Desc";
   int ierr = ZOLTAN_OK;
   int use_mach_desc;
   char filename[256];
 
-  LB_Bind_Param(Mach_params, "USE_MACHINE_DESC", (void *) &use_mach_desc);
-  LB_Bind_Param(Mach_params, "MACHINE_DESC_FILE", (void *) filename);
+  Zoltan_Bind_Param(Mach_params, "USE_MACHINE_DESC", (void *) &use_mach_desc);
+  Zoltan_Bind_Param(Mach_params, "MACHINE_DESC_FILE", (void *) filename);
 
   use_mach_desc = 0;
   strcpy(filename, MACHINE_DESC_FILE_DEFAULT);
 
-  LB_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc,
+  Zoltan_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
   if (use_mach_desc > 0) {
@@ -77,8 +77,8 @@ int LB_Build_Machine_Desc(
 
     if ((lb->Machine_Desc == NULL) || (use_mach_desc==2)){
       /* Read machine description from file. 
-       * Use LB_Get_Processor_Name to extract the sub-machine
-       * on which this LB structure is running. 
+       * Use Zoltan_Get_Processor_Name to extract the sub-machine
+       * on which this Zoltan structure is running. 
        * Broadcast the machine structure to all procs.
        */
       ZOLTAN_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "

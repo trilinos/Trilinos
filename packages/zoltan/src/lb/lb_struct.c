@@ -20,7 +20,7 @@
 /*****************************************************************************/
 /*
  *  This file contains routines that create and destroy load-balancing 
- *  structures (struct LB_Struct).
+ *  structures (struct Zoltan_Struct).
  *  These functions are all callable by the application. 
  */
 /*****************************************************************************/
@@ -80,22 +80,22 @@ LB *lb;
    *  Set defaults for fields of lb:
    */
 
-  lb->Num_GID = LB_NUM_ID_ENTRIES_DEF;
-  lb->Num_LID = LB_NUM_ID_ENTRIES_DEF;
+  lb->Num_GID = ZOLTAN_NUM_ID_ENTRIES_DEF;
+  lb->Num_LID = ZOLTAN_NUM_ID_ENTRIES_DEF;
   lb->Method = RCB;    
-  lb->LB_Fn = LB_rcb;
-  lb->Debug_Level = LB_DEBUG_LEVEL_DEF;
-  lb->Debug_Proc = LB_DEBUG_PROC_DEF;
+  lb->LB_Fn = Zoltan_RCB;
+  lb->Debug_Level = ZOLTAN_DEBUG_LEVEL_DEF;
+  lb->Debug_Proc = ZOLTAN_DEBUG_PROC_DEF;
   lb->Fortran = 0;
-  lb->Return_Lists = LB_RETURN_LISTS_DEF;
-  lb->Tflops_Special = LB_TFLOPS_SPECIAL_DEF;
-  lb->Timer = LB_TIMER_DEF;
+  lb->LB_Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
+  lb->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
+  lb->Timer = ZOLTAN_TIMER_DEF;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
-  lb->Imbalance_Tol = LB_IMBALANCE_TOL_DEF;
-  lb->Deterministic = LB_DETERMINISTIC_DEF;
-  lb->Obj_Weight_Dim = LB_OBJ_WEIGHT_DEF;
-  lb->Comm_Weight_Dim = LB_COMM_WEIGHT_DEF;
+  lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
+  lb->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
+  lb->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
+  lb->Comm_Weight_Dim = ZOLTAN_COMM_WEIGHT_DEF;
   lb->Data_Structure = NULL;
 
   lb->Get_Num_Edges = NULL;
@@ -138,7 +138,7 @@ LB *lb;
   lb->Get_Child_List_Fort = NULL;
   lb->Get_Child_Weight_Fort = NULL;
 
-  lb->Migrate.Auto_Migrate = LB_AUTO_MIGRATE_DEF;
+  lb->Migrate.Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
   lb->Migrate.Pre_Migrate = NULL;
   lb->Migrate.Mid_Migrate = NULL;
   lb->Migrate.Post_Migrate = NULL;
@@ -171,9 +171,9 @@ void Zoltan_Destroy(LB **lb)
 
   if (*lb != NULL) {
 
-    LB_Free_Structure(*lb);
+    Zoltan_Free_Structure(*lb);
 
-    LB_Free_Params(&((*lb)->Params));
+    Zoltan_Free_Params(&((*lb)->Params));
 
     MPI_Comm_free(&((*lb)->Communicator));
 

@@ -14,7 +14,7 @@
 #include "lb_const.h"
 #include "ha_const.h"
 
-int LB_Get_Processor_Name(
+int Zoltan_Get_Processor_Name(
    LB *lb,             /* The load-balancing structure.                */
    char *name          /* A string uniquely identifying the processor. 
                           We assume that at least MAX_PROC_NAME_LEN 
