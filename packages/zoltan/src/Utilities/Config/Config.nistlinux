@@ -110,10 +110,10 @@ LOCAL_F90		= $(F90)
 
 ifeq "$(MPI_VERSION)" "lam"
 MPI_LIB		= -lmpi -largs -ltrillium -ltstdio -lt -lgcc
-MPI_LIBPATH	= -L$(LAMHOME)/lib \
+MPI_LIBPATH	= -L$(LAMHOME)/lib
 else
 MPI_LIB 	= -lpmpich -lmpich -lg2c
-MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
+MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib
 endif
 
 PARMETIS_LIBPATH 	= -L$(PARMETISHOME)/linux_$(MPI_VERSION)
