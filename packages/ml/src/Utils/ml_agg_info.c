@@ -1431,7 +1431,6 @@ int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
   int incr_or_decr;
-  int num_PDE_eqns  = ag->num_PDE_eqns;
   int begin, end;
   
   /* ------------------- execution begins --------------------------------- */
@@ -1539,9 +1538,9 @@ int ML_Aggregate_Stats_Analyze( ML *ml, ML_Aggregate *ag)
   int i, ilevel, iaggre;
   int Nlocal, Naggregates;
   ML_Aggregate_Viz_Stats * info;
-  int dim, diff;
+  int diff;
   double dmin, davg, dmax, dstd;
-  int  imin, iavg, imax;
+  int  imin, imax;
   ML_Comm *comm;
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
@@ -1888,7 +1887,6 @@ int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag)
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
   int incr_or_decr;
-  int num_PDE_eqns  = ag->num_PDE_eqns;
   
   /* ------------------- execution begins --------------------------------- */
   

@@ -491,7 +491,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 		  x[irow], y[irow], val );
 	else
 	  fprintf( fp,
-		  "%f %f %%f f\n",
+		  "%f %f %f %f\n",
 		  x[irow], y[irow], z[irow], val );
 
       }
