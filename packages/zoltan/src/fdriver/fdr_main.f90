@@ -185,6 +185,7 @@ end interface
     deallocate(elements)
   endif
   if (associated(prob%params)) deallocate(prob%params)
+  call LB_Memory_Stats()
   call MPI_Finalize(error)
 
 end program fdriver

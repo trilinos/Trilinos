@@ -67,6 +67,7 @@ $(ZOD)/libzoltan.a:
 	cd ..; $(MAKE) $(TARGET_ARCH)
 
 clean:
-	rm -f $(ZOD)/fdr*.o $(ZOD)/mpi_h.o $(ZOD)/lampmpi.o $(ZOD)/mpistring.o\
-	      *.mod debug V* *.vo *.dbg $(ZOD)/zfdrive
+	rm -f $(ZOD)/libzoltan.a $(ZOD)/fdr*.o $(ZOD)/farg.o \
+	      $(ZOD)/mpi_h.o $(ZOD)/lampmpi.o $(ZOD)/mpistring.o\
+	      $(ZOD)/*.mod debug V* *.vo *.dbg $(ZOD)/zfdrive
 	rm -Rf album
