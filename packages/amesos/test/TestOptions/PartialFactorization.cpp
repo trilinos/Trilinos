@@ -171,4 +171,5 @@ int PartialFactorization( char* AmesosClass,
     }
   }
 #endif
+  return(0);
 }
