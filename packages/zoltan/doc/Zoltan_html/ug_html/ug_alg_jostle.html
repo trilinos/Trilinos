@@ -34,12 +34,13 @@ London, UK, by Chris Walshaw. The parallel version of Jostle is sometimes
 called pjostle. In the Zoltan context, the name Jostle always refers to
 the parallel version of the library. The main algorithm used in Jostle
 is based on multilevel graph partitioning, and a diffusion-type method
-is also available. Hence the Jostle library is similar to ParMETIS. Zoltan
-provides an interface to Jostle to give users an alternative to ParMETIS.
-<p>At present, only a subset of the Jostle options are supported by Zoltan.
+is also available. Hence the Jostle library is very similar to ParMETIS.
+See the <a href="ug_alg_parmetis.html">ParMETIS</a> section for a brief
+description of graph partitioning as a model for load balancing.
+<p>At present, only the most common Jostle options are supported by Zoltan.
 These are briefly described below. For further details, see the documentation
-available from the Jostle home page. More options may be added to Zoltan
-upon request.
+available from the <a href="http://www.gre.ac.uk/jostle/">Jostle home page</a>.
+More options may be added to Zoltan upon request.
 <p>Note that Jostle is not distributed with Zoltan. If you wish to use
 Jostle within Zoltan, you must first obtain a <a href="http://www.gre.ac.uk/jostle/plicense.ps.gz">license
 for Parallel Jostle</a> and install it on your system. The license is currently
@@ -106,24 +107,12 @@ are "on" and "off".)</td>
 only be used during debugging).</td>
 </tr>
 
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; <i>SCALED_WEIGHT_MAX</i></td>
-
-<td NOSAVE>Jostle requires integer vertex weights, while Zoltan allows
-real valued object weights. The object weights are therefore scaled and
-rounded to an integer.&nbsp; This affects only the local copy of the data
-passed to Jostle and is thus transparent to the user. A positive value
-<i>n</i> means that the weights are scaled such that&nbsp; all the nonzero
-weights (over all dimensions) are between 1 and <i>n.</i> No scaling is
-employed if <i>SCALED_WEIGHT_MAX</i> is zero.</td>
-</tr>
-
 <tr>
 <td VALIGN=TOP><b>Default values:</b></td>
 
 <td>See the <a href="http://www.gre.ac.uk/jostle/">Jostle</a>&nbsp; documentation.&nbsp;
 See our <a href="ug_alg_parmetis.html">ParMETIS</a> documentation for the
-last two parameters.</td>
+last parameter.</td>
 </tr>
 
 <tr>

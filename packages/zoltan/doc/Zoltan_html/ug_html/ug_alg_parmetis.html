@@ -29,26 +29,30 @@
 <h2>
 <a NAME="ParMETIS"></a>ParMETIS</h2>
 <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-is a parallel library for graph partitioning&nbsp; (and repartitioning)
-developed at the University of Minnesota by Karypis, Schloegel and&nbsp;
-Kumar. ParMETIS is therefore strictly speaking not a method but rather
-a collection of methods. In the Zoltan context, ParMETIS is a method with
-many sub-methods. Zoltan provides an interface to all the ParMETIS (sub-)methods.&nbsp;
-The user selects which ParMETIS method to use through the parameter PARMETIS_METHOD.
-Most of the ParMETIS methods are based on either multilevel Kernighan-Lin
-partitioning or some diffusion algorithm. The names of the ParMETIS methods
-used by Zoltan are identical to those in the ParMETIS library. For further
-information about the various ParMETIS methods and parameters, please consult
-the ParMETIS User's Guide.
-<p>This interface is currently compatible with ParMETIS version 2.0.&nbsp;
-There is no guarantee that Zoltan will work correctly if you have a different
-version of ParMETIS on your computer. Source and documentation for ParMETIS
-can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
-home page</a>. As a courtesy service,&nbsp; a compatible version of the
-ParMETIS&nbsp; source code will be distributed with Zoltan. However, ParMETIS
-is a completely separate library. If you do not wish to install ParMETIS,
-it is possible to compile Zoltan without any references to ParMETIS&nbsp;
-(set the NO_PARMETIS flag when you 'make' Zoltan).
+is a parallel library for graph partitioning (for static load balancing)
+and repartitioning (for dynamic load balancing) developed at the University
+of Minnesota by Karypis, Schloegel and&nbsp; Kumar. ParMETIS is therefore
+strictly speaking not a method but rather a collection of methods. In the
+Zoltan context, ParMETIS is a method with many sub-methods. Zoltan provides
+an interface to all the ParMETIS (sub-)methods.&nbsp; The user selects
+which ParMETIS method to use through the parameter PARMETIS_METHOD. Most
+of the ParMETIS methods are based on either multilevel Kernighan-Lin partitioning
+or some diffusion algorithm. The names of the ParMETIS methods used by
+Zoltan are identical to those in the ParMETIS library. For further information
+about the various ParMETIS methods and parameters, please consult the ParMETIS
+User's Guide.
+<p>Graph partitioning is a useful abstraction for load balancing. The main
+idea is to represent the computatiional application as a weighted graph.
+The nodes or vertices in the graph correspond to objects in Zoltan.&nbsp;
+Each object may have a weight that normally represents the amount of computation.
+The edges or arcs in the graph usually correspond to communication costs.
+In graph partitioning, the problem is to find a partitioning of the graph
+that minimizes the cut size (weight) subject to the partitions having approximately
+equal size (weight). In repartitioning, it is assumed that a partitioning
+already exists. The problem is to find a good partitioning that is also
+"similar" in some sense to the existing partitioning. This keeps the migration
+cost low. All the problems described above are NP-hard so no efficient
+exact algorithm is known.
 <p>We only give a brief summary of the various ParMETIS methods here; for
 more details see the ParMETIS documentation. The methods fall into three
 categories:
@@ -65,9 +69,20 @@ Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
 multiple times to reduce the communication cost (cut weight) if desired.</li>
 </ol>
 As a rule of thumb, use one of the Part* methods if you have a poor initial
-balance and you are willing to spend some time doing migration. Use the
-Repart* methods when you have a reasonably good load balance that you wish
-to update incrementally (for example, in adaptive mesh refinement).
+balance and you are willing to spend some time doing migration. One such
+case is static load balancing, that is, you only need to balance once.
+Use the Repart* methods when you have a reasonably good load balance that
+you wish to update incrementally. These methods are well suited&nbsp; for
+dynamic load balancing (for example,&nbsp; adaptive mesh refinement).
+<p>This interface is currently compatible with ParMETIS version 2.0.&nbsp;
+There is no guarantee that Zoltan will work correctly if you have a different
+version of ParMETIS on your computer. Source and documentation for ParMETIS
+can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
+home page</a>. As a courtesy service,&nbsp; a compatible version of the
+ParMETIS&nbsp; source code will be distributed with Zoltan. However, ParMETIS
+is a completely separate library. If you do not wish to install ParMETIS,
+it is possible to compile Zoltan without any references to ParMETIS&nbsp;
+(set the NO_PARMETIS flag when you 'make' Zoltan).
 <p>The current version of Zoltan ignores the imbalance tolerance parameter,
 IMBALANCE_TOL, when ParMETIS is used. The reason is that the corresponding
 imbalance parameter is fixed at 1.05 in ParMETIS 2.0. We expect that future
@@ -133,21 +148,6 @@ more information (for example, 3=1+2, 5=1+4, 6=2+4).</td>
 only be used during debugging).</td>
 </tr>
 
-<tr VALIGN=TOP NOSAVE>
-<td>&nbsp;&nbsp;&nbsp; <i>SCALED_WEIGHT_MAX</i></td>
-
-<td NOSAVE>ParMETIS requires integer vertex weights, while Zoltan allows
-real valued object weights. The object weights are therefore scaled and
-rounded to an integer.&nbsp; This affects only the local copy of the data
-passed to ParMETIS and is thus transparent to the user. A positive value
-<i>n
-</i>means
-that the weights are scaled such that&nbsp; all the nonzero weights (over
-all dimensions) are between 1 and <i>n.</i>&nbsp; No scaling is employed
-if <i>SCALED_WEIGHT_MAX
-</i>is zero.</td>
-</tr>
-
 <tr>
 <td VALIGN=TOP><b>Default values:</b></td>
 
@@ -182,12 +182,6 @@ if <i>SCALED_WEIGHT_MAX
 <td></td>
 
 <td><i>CHECK_INPUT</i> = 1</td>
-</tr>
-
-<tr>
-<td></td>
-
-<td><i>SCALED_WEIGHT_MAX = </i>32000</td>
 </tr>
 
 <tr>
