@@ -826,7 +826,6 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
    ML_Sm_BlockHiptmair_Data *dataptr;
    ML_Comm_Envelope *envelope;
    int reduced_smoother_flag;
-//#define ML_DEBUG_SMOOTHER
 #ifdef ML_DEBUG_SMOOTHER
    int i,j;
    double *res2, res_norm;
@@ -928,8 +927,6 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
 	x_nodal1[kk] = 0.;
 	x_nodal2[kk] = 0.;
       }
-      //for (kk = TtATmat->invec_leng/2; kk < TtATmat->invec_leng; kk++) 
-//	      x_nodal2[kk] = 0.;
 
       ML_Comm_Envelope_Increment_Tag(envelope);
    
@@ -3460,7 +3457,6 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
     dbl_arg1 = (double *) ML_Smoother_Arglist_Get(edge_args, 1);
     if ((( (int) dbl_arg1[0]) == ML_DEFAULT) && (Amat->comm->ML_nprocs != 1))
     {
-      //hhhhhhhhhhhhmmmmmmmmmmmmmmmmmmmmm  do we want to use A or submat M here?
       dataptr->max_eig = ML_Operator_GetMaxEig(Amat);
       dataptr->omega = 1.0 / dataptr->max_eig;
       if (Amat->comm->ML_mypid == 0
