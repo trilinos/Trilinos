@@ -887,10 +887,6 @@ Optional Features:
   --enable-nox-petsc-examples
                           compile petsc interface examples
   --enable-loca           compile the loca library
-  --enable-loca-anasazi   compile anasazi support into liblocaepetra
-  --enable-nox-epetra-azlu
-                          includes az_lu preconditioner in the epetra
-                          interface - requires y12m library
 
   --enable-prerelease     Enable compilation and documentation of prerelease
                           code.
@@ -910,6 +906,7 @@ Optional Packages:
   --with-mpi-libs="LIBS"  MPI libraries ["-lmpi"]
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include]
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib]
+  --with-loca-anasazi     compile anasazi support into liblocaepetra
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinos         building inside Trilinos directory structure
@@ -928,6 +925,8 @@ Optional Packages:
   --with-anasaziutils-libdir
                           specify location of anasaziutils library
   --with-y12m-libdir      specify location of y12m library
+  --with-nox-epetra-azlu  includes az_lu preconditioner in the epetra
+                          interface - requires y12m library
   --with-petsc-incdir     specify location of PETSc header files
   --with-petsc-libdir     specify location of petsc library
 
@@ -3276,7 +3275,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3279:" \
+echo "$as_me:3278:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5140,10 +5139,11 @@ fi
 # LOCA-Epetra-Anasazi support
 # ------------------------------------------------------------------------
 
-# Check whether --enable-loca-anasazi or --disable-loca-anasazi was given.
-if test "${enable_loca_anasazi+set}" = set; then
-  enableval="$enable_loca_anasazi"
-  BUILD_LOCA_ANASAZI_SUPPORT=${enableval}
+
+# Check whether --with-loca-anasazi or --without-loca-anasazi was given.
+if test "${with_loca_anasazi+set}" = set; then
+  withval="$with_loca_anasazi"
+  BUILD_LOCA_ANASAZI_SUPPORT=${withval}
 else
   BUILD_LOCA_ANASAZI_SUPPORT=no
 
@@ -10981,10 +10981,11 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   # NOTE: The y12m library is only needed if aztecoo is built
   # with the flag --enable-aztecoo-azlu.
   # Leaving this out means the az_lu preconditioner is disabled
-  # Check whether --enable-nox-epetra-azlu or --disable-nox-epetra-azlu was given.
-if test "${enable_nox_epetra_azlu+set}" = set; then
-  enableval="$enable_nox_epetra_azlu"
-  REQUIRE_Y12M=$enableval
+
+# Check whether --with-nox-epetra-azlu or --without-nox-epetra-azlu was given.
+if test "${with_nox_epetra_azlu+set}" = set; then
+  withval="$with_nox_epetra_azlu"
+  REQUIRE_Y12M=$withval
 else
   REQUIRE_Y12M=no
 

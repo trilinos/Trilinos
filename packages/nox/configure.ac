@@ -708,9 +708,9 @@ fi
 # LOCA-Epetra-Anasazi support
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(loca-anasazi,
-[AC_HELP_STRING([--enable-loca-anasazi],[compile anasazi support into liblocaepetra])],
-[BUILD_LOCA_ANASAZI_SUPPORT=${enableval}],
+AC_ARG_WITH(loca-anasazi,
+[AC_HELP_STRING([--with-loca-anasazi],[compile anasazi support into liblocaepetra])],
+[BUILD_LOCA_ANASAZI_SUPPORT=${withval}],
 [BUILD_LOCA_ANASAZI_SUPPORT=no]
 )
 AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
@@ -1037,10 +1037,10 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   # NOTE: The y12m library is only needed if aztecoo is built 
   # with the flag --enable-aztecoo-azlu.
   # Leaving this out means the az_lu preconditioner is disabled
-  AC_ARG_ENABLE(nox-epetra-azlu,
-  [AC_HELP_STRING([--enable-nox-epetra-azlu],
+  AC_ARG_WITH(nox-epetra-azlu,
+  [AC_HELP_STRING([--with-nox-epetra-azlu],
   [includes az_lu preconditioner in the epetra interface - requires y12m library])],
-  [REQUIRE_Y12M=$enableval],
+  [REQUIRE_Y12M=$withval],
   [REQUIRE_Y12M=no]
   )
 
