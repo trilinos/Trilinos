@@ -73,7 +73,7 @@ LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplex(
     return res;
 
   // Compute B*z
-  res = applyJacobian(input_imag, *tmp);
+  res = applyMassMatrix(input_imag, *tmp);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
@@ -86,7 +86,7 @@ LOCA::Bifurcation::HopfBord::AbstractGroup::applyComplex(
     return res;
 
   // Compute B*y
-  res = applyJacobian(input_real, *tmp);
+  res = applyMassMatrix(input_real, *tmp);
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
