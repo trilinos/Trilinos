@@ -72,7 +72,8 @@ int Zoltan_HG_HPart_Lib (
   ZZ *zz,              /* Zoltan data structure */
   HGraph *hg,          /* Input hypergraph to be partitioned */
   int p,               /* Input:  number partitions to be generated */
-  Partition part,      /* Output:  partition #s; aligned with vertex arrays. */
+  Partition part,      /* Input:  initial partition #s; aligned with vtx arrays;
+                          Output: computed partition #s. */
   HGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
 int level
 )

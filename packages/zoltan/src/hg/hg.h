@@ -41,21 +41,6 @@ extern "C" {
 #define EPS 1e-6
     
 
-/* Matching, Packing, and Grouping arrays.  Technically, they are all the same;
- * the different typedefs are not needed.  In the description below, Matching is
- * used; the same description applies to Packing and Grouping.  If a vertex i is
- * not being contracted with other vertices,  Matching[i] == i.  If vertices i,
- * j, and k are being contracted together to form one new vertex,
- * Matching[i] == j; Matching[j] == k; and Matching[k] == i;  The cycle describes
- * the contraction. */
-typedef int *Matching;  /* length |V|, matching information of vertices */
-typedef int *Packing;   /* length |V|, packing information of vertices */
-typedef int *Grouping;  /* length |V|, grouping information of vertices */
-
-typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse vertices */
-typedef int *Partition; /* length |V|, partition ID for each vertex */
-
-    
 /*****************************************************************************/
 /* Data structure for Zoltan's base hypergraph.
  * Includes Zoltan IDs corresponding to local objects (vertices) and
@@ -64,8 +49,7 @@ typedef int *Partition; /* length |V|, partition ID for each vertex */
 struct Zoltan_HGraph {
   ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
-  Partition Parts;          /* Initial partition #s for on-processor objects */
-                            /* KDD In parallel version Part may be part of HG */
+  Partition Input_Parts;    /* Initial partition #s for on-processor objects */
   HGraph HG;                /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_HGraph ZHG;
@@ -74,11 +58,11 @@ typedef struct Zoltan_HGraph ZHG;
 
 
 typedef struct {
-   HGraph    *hg;
-   Partition part;
-   Matching  match;
-   LevelMap  lmap;
-   } HGraphLevel;
+  HGraph    *hg;
+  Partition part;
+  Matching  match;
+  LevelMap  lmap;
+} HGraphLevel;
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
@@ -205,7 +189,7 @@ void Zoltan_HG_Plot(int, int, int, int*, int*, int*, char*);
 
 /* Prototypes */
 extern int Zoltan_HG_Build_Hypergraph (ZZ*, ZHG**, HGPartParams*);
-extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, FILE*);
+extern void Zoltan_HG_HGraph_Print(ZZ*, ZHG*,  HGraph*, Partition, FILE*);
 extern int Zoltan_HG_Return_Lists(ZZ*, ZHG*, Partition, int*,
   ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
 extern int Zoltan_HG_PaToH(ZZ *, HGraph *, int, int *);

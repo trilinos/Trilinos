@@ -83,6 +83,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
   else if (!strcasecmp(str, "gr3"))   return coarse_part_gr3;
   else if (!strcasecmp(str, "gr4"))   return coarse_part_gr4;
+  else if (!strcasecmp(str, "no"))    return NULL;
   else {                              *ierr = ZOLTAN_FATAL; return NULL;}
 }
 
@@ -97,7 +98,8 @@ int Zoltan_PHG_CoarsePartition(
   int numPart,         /* Input:  number of partitions to generate. */
   float *part_sizes,   /* Input:  array of size numPart listing target sizes
                                   (% of work) for the partitions */
-  Partition part,      /* Output: array of partition assignments.   */
+  Partition part,      /* Input:  array of initial partition assignments.
+                          Output: array of computed partition assignments.   */
   PHGPartParams *hgp   /* Input:  parameters to use.  */
 )
 {
@@ -114,6 +116,7 @@ int Zoltan_PHG_CoarsePartition(
 char *yo = "Zoltan_PHG_CoarsePartition";
 int ierr = ZOLTAN_OK;
 int i, si, j;
+unsigned int tmp;
 static PHGComm scomm;          /* Serial communicator info */
 static int first_time = 1;
 HGraph *shg = NULL;            /* Serial hypergraph gathered from phg */
@@ -125,7 +128,21 @@ float bal, worst_cut;
 
   /* take care of all special cases first */
 
-  if (numPart == 1) {            
+  if (!strcasecmp(hgp->coarsepartition_str, "no")) {
+    /* Do no coarse partitioning. */
+    /* Do a sanity test and  mapping to parts [0,...,numPart-1] */
+    int first = 1;
+    for (i = 0; i < phg->nVtx; i++)
+      if (part[i] >= numPart) {
+        if (first) {
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, "Initial part number > numParts.");
+          first = 0;
+          ierr = ZOLTAN_WARN;
+        }
+        part[i] = part[i] % numPart;
+      }
+  }
+  else if (numPart == 1) {            
     /* everything goes in the one partition */
     for (i =  0; i < phg->nVtx; i++)
       part[i] = 0;
@@ -210,8 +227,9 @@ float bal, worst_cut;
     /* Keep the NUM_PART_KEEP best ones around. */
     /* Currently, only the best one is used. */
 
-    /* KDDKDD Set RNG so different procs compute different parts. */
-    /* KDDKDD For now, use same seed everywhere for debugging. */
+    /* Set RNG so different procs compute different parts. */
+    tmp = Zoltan_Rand();
+    Zoltan_Srand(tmp + zz->Proc);
 
     new_cand = 0;
     new_part = spart;

@@ -138,6 +138,7 @@ int max_assignment, have_assignments;
     /* create the vtxdist array. */
     create_Vtxdist();
     break;
+  case INITIAL_FILE:
   case INITIAL_CYCLIC:
     /* no initialization needed for this method. */
     break;

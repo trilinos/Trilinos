@@ -143,6 +143,7 @@ int read_cmd_file (
               else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
               else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
               else if (!strcmp(value, "owner"))   i = INITIAL_OWNER;
+              else if (!strcmp(value, "file"))    i = INITIAL_FILE;
               else  {
                 Gen_Error(0, "fatal: bad initial distribution argument");
                 return 0;
@@ -150,7 +151,7 @@ int read_cmd_file (
               pio_info->init_dist_type = i;
             }
             else if (!strcmp(string, "procs"))  {
-              if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1) {
+              if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &nv) != 1){
                 Gen_Error(0, "fatal: initial procs value must be integal");
                 return 0;
               }

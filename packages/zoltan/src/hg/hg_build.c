@@ -54,7 +54,7 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
   /* Initialize the Zoltan hypergraph data fields. */
   zhg->Global_IDs = NULL;
   zhg->Local_IDs = NULL;
-  zhg->Parts = NULL;
+  zhg->Input_Parts = NULL;
 
   hgraph = &(zhg->HG);
   Zoltan_HG_HGraph_Init(hgraph);
@@ -65,7 +65,8 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
     ierr = Zoltan_Get_Obj_List(zz, &(hgraph->nVtx), &(zhg->Global_IDs),
-     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt), &(zhg->Parts));
+      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt),
+      &(zhg->Input_Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       goto End;
@@ -90,7 +91,8 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
     Zoltan_HG_Graph_Init(&graph);
     ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-     &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
+      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt),
+      &(zhg->Input_Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       Zoltan_HG_Graph_Free(&graph);
@@ -140,14 +142,14 @@ int get_geom_data=0; /* Current hg methods don't use geometry. */
   }
 
   if (hgp->output_level >= HG_DEBUG_PRINT)
-    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), stdout);
+    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), zhg->Input_Parts, stdout);
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
     Zoltan_HG_HGraph_Free(&(zhg->HG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
-     &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
+     &(zhg->Local_IDs), &(zhg->Input_Parts), zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);

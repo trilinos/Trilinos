@@ -47,6 +47,7 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
   else if (!strcasecmp(str, "gr2"))   return global_gr2;
   else if (!strcasecmp(str, "gr3"))   return global_gr3;
   else if (!strcasecmp(str, "gr4"))   return global_gr4;
+  else if (!strcasecmp(str, "no"))    return global_gr4;
   else                                return NULL;
 }
 
@@ -57,9 +58,34 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
  * multilevel scheme (V-cycle).
  */
 
-int Zoltan_HG_Global(ZZ *zz,HGraph *hg,int p,Partition part,HGPartParams *hgp)
+int Zoltan_HG_Global(
+  ZZ *zz,
+  HGraph *hg,
+  int p,                 /* Number of requested parts */
+  Partition part,        /* Input:  initial part assignments for vtx in hg;
+                            Output: computed part assignments for vtxs in hg */
+  HGPartParams *hgp
+)
 {
-  return hgp->global_part(zz,hg,p,part,hgp);
+  if (!strcasecmp(hgp->global_str, "no")) {
+    /* Use the input partition */
+    int i, ierr = ZOLTAN_OK;
+    int first = 1;
+    char *yo = "Zoltan_HG_Global";
+    /* Do a sanity test and  mapping to parts [0,...,numPart-1] */
+    for (i = 0; i < hg->nVtx; i++)
+      if (part[i] >= p) {
+        if (first) {
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, "Initial part number > p.");
+          first = 0;
+          ierr = ZOLTAN_WARN;
+        }
+        part[i] = part[i] % p;
+      }
+    return ierr;
+  }
+  else
+    return hgp->global_part(zz,hg,p,part,hgp);
 }
 
 /****************************************************************************/

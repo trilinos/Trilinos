@@ -91,6 +91,21 @@ typedef struct {
 } HGraph;
 
 
+/* Matching, Packing, and Grouping arrays.  Technically, they are all the same;
+ * the different typedefs are not needed.  In the description below, Matching is
+ * used; the same description applies to Packing and Grouping.  If a vertex i is
+ * not being contracted with other vertices,  Matching[i] == i.  If vertices i,
+ * j, and k are being contracted together to form one new vertex,
+ * Matching[i] == j; Matching[j] == k; and Matching[k] == i;
+ * The cycle describes the contraction. */
+typedef int *Matching;  /* length |V|, matching information of vertices */
+typedef int *Packing;   /* length |V|, packing information of vertices */
+typedef int *Grouping;  /* length |V|, grouping information of vertices */
+
+typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse vertices */
+typedef int *Partition; /* length |V|, partition ID for each vertex */
+
+
 extern void Zoltan_HG_Graph_Init  (Graph*);
 extern int Zoltan_HG_Graph_Free   (Graph*);
 
@@ -104,7 +119,8 @@ extern int Zoltan_HG_Info         (ZZ*, HGraph*);
 extern int Zoltan_HG_Check        (ZZ*, HGraph*);
 extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
 extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
-extern void Zoltan_HG_Print(ZZ*, HGraph*, FILE*, char*);
+extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
+
 
     
 #ifdef __cplusplus

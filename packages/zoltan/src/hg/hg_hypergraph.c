@@ -87,7 +87,8 @@ int Zoltan_HG_HGraph_Free(
 )
 {
   if (hg)
-    Zoltan_Multifree (__FILE__, __LINE__, 10, &hg->coor, &hg->vwgt, &hg->ewgt,
+    Zoltan_Multifree (__FILE__, __LINE__, 10, 
+     &hg->coor, &hg->vwgt, &hg->ewgt,
      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->dist_x,
      &hg->dist_y, &hg->vmap);
 
@@ -465,6 +466,7 @@ End:
 void Zoltan_HG_Print(
   ZZ *zz,
   HGraph *hg,
+  Partition parts,
   FILE *fp,
   char *str
 )
@@ -493,7 +495,8 @@ char *yo = "Zoltan_HG_Print";
   /* Print Vertex Info */
   fprintf(fp, "%s Vertices:  (edges)\n", str);
   for (i = 0; i < hg->nVtx; i++) {
-    fprintf(fp, "%d (%d):  ", i, VTX_LNO_TO_GNO(hg, i));
+    fprintf(fp, "%d (%d) in part %d:  ", 
+            i, VTX_LNO_TO_GNO(hg, i), parts[i]);
     fprintf(fp, "(");
     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
       fprintf(fp, "%d ", hg->vedge[j]);

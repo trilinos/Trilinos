@@ -14,13 +14,13 @@
 #ifndef __ZOLTAN_PHG_H
 #define __ZOLTAN_PHG_H
 
-#include "hg.h"
-    
 #include "phg_comm.h"
 #include "phg_const.h"
 #include "phg_util.h"
 #include "params_const.h"
 #include "zoltan_comm.h"
+#include "hg.h"
+#include "hg_hypergraph.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -38,15 +38,14 @@ struct Zoltan_PHGraph {
   int nObj;                 /* Number of on-processor objects. */
   ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
-  int *Parts;               /* Initial partition #s for on-processor objects */
-                            /* KDD In parallel version Part may be in HG */
+  int *Input_Parts;         /* Initial partition #s for on-processor objects */
   ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
                                within row communicators. */
   int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
                                received from other processors in row.
                                Used to fill buffer for Comm_Do_Reverse
                                with VtxPlan in building return lists. */
-  int nRecv_GNOs;           /* Number of GNOs in Receive_GNOs. */
+  int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
   HGraph PHG;               /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_PHGraph ZPHG;
@@ -90,7 +89,8 @@ typedef struct Zoltan_PHGraph ZPHG;
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching, struct PHGPartParamsStruct*);
+typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching, 
+                                   struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
@@ -112,11 +112,11 @@ struct PHGPartParamsStruct {
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/
     
   ZOLTAN_PHG_MATCHING_FN *matching;    /* Pointers to Matching function */
-  ZOLTAN_HG_MATCHING_FN  *locmatching;   /* Pointer to local Matching function */
-  ZOLTAN_HG_MATCHING_FN  *matching_opt;  /* Pointers to Matching optimization  */
+  ZOLTAN_HG_MATCHING_FN  *locmatching;  /* Pointer to local Matching function */
+  ZOLTAN_HG_MATCHING_FN  *matching_opt; /* Pointers to Matching optimization  */
     
-  int edge_scaling;                    /* type of hyperedge weight scaling */
-  int vtx_scaling;                     /* type of vertex scaling for inner product */
+  int edge_scaling;              /* type of hyperedge weight scaling */
+  int vtx_scaling;               /* type of vertex scaling for inner product */
   float *vtx_scal;                     /* vtx scaling array */
   int LocalCoarsePartition;            /* 1 -> apply coarse partitioner locally;
                                           0 -> gather entire HG to each proc
@@ -140,13 +140,13 @@ struct PHGPartParamsStruct {
     /* NOTE THAT this comm refers to "GLOBAL" comm structure
        (hence the name change: just to make sure it has not been used
         accidentally in an inccorrect way)
-       comm of hg should be used in coarsening/initpart/refimenet codes
+       comm of hg should be used in coarsening/initpart/refinement codes
        because of possible processor splits in recursive bisection
     */
   PHGComm globalcomm;   
-  int proc_split;       /* 0: menas processors will not be split in RB,
-                           >0 means they will be split into two parts for each side
-                              of the recursion */
+  int proc_split;   /* 0 means processors will not be split in RB,
+                       >0 means they will be split into two parts for each side
+                       of the recursion */
                     
 
   int num_coarse_iter;  /* Number of coarse partitions to try on each proc. */
@@ -225,8 +225,8 @@ extern double Zoltan_PHG_hcut_size_total(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_hcut_size_links(PHGComm*, HGraph*, Partition, int);    
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);
 
-extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, PHGPartParams*);
-extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  HGraph*, FILE*);
+extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, Partition*, PHGPartParams*);
+extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*, HGraph*, Partition, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 

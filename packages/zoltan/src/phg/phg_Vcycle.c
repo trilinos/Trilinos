@@ -21,8 +21,8 @@ extern "C" {
 
 
 typedef struct tagVCycle {
-    HGraph            *hg;         /* for finer==NULL, hg and part contains   */
-    Partition          part;       /* original hg and part, don't delete them */  
+    HGraph            *hg;         /* for finer==NULL, hg and Part contains   */
+    Partition          Part;       /* original hg and Part, don't delete them */  
     int               *LevelMap;   /* necessary to uncoarsen                  */
                                    /* LevelMap size = hg->nVtx 
                                       LevelMap[i] is the vtx number of the
@@ -94,7 +94,7 @@ static int allocVCycle(VCycle *v)
   if (!v->hg || !v->hg->nVtx)
     return ZOLTAN_OK;
     
-  if (!v->part && !(v->part = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
+  if (!v->Part && !(v->Part = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
     return ZOLTAN_MEMERR;
  
   if (!v->LevelMap 
@@ -116,8 +116,9 @@ static VCycle *newVCycle(HGraph *hg, Partition part, VCycle *finer)
     return NULL;
         
   vcycle->finer    = finer;
-  vcycle->part     = part;
+  vcycle->Part     = part;
   vcycle->LevelMap = NULL;
+  vcycle->LevelCnt = 0;
   vcycle->LevelData = NULL;
   vcycle->hg       = hg ? hg : (HGraph*) ZOLTAN_MALLOC (sizeof(HGraph));
   if (!vcycle->hg)  {
@@ -142,8 +143,10 @@ int Zoltan_PHG_Partition (
   HGraph *hg,           /* Input hypergraph to be partitioned */
   int p,                /* Input:  number partitions to be generated */
   float *part_sizes,    /* Input:  array of length p containing percentages
-                             of work to be assigned to each partition */
-  Partition Parts,      /* Output:  partition #s; aligned with vtx arrays. */
+                           of work to be assigned to each partition */
+  Partition parts,      /* Input:  initial partition #s; aligned with vtx 
+                           arrays. 
+                           Output:  computed partition #s */
   PHGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
   int level)
 {
@@ -155,7 +158,7 @@ int Zoltan_PHG_Partition (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
-  if (!(vcycle = newVCycle(hg, Parts, NULL))) {
+  if (!(vcycle = newVCycle(hg, parts, NULL))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     return ZOLTAN_MEMERR;
   }
@@ -232,7 +235,7 @@ int Zoltan_PHG_Partition (
      "coarsening plot");
 
   /****** Coarse Partitioning ******/
-  err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->part, hgp);
+  err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 
@@ -242,17 +245,17 @@ int Zoltan_PHG_Partition (
     VCycle *finer = vcycle->finer;
     hg = vcycle->hg;
 
-    err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->part, hgp);
+    err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->Part, hgp);
         
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
               hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
               hgp->coarsepartition_str, hgp->refinement_str, p,
-              Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->part),
-              Zoltan_PHG_hcut_size_links(hgc, hg, vcycle->part, p));
+              Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->Part),
+              Zoltan_PHG_hcut_size_links(hgc, hg, vcycle->Part, p));
 
     if (hgp->output_level >= PHG_DEBUG_PLOT)
-      Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->part,
+      Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
        "partitioned plot");
         
     /* Project coarse partition to fine partition */
@@ -265,7 +268,7 @@ int Zoltan_PHG_Partition (
       /* easy for undoing internal matches */
       for (i = 0; i < finer->hg->nVtx; i++)
         if (finer->LevelMap[i] >= 0)
-          finer->part[i] = vcycle->part[finer->LevelMap[i]];
+          finer->Part[i] = vcycle->Part[finer->LevelMap[i]];
                  
       /* the rest is to undo external matches */    
       MPI_Allgather (&finer->LevelCnt, 1, MPI_INT, each_size, 1, MPI_INT,
@@ -285,7 +288,7 @@ int Zoltan_PHG_Partition (
   
         for (i = 0; i < finer->LevelCnt; i++)  {
           i++;                         /* skip gno entry */
-          finer->LevelData[i]=vcycle->part[finer->LevelMap[finer->LevelData[i]]];
+          finer->LevelData[i]=vcycle->Part[finer->LevelMap[finer->LevelData[i]]];
         }
                                  
         MPI_Allgatherv (finer->LevelData, each_size[hgc->myProc_x], MPI_INT,
@@ -295,7 +298,7 @@ int Zoltan_PHG_Partition (
           gno   = *ip++;
           lpart = *ip++;
           if (VTX_TO_PROC_X (finer->hg, gno) == hgc->myProc_x)
-            finer->part[VTX_GNO_TO_LNO (finer->hg, gno)] = lpart;
+            finer->Part[VTX_GNO_TO_LNO (finer->hg, gno)] = lpart;
         }
         ZOLTAN_FREE (&rbuffer);
       }          
@@ -308,7 +311,7 @@ End:
   while (vcycle) {
     if (vcycle->finer) {   /* cleanup by level */
       Zoltan_HG_HGraph_Free (vcycle->hg);
-      Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->part, &vcycle->LevelMap,
+      Zoltan_Multifree (__FILE__, __LINE__, 4, &vcycle->Part, &vcycle->LevelMap,
                         &vcycle->LevelData, &vcycle->hg);
     }
     else                   /* cleanup top level */

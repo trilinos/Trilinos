@@ -32,13 +32,16 @@ extern "C" {
 /* Function prototypes */
 
 static int hash_lookup (ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*);
+static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*, Partition*);
 
 /*****************************************************************************/
 
 int Zoltan_PHG_Build_Hypergraph(
   ZZ *zz,                            /* Zoltan data structure */
   ZPHG **zoltan_hg,                  /* Hypergraph to be allocated and built.*/
+  Partition *input_parts,            /* Initial partition assignments for
+                                        vtxs in 2D distribution; length = 
+                                        zoltan_hg->PHG->nVtx.  */
   PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
 )
 {
@@ -57,6 +60,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   /* Initialize the Zoltan hypergraph data fields. */
   zhg->GIDs = NULL;
   zhg->LIDs = NULL;
+  zhg->Input_Parts = NULL;
   zhg->VtxPlan = NULL;
   zhg->Recv_GNOs = NULL;
   zhg->nRecv_GNOs = 0;
@@ -75,7 +79,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg);
+    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, input_parts);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
       goto End;
@@ -97,7 +101,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
     Zoltan_HG_Graph_Init(&graph);
     ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->GIDs),
-     &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
+      &(zhg->LIDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Input_Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
       Zoltan_HG_Graph_Free(&graph);
@@ -149,17 +153,17 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
 
   if (hgp->output_level >= PHG_DEBUG_PLOT)
-      Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
+    Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
 
   if (hgp->output_level >= PHG_DEBUG_PRINT)
-    Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->PHG), stdout);
+    Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->PHG), *input_parts, stdout);
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
     Zoltan_HG_HGraph_Free(&(zhg->PHG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->GIDs),
-     &(zhg->LIDs), &(zhg->Parts), zoltan_hg);
+     &(zhg->LIDs), &(zhg->Input_Parts), zoltan_hg);
   }
     
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -171,7 +175,9 @@ End:
 
 static int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
-  ZPHG *zhg      /* Description of hypergraph provided by the application. */
+  ZPHG *zhg,      /* Description of hypergraph provided by the application. */
+  Partition *input_parts   /* Initial partition assignment of vtxs in 
+                              2D data distribution; length = zhg->PHG->nVtx. */
 )
 {
 /* Routine to call HG query function and build HG data structure. 
@@ -246,7 +252,7 @@ int *hindex = NULL, *hvertex = NULL;
 int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx, nwgt = 0;
 int nrecv, *recv_gno = NULL; 
-float *recv_wgts = NULL;
+int *tmpparts = NULL, *recvparts = NULL;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
@@ -271,13 +277,15 @@ float *tmpwgts = NULL;
   app.pin_procs = NULL;
   app.pin_gno = NULL;
   app.vtxdist = NULL;
+  app.vtx_gno = NULL;
   app.edgedist = NULL;
+  app.edge_gno = NULL;
   app.vwgt = NULL;
   app.ewgt = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->GIDs), &(zhg->LIDs), 
                              zz->Obj_Weight_Dim, &app.vwgt, 
-                             &(zhg->Parts));
+                             &(zhg->Input_Parts));
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
     goto End;
@@ -559,40 +567,75 @@ float *tmpwgts = NULL;
     goto End;
   }
 
-  /* Send vertex weights, if any. */
+  /* Send vertex partition assignments and weights, if any. */
+  /* Can use same plan for both. */
 
-  if (zz->Obj_Weight_Dim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS) {
-    if (phg->comm->nProc_x > 1) {
+  if (phg->comm->nProc_x > 1) {
 
-      /* Need a communication plan mapping GIDs to their GNOs processors
-       * within a row communicator.  The plan is used to send vertex weights
-       * to the 2D distribution and/or to create return lists after partitioning
-       */
-  
-      for (i = 0; i < app.nVtx; i++)
-        proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
-        
-      msg_tag++;
-      ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
-                                phg->comm->row_comm, msg_tag, &nrecv);
-      zhg->nRecv_GNOs = nrecv;
+    /* Need a communication plan mapping GIDs to their GNOs processors
+     * within a row communicator.  The plan is used to send vertex weights
+     * and partition assignments to the 2D distribution and/or 
+     * to create return lists after partitioning
+     */
 
-      zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
-      if (nrecv && !recv_gno) MEMORY_ERROR;
+    for (i = 0; i < app.nVtx; i++)
+      proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
+      
+    msg_tag++;
+    ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
+                              phg->comm->row_comm, msg_tag, &nrecv);
+    zhg->nRecv_GNOs = nrecv;
 
-      /* Use plan to send weights to the appropriate proc_x. */
-      msg_tag++;
-      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
-                            sizeof(int), (char *) recv_gno);
+    zhg->Recv_GNOs = recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    if (nrecv && !recv_gno) MEMORY_ERROR;
 
-    }
-    else {
-      /* Save map of what needed. */
-      zhg->nRecv_GNOs = nrecv = app.nVtx;
-      zhg->Recv_GNOs = recv_gno = app.vtx_gno;
+    /* Use plan to send weights to the appropriate proc_x. */
+    msg_tag++;
+    ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
+                          sizeof(int), (char *) recv_gno);
+
+  }
+  else {
+    /* Save map of what needed. */
+    zhg->nRecv_GNOs = nrecv = app.nVtx;
+    zhg->Recv_GNOs = recv_gno = app.vtx_gno;
+  }
+
+  /* Send vertex partition assignments to 2D distribution. */
+
+  tmpparts = (int *) ZOLTAN_CALLOC(phg->nVtx, sizeof(int));
+  *input_parts = (int *) ZOLTAN_MALLOC(phg->nVtx * sizeof(int));
+  if (phg->nVtx && (!tmpparts || !*input_parts)) MEMORY_ERROR;
+
+  if (phg->comm->nProc_x == 1)  {
+    for (i = 0; i < app.nVtx; i++) {
+      idx = app.vtx_gno[i];
+      tmpparts[idx] = zhg->Input_Parts[i];
     }
   }
+  else {
+    /* In using input_parts for recv, assuming nrecv <= phg->nVtx */
+    msg_tag++;
+    ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) zhg->Input_Parts,
+                          sizeof(int), (char *) *input_parts);
+
+    for (i = 0; i < nrecv; i++) {
+      idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
+      tmpparts[idx] = (*input_parts)[i];
+    }
+  }
+
+  /* Reduce partition assignments for all vertices within column 
+   * to all processors within column.
+   */
+
+  MPI_Allreduce(tmpparts, *input_parts, phg->nVtx, MPI_INT, MPI_MAX, 
+                phg->comm->col_comm);
+
+  ZOLTAN_FREE(&tmpparts);
   
+
+  /* Allocate temp storage for vtx and/or edge weights. */
 
   if (zz->Obj_Weight_Dim || zz->Edge_Weight_Dim) {
     nwgt = MAX(phg->nVtx * zz->Obj_Weight_Dim, 
@@ -600,6 +643,8 @@ float *tmpwgts = NULL;
     tmpwgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
     if (nwgt && !tmpwgts) MEMORY_ERROR;
   }
+
+  /* Send vertex weights to 2D distribution. */
 
   if (zz->Obj_Weight_Dim) {
     dim = phg->VtxWeightDim = zz->Obj_Weight_Dim;
@@ -618,20 +663,16 @@ float *tmpwgts = NULL;
     }
     else {
       
-      recv_wgts = (float *) ZOLTAN_MALLOC(nrecv * dim * sizeof(float));
-      if (nrecv && !recv_wgts) MEMORY_ERROR;
-
+      /* In using phg->vwgt for recv, assuming nrecv <= phg->nVtx */
       msg_tag++;
       ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt, 
-                            dim*sizeof(float), (char *) recv_wgts);
+                            dim*sizeof(float), (char *) phg->vwgt);
       
       for (i = 0; i < nrecv; i++) {
         idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
         for (j = 0; j < dim; j++) 
-          tmpwgts[idx * dim + j] = recv_wgts[i * dim + j];
+          tmpwgts[idx * dim + j] = phg->vwgt[i * dim + j];
       }
-
-      ZOLTAN_FREE(&recv_wgts);
     }
 
     /* Reduce weights for all vertices within column 
@@ -685,26 +726,25 @@ float *tmpwgts = NULL;
                                 phg->comm->col_comm, msg_tag, &nrecv);
 
       recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
-      recv_wgts = (float *) ZOLTAN_MALLOC(nrecv * dim * sizeof(float));
-      if (nrecv && (!recv_gno || !recv_wgts)) MEMORY_ERROR;
+      if (nrecv && !recv_gno) MEMORY_ERROR;
 
       msg_tag++;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.edge_gno, sizeof(int),
                             (char *) recv_gno);
 
+      /* In using phg->vwgt for recv, assuming nrecv <= phg->nVtx */
       msg_tag++;
       ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.ewgt, 
-                            dim*sizeof(float), (char *) recv_wgts);
+                            dim*sizeof(float), (char *) phg->ewgt);
 
       Zoltan_Comm_Destroy(&plan);
 
       for (i = 0; i < nrecv; i++) {
         idx = EDGE_GNO_TO_LNO(phg, recv_gno[i]);
         for (j = 0; j < dim; j++) 
-          tmpwgts[idx * dim + j] = recv_wgts[i * dim + j];
+          tmpwgts[idx * dim + j] = phg->ewgt[i * dim + j];
       }
       ZOLTAN_FREE(&recv_gno); 
-      ZOLTAN_FREE(&recv_wgts);
     }
 
     /* Need to gather weights for all edges within row 

@@ -24,8 +24,8 @@ static int split_hypergraph (HGraph*, HGraph*, Partition, int, ZZ*);
 
 /* recursively divides problem into 2 parts until all p found */
 int Zoltan_HG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
- HGPartParams *hgp, int level)
-   {
+  HGPartParams *hgp, int level)
+{
    int i, mid;
    int err;
    Partition part;
@@ -47,6 +47,8 @@ hg->redl = hgp->redl;
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
       return ZOLTAN_MEMERR;
       }
+   for (i = 0; i < hg->nVtx; i++) 
+      part[i] = final[hg->vmap[i]];
 
    /* bipartition current hypergraph with appropriate split ratio */
    mid = (lo+hi)/2;
@@ -93,13 +95,13 @@ hg->redl = hgp->redl;
    ZOLTAN_FREE (&new);
 
    return ZOLTAN_OK;
-   }
+}
 
 
 
 static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
  int partid, ZZ *zz)
-   {
+{
    int *tmap;        /* temporary array mapping from old HGraph info to new */
    int edge, i;                                            /* loop counters */
    int pins;
@@ -175,7 +177,7 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
 
    ZOLTAN_FREE (&tmap);
    return ZOLTAN_OK;
-   }
+}
 
 
 

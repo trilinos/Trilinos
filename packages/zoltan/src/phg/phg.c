@@ -86,7 +86,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZPHG *zoltan_hg = NULL;
     int nVtx;                        /* Temporary variable for base graph. */
     PHGPartParams hgp;               /* Hypergraph parameters. */
-    Partition output_parts = NULL;   /* Output partition from HG partitioner. */
+    Partition parts = NULL;          /* Partition assignments in 
+                                        2D distribution. */
     int err = ZOLTAN_OK;
     char *yo = "Zoltan_PHG";
     
@@ -104,7 +105,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
         goto End;
     
   /* build initial Zoltan hypergraph from callback functions. */
-  err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &hgp);
+  err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
@@ -116,13 +117,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
  
-  /* allocate output partition memory */
-  if (nVtx && !(output_parts = (Partition) ZOLTAN_MALLOC (nVtx * sizeof(int)))) {
-    err = ZOLTAN_MEMERR;
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    goto End;
-  }
-
 /*
   uprintf(zoltan_hg->PHG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
@@ -131,7 +125,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
      Zoltan_PHG_Partition anyways... */
   if (hgp.kway || zz->LB.Num_Global_Parts == 2) {  /* call main V cycle routine */
     err = Zoltan_PHG_Partition(zz, &zoltan_hg->PHG, zz->LB.Num_Global_Parts,
-     hgp.part_sizes, output_parts, &hgp, 0);
+     hgp.part_sizes, parts, &hgp, 0);
     if (err != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
       goto End;
@@ -154,17 +148,17 @@ int **exp_to_part )         /* list of partitions to which exported objs
     hgp.bal_tol = pow (hgp.bal_tol, 1.0 / ceil (log((double)p) / log(2.0)));
 
     /* partition hypergraph */
-    err = Zoltan_PHG_rdivide (0, p-1, output_parts, zz, hg, &hgp, 0);
+    err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0);
     for (i = 0; i < hg->nVtx; ++i)
-        if (output_parts[i]<0 || output_parts[i]>=p)
-            errexit("invalid partvec[%d]=%d", i, output_parts[i]);
+        if (parts[i]<0 || parts[i]>=p)
+            errexit("invalid partvec[%d]=%d", i, parts[i]);
 
     if (hgp.output_level >= PHG_DEBUG_LIST)     
       uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
        "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
        hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
-       Zoltan_PHG_Compute_Balance(zz, hg, p, output_parts),
-       Zoltan_PHG_hcut_size_links(hg->comm, hg, output_parts, p));
+       Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
+       Zoltan_PHG_hcut_size_links(hg->comm, hg, parts, p));
         
     if (err != ZOLTAN_OK)  {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
@@ -174,7 +168,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }  
   
   /* Build Zoltan's return arguments. */
-  Zoltan_PHG_Return_Lists(zz, zoltan_hg, output_parts, num_exp, exp_gids,
+  Zoltan_PHG_Return_Lists(zz, zoltan_hg, parts, num_exp, exp_gids,
    exp_lids, exp_procs, exp_to_part);
     
 End:
@@ -183,7 +177,7 @@ End:
   else if (err != ZOLTAN_OK)
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Error partitioning hypergraph.")
     
-  ZOLTAN_FREE(&output_parts);
+  ZOLTAN_FREE(&parts);
   Zoltan_PHG_Free_Structure(zz);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return err;
@@ -200,7 +194,7 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
 
   if (zoltan_hg != NULL) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->GIDs, &zoltan_hg->LIDs,
-     &zoltan_hg->Parts);
+     &zoltan_hg->Input_Parts);
     Zoltan_HG_HGraph_Free (&zoltan_hg->PHG);
     ZOLTAN_FREE (&zz->LB.Data_Structure);
   }
@@ -314,7 +308,7 @@ static int Zoltan_PHG_Return_Lists (
   int num_gid_entries   = zz->Num_GID;
   int num_lid_entries   = zz->Num_LID;
   int nObj              = zhg->nObj;
-  Partition input_parts = zhg->Parts;
+  Partition input_parts = zhg->Input_Parts;
   ZOLTAN_ID_PTR gids    = zhg->GIDs;
   ZOLTAN_ID_PTR lids    = zhg->LIDs;
   HGraph *phg           = &(zhg->PHG);
@@ -402,6 +396,7 @@ void Zoltan_PHG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
   ZPHG *zoltan_hg,
   HGraph *hg,
+  Partition parts, 
   FILE *fp
 )
 {
@@ -432,7 +427,7 @@ void Zoltan_PHG_HGraph_Print(
     fprintf(fp, ", %d)\n", i);
   }
 
-  Zoltan_HG_Print(zz, hg, fp, "Build");
+  Zoltan_HG_Print(zz, hg, parts, fp, "Build");
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 

@@ -128,6 +128,7 @@ printf ("RTHRTH: starting\n");
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     goto End;
   }
+  for (i = 0; i < nVtx; i++) output_parts[i] = zoltan_hg->Input_Parts[i];
 
 #ifdef KDDKDD_INITIAL_DATA
   /* Plot Initial data on one processor */
@@ -241,7 +242,7 @@ ZHG *zoltan_hg = (ZHG *)(zz->LB.Data_Structure);
 
   if (zoltan_hg != NULL) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
-     &zoltan_hg->Local_IDs, &zoltan_hg->Parts);
+     &zoltan_hg->Local_IDs, &zoltan_hg->Input_Parts);
     Zoltan_HG_HGraph_Free(&zoltan_hg->HG);
     ZOLTAN_FREE((void**) &zz->LB.Data_Structure);
   }
@@ -340,7 +341,7 @@ int eproc;
 int num_gid_entries   = zz->Num_GID;
 int num_lid_entries   = zz->Num_LID;
 int nVtx              = zoltan_hg->HG.nVtx;
-Partition input_parts = zoltan_hg->Parts;
+Partition input_parts = zoltan_hg->Input_Parts;
 ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
 ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
 char *yo = "Zoltan_HG_Return_Lists";
@@ -401,6 +402,7 @@ void Zoltan_HG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
   ZHG *zoltan_hg,
   HGraph *hg,
+  Partition parts,
   FILE *fp
 )
 {
@@ -431,7 +433,7 @@ char *yo = "Zoltan_HG_HGraph_Print";
     fprintf(fp, ", %d)\n", i);
   }
 
-  Zoltan_HG_Print(zz, hg, fp, "Build");
+  Zoltan_HG_Print(zz, hg, parts, fp, "Build");
 
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }

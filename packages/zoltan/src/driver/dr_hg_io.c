@@ -180,6 +180,31 @@ int read_hypergraph_file(
         return 0;
       }
     }
+
+       /* Read Chaco assignment file, if requested */
+    if (pio_info->init_dist_type == INITIAL_FILE) {
+      sprintf(filename, "%s.assign", pio_info->pexo_fname);
+      fp = fopen(filename, "r");
+      if (fp == NULL) {
+        sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
+                "initial distribution cannot be read",
+                filename);
+        Gen_Error(0, cmesg);
+        return 0;
+      }
+      else {
+        /* read the coordinates in on processor 0 */
+        ch_assignments = (short *) malloc(nvtxs * sizeof(short));
+        if (!ch_assignments) {
+          Gen_Error(0, "fatal: insufficient memory");
+          return 0;
+        }
+        if (chaco_input_assign(fp, filename, ch_nvtxs, ch_assignments) != 0){
+          Gen_Error(0, "fatal: Error returned from chaco_input_assign");
+          return 0;
+        }
+      }
+    }
   }
   
   MPI_Bcast(&base, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -346,7 +371,11 @@ float *old_hewgts = NULL;
 float *send_hewgts = NULL;
 MPI_Status status;
 int num_dist_procs;
+int hedge_init_dist_type;
 
+  hedge_init_dist_type = (pio_info->init_dist_type != INITIAL_FILE 
+                          ? pio_info->init_dist_type
+                          : INITIAL_LINEAR);
 
   /* Determine number of processors and my rank. */
   MPI_Comm_size (comm, &nprocs );
@@ -389,11 +418,11 @@ int num_dist_procs;
 
     /* Determine to which processors hyperedges should be sent */
     for (h = 0; h < *gnhedges; h++) {
-      if (pio_info->init_dist_type == INITIAL_CYCLIC)  
+      if (hedge_init_dist_type == INITIAL_CYCLIC)  
         p = h % num_dist_procs;
-      else if (pio_info->init_dist_type == INITIAL_LINEAR) 
+      else if (hedge_init_dist_type == INITIAL_LINEAR) 
         p = (int) ((float) (h * num_dist_procs) / (float)(*gnhedges));
-      else if (pio_info->init_dist_type == INITIAL_OWNER) 
+      else if (hedge_init_dist_type == INITIAL_OWNER) 
         p = ch_dist_proc(old_hvertex[old_hindex[h]], assignments, base);
       size[p] += (old_hindex[h+1] - old_hindex[h]);
       num_send[p]++;
