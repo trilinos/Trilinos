@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestKluSerial_SOURCES) $(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
+SOURCES = $(TestKluSerial_SOURCES) $(TestMemoryLeaks_SOURCES) $(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
+	$(am__EXEEXT_4)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -100,11 +101,16 @@ CONFIG_CLEAN_FILES =
 @HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_1 = TestUmfpackSerial$(EXEEXT)
 @HAVE_AMESOS_KLU_TRUE@am__EXEEXT_2 = TestKluSerial$(EXEEXT)
 @HAVE_AMESOS_SUPERLU_TRUE@am__EXEEXT_3 = TestSuperluSerial$(EXEEXT)
+@HAVE_VALGRIND_TRUE@am__EXEEXT_4 = TestMemoryLeaks$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestKluSerial_SOURCES_DIST = $(srcdir)/TestKluSerial
 am_TestKluSerial_OBJECTS =
 TestKluSerial_OBJECTS = $(am_TestKluSerial_OBJECTS)
 TestKluSerial_LDADD = $(LDADD)
+am__TestMemoryLeaks_SOURCES_DIST = $(srcdir)/TestMemoryLeaks
+am_TestMemoryLeaks_OBJECTS =
+TestMemoryLeaks_OBJECTS = $(am_TestMemoryLeaks_OBJECTS)
+TestMemoryLeaks_LDADD = $(LDADD)
 am__TestSuperluSerial_SOURCES_DIST = $(srcdir)/TestSuperluSerial
 am_TestSuperluSerial_OBJECTS =
 TestSuperluSerial_OBJECTS = $(am_TestSuperluSerial_OBJECTS)
@@ -118,9 +124,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestKluSerial_SOURCES) $(TestSuperluSerial_SOURCES) \
-	$(TestUmfpackSerial_SOURCES)
+SOURCES = $(TestKluSerial_SOURCES) $(TestMemoryLeaks_SOURCES) \
+	$(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
 DIST_SOURCES = $(am__TestKluSerial_SOURCES_DIST) \
+	$(am__TestMemoryLeaks_SOURCES_DIST) \
 	$(am__TestSuperluSerial_SOURCES_DIST) \
 	$(am__TestUmfpackSerial_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -181,6 +188,8 @@ HAVE_AMESOS_UMFPACK_FALSE = @HAVE_AMESOS_UMFPACK_FALSE@
 HAVE_AMESOS_UMFPACK_TRUE = @HAVE_AMESOS_UMFPACK_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
+HAVE_VALGRIND_TRUE = @HAVE_VALGRIND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
@@ -268,9 +277,12 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_KLU_TRUE@KLU_TEST = TestKluSerial
 @HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_TEST = 
 @HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = TestSuperluSerial
+@HAVE_VALGRIND_FALSE@VALGRIND_TEST = 
+@HAVE_VALGRIND_TRUE@VALGRIND_TEST = TestMemoryLeaks
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpackSerial_SOURCES = $(srcdir)/TestUmfpackSerial
 @HAVE_AMESOS_KLU_TRUE@TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
 @HAVE_AMESOS_SUPERLU_TRUE@TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
+@HAVE_VALGRIND_TRUE@TestMemoryLeaks_SOURCES = $(srcdir)/TestMemoryLeaks
 all: all-am
 
 .SUFFIXES:
@@ -309,6 +321,9 @@ clean-noinstPROGRAMS:
 @HAVE_AMESOS_KLU_FALSE@TestKluSerial$(EXEEXT): $(TestKluSerial_OBJECTS) $(TestKluSerial_DEPENDENCIES) 
 @HAVE_AMESOS_KLU_FALSE@	@rm -f TestKluSerial$(EXEEXT)
 @HAVE_AMESOS_KLU_FALSE@	$(LINK) $(TestKluSerial_LDFLAGS) $(TestKluSerial_OBJECTS) $(TestKluSerial_LDADD) $(LIBS)
+@HAVE_VALGRIND_FALSE@TestMemoryLeaks$(EXEEXT): $(TestMemoryLeaks_OBJECTS) $(TestMemoryLeaks_DEPENDENCIES) 
+@HAVE_VALGRIND_FALSE@	@rm -f TestMemoryLeaks$(EXEEXT)
+@HAVE_VALGRIND_FALSE@	$(LINK) $(TestMemoryLeaks_LDFLAGS) $(TestMemoryLeaks_OBJECTS) $(TestMemoryLeaks_LDADD) $(LIBS)
 @HAVE_AMESOS_SUPERLU_FALSE@TestSuperluSerial$(EXEEXT): $(TestSuperluSerial_OBJECTS) $(TestSuperluSerial_DEPENDENCIES) 
 @HAVE_AMESOS_SUPERLU_FALSE@	@rm -f TestSuperluSerial$(EXEEXT)
 @HAVE_AMESOS_SUPERLU_FALSE@	$(LINK) $(TestSuperluSerial_LDFLAGS) $(TestSuperluSerial_OBJECTS) $(TestSuperluSerial_LDADD) $(LIBS)
@@ -449,6 +464,9 @@ uninstall-am: uninstall-info-am
 
 @HAVE_AMESOS_SUPERLU_TRUE@TestSuperluSerial$(EXEEXT): $(srcdir)/TestSuperluSerial
 @HAVE_AMESOS_SUPERLU_TRUE@	cp $(srcdir)/TestSuperluSerial TestSuperluSerial$(EXEEXT) 
+
+@HAVE_VALGRIND_TRUE@TestMemoryLeaks$(EXEEXT): $(srcdir)/TestMemoryLeaks
+@HAVE_VALGRIND_TRUE@	cp $(srcdir)/TestMemoryLeaks TestMemoryLeaks$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

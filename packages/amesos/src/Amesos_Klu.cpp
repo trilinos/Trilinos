@@ -333,6 +333,8 @@ int Amesos_Klu::PerformSymbolicFactorization() {
   Time_->ResetStartTime();  
 
   if ( iam == 0 ) { 
+    if ( PrivateKluData_->Symbolic_ ) klu_btf_free_symbolic (&(PrivateKluData_->Symbolic_)) ;
+
     PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
     if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }

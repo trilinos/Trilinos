@@ -164,6 +164,15 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if want to build valgrind */
+#undef HAVE_VALGRIND
+
+/* Define to 1 if you have the <valgrind.h> header file. */
+#undef HAVE_VALGRIND_H
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#undef HAVE_VALGRIND_VALGRIND_H
+
 /* Define to 1 if you have the <vector> header file. */
 #undef HAVE_VECTOR
 

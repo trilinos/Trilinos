@@ -218,6 +218,8 @@ if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" !=
     AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Amesos requires at least one or the other.]])
 fi  
 
+AC_CHECK_HEADERS([valgrind.h valgrind/valgrind.h],,,)
+
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
@@ -259,6 +261,9 @@ AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
+AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories 

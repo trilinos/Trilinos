@@ -49,7 +49,13 @@ else
 SUPERLU_TEST = 
 endif
 
-noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST) $(SUPERLU_TEST)
+if HAVE_VALGRIND
+VALGRIND_TEST = TestMemoryLeaks
+else
+VALGRIND_TEST = 
+endif
+
+noinst_PROGRAMS = $(UMFPACK_TEST) $(KLU_TEST) $(SUPERLU_TEST) $(VALGRIND_TEST)
 
 
 if HAVE_AMESOS_UMFPACK
@@ -71,6 +77,14 @@ TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
 
 TestSuperluSerial$(EXEEXT): $(srcdir)/TestSuperluSerial
 	cp $(srcdir)/TestSuperluSerial TestSuperluSerial$(EXEEXT) 
+endif
+
+
+if HAVE_VALGRIND
+TestMemoryLeaks_SOURCES = $(srcdir)/TestMemoryLeaks
+
+TestMemoryLeaks$(EXEEXT): $(srcdir)/TestMemoryLeaks
+	cp $(srcdir)/TestMemoryLeaks TestMemoryLeaks$(EXEEXT) 
 endif
 
 
