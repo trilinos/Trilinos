@@ -1624,7 +1624,7 @@ int element, neighbor, count, j, k, j2, k2, found_prev, vert1, vert2, v;
  * new in/out between them if you find one.
  */
 
-                           for (vert1==0; vert1<j2 && !success; vert1++) {
+                           for (vert1=0; vert1<j2 && !success; vert1++) {
                               v = shared_vert[element][j2][k2][vert1];
                               if (v != in[element] && v != out[element] &&
                                   v != in[prev[element]]) {
@@ -1649,10 +1649,10 @@ int element, neighbor, count, j, k, j2, k2, found_prev, vert1, vert2, v;
  * in[prev[element]], and make that the in/out if found
  */
 
-                           for (vert1==0; vert1<j && !success; vert1++) {
+                           for (vert1=0; vert1<j && !success; vert1++) {
                               v = shared_vert[element][j][k][vert1];
                               if (v != out[element] && v != in[prev[element]]) {
-                                 for (vert2==0; vert2<j2 && !success; vert2++) {
+                                 for (vert2=0; vert2<j2 && !success; vert2++) {
                                     if (shared_vert[element][j2][k2][vert2] == v) {
                                        in[element] = v;
                                        out[prev[element]] = v;

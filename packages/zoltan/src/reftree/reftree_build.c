@@ -718,8 +718,8 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    processor, and if so set assigned and local id */
 
   full_lid = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
-  full_assigned = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
-  full_known = ZOLTAN_MALLOC_GID_ARRAY(zz, total_num_obj);
+  full_assigned = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
+  full_known = (int *) ZOLTAN_MALLOC(total_num_obj*sizeof(int));
   if (full_lid == NULL || full_assigned == NULL || full_known == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_FREE(&local_gids);
