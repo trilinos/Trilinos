@@ -1,3 +1,4 @@
+
 // File BlockArnoldi.hpp
 #ifndef BLOCK_ARNOLDI_HPP
 #define BLOCK_ARNOLDI_HPP
@@ -98,13 +99,14 @@ public:
 	//@}
 private:
 	void QRFactorization( AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>& );
+	void SortSchurForm( AnasaziDenseMatrix<TYPE>& H, AnasaziDenseMatrix<TYPE>& Q );
 	void BlockReduction();
 	void BlkOrth( const int j );
 	void BlkOrthSing( const int j );
 	void ComputeResiduals( const bool );
 	void ComputeEvecs();
 	void Restart();
-	void Sort( const bool );
+	void Sort();
 	void SetInitBlock();
 	void SetBlkTols();
 	void CheckBlkArnRed( const int );
@@ -151,7 +153,7 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziEigenproblem<TYPE> & problem,
 	AnasaziMultiVec<TYPE>* ivec = _problem.GetInitVec();
 	assert(ivec!=NULL);
 
-	assert(_length>=0); assert(_block>=0);
+	assert(_length>0); assert(_block>0); assert(_step>0);
 	//
 	// Make room for the Arnoldi vectors and F.
 	//
@@ -161,36 +163,30 @@ BlockArnoldi<TYPE>::BlockArnoldi(AnasaziEigenproblem<TYPE> & problem,
 	//
 	_evecr = ivec->Clone(_nev); assert(_evecr!=NULL);
 	_eveci = ivec->Clone(_nev); assert(_eveci!=NULL);
-	if (_length*_block && _basisvecs && _evecr && _eveci) {
-		//
-		// Create the rectangular Hessenberg matrix
-		//
-		_hessmatrix = new AnasaziDenseMatrix<TYPE>((_length+1)*_block, _length*_block); 
-		assert(_hessmatrix!=NULL);
-		//
-		// Create the vectors for eigenvalues and their residual errors and
-		// initialize them.
-		//
-		_evalr = new TYPE[ _block*_length ]; assert(_evalr!=NULL);  
-		_evali = new TYPE[ _block*_length ]; assert(_evali!=NULL);  
-		_ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals!=NULL);
-		_actualresiduals = new TYPE[ _block*_length ]; assert(_actualresiduals!=NULL);
-		_order = new int[ _block*_length ]; assert(_order!=NULL);
-		const TYPE one = 1.0, zero = 0.0;
-		for (int i=0; i< _block*_length; i++) {
-			_evalr[i] = zero; _evali[i] = zero;
-			_ritzresiduals[i] = one;
-			_actualresiduals[i] = one;
-		}			
-		//
-		//  Set the tolerances for block orthogonality
-		//
-		SetBlkTols();  
-	}
-	else {
-		cout << "BlockArnoldi:ctor " << _length << _block << _basisvecs << endl;
-		exit(-1);
-	}
+	//
+	// Create the rectangular Hessenberg matrix
+	//
+	_hessmatrix = new AnasaziDenseMatrix<TYPE>((_length+1)*_block, _length*_block); 
+	assert(_hessmatrix!=NULL);
+	//
+	// Create the vectors for eigenvalues and their residual errors and
+	// initialize them.
+	//
+	_evalr = new TYPE[ _block*_length ]; assert(_evalr!=NULL);  
+	_evali = new TYPE[ _block*_length ]; assert(_evali!=NULL);  
+	_ritzresiduals = new TYPE[ _block*_length ]; assert(_ritzresiduals!=NULL);
+	_actualresiduals = new TYPE[ _block*_length ]; assert(_actualresiduals!=NULL);
+	_order = new int[ _block*_length ]; assert(_order!=NULL);
+	const TYPE one = 1.0, zero = 0.0;
+	for (int i=0; i< _block*_length; i++) {
+		_evalr[i] = zero; _evali[i] = zero;
+		_ritzresiduals[i] = one;
+		_actualresiduals[i] = one;
+	}			
+	//
+	//  Set the tolerances for block orthogonality
+	//
+	SetBlkTols();  
 }
 
 template <class TYPE>
@@ -270,6 +266,7 @@ TYPE * BlockArnoldi<TYPE>::getEvals() {
 template <class TYPE>
 TYPE * BlockArnoldi<TYPE>::getEvals( int& num ) {
 	int i;
+
 	// Correct the value of num if it's greater than the number of eigenvalue
 	// approximations available.  If there was a restart recently, then there
 	// may be more eigenvalue approximations than _jstart would lead you to
@@ -506,6 +503,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 	// a restart or hit the number of maximum iterations (restarts).  
 	//
 	while(tempsteps > 0 && _restartiter <= _restarts && !exit_flg) {
+	        _isevecscurrent = false;
 		// If we don't need to restart, just get it over with and return.
 		if (_jstart+tempsteps < _length) {
 			_jend = _jstart+tempsteps;
@@ -1129,9 +1127,18 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int i=0,j=0;
 	int m = _jstart*_block, n=_jstart*_block, info=0;
 	int mm1 = (_jstart-1)*_block;
+	int _nevtemp, _nevtemp2;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
 	AnasaziDenseMatrix<TYPE>* Hj;	
+	AnasaziDenseMatrix<TYPE> Q(n,n);
+	AnasaziLAPACK lapack;
+	AnasaziBLAS blas;
+	if (_jstart < _nevblock) {
+	  _nevtemp = n; _nevtemp2 = n;
+	} else {
+	  _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
+	}
 	//
 	// If we are going to restart then we can overwrite the 
 	// hessenberg matrix with the Schur factorization, else we
@@ -1146,96 +1153,10 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		Hj = new AnasaziDenseMatrix<TYPE>(Hj_temp);
 	}
 	//
-	//---------------------------------------------------
-	// Compute the current eigenvalue estimates
-	// ---> Use driver GEES to first reduce to upper Hessenberg 
-	// 	form and then compute Schur form, outputting eigenvalues
-	//---------------------------------------------------
+	// Compute the Schur decomposition for the current block upper hessenber
+	// matrix, and resort the Schur form.  The Schur vectors will be in Q on return.
 	//
-	AnasaziDenseMatrix<TYPE> Q(n,n);
-	int sdim = 0; 
-	int lwork = 4*n;
-	int ldhj = Hj->getld();
-	int ldq = Q.getld();
-	int *select = new int[ n ];
-	int *bwork = new int[ n ];
-	char * jobvs = "V";
-	char * sort = "N";
-	TYPE *ptr_hj = Hj->getarray();
-	TYPE *ptr_q = Q.getarray();
-	TYPE *work = new TYPE[lwork]; assert(work!=NULL);
-	AnasaziLAPACK lapack;
-	lapack.GEES( *jobvs, *sort, select, n, ptr_hj, ldhj, sdim,_evalr,
-			_evali, ptr_q, ldq, work, lwork, bwork, &info );
-	assert(info==0);
-	//
-	// Sort the eigenvalues, this also sorts the _order vector so we know
-	// which ones we want. 
-	//
-	//cout<<"Before sorting (Hj):"<<endl;
-	//Hj->print();
-
-	Sort( true );
-	//
-	// Reorder real Schur factorization, remember to add one to the indices for the
-	// fortran call and determine offset.  The offset is necessary since the TREXC
-	// method reorders in a nonsymmetric fashion, thus we use the reordering in
-	// a stack-like fashion.  Also take into account conjugate pairs, which may mess
-	// up the reordering, since the pair is moved if one of the pair is moved.
-	//
-	AnasaziBLAS blas;
-
-	int _nevtemp, _nevtemp2, _nevtemp3, _nevtemp4;
-	int extprs, numimag=0;
-	if (_jstart < _nevblock) {
-                _nevtemp = n; _nevtemp2 = n; _nevtemp4 = n;
-        } else {
-                _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
-                        
-                // Count the number of eigenvalues with imaginary parts.
-                for (i=0; i<_nevtemp; i++) { if (_evali[i]!=zero) { numimag++; }; }
-                        
-                // Use this information to determine how many pairs we have (conjprs)
-                // and if there is a pair off the end of the _nev eigenvalues (extprs).
-                extprs = numimag % 2;
-                        
-                // So how many eigenvalues do we need to pay attention to, including all     
-                // the conjugate pairs?
-                _nevtemp4 = _nevtemp + extprs;
-        }
-	
-	char * compq = "V";
-	TYPE tempimagprt = 0;
-	int tempimagindx = 0;
-	int *offset = new int[ _nevtemp4 ]; assert(offset!=NULL);
-	int *_order2 = new int[ _nevtemp4 ]; assert(_order2!=NULL);
-	i = 0; _nevtemp3 = 0;
-	while (i < _nevtemp4) {
-		if (_evali[i] != zero) {
-			offset[_nevtemp3] = 0;
-			for (j=i; j<_nevtemp4; j++) {
-				if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
-			}
-			_order2[_nevtemp3] = _order[i];
-			i = i+2;
-		} else {
-			offset[_nevtemp3] = 0;
-			for (j=i; j<_nevtemp4; j++) {
-				if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
-			}
-			_order2[_nevtemp3] = _order[i];
-			i = i++;
-		}
-		_nevtemp3++;
-	}
-	for (i=_nevtemp3-1; i>=0; i--) {
-		lapack.TREXC( *compq, n, ptr_hj, ldhj, ptr_q, ldq, _order2[i]+1+offset[i], 
-				1, work, &info );
-		assert(info==0);
-	//	cout<<"Moving "<<_order2[i]+offset[i]<<" to "<<1<<endl;
-	}
-	//cout<<"After sorting and reordering (Hj):"<<endl;
-	//Hj->print();
+	SortSchurForm( *Hj, Q );
 	//
 	// Check the residual error for the Krylov-Schur decomposition.
 	// The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
@@ -1311,208 +1232,310 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 		delete basistemp, basistemp2;
 		delete [] index;
 	}			
-	delete [] work; 
-	delete [] bwork, select;
-	delete [] offset;
 }
 
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::ComputeEvecs() {
-	int i=0,j=0;
+	int i=0,j=0,k=0;
 	int n=_jstart*_block, info=0;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
+	AnasaziLAPACK lapack;
+	AnasaziBLAS blas;
+	AnasaziMultiVec<TYPE>* basistemp;
+	AnasaziDenseMatrix<TYPE> Q(n,n);
+	int * index = new int [ n ]; assert(index!=NULL);
+	//  Set the index array.
+	for (k=0; k<n; k++) { index[k] = k; }
+	//
+	//  Get a view into the current Hessenberg matrix.
+	//
+	AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, n, n);
+	AnasaziDenseMatrix<TYPE> Hj(Hj_temp);
+	int ldhj = Hj.getld();
+	TYPE *ptr_hj = Hj.getarray();
 	//
 	//  If the Krylov-Schur decomposition is not current, compute residuals
 	//  like we are going to restart to update decomposition.
 	//
-	if (!_isdecompcurrent) { ComputeResiduals(true); }
-	//
-	//  Now the pointer has been set for a restart, so we need to change the
-	//  size of the matrix just in case there is a complex conjugate pair at 
-	//  the end of the desired eigenvalues.
-	//
-	if ( n==_nev && _restartiter > 0 ) { n++; };
-	//
-	//------------------------------------------------------------------------
-	//  Now the eigenvalues and Krylov-Schur decomposition are current.
-	//		A*V = V*T + F*B^T
-	//  ----->  Compute the eigenvectors of T which were already sorted by
-	//		ComputeResiduals.
-	//------------------------------------------------------------------------
-	//
-	//  Create view into Schur matrix, then copy it so it doesn't get overwritten.
-	//
-	AnasaziDenseMatrix<TYPE> Hj_temp(*_hessmatrix, i, j, n, n);
-	AnasaziDenseMatrix<TYPE> Hj(Hj_temp);
-        //
-	//  Now compute the eigenvectors of the Schur form
-	//
-        AnasaziDenseMatrix<TYPE> Q(n,n);
-	char * side = "R";
-	char * howmny = "A";
-        int *select = new int[ n ];
-        int lwork = 4*n;
-        int ldhj = Hj.getld();
-        int ldq = Q.getld();
-        TYPE *ptr_hj = Hj.getarray();
-        TYPE *ptr_q = Q.getarray();   
-        TYPE *work = new TYPE[lwork]; assert(work!=NULL); 
-        AnasaziLAPACK lapack;
-	int mm, ldvl = 1;
-	TYPE *vl = new TYPE[ ldvl ];
-	lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
-			ptr_q, ldq, n, &mm, work, &info );
-	assert(info==0);
-	//
-	//  Convert back to approximate eigenvectors of the operator.
-	//
-	int * index = new int [ n ];
-	for (i=0; i<n; i++) {
-		index[i] = i;
+	if (!_isdecompcurrent) { 
+	  //
+	  // Update the Krylov basis using the Schur form.  
+	  // Take into account that deflated blocks need not be updated.
+	  //	
+	  SortSchurForm( Hj, Q );
+	  basistemp = _basisvecs->Clone( n );
+	  AnasaziMultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
+	  basistemp->MvTimesMatAddMv ( one, *basistemp2, Q, zero );
+	} else {
+	  //
+	  // We can aquire the Ritz vectors from the current decomposition.
+	  //
+	  basistemp = _basisvecs->CloneCopy( index, n );
 	}
-	AnasaziMultiVec<TYPE>* evecstemp = _basisvecs->Clone( n );
-	AnasaziMultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, n );
-	evecstemp->MvTimesMatAddMv( one, *basistemp, Q, zero );
 	//
-	// Sort the eigenvectors, if symmetric problem don't worry about complex
-	// eigenvectors.
-	//
-	// Initialize imaginary part of eigenvector to zero, so we won't have to deal
-	// with tracking it when complex eigenvalues are present.
-	_eveci->MvInit(zero);
-	//
-	// Get the B-norms of each eigenvector for normalization purposes.
-	//
-	TYPE * normevec = new double[ n ];
-	AnasaziDenseMatrix<TYPE> normmat(n,n);
-        _problem.BInProd( one, *evecstemp, *evecstemp, normmat );
-	TYPE *ptr_normmat = normmat.getarray();
-	for (i=0; i<n; i++) {
-		normevec[i] = sqrt( ptr_normmat[i*n+i] );
-	}
-	AnasaziMultiVec<TYPE> *tempvec1, *tempvec2;
+	//  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
+	//  So, copy the Ritz vectors.  Else, we need to compute the eigenvectors of the
+	//  Schur form to compute the eigenvectors of the non-symmetric operator.
 	//
 	if (_issym) {
-		_evecr->SetBlock( *evecstemp, index, _nev );
-		//
-		// Scale eigenvectors.
-		//
-		for (i=0; i<_nev; i++) {
-			// Real part of eigenvector.
-			tempvec1 = _evecr->CloneView( index+i, 1 );
-			tempvec2 = _evecr->CloneCopy( index+i, 1 );
-			tempvec1->MvAddMv( one/normevec[i], *tempvec2, zero, *tempvec2 );
-		}
+	  _evecr->SetBlock( *basistemp, index, _nev );
 	} else {  
-		int conjprs=0;
-		TYPE * scalfac = new double [ _nev+1 ];
-		int * indexr = new int [ _nev+1 ];
-		int * indexi = new int [ _nev+1 ];
-		i = 0;
-		while ( i<_nev ) {	
-			if (_evali[i] != zero) {
-				// Note where real part of eigenvector is.
-				indexr[i] = i;
-				indexr[i+1] = i;	
+	  //
+	  //  Now compute the eigenvectors of the Schur form
+	  //  Reset the dense matrix and compute the eigenvalues of the Schur form.
+	  //
+	  Q.init();
+	  int ldq = Q.getld();
+	  TYPE *ptr_q = Q.getarray();
+	  int lwork = 4*n;
+	  TYPE *work = new TYPE[lwork]; assert(work!=NULL);
+	  int *select = new int[ n ];	  
+	  char * side = "R";
+	  char * howmny = "A";
+	  int mm, ldvl = 1;
+	  TYPE *vl = new TYPE[ ldvl ];
+	  lapack.TREVC( *side, *howmny, select, n, ptr_hj, ldhj, vl, ldvl,
+			ptr_q, ldq, n, &mm, work, &info );
+	  assert(info==0);
+	  //
+	  //  The computed eigenvectors are normalized by the infinity norm.
+	  //  Change to euclidean norm.
+	  //
+	  TYPE enormscale;
+	  for (j=0; j<n; j++) {
+	    enormscale = blas.NRM2(n, ptr_q+(j*ldq));
+	    blas.SCAL(n, one/enormscale, ptr_q+(j*ldq));
+	  }
+	  //
+	  //  Convert back to approximate eigenvectors of the operator.
+	  //
+	  AnasaziMultiVec<TYPE>* evecstemp = _basisvecs->Clone( n );
+	  evecstemp->MvTimesMatAddMv( one, *basistemp, Q, zero );
+	  //
+	  // Sort the eigenvectors.
+	  //
+	  // Initialize imaginary part of eigenvector to zero, so we won't have to deal
+	  // with tracking it when complex eigenvalues are present.
+	  _eveci->MvInit(zero);
 
-				// Note where imaginary part of eigenvector is.
-				indexi[conjprs] = i+1;
-
-				// Compute the scaling factor
-				scalfac[i] = lapack.LAPY2(normevec[i],normevec[i+1]);
-				scalfac[i+1] = scalfac[i];
-
-				// Increment counters.
-				conjprs++;
-				i = i+2; 				
-			} else {
-				// Note where real part of eigenvector is.
-				// We don't have to do anything for the imaginary
-				// part since we initialized the vectors to zero.
-				indexr[i] = i;
-				scalfac[i] = normevec[i];
-				i++;			
-			}
-		}
-		// Set the real part of the eigenvectors.
-		AnasaziMultiVec<TYPE>* evecstemp2 = evecstemp->CloneView( indexr, _nev );
-		_evecr->SetBlock( *evecstemp2, index, _nev );
-		delete evecstemp2;
-
-		// Set the imaginary part of the eigenvectors if conjugate pairs exist.
-		// If the last eigenvector has a split conjugate pair, don't set negative imaginary
-		// part.
-		if (conjprs) {	
-			AnasaziMultiVec<TYPE>  *evecstempi, *eveci1;
-			//
-			// There's a problem when the last eigenvalues is the first of
-			// a conjugate pair.
-			//
-			if (indexi[conjprs-1]==_nev) {
-                            // Set conjugate part of imaginary eigenvectors first.
-                            for (i=0; i<conjprs-1; i++) {
-				evecstempi = evecstemp->CloneView( indexi+i, 1 );
-				eveci1 = _eveci->CloneView( indexi+i, 1 );
-				eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
-				    *evecstempi, zero, *evecstempi );
-
-				// Change index and set non-conjugate part of imaginary eigenvalue
-				indexi[i]--;
-				eveci1 = _eveci->CloneView( indexi+i, 1 );
-				eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
-				    *evecstempi, zero, *evecstempi );			
-			    }
-
-			    // Set imaginary part of last eigenvector now.
-                            indexi[0] = indexi[conjprs-1]-1;
-                            evecstempi = evecstemp->CloneView( indexi+(conjprs-1), 1 );
-                            eveci1 = _eveci->CloneView( indexi, 1 );
-                            eveci1->MvAddMv( abs(_evali[indexi[0]])/_evali[indexi[0]],
-                                                *evecstempi, zero, *evecstempi );
-			    
-			} else {
-                            for (i=0; i<conjprs; i++) {
-                                evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
-                                eveci1 = _eveci->CloneView( indexi+i, 1 );
-                                eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
-                                                *evecstempi, zero, *evecstempi );
-                                // Change index and set non-conjugate part of imag eigenvector.
-                                indexi[i]--;
-                                eveci1 = _eveci->CloneView( indexi+i, 1 );
-                                eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]],
-                                                *evecstempi, zero, *evecstempi );
-                            }
-			    
-			}				    
-	
-			// Clean up.
-			delete evecstempi, eveci1;
-		}
-		//
-		// Now scale the eigenvectors.
-		//
-		for (i=0; i<_nev; i++) {
-			// Real part of eigenvector.
-			tempvec1 = _evecr->CloneView( index+i, 1 );
-			tempvec2 = _evecr->CloneCopy( index+i, 1 );
-			tempvec1->MvAddMv( one/scalfac[i], *tempvec2, zero, *tempvec2 );
-
-			// Imaginary part of eigenvector.
-			tempvec1 = _eveci->CloneView( index+i, 1 );
-			tempvec2 = _eveci->CloneCopy( index+i, 1 );
-			tempvec1->MvAddMv( one/scalfac[i], *tempvec2, zero, *tempvec2 );
-		}
-		// Clean up.
-		delete [] indexr;
-		delete [] indexi;
-		delete [] scalfac;
+	  int conjprs=0;
+	  int * indexi = new int [ _nev+1 ];
+	  AnasaziMultiVec<TYPE> *evecstempr, *evecr1;
+	  i = 0;
+	  while ( i<_nev ) {	
+	    if (_evali[i] != zero) {
+	      // Copy the real part of the eigenvector.  Scale by 0.5 to normalize the vector.
+	      evecstempr = evecstemp->CloneView( index+i, 1 );
+	      evecr1 = _evecr->CloneView( index+i, 1 );
+	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
+	      evecr1 = _evecr->CloneView( index+i+1, 1 );
+	      evecr1->MvAddMv( one/(2*one), *evecstempr, zero, *evecstempr );
+	      
+	      // Note where imaginary part of eigenvector is.
+	      indexi[conjprs] = i+1;
+	      
+	      // Increment counters.
+	      conjprs++;
+	      i = i+2; 				
+	    } else {
+	      // Copy the real part of the eigenvector, no scaling needed.
+	      // We don't have to do anything for the imaginary
+	      // part since we initialized the vectors to zero.
+	      evecstempr = evecstemp->CloneView( index+i, 1 );
+	      _evecr->SetBlock( *evecstempr, index+i, 1 );
+	      i++;			
+	    }
+	  }
+	  // Set the imaginary part of the eigenvectors if conjugate pairs exist.
+	  // If the last eigenvector has a split conjugate pair, don't set negative imaginary
+	  // part.
+	  if (conjprs) {	
+	    AnasaziMultiVec<TYPE>  *evecstempi, *eveci1;
+	    //
+	    // There's a problem when the last eigenvalues is the first of
+	    // a conjugate pair.
+	    //
+	    if (indexi[conjprs-1]==_nev) {
+	      // Set conjugate part of imaginary eigenvectors first.
+	      for (i=0; i<conjprs-1; i++) {
+		evecstempi = evecstemp->CloneView( indexi+i, 1 );
+		eveci1 = _eveci->CloneView( indexi+i, 1 );
+		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+				 *evecstempi, zero, *evecstempi );
+		
+      		// Change index and set non-conjugate part of imaginary eigenvalue
+		indexi[i]--;
+		eveci1 = _eveci->CloneView( indexi+i, 1 );
+		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+				 *evecstempi, zero, *evecstempi );			
+	      }
+	      
+	      // Set imaginary part of last eigenvector now.
+	      indexi[0] = indexi[conjprs-1]-1;
+	      evecstempi = evecstemp->CloneView( indexi+(conjprs-1), 1 );
+	      eveci1 = _eveci->CloneView( indexi, 1 );
+	      eveci1->MvAddMv( abs(_evali[indexi[0]])/_evali[indexi[0]]/(2*one),
+			       *evecstempi, zero, *evecstempi );
+	      
+	    } else {
+	      for (i=0; i<conjprs; i++) {
+		evecstempi = evecstemp->CloneView( indexi+i, 1 ); 
+		eveci1 = _eveci->CloneView( indexi+i, 1 );
+		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+				 *evecstempi, zero, *evecstempi );
+		// Change index and set non-conjugate part of imag eigenvector.
+		indexi[i]--;
+		eveci1 = _eveci->CloneView( indexi+i, 1 );
+		eveci1->MvAddMv( abs(_evali[indexi[i]])/_evali[indexi[i]]/(2*one),
+				 *evecstempi, zero, *evecstempi );
+	      }	      
+	    }				    
+	    // Clean up.
+	    delete evecstempi, eveci1;
+	  }
+	  // Clean up.
+	  delete evecstemp, evecstempr, evecr1;
+	  delete [] indexi;
 	}
 
 	_isevecscurrent = true;
 	delete [] index;
-	delete evecstemp, basistemp, tempvec1, tempvec2;
+	delete basistemp;
+}
+
+template<class TYPE>
+void BlockArnoldi<TYPE>::SortSchurForm( AnasaziDenseMatrix<TYPE>& H, AnasaziDenseMatrix<TYPE>& Q ) {
+        const TYPE one = 1.0;
+        const TYPE zero = 0.0;
+        AnasaziLAPACK lapack; 
+	int i, j, info=0;
+        int n = H.getrows(), ldh = H.getld();
+	TYPE *ptr_h = H.getarray();
+	//
+	//  If the operator is symmetric, analyze the block tridiagonal matrix
+	//  and enforce symmetry.
+	//
+	if (_issym) {
+	  if (_restartiter > 0 && _restarts!=0) {
+	    //
+	    // The method has been restarted, so more caution must be used in
+	    // imposing symmetry.
+	    //
+	    for(j=_nevblock*_block; j<n; j++) {
+	      for(i=0; i<j; i++) {
+		ptr_h[j*ldh + i] = ptr_h[i*ldh + j];
+	      }
+	    }
+	  } else {
+	    //
+	    // We haven't restarted, so just enforce symmetry throughout Hj.
+	    //
+	    for( j=0; j<n; j++ ) {
+	      for( i=0; i<j; i++ ) {
+		ptr_h[j*ldh + i] = ptr_h[i*ldh + j];
+	      }
+	    }
+	  }
+	}
+	//
+	//---------------------------------------------------
+	// Compute the current eigenvalue estimates
+	// ---> Use driver GEES to first reduce to upper Hessenberg 
+	// 	form and then compute Schur form, outputting eigenvalues
+	//---------------------------------------------------
+	//
+	int lwork = 4*n;
+	int ldq = Q.getld();
+	TYPE *ptr_q = Q.getarray();
+	TYPE *work = new TYPE[lwork]; assert(work!=NULL);
+	int *select = new int[ n ];
+	int sdim = 0; 
+	int *bwork = new int[ n ];
+	char * jobvs = "V";
+	char * sort = "N";
+	lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, sdim,_evalr,
+		     _evali, ptr_q, ldq, work, lwork, bwork, &info );
+	assert(info==0);
+	//
+	// Sort the eigenvalues, this also sorts the _order vector so we know
+	// which ones we want. 
+	//
+	//cout<<"Before sorting (Hj):"<<endl;
+	//Hj.print();	  
+	Sort();
+	//
+	// Reorder real Schur factorization, remember to add one to the indices for the
+	// fortran call and determine offset.  The offset is necessary since the TREXC
+	// method reorders in a nonsymmetric fashion, thus we use the reordering in
+	// a stack-like fashion.  Also take into account conjugate pairs, which may mess
+	// up the reordering, since the pair is moved if one of the pair is moved.
+	//
+	int _nevtemp, _nevtemp2, _nevtemp3, _nevtemp4;
+	int extprs, numimag=0;
+	if (_jstart < _nevblock) {
+	  _nevtemp = n; _nevtemp2 = n; _nevtemp4 = n;
+	} else {
+	  _nevtemp = _nevblock*_block; _nevtemp2 = _nev;
+	  
+	  // Count the number of eigenvalues with imaginary parts.
+	  for (i=0; i<_nevtemp; i++) { if (_evali[i]!=zero) { numimag++; }; }
+	  
+	  // Use this information to determine how many pairs we have (conjprs)
+	  // and if there is a pair off the end of the _nev eigenvalues (extprs).
+	  extprs = numimag % 2;
+	  
+	  // So how many eigenvalues do we need to pay attention to, including all     
+	  // the conjugate pairs?
+	  _nevtemp4 = _nevtemp + extprs;
+	}
+	
+	char * compq = "V";
+	TYPE tempimagprt = zero;
+	int tempimagindx = 0;
+	int *offset = new int[ _nevtemp4 ]; assert(offset!=NULL);
+	int *_order2 = new int[ _nevtemp4 ]; assert(_order2!=NULL);
+	i = 0; _nevtemp3 = 0;
+	while (i < _nevtemp4) {
+	  if (_evali[i] != zero) {
+	    offset[_nevtemp3] = 0;
+	    for (j=i; j<_nevtemp4; j++) {
+	      if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
+	    }
+	    _order2[_nevtemp3] = _order[i];
+	    i = i+2;
+	  } else {
+	    offset[_nevtemp3] = 0;
+	    for (j=i; j<_nevtemp4; j++) {
+	      if (_order[j] > _order[i]) { offset[_nevtemp3]++; }
+	    }
+	    _order2[_nevtemp3] = _order[i];
+	    i = i++;
+	  }
+	  _nevtemp3++;
+	}
+	for (i=_nevtemp3-1; i>=0; i--) {
+	  lapack.TREXC( *compq, n, ptr_h, ldh, ptr_q, ldq, _order2[i]+1+offset[i], 
+			1, work, &info );
+	  assert(info==0);
+	}
+	//cout<<"After sorting and reordering (Hj):"<<endl;
+	//Hj.print(); 
+	//
+	// Determine largest off diagonal element of Schur matrix for symmetric case.
+	//
+	TYPE _maxsymmelem = zero;
+	if (_issym) {
+	  for(j=0; j<n; j++){
+	    for(i=0; i<j; i++) {
+	      if(abs(ptr_h[j*ldh+i])>_maxsymmelem) { _maxsymmelem = ptr_h[j*ldh+i]; }
+	    }
+	  }
+	}
+	delete [] work; 
+	delete [] bwork, select;
+	delete [] offset;
 }
 
 template<class TYPE>
@@ -1579,107 +1602,7 @@ void BlockArnoldi<TYPE>::Restart() {
 }
 
 template<class TYPE>
-void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
-        int i,k,m=(j+1)*_block;
-        int *index = new int[m];
-	Anasazi_ReturnType ret;       
-         
-        for ( i=0; i<_block; i++ ) {
-                index[i] = m+i;
-        }
-        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
-        assert(F_vec!=NULL);
-                        
-        TYPE *ptr_norms = new TYPE[m];
-        TYPE sum=0.0;
-                        
-        F_vec->MvNorm(ptr_norms);
-        for ( i=0; i<_block; i++ ) {
-                sum += ptr_norms[i];
-        }
-                
-        for ( i=0; i<m; i++ ) {
-                index[i] = i;  
-        }
-        AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
-        assert(Vj!=NULL);   
-        cout << " " << endl;
-        cout << "********Block Arnoldi iteration******** " << j << endl;
-        cout << " " << endl;
-                        
-        const TYPE one=1.0;
-        const TYPE zero=0.0;
-        AnasaziDenseMatrix<TYPE> VTV(m,m);
-	ret = _problem.BInProd( one, *Vj, *Vj, VTV );
-	if (ret != Ok) { }
-        TYPE* ptr=VTV.getarray();
-        TYPE column_sum;
-        
-	//cout<<"VTV : "<<endl;
-	//VTV.print();
-        for (k=0; k<m; k++) {
-                column_sum=zero;
-                for (i=0; i<m; i++) {
-                        if (i==k) {
-                                ptr[i] -= one;
-                        }
-                        column_sum += ptr[i];
-                }
-                cout <<  " V^T*B*V-I " << "for column " << k << " is " << fabs(column_sum) << endl;
-                ptr += m;
-        }
-        cout << " " << endl;
-        
-        AnasaziDenseMatrix<TYPE> E(m,_block);
-        
-	ret = _problem.BInProd( one, *Vj, *F_vec, E );
-	if (ret != Ok) { }
-        TYPE* ptr_Ej=E.getarray();
-                        
-	//cout<<"VTF : "<<endl;
-	//E.print();
-        for (k=0;k<_block;k++) {
-                column_sum=zero;
-                for (i=0; i<m; i++) {
-                        column_sum += ptr_Ej[i];
-                }
-                ptr_Ej += m;
-                if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-                cout << " B-Orthogonality with F " << "for column " << k << " is " << fabs(column_sum) << endl;
-}
-        cout << " " << endl;
-                 
-        AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
-        ret = _problem.ApplyOp(*Vj,*AVj);
-        int row_offset=0;
-        int col_offset=0;
-        AnasaziDenseMatrix<TYPE> Hj(*_hessmatrix, row_offset, col_offset, m, m);
-        AVj->MvTimesMatAddMv(-one, *Vj, Hj, one);
-        for ( i=0; i<_block; i++ ) {  
-                index[i] = j*_block+i;
-        }
-
-        AnasaziMultiVec<TYPE>* Fj = AVj->CloneView(index, _block);
-        Fj->MvAddMv(-one, *F_vec, one, *Fj);
-	
-        AVj->MvNorm(ptr_norms);
-        
-        for ( i=0; i<m; i++ ) { 
-                cout << " Arnoldi relation " << "for column " << i << " is " << fabs(ptr_norms[i]) << endl;        
-	}
-        cout << " " << endl;
-                
-        delete F_vec;
-        delete Fj;
-        delete AVj;
-        delete Vj;
-        delete [] index;
-        delete [] ptr_norms;
-}
-
-
-template<class TYPE>
-void BlockArnoldi<TYPE>::Sort( const bool apply ) {
+void BlockArnoldi<TYPE>::Sort() {
 	int i, j, tempord;
 	const int n = _jstart*_block;
 	TYPE temp, tempr, tempi;
@@ -1700,8 +1623,8 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 			for (j=1; j < n; ++j) {
 				tempr = _evalr[j]; 
 				tempord = _order[j];
-				temp = abs(_evalr[j]);
-				for (i=j-1; i>=0 && abs(_evalr[i])>temp; --i) {
+				temp = _evalr[j]*_evalr[j];
+				for (i=j-1; i>=0 && (_evalr[i]*_evalr[i])>temp; --i) {
 					_evalr[i+1]=_evalr[i];
 					_order[i+1]=_order[i];
 				}
@@ -1770,8 +1693,8 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 			for (j=1; j < n; ++j) {
 				tempr = _evalr[j]; 
 				tempord = _order[j];
-				temp = abs(_evalr[j]);
-				for (i=j-1; i>=0 && abs(_evalr[i])<temp; --i) {
+				temp = _evalr[j]*_evalr[j];
+				for (i=j-1; i>=0 && (_evalr[i]*_evalr[i])<temp; --i) {
 					_evalr[i+1]=_evalr[i];
 					_order[i+1]=_order[i];
 				}
@@ -1832,6 +1755,101 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 			_evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
 		}
 	}
+}
+
+template<class TYPE>
+void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
+        int i,k,m=(j+1)*_block;
+        int *index = new int[m];
+	Anasazi_ReturnType ret;       
+         
+        for ( i=0; i<_block; i++ ) {
+                index[i] = m+i;
+        }
+        AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _block);
+        assert(F_vec!=NULL);
+                        
+        TYPE *ptr_norms = new TYPE[m];
+        TYPE sum=0.0;
+                        
+        F_vec->MvNorm(ptr_norms);
+        for ( i=0; i<_block; i++ ) {
+                sum += ptr_norms[i];
+        }
+                
+        for ( i=0; i<m; i++ ) {
+                index[i] = i;  
+        }
+        AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
+        assert(Vj!=NULL);   
+        cout << " " << endl;
+        cout << "********Block Arnoldi iteration******** " << j << endl;
+        cout << " " << endl;
+                        
+        const TYPE one=1.0;
+        const TYPE zero=0.0;
+        AnasaziDenseMatrix<TYPE> VTV(m,m);
+	ret = _problem.BInProd( one, *Vj, *Vj, VTV );
+	if (ret != Ok) { }
+        TYPE* ptr=VTV.getarray();
+        TYPE column_sum;
+        
+        for (k=0; k<m; k++) {
+                column_sum=zero;
+                for (i=0; i<m; i++) {
+                        if (i==k) {
+                                ptr[i] -= one;
+                        }
+                        column_sum += ptr[i];
+                }
+                cout <<  " V^T*B*V-I " << "for column " << k << " is " << fabs(column_sum) << endl;
+                ptr += m;
+        }
+        cout << " " << endl;
+        
+        AnasaziDenseMatrix<TYPE> E(m,_block);
+        
+	ret = _problem.BInProd( one, *Vj, *F_vec, E );
+	if (ret != Ok) { }
+        TYPE* ptr_Ej=E.getarray();
+                        
+        for (k=0;k<_block;k++) {
+                column_sum=zero;
+                for (i=0; i<m; i++) {
+                        column_sum += ptr_Ej[i];
+                }
+                ptr_Ej += m;
+                if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
+                cout << " B-Orthogonality with F " << "for column " << k << " is " << fabs(column_sum) << endl;
+	}
+        cout << " " << endl;
+                 
+        AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
+        ret = _problem.ApplyOp(*Vj,*AVj);
+        int row_offset=0;
+        int col_offset=0;
+        AnasaziDenseMatrix<TYPE> Hj(*_hessmatrix, row_offset, col_offset, m, m);
+        AVj->MvTimesMatAddMv(-one, *Vj, Hj, one);
+        for ( i=0; i<_block; i++ ) {  
+                index[i] = j*_block+i;
+        }
+
+        AnasaziMultiVec<TYPE>* Fj = AVj->CloneView(index, _block);
+        Fj->MvAddMv(-one, *F_vec, one, *Fj);
+	
+        AVj->MvNorm(ptr_norms);
+        
+        for ( i=0; i<m; i++ ) { 
+                cout << " Arnoldi relation " << "for column " << i << " is " << fabs(ptr_norms[i]) << endl;        
+	}
+        cout << " " << endl;
+                
+        delete F_vec;
+        delete Fj;
+        delete AVj;
+        delete Vj;
+        delete [] index;
+        delete [] ptr_norms;
 }
 
 } // End of namespace Anasazi
