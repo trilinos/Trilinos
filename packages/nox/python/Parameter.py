@@ -88,6 +88,7 @@ class Utils(_object):
     Details = _Parameter.Utils_Details
     OuterIterationStatusTest = _Parameter.Utils_OuterIterationStatusTest
     LinearSolverDetails = _Parameter.Utils_LinearSolverDetails
+    TestDetails = _Parameter.Utils_TestDetails
     def __init__(self, *args):
         _swig_setattr(self, Utils, 'this', _Parameter.new_Utils(*args))
         _swig_setattr(self, Utils, 'thisown', 1)

@@ -2973,5 +2973,8 @@ SWIGEXPORT(void) SWIG_init(void) {
     {
         PyDict_SetItemString(d,"Utils_LinearSolverDetails", SWIG_From_int((int)(Utils::LinearSolverDetails))); 
     }
+    {
+        PyDict_SetItemString(d,"Utils_TestDetails", SWIG_From_int((int)(Utils::TestDetails))); 
+    }
 }
 

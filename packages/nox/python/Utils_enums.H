@@ -13,7 +13,8 @@ public:
     Parameters               = NOX::Utils::Parameters,
     Details                  = NOX::Utils::Details,
     OuterIterationStatusTest = NOX::Utils::OuterIterationStatusTest,
-    LinearSolverDetails      = NOX::Utils::LinearSolverDetails
+    LinearSolverDetails      = NOX::Utils::LinearSolverDetails,
+    TestDetails		     = NOX::Utils::TestDetails
   };
 };
 
