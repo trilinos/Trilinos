@@ -29,6 +29,13 @@ extern int ML_Anasazi_Get_SpectralNorm_Anasazi(ML_Operator * Amat,
 					       double * LambdaMax );
 #endif
 
+/* Definitions for the GGB method */
+#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
+#define GGBcycFirst     /* #define GGBcycSecond */
+#define store_AQ        /* May not be defined if storage is an issue (but slower) */ 
+#define newrap          /* Should always be defined for better performance */
+#endif
+
 /* ************************************************************************* *
  * Structure to hold user-selected ML output level.                          *
  * ************************************************************************* */
@@ -2947,7 +2954,7 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
        
        ml_ggb = (ML *) ml->void_options;
        
-#define GGBcycFirst
+
        
 #ifdef GGBcycFirst
        double *sol;
@@ -3059,22 +3066,21 @@ extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
    
   /* Solve coarse grid problem */
   ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
- 
-    
+     
   /* Need to do it anyway */
   ML_Operator_Apply(Pmat, lengc, sol0, lengf, sol);
   
   
   
   /* Use this option if A*Q was stored in the process of computing rap in GGB build */
-  /* #define store_AQ */
+
+
 #ifdef store_AQ 
 
     
   /* Qtilde = Q'*A  qas stored in the coarse grid build */
   Qtilde = (ML_Operator *) ml_ggb->void_options; 
-  
-  
+
   /* Interpolate to fine mesh */ /* Here we should put Qtilde */
   ML_Operator_Apply(Qtilde, lengc, sol0, lengf, tmp1);
 
@@ -5888,6 +5894,7 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 
 #include "ml_amesos.h"
 
+
 int ML_build_ggb(ML *ml, void *data)
 {
   
@@ -5899,7 +5906,7 @@ int ML_build_ggb(ML *ml, void *data)
   int                    Nneighbors, nprocs, i;
   char str[80];
   double *zdata, *rap, *values;
-  int count, j;
+  int count, j, one=1;
   double *temp;
 #ifdef ML_TIMING
    double t0;
@@ -6014,16 +6021,15 @@ int ML_build_ggb(ML *ml, void *data)
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
  
 
-  /* #define newrap */
-#ifdef newrap
 
+  /* Dense RAP matrix-matrix product */
+
+#ifdef newrap
 
   zdata = (double *) ML_allocate( Ncols * Nrows*sizeof(double));
   temp  = (double *) ML_allocate( Nrows*sizeof(double));
   values = csr_data->values;
 
-
-#define store_AQ  
 
 #ifdef store_AQ  
   /* Define Qtilde = K*Q;  to be used later in the GGB cycle (GGB first) */
@@ -6044,8 +6050,7 @@ int ML_build_ggb(ML *ml, void *data)
    
 
 #ifdef store_AQ      
-    for (j = 0; j < Nrows; j++) Qtilde_data->values[j*Ncols+i] = zdata[i*Nrows+j];
-    
+    for (j = 0; j < Nrows; j++) Qtilde_data->values[j*Ncols+i] = zdata[i*Nrows+j];    
 #endif   
 }
 
@@ -6057,7 +6062,7 @@ int ML_build_ggb(ML *ml, void *data)
     
 
   /* Define Qtilde */
-  Qtilde = ML_Operator_Create(NULL);
+  Qtilde = ML_Operator_Create(Pmat->comm);
   ML_CommInfoOP_Clone(  &(Qtilde->getrow->pre_comm),  Pmat->getrow->pre_comm);
   
   
@@ -6077,22 +6082,25 @@ int ML_build_ggb(ML *ml, void *data)
 
   
   ml_ggb->void_options = (void *) Qtilde;
+
+
 #endif
-  /* 
- printf("before the dump\n"); fflush(stdout);
+
+  /*
+  printf("before the dump\n"); fflush(stdout);  
   ML_Operator_Print(Qtilde, "Qtilde_print");
-  while(1 == 1) ;
   ML_CommInfoOP_Print( (Qtilde->getrow->pre_comm),  "Qcomm");
   ML_Operator_Dump(Qtilde, NULL, NULL,"Qtilde", ML_TRUE);
-  printf("after the dump\n"); fflush(stdout);
+  printf("after the dump\n"); fflush(stdout);  
+  while(1 == 1) ; 
   */
-  
 
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
   rap = (double *) ML_allocate( Ncols * Ncols * sizeof(double));
   csr_data->columns =  (int *) ML_allocate(sizeof(int)*(Ncols*Ncols+1));
   csr_data->rowptr  =  (int *) ML_allocate(sizeof(int)*(Ncols+1));
-  
+ 
+
   count = 0;
   for (i = 0; i < Ncols; i++) {
     for (j = 0; j < Nrows; j++) temp[j] = values[j*Ncols+i];
@@ -6100,36 +6108,61 @@ int ML_build_ggb(ML *ml, void *data)
     for (j = 0; j < Ncols; j++) {
       csr_data->columns[count] = j;
       csr_data->rowptr[i] = Ncols*i;
-   
-      rap[count++] = ML_gdot(Nrows, temp,
-			     &(zdata[j*Nrows]), ml->comm);
+
+      /*
+	rap[count++] = ML_gdot(Nrows, temp,
+	&(zdata[j*Nrows]), ml->comm);
+      */
+	rap[count++] =  MLFORTRAN(ddot)(&Nrows, temp, &one, &(zdata[j*Nrows]), &one);
       
-    }
+    }    
+        
   }
-  /*  ML_gsum_vec_dbl(rap, Ncols*Ncols, ml->comm); */
 
+  /* Communicate the local dot products to get the sum */ 
+  double *workspace;
+  workspace = (double *) ML_allocate( Ncols*Ncols * sizeof(double));
+  ML_gsum_vec_double(&rap, &workspace, Ncols*Ncols, ml_ggb->comm); 
+  ML_free(workspace);
   
-
+  
+  /* Put the RAP matrix result in CSR format */
   csr_data->rowptr[Ncols] = Ncols*Ncols;
   csr_data->values  =  rap;
 
- if (ml_ggb->comm->ML_mypid == 0)
-   ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), Ncols, Ncols, ML_EMPTY, csr_data,
-				 Ncols, NULL, 0);
- else 
-  ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), 0, 0, ML_EMPTY, csr_data,
-				 0, NULL, 0);
- 
+  if (ml_ggb->comm->ML_mypid == 0)
+    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), Ncols, Ncols, ML_EMPTY, csr_data,
+				   Ncols, NULL, 0);
+  else 
+    ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), 0, 0, ML_EMPTY, csr_data,
+				   0, NULL, 0);
+  
   
   ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), ML_EXTERNAL, Ncols, CSR_getrows);
   ML_Operator_Set_ApplyFunc (&(ml_ggb->Amat[0]), ML_INTERNAL, CSR_densematvec); 
   ml_ggb->Amat[0].getrow->pre_comm = ML_CommInfoOP_Create();
-
   ml_ggb->Amat[0].data_destroy = ML_CSR_MSRdata_Destroy;
 
+
+  /* debug the rap */
+  /*
+    printf("before the dump\n"); fflush(stdout); 
+    ML_Operator_Print(&(ml_ggb->Amat[0]), "RAP_print");
+    ML_CommInfoOP_Print( ml_ggb->Amat[0].getrow->pre_comm,  "RAPcomm");
+    ML_Operator_Dump(&(ml_ggb->Amat[0]), NULL, NULL,"RAP", ML_TRUE);
+    printf("after the dump\n"); fflush(stdout);      
+  */
   
+  
+  /* Free work arrays */
   ML_free(zdata);
   ML_free(temp);
+
+
+#else
+  ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
+#endif
+
 
 
 #ifdef ML_TIMING
@@ -6138,22 +6171,18 @@ int ML_build_ggb(ML *ml, void *data)
 #endif
 
 
-#else
-  ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
-#endif
-
-  switch( ML_ggb_CoarseSolver ) {
-  case 1:
-    /* superlu, default solver */
-    ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
-    break;
-  case 2:
-    /* amesos, now default is KLU */
-    ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
-    break;
-  default:
-    printf("ERROR: coarse solver for GGB not correct\n");
-    exit( EXIT_FAILURE );
+   switch( ML_ggb_CoarseSolver ) {
+   case 1:
+     /* superlu, default solver */
+     ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+     break;
+   case 2:
+     /* amesos, now default is KLU */
+     ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
+     break;
+   default:
+     printf("ERROR: coarse solver for GGB not correct\n");
+     exit( EXIT_FAILURE );
   }
 
     
