@@ -129,7 +129,6 @@ int LB_rcb(
     PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
 	{ "RCB_REUSE", NULL, "INT" },
-	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
         { "KEEP_CUTS", NULL, "INT" },
@@ -137,25 +136,24 @@ int LB_rcb(
     
     RCB_params[0].ptr = (void *) &overalloc;
     RCB_params[1].ptr = (void *) &reuse;
-    RCB_params[2].ptr = (void *) &wgtflag;
-    RCB_params[3].ptr = (void *) &check;
-    RCB_params[4].ptr = (void *) &stats;
-    RCB_params[5].ptr = (void *) &gen_tree;
+    RCB_params[2].ptr = (void *) &check;
+    RCB_params[3].ptr = (void *) &stats;
+    RCB_params[4].ptr = (void *) &gen_tree;
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
-    wgtflag = 0;
     check = RCB_CHECK;
     stats = RCB_STATS;
     gen_tree = 0;
+    wgtflag = (lb->Obj_Weight_Dim > 0); /* Multidim. weights not accepted */
 
     LB_Assign_Param_Vals(lb->Params, RCB_params);
 
     *num_export = -1;  /* We don't compute the export map. */
 
     return(rcb(lb, num_import, import_global_ids, import_local_ids,
-		 import_procs, overalloc, reuse, wgtflag, check,
-		 stats, gen_tree));
+		 import_procs, overalloc, reuse, wgtflag,
+                 check, stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
