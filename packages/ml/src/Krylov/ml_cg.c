@@ -145,18 +145,18 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
 
 int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
 {
-   int         i, j, k, its, maxiter, ncnt, *colInd, allocated, print_freq;
-   int         *offset_array, myoffset, *itmp_array, nprocs, mypid, totallength;
+   int         i, j, k, its, maxiter, ncnt, *colInd = NULL, allocated, print_freq;
+   int         *offset_array = NULL, myoffset, *itmp_array = NULL, nprocs, mypid, totallength;
    int         ext_leng, total_length, original_maxiter, Nbc;
    int         level;
    double      alpha, beta, rho, rhom1, sigma, offdiag_norm;
    double      *r = NULL, *p = NULL, *ap = NULL, res_norm, *alpha_array = NULL, *colVal = NULL, *diag=NULL;
    double      *rhs=NULL, *rnorm_array = NULL, **Tmat = NULL, init_offdiag_norm;
-   double      app, aqq, arr, ass, apq, sign, tau, t, c, s, *u;
+   double      app, aqq, arr, ass, apq, sign, tau, t, c, s, *u = NULL;
    double      max_row_sum, min_row_sum, sum;
-   ML_Operator *matrix;
-   ML_Comm     *comm;
-   ML_CommInfoOP *getrow_comm;
+   ML_Operator *matrix = NULL;
+   ML_Comm     *comm = NULL;
+   ML_CommInfoOP *getrow_comm = NULL;
 
    /* ----------------------------------------------------------------*/
    /* get all parameters from parent object*/
