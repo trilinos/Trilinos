@@ -21,9 +21,9 @@ extern "C" {
 #include "phg.h"
 
 
-static ZOLTAN_PHG_MATCHING_FN matching_local;    /* dummy function for local matching */
-static ZOLTAN_PHG_MATCHING_FN matching_ipm;      /* inner product matching */
-static ZOLTAN_PHG_MATCHING_FN matching_col_ipm;  /* local ipm along proc columns*/
+static ZOLTAN_PHG_MATCHING_FN matching_local;   /* function for local matching */
+static ZOLTAN_PHG_MATCHING_FN matching_ipm;     /* inner product matching */
+static ZOLTAN_PHG_MATCHING_FN matching_col_ipm; /* local ipm along proc columns*/
 
 
 /*****************************************************************************/
@@ -31,7 +31,8 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
     int exist=1;
     
-    if (!strcasecmp(hgp->redm_str, "no"))        hgp->matching = NULL;
+    if (!strcasecmp(hgp->redm_str, "no"))
+        hgp->matching = NULL;
     else if (!strncasecmp(hgp->redm_str, "l-", 2))  {
         HGPartParams hp;
 
@@ -40,18 +41,18 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
         if (!Zoltan_HG_Set_Matching_Fn(&hp)) {
             exist = 0;
             hgp->matching = NULL;
-        } else {            
-            hgp->matching = matching_local; /* just to make sure that coarsening will
-                                            continue.
-                                            We'll not call this code for global matching.
-                                            Actually, we'll pick the best local, but
-                                            code structure doesn't allow us to use a
-                                            function */
+        } else {   
+            /* just to make sure that coarsening will continue. We'll not call
+             * this code for global matching. Actually, we'll pick the best 
+             * local, but code structure doesn't allow us to use a function */     
+            hgp->matching = matching_local; 
             hgp->locmatching = hp.matching;
             hgp->matching_opt = hp.matching_opt;
         }
-    } else if (!strcasecmp(hgp->redm_str, "c-ipm"))  hgp->matching = matching_col_ipm;    
-    else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
+    } else if (!strcasecmp(hgp->redm_str, "c-ipm"))
+        hgp->matching = matching_col_ipm;   
+    else if (!strcasecmp(hgp->redm_str, "ipm"))
+        hgp->matching = matching_ipm;
     else {
         exist = 0;
         hgp->matching = NULL;
@@ -124,7 +125,7 @@ End:
 
 static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 {
-    uprintf(hg->comm, " Something wrong! This function should not be called at all!\n");
+    uprintf(hg->comm, "Something wrong! This function should not be called!\n");
     /* UVC: NOTE:
        The reason that we're not doing local matchin in this function, we don't
        have access to parameter structure. So there is no way to figure
@@ -242,7 +243,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, *psums, *tsums, *order, pincnt;
+  int i, j, k, lno, loop, vertex, *psums, *tsums, *order, *c_order, pincnt;
   int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int ncandidates, nloop;
   int *select, pselect;
@@ -255,12 +256,12 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
   
-Zoltan_HG_Srand (123456);
-  
-  nloop = hg->dist_x[hgc->nProc_x] > 100 ? 15 : 2; /* temporary; will change! */
-  ncandidates = MAX (1, hg->nVtx / (2 * nloop)) ; /* match impacts 2 vertices */
-       
-  order = psums = tsums = select = cmatch = each_size = displs = NULL;
+  nloop = hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * 8);
+  ncandidates = hg->nVtx/nloop/2 + 1;
+        
+  c_order = order = psums = tsums = select = cmatch = each_size = displs = NULL;
+  buffer = rbuffer = NULL;
+  each_count = NULL;
   if (hg->nVtx > 0 && (
       !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
    || !(psums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
@@ -315,7 +316,8 @@ Zoltan_HG_Srand (123456);
      }
   pincnt = 3 * hg->nPins;   
   if (total_count > 0 &&  (
-      !(m_vindex = (int*) ZOLTAN_MALLOC ((total_count+1) * sizeof(int)))
+      !(c_order  = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
+   || !(m_vindex = (int*) ZOLTAN_MALLOC ((total_count+1) * sizeof(int)))
    || !(m_gno    = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
    || !(m_bestsum= (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
    || !(m_bestv  = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))))  {
@@ -426,8 +428,20 @@ Zoltan_HG_Srand (123456);
           
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);            
                
+     for (i = 0; i < total_count; i++)
+       c_order[i] = i;
+         
+     for (i = 0; i < total_count; i++)  {
+       lno = Zoltan_HG_Rand () % total_count;
+       /* swap current vertex with randomly selected vertex */
+       vertex       = c_order[lno];
+       c_order[lno] = c_order[i];
+       c_order[i]   = vertex;
+     }
+         
      /* for each match vertex, compute all local partial inner products */
-     for (vertex = 0; vertex < total_count; vertex++)  {
+     for (k = 0; k < total_count; k++)  {
+       vertex = c_order[k];
        for (i = 0; i < hg->nVtx; i++)
          tsums[i] = psums[i] = 0;
 
@@ -451,7 +465,7 @@ Zoltan_HG_Srand (123456);
            m_bestsum[vertex] = tsums[i];
            m_bestv  [vertex] = i;
          }    
-       cmatch [m_bestv[vertex]] = -1;      /* pending match */       
+       cmatch [m_bestv[vertex]] = -1;      /* mark pending match */       
      }
         
      /************************ PHASE 3: **************************************/
@@ -468,7 +482,7 @@ Zoltan_HG_Srand (123456);
      ip = (int*) buffer; 
      for (vertex = 0; vertex < total_count; vertex++)  {
        *ip++ = m_gno [vertex];
-       *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);
+       *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);     
        *ip++ = m_bestsum [vertex];
      }
       
@@ -546,8 +560,8 @@ Zoltan_HG_Srand (123456);
         
   Zoltan_Multifree (__FILE__, __LINE__, 7, &psums, &tsums, &select, &cmatch,
    &each_size, &each_count, &displs); 
-  Zoltan_Multifree (__FILE__, __LINE__, 7, &m_vindex, &m_vedge, &m_gno, &b_gno,
-   &m_bestsum, &m_bestv, &b_bestsum);     
+  Zoltan_Multifree (__FILE__, __LINE__, 9, &m_vindex, &m_vedge, &m_gno, &b_gno,
+   &m_bestsum, &m_bestv, &b_bestsum, &order, &c_order);     
   return ZOLTAN_OK;
 }
 
