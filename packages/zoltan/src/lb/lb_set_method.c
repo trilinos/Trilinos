@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
@@ -13,20 +13,18 @@
 
 #include "zz_const.h"
 #include "zz_util_const.h"
-#include "all_allo_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 /*
  *  This file contains routines to set the load-balancing method.
- *  This function is callable by the application.
  */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_LB_Set_Method(ZZ *zz, char *method_name)
+int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
 {
 /*
  *  Function to set the load balancing method to be used.
@@ -36,10 +34,10 @@ int Zoltan_LB_Set_Method(ZZ *zz, char *method_name)
  *    method_name        --  String specifying the desired method.
  *
  *  Output:
- *    lbf*               --  Appropriate fields set to designated values.
+ *    zz->LB.*           --  Appropriate fields set to designated values.
  */
 
-  char *yo = "Zoltan_LB_Set_Method";
+  char *yo = "Zoltan_LB_Set_LB_Method";
   char msg[256];
   char *method_upper;
   int error;

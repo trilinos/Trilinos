@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -11,6 +11,7 @@
  *    $Revision$
  ****************************************************************************/
 
+/*define NULL_IMPORT_LISTS_TO_HELP_MIGRATE*/
 /*--------------------------------------------------------------------------*/
 /* Purpose: Call Zoltan to migrate elements.                                */
 /*          Contains all of the callback functions that Zoltan needs        */
@@ -103,6 +104,7 @@ char *yo = "migrate_elements";
   /*
    * register migration functions
    */
+#ifndef NULL_IMPORT_LISTS_TO_HELP_MIGRATE
   if (Zoltan_Set_Fn(zz, ZOLTAN_PRE_MIGRATE_FN_TYPE, (void (*)()) migrate_pre_process,
                 (void *) mesh) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
@@ -114,6 +116,7 @@ char *yo = "migrate_elements";
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
     return 0;
   }
+#endif
 
   if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE, (void (*)()) migrate_elem_size,
                (void *) mesh) == ZOLTAN_FATAL) {
@@ -133,12 +136,33 @@ char *yo = "migrate_elements";
     return 0;
   }
 
+#ifndef NULL_IMPORT_LISTS_TO_HELP_MIGRATE
   if (Zoltan_Help_Migrate(zz, 
                       num_imp, imp_gids, imp_lids, imp_procs,
                       num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
     return 0;
   }
+#else
+  {
+  /* Call Zoltan_Help_Migrate with empty import lists. */
+  /* Have to "manually" call migrate_pre_process and migrate_post_process. */
+  int ierr = 0;
+  migrate_pre_process((void *) mesh, 1, 1,
+                      num_imp, imp_gids, imp_lids, imp_procs,
+                      num_exp, exp_gids, exp_lids, exp_procs, &ierr);
+  if (Zoltan_Help_Migrate(zz, 
+                      -1, NULL, NULL, NULL,
+                      num_exp, exp_gids, exp_lids, exp_procs) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Help_Migrate()\n");
+    return 0;
+  }
+  migrate_post_process((void *) mesh, 1, 1,  
+                       num_imp, imp_gids, imp_lids, imp_procs,
+                       num_exp, exp_gids, exp_lids, exp_procs, &ierr);
+  }
+#endif
+
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;

@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -218,7 +218,7 @@ typedef enum Zoltan_Ref_Type LB_REF_TYPE;
 #define LB_Set_Child_List_Fn        Zoltan_Set_Child_List_Fn
 #define LB_Set_Child_Weight_Fn      Zoltan_Set_Child_Weight_Fn
 
-#define LB_Set_Method               Zoltan_LB_Set_Method
+#define LB_Set_Method(a,b)          Zoltan_Set_Param(a,"LB_METHOD",b)
 #define LB_Balance                  Zoltan_LB_Balance
 #define LB_Free_Data                Zoltan_LB_Free_Data
 #define LB_Eval                     Zoltan_LB_Eval 

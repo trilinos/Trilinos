@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -1520,24 +1520,6 @@ extern int Zoltan_Set_Child_Weight_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_CHILD_WEIGHT_FN *fn_ptr, 
   void *data_ptr
-);
-
-
-/*****************************************************************************/
-/*
- *  Function to set the load balancing method to be used.
- *  Input:
- *    zz                  --  The Zoltan structure to which this
- *                            method applies.
- *    string              --  String specifying the desired method.
- *  Output:
- *    zz                  --  Appropriate fields set to designated values.
- *  Returned value:       --  Error code
- */
-
-extern int Zoltan_LB_Set_Method(
-  struct Zoltan_Struct *zz, 
-  char *string
 );
 
 /*****************************************************************************/

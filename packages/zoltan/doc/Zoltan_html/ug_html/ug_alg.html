@@ -8,7 +8,7 @@
    <title>Zoltan User's Guide:  Algorithms</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -40,8 +40,9 @@ in the Zoltan library:
 <br><a href="ug_alg_jostle.html">Jostle (JOSTLE)</a>
 <br><a href="ug_alg_oct.html">Octree Partitioning (OCTPART)</a>
 </blockquote>
-The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
-to enable the corresponding method.
+The parenthetical string is the parameter value for <a href="#LB_METHOD"><i>LB_METHOD</i></a> parameter; 
+the parameter is set through a call to 
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <p>For further analysis and discussion of the algorithms, see [<a href="ug_refs.html#hendrickson-devine">Hendrickson
 and Devine</a>].
 <p>
@@ -64,6 +65,27 @@ These load-balancing parameters are described below.
 
 <td></td>
 </tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="LB_METHOD"></a>&nbsp;&nbsp;&nbsp; <i>LB_METHOD</i></td>
+
+<td>The load-balancing algorithm used by Zoltan is specified by this parameter.
+Valid values are 
+<blockquote>"RCB" (for <a href="ug_alg_rcb.html">recursive coordinate bisection</a>),
+<br>"RIB" (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
+<br>"HSFC" (for <a href="ug_alg_hsfc.html">Hilbert space-filling curve partitioning</a>),
+<br>"PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a>
+library),
+<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a> library),
+<br>"OCTPART" (for <a href="ug_alg_oct.html">octree partitioning</a>),
+<br>"REFTREE" (for <a href="ug_alg_reftree.html">refinement tree based
+partitioning</a>), and
+<br>"NONE" (for no load-balancing).
+</blockquote>
+
+</td>
+</tr>
+
 
 <tr VALIGN=TOP NOSAVE>
 <td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
@@ -103,6 +125,12 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 
 <td></td>
 </tr>
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>LB_METHOD</i> = RCB</td>
+</tr>
+
 <tr VALIGN=TOP>
 <td></td>
 

@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * This software is distributed under the GNU Lesser General Public License. *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
@@ -35,7 +35,7 @@ int Zoltan_HSFC_Point_Assign (ZZ *zz, double *x, int *proc)
    int        i ;
    HSFC_Data *d ;
    int        err ;
-   char *yo = "Zoltan_HSFC_Point_Drop" ;
+   char *yo = "Zoltan_HSFC_Point_Assign" ;
 
    ZOLTAN_TRACE_ENTER (zz, yo) ;
    d = (HSFC_Data *) zz->LB.Data_Structure ;

@@ -8,7 +8,7 @@
    <title> Zoltan Developer's Guide:  Load Balancing Data Structures</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -606,21 +606,22 @@ for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 
 <td>An enumerated type designating which load-balancing algorithm should
 be used with this Zoltan structure; 
-set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+set via a call to
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+for <a href="../ug_html/ug_alg.html#LB_METHOD">LB_METHOD</a>.
 </td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>LB_FN *<i> LB_Fn</i></td>
 
-<td>A pointer to the load-balancing function specified by <i>Method</i>;
-set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
+<td>A pointer to the load-balancing function specified by <i>Method</i>.
+</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>ZOLTAN_LB_FREE_DATA_FN <i>*Free_Structure</i></td>
 <td> Pointer to a function that frees the Data_Structure memory.
-Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
 </td>
 </tr>
 
@@ -628,14 +629,12 @@ Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_
 <td VALIGN=TOP>ZOLTAN_LB_POINT_ASSIGN_FN <i>*Point_Assign</i></td>
 <td> Pointer to the function that performs 
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a> for the particular load-balancing method.  
-Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
 </td>
 </tr>
 
 <td VALIGN=TOP>ZOLTAN_LB_BOX_ASSIGN_FN <i>*Box_Assign</i></td>
 <td> Pointer to the function that performs 
 <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a> for the particular load-balancing method.  
-Set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
 </td>
 </tr>
 

@@ -14,7 +14,7 @@
    <title>Zoltan Project Description</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
 -->
@@ -527,10 +527,12 @@ library:
 </ul>
 
 Once the Zoltan callback functions are implemented, an application can switch
-between partitioning algorithms through one simple function call to 
-<a href="ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method"><b>Zoltan_LB_Set_Method</b></a>.  
-Thus, comparisons of different algorithms within a single application are easy
-to obtain, enabling users to try several algorithms and find
+between partitioning algorithms by changing only the 
+<a href="ug_html/ug_alg.html#LB_METHOD"><i>LB_METHOD</i></a> parameter
+through a call to 
+<a href="ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>.  
+Thus, comparing different algorithms within a single application is easy,
+enabling users to try several algorithms and find
 the best ones for their applications.
 <p>
 <!---------------------------------------------------------------------------->

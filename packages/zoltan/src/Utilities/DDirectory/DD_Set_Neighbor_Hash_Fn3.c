@@ -22,48 +22,58 @@
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
 
-static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
+static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc) ;
 
-static int max_gid ;
-static int groupsize ;
+static int remainder ;
+static int average ;
+static int breakpt ;
+static int total_ ;
 
 
-/*************  Zoltan_DD_Set_Hash_Fn1() ***********************/
+/*************  Zoltan_DD_Set_Hash_Fn3() ***********************/
 /*
 **  These routines associate the first n=groupsize GIDs to proc 0, the
 **  next n to proc 1, etc.  It assumes the GIDs are consecutive numbers.
 **  It assumes that GIDs primarily stay near their original owner. The
 **  GID length is assumed to be 1. GIDs outside of range are evenly
-**  distributed among the processors via modulo(nproc).
+**  distributed among the processors via modulo(nproc).  This method
+**  is designed for Trilinos/Epetra linear map.
 */
 
 
-int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
+int Zoltan_DD_Set_Neighbor_Hash_Fn3 (
  Zoltan_DD_Directory *dd,          /* directory state information */
- int size)                         /* number of reserved GIDs per CPU */
+ int total)                        /* total number of GIDS */
    {
-   char *yo = "Zoltan_DD_Set_Hash_Fn1" ;
+   char *yo = "Zoltan_DD_Set_Hash_Fn3" ;
 
-   if (dd == NULL || size < 1)
+   if (dd == NULL || total < 1)
       {
       ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
-   groupsize   = size ;
-   dd->hash    = dd_nh1 ;
-   dd->cleanup = NULL ;                 /* no need to free anything */
+   total_    = total ;
+   average   = total / dd->nproc ;
+   remainder = total % dd->nproc ;
+   breakpt   = (average+1) * remainder ;
 
-   max_gid     = size * dd->nproc ;     /* larger GIDs out of range */
+   dd->hash    = dd_nh3 ;
+   dd->cleanup = NULL ;                 /* no need to free anything */
 
    return ZOLTAN_DD_NORMAL_RETURN ;
    }
 
 
 
-static unsigned int dd_nh1 (ZOLTAN_ID_PTR gid, int gid_length,
+static unsigned int dd_nh3 (ZOLTAN_ID_PTR gid, int gid_length,
  unsigned int nproc)
    {
-   return (*gid < max_gid) ? (*gid / groupsize) : (*gid % nproc) ;
+   if (*gid < breakpt)
+      return *gid/(average+1) ;
+   if (*gid < total_)
+      return remainder + (*gid-breakpt)/average ;
+
+   return -1 ;                    /* error, gid is out of range */
    }

@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * This software is distributed under the GNU Lesser General Public License. *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
@@ -14,6 +14,11 @@
 
 #ifndef ZOLTAN_DD_H
 #define ZOLTAN_DD_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
 
 #include "zoltan_mem.h"
 #include "zoltan_comm.h"
@@ -159,5 +164,11 @@ typedef struct             /* Only used by Zoltan_DD_Remove()      */
 
 unsigned int Zoltan_DD_Hash2(ZOLTAN_ID_PTR key, int num_id_entries,
  unsigned int n) ;
+
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
+
 
 #endif

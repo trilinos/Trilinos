@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
+ * Zoltan Library for Parallel Applications                                  *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -53,7 +53,6 @@
 #define Zfw_Set_Fn9s                   zfw_set_fn9s
 #define Zfw_Set_FnAs                   zfw_set_fnas
 #define Zfw_Set_FnBs                   zfw_set_fnbs
-#define Zfw_LB_Set_Method              zfw_lb_set_method
 #define Zfw_Set_Param                  zfw_set_param
 #define Zfw_LB_Balance                 zfw_lb_balance
 #define Zfw_LB_Eval                    zfw_lb_eval
@@ -99,7 +98,6 @@
 #define Zfw_Set_Fn9s                   ZFW_SET_FN9S
 #define Zfw_Set_FnAs                   ZFW_SET_FNAS
 #define Zfw_Set_FnBs                   ZFW_SET_FNBS
-#define Zfw_LB_Set_Method              ZFW_LB_SET_METHOD
 #define Zfw_Set_Param                  ZFW_SET_PARAM
 #define Zfw_LB_Balance                 ZFW_LB_BALANCE
 #define Zfw_LB_Eval                    ZFW_LB_EVAL
@@ -144,7 +142,6 @@
 #define Zfw_Set_Fn9s                   zfw_set_fn9s_
 #define Zfw_Set_FnAs                   zfw_set_fnas_
 #define Zfw_Set_FnBs                   zfw_set_fnbs_
-#define Zfw_LB_Set_Method              zfw_lb_set_method_
 #define Zfw_Set_Param                  zfw_set_param_
 #define Zfw_LB_Balance                 zfw_lb_balance_
 #define Zfw_LB_Eval                    zfw_lb_eval_
@@ -190,7 +187,6 @@
 #define Zfw_Set_Fn9s                   zfw_set_fn9s__
 #define Zfw_Set_FnAs                   zfw_set_fnas__
 #define Zfw_Set_FnBs                   zfw_set_fnbs__
-#define Zfw_LB_Set_Method              zfw_lb_set_method__
 #define Zfw_Set_Param                  zfw_set_param__
 #define Zfw_LB_Balance                 zfw_lb_balance__
 #define Zfw_LB_Eval                    zfw_lb_eval__
@@ -948,23 +944,6 @@ int Zfw_Set_FnBs(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
 /* data is type(LB_User_Data_4) */
 {
    return Zfw_Set_Fn(addr_lb, nbytes, type, fn, (void *)data);
-}
-
-int Zfw_LB_Set_Method(int *addr_lb, int *nbytes, int *int_str, int *len)
-{
-   struct Zoltan_Struct *lb;
-   char *str;
-   unsigned char *p;
-   int i, result;
-   str = (char *)ZOLTAN_MALLOC(*len+1);
-   p = (unsigned char *) &lb;
-   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   Zoltan_Current = lb;
-   for (i=0; i<(*len); i++) str[i] = (char)int_str[i];
-   str[*len] = '\0';
-   result = Zoltan_LB_Set_Method(lb, str);
-   ZOLTAN_FREE(&str);
-   return result;
 }
 
 int Zfw_Set_Param(int *addr_lb, int *nbytes, int *int_param_name,

@@ -361,7 +361,7 @@ type(LB_Struct) INTENT_IN lb
 character(len=*) INTENT_IN string
 type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
-LBf90_LB_Set_Method = Zf90_LB_set_Method(zz,string)
+LBf90_LB_Set_Method = Zf90_Set_Param(zz,"LB_METHOD",string)
 end function LBf90_LB_Set_Method
 
 function LBf90_Set_Param(lb,param_name,new_value)

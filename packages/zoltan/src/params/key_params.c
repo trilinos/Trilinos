@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -31,6 +31,7 @@ static PARAM_VARS Key_params[] = {
   { "NUM_GID_ENTRIES", NULL, "INT" },
   { "NUM_LID_ENTRIES", NULL, "INT" },
   { "RETURN_LISTS", NULL, "STRING" },
+  { "LB_METHOD", NULL, "STRING" },
   { "TFLOPS_SPECIAL", NULL, "INT" },
   { "COMM_WEIGHT_DIM", NULL, "INT" }, /* For backward compatibility only. */
                                       /* Prefer use of EDGE_WEIGHT_DIM.   */
@@ -94,7 +95,7 @@ char *val)			/* value of variable */
         break;
 
       case 3: 		/* Edge weight dim.  */
-      case 12:
+      case 13:
         if (result.def)
             result.ival = ZOLTAN_EDGE_WEIGHT_DEF;
 	if (result.ival < 0) {
@@ -205,7 +206,13 @@ char *val)			/* value of variable */
 	zz->LB.Return_Lists = tmp;
         break;
 
-      case 11: 		/* Tflops Special flag */
+      case 11:          /* LB_Method */
+        status = Zoltan_LB_Set_LB_Method(zz,result.sval);
+        if (status == ZOLTAN_OK)
+          status = 3;
+        break;
+
+      case 12: 		/* Tflops Special flag */
         if (result.def)
             result.ival = ZOLTAN_TFLOPS_SPECIAL_DEF;
 	if (result.ival < 0) {
@@ -271,5 +278,5 @@ void Zoltan_Print_Key_Params(ZZ *zz)
     break;
   }
   if (zz->Tflops_Special)   /* print only if set */
-     printf("ZOLTAN Parameter %s = %s\n", Key_params[11].name, "TRUE");
+     printf("ZOLTAN Parameter %s = %s\n", Key_params[12].name, "TRUE");
 }

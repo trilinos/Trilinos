@@ -1,5 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+! Zoltan Library for Parallel Applications                                   !
 ! For more info, see the README file in the top-level Zoltan directory.      ! 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -98,8 +98,8 @@ type(PROB_INFO) :: prob
 
 
 !  /* Set the method */
-  if (Zoltan_LB_Set_Method(zz_obj, prob%method) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Method()"
+  if (Zoltan_Set_Param(zz_obj, "LB_METHOD", prob%method) == ZOLTAN_FATAL) then
+    print *, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)"
     run_zoltan = .false.
     return
   endif

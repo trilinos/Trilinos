@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -341,8 +341,8 @@ int ierr = 0;
    *  value of RETURN_LISTS parameter).
    */
 
-  if (num_export == -1 || num_import == -1) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Both export and import lists must be "
+  if (num_export == -1) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Export lists must be "
                                  "provided; change RETURN_LISTS parameter.");
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_FATAL);
@@ -537,7 +537,7 @@ int ierr = 0;
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ierr);
   }
-  if (tmp_import != num_import) {
+  if ((num_import != -1) && (tmp_import != num_import)) {
     sprintf(msg, "tmp_import %d != num_import %d.", tmp_import, num_import);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
   }
@@ -558,7 +558,7 @@ int ierr = 0;
     return (ierr);
   }
 
-  if (num_import > 0) {
+  if (tmp_import > 0) {
     import_buf = (char *) ZOLTAN_MALLOC(total_recv_size);
     if (!import_buf) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -626,7 +626,7 @@ int ierr = 0;
    */
 
   tmp = import_buf;
-  for (i = 0; i < num_import; i++) {
+  for (i = 0; i < tmp_import; i++) {
 
     /* Unpack the object's global ID */
     tmp_id = (ZOLTAN_ID_PTR) tmp;

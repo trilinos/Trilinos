@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     * 
  *****************************************************************************/
 /*****************************************************************************
@@ -79,8 +79,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Set the method */
-  if (Zoltan_LB_Set_Method(zz, prob->method) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_LB_Set_Method()\n");
+  if (Zoltan_Set_Param(zz, "LB_METHOD", prob->method) == ZOLTAN_FATAL) {
+    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
   }
 

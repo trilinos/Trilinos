@@ -1,6 +1,6 @@
 ##############################################################################
-# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
-# Copyright (c) 2000, Sandia National Laboratories.                          #
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
 # For more info, see the README file in the top-level Zoltan directory.      # 
 ##############################################################################
 ##############################################################################
@@ -114,7 +114,8 @@ UTIL_INC		= zoltan_id.h
 
 DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
                   DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
-                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c 
+                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c \
+                  DD_Set_Neighbor_Hash_Fn3.c
 DD_INC		= zoltan_dd.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd

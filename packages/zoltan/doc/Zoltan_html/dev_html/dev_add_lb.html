@@ -1,6 +1,6 @@
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -30,7 +30,7 @@
 <A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
 The new load-balancing algorithm should be implemented as an <B>LB_FN</B>.
 The type definition for an <B>LB_FN</B> is in <I>lb/lb_const.h</I> and
-is described below. When the new algorithm is selected in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>,
+is described below. When the new algorithm is selected,
 the <I>LB_Fn</I> field of the <B>Zoltan_Struct</B> is set to point to the <B>LB_FN</B>
 function for the new algorithm. This pointer is then used in invoking load
 balancing in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>.

@@ -1,5 +1,5 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+! Zoltan Library for Parallel Applications                                   !
 ! For more info, see the README file in the top-level Zoltan directory.      ! 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -99,7 +99,6 @@ public :: &
    Zoltan_Destroy, &
    Zoltan_Memory_Stats, &
    Zoltan_Set_Fn, &
-   Zoltan_LB_Set_Method, &
    Zoltan_Set_Param, &
    Zoltan_LB_Balance, &
    Zoltan_LB_Eval, &
@@ -656,19 +655,6 @@ end function Zfw_Set_Fn7s
 end interface
 
 interface
-!NAS$ ALIEN "F77 zfw_set_method"
-function Zfw_LB_Set_Method(zz,nbytes,string,length)
-use zoltan_types
-use lb_user_const
-use zoltan_user_data
-implicit none
-integer(Zoltan_INT) :: Zfw_LB_Set_Method
-integer(Zoltan_INT), dimension(*) INTENT_IN zz, string
-integer(Zoltan_INT) INTENT_IN nbytes, length
-end function Zfw_LB_Set_Method
-end interface
-
-interface
 !NAS$ ALIEN "F77 zfw_set_param"
 function Zfw_Set_Param(zz,nbytes,param_name,param_name_len, &
                           new_value,new_value_len)
@@ -894,10 +880,6 @@ interface Zoltan_Set_Fn
    module procedure Zf90_Set_Fn5s
    module procedure Zf90_Set_Fn6s
    module procedure Zf90_Set_Fn7s
-end interface
-
-interface Zoltan_LB_Set_Method
-   module procedure Zf90_LB_Set_Method
 end interface
 
 interface Zoltan_Set_Param
@@ -1403,24 +1385,6 @@ Zf90_Set_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,fn_type%choice,loc(fn_ptr),data)
 Zf90_Set_Fn7s = Zfw_Set_Fn7s(zz_addr,nbytes,fn_type%choice,fn_ptr,data)
 #endif
 end function Zf90_Set_Fn7s
-
-function Zf90_LB_Set_Method(zz,string)
-integer(Zoltan_INT) :: Zf90_LB_Set_Method
-type(Zoltan_Struct) INTENT_IN zz
-character(len=*) INTENT_IN string
-integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
-integer(Zoltan_INT), dimension(len_trim(string)) :: int_string
-integer(Zoltan_INT) :: nbytes, length, i
-nbytes = Zoltan_PTR_LENGTH
-length = len_trim(string)
-do i=1,nbytes
-   zz_addr(i) = ichar(zz%addr%addr(i:i))
-end do
-do i=1,length
-   int_string(i) = ichar(string(i:i))
-end do
-Zf90_LB_Set_Method = Zfw_LB_Set_Method(zz_addr,nbytes,int_string,length)
-end function Zf90_LB_Set_Method
 
 function Zf90_Set_Param(zz,param_name,new_value)
 integer(Zoltan_INT) :: Zf90_Set_Param

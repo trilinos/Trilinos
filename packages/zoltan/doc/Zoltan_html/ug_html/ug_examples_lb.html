@@ -8,7 +8,7 @@
    <title>Zoltan User's Guide:  Load-Balancing Examples</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -30,10 +30,12 @@
 <a NAME="Load-Balancing Example"></a>Load-Balancing Example</h2>
 An example of the typical calling sequence for load balancing using Zoltan
 in a finite element application is shown in the <a href="#LB Example Fig">figure</a>
-below. An application first selects a load-balancing algorithm through
-a call to <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
-Next, some parameter values are set by calls
-to <b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+below. An application first selects a load-balancing algorithm 
+by setting the <a href="ug_alg.html#LB_METHOD"><i>LB_METHOD</i></a> parameter
+with 
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
+Next, other parameter values are set by calls to 
+<b><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 After some computation, load balancing is invoked by calling <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 The results of the load balancing include the number of nodes to be imported
 and exported to the processor, lists of global and local IDs of the imported
@@ -60,8 +62,8 @@ exp_global_ids;</tt>
 imp_local_ids, exp_local_ids;</tt>
 <p><tt>/* <i>Set load-balancing method.</i> */</tt>
 <br><tt>read_load_balancing_info_from_input_file(&amp;lb_method);</tt>
-<br><tt><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a>(zz,
-lb_method);</tt>
+<br><tt><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
+"LB_METHOD", lb_method);</tt>
 <p><tt>/* <i>Reset some load-balancing parameters.</i> */</tt>
 <br><tt><a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "RCB_Reuse", "TRUE");</tt>
@@ -102,7 +104,7 @@ with the Zoltan library.</i></caption>
 <br><tt>integer(Zoltan_INT) ierr</tt>
 <p><tt>! <i>Set load-balancing method.</i></tt>
 <br><tt>lb_method = "RCB"</tt>
-<br><tt>ierr = <a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a>(zz,
+<br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz, "LB_METHOD",
 lb_method)</tt>
 <p><tt>! <i>Reset some load-balancing parameters</i></tt>
 <br><tt>ierr = <a href="ug_interface_init.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,

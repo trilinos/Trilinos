@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -77,7 +77,7 @@ char *val1)			/* value to set this parameter to */
      *  1 -> not matched. 
      *  2 -> matched, but failed checks. 
      *  3 -> matched and OK, but don't add it to params list.
-     *  other -> more serious error (LB return codes) */
+     *  other -> more serious error (Zoltan return codes) */
 
     /* First convert to upper case & remove leading white space. */
     flag = Zoltan_Clean_String(name1, &name);

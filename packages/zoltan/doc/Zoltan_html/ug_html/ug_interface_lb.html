@@ -8,7 +8,7 @@
    <title>Zoltan User's Guide:  Load-Balancing Interface</title>
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -30,96 +30,11 @@
 <a NAME="Load-Balancing Functions"></a>Load-Balancing Functions</h2>
 The following functions are the load-balancing interface functions in the
 Zoltan library; their descriptions are included below.
-<blockquote><b><a href="#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
-<br><b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+<blockquote>
+<b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 <br><b><a href="#Zoltan_LB_Eval">Zoltan_LB_Eval</a></b>
 <br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
 </blockquote>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_LB_Set_Method"></a>
-<hr WIDTH="100%">
-<table WIDTH="100%" NOSAVE >
-<tr NOSAVE>
-<td VALIGN=TOP NOSAVE>C:</td>
-
-<td WIDTH="85%">
-int <b>Zoltan_LB_Set_Method</b>
-(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
-char&nbsp;*<i>string</i>);&nbsp;</td>
-</tr>
-
-<tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
-
-<td>FUNCTION <b>Zoltan_LB_Set_Method</b>(<i>zz</i>, <i>string</i>)&nbsp;
-<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Set_Method&nbsp;
-<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
-<br>CHARACTER(LEN=*), INTENT(IN) :: string&nbsp;</td>
-</tr>
-</table>
-
-<hr WIDTH="100%"><b>Zoltan_LB_Set_Method</b> is used to specify which load-balancing
-algorithm should be used by the application.
-<br>&nbsp;
-<table WIDTH="100%" >
-<tr>
-<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
-<td WIDTH="80%"></td>
-</tr>
-
-<tr>
-<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
-
-<td>Pointer to the Zoltan structure created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; string</i></td>
-
-<td>A string containing the name of the desired load-balancing technique.
-Valid values for <i>string</i> are&nbsp;
-<blockquote>"RCB" (for <a href="ug_alg_rcb.html#RCB">recursive coordinate
-bisection</a>),&nbsp;
-<br>"RIB" (for <a href="ug_alg_rib.html">recursive inertial bisection</a>),
-<br>"HSFC" (for <a href="ug_alg_rib.html">Hilbert space-filling curve partitioning</a>),
-<br>"PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a>
-library),&nbsp;
-<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a>
-library),&nbsp;
-<br>"OCTPART" (for <a href="ug_alg_oct.html#Octree">octree partitioning</a>),&nbsp;
-<br>"REFTREE" (for <a href="ug_alg_reftree.html">refinement tree based
-partitioning</a>), and&nbsp;
-<br>"NONE" (for no load-balancing).</blockquote>
-</td>
-</tr>
-
-<tr>
-<td><b>Returned Value:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
-
-<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
-</tr>
-
-<tr>
-<td><b>Default:</b></td>
-
-<td></td>
-</tr>
-
-<tr>
-<td></td>
-
-<td>If <b>Zoltan_LB_Set_Method</b> is not called, <a href="ug_alg_rcb.html#RCB">RCB</a>
-is used.</td>
-</tr>
-</table>
 
 
 <!------------------------------------------------------------------------->
@@ -164,7 +79,8 @@ export_global_ids, export_local_ids, export_procs</i>)&nbsp;
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_LB_Balance</b> invokes the load-balancing routine specified
-by <b><a href="#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.  Results of the 
+by the <a href="ug_alg.html#LB_METHOD"><i>LB_METHOD</i></a> parameter.
+Results of the 
 partitioning are returned in lists of objects to be imported and exported.
 These arrays are allocated in Zoltan; applications should not allocate these
 arrays before calling <b>Zoltan_LB_Balance</b>.  The arrays are later freed through

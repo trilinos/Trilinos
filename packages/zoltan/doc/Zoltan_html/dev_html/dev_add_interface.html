@@ -1,6 +1,6 @@
 <!-----------------------------------------------------------------------------
  ! Zoltan Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
  ! This document is released under the GNU Lesser General Public License.     !
  ! For more info, see the README file in the top-level Zoltan directory.      !
  !----------------------------------------------------------------------------!
@@ -45,19 +45,19 @@ interface will then build the lists requested by
 
 <p>
 A new algorithm must be added to the load-balancing interface for use
-in
-<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+with parameter
+<a href="../ug_html/ug_alg.html#LB_METHOD">LB_METHOD</a>.
 An entry for the new algorithm must be added to the enumerated type <b>Zoltan_LB_Method</b>
 in <i>lb/lb_const.h</i>. An external <b><a href="dev_add_lb.html">LB_FN</a></b>
 prototype for the load-balancing function must also be added to <i>lb/lb_const.h</i>;
 see the prototype for function <i>Zoltan_RCB</i> as an example. A character
-string describing the new algorithm should be chosen to be used as application
-input to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+string describing the new algorithm should be chosen to be used as the parameter
+value for 
+<a href="../ug_html/ug_alg.html#LB_METHOD">LB_METHOD</a>.
 In 
-<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>,
+function <b>Zoltan_LB_Set_LB_Method</b>,
 a test for this string should be added
 and the <i>Method</i> and <i>LB_Fn</i> fields of the <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
-passed to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
 should be set to the new enumerated type value and new load-balancing function
 pointer.
 <br>&nbsp;

@@ -13,7 +13,7 @@ CURDIR="`pwd`"
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
 rm -rf Zoltan ParMETIS
 rm -f zoltan_distrib.tar.gz
-cvs checkout -r Zoltan_v1_23_bugfix -P Zoltan
+cvs checkout -r Zoltan_v1_3_bugfix -P Zoltan
 cvs checkout -P ParMETIS
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
@@ -47,6 +47,6 @@ done;
 chmod -R ogu+r *
 tar cvf zoltan_distrib.tar Zoltan ParMETIS
 gzip zoltan_distrib.tar
-cvs rtag -r Zoltan_v1_23_bugfix ${ACT_TAG} Zoltan 
+cvs rtag -r Zoltan_v1_3_bugfix ${ACT_TAG} Zoltan 
 cvs rtag ${ACT_TAG} ParMETIS 
 exit 0

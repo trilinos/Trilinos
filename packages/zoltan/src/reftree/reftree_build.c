@@ -87,26 +87,26 @@ int Zoltan_Reftree_Init(ZZ *zz)
  */
 char *yo = "Zoltan_Reftree_Init";
 char msg[256];
-struct Zoltan_Reftree_data_struct *reftree_data; /* data pointed to by zz */
+struct Zoltan_Reftree_data_struct *reftree_data = NULL; /* data pointed to by zz */
 ZOLTAN_REFTREE *root;          /* Root of the refinement tree */
-struct Zoltan_Reftree_hash_node **hashtab; /* hash table */
+struct Zoltan_Reftree_hash_node **hashtab = NULL; /* hash table */
 int nproc;                 /* number of processors */
-ZOLTAN_ID_PTR local_gids;      /* coarse element Global IDs from user */
-ZOLTAN_ID_PTR local_lids;      /* coarse element Local IDs from user */
+ZOLTAN_ID_PTR local_gids = NULL; /* coarse element Global IDs from user */
+ZOLTAN_ID_PTR local_lids = NULL; /* coarse element Local IDs from user */
 ZOLTAN_ID_PTR lid, prev_lid;   /* temporary coarse element Local ID; used to pass
                               NULL to query functions when NUM_LID_ENTRIES=0 */
-ZOLTAN_ID_PTR all_gids;        /* coarse element Global IDs from all procs */
-int *assigned;             /* 1 if the element is assigned to this proc */
-int *num_vert;             /* number of vertices for each coarse element */
-int *reorder_nvert;        /* num_vert reordered by permutation "order" */
+ZOLTAN_ID_PTR all_gids = NULL; /* coarse element Global IDs from all procs */
+int *assigned = NULL;      /* 1 if the element is assigned to this proc */
+int *num_vert = NULL;      /* number of vertices for each coarse element */
+int *reorder_nvert = NULL; /* num_vert reordered by permutation "order" */
 int root_vert[1];          /* fake number of vertices for the root */
-int *vertices;             /* vertices for the coarse elements */
-int *in_vertex;            /* "in" vertex for each coarse element */
-int *out_vertex;           /* "out" vertex for each coarse element */
+int *vertices = NULL;      /* vertices for the coarse elements */
+int *in_vertex = NULL;     /* "in" vertex for each coarse element */
+int *out_vertex = NULL;    /* "out" vertex for each coarse element */
 int in_order;              /* 1 if user is supplying order of the elements */
 int num_obj;               /* number of coarse objects known to this proc */
-int *num_obj_all;          /* num_obj from each processor */
-int *displs;               /* running sum of num_obj_all */
+int *num_obj_all = NULL;   /* num_obj from each processor */
+int *displs = NULL;        /* running sum of num_obj_all */
 int sum_num_obj;           /* full sum of num_obj_all */
 int total_num_obj;         /* number of objects in the whole coarse grid */
 int ierr;                  /* error flag from calls */
@@ -114,7 +114,7 @@ int final_ierr;            /* error flag returned by this routine */
 int wdim;                  /* dimension of object weights */
 int count;                 /* counter for number of objects */
 int sum_vert;              /* summation of number of vertices of objects */
-int *order;                /* permutation array for ordering coarse elements */
+int *order = NULL;         /* permutation array for ordering coarse elements */
 int found;                 /* flag for terminating first/next query loop */
 int hashsize;              /* size of the hash table */
 int i, j;                  /* loop counters */
@@ -532,7 +532,7 @@ int num_lid_entries = zz->Num_LID;  /* number of array entries in a local ID */
    * If the user supplies the order, it was set above.
    */
 
-  if (!in_order) {
+  if (!in_order && num_obj != 0) {
 
   /*
    * TEMP For now, require that the user provide the order.

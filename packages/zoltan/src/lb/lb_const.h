@@ -1,6 +1,6 @@
 /*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
@@ -135,6 +135,8 @@ struct Zoltan_Migrate_Struct {
 
 /*****************************************************************************/
 /* PROTOTYPES */
+
+extern int Zoltan_LB_Set_LB_Method(struct Zoltan_Struct *, char *);
 
 /* PARTITIONING FUNCTIONS */
 extern ZOLTAN_LB_FN Zoltan_RCB;
