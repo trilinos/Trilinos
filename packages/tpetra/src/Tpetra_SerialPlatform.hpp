@@ -4,7 +4,7 @@
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Platform.hpp"
 #include "Tpetra_SerialComm.hpp"
-#include "Tpetra_SerialDirectory.hpp"
+///#include "Tpetra_SerialDirectory.hpp"
 #include "Tpetra_SerialDistributor.hpp"
 
 namespace Tpetra {
@@ -56,11 +56,11 @@ template<typename OrdinalType> class ElementSpace;
 		};
 
 		//! Directory Instance
-		Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
+		///Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
 		  // static_cast casts SerialDirectory* to Directory*
-		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(elementSpace)); 
-		  return(dir);
-		};
+		  ///Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(elementSpace)); 
+		///return(dir);
+		///};
 
 		//@}
 

@@ -27,17 +27,33 @@
 //@HEADER
 
 #include "Tpetra_Object.hpp"
+#include "Tpetra_SerialComm.hpp"
+#include "Tpetra_SerialPlatform.hpp"
 
 int main(int argc, char *argv[])
 {
-	cout << "Starting verySimple example..." << endl;
+	cout << "*** Starting verySimple example..." << endl;
 
+	// test Object
+	cout << "*** Testing Object..." << endl;
   Tpetra::Object obj1;
 	Tpetra::Object obj2("obj2");
 
 	int temp1 = obj1.getTracebackMode();
+	cout << obj1 << endl;
 
-	cout << "Finished." << endl;
+	// test SerialComm
+	cout << "*** Testing SerialComm..." << endl;
+	Tpetra::SerialComm<double, int> comm1;
+	int temp2 = comm1.getNumImages();
+	cout << comm1 << endl;
+
+	// test Platform
+	cout << "*** Testing SerialPlatform..." << endl;
+	Tpetra::SerialPlatform<int, int> platform1;
+	cout << platform1 << endl;
+
+	cout << "*** Finished." << endl;
 
   return(0);
 }

@@ -123,12 +123,13 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 CORE_H = \
-	$(srcdir)/Tpetra_Object.hpp 
+	$(srcdir)/Tpetra_Object.hpp \
+	$(srcdir)/Tpetra_Platform.hpp \
+	$(srcdir)/Tpetra_Comm.hpp \
+	$(srcdir)/Tpetra_Distributor.hpp 
 
 
-CORE = \
-	$(srcdir)/Tpetra_Object.cpp
-
+CORE = 
 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp
@@ -141,7 +142,13 @@ ENUM_H =
 UNIPROC_H = 
 
 UNIPROC = 
-SERIAL_H = 
+
+SERIAL_H = \
+	$(srcdir)/Tpetra_SerialPlatform.hpp \
+	$(srcdir)/Tpetra_SerialComm.hpp \
+	$(srcdir)/Tpetra_SerialDistributor.hpp 
+
+
 SERIAL = 
 
 EXTRA_MPI_H = 
@@ -266,13 +273,12 @@ CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
 libtpetra_a_DEPENDENCIES =
-am__objects_1 = Tpetra_Object.$(OBJEXT)
-am__objects_2 =
-@HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
-@HAVE_MPI_FALSE@am__objects_3 =
-am_libtpetra_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_2) $(am__objects_2) \
-	$(am__objects_2) $(am__objects_3)
+am__objects_1 =
+@HAVE_MPI_TRUE@am__objects_2 = $(am__objects_1)
+@HAVE_MPI_FALSE@am__objects_2 =
+am_libtpetra_a_OBJECTS = $(am__objects_1) $(am__objects_1) \
+	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
+	$(am__objects_1) $(am__objects_2)
 libtpetra_a_OBJECTS = $(am_libtpetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -280,15 +286,11 @@ DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
 CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Tpetra_Object.Po
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-CXXFLAGS = @CXXFLAGS@
+CFLAGS = @CFLAGS@
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(libtpetra_a_SOURCES) $(EXTRA_libtpetra_a_SOURCES)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
 
@@ -300,7 +302,6 @@ all: Tpetra_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
@@ -355,7 +356,6 @@ uninstall-libLIBRARIES:
 
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
-Tpetra_Object.$(OBJEXT): $(srcdir)/Tpetra_Object.cpp
 libtpetra.a: $(libtpetra_a_OBJECTS) $(libtpetra_a_DEPENDENCIES) 
 	-rm -f libtpetra.a
 	$(libtpetra_a_AR) libtpetra.a $(libtpetra_a_OBJECTS) $(libtpetra_a_LIBADD)
@@ -366,36 +366,6 @@ mostlyclean-compile:
 
 distclean-compile:
 	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_Object.Po@am__quote@
-
-distclean-depend:
-	-rm -rf ./$(DEPDIR)
-
-.cpp.o:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
-
-.cpp.obj:
-@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
-
-Tpetra_Object.o: $(srcdir)/Tpetra_Object.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_Object.cpp' object='Tpetra_Object.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_Object.Po' tmpdepfile='$(DEPDIR)/Tpetra_Object.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_Object.o `test -f '$(srcdir)/Tpetra_Object.cpp' || echo '$(srcdir)/'`$(srcdir)/Tpetra_Object.cpp
-
-Tpetra_Object.obj: $(srcdir)/Tpetra_Object.cpp
-@AMDEP_TRUE@	source='$(srcdir)/Tpetra_Object.cpp' object='Tpetra_Object.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/Tpetra_Object.Po' tmpdepfile='$(DEPDIR)/Tpetra_Object.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_Object.obj `cygpath -w $(srcdir)/Tpetra_Object.cpp`
-CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 install-includeHEADERS: $(include_HEADERS)
@@ -534,8 +504,8 @@ clean-am: clean-generic clean-libLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 
-distclean-am: clean-am distclean-compile distclean-depend \
-	distclean-generic distclean-hdr distclean-tags
+distclean-am: clean-am distclean-compile distclean-generic distclean-hdr \
+	distclean-tags
 
 dvi: dvi-am
 
@@ -567,7 +537,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
 .PHONY: GTAGS all all-am check check-am clean clean-generic \
-	clean-libLIBRARIES distclean distclean-compile distclean-depend \
+	clean-libLIBRARIES distclean distclean-compile \
 	distclean-generic distclean-hdr distclean-tags distdir dvi \
 	dvi-am info info-am install install-am install-data \
 	install-data-am install-exec install-exec-am \

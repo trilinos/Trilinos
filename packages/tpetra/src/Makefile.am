@@ -34,10 +34,12 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
-	$(srcdir)/Tpetra_Object.hpp 
+	$(srcdir)/Tpetra_Object.hpp \
+	$(srcdir)/Tpetra_Platform.hpp \
+	$(srcdir)/Tpetra_Comm.hpp \
+	$(srcdir)/Tpetra_Distributor.hpp 
 
-CORE = \
-	$(srcdir)/Tpetra_Object.cpp
+CORE = 
 
 UTIL_H = \
 	$(srcdir)/Tpetra_ConfigDefs.hpp
@@ -49,7 +51,12 @@ ENUM_H =
 UNIPROC_H = 
 
 UNIPROC = 
-SERIAL_H = 
+
+SERIAL_H = \
+	$(srcdir)/Tpetra_SerialPlatform.hpp \
+	$(srcdir)/Tpetra_SerialComm.hpp \
+	$(srcdir)/Tpetra_SerialDistributor.hpp 
+
 SERIAL = 
 
 EXTRA_MPI_H =
