@@ -26,6 +26,14 @@
 # ************************************************************************
 #@HEADER
 
+if HAVE_PERFORMANCE
+PERF_SUBDIR = Test_Performance
+else
+PERF_SUBDIR =
+endif
+                                                                                
+
+
 SUBDIRS = scripts \
 	  Test_Basic \
 	  Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
@@ -37,4 +45,5 @@ SUBDIRS = scripts \
 	  Test_SuperLU \
 	  Test_SuperLU_DIST \
 	  Test_MUMPS \
-	  Test_DSCPACK TestOptions
+	  Test_DSCPACK TestOptions ${PERF_SUBDIR}
+

@@ -266,6 +266,9 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( amesos, examples, [Build Amesos examples], AMESOS_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_amesos_examples" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(performance, [Run performance tests (not all packages are sensitive to this option)], PERFORMANCE, no)
+AM_CONDITIONAL(HAVE_PERFORMANCE, test "X$ac_cv_use_performance" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(valgrind, [Use valgrind to perform memory checks and detect leaks (not all packages are sensitive to this option)], VALGRIND, no)
 AM_CONDITIONAL(HAVE_VALGRIND, test "X$ac_cv_use_valgrind" != "Xno")
 
@@ -354,6 +357,15 @@ fi
 # ------------------------------------------------------------------------
 # Checks for addons
 # ------------------------------------------------------------------------
+                                                                                
+TAC_ARG_WITH( trilinosdatadir, [Set TrilinosData directory], trilinosdatadir_not_sp
+ecified )
+
+## echo "  tac_with_trilinosdatadir =  ${tac_with_trilinosdatadir} "              
+## TAC_CHECK_FILE(
+
+AC_SUBST(tac_with_trilinosdatadir)
+
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, lapack, [Enable Amesos interface support
 					     for LAPACK], 
@@ -746,6 +758,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		test/Makefile
 		test/Test_Basic/Makefile
+		test/Test_Performance/Makefile
 		test/Test_Epetra_RowMatrix/Makefile
 		test/Test_Epetra_CrsMatrix/Makefile
 		test/Test_Epetra_VbrMatrix/Makefile

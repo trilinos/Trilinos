@@ -79,6 +79,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_with.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -102,7 +103,11 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = scripts Test_Basic Test_Epetra_RowMatrix \
+	Test_Epetra_CrsMatrix Test_Epetra_VbrMatrix \
+	Test_MultipleSolves Test_Detailed Test_LAPACK Test_KLU \
+	Test_UMFPACK Test_SuperLU Test_SuperLU_DIST Test_MUMPS \
+	Test_DSCPACK TestOptions Test_Performance
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -166,6 +171,8 @@ HAVE_COVERAGE_FALSE = @HAVE_COVERAGE_FALSE@
 HAVE_COVERAGE_TRUE = @HAVE_COVERAGE_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERFORMANCE_FALSE = @HAVE_PERFORMANCE_FALSE@
+HAVE_PERFORMANCE_TRUE = @HAVE_PERFORMANCE_TRUE@
 HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
 HAVE_VALGRIND_TRUE = @HAVE_VALGRIND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -245,11 +252,14 @@ program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
+tac_with_trilinosdatadir = @tac_with_trilinosdatadir@
 target = @target@
 target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+@HAVE_PERFORMANCE_FALSE@PERF_SUBDIR = 
+@HAVE_PERFORMANCE_TRUE@PERF_SUBDIR = Test_Performance
 SUBDIRS = scripts \
 	  Test_Basic \
 	  Test_Epetra_RowMatrix Test_Epetra_CrsMatrix \
@@ -261,7 +271,7 @@ SUBDIRS = scripts \
 	  Test_SuperLU \
 	  Test_SuperLU_DIST \
 	  Test_MUMPS \
-	  Test_DSCPACK TestOptions
+	  Test_DSCPACK TestOptions ${PERF_SUBDIR}
 
 all: all-recursive
 
@@ -440,7 +450,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d "$(distdir)/$$subdir" \
 	    || mkdir "$(distdir)/$$subdir" \

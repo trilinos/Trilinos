@@ -83,6 +83,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_with.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_blaslib.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -201,6 +202,8 @@ HAVE_COVERAGE_FALSE = @HAVE_COVERAGE_FALSE@
 HAVE_COVERAGE_TRUE = @HAVE_COVERAGE_TRUE@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
+HAVE_PERFORMANCE_FALSE = @HAVE_PERFORMANCE_FALSE@
+HAVE_PERFORMANCE_TRUE = @HAVE_PERFORMANCE_TRUE@
 HAVE_VALGRIND_FALSE = @HAVE_VALGRIND_FALSE@
 HAVE_VALGRIND_TRUE = @HAVE_VALGRIND_TRUE@
 INSTALL_DATA = @INSTALL_DATA@
@@ -280,6 +283,7 @@ program_transform_name = @program_transform_name@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
+tac_with_trilinosdatadir = @tac_with_trilinosdatadir@
 target = @target@
 target_alias = @target_alias@
 target_cpu = @target_cpu@
