@@ -41,7 +41,7 @@ namespace Epetra {
 
 class Group;			// forward declaration
 
-  /*! \brief Shared Jacobian for NOX Epetra Group objects.
+  /*! \brief Shared Jacobian for NOX::Epetra::Group objects.
    * 
    * Due to the size of the Jacobian, we cannot afford to have
    * multiple copies. Instead we implement a shared Jacobian. */

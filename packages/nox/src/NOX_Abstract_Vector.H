@@ -32,6 +32,9 @@
 
 #ifndef NOX_ABSTRACT_VECTOR_H
 #define NOX_ABSTRACT_VECTOR_H
+
+/*! \mainpage %NOX: An Object-Oriented Nonlinear Solver Package
+ */
  
 //! Nonlinear solvers package namespace
 namespace NOX {
@@ -39,10 +42,10 @@ namespace NOX {
   //! Specify whether to copy using deep copy or just copy by shape.
   enum CopyType { DeepCopy, CopyShape };
 
-//! NOX abstract interface for vector and group
+//! %NOX abstract interface for vector and group
 namespace Abstract {
 
-  /*! \brief NOX's pure abstract vector interface for vectors that are
+  /*! \brief %NOX's pure abstract vector interface for vectors that are
    * used by the NLS solver. We require only limited functionality for
    * the vectors.*/
 

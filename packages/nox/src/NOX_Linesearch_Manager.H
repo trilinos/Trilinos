@@ -38,7 +38,7 @@
 namespace NOX {
 namespace Linesearch {
 
-//! Manager for all different line searches
+//! %Manager for all different line searches
 /*! 
    The parameters must specify the type of line search as well as all
    the corresponding parameters for that line search.

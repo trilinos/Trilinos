@@ -42,7 +42,7 @@ namespace Solver
 class Generic;			// forward declaration
 }
 
-//! Status checkers.
+//! %Status checkers.
 namespace Status {
 
   //! Status type.

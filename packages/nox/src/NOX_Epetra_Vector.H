@@ -38,10 +38,10 @@
 
 namespace NOX {
 
-//! NOX Epetra support.
+//! %NOX %Epetra support.
 namespace Epetra {
 
-//! Implementation of NOX::Abstract::Vector for Epetra vectors.
+//! Implementation of NOX::Abstract::Vector for %Epetra vectors.
 class Vector : public Abstract::Vector {
 
  public:			

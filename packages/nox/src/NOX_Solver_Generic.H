@@ -39,7 +39,7 @@
 
 namespace NOX {
 
-//! NOX Nonlinear Solvers Namespace.
+//! %NOX Nonlinear Solvers Namespace.
 namespace Solver {
 
 //! Abstract nonlinear solver method interface.

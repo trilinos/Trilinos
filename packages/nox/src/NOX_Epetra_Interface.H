@@ -39,7 +39,7 @@
 namespace NOX {
 namespace Epetra {
 
-  /*! \brief Used by NOX Epetra Group to provide a link to the
+  /*! \brief Used by NOX::Epetra::Group to provide a link to the
    *  external code for RHS and Jacobian fills. */
 
 class Interface {

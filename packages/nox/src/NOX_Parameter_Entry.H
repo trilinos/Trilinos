@@ -37,7 +37,7 @@
 
 namespace NOX {
 
-//! NOX Parameter support.
+//! %NOX %Parameter support.
 namespace Parameter {
 
 class List; // anonther parameter type (forward declaration)
