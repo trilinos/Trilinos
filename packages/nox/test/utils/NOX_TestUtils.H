@@ -11,7 +11,7 @@
 
   These routines are based on a similar code in APPSPACK. Functionality
   for vector-typed input parameters has been commented out in this
-  file, but may be reinsated in the future.
+  file, but may be reinstated in the future.
 */
 
 #ifndef NOX_TEST_UTILS_H
@@ -41,7 +41,7 @@ namespace NOX
   false otherwise.
   
 */
-bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string& value);
+bool getNextQuotedString(const string& line, string::size_type& pos, string& value);
 
 /*!  Get the next string on the given line, starting at
   position pos. 
@@ -61,7 +61,7 @@ bool NOX::getNextQuotedString(const string& line, string::size_type& pos, string
   false otherwise.
   
 */
-bool NOX::getNextString(const string& line, string::size_type& pos, string& value);
+bool getNextString(const string& line, string::size_type& pos, string& value);
 
 /*!  Get the next string on the given line, starting at
   position pos, and convert it to a double. 
@@ -81,7 +81,7 @@ bool NOX::getNextString(const string& line, string::size_type& pos, string& valu
   false otherwise.
   
 */
-bool NOX::getNextDouble(const string& line, string::size_type& pos, double& value);
+bool getNextDouble(const string& line, string::size_type& pos, double& value);
 
 
 /*!  Get the next string on the given line, starting at
@@ -102,7 +102,7 @@ bool NOX::getNextDouble(const string& line, string::size_type& pos, double& valu
   false otherwise.
   
 */
-bool NOX::getNextInt(const string& line, string::size_type& pos, int& value);
+bool getNextInt(const string& line, string::size_type& pos, int& value);
 
 
 /*!
@@ -121,10 +121,10 @@ bool NOX::getNextInt(const string& line, string::size_type& pos, int& value);
 */
 
 
-bool NOX::parseTextInputFile(const string filename, NOX::Parameter::List& params);
+bool parseTextInputFile(const string filename, NOX::Parameter::List& params);
 
 //! Process a single line of the text input file.
-bool NOX::processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
+bool processTextInputFileLine(const string& line, NOX::Parameter::List& params, 
 			      NOX::Parameter::List*& subPtr);
 
 } // namespace NOX
