@@ -1183,6 +1183,18 @@ int ML_Operator_Destroy_DiscreteLaplacian()
 #endif
 
 
+string ML_toString(const int& x) {
+  char s[100];
+  sprintf(s, "%d", x);
+  return string(s);
+}
+
+string ML_toString(const double& x) {
+  char s[100];
+  sprintf(s, "%g", x);
+  return string(s);
+}
+
 #else
 
   /*noop for certain compilers*/

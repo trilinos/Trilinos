@@ -131,6 +131,11 @@ int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 				CrsMatrix, int & MaxNumNonzeros,
 				bool CheckNonzeroRow, double &);
+
+string ML_toString(const int& x);
+string ML_toString(const double& x);
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
