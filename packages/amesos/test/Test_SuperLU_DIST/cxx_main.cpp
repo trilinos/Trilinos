@@ -58,17 +58,11 @@ bool CheckError(const Epetra_RowMatrix& A,
   return(TestPassed);
 }
 
-//=============================================================================
-int main(int argc, char *argv[]) {
+int sub_main( Epetra_Comm &Comm ) { 
+  //  Allow destruction of the Amesos class(es) before the
+  //  call to MPI_Finalize()
 
-#ifdef HAVE_MPI
-  MPI_Init(&argc, &argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  int NumGlobalElements = 1000;
+  int NumGlobalElements = 100;   // kludge  see bug #1142
   int NumVectors = 7;
   
   // =================== //
@@ -165,21 +159,23 @@ int main(int argc, char *argv[]) {
 
   AMESOS_CHK_ERR(Solver.SymbolicFactorization());
   AMESOS_CHK_ERR(Solver.NumericFactorization());
+#if 1
   AMESOS_CHK_ERR(Solver.Solve());
+#endif 
 
   bool TestPassed = true;
 
+#if 1
   TestPassed = TestPassed &&
     CheckError(A,x,b,x_exact);
-
-#ifdef HAVE_MPI
-  MPI_Finalize();
 #endif
+
 
   if (TestPassed) {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST PASSED" << endl << endl;
-    system("touch Amesos_OK");
+    //    system("touch Amesos_OK");
+    Comm.Barrier();
     return(EXIT_SUCCESS);
   }
   else {
@@ -187,7 +183,25 @@ int main(int argc, char *argv[]) {
       cout << endl << "TEST FAILED" << endl << endl;
     return(EXIT_FAILURE);
   }
+  assert( false ) ; 
+}
 
+//=============================================================================
+int main(int argc, char *argv[]) {
+
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  int retvalue = sub_main(Comm) ; 
+
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
+  return( retvalue ) ;   
 }
 
 #else

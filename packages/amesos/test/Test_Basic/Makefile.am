@@ -50,11 +50,13 @@ TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.c
 	$(srcdir)/In_AmesosDscpack.csh Matrices
 	cp  $(srcdir)/In_TestBasic.csh TestBasic.csh
 	cp  $(srcdir)/In_AmesosSuperludist.csh AmesosSuperludist.csh 
+	cp  $(srcdir)/In_AmesosUmfpack.csh AmesosUmfpack.csh 
 	cp  $(srcdir)/In_AmesosDscpack.csh AmesosDscpack.csh 
+	cp  $(srcdir)/In_AmesosKlu.csh AmesosKlu.csh 
 	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
 	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
 	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
-	cp  $(srcdir)/In_AmesosKlu.csh AmesosKlu.csh 
+	cp  $(srcdir)/In_Suppressions Suppressions 
 
 Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa                              

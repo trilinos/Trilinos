@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestExamples_SOURCES)
+SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) $(TestDscpack_SOURCES) $(TestExamples_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,8 +65,9 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_TRUE@noinst_PROGRAMS = TestAmesos$(EXEEXT) \
-@HAVE_MPI_TRUE@	TestBasic$(EXEEXT) TestExamples$(EXEEXT)
+noinst_PROGRAMS = TestAmesos$(EXEEXT) TestBasic$(EXEEXT) \
+	TestExamples$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_2) \
+	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +99,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
+@HAVE_AMESOS_DSCPACK_TRUE@am__EXEEXT_1 = TestDscpack$(EXEEXT)
+@HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_2 = TestUmfpack$(EXEEXT)
+@HAVE_AMESOS_MUMPS_TRUE@am__EXEEXT_3 = TestMumps$(EXEEXT)
+@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_4 = TestKlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@am__EXEEXT_5 = TestSuperlud$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestAmesos_SOURCES_DIST = $(srcdir)/TestAmesos.sh
 am_TestAmesos_OBJECTS =
@@ -107,19 +113,44 @@ am__TestBasic_SOURCES_DIST = $(srcdir)/TestBasic.sh
 am_TestBasic_OBJECTS =
 TestBasic_OBJECTS = $(am_TestBasic_OBJECTS)
 TestBasic_LDADD = $(LDADD)
+am__TestDscpack_SOURCES_DIST = $(srcdir)/TestDscpack
+am_TestDscpack_OBJECTS =
+TestDscpack_OBJECTS = $(am_TestDscpack_OBJECTS)
+TestDscpack_LDADD = $(LDADD)
 am__TestExamples_SOURCES_DIST = $(srcdir)/TestExamples.sh
 am_TestExamples_OBJECTS =
 TestExamples_OBJECTS = $(am_TestExamples_OBJECTS)
 TestExamples_LDADD = $(LDADD)
+am__TestKlu_SOURCES_DIST = $(srcdir)/TestKlu
+am_TestKlu_OBJECTS =
+TestKlu_OBJECTS = $(am_TestKlu_OBJECTS)
+TestKlu_LDADD = $(LDADD)
+am__TestMumps_SOURCES_DIST = $(srcdir)/TestMumps
+am_TestMumps_OBJECTS =
+TestMumps_OBJECTS = $(am_TestMumps_OBJECTS)
+TestMumps_LDADD = $(LDADD)
+am__TestSuperlud_SOURCES_DIST = $(srcdir)/TestSuperlud
+am_TestSuperlud_OBJECTS =
+TestSuperlud_OBJECTS = $(am_TestSuperlud_OBJECTS)
+TestSuperlud_LDADD = $(LDADD)
+am__TestUmfpack_SOURCES_DIST = $(srcdir)/TestUmfpack
+am_TestUmfpack_OBJECTS =
+TestUmfpack_OBJECTS = $(am_TestUmfpack_OBJECTS)
+TestUmfpack_LDADD = $(LDADD)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestAmesos_SOURCES) $(TestBasic_SOURCES) \
-	$(TestExamples_SOURCES)
+	$(TestDscpack_SOURCES) $(TestExamples_SOURCES) \
+	$(TestKlu_SOURCES) $(TestMumps_SOURCES) \
+	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
 DIST_SOURCES = $(am__TestAmesos_SOURCES_DIST) \
-	$(am__TestBasic_SOURCES_DIST) $(am__TestExamples_SOURCES_DIST)
+	$(am__TestBasic_SOURCES_DIST) $(am__TestDscpack_SOURCES_DIST) \
+	$(am__TestExamples_SOURCES_DIST) $(am__TestKlu_SOURCES_DIST) \
+	$(am__TestMumps_SOURCES_DIST) $(am__TestSuperlud_SOURCES_DIST) \
+	$(am__TestUmfpack_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -263,9 +294,40 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
+# Nothing should be done for a serial build
 @HAVE_MPI_TRUE@TestAmesos_SOURCES = $(srcdir)/TestAmesos.sh
 @HAVE_MPI_TRUE@TestBasic_SOURCES = $(srcdir)/TestBasic.sh
 @HAVE_MPI_TRUE@TestExamples_SOURCES = $(srcdir)/TestExamples.sh
+@HAVE_AMESOS_DSCPACK_FALSE@DSCPACK_TEST = 
+@HAVE_AMESOS_DSCPACK_TRUE@DSCPACK_TEST = TestDscpack
+@HAVE_AMESOS_UMFPACK_FALSE@UMFPACK_TEST = 
+@HAVE_AMESOS_UMFPACK_TRUE@UMFPACK_TEST = TestUmfpack
+@HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_TEST = 
+
+# if HAVE_AMESOS_SCALAPACK
+# SCALAPACK_TEST = TestScalapack
+# else
+# SCALAPACK_TEST = 
+# endif
+@HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = Test_Superlu
+@HAVE_AMESOS_KLU_FALSE@KLU_TEST = 
+@HAVE_AMESOS_KLU_TRUE@KLU_TEST = TestKlu
+@HAVE_AMESOS_SUPERLUDIST_FALSE@SUPERLUDIST_TEST = 
+@HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST_TEST = TestSuperlud
+@HAVE_AMESOS_MUMPS_FALSE@MUMPS_TEST = 
+@HAVE_AMESOS_MUMPS_TRUE@MUMPS_TEST = TestMumps
+@HAVE_AMESOS_DSCPACK_TRUE@TestDscpack_SOURCES = $(srcdir)/TestDscpack
+@HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
+
+# if HAVE_AMESOS_SCALAPACK
+# TestScalapack_SOURCES = $(srcdir)/TestScalapack
+# 
+# TestScalapack$(EXEEXT): $(srcdir)/TestScalapack
+# 	cp $(srcdir)/TestScalapack TestScalapack$(EXEEXT) 
+# endif
+@HAVE_AMESOS_KLU_TRUE@TestKlu_SOURCES = $(srcdir)/TestKlu
+@HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperlud_SOURCES = $(srcdir)/TestSuperlud
+@HAVE_AMESOS_MUMPS_TRUE@TestMumps_SOURCES = $(srcdir)/TestMumps
 all: all-am
 
 .SUFFIXES:
@@ -307,9 +369,24 @@ clean-noinstPROGRAMS:
 @HAVE_MPI_FALSE@TestBasic$(EXEEXT): $(TestBasic_OBJECTS) $(TestBasic_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestBasic$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestBasic_LDFLAGS) $(TestBasic_OBJECTS) $(TestBasic_LDADD) $(LIBS)
+@HAVE_AMESOS_DSCPACK_FALSE@TestDscpack$(EXEEXT): $(TestDscpack_OBJECTS) $(TestDscpack_DEPENDENCIES) 
+@HAVE_AMESOS_DSCPACK_FALSE@	@rm -f TestDscpack$(EXEEXT)
+@HAVE_AMESOS_DSCPACK_FALSE@	$(LINK) $(TestDscpack_LDFLAGS) $(TestDscpack_OBJECTS) $(TestDscpack_LDADD) $(LIBS)
 @HAVE_MPI_FALSE@TestExamples$(EXEEXT): $(TestExamples_OBJECTS) $(TestExamples_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestExamples$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestExamples_LDFLAGS) $(TestExamples_OBJECTS) $(TestExamples_LDADD) $(LIBS)
+@HAVE_AMESOS_KLU_FALSE@TestKlu$(EXEEXT): $(TestKlu_OBJECTS) $(TestKlu_DEPENDENCIES) 
+@HAVE_AMESOS_KLU_FALSE@	@rm -f TestKlu$(EXEEXT)
+@HAVE_AMESOS_KLU_FALSE@	$(LINK) $(TestKlu_LDFLAGS) $(TestKlu_OBJECTS) $(TestKlu_LDADD) $(LIBS)
+@HAVE_AMESOS_MUMPS_FALSE@TestMumps$(EXEEXT): $(TestMumps_OBJECTS) $(TestMumps_DEPENDENCIES) 
+@HAVE_AMESOS_MUMPS_FALSE@	@rm -f TestMumps$(EXEEXT)
+@HAVE_AMESOS_MUMPS_FALSE@	$(LINK) $(TestMumps_LDFLAGS) $(TestMumps_OBJECTS) $(TestMumps_LDADD) $(LIBS)
+@HAVE_AMESOS_SUPERLUDIST_FALSE@TestSuperlud$(EXEEXT): $(TestSuperlud_OBJECTS) $(TestSuperlud_DEPENDENCIES) 
+@HAVE_AMESOS_SUPERLUDIST_FALSE@	@rm -f TestSuperlud$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_FALSE@	$(LINK) $(TestSuperlud_LDFLAGS) $(TestSuperlud_OBJECTS) $(TestSuperlud_LDADD) $(LIBS)
+@HAVE_AMESOS_UMFPACK_FALSE@TestUmfpack$(EXEEXT): $(TestUmfpack_OBJECTS) $(TestUmfpack_DEPENDENCIES) 
+@HAVE_AMESOS_UMFPACK_FALSE@	@rm -f TestUmfpack$(EXEEXT)
+@HAVE_AMESOS_UMFPACK_FALSE@	$(LINK) $(TestUmfpack_LDFLAGS) $(TestUmfpack_OBJECTS) $(TestUmfpack_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -441,6 +518,21 @@ uninstall-am: uninstall-info-am
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestBasic.sh TestBasic$(EXEEXT) 
 @HAVE_MPI_TRUE@TestExamples$(EXEEXT):
 @HAVE_MPI_TRUE@	cp $(srcdir)/TestExamples.sh TestExamples$(EXEEXT) 
+
+@HAVE_AMESOS_DSCPACK_TRUE@TestDscpack$(EXEEXT): $(srcdir)/TestDscpack
+@HAVE_AMESOS_DSCPACK_TRUE@	cp $(srcdir)/TestDscpack TestDscpack$(EXEEXT) 
+
+@HAVE_AMESOS_UMFPACK_TRUE@TestUmfpack$(EXEEXT): $(srcdir)/TestUmfpack
+@HAVE_AMESOS_UMFPACK_TRUE@	cp $(srcdir)/TestUmfpack TestUmfpack$(EXEEXT) 
+
+@HAVE_AMESOS_KLU_TRUE@TestKlu$(EXEEXT): $(srcdir)/TestKlu
+@HAVE_AMESOS_KLU_TRUE@	cp $(srcdir)/TestKlu TestKlu$(EXEEXT) 
+
+@HAVE_AMESOS_SUPERLUDIST_TRUE@TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
+@HAVE_AMESOS_SUPERLUDIST_TRUE@	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 
+
+@HAVE_AMESOS_MUMPS_TRUE@TestMumps$(EXEEXT): $(srcdir)/TestMumps
+@HAVE_AMESOS_MUMPS_TRUE@	cp $(srcdir)/TestMumps TestMumps$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
