@@ -2309,7 +2309,8 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
-      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, ML_TRUE);
+      ML_repartition_Acoarse(ml, level, next, (ML_Aggregate*)user_data, 
+                             ML_TRUE, ML_FALSE);
 #ifdef ML_MPI
 MPI_Barrier(MPI_COMM_WORLD);
 #endif
