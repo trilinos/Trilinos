@@ -325,6 +325,25 @@ int Epetra_VbrMatrix::PutScalar(double ScalarConstant)
   }
   return(0);
 }
+
+//==============================================================================
+int Epetra_VbrMatrix::Scale(double ScalarConstant) 
+{
+  for (int i=0; i<NumMyBlockRows_; i++) {
+    int NumBlockEntries = NumBlockEntriesPerRow_[i];
+    int RowDim = ElementSizeList_[i];
+    for (int j=0; j< NumBlockEntries; j++) {
+      int LDA = LDAs_[i][j];
+      int ColDim = ColDims_[i][j];
+      for (int col=0; col < ColDim; col++) {
+	double * Values = Values_[i][j]+col*LDA;
+	for (int row=0; row < RowDim; row++)
+	  *Values++ *= ScalarConstant;
+      }
+    }
+  }
+  return(0);
+}
 //==========================================================================
 int Epetra_VbrMatrix::BeginInsertGlobalValues(int BlockRow, int NumBlockEntries, int * BlockIndices) {
 
@@ -1067,6 +1086,33 @@ int Epetra_VbrMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
   return(0);
 }
 //==============================================================================
+int Epetra_VbrMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
+	
+  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't get diagonal unless matrix is filled
+  if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
+  int ierr = 0;
+  double * diagptr = (double *) Diagonal.Values(); // Dangerous but being lazy
+  for(int i=0; i<NumMyBlockRows_; i++){
+    int BlockRow = i;
+    int RowDim = ElementSizeList_[i];
+    int NumEntries = NumBlockEntriesPerRow_[i];
+    int * Indices = Indices_[i];
+    bool DiagMissing = true;
+    for (int j=0; j<NumEntries; j++) {
+      int BlockCol = Indices[j];
+      if (BlockRow==BlockCol) {
+	ReplaceMatDiag(Values_[i][j], LDAs_[i][j], RowDim, ColDims_[i][j], 
+		    diagptr+FirstPointInElementList_[i]);
+	DiagMissing = false;
+	break;
+      }
+    }
+    if (DiagMissing) ierr = 1; // flag a warning error
+  }
+  EPETRA_CHK_ERR(ierr);
+  return(0);
+}
+//==============================================================================
 int Epetra_VbrMatrix::BeginExtractBlockDiagonalCopy(int MaxNumBlockDiagonalEntries, 
 							int & NumBlockDiagonalEntries, int * RowColDims ) const{
 	
@@ -1129,7 +1175,7 @@ int Epetra_VbrMatrix::ExtractBlockDiagonalEntryView(double * & Values, int & LDA
 }
 //=============================================================================
 int Epetra_VbrMatrix::CopyMatDiag(double * A, int LDA, int NumRows, int NumCols, 
-					double * Diagonal) const {
+				  double * Diagonal) const {
 
   int i;
   double * ptr1 = Diagonal;
@@ -1139,6 +1185,21 @@ int Epetra_VbrMatrix::CopyMatDiag(double * A, int LDA, int NumRows, int NumCols,
   for (i=0; i<ndiags; i++) {
     ptr2 = A + i*LDA+i;
     *ptr1++ = *ptr2;
+  }
+  return(0);
+}
+//=============================================================================
+int Epetra_VbrMatrix::ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCols, 
+				     double * Diagonal) {
+
+  int i;
+  double * ptr1 = Diagonal;
+  double * ptr2;
+  int ndiags = EPETRA_MIN(NumRows,NumCols);
+
+  for (i=0; i<ndiags; i++) {
+    ptr2 = A + i*LDA+i;
+    *ptr2++ = *ptr1;
   }
   return(0);
 }

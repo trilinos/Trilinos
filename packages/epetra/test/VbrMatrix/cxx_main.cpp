@@ -365,6 +365,34 @@ int main(int argc, char *argv[])
   int One = 1;
   if (B.MyGRID(0)) EPETRA_TEST_ERR(!(B.BeginInsertGlobalValues(0, 1, &One)==-2),ierr);
 
+  Epetra_Vector checkDiag(B.RowMap());
+  forierr = 0;
+  int NumMyEquations1 = B.NumMyRows();
+  double two1 = 2.0;
+
+    // Test diagonal replacement and extraction methods
+
+    forierr = 0;
+    for (i=0; i<NumMyEquations1; i++) checkDiag[i]=two1;
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    EPETRA_TEST_ERR(!(B.ReplaceDiagonalValues(checkDiag)==0),ierr);
+
+    Epetra_Vector checkDiag1(B.RowMap());
+    EPETRA_TEST_ERR(!(B.ExtractDiagonalCopy(checkDiag1)==0),ierr);
+
+    forierr = 0;
+    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
+
+    double orignorm = B.NormOne();
+    EPETRA_TEST_ERR(!(B.Scale(4.0)==0),ierr);
+    EPETRA_TEST_ERR((B.NormOne()!=orignorm),ierr);
+    
+    if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
+
 
   /*
   if (verbose1) {

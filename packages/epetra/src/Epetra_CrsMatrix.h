@@ -163,6 +163,15 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int PutScalar(double ScalarConstant);
 
+  //! Multiply all values in the matrix by a constant value (in place: A <- ScalarConstant * A).
+  /*!
+    \param In
+           ScalarConstant - Value to use.
+
+    \return Integer error code, set to 0 if successful.
+  */
+    int Scale(double ScalarConstant);
+
   //! Insert a list of elements in a given global row of the matrix.
   /*!
     \param In
@@ -252,6 +261,21 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful.
   */
     int SumIntoMyValues(int MyRow, int NumEntries, double * Values, int *Indices);
+
+    //! Replaces diagonal values of the with those in the user-provided vector.
+    /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
+        If a diagonal value does not exist for a given row, the corresponding value in
+	the input Epetra_Vector will be ignored and the return code will be set to 1.
+
+	The Epetra_Map associated with the input Epetra_Vector must be compatible with
+	the RowMap of the matrix.
+
+    \param Diagonal (In) - New values to be placed in the main diagonal.
+
+    \return Integer error code, set to 0 if successful, 1 of one or more diagonal entries not present in matrix.
+  */
+    int ReplaceDiagonalValues(const Epetra_Vector & Diagonal);
+
   //@}
 
   //@{ \name Transformation methods

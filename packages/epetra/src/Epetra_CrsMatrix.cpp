@@ -215,6 +215,15 @@ int Epetra_CrsMatrix::PutScalar(double ScalarConstant)
   }
   return(0);
 }
+//==============================================================================
+int Epetra_CrsMatrix::Scale(double ScalarConstant) 
+{
+  for (int i=0; i<NumMyRows_; i++) {
+    int NumEntries = NumEntriesPerRow_[i];
+    for (int j=0; j< NumEntries; j++) Values_[i][j] *= ScalarConstant;
+  }
+  return(0);
+}
 //==========================================================================
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries, double * Values, int *Indices) {
 
@@ -629,23 +638,43 @@ int Epetra_CrsMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
 //==============================================================================
 int Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
 	
-  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't get diagonal unless matrix is filled
+  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't get diagonal unless matrix is filled (and in local index space)
   if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
 
-  int Base = IndexBase();
   for(int i=0; i<NumMyRows_; i++){
-    int Row = i + Base;
     int NumEntries = NumEntriesPerRow_[i];
     int * Indices = Indices_[i];
     Diagonal[i] = 0.0;
     for (int j=0; j<NumEntries; j++) {
-      int Col = Indices[j];
-      if (Row==Col) {
+      if (i==Indices[j]) {
 	Diagonal[i] = Values_[i][j];
 	break;
       }
     }
   }
+  return(0);
+}
+//==============================================================================
+int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
+	
+  if (!Filled()) EPETRA_CHK_ERR(-1); // Can't replace diagonal unless matrix is filled (and in local index space)
+  if (!RowMap().SameAs(Diagonal.Map())) EPETRA_CHK_ERR(-2); // Maps must be the same
+
+  int ierr = 0;
+  for(int i=0; i<NumMyRows_; i++){
+    int NumEntries = NumEntriesPerRow_[i];
+    int * Indices = Indices_[i];
+    bool DiagMissing = true;
+    for (int j=0; j<NumEntries; j++) {
+      if (i==Indices[j]) {
+	Values_[i][j] = Diagonal[i];
+	DiagMissing = false;
+	break;
+      }
+    }
+    if (DiagMissing) ierr = 1; // flag a warning error
+  }
+  EPETRA_CHK_ERR(ierr);
   return(0);
 }
 //==========================================================================

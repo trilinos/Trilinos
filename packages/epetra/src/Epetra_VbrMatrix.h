@@ -163,6 +163,16 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
     int PutScalar(double ScalarConstant);
 
+  //! Multiply all values in the matrix by a constant value (in place: A <- ScalarConstant * A).
+  /*!
+    \param In
+           ScalarConstant - Value to use.
+
+    \return Integer error code, set to 0 if successful.
+  */
+    int Scale(double ScalarConstant);
+
+
   //! Initiate insertion of a list of elements in a given global row of the matrix, values are inserted via SubmitEntry().
   /*!
     \param In
@@ -275,6 +285,20 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     */
 
     int EndSubmitEntries();
+
+    //! Replaces diagonal values of the with those in the user-provided vector.
+    /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
+        If a diagonal value does not exist for a given row, the corresponding value in
+	the input Epetra_Vector will be ignored and the return code will be set to 1.
+
+	The Epetra_Map associated with the input Epetra_Vector must be compatible with
+	the RowMap of the matrix.
+
+    \param Diagonal (In) - New values to be placed in the main diagonal.
+
+    \return Integer error code, set to 0 if successful, 1 of one or more diagonal entries not present in matrix.
+  */
+    int ReplaceDiagonalValues(const Epetra_Vector & Diagonal);
 
     //! Signal that data entry is complete, perform transformations to local index space.
     /* This version of TransformToLocal assumes that the domain and range distributions are
@@ -1068,6 +1092,8 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   int ExtractBlockDimsView(int NumBlockEntries, int * & ColDims, int * & LDAs) const;
   int CopyMatDiag(double * A, int LDA, int NumRows, int NumCols, 
 		  double * Diagonal) const;
+  int ReplaceMatDiag(double * A, int LDA, int NumRows, int NumCols, 
+		     double * Diagonal);
 
   void BlockRowMultiply(bool TransA, int RowDim, int NumEntries, 
 			int * BlockIndices, int RowOff,

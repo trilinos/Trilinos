@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
 
   if (debug) Comm.Barrier();
 
-  if (verbose) cout << "\n\n*****Testing lccal view constructor" << endl<< endl;
+  if (verbose) cout << "\n\n*****Testing local view constructor" << endl<< endl;
 
   Epetra_CrsMatrix BV(View, AA.RowMap(), AA.ColMap(), 0);
 
@@ -428,6 +428,29 @@ int main(int argc, char *argv[])
     forierr = 0;
     for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==two1);
     EPETRA_TEST_ERR(forierr,ierr);
+
+    // Test diagonal replacement method
+
+    forierr = 0;
+    for (i=0; i<NumMyEquations1; i++) checkDiag[i]=two1*two1;
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    EPETRA_TEST_ERR(!(A1.ReplaceDiagonalValues(checkDiag)==0),ierr);
+
+    Epetra_Vector checkDiag1(Map1);
+    EPETRA_TEST_ERR(!(A1.ExtractDiagonalCopy(checkDiag1)==0),ierr);
+
+    forierr = 0;
+    for (i=0; i<NumMyEquations1; i++) forierr += !(checkDiag[i]==checkDiag1[i]);
+    EPETRA_TEST_ERR(forierr,ierr);
+
+    if (verbose) cout << "\n\nDiagonal extraction and replacement OK.\n\n" << endl;
+
+    double orignorm = A1.NormOne();
+    EPETRA_TEST_ERR(!(A1.Scale(4.0)==0),ierr);
+    EPETRA_TEST_ERR((A1.NormOne()!=orignorm),ierr);
+    
+    if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
 
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
