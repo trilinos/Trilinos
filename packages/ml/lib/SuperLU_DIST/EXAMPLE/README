@@ -1,0 +1,30 @@
+		SuperLU_Dist Examples
+
+This directory contains sample programs to illustrate how to use
+various functions provded in SuperLU_Dist. You can modify these
+examples to suit your applications.
+
+The command line options "-r <process rows>" and "-c <process columns>"
+defines the 2-D process grid. The total number of processes <procs> is:
+	<procs> = <process rows> * <process columns>
+If the options is not provided at the command line, the programs
+will use 1 as default in each case.
+
+Two sample matrices are provided in this directory: g20.rua is
+a real matrix and cg20.cua is a complex matrix.
+
+
+1. To run the real examples (pddrive, pddrive1, pddrive2 and pddrive3),
+   you may type:
+   % mpprun -n <procs> pddrive -r <process row> -c <process columns> g20.rua
+
+2. To run the real example pddrive4, you may type:
+   % mpprun -n 10 pddrive4 g20.rua
+   
+3. To run the complex examples (pzdrive, pzdrive1, pzdrive2 and pzdrive3),
+   you may type:
+   % mpprun -n <procs> pzdrive -r <process row> -c <process columns> cg20.cua
+
+4. To run the complex example pzdrive4, you may type:
+   % mpprun -n 10 pzdrive4 cg20.rua
+   

@@ -1,0 +1,13 @@
+
+
+Here I have tried to combine Sherry's most recent version of SuperLU_DIST
+/ufs/tmp_6/dmday/SuperLU_DIST
+
+with my most recent 
+
+janus 144 >cp pdgsrfs_ABXglobal.c /scratch/tmp_6/dmday/SuperLU/SRC/.
+janus 145 >cp pdgssvx_ABglobal.c /scratch/tmp_6/dmday/SuperLU/SRC/.
+janus 146 >pwd
+/ufs/tmp_6/dmday/SuperLU/SuperLU_DIST/SRC
+
+
