@@ -75,6 +75,9 @@ namespace Teuchos
 			//! Write the header
 			string header() const ;
 
+			//! Write the header terminated as <Header/>
+			string terminatedHeader() const ;
+
 			//! Write the footer
 			string footer() const {return "</" + getTag() + ">";}
 

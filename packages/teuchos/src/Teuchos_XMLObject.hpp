@@ -129,6 +129,9 @@ namespace Teuchos
 			//! Write the header for this object to a string
 			string header() const {return ptr_->header();}
 
+			//! Write the header for this object to a string
+			string terminatedHeader() const {return ptr_->terminatedHeader();}
+
 			//! Write the footer for this object to a string
 			string footer() const {return ptr_->footer();}
 

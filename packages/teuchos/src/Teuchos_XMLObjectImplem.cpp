@@ -82,28 +82,35 @@ string XMLObjectImplem::header() const
 			rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
 		}
 
-  if (content_.length()==0 && children_.length()==0) 
-    {
-      rtn += "/>";
-    }
-  else
-    {
-      rtn += ">";
-    }
+  rtn += ">";
+	return rtn;
+}
+
+string XMLObjectImplem::terminatedHeader() const
+{
+	string rtn = "<" + tag_;
+      
+  for (Map::const_iterator i=attributes_.begin(); i!=attributes_.end(); ++i)
+		{
+			rtn += " " + (*i).first + "=\"" + (*i).second + "\"";
+		}
+
+  rtn += "/>";
+
 	return rtn;
 }
 
 string XMLObjectImplem::toString() const
 {
-  string rtn = header() + "\n";
-      
-  
+  string rtn;
+
   if (content_.length()==0 && children_.length()==0) 
     {
-      return rtn;
+      rtn= terminatedHeader() + "\n";
     }
   else
     {
+      rtn = header() + "\n";
       bool allBlankContent = true;
       for (int i=0; i<content_.length(); i++)
         {
@@ -133,14 +140,16 @@ void XMLObjectImplem::print(ostream& os, int indent) const
 {
   for (int i=0; i<indent; i++) os << " ";
   
-  os << header() << endl;
+
   
   if (content_.length()==0 && children_.length()==0) 
     {
+      os << terminatedHeader() << endl;
       return;
     }
   else
     {
+      os << header() << endl;
       printContent(os, indent+2);
 
       for (int i=0; i<children_.length(); i++)
