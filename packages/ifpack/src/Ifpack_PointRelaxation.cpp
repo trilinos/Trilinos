@@ -377,7 +377,7 @@ ApplyInverseJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   if (NumSweeps_ == 1 && ZeroStartingSolution_
       && (PrintFrequency() == 0)) {
-    IFPACK_CHK_ERR(Y.Multiply(DampingFactor_,Y,*Diagonal_,0.0));
+    IFPACK_CHK_ERR(Y.Multiply(DampingFactor_,X,*Diagonal_,0.0));
     return(0);
   }
 

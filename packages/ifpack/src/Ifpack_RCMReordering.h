@@ -51,10 +51,10 @@ public:
   }
 
   //! Returns the reordered index of row \c i.
-  virtual int Reorder(const int i) const;
+  virtual inline int Reorder(const int i) const;
 
   //! Returns the inverse reordered index of row \c i.
-  virtual int InvReorder(const int i) const;
+  virtual inline int InvReorder(const int i) const;
 
   //! Applies reordering to multivector X, whose local length equals the number of local rows.
   virtual int P(const Epetra_MultiVector& Xorig,
