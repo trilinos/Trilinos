@@ -3609,13 +3609,19 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
     exit( EXIT_FAILURE);
   }
   
+#ifdef HAVE_ML_AMESOS
   ML_Amesos_Gen(ml,0,choice,max_procs,&Amesos_Handle);
 
   ML_Amesos_Solve(Amesos_Handle, delta_x, resid_vector );
 
   ML_Amesos_Destroy(Amesos_Handle);
+#else
+  fprintf( stderr,
+	   "*ML*ERR* configure with --with-ml_amesos to use this function\n");
+  exit( EXIT_FAILURE );
+#endif
 
-  //  ML_Destroy(&ml);
+  ML_Destroy(&ml);
   
   return;
   
