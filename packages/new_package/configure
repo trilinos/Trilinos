@@ -3263,7 +3263,10 @@ fi
 
 
 if test -n "${MPI_CXX}"; then
-  # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
+  if test -f ${MPI_CXX}; then
+    MPI_CXX_EXISTS=yes
+  else
+    # Extract the first word of "${MPI_CXX}", so it can be a program name with args.
 set dummy ${MPI_CXX}; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -3299,9 +3302,15 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+  fi
+
   if test "X${MPI_CXX_EXISTS}" = "Xyes"; then
     CXX=${MPI_CXX}
   else
+    echo "-----"
+    echo "Cannot find MPI C++ compiler ${MPI_CXX}."
+    echo "Specify with --with-mpi-cxx."
+    echo "-----"
     { { echo "$as_me:$LINENO: error: MPI C++ compiler (${MPI_CXX}) not found." >&5
 echo "$as_me: error: MPI C++ compiler (${MPI_CXX}) not found." >&2;}
    { (exit 1); exit 1; }; }
@@ -3309,7 +3318,10 @@ echo "$as_me: error: MPI C++ compiler (${MPI_CXX}) not found." >&2;}
 fi
 
 if test -n "${MPI_CC}"; then
-  # Extract the first word of "${MPI_CC}", so it can be a program name with args.
+  if test -f ${MPI_CC}; then
+    MPI_CC_EXISTS=yes
+  else
+    # Extract the first word of "${MPI_CC}", so it can be a program name with args.
 set dummy ${MPI_CC}; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -3345,9 +3357,15 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+  fi
+
   if test "X${MPI_CC_EXISTS}" = "Xyes"; then
     CC=${MPI_CC}
   else
+    echo "-----"
+    echo "Cannot find MPI C compiler ${MPI_CC}."
+    echo "Specify with --with-mpi-cc."
+    echo "-----"
     { { echo "$as_me:$LINENO: error: MPI C compiler (${MPI_CC}) not found." >&5
 echo "$as_me: error: MPI C compiler (${MPI_CC}) not found." >&2;}
    { (exit 1); exit 1; }; }
@@ -3355,7 +3373,10 @@ echo "$as_me: error: MPI C compiler (${MPI_CC}) not found." >&2;}
 fi
 
 if test -n "${MPI_F77}"; then
-  # Extract the first word of "${MPI_F77}", so it can be a program name with args.
+  if test -f ${MPI_F77}; then
+    MPI_F77_EXISTS=yes
+  else
+    # Extract the first word of "${MPI_F77}", so it can be a program name with args.
 set dummy ${MPI_F77}; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -3391,9 +3412,15 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
+  fi
+
   if test "X${MPI_F77_EXISTS}" = "Xyes"; then
     F77=${MPI_F77}
   else
+    echo "-----"
+    echo "Cannot find MPI Fortran compiler ${MPI_F77}."
+    echo "Specify with --with-mpi-f77."
+    echo "-----"
     { { echo "$as_me:$LINENO: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&5
 echo "$as_me: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&2;}
    { (exit 1); exit 1; }; }
@@ -5502,7 +5529,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5505: \"$ac_link\") >&5
+(eval echo $as_me:5532: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5581,7 +5608,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5584: \"$ac_link\") >&5
+(eval echo $as_me:5611: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6472,7 +6499,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6475: \"$ac_link\") >&5
+(eval echo $as_me:6502: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6551,7 +6578,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6554: \"$ac_link\") >&5
+(eval echo $as_me:6581: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
