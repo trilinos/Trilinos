@@ -42,15 +42,13 @@
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-MoreThuente::MoreThuente(Parameter::List& params) :
-  tmpvecptr(NULL)
+MoreThuente::MoreThuente(Parameter::List& params) 
 {
   reset(params);
 }
 
 MoreThuente::~MoreThuente()
 {
-  delete tmpvecptr;
 }
 
 bool MoreThuente::reset(Parameter::List& params)
@@ -85,39 +83,14 @@ bool MoreThuente::compute(Abstract::Group& grp, double& step,
   return (info == 1);
 }
 
-double MoreThuente::dgcompute(const Abstract::Vector& dir, const Abstract::Group& grp)
-{
-  if (grp.isGradient()) {
-    return dir.dot(grp.getGradient());
-  }
-
-  if (tmpvecptr == NULL) {
-    tmpvecptr = grp.getX().clone(ShapeCopy);
-  }
-
-  // tmpvec = J * dir
-  bool flag = grp.applyJacobian(dir,*tmpvecptr);
-  
-  if (!flag) {
-    cout << "NOX::LineSearch::MoreThuente::dgcompute -  Unable to apply Jacobian!" << endl;
-    throw "NOX Error";
-  }
-
-  if (!grp.isF()) {
-    cout << "NOX::LineSearch::MoreThuente::dgcompute - Invalid F" << endl;
-    throw "NOX Error";
-  }
-
-  return (tmpvecptr->dot(grp.getF()));
-}
-
 int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
 			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
 {
   if (Utils::doPrint(Utils::InnerIteration)) {
    cout << "\n" << Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
-   // Set default step
+
+  // Set default step
   stp = defaultstep;
 
   int info = 0;			// return code
@@ -126,7 +99,7 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
 
-  double dginit = dgcompute(dir, oldgrp);
+  double dginit = computeSlope(dir, oldgrp);
 
   if (dginit >= 0.0) {
     if (Utils::doPrint(Utils::Warning)) {
@@ -201,15 +174,9 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
     newgrp.computeJacobian();
     nfev ++;
+    string message = "";
 
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << setw(3) << nfev << ":";
-      cout << " step = " << Utils::sci(stp);
-      cout << " oldf = " << Utils::sci(2*finit);
-      cout << " newf = " << Utils::sci(2*f);
-    }
-
-    double dg = dgcompute(dir, newgrp);
+    double dg = computeSlope(dir, newgrp);
 
     double ftest1 = finit + stp * dgtest;
 
@@ -244,31 +211,29 @@ int MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 	stp = recoverystep;
 	newgrp.computeX(oldgrp, dir, stp);
 	
-	if (Utils::doPrint(Utils::InnerIteration)) 
-	  cout << " (USING RECOVERY STEP!) \n";
+	message = "(USING RECOVERY STEP!)";
 	
+	/*
 	if (Utils::doPrint(Utils::Details))
-	    cout << "[Failure info flag = " << info << "]" << endl;
+	  message += "[Failure info flag = " + info + "]";
+	*/
 	    
       }
       else {			// Line search succeeded
 	
-	if (Utils::doPrint(Utils::InnerIteration)) 
-	  cout << " (STEP ACCEPTED!)" << endl;
+	message = "(STEP ACCEPTED!)";
 	
       }
       
-      if (Utils::doPrint(Utils::InnerIteration)) 
-	cout << Utils::fill(72) << "\n" << endl;
+      printStep(nfev, stp, finit, f, message);
 
       // Returning the line search flag
       return info;
 
     } // info != 0
+    
+    printStep(nfev, stp, finit, f, message);
 
-    if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << endl;
-    }
 
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.

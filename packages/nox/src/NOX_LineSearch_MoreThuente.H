@@ -33,7 +33,7 @@
 #ifndef NOX_MORETHUENTE_H
 #define NOX_MORETHUENTE_H
 
-#include "NOX_LineSearch_Generic.H" // base class
+#include "NOX_LineSearch_Common.H" // base class
 
 namespace NOX {
 namespace LineSearch {
@@ -49,7 +49,9 @@ namespace LineSearch {
 
   The function we are minimizing is given by
 
-  f(x) = 0.5 * F(x)'* F(x)
+  \f[
+  f(x) = 0.5 \|F(x)\|^2
+  \f]
 
   The purpose of the More'-Thuente line search is to find a step which
   satisfies a sufficient decrease condition and a curvature condition.
@@ -57,21 +59,26 @@ namespace LineSearch {
   endpoints stx and sty. The interval of uncertainty is initially
   chosen so that it contains a minimizer of the modified function
 
-  f(x+stp*s) - f(x) - ftol*stp*(gradf(x)'s).
+  \f[
+  f(x+{\rm stp} \; s) - f(x) - {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s).
+  \f]
 
   If a step is obtained for which the modified function has a
   nonpositive function value and nonnegative derivative, then the
   interval of uncertainty is chosen so that it contains a minimizer of
-  f(x+stp*s).
+  \f$f(x+{\rm stp}\;s)\f$.
 
   The algorithm is designed to find a step which satisfies the
   sufficient decrease condition
 
-  f(x+stp*s) <= f(x) + ftol*stp*(gradf(x)'s),
-
+  \f[
+  f(x + {\rm stp} \; s) <= f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
+  \f]
   and the curvature condition
 
-  abs(gradf(x+stp*s)'s)) <= gtol*abs(gradf(x)'s).
+  \f[
+  \vert \nabla f(x + {\rm stp} \; s)^T s) \vert <= {\rm gtol} \;  |\nabla f(x)^T s|
+  \f]
 
   If ftol is less than gtol and if, for example, the function is
   bounded below, then there is always a step which satisfies both
@@ -108,7 +115,7 @@ namespace LineSearch {
 
 */
 
-class MoreThuente : public Generic {
+class MoreThuente : public Common {
 
 public:
 
@@ -352,18 +359,12 @@ private:
 
   //! max
   double max(double a, double b);
+
   //! min
   double min(double a, double b);
+
   //! absmax - returns the max of the absolute value of the three inputs
   double absmax(double a, double b, double c);
-
-
-  //! Computes d'*g where d is the given search direction (dir) and g
-  //! is the gradient corresponding to the given group (grp). If the
-  //! gradient has not been computed, then we compute F'*(J*d)
-  //! instead. Here F is the right-hand-side and J is the Jacobian
-  //! corresponding to the given group. 
-  double dgcompute(const Abstract::Vector& dir, const Abstract::Group& grp);
 
 
 private:
@@ -385,10 +386,6 @@ private:
   double defaultstep;
   //! Recovery step if linesearch fails
   double recoverystep;
-
-  //! Temporary abstract vector pointer
-  Abstract::Vector* tmpvecptr;
-
 
 };
 } // namespace LineSearch
