@@ -322,7 +322,7 @@ namespace LOCA {
       applyShiftedMatrixInverse(NOX::Parameter::List& params,
 				const NOX::Abstract::Vector& input,
 				NOX::Abstract::Vector& result,
-				double shift) const;
+				double shift);
       //@}
 
       /*! 

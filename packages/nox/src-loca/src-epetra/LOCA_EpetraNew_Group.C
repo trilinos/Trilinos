@@ -348,7 +348,7 @@ LOCA::EpetraNew::Group::applyShiftedMatrixInverse(
 					    NOX::Parameter::List& params,
 					    const NOX::Abstract::Vector& input,
 					    NOX::Abstract::Vector& result,
-					    double shift) const
+					    double shift)
                                            
 {
   const NOX::Epetra::Vector& epetraInput = dynamic_cast<const NOX::Epetra::Vector&>(input);
