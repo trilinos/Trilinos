@@ -28,7 +28,9 @@ char     *inname,		/* name of input file */
 int     **start,		/* start of edge list for each vertex */
 int     **adjacency,		/* edge list data */
 int      *nvtxs,		/* number of vertices in graph */
+int      *vwgt_dim,		/* # of vertex weights per node */
 float   **vweights,		/* vertex weight list data */
+int      *ewgt_dim,		/* # of edge weights per edge */
 float   **eweights 		/* edge weight list data */
 )
 {
@@ -99,14 +101,31 @@ float   **eweights 		/* edge weight list data */
     if (!end_flag) {
 	option = read_int(fin, &end_flag);
     }
-    while (!end_flag)
-	j = read_int(fin, &end_flag);
 
     using_ewgts = option - 10 * (option / 10);
     option /= 10;
     using_vwgts = option - 10 * (option / 10);
     option /= 10;
     vtxnums = option - 10 * (option / 10);
+
+    /* Read weight dimensions */
+    (*vwgt_dim) = using_vwgts;
+    (*ewgt_dim) = using_ewgts;
+    if (using_vwgts){
+       j = read_int(fin, &end_flag);
+       if (!end_flag) (*vwgt_dim) = j;
+    }
+    if (using_ewgts){
+       j = read_int(fin, &end_flag);
+       if (!end_flag) (*ewgt_dim) = j;
+    }
+
+    /* Discard rest of line */
+    while (!end_flag)
+	j = read_int(fin, &end_flag);
+
+    printf("Debug: using_vwgts=%1d, using_ewgts=%1d, vwgt_dim = %d, ewgt_dim = %d\n", 
+           using_vwgts, using_ewgts, *vwgt_dim, *ewgt_dim);
 
     /* Allocate space for rows and columns. */
     *start = (int *) malloc((unsigned) (*nvtxs + 1) * sizeof(int));
@@ -116,13 +135,13 @@ float   **eweights 		/* edge weight list data */
 	*adjacency = NULL;
 
     if (using_vwgts)
-	*vweights = (float *) malloc((unsigned) (*nvtxs) * sizeof(float));
+	*vweights = (float *) malloc((unsigned) (*nvtxs) * (*vwgt_dim) * sizeof(float));
     else
 	*vweights = NULL;
 
     if (using_ewgts)
 	*eweights = (float *)
-                     malloc((unsigned) (2 * narcs + 1) * sizeof(float));
+                     malloc((unsigned) (2 * narcs + 1) * (*ewgt_dim) * sizeof(float));
     else
 	*eweights = NULL;
 
@@ -172,20 +191,22 @@ float   **eweights 		/* edge weight list data */
 
 	/* If vertices are weighted, read vertex weight. */
 	if (using_vwgts && new_vertex) {
-	    weight = read_val(fin, &end_flag);
-	    if (end_flag) {
-		printf("ERROR in graph file `%s':", inname);
-		printf(" no weight for vertex %d.\n", vertex);
-		fclose(fin);
-		return (1);
+            for (j=0; j<(*vwgt_dim); j++){
+	    	weight = read_val(fin, &end_flag);
+	    	if (end_flag) {
+			printf("ERROR in graph file `%s':", inname);
+			printf(" not enough weights for vertex %d.\n", vertex);
+			fclose(fin);
+			return (1);
+	    	}
+	    	if ((weight <= 0) && Debug_Input) {
+			printf("ERROR in graph file `%s':", inname);
+			printf(" zero or negative weight entered for vertex %d.\n", vertex);
+			fclose(fin);
+			return (1);
+	    	}
+	    	(*vweights)[(vertex-1)*(*vwgt_dim)+j] = weight;
 	    }
-	    if ((weight <= 0) && Debug_Input) {
-		printf("ERROR in graph file `%s':", inname);
-		printf(" zero or negative weight entered for vertex %d.\n", vertex);
-		fclose(fin);
-		return (1);
-	    }
-	    (*vweights)[vertex-1] = weight;
 	}
 
 	nedge = 0;
@@ -243,26 +264,28 @@ float   **eweights 		/* edge weight list data */
             }
 
 	    if (using_ewgts) {	/* Read edge weight if it's being input. */
-		eweight = read_val(fin, &end_flag);
+                for (j=0; j<(*ewgt_dim); j++){
+		    eweight = read_val(fin, &end_flag);
 
-		if (end_flag) {
-		    printf("ERROR in graph file `%s':", inname);
-		    printf(" no weight for edge (%d,%d).\n", vertex, neighbor);
-		    fclose(fin);
-		    return (1);
-		}
-
-		if (eweight <= 0 && Debug_Input) {
-		    printf("WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
-			   vertex, neighbor);
-		    skip_flag = TRUE;
-		    if (!ignore_me) {
-			ignore_me = TRUE;
-			++ignored;
+		    if (end_flag) {
+		        printf("ERROR in graph file `%s':", inname);
+		        printf(" not enough weights for edge (%d,%d).\n", vertex, neighbor);
+		        fclose(fin);
+		        return (1);
 		    }
-		}
-		else {
-		    *ewptr++ = eweight;
+
+		    if (eweight <= 0 && Debug_Input) {
+		        printf("WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
+			   vertex, neighbor);
+		        skip_flag = TRUE;
+		        if (!ignore_me) {
+			    ignore_me = TRUE;
+			    ++ignored;
+		        }
+		    }
+		    else {
+		        *ewptr++ = eweight;
+		    }
 		}
 	    }
 
