@@ -30,6 +30,8 @@
 #ifndef ZOLTAN_MIGRATIONFUNCTIONS_H_
 #define ZOLTAN_MIGRATIONFUNCTIONS_H_
 
+#include <EpetraExt_ConfigDefs.h>
+
 #include <zoltan.h>
 
 namespace Zoltan {

@@ -34,16 +34,18 @@ inout_example_SOURCES = \
   $(srcdir)/cxx_main.cpp
 
 inout_example_DEPENDENCIES = \
-  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/src/transform/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
 inout_example_CXXFLAGS = -I$(top_srcdir)/src/inout \
-                            -I$(top_builddir)/src \
-                            -I$(top_srcdir)/../epetra/src \
-                            -I$(top_builddir)/../epetra/src
+                         -I$(top_builddir)/src \
+                         -I$(top_srcdir)/../epetra/src \
+                         -I$(top_builddir)/../epetra/src \
+                         -I$(top_srcdir)/../triutils/src \
+                         -I$(top_builddir)/../triutils/src
 
 inout_example_LDADD = \
-  $(top_builddir)/src/transform/libepetraext_inout.a \
+  $(top_builddir)/src/transform/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../epetra/src/libtriutils.a \
   $(BLAS_LIBS) \

@@ -26,8 +26,12 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_INOUT_EXAMPLES
+if BUILD_EXAMPLES
+
+if BUILD_INOUT
 
 SUBDIRS = inout
+
+endif
 
 endif

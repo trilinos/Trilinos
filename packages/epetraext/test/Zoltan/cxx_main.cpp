@@ -39,9 +39,10 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "EDT_CrsGraph_Zoltan.h"
-#include "EDT_CrsGraph_ZoltanOrder.h"
-#include "EDT_LinearProblem_GraphTrans.h"
+
+#include "EpetraExt_Zoltan_CrsGraph.h"
+#include "EpetraExt_ZoltanOrder_CrsGraph.h"
+#include "EpetraExt_LPTrans_From_GraphTrans.h"
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {

@@ -35,18 +35,19 @@ inout_test_SOURCES = \
   $(top_srcdir)/test/epetra_test_err.h
 
 inout_test_DEPENDENCIES = \
-  $(top_builddir)/src/inout/libepetraext_inout.a \
+  $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a
 
 inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
-                            -I$(top_builddir)/src \
-                            -I$(top_srcdir)/../epetra/src \
-                            -I$(top_builddir)/../epetra/src \
-                            -I$(top_srcdir)/../triutils/src \
-                            -I$(top_builddir)/../triutils/src
+                      -I$(top_srcdir)/src \
+                      -I$(top_builddir)/src \
+                      -I$(top_srcdir)/../epetra/src \
+                      -I$(top_builddir)/../epetra/src \
+                      -I$(top_srcdir)/../triutils/src \
+                      -I$(top_builddir)/../triutils/src
 
 inout_test_LDADD = \
-  $(top_builddir)/src/inout/libepetraext_inout.a \
+  $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
   $(BLAS_LIBS) \

@@ -24,8 +24,9 @@
 #ifndef EPETRAEXT_MATRIXMATRIX_H
 #define EPETRAEXT_MATRIXMATRIX_H
 
-#include <Epetra_RowMatrix.h>
-#include <Epetra_CrsMatrix.h>
+#include <EpetraExt_ConfigDefs.h>
+
+class Epetra_CrsMatrix;
 
 namespace EpetraExt {
 
@@ -34,7 +35,8 @@ namespace EpetraExt {
       See the program epetraext/test/MatrixMatrix/cxx_main.cpp for
       a usage example.
    */
-  class MatrixMatrix {
+class MatrixMatrix {
+
   public:
     /** destructor */
     virtual ~MatrixMatrix(){}
@@ -59,7 +61,8 @@ namespace EpetraExt {
 			const Epetra_CrsMatrix& B,
 			Epetra_CrsMatrix& C);
 
-  };//class MatrixMatrix
+};//class MatrixMatrix
+
 }//namespace EpetraExt
 
 #endif

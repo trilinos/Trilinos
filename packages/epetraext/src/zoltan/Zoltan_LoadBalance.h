@@ -12,7 +12,7 @@
 #ifndef ZOLTAN_LOADBALANCE_H_
 #define ZOLTAN_LOADBALANCE_H_
 
-#include <Zoltan_CPP_config.h>
+#include <EpetraExt_ConfigDefs.h>
 
 #include <zoltan.h>
 
@@ -196,7 +196,7 @@ public:
  int Set_Unpack_Obj_Fn       ( ZOLTAN_UNPACK_OBJ_FN * fn_ptr,
                               void * data = 0 );
 
-//#endif /* ZOLTAN_OLD_CALLBACK */
+#endif /* ZOLTAN_OLD_CALLBACK */
 
  //@}
 

@@ -118,12 +118,23 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_INOUT_TESTS_FALSE@@BUILD_TRANSFORM_TESTS_FALSE@SUBDIRS = 
-@BUILD_INOUT_TESTS_FALSE@@BUILD_TRANSFORM_TESTS_TRUE@@HAVE_MPI_TRUE@SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts
-@BUILD_INOUT_TESTS_FALSE@@BUILD_TRANSFORM_TESTS_TRUE@@HAVE_MPI_FALSE@SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts
-@BUILD_INOUT_TESTS_TRUE@@BUILD_TRANSFORM_TESTS_FALSE@SUBDIRS = inout
-@BUILD_INOUT_TESTS_TRUE@@BUILD_TRANSFORM_TESTS_TRUE@@HAVE_MPI_TRUE@SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts inout
-@BUILD_INOUT_TESTS_TRUE@@BUILD_TRANSFORM_TESTS_TRUE@@HAVE_MPI_FALSE@SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts inout
+@BUILD_EXPERIMENTAL_FALSE@@BUILD_TESTS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap scripts
+@BUILD_EXPERIMENTAL_TRUE@@BUILD_TESTS_TRUE@@BUILD_TRANSFORM_TRUE@TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap SymmRCM scripts
+@BUILD_TESTS_TRUE@@BUILD_TRANSFORM_FALSE@TRANSFORM_SUBDIRS = 
+
+@BUILD_BTF_FALSE@@BUILD_TESTS_TRUE@BTF_SUBDIRS = 
+@BUILD_BTF_TRUE@@BUILD_TESTS_TRUE@BTF_SUBDIRS = BTF
+
+@BUILD_INOUT_FALSE@@BUILD_TESTS_TRUE@INOUT_SUBDIRS = 
+@BUILD_INOUT_TRUE@@BUILD_TESTS_TRUE@INOUT_SUBDIRS = inout
+
+@BUILD_TESTS_TRUE@@BUILD_ZOLTAN_TRUE@ZOLTAN_SUBDIRS = Zoltan
+@BUILD_TESTS_TRUE@@BUILD_ZOLTAN_FALSE@ZOLTAN_SUBDIRS = 
+
+@BUILD_COLORING_FALSE@@BUILD_TESTS_TRUE@COLORING_SUBDIRS = 
+@BUILD_COLORING_TRUE@@BUILD_TESTS_TRUE@COLORING_SUBDIRS = MapColoring
+
+@BUILD_TESTS_TRUE@SUBDIRS = MatrixMatrix $(TRANSFORM_SUBDIRS) $(BTF_SUBDIRS) $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(COLORING_SUBDIRS)
 subdir = test
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
@@ -135,8 +146,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter \
-	SymmRCM View scripts Overlap Zoltan inout
+DIST_SUBDIRS = MatrixMatrix Composite Permutation SingletonFilter View \
+	Overlap scripts SymmRCM BTF inout Zoltan MapColoring
 all: all-recursive
 
 .SUFFIXES:

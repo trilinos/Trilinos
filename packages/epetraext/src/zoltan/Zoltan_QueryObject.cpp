@@ -29,8 +29,6 @@
 // Current Owner  : $Author$
 //-------------------------------------------------------------------------
 
-#include <Zoltan_CPP_config.h>
-
 #include <Zoltan_QueryObject.h>
 
   //General Functions

@@ -37,9 +37,11 @@
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_CrsGraph.h"
-#include "EDT_CrsGraph_View.h"
-#include "EDT_CrsMatrix_View.h"
-#include "EDT_MultiVector_View.h"
+
+#include "EpetraExt_View_CrsGraph.h"
+#include "EpetraExt_View_CrsMatrix.h"
+#include "EpetraExt_View_MultiVector.h"
+
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {

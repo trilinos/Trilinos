@@ -47,7 +47,7 @@ echo "----------------------------------------"
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
-AC_CONFIG_SRCDIR(/src/transform/EDT_CrsGraph_View.cpp)
+AC_CONFIG_SRCDIR(/src/transform/EpetraExt_View_CrsGraph.cpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -75,11 +75,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-AM_INIT_AUTOMAKE(1.6.3)
+AM_INIT_AUTOMAKE(EpetraExt, 1.6.3)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.53)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.
@@ -137,55 +137,55 @@ TAC_ARG_CHECK_MPI
 # Build Tests?
 # ------------------------------------------------------------------------
 
-AC_DEFUN(EPETRAEXT_SUBPKG,
-[
-  AC_ARG_ENABLE(epetraext-$1,
-  [AC_HELP_STRING([--enable-epetraext-$1],[compile $1 sub-package])],
-  [SUBPKG_$1=$enableval],
-  [SUBPKG_$1=$2]
-  )
-
-  AC_ARG_ENABLE(epetraext-$1-tests,
-  [AC_HELP_STRING([--enable-epetraext-$1-tests],[compile $1 tests])],
-  [SUBPKG_$1_TESTS=$enableval],
-  [SUBPKG_$1_TESTS=no]
-  )
-
-  AC_ARG_ENABLE(epetraext-$1-examples,
-  [AC_HELP_STRING([--enable-epetraext-$1-examples],[compile $1 examples])],
-  [SUBPKG_$1_EXAMPLES=$enableval],
-  [SUBPKG_$1_EXAMPLES=no]
-  )
-
-  #Cannot build tests if associated sub-package not built
-  if test ${SUBPKG_$1_TESTS} = yes; then
-    SUBPKG_$1=yes;
-  fi
-
-  #Cannot build examples if associated sub-package not built
-  if test ${SUBPKG_$1_EXAMPLES} = yes; then
-    SUBPKG_$1=yes;
-  fi
-
-  AC_MSG_CHECKING(whether the sub-package $1 should be built)
-  AC_MSG_RESULT(${SUBPKG_$1})
-
-  AC_MSG_CHECKING(whether the $1 tests should be built)
-  AC_MSG_RESULT(${SUBPKG_$1_TESTS})
-
-  AC_MSG_CHECKING(whether the $1 examples should be built)
-  AC_MSG_RESULT(${SUBPKG_$1_EXAMPLES})
-])
-
-EPETRAEXT_SUBPKG(transform,yes)
-AM_CONDITIONAL(BUILD_TRANSFORM, test X${SUBPKG_transform} = Xyes)
-AM_CONDITIONAL(BUILD_TRANSFORM_TESTS, test X${SUBPKG_transform_TESTS} = Xyes)
-AM_CONDITIONAL(BUILD_TRANSFORM_EXAMPLES, test X${SUBPKG_transform_EXAMPLES} = Xyes)
-
-EPETRAEXT_SUBPKG(inout,yes)
-AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout} = Xyes)
-AM_CONDITIONAL(BUILD_INOUT_TESTS, test X${SUBPKG_inout_TESTS} = Xyes)
-AM_CONDITIONAL(BUILD_INOUT_EXAMPLES, test X${SUBPKG_inout_EXAMPLES} = Xyes)
+#AC_DEFUN(EPETRAEXT_SUBPKG,
+#[
+#  AC_ARG_ENABLE(epetraext-$1,
+#  [AC_HELP_STRING([--enable-epetraext-$1],[compile $1 sub-package])],
+#  [SUBPKG_$1=$enableval],
+#  [SUBPKG_$1=$2]
+#  )
+#
+#  AC_ARG_ENABLE(epetraext-$1-tests,
+#  [AC_HELP_STRING([--enable-epetraext-$1-tests],[compile $1 tests])],
+#  [SUBPKG_$1_TESTS=$enableval],
+#  [SUBPKG_$1_TESTS=no]
+#  )
+#
+#  AC_ARG_ENABLE(epetraext-$1-examples,
+#  [AC_HELP_STRING([--enable-epetraext-$1-examples],[compile $1 examples])],
+#  [SUBPKG_$1_EXAMPLES=$enableval],
+#  [SUBPKG_$1_EXAMPLES=no]
+#  )
+#
+#  #Cannot build tests if associated sub-package not built
+#  if test ${SUBPKG_$1_TESTS} = yes; then
+#    SUBPKG_$1=yes;
+#  fi
+#
+#  #Cannot build examples if associated sub-package not built
+#  if test ${SUBPKG_$1_EXAMPLES} = yes; then
+#    SUBPKG_$1=yes;
+#  fi
+#
+#  AC_MSG_CHECKING(whether the sub-package $1 should be built)
+#  AC_MSG_RESULT(${SUBPKG_$1})
+#
+#  AC_MSG_CHECKING(whether the $1 tests should be built)
+#  AC_MSG_RESULT(${SUBPKG_$1_TESTS})
+#
+#  AC_MSG_CHECKING(whether the $1 examples should be built)
+#  AC_MSG_RESULT(${SUBPKG_$1_EXAMPLES})
+#])
+#
+#EPETRAEXT_SUBPKG(transform,yes)
+#AM_CONDITIONAL(BUILD_TRANSFORM, test X${SUBPKG_transform} = Xyes)
+#AM_CONDITIONAL(BUILD_TRANSFORM_TESTS, test X${SUBPKG_transform_TESTS} = Xyes)
+#AM_CONDITIONAL(BUILD_TRANSFORM_EXAMPLES, test X${SUBPKG_transform_EXAMPLES} = Xyes)
+#
+#EPETRAEXT_SUBPKG(inout,yes)
+#AM_CONDITIONAL(BUILD_INOUT, test X${SUBPKG_inout} = Xyes)
+#AM_CONDITIONAL(BUILD_INOUT_TESTS, test X${SUBPKG_inout_TESTS} = Xyes)
+#AM_CONDITIONAL(BUILD_INOUT_EXAMPLES, test X${SUBPKG_inout_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Special check for case of running on TFLOP
@@ -267,9 +267,20 @@ TAC_ARG_ENABLE_OPTION(warning_messages, [enable printing of warning error messag
 TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output], 
                    FORMAT_IO, yes)
 
-TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], 
-		EPETRAEXT_ZOLTAN, no)
-AM_CONDITIONAL(HAVE_EPETRAEXT_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, transform, [Enable EpetraExt Transform subpkg], TRANSFORM, yes)
+AM_CONDITIONAL(BUILD_TRANSFORM, [test "X$ac_cv_use_epetraext_transform" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, inout, [Enable EpetraExt InOut subpkg], INOUT, yes)
+AM_CONDITIONAL(BUILD_INOUT, [test "X$ac_cv_use_epetraext_inout" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, coloring, [Enable EpetraExt Coloring subpkg], INOUT, yes)
+AM_CONDITIONAL(BUILD_COLORING, [test "X$ac_cv_use_epetraext_coloring" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], ZOLTAN, no)
+AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, btf, [Enable EpetraExt BTF subpkg], BTF, no)
+AM_CONDITIONAL(BUILD_BTF, [test "X$ac_cv_use_epetraext_btf" != "Xno"])
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
@@ -277,6 +288,19 @@ AM_CONDITIONAL(HAVE_EPETRAEXT_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "X
 
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, no)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE(experimental, [Build experimental code for all Trilinos packages (not all packages are sensitive to this option)], EXPERIMENTAL, no)
+AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, tests, [Build tests for EpetraExt package], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, examples, [Build examples for EpetraExt package], EXAMPLES, no)
+AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+TAC_ARG_ENABLE_FEATURE_SUB( epetraext, experimental, [Build experimental code for EpetraExt package], EXPERIMENTAL, no)
+AM_CONDITIONAL(BUILD_EXPERIMENTAL, test "X$ac_cv_use_experimental" != "Xno")
+
+# ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -364,8 +388,6 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
-		src/transform/Makefile
-		src/inout/Makefile
                 test/Makefile
                 test/BTF/Makefile
                 test/Composite/Makefile

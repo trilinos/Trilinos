@@ -33,14 +33,15 @@
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
+
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "EDT_CrsGraph_Overlap.h"
-#include "EDT_LinearProblem_GraphTrans.h"
+#include "EpetraExt_Overlap_CrsGraph.h"
+#include "EpetraExt_LPTrans_From_GraphTrans.h"
 #include "../epetra_test_err.h"
 
 int main(int argc, char *argv[]) {

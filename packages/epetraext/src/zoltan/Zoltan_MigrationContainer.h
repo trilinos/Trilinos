@@ -29,6 +29,8 @@
 #ifndef ZOLTAN_MIGRATIONCONTAINER_H_
 #define ZOLTAN_MIGRATIONCONTAINER_H_
 
+#include <EpetraExt_ConfigDefs.h>
+
 #include <map>
 
 namespace Zoltan {

@@ -26,44 +26,66 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_TRANSFORM_TESTS
+if BUILD_TESTS
 
-if HAVE_MPI
+if BUILD_TRANSFORM
 
-if BUILD_INOUT_TESTS
+if BUILD_EXPERIMENTAL
 
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts inout
+TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap SymmRCM scripts
+
+else
+
+TRANSFORM_SUBDIRS = Composite Permutation SingletonFilter View Overlap scripts
+
+endif
+
+else
+
+TRANSFORM_SUBDIRS =
+
+endif
+
+if BUILD_BTF
+
+BTF_SUBDIRS = BTF
+
+else
+
+BTF_SUBDIRS =
+
+endif
+
+if BUILD_INOUT
+
+INOUT_SUBDIRS = inout
 
 else 
 
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View Overlap Zoltan scripts
+INOUT_SUBDIRS = 
 
 endif 
 
-else
+if BUILD_ZOLTAN
 
-if BUILD_INOUT_TESTS
-
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts inout
+ZOLTAN_SUBDIRS = Zoltan
 
 else
 
-SUBDIRS = BTF Composite MapColoring Permutation SingletonFilter SymmRCM View scripts
+ZOLTAN_SUBDIRS =
 
 endif
 
-endif
+if BUILD_COLORING
+
+COLORING_SUBDIRS = MapColoring
 
 else
 
-if BUILD_INOUT_TESTS
-
-SUBDIRS = inout
-
-else 
-
-SUBDIRS = 
+COLORING_SUBDIRS = 
 
 endif
+
+SUBDIRS = MatrixMatrix $(TRANSFORM_SUBDIRS) $(BTF_SUBDIRS) $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(COLORING_SUBDIRS)
 
 endif

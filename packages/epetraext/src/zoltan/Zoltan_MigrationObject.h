@@ -12,6 +12,8 @@
 #ifndef ZOLTAN_MIGRATIONOBJECT_H_
 #define ZOLTAN_MIGRATIONOBJECT_H_
 
+#include "EpetraExt_ConfigDefs.h"
+
 #include <zoltan.h>
 
 namespace Zoltan {

@@ -29,8 +29,6 @@
 // Current Owner  : $Author$
 //-------------------------------------------------------------------------
 
-#include <Zoltan_CPP_config.h>
-
 #include <Zoltan_MigrationObject.h>
 
 #include <iostream>

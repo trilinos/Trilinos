@@ -33,13 +33,14 @@
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
+
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
-#include "EDT_Permutation.h"
+#include "EpetraExt_Permutation.h"
 #include "../epetra_test_err.h"
 
 int check_rowpermute_crsmatrix_local_diagonal(Epetra_Comm& Comm, bool verbose);

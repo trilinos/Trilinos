@@ -30,6 +30,8 @@
 #ifndef ZOLTAN_QUERYFUNCTIONS_H_
 #define ZOLTAN_QUERYFUNCTIONS_H_
 
+#include "EpetraExt_ConfigDefs.h"
+
 #include <zoltan.h>
 
 namespace Zoltan {

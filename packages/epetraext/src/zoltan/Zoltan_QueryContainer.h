@@ -29,6 +29,8 @@
 #ifndef ZOLTAN_QUERYCONTAINER_H_
 #define ZOLTAN_QUERYCONTAINER_H_
 
+#include "EpetraExt_ConfigDefs.h"
+
 #include <map>
 
 namespace Zoltan {

@@ -27,13 +27,14 @@
 // ************************************************************************
 //@HEADER
 
-#include <Epetra_ConfigDefs.h>
 #include <EpetraExt_MatrixMatrix.h>
+
 #include <Epetra_Export.h>
 #include <Epetra_Import.h>
 #include <Epetra_Util.h>
 #include <Epetra_Map.h>
 #include <Epetra_Comm.h>
+#include <Epetra_CrsMatrix.h>
 
 namespace EpetraExt {
 

@@ -33,16 +33,16 @@
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
+
 #include "Epetra_SerialComm.h"
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_IntVector.h"
 #include "Epetra_MapColoring.h"
-#include "EDT_CrsGraph_MapColoring.h"
-#include "EDT_CrsGraph_MapColoringIndex.h"
+#include "EpetraExt_MapColoring.h"
+#include "EpetraExt_MapColoringIndex.h"
 #include "../epetra_test_err.h"
-#include <stdio.h>
 
 #include <vector>
 

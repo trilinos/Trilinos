@@ -28,15 +28,15 @@
 
 // Transform_Composite Test routine
 
-#include <Epetra_ConfigDefs.h>
+#include <EpetraExt_ConfigDefs.h>
+
+#include "Epetra_SerialComm.h"
+#include "Epetra_Time.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
-
-#include "Epetra_SerialComm.h"
-#include "Epetra_Time.h"
 
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
@@ -44,11 +44,14 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 
-#include "Epetra_Transform_Composite.h"
-#include "EDT_LinearProblem_GraphTrans.h"
-#include "EDT_CrsGraph_SymmRCM.h"
-#include "EDT_CrsGraph_Overlap.h"
-#include "EDT_CrsGraph_BTF.h"
+#include "EpetraExt_Transform_Composite.h"
+#include "EpetraExt_LPTrans_From_GraphTrans.h"
+#include "EpetraExt_SymmRCM_CrsGraph.h"
+#include "EpetraExt_CrsSingletonFilter_LinearProblem.h"
+
+#ifdef EPETRA_MPI
+#include "EpetraExt_Overlap_CrsGraph.h"
+#endif
 
 #include "../epetra_test_err.h"
 
@@ -120,10 +123,9 @@ int main(int argc, char *argv[]) {
 
   EpetraExt::Transform_Composite<Epetra_LinearProblem> CompTrans;
 
-  EpetraExt::CrsGraph_BTF BTF_Trans;
-  EpetraExt::SameTypeTransform<Epetra_LinearProblem> *
-        BTF_LPTrans = new EpetraExt::LinearProblem_GraphTrans( BTF_Trans );
-  CompTrans.addTransform( BTF_LPTrans );
+  EpetraExt::LinearProblem_CrsSingletonFilter CSF_LPTrans;
+  EpetraExt::SameTypeTransform<Epetra_LinearProblem> * CSF_LPTransPtr = &CSF_LPTrans;
+  CompTrans.addTransform( CSF_LPTransPtr );
 
   EpetraExt::CrsGraph_SymmRCM RCM_Trans;
   EpetraExt::SameTypeTransform<Epetra_LinearProblem> *
