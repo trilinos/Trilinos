@@ -556,7 +556,7 @@ int Epetra_CrsMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const {
     for (int j=0; j<NumEntries; j++) {
       int Col = Indices[j];
       if (Row==Col) {
-	Diagonal[j] = Values_[i][j];
+	Diagonal[i] = Values_[i][j];
 	break;
       }
     }
