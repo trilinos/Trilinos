@@ -97,7 +97,14 @@ int main(int argc, char *argv[]) {
 
   EPETRA_TEST_ERR( Drumm3(Map, verbose),ierr);
 
-  EPETRA_TEST_ERR(MultiVectorTests(Map, NumVectors, verbose),ierr);
+
+  bool preconstruct_graph = false;
+
+  EPETRA_TEST_ERR( four_quads(Comm, preconstruct_graph, verbose), ierr);
+
+  preconstruct_graph = true;
+
+  EPETRA_TEST_ERR( four_quads(Comm, preconstruct_graph, verbose), ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize();

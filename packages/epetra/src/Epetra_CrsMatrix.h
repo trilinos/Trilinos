@@ -186,7 +186,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Global column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if the
+    allocated length of the row has to be expanded, a positive warning code
+    will be returned.
   */
 	int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 	
@@ -201,7 +203,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Global column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if a value
+    is not already present for the specified location in the matrix, the
+    input value will be ignored and a positive warning code will be returned.
   */
 	int ReplaceGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 	
@@ -216,7 +220,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Global column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if a value
+    is not already present for the specified location in the matrix, the
+    input value will be ignored and a positive warning code will be returned.
   */
 	int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 
@@ -231,7 +237,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Local column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if the
+    allocated length of the row has to be expanded, a positive warning code
+    will be returned.
   */
 	int InsertMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
@@ -246,7 +254,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Local column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if a value
+    is not already present for the specified location in the matrix, the
+    input value will be ignored and a positive warning code will be returned.
   */
 	int ReplaceMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
@@ -261,7 +271,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		Indices - Local column indices corresponding to values.
 		
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful. Note that if the
+    allocated length of the row has to be expanded, a positive warning code
+    will be returned.
   */
 	int SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 

@@ -81,6 +81,12 @@ class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     int NumBlockEntriesPerRow,
 		     bool ignoreNonLocalEntries=false);
 
+  /** Constructor with pre-constructed Graph.
+   */
+  Epetra_FEVbrMatrix(Epetra_DataAccess CV,
+		     const Epetra_CrsGraph& Graph,
+		     bool ignoreNonLocalEntries=false);
+
   //! Epetra_VbrMatrix Destructor
   virtual ~Epetra_FEVbrMatrix();
   //@}

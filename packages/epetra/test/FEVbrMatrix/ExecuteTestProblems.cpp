@@ -451,3 +451,208 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   return(ierr);
 }
+
+int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
+{   
+  if (verbose) {
+    cout << "******************* four_quads ***********************"<<endl;
+  }
+
+  //This function assembles a matrix representing a finite-element mesh
+  //of four 2-D quad elements. There are 9 nodes in the problem. The
+  //same problem is assembled no matter how many processors are being used
+  //(within reason). It may not work if more than 9 processors are used.
+  //
+  //  *------*------*
+  // 6|     7|     8|
+  //  | E2   | E3   |
+  //  *------*------*
+  // 3|     4|     5|
+  //  | E0   | E1   |
+  //  *------*------*
+  // 0      1      2
+  //
+  //Nodes are denoted by * with node-numbers below and left of each node.
+  //E0, E1 and so on are element-numbers.
+  //
+  //Each processor will contribute a sub-matrix of size 4x4, filled with 1's,
+  //for each element. Thus, the coefficient value at position 0,0 should end up
+  //being 1.0*numProcs, the value at position 4,4 should be 1.0*4*numProcs, etc.
+  //
+  //Depending on the number of processors being used, the locations of the
+  //specific matrix positions (in terms of which processor owns them) will vary.
+  //
+  
+  int myPID = Comm.MyPID();
+  int numProcs = Comm.NumProc();
+  
+  int numNodes = 9;
+  int numElems = 4;
+  int numNodesPerElem = 4;
+
+  int blockSize = 1;
+  int indexBase = 0;
+
+  //Create a map using epetra-defined linear distribution.
+  Epetra_BlockMap map(numNodes, blockSize, indexBase, Comm);
+
+  Epetra_CrsGraph* graph = NULL;
+
+  int* nodes = new int[numNodesPerElem];
+  int i, j, k, err = 0;
+
+  if (preconstruct_graph) {
+    graph = new Epetra_CrsGraph(Copy, map, 1);
+
+    //we're going to fill the graph with indices, but remember it will only
+    //accept indices in rows for which map.MyGID(row) is true.
+
+    for(i=0; i<numElems; ++i) {
+      switch(i) {
+      case 0:
+        nodes[0] = 0; nodes[1] = 1; nodes[2] = 4; nodes[3] = 3;
+        break;
+      case 1:
+        nodes[0] = 1; nodes[1] = 2; nodes[2] = 5; nodes[3] = 4;
+        break;
+      case 2:
+        nodes[0] = 3; nodes[1] = 4; nodes[2] = 7; nodes[3] = 6;
+        break;
+      case 3:
+        nodes[0] = 4; nodes[1] = 5; nodes[2] = 8; nodes[3] = 7;
+        break;
+      }
+
+      for(j=0; j<numNodesPerElem; ++j) {
+        if (map.MyGID(nodes[j])) {
+          err = graph->InsertGlobalIndices(nodes[j], numNodesPerElem,
+                                           nodes);
+          if (err<0) return(err);
+        }
+      }
+    }
+
+    EPETRA_CHK_ERR( graph->FillComplete() );
+  }
+
+  Epetra_FEVbrMatrix* A = NULL;
+
+  if (preconstruct_graph) {
+    A = new Epetra_FEVbrMatrix(Copy, *graph);
+  }
+  else {
+    A = new Epetra_FEVbrMatrix(Copy, map, 1);
+  }
+
+  //EPETRA_CHK_ERR( A->PutScalar(0.0) );
+
+  double* values_1d = new double[numNodesPerElem*numNodesPerElem];
+  double** values_2d = new double*[numNodesPerElem];
+
+  for(i=0; i<numNodesPerElem*numNodesPerElem; ++i) values_1d[i] = 1.0;
+
+  int offset = 0;
+  for(i=0; i<numNodesPerElem; ++i) {
+    values_2d[i] = &(values_1d[offset]);
+    offset += numNodesPerElem;
+  }
+
+  for(i=0; i<numElems; ++i) {
+    switch(i) {
+    case 0:
+      nodes[0] = 0; nodes[1] = 1; nodes[2] = 4; nodes[3] = 3;
+      break;
+
+    case 1:
+      nodes[0] = 1; nodes[1] = 2; nodes[2] = 5; nodes[3] = 4;
+      break;
+
+    case 2:
+      nodes[0] = 3; nodes[1] = 4; nodes[2] = 7; nodes[3] = 6;
+      break;
+
+     case 3:
+      nodes[0] = 4; nodes[1] = 5; nodes[2] = 8; nodes[3] = 7;
+      break;
+    }
+
+    for(j=0; j<numNodesPerElem; ++j) {
+      if (preconstruct_graph) {
+	err = A->BeginSumIntoGlobalValues(nodes[j], numNodesPerElem, nodes);
+	if (err<0) return(err);
+      }
+      else {
+	err = A->BeginInsertGlobalValues(nodes[j], numNodesPerElem, nodes);
+	if (err<0) return(err);
+      }
+    
+      for(k=0; k<numNodesPerElem; ++k) {
+	err = A->SubmitBlockEntry(values_1d, blockSize, blockSize, blockSize);
+	if (err<0) return(err);
+      }
+
+      err = A->EndSubmitEntries();
+      if (err<0) return(err);
+    }
+  }
+
+  EPETRA_CHK_ERR( A->GlobalAssemble() );
+
+  if (verbose) {
+    cout << *A << endl;
+  }
+
+  int len = 20;
+  int* indices = new int[len];
+  double* values = new double[len];
+  int numIndices;
+
+  if (map.MyGID(0)) {
+    int lid = map.LID(0);
+    EPETRA_CHK_ERR( A->ExtractMyRowCopy(lid, len, numIndices,
+					values, indices) );
+    if (numIndices != 4) {
+      return(-1);
+    }
+    if (indices[0] != lid) {
+      return(-2);
+    }
+
+    if (values[0] != 1.0*numProcs) {
+      cout << "ERROR: values[0] ("<<values[0]<<") should be "<<numProcs<<endl;
+      return(-3);
+    }
+  }
+
+  if (map.MyGID(4)) {
+    int lid = map.LID(4);
+    EPETRA_CHK_ERR( A->ExtractMyRowCopy(lid, len, numIndices,
+					values, indices) );
+
+    if (numIndices != 9) {
+      return(-4);
+    }
+    int lcid = A->LCID(4);
+//     if (indices[lcid] != 4) {
+//       cout << "ERROR: indices[4] ("<<indices[4]<<") should be "
+// 	   <<A->LCID(4)<<endl;
+//       return(-5);
+//     }
+    if (values[lcid] != 4.0*numProcs) {
+      cout << "ERROR: values["<<lcid<<"] ("<<values[lcid]<<") should be "
+	   <<4*numProcs<<endl;
+      return(-6);
+    }
+  }
+
+  delete [] values_2d;
+  delete [] values_1d;
+  delete [] nodes;
+  delete [] indices;
+  delete [] values;
+
+  delete A;
+  delete graph;
+
+  return(0);
+}

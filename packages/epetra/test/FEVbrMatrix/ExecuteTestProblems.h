@@ -33,3 +33,5 @@ int quad1(const Epetra_Map& map, bool verbose);
 int quad2(const Epetra_Map& map, bool verbose);
 
 int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose);
+
+int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose);
