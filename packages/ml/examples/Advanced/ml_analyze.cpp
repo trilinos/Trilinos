@@ -145,25 +145,6 @@ int main(int argc, char *argv[])
   
   MLPrec->PrintStencil2D(16,16);
 
-  // =========================== //
-  // E I G E N - A N A L Y S I S //
-  // =========================== //
-
-  if (ProblemSize < 1024 && Comm.NumProc() == 1) {
-
-    // Analysis with "dense" involves dense eigenvalue problems.
-    // This can be very expensive, as the sparse matrix on each level
-    // is converted to a dense one, then LAPACK routines are used
-    // Also, it can be done only for serial computations.
-    // `5,5' refers to the number of pre-smoother and post-smoother
-    // applications to a random vector.
- 
-    //MLPrec->AnalyzeSmoothersDense(5,5);
-    //MLPrec->AnalyzeMatrixEigenvaluesDense("A");
-    //MLPrec->AnalyzeMatrixEigenvaluesDense("P^{-1}A");
-    
-  }
-
   // ================================================= //
   // A N A L Y S I S   O F   T H E   H I E R A R C H Y //
   // ================================================= //
