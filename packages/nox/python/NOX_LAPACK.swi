@@ -1,0 +1,23 @@
+// -*- c++ -*-
+
+// This swig interface file includes the actual definitions for the LAPACK
+// module.  See NOX_LAPACK.swi for a description of why this is done this way
+
+%{
+// NOX includes
+#include "NOX.H"
+#include "NOX_LAPACK.H"
+%}
+
+// Ignore/renames
+%rename(Print) *::print() const;
+%ignore operator=;
+%ignore operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
+
+// Import base class declarations
+%import "NOX_Abstract.i"
+
+// LOCA interface includes
+%include "NOX_LAPACK_Vector.H"
+%include "NOX_LAPACK_Interface.H"
+%include "NOX_LAPACK_Group.H"

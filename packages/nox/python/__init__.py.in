@@ -1,0 +1,23 @@
+import_epetra = @IMPORT_EPETRA@
+import_lapack = @IMPORT_LAPACK@
+
+__all__ = ["Abstract", "Parameter", "Solver", "StatusTest"]
+
+if (import_epetra):
+    __all__.append("Epetra")
+    
+if (import_lapack):
+    __all__.append("LAPACK")
+
+# Import the modules with no path problems
+import Abstract
+import Parameter
+from Parameter import Utils
+import Solver
+import StatusTest
+
+if (import_epetra):
+    import Epetra
+
+if (import_lapack):
+    import LAPACK
