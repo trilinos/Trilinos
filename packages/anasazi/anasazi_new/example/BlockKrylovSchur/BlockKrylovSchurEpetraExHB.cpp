@@ -33,7 +33,7 @@
 //  block Arnoldi method can be set by the user.
 
 #include "AnasaziPetraInterface.hpp"
-#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
 	//
 	//  Initialize the Block Arnoldi solver
 	//
-        Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MySort, MyOM, tol, length,
+        Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length,
                                          step, restarts);
 
 #ifdef UNIX
@@ -183,10 +183,10 @@ int main(int argc, char *argv[]) {
 #endif
 
         // iterate a few steps (if you wish)
-        //MyBlockArnoldi.iterate(5);
+        //MySolver.iterate(5);
 
         // solve the problem to the specified tolerances or length
-        MyBlockArnoldi.solve();
+        MySolver.solve();
 #ifdef UNIX
         double elapsed_time = timer.ElapsedTime();
         double total_flops = A.Flops(); 
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
         Anasazi::PetraVec* eveci = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs()->CloneView( index, nev ));
 
         // output results to screen
-        MyBlockArnoldi.currentStatus();
+        MySolver.currentStatus();
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
@@ -280,4 +280,4 @@ int main(int argc, char *argv[]) {
 
   	return 0;
 
-} // end BlockArnoldiPetraExHb.cpp
+} // end BlockKrylovSchurPetraExHb.cpp

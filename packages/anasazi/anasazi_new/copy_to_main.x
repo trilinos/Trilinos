@@ -16,7 +16,7 @@ mkdir ../example/ModeLaplace
 cp ./example/ModeLaplace/*.cpp ../example/ModeLaplace/.
 cp ./example/ModeLaplace/*.h ../example/ModeLaplace/.
 cp ./example/ModeLaplace/Makefile* ../example/ModeLaplace/.
-mkdir ../example/BlockArnoldi
-cp ./example/BlockArnoldi/*.cpp ../example/BlockArnoldi/.
-cp ./example/BlockArnoldi/Makefile* ../example/BlockArnoldi/.
+mkdir ../example/BlockKrylovSchur
+cp ./example/BlockKrylovSchur/*.cpp ../example/BlockKrylovSchur/.
+cp ./example/BlockKrylovSchur/Makefile* ../example/BlockKrylovSchur/.
 

@@ -26,5 +26,5 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = ModeLaplace BlockArnoldi 
+SUBDIRS = ModeLaplace BlockKrylovSchur
 

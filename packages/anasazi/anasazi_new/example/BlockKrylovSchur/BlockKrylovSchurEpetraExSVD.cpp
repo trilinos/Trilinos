@@ -41,7 +41,7 @@
 //  NOTE:  This example came from the ARPACK SVD driver dsvd.f
 //
 #include "AnasaziPetraInterface.hpp"
-#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 	//MyOM.SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MySort, MyOM, tol, length, 
+	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, length, 
 						step, restarts);	
 	
 #ifdef UNIX
@@ -184,10 +184,10 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// Iterate a few steps (if you wish)
-	//MyBlockArnoldi.iterate(5);
+	//MySolver.iterate(5);
 
 	// Solve the problem to the specified tolerances or length
-	MyBlockArnoldi.solve();
+	MySolver.solve();
 
 #ifdef UNIX
 	double elapsed_time = timer.ElapsedTime();
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
 	Anasazi::PetraVec* evecr = dynamic_cast<Anasazi::PetraVec*>(MyProblem.GetEvecs());
 
 	// Output results to screen
-	MyBlockArnoldi.currentStatus();
+	MySolver.currentStatus();
 	
 	// Compute singular values/vectors and direct residuals.
 	//

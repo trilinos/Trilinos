@@ -5,23 +5,23 @@ EXEEXT = .exe
 
 if BUILD_BELOS
 if BUILD_IFPACK
-ANASAZI_BIRAM_EX_SI_IFPACK = BlockArnoldiPetraExGen
+ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
 endif
 endif
 
 #if BUILD_TRIUTILS
-ANASAZI_BIRAM_EX_HB = BlockArnoldiPetraExHb
+ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
 #endif 
 
-noinst_PROGRAMS = BlockArnoldiPetraEx BlockArnoldiPetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
+noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
 
-BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
+BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 
-BlockArnoldiPetraExSVD_SOURCES = $(srcdir)/BlockArnoldiPetraExSVD.cpp
+BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 
-BlockArnoldiPetraExHb_SOURCES = $(srcdir)/BlockArnoldiPetraExHb.cpp
+BlockKrylovSchurEpetraExHB_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExHB.cpp
 
-BlockArnoldiPetraExGen_SOURCES = $(srcdir)/BlockArnoldiPetraExGen.cpp
+BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
 
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
@@ -33,53 +33,53 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
-BlockArnoldiPetraEx_DEPENDENCIES = \
+BlockKrylovSchurEpetraEx_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
-BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraEx_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockArnoldiPetraEx_LDADD = \
+BlockKrylovSchurEpetraEx_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-BlockArnoldiPetraExSVD_DEPENDENCIES = \
+BlockKrylovSchurEpetraExSVD_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
-BlockArnoldiPetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExSVD_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockArnoldiPetraExSVD_LDADD = \
+BlockKrylovSchurEpetraExSVD_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-BlockArnoldiPetraExHb_DEPENDENCIES = \
+BlockKrylovSchurEpetraExHB_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockArnoldiPetraExHb_CXXFLAGS = -I$(top_srcdir)/src \
+BlockKrylovSchurEpetraExHB_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
 
 #np# List libraries that np is dependent on.
-BlockArnoldiPetraExHb_LDADD = \
+BlockKrylovSchurEpetraExHB_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
-BlockArnoldiPetraExGen_DEPENDENCIES = \
+BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-BlockArnoldiPetraExGen_CXXFLAGS = -I$(top_srcdir)/src
+BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
-BlockArnoldiPetraExGen_LDADD = \
+BlockKrylovSchurEpetraExGen_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \

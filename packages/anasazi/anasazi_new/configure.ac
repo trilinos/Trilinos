@@ -400,7 +400,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		example/Makefile
 		example/ModeLaplace/Makefile
-		example/BlockArnoldi/Makefile
+		example/BlockKrylovSchur/Makefile
 		])
 
 AC_OUTPUT()

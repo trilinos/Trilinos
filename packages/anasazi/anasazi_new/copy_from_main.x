@@ -15,8 +15,8 @@ cp ../example/Makefile* ./example/.
 cp ../example/ModeLaplace/Makefile* ./example/ModeLaplace/.
 cp ../example/ModeLaplace/*.cpp ./example/ModeLaplace/.
 cp ../example/ModeLaplace/*.h ./example/ModeLaplace/.
-cp ../example/BlockArnoldi/Makefile* ./example/BlockArnoldi/.
-cp ../example/BlockArnoldi/*.cpp ./example/BlockArnoldi/.
+cp ../example/BlockKrylovSchur/Makefile* ./example/BlockKrylovSchur/.
+cp ../example/BlockKrylovSchur/*.cpp ./example/BlockKrylovSchur/.
 
 # Remove files from main so that they are not commited
 ./remove_from_main.x

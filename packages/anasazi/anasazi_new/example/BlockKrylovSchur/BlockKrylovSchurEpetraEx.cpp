@@ -32,7 +32,7 @@
 //  Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
 
 #include "AnasaziPetraInterface.hpp"
-#include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
 	int block = 1;
 	int length = 10;
 	int nev = 4;
-	double tol = Teuchos::ScalarTraits<double>::eps();
+	double tol = 1e-8;
 	string which="SM";
 	int restarts = 300;
 	//int step = 1;
@@ -261,18 +261,18 @@ int main(int argc, char *argv[]) {
 	//MyOM.SetVerbosity( 2 );	
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MySort, MyOM, tol, length, 
-						step, restarts);	
+	Anasazi::BlockKrylovSchur<double> MySolver(MyProblem, MySort, MyOM, tol, 
+							     length, step, restarts);	
 
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);
 #endif
 
 	// Iterate a few steps (if you wish)
-	//MyBlockArnoldi.iterate(5);
+	//MySolver.iterate(5);
 
 	// Solve the problem to the specified tolerances or length
-	MyBlockArnoldi.solve();
+	MySolver.solve();
 
 #ifdef UNIX
 	double elapsed_time = timer.ElapsedTime();
@@ -303,7 +303,7 @@ int main(int argc, char *argv[]) {
 	}	  
 	
 	// Output results to screen
-	MyBlockArnoldi.currentStatus();
+	MySolver.currentStatus();
 	
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;

@@ -41,9 +41,9 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-/*!	\class Anasazi::BlockArnoldi
+/*!	\class Anasazi::BlockKrylovSchur
 
-	\brief This class implements the Implicitly Restarted Block Arnoldi Method,
+	\brief This class implements the Restarted Block Krylov Schur Method,
 	an iterative method for solving eigenvalue problems.
 
 	\author Rich Lehoucq, Heidi Thornquist
@@ -52,12 +52,12 @@
 namespace Anasazi {
   
   template <class TYPE>
-  class BlockArnoldi : public Eigensolver<TYPE> { 
+  class BlockKrylovSchur : public Eigensolver<TYPE> { 
   public:
     //@{ \name Constructor/Destructor.
     
-    //! %Anasazi::BlockArnoldi constructor.
-    BlockArnoldi( Eigenproblem<TYPE>& problem, 
+    //! %Anasazi::BlockKrylovSchur constructor.
+    BlockKrylovSchur( Eigenproblem<TYPE>& problem, 
 		  SortManager<TYPE>& sm,
 		  OutputManager<TYPE>& om,
 		  const TYPE tol=1.0e-6,
@@ -66,13 +66,13 @@ namespace Anasazi {
 		  const int restarts=0 
 		  );
     
-    //! %Anasazi::BlockArnoldi destructor.
-    virtual ~BlockArnoldi();
+    //! %Anasazi::BlockKrylovSchur destructor.
+    virtual ~BlockKrylovSchur();
     //@}
     
     //@{ \name Solver application methods.
     
-    /*! \brief This method performs a given number of steps of the Block Arnoldi
+    /*! \brief This method performs a given number of steps of the BlockArnoldi
       Method, returning upon completion or convergence.
     */
     void iterate( const int steps=1 );
@@ -96,7 +96,7 @@ namespace Anasazi {
     int GetNumIters() const { return(_iter); };
     
     //! Get the current restart count of the iteration method.
-    /*! Some eigensolvers can perform restarts (i.e. Arnoldi) to reduce memory
+    /*! Some eigensolvers can perform restarts (i.e.Arnoldi) to reduce memory
       and orthogonalization costs.  For other eigensolvers that don't
       perform restarts (i.e. LOBPCG), this is not a valid stopping criteria.
     */
@@ -169,7 +169,7 @@ namespace Anasazi {
   // Note: I should define a copy constructor and overload = because of the use of new
   //
   template <class TYPE>
-  BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem, 
+  BlockKrylovSchur<TYPE>::BlockKrylovSchur(Eigenproblem<TYPE> & problem, 
 				   SortManager<TYPE> & sm,
 				   OutputManager<TYPE> & om,
 				   const TYPE tol, 
@@ -219,11 +219,11 @@ namespace Anasazi {
     // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
     // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
     //
-    //_nevblock = _nev/_block + 1;
+    _nevblock = _nev/_block + 1;
     // TEST CODE:  This part has changed from saving another block to compare with ARPACK.
-    _nevblock = _nev/_block;  
-    if (_nev%_block) 
-    _nevblock++;    
+    //_nevblock = _nev/_block;  
+    //if (_nev%_block) 
+    //_nevblock++;    
     _maxoffset = (_length-_nevblock)/2;
     //
     // Retrieve the initial vector from the Anasazi::Eigenproblem.
@@ -233,7 +233,7 @@ namespace Anasazi {
     //
     assert(_length>0); assert(_step>0);
     //
-    // Make room for the Arnoldi vectors and F.
+    // Make room for theArnoldi vectors and F.
     //
     _basisvecs = ivec->Clone((_length+1)*_block); assert(_basisvecs!=NULL);
     //
@@ -260,7 +260,7 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::SetBlkTols() {
+  void BlockKrylovSchur<TYPE>::SetBlkTols() {
     const TYPE two = 2.0;
     TYPE eps;
     char precision = 'P';
@@ -273,7 +273,7 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  BlockArnoldi<TYPE>::~BlockArnoldi() 
+  BlockKrylovSchur<TYPE>::~BlockKrylovSchur() 
   {
     if (_basisvecs) delete _basisvecs;
     if (_ritzresiduals) delete [] _ritzresiduals;
@@ -282,7 +282,7 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::currentStatus() {
+  void BlockKrylovSchur<TYPE>::currentStatus() {
     int i;
     if (_om.doOutput(-1)) {
       cout<<" "<<endl;
@@ -349,7 +349,7 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::solve () {
+  void BlockKrylovSchur<TYPE>::solve () {
     //int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
     //
     // Right now the solver will just go the remaining iterations, but this design will allow
@@ -366,11 +366,11 @@ namespace Anasazi {
   }
   
   template <class TYPE>
-  void BlockArnoldi<TYPE>::iterate(const int steps) {
+  void BlockKrylovSchur<TYPE>::iterate(const int steps) {
     int i,temp;
     int tempsteps = steps;
     //
-    // If this is the first steps of Block Arnoldi, initialize the first block of _basisvecs
+    // If this is the first steps of Block Krylov Schur, initialize the first block of _basisvecs
     //
     if (!_iter) {
       int *index = new int[ _block ]; assert(index!=NULL);
@@ -460,7 +460,7 @@ namespace Anasazi {
   
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::BlockReduction () {
+  void BlockKrylovSchur<TYPE>::BlockReduction () {
     int i,j;
     ReturnType ret;
     int *index = new int[ _block ]; assert(index!=NULL);
@@ -522,7 +522,7 @@ namespace Anasazi {
   
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::BlkOrth( MultiVec<TYPE>& Vec_in, const int j ) {
+  void BlockKrylovSchur<TYPE>::BlkOrth( MultiVec<TYPE>& Vec_in, const int j ) {
     //
     // Orthogonalization is first done between the new block of
     // vectors and all previous blocks, then the vectors within the
@@ -657,7 +657,7 @@ namespace Anasazi {
   
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::BlkOrthSing( MultiVec<TYPE>& Vec_in, const int j ) {
+  void BlockKrylovSchur<TYPE>::BlkOrthSing( MultiVec<TYPE>& Vec_in, const int j ) {
     //
     // This is a variant of A. Ruhe's block Arnoldi
     // The orthogonalization of the vectors F_vec is done
@@ -858,7 +858,7 @@ namespace Anasazi {
 
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn, 
+  void BlockKrylovSchur<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn, 
 					    Teuchos::SerialDenseMatrix<int,TYPE>& FouierR) {
     int i,j,k;
     int nb = VecIn.GetNumberVecs(); assert (nb == _block);
@@ -1033,7 +1033,7 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::ComputeEvecs() {
+  void BlockKrylovSchur<TYPE>::ComputeEvecs() {
     //
     int i=0,j=0,k=0;
     int n=_jstart*_block, info=0;
@@ -1199,7 +1199,7 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::ComputeSchurForm( const bool apply )
+  void BlockKrylovSchur<TYPE>::ComputeSchurForm( const bool apply )
   {
     int m = _jstart*_block, n=_jstart*_block;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
@@ -1309,7 +1309,7 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
+  void BlockKrylovSchur<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     Teuchos::LAPACK<int,TYPE> lapack; 
@@ -1536,7 +1536,7 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::Restart() {
+  void BlockKrylovSchur<TYPE>::Restart() {
     //  This method assumes the ComputeResiduals has been called before it
     //  to compute the Schur vectors and residuals.  This information is used to 
     //  restart the factorization.
@@ -1567,7 +1567,7 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::CheckSchurVecs( const int j ) {
+  void BlockKrylovSchur<TYPE>::CheckSchurVecs( const int j ) {
     //
     // Check the difference between the projection of A with the Schur vectors and the Schur matrix.
     // 
@@ -1588,7 +1588,7 @@ namespace Anasazi {
   
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::CheckBlkArnRed( const int j ) {
+  void BlockKrylovSchur<TYPE>::CheckBlkArnRed( const int j ) {
     int i,k,m=(j+1)*_block;
     int *index = new int[m];
     ReturnType ret;       
@@ -1682,7 +1682,7 @@ namespace Anasazi {
   
 } // End of namespace Anasazi
 #endif
-// End of file AnasaziBlockArnoldi.hpp
+// End of file AnasaziBlockKrylovSchur.hpp
 
 
 

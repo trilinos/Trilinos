@@ -16,6 +16,6 @@ rm ../example/ModeLaplace/Makefile*
 rm ../example/ModeLaplace/*.cpp
 rm ../example/ModeLaplace/*.h
 rm -rf ../example/ModeLaplace
-rm ../example/BlockArnoldi/Makefile*
-rm ../example/BlockArnoldi/*.cpp
-rm -rf ../example/BlockArnoldi
+rm ../example/BlockKrylovSchur/Makefile*
+rm ../example/BlockKrylovSchur/*.cpp
+rm -rf ../example/BlockKrylovSchur
