@@ -366,6 +366,10 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
   int N_levels = 5, level, coarsest_level;
   ML_Aggregate *ag;
   int          nblocks, *blocks;
+  /*  hacker stuff
+  ML          *subml;
+  struct aztec_context *context;
+  */
 
   /**************************************************************************/
   extern void create_msr_matrix(int*, double **, int **, int);
@@ -472,8 +476,72 @@ int construct_ml_grids(int N_elements, int *proc_config, AZ_MATRIX **Amat_f,
     }
 
     if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);
-    else ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
+    else {
+       ML_Gen_Smoother_SymGaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 
                                     coarse_iterations,1.);
+    /* Some advanced options for speeding up coarse grid solves  */
+    /*                                                           */
+    /* This one is used to block the matrix (throw away nonzeros */
+    /* between blocks) before calling superlu.                   */
+    /* 
+    /* ml->Amat[coarsest_level].invec_leng = -7;
+       ML_Gen_CoarseSolverSuperLU(ml,coarsest_level);
+       ml->Amat[coarsest_level].invec_leng=ml->Amat[coarsest_level].outvec_leng;
+     */
+
+    /* This one is used to use Aztec on a global matrix. That is */
+    /* replicate global matrix on each processor and then apply  */
+    /* Aztec to solve it.                                        */
+    /* 
+    /* oldvalue = options[AZ_max_iter];
+       options[AZ_max_iter] = -42;
+       ML_Gen_SmootherAztec(ml, coarsest_level, options, params, 
+            proc_config, status, 2, ML_PRESMOOTHER,ML_precondition);
+       options[AZ_max_iter] = oldvalue;
+     */
+
+    /* This one is used to use Aztec with superlu as a preconditoner */
+    /* when we have dropped values from coarse grid matrix. To do    */
+    /* this, we                                                      */
+    /*      1) replicate matrix within a new ml structure (subml).   */
+    /*      2) invoke superlu on matrix within new structure.        */
+    /*      3) Set Aztec smoother for original ml structure.         */
+    /*      4) Hard wire ML function and data pointer into Aztec     */
+    /*         data structure.                                       */
+    /*
+       ML_Create(&subml,1);
+       ML_Init_Amatrix(subml, 0, ml->Amat[coarsest_level].invec_leng,
+                ml->Amat[coarsest_level].invec_leng,
+                ml->Amat[coarsest_level].data);
+       ML_Operator_Set_Getrow( &(subml->Amat[0]), ML_EXTERNAL, 
+                        subml->Amat[0].outvec_leng, 
+			ml->Amat[coarsest_level].getrow->external);
+       ML_CommInfoOP_Clone( &(subml->Amat[0].getrow->pre_comm), 
+                            ml->Amat[coarsest_level].getrow->pre_comm);
+
+       if (ml->Amat[coarsest_level].matvec->ML_id == ML_EXTERNAL)
+            ML_Operator_Set_ApplyFunc(&(subml->Amat[0]),ML_EXTERNAL,
+                                 ml->Amat[coarsest_level].matvec->external);
+       else ML_Operator_Set_ApplyFunc(&(subml->Amat[0]),ML_INTERNAL,
+                                 ml->Amat[coarsest_level].matvec->internal);
+
+       subml->Amat[0].invec_leng = -7;
+       ML_Gen_CoarseSolverSuperLU(subml,0);
+       subml->Amat[0].invec_leng = subml->Amat[0].outvec_leng;
+       ML_Gen_Solver( subml, ML_MGV, 0, 0);
+
+       options[AZ_precond]    = AZ_user_precond;
+       ML_Gen_SmootherAztec(ml, coarsest_level, options, params, proc_config,
+                   status, 2, ML_PRESMOOTHER,ML_precondition);
+
+       context = (struct aztec_context *) 
+                         ml->pre_smoother[coarsest_level].smoother->data;
+       context->Prec->ml_ptr = subml;
+       context->Prec->precond_data = subml;
+       context->Prec->prec_function = ML_precondition;
+     */
+    }
+
 
     ML_Gen_Solver( ml, ML_MGV, N_levels-1, coarsest_level);
     ML_Aggregate_Destroy(&ag);
