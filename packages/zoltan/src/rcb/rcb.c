@@ -171,7 +171,7 @@ void lb_rcb(
    */
 
   LB_start_time = MPI_Wtime();
-  rcb_build_data_structure(lb, &pdotnum, &dotmax);
+  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
 

@@ -23,7 +23,7 @@ static char *cvs_lbutilc_id = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-void perform_error_checking(LB *lb)
+void LB_perform_error_checking(LB *lb)
 {
 /* 
  *  Routine to make sure required functions are defined for the given method.

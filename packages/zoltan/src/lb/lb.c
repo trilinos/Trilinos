@@ -503,7 +503,7 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
    *  Initializations and error checking.
    */
 
-  perform_error_checking(lb);
+  LB_perform_error_checking(lb);
 
   lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
             import_procs);
@@ -656,7 +656,7 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-  comm_plan = comm_create(num_import, proc_list, lb->Communicator, num_export);
+  comm_plan = LB_comm_create(num_import, proc_list, lb->Communicator, num_export);
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -680,7 +680,7 @@ int i;
     *export_procs = NULL;
   }
 
-  comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
+  LB_comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
           (char *) export_objs);
 
   /*
@@ -697,7 +697,7 @@ int i;
   LB_safe_free((void **) &import_objs);
   LB_safe_free((void **) &export_objs);
   
-  comm_destroy(&comm_plan);
+  LB_comm_destroy(&comm_plan);
 }
 
 /****************************************************************************/
@@ -758,6 +758,7 @@ int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 LB_GID global_id;        /* tmp global ID for unpacking objects.            */
 COMM_OBJ *comm_plan;     /* Communication object returned
                             by Bruce and Steve's communication routines     */
+int ierr = 0;
 
   /*
    *  Return if this processor is not in the load-balancing object's
@@ -797,12 +798,24 @@ COMM_OBJ *comm_plan;     /* Communication object returned
                             num_import, import_global_ids,
                             import_local_ids, import_procs,
                             num_export, export_global_ids,
-                            export_local_ids, export_procs);
+                            export_local_ids, export_procs, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] %s: Error returned from user defined "
+                      "Migrate.Pre_Process function.\n", lb->Proc, yo);
+      exit (-1);
+    }
+
     if (lb->Debug > 5)
       printf("DLBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
-  size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data);
+  size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, &ierr);
+  if (ierr) {
+    fprintf(stderr, "[%d] %s: Error returned from user defined "
+                    "Migrate.Get_Obj_Size function.\n", lb->Proc, yo);
+    exit (-1);
+  }
+
 
   if (num_export > 0) {
     export_buf = (char *) LB_array_alloc(__FILE__, __LINE__, 1, num_export,
@@ -819,7 +832,13 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     for (i = 0; i < num_export; i++) {
       proc_list[i] = export_procs[i];
       lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, export_global_ids[i],
-                           export_local_ids[i], export_procs[i], size, tmp);
+                           export_local_ids[i], export_procs[i], size, tmp,
+                           &ierr);
+      if (ierr) {
+        fprintf(stderr, "[%d] %s: Error returned from user defined "
+                        "Migrate.Pack_Obj function.\n", lb->Proc, yo);
+        exit (-1);
+      }
       tmp += size;
     }
   }
@@ -829,7 +848,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
    *  processor has to import to establish the new decomposition.
    */
 
-  comm_plan = comm_create(num_export, proc_list, lb->Communicator, &tmp_import);
+  comm_plan = LB_comm_create(num_export, proc_list, lb->Communicator, &tmp_import);
   if (tmp_import != num_import) {
     fprintf(stderr, "%d  Error in %s:  tmp_import %d != num_import %d\n", 
             lb->Proc, yo, tmp_import, num_import);
@@ -843,13 +862,13 @@ COMM_OBJ *comm_plan;     /* Communication object returned
    *  Send the export data using the communication plan.
    */
 
-  comm_do(comm_plan, export_buf, size, import_buf);
+  LB_comm_do(comm_plan, export_buf, size, import_buf);
 
   /*
    *  Free whatever memory we can.
    */
 
-  comm_destroy(&comm_plan);
+  LB_comm_destroy(&comm_plan);
   LB_safe_free((void **) &proc_list);
   LB_safe_free((void **) &export_buf);
 
@@ -861,7 +880,13 @@ COMM_OBJ *comm_plan;     /* Communication object returned
   for (i = 0; i < num_import; i++) {
     if (import_global_ids != NULL) 
       LB_SET_GID(global_id, import_global_ids[i]);
-    lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, global_id, size, tmp);
+    lb->Migrate.Unpack_Obj(lb->Migrate.Unpack_Obj_Data, global_id, size,
+                           tmp, &ierr);
+    if (ierr) {
+      fprintf(stderr, "[%d] %s: Error returned from user defined "
+                      "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
+      exit (-1);
+    }
     tmp += size;
   }
 

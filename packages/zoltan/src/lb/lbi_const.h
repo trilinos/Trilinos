@@ -87,11 +87,14 @@ struct LB_Struct;
  *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    double                    --  the weight for the object.
  */
 
-typedef double LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id);
+typedef double LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id,
+                                int *ierr);
 
 /*****************************************************************************/
 /*
@@ -102,11 +105,14 @@ typedef double LB_OBJ_WEIGHT_FN(void *data, LB_GID global_id, LB_LID local_id);
  *    void *data                --  pointer to user defined data structure
  *    LB_GID global_id          --  the Global ID for the object
  *    LB_LID local_id           --  the Local ID for the object
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the number of neighbor objects.
  */
 
-typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id);
+typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id,
+                            int *ierr);
 
 /*****************************************************************************/
 /*
@@ -120,10 +126,12 @@ typedef int LB_NUM_EDGES_FN(void *data, LB_GID global_id, LB_LID local_id);
  *  Output:
  *    LB_GID *nbor_global_ids   --  Array of Global IDs of neighboring objects.
  *    LB_LID *nbor_local_ids    --  Array of Local IDs of neighboring objects.
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
-                             LB_GID *nbor_global_id, LB_LID *nbor_local_id);
+                             LB_GID *nbor_global_id, LB_LID *nbor_local_id,
+                             int *ierr);
 
 /*****************************************************************************/
 /*
@@ -132,11 +140,13 @@ typedef void LB_EDGE_LIST_FN(void *data, LB_GID global_id, LB_LID local_id,
  *  used to express the coordinates of the object).
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the number of geometry fields.
  */
 
-typedef int LB_NUM_GEOM_FN(void *data);
+typedef int LB_NUM_GEOM_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -149,10 +159,11 @@ typedef int LB_NUM_GEOM_FN(void *data);
  *  Output:
  *    double *geom_vec          --  the geometry info for the object
  *                                  (e.g., coordinates)
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
-                        double *geom_vec);
+                        double *geom_vec, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -160,11 +171,13 @@ typedef void LB_GEOM_FN(void *data, LB_GID global_id, LB_LID local_id,
  *  located in that processor's memory.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the number of local objects.
  */
 
-typedef int LB_NUM_OBJ_FN(void *data);
+typedef int LB_NUM_OBJ_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -176,9 +189,11 @@ typedef int LB_NUM_OBJ_FN(void *data);
  *                                  processor.
  *    LB_LID *local_ids         --  array of Local IDs of all objects on the
  *                                  processor.
+ *    int *ierr                 --  error code
  */
 
-typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids);
+typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids,
+                            int *ierr);
 
 /*****************************************************************************/
 /*
@@ -191,13 +206,14 @@ typedef void LB_OBJ_LIST_FN(void *data, LB_GID *global_ids, LB_LID *local_ids);
  *                                  objects.
  *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no
  *                                  objects.
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
  *                                  no more objects exist on the processor.
  */
 
 typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
-                            LB_LID *first_local_id);
+                            LB_LID *first_local_id, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -212,6 +228,7 @@ typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
  *                                  more objects.
  *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no
  *                                  more objects.
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
  *                                  no more objects exist (i.e., global_id is
@@ -219,7 +236,8 @@ typedef int LB_FIRST_OBJ_FN(void *data, LB_GID *first_global_id,
  */
 
 typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
-                           LB_GID *next_global_id, LB_LID *next_local_id);
+                           LB_GID *next_global_id, LB_LID *next_local_id,
+                           int *ierr);
 
 /*****************************************************************************/
 /*
@@ -228,11 +246,13 @@ typedef int LB_NEXT_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
  *  Input:  
  *    void *data                --  pointer to user defined data structure
  *    int nbor_proc             --  processor ID of the neighboring processor.
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the number of local objects.
  */
 
-typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc);
+typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -248,10 +268,12 @@ typedef int LB_NUM_BORDER_OBJ_FN(void *data, int nbor_proc);
  *    LB_LID *local_ids         --  array of Local IDs of all objects on the 
  *                                  processor border with the given neighboring 
  *                                  processor.
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
-                                   LB_GID *global_ids, LB_LID *local_ids);
+                                   LB_GID *global_ids, LB_LID *local_ids,
+                                   int *ierr);
 
 /*****************************************************************************/
 /*
@@ -265,6 +287,7 @@ typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
  *                                  objects.
  *    LB_LID *first_local_id    --  Local ID of the next object; NULL if no 
  *                                  objects.
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
  *                                  no more objects exist (i.e., global_id is
@@ -273,7 +296,7 @@ typedef void LB_BORDER_OBJ_LIST_FN(void *data, int nbor_proc,
 
 typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
                                    LB_GID *first_global_id,
-                                   LB_LID *first_local_id);
+                                   LB_LID *first_local_id, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -289,6 +312,7 @@ typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
  *                                  more objects.
  *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no 
  *                                  more objects.
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
  *                                  no more objects exist (i.e., global_id is
@@ -298,7 +322,7 @@ typedef int LB_FIRST_BORDER_OBJ_FN(void *data, int nbor_proc,
 typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
                                   LB_LID local_id, int nbor_proc,
                                   LB_GID *next_global_id,
-                                  LB_LID *next_local_id);
+                                  LB_LID *next_local_id, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -308,11 +332,13 @@ typedef int LB_NEXT_BORDER_OBJ_FN(void *data, LB_GID global_id,
  *  comm.c routines to allocate message buffers.
  *  Input:  
  *    void *data                --  pointer to user defined data structure
+ *  Output:
+ *    int *ierr                 --  error code
  *  Returned value:
  *    int                       --  the size of data of local objects.
  */
 
-typedef int LB_OBJ_SIZE_FN(void *data);
+typedef int LB_OBJ_SIZE_FN(void *data, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -332,14 +358,15 @@ typedef int LB_OBJ_SIZE_FN(void *data);
  *    int *export_procs         --  Processor IDs of processors to receive
  *                                  the objects.
  *  Output:
- *    none                      --  the application performs pre-processing.
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
                                LB_GID *import_global_ids,
                                LB_LID *import_local_ids, int *import_procs,
                                int num_export, LB_GID *export_global_ids,
-                               LB_LID *export_local_ids, int *export_procs);
+                               LB_LID *export_local_ids, int *export_procs,
+                               int *ierr);
 
 /*****************************************************************************/
 /*
@@ -360,10 +387,11 @@ typedef void LB_PRE_MIGRATE_FN(void *data, int num_import,
  *  Output:
  *    char *buf                 --  the buffer is rewritten with the packed
  *                                  data.
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
-                            int dest_proc, int size, char *buf);
+                            int dest_proc, int size, char *buf, int *ierr);
 
 /*****************************************************************************/
 /*
@@ -379,12 +407,11 @@ typedef void LB_PACK_OBJ_FN(void *data, LB_GID global_id, LB_LID local_id,
  *    char *buf                 --  starting address of buffer into which to
  *                                  pack the object.
  *  Output:
- *    none                      --  the routine processes the data in the
- *                                  buffer.
+ *    int *ierr                 --  error code
  */
 
 typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
-                              char *buf);
+                              char *buf, int *ierr);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -394,11 +421,11 @@ typedef void LB_UNPACK_OBJ_FN(void *data, LB_GID global_id, int size,
 
 /*
  *  Function to initialize values needed in load balancing tools, and
- *  returns which version of the library this is. This function must
- *  be called with the argc, argv arguments from main. If the application
+ *  returns which version of the library this is. If the application
  *  uses MPI, call this function after calling MPI_Init. If the
  *  application does not use MPI, this function calls MPI_Init for
- *  use by the load balancer.
+ *  use by the load balancer. This function returns the version of
+ *  the DLB library.
  */
 
 extern void LB_Initialize(int argc, char **argv, float *ver);
