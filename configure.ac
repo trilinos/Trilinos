@@ -192,6 +192,7 @@ if test "X$ac_cv_use_ml" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/ml])
 fi
 
+## #np# - Copy the next three lines, and change package name
 if test "X$ac_cv_use_new_package" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/new_package])
 fi
