@@ -60,7 +60,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosIterativeSolver.hpp"
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosOperator.hpp"
 #include "BelosStatusTest.hpp"
@@ -78,14 +78,14 @@
 
 namespace Belos {
 
-template <class TYPE, class OP, class MV>
-class BlockCG : public IterativeSolver<TYPE,OP,MV> { 
+template <class ScalarType, class MV, class OP>
+class BlockCG : public IterativeSolver<ScalarType,MV,OP> { 
 public:
   //@{ \name Constructor/Destructor.
   //! %Belos::BlockCG constructor.
-  BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp,
-	  const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
-	  const RefCountPtr<OutputManager<TYPE> > &om);
+  BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
+	  const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
+	  const RefCountPtr<OutputManager<ScalarType> > &om);
   
   //! %BlockCG destructor.
   virtual ~BlockCG();
@@ -103,7 +103,7 @@ public:
   /*! 
       \note The memory for the residual MultiVec must be handled by the calling routine.
    */
-  RefCountPtr<const MV> GetNativeResiduals( TYPE *normvec ) const;
+  RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const;
   
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -116,7 +116,7 @@ public:
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
    */
-  LinearProblemManager<TYPE,OP,MV>& GetLinearProblem() const { return( *_lp ); }
+  LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const { return( *_lp ); }
 
   //@} 
   
@@ -132,20 +132,20 @@ public:
 private:
 
   void SetCGBlkTols();
-  bool QRFactorDef(MV&, Teuchos::SerialDenseMatrix<int,TYPE>&,
-		   int[], int&);
-  void CheckCGOrth(MV&, MV&);
-  void PrintCGIterInfo(int[], const int);
+  bool QRFactorDef(MV&, Teuchos::SerialDenseMatrix<int,ScalarType>&, std::vector<int>* );
+  void CheckOrthogonality(MV&, MV&);
+  void CheckAOrthogonality(MV&, MV&);
+  void PrintCGIterInfo(const std::vector<int> &ind);
   void BlockIteration();
 
   //! Linear problem manager [ must be passed in by the user ]
-  RefCountPtr<LinearProblemManager<TYPE,OP,MV> > _lp; 
+  RefCountPtr<LinearProblem<ScalarType,MV,OP> > _lp; 
 
   //! Status test [ must be passed in by the user ]
-  RefCountPtr<StatusTest<TYPE,OP,MV> > _stest; 
+  RefCountPtr<StatusTest<ScalarType,MV,OP> > _stest; 
 
   //! Output manager [ must be passed in by the user ]
-  RefCountPtr<OutputManager<TYPE> > _om;
+  RefCountPtr<OutputManager<ScalarType> > _om;
 
   //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
   RefCountPtr<MV> _cur_block_sol;
@@ -163,19 +163,19 @@ private:
   int _blocksize, _iter, _new_blk;
 
   //! Numerical breakdown tolerances.
-  TYPE _prec, _dep_tol;
+  ScalarType _prec, _dep_tol;
 
-  typedef MultiVecTraits<TYPE,MV> MVT;
+  typedef MultiVecTraits<ScalarType,MV> MVT;
 };
 
 //
 // Implementation
 //
 
-template <class TYPE, class OP, class MV>
-BlockCG<TYPE,OP,MV>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp,
-		       const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
-		       const RefCountPtr<OutputManager<TYPE> > &om) : 
+template <class ScalarType, class MV, class OP>
+BlockCG<ScalarType,MV,OP>::BlockCG(const RefCountPtr<LinearProblem<ScalarType,MV,OP> > &lp,
+				   const RefCountPtr<StatusTest<ScalarType,MV,OP> > &stest,
+				   const RefCountPtr<OutputManager<ScalarType> > &om) : 
   _lp(lp), 
   _stest(stest),
   _om(om),
@@ -192,39 +192,38 @@ BlockCG<TYPE,OP,MV>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> 
   SetCGBlkTols();
 }
 
-template <class TYPE, class OP, class MV>
-BlockCG<TYPE,OP,MV>::~BlockCG() 
+template <class ScalarType, class MV, class OP>
+BlockCG<ScalarType,MV,OP>::~BlockCG() 
 {
 }
 
-template <class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::SetCGBlkTols() 
+template <class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::SetCGBlkTols() 
 {
-  const TYPE two = 2.0;
-  TYPE eps;
+  const ScalarType two = 2.0;
+  ScalarType eps;
   char precision = 'P';
-  Teuchos::LAPACK<int,TYPE> lapack;
+  Teuchos::LAPACK<int,ScalarType> lapack;
   eps = lapack.LAMCH(precision);
   _prec = eps;
   _dep_tol = 1/sqrt(two);
 }
 
-template <class TYPE, class OP, class MV>
-RefCountPtr<const MV> BlockCG<TYPE,OP,MV>::GetNativeResiduals( TYPE *normvec ) const 
+template <class ScalarType, class MV, class OP>
+RefCountPtr<const MV> BlockCG<ScalarType,MV,OP>::GetNativeResiduals( std::vector<ScalarType> *normvec ) const 
 {
   int i;
-  int* index = new int[ _blocksize ];
+  std::vector<int> index( _blocksize );
   if (_new_blk)
     for (i=0; i<_blocksize; i++) { index[i] = i; }
   else
     for (i=0; i<_blocksize; i++) { index[i] = _blocksize + i; }
-  RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvecs, index, _blocksize );
-  delete [] index;
+  RefCountPtr<MV> ResidMV = MVT::CloneView( *_residvecs, index );
   return ResidMV;
 }
 
-template <class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::Solve () 
+template <class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::Solve () 
 {
   //
   // Retrieve the first linear system to be solved.
@@ -243,7 +242,7 @@ void BlockCG<TYPE,OP,MV>::Solve ()
       //
       // Create single vector CG solver for this linear system.
       //
-      Belos::CG<TYPE,OP,MV> CGSolver(_lp, _stest, _om);
+      Belos::CG<ScalarType,MV,OP> CGSolver(_lp, _stest, _om);
       CGSolver.Solve();
       //
     } else {
@@ -262,25 +261,25 @@ void BlockCG<TYPE,OP,MV>::Solve ()
 //
 
 
-template <class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::BlockIteration ( ) 
+template <class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::BlockIteration ( ) 
 {
   //
   int i, j, k, info, num_ind;
   int ind_blksz, prev_ind_blksz;
   bool exit_flg = false;
   char UPLO = 'U';
-  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-  Teuchos::LAPACK<int,TYPE> lapack;
+  const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  Teuchos::LAPACK<int,ScalarType> lapack;
   RefCountPtr<MV> P_prev, R_prev, AP_prev, P_new, R_new;
   //
   // Make additional space needed during iteration
   //
-  int *index2 = new int[ _blocksize ]; assert(index2!=NULL);
-  int *index = new int[ _blocksize ]; assert(index!=NULL);
-  int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
-  int *cols = new int[_blocksize]; assert(cols!=NULL);
+  std::vector<int> index2( _blocksize );
+  std::vector<int> index( _blocksize );
+  std::vector<int> ind_idx( _blocksize );
+  std::vector<int> cols( _blocksize );
   //
   // Make room for the direction, residual, and operator applied to direction vectors.
   // We save 3 blocks of these vectors.  Also create 2 vectors of _blocksize to store
@@ -288,15 +287,15 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
   //
   RefCountPtr<MV> _basisvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
   RefCountPtr<MV> temp_blk = MVT::Clone( *_cur_block_sol, _blocksize );
-  TYPE* _cur_resid_norms = new TYPE[_blocksize]; assert(_cur_resid_norms!=NULL);
-  TYPE* _init_resid_norms= new TYPE[_blocksize]; assert(_init_resid_norms!=NULL);
+  std::vector<ScalarType> _cur_resid_norms( _blocksize );
+  std::vector<ScalarType> _init_resid_norms( _blocksize );
   _residvecs = MVT::Clone( *_cur_block_sol, 2*_blocksize ); 
   //
   ind_blksz = _blocksize;
   prev_ind_blksz = _blocksize;
-  Teuchos::SerialDenseMatrix<int,TYPE> alpha( _blocksize, _blocksize );
-  Teuchos::SerialDenseMatrix<int,TYPE> beta( _blocksize, _blocksize );
-  Teuchos::SerialDenseMatrix<int,TYPE> T2( _blocksize, _blocksize );
+  Teuchos::SerialDenseMatrix<int,ScalarType> alpha( _blocksize, _blocksize );
+  Teuchos::SerialDenseMatrix<int,ScalarType> beta( _blocksize, _blocksize );
+  Teuchos::SerialDenseMatrix<int,ScalarType> T2( _blocksize, _blocksize );
   //
   for (i=0;i<_blocksize;i++){
     index[i] = i;
@@ -317,9 +316,9 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
   // Associate the first block of _basisvecs with P_prev and the
   // first block of _residvecs with R_prev
   //
-  P_prev = MVT::CloneView( *_basisvecs, ind_idx, _blocksize);
-  R_prev = MVT::CloneView( *_residvecs, ind_idx, _blocksize);
-  AP_prev = MVT::CloneView( *temp_blk, ind_idx, _blocksize);
+  P_prev = MVT::CloneView( *_basisvecs, ind_idx );
+  R_prev = MVT::CloneView( *_residvecs, ind_idx );
+  AP_prev = MVT::CloneView( *temp_blk, ind_idx );
   //
   // Store initial guesses to AX = B in 1st block of _basisvecs
   //         P_prev = one*cur_block_sol + zero*P_prev
@@ -338,21 +337,20 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
   //
   //-------Compute and save the initial residual norms----------
   //
-  MVT::MvNorm(*R_prev, _init_resid_norms);
+  MVT::MvNorm(*R_prev, &_init_resid_norms);
   //
   // Update indices of current (independent) blocks.
   // If a residual is too small, it will be dropped from
   // the current block, thus, from future computations
   //
-  k = 0; j = 0;
+  j = 0;
+  ind_idx.resize( 0 );
   for (i=0; i<_blocksize; i++){
     _cur_resid_norms[i] = _init_resid_norms[i];
-    if (_init_resid_norms[i] > _prec){
-      ind_idx[k] = i;
-      k = k+1;
-    }
+    if (_init_resid_norms[i] > _prec)
+      ind_idx.push_back( i );
   }
-  ind_blksz = k; 
+  ind_blksz = ind_idx.size(); 
   //
   if (ind_blksz > 0) { 
     //
@@ -362,8 +360,8 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     // Associate current blocks of residuals, directions, and solution block
     // with R_prev, P_prev, and cur_sol
     //
-    R_prev = MVT::CloneView( *_residvecs, ind_idx, ind_blksz );
-    P_prev = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+    R_prev = MVT::CloneView( *_residvecs, ind_idx );
+    P_prev = MVT::CloneView( *_basisvecs, ind_idx );
     //
     //----------------Compute initial direction vectors--------------------------
     // Initially, they are set to the preconditioned residuals
@@ -374,9 +372,10 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     // and check for dependencies, adjusting indices of independent
     // vectors if needed
     //
-    Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz, ind_blksz);
-    num_ind = 0; exit_flg = false;
-    exit_flg = QRFactorDef(*P_prev, G, cols, num_ind);
+    Teuchos::SerialDenseMatrix<int,ScalarType> G(ind_blksz, ind_blksz);
+    exit_flg = false;
+    exit_flg = QRFactorDef(*P_prev, G, &cols );
+    num_ind = cols.size();
     //
     if ( exit_flg ) {
       if (_om->doOutput( 0 )) {
@@ -391,10 +390,16 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
 	*_os << " Adjusting blocks and indices for iteration" << endl;
       }
       //
+      // Adjust block and indices for iteration.
+      //
       ind_blksz = num_ind;
-      for (i=0; i< ind_blksz; i++){
-	ind_idx[i] = ind_idx[cols[i]];
-      }	
+      std::vector<int> temp_idx( ind_blksz );
+      for (i=0; i< ind_blksz; i++)
+	temp_idx[i] = ind_idx[cols[i]];
+      ind_idx.resize( ind_blksz );
+      for (i=0; i< ind_blksz; i++)      
+	ind_idx[i] = temp_idx[i];
+      
     }  // end if (num < ind_blksz)
   }  // end if (ind_blksz > 0)
   //		
@@ -406,7 +411,7 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     }
     exit_flg = true;
   }
-
+  
   // ***************************************************************************
   // ************************Main CG Loop***************************************
   // ***************************************************************************
@@ -421,25 +426,27 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     // Get views of the previous blocks of residuals, direction vectors, etc.
     //
     if (_new_blk){
-      P_prev = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+      P_prev = MVT::CloneView( *_basisvecs, ind_idx );
     }
     else {
+      index2.resize( ind_blksz );
       for (i=0; i< ind_blksz; i++) {
 	index2[i] = _blocksize + ind_idx[i];
       } 
-      P_prev = MVT::CloneView( *_basisvecs, index2, ind_blksz);
+      P_prev = MVT::CloneView( *_basisvecs, index2 );
     }
     //
+    index2.resize( _blocksize );
     for (i=0; i < _blocksize; i++){
       index2[i] = _blocksize + i;
     }
     if (_new_blk){
-      R_prev = MVT::CloneView( *_residvecs, index, _blocksize );
-      R_new = MVT::CloneView( *_residvecs, index2, _blocksize );
+      R_prev = MVT::CloneView( *_residvecs, index );
+      R_new = MVT::CloneView( *_residvecs, index2 );
     }
     else {
-      R_prev = MVT::CloneView( *_residvecs, index2, _blocksize );
-      R_new = MVT::CloneView( *_residvecs, index, _blocksize );
+      R_prev = MVT::CloneView( *_residvecs, index2 );
+      R_new = MVT::CloneView( *_residvecs, index );
     }
     //
     // Compute the coefficient matrix alpha
@@ -455,20 +462,20 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
       // The number of independent direction vectors has changed,
       // so the dimension of the application multivectors needs to be resized.
       //
-      AP_prev = MVT::CloneView( *temp_blk, ind_idx, ind_blksz ); 
+      AP_prev = MVT::CloneView( *temp_blk, ind_idx ); 
       alpha.reshape( ind_blksz, _blocksize );
       T2.reshape( ind_blksz, ind_blksz );
     }
     _lp->ApplyOp( *P_prev, *AP_prev );
-    MVT::MvTransMv( *R_prev, one, *P_prev, alpha);   
-    MVT::MvTransMv( *AP_prev, one, *P_prev, T2);
+    MVT::MvTransMv( one, *P_prev, *R_prev, alpha);   
+    MVT::MvTransMv( one, *P_prev, *AP_prev, T2);
     //
     // 2)
     lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
     if (info != 0) {
       if(_om->doOutput( 0 )){
 	*_os << " Exiting Block CG iteration "
-	    << " -- Iteration# " << _iter << endl;
+	     << " -- Iteration# " << _iter << endl;
 	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
 	*_os << " P_prev'* A*P_prev is singular" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
@@ -481,7 +488,7 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     if (info != 0) {
       if(_om->doOutput( 0 )){
 	*_os << " Exiting Block CG iteration "
-	    << " -- Iteration# " << _iter << endl;
+	     << " -- Iteration# " << _iter << endl;
 	*_os << " Reason: Cannot compute coefficient matrix alpha" << endl;
 	*_os << " Solution will be updated upon exiting loop" << endl;
       }
@@ -500,7 +507,7 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     //
     // ****Compute the Current Relative Residual Norms and the Block Error****
     //
-    MVT::MvNorm( *R_new, _cur_resid_norms);
+    MVT::MvNorm( *R_new, &_cur_resid_norms );
     //
     prev_ind_blksz = ind_blksz; // Save old ind_blksz of P_prev
     //
@@ -509,17 +516,22 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     // ind_idx are a subset of cur_idx.
     //
     k = 0;
+    std::vector<int> temp_idx;
     for (i=0; i< ind_blksz; i++){
-      if (_cur_resid_norms[ ind_idx[i] ] / _init_resid_norms[ ind_idx[i] ] > _prec){
-	ind_idx[k] = ind_idx[i]; k = k+1;
-      }
+      if (_cur_resid_norms[ ind_idx[i] ] / _init_resid_norms[ ind_idx[i] ] > _prec)
+	temp_idx.push_back( ind_idx[i] );
     }
-    ind_blksz = k;
+    ind_blksz = temp_idx.size();
+    if (ind_blksz < prev_ind_blksz ) {
+      ind_idx.resize( ind_blksz );
+      for (i=0; i< ind_blksz; i++)
+	ind_idx[i] = temp_idx[i];
+    }
     //
     // ****************Print iteration information*****************************
     //
     if (_om->doOutput( 2 )) {
-      PrintCGIterInfo( ind_idx, ind_blksz );
+      PrintCGIterInfo( ind_idx );
     }
     //
     // ****************Test for breakdown*************************************
@@ -537,19 +549,20 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     // **************Compute the new block of direction vectors****************
     //
     // Get views of the new blocks of independent direction vectors and
-    // the corresponding residuals. Note: ind_idx are a subset of cur_idx.
+    // the corresponding residuals. 
     //
+    index2.resize( ind_blksz );
     for (i=0; i<ind_blksz; i++){
       index2[i] = _blocksize + ind_idx[i];
     }
-    
+
     if (_new_blk) {
-      R_new = MVT::CloneView( *_residvecs, index2, ind_blksz );
-      P_new = MVT::CloneView( *_basisvecs, index2, ind_blksz );
+      R_new = MVT::CloneView( *_residvecs, index2 );
+      P_new = MVT::CloneView( *_basisvecs, index2 );
     }
     else {
-      R_new = MVT::CloneView( *_residvecs, ind_idx, ind_blksz );
-      P_new = MVT::CloneView( *_basisvecs, ind_idx, ind_blksz );
+      R_new = MVT::CloneView( *_residvecs, ind_idx );
+      P_new = MVT::CloneView( *_basisvecs, ind_idx );
     }
     //
     // Put the current preconditioned initial residual into P_new since P_new = precond_resid + P_prev * beta
@@ -568,7 +581,7 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     //
     // 1 & 2)  Note: we already have computed T2 and its Cholesky
     //         factorization during computation of alpha
-    MVT::MvTransMv(*P_new, -one, *AP_prev, beta);
+    MVT::MvTransMv(-one, *AP_prev, *P_new, beta);
     // 3)
     lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, T2.values(), prev_ind_blksz, beta.values(), prev_ind_blksz, &info);
     // Note: Solution returned in beta
@@ -590,18 +603,19 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
     //
     if (_om->doOutput( 2 )) {
       *_os << "Orthogonality check" << endl;
-      CheckCGOrth(*P_prev, *P_new);   
+      CheckAOrthogonality(*P_prev, *P_new);   
     }
     //
     // Compute orthonormal block of direction vectors,
     // and check for dependencies, adjusting indices of
     // independent vectors if needed
     //
-    Teuchos::SerialDenseMatrix<int,TYPE> G(ind_blksz,ind_blksz);
-    exit_flg = QRFactorDef(*P_new, G, cols, num_ind);
+    Teuchos::SerialDenseMatrix<int,ScalarType> G(ind_blksz,ind_blksz);
+    exit_flg = QRFactorDef(*P_new, G, &cols);
     //
     // Check if the orthogonalization has failed.
     //
+    num_ind = cols.size();
     if ( exit_flg ) {
       ind_blksz = num_ind;
       if (_om->doOutput( 0 )) {
@@ -625,15 +639,19 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
 	*_os << endl << endl;
       }
       ind_blksz = num_ind;
+      std::vector<int> temp_idx( ind_blksz );
       for (i=0; i<ind_blksz; i++)
-	ind_idx[i] = ind_idx[cols[i]];
+	temp_idx[i] = ind_idx[cols[i]];
+      ind_idx.resize( ind_blksz );
+      for (i=0; i<ind_blksz; i++)
+	ind_idx[i] = temp_idx[i];
     }
     //
     // Check A-orthogonality after orthonormalization
     //
     if (_om->doOutput( 2 )) {
       *_os << "Orthogonality check after orthonormalization " << endl; 
-      CheckCGOrth(*P_prev, *P_new);
+      CheckAOrthogonality(*P_prev, *P_new);
     }
     // 
     // *****Update index of new blocks*****************************************
@@ -654,69 +672,65 @@ void BlockCG<TYPE,OP,MV>::BlockIteration ( )
   if (_om->doOutput( 0 )) {
     _stest->Print(*_os);
   }  
-  // *******************************************************************************
-  // **************Free heap space**************
-  //   
-  delete [] index; index=0;
-  delete [] index2; index2=0;
-  delete [] ind_idx; ind_idx = 0;
-  delete [] cols; cols = 0;
-  delete [] _cur_resid_norms; _cur_resid_norms = 0;
-  delete [] _init_resid_norms; _init_resid_norms = 0;
   //
 } // end BlockIteration()
 //
 
-template<class TYPE, class OP, class MV>
-bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn, 
-				 Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
-				 int cols[], int &num) 
+template<class ScalarType, class MV, class OP>
+bool BlockCG<ScalarType,MV,OP>::QRFactorDef (MV& VecIn, 
+					     Teuchos::SerialDenseMatrix<int,ScalarType>& FourierR, 
+					     std::vector<int>* cols) 
 {
   int i, j, k;
   int num_orth, num_dep = 0;
   int nb = MVT::GetNumberVecs( VecIn );
-  int *index = new int[ nb ]; assert(index!=NULL);
-  int *dep_idx = new int[ nb ]; assert(dep_idx!=NULL);
+  std::vector<int> index, dep_idx;
+  std::vector<int> index2( 1 );
   RefCountPtr<MV> qj, Qj;
-  Teuchos::SerialDenseVector<int,TYPE> rj;
+  Teuchos::SerialDenseVector<int,ScalarType> rj;
   const int IntOne = Teuchos::OrdinalTraits<int>::one();
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-  TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn!=NULL);
-  //
-  // Set the index vector.
-  //
-  for ( i=0; i<nb; i++ ) { index[i] = i; }
+  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  std::vector<ScalarType> NormVecIn( nb );
+  std::vector<ScalarType> qNorm( 1 );
   //
   // Zero out the array that will contain the Fourier coefficients.
+  // 
+  FourierR.putScalar();
   //
-  FouierR.putScalar();
+  // Reset the size of the independent columns back to zero.
+  //
+  cols->resize( 0 );
   //
   // Compute the Frobenius norm of VecIn -- this will be used to
   // determine rank deficiency of VecIn
   //
-  MVT::MvNorm( VecIn, NormVecIn );
-  TYPE FroNorm = zero;
+  MVT::MvNorm( VecIn, &NormVecIn );
+  ScalarType FroNorm = zero;
   for (j=0; j<nb; j++) {
     FroNorm += NormVecIn[j] * NormVecIn[j];
   }
-  FroNorm = sqrt(FroNorm);
-  num = 0; 
+  FroNorm = Teuchos::ScalarTraits<ScalarType>::squareroot(FroNorm);
   //
   // Start the loop to orthogonalize the nb columns of VecIn.
+  //
   //
   for ( j=0; j<nb; j++ ) {
     //
     // Grab the j-th column of VecIn (the first column is indexed to 
     // be the zero-th one).
     //
-    qj = MVT::CloneView( VecIn, index+j, IntOne);
+    index2[0] = j;
+    qj = MVT::CloneView( VecIn, index2 );
     if ( j ) {
       //
       // Grab the first j columns of VecIn (that are now an orthogonal
       // basis for first j columns of the entering VecIn).
       //
-      Qj = MVT::CloneView( VecIn, index, j);
+      index.resize( j );
+      for (i=0; i<j; i++)
+	index[i] = i;
+      Qj = MVT::CloneView( VecIn, index );
       rj.size(j);
       //
       // Enter a for loop that does two (num_orth) steps of classical 
@@ -728,7 +742,7 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
 	// j of VecIn against columns 0:j-1 of VecIn. In other words, 
 	// result = trans(Qj)*qj.
 	//
-	MVT::MvTransMv( *qj, one, *Qj, rj );
+	MVT::MvTransMv( one, *Qj, *qj, rj );
 	//
 	// Sum result[0:j-1] into column j of R.
 	//
@@ -737,27 +751,28 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
 	}
 	//
 	for ( k=0; k<j; k++ ) {
-	  FouierR(k,j) += rj[k];
+	  FourierR(k,j) += rj[k];
 	}
 	//
 	//   Compute qj <- qj - Qj * rj.
 	//
 	MVT::MvTimesMatAddMv(-one, *Qj, rj, one, *qj);
       }
-    }
+      
+    } // if (j)
     //
     // Compute the norm of column j of VecIn (=qj).
     //
-    MVT::MvNorm( *qj, &FouierR(j,j) );
+    MVT::MvNorm( *qj, &qNorm );
+    FourierR(j,j) = qNorm[0];
     //
-    if ( NormVecIn[j] > _prec && FouierR(j,j) > (_prec * NormVecIn[j]) ) {
+    if ( NormVecIn[j] > _prec && FourierR(j,j) > (_prec * NormVecIn[j]) ) {
       //
       // Normalize qj to make it into a unit vector.
       //
-      TYPE rjj = one / FouierR(j,j);
+      ScalarType rjj = one / FourierR(j,j);
       MVT::MvAddMv( rjj, *qj, zero, *qj, *qj );
-      cols[num] = j;
-      num++;
+      cols->push_back( j );  
     }
     else {
       // 
@@ -769,45 +784,76 @@ bool BlockCG<TYPE,OP,MV>::QRFactorDef (MV& VecIn,
       // and zeros in the row to the right of the diagonal -- this
       // requires updating the indices of the dependent columns
       //
-      FouierR(j,j) = one;
-      dep_idx[num_dep] = j;
+      FourierR(j,j) = one;
+      dep_idx.push_back( j );
       num_dep++;
     }	
-  }
-  delete [] index;
-  delete [] dep_idx;
-  delete [] NormVecIn;
+    
+  } // for (j=0; j<nb; j++)
   //
   // Return true if we could not create any independent direction vectors (failure).
   //
-  if (!num) return true;
+  if (cols->size() == 0) return true;
   return false;
   //
 } // end QRFactorDef
 
 
-template<class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2) 
+template<class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::CheckOrthogonality(MV& P1, MV& P2) 
 {
   //
-  // This routine computes P2^T * A * P1
-  // Checks the orthogonality wrt A between any two blocks of multivectors with the same length
+  // This routine computes P2^T * P1
   //
-  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+  const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   int i, k;
   //
   int numvecs1 = MVT::GetNumberVecs( P1 );
   int numvecs2 = MVT::GetNumberVecs( P2 );
   //
-  RefCountPtr<MV> AP = MVT::CloneCopy( P1 );
+  Teuchos::SerialDenseMatrix<int,ScalarType> PtP(numvecs2, numvecs1);
+  MVT::MvTransMv( one, P2, P1, PtP);
+  //
+  ScalarType* ptr = PtP.values();
+  ScalarType column_sum;
+  //
+  for (k=0; k<numvecs1; k++) {
+    column_sum = zero;
+    for (i=0; i<numvecs2; i++) {
+      column_sum += ptr[i];
+    }
+    *_os << " P2^T*P1 for column "
+	 << k << " is  " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) << endl;
+    ptr += numvecs2;
+  }
+  *_os << endl;
+  //
+} // end check_orthog
+//
+
+template<class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::CheckAOrthogonality(MV& P1, MV& P2) 
+{
+  //
+  // This routine computes P2^T * A * P1
+  // Checks the orthogonality wrt A between any two blocks of multivectors with the same length
+  //
+  const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  int i, k;
+  //
+  int numvecs1 = MVT::GetNumberVecs( P1 );
+  int numvecs2 = MVT::GetNumberVecs( P2 );
+  //
+  RefCountPtr<MV> AP = MVT::Clone( P1, numvecs1 );
   _lp->ApplyOp(P1, *AP);
   //
-  Teuchos::SerialDenseMatrix<int,TYPE> PAP(numvecs2, numvecs1);
-  MVT::MvTransMv(*AP, one, P2, PAP);
+  Teuchos::SerialDenseMatrix<int,ScalarType> PAP(numvecs2, numvecs1);
+  MVT::MvTransMv( one, P2, *AP, PAP);
   //
-  TYPE* ptr = PAP.values();
-  TYPE column_sum;
+  ScalarType* ptr = PAP.values();
+  ScalarType column_sum;
   //
   for (k=0; k<numvecs1; k++) {
     column_sum = zero;
@@ -815,7 +861,7 @@ void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2)
       column_sum += ptr[i];
     }
     *_os << " P2^T*A*P1 for column "
-	 << k << " is  " << Teuchos::ScalarTraits<TYPE>::magnitude(column_sum) << endl;
+	 << k << " is  " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) << endl;
     ptr += numvecs2;
   }
   *_os << " " << endl;
@@ -824,11 +870,12 @@ void BlockCG<TYPE,OP,MV>::CheckCGOrth(MV& P1, MV& P2)
 //
 
 
-template<class TYPE, class OP, class MV>
-void BlockCG<TYPE,OP,MV>::PrintCGIterInfo( int ind[], const int indsz )
+template<class ScalarType, class MV, class OP>
+void BlockCG<ScalarType,MV,OP>::PrintCGIterInfo( const std::vector<int> &ind )
 {
   //
   int i;
+  int indsz = ind.size();
   *_os << "# of independent direction vectors: " << indsz << endl;    
   *_os << " Independent indices: " << endl;
   for (i=0; i<indsz; i++){

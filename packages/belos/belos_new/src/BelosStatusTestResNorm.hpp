@@ -35,8 +35,7 @@
 */
 
 #include "BelosStatusTest.hpp"
-#include "BelosLinearProblemManager.hpp"
-#include "BelosMultiVec.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosMultiVecTraits.hpp"
 
 /*! 
@@ -63,8 +62,8 @@
 
 namespace Belos {
 
-template <class TYPE, class OP, class MV>
-class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
+template <class ScalarType, class MV, class OP>
+class StatusTestResNorm: public StatusTest<ScalarType,MV,OP> {
 
  public:
 
@@ -101,7 +100,7 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     either because left scaling or preconditioning was used, or because round-off error has 
     introduced significant error, or both.
   */
-  StatusTestResNorm( TYPE Tolerance );
+  StatusTestResNorm( ScalarType Tolerance );
 
   //! Destructor
   virtual ~StatusTestResNorm();
@@ -140,13 +139,13 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     </ul>
     </ol>
   */
-  int DefineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, TYPE ScaleValue = 1.0);
+  int DefineScaleForm( ScaleType TypeOfScaling, NormType TypeOfNorm, ScalarType ScaleValue = 1.0);
 
   //! Reset the value of the tolerance
   /*! We allow the tolerance to be reset for cases where, in the process of testing the residual, 
     we find that the initial tolerance was too tight or too lax.
   */
-  int ResetTolerance(TYPE Tolerance) {tolerance_ = Tolerance; return(0);};
+  int ResetTolerance(ScalarType Tolerance) {tolerance_ = Tolerance; return(0);};
   //@}
 
   //@{ \name Status methods
@@ -157,7 +156,7 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
 
     \return StatusType: Unconverged, Converged or Failed.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE,OP,MV>* iSolver);
+  StatusType CheckStatus(IterativeSolver<ScalarType,MV,OP>* iSolver);
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -194,16 +193,16 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
   //@{ \name Methods to access data members.
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
-  TYPE GetTolerance() const {return(tolerance_);};
+  ScalarType GetTolerance() const {return(tolerance_);};
   
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
-  TYPE* GetTestValue() const {return(testvector_);};
+  std::vector<ScalarType>* GetTestValue() const {return(&testvector_);};
 
   //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
-  TYPE* GetResNormValue() const {return(resvector_);};
+  std::vector<ScalarType>* GetResNormValue() const {return(&resvector_);};
 
   //! Returns the scaled norm value, \f$ \sigma \f$.
-  TYPE* GetScaledNormValue() const {return(scalevector_);};
+  std::vector<ScalarType>* GetScaledNormValue() const {return(&scalevector_);};
 
   //@}
 
@@ -214,7 +213,7 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
   //@{ \name Private data members.
   
   //! Tolerance used to determine convergence
-  TYPE tolerance_;
+  ScalarType tolerance_;
  
   //! Type of residual to use (explicit or implicit)
   ResType restype_;
@@ -229,16 +228,16 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
   NormType scalenormtype_;
 
   //! Scaling value.
-  TYPE scalevalue_;
+  ScalarType scalevalue_;
 
   //! Scaling vector.
-  TYPE* scalevector_;
+  std::vector<ScalarType> scalevector_;
   
   //! Residual norm vector.
-  TYPE* resvector_;
+  std::vector<ScalarType> resvector_;
 
   //! Test vector = resvector_ / scalevector_
-  TYPE* testvector_;
+  std::vector<ScalarType> testvector_;
   
   //! Status
   StatusType status_;
@@ -266,21 +265,18 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
 
   //@}
 
-  typedef MultiVecTraits<TYPE,MV>  MVT;
+  typedef MultiVecTraits<ScalarType,MV>  MVT;
 };
 
 
-  template <class TYPE, class OP, class MV>
-  StatusTestResNorm<TYPE,OP,MV>::StatusTestResNorm( TYPE Tolerance )
+  template <class ScalarType, class MV, class OP>
+  StatusTestResNorm<ScalarType,MV,OP>::StatusTestResNorm( ScalarType Tolerance )
     : tolerance_(Tolerance),
       restype_(Implicit),
       resnormtype_(TwoNorm),	
       scaletype_(NormOfInitRes),
       scalenormtype_(TwoNorm),
       scalevalue_(1.0),
-      scalevector_(0),
-      resvector_(0),
-      testvector_(0),
       status_(Unchecked),
       cur_rhs_num_(0),
       cur_blksz_(0),
@@ -294,20 +290,14 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     // the implicit residual vector.
   }
 
-  template <class TYPE, class OP, class MV>
-  StatusTestResNorm<TYPE,OP,MV>::~StatusTestResNorm() 
+  template <class ScalarType, class MV, class OP>
+  StatusTestResNorm<ScalarType,MV,OP>::~StatusTestResNorm() 
   {
-    if (scalevector_) { delete [] scalevector_; }
-    if (resvector_) { delete [] resvector_; }
-    if (testvector_) { delete [] testvector_; }
   }
 
-  template <class TYPE, class OP, class MV>
-  void StatusTestResNorm<TYPE,OP,MV>::Reset() 
+  template <class ScalarType, class MV, class OP>
+  void StatusTestResNorm<ScalarType,MV,OP>::Reset() 
   {
-    if (scalevector_) { delete [] scalevector_; }
-    if (resvector_) { delete [] resvector_; }
-    if (testvector_) { delete [] testvector_; }
     status_ = Unchecked;
     cur_rhs_num_ = 0;
     cur_blksz_ = 0;
@@ -315,8 +305,8 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     firstcallCheckStatus_ = true;
   }
 
-  template <class TYPE, class OP, class MV>
-  int StatusTestResNorm<TYPE,OP,MV>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
+  template <class ScalarType, class MV, class OP>
+  int StatusTestResNorm<ScalarType,MV,OP>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
   {    
     assert( firstcallDefineResForm_ );
     firstcallDefineResForm_ = false;
@@ -331,9 +321,9 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     return(0);
   }
 
-  template <class TYPE, class OP, class MV> 
-  int StatusTestResNorm<TYPE,OP,MV>::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
-					       TYPE ScaleValue )
+  template <class ScalarType, class MV, class OP> 
+  int StatusTestResNorm<ScalarType,MV,OP>::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
+					       ScalarType ScaleValue )
   {
     
     assert( firstcallDefineScaleForm_ );
@@ -346,12 +336,12 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     return(0);
   }
 
-  template <class TYPE, class OP, class MV>
-  StatusType StatusTestResNorm<TYPE,OP,MV>::CheckStatus( IterativeSolver<TYPE,OP,MV>* iSolver )
+  template <class ScalarType, class MV, class OP>
+  StatusType StatusTestResNorm<ScalarType,MV,OP>::CheckStatus( IterativeSolver<ScalarType,MV,OP>* iSolver )
   {
   int i;
   ReturnType ret;
-  LinearProblemManager<TYPE,OP,MV>& lp = iSolver->GetLinearProblem();
+  LinearProblem<ScalarType,MV,OP>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
     //
@@ -364,30 +354,30 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     if (scaletype_== NormOfRHS) {
       const MV& rhs = *lp.GetRHS();
       numrhs_ = MVT::GetNumberVecs( rhs );
-      scalevector_ = new TYPE[ numrhs_ ];
-      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
-      testvector_ = new TYPE[ numrhs_ ];
-      MVT::MvNorm( rhs, scalevector_, scalenormtype_ );
+      scalevector_.resize( numrhs_ );
+      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      testvector_.resize( numrhs_ );
+      MVT::MvNorm( rhs, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
       const MV &init_res = lp.GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
-      scalevector_ = new TYPE[ numrhs_ ];
-      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
-      testvector_ = new TYPE[ numrhs_ ];
-      MVT::MvNorm( init_res, scalevector_, scalenormtype_ );
+      scalevector_.resize( numrhs_ );
+      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      testvector_.resize( numrhs_ );
+      MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
       const MV& init_res = lp.GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
-      scalevector_ = new TYPE[ numrhs_ ];
-      resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
-      testvector_ = new TYPE[ numrhs_ ];
+      scalevector_.resize( numrhs_ );
+      resvector_.resize( numrhs_ + cur_blksz_ ); // Might need a little longer vector if numrhs_ % blocksize_ != 0
+      testvector_.resize( numrhs_ );
       RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
-          MVT::MvNorm( *prec_init_res, scalevector_, scalenormtype_ );
+          MVT::MvNorm( *prec_init_res, &scalevector_, scalenormtype_ );
       else 
-          MVT::MvNorm( init_res, scalevector_, scalenormtype_ );
+          MVT::MvNorm( init_res, &scalevector_, scalenormtype_ );
     }
 
     // Initialize the testvector.
@@ -420,10 +410,17 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    RefCountPtr<const MV> residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
+    std::vector<ScalarType> tmp_resvector( cur_blksz_ );
+    RefCountPtr<const MV> residMV = iSolver->GetNativeResiduals( &tmp_resvector );     
     if ( residMV.get() != NULL ) { 
-  	MVT::MvNorm( *residMV, resvector_ + cur_rhs_num_, resnormtype_ );    
-    } 
+      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( *residMV ) );
+      MVT::MvNorm( *residMV, &tmp_resvector, resnormtype_ );    
+      for (i=0; i<MVT::GetNumberVecs( *residMV ); i++)
+	resvector_[i+cur_rhs_num_] = tmp_resvector[i]; 
+    } else {
+      for (i=0; i<cur_blksz_; i++)
+        resvector_[i+cur_rhs_num_] = tmp_resvector[i];
+    }
   }
   else if (restype_==Explicit) {
     //
@@ -433,19 +430,17 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
     //
     if ( lp.IsSolutionUpdated() ) {
       const MV& cur_res = lp.GetCurrResVec();
-      ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
-      if ( ret != Ok ) {
-        status_ = Failed;
-        return(status_);
-      }
+      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
+      MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
+      for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
+	resvector_[i+cur_rhs_num_] = tmp_resvector[i];
     } else {
       RefCountPtr<const MV> cur_soln = iSolver->GetCurrentSoln();
       const MV &cur_res = lp.GetCurrResVec( &*cur_soln );
-      ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
-      if ( ret != Ok ) {
-        status_ = Failed;
-        return(status_);
-      }
+      std::vector<ScalarType> tmp_resvector( MVT::GetNumberVecs( cur_res ) );
+      MVT::MvNorm( cur_res, &tmp_resvector, resnormtype_ );
+      for (i=0; i<MVT::GetNumberVecs( cur_res ); i++)
+	resvector_[i+cur_rhs_num_] = tmp_resvector[i];      
     }
   }
   //
@@ -453,7 +448,7 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
   // (if any of them don't meet the tolerance or are NaN, then we exit with that status)
   //
   status_ = Converged; // This will be set to unconverged or NaN.
-  if ( scalevector_ ) {
+  if ( scalevector_.size() > 0 ) {
     for (i = cur_rhs_num_; i < (cur_rhs_num_ + cur_blksz_); i++) {
       testvector_[ i ] = resvector_[ i ] / scalevector_[ i ] / scalevalue_;
       if (testvector_[ i ] > tolerance_)
@@ -483,8 +478,8 @@ class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
 }
 
 
-template <class TYPE, class OP, class MV>
-ostream& StatusTestResNorm<TYPE,OP,MV>::Print(ostream& os, int indent) const
+template <class ScalarType, class MV, class OP>
+ostream& StatusTestResNorm<ScalarType,MV,OP>::Print(ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';

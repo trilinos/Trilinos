@@ -41,12 +41,12 @@
 //
 // 
 #include "BelosConfigDefs.hpp"
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosPetraInterface.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosBlockCG.hpp"
 #include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
@@ -92,10 +92,10 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   double dropTol = 1.0e-6;
   //
-  Ifpack_CrsIct* ICT = 0;
+  Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
   //
   if (Lfill > -1) {
-    ICT = new Ifpack_CrsIct(*A, dropTol, Lfill);
+    ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
     ICT->SetAbsoluteThreshold(Athresh);
     ICT->SetRelativeThreshold(Rthresh);
     int initerr = ICT->InitValues(*A);
@@ -110,7 +110,6 @@ int main(int argc, char *argv[]) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   }
-  Epetra_Operator& prec = *ICT;
   //
   // Solve using Belos
   //
@@ -121,43 +120,39 @@ int main(int argc, char *argv[]) {
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
-  Belos::PetraMat<double> Amat( &*A );
+  Belos::EpetraOp Amat( A );
   //
   // call the ctor for the preconditioning object
   //
-  Belos::PetraPrec<double> EpetraOpPrec( &prec );
+  Belos::EpetraPrecOp Prec( ICT );
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
   //
   const Epetra_Map &Map = A->RowMap();
   const int NumGlobalElements = Map.NumGlobalElements();
-  //int numrhs = 15;  // total number of right-hand sides to solve for
-  int numrhs = 10;
+  int numrhs = 15;  // total number of right-hand sides to solve for
   int block = 10;  // blocksize used by solver
-  //int block = 5;
-  //int block = 15;
   int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
   double tol = 1.0e-6;  // relative residual tolerance
   //
   // *****Construct initial guess and random right-hand-sides *****
   //
-  Belos::PetraVec<double> soln(Map, numrhs);
-  Belos::PetraVec<double> rhs(Map, numrhs);
-  rhs.SetSeed(0);
+  Belos::EpetraMultiVec soln(Map, numrhs);
+  Belos::EpetraMultiVec rhs(Map, numrhs);
   rhs.MvRandom();
   //
   // *****Create Linear Problem for Belos Solver
   //
-  Belos::LinearProblemManager<double,OP,MV> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
-  My_LP.SetLeftPrec( rcp(&EpetraOpPrec, false) );
+  Belos::LinearProblem<double,MV,OP> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
+  My_LP.SetLeftPrec( rcp(&Prec, false) );
   My_LP.SetBlockSize( block );
   //
   // *****Create Status Test Class for the Belos Solver
   //
-  Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
-  Belos::StatusTestResNorm<double,OP,MV> test2( tol );
-  Belos::StatusTestCombo<double,OP,MV> My_Test( Belos::StatusTestCombo<double,OP,MV>::OR, test1, test2 );
+  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
+  Belos::StatusTestResNorm<double,MV,OP> test2( tol );
+  Belos::StatusTestCombo<double,MV,OP> My_Test( Belos::StatusTestCombo<double,MV,OP>::OR, test1, test2 );
   
   Belos::OutputManager<double> My_OM( MyPID );
   if (verbose)
@@ -167,8 +162,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block CG iteration*************************
   // *******************************************************************
   //
-  Belos::BlockCG<double,Belos::Operator<double>,Belos::MultiVec<double> >
-    MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
+  Belos::BlockCG<double, MV, OP > MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
   //
   // **********Print out information about problem*******************
   //
@@ -196,28 +190,24 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  double* actual_resids = new double[numrhs];
-  double* rhs_norm = new double[numrhs];
-  Belos::PetraVec<double> resid( Map, numrhs );
+  std::vector<double> actual_resids( numrhs );
+  std::vector<double> rhs_norm( numrhs );
+  Belos::EpetraMultiVec resid( Map, numrhs );
   OPT::Apply( Amat, soln, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
-  MVT::MvNorm( resid, actual_resids );
-  MVT::MvNorm( rhs, rhs_norm );
+  MVT::MvNorm( resid, &actual_resids );
+  MVT::MvNorm( rhs, &rhs_norm );
   if (verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for (int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
-  // Release all objects  
-  if (ICT) { delete ICT; ICT = 0; }
-  delete [] actual_resids;
-  delete [] rhs_norm;
   
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
-
+  
   if (My_Test.GetStatus() == Belos::Converged) {
     cout<< "***************** The test PASSED !!!********************"<<endl;
     return 0;

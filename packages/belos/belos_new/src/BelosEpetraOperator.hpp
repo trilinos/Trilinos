@@ -39,10 +39,10 @@
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
 
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosStatusTest.hpp"
 #include "BelosOutputManager.hpp"
-#include "BelosPetraInterface.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
 #include "BelosBlockCG.hpp"
 

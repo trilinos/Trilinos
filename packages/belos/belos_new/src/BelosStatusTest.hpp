@@ -51,7 +51,7 @@
 
 namespace Belos {
 
-template <class TYPE, class OP, class MV>
+template <class TYPE, class MV, class OP>
 class StatusTest {
 
  public:
@@ -74,7 +74,7 @@ class StatusTest {
 
     \return Belos::StatusType: Unconverged, Converged or Failed.
   */
-  virtual StatusType CheckStatus( IterativeSolver<TYPE,OP,MV>* iSolver ) = 0;
+  virtual StatusType CheckStatus( IterativeSolver<TYPE,MV,OP>* iSolver ) = 0;
 
   //! Return the result of the most recent CheckStatus call.
   virtual StatusType GetStatus() const = 0;

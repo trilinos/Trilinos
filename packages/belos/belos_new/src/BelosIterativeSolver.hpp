@@ -34,9 +34,7 @@
     \brief Pure virtual base class which describes the basic interface to the iterative solver.
 */
 
-#include "BelosLinearProblemManager.hpp"
-#include "BelosOperator.hpp"
-#include "BelosMultiVec.hpp"
+#include "BelosLinearProblem.hpp"
 
 /*! \class Belos::IterativeSolver
   \brief The Belos::IterativeSolver is a templated virtual base class that defines the
@@ -48,7 +46,7 @@
 
 namespace Belos {
 
-template <class TYPE, class OP, class MV>
+template <class ScalarType, class MV, class OP>
 class IterativeSolver {
     
   public:
@@ -87,7 +85,7 @@ class IterativeSolver {
       by the calling routine.
     </ol>
   */
-  virtual RefCountPtr<const MV> GetNativeResiduals( TYPE* normvec ) const = 0;
+  virtual RefCountPtr<const MV> GetNativeResiduals( std::vector<ScalarType> *normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -103,7 +101,7 @@ class IterativeSolver {
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual LinearProblemManager<TYPE,OP,MV>& GetLinearProblem() const = 0;
+  virtual LinearProblem<ScalarType,MV,OP>& GetLinearProblem() const = 0;
 
   //@}
 

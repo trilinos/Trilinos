@@ -33,13 +33,13 @@
 // NOTE: No preconditioner is used in this case. 
 //
 #include "BelosConfigDefs.hpp"
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosPetraInterface.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
 #include "createEpetraProblem.hpp"
 #include "Epetra_CrsMatrix.h"
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
-  Belos::PetraMat<double> Amat( &*A );
+  Belos::EpetraOp Amat( A );
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
@@ -91,12 +91,12 @@ int main(int argc, char *argv[]) {
   //
   // Construct the right-hand side and solution multivectors.
   //
-  Belos::PetraVec<double> rhs(*B);
-  Belos::PetraVec<double> soln(*X);
+  Belos::EpetraMultiVec rhs(*B);
+  Belos::EpetraMultiVec soln(*X);
   //
   // Construct an unpreconditioned linear problem instance.
   //
-  Belos::LinearProblemManager<double,OP,MV>
+  Belos::LinearProblem<double,MV,OP>
 	My_LP( rcp(&Amat, false), rcp(&soln,false), rcp(&rhs,false));
   My_LP.SetBlockSize( block );
   //
@@ -104,10 +104,10 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  typedef Belos::StatusTestCombo<double,OP,MV>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<double,OP,MV>  StatusTestResNorm_t;
-  Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
-  Belos::StatusTestMaxRestarts<double,OP,MV> test2( numrestarts );
+  typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
+  typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
+  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
+  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
   StatusTestCombo_t test3( StatusTestCombo_t::OR, test1, test2 );
   StatusTestResNorm_t test4( tol );
   StatusTestCombo_t My_Test( StatusTestCombo_t::OR, test3, test4 );
@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   if (verbose)
 	My_OM.SetVerbosity( 2 );
   
-  Belos::BlockGmres<double,OP,MV>
+  Belos::BlockGmres<double,MV,OP>
 	MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
   
   //

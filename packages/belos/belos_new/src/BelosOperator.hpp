@@ -55,39 +55,52 @@
 */
 
 namespace Belos {
-
-template <class TYPE>
-class Operator {
-public:
-
-	//@{ \name Constructor/Destructor.
-
-	//! Default constructor
-	Operator() {};
-
-	//! Destructor.
-	virtual ~Operator() {};
-	//@}
-	
-	//@{ \name Operator application method.
-
-	/*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
-	to it resulting in the Belos::MultiVec \c y, which is returned.
-	*/
-	virtual ReturnType Apply ( const MultiVec<TYPE>& x, 
-				  MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const 
-		{ return Undefined; };
-	
-	/*! \brief This routine takes the Belos::MultiVec \c x and applies the inverse operator
-	to it resulting in the Belos::MultiVec \c y, which is returned.
-	*/
-	virtual ReturnType ApplyInverse ( const MultiVec<TYPE>& x,
-					MultiVec<TYPE>& y, ETrans trans=NOTRANS ) const
-		{ return Undefined; };
-	//@}
-};
-
-
+  
+  template <class ScalarType>
+  class Operator {
+  public:
+    
+    //@{ \name Constructor/Destructor.
+    
+    //! Default constructor
+    Operator() {};
+    
+    //! Destructor.
+    virtual ~Operator() {};
+    //@}
+    
+    //@{ \name Operator application method.
+    
+    /*! \brief This routine takes the Belos::MultiVec \c x and applies the operator
+      to it resulting in the Belos::MultiVec \c y, which is returned.
+    */
+    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, 
+			       MultiVec<ScalarType>& y, ETrans trans=NOTRANS ) const = 0;
+  };
+  
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Belos::OperatorTraits for Belos::Operator 
+  //                                               and Belos::MultiVec.
+  //
+  ////////////////////////////////////////////////////////////////////  
+  
+  template <class ScalarType> 
+  class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const Operator<ScalarType>& Op, 
+			      const MultiVec<ScalarType>& x, 
+			      MultiVec<ScalarType>& y,
+			      ETrans trans=NOTRANS )
+    { return Op.Apply( x, y, trans ); }
+    
+  };
+  
 } // end Belos namespace
+
 #endif
+
 // end of file BelosOperator.hpp

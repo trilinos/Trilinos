@@ -34,52 +34,32 @@
 	required by the iterative linear solver.
 */
 
-#include "BelosMultiVec.hpp"
-#include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
-#ifdef HAVE_TSFCORE
-#include "TSFCoreLinearOp.hpp"
-#endif
 
 namespace Belos {
 
-template <class TYPE, class MV, class OP>
-class OperatorTraits {};
-
-template <class TYPE> 
-class OperatorTraits < TYPE, MultiVec<TYPE>, Operator<TYPE> > 
-{
-public:
-
-  ///
-  static ReturnType Apply ( const Operator<TYPE>& Op, const MultiVec<TYPE>& x, 
-			    MultiVec<TYPE>& y, ETrans trans=NOTRANS )
-  { return Op.Apply( x, y, trans ); }
+  template< class ScalarType, class MV, class OP >
+  struct UndefinedOperatorTraits
+  {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
+  };
   
-  ///
-  static ReturnType ApplyInverse ( const Operator<TYPE>& Op, const MultiVec<TYPE>& x,
-				   MultiVec<TYPE>& y, ETrans trans=NOTRANS )
-  { return Op.ApplyInverse( x, y, trans ); }
-
-};
-
-#ifdef HAVE_TSFCORE
-
-template <class TYPE> 
-class OperatorTraits < TYPE, TSFCore::MultiVector<TYPE>, TSFCore::LinearOp<TYPE> > 
-{
-public:
-
-  ///
-  static ReturnType Apply ( const TSFCore::LinearOp<TYPE>& Op, const TSFCore::MultiVector<TYPE>& x, 
-			    TSFCore::MultiVector<TYPE>& y, ETrans trans=NOTRANS )
-  { Op.apply( trans==NOTRANS ? TSFCore::NOTRANS : TSFCore::TRANS, x, &y ); return Ok; }
-
-};
-
-#endif // HAVE_TSFCORE
-
+  template <class ScalarType, class MV, class OP>
+  class OperatorTraits 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const OP& Op, 
+			      const MV& x, 
+			      MV& y, 
+			      ETrans trans = NOTRANS )
+    { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+    
+  };
+  
 } // end Belos namespace
 
 #endif // BELOS_OPERATOR_TRAITS_HPP

@@ -72,14 +72,14 @@
 
 namespace Belos {
 
-template <class TYPE, class OP, class MV>
-class StatusTestCombo: public StatusTest<TYPE,OP,MV> {
+template <class TYPE, class MV, class OP>
+class StatusTestCombo: public StatusTest<TYPE,MV,OP> {
 	
  public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-  typedef std::vector< StatusTest<TYPE,OP,MV>* > st_vector;
+  typedef std::vector< StatusTest<TYPE,MV,OP>* > st_vector;
   typedef typename st_vector::iterator iterator;
   typedef typename st_vector::const_iterator const_iterator;
 
@@ -103,13 +103,13 @@ class StatusTestCombo: public StatusTest<TYPE,OP,MV> {
   StatusTestCombo(ComboType t);
 
   //! Single test constructor.
-  StatusTestCombo(ComboType t, StatusTest<TYPE,OP,MV>& test1);
+  StatusTestCombo(ComboType t, StatusTest<TYPE,MV,OP>& test1);
 
   //! Dual test constructor.
-  StatusTestCombo(ComboType t, StatusTest<TYPE,OP,MV>& test1, StatusTest<TYPE,OP,MV>& test2);
+  StatusTestCombo(ComboType t, StatusTest<TYPE,MV,OP>& test1, StatusTest<TYPE,MV,OP>& test2);
 
   //! Add another test to this combination.
-  StatusTestCombo<TYPE,OP,MV>& AddStatusTest(StatusTest<TYPE,OP,MV>& add_test);
+  StatusTestCombo<TYPE,MV,OP>& AddStatusTest(StatusTest<TYPE,MV,OP>& add_test);
 
   //! Destructor
   virtual ~StatusTestCombo() {};
@@ -121,7 +121,7 @@ class StatusTestCombo: public StatusTest<TYPE,OP,MV> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus( IterativeSolver<TYPE,OP,MV>* iSolver );
+  StatusType CheckStatus( IterativeSolver<TYPE,MV,OP>* iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const { return(status_); };
@@ -164,17 +164,17 @@ protected:
 
   //@{ \name Internal methods.
   //! Use this for checkStatus when this is an OR type combo. Updates status.
-  void OrOp( IterativeSolver<TYPE,OP,MV>* iSolver );
+  void OrOp( IterativeSolver<TYPE,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
-  void AndOp( IterativeSolver<TYPE,OP,MV>* iSolver );
+  void AndOp( IterativeSolver<TYPE,MV,OP>* iSolver );
 
   //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
-  void SeqOp( IterativeSolver<TYPE,OP,MV>* iSolver );
+  void SeqOp( IterativeSolver<TYPE,MV,OP>* iSolver );
 
   //! Check whether or not it is safe to add a to the list of
   //! tests. This is necessary to avoid any infinite recursions.
-  bool IsSafe(StatusTest<TYPE,OP,MV>& test1);
+  bool IsSafe(StatusTest<TYPE,MV,OP>& test1);
   //@}
 
  private:
@@ -192,23 +192,23 @@ protected:
 
 };
 
-template <class TYPE, class OP, class MV>
-StatusTestCombo<TYPE,OP,MV>::StatusTestCombo(ComboType t)
+template <class TYPE, class MV, class OP>
+StatusTestCombo<TYPE,MV,OP>::StatusTestCombo(ComboType t)
 {
   type_ = t;
   status_ = Unchecked;
 }
 
-template <class TYPE, class OP, class MV>
-StatusTestCombo<TYPE,OP,MV>::StatusTestCombo(ComboType t, StatusTest<TYPE,OP,MV>& test1)
+template <class TYPE, class MV, class OP>
+StatusTestCombo<TYPE,MV,OP>::StatusTestCombo(ComboType t, StatusTest<TYPE,MV,OP>& test1)
 {
   type_ = t;
   tests_.push_back(&test1);
   status_ = Unchecked;
 }
 
-template <class TYPE, class OP, class MV>
-StatusTestCombo<TYPE,OP,MV>::StatusTestCombo(ComboType t, StatusTest<TYPE,OP,MV>& test1, StatusTest<TYPE,OP,MV>& test2)
+template <class TYPE, class MV, class OP>
+StatusTestCombo<TYPE,MV,OP>::StatusTestCombo(ComboType t, StatusTest<TYPE,MV,OP>& test1, StatusTest<TYPE,MV,OP>& test2)
 {
   type_ = t;
   tests_.push_back(&test1);
@@ -216,8 +216,8 @@ StatusTestCombo<TYPE,OP,MV>::StatusTestCombo(ComboType t, StatusTest<TYPE,OP,MV>
   status_ = Unchecked;
 }
 
-template <class TYPE, class OP, class MV>
-StatusTestCombo<TYPE,OP,MV>& StatusTestCombo<TYPE,OP,MV>::AddStatusTest(StatusTest<TYPE,OP,MV>& add_test)
+template <class TYPE, class MV, class OP>
+StatusTestCombo<TYPE,MV,OP>& StatusTestCombo<TYPE,MV,OP>::AddStatusTest(StatusTest<TYPE,MV,OP>& add_test)
 {
   if (IsSafe(add_test))
     tests_.push_back(&add_test);
@@ -234,8 +234,8 @@ StatusTestCombo<TYPE,OP,MV>& StatusTestCombo<TYPE,OP,MV>::AddStatusTest(StatusTe
   return *this;
 }
 
-template <class TYPE, class OP, class MV>
-bool StatusTestCombo<TYPE,OP,MV>::IsSafe(StatusTest<TYPE,OP,MV>& test1)
+template <class TYPE, class MV, class OP>
+bool StatusTestCombo<TYPE,MV,OP>::IsSafe(StatusTest<TYPE,MV,OP>& test1)
 {
   // Are we trying to add "this" to "this"? This would result in an infinite recursion.
   if (&test1 == this)
@@ -245,7 +245,7 @@ bool StatusTestCombo<TYPE,OP,MV>::IsSafe(StatusTest<TYPE,OP,MV>& test1)
   // in the list because that can also lead to infinite recursions.
   for (iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusTestCombo<TYPE,OP,MV>* ptr = dynamic_cast< StatusTestCombo<TYPE,OP,MV> *>(*i);
+    StatusTestCombo<TYPE,MV,OP>* ptr = dynamic_cast< StatusTestCombo<TYPE,MV,OP> *>(*i);
     if (ptr != NULL)
       if (!ptr->IsSafe(test1))
         return false;
@@ -253,15 +253,15 @@ bool StatusTestCombo<TYPE,OP,MV>::IsSafe(StatusTest<TYPE,OP,MV>& test1)
   return true;
 }
 
-template <class TYPE, class OP, class MV>
-bool StatusTestCombo<TYPE,OP,MV>::ResidualVectorRequired() const
+template <class TYPE, class MV, class OP>
+bool StatusTestCombo<TYPE,MV,OP>::ResidualVectorRequired() const
 {
   // If any of the StatusTest object require the residual vector, then return true.
   
   // Recursively test this property.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    StatusTest<TYPE,OP,MV>* ptr = dynamic_cast< StatusTest<TYPE,OP,MV> *>(*i);
+    StatusTest<TYPE,MV,OP>* ptr = dynamic_cast< StatusTest<TYPE,MV,OP> *>(*i);
     if (ptr != NULL)
       if (ptr->ResidualVectorRequired())
         return true;
@@ -271,8 +271,8 @@ bool StatusTestCombo<TYPE,OP,MV>::ResidualVectorRequired() const
   return false;
 }
 
-template <class TYPE, class OP, class MV>
-StatusType StatusTestCombo<TYPE,OP,MV>::CheckStatus( IterativeSolver<TYPE,OP,MV>* iSolver )
+template <class TYPE, class MV, class OP>
+StatusType StatusTestCombo<TYPE,MV,OP>::CheckStatus( IterativeSolver<TYPE,MV,OP>* iSolver )
 {
   status_ = Unconverged;
 
@@ -286,8 +286,8 @@ StatusType StatusTestCombo<TYPE,OP,MV>::CheckStatus( IterativeSolver<TYPE,OP,MV>
   return status_;
 }
 
-template <class TYPE, class OP, class MV>
-void StatusTestCombo<TYPE,OP,MV>::Reset( )
+template <class TYPE, class MV, class OP>
+void StatusTestCombo<TYPE,MV,OP>::Reset( )
 {
   // Resets all status tests in my list.
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) 
@@ -300,8 +300,8 @@ void StatusTestCombo<TYPE,OP,MV>::Reset( )
   return;
 }
 
-template <class TYPE, class OP, class MV>
-void StatusTestCombo<TYPE,OP,MV>::OrOp( IterativeSolver<TYPE,OP,MV>* iSolver )
+template <class TYPE, class MV, class OP>
+void StatusTestCombo<TYPE,MV,OP>::OrOp( IterativeSolver<TYPE,MV,OP>* iSolver )
 {
   bool isFailed = false;
 
@@ -325,8 +325,8 @@ void StatusTestCombo<TYPE,OP,MV>::OrOp( IterativeSolver<TYPE,OP,MV>* iSolver )
   return;
 }
 
-template <class TYPE, class OP, class MV>
-void StatusTestCombo<TYPE,OP,MV>::AndOp( IterativeSolver<TYPE,OP,MV>* iSolver )
+template <class TYPE, class MV, class OP>
+void StatusTestCombo<TYPE,MV,OP>::AndOp( IterativeSolver<TYPE,MV,OP>* iSolver )
 {
   bool isUnconverged = false;
   bool isFailed = false;
@@ -358,8 +358,8 @@ void StatusTestCombo<TYPE,OP,MV>::AndOp( IterativeSolver<TYPE,OP,MV>* iSolver )
   return;
 }
 
-template <class TYPE, class OP, class MV>
-void StatusTestCombo<TYPE,OP,MV>::SeqOp( IterativeSolver<TYPE,OP,MV>* iSolver ) 
+template <class TYPE, class MV, class OP>
+void StatusTestCombo<TYPE,MV,OP>::SeqOp( IterativeSolver<TYPE,MV,OP>* iSolver ) 
 {
   for (const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
@@ -381,8 +381,8 @@ void StatusTestCombo<TYPE,OP,MV>::SeqOp( IterativeSolver<TYPE,OP,MV>* iSolver )
   return;
 }
 
-template <class TYPE, class OP, class MV>
-ostream& StatusTestCombo<TYPE,OP,MV>::Print(ostream& os, int indent) const {
+template <class TYPE, class MV, class OP>
+ostream& StatusTestCombo<TYPE,MV,OP>::Print(ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
   PrintStatus(os, status_);

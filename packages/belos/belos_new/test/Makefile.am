@@ -1,5 +1,5 @@
 # @HEADER
 # @HEADER
 
-SUBDIRS = scripts BlockCG BlockGmres NonblockCg NonblockGmres
+SUBDIRS = scripts BlockCG BlockGmres 
 

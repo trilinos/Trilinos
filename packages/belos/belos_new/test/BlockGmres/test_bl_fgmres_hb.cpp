@@ -41,13 +41,13 @@
 //
 // 
 #include "BelosConfigDefs.hpp"
-#include "BelosLinearProblemManager.hpp"
+#include "BelosLinearProblem.hpp"
 #include "BelosOutputManager.hpp"
 #include "BelosStatusTestMaxIters.hpp"
 #include "BelosStatusTestMaxRestarts.hpp"
 #include "BelosStatusTestResNorm.hpp"
 #include "BelosStatusTestCombo.hpp"
-#include "BelosPetraInterface.hpp"
+#include "BelosEpetraAdapter.hpp"
 #include "BelosBlockGmres.hpp"
 #include "createEpetraProblem.hpp"
 #include "Ifpack_IlukGraph.h"
@@ -93,13 +93,13 @@ int main(int argc, char *argv[]) {
   // if (argc >5) Rthresh = atof(argv[5]);
   if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
   //
-  Ifpack_IlukGraph * ilukGraph=0;
-  Ifpack_CrsRiluk * ilukFactors=0;
+  Teuchos::RefCountPtr<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RefCountPtr<Ifpack_CrsRiluk> ilukFactors;
   //
   if (Lfill > -1) {
-    ilukGraph = new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap);
+    ilukGraph = Teuchos::rcp( new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap) );
     assert(ilukGraph->ConstructFilledGraph()==0);
-    ilukFactors = new Ifpack_CrsRiluk(*ilukGraph);
+    ilukFactors = Teuchos::rcp( new Ifpack_CrsRiluk(*ilukGraph) );
     int initerr = ilukFactors->InitValues(*A);
     if (initerr != 0) cout << "InitValues error = " << initerr;
     assert(ilukFactors->Factor() == 0);
@@ -112,7 +112,6 @@ int main(int argc, char *argv[]) {
     cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
     cout << endl;
   }
-  Epetra_Operator& prec = *ilukFactors;
   //
   // Solve using Belos
   //
@@ -123,11 +122,11 @@ int main(int argc, char *argv[]) {
   //
   // Construct a Belos::Operator instance through the Epetra interface.
   //
-  Belos::PetraMat<double> Amat( &*A );
+  Belos::EpetraOp Amat( A );
   //
   // call the ctor for the preconditioning object
   //
-  Belos::PetraPrec<double> EpetraOpPrec( &prec );
+  Belos::EpetraPrecOp Prec( ilukFactors );
   //
   // ********Other information used by block solver***********
   // *****************(can be user specified)******************
@@ -147,19 +146,19 @@ int main(int argc, char *argv[]) {
   //
   // *****Construct solution vector and random right-hand-sides *****
   //
-  Belos::PetraVec<double> soln(Map, numrhs);
-  Belos::PetraVec<double> rhs(Map, numrhs);
+  Belos::EpetraMultiVec soln(Map, numrhs);
+  Belos::EpetraMultiVec rhs(Map, numrhs);
   rhs.MvRandom();
-  Belos::LinearProblemManager<double,OP,MV>
+  Belos::LinearProblem<double,MV,OP>
     My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
-  My_LP.SetRightPrec( rcp(&EpetraOpPrec,false) );
-  //My_LP.SetLeftPrec( rcp(&EpetraOpPrec,false) );
+  My_LP.SetRightPrec( rcp(&Prec,false) );
+  //My_LP.SetLeftPrec( rcp(&Prec,false) );
   My_LP.SetBlockSize( block );
   
-  typedef Belos::StatusTestCombo<double,OP,MV>  StatusTestCombo_t;
-  typedef Belos::StatusTestResNorm<double,OP,MV>  StatusTestResNorm_t;
-  Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
-  Belos::StatusTestMaxRestarts<double,OP,MV> test2( numrestarts );
+  typedef Belos::StatusTestCombo<double,MV,OP>  StatusTestCombo_t;
+  typedef Belos::StatusTestResNorm<double,MV,OP>  StatusTestResNorm_t;
+  Belos::StatusTestMaxIters<double,MV,OP> test1( maxits );
+  Belos::StatusTestMaxRestarts<double,MV,OP> test2( numrestarts );
   StatusTestCombo_t BasicTest( StatusTestCombo_t::OR, test1, test2 );
   StatusTestResNorm_t test3( tol );
   test3.DefineScaleForm( StatusTestResNorm_t::NormOfPrecInitRes, Belos::TwoNorm );
@@ -176,7 +175,7 @@ int main(int argc, char *argv[]) {
   // *************Start the block Gmres iteration*************************
   // *******************************************************************
   //
-  Belos::BlockGmres<double,OP,MV>
+  Belos::BlockGmres<double,MV,OP>
     MyBlockGmres( rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false), rcp(&My_PL,false));
   //
   // **********Print out information about problem*******************
@@ -208,27 +207,20 @@ int main(int argc, char *argv[]) {
   //
   // Compute actual residuals.
   //
-  double* actual_resids = new double[numrhs];
-  double* rhs_norm = new double[numrhs];
-  Belos::PetraVec<double> resid(Map, numrhs);
+  std::vector<double> actual_resids( numrhs );
+  std::vector<double> rhs_norm( numrhs );
+  Belos::EpetraMultiVec resid(Map, numrhs);
   OPT::Apply( Amat, soln, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, rhs, resid ); 
-  MVT::MvNorm( resid, actual_resids );
-  MVT::MvNorm( rhs, rhs_norm );
+  MVT::MvNorm( resid, &actual_resids );
+  MVT::MvNorm( rhs, &rhs_norm );
   if (verbose) {
     cout<< "---------- Actual Residuals (normalized) ----------"<<endl<<endl;
     for ( int i=0; i<numrhs; i++) {
       cout<<"Problem "<<i<<" : \t"<< actual_resids[i]/rhs_norm[i] <<endl;
     }
   }
-  // Release all objects  
 
-  if (ilukGraph) delete ilukGraph;
-  if (ilukFactors) delete ilukFactors;
-
-  delete [] actual_resids;
-  delete [] rhs_norm;	
-  
   if (verbose) {
     cout << "Solution time: "<<timer.totalElapsedTime()<<endl;
   }
