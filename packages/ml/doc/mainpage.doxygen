@@ -59,7 +59,7 @@ part of the Trilinos development environment.
 
 \section download Download ML
 
-ML can be donwloaded from the web page http://software.sandia.gov/trilinos/downloads.html
+ML can be downloaded from the web page http://software.sandia.gov/trilinos/downloads.html
 
 \section desc Project Description
 
@@ -120,10 +120,10 @@ SuperLU/SuperLU_DIST, UMFPACK, Mumps, parasails, Trilinos/Epetra, Metis, ParMETI
 
 
 \section dev Developers
-The ML deverlopers are:
-- Jonathan Hu;
-- Marzio Sala;
-- Ray S. Tuminaro;
+The ML developers are:
+- Ray S. Tuminaro
+- Jonathan J. Hu
+- Marzio G. Sala
 
 \section doc Documentation about ML
 
@@ -256,7 +256,7 @@ and in the ML_Anasazi namespace.
 It is possible to instruct ML_Epetra::MultiLevelPreconditioner to print out the
 process ID, so that one can attach to the desired process. One can proceed as
 follows:
-- define the enviromental variable ML_BREAK_FOR_DEBUGGER (example, in BASH, export
+- define the environmental variable ML_BREAK_FOR_DEBUGGER (example, in BASH, export
  ML_BREAK_FOR_DEBUGGER=1 )
 - run the parallel code on a terminal (example, mpirun -np 4 ml_example.exe )
 - the code will stop in the first call to ComputePreconditioner(). This may occur
@@ -542,7 +542,7 @@ Trilinos_Util_CrsMatrixGallery.h is required by this example, and not by ML.
 \c HAVE_ML_TRIUTILS, and the header files are required by the example, and not
 by the ML source. Class Trilinos_Util::CrsMatrixGallery is used to create an
 example matrix. This Epetra_CrsMatrix is then converted to an ML_Operator
-(heavy-weight convertion).
+(heavy-weight conversion).
 
 \note ML accepts Epetra_RowMatrix's; please refer to \ref ex_mlp.
 
@@ -635,7 +635,7 @@ suppose to deal with a symmetric problem. We also set a simple coarse solver
   // generate the solver
   ML_Gen_Solver(ml_handle, ML_MGV, maxMgLevels-1, coarsestLevel);
  
-  // create an Epetra_Operrator based on the previously created
+  // create an Epetra_Operator based on the previously created
   // hierarchy
   MultiLevelOperator MLPrec(ml_handle, Comm, *Map, *Map);
 \endcode
