@@ -43,7 +43,7 @@
 // Constructor - creates the Epetra objects (maps and vectors) 
 Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
-  xFactor(100.0),
+  xFactor(10.0),
   viscosity(0.1),
   xmin(-20.0),
   xmax(20.0),
@@ -54,15 +54,12 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   xptr = new Epetra_Vector(*StandardMap);
   double Length= xmax - xmin;
   dx=Length/((double) NumGlobalNodes-1);
-  for ( int i = 0; i < NumMyElements; ++i ) {
-    (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
+  for ( int i = 0; i < NumMyNodes; ++i ) {
+    (*xptr)[i] = xmin + dx*((double) StandardMap->MinMyGID()+i);
   }
 
   // Create extra vector needed for this transient problem
   oldSolution = new Epetra_Vector(*StandardMap);
-
-  // Create the Importer needed for FD coloring
-  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
 
   oldSolution = new Epetra_Vector(*StandardMap);
   exactSolution = new Epetra_Vector(*StandardMap);
@@ -80,20 +77,18 @@ Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   A = new Epetra_CrsMatrix (Copy, *AA);
   A->TransformToLocal();
 
+  // Create the Importer needed for FD coloring
+  ColumnToOverlapImporter = new Epetra_Import(A->ColMap(),*OverlapMap);
+
 }
 
 // Destructor
 Burgers::~Burgers()
 {
-  delete A;
-  delete AA;
   delete xptr;
-  delete initialSolution;
   delete oldSolution;
   delete exactSolution;
   delete ColumnToOverlapImporter;
-  delete OverlapMap;
-  delete StandardMap;
 }
 
 // Reset function
@@ -115,11 +110,14 @@ bool Burgers::initializeSoln()
   Epetra_Vector& x = *xptr;
 
   double arg;
-  for(int i=0; i<NumMyElements; i++) {
+  for(int i=0; i<NumMyNodes; i++) {
     arg = x[i]/xFactor;
     (*initialSolution)[i] = (1.0 - ( exp(arg) - exp(-arg) ) /
                                    ( exp(arg) + exp(-arg) )) - 1.0;
   }
+
+  *oldSolution = *initialSolution;
+
   return true;
 }
 
@@ -150,6 +148,11 @@ bool Burgers::evaluate(
 
   // Declare required variables
   int i,j,ierr;
+  int OverlapNumMyNodes = OverlapMap->NumMyElements();
+
+  int OverlapMinMyNodeGID;
+  if (MyPID==0) OverlapMinMyNodeGID = StandardMap->MinMyGID();
+  else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
 
   int row, column;
   double jac;
@@ -167,7 +170,7 @@ bool Burgers::evaluate(
   if ((flag == F_ONLY)    || (flag == ALL)) i=rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
     
     // Loop Over Gauss Points
     for(int gp=0; gp < 2; gp++) {
@@ -233,7 +236,7 @@ bool Burgers::evaluate(
   // U(xmax)=0
   if (MyPID==NumProc-1) {
     if ((flag == F_ONLY)    || (flag == ALL)) 
-      (*rhs)[NumMyElements-1]= (*soln)[OverlapNumMyElements-1] - (-1.0);
+      (*rhs)[NumMyNodes-1]= (*soln)[OverlapNumMyNodes-1] - (-1.0);
     if ((flag == MATRIX_ONLY) || (flag == ALL)) {
       row=NumGlobalNodes-1;
       column=row;
@@ -263,7 +266,7 @@ Epetra_Vector& Burgers::getExactSoln(double time)
 {
   Epetra_Vector& x = *xptr;
 
-  for(int i=0; i<NumMyElements; i++)
+  for(int i=0; i<NumMyNodes; i++)
     (*exactSolution)[i] = (1.0 - tanh( (x[i]-2.0*time/xFactor)/xFactor )) / 2.0;
 
   return *exactSolution;
@@ -285,13 +288,13 @@ void Burgers::generateGraph()
   // Declare required variables
   int i,j;
   int row, column;
-  int OverlapNumMyElements = OverlapMap->NumMyElements();
+  int OverlapNumMyNodes = OverlapMap->NumMyElements();
   int OverlapMinMyGID;
   if (MyPID==0) OverlapMinMyGID = StandardMap->MinMyGID();
   else OverlapMinMyGID = StandardMap->MinMyGID()-1;
   
   // Loop Over # of Finite Elements on Processor
-  for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
+  for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
           
     // Loop over Nodes in Element
     for (i=0; i< 2; i++) {

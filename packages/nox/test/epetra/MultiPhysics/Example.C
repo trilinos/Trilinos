@@ -95,6 +95,7 @@
 #include "Problem_Interface.H" 
 #include "Equation_A.H"              
 #include "Equation_B.H"              
+#include "Burgers.H"              
 
 #include "HMX_PDE.H"              
 
@@ -252,6 +253,7 @@ int main(int argc, char *argv[])
     Equation_B ProblemB(Comm, NumGlobalNodes, "Species");
   //  Equation_B ProblemB2(Comm, 11);
   //  Equation_B ProblemB3(Comm, 501);
+    Burgers burgers(Comm, 10*NumGlobalNodes, "Burgers");
   
     // An interesting note: the order of solving each problem is based on the
     // order of adding.  For this decoupled problem, problem B is linear
@@ -265,6 +267,7 @@ int main(int argc, char *argv[])
     problemManager.addProblem(ProblemB);
   //  problemManager.addProblem(ProblemB2);
   //  problemManager.addProblem(ProblemB3);
+    problemManager.addProblem(burgers);
   
   //  problemManager.createDependency("Temperature", "Species");
     problemManager.createDependency(ProblemA, ProblemB);
@@ -278,7 +281,7 @@ int main(int argc, char *argv[])
     problemManager.outputStatus();
   
     // Initialize time integration parameters
-    int maxTimeSteps = 1;
+    int maxTimeSteps = 100;
     int timeStep = 0;
     double time = 0.;
     double dt = ProblemA.getdt();
@@ -297,6 +300,14 @@ int main(int argc, char *argv[])
                                    xMesh[i], ProblemA.getSolution()[i], 
                                    ProblemB.getSolution()[i]);
     fclose(ifp);
+    Epetra_Vector& burgersX = burgers.getMesh();
+    (void) sprintf(file_name, "burgers.%d_%d",MyPID,timeStep);
+    ifp = fopen(file_name, "w");
+    for (int i = 0; i < 10*NumMyNodes; ++i)
+      fprintf(ifp, "%d  %E  %E\n", burgersX.Map().MinMyGID()+i, 
+                                   burgersX[i], burgers.getSolution()[i]);
+    fclose(ifp);
+    
     
     // Time integration loop
     while(timeStep < maxTimeSteps) {

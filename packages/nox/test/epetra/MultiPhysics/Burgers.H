@@ -105,24 +105,11 @@ protected:
   double dx; 
   double dt; 
 
-  Epetra_Map *StandardMap; 
-  Epetra_Map *OverlapMap;
+  FillType flag;
   Epetra_Import *ColumnToOverlapImporter;
-  Epetra_Vector *initialSolution;
   Epetra_Vector *oldSolution;
   Epetra_Vector *rhs;
   Epetra_Vector *exactSolution;
-  Epetra_Comm *Comm;
-
-  int MyPID;              // Process number
-  int NumProc;            // Total number of processes
-  int NumMyElements;      // Number of elements owned by this process
-  int OverlapNumMyElements;//Number of overlap elements owned by this proc
-  int OverlapMinMyGID;    // Min gloal global overlap element on this proc
-
-  FillType flag;
-
-
 };
 #endif
 

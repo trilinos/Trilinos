@@ -57,9 +57,6 @@ class XferOp;
 // Flag to tell the evaluate routine what objects to fill
 enum FillType {F_ONLY, MATRIX_ONLY, ALL}; 
 
-// Flag to tell how to order the unknowns
-enum StoreUnknowns {Interleaved, Staggered}; // Not currently used
-
 // Finite Element Problem Class
 class GenericEpetraProblem { 
 
