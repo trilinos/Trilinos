@@ -1,4 +1,4 @@
- /* Copyright (2003) Sandia Corportation. Under the terms of Contract 
+ /* Copyright (2003) Sandia Corportation. Under the terms of Contract
    * DE-AC04-94AL85000, there is a non-exclusive license for use of this 
    * work by or on behalf of the U.S. Government.  Export of this program
    * may require a license from the United States Government. */
@@ -167,7 +167,7 @@ int Amesos_Mumps::SetCNTL(int pos, double value)
 {
   // NOTE: suppose first position is 1 (as in FORTRAN)
   if( pos>0 && pos<6 ) {
-    icntl_[pos-1] = value;
+    cntl_[pos-1] = value;
     return 0;
   } else {
     return -1;
@@ -302,8 +302,12 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 {
 
   if( IsLocal() ) {
+#ifdef EPETRA_MPI
     MPI_Comm MPIC = MPI_COMM_SELF ;
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
+#else
+    MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
+#endif
   }
   else
     MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 

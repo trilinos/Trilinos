@@ -31,8 +31,11 @@ class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
 class Epetra_MultiVector;
 #include "Epetra_SerialDenseVector.h"
-class Epetra_IntSerialDenseVector;
-class Epetra_SerialDenseMatrix;
+#include "Epetra_IntSerialDenseVector.h"
+#include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_Map.h"
+//class Epetra_IntSerialDenseVector;
+//class Epetra_SerialDenseMatrix;
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -153,19 +156,19 @@ public:
   int AddToNumFactTime(double);
   int AddToSolFactTime(double);
   
-  inline int GetSymFactTime() const
+  inline double GetSymFactTime() const
   {
     return SymFactTime_;
   }
   
-  inline int GetNumFactTime() const
+  inline double GetNumFactTime() const
   {
-    return SymFactTime_;
+    return NumFactTime_;
   }
 
-  inline int GetSolFactTime() const 
+  inline double GetSolFactTime() const 
   {
-    return SymFactTime_;
+    return SolFactTime_;
   }
 
   //! Set the matrix property (unsymmetric, SPD, general symmetric).
