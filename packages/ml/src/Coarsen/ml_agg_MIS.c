@@ -213,7 +213,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    tmatrix  = ML_Operator_halfClone(Amatrix);
 
    ML_2matmult(tmatrix, Amatrix, Asqrd);
-   ML_Operator_halfDestroy(tmatrix);
+   ML_Operator_halfClone_Destroy(tmatrix);
 
    mat_comm        = Asqrd->getrow->pre_comm;
    Asqrd_Nneigh    = ML_CommInfoOP_Get_Nneighbors(mat_comm);
