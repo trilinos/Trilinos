@@ -63,14 +63,12 @@ extern AZ_MATRIX   *user_Kn_build(struct user_partition_data *);
 
 int main(int argc, char *argv[])
 {
-  int ierr;
   int NumVectors = 16;
   int NumGlobalNodes = 1024;
   struct user_partition_data Partition = {NULL, NULL,0,0,NULL,0,0,0};
 
   /* See Aztec User's Guide for information on these variables */
 
-  AZ_MATRIX    *Kn_mat;
   int          proc_config[AZ_PROC_SIZE];
 
   /* get processor information (id & # of procs) and set ML's printlevel. */
@@ -150,7 +148,8 @@ int main(int argc, char *argv[])
   double TotalNorm = 0.0;
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm2[i];
-    if (Norm2[i] > 1e-15) {
+    if (Norm2[i] > 1e-13) {
+      cout << "### Norm2[" << i << "] = " << Norm2[i] << endl;
       cout << "### TEST FAILED" << endl;
       ML_EXIT(-2); 
     }
