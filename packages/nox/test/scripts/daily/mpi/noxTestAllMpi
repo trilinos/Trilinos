@@ -92,9 +92,12 @@ echo `uname -a` >>& $file
 set tests_lapack = 
 set tests_epetra = (NOX_NewTest NOX_Vector NOX_Group 1Dfem \
                     LOCA_NewTest LOCA_Group)
-set tests_petsc = 
-
-foreach h (lapack epetra petsc)
+set tests_petsc =
+ 
+## testscript returns an error since petsc and lapack are empty so I commented
+## it out for now
+##foreach h (lapack epetra petsc)
+foreach h (epetra)
     cd $h
 
     if ($h == lapack) then
