@@ -51,9 +51,9 @@
 // 0 for C/C++ matrices). Elements can be stored in any order.
 //
 // An example of use can be as:
-// $ mpirun -np 2 ./ml_read_matrix_AIJ.exe matrix.aij
-// (a small example of matrix.aij is contained in the ml/examples
-// subdirectory).
+// $ mpirun -np 2 ./ml_read_matrix_AIJ.exe <matrix-name>
+// (a small example of matrix.aij is contained in the
+// ml/examples/ExampleMatrices // subdirectory).
 //
 // NOTE: this code is not efficient for serial runs,
 // as it creates the distributed matrix anyway (which in that

@@ -117,17 +117,22 @@ int main(int argc, char *argv[])
   // overwrite some parameters. Please refer to the user's guide
   // for more information
   // Some parameters are reported here to better explain the process
-  // even if they are as defaults
+  // even if they are as defaults. 
+  // NOTE: To use `METIS' as aggregation scheme, you need to configure
+  // ML with the option --with-ml_metis. Otherwise, the code will
+  // creates aggregates containing all the local nodes (that is,
+  // the dimension of the coarse problem will be equal to the
+  // number of processors)
  
-  MLList.set("aggregation: type", "MIS");
+  MLList.set("aggregation: type", "METIS");
   MLList.set("smoother: type","Aztec");
   
-  // put 16 nodes on each aggregate. This number can be too small
+  // put 64 nodes on each aggregate. This number can be too small
   // for large problems. In this case, either augment ir, or increase
   // the number of levels. Also, use only presmoothing, and KLU as
   // coarse solver (KLU is enabled by default with Amesos)
 
-  MLList.set("aggregation: nodes per aggregate", 16);
+  MLList.set("aggregation: nodes per aggregate", 64);
   MLList.set("smoother: pre or post", "pre");
   MLList.set("coarse: type","Amesos-KLU");
   
@@ -145,7 +150,8 @@ int main(int argc, char *argv[])
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
  
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+    new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);

@@ -23,9 +23,6 @@ if HAVE_MPI
 if ML_BENCHMARKING
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
-		  mlaz_example \
-		  ml_two_level_DD \
                   ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa ml_read_maxwell \
                   ml_example_MultiLevelPreconditioner \
@@ -42,10 +39,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
-		  mlaz_example \
-		  ml_two_level_DD \
-		          ml_readfile ml_read_elas ml_recirc \
+                  ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
                   ml_example_MultiLevelPreconditioner \
                   ml_example_MultiLevelPreconditioner_2level \
@@ -58,15 +52,11 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
                   ml_multiple_rhs \
-                  ml_aztecoo \
                   ml_example_elasticity
 endif #ML_BENCHMARKING
 else #no mpi
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS ml_aztec_simple_ParMETIS \
-                  mlaz_example \
-		  ml_two_level_DD \
 		  ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
                   ml_example_MultiLevelPreconditioner \
@@ -80,7 +70,6 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_example_MultiLevelPreconditioner_maxwell  \
 		  ml_read_matrix_AIJ \
                   ml_multiple_rhs \
-                  ml_aztecoo \
                   ml_example_elasticity
 endif #HAVE_MPI
 
@@ -97,10 +86,6 @@ mlguide_SOURCES = $(srcdir)/mlguide.c
 mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 if !ML_STANDALONE_MODE
 ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
-ml_aztec_simple_METIS_SOURCES = $(srcdir)/ml_aztec_simple_METIS.c
-ml_aztec_simple_ParMETIS_SOURCES = $(srcdir)/ml_aztec_simple_ParMETIS.c
-mlaz_example_SOURCES = $(srcdir)/mlaz_example.c
-ml_two_level_DD_SOURCES = $(srcdir)/ml_two_level_DD.c
 ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
 ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
 ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
@@ -122,7 +107,6 @@ ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_Multi
 ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
 ml_read_matrix_AIJ_SOURCES= $(srcdir)/ml_read_matrix_AIJ.cpp
 ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
-ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -305,22 +289,6 @@ ml_simple_max_CFLAGS = ${ml_common_include_locations}
 ml_simple_max_LDADD = ${ml_libs}
 ml_simple_max_LINK = ${mllink}
 
-ml_aztec_simple_METIS_CFLAGS = ${ml_common_include_locations}
-ml_aztec_simple_METIS_LDADD = ${ml_libs}
-ml_aztec_simple_METIS_LINK = ${mllink}
-
-ml_aztec_simple_ParMETIS_CFLAGS = ${ml_common_include_locations}
-ml_aztec_simple_ParMETIS_LDADD = ${ml_libs}
-ml_aztec_simple_ParMETIS_LINK = ${mllink}
-
-mlaz_example_CFLAGS = ${ml_common_include_locations}
-mlaz_example_LDADD = ${ml_libs}
-mlaz_example_LINK = ${mllink}
-
-ml_two_level_DD_CFLAGS = ${ml_common_include_locations}
-ml_two_level_DD_LDADD = ${ml_libs}
-ml_two_level_DD_LINK = ${mllink}
-
 ml_readfile_CFLAGS = ${ml_common_include_locations}
 ml_readfile_LDADD = ${ml_libs}
 ml_readfile_LINK = ${mllink}
@@ -391,11 +359,6 @@ ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
 ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
 ml_multiple_rhs_LDADD = ${ml_libs}
 ml_multiple_rhs_LINK = ${mllink}
-
-ml_aztecoo_CPPFLAGS = ${ml_common_include_locations}
-ml_aztecoo_CXXFLAGS = ${ml_common_include_locations}
-ml_aztecoo_LDADD = ${ml_libs}
-ml_aztecoo_LINK = ${mllink}
 
 ml_example_elasticity_CFLAGS = ${ml_common_include_locations}
 ml_example_elasticity_LDADD = ${ml_libs}

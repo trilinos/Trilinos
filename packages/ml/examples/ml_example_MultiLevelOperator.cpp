@@ -38,9 +38,12 @@ using namespace Trilinos_Util;
 
 // MAIN DRIVER -- example of use of ML_Epetra::MultiLevelOperator
 //
-// from the command line, you may try something like that:
-// $ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d 
-//          -problem_size=1000
+// This file reads a matrix in Harwell/Boeing format from the
+// specified file, and solves the corresponding linear system using
+// ML as a preconditioner. 
+//
+// From the command line, you may try something like that:
+// $ mpirun -np 4 ./ml_example_epetra_operator.exe -matrix_name=<matrix>
 //
 // For more options for Trilinos_Util::CrsMatrixGallery, consult the
 // Trilinos 4.0 tutorial
@@ -58,33 +61,35 @@ int main(int argc, char *argv[])
   Epetra_Time Time(Comm);
   
   CommandLineParser CLP(argc,argv);
-  CrsMatrixGallery Gallery("", Comm);
-
-  // default values for problem type and size
-  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_1d" ); 
-  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "60" ); 
+  // to read MatrixMarket matrices, simply change "hb" to "matrix_market"
+  CrsMatrixGallery Gallery("hb", Comm);
 
   // initialize MatrixGallery object with options specified in the shell
   Gallery.Set(CLP);
   
   // get pointer to the linear system matrix
-  Epetra_CrsMatrix * A = Gallery.GetMatrix();
+  Epetra_CrsMatrix* A = Gallery.GetMatrix();
 
   // get a pointer to the map
-  const Epetra_Map * Map = Gallery.GetMap();
+  const Epetra_Map* Map = Gallery.GetMap();
 
   // get a pointer to the linear system problem
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
   
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
   
   // ================= MultiLevelOperator SECTION ========================
 
-  int nLevels = 10;
-  int maxMgLevels = 6;
-  ML_Set_PrintLevel(10);
-  ML *ml_handle;
+  // this is the "developers' way": each of the ML components
+  // has to be properly created and configured. If you are
+  // looking for an easier way to do this, try using the
+  // ML_Epetra::MultiLevelPreconditioner class.
+
+  int nLevels = 10;            // maximum number of levels
+  int maxMgLevels = 6;         // 
+  ML_Set_PrintLevel(10);       // print level (0 silent, 10 verbose)
+  ML *ml_handle;               // container of all ML' data
   
   ML_Create(&ml_handle, maxMgLevels);
 
@@ -99,8 +104,6 @@ int main(int argc, char *argv[])
   
   // select coarsening scheme. 
   ML_Aggregate_Set_CoarsenScheme_Uncoupled(agg_object);
-
-//  ML_Aggregate_Set_DampingFactor(agg_object,0.0);
 
   // generate the hierarchy. We decided to use decreasing ordering;
   // one can also use ML_INCREASING (in this case, you need to replace
@@ -118,20 +121,12 @@ int main(int argc, char *argv[])
 
   // simple coarse solver. You may want to use Amesos to access
   // to a large variety of direct solvers, serial and parallel
-  ML_Gen_Smoother_SymGaussSeidel(ml_handle, coarsestLevel, ML_BOTH, 
-				 nits, ML_DEFAULT);
+  ML_Gen_Smoother_GaussSeidel(ml_handle, coarsestLevel, ML_BOTH, 
+                              nits, ML_DEFAULT);
  
   // generate the solver
   ML_Gen_Solver(ml_handle, ML_MGV, maxMgLevels-1, coarsestLevel);
  
-  ML_Operator_Print(&(ml_handle->Rmat[ml_handle->ML_finest_level]),
-	            "R");
-  ML_Operator_PrintSparsity(&(ml_handle->Rmat[ml_handle->ML_finest_level]),
-			    "Rmat", "Rmat",ML_YES,1);
-  ML_Operator_PrintSparsity(&(ml_handle->Pmat[ml_handle->ML_finest_level-1]),
-			    "Pmat", "Pmat",ML_YES,1);
-  ML_Operator_PrintSparsity(&(ml_handle->Amat[ml_handle->ML_finest_level]),
-			    "Amat", "Amat",ML_YES,1);
   // create an Epetra_Operrator based on the previously created
   // hierarchy
   MultiLevelOperator MLPrec(ml_handle, Comm, *Map, *Map);
@@ -141,13 +136,14 @@ int main(int argc, char *argv[])
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(&MLPrec);
 
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_solver, AZ_gmres);
+  // set the AztecOO's output level
   solver.SetAztecOption(AZ_output, 16);
 
   // solve with AztecOO
   solver.Iterate(500, 1e-5);
 
-  // compute the real residual
+  // check the real residual
 
   double residual, diff, res2;
   Gallery.ComputeResidual(&residual);
@@ -160,11 +156,14 @@ int main(int argc, char *argv[])
     cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
+  if (diff > 1e-5)
+    exit(EXIT_FAILURE);
+
 #ifdef EPETRA_MPI
-  MPI_Finalize() ;
+  MPI_Finalize();
 #endif
 
-  return 0 ;
+  exit(EXIT_SUCCESS);
   
 }
 
