@@ -4032,12 +4032,15 @@ int ML_Smoother_Gen_VBGSFacts(ML_Sm_BGS_Data **data, ML_Operator *Amat,
       printf("ML_Gen_VBGSFacts : blocking information not available.\n");
       exit(1);
    }
-   dataptr->blockmap = (int *) ML_allocate( Nrows * sizeof(int));
+   dataptr->blockmap = (int *) ML_allocate( (Nrows+1) * sizeof(int));
    if (dataptr->blockmap == NULL) 
       pr_error("ML_Smoother_Gen_VBGSFacts: out of space\n");
    for (i = 0; i < Nrows; i++) dataptr->blockmap[i] = blockIndices[i];
 
-   dataptr->blocklengths = (int*) ML_allocate( Nblocks * sizeof(int));
+   dataptr->blocklengths = (int*) ML_allocate( (Nblocks+1) * sizeof(int));
+   if (dataptr->blocklengths == NULL) 
+      pr_error("ML_Smoother_Gen_VBGSFacts: out of space\n");
+
    block_sizes = dataptr->blocklengths;
 
    /* ----------------------------------------------------------- */
@@ -6838,7 +6841,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 				   Amat);
    if (smoother == (void *) ML_Gen_Smoother_MLS) {
      if (ML_Smoother_Arglist_Nargs(args) != 4) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 nodal arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_MLS() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1); /* eig ratio     */
@@ -6850,7 +6853,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    }
    else if (smoother == (void *) ML_Gen_Smoother_Jacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 2) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need two nodal arguments for ML_Gen_Smoother_Jacobi() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need two arguments for ML_Gen_Smoother_Jacobi() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6867,7 +6870,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    else if (smoother == (void *) ML_Gen_Smoother_GaussSeidel) {
      printf("Entering ML_Smoother_Gen_Hiptmair_Data (GS)\n");
      if (ML_Smoother_Arglist_Nargs(args) != 3) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need three nodal arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need three arguments for ML_Gen_Smoother_GaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6882,7 +6885,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    }
    else if (smoother == (void *) ML_Gen_Smoother_SymGaussSeidel) {
      if (ML_Smoother_Arglist_Nargs(args) != 3) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need three nodal arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need three arguments for ML_Gen_Smoother_SymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6897,7 +6900,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    }
    else if (smoother == (void *) ML_Gen_Smoother_VBlockJacobi) {
      if (ML_Smoother_Arglist_Nargs(args) != 4) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 nodal arguments for ML_Gen_Smoother_VBlockJacobi() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 arguments for ML_Gen_Smoother_VBlockJacobi() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
@@ -6914,16 +6917,16 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 				  *int_arg1, omega, *int_arg2,int_arg3);
    }
    else if (smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) {
-     if (ML_Smoother_Arglist_Nargs(args) != 4) {
-       printf("ML_Smoother_Gen_Hiptmair_Data: Need 4 nodal arguments for ML_Gen_Smoother_VBlockSymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
+     if (ML_Smoother_Arglist_Nargs(args) != 5) {
+       printf("ML_Smoother_Gen_Hiptmair_Data: Need 5 arguments for ML_Gen_Smoother_VBlockSymGaussSeidel() got %d arguments\n", ML_Smoother_Arglist_Nargs(args));
        exit(1);
      }
      int_arg1 = (int *) ML_Smoother_Arglist_Get(args, 0);
      dbl_arg1 = (double *) ML_Smoother_Arglist_Get(args, 1);
      omega = dbl_arg1[0];
      if ( ((int) omega) == ML_DEFAULT) omega= default_omega;
-     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 2);
-     int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 3);
+     int_arg2 = (int *) ML_Smoother_Arglist_Get(args, 3);
+     int_arg3 = (int *) ML_Smoother_Arglist_Get(args, 4);
      
      if (Amat->comm->ML_mypid == 0 && 2 < ML_Get_PrintLevel() )
        printf("Generating subsmoother variable block symmetric Gauss Seidel\n");
@@ -6931,7 +6934,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 				  *int_arg1, omega, *int_arg2,int_arg3);
    }
    else {
-   printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair nodal subproblem\n");
+   printf("ML_Smoother_Gen_Hiptmair_Data: Unknown smoother for Hiptmair subproblem\n");
      exit(1);
    }
    return 0;
