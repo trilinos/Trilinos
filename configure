@@ -295,7 +295,7 @@ ac_subdirs_all="$ac_subdirs_all packages/ml"
 ac_subdirs_all="$ac_subdirs_all packages/nox"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
 ac_subdirs_all="$ac_subdirs_all packages/tpetra"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE subdirs BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot subdirs BUILD_TEUCHOS_TRUE BUILD_TEUCHOS_FALSE BUILD_KOKKOS_TRUE BUILD_KOKKOS_FALSE BUILD_EPETRA_TRUE BUILD_EPETRA_FALSE BUILD_TRIUTILS_TRUE BUILD_TRIUTILS_FALSE BUILD_IFPACK_TRUE BUILD_IFPACK_FALSE BUILD_AZTECOO_TRUE BUILD_AZTECOO_FALSE BUILD_CLAPS_TRUE BUILD_CLAPS_FALSE BUILD_KOMPLEX_TRUE BUILD_KOMPLEX_FALSE BUILD_TSF_TRUE BUILD_TSF_FALSE BUILD_TSFCORE_TRUE BUILD_TSFCORE_FALSE BUILD_TSFEXTENDED_TRUE BUILD_TSFEXTENDED_FALSE BUILD_TSFCOREUTILS_TRUE BUILD_TSFCOREUTILS_FALSE BUILD_AMESOS_TRUE BUILD_AMESOS_FALSE BUILD_EPETRAEXT_TRUE BUILD_EPETRAEXT_FALSE BUILD_BELOS_TRUE BUILD_BELOS_FALSE BUILD_ANASAZI_TRUE BUILD_ANASAZI_FALSE BUILD_MEROS_TRUE BUILD_MEROS_FALSE BUILD_ML_TRUE BUILD_ML_FALSE BUILD_NOX_TRUE BUILD_NOX_FALSE BUILD_NEW_PACKAGE_TRUE BUILD_NEW_PACKAGE_FALSE BUILD_TPETRA_TRUE BUILD_TPETRA_FALSE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -822,38 +822,38 @@ Optional Features:
                           satisfy the dependencies of enabled packages will be
                           built (default is yes)
   --enable-amesos         Build amesos (default is no)
-  --enable-loca           Build loca (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-nox            Build nox (default is yes unless the
-                          --disable-default-packages option is used
-  --enable-meros          Build meros (default is no)
-  --enable-tsf            Build TSF (default is no)
-  --enable-tsfextended    Build TSFExtended (default is no)
-  --enable-tsfcore        Build TSFCore (default is no)
-  --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
-  --enable-komplex        Build komplex (default is no)
+  --enable-anasazi        Build anasazi (default is no)
   --enable-aztecoo        Build aztecoo (default is yes unless the
                           --disable-default-packages option is used
-  --enable-aztecoo-teuchos
-                          Enable AztecOO Teuchos::ParameterList interface.
-                          Default is no. Requires Teuchos package.
-  --enable-claps          Build claps (default is no)
   --enable-belos          Build belos (default is no)
-  --enable-anasazi        Build anasazi (default is no)
-  --enable-ifpack         Build ifpack (default is yes unless the
+  --enable-claps          Build claps (default is no)
+  --enable-epetra         Build epetra (default is yes unless the
                           --disable-default-packages option is used
-  --enable-triutils       Build triutils (default is no)
   --enable-epetraext      Build epetraext (default is yes unless the
                           --disable-default-packages option is used
-  --enable-tpetra         Build tpetra (default is no)
-  --enable-teuchos        Build teuchos (default is no)
+  --enable-ifpack         Build ifpack (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-kokkos         Build kokkos (default is no)
+  --enable-komplex        Build komplex (default is no)
+  --enable-loca           Build loca (default is yes unless the
+                          --disable-default-packages option is used
+  --enable-meros          Build meros (default is no)
   --enable-ml             Build ml (default is yes unless the
                           --disable-default-packages option is used
   --enable-new_package    Build new_package (default is yes unless the
                           --disable-default-packages option is used
-  --enable-epetra         Build epetra (default is yes unless the
+  --enable-nox            Build nox (default is yes unless the
                           --disable-default-packages option is used
-  --enable-kokkos         Build kokkos (default is no)
+  --enable-teuchos        Build teuchos (default is no)
+  --enable-tpetra         Build tpetra (default is no)
+  --enable-triutils       Build triutils (default is no)
+  --enable-tsf            Build TSF (default is no)
+  --enable-tsfcore        Build TSFCore (default is no)
+  --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
+  --enable-tsfextended    Build TSFExtended (default is no)
+  --enable-aztecoo-teuchos
+                          Enable AztecOO Teuchos::ParameterList interface.
+                          Default is no. Requires Teuchos package.
 
 
 CAN'T FIND THE OPTION YOU NEED?
@@ -1843,8 +1843,10 @@ fi
 if test "${enable_amesos+set}" = set; then
   enableval="$enable_amesos"
   ac_cv_use_amesos=$enableval
+ac_cv_use_amesos_explicit=$enableval
 else
   ac_cv_use_amesos=no
+ac_cv_use_amesos_explicit=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use amesos" >&5
@@ -1865,425 +1867,14 @@ fi
 
 
 
-if test "X$ac_cv_use_amesos" != "Xno"; then
-  BUILD_AMESOS_TRUE=
-  BUILD_AMESOS_FALSE='#'
-else
-  BUILD_AMESOS_TRUE='#'
-  BUILD_AMESOS_FALSE=
-fi
-
-
-
-# Check whether --enable-loca or --disable-loca was given.
-if test "${enable_loca+set}" = set; then
-  enableval="$enable_loca"
-  ac_cv_use_loca=$enableval
-else
-  ac_cv_use_loca=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use loca" >&5
-echo $ECHO_N "checking whether to use loca... $ECHO_C" >&6
-
-if test "X$ac_cv_use_loca" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_LOCA
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-#The following line is not necessary for LOCA because LOCA
-#lives in the NOX directory structure
-#AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
-
-
-# Check whether --enable-nox or --disable-nox was given.
-if test "${enable_nox+set}" = set; then
-  enableval="$enable_nox"
-  ac_cv_use_nox=$enableval
-else
-  ac_cv_use_nox=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use nox" >&5
-echo $ECHO_N "checking whether to use nox... $ECHO_C" >&6
-
-if test "X$ac_cv_use_nox" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_NOX
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_nox" != "Xno" ||
-	test "X$ac_cv_use_loca" != "Xno"; then
-  BUILD_NOX_TRUE=
-  BUILD_NOX_FALSE='#'
-else
-  BUILD_NOX_TRUE='#'
-  BUILD_NOX_FALSE=
-fi
-
-
-
-# Check whether --enable-meros or --disable-meros was given.
-if test "${enable_meros+set}" = set; then
-  enableval="$enable_meros"
-  ac_cv_use_meros=$enableval
-else
-  ac_cv_use_meros=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use meros" >&5
-echo $ECHO_N "checking whether to use meros... $ECHO_C" >&6
-
-if test "X$ac_cv_use_meros" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_MEROS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_meros" != "Xno"; then
-  BUILD_MEROS_TRUE=
-  BUILD_MEROS_FALSE='#'
-else
-  BUILD_MEROS_TRUE='#'
-  BUILD_MEROS_FALSE=
-fi
-
-
-
-# Check whether --enable-tsf or --disable-tsf was given.
-if test "${enable_tsf+set}" = set; then
-  enableval="$enable_tsf"
-  ac_cv_use_tsf=$enableval
-else
-  ac_cv_use_tsf=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use tsf" >&5
-echo $ECHO_N "checking whether to use tsf... $ECHO_C" >&6
-
-if test "X$ac_cv_use_tsf" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TSF
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_meros" != "Xno"; then
-  BUILD_TSF_TRUE=
-  BUILD_TSF_FALSE='#'
-else
-  BUILD_TSF_TRUE='#'
-  BUILD_TSF_FALSE=
-fi
-
-
-
-# Check whether --enable-tsfextended or --disable-tsfextended was given.
-if test "${enable_tsfextended+set}" = set; then
-  enableval="$enable_tsfextended"
-  ac_cv_use_tsfextended=$enableval
-else
-  ac_cv_use_tsfextended=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use tsfextended" >&5
-echo $ECHO_N "checking whether to use tsfextended... $ECHO_C" >&6
-
-if test "X$ac_cv_use_tsfextended" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TSFEXTENDED
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_tsfextended" != "Xno"; then
-  BUILD_TSFEXTENDED_TRUE=
-  BUILD_TSFEXTENDED_FALSE='#'
-else
-  BUILD_TSFEXTENDED_TRUE='#'
-  BUILD_TSFEXTENDED_FALSE=
-fi
-
-
-
-# Check whether --enable-tsfcore or --disable-tsfcore was given.
-if test "${enable_tsfcore+set}" = set; then
-  enableval="$enable_tsfcore"
-  ac_cv_use_tsfcore=$enableval
-else
-  ac_cv_use_tsfcore=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use tsfcore" >&5
-echo $ECHO_N "checking whether to use tsfcore... $ECHO_C" >&6
-
-if test "X$ac_cv_use_tsfcore" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TSFCORE
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_tsfcore" != "Xno" ||
-  test "X$ac_cv_use_tsfextended" != "Xno"; then
-  BUILD_TSFCORE_TRUE=
-  BUILD_TSFCORE_FALSE='#'
-else
-  BUILD_TSFCORE_TRUE='#'
-  BUILD_TSFCORE_FALSE=
-fi
-
-
-
-# Check whether --enable-tsfcoreutils or --disable-tsfcoreutils was given.
-if test "${enable_tsfcoreutils+set}" = set; then
-  enableval="$enable_tsfcoreutils"
-  ac_cv_use_tsfcoreutils=$enableval
-else
-  ac_cv_use_tsfcoreutils=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use tsfcoreutils" >&5
-echo $ECHO_N "checking whether to use tsfcoreutils... $ECHO_C" >&6
-
-if test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TSFCOREUTILS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
-	test "X$ac_cv_use_tsfcore" != "Xno" ||
-  test "X$ac_cv_use_tsfextended" != "Xno"; then
-  BUILD_TSFCOREUTILS_TRUE=
-  BUILD_TSFCOREUTILS_FALSE='#'
-else
-  BUILD_TSFCOREUTILS_TRUE='#'
-  BUILD_TSFCOREUTILS_FALSE=
-fi
-
-
-
-# Check whether --enable-komplex or --disable-komplex was given.
-if test "${enable_komplex+set}" = set; then
-  enableval="$enable_komplex"
-  ac_cv_use_komplex=$enableval
-else
-  ac_cv_use_komplex=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use komplex" >&5
-echo $ECHO_N "checking whether to use komplex... $ECHO_C" >&6
-
-if test "X$ac_cv_use_komplex" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_KOMPLEX
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_komplex" != "Xno"; then
-  BUILD_KOMPLEX_TRUE=
-  BUILD_KOMPLEX_FALSE='#'
-else
-  BUILD_KOMPLEX_TRUE='#'
-  BUILD_KOMPLEX_FALSE=
-fi
-
-
-
-# Check whether --enable-aztecoo or --disable-aztecoo was given.
-if test "${enable_aztecoo+set}" = set; then
-  enableval="$enable_aztecoo"
-  ac_cv_use_aztecoo=$enableval
-else
-  ac_cv_use_aztecoo=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
-echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
-
-if test "X$ac_cv_use_aztecoo" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AZTECOO
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_komplex" != "Xno"; then
-  BUILD_AZTECOO_TRUE=
-  BUILD_AZTECOO_FALSE='#'
-else
-  BUILD_AZTECOO_TRUE='#'
-  BUILD_AZTECOO_FALSE=
-fi
-
-
-# Check whether --enable-aztecoo-teuchos or --disable-aztecoo-teuchos was given.
-if test "${enable_aztecoo_teuchos+set}" = set; then
-  enableval="$enable_aztecoo_teuchos"
-  ac_cv_use_aztecoo_teuchos=$enableval
-else
-  ac_cv_use_aztecoo_teuchos=no
-fi;
-
-
-# Check whether --enable-claps or --disable-claps was given.
-if test "${enable_claps+set}" = set; then
-  enableval="$enable_claps"
-  ac_cv_use_claps=$enableval
-else
-  ac_cv_use_claps=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use claps" >&5
-echo $ECHO_N "checking whether to use claps... $ECHO_C" >&6
-
-if test "X$ac_cv_use_claps" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_CLAPS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_claps" != "Xno"; then
-  BUILD_CLAPS_TRUE=
-  BUILD_CLAPS_FALSE='#'
-else
-  BUILD_CLAPS_TRUE='#'
-  BUILD_CLAPS_FALSE=
-fi
-
-
-
-# Check whether --enable-belos or --disable-belos was given.
-if test "${enable_belos+set}" = set; then
-  enableval="$enable_belos"
-  ac_cv_use_belos=$enableval
-else
-  ac_cv_use_belos=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use belos" >&5
-echo $ECHO_N "checking whether to use belos... $ECHO_C" >&6
-
-if test "X$ac_cv_use_belos" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_BELOS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_belos" != "Xno"; then
-  BUILD_BELOS_TRUE=
-  BUILD_BELOS_FALSE='#'
-else
-  BUILD_BELOS_TRUE='#'
-  BUILD_BELOS_FALSE=
-fi
-
-
-
 # Check whether --enable-anasazi or --disable-anasazi was given.
 if test "${enable_anasazi+set}" = set; then
   enableval="$enable_anasazi"
   ac_cv_use_anasazi=$enableval
+ac_cv_use_anasazi_explicit=$enableval
 else
   ac_cv_use_anasazi=no
+ac_cv_use_anasazi_explicit=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use anasazi" >&5
@@ -2304,33 +1895,25 @@ fi
 
 
 
-if test "X$ac_cv_use_anasazi" != "Xno"; then
-  BUILD_ANASAZI_TRUE=
-  BUILD_ANASAZI_FALSE='#'
+# Check whether --enable-aztecoo or --disable-aztecoo was given.
+if test "${enable_aztecoo+set}" = set; then
+  enableval="$enable_aztecoo"
+  ac_cv_use_aztecoo=$enableval
+ac_cv_use_aztecoo_explicit=$enableval
 else
-  BUILD_ANASAZI_TRUE='#'
-  BUILD_ANASAZI_FALSE=
-fi
-
-
-
-# Check whether --enable-ifpack or --disable-ifpack was given.
-if test "${enable_ifpack+set}" = set; then
-  enableval="$enable_ifpack"
-  ac_cv_use_ifpack=$enableval
-else
-  ac_cv_use_ifpack=$ac_cv_use_default_packages
+  ac_cv_use_aztecoo=$ac_cv_use_default_packages
+ac_cv_use_aztecoo_explicit=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use ifpack" >&5
-echo $ECHO_N "checking whether to use ifpack... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use aztecoo" >&5
+echo $ECHO_N "checking whether to use aztecoo... $ECHO_C" >&6
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
+if test "X$ac_cv_use_aztecoo" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK
+#define HAVE_AZTECOO
 _ACEOF
 
 else
@@ -2340,33 +1923,25 @@ fi
 
 
 
-if test "X$ac_cv_use_ifpack" != "Xno"; then
-  BUILD_IFPACK_TRUE=
-  BUILD_IFPACK_FALSE='#'
+# Check whether --enable-belos or --disable-belos was given.
+if test "${enable_belos+set}" = set; then
+  enableval="$enable_belos"
+  ac_cv_use_belos=$enableval
+ac_cv_use_belos_explicit=$enableval
 else
-  BUILD_IFPACK_TRUE='#'
-  BUILD_IFPACK_FALSE=
-fi
-
-
-
-# Check whether --enable-triutils or --disable-triutils was given.
-if test "${enable_triutils+set}" = set; then
-  enableval="$enable_triutils"
-  ac_cv_use_triutils=$enableval
-else
-  ac_cv_use_triutils=no
+  ac_cv_use_belos=no
+ac_cv_use_belos_explicit=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use triutils" >&5
-echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use belos" >&5
+echo $ECHO_N "checking whether to use belos... $ECHO_C" >&6
 
-if test "X$ac_cv_use_triutils" != "Xno"; then
+if test "X$ac_cv_use_belos" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_TRIUTILS
+#define HAVE_BELOS
 _ACEOF
 
 else
@@ -2376,37 +1951,25 @@ fi
 
 
 
-if test "X$ac_cv_use_triutils" != "Xno" ||
-	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno"; then
-  BUILD_TRIUTILS_TRUE=
-  BUILD_TRIUTILS_FALSE='#'
+# Check whether --enable-claps or --disable-claps was given.
+if test "${enable_claps+set}" = set; then
+  enableval="$enable_claps"
+  ac_cv_use_claps=$enableval
+ac_cv_use_claps_explicit=$enableval
 else
-  BUILD_TRIUTILS_TRUE='#'
-  BUILD_TRIUTILS_FALSE=
-fi
-
-
-
-# Check whether --enable-epetraext or --disable-epetraext was given.
-if test "${enable_epetraext+set}" = set; then
-  enableval="$enable_epetraext"
-  ac_cv_use_epetraext=$enableval
-else
-  ac_cv_use_epetraext=$ac_cv_use_default_packages
+  ac_cv_use_claps=no
+ac_cv_use_claps_explicit=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use epetraext" >&5
-echo $ECHO_N "checking whether to use epetraext... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use claps" >&5
+echo $ECHO_N "checking whether to use claps... $ECHO_C" >&6
 
-if test "X$ac_cv_use_epetraext" != "Xno"; then
+if test "X$ac_cv_use_claps" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRAEXT
+#define HAVE_CLAPS
 _ACEOF
 
 else
@@ -2415,197 +1978,15 @@ echo "${ECHO_T}no" >&6
 fi
 
 
-
-if test "X$ac_cv_use_epetraext" != "Xno"; then
-  BUILD_EPETRAEXT_TRUE=
-  BUILD_EPETRAEXT_FALSE='#'
-else
-  BUILD_EPETRAEXT_TRUE='#'
-  BUILD_EPETRAEXT_FALSE=
-fi
-
-
-
-# Check whether --enable-tpetra or --disable-tpetra was given.
-if test "${enable_tpetra+set}" = set; then
-  enableval="$enable_tpetra"
-  ac_cv_use_tpetra=$enableval
-else
-  ac_cv_use_tpetra=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use tpetra" >&5
-echo $ECHO_N "checking whether to use tpetra... $ECHO_C" >&6
-
-if test "X$ac_cv_use_tpetra" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TPETRA
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_tpetra" != "Xno"; then
-  BUILD_TPETRA_TRUE=
-  BUILD_TPETRA_FALSE='#'
-else
-  BUILD_TPETRA_TRUE='#'
-  BUILD_TPETRA_FALSE=
-fi
-
-
-
-# Check whether --enable-teuchos or --disable-teuchos was given.
-if test "${enable_teuchos+set}" = set; then
-  enableval="$enable_teuchos"
-  ac_cv_use_teuchos=$enableval
-else
-  ac_cv_use_teuchos=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use teuchos" >&5
-echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
-
-if test "X$ac_cv_use_teuchos" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_TEUCHOS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_teuchos" != "Xno" ||
-	test "X$ac_cv_use_tpetra" != "Xno" ||
-	test "X$ac_cv_use_tsfcore" != "Xno" ||
-	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
-	test "X$ac_cv_use_tsfextended" != "Xno" ||
-        test "X$ac_cv_use_loca" != "Xno" ||
- 	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno" ||
-	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno"; then
-  BUILD_TEUCHOS_TRUE=
-  BUILD_TEUCHOS_FALSE='#'
-else
-  BUILD_TEUCHOS_TRUE='#'
-  BUILD_TEUCHOS_FALSE=
-fi
-
-
-
-# Check whether --enable-ml or --disable-ml was given.
-if test "${enable_ml+set}" = set; then
-  enableval="$enable_ml"
-  ac_cv_use_ml=$enableval
-else
-  ac_cv_use_ml=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use ml" >&5
-echo $ECHO_N "checking whether to use ml... $ECHO_C" >&6
-
-if test "X$ac_cv_use_ml" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_ml" != "Xno"; then
-  BUILD_ML_TRUE=
-  BUILD_ML_FALSE='#'
-else
-  BUILD_ML_TRUE='#'
-  BUILD_ML_FALSE=
-fi
-
-
-## #np# - Copy the next two lines, and change the name
-
-# Check whether --enable-new_package or --disable-new_package was given.
-if test "${enable_new_package+set}" = set; then
-  enableval="$enable_new_package"
-  ac_cv_use_new_package=$enableval
-else
-  ac_cv_use_new_package=$ac_cv_use_default_packages
-fi;
-
-echo "$as_me:$LINENO: checking whether to use new_package" >&5
-echo $ECHO_N "checking whether to use new_package... $ECHO_C" >&6
-
-if test "X$ac_cv_use_new_package" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_NEW_PACKAGE
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
-
-if test "X$ac_cv_use_new_package" != "Xno"; then
-  BUILD_NEW_PACKAGE_TRUE=
-  BUILD_NEW_PACKAGE_FALSE='#'
-else
-  BUILD_NEW_PACKAGE_TRUE='#'
-  BUILD_NEW_PACKAGE_FALSE=
-fi
-
-
-
-if test "X$ac_cv_use_teuchos" != "Xno" ||
-	test "X$ac_cv_use_tpetra" != "Xno" ||
-        test "X$ac_cv_use_tsfextended" != "Xno" ||
- 	test "X$ac_cv_use_tsfcore" != "Xno" ||
-	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
-        test "X$ac_cv_use_loca" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno" ||
- 	test "X$ac_cv_use_anasazi" != "Xno" ||
-	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno"; then
-
-
-subdirs="$subdirs packages/teuchos"
-
-fi
-
-## #np# - If your package requires epetra - you should add
-## it to the following list
-##	test "X$ac_cv_use_new_package" != "Xno" ||
 
 # Check whether --enable-epetra or --disable-epetra was given.
 if test "${enable_epetra+set}" = set; then
   enableval="$enable_epetra"
   ac_cv_use_epetra=$enableval
+ac_cv_use_epetra_explicit=$enableval
 else
   ac_cv_use_epetra=$ac_cv_use_default_packages
+ac_cv_use_epetra_explicit=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use epetra" >&5
@@ -2626,25 +2007,58 @@ fi
 
 
 
-if test "X$ac_cv_use_epetra" != "Xno" ||
-	test "X$ac_cv_use_ifpack" != "Xno" ||
-	test "X$ac_cv_use_tsf" != "Xno" ||
-	test "X$ac_cv_use_tsfextended" != "Xno" ||
-	test "X$ac_cv_use_amesos" != "Xno" ||
-	test "X$ac_cv_use_triutils" != "Xno" ||
-	test "X$ac_cv_use_aztecoo" != "Xno" ||
-	test "X$ac_cv_use_komplex" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno" ||
-	test "X$ac_cv_use_new_package" != "Xno" ||
-        test "X$ac_cv_use_epetraext" != "Xno"  ||
-        test "X$ac_cv_use_claps" != "Xno"  ||
-        test "X$ac_cv_use_meros" != "Xno"; then
-  BUILD_EPETRA_TRUE=
-  BUILD_EPETRA_FALSE='#'
+# Check whether --enable-epetraext or --disable-epetraext was given.
+if test "${enable_epetraext+set}" = set; then
+  enableval="$enable_epetraext"
+  ac_cv_use_epetraext=$enableval
+ac_cv_use_epetraext_explicit=$enableval
 else
-  BUILD_EPETRA_TRUE='#'
-  BUILD_EPETRA_FALSE=
+  ac_cv_use_epetraext=$ac_cv_use_default_packages
+ac_cv_use_epetraext_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use epetraext" >&5
+echo $ECHO_N "checking whether to use epetraext... $ECHO_C" >&6
+
+if test "X$ac_cv_use_epetraext" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_EPETRAEXT
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-ifpack or --disable-ifpack was given.
+if test "${enable_ifpack+set}" = set; then
+  enableval="$enable_ifpack"
+  ac_cv_use_ifpack=$enableval
+ac_cv_use_ifpack_explicit=$enableval
+else
+  ac_cv_use_ifpack=$ac_cv_use_default_packages
+ac_cv_use_ifpack_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ifpack" >&5
+echo $ECHO_N "checking whether to use ifpack... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ifpack" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
 fi
 
 
@@ -2653,8 +2067,10 @@ fi
 if test "${enable_kokkos+set}" = set; then
   enableval="$enable_kokkos"
   ac_cv_use_kokkos=$enableval
+ac_cv_use_kokkos_explicit=$enableval
 else
   ac_cv_use_kokkos=no
+ac_cv_use_kokkos_explicit=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use kokkos" >&5
@@ -2675,13 +2091,408 @@ fi
 
 
 
-if test "X$ac_cv_use_kokkos" != "Xno" ||
-	test "X$ac_cv_use_tpetra" != "Xno"; then
-  BUILD_KOKKOS_TRUE=
-  BUILD_KOKKOS_FALSE='#'
+# Check whether --enable-komplex or --disable-komplex was given.
+if test "${enable_komplex+set}" = set; then
+  enableval="$enable_komplex"
+  ac_cv_use_komplex=$enableval
+ac_cv_use_komplex_explicit=$enableval
 else
-  BUILD_KOKKOS_TRUE='#'
-  BUILD_KOKKOS_FALSE=
+  ac_cv_use_komplex=no
+ac_cv_use_komplex_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use komplex" >&5
+echo $ECHO_N "checking whether to use komplex... $ECHO_C" >&6
+
+if test "X$ac_cv_use_komplex" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_KOMPLEX
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-loca or --disable-loca was given.
+if test "${enable_loca+set}" = set; then
+  enableval="$enable_loca"
+  ac_cv_use_loca=$enableval
+ac_cv_use_loca_explicit=$enableval
+else
+  ac_cv_use_loca=$ac_cv_use_default_packages
+ac_cv_use_loca_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use loca" >&5
+echo $ECHO_N "checking whether to use loca... $ECHO_C" >&6
+
+if test "X$ac_cv_use_loca" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCA
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-meros or --disable-meros was given.
+if test "${enable_meros+set}" = set; then
+  enableval="$enable_meros"
+  ac_cv_use_meros=$enableval
+ac_cv_use_meros_explicit=$enableval
+else
+  ac_cv_use_meros=no
+ac_cv_use_meros_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use meros" >&5
+echo $ECHO_N "checking whether to use meros... $ECHO_C" >&6
+
+if test "X$ac_cv_use_meros" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MEROS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-ml or --disable-ml was given.
+if test "${enable_ml+set}" = set; then
+  enableval="$enable_ml"
+  ac_cv_use_ml=$enableval
+ac_cv_use_ml_explicit=$enableval
+else
+  ac_cv_use_ml=$ac_cv_use_default_packages
+ac_cv_use_ml_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml" >&5
+echo $ECHO_N "checking whether to use ml... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+## #np# - Copy the next line, and change the name.  Place the line in
+## #np# - alphabetical order based on package name.
+
+# Check whether --enable-new_package or --disable-new_package was given.
+if test "${enable_new_package+set}" = set; then
+  enableval="$enable_new_package"
+  ac_cv_use_new_package=$enableval
+ac_cv_use_new_package_explicit=$enableval
+else
+  ac_cv_use_new_package=$ac_cv_use_default_packages
+ac_cv_use_new_package_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use new_package" >&5
+echo $ECHO_N "checking whether to use new_package... $ECHO_C" >&6
+
+if test "X$ac_cv_use_new_package" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NEW_PACKAGE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-nox or --disable-nox was given.
+if test "${enable_nox+set}" = set; then
+  enableval="$enable_nox"
+  ac_cv_use_nox=$enableval
+ac_cv_use_nox_explicit=$enableval
+else
+  ac_cv_use_nox=$ac_cv_use_default_packages
+ac_cv_use_nox_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use nox" >&5
+echo $ECHO_N "checking whether to use nox... $ECHO_C" >&6
+
+if test "X$ac_cv_use_nox" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-teuchos or --disable-teuchos was given.
+if test "${enable_teuchos+set}" = set; then
+  enableval="$enable_teuchos"
+  ac_cv_use_teuchos=$enableval
+ac_cv_use_teuchos_explicit=$enableval
+else
+  ac_cv_use_teuchos=no
+ac_cv_use_teuchos_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use teuchos" >&5
+echo $ECHO_N "checking whether to use teuchos... $ECHO_C" >&6
+
+if test "X$ac_cv_use_teuchos" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TEUCHOS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-tpetra or --disable-tpetra was given.
+if test "${enable_tpetra+set}" = set; then
+  enableval="$enable_tpetra"
+  ac_cv_use_tpetra=$enableval
+ac_cv_use_tpetra_explicit=$enableval
+else
+  ac_cv_use_tpetra=no
+ac_cv_use_tpetra_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tpetra" >&5
+echo $ECHO_N "checking whether to use tpetra... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tpetra" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TPETRA
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-triutils or --disable-triutils was given.
+if test "${enable_triutils+set}" = set; then
+  enableval="$enable_triutils"
+  ac_cv_use_triutils=$enableval
+ac_cv_use_triutils_explicit=$enableval
+else
+  ac_cv_use_triutils=no
+ac_cv_use_triutils_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use triutils" >&5
+echo $ECHO_N "checking whether to use triutils... $ECHO_C" >&6
+
+if test "X$ac_cv_use_triutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TRIUTILS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-tsf or --disable-tsf was given.
+if test "${enable_tsf+set}" = set; then
+  enableval="$enable_tsf"
+  ac_cv_use_tsf=$enableval
+ac_cv_use_tsf_explicit=$enableval
+else
+  ac_cv_use_tsf=no
+ac_cv_use_tsf_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsf" >&5
+echo $ECHO_N "checking whether to use tsf... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsf" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSF
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-tsfcore or --disable-tsfcore was given.
+if test "${enable_tsfcore+set}" = set; then
+  enableval="$enable_tsfcore"
+  ac_cv_use_tsfcore=$enableval
+ac_cv_use_tsfcore_explicit=$enableval
+else
+  ac_cv_use_tsfcore=no
+ac_cv_use_tsfcore_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsfcore" >&5
+echo $ECHO_N "checking whether to use tsfcore... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCORE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-tsfcoreutils or --disable-tsfcoreutils was given.
+if test "${enable_tsfcoreutils+set}" = set; then
+  enableval="$enable_tsfcoreutils"
+  ac_cv_use_tsfcoreutils=$enableval
+ac_cv_use_tsfcoreutils_explicit=$enableval
+else
+  ac_cv_use_tsfcoreutils=no
+ac_cv_use_tsfcoreutils_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsfcoreutils" >&5
+echo $ECHO_N "checking whether to use tsfcoreutils... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCOREUTILS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-tsfextended or --disable-tsfextended was given.
+if test "${enable_tsfextended+set}" = set; then
+  enableval="$enable_tsfextended"
+  ac_cv_use_tsfextended=$enableval
+ac_cv_use_tsfextended_explicit=$enableval
+else
+  ac_cv_use_tsfextended=no
+ac_cv_use_tsfextended_explicit=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsfextended" >&5
+echo $ECHO_N "checking whether to use tsfextended... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsfextended" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFEXTENDED
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+# Check whether --enable-aztecoo-teuchos or --disable-aztecoo-teuchos was given.
+if test "${enable_aztecoo_teuchos+set}" = set; then
+  enableval="$enable_aztecoo_teuchos"
+  ac_cv_use_aztecoo_teuchos=$enableval
+else
+  ac_cv_use_aztecoo_teuchos=no
+fi;
+
+if test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_tpetra" != "Xno" ||
+        test "X$ac_cv_use_tsfextended" != "Xno" ||
+ 	test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
+        test "X$ac_cv_use_loca" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno" ||
+ 	test "X$ac_cv_use_anasazi" != "Xno" ||
+	test "X$ac_cv_use_aztecoo_teuchos" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
+
+
+subdirs="$subdirs packages/teuchos"
+
+  BUILD_TEUCHOS=yes
+  if test "X$ac_cv_use_teuchos_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-teuchos"
+  fi
+else
+  BUILD_TEUCHOS=no
+fi
+
+
+if test "X$BUILD_TEUCHOS" == "Xyes"; then
+  BUILD_TEUCHOS_TRUE=
+  BUILD_TEUCHOS_FALSE='#'
+else
+  BUILD_TEUCHOS_TRUE='#'
+  BUILD_TEUCHOS_FALSE=
 fi
 
 
@@ -2691,7 +2502,23 @@ if test "X$ac_cv_use_kokkos" != "Xno" ||
 
 subdirs="$subdirs packages/kokkos"
 
+  BUILD_KOKKOS=yes
+  if test "X$ac_cv_use_kokkos_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-kokkos"
+  fi
+else
+  BUILD_KOKKOS=no
 fi
+
+
+if test "X$BUILD_KOKKOS" == "Xyes"; then
+  BUILD_KOKKOS_TRUE=
+  BUILD_KOKKOS_FALSE='#'
+else
+  BUILD_KOKKOS_TRUE='#'
+  BUILD_KOKKOS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
@@ -2710,7 +2537,23 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 
 subdirs="$subdirs packages/epetra"
 
+  BUILD_EPETRA=yes
+  if test "X$ac_cv_use_epetra_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-epetra"
+  fi
+else
+  BUILD_EPETRA=no
 fi
+
+
+if test "X$BUILD_EPETRA" == "Xyes"; then
+  BUILD_EPETRA_TRUE=
+  BUILD_EPETRA_FALSE='#'
+else
+  BUILD_EPETRA_TRUE='#'
+  BUILD_EPETRA_FALSE=
+fi
+
 
 if test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
@@ -2721,14 +2564,46 @@ if test "X$ac_cv_use_triutils" != "Xno" ||
 
 subdirs="$subdirs packages/triutils"
 
+  BUILD_TRIUTILS=yes
+  if test "X$ac_cv_use_triutils_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-triutils"
+  fi
+else
+  BUILD_TRIUTILS=no
 fi
+
+
+if test "X$BUILD_TRIUTILS" != "Xno"; then
+  BUILD_TRIUTILS_TRUE=
+  BUILD_TRIUTILS_FALSE='#'
+else
+  BUILD_TRIUTILS_TRUE='#'
+  BUILD_TRIUTILS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_ifpack" != "Xno"; then
 
 
 subdirs="$subdirs packages/ifpack"
 
+  BUILD_IFPACK=yes
+  if test "X$ac_cv_use_ifpack_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-ifpack"
+  fi
+else
+  BUILD_IFPACK=no
 fi
+
+
+if test "X$BUILD_IFPACK" != "Xno"; then
+  BUILD_IFPACK_TRUE=
+  BUILD_IFPACK_FALSE='#'
+else
+  BUILD_IFPACK_TRUE='#'
+  BUILD_IFPACK_FALSE=
+fi
+
 
 if test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
@@ -2736,21 +2611,69 @@ if test "X$ac_cv_use_aztecoo" != "Xno" ||
 
 subdirs="$subdirs packages/aztecoo"
 
+  BUILD_AZTECOO=yes
+  if test "X$ac_cv_use_aztecoo_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-aztecoo"
+  fi
+else
+  BUILD_AZTECOO=no
 fi
+
+
+if test "X$BUILD_AZTECOO" != "Xno"; then
+  BUILD_AZTECOO_TRUE=
+  BUILD_AZTECOO_FALSE='#'
+else
+  BUILD_AZTECOO_TRUE='#'
+  BUILD_AZTECOO_FALSE=
+fi
+
 
 if test "X$ac_cv_use_claps" != "Xno"; then
 
 
 subdirs="$subdirs packages/claps"
 
+  BUILD_CLAPS=yes
+  if test "X$ac_cv_use_claps_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-claps"
+  fi
+else
+  BUILD_CLAPS=no
 fi
+
+
+if test "X$BUILD_CLAPS" != "Xno"; then
+  BUILD_CLAPS_TRUE=
+  BUILD_CLAPS_FALSE='#'
+else
+  BUILD_CLAPS_TRUE='#'
+  BUILD_CLAPS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_komplex" != "Xno"; then
 
 
 subdirs="$subdirs packages/komplex"
 
+  BUILD_KOMPLEX=yes
+  if test "X$ac_cv_use_komplex_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-komplex"
+  fi
+else
+  BUILD_KOMPLEX=no
 fi
+
+
+if test "X$BUILD_KOMPLEX" != "Xno"; then
+  BUILD_KOMPLEX_TRUE=
+  BUILD_KOMPLEX_FALSE='#'
+else
+  BUILD_KOMPLEX_TRUE='#'
+  BUILD_KOMPLEX_FALSE=
+fi
+
 
 if test "X$ac_cv_use_tsf" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno"; then
@@ -2758,7 +2681,23 @@ if test "X$ac_cv_use_tsf" != "Xno" ||
 
 subdirs="$subdirs packages/TSF"
 
+  BUILD_TSF=yes
+  if test "X$ac_cv_use_tsf_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-tsf"
+  fi
+else
+  BUILD_TSF=no
 fi
+
+
+if test "X$BUILD_TSF" != "Xno"; then
+  BUILD_TSF_TRUE=
+  BUILD_TSF_FALSE='#'
+else
+  BUILD_TSF_TRUE='#'
+  BUILD_TSF_FALSE=
+fi
+
 
 if test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfextended" != "Xno"; then
@@ -2766,14 +2705,46 @@ if test "X$ac_cv_use_tsfcore" != "Xno" ||
 
 subdirs="$subdirs packages/TSFCore"
 
+  BUILD_TSFCORE=yes
+  if test "X$ac_cv_use_tsfcore_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-tsfcore"
+  fi
+else
+  BUILD_TSFCORE=no
 fi
+
+
+if test "X$BUILD_TSFCORE" != "Xno"; then
+  BUILD_TSFCORE_TRUE=
+  BUILD_TSFCORE_FALSE='#'
+else
+  BUILD_TSFCORE_TRUE='#'
+  BUILD_TSFCORE_FALSE=
+fi
+
 
 if test "X$ac_cv_use_tsfextended" != "Xno"; then
 
 
 subdirs="$subdirs packages/TSFExtended"
 
+  BUILD_TSEXTENDEDF=yes
+  if test "X$ac_cv_use_tsfextended_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-tsfextended"
+  fi
+else
+  BUILD_TSFEXTENDED=no
 fi
+
+
+if test "X$BUILD_TSFEXTENDED" != "Xno"; then
+  BUILD_TSFEXTENDED_TRUE=
+  BUILD_TSFEXTENDED_FALSE='#'
+else
+  BUILD_TSFEXTENDED_TRUE='#'
+  BUILD_TSFEXTENDED_FALSE=
+fi
+
 
 if test "X$ac_cv_use_tsfcore" != "Xno" ||
         test "X$ac_cv_use_tsfextended" != "Xno" ||
@@ -2782,49 +2753,161 @@ if test "X$ac_cv_use_tsfcore" != "Xno" ||
 
 subdirs="$subdirs packages/TSFCoreUtils"
 
+  BUILD_TSFCOREUTILS=yes
+  if test "X$ac_cv_use_tsfcoreutils_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-tsfcoreutils"
+  fi
+else
+  BUILD_TSFCOREUTILS=no
 fi
+
+
+if test "X$BUILD_TSFCOREUTILS" != "Xno"; then
+  BUILD_TSFCOREUTILS_TRUE=
+  BUILD_TSFCOREUTILS_FALSE='#'
+else
+  BUILD_TSFCOREUTILS_TRUE='#'
+  BUILD_TSFCOREUTILS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_amesos" != "Xno"; then
 
 
 subdirs="$subdirs packages/amesos"
 
+  BUILD_AMESOS=yes
+  if test "X$ac_cv_use_amesos_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-amesos"
+  fi
+else
+  BUILD_AMESOS=no
 fi
+
+
+if test "X$BUILD_AMESOS" != "Xno"; then
+  BUILD_AMESOS_TRUE=
+  BUILD_AMESOS_FALSE='#'
+else
+  BUILD_AMESOS_TRUE='#'
+  BUILD_AMESOS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_epetraext" != "Xno"; then
 
 
 subdirs="$subdirs packages/epetraext"
 
+  BUILD_EPETRAEXT=yes
+  if test "X$ac_cv_use_epetraext_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-epetraext"
+  fi
+else
+  BUILD_EPETRAEXT=no
 fi
+
+
+if test "X$BUILD_EPETRAEXT" != "Xno"; then
+  BUILD_EPETRAEXT_TRUE=
+  BUILD_EPETRAEXT_FALSE='#'
+else
+  BUILD_EPETRAEXT_TRUE='#'
+  BUILD_EPETRAEXT_FALSE=
+fi
+
 
 if test "X$ac_cv_use_belos" != "Xno"; then
 
 
 subdirs="$subdirs packages/belos"
 
+  BUILD_BELOS=yes
+  if test "X$ac_cv_use_belos_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-belos"
+  fi
+else
+  BUILD_BELOS=no
 fi
+
+
+if test "X$BUILD_BELOS" != "Xno"; then
+  BUILD_BELOS_TRUE=
+  BUILD_BELOS_FALSE='#'
+else
+  BUILD_BELOS_TRUE='#'
+  BUILD_BELOS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_anasazi" != "Xno"; then
 
 
 subdirs="$subdirs packages/anasazi"
 
+  BUILD_ANASAZI=yes
+  if test "X$ac_cv_use_anasazi_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-anasazi"
+  fi
+else
+  BUILD_ANASAZI=no
 fi
+
+
+if test "X$BUILD_ANASAZI" != "Xno"; then
+  BUILD_ANASAZI_TRUE=
+  BUILD_ANASAZI_FALSE='#'
+else
+  BUILD_ANASAZI_TRUE='#'
+  BUILD_ANASAZI_FALSE=
+fi
+
 
 if test "X$ac_cv_use_meros" != "Xno"; then
 
 
 subdirs="$subdirs packages/meros"
 
+  BUILD_MEROS=yes
+  if test "X$ac_cv_use_meros_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-meros"
+  fi
+else
+  BUILD_MEROS=no
 fi
+
+
+if test "X$BUILD_MEROS" != "Xno"; then
+  BUILD_MEROS_TRUE=
+  BUILD_MEROS_FALSE='#'
+else
+  BUILD_MEROS_TRUE='#'
+  BUILD_MEROS_FALSE=
+fi
+
 
 if test "X$ac_cv_use_ml" != "Xno"; then
 
 
 subdirs="$subdirs packages/ml"
 
+  BUILD_ML=yes
+  if test "X$ac_cv_use_ml_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-ml"
+  fi
+else
+  BUILD_ML=no
 fi
+
+
+if test "X$BUILD_ML" != "Xno"; then
+  BUILD_ML_TRUE=
+  BUILD_ML_FALSE='#'
+else
+  BUILD_ML_TRUE='#'
+  BUILD_ML_FALSE=
+fi
+
 
 if test "X$ac_cv_use_nox" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno"; then
@@ -2832,22 +2915,70 @@ if test "X$ac_cv_use_nox" != "Xno" ||
 
 subdirs="$subdirs packages/nox"
 
+  BUILD_NOX=yes
+  if test "X$ac_cv_use_nox_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-nox"
+  fi
+else
+  BUILD_NOX=no
 fi
 
-## #np# - Copy the next three lines, and change package name
+
+if test "X$BUILD_NOX" != "Xno"; then
+  BUILD_NOX_TRUE=
+  BUILD_NOX_FALSE='#'
+else
+  BUILD_NOX_TRUE='#'
+  BUILD_NOX_FALSE=
+fi
+
+
+## #np# - Copy the next section, and change package name
 if test "X$ac_cv_use_new_package" != "Xno"; then
 
 
 subdirs="$subdirs packages/new_package"
 
+  BUILD_NEW_PACKAGE=yes
+  if test "X$ac_cv_use_new_package_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-new_package"
+  fi
+else
+  BUILD_NEW_PACKAGE=no
 fi
+
+
+if test "X$BUILD_NEW_PACKAGE" != "Xno"; then
+  BUILD_NEW_PACKAGE_TRUE=
+  BUILD_NEW_PACKAGE_FALSE='#'
+else
+  BUILD_NEW_PACKAGE_TRUE='#'
+  BUILD_NEW_PACKAGE_FALSE=
+fi
+
 
 if test "X$ac_cv_use_tpetra" != "Xno"; then
 
 
 subdirs="$subdirs packages/tpetra"
 
+  BUILD_TPETRA=yes
+  if test "X$ac_cv_use_tpetra_explicit" == "Xno"; then
+    ac_configure_args="$ac_configure_args --enable-tpetra"
+  fi
+else
+  BUILD_TPETRA=no
 fi
+
+
+if test "X$BUILD_TPETRA" != "Xno"; then
+  BUILD_TPETRA_TRUE=
+  BUILD_TPETRA_FALSE='#'
+else
+  BUILD_TPETRA_TRUE='#'
+  BUILD_TPETRA_FALSE=
+fi
+
 
 # Check whether --enable- or --disable- was given.
 if test "${enable_+set}" = set; then
@@ -2954,59 +3085,38 @@ echo "$as_me: error: conditional \"MAINTAINER_MODE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_AMESOS_TRUE}" && test -z "${BUILD_AMESOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_AMESOS\" was never defined.
+if test -z "${BUILD_TEUCHOS_TRUE}" && test -z "${BUILD_TEUCHOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_AMESOS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_TEUCHOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_NOX_TRUE}" && test -z "${BUILD_NOX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX\" was never defined.
+if test -z "${BUILD_KOKKOS_TRUE}" && test -z "${BUILD_KOKKOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_KOKKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_NOX\" was never defined.
+echo "$as_me: error: conditional \"BUILD_KOKKOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_MEROS_TRUE}" && test -z "${BUILD_MEROS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MEROS\" was never defined.
+if test -z "${BUILD_EPETRA_TRUE}" && test -z "${BUILD_EPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_MEROS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_EPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_TSF_TRUE}" && test -z "${BUILD_TSF_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSF\" was never defined.
+if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TSF\" was never defined.
+echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_TSFEXTENDED_TRUE}" && test -z "${BUILD_TSFEXTENDED_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFEXTENDED\" was never defined.
+if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TSFEXTENDED\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TSFCORE_TRUE}" && test -z "${BUILD_TSFCORE_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFCORE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TSFCORE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TSFCOREUTILS_TRUE}" && test -z "${BUILD_TSFCOREUTILS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFCOREUTILS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TSFCOREUTILS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_KOMPLEX_TRUE}" && test -z "${BUILD_KOMPLEX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_KOMPLEX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_KOMPLEX\" was never defined.
+echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3024,6 +3134,55 @@ echo "$as_me: error: conditional \"BUILD_CLAPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_KOMPLEX_TRUE}" && test -z "${BUILD_KOMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSF_TRUE}" && test -z "${BUILD_TSF_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSFCORE_TRUE}" && test -z "${BUILD_TSFCORE_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFCORE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSFCORE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSFEXTENDED_TRUE}" && test -z "${BUILD_TSFEXTENDED_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFEXTENDED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSFEXTENDED\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_TSFCOREUTILS_TRUE}" && test -z "${BUILD_TSFCOREUTILS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TSFCOREUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_TSFCOREUTILS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_AMESOS_TRUE}" && test -z "${BUILD_AMESOS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_AMESOS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_BELOS_TRUE}" && test -z "${BUILD_BELOS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_BELOS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -3038,38 +3197,10 @@ echo "$as_me: error: conditional \"BUILD_ANASAZI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
+if test -z "${BUILD_MEROS_TRUE}" && test -z "${BUILD_MEROS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_MEROS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TRIUTILS_TRUE}" && test -z "${BUILD_TRIUTILS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TRIUTILS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TRIUTILS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_EPETRAEXT_TRUE}" && test -z "${BUILD_EPETRAEXT_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_EPETRAEXT\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TPETRA_TRUE}" && test -z "${BUILD_TPETRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_TEUCHOS_TRUE}" && test -z "${BUILD_TEUCHOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TEUCHOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_TEUCHOS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_MEROS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3080,6 +3211,13 @@ echo "$as_me: error: conditional \"BUILD_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${BUILD_NOX_TRUE}" && test -z "${BUILD_NOX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_NOX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"BUILD_NOX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_NEW_PACKAGE_TRUE}" && test -z "${BUILD_NEW_PACKAGE_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_NEW_PACKAGE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -3087,17 +3225,10 @@ echo "$as_me: error: conditional \"BUILD_NEW_PACKAGE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${BUILD_EPETRA_TRUE}" && test -z "${BUILD_EPETRA_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_EPETRA\" was never defined.
+if test -z "${BUILD_TPETRA_TRUE}" && test -z "${BUILD_TPETRA_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"BUILD_TPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_EPETRA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${BUILD_KOKKOS_TRUE}" && test -z "${BUILD_KOKKOS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"BUILD_KOKKOS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"BUILD_KOKKOS\" was never defined.
+echo "$as_me: error: conditional \"BUILD_TPETRA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -3645,49 +3776,49 @@ s,@mkdir_p@,$mkdir_p,;t t
 s,@AWK@,$AWK,;t t
 s,@SET_MAKE@,$SET_MAKE,;t t
 s,@am__leading_dot@,$am__leading_dot,;t t
-s,@BUILD_AMESOS_TRUE@,$BUILD_AMESOS_TRUE,;t t
-s,@BUILD_AMESOS_FALSE@,$BUILD_AMESOS_FALSE,;t t
-s,@BUILD_NOX_TRUE@,$BUILD_NOX_TRUE,;t t
-s,@BUILD_NOX_FALSE@,$BUILD_NOX_FALSE,;t t
-s,@BUILD_MEROS_TRUE@,$BUILD_MEROS_TRUE,;t t
-s,@BUILD_MEROS_FALSE@,$BUILD_MEROS_FALSE,;t t
-s,@BUILD_TSF_TRUE@,$BUILD_TSF_TRUE,;t t
-s,@BUILD_TSF_FALSE@,$BUILD_TSF_FALSE,;t t
-s,@BUILD_TSFEXTENDED_TRUE@,$BUILD_TSFEXTENDED_TRUE,;t t
-s,@BUILD_TSFEXTENDED_FALSE@,$BUILD_TSFEXTENDED_FALSE,;t t
-s,@BUILD_TSFCORE_TRUE@,$BUILD_TSFCORE_TRUE,;t t
-s,@BUILD_TSFCORE_FALSE@,$BUILD_TSFCORE_FALSE,;t t
-s,@BUILD_TSFCOREUTILS_TRUE@,$BUILD_TSFCOREUTILS_TRUE,;t t
-s,@BUILD_TSFCOREUTILS_FALSE@,$BUILD_TSFCOREUTILS_FALSE,;t t
-s,@BUILD_KOMPLEX_TRUE@,$BUILD_KOMPLEX_TRUE,;t t
-s,@BUILD_KOMPLEX_FALSE@,$BUILD_KOMPLEX_FALSE,;t t
+s,@subdirs@,$subdirs,;t t
+s,@BUILD_TEUCHOS_TRUE@,$BUILD_TEUCHOS_TRUE,;t t
+s,@BUILD_TEUCHOS_FALSE@,$BUILD_TEUCHOS_FALSE,;t t
+s,@BUILD_KOKKOS_TRUE@,$BUILD_KOKKOS_TRUE,;t t
+s,@BUILD_KOKKOS_FALSE@,$BUILD_KOKKOS_FALSE,;t t
+s,@BUILD_EPETRA_TRUE@,$BUILD_EPETRA_TRUE,;t t
+s,@BUILD_EPETRA_FALSE@,$BUILD_EPETRA_FALSE,;t t
+s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
+s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
+s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
+s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
 s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t
 s,@BUILD_AZTECOO_FALSE@,$BUILD_AZTECOO_FALSE,;t t
 s,@BUILD_CLAPS_TRUE@,$BUILD_CLAPS_TRUE,;t t
 s,@BUILD_CLAPS_FALSE@,$BUILD_CLAPS_FALSE,;t t
+s,@BUILD_KOMPLEX_TRUE@,$BUILD_KOMPLEX_TRUE,;t t
+s,@BUILD_KOMPLEX_FALSE@,$BUILD_KOMPLEX_FALSE,;t t
+s,@BUILD_TSF_TRUE@,$BUILD_TSF_TRUE,;t t
+s,@BUILD_TSF_FALSE@,$BUILD_TSF_FALSE,;t t
+s,@BUILD_TSFCORE_TRUE@,$BUILD_TSFCORE_TRUE,;t t
+s,@BUILD_TSFCORE_FALSE@,$BUILD_TSFCORE_FALSE,;t t
+s,@BUILD_TSFEXTENDED_TRUE@,$BUILD_TSFEXTENDED_TRUE,;t t
+s,@BUILD_TSFEXTENDED_FALSE@,$BUILD_TSFEXTENDED_FALSE,;t t
+s,@BUILD_TSFCOREUTILS_TRUE@,$BUILD_TSFCOREUTILS_TRUE,;t t
+s,@BUILD_TSFCOREUTILS_FALSE@,$BUILD_TSFCOREUTILS_FALSE,;t t
+s,@BUILD_AMESOS_TRUE@,$BUILD_AMESOS_TRUE,;t t
+s,@BUILD_AMESOS_FALSE@,$BUILD_AMESOS_FALSE,;t t
+s,@BUILD_EPETRAEXT_TRUE@,$BUILD_EPETRAEXT_TRUE,;t t
+s,@BUILD_EPETRAEXT_FALSE@,$BUILD_EPETRAEXT_FALSE,;t t
 s,@BUILD_BELOS_TRUE@,$BUILD_BELOS_TRUE,;t t
 s,@BUILD_BELOS_FALSE@,$BUILD_BELOS_FALSE,;t t
 s,@BUILD_ANASAZI_TRUE@,$BUILD_ANASAZI_TRUE,;t t
 s,@BUILD_ANASAZI_FALSE@,$BUILD_ANASAZI_FALSE,;t t
-s,@BUILD_IFPACK_TRUE@,$BUILD_IFPACK_TRUE,;t t
-s,@BUILD_IFPACK_FALSE@,$BUILD_IFPACK_FALSE,;t t
-s,@BUILD_TRIUTILS_TRUE@,$BUILD_TRIUTILS_TRUE,;t t
-s,@BUILD_TRIUTILS_FALSE@,$BUILD_TRIUTILS_FALSE,;t t
-s,@BUILD_EPETRAEXT_TRUE@,$BUILD_EPETRAEXT_TRUE,;t t
-s,@BUILD_EPETRAEXT_FALSE@,$BUILD_EPETRAEXT_FALSE,;t t
-s,@BUILD_TPETRA_TRUE@,$BUILD_TPETRA_TRUE,;t t
-s,@BUILD_TPETRA_FALSE@,$BUILD_TPETRA_FALSE,;t t
-s,@BUILD_TEUCHOS_TRUE@,$BUILD_TEUCHOS_TRUE,;t t
-s,@BUILD_TEUCHOS_FALSE@,$BUILD_TEUCHOS_FALSE,;t t
+s,@BUILD_MEROS_TRUE@,$BUILD_MEROS_TRUE,;t t
+s,@BUILD_MEROS_FALSE@,$BUILD_MEROS_FALSE,;t t
 s,@BUILD_ML_TRUE@,$BUILD_ML_TRUE,;t t
 s,@BUILD_ML_FALSE@,$BUILD_ML_FALSE,;t t
+s,@BUILD_NOX_TRUE@,$BUILD_NOX_TRUE,;t t
+s,@BUILD_NOX_FALSE@,$BUILD_NOX_FALSE,;t t
 s,@BUILD_NEW_PACKAGE_TRUE@,$BUILD_NEW_PACKAGE_TRUE,;t t
 s,@BUILD_NEW_PACKAGE_FALSE@,$BUILD_NEW_PACKAGE_FALSE,;t t
-s,@subdirs@,$subdirs,;t t
-s,@BUILD_EPETRA_TRUE@,$BUILD_EPETRA_TRUE,;t t
-s,@BUILD_EPETRA_FALSE@,$BUILD_EPETRA_FALSE,;t t
-s,@BUILD_KOKKOS_TRUE@,$BUILD_KOKKOS_TRUE,;t t
-s,@BUILD_KOKKOS_FALSE@,$BUILD_KOKKOS_FALSE,;t t
+s,@BUILD_TPETRA_TRUE@,$BUILD_TPETRA_TRUE,;t t
+s,@BUILD_TPETRA_FALSE@,$BUILD_TPETRA_FALSE,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF

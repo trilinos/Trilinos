@@ -26,7 +26,10 @@ AC_DEFUN([TAC_ARG_ENABLE_FEATURE],
 [
 AC_ARG_ENABLE([$1],
 AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
-ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
+ac_cv_use_$1=$enableval
+ac_cv_use_$1_explicit=$enableval,
+ac_cv_use_$1=$4
+ac_cv_use_$1_explicit=no)
 
 AC_MSG_CHECKING(whether to use [$1])
 

@@ -29,7 +29,10 @@ AC_DEFUN([TAC_ARG_ENABLE_DEFAULT_FEATURE],
 [
 AC_ARG_ENABLE([$1],
 AC_HELP_STRING([--enable-$1],[$2 (default is yes unless the --disable-default-packages option is used]),
-ac_cv_use_$1=$enableval, ac_cv_use_$1=$ac_cv_use_default_packages)
+ac_cv_use_$1=$enableval
+ac_cv_use_$1_explicit=$enableval,
+ac_cv_use_$1=$ac_cv_use_default_packages
+ac_cv_use_$1_explicit=no)
 
 AC_MSG_CHECKING(whether to use [$1])
 
