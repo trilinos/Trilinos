@@ -169,7 +169,9 @@ int Zoltan_HG_HPart_Lib (
     { printf("wanted coarsen to %d vertices, but reached %d vertices.\n",hgp->redl,c_hg.nVtx);
       return ZOLTAN_FATAL;
     }
-  
+    if (c_hg.nVtx > .9*hg->nVtx)
+      hgp->redl = c_hg.nVtx;
+    
     /* Free Packing */
     ZOLTAN_FREE ((void **) &pack);
 

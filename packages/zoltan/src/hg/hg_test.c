@@ -124,6 +124,10 @@ int main (int argc, char **argv)
 /* free hypergraph */
   if (Zoltan_HG_HGraph_Free (&hg))
     return 1;
+  if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0)
+  { printf("ERROR: remaining memory: %d\n");
+    return 1;
+  }
   ADD_NEW_TIME(t_rest);
   END_TIME();
   times_output();
