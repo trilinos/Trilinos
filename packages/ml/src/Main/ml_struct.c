@@ -14,6 +14,7 @@
 #include "ml_aztec_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_lapack.h"
+#include "ml_smoother.h"
 #ifdef ML_MPI
 #include "mpi.h"
 #endif
@@ -729,12 +730,19 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
       printf("ML_Set_Smoother: cannot set smoother on level %d\n",nl);
       return 1;
    }
-   if (pre_or_post == ML_PRESMOOTH)
+   if (pre_or_post == ML_PRESMOOTH) {
       return(ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
                               NULL, func, 1,(double) ML_DEFAULT));
+   }
    else if (pre_or_post == ML_POSTSMOOTH)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_EXTERNAL, data,
                               NULL, func, 1, (double) ML_DEFAULT));
+   else if (pre_or_post == ML_BOTH)  {
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_EXTERNAL, data,
+                              NULL, func, 1,(double) ML_DEFAULT);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_EXTERNAL, data,
+                              NULL, func, 1, (double) ML_DEFAULT));
+   }
    else return(pr_error("ML_Set_Smoother: unknown pre_or_post choice\n"));
 }
 
@@ -758,15 +766,25 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
    fun = ML_Smoother_Jacobi;
    if (omega == ML_DEFAULT) omega = .5;
 
-   if (pre_or_post == ML_PRESMOOTH) 
+   if (pre_or_post == ML_PRESMOOTH) {
       for (i = start_level; i <= end_level; i++)
        status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
                              fun, NULL, ntimes, omega);
+   }
    else if (pre_or_post == ML_POSTSMOOTH)
       for (i = start_level; i <= end_level; i++)
        status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
                              fun, NULL, ntimes,omega);
+   else if (pre_or_post == ML_BOTH) {
+      for (i = start_level; i <= end_level; i++) {
+        status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
+                             fun, NULL, ntimes, omega);
+        status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                             fun, NULL, ntimes,omega);
+      }
+   }
    else return(pr_error("ML_Gen_Smoother_Jacobi: unknown pre_or_post choice\n"));
+
    return(status);
 }
 
@@ -789,14 +807,24 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 
    fun = ML_Smoother_GaussSeidel;
 
-   if (pre_or_post == ML_PRESMOOTH)
+   if (pre_or_post == ML_PRESMOOTH) {
       for (i = start_level; i <= end_level; i++)
              status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
                                       fun, NULL, ntimes, omega);
-   else if (pre_or_post == ML_POSTSMOOTH)
+   }
+   else if (pre_or_post == ML_POSTSMOOTH) {
       for (i = start_level; i <= end_level; i++)
              status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
                              fun, NULL, ntimes, omega);
+   }
+   else if (pre_or_post == ML_BOTH) {
+      for (i = start_level; i <= end_level; i++) {
+             status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
+                                      fun, NULL, ntimes, omega);
+             status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                             fun, NULL, ntimes, omega);
+      }
+   }
    else return(pr_error("ML_Gen_Gauss-Seidel: unknown pre_or_post choice\n"));
    return(status);
 }
@@ -871,6 +899,13 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 	 ml->pre_smoother[i].data_destroy = fun2;
       }
       else if (pre_or_post == ML_POSTSMOOTH) {
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
+                                  sgs_nums, fun, NULL, ntimes, omega);
+	 ml->post_smoother[i].data_destroy = fun2;
+      }
+      else if (pre_or_post == ML_BOTH) {
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+                                  sgs_nums, fun, NULL, ntimes, omega);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, 
                                   sgs_nums, fun, NULL, ntimes, omega);
 	 ml->post_smoother[i].data_destroy = fun2;
@@ -1070,6 +1105,20 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 #endif
       }
    }
+   else if (pre_or_post == ML_BOTH) {
+      for (i = start_level; i <= end_level; i++) {
+         ML_Smoother_Create_BGS_Data(&data);
+	 ML_Smoother_Gen_BGSFacts(&data, &(ml->Amat[i]), blocksize);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+		                 (void *) data, fun, NULL, ntimes, omega);
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+         ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
+#endif
+	 status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+			      (void *) data, fun, NULL, ntimes, omega);
+      }
+   }
    else return(pr_error("Print unknown pre_or_post choice\n"));
    return(status);
 }
@@ -1107,6 +1156,12 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
    else if (pre_or_post == ML_POSTSMOOTH)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, ntimes, myomega));
+   else if (pre_or_post == ML_BOTH) {
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+                        (void *) data, fun, NULL, ntimes, myomega);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+                             (void *) data, fun, NULL, ntimes, myomega));
+   }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
 
@@ -1140,6 +1195,12 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
    else if (pre_or_post == ML_POSTSMOOTH)
       return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
                              (void *) data, fun, NULL, ntimes, omega));
+   else if (pre_or_post == ML_BOTH) {
+      ML_Smoother_Set(&(ml->pre_smoother[nl]), ML_INTERNAL, 
+                        (void *) data, fun, NULL, ntimes, omega);
+      return(ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL, 
+                             (void *) data, fun, NULL, ntimes, omega));
+   }
    else return(pr_error("Print unknown pre_or_post choice\n"));
 }
 
@@ -1582,8 +1643,8 @@ for (j = 0; j < row_length; j++)
 
    return(status);
 #else
-     printf("ParaSails not linked\n");
-     return(1);
+   printf("ParaSails not linked\n");
+   return(1);
 #endif
 }
 
@@ -3577,4 +3638,13 @@ int ML_Gen_GridXsferUsingFEBasis(ML *ml, int L1, int L2, int stride)
    
    return 0;
 }
+int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
+{
+   *block_list = (int *) ML_allocate(ml->Amat[level].outvec_leng*sizeof(int));
+   if (*block_list == NULL)
+      pr_error("ML_Gen_Blocks_Metis: out of space\n");
 
+   ML_Operator_BlockPartition(&(ml->Amat[level]), ml->Amat[level].outvec_leng,
+                             nblocks, *block_list, NULL, NULL, 0);
+   return 0;
+}
