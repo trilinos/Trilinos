@@ -11,7 +11,7 @@ using namespace std;
 // This function is to be used when first identifying an error.
 #define EPETRA_TEST_ERR(a,b) { { int epetra_testing_err = a; \
   if (epetra_testing_err != 0) {\
-    cout << "Non zero error code " << epetra_testing_err << \
+    cerr << "Non zero error code " << epetra_testing_err << \
        ", file: " << __FILE__ << ", line: " << __LINE__ << endl;\
  b+=1;\
   }\
