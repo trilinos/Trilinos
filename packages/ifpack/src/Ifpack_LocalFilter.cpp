@@ -4,6 +4,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
 #include "Ifpack_LocalFilter.h"
 
 //==============================================================================
@@ -195,7 +196,7 @@ int Ifpack_LocalFilter::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 //==============================================================================
-const Epetra_BlockMap& Map() const
+const Epetra_BlockMap& Ifpack_LocalFilter::Map() const
 {
   return(*Map_);
 }
