@@ -97,21 +97,24 @@ void NOX::Solver::TensorBased::init()
   NOX::Parameter::List& p = paramsPtr->sublist("Solver Options");
   havePrePostOperator = false;
   prePostOperatorPtr = 0;
-  if (p.isParameter("User Defined Pre/Post Operator")) {
-    if (p.isParameterArbitrary("User Defined Pre/Post Operator")) {
+  if (p.isParameter("User Defined Pre/Post Operator"))
+  {
+    if (p.isParameterArbitrary("User Defined Pre/Post Operator"))
+    {
       prePostOperatorPtr = dynamic_cast<NOX::Parameter::PrePostOperator*>
 	(p.getArbitraryParameter("User Defined Pre/Post Operator").clone());
       if (prePostOperatorPtr != 0)
 	havePrePostOperator = true;
       else
 	if (utils.isPrintProcessAndType(NOX::Utils::Warning))
-	  cout << "Warning: NOX::Solver::LineSearchBased::init() - " 
+	  cout << "Warning: NOX::Solver::TensorBased::init() - " 
 	       << "\"User Defined Pre/Post Operator\" not derived from " 
 	       << "NOX::Parameter::PrePostOperator class!\n" 
 	       << "Ignoring this flag!"<< endl;
     }
-    else {
-      cout << "ERROR: NOX::Solver::LineSearchBased::init() - the parameter "
+    else
+    {
+      cout << "ERROR: NOX::Solver::TensorBased::init() - the parameter "
 	   << "\"User Defined Pre/Post Operator\" must be derived from an"
 	   << "arbitrary parameter!" << endl;
       throw "NOX Error";
@@ -305,7 +308,8 @@ NOX::StatusTest::StatusType  NOX::Solver::TensorBased::iterate()
     prePostOperatorPtr->runPreIterate(*this);
 
   // First check status
-  if (status != NOX::StatusTest::Unconverged) { 
+  if (status != NOX::StatusTest::Unconverged)
+  { 
     if (havePrePostOperator)
       prePostOperatorPtr->runPostIterate(*this);
     return status;
@@ -460,7 +464,8 @@ void NOX::Solver::TensorBased::printUpdate()
 
   // Print the final parameter values of the status test
   if ((status != NOX::StatusTest::Unconverged) && 
-      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration))) {
+      (utils.isPrintProcessAndType(NOX::Utils::OuterIteration)))
+  {
     cout << NOX::Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
     testPtr->print(cout);
@@ -478,21 +483,18 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
   // Compute F at current solution.
   status = soln.computeF();
   if (status != NOX::Abstract::Group::Ok) 
-    NOX::Solver::TensorBased::throwError("compute",
-					      "Unable to compute F");
+    throwError("computeTensorDirection", "Unable to compute F");
 
   // Compute Jacobian at current solution.
   status = soln.computeJacobian();
   if (status != NOX::Abstract::Group::Ok) 
-    NOX::Solver::TensorBased::throwError("compute",
-					      "Unable to compute Jacobian");
+    throwError("computeTensorDirection", "Unable to compute Jacobian");
   
   // Begin processing for the tensor step, if necessary.
   double sDotS = 0.0;
   int tempVal1 = 0;
   if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
-    {
-
+  {
     // Save old Newton step as initial guess to second system  (not necessary)
     tmpVec = newtonVec;
     tmpVecPtr->scale(-1.0);   // could probably rewrite to avoid this...
@@ -517,8 +519,7 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
     printf("\n\n\nNorm of tmpVec = %8e\n\n\n", tmpVec.norm()); 
     status = soln.applyJacobianInverse(localParams, acVec, tmpVec);
     if (status != NOX::Abstract::Group::Ok)
-      NOX::Solver::TensorBased::throwError("compute",
-				"Unable to apply Jacobian inverse");
+      throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
     printf("\n\n\nNorm of tmpVec = %8e\n\n\n", tmpVec.norm()); 
 #endif // OLD_WAY
 
@@ -531,18 +532,19 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
     printf(" Norm of initial guess: %e\n", tmpVec.norm());
     printf(" initg norm of model residual = %14.6e (abs)   %14.6e (rel)\n",
 	   residualNorm,
-	   residualNorm/solver.getPreviousSolutionGroup().getF().norm());
+	   residualNorm/solver.getPreviousSolutionGroup().getNormF());
 #endif
 
     // Save some parameters and use them later...
     double tol = localParams.getParameter("Tolerance", 1e-4);
     double relativeResidual = residualNorm /
-      solver.getPreviousSolutionGroup().getF().norm();
+      solver.getPreviousSolutionGroup().getNormF();
 
     // Decide whether to use initial guess...
     bool isInitialGuessGood = false;
 #ifdef USE_INITIAL_GUESS_LOGIC    
-    if (relativeResidual < 1.0) {
+    if (relativeResidual < 1.0)
+    {
       printf("Initial guess is good...\n");
       isInitialGuessGood = true;
       tensorVec = tmpVec;
@@ -564,8 +566,7 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
     //tmpVec.init(0.0);
     status = soln.applyJacobianInverse(localParams, *residualVecPtr, tmpVec);
     if (status != NOX::Abstract::Group::Ok)
-      NOX::Solver::TensorBased::throwError("compute",
-				"Unable to apply Jacobian inverse");
+      throwError("computeTensorDirection", "Unable to apply Jacobian inverse");
     if (isInitialGuessGood) 
       tmpVec.update(1.0, tensorVec, 1.0);
     localParams.setParameter("Tolerance",  tol);
@@ -579,15 +580,14 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
     double residualNorm2 = residualVecPtr->norm();
     printf(" jifp norm of model residual = %14.6e (abs)   %14.6e (rel)\n",
 	   residualNorm2,
-	   residualNorm2/solver.getPreviousSolutionGroup().getF().norm());
+	   residualNorm2/solver.getPreviousSolutionGroup().getNormF());
 #endif
   }
 
   // Compute the Newton direction
   status = soln.computeNewton(localParams);
   if (status != NOX::Abstract::Group::Ok)
-    NOX::Solver::TensorBased::throwError("compute",
-					      "Unable to compute Newton step");
+    throwError("computeTensorDirection", "Unable to compute Newton step");
   newtonVec = soln.getNewton();
   int tempVal2 = localParams.sublist("Output").
     getParameter("Number of Linear Iterations", 0);
@@ -599,7 +599,8 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
 #endif // CHECK_RESIDUALS
 
   // Continue processing the tensor step, if necessary
-  if ((nIter > 0)  &&  (requestedBaseStep == TensorStep)) {
+  if ((nIter > 0)  &&  (requestedBaseStep == TensorStep))
+  {
 
     // Form the term inv(J)*a...  (note that a is not multiplied by 2)
     tmpVecPtr->update(1.0, newtonVec, -1.0, scVec, 1.0);
@@ -619,7 +620,8 @@ bool NOX::Solver::TensorBased::computeTensorDirection(
 #ifdef ALPHA    
     double alpha2 = lambdaBar;
     printf(" Beta = %e   Alpha2 = %e\n", beta, alpha2);
-    if (alpha2 != 1.0) {
+    if (alpha2 != 1.0)
+    {
       printf("   *** Scaling tensor term a ***\n");
       acVecPtr->scale(alpha2);
       tmpVec.scale(alpha2);
@@ -658,8 +660,8 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
   double beta = 0;
   double discriminant = qb*qb - 4*qa*qc*lambda;
 
-  if (discriminant < 0) {
-
+  if (discriminant < 0)
+  {
     // no real root
     beta = -qb/qa/2;
     qval = qa * beta * beta + qb * beta + lambda * qc;
@@ -668,16 +670,19 @@ double NOX::Solver::TensorBased::calculateBeta(double qa,
     cout << "  ####  LambdaBar = " << lambdaBar << "  ####\n";
 #endif
   }
-  else {
+  else
+  {
     qval = 0;
     lambdaBar = 1.0;
-    if (fabs(qa/qb) < 1e-8  &&  fabs(lambda * qc / qb) < 1) {
+    if (fabs(qa/qb) < 1e-8  &&  fabs(lambda * qc / qb) < 1)
+    {
 #if DEBUG_LEVEL > 0
       cout << "qa is relatively small\n";
 #endif 
       beta = -lambda*qc/qb;
     }
-    else {
+    else
+    {
       double tmp1 = (-qb + sqrt(discriminant)) / (2*qa);
       double tmp2 = (-qb - sqrt(discriminant)) / (2*qa);
       beta = (fabs(tmp1) < fabs(tmp2)) ? tmp1 : tmp2; // bwb - temporary test
@@ -740,7 +745,8 @@ bool NOX::Solver::TensorBased::implementGlobalStrategy(
   // Do line search and compute new soln.
   if (lsType != Dual || isNewtonDirection)
     ok = performLinesearch(newGrp, step, searchDirection, s);
-  else if (lsType == Dual) {
+  else if (lsType == Dual)
+  {
     double tensorf;
     double tensorStep;
     bool isTensorDescent = false;
@@ -749,7 +755,8 @@ bool NOX::Solver::TensorBased::implementGlobalStrategy(
     double fprime = slopeObj.computeSlope(searchDirection, oldGrp);
 
     // Backtrack along tensor direction if it is descent direction.
-    if (fprime < 0) {
+    if (fprime < 0)
+    {
       ok = performLinesearch(newGrp, step, searchDirection, s);
       tensorf = 0.5*newGrp.getNormF()*newGrp.getNormF();
       tensorStep = step;
@@ -761,7 +768,8 @@ bool NOX::Solver::TensorBased::implementGlobalStrategy(
     double newf = 0.5*newGrp.getNormF()*newGrp.getNormF();
 
     // If backtracking on the tensor step produced a better step, then use it.
-    if (isTensorDescent  &&  tensorf < newf) {
+    if (isTensorDescent  &&  tensorf < newf)
+    {
       newGrp.computeX(oldGrp, tensorVec, tensorStep);
       newGrp.computeF();    
     }
@@ -777,7 +785,8 @@ bool NOX::Solver::TensorBased::performLinesearch(
 				const NOX::Abstract::Vector& dir,
 				const NOX::Solver::Generic& s)
 {
-  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration))
+  {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "-- Tensor Line Search ("
 	 << paramsPtr->sublist("Line Search").sublist("Tensor").
@@ -817,16 +826,18 @@ bool NOX::Solver::TensorBased::performLinesearch(
   isAcceptable = (newf < threshold);
 
   // Update counter and allocate memory for dir2 if a linesearch is needed
-  if (!isAcceptable) { 
+  if (!isAcceptable)
+  { 
     counter.incrementNumNonTrivialLineSearches();
     tmpVec = dir;
   }
 
   // Iterate until the trial point is accepted....
-  while (!isAcceptable) {  
-      
+  while (!isAcceptable)
+  {  
     // Check for linesearch failure
-    if (lsIterations > maxIters) {
+    if (lsIterations > maxIters)
+    {
       isFailed = true;
       message = "(FAILED - Max Iters)";
       break;
@@ -835,21 +846,24 @@ bool NOX::Solver::TensorBased::performLinesearch(
     print.printStep(lsIterations, step, oldf, newf);
 
     // Is the full tensor step a descent direction?  If not, switch to Newton
-    if ((!isNewtonDirection) && (isFirstPass && fprime >= 0)) {
+    if ((!isNewtonDirection) && (isFirstPass && fprime >= 0))
+    {
       tmpVec = newtonVec;
       fprime = slopeObj.computeSlope(tmpVec, oldSoln);
       multsJv++;
       
       printf("  Switching to Newton.  New fprime = %e\n", fprime);
     }
-    else {
+    else
+    {
       step = selectLambda(newf, oldf, fprime, step);
     }
     
     isFirstPass = false;
 
     // Check for linesearch failure
-    if (step < minStep) {
+    if (step < minStep)
+    {
       isFailed = true;
       message = "(FAILED - Min Step)";
       break;
@@ -860,12 +874,14 @@ bool NOX::Solver::TensorBased::performLinesearch(
     lsIterations ++;
 
     // Compute new trial point and its function value
-    if ((lsType == Curvilinear) && !(isNewtonDirection)) {
+    if ((lsType == Curvilinear) && !(isNewtonDirection))
+    {
       bool ok = computeCurvilinearStep(tmpVec, oldSoln, s, step);
       // Note: oldSoln is needed above to get correct preconditioner 
       newsoln.computeX(oldSoln, tmpVec, 1.0);
     }
-    else {
+    else
+    {
       newsoln.computeX(oldSoln, tmpVec, step);
     }
     newsoln.computeF();    
@@ -913,7 +929,8 @@ double NOX::Solver::TensorBased::getNormModelResidual(
   residualPtr->update(1.0, soln.getF(), 1.0);
 
   // Compute residual of Tensor model, if requested...
-  if (isTensorModel) {
+  if (isTensorModel)
+  {
     double beta = scVecPtr->dot(dir);
     printf(" sc'*dt           = %e\n", beta);
     printf(" norm(dt) = %e\n", dir.norm());
@@ -921,7 +938,8 @@ double NOX::Solver::TensorBased::getNormModelResidual(
   }
 
 #ifdef LEAVE_OUT
-  if (precondition == Left) {
+  if (precondition == Left)
+  {
     NOX::Abstract::Vector* tmpPtr = soln.getF().clone(ShapeCopy);
     *tmpPtr = *residualPtr;
     applyPreconditioner(false, soln, *localParamsPtr, *tmpPtr, *residualPtr,
@@ -943,7 +961,7 @@ void NOX::Solver::TensorBased::printDirectionInfo(char* dirName,
 {
   double residual = getNormModelResidual(dir, soln, isTensorModel);
   printf(" %s norm of model residual = %14.6e (abs)   %14.6e (rel)\n",
-	 dirName, residual, residual/soln.getF().norm());
+	 dirName, residual, residual/soln.getNormF());
   double fprime = getDirectionalDerivative(dir, soln);
   printf(" %s directional derivative = %14.6e (abs)   %14.6e (rel)\n",
 	 dirName, fprime, fprime/dir.norm());
@@ -970,13 +988,15 @@ double NOX::Solver::TensorBased::selectLambda(double newf, double oldf,
   double lambdaRet;
   double temp;
   
-  if (lambdaSelection == Quadratic) {
+  if (lambdaSelection == Quadratic)
+  {
     temp = -oldfprime / (2.0*(newf - oldf - oldfprime));
     if (temp < 0.1)
       temp = 0.1;
     lambdaRet = temp *lambda;
   }
-  else {
+  else
+  {
     lambdaRet = 0.5 * lambda;
   }
   return lambdaRet;
