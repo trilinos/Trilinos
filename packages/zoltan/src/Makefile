@@ -81,8 +81,9 @@ ALL_INC		= all_const.h all_allo_const.h
 LB_CSRC		= lb.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 
-RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c
-RCB_INC		= rcb_const.h
+RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
+                  create_proc_list.c
+RCB_INC		= rcb_const.h create_proc_list.h
 
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
 		  output.c migreg.c hilbert.c
