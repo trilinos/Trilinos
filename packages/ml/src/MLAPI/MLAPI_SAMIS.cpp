@@ -11,10 +11,12 @@ namespace SAMIS {
 // File reader written by M. Brezina; imported into MLAPI by M. Sala 
 // on 07-Mar-05.
 
+/* commented out on 14-Mar-05 to compile on atlantis (SGI64)
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+*/
 #include <fcntl.h>
 #include <unistd.h>
 #include <iostream>
