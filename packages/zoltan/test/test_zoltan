@@ -245,14 +245,19 @@ if ( $yes_fortran ) then
     set ch_methods = ( $ch_methods rcb rcb-ts )
     set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
     set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
+    set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-ts )
     set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
     set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
+    set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
+    set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc hsfc-partless hsfc-partmore )
+    set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
   endif
   if (! $no_bsfc) then
     set ch_methods = ( $ch_methods bsfc )
