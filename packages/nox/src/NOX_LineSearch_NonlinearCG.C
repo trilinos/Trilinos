@@ -65,6 +65,10 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
 		     const Abstract::Vector& dir,
 		     const Solver::Generic& s) 
 {
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
+  {
+    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- NonlinearCG Line Search -- \n";
+  }
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
 
@@ -83,11 +87,11 @@ bool NonlinearCG::compute(Abstract::Group& newgrp,
   double checkOrthogonality = fabs( newgrp.getF().dot(dir) ); 
 
   if (utils.isPrintProcessAndType(Utils::InnerIteration)) {
-    cout << endl;
     cout << setw(3) << "1" << ":";
     cout << " step = " << utils.sciformat(step);
     cout << " orth = " << utils.sciformat(checkOrthogonality);
   }
+  cout << "\n" << NOX::Utils::fill(72) << "\n" << endl;
   
   return true;
 }
