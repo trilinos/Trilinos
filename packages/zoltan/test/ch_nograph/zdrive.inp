@@ -1,7 +1,6 @@
-Decomposition Method 	= parmetis
-Zoltan Parameters	= parmetis_method=partgeom
-Zoltan Parameters       = debug_level=10
+Decomposition Method 	= rcb
+Zoltan Parameters	= 
 File Type		= Chaco
 File Name		= nograph
 Parallel Disk Info	= number=0
-zdrive debug level      = 4
+test local partitions	= 1
