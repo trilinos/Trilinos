@@ -104,7 +104,11 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
 
-  double dginit = slope.computeSlope(dir, oldgrp);
+  double dginit(0.0);
+  if ( oldgrp.isJacobian() )
+    dginit = slope.computeSlope(dir, oldgrp);
+  else
+    dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
 
   if (dginit >= 0.0) 
   {
@@ -209,7 +213,11 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     nfev ++;
     string message = "";
 
-    double dg = slope.computeSlope(dir, newgrp);
+    double dg(0.0);
+    if ( oldgrp.isJacobian() )
+      dg = slope.computeSlope(dir, newgrp);
+    else
+      dg = slope.computeSlopeWithOutJac(dir, newgrp);
 
     double ftest1 = finit + stp * dgtest;
 

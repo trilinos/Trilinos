@@ -121,7 +121,11 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   double oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
 
   // Compute the slope at oldf. 
-  double slope = slopeObj.computeSlope(dir, oldGrp);
+  double slope(0.0);
+  if ( oldGrp.isJacobian() )
+    slope = slopeObj.computeSlope(dir, oldGrp);
+  else
+    slope = slopeObj.computeSlopeWithOutJac(dir, oldGrp);
 
   // Get New F
   step = defaultStep;
