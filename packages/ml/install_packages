@@ -18,14 +18,14 @@ yes_or_no=`${echo} ${yes_or_no}s`
 if test `expr $yes_or_no` = 'yess'
 #   test `expr $yes_or_no` = 's'
 then
-   ${echo} -n "Where is the Lapack library? [/usr/local/lib] "
+   ${echo} -n "Where is the Lapack library (enter NA if not needed)? [/usr/local/lib] "
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
    then
       directory=/usr/local/lib
    fi
-   ${echo} -n "What is the name of the Lapack library? [lapack] "
+   ${echo} -n "What is the name of the Lapack library (enter NA if not needed)? [lapack] "
    read library
    tlibrary=`${echo} ${library}x`
    if test `expr $tlibrary ` = 'x'
@@ -33,7 +33,14 @@ then
       library=lapack
    fi
    PACKAGES=`${echo} $PACKAGES -DUSE_VENDOR_LAPACK`
-   LIBRARIES=`${echo} $LIBRARIES -L${directory} -l${library}`
+   if test `expr $directory ` != 'NA'
+   then
+      LIBRARIES=`${echo} $LIBRARIES -L${directory}`
+   fi
+   if test `expr $library ` != 'NA'
+   then
+      LIBRARIES=`${echo} $LIBRARIES -l${library}`
+   fi
    GOT_LAPACK=yes
    ${echo} "=================================================================="
 fi
@@ -166,12 +173,12 @@ if test `expr $yes_or_no` = 'yess' ||
 then
    AZTEC_INTERNAL=no 
    PACKAGES=`${echo} $PACKAGES -DAZTEC`
-   ${echo} -n "Where is the Aztec directory? [$PWD/lib/Aztec] "
+   ${echo} -n "Where is the Aztec include directory? [$PWD/lib/Aztec/lib] "
    read directory
    tdirectory=`${echo} ${directory}x`
    if test `expr $tdirectory` = 'x'
    then
-      directory=$PWD/lib/Aztec
+      directory=$PWD/lib/Aztec/lib
    fi
    ${echo} -n "Are you using an internal developer distribution of Aztec? [no] "
    read yes_or_no
@@ -182,11 +189,13 @@ then
       read dir
       AZTEC_INTERNAL=yes 
       LIBRARIES=`${echo} -L${dir} -ly12m -lblas ${LIBRARIES}`
-      INC_PATH=`${echo} -I${directory}/../az ${INC_PATH}`
-      LIBRARIES=`${echo} $directory/libaztec.a ${LIBRARIES}`
+      INC_PATH=`${echo} -I${directory} ${INC_PATH}`
+      ${echo} -n "Where is Aztec library? "
+      read dir
+      LIBRARIES=`${echo} ${dir}/libaztec.a ${LIBRARIES}`
    else
-      INC_PATH=`${echo} -I${directory}/lib ${INC_PATH}`
-      LIBRARIES=`${echo} $directory/lib/libaztec.a ${LIBRARIES}`
+      INC_PATH=`${echo} -I${directory} ${INC_PATH}`
+      LIBRARIES=`${echo} ${directory}/libaztec.a ${LIBRARIES}`
 
       ${echo}
       ${echo} -n "Do you need to build Aztec? [yes] "
@@ -205,7 +214,7 @@ then
             tFLAGS=-Dmatched
          fi
 
-         cd ${directory}/lib
+         cd ${directory}
          if test `expr $USING_MPI` = 'no'
          then
             AZCOMM=md_wrap_scalar_c.c
