@@ -1585,7 +1585,9 @@ int AZ_oldsolve_setup(double x[], double b[], int options[], double params[],
      be turned on and off at will during the run of a simulation.
   */
 
-  AZ_capture_matrix( Amat, proc_config, data_org, b);
+  if (options[AZ_output] != AZ_none) {
+    AZ_capture_matrix( Amat, proc_config, data_org, b);
+  }
 
 
   /* If desired, print out the matrix and indexing arrays */
