@@ -473,10 +473,10 @@ static int Zoltan_ParMetis_Jostle(
   int num_obj=0, num_edges, edgecut;
   int nsend, wgtflag, numflag, graph_type; 
   int get_graph_data, get_geom_data, get_times; 
-  int compute_only_part_changes=1; /* EBEB: Read parameter when implemented. */
+  int compute_only_part_changes=0; /* EBEB: Read parameter when implemented. */
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
-  int tmp_num_obj, ncon, start_index, compute_order=0;
+  int num_obj_orig, ncon, start_index, compute_order=0;
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
   ZOLTAN_ID_PTR local_ids;
@@ -768,11 +768,11 @@ static int Zoltan_ParMetis_Jostle(
    * redistribute the graph data structure before calling ParMetis.
    * After partitioning, the results must be mapped back.
    */
-  tmp_num_obj = num_obj;
   if ((scatter>0) && (scatter<3)){
     /* Decide if the data imbalance is so bad that we should scatter the graph. */
     /* scatter==1: Scatter if all the objects are on a single processor.        */
     /* scatter==2: Scatter if any processor has no objects.                     */
+    num_obj_orig = num_obj; /* Save value for later. */
     if (num_obj==0)
       j = 1;
     else 
@@ -797,14 +797,14 @@ static int Zoltan_ParMetis_Jostle(
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       ZOLTAN_PARMETIS_ERROR(ierr, "Zoltan_Scatter_Graph returned error.");
     }
-    tmp_num_obj = vtxdist[zz->Proc+1]-vtxdist[zz->Proc];
+    num_obj = vtxdist[zz->Proc+1]-vtxdist[zz->Proc];
   }
 
   /* Get ready to call ParMETIS or Jostle */
   edgecut = -1; 
   wgtflag = 2*(obj_wgt_dim>0) + (edge_wgt_dim>0); 
   numflag = 0;
-  part = (idxtype *)ZOLTAN_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
+  part = (idxtype *)ZOLTAN_MALLOC((num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -830,15 +830,15 @@ static int Zoltan_ParMetis_Jostle(
               adjwgt, obj_wgt_dim, edge_wgt_dim, graph_type, check_graph, flag);
   
     /* Special error checks to avoid certain death in ParMETIS 2.0 */
-    if (xadj[tmp_num_obj] == 0){
+    if (xadj[num_obj] == 0){
       /* No edges on a proc is a fatal error in ParMETIS 2.0
        * and in Jostle 1.2. This error test should be removed
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will fail. Please try a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will likely fail. Please set scatter_graph=2, or try a different load balancing method.");
       } else { /* ParMETIS */
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS will fail. Please try a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS will likely fail. Please set scatter_graph=2, or try a different load balancing method.");
       }
     }
   }
@@ -874,7 +874,7 @@ static int Zoltan_ParMetis_Jostle(
     ndims = 1;             /* Topological dimension of the computer */
     network[1] = zz->Num_Proc;
     /* Convert xadj array to Jostle format (degree) */
-    for (i=0; i<tmp_num_obj; i++){
+    for (i=0; i<num_obj; i++){
       xadj[i] = xadj[i+1] - xadj[i];
     }
     /* Convert vtxdist array to Jostle format (degree) */
@@ -945,7 +945,7 @@ static int Zoltan_ParMetis_Jostle(
     else {
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
       options[0] = 0;  /* Use default options for METIS. */
-      METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
+      METIS_NodeND (&num_obj, xadj, adjncy, 
         &numflag, options, part, iperm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
@@ -1010,7 +1010,7 @@ static int Zoltan_ParMetis_Jostle(
     else {
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
       options[0] = 0;  /* Use default options for METIS. */
-      METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
+      METIS_NodeND (&num_obj, xadj, adjncy, 
         &numflag, options, part, iperm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
@@ -1045,6 +1045,8 @@ static int Zoltan_ParMetis_Jostle(
    * original distribution 
    */
   if (scatter){
+    num_obj = num_obj_orig; /* Restore value from original distribution. */
+
     /* Allocate space for partition array under original distribution */
     part2 = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype)); 
     if (num_obj && !part2){
@@ -1052,7 +1054,7 @@ static int Zoltan_ParMetis_Jostle(
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory. ");
     }
     /* Use reverse communication to compute the partition array under the 
-     * original distribution 
+     * original distribution.
      */
     ierr = Zoltan_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
                               NULL, (char *) part2);
