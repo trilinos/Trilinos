@@ -28,16 +28,16 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Platform_test
+noinst_PROGRAMS = Comm_test
 
-Platform_test_SOURCES = $(srcdir)/cxx_main.cpp
+Comm_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-Platform_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+Comm_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-Platform_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+Comm_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
 	-I$(top_builddir)/../teuchos/src
 
-Platform_test_LDADD = $(top_builddir)/src/libtpetra.a \
+Comm_test_LDADD = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LIBS) $(FLIBS)

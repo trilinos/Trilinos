@@ -3,7 +3,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Comm.hpp"
-#include "Tpetra_Directory.hpp"
+///#include "Tpetra_Directory.hpp"
 #include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
@@ -39,7 +39,7 @@ public:
 		virtual Distributor<ScalarType, OrdinalType>* createScalarDistributor() const = 0;
 		virtual Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const = 0;
 		//! Directory Instance
-		virtual Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
+		///virtual Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
 		//@}
 
 		//@{ \name I/O Methods

@@ -22,12 +22,12 @@ int main(int argc, char* argv[]) {
   int size, rank; // Number of MPI processes, My process ID
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  Tpetra::MpiPlatform<SCALARTYPE, ORDINALTYPE> platform( MPI_COMM_WORLD );
+  Tpetra::MpiPlatform<ORDINALTYPE, SCALARTYPE> platform( MPI_COMM_WORLD );
 #else
   int size = 1; // Serial case (not using MPI)
   int rank = 0;
   if(verbose) cout << "Creating SerialPlatform object...";
-  Tpetra::SerialPlatform<SCALARTYPE, ORDINALTYPE> platform;
+  Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
   //if(debug) cout << platform.label() << endl;
 	if(verbose) cout << "Successful." << endl;
 #endif

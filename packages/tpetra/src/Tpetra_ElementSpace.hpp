@@ -2,7 +2,7 @@
 #define _TPETRA_ELEMENTSPACE_HPP_
 
 #include "Tpetra_Object.hpp"
-#include "Tpetra_Directory.hpp"
+///#include "Tpetra_Directory.hpp"
 #include <map>
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_ElementSpaceData.hpp"
@@ -63,8 +63,8 @@ ElementSpace(ElementSpace<OrdinalType> const& ElementSpace);
 //@{ \name Local/Global ID Accessor Methods
 
 //! Returns the image IDs and corresponding local IDs for a given list of global IDs.
-void getRemoteIDList(OrdinalType numIDs, OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList) const 
-	{ElementSpaceData_->Directory_->getDirectoryEntries(numIDs, GIDList, imageIDList, LIDList);};
+///void getRemoteIDList(OrdinalType numIDs, OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList) const 
+///	{ElementSpaceData_->Directory_->getDirectoryEntries(numIDs, GIDList, imageIDList, LIDList);};
 
 //! Returns local ID of global ID passed in, throws exception -1 if not found on this image.
 OrdinalType getLID(OrdinalType GID) const;
@@ -157,7 +157,7 @@ private:
 Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuchos smart pointer
 
 // private functions
-void directorySetup();
+///void directorySetup();
 
 }; // ElementSpace class
 
@@ -205,7 +205,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 																																		 minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
   
 	// initialize directory
-  directorySetup();
+  ///directorySetup();
 }
 
 // constructor #2, user contig
@@ -257,7 +257,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 																																		minMyGID, maxMyGID, lgMap, glMap, true, Platform, comm));
   
 	// initialize directory
-  directorySetup();
+  ///directorySetup();
 }
 
 // constructor #3, user non-contig
@@ -319,7 +319,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 																																		 minMyGID, maxMyGID, lgMap, glMap, false, Platform, comm));
 
 	// initialize directory
-  directorySetup();
+  ///directorySetup();
 }
 
 // copy constructor
@@ -497,12 +497,12 @@ void ElementSpace<OrdinalType>::print(ostream& os) const {
 }
 
 //=======================================================================
-template<typename OrdinalType>
-void ElementSpace<OrdinalType>::directorySetup() {
-  if(getNumGlobalElements() != 0)
-    if(ElementSpaceData_->Directory_ == 0)
-      ElementSpaceData_->Directory_ = platform().createDirectory(*this); // Make directory
-}
+///template<typename OrdinalType>
+///void ElementSpace<OrdinalType>::directorySetup() {
+///  if(getNumGlobalElements() != 0)
+///    if(ElementSpaceData_->Directory_ == 0)
+///      ElementSpaceData_->Directory_ = platform().createDirectory(*this); // Make directory
+///}
 
 //=============================================================================
 // end Tpetra_ElementSpace.cpp

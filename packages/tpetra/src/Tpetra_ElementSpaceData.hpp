@@ -36,14 +36,14 @@ class ElementSpaceData : public Object {
 		, lgMap_(lgMap)
 		, glMap_(glMap)
 		, myGlobalElements_(0)
-		, Directory_(0) 
+		///, Directory_(0) 
 		{};
 
 	~ElementSpaceData() {
-		if(Directory_ != 0) {
-			delete Directory_;
-			Directory_ = 0;
-		}
+		///if(Directory_ != 0) {
+		///delete Directory_;
+		///Directory_ = 0;
+		///}
 		if(myGlobalElements_ != 0) {
 			delete [] myGlobalElements_;
 			myGlobalElements_ = 0;
@@ -71,7 +71,7 @@ class ElementSpaceData : public Object {
   map<OrdinalType, OrdinalType> lgMap_;
   map<OrdinalType, OrdinalType> const glMap_;
 	OrdinalType* myGlobalElements_;
-	Directory<OrdinalType>* Directory_;
+	///Directory<OrdinalType>* Directory_;
 
  private:
 	bool checkGlobalness() {

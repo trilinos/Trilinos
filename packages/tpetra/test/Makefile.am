@@ -26,4 +26,4 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = 
+SUBDIRS = Comm Platform Distributor

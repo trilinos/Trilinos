@@ -37,8 +37,7 @@ CORE_H = \
 	$(srcdir)/Tpetra_Object.hpp \
 	$(srcdir)/Tpetra_Platform.hpp \
 	$(srcdir)/Tpetra_Comm.hpp \
-	$(srcdir)/Tpetra_Distributor.hpp \
-	$(srcdir)/Tpetra_Directory.hpp
+	$(srcdir)/Tpetra_Distributor.hpp
 
 CORE = 
 
@@ -56,8 +55,7 @@ UNIPROC =
 SERIAL_H = \
 	$(srcdir)/Tpetra_SerialPlatform.hpp \
 	$(srcdir)/Tpetra_SerialComm.hpp \
-	$(srcdir)/Tpetra_SerialDistributor.hpp \
-	$(srcdir)/Tpetra_SerialDirectory.hpp
+	$(srcdir)/Tpetra_SerialDistributor.hpp
 
 SERIAL = 
 

@@ -335,6 +335,9 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/verySimple/Makefile
 		test/Makefile
+		test/Comm/Makefile
+		test/Distributor/Makefile
+		test/Platform/Makefile
 		])
 
 AC_OUTPUT()
