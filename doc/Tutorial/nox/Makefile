@@ -29,10 +29,15 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
 MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 	            -I$(TRILINOS_LIB)/include/
 		    
+# you may need to specify -lteuchos, if Trilinos has been build
+# with teuchos support
+# Also, if AztecOO has been configured with support for Y12M.
+# you need to specify this library.
+NOX_LIBS = -lteuchos 
 MY_LINKER_FLAGS = $(LDFLAGS) \
 	-L$(TRILINOS_LIB)/lib/ \
 	-lnoxepetra -lnox -lifpack \
-	-laztecoo -lepetra -llapack -lblas $(ARCH_LIBS)
+	-laztecoo -lepetra $(NOX_LIBS) -llapack -lblas $(ARCH_LIBS)
 
 all: ex1 ex2 
 
