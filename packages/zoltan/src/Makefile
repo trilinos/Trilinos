@@ -240,6 +240,7 @@ SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
 ##############################################################################
 #
 TFLOP_CC	= pgcc -cougar
+TFLOP_F90	= pgf90 -cougar
 TFLOP_DBG_FLAGS	= -g
 TFLOP_OPT_FLAGS	= -O3 -Minfo=all
 TFLOP_RANLIB	= xranlib
@@ -643,11 +644,17 @@ tflop:
 	@rm -f Obj_tflop/Makefile
 	@cp Makefile_sub Obj_tflop/Makefile
 	@cd Obj_tflop; \
-	$(MAKE) $(LIB_NAME) "CC=$(TFLOP_CCOMP)"\
+	$(MAKE) $(LIB_NAME) "CC=$(TFLOP_CCOMP) $(NISTLINUX_F90CFLAGS) -DNO_MPI2"\
 	"LIB_NAME=$(LIB_NAME)" "INC=$(TFLOP_INC)"\
 	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
 	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(TFLOP_RANLIB)"
+	"RANLIB=$(TFLOP_RANLIB)"  \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(NISTLINUX_FFLAGS)" \
+	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"
+
+#KDD  trying to build tflop f90 version; using NISTLINUX flags; 
+#KDD  specifying F90_COMPILER=pgi on command line.
 
 tflop-dr:
 	@if [ ! -d Obj_tflop ]; \
@@ -665,6 +672,15 @@ tflop-dr:
 	@if [ ! -f test/$(TARGET).tflop ]; \
 	then ln -s ../Obj_tflop/$(TARGET) test/$(TARGET).tflop; \
 	fi
+
+tflop-fdr:
+	@cd fdriver; \
+	$(MAKE) zfdrive "F90=$(TFLOP_F90)" "FFLAGS=$(NISTLINUX_FFLAGS)" \
+	"CC=$(TFLOP_CCOMP) $(NISTLINUX_F90CFLAGS)" "FARG=$(NISTLINUX_FARG)" \
+	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
+	"ZOLTAN_OBJ_DIR=../Obj_tflop" "MPIINC=$(TFLOP_INC_PATH)" \
+        "TARGET_ARCH=tflop" \
+        "MPILIB=$(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) -lmpi"
 
 solaris: sun
 

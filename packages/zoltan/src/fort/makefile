@@ -22,7 +22,7 @@ cwrap.o: cwrap.c
 	$(CC) -c cwrap.c
 
 sppr: sppr.f90
-	$(F90) -o sppr sppr.f90
+	/usr/sbin/f90 -o sppr sppr.f90
 
 clean:
 	rm -f *.o fwrap.f90 ztypes.f90 *.mod debug V* *.vo *.dbg zfdriver sppr \
