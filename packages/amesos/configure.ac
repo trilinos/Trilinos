@@ -454,6 +454,15 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
   AC_CHECK_HEADER([superlu_ddefs.h],,AC_MSG_ERROR([[Cannot find SuperLU_dist header files (superlu_ddefs.h), specify a location using --with-incdirs (ex.  --with-incdirs=/home/username/include).]]))
 
+  # some versions of SuperLU_DIST need to call set_default_options_dist(),
+  # others have set_default_options()
+  AC_TRY_LINK_FUNC(set_default_options_dist,amesos_slu_old="yes",
+                   amesos_slu_old="no")
+
+  if test "X$amesos_slu_old" != "Xno"; then
+    AC_DEFINE(AMESOS_SUPERLUDIST_OLD,[],[Need set_default_options_dist()])
+  fi
+
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 else
