@@ -126,6 +126,9 @@ start_time = AZ_second();
 	AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
 	
         ML_Aggregate_Create( &ag );
+        ML_Aggregate_Set_CoarsenScheme_Uncoupled(ag);
+        ML_Aggregate_Set_Threshold(ag,0.0);
+
 
 	coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, ML_DECREASING, ag);
 	coarsest_level = N_levels - coarsest_level;

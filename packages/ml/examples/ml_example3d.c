@@ -851,19 +851,18 @@ int nx,ny,nz;
    * neighbor exists.
    */
 
-/*
   bindx[k] = row + NP;     if ((row/NP)%m      != m-1) val[k++] = -1.0;
   bindx[k] = row - NP;     if ((row/NP)%m      != 0  ) val[k++] = -1.0;
   bindx[k] = row + m*NP;   if ((row/(NP*m))%m  != m-1) val[k++] = -1.0;
   bindx[k] = row - m*NP;   if ((row/(NP*m))%m  != 0  ) val[k++] = -1.0;
   bindx[k] = row + m*m*NP; if (bindx[k]    < m*m*m*NP) val[k++] = -1.0;
   bindx[k] = row - m*m*NP; if (bindx[k]          >= 0) val[k++] = -1.0;
-*/
 
 nx = (row/NP)%m;
 ny = (row/(NP*m))%m;
 nz = (row/(NP*m*m));
 
+/*
   if (nx != m-1) {
      bindx[k] = row + NP                ; val[k++] = -1.0;
      if (ny != m-1) {
@@ -942,13 +941,14 @@ nz = (row/(NP*m*m));
            bindx[k] = row      - m*NP - m*m*NP; val[k++] = -0.5;
         }
      }
+*/
 
 
   bindx[location+1] = k;
-/*
   val[location]     = 6.0;
-*/
+/*
   val[location]     = 14.0;
+*/
 
 } /* add_row_3D */
 

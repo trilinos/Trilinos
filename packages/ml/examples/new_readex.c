@@ -250,7 +250,7 @@ j, ML_POSTSMOOTHER,NULL);
 /*
                 nblocks = ML_Aggregate_Get_AggrCount( ag, level );
                 ML_Aggregate_Get_AggrMap( ag, level, &blocks);
-                ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_PRESMOOTHER, nsmooth, 1.0,
+                ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_BOTH, nsmooth, 1.0,
                                                  nblocks, blocks);
                 ML_Gen_Smoother_VBlockSymGaussSeidel( ml , level, ML_POSTSMOOTHER, nsmooth, 1.0, 
                                                  nblocks, blocks);
