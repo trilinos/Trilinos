@@ -252,10 +252,10 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   im_load = 0;
   msgtag = 32767;
   ierr = LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator, 
-      msgtag, lb->Deterministic, &nreceives);
-  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+         msgtag, &nreceives);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     abort();
   }
 
@@ -270,9 +270,9 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
          (char *) tmp);
-  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_FREE(&tmp);
     abort();
   }

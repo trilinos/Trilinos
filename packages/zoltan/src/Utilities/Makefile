@@ -82,7 +82,8 @@ MEM_DRIVER_DEP  = $(MEM_LIB)
 # COMMUNICATION PACKAGE
 
 COMM_CSRC	= comm_create.c comm_do.c comm_do_reverse.c comm_destroy.c \
-		  comm_invert_map.c
+		  comm_invert_map.c comm_exchange_sizes.c comm_resize.c \
+                  comm_sort_ints.c
 COMM_INC	= comm_const.h
 COMM_LIB	= libzoltan_comm.a
 COMM_TARGET     = zoltan_comm

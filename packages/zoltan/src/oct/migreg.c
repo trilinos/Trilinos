@@ -33,11 +33,11 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
 				    the objs from other processors. */
 
   msgtag = 32767;
-  ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, msgtag, 
-                 lb->Deterministic, &n_import);
-  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+  ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
+            msgtag, &n_import);
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     abort();
   }
   *c2 = n_import;
@@ -54,9 +54,9 @@ void LB_migreg_migrate_regions(LB *lb, Region *regions, int *npids,
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
-  if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN) {
+  if (ierr != COMM_OK && ierr != COMM_WARN) {
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Create\n", yo, 
-            (ierr == LB_COMM_MEMERR ? "LB_COMM_MEMERR" : "LB_COMM_FATAL"));
+            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
     LB_FREE(&import_objs);
     abort();
   }

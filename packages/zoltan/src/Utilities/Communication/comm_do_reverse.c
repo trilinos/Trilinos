@@ -14,8 +14,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi.h"
-#include "comm_const.h"
 #include "mem_const.h"
+#include "comm_const.h"
 
 
 /* Perform a reverse communication operation.  Communication object describes */
@@ -26,14 +26,15 @@ int       LB_Comm_Do_Reverse(
 struct Comm_Obj *plan,		/* communication data structure */
 int       tag,			/* message tag for communicating */
 char     *send_data,		/* array of data I currently own */
-int       nsize,		/* # bytes per data item */
-char     *recv_data)		/* array of data I'll own after comm */
+int       nbytes,		/* # bytes per data item */
+int      *sizes,		/* variable size of objects (if not NULL) */
+char     *recv_data)		/* array of data I'll own after reverse comm */
 {
     struct Comm_Obj *plan_reverse;	/* communication data structure */
     int       my_proc;		/* current processor ID */
     int       total_send_length;/* total message length I send in plan */
     int       max_recv_length;	/* biggest message I recv in plan */
-    int       lb_flag;		/* status flag */
+    int       comm_flag;		/* status flag */
     int       i;		/* loop counter */
     static char *yo = "LB_Comm_Do_Reverse";
 
@@ -41,7 +42,7 @@ char     *recv_data)		/* array of data I'll own after comm */
     if (!plan){
       fprintf(stderr, "Zoltan error in %s: Communication plan = NULL\n", 
         yo);
-      return LB_COMM_FATAL;
+      return COMM_FATAL;
     }
 
     MPI_Comm_rank(plan->comm, &my_proc);
@@ -61,28 +62,71 @@ char     *recv_data)		/* array of data I'll own after comm */
 
     plan_reverse = (struct Comm_Obj *) LB_MALLOC(sizeof(struct Comm_Obj));
 
+    plan_reverse->nvals = plan->nvals_recv;
+    plan_reverse->nvals_recv = plan->nvals;
     plan_reverse->lengths_to = plan->lengths_from;
     plan_reverse->procs_to = plan->procs_from;
     plan_reverse->indices_to = plan->indices_from;
+    plan_reverse->starts_to = plan->starts_from;
     plan_reverse->lengths_from = plan->lengths_to;
     plan_reverse->procs_from = plan->procs_to;
     plan_reverse->indices_from = plan->indices_to;
+    plan_reverse->starts_from = plan->starts_to;
     plan_reverse->nrecvs = plan->nsends;
     plan_reverse->nsends = plan->nrecvs;
     plan_reverse->self_msg = plan->self_msg;
-    plan_reverse->max_send_length = max_recv_length;
-    plan_reverse->total_recv_length = total_send_length;
+    plan_reverse->max_send_size = max_recv_length;
+    plan_reverse->total_recv_size = total_send_length;
     plan_reverse->comm = plan->comm;
+    plan_reverse->sizes = NULL;
+    plan_reverse->sizes_to = NULL;
+    plan_reverse->sizes_from = NULL;
+    plan_reverse->starts_to_ptr = NULL;
+    plan_reverse->starts_from_ptr = NULL;
+    plan_reverse->indices_to_ptr = NULL;
+    plan_reverse->indices_from_ptr = NULL;
+
+
     plan_reverse->request = (MPI_Request *)
 	LB_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Request));
+    if (plan_reverse->request == NULL && plan_reverse->nrecvs != 0) {
+        LB_FREE((void **) &plan_reverse);
+	return(COMM_MEMERR);
+    }
+
     plan_reverse->status = (MPI_Status *)
 	LB_MALLOC(plan_reverse->nrecvs * sizeof(MPI_Status));
+    if (plan_reverse->status == NULL && plan_reverse->nrecvs != 0) {
+        LB_FREE((void **) &(plan_reverse->request));
+        LB_FREE((void **) &plan_reverse);
+	return(COMM_MEMERR);
+    }
 
-    lb_flag = LB_Comm_Do(plan_reverse, tag, send_data, nsize, recv_data);
+    if (sizes != NULL) {
+	comm_flag = LB_Comm_Resize(plan_reverse, sizes, tag);
 
+        if (comm_flag != COMM_OK && comm_flag != COMM_WARN) {
+            LB_FREE((void **) &(plan_reverse->status));
+            LB_FREE((void **) &(plan_reverse->request));
+            LB_FREE((void **) &plan_reverse);
+	    return(comm_flag);
+        }
+    }
+
+    comm_flag = LB_Comm_Do(plan_reverse, tag, send_data, nbytes, recv_data);
+
+    if (sizes != NULL) {
+        LB_FREE((void *) &plan_reverse->sizes);
+	LB_FREE((void *) &plan_reverse->sizes_to);
+	LB_FREE((void *) &plan_reverse->sizes_from);
+	LB_FREE((void *) &plan_reverse->starts_to_ptr);
+	LB_FREE((void *) &plan_reverse->starts_from_ptr);
+	LB_FREE((void *) &plan_reverse->indices_to_ptr);
+	LB_FREE((void *) &plan_reverse->indices_from_ptr);
+    }
     LB_FREE((void **) &(plan_reverse->status));
     LB_FREE((void **) &(plan_reverse->request));
     LB_FREE((void **) &plan_reverse);
 
-    return(lb_flag);
+    return(comm_flag);
 }

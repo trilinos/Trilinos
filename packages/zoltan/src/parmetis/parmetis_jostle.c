@@ -757,13 +757,12 @@ static int LB_ParMetis_Jostle(
       printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
              lb->Proc, nsend);
 
-    ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, 
-                           lb->Deterministic, &nrecv);
-    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN){
+    ierr = LB_Comm_Create(&comm_plan, nsend, plist, comm, TAG1, &nrecv);
+    if (ierr != COMM_OK && ierr != COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     /* Allocate recv buffer */
@@ -780,11 +779,11 @@ static int LB_ParMetis_Jostle(
 
     /* Do the communication */
     ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
-    if (ierr != LB_COMM_OK && ierr != LB_COMM_WARN){
+    if (ierr != COMM_OK && ierr != COMM_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
 
     /* Destroy the comm. plan */
@@ -1135,11 +1134,12 @@ static int LB_ParMetis_Jostle(
       return LB_MEMERR;
     }
     /* Use reverse communication to compute the partition array under the original distribution */
-    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), (char *) part2);
-    if ((ierr == LB_COMM_FATAL) || (ierr == LB_COMM_MEMERR)){
+    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), NULL,
+                              (char *) part2);
+    if ((ierr == COMM_FATAL) || (ierr == COMM_MEMERR)){
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
-      return (ierr == LB_COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
     }
     LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     LB_FREE(&part); /* We don't need the partition array with the scattered distribution any more */

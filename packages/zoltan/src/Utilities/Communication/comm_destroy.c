@@ -23,15 +23,24 @@ struct Comm_Obj **plan)		/* communication data structure pointer */
     /* Free fields of the communication object. */
     LB_FREE((void **) &((*plan)->status));
     LB_FREE((void **) &((*plan)->request));
-    LB_FREE((void **) &((*plan)->procs_from));
-    LB_FREE((void **) &((*plan)->lengths_from));
+    LB_FREE((void **) &((*plan)->sizes));
+    LB_FREE((void **) &((*plan)->sizes_to));
+    LB_FREE((void **) &((*plan)->sizes_from));
+    LB_FREE((void **) &((*plan)->starts_to_ptr));
+    LB_FREE((void **) &((*plan)->starts_from_ptr));
+    LB_FREE((void **) &((*plan)->indices_to_ptr));
+    LB_FREE((void **) &((*plan)->indices_from_ptr));
     LB_FREE((void **) &((*plan)->indices_from));
-    LB_FREE((void **) &((*plan)->procs_to));
-    LB_FREE((void **) &((*plan)->lengths_to));
     LB_FREE((void **) &((*plan)->indices_to));
+    LB_FREE((void **) &((*plan)->lengths_from));
+    LB_FREE((void **) &((*plan)->starts_to));
+    LB_FREE((void **) &((*plan)->starts_from));
+    LB_FREE((void **) &((*plan)->lengths_to));
+    LB_FREE((void **) &((*plan)->procs_from));
+    LB_FREE((void **) &((*plan)->procs_to));
 
     /* Free the communication object itself */
     LB_FREE((void **) plan);
 
-    return(LB_COMM_OK);
+    return(COMM_OK);
 }

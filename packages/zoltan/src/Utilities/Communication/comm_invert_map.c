@@ -1,16 +1,3 @@
-/*****************************************************************************
- * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
- * Copyright (c) 2000, Sandia National Laboratories.                         *
- * For more info, see the README file in the top-level Zoltan directory.     *  
- *****************************************************************************/
-/*****************************************************************************
- * CVS File Information :
- *    $RCSfile$
- *    $Author$
- *    $Date$
- *    $Revision$
- ****************************************************************************/
-
 #include <stdio.h>
 #include "mpi.h"
 #include "comm_const.h"
@@ -21,41 +8,31 @@
 /* contain list of processors I send to and the lengths of the corresponding */
 /* messages. Upon exit, "lengths_from" and "procs_from" contain receive info. */
 
-/* Data is allowed to be mapped from me to me. This self entry is always last */
-/* in the list of recvs. */
+/* Note: By reinterpreting "to" and "from", this routine can do the opposite: */
+/* given "from" data it computes "to" data. */
 
-/* List of messages to/from is ended by a negative value in procs array. */
-
-/* Always keep self messages at end. */
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-/* Prototype definition */
-static void      LB_Sort_Procs(int *, int *, int);
+/* Data is allowed to be mapped from me to me. */
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int       LB_Invert_Map(
-int      *lengths_to,		/* lengths of my sends */
+int       LB_Comm_Invert_Map(
+int      *lengths_to,		/* number of items I'm sending */
 int      *procs_to,		/* procs I send to */
 int       nsends,		/* number of messages I'll send */
 int       self_msg,		/* do I copy data to myself? */
-int     **plengths_from,	/* lengths of my recvs */
+int     **plengths_from,	/* number of items I'm receiving */
 int     **pprocs_from,		/* procs I recv lengths from */
 int      *pnrecvs,		/* number of messages I receive */
 int       my_proc,		/* my processor number */
 int       nprocs,		/* total number of processors */
+int       out_of_mem,		/* tell everyone I'm out of memory? */
 int       tag,			/* message tag I can use */
-int       deterministic,        /* flag indicating whether result should be
-                                   deterministic (i.e., independent of the
-                                   order in which messages are received). */
 MPI_Comm  comm)			/* communicator */
 {
     int      *lengths_from;	/* lengths of my recvs */
-    int      *procs_from;	/* procs I recv lengths from (-1 ends) */
+    int      *procs_from;	/* procs I recv lengths from */
     int      *msg_count;	/* binary flag for procs I send to (nprocs) */
     int      *counts;		/* argument to Reduce_scatter */
     int       nrecvs;		/* number of messages I'll receive */
@@ -65,6 +42,15 @@ MPI_Comm  comm)			/* communicator */
     msg_count = (int *) LB_MALLOC(nprocs * sizeof(int));
     counts = (int *) LB_MALLOC(nprocs * sizeof(int));
 
+    if (msg_count == NULL || counts == NULL) out_of_mem = 1;
+
+    MPI_Allreduce((void *) &out_of_mem, (void *) &i, 1, MPI_INT, MPI_MAX, comm);
+    if (i) {
+	LB_FREE((void **) &counts);
+	LB_FREE((void **) &msg_count);
+	return(COMM_MEMERR);
+    }
+
     for (i = 0; i < nprocs; i++) {
 	msg_count[i] = 0;
 	counts[i] = 1;
@@ -72,13 +58,17 @@ MPI_Comm  comm)			/* communicator */
     for (i = 0; i < nsends + self_msg; i++)
 	msg_count[procs_to[i]] = 1;
 
-    MPI_Reduce_scatter(msg_count, &nrecvs, counts, MPI_INT, MPI_SUM, comm);
+    MPI_Reduce_scatter((void *) msg_count, (void *) &nrecvs, counts, MPI_INT,
+	MPI_SUM, comm);
 
     LB_FREE((void **) &counts);
     LB_FREE((void **) &msg_count);
 
     lengths_from = (int *) LB_MALLOC(nrecvs*sizeof(int));
     procs_from = (int *) LB_MALLOC(nrecvs*sizeof(int));
+
+    /* Note: these mallocs should never fail as prior frees are larger. */
+
 
     /* Send the lengths of all my real messages to their receivers. */
     for (i = 0; i < nsends + self_msg; i++) {
@@ -92,7 +82,6 @@ MPI_Comm  comm)			/* communicator */
 	}
     }
 
-
     /* Now receive the lengths of all my messages from their senders. */
     /* Note that proc/length_from lists are ordered by sequence msgs arrive. */
     for (i = 0; i < nrecvs - self_msg; i++) {
@@ -101,61 +90,17 @@ MPI_Comm  comm)			/* communicator */
 	procs_from[i] = status.MPI_SOURCE;
     }
 
-    /* Barrier to insure all my MPI_ANY_SOURCE messages are received.
-       Otherwise some procs could proceed to comm_do and start sending to me.
-    
-    MPI_Barrier(comm);
-    */
-    
-    /* Instead of barrier, I'm counting on having a unique tag. */
+    /* Note: I'm counting on having a unique tag or some of my incoming */
+    /*       messages might get confused with others. */
 
     
-    if (deterministic) {
-        /* 
-         * If a deterministic ordering is needed (eg. for debugging), 
-         * sort recvs. 
-         * Note: self messages are kept at the end. 
-         */
-        LB_Sort_Procs(procs_from, lengths_from, nrecvs - self_msg);
-    }
+    /* Sort recv lists to keep execution deterministic (e.g. for debugging) */
+
+    LB_Sort_Ints(procs_from, lengths_from, nrecvs);
 
     *plengths_from = lengths_from;
     *pprocs_from = procs_from;
     *pnrecvs = nrecvs - self_msg;    /* Only return number of true messages */
 
-    return(LB_COMM_OK);
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-static void      LB_Sort_Procs(
-int      *procs,                /* procs I'll receive from */
-int      *vals,                 /* value associated with each message */
-int       nvals)		/* length of these two arrays */
-{
-/* This routine will ensure that the ordering */
-/* produced by the invert_map routines is deterministic.  This should */
-/* make bugs more reproducible.  This is accomplished by sorting */
-/* the message lists by processor ID. */
-
-    int       temp;		/* swapping value */
-    int       i, j;             /* loop counter */
-
-    /* Use a simple bubble sort on procs entries. */
-
-    for (i = 1; i < nvals; i++) {
-	j = i;
-	while (j > 0 && procs[j] < procs[j - 1]) {
-	    /* Flip j and j-1 entries. */
-	    temp = procs[j];
-	    procs[j] = procs[j - 1];
-	    procs[j - 1] = temp;
-	    temp = vals[j];
-	    vals[j] = vals[j - 1];
-	    vals[j - 1] = temp;
-	    j--;
-	}
-    }
+    return(COMM_OK);
 }
