@@ -853,7 +853,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    printf("\n--------------------------------\n");
    printf("Coming into matrix Hiptmair\n");
    printf("\t%d: ||x|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
-           sqrt((ML_gdot(Nrows, x, x, comm))));
+           sqrt((ML_gdot(Nrows, x, x, Tmat_trans->comm))));
    printf("\t%d: ||rhs|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
           sqrt((ML_gdot(Nrows, rhs, rhs, Tmat_trans->comm))));
    fflush(stdout);
@@ -3013,7 +3013,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                                  ML_Operator *Tmat, ML_Operator *Tmat_trans,
                                  ML_Operator *Tmat_bc, int BClength,
-                                 int *BCindices)
+                                 int *BCindices, double omega)
 {
    ML_Sm_Hiptmair_Data *dataptr;
    ML_Operator *tmpmat, *tmpmat2;
@@ -3034,19 +3034,31 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    /* Get maximum eigenvalue for damping parameter. */
 
-   kdata = ML_Krylov_Create( Amat->comm );
-   ML_Krylov_Set_PrintFreq( kdata, 0 );
-   ML_Krylov_Set_ComputeEigenvalues( kdata );
-   ML_Krylov_Set_Amatrix(kdata, Amat);
-   ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
-   dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
-   dataptr->omega = 1.0 / dataptr->max_eig;
-   ML_Krylov_Destroy(&kdata);
-/*
-   printf("in ML_Smoother_Gen_Hiptmair_Data: not calculating max eigenvalue\n");
-   dataptr->max_eig = 1.0;
-   dataptr->omega = 1.0 ;
-*/
+   if ( ((int) omega) == ML_DEFAULT)
+   {
+      kdata = ML_Krylov_Create( Amat->comm );
+      /* next line sets method to CG */
+      ML_Krylov_Set_ComputeEigenvalues( kdata );
+      ML_Krylov_Set_PrintFreq( kdata, 0 );
+      ML_Krylov_Set_Amatrix(kdata, Amat);
+      ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+      dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
+      dataptr->omega = 1.0 / dataptr->max_eig;
+      ML_Krylov_Destroy(&kdata);
+      if (Amat->comm->ML_mypid == 0)
+      {
+         printf("E:Calculated max eigenvalue of %lf.\n",dataptr->max_eig);
+         printf("E:Using Hiptmair damping factor of %lf.\n",dataptr->omega);
+         fflush(stdout);
+      }  
+   }
+   else
+   {
+      if (Amat->comm->ML_mypid == 0)
+         printf("Using user-provided Hiptmair damping factor of %lf.\n",omega);
+      dataptr->max_eig = 1.0;
+      dataptr->omega = omega;
+   }
 
    /* Check matrix dimensions. */
 
@@ -3082,11 +3094,11 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    if (Tmat_bc != NULL)
    {
       tmpmat2 = ML_Operator_Create(Amat->comm);
-      /* Calculate matrix product Ke * T.  Postprocess to get (alsmost)
+      /* Calculate matrix product Ke * T.  Postprocess to get (almost)
          the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
          Dirichlet b.c. applied to both rows and columns of Ke.  The
-         only differences will be the b.c.  rows themselves. */
-      /*ML_matmat_mult(Amat,Tmat_bc,&tmpmat2);*/
+         only differences will be the b.c.  rows themselves, which
+         will be zero. */
       ML_2matmult(Amat,Tmat_bc,tmpmat2);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
@@ -3100,7 +3112,6 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
          for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
             val_ptr[k] = 0.0;
       }
-      /*ML_matmat_mult(Tmat_trans,tmpmat2,&tmpmat);*/
       ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
       ML_Operator_Destroy(tmpmat2);
    }
@@ -3108,13 +3119,31 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    {
       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
    }
-
+/*
+   kdata = ML_Krylov_Create( tmpmat->comm );
+   ML_Krylov_Set_ComputeEigenvalues( kdata );
+   ML_Krylov_Set_PrintFreq( kdata, 0 );
+   ML_Krylov_Set_Amatrix(kdata, tmpmat);
+   ML_Krylov_Solve(kdata, tmpmat->outvec_leng, NULL, NULL);
+   if (tmpmat->comm->ML_mypid == 0)
+   {
+      printf("N:Calculated max eigenvalue of %lf.\n",dataptr->max_eig);
+      printf("N:Using Hiptmair damping factor of %lf.\n",dataptr->omega);
+      fflush(stdout);
+   }  
+*/
    /* Create ML_Smoother data structure for nodes.
       This is used in symmetric GS sweep over nodes. */
    mylevel = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
    ML_Smoother_Create(&(dataptr->sm_nodal), mylevel);
    dataptr->sm_nodal->ntimes = 1;
-   dataptr->sm_nodal->omega = 1;
+   dataptr->sm_nodal->omega = 1.0;
+
+/*
+   dataptr->sm_nodal->omega = 1.0 / ML_Krylov_Get_MaxEigenvalue(kdata);
+   ML_Krylov_Destroy(&kdata);
+*/
+
    dataptr->sm_nodal->my_level->Amat = tmpmat;
    dataptr->sm_nodal->my_level->comm = tmpmat->comm;
    dataptr->TtATmat = tmpmat;
