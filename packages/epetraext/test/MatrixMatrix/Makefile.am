@@ -39,6 +39,7 @@ MatrixMatrix_test_DEPENDENCIES = \
   $(top_builddir)/../epetra/src/libepetra.a
 
 MatrixMatrix_test_CXXFLAGS = -I$(top_srcdir)/src \
+		 	     -I$(top_srcdir)/src/inout \
                              -I$(top_builddir)/src \
                              -I$(top_srcdir)/../epetra/src \
                              -I$(top_builddir)/../epetra/src
