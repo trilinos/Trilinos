@@ -16,6 +16,7 @@ noinst_PROGRAMS = Blackboard            \
                   Richardson            \
                   AdaptiveSA            \
                   AdaptiveSA_Elasticity \
+                  AdaptiveSA_SAMIS      \
                   NonSymmetricSA
 
 Blackboard_SOURCES  = $(srcdir)/Blackboard.cpp
@@ -65,3 +66,9 @@ NonSymmetricSA_CPPFLAGS = ${ml_common_include_locations}
 NonSymmetricSA_CXXFLAGS = ${ml_common_include_locations}
 NonSymmetricSA_LDADD    = ${ml_libs} 
 NonSymmetricSA_LINK     = ${mllink}
+
+AdaptiveSA_SAMIS_SOURCES  = $(srcdir)/AdaptiveSA_SAMIS.cpp
+AdaptiveSA_SAMIS_CPPFLAGS = ${ml_common_include_locations}
+AdaptiveSA_SAMIS_CXXFLAGS = ${ml_common_include_locations}
+AdaptiveSA_SAMIS_LDADD    = ${ml_libs} 
+AdaptiveSA_SAMIS_LINK     = ${mllink}
