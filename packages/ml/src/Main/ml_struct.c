@@ -133,7 +133,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    (*ml_ptr)->SingleLevel        = SingleLevel;
    (*ml_ptr)->Rmat               = Rmat;
    (*ml_ptr)->Pmat               = Pmat;
-   (*ml_ptr)->spectral_radius = max_eigen;
+   (*ml_ptr)->spectral_radius    = max_eigen;
    (*ml_ptr)->symmetrize_matrix  = ML_FALSE;
    (*ml_ptr)->Amat_Normalization = Amat_Normalization ;
    (*ml_ptr)->timing             = NULL;
@@ -205,7 +205,7 @@ int ML_Destroy(ML **ml_ptr)
    ml = (*ml_ptr);
 
 #ifdef ML_TIMING
-   if ( ml->output_level != 0 ) ML_Print_Timing(ml);
+      if ( ml->output_level != 0 ) ML_Print_Timing(ml);
 #endif
 
    if (ml != NULL)
@@ -3534,6 +3534,10 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    FILE    *fp;
 #endif
 
+#if defined(ML_MPI) && defined(ML_SYNCH)
+   MPI_Barrier(MPI_COMM_WORLD);
+#endif
+
    Amat     = curr->Amat;
    Rmat     = curr->Rmat;
    pre      = curr->pre_smoother;
@@ -3593,6 +3597,9 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    /* smoothing or coarse solve                                    */
    /* ------------------------------------------------------------ */
    if (Rmat->to == NULL) {    /* coarsest grid */
+#if defined(ML_MPI) && defined(ML_SYNCH)
+   MPI_Barrier(MPI_COMM_WORLD);
+#endif
       if ( ML_CSolve_Check( csolve ) == 1 ) {
          ML_CSolve_Apply(csolve, lengf, sol, lengf, rhss);
       } else {
@@ -3613,6 +3620,9 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* pre-smoothing and compute residual                        */
       /* --------------------------------------------------------- */
+#if defined(ML_MPI) && defined(ML_SYNCH)
+   MPI_Barrier(MPI_COMM_WORLD);
+#endif
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
@@ -3833,9 +3843,15 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    }
 
 #else
+#if defined(ML_MPI) && defined(ML_SYNCH)
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,comm, ML_NO_RES_NORM, ml);
+#if defined(ML_MPI) && defined(ML_SYNCH)
+      MPI_Barrier(MPI_COMM_WORLD);
+#endif
       if ( (ml->ML_scheme == ML_MGW) && (Rmat->to->Rmat->to != NULL))
-	ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
+        ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_NONZERO,comm, ML_NO_RES_NORM,ml);
 #endif /* ifdef ML_SINGLE_LEVEL_PROFILING */
 
       /* ------------------------------------------------------------ */
@@ -3861,6 +3877,9 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       /* --------------------------------------------------------- */
       /* post-smoothing                                            */
       /* --------------------------------------------------------- */
+#if defined(ML_MPI) && defined(ML_SYNCH)
+   MPI_Barrier(MPI_COMM_WORLD);
+#endif
       for ( i = 0; i < lengf; i++ ) sol[i] += res[i];
 #if defined(RAP_CHECK) || defined(ANALYSIS)
 
@@ -3977,6 +3996,9 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
    }
 
    ML_free(rhss);
+#if defined(ML_MPI) && defined(ML_SYNCH)
+   MPI_Barrier(MPI_COMM_WORLD);
+#endif
    return(res_norm);
 }
 /*****************************************************************************/
