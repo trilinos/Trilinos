@@ -15,11 +15,6 @@
 #ifndef __TIMER_H
 #define __TIMER_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include "timer_const.h"
 #include <time.h> /* ANSI C; defines clock_t and clock() */
 
@@ -44,10 +39,6 @@ extern "C" {
 /* #include <sys/types.h> -- Included by sys/times.h on most systems. */
 #include <sys/times.h>
 #include <unistd.h> /* Needed for sysconf() and _SC_CLK_TCK */
-#endif
-
-#ifdef __cplusplus
-} /* closing bracket for extern "C" */
 #endif
 
 #endif

@@ -15,13 +15,12 @@
 #ifndef __PAR_TFLOPS_SPECIAL_H
 #define __PAR_TFLOPS_SPECIAL_H
 
+#include <mpi.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <mpi.h>
 
 /* prototypes for TFLOPS_SPECIAL */
 extern void Zoltan_RB_scan_double(double *, double *, int, MPI_Comm, int, int, int);

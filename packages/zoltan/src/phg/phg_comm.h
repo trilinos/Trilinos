@@ -13,12 +13,13 @@
 #ifndef __ZOLTAN_PHG_COMM_H
 #define __ZOLTAN_PHG_COMM_H
 
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-#include "zz_const.h"
     
 /********************************************/
 /* Communication and Distribution variables */

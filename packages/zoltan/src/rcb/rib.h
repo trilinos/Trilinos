@@ -15,15 +15,14 @@
 #ifndef __RIB_H
 #define __RIB_H
 
+#include "zz_const.h"
+#include "shared.h"
+#include "rib_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "zz_const.h"
-#include "shared.h"
-#include "rib_const.h"
 
 /* Data structures for parallel recursive inertial bisection method */
 

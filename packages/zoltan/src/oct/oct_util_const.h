@@ -9,13 +9,13 @@
 #ifndef __OCT_UTIL_CONST_H
 #define __OCT_UTIL_CONST_H
 
+#include "octree_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include "octree_const.h"
 extern int    Zoltan_Oct_get_child_dir(OCT_Global_Info *OCT_info, int dir, int cnum);
 extern int    Zoltan_Oct_convert_idx_from_map(OCT_Global_Info *OCT_info, int dir, int cnum);
 

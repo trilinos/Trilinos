@@ -15,14 +15,13 @@
 #ifndef __RCB_H
 #define __RCB_H
 
+#include "shared.h"
+#include "rcb_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "shared.h"
-#include "rcb_const.h"
 
 /* Data structures for parallel RCB */
 

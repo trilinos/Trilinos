@@ -9,13 +9,12 @@
 #ifndef __OCT_ROOTLIST_CONST_H
 #define __OCT_ROOTLIST_CONST_H
 
+#include "octant_const.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "octant_const.h"
 
 /* Structure used to store root octants for on and off processor roots */
 /* The first and last nodes are sentinals */

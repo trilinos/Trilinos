@@ -15,14 +15,15 @@
 #ifndef __ORDER_CONST_H
 #define __ORDER_CONST_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include "zoltan.h"
 #ifndef __PARAMS_CONST_H
 #include "params_const.h" /* needed for MAX_PARAM_STRING_LEN */
+#endif
+
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
 #endif
 
 /*

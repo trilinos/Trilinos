@@ -14,13 +14,13 @@
 #ifndef __PHG_UTIL_H
 #define __PHG_UTIL_H
 
+#include <stdarg.h>
+#include "phg_comm.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include <stdarg.h>
-#include "phg_comm.h"
 
 /* Definitions to allow simplicity in PHG code 
  * while protecting application namespace. 

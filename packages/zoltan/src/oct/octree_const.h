@@ -9,15 +9,13 @@
 #ifndef __OCT_OCTREE_CONST_H
 #define __OCT_OCTREE_CONST_H
 
+#include "octant_const.h"
+#include "rootlist_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "octant_const.h"
-#include "rootlist_const.h"
-
 
 typedef struct {
   int npid;

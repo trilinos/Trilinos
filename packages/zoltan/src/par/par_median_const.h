@@ -15,13 +15,12 @@
 #ifndef __PAR_MEDIAN_CONST_H
 #define __PAR_MEDIAN_CONST_H
 
+#include <mpi.h>
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <mpi.h>
 
 extern int Zoltan_RB_find_median(int, double *, double *, int *,
   int, int, double, MPI_Comm,

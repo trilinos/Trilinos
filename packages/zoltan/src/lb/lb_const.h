@@ -15,13 +15,14 @@
 #ifndef __LB_CONST_H
 #define __LB_CONST_H
 
+#include "zoltan.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
 
-#include "zoltan.h"
 
 /*
  * Type definitions for functions that depend on 

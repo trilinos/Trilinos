@@ -9,13 +9,12 @@
 #ifndef __OCTUPDATE_H
 #define __OCTUPDATE_H
 
+#include "octupdate_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "octupdate_const.h"
 
 static void    Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs, 
 		      COORD min, COORD max, int wgtflag, float *c4);

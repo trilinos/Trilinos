@@ -15,15 +15,15 @@
 #ifndef __PARMETIS_JOSTLE_H
 #define __PARMETIS_JOSTLE_H
 
+#include <limits.h>
+#include "zoltan_comm.h"
+#include "parmetis_jostle_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-#include <limits.h>
-#include "zoltan_comm.h"
-#include "parmetis_jostle_const.h"
 
 /* Include ParMetis and/or Jostle header files if necessary. 
  * These include files must be available in the include path set in the 

@@ -9,13 +9,12 @@
 #ifndef __OCTANT_CONST_H
 #define __OCTANT_CONST_H
 
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include "zz_const.h"
 
 typedef double COORD[3];
 typedef enum {LOCALOCT, REMOTEOCT} OctType;

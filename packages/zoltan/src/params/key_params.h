@@ -15,12 +15,12 @@
 #ifndef __KEY_PARAMS_H
 #define __KEY_PARAMS_H
 
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "zz_const.h"
 
 extern int Zoltan_Set_Key_Param(ZZ *, char *, char *, int);
 extern void Zoltan_Print_Key_Params(ZZ *);

@@ -9,13 +9,14 @@
 #ifndef __REFTREE_H
 #define __REFTREE_H
 
+#include "reftree_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
 
-#include "reftree_const.h"
 /* Some constants */
 
 /* Maximum number of vertices per element */

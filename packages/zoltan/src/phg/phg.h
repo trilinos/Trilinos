@@ -14,11 +14,6 @@
 #ifndef __ZOLTAN_PHG_H
 #define __ZOLTAN_PHG_H
 
-#ifdef __cplusplus
-/* if C++, define the rest of this header file as extern C */
-extern "C" {
-#endif
-
 #include "hg.h"
     
 #include "phg_comm.h"
@@ -26,6 +21,12 @@ extern "C" {
 #include "phg_util.h"
 #include "params_const.h"
 #include "zoltan_comm.h"
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 /********************************************************************
  * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 

@@ -15,14 +15,13 @@
 #ifndef __PAR_BISECT_CONST_H
 #define __PAR_BISECT_CONST_H
 
+#include <mpi.h>
+#include "zz_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-
-#include <mpi.h>
-#include "zz_const.h"
 
 extern int Zoltan_RB_find_bisector(ZZ *, int, double *, double *, 
   int *, int, int, int, double *, MPI_Comm,

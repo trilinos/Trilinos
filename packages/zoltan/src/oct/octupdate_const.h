@@ -9,12 +9,12 @@
 #ifndef __OCTUPDATE_CONST_H
 #define __OCTUPDATE_CONST_H
 
+#include "octree_const.h"
+
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "octree_const.h"
 
 #ifdef LGG_MIGOCT
 extern void    Zoltan_Oct_resetIdCount(int start_count);
