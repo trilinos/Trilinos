@@ -72,8 +72,11 @@ int Epetra_Object::ReportError(const string Message, int ErrorCode) const {
   // NOTE:  We are extracting a C-style string from Message because
   //        the SGI compiler does not have a real string class with 
   //        the << operator.  Some day we should get rid of ".c_str()"
+                              if ((ErrorCode < 0 && Epetra_Object::GetTracebackMode() > 0) || \
+                                  (ErrorCode > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
   cerr << endl << "Error in Epetra Object with label:  " << Label_ << endl
        << "Epetra Error:  " << Message.c_str() << "  Error Code:  " << ErrorCode << endl;
+}
 #endif
   return(ErrorCode);
 }
