@@ -2,6 +2,10 @@ module lb_user_const
 use zoltan_types
 implicit none
 
+!  This version of lb_user_const.f90 is a modification of the example
+!  lb_user_const_int.f90, modified for use with fdriver by adding the
+!  definition of type(ELEM_INFO) and defining LB_User_Data_1.
+
 !  This file contains the user-defined data types and comparison functions
 !  for global and local IDs used by the application and the
 !  load-balancing library.  Application developers should modify these
