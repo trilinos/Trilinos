@@ -83,9 +83,8 @@ char  *yo = "Zoltan_PHG_Matching";
         err = ZOLTAN_MEMERR;
         goto End;
      }
-     /* EBEB We need a parallel edge weight scaling routine, 
-             do not use the old serial routine! */
-     Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
+ 
+     Zoltan_PHG_Scale_Weights (zz, hg, new_ewgt, hgp);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
   }

@@ -157,6 +157,7 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /**********************/
 int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
+int Zoltan_PHG_Scale_Weights (ZZ*, HGraph*, float*, PHGPartParams*);
 
 /**************/
 /* Coarsening */
