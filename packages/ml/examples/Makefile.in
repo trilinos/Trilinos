@@ -15,15 +15,32 @@
 @SET_MAKE@
 
 #@HEADER
+# ************************************************************************
+# 
+#              ML: Multilevel Preconditioning Package
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Ray Tuminaro or Jonathan Hu ({rstumin|jhu}@sandia.gov) 
+# 
+# ************************************************************************
 #@HEADER
-
-#ML_STANDALONE_MODE is set only if ml is being built by itself.
-#It controls which linker is used:  in the case that ml is built
-#with aztecoo and epetra support enabled, then a c++ linker is invoked
-#for ML's interfaces to those two packages.
-
-SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) $(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) $(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) $(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) $(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_user_aggr_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -45,86 +62,6 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS =  \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	mlguide_par$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_aztec_simple$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example1dGS$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example2d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example3d$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_simple_max$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_preconditioner$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_2level_DD$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_operator$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_filtering$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_user_aggr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_viz$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_analyze$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_maxwell$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_elasticity$(EXEEXT)
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
-EXTRA_PROGRAMS = ml_read_maxwell$(EXEEXT) mlguide_par$(EXEEXT)
 subdir = examples
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -156,250 +93,17 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am__ml_2level_DD_SOURCES_DIST = $(srcdir)/ml_2level_DD.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_2level_DD_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_2level_DD-ml_2level_DD.$(OBJEXT)
-ml_2level_DD_OBJECTS = $(am_ml_2level_DD_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
-am__DEPENDENCIES_8 =
-@ML_STANDALONE_MODE_FALSE@am__DEPENDENCIES_9 =  \
-@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_1) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_3) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_4) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8)
-@ML_STANDALONE_MODE_TRUE@am__DEPENDENCIES_9 =  \
-@ML_STANDALONE_MODE_TRUE@	$(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8)
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_AztecMsr_SOURCES_DIST = $(srcdir)/ml_AztecMsr.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_AztecMsr_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_AztecMsr-ml_AztecMsr.$(OBJEXT)
-ml_AztecMsr_OBJECTS = $(am_ml_AztecMsr_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_EpetraVbr_SOURCES_DIST = $(srcdir)/ml_EpetraVbr.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_EpetraVbr_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_EpetraVbr-ml_EpetraVbr.$(OBJEXT)
-ml_EpetraVbr_OBJECTS = $(am_ml_EpetraVbr_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_analyze_SOURCES_DIST = $(srcdir)/ml_analyze.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_analyze_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_analyze-ml_analyze.$(OBJEXT)
-ml_analyze_OBJECTS = $(am_ml_analyze_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_analyze_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
-@ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
-ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example1d_SOURCES_DIST = $(srcdir)/ml_example1d.c
-@ML_STANDALONE_MODE_FALSE@am_ml_example1d_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_example1d-ml_example1d.$(OBJEXT)
-ml_example1d_OBJECTS = $(am_ml_example1d_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example1d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example1dGS_SOURCES_DIST = $(srcdir)/ml_example1dGS.c
-@ML_STANDALONE_MODE_FALSE@am_ml_example1dGS_OBJECTS = ml_example1dGS-ml_example1dGS.$(OBJEXT)
-ml_example1dGS_OBJECTS = $(am_ml_example1dGS_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example1dGS_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example2d_SOURCES_DIST = $(srcdir)/ml_example2d.c
-@ML_STANDALONE_MODE_FALSE@am_ml_example2d_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_example2d-ml_example2d.$(OBJEXT)
-ml_example2d_OBJECTS = $(am_ml_example2d_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example2d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example3d_SOURCES_DIST = $(srcdir)/ml_example3d.c
-@ML_STANDALONE_MODE_FALSE@am_ml_example3d_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_example3d-ml_example3d.$(OBJEXT)
-ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example3d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_example_elasticity_SOURCES_DIST =  \
-	$(srcdir)/ml_example_elasticity.c
-@ML_STANDALONE_MODE_FALSE@am_ml_example_elasticity_OBJECTS = ml_example_elasticity-ml_example_elasticity.$(OBJEXT)
-ml_example_elasticity_OBJECTS = $(am_ml_example_elasticity_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_example_elasticity_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_filtering_SOURCES_DIST = $(srcdir)/ml_filtering.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_filtering_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_filtering-ml_filtering.$(OBJEXT)
-ml_filtering_OBJECTS = $(am_ml_filtering_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_filtering_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_maxwell_SOURCES_DIST = $(srcdir)/ml_maxwell.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_maxwell_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_maxwell-ml_maxwell.$(OBJEXT)
-ml_maxwell_OBJECTS = $(am_ml_maxwell_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_multiple_rhs_SOURCES_DIST = $(srcdir)/ml_multiple_rhs.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_multiple_rhs_OBJECTS = ml_multiple_rhs-ml_multiple_rhs.$(OBJEXT)
-ml_multiple_rhs_OBJECTS = $(am_ml_multiple_rhs_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_operator_SOURCES_DIST = $(srcdir)/ml_operator.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_operator_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_operator-ml_operator.$(OBJEXT)
-ml_operator_OBJECTS = $(am_ml_operator_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_operator_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_preconditioner_SOURCES_DIST = $(srcdir)/ml_preconditioner.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_preconditioner_OBJECTS = ml_preconditioner-ml_preconditioner.$(OBJEXT)
-ml_preconditioner_OBJECTS = $(am_ml_preconditioner_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_read_elas_SOURCES_DIST = $(srcdir)/ml_read_elas.c
-@ML_STANDALONE_MODE_FALSE@am_ml_read_elas_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_read_elas-ml_read_elas.$(OBJEXT)
-ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_read_elas_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_read_matrix_AIJ_SOURCES_DIST =  \
-	$(srcdir)/ml_read_matrix_AIJ.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_read_matrix_AIJ_OBJECTS = ml_read_matrix_AIJ-ml_read_matrix_AIJ.$(OBJEXT)
-ml_read_matrix_AIJ_OBJECTS = $(am_ml_read_matrix_AIJ_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_read_maxwell_SOURCES_DIST = $(srcdir)/ml_read_maxwell.c
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
-ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES = $(am__DEPENDENCIES_9)
-am__ml_read_salsa_SOURCES_DIST = $(srcdir)/ml_read_salsa.c
-@ML_STANDALONE_MODE_FALSE@am_ml_read_salsa_OBJECTS = ml_read_salsa-ml_read_salsa.$(OBJEXT)
-ml_read_salsa_OBJECTS = $(am_ml_read_salsa_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_read_salsa_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_readfile_SOURCES_DIST = $(srcdir)/ml_readfile.c
-@ML_STANDALONE_MODE_FALSE@am_ml_readfile_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_readfile-ml_readfile.$(OBJEXT)
-ml_readfile_OBJECTS = $(am_ml_readfile_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_readfile_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_recirc_SOURCES_DIST = $(srcdir)/ml_recirc.c
-@ML_STANDALONE_MODE_FALSE@am_ml_recirc_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_recirc-ml_recirc.$(OBJEXT)
-ml_recirc_OBJECTS = $(am_ml_recirc_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_recirc_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_simple_max_SOURCES_DIST = $(srcdir)/ml_simple_max.c
-@ML_STANDALONE_MODE_FALSE@am_ml_simple_max_OBJECTS = ml_simple_max-ml_simple_max.$(OBJEXT)
-ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_simple_max_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_user_aggr_SOURCES_DIST = $(srcdir)/ml_user_aggr.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_user_aggr_OBJECTS =  \
-@ML_STANDALONE_MODE_FALSE@	ml_user_aggr-ml_user_aggr.$(OBJEXT)
-ml_user_aggr_OBJECTS = $(am_ml_user_aggr_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
-am__ml_viz_SOURCES_DIST = $(srcdir)/ml_viz.cpp
-@ML_STANDALONE_MODE_FALSE@am_ml_viz_OBJECTS = ml_viz-ml_viz.$(OBJEXT)
-ml_viz_OBJECTS = $(am_ml_viz_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@ml_viz_DEPENDENCIES = $(am__DEPENDENCIES_9)
-am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
-mlguide_OBJECTS = $(am_mlguide_OBJECTS)
-mlguide_DEPENDENCIES = $(am__DEPENDENCIES_9)
-am_mlguide_par_OBJECTS = mlguide_par-mlguide_par.$(OBJEXT)
-mlguide_par_OBJECTS = $(am_mlguide_par_OBJECTS)
-mlguide_par_DEPENDENCIES = $(am__DEPENDENCIES_9)
-DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_analyze-ml_analyze.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example1d-ml_example1d.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_filtering-ml_filtering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_maxwell-ml_maxwell.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_operator-ml_operator.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_recirc-ml_recirc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_simple_max-ml_simple_max.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ml_viz-ml_viz.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mlguide-mlguide.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/mlguide_par-mlguide_par.Po
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-SOURCES = $(ml_2level_DD_SOURCES) $(ml_AztecMsr_SOURCES) \
-	$(ml_EpetraVbr_SOURCES) $(ml_analyze_SOURCES) \
-	$(ml_aztec_simple_SOURCES) $(ml_example1d_SOURCES) \
-	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
-	$(ml_example3d_SOURCES) $(ml_example_elasticity_SOURCES) \
-	$(ml_filtering_SOURCES) $(ml_maxwell_SOURCES) \
-	$(ml_multiple_rhs_SOURCES) $(ml_operator_SOURCES) \
-	$(ml_preconditioner_SOURCES) $(ml_read_elas_SOURCES) \
-	$(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) \
-	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
-	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
-	$(ml_user_aggr_SOURCES) $(ml_viz_SOURCES) $(mlguide_SOURCES) \
-	$(mlguide_par_SOURCES)
-DIST_SOURCES = $(am__ml_2level_DD_SOURCES_DIST) \
-	$(am__ml_AztecMsr_SOURCES_DIST) \
-	$(am__ml_EpetraVbr_SOURCES_DIST) \
-	$(am__ml_analyze_SOURCES_DIST) \
-	$(am__ml_aztec_simple_SOURCES_DIST) \
-	$(am__ml_example1d_SOURCES_DIST) \
-	$(am__ml_example1dGS_SOURCES_DIST) \
-	$(am__ml_example2d_SOURCES_DIST) \
-	$(am__ml_example3d_SOURCES_DIST) \
-	$(am__ml_example_elasticity_SOURCES_DIST) \
-	$(am__ml_filtering_SOURCES_DIST) \
-	$(am__ml_maxwell_SOURCES_DIST) \
-	$(am__ml_multiple_rhs_SOURCES_DIST) \
-	$(am__ml_operator_SOURCES_DIST) \
-	$(am__ml_preconditioner_SOURCES_DIST) \
-	$(am__ml_read_elas_SOURCES_DIST) \
-	$(am__ml_read_matrix_AIJ_SOURCES_DIST) \
-	$(am__ml_read_maxwell_SOURCES_DIST) \
-	$(am__ml_read_salsa_SOURCES_DIST) \
-	$(am__ml_readfile_SOURCES_DIST) $(am__ml_recirc_SOURCES_DIST) \
-	$(am__ml_simple_max_SOURCES_DIST) \
-	$(am__ml_user_aggr_SOURCES_DIST) $(am__ml_viz_SOURCES_DIST) \
-	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES =
+DIST_SOURCES =
+RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
+	html-recursive info-recursive install-data-recursive \
+	install-exec-recursive install-info-recursive \
+	install-recursive installcheck-recursive installdirs-recursive \
+	pdf-recursive ps-recursive uninstall-info-recursive \
+	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -428,7 +132,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
-EXEEXT = .exe
+EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
@@ -449,6 +153,7 @@ MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
 ML_BENCHMARKING_FALSE = @ML_BENCHMARKING_FALSE@
 ML_BENCHMARKING_TRUE = @ML_BENCHMARKING_TRUE@
+ML_BUILD_DIRECTORY = @ML_BUILD_DIRECTORY@
 ML_BUILD_EXAMPLES_FALSE = @ML_BUILD_EXAMPLES_FALSE@
 ML_BUILD_EXAMPLES_TRUE = @ML_BUILD_EXAMPLES_TRUE@
 ML_STANDALONE_MODE_FALSE = @ML_STANDALONE_MODE_FALSE@
@@ -533,223 +238,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-
-# One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
-# of the  following primaries that the pattern is 
-# "(Exe_name)_(PRIMARY_NAME) = ").
-# List all source files needed to compile the exe.
-mlguide_SOURCES = $(srcdir)/mlguide.c
-mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
-@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_SOURCES = $(srcdir)/ml_aztec_simple.c
-@ML_STANDALONE_MODE_FALSE@ml_example1d_SOURCES = $(srcdir)/ml_example1d.c
-@ML_STANDALONE_MODE_FALSE@ml_example1dGS_SOURCES = $(srcdir)/ml_example1dGS.c
-@ML_STANDALONE_MODE_FALSE@ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
-@ML_STANDALONE_MODE_FALSE@ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
-@ML_STANDALONE_MODE_FALSE@ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
-@ML_STANDALONE_MODE_FALSE@ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
-@ML_STANDALONE_MODE_FALSE@ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
-@ML_STANDALONE_MODE_FALSE@ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
-@ML_STANDALONE_MODE_FALSE@ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_SOURCES = $(srcdir)/ml_preconditioner.cpp
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_SOURCES = $(srcdir)/ml_2level_DD.cpp
-@ML_STANDALONE_MODE_FALSE@ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
-@ML_STANDALONE_MODE_FALSE@ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_SOURCES = $(srcdir)/ml_EpetraVbr.cpp
-@ML_STANDALONE_MODE_FALSE@ml_viz_SOURCES = $(srcdir)/ml_viz.cpp
-@ML_STANDALONE_MODE_FALSE@ml_analyze_SOURCES = $(srcdir)/ml_analyze.cpp
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_SOURCES = $(srcdir)/ml_maxwell.cpp
-@ML_STANDALONE_MODE_FALSE@ml_example_elasticity_SOURCES = $(srcdir)/ml_example_elasticity.c
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_SOURCES = $(srcdir)/ml_read_matrix_AIJ.cpp
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
-@ML_USING_AZTECOO_FALSE@aztecoo_incdir = 
-
-# One DEPENDENCIES primary is needed for each exe listed above.  List any
-# libraries that the exe depends on.  (This primary is not absolutely
-# essential.)
-
-# This is not working.  
-# It should be ok to omit it because when _DEPENDENCIES is not
-# specified, the value is calculated from the corresponding _LDADD value.
-#if ML_STANDALONE_MODE
-#mlguide_DEPENDENCIES =
-#else
-#mlguide_DEPENDENCIES = ${ml_integrated_dependencies}
-#endif
-@ML_USING_AZTECOO_TRUE@aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
-@ML_USING_AMESOS_FALSE@amesos_incdir = 
-@ML_USING_AMESOS_TRUE@amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
-@ML_USING_IFPACK_FALSE@ifpack_incdir = 
-@ML_USING_IFPACK_TRUE@ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src 
-@ML_USING_TEUCHOS_TRUE@teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
-@ML_USING_TEUCHOS_FALSE@teucho_incdir = 
-@ML_USING_ANASAZI_FALSE@anasazi_incdir = 
-@ML_USING_ANASAZI_TRUE@anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
-@ML_USING_TRIUTILS_FALSE@triutils_incdir = 
-@ML_USING_TRIUTILS_TRUE@triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
-@ML_USING_EPETRA_FALSE@epetra_incdir = 
-@ML_USING_EPETRA_TRUE@epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
-ml_common_include_locations = -I$(top_srcdir)/src/Include \
-                   -I$(top_srcdir)/src/Coarsen            \
-                   -I$(top_srcdir)/src/Comm               \
-                   -I$(top_srcdir)/src/FEGrid             \
-                   -I$(top_srcdir)/src/Include            \
-                   -I$(top_srcdir)/src/Krylov             \
-                   -I$(top_srcdir)/src/Main               \
-                   -I$(top_srcdir)/src/Operator           \
-                   -I$(top_srcdir)/src/Smoother           \
-                   -I$(top_srcdir)/src/Utils              \
-	           $(aztecoo_incdir) \
-	           $(ifpack_incdir) \
-	           $(amesos_incdir) \
-	           $(teuchos_incdir) \
-	           $(anasazi_incdir) \
-	           $(triutils_incdir) \
-	           $(epetra_incdir)
-
-@ML_STANDALONE_MODE_FALSE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-
-#I'm defining the linker in this way, rather than
-#       ml_invididual_example_LINK = ${CC}
-#because the above definition will not use the compiler and loader flags
-#specified in AM_CFLAGS, CFLAGS, AM_LDFLAGS, and LDFLAGS.
-@ML_STANDALONE_MODE_TRUE@mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-#
-@ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib)        \
-@ML_STANDALONE_MODE_FALSE@                $(ifpack_lib)         \
-@ML_STANDALONE_MODE_FALSE@                $(amesos_lib)         \
-@ML_STANDALONE_MODE_FALSE@                $(anasazi_lib)        \
-@ML_STANDALONE_MODE_FALSE@                $(teuchos_lib)        \
-@ML_STANDALONE_MODE_FALSE@                $(triutils_lib)       \
-@ML_STANDALONE_MODE_FALSE@                $(epetra_lib)         \
-@ML_STANDALONE_MODE_FALSE@                $(LIBS)               \
-@ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)        \
-@ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)          \
-@ML_STANDALONE_MODE_FALSE@                $(FLIBS)
-
-@ML_STANDALONE_MODE_TRUE@ml_libs = $(top_builddir)/src/libml.a        \
-@ML_STANDALONE_MODE_TRUE@                $(LIBS)             \
-@ML_STANDALONE_MODE_TRUE@                $(LAPACK_LIBS)                            \
-@ML_STANDALONE_MODE_TRUE@                $(BLAS_LIBS)                            \
-@ML_STANDALONE_MODE_TRUE@                $(FLIBS)
-
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_FALSE@aztecoo_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_TRUE@aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_FALSE@epetra_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_TRUE@epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_FALSE@amesos_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_FALSE@anasazi_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_FALSE@triutils_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_FALSE@ifpack_lib = 
-@ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
-
-# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-# any -I's necessary for building the exe.
-
-# One LDADD primary can be defined for each exe listed above.  Include any
-# LDFLAGS  necessary for building the exe.
-mlguide_CFLAGS = ${ml_common_include_locations}
-mlguide_LDADD = ${ml_libs}
-mlguide_LINK = ${mllink}
-mlguide_par_CFLAGS = ${ml_common_include_locations}
-mlguide_par_LDADD = ${ml_libs}
-mlguide_par_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_aztec_simple_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example1d_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example1d_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example1d_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example1dGS_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example1dGS_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example1dGS_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example2d_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example2d_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example2d_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example3d_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example3d_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example3d_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_simple_max_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_simple_max_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_simple_max_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_readfile_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_readfile_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_readfile_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_read_elas_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_read_elas_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_read_elas_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_recirc_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_recirc_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_recirc_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_read_salsa_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_read_salsa_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_read_salsa_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_preconditioner_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_2level_DD_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_LDADD = ${ml_libs} 
-@ML_STANDALONE_MODE_FALSE@ml_AztecMsr_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_operator_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_operator_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_operator_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_operator_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_filtering_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_filtering_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_filtering_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_filtering_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_user_aggr_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_EpetraVbr_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_viz_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_viz_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_viz_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_viz_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_analyze_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_analyze_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_analyze_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_analyze_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_maxwell_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_CPPFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_CXXFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_LINK = ${mllink}
-@ML_STANDALONE_MODE_FALSE@ml_example_elasticity_CFLAGS = ${ml_common_include_locations}
-@ML_STANDALONE_MODE_FALSE@ml_example_elasticity_LDADD = ${ml_libs}
-@ML_STANDALONE_MODE_FALSE@ml_example_elasticity_LINK = ${mllink}
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LDADD = ${ml_libs}
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LINK = ${mllink}
-all: all-am
+SUBDIRS = Advanced BasicExamples Elasticity MatrixFormats MatrixReading Maxwell StandAlone MultipleRHS TwoLevelDD Other Visualization
+all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -779,569 +271,66 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-clean-noinstPROGRAMS:
-	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-ml_2level_DD$(EXEEXT): $(ml_2level_DD_OBJECTS) $(ml_2level_DD_DEPENDENCIES) 
-	@rm -f ml_2level_DD$(EXEEXT)
-	$(ml_2level_DD_LINK) $(ml_2level_DD_LDFLAGS) $(ml_2level_DD_OBJECTS) $(ml_2level_DD_LDADD) $(LIBS)
-ml_AztecMsr$(EXEEXT): $(ml_AztecMsr_OBJECTS) $(ml_AztecMsr_DEPENDENCIES) 
-	@rm -f ml_AztecMsr$(EXEEXT)
-	$(ml_AztecMsr_LINK) $(ml_AztecMsr_LDFLAGS) $(ml_AztecMsr_OBJECTS) $(ml_AztecMsr_LDADD) $(LIBS)
-ml_EpetraVbr$(EXEEXT): $(ml_EpetraVbr_OBJECTS) $(ml_EpetraVbr_DEPENDENCIES) 
-	@rm -f ml_EpetraVbr$(EXEEXT)
-	$(ml_EpetraVbr_LINK) $(ml_EpetraVbr_LDFLAGS) $(ml_EpetraVbr_OBJECTS) $(ml_EpetraVbr_LDADD) $(LIBS)
-ml_analyze$(EXEEXT): $(ml_analyze_OBJECTS) $(ml_analyze_DEPENDENCIES) 
-	@rm -f ml_analyze$(EXEEXT)
-	$(ml_analyze_LINK) $(ml_analyze_LDFLAGS) $(ml_analyze_OBJECTS) $(ml_analyze_LDADD) $(LIBS)
-ml_aztec_simple$(EXEEXT): $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_DEPENDENCIES) 
-	@rm -f ml_aztec_simple$(EXEEXT)
-	$(ml_aztec_simple_LINK) $(ml_aztec_simple_LDFLAGS) $(ml_aztec_simple_OBJECTS) $(ml_aztec_simple_LDADD) $(LIBS)
-ml_example1d$(EXEEXT): $(ml_example1d_OBJECTS) $(ml_example1d_DEPENDENCIES) 
-	@rm -f ml_example1d$(EXEEXT)
-	$(ml_example1d_LINK) $(ml_example1d_LDFLAGS) $(ml_example1d_OBJECTS) $(ml_example1d_LDADD) $(LIBS)
-ml_example1dGS$(EXEEXT): $(ml_example1dGS_OBJECTS) $(ml_example1dGS_DEPENDENCIES) 
-	@rm -f ml_example1dGS$(EXEEXT)
-	$(ml_example1dGS_LINK) $(ml_example1dGS_LDFLAGS) $(ml_example1dGS_OBJECTS) $(ml_example1dGS_LDADD) $(LIBS)
-ml_example2d$(EXEEXT): $(ml_example2d_OBJECTS) $(ml_example2d_DEPENDENCIES) 
-	@rm -f ml_example2d$(EXEEXT)
-	$(ml_example2d_LINK) $(ml_example2d_LDFLAGS) $(ml_example2d_OBJECTS) $(ml_example2d_LDADD) $(LIBS)
-ml_example3d$(EXEEXT): $(ml_example3d_OBJECTS) $(ml_example3d_DEPENDENCIES) 
-	@rm -f ml_example3d$(EXEEXT)
-	$(ml_example3d_LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
-ml_example_elasticity$(EXEEXT): $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_DEPENDENCIES) 
-	@rm -f ml_example_elasticity$(EXEEXT)
-	$(ml_example_elasticity_LINK) $(ml_example_elasticity_LDFLAGS) $(ml_example_elasticity_OBJECTS) $(ml_example_elasticity_LDADD) $(LIBS)
-ml_filtering$(EXEEXT): $(ml_filtering_OBJECTS) $(ml_filtering_DEPENDENCIES) 
-	@rm -f ml_filtering$(EXEEXT)
-	$(ml_filtering_LINK) $(ml_filtering_LDFLAGS) $(ml_filtering_OBJECTS) $(ml_filtering_LDADD) $(LIBS)
-ml_maxwell$(EXEEXT): $(ml_maxwell_OBJECTS) $(ml_maxwell_DEPENDENCIES) 
-	@rm -f ml_maxwell$(EXEEXT)
-	$(ml_maxwell_LINK) $(ml_maxwell_LDFLAGS) $(ml_maxwell_OBJECTS) $(ml_maxwell_LDADD) $(LIBS)
-ml_multiple_rhs$(EXEEXT): $(ml_multiple_rhs_OBJECTS) $(ml_multiple_rhs_DEPENDENCIES) 
-	@rm -f ml_multiple_rhs$(EXEEXT)
-	$(ml_multiple_rhs_LINK) $(ml_multiple_rhs_LDFLAGS) $(ml_multiple_rhs_OBJECTS) $(ml_multiple_rhs_LDADD) $(LIBS)
-ml_operator$(EXEEXT): $(ml_operator_OBJECTS) $(ml_operator_DEPENDENCIES) 
-	@rm -f ml_operator$(EXEEXT)
-	$(ml_operator_LINK) $(ml_operator_LDFLAGS) $(ml_operator_OBJECTS) $(ml_operator_LDADD) $(LIBS)
-ml_preconditioner$(EXEEXT): $(ml_preconditioner_OBJECTS) $(ml_preconditioner_DEPENDENCIES) 
-	@rm -f ml_preconditioner$(EXEEXT)
-	$(ml_preconditioner_LINK) $(ml_preconditioner_LDFLAGS) $(ml_preconditioner_OBJECTS) $(ml_preconditioner_LDADD) $(LIBS)
-ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
-	@rm -f ml_read_elas$(EXEEXT)
-	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
-ml_read_matrix_AIJ$(EXEEXT): $(ml_read_matrix_AIJ_OBJECTS) $(ml_read_matrix_AIJ_DEPENDENCIES) 
-	@rm -f ml_read_matrix_AIJ$(EXEEXT)
-	$(ml_read_matrix_AIJ_LINK) $(ml_read_matrix_AIJ_LDFLAGS) $(ml_read_matrix_AIJ_OBJECTS) $(ml_read_matrix_AIJ_LDADD) $(LIBS)
-ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
-	@rm -f ml_read_maxwell$(EXEEXT)
-	$(ml_read_maxwell_LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
-ml_read_salsa$(EXEEXT): $(ml_read_salsa_OBJECTS) $(ml_read_salsa_DEPENDENCIES) 
-	@rm -f ml_read_salsa$(EXEEXT)
-	$(ml_read_salsa_LINK) $(ml_read_salsa_LDFLAGS) $(ml_read_salsa_OBJECTS) $(ml_read_salsa_LDADD) $(LIBS)
-ml_readfile$(EXEEXT): $(ml_readfile_OBJECTS) $(ml_readfile_DEPENDENCIES) 
-	@rm -f ml_readfile$(EXEEXT)
-	$(ml_readfile_LINK) $(ml_readfile_LDFLAGS) $(ml_readfile_OBJECTS) $(ml_readfile_LDADD) $(LIBS)
-ml_recirc$(EXEEXT): $(ml_recirc_OBJECTS) $(ml_recirc_DEPENDENCIES) 
-	@rm -f ml_recirc$(EXEEXT)
-	$(ml_recirc_LINK) $(ml_recirc_LDFLAGS) $(ml_recirc_OBJECTS) $(ml_recirc_LDADD) $(LIBS)
-ml_simple_max$(EXEEXT): $(ml_simple_max_OBJECTS) $(ml_simple_max_DEPENDENCIES) 
-	@rm -f ml_simple_max$(EXEEXT)
-	$(ml_simple_max_LINK) $(ml_simple_max_LDFLAGS) $(ml_simple_max_OBJECTS) $(ml_simple_max_LDADD) $(LIBS)
-ml_user_aggr$(EXEEXT): $(ml_user_aggr_OBJECTS) $(ml_user_aggr_DEPENDENCIES) 
-	@rm -f ml_user_aggr$(EXEEXT)
-	$(ml_user_aggr_LINK) $(ml_user_aggr_LDFLAGS) $(ml_user_aggr_OBJECTS) $(ml_user_aggr_LDADD) $(LIBS)
-ml_viz$(EXEEXT): $(ml_viz_OBJECTS) $(ml_viz_DEPENDENCIES) 
-	@rm -f ml_viz$(EXEEXT)
-	$(ml_viz_LINK) $(ml_viz_LDFLAGS) $(ml_viz_OBJECTS) $(ml_viz_LDADD) $(LIBS)
-mlguide$(EXEEXT): $(mlguide_OBJECTS) $(mlguide_DEPENDENCIES) 
-	@rm -f mlguide$(EXEEXT)
-	$(mlguide_LINK) $(mlguide_LDFLAGS) $(mlguide_OBJECTS) $(mlguide_LDADD) $(LIBS)
-mlguide_par$(EXEEXT): $(mlguide_par_OBJECTS) $(mlguide_par_DEPENDENCIES) 
-	@rm -f mlguide_par$(EXEEXT)
-	$(mlguide_par_LINK) $(mlguide_par_LDFLAGS) $(mlguide_par_OBJECTS) $(mlguide_par_LDADD) $(LIBS)
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_analyze-ml_analyze.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1d-ml_example1d.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_filtering-ml_filtering.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_maxwell-ml_maxwell.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_operator-ml_operator.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_recirc-ml_recirc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_simple_max-ml_simple_max.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_viz-ml_viz.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide-mlguide.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mlguide_par-mlguide_par.Po@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-ml_aztec_simple-ml_aztec_simple.o: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.o -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.o `test -f '$(srcdir)/ml_aztec_simple.c' || echo '$(srcdir)/'`$(srcdir)/ml_aztec_simple.c
-
-ml_aztec_simple-ml_aztec_simple.obj: $(srcdir)/ml_aztec_simple.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -MT ml_aztec_simple-ml_aztec_simple.obj -MD -MP -MF "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo" "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po"; else rm -f "$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_aztec_simple.c' object='ml_aztec_simple-ml_aztec_simple.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.Po' tmpdepfile='$(DEPDIR)/ml_aztec_simple-ml_aztec_simple.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_aztec_simple_CFLAGS) $(CFLAGS) -c -o ml_aztec_simple-ml_aztec_simple.obj `if test -f '$(srcdir)/ml_aztec_simple.c'; then $(CYGPATH_W) '$(srcdir)/ml_aztec_simple.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_aztec_simple.c'; fi`
-
-ml_example1d-ml_example1d.o: $(srcdir)/ml_example1d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1d_CFLAGS) $(CFLAGS) -MT ml_example1d-ml_example1d.o -MD -MP -MF "$(DEPDIR)/ml_example1d-ml_example1d.Tpo" -c -o ml_example1d-ml_example1d.o `test -f '$(srcdir)/ml_example1d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example1d.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example1d-ml_example1d.Tpo" "$(DEPDIR)/ml_example1d-ml_example1d.Po"; else rm -f "$(DEPDIR)/ml_example1d-ml_example1d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example1d.c' object='ml_example1d-ml_example1d.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example1d-ml_example1d.Po' tmpdepfile='$(DEPDIR)/ml_example1d-ml_example1d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1d_CFLAGS) $(CFLAGS) -c -o ml_example1d-ml_example1d.o `test -f '$(srcdir)/ml_example1d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example1d.c
-
-ml_example1d-ml_example1d.obj: $(srcdir)/ml_example1d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1d_CFLAGS) $(CFLAGS) -MT ml_example1d-ml_example1d.obj -MD -MP -MF "$(DEPDIR)/ml_example1d-ml_example1d.Tpo" -c -o ml_example1d-ml_example1d.obj `if test -f '$(srcdir)/ml_example1d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example1d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example1d.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example1d-ml_example1d.Tpo" "$(DEPDIR)/ml_example1d-ml_example1d.Po"; else rm -f "$(DEPDIR)/ml_example1d-ml_example1d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example1d.c' object='ml_example1d-ml_example1d.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example1d-ml_example1d.Po' tmpdepfile='$(DEPDIR)/ml_example1d-ml_example1d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1d_CFLAGS) $(CFLAGS) -c -o ml_example1d-ml_example1d.obj `if test -f '$(srcdir)/ml_example1d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example1d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example1d.c'; fi`
-
-ml_example1dGS-ml_example1dGS.o: $(srcdir)/ml_example1dGS.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1dGS_CFLAGS) $(CFLAGS) -MT ml_example1dGS-ml_example1dGS.o -MD -MP -MF "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo" -c -o ml_example1dGS-ml_example1dGS.o `test -f '$(srcdir)/ml_example1dGS.c' || echo '$(srcdir)/'`$(srcdir)/ml_example1dGS.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo" "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po"; else rm -f "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example1dGS.c' object='ml_example1dGS-ml_example1dGS.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po' tmpdepfile='$(DEPDIR)/ml_example1dGS-ml_example1dGS.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1dGS_CFLAGS) $(CFLAGS) -c -o ml_example1dGS-ml_example1dGS.o `test -f '$(srcdir)/ml_example1dGS.c' || echo '$(srcdir)/'`$(srcdir)/ml_example1dGS.c
-
-ml_example1dGS-ml_example1dGS.obj: $(srcdir)/ml_example1dGS.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1dGS_CFLAGS) $(CFLAGS) -MT ml_example1dGS-ml_example1dGS.obj -MD -MP -MF "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo" -c -o ml_example1dGS-ml_example1dGS.obj `if test -f '$(srcdir)/ml_example1dGS.c'; then $(CYGPATH_W) '$(srcdir)/ml_example1dGS.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example1dGS.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo" "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po"; else rm -f "$(DEPDIR)/ml_example1dGS-ml_example1dGS.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example1dGS.c' object='ml_example1dGS-ml_example1dGS.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po' tmpdepfile='$(DEPDIR)/ml_example1dGS-ml_example1dGS.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example1dGS_CFLAGS) $(CFLAGS) -c -o ml_example1dGS-ml_example1dGS.obj `if test -f '$(srcdir)/ml_example1dGS.c'; then $(CYGPATH_W) '$(srcdir)/ml_example1dGS.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example1dGS.c'; fi`
-
-ml_example2d-ml_example2d.o: $(srcdir)/ml_example2d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example2d_CFLAGS) $(CFLAGS) -MT ml_example2d-ml_example2d.o -MD -MP -MF "$(DEPDIR)/ml_example2d-ml_example2d.Tpo" -c -o ml_example2d-ml_example2d.o `test -f '$(srcdir)/ml_example2d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example2d.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example2d-ml_example2d.Tpo" "$(DEPDIR)/ml_example2d-ml_example2d.Po"; else rm -f "$(DEPDIR)/ml_example2d-ml_example2d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example2d.c' object='ml_example2d-ml_example2d.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example2d-ml_example2d.Po' tmpdepfile='$(DEPDIR)/ml_example2d-ml_example2d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example2d_CFLAGS) $(CFLAGS) -c -o ml_example2d-ml_example2d.o `test -f '$(srcdir)/ml_example2d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example2d.c
-
-ml_example2d-ml_example2d.obj: $(srcdir)/ml_example2d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example2d_CFLAGS) $(CFLAGS) -MT ml_example2d-ml_example2d.obj -MD -MP -MF "$(DEPDIR)/ml_example2d-ml_example2d.Tpo" -c -o ml_example2d-ml_example2d.obj `if test -f '$(srcdir)/ml_example2d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example2d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example2d.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example2d-ml_example2d.Tpo" "$(DEPDIR)/ml_example2d-ml_example2d.Po"; else rm -f "$(DEPDIR)/ml_example2d-ml_example2d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example2d.c' object='ml_example2d-ml_example2d.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example2d-ml_example2d.Po' tmpdepfile='$(DEPDIR)/ml_example2d-ml_example2d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example2d_CFLAGS) $(CFLAGS) -c -o ml_example2d-ml_example2d.obj `if test -f '$(srcdir)/ml_example2d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example2d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example2d.c'; fi`
-
-ml_example3d-ml_example3d.o: $(srcdir)/ml_example3d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -MT ml_example3d-ml_example3d.o -MD -MP -MF "$(DEPDIR)/ml_example3d-ml_example3d.Tpo" -c -o ml_example3d-ml_example3d.o `test -f '$(srcdir)/ml_example3d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example3d.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example3d-ml_example3d.Tpo" "$(DEPDIR)/ml_example3d-ml_example3d.Po"; else rm -f "$(DEPDIR)/ml_example3d-ml_example3d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example3d.c' object='ml_example3d-ml_example3d.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example3d-ml_example3d.Po' tmpdepfile='$(DEPDIR)/ml_example3d-ml_example3d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -c -o ml_example3d-ml_example3d.o `test -f '$(srcdir)/ml_example3d.c' || echo '$(srcdir)/'`$(srcdir)/ml_example3d.c
-
-ml_example3d-ml_example3d.obj: $(srcdir)/ml_example3d.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -MT ml_example3d-ml_example3d.obj -MD -MP -MF "$(DEPDIR)/ml_example3d-ml_example3d.Tpo" -c -o ml_example3d-ml_example3d.obj `if test -f '$(srcdir)/ml_example3d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example3d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example3d.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example3d-ml_example3d.Tpo" "$(DEPDIR)/ml_example3d-ml_example3d.Po"; else rm -f "$(DEPDIR)/ml_example3d-ml_example3d.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example3d.c' object='ml_example3d-ml_example3d.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example3d-ml_example3d.Po' tmpdepfile='$(DEPDIR)/ml_example3d-ml_example3d.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example3d_CFLAGS) $(CFLAGS) -c -o ml_example3d-ml_example3d.obj `if test -f '$(srcdir)/ml_example3d.c'; then $(CYGPATH_W) '$(srcdir)/ml_example3d.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example3d.c'; fi`
-
-ml_example_elasticity-ml_example_elasticity.o: $(srcdir)/ml_example_elasticity.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example_elasticity_CFLAGS) $(CFLAGS) -MT ml_example_elasticity-ml_example_elasticity.o -MD -MP -MF "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo" -c -o ml_example_elasticity-ml_example_elasticity.o `test -f '$(srcdir)/ml_example_elasticity.c' || echo '$(srcdir)/'`$(srcdir)/ml_example_elasticity.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo" "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po"; else rm -f "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example_elasticity.c' object='ml_example_elasticity-ml_example_elasticity.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po' tmpdepfile='$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example_elasticity_CFLAGS) $(CFLAGS) -c -o ml_example_elasticity-ml_example_elasticity.o `test -f '$(srcdir)/ml_example_elasticity.c' || echo '$(srcdir)/'`$(srcdir)/ml_example_elasticity.c
-
-ml_example_elasticity-ml_example_elasticity.obj: $(srcdir)/ml_example_elasticity.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example_elasticity_CFLAGS) $(CFLAGS) -MT ml_example_elasticity-ml_example_elasticity.obj -MD -MP -MF "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo" -c -o ml_example_elasticity-ml_example_elasticity.obj `if test -f '$(srcdir)/ml_example_elasticity.c'; then $(CYGPATH_W) '$(srcdir)/ml_example_elasticity.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_elasticity.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo" "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po"; else rm -f "$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_example_elasticity.c' object='ml_example_elasticity-ml_example_elasticity.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.Po' tmpdepfile='$(DEPDIR)/ml_example_elasticity-ml_example_elasticity.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_example_elasticity_CFLAGS) $(CFLAGS) -c -o ml_example_elasticity-ml_example_elasticity.obj `if test -f '$(srcdir)/ml_example_elasticity.c'; then $(CYGPATH_W) '$(srcdir)/ml_example_elasticity.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_example_elasticity.c'; fi`
-
-ml_read_elas-ml_read_elas.o: $(srcdir)/ml_read_elas.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -MT ml_read_elas-ml_read_elas.o -MD -MP -MF "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" -c -o ml_read_elas-ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas-ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas-ml_read_elas.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas-ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas-ml_read_elas.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.o `test -f '$(srcdir)/ml_read_elas.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_elas.c
-
-ml_read_elas-ml_read_elas.obj: $(srcdir)/ml_read_elas.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -MT ml_read_elas-ml_read_elas.obj -MD -MP -MF "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" -c -o ml_read_elas-ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo" "$(DEPDIR)/ml_read_elas-ml_read_elas.Po"; else rm -f "$(DEPDIR)/ml_read_elas-ml_read_elas.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_elas.c' object='ml_read_elas-ml_read_elas.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_elas-ml_read_elas.Po' tmpdepfile='$(DEPDIR)/ml_read_elas-ml_read_elas.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_elas_CFLAGS) $(CFLAGS) -c -o ml_read_elas-ml_read_elas.obj `if test -f '$(srcdir)/ml_read_elas.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_elas.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_elas.c'; fi`
-
-ml_read_maxwell-ml_read_maxwell.o: $(srcdir)/ml_read_maxwell.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -MT ml_read_maxwell-ml_read_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po"; else rm -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.o `test -f '$(srcdir)/ml_read_maxwell.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_maxwell.c
-
-ml_read_maxwell-ml_read_maxwell.obj: $(srcdir)/ml_read_maxwell.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -MT ml_read_maxwell-ml_read_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" -c -o ml_read_maxwell-ml_read_maxwell.obj `if test -f '$(srcdir)/ml_read_maxwell.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_maxwell.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_maxwell.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo" "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po"; else rm -f "$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_maxwell.c' object='ml_read_maxwell-ml_read_maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_maxwell_CFLAGS) $(CFLAGS) -c -o ml_read_maxwell-ml_read_maxwell.obj `if test -f '$(srcdir)/ml_read_maxwell.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_maxwell.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_maxwell.c'; fi`
-
-ml_read_salsa-ml_read_salsa.o: $(srcdir)/ml_read_salsa.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -MT ml_read_salsa-ml_read_salsa.o -MD -MP -MF "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" -c -o ml_read_salsa-ml_read_salsa.o `test -f '$(srcdir)/ml_read_salsa.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_salsa.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po"; else rm -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_salsa.c' object='ml_read_salsa-ml_read_salsa.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po' tmpdepfile='$(DEPDIR)/ml_read_salsa-ml_read_salsa.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -c -o ml_read_salsa-ml_read_salsa.o `test -f '$(srcdir)/ml_read_salsa.c' || echo '$(srcdir)/'`$(srcdir)/ml_read_salsa.c
-
-ml_read_salsa-ml_read_salsa.obj: $(srcdir)/ml_read_salsa.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -MT ml_read_salsa-ml_read_salsa.obj -MD -MP -MF "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" -c -o ml_read_salsa-ml_read_salsa.obj `if test -f '$(srcdir)/ml_read_salsa.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_salsa.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_salsa.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo" "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po"; else rm -f "$(DEPDIR)/ml_read_salsa-ml_read_salsa.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_read_salsa.c' object='ml_read_salsa-ml_read_salsa.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po' tmpdepfile='$(DEPDIR)/ml_read_salsa-ml_read_salsa.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_read_salsa_CFLAGS) $(CFLAGS) -c -o ml_read_salsa-ml_read_salsa.obj `if test -f '$(srcdir)/ml_read_salsa.c'; then $(CYGPATH_W) '$(srcdir)/ml_read_salsa.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_salsa.c'; fi`
-
-ml_readfile-ml_readfile.o: $(srcdir)/ml_readfile.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -MT ml_readfile-ml_readfile.o -MD -MP -MF "$(DEPDIR)/ml_readfile-ml_readfile.Tpo" -c -o ml_readfile-ml_readfile.o `test -f '$(srcdir)/ml_readfile.c' || echo '$(srcdir)/'`$(srcdir)/ml_readfile.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readfile-ml_readfile.Tpo" "$(DEPDIR)/ml_readfile-ml_readfile.Po"; else rm -f "$(DEPDIR)/ml_readfile-ml_readfile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readfile.c' object='ml_readfile-ml_readfile.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readfile-ml_readfile.Po' tmpdepfile='$(DEPDIR)/ml_readfile-ml_readfile.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -c -o ml_readfile-ml_readfile.o `test -f '$(srcdir)/ml_readfile.c' || echo '$(srcdir)/'`$(srcdir)/ml_readfile.c
-
-ml_readfile-ml_readfile.obj: $(srcdir)/ml_readfile.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -MT ml_readfile-ml_readfile.obj -MD -MP -MF "$(DEPDIR)/ml_readfile-ml_readfile.Tpo" -c -o ml_readfile-ml_readfile.obj `if test -f '$(srcdir)/ml_readfile.c'; then $(CYGPATH_W) '$(srcdir)/ml_readfile.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readfile.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_readfile-ml_readfile.Tpo" "$(DEPDIR)/ml_readfile-ml_readfile.Po"; else rm -f "$(DEPDIR)/ml_readfile-ml_readfile.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_readfile.c' object='ml_readfile-ml_readfile.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_readfile-ml_readfile.Po' tmpdepfile='$(DEPDIR)/ml_readfile-ml_readfile.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_readfile_CFLAGS) $(CFLAGS) -c -o ml_readfile-ml_readfile.obj `if test -f '$(srcdir)/ml_readfile.c'; then $(CYGPATH_W) '$(srcdir)/ml_readfile.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_readfile.c'; fi`
-
-ml_recirc-ml_recirc.o: $(srcdir)/ml_recirc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_recirc_CFLAGS) $(CFLAGS) -MT ml_recirc-ml_recirc.o -MD -MP -MF "$(DEPDIR)/ml_recirc-ml_recirc.Tpo" -c -o ml_recirc-ml_recirc.o `test -f '$(srcdir)/ml_recirc.c' || echo '$(srcdir)/'`$(srcdir)/ml_recirc.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_recirc-ml_recirc.Tpo" "$(DEPDIR)/ml_recirc-ml_recirc.Po"; else rm -f "$(DEPDIR)/ml_recirc-ml_recirc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_recirc.c' object='ml_recirc-ml_recirc.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_recirc-ml_recirc.Po' tmpdepfile='$(DEPDIR)/ml_recirc-ml_recirc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_recirc_CFLAGS) $(CFLAGS) -c -o ml_recirc-ml_recirc.o `test -f '$(srcdir)/ml_recirc.c' || echo '$(srcdir)/'`$(srcdir)/ml_recirc.c
-
-ml_recirc-ml_recirc.obj: $(srcdir)/ml_recirc.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_recirc_CFLAGS) $(CFLAGS) -MT ml_recirc-ml_recirc.obj -MD -MP -MF "$(DEPDIR)/ml_recirc-ml_recirc.Tpo" -c -o ml_recirc-ml_recirc.obj `if test -f '$(srcdir)/ml_recirc.c'; then $(CYGPATH_W) '$(srcdir)/ml_recirc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_recirc.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_recirc-ml_recirc.Tpo" "$(DEPDIR)/ml_recirc-ml_recirc.Po"; else rm -f "$(DEPDIR)/ml_recirc-ml_recirc.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_recirc.c' object='ml_recirc-ml_recirc.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_recirc-ml_recirc.Po' tmpdepfile='$(DEPDIR)/ml_recirc-ml_recirc.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_recirc_CFLAGS) $(CFLAGS) -c -o ml_recirc-ml_recirc.obj `if test -f '$(srcdir)/ml_recirc.c'; then $(CYGPATH_W) '$(srcdir)/ml_recirc.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_recirc.c'; fi`
-
-ml_simple_max-ml_simple_max.o: $(srcdir)/ml_simple_max.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_simple_max_CFLAGS) $(CFLAGS) -MT ml_simple_max-ml_simple_max.o -MD -MP -MF "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo" -c -o ml_simple_max-ml_simple_max.o `test -f '$(srcdir)/ml_simple_max.c' || echo '$(srcdir)/'`$(srcdir)/ml_simple_max.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo" "$(DEPDIR)/ml_simple_max-ml_simple_max.Po"; else rm -f "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_simple_max.c' object='ml_simple_max-ml_simple_max.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_simple_max-ml_simple_max.Po' tmpdepfile='$(DEPDIR)/ml_simple_max-ml_simple_max.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_simple_max_CFLAGS) $(CFLAGS) -c -o ml_simple_max-ml_simple_max.o `test -f '$(srcdir)/ml_simple_max.c' || echo '$(srcdir)/'`$(srcdir)/ml_simple_max.c
-
-ml_simple_max-ml_simple_max.obj: $(srcdir)/ml_simple_max.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_simple_max_CFLAGS) $(CFLAGS) -MT ml_simple_max-ml_simple_max.obj -MD -MP -MF "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo" -c -o ml_simple_max-ml_simple_max.obj `if test -f '$(srcdir)/ml_simple_max.c'; then $(CYGPATH_W) '$(srcdir)/ml_simple_max.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_simple_max.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo" "$(DEPDIR)/ml_simple_max-ml_simple_max.Po"; else rm -f "$(DEPDIR)/ml_simple_max-ml_simple_max.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ml_simple_max.c' object='ml_simple_max-ml_simple_max.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_simple_max-ml_simple_max.Po' tmpdepfile='$(DEPDIR)/ml_simple_max-ml_simple_max.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ml_simple_max_CFLAGS) $(CFLAGS) -c -o ml_simple_max-ml_simple_max.obj `if test -f '$(srcdir)/ml_simple_max.c'; then $(CYGPATH_W) '$(srcdir)/ml_simple_max.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_simple_max.c'; fi`
-
-mlguide-mlguide.o: $(srcdir)/mlguide.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -MT mlguide-mlguide.o -MD -MP -MF "$(DEPDIR)/mlguide-mlguide.Tpo" -c -o mlguide-mlguide.o `test -f '$(srcdir)/mlguide.c' || echo '$(srcdir)/'`$(srcdir)/mlguide.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide-mlguide.Tpo" "$(DEPDIR)/mlguide-mlguide.Po"; else rm -f "$(DEPDIR)/mlguide-mlguide.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide.c' object='mlguide-mlguide.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide-mlguide.Po' tmpdepfile='$(DEPDIR)/mlguide-mlguide.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -c -o mlguide-mlguide.o `test -f '$(srcdir)/mlguide.c' || echo '$(srcdir)/'`$(srcdir)/mlguide.c
-
-mlguide-mlguide.obj: $(srcdir)/mlguide.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -MT mlguide-mlguide.obj -MD -MP -MF "$(DEPDIR)/mlguide-mlguide.Tpo" -c -o mlguide-mlguide.obj `if test -f '$(srcdir)/mlguide.c'; then $(CYGPATH_W) '$(srcdir)/mlguide.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide-mlguide.Tpo" "$(DEPDIR)/mlguide-mlguide.Po"; else rm -f "$(DEPDIR)/mlguide-mlguide.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide.c' object='mlguide-mlguide.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide-mlguide.Po' tmpdepfile='$(DEPDIR)/mlguide-mlguide.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_CFLAGS) $(CFLAGS) -c -o mlguide-mlguide.obj `if test -f '$(srcdir)/mlguide.c'; then $(CYGPATH_W) '$(srcdir)/mlguide.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide.c'; fi`
-
-mlguide_par-mlguide_par.o: $(srcdir)/mlguide_par.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -MT mlguide_par-mlguide_par.o -MD -MP -MF "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" -c -o mlguide_par-mlguide_par.o `test -f '$(srcdir)/mlguide_par.c' || echo '$(srcdir)/'`$(srcdir)/mlguide_par.c; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" "$(DEPDIR)/mlguide_par-mlguide_par.Po"; else rm -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide_par.c' object='mlguide_par-mlguide_par.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide_par-mlguide_par.Po' tmpdepfile='$(DEPDIR)/mlguide_par-mlguide_par.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -c -o mlguide_par-mlguide_par.o `test -f '$(srcdir)/mlguide_par.c' || echo '$(srcdir)/'`$(srcdir)/mlguide_par.c
-
-mlguide_par-mlguide_par.obj: $(srcdir)/mlguide_par.c
-@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -MT mlguide_par-mlguide_par.obj -MD -MP -MF "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" -c -o mlguide_par-mlguide_par.obj `if test -f '$(srcdir)/mlguide_par.c'; then $(CYGPATH_W) '$(srcdir)/mlguide_par.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide_par.c'; fi`; \
-@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo" "$(DEPDIR)/mlguide_par-mlguide_par.Po"; else rm -f "$(DEPDIR)/mlguide_par-mlguide_par.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/mlguide_par.c' object='mlguide_par-mlguide_par.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/mlguide_par-mlguide_par.Po' tmpdepfile='$(DEPDIR)/mlguide_par-mlguide_par.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -c -o mlguide_par-mlguide_par.obj `if test -f '$(srcdir)/mlguide_par.c'; then $(CYGPATH_W) '$(srcdir)/mlguide_par.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/mlguide_par.c'; fi`
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ `$(CYGPATH_W) '$<'`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/$*.Tpo" "$(DEPDIR)/$*.Po"; else rm -f "$(DEPDIR)/$*.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-ml_2level_DD-ml_2level_DD.o: $(srcdir)/ml_2level_DD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -MT ml_2level_DD-ml_2level_DD.o -MD -MP -MF "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" -c -o ml_2level_DD-ml_2level_DD.o `test -f '$(srcdir)/ml_2level_DD.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_2level_DD.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po"; else rm -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_2level_DD.cpp' object='ml_2level_DD-ml_2level_DD.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po' tmpdepfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -c -o ml_2level_DD-ml_2level_DD.o `test -f '$(srcdir)/ml_2level_DD.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_2level_DD.cpp
-
-ml_2level_DD-ml_2level_DD.obj: $(srcdir)/ml_2level_DD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -MT ml_2level_DD-ml_2level_DD.obj -MD -MP -MF "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" -c -o ml_2level_DD-ml_2level_DD.obj `if test -f '$(srcdir)/ml_2level_DD.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_2level_DD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_2level_DD.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo" "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po"; else rm -f "$(DEPDIR)/ml_2level_DD-ml_2level_DD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_2level_DD.cpp' object='ml_2level_DD-ml_2level_DD.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.Po' tmpdepfile='$(DEPDIR)/ml_2level_DD-ml_2level_DD.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_2level_DD_CPPFLAGS) $(CPPFLAGS) $(ml_2level_DD_CXXFLAGS) $(CXXFLAGS) -c -o ml_2level_DD-ml_2level_DD.obj `if test -f '$(srcdir)/ml_2level_DD.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_2level_DD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_2level_DD.cpp'; fi`
-
-ml_AztecMsr-ml_AztecMsr.o: $(srcdir)/ml_AztecMsr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.o -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.o `test -f '$(srcdir)/ml_AztecMsr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_AztecMsr.cpp
-
-ml_AztecMsr-ml_AztecMsr.obj: $(srcdir)/ml_AztecMsr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -MT ml_AztecMsr-ml_AztecMsr.obj -MD -MP -MF "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo" "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po"; else rm -f "$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_AztecMsr.cpp' object='ml_AztecMsr-ml_AztecMsr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.Po' tmpdepfile='$(DEPDIR)/ml_AztecMsr-ml_AztecMsr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_AztecMsr_CPPFLAGS) $(CPPFLAGS) $(ml_AztecMsr_CXXFLAGS) $(CXXFLAGS) -c -o ml_AztecMsr-ml_AztecMsr.obj `if test -f '$(srcdir)/ml_AztecMsr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_AztecMsr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_AztecMsr.cpp'; fi`
-
-ml_EpetraVbr-ml_EpetraVbr.o: $(srcdir)/ml_EpetraVbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.o -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.o `test -f '$(srcdir)/ml_EpetraVbr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_EpetraVbr.cpp
-
-ml_EpetraVbr-ml_EpetraVbr.obj: $(srcdir)/ml_EpetraVbr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -MT ml_EpetraVbr-ml_EpetraVbr.obj -MD -MP -MF "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo" "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po"; else rm -f "$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_EpetraVbr.cpp' object='ml_EpetraVbr-ml_EpetraVbr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.Po' tmpdepfile='$(DEPDIR)/ml_EpetraVbr-ml_EpetraVbr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_EpetraVbr_CPPFLAGS) $(CPPFLAGS) $(ml_EpetraVbr_CXXFLAGS) $(CXXFLAGS) -c -o ml_EpetraVbr-ml_EpetraVbr.obj `if test -f '$(srcdir)/ml_EpetraVbr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_EpetraVbr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_EpetraVbr.cpp'; fi`
-
-ml_analyze-ml_analyze.o: $(srcdir)/ml_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.o -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.o `test -f '$(srcdir)/ml_analyze.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_analyze.cpp
-
-ml_analyze-ml_analyze.obj: $(srcdir)/ml_analyze.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -MT ml_analyze-ml_analyze.obj -MD -MP -MF "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo" "$(DEPDIR)/ml_analyze-ml_analyze.Po"; else rm -f "$(DEPDIR)/ml_analyze-ml_analyze.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_analyze.cpp' object='ml_analyze-ml_analyze.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_analyze-ml_analyze.Po' tmpdepfile='$(DEPDIR)/ml_analyze-ml_analyze.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_analyze_CPPFLAGS) $(CPPFLAGS) $(ml_analyze_CXXFLAGS) $(CXXFLAGS) -c -o ml_analyze-ml_analyze.obj `if test -f '$(srcdir)/ml_analyze.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_analyze.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_analyze.cpp'; fi`
-
-ml_filtering-ml_filtering.o: $(srcdir)/ml_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.o -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.o `test -f '$(srcdir)/ml_filtering.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_filtering.cpp
-
-ml_filtering-ml_filtering.obj: $(srcdir)/ml_filtering.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -MT ml_filtering-ml_filtering.obj -MD -MP -MF "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo" "$(DEPDIR)/ml_filtering-ml_filtering.Po"; else rm -f "$(DEPDIR)/ml_filtering-ml_filtering.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_filtering.cpp' object='ml_filtering-ml_filtering.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_filtering-ml_filtering.Po' tmpdepfile='$(DEPDIR)/ml_filtering-ml_filtering.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_filtering_CPPFLAGS) $(CPPFLAGS) $(ml_filtering_CXXFLAGS) $(CXXFLAGS) -c -o ml_filtering-ml_filtering.obj `if test -f '$(srcdir)/ml_filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_filtering.cpp'; fi`
-
-ml_maxwell-ml_maxwell.o: $(srcdir)/ml_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.o -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.o `test -f '$(srcdir)/ml_maxwell.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_maxwell.cpp
-
-ml_maxwell-ml_maxwell.obj: $(srcdir)/ml_maxwell.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -MT ml_maxwell-ml_maxwell.obj -MD -MP -MF "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo" "$(DEPDIR)/ml_maxwell-ml_maxwell.Po"; else rm -f "$(DEPDIR)/ml_maxwell-ml_maxwell.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_maxwell.cpp' object='ml_maxwell-ml_maxwell.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_maxwell-ml_maxwell.Po' tmpdepfile='$(DEPDIR)/ml_maxwell-ml_maxwell.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_maxwell_CPPFLAGS) $(CPPFLAGS) $(ml_maxwell_CXXFLAGS) $(CXXFLAGS) -c -o ml_maxwell-ml_maxwell.obj `if test -f '$(srcdir)/ml_maxwell.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_maxwell.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_maxwell.cpp'; fi`
-
-ml_multiple_rhs-ml_multiple_rhs.o: $(srcdir)/ml_multiple_rhs.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -MT ml_multiple_rhs-ml_multiple_rhs.o -MD -MP -MF "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo" -c -o ml_multiple_rhs-ml_multiple_rhs.o `test -f '$(srcdir)/ml_multiple_rhs.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_multiple_rhs.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo" "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po"; else rm -f "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_multiple_rhs.cpp' object='ml_multiple_rhs-ml_multiple_rhs.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po' tmpdepfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -c -o ml_multiple_rhs-ml_multiple_rhs.o `test -f '$(srcdir)/ml_multiple_rhs.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_multiple_rhs.cpp
-
-ml_multiple_rhs-ml_multiple_rhs.obj: $(srcdir)/ml_multiple_rhs.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -MT ml_multiple_rhs-ml_multiple_rhs.obj -MD -MP -MF "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo" -c -o ml_multiple_rhs-ml_multiple_rhs.obj `if test -f '$(srcdir)/ml_multiple_rhs.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_multiple_rhs.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_multiple_rhs.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo" "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po"; else rm -f "$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_multiple_rhs.cpp' object='ml_multiple_rhs-ml_multiple_rhs.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po' tmpdepfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -c -o ml_multiple_rhs-ml_multiple_rhs.obj `if test -f '$(srcdir)/ml_multiple_rhs.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_multiple_rhs.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_multiple_rhs.cpp'; fi`
-
-ml_operator-ml_operator.o: $(srcdir)/ml_operator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.o -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.o `test -f '$(srcdir)/ml_operator.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_operator.cpp
-
-ml_operator-ml_operator.obj: $(srcdir)/ml_operator.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -MT ml_operator-ml_operator.obj -MD -MP -MF "$(DEPDIR)/ml_operator-ml_operator.Tpo" -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_operator-ml_operator.Tpo" "$(DEPDIR)/ml_operator-ml_operator.Po"; else rm -f "$(DEPDIR)/ml_operator-ml_operator.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_operator.cpp' object='ml_operator-ml_operator.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_operator-ml_operator.Po' tmpdepfile='$(DEPDIR)/ml_operator-ml_operator.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_operator_CPPFLAGS) $(CPPFLAGS) $(ml_operator_CXXFLAGS) $(CXXFLAGS) -c -o ml_operator-ml_operator.obj `if test -f '$(srcdir)/ml_operator.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_operator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_operator.cpp'; fi`
-
-ml_preconditioner-ml_preconditioner.o: $(srcdir)/ml_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.o -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.o `test -f '$(srcdir)/ml_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_preconditioner.cpp
-
-ml_preconditioner-ml_preconditioner.obj: $(srcdir)/ml_preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -MT ml_preconditioner-ml_preconditioner.obj -MD -MP -MF "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo" "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po"; else rm -f "$(DEPDIR)/ml_preconditioner-ml_preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_preconditioner.cpp' object='ml_preconditioner-ml_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_preconditioner-ml_preconditioner.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_preconditioner_CPPFLAGS) $(CPPFLAGS) $(ml_preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o ml_preconditioner-ml_preconditioner.obj `if test -f '$(srcdir)/ml_preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_preconditioner.cpp'; fi`
-
-ml_read_matrix_AIJ-ml_read_matrix_AIJ.o: $(srcdir)/ml_read_matrix_AIJ.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -MT ml_read_matrix_AIJ-ml_read_matrix_AIJ.o -MD -MP -MF "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.o `test -f '$(srcdir)/ml_read_matrix_AIJ.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_matrix_AIJ.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po"; else rm -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_read_matrix_AIJ.cpp' object='ml_read_matrix_AIJ-ml_read_matrix_AIJ.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.o `test -f '$(srcdir)/ml_read_matrix_AIJ.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_matrix_AIJ.cpp
-
-ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj: $(srcdir)/ml_read_matrix_AIJ.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -MT ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj -MD -MP -MF "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po"; else rm -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_read_matrix_AIJ.cpp' object='ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`
-
-ml_user_aggr-ml_user_aggr.o: $(srcdir)/ml_user_aggr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.o -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.o `test -f '$(srcdir)/ml_user_aggr.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_user_aggr.cpp
-
-ml_user_aggr-ml_user_aggr.obj: $(srcdir)/ml_user_aggr.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -MT ml_user_aggr-ml_user_aggr.obj -MD -MP -MF "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo" "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po"; else rm -f "$(DEPDIR)/ml_user_aggr-ml_user_aggr.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_user_aggr.cpp' object='ml_user_aggr-ml_user_aggr.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.Po' tmpdepfile='$(DEPDIR)/ml_user_aggr-ml_user_aggr.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_user_aggr_CPPFLAGS) $(CPPFLAGS) $(ml_user_aggr_CXXFLAGS) $(CXXFLAGS) -c -o ml_user_aggr-ml_user_aggr.obj `if test -f '$(srcdir)/ml_user_aggr.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_user_aggr.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_user_aggr.cpp'; fi`
-
-ml_viz-ml_viz.o: $(srcdir)/ml_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.o -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.o `test -f '$(srcdir)/ml_viz.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_viz.cpp
-
-ml_viz-ml_viz.obj: $(srcdir)/ml_viz.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -MT ml_viz-ml_viz.obj -MD -MP -MF "$(DEPDIR)/ml_viz-ml_viz.Tpo" -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_viz-ml_viz.Tpo" "$(DEPDIR)/ml_viz-ml_viz.Po"; else rm -f "$(DEPDIR)/ml_viz-ml_viz.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_viz.cpp' object='ml_viz-ml_viz.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_viz-ml_viz.Po' tmpdepfile='$(DEPDIR)/ml_viz-ml_viz.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_viz_CPPFLAGS) $(CPPFLAGS) $(ml_viz_CXXFLAGS) $(CXXFLAGS) -c -o ml_viz-ml_viz.obj `if test -f '$(srcdir)/ml_viz.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_viz.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_viz.cpp'; fi`
 uninstall-info-am:
+
+# This directory's subdirectories are mostly independent; you can cd
+# into them and run `make' without going through this Makefile.
+# To change the values of `make' variables: instead of editing Makefiles,
+# (1) if the variable is set in `config.status', edit `config.status'
+#     (which will cause the Makefiles to be regenerated when you run `make');
+# (2) otherwise, pass the desired values on the `make' command line.
+$(RECURSIVE_TARGETS):
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+	dot_seen=no; \
+	target=`echo $@ | sed s/-recursive//`; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    dot_seen=yes; \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done; \
+	if test "$$dot_seen" = "no"; then \
+	  $(MAKE) $(AM_MAKEFLAGS) "$$target-am" || exit 1; \
+	fi; test -z "$$fail"
+
+mostlyclean-recursive clean-recursive distclean-recursive \
+maintainer-clean-recursive:
+	@set fnord $$MAKEFLAGS; amf=$$2; \
+	dot_seen=no; \
+	case "$@" in \
+	  distclean-* | maintainer-clean-*) list='$(DIST_SUBDIRS)' ;; \
+	  *) list='$(SUBDIRS)' ;; \
+	esac; \
+	rev=''; for subdir in $$list; do \
+	  if test "$$subdir" = "."; then :; else \
+	    rev="$$subdir $$rev"; \
+	  fi; \
+	done; \
+	rev="$$rev ."; \
+	target=`echo $@ | sed s/-recursive//`; \
+	for subdir in $$rev; do \
+	  echo "Making $$target in $$subdir"; \
+	  if test "$$subdir" = "."; then \
+	    local_target="$$target-am"; \
+	  else \
+	    local_target="$$target"; \
+	  fi; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) $$local_target) \
+	   || case "$$amf" in *=*) exit 1;; *k*) fail=yes;; *) exit 1;; esac; \
+	done && test -z "$$fail"
+tags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) tags); \
+	done
+ctags-recursive:
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  test "$$subdir" = . || (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) ctags); \
+	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -1353,10 +342,21 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS: tags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
+	if (etags --etags-include --version) >/dev/null 2>&1; then \
+	  include_option=--etags-include; \
+	else \
+	  include_option=--include; \
+	fi; \
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -f $$subdir/TAGS && \
+	      tags="$$tags $$include_option=$$here/$$subdir/TAGS"; \
+	  fi; \
+	done; \
 	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
@@ -1367,7 +367,7 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	  || $(ETAGS) $(ETAGSFLAGS) $(AM_ETAGSFLAGS) $(ETAGS_ARGS) \
 	     $$tags $$unique
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS: ctags-recursive $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
@@ -1416,19 +416,33 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
+	list='$(SUBDIRS)'; for subdir in $$list; do \
+	  if test "$$subdir" = .; then :; else \
+	    test -d "$(distdir)/$$subdir" \
+	    || mkdir "$(distdir)/$$subdir" \
+	    || exit 1; \
+	    (cd $$subdir && \
+	      $(MAKE) $(AM_MAKEFLAGS) \
+	        top_distdir="../$(top_distdir)" \
+	        distdir="../$(distdir)/$$subdir" \
+	        distdir) \
+	      || exit 1; \
+	  fi; \
+	done
 check-am: all-am
-check: check-am
-all-am: Makefile $(PROGRAMS)
-installdirs:
-install: install-am
-install-exec: install-exec-am
-install-data: install-data-am
-uninstall: uninstall-am
+check: check-recursive
+all-am: Makefile
+installdirs: installdirs-recursive
+installdirs-am:
+install: install-recursive
+install-exec: install-exec-recursive
+install-data: install-data-recursive
+uninstall: uninstall-recursive
 
 install-am: all-am
 	@$(MAKE) $(AM_MAKEFLAGS) install-exec-am install-data-am
 
-installcheck: installcheck-am
+installcheck: installcheck-recursive
 install-strip:
 	$(MAKE) $(AM_MAKEFLAGS) INSTALL_PROGRAM="$(INSTALL_STRIP_PROGRAM)" \
 	  install_sh_PROGRAM="$(INSTALL_STRIP_PROGRAM)" INSTALL_STRIP_FLAG=-s \
@@ -1444,23 +458,21 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-clean: clean-am
+clean: clean-recursive
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
-distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
+distclean: distclean-recursive
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
-dvi: dvi-am
+dvi: dvi-recursive
 
 dvi-am:
 
-html: html-am
+html: html-recursive
 
-info: info-am
+info: info-recursive
 
 info-am:
 
@@ -1468,43 +480,44 @@ install-data-am:
 
 install-exec-am:
 
-install-info: install-info-am
+install-info: install-info-recursive
 
 install-man:
 
 installcheck-am:
 
-maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
+maintainer-clean: maintainer-clean-recursive
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
-mostlyclean: mostlyclean-am
+mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-generic
 
-pdf: pdf-am
+pdf: pdf-recursive
 
 pdf-am:
 
-ps: ps-am
+ps: ps-recursive
 
 ps-am:
 
 uninstall-am: uninstall-info-am
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-exec install-exec-am install-info \
-	install-info-am install-man install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am uninstall-info-am
+uninstall-info: uninstall-info-recursive
 
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@		  ml_read_matrix_AIJ
+.PHONY: $(RECURSIVE_TARGETS) CTAGS GTAGS all all-am check check-am \
+	clean clean-generic clean-recursive ctags ctags-recursive \
+	distclean distclean-generic distclean-recursive distclean-tags \
+	distdir dvi dvi-am html html-am info info-am install \
+	install-am install-data install-data-am install-exec \
+	install-exec-am install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	maintainer-clean-recursive mostlyclean mostlyclean-generic \
+	mostlyclean-recursive pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-info-am
+
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
