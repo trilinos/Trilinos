@@ -17,7 +17,7 @@
 
 /* Prototypes for functions internal to this file */
 
-static void LB_Reftree_Free_Subtree(LB_REFTREE *subroot);
+static void LB_Reftree_Free_Subtree(LB *lb, LB_REFTREE *subroot);
 static int order_tri_bisect(LB *lb, int *vert1, int *order, int *vertices,
                      int *in_vertex, int *out_vertex, LB_REFTREE *subroot);
 static int order_quad_quad(LB *lb, int *vert1, int *order, int *vertices,
@@ -34,6 +34,20 @@ static int find_inout(int level, int num_child, int *num_vert, int *vert1,
                int *vertices, int *in_vertex, int *out_vertex, int *order);
 static int LB_Reftree_Reinit_Coarse(LB *lb);
 static int LB_Reftree_Build_Recursive(LB *lb,LB_REFTREE *subroot);
+static int alloc_reftree_nodes(LB *lb, LB_REFTREE **node, int num_node,
+                               int *num_vert);
+void free_reftree_nodes(LB_REFTREE **node);
+
+static LB_ID_PTR slocal_gids;  /* coarse element Global IDs from user */
+static LB_ID_PTR slocal_lids;  /* coarse element Local IDs from user */
+static int *sassigned;         /* 1 if the element is assigned to this proc */
+static int *snum_vert;         /* number of vertices for each coarse element */
+static int *svertices;         /* vertices for the coarse elements */
+static int *sin_vertex;        /* "in" vertex for each coarse element */
+static int *sout_vertex;       /* "out" vertex for each coarse element */
+static int *svert1;        /* array containing the first vertex for each child*/
+static int *sorder;            /* order of the children */
+static int ssize;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -84,6 +98,8 @@ LB_ID_PTR lid, prev_lid;   /* temporary coarse element Local ID; used to pass
 LB_ID_PTR all_gids;        /* coarse element Global IDs from all procs */
 int *assigned;             /* 1 if the element is assigned to this proc */
 int *num_vert;             /* number of vertices for each coarse element */
+int *reorder_nvert;        /* num_vert reordered by permutation "order" */
+int root_vert[1];          /* fake number of vertices for the root */
 int *vertices;             /* vertices for the coarse elements */
 int *in_vertex;            /* "in" vertex for each coarse element */
 int *out_vertex;           /* "out" vertex for each coarse element */
@@ -107,6 +123,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   LB_TRACE_ENTER(lb, yo);
 
+  ssize = 0;
   final_ierr = LB_OK;
 
   if (lb->Obj_Weight_Dim == 0) {
@@ -124,45 +141,25 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   if (lb->Data_Structure != NULL) LB_Reftree_Free_Structure(lb);
 
-  root = (LB_REFTREE *) LB_MALLOC(sizeof(LB_REFTREE));
-  if (root == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_TRACE_EXIT(lb, yo);
-    return(LB_MEMERR);
+  root_vert[0] = 1;
+  ierr = alloc_reftree_nodes(lb, &root, 1, root_vert);
+  if (ierr == LB_MEMERR) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned by alloc_reftree_nodes.");
+    return(ierr);
   }
 
   /*
    * Initialize the root
    */
 
-  root->global_id = LB_MALLOC_GID(lb);
-  root->local_id  = LB_MALLOC_LID(lb);
-  if (root->global_id == NULL || (num_lid_entries && root->local_id == NULL)) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_Reftree_Free_Structure(lb);
-    LB_TRACE_EXIT(lb, yo);
-    return(LB_MEMERR);
-  }
-
   root->children       = (LB_REFTREE *) NULL;
   root->num_child      = 0;
   root->num_vertex     = 0;
-  root->vertices       = (int *) NULL;
   root->in_vertex      = (int) NULL;
   root->out_vertex     = (int) NULL;
   root->assigned_to_me = 0;
   root->partition      = 0;
 
-  root->weight = (float *) LB_MALLOC(wdim*sizeof(float));
-  root->summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-  root->my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-  if (root->weight == NULL || root->summed_weight == NULL ||
-      root->my_sum_weight == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_Reftree_Free_Structure(lb);
-    LB_TRACE_EXIT(lb, yo);
-    return(LB_MEMERR);
-  }
   for (i=0; i<wdim; i++) {
     root->weight[i] = 0.0;
     root->summed_weight[i] = 0.0;
@@ -522,6 +519,7 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     LB_FREE(&vertices);
     LB_FREE(&in_vertex);
     LB_FREE(&out_vertex);
+    LB_FREE(&order);
     LB_Reftree_Free_Structure(lb);
     LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
@@ -555,8 +553,8 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Allocate the children of the root
    */
 
-  root->children = (LB_REFTREE *) LB_MALLOC(total_num_obj*sizeof(LB_REFTREE));
-  if (root->children == NULL) {
+  reorder_nvert = (int *) LB_MALLOC(total_num_obj*sizeof(int));
+  if (reorder_nvert == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&local_gids);
     LB_FREE(&local_lids);
@@ -570,6 +568,30 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
     LB_TRACE_EXIT(lb, yo);
     return(LB_MEMERR);
   }
+/* use MAXVERT for coarse grid objects to avoid complicated reallocation
+   during Reinit_Coarse */
+  for (i=0; i<total_num_obj; i++) {
+/*    reorder_nvert[order[i]] = num_vert[i]; */
+    reorder_nvert[i] = MAXVERT;
+  }
+
+  ierr = alloc_reftree_nodes(lb, &(root->children), total_num_obj,
+                             reorder_nvert);
+  LB_FREE(&reorder_nvert);
+  if (ierr == LB_MEMERR) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Error returned by alloc_reftree_nodes.");
+    LB_FREE(&local_gids);
+    LB_FREE(&local_lids);
+    LB_FREE(&assigned);
+    LB_FREE(&num_vert);
+    LB_FREE(&vertices);
+    LB_FREE(&in_vertex);
+    LB_FREE(&out_vertex);
+    LB_FREE(&order);
+    LB_Reftree_Free_Structure(lb);
+    return(ierr);
+  }
+
   root->num_child = total_num_obj;
 
   /*
@@ -597,39 +619,6 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
 
   sum_vert = 0;
   for (i=0; i<total_num_obj; i++) {
-
-  /*
-   * allocate memory within the tree node
-   */
-
-    root->children[order[i]].global_id = LB_MALLOC_GID(lb);
-    root->children[order[i]].local_id  = LB_MALLOC_LID(lb);
-    root->children[order[i]].weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    root->children[order[i]].summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    root->children[order[i]].my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    if (num_vert[i] <= 0)
-      root->children[order[i]].vertices = (int *) LB_MALLOC(sizeof(int));
-    else
-      root->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
-    if (root->children[order[i]].global_id == NULL     ||
-        (num_lid_entries && root->children[order[i]].local_id == NULL) ||
-        root->children[order[i]].weight        == NULL ||
-        root->children[order[i]].summed_weight == NULL ||
-        root->children[order[i]].my_sum_weight == NULL ||
-        root->children[order[i]].vertices      == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
-      LB_FREE(&order);
-      LB_Reftree_Free_Structure(lb);
-      LB_TRACE_EXIT(lb, yo);
-      return(LB_MEMERR);
-    }
 
   /*
    * Get the weight
@@ -795,25 +784,20 @@ char msg[256];
 int ierr;                  /* error code called routines */
 int final_ierr;            /* error code returned by this routine */
 int num_obj;               /* number of children returned by user */
-LB_ID_PTR local_gids;      /* coarse element Global IDs from user */
-LB_ID_PTR local_lids;      /* coarse element Local IDs from user */
 LB_ID_PTR lid;             /* temporary coarse element Local ID; used to pass
                               NULL to query functions when NUM_LID_ENTRIES=0 */
-int *assigned;             /* 1 if the element is assigned to this proc */
-int *num_vert;             /* number of vertices for each coarse element */
-int *vertices;             /* vertices for the coarse elements */
-int *in_vertex;            /* "in" vertex for each coarse element */
-int *out_vertex;           /* "out" vertex for each coarse element */
+int *reorder_nvert;        /* num_vert reordered by permutation "order" */
 LB_REF_TYPE ref_type;      /* type of refinement that creates children */
-int *order;                /* order of the children */
 int wdim;                  /* dimension for weights */
 int i, j;                  /* loop counters */
 int sum_vert;              /* running sum of the number of vertices */
-int *vert1;                /* array containing the first vertex for each child*/
 struct LB_reftree_hash_node **hashtab; /* hash tree */
 int hashsize;              /* size of the hash table */
 int num_gid_entries = lb->Num_GID;  /* number of array entries in a global ID */
 int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
+int children_agree;        /* flag, true if all children of a node in the
+                              refinement tree agree with data from GET_CHILD */
+int existing;              /* existing child that agrees with GET_CHILD data */
 
   final_ierr = LB_OK;
   if (lb->Obj_Weight_Dim == 0) {
@@ -846,11 +830,15 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
   }
 
   /*
-   * If there are no children, set the weight if it is not user provided,
+   * If there are no children, make sure the tree has no children, and
+   * set the weight if it is not user provided,
    * and return.  The default is to use 1.0 for leaves and 0.0 for others.
    */
 
   if (num_obj == 0) {
+    if (subroot->num_child != 0) {
+      LB_Reftree_Free_Subtree(lb, subroot);
+    }
     if (lb->Obj_Weight_Dim == 0) *(subroot->weight) = 1.0;
     return(LB_OK);
   }
@@ -859,47 +847,55 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Get the children
    */
 
-  local_gids = LB_MALLOC_GID_ARRAY(lb, num_obj);
-  local_lids = LB_MALLOC_LID_ARRAY(lb, num_obj);
-  assigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
-  num_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
-  vertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
-  in_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
-  out_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
-  vert1      = (int *) LB_MALLOC((num_obj+1)*sizeof(int));
-  if (local_gids == NULL || (num_lid_entries > 0 && local_lids == NULL) || 
-      assigned   == NULL ||
-      num_vert   == NULL || vertices   == NULL || in_vertex == NULL ||
-      out_vertex == NULL || vert1      == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&vert1);
-    LB_Reftree_Free_Structure(lb);
-    return(LB_MEMERR);
+  if (num_obj > ssize) {
+    if (ssize > 0) {
+      LB_FREE(&slocal_gids);
+      LB_FREE(&slocal_lids);
+      LB_FREE(&sassigned);
+      LB_FREE(&snum_vert);
+      LB_FREE(&svertices);
+      LB_FREE(&sin_vertex);
+      LB_FREE(&sout_vertex);
+      LB_FREE(&svert1);
+    }
+    slocal_gids = LB_MALLOC_GID_ARRAY(lb, num_obj);
+    slocal_lids = LB_MALLOC_LID_ARRAY(lb, num_obj);
+    sassigned   = (int *) LB_MALLOC(num_obj*sizeof(int));
+    snum_vert   = (int *) LB_MALLOC(num_obj*sizeof(int));
+    svertices   = (int *) LB_MALLOC(MAXVERT*num_obj*sizeof(int));
+    sin_vertex  = (int *) LB_MALLOC(num_obj*sizeof(int));
+    sout_vertex = (int *) LB_MALLOC(num_obj*sizeof(int));
+    svert1      = (int *) LB_MALLOC((num_obj+1)*sizeof(int));
+    sorder      = (int *) LB_MALLOC(num_obj*sizeof(int));
+    ssize = num_obj;
+    if (slocal_gids == NULL || (num_lid_entries > 0 && slocal_lids == NULL) || 
+        sassigned   == NULL ||
+        snum_vert   == NULL || svertices   == NULL || sin_vertex == NULL ||
+        sout_vertex == NULL || svert1      == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_FREE(&slocal_gids);
+      LB_FREE(&slocal_lids);
+      LB_FREE(&sassigned);
+      LB_FREE(&snum_vert);
+      LB_FREE(&svertices);
+      LB_FREE(&sin_vertex);
+      LB_FREE(&sout_vertex);
+      LB_FREE(&svert1);
+      LB_FREE(&sorder);
+      ssize = 0;
+      LB_Reftree_Free_Structure(lb);
+      return(LB_MEMERR);
+    }
   }
   lb->Get_Child_List(lb->Get_Child_List_Data, 
                      num_gid_entries, num_lid_entries,
                      subroot->global_id, subroot->local_id, 
-                     local_gids, local_lids, assigned,
-                     num_vert, vertices, &ref_type, in_vertex, out_vertex,
+                     slocal_gids, slocal_lids, sassigned,
+                     snum_vert, svertices, &ref_type, sin_vertex, sout_vertex,
                      &ierr);
   if (ierr) {
     LB_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned from user function Get_Child_List.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&vert1);
     LB_Reftree_Free_Structure(lb);
     return(ierr);
   }
@@ -908,46 +904,116 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Set the start of the list of vertices for each child
    */
 
-  vert1[0] = 0;
-  for (i=0; i<num_obj; i++) vert1[i+1] = vert1[i] + num_vert[i];
+  svert1[0] = 0;
+  for (i=0; i<num_obj; i++) svert1[i+1] = svert1[i] + snum_vert[i];
+
+  /*
+   * If there already exist children, then make sure they are exactly the
+   * same.  Otherwise, delete them and rebuild the tree from here.
+   */
+
+  /*
+   * check that the number of children agree and that each child agrees
+   * with an existing child in GID, LID and vertices
+   */
+
+  children_agree = 1;
+  if (subroot->num_child == 0) {
+    children_agree = 0;
+  } else {
+    if (subroot->num_child != num_obj) {
+      children_agree = 0;
+    } else {
+      for (i=0; i<num_obj && children_agree; i++) {
+        existing = -1;
+        for (j=0; j<subroot->num_child && existing==-1; j++) {
+          if (LB_EQ_GID(lb, subroot->children[j].global_id,
+                        &(slocal_gids[i*num_gid_entries]))) {
+            existing = j;
+          }
+        }
+        for (j=0; j<num_lid_entries; j++) {
+          if (subroot->children[existing].local_id[j] !=
+              slocal_lids[i*num_lid_entries+j]) {
+            children_agree = 0;
+          }
+        }
+        if (subroot->children[existing].num_vertex != snum_vert[i]) {
+          children_agree = 0;
+        } else {
+          if (snum_vert[i] != 0) {
+            for (j=0; j<snum_vert[i] && children_agree; j++) {
+              if (subroot->children[existing].vertices[j] != svertices[svert1[i]+j]) {
+                children_agree = 0;
+              }
+            }
+          }
+        }
+/* set new value of assigned just in case we keep the children */
+        subroot->children[existing].assigned_to_me = sassigned[i];
+      }
+    }
+  }
+
+  /*
+   * If the children do not agree, then get rid of them and rebuild
+   */
+
+  if (!children_agree) LB_Reftree_Free_Subtree(lb, subroot);
+
+  if (subroot->num_child != 0) {
+
+  /*
+   * If the children were kept, set the current weights
+   */
+
+    for (i=0; i<subroot->num_child; i++) {
+      if (lb->Obj_Weight_Dim == 0) {
+         *(subroot->children[i].weight) = 0.0;
+      }
+      else {
+        lid = (num_lid_entries ? subroot->children[i].local_id : NULL);
+        lb->Get_Child_Weight(lb->Get_Child_Weight_Data,
+                             num_gid_entries, num_lid_entries,
+                             subroot->children[i].global_id,
+                             lid, 
+                             lb->Obj_Weight_Dim,
+                             subroot->children[i].weight, &ierr);
+      }
+      for (j=0; j<wdim; j++) {
+        subroot->children[i].summed_weight[j] = 0.0;
+        subroot->children[i].my_sum_weight[j] = 0.0;
+      }
+    }
+
+  } else {
+
+  /*
+   * If the children did not already exist or were removed, add them
+   */
 
   /*
    * Determine the order of the children
    */
 
-  order = (int *) LB_MALLOC(num_obj*sizeof(int));
-  if (order == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&vert1);
-    LB_Reftree_Free_Structure(lb);
-    return(LB_MEMERR);
-  }
-
   /*
    * TEMP until code is supplied to support these refinement types
    */
 
-  switch (ref_type) {
-  case LB_HEX3D_OCT:
-    if (TEMP_first_warning) {
-      LB_PRINT_WARN(lb->Proc, yo, "Currently not supporting "
-                      "automatic ordering of elements for refinement type "
-                      "LB_HEX3D_OCT.  Using LB_OTHER_REF.");
-      TEMP_first_warning = 0;
-      final_ierr = LB_WARN;
+    switch (ref_type) {
+    case LB_HEX3D_OCT:
+      if (TEMP_first_warning) {
+        LB_PRINT_WARN(lb->Proc, yo, "Currently not supporting "
+                        "automatic ordering of elements for refinement type "
+                        "LB_HEX3D_OCT.  Using LB_OTHER_REF.");
+        TEMP_first_warning = 0;
+        final_ierr = LB_WARN;
+      }
+      ref_type = LB_OTHER_REF;
+      break;
+    default:
+      break;
     }
-    ref_type = LB_OTHER_REF;
-    break;
-  default:
-    break;
-  }
 
   /* end TEMP */
 
@@ -956,39 +1022,39 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    *  and the in/out vertices
    */
 
-  switch (ref_type) {
+    switch (ref_type) {
 
-  case LB_IN_ORDER:
-    for (i=0; i<num_obj; i++) order[i] = i;
-    break;
-  case LB_TRI_BISECT:
-    ierr = order_tri_bisect(lb,vert1,order,vertices,in_vertex,out_vertex,
-                            subroot);
-    break;
-  case LB_QUAD_QUAD:
-    ierr = order_quad_quad(lb,vert1,order,vertices,in_vertex,out_vertex,
-                           subroot);
-    break;
-  case LB_HEX3D_OCT:
+    case LB_IN_ORDER:
+      for (i=0; i<num_obj; i++) sorder[i] = i;
+      break;
+    case LB_TRI_BISECT:
+      ierr = order_tri_bisect(lb,svert1,sorder,svertices,sin_vertex,sout_vertex,
+                              subroot);
+      break;
+    case LB_QUAD_QUAD:
+      ierr = order_quad_quad(lb,svert1,sorder,svertices,sin_vertex,sout_vertex,
+                             subroot);
+      break;
+    case LB_HEX3D_OCT:
     /* TEMP */
-    LB_PRINT_WARN(lb->Proc, yo, "Oops, still got into case for HEX3D_OCT.");
-    for (i=0; i<num_obj; i++) order[i] = i;
-    break;
-  case LB_OTHER_REF:
-    ierr = order_other_ref(lb, subroot, num_obj, num_vert, vert1, vertices,
-                           order, in_vertex, out_vertex);
-    break;
+      LB_PRINT_WARN(lb->Proc, yo, "Oops, still got into case for HEX3D_OCT.");
+      for (i=0; i<num_obj; i++) sorder[i] = i;
+      break;
+    case LB_OTHER_REF:
+      ierr = order_other_ref(lb, subroot, num_obj, snum_vert, svert1, svertices,
+                             sorder, sin_vertex, sout_vertex);
+      break;
 
   /*
    * Default case if a bad value gets returned; use them in order.
    */
-  default:
-    sprintf(msg, "Unknown value returned for ref_type"
-            " = %d.  Using children in order provided.",ref_type);
-    LB_PRINT_WARN(lb->Proc, yo, msg);
-    for (i=0; i<num_obj; i++) order[i] = i;
-    final_ierr = LB_WARN;
-  }
+    default:
+      sprintf(msg, "Unknown value returned for ref_type"
+              " = %d.  Using children in order provided.",ref_type);
+      LB_PRINT_WARN(lb->Proc, yo, msg);
+      for (i=0; i<num_obj; i++) sorder[i] = i;
+      final_ierr = LB_WARN;
+    }
 
   /*
    * Copy the children into the child list of the subroot
@@ -998,138 +1064,91 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
    * Allocate the children
    */
 
-  if (subroot->children != NULL) {
-    LB_PRINT_WARN(lb->Proc, yo, "children already existed; memory"
-                    " leak potential.");
-    final_ierr = LB_WARN;
-  }
+    if (subroot->children != NULL) {
+      LB_PRINT_WARN(lb->Proc, yo, "children already existed; memory"
+                      " leak potential.");
+      final_ierr = LB_WARN;
+    }
 
-  subroot->children = (LB_REFTREE *) LB_MALLOC(num_obj*sizeof(LB_REFTREE));
-  if (subroot->children == NULL) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    LB_FREE(&local_gids);
-    LB_FREE(&local_lids);
-    LB_FREE(&assigned);
-    LB_FREE(&num_vert);
-    LB_FREE(&vertices);
-    LB_FREE(&in_vertex);
-    LB_FREE(&out_vertex);
-    LB_FREE(&order);
-    LB_FREE(&vert1);
-    LB_Reftree_Free_Structure(lb);
-    return(LB_MEMERR);
-  }
-  subroot->num_child = num_obj;
+    reorder_nvert = (int *) LB_MALLOC(num_obj*sizeof(int));
+    if (reorder_nvert == NULL) {
+      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      LB_Reftree_Free_Structure(lb);
+      return(LB_MEMERR);
+    }
+    for (i=0; i<num_obj; i++) {
+      reorder_nvert[sorder[i]] = snum_vert[i];
+    }
 
-  hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
-  hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
+    ierr = alloc_reftree_nodes(lb, &(subroot->children), num_obj, reorder_nvert);
+
+    LB_FREE(&reorder_nvert);
+
+    subroot->num_child = num_obj;
+
+    hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
+    hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
 
   /*
    * For each child ...
    */
 
-  sum_vert = 0;
-  for (i=0; i<num_obj; i++) {
-
-  /*
-   * allocate memory within the child
-   */
-
-    subroot->children[order[i]].global_id = LB_MALLOC_GID(lb);
-    subroot->children[order[i]].local_id  = LB_MALLOC_LID(lb);
-    subroot->children[order[i]].weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    subroot->children[order[i]].summed_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    subroot->children[order[i]].my_sum_weight = (float *) LB_MALLOC(wdim*sizeof(float));
-    if (num_vert[i] <= 0)
-      subroot->children[order[i]].vertices = (int *) LB_MALLOC(sizeof(int));
-    else
-      subroot->children[order[i]].vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
-    if (subroot->children[order[i]].global_id     == NULL ||
-        (num_lid_entries && subroot->children[order[i]].local_id == NULL) ||
-        subroot->children[order[i]].weight        == NULL ||
-        subroot->children[order[i]].summed_weight == NULL ||
-        subroot->children[order[i]].my_sum_weight == NULL ||
-        subroot->children[order[i]].vertices      == NULL) {
-      LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      LB_FREE(&local_gids);
-      LB_FREE(&local_lids);
-      LB_FREE(&assigned);
-      LB_FREE(&num_vert);
-      LB_FREE(&vertices);
-      LB_FREE(&in_vertex);
-      LB_FREE(&out_vertex);
-      LB_FREE(&vert1);
-      LB_FREE(&order);
-      LB_Reftree_Free_Structure(lb);
-      return(LB_MEMERR);
-    }
+    sum_vert = 0;
+    for (i=0; i<num_obj; i++) {
 
   /*
    * Get the weight
    */
 
-    if (lb->Obj_Weight_Dim == 0) {
-       *(subroot->children[order[i]].weight) = 0.0;
-    }
-    else {
-      lid = (num_lid_entries ? &(local_lids[i*num_lid_entries]) : NULL);
-      lb->Get_Child_Weight(lb->Get_Child_Weight_Data,
-                           num_gid_entries, num_lid_entries,
-                           &(local_gids[i*num_gid_entries]),
-                           lid, 
-                           lb->Obj_Weight_Dim,
-                           subroot->children[order[i]].weight, &ierr);
-    }
-    for (j=0; j<wdim; j++) {
-      subroot->children[order[i]].summed_weight[j] = 0.0;
-      subroot->children[order[i]].my_sum_weight[j] = 0.0;
-    }
+      if (lb->Obj_Weight_Dim == 0) {
+         *(subroot->children[sorder[i]].weight) = 0.0;
+      }
+      else {
+        lid = (num_lid_entries ? &(slocal_lids[i*num_lid_entries]) : NULL);
+        lb->Get_Child_Weight(lb->Get_Child_Weight_Data,
+                             num_gid_entries, num_lid_entries,
+                             &(slocal_gids[i*num_gid_entries]),
+                             lid, 
+                             lb->Obj_Weight_Dim,
+                             subroot->children[sorder[i]].weight, &ierr);
+      }
+      for (j=0; j<wdim; j++) {
+        subroot->children[sorder[i]].summed_weight[j] = 0.0;
+        subroot->children[sorder[i]].my_sum_weight[j] = 0.0;
+      }
 
   /*
    * Copy the vertices
    */
 
-    for (j=0; j<num_vert[i]; j++)
-      subroot->children[order[i]].vertices[j] = vertices[sum_vert+j];
-    if (num_vert[i] > 0) sum_vert += num_vert[i];
+      for (j=0; j<snum_vert[i]; j++)
+        subroot->children[sorder[i]].vertices[j] = svertices[sum_vert+j];
+      if (snum_vert[i] > 0) sum_vert += snum_vert[i];
 
   /*
    * Copy from temporary arrays and set empty defaults
    */
 
-    LB_SET_GID(lb, subroot->children[order[i]].global_id,
-               &(local_gids[i*num_gid_entries]));
-    LB_SET_LID(lb, subroot->children[order[i]].local_id,
-               &(local_lids[i*num_lid_entries]));
-    subroot->children[order[i]].children       = (LB_REFTREE *) NULL;
-    subroot->children[order[i]].num_child      = 0;
-    subroot->children[order[i]].num_vertex     = num_vert[i];
-    subroot->children[order[i]].in_vertex      = in_vertex[i];
-    subroot->children[order[i]].out_vertex     = out_vertex[i];
-    subroot->children[order[i]].assigned_to_me = assigned[i];
-    subroot->children[order[i]].partition      = 0;
+      LB_SET_GID(lb, subroot->children[sorder[i]].global_id,
+                 &(slocal_gids[i*num_gid_entries]));
+      LB_SET_LID(lb, subroot->children[sorder[i]].local_id,
+                 &(slocal_lids[i*num_lid_entries]));
+      subroot->children[sorder[i]].children       = (LB_REFTREE *) NULL;
+      subroot->children[sorder[i]].num_child      = 0;
+      subroot->children[sorder[i]].num_vertex     = snum_vert[i];
+      subroot->children[sorder[i]].in_vertex      = sin_vertex[i];
+      subroot->children[sorder[i]].out_vertex     = sout_vertex[i];
+      subroot->children[sorder[i]].assigned_to_me = sassigned[i];
+      subroot->children[sorder[i]].partition      = 0;
 
   /*
    * Add it to the hash table
    */
 
-    LB_Reftree_Hash_Insert(lb, &(subroot->children[order[i]]),hashtab,hashsize);
+      LB_Reftree_Hash_Insert(lb, &(subroot->children[sorder[i]]),hashtab,hashsize);
 
+    }
   }
-
-  /*
-   * clean up
-   */
-
-  LB_FREE(&local_gids);
-  LB_FREE(&local_lids);
-  LB_FREE(&assigned);
-  LB_FREE(&num_vert);
-  LB_FREE(&vertices);
-  LB_FREE(&in_vertex);
-  LB_FREE(&out_vertex);
-  LB_FREE(&vert1);
-  LB_FREE(&order);
 
   /*
    * recursively do the children
@@ -1777,6 +1796,103 @@ int solved;                     /* found a solution */
 /*****************************************************************************/
 /*****************************************************************************/
 
+static int alloc_reftree_nodes(LB *lb, LB_REFTREE **node, int num_node,
+                               int *num_vert)
+
+{
+/*
+ *  Function to allocate num_node refinement tree nodes
+ */
+
+/*
+ *  A pointer to the first allocated node is returned in node.
+ *  num_vert is input to indicate the number of vertices to allocate for
+ *  the element corresponding to each node.
+ */
+
+LB_ID_PTR gids;     /* pointer to memory for GIDs */
+LB_ID_PTR lids;     /* pointer to memory for LIDs */
+float *float_mem;   /* pointer to memory for floats */
+int *int_mem;       /* pointer to memory for ints */
+int sum_vert;       /* sum of num_vert */
+int wdim;           /* dimension of object weights */
+int i;              /* loop counter */
+
+char *yo = "alloc_reftree_nodes";
+
+  if (lb->Obj_Weight_Dim == 0) {
+    wdim = 1;
+  } else {
+    wdim = lb->Obj_Weight_Dim;
+  }
+
+/* compute sum of num_vert */
+
+  sum_vert = 0;
+  for (i=0; i<num_node; i++) sum_vert = sum_vert + num_vert[i];
+
+/* allocate the structures themselves */
+
+  *node = (LB_REFTREE *) LB_MALLOC(num_node*sizeof(LB_REFTREE));
+
+/* allocate memory to be used within the structures */
+
+  gids = LB_MALLOC_GID_ARRAY(lb, num_node);
+  lids = LB_MALLOC_LID_ARRAY(lb, num_node);
+  float_mem = (float *) LB_MALLOC(3*wdim*num_node*sizeof(float));
+  int_mem   = (int   *) LB_MALLOC(sum_vert*sizeof(int));
+
+  if (node == NULL || gids == NULL || lids == NULL || float_mem == NULL ||
+      int_mem == NULL) {
+    LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    LB_FREE(&gids);
+    LB_FREE(&lids);
+    LB_FREE(&float_mem);
+    LB_FREE(&int_mem);
+    LB_FREE(&node);
+    LB_TRACE_EXIT(lb, yo);
+    return(LB_MEMERR);
+  }
+
+/* divide the memory up among the nodes */
+
+  for (i=0; i<num_node; i++) {
+    (*node)[i].global_id = gids;
+    gids++;
+    (*node)[i].local_id = lids;
+    lids++;
+    (*node)[i].weight = float_mem;
+    (*node)[i].summed_weight = float_mem+wdim;
+    (*node)[i].my_sum_weight = float_mem+2*wdim;
+    float_mem += 3*wdim;
+    (*node)[i].vertices = int_mem;
+    int_mem += num_vert[i];
+  }
+
+  return(LB_OK);
+}
+
+/*****************************************************************************/
+
+void free_reftree_nodes(LB_REFTREE **node)
+
+{
+/*
+ *  Function to free memory of one or more refinement tree nodes.
+ *  node should be a pointer returned by alloc_reftree_nodes; all nodes
+ *  allocated by that call are freed.
+ */
+
+  LB_FREE(&((*node)->global_id));
+  LB_FREE(&((*node)->local_id));
+  LB_FREE(&((*node)->weight));
+  LB_FREE(&((*node)->vertices));
+  LB_FREE(node);
+
+}
+
+/*****************************************************************************/
+
 void LB_Reftree_Free_Structure(LB *lb)
 
 {
@@ -1796,26 +1912,25 @@ int i;                                       /* loop counter */
   if (root != NULL) {
 
   /*
-   * Eliminate all the children, recursively
+   * Make all the children of the root be leaves, recursively
    */
 
     if (root->children != NULL) {
       for (i=0; i<root->num_child; i++)
-        LB_Reftree_Free_Subtree(&(root->children[i]));
-
-      LB_FREE(&(root->children));
+        LB_Reftree_Free_Subtree(lb, &(root->children[i]));
     }
 
   /*
-   * Free the memory in root, and root itself
+   * Free the memory used by the children, making root a leaf
    */
 
-    LB_FREE(&(root->global_id));
-    LB_FREE(&(root->local_id));
-    LB_FREE(&(root->weight));
-    LB_FREE(&(root->summed_weight));
-    LB_FREE(&(root->my_sum_weight));
-    LB_FREE(&root);
+      free_reftree_nodes(&(root->children));
+
+  /*
+   * Free the root
+   */
+
+    free_reftree_nodes(&root);
   }
 
   /*
@@ -1834,96 +1949,39 @@ int i;                                       /* loop counter */
 
 }
 
-static void LB_Reftree_Free_Subtree(LB_REFTREE *subroot)
+static void LB_Reftree_Free_Subtree(LB *lb, LB_REFTREE *subroot)
 
 {
 /*
- *  Function to free the memory of a subtree
+ *  Function to free the memory of a subtree.  Upon return, subroot is a leaf.
  */
 int i;   /* loop counter */
+struct LB_reftree_data_struct *reftree_data; /* data structure from lb */
 
   if (subroot != NULL) {
 
+    reftree_data = (struct LB_reftree_data_struct *)lb->Data_Structure;
+
   /*
-   * Eliminate all the children, recursively
+   * Turn all the children into leaves and remove them from the hash table
    */
 
     if (subroot->children != NULL) {
-      for (i=0; i<subroot->num_child; i++) 
-        LB_Reftree_Free_Subtree(&(subroot->children[i]));
-      
-      LB_FREE(&(subroot->children));
-    }
-
-  /*
-   * Free the memory in subroot
-   */
-
-    LB_FREE(&(subroot->global_id));
-    LB_FREE(&(subroot->local_id));
-    LB_FREE(&(subroot->weight));
-    LB_FREE(&(subroot->summed_weight));
-    LB_FREE(&(subroot->my_sum_weight));
-    LB_FREE(&(subroot->vertices));
-  }
-}
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-void LB_Reftree_Reinitialize(LB *lb)
-
-{
-/*
- *  Function to set a refinement tree back to the initial grid (1 tree level)
- */
-struct LB_reftree_data_struct *reftree_data; /* data structure from lb */
-LB_REFTREE *root;                            /* Root of the refinement tree */
-struct LB_reftree_hash_node **hashtab;       /* hash table */
-int hashsize;                                /* dimension of hash table */
-LB_REFTREE *child;                           /* A child of the root */
-int i, j;                                    /* loop counters */
-
-
-  reftree_data = (struct LB_reftree_data_struct *)lb->Data_Structure;
-
-  root = reftree_data->reftree_root;
-  hashtab  = reftree_data->hash_table;
-  hashsize = reftree_data->hash_table_size;
-
-  if (root != NULL) {
-
-  /*
-   * Clear out the hash table
-   */
-
-    LB_Reftree_Clear_Hash_Table(hashtab,hashsize);
-
-  /*
-   * Go through the children of the root (initial elements)
-   */
-
-    if (root->children != NULL) {
-      for (i=0; i<root->num_child; i++) {
-        child = &(root->children[i]);
-
-  /*
-   * Eliminate each child of this object, and update this object, and
-   * add it back to the hash table
-   */
-  
-        if (child->children != NULL) {
-          for (j=0; j<child->num_child; j++)
-            LB_Reftree_Free_Subtree(&(child->children[j]));
-
-          LB_FREE(&(child->children));
-          child->children = (LB_REFTREE *)NULL;
-        }
-        child->num_child = 0;
-        LB_Reftree_Hash_Insert(lb, child,hashtab,hashsize);
+      for (i=0; i<subroot->num_child; i++) {
+        LB_Reftree_Free_Subtree(lb,&(subroot->children[i]));
+        LB_Reftree_Hash_Remove(lb,&(subroot->children[i]),
+                               reftree_data->hash_table,
+                               reftree_data->hash_table_size);
       }
+
+  /*
+   * Free the memory used by the children, making subroot a leaf
+   */
+
+      free_reftree_nodes(&(subroot->children));
+      subroot->num_child = 0;
     }
+
   }
 }
 
@@ -2058,24 +2116,9 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
           final_ierr = LB_WARN;
         }
         else {
+/* can just reassign num_vertex instead of doing a complicated reallocation
+   because coarse grid objects are allocated with MAXVERT */
           tree_node->num_vertex = num_vert[i];
-          LB_FREE(&(tree_node->vertices));
-          if (num_vert[i] <= 0)
-            tree_node->vertices = (int *) LB_MALLOC(sizeof(int));
-          else
-            tree_node->vertices = (int *) LB_MALLOC(num_vert[i]*sizeof(int));
-          if (tree_node->vertices == NULL) {
-            LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-            LB_FREE(&local_gids);
-            LB_FREE(&local_lids);
-            LB_FREE(&assigned);
-            LB_FREE(&num_vert);
-            LB_FREE(&vertices);
-            LB_FREE(&in_vertex);
-            LB_FREE(&out_vertex);
-            return(LB_MEMERR);
-          }
-
           for (j=0; j<num_vert[i]; j++)
             tree_node->vertices[j] = vertices[sum_vert+j];
           if (num_vert[i] > 0) sum_vert += num_vert[i];
@@ -2146,17 +2189,9 @@ int num_lid_entries = lb->Num_LID;  /* number of array entries in a local ID */
         final_ierr = LB_WARN;
       }
       else {
+/* can just reassign num_vertex instead of doing a complicated reallocation
+   because coarse grid objects are allocated with MAXVERT */
         tree_node->num_vertex = snum_vert;
-        LB_FREE(&(tree_node->vertices));
-        if (snum_vert <= 0)
-          tree_node->vertices = (int *) LB_MALLOC(sizeof(int));
-        else
-          tree_node->vertices = (int *) LB_MALLOC(snum_vert*sizeof(int));
-        if (tree_node->vertices == NULL) {
-          LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-          return(LB_MEMERR);
-        }
-  
         for (j=0; j<snum_vert; j++)
           tree_node->vertices[j] = vertices[j];
   
@@ -2312,8 +2347,6 @@ LB_REFTREE *root;
   /*
    * delete the tree, except for the first level (initial coarse grid)
    */
-
-  LB_Reftree_Reinitialize(lb);
 
 }
 

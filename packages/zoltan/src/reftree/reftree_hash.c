@@ -70,6 +70,44 @@ struct LB_reftree_hash_node *new_entry;
   hashtab[i] = new_entry;
 }
 
+/* LB_Reftree_Hash_Remove removes a key from the hash table
+ *
+ * Input:
+ *   lb, a load-balancing structure
+ *   hashtab, pointer to the hash table
+ *   key, a key to look up of type LB_GID (any data type)
+ *   n,   dimension of the hash table
+ *
+ * Author: William Mitchell, william.mitchell@nist.gov
+ */
+
+void LB_Reftree_Hash_Remove (LB *lb, LB_REFTREE *reftree_node,
+                             struct LB_reftree_hash_node **hashtab, int n)
+{
+  int i;
+  struct LB_reftree_hash_node *ptr, *prev, *next;
+
+  i = LB_Hash(reftree_node->global_id, lb->Num_GID, (unsigned int)n);
+  ptr = hashtab[i];
+  prev = NULL;
+  while (ptr != NULL) {
+    if (LB_EQ_GID(lb, ptr->gid, reftree_node->global_id)) {
+      next = ptr->next;
+      LB_FREE(&(ptr->gid));
+      LB_FREE(&ptr);
+      if (prev == NULL) {
+        hashtab[i] = next;
+      } else {
+        prev->next = next;
+      }
+      ptr = NULL;
+    } else {
+      prev = ptr;
+      ptr = ptr->next;
+    }
+  }
+}
+
 /* LB_Reftree_Clear_Hash_Table empties a hash table and frees the
  * memory, except for the memory of the table itself
  *

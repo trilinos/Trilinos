@@ -60,6 +60,7 @@ int LB_Reftree_Part(
 char *yo = "LB_Reftree_Part";
 int ierr;       /* error code returned by called routines */
 int final_ierr; /* error code returned by this routine */
+double time0, time1, time2, time3, time4;
 
   /* Initializations in case of early exit. */
   *num_export = -1;
@@ -71,6 +72,7 @@ int final_ierr; /* error code returned by this routine */
    */
 
   if (lb->Data_Structure == NULL) {
+    if (lb->Debug_Level >= LB_DEBUG_ATIME) time0 = LB_Time(lb->Timer);
     ierr = LB_Reftree_Init(lb);
     if (ierr==LB_FATAL || ierr==LB_MEMERR) {
       LB_PRINT_ERROR(lb->Proc, yo, 
@@ -78,6 +80,12 @@ int final_ierr; /* error code returned by this routine */
       return(ierr);
     }
     if (ierr==LB_WARN) final_ierr = LB_WARN;
+    if (lb->Debug_Level >= LB_DEBUG_ATIME) time1 = LB_Time(lb->Timer);
+  } else {
+    if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+      time1 = LB_Time(lb->Timer);
+      time0 = time1 + 1.0;
+    }
   }
 
   /*
@@ -91,6 +99,7 @@ int final_ierr; /* error code returned by this routine */
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) time2 = LB_Time(lb->Timer);
 
   /*
    * sum the weights in the tree
@@ -103,6 +112,7 @@ int final_ierr; /* error code returned by this routine */
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) time3 = LB_Time(lb->Timer);
 
   /*
    * determine the new partition
@@ -116,12 +126,20 @@ int final_ierr; /* error code returned by this routine */
     return(ierr);
   }
   if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) time4 = LB_Time(lb->Timer);
 
-  /*
-   * delete the tree, except for the first level (initial coarse grid)
-   */
-
-  LB_Reftree_Reinitialize(lb);
+  if (lb->Debug_Level >= LB_DEBUG_ATIME) {
+    if (time0 <= time1) {
+      LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time1-time0,
+                     "REFTREE Time to initialize :");
+    }
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time2-time1, 
+                   "REFTREE Time to build tree :");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time3-time2,
+                   "REFTREE Time to sum weights:");
+    LB_Print_Stats(lb->Communicator, lb->Debug_Proc, time4-time3,
+                   "REFTREE Time to partition  :");
+  }
 
   return(final_ierr);
 }

@@ -71,13 +71,14 @@ extern int LB_Set_Reftree_Param(char *name, char *val);
 extern int LB_Reftree_Init(LB *lb);
 extern int LB_Reftree_Build(LB *lb);
 extern void LB_Reftree_Free_Structure(LB *lb);
-extern void LB_Reftree_Reinitialize(LB *lb);
 extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
 
 extern LB_REFTREE* LB_Reftree_hash_lookup(LB *lb, 
                                           struct LB_reftree_hash_node **hashtab,
                                           LB_ID_PTR key, int n);
 extern void LB_Reftree_Hash_Insert(LB *lb, LB_REFTREE *reftree_node,
+                            struct LB_reftree_hash_node **hashtab, int size);
+extern void LB_Reftree_Hash_Remove(LB *lb, LB_REFTREE *reftree_node,
                             struct LB_reftree_hash_node **hashtab, int size);
 extern void LB_Reftree_Clear_Hash_Table(struct LB_reftree_hash_node **hashtab,
                                  int size);
