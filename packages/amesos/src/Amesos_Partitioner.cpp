@@ -14,7 +14,6 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-#include "Epetra_Import.h"
 #include "Teuchos_ParameterList.hpp"
 
 // FIXME....
@@ -34,13 +33,14 @@ extern "C" {
 #endif
 
 //==============================================================================
-Amesos_Partitioner::Amesos_Partitioner(const Epetra_CrsGraph* Graph,
-				       Teuchos::ParameterList& List) :
+Amesos_Partitioner::
+Amesos_Partitioner(const Epetra_CrsGraph* Graph,
+		   const Epetra_CrsGraph* OverlappingGraph_,
+		   Teuchos::ParameterList& List) :
   NumLocalParts_(0),
   Graph_(Graph),
-  OverlappingGraph_(0),
+  OverlappingGraph_(OverlappingGraph_),
   OverlappingMap_(0),
-  OverlappingImporter_(0),
   OverlappingLevel_(0),
   IsPartitionComputed_(false),
   verbose_(2),
@@ -64,8 +64,8 @@ int Amesos_Partitioner::SetParameters()
 
   // get parameters from input list
   // FIXME: use isParameter() 
-  NumLocalParts_ = List_.get("local parts", 1);
-  OverlappingLevel_ = List_.get("overlap level", 0);
+  NumLocalParts_ = List_.get("local parts", (int)1);
+  OverlappingLevel_ = List_.get("overlap level", (int)0);
   DecompositionType_ = List_.get("partitioner", "METIS");
   verbose_ = List_.get("output level", 2);
       
@@ -104,14 +104,8 @@ Amesos_Partitioner::~Amesos_Partitioner()
 
   IsPartitionComputed_ = false;
 
-  if (OverlappingGraph_)
-    delete OverlappingGraph_;
-
   if (OverlappingMap_)
     delete OverlappingMap_;
-
-  if (OverlappingImporter_)
-    delete OverlappingImporter_;
 
 }
 
@@ -152,15 +146,11 @@ int Amesos_Partitioner::Compute()
   else
     AMESOS_CHK_ERR(-1); // value not valid
 
-  // 3.- compute the graph with overlapping (if necessary)
-
-  AMESOS_CHK_ERR(ComputeOverlappingGraph());
- 
-  // 4.- compute the partitions with overlapping
+  // 3.- compute the partitions with overlapping
   
   AMESOS_CHK_ERR(ComputeOverlappingPartitions());
 
-  // 5.- return to the user
+  // 4.- return to the user
  
   IsPartitionComputed_ = true;
 
@@ -597,83 +587,6 @@ int Amesos_Partitioner::ComputeMETISPartition()
 
   // FIXME: some timing?
 } /* ML_DecomposeGraph_with_METIS */
-
-//============================================================================
-// copied from IFPACK
-int Amesos_Partitioner::ComputeOverlappingGraph()
-{
-
-  if (OverlappingLevel_ == 0) 
-    return(0); // All done
-  if (Comm().NumProc() == 1) 
-    return(0); // All done
-
-  if (verbose_ > 5 && Comm().MyPID() == 0) {
-    cout << PrintMsg_ << "Computing overlapping graph..." << endl;
-  }
-
-  OverlappingGraph_ = const_cast<Epetra_CrsGraph*>(Graph_);
-  OverlappingMap_ = const_cast<Epetra_BlockMap*>(&(Graph_->RowMap()));
-
-  Epetra_CrsGraph* OldGraph;
-  Epetra_BlockMap* OldMap;
-  const Epetra_BlockMap* DomainMap = &(Graph_->DomainMap());
-  const Epetra_BlockMap* RangeMap = &(Graph_->RangeMap());
-
-  for (int level = 1; level <= OverlappingLevel_ ; ++level) {
-
-    OldGraph = OverlappingGraph_;
-    OldMap = OverlappingMap_;
-
-    OverlappingImporter_ = const_cast<Epetra_Import*>(OldGraph->Importer());
-    OverlappingMap_ = new Epetra_BlockMap(OverlappingImporter_->TargetMap());
-
-    if (level < OverlappingLevel_)
-      OverlappingGraph_ = new Epetra_CrsGraph(Copy, *OverlappingMap_, 0);
-    else
-      // On last iteration, we want to filter out all columns except 
-      // those that correspond
-      // to rows in the graph.  This assures that our matrix is square
-      OverlappingGraph_ = new Epetra_CrsGraph(Copy, *OverlappingMap_, 
-					  *OverlappingMap_, 0);
-
-    AMESOS_CHK_ERR(OverlappingGraph_->Import(*Graph_, 
-					     *OverlappingImporter_, Insert));
-    if (level < OverlappingLevel_) {
-      AMESOS_CHK_ERR(OverlappingGraph_->TransformToLocal(DomainMap, RangeMap));
-    }
-    else {
-      // Copy last OverlapImporter because we will use it later
-      OverlappingImporter_ = new Epetra_Import(*OverlappingMap_, *DomainMap);
-      AMESOS_CHK_ERR(OverlappingGraph_->TransformToLocal(DomainMap, RangeMap));
-    }
-
-    if (level > 1) {
-      delete OldGraph;
-      delete OldMap;
-    }
-  }
-
-  return(0);
-}
-  
-//============================================================================
-const Epetra_CrsGraph* Amesos_Partitioner::OverlappingGraph() const
-{
-  if ((OverlappingLevel_ == 0) || (Comm().NumProc() == 1))
-    return(Graph_);
-  else
-    return(OverlappingGraph_);
-}
-
-//============================================================================
-const Epetra_Import* Amesos_Partitioner::OverlappingImport() const
-{
-  if ((OverlappingLevel_ == 0) || (Comm().NumProc() == 1))
-    return((Graph_->Importer()));
-  else
-    return(OverlappingImporter_);
-}
 
 //============================================================================
 

@@ -5,6 +5,7 @@
 #include "Amesos_Container.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Epetra_SerialDenseSolver.h"
+#include "Epetra_IntSerialDenseVector.h"
 
 class Amesos_ContainerLAPACK : public Amesos_Container {
 
@@ -36,15 +37,17 @@ public:
   
   virtual double& RHS(const int i, const int Vector = 0);
 
+  virtual int& GID(const int i);
+
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value);
 
-  virtual int GetMatrixPointer(void** Matrix);
-
-  virtual int SetInversePointer(void* InvMatrix);
-
   virtual int Compute();
 
+  virtual int ComputeInverse(char* Type,
+			     Amesos_InverseFactory& Factory,
+			     Teuchos::ParameterList& List);
+  
   virtual bool IsProblemShaped() const
   {
     return(IsProblemShaped_);
@@ -69,6 +72,7 @@ private:
   Epetra_SerialDenseMatrix LHS_;
   Epetra_SerialDenseMatrix RHS_;
   Epetra_SerialDenseSolver Solver_;
+  Epetra_IntSerialDenseVector GID_;
   bool IsProblemShaped_;
   bool IsProblemComputed_;
 

@@ -17,7 +17,8 @@ class Amesos_Partitioner {
 public:
 
   Amesos_Partitioner(const Epetra_CrsGraph* CrsGraph,
-		   Teuchos::ParameterList& List);
+		     const Epetra_CrsGraph* OverlappingGraph_,
+		     Teuchos::ParameterList& List);
 
   ~Amesos_Partitioner();
 
@@ -93,9 +94,10 @@ public:
     return(&Partition_[0]);
   }
 
-  const Epetra_CrsGraph* OverlappingGraph() const;
-
-  const Epetra_Import* OverlappingImport() const;
+  const Epetra_CrsGraph* OverlappingGraph() const
+  {
+    return(OverlappingGraph_);
+  }
 
   const int NumMyRows() const
   {
@@ -170,14 +172,11 @@ private:
   const Epetra_CrsGraph* Graph_;
 
   //! Overlapping graph. It is computed only it OverlappingLevel_ > 1
-  Epetra_CrsGraph* OverlappingGraph_;
+  const Epetra_CrsGraph* OverlappingGraph_;
   
   /*! Map for the overlapping graph. It is computed only if OverlappingGraph_
    * > 1 */
   Epetra_BlockMap* OverlappingMap_;
-
-  // FIXME: am I useful?
-  Epetra_Import* OverlappingImporter_;
 
 
   //! Overlapping level.

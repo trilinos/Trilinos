@@ -10,6 +10,7 @@ class Epetra_CrsMatrix;
 class Epetra_LinearProblem;
 class Epetra_MultiVector;
 class Epetra_BlockMap;
+#include "Epetra_IntSerialDenseVector.h"
 
 class Amesos_ContainerEpetraCrs : public Amesos_Container {
 
@@ -44,14 +45,16 @@ public:
   
   virtual double& RHS(const int i, const int Vector = 0);
 
+  virtual int& GID(const int i);
+
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value);
 
-  virtual int GetMatrixPointer(void** Matrix);
-
-  virtual int SetInversePointer(void* Inverse);
-
   virtual int Compute();
+
+  virtual int ComputeInverse(char* Type,
+			     Amesos_InverseFactory& Factory,
+			     Teuchos::ParameterList& List);
 
   virtual bool IsProblemShaped() const
   {
@@ -78,6 +81,7 @@ private:
   Epetra_Operator* Inverse_;
   Epetra_MultiVector* LHS_;
   Epetra_MultiVector* RHS_;
+  Epetra_IntSerialDenseVector GID_;
 
   Epetra_LinearProblem* Solver_;
 

@@ -2,6 +2,7 @@
 #define AMESOS_CONTAINER_H
 
 class Epetra_BlockMap;
+#include "Amesos_InverseFactory.h"
 
 class Amesos_Container {
 
@@ -25,15 +26,17 @@ public:
   
   virtual double& RHS(const int i, const int Vector = 0) = 0;
 
+  virtual int& GID(const int i) = 0;
+
   virtual int SetMatrixElement(const int row, const int col,
 			       const double value) = 0;
 
-  virtual int GetMatrixPointer(void** Matrix) = 0;
-
-  virtual int SetInversePointer(void* InvMatrix) = 0;
-
   virtual int Compute() = 0;
 
+  virtual int ComputeInverse(char* Type,
+			     Amesos_InverseFactory& Factory,
+			     Teuchos::ParameterList& List) = 0;
+  
   virtual bool IsProblemShaped() const = 0;
 
   virtual bool IsProblemComputed() const = 0;

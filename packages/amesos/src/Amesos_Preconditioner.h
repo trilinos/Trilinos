@@ -3,28 +3,30 @@
 
 #include "Epetra_Operator.h"
 #include "Teuchos_ParameterList.hpp"
-class Epetra_MultiVector;
 class Epetra_Map;
 class Epetra_Comm;
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 class Epetra_RowMatrix;
+class Amesos_LocalRowMatrix;
 
 class Amesos_Preconditioner : public Epetra_Operator {
       
 public:
 
   Amesos_Preconditioner(char* SolverType,
-				  Epetra_RowMatrix* Matrix);
+			Epetra_RowMatrix* Matrix,
+			const bool LocalizeMatrix = true);
 
   Amesos_Preconditioner(char* SolverType,
-				  Epetra_RowMatrix* Matrix,
-				  Teuchos::ParameterList& List);
+			Epetra_RowMatrix* Matrix,
+			Teuchos::ParameterList& List,
+			const bool LocalizeMatrix = true);
   //@{ \name Destructor.
-    //! Destructor
-    virtual ~Amesos_Preconditioner();
+  //! Destructor
+  virtual ~Amesos_Preconditioner();
   //@}
-  
+
   //@{ \name Atribute set methods.
 
     //! If set true, transpose of this operator will be applied.
@@ -97,12 +99,24 @@ public:
     virtual const Epetra_Map & OperatorRangeMap() const;
   //@}
 
+    virtual bool IsLocalized() const
+    {
+      return(IsLocalized_);
+    }
+
 private:
 
-  Epetra_RowMatrix* Matrix_;
-  Amesos_BaseSolver* Solver_;
+    int Amesos_Preconditioner::Compute(char* SolverType,
+				       Epetra_RowMatrix* Matrix,
+				       Teuchos::ParameterList& List,
+				       const bool LocalizeMatrix);
+
+    Epetra_RowMatrix* Matrix_;
+    Amesos_LocalRowMatrix* LocalizedMatrix_;
+    Amesos_BaseSolver* Solver_;
   Epetra_LinearProblem* Problem_;
   string Label_;
+  bool IsLocalized_;
 
 };
 

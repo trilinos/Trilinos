@@ -4,6 +4,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_LocalRowMatrix.h"
 #include "Amesos.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_RowMatrix.h"
@@ -11,24 +12,48 @@
 
 //==============================================================================
 Amesos_Preconditioner::Amesos_Preconditioner(char* SolverType,
-				 Epetra_RowMatrix* Matrix) 
+					     Epetra_RowMatrix* Matrix,
+					     const bool LocalizeMatrix)
 {
 
   Teuchos::ParameterList List;
-  Amesos_Preconditioner(SolverType, Matrix, List);
+  AMESOS_CHK_ERRV(Compute(SolverType,Matrix,List,LocalizeMatrix));
 
 }
 
 //==============================================================================
 Amesos_Preconditioner::Amesos_Preconditioner(char* SolverType,
-				 Epetra_RowMatrix* Matrix,
-				 Teuchos::ParameterList& List) :
-  Matrix_(Matrix),
-  Label_("Amesos_Preconditioner")
+					     Epetra_RowMatrix* Matrix,
+					     Teuchos::ParameterList& List,
+					     const bool LocalizeMatrix)
+{
+  AMESOS_CHK_ERRV(Compute(SolverType,Matrix,List,LocalizeMatrix));
+}
+
+//==============================================================================
+int Amesos_Preconditioner::Compute(char* SolverType,
+				   Epetra_RowMatrix* Matrix,
+				   Teuchos::ParameterList& List,
+				   const bool LocalizeMatrix)
 {
 
+  Matrix_ = Matrix;
+  LocalizedMatrix_ = 0;
+  IsLocalized_ = LocalizeMatrix;
+
+  Label_ = string(SolverType) + " preconditioner, overlap = 0";
+
   Problem_ = new Epetra_LinearProblem;
-  Problem_->SetOperator(Matrix_);
+
+  if (IsLocalized() == true) {
+
+    LocalizedMatrix_ = new Amesos_LocalRowMatrix(Matrix);
+    assert (LocalizedMatrix_ != 0);
+    Problem_->SetOperator(LocalizedMatrix_);
+
+  }
+  else
+    Problem_->SetOperator(Matrix_);
 
   Amesos Factory;
   Solver_ = Factory.Create(SolverType,*Problem_);
@@ -38,15 +63,16 @@ Amesos_Preconditioner::Amesos_Preconditioner(char* SolverType,
     Solver_ = Factory.Create("Amesos_Klu",*Problem_);
 
     if (Solver_ == 0) {
-      AMESOS_CHK_ERRV(-1);
+      AMESOS_CHK_ERR(-1);
     }
   }
 
   Solver_->SetParameters(List);
 
-  AMESOS_CHK_ERRV(Solver_->SymbolicFactorization());
-  AMESOS_CHK_ERRV(Solver_->NumericFactorization());
+  AMESOS_CHK_ERR(Solver_->SymbolicFactorization());
+  AMESOS_CHK_ERR(Solver_->NumericFactorization());
 
+  return(0);
 }
 
 //==============================================================================
@@ -57,6 +83,9 @@ Amesos_Preconditioner::~Amesos_Preconditioner()
 
   if (Solver_)
     delete Solver_;
+
+  if (LocalizedMatrix_)
+    delete LocalizedMatrix_;
 
 }
 
@@ -71,7 +100,12 @@ int Amesos_Preconditioner::SetUseTranspose(bool UseTranspose)
 int Amesos_Preconditioner::
 Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  AMESOS_CHK_ERR(Matrix_->Apply(X,Y));
+  if (IsLocalized() == false) {
+    AMESOS_CHK_ERR(Matrix_->Apply(X,Y));
+  } 
+  else {
+    AMESOS_CHK_ERR(LocalizedMatrix_->Apply(X,Y));
+  }
 }
 
 //==============================================================================
@@ -79,12 +113,33 @@ int Amesos_Preconditioner::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  // FIXME
-  Epetra_MultiVector Xtmp(X);
-  Problem_->SetLHS(&Y);
-  Problem_->SetRHS((Epetra_MultiVector*)&Xtmp);
+  int NumVectors = X.NumVectors();
 
-  AMESOS_CHK_ERR(Solver_->Solve());
+  if (NumVectors != Y.NumVectors())
+    AMESOS_CHK_ERR(-1); // wrong input
+  
+  if (IsLocalized()) {
+    
+    Epetra_MultiVector LocalizedX(Copy,LocalizedMatrix_->RowMatrixRowMap(),
+				  X.Pointers(), NumVectors);
+    Epetra_MultiVector LocalizedY(View,LocalizedMatrix_->RowMatrixRowMap(),
+				  Y.Pointers(), NumVectors);
+    
+    Problem_->SetLHS(&LocalizedY);
+    Problem_->SetRHS(&LocalizedX);
+
+    AMESOS_CHK_ERR(Solver_->Solve());
+
+  }
+  else {
+
+    Epetra_MultiVector Xtmp(X);
+    Problem_->SetLHS(&Y);
+    Problem_->SetRHS((Epetra_MultiVector*)&Xtmp);
+    AMESOS_CHK_ERR(Solver_->Solve());
+
+  }
+    
 
   return(0);
 }
@@ -116,17 +171,30 @@ bool Amesos_Preconditioner::HasNormInf() const
 //==============================================================================
 const Epetra_Comm & Amesos_Preconditioner::Comm() const
 {
-  return(Matrix_->Comm());
+  if (IsLocalized() == false) {
+    return(Matrix_->Comm());
+  }
+  else {
+    return(LocalizedMatrix_->Comm());
+  }
 }
 
 //==============================================================================
 const Epetra_Map & Amesos_Preconditioner::OperatorDomainMap() const
 {
-  return(Matrix_->OperatorDomainMap());
+  if (IsLocalized() == false) {
+    return(Matrix_->OperatorDomainMap());
+  }
+  else {
+    return(LocalizedMatrix_->OperatorDomainMap());
+  }
 }
 
 //==============================================================================
 const Epetra_Map & Amesos_Preconditioner::OperatorRangeMap() const
 {
-  return(Matrix_->OperatorRangeMap());
+  if (IsLocalized() == false)
+    return(Matrix_->OperatorRangeMap());
+  else
+    return(LocalizedMatrix_->OperatorRangeMap());
 }

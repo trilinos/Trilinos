@@ -7,6 +7,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_IntSerialDenseVector.h"
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -67,6 +68,7 @@ int Amesos_ContainerEpetraCrs::Shape(const int NumRows, const int NumVectors)
 
   LHS_ = new Epetra_MultiVector(*Map_,NumVectors);
   RHS_ = new Epetra_MultiVector(*Map_,NumVectors);
+  GID_.Reshape(NumRows,1);
 
   // FIXME: try View??
   Matrix_ = new Epetra_CrsMatrix(Copy,*Map_,0);
@@ -198,6 +200,9 @@ int Amesos_ContainerEpetraCrs::Destroy()
   if (Solver_)
     delete Solver_;
 
+  if (Inverse_)
+    delete Inverse_;
+
   Map_ = 0;
   Matrix_ = 0;
   Inverse_ = 0;
@@ -211,27 +216,26 @@ int Amesos_ContainerEpetraCrs::Destroy()
 }
 
 //==============================================================================
-int Amesos_ContainerEpetraCrs::GetMatrixPointer(void** Matrix)
+int& Amesos_ContainerEpetraCrs::GID(const int i)
 {
-  if (IsProblemShaped() == false) {
-    AMESOS_CHK_ERR(-1);
-  }
-
-  if (IsProblemComputed() == false) {
-    AMESOS_CHK_ERR(-1);
-  }
-
-  *Matrix = (void*) Matrix_;
-
-  return(0);
+  return(GID_[i]);
 }
 
 //==============================================================================
-int Amesos_ContainerEpetraCrs::SetInversePointer(void* Inverse)
+int Amesos_ContainerEpetraCrs::ComputeInverse(char* Type,
+					   Amesos_InverseFactory& Factory,
+					   Teuchos::ParameterList&
+					   List)
 {
-  Inverse_ = (Epetra_Operator*)Inverse;
+
+  if (Inverse_)
+    delete Inverse_;
+
+  Inverse_ = Factory.Create(Type, Matrix_, (Epetra_RowMatrix*)0,List);
+
+  if (Inverse_ == 0)
+    AMESOS_CHK_ERR(-10);
 
   return(0);
 }
-
 

@@ -3,12 +3,16 @@
 
 #include "Epetra_Operator.h"
 #include "Teuchos_ParameterList.hpp"
+#include "Amesos_InverseFactory.h"
 class Epetra_MultiVector;
 class Epetra_Map;
 class Epetra_Comm;
 class Amesos_BaseSolver;
 class Epetra_LinearProblem;
 class Epetra_CrsMatrix;
+class Epetra_Import;
+class Epetra_Export;
+class Amesos_LocalRowMatrix;
 
 class Amesos_OverlappingPreconditioner : public Epetra_Operator {
       
@@ -16,11 +20,15 @@ public:
 
   Amesos_OverlappingPreconditioner(char* SolverType,
 				  Epetra_CrsMatrix* Matrix,
-				  int OverlappingLevel);
+				  Amesos_InverseFactory& Factory,
+				  int OverlappingLevel = 1,
+				  bool IsSymmetric = false);
 
   Amesos_OverlappingPreconditioner(char* SolverType,
 				  Epetra_CrsMatrix* Matrix,
+				  Amesos_InverseFactory& Factory,
 				  int OverlappingLevel,
+				  bool IsSymmetric,
 				  Teuchos::ParameterList& List);
   //@{ \name Destructor.
     //! Destructor
@@ -99,17 +107,33 @@ public:
     virtual const Epetra_Map & OperatorRangeMap() const;
   //@}
 
+    bool IsSymmetric() const
+    {
+      return(IsSymmetric_);
+     }
+
 private:
+
+  int Compute(char* SolverType,
+	      Epetra_CrsMatrix* Matrix,
+	      int OverlappingLevel,
+	      bool IsSymmetric,
+	      Amesos_InverseFactory& Factory,
+	      Teuchos::ParameterList& List);
 
   int OverlappingLevel_;
   Epetra_CrsMatrix* Matrix_;
+  Epetra_Operator* Inverse_;
+  bool IsSymmetric_;
   Epetra_CrsMatrix* OverlappingMatrix_;
-  Epetra_MultiVector* OverlappedX_;
-  Epetra_MultiVector* OverlappedY_;
+  mutable Epetra_MultiVector* OverlappingX_;
+  mutable Epetra_MultiVector* OverlappingY_;
   Epetra_Import* Importer_;
+  Epetra_Export* Exporter_;
   Amesos_BaseSolver* Solver_;
   Epetra_LinearProblem* Problem_;
   string Label_;
+  Amesos_LocalRowMatrix* LocalOverlappingMatrix_;
 
 };
 

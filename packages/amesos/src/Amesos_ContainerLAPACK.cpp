@@ -1,7 +1,7 @@
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_LocalLinearProblem.h"
 #include "Amesos_ContainerLAPACK.h"
-
+#include "Epetra_IntSerialDenseVector.h"
 
 //==============================================================================
 Amesos_ContainerLAPACK::Amesos_ContainerLAPACK() :
@@ -49,6 +49,7 @@ int Amesos_ContainerLAPACK::Shape(const int NumRows, const int NumVectors)
 
   AMESOS_CHK_ERR(LHS_.Reshape(NumRows_,NumVectors));
   AMESOS_CHK_ERR(RHS_.Reshape(NumRows_,NumVectors));
+  AMESOS_CHK_ERR(GID_.Reshape(NumRows_,NumVectors));
 
   Matrix_.Reshape(NumRows_,NumRows_);
   // zero out matrix elements
@@ -115,14 +116,13 @@ SetMatrixElement(const int row, const int col, const double value)
 }
 
 //==============================================================================
-int Amesos_ContainerLAPACK::GetMatrixPointer(void** InvMatrix)
+int Amesos_ContainerLAPACK::ComputeInverse(char* Type,
+					   Amesos_InverseFactory& Factory,
+					   Teuchos::ParameterList& List)
 {
-  AMESOS_CHK_ERR(-99);
-}
 
-int Amesos_ContainerLAPACK::SetInversePointer(void* InvMatrix)
-{
-  AMESOS_CHK_ERR(-99); // not implemented
+  AMESOS_CHK_ERR(Solver_.Factor());
+
 }
 
 //==============================================================================
@@ -133,8 +133,6 @@ int Amesos_ContainerLAPACK::Compute()
   }
 
   IsProblemComputed_ = true;
-
-  AMESOS_CHK_ERR(Solver_.Factor());
 
   return(0);
 }
@@ -167,5 +165,11 @@ int Amesos_ContainerLAPACK::Destroy() {
   IsProblemShaped_ = false;
   IsProblemComputed_ = false;
   return(0);
+}
+
+//==============================================================================
+int& Amesos_ContainerLAPACK::GID(const int i)
+{
+  return(GID_[i]);
 }
 

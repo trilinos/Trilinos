@@ -1,24 +1,31 @@
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_OverlappingPreconditioner.h"
+#include "Amesos_InverseFactory.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Amesos_BaseSolver.h"
+#include "Amesos_LocalRowMatrix.h"
 #include "Amesos.h"
+#include "Amesos_Utils.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 #include "Teuchos_ParameterList.hpp"
 
 //==============================================================================
 Amesos_OverlappingPreconditioner::
 Amesos_OverlappingPreconditioner(char* SolverType,
 				 Epetra_CrsMatrix* Matrix,
-				 int OverlappingLevel) 
+				 Amesos_InverseFactory& Factory,
+				 int OverlappingLevel,
+				 bool IsSymmetric)
 {
 
   Teuchos::ParameterList List;
-  Amesos_OverlappingPreconditioner(SolverType, Matrix, OverlappingLevel,
-				   List);
+  AMESOS_CHK_ERRV(Compute(SolverType,Matrix,OverlappingLevel,
+			  IsSymmetric,Factory,List));
 
 }
 
@@ -26,66 +33,81 @@ Amesos_OverlappingPreconditioner(char* SolverType,
 Amesos_OverlappingPreconditioner::
 Amesos_OverlappingPreconditioner(char* SolverType,
 				 Epetra_CrsMatrix* Matrix,
+				 Amesos_InverseFactory& Factory,
 				 int OverlappingLevel,
-				 Teuchos::ParameterList& List) :
-  Matrix_(Matrix),
-  OverlappingLevel_(OverlappingLevel),
-  Label_("Amesos_OverlappingPreconditioner")
+				 bool IsSymmetric,
+				 Teuchos::ParameterList& List)
+{
+  AMESOS_CHK_ERRV(Compute(SolverType,Matrix,OverlappingLevel,
+			  IsSymmetric,Factory,List));
+}
+
+int Amesos_OverlappingPreconditioner::
+Compute(char* SolverType, Epetra_CrsMatrix* Matrix,
+	int OverlappingLevel, bool IsSymmetric,
+	Amesos_InverseFactory& Factory, Teuchos::ParameterList& List)
 {
 
-  // FIXME: to add an option for symmetric/non-symmetric
-  // FIXME:
-  // not I don't consider no-overlap. Should I ???
-  assert(OverlappingLevel > 0);
+  Matrix_ = Matrix;
+  OverlappingLevel_ = OverlappingLevel;
+  IsSymmetric_ = IsSymmetric;
+  Inverse_ = 0;
 
-  OverlappingLevel_ = 1;
-  if (OverlappingLevel_ > 0) {
-    OverlappingMatrix_ = CreateOverlappingMatrix(Matrix, 
-						 OverlappingMatrix_);
+  // =========================== //
+  // build the overlapping graph //
+  // =========================== //
+ 
+  Label_ = string(SolverType) + " preconditioner, overlap = " +
+    Amesos_toString(OverlappingLevel);
+
+  if ((OverlappingLevel_ > 0) && (Comm().NumProc() > 1)) {
+
+    OverlappingMatrix_ = Amesos_CreateOverlappingCrsMatrix(Matrix, 
+							   OverlappingLevel_);
     assert(OverlappingMatrix_ != 0);
 
+  }
+  else 
+    OverlappingMatrix_ = Matrix_;
 
-    OverlappingX_ = 
-      new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),1);
-    OverlappingY_ = 
-      new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),1);
+    Importer_ = new Epetra_Import(OverlappingMatrix_->RowMatrixRowMap(), 
+				  Matrix->RowMatrixRowMap());
+    Exporter_ = new Epetra_Export(Matrix->RowMatrixRowMap(),
+				  OverlappingMatrix_->RowMatrixRowMap());
 
-    // to import off-process data before the application of the
-    // preconditioner
-    Importer_ = new Epetra_Importer(Matrix->RowMatrixRowMap(),
-				    OverlappingMatrix->RowMatrixRowMap());
+  OverlappingX_ = 
+    new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),1);
+  OverlappingY_ = 
+    new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),1);
 
-    // wrap up the overlapping matrix into a local matrix
-    LocalOverlappingMatrix_ = 
-      new Amesos_LocalRowMatrix(OverlappingMatrix_);
+  // to import off-process data before the application of the
+  // preconditioner
+  // FIXME: can I save one?
+  // wrap up the overlapping matrix into a local matrix
+  LocalOverlappingMatrix_ = 
+    new Amesos_LocalRowMatrix(OverlappingMatrix_);
+  assert (LocalOverlappingMatrix_ != 0);
 
-    Problem_ = new Epetra_LinearProblem;
-    Problem_->SetOperator(LocalOverlappingMatrix_);
+  // ================= //
+  // build the inverse //
+  // ================= //
 
-    Amesos Factory;
-    Solver_ = Factory.Create(SolverType,*Problem_);
-
-    if (Solver_ == 0) {
-      // try to create KLU, it is generally enabled
-      Solver_ = Factory.Create("Amesos_Klu",*Problem_);
-
-      if (Solver_ == 0) {
-	AMESOS_CHK_ERRV(-1);
-      }
-    }
-
-    Solver_->SetParameters(List);
-
-    // factorize matrices
-    AMESOS_CHK_ERRV(Solver_->SymbolicFactorization());
-    AMESOS_CHK_ERRV(Solver_->NumericFactorization());
-
-  } // fix the case without overlap
+  Inverse_ = Factory.Create(SolverType,LocalOverlappingMatrix_,
+			    Matrix_,List);
+ 
+  if (Inverse_ == 0)
+    AMESOS_CHK_ERR(-1);
+    
+  return(0);
 }
 
 //==============================================================================
 Amesos_OverlappingPreconditioner::~Amesos_OverlappingPreconditioner()
 {
+
+  if (OverlappingMatrix_ && OverlappingLevel_)
+    delete OverlappingMatrix_;
+
   if (OverlappingX_)
     delete OverlappingX_;
 
@@ -104,6 +126,8 @@ Amesos_OverlappingPreconditioner::~Amesos_OverlappingPreconditioner()
   if (Solver_)
     delete Solver_;
 
+  if (Inverse_)
+    delete Inverse_;
 }
 
 //==============================================================================
@@ -126,7 +150,6 @@ int Amesos_OverlappingPreconditioner::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
 
-  // FIXME
   if (X.NumVectors() != Y.NumVectors())
     AMESOS_CHK_ERR(-1); // something wrong
 
@@ -143,14 +166,22 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     assert (OverlappingY_ != 0);
   }
 
-  X.Import(Overlapping_X,*Importer_,Insert);
+  AMESOS_CHK_ERR(OverlappingX_->Export(X,*Exporter_,Insert));
 
-  Problem_->SetLHS(OverlappingY_);
-  Problem_->SetRHS(OverlappingX_);
+  Epetra_MultiVector LocalX(View,LocalOverlappingMatrix_->RowMatrixRowMap(),
+			    OverlappingX_->Pointers(),X.NumVectors());
+  Epetra_MultiVector LocalY(View,LocalOverlappingMatrix_->RowMatrixRowMap(),
+			    OverlappingY_->Pointers(),Y.NumVectors());
 
-  AMESOS_CHK_ERR(Solver_->Solve());
+  AMESOS_CHK_ERR(Inverse_->ApplyInverse(LocalX,LocalY));
 
-  Y.Export(OverlappingY_,*Importer_,Insert);
+  if (IsSymmetric()) {
+    AMESOS_CHK_ERR(Y.Export(*OverlappingY_,*Importer_,Add));
+  }
+  else {
+    AMESOS_CHK_ERR(Y.Export(*OverlappingY_,*Importer_,Zero));
+  }
+
   return(0);
 }
 
@@ -195,4 +226,3 @@ const Epetra_Map & Amesos_OverlappingPreconditioner::OperatorRangeMap() const
 {
   return(Matrix_->OperatorRangeMap());
 }
-

@@ -2,7 +2,9 @@
 #include "Epetra_Comm.h"
 #include "Amesos_Utils.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_CrsGraph.h"
 #include "Epetra_Map.h"
+#include "Epetra_BlockMap.h"
 #include "Epetra_Import.h"
 
 void Amesos_BreakForDebugger(Epetra_Comm& Comm)
@@ -39,8 +41,8 @@ void Amesos_BreakForDebugger(Epetra_Comm& Comm)
 }
 
 //============================================================================
-Epetra_CrsMatrix* CreateOverlappingCrsMatrix(Epetra_CrsMatrix* Matrix,
-					     const int OverlappingLevel)
+Epetra_CrsMatrix* Amesos_CreateOverlappingCrsMatrix(Epetra_CrsMatrix* Matrix,
+						    const int OverlappingLevel)
 {
 
   if (OverlappingLevel == 0) 
@@ -94,8 +96,85 @@ Epetra_CrsMatrix* CreateOverlappingCrsMatrix(Epetra_CrsMatrix* Matrix,
     if (level > 1) {
       delete OldMatrix;
     }
+    OverlappingMatrix->FillComplete();
+
   }
 
   return(OverlappingMatrix);
 }
 
+//============================================================================
+Epetra_CrsGraph* Amesos_CreateOverlappingCrsMatrix(Epetra_CrsGraph* Graph,
+						   const int OverlappingLevel)
+{
+
+  if (OverlappingLevel == 0) 
+    return(0); // All done
+  if (Graph->Comm().NumProc() == 1) 
+    return(0); // All done
+
+  Epetra_CrsGraph* OverlappingGraph;
+  Epetra_BlockMap* OverlappingMap;
+  OverlappingGraph = const_cast<Epetra_CrsGraph*>(Graph);
+  OverlappingMap = const_cast<Epetra_BlockMap*>(&(Graph->RowMap()));
+
+  Epetra_CrsGraph* OldGraph;
+  Epetra_BlockMap* OldMap;
+  const Epetra_BlockMap* DomainMap = &(Graph->DomainMap());
+  const Epetra_BlockMap* RangeMap = &(Graph->RangeMap());
+
+  for (int level = 1; level <= OverlappingLevel ; ++level) {
+
+    OldGraph = OverlappingGraph;
+    OldMap = OverlappingMap;
+
+    Epetra_Import* OverlappingImporter;
+    OverlappingImporter = const_cast<Epetra_Import*>(OldGraph->Importer());
+    OverlappingMap = new Epetra_BlockMap(OverlappingImporter->TargetMap());
+
+    if (level < OverlappingLevel)
+      OverlappingGraph = new Epetra_CrsGraph(Copy, *OverlappingMap, 0);
+    else
+      // On last iteration, we want to filter out all columns except 
+      // those that correspond
+      // to rows in the graph.  This assures that our matrix is square
+      OverlappingGraph = new Epetra_CrsGraph(Copy, *OverlappingMap, 
+					  *OverlappingMap, 0);
+
+    OverlappingGraph->Import(*OldGraph, *OverlappingImporter, Insert);
+    if (level < OverlappingLevel) 
+      OverlappingGraph->TransformToLocal(DomainMap, RangeMap);
+    else {
+      // Copy last OverlapImporter because we will use it later
+      OverlappingImporter = new Epetra_Import(*OverlappingMap, *DomainMap);
+      OverlappingGraph->TransformToLocal(DomainMap, RangeMap);
+    }
+
+    if (level > 1) {
+      delete OldGraph;
+      delete OldMap;
+    }
+
+    delete OverlappingMap;
+    OverlappingGraph->FillComplete();
+
+  }
+
+  return(OverlappingGraph);
+}
+
+//============================================================================
+string Amesos_toString(const int& x)
+{
+  char s[100];
+  sprintf(s, "%d", x);
+  return string(s);
+}
+
+//============================================================================
+string Amesos_toString(const double& x)
+{
+  char s[100];
+  sprintf(s, "%g", x);
+  return string(s);
+}
