@@ -18,6 +18,7 @@
 
 /*
  * Definition of the Zoltan Ordering Struct (ZOS).
+ * This structure contains information about one particular ordering.
  */
 
 struct Zoltan_Order_Struct {
@@ -34,14 +35,28 @@ struct Zoltan_Order_Struct {
 typedef struct Zoltan_Order_Struct ZOS;
 
 /*
+ * Definition of Zoltan Order Option struct.
+ * This structure contains options that are passed on to the ordering method.
+ */
+
+struct Zoltan_Order_Options {
+  char *order_type;		/* In: Ordering is LOCAL or GLOBAL? */
+  int start_index;		/* In: Permutations start at 0 or 1? */
+  int reorder;			/* In: Permute from existing ordering? */
+  int use_order_info;		/* In: Put order info into ZOS? */
+  int return_args;		/* Out: What return arguments were computed? */
+};
+
+typedef struct Zoltan_Order_Options ZOOS;
+
+/*
  * Type definitions for functions that depend on 
  * ordering method or uses the ordering struct.
  */
 
 typedef int ZOLTAN_ORDER_FN(ZZ *, 
                          ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
-                         int *, int *, int *,
-                         ZOS *);
+                         int *, int *, ZOOS *, ZOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */

@@ -66,14 +66,14 @@ int Zoltan_Order(
  */
 
   char *yo = "Zoltan_Order";
-  int ierr, return_args, use_order_info; 
-  int reorder, start_index;
+  int ierr;
   int *vtxdist;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
   char msg[256], method[80], order_type[80];
   int comm[2],gcomm[2]; 
   ZOLTAN_ORDER_FN *Order_fn;
+  struct Zoltan_Order_Options opt;
 
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -109,22 +109,22 @@ int Zoltan_Order(
    */
 
   /* Set default parameter values */
-  use_order_info = 0;
   strcpy(method, "PARMETIS");
-  strcpy(order_type, "GLOBAL");
-  start_index = 0;
-  reorder = 0;
+  opt.use_order_info = 0;
+  strcpy(opt.order_type, "GLOBAL");
+  opt.start_index = 0;
+  opt.reorder = 0;
 
-  Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) &method);
-  Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) order_type);
-  Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &start_index);
-  Zoltan_Bind_Param(Order_params, "REORDER",      (void *) &reorder);
-  Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &use_order_info);
+  Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) method);
+  Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) opt.order_type);
+  Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &opt.start_index);
+  Zoltan_Bind_Param(Order_params, "REORDER",      (void *) &opt.reorder);
+  Zoltan_Bind_Param(Order_params, "USE_ORDER_INFO", (void *) &opt.use_order_info);
 
   Zoltan_Assign_Param_Vals(zz->Params, Order_params, zz->Debug_Level, 
                            zz->Proc, zz->Debug_Proc);
 
-  if (use_order_info == 0) order_info = NULL;
+  if (opt.use_order_info == 0) order_info = NULL;
 
   /*
    *  Find the selected method.
@@ -166,7 +166,7 @@ int Zoltan_Order(
    * Call the actual ordering function.
    */
 
-  ierr = (*Order_fn)(zz, gids, lids, rank, iperm, &return_args, order_info);
+  ierr = (*Order_fn)(zz, gids, lids, rank, iperm, &opt, order_info);
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
@@ -189,15 +189,15 @@ int Zoltan_Order(
     return (ierr);
   }
 
-  if (!(return_args & RETURN_RANK)){
+  if (!(opt.return_args & RETURN_RANK)){
     /* Compute rank from iperm */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, order_type, start_index);
+    Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, order_type, opt.start_index);
   }
-  else if (!(return_args & RETURN_IPERM)){
+  else if (!(opt.return_args & RETURN_IPERM)){
     /* Compute iperm from rank */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
-    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, order_type, start_index);
+    Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, order_type, opt.start_index);
   }
   ZOLTAN_FREE(&vtxdist);
 
