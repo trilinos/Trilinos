@@ -38,9 +38,6 @@
 /* Define if want to build default-packages */
 #undef HAVE_DEFAULT_PACKAGES
 
-/* Define if want to build ml_examples */
-#undef HAVE_EXAMPLES
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -58,6 +55,16 @@
 
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
+
+/* Define if want to build libcheck */
+#undef HAVE_LIBCHECK
+
+/* Define to 1 if your system has a GNU libc compatible `malloc' function, and
+   to 0 otherwise. */
+#undef HAVE_MALLOC
+
+/* Define to 1 if you have the <malloc.h> header file. */
+#undef HAVE_MALLOC_H
 
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
@@ -92,6 +99,9 @@
 /* Define if want to build epetra */
 #undef HAVE_ML_EPETRA
 
+/* Define if want to build ml-examples */
+#undef HAVE_ML_EXAMPLES
+
 /* Define if want to build with ml_external_mpi_functions enabled */
 #undef HAVE_ML_EXTERNAL_MPI_FUNCTIONS
 
@@ -107,6 +117,9 @@
 /* Define if want to build with ml_newtpe enabled */
 #undef HAVE_ML_NEW_T_PE
 
+/* Define if want to build with ml_parasails enabled */
+#undef HAVE_ML_PARASAILS
+
 /* Define if want to build with ml_parmetis2x enabled */
 #undef HAVE_ML_PARMETIS_2x
 
@@ -121,6 +134,9 @@
 
 /* Define if want to build with ml_superlu_dist enabled */
 #undef HAVE_ML_SUPERLU_DIST
+
+/* Define if want to build ml-tests */
+#undef HAVE_ML_TESTS
 
 /* Define if want to build with teuchos enabled */
 #undef HAVE_ML_TEUCHOS
@@ -220,3 +236,6 @@
 #ifndef __cplusplus
 #undef inline
 #endif
+
+/* Define to rpl_malloc if the replacement function should be used. */
+#undef malloc
