@@ -188,8 +188,10 @@ TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build belos tests], BELOS_TESTS, yes)
 AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
-TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, no)
+TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, yes)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
+#TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories 

@@ -877,7 +877,7 @@ Optional Features:
   --enable-belos-tests    Build belos tests (default is yes)
   --enable-tests          Build tests for all Trilinos packages (default is
                           yes)
-  --enable-ifpack         Build examples which use ifpack (default is no)
+  --enable-ifpack         Build examples which use ifpack (default is yes)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5486,7 +5486,7 @@ if test "${enable_ifpack+set}" = set; then
   enableval="$enable_ifpack"
   ac_cv_use_ifpack=$enableval
 else
-  ac_cv_use_ifpack=no
+  ac_cv_use_ifpack=yes
 fi;
 
 echo "$as_me:$LINENO: checking whether to use ifpack" >&5
@@ -5515,6 +5515,8 @@ else
   BUILD_IFPACK_FALSE=
 fi
 
+#TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories
@@ -5607,7 +5609,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5610: \"$ac_link\") >&5
+(eval echo $as_me:5612: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5687,7 +5689,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5690: \"$ac_link\") >&5
+(eval echo $as_me:5692: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8074,7 +8076,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8077: \"$ac_link\") >&5
+(eval echo $as_me:8079: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8154,7 +8156,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8157: \"$ac_link\") >&5
+(eval echo $as_me:8159: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
