@@ -56,3 +56,4 @@ INPUT                  = ../../../../Trilinos/packages/epetra/src
 INPUT                 += ../../../../Trilinos/packages/epetra/doc/index.doc
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/epetra/example/petra_power_method
+GENERATE_TAGFILE       = epetra.tag
