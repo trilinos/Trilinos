@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver
   NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
-  lsParams.setParameter("Aztec Solver", "CG");  
+  lsParams.setParameter("Aztec Solver", "GMRES");  
   lsParams.setParameter("Max Iterations", 800);  
   lsParams.setParameter("Tolerance", 1e-4);
   lsParams.setParameter("Output Frequency", 50);    
