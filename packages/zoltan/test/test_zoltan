@@ -3,7 +3,7 @@
 # This C-shell script runs all the test examples 
 # and compares the results against pre-computed results.
 #
-# Usage: run_tests [-arch arch-type] [-cmd command] 
+# Usage: test_zoltan [-arch arch-type] [-cmd command] 
 #
 # where arch-type is one of {sun, sunos, smos, tflop, cplant}.
 # Alternatively, give a run command with the -cmd option.
@@ -24,7 +24,7 @@ set nem_pdisk = (1 2 2) # parallel disk info
 @ no_chaco = 0
 @ no_nemesis = 0
 @ no_parmetis = 0
-set outfile = tests.out
+set logfile = test_zoltan.log
 set answers = answers
 set outdir = output
 unset run
@@ -50,11 +50,21 @@ while ( $#argv )
      @ no_parmetis = 1
   else if ( $1 == "-no_chaco" ) then
      @ no_chaco = 1
+  else if ( $1 == "-logfile" ) then
+  
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for -logfile"
+      goto usage
+    endif
+    
+    shift argv
+    set logfile = $1
+    
   else if ( $1 == "-arch" ) then
   
     # Determine what command to use to launch a parallel program
     if ( $#argv < 2 ) then
-      echo "Error: Missing argument for -arch"
+      echo "Error: No argument for -arch"
       goto usage
     endif
     
@@ -80,7 +90,7 @@ while ( $#argv )
   
   else if ( $1 == "-cmd" ) then
     if ( $#argv < 2 ) then
-      echo "Error: Missing argument for -cmd"
+      echo "Error: No argument for -cmd"
       goto usage
     endif
     
@@ -119,10 +129,10 @@ else
   set nem_methods = ( rcb oct partkway partgeom diffusion )
 endif
 
-# Set up output file
-if ( -e $outfile ) mv $outfile ${outfile}.old
-echo "Tests run on `date`" > $outfile
-echo " " >> $outfile
+# Set up log file
+if ( -e $logfile ) mv $logfile ${logfile}.old
+echo "Tests run on `date`" > $logfile
+echo " " >> $logfile
 
 
 # Loop over Chaco problems
@@ -134,12 +144,12 @@ if (! $no_chaco ) then
     # Go to the next test directory, initialize
     cd ch_${ch_name[1]}
     @ np = $ch_nproc[1]
-    echo "Running test case ${ch_name[1]} on ${ch_nproc[1]} procs" | tee -a ../$outfile
+    echo "Running test case ${ch_name[1]} on ${ch_nproc[1]} procs" | tee -a ../$logfile
 
     # Check output directories 
     if (! -d $outdir ) mkdir $outdir
     if (! -d $answers ) then
-      echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$outfile
+      echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$logfile
     endif
 
     # Save input file 
@@ -173,7 +183,7 @@ if (! $no_chaco ) then
           @ i = 0
           while ( $i < $np )
             mv ${ch_name[1]}.out.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-            diff -c ${outdir}/${ch_name[1]}.$mtd.$np.$i ${answers}/${ch_name[1]}.$mtd.$np.$i >> ../$outfile
+            diff -c ${outdir}/${ch_name[1]}.$mtd.$np.$i ${answers}/${ch_name[1]}.$mtd.$np.$i >> ../$logfile
             if ( $status ) then 
               @ fail = 1
             endif
@@ -181,16 +191,16 @@ if (! $no_chaco ) then
           end
     
         else
-          echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$outfile
+          echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
         endif
   
   
         # Report success or failure 
         if ( $fail ) then
           @ nfailed = $nfailed + 1
-          echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$outfile
+          echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
         else
-          echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$outfile 
+          echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
         endif
 
       endif # !skip
@@ -207,13 +217,13 @@ if (! $no_chaco ) then
   end
   
   # Print failure summary
-  echo " " | tee -a $outfile
+  echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
-    echo "Success: all Chaco problems passed." | tee -a $outfile
+    echo "Success: all Chaco problems passed." | tee -a $logfile
   else
-    echo "Failure: $nfailed Chaco problems failed." | tee -a $outfile
+    echo "Failure: $nfailed Chaco problems failed." | tee -a $logfile
   endif
-  echo " " | tee -a $outfile
+  echo " " | tee -a $logfile
 
 endif # chaco
 
@@ -226,12 +236,12 @@ if (! $no_nemesis ) then
     # Go to the next test directory, initialize
     cd nem_${nem_name[1]}
     @ np = $nem_nproc[1]
-    echo "Running test case ${nem_name[1]} on ${nem_nproc[1]} procs" | tee -a ../$outfile
+    echo "Running test case ${nem_name[1]} on ${nem_nproc[1]} procs" | tee -a ../$logfile
 
     # Check output directories 
     if (! -d $outdir ) mkdir $outdir
     if (! -d $answers ) then
-      echo "Warning: Answer directory missing in nem_${nem_name[1]}" | tee -a ../$outfile
+      echo "Warning: Answer directory missing in nem_${nem_name[1]}" | tee -a ../$logfile
     endif
 
     # Save input file 
@@ -262,7 +272,7 @@ if (! $no_nemesis ) then
                set pdir = pio_${pdirno}
             endif
             mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
-            diff -c ${outdir}/${nem_name[1]}.$mtd.$np.$i ${answers}/${nem_name[1]}.$mtd.$np.$i >> ../$outfile
+            diff -c ${outdir}/${nem_name[1]}.$mtd.$np.$i ${answers}/${nem_name[1]}.$mtd.$np.$i >> ../$logfile
             if ( $status ) then 
               @ fail = 1
             endif
@@ -274,15 +284,15 @@ if (! $no_nemesis ) then
           end
     
         else
-          echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$outfile
+          echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
         endif
   
         # Report success or failure 
         if ( $fail ) then
           @ nfailed = $nfailed + 1
-          echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$outfile
+          echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
         else
-          echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$outfile 
+          echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
         endif
 
       endif # !skip
@@ -300,13 +310,13 @@ if (! $no_nemesis ) then
   end
   
   # Print failure summary
-  echo " " | tee -a $outfile
+  echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
-    echo "Success: all Nemesis problems passed." | tee -a $outfile
+    echo "Success: all Nemesis problems passed." | tee -a $logfile
   else
-    echo "Failure: $nfailed Nemesis problems failed." | tee -a $outfile
+    echo "Failure: $nfailed Nemesis problems failed." | tee -a $logfile
   endif
-  echo " " | tee -a $outfile
+  echo " " | tee -a $logfile
 
 endif # Nemesis
 
@@ -317,8 +327,10 @@ exit 0
 usage:
   echo "Usage: $0 [-arch arch-type] [-cmd command]"
   echo "where arch-type is one of {sun, sunos, smos, tflop, cplant}."
-  echo "Either -arch or -cmd must be specified."
+  echo "Alternatively, specify the command to load and run a parallel "
+  echo "program with the -cmd option."
   echo "Other options:"
+  echo "   -logfile filename"
   echo "   -no_parmetis"
   echo "   -no_nemesis"
   echo "   -no_chaco"
