@@ -120,12 +120,6 @@ int main(int argc, char *argv[])
   Partition.Nglobal = Nnodes;
   user_partition(&Partition);
 
-  /* Create an empty multigrid hierarchy and set the 'MaxMGLevels-1'th      */
-  /* level discretization within this hierarchy to the ML matrix            */
-  /* representing Kn (Poisson discretization).                              */
-
-  ML_Create(&ml, MaxMgLevels);
-
   /* Build Kn as Aztec matrices. Use built-in function AZ_ML_Set_Amat()    */
   /* to convert to an ML matrix and put in hierarchy.                      */
 
