@@ -67,6 +67,6 @@ extern int     LB_POct_delTree(OCT_Global_Info *OCT_info,pOctant *root);
 
 /* KDDKDDFREE moved to octree_const.h to allow OCT_Global_Info arg. */
 extern void    LB_Oct_free(OCT_Global_Info *OCT_info, pOctant *oct);
-extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList rlist, pOctant oct);
+extern int     RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct);
 
 #endif /*__OCT_OCTREE_CONST_H*/

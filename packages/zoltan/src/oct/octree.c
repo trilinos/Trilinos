@@ -68,8 +68,12 @@ void LB_POct_free(OCT_Global_Info *OCT_info, pOctant *oct) {
 
   /* traverse through local root list, if octant a local root */
 
-  if(LB_Oct_Ppid(*oct) != OCT_info->OCT_localpid) 
-    RL_delRootOctant(OCT_info, RootList, *oct);
+  if(LB_Oct_Ppid(*oct) != OCT_info->OCT_localpid) {
+    /* KDDKDDFREE Now passing pointer to OCT_rootlist so that, if
+     * KDDKDDFREE head of list is deleted, this pointer can be updated
+     * KDDKDDFREE appropriately (i.e., no longer points to deleted entry). */
+    RL_delRootOctant(OCT_info, &(OCT_info->OCT_rootlist), *oct);
+  }
 
   /* free up space in memory */
   LB_Oct_free(OCT_info, oct);
@@ -94,7 +98,10 @@ void LB_POct_setparent(OCT_Global_Info *OCT_info, pOctant oct, pOctant parent, i
   }
   else {
     if(ppid == OCT_info->OCT_localpid) {
-      RL_delRootOctant(OCT_info, RootList, oct);     /* was foreign -- now local  */
+      /* KDDKDDFREE Now passing pointer to OCT_rootlist so that, if 
+       * KDDKDDFREE head of list is deleted, this pointer can be updated
+       * KDDKDDFREE appropriately (i.e., no longer points to deleted entry). */
+      RL_delRootOctant(OCT_info, &(OCT_info->OCT_rootlist), oct);     /* was foreign -- now local  */
     }
   }
 

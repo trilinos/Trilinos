@@ -54,7 +54,11 @@ int RL_addRootOctant(pRList rlist, pOctant oct) {
   return 0;
 }
 
-int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList rlist, pOctant oct) {
+/* KDDKDDFREE changed rlist to *rootlist so that if head of list is deleted,
+ * KDDKDDFREE a new head pointer can be propagated back to the calling routine.
+ */
+int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList *rootlist, pOctant oct) {
+  pRList  rlist = *rootlist;
   pRList  temp;
   pRList  prev;
   pOctant rootoct;
@@ -69,6 +73,15 @@ int RL_delRootOctant(OCT_Global_Info *OCT_info, pRList rlist, pOctant oct) {
       temp = rlist;
       rootoct = RL_nextRootOctant(&rlist);
       prev->next = rlist;
+      /* KDDKDDFREE  Update *rootlist (head of list) if the lead entry is
+       * KDDKDDFREE  being deleted.  */
+      if (temp == *rootlist) 
+        *rootlist = rlist;
+      /* KDDKDDFREE  If there is only one item in list and it will be deleted,
+       * KDDKDDFREE  set head of list to NULL. */
+      if (temp == prev && temp == rlist)
+        *rootlist = NULL;
+      /* END KDDKDDFREE */
       LB_FREE(&temp);
       result = 0;
     }
