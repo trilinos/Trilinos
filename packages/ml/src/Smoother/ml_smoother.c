@@ -3077,6 +3077,7 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
 
    /* Triple matrix product T^{*}AT. */
 
+
    tmpmat = ML_Operator_Create(Amat->comm);
    if (Tmat_bc != NULL)
    {
@@ -3085,7 +3086,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
          the same result matrix as bc(Ke) * T, where bc(Ke) is Ke with
          Dirichlet b.c. applied to both rows and columns of Ke.  The
          only differences will be the b.c.  rows themselves. */
-      ML_matmat_mult(Amat,Tmat_bc,&tmpmat2);
+      /*ML_matmat_mult(Amat,Tmat_bc,&tmpmat2);*/
+      ML_2matmult(Amat,Tmat_bc,tmpmat2);
       matdata = (struct ML_CSR_MSRdata *) (tmpmat2->data);
       row_ptr = matdata->rowptr;
       bindx = matdata->columns;
@@ -3098,7 +3100,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
          for (k = row_ptr[j]; k < row_ptr[j+1]; k++)
             val_ptr[k] = 0.0;
       }
-      ML_matmat_mult(Tmat_trans,tmpmat2,&tmpmat);
+      /*ML_matmat_mult(Tmat_trans,tmpmat2,&tmpmat);*/
+      ML_2matmult(Tmat_trans,tmpmat2,tmpmat);
       ML_Operator_Destroy(tmpmat2);
    }
    else
