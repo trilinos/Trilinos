@@ -65,6 +65,7 @@ int Epetra_Vector::ExtractView(double **V)
   return(Epetra_MultiVector::ExtractView(V, &junk));
 }
 
+/*
 //=========================================================================
 double& Epetra_Vector::operator [] (int Index)  {
 
@@ -76,6 +77,8 @@ const double& Epetra_Vector::operator [] (int Index) const  {
 
    return(Values_[Index]);
 }
+*/
+
 //=========================================================================
 int Epetra_Vector::ReplaceGlobalValues(int NumEntries, double * Values, int * Indices) {
   // Use the more general method below

@@ -360,12 +360,12 @@ class Epetra_Vector : public Epetra_MultiVector {
   /*!
     \return V[Index].
   */
-    double& operator [] (int index);
+    double& operator [] (int index) { return Values_[index]; }
   //! Element access function.
   /*!
     \return V[Index].
   */
-    const double& operator [] (int index) const;
+    const double& operator [] (int index) const { return Values_[index]; }
     //@}
     
  private:
