@@ -19,26 +19,23 @@ extern "C" {
 #include "zoltan_comm.h"
 
 
-/* UVC: removed the OLD coarsening code which didn't have identical net removal
-   now the old coarsening code is the code which does identical net removal
-   with net shuffling.
-   The new coarsening code; doesn't do net shuffling!
+#define COARSEN_WITH_NET_SHUFFLING
+    
+/* UVC:
+   - COARSEN_WITH_NET_SHUFFLING is made the default one; since it seems to
+     producing better cuts whitout increasing the total time a lot
+   - removed the OLD coarsening code which didn't have identical net removal
 
-   UVC TODO: right now we're stoping after identifying locally
+   UVC TODO:
+   In the coarsening code that doesn't do net suffling
+      right now we're stoping after identifying locally
      (in processors rows) identical nets; we will investigate
      what percentage of the identical nets will be identified
      by this method and later we may decide to implement global
      identical net removal.
 */
     
-#define USE_NEW_COARSENING  
 
-
-/*       
-#define FIND_GLOBAL_IDENTICAL_NETS
-*/
-
-    
 #define PLAN_TAG 32010      /* tag for comm plan */ 
 
 
@@ -183,7 +180,7 @@ void identicalOperator(void *va, void *vb, int *len, MPI_Datatype *dt)
 }
 
 
-#ifdef USE_NEW_COARSENING
+#ifndef COARSEN_WITH_NET_SHUFFLING
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
    match are clustered to a single vertex. Currently, we allow more
@@ -681,7 +678,8 @@ int Zoltan_PHG_Coarsening
 }
 
 #else    
-/* else for #ifdef USE_NEW_COARSENING */
+/* else for #ifndef COARSEN_WITH_NET_SHUFFLING;
+   meaning the following code DOES Net Shuffling */
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
    match are clustered to a single vertex. Currently, we allow more
