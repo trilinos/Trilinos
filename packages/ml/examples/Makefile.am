@@ -210,13 +210,13 @@ ifpack_lib =
 endif
 #
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(aztecoo_lib} \
-                ${ifpack_lib} \
-                ${amesos_lib} \
-                ${anasazi_lib} \
-                ${teuchos_lib} \
-                ${triutils_lib} \
-                $(epetra_lib} \
+                $(aztecoo_lib) \
+                $(ifpack_lib) \
+                $(amesos_lib) \
+                $(anasazi_lib) \
+                $(teuchos_lib) \
+                $(triutils_lib) \
+                $(epetra_lib) \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \

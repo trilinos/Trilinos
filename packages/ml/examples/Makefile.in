@@ -163,184 +163,188 @@ PROGRAMS = $(noinst_PROGRAMS)
 am__ml_aztec_simple_SOURCES_DIST = $(srcdir)/ml_aztec_simple.c
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = ml_aztec_simple-ml_aztec_simple.$(OBJEXT)
 ml_aztec_simple_OBJECTS = $(am_ml_aztec_simple_OBJECTS)
-@ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_6 =
-@ML_STANDALONE_MODE_FALSE@am__DEPENDENCIES_7 =  \
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AZTECOO_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../aztecoo/src/libaztecoo.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../amesos/src/libamesos.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../anasazi/src/libanasazi.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_6 = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_STANDALONE_MODE_FALSE@@ML_USING_EPETRA_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/../epetra/src/libepetra.a
+am__DEPENDENCIES_8 =
+@ML_STANDALONE_MODE_FALSE@am__DEPENDENCIES_9 =  \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_FALSE@	$(aztecoo_lib} $(am__DEPENDENCIES_1) \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_1) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_3) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_4) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) $(epetra_lib} \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6)
-@ML_STANDALONE_MODE_TRUE@am__DEPENDENCIES_7 =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7) \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_8)
+@ML_STANDALONE_MODE_TRUE@am__DEPENDENCIES_9 =  \
 @ML_STANDALONE_MODE_TRUE@	$(top_builddir)/src/libml.a \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_6) \
-@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_6)
+@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8) \
+@ML_STANDALONE_MODE_TRUE@	$(am__DEPENDENCIES_8)
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_aztec_simple_METIS_SOURCES_DIST =  \
 	$(srcdir)/ml_aztec_simple_METIS.c
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_METIS_OBJECTS = ml_aztec_simple_METIS-ml_aztec_simple_METIS.$(OBJEXT)
 ml_aztec_simple_METIS_OBJECTS = $(am_ml_aztec_simple_METIS_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_METIS_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_aztec_simple_ParMETIS_SOURCES_DIST =  \
 	$(srcdir)/ml_aztec_simple_ParMETIS.c
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_ParMETIS_OBJECTS = ml_aztec_simple_ParMETIS-ml_aztec_simple_ParMETIS.$(OBJEXT)
 ml_aztec_simple_ParMETIS_OBJECTS =  \
 	$(am_ml_aztec_simple_ParMETIS_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_aztec_simple_ParMETIS_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example1d_SOURCES_DIST = $(srcdir)/ml_example1d.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example1d_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_example1d-ml_example1d.$(OBJEXT)
 ml_example1d_OBJECTS = $(am_ml_example1d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example1d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example1dGS_SOURCES_DIST = $(srcdir)/ml_example1dGS.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example1dGS_OBJECTS = ml_example1dGS-ml_example1dGS.$(OBJEXT)
 ml_example1dGS_OBJECTS = $(am_ml_example1dGS_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example1dGS_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example2d_SOURCES_DIST = $(srcdir)/ml_example2d.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example2d_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_example2d-ml_example2d.$(OBJEXT)
 ml_example2d_OBJECTS = $(am_ml_example2d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example2d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example3d_SOURCES_DIST = $(srcdir)/ml_example3d.c
 @ML_STANDALONE_MODE_FALSE@am_ml_example3d_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_example3d-ml_example3d.$(OBJEXT)
 ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example3d_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelOperator_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelOperator.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelOperator_OBJECTS = ml_example_MultiLevelOperator-ml_example_MultiLevelOperator.$(OBJEXT)
 ml_example_MultiLevelOperator_OBJECTS =  \
 	$(am_ml_example_MultiLevelOperator_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelOperator_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_OBJECTS = ml_example_MultiLevelPreconditioner-ml_example_MultiLevelPreconditioner.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_2level_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_2level_OBJECTS = ml_example_MultiLevelPreconditioner_2level-ml_example_MultiLevelPreconditioner_2level.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_2level_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_2level_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_2level_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS = ml_example_MultiLevelPreconditioner_AztecMSR-ml_example_MultiLevelPreconditioner_AztecMSR.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_AztecMSR_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_AztecMSR_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_analyze_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_analyze_OBJECTS = ml_example_MultiLevelPreconditioner_analyze-ml_example_MultiLevelPreconditioner_analyze.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_analyze_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_analyze_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_filtering_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_filtering_OBJECTS = ml_example_MultiLevelPreconditioner_filtering-ml_example_MultiLevelPreconditioner_filtering.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_filtering_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_filtering_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_filtering_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_maxwell_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_maxwell_OBJECTS = ml_example_MultiLevelPreconditioner_maxwell-ml_example_MultiLevelPreconditioner_maxwell.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_maxwell_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_maxwell_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_vbr_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_vbr_OBJECTS = ml_example_MultiLevelPreconditioner_vbr-ml_example_MultiLevelPreconditioner_vbr.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_vbr_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_vbr_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_vbr_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_example_MultiLevelPreconditioner_viz_SOURCES_DIST =  \
 	$(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_example_MultiLevelPreconditioner_viz_OBJECTS = ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.$(OBJEXT)
 ml_example_MultiLevelPreconditioner_viz_OBJECTS =  \
 	$(am_ml_example_MultiLevelPreconditioner_viz_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_multiple_rhs_SOURCES_DIST = $(srcdir)/ml_multiple_rhs.cpp
 @ML_STANDALONE_MODE_FALSE@am_ml_multiple_rhs_OBJECTS = ml_multiple_rhs-ml_multiple_rhs.$(OBJEXT)
 ml_multiple_rhs_OBJECTS = $(am_ml_multiple_rhs_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_read_elas_SOURCES_DIST = $(srcdir)/ml_read_elas.c
 @ML_STANDALONE_MODE_FALSE@am_ml_read_elas_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_read_elas-ml_read_elas.$(OBJEXT)
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_read_maxwell_SOURCES_DIST = $(srcdir)/ml_read_maxwell.c
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
 ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
-@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES = $(am__DEPENDENCIES_7)
+@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_DEPENDENCIES = $(am__DEPENDENCIES_9)
 am__ml_read_salsa_SOURCES_DIST = $(srcdir)/ml_read_salsa.c
 @ML_STANDALONE_MODE_FALSE@am_ml_read_salsa_OBJECTS = ml_read_salsa-ml_read_salsa.$(OBJEXT)
 ml_read_salsa_OBJECTS = $(am_ml_read_salsa_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_readfile_SOURCES_DIST = $(srcdir)/ml_readfile.c
 @ML_STANDALONE_MODE_FALSE@am_ml_readfile_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_readfile-ml_readfile.$(OBJEXT)
 ml_readfile_OBJECTS = $(am_ml_readfile_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_readfile_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_recirc_SOURCES_DIST = $(srcdir)/ml_recirc.c
 @ML_STANDALONE_MODE_FALSE@am_ml_recirc_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	ml_recirc-ml_recirc.$(OBJEXT)
 ml_recirc_OBJECTS = $(am_ml_recirc_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_recirc_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_simple_max_SOURCES_DIST = $(srcdir)/ml_simple_max.c
 @ML_STANDALONE_MODE_FALSE@am_ml_simple_max_OBJECTS = ml_simple_max-ml_simple_max.$(OBJEXT)
 ml_simple_max_OBJECTS = $(am_ml_simple_max_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_simple_max_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_two_level_DD_SOURCES_DIST = $(srcdir)/ml_two_level_DD.c
 @ML_STANDALONE_MODE_FALSE@am_ml_two_level_DD_OBJECTS = ml_two_level_DD-ml_two_level_DD.$(OBJEXT)
 ml_two_level_DD_OBJECTS = $(am_ml_two_level_DD_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_two_level_DD_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__mlaz_example_SOURCES_DIST = $(srcdir)/mlaz_example.c
 @ML_STANDALONE_MODE_FALSE@am_mlaz_example_OBJECTS =  \
 @ML_STANDALONE_MODE_FALSE@	mlaz_example-mlaz_example.$(OBJEXT)
 mlaz_example_OBJECTS = $(am_mlaz_example_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@mlaz_example_DEPENDENCIES =  \
-@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_7)
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am_mlguide_OBJECTS = mlguide-mlguide.$(OBJEXT)
 mlguide_OBJECTS = $(am_mlguide_OBJECTS)
-mlguide_DEPENDENCIES = $(am__DEPENDENCIES_7)
+mlguide_DEPENDENCIES = $(am__DEPENDENCIES_9)
 am_mlguide_par_OBJECTS = mlguide_par-mlguide_par.$(OBJEXT)
 mlguide_par_OBJECTS = $(am_mlguide_par_OBJECTS)
-mlguide_par_DEPENDENCIES = $(am__DEPENDENCIES_7)
+mlguide_par_DEPENDENCIES = $(am__DEPENDENCIES_9)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -633,13 +637,13 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 @ML_STANDALONE_MODE_TRUE@mllink = $(CC) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 #
 @ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
-@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib} \
-@ML_STANDALONE_MODE_FALSE@                ${ifpack_lib} \
-@ML_STANDALONE_MODE_FALSE@                ${amesos_lib} \
-@ML_STANDALONE_MODE_FALSE@                ${anasazi_lib} \
-@ML_STANDALONE_MODE_FALSE@                ${teuchos_lib} \
-@ML_STANDALONE_MODE_FALSE@                ${triutils_lib} \
-@ML_STANDALONE_MODE_FALSE@                $(epetra_lib} \
+@ML_STANDALONE_MODE_FALSE@                $(aztecoo_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(ifpack_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(amesos_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(anasazi_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(teuchos_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(triutils_lib) \
+@ML_STANDALONE_MODE_FALSE@                $(epetra_lib) \
 @ML_STANDALONE_MODE_FALSE@                $(LIBS) \
 @ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)                            \
 @ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)                            \
