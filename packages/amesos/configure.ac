@@ -554,14 +554,20 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
 
 
-    SAVE_LIBS="${LIBS}"
-      LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
-      AC_TRY_LINK_FUNC(dmumps_164_,,
-      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
-    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
-      AC_TRY_LINK_FUNC(qsortUpInts,,
-      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
-    LIBS="${SAVE_LIBS}"
+#
+#    The following attempt to confirm that libmumps.a and lidpord.a are the right libraries
+#    fails - presumably because we need to link other libraries in (either fortran 
+#    scalapack or blacs libraries.)
+#
+
+#    SAVE_LIBS="${LIBS}"
+#      LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
+#      AC_TRY_LINK_FUNC(dmumps_164_,,
+#      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
+#    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
+#      AC_TRY_LINK_FUNC(qsortUpInts,,
+#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/doxygen/html/index.html for details.]]))  
+#    LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
   amesos_libs="${amesos_libs} ${tac_with_amesos_mumpslib} ${tac_with_amesos_mumpspordlib} -lfortran"
