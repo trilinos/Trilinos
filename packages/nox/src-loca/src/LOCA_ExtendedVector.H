@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_MULTIVECTOR_H
-#define LOCA_MULTIVECTOR_H
+#ifndef LOCA_EXTENDEDVECTOR_H
+#define LOCA_EXTENDEDVECTOR_H
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
@@ -68,25 +68,26 @@ namespace LOCA {
     in terms of the implementations of each stored abstract vector.
   */
 
-  class MultiVector : public NOX::Abstract::Vector {
+  class ExtendedVector : public NOX::Abstract::Vector {
 
   public:
   
-    //! %MultiVector constructor.
-    MultiVector(const vector< NOX::Abstract::Vector* > vv,
-		const vector< double > vs);
+    //! %ExtendedVector constructor.
+    ExtendedVector(const vector< NOX::Abstract::Vector* > vv,
+		   const vector< double > vs);
 
     //! Copy constructor.
-    MultiVector(const MultiVector& source, NOX::CopyType type = NOX::DeepCopy);
+    ExtendedVector(const ExtendedVector& source, 
+		   NOX::CopyType type = NOX::DeepCopy);
 
     //! Vector destructor.
-    virtual ~MultiVector();
+    virtual ~ExtendedVector();
 
     //! Assignment operator
     virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
   
     //! Assignment operator
-    virtual MultiVector& operator=(const MultiVector& y);
+    virtual ExtendedVector& operator=(const ExtendedVector& y);
 
     //! Clone function.  Applies clone to each stored vector
     virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
@@ -156,8 +157,8 @@ namespace LOCA {
 
   protected:
 
-    //! %MultiVector constructor.
-    MultiVector(int nvecs, int nscalars);
+    //! %ExtendedVector constructor.
+    ExtendedVector(int nvecs, int nscalars);
 
   protected:
 
@@ -170,7 +171,7 @@ namespace LOCA {
     //! Random number generator
     NOX::Random urand;
 
-  }; // class MultiVector
+  }; // class ExtendedVector
 } // namespace LOCA
 
 #endif
