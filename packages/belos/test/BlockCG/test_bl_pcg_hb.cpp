@@ -227,7 +227,9 @@ int main(int argc, char *argv[]) {
 			array[i + j*NumMyElements]= 0.0;
 		}
 	}
-	MyBlockCG.SetInitGuess(array, numrhs, stride);
+	
+	AnasaziPetraVec<double> iguess(Map, array, numrhs, stride);
+	MyBlockCG.SetInitGuess( iguess );
 
 	MyBlockCG.SetDebugLevel(0);
 
@@ -253,14 +255,14 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockCG.TrueResiduals(verbose);
 
-	MyBlockCG.GetSolutions(array, stride);
+	AnasaziPetraVec<double> solutions(Map, numrhs);
+	MyBlockCG.GetSolutions( solutions );
 
 	
 // Release all objects  
 
   delete [] NumNz;
   delete [] array;
-  
 	
   return 0;
   //

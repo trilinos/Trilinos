@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 	Ifpack_IlukGraph * ilukGraph=0;
 	Ifpack_CrsRiluk * ilukFactors=0;
 	Epetra_Operator * prec;
-	bool precflag = true;  // true if preconditioning is used, false otherwise
+	bool precflag = false;  // true if preconditioning is used, false otherwise
 	//
 	if (Lfill > -1) {
 		ilukGraph = new Ifpack_IlukGraph(A.Graph(), Lfill, Overlap);
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     int block = 10;  // blocksize used by solver
 	int numrestarts = 20; // number of restarts allowed 
     int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
-    double tol = 5.0e-15;  // relative residual tolerance
+    double tol = 5.0e-9;  // relative residual tolerance
 	//
 	//************************************************************
 	//*****Construct random right-hand-sides *****
@@ -214,7 +214,9 @@ int main(int argc, char *argv[]) {
 			array[i + j*NumMyElements]= 0.0;
 		}
 	}
-	MyBlockGmres.SetInitGuess(array, numrhs, stride);
+
+	AnasaziPetraVec<double> iguess(Map, array, numrhs, stride);
+	MyBlockGmres.SetInitGuess( iguess );
 
 	MyBlockGmres.SetRestart(numrestarts);
  
@@ -256,14 +258,14 @@ int main(int argc, char *argv[]) {
 	}
 	MyBlockGmres.TrueResiduals(verbose);
 
-	MyBlockGmres.GetSolutions(array, stride);
+	AnasaziPetraVec<double> solutions(Map, numrhs);
+	MyBlockGmres.GetSolutions( solutions );
 
 	
 // Release all objects  
 
   delete [] NumNz;
   delete [] array;
-  
 	
   return 0;
   //
