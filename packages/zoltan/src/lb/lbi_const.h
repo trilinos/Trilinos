@@ -12,6 +12,10 @@
  * $Revision$
  *
  *====================================================================*/
+
+#ifndef __LBI_CONST_H
+#define __LBI_CONST_H
+
 #ifndef lint
 static char *cvs_lbiconsth_id = "$Id$";
 #endif
@@ -449,3 +453,4 @@ extern int LB_Balance(struct LB_Struct *, int *, LB_TAG **, int *, LB_TAG **);
 
 extern void LB_Initialize_Params_Array(double *);
 
+#endif
