@@ -196,7 +196,6 @@ COMP_H =
 
 COMP = 
 
-
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
 #np# - Add packages that this package is dependent on
@@ -301,8 +300,9 @@ nodist_execinclude_HEADERS = Teuchos_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Create the makeoptions file
+# ------------------------------------------------------------------------
 
-
-
-
-
+install-exec-hook:
+	perl $(srcdir)/../.generate-makeoptions.pl ../../../ > $(exec_prefix)/include/trilinos_make_macros.mak
