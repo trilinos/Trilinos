@@ -157,7 +157,7 @@ namespace Anasazi {
     int _restartiter, _iter, _jstart, _jend, _nevblock;
     int _offset, _maxoffset;
     bool _isdecompcurrent, _isevecscurrent, _exit_flg, _dep_flg;
-    TYPE _schurerror, _scalefactor, _dep_tol, _blk_tol, _sing_tol, _def_tol;
+    TYPE _schurerror, _dep_tol, _blk_tol, _sing_tol, _def_tol;
 
     // Information obtained from the eigenproblem
     MultiVec<TYPE> *_evecr, *_eveci; 
@@ -201,7 +201,6 @@ namespace Anasazi {
     _exit_flg(false),
     _dep_flg(false),
     _schurerror(1.0), 
-    _scalefactor(1.0),
     _dep_tol(1.0), 
     _blk_tol(1.0),
     _sing_tol(1.0),
@@ -1261,7 +1260,7 @@ namespace Anasazi {
       if (_nevblock <= _jstart ) {
 	//
 	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b2(Teuchos::View, sub_block_b, _block, _nev);
-	_schurerror = sub_block_b2.normFrobenius()/_scalefactor;
+	_schurerror = sub_block_b2.normFrobenius();
 	//
 	// Determine whether we need to continue with the computations.
 	//
@@ -1360,17 +1359,6 @@ namespace Anasazi {
 		 _ritzvals_i, ptr_q, ldq, work, lwork, bwork, &info );
     assert(info==0);
     //
-    // Compute new scaling factor which will provide an approximate 2-norm to scale.
-    // NOTE: This will be removed with the advent of a status test.
-    //
-    TYPE tempsf = zero; 
-    _scalefactor = lapack.LAPY2(_ritzvals_r[0],_ritzvals_i[0]);
-    for (i=1; i<n; i++) {
-      tempsf = lapack.LAPY2(_ritzvals_r[i],_ritzvals_i[i]);
-      if (tempsf > _scalefactor) _scalefactor = tempsf;
-    }
-    _scalefactor = Teuchos::ScalarTraits<TYPE>::squareroot( _scalefactor );
-    //
     //---------------------------------------------------
     // Compute the current Ritz residuals for ALL the eigenvalues estimates (Ritz values)
     //           || Ax - x\theta || = || FB_m^Ts || 
@@ -1405,7 +1393,7 @@ namespace Anasazi {
       //
       for (i=0; i<n ; i++) {
 	//_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
-	_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1)/_scalefactor;
+	_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
       }   
     } else {
       //
@@ -1422,17 +1410,44 @@ namespace Anasazi {
       assert(info==0);
       delete [] vl;
       //
+      // Scale the eigenvectors so that their euclidean norms are all one.
+      // ( conjugate pairs get normalized by the sqrt(2) )
+      //
+      TYPE temp;
+      TYPE* qt_ptr = Q_temp.values();
+      i = 0;
+      while( i < n ) {
+	if ( _ritzvals_i[i] != zero ) {
+	  temp = lapack.LAPY2( blas.NRM2( n, qt_ptr+i*n, 1 ), blas.NRM2( n, qt_ptr+(i+1)*n, 1 ) );
+	  blas.SCAL( n, one/temp, qt_ptr+i*n, 1 );
+	  blas.SCAL( n, one/temp, qt_ptr+(i+1)*n, 1 );	      
+	  i = i+2;
+	} else {
+	  temp = blas.NRM2( n, qt_ptr+i*n, 1 );
+	  blas.SCAL( n, one/temp, qt_ptr+i*n, 1 );
+	  i++;
+	}
+      }
+      //
       // Compute H_{m+1,m}*B_m^T*S where the i-th column of S is 's' for the i-th Ritz-value
       //
       blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, n, n, one, 
 		 sub_block_b.values(), sub_block_b.stride(), Q_temp.values(), 
 		 Q_temp.stride(), zero, S.values(), S.stride() );
       TYPE* s_ptr = S.values();
-      for (i=0; i<n ; i++) {
-	//_ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1);
-	_ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1)/_scalefactor;
-      }         
-    } 
+      i = 0;
+      while( i < n ) {
+	if ( _ritzvals_i[i] != zero ) {
+	  _ritzresiduals[i] = lapack.LAPY2( blas.NRM2(_block, s_ptr + i*_block, 1),
+					    blas.NRM2(_block, s_ptr + (i+1)*_block, 1) );
+	  _ritzresiduals[i+1] = _ritzresiduals[i];
+	  i = i+2;
+	} else {
+	  _ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1);
+	  i++;
+	}
+      }
+    }
     //
     //---------------------------------------------------
     // Sort the eigenvalues
@@ -1564,7 +1579,7 @@ namespace Anasazi {
     basistemp->MvTransMv( one, *Z, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
-    cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter << " is "<< SchurProj.normFrobenius()/_scalefactor<<" (should be small)"<<endl;
+    cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter << " is "<< SchurProj.normFrobenius()<<" (should be small)"<<endl;
   }
   
   
@@ -1649,7 +1664,7 @@ namespace Anasazi {
     AVj->MvNorm(ptr_norms);
     
     for ( i=0; i<m; i++ ) { 
-      cout << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i]/_scalefactor << endl;  
+      cout << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i] << endl;  
     }
     cout << " " << endl;
     
