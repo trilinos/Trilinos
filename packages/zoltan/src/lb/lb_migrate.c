@@ -478,8 +478,9 @@ int ierr = 0;
       tmp += aligned_int;
 
       if (lb->Debug_Level >= LB_DEBUG_ALL){
-        printf("[%1d] DEBUG in %s: Packing object with gid %u, "
-               "size = %d bytes\n", lb->Proc, yo, *tmp_id, sizes[i]); 
+        printf("[%1d] DEBUG in %s: Packing object with gid ", lb->Proc, yo);
+        LB_PRINT_GID(lb, tmp_id);
+        printf("size = %d bytes\n", sizes[i]); 
       }
 
       /* Pack the object's data */
@@ -622,8 +623,9 @@ int ierr = 0;
     tmp += aligned_int;
 
     if (lb->Debug_Level >= LB_DEBUG_ALL){
-      printf("[%1d] DEBUG in %s: Unpacking object with gid %u, "
-             "size = %d bytes\n", lb->Proc, yo, *tmp_id, size); 
+      printf("[%1d] DEBUG in %s: Unpacking object with gid ", lb->Proc, yo);
+      LB_PRINT_GID(lb, tmp_id);
+      printf("size = %d bytes\n", size);
     }
 
     /* Unpack the object's data */
