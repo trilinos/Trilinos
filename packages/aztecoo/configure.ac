@@ -229,10 +229,12 @@ TAC_ARG_WITH_INCDIRS
 TAC_ARG_ENABLE_FEATURE(triutils, [Build triutils], TRIUTILS, yes)
 AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-# y12m is needed only when AZ_lu is enabled
-if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
+# We need to perform this check even if azlu is not enabled.  Otherwise
+# the macros associated with referencey12m are undefined
   TAC_ARG_ENABLE_FEATURE(referencey12m, [Build y12m lib included in the distribution], Y12M, no)
   AM_CONDITIONAL(BUILD_Y12M, test "X$ac_cv_use_referencey12m" != "Xno")
+# y12m is needed only when AZ_lu is enabled
+if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
 # y12m library needed
   if test "X$ac_cv_use_referencey12m" = "Xno"; then
     # Find a valid y12m

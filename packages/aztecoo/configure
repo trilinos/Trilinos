@@ -5406,8 +5406,8 @@ else
   BUILD_TRIUTILS_FALSE=
 fi
 
-# y12m is needed only when AZ_lu is enabled
-if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
+# We need to perform this check even if azlu is not enabled.  Otherwise
+# the macros associated with referencey12m are undefined
 
 # Check whether --enable-referencey12m or --disable-referencey12m was given.
 if test "${enable_referencey12m+set}" = set; then
@@ -5442,6 +5442,8 @@ else
   BUILD_Y12M_TRUE='#'
   BUILD_Y12M_FALSE=
 fi
+# y12m is needed only when AZ_lu is enabled
+if test "X$ac_cv_use_aztecoo_azlu" != "Xno"; then
 # y12m library needed
   if test "X$ac_cv_use_referencey12m" = "Xno"; then
     # Find a valid y12m
@@ -5997,7 +5999,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6000: \"$ac_link\") >&5
+(eval echo $as_me:6002: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6076,7 +6078,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6079: \"$ac_link\") >&5
+(eval echo $as_me:6081: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8069,7 +8071,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8072: \"$ac_link\") >&5
+(eval echo $as_me:8074: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8148,7 +8150,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8151: \"$ac_link\") >&5
+(eval echo $as_me:8153: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
