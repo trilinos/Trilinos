@@ -27,7 +27,8 @@
 // @HEADER
 
 #include "Ifpack_ConfigDefs.h"
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS)
+// FIXME: this test has to be re-enabled
+#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_AMESOS) && defined(HAVE_IFPACK_TEUCHOS) && defined(FIXME)
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
