@@ -217,7 +217,7 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
 {
    int   i, j, *vertices=NULL, *del_edges=NULL, vertex, first_vertex, edge,
-         number, best_edge, best_size;
+         number, best_edge, best_size, best_neighbors, random, size;
    float best_ewgt;
    char  *yo = "grouping_heg" ;
 
@@ -240,25 +240,48 @@ static int grouping_rhg (ZZ *zz, HGraph *hg, Packing pack, int limit)
       if (pack[vertex] != vertex)
          continue ;            /* vertex is already matched, move on */
 
-      best_edge = best_size = -1;
+      best_neighbors = 0 ;
+      best_edge = best_size = -1 ;
       best_ewgt = -1.0 ;
       for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
          {
          int size ;
          edge = hg->vedge[j];
          size = hg->hindex[edge+1] - hg->hindex[edge] ;
-
-         if (del_edges[edge]==0 && ((!(hg->ewgt) && size < best_size)
+         if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
+          || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size)))
+            {
+            best_neighbors++;
+            }
+         else if (del_edges[edge]==0 && ((!(hg->ewgt) && size < best_size)
           || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
                        || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
               {
+              best_neighbors = 1 ;
               best_edge = edge ;
               best_ewgt = hg->ewgt[edge] ;
               best_size = hg->hindex[edge+1]-hg->hindex[edge];
               }
          }
-      if (best_edge == -1)
+      if (best_neighbors == 0)
          continue ;                       /* no suitable edge found */
+
+      if (best_neighbors > 1)
+         {
+         random = rand() % best_neighbors;
+         for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
+            {
+            edge = hg->vedge[j] ;
+            size = hg->hindex[edge+1] - hg->hindex[edge] ;
+            if (del_edges[edge]==0 && ((!(hg->ewgt) && size == best_size)
+              || (hg->ewgt && hg->ewgt[edge] == best_ewgt && size == best_size))
+              && --best_neighbors==random)
+                 {
+                 best_edge = edge ;
+                 break ;
+                 }
+            }
+         }
 
       for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])

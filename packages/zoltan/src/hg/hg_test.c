@@ -100,7 +100,7 @@ int main (int argc, char **argv)
 /* load and info hypergraph */
   if (Zoltan_HG_Readfile(&zz,&hg,hgraphfile))
     return 1;
-  printf("Memory: %d %d\n",
+  printf("Initial Memory: %d %d\n",
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
   if (Zoltan_HG_Info (&zz,&hg))
@@ -128,7 +128,7 @@ int main (int argc, char **argv)
   END_TIME();
   times_output();
 
-  printf("Memory: %d %d\n",
+  printf("Final Memory: %d %d\n",
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
          Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
 
