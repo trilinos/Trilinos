@@ -163,8 +163,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       while (getrowfunc(Amatrix->data,1,&i,maxnnz_per_row,col_ind, 
                         col_val,&m) == 0 ) 
       {
-         free(col_ind);
-         free(col_val);
+         ML_free(col_ind);
+         ML_free(col_val);
          maxnnz_per_row = maxnnz_per_row * 2 + 1; 
          col_ind = (int *)    ML_allocate(maxnnz_per_row*sizeof(int));
          col_val = (double *) ML_allocate(maxnnz_per_row*sizeof(double));
@@ -182,7 +182,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    }
    if ( epsilon == 0.0 && diagonal != NULL ) 
    {
-      free(diagonal);
+      ML_free(diagonal);
       diagonal = NULL;
    }
 
@@ -240,9 +240,9 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       mat_indx[i+1] = nz_cnt;
       if ( m <= 1 ) mat_indx[i] = -mat_indx[i];
    }
-   free(col_ind);
-   free(col_val);
-   if ( diagonal != NULL ) free(diagonal);
+   ML_free(col_ind);
+   ML_free(col_val);
+   if ( diagonal != NULL ) ML_free(diagonal);
 
    /* ============================================================= */
    /* Construct the matrix that relates to the nodes by combining   */
@@ -324,7 +324,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       for ( j = amal_mat_indx[i]; j < amal_mat_indx[i+1]; j++)
          col_entered[ amal_mat_indx[j]] = 'F';
    }
-   free(col_entered);
+   ML_free(col_entered);
 
    if ( mypid == 0 && printflag  < ML_Get_PrintLevel()) 
       printf("Aggregation(UVB) : Amalgamated matrix done \n");
@@ -335,7 +335,7 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
 
    ML_Aggregate_CoarsenUncoupledCore(ml_ag,comm,Amatrix,amal_mat_indx,
                                      bdry_array, &aggr_count, &aggr_index); 
-   free( bdry_array );
+   ML_free( bdry_array );
 
    /* ============================================================= */
    /* Form tentative prolongator                                    */
@@ -384,8 +384,8 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
       ML_gsum_vec_int(itmp_array, itmp_array2, nprocs, comm);
       naggr_offset = 0;
       for ( i = 0; i < mypid; i++ ) naggr_offset += itmp_array[i];
-      free(itmp_array);
-      free(itmp_array2);
+      ML_free(itmp_array);
+      ML_free(itmp_array2);
       sprintf(zfn, "mlaggr.out.%d",mypid);
       zfp = fopen(zfn,"w");
       fprintf(zfp, "aggr_count = %d \n", count);
@@ -714,7 +714,7 @@ if (comm->ML_mypid == 0 )
    ML_memory_free((void**) &amal_mat_indx);
    ML_memory_free((void**) &aggr_index);
    ML_memory_free((void**)&agg_sizes);
-   for (i = 0; i < aggr_count; i++) free(rows_in_aggs[i]);
+   for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
    ML_memory_free((void**)&tmp_vect);
@@ -868,7 +868,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          new_node = node_head;
          inode = new_node->node_id;
          node_head = new_node->next;
-         free(new_node);
+         ML_free(new_node);
       }
 
       /*------------------------------------------------------ */
@@ -922,8 +922,8 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
              supernode->length < min_nodes_per_aggregate) 
          {
             aggr_stat[inode] = ML_AGGR_NOTSEL;
-            free( supernode->list );
-            free( supernode );
+            ML_free( supernode->list );
+            ML_free( supernode );
             if ( ordering == 2 ) /* if graph ordering */
             {
                for (jnode=mat_indx[inode];jnode<mat_indx[inode+1];jnode++) 
@@ -1007,7 +1007,7 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
       {
          new_node = node_head;
          node_head = new_node->next;
-         free( new_node );
+         ML_free( new_node );
       }
    }
 
@@ -1194,46 +1194,48 @@ int ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
                  aggr_stat[index] != ML_AGGR_BDRY ) 
                supernode->list[supernode->length++] = index;
          }
-if ( supernode->length > 1 )
-{
-         for ( j = 0; j < supernode->length; j++ ) 
+         if ( supernode->length > 1 )
          {
-            jnode = supernode->list[j];
-            aggr_stat[jnode] = ML_AGGR_SELECTED;
-            aggr_index[jnode] = aggr_count;
+            for ( j = 0; j < supernode->length; j++ ) 
+            {
+               jnode = supernode->list[j];
+               aggr_stat[jnode] = ML_AGGR_SELECTED;
+               aggr_index[jnode] = aggr_count;
+            }
+            supernode->next = NULL;
+            supernode->index = aggr_count;
+            if ( aggr_count == 0 ) 
+            {
+               aggr_head = supernode;
+               aggr_curr = supernode;
+            } 
+            else 
+            {
+               aggr_curr->next = supernode;
+               aggr_curr = supernode;
+            } 
+            aggr_cnt_array[aggr_count++] = supernode->length;
+            if ( aggr_count >= aggr_cnt_leng ) 
+            {
+               itmp_array = aggr_cnt_array;
+               aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
+               nbytes = aggr_cnt_leng * sizeof( int );
+               ML_memory_alloc((void**) &aggr_cnt_array, nbytes, "AGL");
+               for ( k = 0; k < aggr_count; k++ )
+                  aggr_cnt_array[k] = itmp_array[k];
+               ML_memory_free((void**) &itmp_array);
+            }
          }
-         supernode->next = NULL;
-         supernode->index = aggr_count;
-         if ( aggr_count == 0 ) 
+         else
          {
-            aggr_head = supernode;
-            aggr_curr = supernode;
-         } 
-         else 
-         {
-            aggr_curr->next = supernode;
-            aggr_curr = supernode;
-         } 
-         aggr_cnt_array[aggr_count++] = supernode->length;
-         if ( aggr_count >= aggr_cnt_leng ) 
-         {
-            itmp_array = aggr_cnt_array;
-            aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
-            nbytes = aggr_cnt_leng * sizeof( int );
-            ML_memory_alloc((void**) &aggr_cnt_array, nbytes, "AGL");
-            for ( k = 0; k < aggr_count; k++ )
-               aggr_cnt_array[k] = itmp_array[k];
-            ML_memory_free((void**) &itmp_array);
+            for ( j = 0; j < supernode->length; j++ ) 
+            {
+               jnode = supernode->list[j];
+               aggr_stat[jnode] = ML_AGGR_BDRY;
+            }
+            if ( supernode->maxlength > 0 ) ML_free( supernode->list );
+            ML_free( supernode );
          }
-}
-else
-{
-for ( j = 0; j < supernode->length; j++ ) 
-{
-jnode = supernode->list[j];
-aggr_stat[jnode] = ML_AGGR_BDRY;
-}
-}
       }
    }
 
@@ -1275,8 +1277,8 @@ aggr_stat[jnode] = ML_AGGR_BDRY;
    {
       supernode = aggr_curr;
       aggr_curr = aggr_curr->next;
-      if ( supernode->maxlength > 0 ) free( supernode->list );
-      free( supernode );
+      if ( supernode->maxlength > 0 ) ML_free( supernode->list );
+      ML_free( supernode );
    }
    (*aggr_count_in) = aggr_count;
    (*aggr_index_in) = aggr_index;
