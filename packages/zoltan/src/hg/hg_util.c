@@ -16,7 +16,11 @@
 extern "C" {
 #endif
 
+#ifdef ZOLTAN_HG
 #include "hypergraph.h"
+#endif
+
+#include "hg_util.h"
 #include "math.h"
 
 
@@ -49,6 +53,7 @@ void Zoltan_HG_HGraph_Init(
 /*****************************************************************************/
 
 
+#ifdef ZOLTAN_HG
 
 void Zoltan_HG_Graph_Init(
   Graph *graph
@@ -70,6 +75,8 @@ void Zoltan_HG_Graph_Init(
   graph->neigh   = NULL;
 }
 
+#endif /* ZOLTAN_HG */
+
 /****************************************************************************/
 
 
@@ -87,7 +94,7 @@ int Zoltan_HG_HGraph_Free(
 
 /****************************************************************************/
 
-
+#ifdef ZOLTAN_HG
 
 /* Frees all memory associated with a graph; does not free the graph itself. */
 int Zoltan_HG_Graph_Free(
@@ -223,6 +230,7 @@ char *yo = "Zoltan_HG_Info";
 }
 
 
+#endif /* ZOLTAN_HG */
 
 /****************************************************************************/
 /**  Given arrays to lookup a vertex for a given hyperedge (hindex, hvertex)
@@ -312,6 +320,7 @@ char *yo = "Zoltan_HG_Create_Mirror";
    return ZOLTAN_OK;
 }
 
+#ifdef ZOLTAN_HG
 
 
 /****************************************************************************/
@@ -795,6 +804,7 @@ int i, number, temp;
      }
 }
 
+#endif /* ZOLTAN_HG */
 
 
 #ifdef __cplusplus

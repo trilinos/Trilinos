@@ -26,7 +26,7 @@ extern "C" {
 #include <string.h>
 #include <math.h>
 
-#ifdef HTEST
+#ifdef HGEXEC
 #include "zoltan_mem.h"
 
 typedef struct
@@ -75,59 +75,7 @@ typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse vert
 typedef int *Partition; /* length |V|, partition ID for each vertex */
 
 
-typedef struct {
-   int info;    /* primarily for debugging recursive algorithms;initially 0 */
-   int nVtx;    /* number of vertices, |V| */
-   int nEdge;   /* Size of neigh array; 2|E| */
-   int nDim;    /* Number of dimensions for a vertex's coordinate */
-   int VertexWeightDim;  /* number of weight dimensions for a vertex */
-   int EdgeWeightDim;    /* number of weight dimensions for an edge */
-
-   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
-                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
-                     processor n.   KDD:  temporary; may change later. */
-
-   /* physical coordinates of each vertex, optional */
-   double *coor; /*  |V| long by CoordinateDim */
-
-   /* arrays with vertex and edge weights */
-   float *vwgt;  /* weights of vertices, |V| long by VtxWeightDim */
-   float *ewgt;  /* weights of hypergraph edges, 2|E| long by EdgeWeightDim */
-
-   /* arrays to look up the neighbors of a vertex */
-   int *nindex;  /* length |V|+1 index to neigh, last is 2|E| */
-   int *neigh;   /* length 2|E|, list of neighbors for each vertex */
-   } Graph;
-
-
-typedef struct {
-   int info;     /* primarily for debugging recursive algorithms;initially 0 */
-   int nVtx;    /* number of vertices, |V| */
-   int nEdge;   /* number of hyperedges, |E| */
-   int nInput;  /* number of inputs, |I| */
-   int nDim;    /* Number of dimensions of a vertex's coordinate */
-   int VertexWeightDim;  /* number of weight dimensions for a vertex */
-   int EdgeWeightDim;    /* number of weight dimensions for an edge */
-
-   /* physical coordinates of each vertex, optional */
-   double *coor; /*  |V| long by CoordinateDim */
-
-   /* arrays with vertex and edge weights */
-   float *vwgt;  /* weights of vertices, |V| long by VtxWeightDim */
-   float *ewgt;  /* weights of hypergraph edges, |E| long by EdgeWeightDim */
-
-   /* arrays to look up vertices given a hyperedge */
-   int *hindex;  /* length |E|+1 index into hvertex, last is |P| */
-   int *hvertex; /* length |P| array containing associated vertices */
-
-   /* arrays to look up hyperedges given a vertex */
-   int *vindex;  /* length |V|+1 index into vedge, last is |P| */
-   int *vedge;   /* length |P| array containing associated hyperedges */
-
-   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
-                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
-                     processor n.   KDD:  temporary; may change later. */
-   } HGraph;
+#include "hg_hypergraph.h"
 
 
 typedef struct {
@@ -138,27 +86,7 @@ typedef struct {
    } HGraphLevel;
 
 
-/* Hypergraph utilities */
-void Zoltan_HG_HGraph_Init (HGraph*);
-void Zoltan_HG_Graph_Init  (Graph*);
-int Zoltan_HG_HGraph_Free  (HGraph*);
-int Zoltan_HG_Graph_Free   (Graph*);
-int Zoltan_HG_Info         (ZZ*, HGraph*);
-int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
-int Zoltan_HG_Check        (ZZ*, HGraph*);
-int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
-int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
-void Zoltan_HG_Print(ZZ*, HGraph*, FILE*);
-
-unsigned int Zoltan_HG_Rand (void);
-void         Zoltan_HG_Srand (unsigned int);
-void         Zoltan_HG_Rand_Perm_Int (int*, int);
-
-/* Hypergraph read from file */
-/* EBEB - Moved to driver directory.
-int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
- float**, int*, float**, int*);
-*/
+#include "hg_util.h"
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
