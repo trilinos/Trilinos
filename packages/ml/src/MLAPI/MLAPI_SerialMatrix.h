@@ -1,5 +1,5 @@
-#ifndef MLAPI_MATRIX_H
-#define MLAPI_MATRIX_H
+#ifndef MLAPI_SERIALMATRIX_H
+#define MLAPI_SERIALMATRIX_H
 
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -15,13 +15,11 @@
 
 namespace MLAPI {
 
-class Matrix : public Epetra_RowMatrix, public BaseObject {
+class SerialMatrix : public Epetra_RowMatrix, public BaseObject {
 
 public:
 
-  Matrix();
-
-  Matrix(const Space& RowSpace, const Space& ColSpace)
+  SerialMatrix(const Space& RowSpace, const Space& ColSpace)
   {
     RowSpace_ = RowSpace;
     ColSpace_ = ColSpace;
@@ -33,7 +31,7 @@ public:
     NumMyDiagonals_ = 0;
 
     if (GetNumProcs() != 1)
-      ML_THROW("Class Matrix can only be used for serial computations.", -1);
+      ML_THROW("Class SerialMatrix can only be used for serial computations.", -1);
 
     RowMap_ = new Epetra_Map(NumMyRows_,0,GetEpetra_Comm());
     ColMap_ = new Epetra_Map(NumMyCols_,0,GetEpetra_Comm());
@@ -322,7 +320,7 @@ public:
     vector<int>    Indices(Length);
 
     os << endl;
-    os << "*** MLAPI::Matrix ***" << endl;
+    os << "*** MLAPI::SerialMatrix ***" << endl;
     os << "Label = " << GetLabel() << endl;
     os << "Number of rows = " << NumMyRows() << endl;
     os << "Number of columns = " << NumMyCols() << endl;
@@ -359,11 +357,11 @@ public:
 
 private:
 
-  Matrix(const Matrix& rhs)
+  SerialMatrix(const SerialMatrix& rhs)
   {
   }
 
-  Matrix& operator=(const Matrix& rhs)
+  SerialMatrix& operator=(const SerialMatrix& rhs)
   {
     return(*this);
   }
@@ -382,9 +380,9 @@ private:
   Epetra_Map* RowMap_;
   Epetra_Map* ColMap_;
 
-}; // class Matrix
+}; // class SerialMatrix
 
 } // namespace MLAPI
 
 #endif // ifdef HAVE_ML_MLAPI
-#endif // ifndef MLAPI_MATRIX_H
+#endif // ifndef MLAPI_SERIALMATRIX_H
