@@ -49,7 +49,7 @@ void TreeBuildingXMLHandler::characters(const string& chars,
 }
 
 void TreeBuildingXMLHandler::startElement(const string& tag, 
-																					const Map<string,string>& attributes)
+																					const Map& attributes)
 {
   XMLObject parent;
   

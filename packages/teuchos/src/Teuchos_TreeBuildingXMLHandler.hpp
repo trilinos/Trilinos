@@ -63,7 +63,7 @@ namespace Teuchos
 
       /** \brief Receive notification of the start of an element */
       void startElement(const string& tag,
-                        const Map<string,string>& attributes);
+                        const Map& attributes);
 
     private:
       XMLObject root_;
