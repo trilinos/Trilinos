@@ -54,6 +54,7 @@ public :: &
    ZOLTAN_FN_TYPES
 
 public :: &
+   ZOLTAN_PARTITION_FN_TYPE, &
    ZOLTAN_NUM_EDGES_FN_TYPE, &
    ZOLTAN_EDGE_LIST_FN_TYPE, &
    ZOLTAN_NUM_GEOM_FN_TYPE, &
@@ -119,6 +120,7 @@ public :: &
    Zoltan_Set_Num_Border_Obj_Fn, Zoltan_Set_Border_Obj_List_Fn, &
    Zoltan_Set_First_Border_Obj_Fn, Zoltan_Set_Next_Border_Obj_Fn, &
    Zoltan_Set_Num_Geom_Fn, Zoltan_Set_Geom_Fn, &
+   Zoltan_Set_Partition_Fn, &
    Zoltan_Set_Num_Edges_Fn, Zoltan_Set_Edge_List_Fn, &
    Zoltan_Set_Num_Coarse_Obj_Fn, Zoltan_Set_Coarse_Obj_List_Fn, &
    Zoltan_Set_First_Coarse_Obj_Fn, Zoltan_Set_Next_Coarse_Obj_Fn, &
@@ -180,7 +182,8 @@ type(ZOLTAN_FN_TYPEF), parameter :: &
    ZOLTAN_NUM_COARSE_OBJ_FN_TYPE   = ZOLTAN_FN_TYPEF(18_Zoltan_INT), &
    ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE = ZOLTAN_FN_TYPEF(20_Zoltan_INT), &
    ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE  = ZOLTAN_FN_TYPEF(21_Zoltan_INT), &
-   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(22_Zoltan_INT)
+   ZOLTAN_NUM_CHILD_FN_TYPE        = ZOLTAN_FN_TYPEF(22_Zoltan_INT), &
+   ZOLTAN_PARTITION_FN_TYPE        = ZOLTAN_FN_TYPEF(28_Zoltan_INT)
 
 #ifdef SUNSOFT
 ! bug in SunSoft compiler prevents using parameter
@@ -957,6 +960,7 @@ end interface
 
 #include "set_numgeom.if"
 #include "set_geom.if"
+#include "set_partition.if"
 #include "set_numedges.if"
 #include "set_edgelist.if"
 #include "set_numobj.if"
@@ -1756,7 +1760,7 @@ end function Zf90_Help_Migrate
 
 ! TEMP child_order
 subroutine Zf90_Reftree_Get_Child_Order(zz,order,ierr)
-type(Zoltan_Struct), pointer :: zz
+type(Zoltan_Struct) INTENT_IN zz
 integer(Zoltan_INT), intent(inout), dimension(*) :: order
 integer(Zoltan_INT), intent(out) :: ierr
 integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
@@ -1771,6 +1775,7 @@ end subroutine Zf90_Reftree_Get_Child_Order
 
 #include "set_numgeom.fn"
 #include "set_geom.fn"
+#include "set_partition.fn"
 #include "set_numedges.fn"
 #include "set_edgelist.fn"
 #include "set_numobj.fn"

@@ -478,10 +478,10 @@ end function LBf90_Help_Migrate
 
 ! TEMP child_order
 subroutine LBf90_Reftree_Get_Child_Order(lb,order,ierr)
-type(LB_Struct), pointer :: lb
+type(LB_Struct) INTENT_IN lb
 integer(Zoltan_INT), intent(inout), dimension(*) :: order
 integer(Zoltan_INT), intent(out) :: ierr
-type(Zoltan_Struct), pointer :: zz
+type(Zoltan_Struct) :: zz
 call LB_to_ZZ(lb,zz)
 call Zf90_Reftree_Get_Child_Order(zz,order,ierr)
 end subroutine LBf90_Reftree_Get_Child_Order
