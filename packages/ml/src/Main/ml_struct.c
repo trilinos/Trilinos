@@ -970,30 +970,33 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
    }
 
    fun = ML_Smoother_SGSSequential;
+   if (omega == ML_DEFAULT) omega = 1.;
 
-   if (pre_or_post == ML_PRESMOOTHER)
+   for (i = start_level; i <= end_level; i++)
    {
-      for (i = start_level; i <= end_level; i++)
-         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega);
-   }
-   else if (pre_or_post == ML_POSTSMOOTHER)
-   {
-      for (i = start_level; i <= end_level; i++)
-         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega);
-   }
-   else if (pre_or_post == ML_BOTH)
-   {
-      for (i = start_level; i <= end_level; i++)
+      if (pre_or_post == ML_PRESMOOTHER)
       {
+         sprintf(str,"SGS_pre%d",i);
          status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega);
-         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
-                                  fun, NULL, ntimes, omega);
+                                  fun, NULL, ntimes, omega, str);
       }
+      else if (pre_or_post == ML_POSTSMOOTHER)
+      {
+         sprintf(str,"SGS_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega, str);
+      }
+      else if (pre_or_post == ML_BOTH)
+      {
+         sprintf(str,"SGS_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega, str);
+         sprintf(str,"SGS_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega, str);
+      }
+      else return(pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n"));
    }
-   else return(pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n"));
    return(status);
 }
 
