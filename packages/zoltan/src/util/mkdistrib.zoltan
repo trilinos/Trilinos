@@ -13,7 +13,7 @@ CURDIR="`pwd`"
 ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
 rm -rf Zoltan
 rm -f zoltan_distrib.tar.Z
-cvs checkout Zoltan
+cvs checkout -P Zoltan
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
