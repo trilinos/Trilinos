@@ -306,7 +306,7 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, umfpack, [Enable Amesos interface support fo
 		AMESOS_UMFPACK, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, superlu, [Enable Amesos interface support for SUPERLU], 
-		AMESOS_SUPERLU, yes)
+		AMESOS_SUPERLU, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, klu, [Enable Amesos interface support for KLU], 
 		AMESOS_KLU, yes)

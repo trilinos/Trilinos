@@ -896,7 +896,7 @@ Optional Features:
   --enable-amesos-umfpack Enable Amesos interface support for UMFPACK (default
                           is no)
   --enable-amesos-superlu Enable Amesos interface support for SUPERLU (default
-                          is yes)
+                          is no)
   --enable-amesos-klu     Enable Amesos interface support for KLU (default is
                           yes)
   --enable-amesos-mumps   Enable Amesos interface support for MUMPS (default
@@ -9273,7 +9273,7 @@ if test "${enable_amesos_superlu+set}" = set; then
   enableval="$enable_amesos_superlu"
   ac_cv_use_amesos_superlu=$enableval
 else
-  ac_cv_use_amesos_superlu=yes
+  ac_cv_use_amesos_superlu=no
 fi;
 
 echo "$as_me:$LINENO: checking whether to use amesos-superlu" >&5
