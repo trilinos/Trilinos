@@ -32,57 +32,68 @@
 
 //! Kokkos::Flops:  The Kokkos Floating Point Operations Class.
 /*! The Kokkos::Flops class provides basic support and consistent interfaces
-    for counting and reporting floating point operations performed in 
-    the Kokkos computational classes.  All classes based on the Kokkos::CompObject
-    can count flops by the user creating an Kokkos::Flops object and calling the SetFlopCounter()
-    method for an Kokkos::CompObject.
+  for counting and reporting floating point operations performed in 
+  the Kokkos computational classes.  All classes based on the Kokkos::CompObject
+  can count flops by the user creating an Kokkos::Flops object and calling the SetFlopCounter()
+  method for an Kokkos::CompObject.
   
 */
 
 namespace Kokkos {
-class Flops {
+  class Flops {
     
   public:
-  //! Flops Constructor.
-  /*! Creates a Flops instance. This instance can be queried for
+    //@{ \name Constructors/Destructor.
+    //! Flops Constructor.
+    /*! Creates a Flops instance. This instance can be queried for
       the number of floating point operations performed for the associated
       \e this object.
-  */
-  Flops(void);
+    */
+    Flops(void)
+      : flops_(0.0){};
 
-  //! Flops Copy Constructor.
-  /*! Makes an exact copy of an existing Flops instance.
-  */
-  Flops(const Flops& Flops);
+    //! Flops Copy Constructor.
+    /*! Makes a copy of an existing Flops instance.
+      \warning The counter of the Flops copy is reset to zero.
+    */
+    Flops(const Flops& Flops)
+      : flops_(0.0){};
 
-  //! Returns the number of floating point operations with \e this object and resets the count.
-  double flops() const {double tmp = flops_; flops_ = 0.0; return(tmp);};
+    //! Flops Destructor.
+    virtual ~Flops(void);
+    //@}
 
-  //! Resets the number of floating point operations to zero for \e this multi-vector.
-  void resetFlops() {flops_=0.0;};
 
-  //! Flops Destructor.
-  /*! Completely deletes a Flops object.  
-  */
-  virtual ~Flops(void);
+    //@{ \name Attribute access/reset methods.
+    //! Returns the number of floating point operations with \e this object and resets the count.
+    double flops() const {double tmp = flops_; flops_ = 0.0; return(tmp);};
 
-  friend class CompObject;
+    //! Resets the number of floating point operations to zero for \e this multi-vector.
+    void resetFlops() {flops_=0.0;};
+    //@}
 
- protected:
-  mutable double flops_;
-  //! Increment flop count for \e this object from an int
-  void updateFlops(int flops) const {flops_ += (double) flops;};
-  //! Increment flop count for \e this object from a long int
-  void updateFlops(long int flops) const {flops_ += (double) flops;};
-  //! Increment flop count for \e this object from a double
-  void updateFlops(double flops) const {flops_ += flops;};
-  //! Increment flop count for \e this object from a float
-  void updateFlops(float flops) const {flops_ +=(double) flops;};
+    //@{ \name Friend class.
+    //! CompObject needs to be able to set the flopCounter_ attribute of Flops
+    friend class CompObject;
+    //@}
+
+  protected:
+
+    mutable double flops_;
+
+    //! Increment flop count for \e this object from an int
+    void updateFlops(int flops) const {flops_ += (double) flops;};
+
+    //! Increment flop count for \e this object from a long int
+    void updateFlops(long int flops) const {flops_ += (double) flops;};
+
+    //! Increment flop count for \e this object from a double
+    void updateFlops(double flops) const {flops_ += flops;};
+
+    //! Increment flop count for \e this object from a float
+    void updateFlops(float flops) const {flops_ +=(double) flops;};
   
-
- private:
-  
-};
+  };
 
 } // namespace Kokkos
 

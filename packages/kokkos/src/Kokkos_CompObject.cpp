@@ -31,21 +31,20 @@
 #include "Kokkos_CompObject.hpp"
 
 
+using namespace Kokkos;
 
 //=============================================================================
-
 // Constructor
-
-Kokkos_CompObject::Kokkos_CompObject() {
-  FlopCounter_ = 0;
+CompObject::CompObject() {
+  flopCounter_ = 0;
 }
 
 //==========================================================================
 
 // Copy Constructor
 
-Kokkos_CompObject::Kokkos_CompObject(const Kokkos_CompObject& Source)
-  : FlopCounter_(Source.FlopCounter_)
+CompObject::CompObject(const CompObject& source)
+  : flopCounter_(source.flopCounter_)
 {}
 //=========================================================================
-Kokkos_CompObject::~Kokkos_CompObject(){FlopCounter_=0;}
+CompObject::~CompObject(){flopCounter_=0;}
