@@ -7,9 +7,9 @@
 #ifndef F2C_INCLUDE
 #define F2C_INCLUDE
 
-#include "../../etc/ml_aztec_lapack.h"
-#include "../../etc/ml_vendor_lapack.h"
-#include "../../etc/ml_superlu_lapack.h"
+#include "ml_aztec_lapack.h"
+#include "ml_vendor_lapack.h"
+#include "ml_superlu_lapack.h"
 #include "ml_defs.h"
 #include <stdio.h>
 /* typedef long int integer; */
