@@ -22,7 +22,7 @@ grep FUNC ../src/Utils/ml_lapack.c | sed "s/\#ifndef /-D/g" | \
      sed "s/$/ \\\/" >> la_defs
 ${echo} "-o ml_lapack.o -I../Obj ml_lapack.c \\" >> la_defs
 ${echo} "-DML_DUMMY_FUNC" >> la_defs
-${echo} "\\rm -f ml_lapack1.o; mv ml_lapack.o ml_lapack1.o" >> la_defs
+${echo} "\\\rm -f ml_lapack1.o; mv ml_lapack.o ml_lapack1.o" >> la_defs
 
 \rm -f lower_list upper_list 
 
