@@ -113,26 +113,16 @@ int main(int argc, char *argv[])
   Operator FineMatrix(FineSpace,FineSpace,*A);
 
   // build the preconditioner
-  Preconditioner* MLAPIPrec;
-  
-  string PrecType = "multilevel";
-
-  if (PrecType == "multilevel")
-    MLAPIPrec = new MultiLevel(FineMatrix,MLList);
-  else if (PrecType == "additive")
-    MLAPIPrec = new MultiLevel(FineMatrix,MLList);
-  else if (PrecType == "hybrid")
-    MLAPIPrec = new MultiLevel(FineMatrix,MLList);
+  MultiLevel  MLAPIPrec(FineMatrix,MLList);
 
   // wrap the MLAPI::Preconditioner object as an Epetra_Operator, so that
   // we can use it for AztecOO
-  Epetra_Operator* MLPrec = 
-    new EpetraPreconditioner(Comm,A->RowMatrixRowMap(),*MLAPIPrec);
+  EpetraPreconditioner EpetraPrec(Comm,A->RowMatrixRowMap(),MLAPIPrec);
 
   // =========================== end of ML part =============================
   
   // inform AztecOO to use MLPrec in the preconditioning phase
-  solver.SetPrecOperator(MLPrec);
+  solver.SetPrecOperator(&EpetraPrec);
   
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 8);
@@ -140,8 +130,6 @@ int main(int argc, char *argv[])
   // solve with 500 iterations and 1e-12 tolerance  
   solver.Iterate(500, 1e-5);
 
-  delete MLAPIPrec;
-  
   // finalize the MLAPI workspace
   Finalize();
 

@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(Compare_SOURCES) $(CreateTwoLevelDD_SOURCES) $(PowerMethod_SOURCES) $(Preconditioner_SOURCES)
+SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -40,8 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = PowerMethod$(EXEEXT) CreateTwoLevelDD$(EXEEXT) \
-	Preconditioner$(EXEEXT) Compare$(EXEEXT)
+noinst_PROGRAMS = PowerMethod$(EXEEXT) TwoLevelDDAdditive$(EXEEXT) \
+	MultiLevel$(EXEEXT)
 DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = examples/MLAPI
@@ -75,38 +75,34 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_Compare_OBJECTS = Compare-Compare.$(OBJEXT)
-Compare_OBJECTS = $(am_Compare_OBJECTS)
+am_MultiLevel_OBJECTS = MultiLevel-MultiLevel.$(OBJEXT)
+MultiLevel_OBJECTS = $(am_MultiLevel_OBJECTS)
 am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-Compare_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_CreateTwoLevelDD_OBJECTS =  \
-	CreateTwoLevelDD-CreateTwoLevelDD.$(OBJEXT)
-CreateTwoLevelDD_OBJECTS = $(am_CreateTwoLevelDD_OBJECTS)
-CreateTwoLevelDD_DEPENDENCIES = $(am__DEPENDENCIES_2)
+MultiLevel_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_PowerMethod_OBJECTS = PowerMethod-PowerMethod.$(OBJEXT)
 PowerMethod_OBJECTS = $(am_PowerMethod_OBJECTS)
 PowerMethod_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_Preconditioner_OBJECTS = Preconditioner-Preconditioner.$(OBJEXT)
-Preconditioner_OBJECTS = $(am_Preconditioner_OBJECTS)
-Preconditioner_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_TwoLevelDDAdditive_OBJECTS =  \
+	TwoLevelDDAdditive-CreateTwoLevelDD.$(OBJEXT)
+TwoLevelDDAdditive_OBJECTS = $(am_TwoLevelDDAdditive_OBJECTS)
+TwoLevelDDAdditive_DEPENDENCIES = $(am__DEPENDENCIES_2)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/Compare-Compare.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/MultiLevel-MultiLevel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/PowerMethod-PowerMethod.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Preconditioner-Preconditioner.Po
+@AMDEP_TRUE@	./$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(Compare_SOURCES) $(CreateTwoLevelDD_SOURCES) \
-	$(PowerMethod_SOURCES) $(Preconditioner_SOURCES)
-DIST_SOURCES = $(Compare_SOURCES) $(CreateTwoLevelDD_SOURCES) \
-	$(PowerMethod_SOURCES) $(Preconditioner_SOURCES)
+SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) \
+	$(TwoLevelDDAdditive_SOURCES)
+DIST_SOURCES = $(MultiLevel_SOURCES) $(PowerMethod_SOURCES) \
+	$(TwoLevelDDAdditive_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -250,21 +246,16 @@ PowerMethod_CPPFLAGS = ${ml_common_include_locations}
 PowerMethod_CXXFLAGS = ${ml_common_include_locations}
 PowerMethod_LDADD = ${ml_libs} 
 PowerMethod_LINK = ${mllink}
-CreateTwoLevelDD_SOURCES = $(srcdir)/CreateTwoLevelDD.cpp
-CreateTwoLevelDD_CPPFLAGS = ${ml_common_include_locations}
-CreateTwoLevelDD_CXXFLAGS = ${ml_common_include_locations}
-CreateTwoLevelDD_LDADD = ${ml_libs} 
-CreateTwoLevelDD_LINK = ${mllink}
-Preconditioner_SOURCES = $(srcdir)/Preconditioner.cpp
-Preconditioner_CPPFLAGS = ${ml_common_include_locations}
-Preconditioner_CXXFLAGS = ${ml_common_include_locations}
-Preconditioner_LDADD = ${ml_libs} 
-Preconditioner_LINK = ${mllink}
-Compare_SOURCES = $(srcdir)/Compare.cpp
-Compare_CPPFLAGS = ${ml_common_include_locations}
-Compare_CXXFLAGS = ${ml_common_include_locations}
-Compare_LDADD = ${ml_libs} 
-Compare_LINK = ${mllink}
+TwoLevelDDAdditive_SOURCES = $(srcdir)/CreateTwoLevelDD.cpp
+TwoLevelDDAdditive_CPPFLAGS = ${ml_common_include_locations}
+TwoLevelDDAdditive_CXXFLAGS = ${ml_common_include_locations}
+TwoLevelDDAdditive_LDADD = ${ml_libs} 
+TwoLevelDDAdditive_LINK = ${mllink}
+MultiLevel_SOURCES = $(srcdir)/MultiLevel.cpp
+MultiLevel_CPPFLAGS = ${ml_common_include_locations}
+MultiLevel_CXXFLAGS = ${ml_common_include_locations}
+MultiLevel_LDADD = ${ml_libs} 
+MultiLevel_LINK = ${mllink}
 
 ####################
 # include locations
@@ -409,18 +400,15 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-Compare$(EXEEXT): $(Compare_OBJECTS) $(Compare_DEPENDENCIES) 
-	@rm -f Compare$(EXEEXT)
-	$(Compare_LINK) $(Compare_LDFLAGS) $(Compare_OBJECTS) $(Compare_LDADD) $(LIBS)
-CreateTwoLevelDD$(EXEEXT): $(CreateTwoLevelDD_OBJECTS) $(CreateTwoLevelDD_DEPENDENCIES) 
-	@rm -f CreateTwoLevelDD$(EXEEXT)
-	$(CreateTwoLevelDD_LINK) $(CreateTwoLevelDD_LDFLAGS) $(CreateTwoLevelDD_OBJECTS) $(CreateTwoLevelDD_LDADD) $(LIBS)
+MultiLevel$(EXEEXT): $(MultiLevel_OBJECTS) $(MultiLevel_DEPENDENCIES) 
+	@rm -f MultiLevel$(EXEEXT)
+	$(MultiLevel_LINK) $(MultiLevel_LDFLAGS) $(MultiLevel_OBJECTS) $(MultiLevel_LDADD) $(LIBS)
 PowerMethod$(EXEEXT): $(PowerMethod_OBJECTS) $(PowerMethod_DEPENDENCIES) 
 	@rm -f PowerMethod$(EXEEXT)
 	$(PowerMethod_LINK) $(PowerMethod_LDFLAGS) $(PowerMethod_OBJECTS) $(PowerMethod_LDADD) $(LIBS)
-Preconditioner$(EXEEXT): $(Preconditioner_OBJECTS) $(Preconditioner_DEPENDENCIES) 
-	@rm -f Preconditioner$(EXEEXT)
-	$(Preconditioner_LINK) $(Preconditioner_LDFLAGS) $(Preconditioner_OBJECTS) $(Preconditioner_LDADD) $(LIBS)
+TwoLevelDDAdditive$(EXEEXT): $(TwoLevelDDAdditive_OBJECTS) $(TwoLevelDDAdditive_DEPENDENCIES) 
+	@rm -f TwoLevelDDAdditive$(EXEEXT)
+	$(TwoLevelDDAdditive_LINK) $(TwoLevelDDAdditive_LDFLAGS) $(TwoLevelDDAdditive_OBJECTS) $(TwoLevelDDAdditive_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -428,10 +416,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Compare-Compare.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel-MultiLevel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PowerMethod-PowerMethod.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Preconditioner-Preconditioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -449,37 +436,21 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Compare-Compare.o: $(srcdir)/Compare.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Compare_CPPFLAGS) $(CPPFLAGS) $(Compare_CXXFLAGS) $(CXXFLAGS) -MT Compare-Compare.o -MD -MP -MF "$(DEPDIR)/Compare-Compare.Tpo" -c -o Compare-Compare.o `test -f '$(srcdir)/Compare.cpp' || echo '$(srcdir)/'`$(srcdir)/Compare.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Compare-Compare.Tpo" "$(DEPDIR)/Compare-Compare.Po"; else rm -f "$(DEPDIR)/Compare-Compare.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Compare.cpp' object='Compare-Compare.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Compare-Compare.Po' tmpdepfile='$(DEPDIR)/Compare-Compare.TPo' @AMDEPBACKSLASH@
+MultiLevel-MultiLevel.o: $(srcdir)/MultiLevel.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.o -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" "$(DEPDIR)/MultiLevel-MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel-MultiLevel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel-MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel-MultiLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Compare_CPPFLAGS) $(CPPFLAGS) $(Compare_CXXFLAGS) $(CXXFLAGS) -c -o Compare-Compare.o `test -f '$(srcdir)/Compare.cpp' || echo '$(srcdir)/'`$(srcdir)/Compare.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel-MultiLevel.o `test -f '$(srcdir)/MultiLevel.cpp' || echo '$(srcdir)/'`$(srcdir)/MultiLevel.cpp
 
-Compare-Compare.obj: $(srcdir)/Compare.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Compare_CPPFLAGS) $(CPPFLAGS) $(Compare_CXXFLAGS) $(CXXFLAGS) -MT Compare-Compare.obj -MD -MP -MF "$(DEPDIR)/Compare-Compare.Tpo" -c -o Compare-Compare.obj `if test -f '$(srcdir)/Compare.cpp'; then $(CYGPATH_W) '$(srcdir)/Compare.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Compare.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Compare-Compare.Tpo" "$(DEPDIR)/Compare-Compare.Po"; else rm -f "$(DEPDIR)/Compare-Compare.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Compare.cpp' object='Compare-Compare.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Compare-Compare.Po' tmpdepfile='$(DEPDIR)/Compare-Compare.TPo' @AMDEPBACKSLASH@
+MultiLevel-MultiLevel.obj: $(srcdir)/MultiLevel.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -MT MultiLevel-MultiLevel.obj -MD -MP -MF "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" -c -o MultiLevel-MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo" "$(DEPDIR)/MultiLevel-MultiLevel.Po"; else rm -f "$(DEPDIR)/MultiLevel-MultiLevel.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/MultiLevel.cpp' object='MultiLevel-MultiLevel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/MultiLevel-MultiLevel.Po' tmpdepfile='$(DEPDIR)/MultiLevel-MultiLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Compare_CPPFLAGS) $(CPPFLAGS) $(Compare_CXXFLAGS) $(CXXFLAGS) -c -o Compare-Compare.obj `if test -f '$(srcdir)/Compare.cpp'; then $(CYGPATH_W) '$(srcdir)/Compare.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Compare.cpp'; fi`
-
-CreateTwoLevelDD-CreateTwoLevelDD.o: $(srcdir)/CreateTwoLevelDD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CreateTwoLevelDD_CPPFLAGS) $(CPPFLAGS) $(CreateTwoLevelDD_CXXFLAGS) $(CXXFLAGS) -MT CreateTwoLevelDD-CreateTwoLevelDD.o -MD -MP -MF "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo" -c -o CreateTwoLevelDD-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo" "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='CreateTwoLevelDD-CreateTwoLevelDD.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CreateTwoLevelDD_CPPFLAGS) $(CPPFLAGS) $(CreateTwoLevelDD_CXXFLAGS) $(CXXFLAGS) -c -o CreateTwoLevelDD-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp
-
-CreateTwoLevelDD-CreateTwoLevelDD.obj: $(srcdir)/CreateTwoLevelDD.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CreateTwoLevelDD_CPPFLAGS) $(CPPFLAGS) $(CreateTwoLevelDD_CXXFLAGS) $(CXXFLAGS) -MT CreateTwoLevelDD-CreateTwoLevelDD.obj -MD -MP -MF "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo" -c -o CreateTwoLevelDD-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo" "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='CreateTwoLevelDD-CreateTwoLevelDD.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/CreateTwoLevelDD-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CreateTwoLevelDD_CPPFLAGS) $(CPPFLAGS) $(CreateTwoLevelDD_CXXFLAGS) $(CXXFLAGS) -c -o CreateTwoLevelDD-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(MultiLevel_CPPFLAGS) $(CPPFLAGS) $(MultiLevel_CXXFLAGS) $(CXXFLAGS) -c -o MultiLevel-MultiLevel.obj `if test -f '$(srcdir)/MultiLevel.cpp'; then $(CYGPATH_W) '$(srcdir)/MultiLevel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/MultiLevel.cpp'; fi`
 
 PowerMethod-PowerMethod.o: $(srcdir)/PowerMethod.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(PowerMethod_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -MT PowerMethod-PowerMethod.o -MD -MP -MF "$(DEPDIR)/PowerMethod-PowerMethod.Tpo" -c -o PowerMethod-PowerMethod.o `test -f '$(srcdir)/PowerMethod.cpp' || echo '$(srcdir)/'`$(srcdir)/PowerMethod.cpp; \
@@ -497,21 +468,21 @@ PowerMethod-PowerMethod.obj: $(srcdir)/PowerMethod.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(PowerMethod_CPPFLAGS) $(CPPFLAGS) $(PowerMethod_CXXFLAGS) $(CXXFLAGS) -c -o PowerMethod-PowerMethod.obj `if test -f '$(srcdir)/PowerMethod.cpp'; then $(CYGPATH_W) '$(srcdir)/PowerMethod.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PowerMethod.cpp'; fi`
 
-Preconditioner-Preconditioner.o: $(srcdir)/Preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Preconditioner_CPPFLAGS) $(CPPFLAGS) $(Preconditioner_CXXFLAGS) $(CXXFLAGS) -MT Preconditioner-Preconditioner.o -MD -MP -MF "$(DEPDIR)/Preconditioner-Preconditioner.Tpo" -c -o Preconditioner-Preconditioner.o `test -f '$(srcdir)/Preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Preconditioner.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Preconditioner-Preconditioner.Tpo" "$(DEPDIR)/Preconditioner-Preconditioner.Po"; else rm -f "$(DEPDIR)/Preconditioner-Preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Preconditioner.cpp' object='Preconditioner-Preconditioner.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Preconditioner-Preconditioner.Po' tmpdepfile='$(DEPDIR)/Preconditioner-Preconditioner.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-CreateTwoLevelDD.o: $(srcdir)/CreateTwoLevelDD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-CreateTwoLevelDD.o -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" -c -o TwoLevelDDAdditive-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='TwoLevelDDAdditive-CreateTwoLevelDD.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Preconditioner_CPPFLAGS) $(CPPFLAGS) $(Preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o Preconditioner-Preconditioner.o `test -f '$(srcdir)/Preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Preconditioner.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-CreateTwoLevelDD.o `test -f '$(srcdir)/CreateTwoLevelDD.cpp' || echo '$(srcdir)/'`$(srcdir)/CreateTwoLevelDD.cpp
 
-Preconditioner-Preconditioner.obj: $(srcdir)/Preconditioner.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Preconditioner_CPPFLAGS) $(CPPFLAGS) $(Preconditioner_CXXFLAGS) $(CXXFLAGS) -MT Preconditioner-Preconditioner.obj -MD -MP -MF "$(DEPDIR)/Preconditioner-Preconditioner.Tpo" -c -o Preconditioner-Preconditioner.obj `if test -f '$(srcdir)/Preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Preconditioner.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Preconditioner-Preconditioner.Tpo" "$(DEPDIR)/Preconditioner-Preconditioner.Po"; else rm -f "$(DEPDIR)/Preconditioner-Preconditioner.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Preconditioner.cpp' object='Preconditioner-Preconditioner.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Preconditioner-Preconditioner.Po' tmpdepfile='$(DEPDIR)/Preconditioner-Preconditioner.TPo' @AMDEPBACKSLASH@
+TwoLevelDDAdditive-CreateTwoLevelDD.obj: $(srcdir)/CreateTwoLevelDD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -MT TwoLevelDDAdditive-CreateTwoLevelDD.obj -MD -MP -MF "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" -c -o TwoLevelDDAdditive-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo" "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po"; else rm -f "$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CreateTwoLevelDD.cpp' object='TwoLevelDDAdditive-CreateTwoLevelDD.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.Po' tmpdepfile='$(DEPDIR)/TwoLevelDDAdditive-CreateTwoLevelDD.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Preconditioner_CPPFLAGS) $(CPPFLAGS) $(Preconditioner_CXXFLAGS) $(CXXFLAGS) -c -o Preconditioner-Preconditioner.obj `if test -f '$(srcdir)/Preconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/Preconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Preconditioner.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(TwoLevelDDAdditive_CPPFLAGS) $(CPPFLAGS) $(TwoLevelDDAdditive_CXXFLAGS) $(CXXFLAGS) -c -o TwoLevelDDAdditive-CreateTwoLevelDD.obj `if test -f '$(srcdir)/CreateTwoLevelDD.cpp'; then $(CYGPATH_W) '$(srcdir)/CreateTwoLevelDD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CreateTwoLevelDD.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
