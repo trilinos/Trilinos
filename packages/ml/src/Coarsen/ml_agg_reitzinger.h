@@ -18,6 +18,7 @@
 #include "ml_mat_formats.h"
 #include "ml_agg_genP.h"
 #include "ml_op_utils.h"
+#include "ml_operator_blockmat.h"
 /* ******************************************************************** */
 /* ******************************************************************** */
 /*      User Interface Proto-types                                      */
