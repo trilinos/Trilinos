@@ -113,8 +113,9 @@ install_sh = @install_sh@
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANCONT = chanContinuation
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTP = chanTP
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANTPCONT = chanTPContinuation
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@CHANHOMOTOPY = chanHomotopy
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -131,6 +132,11 @@ chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.C
 
 
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
+
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
@@ -141,6 +147,8 @@ chanContinuation_DEPENDENCIES = \
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
@@ -153,6 +161,8 @@ chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
+chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
 chanContinuation_LDADD = \
 		-L$(top_builddir)/src \
 		-L$(top_builddir)/src-lapack \
@@ -164,6 +174,8 @@ chanContinuation_LDADD = \
 chanTP_LDADD = $(chanContinuation_LDADD)
 
 chanTPContinuation_LDADD = $(chanContinuation_LDADD)
+
+chanHomotopy_LDADD = $(chanContinuation_LDADD)
 subdir = src-loca/example-lapack/Chan
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
@@ -171,7 +183,8 @@ CONFIG_CLEAN_FILES =
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@noinst_PROGRAMS = \
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	chanContinuation$(EXEEXT) \
 @BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	chanTP$(EXEEXT) \
-@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	chanTPContinuation$(EXEEXT)
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	chanTPContinuation$(EXEEXT) \
+@BUILD_LOCA_LAPACK_EXAMPLES_TRUE@	chanHomotopy$(EXEEXT)
 @BUILD_LOCA_LAPACK_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
@@ -180,6 +193,10 @@ am_chanContinuation_OBJECTS = \
 	chanContinuation-ChanProblemInterface.$(OBJEXT)
 chanContinuation_OBJECTS = $(am_chanContinuation_OBJECTS)
 chanContinuation_LDFLAGS =
+am_chanHomotopy_OBJECTS = chanHomotopy-ChanHomotopy.$(OBJEXT) \
+	chanHomotopy-ChanProblemInterface.$(OBJEXT)
+chanHomotopy_OBJECTS = $(am_chanHomotopy_OBJECTS)
+chanHomotopy_LDFLAGS =
 am_chanTP_OBJECTS = chanTP-ChanTP.$(OBJEXT) \
 	chanTP-ChanProblemInterface.$(OBJEXT)
 chanTP_OBJECTS = $(am_chanTP_OBJECTS)
@@ -198,6 +215,8 @@ LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/chanContinuation-ChanContinuation.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanContinuation-ChanProblemInterface.Po \
+@AMDEP_TRUE@	$(DEPDIR)/chanHomotopy-ChanHomotopy.Po \
+@AMDEP_TRUE@	$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanTP-ChanProblemInterface.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanTP-ChanTP.Po \
 @AMDEP_TRUE@	$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po \
@@ -213,10 +232,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-DIST_SOURCES = $(chanContinuation_SOURCES) $(chanTP_SOURCES) \
-	$(chanTPContinuation_SOURCES)
+DIST_SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) \
+	$(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(chanContinuation_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
+SOURCES = $(chanContinuation_SOURCES) $(chanHomotopy_SOURCES) $(chanTP_SOURCES) $(chanTPContinuation_SOURCES)
 
 all: all-am
 
@@ -239,6 +258,12 @@ chanContinuation-ChanProblemInterface.$(OBJEXT): \
 chanContinuation$(EXEEXT): $(chanContinuation_OBJECTS) $(chanContinuation_DEPENDENCIES) 
 	@rm -f chanContinuation$(EXEEXT)
 	$(CXXLINK) $(chanContinuation_LDFLAGS) $(chanContinuation_OBJECTS) $(chanContinuation_LDADD) $(LIBS)
+chanHomotopy-ChanHomotopy.$(OBJEXT): $(srcdir)/ChanHomotopy.C
+chanHomotopy-ChanProblemInterface.$(OBJEXT): \
+	$(srcdir)/ChanProblemInterface.C
+chanHomotopy$(EXEEXT): $(chanHomotopy_OBJECTS) $(chanHomotopy_DEPENDENCIES) 
+	@rm -f chanHomotopy$(EXEEXT)
+	$(CXXLINK) $(chanHomotopy_LDFLAGS) $(chanHomotopy_OBJECTS) $(chanHomotopy_LDADD) $(LIBS)
 chanTP-ChanTP.$(OBJEXT): $(srcdir)/ChanTP.C
 chanTP-ChanProblemInterface.$(OBJEXT): $(srcdir)/ChanProblemInterface.C
 chanTP$(EXEEXT): $(chanTP_OBJECTS) $(chanTP_DEPENDENCIES) 
@@ -260,6 +285,8 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanContinuation-ChanContinuation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanContinuation-ChanProblemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanHomotopy-ChanHomotopy.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanTP-ChanProblemInterface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanTP-ChanTP.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/chanTPContinuation-ChanProblemInterface.Po@am__quote@
@@ -303,6 +330,30 @@ chanContinuation-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanContinuation-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanContinuation_CXXFLAGS) $(CXXFLAGS) -c -o chanContinuation-ChanProblemInterface.obj `cygpath -w $(srcdir)/ChanProblemInterface.C`
+
+chanHomotopy-ChanHomotopy.o: $(srcdir)/ChanHomotopy.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy-ChanHomotopy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanHomotopy.o `test -f $(srcdir)/ChanHomotopy.C || echo '$(srcdir)/'`$(srcdir)/ChanHomotopy.C
+
+chanHomotopy-ChanHomotopy.obj: $(srcdir)/ChanHomotopy.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanHomotopy.C' object='chanHomotopy-ChanHomotopy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanHomotopy.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanHomotopy.obj `cygpath -w $(srcdir)/ChanHomotopy.C`
+
+chanHomotopy-ChanProblemInterface.o: $(srcdir)/ChanProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy-ChanProblemInterface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanProblemInterface.o `test -f $(srcdir)/ChanProblemInterface.C || echo '$(srcdir)/'`$(srcdir)/ChanProblemInterface.C
+
+chanHomotopy-ChanProblemInterface.obj: $(srcdir)/ChanProblemInterface.C
+@AMDEP_TRUE@	source='$(srcdir)/ChanProblemInterface.C' object='chanHomotopy-ChanProblemInterface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.Po' tmpdepfile='$(DEPDIR)/chanHomotopy-ChanProblemInterface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(chanHomotopy_CXXFLAGS) $(CXXFLAGS) -c -o chanHomotopy-ChanProblemInterface.obj `cygpath -w $(srcdir)/ChanProblemInterface.C`
 
 chanTP-ChanTP.o: $(srcdir)/ChanTP.C
 @AMDEP_TRUE@	source='$(srcdir)/ChanTP.C' object='chanTP-ChanTP.o' libtool=no @AMDEPBACKSLASH@

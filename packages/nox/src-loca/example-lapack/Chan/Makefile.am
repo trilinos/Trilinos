@@ -34,10 +34,11 @@ if BUILD_LOCA_LAPACK_EXAMPLES
 CHANCONT = chanContinuation
 CHANTP = chanTP
 CHANTPCONT = chanTPContinuation
+CHANHOMOTOPY = chanHomotopy
 
 endif
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT) $(CHANHOMOTOPY)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
@@ -51,6 +52,10 @@ chanTPContinuation_SOURCES = $(srcdir)/ChanTPContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
+chanHomotopy_SOURCES = $(srcdir)/ChanHomotopy.C \
+		$(srcdir)/ChanProblemInterface.H \
+		$(srcdir)/ChanProblemInterface.C
+
 chanContinuation_DEPENDENCIES = \
         $(top_builddir)/src/libnox.a \
 	$(top_builddir)/src-lapack/libnoxlapack.a \
@@ -60,6 +65,8 @@ chanContinuation_DEPENDENCIES = \
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
+
+chanHomotopy_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src \
@@ -71,6 +78,8 @@ chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTPContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
+chanHomotopy_CXXFLAGS = $(chanContinuation_CXXFLAGS)
+
 chanContinuation_LDADD = \
 		-L$(top_builddir)/src \
 		-L$(top_builddir)/src-lapack \
@@ -81,3 +90,5 @@ chanContinuation_LDADD = \
 chanTP_LDADD = $(chanContinuation_LDADD)
 
 chanTPContinuation_LDADD = $(chanContinuation_LDADD)
+
+chanHomotopy_LDADD = $(chanContinuation_LDADD)
