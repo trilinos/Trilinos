@@ -83,6 +83,9 @@ public:
   // Change time step
   void setdt(const double newDt);
 
+  // Set parameters alpha, beta
+  void setParameters(const double alpha_, const double beta_);
+
   // Evaluates the function (F) and/or the Jacobian using the solution 
   // values in solnVector.
   bool evaluate(NOX::EpetraNew::Interface::Required::FillType fType, 
@@ -151,6 +154,7 @@ private:
   int NumGlobalNodes;     // Total Number of nodes
   int NumMyUnknowns;      // Number of unknowns owned by this process
   int NumGlobalUnknowns;  // Total Number of unknowns
+  double alpha, beta;     // Model Parameters
 
 };
 #endif

@@ -66,8 +66,8 @@
  */
 
 // NOX Objects
-#include "NOX.H"
-#include "NOX_Epetra.H"
+#include "LOCA.H"
+#include "LOCA_Epetra.H"
 #include "NOX_Common.H"
 
 // Trilinos Objects
@@ -112,7 +112,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i;
+  int ierr = 0, i, replica=0;
 
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
   // Divide in chunks of spatialProcs = 2
 
   int spatialProcs=1;
-  int replica = rank/spatialProcs;
+  replica = rank/spatialProcs;
   if (size % spatialProcs != 0) {
     cout << "ERROR: num spatial procs " << spatialProcs
 	 << " does not divide into num total procs " << size << endl;
@@ -202,8 +202,83 @@ int main(int argc, char *argv[])
   // Begin Nonlinear Solver ************************************
 
   // Create the top level parameter list
-  NOX::Parameter::List nlParams;
 
+  NOX::Parameter::List paramList;
+
+  // Create LOCA sublist
+  NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+
+  // Create the stepper sublist and set the stepper parameters
+  NOX::Parameter::List& locaStepperList = locaParamsList.sublist("Stepper");
+  locaStepperList.setParameter("Continuation Method", "Natural");
+  //locaStepperList.setParameter("Continuation Method", "Arc Length");
+  //locaStepperList.setParameter("Continuation Method", "Householder Arc Length");
+  locaStepperList.setParameter("Continuation Parameter", "alpha");
+  locaStepperList.setParameter("Initial Value", 0.6);
+  locaStepperList.setParameter("Max Value", 100.0);
+  locaStepperList.setParameter("Min Value", 0.05);
+#ifdef DO_XYZT
+  locaStepperList.setParameter("Max Steps", 4);
+#else
+  locaStepperList.setParameter("Max Steps", 0);// must be 0 so just a nonlinear solver
+#endif
+  locaStepperList.setParameter("Max Nonlinear Iterations", 15);
+  locaStepperList.setParameter("Enable Arc Length Scaling", true);
+  locaStepperList.setParameter("Goal Arc Length Parameter Contribution", 0.5);
+  locaStepperList.setParameter("Max Arc Length Parameter Contribution", 0.7);
+  locaStepperList.setParameter("Initial Scale Factor", 1.0);
+  locaStepperList.setParameter("Min Scale Factor", 1.0e-8);
+  locaStepperList.setParameter("Enable Tangent Factor Step Size Scaling",false);
+  locaStepperList.setParameter("Min Tangent Factor", 0.8);
+  locaStepperList.setParameter("Tangent Factor Exponent",1.5);
+
+  // Create step size sublist
+  NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+  stepSizeList.setParameter("Method", "Constant");
+ // stepSizeList.setParameter("Method", "Adaptive");
+  stepSizeList.setParameter("Initial Step Size", 0.1);
+  stepSizeList.setParameter("Min Step Size", 1.0e-3);
+  stepSizeList.setParameter("Max Step Size", 2000.0);
+  stepSizeList.setParameter("Aggressiveness", 0.1);
+  stepSizeList.setParameter("Failed Step Reduction Factor", 0.5);
+  stepSizeList.setParameter("Successful Step Increase Factor", 1.00); // for constant
+
+  // Create predictor sublist
+  NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+  //predictorList.setParameter("Method", "Constant");
+  //predictorList.setParameter("Method", "Tangent");
+  predictorList.setParameter("Method", "Secant");
+
+  // Create bifurcation sublist
+    NOX::Parameter::List& bifurcationList = 
+      locaParamsList.sublist("Bifurcation");
+    bifurcationList.setParameter("Method", "None");
+
+  // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
+  locaStepperList.setParameter("Compute Eigenvalues",false);
+  NOX::Parameter::List& aList = locaStepperList.sublist("Anasazi");
+  aList.setParameter("Block Size", 1);
+  aList.setParameter("Arnoldi Size", 10);
+  aList.setParameter("NEV", 3);
+  aList.setParameter("Tol", 2.0e-7);
+  aList.setParameter("Convergence Check", 1);
+  aList.setParameter("Restarts",2);
+  aList.setParameter("Frequency",1);
+  aList.setParameter("Debug Level",0);
+  
+  // Set the LOCA Utilities
+  NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
+  locaUtilsList.setParameter("MyPID", MyPID);
+  locaUtilsList.setParameter("Output Information", 
+			     LOCA::Utils::Warning +
+			     LOCA::Utils::StepperIteration +
+			     LOCA::Utils::StepperDetails +
+			     LOCA::Utils::Solver +
+			     LOCA::Utils::SolverDetails +
+			     LOCA::Utils::Parameters);
+
+  // Create the "Solver" parameters sublist to be used with NOX Solvers
+  NOX::Parameter::List& nlParams = paramList.sublist("NOX");
   // Set the nonlinear solver method
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
   //nlParams.setParameter("Nonlinear Solver", "Trust Region Based");
@@ -269,52 +344,13 @@ int main(int argc, char *argv[])
   //lsParams.setParameter("Polynomial Order", 6); 
 
   // Create the interface between the test problem and the nonlinear solver
-  Problem_Interface interface(Problem);
+  Problem_Interface interface(Problem, replica);
+
+  // Print initial guess
+  interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
 
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
-  // 1. User supplied (Epetra_RowMatrix)
-  //
   Epetra_CrsMatrix& A = Problem.getJacobian(); // Default
-
-  //NOX::EpetraNew::Interface::Jacobian& iJac = interface;
-  // 2. Matrix-Free (Epetra_Operator)
-  //NOX::EpetraNew::MatrixFree A(interface, soln);
-  // 3. Finite Difference (Epetra_RowMatrix)
-  //NOX::EpetraNew::FiniteDifference FD(interface, soln, Problem.getGraph());
-  //  A.setDifferenceMethod(NOX::Epetra::FiniteDifference::Backward);
-  // 4. Jacobi Preconditioner
-  //NOX::Epetra::JacobiPreconditioner Prec(soln);
-  // 5. Finite Difference with Coloring......uncomment the following
-// -------------- Uncomment this block to use coloring --------------- //
-/*
-#ifndef HAVE_NOX_EPETRAEXT
-  cout << "Cannot use Coloring without package epetraext !!!!" << endl;
-  exit(0);
-#else 
-  // Create a timer for performance
-  Epetra_Time fillTime(Comm);
-
-  bool verbose = false; 
-  int reordering = 0; 
-  bool useParallelColoring = true; 
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-    EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
-  EpetraExt::CrsGraph_MapColoring tmpMapColoring(algType, verbose, reordering, useParallelColoring); 
-  Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
-  EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
-  vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
-  NOX::EpetraNew::FiniteDifferenceColoring FDC(interface, soln, 
-                                             Problem.getGraph(),
-                                             *colorMap, *columns, 
-                                             useParallelColoring);
-                                             //1.0e-6, 0.e0);
-  printf("\n[%d]\tTime to color Jacobian --> %e sec.  for %d colors.\n\n",
-              MyPID,fillTime.ElapsedTime(), colorMap->NumColors());
-
-  FDC.setDifferenceMethod(NOX::EpetraNew::FiniteDifference::Centered);
-*/
-// -------------- End of block needed to use coloring --------------- */
-
 
 #ifdef DO_XYZT
   LOCA::EpetraNew::Interface::xyzt ixyzt(interface, interface, interface,
@@ -322,7 +358,7 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix& Axyzt = ixyzt.getJacobian();
   Epetra_Vector& solnxyzt = ixyzt.getSolution();
 
-  NOX::EpetraNew::Interface::Required& iReq = ixyzt;
+  LOCA::EpetraNew::Interface::Required& iReq = ixyzt;
 
   // Create the Linear System
   NOX::EpetraNew::Interface::Jacobian& iJac = ixyzt;
@@ -337,7 +373,7 @@ int main(int argc, char *argv[])
   scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
   //grp.setLinearSolveScaling(scaling);
 
-  NOX::EpetraNew::Interface::Required& iReq = interface;
+  LOCA::EpetraNew::Interface::Required& iReq = interface;
 
   // Create the Linear System
   NOX::EpetraNew::Interface::Jacobian& iJac = interface;
@@ -349,7 +385,13 @@ int main(int argc, char *argv[])
   NOX::Epetra::Vector initialGuess(soln, NOX::DeepCopy, true);
 #endif
 
-  NOX::EpetraNew::Group grp(printParams, iReq, initialGuess, linSys);
+  // Create and initialize the parameter vector
+  LOCA::ParameterVector pVector;
+  pVector.addParameter("alpha",0.6);
+  pVector.addParameter("beta",2.0);
+
+  LOCA::EpetraNew::Group grp(printParams, iReq, initialGuess, linSys, pVector);
+
   grp.computeF();
 
   // Create the convergence tests
@@ -368,29 +410,18 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Create the method
-  NOX::Solver::Manager solver(grp, combo, nlParams);
+  //NOX::Solver::Manager solver(grp, combo, nlParams);
+  LOCA::Stepper stepper(grp, combo, paramList);
 
   // Initialize time integration parameters
 #ifdef DO_XYZT
   int maxTimeSteps = 1;
 #else
-  int maxTimeSteps =20;
+  int maxTimeSteps = 5;
 #endif
   int timeStep = 0;
   double time = 0.;
   double dt = Problem.getdt();
-  
-  // Print initial solution
-  char file_name[25];
-  FILE *ifp;
-  Epetra_Vector& xMesh = Problem.getMesh();
-  int NumMyNodes = xMesh.Map().NumMyElements();
-  (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
-  ifp = fopen(file_name, "w");
-  for (i=0; i<NumMyNodes; i++)
-    fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, 
-                                 xMesh[i], soln[2*i], soln[2*i+1]);
-  fclose(ifp);
   
   // Time integration loop
   while(timeStep < maxTimeSteps) {
@@ -400,36 +431,29 @@ int main(int argc, char *argv[])
   
     cout << "Time Step: " << timeStep << ",\tTime: " << time << endl;
   
-    NOX::StatusTest::StatusType status = solver.solve();
-  
-    if (status != NOX::StatusTest::Converged)
-      if (MyPID==0) 
-        cout << "Nonlinear solver failed to converge!" << endl;
+//    NOX::StatusTest::StatusType status = solver.solve();
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+
+    if (status != LOCA::Abstract::Iterator::Finished)
+       if (MyPID==0) cout << "Stepper failed to converge!" << endl;
+
 
     // Get the Epetra_Vector with the final solution from the solver
-    const NOX::EpetraNew::Group& finalGroup = 
-      dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
+    const LOCA::EpetraNew::Group& finalGroup = 
+      dynamic_cast<const LOCA::EpetraNew::Group&>(stepper.getSolutionGroup());
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
     // End Nonlinear Solver **************************************
 
     // Print solution
-#ifdef DO_XYZT
-    (void) sprintf(file_name, "output.%03d_%05d",MyPID,replica+1);
-#else
-    (void) sprintf(file_name, "output.%03d_%05d",MyPID,timeStep);
+#ifndef DO_XYZT
+    interface.printSolution(soln, locaStepperList.getParameter("Initial Value", 0.0));
 #endif
-    ifp = fopen(file_name, "w");
-    for (i=0; i<NumMyNodes; i++)
-      fprintf(ifp, "%d  %E  %E  %E\n", soln.Map().MinMyGID()+i,
-                                   xMesh[i], finalSolution[2*i],
-                                   finalSolution[2*i+1]);
-    fclose(ifp);
 
     Problem.reset(finalSolution);
     grp.setX(finalSolution);
-    solver.reset(grp, combo, nlParams);
+    stepper.reset(grp, combo, paramList);
     grp.computeF();
 
   } // end time step while loop
@@ -439,7 +463,7 @@ int main(int argc, char *argv[])
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << endl << "Final Parameters" << endl
 	 << "****************" << endl;
-    solver.getParameterList().print(cout);
+    stepper.getParameterList().print(cout);
     cout << endl;
   }
 

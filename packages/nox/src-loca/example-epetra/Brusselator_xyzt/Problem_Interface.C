@@ -34,11 +34,15 @@
 // ----------   User Defined Includes   ----------
 #include "Brusselator.H"
 #include "Epetra_CrsMatrix.h"
+#ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_MatrixMatrix.h"
+#endif
 
 //-----------------------------------------------------------------------------
-Problem_Interface::Problem_Interface(Brusselator& Problem) :
-  problem(Problem)
+Problem_Interface::Problem_Interface(Brusselator& Problem, int replica_) :
+  problem(Problem),
+  replica(replica_),
+  outStep(0)
 { }
 
 Problem_Interface::~Problem_Interface()
@@ -53,6 +57,26 @@ bool Problem_Interface::computeF(const Epetra_Vector& x, Epetra_Vector& FVec,
 bool Problem_Interface::computeJacobian(const Epetra_Vector& x)
 {
   return problem.evaluate(NOX::EpetraNew::Interface::Required::Jac, &x, 0, 0);
+}
+
+void Problem_Interface::setParameters(const LOCA::ParameterVector& params)
+{
+  problem.setParameters( params.getValue("alpha"), params.getValue("beta") );
+}
+ 
+void Problem_Interface::printSolution(const Epetra_Vector& x, double conParam)
+{
+   char file_name[25];
+   FILE *ifp;
+   Epetra_Vector& xMesh = problem.getMesh();
+   int NumMyNodes = xMesh.Map().NumMyElements();
+   (void) sprintf(file_name, "output.p%02d_t%03d_s%03d", xMesh.Comm().MyPID(),
+		  replica+1, outStep++);
+   ifp = fopen(file_name, "w");
+   for (int i=0; i<NumMyNodes; i++)
+     fprintf(ifp, "%d  %E  %E  %E\n", xMesh.Map().MinMyGID()+i, xMesh[i],
+                       x[2*i], x[2*i+1]);
+   fclose(ifp);
 }
 
 bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M)
@@ -84,7 +108,11 @@ bool Problem_Interface::computeMassMatrix(const Epetra_Vector& x)
 
   // Construct mass matrix by:  M/dt =  -2*(J - M/dt) + 2*(J - M/(2*dt)) 
   cout << "Negative Sign Not Verified On Mass Matrix Computation " << endl;
+#ifdef HAVE_NOX_EPETRAEXT
   ierr = EpetraExt::MatrixMatrix::Add(tmpJac, false, -2.0, JacRef, 2.0);
+#else
+  ierr = -10;
+#endif
 
   if (ierr != 0) {
     cout << "ERROR: Problem_Interface::computeMassMatrix: ierr != 0:   " << ierr << endl;

@@ -31,7 +31,7 @@
 #define LOCA_EPETRANEW_INTERFACE_XYZT_H
 
 #include "NOX_Common.H"
-#include "NOX_EpetraNew_Interface_Required.H"
+#include "LOCA_EpetraNew_Interface_Required.H"
 #include "NOX_EpetraNew_Interface_Jacobian.H"
 #include "LOCA_EpetraNew_Interface_MassMatrix.H"
   
@@ -67,7 +67,7 @@ namespace Interface {
     implementation.  Used by NOX::EpetraNew::Group to provide a link
     to the external code for residual fills.
   */
-class xyzt : public NOX::EpetraNew::Interface::Required,
+class xyzt : public LOCA::EpetraNew::Interface::Required,
              public NOX::EpetraNew::Interface::Jacobian
 {
 
@@ -77,7 +77,7 @@ public:
   //! time step, and assembles a single space-time system
 
   //! Constructor
-  xyzt(NOX::EpetraNew::Interface::Required &iReq,  NOX::EpetraNew::Interface::Jacobian &iJac,
+  xyzt(LOCA::EpetraNew::Interface::Required &iReq,  NOX::EpetraNew::Interface::Jacobian &iJac,
        LOCA::EpetraNew::Interface::MassMatrix &iMass, Epetra_Vector &splitVec,
        Epetra_CrsMatrix &splitJac,  Epetra_CrsMatrix &splitMass, 
        Epetra_MpiComm &globalComm, int replica);
@@ -91,6 +91,10 @@ public:
   
   virtual bool computeJacobian(const Epetra_Vector& x);
 
+  virtual void setParameters(const LOCA::ParameterVector& param);
+
+  virtual void printSolution(const Epetra_Vector& x_, double conParam);
+
   virtual EpetraExt::BlockVector& getSolution();
   virtual EpetraExt::BlockCrsMatrix& getJacobian();
 
@@ -99,7 +103,7 @@ private:
 
   
   // Info from split (3D) problem
-  NOX::EpetraNew::Interface::Required &iReq;
+  LOCA::EpetraNew::Interface::Required &iReq;
   NOX::EpetraNew::Interface::Jacobian &iJac;
   LOCA::EpetraNew::Interface::MassMatrix &iMass;
   Epetra_Vector& splitVec;

@@ -49,7 +49,9 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   NumGlobalNodes(numGlobalNodes),
   ColumnToOverlapImporter(0),
   AA(0),
-  A(0)
+  A(0),
+  alpha(0.6),
+  beta(2.0)
 {
 
   // Commonly used variables
@@ -273,6 +275,13 @@ void Brusselator::setdt(const double newDt)
   dt = newDt;
 }
 
+void Brusselator::setParameters(const double alpha_, const double beta_)
+{
+  alpha = alpha_;
+  beta  = beta_;
+  cout<<" Brusselator::setParameters: alpha = "<<alpha<<"  beta = "<<beta<<endl;
+}
+
 // Matrix and Residual Fills
 bool Brusselator::evaluate(NOX::EpetraNew::Interface::Required::FillType fType, 
 				    const Epetra_Vector* soln, 
@@ -337,8 +346,8 @@ bool Brusselator::evaluate(NOX::EpetraNew::Interface::Required::FillType fType,
   double factor2=1000.0;
   double Dcoeff1 = 0.025;
   double Dcoeff2 = 0.025;
-  double alpha = 0.6;
-  double beta = 2.0;
+//  double alpha = 0.6;
+//  double beta = 2.0;
   double jac11, jac12, jac21, jac22;
   double xx[2];
   double uu[2*NUMSPECIES]; // Use of the anonymous enum is needed for SGI builds

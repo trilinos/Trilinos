@@ -39,7 +39,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
-#include "NOX_EpetraNew_Interface_Required.H" // base class
+#include "LOCA_Parameter_Vector.H"
+#include "LOCA_EpetraNew_Interface_Required.H" // base class
 #include "NOX_EpetraNew_Interface_Jacobian.H" // base class
 #include "NOX_EpetraNew_Interface_Preconditioner.H" // base class
 #include "LOCA_EpetraNew_Interface_MassMatrix.H" // base class
@@ -47,13 +48,13 @@
 // ---------- Forward Declarations ----------
 class Brusselator;
 
-class Problem_Interface : public NOX::EpetraNew::Interface::Required,
+class Problem_Interface : public LOCA::EpetraNew::Interface::Required,
                           public NOX::EpetraNew::Interface::Jacobian,
                           public NOX::EpetraNew::Interface::Preconditioner,
                           public LOCA::EpetraNew::Interface::MassMatrix
 {
 public:
-  Problem_Interface(Brusselator& Problem);
+  Problem_Interface(Brusselator& Problem, int replica=0);
   ~Problem_Interface();
 
   //! Compute and return F
@@ -62,6 +63,12 @@ public:
 
   //! Compute an explicit Jacobian
   bool computeJacobian(const Epetra_Vector& x);
+
+  //! Set a parameter in the user's code.
+  void setParameters(const LOCA::ParameterVector& params);
+
+  //! Call user's own print routine for vector-parameter pair
+  virtual void printSolution(const Epetra_Vector& x_, double conParam);
 
   //! Compute the Epetra_RowMatrix M, that will be used by the Aztec preconditioner instead of the Jacobian.  This is used when there is no explicit Jacobian present (i.e. Matrix-Free Newton-Krylov).  This MUST BE an Epetra_RowMatrix since the Aztec preconditioners need to know the sparsity pattern of the matrix.  Returns true if computation was successful.
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
@@ -82,6 +89,10 @@ public:
    *  passdown class design by the application code.
    */ 
   Brusselator& problem;
+
+private:
+  int outStep;  // Output step index
+  int replica;  // only used for printing
 };
 
 #endif

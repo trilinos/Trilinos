@@ -28,14 +28,16 @@
 //@HEADER
 
 #include "LOCA_EpetraNew_Interface_xyzt.H"
-#include "EpetraExt_MatrixMatrix.h"
   
 #ifdef HAVE_MPI
 #ifdef HAVE_NOX_EPETRAEXT
 
+#include "EpetraExt_MatrixMatrix.h"
+
 using namespace  LOCA::EpetraNew::Interface;
 
-xyzt::xyzt(NOX::EpetraNew::Interface::Required &iReq_, NOX::EpetraNew::Interface::Jacobian &iJac_,
+xyzt::xyzt(LOCA::EpetraNew::Interface::Required &iReq_,
+       NOX::EpetraNew::Interface::Jacobian &iJac_,
        LOCA::EpetraNew::Interface::MassMatrix &iMass_, Epetra_Vector &splitVec_,
        Epetra_CrsMatrix &splitJac_, Epetra_CrsMatrix &splitMass_, Epetra_MpiComm &globalComm_,
        int replica_) : iReq(iReq_), iJac(iJac_), iMass(iMass_), splitVec(splitVec_),
@@ -152,6 +154,17 @@ for (int i=0; i<1.0e7; i++) {replica++; replica--;} //pause
 */
 
   return stat;
+}
+
+void xyzt::setParameters(const LOCA::ParameterVector& params)
+{
+   iReq.setParameters(params);
+}
+
+void xyzt::printSolution(const Epetra_Vector& x, double conParam)
+{
+   solution->Block() = x;
+   iReq.printSolution(solution->Block(), conParam);
 }
 
 EpetraExt::BlockVector& xyzt::getSolution()
