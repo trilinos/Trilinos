@@ -580,10 +580,10 @@ report($SUMMARY);
                             
                             my $command = "";
                             $command .= "cat $options{'TRILINOS_DIR'}[0]/testharness/temp/";
-                            $command .= "trilinos_build_log_$hostOS.txt | tail -300 > ";
+                            $command .= "trilinos_build_log_$hostOS.txt | tail -100 > ";
                             $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
                             $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log";
-                            system $command;     
+                            system $command;
                                 
                             # remove broken package (in recover mode only)
                             if ($flags{r}) {                            
