@@ -72,8 +72,8 @@
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start AmesosDscpackShort.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
-echo "COMMENT The values printed in columns 11 and 12 are relative."
-echo "COMMENT We test against absolute errors."  
+echo "COMMENT The values printed in columns 11 and 12 are relative." >> SST.summary 
+echo "COMMENT We test against absolute errors."   >> SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
 echo "COMMENT column 2 - solver name " >> SST.summary 
 echo "COMMENT column 3 - timestamp" >> SST.summary 
@@ -130,11 +130,11 @@ mpirun -np 1 amesos_test.exe DSCPACK KheadK.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK KheadSorted.mtx 0 1 1 0 1e-15 1e-8 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK bcsstk01.mtx 0 1 1 0 1e-12 1e-5 >>SST.stdout
  mpirun  -np 2 amesos_test.exe DSCPACK bcsstk02.mtx 0 1 1 0 1e-12 1e-10 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 1 0 1e-12 1e-8 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-11 1e-4 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 1 0 1e-9 1e-2 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK nos1.mtx 0 1 1 0 1e-9 1e-5 >>SST.stdout
- mpirun  -np 2 amesos_test.exe DSCPACK nos5.mtx 0 1 1 0 1e-12 1e-9 >>SST.stdout
+ mpirun  -np 4 amesos_test.exe DSCPACK bcsstk04.mtx 0 1 1 0 1e-12 1e-8 >>SST.stdout
+ mpirun  -np 4 amesos_test.exe DSCPACK bcsstk08.mtx 0 1 1 0 1e-11 1e-4 >>SST.stdout
+ mpirun  -np 4 amesos_test.exe DSCPACK bcsstk13.mtx 0 1 1 0 1e-9 1e-2 >>SST.stdout
+ mpirun  -np 4 amesos_test.exe DSCPACK nos1.mtx 0 1 1 0 1e-9 1e-5 >>SST.stdout
+ mpirun  -np 8 amesos_test.exe DSCPACK nos5.mtx 0 1 1 0 1e-12 1e-9 >>SST.stdout
 #
 #  Test some tranpose solves
 #

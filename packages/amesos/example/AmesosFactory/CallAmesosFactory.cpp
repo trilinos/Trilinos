@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   //
   //  Note that Abase is created with an empty Problem, none of A, x or b
   //  have been specified at this point.  
-  Abase = Afactory.Create( "Amesos_Mumps", Problem ) ; 
+  Abase = Afactory.Create( "Amesos_Klu", Problem ) ; 
   if ( Abase == 0 ) {
     cout << " AMESOS_KLU not implemented " << endl ; 
     exit(13);

@@ -61,8 +61,8 @@
 touch SST.summary
 cat >>AME.summary <SST.summary 
 echo "COMMENT Start AmesosKluJanus.exe, the Direct Sparse Solver Regresion Test" > SST.summary 
-echo "COMMENT The values printed in columns 11 and 12 are relative."
-echo "COMMENT We test against absolute errors."  
+echo "COMMENT The values printed in columns 11 and 12 are relative." >> SST.summary 
+echo "COMMENT We test against absolute errors."   >> SST.summary 
 echo "COMMENT column 1 - machine name " >> SST.summary 
 echo "COMMENT column 2 - solver name " >> SST.summary 
 echo "COMMENT column 3 - timestamp" >> SST.summary 

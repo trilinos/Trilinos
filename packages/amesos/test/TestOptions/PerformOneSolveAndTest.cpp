@@ -100,8 +100,12 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  Phase 1:  Compute b = A' A' A xexact
     //
     Problem.SetOperator( Amat );
-    
-    EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
+   
+    //
+    //  We only set transpose if we have to - this allows valgrind to check
+    //  that transpose is set to a default value before it is used.
+    //
+    if ( transpose ) EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
     EPETRA_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     EPETRA_CHK_ERR( Abase->NumericFactorization(  ) ); 
 
@@ -167,6 +171,7 @@ int PerformOneSolveAndTest(char* AmesosClass,
 
     if ( Levels >= 2 ) 
       {
+        EPETRA_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
 	Problem.SetLHS( &sAx );
 	Problem.SetRHS( &sAAx );
 	val[0] =  Value ; 
