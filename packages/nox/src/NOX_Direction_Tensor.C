@@ -1193,7 +1193,7 @@ void Tensor::givapp(double* c, double* s, double* v, int k)
 }
 
 
-double* Tensor::backsolve(double** U, double* b, int* perm, int n, int dim=0)
+double* Tensor::backsolve(double** U, double* b, int* perm, int n, int dim)
      /* This function solves the triangular system Ux=b when provided an 
       * upper triangular matrix U. The array perm is a permutation array.
       * The pointer returned is the newly created solution vector x.
