@@ -2201,6 +2201,14 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
    Amat = &(ml->Amat[parent_level]);
    Rmat = &(ml->Rmat[parent_level]);
    Pmat = &(ml->Pmat[child_level]);
+/*
+printf("    (%d): Amat(%d,%d)  Rmat(%d,%d)  Pmat(%d,%d)\n",
+                Amat->comm->ML_mypid,
+                Amat->outvec_leng,Amat->invec_leng,
+                Rmat->outvec_leng,Rmat->invec_leng,
+                Pmat->outvec_leng,Pmat->invec_leng);
+fflush(stdout);
+*/
 
    if (Amat->matvec->ML_id == ML_EMPTY) {
       if (output_level > 3)
@@ -2265,6 +2273,7 @@ int ML_Gen_AmatrixRAP(ML *ml, int parent_level, int child_level)
        }
    }
 
+/*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]), 
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           ML_MSR_MATRIX);
