@@ -667,7 +667,6 @@ double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag)
    ML_free(val);
    ML_free(bindx);
    largest = ML_Comm_GmaxDouble(matrix->comm, largest);
-
    return largest;
 }
 
@@ -1450,7 +1449,6 @@ double ML_Operator_GetMaxEig(ML_Operator *Amat)
 int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
 {
    ML_Operator *Amat;
-   int i;
 
    assert(numvecs <= ML_MAX_SUBSPACE_DIM);
 
