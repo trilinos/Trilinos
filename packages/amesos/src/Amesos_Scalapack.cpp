@@ -357,7 +357,7 @@ int Amesos_Scalapack::ReadParameterList() {
   //
   MaxProcesses_ = - 1; 
 
-  if (ParameterList_->isParameterSublist("Scalapack") ) {
+  if (ParameterList_->isSublist("Scalapack") ) {
     Teuchos::ParameterList ScalapackParams = ParameterList_->sublist("Scalapack") ;
     MaxProcesses_ = ScalapackParams.getParameter("MaxProcesses",MaxProcesses_);
 
