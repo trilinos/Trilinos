@@ -107,7 +107,8 @@ int Zoltan_HG_HPart_Lib (
   { for (i=0; i<hg->nVtx; i++)
       part[i] = i;
   }
-  else if (hg->nVtx <= hgp->redl) /* fewer vertices than desired */
+  else if (hg->nVtx <= hgp->redl || hg->nEdge == 0 )
+          /* fewer vertices than desired or no edges */
   { ierr = Zoltan_HG_Global (zz, hg, p, part, hgp);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       return ierr;
