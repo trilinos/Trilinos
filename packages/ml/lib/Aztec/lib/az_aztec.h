@@ -477,9 +477,15 @@ extern void AZ_fortransolve(double x[], double b[], int options[],
 
 /* function definitions */
 
+#ifndef max
 #define max(x,y) (( x > y ) ? x : y)     /* max function  */
+#endif
+#ifndef min
 #define min(x,y) (( x < y ) ? x : y)     /* min function  */
+#endif
+#ifndef sgn
 #define sgn(x) ((x < 0.0) ? -1.0 : 1.0)  /* sign function */
+#endif
 
 /*
  * There are different conventions for external names for fortran subroutines.
