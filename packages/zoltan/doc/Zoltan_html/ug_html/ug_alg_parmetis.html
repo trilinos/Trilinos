@@ -38,10 +38,8 @@ with many sub-methods. Zoltan provides an interface to all the ParMETIS
 the parameter PARMETIS_METHOD. Most of the ParMETIS methods are based on
 either multilevel Kernighan-Lin partitioning or a diffusion algorithm.
 The names of the ParMETIS methods used by Zoltan are identical to those
-in the ParMETIS library. For further information about the various 
-<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-methods and parameters, please consult the 
-<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+in the ParMETIS library. For further information about the various <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+methods and parameters, please consult the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 User's Guide.
 <p>Graph partitioning is a useful abstraction for load balancing. The main
 idea is to represent the computatiional application as a weighted graph.
@@ -59,10 +57,8 @@ above are NP-hard so no efficient exact algorithm is known. We remark that
 in Zoltan, the number of partitions is always the same as the number of
 processes (which is normally equal to the number of processors).
 <p>We only give a brief summary of the various ParMETIS methods here; for
-more details see the 
-<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
-documentation. The methods fall into three
-categories:
+more details see the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
+documentation. The methods fall into three categories:
 <ol>
 <li>
 Part* - Perform graph partitioning without consideration of the initial
@@ -95,10 +91,10 @@ it is possible to compile Zoltan without any references to ParMETIS&nbsp;
 lower-level makefile <i><a href="ug_usage.html#Building the Library">Makefiles/Makefile.&lt;platform></a></i>).
 <p>The current version of Zoltan ignores the imbalance tolerance parameter
 IMBALANCE_TOL when ParMETIS is used, as ParMETIS 2.0 fixes the corresponding
-imbalance parameter at 1.05. We expect that future
-versions of ParMETIS will allow the user to select the tolerance for load
-imbalance. When this feature becomes available in ParMETIS, it will also
-be supported through IMBALANCE_TOL in Zoltan.
+imbalance parameter at 1.05. We expect that future versions of ParMETIS
+will allow the user to select the tolerance for load imbalance. When this
+feature becomes available in ParMETIS, it will also be supported through
+IMBALANCE_TOL in Zoltan.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -164,6 +160,14 @@ more information (for example, 3=1+2, 5=1+4, 6=2+4).</td>
 only be used during debugging).</td>
 </tr>
 
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
+
+<td NOSAVE>Scatter graph data approximately equally among the processors
+before calling the partitioner? 0 = don't scatter, 1 = scatter if there
+is a great imbalance, 2 = always scatter.&nbsp;</td>
+</tr>
+
 <tr>
 <td VALIGN=TOP><b>Default values:</b></td>
 
@@ -198,6 +202,12 @@ only be used during debugging).</td>
 <td></td>
 
 <td><i>CHECK_GRAPH</i> = 1</td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><i>SCATTER_GRAPH </i>= 1</td>
 </tr>
 
 <tr>
