@@ -35,11 +35,19 @@
 #                    be called from Fortran.
 #    YES_JOSTLE=1    Use to compile and link a version of Zoltan that runs
 #                    with the JOSTLE library.
+#    LOCAL_F90=path  Path to local (not cross-compiling) version of F90.
+#                    Used when cross-compiling the F90 interface of Zoltan.  
+#                    Default is $(SUN_F90) for tflop or architecture 
+#                    specific F90 compiler for other architectures.
 #
 # Example:
 # To compile a version of zdrive for SunOS 4 that doesn't use PARMETIS or
 # NEMESIS, type
 #    gmake NO_PARMETIS=1 NO_NEMESIS=1 sunos-dr
+##############################################################################
+
+##############################################################################
+# Process input flags
 ##############################################################################
 
 GDEFINES	= -DDEBUG
@@ -84,6 +92,13 @@ JOSTLELIB_PATH = .
 THIRD_PARTY_LIB_PATH = $(PARMETISLIB_PATH) $(JOSTLIB_PATH)
 
 # Makefile for load-balancing library.
+
+############################################################################
+#                  OBJECT DIRECTORIES
+############################################################################
+
+ALL_OBJ_DIRS := $(wildcard Obj_*)
+
 ############################################################################
 #                  SOURCE CODE
 ############################################################################
@@ -240,11 +255,23 @@ SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
 ##############################################################################
 #
 TFLOP_CC	= pgcc -cougar
-TFLOP_F90	= pgf90 -cougar
 TFLOP_DBG_FLAGS	= -g
 TFLOP_OPT_FLAGS	= -O3 -Minfo=all
 TFLOP_RANLIB	= xranlib
 TFLOP_AR	= xar r
+
+#F90 Flags
+TFLOP_F90	= pgf90 -cougar
+ifdef LOCAL_F90
+  TFLOP_LOCAL_F90 = $(LOCAL_F90)
+else
+  TFLOP_LOCAL_F90 = $(SUN_F90)
+endif
+TFLOP_F90CFLAGS = -DFMANGLE=UNDERSCORE -DPGI -DNO_MPI2
+TFLOP_FFLAGS    =
+TFLOP_FARG      = farg_typical
+TFLOP_ZOLTAN_MOD_DIR = -I../Obj_tflop
+TFLOP_SPPR_HEAD = spprinc.most
 
 TFLOP_CSRC	= $(LIB_SRC_C)
 TFLOP_INC	= $(INC)
@@ -275,6 +302,7 @@ TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
 #                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
 #SUN_CC		= purify -follow-child-processes=yes -cache-dir=/tmp/purify gcc
 SUN_CC		= gcc
+SUN_F90         = f90
 SUN_DBG_FLAGS	= -g 
 SUN_OPT_FLAGS	= -O
 SUN_RANLIB	= ranlib
@@ -405,6 +433,11 @@ CPLANT_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(CPLANT_ARCHD)/lib $(NEM_LIBS) \
 # NIST SUN defines (Solaris)
 ##############################################################################
 NISTSUN_F90 = f90
+ifdef LOCAL_F90
+  NISTSUN_LOCAL_F90 = $(LOCAL_F90)
+else
+  NISTSUN_LOCAL_F90 = $(NISTSUN_F90)
+endif
 NISTSUN_FFLAGS = -g
 NISTSUN_F90CFLAGS = -DFMANGLE=UNDERSCORE
 NISTSUN_SPPR_HEAD = spprinc.sun
@@ -530,6 +563,11 @@ endif
 endif
 endif
 endif
+ifdef LOCAL_F90
+  NISTLINUX_LOCAL_F90 = $(LOCAL_F90)
+else
+  NISTLINUX_LOCAL_F90 = $(NISTLINUX_F90)
+endif
 NISTLINUX_CC		= gcc
 NISTLINUX_DBG_FLAGS	= -g 
 NISTLINUX_OPT_FLAGS	= -O
@@ -601,6 +639,8 @@ help:
 	@echo '      NO_NEMESIS=1   (to exclude Nemesis from driver)'
 	@echo '      YES_FORTRAN=1  (to compile fortran interface)'
 	@echo '      YES_JOSTLE=1   (to include Jostle in the library)'
+	@echo '      LOCAL_F90=path (specifies local F90 compiler; used only'
+	@echo '                      when cross-compiling the F90 interface)'
 	@echo ' '
 
 ###########################################################################
@@ -644,17 +684,17 @@ tflop:
 	@rm -f Obj_tflop/Makefile
 	@cp Makefile_sub Obj_tflop/Makefile
 	@cd Obj_tflop; \
-	$(MAKE) $(LIB_NAME) "CC=$(TFLOP_CCOMP) $(NISTLINUX_F90CFLAGS) -DNO_MPI2"\
+	$(MAKE) $(LIB_NAME) \
+	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS)"\
 	"LIB_NAME=$(LIB_NAME)" "INC=$(TFLOP_INC)"\
 	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
 	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(TFLOP_RANLIB)"  \
 	"INC_FORTRAN=$(INC_FORTRAN)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(NISTLINUX_FFLAGS)" \
-	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"
-
-#KDD  trying to build tflop f90 version; using NISTLINUX flags; 
-#KDD  specifying F90_COMPILER=pgi on command line.
+	"ZOLTAN_OBJ_DIR=../Obj_tflop" \
+	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(TFLOP_FFLAGS)" \
+	"SPPR_HEAD=$(TFLOP_SPPR_HEAD)" "LOCAL_F90=$(TFLOP_LOCAL_F90)"
 
 tflop-dr:
 	@if [ ! -d Obj_tflop ]; \
@@ -664,23 +704,30 @@ tflop-dr:
 	@cp Makefile_sub Obj_tflop/Makefile
 	@cd Obj_tflop; \
 	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(TFLOP_CCOMP) $(TFLOP_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS) $(TFLOP_DR_IPATH)" \
+	"LIB_NAME=$(LIB_NAME)" "INC=$(TFLOP_INC)"\
 	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
 	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(TFLOP_RANLIB)" "MAIN_OBJ=$(TFLOP_DR_OBJ)" \
-	"LNK_LIBS=$(TFLOP_DR_LIBS)"
+	"RANLIB=$(TFLOP_RANLIB)" \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"ZOLTAN_OBJ_DIR=../Obj_tflop" \
+	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(TFLOP_F90) $(TFLOP_FFLAGS)" \
+	"SPPR_HEAD=$(TFLOP_SPPR_HEAD)" "LOCAL_F90=$(TFLOP_LOCAL_F90)" \
+	"MAIN_OBJ=$(TFLOP_DR_OBJ)" \
+	"LNK_LIBS=$(TFLOP_DR_LIBS)" 
 	@if [ ! -f test/$(TARGET).tflop ]; \
 	then ln -s ../Obj_tflop/$(TARGET) test/$(TARGET).tflop; \
 	fi
 
 tflop-fdr:
 	@cd fdriver; \
-	$(MAKE) zfdrive "F90=$(TFLOP_F90)" "FFLAGS=$(NISTLINUX_FFLAGS)" \
-	"CC=$(TFLOP_CCOMP) $(NISTLINUX_F90CFLAGS)" "FARG=$(NISTLINUX_FARG)" \
-	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
+	$(MAKE) zfdrive "F90=$(TFLOP_F90)" "FFLAGS=$(TFLOP_FFLAGS)" \
+	"CC=$(TFLOP_CCOMP) $(TFLOP_F90CFLAGS)" "FARG=$(TFLOP_FARG)" \
+	"ZOLTAN_MOD_DIR=$(TFLOP_ZOLTAN_MOD_DIR)" \
 	"ZOLTAN_OBJ_DIR=../Obj_tflop" "MPIINC=$(TFLOP_INC_PATH)" \
-        "TARGET_ARCH=tflop" \
-        "MPILIB=$(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) -lmpi"
+        "TARGET_ARCH=tflop" "LOCAL_F90=$(TFLOP_LOCAL_F90)" \
+        "MPILIB=$(TFLOP_TP_LPATH) $(THIRD_PARTY_LIBS) $(TFLOP_MPI_LIB)"
 
 solaris: sun
 
@@ -785,13 +832,17 @@ nistsun:
 	@rm -f Obj_nistsun/Makefile
 	@cp Makefile_sub Obj_nistsun/Makefile
 	@cd Obj_nistsun; \
-	$(MAKE) $(LIB_NAME) "CC=$(NISTSUN_CCOMP)"\
+	$(MAKE) $(LIB_NAME) \
+	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS)"\
 	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
 	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
 	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"RANLIB=$(NISTSUN_RANLIB)" \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistsun" \
+        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
 	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTSUN_F90) $(NISTSUN_FFLAGS)" \
-	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)"
+	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)" "LOCAL_F90=$(NISTSUN_LOCAL_F90)"
 
 nistsun-dr:
 	@if [ ! -d Obj_nistsun ]; \
@@ -801,11 +852,17 @@ nistsun-dr:
 	@cp Makefile_sub Obj_nistsun/Makefile
 	@cd Obj_nistsun; \
 	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(NISTSUN_CCOMP) $(NISTSUN_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS) $(NISTSUN_DR_IPATH)" \
+	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTSUN_INC)"\
 	"AR=$(NISTSUN_AR)" "OBJ_FILES=$(NISTSUN_OBJ)" \
 	"DEFS=$(NISTSUN_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTSUN_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
+	"RANLIB=$(NISTSUN_RANLIB)" \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistsun" \
+        "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTSUN_F90) $(NISTSUN_FFLAGS)" \
+	"SPPR_HEAD=$(NISTSUN_SPPR_HEAD)" "LOCAL_F90=$(NISTSUN_LOCAL_F90)" \
+	"MAIN_OBJ=$(NISTSUN_DR_OBJ)" \
 	"LNK_LIBS=$(NISTSUN_DR_LIBS)"
 	@if [ ! -f test/$(TARGET).nistsun ]; \
 	then ln -s ../Obj_nistsun/$(TARGET) test/$(TARGET).nistsun; \
@@ -814,10 +871,11 @@ nistsun-dr:
 nistsun-fdr:
 	@cd fdriver; \
 	$(MAKE) zfdrive "F90=$(NISTSUN_F90)" "FFLAGS=$(NISTSUN_FFLAGS)" \
-	"CC=$(NISTSUN_CCOMP)" "FARG=$(NISTSUN_FARG)" \
+	"CC=$(NISTSUN_CCOMP) $(NISTSUN_F90CFLAGS)" "FARG=$(NISTSUN_FARG)" \
         "ZOLTAN_MOD_DIR=$(NISTSUN_ZOLTAN_MOD_DIR)" \
 	"ZOLTAN_OBJ_DIR=../Obj_nistsun" "MPIINC=$(NISTSUN_INC_PATH)" \
-	"MPILIB=$(NISTSUN_MPI_LIBS)" "TARGET_ARCH=nistsun"
+	"TARGET_ARCH=nistsun"  "LOCAL_F90=$(NISTSUN_LOCAL_F90)" \
+	"MPILIB=$(NISTSUN_MPI_LIBS) $(THIRD_PARTY_LIBS)" 
 
 nistlinux:
 	@if [ ! -d Obj_nistlinux ]; \
@@ -826,13 +884,17 @@ nistlinux:
 	@rm -f Obj_nistlinux/Makefile
 	@cp Makefile_sub Obj_nistlinux/Makefile
 	@cd Obj_nistlinux; \
-	$(MAKE) $(LIB_NAME) "CC=$(NISTLINUX_CCOMP)"\
+	$(MAKE) $(LIB_NAME) \
+	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS)"\
 	"LIB_NAME=$(LIB_NAME)" "INC=$(NISTLINUX_INC)"\
 	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
 	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
+	"RANLIB=$(NISTLINUX_RANLIB)" \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" \
+	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
 	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTLINUX_F90) $(NISTLINUX_FFLAGS)" \
-	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"
+	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)"
 
 nistlinux-dr:
 	@if [ ! -d Obj_nistlinux ]; \
@@ -842,12 +904,18 @@ nistlinux-dr:
 	@cp Makefile_sub Obj_nistlinux/Makefile
 	@cd Obj_nistlinux; \
 	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
-	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS) $(NISTLINUX_DR_IPATH)" \
+	"LIB_NAME=$(LIB_NAME)" \
 	"AR=$(NISTLINUX_AR)" "OBJ_FILES=$(NISTLINUX_OBJ)" \
 	"DEFS=$(NISTLINUX_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(NISTLINUX_RANLIB)" "INC_FORTRAN=$(INC_FORTRAN)" \
-	"FOBJ_FILES=$(FOBJ_FILES)" "MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
-	"LNK_LIBS=$(NISTLINUX_DR_LIBS)"
+	"RANLIB=$(NISTLINUX_RANLIB)" \
+	"INC_FORTRAN=$(INC_FORTRAN)" \
+	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" \
+	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
+	"FOBJ_FILES=$(FOBJ_FILES)" "F90=$(NISTLINUX_f()) $(NISTLINUX_FFLAGS)" \
+	"SPPR_HEAD=$(NISTLINUX_SPPR_HEAD)"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)" \
+	"MAIN_OBJ=$(NISTLINUX_DR_OBJ)" \
+	"LNK_LIBS=$(NISTLINUX_DR_LIBS)" 
 	if [ ! -f test/$(TARGET).nistlinux ]; \
 	then ln -s ../Obj_nistlinux/$(TARGET) test/$(TARGET).nistlinux; \
 	fi
@@ -855,10 +923,11 @@ nistlinux-dr:
 nistlinux-fdr:
 	@cd fdriver; \
 	$(MAKE) zfdrive "F90=$(NISTLINUX_F90)" "FFLAGS=$(NISTLINUX_FFLAGS)" \
-	"CC=$(NISTLINUX_CCOMP)" "FARG=$(NISTLINUX_FARG)" \
+	"CC=$(NISTLINUX_CCOMP) $(NISTLINUX_F90CFLAGS)" "FARG=$(NISTLINUX_FARG)"\
 	"ZOLTAN_MOD_DIR=$(NISTLINUX_ZOLTAN_MOD_DIR)" \
 	"ZOLTAN_OBJ_DIR=../Obj_nistlinux" "MPIINC=$(NISTLINUX_INC_PATH)" \
-        "MPILIB=$(NISTLINUX_MPI_LIBS)" "TARGET_ARCH=nistlinux"
+        "TARGET_ARCH=nistlinux"  "LOCAL_F90=$(NISTLINUX_LOCAL_F90)" \
+        "MPILIB=$(NISTLINUX_MPI_LIBS) $(THIRD_PARTY_LIBS)"
 
 #
 ############################################################################
@@ -882,8 +951,17 @@ printout:
 	tps  $(INC) | lpr
 
 clean:
-	-for a in $(SUBDIRS); do cd $$a; \
-	 $(RM) -f *.o *.d *.d@ zdrive zdrive.pure; \
-	 cd ..; done;
-	 cd fort; $(MAKE) clean;
-	 cd fdriver; $(MAKE) clean; exit 0
+	-for a in $(SUBDIRS); do \
+	 cd $$a; \
+         echo $$a; \
+	 $(RM) -f *.o *.d *.d@ zdrive zdrive.pure libzoltan.a; \
+	 cd ..; \
+	 done;
+	-for a in $(ALL_OBJ_DIRS); do \
+         echo $$a; \
+	 cd fort; $(MAKE) "ZOLTAN_OBJ_DIR=../$$a" clean; cd ..; \
+	 cd fdriver; $(MAKE) "ZOLTAN_OBJ_DIR=../$$a" clean; cd ..; \
+	 cd $$a; $(RM) -f *.o *.d *.d@ zdrive zdrive.pure libzoltan.a; cd ..; \
+	 done;
+	 exit 0
+
