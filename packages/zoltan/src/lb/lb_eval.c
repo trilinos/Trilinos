@@ -94,7 +94,6 @@ int LB_Eval (LB *lb, int print_stats,
       return LB_MEMERR;
     }
   }
-  
 
   /* Allocate space for weights if needed */
   if (lb->Obj_Weight_Dim>0){
@@ -138,7 +137,7 @@ int LB_Eval (LB *lb, int print_stats,
   num_adj = 0;
   cuts = 0;
 
-  if (lb->Get_Num_Edges != NULL) {
+  if (lb->Get_Num_Edges && lb->Get_Edge_List) {
     /* Use the basic graph query functions */
 
     /* First compute max no. of edges so we can allocate the right
@@ -171,8 +170,8 @@ int LB_Eval (LB *lb, int print_stats,
       tmp_cutwgt = (float *) LB_MALLOC(4*(lb->Comm_Weight_Dim) * sizeof(float));
     }
 
-    if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (lb->Comm_Weight_Dim && ((!ewgts) || (!tmp_cutwgt))) || (!proc)){
+    if ((max_edges && ((!nbors_global) || (!nbors_proc) || (lb->Comm_Weight_Dim && !ewgts))) || 
+        (lb->Comm_Weight_Dim && (!tmp_cutwgt)) || (!proc)){
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
@@ -256,7 +255,7 @@ int LB_Eval (LB *lb, int print_stats,
                     MPI_FLOAT, MPI_MIN, lb->Communicator);
     }
     /* Global reduction for comm weights. */
-    if (lb->Comm_Weight_Dim>0){
+    if (lb->Comm_Weight_Dim>0 && lb->Get_Num_Edges && lb->Get_Edge_List){
       MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[lb->Comm_Weight_Dim], lb->Comm_Weight_Dim, 
                     MPI_FLOAT, MPI_MAX, lb->Communicator);
       MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[2*(lb->Comm_Weight_Dim)], lb->Comm_Weight_Dim,
@@ -264,6 +263,7 @@ int LB_Eval (LB *lb, int print_stats,
       MPI_Allreduce(tmp_cutwgt, &tmp_cutwgt[3*(lb->Comm_Weight_Dim)], lb->Comm_Weight_Dim,
                     MPI_FLOAT, MPI_MIN, lb->Communicator);
     }
+    fflush(stdout);
      
     stats[0] = num_obj;
     stats[1] = cuts;
@@ -302,7 +302,7 @@ int LB_Eval (LB *lb, int print_stats,
            : 1.));
       }
 
-      if (lb->Get_Num_Edges != NULL){
+      if (lb->Get_Num_Edges && lb->Get_Edge_List){
         for (i=0; i<lb->Comm_Weight_Dim; i++){
           printf("%s  Comm. weight  #%1d :  Max = %g, Min = %g, "
             "Sum = %g, Imbal. = %5.3f\n",
