@@ -56,7 +56,7 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
   {
     multimap<int,int> adjMap;
     for( int i = 0; i < nRows; ++i )
-      adjMap.insert( pair<int,int>( Adj2.NumMyIndices(i), i ) );
+      adjMap.insert( pair<const int,int>( Adj2.NumMyIndices(i), i ) );
     multimap<int,int>::iterator iter = adjMap.begin();
     multimap<int,int>::iterator end = adjMap.end();
     for( int i = 1; iter != end; ++iter, ++i )
