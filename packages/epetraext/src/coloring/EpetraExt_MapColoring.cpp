@@ -100,14 +100,14 @@ operator()( OriginalTypeRef orig  )
 
     for( int i = 0; i < nRows; ++i )
     {
-      assert( orig.ExtractMyRowView( i, NumIndices, Indices ) == 0 );
-      assert( base->InsertMyIndices( i, NumIndices, Indices ) >= 0 );
+      orig.ExtractMyRowView( i, NumIndices, Indices );
+      base->InsertMyIndices( i, NumIndices, Indices );
 
       //Do this with a single insert
       //Is this the right thing?
       for( int j = 0; j < NumIndices; ++j )
         if( Indices[j] >= nRows )
-          assert( base->InsertMyIndices( Indices[j], 1, &i ) >= 0 );
+          base->InsertMyIndices( Indices[j], 1, &i );
     } 
     base->TransformToLocal();
   }
@@ -139,12 +139,12 @@ operator()( OriginalTypeRef orig  )
   int * Adj1Indices;
   for( int i = 0; i < nCols; ++i )
   {
-    assert( Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
+    Adj1.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
 
     set<int> Cols;
     for( int j = 0; j < NumAdj1Indices; ++j )
     {
-      assert( base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices ) == 0 );
+      base->ExtractMyRowView( Adj1Indices[j], NumIndices, Indices );
       for( int k = 0; k < NumIndices; ++k )
         if( Indices[k] < nCols ) Cols.insert( Indices[k] );
     }
@@ -153,9 +153,9 @@ operator()( OriginalTypeRef orig  )
     set<int>::iterator iterIS = Cols.begin();
     set<int>::iterator iendIS = Cols.end();
     for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
-    assert( Adj2.InsertMyIndices( i, nCols2, &ColVec[0] ) >= 0 );
+    Adj2.InsertMyIndices( i, nCols2, &ColVec[0] );
   }
-  assert( Adj2.TransformToLocal() == 0 );
+  Adj2.TransformToLocal();
   if( verbose_ ) cout << "Adjacency 2 Graph!\n" << Adj2;
 
 #ifdef EPETRAEXT_TIMING
@@ -353,13 +353,13 @@ operator()( OriginalTypeRef orig  )
     int * Adj1Indices;
     for( int i = 0; i < nRows; ++i )
     {
-      assert( OverlapGraph.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices ) == 0 );
+      OverlapGraph.ExtractMyRowView( i, NumAdj1Indices, Adj1Indices );
 
       set<int> Cols;
       for( int j = 0; j < NumAdj1Indices; ++j )
       {
         int GID = OverlapGraph.LRID( OverlapGraph.GCID( Adj1Indices[j] ) );
-        assert( OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices ) == 0 );
+        OverlapGraph.ExtractMyRowView( GID, NumIndices, Indices );
         for( int k = 0; k < NumIndices; ++k ) Cols.insert( Indices[k] );
       }
       int nCols2 = Cols.size();
@@ -367,7 +367,7 @@ operator()( OriginalTypeRef orig  )
       set<int>::iterator iterIS = Cols.begin();
       set<int>::iterator iendIS = Cols.end();
       for( int j = 0 ; iterIS != iendIS; ++iterIS, ++j ) ColVec[j] = *iterIS;
-      assert( Adj2.InsertMyIndices( i, nCols2, &ColVec[0] ) >= 0 );
+      Adj2.InsertMyIndices( i, nCols2, &ColVec[0] );
     }
     assert( Adj2.TransformToLocal() == 0 );
     RowMap.Comm().Barrier();

@@ -64,8 +64,8 @@ class CrsGraph_MapColoring : public StructuralTransform<Epetra_CrsGraph,Epetra_M
 		        bool colorParallel = false,
                         bool serialBoundaryColoring = true,
                         int verbosityLevel = 0 )
-  : algo_(algo),
-    verbose_(verbose),
+  : verbose_(verbose),
+    algo_(algo),
     reordering_(reordering),
     colorParallel_(colorParallel),
     SerialBoundaryColoring_(serialBoundaryColoring),
