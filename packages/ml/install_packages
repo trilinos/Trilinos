@@ -435,4 +435,5 @@ ${echo}
 ${echo} "setenv ARCH " $ARCH
 ${echo} "cd Obj"
 ${echo} "make"
+cd ..
 \rm -f .arch_env
