@@ -669,9 +669,18 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   /* Copy parts array to part, in case ParMetis needs it. */
-  /* EBEB ParMetis will crash if part[i] on input is >= num_parts. */
-  for (i=0; i<num_obj; i++)
+  for (i=0; i<num_obj; i++){
     part[i] = parts[i];
+    if ((part[i] >= num_part) && !strcmp(alg, "ADAPTIVEREPART")){
+      /* ParMetis 3.0 will crash if part[i] >= num_part on input 
+       * and ADAPTIVEREPART is chosen. EBEB: Remove this test when
+       * there is a patch or new release for ParMetis 3. */
+      sprintf(msg, "Partition number %1d >= number of partitions %1d.\n"
+        "ParMETIS 3.0 with %s will fail, please use a different method.",
+         part[i], num_part, alg);
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, msg);
+    }
+  }
 
   /* ParMetis 2 and 3 require integer weights. Convert from float. */
 
