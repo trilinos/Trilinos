@@ -106,6 +106,77 @@ RIB_STRUCT    *rib;                   /* Data structure for RIB. */
   }
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+#define COPY_BUFFER(buf, type, allocLen, copyLen) \
+  if (from->buf) { \
+    to->buf = (type *)ZOLTAN_MALLOC((allocLen) * sizeof(type)); \
+    if (!to->buf) { \
+      Zoltan_RIB_Free_Structure(toZZ); \
+      ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory."); \
+      return(ZOLTAN_MEMERR); \
+    } \
+    if (copyLen > 0){ \
+      memcpy(to->buf, from->buf, (copyLen) * sizeof(type)); \
+    } else { \
+      memset(to->buf, 0, allocLen); \
+    } \
+  } \
+  else { \
+    to->buf = NULL; \
+  }
+
+int Zoltan_RIB_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
+{
+  char *yo = "Zoltan_RIB_Copy_Structure";
+  int num_obj, max_obj, rc;
+  RIB_STRUCT *to, *from;
+  ZOLTAN_ID_PTR gids, lids;
+
+  from = (RIB_STRUCT *)fromZZ->LB.Data_Structure;
+  Zoltan_RIB_Free_Structure(toZZ);
+
+  if (!from){
+    return ZOLTAN_OK;
+  }
+
+  rc = Zoltan_Copy_Obj_List(fromZZ, from->Global_IDs, &gids,
+    from->Local_IDs, &lids,  0, NULL, NULL, NULL, NULL, &num_obj);
+
+  if ((rc != ZOLTAN_OK) && (rc != ZOLTAN_WARN)){
+    return rc;
+  }
+
+  to = (RIB_STRUCT *)ZOLTAN_MALLOC(sizeof(RIB_STRUCT));
+  if (to == NULL) {
+    ZOLTAN_PRINT_ERROR(fromZZ->Proc, yo, "Insufficient memory.");
+    ZOLTAN_FREE(&gids);
+    ZOLTAN_FREE(&lids);
+    return(ZOLTAN_MEMERR);
+  }
+
+  memset(to, 0, sizeof(RIB_STRUCT));
+  toZZ->LB.Data_Structure = (void *)to;
+
+  max_obj = (int)(1.5 * num_obj) + 1;
+  
+  to->Global_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, gids, max_obj);
+  to->Local_IDs = ZOLTAN_REALLOC_GID_ARRAY(fromZZ, lids, max_obj);
+
+  COPY_BUFFER(Dots, struct Dot_Struct, max_obj, num_obj);
+
+  if (fromZZ->LB.Num_Global_Parts){
+    COPY_BUFFER(Tree_Ptr, struct rib_tree,
+              fromZZ->LB.Num_Global_Parts, fromZZ->LB.Num_Global_Parts);
+  }
+
+  to->Num_Geom = from->Num_Geom;
+
+  return ZOLTAN_OK;
+}
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
