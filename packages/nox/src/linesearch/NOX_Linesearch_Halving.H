@@ -44,6 +44,9 @@ private:
  //! Default step
   double defaultstep;
 
+  //! Default step for linesearch failure
+  double recoverystep;
+
 };
 }
 }

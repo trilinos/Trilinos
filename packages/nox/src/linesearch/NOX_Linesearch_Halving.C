@@ -30,6 +30,7 @@ void Halving::reset(const Parameter::List& params)
 { 
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
+  recoverystep = params.getParameter("Recovery Step", defaultstep);
 }
 
 bool Halving::operator()(Abstract::Group& newgrp, double& step, 
@@ -37,6 +38,7 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
 {
   double oldf = oldgrp.getNormRHS();
   double newf;
+  bool isfailed = false;
 
   step = defaultstep;
   newgrp.computeX(oldgrp, dir, step);
@@ -46,7 +48,7 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
   if (Utils::doPrint(1)) {
    cout << "\n" << Utils::fill(72) << "\n" << " -- Interval Halving Line Search -- \n";
   }
-  while (newf >= oldf) {
+  while ((newf >= oldf) && (!isfailed)) {
 
     if (Utils::doPrint(1)) {
       cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
@@ -58,11 +60,8 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
     step = step * 0.5;
 
     if (step < minstep) {
-      if (Utils::doPrint(1)) {
-	cout << "--Linesearch Failed!--" << endl;
-	cout << Utils::fill(72) << "\n" << endl;
-      }
-      return false;
+      isfailed = true;
+      step = recoverystep;
     }
 
     newgrp.computeX(oldgrp, dir, step);
@@ -70,16 +69,18 @@ bool Halving::operator()(Abstract::Group& newgrp, double& step,
     newf = newgrp.getNormRHS();
   } 
 
-  
   if (Utils::doPrint(1)) {
     cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
     cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(oldf);
     cout << Utils::fill(1,' ') << "newf = " << Utils::sci(newf);
     cout << endl;
-    cout << "--Step Accepted!--" << endl;
+    if (isfailed)
+      cout << "--Linesearch Failed!--" << endl;
+    else
+      cout << "--Step Accepted!--" << endl;
     cout << Utils::fill(72) << "\n" << endl;
   }
 
-  return true;
+  return (!isfailed);
 }
 
