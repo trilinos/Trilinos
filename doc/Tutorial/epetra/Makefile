@@ -5,11 +5,11 @@ MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
 
 MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
 	-L$(TRILINOS_LIB)/lib/ \
-	-lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
+	-ltriutils -lepetra $(LIB_PATHS) $(ARCH_LIBS) -llapack -lblas
 
 all: ex1 ex2 ex3 ex4 ex5 ex6 ex7 ex8 ex9 ex10 \
      ex11 ex12 ex13 ex14 ex15 ex16 ex17 ex18 ex19 ex20\
-     ex21 ex22 ex23 ex24
+     ex21 ex22 ex23 ex24 ex25
      
 ex1: ex1.cpp
 	$(CXX)     ex1.cpp $(MY_COMPILER_FLAGS) 
@@ -130,6 +130,11 @@ ex24: ex24.cpp
 	$(CXX)     ex24.cpp $(MY_COMPILER_FLAGS) 
 	$(LINKER)  ex24.o   $(MY_LINKER_FLAGS)    -o ex24.exe
 	/bin/rm -r ex24.o
+
+ex25: ex25.cpp
+	$(CXX)     ex25.cpp $(MY_COMPILER_FLAGS) 
+	$(LINKER)  ex25.o   $(MY_LINKER_FLAGS)    -o ex25.exe
+	/bin/rm -r ex25.o
 
 clean:
 	/bin/rm -f *.o ex?.exe ex??.exe
