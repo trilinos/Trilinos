@@ -59,9 +59,6 @@ bool Newton::reset(Parameter::List& p)
   paramsPtr = &p;
   if (!paramsPtr->sublist("Linear Solver").isParameter("Tolerance"))
     paramsPtr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
-
-  nResetJacobian = p.getParameter("Reset Jacobian", 1);
-
   return true;
 }
 
@@ -88,10 +85,7 @@ bool Newton::compute(Abstract::Vector& dir,
   }
 
   // Compute Jacobian at current solution.
-  if(solver.getNumIterations() % nResetJacobian)
-    ok = soln.validateJacobian();
-  else
-    ok = soln.computeJacobian();
+  ok = soln.computeJacobian();
 
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))

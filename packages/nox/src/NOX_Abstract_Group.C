@@ -40,11 +40,6 @@ bool Group::computeJacobian()
   return false;
 }
 
-bool Group::validateJacobian()
-{
-  return false;
-}
-
 bool Group::computeGradient()
 {
   return false;

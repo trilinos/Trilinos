@@ -118,13 +118,6 @@ public:
   */
   virtual bool computeJacobian();
 
-  //! Validate Jacobian without recomputing it.
-  /*! Causes existing Jacobian from previous nonlinear iteration to be valid
-      for this one.  This is needed for modified Newton.
-      \note If not defined in derived object, returns \c false.
-  */
-  virtual bool validateJacobian();
-
   //! Compute and return gradient.
   //! Returns \c false if either F or the Jacobian have not been computed.
   /*! In other words, compute \f$g = J^T F\f$. 
