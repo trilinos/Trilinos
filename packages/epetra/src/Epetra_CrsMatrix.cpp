@@ -483,29 +483,35 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
       double * const Values = Values_[i];
       int * const Indices = Indices_[i];
 
-      int j0 = 0;
-      int jj0 = Indices[j0];
+      int offset = 0;
       int shift = 0;
+      int numMerged = 0;
 
-      for (j=1; j<NumEntries; j++) {
-	int jj = Indices[j];
-	if (jj==jj0) {// Check if index is repeated
+      while(offset+shift < NumEntries-1) {
+	int index = Indices[offset+shift];
 
-	  Values[j0-shift] += Values[j-shift];
-
-	  for (k=j-shift; k<NumEntries-1-shift; k++) {
-            Values[k] = Values[k+1]; // Shift values down
-          }
-          ++shift;
+	for(int j=offset+1; j<NumEntries-shift; ++j) {
+	  //Add values with matching indices to Values[offset].
+	  if (index == Indices[j+shift]) {
+	    Values[offset] += Values[j];
+	    ++numMerged;
+	  }
+	  else {
+	    break;
+	  }
 	}
-	else {
-	  j0=j; // Redefine comparison index value
-	  jj0=Indices[j0];
+
+	//Now slide remaining Values down in the list.
+	for(int k=offset+1; k<NumEntries-numMerged-1; ++k) {
+	  Values[k] = Values[k+numMerged];
 	}
+
+	shift = numMerged;
+	++offset;
       }
     }
   }
-  
+
   EPETRA_CHK_ERR(Graph_->RemoveRedundantIndices()); // Remove redundant indices and then return
   return(0);
 }

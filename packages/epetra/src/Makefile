@@ -30,6 +30,7 @@ ALL_EPETRA_CC = \
             Epetra_EasySerialDenseProblem.cpp \
             Epetra_EasySerialSpdDenseProblem.cpp \
             Epetra_Export.cpp \
+            Epetra_FECrsMatrix.cpp \
             Epetra_FEVector.cpp \
             Epetra_Flops.cpp \
             Epetra_HardSerialDenseProblem.cpp \
@@ -63,6 +64,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_LocalMap.cpp \
             Epetra_BasicDirectory.cpp \
             Epetra_Export.cpp \
+            Epetra_FECrsMatrix.cpp \
             Epetra_FEVector.cpp \
             Epetra_Import.cpp \
             Epetra_MultiVector.cpp \
