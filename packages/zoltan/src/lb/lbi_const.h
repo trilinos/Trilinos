@@ -174,8 +174,8 @@ typedef void LB_EDGE_LIST_FORT_FN(void *data,
                                   int *num_gid_entries, int *num_lid_entries,
                                   LB_ID_PTR global_id, LB_ID_PTR local_id, 
                                   LB_ID_PTR nbor_global_id,
-                                  int *nbor_procs, int *wdim, int *nbor_ewgts,
-                                  int *ierr);
+                                  int *nbor_procs, int *wdim, 
+                                  float *nbor_ewgts, int *ierr);
 
 /*****************************************************************************/
 /*
