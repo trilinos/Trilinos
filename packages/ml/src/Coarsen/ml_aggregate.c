@@ -66,7 +66,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->max_neigh_already_selected = 0;
    (*ag)->attach_scheme              = ML_AGGR_MAXLINK;
    (*ag)->coarsen_scheme             = ML_AGGR_UNCOUPLED;
-   (*ag)->threshold                  = 0.08;
+   (*ag)->threshold                  = 0.0;
    (*ag)->smoothP_damping_factor     = 4.0/3.0;
    (*ag)->spectral_radius_scheme     = 1;  /* compute it */
    (*ag)->smoothP_type               = 0;  /* point type */
