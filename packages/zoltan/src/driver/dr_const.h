@@ -136,7 +136,7 @@ extern int Debug_Driver;
 extern int DDirectory_Test;
 extern int Gnuplot_Output;
 extern int Number_Iterations;
-extern int Driver_Mode;
+extern int Driver_Action;
 extern int Debug_Chaco_Input;
 extern int Chaco_In_Assign_Inv;
 

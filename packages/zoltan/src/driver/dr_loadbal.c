@@ -172,7 +172,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   DEBUG_TRACE_START(Proc, yo);
 
-  if (Driver_Mode & 1){
+  if (Driver_Action & 1){
 
     /* Load balancing part */
   
@@ -246,7 +246,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
                         &export_gids, &export_lids, &export_procs);
   }
 
-  if (Driver_Mode & 2){
+  if (Driver_Action & 2){
     /* Only do ordering if this was specified in the driver input file */
     order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
     order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
