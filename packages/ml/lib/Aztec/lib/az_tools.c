@@ -4472,7 +4472,7 @@ void AZ_transform(int proc_config[], int *external[], int bindx[], double val[],
                bnptr, bindx, extern_proc, N_extern, AZ_EXTERNS, mat_type);
 #else
                bnptr, bindx, extern_proc, N_extern, AZ_ALL, mat_type);
-endif
+#endif
 
   /*
    * Permute the matrix using the new ordering.  IMPORTANT: This routine assumes
