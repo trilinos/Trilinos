@@ -1,8 +1,7 @@
 #define MatrixProductHiptmair
-#define USESGSSequential
 /*
+#define NoDampingFactor
 #define MatrixFreeHiptmair
-#define USEJACOBI
 */
 
 /* ************************************************************************* */
@@ -104,6 +103,8 @@ int ML_Smoother_Init(ML_Smoother *ml_sm, ML_1Level *mylevel)
    ml_sm->build_time = 0.0;
    ml_sm->apply_time = 0.0;
    ml_sm->label      = NULL;
+   ml_sm->pre_or_post = 0;
+   ml_sm->envelope = NULL;
    return 0;
 } 
 
@@ -174,6 +175,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
    ml_sm->my_level = NULL;
    ml_sm->ntimes = 0;
    ml_sm->omega = 0;
+   ml_sm->pre_or_post = 0;
    ml_sm->init_guess = ML_NONZERO;
    ml_sm->tol = 0;
    if ((ml_sm->data_destroy != NULL) && (ml_sm->smoother->data != NULL)) {
@@ -469,6 +471,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    /* set up                                                            */
    /* ----------------------------------------------------------------- */
 
+   printf("Entering GS\n");
 
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
@@ -509,7 +512,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
       for (i = 0; i < Nrows; i++) 
       {
@@ -663,7 +666,8 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,
+                          ML_OVERWRITE,smooth_ptr->envelope);
 
       for (i = 0; i < Nrows; i++) 
       {
@@ -691,7 +695,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 
 #ifdef ML_OBSOLETE
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,sm->envelope);
 #endif
 
       for (i = Nrows-1; i >= 0; i--) 
@@ -730,7 +734,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    for (iter = 0; iter < smooth_ptr->ntimes; iter++)
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,sm->envelope);
 
       for (i = 0; i < Nrows; i++)
       {
@@ -806,6 +810,8 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
           *rhs_nodal, *x_nodal;
    ML_Smoother  *smooth_ptr, *sm_nodal;
    ML_Sm_Hiptmair_Data *dataptr;
+   double omega, max_eig;
+   ML_Comm_Envelope *envelope;
 #ifdef ML_DEBUG_SMOOTHER
    double *res2, res_norm;
 #endif
@@ -822,6 +828,12 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    Tmat = (ML_Operator *) dataptr->Tmat;
    Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
    TtATmat = (ML_Operator *) dataptr->TtATmat;
+   max_eig = (double) dataptr->max_eig;
+
+/*
+   printf("max_eig = %e, ntimes = %d, omega = %d\n",
+           max_eig, smooth_ptr->ntimes, smooth_ptr->omega);
+*/
 
    res_edge = (double *) dataptr->res_edge;
    edge_update = (double *) dataptr->edge_update;
@@ -841,6 +853,17 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    fflush(stdout);
 #endif
 
+   ML_Comm_Envelope_Create(&envelope);
+   smooth_ptr->envelope = envelope;
+
+   if (smooth_ptr->pre_or_post != ML_TAG_PRESM)
+      smooth_ptr->pre_or_post = ML_TAG_PRESM;
+   else
+      smooth_ptr->pre_or_post = ML_TAG_POSTSM;
+
+   ML_Comm_Envelope_Set_Tag(envelope, smooth_ptr->my_level->levelnum,
+                            smooth_ptr->pre_or_post); 
+
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
    
@@ -852,18 +875,29 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
          where N is the number of Hiptmair sweeps. */
       ntimes = smooth_ptr->ntimes;
       smooth_ptr->ntimes = 1;
+#ifndef NoDampingFactor
+      omega = smooth_ptr->omega;
+      smooth_ptr->omega = dataptr->omega;
+#endif /* ifdef DampingFactor */
 
 #ifdef USEJACOBI
-      smooth_ptr->omega = 0.5;
       ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
-      smooth_ptr->omega = 1.0;
 #elif defined(USESGSSequential)
       ML_Smoother_SGSSequential(sm, inlen, x, outlen, rhs);
 #else
       ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
 #endif
+ 
+      /* Reset ntimes and omega for Hiptmair smoother. */
+
       smooth_ptr->ntimes = ntimes;
+#ifndef NoDampingFactor
+      smooth_ptr->omega = omega;
+#endif /* ifdef DampingFactor */
+
       for (kk = 0; kk < TtATmat->invec_leng; kk++) x_nodal[kk] = 0.;
+
+      ML_Comm_Envelope_Increment_Tag(envelope);
    
       /* calculate initial residual */ 
       ML_Operator_Apply(Ke_mat, Ke_mat->invec_leng,
@@ -881,9 +915,11 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       /****************************
       * Symmetric sweep on nodes. *
       ****************************/
+      ML_Comm_Envelope_Increment_Tag(envelope);
+
       ML_Operator_Apply(Tmat_trans, Tmat_trans->invec_leng,
                         res_edge, Tmat_trans->outvec_leng,rhs_nodal);
-   
+
 #ifdef ML_DEBUG_SMOOTHER
       printf("Before SGS on nodes\n");
       printf("\t%d: ||x_nodal|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
@@ -895,15 +931,14 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
 #endif
 
 #ifdef USEJACOBI
-      dataptr->sm->omega = 0.5;
-      ML_Smoother_Jacobi(dataptr->sm, TtATmat->invec_leng, x_nodal,
+      ML_Smoother_Jacobi(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
-      dataptr->sm->omega = 1.0;
+      dataptr->sm_nodal->omega = 1.0;
 #elif defined(USESGSSequential)
-      ML_Smoother_SGSSequential(dataptr->sm, TtATmat->invec_leng, x_nodal,
+      ML_Smoother_SGSSequential(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                                 TtATmat->outvec_leng, rhs_nodal);
 #else
-      ML_Smoother_SGS(dataptr->sm, TtATmat->invec_leng, x_nodal,
+      ML_Smoother_SGS(dataptr->sm_nodal, TtATmat->invec_leng, x_nodal,
                       TtATmat->outvec_leng, rhs_nodal);
 #endif
 
@@ -920,6 +955,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       /************************
       * Update edge solution. *
       ************************/
+      ML_Comm_Envelope_Increment_Tag(envelope);
       ML_Operator_Apply(Tmat, Tmat->invec_leng,
                         x_nodal, Tmat->outvec_leng,edge_update);
    
@@ -931,14 +967,12 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
              sqrt((ML_gdot(Nrows,x,x,comm))));
       printf("--------------------------------\n");
 #endif
+
+      ML_Comm_Envelope_Increment_Tag(envelope);
    
    } /*for (iter = 0; ...*/
 
-/*
-   smooth_ptr->omega = 0.5;
-   ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
-   smooth_ptr->omega = 1.0;
-*/
+   ML_Comm_Envelope_Destroy(envelope);
 
 #ifdef ML_DEBUG_SMOOTHER
   #undef ML_DEBUG_SMOOTHER
@@ -1067,7 +1101,7 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
       res[kk] = rhs[kk] - res[kk];
 
    if (getrow_comm != NULL)
-      ML_exchange_bdry(res,getrow_comm, inlen, comm, ML_OVERWRITE);
+      ML_exchange_bdry(res,getrow_comm, inlen, comm, ML_OVERWRITE,NULL);
 
 #ifdef ML_DEBUG_SMOOTHER
 #ifdef vecdump
@@ -1365,7 +1399,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
       while ( token < nprocs )
       {
          if (getrow_comm != NULL)
-            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
          if ( token == mypid )
          {
@@ -1396,7 +1430,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
       while ( token >= 0 )
       {
          if (getrow_comm != NULL)
-            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
          if ( token == mypid )
          {
@@ -1503,7 +1537,7 @@ int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
       for (i = 0; i < Nblocks; i++) 
       {
@@ -1667,7 +1701,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
       /* compute the residual */
 
@@ -1842,7 +1876,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
-         ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
       for (i = 0; i < Nblocks; i++) 
       {
@@ -2052,7 +2086,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
       while ( token < nprocs )
       {
          if (getrow_comm != NULL)
-            ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
+            ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
          if ( token == mypid )
          {
@@ -2111,7 +2145,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
       while ( token >= 0 )
       {
          if (getrow_comm != NULL)
-            ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
+            ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
          if ( token == mypid )
          {
@@ -2262,7 +2296,7 @@ int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
 
       getrow_comm= Amat->getrow->pre_comm;
       if (getrow_comm != NULL)
-         ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE,NULL);
    }
 
    for ( i = 0; i < extNrows; i++ )
@@ -2357,7 +2391,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
 
    if (extNrows > outlen && getrow_comm != NULL)
-      ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE);
+      ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE,NULL);
 
    /* --------------------------------------------------------- */
    /* set up for SuperLU solves                                 */
@@ -2413,7 +2447,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    {
       for ( i = 0; i < inlen; i++ ) xbuffer[i] = x[i];
       if (extNrows > outlen && getrow_comm != NULL)
-         ML_exchange_bdry(xbuffer,getrow_comm,inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(xbuffer,getrow_comm,inlen,comm,ML_OVERWRITE,NULL);
 
       for ( i = 0; i < nblocks; i++ )
       {
@@ -2529,7 +2563,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
 
    if (extNrows > outlen && getrow_comm != NULL)
-      ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE);
+      ML_exchange_bdry(dbuffer,getrow_comm,inlen,comm,ML_OVERWRITE,NULL);
 
    /* --------------------------------------------------------- */
    /* set up for SuperLU solves                                 */
@@ -2585,7 +2619,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
    {
       for ( i = 0; i < inlen; i++ ) xbuffer[i] = x[i];
       if (extNrows > outlen && getrow_comm != NULL)
-         ML_exchange_bdry(xbuffer,getrow_comm,inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(xbuffer,getrow_comm,inlen,comm,ML_OVERWRITE,NULL);
 
       for ( i = 0; i < nblocks; i++ )
       {
@@ -2660,11 +2694,13 @@ int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
    ml_data->ATmat_trans = NULL;
    ml_data->TtAT_diag = NULL;
    ml_data->TtATmat = NULL;
-   ml_data->sm = NULL;
+   ml_data->sm_nodal = NULL;
    ml_data->res_edge = NULL;
    ml_data->rhs_nodal = NULL;
    ml_data->x_nodal = NULL;
    ml_data->edge_update = NULL;
+   ml_data->max_eig = 0.0;
+   ml_data->omega = 1.0;
    return(0);
 }
  
@@ -2687,10 +2723,6 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
    if ( ml_data->TtATmat != NULL )
       ML_Operator_Destroy(ml_data->TtATmat);
 
-   if ( ml_data->sm != NULL )
-      /*ML_free(ml_data->sm);*/
-      ML_Smoother_Destroy(&(ml_data->sm));
-
    if ( ml_data->res_edge != NULL )
       ML_free(ml_data->res_edge);
 
@@ -2702,7 +2734,15 @@ void ML_Smoother_Destroy_Hiptmair_Data(void *data)
 
    if ( ml_data->edge_update != NULL )
       ML_free(ml_data->edge_update);
- 
+
+   if ( (ml_data->sm_nodal != NULL) && (ml_data->sm_nodal->my_level != NULL) )
+   {
+      ML_free(ml_data->sm_nodal->my_level);
+   }
+
+   if ( ml_data->sm_nodal != NULL )
+      ML_Smoother_Destroy(&(ml_data->sm_nodal));
+
    ML_memory_free((void**) &ml_data);
 }                                                                               
 /* ******************************************************************** */
@@ -2971,6 +3011,8 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    int totalsize;
    struct ML_CSR_MSRdata *Amat_data, *eye_csr_data;
    ML_1Level *mylevel;
+   double max_eig;
+   ML_Krylov   *kdata; 
 #ifdef ML_TIMING_DETAILED
    int    nprocs, mypid;
    double t0;
@@ -2981,7 +3023,17 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    dataptr = *data;
    dataptr->Tmat_trans = Tmat_trans;
    dataptr->Tmat = Tmat;
-   dataptr->ATmat_trans = ML_Operator_Create(Tmat_trans->comm);
+
+   /* Get maximum eigenvalue for damping parameter. */
+
+   kdata = ML_Krylov_Create( Amat->comm );
+   ML_Krylov_Set_PrintFreq( kdata, 0 );
+   ML_Krylov_Set_ComputeEigenvalues( kdata );
+   ML_Krylov_Set_Amatrix(kdata, Amat);
+   ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+   dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
+   dataptr->omega = 1.0 / dataptr->max_eig;
+   ML_Krylov_Destroy(&kdata);
 
    /* Check matrix dimensions. */
 
@@ -3018,11 +3070,11 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
    /* Create ML_Smoother data structure for nodes.
       This is used in symmetric GS sweep over nodes. */
    mylevel = (ML_1Level *) ML_allocate(sizeof(ML_1Level));
-   ML_Smoother_Create(&(dataptr->sm), mylevel);
-   dataptr->sm->ntimes = 1;
-   dataptr->sm->omega = 1;
-   dataptr->sm->my_level->Amat = tmpmat;
-   dataptr->sm->my_level->comm = tmpmat->comm;
+   ML_Smoother_Create(&(dataptr->sm_nodal), mylevel);
+   dataptr->sm_nodal->ntimes = 1;
+   dataptr->sm_nodal->omega = 1;
+   dataptr->sm_nodal->my_level->Amat = tmpmat;
+   dataptr->sm_nodal->my_level->comm = tmpmat->comm;
    dataptr->TtATmat = tmpmat;
 
 
@@ -3035,6 +3087,91 @@ int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
                       ML_allocate(Tmat->invec_leng * sizeof(double));
    dataptr->edge_update = (double * )
                           ML_allocate(Amat->invec_leng * sizeof(double));
+#ifdef ML_TIMING
+         ml->pre_smoother[i].build_time = GetClock() - t0;
+#endif       
+   return 0;
+}
+#endif /* ifdef MatrixProductHiptmair */
+
+/* ************************************************************************* 
+   Function to _regenerate_ the matrix products needed in the Hiptmair
+   smoother on one level.  This function assumes that only the fine grid
+   edge matrix has changed.  The restriction, interpolation, and discrete
+   gradients should all be the same.
+   ************************************************************************* */
+
+#ifdef MatrixProductHiptmair
+int ML_Smoother_Gen_Hiptmair_DataReuse(ML_Sm_Hiptmair_Data **data,
+                                       ML_Operator *Amat)
+{
+   ML_Sm_Hiptmair_Data *dataptr;
+   ML_Operator *tmpmat, *Tmat, *Tmat_trans;
+   double max_eig;
+   ML_Krylov   *kdata; 
+#ifdef ML_TIMING_DETAILED
+   int    nprocs, mypid;
+   double t0;
+
+   t0 = GetClock();
+#endif
+
+   dataptr = *data;
+   Tmat = dataptr->Tmat;
+   Tmat_trans = dataptr->Tmat_trans;
+
+   /* Get maximum eigenvalue for damping parameter. */
+
+   kdata = ML_Krylov_Create( Amat->comm );
+   ML_Krylov_Set_PrintFreq( kdata, 0 );
+   ML_Krylov_Set_ComputeEigenvalues( kdata );
+   ML_Krylov_Set_Amatrix(kdata, Amat);
+   ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+   dataptr->max_eig = ML_Krylov_Get_MaxEigenvalue(kdata);
+   dataptr->omega = 1.0 / dataptr->max_eig;
+   ML_Krylov_Destroy(&kdata);
+
+   /* Check matrix dimensions. */
+
+   if (Tmat_trans->invec_leng != Amat->outvec_leng)
+   {
+      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Tmat_trans and Amat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tTmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
+			 Tmat_trans->invec_leng, Amat->outvec_leng);
+      exit(1);
+   }
+   if ( dataptr->Tmat_trans->invec_leng != Amat->outvec_leng )
+   {
+      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Tmat_trans and Amat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tATmat_trans->invec_leng = %d, Amat->outvec_leng = %d\n",
+			 dataptr->Tmat_trans->invec_leng, Amat->outvec_leng);
+      exit(1);
+   }
+   if ( Amat->invec_leng != Tmat->outvec_leng )
+   {
+      printf("In ML_Smoother_Gen_Hiptmair_DataReuse: Amat and Tmat\n"
+	         "\tdimensions do not agree:\n"
+			 "\tAmat->invec_leng = %d, Tmat->outvec_leng = %d\n",
+			 Amat->invec_leng, Tmat->outvec_leng);
+      exit(1);
+   }
+
+   /* Triple matrix product T^{*}AT. */
+
+   /* But first free the existing triple matrix product. */
+   ML_Operator_Destroy(dataptr->sm_nodal->my_level->Amat);
+   tmpmat = ML_Operator_Create(Amat->comm);
+   ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+
+   /* Modify ML_Smoother data structure for nodes.
+      This is used in symmetric GS sweep over nodes.
+      This guy should already have been allocated. */
+   dataptr->sm_nodal->my_level->Amat = tmpmat;
+   dataptr->sm_nodal->my_level->comm = tmpmat->comm;
+   dataptr->TtATmat = tmpmat;
+
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
 #endif       
@@ -3447,7 +3584,7 @@ int ML_Smoother_ComposeOverlappedMatrix(ML_Operator *Amat, ML_Comm *comm,
    for (i = Nrows; i < extNrows; i++) dble_array[i] = 0.0;
    for (i = 0; i < Nrows; i++) dble_array[i] = 1.0 * ( i + NrowsOffset );
    if (getrow_comm != NULL)
-      ML_exchange_bdry(dble_array,getrow_comm, Nrows,comm,ML_OVERWRITE);
+      ML_exchange_bdry(dble_array,getrow_comm, Nrows,comm,ML_OVERWRITE,NULL);
    index_array = ( int *) malloc((extNrows-Nrows) * sizeof(int));
    for (i = Nrows; i < extNrows; i++) index_array[i-Nrows] = dble_array[i];
    index_array2  = (int *) malloc((extNrows-Nrows) *sizeof(int));
@@ -4601,7 +4738,7 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
 
       if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
           || (iter != 0) )
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
 
       bindx_row = bindx[0];
@@ -4703,7 +4840,7 @@ int ML_Smoother_MSR_SGS(void *sm,int inlen,double x[],int outlen,double rhs[])
 
       if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
           || (iter != 0) )
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
 
       bindx_row = bindx[0];
@@ -4815,7 +4952,7 @@ extra  = (int *) data[3];
 
       if (((getrow_comm != NULL) && (smooth_ptr->init_guess == ML_NONZERO))
           || (iter != 0) )
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
 
       bindx_row = bindx[0];
@@ -4835,7 +4972,7 @@ extra  = (int *) data[3];
 */
       }
 
-      ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+      ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
       for (ii = 0; ii < Nextra; ii++) {
          i    = extra[ii];
          sum  = rhs[i];
@@ -4854,7 +4991,7 @@ extra  = (int *) data[3];
          }
          x2[i] = one_minus_omega[i]*x2[i] + sum * omega_val[i];
       }
-      ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+      ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
 
       bindx_ptr--;
@@ -5081,7 +5218,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
    if (bindx == NULL) {
       for (iter = 0; iter < smooth_ptr->ntimes; iter++) {
          if (getrow_comm != NULL)
-            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
          for (ii = 0; ii < Nrows; ii++) {
             i = ordering[ii];
             dtemp = 0.0;
@@ -5132,7 +5269,7 @@ int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
      for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
      {
         if (getrow_comm != NULL) 
-           ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+           ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
         for (ii = 0; ii < Nrows; ii++) {
            i = ordering[ii];
@@ -5392,7 +5529,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    
 #define MB_FORNOW
 #ifdef 	MB_FORNOW
-   // @@@ printf("@@@ ML_Smoother_MLS: allocating ....\n");
+   /* @@@ printf("@@@ ML_Smoother_MLS: allocating ....\n"); */
    res0  = (double *) ML_allocate(n*sizeof(double));
    res   = (double *) ML_allocate(n*sizeof(double));
    y     = (double *) ML_allocate(n*sizeof(double));
@@ -5404,7 +5541,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
    ML_Operator_Apply(Amat, n, x, n, res0);
 
-   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; // @@@ sign ?
+   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; /* @@@ sign ? */
 
    if (deg == 1) { 
 
@@ -5412,8 +5549,8 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
 
        for (i=0; i<n; i++) x[i] += cf * res0[i]; 
 #ifdef 	MB_FORNOW
-       // @@@ clean up later in destructor, right now clean in here ....
-       // @@@ printf("@@@ ML_Smoother_MLS: deallocating ....\n");
+       /* @@@ clean up later in destructor, right now clean in here ....
+          @@@ printf("@@@ ML_Smoother_MLS: deallocating ....\n"); */
        if (y)    ML_free(   y);
        if (res)  ML_free( res);
        if (res0) ML_free(res0);
@@ -5422,7 +5559,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
        * Apply the S_prime operator 
        */
        ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
-       // @@@ must deallocate here if we decide to stick with local allocations
+       /*@@@ must deallocate here if we decide to stick with local allocations*/
        return 0;
 
    } else { 
@@ -5439,7 +5576,7 @@ int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
    for (i=0; i<n; i++) x[i] += over * y[i];
 
 #ifdef 	MB_FORNOW
-   // @@@ clean up later in destructor, right now clean in here ....
+   /* @@@ clean up later in destructor, right now clean in here ....*/
    printf("@@@ ML_Smoother_MLS: deallocating ....\n");
    if (y)    ML_free(   y);
    if (res)  ML_free( res);
