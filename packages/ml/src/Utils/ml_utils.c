@@ -543,7 +543,8 @@ void ML_az_dsort(double list[], int N)
 
   /* local variables */
 
-  int    l, r, RR, K, j, i, flag;
+  int    l, r, j, i, flag;
+  double RR, K;
 
   /*********************** execution begins ******************************/
 
