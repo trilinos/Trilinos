@@ -17,15 +17,16 @@ extern "C" {
 #endif
 #endif
 
-  extern int ML_Aggregate_Viz_Stats_Setup( ML_Aggregate *ag, int MaxLevels );
-  extern int ML_Aggregate_Viz_Stats_Clean( ML_Aggregate *ag, int MaxLevels );
+  extern int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels );
+  extern int ML_Aggregate_VizAndStats_Clean( ML_Aggregate *ag, int MaxLevels );
   extern void ML_Aggregate_ComputeRadius( ML_Aggregate_Viz_Stats finer_level,
 					  ML_Aggregate_Viz_Stats coarser_level,
 					  double R[] );
-  extern void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
-				       double R[] );
+  extern void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,int,
+				       double R[], int,ML_Comm * comm );
   extern void ML_Aggregate_ComputeCenterOfGravity( ML_Aggregate_Viz_Stats finer_level,
-					    ML_Aggregate_Viz_Stats coarser_level );
+					    ML_Aggregate_Viz_Stats coarser_level,
+						   ML_Comm * comm);
   extern void ML_Aggregate_ComputeVolume( int N_fine,
 					  int N_aggregates,
 					  int graph_decomposition[],
@@ -51,7 +52,7 @@ extern "C" {
   extern int ML_Aggregate_Viz_Stats_SetUpLevel( ML_Aggregate_Viz_Stats finer_level,
 						ML_Aggregate_Viz_Stats *coarser_level,
 						int dim );
-  extern int ML_Aggregate_Visualize( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
+  extern int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag, int MaxMgLevels,
 				     double *x, double *y, double *z, int Ndimensions,
 				     char *base_filename );
   extern int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
