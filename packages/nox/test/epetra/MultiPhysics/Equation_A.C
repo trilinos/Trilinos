@@ -45,7 +45,7 @@ Equation_A::Equation_A(Epetra_Comm& comm, int numGlobalNodes,
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
-  dt(1.0e-1)
+  dt(2.0e-1)
 {
 
   // Create mesh and solution vectors
@@ -207,6 +207,7 @@ bool Equation_A::evaluate(
   Basis basis;
 
   int id_spec; // Index for needed dependent Species vector
+  int id_vel;  // Index for needed dependent velocity vector
 
   map<string, int>::iterator id_ptr = nameToMyIndex.find("Species");
   if( id_ptr == nameToMyIndex.end() ) {
@@ -219,6 +220,15 @@ bool Equation_A::evaluate(
   }
   else
     id_spec = id_ptr->second;
+  
+  id_ptr = nameToMyIndex.find("Burgers");
+  if( id_ptr == nameToMyIndex.end() ) {
+    cout << "WARNING: Equation_A (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\" !!" << endl;
+    throw "Equation_A (Species) ERROR";
+  }
+  else
+    id_vel = id_ptr->second;
   
   // Zero out the objects that will be filled
   if ( fillMatrix ) A->PutScalar(0.0);
@@ -251,6 +261,7 @@ bool Equation_A::evaluate(
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
 	      +basis.wt*basis.dx
 	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
+	      +basis.ddep[id_vel]*basis.duu/basis.dx * basis.phi[i] 
               +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -alpha + (beta+1.0)*basis.uu
                 - basis.uu*basis.uu*basis.ddep[id_spec]) );

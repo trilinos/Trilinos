@@ -45,7 +45,7 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
   xmax(1.0),
-  dt(1.0e-1)
+  dt(2.0e-1)
 {
 
   // Create mesh and solution vectors
@@ -205,13 +205,9 @@ bool Equation_B::evaluate(
   double uuold[2];
   vector<double*> ddep(numDep, new double[2]);
   Basis basis;
-
   
-  // Zero out the objects that will be filled
-  if ( fillMatrix ) A->PutScalar(0.0);
-  if ( fillF ) rhs->PutScalar(0.0);
-
   int id_temp; // Index for needed dependent Species vector
+  int id_vel;  // Index for needed dependent velocity vector
 
   map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
   if( id_ptr == nameToMyIndex.end() ) {
@@ -224,6 +220,19 @@ bool Equation_B::evaluate(
   }
   else
     id_temp = id_ptr->second;
+
+  id_ptr = nameToMyIndex.find("Burgers");
+  if( id_ptr == nameToMyIndex.end() ) {
+    cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
+         << "vector for problem \"Burgers\" !!" << endl;
+    throw "Equation_A (Species) ERROR";
+  }
+  else
+    id_vel = id_ptr->second;
+
+  // Zero out the objects that will be filled
+  if ( fillMatrix ) A->PutScalar(0.0);
+  if ( fillF ) rhs->PutScalar(0.0);
 
   // Loop Over # of Finite Elements on Processor
   for (int ne=0; ne < OverlapNumMyNodes-1; ne++) {
@@ -252,6 +261,7 @@ bool Equation_B::evaluate(
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
 	      +basis.wt*basis.dx
 	      *((basis.uu - basis.uuold)/dt * basis.phi[i] 
+	      +basis.ddep[id_vel]*basis.duu/basis.dx * basis.phi[i] 
 	      +(1.0/(basis.dx*basis.dx))*Dcoeff*basis.duu*basis.dphide[i]
               + basis.phi[i] * ( -beta*basis.ddep[id_temp]
                  + basis.ddep[id_temp]*basis.ddep[id_temp]*basis.uu) );

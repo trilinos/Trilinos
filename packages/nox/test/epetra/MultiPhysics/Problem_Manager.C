@@ -1367,15 +1367,14 @@ void Problem_Manager::outputStatus()
   cout                 << "\t\t********************************" << endl;
   cout << endl << endl;
 
-  // Loop over each problem being managed and write its solution vector
-  // to a file.
+  // Loop over each problem being managed and output its dependencies
   for( ; problemIter != problemLast; problemIter++) {
 
     GenericEpetraProblem& problem = *(*problemIter).second;
     cout << "\tProblem \"" << problem.getName() << "\" (" << problemIter->first
          << ")\t Depends on:" << endl;
     
-    for( unsigned int j = 0; j<problem.depProblems.size(); j++ ) {
+    for( unsigned int j = 0; j < problem.depProblems.size(); ++j ) {
       dependIter = Problems.find( problem.depProblems[j] );
       cout << "\t\t-------------> \t\t\"" << dependIter->second->getName() 
            << "\"" << endl;

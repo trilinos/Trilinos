@@ -43,11 +43,11 @@
 // Constructor - creates the Epetra objects (maps and vectors) 
 Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
-  xFactor(10.0),
-  viscosity(0.1),
-  xmin(-20.0),
-  xmax(20.0),
-  dt(1.e-00)
+  xFactor(5.0),
+  viscosity(0.005),
+  xmin(0.0),
+  xmax(1.0),
+  dt(0.20)
 {
 
   // Create the nodal coordinates
@@ -111,7 +111,7 @@ bool Burgers::initializeSoln()
 
   double arg;
   for(int i=0; i<NumMyNodes; i++) {
-    arg = x[i]/xFactor;
+    arg = ( 20.0 * x[i] - 10.0 ) / xFactor;
     (*initialSolution)[i] = (1.0 - ( exp(arg) - exp(-arg) ) /
                                    ( exp(arg) + exp(-arg) )) - 1.0;
   }
@@ -139,12 +139,27 @@ bool Burgers::evaluate(
   // Create the overlapped solution and position vectors
   Epetra_Vector u(*OverlapMap);
   Epetra_Vector uold(*OverlapMap);
+  vector<Epetra_Vector> dep(numDep, Epetra_Vector(*OverlapMap));
   Epetra_Vector xvec(*OverlapMap);
 
   // Export Solution to Overlap vector
-  u.Import(*soln, *ColumnToOverlapImporter, Insert);
-  uold.Import(*oldSolution, *ColumnToOverlapImporter, Insert);
-  xvec.Import(*xptr, *ColumnToOverlapImporter, Insert);
+  // If the vector to be used in the fill is already in the Overlap form,
+  // we simply need to map on-processor from column-space indices to
+  // OverlapMap indices. Note that the old solution is simply fixed data that
+  // needs to be sent to an OverlapMap (ghosted) vector.  The conditional
+  // treatment for the current soution vector arises from use of
+  // FD coloring in parallel.
+  uold.Import(*oldSolution, *Importer, Insert);
+  for( int i = 0; i<numDep; i++ )
+    dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
+                   *Importer, Insert);
+  xvec.Import(*xptr, *Importer, Insert);
+  if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
+    // Overlap vector for solution received from FD coloring, so simply reorder
+    // on processor
+    u.Export(*soln, *ColumnToOverlapImporter, Insert);
+  else // Communication to Overlap vector is needed
+    u.Import(*soln, *Importer, Insert);
 
   // Declare required variables
   int i,j,ierr;
@@ -159,11 +174,19 @@ bool Burgers::evaluate(
   double xx[2];
   double uu[2];
   double uuold[2];
-  vector<double*> ddep(numDep);
-  for( int i = 0; i<numDep; i++)
-    ddep[i] = new double[2];
-  //double *srcTerm = new double[2];
+  vector<double*> ddep(numDep, new double[2]);
   Basis basis;
+
+  int id_temp; // Index for needed dependent Temperature vector
+
+  map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
+  if( id_ptr == nameToMyIndex.end() ) {
+    cout << "WARNING: Burgers (\"" << myName << "\") could not get "
+         << "vector for problem \"Temperature\" !!" << endl;
+    throw "Burgers ERROR";
+  }
+  else
+    id_temp = id_ptr->second;
 
   // Zero out the objects that will be filled
   if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
@@ -181,6 +204,10 @@ bool Burgers::evaluate(
       uu[1]=u[ne+1];
       uuold[0]=uold[ne];
       uuold[1]=uold[ne+1];
+      for( int i = 0; i<numDep; i++ ) {
+        ddep[i][0] = dep[i][ne];
+        ddep[i][1] = dep[i][ne+1];
+      }
       // Calculate the basis function at the gauss point
       basis.getBasis(gp, xx, uu, uuold, ddep);
 	            
@@ -194,7 +221,8 @@ bool Burgers::evaluate(
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
               +basis.wt*basis.dx*(
                 (basis.uu-basis.uuold)/dt*basis.phi[i] +
-                (1.0/(basis.dx*basis.dx))*viscosity*basis.duu*basis.dphide[i] -
+                (1.0/(basis.dx*basis.dx))*viscosity*pow(basis.ddep[id_temp],1.5)
+                  *basis.duu*basis.dphide[i] -
                 (1.0/basis.dx)*0.5*basis.uu*basis.uu*basis.dphide[i]);
 	  }
 	}

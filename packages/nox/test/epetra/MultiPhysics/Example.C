@@ -234,7 +234,7 @@ int main(int argc, char *argv[])
   combo.addStatusTest(maxiters);
 
   // Create the Problem Manager
-  Problem_Manager problemManager(Comm, true);
+  Problem_Manager problemManager(Comm, false);
 
   // Note that each problem could contain its own nlParams list as well as
   // its own convergence test(s). 
@@ -271,10 +271,14 @@ int main(int argc, char *argv[])
   
   //  problemManager.createDependency("Temperature", "Species");
     problemManager.createDependency(ProblemA, ProblemB);
+    problemManager.createDependency(ProblemA, burgers);
   //  problemManager.createDependency(ProblemA2, ProblemB3);
     problemManager.createDependency(ProblemB, ProblemA);
+    problemManager.createDependency(ProblemB, burgers);
   //  problemManager.createDependency(ProblemB2, ProblemA);
   //  problemManager.createDependency(ProblemB3, ProblemA2);
+
+    problemManager.createDependency(burgers, ProblemA);
   
     problemManager.registerComplete(); // Trigger setup of groups, solvers, etc.
   
