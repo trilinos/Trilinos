@@ -134,8 +134,9 @@ int Zoltan_RB_find_bisector(
   double  *tmp = NULL;               /* temp array for Tflops_Special */
   double  *tmplo = NULL;             /* temp arrays for norm calculations */
   double  *tmphi = NULL;             /* temp arrays for norm calculations */
-  double  *invfraclo = NULL;         /* inverse of fractionlo,hi */
-  double  *invfrachi = NULL;         /* inverse of fractionlo,hi */
+  double  *scale = NULL;             /* scaling for weights */
+  double  *scalelo = NULL;           /* scaling for weights in lo */
+  double  *scalehi = NULL;           /* scaling for weights in hi */
   double  normlo=0.0, normhi=0.0;    /* norms of weight vectors */
   double  oldnorm;                   /* temp norm */
   double  eps;                       /* abs. tolerance for imbalance */
@@ -220,22 +221,25 @@ int Zoltan_RB_find_bisector(
     }
   }
 
-  /* Normal case: Initialize invfraclo,hi and go to main section. */
-  invfraclo = (double *) ZOLTAN_MALLOC(2*nwgts*sizeof(double));
-  if (!invfraclo){
+  /* Normal case: Initialize scale vectors and go to main section. */
+  scale = (double *) ZOLTAN_MALLOC(3*nwgts*sizeof(double));
+  if (!scale){
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
-  invfrachi = &invfraclo[nwgts];
+  scalelo = &scale[nwgts];
+  scalehi = &scale[2*nwgts];
   for (j=0; j<nwgts; j++){
     /* Make sure we avoid divide by zero. */
     temp = fraclo[j];
     if (temp < FRACTION_SMALL)           temp = FRACTION_SMALL;
     else if (temp > 1. - FRACTION_SMALL) temp = 1. - FRACTION_SMALL;
-    /* Scale by a half so a .5/.5 balanced partition implies no scaling. */
-    invfraclo[j] = 0.5/temp;
-    invfrachi[j] = 0.5/(1.0 - temp);
+    /* Scale to make weight-norm larger where the tolerance is low. */
+    /* Scale so weights are unchanged when Tol=1.1 (arbitrary choice) */
+    scale[j] = 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
+    scalelo[j] = scale[j]/temp;
+    scalehi[j] = scale[j]/(1.0-temp);
   }
 
   if (dotnum > 0) {
@@ -363,7 +367,7 @@ int Zoltan_RB_find_bisector(
      for (i = proclower; i < proclower + num_procs; i++)
         if (tmp[i] < valuemin2) valuemin2 = tmp[i];
 
-     /* find sum of weights - may be more efficient if all weights were done at once? */
+     /* find sum of weights - should use Zoltan_RB_sum_double? */
      for (j=0; j<nwgts; j++){
        tmp[proc] = wtsum[j] = localsum[j];
        MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
@@ -401,24 +405,16 @@ int Zoltan_RB_find_bisector(
   }
   */
 
-  /* Scale weights. Important for not comparable weights, but also w.r.t.
-     the load imbalance tolerances. */
-  for (i=0; i<dotnum; i++){
+  /* Scaling. If weights aren't comparable, set scale vectors
+     such as to normalize the sum of weights to one.
+     Note that we don't scale the weights, only the inner products. */
+  if (!obj_wgt_comparable){
     for (j=0; j<nwgts; j++){
-      /* If not comparable, scale weights to make sums equal. */
-      if ((!obj_wgt_comparable) && (wtsum[j]>0)) 
-        wgts[i*nwgts+j] /= wtsum[j];
-      /* Then scale to make weights larger where the tolerance is low. */
-      /* Scale so weights are unchanged when Tol=1.1 */
-      wgts[i*nwgts+j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
+      if (wtsum[j]>0) 
+        scale[j] /= wtsum[j];
+        scalelo[j] /= wtsum[j];
+        scalehi[j] /= wtsum[j];
     }
-  }
-  /* Update wtsum. */
-  for (j=0; j<nwgts; j++){
-    if (!obj_wgt_comparable)
-      if (wtsum[j]>0) wtsum[j] = 1.0;
-    /* Scale so weights are unchanged when Tol=1.1 */
-    wtsum[j] *= 0.1/(zz->LB.Imbalance_Tol[j]-ALMOST_ONE);
   }
 
   /* weightlo/hi = total weight in non-active parts of partition */
@@ -427,8 +423,13 @@ int Zoltan_RB_find_bisector(
 
   /* Set tolerance for each cut to imbal_tol/log(p) */
   /* The imbalance tol vector is used implicitly through scaling. */
-  eps = (zz->LB.Imbalance_Tol[0]-1.) / (log(num_parts)/log(2.0))
-        * 0.5*Zoltan_norm(mcnorm, nwgts, wtsum, NULL);
+  /* EBEB This convergence test should be improved later. */
+  temp = zz->LB.Imbalance_Tol[0];
+  for (j=1; j<nwgts; j++)
+    if (zz->LB.Imbalance_Tol[j]<temp)
+      temp = zz->LB.Imbalance_Tol[j];
+  eps = (temp-1.) / (log(num_parts)/log(2.0))
+        * 0.5*Zoltan_norm(mcnorm, nwgts, wtsum, scale);
 
   /* bisector iteration */
   /* zoom in on bisector until correct # of dots in each half of partition */
@@ -553,9 +554,9 @@ int Zoltan_RB_find_bisector(
       /* normlo = norm of weights in lower half */
       /* normhi = norm of weights in upper half */
       Zoltan_daxpy(nwgts, 1., weightlo, med->totallo, tmplo);
-      normlo = Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo);
+      normlo = Zoltan_norm(mcnorm, nwgts, tmplo, scalelo);
       Zoltan_daxpy(nwgts, 1., weighthi, med->totalhi, tmphi);
-      normhi = Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi);
+      normhi = Zoltan_norm(mcnorm, nwgts, tmphi, scalehi);
 
 #ifdef DEBUG
       printf("[%2d] Debug: med->valuelo = %lf, med->valuehi = %lf\n", 
@@ -586,8 +587,8 @@ int Zoltan_RB_find_bisector(
         Zoltan_daxpy(nwgts, -1., med->wthi, tmphi, tmphi);
         /* rectilinear case: treat several dots as a single dot. */
         if (rectilinear || (med->counthi == 1)) { /* only one dot to move */
-          if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) < 
-              Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) ){                 
+          if (Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) < 
+              Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) ){                 
                                                  /* move it, keep iterating */
             if (med->counthi == 1){    /* single dot */
               if (proc == med->prochi) 
@@ -603,7 +604,7 @@ int Zoltan_RB_find_bisector(
             }
           }
           else {                                 /* only move if beneficial */
-            if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) < normhi){
+            if (Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) < normhi){
               if (med->counthi == 1){    /* single dot */
                 if (proc == med->prochi) 
                   dotmark[indexhi] = 0;
@@ -632,8 +633,8 @@ int Zoltan_RB_find_bisector(
             for (k=0; k<nwgts; k++)
               localsum[k] = medme->wthi[k];   
           }
-          if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) >=
-              Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi)){   
+          if (Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) >=
+              Zoltan_norm(mcnorm, nwgts, tmphi, scalehi)){   
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
@@ -676,20 +677,20 @@ int Zoltan_RB_find_bisector(
                 Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], tmplo, tmplo);
 #ifdef DEBUG
                 printf("[%2d] Examining dot %2d = %lf, norm= %lf, oldnorm= %lf\n",
-                  proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo), oldnorm);
+                  proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), oldnorm);
                 printf("[%2d] tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
                 printf("[%2d] tmphi = (%lf, %lf)\n", proc, tmphi[0], tmphi[1]);
 #endif
-                if (Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) < oldnorm){
+                if (Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) < oldnorm){
                   dotmark[i] = 0;  /* weightlo will be updated later */
                   Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], wtsum, wtsum);
 #ifdef DEBUG
-            printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo), Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi));
+            printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), Zoltan_norm(mcnorm, nwgts, tmphi, scalehi));
 #endif 
                 }
                 /* tmphi -= wgts[i] */
                 Zoltan_daxpy(nwgts, -1., &wgts[i*nwgts], tmphi, tmphi);
-                oldnorm = Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi);
+                oldnorm = Zoltan_norm(mcnorm, nwgts, tmphi, scalehi);
               }
               else                        /* move all */
                 dotmark[i] = 0;  /* weightlo will be updated later */
@@ -745,8 +746,8 @@ int Zoltan_RB_find_bisector(
         Zoltan_daxpy(nwgts, -1., med->wtlo, tmplo, tmplo);
         /* rectilinear case: treat several dots as a single dot. */
         if (rectilinear || (med->countlo == 1)) {  /* only one dot to move */
-          if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) < 
-              Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo)){                 
+          if (Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) < 
+              Zoltan_norm(mcnorm, nwgts, tmplo, scalelo)){                 
                                                  /* move it, keep iterating */
             if (med->counthi == 1){    /* single dot */
               if (proc == med->proclo) 
@@ -762,7 +763,7 @@ int Zoltan_RB_find_bisector(
             }
           }
           else {                                 /* only move if beneficial */
-            if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) < normlo){
+            if (Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) < normlo){
               if (med->counthi == 1){    /* single dot */
                 if (proc == med->proclo) 
                   dotmark[indexlo] = 1;
@@ -795,8 +796,8 @@ int Zoltan_RB_find_bisector(
           printf("[%2d] Debug: tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
           printf("[%2d] Debug: tmphi = (%lf, %lf)\n", proc, tmphi[0], tmphi[1]);
 #endif 
-          if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) >=
-              Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo) ){   
+          if (Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) >=
+              Zoltan_norm(mcnorm, nwgts, tmplo, scalelo) ){   
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
@@ -839,20 +840,20 @@ int Zoltan_RB_find_bisector(
                 Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], tmphi, tmphi);
 #ifdef DEBUG
                 printf("[%2d] Examining dot %2d = %lf, norm= %lf, oldnorm= %lf\n",
-                  proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi), oldnorm);
+                  proc, i, dots[i], Zoltan_norm(mcnorm, nwgts, tmphi, scalehi), oldnorm);
                 printf("[%2d] tmplo = (%lf, %lf)\n", proc, tmplo[0], tmplo[1]);
                 printf("[%2d] tmphi = (%lf, %lf)\n", proc, tmphi[0], tmphi[1]);
 #endif
-                if (Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi) < oldnorm){
+                if (Zoltan_norm(mcnorm, nwgts, tmphi, scalehi) < oldnorm){
                   dotmark[i] = 1;  /* weighthi will be updated later */
                   Zoltan_daxpy(nwgts, 1., &wgts[i*nwgts], wtsum, wtsum);
 #ifdef DEBUG
-            printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo), Zoltan_norm(mcnorm, nwgts, tmphi, invfrachi));
+            printf("[%2d] Debug: moving dot %d to other half, norm(tmplo) = %g, norm(tmphi) = %g\n", proc, i, Zoltan_norm(mcnorm, nwgts, tmplo, scalelo), Zoltan_norm(mcnorm, nwgts, tmphi, scalehi));
 #endif 
                 }
                 /* tmplo -= wgts[i] */
                 Zoltan_daxpy(nwgts, -1., &wgts[i*nwgts], tmplo, tmplo);
-                oldnorm = Zoltan_norm(mcnorm, nwgts, tmplo, invfraclo);
+                oldnorm = Zoltan_norm(mcnorm, nwgts, tmplo, scalelo);
               }
               else                        /* move all */
                 dotmark[i] = 1;  /* weighthi will be updated later */
@@ -928,7 +929,7 @@ End:
   ZOLTAN_FREE(&med);
   ZOLTAN_FREE(&medme);
   ZOLTAN_FREE(&localsum);
-  ZOLTAN_FREE(&invfraclo);
+  ZOLTAN_FREE(&scale);
   if (wtflag) ZOLTAN_FREE(&wgts);
 
   if (med_type_defined) {
