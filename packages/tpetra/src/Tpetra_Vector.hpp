@@ -35,6 +35,7 @@
 #include <Teuchos_BLAS.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <vector>
+#include <numeric>
 
 namespace Tpetra {
 
@@ -174,7 +175,17 @@ public:
 	void absoluteValue(Vector<OrdinalType, ScalarType> const& x);
 
   //! Changes this vector to element-wise reciprocal values of x.
-  void reciprocal(Vector<OrdinalType, ScalarType> const& x);
+  void reciprocal(Vector<OrdinalType, ScalarType> const& x) {
+		if(! vectorSpace().isCompatible(x.vectorSpace()))
+			throw reportError("Vector sizes do not match.", 2);
+
+		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		ScalarType const scalarOne = Teuchos::ScalarTraits<ScalarType>::one();
+		OrdinalType const length = getNumMyEntries();
+
+		for(OrdinalType i = ordinalZero; i < length; i++)
+			scalarArray_[i] = scalarOne / x[i];
+	}
 
   //! Scale the current values of a vector, \e this = scalarThis*\e this.
   void scale(ScalarType scalarThis);
@@ -203,19 +214,19 @@ public:
 
   //! Compute minimum value of vector.
   ScalarType minValue() const {
-		return(*(min_element(scalarArray.begin(), scalarArray.end()))); // use STL min_element, takes constant time
+		return(*(min_element(scalarArray_.begin(), scalarArray_.end()))); // use STL min_element, takes constant time
 	};
 
   //! Compute maximum value of vector.
   ScalarType maxValue() const {
-		return(*(max_element(scalarArray.begin(), scalarArray.end()))); // use STL max_element, takes constant time
+		return(*(max_element(scalarArray_.begin(), scalarArray_.end()))); // use STL max_element, takes constant time
 	};
 
   //! Compute mean (average) value of vector.
   ScalarType meanValue() const {
 		ScalarType const scalarZero = Teuchos::ScalarTraits<ScalarType>::zero();
-		ScalarType length = getNumMyElements(); // implicit cast from OT to ST
-		ScalarType total = accumulate(scalarArray.begin(), scalarArray.end(), scalarZero); // use STL accumulate, takes linear time
+		ScalarType length = getNumMyEntries(); // implicit cast from OT to ST
+		ScalarType total = accumulate(scalarArray_.begin(), scalarArray_.end(), scalarZero); // use STL accumulate, takes linear time
 		return(total / length);
 	};
 
@@ -230,22 +241,26 @@ public:
 			throw reportError("Vector sizes do not match.", 2);
 
 		OrdinalType const ordinalZero = Teuchos::OrdinalTraits<OrdinalType>::zero();
+		OrdinalType const ordinalOne = Teuchos::OrdinalTraits<OrdinalType>::one();
 		OrdinalType const length = getNumMyEntries();
 
+		// with BLAS
+		
 		// calculate this *= scalarThis
-		for(OrdinalType i = ordinalZero; i < length; i++)
-			scalarArray_[i] = scalarArray_[i] * scalarThis;
-
+		BLAS_.SCAL(length, scalarThis, &scalarArray_[ordinalZero], ordinalOne);
+		/*
 		// calculate x@y into temp vector
-		vector<ScalarType> temp(length);
-		transform(x.begin(), x.end(), y.begin(), temp.begin(), multiplies<ScalarType>());
+		vector<ScalarType> xytemp(length);
+		transform(x.scalarArray_.begin(), x.scalarArray_.end(), y.scalarArray_.begin(), xytemp.begin(), multiplies<ScalarType>());
 
-		// calculate temp *= scalarXY
-		for(OrdinalType i = ordinalZero; i < length; i++)
-			scalarArray_[i] = scalarArray_[i] * scalarThis;
+		// calculate this = scalarXY * temp + this
+		BLAS_.AXPY(length, scalarXY, &xytemp[ordinalZero], ordinalOne, &scalarArray_[ordinalZero], ordinalOne);
+		*/
 
-		// add temp to this
-		transform(scalarArray_.begin(), scalarArray_.end(), temp.begin(), plus<ScalarType>());
+		// without BLAS
+
+		// calculate this *= scalarThis
+
 	}
 
 	//! Reciprocal multiply (elementwise)
@@ -325,12 +340,16 @@ public:
 	};
 	//@}
 
-private:
+	//@{ \name Misc. 
 
 	//! Returns a const reference to the VectorSpace this Vector belongs to.
 	VectorSpace<OrdinalType, ScalarType> const& vectorSpace() const {
 		return(VectorSpace_);
 	};
+
+	//@}
+
+private:
 
 	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
 	VectorSpace<OrdinalType, ScalarType> VectorSpace_;

@@ -68,6 +68,7 @@ int main(int argc, char* argv[]) {
 	return(ierr);
 }
 
+//======================================================================
 template <typename OrdinalType, typename ScalarType>
 int unitTests(bool verbose, bool debug) {
 	int ierr = 0;
@@ -78,10 +79,11 @@ int unitTests(bool verbose, bool debug) {
 	char const * STName = Teuchos::ScalarTraits<ScalarType>::name();
 	if(verbose) cout << "Starting unit tests for Vector<" << OTName << "," << STName << ">." << endl;
 
-	//
+	// ======================================================================
 	// code coverage section - just call functions, no testing
-	//
+	// ======================================================================
 	if(verbose) cout << "Starting code coverage section..." << endl;
+
 	// constructors
 	if(verbose) cout << "Constructors..." << endl;
 	// taking a VectorSpace
@@ -110,24 +112,45 @@ int unitTests(bool verbose, bool debug) {
 	temp = vector.getNumGlobalEntries();
 	temp = vector.getNumMyEntries();
 
-	// element access
+	// element access - [] operator
 	if(verbose) cout << "Element access methods..." << endl;
 	ScalarType const temp1 = vector[1];
 	vector[0] = temp1;
 
 	// set all to scalar
 	if(verbose) cout << "setAllToScalar..." << endl;
-	vector.setAllToScalar(3.0);
+	ScalarType scalar3 = Teuchos::ScalarTraits<ScalarType>::one();
+	scalar3 += (scalar3 + scalar3); // 1 += (1+1) , should equal 3
+	vector.setAllToScalar(scalar3);
 
 	// set all to random
 	if(verbose) cout << "setAllToRandom..." << endl;
 	vector.setAllToRandom();
 
+	// math functions
+
+	// reciprocal
+	if(verbose) cout << "reciprocal..." << endl;
+	vector.reciprocal(v2);
+	// min value
+	if(verbose) cout << "minValue..." << endl;
+	vector.minValue();
+	// max value
+	if(verbose) cout << "maxValue..." << endl;
+	vector.maxValue();
+	// mean value
+	if(verbose) cout << "meanValue..." << endl;
+	vector.meanValue();
+	// elementwiseMultiply
+	if(verbose) cout << "elementwiseMultiply..." << endl;
+	vector.elementwiseMultiply(temp1, vector1a, v2, scalar3);
+
+
 	if(verbose) cout << "Code coverage section finished." << endl;
 
-	//
+	// ======================================================================
 	// actual testing section - affects return code
-	//
+	// ======================================================================
 
 	if(verbose) cout << "Starting actual testing section..." << endl;
 
