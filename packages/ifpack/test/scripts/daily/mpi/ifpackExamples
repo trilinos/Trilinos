@@ -98,7 +98,9 @@ echo $file
 
 cd ../example
 # avoids problem of no executables in subdirectory
+touch fakefile.exe
 foreach g(*.exe)
+ if( $g != "fakefile.exe") then
   echo "[IFPACK TestExamples]" >>& $file
   echo "[IFPACK TestExamples] Testing file >>" $g "<<" >>& $file
     if( "$2" == "True" ) then
@@ -121,7 +123,10 @@ foreach g(*.exe)
       $mpigo 2 ./$g >>& $file
     endif
   end
+ endif
 end #foreach f
+
+/bin/rm fakefile.exe
 cd ../test
 
 ## At this point, it is assumed that the current directory is
