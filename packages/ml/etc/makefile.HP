@@ -1,8 +1,9 @@
 OPT_FLAGS=-O 
 ARCH_FLAGS= $(OPT_FLAGS) -Dmatched
 CC=cc
-FC=cc
+FC=f77
 RANLIB=ranlib
 LINKER=$(CC)
-ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket
+ARCH_LIBS=
+#ARCH_LIBS=-lmalloc -lM77 -lF77 -lsunmath -lnsl -lsocket
 AR=ar
