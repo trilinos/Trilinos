@@ -205,6 +205,7 @@ int LB_Jostle(
 /* and calls ParMetis or Jostle.                                */
 /****************************************************************/
 
+#if (defined(LB_JOSTLE) || !defined(LB_NO_PARMETIS))
 /* Misc. local constants */
 #define CHUNKSIZE 10  /* Number of list nodes to allocate in one chunk. */
 
@@ -888,6 +889,7 @@ int LB_ParMetis_Jostle(
 #endif
   return LB_OK;
 }
+#endif /* defined (LB_JOSTLE) || !defined (LB_NO_PARMETIS) */
 
 
 /*********************************************************************/
