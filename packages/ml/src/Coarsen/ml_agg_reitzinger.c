@@ -647,7 +647,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      Pn_coarse = SPn_mat;
 #endif
 
-   
 /****************** Check the construction of Pe ***********************/
      vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->invec_leng+1+
 						  Pe->outvec_leng));
@@ -735,7 +734,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
         
         /* Weed out small values in Pe. */
-        droptol = 1e-12;
+        droptol = 1e-4;
         if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel()) {
            printf("Dropping Pe entries with absolute value smaller than %e\n",
                   droptol);
@@ -1106,7 +1105,6 @@ int ml_leastsq_edge_interp(ML_Operator *Pn_mat, ML_Operator *SPn_mat,
   coef_count = 0;
   for (i=0; i < Tfine_mat->outvec_leng; i++) {
     /* special case when Tfine(i,:) has only one entry */
-
     if (Tfine_rowptr[i+1] - Tfine_rowptr[i] == 1) {
       if (Tfine_values[Tfine_rowptr[i]] == 1.) thesign = 1.;
       else thesign = -1.;
