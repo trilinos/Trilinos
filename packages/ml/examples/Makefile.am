@@ -30,6 +30,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_operator \
                   ml_AztecMsr \
                   ml_filtering \
+                  ml_user_aggr \
 		  ml_EpetraVbr \
 		  ml_viz \
 		  ml_analyze \
@@ -46,6 +47,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_operator \
                   ml_AztecMsr \
                   ml_filtering \
+                  ml_user_aggr \
 		  ml_EpetraVbr \
 		  ml_viz \
 		  ml_analyze \
@@ -64,6 +66,7 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_operator \
                   ml_AztecMsr \
                   ml_filtering \
+                  ml_user_aggr \
 		  ml_EpetraVbr \
 		  ml_viz \
 		  ml_analyze \
@@ -100,6 +103,7 @@ ml_2level_DD_SOURCES = $(srcdir)/ml_2level_DD.cpp
 ml_operator_SOURCES = $(srcdir)/ml_operator.cpp
 ml_AztecMsr_SOURCES = $(srcdir)/ml_AztecMsr.cpp
 ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
+ml_user_aggr_SOURCES = $(srcdir)/ml_user_aggr.cpp
 ml_EpetraVbr_SOURCES= $(srcdir)/ml_EpetraVbr.cpp
 ml_viz_SOURCES= $(srcdir)/ml_viz.cpp
 ml_analyze_SOURCES= $(srcdir)/ml_analyze.cpp
@@ -329,6 +333,11 @@ ml_filtering_CPPFLAGS = ${ml_common_include_locations}
 ml_filtering_CXXFLAGS = ${ml_common_include_locations}
 ml_filtering_LDADD = ${ml_libs}
 ml_filtering_LINK = ${mllink}
+
+ml_user_aggr_CPPFLAGS = ${ml_common_include_locations}
+ml_user_aggr_CXXFLAGS = ${ml_common_include_locations}
+ml_user_aggr_LDADD = ${ml_libs}
+ml_user_aggr_LINK = ${mllink}
 
 ml_EpetraVbr_CPPFLAGS = ${ml_common_include_locations}
 ml_EpetraVbr_CXXFLAGS = ${ml_common_include_locations}
