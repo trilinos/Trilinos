@@ -99,6 +99,7 @@ LOCA_MULTICONTINUATION_H = \
 LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
+	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \

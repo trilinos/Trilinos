@@ -90,6 +90,36 @@ namespace LOCA {
 
       //@}
 
+      
+      /*! 
+       * @name Virtual methods with default implementations 
+       * These methods should be overloaded in a concrete implementation
+       * if more appropriate/efficient approaches are available.
+       */
+      //@{
+
+      //! Projects solution to a few scalars for multiparameter continuation
+      /*! 
+       * This method is called every time a solution is saved by the 
+       * multiparameter continuation code MF for later visualization
+       * and should project the solution vector down to a few scalars.
+       * The array \c px will be preallocated to the proper length
+       * given by projectToDrawDimension().
+       *
+       * The default implementation is the max norm of the vector.
+       */
+      virtual void projectToDraw(const NOX::Abstract::Vector& x,
+				 double *px) const;
+
+      //! Returns the dimension of the project to draw array
+      /*!
+       * The default implementation is to return 1 since the default
+       * projection is the max norm of the vector (a scalar).
+       */
+      virtual int projectToDrawDimension() const;
+
+      //@}
+
     };
   } // namespace MultiContinuation
 } // namespace LOCA

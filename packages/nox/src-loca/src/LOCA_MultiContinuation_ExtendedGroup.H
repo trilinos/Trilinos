@@ -327,6 +327,15 @@ namespace LOCA {
       virtual const LOCA::MultiContinuation::ExtendedMultiVector& 
       getPredictorDirections() const;
 
+      //! Set predictor direction \em i
+      virtual void
+      setPredictorDirection(const LOCA::MultiContinuation::ExtendedVector& v, 
+			    int i);
+
+      //! Set all predictor directions
+      virtual void 
+      setPredictorDirections(const LOCA::MultiContinuation::ExtendedMultiVector& v);
+
       //! Is Predictor valid
       virtual bool isPredictor() const;
 
@@ -373,6 +382,14 @@ namespace LOCA {
       virtual double computeScaledDotProduct(
 			       const NOX::Abstract::Vector& x, 
 			       const NOX::Abstract::Vector& y) const;
+
+      //! Returns dimension of project to draw array
+      virtual int projectToDrawDimension() const;
+
+      //! Fills the project to draw array
+      virtual void projectToDraw(
+			    const LOCA::MultiContinuation::ExtendedVector& x, 
+			    double *px) const;
 
       //@}
 

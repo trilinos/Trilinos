@@ -134,22 +134,24 @@ LOCA::MultiContinuation::ArcLengthGroup::computeConstraints()
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // compute predictor
-  if (!isValidConstraintDerivatives) {
-    finalStatus = computeConstraintDerivatives();
-    LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
-  }
+//   if (!isValidConstraintDerivatives) {
+//     finalStatus = computeConstraintDerivatives();
+//     LOCA::ErrorCheck::checkReturnType(finalStatus, callingFunction);
+//   }
 
-  // compute secant vector
-  LOCA::MultiContinuation::ExtendedVector *secantVec =
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xVec->clone(NOX::DeepCopy));
-  secantVec->update(-1.0, *prevXVec, 1.0);
+//   // compute secant vector
+//   LOCA::MultiContinuation::ExtendedVector *secantVec =
+//     dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(xVec->clone(NOX::DeepCopy));
+//   secantVec->update(-1.0, *prevXVec, 1.0);
   
-  for (int i=0; i<numParams; i++) {
-    constraints(i,0) = scaledPredictorMultiVec[i].dot(*secantVec) - 
-      stepSize[i] * scaledPredictorMultiVec[i].dot(predictorMultiVec[i]);
-  }
+//   for (int i=0; i<numParams; i++) {
+//     constraints(i,0) = scaledPredictorMultiVec[i].dot(*secantVec) - 
+//       stepSize[i] * scaledPredictorMultiVec[i].dot(predictorMultiVec[i]);
+//   }
 
-  delete secantVec;
+//   delete secantVec;
+
+  constraints.putScalar(0.0);
 
   return finalStatus;
 }

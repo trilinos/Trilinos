@@ -746,6 +746,23 @@ LOCA::MultiContinuation::ExtendedGroup::getPredictorDirections() const
   return predictorMultiVec;
 }
 
+void
+LOCA::MultiContinuation::ExtendedGroup::setPredictorDirection(
+			    const LOCA::MultiContinuation::ExtendedVector& v, 
+			    int i)
+{
+  predictorMultiVec[i] = v;
+  isValidPredictor = true;
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::setPredictorDirections(
+			const LOCA::MultiContinuation::ExtendedMultiVector& v)
+{
+  predictorMultiVec = v;
+  isValidPredictor = true;
+}
+
 bool
 LOCA::MultiContinuation::ExtendedGroup::isPredictor() const
 {
@@ -861,6 +878,25 @@ LOCA::MultiContinuation::ExtendedGroup::computeScaledDotProduct(
     val += mx.getScalar(i) * my.getScalar(i);
 
   return val;
+}
+
+int
+LOCA::MultiContinuation::ExtendedGroup::projectToDrawDimension() const
+{
+  return numParams + grpPtr->projectToDrawDimension();
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::projectToDraw(
+			    const LOCA::MultiContinuation::ExtendedVector& x, 
+			    double *px) const
+{
+  // first numParams components are the parameters
+  for (int i=0; i<numParams; i++)
+    px[i] = x.getScalar(i);
+
+  // fill remaining solution components
+  grpPtr->projectToDraw(x.getXVec(), px+numParams);
 }
 
 NOX::Abstract::Group::ReturnType
