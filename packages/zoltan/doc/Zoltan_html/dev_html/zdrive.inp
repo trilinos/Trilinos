@@ -179,3 +179,25 @@ Parallel Disk Info	= number=4,zeros
 #
 #-----------------------------------------------------------------------------
 Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
+
+#-----------------------------------------------------------------------------
+# Zdrive debug level = <integer>
+#
+# This line is optional.  It sets a debug level within zdrive (not within
+# Zoltan) that determines what output is written to stdout at runtime.
+# The currently defined values are listed below.  For a given debug level
+# value i, all debug output for levels <= i is printed.
+#
+# 	0   --  No debug output is produced.
+#	1   --  Evaluation of the initial and final partition is done
+#               through calls to driver_eval and LB_Eval.
+#	2   --  Function call traces through major driver functions are
+#               printed.
+#       3   --  Not used yet.
+#       4   --  Entire distributed mesh (elements, adjacencies, communication
+#               maps, etc.) is printed.  This output is done serially and can
+#               be big and slow.
+#
+# Default value is 1.
+#-----------------------------------------------------------------------------
+Zdrive debug level = 1

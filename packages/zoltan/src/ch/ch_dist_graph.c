@@ -23,6 +23,7 @@ static char *cvs_chaco_dist_graph_id = "$Id$";
 #include "all_allo_const.h"
 #include "ch_input_const.h"
 #include "dr_err_const.h"
+#include "dr_const.h"
 
 /*
  * Distribute a graph from one processor to all processors.
@@ -46,6 +47,7 @@ int chaco_dist_graph(
   float   **z                   /* z-coordinates of the vertices */
 )
 {
+  char *yo = "chaco_dist_graph";
   int nprocs, myproc, i, n, p, nedges, nsend, rest;
   int offset, use_vwgts, use_ewgts, use_graph;
   int *old_xadj = NULL, *old_adjncy = NULL, *old_vwgts = NULL, *size = NULL;
@@ -57,9 +59,7 @@ int chaco_dist_graph(
   MPI_Comm_size (comm, &nprocs );
   MPI_Comm_rank (comm, &myproc );
 
-  if (DEBUG_TRACE > 0) {
-    if (myproc==0) printf("<Entering ch_dist_graph>\n");
-  }
+  DEBUG_TRACE_START(myproc, yo);
 
   /* Initialize */
   use_ewgts = (*ewgts != NULL);
@@ -273,8 +273,6 @@ int chaco_dist_graph(
   }
   if (size != NULL) free(size);
    
-  if (DEBUG_INPUT > 0) {
-    if (myproc==0) printf("Done distributing graph \n");
-  }
+  DEBUG_TRACE_END(myproc, yo);
   return 1;
 }
