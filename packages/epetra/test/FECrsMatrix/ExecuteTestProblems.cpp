@@ -128,8 +128,8 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   if (verbose) {
   cout << "after globalAssemble"<<endl;
-  A.Print(cout);
   }
+  A.Print(cout);
 
   delete [] values_1d;
   delete [] ptIndices;

@@ -8,8 +8,9 @@
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-                                 const Epetra_Map& RowMap,
-				 int* NumEntriesPerRow)
+				       const Epetra_Map& RowMap,
+				       int* NumEntriesPerRow,
+				       bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -20,7 +21,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
     workData_(NULL),
-    workDataLength_(0)
+    workDataLength_(0),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstRow_ = RowMap.MinMyGID();
   myNumRows_ = RowMap.NumMyElements();
@@ -31,8 +33,9 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
 
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
-                                 const Epetra_Map& RowMap,
-				 int NumEntriesPerRow)
+				       const Epetra_Map& RowMap,
+				       int NumEntriesPerRow,
+				       bool ignoreNonLocalEntries)
   : Epetra_CrsMatrix(CV, RowMap, NumEntriesPerRow),
     myFirstRow_(0),
     myNumRows_(0),
@@ -43,7 +46,8 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCols_(NULL),
     nonlocalCoefs_(NULL),
     workData_(NULL),
-    workDataLength_(0)
+    workDataLength_(0),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstRow_ = RowMap.MinMyGID();
   myNumRows_ = RowMap.NumMyElements();
@@ -160,6 +164,10 @@ int Epetra_FECrsMatrix::ReplaceGlobalValues(int numRows, const int* rows,
 int Epetra_FECrsMatrix::GlobalAssemble()
 {
   if (Map().Comm().NumProc() < 2) {
+    return(0);
+  }
+
+  if (ignoreNonLocalEntries_) {
     return(0);
   }
 
@@ -334,9 +342,11 @@ int Epetra_FECrsMatrix::InputGlobalValues(int numRows, const int* rows,
       }
     }
     else {
-      EPETRA_CHK_ERR( InputNonlocalGlobalValues(rows[i],
-						numCols, cols,
-						valuesptr, accumulate) );
+      if (!ignoreNonLocalEntries_) {
+	EPETRA_CHK_ERR( InputNonlocalGlobalValues(rows[i],
+						  numCols, cols,
+						  valuesptr, accumulate) );
+      }
     }
     offset += numCols;
   }

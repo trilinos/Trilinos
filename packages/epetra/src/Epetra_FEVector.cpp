@@ -23,7 +23,8 @@
 //
 
 //----------------------------------------------------------------------------
-Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map)
+Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map,
+				 bool ignoreNonLocalEntries)
   : Epetra_MultiVector(Map, 1),
     myFirstID_(0),
     myNumIDs_(0),
@@ -31,7 +32,8 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& Map)
     nonlocalIDs_(NULL),
     numNonlocalIDs_(0),
     allocatedNonlocalLength_(0),
-    nonlocalCoefs_(NULL)
+    nonlocalCoefs_(NULL),
+    ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
   myFirstID_ = Map.MinMyGID();
   myNumIDs_ = Map.NumMyElements();
@@ -84,7 +86,9 @@ int Epetra_FEVector::inputValues(int numIDs,
       }
     }
     else {
-      EPETRA_CHK_ERR( inputNonlocalValue(GIDs[i], values[i], accumulate) );
+      if (!ignoreNonLocalEntries_) {
+	EPETRA_CHK_ERR( inputNonlocalValue(GIDs[i], values[i], accumulate) );
+      }
     }
   }
 
@@ -138,6 +142,10 @@ int Epetra_FEVector::GlobalAssemble()
 
   //(We don't need to do anything if there's only one processor.)
   if (Map().Comm().NumProc() < 2) {
+    return(0);
+  }
+
+  if (ignoreNonLocalEntries_) {
     return(0);
   }
 

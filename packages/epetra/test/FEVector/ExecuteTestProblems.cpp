@@ -69,8 +69,8 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 
   if (verbose) {
   cout << "after globalAssemble"<<endl;
-  A.Print(cout);
   }
+  A.Print(cout);
 
   return(ierr);
 }

@@ -55,7 +55,8 @@ class Epetra_FEVector : public Epetra_MultiVector {
       ReplaceGlobalValues() will accept any global IDs, and GlobalAssemble()
       will move any non-local data onto the appropriate owning processors.
    */
-   Epetra_FEVector(const Epetra_BlockMap& Map);
+   Epetra_FEVector(const Epetra_BlockMap& Map,
+		   bool ignoreNonLocalEntries=false);
 
    /** Destructor */
    virtual ~Epetra_FEVector();
@@ -79,6 +80,12 @@ class Epetra_FEVector : public Epetra_MultiVector {
    */
    int GlobalAssemble();
 
+   /** Set whether or not non-local data values should be ignored.
+    */
+   void setIgnoreNonLocalEntries(bool flag) {
+     ignoreNonLocalEntries_ = flag;
+   }
+
  private:
   int inputValues(int numIDs,
                   const int* GIDs, const double* values,
@@ -94,6 +101,8 @@ class Epetra_FEVector : public Epetra_MultiVector {
   int numNonlocalIDs_;
   int allocatedNonlocalLength_;
   double* nonlocalCoefs_;
+
+  bool ignoreNonLocalEntries_;
 };
 
 #endif

@@ -61,12 +61,14 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
   /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
                    const Epetra_Map& RowMap,
-                   int* NumEntriesPerRow);
+                   int* NumEntriesPerRow,
+		      bool ignoreNonLocalEntries=false);
 
    /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,
                    const Epetra_Map& RowMap,
-                   int NumEntriesPerRow);
+                   int NumEntriesPerRow,
+		      bool ignoreNonLocalEntries=false);
 
    /** Destructor. */
    virtual ~Epetra_FECrsMatrix();
@@ -239,6 +241,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
    */
    int GlobalAssemble();
 
+   /** Set whether or not non-local data values should be ignored.
+    */
+   void setIgnoreNonLocalEntries(bool flag) {
+     ignoreNonLocalEntries_ = flag;
+   }
+
   private:
    int InputGlobalValues(int numRows, const int* rows,
                          int numCols, const int* cols,
@@ -275,6 +283,7 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    double* workData_;
    int workDataLength_;
+   bool ignoreNonLocalEntries_;
 };//class Epetra_FECrsMatrix
 
 #endif //_EPETRA_FECRSMATRIX_H_
