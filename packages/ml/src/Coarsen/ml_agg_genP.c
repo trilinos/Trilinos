@@ -2224,18 +2224,35 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
   char name[80];
   int size_old, size_new;
   double* tmp_old,* tmp_new;
+  double* aggr_sizes;
+  int (*getrow)(ML_Operator*, int, int [], int, int [], double [], int []);
+  int (*matvec)(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]);
 
-  if (Pmat->getrow->func_ptr != CSR_getrow) 
+  if (PDEs != 1)
   {
-    fprintf(stderr, "ERROR: only CSR_getrow() is currently supported\n"
-            "ERROR: (file %s, line %d)\n",
-            __FILE__, __LINE__);
-    exit(EXIT_FAILURE);
+    getrow = Pmat->getrow->func_ptr;
+    matvec = Pmat->matvec->func_ptr;
+
+    if (getrow != CSR_getrow && getrow != sCSR_getrows)
+    {
+      fprintf(stderr, "ERROR: only CSR_getrow() and sCSR_getrows() are currently supported\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+
+    if (matvec != CSR_matvec && matvec != sCSR_matvec)
+    {
+      fprintf(stderr, "ERROR: only CSR_matvec() and sCSR_matvec() are currently supported\n"
+              "ERROR: (file %s, line %d)\n",
+              __FILE__, __LINE__);
+      exit(EXIT_FAILURE);
+    }
+
+    Pmat->getrow->func_ptr = CSR_get_one_row;
+    Pmat->matvec->func_ptr = CSR_ones_matvec;
   }
 
-  if (0 && PDEs == 1)
-    Pmat->getrow->func_ptr = CSR_get_one_row;
-  
   if (Amat->grid_info == NULL) 
   {
     fprintf(stderr, "Amat->grid_info == NULL\n"
@@ -2253,7 +2270,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
 
   ML_Operator_Set_ApplyFuncData(Rmat, Pmat->outvec_leng,
                                 Pmat->invec_leng, 
-                                Pmat->data, -1, CSR_trans_matvec, 0);
+                                Pmat->data, -1, CSR_trans_ones_matvec, 0);
 
   Rmat->getrow->func_ptr = NULL;
   Rmat->data_destroy = NULL;
@@ -2267,20 +2284,33 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
     Nghost = Cmat->getrow->pre_comm->total_rcv_length;
   }
   
-  size_old = Rmat->invec_leng + 1;
-  size_new = Rmat->outvec_leng + Nghost + 1;
-  tmp_old = (double*) ML_allocate(sizeof(double) * size_old);
-  tmp_new = (double*) ML_allocate(sizeof(double) * size_new);
+  size_old = Rmat->invec_leng;
+  size_new = Rmat->outvec_leng + Nghost;
+  tmp_old = (double*) ML_allocate(sizeof(double) * (size_old + 1));
+  tmp_new = (double*) ML_allocate(sizeof(double) * (size_new + 1));
+  aggr_sizes = (double*) ML_allocate(sizeof(double) * (size_new + 1));
+
+  /* computes how many nodes are included in each aggregate */
 
   for (i = 0 ; i < size_old ; ++i)
     tmp_old[i] = 0.0;
 
+  for (i = 0 ; i < size_old ; i += PDEs)
+    tmp_old[i] = 1.0;
+
+  ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, aggr_sizes);
+
+  ML_exchange_bdry(aggr_sizes,Cmat->getrow->pre_comm,Cmat->outvec_leng,
+                   Cmat->comm, ML_OVERWRITE,NULL);
+
+  /* project the coordinates */
+
   if (Amat->grid_info->x!= NULL) 
   {
-    for (i = 0 ; i < Rmat->invec_leng ; i+=PDEs)
+    for (i = 0 ; i < size_old ; i+=PDEs)
       tmp_old[i] = Amat->grid_info->x[i / PDEs];
 
-    ML_Operator_Apply(Rmat, Rmat->invec_leng, tmp_old, Rmat->outvec_leng, tmp_new);
+    ML_Operator_Apply(Rmat, size_old, tmp_old, Rmat->outvec_leng, tmp_new);
 
     sprintf(name, "x_coord_%d", size_new / PDEs);
     ML_memory_alloc((void**)&new_x_coord, sizeof(double) * (size_new / PDEs + 1), name);
@@ -2289,7 +2319,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
     for (i = 0 ; i < size_new ; i+=PDEs)
-      new_x_coord[i / PDEs] = tmp_new[i];
+      new_x_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
     Cmat->grid_info->x = new_x_coord;
   }
@@ -2308,7 +2338,7 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
     for (i = 0 ; i < size_new ; i+=PDEs)
-      new_y_coord[i / PDEs] = tmp_new[i];
+      new_y_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
     Cmat->grid_info->y = new_y_coord;
   }
@@ -2327,18 +2357,22 @@ void ML_Project_Coordinates(ML_Operator* Amat, ML_Operator* Pmat,
                      Cmat->comm, ML_OVERWRITE,NULL);
 
     for (i = 0 ; i < size_new ; i+=PDEs)
-      new_z_coord[i / PDEs] = tmp_new[i];
+      new_z_coord[i / PDEs] = tmp_new[i] / aggr_sizes[i];
 
     Cmat->grid_info->z = new_z_coord;
   }
 
   ML_free(tmp_old);
   ML_free(tmp_new);
+  ML_free(aggr_sizes);
 
   Cmat->grid_info->Ndim = Amat->grid_info->Ndim;
 
-  if (0 && PDEs == 1)
-    Pmat->getrow->func_ptr = CSR_getrow;
+  if (PDEs != 1)
+  {
+    Pmat->getrow->func_ptr = getrow;
+    Pmat->matvec->func_ptr = matvec;
+  }
 
   ML_Operator_Destroy(&Rmat);
 }
@@ -2587,7 +2621,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 {
    int level, next, flag, count=1;
    int i, j, bail_flag, N_input_vector;
-   ML_Operator *Pmat, *Ptent;
+   ML_Operator *Amat, *Pmat, *Ptent;
    ML_CommInfoOP *getrow_comm;
    int aux_flag;
    
@@ -2601,8 +2635,10 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
    while (next >= 0) 
    {
+     Amat = &(ml->Amat[level]);
      aux_flag = (ml->Amat[fine_level].aux_data->enable && 
                  level <= ml->Amat[fine_level].aux_data->max_level);
+
      if (aux_flag)
      {
        if (ml->comm->ML_mypid == 0 && 8 < ML_Get_PrintLevel()) 
@@ -2610,7 +2646,7 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MultiLevelHierarchy (level %d) : Using auxiliary matrix\n",
                 level);
          printf("ML_Gen_MultiLevelHierarchy (level %d) : threshold = %e\n", 
-                level, ml->Amat[level].aux_data->threshold);
+                level, Amat->aux_data->threshold);
        }
 
        ML_Init_Aux(ml, level);
@@ -2621,7 +2657,6 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 		level );
 
       flag = (*user_gen_prolongator)(ml, level, next, user_data);
-      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
 
       if (flag < 0) break;
 
@@ -2689,29 +2724,28 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
          printf("ML_Gen_MultiLevelHierarchy (level %d) : RAP time = %e\n", level, t0);
 #endif
 
-      if (aux_flag)
+      /* reduce memory usage */
+      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[next]));
+      ML_Operator_ImplicitTranspose(&(ml->Rmat[level]), &(ml->Pmat[next]), ML_TRUE);
+      if (((ML_Aggregate*)user_data)->P_tentative != NULL)
       {
-        if (((ML_Aggregate*)user_data)->smoothP_damping_factor != 0.0) 
-        {
-          Ptent = ((ML_Aggregate*)user_data)->P_tentative[next];
-          if (Ptent == NULL) 
-          {
-            fprintf(stderr, "ERROR: Ptent is NULL!\n"
-                    "(file %s, line %d)\n", 
-                    __FILE__, __LINE__);
-            exit(EXIT_FAILURE);
-          }
-          Ptent->num_PDEs = ml->Pmat[next].num_PDEs;
-        }
-        else
-        {
-          Ptent = &(ml->Pmat[next]);
-        }
+        Ptent = ((ML_Aggregate*)user_data)->P_tentative[next];
+        if (Ptent != NULL)
+          ML_Operator_ChangeToSinglePrecision(Ptent);
+      }
+      else
+        Ptent = &(ml->Pmat[next]);
 
-        ML_Project_Coordinates(&(ml->Amat[level]), Ptent, &(ml->Amat[next]));
+      /* project the coordinates (if any) to the next
+       * coarser level */
 
+      if (Amat->grid_info->x != NULL || Amat->grid_info->y != NULL || 
+          Amat->grid_info->z != NULL)
+        ML_Project_Coordinates(Amat, Ptent, &(ml->Amat[next]));
+
+      if (aux_flag)
         ml->Amat[next].aux_data->threshold = ml->Amat[level].aux_data->threshold * 1.0;
-      }        
+
       level = next;
       next  = user_next_level(ml, next, user_data);
 
@@ -3197,7 +3231,7 @@ int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      /* clean and regenerate R */
 
      mat = &(ml->Rmat[old_mesh_level]);
-     if (ag->smoothP_damping_factor != 0.0 ) {
+     if (ML_Use_LowMemory() == ML_TRUE || ag->smoothP_damping_factor != 0.0) {
        ML_Operator_Clean(mat);
        ML_Operator_Init(mat,ml->comm);
        ML_MultiLevel_Gen_Restriction(ml, old_mesh_level, mesh_level, (void *)ag);
@@ -3209,6 +3243,10 @@ int  ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ML *ml,
      ML_Operator_Clean(mat);
      ML_Operator_Init(mat,ml->comm);
      ML_Gen_AmatrixRAP(ml, old_mesh_level, mesh_level);
+
+     /* save some memory */
+
+     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[mesh_level]));
    }
 
    return 0;
