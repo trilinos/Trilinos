@@ -40,7 +40,7 @@
 #include "Epetra_Time.h"
 
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
 #endif
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   int ione = 1;
 
   double time ;
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm comm(MPI_COMM_WORLD);
 #else
@@ -289,7 +289,7 @@ int main(int argc, char *argv[])
 
   delete [] numNz;
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   MPI_Finalize() ;
 #endif
 
@@ -301,12 +301,12 @@ return 0 ;
 int main(int argc, char *argv[])
 {
 
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   MPI_Init(&argc,&argv);
 #endif
   puts("Please configure ML with optinos --enable-epetra");
   puts("--enable-aztecoo --enable-triutils to run this example");
-#ifdef EPETRA_MPI
+#ifdef ML_MPI
   MPI_Finalize() ;
 #endif
 
