@@ -154,6 +154,9 @@ int i, ierr = 0;
         return(LB_MEMERR);
       }
 
+      if (wgtflag == 0)
+        for (i = 0; i < *num_obj; i++) objs_wgt[i] = 0.;
+
       lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, 
                        wgtflag, objs_wgt, &ierr);
       if (ierr == LB_FATAL || ierr == LB_MEMERR) {
