@@ -2188,6 +2188,81 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
 }
 #endif/*MB_MODIF*/
 
+int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
+{
+   int              start_level, end_level, i, j, errCode=0;
+   struct MLSthing *widget;
+   ML_Operator     *Amat;
+   double          *tdiag;
+   char             str[80];
+   int                (*fun)(void *, int, double *, int, double *);
+   int iii, degree;
+   ML_Krylov   *kdata;
+   int ntimes = 1;
+   ML_Operator *t2, *t3;
+
+#ifdef ML_TIMING
+   double         t0;
+#endif
+
+   if (nl == ML_ALL_LEVELS) {
+	  start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+
+   if (start_level < 0) {
+      printf("ML_Gen_Smoother_ERF_1StepKrylov: cannot set smoother on level %d\n",
+		      start_level);
+      return 1;
+   }
+
+
+     
+
+   fun = ML_DiagScaled_1stepKrylov;
+   iii = 0;
+   degree = 1;
+
+   for (i = start_level; i <= end_level; i++) {
+#ifdef ML_TIMING
+     t0 = GetClock();
+#endif
+     Amat = &(ml->Amat[i]);
+     if (Amat->matvec->ML_id != ML_EMPTY) {
+	 if (pre_or_post == ML_PRESMOOTHER) {
+           sprintf(str,"ERF_1STEP_pre%d",i);
+           errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+				  NULL, fun, NULL, ntimes, 0.0, str);
+	 }
+	 else if (pre_or_post == ML_POSTSMOOTHER) {
+           sprintf(str,"ERF_1STEP_post%d",i);
+	   errCode=ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+				  NULL, fun, NULL, ntimes, 0.0, str);
+	 }
+	 else if (pre_or_post == ML_BOTH) {
+           sprintf(str,"ERF_1STEP_pre%d",i);
+
+	   ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL,
+                        (void *) widget, fun, NULL, ntimes,
+			0.0, str);
+           sprintf(str,"ERF_1STEP_post%d",i);
+	   errCode = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+               (void *) widget, fun, NULL, ntimes, 0.0, str);
+	 }
+	 else return(pr_error("Print unknown pre_or_post choice\n"));
+
+#ifdef ML_TIMING
+         if (pre_or_post == ML_PRESMOOTHER)
+	   ml->pre_smoother[i].build_time = GetClock() - t0;
+	 else ml->post_smoother[i].build_time = GetClock() - t0;
+
+         ml->timing->total_build_time   += ml->post_smoother[i].build_time;
+#endif
+     }
+   }
+   return errCode;
+}
+
+
 
 /* ------------------------------------------------------------------------- */
 /* generate the sparse approximate inverse smoother */

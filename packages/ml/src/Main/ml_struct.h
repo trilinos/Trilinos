@@ -234,6 +234,8 @@ extern int ML_Gen_Smoother_SymGaussSeidelSequential(ML*,int nl,int pre_post,
                      int ntimes, double omega);
 extern int ML_Gen_Smoother_MLS(ML*,int nl,int pre_post, double eig,
                      int degree);
+extern int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post);
+
 extern int ML_Gimmie_Eigenvalues(ML_Operator *Amat, int scale_by_diag,
 			 int matrix_is_nonsymmetric, int symmetrize_matrix);
 extern int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, 
