@@ -522,9 +522,6 @@ void ML_precondition(double ff[], int options[], int proc_config[],
 #endif
   /* pre- and post-processing projection step */
   else if (ml->ML_scheme == ML_PAMGV) ML_Solve_ProjectedAMGV( ml, ff, ffout);
-/*MS*/
-  else if( ml->ML_scheme == ML_FULLYADD ) ML_Solve_FullyAdditive( ml, ff, ffout);
-/*ms*/
   else ML_Solve_MGV( ml, ff, ffout );
   for (i = 0; i < lenf; i++) ff[i] = ffout[i];
   ML_free(ffout);
