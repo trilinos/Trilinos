@@ -99,7 +99,44 @@ typedef struct Zoltan_Timer {
   int NextTimeStruct;     /* Index of next unused TimeStruct */
   ZTIMER_TS *Times;       /* Array of actual timing data -- individual timers */
 } ZTIMER;
+/****************************************************************************/
 
+ZTIMER *Zoltan_Timer_Copy(ZTIMER *from)
+{
+  ZTIMER *to = NULL;
+
+  Zoltan_Timer_Copy_To(&to, from);
+
+  return to;
+}
+int Zoltan_Timer_Copy_To(ZTIMER **to, ZTIMER *from)
+{
+  if (!to){
+    return ZOLTAN_FATAL;
+  }
+
+  if (*to){
+    Zoltan_Timer_Destroy(to);
+  }
+
+  if (from){
+    *to = (ZTIMER *)ZOLTAN_MALLOC(sizeof(ZTIMER));
+    ZTIMER *toptr = *to;
+
+    toptr->Timer_Flag = from->Timer_Flag;
+    toptr->Length = from->Length;
+    toptr->NextTimeStruct = from->NextTimeStruct;
+    if (toptr->Length > 0){
+      toptr->Times = (ZTIMER_TS *)ZOLTAN_MALLOC(sizeof(ZTIMER_TS) * toptr->Length);
+      memcpy(toptr->Times, from->Times, sizeof(ZTIMER_TS) * toptr->Length);
+    }
+    else{
+      toptr->Times = NULL;
+    }
+  }
+  
+  return ZOLTAN_OK;
+}
 /****************************************************************************/
 ZTIMER *Zoltan_Timer_Create(
   int timer_flag
@@ -122,34 +159,6 @@ int i;
     zt->Times[i].Status = 0;
 
   return zt;
-}
-
-/****************************************************************************/
-int Zoltan_Timer_Copy(ZTIMER **to, ZTIMER *from)
-{
-  ZTIMER *new = NULL;
-  int nrecs;
-
-  if (from) {
-    new = (ZTIMER *) ZOLTAN_MALLOC(sizeof(ZTIMER));
-    nrecs = from->Length;
-
-    if (nrecs > 0){
-      new->Times = (ZTIMER_TS *) ZOLTAN_MALLOC(sizeof(ZTIMER_TS) * nrecs);
-      memcpy(new->Times, from->Times, sizeof(ZTIMER_TS) * nrecs);
-    }
-    else {
-      new->Times = NULL;
-    }
-    
-    new->Timer_Flag = from->Timer_Flag;
-    new->NextTimeStruct = from->NextTimeStruct;
-    new->Length = nrecs;
-  }
-
-  *to = new;
-
-  return ZOLTAN_OK;
 }
 
 /****************************************************************************/
