@@ -97,10 +97,10 @@ int oct_output_level = 1;     /* Flag specifying amount of output.           */
 int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
 int error = FALSE;            /* error flag                                  */
 
-  OCT_params[0].ptr = (void *) &oct_dim;
-  OCT_params[1].ptr = (void *) &oct_method;
-  OCT_params[2].ptr = (void *) &oct_granularity;
-  OCT_params[3].ptr = (void *) &oct_output_level;
+  LB_Bind_Param(OCT_params, "OCT_DIM", (void *) &oct_dim);
+  LB_Bind_Param(OCT_params, "OCT_METHOD", (void *) &oct_method);
+  LB_Bind_Param(OCT_params, "OCT_GRANULARITY", (void *) &oct_granularity);
+  LB_Bind_Param(OCT_params, "OCT_OUTPUT_LEVEL", (void *) &oct_output_level);
 
   LB_Assign_Param_Vals(lb->Params, OCT_params, lb->Debug_Level, lb->Proc);
 

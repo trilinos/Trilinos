@@ -171,7 +171,7 @@ unsigned char *p;          /* for setting IDs to NULL */
    * Allocate and initialize the hash table.
    */
 
-  REFTREE_params[0].ptr = (void *) &hashsize;
+  LB_Bind_Param(REFTREE_params, "REFTREE_HASH_SIZE", (void *) &hashsize);
   hashsize = DEFAULT_HASH_TABLE_SIZE;
   LB_Assign_Param_Vals(lb->Params, REFTREE_params, lb->Debug_Level, lb->Proc);
 

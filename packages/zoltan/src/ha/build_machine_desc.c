@@ -61,8 +61,8 @@ int LB_Build_Machine_Desc(
   int use_mach_desc;
   char *filename;
 
-  Mach_params[0].ptr = (void *) &use_mach_desc;
-  Mach_params[1].ptr = (void *) &filename;
+  LB_Bind_Param(Mach_params, "USE_MACHINE_DESC", (void *) &use_mach_desc);
+  LB_Bind_Param(Mach_params, "MACHINE_DESC_FILE", (void *) &filename);
 
   use_mach_desc = 0;
   filename = MACHINE_DESC_FILE_DEFAULT;
