@@ -735,7 +735,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
          coarsen_scheme = ML_AGGR_COUPLED;
       else if (coarsen_scheme == ML_AGGR_MIS) 
          coarsen_scheme = ML_AGGR_MIS;
-      if (coarsen_scheme == ML_AGGR_HYBRIDUC) 
+      else if (coarsen_scheme == ML_AGGR_HYBRIDUC) 
          coarsen_scheme = ML_AGGR_COUPLED;
       else if (coarsen_scheme == ML_AGGR_HYBRIDUM) 
          coarsen_scheme = ML_AGGR_MIS;
