@@ -39,7 +39,49 @@ query functions. We anticipate that this problem can be overcome, and support
 will be added soon. 
 -------------------------------------------------------------------------------
 PROBLEMS EXISTING IN PARMETIS 
-(reported to the ParMETIS development team at the University of Minnesota)
+(Reported to the ParMETIS development team at the University of Minnesota,
+ metis@cs.umn.edu)
+
+
+Name: ParMETIS_V3_AdaptiveRepart dies for zero-sized partitions.
+Version: ParMETIS 3.0
+Symptom: run-time error "killed by signal 8" on DEC.  FPE, divide-by-zero.
+Description:
+   ParMETIS_V3_AdaptiveRepart divides by partition size; thus, zero-sized 
+   partitions cause a floating-point exception.  This problem is exhibited in 
+   adaptive-partlocal3 tests.  The tests actually run on Sun and Linux machines 
+   (which don't seem to care about the divide-by-zero), but cause an FPE 
+   signal on DEC (Compaq) machines.
+Reported: 1/23/2003.
+Status: Acknowledged by GK, no time estimate for bug fix.
+
+Name: ParMETIS_V3_AdaptiveRepart crashes when no edges.
+Version: ParMETIS 3.0
+Symptom: Floating point exception, divide-by-zero.
+Description:
+   Divide-by-zero in ParMETISLib/adrivers.c, function Adaptive_Partition, 
+   line 40.
+Reported: 1/23/2003.
+Status: Acknowledged by GK, no time estimate for bug fix.
+
+Name: Uninitialized memory read in akwayfm.c.
+Version: ParMETIS 3.0
+Symptom: UMR warning.
+Description:
+   UMR in ParMETISLib/akwayfm.c, function Moc_KWayAdaptiveRefine, near line 520.
+Reported: 1/23/2003.
+Status: Acknowledged by GK, no time estimate for bug fix.
+
+Name: Memory leak in wave.c
+Version: ParMETIS 3.0
+Symptom: Some memory not freed.
+Description:
+   Memory leak in ParMETISLib/wave.c, function WavefrontDiffusion;
+   memory for the following variables is not always freed:
+   solution, perm, workspace, cand
+   We believe the early return near line 111 causes the problem.
+Reported: 1/23/2003.
+Status: Acknowledged by GK, no time estimate for bug fix.
 
 Name: tpwgts ignored for small graphs.
 Version: ParMETIS 3.0
@@ -64,19 +106,6 @@ Description:
    in Zoltan's "partless" test cases. 
 Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/12/02.
 Status: No reply.
-
-
-Name: ParMETIS_V3_AdaptiveRepart dies for zero-sized partitions.
-Version: ParMETIS 3.0
-Symptom: run-time error "killed by signal 8" on DEC.  Floating-point exception.
-Description:
-   ParMETIS_V3_AdaptiveRepart divides by partition size; thus, zero-sized 
-   partitions cause a floating-point exception.  This problem is exhibited in 
-   adaptive-partlocal3 tests.  The tests actually run on Sun and Linux machines 
-   (which don't seem to care about the divide-by-zero), but cause an FPE 
-   signal on DEC (Compaq) machines.
-Reported: Not yet.
-Status:
 
 
 Name: load imbalance tolerance
