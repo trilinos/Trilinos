@@ -14,8 +14,8 @@ CrsRiluk_test_DEPENDENCIES = \
 CrsRiluk_test_CXXFLAGS = -I$(top_srcdir)/src \
 	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 
-CrsRiluk_test_LDADD = -L$(top_builddir)/src -lifpack \
-	-L$(top_builddir)/../epetra/src -lepetra \
+CrsRiluk_test_LDADD = $(top_builddir)/src/libifpack.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(BLAS_LIBS) $(FLIBS)
 
 
