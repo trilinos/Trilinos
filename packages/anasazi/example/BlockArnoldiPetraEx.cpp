@@ -2,10 +2,10 @@
 #include "AnasaziBlockArnoldi.hpp"
 #include "AnasaziCommon.hpp"
 
-//  This example computes the specified eigenvalues of the discretized 2D Laplacian using
-//  the block Arnoldi method.  This discretized operator is constructed as an Epetra matrix, 
-//  then passed into the AnasaziPetraMat to be used in the construction of the Krylov 
-//  decomposition.  The specifics of the block Arnoldi method can be set by the user.
+//  This example computes the specified eigenvalues of the discretized 2D Convection-Diffusion
+//  equation using the block Arnoldi method.  This discretized operator is constructed as an 
+//  Epetra matrix, then passed into the AnasaziPetraMat to be used in the construction of the
+//  Krylov decomposition.  The specifics of the block Arnoldi method can be set by the user.
 
 int main(int argc, char *argv[]) {
 	int ierr = 0, i, j;
@@ -78,38 +78,42 @@ int main(int argc, char *argv[]) {
 
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
+	// Diffusion coefficient, can be set by user.
+	double rho = 1.2;  
+
 	// Add  rows one-at-a-time
 	// Need some vectors to help
-	// Off diagonal Values will always be -1
 
-
+	const double one = 2.0;
 	double *Values = new double[2];
-	Values[0] = -1.0; Values[1] = -1.0;
+	double h = one /(NumGlobalElements + one);
+	double c = rho*h/ 2.0;
+	Values[0] = -one-c; Values[1] = -one+c;
 	int *Indices = new int[2];
-	double diag = 2.5;
-	double one = 1.0;
-	double rdiag = 1.0/diag;
+	double diag = 2.0;
 	int NumEntries;
-
+	
 	for (i=0; i<NumMyElements; i++)
 	{
 		if (MyGlobalElements[i]==0)
 		{
 			Indices[0] = 1;
 			NumEntries = 1;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values+1, Indices)==0);
 		}
 		else if (MyGlobalElements[i] == NumGlobalElements-1)
 		{
 			Indices[0] = NumGlobalElements-2;
 			NumEntries = 1;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		}
 		else
 		{
 			Indices[0] = MyGlobalElements[i]-1;
 			Indices[1] = MyGlobalElements[i]+1;
 			NumEntries = 2;
+			assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		}
-		assert(A.InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices)==0);
 		// Put in the diagonal entry
 		assert(A.InsertGlobalValues(MyGlobalElements[i], 1, &diag, MyGlobalElements+i)==0);
 	}
@@ -145,7 +149,7 @@ int main(int argc, char *argv[]) {
 						which, step, restarts);
 	
 	// inform the solver that the problem is symmetric
-	MyBlockArnoldi.setSymmetric(true);
+	//MyBlockArnoldi.setSymmetric(true);
 	MyBlockArnoldi.setDebugLevel(1);
 
 #ifdef UNIX
