@@ -232,15 +232,15 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
 
   dir = soln.getGradient();
 
-  deque<double> alpha;
-  double a, b, c;
-  
   if (!updates.empty()) {
 
+    deque<double> alpha;
+    double a, b, c;
+  
     for (UpdateConstReverseIterator i = updates.rbegin(); i != updates.rend(); i++) {
 
       const Update& u = *(*i);
-      const double rho = u.sdoty();
+      const double rho = 1.0 / u.sdoty();
       const Abstract::Vector& s = u.s();
       const Abstract::Vector& y = u.y();
       a = rho * dir.dot(s);
@@ -250,15 +250,14 @@ bool QuasiNewton::compute(Abstract::Vector& dir,
     }
     
     const Update& u = *(updates.back());
-    const double rho = u.sdoty();
     const Abstract::Vector& y = u.y();
-    double gamma = rho / y.dot(y);
+    double gamma = u.sdoty() / y.dot(y);
     dir.scale(gamma);
     
     for (UpdateConstIterator i = updates.begin(); i != updates.end(); i++) {
       
       const Update& u = *(*i);
-      const double rho = u.sdoty();
+      const double rho = 1.0 / u.sdoty();
       const Abstract::Vector& s = u.s();
       const Abstract::Vector& y = u.y();
       a = alpha.front();
