@@ -23,8 +23,10 @@
 #include "Epetra_CrsMatrix.h"
 #include "CreateTridi.h"
 
+#ifdef HAVE_AMESOS_SUPERLUDIST
 #include "superlu_ddefs.h"
 #include "supermatrix.h"
+#endif
 
 
 int SubTest(Epetra_Comm &Comm, AMESOS::Parameter::List ParamList )
@@ -326,7 +328,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
   int iam = Comm.MyPID() ; 
-
   
  {
    AMESOS::Parameter::List ParamList ;
