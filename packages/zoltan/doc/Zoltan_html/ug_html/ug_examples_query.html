@@ -411,7 +411,8 @@ variable to pass the mesh data
 <br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
 <a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
 
-<tt>user_return_owned_nodes<font color="#FF0000">, data</font>)&nbsp;&nbsp;</tt>
+<tt>user_return_owned_nodes<font color="#FF0000">,</font> </tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#FF0000">data</font>)&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>end program&nbsp;</tt>
 <p><tt>subroutine user_return_owned_nodes(data, &amp;</tt>
@@ -432,8 +433,8 @@ User_Data argument</i></font></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>return global node numbers as global_ids.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>return index into Nodes array for local_ids.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries)
-= Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries) = &amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
 = i&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
