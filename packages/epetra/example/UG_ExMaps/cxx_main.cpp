@@ -9,11 +9,7 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_IntSerialDenseVector.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 // prototype
-double power_method(const Epetra_CrsMatrix& A);
 int main(int argc, char *argv[]) {
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -33,32 +29,7 @@ int main(int argc, char *argv[]) {
   Epetra_Map Map(NumGlobalElements, 0, Comm);
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map.NumMyElements();
-  // Create an Epetra_CrsMatrix
-  Epetra_CrsMatrix A(Copy, Map, 1);
- // Add  rows one-at-a-time
-  Epetra_SerialDenseVector DiagVal(1); 
-  DiagVal[0] = 2.0; // We set all diagonal values to 2
-  Epetra_IntSerialDenseVector ColIndices(1);
-  for (int i=0; i<NumMyElements; i++) {
-    int RowIndex = Map.GID(i);
-    ColIndices[0] = RowIndex;
-    // Put in the diagonal entry
-    A.InsertGlobalValues(RowIndex, DiagVal.Length(), 
-			 DiagVal.Values(), ColIndices.Values());  
-  }
-  if (Map.MyGID(0)) { // Change the first global diagonal value to 4.0
-    DiagVal[0] = 4.0;
-    int RowIndex = 0;
-    ColIndices[0] = RowIndex;
-  A.ReplaceGlobalValues(RowIndex, DiagVal.Length(), 
-			DiagVal.Values(), ColIndices.Values());
-  }
-  // Finish up
- A.TransformToLocal();
-  // Iterate
-  double lambda = power_method(A);
-  if (Comm.MyPID()==0) 
-    cout << endl << "Estimate of Dominant Eigenvalue = " << lambda << endl;		
+  cout << Map << endl;
 #ifdef UG_EX1_MPI
   MPI_Finalize() ;
 #endif
