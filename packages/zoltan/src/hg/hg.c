@@ -105,10 +105,23 @@ printf ("RTHRTH: starting\n");
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
   }
-   
+
+  if (zz->Debug_Level > ZOLTAN_DEBUG_NONE) 
+  {
+    int i, max = 0;
+    printf("Hypergraph Stats:\n");
+    printf("           nVtxs = %d\n", zoltan_hg->HG.nVtx);
+    printf("           nEdge = %d\n", zoltan_hg->HG.nEdge);
+    printf("           nPins = %d\n", zoltan_hg->HG.nInput);
+    for (i = 0; i < zoltan_hg->HG.nEdge; i++)
+      if (zoltan_hg->HG.hindex[i+1]-zoltan_hg->HG.hindex[i] > max)
+        max = zoltan_hg->HG.hindex[i+1]-zoltan_hg->HG.hindex[i];
+    printf("           maxEL = %d\n", max);
+  }
+
   zz->LB.Data_Structure = zoltan_hg;
   nVtx = zoltan_hg->HG.nVtx;
- zoltan_hg->HG.redl = hgp.redl;
+  zoltan_hg->HG.redl = hgp.redl;
  
   /* allocate output partition memory */
   output_parts = (Partition) ZOLTAN_MALLOC(nVtx * sizeof(int));
@@ -118,42 +131,54 @@ printf ("RTHRTH: starting\n");
     goto End;
   }
 
+#ifdef KDDKDD_INITIAL_DATA
+  /* Plot Initial data on one processor */
+  Zoltan_HG_Plot(zz->Proc, zoltan_hg->HG.nVtx, 1, zoltan_hg->HG.vindex, 
+                 zoltan_hg->HG.vedge, NULL, "Initial Data");
+#endif /* KDDKDD_INITIAL_DATA */
 
 /*
 hgp.kway = ((!strcasecmp(hgp.local_str, "fmkway")) ? 1 : 0);
 */
 hgp.kway = ((strstr(hgp.local_str,"kway")) ? 1 : 0);
 
-printf ("RTHRTH  type is %s\n", (hgp.kway ? "kway": "recursive bisection"));  fflush (NULL);
   if (hgp.kway) {
-     ierr = Zoltan_HG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, output_parts, &hgp, 0);
-     if (ierr != ZOLTAN_OK)
-         return ierr;
-     }
+    ierr = Zoltan_HG_HPart_Lib(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts, 
+                               output_parts, &hgp, 0);
+    if (ierr != ZOLTAN_OK)
+      return ierr;
+  }
   else {
-     /* vmap associates original vertices to sub hypergraphs */
-     zoltan_hg->HG.vmap = (int*) ZOLTAN_MALLOC (zoltan_hg->HG.nVtx * sizeof (int));
-     if (zoltan_hg->HG.vmap == NULL)  {
-        ierr = ZOLTAN_MEMERR;
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        goto End;
-        }
-     for (i = 0; i < zoltan_hg->HG.nVtx; i++)
-        zoltan_hg->HG.vmap[i] = i;
+    /* vmap associates original vertices to sub hypergraphs */
+    zoltan_hg->HG.vmap = (int*) ZOLTAN_MALLOC(zoltan_hg->HG.nVtx*sizeof (int));
+    if (zoltan_hg->HG.vmap == NULL)  {
+      ierr = ZOLTAN_MEMERR;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      goto End;
+    }
+    for (i = 0; i < zoltan_hg->HG.nVtx; i++)
+      zoltan_hg->HG.vmap[i] = i;
 
-     /* tighten balance tolerance for recursive bisection process */
-     if (zz->LB.Num_Global_Parts > 2)
-        hgp.bal_tol = pow (hgp.bal_tol,
-         1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
+    /* tighten balance tolerance for recursive bisection process */
+    if (zz->LB.Num_Global_Parts > 2)
+      hgp.bal_tol = pow (hgp.bal_tol,
+        1.0 / ceil (log((double)zz->LB.Num_Global_Parts) / log(2.0)));
 
-     /* partition hypergraph */
-     ierr = Zoltan_HG_rdivide (1, zz->LB.Num_Global_Parts, output_parts, zz, &zoltan_hg->HG, &hgp, 0);
-     if (ierr != ZOLTAN_OK)  {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
-        goto End;
-        }
-     ZOLTAN_FREE (&zoltan_hg->HG.vmap);
-     }
+    /* partition hypergraph */
+    ierr = Zoltan_HG_rdivide(1, zz->LB.Num_Global_Parts, output_parts, zz, 
+                             &zoltan_hg->HG, &hgp, 0);
+    if (ierr != ZOLTAN_OK)  {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
+      goto End;
+    }
+    ZOLTAN_FREE (&zoltan_hg->HG.vmap);
+  }
+
+#ifdef KDDKDD_PLOTDATA
+  Zoltan_HG_Plot(zz->Proc, zoltan_hg->HG.nVtx, zz->LB.Num_Global_Parts, 
+                 zoltan_hg->HG.vindex, zoltan_hg->HG.vedge, output_parts, 
+                 "Final Partition");
+#endif /* KDDKDD_PLOTDATA */
 
 
 if (zz->Proc == 0)

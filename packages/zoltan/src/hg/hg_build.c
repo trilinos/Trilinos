@@ -244,6 +244,7 @@ int num_gid_entries = zz->Num_GID;
   }
   
   /* Build hg->hindex */
+  /* KDD -- should we remove HEdges with size 1 from edge lists here? */
   hg->hindex = (int *) ZOLTAN_MALLOC((hg->nEdge + 1) * sizeof(int));
   if (!hg->hindex) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");

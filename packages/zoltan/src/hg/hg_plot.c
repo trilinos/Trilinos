@@ -45,10 +45,12 @@ int i, j, v;
 FILE *fp = NULL;
 int prev_part = -1;
 int *idx = NULL;
+int *invidx = NULL;
 int *vtx = NULL;
 
-  idx = (int *) ZOLTAN_MALLOC(2 * nvtx * sizeof(int));
-  vtx = idx + nvtx;
+  idx = (int *) ZOLTAN_MALLOC(3 * nvtx * sizeof(int));
+  invidx = idx + nvtx;
+  vtx = invidx + nvtx;
   for (i = 0; i < nvtx; i++) vtx[i] = idx[i] = i;
   if (part != NULL) {
     /* sort vertices by partition */
@@ -60,6 +62,9 @@ int *vtx = NULL;
     fp = fopen(filename, "w");
     fprintf(fp, "#%s\n", str);
   }
+
+  for (i = 0; i < nvtx; i++)
+    invidx[idx[i]] = i;
 
   for (i = 0; i < nvtx; i++) {
     v = idx[i];
@@ -73,16 +78,25 @@ int *vtx = NULL;
         prev_part = part[v];
       }
     }
+#undef KDDKDD_REGULAR
+#ifdef KDDKDD_REGULAR
     for (j = vindex[v]; j < vindex[v+1]; j++)
       fprintf(fp, "%d %d\n", vedge[j], -v);
+#else
+    /* KDDKDD_BLOCKED */
+    /* Block printout by partition; permute rows and columns */
+    for (j = vindex[v]; j < vindex[v+1]; j++) 
+      fprintf(fp, "%d %d\n", invidx[vedge[j]], -i);
+#endif /* KDDKDD_BLOCKED */
   }
+
 
   fclose(fp);
   ZOLTAN_FREE(&idx);
   if (proc == 0) {
     sprintf(filename, "hgplot%02d.gnuload", cnt);
     fp = fopen(filename, "w");
-    fprintf(fp, "set data style points\n");
+    fprintf(fp, "set data style dots\n");
     fprintf(fp, "set nokey\n");
     fprintf(fp, "set title \"%s\"\n", str);
     fprintf(fp, "set xlabel \"hyperedges\"\n");
