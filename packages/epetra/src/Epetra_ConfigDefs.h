@@ -123,11 +123,15 @@ const double Epetra_Underflow = 2.23E-308;
 
 
 #ifndef TFLOP
+#ifndef JANUS_STLPORT
 #ifdef HAVE_CMATH
 #include <cmath>
 #else
 #include <math.h>
 #endif
+#else /* JANUS_STLPORT */
+#include <math.h>
+#endif /* JANUS_STLPORT */
 using namespace std;
 #else /* TFLOP defined */
 #ifdef HAVE_IOMANIP
