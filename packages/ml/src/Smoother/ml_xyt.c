@@ -57,13 +57,13 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    }
    *Nghost = Nrecv;
 
-   dmapper = (double *) malloc((Nrows+Nrecv)*sizeof(double));
+   dmapper = (double *) ML_allocate((Nrows+Nrecv)*sizeof(double));
    for (i = 0; i < Nrows; i++) dmapper[i] = (double) (i+start+1);
 
 
    ML_exchange_bdry(dmapper, getrow_comm, Nrows,my_ml->comm,ML_OVERWRITE,NULL);
 
-   mapper  = (int    *) malloc((Nrows+Nrecv)*sizeof(int));
+   mapper  = (int    *) ML_allocate((Nrows+Nrecv)*sizeof(int));
    for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = (int) dmapper[i];
    free(dmapper);
 
@@ -83,8 +83,8 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    sep_space = (int) (10.*sqrt( (double) total_rows ));
    sep_space += Nrows;
 
-   sep     = (int *) malloc(sep_space*sizeof(int));
-   s_sizes = (int *) malloc( (N_bits+2)*sizeof(int) );
+   sep     = (int *) ML_allocate(sep_space*sizeof(int));
+   s_sizes = (int *) ML_allocate( (N_bits+2)*sizeof(int) );
    *Nseparators = N_bits + 1;
 #ifdef out
    N_count = 0;
@@ -139,8 +139,8 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    N_nz = 0;
    allocated = 10;
-   bindx = (int    *) malloc(allocated*sizeof(int));
-   val   = (double *) malloc(allocated*sizeof(double));
+   bindx = (int    *) ML_allocate(allocated*sizeof(int));
+   val   = (double *) ML_allocate(allocated*sizeof(double));
 
    for (i = 0; i < Nrows; i++) {
       ML_get_matrix_row(Amat, 1, &i, &allocated, &bindx, &val,
@@ -149,9 +149,9 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    }
    free(bindx); free(val);
 
-   bindx = (int    *) malloc((N_nz+1)*sizeof(int));
-   val   = (double *) malloc((N_nz+1)*sizeof(double));
-   row_ptr=(int    *) malloc((Nrows+1)*sizeof(int));
+   bindx = (int    *) ML_allocate((N_nz+1)*sizeof(int));
+   val   = (double *) ML_allocate((N_nz+1)*sizeof(double));
+   row_ptr=(int    *) ML_allocate((Nrows+1)*sizeof(int));
 
    N_nz = 0;
    row_ptr[0] = N_nz;
@@ -182,7 +182,7 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, CSR_matvec);
 
 
-   neighbors = (int *) malloc(sizeof(int)*getrow_comm->N_neighbors);
+   neighbors = (int *) ML_allocate(sizeof(int)*getrow_comm->N_neighbors);
    for (i = 0; i < getrow_comm->N_neighbors; i++)
       neighbors[i] = getrow_comm->neighbors[i].ML_id;
 
@@ -615,8 +615,8 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
 
    Nrows = Amat->matvec->Nrows;
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");
 
    getrow_comm= Amat->getrow->pre_comm;
@@ -660,8 +660,8 @@ int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 
    Nrows = Amat->matvec->Nrows;
    allocated_space = Amat->max_nz_per_row+1;
-   cols = (int    *) malloc(allocated_space*sizeof(int   ));
-   vals = (double *) malloc(allocated_space*sizeof(double));
+   cols = (int    *) ML_allocate(allocated_space*sizeof(int   ));
+   vals = (double *) ML_allocate(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");
 
    getrow_comm= Amat->getrow->pre_comm;

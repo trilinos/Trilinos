@@ -320,8 +320,8 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       ML_SuperLU_Set_Tile(nprocs, &tsz ,&stile, &mtile, &ltile);
       ntile = stile + mtile + ltile;
       tsz2 = tsz * tsz;
-      usermap = (int_t *) malloc( tsz2*sizeof(int_t) );
-      lugrid_tiles = (ML_Lugrid *) malloc( ntile*sizeof(ML_Lugrid) );
+      usermap = (int_t *) ML_allocate( tsz2*sizeof(int_t) );
+      lugrid_tiles = (ML_Lugrid *) ML_allocate( ntile*sizeof(ML_Lugrid) );
       k = 0;
       for( g=0 ; g < ntile; g++)
       {
@@ -400,15 +400,15 @@ int ML_SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
        * optionsptr->ColPerm = NATURAL;
        * ... and Equil
        */
-      ScalePermstruct = ( ScalePermstruct_t *) malloc( sizeof( ScalePermstruct_t));
+      ScalePermstruct = ( ScalePermstruct_t *) ML_allocate( sizeof( ScalePermstruct_t));
       ScalePermstructInit(n, n, ScalePermstruct);
-      LUstruct = ( LUstruct_t *) malloc( sizeof( LUstruct_t) );
+      LUstruct = ( LUstruct_t *) ML_allocate( sizeof( LUstruct_t) );
       LUstructInit(n, n, LUstruct);
       solver->PERMspl = (void *) ScalePermstruct;
       solver->LUspl = (void *) LUstruct;
       solver->gridtiles = lugrid_tiles;
       /* rst: mygrid is a pointer to a structure, not a structure.
-       *  mygrid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
+       *  mygrid = ( gridinfo_t *) ML_allocate( sizeof( gridinfo_t) );
        */
    } 
    else 
@@ -769,7 +769,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
    }
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
@@ -784,8 +784,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    flag    = 0;
 
    while (flag == 0) {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -823,7 +823,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
          ML_free(cols);
       }
    }
-   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    csr_mat->mat_n  = osize;
    csr_mat->mat_ja = cols;
    csr_mat->mat_a  = vals;
@@ -834,7 +834,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* form a global matrix                                              */
    /* ----------------------------------------------------------------- */
 
-   csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
    free(row_ptr);
    free(cols);
@@ -848,7 +848,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
       nrows   = csr2_mat->mat_n;
-      temp_ptr =(struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+      temp_ptr =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
       temp_ptr->rowptr = mat_ia;
       temp_ptr->columns= mat_ja;
       temp_ptr->values = mat_val;
@@ -1033,7 +1033,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       nblocks = -op->invec_leng;
       op->invec_leng = osize;
    }
-   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+   row_ptr = (int *) ML_allocate(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
    if ( op->getrow->internal != NULL ) {
@@ -1048,8 +1048,8 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    flag    = 0;
 
    while (flag == 0) {
-      cols    = (int    *) malloc(sizeof(int)*space);
-      vals    = (double *) malloc(sizeof(double)*space);
+      cols    = (int    *) ML_allocate(sizeof(int)*space);
+      vals    = (double *) ML_allocate(sizeof(double)*space);
 
       nz_ptr = 0;
       row_ptr[0] = nz_ptr;
@@ -1076,7 +1076,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
          ML_free(cols);
       }
    }
-   csr_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    csr_mat->mat_n  = osize;
    csr_mat->mat_ja = cols;
    csr_mat->mat_a  = vals;
@@ -1089,7 +1089,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    /* mat := csr2_mat (in column format) = csr2_mat transpose           */
    /* ----------------------------------------------------------------- */
 
-   csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
+   csr2_mat = (ML_Matrix_DCSR *) ML_allocate(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
    free(cols);
    free(vals);
@@ -1103,7 +1103,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       mat_ja  = csr2_mat->mat_ja;
       mat_val = csr2_mat->mat_a;
       nrows   = csr2_mat->mat_n;
-      temp_ptr =(struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+      temp_ptr =(struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
       temp_ptr->rowptr = mat_ia;
       temp_ptr->columns= mat_ja;
       temp_ptr->values = mat_val;
@@ -1340,7 +1340,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    /* communicate the rhs and put into dbuffer                  */
    /* --------------------------------------------------------- */
 
-   dbuffer = (double *) malloc(extNrows * sizeof(double));
+   dbuffer = (double *) ML_allocate(extNrows * sizeof(double));
    for ( i = 0; i < outlen; i++ ) dbuffer[i] = rhs[i];
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
 
@@ -1351,8 +1351,8 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    /* set up for SuperLU solves                                 */
    /* --------------------------------------------------------- */
 
-   rhsbuf = (double *) malloc(max_blk_size * sizeof(double));
-   solbuf = (double *) malloc(max_blk_size * sizeof(double));
+   rhsbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
+   solbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
    panel_size               = sp_ienv(1);
    iparam.panel_size        = panel_size;
    iparam.relax             = sp_ienv(2);
@@ -1367,7 +1367,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
 
    /* --------------------------------------------------------- */
    /* the first pass                                            */
@@ -1395,7 +1395,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
       Destroy_SuperMatrix_Store(&X);
    }
 
-   if (ntimes > 1) xbuffer = (double *) malloc(extNrows * sizeof(double));
+   if (ntimes > 1) xbuffer = (double *) ML_allocate(extNrows * sizeof(double));
 
    for ( m = 1; m < ntimes; m++ )
    {
@@ -1511,7 +1511,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    /* communicate the rhs and put into dbuffer                  */
    /* --------------------------------------------------------- */
 
-   dbuffer = (double *) malloc(extNrows * sizeof(double));
+   dbuffer = (double *) ML_allocate(extNrows * sizeof(double));
    for ( i = 0; i < outlen; i++ ) dbuffer[i] = rhs[i];
    for ( i = outlen; i < extNrows; i++ ) dbuffer[i] = 0.0;
    for ( i = 0; i < inlen;  i++ ) x[i] = 0.0;
@@ -1523,8 +1523,8 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    /* set up for SuperLU solves                                 */
    /* --------------------------------------------------------- */
 
-   rhsbuf = (double *) malloc(max_blk_size * sizeof(double));
-   solbuf = (double *) malloc(max_blk_size * sizeof(double));
+   rhsbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
+   solbuf = (double *) ML_allocate(max_blk_size * sizeof(double));
    panel_size               = sp_ienv(1);
    iparam.panel_size        = panel_size;
    iparam.relax             = sp_ienv(2);
@@ -1539,7 +1539,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
 
    /* --------------------------------------------------------- */
    /* the first pass                                            */
@@ -1567,7 +1567,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
       Destroy_SuperMatrix_Store(&X);
    }
 
-   if (ntimes > 1) xbuffer = (double *) malloc(extNrows * sizeof(double));
+   if (ntimes > 1) xbuffer = (double *) ML_allocate(extNrows * sizeof(double));
 
    for ( m = 1; m < ntimes; m++ )
    {
@@ -1835,11 +1835,11 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* compose the initial blk_size information                   */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->blk_size = (int *) malloc(nblocks * sizeof(int) );
-   schwarz_ptr->blk_indices = (int **) malloc(nblocks * sizeof(int*) );
+   schwarz_ptr->blk_size = (int *) ML_allocate(nblocks * sizeof(int) );
+   schwarz_ptr->blk_indices = (int **) ML_allocate(nblocks * sizeof(int*) );
    blk_indices  = schwarz_ptr->blk_indices;
    blk_size     = schwarz_ptr->blk_size;
-   tmp_blk_leng = (int *) malloc(nblocks * sizeof(int) );
+   tmp_blk_leng = (int *) ML_allocate(nblocks * sizeof(int) );
    for ( i = 0; i < nblocks; i++ ) blk_size[i] = 0; 
    for ( i = 0; i < Nrows; i++ )   blk_size[blkinfo[i]]++;
    for ( i = 0; i < nblocks; i++ ) 
@@ -1853,7 +1853,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    for ( i = 0; i < nblocks; i++ ) 
    {
       tmp_blk_leng[i] = blk_size[i] * blk_size[i] + 5;
-      blk_indices[i] = (int *) malloc(tmp_blk_leng[i] * sizeof(int));
+      blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
    }
    for ( i = 0; i < nblocks; i++ ) blk_size[i] = 0;
    for ( i = 0; i < Nrows; i++ ) 
@@ -1869,8 +1869,8 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* ---------------------------------------------------------- */
 
    allocated_space = extNrows;
-   vals = (double *) malloc(allocated_space * sizeof(double));
-   cols = (int *)    malloc(allocated_space * sizeof(int));
+   vals = (double *) ML_allocate(allocated_space * sizeof(double));
+   cols = (int *)    ML_allocate(allocated_space * sizeof(int));
    max_blk_size = 0;
    for ( i = 0; i < nblocks; i++ ) 
    {
@@ -1883,7 +1883,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
          {
             tmp_indices = blk_indices[i];
             tmp_blk_leng[i] = 2 * ( blk_size[i] + rowleng ) + 2;
-            blk_indices[i] = (int *) malloc(tmp_blk_leng[i] * sizeof(int));
+            blk_indices[i] = (int *) ML_allocate(tmp_blk_leng[i] * sizeof(int));
             for (k = 0; k < blk_size[i]; k++) blk_indices[i][k] = tmp_indices[k]; 
             free( tmp_indices );
          }   
@@ -1906,15 +1906,15 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* compute the memory requirements for each block             */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->bmat_ia = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->bmat_ja = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->bmat_aa = (double **) malloc(nblocks * sizeof(double*) );
+   schwarz_ptr->bmat_ia = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->bmat_ja = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->bmat_aa = (double **) ML_allocate(nblocks * sizeof(double*) );
    bmat_ia = schwarz_ptr->bmat_ia;
    bmat_ja = schwarz_ptr->bmat_ja;
    bmat_aa = schwarz_ptr->bmat_aa;
-   schwarz_ptr->aux_bmat_ia = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->aux_bmat_ja = (int **)    malloc(nblocks * sizeof(int*) );
-   schwarz_ptr->aux_bmat_aa = (double **) malloc(nblocks * sizeof(double*) );
+   schwarz_ptr->aux_bmat_ia = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->aux_bmat_ja = (int **)    ML_allocate(nblocks * sizeof(int*) );
+   schwarz_ptr->aux_bmat_aa = (double **) ML_allocate(nblocks * sizeof(double*) );
    aux_bmat_ia = schwarz_ptr->aux_bmat_ia;
    aux_bmat_ja = schwarz_ptr->aux_bmat_ja;
    aux_bmat_aa = schwarz_ptr->aux_bmat_aa;
@@ -1944,12 +1944,12 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
             else              aux_nnz++;
          }
       }
-      bmat_ia[i] = (int *)    malloc( (blk_size[i] + 1) * sizeof(int));
-      bmat_ja[i] = (int *)    malloc( nnz * sizeof(int));
-      bmat_aa[i] = (double *) malloc( nnz * sizeof(double));
-      aux_bmat_ia[i] = (int *)    malloc( (blk_size[i] + 1) * sizeof(int));
-      aux_bmat_ja[i] = (int *)    malloc( aux_nnz * sizeof(int));
-      aux_bmat_aa[i] = (double *) malloc( aux_nnz * sizeof(double));
+      bmat_ia[i] = (int *)    ML_allocate( (blk_size[i] + 1) * sizeof(int));
+      bmat_ja[i] = (int *)    ML_allocate( nnz * sizeof(int));
+      bmat_aa[i] = (double *) ML_allocate( nnz * sizeof(double));
+      aux_bmat_ia[i] = (int *)    ML_allocate( (blk_size[i] + 1) * sizeof(int));
+      aux_bmat_ja[i] = (int *)    ML_allocate( aux_nnz * sizeof(int));
+      aux_bmat_aa[i] = (double *) ML_allocate( aux_nnz * sizeof(double));
    }
 
    /* ---------------------------------------------------------- */
@@ -2008,25 +2008,25 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
    /* call SuperLU to perform decomposition                      */
    /* ---------------------------------------------------------- */
 
-   schwarz_ptr->slu_Amat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->slu_Lmat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->slu_Umat = (SuperMatrix **) malloc(nblocks*sizeof(SuperMatrix*));
-   schwarz_ptr->perm_r   = (int **) malloc(nblocks*sizeof(int*));
-   schwarz_ptr->perm_c   = (int **) malloc(nblocks*sizeof(int*));
-   etree = (int *) malloc( max_blk_size * sizeof(int) );
+   schwarz_ptr->slu_Amat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->slu_Lmat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->slu_Umat = (SuperMatrix **) ML_allocate(nblocks*sizeof(SuperMatrix*));
+   schwarz_ptr->perm_r   = (int **) ML_allocate(nblocks*sizeof(int*));
+   schwarz_ptr->perm_c   = (int **) ML_allocate(nblocks*sizeof(int*));
+   etree = (int *) ML_allocate( max_blk_size * sizeof(int) );
    R     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    C     = (double *) SUPERLU_MALLOC(max_blk_size * sizeof(double));
    ferr  = (double *) SUPERLU_MALLOC(sizeof(double));
    berr  = (double *) SUPERLU_MALLOC(sizeof(double));
-   tsol  = (double *) malloc( max_blk_size * sizeof(double) );
-   trhs  = (double *) malloc( max_blk_size * sizeof(double) );
+   tsol  = (double *) ML_allocate( max_blk_size * sizeof(double) );
+   trhs  = (double *) ML_allocate( max_blk_size * sizeof(double) );
    for ( i = 0; i < max_blk_size; i ++ ) trhs[i] = 0.0;
 
    for ( i = 0; i < nblocks; i ++ )
    {
-      schwarz_ptr->slu_Amat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
-      schwarz_ptr->slu_Lmat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
-      schwarz_ptr->slu_Umat[i] = (SuperMatrix *) malloc(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Amat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Lmat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
+      schwarz_ptr->slu_Umat[i] = (SuperMatrix *) ML_allocate(sizeof(SuperMatrix));
       A = schwarz_ptr->slu_Amat[i];
       L = schwarz_ptr->slu_Lmat[i];
       U = schwarz_ptr->slu_Umat[i];
@@ -2036,8 +2036,8 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
       mat_aa = schwarz_ptr->bmat_aa[i];
       nnz    = mat_ia[nrows];
       dCreate_CompRow_Matrix(A,nrows,nrows,nnz,mat_aa,mat_ja,mat_ia,NR,_D,GE);
-      schwarz_ptr->perm_r[i] = (int *) malloc(nrows*sizeof(int));
-      schwarz_ptr->perm_c[i] = (int *) malloc(2*nrows*sizeof(int));
+      schwarz_ptr->perm_r[i] = (int *) ML_allocate(nrows*sizeof(int));
+      schwarz_ptr->perm_c[i] = (int *) ML_allocate(2*nrows*sizeof(int));
       perm_r = schwarz_ptr->perm_r[i];
       perm_c = schwarz_ptr->perm_c[i];
       permc_spec = 0;
@@ -2143,7 +2143,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
-   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   data->blk_info = (int *) ML_allocate(data->Nrows * sizeof(int));
    if ( blkinfo != NULL && length != 0 )
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];
@@ -2252,7 +2252,7 @@ int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post
    comm = ml->comm;
    ML_Smoother_Create_Schwarz_Data( &data );
    data->Nrows   = Amat->outvec_leng;
-   data->blk_info = (int *) malloc(data->Nrows * sizeof(int));
+   data->blk_info = (int *) ML_allocate(data->Nrows * sizeof(int));
    if ( blkinfo != NULL && length != 0 )
    {
       for ( i = 0; i < length; i++ ) data->blk_info[i] = blkinfo[i];

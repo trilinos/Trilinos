@@ -194,7 +194,7 @@ int ML_CSolve_Set_Label( ML_CSolve *csolve, char *label)
 
    if (csolve->label != NULL) { free(csolve->label); csolve->label = NULL; }
    size = strlen(label) + 1;
-   csolve->label = (char *) malloc(size*sizeof(char));
+   csolve->label = (char *) ML_allocate(size*sizeof(char));
    if (csolve->label == NULL) pr_error("Not enough space in ML_CSolve_Set_Label\n");
    strncpy(csolve->label,label,size);
    return(1);
