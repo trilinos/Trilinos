@@ -279,12 +279,12 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   computeJacobian();
 
   // Create the operator and initial vector
-  AnasaziLOCAMat<double> Amat( params, *this );
-  AnasaziLOCAVec<double> ivec( xVector, blksz );
+  Anasazi::LOCAMat<double> Amat( params, *this );
+  Anasazi::LOCAVec<double> ivec( xVector, blksz );
   ivec.MvRandom();
 
   // Create an instance of the eigenproblem
-  AnasaziEigenproblem<double> LOCAProblem( &Amat, &ivec );
+  Anasazi::Eigenproblem<double> LOCAProblem( &Amat, &ivec );
 
   // Initialize the solver
   Anasazi::BlockArnoldi<double> LOCABlockArnoldi( LOCAProblem, tol, nev, length,
@@ -310,9 +310,9 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
   }
   
   // Obtain the eigenvectors
-  AnasaziLOCAVec<double> evecR( xVector, nev );
+  Anasazi::LOCAVec<double> evecR( xVector, nev );
   LOCABlockArnoldi.getEvecs( evecR );
-  AnasaziLOCAVec<double> evecI( xVector, nev );
+  Anasazi::LOCAVec<double> evecI( xVector, nev );
   LOCABlockArnoldi.getiEvecs( evecI );
 
   // Create some temporary vectors
