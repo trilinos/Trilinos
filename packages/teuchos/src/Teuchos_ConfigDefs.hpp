@@ -322,7 +322,7 @@ const double Teuchos_Underflow = 2.23E-308;
 
 // Make error report silent by defining TEUCHOS_NO_ERROR_REPORTS
 
-#define TEUCHOS_CHK_ERR(a) { int tpetra_err = a; if (tpetra_err != 0)  return(tpetra_err);}
+#define TEUCHOS_CHK_ERR(a) { if (a != 0)  return(a);}
 #define TEUCHOS_CHK_PTR(a) { return(a);}
 #define TEUCHOS_CHK_REF(a) { return(a);}
 const int Teuchos_DefaultTracebackMode = 1; // Default value for traceback behavior

@@ -294,6 +294,14 @@ TAC_ARG_WITH_INCDIRS
 # TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
+# Check to see if array boundschecking has been enabled
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, abc, [Enable array bounds checking], 
+		TEUCHOS_ARRAY_BOUNDSCHECK, no)
+
+
+# ------------------------------------------------------------------------
 # Checks for addons 
 # ------------------------------------------------------------------------
 
@@ -421,12 +429,6 @@ AC_SUBST(TRILINOS_TEMPLATE_OBJS)
 # ------------------------------------------------------------------------
 
 TAC_ARG_CONFIG_EXPAT
-
-# ------------------------------------------------------------------------
-# Check to see if array boundschecking has been enabled
-# ------------------------------------------------------------------------
-
-TAC_ARG_CONFIG_BOUNDSCHECK
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files

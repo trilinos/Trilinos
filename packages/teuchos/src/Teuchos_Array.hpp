@@ -246,7 +246,7 @@ namespace Teuchos
 
   template<class T> inline
   T& Array<T>::operator[](int i) {
-#ifdef TEUCHOS_HAVE_ARRAY_BOUNDSCHECK
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     indexCheckCrash(i);
 #endif
     return data_[i];
@@ -254,7 +254,7 @@ namespace Teuchos
 
   template<class T> inline
   const T& Array<T>::operator[](int i) const {
-#ifdef TEUCHOS_HAVE_ARRAY_BOUNDSCHECK
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     indexCheckCrash(i);
 #endif
     return data_[i];
@@ -263,7 +263,7 @@ namespace Teuchos
   template<class T> inline
   void Array<T>::remove(int i)
   {
-#ifdef TEUCHOS_HAVE_ARRAY_BOUNDSCHECK
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
     indexCheckCrash(i);
 #endif
     for (int j=i+1; j<length(); j++)
@@ -282,7 +282,7 @@ namespace Teuchos
   template<class T> inline
   bool Array<T>::hasBoundsChecking()
   {
-#ifdef TEUCHOS_HAVE_ARRAY_BOUNDSCHECK  
+#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK  
     return true;
 #else
     return false;
@@ -487,5 +487,5 @@ namespace Teuchos
   }
 }
 
-#endif
+#endif // TEUCHOS_ARRAY_H
 

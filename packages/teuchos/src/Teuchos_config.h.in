@@ -155,6 +155,9 @@
 /* Define if want to build teuchos-arprec */
 #undef HAVE_TEUCHOS_ARPREC
 
+/* Define if want to build teuchos-abc */
+#undef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+
 /* Define if want to build teuchos-experimental */
 #undef HAVE_TEUCHOS_EXPERIMENTAL
 
@@ -187,9 +190,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Define if we are using array boundschecking */
-#undef TEUCHOS_HAVE_ARRAY_BOUNDSCHECK
 
 /* Version number of package */
 #undef VERSION
