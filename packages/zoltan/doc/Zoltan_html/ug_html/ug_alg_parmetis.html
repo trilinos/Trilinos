@@ -48,11 +48,11 @@ more details see the ParMETIS documentation. The methods fall into three
 categories:
 <OL>
 <LI>
-Part* - These algorithms perform graph partitioning without consideration
+Part* - Perform graph partitioning without consideration
 of the initial distribution.</LI>
 
 <LI>
-Repart* - Incremental algorithms with small migration cost</LI>
+Repart* - Incremental algorithms with small migration cost.</LI>
 
 <LI>
 Refine* - Refines a given partitioning (balance).&nbsp; Can be applied
@@ -63,10 +63,13 @@ balance and you are willing to spend some time doing migration. Use the
 Repart* methods when you have a reasonably good load balance that you wish
 to update incrementally (for example, in adaptive mesh refinement).
 <BR>&nbsp;
-<BR>The current version ignores the tolerance parameter. We expect that
+<BR>The current version of Zoltan ignores the imbalance tolerance parameter,
+IMBALANCE_TOL, when ParMETIS is used. The reason is that
+the corresponding imbalance parameter is fixed at 0.05 in ParMETIS 2.0. 
+We expect that
 future versions of ParMETIS will allow the user to select the tolerance
-for load imbalance. When this feature&nbsp;&nbsp; becomes available in
-ParMETIS, it will also be supported through Zoltan.
+for load imbalance. When this feature becomes available in
+ParMETIS, it will also be supported through IMBALANCE_TOL in Zoltan.
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
 <TR>

@@ -47,7 +47,7 @@ only the&nbsp; <A HREF="ug_alg_rcb.html#RCB">RCB</A> algorithm.
 
 <HR WIDTH="100%"><B>LB_Point_Assign</B> is used to determine which processor
 a new point should be assigned to. It is only applicable to geometrically
-generated decompositions (currently only RCB). If the parameter <B>RCB_TREE</B>
+generated decompositions (currently only RCB). If the parameter <B>KEEP_CUTS</B>
 is set to TRUE, then the recursive sequence of cuts which define an RCB
 decomposition is saved. Given a new geometric point, the processor which
 owns it can be determined.
@@ -112,7 +112,7 @@ might need to know about an extended geometric object. <B>LB_Box_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
 only RCB is supported), and given an axis-aligned box around the geometric
 object, <B>LB_Box_Assign</B> determines which processors own geometry that
-intersects the box. To use this routine, the parameter <B>RCB_TREE</B>
+intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
 must be set to TRUE when the RCB decomposition is generated. This parameter
 will cause the recursive sequence of geometric cuts to be saved, which
 is necessary for <B>LB_Box_Assign</B> to do its job.
