@@ -352,9 +352,16 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         elements[iplace].invperm_value = -1;
         elements[iplace].nadj = 0;
         elements[iplace].adj_len = 0;
-        /* weights are 1 for now */
-        for (i = 0; i < MAX_CPU_WGTS; i++)
-          elements[iplace].cpu_wgt[i] = 1.0;
+        /* first weights are all 1 for now */
+        elements[iplace].cpu_wgt[0] = 1.0;
+        if (MAX_CPU_WGTS>1){
+          /* second weights will be set later */
+          elements[iplace].cpu_wgt[1] = 0.0;
+          /* make artificial data for more multi-weights */
+          for (i = 2; i < MAX_CPU_WGTS; i++)
+            elements[iplace].cpu_wgt[i] = elements[iplace].my_part +
+              0.5*((elements[iplace].globalID)%i);
+        }
         elements[iplace].mem_wgt = 1.0;
 
         /* allocate space for the connect list and the coordinates */
@@ -444,6 +451,18 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
     iblk = elements[ielem].elem_blk;
     for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
       elements[ielem].connect[inode] = nmap[elements[ielem].connect[inode]];
+    }
+  }
+
+  /*
+   * let cpu_wgt[1] be the number of sides (surfaces) not
+   * connected to other elements. (test case for multi-weight
+   * load balancing).
+   */
+  if (MAX_CPU_WGTS>1){
+    for (ielem = 0; ielem < mesh->num_elems; ielem++) {
+      /* elements[ielem].cpu_wgt[1] = elements[ielem].adj_len - elements[ielem].nadj */
+      elements[ielem].cpu_wgt[1] = elements[ielem].adj_len - elements[ielem].nadj - 1; /* EBEB Strangely, nadj is one less than expected so subtract one. */
     }
   }
 
