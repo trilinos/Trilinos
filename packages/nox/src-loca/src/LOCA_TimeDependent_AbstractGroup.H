@@ -82,6 +82,27 @@ namespace LOCA {
       //! Is mass matrix valid
       virtual bool isMassMatrix() const = 0;
 
+      virtual NOX::Abstract::Group::ReturnType
+      computeShiftedMatrix(const double& shift)
+      {  cout << "Error:  No implementation of computeShiftedMatrix in LOCA::TimeDependent::AbstractGroup" << endl;
+         return NOX::Abstract::Group::BadDependency;};
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrix(const NOX::Abstract::Vector& input,
+                         NOX::Abstract::Vector& result,
+                         const double& shift, bool massMatrix) const
+      { cout << "Error:  No implementation of applyShiftedMatrix in LOCA::TimeDependent::AbstractGroup" << endl;
+        return NOX::Abstract::Group::BadDependency;};
+
+      virtual NOX::Abstract::Group::ReturnType
+      applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
+                                NOX::Abstract::Vector& result,
+                                const double& shift, bool massMatrix,
+                                NOX::Parameter::List& params) const
+      { cout << "Error:  No implementation of applyShiftedMatrix in LOCA::TimeDependent::AbstractGroup" << endl;
+        return NOX::Abstract::Group::BadDependency;};
+
+
       //@}
 
     };
