@@ -818,50 +818,49 @@ ComputePreconditioner(const bool CheckPreconditioner)
       ML_Repartition_Activate(ml_edges_);
       ML_Repartition_Activate(ml_nodes_);
 
+      double minmax = List_.get(Prefix_ + "repartition: node min max ratio", 1.1);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
+      int minperproc = List_.get(Prefix_ + "repartition: node min per proc", 20);
+      ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
+
+      minmax = List_.get(Prefix_ + "repartition: edge min max ratio", 1.1);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_edges_,minmax);
+      minperproc = List_.get(Prefix_ + "repartition: edge min per proc", 20);
+      ML_Repartition_Set_MinPerProc(ml_edges_,minperproc);
+
       if (Repartitioner == "Zoltan") {
         // create aggregate structure necessary for repartitioning via Zoltan
         // (which requires coordinates)
         ML_Aggregate_Create(&agg_edge_);
 
-        //nodes
-
         // This copies the coordinates if the aggregation scheme
         // of at least one level is Zoltan. Coordinates will be
         // projected for ALL levels independently of the 
         // aggregation scheme.
-        double * coord = List_.get(Prefix_ + "repartition: Zoltan node coordinates",
-                       (double *)0);
+        double * coord = List_.get(Prefix_ +
+               "repartition: Zoltan node coordinates", (double *)0);
         ML_Aggregate_Set_NodalCoordinates(ml_nodes_, agg_, coord);
         int NumDimensions = List_.get(Prefix_ +
-                             "repartition: Zoltan dimensions", 0);
+               "repartition: Zoltan dimensions", 0);
         ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
 
-        double minmax = List_.get(Prefix_ + "repartition: node min max ratio", 1.1);
-        int minperproc = List_.get(Prefix_ + "repartition: node min per proc", 20);
-        ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
-        ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
         ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
 
         //edges
         coord = List_.get(Prefix_ +
-                          "repartition: Zoltan edge coordinates", (double *)0);
+               "repartition: Zoltan edge coordinates", (double *)0);
         //FIXME JJH this would be a bug if increasing is ever supported
         agg_edge_->begin_level = MaxCreationLevels-1; 
         ML_Aggregate_Set_NodalCoordinates(ml_edges_, agg_edge_, coord);
         ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
-        minmax = List_.get(Prefix_ + "repartition: edge min max ratio", 1.1);
-        ML_Repartition_Set_LargestMinMaxRatio(ml_edges_,minmax);
-        minperproc = List_.get(Prefix_ + "repartition: edge min per proc", 20);
-        ML_Repartition_Set_MinPerProc(ml_edges_,minperproc);
         ML_Repartition_Set_Partitioner(ml_edges_,ML_USEZOLTAN);
       }
-      else if (Repartitioner == "ParMETIS") {
-      }
-      else if (Repartitioner == "Jostle") {
-      }
-      else {
-        if(Comm().MyPID() == 0) cout << "Unrecognized partitioner." << endl;
-      }
+      else if (Repartitioner == "ParMETIS")
+        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEPARMETIS);
+      else if (Repartitioner == "Jostle")
+        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEJOSTLE);
+      else
+        if (Comm().MyPID() == 0) pr_error("Unrecognized partitioner: %s.", Repartitioner);
     } //if (ShouldRepartition)
   } //if( SolvingMaxwell_ ...
   
@@ -1141,18 +1140,13 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* Now cycling over all levels                                            */
   /* ********************************************************************** */
 
-  if (SolvingMaxwell_ == false) {
-    ML_CHK_ERR(SetSmoothers());
-    // this below *must* to be here and not before the construction of the smoothers
-    if ((agg_)->aggr_info != NULL) {
-      for (int i = 0 ; i < NumLevels_ ; ++i) {
-        if ((agg_)->aggr_info[i] != NULL) 
-          ML_memory_free((void **)&((agg_)->aggr_info[i]));
-      } 
-    }
-  }
-  else {
-    ML_CHK_ERR(SetSmoothersMaxwell());
+  ML_CHK_ERR(SetSmoothers());
+  // this below *must* to be here and not before the construction of the smoothers
+  if ((agg_)->aggr_info != NULL) {
+    for (int i = 0 ; i < NumLevels_ ; ++i) {
+      if ((agg_)->aggr_info[i] != NULL) 
+        ML_memory_free((void **)&((agg_)->aggr_info[i]));
+    } 
   }
 
   if (AnalyzeMemory_) {
