@@ -6,15 +6,9 @@
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
-<<<<<<< phg_match.c
  *    $Author$
  *    $Date$
  *    $Revision$
-=======
- *    $Author$
- *    $Date$
- *    $Revision$
->>>>>>> 1.39
  ****************************************************************************/
 
  
@@ -248,7 +242,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
              
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, lno, loop, vertex, *psums, *tsums, *order;
+  int i, j, lno, loop, vertex, *psums, *tsums, *order, pincnt;
   int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
   int ncandidates, nloop;
   int *select, pselect;
@@ -260,7 +254,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   int *displs, *each_size, *each_count, total_count;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
-    
+  
+Zoltan_HG_Srand (123456);
+  
   nloop = hg->dist_x[hgc->nProc_x] > 100 ? 15 : 2;
   ncandidates = MAX (1, hg->nVtx / (2 * nloop)) ; /* match impacts 2 vertices */
        
@@ -280,12 +276,21 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
    * match[i] = j & match [j] = i.  NOTE: a match to an off processor vertex is
    * indicated my a negative number, -(gno+1), which must use global numbers
    * (gno's).        */
+  for (i = 0; i < hg->nVtx; i++)
+    match[i] = i;   
+   
   /* order[] is used to impliemnet alternative vertex selection algorithms:
    * natural (lno), random, weight order, vertex size, etc. */
   for (i = 0; i < hg->nVtx; i++)
-     order[i] = match[i] = i;
-     
-
+     order[i] = i;
+         
+  for (i = 0; i < hg->nVtx; i++)  {
+    lno = Zoltan_HG_Rand () % hg->nVtx;
+    /* swap current vertex with randomly selected vertex */
+    vertex     = order[lno];
+    order[lno] = order[i];
+    order[i]   = vertex;
+    }
 
   if (hgc->nProc_x > 0 && (
       !(select    = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
@@ -308,6 +313,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
+  pincnt = 3 * hg->nPins;   
   if (total_count > 0 &&  (
       !(m_vindex = (int*) ZOLTAN_MALLOC ((total_count+1) * sizeof(int)))
    || !(m_gno    = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
@@ -323,7 +329,6 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
-     
                         
   /* Loop processing ncandidates vertices per column each pass. Each loop has 4 phases:
    * Phase 1: send ncandidates vertices for global matching - horizontal communication
@@ -399,8 +404,18 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        m_vindex[i] = pins;                
        m_gno   [i] = *ip++;
        edgecount   = *ip++;
+       
+       if (pincnt < pins + edgecount)  {
+         m_vedge = (int*)ZOLTAN_REALLOC(m_vedge, (pins+edgecount) * sizeof(int));
+         if (!m_vedge)  {
+           ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+           return ZOLTAN_MEMERR;
+         }     
+         pincnt += edgecount;
+       }
+        
        while (edgecount-- > 0)
-         m_vedge[pins++] = *ip++;           
+         m_vedge[pins++] = *ip++;    
      } 
      m_vindex[i] = pins;
           
@@ -418,18 +433,18 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        /* if local vtx, remove self inner product which is a false maximum */
        if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)
          psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
-       
+                  
        /* Want to use sparse communication with explicit summing later but
           for now, all procs in my column have same complete inner products */      
-       MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);             
-                            
+       MPI_Allreduce(psums, tsums, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);
+          
        /* each proc computes best, all rows in a column compute same answer */        
        m_bestsum [vertex] = -1;
        m_bestv   [vertex] =  0;
        for (i = 0; i < hg->nVtx; i++)
          if (tsums[i] > m_bestsum[vertex]  &&  cmatch[i] == i)  {
-           m_bestsum [vertex] = tsums[i];
-           m_bestv   [vertex] = i;
+           m_bestsum[vertex] = tsums[i];
+           m_bestv  [vertex] = i;
          }    
        cmatch [m_bestv[vertex]] = -1;      /* pending match */       
      }
