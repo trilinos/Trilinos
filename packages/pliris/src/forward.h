@@ -28,4 +28,18 @@
 // @HEADER
 */
 
+#ifndef __FORWARDH__
+#define __FORWARDH__
+
+#include "defines.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void forward(DATA_TYPE *, DATA_TYPE *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 
