@@ -141,6 +141,7 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   rowptr_new         = (int *) ML_allocate( (Nrows_new+1)*sizeof(int));
   if (rowptr_new == NULL) {
      fprintf(stderr,"Out of space in ML_exchange_rows\n");
+     printf("   tried to allocate %d ints for rowptr_new\n",Nrows_new+1);
      exit(1);
   }
 
@@ -154,7 +155,9 @@ void ML_exchange_rows(ML_Operator *Pmatrix, ML_Operator **Pappended,
   dtemp  = (double *) ML_allocate((Nrows+Nghost + 1)*sizeof(double));
   if (dtemp == NULL) 
   {
-     printf("out of space in exch_row\n");  exit(1);
+     printf("out of space in ML_exchange_rows\n");
+     printf("   tried to allocate %d + %d doubles for dtemp\n",Nrows,Nghost);
+     exit(1);
   }
    
   for (j = 0; j < Nrows+Nghost + 1; j++) dtemp[j] = -1.;
@@ -251,7 +254,8 @@ example (with nonutilized ghost variables still works
   dbuff    = (double *) ML_allocate( allocated_space*sizeof(double));
   if (dbuff == NULL) 
   {
-     printf("out of space in exch rows\n");
+     printf("out of space in ML_exchange_rows\n");
+     printf("   tried to allocate %d doubles for dbuff\n",allocated_space);
      exit(1);
   }
 
@@ -273,7 +277,8 @@ example (with nonutilized ghost variables still works
   neighbor    = (int *) ML_allocate(Nneighbors*sizeof(int));
   if ((Nneighbors != 0) && (neighbor == NULL)) 
   {
-     printf("Not enough space in exch_row\n");
+     printf("Not enough space in ML_exchange_rows\n");
+     printf("   tried to allocate %d ints for neighbor\n",Nneighbors);
      exit(1);
   }
   for (i = 0; i < Nneighbors; i++) 
@@ -392,7 +397,9 @@ example (with nonutilized ghost variables still works
      newmap = (int *) ML_allocate(((*Pappended)->getrow->Nrows+1)*sizeof(int));
      if (newmap == NULL) 
      {
-        printf("Now enough space for remap\n");
+        printf("Not enough space in ML_exchange_rows for remap\n");
+        printf("   tried to allocate %d ints for newmap\n",
+               (*Pappended)->getrow->Nrows+1);
         exit(1);
      }
      for (i = 0; i < Nrows; i++) newmap[i] = -1;
@@ -1336,6 +1343,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
       count  += send_lengths[i];
       count2 += rcv_lengths[i];
    }
+
    ML_free(neighbors);
    ML_free(send_lengths);
    ML_free(rcv_lengths);

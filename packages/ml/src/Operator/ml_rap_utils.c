@@ -116,19 +116,27 @@ void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
 #endif
 
    if (RAP->getrow->ML_id != ML_ID_MATRIX) {
-      printf("ML_rap_check: RAP is the wrong object. \n");
+      if (ml->comm->ML_mypid == 0)
+         printf("ML_rap_check: RAP is the wrong object (=%d). \n",
+                         RAP->getrow->ML_id);
       exit(1);
    }
    if (R->getrow->ML_id != ML_ID_MATRIX) {
-      printf("ML_rap_check: R is the wrong object. \n");
+      if (ml->comm->ML_mypid == 0)
+        printf("ML_rap_check: R is the wrong object (=%d). \n",
+                         RAP->getrow->ML_id);
       exit(1);
    }
    if (P->getrow->ML_id != ML_ID_MATRIX) {
-      printf("ML_rap_check: P is the wrong object. \n");
+      if (ml->comm->ML_mypid == 0)
+        printf("ML_rap_check: P is the wrong object (=%d). \n",
+                         RAP->getrow->ML_id);
       exit(1);
    }
    if (A->getrow->ML_id != ML_ID_MATRIX) {
-      printf("ML_rap_check: A is the wrong object. \n");
+      if (ml->comm->ML_mypid == 0)
+        printf("ML_rap_check: A is the wrong object (=%d). \n",
+                         RAP->getrow->ML_id);
       exit(1);
    }
 
