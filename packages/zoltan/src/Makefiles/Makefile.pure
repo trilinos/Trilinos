@@ -29,7 +29,7 @@ AR			= ar r
 
 # use CFLAGS = $(DBG_FLAGS) with purify.
 CC			= purify -follow-child-processes=yes \
-			  -cache-dir=/tmp/purify gcc
+			  -cache-dir=/Net/proj/zoltan/tmp/purify gcc
 
 INCLUDE_PATH		= -I/Net/local/lang/SC3.0.1/include \
 			  -I/Net/local/lang/SC3.0.1/ansi_include \
