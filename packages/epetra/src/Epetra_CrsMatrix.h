@@ -627,13 +627,13 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	//! If matrix indices are packed into single array (done in OptimizeStorage()) return true, otherwise false.
 	bool IndicesAreContiguous() const {return(Graph_->IndicesAreContiguous());};
 	
-	//! If matrix is lower triangular, this query returns true, otherwise it returns false.
+	//! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
 	bool LowerTriangular() const {return(Graph_->LowerTriangular());};
 	
-	//! If matrix is upper triangular, this query returns true, otherwise it returns false.
+	//! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
 	bool UpperTriangular() const {return(Graph_->UpperTriangular());};
 	
-	//! If matrix has no diagonal entries, this query returns true, otherwise it returns false.
+	//! If matrix has no diagonal entries in global index space, this query returns true, otherwise it returns false.
 	bool NoDiagonal() const {return(Graph_->NoDiagonal());};
 	
   //@}
@@ -661,7 +661,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	//! Returns the number of global matrix columns.
 	int NumGlobalCols() const {return(Graph_->NumGlobalCols());};
 	
-	//! Returns the number of global nonzero diagonal entries.
+	//! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
 	int NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
 	
 	//! Returns the number of nonzero entries in the calling processor's portion of the matrix.
@@ -673,7 +673,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	//! Returns the number of matrix columns owned by the calling processor.
 	int NumMyCols() const {return(Graph_->NumMyCols());};
 	
-	//! Returns the number of local nonzero diagonal entries.
+	//! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
 	int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
 	
 	//! Returns the current number of nonzero entries in specified global row on this processor.

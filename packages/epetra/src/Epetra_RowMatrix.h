@@ -212,7 +212,7 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     //! Returns the number of global matrix columns.
     virtual int NumGlobalCols() const= 0;
 
-    //! Returns the number of global nonzero diagonal entries.
+    //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
     virtual int NumGlobalDiagonals() const = 0;
     
     //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
@@ -224,13 +224,13 @@ class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_Sr
     //! Returns the number of matrix columns owned by the calling processor.
     virtual int NumMyCols() const = 0;
 
-    //! Returns the number of local nonzero diagonal entries.
+    //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
     virtual int NumMyDiagonals() const = 0;
 
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
     virtual bool LowerTriangular() const = 0;
 
-    //! If matrix is upper triangular, this query returns true, otherwise it returns false.
+    //! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
     virtual bool UpperTriangular() const = 0;
 
     //! Returns the Epetra_Map object associated with the rows of this matrix.

@@ -763,13 +763,13 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     //! If matrix indices are packed into single array (done in OptimizeStorage()) return true, otherwise false.
     bool IndicesAreContiguous() const {return(Graph_->IndicesAreContiguous());};
 
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
     bool LowerTriangular() const {return(Graph_->LowerTriangular());};
 
-    //! If matrix is upper triangular, this query returns true, otherwise it returns false.
+    //! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
     bool UpperTriangular() const {return(Graph_->UpperTriangular());};
 
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    //! If matrix has no diagonal entries based on global row/column index comparisons, this query returns true, otherwise it returns false.
     bool NoDiagonal() const {return(Graph_->NoDiagonal());};
 
   //@}
@@ -827,10 +827,10 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the number of nonzero block entries in the calling processor's portion of the matrix.
     int NumMyBlockEntries() const {return(Graph_->NumMyEntries());};
 
-    //! Returns the number of local nonzero block diagonal entries.
+    //! Returns the number of local nonzero block diagonal entries, based on global row/column index comparisons.
     int NumMyBlockDiagonals() const {return(Graph_->NumMyBlockDiagonals());};
     
-    //! Returns the number of local nonzero diagonal entries.
+    //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
     int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
     
     //! Returns the number of global Block matrix rows.
@@ -842,10 +842,10 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     //! Returns the number of nonzero block entries in the global matrix.
     int NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
     
-    //! Returns the number of global nonzero block diagonal entries.
+    //! Returns the number of global nonzero block diagonal entries, based on global row/column index comparisions.
     int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
     
-    //! Returns the number of global nonzero diagonal entries.
+    //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisions.
     int NumGlobalDiagonals() const {return(Graph_->NumGlobalDiagonals());};
 
     //! Returns the current number of nonzero Block entries in specified global row on this processor.

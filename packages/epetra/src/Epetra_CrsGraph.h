@@ -333,13 +333,13 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	//! If column indices are in local range, this query returns true, otherwise it returns false.
 	bool IndicesAreLocal() const {return(CrsGraphData_->IndicesAreLocal_);};
 	
-	//! If graph is lower triangular, this query returns true, otherwise it returns false.
+	//! If graph is lower triangular in local index space, this query returns true, otherwise it returns false.
 	bool LowerTriangular() const {return(CrsGraphData_->LowerTriangular_);};
 	
-	//! If graph is upper triangular, this query returns true, otherwise it returns false.
+	//! If graph is upper triangular in local index space, this query returns true, otherwise it returns false.
 	bool UpperTriangular() const {return(CrsGraphData_->UpperTriangular_);};
 	
-	//! If graph has no diagonal entries, this query returns true, otherwise it returns false.
+	//! If graph has no diagonal entries in global index space, this query returns true, otherwise it returns false.
 	bool NoDiagonal() const {return(CrsGraphData_->NoDiagonal_);};
 	
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
@@ -370,10 +370,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	//! Returns the number of indices in the global graph.
 	int NumGlobalNonzeros() const {return(CrsGraphData_->NumGlobalNonzeros_);};
 	
-	//! Returns the number of diagonal entries in the global graph.
+	//! Returns the number of diagonal entries in the global graph, based on global row/column index comparisons.
 	int NumGlobalDiagonals() const {return(CrsGraphData_->NumGlobalDiagonals_);};
 	
-	//! Returns the number of diagonal entries in the local graph.
+	//! Returns the number of diagonal entries in the local graph, based on global row/column index comparisons.
 	int NumMyDiagonals() const {return(CrsGraphData_->NumMyDiagonals_);};
 	
 	//! Returns the number of block matrix rows on this processor.
@@ -388,10 +388,10 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	//! Returns the number of Block matrix columns in global matrix.
 	int NumGlobalBlockCols() const {return(CrsGraphData_->NumGlobalBlockCols_);};
 	
-	//! Returns the number of Block diagonal entries in the local graph.
+	//! Returns the number of Block diagonal entries in the local graph, based on global row/column index comparisons.
 	int NumMyBlockDiagonals() const {return(CrsGraphData_->NumMyBlockDiagonals_);};
 	
-	//! Returns the number of Block diagonal entries in the global graph.
+	//! Returns the number of Block diagonal entries in the global graph, based on global row/column index comparisons.
 	int NumGlobalBlockDiagonals() const {return(CrsGraphData_->NumGlobalBlockDiagonals_);};
 	
 	//! Returns the number of entries in the global graph.
