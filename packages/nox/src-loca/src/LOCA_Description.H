@@ -243,11 +243,19 @@ discuss the additional steps required to use %LOCA.
 
 \section loca_user_info_step_1 Step 1: Download, Configure, Compile, and Install LOCA
 
-%LOCA is part of %NOX, so by downloading %NOX you have %LOCA.  To enable %LOCA 
+%LOCA is part of %NOX, so by downloading %NOX you have %LOCA.  Note that %LOCA 
+is dependent on some Trilinos packages (namely Teuchos), and greatly benefits
+from others (in particular, Anasazi).  Therefore %LOCA can only be configured
+and built inside of Trilinos.  To enable %LOCA 
 during configuration and compilation, supply the --enable-loca configuration 
 option.  %LOCA %LAPACK and %Epetra support and examples are automatically 
-enabled if they are enabled in %NOX (see \ref nox_configuration_options).  
-Typing "make" and "make install" in the top-level %NOX directory then
+enabled if they are enabled in %NOX (see \ref nox_configuration_options). In
+addition, Trilinos must be configured with --enable-teuchos, and if %LAPACK
+support is enabled, --enable-teuchos-complex.  %LOCA is capable of using the 
+Anasazi eigensolver to compute eigenvalues/eigenvectors at each continuation
+step, and this can be enabled by adding the --enable-anasazi and 
+--with-loca-anasazi configure flags. See \ref nox_configuration_options for
+other available configure options.  Typing "make" and "make install" in the top-level %NOX directory will then
 compile and install %LOCA as well as %NOX.
 
 \section loca_user_info_step_2 Step 2: Create concrete implementations of the LOCA AbstractGroup classes
