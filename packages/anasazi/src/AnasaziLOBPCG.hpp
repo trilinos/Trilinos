@@ -506,7 +506,7 @@ namespace Anasazi {
 	  for (i=0; i<_blockSize-1; i++)
 	    index[i] = i+1;
 	  Teuchos::RefCountPtr<MV> Xinit = MVT::CloneView( *X, index );
-	  Xinit->Random();
+	  MVT::MvRandom( *Xinit );
 	  nFound = _blockSize - 1;
 	} // if (_blockSize == 1)
 	reStart = true;
