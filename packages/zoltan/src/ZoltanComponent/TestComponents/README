@@ -1,0 +1,22 @@
+This directory (TestSuite) will contain components which will be used
+to run the same set of tests that Zoltan has in ../Zoltan/test. 
+The general architecture is 
+		_________________________
+_____________  |      _____________      !  ___________
+!            !-|     !             !     !--!          !
+!   Driver   !-------! Partitioner !--------! Mesh     !
+!	     !       !             !        !          !
+-------------        --------------         -----------
+
+The Mesh will contain the mesh representation and will liberally
+use the code in ../Zoltan/driver and ../Zoltan/ch since the 
+problems in ../Zoltan/test have meshes stored in Chaco & Nemesis 
+formats which i will not bother to learn. This dependence on 
+Zoltan code is entirely a function of having to use Chaco and 
+Nemesis-format meshes; if you have your own mesh, write a Mesh
+component of your own and be free.
+
+The Driver too has ../Zoltan/driver dependencies since it reads in a 
+command file to determine some Zoltan-specific parameters. It also
+sets this cmd file name on Mesh, so that Mesh can get access to some
+parallel i/o info, again needed for chaco or nemesis file readers.
