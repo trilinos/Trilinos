@@ -462,8 +462,8 @@ int  BuildMultiVectorTests (Epetra_MultiVector & C, const double alpha,
   for (i=0; i< A.NumVectors(); i++) 
     {
       double ip1 = (double) i+1;
-      normw_A[i] = sqrt(ip1);
-      for (j=0; j<A_nrows; j++) Weightsp[i][j] = ip1*Ap[i][j];
+      normw_A[i] = ip1;
+      for (j=0; j<A_nrows; j++) Weightsp[i][j] = Ap[i][j]/ip1;
     }
   
 

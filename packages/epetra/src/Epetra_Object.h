@@ -90,10 +90,15 @@ using namespace std;
 #define EPETRA_MAX(x,y) (( (x) > (y) ) ? x : y)     /* max function  */
 #define EPETRA_MIN(x,y) (( (x) < (y) ) ? x : y)     /* min function  */
 #define EPETRA_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
+
+
 const double Epetra_MinDouble = 1.0E-100;
 const double Epetra_MaxDouble = 1.0E+100;
 const double Epetra_Overflow = 1.79E308; // Used to test if equilibration should be done.
 const double Epetra_Underflow = 2.23E-308;
+
+#undef EPETRA_ANSI_CPP // Do not use ANSI/ISO C++ (curently just checked for I/O functions)
+const bool Epetra_FormatStdout = true; // Set true if the ostream << operator should format output
 
 // Delete any previous definition of EPETRA_NO_ERROR_REPORTS
 
@@ -116,26 +121,30 @@ const double Epetra_Underflow = 2.23E-308;
 #else
 
 
-// Great little macro obtained from Alan Williams
+// Great little macro obtained from Alan Williams (modified for dynamic switching on/off)
 
-#define EPETRA_CHK_ERR(a) { { int epetra_err = a; if (epetra_err != 0) { \
+const int ConstDefaultTracebackMode =2; // Default value for traceback behavior
+
+#define EPETRA_CHK_ERR(a) { { int epetra_err = a; \
+                              if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
+                                  (epetra_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
                       cerr << "Epetra ERROR " << epetra_err << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; \
-                      return(epetra_err);  } }\
+                           << __FILE__ << ", line " << __LINE__ << endl; }\
+                      if (epetra_err !=0) return(epetra_err);  }\
                    }
 
 // Extension of same macro for pointer, returns zero if bad
 
-#define EPETRA_CHK_PTR(a) { if (a == 0) { \
+#define EPETRA_CHK_PTR(a) { if (a == 0 && Epetra_Object::GetTracebackMode() > 0) { \
                       cerr << "Epetra returning zero pointer " << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; } \
                       return(a); \
                    }
 // Extension of same macro for reference, returns a default reference
 
-#define EPETRA_CHK_REF(a) { \
+#define EPETRA_CHK_REF(a) { if (Epetra_Object::GetTracebackMode() > 0) {\
                       cerr << "Epetra returning default reference " << ", " \
-                           << __FILE__ << ", line " << __LINE__ << endl; \
+                           << __FILE__ << ", line " << __LINE__ << endl; } \
                       return(a); \
                    }
 #endif
@@ -153,21 +162,31 @@ const double Epetra_Underflow = 2.23E-308;
 class Epetra_Object {
     
   public:
+  //@{ \name Constructors/destructor.
   //! Epetra_Object Constructor.
-  /*! Creates a Epetra_Object instance.
+  /*! Epetra_Object is the primary base class in Epetra.  All Epetra class
+      are derived from it, directly or indirectly.  This class is seldom
+      used explictly.
   */
-  Epetra_Object();
+  Epetra_Object(int DefaultTracebackMode = ConstDefaultTracebackMode);
 
   //! Epetra_Object Constructor.
   /*! Creates a Epetra_Object with the given label.
   */
-  Epetra_Object(const char * const Label);
+  Epetra_Object(const char * const Label, int DefaultTracebackMode = ConstDefaultTracebackMode);
 
   //! Epetra_Object Copy Constructor.
   /*! Makes an exact copy of an existing Epetra_Object instance.
   */
   Epetra_Object(const Epetra_Object& Object);
 
+  //! Epetra_Object Destructor.
+  /*! Completely deletes a Epetra_Object object.  
+  */
+  virtual ~Epetra_Object();
+  //@}
+  
+  //@{ \name Attribute set/get methods.
 
   //! Epetra_Object Label definition using char *.
   /*! Defines the label used to describe the \e this object.  
@@ -179,17 +198,43 @@ class Epetra_Object {
   */
   virtual char * Label() const;
 
+  //! Set the value of the Epetra_Object error traceback report mode.
+  /*! Sets the integer error traceback behavior.  
+      TracebackMode controls whether or not traceback information is printed when run time 
+      integer errors are detected:
+      <= 0 - No information report
+       = 1 - Fatal (negative) values are reported
+      >= 2 - All values (except zero) reported.
+
+      Default is set to 1.
+  */
+  static void SetTracebackMode(int TracebackModeValue);
+
+  //! Get the value of the Epetra_Object error report mode.
+  static int GetTracebackMode();
+  //@}
+
+  //@{ \name Miscellaneous
+
+  //! Print object to an output stream
   //! Print method
   virtual void Print(ostream & os) const;
 
   //! Error reporting method
   virtual int ReportError(const string Message, int ErrorCode) const;
+  //@}
 
+  
+// TracebackMode controls how much traceback information is printed when run time 
+// integer errors are detected:
+// = 0 - No information report
+// = 1 - Fatal (negative) values are reported
+// = 2 - All values (except zero) reported.
 
-  //! Epetra_Object Destructor.
-  /*! Completely deletes a Epetra_Object object.  
-  */
-  virtual ~Epetra_Object();
+// Default is set to 2.  Can be set to different value using SetTracebackMode() method in
+// Epetra_Object class
+  static int TracebackMode;
+
 
  protected:
   string toString(const int& x) const {
@@ -208,13 +253,34 @@ class Epetra_Object {
  private:
 
   char * Label_;
-  
-};
 
+};
 inline ostream& operator<<(ostream& os, const Epetra_Object& obj)
 {
-  os << obj.Label();
-  obj.Print(os);
+  if (Epetra_FormatStdout) {
+#ifdef EPETRA_ANSI_CPP
+    const ios_base::fmtflags  olda = os.setf(ios::right,ios::adjustfield);
+    const ios_base::fmtflags  oldf = os.setf(ios::scientific,ios::floatfield);
+    const int                 oldp = os.precision(12);
+#else
+    long olda = os.setf(ios::right,ios::adjustfield);
+    long oldf = os.setf(ios::scientific,ios::floatfield);
+    int oldp = os.precision(12);
+#endif
+
+    os << obj.Label();
+    obj.Print(os);
+
+    os.setf(olda,ios::adjustfield);
+    os.setf(oldf,ios::floatfield);
+    os.precision(oldp);
+  }
+  else {
+
+    os << obj.Label();
+    obj.Print(os);
+  }
+  
   return os;
 }
 

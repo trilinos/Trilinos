@@ -272,7 +272,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     //! If graph is upper triangular, this query returns true, otherwise it returns false.
     bool UpperTriangular() const {return(UpperTriangular_);};
 
-    //! If graph is lower triangular, this query returns true, otherwise it returns false.
+    //! If graph has no diagonal entries, this query returns true, otherwise it returns false.
     bool NoDiagonal() const {return(NoDiagonal_);};
 
     //! Returns true of GID is owned by the calling processor, otherwise it returns false.

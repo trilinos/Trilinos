@@ -480,7 +480,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
 
   if (GlobalConstantsComputed()) return(0);
 
-  int * tempvec = new int[6]; // Temp space
+  int * tempvec = new int[8]; // Temp space
 
 
   NumMyEntries_ = 0; // Compute Number of Nonzero entries and max
@@ -505,6 +505,7 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
 
     int RowElementSize = RowMap().MaxElementSize();
     int ColElementSize = RowElementSize;
+    NumGlobalDiagonals_ = tempvec[3] * RowElementSize;
     NumMyNonzeros_ = NumMyEntries_ * RowElementSize * ColElementSize;
     NumGlobalNonzeros_ = NumGlobalEntries_ * RowElementSize * ColElementSize;
     MaxNumNonzeros_ = MaxNumIndices_ * RowElementSize * ColElementSize;
@@ -540,23 +541,28 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
     
     tempvec[0] = NumMyEntries_;
     tempvec[1] = NumMyBlockDiagonals_;
-    tempvec[2] = NumMyNonzeros_;
+    tempvec[2] = NumMyDiagonals_;
+    tempvec[3] = NumMyNonzeros_;
     
-    Comm().SumAll(tempvec, tempvec+3, 3);
+    Comm().SumAll(tempvec, tempvec+4, 4);
     
-    NumGlobalEntries_ = tempvec[3];
-    NumGlobalBlockDiagonals_ = tempvec[4];
-    NumGlobalNonzeros_ = tempvec[5];
+    NumGlobalEntries_ = tempvec[4];
+    NumGlobalBlockDiagonals_ = tempvec[5];
+    NumGlobalDiagonals_ = tempvec[6];
+    NumGlobalNonzeros_ = tempvec[7];
 
     tempvec[0] = MaxNumIndices_;
     tempvec[1] = MaxNumNonzeros_;
 
-    Comm().SumAll(tempvec, tempvec+2, 2);
+    Comm().MaxAll(tempvec, tempvec+2, 2);
 
     GlobalMaxNumIndices_ = tempvec[2];
     GlobalMaxNumNonzeros_ = tempvec[3];
   }
   
+  NumGlobalRows_ = RangeMap_->NumGlobalEquations();
+  NumGlobalCols_ = DomainMap_->NumGlobalEquations();
+
   GlobalConstantsComputed_ = true;
 
   delete [] tempvec;
@@ -1178,9 +1184,6 @@ void Epetra_CrsGraph::Print (ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      long olda = os.setf(ios::right,ios::adjustfield);
-      long oldf = os.setf(ios::scientific,ios::floatfield);
-      int oldp = os.precision(12);
       if (MyPID==0) {
 	os <<  "\nNumber of Global Block Rows  = "; os << NumGlobalBlockRows(); os << endl;
 	os <<    "Number of Global Block Cols  = "; os << NumGlobalBlockCols(); os << endl;
@@ -1241,11 +1244,6 @@ void Epetra_CrsGraph::Print (ostream& os) const {
       
       os << flush;
       
-      // Reset os flags
-      
-      os.setf(olda,ios::adjustfield);
-      os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
     }
     // Do a few global ops to give I/O a chance to complete
     RowMap().Comm().Barrier();

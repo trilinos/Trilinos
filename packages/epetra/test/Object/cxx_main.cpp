@@ -49,6 +49,13 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << "This should say \"New name for Epetra_Object\": " << obj <<endl;
 
+  assert(obj.GetTracebackMode()==ConstDefaultTracebackMode);
+  if (verbose) cout << "Default Traceback Mode value = " << obj.GetTracebackMode() << endl;
+
+  obj.SetTracebackMode(ConstDefaultTracebackMode-1);
+  if (verbose) cout << "Set Traceback Mode value to one less than default = " << obj.GetTracebackMode() << endl;
+  assert(obj.GetTracebackMode()==ConstDefaultTracebackMode-1);
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif

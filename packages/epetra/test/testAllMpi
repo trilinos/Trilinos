@@ -1,0 +1,14 @@
+#!/bin/tcsh
+set file = log.mpi.`eval date +%d%b%Y:%T`
+echo $file
+rm -f $file
+foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
+	cd $f
+	make TRILINOS_COMM=MPI TRILINOS_ID=LAM
+	foreach g(*.exe)
+		echo "############" $g "##############" >>& ../$file
+		mpigo $g 8 -v >>& ../$file
+	end
+	make clobber
+	cd ..
+end

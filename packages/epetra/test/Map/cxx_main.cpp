@@ -39,6 +39,7 @@ int main(int argc, char *argv[]) {
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
 
 
+  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (verbose) cout << Comm << endl;

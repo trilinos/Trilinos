@@ -35,6 +35,7 @@ int main(int argc, char *argv[]) {
 
 #endif
 
+  Comm.SetTracebackMode(0); // This should shut down any error tracing
   bool verbose = false;
 
   // Check if we should print results to standard out
@@ -45,8 +46,9 @@ int main(int argc, char *argv[]) {
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
+  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
+  int NumProc = Comm.NumProc(); 
   if (verbose) cout << Comm <<endl;
 
   bool verbose1 = verbose;
@@ -64,27 +66,24 @@ int main(int argc, char *argv[]) {
   int NumVectors = 4;
   
   // Test LocalMap constructor
+  // and Petra-defined uniform linear distribution constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
+  if (verbose) cout << "     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase,
                               Comm);
-  // Test Petra-defined uniform linear distribution constructor
-  if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
-
   Epetra_BlockMap * BlockMap = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);
   ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -92,22 +91,20 @@ int main(int argc, char *argv[]) {
 
   // Test User-defined linear distribution constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, ElementSize, IndexBase, Comm);
 
   ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -121,22 +118,20 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSize, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSize,
 		      IndexBase, Comm);
   ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -162,45 +157,41 @@ int main(int argc, char *argv[]) {
 	NumGlobalEquations -= (Comm.NumProc()-3)*((NumMyElements-1)%6+2);
     }
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements,  ElementSizeList, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   BlockMap = new Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, ElementSizeList,
 		      IndexBase, Comm);
   ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   // Test Copy constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_BlockMap(*BlockMap)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   Epetra_BlockMap * BlockMap1 = new Epetra_BlockMap(*BlockMap);
 
   ierr = MultiVectorTests(*BlockMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*BlockMap, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -212,22 +203,20 @@ int main(int argc, char *argv[]) {
 
   // Test Petra-defined uniform linear distribution constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   Epetra_Map * Map = new Epetra_Map(NumGlobalElements, IndexBase, Comm);
   ierr = MultiVectorTests(*Map, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -235,23 +224,21 @@ int main(int argc, char *argv[]) {
 
   // Test User-defined linear distribution constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, IndexBase, Comm);
 
   ierr = MultiVectorTests(*Map, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
@@ -265,52 +252,46 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID()>2) MaxMyGID+=3;
   for (i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
 		      IndexBase, Comm);
   ierr = MultiVectorTests(*Map, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr==0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   // Test Copy constructor
 
+  if (verbose) cout << "\n*********************************************************" << endl;
   if (verbose) cout << "Checking Epetra_Map(*Map)" << endl;
+  if (verbose) cout << "*********************************************************" << endl;
  
-  Epetra_Map * Map1 = new Epetra_Map(*Map);
+  Epetra_Map Map1(*Map);
 
   ierr = MultiVectorTests(*Map, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   ierr = MatrixTests(*Map, *LocalMap, NumVectors, verbose);
 
-  if (verbose)
-    if (ierr==0) cout << "Checked OK\n\n" <<endl;
-    else cout << "Error code: "<< ierr << endl;
+  if (verbose && ierr!=0) cout << "Error code: "<< ierr << endl;
 
   assert(ierr==0);
 
   delete [] MyGlobalElements;
   delete Map;
-  delete Map1;
-  delete LocalMap;
 
   if (verbose1)
     {
@@ -318,12 +299,12 @@ int main(int argc, char *argv[]) {
       int M = 27;
       int N = 27;
       int K = 10000;
-      Epetra_Map * Map2 = new Epetra_Map(-1, K, IndexBase, Comm);
-      Epetra_LocalMap * Map3 = new Epetra_LocalMap(M, IndexBase, Comm);
+      Epetra_Map Map2(-1, K, IndexBase, Comm);
+      Epetra_LocalMap Map3(M, IndexBase, Comm);
       
-      Epetra_MultiVector & A = *new Epetra_MultiVector(*Map2,N);A.Random();
-      Epetra_MultiVector & B = *new Epetra_MultiVector(*Map2,N);B.Random();
-      Epetra_MultiVector & C = *new Epetra_MultiVector(*Map3,N);C.Random();
+      Epetra_MultiVector A(Map2,N);A.Random();
+      Epetra_MultiVector B(Map2,N);B.Random();
+      Epetra_MultiVector C(Map3,N);C.Random();
 
       if (verbose) cout << "Testing Assignment operator" << endl;
 
@@ -338,7 +319,9 @@ int main(int argc, char *argv[]) {
       Comm.Barrier();
 	  
       if (verbose) cout << "Testing MFLOPs" << endl;
-      Epetra_Time & mytimer = *new Epetra_Time(Comm);
+      Epetra_Flops counter;
+      C.SetFlopCounter(counter);
+      Epetra_Time mytimer(Comm);
       C.Multiply('T', 'N', 0.5, A, B, 0.0);
       double Multiply_time = mytimer.ElapsedTime();
       double Multiply_flops = C.Flops();
@@ -346,31 +329,24 @@ int main(int argc, char *argv[]) {
       if (verbose) cout << "Total Time  = " << Multiply_time << endl;
       if (verbose) cout << "MFLOPs      = " << Multiply_flops/Multiply_time/1000000.0 << endl;
 
-      delete &mytimer;
-      delete &A;
-      delete &B;
-      delete &C;
-      delete Map2;
-      delete Map3;
-
       Comm.Barrier();
 	  
       // Test MultiVector ostream operator with Petra-defined uniform linear distribution constructor
       // and a small vector
       
-      Epetra_Map * Map4 = new Epetra_Map(100, IndexBase, Comm);
-      double * Dp = new double[200];
+      Epetra_Map Map4(100, IndexBase, Comm);
+      double * Dp = new double[200]; 
       for (j=0; j<2; j++)
 	for (i=0; i<100; i++)
 	  Dp[i+j*100] = i+j*100;
-      Epetra_MultiVector & D = *new Epetra_MultiVector(View, *Map4,Dp, 100, 2);
+      Epetra_MultiVector D(View, Map4,Dp, 100, 2);
 	  
       if (verbose) cout << "\n\nTesting ostream operator:  Multivector  should be 100-by-2 and print i,j indices" 
 	   << endl << endl;
       cout << D << endl;
-      delete &D;
+
+      if (verbose) cout << "Traceback Mode value = " << D.GetTracebackMode() << endl;
       delete [] Dp;
-      delete Map4;
     }
 
 #ifdef EPETRA_MPI

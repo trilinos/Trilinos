@@ -2003,9 +2003,6 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      long olda = os.setf(ios::right,ios::adjustfield);
-      long oldf = os.setf(ios::scientific,ios::floatfield);
-      int oldp = os.precision(12);
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumBlockEntries();
       int * Indices  = new int[MaxNumIndices];
@@ -2046,11 +2043,6 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
       
       os << flush;
       
-      // Reset os flags
-      
-      os.setf(olda,ios::adjustfield);
-      os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();

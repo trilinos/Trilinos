@@ -1,30 +1,29 @@
-#include "Epetra_Object.h"
 #include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 
-int  BuildMatrixTests (Epetra_MultiVector & C,
+int  BuildMatrixTests (Epetra_Vector & C,
 			     const char transa, const char transb, 
 			     const double alpha, 
-			     Epetra_MultiVector& A, 
-			     Epetra_MultiVector& B,
+			     Epetra_Vector& A, 
+			     Epetra_Vector& B,
 			     const double beta,
-			     Epetra_MultiVector& C_GEMM );
+			     Epetra_Vector& C_GEMM );
 
   
-int  BuildMultiVectorTests (Epetra_MultiVector & C,
+int  BuildVectorTests (Epetra_Vector & C,
 				const double alpha, 
-				Epetra_MultiVector& A, 
-				Epetra_MultiVector& sqrtA,
-				Epetra_MultiVector& B,
-				Epetra_MultiVector& C_alphaA,
-				Epetra_MultiVector& C_alphaAplusB,
-				Epetra_MultiVector& C_plusB,
+				Epetra_Vector& A, 
+				Epetra_Vector& sqrtA,
+				Epetra_Vector& B,
+				Epetra_Vector& C_alphaA,
+				Epetra_Vector& C_alphaAplusB,
+				Epetra_Vector& C_plusB,
 				double* const dotvec_AB,
 				double* const norm1_A,
 				double* const norm2_sqrtA,
 				double* const norminf_A,
 				double* const normw_A,
-				Epetra_MultiVector& Weights,
+				Epetra_Vector& Weights,
 				double* const minval_A,
 				double* const maxval_A,
 				double* const meanval_A );  

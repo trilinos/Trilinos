@@ -121,9 +121,6 @@ numbers.
 //=========================================================================
 class Epetra_Vector : public Epetra_MultiVector {
 
-  // Give ostream << function some access to private and protected data/functions.
-
-  friend ostream& operator << (ostream& os, const Epetra_Vector& A);
   public:
 
   //! Basic Epetra_Vector constuctor.
@@ -210,8 +207,5 @@ class Epetra_Vector : public Epetra_MultiVector {
     const double& operator [] (int index) const;
     
 };
-
-//! << operator will work for Epetra_Vectors.
-ostream& operator << (ostream& os, const Epetra_Vector& A);
 
 #endif /* _EPETRA_VECTOR_H_ */

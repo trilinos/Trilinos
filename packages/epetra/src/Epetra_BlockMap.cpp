@@ -788,9 +788,6 @@ void Epetra_BlockMap::Print(ostream & os) const
   
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
-      long olda = os.setf(ios::right,ios::adjustfield);
-      long oldf = os.setf(ios::scientific,ios::floatfield);
-      int oldp = os.precision(12);
       if (MyPID==0) {
 	os <<  "\nNumber of Global Elements  = "; os << NumGlobalElements(); os << endl;
 	os <<    "Number of Global Equations = "; os << NumGlobalEquations(); os << endl;
@@ -840,11 +837,6 @@ void Epetra_BlockMap::Print(ostream & os) const
       
       os << flush;
       
-      // Reset os flags
-      
-      os.setf(olda,ios::adjustfield);
-      os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
     }
     // Do a few global ops to give I/O a chance to complete
     Comm().Barrier();

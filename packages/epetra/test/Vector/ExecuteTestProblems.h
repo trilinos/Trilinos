@@ -1,4 +1,3 @@
-#include "Epetra_Object.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -9,4 +8,4 @@ int MatrixTests(const Epetra_BlockMap & map, const Epetra_LocalMap & LocalMap,
 
 int VectorTests(const Epetra_BlockMap & Map, bool verbose);
 
-int BadResidual(double * Residual);
+int BadResidual(bool verbose, double * Residual);

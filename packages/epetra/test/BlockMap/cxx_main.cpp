@@ -42,11 +42,11 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
+  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
-  if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-		    << " is alive."<<endl << flush;
-
+  cout << Comm << endl << flush;
+  Comm.Barrier();
   bool verbose1 = verbose;
   if (verbose) verbose = (MyPID==0);
 

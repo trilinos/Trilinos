@@ -30,11 +30,11 @@
     // Construct MultiVectors
 
   {
-    Epetra_MultiVector& A          = *new Epetra_MultiVector(LocalMap, NumVectors);
-    Epetra_MultiVector& B          = *new Epetra_MultiVector(LocalMap, NumVectors);
-    Epetra_LocalMap & Map2d = *new Epetra_LocalMap(NumVectors, IndexBase, Comm);
-    Epetra_MultiVector& C          = *new Epetra_MultiVector(Map2d, NumVectors);
-    Epetra_MultiVector& C_GEMM     = *new Epetra_MultiVector(Map2d, NumVectors);
+    Epetra_MultiVector A(LocalMap, NumVectors);
+    Epetra_MultiVector B(LocalMap, NumVectors);
+    Epetra_LocalMap  Map2d(NumVectors, IndexBase, Comm);
+    Epetra_MultiVector C(Map2d, NumVectors);
+    Epetra_MultiVector C_GEMM(Map2d, NumVectors);
 
     double **App, **Bpp, **Cpp;
     
@@ -49,9 +49,9 @@
     for (i=0; i<NumVectors; i++) Bpp[i] = new double[B.MyLength()+i];
     for (i=0; i<NumVectors; i++) Cpp[i] = new double[C.MyLength()+i];
     
-    Epetra_MultiVector& A1 = *new Epetra_MultiVector(View, LocalMap, App, NumVectors);
-    Epetra_MultiVector& B1 = *new Epetra_MultiVector(View, LocalMap, Bpp, NumVectors);
-    Epetra_MultiVector& C1 = *new Epetra_MultiVector(View, Map2d, Cpp, NumVectors);
+    Epetra_MultiVector A1(View, LocalMap, App, NumVectors);
+    Epetra_MultiVector B1(View, LocalMap, Bpp, NumVectors);
+    Epetra_MultiVector C1(View, Map2d, Cpp, NumVectors);
 
     for (int strided = 0; strided<2; strided++){
     int ierr;
@@ -81,16 +81,15 @@
 
 	if (verbose && ierr==0)
 	  {
-	    cout << "\n\nXXXXX Replicated Local MultiVector GEMM tests XXXXX\n" << endl;
+	    cout << "XXXXX Replicated Local MultiVector GEMM tests";
 	    if (strided)
-	    cout << "\n\nXXXXX              Strided Multivectors       XXXXX\n" << endl;
+	    cout << " (Strided Multivectors)" << endl;
 	    else
-	    cout << "\n\nXXXXX          Non-Strided Multivectors       XXXXX\n" << endl;
-	    cout << "\n  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-		 <<", transb = " << transb << endl;
-	    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
+	    cout << " (Non-Strided Multivectors)" << endl;
+	    cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+		 <<", transb = " << transb;
 	  }
-	if (ierr==0 && BadResidual(residual, NumVectors)) return(-1);
+	if (ierr==0 && BadResidual(verbose,residual, NumVectors)) return(-1);
       }
 
       }
@@ -100,18 +99,9 @@
 	delete [] Bpp[i];
 	delete [] Cpp[i];
       }
-    delete &A;
-    delete &B;
-    delete &C;
-    delete &C_GEMM;
-    delete &Map2d;
     delete [] App;
     delete [] Bpp;
     delete [] Cpp;
-    
-    delete &A1;
-    delete &B1;
-    delete &C1;
   }
       
     // ====================================
@@ -120,11 +110,11 @@
 
     // Construct MultiVectors
   {
-    Epetra_MultiVector& A          = *new Epetra_MultiVector(Map, NumVectors);
-    Epetra_MultiVector& B          = *new Epetra_MultiVector(Map, NumVectors);
-    Epetra_LocalMap & Map2d = *new Epetra_LocalMap(NumVectors, IndexBase, Comm);
-    Epetra_MultiVector& C          = *new Epetra_MultiVector(Map2d, NumVectors);
-    Epetra_MultiVector& C_GEMM     = *new Epetra_MultiVector(Map2d, NumVectors);
+    Epetra_MultiVector A(Map, NumVectors);
+    Epetra_MultiVector B(Map, NumVectors);
+    Epetra_LocalMap Map2d(NumVectors, IndexBase, Comm);
+    Epetra_MultiVector C(Map2d, NumVectors);
+    Epetra_MultiVector C_GEMM(Map2d, NumVectors);
 
     char transa = 'T';
     char transb = 'N';
@@ -138,19 +128,13 @@
 
     if (verbose && ierr==0)
       {
-	cout << "\n\nXXXXX   Generalized 2D dot product via GEMM call  XXXXX\n" << endl;
-	cout << "\n  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-	     <<", transb = " << transb << endl;
-	for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
+	cout << "XXXXX Generalized 2D dot product via GEMM call     " << endl;
+	cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+	     <<", transb = " << transb;
       }
-    if (BadResidual(residual, NumVectors)) return(-1);
+    if (BadResidual(verbose,residual, NumVectors)) return(-1);
     
     
-    delete &A;
-    delete &B;
-    delete &C;
-    delete &C_GEMM;
-    delete &Map2d;
   }      
     // ====================================
     // Case 6-7  (A, C distributed, B local)
@@ -158,11 +142,11 @@
 
     // Construct MultiVectors
   {
-    Epetra_MultiVector& A          = *new Epetra_MultiVector(Map, NumVectors);
-    Epetra_LocalMap & Map2d = *new Epetra_LocalMap(NumVectors, IndexBase, Comm);
-    Epetra_MultiVector& B          = *new Epetra_MultiVector(Map2d, NumVectors);
-    Epetra_MultiVector& C          = *new Epetra_MultiVector(Map, NumVectors);
-    Epetra_MultiVector& C_GEMM     = *new Epetra_MultiVector(Map, NumVectors);
+    Epetra_MultiVector A(Map, NumVectors);
+    Epetra_LocalMap Map2d(NumVectors, IndexBase, Comm);
+    Epetra_MultiVector B(Map2d, NumVectors);
+    Epetra_MultiVector C(Map, NumVectors);
+    Epetra_MultiVector C_GEMM(Map, NumVectors);
 
     for (i=0; i<2; i++)
       {
@@ -178,19 +162,13 @@
 	
 	if (verbose)
 	  {
-	    cout << "\n\nXXXXX   Generalized 2D vector update via GEMM call  XXXXX\n" << endl;
-	    cout << "\n  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
-		 <<", transb = " << transb << endl;
-	    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
+	    cout << "XXXXX Generalized 2D vector update via GEMM call     " << endl;
+	    cout << "  alpha = " << alpha << ",  beta = " << beta <<", transa = "<<transa
+		 <<", transb = " << transb;
 	  }
-	if (BadResidual(residual, NumVectors)) return(-1);
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
       }
 
-    delete &A;
-    delete &B;
-    delete &C;
-    delete &C_GEMM; 
-    delete &Map2d;
     delete [] residual;
     
     return(ierr);
@@ -211,14 +189,14 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   
   // Construct MultiVectors
   
-  Epetra_MultiVector& A             = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& sqrtA         = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& B             = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& C             = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& C_alphaA      = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& C_alphaAplusB = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& C_plusB       = *new Epetra_MultiVector(Map, NumVectors);
-  Epetra_MultiVector& Weights       = *new Epetra_MultiVector(Map, NumVectors);
+  Epetra_MultiVector A(Map, NumVectors);
+  Epetra_MultiVector sqrtA(Map, NumVectors);
+  Epetra_MultiVector B(Map, NumVectors);
+  Epetra_MultiVector C(Map, NumVectors);
+  Epetra_MultiVector C_alphaA(Map, NumVectors);
+  Epetra_MultiVector C_alphaAplusB(Map, NumVectors);
+  Epetra_MultiVector C_plusB(Map, NumVectors);
+  Epetra_MultiVector Weights(Map, NumVectors);
   
   // Construct double vectors
   double *dotvec_AB   = new double[NumVectors];
@@ -239,192 +217,156 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 			     C_plusB, dotvec_AB, norm1_A, norm2_sqrtA, norminf_A, 
 			     normw_A, Weights, minval_A, maxval_A, meanval_A);
   
-  if (verbose) cout << "\n\nXXXXX   Testing alpha * A  XXXXX\n";
+  if (verbose) cout << "XXXXX Testing alpha * A     ";
   // Test alpha*A
-  Epetra_MultiVector& alphaA = *new Epetra_MultiVector(A); // Copy of A
+  Epetra_MultiVector alphaA(A); // Copy of A
   ierr += alphaA.Scale(alpha);
   ierr += alphaA.Update(-1.0, C_alphaA, 1.0);
   ierr += alphaA.Norm2(residual);
   
   if (ierr!=0 && verbose) 
-    cout << "Error in alpha * A MultiVector testing\n";
+    cout << "Error in alpha * A MultiVector testing";
   if (ierr) return(-2);
   if (verbose)
 	{
-	  cout << "\n  alpha = " << alpha << endl;
-	  for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
+	  cout << "  alpha = " << alpha;
 	}
-  delete &alphaA;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
   
-  if (verbose) cout << "\n\nXXXXX   Testing C = alpha * A + B   XXXXX\n";
+  if (verbose) cout << "XXXXX Testing C = alpha * A + B      ";
   // Test alpha*A + B
-  Epetra_MultiVector& alphaAplusB = *new Epetra_MultiVector(A); // Copy of A
+  Epetra_MultiVector alphaAplusB(A); // Copy of A
   ierr += alphaAplusB.Update(1.0, B, alpha, A, 0.0);
   ierr += alphaAplusB.Update(-1.0, C_alphaAplusB, 1.0);
   ierr += alphaAplusB.Norm2(residual);
   
   if (ierr!=0 && verbose) 
-    cout << "Error in alpha * A + B MultiVector testing\n";
+    cout << "Error in alpha * A + B MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    {
-      cout << "\n  alpha = " << alpha << endl;
-      for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-    }
-  if (BadResidual(residual, NumVectors)) return(-1);
-  delete &alphaAplusB;
+  if (verbose) cout << "  alpha = " << alpha;
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
   
-  if (verbose) cout << "\n\nXXXXX   Testing C += B   XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing C += B      ";
   // Test + B
-  Epetra_MultiVector& plusB = *new Epetra_MultiVector(C); // Copy of C
+  Epetra_MultiVector plusB(C); // Copy of C
   ierr += plusB.Update(1.0, B, 1.0);
   ierr += plusB.Update(-1.0, C_plusB, 1.0);
   ierr += plusB.Norm2(residual);
   
   if (ierr!=0 && verbose) 
-    cout << "Error in + B MultiVector testing\n";
+    cout << "Error in + B MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
   
-  delete &plusB;
-  
-  if (verbose) cout << "\n\nXXXXX  Testing A.dotProd(B)  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing A.dotProd(B)     ";
   // Test A.dotvec(B)
   double *dotvec = residual;
   ierr += A.Dot(B,dotvec);
   BLAS.AXPY(NumVectors,-1.0,dotvec_AB,dotvec);
   
   if (ierr!=0 && verbose) 
-    cout << "Error dotvec MultiVector testing\n";
+    cout << "Error dotvec MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
   
   
-  if (verbose) cout << "\n\nXXXXX   Testing norm1_A   XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing norm1_A      ";
   // Test A.norm1()
   double *norm1 = residual;
   ierr += A.Norm1(norm1);
   BLAS.AXPY(NumVectors,-1.0,norm1_A,norm1);
   
   if (ierr!=0 && verbose)
-    cout << "Error in norm1 MultiVector testing\n";
+    cout << "Error in norm1 MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	  
   
-  if (verbose) cout << "\n\nXXXXX Testing norm2_sqrtA  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing norm2_sqrtA     ";
   // Test sqrtA.norm2()
   double *norm2 = residual;
   ierr += sqrtA.Norm2(norm2);
   BLAS.AXPY(NumVectors,-1.0,norm2_sqrtA,norm2);
   
   if (ierr!=0 && verbose)
-    cout << "Error in norm2 MultiVector testing\n";
+    cout << "Error in norm2 MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
-  if (verbose) cout << "\n\nXXXXX Testing norminf_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing norminf_A     ";
   // Test A.norminf()
   double *norminf = residual;
   ierr += A.NormInf(norminf);
   BLAS.AXPY(NumVectors,-1.0,norminf_A,norminf);
   
   if (ierr!=0 && verbose)
-    cout << "Error in NormInf MultiVector testing\n";
+    cout << "Error in NormInf MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
-  if (verbose) cout << "\n\nXXXXX Testing normw_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing normw_A     ";
   // Test A.NormWeighted()
   double *normw = residual;
   ierr += A.NormWeighted(Weights, normw);
   BLAS.AXPY(NumVectors,-1.0,normw_A,normw);
   
   if (ierr!=0 && verbose)
-    cout << "Error in NormWeighted MultiVector testing\n";
+    cout << "Error in NormWeighted MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
-  if (verbose) cout << "\n\nXXXXX Testing minval_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing minval_A     ";
   // Test A.MinValue()
   double *minval = residual;
   ierr += A.MinValue(minval);
   BLAS.AXPY(NumVectors,-1.0,minval_A,minval);
   
   if (ierr!=0 && verbose)
-    cout << "Error in MinValue MultiVector testing\n";
+    cout << "Error in MinValue MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
-  if (verbose) cout << "\n\nXXXXX Testing maxval_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing maxval_A     ";
   // Test A.MaxValue()
   double *maxval = residual;
   ierr += A.MaxValue(maxval);
   BLAS.AXPY(NumVectors,-1.0,maxval_A,maxval);
   
   if (ierr!=0 && verbose)
-    cout << "Error in MaxValue MultiVector testing\n";
+    cout << "Error in MaxValue MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	  
-  if (verbose) cout << "\n\nXXXXX Testing meanval_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing meanval_A     ";
   // Test A.MeanValue()
   double *meanval = residual;
   ierr += A.MeanValue(meanval);
   BLAS.AXPY(NumVectors,-1.0,meanval_A,meanval);
   
   if (ierr!=0 && verbose)
-    cout << "Error in MeanValue MultiVector testing\n";
+    cout << "Error in MeanValue MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
-  if (verbose) cout << "\n\nXXXXX Testing abs_A  XXXXX\n\n";
+  if (verbose) cout << "XXXXX Testing abs_A     ";
   // Test A.Abs()
-  Epetra_MultiVector& Abs_A = A;
+  Epetra_MultiVector Abs_A = A;
   ierr += Abs_A.Abs(A);
   ierr += Abs_A.Update(1.0, A, -1.0); // Abs_A = A - Abs_A (should be zero since A > 0)
   ierr += Abs_A.Norm2(residual);
   if (ierr!=0 && verbose)
-    cout << "Error in Absolute value MultiVector testing\n";
+    cout << "Error in Absolute value MultiVector testing";
   if (ierr) return(-2);
-  if (verbose)
-    for (int j=0; j< NumVectors; j++) cout << "     Residual[" << j <<"] = " << residual[j] << endl;
-  if (BadResidual(residual, NumVectors)) return(-1);
+  if (BadResidual(verbose,residual, NumVectors)) return(-1);
 	
   
   // Delete everything
   
-  delete &A;
-  delete &sqrtA;
-  delete &B;
-  delete &C;
-  delete &C_alphaA;
-  delete &C_alphaAplusB;
-  delete &C_plusB;
-  delete &Weights;
   delete [] dotvec_AB;
   delete [] norm1_A;
   delete [] norm2_sqrtA;
@@ -438,9 +380,19 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   return(ierr);
 }
 
-int BadResidual(double * Residual, int NumVectors)
+int BadResidual(bool verbose, double * Residual, int NumVectors)
 {
   double threshold = 5.0E-6;
-  for (int i=0; i<NumVectors; i++) if (Residual[i]>threshold) return(1);
-  return(0);
+  int ierr = 0;
+  for (int i=0; i<NumVectors; i++) {
+    if (Residual[i]>threshold) {
+      ierr = 1;
+      if (verbose) cout << endl << "     Residual[" << i <<"] = " << Residual[i];
+    }
+  }
+  if (verbose)
+    if (ierr==0) cout << "\t Checked OK" << endl;
+    else cout << endl << "Test failed" << endl;
+  
+  return(ierr);
 }

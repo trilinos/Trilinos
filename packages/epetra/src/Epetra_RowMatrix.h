@@ -215,10 +215,10 @@ class Epetra_RowMatrix {
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     virtual const Epetra_Comm & Comm() const = 0;
 
-    //! Returns the Epetra_Map object associated with the rows of this matrix.
+    //! Returns the Epetra_BlockMap object associated with the rows of this matrix.
     virtual const Epetra_BlockMap & BlockRowMap() const = 0;
 
-    //! Returns the Epetra_Map object that describes the import vector for distributed operations.
+    //! Returns the Epetra_BlockMap object that describes the import vector for distributed operations.
     virtual const Epetra_BlockMap & BlockImportMap() const = 0;
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.

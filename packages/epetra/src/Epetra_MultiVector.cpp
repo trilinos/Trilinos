@@ -1516,9 +1516,6 @@ void Epetra_MultiVector::Print(ostream& os) const {
       int MyLength1 = MyLength();
       int * MyGlobalElements1 = Map().MyGlobalElements();
       double ** A_Pointers = Pointers();
-      long olda = os.setf(ios::right,ios::adjustfield);
-      long oldf = os.setf(ios::scientific,ios::floatfield);
-      int oldp = os.precision(12);
 
       if (MyPID==0) {
 	os.width(14);
@@ -1548,11 +1545,6 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	}
       os << flush;
 
-      // Reset os flags
-
-      os.setf(olda,ios::adjustfield);
-      os.setf(oldf,ios::floatfield);
-      os.precision(oldp);
     }
 
     // Do a few global ops to give I/O a chance to complete

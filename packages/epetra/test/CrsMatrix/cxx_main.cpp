@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
   //  if (rank==0) cin >> tmp;
   //  Comm.Barrier();
 
+  Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
