@@ -67,12 +67,12 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
                                  bool doOffBlocks_,
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
+  nlParams(0),
+  statusTest(0),
   problemCount(0),
   doOffBlocks(doOffBlocks_),
   compositeMap(0),
-  compositeSoln(0),
-  nlParams(0),
-  statusTest(0)
+  compositeSoln(0)
 {
   // Unset doOffBlocks flag if this build does not include the required 
   // EpetraExt library intreface
@@ -101,7 +101,6 @@ Problem_Manager::~Problem_Manager()
   map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
   map<int, NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
-  map<int, Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
   map<int, NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
 
 #ifdef HAVE_NOX_EPETRAEXT
@@ -112,8 +111,8 @@ Problem_Manager::~Problem_Manager()
 	  ColorMapsIter = ColorMaps.begin();
   map<int, EpetraExt::CrsGraph_MapColoringIndex*>::iterator 
 	  ColorMapIndexSetsIter = ColorMapIndexSets.begin();
-  map<int, vector<Epetra_IntVector>*>::iterator 
-	  ColumnsSetsIter = ColumnsSets.begin();
+  //map<int, vector<Epetra_IntVector>*>::iterator 
+  //	  ColumnsSetsIter = ColumnsSets.begin();
   map<int, Epetra_Operator*>::iterator 
 	  MatrixOperatorsIter = MatrixOperators.begin();
 #endif
@@ -490,7 +489,7 @@ void Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 
     vector<OffBlock_Manager*> managerVec = offBlockIter->second;
 
-    for( int i = 0; i<managerVec.size(); i++ )
+    for( unsigned int i = 0; i<managerVec.size(); i++ )
       managerVec[i]->getGroup().setX(inVec);
   }
 }
@@ -576,7 +575,7 @@ void Problem_Manager::computeAllJacobian()
       vector<OffBlock_Manager*> &offBlocksVec =
         OffBlock_Managers.find(probId)->second;
 
-      for( int i = 0; i<offBlocksVec.size(); i++ ) {
+      for( unsigned int i = 0; i<offBlocksVec.size(); i++ ) {
         
         offBlocksVec[i]->getGroup().computeJacobian();
   
@@ -804,6 +803,12 @@ void Problem_Manager::copyProblemJacobiansToComposite()
         columnIndices[j] = indices[columnIndices[j]];
       int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow, 
                        numValues, values, columnIndices);
+      if( ierr )
+      {
+        if (MyPID==0)
+          cout << "ERROR: compositeMatrix.ReplaceGlobalValues(...)" << endl;
+        throw "Problem_Manager ERROR";
+      }
     }
     delete [] values; values = 0;
     delete [] columnIndices; columnIndices = 0;
@@ -815,7 +820,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
     if( doOffBlocks ) {
 #ifdef HAVE_NOX_EPETRAEXT
       // Loop over each problem on which this one depends
-      for( int k = 0; k<problem.depProblems.size(); k++) {
+      for( unsigned int k = 0; k<problem.depProblems.size(); k++) {
 
         // Copy the off-block jacobian matrices for this 
         // problem-problem coupling
@@ -1038,8 +1043,8 @@ bool Problem_Manager::solveMF()
   A = new Epetra_CrsMatrix(Copy, *AA); 
   A->TransformToLocal();
 
-  NOX::EpetraNew::Interface::Required& reqInt = 
-    dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
+  //NOX::EpetraNew::Interface::Required& reqInt = 
+  //  dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
   NOX::Epetra::Vector nox_soln(*compositeSoln);
 
   // Create the Matrix-Free Jacobian Operator
@@ -1185,6 +1190,12 @@ void Problem_Manager::generateGraph()
       for (int j = 0; j<numCols; j++)
         columnIndices[j] = problemIndices[columnIndices[j]];
       int ierr = AA->InsertGlobalIndices(compositeRow, numCols, columnIndices);
+      if( ierr )
+      {
+        if (MyPID==0)
+          cout << "ERROR: AA->InsertGlobalIndices(...)" << endl;
+        throw "Problem_Manager ERROR";
+      }
     }
     delete [] columnIndices; columnIndices = 0;
   }
@@ -1224,7 +1235,7 @@ void Problem_Manager::generateGraph()
       int problemRow, compositeRow, numCols, numDepCols;
   
       // Loop over each problem on which this one depends
-      for( int k = 0; k<problem.depProblems.size(); k++) {
+      for( unsigned int k = 0; k<problem.depProblems.size(); k++) {
 
         // Create the off-block graph to be constructed for this 
         // problem-problem coupling
@@ -1279,7 +1290,6 @@ void Problem_Manager::generateGraph()
           compositeRow = problemIndices[problemRow];
           numDepCols = 0;
           for (int j = 0; j<numCols; j++) {
-            int numDepNodes = depNodesMap.count(columnIndices[j]);
             pair< multimap<int, int>::iterator,
                   multimap<int, int>::iterator > rangeN
                 = depNodesMap.equal_range(columnIndices[j]);
@@ -1334,7 +1344,6 @@ void Problem_Manager::outputSolutions(int timeStep)
     Epetra_Vector& xMesh = problem.getMesh();
     Epetra_Vector& problemSoln = problem.getSolution();
     int NumMyNodes = xMesh.Map().NumMyElements();
-    int NumGlobalNodes = xMesh.Map().NumGlobalElements();
 
     char file_name[25];
     FILE *ifp;
@@ -1367,7 +1376,7 @@ void Problem_Manager::outputStatus()
     cout << "\tProblem \"" << problem.getName() << "\" (" << problemIter->first
          << ")\t Depends on:" << endl;
     
-    for( int j = 0; j<problem.depProblems.size(); j++ ) {
+    for( unsigned int j = 0; j<problem.depProblems.size(); j++ ) {
       dependIter = Problems.find( problem.depProblems[j] );
       cout << "\t\t-------------> \t\t\"" << dependIter->second->getName() 
            << "\"" << endl;

@@ -197,7 +197,6 @@ bool Equation_B::evaluate(
   else OverlapMinMyNodeGID = StandardMap->MinMyGID()-1;
 
   int row, column;
-  double factor=1000.0;
   double Dcoeff = 0.025;
   double alpha = 0.6;
   double beta = 2.0;
@@ -282,7 +281,7 @@ bool Equation_B::evaluate(
   // U(0)=1
   if (MyPID==0) {
     if ( fillF )
-      (*rhs)[0]= (*soln)[0] - 10.0/3.0;
+      (*rhs)[0]= (*soln)[0] - beta/alpha;
     if ( fillMatrix ) {
       int column=0;
       double jac=1.0;
@@ -296,7 +295,7 @@ bool Equation_B::evaluate(
   if ( StandardMap->LID(StandardMap->MaxAllGID()) >= 0 ) {
     int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
     if ( fillF )
-      (*rhs)[lastDof] = (*soln)[lastDof] - 10.0/3.0;
+      (*rhs)[lastDof] = (*soln)[lastDof] - beta/alpha;
     if ( fillMatrix ) {
       int row=StandardMap->MaxAllGID();
       int column = row;
