@@ -10,4 +10,5 @@
 #define ML_DGEMM_FUNC
 #define ML_DTRSM_FUNC
 #define ML_DTRMM_FUNC
+#define ML_DGETRS_FUNC
 #endif
