@@ -968,10 +968,10 @@ int ML_Operator_Amalgamate_Vec_Trans(ML_Operator *Amat, int *blocked,
 /* diagonal ignoring the off-block-diagonal part.                       */
 /* ******************************************************************** */
 
-int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int blksize,
+int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int *blkinfo,
                                          int **new_ja, double **new_aa) 
 {
-   int            i, j, row_leng, buf_leng, nrows, ext_col, diag_flag;
+   int            i, j, row_leng, buf_leng, nrows, blk_num, diag_flag;
    int            total_nnz, allocated, *col_ind=NULL, *mat_ja;
    double         *col_val=NULL, *dbuf=NULL, *mat_aa;
    ML_Comm        *comm;
@@ -995,7 +995,7 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int blksize,
    if (dbuf == NULL) 
       pr_error("ML_Operator_BlockFilter : out of space\n");
                                         
-   for (i = 0; i < nrows; i++) dbuf[i] = (double) (i % blksize);
+   for (i = 0; i < nrows; i++) dbuf[i] = (double) blkinfo[i];
 
    if (Amat->getrow->pre_comm != NULL)
        ML_exchange_bdry(dbuf,Amat->getrow->pre_comm,nrows,comm,ML_OVERWRITE);
@@ -1029,8 +1029,8 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int blksize,
             if ( col_ind[j] < nrows ) total_nnz++;
             else
             {
-               ext_col = (int) dbuf[col_ind[j]];
-               if ( (i % blksize) == (ext_col % blksize) ) total_nnz++;
+               blk_num = (int) dbuf[col_ind[j]];
+               if ( blkinfo[i] == blk_num ) total_nnz++;
             }
          }
       }
@@ -1067,8 +1067,8 @@ int ML_Operator_GetDistributedDiagBlocks(ML_Operator *Amat, int blksize,
          }
          else
          {
-            ext_col = (int) dbuf[col_ind[j]];
-            if ( (i % blksize) == (ext_col % blksize) ) 
+            blk_num = (int) dbuf[col_ind[j]];
+            if ( blkinfo[i] == blk_num ) 
             {
                mat_ja[total_nnz] = col_ind[j];
                mat_aa[total_nnz++] = col_val[j];
