@@ -179,13 +179,16 @@ ELEM_INFO_PTR elements;
   elements = mesh->elements;
 
   /*
-   *  Set some flags.  Assume if true for one element, true for all elements.
+   *  Set some flags. Assume if true for one element, true for all elements.
+   *  Note that some procs may have no elements. 
    */
 
   if (elements[0].edge_wgt != NULL)
-    Use_Edge_Wgts = 1;
+    k = 1;
   else
-    Use_Edge_Wgts = 0;
+    k = 0;
+  /* Make sure all procs have the same value */
+  MPI_Allreduce(&k, &Use_Edge_Wgts, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   /*
    *  For all elements, update adjacent elements' processor information.

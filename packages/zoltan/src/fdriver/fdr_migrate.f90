@@ -160,6 +160,7 @@ integer(LB_INT) :: exp_elem  !/* index of an element being exported */
 integer(LB_INT) :: bor_elem  !/* index of an element along the processor border
 integer(LB_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
 type(ELEM_INFO), pointer :: elements(:)
+logical :: flag
 
   elements => data%ptr
 
@@ -170,10 +171,13 @@ type(ELEM_INFO), pointer :: elements(:)
 !   */
 
   if (associated(elements(0)%edge_wgt)) then
-    Use_Edge_Wgts = .true.
+    flag = .true.
   else
-    Use_Edge_Wgts = .false.
+    flag = .false.
   endif
+! Make sure all procs have the same value.
+  call MPI_Allreduce(flag, Use_Edge_Wgts, 1, MPI_INTEGER, MPI_LOR, &
+                     MPI_COMM_WORLD, mpierr)
 
 
 !  /*
