@@ -23,6 +23,15 @@
 #define HAVE_CONFIG_H
 #endif
 
+#include "ml_config.h"
+
+// The C++ interface of ML (more precisely,
+// ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
+// configured with --enable-epetra --enable-teuchos. This example
+// required --enable-triutils (for the definition of the linear systems)
+
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
@@ -641,3 +650,18 @@ ML_Operator *user_T_build(struct user_partition *Edge_Partition,
 
   return(Tmat);
 }
+
+#else
+
+#include <stdlib.h>
+#include <stdio.h>
+
+int main(int argc, char *argv[])
+{
+  puts("Please configure ML with --enable-epetra --enable-teuchos --enable-triutils");
+
+  return 0;
+}
+
+#endif /* #if defined(ML_WITH_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS) */
+
