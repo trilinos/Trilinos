@@ -1,0 +1,33 @@
+# Default environment variable definitions are defined in makefile.defaults
+ 
+include $(TRILINOS_HOME)/build/makefile.defaults
+
+# Define architecture specific flags for C++, C and Fortran
+
+ARCH_CXXFLAGS= -O3
+ARCH_CFLAGS= -O3
+ARCH_FFLAGS= -O3
+
+# Define compiler commands
+
+CC=gcc
+FC=g77
+CXX=g++
+
+EPETRA_DEFAULT_DEFINES += -DEPETRA_ANSI_CPP
+
+#Define include directories (remember to use -Idirectory_name)
+
+MPI_INCLUDES = 
+ARCH_INCLUDES = $(MPI_INCLUDES)
+
+LIBMPI =
+ARCH_LIBS = -lm -lg2c $(MPI_LIBS)
+
+################## External Libraries ##########################
+
+LIBBLAS = /usr/lib/libblas.a
+
+LIBLAPACK = /usr/lib/liblapack.a
+LIBSPBLAS = /usr/lib/libspblas.a
+LIBY12M   = /usr/lib/liby12m.a
