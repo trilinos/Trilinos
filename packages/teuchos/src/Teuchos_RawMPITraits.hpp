@@ -94,6 +94,23 @@ public:
 	static MPI_Datatype type() { return MPI_DOUBLE; }
 };
 
+///
+/** Partial specialization of <tt>RawMPITraits</tt> for <tt>std::complex<T></tt>
+ */
+template <class T> class RawMPITraits<std::complex<T> > {
+public:
+	///
+	static MPI_Datatype type() { buildType(); return type_; }
+private:
+	static void buildType() {
+		if(type_==MPI_DATATYPE_NULL)
+			MPI_Type_contiguous( 2, RawMPITraits<T>::type(), &type_ );
+	}
+	static MPI_Datatype type_;
+};
+
+template <class T> MPI_Datatype RawMPITraits<std::complex<T> >::type_ = MPI_DATATYPE_NULL;
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 } // namespace Teuchos
