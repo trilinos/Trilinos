@@ -408,10 +408,10 @@ int LB_Balance(
   LB *lb, 
   int *num_import_objs,       /* The number of non-local objects in the
                                  processor's new decomposition.            */
-  LB_ID **import_global_ids,  /* Array of global IDs for non-local objects
+  LB_GID **import_global_ids, /* Array of global IDs for non-local objects
                                  (i.e., objs to be imported) in
                                  the processor's new decomposition.        */
-  LB_ID **import_local_ids,   /* Array of local IDs for non-local objects
+  LB_LID **import_local_ids,  /* Array of local IDs for non-local objects
                                  (i.e., objs to be imported) in
                                  the processor's new decomposition.        */
   int **import_procs,         /* Array of processor IDs for processors 
@@ -421,11 +421,11 @@ int LB_Balance(
   int *num_export_objs,       /* The number of local objects that need to
                                  be exported from the processor to establish
                                  the new decomposition.                    */
-  LB_ID **export_global_ids,  /* Array of global IDs for objects that need
+  LB_GID **export_global_ids, /* Array of global IDs for objects that need
                                  to be exported (assigned and sent to other
                                  processors) to establish the new 
                                  decomposition.                            */
-  LB_ID **export_local_ids,   /* Array of local IDs for objects that need
+  LB_LID **export_local_ids,  /* Array of local IDs for objects that need
                                  to be exported (assigned and sent to other
                                  processors) to establish the new 
                                  decomposition.                            */
@@ -459,6 +459,12 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
   LB_start_time = MPI_Wtime();
 
+  *num_import_objs = *num_export_objs = 0;
+  *import_global_ids = *import_local_ids = NULL;
+  *import_procs = NULL;
+  *export_global_ids = *export_local_ids = NULL;
+  *export_procs = NULL;
+
   if (lb->Method == NONE) {
     if (LB_Proc == 0)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
@@ -472,12 +478,6 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
    */
 
   perform_error_checking(lb);
-
-  *num_import_objs = *num_export_objs = 0;
-  *import_global_ids = *import_local_ids = NULL;
-  *import_procs = NULL;
-  *export_global_ids = *export_local_ids = NULL;
-  *export_procs = NULL;
 
   lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
             import_procs);
@@ -516,13 +516,13 @@ double LB_time[2] = {0.0,0.0}, LB_max_time[2] = {0.0,0.0};
 
   if (LB_Debug > 6) {
     int i;
-    LB_print_sync_start(TRUE);
+    LB_print_sync_start(lb, TRUE);
     printf("LBLB: Objects to be exported from Proc %d\n", LB_Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
              (*export_global_ids)[i], (*export_procs)[i]);
     }
-    LB_print_sync_end(TRUE);
+    LB_print_sync_end(lb, TRUE);
   }
 
   /*
@@ -557,10 +557,10 @@ void LB_Compute_Destinations(
   LB *lb,                    /* Load balancing object for current balance.   */
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
-  LB_ID *import_global_ids,  /* Array of global IDs for non-local objects 
+  LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
                                 assigned to this processor in the new
                                 decomposition.                               */
-  LB_ID *import_local_ids,   /* Array of local IDs for non-local objects
+  LB_LID *import_local_ids,  /* Array of local IDs for non-local objects
                                 assigned to the processor in the new
                                 decomposition.                               */
   int *import_procs,         /* Array of processor IDs of processors owning
@@ -569,10 +569,10 @@ void LB_Compute_Destinations(
   int *num_export,           /* Returned value:  Number of objs to be exported
                                 to other processors to establish the new
                                 decomposition.                               */
-  LB_ID **export_global_ids, /* Returned value:  Array of global IDs of
+  LB_GID **export_global_ids,/* Returned value:  Array of global IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
-  LB_ID **export_local_ids,  /* Returned value:  Array of local IDs of
+  LB_LID **export_local_ids, /* Returned value:  Array of local IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
   int **export_procs         /* Returned value:  Array of processor IDs
@@ -632,10 +632,10 @@ int i;
   if (*num_export > 0) {
     export_objs         = (LB_TAG *) LB_array_alloc(__FILE__, __LINE__, 1, 
                                                    *num_export, sizeof(LB_TAG));
-    *export_global_ids = (LB_ID *)  LB_array_alloc(__FILE__, __LINE__, 1,
-                                                   *num_export, sizeof(LB_ID));
-    *export_local_ids  = (LB_ID *)  LB_array_alloc(__FILE__, __LINE__, 1,
-                                                   *num_export, sizeof(LB_ID));
+    *export_global_ids  = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                   *num_export, sizeof(LB_GID));
+    *export_local_ids   = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                   *num_export, sizeof(LB_LID));
     *export_procs       = (int *)    LB_array_alloc(__FILE__, __LINE__, 1,
                                                    *num_export, sizeof(int));
   }
@@ -662,7 +662,7 @@ int i;
   LB_safe_free((void **) &import_objs);
   LB_safe_free((void **) &export_objs);
   
-  comm_destroy(comm_plan);
+  comm_destroy(&comm_plan);
 }
 
 /****************************************************************************/
@@ -673,11 +673,11 @@ void LB_Help_Migrate(
   LB *lb,                    /* Load balancing object for current balance.   */
   int num_import,            /* Number of non-local objects assigned to the 
                                 processor in the new decomposition.          */
-  LB_ID *import_global_ids,  /* Array of global IDs for non-local objects 
+  LB_GID *import_global_ids, /* Array of global IDs for non-local objects 
                                 assigned to this processor in the new
                                 decomposition; this field can be NULL if 
                                 the application does not provide import IDs. */
-  LB_ID *import_local_ids,   /* Array of local IDs for non-local objects
+  LB_LID *import_local_ids,  /* Array of local IDs for non-local objects
                                 assigned to the processor in the new
                                 decomposition; this field can be NULL if the 
                                 application does not provide import IDs.     */
@@ -689,10 +689,10 @@ void LB_Help_Migrate(
   int num_export,            /* Number of objs to be exported
                                 to other processors to establish the new
                                 decomposition.                               */
-  LB_ID *export_global_ids,  /* Array of global IDs of
+  LB_GID *export_global_ids, /* Array of global IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
-  LB_ID *export_local_ids,   /* Array of local IDs of
+  LB_LID *export_local_ids,  /* Array of local IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
   int *export_procs          /* Array of processor IDs
@@ -720,7 +720,7 @@ char *tmp;               /* temporary pointer into buffers.                 */
 int i;                   /* loop counter.                                   */
 int tmp_import;          /* number of objects to be imported.               */
 int *proc_list = NULL;   /* list of processors to which this proc exports.  */
-LB_ID global_id;         /* tmp global ID for unpacking objects.            */
+LB_GID global_id;        /* tmp global ID for unpacking objects.            */
 COMM_OBJ *comm_plan;     /* Communication object returned
                             by Bruce and Steve's communication routines     */
 
@@ -805,7 +805,7 @@ COMM_OBJ *comm_plan;     /* Communication object returned
    *  Free whatever memory we can.
    */
 
-  comm_destroy(comm_plan);
+  comm_destroy(&comm_plan);
   LB_safe_free((void **) &proc_list);
   LB_safe_free((void **) &export_buf);
 
@@ -833,19 +833,19 @@ COMM_OBJ *comm_plan;     /* Communication object returned
 /****************************************************************************/
 
 void LB_Free_Data(
-  LB_ID **import_global_ids,  /* Array of global IDs for non-local objects 
+  LB_GID **import_global_ids, /* Array of global IDs for non-local objects 
                                 assigned to this processor in the new
                                 decomposition.                               */
-  LB_ID **import_local_ids,   /* Array of local IDs for non-local objects
+  LB_LID **import_local_ids,  /* Array of local IDs for non-local objects
                                 assigned to the processor in the new
                                 decomposition.                               */
   int **import_procs,         /* Array of processor IDs of processors owning
                                 the non-local objects that are assigned to
                                 this processor in the new decomposition.     */
-  LB_ID **export_global_ids,  /* Array of global IDs of
+  LB_GID **export_global_ids, /* Array of global IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
-  LB_ID **export_local_ids,   /* Array of local IDs of
+  LB_LID **export_local_ids,  /* Array of local IDs of
                                 objects to be exported to other processors
                                 to establish the new decomposition.          */
   int **export_procs          /* Array of processor IDs

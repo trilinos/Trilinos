@@ -248,7 +248,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
   }
   
   comm_do(comm_plan, (char *) export_tags, sizeof(Region), (char *) tmp);
-  comm_destroy(comm_plan);
+  comm_destroy(&comm_plan);
 
   /* get each message sent, and store region in import array */
   j=0;
@@ -316,7 +316,7 @@ static void malloc_new_objects(int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-void fix_tags(LB_ID **import_global_ids, LB_ID **import_local_ids,
+void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
               int **import_procs, int nrectags, pRegion import_regs)
 {
   int i;                                  /* index counter */
@@ -329,10 +329,10 @@ void fix_tags(LB_ID **import_global_ids, LB_ID **import_local_ids,
 
     /* allocate memory */
 
-    *import_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__,
-                                                  1, nrectags, sizeof(LB_ID));
-    *import_local_ids  = (LB_ID *) LB_array_alloc(__FILE__, __LINE__,
-                                                  1, nrectags, sizeof(LB_ID));
+    *import_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__,
+                                                  1, nrectags, sizeof(LB_GID));
+    *import_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__,
+                                                  1, nrectags, sizeof(LB_LID));
     *import_procs      = (int *)   LB_array_alloc(__FILE__, __LINE__,
                                                   1, nrectags, sizeof(int));
     if(*import_procs == NULL) {

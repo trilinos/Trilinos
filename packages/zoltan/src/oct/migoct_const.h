@@ -25,7 +25,7 @@ extern void Migrate_Objects(pOctant *octs, int *newpids, int nocts,
 			    float *c2, float *c3, int *counter3, 
 			    int *counter4);
 
-extern void fix_tags(LB_ID **import_global_ids, LB_ID **import_local_ids,
+extern void fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
               int **import_procs, int nrectags, pRegion import_regs);
 
 #endif

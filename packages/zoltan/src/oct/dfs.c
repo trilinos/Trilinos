@@ -97,10 +97,10 @@ void dfs_partition(int *counter, float *c1) {
   vector_set_comp(pcoord,0,0,0);
 
 #if 0 
-    LB_print_sync_start(TRUE);
+    LB_print_sync_start(lb, TRUE);
     printf("Global %6.1f  Pref %6.1f  Opt %6.1f  Pnum %2d  Pcost %8.2f\n",
 	   globalcost,prefcost,optcost,partition,pcost);
-    LB_print_sync_end(TRUE);
+    LB_print_sync_end(lb, TRUE);
 #endif
 
   visit_all_subtrees();
@@ -337,9 +337,9 @@ void dfs_migrate(pRegion *export_regs, int *nsentags,
   free(dpids);
   
 #if 0
-  LB_print_sync_start(TRUE);
+  LB_print_sync_start(lb, TRUE);
     printf("dfs_migrate: sending %d regions\n",nregions);
-  LB_print_sync_end(TRUE);
+  LB_print_sync_end(lb, TRUE);
   {
     pMesh mesh;
     int local_meshregions, global_meshregions;

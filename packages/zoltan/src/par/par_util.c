@@ -24,23 +24,24 @@ static char *cvs_parutil_id =
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "lb_const.h"
 #include "par_const.h"
 #define PRINT_SYNC 5000
 
-void LB_print_sync_start(int do_print_line)
+void LB_print_sync_start(LB *lb, int do_print_line)
 {
 /* 
- * Routine to allow IO between print_sync_start and print_sync_end to be printed
- * by each processor entirely before the next processor begins its IO.  The
- * printing sequence is from proc = 0 to the last processor, number_of_procs =
- * LB_Num_Proc - 1.
+ * Routine to allow I/O between print_sync_start and print_sync_end to be 
+ * printed by each processor in the lb->Communicator entirely before the next
+ * processor begins its I/O.  The printing sequence is from proc = 0 to the
+ * last processor, where the last processor is lb->Num_Proc - 1.
  *
- * The argument is a boolean variable.  If true, a line of # is printed to
- * indicate the start of a print_sync I/O block.
+ * The do_print_line argument is a boolean variable.  If true, a line of # 
+ * is printed to indicate the start of a print_sync I/O block.
  *
  * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
  *
- * Author: John Shadid (1421, SNL)
+ * Author: John Shadid (9221, SNL)
  */
 
 int        flag = 1, from, type;
@@ -50,11 +51,12 @@ MPI_Status st;
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
 
-  if ( LB_Proc != 0) {
-    from = LB_Proc -1;
-    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, MPI_COMM_WORLD, &st)
+  if (lb->Proc != 0) {
+    from = lb->Proc -1;
+    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
         != 0) {
-      fprintf(stderr, "LB_print_sync_start: ERROR on node %d\n", LB_Proc);
+      fprintf(stderr, "LB_print_sync_start: ERROR on processor %d (%d)\n",
+              lb->Proc, LB_Proc);
       fprintf(stderr, "MPI_Recv failed, message type %d\n", type);
       exit (-1);
     }
@@ -74,20 +76,20 @@ MPI_Status st;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_print_sync_end(int do_print_line)
+void LB_print_sync_end(LB *lb, int do_print_line)
 {
 /*
- * Routine to allow IO between print_sync_start and print_sync_end to be printed
- * by each processor entirely before the next processor begins its IO.  The
- * printing sequence is from proc = 0 to the last processor, number_of_procs =
- * LB_Num_Proc - 1.
+ * Routine to allow I/O between print_sync_start and print_sync_end to be 
+ * printed by each processor in the lb->Communicator entirely before the next
+ * processor begins its I/O.  The printing sequence is from proc = 0 to the
+ * last processor, where the last processor is lb->Num_Proc - 1.
  *
- * The argument is a boolean variable.  If true, a line of # is printed to
- * indicate the start of a print_sync I/O block.
+ * The do_print_line argument is a boolean variable.  If true, a line of # 
+ * is printed to indicate the start of a print_sync I/O block.
  *
  * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
  *
- * Author: John Shadid (1421, SNL)
+ * Author: John Shadid (9221, SNL)
  */
 
 int         flag = 1, from, type, to;
@@ -99,8 +101,8 @@ MPI_Status  st;
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
 
-  if (LB_Proc < LB_Num_Proc -1)
-    to = LB_Proc + 1;
+  if (lb->Proc < lb->Num_Proc -1)
+    to = lb->Proc + 1;
   else {
     to = 0;
     if (do_print_line) {
@@ -112,26 +114,28 @@ MPI_Status  st;
     }
   }
 
-  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, MPI_COMM_WORLD) != 0 ) {
-    fprintf(stderr, "LB_print_sync_end: ERROR on node %d\n", LB_Proc);
+  if (MPI_Send((void *) &flag, 1, MPI_INT, to, type, lb->Communicator) != 0 ) {
+    fprintf(stderr, "LB_print_sync_end: ERROR on node %d (%d)\n",
+            lb->Proc, LB_Proc);
     fprintf(stderr, "MPI_Send failed, message type %d\n", type);
     exit (-1);
   }
-  if (LB_Proc == 0) {
-    from = LB_Num_Proc -1;
-    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, MPI_COMM_WORLD, &st)
+  if (lb->Proc == 0) {
+    from = lb->Num_Proc -1;
+    if (MPI_Recv((void *) &flag, 1, MPI_INT, from, type, lb->Communicator, &st)
         != 0) {
-      fprintf(stderr, "LB_print_sync_end: ERROR on node %d\n", LB_Proc);
+      fprintf(stderr, "LB_print_sync_end: ERROR on node %d (%d)\n",
+             lb->Proc, LB_Proc);
       fprintf(stderr, "MPI_Recv failed, message type %d/n", type);
       exit (-1);
     }
   }
 
   /*
-   * Do a final sync amongst all the processors, so that all of the other
+   * Do a final sync among all the processors, so that all of the other
    * processors must wait for Proc 0 to receive the final message from Proc
-   * (Num_Proc-1)
+   * (lb->Num_Proc-1)
    */
 
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(lb->Communicator);
 }

@@ -26,7 +26,7 @@ extern int LB_Proc;
 extern int LB_Num_Proc;
 extern int LB_Debug;
 
-extern void LB_print_sync_start(int);
-extern void LB_print_sync_end(int);
+extern void LB_print_sync_start(LB *, int);
+extern void LB_print_sync_end(LB *, int);
 
 #endif

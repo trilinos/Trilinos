@@ -26,7 +26,7 @@ static char *cvs_rcbutilc_id = "$Id$";
 /*****************************************************************************/
 /* PROTOTYPES */
 
-static void initialize_dot(LB *, struct rcb_dot *, LB_ID, LB_ID);
+static void initialize_dot(LB *, struct rcb_dot *, LB_GID, LB_LID);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -40,12 +40,12 @@ void rcb_build_data_structure(LB *lb, int *num_obj, int *max_obj)
  */
 char *yo = "rcb_build_data_structure";
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
-LB_ID *objs_global;                   /* Array of global IDs returned by the
+LB_GID *objs_global;                  /* Array of global IDs returned by the
                                          application.                        */
-LB_ID *objs_local;                    /* Array of local IDs returned by the
+LB_LID *objs_local;                   /* Array of local IDs returned by the
                                          application.                        */
-LB_ID obj_global_id;                  /* Global ID returned by application.  */
-LB_ID obj_local_id;                   /* Local ID returned by application.   */
+LB_GID obj_global_id;                 /* Global ID returned by application.  */
+LB_LID obj_local_id;                  /* Local ID returned by application.   */
 int num_geom;                         /* # values per object used to describe
                                          the geometry.                       */
 int found;
@@ -104,15 +104,17 @@ int i;
      *  dot for each object.
      */
 
-    objs_global = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, 2 * *num_obj,
-                                           sizeof(LB_ID));
-    objs_local = (LB_ID *) (objs_global + *num_obj);
+    objs_global = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+                                           sizeof(LB_GID));
+    objs_local  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+                                           sizeof(LB_LID));
     lb->Get_Obj_List(objs_global, objs_local);
 
     for (i = 0; i < *num_obj; i++) {
       initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i]);
     }
     LB_safe_free((void **) &objs_global);
+    LB_safe_free((void **) &objs_local);
   }
   else if (lb->Get_First_Obj != NULL && lb->Get_Next_Obj != NULL) {
 
@@ -150,8 +152,8 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_ID global_id, 
-                           LB_ID local_id)
+static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id, 
+                           LB_LID local_id)
 {
 /*
  *  Function that initializes the dot data structure for RCB.  It uses the 

@@ -60,7 +60,7 @@ void migreg_migrate_regions(Region *regions, int *npids,
   }
 
   free(import_objs);
-  comm_destroy(comm_plan);
+  comm_destroy(&comm_plan);
 }
 
 /*

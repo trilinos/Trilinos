@@ -26,7 +26,6 @@ static char *cvs_outputc_id = "$Id$";
 void print_stats(double timetotal, double *timers, int *counters, float *c,
 		 int STATS_TYPE)
 {
-  LB_ID *obj_ids;                          /* pointer to all the objects ids */
   int i,                                   /* index counter */
       proc,                                /* the processor number */
       nprocs,                              /* total number of processors */
@@ -62,9 +61,11 @@ void print_stats(double timetotal, double *timers, int *counters, float *c,
   int numobj;
   LB *lb;
 
-  obj_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1, 2 * numobj,
-                                     sizeof(LB_ID));
-  obj_local_ids = (LB_ID *) (obj_global_ids + numobj);
+  numobj = lb->Get_Num_Obj();
+  obj_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
+                                             sizeof(LB_GID));
+  obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, numobj,
+                                             sizeof(LB_LID));
   lb->Get_Obj_List(obj_global_ids, obj_local_ids);
   /* need to get weights of all the objects */
   weight = mweight = tweight = 0.0;
@@ -102,6 +103,9 @@ void print_stats(double timetotal, double *timers, int *counters, float *c,
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d max weight of a sigle object = %g\n", proc, mweight);
+
+  LB_safe_free((void **) &obj_global_ids);
+  LB_safe_free((void **) &obj_local_ids);
 }
 #endif
 

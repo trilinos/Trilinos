@@ -52,22 +52,22 @@ static char *cvs_rcbc_id = "$Id$";
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
-int RCB_CHECK = 1;
+static int RCB_CHECK = 1;
 
 /*  RCB_STATS = 0  No statistics logging */
 /*  RCB_STATS = 1  Log times and counts, print summary */
 /*  RCB_STATS = 2  Log times and counts, print for each proc */
-int RCB_STATS = 1;
+static int RCB_STATS = 1;
 
 void lb_rcb(
   LB *lb,                     /* The load-balancing structure with info for
                                  the RCB balancer.                           */
   int *num_import,            /* Number of non-local objects assigned to this
                                  processor in the new decomposition.         */
-  LB_ID **import_global_ids,  /* Returned value:  array of global IDs for
+  LB_GID **import_global_ids, /* Returned value:  array of global IDs for
                                  non-local objects in this processor's new
                                  decomposition.                              */
-  LB_ID **import_local_ids,   /* Returned value:  array of local IDs for
+  LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
                                  non-local objects in this processor's new
                                  decomposition.                              */
   int **import_procs          /* Returned value:  array of processor IDs for
@@ -746,11 +746,11 @@ void lb_rcb(
 
   *num_import = dotnum - dottop;
   if (*num_import > 0) {
-    *import_global_ids = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
-                                                  *num_import, sizeof(LB_ID));
-    *import_local_ids  = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
-                                                  *num_import, sizeof(LB_ID));
-    *import_procs      = (LB_ID *) LB_array_alloc(__FILE__, __LINE__, 1,
+    *import_global_ids = (LB_GID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                  *num_import, sizeof(LB_GID));
+    *import_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1,
+                                                  *num_import, sizeof(LB_LID));
+    *import_procs      = (int *) LB_array_alloc(__FILE__, __LINE__, 1,
                                                   *num_import, sizeof(int));
 
     for (i = 0; i < *num_import; i++) {
@@ -772,7 +772,7 @@ void lb_rcb(
 
   if (LB_Debug > 6) {
     int i;
-    LB_print_sync_start(TRUE);
+    LB_print_sync_start(lb, TRUE);
     printf("DLBLIB RCB Proc %d  Num_Obj=%d  Num_Keep=%d  Num_Non_Local=%d\n", 
            LB_Proc, pdotnum, pdottop, *num_import);
     printf("  Assigned objects:\n");
@@ -785,7 +785,7 @@ void lb_rcb(
       printf("    Obj:  %10d      Orig: %4d\n",
              (*import_global_ids)[i], (*import_procs)[i]);
     }
-    LB_print_sync_end(TRUE);
+    LB_print_sync_end(lb, TRUE);
   }
 }
 

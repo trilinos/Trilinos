@@ -56,12 +56,19 @@ enum LB_Fn_Type {
 typedef enum LB_Fn_Type LB_FN_TYPE;
 
 /*
+ *  Definition of global and local ID data types.  
+ *  KDD_DLB  Eventually, these data types will be defined by the application.
+ */
+
+typedef int LB_GID;
+typedef int LB_LID;
+
+/*
  *  Other common definitions:
  */
 
-typedef int LB_ID;
-
 struct LB_Struct;
+
 
 /*
  *  Maximum number of parameters to be passed to any load-balancing
@@ -80,13 +87,13 @@ struct LB_Struct;
  *  Function to return the weight of the object with a given ID.
  *  
  *  Input:  
- *    LB_ID global_id           --  the Global ID for the object
- *    LB_ID local_id            --  the Local ID for the object
+ *    LB_GID global_id           --  the Global ID for the object
+ *    LB_LID local_id            --  the Local ID for the object
  *  Returned value:
  *    double                    --  the weight for the object.
  */
 
-typedef double LB_OBJ_WEIGHT_FN(LB_ID global_id, LB_ID local_id);
+typedef double LB_OBJ_WEIGHT_FN(LB_GID global_id, LB_LID local_id);
 
 /*****************************************************************************/
 /*
@@ -94,13 +101,13 @@ typedef double LB_OBJ_WEIGHT_FN(LB_ID global_id, LB_ID local_id);
  *  the object's number of edges (i.e., the number of objects with which
  *  the given object must communicate).
  *  Input:  
- *    LB_ID global_id           --  the Global ID for the object
- *    LB_ID local_id            --  the Local ID for the object
+ *    LB_GID global_id          --  the Global ID for the object
+ *    LB_LID local_id           --  the Local ID for the object
  *  Returned value:
  *    int                       --  the number of neighbor objects.
  */
 
-typedef int LB_NUM_EDGES_FN(LB_ID global_id, LB_ID local_id);
+typedef int LB_NUM_EDGES_FN(LB_GID global_id, LB_LID local_id);
 
 /*****************************************************************************/
 /*
@@ -108,15 +115,15 @@ typedef int LB_NUM_EDGES_FN(LB_ID global_id, LB_ID local_id);
  *  the object's edge list (i.e., objects with which the given object must
  *  communicate.
  *  Input:  
- *    LB_ID global_id           --  the Global ID for the object
- *    LB_ID local_id            --  the Local ID for the object
+ *    LB_GID global_id          --  the Global ID for the object
+ *    LB_LID local_id           --  the Local ID for the object
  *  Output:
- *    LB_ID *nbor_global_ids    --  Array of Global IDs of neighboring objects.
- *    LB_ID *nbor_local_ids     --  Array of Local IDs of neighboring objects.
+ *    LB_GID *nbor_global_ids   --  Array of Global IDs of neighboring objects.
+ *    LB_LID *nbor_local_ids    --  Array of Local IDs of neighboring objects.
  */
 
-typedef void LB_EDGE_LIST_FN(LB_ID global_id, LB_ID local_id,
-                             LB_ID *nbor_global_id, LB_ID *nbor_local_id);
+typedef void LB_EDGE_LIST_FN(LB_GID global_id, LB_LID local_id,
+                             LB_GID *nbor_global_id, LB_LID *nbor_local_id);
 
 /*****************************************************************************/
 /*
@@ -135,14 +142,14 @@ typedef int LB_NUM_GEOM_FN();
  *  Function to return, for the object with a given ID,
  *  the geometry information for the object (e.g., coordinates).
  *  Input:  
- *    LB_ID global_id           --  the Global ID for the object
- *    LB_ID local_id            --  the Local ID for the object
+ *    LB_GID global_id          --  the Global ID for the object
+ *    LB_LID local_id           --  the Local ID for the object
  *  Output:
  *    double *geom_vec          --  the geometry info for the object
  *                                  (e.g., coordinates)
  */
 
-typedef void LB_GEOM_FN(LB_ID global_id, LB_ID local_id, double *geom_vec);
+typedef void LB_GEOM_FN(LB_GID global_id, LB_LID local_id, double *geom_vec);
 
 /*****************************************************************************/
 /*
@@ -162,41 +169,41 @@ typedef int LB_NUM_OBJ_FN();
  *  Input:  
  *    none
  *  Output:
- *    LB_ID *global_ids         --  array of Global IDs of all objects on the
+ *    LB_GID *global_ids        --  array of Global IDs of all objects on the
  *                                  processor.
- *    LB_ID *local_ids          --  array of Local IDs of all objects on the
+ *    LB_LID *local_ids         --  array of Local IDs of all objects on the
  *                                  processor.
  */
 
-typedef void LB_OBJ_LIST_FN(LB_ID *global_ids, LB_ID *local_ids);
+typedef void LB_OBJ_LIST_FN(LB_GID *global_ids, LB_LID *local_ids);
 
 /*****************************************************************************/
 /*
  *  Iterator function for local objects; return the first local object on
  *  the processor.  This function should be used with LB_NEXT_OBJ_FN.
  *  Output:
- *    LB_ID *first_global_id    --  Global ID of the first object; NULL if no
+ *    LB_GID *first_global_id   --  Global ID of the first object; NULL if no
  *                                  objects.
- *    LB_ID *first_local_id     --  Local ID of the first object; NULL if no
+ *    LB_LID *first_local_id    --  Local ID of the first object; NULL if no
  *                                  objects.
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
  *                                  no more objects exist on the processor.
  */
 
-typedef int LB_FIRST_OBJ_FN(LB_ID *first_global_id, LB_ID *first_local_id);
+typedef int LB_FIRST_OBJ_FN(LB_GID *first_global_id, LB_LID *first_local_id);
 
 /*****************************************************************************/
 /*
  *  Iterator function for local objects; return the next local object.
  *  This function should be used with LB_FIRST_OBJ_FN.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the previous object.
- *    LB_ID local_id            --  Local ID of the previous object.
+ *    LB_GID global_id          --  Global ID of the previous object.
+ *    LB_LID local_id           --  Local ID of the previous object.
  *  Output:
- *    LB_ID *next_global_id     --  Global ID of the next object; NULL if no
+ *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
  *                                  more objects.
- *    LB_ID *next_local_id      --  Local ID of the next object; NULL if no
+ *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no
  *                                  more objects.
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -204,8 +211,8 @@ typedef int LB_FIRST_OBJ_FN(LB_ID *first_global_id, LB_ID *first_local_id);
  *                                  the last object).
  */
 
-typedef int LB_NEXT_OBJ_FN(LB_ID global_id, LB_ID local_id,
-                           LB_ID *next_global_id, LB_ID *next_local_id);
+typedef int LB_NEXT_OBJ_FN(LB_GID global_id, LB_LID local_id,
+                           LB_GID *next_global_id, LB_LID *next_local_id);
 
 /*****************************************************************************/
 /*
@@ -226,16 +233,16 @@ typedef int LB_NUM_BORDER_OBJ_FN(int nbor_proc);
  *  Input:  
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
- *    LB_ID *global_ids         --  array of Global IDs of all objects on the
+ *    LB_GID *global_ids        --  array of Global IDs of all objects on the
  *                                  processor border with the given neighboring
  *                                  processor.
- *    LB_ID *local_ids          --  array of Local IDs of all objects on the 
+ *    LB_LID *local_ids         --  array of Local IDs of all objects on the 
  *                                  processor border with the given neighboring 
  *                                  processor.
  */
 
-typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_ID *global_ids,
-                                   LB_ID *local_ids);
+typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_GID *global_ids,
+                                   LB_LID *local_ids);
 
 /*****************************************************************************/
 /*
@@ -244,9 +251,9 @@ typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_ID *global_ids,
  *  Input:  
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
- *    LB_ID *first_global_id    --  Global ID of the next object; NULL if no
+ *    LB_GID *first_global_id   --  Global ID of the next object; NULL if no
  *                                  objects.
- *    LB_ID *first_local_id     --  Local ID of the next object; NULL if no 
+ *    LB_LID *first_local_id    --  Local ID of the next object; NULL if no 
  *                                  objects.
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -254,21 +261,21 @@ typedef void LB_BORDER_OBJ_LIST_FN(int nbor_proc, LB_ID *global_ids,
  *                                  the last object).
  */
 
-typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_ID *first_global_id,
-                                   LB_ID *first_local_id);
+typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_GID *first_global_id,
+                                   LB_LID *first_local_id);
 
 /*****************************************************************************/
 /*
  *  Iterator function for border objects; return the next local object 
  *  along the subdomain boundary with a given processor.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the previous object.
- *    LB_ID local_id            --  Local ID of the previous object.
+ *    LB_GID global_id          --  Global ID of the previous object.
+ *    LB_LID local_id           --  Local ID of the previous object.
  *    int nbor_proc             --  processor ID of the neighboring processor.
  *  Output:
- *    LB_ID *next_global_id     --  Global ID of the next object; NULL if no
+ *    LB_GID *next_global_id    --  Global ID of the next object; NULL if no
  *                                  more objects.
- *    LB_ID *next_local_id      --  Local ID of the next object; NULL if no 
+ *    LB_LID *next_local_id     --  Local ID of the next object; NULL if no 
  *                                  more objects.
  *  Returned value:
  *    int                       --  1 if a valid object is returned; 0 if
@@ -276,9 +283,9 @@ typedef int LB_FIRST_BORDER_OBJ_FN(int nbor_proc, LB_ID *first_global_id,
  *                                  the last object).
  */
 
-typedef int LB_NEXT_BORDER_OBJ_FN(LB_ID global_id, LB_ID local_id, 
-                                  int nbor_proc,
-                                  LB_ID *next_global_id, LB_ID *next_local_id);
+typedef int LB_NEXT_BORDER_OBJ_FN(LB_GID global_id, LB_LID local_id, 
+                                 int nbor_proc,
+                                 LB_GID *next_global_id, LB_LID *next_local_id);
 
 /*****************************************************************************/
 /*
@@ -302,22 +309,22 @@ typedef int LB_OBJ_SIZE_FN();
  *  pre-processing in this function.
  *  Input:  
  *    int num_import            --  Number of objects to be imported.
- *    LB_ID *import_global_ids  --  Global IDs of objects to be imported.
- *    LB_ID *import_local_ids   --  Local IDs of objects to be imported.
+ *    LB_GID *import_global_ids --  Global IDs of objects to be imported.
+ *    LB_LID *import_local_ids  --  Local IDs of objects to be imported.
  *    int *import_procs         --  Processor IDs of importing processors.
  *    int num_export            --  Number of objects to be exported.
- *    LB_ID *export_global_ids  --  Global IDs of objects to be exported.
- *    LB_ID *export_local_ids   --  Local IDs of objects to be exported.
+ *    LB_GID *export_global_ids --  Global IDs of objects to be exported.
+ *    LB_LID *export_local_ids  --  Local IDs of objects to be exported.
  *    int *export_procs         --  Processor IDs of processors to receive
  *                                  the objects.
  *  Output:
  *    none                      --  the application performs pre-processing.
  */
 
-typedef void LB_PRE_MIGRATE_FN(int num_import, LB_ID *import_global_ids,
-                               LB_ID *import_local_ids, int *import_procs,
-                               int num_export, LB_ID *export_global_ids,
-                               LB_ID *export_local_ids, int *export_procs);
+typedef void LB_PRE_MIGRATE_FN(int num_import, LB_GID *import_global_ids,
+                               LB_LID *import_local_ids, int *import_procs,
+                               int num_export, LB_GID *export_global_ids,
+                               LB_LID *export_local_ids, int *export_procs);
 
 /*****************************************************************************/
 /*
@@ -327,8 +334,8 @@ typedef void LB_PRE_MIGRATE_FN(int num_import, LB_ID *import_global_ids,
  *  into a communication buffer, the starting address of which is provided
  *  by the load-balancer.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the object to be packed.
- *    LB_ID local_id            --  Local ID of the object to be packed.
+ *    LB_GID global_id          --  Global ID of the object to be packed.
+ *    LB_LID local_id           --  Local ID of the object to be packed.
  *    int dest_proc             --  Processor ID of the destination processor.
  *    int size                  --  number of bytes allowed for the object to
  *                                  be packed.
@@ -339,7 +346,7 @@ typedef void LB_PRE_MIGRATE_FN(int num_import, LB_ID *import_global_ids,
  *                                  data.
  */
 
-typedef void LB_PACK_OBJ_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
+typedef void LB_PACK_OBJ_FN(LB_GID global_id, LB_LID local_id, int dest_proc,
                                int size, char *buf);
 
 /*****************************************************************************/
@@ -349,7 +356,7 @@ typedef void LB_PACK_OBJ_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
  *  to help migrate the data.  The data is stored in a buffer (char *); the
  *  size of the data for the object is included.
  *  Input:  
- *    LB_ID global_id           --  Global ID of the object to be unpacked.
+ *    LB_GID global_id          --  Global ID of the object to be unpacked.
  *    int size                  --  number of bytes in the buffer for the
  *                                  object.
  *    char *buf                 --  starting address of buffer into which to
@@ -359,7 +366,7 @@ typedef void LB_PACK_OBJ_FN(LB_ID global_id, LB_ID local_id, int dest_proc,
  *                                  buffer.
  */
 
-typedef void LB_UNPACK_OBJ_FN(LB_ID global_id, int size, char *buf);
+typedef void LB_UNPACK_OBJ_FN(LB_GID global_id, int size, char *buf);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -488,9 +495,9 @@ extern void LB_Initialize_Params_Array(double *params);
  *    int *num_import            --  The number of non-local objects in the 
  *                                   processor's new decomposition (i.e.,
  *                                   number of objects to be imported).
- *    LB_ID **import_global_ids  --  Pointer to array of Global IDs for the
+ *    LB_GID **import_global_ids --  Pointer to array of Global IDs for the
  *                                   objects to be imported.
- *    LB_ID **import_local_ids   --  Pointer to array of Local IDs for the 
+ *    LB_LID **import_local_ids  --  Pointer to array of Local IDs for the 
  *                                   objects to be imported (local to the
  *                                   exporting processor).
  *    int **import_procs         --  Pointer to array of Processor IDs for the 
@@ -499,10 +506,10 @@ extern void LB_Initialize_Params_Array(double *params);
  *    int *num_export            --  The number of local objects that need to be
  *                                   exported from the processor to establish
  *                                   the new decomposition.
- *    LB_ID **export_global_ids  --  Pointer to array of Global IDs for the
+ *    LB_GID **export_global_ids --  Pointer to array of Global IDs for the
  *                                   objects to be exported from the current
  *                                   processor.
- *    LB_ID **export_local_ids   --  Pointer to array of Local IDs for the
+ *    LB_LID **export_local_ids  --  Pointer to array of Local IDs for the
  *                                   objects to be exported (local to the
  *                                   current processor).
  *    int **export_procs         --  Pointer to array of Processor IDs for the
@@ -519,10 +526,10 @@ extern void LB_Initialize_Params_Array(double *params);
  */
 
 extern int LB_Balance(struct LB_Struct *lb, 
-                      int *num_import, LB_ID **import_global_ids,
-                      LB_ID **import_local_ids, int **import_procs,
-                      int *num_export, LB_ID **export_global_ids,
-                      LB_ID **export_local_ids, int **export_procs);
+                      int *num_import, LB_GID **import_global_ids,
+                      LB_LID **import_local_ids, int **import_procs,
+                      int *num_export, LB_GID **export_global_ids,
+                      LB_LID **export_local_ids, int **export_procs);
 
 /*****************************************************************************/
 /*
@@ -535,10 +542,10 @@ extern int LB_Balance(struct LB_Struct *lb,
  *    struct LB_Struct *lb       --  Load balancing object for current balance.
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
- *    LB_ID *import_global_ids   --  Array of global IDs for non-local objects
+ *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
  *                                   assigned to this processor in the new
  *                                   decomposition.
- *    LB_ID *import_local_ids    --  Array of local IDs for non-local objects
+ *    LB_LID *import_local_ids   --  Array of local IDs for non-local objects
  *                                   assigned to the processor in the new
  *                                   decomposition.
  *    int *import_procs          --  Array of processor IDs of processors owning
@@ -548,10 +555,10 @@ extern int LB_Balance(struct LB_Struct *lb,
  *    int *num_export            --  The number of local objects that need to be
  *                                   exported from the processor to establish
  *                                   the new decomposition.
- *    LB_ID **export_global_ids  --  Pointer to array of Global IDs for the
+ *    LB_GID **export_global_ids --  Pointer to array of Global IDs for the
  *                                   objects to be exported from the current
  *                                   processor.
- *    LB_ID **export_local_ids   --  Pointer to array of Local IDs for the
+ *    LB_LID **export_local_ids  --  Pointer to array of Local IDs for the
  *                                   objects to be exported (local to the
  *                                   current processor).
  *    int **export_procs         --  Pointer to array of Processor IDs for the
@@ -561,10 +568,10 @@ extern int LB_Balance(struct LB_Struct *lb,
 
 
 extern void LB_Compute_Destinations(struct LB_Struct *lb,
-                                 int num_import, LB_ID *import_global_ids,
-                                 LB_ID *import_local_ids, int *import_procs, 
-                                 int *num_export, LB_ID **export_global_ids,
-                                 LB_ID **export_local_ids, int **export_procs);
+                                 int num_import, LB_GID *import_global_ids,
+                                 LB_LID *import_local_ids, int *import_procs, 
+                                 int *num_export, LB_GID **export_global_ids,
+                                 LB_LID **export_local_ids, int **export_procs);
 
 /*****************************************************************************/
 /*
@@ -582,10 +589,10 @@ extern void LB_Compute_Destinations(struct LB_Struct *lb,
  *    struct LB_Struct *lb       --  Load balancing object for current balance.
  *    int num_import             --  Number of non-local objects assigned to the
  *                                   processor in the new decomposition.
- *    LB_ID *import_global_ids   --  Array of global IDs for non-local objects
+ *    LB_GID *import_global_ids  --  Array of global IDs for non-local objects
  *                                   assigned to this processor in the new
  *                                   decomposition.
- *    LB_ID *import_local_ids    --  Array of local IDs for non-local objects
+ *    LB_LID *import_local_ids   --  Array of local IDs for non-local objects
  *                                   assigned to the processor in the new
  *                                   decomposition.
  *    int *import_procs          --  Array of processor IDs of processors owning
@@ -594,9 +601,9 @@ extern void LB_Compute_Destinations(struct LB_Struct *lb,
  *    int num_export             --  The number of local objects that need to be
  *                                   exported from the processor to establish
  *                                   the new decomposition.
- *    LB_ID *export_global_ids   --  Array of Global IDs for the objects to be 
+ *    LB_GID *export_global_ids  --  Array of Global IDs for the objects to be 
  *                                   exported from the current processor.
- *    LB_ID *export_local_ids    --  Array of Local IDs for the objects to be 
+ *    LB_LID *export_local_ids   --  Array of Local IDs for the objects to be 
  *                                   exported (local to the current processor).
  *    int *export_procs          --  Array of Processor IDs for the objects to
  *                                   be exported (processor IDs of destination
@@ -608,10 +615,10 @@ extern void LB_Compute_Destinations(struct LB_Struct *lb,
  */
 
 extern void LB_Help_Migrate(struct LB_Struct *lb,
-                            int num_import, LB_ID *import_global_ids,
-                            LB_ID *import_local_ids, int *import_procs,
-                            int num_export, LB_ID *export_global_ids,
-                            LB_ID *export_local_ids, int *export_procs);
+                            int num_import, LB_GID *import_global_ids,
+                            LB_LID *import_local_ids, int *import_procs,
+                            int num_export, LB_GID *export_global_ids,
+                            LB_LID *export_local_ids, int *export_procs);
 
 /*****************************************************************************/
 /*
@@ -619,22 +626,22 @@ extern void LB_Help_Migrate(struct LB_Struct *lb,
  *  are freed and the pointers are set to NULL.
  *
  *  Input:
- *    LB_ID **import_global_ids  --  Pointer to array of global IDs for imported
+ *    LB_GID **import_global_ids --  Pointer to array of global IDs for imported
  *                                   objects.
- *    LB_ID **import_local_ids   --  Pointer to array of local IDs for imported 
+ *    LB_LID **import_local_ids  --  Pointer to array of local IDs for imported 
  *                                   objects.
  *    int **import_procs         --  Pointer to array of processor IDs of 
  *                                   imported objects.
- *    LB_ID **export_global_ids  --  Pointer to array of global IDs for exported
+ *    LB_GID **export_global_ids --  Pointer to array of global IDs for exported
  *                                   objects.
- *    LB_ID **export_local_ids   --  Pointer to array of local IDs for exported
+ *    LB_LID **export_local_ids  --  Pointer to array of local IDs for exported
  *                                   objects.
  *    int **export_procs         --  Pointer to array of destination processor
  *                                   IDs of exported objects.
  */
-extern void LB_Free_Data(LB_ID **import_global_ids, LB_ID **import_local_ids,
+extern void LB_Free_Data(LB_GID **import_global_ids, LB_LID **import_local_ids,
                          int **import_procs,
-                         LB_ID **export_global_ids, LB_ID **export_local_ids,
+                         LB_GID **export_global_ids, LB_LID **export_local_ids,
                          int **export_procs);
 
 /*****************************************************************************/

@@ -24,8 +24,11 @@ static char *cvs_lbconsth_id = "$Id$";
 #include <strings.h>
 #include <math.h>
 
-#include "par_const.h"
 #include "lbi_const.h"
+
+/*
+ *  See bottom for other included files.
+ */
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -49,7 +52,7 @@ static char *cvs_lbconsth_id = "$Id$";
 typedef struct LB_Struct LB;
 typedef struct LB_Tag_Struct LB_TAG;
 
-typedef void LB_FN(LB *, int*, LB_ID**, LB_ID**, int **);
+typedef void LB_FN(LB *, int*, LB_GID**, LB_LID**, int **);
 
 /*
  *  Define the possible load balancing methods allowed.
@@ -72,9 +75,9 @@ typedef enum LB_Method {
  */
 
 struct LB_Tag_Struct {
-  LB_ID Global_ID;                /* Global ID for the object; provided by 
+  LB_GID Global_ID;               /* Global ID for the object; provided by 
                                      the application.                        */
-  LB_ID Local_ID;                 /* Local ID for the object; the application
+  LB_LID Local_ID;                /* Local ID for the object; the application
                                      determines what is meant by "local ID";
                                      the load-balancer stores this field only
                                      so the application can take advantage of
@@ -199,5 +202,7 @@ struct LB_Struct {
 extern LB_FN lb_rcb;
 extern LB_FN lb_wheat;
 extern LB_FN lb_oct_init;
+
+#include "par_const.h"
 
 #endif
