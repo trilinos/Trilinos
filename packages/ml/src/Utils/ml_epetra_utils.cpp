@@ -757,8 +757,6 @@ int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)
 }
 #endif
 
-
-
 #else
 
   /*noop for certain compilers*/

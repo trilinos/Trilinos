@@ -130,7 +130,8 @@ $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
-$(srcdir)/Utils/ml_ifpack_wrap.h
+$(srcdir)/Utils/ml_ifpack_wrap.h \
+$(srcdir)/Utils/ml_epetra_preconditioner.h
 
 
 UTIL = \
@@ -148,7 +149,8 @@ $(srcdir)/Utils/ml_viz_opendx.c \
 $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
-$(srcdir)/Utils/ml_ifpack_wrap.cpp
+$(srcdir)/Utils/ml_ifpack_wrap.cpp \
+$(srcdir)/Utils/ml_epetra_preconditioner.cpp
 
 
 ENUM_H = 
@@ -233,6 +235,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
               -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
               -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
+              -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \

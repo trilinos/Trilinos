@@ -110,6 +110,9 @@
 /* Define if want to build with ml_superlu_dist enabled */
 #undef HAVE_ML_SUPERLU_DIST
 
+/* Define if want to build with ml_teuchos enabled */
+#undef HAVE_ML_TEUCHOS
+
 /* Define if want to build with ml_timing enabled */
 #undef HAVE_ML_TIMING
 

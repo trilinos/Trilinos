@@ -1395,7 +1395,7 @@ int agg_offset, vertex_offset;
 
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_local;
        if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-	 printf( "%s Requested %d local aggregates (on proc 0)\n",
+	 printf( "%s Objective : %d local aggregates (on proc 0)\n",
 		 str,
 		 aggr_count );
        }
@@ -1405,7 +1405,7 @@ int agg_offset, vertex_offset;
        
        aggr_count = aggr_options[ml_ag->cur_level].Naggregates_global;
        if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-	 printf( "%s Requested %d global aggregates\n",
+	 printf( "%s Objective : %d global aggregates\n",
 		 str,
 		 aggr_count );
        }
@@ -1451,7 +1451,7 @@ int agg_offset, vertex_offset;
        aggr_count = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
 
        if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
-	 printf( "%s Requested %d nodes per aggregate\n",
+	 printf( "%s Objective : %d nodes per aggregate\n",
 		 str,
 		 aggr_count );
        }

@@ -322,6 +322,7 @@ TAC_ARG_WITH_PACKAGE(ml_amesos, [Enable AMESOS support.  Note 1: Amesos is a thi
 #
 TAC_ARG_WITH_PACKAGE(ml_ifpack, [Enable IFPACK support.  Note 1: Ifpack is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Ifpack headers and libraries like so: configure --with-libs="<other libraries> -lifpack" --with-ldflags="-L<Ifpack-library-path>" and --with-incdirs="<Ifpack-include-path>". Note 3: Ifpack requires --with-ml_epetra], ML_IFPACK, no)
 #
+TAC_ARG_WITH_PACKAGE(ml_teuchos, [Enable TEUCHOS support.  Note 1: Ifpack is a third party library (part of the Trilinos framework).  As such, configure assumes that it has already been built.  Note 2: You may need to specify the location of the Teuchos headers and libraries like so: configure --with-libs="<other libraries> -lteuchos" --with-ldflags="-L<Ifpack-library-path>" and --with-incdirs="<teuchos-include-path>". Note 3: teuchos requires --with-ml_epetra], ML_TEUCHOS, no)
 
 AC_ARG_WITH(ml-64bit-integer,
 [AC_HELP_STRING([--with-ml-64bit-integer],[Support for 64-bit integers; required if ML used

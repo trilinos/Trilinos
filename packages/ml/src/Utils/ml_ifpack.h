@@ -23,6 +23,12 @@
 #define ML_IFPACK_PARAMS_SIZE            20
 #define ML_IFPACK_RELAX_VALUE             0
 
+#ifndef ML_CPP
+#ifdef __cplusplus
+   extern "C" {
+#endif
+#endif
+
 extern int ML_Smoother_Ifpack(void *sm,int inlen,double x[],int outlen,
 			      double rhs[]);
 
@@ -30,5 +36,11 @@ void ML_Smoother_Clean_Ifpack(void * Ifpack_Handle);
 
 int ML_Gen_Smoother_Ifpack(ML *ml, int nl, int choice, int *options,
 			   double *params);
+
+#ifndef ML_CPP
+#ifdef __cplusplus
+   }
+#endif
+#endif
 
 #endif /* #ifndef __ML_IFPACK_H__ */

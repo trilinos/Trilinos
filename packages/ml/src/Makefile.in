@@ -222,7 +222,8 @@ $(srcdir)/Utils/ml_vampir.h \
 $(srcdir)/Utils/ml_amesos.h \
 $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
-$(srcdir)/Utils/ml_ifpack_wrap.h
+$(srcdir)/Utils/ml_ifpack_wrap.h \
+$(srcdir)/Utils/ml_epetra_preconditioner.h
 
 
 UTIL = \
@@ -240,7 +241,8 @@ $(srcdir)/Utils/ml_viz_opendx.c \
 $(srcdir)/Utils/ml_amesos.c \
 $(srcdir)/Utils/ml_amesos_wrap.cpp \
 $(srcdir)/Utils/ml_ifpack.c \
-$(srcdir)/Utils/ml_ifpack_wrap.cpp
+$(srcdir)/Utils/ml_ifpack_wrap.cpp \
+$(srcdir)/Utils/ml_epetra_preconditioner.cpp
 
 
 ENUM_H = 
@@ -318,6 +320,7 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
               -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
               -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
               -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
+              -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
               -I$(srcdir)/Comm \
               -I$(srcdir)/Operator \
               -I$(srcdir)/Smoother \
@@ -449,7 +452,8 @@ am__objects_2 = ml_rbm.$(OBJEXT) ml_aztec_utils.$(OBJEXT) \
 	ml_lapack.$(OBJEXT) ml_memory.$(OBJEXT) ml_eigf2c.$(OBJEXT) \
 	ml_agg_info.$(OBJEXT) ml_viz_opendx.$(OBJEXT) \
 	ml_amesos.$(OBJEXT) ml_amesos_wrap.$(OBJEXT) \
-	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT)
+	ml_ifpack.$(OBJEXT) ml_ifpack_wrap.$(OBJEXT) \
+	ml_epetra_preconditioner.$(OBJEXT)
 am__objects_3 =
 @HAVE_MPI_TRUE@am__objects_4 = $(am__objects_3)
 @HAVE_MPI_FALSE@am__objects_4 =
@@ -488,6 +492,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_csolve.Po ./$(DEPDIR)/ml_eigf2c.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_elementagx.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_operator.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_epetra_utils.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_exch_row.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_get_basis.Po ./$(DEPDIR)/ml_ggb.Po \
@@ -658,6 +663,8 @@ ml_amesos.$(OBJEXT): $(srcdir)/Utils/ml_amesos.c
 ml_amesos_wrap.$(OBJEXT): $(srcdir)/Utils/ml_amesos_wrap.cpp
 ml_ifpack.$(OBJEXT): $(srcdir)/Utils/ml_ifpack.c
 ml_ifpack_wrap.$(OBJEXT): $(srcdir)/Utils/ml_ifpack_wrap.cpp
+ml_epetra_preconditioner.$(OBJEXT): \
+	$(srcdir)/Utils/ml_epetra_preconditioner.cpp
 libml.a: $(libml_a_OBJECTS) $(libml_a_DEPENDENCIES) 
 	-rm -f libml.a
 	$(libml_a_AR) libml.a $(libml_a_OBJECTS) $(libml_a_LIBADD)
@@ -697,6 +704,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_eigf2c.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_elementagx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_operator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_epetra_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_exch_row.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_get_basis.Po@am__quote@
@@ -1581,6 +1589,18 @@ ml_ifpack_wrap.obj: $(srcdir)/Utils/ml_ifpack_wrap.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/ml_ifpack_wrap.Po' tmpdepfile='$(DEPDIR)/ml_ifpack_wrap.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_ifpack_wrap.obj `cygpath -w $(srcdir)/Utils/ml_ifpack_wrap.cpp`
+
+ml_epetra_preconditioner.o: $(srcdir)/Utils/ml_epetra_preconditioner.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_epetra_preconditioner.cpp' object='ml_epetra_preconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_preconditioner.o `test -f '$(srcdir)/Utils/ml_epetra_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/Utils/ml_epetra_preconditioner.cpp
+
+ml_epetra_preconditioner.obj: $(srcdir)/Utils/ml_epetra_preconditioner.cpp
+@AMDEP_TRUE@	source='$(srcdir)/Utils/ml_epetra_preconditioner.cpp' object='ml_epetra_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_epetra_preconditioner.obj `cygpath -w $(srcdir)/Utils/ml_epetra_preconditioner.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
