@@ -314,7 +314,11 @@ else
       if test `expr $yes_or_no` = 'yess' ||
          test `expr $yes_or_no` = 's'
       then
-         ${echo} "This is not done yet ..."
+         ${echo} "Here goes ..."
+         cd ${directory}/SRC
+         make "CC=${CC}" "ARCH=${AR}" "RANLIB=${RANLIB}" "PLAT=${ARCH}" \
+              "CFLAGS=${ARCH_FLAGS} ${MPI_INC_PATH}" "LOADER=${LINKER}"  double
+         cd $ML_HOME
       fi
       ${echo} "=================================================================="
    fi
