@@ -38,8 +38,8 @@ PARALLEL_CMD=`echo mpirun -machinefile ${HOME}/bin/machinefile -np `
 #                                parallel benchmarks should be run.
 #
 SCRIPT_DIRECTORY=${PWD}
-BENCH_DIRECTORY=${HOME}/mlbench
-#BENCH_DIRECTORY=${HOME}/tmp/mlbench
+#BENCH_DIRECTORY=${HOME}/mlbench
+BENCH_DIRECTORY=${HOME}/tmp/mlbench
 EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_DIRECTORY=/tmp/mlbench_results
 PARALLEL=FALSE
