@@ -33,7 +33,15 @@ contains
 function ptrcompare(p1,p2)
 logical :: ptrcompare
 type(LB_PTR), intent(in) :: p1, p2
-ptrcompare = (p1%addr == p2%addr)
+integer :: i
+! should be able to compare the strings with a single statement
+!   ptrcompare = (p1%addr == p2%addr)
+! but bugs in PGI 3.1-2 and NAG 4.0 require comparing one character
+! at a time
+ptrcompare = .true.
+do i=1,LB_PTR_LENGTH
+   ptrcompare = ptrcompare .and. (p1%addr(i:i) == p2%addr(i:i))
+end do
 end function ptrcompare
 
 end module zoltan_types
