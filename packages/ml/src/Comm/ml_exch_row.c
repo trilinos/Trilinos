@@ -885,7 +885,14 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
             /* else col = j + imatrix->getrow->Nrows; */
             else col = j + imatrix->invec_leng;
          }
-         bindx[next_nz] = col; val[next_nz++] = dtemp;
+	 /* rst: changing this to weed out any zero values */
+	 /* in the final matrix that is created. A long    */
+	 /* time ago ... we used to do this. I'm not sure  */
+	 /* if there is a reason that we stopped weeding   */
+	 /* out zeros.                                     */
+	 if (dtemp != 0.) {
+	   bindx[next_nz] = col; val[next_nz++] = dtemp;
+	 }
       }
       rowptr[i+1] = next_nz;
    }
