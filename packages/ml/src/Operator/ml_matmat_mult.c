@@ -562,17 +562,25 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
       }
 
       /* store matrix row */
-
+      /*
       memcpy(&(Ccol[next_nz]),accum_col, sizeof(int)*Ncols);
       memcpy(&(Cval[next_nz]),accum_val, sizeof(double)*Ncols);
       next_nz += Ncols;
+      */
 
-      /* above code might be a bit faster???
+      /* above code might be a bit faster??? */
       for (k = 0; k < Ncols; k++) {
+	/* This 'if' might break some applications somewhere */
+	/* but I can't remember who and where or why?        */
+	/* For now, I want to reduce memory in alegra so I am*/
+	/* putting it in. If we later want to take this out  */
+	/* we should use the memcpy code above.              */
+	if (accum_val[k] != 0.0) {
           Ccol[next_nz] = accum_col[k];
           Cval[next_nz++] = accum_val[k];
+	}
       }
-      */
+      /*      */
 #ifdef takeout
 for (jj = 0; jj < Ncols; jj++) accum_val[jj] = 0.;
 #endif
