@@ -646,6 +646,25 @@ static int Zoltan_ParMetis_Jostle(
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
+#if PARMETIS_MAJOR_VERSION >= 3
+    /* Special error checks to avoid totally baffled users of ParMETIS.
+     * ParMETIS 3.0 Partkway ignores partition sizes for problems with 
+     * less than 10000 objects.
+     */
+    if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts) 
+                                 && (zz->Obj_Weight_Dim <= 1)) {
+      int gsum;
+      MPI_Allreduce(&num_obj, &gsum, 1, MPI_INT, MPI_SUM, comm);
+      if (gsum < 10000) {
+        char str[256];
+        sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
+                "to ignore partition sizes; uniform partition sizes will be "
+                "produced. Please try a different load-balancing method.\n", 
+                gsum);
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, str);
+      }
+    }
+#endif
 
   }
   
@@ -672,15 +691,25 @@ static int Zoltan_ParMetis_Jostle(
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   /* Copy parts array to part, in case ParMetis needs it. */
-  for (i=0; i<num_obj; i++){
+  for (i=0; i<num_obj; i++) 
     part[i] = parts[i];
-    if ((part[i] >= num_part) && !strcmp(alg, "ADAPTIVEREPART")){
-      /* ParMetis 3.0 will crash if part[i] >= num_part on input 
-       * and ADAPTIVEREPART is chosen. EBEB: Remove this test when
-       * there is a patch or new release for ParMetis 3. */
+
+  /* Special error checks to avoid certain death in ParMETIS.
+   * AdaptiveRepart uses input partition number to index into an array 
+   * of size num_part.  Thus, it segfaults if an input 
+   * partition number >= num_part. 
+   * EBEB: Remove this test when there is a patch or new release for
+   * ParMetis 3. 
+   */
+  if (strcmp(alg, "ADAPTIVEREPART") == 0) {
+    int gmax, maxpart = -1;
+    for (i = 0; i < num_obj; i++)
+      if (part[i] > maxpart) maxpart = part[i];
+    MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
+    if (gmax >= num_part) {
       sprintf(msg, "Partition number %1d >= number of partitions %1d.\n"
         "ParMETIS 3.0 with %s will fail, please use a different method.",
-         part[i], num_part, alg);
+         gmax, num_part, alg);
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, msg);
     }
   }
@@ -849,20 +878,28 @@ static int Zoltan_ParMetis_Jostle(
     ierr = Zoltan_Verify_Graph(zz->Communicator, vtxdist, xadj, adjncy, vwgt, 
               adjwgt, obj_wgt_dim, edge_wgt_dim, graph_type, check_graph, flag);
   
-    /* Special error checks to avoid certain death in ParMETIS 2.0 */
+    /* Special error checks to avoid certain death in ParMETIS */
     if (xadj[num_obj] == 0){
       /* No edges on a proc is a fatal error in ParMETIS 2.0
        * and in Jostle 1.2. This error test should be removed
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
       if (strcmp(alg, "JOSTLE") == 0){
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle will likely fail. Please try a different load balancing method.");
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. Jostle "
+                              "will likely fail. Please try a different "
+                              "load-balancing method.");
       } else { /* ParMETIS */
 #if (PARMETIS_MAJOR_VERSION == 2) 
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS 2.x will likely fail. You should upgrade to ParMETIS 3, or try a different load balancing method."); 
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
+                              "ParMETIS 2.x will likely fail. You should "
+                              "upgrade to ParMETIS 3, or try a different "
+                              "load-balancing method."); 
 #else /* PARMETIS_MAJOR_VERSION == 3 */
         if (strcmp(alg, "ADAPTIVEREPART") == 0)
-          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. ParMETIS 3.0 will likely fail with method AdaptiveRepart. Please try a different load balancing method."); 
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
+                                "ParMETIS 3.0 will likely fail with method "
+                                "AdaptiveRepart. Please try a different "
+                                "load-balancing method."); 
 #endif
       }
     }
@@ -877,7 +914,7 @@ static int Zoltan_ParMetis_Jostle(
   if (!compute_order){ /* ordering does not need partsizes */
     /* Assume partition sizes are given as input. */
     if (!part_sizes){
-      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Input parameter part_sizes is NULL.");
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,"Input parameter part_sizes is NULL.");
     }
     if ((zz->Proc == 0) && (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)) {
       for (i=0; i<num_part; i++){
@@ -887,6 +924,17 @@ static int Zoltan_ParMetis_Jostle(
         printf("\n");
       }
     }
+
+    /* Special error checks to avoid certain death in ParMETIS */
+    /* ParMETIS3.0 divides by partition sizes in AdaptiveRepart, */
+    /* so it has a FPE when part_sizes[i] == 0 */
+    if (strcmp(alg, "ADAPTIVEREPART") == 0)
+      for (i = 0; i < num_part*ncon; i++)
+        if (part_sizes[i] == 0) 
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Zero-sized partitions requested."
+                                "ParMETIS 3.0 will likely fail. Please try a "
+                                "different load-balancing method."); 
+
   }
 #else /* PARMETIS_MAJOR_VERSION < 3 */
   if ((ncon >= 2) && strcmp(alg, "JOSTLE")) {
@@ -896,7 +944,13 @@ static int Zoltan_ParMetis_Jostle(
       "version of parmetis.h and recompile Zoltan.");
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Multi-constraint error.");
   }
-  /* Warn if non-uniform partition sizes are input? */
+  /* Error if non-uniform partition sizes are input. */
+  if (!(zz->LB.Uniform_Parts)) {
+    ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,
+      "You need ParMETIS v3.0 or higher to non-uniform partition sizes.\n"
+      "If you have this version installed, please include the appropriate\n"
+      "version of parmetis.h and recompile Zoltan.");
+  }
 #endif 
 
   if (strcmp(alg, "JOSTLE") == 0){
