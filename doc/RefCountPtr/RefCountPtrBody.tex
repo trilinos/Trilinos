@@ -577,11 +577,11 @@ mutable object
 \hline
 array of non-mutable objects
 & {}\texttt{const S s[]}
-& {}\texttt{RefCountPtr<const S> s[]} \\
+& {}\texttt{const RefCountPtr<const S> s[]} \\
 \hline
 array of mutable objects
 & {}\texttt{S s[]}
-& {}\texttt{RefCountPtr<S> s[]} \\
+& {}\texttt{const RefCountPtr<S> s[]} \\
 \hline
 \end{tabular}
 \begin{center}
@@ -617,11 +617,11 @@ mutable object
 \hline
 array of non-mutable objects
 & {}\texttt{const A* a[]}
-& {}\texttt{RefCountPtr<const A> a[]} \\
+& {}\texttt{const RefCountPtr<const A> a[]} \\
 \hline
 array of mutable objects
 & {}\texttt{A* a[]}
-& {}\texttt{RefCountPtr<A> a[]} \\
+& {}\texttt{const RefCountPtr<A> a[]} \\
 \hline
 \end{tabular}
 \begin{center}
