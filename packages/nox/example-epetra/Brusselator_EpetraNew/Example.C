@@ -240,19 +240,26 @@ int main(int argc, char *argv[])
   // Create a timer for performance
   Epetra_Time fillTime(Comm);
 
-  bool verbose = false; 
-  int reordering = 0; 
-  bool useParallelColoring = true; 
   EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
     EpetraExt::CrsGraph_MapColoring::ALGO_GREEDY;
-  EpetraExt::CrsGraph_MapColoring tmpMapColoring(algType, verbose, reordering, useParallelColoring); 
+  bool verbose = false; 
+  int reordering = 0; 
+  bool colorParallel = true; 
+  bool serialBoundaryColoring = true; 
+  int verbosityLevel = 0; 
+  bool distance1 = false; 
+  EpetraExt::CrsGraph_MapColoring tmpMapColoring(
+    algType, verbose, reordering, colorParallel, serialBoundaryColoring, 
+    verbosityLevel, distance1); 
   Epetra_MapColoring* colorMap = &tmpMapColoring(Problem.getGraph());
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
   vector<Epetra_IntVector>* columns = &colorMapIndex(Problem.getGraph());
+
   NOX::EpetraNew::FiniteDifferenceColoring FDC(interface, soln, 
                                              Problem.getGraph(),
                                              *colorMap, *columns, 
-                                             useParallelColoring);
+                                             colorParallel,
+                                             distance1);
                                              //1.0e-6, 0.e0);
   printf("\n[%d]\tTime to color Jacobian --> %e sec.  for %d colors.\n\n",
               MyPID,fillTime.ElapsedTime(), colorMap->NumColors());

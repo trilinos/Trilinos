@@ -44,12 +44,12 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
   xmin(0.0),
   xmax(1.0),
   dt(5.0e-1),
-  Comm(&comm),
   overlapType(OType_),
-  NumGlobalNodes(numGlobalNodes),
   ColumnToOverlapImporter(0),
   AA(0),
-  A(0)
+  A(0),
+  Comm(&comm),
+  NumGlobalNodes(numGlobalNodes)
 {
 
   // Commonly used variables
@@ -233,10 +233,12 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm,
 // Destructor
 Brusselator::~Brusselator()
 {
-  delete AA;
+  delete A;
+  //delete AA;
   delete xptr;
   delete initialSolution;
   delete oldSolution;
+  delete nodeImporter;
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
@@ -319,7 +321,6 @@ bool Brusselator::evaluate(NOX::EpetraNew::Interface::Required::FillType fType,
   // Declare required variables
   int i,j,ierr;
   int OverlapNumMyNodes = OverlapNodeMap->NumMyElements();
-  int OverlapNumMyUnknowns = OverlapMap->NumMyElements();
 
   int OverlapMinMyNodeGID;
   if (MyPID==0) OverlapMinMyNodeGID = StandardNodeMap->MinMyGID();
@@ -327,8 +328,6 @@ bool Brusselator::evaluate(NOX::EpetraNew::Interface::Required::FillType fType,
 
   int row1, row2, column1, column2;
   double term1, term2;
-  double factor1=1000.0;
-  double factor2=1000.0;
   double Dcoeff1 = 0.025;
   double Dcoeff2 = 0.025;
   double alpha = 0.6;
