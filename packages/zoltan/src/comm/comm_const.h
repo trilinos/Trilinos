@@ -19,7 +19,7 @@
 static char *cvs_commh_id = "$Id$";
 #endif
 
-#include "mpi.h"
+#include <mpi.h>
 
 /* data structure for irregular communication */
 
@@ -42,8 +42,8 @@ typedef struct Comm_Obj COMM_OBJ;
 
 /* function prototypes */
 
-void comm_do(struct Comm_Obj *, char *, int, char *);
-struct Comm_Obj *comm_create(int, int *, MPI_Comm, int *);
-void comm_destroy(struct Comm_Obj *);
+extern void comm_do(struct Comm_Obj *, char *, int, char *);
+extern struct Comm_Obj *comm_create(int, int *, MPI_Comm, int *);
+extern void comm_destroy(struct Comm_Obj *);
 
 #endif

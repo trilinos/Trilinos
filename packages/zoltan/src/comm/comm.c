@@ -24,9 +24,8 @@ static char *cvs_commc_id = "$Id$";
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <mpi.h>
 #include <memory.h>
-#include "comm.h"
+#include "comm_const.h"
 #include "all_allo_const.h"
 
 #define MAX(A,B) ((A) > (B)) ? (A) : (B)
