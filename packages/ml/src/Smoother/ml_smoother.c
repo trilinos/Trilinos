@@ -27,11 +27,13 @@
 /* ML_Smoother_OverlappedILUT                                                */
 /* ML_Smoother_VBlockAdditiveSchwarz                                         */
 /* ML_Smoother_VBlockMultiplicativeSchwarz                                   */
+/* ML_Smoother_ParaSails                                                     */
 /* ************************************************************************* */
 /*  Methods available                                                        */
 /*   - weighted Jacobi                                                       */
 /*   - Gauss Seidel                                                          */
 /*   - symmetric Gauss Seidel                                                */
+/*   - symmetric Gauss Seidel (sequential)                                   */
 /*   - block Gauss Seidel                                                    */
 /*   - variable block Jacobi                                                 */
 /*   - variable block Symmetric Gauss Seidel                                 */
@@ -40,11 +42,16 @@
 /*   - overlapped ILUT                                                       */
 /*   - variable block additive Schwarz                                       */
 /*   - variable block multiplicative Schwarz                                 */
+/*   - sparse approximate inverse                                            */
 /* ************************************************************************* */
 
 #include "ml_smoother.h"
 #include "ml_aztec_utils.h"
 #include "ml_lapack.h"
+
+/* ************************************************************************* */
+/* include files for SuperLU and MPI                                         */
+/* ------------------------------------------------------------------------- */
 
 #ifdef SUPERLU
 #include "dsp_defs.h"
@@ -113,12 +120,15 @@ int ML_Smoother_Destroy(ML_Smoother **sm)
 
 int ML_Smoother_Clean(ML_Smoother *ml_sm)
 {
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    int    nprocs, mypid;
    double t1;
 #endif
+   ML_Sm_BGS_Data     *ml_data;
+   ML_Sm_ILUT_Data    *ilut_data;
+   ML_Sm_Schwarz_Data *schwarz_data;
 
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    mypid  = ml_sm->my_level->comm->ML_mypid;
    nprocs = ml_sm->my_level->comm->ML_nprocs;
    t1 = ML_gsum_double(ml_sm->build_time, ml_sm->my_level->comm);
@@ -135,7 +145,7 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       printf(" Build time for %s (minimum) \t= %e\n",ml_sm->label,t1);
 #endif
 
-#ifdef ML_DETAILED_TIMING
+#ifdef ML_TIMING_DETAILED
    if (ml_sm->label != NULL) 
    {
       t1 = ML_gsum_double(ml_sm->apply_time, ml_sm->my_level->comm);
@@ -164,6 +174,40 @@ int ML_Smoother_Clean(ML_Smoother *ml_sm)
       ml_sm->smoother->data = NULL;
    }
    ml_sm->data_destroy = NULL;
+   if ( ml_sm->smoother->internal == ML_Smoother_VBlockSGS ||
+        ml_sm->smoother->internal == ML_Smoother_VBlockJacobi )
+   {
+      ml_data = ml_sm->smoother->data;
+      if ( ml_data != NULL )
+      {
+         ML_Smoother_Destroy_BGS_Data(&(ml_data));
+         ml_sm->smoother->data = NULL;
+      }
+   }
+   if ( ml_sm->smoother->internal == ML_Smoother_OverlappedILUT &&
+        ml_sm->smoother->data != NULL )
+   {
+      ilut_data = ml_sm->smoother->data;
+      ML_Smoother_Destroy_ILUT_Data(ilut_data);
+      ml_sm->smoother->data = NULL;
+   }
+   if ( ml_sm->smoother->internal == ML_Smoother_SGS &&
+        ml_sm->smoother->data != NULL )
+   {
+#ifdef ML_FAST
+      ilut_data = ml_sm->smoother->data;
+      ML_Smoother_Destroy_ILUT_Data(ilut_data);
+      ml_sm->smoother->data = NULL;
+#endif
+   }
+   if (((ml_sm->smoother->internal == ML_Smoother_VBlockAdditiveSchwarz) ||
+        (ml_sm->smoother->internal == ML_Smoother_VBlockMultiplicativeSchwarz)) &&
+        ml_sm->smoother->data != NULL )
+   {
+      schwarz_data = ml_sm->smoother->data;
+      ML_Smoother_Destroy_Schwarz_Data(&(schwarz_data));
+      ml_sm->smoother->data = NULL;
+   }
 
    ML_memory_free((void**)&(ml_sm->smoother));
    if (ml_sm->label != NULL) { free(ml_sm->label); ml_sm->label = NULL; }
@@ -198,14 +242,14 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
    int         i, n;
    double      temp, *res, tol;
    ML_Operator *Amat;
-#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
-   double      t0;
 
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
+   double      t0;
    t0 = GetClock();
 #endif
 
    if (pre->smoother->ML_id == ML_EMPTY) return 1;
-pre->init_guess = init_guess;
+   pre->init_guess = init_guess;
 
    if (pre->smoother->ML_id == ML_EXTERNAL)
         pre->smoother->external(pre->smoother->data,inlen,sol,outlen,rhs);
@@ -231,7 +275,7 @@ pre->init_guess = init_guess;
       }
       else pre->smoother->internal(pre,inlen,sol,outlen,rhs);
    }
-#if defined(ML_TIMING) || defined(ML_DETAILED_TIMING)
+#if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    pre->apply_time += (GetClock() - t0);
 #endif
    return 1;
@@ -279,20 +323,27 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
    double *res,omega, *diagonal, *vals, *tdiag, *res2 = NULL;
    double r_z_dot, p_ap_dot;
    ML_Smoother  *smooth_ptr;
-#ifdef ML_SMOOTHER_DEBUG
+
+#ifdef ML_DEBUG_SMOOTHER
    ML_Comm      *comm;
    double res_norm;
 #endif
 
    smooth_ptr = (ML_Smoother *) sm;
 
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
    comm = smooth_ptr->my_level->comm;
 #endif
+
    omega = smooth_ptr->omega;
    Amat = smooth_ptr->my_level->Amat;
    if (Amat->matvec->ML_id == ML_EMPTY) 
          pr_error("Error(ML_Jacobi): Need matvec\n");
+
+   /* ----------------------------------------------------------------- */
+   /* extract diagonal using getrow function if not found               */
+   /* ----------------------------------------------------------------- */
+
    if (Amat->diagonal == NULL) 
    {
       if (Amat->getrow->ML_id == ML_EMPTY) 
@@ -334,7 +385,8 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
    if (smooth_ptr->omega == ML_ONE_STEP_CG) {
       res2  = (double *) malloc(n*sizeof(double));
    }
-#ifdef ML_SMOOTHER_DEBUG
+
+#ifdef ML_DEBUG_SMOOTHER
    if (res2 != NULL) res2  = (double *) malloc(n*sizeof(double));
    printf("    ML_Jacobi, omega = %e\n", omega);
 #endif
@@ -356,7 +408,8 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
          else omega = 1.;
       }
       for (i = 0; i < n; i++) x[i] += omega*res[i];
-#ifdef ML_SMOOTHER_DEBUG
+
+#ifdef ML_DEBUG_SMOOTHER
       ML_Operator_Apply(Amat, n, x, n, res2);
       for ( i = 0; i < n; i++ ) res2[i] = rhs[i] - res2[i];
       res_norm = sqrt(ML_gdot(n, res2, res2, comm));
@@ -377,7 +430,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 {
    int iter, i, j, length, allocated_space, *cols, col;
    double dtemp, diag_term, *vals;
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
    double *res2, res_norm;
 #endif
    ML_Operator *Amat;
@@ -387,6 +440,10 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    double *x2, omega;
    ML_Smoother  *smooth_ptr;
    smooth_ptr = (ML_Smoother *) sm;
+
+   /* ----------------------------------------------------------------- */
+   /* set up                                                            */
+   /* ----------------------------------------------------------------- */
 
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
@@ -416,9 +473,14 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    }
    else x2 = x;
 
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
    res2 = (double*) malloc(Nrows * sizeof(double));
 #endif
+
+   /* ----------------------------------------------------------------- */
+   /* perform smoothing                                                 */
+   /* ----------------------------------------------------------------- */
+
    for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
    {
       if (getrow_comm != NULL)
@@ -441,7 +503,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 
          x2[i] += omega * (rhs[i] - dtemp)/diag_term;
       }
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
       ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
       for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
       res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
@@ -456,10 +518,237 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    if (allocated_space != Amat->max_nz_per_row+1) 
       Amat->max_nz_per_row = allocated_space;
 
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
    free(res2);
 #endif
    free(vals); free(cols);
+
+   return 0;
+}
+
+/* ************************************************************************* */
+/* Symmetric Gauss-Seidel smoother                                           */
+/* ------------------------------------------------------------------------- */
+
+int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
+{
+   int iter, i, j, length, allocated_space, *cols, col;
+   double dtemp, diag_term, *vals, omega;
+   ML_Operator *Amat;
+   ML_Comm *comm;
+   ML_CommInfoOP *getrow_comm;
+   int Nrows;
+   double *x2;
+#ifdef ML_SMOOTHER_DEBUG
+   double *res2, res_norm, init_norm;
+#endif
+   ML_Smoother  *smooth_ptr;
+#ifdef ML_FAST
+   ML_Sm_ILUT_Data *ilut_data;
+#endif
+
+   /* ----------------------------------------------------------------- */
+   /* fetch data                                                        */
+   /* ----------------------------------------------------------------- */
+
+   smooth_ptr = (ML_Smoother *) sm;
+   omega = smooth_ptr->omega;
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+#ifdef ML_FAST
+   ilut_data  = smooth_ptr->smoother->data;
+#endif
+
+   if (Amat->getrow->ML_id == ML_EMPTY) 
+      pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
+
+   /* ----------------------------------------------------------------- */
+   /* if matrix not found, get it (more efficient implementation, but   */
+   /* take up much more memory)                                         */
+   /* ----------------------------------------------------------------- */
+
+#ifdef ML_FAST
+   ilut_data  = smooth_ptr->smoother->data;
+   if ( ilut_data != NULL )
+   {
+      rptr = ilut_data->mat_ia;
+      cols = ilut_data->mat_ja;
+      vals = ilut_data->mat_aa;
+   }
+   else
+   {
+      allocated_space = (Amat->max_nz_per_row+1) * Nrows + 1;
+      rptr = (int    *) malloc(allocated_space*sizeof(int   ));
+      cols = (int    *) malloc(allocated_space*sizeof(int   ));
+      vals = (double *) malloc(allocated_space*sizeof(double));
+      if (vals == NULL) pr_error("ML_Smoother_SGS ERROR: Not enough space\n");
+      nnz = 0;
+      rptr[0] = nnz;
+      for (i = 0; i < Nrows; i++)
+      {
+         ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,&length,nnz);
+         nnz += length;
+         rptr[i+1] = nnz;
+      }
+      if ( nnz > allocated_space ) printf("ERROR in ML_Smoother_SGS memory\n");
+      ML_memory_alloc((void**)&ilut_data, sizeof(ML_Sm_ILUT_Data), "ILU");
+      ilut_data->Nrows = Nrows;
+      ilut_data->mat_ia = rptr;
+      ilut_data->mat_ja = cols;
+      ilut_data->mat_aa = vals;
+      ilut_data->getrow_comm = NULL;
+      ilut_data->fillin = 0;
+      smooth_ptr->smoother->data = ilut_data;
+   }
+#else
+   allocated_space = Amat->max_nz_per_row + 1;
+   cols = (int    *) malloc(allocated_space*sizeof(int   ));
+   vals = (double *) malloc(allocated_space*sizeof(double));
+   if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
+#endif
+
+   /* ----------------------------------------------------------------- */
+   /* get an extended buffer for ghost data                             */
+   /* ----------------------------------------------------------------- */
+
+   getrow_comm = Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) 
+   {
+      x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
+				   *sizeof(double));
+      if (x2 == NULL) 
+      {
+         printf("Not enough space in Gauss-Seidel\n"); exit(1);
+      }
+      for (i = 0; i < inlen; i++) x2[i] = x[i];
+   }
+   else x2 = x;
+
+   /* ----------------------------------------------------------------- */
+   /* perform smoothing (more memory efficient version)                 */
+   /* ----------------------------------------------------------------- */
+
+#ifdef ML_SMOOTHER_DEBUG
+   res2 = (double*) malloc(Nrows * sizeof(double));
+#endif
+
+#ifndef ML_FAST
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   {
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+      for (i = 0; i < Nrows; i++) 
+      {
+         dtemp = 0.0;
+         diag_term = 0.0;
+         ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+         for (j = 0; j < length; j++) 
+         {
+            col = cols[j];
+            dtemp += vals[j]*x2[col];
+            if (col == i) diag_term = vals[j];
+         }
+         if (diag_term != 0.0)
+            x2[i] += omega*(rhs[i] - dtemp)/diag_term;
+      }
+#ifdef ML_DEBUG_SMOOTHER
+      ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
+      for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
+      res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
+      printf("      SGS (for ) : iter = %2d, rnorm = %e\n", iter, res_norm);
+#endif
+
+#ifdef ML_OBSOLETE
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+#endif
+
+      for (i = Nrows-1; i >= 0; i--) 
+      {
+         dtemp = 0.0;
+         diag_term = 0.0;
+         ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+         for (j = 0; j < length; j++) 
+         {
+            col = cols[j];
+            dtemp += vals[j]*x2[col];
+            if (col == i) diag_term = vals[j];
+         }
+         if (diag_term != 0.0)
+            x2[i] += omega*(rhs[i] - dtemp)/diag_term;
+      }
+
+#ifdef ML_DEBUG_SMOOTHER
+      ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
+      for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
+      res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
+      printf("      SGS (back) : iter = %2d, rnorm = %e\n", iter, res_norm);
+#endif
+   }
+#else
+
+   /* ----------------------------------------------------------------- */
+   /* perform smoothing (more CPU efficient version)                    */
+   /* ----------------------------------------------------------------- */
+
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
+   {
+      if (getrow_comm != NULL)
+         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+      for (i = 0; i < Nrows; i++)
+      {
+         dtemp = rhs[i];
+         diag_term = 0.0;
+         for (j = rptr[i]; j < rptr[i+1]; j++)
+         {
+            col = cols[j];
+            dtemp -= (vals[j]*x2[col]);
+            if (col == i) diag_term = vals[j];
+         }
+         if (diag_term != 0.0)
+            x2[i] += (omega * dtemp / diag_term);
+      }
+
+      for (i = Nrows-1; i >= 0; i--)
+      {
+         dtemp = rhs[i];
+         diag_term = 0.0;
+         for (j = rptr[i]; j < rptr[i+1]; j++)
+         {
+            col = cols[j];
+            dtemp -= (vals[j]*x2[col]);
+            if (col == i) diag_term = vals[j];
+         }
+         if (diag_term != 0.0)
+            x2[i] += (omega * dtemp / diag_term);
+      }
+   }
+#endif
+
+   /* ----------------------------------------------------------------- */
+   /* clean up
+   /* ----------------------------------------------------------------- */
+
+#ifdef ML_SMOOTHER_DEBUG
+   free(res2);
+#endif
+
+   if (getrow_comm != NULL) {
+      for (i = 0; i < inlen; i++) x[i] = x2[i];
+      ML_free(x2);
+   }
+#ifndef ML_FAST
+   if (allocated_space != Amat->max_nz_per_row+1) {
+      Amat->max_nz_per_row = allocated_space;
+   }
+   free(vals); free(cols);
+#endif
 
    return 0;
 }
@@ -617,45 +906,42 @@ gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
 }
 
 /* ************************************************************************* */
-/* Symmetric Gauss-Seidel smoother                                           */
+/* sequential Symmetric Gauss-Seidel smoother                                */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
+int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
+                              double rhs[])
 {
-   int iter, i, j, length, allocated_space, *cols, col;
-   double dtemp, diag_term, *vals, omega;
-   ML_Operator *Amat;
-   ML_Comm *comm;
+   int           i, j, iter, Nrows, length, allocated_space, *cols, col;
+   int           token, mypid, nprocs;
+   double        dtemp, diag_term, *vals, omega, *x2;
+   ML_Operator   *Amat;
+   ML_Comm       *comm;
    ML_CommInfoOP *getrow_comm;
-   int Nrows;
-   double *x2;
-#ifdef ML_SMOOTHER_DEBUG
-   double *res2, res_norm, init_norm;
-#endif
-   ML_Smoother  *smooth_ptr;
+   ML_Smoother   *smooth_ptr;
+
    smooth_ptr = (ML_Smoother *) sm;
+   omega      = smooth_ptr->omega;
+   Amat       = smooth_ptr->my_level->Amat;
+   comm       = smooth_ptr->my_level->comm;
+   nprocs     = comm->ML_nprocs;
+   mypid      = comm->ML_mypid;
+   Nrows      = Amat->getrow->Nrows;
 
-   omega = smooth_ptr->omega;
-   Amat = smooth_ptr->my_level->Amat;
-   comm = smooth_ptr->my_level->comm;
-   Nrows = Amat->getrow->Nrows;
-
-   if (Amat->getrow->ML_id == ML_EMPTY) 
-      pr_error("Error(ML_SGS): Need getrow() for SGS smoother\n");
+   if (Amat->getrow->ML_id == ML_EMPTY)
+      pr_error("Error(ML_SGSSequential): Need getrow() for SGS smoother\n");
 
    allocated_space = Amat->max_nz_per_row+1;
    cols = (int    *) malloc(allocated_space*sizeof(int   ));
    vals = (double *) malloc(allocated_space*sizeof(double));
    if (vals == NULL) pr_error("Error in ML_SymGaussSeidel: Not enough space\n");
-   if (Amat->getrow->post_comm != NULL)
-      pr_error("Post communication not implemented for SGS smoother\n");
 
    getrow_comm= Amat->getrow->pre_comm;
-   if (getrow_comm != NULL) 
+   if (getrow_comm != NULL)
    {
       x2 = (double *) ML_allocate((inlen+getrow_comm->total_rcv_length+1)
-				   *sizeof(double));
-      if (x2 == NULL) 
+                                   *sizeof(double));
+      if (x2 == NULL)
       {
          printf("Not enough space in Gauss-Seidel\n"); exit(1);
       }
@@ -663,81 +949,74 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    }
    else x2 = x;
 
-#ifdef ML_SMOOTHER_DEBUG
-   res2 = (double*) malloc(Nrows * sizeof(double));
-#endif
-   for (iter = 0; iter < smooth_ptr->ntimes; iter++) 
+   for (iter = 0; iter < smooth_ptr->ntimes; iter++)
    {
-      if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+      token = 0;
 
-      for (i = 0; i < Nrows; i++) 
+      while ( token < nprocs )
       {
-         dtemp = 0.0;
-         diag_term = 0.0;
-         ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
-                           &length, 0);
-         for (j = 0; j < length; j++) 
+         if (getrow_comm != NULL)
+            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+         if ( token == mypid )
          {
-            col = cols[j];
-            dtemp += vals[j]*x2[col];
-            if (col == i) diag_term = vals[j];
+            for (i = 0; i < Nrows; i++)
+            {
+               dtemp = 0.0;
+               diag_term = 0.0;
+               ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                 &length, 0);
+               for (j = 0; j < length; j++)
+               {
+                  col = cols[j];
+                  dtemp += vals[j]*x2[col];
+                  if (col == i) diag_term = vals[j];
+               }
+               if (diag_term != 0.0)
+                  x2[i] += omega*(rhs[i] - dtemp)/diag_term;
+            }
          }
-         /* ### Changes : C. Tong
-         if (diag_term == 0.0)
-            pr_error("Error: SGS() can not be used with a zero diagonal\n");
-         */
-
-         if (diag_term != 0.0)
-            x2[i] += omega*(rhs[i] - dtemp)/diag_term;
+         token++;
+         token = ML_gmax_int( token, comm);
       }
-#ifdef ML_SMOOTHER_DEBUG
-      ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
-      for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
-      res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
-      printf("      SGS (for ) : iter = %2d, rnorm = %e\n", iter, res_norm);
-#endif
-
-      if (getrow_comm != NULL)
-         ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
-
-      for (i = Nrows-1; i >= 0; i--) 
-      {
-         dtemp = 0.0;
-         diag_term = 0.0;
-         ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
-                           &length, 0);
-         for (j = 0; j < length; j++) 
-         {
-            col = cols[j];
-            dtemp += vals[j]*x2[col];
-            if (col == i) diag_term = vals[j];
-         }
-         /* ### Changes : C. Tong
-         if (diag_term == 0.0)
-            pr_error("Error: GS() can not be used with a zero diagonal\n");
-         if (diag_term != 0.0)
-         */
-            x2[i] += omega*(rhs[i] - dtemp)/diag_term;
-      }
-#ifdef ML_SMOOTHER_DEBUG
-      ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
-      for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
-      res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
-      printf("      SGS (back) : iter = %2d, rnorm = %e\n", iter, res_norm);
-#endif
    }
-#ifdef ML_SMOOTHER_DEBUG
-   free(res2);
-#endif
+   for (iter = smooth_ptr->ntimes; iter > 0; iter--)
+   {
+      token = nprocs - 1;
 
-   if (getrow_comm != NULL) {
+      while ( token >= 0 )
+      {
+         if (getrow_comm != NULL)
+            ML_exchange_bdry(x2,getrow_comm, inlen,comm,ML_OVERWRITE);
+
+         if ( token == mypid )
+         {
+            for (i = Nrows-1; i >= 0; i--)
+            {
+               dtemp = 0.0;
+               diag_term = 0.0;
+               ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                 &length, 0);
+               for (j = 0; j < length; j++)
+               {
+                  col = cols[j];
+                  dtemp += vals[j]*x2[col];
+                  if (col == i) diag_term = vals[j];
+               }
+               x2[i] += omega*(rhs[i] - dtemp)/diag_term;
+            }
+         }
+         token--;
+         token = ML_gmax_int( token, comm);
+      }
+   }
+   if (getrow_comm != NULL)
+   {
       for (i = 0; i < inlen; i++) x[i] = x2[i];
       ML_free(x2);
    }
-   if (allocated_space != Amat->max_nz_per_row+1) {
+   if (allocated_space != Amat->max_nz_per_row+1)
       Amat->max_nz_per_row = allocated_space;
-   }
 
    free(vals); free(cols);
 
@@ -1190,14 +1469,28 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
             }
          }
       }
-/*
-   }
-   for (iter = smooth_ptr->ntimes; iter > 0; iter--) 
-   {
-      if (getrow_comm != NULL)
-         ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
-*/
-
+      for (i = 0; i < Nrows; i++)
+      {
+         if ( block_indices[i] == -1 )
+         {
+            ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                                &length,0);
+            Ax[0] = 0.0;
+            for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
+            x_ext[i] += (omega * (rhs[i] - Ax[0]));
+         }
+      }
+      for (i = Nrows-1; i >= 0; i--)
+      {
+         if ( block_indices[i] == -1 )
+         {
+            ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                                &length,0);
+            Ax[0] = 0.0;
+            for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
+            x_ext[i] += (omega * (rhs[i] - Ax[0]));
+         }
+      }
       for (i = Nblocks-1; i >= 0; i--) 
       {
          blocksize = blocklengths[i];
@@ -1386,6 +1679,17 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
                   }
                }
             }
+            for (i = 0; i < Nrows; i++)
+            {
+               if ( block_indices[i] == -1 )
+               {
+                  ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                                      &length,0);
+                  Ax[0] = 0.0;
+                  for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
+                  x_ext[i] += (omega * (rhs[i] - Ax[0]));
+               }
+            }
          }
          token++; 
          token = ML_gmax_int( token, comm);
@@ -1402,6 +1706,17 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
 
          if ( token == mypid )
          {
+            for (i = Nrows-1; i >= 0; i++)
+            {
+               if ( block_indices[i] == -1 )
+               {
+                  ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
+                                                      &length,0);
+                  Ax[0] = 0.0;
+                  for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
+                  x_ext[i] += (omega * (rhs[i] - Ax[0]));
+               }
+            }
             for (i = Nblocks-1; i >= 0; i--) 
             {
                blocksize = blocklengths[i];
@@ -2021,7 +2336,6 @@ void ML_Smoother_Destroy_ILUT_Data(void *data)
 {
    ML_Sm_ILUT_Data *ml_data;
 
- 
    ml_data = (ML_Sm_ILUT_Data *) data;
    if ( ml_data->mat_ia != NULL ) free(ml_data->mat_ia);
    if ( ml_data->mat_ja != NULL ) free(ml_data->mat_ja);
@@ -2876,7 +3190,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
 
    for ( i = 0; i < Nrows; i++ )
    {
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
       if ( i % 1000 == 0 )
          printf("%4d : ILUT Processing row %6d (%6d)\n", mypid, i, extNrows);
 #endif
@@ -3029,7 +3343,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
    offset = 0;
    for ( i = 0; i < total_recv_leng; i++ )
    {
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
       if ( (i+Nrows) % 1000 == 0 )
          printf("%4d : ILUT Processing row %6d (%6d)\n",mypid,i+Nrows,extNrows);
 #endif
@@ -3182,7 +3496,7 @@ int ML_Smoother_ILUTDecomposition(ML_Sm_ILUT_Data *data, ML_Operator *Amat,
       printf("ERROR in ILUTDecomp : memory out of bound (consult ML developers)\n");
       exit(1);
    }
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
    printf("%4d : ILUT Smoother - nnz(ILUT) = \n", mypid, nnz_count);
 #endif
 
@@ -3489,7 +3803,7 @@ int ML_Smoother_VBlockSchwarzDecomposition(ML_Sm_Schwarz_Data *data,
       dgssvx(fact, trans, refact, A, &iparam, perm_c, perm_r, etree,
              equed, R, C, L, U, work, lwork, &B, &X, &rpg, &rcond,
              ferr, berr, &mem_usage, &info);
-#ifdef ML_SMOOTHER_DEBUG
+#ifdef ML_DEBUG_SMOOTHER
 printf("Block %6d(%6d) : cond no. = %e\n", i, nblocks, 1.0 / rcond);
 if ( info != 0 && info != (nrows+1) )
 {
