@@ -32,19 +32,14 @@
 if BUILD_LOCA_LAPACK_EXAMPLES
 
 CHANCONT = chanContinuation
-CHANALCONT = chanAlContinuation
 CHANTP = chanTP
 CHANTPCONT = chanTPContinuation
 
 endif
 
-noinst_PROGRAMS = $(CHANCONT) $(CHANALCONT) $(CHANTP) $(CHANTPCONT)
+noinst_PROGRAMS = $(CHANCONT) $(CHANTP) $(CHANTPCONT)
 
 chanContinuation_SOURCES = $(srcdir)/ChanContinuation.C \
-		$(srcdir)/ChanProblemInterface.H \
-		$(srcdir)/ChanProblemInterface.C
-
-chanAlContinuation_SOURCES = $(srcdir)/ChanAlContinuation.C \
 		$(srcdir)/ChanProblemInterface.H \
 		$(srcdir)/ChanProblemInterface.C
 
@@ -62,8 +57,6 @@ chanContinuation_DEPENDENCIES = \
 	$(top_builddir)/src-loca/src/libloca.a \
         $(top_builddir)/src-loca/src-lapack/liblocalapack.a
 
-chanAlContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
-
 chanTP_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
 
 chanTPContinuation_DEPENDENCIES = $(chanContinuation_DEPENDENCIES)
@@ -73,8 +66,6 @@ chanContinuation_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 		   -I$(top_srcdir)/src-lapack \
 		   -I$(top_srcdir)/src-loca/src \
                    -I$(top_srcdir)/src-loca/src-lapack
-
-chanAlContinuation_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
 chanTP_CXXFLAGS = $(chanContinuation_CXXFLAGS)
 
@@ -86,8 +77,6 @@ chanContinuation_LDADD = \
                 -L$(top_builddir)/src-loca/src \
                 -L$(top_builddir)/src-loca/src-lapack \
                 -llocalapack -lloca -lnoxlapack -lnox
-
-chanAlContinuation_LDADD = $(chanContinuation_LDADD)
 
 chanTP_LDADD = $(chanContinuation_LDADD)
 
