@@ -104,6 +104,14 @@
 #define ML_TIMING
 #endif
 
+#ifdef HAVE_ML_MULTIPLE_RHS
+#define WKC
+#endif
+
+#ifdef HAVE_ML_FLOPS
+#define ML_FLOPS
+#endif
+
 
 #endif /*ifdef HAVE_CONFIG_H*/
 

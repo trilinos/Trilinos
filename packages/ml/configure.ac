@@ -102,16 +102,24 @@ AC_PREREQ(2.52)
 # Checks for programs
 # ------------------------------------------------------------------------
 
-AC_PROG_CC(cc gcc)
+TAC_ARG_CONFIG_MPI
+
 AC_PROG_CXX(CC g++ gcc c++ cxx)
-AC_PROG_F77(f77 g77 f90 xlf90)
+
+TAC_ARG_ENABLE_OPTION(ml_multiple_rhs, [experimental], ML_MULTIPLE_RHS, no)
+#TAC_ARG_ENABLE_OPTION(ml_multiple_rhs, [Enable optimized code for multiple right hand sides.   Note: this will automatically cause all ML object files to be built with the c++ compiler.], ML_MULTIPLE_RHS, no)
+if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
+CC=${CXX}
+fi
+AC_PROG_CC(cc gcc)
+
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
 
-TAC_ARG_CONFIG_MPI
+
 
 # ------------------------------------------------------------------------
 # Checks for extra flags
@@ -254,20 +262,31 @@ AC_CXX_STD_SPRINTF
 
 # invoke with "with-xxxxxx", where xxxxxx is the first argument, e.g., ml_aztec
 
+###########################
 # these are ON by default
+###########################
  TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Epetra support], ML_AZTEC, yes)
+#
  TAC_ARG_WITH_PACKAGE(ml_aztec, [Enable Aztec support], ML_AZTEC, yes)
 # TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
  TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_lapack, [Use system lapack library (not ml's internal reference lapack)], ML_VENDOR_LAPACK, yes)
- TAC_ARG_WITH_PACKAGE(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, yes)
- TAC_ARG_WITH_PACKAGE(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
+ TAC_ARG_ENABLE_OPTION(ml_enrich, [Enable latest enriched Maxwell prolongator], ML_ENRICH, yes)
+#
+ TAC_ARG_ENABLE_OPTION(ml_newtpe, [Enable latest Maxwell prolongator fixes], ML_NEW_T_PE, yes)
 
+###########################
 # these are OFF by default
+###########################
  TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the SuperLU headers and libraries via the configure options --with-ldflags=<SuperLU-library-path/library-name> and --with-incdirs=SuperLU-include-directory.], ML_SUPERLU, no)
- TAC_ARG_WITH_PACKAGE(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
- TAC_ARG_WITH_PACKAGE(ml_timing, [Enable timing routines], ML_TIMING, no)
+ #
+ TAC_ARG_ENABLE_OPTION(ml_complex_maxwell, [Enable complex maxwell solver capability], ML_COMPLEX_MAXWELL, no)
+ #
+#
+ TAC_ARG_ENABLE_OPTION(ml_timing, [Enable timing routines], ML_TIMING, no)
+#
+ TAC_ARG_ENABLE_OPTION(ml_flops, [Enable flop counting.], ML_TIMING, no)
 
 #TAC_ARG_ENABLE_FEATURE_SUB( ml, slud, [Enable ML interface support for SuperLU], ML_SLU, no)
 

@@ -71,13 +71,16 @@
 /* Define if want to build with ml_external_mpi_functions enabled */
 #undef HAVE_ML_EXTERNAL_MPI_FUNCTIONS
 
+/* Define if want to build with ml_multiple_rhs enabled */
+#undef HAVE_ML_MULTIPLE_RHS
+
 /* Define if want to build with ml_newtpe enabled */
 #undef HAVE_ML_NEW_T_PE
 
 /* Define if want to build with ml_superlu enabled */
 #undef HAVE_ML_SUPERLU
 
-/* Define if want to build with ml_timing enabled */
+/* Define if want to build with ml_flops enabled */
 #undef HAVE_ML_TIMING
 
 /* define if we want to use MPI */
