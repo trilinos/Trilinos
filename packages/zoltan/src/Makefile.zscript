@@ -9,7 +9,7 @@
 #    $RCSfile$
 #    $Author$
 #    $Date$
-#    $Revision$
+#    Revision: 1.6 $
 ##############################################################################
 
 include ./Utilities/Config/Config.$(ZOLTAN_ARCH)
@@ -23,19 +23,6 @@ ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
 
 zoltan:	
 	@if [ ! -f $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) ]; then \
-	sh -x zoltan_script \
-	  '$(DEFS)' \
-	  '$(CC)' \
-	  '$(CFLAGS)' \
-	  '$(F90CFLAGS)' \
-	  '$(INCLUDE_PATH)' \
-	  '$(PARMETIS_LIBPATH)' \
-	  '$(JOSTLE_LIBPATH)' \
-	  '$(JOSTLE_INCPATH)' \
-	  '$(AR)' \
-	  '$(RANLIB)' \
-	  '$(ZOLTAN_ARCH)' \
-	  '$(ZOLTAN_LIB_DIR)' ;\
 	cd Utilities; \
 	sh -x zoltan_script \
 	  '$(DEFS)' \
@@ -44,6 +31,7 @@ zoltan:
 	  '$(F90CFLAGS)' \
 	  '$(INCLUDE_PATH)' \
 	  '$(PARMETIS_LIBPATH)' \
+	  '$(PARMETIS_INCPATH)' \
 	  '$(JOSTLE_LIBPATH)' \
 	  '$(JOSTLE_INCPATH)' \
 	  '$(AR)' \
@@ -51,7 +39,21 @@ zoltan:
 	  '$(ZOLTAN_ARCH)' \
 	  '$(ZOLTAN_LIB_DIR)' ;\
         fi; \
-        cd ..;
+        cd ..;\
+	sh -x zoltan_script \
+	  '$(DEFS)' \
+	  '$(CC)' \
+	  '$(CFLAGS)' \
+	  '$(F90CFLAGS)' \
+	  '$(INCLUDE_PATH)' \
+	  '$(PARMETIS_LIBPATH)' \
+	  '$(PARMETIS_INCPATH)' \
+	  '$(JOSTLE_LIBPATH)' \
+	  '$(JOSTLE_INCPATH)' \
+	  '$(AR)' \
+	  '$(RANLIB)' \
+	  '$(ZOLTAN_ARCH)' \
+	  '$(ZOLTAN_LIB_DIR)' ;
 
 
 clean:

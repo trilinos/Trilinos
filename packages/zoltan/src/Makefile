@@ -8,7 +8,7 @@
 #    $RCSfile$
 #    $Author$
 #    $Date$
-#    $Revision$
+#    Revision: 1.107 $
 ##############################################################################
 
 ##############################################################################
@@ -380,13 +380,14 @@ zscript:
 	@echo F90CFLAGS='"$$4"' >> zoltan_script
 	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
 	@echo PARMETIS_FLAG='"$${6:+-DZOLTAN_PARMETIS}"' >> zoltan_script
-	@echo JOSTLE_FLAG='"$${7:+-DZOLTAN_JOSTLE}"' >> zoltan_script
-	@echo JOSTLE_INCPATH='"$$8"' >> zoltan_script
-	@echo AR='"$$9"' >> zoltan_script
+	@echo PARMETIS_INCPATH='"$$7"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${8:+-DZOLTAN_JOSTLE}"' >> zoltan_script
+	@echo JOSTLE_INCPATH='"$$9"' >> zoltan_script
 	@echo shift 9 >> zoltan_script
-	@echo RANLIB='"$$1"' >> zoltan_script
-	@echo ZOLTAN_ARCH='"$${2:-generic}"' >> zoltan_script
-	@echo ZOLTAN_LIB_DIR='"$$3"' >> zoltan_script
+	@echo AR='"$$1"' >> zoltan_script
+	@echo RANLIB='"$$2"' >> zoltan_script
+	@echo ZOLTAN_ARCH='"$${3:-generic}"' >> zoltan_script
+	@echo ZOLTAN_LIB_DIR='"$$4"' >> zoltan_script
 	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
 	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
@@ -394,6 +395,7 @@ zscript:
 	@echo 'then mkdir $$ZOLTAN_OBJ_DIR ;' >> zoltan_script
 	@echo 'fi' >> zoltan_script
 	@echo 'rm -f $$ZOLTAN_OBJ_DIR/*' >> zoltan_script
+	@echo 'cp -f Utilities/$$ZOLTAN_OBJ_DIR/$(LIB_NAME) $$ZOLTAN_OBJ_DIR' >> zoltan_script
 	@echo 'cd $$ZOLTAN_OBJ_DIR' >> zoltan_script
 	@echo "echo 'Zoltan:  Compiling Zoltan/zz'" >> zoltan_script
 	@for iii in $(ZZ_CSRC) ; do \
@@ -433,7 +435,7 @@ zscript:
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/parmetis'" >> zoltan_script
 	@for iii in $(PARMETIS_CSRC) ; do \
-	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../parmetis/$$iii >> zoltan_script; \
+	 echo '$$CCOMP' $(SUBINCPATH) '$$PARMETIS_INCPATH' -c '$$GDEFINES $$DEFS' ../parmetis/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/timer'" >> zoltan_script
 	@for iii in $(TIMER_CSRC) ; do \

@@ -8,7 +8,7 @@
 #    $RCSfile$
 #    $Author$
 #    $Date$
-#    $Revision$
+#    Revision: 1.17 $
 ##############################################################################
 
 ##############################################################################
@@ -114,8 +114,7 @@ UTIL_INC		= zoltan_id.h
 
 DD_CSRC		= DD_Create.c DD_Destroy.c DD_Find.c DD_Remove.c DD_Update.c \
                   DD_Set_Hash_Fn.c DD_Hash2.c DD_Stats.c DD_Print.c\
-                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c \
-		  $(UTIL_CSRC)
+                  DD_Set_Neighbor_Hash_Fn1.c DD_Set_Neighbor_Hash_Fn2.c 
 DD_INC		= zoltan_dd.h
 DD_LIB		= libzoltan_dd.a
 DD_TARGET	= zoltan_dd
@@ -281,7 +280,7 @@ $(DD_LIB):
 	"LIB_NAME=$(DD_LIB)"			\
 	"CC=$(CCOMP)"				\
 	"VPATH=$(SUB_VPATH)"			\
-	"OBJ_FILES=$(DD_CSRC:.c=.o)"		\
+	"OBJ_FILES=$(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
@@ -318,7 +317,7 @@ $(ZOLTAN):
 	@cd $(OBJ_DIR); 			\
 	$(MAKE) $(ZOLTAN_LIB) 			\
 	"LIB_NAME=$(ZOLTAN_LIB)"		\
-	"OBJ_FILES=$(DD_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o)" \
+	"OBJ_FILES=$(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o)" \
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
@@ -337,13 +336,14 @@ zscript:
 	@echo F90CFLAGS='"$$4"' >> zoltan_script
 	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
 	@echo PARMETIS_FLAG='"$${6:+-DLB_PARMETIS}"' >> zoltan_script
-	@echo JOSTLE_FLAG='"$${7:+-DLB_JOSTLE}"' >> zoltan_script
-	@echo JOSTLE_INCPATH='"$$8"' >> zoltan_script
-	@echo AR='"$$9"' >> zoltan_script
+	@echo JOSTLE_INCPATH='"$$7"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${8:+-DLB_JOSTLE}"' >> zoltan_script
+	@echo JOSTLE_INCPATH='"$$9"' >> zoltan_script
 	@echo shift 9 >> zoltan_script
-	@echo RANLIB='"$$1"' >> zoltan_script
-	@echo ZOLTAN_ARCH='"$${2:-generic}"' >> zoltan_script
-	@echo ZOLTAN_LIB_DIR='"$$3"' >> zoltan_script
+	@echo AR='"$$1"' >> zoltan_script
+	@echo RANLIB='"$$2"' >> zoltan_script
+	@echo ZOLTAN_ARCH='"$${3:-generic}"' >> zoltan_script
+	@echo ZOLTAN_LIB_DIR='"$$4"' >> zoltan_script
 	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$JOSTLE_INCPATH"' >> zoltan_script
 	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
@@ -359,10 +359,6 @@ zscript:
 	@echo "echo Zoltan:  Linking $(MEM_LIB)" >> zoltan_script
 	@echo '$$AR' $(MEM_LIB) $(MEM_CSRC:.c=.o) >> zoltan_script
 	@echo '$$RANLIB' $(MEM_LIB) >> zoltan_script
-	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
-	@echo 'then cp -f $(MEM_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
-	@echo 'else cp -f $(MEM_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
-	@echo 'fi' >> zoltan_script
 	@echo "echo 'Zoltan:  Compiling Utilities/Communication'" >> zoltan_script
 	@for iii in $(COMM_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../Communication/$$iii >> zoltan_script; \
@@ -370,21 +366,20 @@ zscript:
 	@echo "echo Zoltan:  Linking $(COMM_LIB)" >> zoltan_script
 	@echo '$$AR' $(COMM_LIB) $(COMM_CSRC:.c=.o) >> zoltan_script
 	@echo '$$RANLIB' $(COMM_LIB) >> zoltan_script
-	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
-	@echo 'then cp -f $(COMM_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
-	@echo 'else cp -f $(COMM_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
-	@echo 'fi' >> zoltan_script
 	@echo "echo 'Zoltan:  Compiling Utilities/DDirectory'" >> zoltan_script
 	@for iii in $(DD_CSRC)  ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../DDirectory/$$iii >> zoltan_script; \
 	 done;
+	@echo "echo 'Zoltan:  Compiling Utilities/shared'" >> zoltan_script
+	@for iii in $(UTIL_CSRC)  ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../shared/$$iii >> zoltan_script; \
+	 done;
 	@echo "echo Zoltan:  Linking $(DD_LIB)" >> zoltan_script
-	@echo '$$AR' $(DD_LIB) $(DD_CSRC:.c=.o) >> zoltan_script
+	@echo '$$AR' $(DD_LIB) $(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) >> zoltan_script
 	@echo '$$RANLIB' $(DD_LIB) >> zoltan_script
-	@echo 'if [ $$ZOLTAN_LIB_DIR ] ; ' >> zoltan_script
-	@echo 'then cp -f $(DD_LIB) $$ZOLTAN_LIB_DIR ; ' >> zoltan_script
-	@echo 'else cp -f $(DD_LIB) ../../$$ZOLTAN_OBJ_DIR ; ' >> zoltan_script
-	@echo 'fi' >> zoltan_script
+	@echo "echo Zoltan:  Linking $(ZOLTAN_LIB)" >> zoltan_script
+	@echo '$$AR' $(ZOLTAN_LIB) $(MEM_CSRC:.c=.o) $(COMM_CSRC:.c=.o) $(DD_CSRC:.c=.o) $(UTIL_CSRC:.c=.o) >> zoltan_script
+	@echo '$$RANLIB' $(ZOLTAN_LIB) >> zoltan_script
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
 #
@@ -405,7 +400,7 @@ lint_comm: $(MEM_CSRC) $(COMM_CSRC) $(COMM_DRIVER_CSRC)
 	@echo "running lint..."
 	$(LINT) $(LINT_FLAGS) $?
 
-lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(DD_DRIVER_CSRC) 
+lint_dd: $(MEM_CSRC) $(COMM_CSRC) $(DD_CSRC) $(UTIL_CSRC) $(DD_DRIVER_CSRC) 
 	@echo "running lint..."
 	$(LINT) -I../include $(LINT_FLAGS)  $?
 
