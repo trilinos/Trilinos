@@ -1384,16 +1384,13 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
 {
    char  buffer[10000];
    char* bptr      = 0;
-   Epetra_CrsMatrix* A = 0;
-   double* val = 0;
-   int* bindx  = 0;
 
    int  numeq_total = map.NumGlobalElements();
    int  numeq       = map.NumMyElements();
    int  nproc       = comm.NumProc();
    int  proc        = comm.MyPID();
    
-   A = new Epetra_CrsMatrix(Copy,map,map,0);
+   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy,map,map,0);
    
    for (int activeproc=0; activeproc<nproc; activeproc++)
    {
@@ -1401,6 +1398,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       FILE* fp = 0;
       if (activeproc==proc)
       {
+         cout << "Proc " << proc << " is reading the Epetra_CrsMatrix .."; fflush(stdout);
          fp = fopen(filename,"r");
          if (fp) 
          {
@@ -1408,7 +1406,7 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
             fgets(buffer,9999,fp);
             int readnumeq = strtol(buffer,&bptr,10);
             if (readnumeq != numeq_total)
-            ok = 0;
+               ok = 0;
          }
          else ok = 0;
       }
@@ -1420,8 +1418,32 @@ Epetra_CrsMatrix* Epetra_ML_readaztecmatrix(char* filename,Epetra_Map& map,Epetr
       }
       if (activeproc==proc)
       {
-         fgets(buffer,9999,fp);   
+         for (int i=0; i<numeq_total; i++)
+         {
+            fgets(buffer,9999,fp);
+            int row = strtol(buffer,&bptr,10);
+            if (!map.MyGID(row)) // it's not one of my rows 
+               continue;
+            else                 // this row belongs to me, read it
+            {
+               cout << "."; fflush(stdout);
+               // read the main diagonal value
+               double value = strtod(bptr,&bptr);
+               A->InsertGlobalValues(row,1,&value,&row);
+               // read off-diagonal entries and insert them
+               int column = 0;
+               while (column != -1)
+               {
+                  column = strtol(bptr,&bptr,10);
+                  if (column == -1) break;
+                  value = strtod(bptr,&bptr);
+                  A->InsertGlobalValues(row,1,&value,&column);
+               }
+            }
+         }
+         cout << endl;   
       }
+      comm.Barrier();
    }
    
    
