@@ -1,7 +1,10 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_MPISession.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 using namespace Teuchos;
 using std::string;
@@ -18,12 +21,14 @@ static Time& exceptTimer() {static RefCountPtr<Time> t = TimeMonitor::getNewTime
 
 
 
-int main(int argc, void** argv)
+int main(int argc, char* argv[])
 {
   try
     {
-      /* initialize MPI */
-      MPISession::init(&argc, &argv);
+#ifdef HAVE_MPI 
+      /* initialize MPI if we are running in parallel */
+      MPI_Init(&argc, &argv);
+#endif
 
       double sqrtFunc();
       double factFunc(int x);
@@ -57,8 +62,10 @@ int main(int argc, void** argv)
   /* summarize timings. This must be done before finalizing MPI  */
   TimeMonitor::summarize();
 
-  /* clean up MPI */
-  MPISession::finalize();
+#ifdef HAVE_MPI
+  /* clean up MPI if we are running in parallel*/
+  MPI_Finalize();
+#endif
 
   return 0;
 }
