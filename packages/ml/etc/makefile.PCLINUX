@@ -9,3 +9,4 @@ LINKER=$(CC)
 # ARCH_LIBS=/usr/lib/gcc-lib/i386-redhat-linux/2.96/libg2c.a
 ARCH_LIBS=-lg2c
 AR=ar
+#ARCH_FLAGS=-Wall -Wtraditional -Wpointer-arith -Wcast-qual -Wcast-align -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wredundant-decls -Wnested-externs -Wlong-long
