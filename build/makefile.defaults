@@ -151,7 +151,7 @@ LIBSUPERLU   = $(ML_HOME)/lib/DSuperLU/superluPCLINUX.a
 # IFPACK - Use old IFPACK with AztecOO
 # AZ_COL_REORDER - Use experimental column reordering with AztecOO.
 
-AZTECOO_DEFAULT_DEFINES = -DIFPACK
+AZTECOO_DEFAULT_DEFINES = -DIFPACK -DHAVE_AZLU
 
 ##################### Derived Variables ###########################
 
