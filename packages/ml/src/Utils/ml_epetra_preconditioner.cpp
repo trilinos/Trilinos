@@ -1999,6 +1999,22 @@ field_of_values->P_coeff[2] = 4.234091e-01;
 
 // ============================================================================
 
+/*! Currently supported defaults:
+
+  - SA: classic smoothed aggregation, using Uncoupled/MIS schemes;
+
+  - maxwell: for Maxwell equations (under development);
+
+  - DD: 2-level domain decomposition preconditioner, using METIS, and
+  Aztec smoothers with ILUT(0);
+
+  - DD-ML: 3-level domain decomposition preconditioner, using METIS and
+  ParMETIS, and Aztec smoothers with ILUT(0);
+
+  - DD-LU:  2-level domain decomposition preconditioner, using METIS, and
+  Aztec smoothers with LU.
+
+*/
 int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List, char * Prefix_ )
 {
   

@@ -34,16 +34,18 @@ class Epetra_Comm;
 #include "Epetra_Object.h"
 #include "ml_include.h"
 
-//! Operator: An implementation of the Epetra_Operator class.
-/*! Operator class implements Epetra_Operator using a
-    pre-constructed ML solver object.
-    Once constructed, an Operator can be used as a preconditioner
-    within an AztecOO solver object.
-*/    
+//! ML_Epetra: default namespace for all Epetra interfaces.
 
 namespace ML_Epetra 
 {
   
+//! MultiLevelOperator: An implementation of the Epetra_Operator class.
+/*! MultiLevelOperator class implements Epetra_Operator using a
+    pre-constructed ML solver object.  Once constructed, a
+    MultiLevelOperator object can be used as a preconditioner within an
+    AztecOO solver object.
+*/    
+
 class MultiLevelOperator: public virtual Epetra_Operator {
       
  public:
@@ -69,13 +71,15 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //@{ \name Atribute set methods.
 
     //! If set true, the multigrid hierarchy is destroyed when the Operator is destroyed.
-    /*! This flag determines the ownership of the multigrid hierarchy. When set to true, this
-        object owns the multigrid hierarchy and so it destroys it when freed. Otherwise, it is
-        assumed that the multigrid hierarchy is owned by another object and so it is not freed.
-        By default, the multigrid hierarchy is not owned by this object.
+    /*! This flag determines the ownership of the multigrid
+        hierarchy. When set to true, this object owns the multigrid
+        hierarchy and so it destroys it when freed. Otherwise, it is
+        assumed that the multigrid hierarchy is owned by another object
+        and so it is not freed.  By default, the multigrid hierarchy is
+        not owned by this object.
       
-    \param In
-	   ownership - If true, this object owns the corresponding multigrid hierarchy. 
+    \param In ownership - If true, this object owns the corresponding
+    multigrid hierarchy.
 
   */
   int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
@@ -85,12 +89,14 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   //@{ \name Atribute set methods.
 
     //! If set true, transpose of this operator will be applied.
-    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
-	does not support transpose use, this method should return a value of -1.
+    /*! This flag allows the transpose of the given operator to be used
+        implicitly.  Setting this flag affects only the Apply() and
+        ApplyInverse() methods.  If the implementation of this interface
+        does not support transpose use, this method should return a
+        value of -1.
       
-    \param In
-	   UseTranspose - If true, multiply by the transpose of operator, otherwise just use operator.
+	\param In UseTranspose - If true, multiply by the transpose of
+	operator, otherwise just use operator.
 
     \warning - This method has no effect and returns -1 as error code.
   */
@@ -100,13 +106,10 @@ class MultiLevelOperator: public virtual Epetra_Operator {
   
   //@{ \name Mathematical functions.
 
-    //! Returns the result of a Operator applied to a Epetra_MultiVector X in Y.
-    /*! 
-    \param In
-	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
-    \param Out
-	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
-
+  //! Returns the result of a Operator applied to a Epetra_MultiVector X in Y.
+  /*! 
+    \param \In X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param \Out Y -A Epetra_MultiVector of dimension NumVectors containing result.
     \warning - This method has no effect and returns -1 as error code.
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
@@ -114,10 +117,8 @@ class MultiLevelOperator: public virtual Epetra_Operator {
 
   //! Returns the result of a Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! 
-    \param In
-    X - A Epetra_MultiVector of dimension NumVectors to solve for.
-    \param Out
-    Y -A Epetra_MultiVector of dimension NumVectors containing result.
+    \param \In X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param \Out Y -A Epetra_MultiVector of dimension NumVectors containing result.
     
     \return Integer error code, set to 0 if successful.
   */
@@ -168,12 +169,18 @@ kSize = WKC) const;
   
  protected:
 
+  //@{ Private data
+  //! Pointer to the ML_Structure.
   ML * solver_;
+  //! Label for this object.
   char * Label_;
 
  private:
+  //! Reference to Epetra communicator.
   const Epetra_Comm & Comm_;
+  //! Reference to Domain Map.
   const Epetra_Map & DomainMap_;
+  //! Reference to Range Map.
   const Epetra_Map & RangeMap_;
   bool  ownership_;
 };

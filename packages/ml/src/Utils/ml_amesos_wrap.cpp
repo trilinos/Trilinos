@@ -45,6 +45,8 @@ static int NumSolves__ = 0;
 static double MaxError__ = 0.0;
 #endif
 
+// ================================================ ====== ==== ==== == =
+
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
@@ -265,6 +267,8 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   return 0;
 }
 
+// ================================================ ====== ==== ==== == =
+
 int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 {
 
@@ -307,6 +311,8 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
 #ifdef DEBUG
 #include <iomanip>
 #endif
+
+// ================================================ ====== ==== ==== == =
 
 void ML_Amesos_Destroy(void *Amesos_Handle)
 {

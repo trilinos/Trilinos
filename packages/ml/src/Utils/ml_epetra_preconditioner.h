@@ -18,6 +18,8 @@ class Epetra_CrsMatrix;
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
+//! ML_Epetra: default namespace for all Epetra interfaces.
+
 namespace ML_Epetra
 {
 
@@ -38,10 +40,18 @@ namespace ML_Epetra
   //! Sets classical smoothed aggregation.
   int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = "");
 
-  
+
+//! MultiLevelPreconditioner: An implementation of the Epetra_RowMatrix class.
+/*! MultiLevelPreconditioner class implements Epetra_RowMatrix using a
+    an Epetra_RowMatrix, and possibly a Teuchos parameters list, that
+    specifies how to construct the preconditioner.
+    The resulting preconditioner is completely black-box.
+*/  
 class MultiLevelPreconditioner : public virtual Epetra_RowMatrix {
       
 public:  
+
+  //@{ \name Destructor.
 
   //! Constructs an MultiLevelPreconditioner with default values.
 
@@ -79,11 +89,22 @@ public:
 			    const Teuchos::ParameterList & List,
 			    const bool ComputePrec=true,
 			    const char Prefix[]="");
+
+  //@}
   
+  //@{ \name Destructor.
+
   ~MultiLevelPreconditioner() {
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner(); 
   }
 
+  //@}
+  
+  //@{ \name Query functions
+
+  //! Prints label associated to this object.
+  char * Label() const{return(Label_);};  
+  
   //! Prints unused parameters in the input ParameterList.
   void PrintUnused() const
   {
@@ -96,13 +117,16 @@ public:
     List_.unused(os);
   }
 
+  //! Prints unused parameters in the input ParameterList to cout on proc \c MyPID. 
   void PrintUnused(const int MyPID) const;
 
+  //! Gets a reference to the internally stored parameters' list.
   Teuchos::ParameterList & GetList() 
   {
     return List_;
   }
 
+  // Get a copy of the internally stored output list.
   Teuchos::ParameterList GetOutputList() 
   {
     return OutputList_;
@@ -113,6 +137,20 @@ public:
 
   //! Copies \c List into the internally stored parameter list object.
   int SetParameterList(const Teuchos::ParameterList & List);
+
+  //@}
+  
+  //@{ \name Mathematical functions.
+
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(-1);}
+
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  //@}
+  
+  //@{ \name Atribute access functions
+
 
   //! Computes the multilevel hierarchy.
   /*! Computes the multilevel hierarchy. This function retrives the user's defines parameters (as
@@ -127,44 +165,43 @@ public:
   }
 
   // following functions are required to derive Epetra_RowMatrix objects.
-  
+
+  //! Sets ownership.
   int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
 
+  //! Sets use transpose (not implemented).
   int SetUseTranspose(bool UseTranspose){return(-1);}
 
-  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(-1);}
-
-  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
-
+  //! Returns the infinity norm (not implemented).
   double NormInf() const {return(0.0);};
 
-  char * Label() const{return(Label_);};
-  
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(false);};
   
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
   bool HasNormInf() const{return(false);};
+
   
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   const Epetra_Comm & Comm() const{return(*Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
   const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
+  
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
   //@}
 
-  //! Destroies all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
+  //! Destroys all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
   void DestroyPreconditioner() 
   {
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner();
   }
 
-  //! Destroies all structures allocated in \c ComputePreconditioner().   
+  //! Destroyes all structures allocated in \c ComputePreconditioner().   
   void Destroy_ML_Preconditioner();
 
+  //!  Returns a reference to RowMatrix->Map().
   const Epetra_BlockMap & Map() const
   {
     return RowMatrix_->Map();
@@ -299,18 +336,21 @@ public:
   {
     return RowMatrix_->RowMatrixColMap();
   }
-  
+  //@}
     
 private:
 
+  //! Copy constructor, should not be used
   MultiLevelPreconditioner(const MultiLevelPreconditioner & rhs) 
   {};
 
+  //! operator =, should not be used.
   MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & rhs)
   {
     return *this;
   };
-  
+
+  //@{ \name Internal setting functions
   //! Initializes object with defauls values.
   void Initialize();
 
@@ -326,75 +366,118 @@ private:
   //! Sets aggregation schemes.
   void SetAggregation();
 
-  //! Set preconditioner type (usually, V-cycle).
+  //! Sets preconditioner type (usually, V-cycle).
   void SetPreconditioner();
 
+  //! Sets the null space.
   void SetNullSpace();
 
+  //! Sets the null space for Maxwell equations.
   void SetNullSpaceMaxwell();
 
+  //! Set parameters for eigen-computations.
   void SetEigenList();
 
+  //! Sets prolongator smoother parameters.
   void SetSmoothingDamping();
-  
-  void PrintLine() const;
-  
-  ML * ml_;                                 // ML_Struct
-  ML_Aggregate *agg_;                       // ML_Aggregate, contains aggregate information
-  
-  char * Label_;
 
-  const Epetra_RowMatrix * RowMatrix_;      // pointer to linear system matrix
+  //! Prints a line on cout.
+  void PrintLine() const;
+
+  //! Creates label for this object (printed out by AztecOO)
+  int CreateLabel();
+
+  //@}
+
+  //@{ \name Internal data
+  
+  ML * ml_;                                 //! Pointer to ML_Struct
+  ML_Aggregate *agg_;                       //! ML_Aggregate, contains aggregate information
+  
+  char * Label_;                            //! Label for this object
+
+  const Epetra_RowMatrix * RowMatrix_;      //! pointer to linear system matrix
+  //! specifies whether a hierarchy already exists or not.
   bool IsComputePreconditionerOK_;
   
-  int CreateLabel();
-  
+  //! Number of levels
   int NumLevels_;
-  const Epetra_Map * DomainMap_;
-  const Epetra_Map * RangeMap_;
-  const Epetra_Comm * Comm_;
+  const Epetra_Map * DomainMap_;            //! Domain Map
+  const Epetra_Map * RangeMap_;             //! Range Map
+  const Epetra_Comm * Comm_;                //! Epetra communicator object.
   bool  ownership_;
-  int   ProcConfig_[AZ_PROC_SIZE];          // some Aztec's vectors
-  int   SmootherOptions_[AZ_OPTIONS_SIZE];
-  double SmootherParams_[AZ_PARAMS_SIZE];
-  double SmootherStatus_[AZ_STATUS_SIZE];
+  int   ProcConfig_[AZ_PROC_SIZE];          //! proc_config for Aztec smoothers
+  int   SmootherOptions_[AZ_OPTIONS_SIZE];  //! options for Aztec smoothers
+  double SmootherParams_[AZ_PARAMS_SIZE];   //! params for Aztec smoothers
+  double SmootherStatus_[AZ_STATUS_SIZE];   //! status for Aztec smoothers
 
-  Teuchos::ParameterList List_;             // all input parameters are here
-  Teuchos::ParameterList OutputList_;       // various informations
+  //! List containing all input parameters.
+  Teuchos::ParameterList List_;
+  //! List containing all output parameters
+  Teuchos::ParameterList OutputList_;      
+  //! List containing all the parameters for eigen-computations.
+  Teuchos::ParameterList EigenList_;       
 
-  Teuchos::ParameterList EigenList_;        // for advanced R constructions
-  
+  //! Maximum number of levels
   int MaxLevels_;
-  int * LevelID_;                           // used to easily handle ML_INCREASING and ML_DECREASING.
-                                            // In this interface, all levels move from 0 to MaxLevels-1.
-                                            // ML's level for interface's level i is LevelID_[i]
+  //! Integer array used to easily handle ML_INCREASING and ML_DECREASING
+  /*! Integer array, of size MaxLevels_, that contain the ML level ID
+    for the first logical level, and so on for all levels. The ML level ID
+    of logical level L is LevelID_[L].
+    In this interface, all levels move from 0 to MaxLevels-1.
+    ML's level for interface's level i is LevelID_[i]
+  */
+  int * LevelID_;
 
-  double * NullSpaceToFree_;                // not NULL if null space vectors have been allocated
-  
-  char Prefix_[80];                         // all user's defined input data have this prefix
-  string PrintMsg_;                         // all cout's have this prefix (default'd in Initialize() )
-  char ErrorMsg_[80];                       // all cerr's have this prefix (default'd in Initialize() )
+  //! If not NULL, contains the allocated null space vector 
+  double * NullSpaceToFree_;              
+
+  //! All user's defined input data have this prefix
+  char Prefix_[80];
+  //! all cout's have this prefix (default'd in Initialize() )
+  string PrintMsg_;
+  //! all cerr's have this prefix (default'd in Initialize() )
+  char ErrorMsg_[80];
+  //! true of information has to be printed on this process
   bool verbose_;
+  //! Number of PDE equations.
   int NumPDEEqns_;
-  
-  // Maxwell stuff
-  bool SolvingMaxwell_;                     // true if Maxwell equations are used
-  const Epetra_RowMatrix * EdgeMatrix_;     // Main matrix for Maxwell
-  const Epetra_RowMatrix * NodeMatrix_;     // aux matrix for Maxwell
+
+  //@}
+
+  //@{ \name Maxwell variables
+
+  //! true if Maxwell equations are used
+  bool SolvingMaxwell_;
+  //! Main matrix for Maxwell
+  const Epetra_RowMatrix * EdgeMatrix_;
+  //! aux matrix for Maxwell
+  const Epetra_RowMatrix * NodeMatrix_;
+  //! T matrix for Maxwell
   const Epetra_RowMatrix * TMatrix_;
   ML_Operator * TMatrixML_;
   ML_Operator * TMatrixTransposeML_;
   ML_Operator ** Tmat_array, ** Tmat_trans_array;
+  //! ML structures for Maxwell
   ML * ml_edges_, * ml_nodes_;
 
-  // variables for Timing
+  //@}
+
+  //@{ \name Variables for Timing
+  //! Number of applications
   int NumApplications_;
-  double ApplicationTime_; // all applications
+  //! CPU time for all applications of the preconditioner
+  double ApplicationTime_;
   bool FirstApplication_;
-  double FirstApplicationTime_; // only for first application
+  //@ CPU time for first application
+  double FirstApplicationTime_;
+  //! Number of construction phases
   int NumConstructions_;
+  //! CPU time for construction of the preconditioner.
   double ConstructionTime_;
 
+  //@}
+  
   // other stuff for old ML's compatibility
   Epetra_CrsMatrix * RowMatrixAllocated_;
   
