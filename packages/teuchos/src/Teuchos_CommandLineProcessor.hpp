@@ -8,6 +8,11 @@
 
 namespace Teuchos {
 
+namespace CommandLineProcessorUtilityPack {
+
+}
+
+
 ///
 /** Class that helps parse command line input arguments from <tt>(argc,argv[])</tt>
  * and set options.
@@ -146,6 +151,8 @@ public:
 	//@{
 
 	///
+	/** Return value for <tt>CommandLineProcessor::parse()</tt>.
+	 */
 	enum EParseCommandLineReturn {
 		PARSE_SUCCESSFULL              =  0
 		,PARSE_HELP_PRINTED            =  1
@@ -192,13 +199,18 @@ public:
 
 	//@}
 
+public:
+	//
+	enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_DOUBLE, OPT_STRING };
+	// RAB: 2003/10/10: Note: I had to move this out of the private section since
+	// the sun compiler (version 7) complained (rightly it now appears after looking
+	// up what the ISO/ANSI C++ standard says) about the declaration for opt_val_val_t
+	// not being able to access a private member of CommandLineProcessor.
+
 private:
 
 	// /////////////////////////////////
 	// Private types
-
-	//
-	enum EOptType { OPT_NONE, OPT_BOOL_TRUE, OPT_BOOL_FALSE, OPT_INT, OPT_DOUBLE, OPT_STRING };
 
 	//
 	struct opt_val_val_t {
