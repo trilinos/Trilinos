@@ -58,9 +58,13 @@
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 
-  /*! 	\class Teuchos::SerialDenseMatrix
-  	\brief This class creates and provides basic support for dense rectangular matrix of templated type.
-  */
+/*! 	\class Teuchos::SerialDenseMatrix
+	\brief This class creates and provides basic support for dense rectangular matrix of templated type.
+*/
+/** \example DenseMatrix/cxx_main.cpp
+    This is an example of how to use the Teuchos::SerialDenseMatrix class.
+*/
+
 
 namespace Teuchos {  
 

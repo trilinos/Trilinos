@@ -50,6 +50,9 @@ namespace Teuchos {
  * This processor can require that all options be recognized or not.
  *
 */
+/** \example CommandLineProcessor/cxx_main.cpp
+    This is an example of how to use the Teuchos::CommandLineProcessor class.
+*/
 
 /* ToDo: RAB: 2003/10/02: Add support for required options as per KRL's suggestion
  *

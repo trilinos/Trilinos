@@ -53,6 +53,9 @@
           <li> Both char* and string map to are stored as strings internally. 
 	  </ul>
 */
+/** \example ParameterList/cxx_main.cpp
+    This is an example of how to use the Teuchos::ParameterList class.
+*/
 
 namespace Teuchos {
 

@@ -49,6 +49,9 @@
 /*! \file Teuchos_BLAS.hpp
     \brief Templated interface class to BLAS routines.
 */
+/** \example BLAS/cxx_main.cpp
+    This is an example of how to use the Teuchos::BLAS class.
+*/
 
 #include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_BLAS_wrappers.hpp"

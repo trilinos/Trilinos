@@ -44,6 +44,9 @@
 /*! \file Teuchos_LAPACK.hpp
     \brief Templated interface class to LAPACK routines.
 */
+/** \example LAPACK/cxx_main.cpp
+    This is an example of how to use the Teuchos::LAPACK class.
+*/
 
 /* for INTEL_CXML, the second arg may need to be changed to 'one'.  If so
 the appropriate declaration of one will need to be added back into
