@@ -5,7 +5,7 @@ EXAMPLE = UG_Ex1
 
 noinst_PROGRAMS = $(EXAMPLE)
 
-UG_Ex1_SOURCES = $(srcdir)/cxx_main.cpp
+UG_Ex1_SOURCES = $(srcdir)/cxx_main.cpp  $(srcdir)/power_method.cpp
 
 UG_Ex1_DEPENDENCIES = $(top_builddir)/src/libepetra.a
 
