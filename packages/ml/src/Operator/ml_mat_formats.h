@@ -32,6 +32,11 @@ struct ML_CSR_MSRdata
 {
    int    *columns, *rowptr;
    double *values;
+                              /*************************************/
+  int    Nnz, Nrows, Ncols;   /* Haim's addition. Convenient for GGB */
+                              /* implementation of prolongator.      */
+                              /* These fields are not normally filled */
+                              /* in the rest of ml. */
 };
 struct ML_vbrdata 
 {
