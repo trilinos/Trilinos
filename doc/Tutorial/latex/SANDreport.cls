@@ -120,7 +120,7 @@
     \setlength{\evensidemargin}{0.0in}
     \setlength{\marginparwidth}{1.0in - \marginparsep}
 
-    \setlength{\textheight}{9in - \footskip - \headheight - \headsep} 
+    \setlength{\textheight}{9.2in - \footskip - \headheight - \headsep} 
     \setlength{\topmargin}{0.2in}
  
 
@@ -199,7 +199,7 @@
             \begin{minipage}[t]{6.0in}
             {
             \CoverFont{b}{18}{20pt}
-            SAND REPORT
+            SANDIA REPORT
             \vspace{0.125in}\\
             \CoverFont{m}{12}{14pt}
             \SANDnumVar\\

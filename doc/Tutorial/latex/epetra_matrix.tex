@@ -455,7 +455,7 @@ matrix is defined by {\sl four} maps:
   differ.  Maps can be obtained using the methods \verb!DomainMap()! and
   \verb!RangeMap()!.
 \end{itemize}
-The potential of the approach are illustated by the example file
+The potential of the approach are illustated by the example file\\
 \TriExe{epetra/ex24.cpp}. In this example, to be run using two
 processors, we build two maps: \verb!MapA! will be used to construct the
 matrix, while \verb!MapB! to define the parallel layout of the vectors
@@ -481,8 +481,8 @@ A.FillComplete(MapB,MapB);
 Now, we can create $X$ and $B$ as vectors based on \verb!MapB!, and
 perform the matrix-vector product:
 \begin{verbatim}
-Epetra_Vector VecB(MapB);   Epetra_Vector VecB2(MapB);  
-A.Multiply(false,VecB,VecB2);
+Epetra_Vector X(MapB);   Epetra_Vector B(MapB);  
+A.Multiply(false,X,B);
 \end{verbatim}  
 
 \begin{remark}
