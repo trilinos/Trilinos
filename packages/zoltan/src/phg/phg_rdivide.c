@@ -12,6 +12,7 @@
  ****************************************************************************/
 
 #include "phg.h"
+#include "phg_distrib.h"
 
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
@@ -19,20 +20,23 @@
   goto End; \
 }
 
+/* #define SPLIT_PROCESSORS */
+
 static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
 
+
 /* recursively divides problem into 2 parts until all p found */
-int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
- PHGPartParams *hgp, int level)
+int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
+                       PHGPartParams *hgp, int level)
 {
-  int i, j, mid, err, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
+  char *yo = "Zoltan_PHG_rdivide";
+  int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
   Partition part=NULL;
-  HGraph *new=NULL;
+  HGraph *left=NULL, *right=NULL;
   PHGComm *hgc = hg->comm;
   float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
                                      because we are doing bisection */
-  char *yo = "Zoltan_PHG_rdivide";
-    
+
   hg->redl = hgp->redl;
   
   /* only one part remaining, record results and exit */
@@ -42,10 +46,8 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
     return ZOLTAN_OK;
   }
 
-  if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))  {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
-    return ZOLTAN_MEMERR;
-  }
+  if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
+      MEMORY_ERROR;
 
   /* bipartition current hypergraph with appropriate split ratio */
   mid = (lo+hi)/2;
@@ -55,12 +57,10 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
   tgpartsize[0] = hg->ratio;
   tgpartsize[1] = 1. - tgpartsize[0];
-  /*   hg->redl = 0;  */
-  err = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
-  if (err != ZOLTAN_OK) {
-    ZOLTAN_FREE (&part);
-    return err;
-  }
+
+  ierr = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
+  if (ierr != ZOLTAN_OK)
+      goto End;
 
   uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
     
@@ -73,45 +73,31 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   }
 
   if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))
-   || !(lpins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))))  {
-     Zoltan_Multifree(__FILE__,__LINE__, 3, &part, &pins[0], &lpins[0]);
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-  }
+   || !(lpins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))))
+      MEMORY_ERROR;
   if (pins[0] && lpins[0]) {
       pins[1]  = &( pins[0][hg->nEdge]);
       lpins[1] = &(lpins[0][hg->nEdge]);
   }
      
   /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
-    for (i = 0; i < hg->nEdge; ++i)
+  for (i = 0; i < hg->nEdge; ++i)
       for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
         ++(lpins[part[hg->hvertex[j]]][i]);
         
-    /* now compute global pin distribution */
-    MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
-    ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
-    
-  if (!(new = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))  {
-    ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
-    Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
-    return ZOLTAN_MEMERR;
-  }
-  Zoltan_HG_HGraph_Init (new);
+  /* now compute global pin distribution */
+  MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
     
   /* recursively divide in two parts and repartition hypergraph */
   if (mid>lo) { /* only split if we really need it */
-      err = split_hypergraph (pins, hg, new, part, 0, zz);
-      if (err != ZOLTAN_OK) {
-          Zoltan_Multifree (__FILE__, __LINE__, 3, &pins[0], &part, &new);
-          return err;
-      }
-      err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
-      Zoltan_HG_HGraph_Free (new);
-      if (err != ZOLTAN_OK) {
-          Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
-          return err;
-      }
+      if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
+          MEMORY_ERROR;
+      Zoltan_HG_HGraph_Init (left);
+      
+      ierr = split_hypergraph (pins, hg, left, part, 0, zz);
+      if (ierr != ZOLTAN_OK) 
+          goto End;
   } else {
       for (i = 0; i < hg->nVtx; ++i)
           if (part[i]==0)
@@ -119,16 +105,169 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
   }
 
   if (hi>mid+1) { /* only split if we need it */
-      err = split_hypergraph (pins, hg, new, part, 1, zz);
+      if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
+          MEMORY_ERROR;
+      Zoltan_HG_HGraph_Init (right);
+      ierr = split_hypergraph (pins, hg, right, part, 1, zz);
+  
+      ZOLTAN_FREE (&pins[0]); /* we don't need pins */      
+      if (ierr != ZOLTAN_OK)
+          goto End;
+  } else {
+      ZOLTAN_FREE (&pins[0]); /* we don't need pins */
+      for (i = 0; i < hg->nVtx; ++i)
+          if (part[i]==1)
+              final [hg->vmap[i]] = hi;
+  }
+
+#ifdef SPLIT_PROCESSORS
+  if (hgc->nProc>1 && left && right) {
+      PHGComm  leftcomm, rightcomm;
+      HGraph  newleft, newright;
+      int     *leftvmap, *rightvmap, mid;
+
+      Zoltan_HG_HGraph_Init (&newleft);
+      Zoltan_HG_HGraph_Init (&newright);
+
+      /* redistribute left and right parts */
+      mid = (int)((float) hgc->nProc * (float) left->nPins / (float) hg->nPins);
+      Zoltan_PHG_Redistribute(zz, left,
+                              0, mid, 
+                              &leftcomm, 
+                              &newleft,
+                              &leftvmap);
+      Zoltan_PHG_Redistribute(zz, right,
+                              mid+1, hgc->nProc-1, 
+                              &rightcomm, 
+                              &newright,
+                              &rightvmap);
+      
+      if (hgc->myProc<=mid) {/* I'm on the left part so I should partition newleft */
+          ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, &newleft, hgp, level+1);
+          Zoltan_HG_HGraph_Free (&newleft);
+      } else { /* I'm on the right part so I should partition newright */
+          ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, &newright, hgp, level+1);
+          Zoltan_HG_HGraph_Free (&newright);
+      }
+  } else {
+#endif
+      if (left) 
+          ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
+      if (right) 
+          ierr |= Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
+#ifdef SPLIT_PROCESSORS      
+  }
+#endif
+  
+ End:
+  if (left)
+      Zoltan_HG_HGraph_Free (left);
+  if (right)
+      Zoltan_HG_HGraph_Free (right);
+  Zoltan_Multifree (__FILE__, __LINE__, 5, &pins[0], &lpins[0], &part, &left, &right);
+
+  return ierr;
+}
+
+
+
+/* recursively divides problem into 2 parts until all p found */
+int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
+                       PHGPartParams *hgp, int level)
+{
+  char *yo = "Zoltan_PHG_rdivide";
+  int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
+  Partition part=NULL;
+  HGraph *left=NULL, *right=NULL;
+  PHGComm *hgc = hg->comm;
+  float tgpartsize[2]={0.0,0.0};    /* Target partition sizes; dimension is 2 
+                                     because we are doing bisection */
+
+  hg->redl = hgp->redl;
+  
+  /* only one part remaining, record results and exit */
+  if (lo == hi) {
+    for (i = 0; i < hg->nVtx; ++i)
+      final [hg->vmap[i]] = lo;
+    return ZOLTAN_OK;
+  }
+
+  if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
+      MEMORY_ERROR;
+
+  /* bipartition current hypergraph with appropriate split ratio */
+  mid = (lo+hi)/2;
+  tgpartsize[0] = tgpartsize[1] = 0.;
+  for (i = lo; i <= mid; i++)  tgpartsize[0] += hgp->part_sizes[i];
+  for (i = lo; i <= hi;  i++)  tgpartsize[1] += hgp->part_sizes[i];
+  hg->ratio = (double) tgpartsize[0] / (double) tgpartsize[1];
+  tgpartsize[0] = hg->ratio;
+  tgpartsize[1] = 1. - tgpartsize[0];
+
+  ierr = Zoltan_PHG_Partition (zz, hg, 2, tgpartsize, part, hgp, level);
+  if (ierr != ZOLTAN_OK)
+      goto End;
+
+  uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, Zoltan_PHG_hcut_size_links(hgc, hg, part, 2));
+    
+  /* if only two parts total, record results and exit */
+  if (lo + 1 == hi)  {
+    for (i = 0; i < hg->nVtx; ++i)
+      final [hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
+    ZOLTAN_FREE (&part);
+    return ZOLTAN_OK;
+  }
+
+  if (hg->nEdge && (!(pins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))
+   || !(lpins[0] = (int*) ZOLTAN_CALLOC (2 * hg->nEdge, sizeof(int)))))
+      MEMORY_ERROR;
+  if (pins[0] && lpins[0]) {
+      pins[1]  = &( pins[0][hg->nEdge]);
+      lpins[1] = &(lpins[0][hg->nEdge]);
+  }
+     
+  /* Initial calculation of the local pin distribution  (sigma in UVC's papers)  */
+  for (i = 0; i < hg->nEdge; ++i)
+      for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+        ++(lpins[part[hg->hvertex[j]]][i]);
+        
+  /* now compute global pin distribution */
+  MPI_Allreduce(lpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+  ZOLTAN_FREE (&lpins[0]);                        /* we don't need lpins */
+    
+  /* recursively divide in two parts and repartition hypergraph */
+  if (mid>lo) { /* only split if we really need it */
+      if (!(left = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
+          MEMORY_ERROR;
+
+      Zoltan_HG_HGraph_Init (left);
+      
+      ierr = split_hypergraph (pins, hg, left, part, 0, zz);
+      if (ierr != ZOLTAN_OK) 
+          goto End;
+
+      ierr = Zoltan_PHG_rdivide (lo, mid, final, zz, left, hgp, level+1);
+      Zoltan_HG_HGraph_Free (left);
+      if (ierr != ZOLTAN_OK) 
+          goto End;
+  } else {
+      for (i = 0; i < hg->nVtx; ++i)
+          if (part[i]==0)
+              final [hg->vmap[i]] = lo;
+  }
+
+  if (hi>mid+1) { /* only split if we need it */
+      if (!(right = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))
+          MEMORY_ERROR;
+      ierr = split_hypergraph (pins, hg, right, part, 1, zz);
   
       ZOLTAN_FREE (&pins[0]); /* we don't need pins */
       
-      if (err != ZOLTAN_OK) {
-          Zoltan_Multifree (__FILE__, __LINE__, 2, &part, &new);
-          return err;
-      }
-      err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
-      Zoltan_HG_HGraph_Free (new);
+      if (ierr != ZOLTAN_OK)
+          goto End;
+
+      ierr = Zoltan_PHG_rdivide (mid+1, hi, final, zz, right, hgp, level+1);
+      Zoltan_HG_HGraph_Free (right);
   } else {
       ZOLTAN_FREE (&pins[0]); /* we don't need pins */
       for (i = 0; i < hg->nVtx; ++i)
@@ -136,11 +275,11 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
               final [hg->vmap[i]] = hi;
   }
       /* remove alloc'ed structs */
-  ZOLTAN_FREE (&part);
-  ZOLTAN_FREE (&new); 
-  return err;
-}
+ End:
+  Zoltan_Multifree (__FILE__, __LINE__, 5, &pins[0], &lpins[0], &part, &left, &right);
 
+  return ierr;
+}
 
 
 static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition part,

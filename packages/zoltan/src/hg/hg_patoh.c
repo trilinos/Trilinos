@@ -70,7 +70,7 @@ int ierr = ZOLTAN_OK;
     scale_round_weights(hg->ewgt, iewgts, hg->nEdge, hg->EdgeWeightDim, 0);
   }
 
-  PaToH_Initialize_Parameters(&pargs, PATOH_CONPART, PATOH_SUGPARAM_DEFAULT); 
+  PaToH_Initialize_Parameters(&pargs, PATOH_CONPART, PATOH_SUGPARAM_DEFAULT);
 
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 
               ivwgts, iewgts, hg->hindex, hg->hvertex);
@@ -89,18 +89,11 @@ int ierr = ZOLTAN_OK;
   if (hg->VtxWeightDim <= 1)
     PaToH_Partition(&pargs, hg->nVtx, hg->nEdge, ivwgts, iewgts, hg->hindex,
                     hg->hvertex, partvec, partweight, &cut);
-  else {
-    /* KDD For now, use these parameters.  Umit will update PaToH so 
-     * that default parameters will work.  (Currently PaToH's default
-     * coarse partitioning fails.)
-     */
-    pargs.initp_alg = PATOH_IPA_GHGP;
-    pargs.ref_alg = PATOH_REFALG_D_FM;
-
+  else 
     PaToH_MultiConst_Partition(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim,
                                ivwgts, hg->hindex, hg->hvertex, partvec,
                                partweight, &cut);
-  }
+  
 
   /* HERE:  Check whether imbalance criteria were met. */
 
@@ -111,6 +104,8 @@ End:
   ZOLTAN_FREE(&ivwgts);
   ZOLTAN_FREE(&iewgts);
   ZOLTAN_FREE(&partweight);
+  PaToH_Free();
+
 
   return ierr;
 }

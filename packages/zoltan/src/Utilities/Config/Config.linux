@@ -102,9 +102,10 @@ CPPC			= mpiCC -Wall
 # INCLUDE_PATH          = -I$(MPIR_HOME)/include
 # endif
 
-DBG_FLAGS		= -g 
-OPT_FLAGS		= -O 
-CFLAGS 			= $(DBG_FLAGS)
+
+DBG_FLAGS		= -g -Wall
+OPT_FLAGS		= -O2 -Wall
+CFLAGS 			= $(DBG_FLAGS) 
 
 LOCAL_F90		= $(F90)
 
@@ -119,12 +120,15 @@ endif
 #MPI_LIB = -lg2c
 #MPI_LIBPATH = -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
 
-PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3
-PARMETIS_INCPATH  	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
+# PARMETIS_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib/ParMETIS3
+# PARMETIS_INCPATH  	= -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 
 #JOSTLE_LIBPATH 	= -L/Net/local/proj/zoltan/arch/linux/lib
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
-NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
+# NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
+# NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
+
+PATOH_LIBPATH		= -L/home/umit/work/src/PaToH/lib
+PATOH_INCPATH		= -I/home/umit/work/src/PaToH/dist
