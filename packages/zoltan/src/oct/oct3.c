@@ -1,0 +1,871 @@
+/*** ATTN: for the purposes of being used as a load balancer, are the local
+ *** octant checks necessary? As it stands, an octree is created each time
+ *** there is a load balance call. So all octants should be local. (6/1/98)
+ *** NOTE: The previous statement isn't totally correct. Among the things 
+ *** need to be done is to make a global octree; thus needs to check if an
+ *** octant is local. POC_local() has been put back. (6/23/98)
+ ***/
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "octant_const.h"
+#include "msg_const.h"
+#include "costs_const.h"
+#include "util_const.h"
+#include "dfs_const.h"
+#include "octupdate.h"
+#include "mpi.h"
+#include "merge_const.h"
+
+/* NOTE: be careful later about region lists for nonterminal octants */
+
+static int oct_nref=0;                              /* number of refinements */
+static int oct_ncoarse=0;                           /* number of coarsenings */
+static int idcount = 0;
+
+extern void print_stats(double timetotal, LB *objptr, int numobj, 
+			double *timers, int *counters, int STAT_TYPE);
+
+void oct_init(LB *lb,         /* The load-balancing structure with info for
+                                 the RCB balancer.                           */
+  int *pobjnum,               /* # of objs - decomposition changes it */
+  int *pobjtop,               /* dots >= this index are new */
+  int *num_non_local,         /* Number of non-local objects assigned to this
+                                 processor in the new decomposition.         */
+  LB_TAG **non_local_objs     /* Array of returned non-local obj info for the
+                                 new decomposition.                          */
+) {
+  LB_TAG *export_tags;            
+  int nsentags;
+  LB_TAG *import_tags;
+  int nrectags;
+  pOctant ptr;
+  pRList root;
+  int count;
+  double time1,time2,time3,time4;  /* timers */
+  double timestart,timestop;       /* timers */
+  double timers[4];                /* diagnostic timers 
+			              0 = start-up time before recursion
+				      1 = time before median iterations
+				      2 = time in median iterations
+				      3 = communication time */
+  int    counters[7];              /* diagnostic counts
+			              0 = # of median iterations
+				      1 = # of objects sent
+				      2 = # of objects received
+				      3 = most objects this proc ever owns
+				      4 = most objects this proc ever allocs
+				      5 = # of times a previous cut is re-used
+				      6 = # of reallocs of dot array */
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  timestart = MPI_Wtime();
+
+  /* initialize timers and counters */
+  counters[0] = 0;
+  counters[1] = 0;
+  counters[2] = 0;
+  counters[3] = 0;
+  counters[4] = 0;
+  counters[5] = 0;
+  counters[6] = 0;
+  timers[1] = 0.0;
+  timers[2] = 0.0;
+  timers[3] = 0.0;
+
+  export_tags = NULL;
+  import_tags = NULL;
+  count = nsentags = nrectags = 0;
+  msg_init();
+  POC_init(msg_mypid);
+
+  time1 = MPI_Wtime();
+  oct_gen_tree_from_input_data(lb, &counters[3], &counters[4]);
+  time2 = MPI_Wtime();
+  timers[0] = time2 - time1;                 /* time took to create octree */
+  
+  PRINT_IN_ORDER()
+    POC_printResults();
+  
+  merge_tree();
+
+  time1 = MPI_Wtime();
+  dfs_partition(&counters[0]);
+  time2 = MPI_Wtime();
+  timers[1] = time2 - time1;              /* time took to partition octree */
+  
+  time1 = MPI_Wtime();
+  dfs_migrate(&export_tags, &nsentags, &import_tags, &nrectags);
+  time2 = MPI_Wtime();
+  timers[2] = time2 - time1;               /* time took to setup migration */
+  
+  *non_local_objs = import_tags;
+  *num_non_local = nrectags;
+
+  /* count the number of objects on this processor */
+  root = OCT_rootlist;
+  while(root != NULL) {
+    ptr = root->oct;
+    while(ptr != NULL) {
+      if(POC_isTerminal(ptr))
+	count += POC_nRegions(ptr);
+      ptr = POC_nextDfs(ptr);
+    }
+    root = root->next;
+  }
+
+  *pobjtop = count - nsentags;
+  *pobjnum = *pobjtop + nrectags;
+
+  counters[1] = nsentags;
+  counters[2] = nrectags;
+  MPI_Barrier(MPI_COMM_WORLD);
+  timestop = MPI_Wtime();
+  
+  print_stats(timestop - timestart, lb, count, timers, counters, 2);
+  /* 
+   * fprintf(stderr, "%d) non_local %d, count %d, nsent %d, top %d, num %d\n",
+   *         msg_mypid, *num_non_local, count, nsentags, *pdottop, *pobjnum);
+   */
+}
+
+/*
+ * void oct_gen_tree_from_input_data()
+ *
+ * This function will create a root node of on each processor which will
+ * then be used to create an octree with regions associated with it. The
+ * tree will then be balanced and the output used to balance "mesh regions"
+ * on several processors.
+ *
+ */
+void oct_gen_tree_from_input_data(LB *lb, int *c3, int *c4) {
+  double min[3],                         /* min coord bounds of objects */
+         max[3];                         /* max coord bounds of objects */
+  int num_extra;                         /* number of orphaned objects */
+  int num_objs;                          /* total number of local objects */
+  pRegion Region_list;                   /* arfray of objects to be inserted */
+  pRegion ptr,
+          ptr1;
+  pOctant root;
+  int i;
+
+  /*
+   * If there are no objects on this processor, do not create a root octant.
+   * The partitioner will probably assign objects to this processor
+   */
+  if(lb->Get_Num_Local_Obj == NULL) {
+    fprintf(stderr, "%s\n\t%s\n", "Error in octree load balance:",
+	    "Must register Get_Num_Local_Objects function");
+    abort();
+  }
+  *c3 = num_objs = lb->Get_Num_Local_Obj(lb->Object_Type);
+  Region_list = NULL;
+  ptr1 = NULL;
+  if(num_objs > 0) {
+    /* Need A Function To Get The Bounds Of The Local Objects */
+    get_bounds(lb, &ptr1, &num_objs, min, max, c4);
+
+    /* create the global root for this processor */
+    root = POC_new();
+    POC_setbounds(root, min, max);
+    POC_setparent(root, NULL, -1);                /* make it the global root */
+  }
+
+  /* 
+   * attach the regions to the root... oct_fix will create the octree
+   * starting with the root and subdividing as needed 
+   */
+#if 0
+  fprintf(stderr, "(%d)Debugging output follows...%d\n", msg_mypid, num_objs);
+  msg_sync();
+  ptr = ptr1;
+  for(i=0; i < num_objs; i++) {
+    if(ptr == NULL)
+      fprintf(stderr, "(%d) ERROR: ptr == NULL on proc %d...\n", i, msg_mypid);
+    else {
+      if(ptr->Coord == NULL)
+	fprintf(stderr, "(%d) null info on processor %d...\n", i, msg_mypid);
+      else {
+	fprintf(stderr,"info follows...\n");
+	fprintf(stderr, "(%d) info on %d: %lf  %lf  %lf\n", 
+		i, msg_mypid, ptr->Coord[0], ptr->Coord[1], ptr->Coord[2]);
+	fprintf(stderr, "cont: %d %d %d %f\n", 
+		ptr->Tag.Local_ID, ptr->Tag.Global_ID, 
+		ptr->Tag.Proc, ptr->Weight); 
+      }
+      ptr = ptr->next;
+    }
+  }
+#endif
+  
+  num_extra = oct_fix(lb, ptr1, num_objs);
+}
+
+void get_bounds(LB *lb, pRegion *ptr1, int *num_objs, 
+		double min[3], double max[3], int *c4) {
+  int max_num_objs;
+  LB_ID *obj_ids;
+  int i;
+  pRegion tmp, ptr;
+  double gmin, gmax;
+  double x;
+
+  *num_objs = lb->Get_Num_Local_Obj(lb->Object_Type);
+
+  /* ATTN: an arbitrary choice, is this necessary? */
+  *c4 = max_num_objs = 2 * (*num_objs); 
+
+  obj_ids = (LB_ID *) LB_array_alloc(1, (*num_objs), sizeof(LB_ID));
+  if(lb->Get_All_Local_Objs == NULL) {
+    fprintf(stderr, "%s:\n\t%s\n", "Error in octree load balance", 
+	    "user must declare function Get_All_Local_Objs.");
+    abort();
+  }
+  lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
+  if((*num_objs) > 0) {
+    initialize(lb, ptr1, 0, obj_ids[0]);
+    vector_set(min,(*ptr1)->Coord);
+    vector_set(max,(*ptr1)->Coord);
+    max[2] = 1.0;
+  }
+  tmp = *ptr1;
+  for (i = 1; i < (*num_objs); i++) {
+    initialize(lb, &(ptr), i, obj_ids[i]);
+    /* the following is really a hack, since it has no real basis 
+       in vector mathematics.... */
+    if(ptr->Coord[0] < min[0])
+      min[0] = ptr->Coord[0];
+    if(ptr->Coord[1] < min[1])
+      min[1] = ptr->Coord[1];
+    if(ptr->Coord[2] < min[2])
+      min[2] = ptr->Coord[2];
+    if(ptr->Coord[0] > max[0])
+      max[0] = ptr->Coord[0];
+    if(ptr->Coord[1] > max[1])
+      max[1] = ptr->Coord[1];
+    if(ptr->Coord[2] > max[2])
+      max[2] = ptr->Coord[2];
+    tmp->next = ptr;
+    tmp = tmp->next;
+    ptr = NULL;
+  }
+  LB_safe_free((void **) &obj_ids);
+  
+  for(i=0; i<3; i++) {
+    x = min[i];
+    MPI_Allreduce(&x,&gmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
+    min[i] = gmin;
+    x = max[i];
+    MPI_Allreduce(&x,&gmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
+    max[i] = gmax;
+  }
+    
+  return;
+}
+
+/*
+ *  Function that initializes the dot data structure.  It uses the 
+ *  global ID, coordinates and weight provided by the application.  
+ */
+pRegion initialize(LB *lb, pRegion *ret, int local_id, LB_ID global_id) {
+  pRegion reg;
+  int object_type = lb->Object_Type;
+
+  reg = (pRegion)malloc(sizeof(Region));
+  *ret = reg;
+  reg->Tag.Local_ID = local_id;
+  reg->Tag.Global_ID = global_id;
+  reg->Tag.Proc = msg_mypid;
+  /* reg->Proc = 0; */
+  reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
+  lb->Get_Obj_Geom(global_id, object_type, reg->Coord);
+
+#if 0
+  PRINT_IN_ORDER()
+    fprintf(stderr, "Result info on %d: %d %d %d  %lf  %lf  %lf\n", msg_mypid, 
+	    reg->Tag.Local_ID, reg->Tag.Global_ID, reg->Tag.Proc,
+	    reg->Coord[0], reg->Coord[1], reg->Coord[2]); 
+#endif
+
+  if (lb->Get_Obj_Weight != NULL)
+    reg->Weight = lb->Get_Obj_Weight(global_id, object_type);
+  else
+    reg->Weight = 1;
+  reg->next = NULL;
+
+  return(reg);
+}
+
+/*
+ * int oct_fix(pMesh mesh)
+ *
+ * Clear all region pointers from the octree,
+ * reinsert all mesh regions, 
+ * and coarsen or refine the octree as needed.
+ * 
+ * Return the number of regions that could
+ * not be inserted.
+ *
+ */
+int oct_fix(LB *lb, pRegion Region_list, int num_objs) {
+  int nreg;                                /* number of regions not inserted */
+  double pct;                              /* percentage of bad regions */
+  int mregions;                            /* total number of regions */
+  int i;
+
+  /* initalize variables */
+  nreg=0;
+  oct_nref=0;
+  oct_ncoarse=0;
+  
+  /* associate the objects to the octants */
+  nreg=oct_global_insert_object(Region_list, num_objs);
+  oct_global_dref(); 
+
+  if (num_objs)
+    pct=100.0*nreg/num_objs;
+  else
+    pct=0;
+
+  PRINT_IN_ORDER()
+    printf("refs: %5d  drefs: %5d  bad regions: %5d  = %4.1f%%\n",
+	   oct_nref,oct_ncoarse,nreg,pct);
+
+  return(nreg);
+}
+
+/*
+ * int oct_global_insert_object()
+ *
+ * Try to insert all regions in the mesh into the existing
+ * local octree.  Return the number of insertion failures.
+ *
+ */
+int oct_global_insert_object(pRegion Region_list, int num_objs) {
+  pRegion region;                             /* region to be attached */
+  int count;                                  /* count of failed insertions */
+  int i;
+
+  /* initialize variables */
+  count=0;
+  region = Region_list;
+
+  /* get the next region to be inserted */
+  for(i=0; i<num_objs; i++) {
+    if(region != NULL)
+
+#if 0
+      printf("\n%lf   %lf   %lf\n", 
+	     region->Coord[0], region->Coord[1], region->Coord[2]); 
+#endif
+
+    if (!oct_global_insert(region)) {
+      fprintf(stderr, "(%d) WARNING: %s\n", i,
+	      "object could not be inserted into an octant.");
+      /* obj has no octant association increment "orphan" counter */
+      count++;
+    }
+    region = region->next;
+  }
+
+  return(count);
+}
+
+/*
+ * oct_global_insert(region)
+ *
+ * try to insert the region into any of the local-rooted subtrees
+ *
+ * return the octant pointer if successful, or NULL if region's
+ * centroid does not lie within the local octree.  This could
+ * be due to centroid not lying within any local root, or also
+ * if some local root's subtree is off-processor.
+ *
+ * During insertion, refinement may be performed.
+ * In that case, the returned octant is an ancestor
+ * of the octant to which the region is attached.
+ *
+ */
+pOctant oct_global_insert(pRegion region) {
+  pOctant oct;                            /* octree octant */
+
+  /* find the octant which the object lies in */
+  oct=oct_global_find(region->Coord);
+
+  /* if octant is found, try to insert the region */
+  if (oct)
+    if (!oct_subtree_insert(oct, region))                /* inserting region */
+      {
+	fprintf(stderr,"oct_global_insert: insertion failed\n");
+	abort();
+      }
+
+  return(oct);
+}
+
+/*
+ * oct_subtree_insert(oct,region)
+ *
+ * Insert region in oct, carrying out multiple refinement if necessary
+ */
+int oct_subtree_insert(pOctant oct, pRegion region) {
+  double centroid[3];                              /* coordintes of centroid */
+  pRegion entry;
+
+  /* if oct is not terminal, find leaf node the centroid can be attahced to */
+  if (!POC_isTerminal(oct)) {
+    oct=oct_findOctant(oct,region->Coord);
+  }
+
+  if (!oct)
+    return(0);
+
+  /* add the region to the octant */
+  POC_addRegion(oct, region);
+
+  /* check if octant has too many regions and needs to be refined */
+  if (POC_nRegions(oct) > MAXOCTREGIONS)
+    oct_terminal_refine(oct,0);          /* After this, dest may be nonterm */
+
+  return(1);
+}
+
+/*
+ * pOctant oct_global_find(Coord centroid)
+ *
+ * Return the octant in the local octree that contains the
+ * given point, if it exists.  Otherwise, return NULL.
+ *
+ */
+pOctant oct_global_find(double point[3]) {
+  pRList ptr;                      /* ptr used for iterating local root list */
+  pOctant root;                    /* root of a subtree */
+  pOctant oct;                     /* octree octant */
+  double min[3],                   /* minimum bounds coordinates */
+         max[3];                   /* maximum bounds coordinates */
+
+  ptr = POC_localroots();                   /* get a list of all local roots */
+  oct = NULL;
+
+  /* iterate through root list to find if point lies inside root's bounds */
+  while ((!oct) && (ptr != NULL) ) {
+    POC_bounds(ptr->oct,min,max);
+    /* ATTN: in_box may need adjusting for the lower bounds */
+    if (in_box(point,min,max))                 /* check if point fits inside */
+      oct=oct_findOctant(ptr->oct,point); /* find the exact octant for point */
+    ptr = ptr->next;
+  }
+  
+  return(oct);
+}
+
+/*
+ * oct_findOctant(oct, coord)
+ *   (replaces : PO_findOctant(oct,coord))
+ *  
+ *
+ * find the octant in a subtree containing coord (if coord
+ * is not in the subtree, returns the closest octant in the subtree).
+ * NOTE: return NULL if we hit an off-processor link
+ *
+ */
+pOctant oct_findOctant(pOctant oct, double coord[3]) {
+  double min[3],                                  /* min bounds of an octant */
+         max[3],                                  /* max bounds of an octant */
+         origin[3];                               /* origin coord of octant */
+  pOctant child;                                  /* child of an octant */
+  int cnum;                                       /* child number */
+
+  /* if octant is terminal, then this is the right octant */
+  if (POC_isTerminal(oct))
+    return(oct);
+
+  POC_bounds(oct,min,max);                   /* get the bounds of the octant */
+  bounds_to_origin(min,max,origin);            /* convert to bound to origin */
+  cnum = child_which(origin,coord);           /* find closest child to coord */
+  child = POC_child(oct,cnum);                             /* get that child */
+
+  /* ATTN: are these local checks necessary? */
+  /* if ( !POC_local(child) ) */
+  if(!POC_local(oct, cnum))                     /* make sure octant is local */
+    return(NULL);
+
+  return(oct_findOctant(child,coord));    /* recursivly search down the tree */
+}
+
+/*
+ * oct_terminal_refine(oct)
+ *
+ * subdivide a terminal octant and divvy up
+ * its regions to the 8 children; recurse if
+ * necessary to satisfy MAXOCTREGIONS
+ *
+ */
+void oct_terminal_refine(pOctant oct,int count) {
+  double min[3],                  /* coordinates of minimum bounds of region */
+         max[3],                  /* coordinates of maximum bounds of region */
+         origin[3],               /* origin of region */
+         centroid[3];             /* coordinates of region's centroid */
+  pOctant child[8];               /* array of child octants */
+  int cnum;                       /* child number */
+  int i, j;                       /* index counter */
+  pRegion region;                 /* a region to be associated to an octant */
+  pRegion entry;
+  Region reg;
+  double cmin[3], cmax[3];
+
+  for(i=0;i<3;i++)
+    min[i] = max[i] = 0;
+
+  /* upper limit of refinement levels */
+  /* ATTN: may not be used anymore, but can be put back in if necessary */
+  if (count>=10)
+    printf("oct_terminal_refine: bailing out at 10 levels\n");
+  
+  oct_nref++;                                /* increment refinement counter */
+
+  /* octant should be terminal in order to be refined (subdivided) */
+  if (!POC_isTerminal(oct)) {
+    fprintf(stderr,"ref_octant: oct not terminal\n");
+    abort();
+  }
+
+  /* get the bounds of an octant */
+  POC_bounds(oct,min,max);
+  /* calculate the origin from the bounds */
+  bounds_to_origin(min,max,origin);
+
+  region = POC_regionlist(oct);             /* Get list while still terminal */
+  oct->list = NULL;  /* remove regions from octant, it won't be terminal */
+
+  /* create the children and set their id's */
+  for (i=0; i<8; i++) {
+    child[i]=POC_new();                               /* create a new octant */
+    POC_setparent(child[i],oct, msg_mypid);    /* set the child->parent link */
+    POC_setchildnum(child[i],i);                /* which child of the parent */
+    POC_setchild(oct,i,child[i]);              /* set the parent->child link */
+    POC_setID(child[i], oct_nextId());
+    child_bounds(min,max,origin,i,cmin,cmax);
+    POC_setbounds(child[i],cmin,cmax);
+    POC_setCpid(oct, i, msg_mypid);
+  }
+
+  /* assign newly created children to child array*/
+  if(POC_children(oct, child) != 8) {
+    /* 
+     * if subdivision of oct was successful, oct should have 8 children; 
+     * thus a return value of 0 here is a fatal error
+     */
+    fprintf(stderr, "ref_octant: subdivide failed\n");
+    abort();
+  }
+
+  /* iterate through and find which child each region should belong to */
+  while(region != NULL) {
+    cnum=child_which(origin, region->Coord);
+    POC_addRegion(child[cnum], region); /* add region to octant's regionlist */
+    region = region->next;
+  }
+
+  for (i=0; i<8; i++)                                           /* Recursion */
+    if (POC_nRegions(child[i]) > MAXOCTREGIONS)
+      oct_terminal_refine(child[i],count+1);
+}
+
+/*
+ * oct_global_dref()
+ * 
+ * refine and derefine octree as necessary by number of
+ * regions in each octant
+ *
+ */
+void oct_global_dref() {
+  pRList lroots;                              /* list of all the local roots */
+
+  lroots = POC_localroots();
+  while (lroots != NULL) {
+    oct_subtree_dref(lroots->oct);
+    lroots = lroots->next;
+  }
+}
+
+/*
+ * oct_subtree_dref(oct)
+ *
+ * Coarsen octree so that leaf octants do not have less than MINOCTREGIONS 
+ * regions. Refinement takes precedence, so coarsening will not take place 
+ * unless all subtrees agree on it.
+ */
+int oct_subtree_dref(pOctant oct) {
+  pOctant child;                         /* child of an octant */
+  int coarsen;                           /* flag to indicate need to coarsen */
+  int i;                                 /* index counter */
+  int nregions;                          /* number of regions */
+  int total;                             /* total number of regions */
+
+  /* if terminal octant, cannot coarsen on own */
+  if (POC_isTerminal(oct)) {
+    nregions=POC_nRegions(oct);
+
+    if (nregions > (MAXOCTREGIONS*2) ) {
+      printf("oct_subtree_dref: warning: too many (%ld) regions "
+	     "in oct %d (id=%d)\n",POC_nRegions(oct),(int)oct,POC_id(oct));
+      return(-1);
+    }
+    else
+      if (nregions < MINOCTREGIONS)
+	return(nregions);
+      else
+	return(-1);
+  }
+
+  coarsen=1;                                         /* assume to be coarsen */
+  total=0;
+
+  /* look at each child, see if they need to be coarsened */
+  for (i=0; coarsen && i<8; i++) {
+    child = POC_child(oct,i);
+    /* if child is off processor cannot coarsen */
+    /* if (!POC_local(child) ) */
+    if(!POC_local(oct, i))
+      coarsen=0;
+    else {
+      /* get the number of region of the child */
+      nregions=oct_subtree_dref(child);
+      if (nregions<0)
+	coarsen=0;
+      else
+	total+=nregions;                           /* total the region count */
+    }
+  }
+
+  /* check if octant can be coarsened */
+  if (coarsen && total<MAXOCTREGIONS) {
+    oct_terminal_coarsen(oct);
+    
+    if (total < MINOCTREGIONS)
+      return(total);
+    else
+      return(-1);
+  }
+
+  return(-1);
+}
+
+/*
+ * oct_terminal_coarsen(oct)
+ *
+ * remove octant's children, accumulating regions
+ * to octant
+ *
+ */
+void oct_terminal_coarsen(pOctant oct) {
+  pOctant child;                         /* child of an octant */
+  pRegion region;                        /* region associated with an octant */
+  int i;                                 /* index counter */
+  void *temp;                            /* temp variable for iterating */
+  pRegion regionlist[8];                 /* an array of region lists */
+
+  oct_ncoarse++;                             /* increment coarsening counter */
+
+  for(i=0; i<8; i++) {
+    /* get the ith child of an octant */
+    child = POC_child(oct,i);
+    
+    /* cannot coarsen if child is off-processor */
+    /* if(!POC_local(child)) { */
+    if(!POC_local(oct, i)) {          /* cannot be off-processor */
+      fprintf(stderr,"oct_terminal_coarsen: child not local\n");
+      abort();
+    }
+    
+    if(!POC_isTerminal(child)) {
+      fprintf(stderr,"oct_terminal_coarsen: child not terminal\n");
+      abort();
+    }
+    
+    /* get each child's region list */
+    regionlist[i] = POC_regionlist(child);
+    
+    /* delete each child */
+    POC_free(child);
+  }
+  oct->numChild = 0;
+ 
+  /* 
+   * copy contents of each region list into region list
+   * of coarsened parent (which is now a terminal octant) 
+   */
+  for(i=0; i < 8; i++) {
+    region = regionlist[i];
+    /* go through the regionlist and add to octant */
+    while(region != NULL) {
+      POC_addRegion(oct,region);           
+      region = region->next;
+    }
+  }
+}
+
+void oct_resetIdCount(int start_count)
+{
+  idcount = start_count;
+}
+
+int oct_nextId(void)
+{
+  return ++idcount;
+}
+
+/*
+ * oct_roots_in_order(pOctant **roots_ret,int *nroots_ret)
+ *
+ * Return an array of the local roots, sorted by id
+ * Caller must free this array.
+ *
+ */
+typedef struct
+{
+  pOctant ptr;
+  int id;
+} Rootid;
+static int idcompare(Rootid *i, Rootid *j)
+{
+  return( (i->id) - (j->id) );
+}
+void oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
+{
+  int nroots;                                 /* number of roots */
+  pOctant *roots = NULL;                      /* array of roots */
+  Rootid *rootid = NULL;                      /* array of root id's */
+  pRList lroots;                              /* list of local roots */
+  pRList ptr;                                 /* ptr for iterating */
+  pOctant root ;                              /* a root octant */
+  int i;                                      /* index counter */
+  void *temp;                                 /* temp var used for iterating */
+
+  lroots = POC_localroots();          /* get the list of all the local roots */
+  {
+    /* find the total number of roots on the list */
+    i=0;
+    ptr = lroots;
+    while(ptr != NULL) {
+      i++;
+      ptr = ptr->next;
+    }
+    nroots = i; 
+
+    /* set the return variables */
+    *nroots_ret=nroots;
+    if(nroots) {
+      roots=(pOctant *)malloc(sizeof(pOctant)*nroots);
+      rootid=(Rootid *)malloc(sizeof(Rootid)*nroots);
+      if((roots == NULL) || (rootid == NULL)) {
+	fprintf(stderr, "oct_roots_in_order: error in malloc\n");
+	abort();
+      }
+    }
+    *roots_ret=roots;
+    
+    i=0;
+    temp=NULL;
+    /* place roots in an array to be sorted */
+    while (lroots != NULL) {
+      rootid[i].ptr = lroots->oct;
+      rootid[i].id  = POC_id(lroots->oct);
+      i++;
+      lroots = lroots->next;
+    }
+  }
+  if (i!=nroots)
+    abort();
+
+  /* sort the array of roots */
+  qsort(rootid,(size_t)nroots,sizeof(Rootid),(int(*)())idcompare);
+  /* qsort(rootid, nroots, sizeof(Rootid), (int(*)())idcompare); */
+  
+  /* give data to the return variable */
+  for (i=0; i<nroots; i++)
+    roots[i]=rootid[i].ptr;
+
+  free(rootid);
+}
+
+
+/*
+ * pOctant oct_findId(int id)
+ *
+ * find the first octant with given id
+ *
+ */
+pOctant oct_findId(int id)
+{
+  void *temp;
+  pOctant oct;
+
+  oct=NULL;
+  temp=NULL;
+  while (oct=POC_nextDfs(oct)) {
+    if (POC_id(oct)==id)
+      return(oct);
+  }
+
+  return(NULL);
+}
+
+#if 0
+/*
+ * oct_global_clear()
+ *
+ * delete all regions from all octants on the local processor
+ *
+ */
+void oct_global_clear()
+{
+  pPList lroots;                       /* list of all local roots */
+  void *temp;                          /* temp variable used for iterations */
+  pOctant root;                        /* root octant of a tree */
+  pOctant oct;                         /* variable used to reference octants */
+
+  lroots=POC_getRoots();                    /* get a list of all local roots */
+
+  /* 
+   * iterate through the list of roots 
+   * traverse down the subtree 
+   * delete regions associated with octant 
+   */
+  temp=NULL;
+  while (root=PList_next(lroots,&temp))
+    for (oct=root; oct; oct=POC_nextDfs(oct,0))
+      if (POC_isTerminal(oct))
+	POC_delEntities(oct);                          /* delete the regions */
+
+  /* clean up */
+  PList_delete(lroots);
+}
+
+/* global variable from POC library */
+extern pRList OCT_rootlist;
+/*
+ * pOctant oct_localTree_nextDfs(pOctant oct, void **temp)
+ * (previously: pOctant oct_global_nextDfs(pParoct oct, void **temp))
+ *
+ * do a dfs of the local octree on each processor.
+ * subtrees are traversed in the order of the local roots
+ * list, and each subtree is done in dfs order.
+ *
+ * Undefined action will take place if you modify the
+ * tree while traversing.
+ *
+ */
+pOctant oct_localTree_nextDfs(pOctant oct, void **temp)
+{
+  if (*temp==NULL)           /* Start of traversal */
+    return(PList_next(OCT_rootlist,temp));
+
+
+  if (oct=POC_nextDfs(oct, 0))
+    return(oct);
+
+  return(PList_next(OCT_rootlist,temp));
+}
+#endif
