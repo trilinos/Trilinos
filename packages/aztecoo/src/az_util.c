@@ -2366,7 +2366,7 @@ void AZ_clear_solver_parameters(int handle)
   sprintf(str,"sol_param %d",handle);
   AZ_manage_memory(size, AZ_SELECTIVE_CLEAR, -777, str, &i);
 }
-void AZ_set_precond_print_string(struct AZ_PREC_STRUCT *precond, char str[])
+void AZ_set_precond_print_string(struct AZ_PREC_STRUCT *precond, const char str[])
 {
    if ( precond->print_string != NULL) AZ_free( precond->print_string);
    precond->print_string = (char *) AZ_allocate( (strlen(str)+1)*sizeof(char));

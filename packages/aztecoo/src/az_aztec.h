@@ -1285,7 +1285,7 @@ void PREFIX AZ_SLAIC1_F77(int * , int *, float *, float *, float *, float *,
                                     int cnptr[], int *data_org[], int);
 
   extern void AZ_set_precond_print_string(struct AZ_PREC_STRUCT *precond,
-                                          char str[]);
+                                          const char str[]);
 
   extern void AZ_set_proc_config(int proc_config[], MPI_AZComm );
 
