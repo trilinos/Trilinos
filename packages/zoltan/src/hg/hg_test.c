@@ -64,11 +64,12 @@ int main (int argc, char **argv)
     puts("-f      graphfile:        (grid5x5.hg)");
     puts("-p      # of parts:       (2)");
     puts("-redl   reduction level:  (0)");
-    puts("-redm   reduction method: {mxm,rem,hem,grm,lhm,pgm,mxp,rep,rrp,rhp,grp,lhp,pgp,mxg,rrg,reg,heg,(grg)}");
+    puts("-redm   reduction method: {mxm,rrm,rhm,grm,lhm,pgm,");
+    puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
+    puts("                           mxg,reg,rrg,rhg,(grg)}");
     puts("-g      global method:    {ran,(lin)}");
     puts("-l      local method:     (no)");
     puts("default values are in brackets ():");
-    return 0;
   }
   i = 0;
   while (++i<argc)
