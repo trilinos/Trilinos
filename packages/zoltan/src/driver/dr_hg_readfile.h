@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 /* Hypergraph read from file */
 int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
  float**, int*, float**, int*);

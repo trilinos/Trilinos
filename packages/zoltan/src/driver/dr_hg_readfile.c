@@ -16,8 +16,14 @@
 extern "C" {
 #endif
 
-
+#include <stdlib.h>
+#ifdef HTEST
 #include "hypergraph.h"
+#else
+#include "zoltan.h"
+#endif
+
+#include "dr_hg_readfile.h"
 
 #define BUF_LEN 1000000
 
@@ -53,7 +59,7 @@ char *yo = "Zoltan_HG_Readfile";
 
     do {
        if (!fgets (string, 80, f)) {
-          ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
+          fprintf(stderr, "%s ERROR...not able to read input file\n", yo);
           err = ZOLTAN_FATAL;
           goto End;
           }
@@ -99,7 +105,7 @@ static int old_readfile (
 
     do {
        if (!fgets (string, 80, f)) {
-          ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
+          fprintf(stderr, "%s ERROR...not able to read input file\n", yo);
           err = ZOLTAN_FATAL;
           goto End;
           }
@@ -107,8 +113,8 @@ static int old_readfile (
 
     count = sscanf (string, "%d %d %d %d", nVtx, nEdge, nInput, &code);
     if (count <  3) {
-       ZOLTAN_PRINT_ERROR (Proc, yo,
-        "ERROR, first line of file must be: |V| |E| |I| (code)\n");
+       fprintf(stderr, 
+        "%s ERROR, first line of file must be: |V| |E| |I| (code)\n", yo);
        err = ZOLTAN_FATAL;
        goto End;
        }
@@ -117,7 +123,7 @@ static int old_readfile (
     /* KDD -- This logic is wrong if no pins are specified. */
     if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
      || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
-         ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
+         fprintf(stderr, "%s Insufficient memory.", yo);
          err = ZOLTAN_MEMERR;
          goto End;
          }
@@ -126,8 +132,8 @@ static int old_readfile (
     for (i = 0; i < *nEdge; i++) {
        (*index)[i] = Hedge;
        if (!(fgets (string, BUF_LEN, f))) {
-          sprintf(errstr, "ERROR... read hvertex %d\n",i);
-          ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
+          sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
+          fprintf(stderr, errstr);
           err = ZOLTAN_FATAL;
           goto End;
           }
@@ -135,9 +141,9 @@ static int old_readfile (
        while (s) {
           pin = atoi(s);
           if (pin <= 0 || pin > *nVtx) {
-              sprintf(errstr,  "ERROR...pin %d of vertex %d is out of range "
-               "[%d,%d]!\n", pin,i, 1, *nVtx);
-              ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
+              sprintf(errstr,  "%s ERROR...pin %d of vertex %d is out of range "
+               "[%d,%d]!\n", yo, pin,i, 1, *nVtx);
+              fprintf(stderr, errstr);
               err = ZOLTAN_FATAL;
               goto End;
               }
@@ -151,14 +157,14 @@ static int old_readfile (
     if ((code / 10) % 10 == 1) {
        *vwgt_dim = 1;
        if (!((*vwgt) = (float*) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
-          ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
+          fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
           err = ZOLTAN_MEMERR;
           goto End;
           }
        for (i = 0; i < *nVtx; i++) {
           if (!(fgets (string, BUF_LEN, f))) {
-             sprintf(errstr, "ERROR... reading weight %d\n",i);
-             ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
+             sprintf(errstr, "%s ERROR... reading weight %d\n",yo, i);
+             fprintf(stderr,  errstr);
              err = ZOLTAN_FATAL;
              goto End;
              }
@@ -168,7 +174,7 @@ static int old_readfile (
        }
 
     if (fscanf(f, "%d", &i) != EOF) {
-       ZOLTAN_PRINT_WARN (Proc, yo, "Input file is longer than expected!\n");
+       fprintf(stderr, "%s Input file is longer than expected!\n",yo);
        err = ZOLTAN_WARN;
        }
 
@@ -207,7 +213,7 @@ char *yo = "patoh_readfile";
     rewind(f);
     do {
        if (!fgets (string, 80, f)) {
-          ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
+          fprintf(stderr, "%s ERROR...not able to read input file\n", yo);
           err = ZOLTAN_FATAL;
           goto End;
           }
@@ -216,8 +222,8 @@ char *yo = "patoh_readfile";
     count = sscanf (string, "%d %d %d %d %d %d",  base, nVtx, nEdge, nInput,
      &code, &dims);
     if (count <  4) {  /* code and dims are optional */
-       ZOLTAN_PRINT_ERROR (Proc, yo,
-         "Control line of file must be: base |V| |E| |I| (code) (dims)\n");
+       fprintf(stderr, 
+       "%s Control line of file must be: base |V| |E| |I| (code) (dims)\n", yo);
        err = ZOLTAN_FATAL;
        goto End;
        }
@@ -226,7 +232,7 @@ char *yo = "patoh_readfile";
     /* KDD -- This logic is wrong if no pins are specified. */
     if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
      || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
-           ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
+           fprintf(stderr, "%s Insufficient memory.", yo);
            err = ZOLTAN_MEMERR;
            goto End;
            }
@@ -234,7 +240,7 @@ char *yo = "patoh_readfile";
        /* KDD -- This logic is wrong if no edges are specified. */
        *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
        if (*ewgt == NULL) {
-          ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
+          fprintf(stderr, "%s Insufficient memory.", yo);
           err = ZOLTAN_MEMERR;
           goto End;
           }
@@ -246,8 +252,8 @@ char *yo = "patoh_readfile";
        (*index)[i] = Hedge;
 
        if (!(fgets (string, BUF_LEN, f))) {
-          sprintf(errstr, "ERROR... read hvertex %d\n",i);
-          ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
+          sprintf(errstr, "%s ERROR... read hvertex %d\n",yo, i);
+          fprintf(stderr, errstr);
           err = ZOLTAN_FATAL;
           goto End;
           }
@@ -266,9 +272,9 @@ char *yo = "patoh_readfile";
        while (s != NULL) {
           pin = atoi(s);
           if (pin < 0 + *base || pin >= *nVtx + *base) {
-              sprintf(errstr, "ERROR...pin %d of edge %d is out of range "
-               "[%d,%d]!\n", pin,i,0+*base, *nVtx-1+*base);
-              ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
+              sprintf(errstr, "%s ERROR...pin %d of edge %d is out of range "
+               "[%d,%d]!\n",yo, pin,i,0+*base, *nVtx-1+*base);
+              fprintf(stderr, errstr);
               err = ZOLTAN_FATAL;
               goto End;
               }
@@ -285,7 +291,7 @@ char *yo = "patoh_readfile";
     /* KDD -- shouldn't this code use dims in some way? */
     *vwgt_dim = 1;
     if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
-        ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
+        fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
         err = ZOLTAN_MEMERR;
         goto End;
         }

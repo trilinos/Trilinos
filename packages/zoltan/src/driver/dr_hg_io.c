@@ -33,6 +33,7 @@ extern "C" {
 #include "dr_elem_util_const.h"
 #include "dr_maps_const.h"
 #include "ch_input_const.h"
+#include "dr_hg_readfile.h"
 
 #ifndef MAX_STR_LENGTH
 #define MAX_STR_LENGTH 80
