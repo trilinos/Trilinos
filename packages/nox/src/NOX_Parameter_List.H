@@ -43,13 +43,13 @@ namespace Parameter {
 class List {
 
   //! Parameter container typedef
-  typedef map<string, Entry> ParamContainer;
+  typedef map<string, Entry> Map;
 
   //! Parameter container const iterator typedef
-  typedef ParamContainer::const_iterator PCConstIterator;
+  typedef Map::const_iterator ConstIterator;
 
   //! Parameter container iterator typedef
-  typedef ParamContainer::iterator PCIterator;
+  typedef Map::iterator Iterator;
 
 public:
 
@@ -93,6 +93,7 @@ public:
   void setParameter(const string& name, double value);
   void setParameter(const string& name, const char* value);
   void setParameter(const string& name, const string& value);
+  void setParameter(const string& name, const Arbitrary& value);
   //@}
 
   /** @name Getting Parameters 
@@ -110,17 +111,30 @@ public:
   double getParameter(const string& name, double nominal);
   const string& getParameter(const string& name, const char* nominal);
   const string& getParameter(const string& name, const string& nominal);
+  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal);
 
   bool getParameter(const string& name, bool nominal) const;
   int getParameter(const string& name, int nominal) const;
   double getParameter(const string& name, double nominal) const;
   const string& getParameter(const string& name, const char* nominal) const;
   const string& getParameter(const string& name, const string& nominal) const;
+  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal) const;
+
+  //@}
+
+  /** @name Getting Arbitrary Parameters Without Nominal Value
+
+  Special commands for accessing parameters without specifying a
+  nominal value.  Will throw an error if the parameter does not exist
+  or is of the wrong type. Recommend called isParameterArbitrary()
+  first.
+  */
+  //@{
+  const Arbitrary& getArbitraryParameter(const string& name) const;
   //@}
 
   //! Return true if a parameter with this name exists.
   bool isParameter(const string& name) const;
-
 
   /** @name Is Parameter of the Specified Type?
    
@@ -133,12 +147,13 @@ public:
   bool isParameterDouble(const string& name) const;
   bool isParameterString(const string& name) const;
   bool isParameterSublist(const string& name) const;
+  bool isParameterArbitrary(const string& name) const;
   //@}
 
   /** @name Is Parameter Equal Value?
    
     Returns true if the specified parameter exists AND is equal to the
-    specified value.  (Not value for List parameters.)
+    specified value.  (Not valid for Arbitrary or List parameters.)
   */
   //@{
   bool isParameterEqual(const string& name, bool value) const;
@@ -156,11 +171,19 @@ private:
   //! Check to see if "l" or any of its sublists is "this"
   bool isRecursive(const List& l) const;
 
+  //! Access to name (i.e., returns i->first)
+  const string& name(ConstIterator i) const;
+
+  //! Access to Entry (i.e., returns i->second)
+  Entry& entry(Iterator i);
+
+  //! Access to Entry (i.e., returns i->second)
+  const Entry& entry(ConstIterator i) const;
 
 private:
 
   //! Parameter list
-  ParamContainer params;
+  Map params;
  
   //! Used to create a string when the getParameter is called with a
   //! char* nominal value. A new string is created for each such

@@ -34,6 +34,7 @@
 #define NOX_PARAMETER_ENTRY_H
 
 #include "NOX_Common.H"		// class data element (string)
+#include "NOX_Parameter_Arbitrary.H"
 
 namespace NOX {
 
@@ -65,8 +66,11 @@ public:
   //! Double constructor
   Entry(double value, bool isCreatedByGet = false);
 
-  //! String constructor
+  //! String constructor (creates its own copy of the string)
   Entry(const string& value, bool isCreatedByGet = false);
+
+  //! Arbitrary constructor (creates its own copy of the Arbitrary object)
+  Entry(const Arbitrary& value, bool isCreatedByGet = false);
 
   //! Destructor
   ~Entry();
@@ -81,29 +85,33 @@ public:
   //@}
 
   /** @name Set functions. 
-   *
-   * The input value type determines the type of parameter
-   * stored. Invalidates any previous values stored by this object,
-   * although it doesn't necessarily erase them. Resets 'isused'
-   * functionality. */
+   
+    The input value type determines the type of parameter
+    stored. Invalidates any previous values stored by this object,
+    although it doesn't necessarily erase them. Resets 'isused'
+    functionality. 
+  */
   //@{ 
   void setValue(bool value, bool isCreatedByGet = false);
   void setValue(int value, bool isCreatedByGet = false);
   void setValue(double value, bool isCreatedByGet = false);
   void setValue(const char* value, bool isCreatedByGet = false);
   void setValue(const string& value, bool isCreatedByGet = false);
+  void setValue(const Arbitrary& value, bool isCreatedByGet = false);
   //@}
 
   /** @name Is functions. 
-   *
-   * Return true if the parameter is of the specified type; otherwise,
-   * return false. */
+   
+    Return true if the parameter is of the specified type; otherwise,
+    return false.
+  */
   //@{ 
   bool isBool() const;
   bool isInt() const;
   bool isDouble() const;
   bool isString() const;
   bool isList() const;
+  bool isArbitrary() const;
   //@}
 
   
@@ -112,26 +120,33 @@ public:
   bool isUsed() const;
 
   /** @name Get functions. 
-   *
-   * Returns value of parameter. The value is nonsense if we do not
-   * request the correct type of value. We cannot name all of these
-   * functions the same since the language does not allow us to
-   * overload functions based solely on return value. */
+   
+    Returns value of parameter. The value is nonsense if we do not
+    request the correct type of value. We cannot name all of these
+    functions the same since the language does not allow us to
+    overload functions based solely on return value. 
+  */
   //@{ 
   bool getBoolValue() const;
   int getIntValue() const;
   double getDoubleValue() const;
   const string& getStringValue() const;
+  const Arbitrary& getArbitraryValue() const;
   //@}
 
   //! Output the parameter to the given stream. 
-  /*! Formats the output as "<type,value>", except in the case of a
+  /*! 
+    Formats the output as "<type,value>", except in the case of a
     list which just outputs "<sublist>". If the parameter has not yet
     been set, it outputs "<NONE>". This is the function called by the
-    ostream operator<<. */
+    ostream operator<<. 
+  */
   ostream& leftshift(ostream& stream) const;
 
 private:
+
+  //! Reset the entry
+  void reset();
   
   //! All possible parameter types that this class can store
   enum EntryType { 
@@ -144,8 +159,10 @@ private:
     //! Double
     DOUBLE, 
     //! String
-    STRING, 
-    //! Sublist
+    STRING,
+    //! NOX::Parameter::Arbitrary
+    ARBITRARY,
+    //! Sublist (NOX::Parameter::List)
     LIST 
   };
 
@@ -163,6 +180,9 @@ private:
 
   //! String value, if this is of type STRING
   string sval;
+
+  //! Pointer to Arbitrary object, is this is of type ARBITRARY
+  Arbitrary* aval;
 
   //! Pointer to list, if this is of type LIST
   List* lval;		

@@ -41,6 +41,7 @@ Entry::Entry() :
   ival(0),
   dval(0),
   sval(""), 
+  aval(NULL),
   lval(NULL),
   isGotten(false),
   isSetByGet(false)
@@ -53,6 +54,7 @@ Entry::Entry(const Entry& source) :
   ival(0),
   dval(0),
   sval(""), 
+  aval(NULL),
   lval(NULL),
   isGotten(false),
   isSetByGet(false)
@@ -65,19 +67,25 @@ Entry& Entry::operator=(const Entry& source)
   if (&source == this)
     return *this;
 
+  reset();
+
   type = source.type;
   bval = source.bval;
   ival = source.ival;
   dval = source.dval;
   sval = source.sval;
   
-  delete lval;
+  if ((type == ARBITRARY) && (source.aval != NULL)) {
+    aval = source.aval->clone();
+  }
+  
   if ((type == LIST) && (source.lval != NULL)) {
     lval = new List(*source.lval);
   }
   
   isGotten = source.isGotten;
   isSetByGet = source.isSetByGet;
+
   return *this;
 }
 
@@ -87,6 +95,7 @@ Entry::Entry(bool value, bool isCreatedByGet) :
   ival(0),
   dval(0),
   sval(""), 
+  aval(NULL),
   lval(NULL),
   isGotten(false),
   isSetByGet(isCreatedByGet)
@@ -99,6 +108,7 @@ Entry::Entry(int value, bool isCreatedByGet) :
   ival(value),
   dval(0),
   sval(""), 
+  aval(NULL),
   lval(NULL),
   isGotten(false),
   isSetByGet(isCreatedByGet) 
@@ -111,6 +121,7 @@ Entry::Entry(double value, bool isCreatedByGet) :
   ival(0),
   dval(value),
   sval(""), 
+  aval(NULL),
   lval(NULL),
   isGotten(false),
   isSetByGet(isCreatedByGet) 
@@ -123,6 +134,20 @@ Entry::Entry(const string& value, bool isCreatedByGet) :
   ival(0),
   dval(0),
   sval(value), 
+  aval(NULL),
+  lval(NULL),
+  isGotten(false),
+  isSetByGet(isCreatedByGet) 
+{
+}
+
+Entry::Entry(const Arbitrary& value, bool isCreatedByGet) : 
+  type(STRING),
+  bval(false),
+  ival(0),
+  dval(0),
+  sval("" ),
+  aval(value.clone()),
   lval(NULL),
   isGotten(false),
   isSetByGet(isCreatedByGet) 
@@ -131,52 +156,74 @@ Entry::Entry(const string& value, bool isCreatedByGet) :
 
 Entry::~Entry() 
 {
-  if (type == LIST)
-    delete lval;
+  reset();
+}
+
+void Entry::reset()
+{
+  type = NONE;
+
+  delete aval;
+  aval = NULL;
+
+  delete lval;
+  lval = NULL;
+
+  isGotten = false;
+  isSetByGet = false;
 }
 
 void Entry::setValue(bool value, bool isCreatedByGet)
 {
+  reset();
   type = BOOL;
   bval = value;
   isSetByGet = isCreatedByGet;
-  isGotten = false;
 }
 
 void Entry::setValue(int value, bool isCreatedByGet)
 {
+  reset();
   type = INT;
   ival = value;
   isSetByGet = isCreatedByGet;
-  isGotten = false;
 }
 
 void Entry::setValue(double value, bool isCreatedByGet)
 {
+  reset();
   type = DOUBLE;
   dval = value;
   isSetByGet = isCreatedByGet;
-  isGotten = false;
 }
 
 void Entry::setValue(const char* value, bool isCreatedByGet)
 {
+  reset();
   type = STRING;
   sval = value;
   isSetByGet = isCreatedByGet;
-  isGotten = false;
 }
 
 void Entry::setValue(const string& value, bool isCreatedByGet)
 {
+  reset();
   type = STRING;
   sval = value;
   isSetByGet = isCreatedByGet;
-  isGotten = false;
+}
+
+void Entry::setValue(const Arbitrary& value, bool isCreatedByGet)
+{
+  reset();
+  type = ARBITRARY;
+  aval = value.clone();
+  isSetByGet = isCreatedByGet;
 }
 
 List& Entry::setList(bool isCreatedByGet)
 {
+  reset();
   type = LIST;
   lval = new List();
   isSetByGet = isCreatedByGet;
@@ -203,6 +250,11 @@ bool Entry::isDouble() const
 bool Entry::isString() const
 {
   return (type == STRING);
+}
+
+bool Entry::isArbitrary() const
+{
+  return (type == ARBITRARY);
 }
 
 bool Entry::isList() const
@@ -240,6 +292,12 @@ List& Entry::getListValue()
   return *lval;
 }
 
+const Arbitrary& Entry::getArbitraryValue() const
+{
+  isGotten = true;
+  return *aval;
+}
+
 const List& Entry::getListValue() const
 {
   isGotten = true;
@@ -266,6 +324,9 @@ ostream& Entry::leftshift(ostream& stream) const
     break;
   case STRING:
     stream << "\"" << sval << "\"";
+    break;
+  case ARBITRARY:
+    stream << aval->getType();
     break;
   case LIST:
     break;
