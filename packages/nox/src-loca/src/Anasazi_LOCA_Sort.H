@@ -30,9 +30,9 @@
 #ifndef ANASAZI_LOCA_SORT_HPP
 #define ANASAZI_LOCA_SORT_HPP
 
-/*!    \class Anasazi::LOCA::Sort
-       \brief An implementation of the Anasazi::SortManager that performs a collection
-       of common sorting techniques.
+/*!    \class Anasazi::LOCASort
+       \brief An implementation of the Anasazi::SortManager that performs a 
+       collection of common sorting techniques.
 */
 
 #include "AnasaziSortManager.hpp"
