@@ -51,9 +51,12 @@ if ($result != 0) {
   $success = 0;
   printf
     "\n\n*****************************************".
-    "\n*** Running Teuchos RefCountPtr test ****".
-    "\n*****************************************\n\n";
+      "\n*** Running Teuchos RefCountPtr test ****".
+      "\n*****************************************\n\n";
   system ('./RefCountPtr/RefCountPtr_test.exe');
+} else {
+  printf
+    "\n **** RefCountPtr test PASSED **** \n";
 }
 #************************************
 # BLAS test
@@ -67,6 +70,9 @@ if ($result != 0) {
     "\n*** Running Teuchos BLAS test ****".
     "\n*****************************************\n\n";
   system ('./BLAS/BLAS_test.exe -v');
+} else {
+  printf
+    "\n ******* BLAS test PASSED ******** \n";
 }
 #************************************
 # LAPACK test
@@ -80,6 +86,9 @@ if ($result != 0) {
     "\n*** Running Teuchos LAPACK test ****".
     "\n*****************************************\n\n";
   system ('./LAPACK/LAPACK_test.exe -v');
+} else {
+  printf
+    "\n ****** LAPACK test PASSED ******* \n";
 }
 #************************************
 # DenseMatrix test
@@ -93,6 +102,9 @@ if ($result != 0) {
     "\n*** Running Teuchos DenseMatrix test ****".
     "\n*****************************************\n\n";
   system ('./DenseMatrix/DenseMatrix_test.exe -v');
+} else {
+  printf
+    "\n **** DenseMatrix test PASSED **** \n";
 }
 #************************************
 # ParameterList test
@@ -106,6 +118,9 @@ if ($result != 0) {
     "\n*** Running Teuchos ParameterList test ****".
     "\n*****************************************\n\n";
   system ('./ParameterList/ParameterList_test.exe --v');
+} else {
+  printf
+    "\n *** ParameterList test PASSED *** \n";
 }
 # Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );

@@ -40,12 +40,23 @@ printf
   "\n*****************************************************\n";
 
 my $success = 1;  # Boolean (false=0,true=nonzero)
+my $mpirun;       # stratus="prun -n", any other platform="mpirun -np"
 my $result;       # success=0, failure=nonzero
-
+#
+# Check to see if we are on Stratus.
+# If so, we need to 'prun' NOT 'mpirun'
+#
+$result = $ENV{"HOSTNAME"};
+if ($result =~ /stratus/) {
+  $mpirun = "prun -n 3 "
+} else {
+  $mpirun = "mpirun -np 3 "
+}
 #************************************
 # RefCountPtr test
 #************************************
-$result = system ('mpirun -np 3 ./RefCountPtr/RefCountPtr_test.exe --quiet');
+
+$result = system ($mpirun . "./RefCountPtr/RefCountPtr_test.exe --quiet");
 if ($result != 0) {
   # If we failed run it again in verbose mode.
   $success = 0;
@@ -53,33 +64,44 @@ if ($result != 0) {
     "\n\n*****************************************".
     "\n*** Running Teuchos RefCountPtr test ****".
     "\n*****************************************\n\n";
-  system ('mpirun -np 3 ./RefCountPtr/RefCountPtr_test.exe');
+  system ($mpirun . "./RefCountPtr/RefCountPtr_test.exe");
+} else {
+  printf 
+    "\n ****** RefCountPtr MPI test PASSED ****** \n";
 }
 #************************************
 # ParameterList test
 #************************************
-$result = system ('mpirun -np 3 ./ParameterList/ParameterList_test.exe');
+
+$result = system ($mpirun . "./ParameterList/ParameterList_test.exe");
 if ($result != 0) {
   $success = 0;  
   # If we failed run it again in verbose mode.
   printf
-    "\n\n*****************************************".
+    "\n\n*******************************************".
     "\n*** Running Teuchos ParameterList test ****".
-    "\n*****************************************\n\n";
-  system ('mpirun -np 3 ./ParameterList/ParameterList_test.exe --v');
+    "\n*******************************************\n\n";
+  system ($mpirun . "./ParameterList/ParameterList_test.exe --v");
+} else {
+  printf
+    "\n ***** ParameterList MPI test PASSED ***** \n";
 }
 #************************************
 # Timer test
 #************************************
-$result = system ('mpirun -np 3 ./Time/Time_test.exe');
+
+$result = system ($mpirun . "./Time/Time_test.exe");
 if ($result != 0) {
   $success = 0;  
   # If we failed run it again in verbose mode.
   printf
-    "\n\n*****************************************".
-    "\n*** Running Teuchos ParameterList test ****".
-    "\n*****************************************\n\n";
-  system ('mpirun -np 3 ./Time/Time_test.exe --v');
+    "\n\n*******************************************".
+    "\n******* Running Teuchos Timer test ********".
+    "\n*******************************************\n\n";
+  system ($mpirun . "./Time/Time_test.exe --v");
+} else {
+  printf
+    "\n ********* Timer MPI test PASSED ********* \n";
 }
 # Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );
