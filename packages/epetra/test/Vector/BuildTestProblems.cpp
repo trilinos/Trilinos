@@ -226,8 +226,8 @@
       }
     delete A_Map;
     delete B_Map;
-    delete A_MyGlobalElements;
-    delete B_MyGlobalElements;
+    delete []A_MyGlobalElements;
+    delete []B_MyGlobalElements;
 
     return(0);
   }
