@@ -17,6 +17,7 @@
 /* data structure type definition                                       */
 /* ******************************************************************** */
 
+typedef struct ML_Operator_Subspace_Struct ML_Operator_Subspace;
 typedef struct ML_Operator_Struct ML_Operator;
 typedef struct ML_Function_Struct ML_Function;
 typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
@@ -63,6 +64,21 @@ struct ML_GetrowFunc_Struct {
 };
 
 /* -------------------------------------------------------------------- */
+/* This data structure stores all information necessary to be able to   */
+/* project out a subspace (e.g., a known nullspace).                    */
+/* -------------------------------------------------------------------- */
+
+struct ML_Operator_Subspace_Struct {
+   double **basis_vectors;
+   int    dimension;                /* number of basis vectors */
+   int    vecleng;                  /* length of basis vectors */
+   void   (*data_destroy)(void *);
+   double *VAV;                     /* dimension by dimension system to solve */
+   int    *pivots;                  /* pivots for VAV factorization */
+   int    VAVdone;                  /* true if VAV is calculated already */
+};
+
+/* -------------------------------------------------------------------- */
 /* This data structure defines an enriched operator class for the       */
 /* specification of the discretization matrix, the restriction and the  */
 /* prolongation operator.                                               */
@@ -89,7 +105,13 @@ struct ML_Operator_Struct {
    int           num_PDEs, num_rigid;
    double        lambda_max, lambda_min;
    int           N_total_cols_est;
-  int            halfclone;
+   int           halfclone;
+   ML_Operator_Subspace *subspace;
+                /* This is just a hook into modes that we want to project out
+                   before (after) invoking a MG cycle.  I couldn't think of
+                   a more appropriate spot for these, especially as they need
+                   to be available when ML is used as a preconditioner to a
+                   Krylov method. */
 };
 
 /* -------------------------------------------------------------------- */
@@ -180,6 +202,8 @@ extern double ML_Operator_GetMaxEig(ML_Operator *Amat);
 
 extern void *ML_Operator_ArrayCreate( int length);
 extern int ML_Operator_ArrayDestroy( void *array, int length);
+extern int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs,
+                                   int vecleng);
 
 #ifdef __cplusplus
 }
