@@ -121,23 +121,26 @@ class ModifiedNewton : public Generic {
 public:
 
   //! Constructor
-  ModifiedNewton(Parameter::List& params);
+  ModifiedNewton(NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
 
   // derived
-  virtual bool reset(Parameter::List& params);
+  virtual bool reset(NOX::Parameter::List& params);
 
   // derived
-  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-		       const Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+		       const NOX::Solver::Generic& solver);
 
 protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual bool resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter, const Parameter::List& solverParams);
+  virtual bool resetForcingTerm(const NOX::Abstract::Group& soln, 
+				const NOX::Abstract::Group& oldsoln, 
+				int niter, 
+				const NOX::Parameter::List& solverParams);
 
 
 private:
@@ -147,16 +150,16 @@ private:
     \note This is pointer rather than a reference to allow for the
     reset function. 
    */
-  Parameter::List* paramsPtr;
+  NOX::Parameter::List* paramsPtr;
 
   //! Vector containing the predicted RHS
-  Abstract::Vector* predrhs;
+  NOX::Abstract::Vector* predrhs;
 
   //! Vector containing the computed direction
-  Abstract::Vector* stepdir;
+  NOX::Abstract::Vector* stepdir;
 
   //! Group containing the old Jacobian
-  Abstract::Group* oldJacobian;
+  NOX::Abstract::Group* oldJacobian;
 
   //! Integer counting how old the Jacobian is
   int ageOfJacobian;

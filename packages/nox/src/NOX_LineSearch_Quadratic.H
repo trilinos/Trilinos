@@ -117,18 +117,18 @@ class Quadratic : public Common {
 public:
 
   //! Constructor
-  Quadratic(Parameter::List& params);
+  Quadratic(NOX::Parameter::List& params);
 
   //! Destructor
   ~Quadratic();
   
   // derived
-  bool reset(Parameter::List& params);
+  bool reset(NOX::Parameter::List& params);
 
   // derived
-  bool compute(Abstract::Group& newgrp, double& step, 
-	       const Abstract::Vector& dir,
-	       const Solver::Generic& s);
+  bool compute(NOX::Abstract::Group& newgrp, double& step, 
+	       const NOX::Abstract::Vector& dir,
+	       const NOX::Solver::Generic& s);
   
 protected:
   //! sets the output parameters for the linesearch in an "Output" sublist of the "Line Search" sublist. 
@@ -137,7 +137,12 @@ protected:
 protected:
 
   //! Algorithms used to determine convergence of the line search
-  enum convergenceCriteriaType {ArmijoGoldstein, AredPred};
+  enum convergenceCriteriaType {
+    //! Satisy Armijo-Goldstein conditions
+    ArmijoGoldstein, 
+    //! Satisdy Ared/Pred conditions
+    AredPred
+  };
 
   //! Choice of convergence criteria
   convergenceCriteriaType convCriteria;

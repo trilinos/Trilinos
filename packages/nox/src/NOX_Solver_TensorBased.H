@@ -103,19 +103,19 @@ class TensorBased : public Generic {
 public:
 
   //! %TensorBased-method constructor. 
-  TensorBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
+  TensorBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TensorBased();
 
-  virtual bool reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Parameter::List& p);
-  virtual StatusTest::StatusType getStatus();
-  virtual StatusTest::StatusType iterate();
-  virtual StatusTest::StatusType solve();
-  virtual const Abstract::Group& getSolutionGroup() const;
-  virtual const Abstract::Group& getPreviousSolutionGroup() const;
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  virtual NOX::StatusTest::StatusType getStatus();
+  virtual NOX::StatusTest::StatusType iterate();
+  virtual NOX::StatusTest::StatusType solve();
+  virtual const NOX::Abstract::Group& getSolutionGroup() const;
+  virtual const NOX::Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
-  virtual const Parameter::List& getParameterList() const;
+  virtual const NOX::Parameter::List& getParameterList() const;
 
 protected:
   
@@ -137,30 +137,30 @@ protected:
 protected:
   
   //! Current solution.
-  Abstract::Group* solnptr;		
+  NOX::Abstract::Group* solnptr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Group* oldsolnptr;	
+  NOX::Abstract::Group* oldsolnptr;	
   //! Previous solution reference.
-  Abstract::Group& oldsoln;	
+  NOX::Abstract::Group& oldsoln;	
 
   //! Current search direction.pointer.
   /*! We have both a pointer and a reference because we need to create
     a DERIVED object and then want to have a reference to it. */
-  Abstract::Vector* dirptr;
+  NOX::Abstract::Vector* dirptr;
   //! Current search direction.reference.
-  Abstract::Vector& dir;
+  NOX::Abstract::Vector& dir;
 
   //! Stopping test.
-  StatusTest::Generic* testptr;		
+  NOX::StatusTest::Generic* testptr;		
 
   //! Input parameters.
-  Parameter::List params;	
+  NOX::Parameter::List params;	
 
   //! %Search %Direction. 
-  Direction::Tensor direction; 
+  NOX::Direction::Tensor direction; 
 
   //! Current step.
   double step;			
@@ -178,7 +178,7 @@ protected:
   int totalNumLSSteps;
 
   //! %Status of nonlinear solver.
-  StatusTest::StatusType status;
+  NOX::StatusTest::StatusType status;
 
   //! "alpha" parameter in Armijo-Goldstein sufficient decrease condition.
   double alpha;

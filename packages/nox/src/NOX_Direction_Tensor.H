@@ -68,21 +68,24 @@ class Tensor : public Generic {
 public:
 
   //! Constructor
-  Tensor(Parameter::List& params);
+  Tensor(NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~Tensor();
 
   // derived
-  virtual bool reset(Parameter::List& params);
+  virtual bool reset(NOX::Parameter::List& params);
 
   // derived
-  virtual bool compute(Abstract::Vector& dir, Abstract::Group& grp, 
-			  const Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, 
+		       NOX::Abstract::Group& grp, 
+		       const NOX::Solver::Generic& solver);
 
   //! Compute the curvilinear step dT(lambda) and return in dir.
-  bool computeCurvilinearStep(Abstract::Vector& dir, Abstract::Group& grp, 
-			      const Solver::Generic& solver, double lambda);
+  bool computeCurvilinearStep(NOX::Abstract::Vector& dir, 
+			      NOX::Abstract::Group& grp, 
+			      const NOX::Solver::Generic& solver, 
+			      double lambda);
 
 
 protected:
@@ -144,25 +147,25 @@ private:
   reorthogonalizeType reorth;
 
   //! "Direction" sublist with parameters for the direction vector
-  Parameter::List* paramsPtr;
+  NOX::Parameter::List* paramsPtr;
 
   //! Vector containing the predicted RHS
-  Abstract::Vector* predf;
+  NOX::Abstract::Vector* predf;
 
   //! Temporary storage vectors
-  Abstract::Vector* vecw;
+  NOX::Abstract::Vector* vecw;
 
   //! Tensor step
-  Abstract::Vector* dTensor;
+  NOX::Abstract::Vector* dTensor;
 
   //! Curvilinear step at the value lambdaBar
-  Abstract::Vector* dTLambda;
+  NOX::Abstract::Vector* dTLambda;
 
   //! Newton step
-  Abstract::Vector* dNewton;  // maybe get rid of this once dn gets into group
+  NOX::Abstract::Vector* dNewton;  // maybe get rid of this once dn gets into group
 
   //! Array of orthonormal basis vectors
-  Abstract::Vector** basisVptr;
+  NOX::Abstract::Vector** basisVptr;
 
   //! Flag for "continuing" with reset() inside compute() where n is known
   bool isFreshlyReset;
