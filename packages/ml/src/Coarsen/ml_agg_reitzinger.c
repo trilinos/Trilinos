@@ -1488,56 +1488,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML** iml_nodes,
         maxrows, maxproc, minrows, minproc);
 
      }
-MPI_Barrier(MPI_COMM_WORLD);
 
      ML_memory_check("L%d EdgeRepartition",grid_level);
      Pe = Tcoarse;
-/*
-     if (Pe->getrow->pre_comm != NULL) {
-          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          printf("(level %d, %d before) Tcoarse total receive length = %d\n",
-                 grid_level,
-                 Pe->comm->ML_mypid,
-                 Pe->getrow->pre_comm->total_rcv_length);
-     }
-     printf("(level %d, %d before) Tcoarse       (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
-                                 Tcoarse->invec_leng,Tcoarse->outvec_leng);
-     printf("(level %d, %d before) Tcoarse_trans (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
-                          Tcoarse_trans->invec_leng,Tcoarse_trans->outvec_leng);
-     fflush(stdout);
-*/
-/*
-     sprintf(filename,"T%d_before",grid_level);
-     ML_Operator_Print(Tcoarse,filename);
-     sprintf(filename,"globT%d_before",grid_level);
-     ML_Operator_Dump(Tcoarse,NULL,NULL,filename,1);
-*/
-MPI_Barrier(MPI_COMM_WORLD);
      ML_repartition_Acoarse_edge(ml_edges, Tcoarse, Tcoarse_trans, grid_level+1, grid_level, ML_TRUE);
      ML_memory_check("L%d EdgeRepartition end",grid_level);
      ML_Operator_Profile(Tcoarse, NULL, ML_NUMITS);
      ML_Operator_Profile(Tcoarse_trans, NULL, ML_NUMITS);
-/*
-     sprintf(filename,"T%d_after",grid_level);
-     ML_Operator_Print(Tcoarse,filename);
-     sprintf(filename,"globT%d_after",grid_level);
-     ML_Operator_Dump(Tcoarse,NULL,NULL,filename,1);
-*/
      Pe = Tcoarse;
-/*
-     if (Pe->getrow->pre_comm != NULL) {
-          ML_CommInfoOP_Compute_TotalRcvLength(Pe->getrow->pre_comm);
-          printf("(level %d, %d after) Tcoarse total receive length = %d\n",
-                 grid_level,Pe->comm->ML_mypid,
-                 Pe->getrow->pre_comm->total_rcv_length);
-        }
-     printf("(level %d, %d after) Tcoarse       (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
-                                 Tcoarse->invec_leng,Tcoarse->outvec_leng);
-     printf("(level %d, %d after) Tcoarse_trans (%d, %d)\n",grid_level,Tcoarse->comm->ML_mypid,
-                          Tcoarse_trans->invec_leng,Tcoarse_trans->outvec_leng);
-     fflush(stdout);
-MPI_Barrier(MPI_COMM_WORLD);
-*/
      ML_Operator_ImplicitTranspose(&(ml_edges->Rmat[grid_level+1]),
 				   &(ml_edges->Pmat[grid_level]), ML_TRUE);
      ML_Operator_Profile(ml_edges->Rmat+grid_level+1, "edge", ML_NUMITS);
