@@ -1,0 +1,4 @@
+--enable-mpi
+--with-mpi-compilers
+--enable-pliris
+--enable-amesos-dscpack
