@@ -292,8 +292,8 @@ zCPPdrive_comm:
 	@rm -f $(OBJ_DIR)/Makefile
 	@cp Makefile_sub $(OBJ_DIR)/Makefile
 	@cd $(OBJ_DIR); 			\
-	$(MAKE) zdrive_comm 			\
-	"DRIVER_NAME=zdrive_comm"		\
+	$(MAKE) zCPPdrive_comm 			\
+	"DRIVER_NAME=zCPPdrive_comm"		\
 	"CC=$(CPPCOMP)"				\
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(COMM_DRIVER_CPP_CSRC:.cpp=.o)" \
