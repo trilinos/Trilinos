@@ -48,6 +48,7 @@
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_DataAccess.h"
+#include "Epetra_CrsMatrix.h"
 
 #include "EpetraExt_MatlabEngine.h"
 
@@ -71,9 +72,50 @@ cout << "going to setup MPI...\n";
   char matlabBuffer [MATLABBUF];
   cout << "going to init matlab\n";
   EpetraExt::EpetraExt_MatlabEngine engine (comm);
-  cout << "matlab started";
-
+  cout << "matlab started\n";
+  
   ///* CrsMatrix test
+  int numGlobalElements = 8;
+  int numMyElements = 8/comm.NumProc();
+  int M=numGlobalElements/comm.NumProc();
+  int N=10;
+  int* myGlobalElements = new int[M];
+  
+  int startIndex = -4 + M*comm.MyPID();
+  for(int i=0; i < M; i++) {
+      myGlobalElements[i] = startIndex++;
+  }
+  
+
+  Epetra_Map map (numGlobalElements, numMyElements, myGlobalElements, -4, comm);
+  Epetra_CrsMatrix crsMatrix (Copy, map, 8);
+  
+  int indices[8] = {-4,-3,-2,-1,0,1,2,3};
+  double* values = new double[8];
+  double value = M * N * comm.MyPID();
+  for (int i=0; i < M; i++) {
+    if (i % 2 == 0) {
+      for (int j=0; j < N; j++) {
+      	values[j] = value++;
+      }
+      
+      crsMatrix.InsertGlobalValues(myGlobalElements[i], 8, values, indices);
+    }
+  }
+  
+  crsMatrix.FillComplete();
+  cout << "done filling crsMatrix and calling crsMatrix.FillComplete()\n";
+  
+  cout << crsMatrix;
+  
+  cout << "done printing crsMatrix\n";
+  
+  int ierr = engine.PutRowMatrix(crsMatrix, "TEST", true);
+  cout << "done calling engine.PutRowMatrix(crsMatrix, \"TEST\", false)\n";
+  if (ierr != 0) {
+    cout << "engine.PutRowMatrix(crsMatrix, \"TEST\") returned nonzero result: " << ierr << "\n";
+    return(-1);
+  }
   
   //*/
 
@@ -202,6 +244,12 @@ cout << "going to setup MPI...\n";
   cout << matlabBuffer << "\n";
 
   cout << "\n" << comm.MyPID() << " all done\n";
-  return(0);
   
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
+
+  
+  return(0);
+ 
 }
