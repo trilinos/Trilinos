@@ -40,6 +40,7 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_TSF_Group.H"
+#include "NOX_Parameter_Teuchos2NOX.H"
 
 using namespace Teuchos;
 using namespace TSFExtended;
@@ -155,34 +156,33 @@ int main(int argc, void *argv[])
       NOX::StatusTest::MaxIters statusTestB(50);
       NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
-      // Create the list of solver parameters
-      NOX::Parameter::List solverParameters;
-
-      // Set the solver (this is the default)
-      solverParameters.setParameter("Nonlinear Solver", "Line Search Based");
-
-      // Create the line search parameters sublist
-      NOX::Parameter::List& lineSearchParameters = solverParameters.sublist("Line Search");
+      ParameterList solverParameters;
+      solverParameters.set("Nonlinear Solver", "Line Search Based");
+      
+      ParameterList& lineSearchParameters 
+        = solverParameters.sublist("Line Search");
 
       // Set the line search method
-      lineSearchParameters.setParameter("Method","More'-Thuente");
+      lineSearchParameters.set("Method", "More'-Thuente");
 
       // Create the linear solver parameters sublist
-      NOX::Parameter::List& linearSolverParameters = solverParameters.sublist("Linear Solver");
+      ParameterList& linearSolverParameters 
+        = solverParameters.sublist("Linear Solver");
 
       // Set the line search method
-      linearSolverParameters.setParameter("Tolerance","1.0e-14");
+      linearSolverParameters.set("Tolerance","1.0e-14");
 
       // Create the printing parameter sublist
-      NOX::Parameter::List& printingParameters = solverParameters.sublist("Printing");
+      ParameterList& printingParameters = solverParameters.sublist("Printing");
 
       // Set the output precision
-      printingParameters.setParameter("Output Precision",8);
+      printingParameters.set("Output Precision",8);
 
-
+      NOX::Parameter::Teuchos2NOX converter;
+      NOX::Parameter::List noxParameters = converter.toNOX(solverParameters);
 
       // Create the solver
-      NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
+      NOX::Solver::Manager solver(grp, statusTestsCombo, noxParameters);
 
       // Solve the nonlinear system
       NOX::StatusTest::StatusType status = solver.solve();

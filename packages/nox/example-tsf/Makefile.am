@@ -29,6 +29,8 @@
 
 if BUILD_TSF_EXAMPLES
 
+include $(top_builddir)/../TSFExtended/Makefile.export
+
 EXAMPLE = example
 
 noinst_PROGRAMS = $(EXAMPLE)
@@ -37,7 +39,7 @@ example_SOURCES = $(srcdir)/mykeplertest.C
 
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
-        $(top_builddir)/src-tsf/libnoxtsf.a
+        $(top_builddir)/src-tsf/libnoxtsf.a 
 
 example_CXXFLAGS = $(EX_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-tsf
@@ -45,12 +47,7 @@ example_CXXFLAGS = $(EX_CXXFLAGS) \
 example_LDADD = \
 	$(top_builddir)/src-tsf/libnoxtsf.a \
   $(top_builddir)/src/libnox.a \
-	$(TSF_EXTENDED_LIBS) \
-	$(TSF_CORE_LIBS) \
-	$(ML_LIBS) \
-	$(TEUCHOS_LIBS) \
-	$(AZTECOO_LIBS) \
-	$(EPETRA_LIBS) \
+	$(TSF_EXPORT_LIBS) \
   $(MPI_LIBS) $(LIBS) 
 
 
@@ -132,25 +129,6 @@ AZTECOO_INCLUDES = \
 
 TEUCHOS_INCLUDES = \
 -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
-
-
-TSF_EXTENDED_LIBS = $(top_builddir)/../TSFExtended/src/libTSFExtended.a
-
-TSF_CORE_LIBS = \
-	$(top_builddir)/../TSFCore/src/libTSFCore.a \
-  $(top_builddir)/../TSFCoreUtils/src/libTSFCoreUtils.a
-
-TEUCHOS_LIBS = \
-	$(top_builddir)/../teuchos/src/libteuchos.a
-
-EPETRA_LIBS = \
-	$(top_builddir)/../epetra/src/libepetra.a
-
-
-AZTECOO_LIBS = \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a
-
-ML_LIBS = $(top_builddir)/../ml/src/libml.a
 
 
 endif

@@ -180,12 +180,14 @@ PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_LineSearchConstructor.H \
 	$(srcdir)/NOX_Parameter_LineSearchConstructorT.H \
 	$(srcdir)/NOX_Parameter_AnyPtr.H \
-	$(srcdir)/NOX_Parameter_List.H 
+	$(srcdir)/NOX_Parameter_List.H \
+	$(srcdir)/NOX_Parameter_Teuchos2NOX.H 
 
 PARAMETER = \
 	$(srcdir)/NOX_Parameter_Entry.C \
         $(srcdir)/NOX_Parameter_PrePostOperator.C \
-	$(srcdir)/NOX_Parameter_List.C
+	$(srcdir)/NOX_Parameter_List.C \
+	$(srcdir)/NOX_Parameter_Teuchos2NOX.C
 
 SOLVER_H = \
 	$(srcdir)/NOX_Solver_Generic.H \

@@ -64,6 +64,9 @@ namespace NOX {
 	: data(ptr), 
 	  type_string("Generic AnyPtr Container") {}
 
+      AnyPtr(const Teuchos::any& otherData)
+        : data(otherData), type_string("Generic AnyPtr Container") {}
+
       //! Copy constructor
       AnyPtr(const AnyPtr& src)
 	: data(src.data) , type_string(src.type_string) {}
