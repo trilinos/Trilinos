@@ -1357,11 +1357,11 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 
   //explicit tranpose A formed as necessary
   Epetra_CrsMatrix * Aprime = 0;
-  EpetraExt::RowMatrix_Transpose Atrans = 0;
+  EpetraExt::RowMatrix_Transpose * Atrans = 0;
   if( transposeA )
   {
     Atrans = new EpetraExt::RowMatrix_Transpose();
-    Aprime = &dynamic_cast<Epetra_CrsMatrix&>((Atrans(const_cast<Epetra_CrsMatrix&>(A))));
+    Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
   }
   else
     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
@@ -1389,6 +1389,8 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
       B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
     }
   }
+
+  if( Atrans ) delete Atrans;
 
   return(0);
 }
