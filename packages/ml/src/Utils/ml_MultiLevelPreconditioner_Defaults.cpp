@@ -516,7 +516,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, const string Prefix,
 
   List.set(Prefix+"smoother: damping factor",0.67);
 
-  List.set(Prefix+"smoother: type","Gauss-Seidel");
+  List.set(Prefix+"smoother: type","symmetric Gauss-Seidel");
   
   List.set(Prefix+"smoother: pre or post","both");
   
