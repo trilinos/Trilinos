@@ -340,8 +340,8 @@ int Zoltan_PHG_Coarsening
   Zoltan_Comm_Do(*comm_plan, PLAN_TAG+2, buffer, sizeof(int), rbuffer);
 
   /* Allocate vertex weight array for coarse hgraph */
-  if (hg->nVtx > 0 && hg->VtxWeightDim > 0 &&
-      !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * hg->VtxWeightDim,
+  if (c_hg->nVtx > 0 && c_hg->VtxWeightDim > 0 &&
+      !(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx * c_hg->VtxWeightDim,
                                              sizeof(float))))
       MEMORY_ERROR;
   for (i=0; i < hg->nVtx; ++i) {
