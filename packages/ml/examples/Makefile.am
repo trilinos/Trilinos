@@ -30,7 +30,7 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_read_salsa ml_read_maxwell \
                   ml_example_MultiLevelPreconditioner \
                   ml_example_MultiLevelPreconditioner_2level \
-                  ml_example_MultiLevelMultiLevelOOperator \
+                  ml_example_MultiLevelOperator \
                   ml_example_MultiLevelPreconditioner_AztecMSR \
                   ml_example_MultiLevelPreconditioner_filtering \
 		  ml_example_MultiLevelPreconditioner_vbr \
@@ -124,9 +124,6 @@ endif # !ML_STANDALONE_MODE
 # libraries that the exe depends on.  (This primary is not absolutely
 # essential.)
 
-ml_integrated_dependencies = $(top_builddir)/../aztecoo/src/libaztecoo.a \
-                       $(top_builddir)/../epetra/src/libepetra.a
-
 # This is not working.  
 # It should be ok to omit it because when _DEPENDENCIES is not
 # specified, the value is calculated from the corresponding _LDADD value.
@@ -170,30 +167,42 @@ ml_libs = $(top_builddir)/src/libml.a        \
 else
 mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 
+if ML_USING_AZTECOO
+aztecoo_lib = $(top_builddir)/../aztecoo/src/libaztecoo.a
+else
+aztecoo_lib =
+endif
+
+if ML_USING_EPETRA
+epetra_lib = $(top_builddir)/../epetra/src/libepetra.a
+else
+epetra_lib =
+endif
+
 if ML_USING_AMESOS
-# Amesos require Teuchos
-amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-             $(top_builddir)/../teuchos/src/libteuchos.a
+amesos_lib = $(top_builddir)/../amesos/src/libamesos.a
 else
 amesos_lib =
 endif
+
 if ML_USING_ANASAZI
-# Anasazi require Teuchos
-anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-             $(top_builddir)/../teuchos/src/libteuchos.a
+anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a
 else
 anasazi_lib = 
 endif
+
 if ML_USING_TEUCHOS 
 teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
 else
 teuchos_lib =
 endif
+
 if ML_USING_TRIUTILS
 triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
 else
 triutils_lib =
 endif
+
 if ML_USING_IFPACK
 ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 else
@@ -201,13 +210,13 @@ ifpack_lib =
 endif
 #
 ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+                $(aztecoo_lib} \
                 ${ifpack_lib} \
                 ${amesos_lib} \
                 ${anasazi_lib} \
                 ${teuchos_lib} \
                 ${triutils_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
+                $(epetra_lib} \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
