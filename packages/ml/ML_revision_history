@@ -45,3 +45,12 @@ mystring = ml2_0_0_5
      Added block Maxwell capabilities for real block systems that are
        equivalent to the complex systems arising from Maxwell in the frequency
        domain.
+
+mystring = ml2_1_0_0
+
+    Many minor fixes to get the commuting relationship T_h P_n = P_e T_H
+    exactly right.
+    Serial implementation of enriched prolongator.
+    New norm for convergence of Maxwell solver.  This norm measure and scales
+    properly the range space and null space components of the (curl,curl)
+    operator.
