@@ -55,6 +55,7 @@
 #define MATLABBUF 1024
 
 int main(int argc, char *argv[]) {
+cout << "going to setup MPI...";
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
@@ -69,6 +70,7 @@ int main(int argc, char *argv[]) {
   char matlabBuffer [MATLABBUF];
   EpetraExt::MatlabEngine engine (comm);
   
+cout << MyPID << " going to do multivector test...\n";
   ///* MultiVector test
   int numGlobalElements = 100;
   int M = numGlobalElements/comm.NumProc();
@@ -76,14 +78,22 @@ int main(int argc, char *argv[]) {
   int numMyElements = M * N;
   double* A = new double[numMyElements];
   double* Aptr = A;
-  
-  for(int i=0; i < numMyElements; i++) {
-      *Aptr++ = i;
+  int startValue = 0;
+
+cout << MyPID << " allocated space for A, now filling A\n";
+  for(int col=0; col < N; col++) {
+	startValue = (col * numGlobalElements) + (M * MyPID);
+	for(int row=0; row < M; row++) {
+          *Aptr++ = row+startValue;
+      }
   }
+cout << MyPID << " A filled\n";
+
   Epetra_Map map (numGlobalElements, 0, comm);
   Epetra_MultiVector multiVector (Copy, map, A, M, N);
   //cout << multiVector;
   engine.PutMultiVector(multiVector, "MULT");
+
   //*/
   
   /*SerialDenseMatrix test
@@ -141,6 +151,12 @@ int main(int argc, char *argv[]) {
   cout << isdVector;
   */
 
+  while(1) {
+
+	// do nothing
+}
+
+  /*if (comm.NumProc() == 1) {
   int err;
   while(1) {
       // Prompt the user and get a string
@@ -162,9 +178,10 @@ int main(int argc, char *argv[]) {
       	  printf("Matlab Output:\n%s", matlabBuffer);
       }
   }
-  
+  }*/
+
   //delete engine ;
-  
+  cout << "all done";
   return(0);
   
 

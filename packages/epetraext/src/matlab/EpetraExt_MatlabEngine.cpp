@@ -34,6 +34,9 @@
 #include "Epetra_IntSerialDenseMatrix.h"
 #include "Epetra_RowMatrix.h"
 
+#define MATLAB_VERSION 12
+#define LEGACY_MATLAB_VERSION 12
+
 using namespace EpetraExt;
 namespace EpetraExt {
 
@@ -85,17 +88,19 @@ int MatlabEngine::EvalString (char* command, char* outputBuffer, int outputBuffe
 //=============================================================================
 int MatlabEngine::PutMultiVector(const Epetra_MultiVector& A, const char * variableName) {
     mxArray* matlabA = 0;
-    if (Comm_.MyPID() == 0)
+    double* pr = 0;
+    if (Comm_.MyPID() == 0) {
       matlabA = mxCreateDoubleMatrix(A.GlobalLength(), A.NumVectors(), mxREAL);
-      double* pr = mxGetPr(matlabA);
-	
+      pr = mxGetPr(matlabA);
+    }
+
 	if (Matlab::CopyMultiVector(&pr, A)) {
 	  mxDestroyArray(matlabA);
 	  return(-2);
 	}
 
 	if (Comm_.MyPID() == 0)
-	  if (engPutVariable(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
@@ -117,7 +122,7 @@ int MatlabEngine::PutRowMatrix(const Epetra_RowMatrix& A, const char* variableNa
 	}
 
 	if (Comm_.MyPID() == 0) {
-	  if (engPutVariable(Engine_, variableName, matlabA)) {
+	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
 		mxDestroyArray(matlabA);
 		return(-1);
 	  }
@@ -165,7 +170,7 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 		}
 	  }
 
-	  if (engPutVariable(Engine_, variableName, matlabA))
+	  if (PutIntoMatlab(Engine_, variableName, matlabA))
 		ierr = -1;
 	}
 	
@@ -200,7 +205,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 		}
 	  }
 	
-	  if (engPutVariable(Engine_, variableName, matlabA))
+	  if (PutIntoMatlab(Engine_, variableName, matlabA))
 		ierr = -1;
 	}
 
@@ -213,5 +218,13 @@ int MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* varia
 	return(-1);
 }
 
+int MatlabEngine::PutIntoMatlab(Engine* engine, const char* variableName, mxArray* matlabA) {
+#if (MATLAB_VERSION > LEGACY_MATLAB_VERSION)
+    return engPutVariable(engine, variableName, matlabA);
+#else
+    mxSetName(matlabA, variableName);
+    return engPutArray(engine, matlabA);
+#endif
+}
 
 } // namespace EpetraExt

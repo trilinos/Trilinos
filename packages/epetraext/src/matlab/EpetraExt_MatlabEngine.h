@@ -106,6 +106,8 @@ class MatlabEngine {
   int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName);
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
+  int PutIntoMatlab(Engine* engine, const char* variableName, mxArray* matlabA);
+  
  private:
 
     Engine* Engine_ ;

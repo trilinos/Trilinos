@@ -119,8 +119,8 @@ int DoCopyMultiVector(double** matlabApr, const Epetra_MultiVector& A) {
     if (length!=A.MyLength()) ierr = -1;
     double* matlabAvalues = *matlabApr;
     double* Aptr = A.Values();
-    memcpy((void *)matlabAvalues, (void *)Aptr, sizeof(*Aptr) * length * A.NumVectors());
-    matlabAvalues += length;
+    memcpy((void *)matlabAvalues, (void *)Aptr, sizeof(*Aptr) * length * numVectors);
+    *matlabApr += length;   
   }
   int ierrGlobal;
   comm.MinAll(&ierr, &ierrGlobal, 1); // If any processor has -1, all return -1
