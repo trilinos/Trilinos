@@ -37,7 +37,7 @@ the Teuchos documentation.
 
 Teuchos classed have been divided between a "standard" build and an
 "extended" build. The "standard" build has shown to be a portable subset
-of the Teuchos tools and is built by default when Teuchos is enabled
+of the Teuchos tools and is built by default when Teuchos is enabled \newline
 (\verb!--enable-teuchos!). The "extended" build is also portable, but
 contains more special purpose tools like XML parsing and communicators
 (\verb!--enable-teuchos-extended!).
@@ -64,7 +64,7 @@ In this Chapter, we will present the following classes:
 \begin{itemize}
 \item \verb!Teuchos::ParameterList! class. ParameterList is a very handy
   container, that can be used to group all the parameters required by a
-  piece of code (in Section~\ref{sec:teuchos:ParameterList});
+  given piece of code (in Section~\ref{sec:teuchos:ParameterList});
 \item \verb!Teuchos::RefCountPtr! class, a smart reference-counted
   pointer class, which provides functionalities similar to the garbage
   collector of Java (in Section~\ref{sec:teuchos:RefCountPtr});
@@ -73,7 +73,7 @@ In this Chapter, we will present the following classes:
 \item \verb!Teuchos::LAPACK! is introduced in
   Section~\ref{sec:teuchos:LAPACK};
 \item \verb!Teuchos::CommandLineParser!, a parser for command line
-  options, is detailed in Section~\ref{sec:teuchos:CLP}.
+  options (detailed in Section~\ref{sec:teuchos:CLP}).
 \end{itemize}
 
 %%%
@@ -127,7 +127,7 @@ parameters can be printed with method \verb!unused(cout)!.
   \verb!Teuchos::ParameterList! is currently used by several Trilinos
   packages. For instance, all parameters for Amesos objects~(see Chapter
   \ref{chap:amesos}) and the smoothed aggregation preconditioning class
-  \verb!ML_Epetra::Preconditioner! (see
+  \verb!ML_Epetra::MultiLevelPreconditioner! (see
   Section~\ref{sec:ml:preconditioner}) are set through a parameters'
   list.
 \end{remark}

@@ -427,11 +427,15 @@ objects, covered in Section~\ref{sec:import_export}.
 
 The user might require (for example, for reasons of computationally
 efficiency) to work on Epetra\_Vectors as if they were \verb!double *!
-pointers.  The file \TriExe{epetra/ex5.cpp} shows the use of
-\verb!ExtractCopy()!.  \verb!ExtractCopy! does not give access to the
-vector elements, but only copies them into the user-provided array.  The
-user must commit those changes to the vector object, using, for
-instance, \verb!ReplaceMyValues!.
+pointers.  File 
+\newline
+\TriExe{epetra/ex5.cpp} 
+\newline
+shows the use of \verb!ExtractCopy()!.
+\verb!ExtractCopy! does not give access to the vector elements, but only
+copies them into the user-provided array.  The user must commit those
+changes to the vector object, using, for instance,
+\verb!ReplaceMyValues!.
 
 A further, computationally efficient way, is to extract a ``view'' of the
 (multi-)vector internal data.  This can be done as follows, using method
@@ -443,7 +447,7 @@ for( int i=0 ; i<MyLength ; ++i ) z_values[i] *= 10;
 \end{verbatim}
 Now, modifying the values of \verb!z_values! will affect the internal
 data of the Epetra\_Vector \verb!x!.  An example of the use of
-\verb!ExtractView! is reported in file \TriExe{epetra/ex6.cpp}.
+\verb!ExtractView! is reported in file \newline \TriExe{epetra/ex6.cpp}.
 
 \begin{remark}
   The class Epetra\_Vector is derived from Epetra\_MultiVector. Roughly
@@ -460,7 +464,7 @@ extremely useful in situation where a vector is needed for use with an
 Epetra operator or matrix, and the user is not passing in a
 multi-vector. Use this method with caution as it could be extremely
 dangerous.
-A simple example is reported in \TriExe{epetra/ex8.cpp}
+A simple example is reported in \newline \TriExe{epetra/ex8.cpp}
 
 \medskip
 

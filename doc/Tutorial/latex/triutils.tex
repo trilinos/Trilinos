@@ -42,28 +42,28 @@ The reader not interested in the examples may decide to skip this chapter.
 %%%
 %%%
 
-\subsection{Trilinos\_Util\_CommandLineParser}
+\subsection{Trilinos\_Util::CommandLineParser}
 \label{sec:triutils:CLP}
 
-\verb!Trilinos_Util_CommandLineParser! is a class to parse the command
-line.  With this class, it is easy to handle
-input line arguments and shell variables. For instance, the user can
-write
+\verb!Trilinos_Util::CommandLineParser! is a class to parse the command
+line.  With this class, it is easy to handle input line arguments and
+shell-defined variables. For instance, the user can write
 \begin{verbatim}
-[msala:triutils]> ./ex2.exe -nx 10 -tol 1e-6 -solver=cg
+[msala:triutils]>ex2.exe -nx 10 -tol 1e-6 -solver=cg -output
 \end{verbatim}
-and then easily retrieve the value of {\tt nx}, {\tt tol}, and {\tt solver}.
- 
-A simple code using this class is as follows:
+and, in the code, easily obtain the value of {\tt nx}, {\tt tol}, and
+{\tt solver}, using a simple code as follows:
 \begin{verbatim}
 int main(int argc, char *argv[])
 {
 
-  Trilinos_Util_CommandLineParser CLP(argc,argv);
+  Trilinos_Util::CommandLineParser CLP(argc,argv);
   int nx = CLP.Get("-nx", 123);
   int ny = CLP.Get("-ny", 145);
   double tol = CLP.Get("-tol", 1e-12);
   string solver = CLP.Get("-solver","gmres");
+
+  bool Output = CLP.Has("-output");
 
   cout << "nx = " << nx << endl;
   cout << "ny = " << ny << " (default value)" << endl;
@@ -73,10 +73,8 @@ int main(int argc, char *argv[])
   return 0;
 }
 \end{verbatim}
-
-Each line   option can have a value or not. For options with a value,
-the user can specify this values as follows. Let \verb!-tolerance! be the
-name of the option and \verb!1e-12! its value. Both choices are valid:
+In the command line, the user can specify a value for a given option in
+the following ways:
 \begin{itemize}
 \item \verb!-tolerance 1e-12! (with one or more spaces)
 \item \verb!-tolerance=1e-12! (with \verb!=! sign and no spaces)
@@ -84,10 +82,6 @@ name of the option and \verb!1e-12! its value. Both choices are valid:
 
 Option names must begin with one or more dashes (`\verb!-!'). Each option
 cannot have more than one value.
-
-To use this class, the user has to build the database using the
-\verb!argc,argv! input arguments. Then, to retrieve the option value,
-the user has the overloaded function \verb!Get!.
  
 If option name is not found in the database, the default value is
 returned. If needed, the user can also specify a default value to return
@@ -100,23 +94,23 @@ File \TriExe{triutils/ex2.cpp} gives an example of the usage of this class.
 %%%
 %%%
 
-\subsection{Trilinos\_Util\_CrsMatrixGallery}
+\subsection{Trilinos\_Util::CrsMatrixGallery}
 \label{sec:triutils:gallery}
 
-\verb!Trilinos_Util_CrsMatrixGallery! is a class to Epetra\_CrsMatrix
+\verb!Trilinos_Util::CrsMatrixGallery! is a class to Epetra\_CrsMatrix
 and Epetra\_LinearProblem. It is meant to provide functionalities
 similar to the MATLAB's \verb!gallery! function\footnote{Many of the
-  matrices that can be created using Trilinos\_Util\_CrsMatrixGallery
-  are equivalent or simiilar to those provided by the MATLAB\copyright
-  function {\tt gallery}. In these cases, the reader is referred to the
-  MATLAB documentation for more details about the matrices'
-  properties.}.
+  matrices that can be created using Trilinos\_Util::CrsMatrixGallery
+  are equivalent or simiilar to those provided by the
+  MATLAB\copyright~function {\tt gallery}. In these cases, the reader is
+  referred to the MATLAB documentation for more details about the
+  matrices' properties.}.
 
 A typical constructor requires the problem type and an Epetra\_Comm, and
 it is followed by a set of instructions to specify the problem. For
 instance, we may have:
 \begin{verbatim}
-Trilinos_Util_CrsMatrixGallery Gallery("laplace_2d", Comm);
+Trilinos_Util::CrsMatrixGallery Gallery("laplace_2d", Comm);
 Gallery.set("problem_size",100);
 Gallery.set("map_type","linear");
 Gallery.set("solution_type","random");
@@ -125,16 +119,171 @@ which creates a matrix corresponding to the discretization of a 2D
 Laplacian on a Cartesian grid with 100 points. The nodes are decomposed
 linearly, and the exact solution is a random vector.
 
-Alternatively, it is possible to read a matrix stored in Harwell/Boeing
-format as follows:
+As a second example, we show here how to read a matrix stored in
+Harwell/Boeing format:
 \begin{verbatim}
-Trilinos_Util_CrsMatrixGallery Gallery("hb", Comm);
+Trilinos_Util::CrsMatrixGallery Gallery("hb", Comm);
 Gallery.set("matrix_name","bcsstk14.rsa");
 Gallery.set("map_type","greedy");
 \end{verbatim}
-This snipper will read matrix (and, if available, solution and
+This example code will read matrix (and, if available, solution and
 right-hand side) from the file \verb!bcsstk14.rsa!, and will partition
 the matrix across the processes using a gredy algorithm.
+
+\bigskip
+
+Once all the required parameters have been specified, the user can get a
+pointer to the constructed Epetra\_CrsMatrix, to the exact and starting
+solution, and to the right-hand side (all Epetra\_Vector's) by using
+\begin{verbatim}
+A = Gallery.GetMatrix();
+ExactSolution = Gallery.GetExactSolution();
+RHS = Gallery.GetRHS();
+StartingSolution = Gallery.GetStartingSolution();
+\end{verbatim}
+and a pointer to the Epetra\_LinearProblem as
+\begin{verbatim}  
+Epetra_LinearProblem Problem(A,StartingSolution,RHS);
+\end{verbatim}
+At this point, one can for instance solve the linear problem as
+\begin{verbatim}  
+AztecOO Solver(Problem);
+Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );  
+Solver.Iterate(1000,1E-9);
+\end{verbatim}
+Using Trilinos\_Util::MatrixGallery, one can easily compute the true
+residual and the difference between computed and exact solution, as
+\begin{verbatim} 
+double residual;
+Gallery.ComputeResidual(residual);
+  
+Gallery.ComputeDiffBetweenStartingAndExactSolutions(residual);
+\end{verbatim}
+A list of methods implemented by Trilinos\_Util::CrsMatrixGallery is
+reported in Table~\ref{tab:triutils:crs}.
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{14cm} |}
+    \hline
+    {\tt GetMatrix()}\\
+    {Returns a pointer to the internally
+      stored Epetra\_CrsMatrix.} \\ 
+    \\
+    \tt GetExactSolution() \\
+    {Returns a pointer to the internally
+      stored exact solution vector (as an Epetra\_Vector).} \\
+    \\
+    {\tt GetStartingSolution()} \\
+    {Returns a pointer to the
+      internally stored starting solution vector (as an
+      Epetra\_Vector).} \\
+    \\
+    {\tt GetRhs()}  \\
+    {Returns a pointer to the internally
+      stored right-hand side (as an Epetra\_Vector).} \\
+    \\
+    {\tt GetLinearProblem()} \\
+    {Returns a pointer to the internally
+      stored  Epetra\_LinearProblem for the Vbr matrix).} \\
+    \\
+    {\tt GetMap()}\\
+    {Returns a pointer to the internally
+      stored Epetra\_Map.} \\
+    \hline
+  \end{tabular}
+  \caption{Methods of class Trilinos\_Util::CrsMatrixGallery.}
+  \label{tab:triutils:crs}
+\end{table}
+The matrix can be written on a file in MATLAB format, using
+\begin{verbatim}
+string FileName = "matrix.m";
+bool UseSparse = false;
+Gallert.WriteMatrix(FileName,UseSparse);
+\end{verbatim}
+If \verb!UseSparse! is true, the matrix is created in sparse format
+(using the MATLAB command \verb!spalloc!).
+
+\medskip
+
+The main options are here reported.
+
+\vskip .1 in
+
+\choicebox{\tt problem\_type}{[{\tt string}] Specifies the problem
+  type. A list of currently avaialble problems is reported later in this
+  section.}
+
+\choicebox{\tt problem\_size}{[{\tt int}] Size of the problem. Note
+  that some problems, defined on structured meshes, allow the
+  specification of the number of nodes on the x-, y- and z-axis. Please
+  refer to each problem's description for more details.}
+
+\choicebox{\tt nx}{[{\tt int}] Number of nodes in the x-direction (if
+  supported by the specific problem).}
+
+\choicebox{\tt ny}{[{\tt int}] Number of nodes in the y-direction (if
+  supported by the specific problem).}
+
+\choicebox{\tt nz}{[{\tt int}] Number of nodes in the z-direction (if
+  supported by the specific problem).}
+
+\choicebox{\tt mx}{[{\tt int}] Number of processes in the x-direction (if
+  supported by the specific problem).}
+
+\choicebox{\tt my}{[{\tt int}] Number of processes in the y-direction
+  (if supported by the specific problem).}
+
+\choicebox{\tt map\_type}{[{\tt string}] Defines the data layout across
+  the processes. See Table~\ref{tab:triutils:map}. }
+ 
+\choicebox{\tt exact\_solution}{[{\tt string}] Defines the exact solution. See
+  Table~\ref{tab:triutils:exact}.}
+
+\choicebox{\tt starting\_solution}{[{\tt string}] Defines the starting solution
+  vector. It can be: {\tt zero} or {\tt random}.}
+
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+ {\tt linear} & {Create a linear map. Elements are divided into
+  continuous chunks among the processors. This is the default value.} \\
+{\tt box} & {Used for problems defined on Cartesian grids over a
+  square. The domain subdivided into {\tt mx x my} subdomains.  {\tt mx}
+  and {\tt my} are automatically computed if the total number or
+  processes is a square number. Alternatively, {\tt
+    mx} and {\tt my} are specified via {\tt Set("mx",IntValue)} and {\tt
+    Set("my",IntValue)}.} \\
+{\tt interlaced} & {Elements are subdivided so that element i is
+  assigned to process i\%NumProcs.} \\
+{\tt random} & {Assign each node to a random process} \\
+{\tt greedy} & {(only for HB matrices) implements a greedy
+  algorithm to decompose the graph of the HB matrix among the processes}
+\\
+\hline
+  \end{tabular}
+  \caption{Available options for {\tt map\_type}.}
+  \label{tab:triutils:map}
+\end{table}
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{4cm} | p{10cm} |}
+    \hline
+    {\tt random} & Random values \\
+    {\tt constant}  & All elements set to 1.0. \\
+    {\tt quad\_x} & Nodes are supposed to be distributed over the 1D segment $(0,1)$, with
+  equal spacing, and the solution is computed as $x(1-x)$. \\
+{\tt quad\_xy} & Nodes are supposed to be distributed over the square
+  $(0,1) \times (0,1)$ , with equal spacing, and the solution is
+  computed as $x(1-x)y(1-y)$. \\
+    \hline
+  \end{tabular}
+  \caption{Available options for {\tt exact\_solution}.}
+  \label{tab:triutils:exact}
+\end{table}
 
 A list of currently avaialble problems is reported below. By notation,
 \verb!IntValue! refers to a generic positive integer, {\tt
@@ -242,8 +391,8 @@ $A_{i,j}$ (for simplicity, we suppose that indices start from
 
 \choicebox{\tt laplace\_3d}{Creates a matrix corresponding to the
   stencil of a 3D Laplacian operator on a structured Cartesian grid. The
-  problem size is specified using Set("problme size",IntValue). In this
-  case, IntValue must be a cube. Alternatively, one can specify the
+  problem size is specified using {\tt Set("problem size",IntValue)}. In
+  this case, IntValue must be a cube. Alternatively, one can specify the
   number of nodes along the axis, using {\tt Set("nx",IntValue),
     Set("ny",IntValue)}, and {\tt Set("nz",IntValue)}.}
 
@@ -300,9 +449,10 @@ term, and a simple upwind for the convective term. Here,
 \[
 v_x = ( y - 1/2 ) V, \quad \quad \quad v_y = ( 1/2 - x ) V
 \]
-The value of $\mu$ can be specified using {\tt Set("b", b)}, and that of
-$V$ using {\tt Set("a", a)}. The default values are {\tt a=1, b=1e-5}.
-The problem size is specified as in {\tt laplace\_3d}.}
+The value of $\mu$ can be specified using {\tt Set("diff",
+  DoubleValue)}, and that of $V$ using {\tt Set("conv", DoubleValues)}.
+The default values are $\mu=10^{-5}, V=1$.  The problem size is
+specified as in {\tt laplace\_3d}.}
 
 
 \choicebox{\tt ris}{Returns a symmetric Hankel matrix with elements
@@ -315,7 +465,7 @@ The problem size is specified as in {\tt laplace\_3d}.}
   default values are {\tt a=2, b=c=1}. The problem size is specified as
   for {\tt eye}.}
 
-\choicebox{\tt unidir\_flow\_2d}{Returns a matrix corresponding to the
+\choicebox{\tt uni\_flow\_2d}{Returns a matrix corresponding to the
   finite-difference discretization of the problem
   \[
 - \mu \Delta u + (v_x,v_y) \cdot \nabla u = f
@@ -327,100 +477,20 @@ term, and a simple upwind for the convective term. Here,
 v_x = cos(\alpha) V, \quad \quad \quad v_y =  sin(\alpha) V 
 \]
 that corresponds to an unidirectional 2D flow.  The value of $\mu$ can
-be specified using {\tt Set("b", b)}, and that of $V$ using {\tt
-  Set("a", a)}, and that of $\alpha$ using {\tt Set("c", c)}. The
-default values are {\tt a=1, b=1e-5, c=0}. The problem size is specified
-as in {\tt laplace3d}.}
+be specified using {\tt Set("diff", DoubleValue)}, and that of $V$ using
+{\tt Set("conv", DoubleValue)}, and that of $\alpha$ using {\tt
+  Set("alpha", DoubleValue)}. The default values are $V=1, \mu=10^{-5},
+\alpha=0$. The problem size is specified as in {\tt laplace3d}.}
 
 %\choicebox{\tt vander}{Create the Vandermonde matrix whose second last
 %  column is the vector c. The j-th column is given by $A(:,j) =
 %  \alpha^{(n-j)}$. The value of $\alpha$ can be set as {\tt
 %    Set("a",value)}, and it is defaulted to 0.5. }
 
-
 \medskip
 
-Some choices are available to define the exact solution, using {\tt
-  Set("exact solution", value)}. {\tt value} can assume the following
-values:
-
-\vskip .1 in
-
-\choicebox{\tt constant}{The exact solution vector is made up of
-  1's. This is the default value.}
-
-\choicebox{\tt random}{Create a random solution vector}
-
-\choicebox{\tt linear}{Set value at node i is defined as alpha*i. The
-  double value alpha can be set via {\tt Set("alpha",DoubleVal)}.}
-
-\medskip
-
-\verb!CreateMap()! allows some different maps. The type of map is set
-{\tt using Set("map",value)}. {\tt Value} is a string, defined as
-reported below.
-
-\vskip .1 in
-
-\choicebox{\tt linear}{Create a linear map. Elements are divided into
-  continuous chunks among the processors. This is the default value.}
-
-\choicebox{\tt box}{Used for problems defined on Cartesian grids over a
-  square. The domain subdivided into {\tt mx x my} subdomains.  {\tt
-    mx} and {\tt my} are specified via {\tt Set("mx",IntValue)} and {\tt
-    Set("my",IntValue)}.}
-
-\choicebox{\tt interlaced}{Elements are subdivided so that element i is
-  assigned to process i\%NumProcs.}
-  
-\choicebox{\tt random}{Assign each node to a random process}
-
-\choicebox{\tt greedy}{(only for HB matrices) implements a greedy
-  algorithm to decompose the graph of the HB matrix among the processes}
-
-\bigskip
-
-Once all the required parameters have been specified, the user can get a
-pointer to the constructed Epetra\_CrsMatrix, to the exact and starting
-solution, and to the right-hand side (all Epetra\_Vector's) by using
-\begin{verbatim}
-A = G.GetMatrix();
-ExactSolution = G.GetExactSolution();
-RHS = G.GetRHS();
-StartingSolution = G.GetStartingSolution();
-\end{verbatim}
-and a pointer to the Epetra\_LinearProblem as
-\begin{verbatim}  
-Epetra_LinearProblem Problem(A,StartingSolution,RHS);
-\end{verbatim}
-At this point, one can for instance solve the linear problem as
-\begin{verbatim}  
-AztecOO Solver(Problem);
-Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );  
-Solver.Iterate(1000,1E-9);
-\end{verbatim}
-Using Trilinos\_Util\_MatrixGallery, one can easily compute the true
-residual and the difference between computed and exact solution, as
-\begin{verbatim} 
-double residual;
-G.ComputeResidual(residual);
-  
-G.ComputeDiffBetweenStartingAndExactSolutions(residual);
-\end{verbatim}
-
-The matrix can be written on a file in MATLAB format, using
-\begin{verbatim}
-string FileName = "matrix.m";
-bool UseSparse = false;
-Gallert.WriteMatrix(FileName,UseSparse);
-\end{verbatim}
-If \verb!UseSparse! is true, the matrix is created in sparse format
-(using the MATLAB command \verb!spalloc!).
-
-\medskip
-
-Class Trilinos\_Util\_VrbMatrixGallery, derived from
-Trilinos\_Util\_MatrixGallery, can be used to generate VBR matrices.
+Class Trilinos\_Util::VrbMatrixGallery, derived from
+Trilinos\_Util::CrsMatrixGallery, can be used to generate VBR matrices.
 The class creates an Epetra\_CrsMatrix (following user's defined
 parameters, as previously specified), then ``expands'' this matrix into
 a VBR matrix. This VBR  matrix is based on an Epetra\_BlockMap, based on
@@ -429,34 +499,41 @@ equations per node is set with parameter \verb!num_pde_eqns!. The
 Epetra\_CrsMatrix is expanded into a VBR matrix by replicating the
 matrix \verb!num_pde_eqns! times for each equation.
 
-Trilinos\_Util\_VrbMatrixGallery defines the following methods:
+A list of methods implemented by Trilinos\_Util::VrbMatrixGallery is
+reported in Table~\ref{tab:triutils:vbr}.
 
-\vskip .1 in
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| p{14cm} |}
+    \hline
+    {\tt GetVrbMatrix()}\\
+    {Returns a pointer to the internally
+  stored Vbr matrix.} \\
+\tt GetVrbExactSolution() \\
+{Returns a pointer to the internally
+  stored exact solution vector (as an Epetra\_Vector).} \\
+{\tt GetVrbStartingSolution()} \\
+ {Returns a pointer to the
+  internally stored starting solution vector (as an Epetra\_Vector).} \\
+{\tt GetVrbRhs()}  \\
+ {Returns a pointer to the internally
+  stored right-hand side (as an Epetra\_Vector).} \\
+{\tt GetVrbLinearProblem()} \\
+ {Returns a pointer to the internally
+  stored  Epetra\_LinearProblem for the Vbr matrix).} \\
+{\tt GetBlockMap()}\\
+ {Returns a pointer to the internally
+  stored Epetra\_BlockMap.} \\
+    \hline
+  \end{tabular}
+  \caption{Methods of class Trilinos\_Util::VbrMatrixGallery.}
+  \label{tab:triutils:vbr}
+\end{table}
 
-\choicebox{\tt GetVrbMatrix()}{Returns a pointer to the internally
-  stored Vbr matrix.}
-
-\choicebox{\tt GetVrbExactSolution()}{Returns a pointer to the internally
-  stored exact solution vector (as an Epetra\_Vector).}
-
-\choicebox{\tt GetVrbStartingSolution()}{Returns a pointer to the
-  internally stored starting solution vector (as an Epetra\_Vector).}
-
-\choicebox{\tt GetVrbRhs()}{Returns a pointer to the internally
-  stored right-hand side (as an Epetra\_Vector).}
-
-\choicebox{\tt GetVrbLinearProblem()}{Returns a pointer to the internally
-  stored  Epetra\_LinearProblem for the Vbr matrix).}
-
-\choicebox{\tt GetBlock()}{Returns a pointer to the internally
-  stored Epetra\_BlockMap.}
 \medskip
 
-
-\medskip
-
-Trilinos\_Util\_CrsMatrixGallery can be used in conjuction with
-Trilinos\_Util\_CommandLineParser as in the following code:
+Trilinos\_Util::CrsMatrixGallery can be used in conjuction with
+Trilinos\_Util::CommandLineParser as in the following code:
 \begin{verbatim}
 int main(int argc, char *argv[]) 
 {
@@ -469,8 +546,8 @@ int main(int argc, char *argv[])
 
   Epetra_Time Time(Comm);
 
-  Trilinos_Util_CommandLineParser CLP(argc,argv);
-  Trilinos_Util_CrsMatrixGallery Gallery("", Comm);
+  Trilinos_Util::CommandLineParser CLP(argc,argv);
+  Trilinos_Util::CrsMatrixGallery Gallery("", Comm);
 
   Gallery.Set(CLP);
 
@@ -510,10 +587,12 @@ This program can be executed with the following command line:
 [msala:triutils]> mpirun -np 4 ex1.exe -problem_type=laplace_2d \
                   -problem_size=10000
 \end{verbatim}
+Matrix gallery option names shall be specified with an additional
+leading dash (``\verb!-!''). Options values will be specified as usual.
 
 \begin{remark}
   Most of the examples reported in the following chapters use both
-  Trilinos\_Util\_CommandLineParser and Trilinos\_Util\_CrsMatrixGallery
+  Trilinos\_Util::CommandLineParser and Trilinos\_Util::CrsMatrixGallery
   to define the distributed matrix. The user is encouraged to test a
   given method using matrices with different numerical properties.
 \end{remark}

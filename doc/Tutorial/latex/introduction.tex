@@ -111,45 +111,59 @@ accomplished using Trilinos.
     \hline
     {\bf Task} & {\bf Package} & {\bf Tutorial}\\
     \hline
+    \hline
     Definition of serial dense or sparse matrices: & Epetra 
     & Chapter \ref{chap:epetra_mat} \\
     Utilities for Epetra vectors and sparse matrices: & EpetraExt & -- 
     \\
+    \hline
     Templated distributed vectors and sparse matrices: & Tpetra$^\star$
     & -- \\
+    \hline
     Definition of distributed sparse matrices:& Epetra & -- \\
     Solve a linear system with preconditioned Krylov accelerators, like
     CG, GMRES, Bi-CGSTAB, TFQMR:& AztecOO, Belos$^\star$ &
     Chapter \ref{chap:aztecoo} \\
+    \hline
     Definition of incomplete factorizations:& AztecOO, \newline IFPACK &
     Chapter \ref{chap:ifpack} \\
     Definition of a multilevel preconditioner:& ML & Chapter
     \ref{chap:ml} \\
+    \hline
     Definition of black-box smoothed aggregation:& ML & Section
-    \ref{ML_Preconditioner} \\
+    \ref{sec:ml:preconditioner} \\
+    \hline
     Definition of a one-level Schwarz preconditioner (overlapping domain
     decomposition):& AztecOO, \newline IFPACK & Chapter \ref{chap:ifpack} \\
     Definition a two-level Schwarz preconditioner, with coarse grid based on
     aggregation:& AztecOO+ML & Section \ref{sec:ml_DD} \\
+    \hline
     Solution of  systems of nonlinear equations:& NOX & Chapter \ref{chap:nox} \\
     Interface with various direct solvers, as UMFPACK, MUMPS, SuperLU
     and others :& Amesos & Chapter \ref{chap:amesos} \\
+    \hline
     Computation of eigenvalue of large, sparse matrices:& Anasazi &
     Chapter \ref{chap:anasazi} 
     \\
+    \hline
     Solution of complex linear equations (using equivalent real formulation):&
     Komplex$^\star$ & -- \\
+    \hline
     Definition of segregated preconditioners and block preconditioners (for
     instance, for the incompressible Navier-Stokes equations):&
     Meros$^\star$ & -- \\
+    \hline
     Light-weight interface to BLAS and LAPACK: & Epetra 
     & Chapter \ref{chap:epetra_mat} \\
+    \hline
     Templated interface to BLAS and LAPACK, arbitrary-precision
     arithmetic, parameters' list, smart pointers:& Teuchos &
     Section \ref{sec:teuchos:LAPACK} \\
+    \hline
     Definition of abstract interfaces to vectors, linear operators, and
     solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$   & --
     \\
+    \hline
     Generation of matrices & Triutils & Section~\ref{sec:triutils:gallery} \\
     \hline
   \end{tabular}
@@ -419,6 +433,13 @@ author = "Michael A. Heroux and James M. Willenbring",
 institution = "Sandia National Laboratories",
 number = "SAND2003-2952",
 year = 2003}
+
+@techreport{Trilinos-Tutorial-3.1,
+title = "{Trilinos 3.1 Tutorial}",
+author = "Marzio Sala and Michael A. Heroux",
+institution = "Sandia National Laboratories",
+number = "SAND2004-0154",
+year = 2004}
 \end{verbatim}
 The BiBTeX information is available at the web page
 \begin{verbatim}

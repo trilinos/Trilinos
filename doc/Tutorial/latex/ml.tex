@@ -295,7 +295,7 @@ Residual    = 6.99704e-13
 %%%
 
 \subsection{Class ML\_Epetra::MultiLevelOperator}
-\label{sec:ml:Operator}
+\label{sec:ml:operator}
 
 As other Trilinos packages, ML can be compiled and run independently
 from Epetra, that is, it can accept input matrix in formats different
@@ -310,12 +310,12 @@ AztecOO.  This can be done in two ways:
 \item By defining an \verb!ML_Epetra::MultiLevelOperator! object, derived from the
   Epetra\_Operator class. The constructor of this object requires
   already filled ML\_Struct and ML\_Aggregate structures.  ML must have
-  been configure with the option \verb!--with-ml_epetra!.
+  been configure with the option \newline \verb!--with-ml_epetra!.
 \item By defining an \verb!ML_Epetra::MultiLevelPreconditioner! object, derived
   from the Epetra\_RowMatrix class. Basically, the constructor of
   this object demands for an Epetra\_RowMatrix  pointer and a
   Teuchos parameter list, that contains all the user's defined
-  parameters. ML must have been configure with options
+  parameters. ML must have been configure with options \newline
   \verb!--with-ml_epetra --with-ml_teuchos!.
 \end{itemize}
 
@@ -345,7 +345,7 @@ AztecOO documentation for more details.
 
 Let \verb!A! be an \verb!Epetra_RowMatrix! for which we aim to construct
 a preconditioner, and let \verb!ml_handle! be the structure ML requires
-to store internal data (see Section~\ref{high level sample}), created
+to store internal data, created
 with the instruction
 \begin{verbatim}
 ML_Create(&ml_handle,N_levels);
@@ -397,9 +397,9 @@ solver.Iterate(Niters, 1e-12);
 \label{sec:ml:preconditioner}
 
 Alternatively to ML\_Epetra::MultiLevelOperator, users can create
-\verb!ML_Epetra::MultiLevelPreconditioner!  objects.  Class
-\verb!ML_Epetra::MultiLevelPreconditioner! is defined in a header file,
-that must be included as
+MultiLevelPreconditioner objects.  Class \verb!MultiLevelPreconditioner!
+(in namespace {\tt ML\_Epetra}) is defined in a header file, that must be
+included as
 \begin{verbatim}
 #include "ml_epetra_preconditioner.h" 
 \end{verbatim}
@@ -426,18 +426,17 @@ the discretization of a 2D Laplacian operator with a 9pt formula.
 \begin{tabular}{ | p{5cm} | p{10cm} | }
 \hline
 \verb!Uncoupled! & Construct
-aggregates of optimal size (3 nodes in 1D, 9 nodes in 2D, and 27 nodes
+aggregates of optimal size (for structured Cartesian grids, 3 nodes in
+1D, 9 nodes in 2D, and 27 nodes 
 in 3D). Works process-wise (aggregates cannot span more than 1
 process). \\
-\verb!Coupled! & As \verb!Uncoupled!, aggregates can span over
-processes. \\
 \verb!MIS! & Use a maximal independent set. Aggregates can span over
 processes. This scheme usually provided the best aggregates, but it is
 more expensive as it requires a matrix-matrix product. \\
 \verb!METIS! & Use a graph partitioning algorithm to creates the
 aggregates, working process-wise. The number of nodes in each aggregate
 is specified with the option {\tt aggregation: nodes per
-  aggregate}. Requires ML to be configures with {\tt
+  aggregate}. Requires ML to be configuref with {\tt
   --with-ml\_metis}. \\
 \verb!ParMETIS! & As \verb!METIS!, but partition the global
 graph. Requires {\tt --with-ml\_parmetis3x}. Aggregates can span
@@ -507,10 +506,12 @@ required ML to be configured with option \verb!--with-ml_triutils!.)
 
   Teuchos::ParameterList MList;
 
-  MLList.setParameter("max levels",6);
-  MLList.setParameter("increasing or decreasing","decreasing");
-  MLList.setParameter("aggregation: type", "MIS");
-  MLList.setParameter("coarse: type","Amesos_KLU");
+  // default values for smoothed aggregation
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("max levels",6);
+  MLList.set("increasing or decreasing","decreasing");
+  MLList.set("aggregation: type", "MIS");
+  MLList.set("coarse: type","Amesos_KLU");
   
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
@@ -525,16 +526,15 @@ required ML to be configured with option \verb!--with-ml_triutils!.)
 \end{verbatim}
 The general procedure is as follows. First, the users define a Teuchos
 parameters' list. Input parameters are set via method
-\verb!setParameter(ParameterName,ParameterValue)!, where
-\verb!ParameterName! is a string defining the parameter, and
-\verb!ParameterValue! is the specified parameter, that can be any C++
-object or pointer. A complete list of parameters is reported later in
-this section. This list is passed to the constructor, together with a
-pointer to the matrix, and a boolean flag.  If this flag is set to
-\verb!false!, the constructor will not compute the multilevel hierarchy
-until when \verb!MLPrec->ComputePreconditioner()! is called. The
-hierarchy can be destroyed using \verb!MLPrec->Destroy()!.  For
-instance, the user may define a code like:
+\verb!set(ParameterName,ParameterValue)!, where \verb!ParameterName! is
+a string defining the parameter, and \verb!ParameterValue! is the
+specified parameter, that can be any C++ object or pointer.  This list
+is passed to the constructor, together with a pointer to the matrix, and
+a boolean flag.  If this flag is set to \verb!false!, the constructor
+will not compute the multilevel hierarchy until when
+\verb!MLPrec->ComputePreconditioner()! is called. The hierarchy can be
+destroyed using \verb!MLPrec->Destroy()!.  For instance, the user may
+define a code like:
 \begin{verbatim}
   // A is still not filled with numerical values
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
@@ -572,28 +572,11 @@ All ML options can have a common prefix, specified by the
 user in the construction phase. For example, suppose that we require
 \verb!ML: ! to be the prefix. The constructor will be
 \begin{verbatim}
-  MLLIst.setParameter("ML: aggregation: type", "METIS");
+  MLLIst.set("ML: aggregation: type", "METIS");
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true, Prefix);
 \end{verbatim}
 where \verb!Prefix! is a char array containing \verb!ML: !.
-
-The complete list of input parameters is reported below. Some parameters
-are identified with the symbol $\dagger$ (that is not part of the
-parameter name). Those parameters define quantities that can be
-different at each level of the hierarchy. By default, the specified
-parameter will affect all levels. However, the user can tune a specific
-level (say, \verb!d!) assing a further parameter, whose name contains
-\verb! (level d)! at the trailing edge of the string (note the space
-before the open parenthesis). For instance,  assuming
-decreasing levels starting from 4, one could set the aggregation schemes
-as follows:
-\begin{verbatim}
-  MLList.setParameter("aggregation: type (level 4)","METIS");
-  MLList.setParameter("aggregation: type (level 1)","MIS");
-\end{verbatim}
-The code will use the METIS scheme for levels 4, 3 and 2, then the MIS
-scheme for levels 1 and 0.
 
 Note that spaces are important: Do not include leading or trailing
 spaces, and separate words by just one space! Mispelled parameters will
@@ -653,6 +636,8 @@ following parameters:
 \begin{verbatim}
   ParameterList MLList;
 
+  ML_Epetra::SetDefatuls(("DD",MLList);
+
   MLList.set("max levels",2);
   MLList.set("increasing or decreasing","increasing");
 
@@ -689,12 +674,7 @@ AztecOO solver is called using
 \begin{verbatim}
   solver.SetPrecOperator(MLPrec);
 
-  double rthresh = 1.4;
-  solver.SetAztecParam(AZ_rthresh, rthresh);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
-  double athresh = 10.0;
-  solver.SetAztecParam(AZ_athresh, athresh);
-  solver.SetAztecParam(AZ_ill_cond_thresh, 1.0e200);
 
   int Niters = 500;
   solver.SetAztecOption(AZ_kspace, 160);
@@ -717,5 +697,5 @@ The entire code is reported in \TriExe{ml/ex2.cpp}.
 \label{sec:ml_concluding}
 
 More documentation about ML can be found in
-\cite{ML-home-page,TuminaroTong:00,TuminaroTong:00}.
+\cite{ML-home-page,TuminaroTong:00}.
 

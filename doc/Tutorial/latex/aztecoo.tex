@@ -143,7 +143,7 @@ problems.  These preconditioners are sometimes called ``gray-box''
 preconditioners, since the user has to supply few information about
 the matrix and the problem to be solved.
 
-AztecOO itself implements a variety of preconditioners, from
+AztecOO itself implements a variety of balck-box preconditioners, from
 ``classical'' methods such as Jacobi and Gauss-Seidel, to polynomial and
 domain-decomposition based preconditioners. More preconditioners can be
 given to an AztecOO Krylov accelerator, by using the Trilinos packages
@@ -172,12 +172,12 @@ vectors\footnote{At the current stage of development, AztecOO does not
 AztecOO Solver(Problem);
 \end{verbatim}
 and specify how to solve the linear system. All AztecOO options are set
-using two vectors, \verb!options! (integer) and \verb!params! (double),
-as detailed in the Aztec's User Guide.
+using two vectors, one of integers and the other of doubles, as detailed
+in the Aztec's User Guide.
 
 To choose among the different AztecOO parameters, the user can create
 two vectors, usually called \verb!options! and \verb!params!, set them
-to the default values, and then override with the desired parameters:
+to the default values, and then override with the desired parameters.
 Default values can be set by
 \begin{verbatim}
 int    options[AZ_OPTIONS_SIZE];
@@ -199,12 +199,11 @@ For instance,
 \begin{verbatim}
 Solver.SetAztecOption( AZ_precond, AZ_Jacobi );
 \end{verbatim}
-to specify a point Jacobi preconditioner, and a tolerance of $10^{-12}$.
-(We refer to the Aztec documentation for more details about the various
-Aztec settings.)
+to specify a point Jacobi preconditioner.  (We refer to the Aztec
+documentation for more details about the various Aztec settings.)
 
 To solve the linear system, with maximum number of 1550 iterations and a
-tolerance of $1o^{-9}$, the user may call
+tolerance of $10^{-9}$, the user may call
 \begin{verbatim}
 Solver.Iterate(1550,1E-9);
 \end{verbatim}
@@ -217,9 +216,10 @@ with AztecOO is identical for sequential and parallel runs.  However
 (for certain choices of the preconditioners), the convergence rate can
 change as the number of processes used in the computation varies.
 
-When this function returns, one can retrieve the number of iterations
-performed by the linear solver using \verb!Solver.NumIters()!, while
-\verb!Solver.TrueResidual()! gives the (nonscaled) norm the residual.
+When \verb!Iterate()! returns, one can query for the number of
+iterations performed by the linear solver using
+\verb!Solver.NumIters()!, while \verb!Solver.TrueResidual()! gives the
+(nonscaled) norm the residual.
 
 %%%
 %%%
@@ -285,6 +285,38 @@ Solver.SetAztecOption( AZ_overlap, 1 );
   Chapter~\ref{chap:ifpack}.
 \end{remark}
 
+An example of the performances of AztecOO preconditioners is reported in
+Table~\ref{tab:aztecoo:dd}. The table reports the estimated condition
+number of one-level Schwarz preconditioner with mininal overlap. The
+problem is a 2D Laplace operator, discretized using a 5-point formula on
+a regular Cartesian grid. As predicted by theory, the condition number
+is linear $\mathcal{O}(1/hH)$, where $h$ is the mesh size, and $H$ is
+the size of each (square) subdomain.
+
+File \TriExe{aztecoo/ex3.cpp} reports the code used to obtain these
+retults. The code uses the Trilinos\_Util\_CrsMatrixGallery class to
+create the matrix. For instance, to estimate the condition number with
+$h=1/60$ and $H=1/3$, one may have:
+\begin{verbatim}
+[msala:aztecoo]> mpirun -np 9 ex3.exe -problem_type=laplace_2d \
+                 -problem_size=900 -map_type=box
+\end{verbatim}
+
+\begin{table}[htbp]
+  \centering
+  \begin{tabular}{| c | c c c |}
+    \hline
+    & $h=1/30$ & $h=1/60$ & $h=1/120$ \\
+    \hline
+    $H=1/3$ & 40.01 & 83.80 & 183.41 \\
+    $H=1/4$ & 51.46 & 106.01 & 223.22 \\
+    $H=1/6$ & 79.19 & 15040 & 311.26 \\
+    $H=1/8$ & -     & 191.06 & 403.29 \\
+    \hline
+  \end{tabular}
+  \caption{Condition number for one-level domain decomposition precondititoner on a square.}
+  \label{tab:aztecoo:dd}
+\end{table}
 
 %%%
 %%%
@@ -295,10 +327,11 @@ Solver.SetAztecOption( AZ_overlap, 1 );
 
 AztecOO can accept Epetra\_Operator objects as preconditioners. This
 means that any class, derived from Epetra\_Operator an implementing
-method \verb!ApplyInverse()!, can be used in the preconditioning
-phase. AztecOO itself can be used to define a preconditioner for
-AztecOO, as class AztecOO\_Operator (which takes an AztecOO object in
-the construction phase) is derived from Epetra\_Operator.
+method \verb!ApplyInverse()!, can be used in the preconditioning phase,
+using \verb!SetPreOperator()!. AztecOO itself can be used to define a
+preconditioner for AztecOO, as class AztecOO\_Operator (which takes an
+AztecOO object in the construction phase) is derived from
+Epetra\_Operator.
 
 File \TriExe{aztecoo/ex2.cpp} shows how to use an AztecOO solver in the
 preconditioning phase.  The main steps are here reported.
@@ -318,9 +351,10 @@ different (although of the same size).
 Epetra_CrsMatrix P(A);
 \end{verbatim}
 (This operation is in general expensive as involves the copy
-constructor.)  Then, we create the linear problem which will be used as
-preconditioner.  This requires several steps.  (Note that all the
-\verb!P! prefix identifies preconditioner' objects.)
+constructor, and it is used here for the sake of simplicity.)  Then, we
+create the linear problem which will be used as preconditioner.  This
+requires several steps.  (Note that all the \verb!P! prefix identifies
+preconditioner' objects.)
 \begin{enumerate}
 \item We create the linear system solve at each prec step, and and we
   assign the linear operator (in this case, the matrix A itself)
@@ -384,38 +418,6 @@ AztecOO to be configured with {\tt --enable-aztecoo-azlu}. \\
 \end{center}
 \end{table}
 
-An example of the performances of AztecOO preconditioners is reported in
-Table~\ref{tab:aztecoo:dd}. The table reports the estimated condition
-number of one-level Schwarz preconditioner with mininal overlap. The
-problem is a 2D Laplace operator, discretized using a 5-point formula on
-a regular Cartesian grid. As predicted by theory, the condition number
-is linear $\mathcal{O}(1/hH)$, where $h$ is the mesh size, and $H$ is
-the size of each (square) subdomain.
-
-File \TriExe{aztecoo/ex3.cpp} reports the code used to obtain these
-retults. The code uses the Trilinos\_Util\_CrsMatrixGallery class to
-create the matrix. For instance, to estimate the condition number with
-$h=1/60$ and $H=1/3$, one may have:
-\begin{verbatim}
-[msala:aztecoo]> mpirun -np 9 ex3.exe -problem_type=laplace_2d \
-                 -problem_size=900 -map_type=box
-\end{verbatim}
-
-\begin{table}[htbp]
-  \centering
-  \begin{tabular}{| c | c c c |}
-    \hline
-    & $h=1/30$ & $h=1/60$ & $h=1/120$ \\
-    \hline
-    $H=1/3$ & 40.01 & 83.80 & 183.41 \\
-    $H=1/4$ & 51.46 & 106.01 & 223.22 \\
-    $H=1/6$ & 79.19 & 15040 & 311.26 \\
-    $H=1/8$ & -     & 191.06 & 403.29 \\
-    \hline
-  \end{tabular}
-  \caption{Condition number for one-level domain decomposition precondititoner on a square.}
-  \label{tab:aztec:dd}
-\end{table}
 %%%
 %%%
 %%%
