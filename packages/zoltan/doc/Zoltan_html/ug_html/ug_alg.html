@@ -62,18 +62,19 @@ parameters are described below.
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a name="NUM_GID_ENTRIES"></a>&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs"><i>NUM_GID_ENTRIES</i></a></td>
+<td NOSAVE><a NAME="NUM_GID_ENTRIES"></a>&nbsp;&nbsp;&nbsp; <i><a href="ug_usage.html#Data Types for Object IDs">NUM_GID_ENTRIES</a></i></td>
 
-<td> The number of unsigned integers that should be used to represent
-a global identifier (ID).  Values greater than zero are accepted. </td>
+<td>The number of unsigned integers that should be used to represent a
+global identifier (ID). Values greater than zero are accepted.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a name="NUM_LID_ENTRIES"></a>&nbsp;&nbsp;&nbsp;  <a href="ug_usage.html#Data Types for Object IDs"><i>NUM_LID_ENTRIES</i></a></td>
+<td NOSAVE><a NAME="NUM_LID_ENTRIES"></a>&nbsp;&nbsp;&nbsp; <i><a href="ug_usage.html#Data Types for Object IDs">NUM_LID_ENTRIES</a></i></td>
 
-<td> The number of unsigned integers that should be used to represent
-a local identifier (ID).  Values greater than zero are accepted. </td>
+<td>The number of unsigned integers that should be used to represent a
+local identifier (ID). Values greater than or equal to zero are accepted.&nbsp;</td>
 </tr>
+
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> <a href="#Debug Levels in Zoltan">DEBUG_LEVEL</a></i></td>
 
@@ -99,7 +100,8 @@ is 5.</td>
 <td>&nbsp;&nbsp;&nbsp; <i>TIMER</i></td>
 
 <td>The timer with which you wish to measure time. Valid choices include
-<i>wall </i>and <i>cpu</i>.&nbsp;</td>
+<i>wall
+</i>and <i>cpu</i>.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
@@ -354,9 +356,7 @@ parameter).</td>
 <td COLSPAN="2" NOSAVE>&sup1; <i>Output may be serialized; that is, one
 processor may have to complete its output before the next processor is
 allowed to begin its output.&nbsp; This serialization is not scalable and
-can significantly increase execution time on large number of processors.</i>
-<br>
-</td>
+can significantly increase execution time on large number of processors.</i></td>
 
 <td></td>
 </tr>

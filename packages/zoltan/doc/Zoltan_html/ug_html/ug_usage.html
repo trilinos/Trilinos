@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Library Usage</title>
@@ -63,48 +63,36 @@ from Fortran applications.</li>
 <a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>
 Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. <i>All objects to be
-used in load balancing must have unique global IDs.</i>  Zoltan stores an
-ID as an array of unsigned integers.  
-The number of entries in these
-arrays can be set using the 
-<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a> and 
-<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> 
-parameters; by default, one unsigned integer represents an ID.
-Applications may use whatever format is
-most convenient to store their IDs;
-the IDs can then be converted to
-and from Zoltan's ID format in the 
+used in load balancing must have unique global IDs.</i> Zoltan stores an
+ID as an array of unsigned integers. The number of entries in these arrays
+can be set using the <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
+and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> parameters;
+by default, one unsigned integer represents an ID. Applications may use
+whatever format is most convenient to store their IDs; the IDs can then
+be converted to and from Zoltan's ID format in the <a href="ug_query.html">application-registered
+query functions</a>.
+<p>The following type definitions are defined in lb/lbi_const.h; they can
+be used by an application for memory allocation, MPI communication, and
+as arguments to
+<a href="ug_interface.html">load-balancing interface functions</a>
+and
 <a href="ug_query.html">application-registered query functions</a>.
-<p>
-The following type definitions are defined in lb/lbi_const.h; they can be used
-by an application for memory allocation, MPI communication, and as arguments to
-<a href="ug_interface.html">load-balancing interface functions</a> and
-<a href="ug_query.html">application-registered query functions</a>.
-<blockquote>
-typedef unsigned int    <b>LB_ID_TYPE</b>;<br>
-typedef <b>LB_ID_TYPE</b>     *<b>LB_ID_PTR</b>;<br>
-#define <b>LB_ID_MPI_TYPE</b>  MPI_UNSIGNED<br>
-</blockquote>
-In the Fortran interface, IDs are passed as arrays of integers 
-since unsigned integers are not supported in Fortran.  See the description
-of the 
-<a href="ug_fortran_api.html#fortran ug api IDs">Fortran interface</a> 
-for more details.
-<p>
-The local IDs passed to
-Zoltan are not used by the library; they are provided
-for the convenience of the application and can contain any information
-desired by the application. For instance, local array indices for 
-objects may be passed
-as local IDs, enabling direct access to object data in the query function
-routines. See the <a href="ug_query.html">application-registered query
-functions</a> for more details. The source
-code distribution contains an example application 
-<a href="../dev_html/dev_driver.html" ><i>zdrive</i></a> 
-in which global IDs are integers
-and local IDs are local array indices.
-<p>
-
+<blockquote>typedef unsigned int <b>LB_ID_TYPE</b>;
+<br>typedef <b>LB_ID_TYPE</b> *<b>LB_ID_PTR</b>;
+<br>#define <b>LB_ID_MPI_TYPE</b> MPI_UNSIGNED</blockquote>
+In the Fortran interface, IDs are passed as arrays of integers since unsigned
+integers are not supported in Fortran. See the description of the <a href="ug_fortran_api.html#fortran ug api IDs">Fortran
+interface</a> for more details.
+<p>The local IDs passed to Zoltan are not used by the library; they are
+provided for the convenience of the application and can contain any information
+desired by the application. For instance, local array indices for objects
+may be passed as local IDs, enabling direct access to object data in the
+query function routines. See the <a href="ug_query.html">application-registered
+query functions</a> for more details. The source code distribution contains
+an example application <i><a href="../dev_html/dev_driver.html">zdrive</a></i>
+in which global IDs are integers and local IDs are local array indices.
+One may choose not to use local ids at all, in which case <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>
+should be set to zero.
 <h3>
 <a NAME="Building the Library"></a>Building the Zoltan Library</h3>
 The Zoltan library is implemented in ANSI C and can be compiled with any
