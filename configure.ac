@@ -98,6 +98,12 @@ AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 
 
+if test "X$ac_cv_use_teuchos" != "Xno" ||
+	test "X$ac_cv_use_anasazi" != "Xno" ||
+	test "X$ac_cv_use_belos" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/teuchos])
+fi
+
 ## #np# - If your package requires epetra - you should add
 ## it to the following list
 ##	test "X$ac_cv_use_new_package" != "Xno" || 
@@ -124,6 +130,7 @@ if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno" || 
         test "X$ac_cv_use_epetraext" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno" ||
+	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
 fi
@@ -195,14 +202,6 @@ fi
 if test "X$ac_cv_use_new_package" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/new_package])
 fi
-
-###
-if test "X$ac_cv_use_teuchos" != "Xno" ||
-	test "X$ac_cv_use_anasazi" != "Xno" ||
-	test "X$ac_cv_use_belos" != "Xno"; then
-  AC_CONFIG_SUBDIRS([packages/teuchos])
-fi
-###
 
 AC_ARG_ENABLE(,[
 
