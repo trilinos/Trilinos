@@ -951,6 +951,53 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 }
 
 /* ------------------------------------------------------------------------- */
+/* generate the sequential symmetric Gauss Seidel smoother                   */
+/* ------------------------------------------------------------------------- */
+
+int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
+                                             int ntimes, double omega)
+{
+   int (*fun)(void *, int, double *, int, double *);
+   int start_level, end_level, i, status;
+
+   if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
+   else { start_level = nl; end_level = nl;}
+   if (start_level < 0)
+   {
+      printf("ML_Gen_Smoother_SymGaussSeidelSequential: cannot set smoother ");
+      printf("on level %d\n", start_level);
+      return 1;
+   }
+
+   fun = ML_Smoother_SGSSequential;
+
+   if (pre_or_post == ML_PRESMOOTHER)
+   {
+      for (i = start_level; i <= end_level; i++)
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega);
+   }
+   else if (pre_or_post == ML_POSTSMOOTHER)
+   {
+      for (i = start_level; i <= end_level; i++)
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega);
+   }
+   else if (pre_or_post == ML_BOTH)
+   {
+      for (i = start_level; i <= end_level; i++)
+      {
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL, NULL,
+                                  fun, NULL, ntimes, omega);
+      }
+   }
+   else return(pr_error("ML_Gen_SGSSequential: unknown pre_or_post choice\n"));
+   return(status);
+}
+
+/* ------------------------------------------------------------------------- */
 /* generate some other Gauss Seidel smoother (Ray, what is it ?)             */
 /* ------------------------------------------------------------------------- */
 
