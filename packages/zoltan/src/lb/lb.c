@@ -197,13 +197,13 @@ void LB_Destroy(LB **lb)
 /*
  *  Function to free a load balancing structure.
  *  Input:
- *    LB *               --  Pointer to a LB structure.
+ *    LB ** lb           --  Pointer to a LB structure.
  *
  */
 
   LB_Free_Structure(*lb);
 
-  LB_Free_Params(*lb);
+  LB_Free_Params(&((*lb)->Params));
 
   MPI_Comm_free(&((*lb)->Communicator));
 
