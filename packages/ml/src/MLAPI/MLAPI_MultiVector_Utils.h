@@ -26,10 +26,10 @@ MultiVector Duplicate(const MultiVector& y)
   return(x);
 }
 
-//! Extracts a given vector from input multivector.
-MultiVector Extract(const MultiVector& y, const int v)
+//! Creates a new vector, x, such that x = y(:,v)
+MultiVector Duplicate(const MultiVector& y, const int v)
 {
-  if ((v < 0) || v > y.GetNumVectors())
+  if ((v < 0) || v >= y.GetNumVectors())
     ML_THROW("Wrong input parameter v (" +
              GetString(v) + ")", -1);
       

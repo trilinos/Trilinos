@@ -78,6 +78,12 @@ public:
   // @}
   // @{ \name Reshape methods
 
+  //! Resets \c this object.
+  void Reshape()
+  {
+    Destroy();
+  }
+
   //! Reshape with given already computed ML_Operator pointer.
   void Reshape(const Space& DomainSpace, const Space& RangeSpace,
                ML_Operator* Op, bool Ownership = true,
@@ -391,8 +397,15 @@ private:
     return;
   }
 
-  //! Destroys all internal data.
-  void Destroy() { }
+  //! Destroys all internal data and resets \c this object.
+  void Destroy() 
+  { 
+    RangeSpace_.Reshape();
+    DomainSpace_.Reshape();
+    RCPOperatorBox_    = Teuchos::null;
+    RCPRowMatrix_      = Teuchos::null;
+    RCPAuxOperatorBox_ = Teuchos::null;
+  }
 
   //! Domain space.
   Space DomainSpace_;

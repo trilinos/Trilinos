@@ -92,6 +92,12 @@ public:
   // @}
   // @{ Reshaping methods
 
+  //! Resets \c this object.
+  void Reshape()
+  {
+    Destroy();
+  }
+
   //! Reshapes the object with default values.
   void Reshape(const Operator& Op, const string Type)
   {
@@ -345,6 +351,13 @@ public:
   // @}
   
 private:
+
+  void Destroy()
+  {
+    Op_.Reshape();
+    RCPRowMatrix_ = Teuchos::null;
+    RCPData_      = Teuchos::null;
+  }
 
   //! Operator of which \c this object define the inverse.
   Operator Op_;

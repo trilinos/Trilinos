@@ -84,7 +84,17 @@ public:
   //@}
   //@{ \name Reshape methods
 
-  //! Reset the dimension of the space by specifying the local number of elements.
+  //! Resets \c this object.
+  void Reshape()
+  {
+    NumMyElements_       = 0;
+    NumGlobalElements_   = 0;
+    IsLinear_            = true;
+    Offset_              = -1;
+    RCPMyGlobalElements_ = Teuchos::null;
+  }
+
+  //! Resets the dimension of the space by specifying the local number of elements.
   void Reshape(const int NumGlobalElements, const int NumMyElements = -1)
   {
 

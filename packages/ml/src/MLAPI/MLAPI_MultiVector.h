@@ -8,6 +8,8 @@
 #include "MLAPI_TimeObject.h"
 #include "Teuchos_RefCountPtr.hpp"
 #include <iomanip>
+#include <vector>
+#include <algorithm>
 
 namespace MLAPI {
 
@@ -125,6 +127,14 @@ public:
   // @}
   // @{ \name Reshape methods
   
+  //! Resets \c this object.
+  void Reshape()
+  {
+    SetRCPValues(Teuchos::null);
+    GetVectorSpace().Reshape();
+    NumVectors_ = 0;
+  }
+
   //! Sets the space of this vector.
   void Reshape(const Space& S, const int NumVectors = 1)
   {
@@ -227,6 +237,11 @@ public:
     return(VectorSpace_);
   }
 
+  //! Returns the Space on which \c this vector is defined (non-const)
+  inline Space& GetVectorSpace() 
+  {
+    return(VectorSpace_);
+  }
   //! Returns the number of vectors.
   inline int GetNumVectors() const
   {
@@ -464,6 +479,28 @@ public:
     return;
   }
 
+  //! Sorts the component of the vector.
+  void Sort(const int v = 0, const bool IsIncreasing = false)
+  {
+#ifdef MLAPI_CHECK
+    if (v < 0) || (v >= GetNumVectors())
+      ML_THROW("Requested vector " + GetString(v) +
+               ", while NumVectors() = " + GetString(GetNumVectors()), -1);
+#endif
+
+    vector<double> tmp(GetMyLength());
+    for (int i = 0 ; i < GetMyLength() ; ++i)
+      tmp[i] = (*this)(i, v);
+
+    if (IsIncreasing)
+      sort(tmp.begin(), tmp.end(), greater<double>());
+    else
+      sort(tmp.begin(), tmp.end());
+
+    for (int i = 0 ; i < GetMyLength() ; ++i)
+      (*this)(i,v) = tmp[i];
+
+  }
 
   //! Prints basic information about \c this object on ostream
   virtual std::ostream& Print(std::ostream& os,
