@@ -98,7 +98,6 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   MyPID_(-1),
   NumProcs_(-1),
   verbose_(1),
-  debug_(0),
   AddToDiag_(0.0),
   AddDiagElement_(false),
   PrintTiming_(false),
@@ -139,7 +138,6 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
 
 void Amesos_Mumps::Destroy()
 {
-  if( debug_ == 1 ) cout << "Entering `Destroy()'..." << endl;
   
   // destroy instance of the package
   MDS.job = -2;
@@ -191,8 +189,6 @@ Amesos_Mumps::~Amesos_Mumps(void)
 int Amesos_Mumps::ConvertToTriplet()
 {
 
-  if( debug_ == 1 ) cout << "Entering `ConvertToTriplet()'" << endl;
-  
   Time_->ResetStartTime();
 
   // MS // convert to MUMPS format, keeping in distributed form.
@@ -287,8 +283,6 @@ int Amesos_Mumps::ConvertToTriplet()
 void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 {
 
-  if( debug_ == 1 ) cout << "Entering `RedistributeMatrix()' ..." << endl;
-
   Time_->ResetStartTime();
   
   Epetra_IntSerialDenseVector * OldRow = Row;
@@ -338,8 +332,6 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
 {
 
-  if( debug_ == 1 ) cout << "Entering `RedistributeMatrixValues()' ..." << endl;
-
   Time_->ResetStartTime();
   
   // I suppose that NumMyMUMPSNonzeros_ has been computed
@@ -378,8 +370,6 @@ void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
 
 int Amesos_Mumps::ConvertToTripletValues()
 {
-
-  if( debug_ == 1 ) cout << "Entering `ConvertToTripletValues()'" << endl;
 
   Time_->ResetStartTime();  
 
@@ -558,8 +548,6 @@ void Amesos_Mumps::SetICNTLandCNTL()
 int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 {
 
-  if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
-  
   // ========================================= //
   // retrive MUMPS' parameters from list.      //
   // default values defined in the constructor //
@@ -636,12 +624,6 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   if( ParameterList.isParameter("OutputLevel") )
     verbose_ = ParameterList.get("OutputLevel",1);
 
-  // possible debug statements
-  // 0 - no debug
-  // 1 - debug
-  if( ParameterList.isParameter("DebugLevel") )
-    debug_ = ParameterList.get("DebugLevel",0);
-  
   // retrive MUMPS' specific parameters
   
   if (ParameterList.isSublist("mumps") ) {
@@ -775,8 +757,6 @@ void Amesos_Mumps::CheckParameters()
 int Amesos_Mumps::PerformSymbolicFactorization()
 {
 
-  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
-
   // erase data if present
   if( SymbolicFactorizationOK_ && MDS.job != -777 ) {
    Destroy();
@@ -796,9 +776,6 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 #if defined(EPETRA_MPI) && defined(HAVE_AMESOS_MPI_C2F)
     if( MaxProcs_ != NumProcs_ ) {
 
-      if( debug_ == 1 ) cout << "Creating MPI Communicator with "
-			     << MaxProcs_ << " procs" << endl;
-      
       if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
       
       int * ProcsInGroup = new int[MaxProcs_];
@@ -906,8 +883,6 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 int Amesos_Mumps::PerformNumericFactorization( )
 {
 
-  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
-  
   // set vector for matrix entries. User may have changed it
   // since PerformSymbolicFactorization() has been called
 
@@ -965,7 +940,6 @@ int Amesos_Mumps::SymbolicFactorization()
 
   NumSymbolicFact_++;  
   
-  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   MyPID_ = Comm().MyPID();
   NumProcs_ = Comm().NumProc();
@@ -1005,7 +979,6 @@ int Amesos_Mumps::NumericFactorization()
 
   NumNumericFact_++;  
   
-  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   // MS // As in SymbolicFactorization. All those functions
@@ -1044,7 +1017,6 @@ int Amesos_Mumps::Solve()
 
   NumSolve_++;  
   
-  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
 
   Epetra_RowMatrix * Matrix = GetMatrix();

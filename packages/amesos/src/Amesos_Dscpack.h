@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _AMESOS_DSCPACK_H_
-#define _AMESOS_DSCPACK_H_
+#ifndef AMESOS_DSCPACK_H
+#define AMESOS_DSCPACK_H
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -53,14 +53,6 @@ extern "C" {
   <TT>A</TT> is an Epetra_RowMatrix and <TT>X</TT> and <TT>B</TT> are 
   Epetra_MultiVector objects.
 
-  Dscpack execution can be tuned through a variety of parameters.
-  Amesos_Dscpack.h allows control of these parameters through the
-  following named parameters, ignoring parameters with names that it
-  does not recognize.  Where possible, the parameters are common to
-  all direct solvers (although some may ignore them).  However, some
-  parameters, in particular tuning parameters, are unique to each
-  solver.
-    
 */
 class Amesos_Dscpack: public Amesos_BaseSolver { 
 
@@ -92,16 +84,6 @@ public:
       be made to the non-zero structure of the underlying matrix without 
       a subsequent call to SymbolicFactorization().
       
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      </ul>
-
-      postconditions:<ul>
-      <li>Symbolic Factorization will be performed (or marked to be performed) 
-      allowing NumericFactorization() and Solve() to be called.
-      </ul>
-
     \return Integer error code, set to 0 if successful.
   */
     int SymbolicFactorization() ;
@@ -113,46 +95,12 @@ public:
       the underlying matrix without a subsequent call to
       NumericFactorization().  
 
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().  
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      </ul>
-
-      postconditions:<ul>
-      <li>Numeric Factorization will be performed (or marked to be performed) 
-      allowing Solve() to be performed correctly despite a potential change in 
-      in the matrix values (though not in the non-zero structure).
-      </ul>
-
      \return Integer error code, set to 0 if successful.
   */
     int NumericFactorization() ;
 
     //! Solves A X = B (or A<SUP>T</SUP> x = B) 
-    /*! 
-
-      preconditions:<ul>
-      <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
-      <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
-      <li>The non-zero structure of the matrix should not have changed
-          since the last call to SymbolicFactorization().
-      <li>The distribution of the matrix should not have changed 
-          since the last call to SymbolicFactorization()
-      <li>The matrix should not have changed
-          since the last call to NumericFactorization().
-      </ul>
-
-      postconditions:<ul> 
-      <li>X will be set such that A X = B (or
-      A<SUP>T</SUP> X = B), within the limits of the accuracy of the
-      underlying solver.  
-      </ul>
-
+    /*!
      \return Integer error code, set to 0 if successful.
   */
     int Solve();
@@ -161,11 +109,6 @@ public:
   
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
-#if 0
-  //! Returns a character string describing the operator
-  char * Label() const {return(Epetra_Object::Label());};
-#endif
-    
   //! Get a pointer to the Problem.
   const Epetra_LinearProblem *GetProblem() const { return(Problem_); };
 
@@ -183,56 +126,47 @@ public:
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
   const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
 
-  //!  Updates internal variables. 
-  /*!  
-      <br \>Preconditions:<ul>
-      <li>None.</li>
-      </ul>
+  //! Sets parameters as specified in the list, returns 0 if successful.
+  int SetParameters( Teuchos::ParameterList &ParameterList )  ;
 
-      <br \>Postconditions:<ul> 
-      <li>Internal variables controlling the factorization and solve will
-      be updated and take effect on all subsequent calls to NumericFactorization() 
-      and Solve().</li>
-      <li>All parameters whose value are to differ from the default values must 
-be included in ParameterList.  Parameters not specified in ParameterList 
-revert to their default values.
-      </ul>
-
-    \return Integer error code, set to 0 if successful. 
-   */
-   int SetParameters( Teuchos::ParameterList &ParameterList )  ;
-
-  //! Print timing information
+  //! Prints timing information
   void PrintTiming();
   
-  //! Print information about the factorization and solution phases.
+  //! Prints information about the factorization and solution phases.
   void PrintStatus();  
 
   //@}
 
- private:  
+protected:  
+  
+  //! Performs the symbolic factorization.
   int PerformSymbolicFactorization();
+  //! Performs the numeric factorization.
   int PerformNumericFactorization();
 
- protected:
+  //! If \c true, SymbolicFactorization() has been successfully called.
+  bool IsSymbolicFactorizationOK_; 
+  //! If \c true, NumericFactorization() has been successfully called.
+  bool IsNumericFactorizationOK_; 
 
-  bool SymbolicFactorizationOK_; 
-  bool NumericFactorizationOK_; 
+  //! Distribution specified by DscOrder
+  Epetra_CrsGraph * DscGraph_;
 
-  Epetra_CrsGraph * DscGraph_ ; //  Distribution specified by DscOrder
-
+  //! Is \c true, the transpose of the matrix is used.
   bool UseTranspose_;
+  //! Pointer to the linear problem.
   const Epetra_LinearProblem * Problem_;
 
   DSC_Solver	MyDSCObject;
   MPI_Comm MPIC ; 
 
   bool FirstCallToSolve_;
-  bool A_and_LU_built ;            // Tells us whether to free them 
-  int *GlobalStructNewColNum ; 
-  int *GlobalStructNewNum ;  
-  int *GlobalStructOwner ; 
-  int *LocalStructOldNum ; 
+  //! Tells us whether to free them
+  bool A_and_LU_built;
+  int *GlobalStructNewColNum; 
+  int *GlobalStructNewNum; 
+  int *GlobalStructOwner;
+  int *LocalStructOldNum;
 
   int MyDscRank ; 
   int DscNumProcs ; 
@@ -241,28 +175,36 @@ revert to their default values.
   int NumLocalStructs;
   int NumLocalNonz ; 
 
-  // MS // added on 01-Jun-04
-
+  //! If \c true, prints timing information in the destructor.
   bool PrintTiming_;
+  //! If \c true, prints additinal information in the destructor.
   bool PrintStatus_;
+  //! If \c true, computes the norm of rhs and solution.
   bool ComputeVectorNorms_;
+  //! If \c true, compute the norm of the real residual.
   bool ComputeTrueResidual_;
-  
+  //! Toggles the output level.
   int verbose_;
-  int debug_;
-  
-  double ConTime_;                        // time to convert to DSCPACK format
-  double SymTime_;                        // time for symbolic factorization
-  double NumTime_;                        // time for numeric factorization
-  double SolTime_;                        // time for solution
-  double VecTime_;                        // time to redistribute vectors
-  double MatTime_;                        // time to redistribute matrix
-  
-  int NumSymbolicFact_;                   // number of symbolic factorizations 
-  int NumNumericFact_;                    // number of numeric factorizations
-  int NumSolve_;                          // number of solves
-
-  Epetra_Time * Time_;                    // used to track timing
+  //! time to convert to DSCPACK format
+  double ConTime_;
+  //! time for symbolic factorization
+  double SymTime_;
+  //! time for numeric factorization
+  double NumTime_;
+  //! time for solution
+  double SolTime_;
+  //! time to redistribute vectors
+  double VecTime_;
+  //! time to redistribute matrix
+  double MatTime_;
+  //! number of symbolic factorizations
+  int NumSymbolicFact_;
+  //! number of numeric factorizations
+  int NumNumericFact_;
+  //! number of solves
+  int NumSolve_;
+  //! used to track timing
+  Epetra_Time * Time_;
 
   Epetra_Import * ImportToSerial_;
 
@@ -279,5 +221,5 @@ revert to their default values.
 					  // accurate at the last byte.
 
   
-};  // End of  class Amesos_Dscpack  
-#endif /* _AMESOS_DSCPACK_H_ */
+};  // class Amesos_Dscpack  
+#endif /* AMESOS_DSCPACK_H */

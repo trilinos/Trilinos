@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef _AMESOS_MUMPS_H_
-#define _AMESOS_MUMPS_H_
+#ifndef AMESOS_MUMPS_H
+#define AMESOS_MUMPS_H
 
 class Epetra_Import;
 class Epetra_CrsMatrix;
@@ -264,7 +264,7 @@ public:
   /*! Use double precision vectors of size N (global dimension of the matrix) for row
       scaling.
 
-      \param \In RowSca: \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
+      \param RowSca (In) -\c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
   */
   int SetRowScaling(AMESOS_TYPE * RowSca )
   {
@@ -276,7 +276,7 @@ public:
   /*! Use double precision vectors of size N (global dimension of the matrix) for column
       scaling.
 
-      \param \in ColSca: \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
+      \param ColSca (In) - \c float pointer with --enable-amesos-smumps, \c double pointer otherwise.
   */
   int SetColScaling(AMESOS_TYPE * ColSca )
   {
@@ -392,83 +392,120 @@ protected:
   //! Redistributed matrix values over the specified number of processes.
   void RedistributeMatrixValues(const int NumProcs);
   
-  bool SymbolicFactorizationOK_;   //! \c true if SymbolicFactorization has been done
-  bool NumericFactorizationOK_;    //! \c true if NumericFactorization has been done
-  bool IsConvertToTripletOK_;      //! \c true if matrix has already been converted to COO format
-  bool IsComputeSchurComplementOK_; //! \c true if the Schur complement has been computed (need to free memory)
-  bool UseMpiCommSelf_;            //! \c true if only local entries must be considered
+  //! \c true if SymbolicFactorization has been done
+  bool SymbolicFactorizationOK_;
+  //! \c true if NumericFactorization has been done
+  bool NumericFactorizationOK_;
+  //! \c true if matrix has already been converted to COO format
+  bool IsConvertToTripletOK_;
+  //! \c true if the Schur complement has been computed (need to free memory)
+  bool IsComputeSchurComplementOK_;
+  //! \c true if only local entries must be considered
+  bool UseMpiCommSelf_;
 
 #ifndef HAVE_AMESOS_SMUMPS  
-  DMUMPS_STRUC_C MDS ;             //! Mumps data structure for double-precision
+  //! Mumps data structure for double-precision
+  DMUMPS_STRUC_C MDS;
 #else
-  SMUMPS_STRUC_C MDS ;             //! Mumps data structure for single-precision
+  //! Mumps data structure for single-precision
+  SMUMPS_STRUC_C MDS;
 #endif
   
-  Epetra_IntSerialDenseVector * Row; //! row indices of nonzero elements
-  Epetra_IntSerialDenseVector * Col; //! column indices of nonzero elements
-  Epetra_SerialDenseVector    * Val; //! values of nonzero elements
+  //! row indices of nonzero elements
+  Epetra_IntSerialDenseVector* Row;
+  //! column indices of nonzero elements
+  Epetra_IntSerialDenseVector* Col;
+  //! values of nonzero elements
+  Epetra_SerialDenseVector* Val;
 
 #ifdef HAVE_AMESOS_SMUMPS
-  float * SVal;    //! single-precision values of nonzero elements
-  float * SVector; //! single-precision solution vector (on host only)
+  //! single-precision values of nonzero elements
+  float * SVal;
+  //! single-precision solution vector (on host only)
+  float * SVector;
 #endif
   
-  int MyPID;               //!  Process number (i.e. Comm().MyPID() 
-  
-  int numentries_;         //!  Number of non-zero entries in Problem_->GetOperator()
-  int NumGlobalElements_;  //!  Number of rows and columns in the Problem_->GetOperator()
+  //!  Number of non-zero entries in Problem_->GetOperator()
+  int numentries_;         
+  //!  Number of rows and columns in the Problem_->GetOperator()
+  int NumGlobalElements_;  
 
-  bool  KeepMatrixDistributed_;          /*! this governs the ICNTL(18) parameter.
+  bool  KeepMatrixDistributed_;          /*!< this governs the ICNTL(18) parameter.
                                             If false, then matrix is redistributed
                                             to proc 0 before converting it to
                                             triplet format. Then, MUMPS will take care
                                             of reditribution. If true, the input
                                             distributed matrix is passed to MUMPS. */
 
-  int MaxProcs_;            //! Maximum number of processors in the MUMPS' communicator
-  int MaxProcsInputMatrix_; //! Maximum number of processors that contains at least one element of A
+  //! Maximum number of processors in the MUMPS' communicator
+  int MaxProcs_;
+  //! Maximum number of processors that contains at least one element of A
+  int MaxProcsInputMatrix_;
   
-  const Epetra_Map * Map_;  //! Maps to redistribute from Matrix' Map to MaxProcs_ Map
+  //! Maps to redistribute from Matrix' Map to MaxProcs_ Map
+  const Epetra_Map * Map_;
 
-  int NumMUMPSNonzeros_;                  //! actual number of global nonzeros in the matrix
-  int NumMyMUMPSNonzeros_;                //! actual number of local nonzeros in the matrix
+  //! actual number of global nonzeros in the matrix
+  int NumMUMPSNonzeros_;
+  //! actual number of local nonzeros in the matrix
+  int NumMyMUMPSNonzeros_;
   
-  bool UseTranspose_;  //! If \c true, solve the problem with AT.
-  bool AddDiagElement_; //! If \c true, add a the value AddToDiag_ on the diagonal
+  //! If \c true, solve the problem with AT.
+  bool UseTranspose_;
+  //! If \c true, add a the value AddToDiag_ on the diagonal
+  bool AddDiagElement_;
   
-  double AddToDiag_;    //! Value to add to the diagonal if specified
+  //! Value to add to the diagonal if specified 
+  double AddToDiag_;
   
-  bool PrintTiming_;           //! If \c true, print timing in the destruction phase
-  bool PrintStatus_;           //! If \c true, print status in the destruction phase
-  bool ComputeVectorNorms_;    //! If \c true, compute the norms of solution and RHS.
-  bool ComputeTrueResidual_;   //! If \c true, compute the true residual after solution
+  //! If \c true, print timing in the destruction phase
+  bool PrintTiming_;
+  //! If \c true, print status in the destruction phase
+  bool PrintStatus_;
+  //! If \c true, compute the norms of solution and RHS.
+  bool ComputeVectorNorms_;
+  //! If \c true, compute the true residual after solution
+  bool ComputeTrueResidual_;
 
-  int MatrixProperty_;       /*! Set the matrix property:
-			         -# 0 : general unsymmetric matrix;
-				 -# 1 : SPD;
-				 -# 2 : general symmetric matrix.
-			     */
-  
-  double Threshold_;  //! Discard all elements whose absolute value is below this value
+  //! Set the matrix property.
+  /*! Matrix property can be 
+    - 0 : general unsymmetric matrix;
+    - 1 : SPD;
+    - 2 : general symmetric matrix.
+    */
+  int MatrixProperty_;        
+  //! Discard all elements whose absolute value is below this value
+  double Threshold_;
   
   int icntl_[40];        
   AMESOS_TYPE cntl_[5];  
+ 
+  //! Row and column scaling
+  AMESOS_TYPE * RowSca_, * ColSca_; 
 
-  AMESOS_TYPE * RowSca_, * ColSca_; //! Row and column scaling
-
+  //! PermIn for MUMPS.
   int * PermIn_;
-  int Maxis_, Maxs_;  
+  //! MAXIS for MUMPS.
+  int Maxis_;
+  // MAXS for MUMPS.
+  int Maxs_;  
 
-  int NumSchurComplementRows_;            //! Number of rows in the Schur complement (if required)
-  int * SchurComplementRows_;             //! Rows for the Schur complement (if required)
+  //! Number of rows in the Schur complement (if required)
+  int NumSchurComplementRows_;
+  //! Rows for the Schur complement (if required)
+  int * SchurComplementRows_;
 
+  //! Pointer to the Schur complement, as CrsMatrix.
   Epetra_CrsMatrix * CrsSchurComplement_; 
+  //! Pointer to the Schur complement,as DenseMatrix.
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
+  //! ID of calling process.
   int MyPID_;
+  //! Number of processes in computation.
   int NumProcs_;
+  //! Output level.
   int verbose_;
-  int debug_;
   
   EpetraExt_Redistor * Redistor_;
   
@@ -476,24 +513,34 @@ protected:
 
   Epetra_MultiVector * TargetVector_;
 
-  // some timing internal to MUMPS
-  double ConTime_;                        //! time to convert to MUMPS format
-  double SymTime_;                        //! time for symbolic factorization
-  double NumTime_;                        //! time for numeric factorization
-  double SolTime_;                        //! time for solution
-  double VecTime_;                        //! time to redistribute vectors
-  double MatTime_;                        //! time to redistribute matrix
+  //! time to convert to MUMPS format
+  double ConTime_;
+  //! time for symbolic factorization
+  double SymTime_;
+  //! time for numeric factorization
+  double NumTime_;
+  //! time for solution
+  double SolTime_;
+  //! time to redistribute vectors
+  double VecTime_;
+  //! time to redistribute matrix
+  double MatTime_;
   
-  int NumSymbolicFact_;                   //! Number of symbolic factorization phases
-  int NumNumericFact_;                    //! Number of symbolic numeric phases
-  int NumSolve_;                          //! Number of symbolic solution phases
+  //! Number of symbolic factorization phases
+  int NumSymbolicFact_;
+  //! Number of symbolic numeric phases
+  int NumNumericFact_;
+  //! Number of symbolic solution phases
+  int NumSolve_;
 
-  Epetra_Time * Time_;                    //! Used to track timing
+  //! Used to track timing
+  Epetra_Time * Time_;
   
 #ifdef EPETRA_MPI
-  MPI_Comm MUMPSComm_;                    //! MPI communicator used by MUMPS
+  //! MPI communicator used by MUMPS
+  MPI_Comm MUMPSComm_;
 #endif
   
-};  // End of  class Amesos_Mumps
+};  // class Amesos_Mumps
 
-#endif /* _AMESOS_MUMPS_H_ */
+#endif /* AMESOS_MUMPS_H */

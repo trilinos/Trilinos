@@ -50,8 +50,8 @@ At present, either USE_LOCAL or USE_STL_SORT is required
 
 //=============================================================================
 Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) : 
-  SymbolicFactorizationOK_(false), 
-  NumericFactorizationOK_(false),
+  IsSymbolicFactorizationOK_(false), 
+  IsNumericFactorizationOK_(false),
   DscGraph_(0), 
   UseTranspose_(false), // Dscpack is only for symmetric systems
   DscNumProcs(-1), // will be set later
@@ -60,7 +60,6 @@ Amesos_Dscpack::Amesos_Dscpack(const Epetra_LinearProblem &prob ) :
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
-  debug_(0), // turn it on only when debugging is needed
   ConTime_(0.0),
   SymTime_(0.0),
   NumTime_(0.0),
@@ -102,10 +101,9 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
 
 }
 
+//=============================================================================
 int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
-
-  if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
 
   // ========================================= //
   // retrive KLU's parameters from list.       //
@@ -137,12 +135,6 @@ int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList )
   if( ParameterList.isParameter("OutputLevel") )
     verbose_ = ParameterList.get("OutputLevel",1);
 
-  // possible debug statements
-  // 0 - no debug
-  // 1 - debug
-  if( ParameterList.isParameter("DebugLevel") )
-    debug_ = ParameterList.get("DebugLevel",0);
-
   // define on how many processes should be used
   if( ParameterList.isParameter("MaxProcs") )
     MaxProcs_ = ParameterList.get("MaxProcs",-1);
@@ -158,12 +150,10 @@ int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList )
   return 0;
 }
 
-
+//=============================================================================
 int Amesos_Dscpack::PerformSymbolicFactorization()
 {
   
-  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()' ..." << endl;
-
   Time_->ResetStartTime();
   
   vector <int> Replicates;
@@ -171,10 +161,13 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   vector <int> Ai;
 
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
+  if (RowMatrixA == 0)
+    AMESOS_CHK_ERR(-1);
 
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
+  Epetra_CrsMatrix *CastCrsMatrixA = 
+    dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA); 
+  if (CastCrsMatrixA == 0)
+    AMESOS_CHK_ERR(-1); // DSCPACK now supports Epetra_CrsMatrix's only.
 
   const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ;
   const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm());
@@ -302,19 +295,15 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
   
   //    A_and_LU_built = true; 
   
-  SymbolicFactorizationOK_ = true ; 
-
   SymTime_ += Time_->ElapsedTime();
-
   return 0;
 
 }
 
+//=============================================================================
 int Amesos_Dscpack::PerformNumericFactorization()
 {
 
-  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()' ..." << endl;
-  
   Time_->ResetStartTime();
 
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
@@ -439,7 +428,7 @@ int Amesos_Dscpack::PerformNumericFactorization()
     
   }        //     if ( MyDscRank >= 0 ) 
   
-  NumericFactorizationOK_ = true ; 
+  IsNumericFactorizationOK_ = true ; 
 
   NumTime_ += Time_->ElapsedTime();
   
@@ -458,68 +447,59 @@ bool Amesos_Dscpack::MatrixShapeOK() const {
   return OK; 
 }
 
-
+//=============================================================================
 int Amesos_Dscpack::SymbolicFactorization()
 {
-  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  IsSymbolicFactorizationOK_ = false;
+  IsNumericFactorizationOK_ = false;
+  
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time( Comm() );
 
   NumSymbolicFact_++;
   
-  PerformSymbolicFactorization();
-  
-  NumericFactorizationOK_ = false; 
-  return 0;
+  AMESOS_CHK_ERR(PerformSymbolicFactorization());
+  IsSymbolicFactorizationOK_ = false; 
+
+  return(0);
 }
 
+//=============================================================================
 int Amesos_Dscpack::NumericFactorization()
 {
 
-  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  IsNumericFactorizationOK_ = false;
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time( Comm() );
 
   NumNumericFact_++;
   
-  if ( ! SymbolicFactorizationOK_ ) PerformSymbolicFactorization();
+  if (!IsSymbolicFactorizationOK_) 
+    AMESOS_CHK_ERR(SymbolicFactorization());
 
-  PerformNumericFactorization();
+  AMESOS_CHK_ERR(PerformNumericFactorization());
+  IsNumericFactorizationOK_ = true;
 
   return 0;
 }
 
-//
-//  Solve() uses several intermediate matrices to convert the input matrix
-//  to one that we can pass to the Sparse Direct Solver
-//
-//  Epetra_RowMatrix *RowMatrixA - The input matrix
-//
+//=============================================================================
 int Amesos_Dscpack::Solve()
 {
 
-  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time( Comm() );
 
   NumSolve_++;
 
-  if ( ! SymbolicFactorizationOK_ ) PerformSymbolicFactorization();
-
-  if ( ! NumericFactorizationOK_ ) PerformNumericFactorization();
+  if (IsNumericFactorizationOK_ == false) 
+    AMESOS_CHK_ERR(NumericFactorization());
 
   Time_->ResetStartTime();
   
-  // MS // it was GetOperator, now is GetMatrix (only matrices can
-  // MS // be factorized
   Epetra_RowMatrix *RowMatrixA = Problem_->GetMatrix();
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
-
-  //  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-
-  // FIXME: what the hell I am doing here ??
-  //  assert(CastCrsMatrixA!=0);
-
-  Comm().Barrier();
-
-  //...//  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+  if (RowMatrixA == 0)
+    AMESOS_CHK_ERR(-1);
 
   const Epetra_MpiComm & comm1 = dynamic_cast<const Epetra_MpiComm &> (Comm());
   MPIC = comm1.Comm() ;
@@ -528,34 +508,26 @@ int Amesos_Dscpack::Solve()
   int numrows = RowMatrixA->NumGlobalRows();
   assert( numrows == RowMatrixA->NumGlobalCols() );
 
-  //
   //  Convert vector b to a vector in the form that DSCPACK needs it
   //
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
   Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
 
-  int nrhs; 
-  if ( vecX == 0 ) { 
-    nrhs = 0 ;
-    EPETRA_CHK_ERR( vecB != 0 ) ; 
-  } else { 
-    nrhs = vecX->NumVectors() ; 
-    EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
-  }
+  if ((vecX == 0) || (vecB == 0))
+    AMESOS_CHK_ERR(-1); // something wrong with input
 
+  int NumVectors = vecX->NumVectors(); 
   Epetra_MultiVector *vecBvector = (vecB) ; // Ken gxx- do we need vecBvector?
-  //  Epetra_Map DscMap( numrows, NumLocalCols, LocalStructOldNum, 0, Comm() ) ;
-
 
   double *dscmapXvalues ;
   int dscmapXlda ;
-  Epetra_MultiVector dscmapX( *DscMap_, nrhs ) ; 
-  assert( dscmapX.ExtractView( &dscmapXvalues, &dscmapXlda ) == 0 ) ; 
+  Epetra_MultiVector dscmapX(*DscMap_,NumVectors) ; 
+  assert( dscmapX.ExtractView(&dscmapXvalues,&dscmapXlda ) == 0 ) ; 
   assert( dscmapXlda == NumLocalCols ) ; 
 
   double *dscmapBvalues ;
   int dscmapBlda ;
-  Epetra_MultiVector dscmapB( *DscMap_, nrhs ) ; 
+  Epetra_MultiVector dscmapB( *DscMap_, NumVectors ) ; 
   assert( dscmapB.ExtractView( &dscmapBvalues, &dscmapBlda ) == 0 ) ; 
   assert( dscmapBlda == NumLocalCols ) ; 
 
@@ -572,7 +544,7 @@ int Amesos_Dscpack::Solve()
   vector<double> ValuesInNewOrder( NumLocalCols ) ; 
 
   if ( MyDscRank >= 0 ) {
-    for ( int j =0 ; j < nrhs; j++ ) { 
+    for ( int j =0 ; j < NumVectors; j++ ) { 
       for ( int i = 0; i < NumLocalCols; i++ ) { 
 	ValuesInNewOrder[i] = dscmapBvalues[ DscGraph_->LCID( LocalStructOldNum[i] ) +j*dscmapBlda ] ;
       }
@@ -599,7 +571,7 @@ int Amesos_Dscpack::Solve()
   // MS // compute vector norms if required
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
-    for( int i=0 ; i<nrhs ; ++i ) {
+    for( int i=0 ; i<NumVectors ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
       assert((*vecB)(i)->Norm2(&NormRHS)==0);
       if( verbose_ && Comm().MyPID() == 0 ) {
@@ -612,8 +584,8 @@ int Amesos_Dscpack::Solve()
   // MS // compute true residual if required
   if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
     double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),nrhs);
-    for( int i=0 ; i<nrhs ; ++i ) {
+    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
+    for( int i=0 ; i<NumVectors ; ++i ) {
       (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
       (Ax.Update(1.0, *((*vecB)(i)), -1.0));
       (Ax.Norm2(&Norm));
@@ -628,7 +600,6 @@ int Amesos_Dscpack::Solve()
 }
 
 // ================================================ ====== ==== ==== == =
-
 void Amesos_Dscpack::PrintStatus()
 {
 
@@ -657,7 +628,6 @@ void Amesos_Dscpack::PrintStatus()
 }
 
 // ================================================ ====== ==== ==== == =
-
 void Amesos_Dscpack::PrintTiming()
 {
   if( Comm().MyPID() ) return;

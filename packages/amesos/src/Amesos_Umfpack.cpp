@@ -26,17 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-//  As of July 1st, USE_STL_SORT and USE_LOCAL both work together or separatelys
-//  (But you have to set at least one)
-//  #define USE_STL_SORT
-#define USE_LOCAL
-
-#ifndef USE_LOCAL
-#ifndef USE_STL_SORT
-At present, either USE_LOCAL or USE_STL_SORT is required
-#endif
-#endif
-
 #include "Amesos_Umfpack.h"
 extern "C" {
 #include "umfpack.h"
@@ -44,21 +33,18 @@ extern "C" {
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
-#ifdef USE_STL_SORT
-#include <algorithm>
-#endif
 
 //=============================================================================
 Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
-  SymbolicFactorizationOK_(false), 
-  NumericFactorizationOK_(false), 
+  IsSymbolicFactorizationOK_(false), 
+  IsNumericFactorizationOK_(false), 
   Symbolic(0),
   Numeric(0),
   SerialMap_(0), 
-  SerialCrsMatrixA_(0), 
   SerialMatrix_(0), 
   UseTranspose_(false),
   Problem_(&prob), 
@@ -68,7 +54,6 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   ComputeVectorNorms_(false),
   ComputeTrueResidual_(false),
   verbose_(1),
-  debug_(0),
   ConTime_(0.0),
   SymTime_(0.0),
   NumTime_(0.0),
@@ -84,16 +69,15 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
-
   Teuchos::ParameterList ParamList ;
   SetParameters( ParamList ) ; 
 }
 
 //=============================================================================
-Amesos_Umfpack::~Amesos_Umfpack(void) {
+Amesos_Umfpack::~Amesos_Umfpack(void) 
+{
 
   if ( SerialMap_ ) delete SerialMap_ ; 
-  if ( SerialCrsMatrixA_ ) delete SerialCrsMatrixA_ ; 
   if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
   if ( Numeric ) umfpack_di_free_numeric (&Numeric) ;
 
@@ -107,30 +91,20 @@ Amesos_Umfpack::~Amesos_Umfpack(void) {
   
 }
 
-int Amesos_Umfpack::ConvertToSerial() { 
-
-  if( debug_ == 1 ) cout << "Entering `ConvertToSerial()'" << endl;
+//=============================================================================
+int Amesos_Umfpack::ConvertToSerial() 
+{ 
 
   Time_->ResetStartTime();
   
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
-
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  EPETRA_CHK_ERR( CastCrsMatrixA == 0 ) ; 
-
   iam = Comm().MyPID() ;
 
-  const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
+  const Epetra_Map &OriginalMap = Matrix()->RowMatrixRowMap() ; 
 
-  NumGlobalElements_ = CastCrsMatrixA->NumGlobalRows();
-  numentries_ = CastCrsMatrixA->NumGlobalNonzeros();
-  assert( NumGlobalElements_ == CastCrsMatrixA->NumGlobalCols() );
+  NumGlobalElements_ = Matrix()->NumGlobalRows();
+  numentries_ = Matrix()->NumGlobalNonzeros();
+  assert (NumGlobalElements_ == Matrix()->NumGlobalCols());
 
-  //
-  //  Create a serial matrix 
-  //
-  assert( NumGlobalElements_ == OriginalMap.NumGlobalElements() ) ;
   int NumMyElements_ = 0 ;
   if (iam==0) NumMyElements_ = NumGlobalElements_;
 
@@ -138,39 +112,39 @@ int Amesos_Umfpack::ConvertToSerial() {
 	       OriginalMap.NumGlobalElements() )?1:0;
   Comm().Broadcast( &IsLocal_, 1, 0 ) ; 
 
-  //
   //  Convert Original Matrix to Serial (if it is not already) 
   //
-  if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
-  if ( SerialCrsMatrixA_ ) { delete SerialCrsMatrixA_ ; SerialCrsMatrixA_ = 0 ; } 
-  if ( IsLocal_==1 ) {
-     SerialMatrix_ = CastCrsMatrixA ;
-  } else {
-    SerialMap_ = new Epetra_Map( NumGlobalElements_, NumMyElements_, 0, Comm() );
+  if (IsLocal_== 1) {
+     SerialMatrix_ = Matrix();
+  } 
+  else {
+    if (SerialMap_) { delete SerialMap_ ; SerialMap_ = 0 ; } 
 
-    Epetra_Export export_to_serial( OriginalMap, *SerialMap_);
+    SerialMap_ = new Epetra_Map(NumGlobalElements_,NumMyElements_,0,Comm());
+    assert (SerialMap_ != 0);
 
-    SerialCrsMatrixA_ = new Epetra_CrsMatrix(Copy, *SerialMap_, 0);
-    SerialCrsMatrixA_->Export( *CastCrsMatrixA, export_to_serial, Add ); 
+    Epetra_Export export_to_serial(OriginalMap,*SerialMap_);
+
+    Epetra_CrsMatrix* SerialCrsMatrixA;
+    SerialCrsMatrixA = new Epetra_CrsMatrix(Copy,*SerialMap_,0);
+    SerialCrsMatrixA->Export(*Matrix(), export_to_serial,Insert); 
     
-    SerialCrsMatrixA_->TransformToLocal() ; 
-    SerialMatrix_ = SerialCrsMatrixA_ ;
+    SerialCrsMatrixA->TransformToLocal(); 
+    SerialMatrix_ = SerialCrsMatrixA;
   }
 
   MatTime_ += Time_->ElapsedTime();
   
-  return 0;
+  return(0);
 } 
 
-int Amesos_Umfpack::ConvertToUmfpackCRS(){
+//=============================================================================
+int Amesos_Umfpack::ConvertToUmfpackCRS()
+{
   
-  if( debug_ == 1 ) cout << "Entering `ConvertToUmfpackCRS()'" << endl;
-
   Time_->ResetStartTime();
   
-  //
   //  Convert matrix to the form that Umfpack expects (Ap, Ai, Aval) 
-  //
 
   assert( NumGlobalElements_ == SerialMatrix_->NumGlobalRows());
   assert( NumGlobalElements_ == SerialMatrix_->NumGlobalCols());
@@ -179,18 +153,30 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
   Ai.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
   Aval.resize( EPETRA_MAX( NumGlobalElements_, numentries_) ) ; 
 
-  if ( iam==0 ) {
+  int NumEntries = SerialMatrix_->MaxNumEntries();
+  vector<int> Indices;
+  vector<double> Values;
+  Indices.resize(NumEntries);
+  Values.resize(NumEntries);
+  
+  if (iam == 0) {
+
     int NumEntriesThisRow;
-    double *RowValues;
-    int *ColIndices;
     int Ai_index = 0 ; 
     int MyRow;
-    for ( MyRow = 0; MyRow <NumGlobalElements_; MyRow++ ) {
-      assert( SerialMatrix_->ExtractMyRowView( MyRow, NumEntriesThisRow, RowValues, ColIndices ) == 0 ) ;
+    for (MyRow = 0 ; MyRow < NumGlobalElements_; MyRow++) {
+
+      int ierr;
+      ierr = SerialMatrix_->ExtractMyRowCopy(MyRow, NumEntries, 
+					     NumEntriesThisRow, 
+					     &Values[0], &Indices[0]);
+      if (ierr)
+	AMESOS_CHK_ERR(-1);
+
       Ap[MyRow] = Ai_index ; 
       for ( int j = 0; j < NumEntriesThisRow; j++ ) { 
-	Ai[Ai_index] = ColIndices[j] ; 
-	Aval[Ai_index] = RowValues[j] ; 
+	Ai[Ai_index] = Indices[j] ; 
+	Aval[Ai_index] = Values[j] ; 
 	Ai_index++;
       }
     }
@@ -202,10 +188,8 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
   return 0;
 }   
 
-
+//=============================================================================
 int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
-
-  if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
 
   //  Some compilers reject the following cast:
   //  if(  (int) &ParameterList == 0 ) return 0;
@@ -244,12 +228,6 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   if( ParameterList.isParameter("OutputLevel") )
     verbose_ = ParameterList.get("OutputLevel",1);
 
-  // possible debug statements
-  // 0 - no debug
-  // 1 - debug
-  if( ParameterList.isParameter("DebugLevel") )
-    debug_ = ParameterList.get("DebugLevel",0);
-  
   // MS // now comment it out (only because the list if empty).
   // MS // When we will have parameters for UMFPACK sublist
   // MS // uncomment it
@@ -261,34 +239,32 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   return 0;
 }
 
+//=============================================================================
 int Amesos_Umfpack::PerformSymbolicFactorization() {
 
-  if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
-  
   Time_->ResetStartTime();  
 
   double *Control = (double *) NULL, *Info = (double *) NULL ;
   
-  if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
-  if ( iam== 0 ) {
+  if (Symbolic) 
+    umfpack_di_free_symbolic (&Symbolic) ;
+  if (iam== 0) {
     (void) umfpack_di_symbolic (NumGlobalElements_, NumGlobalElements_, &Ap[0], 
 				&Ai[0], &Aval[0], 
 				&Symbolic, Control, Info) ;
   }
-  SymbolicFactorizationOK_ = true ;
 
   SymTime_ += Time_->ElapsedTime();
 
   return 0;
 }
 
+//=============================================================================
 int Amesos_Umfpack::PerformNumericFactorization( ) {
 
-  if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
-  
   Time_->ResetStartTime();
 
-  if ( iam == 0 ) {
+  if (iam == 0) {
     vector<double> Control(UMFPACK_CONTROL);
     vector<double> Info(UMFPACK_INFO);
     umfpack_di_defaults( &Control[0] ) ; 
@@ -302,7 +278,7 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
 				     &Info[0]) ;
     Rcond_ = Info[UMFPACK_RCOND]; 
 
-#if 0
+#if NOT_DEF
     cout << " Rcond_ = " << Rcond_ << endl ; 
 
     int lnz1 = 1000 ;
@@ -342,24 +318,17 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
 
 #endif
 
-
-
-
     assert( status == 0 ) ; 
   }
   
-  NumericFactorizationOK_ = true ; 
-
   NumTime_ += Time_->ElapsedTime();
-
   return 0;
 }
 
-
-
-
-bool Amesos_Umfpack::MatrixShapeOK() const { 
-  bool OK ;
+//=============================================================================
+bool Amesos_Umfpack::MatrixShapeOK() const 
+{ 
+  bool OK = true;
 
   if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
        GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
@@ -367,27 +336,34 @@ bool Amesos_Umfpack::MatrixShapeOK() const {
 }
 
 
-int Amesos_Umfpack::SymbolicFactorization() {
+//=============================================================================
+int Amesos_Umfpack::SymbolicFactorization() 
+{
 
-  if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  IsSymbolicFactorizationOK_ = false;
+  IsNumericFactorizationOK_ = false;
+
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time(Comm());
 
   NumSymbolicFact_++;  
 
   ConvertToSerial() ; 
-  
   ConvertToUmfpackCRS();
   
   PerformSymbolicFactorization();
 
-  NumericFactorizationOK_ = false; 
+  IsSymbolicFactorizationOK_ = false; 
   return 0;
 }
 
-int Amesos_Umfpack::NumericFactorization() {
+//=============================================================================
+int Amesos_Umfpack::NumericFactorization() 
+{
 
-  if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  IsNumericFactorizationOK_ = false;
+  if( Time_ == 0 ) 
+    Time_ = new Epetra_Time( Comm() );
   
   NumNumericFact_++;  
 
@@ -395,102 +371,90 @@ int Amesos_Umfpack::NumericFactorization() {
   
   ConvertToUmfpackCRS();
   
-  if ( ! SymbolicFactorizationOK_ ) {
-    PerformSymbolicFactorization();
+  if (!IsSymbolicFactorizationOK_) {
+    SymbolicFactorization();
   }
 
-  PerformNumericFactorization( );
+  PerformNumericFactorization();
+
+  IsNumericFactorizationOK_ = true;
   return 0;
 }
 
+//=============================================================================
+int Amesos_Umfpack::Solve() 
+{ 
 
-int Amesos_Umfpack::Solve() { 
-
-  if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   NumSolve_++;
 
-  if ( ! ( SymbolicFactorizationOK_ &&  NumericFactorizationOK_ ) ) {
-    ConvertToSerial() ; 
-  
-    ConvertToUmfpackCRS();
-  }
+  // if necessary, perform numeric factorization. 
+  // This may call SymbolicFactorization() as well.
+  if (!IsNumericFactorizationOK_)
+    AMESOS_CHK_ERR(NumericFactorization()); 
 
-  if ( ! SymbolicFactorizationOK_ ) {
-    PerformSymbolicFactorization();
-    assert( ! NumericFactorizationOK_ );  // Can't redo Symbolic Phase and not the Numeric
-  }
+  Epetra_MultiVector* vecX = Problem_->GetLHS(); 
+  Epetra_MultiVector* vecB = Problem_->GetRHS(); 
 
-  
+  if ((vecX == 0) || (vecB == 0))
+    AMESOS_CHK_ERR(-1);
 
-  if ( ! NumericFactorizationOK_ ) PerformNumericFactorization( );
-
-  Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
-  Epetra_MultiVector   *vecB = Problem_->GetRHS() ; 
-
-
-  //
-  //  Compute the number of right hands sides (and check that X and B have the same shape) 
-  //
-  int nrhs; 
-  if ( vecX == 0 ) { 
-    nrhs = 0 ;
-    EPETRA_CHK_ERR( vecB != 0 ) ; 
-  } else { 
-    nrhs = vecX->NumVectors() ; 
-    EPETRA_CHK_ERR( vecB->NumVectors() != nrhs ) ; 
-  }
+  int NumVectors = vecX->NumVectors(); 
+  if (NumVectors != vecB->NumVectors())
+    AMESOS_CHK_ERR(-1);
 
   Epetra_MultiVector *SerialB, *SerialX; 
-  //
+
   //  Extract Serial versions of X and B 
   //
   double *SerialXvalues ;
-
   double *SerialBvalues ;
-  Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
-  Epetra_CrsMatrix *CastCrsMatrixA = dynamic_cast<Epetra_CrsMatrix*>(RowMatrixA) ; 
-  Epetra_MultiVector *SerialXextract = 0;
-  Epetra_MultiVector *SerialBextract = 0;
+
+  Epetra_MultiVector* SerialXextract = 0;
+  Epetra_MultiVector* SerialBextract = 0;
     
-  //
   //  Copy B to the serial version of B
   //
   Time_->ResetStartTime(); // track time to broadcast vectors
   
-  if ( IsLocal_ ==1 ) { 
+  if (IsLocal_ == 1) { 
     SerialB = vecB ; 
     SerialX = vecX ; 
   } else { 
-    assert( IsLocal_ == 0 ) ;
-    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap();
-    Epetra_MultiVector *SerialXextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
-    Epetra_MultiVector *SerialBextract = new Epetra_MultiVector( *SerialMap_, nrhs ) ; 
+    assert (IsLocal_ == 0);
+    const Epetra_Map& OriginalMap = Matrix()->RowMatrixRowMap();
+    Epetra_MultiVector* SerialXextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
+    Epetra_MultiVector* SerialBextract = new Epetra_MultiVector(*SerialMap_,NumVectors); 
 
-    if( ImportToSerial_ == 0 ) {
-      // MS // create importer from distributed to proc 0.
-      // FIXME: I don't work if matrix and/or vectors are changed!
-      // This Importer is destroyed by the dtor only...
-      ImportToSerial_ = new Epetra_Import ( *SerialMap_, OriginalMap );
-      assert( ImportToSerial_ != 0 );
+    if (ImportToSerial_ == 0) {
+      ImportToSerial_ = new Epetra_Import (*SerialMap_,OriginalMap );
     }
      
-    //    Epetra_Import ImportToSerial( *SerialMap_, OriginalMap );
-    SerialBextract->Import( *vecB, *ImportToSerial_, Insert ) ;
-    SerialB = SerialBextract ; 
-    SerialX = SerialXextract ; 
+    if (!ImportToSerial_->SourceMap().SameAs(Matrix()->RowMatrixRowMap())) {
+      delete SerialMap_;
+      SerialMap_ = 0;
+      delete ImportToSerial_;
+      ImportToSerial_ = 0;
+      int i = Matrix()->NumGlobalRows();
+      if (Comm().MyPID())
+	i = 0;
+      SerialMap_ = new Epetra_Map(-1,i,0,Comm());
+      ImportToSerial_ = new Epetra_Import (*SerialMap_,OriginalMap );
+    }
+
+    SerialBextract->Import(*vecB,*ImportToSerial_,Insert);
+    SerialB = SerialBextract; 
+    SerialX = SerialXextract; 
   } 
 
   VecTime_ += Time_->ElapsedTime();
   
-  //
   //  Call UMFPACK to perform the solve
   //  Note:  UMFPACK uses a Compressed Column Storage instead of compressed row storage, 
   //  Hence to compute A X = B, we ask UMFPACK to perform A^T X = B and vice versa
-  //
 
-  Time_->ResetStartTime(); // tract time to solve
+  Time_->ResetStartTime(); // track time to solve
 
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
@@ -500,15 +464,7 @@ int Amesos_Umfpack::Solve() {
     assert( SerialBlda == NumGlobalElements_ ) ; 
     assert( SerialXlda == NumGlobalElements_ ) ; 
     
-#if 0
-    for ( int j=0; j < 1 ; j++ ) {
-      for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	SerialBvalues[i+SerialBlda*j] = 10*j + i ; 
-	SerialXvalues[i+SerialXlda*j] = 100*j + 10*i ; 
-      }
-    }
-#endif
-    for ( int j =0 ; j < nrhs; j++ ) { 
+    for ( int j =0 ; j < NumVectors; j++ ) { 
       double *Control = (double *) NULL, *Info = (double *) NULL ;
       
       int status = umfpack_di_solve (UmfpackRequest, &Ap[0], 
@@ -516,61 +472,17 @@ int Amesos_Umfpack::Solve() {
 				     &SerialXvalues[j*SerialXlda], 
 				     &SerialBvalues[j*SerialBlda], 
 				     Numeric, Control, Info) ;
-
-
-      //      assert( nrhs == 1 ) ; 
-#if 0
-      for ( int k=0; k < nrhs ; k++ ) {
-	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	  cout << "h" << j <<"X( " << i+1 << "," << k+1 << ") = " << SerialXvalues[i+SerialXlda*k] << ";" << endl ; 
-	}
-      }
-      for ( int k=0; k < nrhs ; k++ ) {
-	for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-	  cout << "h" << j <<"B( " << i+1 << "," << k+1 << ") = " << SerialBvalues[i+SerialBlda*k] << ";" << endl ; 
-	}
-      }
-#endif
-      EPETRA_CHK_ERR( status ) ; 
+      AMESOS_CHK_ERR(status); 
     }
   }
     
   SolTime_ += Time_->ElapsedTime();
   
-#if 0
-  Comm().Barrier();
-  if  (iam == 0 ) { 
-    cout << " SerialXlda = " << SerialXlda << endl ; 
-    cout << " SerialBlda = " << SerialBlda << endl ; 
-  //  Print for matlab 
-  //
-  for (int i = 0; i < NumGlobalElements_ ; i++ ) { 
-    for ( int j = Ap[i]; j < Ap[i+1] ; j++ ) { 
-      cout << "A(" << i +1  << "," << Ai[j]+1 << " ) = " << Aval[j] << "; % iam = " << iam <<endl ; 
-    } 
-  }
-  for ( int j=0; j < nrhs ; j++ ) {
-    for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-      cout << "X( " << i+1 << "," << j+1 << ") = " << SerialXvalues[i+SerialXlda*j] << ";" << endl ; 
-    }
-  }
-  for ( int j=0; j < nrhs ; j++ ) {
-    for ( int i =0; i < NumGlobalElements_ ; i++ ) {
-      cout << "B( " << i+1 << "," << j+1 << ") = " << SerialBvalues[i+SerialBlda*j] << ";" << endl ; 
-    }
-  }
-  }
-#endif
-   
-  //
   //  Copy X back to the original vector
   // 
   Time_->ResetStartTime();  // track time to broadcast vectors
 
   if ( IsLocal_ == 0 ) {
-    // MS // drop those, use the previously created one
-    //    const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
-    //    Epetra_Import ImportFromSerial( OriginalMap, *SerialMap_ );
     vecX->Export( *SerialX, *ImportToSerial_, Insert ) ;
     delete SerialBextract ;
     delete SerialXextract ;
@@ -578,24 +490,10 @@ int Amesos_Umfpack::Solve() {
 
   VecTime_ += Time_->ElapsedTime();
 
-#if 0
-  cout << " Here is SerialB " << endl ; 
-  SerialB->Print(cout ) ; 
-  cout << " There was SerialB " << endl ; 
-  
-  cout << " Here is SerialX " << endl ; 
-  SerialX->Print(cout ) ; 
-  cout << " There was SerialX " << endl ; 
-  
-  cout << " Here is VecX " << endl ; 
-  vecX->Print(cout ) ; 
-  cout << " There was VecX " << endl ; 
-#endif  
-
   // MS // compute vector norms
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
-    for( int i=0 ; i<nrhs ; ++i ) {
+    for( int i=0 ; i<NumVectors ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
       assert((*vecB)(i)->Norm2(&NormRHS)==0);
       if( verbose_ && Comm().MyPID() == 0 ) {
@@ -608,8 +506,8 @@ int Amesos_Umfpack::Solve() {
   // MS // compute true residual
   if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
     double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),nrhs);
-    for( int i=0 ; i<nrhs ; ++i ) {
+    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
+    for( int i=0 ; i<NumVectors ; ++i ) {
       (Problem_->GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
       (Ax.Update(1.0, *((*vecB)(i)), -1.0));
       (Ax.Norm2(&Norm));
