@@ -62,12 +62,10 @@ amesos_test_DEPENDENCIES = \
 
 amesos_test_CXXFLAGS = -I$(top_srcdir)/src
 
-KLAPACK_LIBS = -lg2c -llapack -lblas -lm 
-
 amesos_test_LDADD = -L$(top_builddir)/src -lamesos \
 	-L$(top_builddir)/../epetra/src -lepetra \
 	-L$(top_builddir)/../triutils/src -ltriutils \
-	$(AMESOS_LIBS) $(KLAPACK_LIBS) $(LAPACK_LIBS) \
+	$(AMESOS_LIBS) $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"

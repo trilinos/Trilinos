@@ -22,15 +22,12 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#include <map>
-#include <string>
-#include <vector>
-using namespace std;
+#include "Amesos_ConfigDefs.h"
+
 #include "superlu_ddefs.h"
 #include "supermatrix.h"
+//  SuperLU defines Reduce to be a macro in util.h, this conflicts with Reduce() in Epetra_MultiVector.h
 #undef Reduce
-// typedef map< string, int >  OptionsMap ;
-// typedef map< string, double >  ParametersMap ;
 
 #ifndef _SUPERLUDISTOO_H_
 #define _SUPERLUDISTOO_H_
