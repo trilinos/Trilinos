@@ -192,7 +192,7 @@ char *yo = "push";
 
 /* make sure there's enough memory */
 
-   if (to_add_ptr[list] >= to_add_dim[list]) {
+   if (to_add_ptr[list] >= to_add_dim[list]-1) {
       to_add_dim[list] = 2*to_add_dim[list];
       to_add[list] = (int *) ZOLTAN_REALLOC(to_add[list],
                                             sizeof(int *)*to_add_dim[list]);
@@ -1844,7 +1844,7 @@ int all_triangles, i, element, success, ierr;
 /* while there are elements on the to_add list, get one, add it if you can,
    and put its neighbors that are not on the path onto the to_add list */
 
-      while ( (element = get_element_to_add() ) != -1) {
+      while ( (element = get_element_to_add() ) != -1 && path_length < num_obj) {
          success = add_to_cycle(element);
          if (success) {
             ierr = add_to_to_add(element,zz);
