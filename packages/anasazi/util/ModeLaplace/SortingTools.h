@@ -30,7 +30,7 @@
 #define ANASAZI_SORTING_TOOLS_H
 
 #include "AnasaziConfigDefs.hpp"
-using std::memcpy;
+
 
 class SortingTools {
 
