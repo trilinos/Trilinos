@@ -147,6 +147,16 @@ protected:
   //! Function evaluation at perturbX 
   mutable Epetra_Vector fp;
 
+  //! Epetra_Map object used in the returns of the Epetra_Operator derived methods.
+  /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.
+   */ 
+  const Epetra_Map* epetraMap;
+
+  //! Set to true if the epetraMap is created by NOX::Epetra::MatrixFree.
+  /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.  This flag tells the destructor whether or not to destroy the Epetra_Map.
+   */ 
+  bool ownsMap;
+
 };
 } // namespace Epetra
 } // namespace NOX

@@ -39,16 +39,38 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
   currentX(x),
   perturbX(x),
   fo(x),
-  fp(x)
+  fp(x),
+  epetraMap(0),
+  ownsMap(false)
 {
   // Zero out Vectors
   perturbX.PutScalar(0.0);
   fo.PutScalar(0.0);
   fp.PutScalar(0.0);
+
+  // Create an EpetraMap if needed (First try and get it from the 
+  // solution vector currentX)
+  const Epetra_BlockMap* bmap = 0;
+  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
+  if (bmap != 0)
+    epetraMap = dynamic_cast<const Epetra_Map*>(bmap);
+  else {
+    
+    int size = currentX.Map().NumGlobalElements();
+    int mySize = currentX.Map().NumMyElements();
+    int indexBase = currentX.Map().IndexBase();
+    int* globalElementList = currentX.Map().MyGlobalElements();
+    const Epetra_Comm& comm = currentX.Map().Comm();
+    epetraMap = new Epetra_Map(size, mySize, globalElementList, indexBase, comm);
+    ownsMap = true;
+  }
+
 }
 
 MatrixFree::~MatrixFree()
 {
+  if (ownsMap)
+    delete epetraMap;
 }
 
 int MatrixFree::SetUseTranspose(bool UseTranspose) 
@@ -105,9 +127,9 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // Make sure the norm is not zero, otherwise we can get an inf perturbation
   if (vectorNorm == 0.0) {
-    if (NOX::Utils::doPrint(Utils::Warning)) 
-      cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" 
-	   << endl;
+    //if (NOX::Utils::doPrint(Utils::Warning)) 
+    //cout << "Warning: NOX::Epetra::MatrixFree::Apply() - vectorNorm is zero" 
+    //<< endl;
     vectorNorm = 1.0;
   }
 
@@ -165,30 +187,12 @@ const Epetra_Comm & MatrixFree::Comm() const
 }
 const Epetra_Map& MatrixFree::OperatorDomainMap() const
 {
-  const Epetra_BlockMap* bmap = 0;
-  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
-
-  if (bmap == 0) {
-    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorDomainMap() - solution "
-	 << "vector must be an Epetra_Map object!" << endl;
-    throw "NOX Error";
-  }
-
-  return dynamic_cast<const Epetra_Map&>(*bmap);
+  return *epetraMap;
 }
 
 const Epetra_Map& MatrixFree::OperatorRangeMap() const
 {
-  const Epetra_BlockMap* bmap = 0;
-  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
-
-  if (bmap == 0) {
-    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorRangeMap() - solution "
-	 << "vector must be an Epetra_Map object!" << endl;
-    throw "NOX Error";
-  }
-
-  return dynamic_cast<const Epetra_Map&>(*bmap);
+  return *epetraMap;
 }
 
 bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
