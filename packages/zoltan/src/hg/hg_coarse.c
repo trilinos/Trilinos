@@ -16,10 +16,7 @@
 extern "C" {
 #endif
 
-
 #include "hypergraph.h"
-
-
 
 static int *HSIZE;
 static int *SUM;
@@ -38,7 +35,6 @@ static int compare (const int *a, const int *b)
   return 0;
 }
 
-
 static int compare_int (const int *a, const int *b)
 { if ((*a) < (*b))
     return -1;
@@ -46,7 +42,6 @@ static int compare_int (const int *a, const int *b)
     return 1;
   return 0;
 }
-
 
 static int *HINDEX;
 static int *HVERTEX;
@@ -92,10 +87,9 @@ int Zoltan_HG_Coarsening (
         pack[old] = -pack[old]-1;
     } }
   if (!(c_hg->vwgt = (float*) ZOLTAN_MALLOC (sizeof (float) * c_hg->nVtx)))
-     {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   for (i = 0 ; i < c_hg->nVtx ; i++)
       c_hg->vwgt[i] = 0.0 ;
 
@@ -118,15 +112,14 @@ int Zoltan_HG_Coarsening (
       !(c_ewgt        = (float *)ZOLTAN_MALLOC(sizeof(float)* hg->nEdge))    ||
       !(c_hindex      = (int *)  ZOLTAN_MALLOC(sizeof(int)  * (hg->nEdge+1)))||
       !(c_hvertex     = (int *)  ZOLTAN_MALLOC(sizeof(int)  *  hg->nPin)) )
-     {
-     ZOLTAN_FREE ((void **) &used_vertices) ;
-     ZOLTAN_FREE ((void **) &c_hindex) ;
-     ZOLTAN_FREE ((void **) &c_hvertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &used_vertices) ;
+    ZOLTAN_FREE ((void **) &c_hindex) ;
+    ZOLTAN_FREE ((void **) &c_hvertex) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   for (i = 0 ; i < c_hg->nVtx ; i++)
-     used_vertices[i] = 0 ;
+    used_vertices[i] = 0 ;
 
   c_hindex[0] = c_hg->nEdge = c_hg->nPin = 0;
   for (i=0; i<hg->nEdge; i++)
@@ -149,15 +142,14 @@ int Zoltan_HG_Coarsening (
   if (!(sorted = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
       !(HSIZE  = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge)) ||
       !(SUM    = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nEdge))  )
-     {
-     ZOLTAN_FREE ((void **) &c_hindex) ;
-     ZOLTAN_FREE ((void **) &c_hvertex) ;
-     ZOLTAN_FREE ((void **) &sorted) ;
-     ZOLTAN_FREE ((void **) &HSIZE) ;
-     ZOLTAN_FREE ((void **) &SUM) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &c_hindex) ;
+    ZOLTAN_FREE ((void **) &c_hvertex) ;
+    ZOLTAN_FREE ((void **) &sorted) ;
+    ZOLTAN_FREE ((void **) &HSIZE) ;
+    ZOLTAN_FREE ((void **) &SUM) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   for (i = 0; i < c_hg->nEdge; i++)
   { sorted[i] = i;
     HSIZE[i] = c_hindex[i+1]-c_hindex[i];
@@ -223,31 +215,28 @@ int Zoltan_HG_Coarsening (
 
 /* Reallocate the arrays to their exact size */
   if (!(c_hg->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * c_hg->nEdge)))
-     {
-     ZOLTAN_FREE ((void **) &c_hindex) ;
-     ZOLTAN_FREE ((void **) &c_hvertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &c_hindex) ;
+    ZOLTAN_FREE ((void **) &c_hvertex) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   memcpy(c_hg->ewgt,c_ewgt,c_hg->nEdge*sizeof(float));
   ZOLTAN_FREE ((void **) &c_ewgt);
 
   if (!(c_hg->hindex = (int *) ZOLTAN_MALLOC (sizeof (int) * (c_hg->nEdge+1))))
-     {
-     ZOLTAN_FREE ((void **) &c_hindex) ;
-     ZOLTAN_FREE ((void **) &c_hvertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &c_hindex) ;
+    ZOLTAN_FREE ((void **) &c_hvertex) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   memcpy(c_hg->hindex,c_hindex,(c_hg->nEdge+1)*sizeof(int));
   ZOLTAN_FREE ((void **) &c_hindex);
 
   if (!(c_hg->hvertex = (int *) ZOLTAN_MALLOC (sizeof (int) * c_hg->nPin)))
-     {
-     ZOLTAN_FREE ((void **) &c_hvertex) ;
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
+  { ZOLTAN_FREE ((void **) &c_hvertex) ;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
+  }
   memcpy(c_hg->hvertex,c_hvertex,c_hg->nPin*sizeof(int));
   ZOLTAN_FREE ((void **) &c_hvertex);
   return Zoltan_HG_Create_Mirror(zz,c_hg);

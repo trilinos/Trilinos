@@ -54,40 +54,19 @@ int Zoltan_HG_Matching (
   Matching match,
   HGPartParams *hgp,
   int limit)
-{ int	i, j;
-  char *yo = "Zoltan_HG_Matching";
-  int ierr = ZOLTAN_OK;
+{ int ierr;
 
   if (g->vwgt)
-  { if (!(g->ewgt))
-    { if (!(g->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * g->nEdge)))
-      { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-        return ZOLTAN_MEMERR;
-      }
-      for (i=0; i<g->nEdge; i++)
-        g->ewgt[i] = 1.0;
-    }
-
-    for (i=0; i<g->nVtx; i++)
-      for (j=g->nindex[i]; j<g->nindex[i+1]; j++)
-      { if (g->vwgt[i]<=0.0 || g->vwgt[g->neigh[j]]<=0.0)
-          g->ewgt[j] = FLT_MAX;
-        else
-          g->ewgt[j] = g->ewgt[j]/g->vwgt[i]/g->vwgt[g->neigh[j]];
-      }
-  }
+    Zoltan_HG_Scale_Graph_Weight (zz,g);
 
   /* Call matching routine specified by parameters. */
   ierr = hgp->matching(zz,g,match,limit);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-    goto End;
+    return ierr;
 
   /* Optimization */
   ierr = matching_w3 (zz,g,match,limit);
 
-End:
-  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR)
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Returning error.");
   return ierr;
 }
 
@@ -113,9 +92,7 @@ static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
 /*****************************************************************************/
 
 static int matching_rrm (ZZ *zz, Graph *g, Matching match, int limit)
-{ int   i, j, size=0, *vertices, vertex, vertex_deg, number,
-        free_neighbors, random;
-  float w;
+{ int   i, j, size=0, *vertices, vertex, number, free_neighbors, random;
   char *yo = "matching_rrm" ;
 
   if (!(vertices = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx)))

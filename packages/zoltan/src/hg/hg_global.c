@@ -22,21 +22,21 @@ extern "C" {
 static ZOLTAN_HG_GLOBAL_PART_FN global_ran;
 static ZOLTAN_HG_GLOBAL_PART_FN global_lin;
 
-
 /****************************************************************************/
 
 ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
 {
-  if (strcasecmp(str, "ran") == 0) {
-    return global_ran;
-  }
-  else if (strcasecmp(str, "lin") == 0) {
-    return global_lin;
-  }
-  else
-    return NULL;
+  if      (!strcasecmp(str, "ran")) return global_ran;
+  else if (!strcasecmp(str, "lin")) return global_lin;
+  else                              return NULL;
 }
 
+/****************************************************************************/
+
+int Zoltan_HG_Global (ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *hgp)
+{
+  return hgp->global_part(zz,hg,p,part);
+}
 
 /****************************************************************************/
 

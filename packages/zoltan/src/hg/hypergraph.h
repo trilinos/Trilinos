@@ -168,6 +168,8 @@ typedef struct {
 int Zoltan_HG_Set_Options  (ZZ *, HGPartParams *);
 int Zoltan_HG_HPart_Lib    (ZZ *, HGraph *, int, Partition, HGPartParams *);
 int Zoltan_HG_HPart_Info   (ZZ *, HGraph *, int, Partition);
+int Zoltan_HG_Scale_Graph_Weight (ZZ *, Graph *);
+int Zoltan_HG_Scale_HGraph_Weight (ZZ *, HGraph *, float *);
 
 /* Matching functions */
 int Zoltan_HG_Matching (ZZ *, Graph *, Matching, HGPartParams *, int);
@@ -185,6 +187,7 @@ ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *);
 int Zoltan_HG_Coarsening   (ZZ *, HGraph *, Packing, HGraph *, int *);
 
 /* Global Partitioning functions */
+int Zoltan_HG_Global (ZZ *, HGraph *, int, Partition, HGPartParams *);
 ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *);
 
 /* Local refinement functions */ /* KDD Placeholder for later. */

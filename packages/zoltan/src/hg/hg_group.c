@@ -46,39 +46,23 @@ ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
 /****************************************************************************/
 
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
-{ int   i, j;
-  int   limit=0 ;   /* reserved for future use */
+{ int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
-  float *old_ewgt=NULL, weight, sum1, sum2;
+  float *old_ewgt, *new_ewgt;
   char  *yo = "Zoltan_HG_Grouping";
 
-  old_ewgt = hg->ewgt;
-  if (!(hg->ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
-     {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-
-  for (i=0; i<hg->nEdge; i++)
-  { sum1 = sum2 = 0.0;
-    if (hg->vwgt)
-    { for (j=hg->hindex[i]; j<hg->hindex[i+1]; j++)
-      { weight = hg->vwgt[hg->hvertex[j]];
-        sum1 += weight;
-        sum2 += weight*weight;
-    } }
-    else
-      sum1 = sum2 = (float)(hg->hindex[i+1]-hg->hindex[i]);
-    sum1 = (sum1*sum1-sum2)/2.0;
-    if (sum1 == 0.0)
-      hg->ewgt[i] = FLT_MAX;
-    else
-      hg->ewgt[i] = (old_ewgt?old_ewgt[i]:1.0)/sum1;
+  if (!(new_ewgt = (float *) ZOLTAN_MALLOC (sizeof (float) * hg->nEdge)))
+  { ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    return ZOLTAN_MEMERR;
   }
 
+  Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt);
+
+  old_ewgt = hg->ewgt;
+  hg->ewgt = new_ewgt;
   ierr = hgp->grouping(zz,hg,pack,limit);
-  ZOLTAN_FREE ((void **) &hg->ewgt);
   hg->ewgt = old_ewgt;
+  ZOLTAN_FREE ((void **) &new_ewgt);
   return ierr;
 }
 
@@ -87,7 +71,6 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp)
 static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
    {                                    /* limit is defined for future use */
    int i, j, vertex, first_vertex ;
-   char *yo = "grouping_mxg" ;
 
    for (i = 0 ; i < hg->nVtx ; i++)
       pack[i] = i ;

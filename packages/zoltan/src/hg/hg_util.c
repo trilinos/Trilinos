@@ -500,6 +500,7 @@ int ierr = ZOLTAN_OK;
   { ierr = ZOLTAN_MEMERR;
     goto End;
   }
+/* at the moment, the hyperedge weight will be constant !
   if (g->ewgt) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge weights");
     cnt = hg->nEdge * hg->EdgeWeightDim;
@@ -508,6 +509,7 @@ int ierr = ZOLTAN_OK;
       goto End;
     }
   }
+*/
 
   /* KDD  The following section will have to be reworked for parallel HGs. */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Filling edge arrays");
@@ -517,8 +519,10 @@ int ierr = ZOLTAN_OK;
     hvertex[cnt++] = i;
     for (j = g->nindex[i]; j < g->nindex[i+1]; j++) {
       hvertex[cnt++] = g->neigh[j];
+/* at the moment, the hyperedge weight will be constant
       for (k = 0; k < hg->EdgeWeightDim; k++)
         hg->ewgt[i*(hg->EdgeWeightDim)+k] += g->ewgt[j*(hg->EdgeWeightDim)+k];
+*/
     }
   } 
   hindex[hg->nEdge] = cnt;
