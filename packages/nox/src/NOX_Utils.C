@@ -32,10 +32,10 @@
 
 #include "NOX_Utils.H"
 
-int NOX::Utils::myPID = 0;
-int NOX::Utils::outputLevel = 2;
-int NOX::Utils::printProc = 0;
 int NOX::Utils::precision = 4;
+int NOX::Utils::myPID = 0;
+int NOX::Utils::printProc = 0;
+int NOX::Utils::printTest = 0xf;
 
 NOX::Utils::Fill NOX::Utils::fillobj;
 NOX::Utils::Sci NOX::Utils::sciobj;
@@ -69,10 +69,9 @@ ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
   return os;
 }
 
-
 void NOX::Utils::setUtils(NOX::Parameter::List& p)
 {
-  outputLevel = p.getParameter("Output Level", outputLevel);
+  printTest = p.getParameter("Output Information", printTest);
   myPID = p.getParameter("MyPID", myPID);
   printProc = p.getParameter("Output Processor", printProc);
   precision = p.getParameter("Output Precision", precision);
@@ -85,12 +84,36 @@ bool NOX::Utils::isPrintProc()
 
 bool NOX::Utils::doPrint(int printLevel)
 {
-  return ((printProc == myPID) && (printLevel <= outputLevel));
+  cerr << "WARNING: NOX::Utils::doPrint(int printLevel) is deprecated!" << "\n";
+  cerr << "         Use Nox::Utils::doPrint(NOX::Utils::MsgType type) instead.";
+  cerr << endl;
+
+  return (isPrintProc());
 }
 
 bool NOX::Utils::doAllPrint(int printLevel)
 {
-  return (printLevel <= outputLevel);
+  cerr << "WARNING: NOX::Utils::doAllPrint(int printLevel) is deprecated!" << "\n";
+  cerr << "         Use Nox::Utils::doAllPrint(NOX::Utils::MsgType type) instead.";
+  cerr << endl;
+
+  return true;
+}
+
+bool NOX::Utils::doPrint(MsgType type)
+{
+  if (type == Error)
+    return isPrintProc();
+
+  return (isPrintProc() && (printTest & type != 0));
+}
+
+bool NOX::Utils::doAllPrint(MsgType type)
+{
+  if (type == Error)
+    return true;
+
+  return (printTest & type != 0);
 }
 
 int NOX::Utils::getMyPID()

@@ -38,8 +38,47 @@
 
 namespace NOX {
 
-//! Class to provide parallel communication and printing utilities.
+/*!
+  \brief Provides static parallel communication and printing utilities.
+
+  The following parameters are used by this class:
+
+  - "Output Information" - An integer which is a sum of MsgType's to
+    specify how much information to show. Defaults to
+    NOX::Utils::Warning + NOX::Utils::OuterIteration +
+    NOX::Utils::InnerIteration + NOX::Utils::Parameters = 0xf = 15.
+
+  - "Output Processor" - Specifies the designated print process. Defaults to 0.
+
+  - "MyPID" - Specifies this process's ID. Defaults to 0.
+
+  - "Output Precision" - Specifis the default number of decimal places
+    to be used when printing floating point numbers. The default is 4.
+
+  \todo Need to make the public static variables private
+  somehow. Meanwhile, those variables should never be modified
+  directly.
+
+*/
 class Utils {
+
+
+public:
+  /*!
+    \brief Message types for printing.
+
+    Note that each message type if a power of two - this is \b very
+    important. They can be added together to specify which messages
+    you wish to receive.
+  */
+  enum MsgType { 
+    Error = 0,			// Errors are always printed
+    Warning = 0x1,		// 2^0
+    OuterIteration = 0x2,	// 2^1
+    InnerIteration = 0x4,	// 2^2
+    Parameters = 0xa,		// 2^3
+    Details = 0x10		// 2^4
+  };
 
 public:
 
@@ -49,33 +88,56 @@ public:
   //! Set the parameters in the utilities class.
   static void setUtils(Parameter::List& p);
 
-  //! Returns true if the current processor is designated as the processor 
-  //! send output to screen and/or file.
-  /*  This is used to prevent each processor from printing the same 
-   *  information. */
+  /*! 
+    \brief Returns true if the current processor is designated as the
+    processor send output to screen and/or file.
+
+    This is used to prevent each processor from printing the same
+    information. 
+  */
   static bool isPrintProc();
 
-  //! Returns true if printLevel is less than or equal to the
-  //! "Output Level" flag AND this is the designated printing process. 
-  /*! This is used to determine if an output line should be printed.
-   *  The user sets an outputLevel in the ParameterList for the MethodManager 
-   *  If the print level is less than the output level, this function 
-   *  returns true.  The most information is printed at outputLevel 5.  
-   *  The least at level 0. */ 
+  /*! 
+    \brief This function is deprecated.
+
+    \deprecated Use NOX::Utils::doPrint(NOX::Utils::MsgType type)
+    instead. This will print many warnings if you used it and is to be
+    phased out.
+
+  */ 
   static bool doPrint(int printLevel);
 
-  //! Returns true if printLevel is less than or equal to the
-  //! "Output Level" flag.  
-  /*! This is used to determine if an output line should be printed.
-   *  The user sets an outputLevel in the ParameterList for the MethodManager 
-   *  If the print level is less than the output level, this function 
-   *  returns true.  The most information is printed at outputLevel 5.  
-   *  The least at level 0. */ 
+  /*!
+    \brief Indicate whether or not the message should be printed.
+
+    Returns true if the specifed message type should be printed \b and
+    this is the print process.
+
+    \note Be careful about putting any computations inside a doPrint
+    if statement since \b only the print process will execute that
+    code.
+
+  */
+  static bool doPrint(MsgType type);
+
+  /*! 
+    \brief This function is deprecated.
+
+    \deprecated Use NOX::Utils::doAllPrint(NOX::Utils::MsgType type)
+    instead. This will print many warnings if you used it and is to be
+    phased out.
+
+  */ 
   static bool doAllPrint(int printLevel);
 
-  //! Returns the processor ID number for parallel jobs. Returns 0 
-  //! for serial jobs.
-  /*! Returns the rank of calling process */
+  /*!
+    \brief Indicate whether or not the message should be printed.
+
+    Returns true if the specifed message type should be printed.
+  */
+  static bool doAllPrint(MsgType type);
+
+  //! Returns the process ID number.
   static int getMyPID();
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -100,34 +162,34 @@ public:
 
 #endif
 
-  /*! \brief We can use it to put in an arbitrary number of stars or
-   *  any specified fill character.  cout << Utils::fill(10); cout <<
-   *  Utils::fill(10,'-'); */
-
+  /*!  
+    \brief We can use it to put in an arbitrary number of stars or any
+    specified fill character.  cout << Utils::fill(10); cout <<
+    %Utils::fill(10,'-');
+  */
   static Fill& fill(int filln, char fillc = '*');
 
-  /*! \brief We can use it to put a formated double onto the output
-   *  with cout << sci(d); Note: There can only be ONE of these per line. 
-   *  \todo Fix so that there can be more than one per line. */
-
+  /*! 
+    \brief We can use it to put a formated double onto the output with
+    cout << %Utils::sci(d); 
+  */
   static Sci& sci(double dval);
 
 public:
-  
 
   //! Output precision for floats and doubles.
   static int precision;
   
-  //! Processor ID.  Defaults to 0 for serial.
+  //! Processor ID.
   static int myPID;
   
-  //! Output Level. Defaults to level 2.
-  static int outputLevel;
+  //! Output test. 
+  static int printTest;
 
-  //! Processor responsible for output. Defaults to processor 0.
+  //! Processor responsible for output. 
   static int printProc;
 
-};
+}; // class Utils
 
 } // namespace NOX
 
