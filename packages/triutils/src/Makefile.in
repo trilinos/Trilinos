@@ -343,7 +343,8 @@ AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
 WITH_CPP_H = 
 WITH_CPP = 
 UTIL_H = \
-	$(srcdir)/iohb.h
+	$(srcdir)/iohb.h \
+	$(srcdir)/Trilinos_Util_Version.h
 
 UTIL = \
 	$(srcdir)/iohb.cpp

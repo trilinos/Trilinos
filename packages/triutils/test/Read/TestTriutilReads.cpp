@@ -57,9 +57,7 @@
 #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
-
-
-
+#include "Trilinos_Util_Version.h"
 
   int TestOneMatrix( string HBname, string MMname, string TRIname, Epetra_Comm &Comm, bool verbose ) { 
 
@@ -169,6 +167,9 @@ int main( int argc, char *argv[] ) {
 #else
   Epetra_SerialComm Comm;
 #endif
+
+  if (verbose && Comm.MyPID()==0)
+    cout << Triutils_Version() << endl << endl;
 
   int ierr = 0;
   ierr += TestOneMatrix( "bcsstk01.rsa",  "bcsstk01.mtx",  "bcsstk01.triS", Comm, verbose );

@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(triutils, 3.2d, mheroux@cs.sandia.gov)
+AC_INIT(triutils, 1.2d, mheroux@cs.sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"

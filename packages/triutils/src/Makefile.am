@@ -86,8 +86,8 @@ WITH_CPP =
 
 
 UTIL_H = \
-	$(srcdir)/iohb.h
-
+	$(srcdir)/iohb.h \
+	$(srcdir)/Trilinos_Util_Version.h
 
 UTIL = \
 	$(srcdir)/iohb.cpp
