@@ -131,6 +131,8 @@
 
 
    int ML_Operator_Lump(ML_Operator *A, ML_Operator **B);
+   double ML_Global_Standard_Deviation(double sample, int n,
+                                       int activeflag, ML_Comm *comm);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
