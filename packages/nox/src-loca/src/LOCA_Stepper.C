@@ -475,9 +475,6 @@ LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Print successful info for end of step
   printEndStep(LOCA::Abstract::Iterator::Successful);
 
-  // Print (save) solution
-  curGroupPtr->printSolution();
-
   return LOCA::Abstract::Iterator::Successful;
 }
 
@@ -520,6 +517,9 @@ LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
       return LOCA::Abstract::Iterator::Unsuccessful;
     }
   }
+
+  // Print (save) solution
+  curGroupPtr->printSolution();
 
   return stepStatus;
 }
