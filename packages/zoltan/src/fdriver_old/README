@@ -1,0 +1,21 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
+
+FDRIVER_OLD DIRECTORY -- Zoltan F90 test driver application source code.
+------------------------------------------------------------------------
+NOTE:  This directory contains the old version of the fdriver, using Zoltan's
+LB_* interface names.  It is maintained for testing the backward-compatability
+of Zoltan with older applications.  New fdriver development should be done in
+the "fdriver" directory.
+
