@@ -95,7 +95,7 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
               NextNS.GetValues(v), &incr);
 
   ML_Aggregate_Destroy(&agg_object);
-  ML_memory_free(&null_vect);
+  ML_memory_free((void**)&null_vect);
 
 }
 
