@@ -86,7 +86,7 @@ A NOX::ParameterList is supplied in the constructor and during calls to the NOX:
 
 <li> "Size of Krylov Subspace" - When using restarted GMRES this sets the size of the Krylov subspace (defaults to 300). <br>
  
-<li> "Orthogonalization" - The orthogonalization routine use for the Gram-Schmidt orthogonalization procedure in Aztec.The following options are valid:<br>
+<li> "Orthogonalization" - The orthogonalization routine use for the Gram-Schmidt orthogonalization procedure in Aztec.  The following options are valid:<br>
   <ul> 
   <li> "Classical" - (default).
   <li> "Modified" 
