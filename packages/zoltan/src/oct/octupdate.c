@@ -443,7 +443,7 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 	hold = 8;
       remainder = hold;
       for(; remainder > 0; level++) {
-	int pr = (int)pow(hold, level);
+	int pr = (int)pow((double)hold, (double)level);
 	remainder = n - pr;
       }
       level--;
@@ -480,12 +480,12 @@ static void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1,
 
     /* this part creates the map array */
     if(OCT_info->OCT_dimension == 2) {
-      hold = (int)pow(4, level);                  /* ignoring the z+ octants */
+      hold = (int)pow((double)4, (double)level);                  /* ignoring the z+ octants */
       if(hold == 0)
 	hold = 1;
     }
     else
-      hold = (int)pow(8, level);
+      hold = (int)pow((double)8, (double)level);
 
     part = hold / lb->Num_Proc;          /* how many octants per partition */
     remainder = hold % lb->Num_Proc; /* extra octants, not evenly divisible */
