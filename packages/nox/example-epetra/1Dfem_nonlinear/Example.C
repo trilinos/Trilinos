@@ -9,7 +9,7 @@
  */
 
 // Trilinos Objects
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
@@ -37,12 +37,12 @@ int main(int argc, char *argv[])
   int ierr = 0, i;
 
   // Initialize MPI
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
 
   // Create a communicator for Epetra objects
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   Epetra_MpiComm Comm( MPI_COMM_WORLD );
 #else
   Epetra_SerialComm Comm;
@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
     fprintf(ifp, "%d  %E\n", soln.Map().MinMyGID()+i, finalSolution[i]);
   fclose(ifp);
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
 
