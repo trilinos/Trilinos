@@ -4672,10 +4672,10 @@ case $target in
   mips-sgi-irix* )
 
     if test "${CXX}" = "CC"; then
-     CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -DSGI64"
+     CXXFLAGS_MISC="-LANG:std -LANG:ansi-for-init-scope=ON -64 -ptused -no_prelink -no_auto_include -DSGI64"
      F77_MISC=f77
      FFLAGS_MISC="-64"
-     LIBTOOL_CCLINKER_FLAGS_MISC = "-64"
+     LIBTOOL_CCLINKER_FLAGS_MISC = "-64 -ptused -no_prelink -no_auto_include"
      SPECIAL_AR="CC -ar -W,l -W,s -o"
     fi
 
