@@ -56,35 +56,6 @@ Epetra_IntSerialDenseVector::~Epetra_IntSerialDenseVector()
 {}
 
 //=========================================================================
-int& Epetra_IntSerialDenseVector::operator() (int Index) {
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
-  return(A_[Index]);
-}
-
-//=========================================================================
-const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
-   return(A_[Index]);
-}
-
-//=========================================================================
-const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
-   return(A_[Index]);
-}
-
-//=========================================================================
-int& Epetra_IntSerialDenseVector::operator [] (int Index) {
-  if(Index >= M_ || Index < 0) 
-		throw ReportError("Index = " + toString(Index) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
-   return(A_[Index]);
-}
-
-//=========================================================================
 Epetra_IntSerialDenseVector& Epetra_IntSerialDenseVector::operator = (const Epetra_IntSerialDenseVector& Source) {
 	Epetra_IntSerialDenseMatrix::operator=(Source); // call this->Epetra_IntSerialDenseMatrix::operator =
 	return(*this);

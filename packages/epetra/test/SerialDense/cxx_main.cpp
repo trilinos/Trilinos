@@ -8,6 +8,7 @@
 #include <mpi.h>
 #endif
 #include "Epetra_SerialComm.h"
+#include "../epetra_test_err.h"
 
 
 // prototypes
@@ -22,6 +23,15 @@ void GenerateHilbert(double *A, int LDA, int N);
 
 bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
 	       double * X, int LDX, double * B, int LDB, double * resid);
+
+int matrixCpyCtr(bool verbose, bool debug);
+int matrixAssignment(bool verbose, bool debug);
+void printHeading(char* heading);
+double* getRandArray(int length);
+void printMat(char* name, Epetra_SerialDenseMatrix& matrix);
+void printArray(double* array, int length);
+bool identicalSignatures(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b, bool testLDA = true);
+bool seperateData(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b);
 
  
 int main(int argc, char *argv[])
@@ -373,6 +383,18 @@ int main(int argc, char *argv[])
 	if (verbose)
 		cout << "Shaped/sized constructors check OK." << endl;
 
+	// test Copy/View mode in op= and cpy ctr
+	int temperr = 0;
+	temperr = matrixAssignment(verbose, debug);
+	if(verbose && temperr == 0)
+		cout << "Operator = checked OK." << endl;
+	EPETRA_TEST_ERR(temperr, ierr);
+	temperr = matrixCpyCtr(verbose, debug);
+	if(verbose && temperr == 0)
+		cout << "Copy ctr checked OK." << endl;
+	EPETRA_TEST_ERR(temperr, ierr);
+	
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
@@ -541,4 +563,336 @@ bool Residual( int N, int NRHS, double * A, int LDA, bool Transpose,
   }
 
   return(OK);
+}
+
+
+//=========================================================================
+// test matrix operator= (copy & view)
+int matrixAssignment(bool verbose, bool debug) {
+	int ierr = 0;
+	int returnierr = 0;
+	if(verbose) printHeading("Testing matrix operator=");
+
+	// each section is in its own block so we can reuse variable names
+	// lhs = left hand side, rhs = right hand side
+	
+	{
+		// copy->copy (more space needed)
+		// orig and dup should have same signature
+		// modifying orig or dup should have no effect on the other
+		if(verbose) cout << "Checking copy->copy (new alloc)" << endl;
+		Epetra_SerialDenseMatrix lhs(2,2);
+		double* rand1 = getRandArray(25);
+		Epetra_SerialDenseMatrix rhs(Copy, rand1, 5, 5, 5);
+		if(debug) {
+			cout << "before assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		lhs = rhs;
+		if(debug) {
+			cout << "after assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs), ierr);
+		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+		delete[] rand1;
+	}
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+	{
+		// copy->copy (have enough space)
+		// orig and dup should have same signature
+		// modifying orig or dup should have no effect on the other
+		if(verbose) cout << "\nChecking copy->copy (no alloc)" << endl;
+		double* rand1 = getRandArray(25);
+		double* rand2 = getRandArray(20);
+		Epetra_SerialDenseMatrix lhs(Copy, rand1, 5, 5, 5);
+		Epetra_SerialDenseMatrix rhs(Copy, rand2, 4, 4, 5);
+		double* origA = lhs.A();
+		int origLDA = lhs.LDA();
+		if(debug) {
+			cout << "before assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		lhs = rhs;
+		if(debug) {
+			cout << "after assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		// in this case, instead of doing a "normal" LDA test in identSig,
+		// we do our own. Since we had enough space already, A and LDA should
+		// not have been changed by the assignment. (The extra parameter to
+		// identicalSignatures tells it not to test LDA).
+		EPETRA_TEST_ERR((lhs.A() != origA) || (lhs.LDA() != origLDA), ierr);
+		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs,false), ierr);
+		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+	}
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+	{
+		// view->copy
+		// orig and dup should have same signature
+		// modifying orig or dup should have no effect on the other
+		if(verbose) cout << "\nChecking view->copy" << endl;
+		double* rand1 = getRandArray(25);
+		double* rand2 = getRandArray(64);
+		Epetra_SerialDenseMatrix lhs(View, rand1, 5, 5, 5);
+		Epetra_SerialDenseMatrix rhs(Copy, rand2, 8, 8, 8);
+		if(debug) {
+			cout << "before assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		lhs = rhs;
+		if(debug) {
+			cout << "after assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs), ierr);
+		EPETRA_TEST_ERR(!seperateData(rhs,lhs), ierr);
+		delete[] rand1;
+		delete[] rand2;
+	}
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+	{
+	  // copy->view
+		// orig and dup should have same signature
+		// modifying orig or dup should change the other
+		if(verbose) cout << "\nChecking copy->view" << endl;
+		double* rand1 = getRandArray(10);
+		Epetra_SerialDenseMatrix lhs(4,4);
+		Epetra_SerialDenseMatrix rhs(View, rand1, 2, 2, 5);
+		if(debug) {
+			cout << "before assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		lhs = rhs;
+		if(debug) {
+			cout << "after assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs), ierr);
+		EPETRA_TEST_ERR(seperateData(rhs,lhs), ierr);
+		delete[] rand1;
+	}
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;	
+	{
+		// view->view
+		// orig and dup should have same signature
+		// modifying orig or dup should change the other
+		if(verbose) cout << "\nChecking view->view" << endl;
+		double* rand1 = getRandArray(9);
+		double* rand2 = getRandArray(18);
+		Epetra_SerialDenseMatrix lhs(View, rand1, 3, 3, 3);
+		Epetra_SerialDenseMatrix rhs(View, rand2, 3, 3, 6);
+		if(debug) {
+			cout << "before assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		lhs = rhs;
+		if(debug) {
+			cout << "after assignment:" << endl;
+			printMat("rhs",rhs);
+			printMat("lhs",lhs);
+		}
+		EPETRA_TEST_ERR(!identicalSignatures(rhs,lhs), ierr);
+		EPETRA_TEST_ERR(seperateData(rhs,lhs), ierr);
+		delete[] rand1;
+		delete[] rand2;
+	}
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+
+	return(returnierr);
+}
+
+//=========================================================================
+// test matrix copy constructor (copy & view)
+int matrixCpyCtr(bool verbose, bool debug) {
+	const int m1rows = 5;
+	const int m1cols = 4;
+	const int m2rows = 2;
+	const int m2cols = 6;
+
+	int ierr = 0;
+	int returnierr = 0;
+	if(verbose) printHeading("Testing matrix copy constructors");
+
+	if(verbose) cout << "checking copy constructor (view)" << endl;
+	double* m1rand = getRandArray(m1rows * m1cols);
+	if(debug) printArray(m1rand, m1rows * m1cols);
+	Epetra_SerialDenseMatrix m1(View, m1rand, m1rows, m1rows, m1cols);
+	if(debug) {
+		cout << "original matrix:" << endl;
+		printMat("m1",m1);
+	}
+	Epetra_SerialDenseMatrix m1clone(m1);
+	if(debug) {
+		cout << "clone matrix:" << endl;
+		printMat("m1clone",m1clone);
+	}
+	if(verbose) cout << "making sure signatures match" << endl;
+	EPETRA_TEST_ERR(!identicalSignatures(m1, m1clone), ierr);
+	delete[] m1rand;
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+	
+	if(verbose) cout << "\nchecking copy constructor (copy)" << endl;
+	double* m2rand = getRandArray(m2rows * m2cols);
+	if(debug) printArray(m2rand, m2rows * m2cols);
+	Epetra_SerialDenseMatrix m2(Copy, m2rand, m2rows, m2rows, m2cols);
+	if(debug) {
+		cout << "original matrix:" << endl;
+		printMat("m2",m2);
+	}
+	Epetra_SerialDenseMatrix m2clone(m2);
+	if(debug) {
+		cout << "clone matrix:" << endl;
+		printMat("m2clone",m2clone);
+	}
+	if(verbose) cout << "checking that signatures match" << endl;
+	EPETRA_TEST_ERR(!identicalSignatures(m2, m2clone), ierr);
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+
+	if(verbose) cout << "\nmodifying entry in m2, m2clone should be unchanged" << endl;
+	EPETRA_TEST_ERR(!seperateData(m2, m2clone), ierr);
+	if(debug) {
+		printArray(m2rand, m2rows * m2cols);
+		cout << "orig:" << endl;
+		printMat("m2",m2);
+		cout << "clone:" << endl;
+		printMat("m2clone",m2clone);
+	}
+	delete[] m2rand;
+	returnierr += ierr;
+	if(ierr == 0)
+		if(verbose) cout << "Checked OK." << endl;
+	ierr = 0;
+	
+	return(returnierr);
+}
+
+//=========================================================================
+// prints section heading with spacers/formatting
+void printHeading(char* heading) {
+	cout << "\n==================================================================\n";
+	cout << heading << endl;
+	cout << "==================================================================\n";
+}
+
+//=========================================================================
+// prints SerialDenseMatrix/Vector with formatting
+void printMat(char* name, Epetra_SerialDenseMatrix& matrix) {
+	//cout << "--------------------" << endl;
+	cout << "*** " << name << " ***" << endl;
+	cout << matrix;
+	//cout << "--------------------" << endl;
+}
+
+//=========================================================================
+// prints double* array with formatting
+void printArray(double* array, int length) {
+	cout << "user array (size " << length << "): ";
+	for(int i = 0; i < length; i++)
+		cout << array[i] << "  ";
+	cout << endl;
+}
+
+//=========================================================================
+// returns a double* array of a given length, with random values on interval (-1,1).
+// this is the same generator used in SerialDenseMatrix
+double* getRandArray(int length) {
+  const double a = 16807.0;
+	const double BigInt = 2147483647.0;
+	const double DbleOne = 1.0;
+	const double DbleTwo = 2.0;
+	double seed = rand();
+
+	double* array = new double[length];
+
+	for(int i = 0; i < length; i++) {
+		seed = fmod(a * seed, BigInt);
+		array[i] = DbleTwo * (seed / BigInt) - DbleOne;
+	}
+
+	return(array);
+}
+
+//=========================================================================
+// checks the signatures of two matrices
+bool identicalSignatures(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b, bool testLDA) {
+
+	if((a.M()  != b.M()  )|| // check properties first
+		 (a.N()  != b.N()  )||
+		 (a.CV() != b.CV() ))
+		return(false);
+
+	if(testLDA == true)      // if we are coming from op= c->c #2 (have enough space)
+		if(a.LDA() != b.LDA()) // then we don't check LDA (but we do check it in the test function)
+			return(false);
+
+	if(a.CV() == View) { // if we're still here, we need to check the data
+		if(a.A() != b.A()) // for a view, this just means checking the pointers
+			return(false);   // for a copy, this means checking each element
+	}
+	else { // CV == Copy
+		const int m = a.M();
+		const int n = a.N();
+		for(int i = 0; i < m; i++)
+			for(int j = 0; j < n; j++) {
+				if(a(i,j) != b(i,j))
+					return(false);
+			}
+	}
+
+	return(true); // if we're still here, signatures are identical
+}
+
+//=========================================================================
+// checks if two matrices are independent or not
+bool seperateData(Epetra_SerialDenseMatrix& a, Epetra_SerialDenseMatrix& b) {
+	bool seperate;
+
+	int r = EPETRA_MIN(a.M(),b.M()) / 2; // ensures (r,c) is valid
+	int c = EPETRA_MIN(a.N(),b.N()) / 2; // in both matrices
+
+	double orig_a = a(r,c);
+	double new_value = a(r,c) + 1;
+	if(b(r,c) == new_value) // there's a chance b could be independent, but
+		new_value++;          // already have new_value in (r,c).
+	
+	a(r,c) = new_value;
+	if(b(r,c) == new_value)
+		seperate = false;
+	else
+		seperate = true;
+
+	a(r,c) = orig_a; // undo change we made to a
+
+	return(seperate);
 }

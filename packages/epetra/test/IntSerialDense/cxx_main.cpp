@@ -523,6 +523,7 @@ int matrixExceptions(bool verbose, bool debug) {
 	if(ierr == -1)
 		if(verbose) cout << "Checked OK." << endl;
 
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if EPETRA_ARRAY_BOUNDS_CHECK is defined.
 	// out of range index to op() & op[] (6 cases)
 	int* rand16 = getRandArray(16);
 	Epetra_IntSerialDenseMatrix m2(View, rand16, 4, 4, 4);
@@ -605,14 +606,15 @@ int matrixExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
-	
+#endif // end of EPETRA_ARRAY_BOUNDS_CHECK conditional
 	
 	// ISDM = ISDV
+	Epetra_IntSerialDenseMatrix m3;
 	Epetra_IntSerialDenseVector v1;
 	try {
 		caught = false;
 		if(verbose) cout << "\nChecking op = - assigning ISDV to ISDM";
-		m2 = v1;
+		m3 = v1;
 	}
 	catch(int error) {
 		caught = true;
@@ -1339,6 +1341,7 @@ int vectorExceptions(bool verbose, bool debug) {
 	if(ierr == -1)
 		if(verbose) cout << "Checked OK." << endl;
 
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK // only test op() and op[] exceptions if EPETRA_ARRAY_BOUNDS_CHECK is defined.
 	// out of range index to op() & op[]
 	int* rand17 = getRandArray(17);
 	Epetra_IntSerialDenseVector v2(View, rand17, 17);
@@ -1393,6 +1396,7 @@ int vectorExceptions(bool verbose, bool debug) {
 			if(verbose) cout << "Checked OK." << endl;
 	}
 	EPETRA_TEST_ERR(!caught, returnierr);
+#endif // end of EPETRA_ARRAY_BOUNDS_CHECK conditional
 
 	// we don't need to check for ISDV = ISDM, as that is a compile-time error
 	

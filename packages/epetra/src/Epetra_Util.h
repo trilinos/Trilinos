@@ -24,15 +24,23 @@
 
 #ifndef EPETRA_UTIL_H
 #define EPETRA_UTIL_H
+
 #include "Epetra_Object.h"
 class Epetra_CrsMatrix;
 class Epetra_MultiVector;
+
 //! Epetra_Util:  The Epetra Util Wrapper Class.
 /*! The Epetra_Util class is a collection of useful functions that cut across a broad
-    set of other classes.  Specifically, sorting is provided by this class.
+    set of other classes.  Specifically, sorting is provided by this class. A random
+		number generator is also provided.
 
     Epetra_Util is a serial interface only.  This is appropriate since the standard 
     utilities are only specified for serial execution (or shared memory parallel).
+
+		The random number generator is a multiplicative linear congruential generator, 
+		with multiplier 16807 and modulus 2^31 - 1. It is based on the algorithm described in
+		"Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
+		Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
 */
 
 class Epetra_Util {
@@ -41,7 +49,7 @@ class Epetra_Util {
   //! Epetra_Util Constructor.
   /*! Builds an instance of a serial Util object.
    */
-  Epetra_Util(void);
+  Epetra_Util();
 
 
   //! Epetra_Util Copy Constructor.
@@ -50,7 +58,32 @@ class Epetra_Util {
   Epetra_Util(const Epetra_Util& Util);
 
   //! Epetra_Util Destructor.
-  virtual ~Epetra_Util(void);
+  virtual ~Epetra_Util();
+
+  //@{ \name Random number utilities
+
+	//! Returns a random integer on the interval (0, 2^31-1)
+	unsigned int RandomInt();
+
+	//! Returns a random double on the interval (-1.0,1.0)
+	double RandomDouble();
+
+  //! Get seed from Random function.
+  /*!
+    \return Current random number seed.
+  */
+	unsigned int Seed() const;
+
+  //! Set seed for Random function.
+  /*!
+    \param In
+    Seed - An integer on the interval [0, INT_MAX).
+
+    \return Integer error code, set to 0 if successful.
+  */
+	int SetSeed(unsigned int Seed);
+
+	//@}
   
   //! Epetra_Util Sort Routine (Shell sort)
   /*! 
@@ -79,6 +112,7 @@ class Epetra_Util {
   void Sort(bool SortAscending, int NumKeys, int * Keys, 
 	    int NumDoubleCompanions,double ** DoubleCompanions, 
 	    int NumIntCompanions, int ** IntCompanions) const;
+
   //! Epetra_Util Chop method.  Return zero if input Value is less than ChopValue
   static double Chop(const double & Value){
     if (fabs(Value) < chopVal_) return 0;
@@ -86,12 +120,17 @@ class Epetra_Util {
   };
 
   static const double chopVal_;
+
+ private:
+	unsigned int Seed_;
+
 };
 
+
 // Epetra_Util constructor
-inline Epetra_Util::Epetra_Util(void){}
+inline Epetra_Util::Epetra_Util() : Seed_(rand()) {}
 // Epetra_Util constructor
-inline Epetra_Util::Epetra_Util(const Epetra_Util& Util){}
+inline Epetra_Util::Epetra_Util(const Epetra_Util& Util) : Seed_(Util.Seed_) {}
 // Epetra_Util destructor
 inline Epetra_Util::~Epetra_Util(){}
 

@@ -22,8 +22,9 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-
 #include "Epetra_IntSerialDenseMatrix.h"
+#include "Epetra_Util.h"
+
 //=============================================================================
 Epetra_IntSerialDenseMatrix::Epetra_IntSerialDenseMatrix()
 	: Epetra_Object("Epetra::IntSerialDenseMatrix"),
@@ -269,6 +270,7 @@ void Epetra_IntSerialDenseMatrix::CopyMat(int* Source, int Source_LDA, int NumRo
   }
   return;
 }
+
 //=============================================================================
 int Epetra_IntSerialDenseMatrix::OneNorm() {
 	int anorm = 0;
@@ -282,6 +284,7 @@ int Epetra_IntSerialDenseMatrix::OneNorm() {
 	}
 	return(anorm);
 }
+
 //=============================================================================
 int Epetra_IntSerialDenseMatrix::InfNorm() {	
 	int anorm = 0;
@@ -299,40 +302,7 @@ int Epetra_IntSerialDenseMatrix::InfNorm() {
 	}
 	return(anorm);
 }
-//=========================================================================
-int& Epetra_IntSerialDenseMatrix::operator () (int RowIndex, int ColIndex)  {
-  if(RowIndex >= M_ || RowIndex < 0) 
-		throw ReportError("Row index = " + toString(RowIndex) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
-  if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
-  return(A_[ColIndex*LDA_ + RowIndex]);
-}
-//=========================================================================
-const int& Epetra_IntSerialDenseMatrix::operator () (int RowIndex, int ColIndex) const  {
-  if(RowIndex >= M_ || RowIndex < 0) 
-		throw ReportError("Row index = " + toString(RowIndex) + 
-											" Out of Range 0 - " + toString(M_-1),-1);
-  if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
-	return(A_[ColIndex * LDA_ + RowIndex]);
-}
-//=========================================================================
-const int* Epetra_IntSerialDenseMatrix::operator [] (int ColIndex) const  {
-  if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
-  return(A_ + ColIndex * LDA_);
-}
-//=========================================================================
-int* Epetra_IntSerialDenseMatrix::operator [] (int ColIndex)  {
-  if(ColIndex >= N_ || ColIndex < 0) 
-		throw ReportError("Column index = " + toString(ColIndex) + 
-											" Out of Range 0 - " + toString(N_-1),-2);
-  return(A_+ ColIndex * LDA_);
-}
+
 //=========================================================================
 void Epetra_IntSerialDenseMatrix::Print(ostream& os) const {
 	if(CV_ == Copy)
@@ -356,30 +326,16 @@ void Epetra_IntSerialDenseMatrix::Print(ostream& os) const {
 			os << endl;
 		}
 }
+
 //=========================================================================
 int Epetra_IntSerialDenseMatrix::Random() {
-	// Generate random numbers drawn from a uniform distribution on
-	// the interval [0,maxint) using a multiplicative congruential generator
-	// with modulus 2^31 - 1.
 
-	const int maxint = 100;
+	Epetra_Util util;
 
-  const double a = 16807.0;
-	const double BigInt = 2147483647.0;
-	double seed = rand(); // Use POSIX standard random function
-
-	double randdouble;
-	int randint;
-
-	int* arrayPtr = 0;
-
-  for(int j = 0; j < N_; j++) {
-    arrayPtr = A_ + (j * LDA_);
-    for(int i = 0; i < M_; i++) {
-			seed = fmod(a * seed, BigInt);
-			randdouble = (seed / BigInt);
-			randint = int(randdouble * maxint);
-			*arrayPtr++ = randint;
+	for(int j = 0; j < N_; j++) {
+		int* arrayPtr = A_ + (j * LDA_);
+		for(int i = 0; i < M_; i++) {
+			*arrayPtr++ = util.RandomInt();
 		}
 	}
 	

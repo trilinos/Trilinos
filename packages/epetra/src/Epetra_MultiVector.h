@@ -36,6 +36,7 @@ class Epetra_Vector;
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
+#include "Epetra_Util.h"
 
 //! Epetra_MultiVector: A class for constructing and using dense multi-vectors, vectors and matrices in parallel.
 
@@ -459,9 +460,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int PutScalar (double ScalarConstant);
   
   //! Set multi-vector values to random numbers.
-  /*! The random number generator is based on the algorithm described in
-      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
-      Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
+  /*! MultiVector uses the random number generator provided by Epetra_Util. 
+		The multi-vector values will be set to random values on the interval (-1.0, 1.0).
 
     \return Integer error code, set to 0 if successful.
 
@@ -800,17 +800,17 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   //! Set seed for Random function.
   /*!
     \param In
-    Seed - Should be an odd positive integer value (stored as double).
+    Seed - Should be an integer on the interval (0, 2^31-1).
 
     \return Integer error code, set to 0 if successful.
   */
-  int SetSeed(double Seed){Seed_=Seed; return(0);};
+  int SetSeed(unsigned int Seed){return(Util_.SetSeed(Seed));};
 
   //! Get seed from Random function.
   /*!
     \return Current random number seed.
   */
-  double Seed(){return(Seed_);};
+  unsigned int Seed(){return(Util_.Seed());};
 
   //@}
 
@@ -958,11 +958,10 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   bool ConstantStride_;
   int Stride_;
   bool Allocated_;
-  double Seed_;
   double * DoubleTemp_;
   int * IntTemp_;
   Epetra_Vector ** Vectors_;
-
+  Epetra_Util Util_;
 };
 
 #endif /* EPETRA_MULTIVECTOR_H */

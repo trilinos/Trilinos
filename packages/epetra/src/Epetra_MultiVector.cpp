@@ -48,9 +48,10 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_BlockMap& Map, int NumVector
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(Map.NumMyPoints()),
-    Allocated_(false),
-    Seed_(1)
+    Allocated_(false)
 {
+	Util_.SetSeed(1);
+
     AllocateForCopy();
     
     for (int i = 0; i< NumVectors_; i++) Pointers_[i] = Values_+i*Stride_;
@@ -74,7 +75,7 @@ Epetra_MultiVector::Epetra_MultiVector(const Epetra_MultiVector& Source)
     ConstantStride_(true),
     Stride_(0),
     Allocated_(false),
-    Seed_(Source.Seed_)
+    Util_(Source.Util_)
 {
   AllocateForCopy();
   
@@ -101,10 +102,10 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(Map.NumMyPoints()),
-    Allocated_(false),
-    Seed_(1)
+    Allocated_(false)
 {
-  
+	Util_.SetSeed(1);  
+
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
 
@@ -132,9 +133,10 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_BlockM
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(Map.NumMyPoints()),
-    Allocated_(false),
-    Seed_(1)
+    Allocated_(false)
 {
+	Util_.SetSeed(1);
+
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
   
@@ -163,9 +165,10 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(0),
-    Allocated_(false),
-    Seed_(1)
+    Allocated_(false)
 {
+	Util_.SetSeed(1);
+
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
 
@@ -194,10 +197,10 @@ Epetra_MultiVector::Epetra_MultiVector(Epetra_DataAccess CV, const Epetra_MultiV
     UserAllocated_(false),
     ConstantStride_(true),
     Stride_(0),
-    Allocated_(false),
-    Seed_(1)
+    Allocated_(false)
 {
-  
+	Util_.SetSeed(1);  
+
   if (CV==Copy) AllocateForCopy();
   else AllocateForView();
 
@@ -248,9 +251,9 @@ int Epetra_MultiVector::AllocateForCopy(void)
   
   int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
-    Seed_ = 2*Comm_->MyPID() + randval;
+    Util_.SetSeed(2*Comm_->MyPID() + randval);
   else
-    Seed_ = randval; // Replicated Local MultiVectors get the same seed on all PEs
+    Util_.SetSeed(randval); // Replicated Local MultiVectors get the same seed on all PEs
 
   Allocated_ = true;
   UserAllocated_ = false;
@@ -296,9 +299,9 @@ int Epetra_MultiVector::AllocateForView(void)
   
   int randval = rand(); // Use POSIX standard random function
   if (DistributedGlobal_)
-    Seed_ = 2*Comm_->MyPID() + randval;
+    Util_.SetSeed(2*Comm_->MyPID() + randval);
   else
-    Seed_ = randval; // Replicated Local MultiVectors get the same seed on all PEs
+    Util_.SetSeed(randval); // Replicated Local MultiVectors get the same seed on all PEs
 
   Allocated_ = true;
   UserAllocated_ = true;
@@ -414,11 +417,11 @@ int Epetra_MultiVector::ChangeMyValue(int MyBlockRow, int BlockRowOffset,
   return(0);
 }
 //=========================================================================
-int Epetra_MultiVector::Random(void) {
+int Epetra_MultiVector::Random() {
   // Generate random numbers drawn from a uniform distribution on
   // the interval (-1,1) using a multiplicative congruential generator
   // with modulus 2^31 - 1.
-  
+	/*  
   int i,j;
   const double a = 16807.0, BigInt=2147483647.0, DbleOne=1.0, DbleTwo=2.0;
   
@@ -427,9 +430,13 @@ int Epetra_MultiVector::Random(void) {
       Seed_ = fmod( a*Seed_, BigInt );
       Pointers_[i][j] = DbleTwo*(Seed_/BigInt)-DbleOne;
     }
-  
+	*/
+
+	for(int i = 0; i < NumVectors_; i++)
+		for(int j = 0; j < MyLength_; j++)
+			Pointers_[i][j] = Util_.RandomDouble();
+
   return(0);
-  
 }
  
 //=========================================================================

@@ -83,7 +83,7 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
     Size() or Resize functions.  
     Values should be defined by using the [] or () operators.
    */
-  Epetra_SerialDenseVector(void);
+  Epetra_SerialDenseVector();
   
   //! Sized constructor; defines a variable-sized object
   /*!
@@ -108,7 +108,7 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
 	   See Detailed Description section for further discussion.
   */
-  Epetra_SerialDenseVector(Epetra_DataAccess CV, double *Values, int Length);
+  Epetra_SerialDenseVector(Epetra_DataAccess CV, double* Values, int Length);
   
   //! Epetra_SerialDenseVector copy constructor.
   
@@ -157,6 +157,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   /*!
     Returns the specified element of the vector.  Bounds checking is enforced.
     \return Specified element in vector.
+
+    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     double& operator () (int Index);
 
@@ -164,6 +166,8 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
   /*!
     Returns the specified element of the vector.  Bounds checking is enforced.
     \return Specified element in vector.
+
+    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const double& operator () (int Index) const;
 
@@ -184,12 +188,64 @@ class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
     \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const double& operator [] (int Index) const;
+
+  //! Set vector values to random numbers.
+  /*! 
+		SerialDenseVector uses the random number generator provided by Epetra_Util.
+		The vector values will be set to random values on the interval (-1.0, 1.0).
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int Random();
     
   //! Returns length of vector.
-  int Length()  const {return(M_);};
+  int Length() const {return(M_);};
 
   //! Returns pointer to the values in vector.
-  double * Values()  const {return(A_);};
+  double* Values() const {return(A_);};
+
+	//! Returns the data access mode of the \e this vector.
+	Epetra_DataAccess CV() const {return(CV_);};
+
+  //@{ \name I/O methods
+  //! Print service methods; defines behavior of ostream << operator.
+  virtual void Print(ostream& os) const;
+  //@}
 };
+
+// inlined definitions of op() and op[]
+//=========================================================================
+inline double& Epetra_SerialDenseVector::operator() (int Index)  {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if (Index >= M_ || Index < 0) 
+		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1);
+#endif
+  return(A_[Index]);
+}
+//=========================================================================
+inline const double& Epetra_SerialDenseVector::operator() (int Index) const  {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if (Index >= M_ || Index < 0) 
+		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
+inline double& Epetra_SerialDenseVector::operator [] (int Index)  {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if (Index >= M_ || Index < 0) 
+		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
+inline const double& Epetra_SerialDenseVector::operator [] (int Index) const  {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if (Index >= M_ || Index < 0) 
+		throw ReportError("Index = " +toString(Index) + " Out of Range 0 - " + toString(M_-1), -1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
 
 #endif /* EPETRA_SERIALDENSEVECTOR_H */

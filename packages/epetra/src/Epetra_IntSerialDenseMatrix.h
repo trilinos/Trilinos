@@ -194,16 +194,6 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   //! Computes the Infinity-Norm of the \e this matrix.
   virtual int InfNorm();
 
-  //! Element access function.
-  /*!
-    The parentheses operator returns the element in the ith row and jth column if A(i,j) is
-    specified, the expression A[j][i] (note that i and j are reversed) will return the same element.
-    Thus, A(i,j) = A[j][i] for all valid i and j.
-
-    \return Element from the specified row and column.
-  */
-    int& operator () (int RowIndex, int ColIndex);
-
   //! Copy from one matrix to another.
   /*!
     The operator= allows one to copy the values from one existing IntSerialDenseMatrix to another.
@@ -220,6 +210,20 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     Thus, A(i,j) = A[j][i] for all valid i and j.
 
     \return Element from the specified row and column.
+
+		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
+  */
+    int& operator () (int RowIndex, int ColIndex);
+
+  //! Element access function.
+  /*!
+    The parentheses operator returns the element in the ith row and jth column if A(i,j) is
+    specified, the expression A[j][i] (note that i and j are reversed) will return the same element.
+    Thus, A(i,j) = A[j][i] for all valid i and j.
+
+    \return Element from the specified row and column.
+
+		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator () (int RowIndex, int ColIndex) const;
 
@@ -232,6 +236,7 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
+		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     int* operator [] (int ColIndex);
 
@@ -244,16 +249,16 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
     \return Pointer to address of specified column.
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
+		\warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int* operator [] (int ColIndex) const;
 
   //! Set matrix values to random numbers.
-  /*! The random number generator is based on the algorithm described in
-      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
-      Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
+  /*! 
+		IntSerialDenseMatrix uses the random number generator provided by Epetra_Util.
+		The matrix values will be set to random values on the interval (0, 2^31 - 1).
 
     \return Integer error code, set to 0 if successful.
-
   */
   int Random();
     
@@ -307,7 +312,6 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
  protected:
 
 	void CopyMat(int* Source, int Source_LDA, int NumRows, int NumCols, int* Target, int Target_LDA);
-  //void CopyMat(int* A, int LDA, int NumRows, int NumCols, int* B, int LDB);
   void CleanupData();
 
 	Epetra_DataAccess CV_;
@@ -318,5 +322,50 @@ class Epetra_IntSerialDenseMatrix : public Epetra_Object {
   int* A_;
 
 };
+
+// inlined definitions of op() and op[]
+//=========================================================================
+inline int& Epetra_IntSerialDenseMatrix::operator () (int RowIndex, int ColIndex) {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(RowIndex >= M_ || RowIndex < 0) 
+		throw ReportError("Row index = " + toString(RowIndex) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+  if(ColIndex >= N_ || ColIndex < 0) 
+		throw ReportError("Column index = " + toString(ColIndex) + 
+											" Out of Range 0 - " + toString(N_-1),-2);
+#endif
+  return(A_[ColIndex*LDA_ + RowIndex]);
+}
+//=========================================================================
+inline const int& Epetra_IntSerialDenseMatrix::operator () (int RowIndex, int ColIndex) const {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(RowIndex >= M_ || RowIndex < 0) 
+		throw ReportError("Row index = " + toString(RowIndex) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+  if(ColIndex >= N_ || ColIndex < 0) 
+		throw ReportError("Column index = " + toString(ColIndex) + 
+											" Out of Range 0 - " + toString(N_-1),-2);
+#endif
+	return(A_[ColIndex * LDA_ + RowIndex]);
+}
+//=========================================================================
+inline int* Epetra_IntSerialDenseMatrix::operator [] (int ColIndex) {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(ColIndex >= N_ || ColIndex < 0) 
+		throw ReportError("Column index = " + toString(ColIndex) + 
+											" Out of Range 0 - " + toString(N_-1),-2);
+#endif
+  return(A_+ ColIndex * LDA_);
+}
+//=========================================================================
+inline const int* Epetra_IntSerialDenseMatrix::operator [] (int ColIndex) const {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(ColIndex >= N_ || ColIndex < 0) 
+		throw ReportError("Column index = " + toString(ColIndex) + 
+											" Out of Range 0 - " + toString(N_-1),-2);
+#endif
+  return(A_ + ColIndex * LDA_);
+}
+//=========================================================================
 
 #endif /* EPETRA_INTSERIALDENSEMATRIX_H */

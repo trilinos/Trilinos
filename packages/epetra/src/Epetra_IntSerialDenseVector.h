@@ -138,15 +138,19 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
   //! Element access function.
   /*!
-    Returns the specified element of the vector.  Bounds checking is enforced.
+    Returns the specified element of the vector.
     \return Specified element in vector.
+
+    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     int& operator () (int Index);
 
   //! Element access function.
   /*!
-    Returns the specified element of the vector.  Bounds checking is enforced.
+    Returns the specified element of the vector.
     \return Specified element in vector.
+
+    \warning No bounds checking is done unless Epetra is compiled with EPETRA_ARRAY_BOUNDS_CHECK.
   */
     const int& operator () (int Index) const;
 
@@ -169,12 +173,11 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
     const int& operator [] (int Index) const;
     
   //! Set vector values to random numbers.
-  /*! The random number generator is based on the algorithm described in
-      "Random Number Generators: Good Ones Are Hard To Find", S. K. Park and K. W. Miller, 
-      Communications of the ACM, vol. 31, no. 10, pp. 1192-1201.
+  /*! 
+		IntSerialDenseVector uses the random number generator provided by Epetra_Util.
+		The vector values will be set to random values on the interval (0, 2^31 - 1).
 
     \return Integer error code, set to 0 if successful.
-
   */
   int Random();
 
@@ -226,5 +229,44 @@ class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 	int MakeViewOf(const Epetra_IntSerialDenseVector& Source);
 	//@}
 };
+
+// inlined definitions of op() and op[]
+//=========================================================================
+inline int& Epetra_IntSerialDenseVector::operator() (int Index) {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+#endif
+  return(A_[Index]);
+}
+//=========================================================================
+inline const int& Epetra_IntSerialDenseVector::operator() (int Index) const {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
+inline int& Epetra_IntSerialDenseVector::operator [] (int Index) {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+  if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
+inline const int& Epetra_IntSerialDenseVector::operator [] (int Index) const {
+#ifdef EPETRA_ARRAY_BOUNDS_CHECK
+	if(Index >= M_ || Index < 0) 
+		throw ReportError("Index = " + toString(Index) + 
+											" Out of Range 0 - " + toString(M_-1),-1);
+#endif
+   return(A_[Index]);
+}
+//=========================================================================
 
 #endif /* EPETRA_INTSERIALDENSEVECTOR_H */

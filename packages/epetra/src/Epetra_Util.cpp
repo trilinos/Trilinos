@@ -31,6 +31,48 @@
 
 const double Epetra_Util::chopVal_ = 1.0e-15;
 
+//=========================================================================
+unsigned int Epetra_Util::RandomInt() {
+
+  const int a = 16807;
+	const int m = 2147483647;
+	const int q = 127773;
+	const int r = 2836;
+
+	int hi = Seed_ / q;
+	int lo = Seed_ % q;
+	int test = a * lo - r * hi;
+	if (test > 0)
+		Seed_ = test;
+	else
+		Seed_ = test + m;
+	
+	return(Seed_);
+}
+
+//=========================================================================
+double Epetra_Util::RandomDouble() {
+	const double Modulus = 2147483647.0;
+	const double DbleOne = 1.0;
+	const double DbleTwo = 2.0;
+
+	double randdouble = RandomInt(); // implicit conversion from int to double
+	randdouble = DbleTwo * (randdouble / Modulus) - DbleOne; // scale to (-1.0, 1.0)
+
+	return(randdouble);
+}
+
+//=========================================================================
+unsigned int Epetra_Util::Seed() const {
+	return(Seed_);
+}
+
+//=========================================================================
+int Epetra_Util::SetSeed(unsigned int Seed) {
+	Seed_ = Seed;
+	return(0);
+}
+
 //=============================================================================
   void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
 			int NumDoubleCompanions,double ** DoubleCompanions, 
