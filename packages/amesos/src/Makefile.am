@@ -184,13 +184,9 @@ endif
 
 if HAVE_AMESOS_MUMPS
 MUMPS_H = \
-	$(srcdir)/Amesos_Mumps.h \
-	$(srcdir)/Amesos_EpetraBaseSolver.h \
-	$(srcdir)/EpetraExt_Redistor.h
+	$(srcdir)/Amesos_Mumps.h
 MUMPS = \
-	$(srcdir)/Amesos_Mumps.cpp \
-	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
-	$(srcdir)/EpetraExt_Redistor.cpp
+	$(srcdir)/Amesos_Mumps.cpp
 else
 MUMPS_H =
 MUMPS =
