@@ -55,9 +55,8 @@ extern void ML_matmat_mult(ML_Operator *Amat, ML_Operator *Bmat,
 extern void ML_getrow_matvec(ML_Operator *matrix, double *vec, 
                              int Nvec, double *ovec, int *Novec);
 
-extern void ML_rap(ML *ml, ML_Operator *R2mat, ML_Operator *A2mat, 
-                   ML_Operator *P2mat, ML_Operator *Result, int level,
-                   int N_input_vector);
+extern void ML_rap(ML_Operator *R2mat, ML_Operator *A2mat, 
+                   ML_Operator *P2mat, ML_Operator *Result);
 
 extern void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
                          ML_Operator *A, ML_Operator *P, int iNvec,

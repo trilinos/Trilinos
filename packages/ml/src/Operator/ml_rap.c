@@ -25,17 +25,17 @@
 /*                     - length of the local vector 'v'.                */
 /* -------------------------------------------------------------------- */
 
-void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat, 
-            ML_Operator *Pmat, ML_Operator *Result, 
-            int level, int N_input_vector)
+void ML_rap(ML_Operator *Rmat, ML_Operator *Amat, 
+            ML_Operator *Pmat, ML_Operator *Result)
 {
-   int         max_per_proc, i, j;
+  int         max_per_proc, i, j, N_input_vector;
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
    ML_CommInfoOP *getrow_comm; 
    double      *scales = NULL;
 
    /* Check that N_input_vector is reasonable */
 
+   N_input_vector = Pmat->invec_leng;
    getrow_comm = Pmat->getrow->pre_comm;
    if ( getrow_comm != NULL) {
       for (i = 0; i < getrow_comm->N_neighbors; i++) {
@@ -54,7 +54,7 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
 
 
    ML_create_unique_col_id(N_input_vector, &(Pmat->getrow->loc_glob_map),
-                           getrow_comm, &max_per_proc, ml->comm);
+                           getrow_comm, &max_per_proc, Pmat->comm);
    Pmat->getrow->use_loc_glob_map = ML_YES;
 
 
@@ -64,12 +64,12 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
    else Pcomm = Pmat;
 
 #ifdef DEBUG
-   if ( ml->comm->ML_mypid == 0 )
+   if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P begins...\n");
 #endif
    ML_matmat_mult(Amat, Pcomm , &APmat);
 #ifdef DEBUG
-   if ( ml->comm->ML_mypid == 0 )
+   if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : A * P ends.\n");
 #endif
 
@@ -101,14 +101,14 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
    else AP2comm = APcomm;
 
 #ifdef DEBUG
-   if ( ml->comm->ML_mypid == 0 )
+   if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : R * AP begins...\n");
 #endif
 
    ML_matmat_mult(Rmat,AP2comm, &RAPmat);
 
 #ifdef DEBUG
-   if ( ml->comm->ML_mypid == 0 )
+   if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap : R * AP ends.\n");
 #endif
 
@@ -132,7 +132,7 @@ void ML_rap(ML *ml, ML_Operator *Rmat, ML_Operator *Amat,
    ML_RECUR_CSR_MSRdata_Destroy(RAPcomm);
    ML_Operator_Destroy(RAPcomm);
 #ifdef DEBUG
-   if ( ml->comm->ML_mypid == 0 )
+   if ( Pmat->comm->ML_mypid == 0 )
       printf("ML_rap ends.\n");
 #endif
 }
