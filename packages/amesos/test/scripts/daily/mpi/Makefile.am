@@ -6,7 +6,7 @@ EXEEXT = .exe
 if  HAVE_MPI
 
 if HAVE_AMESOS_SLUD
-SLUDIST_TEST = TestSuperLUdist 
+SLUDIST_TEST = TestOldSuperludist 
 else
 SLUDIST_TEST = 
 endif
@@ -30,7 +30,7 @@ KLU_TEST =
 endif
 
 if HAVE_AMESOS_SUPERLUDIST
-SUPERLUDIST_TEST = TestSuperludist
+SUPERLUDIST_TEST = TestSuperlud
 else
 SUPERLUDIST_TEST = 
 endif
@@ -46,10 +46,10 @@ noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) \
 	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) 
 
 if HAVE_AMESOS_SLUD
-TestSuperLUdist_SOURCES = $(srcdir)/TestSuperLUdist
+TestOldSuperludist_SOURCES = $(srcdir)/TestOldSuperludist
 
-TestSuperLUdist$(EXEEXT): $(srcdir)/TestSuperLUdist
-	cp $(srcdir)/TestSuperLUdist TestSuperLUdist$(EXEEXT) 
+TestOldSuperludist$(EXEEXT): $(srcdir)/TestOldSuperludist
+	cp $(srcdir)/TestOldSuperludist TestOldSuperludist$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_DSCPACK
@@ -74,10 +74,10 @@ TestKlu$(EXEEXT): $(srcdir)/TestKlu
 endif
 
 if HAVE_AMESOS_SUPERLUDIST
-TestSuperludist_SOURCES = $(srcdir)/TestSuperludist
+TestSuperlud_SOURCES = $(srcdir)/TestSuperlud
 
-TestSuperludist$(EXEEXT): $(srcdir)/TestSuperludist
-	cp $(srcdir)/TestSuperludist TestSuperludist$(EXEEXT) 
+TestSuperlud$(EXEEXT): $(srcdir)/TestSuperlud
+	cp $(srcdir)/TestSuperlud TestSuperlud$(EXEEXT) 
 endif
 
 if HAVE_AMESOS_MUMPS
