@@ -26,33 +26,30 @@
 # ************************************************************************
 #@HEADER
 
-if BUILD_EXAMPLES
+EXEEXT = .exe
 
-if BUILD_INOUT
+noinst_PROGRAMS = MapColoring_example
 
-INOUT_SUBDIRS = inout
+MapColoring_example_SOURCES = \
+  $(srcdir)/cxx_main.cpp \
+  $(top_srcdir)/test/epetra_test_err.h
 
-endif
+MapColoring_example_DEPENDENCIES = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a
 
-if BUILD_ZOLTAN
+MapColoring_example_CXXFLAGS = -I$(top_srcdir)/src/transform \
+                            -I$(top_srcdir)/src/coloring \
+                            -I$(top_srcdir)/src/inout \
+                            -I$(top_srcdir)/src \
+                            -I$(top_builddir)/src \
+                            -I$(top_srcdir)/../epetra/src \
+                            -I$(top_builddir)/../epetra/src
 
-ZOLTAN_SUBDIRS = zoltan
+MapColoring_example_LDADD = \
+  $(top_builddir)/src/libepetraext.a \
+  $(top_builddir)/../epetra/src/libepetra.a \
+  $(LIBS) \
+  $(BLAS_LIBS) \
+  $(FLIBS)
 
-endif
-
-if BUILD_MATLAB
-
-MATLAB_SUBDIRS = matlab
-
-endif
-
-if BUILD_COLORING
-
-MAPCOLORING_SUBDIRS = MapColoring
-
-endif
-
-SUBDIRS = $(INOUT_SUBDIRS) $(ZOLTAN_SUBDIRS) $(MATLAB_SUBDIRS) \
-	$(MAPCOLORING_SUBDIRS)
-
-endif

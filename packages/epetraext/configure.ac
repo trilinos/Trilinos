@@ -485,6 +485,7 @@ AC_CONFIG_FILES([
                 example/inout/Makefile
                 example/zoltan/Makefile
 		example/matlab/Makefile
+		example/MapColoring/Makefile
 		])
 
 AC_OUTPUT()
