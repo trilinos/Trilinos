@@ -440,7 +440,7 @@ int Zoltan_Jostle(
   }
 
   /* Call the real Jostle/ParMetis interface */
-  return Zoltan_ParMetis_Jostle(zz, 
+  return Zoltan_ParMetis_Jostle(zz, part_sizes,
             num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
             num_exp, exp_gids, exp_lids, exp_procs, exp_to_part,
             alg, &output_level, NULL, NULL, NULL, NULL, NULL);
