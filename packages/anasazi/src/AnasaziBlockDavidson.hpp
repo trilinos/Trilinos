@@ -340,7 +340,7 @@ namespace Anasazi {
 	//
 	// Check orthogonality of X ( if required )
 	//
-	if (_om->isVerbosity( Debug ) ) {
+	if (_om->isVerbosity( OrthoDetails ) ) {
 	  if (localSize > 0)
 	    accuracyCheck( Xcurrent.get(), MX.get(), Xprev.get() );
 	  else
@@ -433,12 +433,12 @@ namespace Anasazi {
 	    nFound ++;	  
 	}
 	// Print information on current iteration
-	if (_om->isVerbosityAndPrint( Debug )) {
+	if (_om->isVerbosityAndPrint( IterationDetails )) {
 	  _os << " Iteration " << _iter << " - Number of converged eigenvectors ";
 	  _os << _knownEV + nFound << endl;
 	} 
 	
-	if (_om->isVerbosityAndPrint( Debug )) {
+	if (_om->isVerbosityAndPrint( IterationDetails )) {
 	  _os << endl;
 	  cout.precision(2);
 	  cout.setf(ios::scientific, ios::floatfield);

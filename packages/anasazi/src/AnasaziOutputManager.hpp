@@ -49,10 +49,12 @@
 
 namespace Anasazi {
 
-	enum MsgType {	Error = 0,  		//! Errors are always printed
+	enum MsgType {	Error = 0,  		//! Errors [ always printed ]
 			Warning = 0x1, 		//! Internal warnings
-			FinalSummary = 0x2, 	//! Final computational summary
-			Debug = 0x4		//! Debugging information
+			IterationDetails = 0x2, //! Approximate eigenvalues, errors
+			OrthoDetails = 0x4,	//! Orthogonalization/orthonormalization details
+			FinalSummary = 0x8, 	//! Final computational summary
+			Debug = 0x10		//! Debugging information
 		};
 
 template <class ScalarType>

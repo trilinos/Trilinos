@@ -110,17 +110,19 @@ namespace Anasazi {
     // alpha[i] = norm of i-th column of (*this)
     //	
     void MvNorm ( std::vector<double>* normvec ) const {
-      if (normvec && (normvec->size() >= GetNumberVecs()) )
-	assert( Norm2(&(*normvec)[0]) == 0 );
+      if (normvec && (normvec->size() >= GetNumberVecs()) ) {
+	int ret = Norm2(&(*normvec)[0]);
+	assert( ret == 0 );
+      }
     };
     //
     // random vectors in i-th column of (*this)
     //
-    void MvRandom() { assert( Random() == 0 ); };
+    void MvRandom() { int ret = Random(); assert( ret == 0 ); };
     //
     // initializes each element of (*this) with alpha
     //
-    void MvInit ( const double alpha ) { assert( PutScalar( alpha ) == 0 ); };
+    void MvInit ( const double alpha ) { int ret = PutScalar( alpha ); assert( ret == 0 ); };
     //
     // print (*this)
     //
@@ -199,7 +201,6 @@ namespace Anasazi {
   
   MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) 
   {
-    std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
     EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
     return ptr_apv; // safe upcast.
   }
@@ -207,7 +208,6 @@ namespace Anasazi {
   
   void EpetraMultiVec::SetBlock( const MultiVec<double>& A, const std::vector<int>& index ) 
   {	
-    std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
     EpetraMultiVec temp_vec(View, *this, index);
 
     int numvecs = index.size();
@@ -215,7 +215,8 @@ namespace Anasazi {
       std::vector<int> index2( numvecs );
       for(int i=0; i<numvecs; i++)
 	index2[i] = i;
-      EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(tmp_vec!=NULL);
+      EpetraMultiVec *tmp_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+      assert(tmp_vec!=NULL);
       EpetraMultiVec A_vec(View, *tmp_vec, index2);
       temp_vec.MvAddMv( 1.0, A_vec, 0.0, A_vec );
     }
@@ -236,9 +237,11 @@ namespace Anasazi {
     Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
     Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
     
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+    assert(A_vec!=NULL);
     
-    assert( Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta ) == 0 );
+    int ret = Multiply( 'N', 'N', alpha, *A_vec, B_Pvec, beta );
+    assert( ret == 0 );
   }
 
   //-------------------------------------------------------------
@@ -250,10 +253,13 @@ namespace Anasazi {
   void EpetraMultiVec::MvAddMv ( const double alpha , const MultiVec<double>& A, 
 				 const double beta, const MultiVec<double>& B) 
   {
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
-    EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); assert(B_vec!=NULL);
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+    assert(A_vec!=NULL);
+    EpetraMultiVec *B_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(B)); 
+    assert(B_vec!=NULL);
     
-    assert ( Update( alpha, *A_vec, beta, *B_vec, 0.0 ) == 0 ); 
+    int ret = Update( alpha, *A_vec, beta, *B_vec, 0.0 );
+    assert( ret == 0 ); 
   }
 
   //-------------------------------------------------------------
@@ -271,7 +277,8 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      assert ( B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 ) == 0 ); 
+      int ret = B_Pvec.Multiply( 'T', 'N', alpha, *A_vec, *this, 0.0 );
+      assert( ret == 0 ); 
     }
   }
   
@@ -283,9 +290,11 @@ namespace Anasazi {
   
   void EpetraMultiVec::MvDot ( const MultiVec<double>& A, std::vector<double>* b ) const
   {
-    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); assert(A_vec!=NULL);
+    EpetraMultiVec *A_vec = dynamic_cast<EpetraMultiVec *>(&const_cast<MultiVec<double> &>(A)); 
+    assert(A_vec!=NULL);
     if (A_vec && b && ( b->size() >= A_vec->NumVectors() ) ) {
-      assert( this->Dot( *A_vec, &(*b)[0] ) == 0 );
+      int ret = this->Dot( *A_vec, &(*b)[0] );
+      assert( ret == 0 );
     }
   }
   
@@ -552,7 +561,7 @@ namespace Anasazi {
       return Failed; 
   }
   
-  
+
   ////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Anasazi::MultiVecTraits for Epetra::MultiVector.
@@ -601,12 +610,14 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(Copy, LocalMap, B.values(), B.stride(), B.numCols());
 
-      assert( mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta ) == 0 );   
+      int ret = mv.Multiply( 'N', 'N', alpha, A, B_Pvec, beta );
+      assert( ret == 0 );   
     }
     ///
     static void MvAddMv( const double alpha, const Epetra_MultiVector& A, const double beta, const Epetra_MultiVector& B, Epetra_MultiVector& mv )
     { 
-      assert( mv.Update( alpha, A, beta, B, 0.0 ) == 0 );
+      int ret = mv.Update( alpha, A, beta, B, 0.0 );
+      assert( ret == 0 );
     }
     ///
     static void MvTransMv( const double alpha, const Epetra_MultiVector& A, const Epetra_MultiVector& mv, Teuchos::SerialDenseMatrix<int,double>& B )
@@ -614,17 +625,20 @@ namespace Anasazi {
       Epetra_LocalMap LocalMap(B.numRows(), 0, mv.Map().Comm());
       Epetra_MultiVector B_Pvec(View, LocalMap, B.values(), B.stride(), B.numCols());
       
-      assert( B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 ) == 0 );
+      int ret = B_Pvec.Multiply( 'T', 'N', alpha, A, mv, 0.0 );
+      assert( ret == 0 );
     }
     ///
     static void MvDot( const Epetra_MultiVector& mv, const Epetra_MultiVector& A, std::vector<double>* b )
     {
-      assert( mv.Dot( A, &(*b)[0] ) == 0 );
+      int ret = mv.Dot( A, &(*b)[0] );
+      assert( ret == 0 );
     }
     ///
     static void MvNorm( const Epetra_MultiVector& mv, std::vector<double>* normvec )
     { 
-      assert( mv.Norm2(&(*normvec)[0]) == 0 );
+      int ret = mv.Norm2(&(*normvec)[0]);
+      assert( ret == 0 );
     }
     ///
     static void SetBlock( const Epetra_MultiVector& A, const std::vector<int>& index, Epetra_MultiVector& mv )
@@ -639,17 +653,20 @@ namespace Anasazi {
         for(int i=0; i<numvecs; i++)
 	  index2[i] = i;
         Epetra_MultiVector A_vec(View, A, &index2[0], numvecs);      
-        assert( temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 ) == 0 );
+        int ret = temp_vec.Update( 1.0, A_vec, 0.0, A_vec, 0.0 );
+	assert( ret == 0 );
       }
-      else
-        assert( temp_vec.Update( 1.0, A, 0.0, A, 0.0 ) == 0 );
+      else {
+        int ret = temp_vec.Update( 1.0, A, 0.0, A, 0.0 );
+	assert( ret == 0 );
+      }
     }
     ///
     static void MvRandom( Epetra_MultiVector& mv )
-    { assert( mv.Random() == 0 ); }
+    { int ret = mv.Random(); assert( ret == 0 ); }
     ///
     static void MvInit( Epetra_MultiVector& mv, double alpha = Teuchos::ScalarTraits<double>::zero() )
-    { assert( mv.PutScalar(alpha) == 0); }
+    { int ret = mv.PutScalar(alpha); assert( ret == 0 ); }
     ///
     static void MvPrint( const Epetra_MultiVector& mv, ostream& os )
     { os << mv << endl; }

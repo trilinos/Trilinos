@@ -55,7 +55,7 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int i;
+	int i, info;
 
 #ifdef EPETRA_MPI
 
@@ -134,41 +134,51 @@ int main(int argc, char *argv[]) {
                 {
                         Indices[0] = 1;
                         NumEntries = 1;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[1], &Indices[0])==0);
-                        assert(B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[1], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[1], &Indices[0]);
+			assert( info==0 );
+                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[1], &Indices[0]);
+			assert( info==0 );
                 }
                 else if (MyGlobalElements[i] == NumGlobalElements-1)
                 {
                         Indices[0] = NumGlobalElements-2;
                         NumEntries = 1;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0])==0);
-                        assert(B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
+			assert( info==0 );
+                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
+			assert( info==0 );
                 }
                 else
                 {
                         Indices[0] = MyGlobalElements[i]-1;
                         Indices[1] = MyGlobalElements[i]+1;
                         NumEntries = 2;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0])==0);
-                        assert(B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
+			assert( info==0 );
+                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
+			assert( info==0 );
                 }
                 // Put in the diagonal entry
-                assert(A->InsertGlobalValues(MyGlobalElements[i], 1, &diagA, &MyGlobalElements[i])==0);
-                assert(B->InsertGlobalValues(MyGlobalElements[i], 1, &diagB, &MyGlobalElements[i])==0);
+                info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diagA, &MyGlobalElements[i]);
+		assert( info==0 );
+                info = B->InsertGlobalValues(MyGlobalElements[i], 1, &diagB, &MyGlobalElements[i]);
+		assert( info==0 );
         }
          
         // Finish up
-        assert(A->TransformToLocal()==0);
-	assert(A->OptimizeStorage()==0);
+        info = A->TransformToLocal();
+	assert( info==0 );
+	info = A->OptimizeStorage();
+	assert( info==0 );
         A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-        assert(B->TransformToLocal()==0);
-	assert(B->OptimizeStorage()==0);
+        info = B->TransformToLocal();
+	assert( info==0 );
+	info = B->OptimizeStorage();
+	assert( info==0 );
         B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-
-
 	//
         //*****Select the Preconditioner*****
-        //
+	  //
         if (verbose) cout << endl << endl;
         if (verbose) cout << "Constructing ICT preconditioner" << endl;
         int Lfill = 0;
@@ -193,7 +203,8 @@ int main(int argc, char *argv[]) {
                 ICT->SetRelativeThreshold(Rthresh);
                 int initerr = ICT->InitValues(*A);
                 if (initerr != 0) cout << "InitValues error = " << initerr;
-                assert(ICT->Factor() == 0);
+                info = ICT->Factor();
+		assert( info==0 );
         } 
         //
         bool transA = false;
@@ -283,7 +294,9 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetNEV( nev );
 	
         // Inform the eigenproblem that you are finishing passing it information
-        assert( MyProblem->SetProblem() == 0 );
+        info = MyProblem->SetProblem();
+	if (info)
+	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
         // Create an output manager to handle the I/O from the solver
         Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =

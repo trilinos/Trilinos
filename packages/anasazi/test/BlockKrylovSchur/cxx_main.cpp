@@ -133,7 +133,9 @@ int main(int argc, char *argv[])
   MyProblem->SetNEV( nev );
 
   // Inform the eigenproblem that you are finishing passing it information
-  assert( MyProblem->SetProblem() == 0 );
+  info = MyProblem->SetProblem();
+  if (info)
+    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create default output manager 
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );

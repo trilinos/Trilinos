@@ -46,8 +46,7 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int i;
-	double zero = 0.0;
+	int i, info;
 
 #ifdef EPETRA_MPI
 
@@ -65,8 +64,6 @@ int main(int argc, char *argv[]) {
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
 	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
-
-	bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.
@@ -135,30 +132,36 @@ int main(int argc, char *argv[]) {
 			Indices[0] = 1;
 			Indices[1] = nx;
 			NumEntries = 2;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
+			assert( info==0 );
 		}
 		else if (MyGlobalElements[i] == nx*(nx-1))
 		{
 			Indices[0] = nx*(nx-1)+1;
 			Indices[1] = nx*(nx-2);
 			NumEntries = 2;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
+			assert( info==0 );
 		}
 		else if (MyGlobalElements[i] == nx-1)
 		{
 			Indices[0] = nx-2;
 			NumEntries = 1;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 			Indices[0] = 2*nx-1;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
+			assert( info==0 );
 		}
 		else if (MyGlobalElements[i] == NumGlobalElements-1)
 		{
 			Indices[0] = NumGlobalElements-2;
 			NumEntries = 1;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 			Indices[0] = nx*(nx-1)-1;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
+			assert( info==0 );
 		}
 		else if (MyGlobalElements[i] < nx)
 		{
@@ -166,7 +169,8 @@ int main(int argc, char *argv[]) {
                         Indices[1] = MyGlobalElements[i]+1;
 			Indices[2] = MyGlobalElements[i]+nx;
                         NumEntries = 3;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 		}
 		else if (MyGlobalElements[i] > nx*(nx-1))
 		{
@@ -174,7 +178,8 @@ int main(int argc, char *argv[]) {
                         Indices[1] = MyGlobalElements[i]+1;
 			Indices[2] = MyGlobalElements[i]-nx;
                         NumEntries = 3;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 		}
                 else if (MyGlobalElements[i]%nx == 0)
 		{
@@ -182,17 +187,20 @@ int main(int argc, char *argv[]) {
 			Indices[1] = MyGlobalElements[i]-nx;
 			Indices[2] = MyGlobalElements[i]+nx;
 			NumEntries = 3;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[1], &Indices[0]);
+			assert( info==0 );
 		}
 		else if ((MyGlobalElements[i]+1)%nx == 0)
 		{
 			Indices[0] = MyGlobalElements[i]-nx;
                         Indices[1] = MyGlobalElements[i]+nx;
                         NumEntries = 2;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[2], &Indices[0]);
+			assert( info==0 );
                         Indices[0] = MyGlobalElements[i]-1;
                         NumEntries = 1;
-                        assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 		}
 		else
 		{
@@ -201,14 +209,17 @@ int main(int argc, char *argv[]) {
 			Indices[2] = MyGlobalElements[i]-nx;
 			Indices[3] = MyGlobalElements[i]+nx;
 			NumEntries = 4;
-			assert(A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0])==0);
+			info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &Values[0], &Indices[0]);
+			assert( info==0 );
 		}
 		// Put in the diagonal entry
-		assert(A->InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i])==0);
+		info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diag, &MyGlobalElements[i]);
+		assert( info==0 );
 	}
 
 	// Finish up
-	assert(A->TransformToLocal()==0);
+	info = A->TransformToLocal();
+	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 	//************************************
@@ -259,7 +270,10 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetNEV( nev );
 	
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem->SetProblem() == 0 );
+	info = MyProblem->SetProblem();
+	if (info)
+          cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+
 	
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =

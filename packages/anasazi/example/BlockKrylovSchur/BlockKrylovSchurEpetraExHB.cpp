@@ -53,7 +53,7 @@
 
 int main(int argc, char *argv[]) {
 	//
-	int i;
+	int i,info;
 	int n_nonzeros, N_update;
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
@@ -122,13 +122,16 @@ int main(int argc, char *argv[]) {
 		row_vals = val + bindx[i];
 		col_inds = bindx + bindx[i];
 		NumEntries = bindx[i+1] - bindx[i];
-		assert(A->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds)==0);
-		assert(A->InsertGlobalValues(update[i], 1, val+i, update+i)==0);
+		info = A->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds);
+		assert(info==0 );
+		info = A->InsertGlobalValues(update[i], 1, val+i, update+i);
+		assert( info==0 );
 	}
 	//
 	// Finish up
 	//
-	assert(A->TransformToLocal()==0);
+	info = A->TransformToLocal();
+	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
         //************************************
@@ -173,7 +176,10 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetNEV( nev );
 
        // Inform the eigenproblem that you are finishing passing it information
-        assert( MyProblem->SetProblem() == 0 );
+        info = MyProblem->SetProblem();
+	if (info)
+	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+
 
         // Create a sorting manager to handle the sorting of eigenvalues in the solver
 	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 

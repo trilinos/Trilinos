@@ -328,7 +328,7 @@ namespace Anasazi {
     //    
     for ( _iter=0; _iter <= _maxIter; _iter++ ) {
       
-      if (_iter || (reStart = true) ) {
+      if (_iter || (reStart == true) ) {
 	
 	reStart = false;
 	localSize = _blockSize;
@@ -493,7 +493,7 @@ namespace Anasazi {
       
       // Check for restarting
       if ((_theta[0] < 0.0) || (nevLocal < _blockSize)) {
-	if (_om->isVerbosity( Debug ) ) {
+	if (_om->isVerbosityAndPrint( IterationDetails ) ) {
 	  _os << " Iteration " << _iter;
 	  _os << "- Failure for spectral decomposition - RESTART with new random search\n";
 	}
@@ -588,12 +588,12 @@ namespace Anasazi {
       */      
       
       // Print information on current iteration
-      if (_om->isVerbosityAndPrint( Debug )) {
+      if (_om->isVerbosityAndPrint( IterationDetails )) {
 	_os << " Iteration " << _iter << " - Number of converged eigenvectors ";
 	_os << _knownEV + nFound << endl;
       }
       
-      if (_om->isVerbosityAndPrint( Debug )) {
+      if (_om->isVerbosityAndPrint( IterationDetails )) {
 	_os << endl;
 	cout.precision(2);
 	cout.setf(ios::scientific, ios::floatfield);
@@ -673,7 +673,7 @@ namespace Anasazi {
 	MVT::MvTimesMatAddMv( -one, *MX, T, one, *R );
 	//timeResidual += MyWatch.WallTime();
 	// When required, monitor some orthogonalities
-	if (_om->isVerbosity( Debug )) {
+	if (_om->isVerbosity( OrthoDetails )) {
 	  if (_knownEV == 0) {
 	    accuracyCheck(X.get(), MX.get(), R.get(), 0, 0, 0);
 	  }
@@ -685,7 +685,7 @@ namespace Anasazi {
 	    accuracyCheck(X.get(), MX.get(), R.get(), copyQ.get(), (localSize>_blockSize) ? H.get() : 0,
 			  (localSize>twoBlocks) ? P.get() : 0);
 	  }
-	} // if (isVerbosity( Debug ))
+	} // if (isVerbosity( OrthoDetails ))
 	
 	if (localSize < threeBlocks)
 	  localSize += _blockSize;
@@ -771,7 +771,7 @@ namespace Anasazi {
 	  index2[j] = _knownEV + j;
 	MVT::SetBlock( *Rconv, index2, *_evecs );
 	_knownEV += (nFound-leftOver);
-	if (_om->isVerbosityAndPrint( Debug )) {
+	if (_om->isVerbosityAndPrint( IterationDetails )) {
 	  _os << endl;
 	  cout.precision(2);
 	  cout.setf(ios::scientific, ios::floatfield);

@@ -138,7 +138,9 @@ int main(int argc, char *argv[])
   MyProblem->SetNEV( nev );
 
   // Inform the eigenproblem that you are finishing passing it information
-  assert( MyProblem->SetProblem() == 0 );
+  info = MyProblem->SetProblem();
+  if (info)
+    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
   // Create the eigensolver
 
@@ -161,7 +163,8 @@ int main(int argc, char *argv[])
   Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
   M->Apply( *evecs, Mvec );  
   Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
-  assert( Kvec.Norm2( &normV[0] )== 0 );
+  info = Kvec.Norm2( &normV[0] );
+  assert( info==0 );
 
   if (MyOM->doPrint()) {
     cout << endl <<"------------------------------------------------------" << endl;

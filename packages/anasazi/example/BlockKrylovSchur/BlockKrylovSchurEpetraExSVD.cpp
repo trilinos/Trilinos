@@ -58,7 +58,7 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int i, j;
+	int i, j, info;
 	const double one = 1.0;
 	const double zero = 0.0;
 	Teuchos::LAPACK<int,double> lapack;
@@ -80,8 +80,6 @@ int main(int argc, char *argv[]) {
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
 	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
-
-	bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
 	int m = 500;
@@ -127,12 +125,15 @@ int main(int argc, char *argv[]) {
 	    else
 	      Values[j] = inv_np1 * ( (j+one)*inv_np1 ) * ( (MyGlobalRowElements[i]+one)*inv_mp1 - one );  // k*(tj)*(si-1)
 	  }
-	  assert(A->InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0])==0);
+	  info = A->InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0]);
+	  assert( info==0 );
 	}
 
 	// Finish up
-	assert(A->TransformToLocal(&ColMap, &RowMap)==0);
-	assert(A->OptimizeStorage()==0);
+	info = A->TransformToLocal(&ColMap, &RowMap);
+	assert( info==0 );
+	info = A->OptimizeStorage();
+	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 	//************************************
@@ -176,7 +177,10 @@ int main(int argc, char *argv[]) {
 	MyProblem->SetNEV( nev );
 
 	// Inform the eigenproblem that you are finishing passing it information
-	assert( MyProblem->SetProblem() == 0 );
+	info = MyProblem->SetProblem();
+	if (info)
+	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+       
 
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
 	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 

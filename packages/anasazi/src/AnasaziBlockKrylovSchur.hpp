@@ -455,7 +455,7 @@ namespace Anasazi {
 	ComputeSchurForm( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
-	if (_om->isVerbosity( Debug )) {
+	if (_om->isVerbosity( IterationDetails )) {
 	  currentStatus();
 	}
       }
@@ -488,7 +488,7 @@ namespace Anasazi {
 	  _isdecompcurrent = false;
 	}
 	// Output current information if necessary
-	if (_om->isVerbosity( Debug )) {
+	if (_om->isVerbosity( IterationDetails )) {
 	  currentStatus();
 	}
       }
@@ -586,17 +586,13 @@ namespace Anasazi {
     // even though we're only going to set the coefficients in
     // rows [0:(j+1)*_blockSize-1]
     //
-    int n_row = _hessmatrix.numRows();
+    int num_prev = (j+1)*_blockSize;
     //
-    for ( k=0; k<_blockSize; k++ ) {
-      for ( i=0; i<n_row ; i++ ) {
-	_hessmatrix( i, j*_blockSize+k ) = zero;
-      }
-    }
+    Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess( Teuchos::View, _hessmatrix, num_prev, _blockSize, 0, j*_blockSize );
+    tmp_hess.putScalar( zero );
     //
     // Grab all previous Arnoldi vectors
     //
-    int num_prev = (j+1)*_blockSize;
     index.resize( num_prev );
     for (i=0; i<num_prev; i++){
       index[i] = i;
@@ -635,11 +631,7 @@ namespace Anasazi {
       // Update the orthogonalization coefficients for the j-th block
       // column of the Hessenberg matrix.
       //
-      for ( k=0; k<_blockSize; k++ ) {
-	for ( i=0; i<num_prev; i++ ) {
-	  _hessmatrix( i, j*_blockSize+k ) += dense_mat(i,k);
-	}
-      }
+      tmp_hess += dense_mat;
       //
       // F_vec <- F_vec - V(0:(j+1)*block-1,:) * H(0:num_prev-1,j:num_prev-1)
       //
@@ -655,7 +647,7 @@ namespace Anasazi {
     for (i=0; i<_blockSize; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	_dep_flg = true;
-	if (_om->isVerbosityAndPrint( Debug )) {
+	if (_om->isVerbosityAndPrint( Warning )) {
 	  _os << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
 	  _os << endl;
@@ -663,7 +655,11 @@ namespace Anasazi {
       }
     } // end for (i=0;...)
     //
-    if (_om->isVerbosity( Debug )) {
+    if (_om->isVerbosity( OrthoDetails )) {
+      if (_om->doPrint()) {
+	_os << "Checking Orthogonality after BlkOrth()"
+	    << " Iteration: " << j << endl<<endl;
+      }
       CheckBlkArnRed(j);
     }
     //
@@ -719,11 +715,8 @@ namespace Anasazi {
     //
     int n_row = _hessmatrix.numRows();
     //
-    for ( k=0; k<_blockSize; k++ ) {
-      for ( i=0; i<n_row ; i++ ) {
-	_hessmatrix(i, j*_blockSize+k) = zero;
-      }
-    }
+    Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess( Teuchos::View, _hessmatrix, n_row, _blockSize, 0, j*_blockSize );
+    tmp_hess.putScalar( zero );
     //
     Teuchos::RefCountPtr<MV>  q_vec, Q_vec, tptr;
     tptr = MVT::Clone( *_basisvecs, IntOne ); 
@@ -737,6 +730,7 @@ namespace Anasazi {
     for (int iter=0; iter<_blockSize; iter++){
       num_prev = (j+1)*_blockSize + iter; // number of previous _basisvecs
       dense_vec.size(num_prev);
+      Teuchos::SerialDenseMatrix<int,ScalarType> tmp_hess_col( Teuchos::View, _hessmatrix, num_prev, 1, 0, j*_blockSize+iter );
       //
       // Grab the next column of _basisvecs
       //
@@ -776,9 +770,7 @@ namespace Anasazi {
       // Sum results [0:num_prev-1] into column (num_prev-_blockSize)
       // of the Hessenberg matrix
       //
-      for (k=0; k<num_prev; k++){
-	_hessmatrix(k, j*_blockSize+iter) += dense_vec(k);
-      }
+      tmp_hess_col += dense_vec;
       //
       // Compute q_vec<- q_vec - Q_vec * dense_vec
       //
@@ -797,10 +789,8 @@ namespace Anasazi {
 	// Sum results [0:num_prev-1] into column (num_prev-_blockSize)
 	// of the Hessenberg matrix
 	//
-	for (k=0; k<num_prev; k++){
-	  _hessmatrix(k, j*_blockSize+iter) += dense_vec(k);
-	}
-	//
+	tmp_hess_col += dense_vec;
+      	//
 	// Compute q_vec<- q_vec - Q_vec * dense_vec
 	//
 	MVT::MvTimesMatAddMv( -one, *Q_vec, dense_vec, one, *q_vec );
@@ -811,9 +801,9 @@ namespace Anasazi {
       // Check for linear dependence
       //
       if (norm2[0] < norm1[0] * _sing_tol) {
-	if (_om->isVerbosityAndPrint( Debug )) {
+	if (_om->isVerbosityAndPrint( Warning )) {
 	  _os << "Column " << num_prev << " of _basisvecs is dependent" 
-	       << endl<<endl;
+	      << endl<<endl;
 	}
 	//
 	// Create a random vector and orthogonalize it against all
@@ -874,9 +864,11 @@ namespace Anasazi {
       } // end else ...
     } // end for (i=0;...)
     //
-    if (_om->isVerbosityAndPrint( Debug )) {
-      _os << "Checking Orthogonality after BlkOrthSing()"
-	   << " Iteration: " << j << endl<<endl;
+    if (_om->isVerbosity( OrthoDetails )) {
+      if (_om->doPrint()) {
+	_os << "Checking Orthogonality after BlkOrthSing()"
+	    << " Iteration: " << j << endl<<endl;
+      }
       CheckBlkArnRed(j);
     }
   } // end BlkOrthSing()
@@ -895,7 +887,7 @@ namespace Anasazi {
     std::vector<int> index2(IntOne);
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
-    bool addvec = false, flg = false;
+    bool addvec = false; 
     ReturnType ret;
     //
     std::vector<ScalarType> norm1(IntOne);
@@ -905,17 +897,11 @@ namespace Anasazi {
     //
     // Zero out the array that will contain the Fourier coefficients.
     //
-    for ( j=0; j<nb; j++ ) {
-      for ( i=0; i<nb; i++ ) {
-	FourierR(i,j) = zero;
-      }
-    }
+    FourierR.putScalar( zero );
     //
     // Start the loop to orthogonalize the nb columns of VecIn.
     //
     for ( j=0; j<nb; j++ ) {
-      //
-      flg = false;
       //
       // Grab the j-th column of VecIn (the first column is indexed to 
       // be the zero-th one).
@@ -927,6 +913,7 @@ namespace Anasazi {
       // vectors in the current block.
       //
       if ( j ) {
+	Teuchos::SerialDenseMatrix<int,ScalarType> FourierR_col( Teuchos::View, FourierR, j, 1, 0, j );
 	index.resize( j );
 	for ( i=0; i<j; i++ ) {
 	  index[i] = i;
@@ -950,9 +937,7 @@ namespace Anasazi {
 	//
 	// Sum results[0:j-1] into column j of R.
 	//
-	for ( k=0; k<j; k++ ) {
-	  FourierR(k,j) += rj(k);
-	}
+	FourierR_col += rj;
 	//
 	// Compute qj <- qj - Qj * rj.
 	//
@@ -968,9 +953,7 @@ namespace Anasazi {
 	  //    				
 	  // Sum results[0:j-1] into column j of R.
 	  //
-	  for ( k=0; k<j; k++ ) {
-	    FourierR(k,j) += rj(k);
-	  }
+	  FourierR += rj;
 	  //
 	  // Compute qj <- qj - Qj * rj.
 	  //
@@ -1112,8 +1095,13 @@ namespace Anasazi {
     //
     // Check the Schur form.
     //
-    if (_om->isVerbosity( Debug ))
+    if (_om->isVerbosity( OrthoDetails )) {
+      if (_om->doPrint()) {
+	_os << "Checking Schur Factorization"
+	    << " Iteration: " << _jstart << endl<<endl;
+      }
       CheckSchurVecs( _jstart );
+    }
     //
     //  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
     //  So, copy the Ritz vectors.  Else, we need to compute the eigenvectors of the
@@ -1321,11 +1309,14 @@ namespace Anasazi {
 	// Update the Krylov-Schur quasi-triangular matrix.
 	//
 	Teuchos::SerialDenseMatrix<int,ScalarType> Hjp1(Teuchos::View, _hessmatrix, _blockSize, _nevtemp, _nevtemp );
+	Hjp1.assign( sub_block_b );
+	/*
 	for (i=0; i<_blockSize; i++) {
 	  for (j=0; j<_nevtemp; j++) {
 	    Hjp1(i, j) = sub_block_b(i, j);
 	  }
 	}      
+	*/
       }
     }
   }
@@ -1571,7 +1562,7 @@ namespace Anasazi {
     //  to compute the Schur vectors and residuals.  This information is used to 
     //  restart the factorization.
     //
-    int i,j;
+    int i;
     int _nevtemp = (_nevblock+_offset)*_blockSize;
     std::vector<int> index( _blockSize );
     //
