@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
 #ifdef AZTEC
   AZ_set_proc_config(proc_config, COMMUNICATOR);
 #endif
-  ML_Set_PrintLevel(10);   /* set ML's output level: 0 gives least output */
+  ML_Set_PrintLevel(15);   /* set ML's output level: 0 gives least output */
 
   /* Set the # of global nodes/edges and partition both the edges and the */
   /* nodes over the processors. NOTE: I believe we assume that if an edge */
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
   ML_Operator_Transpose_byrow(Tmat, Tmat_trans);
 
 
-  Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,MaxMgLevels-1,
+  Nlevels=ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, &ml_nodes,MaxMgLevels-1,
 					     ML_DECREASING,ag,Tmat,Tmat_trans, 
 					     &Tmat_array,&Tmat_trans_array, 
 					     smoothPe_flag, 1.5);
