@@ -2027,6 +2027,36 @@ extern struct Zoltan_Struct *Zoltan_Create(
 
 /*****************************************************************************/
 /*
+ *  Function to create a new Zoltan structure and initialize it to be
+ *  equal to a supplied Zoltan structure.
+ *
+ *  Input:
+ *    from                --  The Zoltan_Struct to be copied
+ *
+ *  Returned value:       --  Pointer to a new Zoltan structure, which
+ *                            is a copy of the "from" structure.
+ *                            If there is an error, NULL is returned.
+ */
+
+extern struct Zoltan_Struct *Zoltan_Copy(struct Zoltan_Struct *from);
+
+/*****************************************************************************/
+/*
+ * Function to copy the fields from one Zoltan_Struct to another.  Both
+ * inputs must be valid Zoltan_Struct's.
+ *
+ *  Input:
+ *    to                  --  A pointer to a valid Zoltan_Struct.
+ *    from                --  Another pointer to a valid Zoltan_Struct.
+ *
+ *  Returned value:       --  0 (zero) if the second Zoltan_Struct was
+ *                            successfully copied to the first, 1 otherwise.
+ */
+
+extern int Zoltan_Copy_To(struct Zoltan_Struct *to, struct Zoltan_Struct *from);
+
+/*****************************************************************************/
+/*
  *  Function to free the space associated with a Zoltan structure.
  *  The input pointer is set to NULL when the routine returns.
  *  Input/Output:
