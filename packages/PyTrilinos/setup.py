@@ -15,7 +15,7 @@ pythonLib  = ["python" + str(sys.version_info[0]) + "." + str(sys.version_info[1
 
 # Trilinos data
 searchList = ["/usr/local", "/Users/aalorbe/local", "~/scratch2/local",
-              "/usr/netpub/Trilinos-10_31_03"]
+              "/usr/netpub/Trilinos-10_31_03", "/smallHD/scratch/install"]
 trilHome = None
 for dir in searchList:
     epetraHeader = dir + "/include/Epetra_Comm.h"

@@ -129,7 +129,7 @@ def extractNumber(text, index):
 ########################################################################
 
 def testExtractNumber():
-    """Call extractNumber() to set various cases of numbers embedded in
+    """Call extractNumber() to test various cases of numbers embedded in
     strings."""
 
     assert(extractNumber("1" ,0) == (0,1))
@@ -143,7 +143,7 @@ def testExtractNumber():
         assert(extractNumber(" +7.89e-03 ",i) == (1,10))
     assert(extractNumber("Age21",2) == (None,None))
     assert(extractNumber("Age21",3) == (3,5))
-    assert(extractNumber("Age21",4) == (3,5,))
+    assert(extractNumber("Age21",4) == (3,5))
 
 ########################################################################
 
@@ -156,6 +156,7 @@ def numSavvyTextMatch(isJunk, text0, text1, tol):
     # Initialization
     s = SequenceMatcher(isJunk, text0, text1)
     opcodes = s.get_opcodes()
+    #print "opcodes =", opcodes
     firstDiff = 0
 
     # Ignore first opcode if it is equal
@@ -164,13 +165,15 @@ def numSavvyTextMatch(isJunk, text0, text1, tol):
         else:                   firstDiff = 1
 
     # Determine indexes based on opcode
-    if (opcodes[firstDiff][0] == "insert"):
+    if   (opcodes[firstDiff][0] == "insert" ):
         i0 = opcodes[firstDiff][1] - 1
         i1 = opcodes[firstDiff][3]
-    elif (opcodes[firstDiff][0] == "replace" or
-          opcodes[firstDiff][0] == "delete"    ):
+    elif (opcodes[firstDiff][0] == "replace"):
         i0 = opcodes[firstDiff][1]
         i1 = opcodes[firstDiff][3]
+    elif (opcodes[firstDiff][0] == "delete" ):
+        i0 = opcodes[firstDiff][1]
+        i1 = opcodes[firstDiff][3] - 1
     else:
         return False    # Shouldn't get here
 
@@ -193,7 +196,7 @@ def numSavvyTextMatch(isJunk, text0, text1, tol):
 def main():
 
     # Initialization
-    tolerance = 1.0e-14
+    tolerance = 1.0e-12
     exitCode  = 0
 
     # Command-line arguments
@@ -216,6 +219,7 @@ def main():
     # Difference engine
     d = Differ()
     results = list(d.compare(text0,text1))
+    #for line in results: print line[:-1]
 
     # Loop over the results
     line0 = 0

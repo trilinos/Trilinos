@@ -30,29 +30,31 @@ PWD         := $(shell pwd)
 # Get the base present working directory name
 BASE_PWD    := $(shell basename $(PWD))
 
+# Default Trilinos home
+TRILINOS_HOME := /usr/local
+
 # System-specific macros
 ifeq ($(UNAME),Darwin)
   ifeq ($(HOSTNAME),samt5980.sandia.gov)
     AAL_HOME      := /Users/aalorbe
     TRILINOS_HOME := $(AAL_HOME)/local
-  else
-    # "Default" Mac configuration
-    TRILINOS_HOME := /usr/local
   endif
   CXX               := c++
   CXXFLAGS          := -Wno-long-double
-  TRILINOS_INCLUDE1 := -I$(TRILINOS_HOME)/include
 else
   ifeq ($(HOSTNAME),sadl12555)
     TRILINOS_HOME   := $(HOME)/scratch2/local
-  else 
-    # "Default" Unix configuration
+  endif
+  ifeq ($(HOSTNAME),sahp4960)
     TRILINOS_HOME   := /usr/netpub/Trilinos-10_31_03
   endif
-
+  ifeq ($(HOSTNAME),)
+    TRILINOS_HOME   := /smallHD/scratch/install
+  endif
   CXX               := g++ -g
-  TRILINOS_INCLUDE1 := -I$(TRILINOS_HOME)/include
 endif
+
+TRILINOS_INCLUDE1 := -I$(TRILINOS_HOME)/include
 
 ifeq ($(TRILINOS_INCLUDE1),-I/usr/local/include)
   TRILINOS_INCLUDE2 :=
