@@ -78,6 +78,8 @@ void MultiLevelPreconditioner::SetNullSpace()
     NumPDEEqns_ = NumRows/NumBlockRows;
   }
 
+  if( verbose_ ) cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
+  
   int NullSpaceDim = NumPDEEqns_;
   double * NullSpacePtr = NULL;
 
