@@ -78,7 +78,7 @@ public:
     */
   virtual int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
+  //! Applies the preconditioner to X, returns the result in Y.
   /*! 
     \param In
     X - A Epetra_MultiVector of dimension NumVectors to be preconditioned.
@@ -101,7 +101,6 @@ public:
 
   //@{ \name Atribute access functions
 
-  //! Returns a character string describing the operator
   virtual char * Label() const
   {
     return((char*)Label_);
@@ -134,65 +133,119 @@ public:
     return(IsComputed_);
   }
 
+  //! Computes the preconditioners.
+  virtual int Compute();
+
+  //! Returns a pointer to the matrix.
+  virtual const Epetra_RowMatrix& Matrix() const
+  {
+    return(*Matrix_);
+  }
+
+  //@}
+
+  //@{ \name Miscellaneous
+
+  //! Returns the condition number estimate.
+  virtual double Condest() const
+  {
+    return(Condest_);
+  }
+
 #ifdef HAVE_IFPACK_TEUCHOS
   //! Sets all the parameters for the preconditioner
   virtual int SetParameters(Teuchos::ParameterList& List);
 #endif
 
-  //! Computes the preconditioners.
-  virtual int Compute();
-
-  //! Returns a pointer to the matrix.
-  virtual const Epetra_RowMatrix* Matrix() const
+  //! Sets integer parameters
+  virtual int SetParameter(const string Name, const int value)
   {
-    return(Matrix_);
+    if (Name == "point: sweeps")
+      SetNumSweeps(value);
+    else if (Name == "point: print frequency")
+      SetPrintFrequency(value);
+    else if (Name == "point: zero starting solution") {
+      if (value)
+	ZeroStartingSolution_ = true;
+      else
+	ZeroStartingSolution_ = false;
+    }
+    SetLabel();
+
+    return(0);
   }
 
+  //! Sets double parameters
+  virtual int SetParameter(const string Name, const double value)
+  {
+    if (Name == "point: damping factor")
+      SetDampingFactor(value);
+
+    SetLabel();
+
+    return(0);
+  }
+
+  //! Sets the label.
+  virtual void SetLabel() = 0;
+
+  //! Print object to an output stream
+  //! Print method
+  virtual ostream& Print(ostream & os) const;
+
+  //@}
+
+protected:
+ 
+  //@{ \name Setting functions
+
   //! Sets the number of sweeps.
-  int SetNumSweeps(const int NumSweeps)
+  inline int SetNumSweeps(const int NumSweeps)
   {
     NumSweeps_ = NumSweeps;
     return(0);
   }
 
   //! Gets the number of sweeps.
-  int NumSweeps() const
+  inline int NumSweeps() const
   {
     return(NumSweeps_);
   }
  
   //! Sets the damping factor
-  int SetDampingFactor(const double DampingFactor)
+  inline int SetDampingFactor(const double DampingFactor)
   {
     DampingFactor_ = DampingFactor;
     return(0);
   }
 
   //! Gets the damping factor.
-  double DampingFactor() const
+  inline double DampingFactor() const
   {
     return(DampingFactor_);
   }
 
-  int SetPrintLevel(const int PrintLevel)
+  inline int SetPrintFrequency(const int PrintFrequency)
   {
-    PrintLevel_ = PrintLevel;
+    PrintFrequency_ = PrintFrequency;
   }
 
-  int PrintLevel() const
+  inline int PrintFrequency() const
   {
-    return(PrintLevel_);
+    return(PrintFrequency_);
   }
 
-  virtual int SetLabel() = 0;
+  //! Sets the label.
+
+
   //@}
 
-protected:
-
-  //! Contains the label of \c this object.
-  char Label_[80];
   //! Contains the diagonal elements of \c Matrix.
   mutable Epetra_Vector* Diagonal_;
+  //! Contains the label of this object.
+  char Label_[80];
+  //! If true, use zero vector as starting solution.
+  bool ZeroStartingSolution_;
   
 private:
 
@@ -213,8 +266,12 @@ private:
   const Epetra_RowMatrix* Matrix_;
   //! If true, use the tranpose of \c Matrix_.
   bool UseTranspose_;
-  //! Toggles the output, from 0 (silent) to 10 (verbose).
-  int PrintLevel_;
+  //! Toggles the frequency, 0 means no output.
+  int PrintFrequency_;
+  //! Contains the estimated condition number
+  double Condest_;
+  //! If true, Compute() also computed the condition number estimate.
+  bool ComputeCondest_;
 
 };
 
