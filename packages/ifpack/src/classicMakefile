@@ -19,7 +19,7 @@ CCFLAGS = $(CXXFLAGS)
 #=======================================================================
 
 
-IFPACK_CC_new = Ifpack_IlukGraph.cpp Ifpack_CrsRiluk.cpp
+IFPACK_CC_new = Ifpack_IlukGraph.cpp Ifpack_CrsRiluk.cpp Ifpack_CrsIct.cpp
 IFPACK_CC_old = \
             ifp_BlockMat.cpp          ifp_BlockVec.cpp \
             ifp_DenseMat.cpp           \
@@ -29,7 +29,8 @@ IFPACK_CC_old = \
 
 IFPACK_C  = az_ifpack_prec_create.c   az_ifpack_precon.c  \
             az_ifpack_iterate.c       az_ifpack_prec_destroy.c \
-            az_ifpack_solve.c
+            az_ifpack_solve.c \
+	    icrout_cholesky_mex.c    icrout_quicksort.c
 
 
 

@@ -1,5 +1,5 @@
 
-#define IFPACK
+#undef IFPACK
 /*
  * Data structure for sparse matrices is CSR, 0-based indexing.
  */
@@ -14,7 +14,7 @@ void crout_ict(
     int n,
 #ifdef IFPACK
     void * A,
-    int maxentries;
+    int maxentries,
     int (*getcol)( void * A, int col, int ** nentries, double * val, int * ind),
     int (*getdiag)( void *A, double * diag),
 #else

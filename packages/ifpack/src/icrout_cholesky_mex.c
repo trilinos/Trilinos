@@ -23,7 +23,7 @@
  * 11/06/02 Added icrout_cholesky_mex
  */
 
-#define IFPACK
+#undef IFPACK
 
 #define SYMSTR 1 /* structurally symmetric version */
 
