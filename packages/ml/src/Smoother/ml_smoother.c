@@ -7186,8 +7186,6 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
    return 0;
 }
 
- 
- 
 int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
 {
 
@@ -7268,10 +7266,10 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
                   exit(1);
                }
             }
-	    tdiag[i] = 0.;
+            tdiag[i] = 0.;
             for (j = 0; j < nn; j++) 
-               if (cols[j] == i) tdiag[i] = vals[j];
-	    if (tdiag[i] == 0.) tdiag[i] = 1.;
+              if (cols[j] == i) tdiag[i] = vals[j];
+            if (tdiag[i] == 0.) tdiag[i] = 1.;
          }
          ML_free(cols); ML_free(vals);
          ML_Operator_Set_Diag(Amat, Amat->matvec->Nrows, tdiag);
@@ -7289,8 +7287,6 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
      if (dk   != NULL) ML_free(dk);
      return 0;
    }
-
-
 
    if (widget->block_scaling == NULL) { /* normal point scaling */
 
@@ -7355,7 +7351,6 @@ int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
 
    return 0;	
 }
-
 
 /*****************************************************************************/
 /* MSR Gauss-Seidel smoother with no damping.                      */
@@ -8128,14 +8123,6 @@ int ML_Cheby_WKC(void *sm, int inlen, double *pep_x, int outlen, double *pep_rhs
    deg    = widget->mlsDeg;
    if (deg == 0) return 0;
 
-   /* This is meant for the case when the matrix is the identity.*/
-   if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
-     for (i = 0; i < Amat->outvec_leng; i++) 
-        for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ )
-           ep_x[KK][i] = ep_rhs[KK][i];
-     return 0;
-   }
-
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
 
@@ -8186,6 +8173,14 @@ int ML_Cheby_WKC(void *sm, int inlen, double *pep_x, int outlen, double *pep_rhs
       } 
    }
    ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
+
+   /* This is meant for the case when the matrix is the identity.*/
+   if ((Amat->lambda_min == 1.0) && (Amat->lambda_min == Amat->lambda_max)) {
+     for (i = 0; i < Amat->outvec_leng; i++) 
+        for ( int KK = 0 ; KK != ep_x.NumVectors() ; KK++ )
+           ep_x[KK][i] = ep_rhs[KK][i]/diagonal[i];
+     return 0;
+   }
 
    Epetra_MultiVector ep_Aux ( ep_x );
    Epetra_MultiVector ep_dk ( ep_x );
