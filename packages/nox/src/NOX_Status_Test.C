@@ -30,42 +30,25 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Status_MaxIters.H" // class definition
+#include "NOX_Status_Test.H"
 #include "NOX_Common.H"
-#include "NOX_Solver_Generic.H"
-
+using namespace NOX;
 using namespace NOX::Status;
 
-MaxIters::MaxIters(int maxiterations)
+ostream& operator<<(ostream& os, StatusType type)
 {
-  if (maxiterations < 1) {
-    cout << "Error: Must choose maxiterations > 1 in NOX::Status::MaxIters" << endl;
-    throw;
+  os << setiosflags(ios::left) << setw(13) << setfill('.');
+  switch (type) {
+  case Failed:
+    os << "Failed";
+    break;
+  case Converged:
+    os << "Converged";
+    break;
+  case Unconverged:
+  default:
+    os << "**";
+    break;
   }
-    
-  maxiters = maxiterations;
-  status = Unconverged;
-}
-
-MaxIters::~MaxIters()
-{
-}
-
-StatusType MaxIters::operator()(const Solver::Generic& problem)
-{
-  status = Unconverged;
-  int niters = problem.getNumIterations();
-  if (niters >= maxiters)
-    status = Failed;
-  return status;
-}
-
-ostream& MaxIters::print(ostream& stream, int indent) const
-{
-  for (int j = 0; j < indent; j ++)
-    stream << ' ';
-  stream << status;
-  stream << "Number of Iterations < " << maxiters;
-  stream << endl;
- return stream;
+  return os;
 }

@@ -180,6 +180,7 @@ STATUS_H = \
 
 
 STATUS = \
+	$(srcdir)/NOX_Status_Test.C \
 	$(srcdir)/NOX_Status_AbsResid.C \
 	$(srcdir)/NOX_Status_Combo.C \
 	$(srcdir)/NOX_Status_MaxResid.C \
@@ -317,10 +318,10 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Direction_SteepestDescent.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_Newton.$(OBJEXT) \
-	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_AbsResid.$(OBJEXT) \
-	NOX_Status_Combo.$(OBJEXT) NOX_Status_MaxResid.$(OBJEXT) \
-	NOX_Status_RelResid.$(OBJEXT) NOX_Status_MaxIters.$(OBJEXT) \
-	NOX_Utils.$(OBJEXT)
+	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_Test.$(OBJEXT) \
+	NOX_Status_AbsResid.$(OBJEXT) NOX_Status_Combo.$(OBJEXT) \
+	NOX_Status_MaxResid.$(OBJEXT) NOX_Status_RelResid.$(OBJEXT) \
+	NOX_Status_MaxIters.$(OBJEXT) NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 libnoxepetra_a_DEPENDENCIES =
 @BUILD_NOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
@@ -357,7 +358,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxIters.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelResid.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Utils.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po $(DEPDIR)/NOX_Utils.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_LinearOperator.Po \
@@ -458,6 +459,7 @@ NOX_Parameter_List.$(OBJEXT): $(srcdir)/NOX_Parameter_List.C
 NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
 NOX_Solver_Newton.$(OBJEXT): $(srcdir)/NOX_Solver_Newton.C
 NOX_Solver_NonlinearCG.$(OBJEXT): $(srcdir)/NOX_Solver_NonlinearCG.C
+NOX_Status_Test.$(OBJEXT): $(srcdir)/NOX_Status_Test.C
 NOX_Status_AbsResid.$(OBJEXT): $(srcdir)/NOX_Status_AbsResid.C
 NOX_Status_Combo.$(OBJEXT): $(srcdir)/NOX_Status_Combo.C
 NOX_Status_MaxResid.$(OBJEXT): $(srcdir)/NOX_Status_MaxResid.C
@@ -508,6 +510,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelResid.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
@@ -686,6 +689,18 @@ NOX_Solver_NonlinearCG.obj: $(srcdir)/NOX_Solver_NonlinearCG.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_NonlinearCG.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_NonlinearCG.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_NonlinearCG.obj `cygpath -w $(srcdir)/NOX_Solver_NonlinearCG.C`
+
+NOX_Status_Test.o: $(srcdir)/NOX_Status_Test.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Test.C' object='NOX_Status_Test.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Test.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Test.o `test -f $(srcdir)/NOX_Status_Test.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_Test.C
+
+NOX_Status_Test.obj: $(srcdir)/NOX_Status_Test.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Test.C' object='NOX_Status_Test.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Test.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Test.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_Test.obj `cygpath -w $(srcdir)/NOX_Status_Test.C`
 
 NOX_Status_AbsResid.o: $(srcdir)/NOX_Status_AbsResid.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Status_AbsResid.C' object='NOX_Status_AbsResid.o' libtool=no @AMDEPBACKSLASH@

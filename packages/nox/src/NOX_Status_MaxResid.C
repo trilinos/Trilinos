@@ -36,6 +36,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
 
 using namespace NOX::Status;
 
@@ -63,8 +64,8 @@ ostream& MaxResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Maximum-Norm Residual with Tolerance = " << tol;
-  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << status;
+  stream << "Residual Max-Norm < " << Utils::sci(tol);
   stream << endl;
   return stream;
 }

@@ -67,8 +67,11 @@ public:
 
 };
 
-} // namespace Solver
+} // namespace Status
 } // namespace NOX
+
+ostream& operator<<(ostream& os, NOX::Status::StatusType type);
+
 
 #endif
 

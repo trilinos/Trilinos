@@ -36,6 +36,7 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
 
 using namespace NOX::Status;
 
@@ -65,8 +66,8 @@ ostream& RelResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Relative Residual Norm with Tolerance = " << reltol;
-  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << status;
+  stream << "Relative Residual 2-Norm < " << Utils::sci(reltol);
   stream << endl;
   return stream;
 }

@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
 
 using namespace NOX::Status;
 
@@ -62,8 +63,8 @@ ostream& AbsResid::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Absolute Residual Norm with Tolerance < " << tol;
-  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << status;
+  stream << "Residual 2-Norm < " << Utils::sci(tol);
   stream << endl;
   return stream;
 }

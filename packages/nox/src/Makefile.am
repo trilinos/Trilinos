@@ -94,6 +94,7 @@ STATUS_H = \
 	$(srcdir)/NOX_Status_MaxIters.H 
 
 STATUS = \
+	$(srcdir)/NOX_Status_Test.C \
 	$(srcdir)/NOX_Status_AbsResid.C \
 	$(srcdir)/NOX_Status_Combo.C \
 	$(srcdir)/NOX_Status_MaxResid.C \

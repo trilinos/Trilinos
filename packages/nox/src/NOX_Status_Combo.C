@@ -149,16 +149,16 @@ ostream& Combo::print(ostream& stream, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Combo ";
+//   stream << setiosflags(ios::left) << setw(13) << setfill('.');
+//   if (status == Unconverged) 
+//     stream << "**";
+//   else if (status == Failed)
+//     stream << "Failed";
+//   else
+//     stream << "Converged";
+  stream << status;
   stream << ((type == OR) ? "OR" : "AND");
-  stream << " Test";
-  stream << " : ";
-  if (status == Unconverged) 
-    stream << "Unconverged";
-  else if (status == Failed)
-    stream << "FAILED!";
-  else
-    stream << "CONVERGED!";
+  stream << " Combination";
   stream << " -> " << endl;
 
   for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
