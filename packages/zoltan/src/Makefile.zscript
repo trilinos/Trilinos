@@ -1,0 +1,13 @@
+include /home/u/kddevin/code/Zoltan/Makefiles/Makefile.$(ZOLTAN_ARCH)
+
+
+zoltan:	
+	zoltan_script \
+	  '$(DEFS)' \
+	  '$(CC)' \
+	  '$(CFLAGS)' \
+	  '$(F90CFLAGS)' \
+	  '$(INCLUDE_PATH)' \
+	  '$(PARMETIS_LIBPATH)' \
+	  '$(JOSTLE_LIBPATH)' \
+	  '$(JOSTLE_INCPATH)' 
