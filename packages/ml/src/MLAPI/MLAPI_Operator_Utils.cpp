@@ -182,7 +182,7 @@ static int diag_getrows(ML_Operator *data, int N_requested_rows, int requested_r
   for (int i = 0; i < N_requested_rows; i++) {
     row_lengths[i] = 1;
     columns[i]     = requested_rows[i];
-    values[i]      = D[i];
+    values[i]      = D[requested_rows[i]];
   }
   return(1);
 }
@@ -204,7 +204,7 @@ Operator GetDiagonal(const MultiVector& D)
     ML_THROW("empty diagonal vector in input", -1);
 
   double* diag = new double[size];
-  for (int i = 0 ; i < size ; ++i)
+  for (int i = 0 ; i < size ; ++i) 
     diag[i] = D(i);
 
   // creates the ML operator and store the diag pointer,
