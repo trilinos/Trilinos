@@ -29,13 +29,13 @@ static char *cvs_gr_type_c = "$Id$";
  */
 /*****************************************************************************/
 
-GRAPH *new_graph()
+GRAPH *LB_new_graph()
 {
 /*
  *  Function to allocate and initialize a new graph data structure.
  *  A pointer to the new graph is returned.
  */
-char *yo = "new_graph";
+char *yo = "LB_new_graph";
 GRAPH *graph;
 
   /*  
@@ -46,10 +46,10 @@ GRAPH *graph;
 
   switch (BL_Graph_Type) {
   case GRAPH_BINARY_TREE:
-    initialize_tree_graph(graph);
+    LB_initialize_tree_graph(graph);
     break;
   case GRAPH_HASH_TABLE:
-    initialize_hash_graph(graph);
+    LB_initialize_hash_graph(graph);
     break;
   default:
     fprintf(stderr, "Error (%s):  Invalid graph type %d\n", yo, BL_Graph_Type);
