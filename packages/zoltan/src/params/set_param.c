@@ -24,6 +24,7 @@
 #include "octupdate_const.h"
 #include "parmetis_jostle_const.h"
 #include "timer_const.h"
+#include "ha_const.h"
 
 static int add_param(LB *, char *, char *);
 static int clean_string(char *, char **);
@@ -83,6 +84,9 @@ char *val1)			/* value to set this parameter to */
 
     if (status == 1)
         status = LB_Set_Timer_Param(name, val);
+
+    if (status == 1)
+        status = LB_Set_Machine_Param(name, val);
 /*
     if (status == 1)
 	status = LB_Set_SFC_Param(name, val);
