@@ -437,7 +437,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   double *val = NULL; 
   int    offset = -1;
 
-#if defined(HAVE_ML_METIS) || defined(HAVE_ML_JOSTLE) 
+#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_JOSTLE) 
   int     Cstyle = 0, dummy = -1;
 #endif
 #ifdef HAVE_ML_PARMETIS_3x
@@ -452,7 +452,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   USR_REQ *request = NULL; 
   char str[80];
 #endif
-#ifdef HAVE_ML_METIS
+#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_PARMETIS_2x)
   int     options[5]={0,3,1,1,0};
   int     weightflag = 0;
 #endif

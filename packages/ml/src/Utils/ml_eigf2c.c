@@ -44,7 +44,7 @@ nd direct residuals", (ftnlen)44);
 
 
 
-int ml_pdneupc__(int *comm,
+int ml_pdneupc__(USR_COMM *comm,
 		int *ivec, char *howmny, int *celect, double *d__, 
 		double *v, int *ldv, double *workev,  char *bmat, int *n, 
 		char *which, int *nev, double *tol, double *resid, int *ncv, 

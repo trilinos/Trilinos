@@ -2930,12 +2930,7 @@ static int ML_ggb_CoarseSolver = 2;
 #endif
 
 #else
- fprintf( stderr,
-	   "ERROR: ML has not been configured with either AMESOS or SUPERLU support.\n"
-	   "ERROR: Please reconfigure.\n"
-	   "ERROR: (file %s, line %d)\n",
-	   __FILE__, __LINE__ );
-  exit(-1);
+static int ML_ggb_CoarseSolver = -2;
 #endif
 
 #else
@@ -3028,6 +3023,13 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
 
 
        if (ML_GGBcycFirst == 1) { /* First Do GGB cycle then MG */ 
+	 if (ML_ggb_CoarseSolver == -2) {
+	   fprintf(stderr,
+		   "ERROR: ML has not been configured with either AMESOS or SUPERLU support.\nERROR: Please reconfigure.\nERROR: (file %s, line %d)\n",
+		   __FILE__, __LINE__ );
+	   exit(EXIT_FAILURE);
+	 }
+
 
 	 /* Option for SuperLU solver */
 	 if (ML_ggb_CoarseSolver == 1) {
@@ -6299,6 +6301,12 @@ int ML_build_ggb(ML *ml, void *data)
    case 2:
      /* amesos, now default is KLU */
      ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
+     break;
+   case -2:
+     fprintf(stderr,
+	     "ERROR: ML has not been configured with either AMESOS or SUPERLU support.\nERROR: Please reconfigure.\nERROR: (file %s, line %d)\n",
+	     __FILE__, __LINE__ );
+     exit(EXIT_FAILURE);
      break;
    default:
      printf("ERROR: coarse solver for GGB not correct\n");

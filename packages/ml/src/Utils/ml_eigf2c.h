@@ -22,7 +22,7 @@ extern "C"
   extern int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a, 
 			   int *lda, int *idigit);
   
-  extern int ml_pdneupc__(int *comm, 
+  extern int ml_pdneupc__(USR_COMM *comm, 
 			 int *ivec, char *howmny, int *celect, double *d__, 
 			 double *v, int *ldv, double *workev,  char *bmat, int *n, 
 			 char *which, int *nev, double *tol, double *resid, int *ncv, 
