@@ -164,6 +164,7 @@ extern int ML_Operator_Init(ML_Operator *, ML_Comm *comm);
 extern int ML_Operator_Clean(ML_Operator *);
 extern int ML_Operator_Dump(ML_Operator *Ke, double *, double *,
 			    char *str, int);
+extern int ML_hash_init(int hash_list[], int hash_length, int *hash_used);
 extern int ML_hash_it( int new_val, int hash_list[], int hash_length, 
 		       int *hash_used);
 
@@ -211,6 +212,7 @@ extern int ML_Operator_Transpose(ML_Operator *Amat, ML_Operator *Amat_trans );
 extern int ML_Operator_Check_Getrow(ML_Operator *, int, char*);
 extern double ML_Operator_MaxNorm(ML_Operator *matrix, int divide_diag);
 extern int ML_Operator_Print(ML_Operator *matrix, const char label[]);
+extern int ML_Operator_ComputeNumNzs(ML_Operator *matrix);
 
 extern int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size, 
                double drop_tolerance);

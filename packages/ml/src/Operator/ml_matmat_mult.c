@@ -1025,6 +1025,14 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_RECUR_CSR_MSRdata_Destroy(Mat1Mat2comm);
    ML_Operator_Destroy(&Mat1Mat2comm);
 }
+int ML_hash_init(int hash_list[], int hash_length, int *hash_used)
+{
+  int i;
+
+  for (i = 0; i < hash_length; i++) hash_list[i] = -1;
+  *hash_used = 0;
+  return 0;
+}
 
 int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
 
