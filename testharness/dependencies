@@ -24,6 +24,7 @@ epetra = \
 --enable-epetra \
 --enable-amesos \
 --enable-anasazi \
+--with-loca-anasazi \
 --enable-aztecoo \
 --enable-belos \
 --enable-epetraext \
@@ -99,8 +100,6 @@ tpetra = \
 
 triutils = \
 --enable-triutils \
---enable-anasazi \
---with-loca-anasazi \
 --enable-aztecoo \
 --enable-komplex \
 --enable-ml_aztecoo \
