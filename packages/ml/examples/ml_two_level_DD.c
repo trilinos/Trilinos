@@ -145,7 +145,6 @@ int main(int argc, char *argv[])
 
   ML_Aggregate_Create( &ag );  
 
-  ML_Aggregate_Viz_Stats_Setup( ag, MaxMgLevels ); 
   ML_Aggregate_Set_CoarsenScheme_METIS(ag);
   ML_Aggregate_Set_MaxCoarseSize(ag, 30);
   ML_Aggregate_Set_Threshold(ag, 0.0); 
@@ -227,14 +226,6 @@ int main(int argc, char *argv[])
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
 
-  /* visualize the aggregates */
-  
-  ML_Aggregate_Visualize( ml, ag, MaxMgLevels,
-			  x, y, NULL, 2, NULL);
-
-  ML_Aggregate_Viz_Stats_Clean( ag, MaxMgLevels );
-  ML_free(x); ML_free(y);
-  
   /* clean up. */
   
   if (Partition.my_local_ids != NULL) free(Partition.my_local_ids);

@@ -136,47 +136,37 @@ int main(int argc, char *argv[])
 
   /********************************************************************/
   /* Set some ML parameters.                                          */
+  /* Some details:                                                    */
+  /* - ML_Aggregate_VizAndStats_Setup tells ML to keep trace of some  */
+  /*   information about the aggregates, so that it will be possible  */
+  /*   to visualize them (after the construction of the ML hierarchy) */
+  /*   with ML_Aggregate_VizAndStats_Compute (this required the nodal */
+  /*   coordinates). Memory used for visualization is free using      */
+  /*   ML_Aggregate_VizAndStats_Destoy.                               */
+  /* - ML_Aggregate_Set_GlobalNumber defined the global number of     */
+  /*   aggregates. Other options are available as well. For instance, */
+  /*   one can define the local number of agggregate, as              */
+  /*      ML_Aggregate_Set_LocalNumber( ml, ag, -1, 128 );            */
+  /*   (-1 means for all levels), or fix the number of nodes per each */
+  /*   aggregte, as                                                   */
+  /*      ML_Aggregate_Set_NodesPerAggr( ml, ag, MaxMgLevels-2, 100 );*/
+  /*   With METIS aggregation, one can use reordering for the next    */
+  /* level:                                                           */
+  /*      ML_Aggregate_Set_ReorderingFlag( ml, ag,-1, ML_YES );       */
   /*------------------------------------------------------------------*/
 
   ML_Aggregate_Create( &ag );  
 
-  ML_Aggregate_Viz_Stats_Setup( ag, MaxMgLevels );
+  ML_Aggregate_VizAndStats_Setup( ag, MaxMgLevels );
   ML_Aggregate_Set_CoarsenScheme_METIS(ag);
   ML_Aggregate_Set_MaxCoarseSize(ag, 30);
-  ML_Aggregate_Set_Threshold(ag, 0.0); 
-
-/* define ONE, TWO or THREE for different options */
-#define ONE
-#ifdef ONE
+  ML_Aggregate_Set_Threshold(ag, 0.0);
+  
   /* example of setting global number of aggregates */
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-1, 128 );
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-2, 16);
   ML_Aggregate_Set_GlobalNumber( ml, ag, MaxMgLevels-3, 4 );
-#endif
-  
-#ifdef TWO
-  /* example of setting local number of aggregates */
-  ML_Aggregate_Set_LocalNumber( ml, ag, MaxMgLevels-1, 128 );
-  ML_Aggregate_Set_LocalNumber( ml, ag, MaxMgLevels-2, 16);
-  ML_Aggregate_Set_LocalNumber( ml, ag, MaxMgLevels-3, 4 );
-#endif
 
-#ifdef THREE
-  /* example of setting the number of nodes for each aggregate */
-  ML_Aggregate_Set_NodesPerAggr( ml, ag, -1, 100 );
-  ML_Aggregate_Set_NodesPerAggr( ml, ag, MaxMgLevels-2, 100 );
-  ML_Aggregate_Set_NodesPerAggr( ml, ag, MaxMgLevels-3, 50 );
-  ML_Aggregate_Set_NodesPerAggr( ml, ag, MaxMgLevels-4, 30 );
-#endif
-
-#ifdef USE_REORDER
-  /* using reordering based on METIS */
-  ML_Aggregate_Set_ReorderingFlag( ml, ag, MaxMgLevels-1, ML_YES );
-  ML_Aggregate_Set_ReorderingFlag( ml, ag, MaxMgLevels-2, ML_YES );
-  ML_Aggregate_Set_ReorderingFlag( ml, ag, MaxMgLevels-3, ML_YES );  
-  ML_Aggregate_Set_ReorderingFlag( ml, ag, -1, ML_YES );  
-#endif
-  
   /********************************************************************/
   /* Build hierarchy using smoothed aggregation.                      */
   /*------------------------------------------------------------------*/
@@ -232,10 +222,10 @@ int main(int argc, char *argv[])
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
   
-  ML_Aggregate_Visualize( ml, ag, MaxMgLevels,
-			  x, y, NULL, 2, NULL);
+  ML_Aggregate_VizAndStats_Compute( ml, ag, MaxMgLevels,
+				    x, y, NULL, 2, NULL);
 
-  ML_Aggregate_Viz_Stats_Clean( ag, MaxMgLevels );
+  ML_Aggregate_VizAndStats_Clean( ag, MaxMgLevels );
   
   /* clean up. */
   
@@ -255,6 +245,10 @@ int main(int argc, char *argv[])
   }
   free(xxx);
   free(rhs);
+
+  if( x != NULL ) free((void*)x);
+  if( y != NULL ) free((void*)y);
+  
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
