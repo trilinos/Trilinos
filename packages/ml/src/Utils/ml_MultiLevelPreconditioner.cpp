@@ -1591,6 +1591,9 @@ ReComputePreconditioner()
 
   Epetra_Time Time(Comm());
   Epetra_Time InitialTime(Comm());
+  InitialTime.ResetStartTime();
+  Time.ResetStartTime();
+
   {
     int NumCompute = OutputList_.get("number of construction phases", 0);
     OutputList_.set("number of construction phases", ++NumCompute);
@@ -1615,8 +1618,6 @@ ReComputePreconditioner()
     cout << PrintMsg_ << "Re-computing the preconditioner..." << endl;
   }
 
-  Time.ResetStartTime();
-
   ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
   if (verbose_)
@@ -1624,11 +1625,12 @@ ReComputePreconditioner()
          << Time.ElapsedTime() << " (s)" << endl;
   Time.ResetStartTime();
 
-  if( verbose_ ) cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
+  if (verbose_) 
+    cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << endl;
 
-  OutputList_.set("time: hierarchy", InitialTime.ElapsedTime() 
+  OutputList_.set("time: hierarchy", Time.ElapsedTime() 
                   + OutputList_.get("time: hierarchy", 0.0));
-  InitialTime.ResetStartTime();
+  Time.ResetStartTime();
 
   // ====================================================================== //
   // Now cycling over all levels                                            //
@@ -1636,9 +1638,9 @@ ReComputePreconditioner()
 
   ML_CHK_ERR(SetSmoothers());
 
-  OutputList_.set("time: smoothers setup", InitialTime.ElapsedTime() 
+  OutputList_.set("time: smoothers setup", Time.ElapsedTime() 
                   + OutputList_.get("time: smoothers setup", 0.0));
-  InitialTime.ResetStartTime();
+  Time.ResetStartTime();
 
   // ====================================================================== //
   // solution of the coarse problem                                         //
@@ -1648,17 +1650,17 @@ ReComputePreconditioner()
     ML_CHK_ERR(SetCoarse());
   }
 
-  OutputList_.set("time: coarse solver setup", InitialTime.ElapsedTime() 
+  OutputList_.set("time: coarse solver setup", Time.ElapsedTime() 
                   + OutputList_.get("time: coarse solver setup", 0.0));
-  InitialTime.ResetStartTime();
+  Time.ResetStartTime();
 
   ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
 
   IsComputePreconditionerOK_ = true;
 
-  OutputList_.set("time: final setup", InitialTime.ElapsedTime() 
+  OutputList_.set("time: final setup", Time.ElapsedTime() 
                   + OutputList_.get("time: final setup", 0.0));
-  InitialTime.ResetStartTime();
+  Time.ResetStartTime();
 
   if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
     cout << endl;
@@ -1680,7 +1682,7 @@ ReComputePreconditioner()
   if (verbose_)
     ML_print_line("-",78);
 
-  ConstructionTime_ += Time.ElapsedTime();
+  ConstructionTime_ += InitialTime.ElapsedTime();
   ++NumConstructions_;
 
   return 0;
