@@ -156,7 +156,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     max_edges = 0;
     for (i=0; i< num_obj; i++){
       lid = (num_lid_entries > 0 ? &(local_ids[i*num_lid_entries]) : NULL);
-      nedges = zz->Get_Num_Edges(zz->Get_Edge_List_Data, 
+      nedges = zz->Get_Num_Edges(zz->Get_Num_Edges_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[i*num_gid_entries]), 
                                  lid, &ierr);
@@ -209,7 +209,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
       gid_off = k * num_gid_entries;
       lid_off = k * num_lid_entries;
       lid = (num_lid_entries > 0 ? &(local_ids[lid_off]) : NULL);
-      nedges = zz->Get_Num_Edges(zz->Get_Edge_List_Data, 
+      nedges = zz->Get_Num_Edges(zz->Get_Num_Edges_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[gid_off]),
                                  lid, &ierr);
