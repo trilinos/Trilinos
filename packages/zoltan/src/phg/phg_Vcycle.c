@@ -67,6 +67,11 @@ typedef struct tagVCycle {
                                      uncoarsening.  */
     struct tagVCycle *finer; 
     struct Zoltan_Comm_Obj  *comm_plan;    
+    struct Zoltan_Timer *timer;   /* timer for this level of the V-cycle */
+    int timer_match;              /* Timers for various stages */
+    int timer_coarse;             /* Declared static so we can accumulate */
+    int timer_refine;             /* times over calls to Zoltan_PHG_Partition */
+    int timer_project;
 } VCycle; 
 
 
@@ -129,7 +134,8 @@ static int allocVCycle(VCycle *v)
 
 
 
-static VCycle *newVCycle(HGraph *hg, Partition part, VCycle *finer)
+static VCycle *newVCycle(ZZ *zz, HGraph *hg, Partition part, VCycle *finer,
+                         PHGPartParams *hgp)
 {
   VCycle *vcycle;
     
@@ -143,6 +149,14 @@ static VCycle *newVCycle(HGraph *hg, Partition part, VCycle *finer)
   vcycle->LevelCnt = 0;
   vcycle->LevelSndCnt = 0;
   vcycle->comm_plan = NULL;
+  if (hgp->use_timers > 2)
+    vcycle->timer = Zoltan_Timer_Create(zz->Timer);
+  else
+    vcycle->timer = NULL;
+  vcycle->timer_match = -1;
+  vcycle->timer_coarse = -1;
+  vcycle->timer_refine = -1;
+  vcycle->timer_project = -1;
   vcycle->hg       = hg ? hg : (HGraph*) ZOLTAN_MALLOC (sizeof(HGraph));
   if (!vcycle->hg)  {
     ZOLTAN_FREE (&vcycle);
@@ -185,7 +199,7 @@ int Zoltan_PHG_Partition (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     
-  if (!(vcycle = newVCycle(hg, parts, NULL))) {
+  if (!(vcycle = newVCycle(zz, hg, parts, NULL, hgp))) {
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "VCycle is NULL.");
     return ZOLTAN_MEMERR;
   }
@@ -218,6 +232,15 @@ int Zoltan_PHG_Partition (
           timer_match = Zoltan_Timer_Init(zz->ZTime, 1, "Matching");
         ZOLTAN_TIMER_START(zz->ZTime, timer_match, hg->comm->Communicator);
       }
+      if (hgp->use_timers > 2) {
+        if (vcycle->timer_match < 0) {
+          char str[80];
+          sprintf(str, "VC Matching %d", hg->info);
+          vcycle->timer_match = Zoltan_Timer_Init(vcycle->timer, 0, str);
+        }
+        ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_match,
+                           hg->comm->Communicator);
+      }
 
       /* Allocate and initialize Matching Array */
       if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
@@ -235,14 +258,26 @@ int Zoltan_PHG_Partition (
       }
       if (hgp->use_timers > 1)
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_match, hg->comm->Communicator);
+      if (hgp->use_timers > 2)
+        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_match, 
+                          hg->comm->Communicator);
 
       if (hgp->use_timers > 1) {
         if (timer_coarse < 0) 
           timer_coarse = Zoltan_Timer_Init(zz->ZTime, 1, "Coarsening");
         ZOLTAN_TIMER_START(zz->ZTime, timer_coarse, hg->comm->Communicator);
       }
+      if (hgp->use_timers > 2) {
+        if (vcycle->timer_coarse < 0) {
+          char str[80];
+          sprintf(str, "VC Coarsening %d", hg->info);
+          vcycle->timer_coarse = Zoltan_Timer_Init(vcycle->timer, 0, str);
+        }
+        ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_coarse,
+                           hg->comm->Communicator);
+      }
             
-      if (!(coarser = newVCycle(NULL, NULL, vcycle))) {
+      if (!(coarser = newVCycle(zz, NULL, NULL, vcycle, hgp))) {
         ZOLTAN_FREE ((void**) &match);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "coarser is NULL.");
         goto End;
@@ -257,6 +292,9 @@ int Zoltan_PHG_Partition (
         
       if (hgp->use_timers > 1)
         ZOLTAN_TIMER_STOP(zz->ZTime, timer_coarse, hg->comm->Communicator);
+      if (hgp->use_timers > 2)
+        ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_coarse, 
+                          hg->comm->Communicator);
 
       ZOLTAN_FREE ((void**) &match);
 
@@ -296,11 +334,23 @@ int Zoltan_PHG_Partition (
         timer_refine = Zoltan_Timer_Init(zz->ZTime, 1, "Refinement");
       ZOLTAN_TIMER_START(zz->ZTime, timer_refine, hg->comm->Communicator);
     }
+    if (hgp->use_timers > 2) {
+      if (vcycle->timer_refine < 0) {
+        char str[80];
+        sprintf(str, "VC Refinement %d", hg->info);
+        vcycle->timer_refine = Zoltan_Timer_Init(vcycle->timer, 0, str);
+      }
+      ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_refine,
+                         hg->comm->Communicator);
+    }
 
     err = Zoltan_PHG_Refinement (zz, hg, p, vcycle->Part, hgp);
         
     if (hgp->use_timers > 1)
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_refine, hg->comm->Communicator);
+    if (hgp->use_timers > 2)
+      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_refine, 
+                        hg->comm->Communicator);
 
     if (hgp->output_level >= PHG_DEBUG_LIST)     
       uprintf(hgc, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
@@ -317,6 +367,15 @@ int Zoltan_PHG_Partition (
       if (timer_project < 0) 
         timer_project = Zoltan_Timer_Init(zz->ZTime, 1, "Project Up");
       ZOLTAN_TIMER_START(zz->ZTime, timer_project, hg->comm->Communicator);
+    }
+    if (hgp->use_timers > 2) {
+      if (vcycle->timer_project < 0) {
+        char str[80];
+        sprintf(str, "VC Project Up %d", hg->info);
+        vcycle->timer_project = Zoltan_Timer_Init(vcycle->timer, 0, str);
+      }
+      ZOLTAN_TIMER_START(vcycle->timer, vcycle->timer_project,
+                         hg->comm->Communicator);
     }
 
     /* Project coarse partition to fine partition */
@@ -362,6 +421,9 @@ int Zoltan_PHG_Partition (
     }
     if (hgp->use_timers > 1) 
       ZOLTAN_TIMER_STOP(zz->ZTime, timer_project, hg->comm->Communicator);
+    if (hgp->use_timers > 2)
+      ZOLTAN_TIMER_STOP(vcycle->timer, vcycle->timer_project, 
+                        hg->comm->Communicator);
 
     vcycle = finer;
   }       /* while (vcycle) */
@@ -379,6 +441,8 @@ End:
                         &vcycle->LevelData);
     del = vcycle;
     vcycle = vcycle->finer;
+    Zoltan_Timer_PrintAll(del->timer, zz->Proc, stdout);
+    if (hgp->use_timers > 2) Zoltan_Timer_Destroy(&del->timer);
     ZOLTAN_FREE(&del);
   }
 
