@@ -52,10 +52,10 @@
 #include "EpetraExt_MatlabEngine.h"
 
 #define BUFSIZE 200
-#define MATLABBUF 1024
+#define MATLABBUF 1024 * 16
 
 int main(int argc, char *argv[]) {
-cout << "going to setup MPI...";
+cout << "going to setup MPI...\n";
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
@@ -63,15 +63,17 @@ cout << "going to setup MPI...";
 #else
   Epetra_SerialComm comm;
 #endif
+  cout << "mpit setup complete\n";
 
   int MyPID = comm.MyPID();
 
   char s [BUFSIZE] ;
   char matlabBuffer [MATLABBUF];
+  cout << "going to init matlab\n";
   EpetraExt::MatlabEngine engine (comm);
-  
-cout << MyPID << " going to do multivector test...\n";
-  ///* MultiVector test
+  cout << "matlab starten";
+  /* MultiVector test
+  cout << MyPID << " going to do multivector test...\n";
   int numGlobalElements = 100;
   int M = numGlobalElements/comm.NumProc();
   int N = 3;
@@ -80,33 +82,36 @@ cout << MyPID << " going to do multivector test...\n";
   double* Aptr = A;
   int startValue = 0;
 
-cout << MyPID << " allocated space for A, now filling A\n";
+  cout << MyPID << " allocated space for A, now filling A\n";
   for(int col=0; col < N; col++) {
 	startValue = (col * numGlobalElements) + (M * MyPID);
 	for(int row=0; row < M; row++) {
           *Aptr++ = row+startValue;
       }
   }
-cout << MyPID << " A filled\n";
+  cout << MyPID << " A filled\n";
 
   Epetra_Map map (numGlobalElements, 0, comm);
   Epetra_MultiVector multiVector (Copy, map, A, M, N);
   //cout << multiVector;
-  engine.PutMultiVector(multiVector, "MULT");
-
-  //*/
+  engine.PutMultiVector(multiVector, "TEST");
+  */
   
   /*SerialDenseMatrix test
+  cout << MyPID << " going to do SerialDenseMatrix test...\n";
   double* A = new double[30];
+  cout << MyPID << " allocated space for A, now filling A\n";
   double* Aptr = A;
   int M = 5;
   int N = 6;
+  int startValue = M*N*comm.MyPID();
   for(int i=0; i < M*N; i++) {
-      *Aptr++ = i;
+      *Aptr++ = i + startValue;
   }
+  cout << MyPID << " A filled\n";
 
   Epetra_SerialDenseMatrix sdMatrix (View, A, M, M, N);
-  engine.PutSerialDenseMatrix(sdMatrix, "SDMATRIX");
+  engine.PutSerialDenseMatrix(sdMatrix, "TEST", 0);
   cout << sdMatrix;
   */
 
@@ -123,19 +128,22 @@ cout << MyPID << " A filled\n";
   cout << sdVector;
   */
 
-  /*IntSerialDenseMatrix test
+  ///*IntSerialDenseMatrix test
+  cout << MyPID << " going to do IntSerialDenseMatrix test...\n";
   int* A = new int[30];
+  cout << MyPID << " allocated space for A, now filling A\n";
   int* Aptr = A;
   int M = 5;
   int N = 6;
   for(int i=0; i < M*N; i++) {
       *Aptr++ = i;
   }
+  cout << MyPID << " A filled\n";
 
   Epetra_IntSerialDenseMatrix isdMatrix (View, A, M, M, N);
-  engine.PutIntSerialDenseMatrix(isdMatrix, "ISDMATRIX");
+  engine.PutIntSerialDenseMatrix(isdMatrix, "TEST", 0);
   cout << isdMatrix;
-  */
+  //*/
 
 
   /* SerialDenseVector test
@@ -151,10 +159,10 @@ cout << MyPID << " A filled\n";
   cout << isdVector;
   */
 
-  while(1) {
+  /*while(1) {
 
 	// do nothing
-}
+	}*/
 
   /*if (comm.NumProc() == 1) {
   int err;
@@ -181,7 +189,14 @@ cout << MyPID << " A filled\n";
   }*/
 
   //delete engine ;
-  cout << "all done";
+
+  
+  engine.EvalString("size(TEST)", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << "\n";
+  engine.EvalString("TEST", matlabBuffer, MATLABBUF);
+  cout << matlabBuffer << "\n";
+
+  cout << "\nall done\n";
   return(0);
   
 

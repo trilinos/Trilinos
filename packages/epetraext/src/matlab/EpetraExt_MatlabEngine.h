@@ -102,8 +102,8 @@ class MatlabEngine {
   int PutMultiVector(const Epetra_MultiVector& A, const char* variableName);
   int PutRowMatrix(const Epetra_RowMatrix& A, const char* variableName, bool transA);
   int PutCrsGraph(const Epetra_CrsGraph& A, const char* variableName, bool transA);
-  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName);
-  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName);
+  int PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const char* variableName, int proc);
+  int PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc);
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
   int PutIntoMatlab(Engine* engine, const char* variableName, mxArray* matlabA);
