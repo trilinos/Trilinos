@@ -18,7 +18,7 @@ extern "C" {
 /* Prototypes */
 
 extern int Zoltan_Reftree_Set_Param(char *name, char *val);
-extern void Zoltan_Reftree_Get_Child_Order(ZZ *zz, int *order, int *ierr); /* TEMP child_order */
+extern void Zoltan_Reftree_Get_Child_Order(ZZ *zz, int *order, int *ierr);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

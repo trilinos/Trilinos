@@ -49,8 +49,9 @@ static int vertex_swap(int *ierr, ZZ *zz);
 static int broken_link(int *ierr, ZZ *zz);
 static int sfc_coarse_grid_path(int nobj,int *num_vert, ZOLTAN_ID_PTR vertices,
                           ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
-                          int *order, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                          char *initpath_method, int all_triangles, ZZ *zz);
+                          double *coords, int *order, ZOLTAN_ID_PTR gids,
+                          ZOLTAN_ID_PTR lids, char *initpath_method,
+                          int all_triangles, ZZ *zz);
 static int find_inout(int elem, int prev, int prevprev,
                       ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
                       ZOLTAN_ID_PTR vertices, int *num_vert, int *first_vert,
@@ -1797,15 +1798,16 @@ int success1, j1, k1, l1;
 
 static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
                          ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex,
-                         int *order, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                         char *initgrid_method, int all_triangles, ZZ *zz)
+                         double *coords, int *order, ZOLTAN_ID_PTR gids,
+                         ZOLTAN_ID_PTR lids, char *initgrid_method,
+                         int all_triangles, ZZ *zz)
 {
 
 /*
  * This routine uses either the Hilbert or Sierpinski Space Filling Curve to
  * find a path through the coarse grid.  This path is not necessarily connected
  * in non-convex domains.  Even if it is connected, the path through refinements
- * of the * grid may not be connected if the in/out vertices can't be assigned
+ * of the grid may not be connected if the in/out vertices can't be assigned
  * to match up.
  * This uses the Hilbert routines to map from 2D and 3D to 1D in
  * hsfc/hsfc_hilbert.c.  It has its own Sierpinski routine, which only
@@ -1815,7 +1817,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   char *yo = "sfc_coarse_grid_path";
   int ierr, num_geom, i, elem, prev, prevprev;
   int *ind, *first_vert;
-  double *sfccoord, *coords;
+  double *sfccoord, loc_coords[3];
   double xmin,xmax,ymin,ymax,zmin,zmax;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -1847,26 +1849,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
  * For each element, determine its SFC mapping from its coordinates to 1D
  */
 
-/* verify the geometry function has be registered */
-
-  if (zz->Get_Geom == NULL && zz->Get_Geom_Multi == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                      "Must register ZOLTAN_GEOM_FN or ZOLTAN_GEOM_MULTI_FN.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ZOLTAN_FATAL);
-  }
-
-/* allocate space for the element coordinates and the SFC coordinate */
-
-  coords = (double *) ZOLTAN_MALLOC(nobj*num_geom*sizeof(double));
-  sfccoord = (double *) ZOLTAN_MALLOC(nobj*sizeof(double));
-  if (sfccoord == NULL || coords == NULL) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_TRACE_EXIT(zz, yo);
-    return(ZOLTAN_MEMERR);
-  }
-
-/* get the coordinates of each element and find max and min */
+/* find min and max coordinates */
 
   xmin =  1.0e50;
   xmax = -1.0e50;
@@ -1874,34 +1857,6 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   ymax = -1.0e50;
   zmin =  1.0e50;
   zmax = -1.0e50;
-  if (zz->Get_Geom) {
-    for (i=0; i<nobj; i++) {
-
-      zz->Get_Geom(zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID, 
-                   &(gids[zz->Num_GID*i]), &(lids[zz->Num_GID*i]),
-                   &(coords[num_geom*i]),&ierr);
-      if (ierr) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                           "Error returned from user function Get_Geom.");
-        Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
-        ZOLTAN_TRACE_EXIT(zz, yo);
-        return(ierr);
-      }
-    }
-  }
-  else {
-    /* Use MULTI Function */
-    zz->Get_Geom_Multi(zz->Get_Geom_Multi_Data, zz->Num_GID, zz->Num_LID, nobj,
-                       gids, lids, num_geom, coords, &ierr);
-    if (ierr) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                         "Error returned from user function Get_Geom_Multi.");
-      Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
-      ZOLTAN_TRACE_EXIT(zz, yo);
-      return(ierr);
-    }
-  }
-
   for (i = 0; i < nobj; i++) {
     if (coords[num_geom*i  ] < xmin) xmin = coords[num_geom*i  ];
     if (coords[num_geom*i  ] > xmax) xmax = coords[num_geom*i  ];
@@ -1913,41 +1868,50 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
     }
   }
 
+/* allocate space for the SFC coordinate */
+
+  sfccoord = (double *) ZOLTAN_MALLOC(nobj*sizeof(double));
+  if (sfccoord == NULL) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return(ZOLTAN_MEMERR);
+  }
+
 /* scale the coordinates to [0,1] and compute the SFC mapping */
 
   for (i=0; i<nobj; i++) {
-    coords[num_geom*i  ] = (coords[num_geom*i  ]-xmin)/(xmax-xmin);
-    coords[num_geom*i+1] = (coords[num_geom*i+1]-ymin)/(ymax-ymin);
+    loc_coords[0] = (coords[num_geom*i  ]-xmin)/(xmax-xmin);
+    loc_coords[1] = (coords[num_geom*i+1]-ymin)/(ymax-ymin);
     if ((strcmp(initgrid_method, "SIERPINSKI") == 0) ||
         (strcmp(initgrid_method, "REFTREE_DEFAULT") == 0 && all_triangles)) {
       if (num_geom == 2) {
-        sfccoord[i] = InvSierpinski2d(zz,&(coords[num_geom*i]));
+        sfccoord[i] = InvSierpinski2d(zz,loc_coords);
       } else {
         ierr = ZOLTAN_FATAL;
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                            "Sierpinski SFC only applies to 2D problems.");
-        Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+        ZOLTAN_FREE(&sfccoord);
         ZOLTAN_TRACE_EXIT(zz, yo);
         return(ierr);
       }
     } else { /* Hilbert */
       if (num_geom == 2) {
-        sfccoord[i] = Zoltan_HSFC_InvHilbert2d(zz,&(coords[num_geom*i]));
+        sfccoord[i] = Zoltan_HSFC_InvHilbert2d(zz,loc_coords);
       } else {
-        coords[num_geom*i+2] = (coords[num_geom*i+2]-zmin)/(zmax-zmin);
-        sfccoord[i] = Zoltan_HSFC_InvHilbert3d(zz,&(coords[num_geom*i]));
+        loc_coords[2] = (coords[num_geom*i+2]-zmin)/(zmax-zmin);
+        sfccoord[i] = Zoltan_HSFC_InvHilbert3d(zz,loc_coords);
       }
     }
   }
 
 /*
- * sort the Hilbert coordinates to get the order of the elements
+ * sort the SFC coordinates to get the order of the elements
  */
 
   ind = (int *) ZOLTAN_MALLOC(nobj*sizeof(int));
   if (ind == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    Zoltan_Multifree(__FILE__,__LINE__, 2, &coords, &sfccoord);
+    ZOLTAN_FREE(&sfccoord);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
@@ -1962,7 +1926,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
   first_vert = (int *) ZOLTAN_MALLOC(nobj*sizeof(int));
   if (first_vert == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    Zoltan_Multifree(__FILE__,__LINE__, 3, &coords, &sfccoord, &ind);
+    Zoltan_Multifree(__FILE__,__LINE__, 2, &sfccoord, &ind);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
@@ -1996,7 +1960,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from find_inout.");
-      Zoltan_Multifree(__FILE__,__LINE__, 4, &coords,&sfccoord,&ind,&first_vert);
+      Zoltan_Multifree(__FILE__,__LINE__, 3, &sfccoord, &ind, &first_vert);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ierr); 
     }
@@ -2011,7 +1975,7 @@ static int sfc_coarse_grid_path(int nobj, int *num_vert, ZOLTAN_ID_PTR vertices,
                       &(  vertices[zz->Num_GID*first_vert[elem]]));
   }
 
-  Zoltan_Multifree(__FILE__,__LINE__, 4, &coords, &sfccoord, &ind, &first_vert);
+  Zoltan_Multifree(__FILE__,__LINE__, 3, &sfccoord, &ind, &first_vert);
   return(ZOLTAN_OK);
 }
 
@@ -2371,9 +2335,10 @@ static void sort_index(int n, double ra[], int indx[])
 
 int Zoltan_Reftree_Coarse_Grid_Path(int nobj, int *num_vert, 
                                ZOLTAN_ID_PTR vertices, ZOLTAN_ID_PTR in_vertex,
-                               ZOLTAN_ID_PTR out_vertex, int *order,
-                               ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-                               char *initpath_method, ZZ *zz)
+                               ZOLTAN_ID_PTR out_vertex, double *coords,
+                               int *order, ZOLTAN_ID_PTR gids,
+                               ZOLTAN_ID_PTR lids, char *initpath_method,
+                               ZZ *zz)
 {
 
 /*
@@ -2402,7 +2367,7 @@ int all_triangles = 0, i, element, success, ierr;
        strcmp(initpath_method, "SIERPINSKI") == 0 ||
        strcmp(initpath_method, "REFTREE_DEFAULT") == 0 ) {
       ierr = sfc_coarse_grid_path(nobj, num_vert, vertices, in_vertex,
-                                  out_vertex, order, gids, lids, 
+                                  out_vertex, coords, order, gids, lids, 
                                   initpath_method, all_triangles, zz);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return (ierr);
