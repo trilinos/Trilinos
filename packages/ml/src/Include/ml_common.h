@@ -57,7 +57,9 @@
 
 /* aztecoo depends on epetra ...*/
 #if defined(HAVE_ML_AZTEC) || defined(HAVE_ML_EPETRA)
+#ifndef AZTEC
 #define AZTEC
+#endif
 #define ML_WITH_EPETRA
 #endif
 
@@ -77,7 +79,9 @@
 #endif
  
 #ifdef HAVE_MPI
+#ifndef ML_MPI
 #define ML_MPI
+#endif
 #endif
 
 #if defined(HAVE_ML_EXTERNAL_MPI_FUNCTIONS) && defined(HAVE_MPI)
