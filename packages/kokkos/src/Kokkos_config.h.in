@@ -41,6 +41,12 @@
 /* Define to 1 if you have the <iostream.h> header file. */
 #undef HAVE_IOSTREAM_H
 
+/* Define if want to build kokkos-examples */
+#undef HAVE_KOKKOS_EXAMPLES
+
+/* Define if want to build kokkos-tests */
+#undef HAVE_KOKKOS_TESTS
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 

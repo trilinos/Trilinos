@@ -191,10 +191,13 @@ AC_CXX_STD_SPRINTF
 # These options can disable the tests and examples of a package.
 # Packages that do not have tests or examples should #-out the 
 # option(s) that does (do) not apply.
+
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( kokkos, tests, [Build Kokkos tests], KOKKOS_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( kokkos, examples, [Build Kokkos examples], KOKKOS_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------
