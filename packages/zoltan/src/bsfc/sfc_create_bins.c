@@ -48,7 +48,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
 		    int* number_of_cuts, int bins_per_proc, 
-		    int hashtable_divider, COMM_OBJ **plan,
+		    int hashtable_divider, ZOLTAN_COMM_OBJ **plan,
 		    int* num_vert_sent, int max_cuts_in_bin)
 {
   char    yo[] = "sfc_create_bins";
@@ -183,19 +183,19 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     }
   }  
   
-  ierr = LB_Comm_Create(plan, off_proc_objects, proclist, 
+  ierr = Zoltan_Comm_Create(plan, off_proc_objects, proclist, 
 			lb->Communicator, comm_tag, &nreturn);
 
-  if(ierr == COMM_WARN) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Create.");
+  if(ierr == ZOLTAN_WARN) {
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Create.");
   }
-  else if(ierr == COMM_FATAL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Create.");
-    return(ZOLTAN_FATAL);
+  else if(ierr == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Create.");
+    return(ierr);
   }      
-  else if(ierr == COMM_MEMERR) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Create.");
-    return(ZOLTAN_MEMERR);
+  else if(ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Create.");
+    return(ierr);
   }
 
   rcv_buffer = (SFC_BIN_WEIGHT_PTR) ZOLTAN_MALLOC(sizeof(SFC_BIN_WEIGHT) * nreturn);
@@ -221,18 +221,18 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 	}
     }
 
-    ierr = LB_Comm_Do(*plan, comm_tag+1+i, (char *) send_buffer, 
+    ierr = Zoltan_Comm_Do(*plan, comm_tag+1+i, (char *) send_buffer, 
 		      sizeof(SFC_BIN_WEIGHT), (char *) rcv_buffer);
-    if(ierr == COMM_WARN) {
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do.");
+    if(ierr == ZOLTAN_WARN) {
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Do.");
     }
-    else if(ierr == COMM_FATAL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do.");
-      return(ZOLTAN_FATAL);
+    else if(ierr == ZOLTAN_FATAL) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Do.");
+      return(ierr);
     }      
-    else if(ierr == COMM_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do.");
-      return(ZOLTAN_MEMERR);
+    else if(ierr == ZOLTAN_MEMERR) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Do.");
+      return(ierr);
     }    
     /* put weights from other processors in their bins */
     for(j=0;j<nreturn;j++) 
@@ -241,17 +241,17 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 	rcv_buffer[j].weight;   
   }
 
-  ierr = LB_Comm_Destroy(plan);
-  if(ierr == COMM_WARN) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Destory.");
+  ierr = Zoltan_Comm_Destroy(plan);
+  if(ierr == ZOLTAN_WARN) {
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Destory.");
   }
-  else if(ierr == COMM_FATAL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Destroy.");
-    return(ZOLTAN_FATAL);
+  else if(ierr == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Destroy.");
+    return(ierr);
   }      
-  else if(ierr == COMM_MEMERR) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Destroy.");
-    return(ZOLTAN_MEMERR);
+  else if(ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Destroy.");
+    return(ierr);
   }
   *plan = NULL; 
   sfc_clear_hashtable(sfc_hash_ptr, hashtable_length);
@@ -541,18 +541,18 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     }
   comm_tag+=10;  /* create new comm tag (10 is chosen arbitrarily) */
   *num_vert_sent = off_proc_objects;
-  ierr = LB_Comm_Create(plan, off_proc_objects, proclist, 
+  ierr = Zoltan_Comm_Create(plan, off_proc_objects, proclist, 
 			lb->Communicator, comm_tag, num_vert_in_cut);
-  if(ierr == COMM_WARN) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Create.");
+  if(ierr == ZOLTAN_WARN) {
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Create.");
   }
-  else if(ierr == COMM_FATAL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Create.");
-    return(ZOLTAN_FATAL);
+  else if(ierr == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Create.");
+    return(ierr);
   }      
-  else if(ierr == COMM_MEMERR) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Create.");
-    return(ZOLTAN_MEMERR);
+  else if(ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Create.");
+    return(ierr);
   }
   /* send out vertices */
   *vert_in_cut_ptr = 
@@ -561,18 +561,18 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = LB_Comm_Do(*plan, comm_tag, (char *) send_vert_buffer, 
+  ierr = Zoltan_Comm_Do(*plan, comm_tag, (char *) send_vert_buffer, 
 		    sizeof(SFC_VERTEX), (char *) *vert_in_cut_ptr);
-  if(ierr == COMM_WARN) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do.");
+  if(ierr == ZOLTAN_WARN) {
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Do.");
   }
-  else if(ierr == COMM_FATAL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do.");
-    return(ZOLTAN_FATAL);
+  else if(ierr == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Do.");
+    return(ierr);
   }      
-  else if(ierr == COMM_MEMERR) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do.");
-    return(ZOLTAN_MEMERR);
+  else if(ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Do.");
+    return(ierr);
   }
   ZOLTAN_FREE(&send_vert_buffer);
   
@@ -583,18 +583,18 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = LB_Comm_Do(*plan, comm_tag+2, (char *) send_wgt_buffer, 
+  ierr = Zoltan_Comm_Do(*plan, comm_tag+2, (char *) send_wgt_buffer, 
 		    sizeof(float)*wgt_dim, (char *) *wgts_in_cut_ptr);
-  if(ierr == COMM_WARN) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do.");
+  if(ierr == ZOLTAN_WARN) {
+    ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Do.");
   }
-  else if(ierr == COMM_FATAL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do.");
-    return(ZOLTAN_FATAL);
+  else if(ierr == ZOLTAN_FATAL) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Do.");
+    return(ierr);
   }      
-  else if(ierr == COMM_MEMERR) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do.");
-    return(ZOLTAN_MEMERR);
+  else if(ierr == ZOLTAN_MEMERR) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Do.");
+    return(ierr);
   }
   ZOLTAN_FREE(&send_wgt_buffer);
   

@@ -39,7 +39,7 @@ int Zoltan_DD_Find (
  int  count,              /* Count of GIDs in above list (in)              */
  int *owner)              /* Outgoing corresponding list of data locations */
    {
-   struct Comm_Obj *plan  = NULL ;  /* efficient MPI communication     */
+   ZOLTAN_COMM_OBJ *plan  = NULL ;  /* efficient MPI communication     */
    char            *rbuff = NULL ;  /* receive buffer                  */
    char            *sbuff = NULL ;  /* send buffer                     */
    int             *procs = NULL ;  /* list of processors to contact   */
@@ -110,11 +110,11 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill.");
 
    /* create efficient communication plan */
-   err = LB_Comm_Create (&plan, count, procs, dd->comm,
+   err = Zoltan_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_FIND_MSG_TAG, &nrec) ;
    if (dd->debug_level > 2)
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Create.");
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       goto fini ;
 
    /* allocate receive buffer */
@@ -129,9 +129,9 @@ int Zoltan_DD_Find (
       }
 
    /* send out find messages across entire system */
-   err = LB_Comm_Do (plan, ZOLTAN_DD_FIND_MSG_TAG+1, sbuff,
+   err = Zoltan_Comm_Do (plan, ZOLTAN_DD_FIND_MSG_TAG+1, sbuff,
     dd->find_msg_size, rbuff) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       goto fini ;
 
    if (dd->debug_level > 2)
@@ -154,9 +154,9 @@ int Zoltan_DD_Find (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill in return info.");
 
    /* send return information back to requester */
-   err = LB_Comm_Do_Reverse(plan, ZOLTAN_DD_FIND_MSG_TAG+2, rbuff,
+   err = Zoltan_Comm_Do_Reverse(plan, ZOLTAN_DD_FIND_MSG_TAG+2, rbuff,
     dd->find_msg_size, NULL, sbuff) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       goto fini ;
 
    if (dd->debug_level > 2)
@@ -192,7 +192,7 @@ fini:
    ZOLTAN_FREE (&sbuff) ;
    ZOLTAN_FREE (&rbuff) ;
    ZOLTAN_FREE (&procs) ;
-   LB_Comm_Destroy (&plan) ;
+   Zoltan_Comm_Destroy (&plan) ;
 
    if (err != ZOLTAN_DD_NORMAL_RETURN)
       ZOLTAN_PRINT_WARN (dd->my_proc, yo, "Return is not normal.") ;

@@ -45,7 +45,7 @@ int Zoltan_DD_Update (
    {
    int             *procs = NULL ;   /* list of processors to contact   */
    DD_Update_Msg   *ptr   = NULL ;
-   struct Comm_Obj *plan  = NULL ;   /* for efficient MPI communication */
+   ZOLTAN_COMM_OBJ *plan  = NULL ;   /* for efficient MPI communication */
    char            *sbuff = NULL ;   /* send buffer                     */
    char            *rbuff = NULL ;   /* receive buffer                  */
    DD_Node         *ddptr = NULL ;
@@ -130,9 +130,9 @@ int Zoltan_DD_Update (
       ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill contact list.");
 
    /* now create efficient communication plan */
-   err = LB_Comm_Create (&plan, count, procs, dd->comm,
+   err = Zoltan_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_UPDATE_MSG_TAG, &nrec) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Create error") ;
       goto fini ;
@@ -154,9 +154,9 @@ int Zoltan_DD_Update (
       }
 
    /* send my update messages & receive updates directed to me */
-   err = LB_Comm_Do (plan, ZOLTAN_DD_UPDATE_MSG_TAG+1, sbuff,
+   err = Zoltan_Comm_Do (plan, ZOLTAN_DD_UPDATE_MSG_TAG+1, sbuff,
     dd->update_msg_size, rbuff) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Do error.") ;
       goto fini ;
@@ -192,7 +192,7 @@ fini:
    ZOLTAN_FREE (&procs) ;
    ZOLTAN_FREE (&sbuff) ;
    ZOLTAN_FREE (&rbuff) ;
-   LB_Comm_Destroy (&plan) ;
+   Zoltan_Comm_Destroy (&plan) ;
 
    if (dd->debug_level > 0)
       {

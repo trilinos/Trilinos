@@ -310,7 +310,7 @@ int nbor_proc;
 int i, j, k, ierr, error = 0, gerror = 0;
 ELEM_INFO_PTR current;
 struct map_list_head map;
-COMM_OBJ *comm;
+ZOLTAN_COMM_OBJ *comm;
 
 
   /* Load array of element globalIDs for elements on this processor. */
@@ -443,10 +443,10 @@ COMM_OBJ *comm;
     i_want[j++] = my_gids[i];
   }
 
-  ierr = LB_Comm_Create(&comm, num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
+  ierr = Zoltan_Comm_Create(&comm, num_nbor, ownerlist, MPI_COMM_WORLD, 747, 
                         &num_others);
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from LB_Comm_Create");
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Create");
     return;
   }
 
@@ -462,17 +462,17 @@ COMM_OBJ *comm;
     return;
   }
 
-  ierr = LB_Comm_Do(comm, 757, (char *) i_want, want_size * sizeof(LB_ID_TYPE), 
+  ierr = Zoltan_Comm_Do(comm, 757, (char *) i_want, want_size * sizeof(LB_ID_TYPE), 
                     (char *) others_want);
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from LB_Comm_Do");
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Do");
     return;
   }
 
   free(i_want);
-  ierr = LB_Comm_Destroy(&comm);
+  ierr = Zoltan_Comm_Destroy(&comm);
   if (ierr) {
-    Gen_Error(0, "Fatal:  Error returned from LB_Comm_Destroy");
+    Gen_Error(0, "Fatal:  Error returned from Zoltan_Comm_Destroy");
     return;
   }
 

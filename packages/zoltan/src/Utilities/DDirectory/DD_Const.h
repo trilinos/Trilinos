@@ -47,7 +47,10 @@
 #define ZOLTAN_DD_REMOVE_MSG_TAG   29142  /* needs 2 consecutive values */
 
 
-
+#ifndef TRUE
+#define FALSE (0)
+#define TRUE  (1)
+#endif /* !TRUE */
 
 
 

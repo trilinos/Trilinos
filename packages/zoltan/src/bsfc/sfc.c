@@ -67,7 +67,7 @@ int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
 		    int* balanced_flag, SFC_VERTEX_PTR *vert_in_cut_ptr,
 		    float** wgts_in_cut_ptr, int* num_vert_in_cut,
 		    int* number_of_cuts, int bins_per_proc, 
-		    int hashtable_divider, COMM_OBJ **plan, 
+		    int hashtable_divider, ZOLTAN_COMM_OBJ **plan, 
 		    int* num_vert_sent, int max_cuts_in_bin);
 
 static PARAM_VARS SFC_params[] = {
@@ -156,7 +156,7 @@ int LB_sfc(
   int number_of_cuts = 0; /* maximum amount of cuts in a coarse bin on this processor */
   int amount_of_bits_used = 0;        /* amount of bits used in calculating the
 					 bin an sfc object belongs to */
-  COMM_OBJ *plan;                     /* used to put all sfc objects that were 
+  ZOLTAN_COMM_OBJ *plan;                     /* used to put all sfc objects that were 
 					 moved to a new proc back on the original proc */
   int comm_tag = 8765;                /* randomly chosen communication tag */
   int num_vert_sent;                  /* the number of sfc objects that this processor 
@@ -484,18 +484,18 @@ int LB_sfc(
         return(ZOLTAN_MEMERR);
       }
     }
-    ierr = LB_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
+    ierr = Zoltan_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
 			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
-    if(ierr == COMM_WARN) {
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Do_Reverse.");
+    if(ierr == ZOLTAN_WARN) {
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Do_Reverse.");
     }
-    else if(ierr == COMM_FATAL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Do_Reverse.");
-      return(ZOLTAN_FATAL);
+    else if(ierr == ZOLTAN_FATAL) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Do_Reverse.");
+      return(ierr);
     }      
-    else if(ierr == COMM_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Do_Reverse.");
-      return(ZOLTAN_MEMERR);
+    else if(ierr == ZOLTAN_MEMERR) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Do_Reverse.");
+      return(ierr);
     }
     /* put objects back in sfc_vert_ptr array the way they 
        were copied from this array */
@@ -506,17 +506,17 @@ int LB_sfc(
       }      
 
     ZOLTAN_FREE(&recv_buf);
-    ierr = LB_Comm_Destroy(&plan);
-    if(ierr == COMM_WARN) {
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from LB_Comm_Destroy.");
+    ierr = Zoltan_Comm_Destroy(&plan);
+    if(ierr == ZOLTAN_WARN) {
+      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Destroy.");
     }
-    else if(ierr == COMM_FATAL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in LB_Comm_Destroy.");
-      return(ZOLTAN_FATAL);
+    else if(ierr == ZOLTAN_FATAL) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Destroy.");
+      return(ierr);
     }      
-    else if(ierr == COMM_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in LB_Comm_Destroy.");
-      return(ZOLTAN_MEMERR);
+    else if(ierr == ZOLTAN_MEMERR) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Destroy.");
+      return(ierr);
     }
   }
 

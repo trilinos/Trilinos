@@ -37,7 +37,7 @@ int Zoltan_DD_Remove (
    {
    int             *procs = NULL ;   /* list of processors to contact   */
    DD_Remove_Msg   *ptr   = NULL ;
-   struct Comm_Obj *plan  = NULL ;   /* efficient MPI communication     */
+   ZOLTAN_COMM_OBJ *plan  = NULL ;   /* efficient MPI communication     */
    char            *sbuff = NULL ;   /* send buffer                     */
    char            *rbuff = NULL ;   /* receive buffer                  */
 
@@ -102,16 +102,16 @@ int Zoltan_DD_Remove (
       }
 
    /* now create efficient communication plan */
-   err = LB_Comm_Create (&plan, count, procs, dd->comm,
+   err = Zoltan_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_REMOVE_MSG_TAG, &nrec) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Create error.") ;
       goto fini ;
       }
 
    if (dd->debug_level > 2)
-      ZOLTAN_PRINT_INFO (dd->my_proc, yo, "After LB_Comm_Create.") ;
+      ZOLTAN_PRINT_INFO (dd->my_proc, yo, "After Zoltan_Comm_Create.") ;
 
    /* allocate receive buffer for nrec DD_Remove_Msg structures */
    if (nrec > 0)
@@ -126,16 +126,16 @@ int Zoltan_DD_Remove (
       }
 
    /* send my remove messages & receive removes directed to me */
-   err = LB_Comm_Do (plan, ZOLTAN_DD_UPDATE_MSG_TAG+1, sbuff,
+   err = Zoltan_Comm_Do (plan, ZOLTAN_DD_UPDATE_MSG_TAG+1, sbuff,
     dd->remove_msg_size, rbuff) ;
-   if (err != COMM_OK)
+   if (err != ZOLTAN_OK)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Do error.") ;
       goto fini ;
       }
 
    if (dd->debug_level > 2)
-      ZOLTAN_PRINT_INFO (dd->my_proc, yo, "After LB_Comm_Do.") ;
+      ZOLTAN_PRINT_INFO (dd->my_proc, yo, "After Zoltan_Comm_Do.") ;
 
    /* for each message rec'd,  remove local directory info */
    errcount = 0 ;
@@ -155,7 +155,7 @@ int Zoltan_DD_Remove (
    ZOLTAN_FREE (&procs) ;
    ZOLTAN_FREE (&sbuff) ;
    ZOLTAN_FREE (&rbuff) ;
-   LB_Comm_Destroy (&plan) ;
+   Zoltan_Comm_Destroy (&plan) ;
 
    if (dd->debug_level > 0)
       {
