@@ -1,0 +1,6 @@
+Decomposition Method	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+Zoltan Parameters	= obj_weight_dim=1, comm_weight_dim=1, scatter_graph=2
+File Type		= Chaco, initial procs = 1
+File Name		= bug
+Parallel Disk Info	= number=0
