@@ -108,8 +108,8 @@ int Zoltan_Octpart(
 {
 int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
 int oct_method = 2;           /* Flag specifying curve to be used.           */
-int oct_maxoctregions = 1;    /* max # of objects in leaves of octree.       */
-int oct_minoctregions = 1;    /* min # of objects in leaves of octree.       */
+int oct_maxoctregions = 40;   /* max # of objects in leaves of octree.       */
+int oct_minoctregions = 10;   /* min # of objects in leaves of octree.       */
 int oct_output_level = 0;     /* Flag specifying amount of output.           */
 int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
 int error = FALSE;            /* error flag                                  */
