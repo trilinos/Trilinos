@@ -59,14 +59,14 @@ double NOX::LineSearch::Utils::Slope::computeSlope(const Abstract::Vector& dir, 
   
   if (status != NOX::Abstract::Group::Ok) 
   {
-    cout << "NOX::LineSearch::Common::computeSlope -  Unable to apply Jacobian!" << endl;
+    cout << "NOX::LineSearch::Utils::Slope::computeSlope -  Unable to apply Jacobian!" << endl;
     throw "NOX Error";
   }
 
   // Check that F exists
   if (!grp.isF()) 
   {
-    cout << "NOX::LineSearch::Common::computeSlope - Invalid F" << endl;
+    cout << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << endl;
     throw "NOX Error";
   }
 
@@ -85,7 +85,7 @@ double NOX::LineSearch::Utils::Slope::computeSlopeWithOutJac(const Abstract::Vec
   // Check that F exists
   if (!grp.isF()) 
   {
-    cout << "NOX::LineSearch::Common::computeSlope - Invalid F" << endl;
+    cout << "NOX::LineSearch::Utils::Slope::computeSlope - Invalid F" << endl;
     throw "NOX Error";
   }
 
