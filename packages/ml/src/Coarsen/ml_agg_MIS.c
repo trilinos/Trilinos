@@ -1,3 +1,4 @@
+#define MAXWELL
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */        
@@ -755,8 +756,15 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
    fp = fopen(fname,"r");
    if (fp == NULL)
    {
-      printf("Cannot open file %s for reading.\n",fname);
+      printf("Cannot open aggregate file %s for reading.\n",fname);
+      printf("exp_Nrows = %d\n",exp_Nrows);
       exit(1);
+   }
+   else
+   {
+      printf("Reading aggregate for level %d from file %s\n",
+             level_count-1,fname);
+      fflush(stdout);
    }
    aggr_count = 0;
    for (i = 0; i <nvertices; i++) {
@@ -1433,8 +1441,9 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
             index = rows_in_aggs[i][j];
             for (k = 0; k < nullspace_dim; k++)
             {
-               if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
-               else {
+              if ( unamalg_bdry[index] == 'T') qr_tmp[k*length+j] = 0.;
+               else
+               {
                   if (index % num_PDE_eqns == k) qr_tmp[k*length+j] = 1.0;
                   else                           qr_tmp[k*length+j] = 0.0;
                }
@@ -1565,6 +1574,13 @@ aggr_cnt_array[i],i);
    for ( i = 0; i < total_send_leng; i++ )
    {
       index = send_list[i];
+      /*
+      if (index == 14)
+      {
+         printf("aggr_index = %d, dble_buf = %e, aggr_count = %d\n",
+                aggr_index[14],dble_buf[i],aggr_count);
+      }
+      */
       if ( aggr_index[index] >= aggr_count )
       {
          dcompare1 = 0.0;
@@ -1579,8 +1595,18 @@ aggr_cnt_array[i],i);
             k      = index * nullspace_dim;
             for ( j = 0; j < nullspace_dim; j++ )
             {
-               new_val[k+j] = dble_buf[index4+j];
-               new_ja[k+j]  = aggr_index[index]*nullspace_dim+j;
+               /*new_val[k+j] = dble_buf[index4+j];*/
+               new_val[ new_ia[index]+j] = dble_buf[index4+j];
+               /* new_ja = column index */
+               /*new_ja[k+j]  = aggr_index[index]*nullspace_dim+j;*/
+               new_ja[ new_ia[index]+j ]  = aggr_index[index]*nullspace_dim+j;
+               /*
+               if (index == 14)
+               {
+                  printf("%d:new_ia[index]+j = %d, new_ja[new_ia[index]+j] = %d\n",
+                         comm->ML_mypid,new_ia[index]+j,new_ja[new_ia[index]+j]);
+               }
+               */
             }
          }
       }
@@ -1606,9 +1632,9 @@ aggr_cnt_array[i],i);
          if (myagg != new_ja[kk]/6) {
             if (myagg == -1) myagg = new_ja[kk]/6;
             else {
-               printf("something is wrong %d %d in row %d\n",
+               printf("a:something is wrong %d %d in row %d\n",
                        myagg, new_ja[kk]/6, i);
-               exit(1);
+               /*exit(1);*/
             } 
           }
       }
@@ -1626,9 +1652,9 @@ aggr_cnt_array[i],i);
 	      if (curagg != new_ja[kk]/6) {
 		if (curagg == -1) curagg = new_ja[kk]/6;
 		else {
-		  printf("Something is wrong %d %d in row %d\n",
+		  printf("b:Something is wrong %d %d in row %d\n",
 			 curagg, new_ja[kk]/6, rowi_col[j]);
-		  exit(1);
+		  /*exit(1);*/
 		} 
 	      }
 	    }
@@ -1750,11 +1776,26 @@ aggr_cnt_array[i],i);
       if (level_count == 1) { j = reordered_glob_nodes[i]; k = global_node_inds[i];}
 #endif /* ifndef MAXWELL */
       else                  { j = i              ; k = i+vertex_offset;}
-      fprintf(fp,"PP%d(%d) = %e\n",level_count,k, d2temp[j]);
+      fprintf(fp,"PP%d(%d) (loc=%d) = %e\n",level_count,k,j, d2temp[j]);
    }
    fclose(fp);
    free(dtemp);
    free(d2temp);
+
+   /*
+   csr_data = (struct ML_CSR_MSRdata *) (*Pmatrix)->data;
+   if (comm->ML_mypid == 1)
+   {
+      printf("%d : row_ptr = %d\nrow_ptr = %d\ncol = %d\nval = %e\n\n\n",
+             comm->ML_mypid,
+             csr_data->rowptr[14], csr_data->rowptr[15],
+             csr_data->columns[14], csr_data->values[14]);
+   }
+   sprintf(fname,"comm%d",comm->ML_mypid);
+   ML_CommInfoOP_Print((*Pmatrix)->getrow->pre_comm, fname);
+   fflush(stdout);
+   */
+
 #endif
 
    return Ncoarse*nullspace_dim;
