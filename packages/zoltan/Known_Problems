@@ -1,4 +1,5 @@
 Problems existing in Zoltan.
+This file was last updated on $Date$
 
 -------------------------------------------------------------------------------
 ERROR CONDITIONS IN ZOLTAN
@@ -12,6 +13,15 @@ Zoltan will be improved in future releases.
 ERROR CONDITIONS IN OCTREE, PARMETIS AND JOSTLE
 On failure, OCTREE, ParMETIS and Jostle methods abort rather than return 
 error codes.  
+-------------------------------------------------------------------------------
+HETEROGENEOUS ENVIRONMENTS
+Some parts of Zoltan currently assume that basic data types like 
+integers and real numbers (floats) have identical representation
+on all processors. This may not be true in a heterogeneous
+environment. Specifically, the unstructured (irregular) communication
+library is unsafe in a heterogeneous environment. This problem
+will be corrected in a future release of Zoltan for heterogeneous
+systems.
 -------------------------------------------------------------------------------
 F90 ISSUES
 Pacific Sierra Research (PSR) Vastf90 is not currently supported due to bugs 
