@@ -8,3 +8,5 @@ extern int     oct_nextId(void);
 extern void    oct_terminal_refine(pOctant oct,int count);
 extern pOctant oct_findId(int i);
 extern pOctant oct_global_insert(pRegion region);
+extern int     oct_subtree_insert(pOctant oct, pRegion region);
+

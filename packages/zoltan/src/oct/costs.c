@@ -11,15 +11,15 @@
 
 
 /*
- * costs_init(octant)
+ * void costs_init(pOctant octant)
  *
  * initialize costs for the subtree rooted at octant
  * ATTN: This function may not be necessary anymore
  */
 void costs_init(pOctant octant) {
-  pOctant children[8];
-  float *data;
-  int i;
+  pOctant children[8];                 /* children of the octant */
+  float *data;                         /* value to be attached to the octant */
+  int i;                               /* index counter */
 
   /*  OEN_attachDataI(octant, "NPID", -1);
       SAFE_MALLOC(data,float*,sizeof(float));
@@ -39,17 +39,16 @@ void costs_init(pOctant octant) {
 }
 
 /*
- * costs_free(octant)
+ * void costs_free(pOctant octant)
  *
+ * deletes the cost associated with the octant
  */
 void costs_free(pOctant octant) {
-  float *data;
-
-  pOctant children[8];
-  int i;
+  float *data;                               /* value attached to the octant */
+  pOctant children[8];                       /* children of the octant */
+  int i;                                     /* index counter */
 
   /* should free seq number? */
-
   /* POC_modify_newpid(octant, OCT_localpid); */
   POC_modify_cost(octant, 0);
 
@@ -63,7 +62,7 @@ void costs_free(pOctant octant) {
 }
 
 /*
- * costs_subtree_compute(pmeshpb,octant,seq)
+ * float costs_subtree_compute(pOctant octant, int sequence_number)
  *
  * Do a DFS on the octree, calculating the costs for any given subtree.
  * (Subtree is defined as any octant and all its descendants.)
@@ -73,7 +72,6 @@ void costs_free(pOctant octant) {
  *
  * NOTE: must call costs_init() first
  */
-/* REMOVED: parameter "type" */
 float costs_subtree_compute(pOctant octant, int *seq) {
   pOctant children[8];                       /* the children of the octant */
   float c;                                   /* cost of each subtree */
@@ -94,17 +92,16 @@ float costs_subtree_compute(pOctant octant, int *seq) {
 	c += costs_subtree_compute(children[i], seq);
     }
   }
-  else                                           /* terminal */
+  else                                                           /* terminal */
     c=costs_weight(octant);
 
-  /* attach the COST data to the octant */
-  /* *((float *)OEN_dataP(octant,"COST"))=c; */
+  /* attach the cost data to the octant */
   POC_modify_cost(octant, c);
   return(c);
 }  
 
 /* 
- * costs_value(octant)
+ * float costs_value(pOctant octant)
  *
  * return cost for an octant
  */
@@ -112,7 +109,7 @@ float costs_value(pOctant oct)
 { return(oct->cost); }
 
 /*
- * costs_global_compute()    (was: all_subtree_costs())
+ * floatg costs_global_compute()                     (was: all_subtree_costs())
  *
  * return costs of all subtrees.
  *
@@ -130,7 +127,6 @@ float costs_global_compute() {
   pRList localroots;                          /* list of all local roots */
   pOctant lr,                                 /* a local root */
           oct;                                /* an octant of a subtree */
-  /* REMOVED : int type=bc_getparam("COSTTYPE"); */
 
   /* initialize variables */
   seq=0;
@@ -154,15 +150,19 @@ float costs_global_compute() {
   return(totcost);
 }
 
+/*
+ * float costs_weight(pOctant octant)
+ *
+ * calculates the cost of an octant. returns the cost..
+ */
 float costs_weight(pOctant octant) {
-  pRegion region;                      /* a region from the list */
-  void *temp;                          /* temp var used for iterations */
-  float cost;                          /* cost of the octant */
+  pRegion region;                                  /* a region from the list */
+  float cost;                                      /* cost of the octant */
 
   region = POC_regionlist(octant);
   cost=0;
 
-  temp=NULL;
+  /* iterate through the region list, summing each of their weights */
   while (region != NULL) {
     cost += region->Weight;
     region = region->next;

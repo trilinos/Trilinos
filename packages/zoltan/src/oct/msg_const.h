@@ -7,6 +7,7 @@ extern int msg_mypid;
 extern int msg_temp;
 
 extern void   msg_init();
+extern void   msg_endBuffer();
 extern void   msg_send_init(void);
 extern void   msg_barrier(void);
 extern void   msg_bsend(void *buf, int size, int dest, int type);

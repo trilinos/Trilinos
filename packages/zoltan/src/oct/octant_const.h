@@ -24,6 +24,7 @@ typedef struct _Octant {             /* octant tree node that has 8 children */
   float cost;                        /* cost of the octant                   */
   int npid;                          /* where to migrate to                  */
   int cpid[8];                       /* the pid of the children              */
+  /* int orientation;*/              /* octant traversal orientation         */
 } Octant;
 
 typedef struct RL_Node *pRList;         /* typedef for a pointer to rootlist */
@@ -44,7 +45,9 @@ extern int OCT_localpid;             /* the processor id                     */
 extern int idcount;                  /* count for id's, help with uniqueness */
 extern double gmin[3];
 extern double gmax[3];
-extern int dim;
+extern int dimension;
+extern int GRAY;
+extern int HILBERT;
 /* extern Map *array; */
 
 #define vector_set(r,a)     \
@@ -74,7 +77,7 @@ extern int dim;
                 ((a)[1]-(b)[1])*((a)[1]-(b)[1]) + \
                 ((a)[2]-(b)[2])*((a)[2]-(b)[2]) ) )
 
-extern void    POC_init(int pid);
+extern void    POC_init(int pid, int dim);
 extern pOctant POC_new();
 extern void    POC_free(pOctant oct);
 extern void    POC_setID(pOctant oct, int id);
@@ -111,4 +114,7 @@ extern pOctant POC_nextDfs(pOctant octant);
 extern int     POC_local(pOctant octant, int i);
 extern void    POC_setCpid(pOctant octant, int i, int cpid); 
 extern int     POC_delTree(pOctant root);
-/* extern pOctant POC_nextDfs(pOcant octant); */
+/* extern pOctant POC_nextDfs(pOcant octant);
+ * extern void    POC_setOrientation(pOctant octant, int orientation);
+ * extern int     POC_getOrientation(pOctant octant);
+ */

@@ -6,13 +6,8 @@
  *
  * Prints out statistic on the octree load balancing partitioner 
  */
-void print_stats(double timetotal, 
-		 LB *lb,
-		 int numobj, 
-		 double *timers, 
-		 int *counters,
-		 /* struct ?!? *rcbbox, */
-		 int STATS_TYPE)
+void print_stats(double timetotal, LB *lb, int numobj, double *timers, 
+		 int *counters, int STATS_TYPE)
 {
   LB_ID *obj_ids;                          /* pointer to all the objects ids */
   int i,                                   /* index counter */
@@ -42,9 +37,10 @@ void print_stats(double timetotal,
 
   MPI_Barrier(MPI_COMM_WORLD);
 
+#if 0
   obj_ids = (LB_ID *) LB_array_alloc(1, numobj, sizeof(LB_ID));
   lb->Get_All_Local_Objs(lb->Object_Type, obj_ids);
-  /* ATTN: Need to get weights of all the objects */
+  /* need to get weights of all the objects */
   weight = mweight = tweight = 0.0;
   if(lb->Get_Obj_Weight != NULL)
     for (i = 0; i < numobj; i++) {
@@ -70,8 +66,7 @@ void print_stats(double timetotal,
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
-  /* if Stats_type == 2, then print out individual weights */
-  if (STATS_TYPE == 2) 
+  if (STATS_TYPE == 2)                       /* print out individual weights */
     printf("    Proc %d has weight = %g\n", proc, tweight);
 
   MPI_Allreduce(&mweight,&wtmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
@@ -80,7 +75,9 @@ void print_stats(double timetotal,
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
-    printf("    Proc %d max weight = %g\n", proc, tweight);
+    printf("    Proc %d max weight of a sigle object = %g\n", proc, mweight);
+
+#endif
 
   /* counter info */
   MPI_Allreduce(&counters[0],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
@@ -123,7 +120,8 @@ void print_stats(double timetotal,
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d max objs = %d\n",proc,counters[3]);
-  
+
+#if 0  
   MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
   MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,MPI_COMM_WORLD);
   MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,MPI_COMM_WORLD);
@@ -159,9 +157,9 @@ void print_stats(double timetotal,
   MPI_Barrier(MPI_COMM_WORLD);
   if (STATS_TYPE == 2)
     printf("    Proc %d # of OverAlloc = %d\n", proc, counters[6]);
+#endif
 
   /* timer info */
-  
   MPI_Allreduce(&timers[0],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   MPI_Allreduce(&timers[0],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
   MPI_Allreduce(&timers[0],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);
@@ -195,8 +193,9 @@ void print_stats(double timetotal,
   if (STATS_TYPE == 2)
     printf("    Proc %d migration notice time = %g\n",proc,timers[2]);
 
-  /* ATTN: I don't time the communication */  
+
 #if 0
+  /* ATTN: I don't time the communication */  
   MPI_Allreduce(&timers[3],&rsum,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
   MPI_Allreduce(&timers[3],&rmin,1,MPI_DOUBLE,MPI_MIN,MPI_COMM_WORLD);
   MPI_Allreduce(&timers[3],&rmax,1,MPI_DOUBLE,MPI_MAX,MPI_COMM_WORLD);

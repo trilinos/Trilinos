@@ -10,11 +10,14 @@
 /* type definition for coordinants */
 typedef double Coord[3];
 
-/* determines criterion for visiting octants */
-static int CLOSE = 0;
-int count;
-/* static int dimensions = 8; */
+static int CLOSE = 0;           /* determines criterion for visiting octants */
+int count;              /* count of number of times dfs_partition was called */
 
+/*
+ * void dfs_set_visit_criterion(int visit)
+ *
+ * sets criterion for visiting subtree. default is use dfs ordering
+ */
 void dfs_set_visit_criterion(int visit) {
   if((visit < 0) || (visit > 1)) {
     fprintf(stderr, "%s\n%s\n", 
@@ -31,7 +34,6 @@ void dfs_set_visit_criterion(int visit) {
  * void dfs_partition()
  * 
  * This function calls the different subfunctions to partition the octree 
- *
  */
 void dfs_partition(int *counter) {
   float mycost,                     /* cost of the octant */
@@ -56,8 +58,6 @@ void dfs_partition(int *counter) {
   /* this is trying to make all the octant id's to be unquie globally */
   while(localroots != NULL) {
     dfs_SetIds(localroots->oct, nprevoct);
-    fprintf(stderr, "(%d) set local root id %d\n", msg_mypid, 
-	    POC_id(localroots->oct));
     localroots = localroots->next;
   }
 
@@ -86,10 +86,15 @@ void dfs_partition(int *counter) {
   visit_all_subtrees();
 
   /* PRINT_IN_ORDER()
-    printf("Partitions = %d\n",partition); */
+     printf("Partitions = %d\n",partition); */
   (*counter) = count;
 }
 
+/*
+ * int dfs_SetIds(pOctant octant, int number_of_previous_octants)
+ *
+ * sets the ids of all the octants so that there is a global numbering
+ */
 int dfs_SetIds(pOctant oct, int nprevoct) {
   int id,                                      /* the id number of an octant */
       i;                                       /* index counter */
@@ -102,7 +107,8 @@ int dfs_SetIds(pOctant oct, int nprevoct) {
   else {
     for(i=0; i<8; i++) {
       child = POC_child(oct, i);
-      dfs_SetIds(child, nprevoct);
+      if (child != NULL)
+	dfs_SetIds(child, nprevoct);
     }
     id = POC_id(oct);
     POC_setID(oct, id+nprevoct);                     /* now have global id's */
@@ -110,16 +116,19 @@ int dfs_SetIds(pOctant oct, int nprevoct) {
   return 0;
 }
 
+/*
+ * void visit_all_subtrees()
+ *
+ * visits each of the subtrees that are on the local processor
+ */
 void visit_all_subtrees() {
-  pRList localroots;                    /* list of all local roots */
+  pRList localroots;                              /* list of all local roots */
 
   /* get the list of all the local roots */
   localroots = POC_localroots();
 
   /* iterate through each root in localroot list */
   while (localroots != NULL) {
-    fprintf(stderr, "(%d) local root %d\n", msg_mypid, 
-	    POC_id(localroots->oct));
     visit(localroots->oct);   /* mark each subtree as being visited */
 #if 0
     costs_free(localroots->oct); /* clear attached cost data (is it needed?) */
@@ -129,7 +138,7 @@ void visit_all_subtrees() {
 }
 
 /*
- * visit(oct)
+ * void visit(pOctant octant)
  * 
  * This routine references the following (static) global variables:
  *
@@ -219,6 +228,11 @@ void visit(pOctant octant) {
   vector_add(pcoord,pcoord,prod);
 }
 
+/*
+ * void tag_subtree(pOctant octant, int partition_number)
+ *
+ * marks all the octants within the subtree to be in the current partition
+ */
 void tag_subtree(pOctant octant, int partition) {
   pOctant children[8];                                 /* children of octant */
   int i;                                               /* index counter */
@@ -238,6 +252,13 @@ void tag_subtree(pOctant octant, int partition) {
       tag_subtree(children[i],partition);
 }
 
+/*
+ * void dfs_migrate(LB_TAG **export_tags, int *number_of_sent_tags,
+ *                  LB_TAG **import_tags, int *number_of_received_tags)
+ *
+ * sets up information so the migrate octant routines can create the
+ * proper export_tags and import_tags arrays
+ */
 void dfs_migrate(LB_TAG **export_tags, int *nsentags,
 		 LB_TAG **import_tags, int *nrectags) 
 {
@@ -251,7 +272,7 @@ void dfs_migrate(LB_TAG **export_tags, int *nsentags,
   int i;                                      /* index counter */
 
   i = POC_nOctants();
-  if(POC_nOctants()) {
+  if(POC_nOctants()) {          /* allocate space for octants being migrated */
     docts = (pOctant *)malloc(sizeof(pOctant)*POC_nOctants());
     dpids = (int *)malloc(sizeof(int)*POC_nOctants());
     if((docts == NULL) || (dpids == NULL)) {
@@ -262,8 +283,9 @@ void dfs_migrate(LB_TAG **export_tags, int *nsentags,
 
   dcount=0;
 
+  /* go through the local octants and make sure each has a valid npid */
   lroots = POC_localroots();
-  while(lroots != NULL) {
+  while(lroots != NULL) { 
     for (oct=lroots->oct; oct; oct=POC_nextDfs(oct)) {
       pid = POC_data_newpid(oct);
       if (pid<0 || pid>=msg_nprocs) {
@@ -282,6 +304,7 @@ void dfs_migrate(LB_TAG **export_tags, int *nsentags,
     abort();
   }
 
+  /* setup the import_tags and export_tags */
   Migrate_Objects(docts, dpids, dcount, export_tags, nsentags, 
 		  import_tags, nrectags);
 

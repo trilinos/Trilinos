@@ -8,14 +8,15 @@
 
 /*
  * interface to message-passing mechanism
- *
  */
-int msg_mypid;                 /* GLOBALS !!! */
-int msg_temp;
-int msg_nprocs;
 
-static int *receives;
-static int bytes_sent;
+/* GLOBAL VARIABLES: be careful when using */
+int msg_mypid;                                /* local processor's id number */
+int msg_temp;                                 /* temp */
+int msg_nprocs;                               /* total number of processors */
+
+static int *receives;                         /* number of messages received */
+static int bytes_sent;                        /* number of bytes sent */
 
 /*
  * msg_init()
@@ -26,8 +27,8 @@ static int bytes_sent;
  */
 void msg_init()
 {
-  int ret;
-  void *bufptr;
+  int ret;                                      /* return value of MPI calls */
+  void *bufptr;                                 /* pointer to a buffer */
 
   /*
   ret=MPI_Init(argc,argv); 
@@ -38,26 +39,29 @@ void msg_init()
   }
   */
 
+  /* find the local processor's id number */
   ret=MPI_Comm_rank(MPI_COMM_WORLD,&msg_mypid);
   if (ret!=MPI_SUCCESS) {
     fprintf(stderr,"msg_init: MPI_Comm_rank() failed\n");
     msg_abort(ret);
   }
 
+  /* find the total number of processors available */
   ret=MPI_Comm_size(MPI_COMM_WORLD,&msg_nprocs);
   if (ret!=MPI_SUCCESS) {
     fprintf(stderr,"msg_init: MPI_Comm_size() failed\n");
     msg_abort(ret);
   }
 
+  /* create a buffer to send messages */
   bufptr=(int *)malloc(MSG_BUFSIZE);
-
   ret=MPI_Buffer_attach(bufptr,MSG_BUFSIZE);
   if (ret!=MPI_SUCCESS) {
     fprintf(stderr,"msg_init: MPI_Buffer_attach() failed\n");
     msg_abort(ret);
   }
 
+  /* allocate array to know how many messages were sent from whom */
   receives=(int *)calloc(msg_nprocs, sizeof(int));
   if (!receives) {
     fprintf(stderr,"msg_init: could not malloc receive array\n");
@@ -66,12 +70,25 @@ void msg_init()
   
 }
 
-
+/*
+ * void msg_end()
+ *
+ * finalizes use of MPI calls 
+ */
 void msg_end(void)
 { MPI_Finalize(); }
 
+void msg_endBuffer() { 
+  void *bufptr;                                 /* pointer to a buffer */
+  int size;
+
+  MPI_Buffer_detach(&bufptr, &size);
+  free(bufptr);
+  free(receives);
+}
+
 /*
- * msg_send_init()
+ * void msg_send_init()
  *
  * call this to initialize the data structure that keeps track
  * of sends.  After calling msg_bsend() as much as desired, this
@@ -81,8 +98,9 @@ void msg_end(void)
  */
 void msg_send_init()
 {
-  int i;
+  int i;                                                    /* index counter */
 
+  /* clear out the receives array */
   for (i=0; i<msg_nprocs; i++)
     receives[i]=0;
 
@@ -90,35 +108,38 @@ void msg_send_init()
 }
 
 /*
- * msg_barrier();
+ * void msg_barrier();
  *
+ * syncronize all the processors
  */
 void msg_barrier()
 { MPI_Barrier(MPI_COMM_WORLD); }
 
 
 /*
- * msg_bsend(buf,size,dest,type)
+ * msg_bsend(void *buf, int size, int destination, int type)
  *
  * Do a send, blocking until buf is free.
  * Checks error codes.
  *
  */
 void msg_bsend(void *buf, int size, int dest, int type) {
-  int ret;
+  int ret;                                         /* MPI call return status */
 
-  if (dest==msg_mypid) {
+  if (dest==msg_mypid) {                                      /* error check */
     fprintf(stderr,"%d msg_bsend: attempt to send to self\n",msg_mypid);
     abort();
   }
 
+  /* update counter */
   if (receives)
     receives[dest]++;
   bytes_sent+=size;
   
+  /* use MPI's buffered send routine */
   ret=MPI_Bsend(buf,size,MPI_BYTE,dest,type,MPI_COMM_WORLD);
 
-  if (ret!=MPI_SUCCESS) {
+  if (ret!=MPI_SUCCESS) {          /* check to make sure send was successful */
     fprintf(stderr,"%d msg_bsend: size=%d dest=%d type=%d errno=%d\n",
 	    msg_mypid,size,dest,type,ret);
     msg_abort(ret);
@@ -127,7 +148,7 @@ void msg_bsend(void *buf, int size, int dest, int type) {
 
 
 /*
- * msg_breceive(buf,size,from,type)
+ * void msg_breceive(void *buf, int size, int *from, int type)
  *
  * receive a message of the specified size and type from any other
  * processor.  Size and type must match.
@@ -135,28 +156,28 @@ void msg_bsend(void *buf, int size, int dest, int type) {
  *
  */
 void msg_breceive(void *buf, int size, int *from, int type) {
-  int ret;
-  int nbytes;
-  MPI_Status status;
+  int ret;                                     /* MPI call return status */
+  int nbytes;                                  /* number of bytes sent */
+  MPI_Status status;                           /* status of message received */
 
   ret=MPI_Recv(buf,size,MPI_BYTE,MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&status);
 
   *from=status.MPI_SOURCE;
   /* MPI_ANY_TAG, status.MPI_TAG */
   
-  if (ret!=MPI_SUCCESS) {
+  if (ret!=MPI_SUCCESS) {                             /* check return status */
     fprintf(stderr,"%d msg_breceive: receive error ret=%d\n",msg_mypid,ret);
     msg_abort(ret);
   }
 
-  ret=MPI_Get_count(&status,MPI_BYTE,&nbytes);
+  ret=MPI_Get_count(&status,MPI_BYTE,&nbytes);   /* get number of bytes sent */
 
-  if (ret!=MPI_SUCCESS) {
+  if (ret!=MPI_SUCCESS) {                             /* check return status */
     fprintf(stderr,"%d msg_breceive: get count failed\n",msg_mypid);
     msg_abort(ret);
   }
 
-  if (nbytes!=size) {
+  if (nbytes!=size) {                                   /* check size status */
     fprintf(stderr,"%d msg_breceive: expected %d bytes but got %d bytes\n",
 	    msg_mypid,size,nbytes);
     abort();
@@ -165,7 +186,8 @@ void msg_breceive(void *buf, int size, int *from, int type) {
 
 
 /*
- * msg_breceive_any(buf,size,from,type)
+ * void msg_breceive_any(void **buffer, int *size_return,
+ *                       int *from_return, int type)
  *
  * receive a variable-sized message of the specified 
  * type from any other processor.
@@ -174,15 +196,15 @@ void msg_breceive(void *buf, int size, int *from, int type) {
  * Caller must free the buffer when done.
  *
  */
-void msg_breceive_anysize(void **buffer_ret,
-                          int *size_ret,
-                          int *from_ret,
-                          int type)
+void msg_breceive_anysize(void **buffer_ret, int *size_ret,
+			  int *from_ret, int type)
 {
-  void *buffer;
-  int ret;
-  int probesize, recvsize;
-  MPI_Status probestat, recvstat;
+  void *buffer;                           /* buffer */
+  int ret;                                /* return status of MPI call */
+  int probesize,                          /* probe size */
+      recvsize;                           /* receive size */
+  MPI_Status probestat,                   /* status of the probe */
+             recvstat;                    /* status of the receive */
 
   ret=MPI_Probe(MPI_ANY_SOURCE,type,MPI_COMM_WORLD,&probestat);
 
@@ -233,7 +255,7 @@ void msg_breceive_anysize(void **buffer_ret,
 }
 
 /*
- * msg_nreceives()
+ * int msg_nreceives()
  *
  * all processors should call this to see what they are
  * sending each other.
@@ -244,12 +266,12 @@ void msg_breceive_anysize(void **buffer_ret,
  */
 int msg_nreceives()
 {
-  int rectot,inmsg;
-  int i;
-  int ret;
+  int rectot,                                   /* total number of receives */
+      inmsg;                                    /* which message counter */
+  int i;                                        /* index counter */
+  int ret;                                      /* return status of MPI call */
 
-  rectot= -1;
-
+  rectot= -1;                                          /* initialize counter */
 
   for (i=0; i<msg_nprocs; i++) {
     inmsg=0;
