@@ -34,6 +34,10 @@ LB *lb)				/* load balance structure */
       LB_RCB_Free_Structure(lb);
       break;
 
+    case IRB:
+      LB_IRB_Free_Structure(lb);
+      break;
+
     case OCTPART:
       LB_OCT_Free_Structure(lb);
       break;
