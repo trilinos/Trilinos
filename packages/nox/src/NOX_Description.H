@@ -529,35 +529,60 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page prerelease NOX Developer's Guide to Adding New Code to NOX
+/*! \page prerelease NOX Developer's Guide to Prerelease Code
 
 
-\section prerelease_code Code in Prerelease
+We define \b prerelease \b code to be code that should not be
+distributed, documented, or tested as part of the automatic nightly
+scripts. 
 
-To add new code to NOX that should not be distributed with the nightly
-distribution, do the following.
+Prerelease code will only be used if configure is executed with the \c
+--enable-prerelease option. In that case, 
+<ul>
+<li>all prerelease code will be compiled (\c -DWITH_PRERELEASE is added to \c CPPFLAGS), 
+<li>doxygen will document prerelease code (\c WITH_PRERELEASE is added to the \c PREDEFINED variable in Doxyfile),
+<li>\c BUILD_PRERELEASE is true for automake/autoconf Makefile generation.
+</ul>
+
+There are two steps to adding prerelease code.
 
 <ol>
 
-<li> Add new \c .C and \c .H files as applicable. The code should be
-     surrounded by a \c WITH_PRERELEASE ifdef as follows.
+<li> Add ifdef's to the source and header files. 
+
+In other words, the code should be surrounded by a \c WITH_PRERELEASE
+ifdef as follows.
+
 \verbatim
 #ifdef WITH_PRERELEASE
-<all code here>
+// Insert All Code Here
 #endif
 \endverbatim
 
-<li> Add the \c .C and \c .H files to Makefile.am, but make sure the
-     code is specified with the \c nodist option. See
-     nox/src/Makefile.am for an example.
+<li> Modify Makefile.am.
 
-<li> To compile the code, be sure to run configure with the \c --with-prerelease option. 
+For example, the following modifications were made to \c
+nox/src/Makefile.am to add NOX_Direction_QuasiNewton as prereease code
+in the libnox.a library.
+
+\verbatim
+if BUILD_PRERELEASE
+
+nodist_pkginclude_HEADERS = \
+	$(srcdir)/NOX_Direction_QuasiNewton.H 
+
+nodist_libnox_a_SOURCES = \
+	$(srcdir)/NOX_Direction_QuasiNewton.C
+
+endif
+\endverbatim
 
 </ol>
 
-Note that any prerelease code in the CVS repository must still be able
-to compile. The only difference is that this code will not be included
-in the nightly distribution that is posted on the web.
+Remember to run configure with the \c --with-prerelease option!!
+
+\note
+Prerelease code must still be able to compile.
 
 */
 
