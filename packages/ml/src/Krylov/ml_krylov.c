@@ -334,6 +334,9 @@ int ML_Krylov_Set_PreconFunc(ML_Krylov *data,
 /* ******************************************************************** */
 /* solve the linear system                                              */
 /* ******************************************************************** */
+#include "ml_cg.h"
+#include "ml_gmres.h"
+#include "ml_bicgstabl.h"
 
 int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
 {
