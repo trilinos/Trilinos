@@ -235,3 +235,42 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
   stream << endl;
   return stream;
 }
+
+
+double NormWRMS::getNormWRMS() const
+{
+  return value;
+}   
+
+double NormWRMS::getTolerance() const
+{
+  return tolerance;
+}
+
+double NormWRMS::getRTOL() const
+{
+  return rtol;
+}
+
+double NormWRMS::getATOL() const
+{
+  if (atolIsScalar)
+    return atol;
+  
+  return (-1.0);
+}
+
+double NormWRMS::getBDFMultiplier() const
+{
+  return factor;
+}
+ 
+double NormWRMS::getAlpha() const
+{
+  return alpha;
+}
+ 
+double NormWRMS::getBeta() const
+{
+  return beta;
+}

@@ -56,6 +56,12 @@ public:
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
+  //! Returns the Maximum number of iterations set in the constructor.
+  virtual int getMaxIters() const;
+
+  //! Returns the current number of iterations taken by the solver.
+  virtual int getNumIters() const;
+
 private:
 
   //! Maximum number of iterations

@@ -169,3 +169,23 @@ ostream& NormUpdate::print(ostream& stream, int indent) const
   stream << endl;
   return stream;
 }
+
+double NOX::StatusTest::NormUpdate::getNormUpdate() const
+{
+  return normUpdate;
+}
+
+double NOX::StatusTest::NormUpdate::getTrueTolerance() const
+{
+  return trueTolerance;
+}
+
+double NOX::StatusTest::NormUpdate::getSpecifiedTolerance() const
+{
+  return specifiedTolerance;
+}
+
+double NOX::StatusTest::NormUpdate::getInitialTolerance() const
+{
+  return initialTolerance;
+}

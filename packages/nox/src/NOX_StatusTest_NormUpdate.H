@@ -133,6 +133,25 @@ public:
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
+  /* @name Accessor Functions
+     Used to query current values of variables in the status test.
+  */
+  //@{
+
+  //! Returns the value of the Update-norm computed in the last call to checkStatus.
+  virtual double getNormUpdate() const;
+   
+  //! Returns the true tolerance.
+  virtual double getTrueTolerance() const;
+
+  //! Returns the specified tolerance set in the constructor.
+  virtual double getSpecifiedTolerance() const;
+
+  //! Returns the initial tolerance.
+  virtual double getInitialTolerance() const;
+
+  //@}
+
 private:
 
   //! %Status

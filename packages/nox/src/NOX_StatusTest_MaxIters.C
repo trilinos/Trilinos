@@ -74,3 +74,13 @@ ostream& MaxIters::print(ostream& stream, int indent) const
   stream << endl;
  return stream;
 }
+
+int MaxIters::getMaxIters() const
+{
+  return maxiters;
+}
+
+int MaxIters::getNumIters() const
+{
+  return niters;
+}

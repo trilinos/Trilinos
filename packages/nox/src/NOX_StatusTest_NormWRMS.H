@@ -139,9 +139,40 @@ public:
   virtual StatusType getStatus() const;
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
+
+  /* @name Accessor Functions
+     Used to query current values of variables in the status test.
+  */
+  //@{
+
+  //! Returns the value of WRMS norm.
+  virtual double getNormWRMS() const;
+   
+  //! Returns the requested tolerance set in the constructor.
+  virtual double getTolerance() const;
+
+  //! Returns the realative tolerance set in the constructor.
+  virtual double getRTOL() const;
+
+  //! Returns the absolute tolerance set in the constructor.  If ATOL is a vector, this will return a value of -1.0.
+  virtual double getATOL() const;
+
+  //! Returns the value of the BDFMultiplier set in the constructor.
+  virtual double getBDFMultiplier() const;
+
+  //! Returns the value of 'alpha' set in the constructor.
+  virtual double getAlpha() const;
+
+  //! Returns the value of 'beta' set in the constructor.
+  virtual double getBeta() const;
+
+  //@}
+
+
+
 private:
 
-  //! Current value of the 
+  //! Current value of the WRMS norm (Must be less than 'tolerance' for convergence).  
   double value;
 
   //! Relative tolerance for convergence.
