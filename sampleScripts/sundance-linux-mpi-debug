@@ -19,7 +19,8 @@ CXXFLAGS="-g" \
 --enable-tsfcore-aztecoo \
 --enable-teuchos \
 --enable-teuchos-abc \
---enable-ml \
+--enable-expat \
+--disable-ml \
 --enable-teuchos-extended \
 --disable-new-package \
 --disable-ml-examples \

@@ -51,7 +51,7 @@ libnox_a_SOURCES = \
 	$(UTILS) \
 	$(MULTIVECS)
 
-libnox_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
+libnox_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS) 
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)

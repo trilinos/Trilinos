@@ -792,9 +792,21 @@ AC_ARG_ENABLE(nox-any,
  [BUILD_NOX_ANY=no]
 )
 
+
+
 # If LOCA is enabled, must enable any support
 if test X${BUILD_LIBLOCA} = Xyes; then
    BUILD_NOX_ANY=yes
+fi
+
+# If TSF is enabled, must enable any and Teuchos support
+if test X${ADDON_tsf} = Xyes; then
+  BUILD_NOX_ANY=yes
+   REQUIRE_TEUCHOS=yes
+   HAVE_NOX_ANY_SUBST=HAVE_NOX_ANY
+   AC_DEFINE(HAVE_NOX_ANY,1,[define that Techos::any support is activated in nox])
+else
+   HAVE_NOX_ANY_SUBST=
 fi
 
 # If any support is enabled, must have teuchos

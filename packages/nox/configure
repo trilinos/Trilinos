@@ -6336,9 +6336,25 @@ else
 
 fi;
 
+
+
 # If LOCA is enabled, must enable any support
 if test X${BUILD_LIBLOCA} = Xyes; then
    BUILD_NOX_ANY=yes
+fi
+
+# If TSF is enabled, must enable any and Teuchos support
+if test X${ADDON_tsf} = Xyes; then
+  BUILD_NOX_ANY=yes
+   REQUIRE_TEUCHOS=yes
+   HAVE_NOX_ANY_SUBST=HAVE_NOX_ANY
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_NOX_ANY 1
+_ACEOF
+
+else
+   HAVE_NOX_ANY_SUBST=
 fi
 
 # If any support is enabled, must have teuchos
@@ -6909,7 +6925,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6912: \"$ac_link\") >&5
+(eval echo $as_me:6928: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6987,7 +7003,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6990: \"$ac_link\") >&5
+(eval echo $as_me:7006: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7987,7 +8003,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7990: \"$ac_link\") >&5
+(eval echo $as_me:8006: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8065,7 +8081,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8068: \"$ac_link\") >&5
+(eval echo $as_me:8084: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

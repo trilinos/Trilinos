@@ -34,9 +34,11 @@
 
 
 #include "NOX_Parameter_List.H"		
-#include "Teuchos_ParameterList.hpp"
+
 
 #ifdef HAVE_NOX_ANY
+
+#include "Teuchos_ParameterList.hpp"
 
 namespace NOX {
 
