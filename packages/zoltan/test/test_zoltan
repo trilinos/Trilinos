@@ -95,6 +95,7 @@ if (! $?run ) then
     case generic:
     case gcc:
     case solaris:
+    case sgi64:
       set run = "mpirun -np"
       breaksw
     case smos:
