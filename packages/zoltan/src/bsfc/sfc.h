@@ -51,7 +51,7 @@ void single_wgt_calc_partition(int wgt_dim, float work_allocated,
 			       LB* lb, float* binned_weight_array, 
 			       float* work_percent_array, float* actual_work_allocated,
 			       int number_of_bins, int* number_of_cuts, int current_proc,
-			       int level_flag);
+			       int level_flag, int*);
 
 int put_in_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr, int array_location,
 		     SFC_VERTEX_PTR sfc_vert_ptr, int wgt_dim, float* obj_wgt);
@@ -73,7 +73,8 @@ int sfc_refine_partition_level(LB* lb, int* local_balanced_flag, int *amount_of_
 			       float* wgts_in_cut_ptr, float* work_percent_array,
 			       float* total_weight_array, float* global_actual_work_allocated,
 			       int number_of_cuts, int* max_cuts_in_bin, int* ll_bins_head,
-			       float* work_prev_allocated, int subbins_per_bin);
+			       float* work_prev_allocated, int subbins_per_bin, 
+			       int* local_balanced_flag_array, int bin_refinement_method);
 
 
 #endif /* _LB_SFC_H */

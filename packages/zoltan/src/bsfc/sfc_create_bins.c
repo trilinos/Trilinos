@@ -36,7 +36,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 		    float* total_weight_array, int* balanced_flag,
 		    SFC_VERTEX_PTR *vert_in_cut_ptr, float** wgts_in_cut_ptr, 
 		    int* num_vert_in_cut, int* number_of_cuts, int bins_per_proc, 
-		    int hashtable_divider, COMM_OBJ **plan, int* num_vert_sent)
+		    int hashtable_divider, COMM_OBJ **plan, int* num_vert_sent,
+		    int max_cuts_in_bin)
 {
   char    yo[] = "sfc_create_bins";
   int i, j, number_of_bins, ierr = 0;
@@ -63,6 +64,7 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   int current_proc;
   float* extra_float_array2 = NULL;
   int local_balanced_flag;
+  int* number_of_cuts_in_bin;
   
 
   binned_weight_array = (float *) LB_MALLOC(sizeof(float) * 2 * bins_per_proc * wgt_dim);
@@ -78,17 +80,16 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   number_of_bins = pow(2,i);
   *amount_of_bits_used = amount_of_bits;
 
-  if(lb->Proc == 0)
-    printf("******** i'm using %d bits on the coarse bins\n",amount_of_bits);
+/*  if(lb->Proc == 0)
+    printf("******** i'm using %d bits on the coarse bins\n",amount_of_bits); */
 
   /*hash table */
   if(hashtable_divider<1) /* hashtable_divider must be >= 1 */
     hashtable_divider = 1;
   hashtable_length = number_of_bins/hashtable_divider + 1;  
-  if(lb->Proc==0)
-    printf("hashtable length is %d !!!!!!!!!!!!\n",hashtable_length);
-//  if(lb->Proc == 3)
-  //  hashtable_length = 2;
+/*  if(lb->Proc==0)
+    printf("hashtable length is %d !!!!!!!!!!!!\n",hashtable_length); */
+
 
   sfc_hash_ptr = (SFC_HASH_OBJ_PTR *) LB_MALLOC(sizeof(SFC_HASH_OBJ_PTR) * hashtable_length);
   for(i=0;i<hashtable_length;i++)
@@ -200,9 +201,9 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     
     i = MPI_Allreduce(dbg1, dbg2, lb->Num_Proc * bins_per_proc*2, MPI_FLOAT, MPI_SUM, lb->Communicator);
 
-    if(lb->Proc==0)
+/*    if(lb->Proc==0)
       for(i=0;i<lb->Num_Proc * bins_per_proc*2;i++)
-	printf("global sum wgt array: bin = %d wgt = %e\n",i, dbg2[i]);
+	printf("global sum wgt array: bin = %d wgt = %e\n",i, dbg2[i]);*/
 
     LB_FREE(&dbg1);
     LB_FREE(&dbg2);
@@ -243,8 +244,6 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 
   for(i=lb->Num_Proc-2;i>=0;i--)
     work_percent_array[i] += work_percent_array[i+1];
-
-
   
   for(i=0;i<wgt_dim;i++)
     extra_float_array[i] = 0.;
@@ -274,6 +273,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
   
   /* each processor needs to know which bins get partitioned into which processor */
   bin_proc_array = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc); /* lists max bin that a processor should get */
+  number_of_cuts_in_bin = (int*) LB_MALLOC(sizeof(int) * 2*bins_per_proc);
+
   for(i=0;i<lb->Num_Proc;i++)
     bin_proc_array[i] = 2*number_of_bins;
 
@@ -287,7 +288,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 			      total_weight_array, bin_proc_array, lb, 
 			      binned_weight_array, work_percent_array,
 			      actual_work_allocated, 2*bins_per_proc, 
-			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
+			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG, 
+			      number_of_cuts_in_bin);
   }
   else {
     /* multi_wgt_dim_calc_partition(); */  
@@ -300,7 +302,8 @@ int sfc_create_bins(LB* lb, int num_local_objects,
 			      total_weight_array, bin_proc_array, lb, 
 			      binned_weight_array, work_percent_array,
 			      actual_work_allocated, 2*bins_per_proc, 
-			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG);
+			      number_of_cuts, current_proc, SFC_COARSE_LEVEL_FLAG,
+			      number_of_cuts_in_bin);
   }
   /* -1 is used to make sure that the last bin does not have a cut in it */
   bin_proc_array[0] = -1;
@@ -334,14 +337,22 @@ int sfc_create_bins(LB* lb, int num_local_objects,
     else
       sfc_vert_ptr[i].cut_bin_flag = SFC_CUT;
   }
-    
+
+  /* check to see if any cut-bin has too many objects in it and refine it. 
+     the problem with too many objects in a cut-bin is that the processor 
+     that gets assigned to that bin will get swamped with communication
+     and might not have enough memory to hold all of the information.  we
+     detect the cut-bins with too many objects by how many cuts are in that 
+     bin */
+ /* ierr = sfc_refine_overloaded_bins();*/
+  LB_FREE(&number_of_cuts_in_bin);    
+
   local_balanced_flag = single_wgt_find_imbalance(work_percent_array,
 						  global_actual_work_allocated[lb->Proc*wgt_dim],
 						  total_weight_array[0], lb->Proc, lb);
 
   ierr = MPI_Allreduce(&local_balanced_flag, balanced_flag, 1, MPI_INT, MPI_MAX, lb->Communicator);
-  printf("proc %d has balanced_flag = %d\n",lb->Proc, *balanced_flag);
-  *balanced_flag = SFC_NOT_BALANCED;   /*change this!!!*/
+  /*printf("proc %d has balanced_flag = %d for coarse bins88888888888\n",lb->Proc, *balanced_flag);*/
   LB_FREE(&global_bin_proc_array);
   LB_FREE(&binned_weight_array);
   LB_FREE(&scanned_work_prev_allocated);
@@ -399,11 +410,15 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
 			       LB* lb, float* binned_weight_array, 
 			       float* work_percent_array, float* actual_work_allocated,
 			       int number_of_bins, int* number_of_cuts, int current_loc,
-			       int level_flag)
+			       int level_flag, int* number_of_cuts_in_bin)
 {
   int i;
   int number_of_cuts2 = 0;
   *number_of_cuts = 0;
+
+  if(level_flag == SFC_COARSE_LEVEL_FLAG)
+    for(i=0;i<number_of_bins;i++)
+      number_of_cuts_in_bin[i] = 0;
 
 /*  printf("part is checking work_percent %e for proc %d!@!@!@!@!@!@!\n",
 	 work_percent_array[current_loc],lb->Proc);*/
@@ -426,11 +441,12 @@ void single_wgt_calc_partition(int wgt_dim, float work_prev_allocated,
       }
       current_loc=current_loc-number_of_cuts2;
     
+      if(level_flag == SFC_COARSE_LEVEL_FLAG)
+	number_of_cuts_in_bin[i] = number_of_cuts2;
 
       if(*number_of_cuts < number_of_cuts2)
 	*number_of_cuts = number_of_cuts2;
     }
-
   }
   /* make sure that the last bin gets the rest of the work */
   bin_proc_array[0] = -1;
@@ -567,12 +583,11 @@ int single_wgt_find_imbalance(float* work_percent_array, float cumulative_work,
     else
       balanced_flag = SFC_BALANCED;
   }
-  if(balanced_flag==SFC_BALANCED)
+/*  if(balanced_flag==SFC_BALANCED)
     printf("proc %d is balanced!!!!!!\n",which_proc);
   else
     printf("proc %d is not balanced.  tolerance is %e actual is %e\n",which_proc, 
-	   lb->Imbalance_Tol,my_extra_work/my_ideal_work
-);
+	   lb->Imbalance_Tol,my_extra_work/my_ideal_work); */
 
   return(balanced_flag);
 }
