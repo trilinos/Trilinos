@@ -29,4 +29,8 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = src src-epetra src-blas example-epetra example-blas
+if BUILD_LOCA_BLAS_EXAMPLES
+
+SUBDIRS = Chan
+
+endif
