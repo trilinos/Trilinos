@@ -80,18 +80,18 @@ the current RCB invocation.&nbsp;
 </tr>
 
 <tr>
-<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_CHECK</i></td>
-
-<td>Flag controlling the invocation of input and output error checking.&nbsp;
-<br>0 = don't do checking; 1 = do checking.</td>
-</tr>
-
-<tr>
 <td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> RCB_OUTPUT_LEVEL</i></td>
 
 <td>Flag controlling the amount of timing and diagnostic output the routine
 produces.&nbsp;
 <br>0 = no output; 1 = print summary; 2 = print data for each processor.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;<i> CHECK_GEOM</i></td>
+
+<td>Flag controlling the invocation of input and output error checking.&nbsp;
+<br>0 = don't do checking; 1 = do checking.</td>
 </tr>
 
 <tr>
@@ -126,13 +126,13 @@ or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>
 <tr>
 <td></td>
 
-<td><i>RCB_CHECK</i> = 1</td>
+<td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><i>RCB_OUTPUT_LEVEL</i> = 0</td>
+<td><i>CHECK_GEOM</i> = 1</td>
 </tr>
 
 <tr>
