@@ -261,7 +261,11 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
-		])
+		test/Makefile
+		test/BaseSparseMultiply/Makefile
+		test/BaseSparseSolve/Makefile
+		test/DenseMultiVector/Makefile
+		test/HbMatrix/Makefile])
 
 AC_OUTPUT()
 
