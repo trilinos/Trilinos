@@ -22,11 +22,13 @@ else
 if HAVE_MPI
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS ml_readfile
+                  ml_aztec_simple_METIS ml_readfile ml_read_elas ml_recirc \
+                  ml_read_salsa
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
-                  ml_aztec_simple_METIS ml_readfile
+                  ml_aztec_simple_METIS ml_readfile ml_read_elas ml_recirc \
+                  ml_read_salsa
 endif
 
 endif
@@ -46,6 +48,9 @@ ml_example2d_SOURCES = $(srcdir)/ml_example2d.c
 ml_example3d_SOURCES = $(srcdir)/ml_example3d.c
 ml_simple_max_SOURCES = $(srcdir)/ml_simple_max.c
 ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
+ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
+ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
+ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
 endif
 
 # One DEPENDENCIES primary is needed for each exe listed above.  List any
@@ -141,4 +146,16 @@ ml_aztec_simple_METIS_LINK = ${mllink}
 ml_readfile_CFLAGS = ${ml_common_include_locations}
 ml_readfile_LDADD = ${ml_libs}
 ml_readfile_LINK = ${mllink}
+
+ml_read_elas_CFLAGS = ${ml_common_include_locations}
+ml_read_elas_LDADD = ${ml_libs}
+ml_read_elas_LINK = ${mllink}
+
+ml_recirc_CFLAGS = ${ml_common_include_locations}
+ml_recirc_LDADD = ${ml_libs}
+ml_recirc_LINK = ${mllink}
+
+ml_read_salsa_CFLAGS = ${ml_common_include_locations}
+ml_read_salsa_LDADD = ${ml_libs}
+ml_read_salsa_LINK = ${mllink}
 endif
