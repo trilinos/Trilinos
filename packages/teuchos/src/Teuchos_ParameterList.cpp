@@ -55,17 +55,17 @@ ParameterList::~ParameterList()
 {
 }
 
-void ParameterList::unused() const
+void ParameterList::unused(ostream& os) const
 {
   for (ConstIterator i = params_.begin(); i != params_.end(); ++i) {
     if (!(entry(i).isUsed())) {
-      cout << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
+      os << "WARNING: Parameter \"" << name(i) << "\" " << entry(i)
 	   << " is unused" << endl;
     }
   }
 }
 
-bool ParameterList::isParameterSublist(const string& name) const
+bool ParameterList::isSublist(const string& name) const
 {
   ConstIterator i = params_.find(name);
 
@@ -88,13 +88,9 @@ ParameterList& ParameterList::sublist(const string& name)
   // If it does exist and is a list, return the list value.
   // Otherwise, throw an error.
   if (i != params_.end()) {
-    if (entry(i).isList())
-      return getValue<ParameterList>(entry(i));
-    else
-    {
-      cerr << "ERROR: Parameter " << name << " is not a valid list." << endl;
-      throw "Teuchos Error";
-    } 
+     TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
+	" Parameter " << name << " is not a list!" );
+     return getValue<ParameterList>(entry(i));
   }
 
   // If it does not exist, create a new empty list and return a reference
@@ -107,19 +103,13 @@ const ParameterList& ParameterList::sublist(const string& name) const
   ConstIterator i = params_.find(name);
 
   // If it does not exist, throw an error
-  if (i == params_.end()) {
-    cerr << "ERROR: Parameter " << name << " is not a valid list." << endl;
-    throw "Teuchos Error";
-  }
+  TEST_FOR_EXCEPTION( i == params_.end(), std::runtime_error,
+	" Parameter " << name << " is not a valid list!" );
 
   // If it does exist and is a list, return the list value.
-  if (entry(i).isList())
-    return getValue<ParameterList>(entry(i));
-  else {
-  // Otherwise, the parameter exists but is not a list. Throw an error.
-  cerr << "ERROR: Parameter " << name << " is not a list." << endl;
-  throw "Teuchos Error";
-  }
+  TEST_FOR_EXCEPTION( !entry(i).isList(), std::runtime_error,
+	" Parameter " << name << " is not a list!" );
+  return getValue<ParameterList>(entry(i));
 }
   
 ostream& ParameterList::print(ostream& os, int indent) const
