@@ -198,6 +198,7 @@ int main(int argc, char *argv[]) {
 
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults("SA",MLList);
+    MLList.set("smoother: type", "Gauss-Seidel");
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
     if (verbose) {
