@@ -49,7 +49,8 @@ LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams,
   NOX::EpetraNew::Group(printingParams, i, initialGuess),
   LOCA::Abstract::Group(),
   params(p),
-  userInterface(i),
+  userInterfaceReq(i),
+  userInterfaceTime(NULL),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -63,7 +64,23 @@ LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams,
   NOX::EpetraNew::Group(printingParams, i, initialGuess, linSys),
   LOCA::Abstract::Group(),
   params(p),
-  userInterface(i),
+  userInterfaceReq(i),
+  userInterfaceTime(NULL),
+  tmpVectorPtr2(0),
+  scaleVecPtr(NULL)
+{
+}
+
+LOCA::EpetraNew::Group::Group(NOX::Parameter::List& printingParams, 
+			      LOCA::EpetraNew::Interface::TimeDependent& i, 
+			      NOX::Epetra::Vector& initialGuess, 
+			      NOX::EpetraNew::LinearSystem& linSys,
+			      const LOCA::ParameterVector& p) :
+  NOX::EpetraNew::Group(printingParams, i, initialGuess, linSys),
+  LOCA::Abstract::Group(),
+  params(p),
+  userInterfaceReq(i), 
+  userInterfaceTime(&i),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -74,7 +91,8 @@ LOCA::EpetraNew::Group::Group(const LOCA::EpetraNew::Group& source,
   NOX::EpetraNew::Group(source, type),
   LOCA::Abstract::Group(source, type),
   params(source.params),
-  userInterface(source.userInterface),
+  userInterfaceReq(source.userInterfaceReq),
+  userInterfaceTime(source.userInterfaceTime),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -165,7 +183,7 @@ LOCA::EpetraNew::Group::computeF()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(params);
+  userInterfaceReq.setParameters(params);
   
   return NOX::EpetraNew::Group::computeF();
 }
@@ -178,7 +196,7 @@ LOCA::EpetraNew::Group::computeJacobian()
     return Abstract::Group::Ok;
   
   // Set the parameters prior to computing F
-  userInterface.setParameters(params);
+  userInterfaceReq.setParameters(params);
 
   return NOX::EpetraNew::Group::computeJacobian();
 }
@@ -192,7 +210,7 @@ LOCA::EpetraNew::Group::getParams() const
 NOX::EpetraNew::Interface::Required& 
 LOCA::EpetraNew::Group::getUserInterface()
 {
-  return userInterface;
+  return userInterfaceReq;
 }
 
 void
@@ -205,7 +223,7 @@ void
 LOCA::EpetraNew::Group::printSolution(const NOX::Epetra::Vector& x_,
 				      const double conParam) const
 {
-  userInterface.printSolution(x_.getEpetraVector(), conParam);
+  userInterfaceReq.printSolution(x_.getEpetraVector(), conParam);
 }
 
 void
@@ -247,6 +265,38 @@ LOCA::EpetraNew::Group::setScaleVector(const NOX::Abstract::Vector& s)
   scaleVecPtr = s.clone(NOX::DeepCopy);
 
   return;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::computeMassMatrix()
+{
+  if(userInterfaceTime != NULL)
+    return NOX::Abstract::Group::Ok;
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+NOX::Abstract::Group::ReturnType
+LOCA::EpetraNew::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
+                                        NOX::Abstract::Vector& result) const
+{
+
+
+  if(userInterfaceTime != NULL){
+     const NOX::Epetra::Vector& epetraInput = 
+       dynamic_cast<const NOX::Epetra::Vector&>(input);
+     NOX::Epetra::Vector& epetraResult =
+       dynamic_cast<NOX::Epetra::Vector&>(result);
+     dynamic_cast<LOCA::EpetraNew::Interface::TimeDependent&>(userInterfaceReq).applyMassMatrix(epetraInput,epetraResult);
+  }
+  else
+    return NOX::Abstract::Group::BadDependency;
+}
+
+bool 
+LOCA::EpetraNew::Group::isMassMatrix()
+{
+  return true;
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -339,13 +389,13 @@ LOCA::EpetraNew::Group::projectToDraw(const NOX::Abstract::Vector& x,
 {
   const NOX::Epetra::Vector& ex = 
     dynamic_cast<const NOX::Epetra::Vector&>(x);
-  userInterface.projectToDraw(ex, px);
+  userInterfaceReq.projectToDraw(ex, px);
 }
 
 int
 LOCA::EpetraNew::Group::projectToDrawDimension() const
 {
-  return userInterface.projectToDrawDimension();
+  return userInterfaceReq.projectToDrawDimension();
 }
 
 NOX::Abstract::Group::ReturnType 
