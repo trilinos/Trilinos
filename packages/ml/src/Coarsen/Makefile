@@ -38,14 +38,15 @@ CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES) -w
 ML_C = ml_ggraph.c       ml_aggregate.c    ml_agg_genP.c \
        ml_agg_MIS.c      ml_agg_coupled.c  ml_agg_uncoupled.c \
        ml_agg_dd.c       ml_check.c        ml_amg.c \
-       ml_amg_genP.c     ml_amg_MIS.c
+       ml_amg_genP.c     ml_amg_MIS.c      ml_agg_reitzinger.c
 
 #=======================================================================
 # ML include files
 #=======================================================================
 
 ML_INC = ml_ggraph.h         ml_aggregate.h      ml_agg_genP.h\
-	 ml_check.h          ml_amg.h            ml_amg_genP.h
+	 ml_check.h          ml_amg.h            ml_amg_genP.h\
+         ml_agg_reitzinger.h
 
 #=======================================================================
 # copy object files to library directory
