@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Load-Balancing Interface</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,588 +19,570 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_interface_augment.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Load-Balancing Interface</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_interface_augment.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="Load-Balancing Functions"></A>Load-Balancing Functions</H2>
+<h2>
+<a NAME="Load-Balancing Functions"></a>Load-Balancing Functions</h2>
 The following functions are the load-balancing interface functions in the
 Zoltan library; their descriptions are included below.
-<BLOCKQUOTE><B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>
-<BR><B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>
-<BR><B><A HREF="#LB_Balance">LB_Balance</A></B>
-<BR><B><A HREF="#LB_Eval">LB_Eval</A></B>
-<BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>
-<BR><B><A HREF="#LB_Destroy">LB_Destroy</A></B></BLOCKQUOTE>
+<blockquote><b><a href="#LB_Set_Method">LB_Set_Method</a></b>
+<br><b><a href="#LB_Set_Param">LB_Set_Param</a></b>
+<br><b><a href="#LB_Balance">LB_Balance</a></b>
+<br><b><a href="#LB_Eval">LB_Eval</a></b>
+<br><b><a href="#LB_Free_Data">LB_Free_Data</a></b>
+<br><b><a href="#LB_Destroy">LB_Destroy</a></b></blockquote>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_Set_Method"></A>int <B>LB_Set_Method</B>(struct <B>LB_Struct</B>
-*<I> lb</I>, char * <I>string</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_Set_Method"></a>int <b>LB_Set_Method</b>(struct <b>LB_Struct</b>
+*<i> lb</i>, char * <i>string</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD>FUNCTION <B>LB_Set_Method</B>(<I>lb</I>, <I>string</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Set_Method&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>CHARACTER(LEN=*), INTENT(IN) :: string&nbsp;</TD>
-</TR>
-</TABLE>
+<td>FUNCTION <b>LB_Set_Method</b>(<i>lb</i>, <i>string</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Set_Method&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>CHARACTER(LEN=*), INTENT(IN) :: string&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%"><B>LB_Set_Method</B> is used to specify which load-balancing
+<hr WIDTH="100%"><b>LB_Set_Method</b> is used to specify which load-balancing
 technique should be used by the application.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
-</TR>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+</tr>
 
-<TR>
-<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<tr>
+<td><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
-</TR>
+<td>Pointer to the load-balancing structure created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; string</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; string</i></td>
 
-<TD>A string containing the name of the desired load-balancing technique.
+<td>A string containing the name of the desired load-balancing technique.
 Valid values of string are&nbsp;
-<BLOCKQUOTE>"RCB" (for <A HREF="ug_alg_rcb.html#RCB">recursive-coordinate
-bisection</A>),&nbsp;
-<BR>"PARMETIS" (for any of the methods in the <A HREF="ug_alg_parmetis.html">ParMETIS</A>
+<blockquote>"RCB" (for <a href="ug_alg_rcb.html#RCB">recursive-coordinate
+bisection</a>),&nbsp;
+<br>"IRB" (for <a href="ug_alg_irb.html">inertial recursive bisection</a>),
+<br>"PARMETIS" (for any of the methods in the <a href="ug_alg_parmetis.html">ParMETIS</a>
 library),&nbsp;
-<BR>"OCTPART" (for <A HREF="ug_alg_oct.html#Octree">octree partitioning</A>),&nbsp;
-<BR>"REFTREE" (for <A HREF="ug_alg_reftree.html">refinement tree based partitioning</A>),
-and&nbsp;
-<BR>"NONE" (for no load-balancing).</BLOCKQUOTE>
-</TD>
-</TR>
+<br>"JOSTLE" (for any of the methods in the <a href="ug_alg_jostle.html">Jostle</a>
+library),&nbsp;
+<br>"OCTPART" (for <a href="ug_alg_oct.html#Octree">octree partitioning</a>),&nbsp;
+<br>"REFTREE" (for <a href="ug_alg_reftree.html">refinement tree based
+partitioning</a>), and&nbsp;
+<br>"NONE" (for no load-balancing).</blockquote>
+</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
 
-<TR>
-<TD><B>Default:</B></TD>
+<tr>
+<td><b>Default:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD>If <B>LB_Set_Method</B> is not called, <A HREF="ug_alg_rcb.html#RCB">RCB</A>
-is used.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<td>If <b>LB_Set_Method</b> is not called, <a href="ug_alg_rcb.html#RCB">RCB</a>
+is used.</td>
+</tr>
+</table>
 
-<TD><A NAME="LB_Set_Param"></A>int <B>LB_Set_Param</B>(struct <B>LB_Struct</B>
-*<I> lb</I>, char * <I>param_name</I>, char * <I>new_val</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>(struct <b>LB_Struct</b>
+*<i> lb</i>, char * <i>param_name</i>, char * <i>new_val</i>);&nbsp;</td>
+</tr>
 
-<TD>FUNCTION <B>LB_Set_Param</B>(<I>lb, param_name, new_val</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Set_Param&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</TD>
-</TR>
-</TABLE>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<HR WIDTH="100%"><B>LB_Set_Param</B> is used to alter the value of one
+<td>FUNCTION <b>LB_Set_Param</b>(<i>lb, param_name, new_val</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Set_Param&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>LB_Set_Param</b> is used to alter the value of one
 of the parameters used by Zoltan.&nbsp; All Zoltan parameter have reasonable
 default values, but this routine allows a user to provide alternative values
 if desired.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
-</TR>
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+</tr>
 
-<TR>
-<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<tr>
+<td><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
-</TR>
+<td>Pointer to the load-balancing structure created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp; param_name</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; param_name</i></td>
 
-<TD>A string containing the name of the parameter to be altered.&nbsp;
+<td>A string containing the name of the parameter to be altered.&nbsp;
 Note that the string is case-insensitive.&nbsp; Also, different load-balancing
-structures can have different parameter values.&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+structures can have different parameter values.&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp; new_val</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp; new_val</i></td>
 
-<TD>A string containing the new value for the parameter.&nbsp; Possible
+<td>A string containing the new value for the parameter.&nbsp; Possible
 stings include "3.154", "True", "7" or anything appropriate for the parameter
-being set. As above, the string is case-insensitive.&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+being set. As above, the string is case-insensitive.&nbsp;</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD></TD>
-</TR>
-</TABLE>
+<td></td>
+</tr>
+</table>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_Balance"></A>int <B>LB_Balance</B>(struct <B>LB_Struct</B>
-* <I>lb</I>, int * <I>changes</I>, int * <I>num_import</I>, <B>LB_GID</B>
-** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
-int ** <I>import_procs</I>, int * <I>num_export</I>, <B>LB_GID </B>**<I>
-export_global_ids</I>, <B>LB_LID</B> ** <I>export_local_ids</I>, int **
-<I>export_procs</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_Balance"></a>int <b>LB_Balance</b>(struct <b>LB_Struct</b>
+* <i>lb</i>, int * <i>changes</i>, int * <i>num_import</i>, <b>LB_GID</b>
+** <i>import_global_ids</i>, <b>LB_LID</b> ** <i>import_local_ids</i>,
+int ** <i>import_procs</i>, int * <i>num_export</i>, <b>LB_GID </b>**<i>
+export_global_ids</i>, <b>LB_LID</b> ** <i>export_local_ids</i>, int **
+<i>export_procs</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD>FUNCTION <B>LB_Balance</B>(<I>lb, changes, num_import, import_global_ids,
+<td>FUNCTION <b>LB_Balance</b>(<i>lb, changes, num_import, import_global_ids,
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
-export_procs</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Balance&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>LOGICAL, INTENT(OUT) :: changes&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
-<BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
+export_procs</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Balance&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>LOGICAL, INTENT(OUT) :: changes&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
+<br>&lt;<i>type-gid</i>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>&lt;<i>type-lid</i>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</td>
+</tr>
+</table>
 
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</TD>
-</TR>
-</TABLE>
+<hr WIDTH="100%"><b>LB_Balance</b> invokes the load-balancing routine specified
+by <b><a href="#LB_Set_Method">LB_Set_Method</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<HR WIDTH="100%"><B>LB_Balance</B> invokes the load-balancing routine specified
-by <B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<td></td>
+</tr>
 
-<TD></TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<td>Pointer to the load-balancing structure, created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+to be used in this invocation of the load-balancing routine.</td>
+</tr>
 
-<TD>Pointer to the load-balancing structure, created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
-to be used in this invocation of the load-balancing routine.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; changes</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; changes</I></TD>
+<td>Set to 1 or .TRUE. if the decomposition was changed by the load-balancing
+method; 0 or .FALSE. otherwise.</td>
+</tr>
 
-<TD>Set to 1 or .TRUE. if the decomposition was changed by the load-balancing method;
-0 or .FALSE. otherwise.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_import&nbsp;</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import&nbsp;</I></TD>
-
-<TD>Upon return, the number of objects that are now assigned to this processor
+<td>Upon return, the number of objects that are now assigned to this processor
 that were assigned to other processors in the old decomposition (i.e.,
-the number of objects to be imported to this processor).</TD>
-</TR>
+the number of objects to be imported to this processor).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<TD>Upon return, an array of size <I>num_import</I> listing the global
-IDs of objects to be imported to this processor.</TD>
-</TR>
+<td>Upon return, an array of size <i>num_import</i> listing the global
+IDs of objects to be imported to this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<TD>Upon return, an array of size <I>num_import</I> listing the local IDs
-of objects to be imported to this processor.</TD>
-</TR>
+<td>Upon return, an array of size <i>num_import</i> listing the local IDs
+of objects to be imported to this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
-<TD>Upon return, an array of size <I>num_import</I> listing the processor
+<td>Upon return, an array of size <i>num_import</i> listing the processor
 IDs of the processors that owned the imported objects in the previous decomposition
-(i.e., the source processors).</TD>
-</TR>
+(i.e., the source processors).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; num_export</i></td>
 
-<TD>Upon return, the number of objects that were assigned to this processor
+<td>Upon return, the number of objects that were assigned to this processor
 in the previous decomposition that are now assigned to other processors
 (i.e., the number of objects that must be exported from this processor
-to other processors).</TD>
-</TR>
+to other processors).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids</i></td>
 
-<TD>Upon return, an array of size <I>num_export</I> listing the global
-IDs of objects to be exported from this processor.</TD>
-</TR>
+<td>Upon return, an array of size <i>num_export</i> listing the global
+IDs of objects to be exported from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<TD>Upon return, an array of size <I>num_export</I> listing the local IDs
-of objects to be exported from this processor.</TD>
-</TR>
+<td>Upon return, an array of size <i>num_export</i> listing the local IDs
+of objects to be exported from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
-<TD>Upon return, an array of size <I>num_export </I>listing the processor
+<td>Upon return, an array of size <i>num_export </i>listing the processor
 IDs of processors that will own the exported objects in the new decomposition
-(i.e., the destination processors).</TD>
-</TR>
+(i.e., the destination processors).</td>
+</tr>
 
-<TR>
-<TD><B>Returned Value:</B></TD>
+<tr>
+<td><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_Eval"></A>void <B>LB_Eval</B>(struct <B>LB_struct *</B><I>lb</I>,
-int <I>print_stats</I>, int *<I>nobj</I>, float *o<I>bj_wgt</I>, int *<I>cut_wgt</I>,
-int *<I>nboundary</I>, int *<I>nadj</I>, int *<I>ierr</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_Eval"></a>void <b>LB_Eval</b>(struct <b>LB_struct *</b><i>lb</i>,
+int <i>print_stats</i>, int *<i>nobj</i>, float *o<i>bj_wgt</i>, int *<i>cut_wgt</i>,
+int *<i>nboundary</i>, int *<i>nadj</i>, int *<i>ierr</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD>SUBROUTINE <B>LB_Eval</B>(<I>lb, print_stats,&nbsp; nobj, obj_wgt,
-cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
-<BR>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<BR>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, cut_wgt, nboundary, nadj, ierr&nbsp;
-<BR>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;</TD>
-</TR>
-</TABLE>
+<td>SUBROUTINE <b>LB_Eval</b>(<i>lb, print_stats,&nbsp; nobj, obj_wgt,
+cut_wgt, nboundary, nadj, ierr</i>)&nbsp;
+<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>LOGICAL, INTENT(IN) :: print_stats&nbsp;
+<br>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, cut_wgt, nboundary,
+nadj, ierr&nbsp;
+<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance
-in the load-balance structure pointed to by <I>lb</I>. Some quality metrics
-are only available if the graph query functions have been registered. <B>LB_Eval
-</B>may either print a summary of the results to <I>stdout</I> or return
-the results in the output parameters.
-<BR>&nbsp;
-<TABLE WIDTH="100%" NOSAVE >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<hr WIDTH="100%"><b>LB_Eval </b>evaluates the quality of the load balance
+in the load-balance structure pointed to by <i>lb</i>. Some quality metrics
+are only available if the graph query functions have been registered. <b>LB_Eval
+</b>may
+either print a summary of the results to <i>stdout</i> or return the results
+in the output parameters.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TD>Pointer to the load-balancing structure.</TD>
-</TR>
+<td>Pointer to the load-balancing structure.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; print_stats</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; print_stats</i></td>
 
-<TD>If <I>print_stats</I>>0 (.TRUE. in Fortran), print a summary (maximum and sum) of the quality
-metrics to <I>stdout.</I></TD>
-</TR>
+<td>If <i>print_stats</i>>0 (.TRUE. in Fortran), print a summary (maximum
+and sum) of the quality metrics to <i>stdout.</i></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nobj</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nobj</i></td>
 
-<TD>Upon return, the number of objects on this processor.</TD>
-</TR>
+<td>Upon return, the number of objects on this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; obj_wgt</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; obj_wgt</i></td>
 
-<TD>Upon return, an array containing the sum of object weights on this
-processor.</TD>
-</TR>
+<td>Upon return, an array containing the sum of object weights on this
+processor.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>cut_wgt</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>cut_wgt</i></td>
 
-<TD>Upon return, the cut size (weight) for this processor.</TD>
-</TR>
+<td>Upon return, the cut size (weight) for this processor.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>nboundary</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>nboundary</i></td>
 
-<TD>Upon return,&nbsp; the number of boundary objects on this processor.</TD>
-</TR>
+<td>Upon return,&nbsp; the number of boundary objects on this processor.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>nadj</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>nadj</i></td>
 
-<TD>Upon return,&nbsp; the number of adjacent processors as defined by
-the communication graph.</TD>
-</TR>
+<td>Upon return,&nbsp; the number of adjacent processors as defined by
+the communication graph.</td>
+</tr>
 
-<TR>
-<TD>&nbsp;&nbsp;&nbsp; <I>ierr</I></TD>
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>ierr</i></td>
 
-<TD>Upon return, an <A HREF="ug_interface.html#Error Codes">error code</A>.</TD>
-</TR>
+<td>Upon return, an <a href="ug_interface.html#Error Codes">error code</a>.</td>
+</tr>
 
-<TR>
-<TD></TD>
+<tr>
+<td></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;</td>
 
-<TD>None.&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td>None.&nbsp;</td>
+</tr>
 
-<TR VALIGN=TOP NOSAVE>
-<TD><B>Query functions:</B>&nbsp;
-<BR>&nbsp;&nbsp;&nbsp;&nbsp; Required:</TD>
+<tr VALIGN=TOP NOSAVE>
+<td><b>Query functions:</b>
+<br>&nbsp;&nbsp;&nbsp;&nbsp; Required:</td>
 
-<TD NOSAVE>&nbsp;
-<BR><A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A>&nbsp;
-<BR><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A> or <A HREF="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</A>/<A HREF="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</A></TD>
-</TR>
+<td NOSAVE>
+<br><a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a>
+<br><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a> or <a href="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a>/<a href="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></td>
+</tr>
 
-<TR VALIGN=TOP NOSAVE>
-<TD>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</TD>
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</td>
 
-<TD NOSAVE><A HREF="ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</A>&nbsp;
-<BR><A HREF="ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</A></TD>
-</TR>
-</TABLE>
+<td NOSAVE><a href="ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</a>
+<br><a href="ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</a></td>
+</tr>
+</table>
 An output parameter is returned only if the input value of that parameter
 was not NULL. (An exception is that the error code is always returned.)
 The rationale for this feature is that if one wishes just to print the
 evaluation results, one can simply set all (or some of) the output parameters
-to NULL in the function call.  From Fortran, this is achieved by omitting
+to NULL in the function call. From Fortran, this is achieved by omitting
 one or more of the optional output parameters.
+<p>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<P>
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>(<b>LB_GID</b> **
+<i>import_global_ids</i>,
+<b>LB_LID</b> ** <i>import_local_ids</i>, int ** <i>import_procs</i>, <b>LB_GID
+</b>** <i>export_global_ids</i>, <b>LB_LID</b> ** <i>export_local_ids</i>,
+int ** <i>export_procs</i>);&nbsp;</td>
+</tr>
 
-<TD><A NAME="LB_Free_Data"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B> **
-<I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>, int
-** <I>import_procs</I>, <B>LB_GID </B>** <I>export_global_ids</I>, <B>LB_LID</B>
-** <I>export_local_ids</I>, int ** <I>export_procs</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<td>FUNCTION <b>LB_Free_Data</b>(<i>import_global_ids, import_local_ids,
+import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
+<br>INTEGER(LB_INT) :: LB_Free_Data&nbsp;
+<br>&lt;<i>type-gid</i>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>&lt;<i>type-lid</i>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
+<p>&lt;<i>type-gid</i>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<br>&lt;<i>type-lid</i>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</td>
+</tr>
+</table>
 
-<TD>FUNCTION <B>LB_Free_Data</B>(<I>import_global_ids, import_local_ids,
-import_procs, export_global_ids, export_local_ids, export_procs</I>)&nbsp;
-<BR>INTEGER(LB_INT) :: LB_Free_Data&nbsp;
-<BR>&lt;<I>type-gid</I>>, POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<BR>&lt;<I>type-lid</I>>, POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<BR>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
-
-<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
-<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;</TD>
-</TR>
-</TABLE>
-
-<HR WIDTH="100%"><B>LB_Free_Data</B> frees the memory allocated by the
-load-balancing routines to return the results of <B><A HREF="#LB_Balance">LB_Balance</A></B>.
+<hr WIDTH="100%"><b>LB_Free_Data</b> frees the memory allocated by the
+load-balancing routines to return the results of <b><a href="#LB_Balance">LB_Balance</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. Note that this does not destroy the
-load balancing data structure itself. That requires a call to 
-<B><A HREF="#LB_Destroy">LB_Destroy</A></B>.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+load balancing data structure itself. That requires a call to <b><a href="#LB_Destroy">LB_Destroy</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_global_ids</i></td>
 
-<TD>The array containing the global IDs of objects imported to this processor.</TD>
-</TR>
+<td>The array containing the global IDs of objects imported to this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_local_ids</i></td>
 
-<TD>The array containing the local IDs of objects imported to this processor.</TD>
-</TR>
+<td>The array containing the local IDs of objects imported to this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; import_procs</i></td>
 
-<TD>The array containing the processor IDs of the processors that owned
-the imported objects in the previous decomposition (i.e., the source processors).</TD>
-</TR>
+<td>The array containing the processor IDs of the processors that owned
+the imported objects in the previous decomposition (i.e., the source processors).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids&nbsp;</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_global_ids&nbsp;</i></td>
 
-<TD>The array containing the global IDs of objects exported from this processor.</TD>
-</TR>
+<td>The array containing the global IDs of objects exported from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_local_ids</i></td>
 
-<TD>The array containing the local IDs of objects exported from this processor.</TD>
-</TR>
+<td>The array containing the local IDs of objects exported from this processor.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; export_procs</i></td>
 
-<TD>The array containing the processor IDs of processors that own the exported
-objects in the new decomposition (i.e., the destination processors).</TD>
-</TR>
+<td>The array containing the processor IDs of processors that own the exported
+objects in the new decomposition (i.e., the destination processors).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><B>Returned Value:</B></TD>
+<tr>
+<td VALIGN=TOP><b>Returned Value:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.&nbsp;
-<BR>&nbsp;</TD>
-</TR>
-</TABLE>
+<td><a href="ug_interface.html#Error Codes">Error code</a>.&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%">
-<TABLE WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>C:</TD>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
 
-<TD><A NAME="LB_Destroy"></A>void <B>LB_Destroy</B> (struct
-<B>LB_Struct</B> ** <I>lb</I>);&nbsp;
-<BR>&nbsp;</TD>
-</TR>
+<td><a NAME="LB_Destroy"></a>void <b>LB_Destroy</b> (struct
+<b>LB_Struct</b>
+** <i>lb</i>);&nbsp;</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<TD>SUBROUTINE <B>LB_Destroy</B>(<I>lb</I>)&nbsp;
-<BR>TYPE(LB_Struct), POINTER :: lb&nbsp;</TD>
-</TR>
-</TABLE>
+<td>SUBROUTINE <b>LB_Destroy</b>(<i>lb</i>)&nbsp;
+<br>TYPE(LB_Struct), POINTER :: lb&nbsp;</td>
+</tr>
+</table>
 
-<HR WIDTH="100%"><B>LB_Destroy</B> frees the memory associated with
-a load-balancing structure and sets the structure to NULL in C or nullifies 
-the structure in Fortran. Note that <B>LB_Destroy</B> does not deallocate
-the import and export arrays returned from <B><A HREF="#LB_Balance">LB_Balance</A></B>.
-This requires a separate call to <B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>.
-<BR>&nbsp;
-<TABLE WIDTH="100%" >
-<TR>
-<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+<hr WIDTH="100%"><b>LB_Destroy</b> frees the memory associated with a load-balancing
+structure and sets the structure to NULL in C or nullifies the structure
+in Fortran. Note that <b>LB_Destroy</b> does not deallocate the import
+and export arrays returned from <b><a href="#LB_Balance">LB_Balance</a></b>.
+This requires a separate call to <b><a href="#LB_Free_Data">LB_Free_Data</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
 
-<TD></TD>
-</TR>
+<td></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
 
-<TD>A pointer to the address of the load-balancing structure, created by 
-<B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
-to be destroyed.&nbsp;</TD>
-</TR>
-</TABLE>
-&nbsp;
+<td>A pointer to the address of the load-balancing structure, created by
+<b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>, to be
+destroyed.&nbsp;</td>
+</tr>
+</table>
 
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_interface_augment.html">Next:&nbsp; Functions for Augmenting
-a Decomposition</A>&nbsp; |&nbsp; <A HREF="ug_interface_init.html">Previous:&nbsp;
-Initialization Functions</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_interface_augment.html">Next:&nbsp;
+Functions for Augmenting a Decomposition</a>&nbsp; |&nbsp; <a href="ug_interface_init.html">Previous:&nbsp;
+Initialization Functions</a>]
+</body>
+</html>
