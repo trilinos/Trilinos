@@ -155,7 +155,7 @@ public:
 
       for (int i = 0; i < n; i ++)
 	for (int j = 0; j < n; j ++)
-	  A(i,j) = 2.0 * drand48() - 1.0;
+	  A(i,j) = drand48();
     }
 
     int info;
@@ -234,7 +234,7 @@ int main(int argc, char* argv[])
 
 
   // Set up the problem interface
-  Linear linear;
+  Linear linear(n, useDefaultProblem);
   
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
@@ -242,9 +242,9 @@ int main(int argc, char* argv[])
   NOX::LAPACK::Group grp(linear);
 
   // Set up the status tests
-  NOX::StatusTest::NormF statusTestA(grp, 1.0e-4);
-  NOX::StatusTest::MaxIters statusTestB(20);
-  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
+  NOX::StatusTest::NormF normf(grp, 1.0e-8);
+  NOX::StatusTest::MaxIters maxiters( 5 * n );
+  NOX::StatusTest::Combo statusTestsCombo(NOX::StatusTest::Combo::OR, normf, maxiters);
 
   // Create the list of solver parameters
   NOX::Parameter::List solverParameters;
@@ -267,8 +267,8 @@ int main(int argc, char* argv[])
 
   // Set memory size
   int m = 5;
-  if (argc == 3) 
-    m = atoi(argv[1]);
+  if (argc >= 3) 
+    m = atoi(argv[2]);
   if (m <= 0)
     m = 5;
   directionParameters.sublist("Quasi-Newton").setParameter("Memory", m);
