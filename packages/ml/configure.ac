@@ -112,7 +112,7 @@ if test "X$ac_cv_use_ml_multiple_rhs" != "Xno"; then
 CC=${CXX}
 fi
 AC_PROG_CC(cc gcc)
-
+AC_PROG_F77(f77 g77 f90 xlf90)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -265,9 +265,13 @@ AC_CXX_STD_SPRINTF
 ###########################
 # these are ON by default
 ###########################
- TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Epetra support], ML_AZTEC, yes)
+ TAC_ARG_WITH_PACKAGE(ml_epetra, [Enable Epetra support], ML_EPETRA, yes)
 #
- TAC_ARG_WITH_PACKAGE(ml_aztec, [Enable Aztec support], ML_AZTEC, yes)
+ TAC_ARG_WITH_PACKAGE(ml_aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
+#if we're not using aztecoo, then build certain ML examples
+#without dependencies on libepetra.a  or libaztecoo.a
+#(See ml/examples/Makefile.am.)
+AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 # TAC_ARG_WITH_PACKAGE(ml_mpi, [Enable mpi support], ML_MPI, yes)
  TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communication functions (not ml's internal implementation)], ML_EXTERNAL_MPI_FUNCTIONS, yes)
 # TAC_ARG_WITH_PACKAGE(ml_vendor_blas, [Use system blas library (not ml's internal reference blas)], ML_VENDOR_BLAS, yes)
