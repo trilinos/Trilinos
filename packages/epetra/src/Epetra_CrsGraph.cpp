@@ -28,6 +28,8 @@
 #include "Epetra_Distributor.h"
 #include "Epetra_Util.h"
 #include "Epetra_Comm.h"
+#include "Epetra_HashTable.h"
+#include "Epetra_Map.h"
 
 //==============================================================================
 Epetra_CrsGraph::Epetra_CrsGraph(Epetra_DataAccess CV, const Epetra_BlockMap& RowMap, int *NumIndicesPerRow) 
@@ -685,80 +687,66 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
 //==========================================================================
 int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_BlockMap & RangeMap) {
 
+  int i, j;
+
   if (ColMap_!=0) return(0); // Already have a Column Map
 
   ComputeIndexState(); // Update index state by checking IndicesAreLocal/Global on all PEs
   if (!IndicesAreGlobal()) EPETRA_CHK_ERR(-1); // Return error: Indices must be global
   
-  // For each row, check if column indices are owned or not.
-  // If owned, transform global index to local index.  
-  // If not owned, add to ColMap for later use
+  // Scan all column indices and sort into two groups: 
+  // Local:  those whose GID matches a GID of some row on this processor and
+  // Remote: All others.
 
-  int NumMyBlockCols = RowMap().NumMyElements(); // Redefine NumMyBlockCols_ to number of local domain map elements
-    
-  int IncBlockCols = EPETRA_MAX(EPETRA_MIN(NumMyBlockCols_/4,100),10);
-  int MaxBlockCols = 0;
-  int *ColIndices = 0;
-  MaxBlockCols = NumMyBlockCols;
-  ColIndices = new int[MaxBlockCols];
-  //}
-  int *new_ColIndices = 0;
+  Epetra_HashTable LocalGIDs(RowMap().NumMyElements());
+  Epetra_HashTable RemoteGIDs(RowMap().NumMyElements());
+  Epetra_HashTable RemoteGIDList(RowMap().NumMyElements());
 
-  int NewNumMyBlockCols = NumMyBlockCols;
-  for (int i=0; i<NumMyBlockRows_; i++){
+  int NumLocalColGIDs = 0;
+  int NumRemoteColGIDs = 0;
+  for (i=0; i<NumMyBlockRows_; i++){
     const int NumIndices = NumIndicesPerRow_[i];
-    for (int j=0; j<NumIndices; j++) {
+    for (j=0; j<NumIndices; j++) {
       int GID = Indices_[i][j];
-      int LID = LRID(GID);
-      if (LID==-1) {
-	bool ExtNew = true;
-	for (int k=NumMyBlockCols; k<NewNumMyBlockCols; k++) {
-	  if (ColIndices[k]==GID) {
-	    ExtNew = false;
-	    break;
-	  }
-	}
-	if (ExtNew) {
-	  if (NewNumMyBlockCols >= MaxBlockCols) { // Need to expand...
-	    MaxBlockCols = EPETRA_MAX(NumMyBlockCols+IncBlockCols, MaxBlockCols+IncBlockCols); // Increment column space 
-	    new_ColIndices = new int[MaxBlockCols];
-	    for (int k=NumMyBlockCols; k<NewNumMyBlockCols; k++) new_ColIndices[k] = ColIndices[k];
-	    if (ColIndices!=0) delete [] ColIndices;
-	    ColIndices = new_ColIndices;
-	  }
-	  ColIndices[NewNumMyBlockCols] = GID;
-	  /*
-	    if (Comm().MyPID()==0) {
-            cout << " i, j, NumIndices = " << i << "  " << j << "  " << NumIndices << endl;
-            cout << "New Column = " << NewNumMyBlockCols << " with GID = " << GID << endl;
-	    }
-	  */
-	  NewNumMyBlockCols++;
+      // Check if GID matches a row GID
+      if (RowMap().MyGID(GID)) {
+	if (LocalGIDs.Get(GID)==-1) // This means its a new local GID
+	  LocalGIDs.Add(GID, NumLocalColGIDs++);
+      }
+      else {
+	if (RemoteGIDs.Get(GID)==-1) { // This means its a new remote GID
+	  RemoteGIDs.Add(GID, NumRemoteColGIDs);
+	  RemoteGIDList.Add(NumRemoteColGIDs++, GID);
 	}
       }
     }
   }
 
+  // Now build integer array containing column GIDs
+  // Build back end, containing remote GIDs, first
+  int NumMyBlockCols = NumLocalColGIDs + NumRemoteColGIDs;
+  int *ColIndices = 0;
+  if (NumMyBlockCols>0) ColIndices = new int[NumMyBlockCols];
 
-  // Create ColMap.  This map will be used to facilitate communication in matrix classes
-      
-  // Find processors that own the off-processor GIDs
-  int NumRemote = NewNumMyBlockCols - NumMyBlockCols;
-  int *RemoteColIndices = ColIndices+NumMyBlockCols;
+  int *RemoteColIndices = ColIndices+NumLocalColGIDs; // Points to back end of ColIndices
+
+  for (i = 0; i<NumRemoteColGIDs; i++) 
+    RemoteColIndices[i] = RemoteGIDList.Get(i); 
+
   int NLists = 1;
   int *PIDList = 0;
   int *SizeList = 0;
   int *RemoteSizeList = 0;
   bool DoSizes = !RowMap().ConstantElementSize(); // If not constant element size, then we must exchange
       
-  if (NumRemote>0) PIDList = new int[NumRemote];
+  if (NumRemoteColGIDs>0) PIDList = new int[NumRemoteColGIDs];
 
   if (DoSizes) {
-    if (NewNumMyBlockCols>0) SizeList = new int[NewNumMyBlockCols];
-    RemoteSizeList = SizeList+NumMyBlockCols;
+    if (NumMyBlockCols>0) SizeList = new int[NumMyBlockCols];
+    RemoteSizeList = SizeList+NumLocalColGIDs;
     NLists++;
   }
-  EPETRA_CHK_ERR(DomainMap.RemoteIDList(NumRemote, RemoteColIndices, PIDList, 0, RemoteSizeList));
+  EPETRA_CHK_ERR(DomainMap.RemoteIDList(NumRemoteColGIDs, RemoteColIndices, PIDList, 0, RemoteSizeList));
       
   // Sort External column indices so that all columns coming from a given remote processor are contiguous
       
@@ -766,25 +754,52 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   int **SortLists = new int*[2];
   SortLists[0] = RemoteColIndices;
   SortLists[1] = RemoteSizeList;
-  Util.Sort(true, NumRemote, PIDList, 0, 0, NLists, SortLists);
+  Util.Sort(true, NumRemoteColGIDs, PIDList, 0, 0, NLists, SortLists);
   delete [] SortLists;
-
   if (PIDList!=0) delete [] PIDList;
-      
-  RowMap().MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements of import column map
-  if (DoSizes)RowMap().ElementSizeList(SizeList); // Load ElementSizeList into first NumMyBlockCols elements of import size list
+
+  // Now fill front end. Two cases:
+  // (1) If the number of Local column GIDs is the same as the number of Local Row GIDs, we
+  //     can simply read the row GIDs into the front part of ColIndices, otherwise 
+  // (2) We step through the GIDs of the RowMap, checking to see if each row GID is a column GID.
+  //     we want to do this to maintain a consistent ordering of GIDs between the columns and the rows.
+
+  if (NumLocalColGIDs==RowMap().NumMyElements()) {
+    RowMap().MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements column GID list
+    if (DoSizes) RowMap().ElementSizeList(SizeList); // Load ElementSizeList too
+  }
+  else {
+    int NumMyElements = RowMap().NumMyElements();
+    int * MyGlobalElements = RowMap().MyGlobalElements();
+    int * ElementSizeList = 0;
+    if (DoSizes) ElementSizeList = RowMap().ElementSizeList();
+    int NumLocalAgain = 0;
+    for (i=0; i<NumMyElements; i++) {
+      int GID = MyGlobalElements[i];
+      if (LocalGIDs.Get(GID)!=-1) {
+	if (DoSizes) SizeList[NumLocalAgain] = ElementSizeList[i];
+	ColIndices[NumLocalAgain++] = GID;
+      }
+    }
+    assert(NumLocalAgain==NumLocalColGIDs); // Sanity test
+  }
+
 
   // Make Column map with same element sizes as Domain map
-  if (RowMap().ConstantElementSize()) // Constant Block size map
-    ColMap_ = new Epetra_BlockMap(-1, NewNumMyBlockCols, ColIndices, RowMap().MaxElementSize(),
+
+  if (RowMap().MaxElementSize()==1) // Simple map
+    ColMap_ = new Epetra_Map(-1, NumMyBlockCols, ColIndices,
+				  RowMap().IndexBase(), RowMap().Comm());
+  else if (RowMap().ConstantElementSize()) // Constant Block size map
+    ColMap_ = new Epetra_BlockMap(-1, NumMyBlockCols, ColIndices, RowMap().MaxElementSize(),
 				  RowMap().IndexBase(), RowMap().Comm());
 
   // Most general case where block size is variable.
   else
-    ColMap_ = new Epetra_BlockMap(-1, NewNumMyBlockCols, ColIndices, SizeList,
+    ColMap_ = new Epetra_BlockMap(-1, NumMyBlockCols, ColIndices, SizeList,
 				  RowMap().IndexBase(), RowMap().Comm());
 
-  delete [] ColIndices; // Delete workspace
+  if (NumMyBlockCols>0) delete [] ColIndices; // Delete workspace
   if (SizeList!=0) delete [] SizeList;
 
   return(0);
@@ -995,6 +1010,12 @@ int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const {
   else return(0); // No indices allocated for this row on this processor
 }
 //=========================================================================
+int Epetra_CrsGraph::CheckSizes(const Epetra_DistObject & Source) {
+  const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
+  if (!A.GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
+  return(0);
+}
+//=========================================================================
 int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
 					 int NumSameIDs, 
 					 int NumPermuteIDs, int * PermuteToLIDs,
@@ -1071,7 +1092,7 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_DistObject & Source,
   
 
   const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
-  
+
   int * IntExports = 0;
   int * IntImports = 0;
   int GlobalMaxNumIndices = A.GlobalMaxNumIndices();

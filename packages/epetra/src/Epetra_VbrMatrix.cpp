@@ -1849,6 +1849,12 @@ void Epetra_VbrMatrix::BlockRowNormOne(int RowDim, int NumEntries, int * BlockRo
   return;
 }
 //=========================================================================
+int Epetra_VbrMatrix::CheckSizes(const Epetra_DistObject & Source) {
+  const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
+  if (!A.Graph().GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
+  return(0);
+}
+//=========================================================================
 int Epetra_VbrMatrix::CopyAndPermute(const Epetra_DistObject & Source,
 				     int NumSameIDs, 
 				     int NumPermuteIDs, int * PermuteToLIDs,

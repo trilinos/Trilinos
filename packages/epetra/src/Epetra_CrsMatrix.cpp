@@ -1314,12 +1314,19 @@ double Epetra_CrsMatrix::NormOne() const {
   return(NormOne_);
 }
 //=========================================================================
+int Epetra_CrsMatrix::CheckSizes(const Epetra_DistObject & Source) {
+  const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
+  if (!A.Graph().GlobalConstantsComputed()) EPETRA_CHK_ERR(-1); // Must have global constants to proceed
+  return(0);
+}
+//=========================================================================
 int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSameIDs, 
 				     int NumPermuteIDs, int * PermuteToLIDs,
 				     int *PermuteFromLIDs) {
   
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
 
+  
   int i;
   
   int Row, NumEntries;

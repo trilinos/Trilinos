@@ -1081,7 +1081,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 		       int * ColFirstPointInElementList, double * x) const;
   void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
 
-  int CheckSizes(const Epetra_DistObject& A){return(0);};
+  int CheckSizes(const Epetra_DistObject& A);
   int CopyAndPermute(const Epetra_DistObject & Source,
 		     int NumSameIDs, 
 		     int NumPermuteIDs, int * PermuteToLIDs,
