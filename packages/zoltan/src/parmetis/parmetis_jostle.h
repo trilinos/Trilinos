@@ -142,6 +142,10 @@ extern int Zoltan_Build_Graph( ZZ *zz, int graph_type, int check_graph,
        int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
        idxtype **vtxdist, idxtype **xadj, idxtype **adjncy, float **ewgts);
+extern int Zoltan_Compare_Ints(const void *key, const void *arg);
+extern int Zoltan_Get_Num_Edges_Per_Obj(ZZ *, int, ZOLTAN_ID_PTR,
+       ZOLTAN_ID_PTR, int **, int *, int *);
+
 
 
 #ifdef __cplusplus

@@ -290,9 +290,9 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
   displs = (int *)ZOLTAN_MALLOC(nproc*sizeof(int));
   if (reqsize_all == NULL || displs == NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    ZOLTAN_FREE(&displs);
-    ZOLTAN_FREE(&reqsize_all);
-    ZOLTAN_FREE(&leaf_list);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &displs,
+                                            &reqsize_all,
+                                            &leaf_list);
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ZOLTAN_MEMERR);
   }
@@ -309,9 +309,9 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
    */
 
   if (sum_reqsize == 0) {
-    ZOLTAN_FREE(&displs);
-    ZOLTAN_FREE(&reqsize_all);
-    ZOLTAN_FREE(&leaf_list);
+    Zoltan_Multifree(__FILE__, __LINE__, 3, &displs,
+                                            &reqsize_all,
+                                            &leaf_list);
   }
   else {
 
@@ -322,10 +322,10 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
     all_leaflist = ZOLTAN_MALLOC_GID_ARRAY(zz, sum_reqsize);
     if (all_leaflist == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&all_leaflist);
-      ZOLTAN_FREE(&displs);
-      ZOLTAN_FREE(&reqsize_all);
-      ZOLTAN_FREE(&leaf_list);
+      Zoltan_Multifree(__FILE__, __LINE__, 4, &all_leaflist,
+                                              &displs,
+                                              &reqsize_all,
+                                              &leaf_list);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
@@ -354,9 +354,9 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
     send_float = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*sum_reqsize);
     if (send_float == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&send_float);
-      ZOLTAN_FREE(&all_leaflist);
-      ZOLTAN_FREE(&reqsize_all);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &send_float,
+                                              &all_leaflist,
+                                              &reqsize_all);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }
@@ -381,10 +381,10 @@ int num_gid_entries = zz->Num_GID; /* Number of array entries in a global ID */
       req_weights = (float *) ZOLTAN_MALLOC(sizeof(float)*wdim*reqsize);
     if (req_weights == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&req_weights);
-      ZOLTAN_FREE(&send_float);
-      ZOLTAN_FREE(&all_leaflist);
-      ZOLTAN_FREE(&reqsize_all);
+      Zoltan_Multifree(__FILE__, __LINE__, 4, &req_weights,
+                                              &send_float,
+                                              &all_leaflist,
+                                              &reqsize_all);
       ZOLTAN_TRACE_EXIT(zz, yo);
       return(ZOLTAN_MEMERR);
     }

@@ -155,10 +155,13 @@ automatically propagate to the algorithms.&nbsp;</blockquote>
 <hr>
 <a NAME="Zoltan_Comm_Create"></a>
 <hr>
-int <b>Zoltan_Comm_Create</b>(struct Comm_Obj&nbsp;
-**<i>plan</i>,<b> </b>int <i>nsend</i>, int *<i>proclist</i>, MPI_Comm
-<i>comm</i>
-, int <i>tag</i>, int *<i>nreturn</i>);&nbsp;
+int <b>Zoltan_Comm_Create</b>(
+struct Zoltan_Comm_Obj **<i>plan</i>,
+int <i>nsend</i>, 
+int *<i>proclist</i>, 
+MPI_Comm <i>comm</i>, 
+int <i>tag</i>, 
+int *<i>nreturn</i>);
 <hr>The <b>Zoltan_Comm_Create</b> function sets up the communication plan in
 the unstructured communication package. Its input is a count of objects
 to be sent to other processors, a list of the processors to which the objects
@@ -234,7 +237,7 @@ each of the objects to be sent.</td>
 <hr>
 <a NAME="Zoltan_Comm_Do"></a>
 <hr>
-int <b>Zoltan_Comm_Do</b>(struct Comm_Obj *<i>plan</i>,
+int <b>Zoltan_Comm_Do</b>(struct Zoltan_Comm_Obj *<i>plan</i>,
 int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do</b> function performs the communication described
 in a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -308,8 +311,8 @@ more details.)</td>
 <hr>
 <a NAME="Zoltan_Comm_Do_Reverse"></a>
 <hr>
-int <b>Zoltan_Comm_Do_Reverse</b>(struct
-Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
+int <b>Zoltan_Comm_Do_Reverse</b>(
+struct Zoltan_Comm_Obj *<i>plan</i>, int <i>tag</i>, char *<i>send_data</i>, int <i>nbytes</i>,
 int *<i>sizes</i>, char *<i>recvbuf</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Do_Reverse</b> function performs communication based
 on a communication plan built by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
@@ -388,8 +391,9 @@ of the values being received, not sent.</td>
 <hr>
 <a NAME="Zoltan_Comm_Resize"></a>
 <hr>
-int <b>Zoltan_Comm_Resize</b>( struct Comm_Obj
-*<i>plan</i>, int *<i>sizes</i>, int <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
+int <b>Zoltan_Comm_Resize</b>(
+struct Zoltan_Comm_Obj *<i>plan</i>, 
+int *<i>sizes</i>, int <i>tag</i> , int *<i>total_recv_size</i>);&nbsp;
 <hr>If the objects being communicated are of variable sizes, then the plan
 produced by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b> is incomplete.
 This routine allows the plan to be augmented to allow for variable sizes.
@@ -454,8 +458,8 @@ size (in bytes), you need to scale by the <i>nbytes</i> argument to <b><a href="
 <hr>
 <a NAME="Zoltan_Comm_Destroy"></a>
 <hr>
-int <b>Zoltan_Comm_Destroy</b>(struct Comm_Obj
-**<i>plan</i>);&nbsp;
+int <b>Zoltan_Comm_Destroy</b>(
+struct Zoltan_Comm_Obj **<i>plan</i>);&nbsp;
 <hr>The <b>Zoltan_Comm_Destroy</b> function frees all memory associated with
 a communication plan created by <b><a href="#Zoltan_Comm_Create">Zoltan_Comm_Create</a></b>.
 <br>&nbsp;
@@ -781,7 +785,7 @@ order.&nbsp;</td>
 <a NAME="Zoltan_Comm_Info"></a>
 <hr>
 int <b>Zoltan_Comm_Info</b>( 
-  struct Comm_Obj *<i>plan</i>,
+  struct Zoltan_Comm_Obj *<i>plan</i>,
   int *<i>nsends</i>,
   int *<i>send_procs</i>,
   int *<i>send_lengths</i>,
@@ -932,7 +936,7 @@ Upon return, the number of self-messages.
 <a NAME="Zoltan_Comm_Invert_Plan"></a>
 <hr>
 int <b>Zoltan_Comm_Invert_Plan</b>( 
-  struct Comm_Obj **<i>plan</i>
+  struct Zoltan_Comm_Obj **<i>plan</i>
 )
 <hr>Given a communication plan, <b>Zoltan_Comm_Invert_Plan</b> 
 alters the plan to make it the plan for the reverse communication.

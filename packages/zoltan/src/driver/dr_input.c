@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -21,9 +21,9 @@ extern "C" {
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <strings.h>
-
+#include <math.h>
 #include <mpi.h>
+#include <ctype.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -31,623 +31,352 @@ extern "C" {
 #include "dr_err_const.h"
 #include "ch_init_dist_const.h"
 
-/*--------------------------------------------------------------------------*/
-/* Purpose: Determine file types for command files and read in the parallel */
-/*          ExodusII command file.                                          */
-/*          Taken from nemesis utilites nem_spread and nem_join.            */
-/*--------------------------------------------------------------------------*/
 
-#define TLIST_CNT 5
+#define SKIPW    "%*[,\t ]"         /* eat up white space amd comma */
+#define SKIPEQ   "%*[\t ]=%*[\t ]"  /* eat up white space and req'd = sign */
+#define BIGSKIP  "%*[={()},\t ]"    /* eat up list starts, stops, white space */
+#define SKIPS    "%*[s\t ]=%*[\t ]"  /* eat up final s, white space, req'd = */
+#define NEXTARG  "%*[,\t ]%[^=\t ]"  /* argument w/o comma, whitespace */
+#define LASTARG  SKIPEQ "%[^,\t\n ]" /* last arg w/o comma, whitespace */
+#define NEXTLIST BIGSKIP "%[^,)}=\t\n ]"
+  
 
-/*****************************************************************************/
-/*****************************************************************************/
-int read_cmd_file(char *filename, PROB_INFO_PTR prob,
-                  PARIO_INFO_PTR pio_info)
-
-/*
- *          This function reads the ASCII parallel-exodus command file.
- *
- *   Input
- *   -----
- *   filename - The name of the command file.
- *   pio_info - parallel I/O information.
+/* Purpose: Determine file types for command files and read in the parallel
+ * ExodusII command file. Taken from nemesis utilites nem_spread and nem_join. 
  */
+
+int read_cmd_file (
+ char *filename,            /* The name of the command file. */
+ PROB_INFO_PTR prob,
+ PARIO_INFO_PTR pio_info)   /* pio_info - parallel I/O information. */
 {
-/* local declarations */
-  FILE  *file_cmd;
-  char  *yo = "read_cmd_file";
-  char   cmesg[256]; /* for error messages */
-  char   inp_line[MAX_INPUT_STR_LN + 1];
-  char   inp_copy[MAX_INPUT_STR_LN + 1];
-  char  *cptr, *cptr2;
-  int    i, icnt;
-  int    num_params_alloc = 0, param_index;
+  FILE *file_cmd;
+  char  line[MAX_INPUT_STR_LN + 1], *pline, *pmax;
+  char  original_line[MAX_INPUT_STR_LN + 1];  /* preserved upper/lower cases */
+  char  string[100], value[100], dummy[100];
+  int   i, n;
 
-/***************************** BEGIN EXECUTION ******************************/
-
+  
   /* Open the file */
-  if((file_cmd=fopen(filename, "r")) == NULL)
+  if ((file_cmd = fopen (filename, "r")) == NULL)
     return 0;
 
   /* Begin parsing the input file */
-  while(fgets(inp_line, MAX_INPUT_STR_LN, file_cmd)) {
-    /* skip any line that is a comment */
-    if((inp_line[0] != '#') && (inp_line[0] != '\n')) {
+  prob->num_params = 0;
+  prob->params = (Parameter_Pair*) malloc (sizeof(Parameter_Pair));
+  while (fgets (line, MAX_INPUT_STR_LN, file_cmd)) {
+    strcpy(original_line, line);  /* used when upper/lower case matters */
+    pmax = line + strlen (line);
+    for (pline = line; pline < pmax; pline++)
+      *pline = tolower (*pline);
+        
+    if (line[0] == '#' || line[0] == '\n')
+      continue;                      /* skip blank lines and comment lines */
+        
+    else if (sscanf(line, " chaco input assignment inverse" SKIPEQ "%d",
+      &Chaco_In_Assign_Inv) == 1)       /* ??? Is this used anymore?  */
+      continue;
 
-      strcpy(inp_copy, inp_line);
-      clean_string(inp_line, " \t");
-      cptr = strtok(inp_line, "\t=");
+    else if (sscanf(line," decomposition method" SKIPEQ "%s", prob->method)== 1)
+      continue;
 
-      /****** The file type ******/
-      if (token_compare(cptr, "file type")) {
-        if(pio_info->file_type < 0) {
-          cptr = strtok(NULL, "\t=,");
-          strip_string(cptr, " \t\n");
-          if (cptr == NULL || strlen(cptr) == 0) {
-            Gen_Error(0, "fatal: must specify file type");
-            return 0;
-          }
+    else if (sscanf(line, " file name" SKIPEQ "%s", pio_info->pexo_fname) == 1)
+      sscanf(original_line, "%*[^=]= %s", pio_info->pexo_fname); /*save case*/
 
-          string_to_lower(cptr, '\0');
-          if (strstr(cptr, "nemesisi")) {
-            pio_info->file_type = NEMESIS_FILE;
-            pio_info->init_dist_type = INITIAL_FILE;
-          }
-          else if (strstr(cptr, "chaco")) {
-            pio_info->file_type = CHACO_FILE;
-            /* Set default values for options here and change them later */
-            pio_info->init_dist_type = INITIAL_LINEAR;
-            pio_info->init_dist_procs = -1;
-            while ((cptr = strtok(NULL, ",")) != NULL){ 
-              strip_string(cptr, " \t\n");
-              string_to_lower(cptr, '=');
-              if (strstr(cptr, "initial distribution")) {
-                cptr2 = strchr(cptr, '=');
-                if (cptr2 == NULL) {
-                  Gen_Error(0, "fatal: initial distribution type is not "
-                               "specified");
-                  return 0;
-                }
-                cptr2++;
-                string_to_lower(cptr2, '\n');
-                if (strstr(cptr2, "linear") || strstr(cptr2, "block")) {
-                  pio_info->init_dist_type = INITIAL_LINEAR;
-                }
-                else if (strstr(cptr2, "cyclic")) {
-                  pio_info->init_dist_type = INITIAL_CYCLIC;
-                }
-                else if (strstr(cptr2, "file")) {
-                  pio_info->init_dist_type = INITIAL_FILE;
-                }
-                else {
-                  Gen_Error(0, "Invalid Chaco initial distribution type.");
-                  return 0;
-                }
-              }
-              else if (strstr(cptr, "initial procs")) {
-                cptr2 = strchr(cptr, '=');
-                if (cptr2 == NULL) {
-                  Gen_Error(0, "fatal: initial no. of procs is not "
-                               "specified");
-                  return 0;
-                }
-                cptr2++;
-                if(sscanf(cptr2, "%d", &(pio_info->init_dist_procs)) != 1) {
-                  Gen_Error(0, "fatal: initial no. of procs must be an integer.");
-                  return 0;
-                }
-              }
+    else if (sscanf(line, " file type" LASTARG "%n", value, &n) == 1) {
+      if (!strcmp(value, "chaco"))  {
+        pio_info->file_type       = CHACO_FILE;
+        pio_info->init_dist_type  = INITIAL_LINEAR;
+        pio_info->init_dist_procs = -1;
+        pline = line;
+
+        while (pline+n < pmax)  {
+          i = sscanf(pline += n, SKIPW "initial" NEXTARG LASTARG "%n",
+                     string, value, &n);
+          if (i != 2)
+            break;
+
+          if (!strcmp(string, "distribution")) {
+            if      (!strcmp(value, "linear"))  i = INITIAL_LINEAR;
+            else if (!strcmp(value, "block"))   i = INITIAL_LINEAR;
+            else if (!strcmp(value, "cyclic"))  i = INITIAL_CYCLIC;
+            else if (!strcmp(value, "file"))    i = INITIAL_FILE;
+            else  {
+              Gen_Error(0, "fatal: bad initial distribution argument");
+              return 0;
             }
+            pio_info->init_dist_type = i;
           }
-          else if (strstr(cptr, "hypergraph")) {
-            pio_info->file_type = HYPERGRAPH_FILE;
-            /* Set default values for options here and change them later */
-            pio_info->init_dist_type = INITIAL_LINEAR;
-            pio_info->init_dist_procs = -1;
-          }
-          else if (strstr(cptr, "random")) {
-            /* No input file; generate random coordinates. */
-            pio_info->file_type = NO_FILE;
-            pio_info->init_dist_type = INITIAL_LINEAR;
-            pio_info->init_dist_procs = -1;
-            pio_info->init_size = 100;  /* default */
-            pio_info->init_dim = 3;     /* default */
-            pio_info->init_vwgt_dim = 1;     /* default */
-            if(strlen(pio_info->pexo_fname) == 0)
-              strcpy(pio_info->pexo_fname, "random");
-            while ((cptr = strtok(NULL, ",")) != NULL){ 
-              strip_string(cptr, " \t\n");
-              string_to_lower(cptr, '=');
-              if (strstr(cptr, "dimension")) {
-                cptr2 = strchr(cptr, '=');
-                if (cptr2 == NULL) {
-                  Gen_Error(0, "fatal: dimension is not specified");
-                  return 0;
-                }
-                cptr2++;
-                if (sscanf(cptr2, "%d", &(pio_info->init_dim)) != 1) {
-                  Gen_Error(0, "fatal: dimension must be an integer.");
-                  return 0;
-                }
-                if (pio_info->init_dim < 1 || pio_info->init_dim > 3) {
-                  Gen_Error(0, "fatal: invalid dimension.");
-                  return 0;
-                }
-              }
-              else if (strstr(cptr, "obj_weight_dim")) {
-                cptr2 = strchr(cptr, '=');
-                if (cptr2 == NULL) {
-                  Gen_Error(0, "fatal: obj_weight_dim is not specified");
-                  return 0;
-                }
-                cptr2++;
-                if (sscanf(cptr2, "%d", &(pio_info->init_vwgt_dim)) != 1) {
-                  Gen_Error(0, "fatal: obj_weight_dim must be an integer.");
-                  return 0;
-                }
-                if (pio_info->init_vwgt_dim < 0) {
-                  Gen_Error(0, "fatal: invalid obj_weight_dim.");
-                  return 0;
-                }
-              }
-              else if (strstr(cptr, "size")) {
-                cptr2 = strchr(cptr, '=');
-                if (cptr2 == NULL) {
-                  Gen_Error(0, "fatal: initial size is not specified");
-                  return 0;
-                }
-                cptr2++;
-                if(sscanf(cptr2, "%d", &(pio_info->init_size)) != 1) {
-                  Gen_Error(0, "fatal: initial size must be an integer.");
-                  return 0;
-                }
-                if (pio_info->init_size < 0) {
-                  Gen_Error(0, "fatal: invalid size.");
-                  return 0;
-                }
-              }
+          else if (!strcmp(string, "procs"))  {
+            if (sscanf(value, " %d%n", &pio_info->init_dist_procs, &n) != 1) {
+              Gen_Error(0, "fatal: initial procs value must be integal");
+              return 0;
             }
           }
           else {
-            sprintf(cmesg, "fatal(%s): unknown file type, %s", yo, cptr);
-            Gen_Error(0, cmesg);
+            Gen_Error(0, "fatal: unrecognizable file type arguments");
             return 0;
           }
         }
       }
-
-      /****** The file name ******/
-      else if (token_compare(cptr, "file name")) {
-        if(strlen(pio_info->pexo_fname) == 0)
-        {
-          cptr = strtok(NULL, "\t=");
-          strip_string(cptr, " \t\n");
-          strcpy(pio_info->pexo_fname, cptr);
-        }
+      else if (strcmp(value, "hypergraph") == 0)  {
+        pio_info->file_type       = HYPERGRAPH_FILE;
+        pio_info->init_dist_type  = INITIAL_LINEAR;
+        pio_info->init_dist_procs = -1;
       }
-
-      /****** The Debug reporting level ******/
-      else if (token_compare(cptr, "zdrive debug level")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Debug_Driver) != 1) {
-          Gen_Error(0, "fatal: zdrive debug level must be an integer.");
-          return 0;
-        }
+      else if (strcmp(value, "nemesisi") == 0)  {
+        pio_info->file_type      = NEMESIS_FILE;
+        pio_info->init_dist_type = INITIAL_FILE;
       }
+      else if (strcmp(value, "random") == 0)  {
+        /* No input file; generate random coordinates. */
+        pio_info->file_type       = NO_FILE;
+        pio_info->init_dist_type  = INITIAL_LINEAR;
+        pio_info->init_dist_procs = -1;
 
-      /****** List-based (MULTI) callback function testing ******/
-      else if (token_compare(cptr, "test multi callbacks")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Test.Multi_Callbacks) != 1) {
-          Gen_Error(0, "fatal: test multi callbacks must be an integer.");
-          return 0;
-        }
-      }
+        pio_info->init_size     = 100;       /* default */
+        pio_info->init_dim      = 3;         /* default */
+        pio_info->init_vwgt_dim = 1;     /* default */
 
-      /****** Null import lists to Help_Migrate testing******/
-      else if (token_compare(cptr, "test null import lists")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &icnt) != 1) {
-          Gen_Error(0, "fatal: test null import lists must be an integer.");
-          return 0;
-        }
-        if (icnt == 1) Test.Null_Lists = IMPORT_LISTS;
-      }
-
-      /****** Null export lists to Help_Migrate testing******/
-      else if (token_compare(cptr, "test null export lists")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &icnt) != 1) {
-          Gen_Error(0, "fatal: test null export lists must be an integer.");
-          return 0;
-        }
-        if (icnt == 1) Test.Null_Lists = EXPORT_LISTS;
-      }
-
-      /****** Box- and Point-drop testing flag ******/
-      else if (token_compare(cptr, "test drops")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Test.Drops) != 1) {
-          Gen_Error(0, "fatal: test drops must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** DDirectory testing flag ******/
-      else if (token_compare(cptr, "test ddirectory")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Test.DDirectory) != 1) {
-          Gen_Error(0, "fatal: test ddirectory must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Unusual Partition generation testing flag ******/
-      else if (token_compare(cptr, "test local partitions")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Test.Local_Partitions) != 1) {
-          Gen_Error(0, "fatal: test partitions must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** file generation testing flag ******/
-      else if (token_compare(cptr, "test generate files")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Test.Gen_Files) != 1) {
-          Gen_Error(0, "fatal: test file generation must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Generate GNUplot output? ******/
-      else if (token_compare(cptr, "gnuplot output")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Output.Gnuplot) != 1) {
-          Gen_Error(0, "fatal: gnuplot output indicator must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Plot processor numbers or partitions? ******/
-      else if (token_compare(cptr, "plot partitions")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Output.Plot_Partitions) != 1) {
-          Gen_Error(0, "fatal: plot partitions indicator must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Generate Nemesis output? ******/
-      else if (token_compare(cptr, "nemesis output")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Output.Nemesis) != 1) {
-          Gen_Error(0, "fatal: nemesis output indicator must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Generate ASCII mesh file? ******/
-      else if (token_compare(cptr, "print mesh info file")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Output.Mesh_Info_File) != 1) {
-          Gen_Error(0, "fatal: Print Mesh Info File indicator must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** The Number of iterations of the balancer to perform ******/
-      else if (token_compare(cptr, "number of iterations")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Number_Iterations) != 1) {
-          Gen_Error(0, "fatal: number of iterations must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** zdrive action: Do load-balancing or ordering? *****/
-      else if (token_compare(cptr, "zdrive action")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Driver_Action) != 1) {
-          Gen_Error(0, "fatal: zdrive action must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** The Chaco Input Assignment Inverse flag ******/
-      else if (token_compare(cptr, "chaco input assignment inverse")) {
-        cptr = strtok(NULL, "\t=");
-        strip_string(cptr, " \t\n");
-        if(sscanf(cptr, "%d", &Chaco_In_Assign_Inv) != 1) {
-          Gen_Error(0, "fatal: Chaco Input Assignment Inverse must be an integer.");
-          return 0;
-        }
-      }
-
-      /****** Parallel Disk Information ******/
-      else if (token_compare(cptr, "parallel disk info")) {
-
-        cptr = strchr(cptr, '\0');
-        cptr++;
-        strip_string(cptr," \t\n=");
-        cptr = strtok(cptr, ",");
-        strip_string(cptr, " \t\n");
-        string_to_lower(cptr, '=');
-
-        /* the first sub-option must be "number" */
-        if (!strstr(cptr, "number")) {
-          Gen_Error(0, "fatal: First sup-option for disk info must be "
-                       "\"number\"");
-          return 0;
-        }
-        else {
-          cptr2 = strchr(cptr, '=');
-          if (cptr2 == NULL) {
-            Gen_Error(0, "fatal: integer value must be specified for"
-                         " reserve space.");
-            return 0;
-          }
-          cptr2++;
-          icnt = sscanf(cptr2, "%d", &(pio_info->num_dsk_ctrlrs));
-          if ((icnt <= 0) || (pio_info->num_dsk_ctrlrs < 0)) {
-            Gen_Error(0, "fatal: Invalid value for # of raid controllers.");
+        strcpy(pio_info->pexo_fname, "random");
+        while (pline+n < pmax && sscanf(pline += n, NEXTARG LASTARG "%n",
+                                        string, value, &n) == 2)  {
+          if (!strcmp(string, "dimension")
+           && sscanf(value, "%d%n", &pio_info->init_dim, &n) == 1)
+            continue;
+          else if (!strcmp(string, "obj_weight_dim")
+           && sscanf(value, "%d%n", &pio_info->init_vwgt_dim, &n) == 1)
+            continue;
+          else if (!strcmp(string, "size")
+           && sscanf(value, "%d%n", &pio_info->init_size, &n) == 1)
+            continue;
+          else  {
+            Gen_Error(0, "fatal: bad file type = random file parameters");
             return 0;
           }
         }
-
-        cptr = strtok(NULL, ",");
-
-        /*
-         * if number = 0, then the input file(s) is in the
-         * root directory given by the parallel disk info, or it
-         * is in the same directory as the executable if nothing
-         * is given for the root infomation. So, no other options
-         * can be given when number = 0
-         */
-        if (pio_info->num_dsk_ctrlrs == 0 && cptr != NULL) {
-          Gen_Error(0, "fatal: Other options not allowed if number = 0.");
-          return 0;
-        }
-
-        while (cptr != NULL) {
-          strip_string(cptr, " \t\n");
-          string_to_lower(cptr, '=');
-          if (strstr(cptr, "list")) {
-            /*
-             * So, "number" references the length of the list, and
-             * I need to do some shuffling to make the new form
-             * work with the old code.
-             */
-            pio_info->dsk_list_cnt = pio_info->num_dsk_ctrlrs;
-            pio_info->num_dsk_ctrlrs = -1;
-
-            /* "{" defines the beginning of the list. } */
-            cptr = strchr(cptr, '{');
-            if (cptr == NULL) {
-              Gen_Error(0, "fatal: disk list must be specified.");
-              return 0;
-            }
-            cptr++;
-
-            /* allocate memory for to hold the values */
-            pio_info->dsk_list = (int *) malloc(pio_info->dsk_list_cnt *
-                                               sizeof(int));
-            for (i = 0; i < (pio_info->dsk_list_cnt - 1); i++) {
-              sscanf(cptr, "%d", &(pio_info->dsk_list[i]));
-              cptr = strtok(NULL, ", \t;");
-            }
-            /* last one is a special case */
-            sscanf(cptr, "%d}", &(pio_info->dsk_list[i]));
-          }
-          else if (strstr(cptr, "offset")) {
-            cptr2 = strchr(cptr, '=');
-            if (cptr2 == NULL) {
-              Gen_Error(0, "fatal: value must be specified with the "
-                           "\"offset\" option.");
-              return 0;
-            }
-            cptr2++;
-            icnt = sscanf(cptr2, "%d", &(pio_info->pdsk_add_fact));
-            if ((icnt <= 0) || (pio_info->pdsk_add_fact < 0)) {
-              Gen_Error(0, "fatal: Invalid value for offset.");
-              return 0;
-            }
-          }
-          else if (strcmp(cptr, "zeros") == 0) {
-            pio_info->zeros = 1;
-          }
-
-          cptr = strtok(NULL, ",");
-        }
-      } /* End "else if (token_compare(cptr, "parallel disk info"))" */
-
-      /****** Parallel File Location ******/
-      else if (token_compare(cptr, "parallel file location")) {
-        cptr = strchr(cptr, '\0');
-        cptr++;
-        strip_string(cptr," \t\n=");
-        cptr = strtok(cptr, ",");
-
-        while (cptr != NULL) {
-          strip_string(cptr, " \t\n");
-          string_to_lower(cptr, '=');
-          if (strstr(cptr, "root")) {
-            cptr2 = strchr(cptr, '=');
-            if(cptr2 == NULL)
-            {
-              Gen_Error(0, "fatal: must specify a path with \"root\"");
-              return 0;
-            }
-            cptr2++;
-            if(strlen(cptr2) == 0)
-            {
-              Gen_Error(0, "fatal: invalid path name specified with \"root\"");
-              return 0;
-            }
-            strcpy(pio_info->pdsk_root, cptr2);
-          }
-          if (strstr(cptr, "subdir")) {
-            cptr2 = strchr(cptr, '=');
-            if(cptr2 == NULL)
-            {
-              Gen_Error(0, "fatal: must specify a path with \"subdir\"");
-              return 0;
-            }
-            cptr2++;
-            if(strlen(cptr2) == 0)
-            {
-              Gen_Error(0, "fatal: invalid path name specified with "
-                           "\"subdir\"");
-              return 0;
-            }
-            strcpy(pio_info->pdsk_subdir, cptr2);
-            if (pio_info->pdsk_subdir[strlen(pio_info->pdsk_subdir)-1] != '/')
-              strcat(pio_info->pdsk_subdir, "/");
-          }
-
-          cptr = strtok(NULL, ",");
-        }
       }
-
-      /****** Decomposition Info ******/
-      else if (token_compare(cptr, "decomposition method")) {
-        /* The method to use for decomposing the graph */
-        if(strlen(prob->method) == 0)
-        {
-          cptr = strtok(NULL, "\t=");
-          strip_string(cptr, " \t\n");
-          strcpy(prob->method, cptr);
-        }
+      else  {
+        Gen_Error(0, "fatal: bad file type parameter");
+        return 0;
       }
+    }
 
-      /****** Zoltan Parameters ******/
-      else if (token_compare(cptr, "zoltan parameters")) {
-        /* parameters to be passed to Zoltan */
-        cptr = strchr(cptr, '\0');
-        cptr++;
-        strip_string(cptr," \t\n=");
-        cptr = strtok(cptr, ",");
+    else if (sscanf(line, " gnuplot output" SKIPEQ "%d", &Output.Gnuplot) == 1)
+      continue;                                 /* Generate GNUplot output */
 
-        /* parameters should be designated by "<param string>=<value string>" */
-        while (cptr != NULL) {
-          param_index = prob->num_params;
-          prob->num_params++;
+    else if (sscanf(line, " nemesis output" SKIPEQ "%d", &Output.Nemesis) == 1)
+      continue;                                 /* Generate Nemesis output */
 
-          /* ensure there is enough memory to store the new parameters */
-          if (prob->num_params > num_params_alloc) {
-            if (num_params_alloc == 0) {
-              num_params_alloc += 5;
-              prob->params = (Parameter_Pair *) malloc(
-                                      num_params_alloc*sizeof(Parameter_Pair));
-            }
+    else if (sscanf(line, " number of iterations" SKIPEQ "%d",
+      &Number_Iterations) == 1)
+      continue;      /* The Number of iterations of the balancer to perform */
+
+    else if (sscanf(line, " parallel disk info %[= \t\n]%n", dummy, &n) == 1) {
+      pline = line;
+      if (sscanf(pline += n, " number = %d%n", &i, &n) != 1)  {
+        Gen_Error(0, "fatal: First sup-option for disk info must be number");
+        return 0;
+      }
+      if (i < 0)  {
+        Gen_Error(0, "fatal: Invalid value for # of raid controllers.");
+        return 0;
+      }
+      pio_info->num_dsk_ctrlrs = i;
+
+      /* if number_dsk_ctrlrs = 0, then the input file(s) is in the root */
+      /* directory given by the parallel disk info, or it is in the same */
+      /* directory as the executable if nothing is given for the root    */
+      /* infomation. So, no other options can be given when = 0          */
+      if (pio_info->num_dsk_ctrlrs == 0)
+        continue;
+
+      while (pline+n < pmax) {
+        i = sscanf(pline += n, NEXTLIST "%n", string, &n) ;
+        if (i != 1)
+          break;
+
+        if (strcmp(string, "zeros") == 0)
+          pio_info->zeros = 1;
+        else if (strcmp(string, "offset") == 0) {
+          if (sscanf(pline += n, " =%d%n", &pio_info->pdsk_add_fact, &n) != 1
+              || pio_info->pdsk_add_fact < 0)  {
+            Gen_Error(0, "fatal: Invalid value for offset.");
+            return 0;
+          }
+        }
+        else if (strcmp(string, "list") == 0)  {
+          pio_info->dsk_list_cnt = pio_info->num_dsk_ctrlrs;
+          pio_info->num_dsk_ctrlrs = -1;
+
+          /* allocate memory for to hold the values */
+          pio_info->dsk_list=(int*)malloc(pio_info->dsk_list_cnt*sizeof(int));
+
+          for (i = 0; i < pio_info->dsk_list_cnt; i++)
+            if (pline+n < pmax && sscanf(pline += n,  BIGSKIP "%d%n",
+             &pio_info->dsk_list[i], &n) == 1)
+              continue;
             else {
-              num_params_alloc += 5;
-              prob->params = (Parameter_Pair *) realloc(prob->params,
-                                      num_params_alloc*sizeof(Parameter_Pair));
-            }
-            if (prob->params == NULL) {
-              Gen_Error(0, "fatal: not enough memory for Zoltan parameters");
+              Gen_Error(0, "Unknown parameter for parallel disk information");
               return 0;
             }
-          }
-
-          /* copy parameter name */
-          i = strcspn(cptr, "=");
-          strncpy(prob->params[param_index][0], cptr, i);
-          prob->params[param_index][0][i]='\0';
-          strip_string(prob->params[param_index][0], " \t\n");
-
-          /* now get the value */
-          cptr2 = strchr(cptr, '=');
-          if(cptr2 == NULL)
-          {
-            sprintf(cmesg, "fatal(%s): must specify value for parameter %s", 
-                            yo, prob->params[param_index][0]);
-            Gen_Error(0, cmesg);
-            return 0;
-          }
-          cptr2++;
-          if (strlen(cptr2) == 0) {
-            sprintf(cmesg, "fatal(%s): must specify value for parameter %s", 
-                            yo, prob->params[param_index][0]);
-            Gen_Error(0, cmesg);
-            return 0;
-          }
-          strcpy(prob->params[param_index][1], cptr2);
-          strip_string(prob->params[param_index][1], " \t\n");
-          cptr = strtok(NULL, ",");
         }
       }
-    } /* End "if(inp_line[0] != '#')" */
-  } /* End "while(fgets(inp_line, MAX_INPUT_STR_LN, file_cmd))" */
+    }
 
+    else if (sscanf(line," parallel file location %[=]%n", dummy, &n)==1) {
+      pline = line;
+      while (pline+n < pmax)  {
+        i = sscanf(pline += n, NEXTARG " = %[^\n\t,= ]%n", string, value, &n);
+        if (i != 2)
+          break;
+        sscanf(original_line + (pline-line), NEXTARG " = %[^\n\t,= ]", 
+               dummy, value); /* reread value from orig line to preserve case */
+                       
+        if (strcmp(string, "root") == 0)
+          strcpy(pio_info->pdsk_root, value);
+        if (strcmp(string, "subdir") == 0)   {
+          strcpy(pio_info->pdsk_subdir, value);
+          if (value [strlen(value)-1] != '/')  {
+            pio_info->pdsk_subdir [strlen(value)] = '/';
+            pio_info->pdsk_subdir [strlen(value)+1] = 0;
+          }
+        }
+      }
+    }
 
-  /* Close the command file */
-  fclose(file_cmd);
+    else if (sscanf(line, " plot partition" SKIPS "%d",
+                    &Output.Plot_Partitions) == 1)
+      continue;                    /* Plot processor numbers or partitions? */
 
+    else if (sscanf(line, " print mesh info file" SKIPEQ "%d",
+                    &Output.Mesh_Info_File) == 1)
+      continue;                                /* Generate ASCII mesh file? */
+
+    else if (sscanf(line, " test ddirectory" SKIPEQ "%d", &Test.DDirectory)==1)
+      continue;                                  /* DDirectory testing flag */
+
+    else if (sscanf(line, " test drops" SKIPEQ "%d", &Test.Drops) == 1)
+      continue;                         /* Box- and Point-drop testing flag */
+
+    else if (sscanf(line, " test generate file" SKIPS "%d",
+                    &Test.Gen_Files) == 1)
+      continue;                             /* file generation testing flag */
+
+    else if (sscanf(line, " test local partition" SKIPS "%d",
+                    &Test.Local_Partitions) == 1)
+      continue;                /* Unusual Partition generation testing flag */
+
+    else if (sscanf(line, " test multi callback" SKIPS "%d",
+                    &Test.Multi_Callbacks) == 1)
+      continue;             /* List-based (MULTI) callback function testing */
+
+    else if (sscanf(line, " test null export list" SKIPS "%d", &n) == 1)  {
+      if (n == 1)              /* Null export lists to Help_Migrate testing */
+        Test.Null_Lists = EXPORT_LISTS;
+    }
+
+    else if (sscanf(line, " test null import list" SKIPS "%d", &n) == 1)  {
+      if (n == 1)              /* Null import lists to Help_Migrate testing */
+        Test.Null_Lists = IMPORT_LISTS;
+    }
+
+    else if (sscanf(line, " zdrive action" SKIPEQ "%d", &Driver_Action) == 1)
+      continue;            /* zdrive action: Do load-balancing or ordering? */
+
+    else if (sscanf(line, " zdrive debug level" SKIPEQ "%d", &Debug_Driver)==1)
+      continue;                                /* The Debug reporting level */
+
+    else if (sscanf(line, " zoltan parameter %*[s\t ]%[=]%n", dummy, &n)==1) {
+      pline = line;
+      while (pline+n < pmax && sscanf(pline += n, NEXTARG " = %[^,=\t\n ]%n",
+                                   prob->params[prob->num_params].Name,
+                                   prob->params[prob->num_params].Val, &n)==2) {
+        prob->params[prob->num_params++].Index = -1;
+        prob->params = (Parameter_Pair*) realloc(prob->params,
+                       (prob->num_params+1) * sizeof(Parameter_Pair));
+        if (prob->params == NULL)  {
+          Gen_Error(0, "fatal: realloc failed for Zoltan Parameters");
+          return 0;
+        }
+      }
+    }
+
+    else if (sscanf(line, " zoltan vector parameter" SKIPS "%[^,=\t\n ]" "%n",
+                    string, &n) == 1   || 
+             sscanf(line, " zoltan parameter vector" SKIPS "%[^,=\t\n ]" "%n",
+                    string, &n) == 1)  {
+      pline = line;
+      i = 0;
+      while (pline+n < pmax && sscanf(pline += n, BIGSKIP "%[^,\t\n) ]%n",
+                                  prob->params[prob->num_params].Val, &n)==1) {
+        prob->params[prob->num_params].Index = i++;
+        strcpy(prob->params[prob->num_params++].Name, string);
+             
+        prob->params = (Parameter_Pair*) realloc(prob->params,
+                                 (prob->num_params+1) * sizeof(Parameter_Pair));
+        if (prob->params == NULL)  {
+          Gen_Error(0, "fatal, realloc failed for Zoltan Parameters");
+          return 0;
+        }
+      }             
+    }
+
+    else {
+      char buffer[200];
+      sprintf (buffer, "fatal error, unrecognized command line: %s\n", line);
+      Gen_Error(0, buffer);
+      return 0;
+    }
+  }
+
+  if (prob->num_params == 0) {
+    free (prob->params);
+    prob->params = NULL;
+  }
+     
+  fclose (file_cmd);
   return 1;
 }
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
-{
-/***************************** BEGIN EXECUTION ******************************/
 
+
+
+int check_inp (PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
+{
   /* check for the parallel Nemesis file for proc 0 */
   if (strlen(pio_info->pexo_fname) <= 0) {
-    Gen_Error(0, "fatal: must specify file base name");
+    Gen_Error (0, "fatal: must specify file base name");
     return 0;
   }
 
   /* default file type is nemesis */
-  if (pio_info->file_type < 0) pio_info->file_type = NEMESIS_FILE;
+  if (pio_info->file_type < 0)
+    pio_info->file_type = NEMESIS_FILE;
 
 #ifndef ZOLTAN_NEMESIS
-  /* 
-   * if not compiling with the ZOLTAN_NEMESIS flag (i.e., not linking with 
-   * Nemesis library), can't use NEMESIS_FILE file type.
-   */
-
+  /* if not compiling with the ZOLTAN_NEMESIS flag (i.e., not linking with */
+  /* Nemesis library), can't use NEMESIS_FILE file type. */
   if (pio_info->file_type == NEMESIS_FILE) {
-    Gen_Error(0, "fatal: must compile for and link with Nemesis "
-                 "libraries for Nemesis file types");
+    Gen_Error(0, "fatal: must compile for and link with Nemesis libraries for"
+                 "Nemesis file types");
     return 0;
   }
-#endif /* !ZOLTAN_NEMESIS */
+#endif
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-/*                 Check the parallel IO specifications                      */
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /* check that there is a list of disks, or a number of raids */
   if ((pio_info->dsk_list_cnt <= 0) && (pio_info->num_dsk_ctrlrs < 0))
-    pio_info->num_dsk_ctrlrs = 0; /* default to single directory */
+    pio_info->num_dsk_ctrlrs = 0;    /* default to single directory */
 
   /* default is not to have preceeding 0's in the disk names */
-  if (pio_info->zeros < 0) pio_info->zeros = 0;
+  if (pio_info->zeros < 0)
+    pio_info->zeros = 0;
 
   /* most systems that we deal with start their files systems with 1 not 0 */
-  if (pio_info->pdsk_add_fact < 0) pio_info->pdsk_add_fact = 1;
+  if (pio_info->pdsk_add_fact < 0)
+    pio_info->pdsk_add_fact = 1;
 
-  /*
-   * if there are parallel disks, then the root and subdir locations must
-   * be specified
-   */
+  /* if there are parallel disks, then specify the root and subdir locations */
   if (pio_info->num_dsk_ctrlrs > 0 || pio_info->dsk_list_cnt > 0) {
     if (strlen(pio_info->pdsk_root) == 0) {
       Gen_Error(0, "fatal: must specify parallel disk root name");
@@ -662,12 +391,7 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
     if (strlen(pio_info->pdsk_root) == 0)
       strcpy(pio_info->pdsk_root, "."); /* default is execution directory */
 
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-/*                 Check the Zoltan specifications                           */
-/*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-  /*
-   * Make sure a load-balancing method was provided.
-   */
+  /* Check Zoltan specs to insure a load-balancing method is selected */
   if (strlen(prob->method) == 0) {
     Gen_Error(0, "fatal: load balance method must be specified");
     return 0;
@@ -676,18 +400,15 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   return 1;
 }
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
-                     MESH_INFO_PTR mesh)
+
+
+void brdcst_cmd_info (int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
+ MESH_INFO_PTR mesh)
 {
-/* local declarations */
   int ctrl_id;
   int size;
   int int_params[13];  /* Make sure this array is large enough */
-/***************************** BEGIN EXECUTION ******************************/
-  
+
   int j = 0;
   int_params[j++] = Debug_Driver;
   int_params[j++] = Test.DDirectory;
@@ -703,7 +424,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
   int_params[j++] = Test.Drops;
   int_params[j++] = Test.Gen_Files;
 
-  MPI_Bcast(int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast (int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
 
   j = 0;
   Debug_Driver           = int_params[j++];
@@ -720,7 +441,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
   Test.Drops             = int_params[j++];
   Test.Gen_Files         = int_params[j++];
 
-  MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+  MPI_Bcast (pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 
   switch (pio_info->file_type) {
   case CHACO_FILE:
@@ -735,25 +456,24 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
     break;
   }
 
-  if(pio_info->dsk_list_cnt > 0) {
-    if(Proc != 0)
-      pio_info->dsk_list = (int *) malloc(pio_info->dsk_list_cnt*sizeof(int));
-
-    MPI_Bcast(pio_info->dsk_list, pio_info->dsk_list_cnt, MPI_INT,
-              0, MPI_COMM_WORLD);
+  if (pio_info->dsk_list_cnt > 0) {
+    if (Proc != 0)
+      pio_info->dsk_list = (int*) malloc (pio_info->dsk_list_cnt*sizeof(int));
+    MPI_Bcast (pio_info->dsk_list, pio_info->dsk_list_cnt, MPI_INT, 0,
+    MPI_COMM_WORLD);
   }
 
   /* and broadcast the problem specifications */
-  MPI_Bcast(prob, sizeof(PROB_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
+  MPI_Bcast (prob, sizeof(PROB_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
   if (prob->num_params > 0) {
     size = prob->num_params * sizeof(Parameter_Pair);
     if (Proc != 0)
-      prob->params = (Parameter_Pair *) malloc(size);
-    MPI_Bcast(prob->params, size, MPI_CHAR, 0, MPI_COMM_WORLD);
+      prob->params = (Parameter_Pair*) malloc(size);
+    MPI_Bcast (prob->params, size, MPI_CHAR, 0, MPI_COMM_WORLD);
   }
 
   /* now calculate where the file for this processor is */
-  if(pio_info->dsk_list_cnt <= 0) {
+  if (pio_info->dsk_list_cnt <= 0) {
     if (pio_info->num_dsk_ctrlrs > 0) {
       ctrl_id = (Proc % pio_info->num_dsk_ctrlrs);
       pio_info->rdisk = ctrl_id + pio_info->pdsk_add_fact;
@@ -763,19 +483,11 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
     ctrl_id = Proc % pio_info->dsk_list_cnt;
     pio_info->rdisk = pio_info->dsk_list[ctrl_id];
   }
-
-  return;
 }
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-void gen_par_filename(char *scalar_fname, char *par_fname,
-                      PARIO_INFO_PTR pio_info, int proc_for, int nprocs)
+
+
 /*----------------------------------------------------------------------------
- *
- *      Author(s):     Gary Hennigan (1421)
- *----------------------------------------------------------------------------
  *      Function which generates the name of a parallel file for a
  *      particular processor. The function does this by appending
  *      "N.p" to the end of the input parameter "scalar_fname", where:
@@ -795,97 +507,32 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
  *
  *              N = 8 processors
  *              p = 0 particular processor ID
- *---------------------------------------------------------------------------
- *      Revision History:
  *
- *              05 November 1993:    Date of Creation
- *---------------------------------------------------------------------------
- */
+ *----------------------------------------------------------------------------
+ *  Determine the number of digits needed to specify the processor ID. 
+ *  This allows
+ *  numbers like 01-99, i.e., prepending zeros to the name to preserve proper
+ *  alphabetic sorting of the files. Comments by Gary Hennigan (1421) */
+
+void gen_par_filename (char *scalar_fname, char *par_fname,
+ PARIO_INFO_PTR pio_info, int myproc, int nprocs)
 {
-
-  /*      Local variables      */
-
-  int i1, iTemp1;
-  int iMaxDigit=0, iMyDigit=0;
-  char cTemp[FILENAME_MAX];
-
-/************************* EXECUTION BEGINS *******************************/
-
-  /*
-   * Find out the number of digits needed to specify the processor ID.
-   * This allows numbers like 01-99, i.e., prepending zeros to the
-   * name to preserve proper alphabetic sorting of the files.
-   */
-
-  iTemp1 = nprocs;
-  do
-  {
-    iTemp1 /= 10;
-    iMaxDigit++;
-  }
-  while(iTemp1 >= 1);
-
-  iTemp1 = proc_for;
-  do
-  {
-    iTemp1 /= 10;
-    iMyDigit++;
-  }
-  while(iTemp1 >= 1);
-
-  /*
-   * Append the number of processors in this run to the scalar file name
-   * along with a '.' (period).
-   */
-  par_fname[0] = 0x00;
-  strcpy(par_fname, scalar_fname);
-  strcat(par_fname, ".");
-  sprintf(cTemp, "%d", nprocs);
-  strcat(par_fname, cTemp);
-  strcat(par_fname, ".");
-
-  /*
-   * Append the proper number of zeros to the filename.
-   */
-  for(i1=0; i1 < iMaxDigit-iMyDigit; i1++)
-    strcat(par_fname, "0");
-
-  /*
-   * Generate the name of the directory on which the parallel disk
-   * array resides. This also directs which processor writes to what
-   * disk.
-   */
-  sprintf(cTemp, "%d", proc_for);
-  strcat(par_fname, cTemp);
-  strcpy(cTemp, par_fname);
-
-
-  /*
-   * Finally, generate the complete file specification for the parallel
-   * file used by this processor.
-   */
-  if (pio_info->num_dsk_ctrlrs > 0) {
-    if(pio_info->zeros) {
-      if(pio_info->rdisk <= 9) {
-        sprintf(par_fname, "%s%d%d/%s%s", pio_info->pdsk_root,0,
-                pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
-      }
-      else {
-        sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root,
-                pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
-      }
-    }
-    else {
-      sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root, pio_info->rdisk,
-              pio_info->pdsk_subdir, cTemp);
-    }
-  }
+  if (pio_info->num_dsk_ctrlrs <= 0)
+    sprintf(par_fname, "%s/%s.%d.%0*d", pio_info->pdsk_root, scalar_fname,
+            nprocs, 1+(int)log10(nprocs), myproc);
+  else if (pio_info->zeros)
+    sprintf(par_fname, "%s%0*d/%s%s.%d.%0*d", pio_info->pdsk_root,
+            pio_info->num_dsk_ctrlrs<9 ? 2 
+                                       : 1+(int)log10(pio_info->num_dsk_ctrlrs),
+            pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
+            1 + (int) log10(nprocs), myproc);
   else
-    sprintf(par_fname, "%s/%s", pio_info->pdsk_root, cTemp);
-
-  return;
+    sprintf(par_fname, "%s%d/%s/%s.%d.%0*d", pio_info->pdsk_root,
+            pio_info->rdisk, pio_info->pdsk_subdir, scalar_fname, nprocs,
+            1 + (int) log10(nprocs), myproc);
 }
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+

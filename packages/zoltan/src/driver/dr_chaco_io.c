@@ -348,10 +348,13 @@ int chaco_fill_elements(
       mesh->elements[i].coord[0] = (float *) calloc(mesh->num_dims,
                                                     sizeof(float));  
       mesh->elements[i].coord[0][0] = x[i];
+      mesh->elements[i].avg_coord[0] = x[i];
       if (mesh->num_dims > 1) {
         mesh->elements[i].coord[0][1] = y[i];
+        mesh->elements[i].avg_coord[1] = y[i];
         if (mesh->num_dims > 2) {
           mesh->elements[i].coord[0][2] = z[i];
+          mesh->elements[i].avg_coord[2] = z[i];
         }
       }
     }

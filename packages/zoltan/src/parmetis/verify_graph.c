@@ -60,13 +60,14 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        int vwgt_dim, int ewgt_dim, 
        int graph_type, int check_graph, int output_level)
 {
-  int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
+  int i, j, ii, k, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
   int num_zeros, num_selfs, num_duplicates, num_singletons;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
-  char *sendbuf, *recvbuf;
+  int *adjncy_sort=NULL, *perm=NULL, *ptr=NULL, free_adjncy_sort=0;
+  char *sendbuf=NULL, *recvbuf=NULL;
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
@@ -169,6 +170,38 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   /* Verify that the graph is symmetric (edge weights, too) */
   /* Also check for self-edges and multi-edges */
 
+  /* Pre-processing: Check if edge lists are sorted. If not, */
+  /* make a copy and sort so we can save time in the lookups. */
+  flag = 0; /* Assume sorted. */
+  for (i=0; (i<num_obj) && (flag==0); i++){
+    for (ii=xadj[i]; ii<xadj[i+1]-1; ii++){
+      if (adjncy[ii] > adjncy[ii+1]){
+        flag = i; /* Not sorted. */
+        break; 
+      }
+    }
+  }
+  if (flag){ /* Need to sort. */
+    adjncy_sort = (int *) ZOLTAN_MALLOC(2*nedges*sizeof(int));
+    free_adjncy_sort = 1;
+    if (nedges && (!adjncy_sort)){
+      /* Out of memory. */
+      ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
+      ierr = ZOLTAN_MEMERR;
+    }
+    perm = adjncy_sort + nedges; /* Permutation for sorting. */
+    for (k=0; k<nedges; k++){
+      adjncy_sort[k] = adjncy[k];
+      perm[k] = k;
+    }
+    for (i=0; i<num_obj; i++)
+      Zoltan_Comm_Sort_Ints(&adjncy_sort[xadj[i]], &perm[xadj[i]], 
+        xadj[i+1]-xadj[i]);
+  }
+  else { /* Already sorted. */
+    adjncy_sort = adjncy;
+  }
+
   /* First pass: Check on-processor edges and count # off-proc edges */
   cross_edges = 0;
   num_selfs = 0;
@@ -188,7 +221,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       }
     }
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
-      global_j = adjncy[ii];
+      global_j = adjncy_sort[ii];
       /* Valid vertex number? */
       if (((graph_type == GLOBAL_GRAPH) && 
            ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])))
@@ -208,13 +241,11 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         }
       }
       /* Duplicate edge? */
-      for (kk=xadj[i]; kk<xadj[i+1]; kk++){
-        if ((kk != ii) && (adjncy[kk] == adjncy[ii])){
-          num_duplicates++;
-          if (output_level>1){
-            sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
-            ZOLTAN_PRINT_WARN(proc, yo, msg);
-          }
+      if ((ii+1<xadj[i+1]) && (adjncy_sort[ii]==adjncy_sort[ii+1])){
+        num_duplicates++;
+        if (output_level>1){
+          sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
+          ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
       }
       /* Is global_j a local vertex? */
@@ -225,29 +256,31 @@ int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
           j = global_j - vtxdist[proc];
         else /* graph_type == LOCAL_GRAPH */
           j = global_j;
-        flag = 0;
-        for (jj=xadj[j]; jj<xadj[j+1]; jj++){
-          if (adjncy[jj] == global_i) {
-            flag = 1;      /* Found edge (global_j, global_i) */
-            if (ewgt_dim){
-              /* Compare weights */
-              for (k=0; k<ewgt_dim; k++){
-                if (adjwgt[jj*ewgt_dim+k] != adjwgt[ii*ewgt_dim+k]){
-                   /* Numerically nonsymmetric */
-                   flag = -1;
-                   ierr = ZOLTAN_WARN;
-                }
-              }
-              if (flag<0 && output_level>0){
-                sprintf(msg, "Graph is numerically nonsymmetric "
-                  "in edge (%d,%d)", global_i, global_j);
-                ZOLTAN_PRINT_WARN(proc, yo, msg);
+        /* Binary search for edge (global_j, global_i) */
+        ptr = bsearch(&global_i, &adjncy_sort[xadj[j]], xadj[j+1]-xadj[j],
+              sizeof(int), Zoltan_Compare_Ints);
+        if (ptr){
+          /* OK, found edge (global_j, global_i) */
+          if ((adjncy_sort==adjncy) && ewgt_dim){
+            /* Compare weights */
+            /* EBEB For now, don't compare weights if we sorted edge lists. */
+            flag = 0;
+            for (k=0; k<ewgt_dim; k++){
+              if (adjwgt[(ptr-adjncy_sort)*ewgt_dim+k] != 
+                                           adjwgt[ii*ewgt_dim+k]){
+                 /* Numerically nonsymmetric */
+                 flag = -1;
+                 ierr = ZOLTAN_WARN;
               }
             }
-            break;
+            if (flag<0 && output_level>0){
+              sprintf(msg, "Graph is numerically nonsymmetric "
+                "in edge (%d,%d)", global_i, global_j);
+              ZOLTAN_PRINT_WARN(proc, yo, msg);
+            }
           }
         }
-        if (flag == 0) {
+        else { /* bsearch failed */
           sprintf(msg, "Graph is not symmetric. "
                   "Edge (%d,%d) exists, but no edge (%d,%d).", 
                   global_i, global_j, global_j, global_i);
@@ -303,6 +336,7 @@ barrier1:
 
   if (global_errors & 4){
     /* Fatal error: return now */
+    if (free_adjncy_sort) ZOLTAN_FREE(&adjncy_sort);
     return ZOLTAN_FATAL;
   }
 
@@ -409,6 +443,8 @@ barrier1:
     ZOLTAN_FREE(&proclist);
   }
 
+  if (free_adjncy_sort) ZOLTAN_FREE(&adjncy_sort);
+
   /* Compute global error code */
   errors = 0;
   if (ierr == ZOLTAN_WARN)
@@ -437,6 +473,15 @@ barrier1:
     return ZOLTAN_OK;
   }
 
+}
+
+/* comparison routine for bsearch */
+int Zoltan_Compare_Ints(const void *key, const void *arg)
+{
+   if ( *(int*) key > (*(int*) arg))  return  1;
+   if ( *(int*) key < (*(int*) arg))  return -1;
+
+   return 0;  /* equal */
 }
 
 

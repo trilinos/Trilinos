@@ -46,8 +46,12 @@ functions are required by individual algorithms.
 <b><a href="#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> 
 </blockquote>
 <a href="#Graph-based Functions">Graph-Based Functions</a>
-<blockquote><b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b>
-<br><b><a href="#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b></blockquote>
+<blockquote>
+<b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br><b><a href="#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</blockquote>
 <a href="#Tree-based Functions">Tree-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</a></b>
@@ -1136,7 +1140,128 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
-<a NAME="ZOLTAN_NUM_EDGES"></a>
+<a NAME="ZOLTAN_NUM_EDGES_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_NUM_EDGES_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>num_edges</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Num_Edges_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids, num_edges,
+ierr</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Edges&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(OUT),DIMENSION(*) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_NUM_EDGES_MULTI_FN</b> query function returns 
+the number
+of edges in the communication graph of the application for each object in a 
+list of objects.  That is, for each object in the <i>global_ids/local_ids</i> 
+arrays, the number of objects with which the given object must share 
+information is returned.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_NUM_EDGES_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>Array of global IDs of objects whose number of edges should be returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>Array of local IDs of objects whose number of edges should be returned.</td>
+</tr>
+
+<tr>
+<td valign=top>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+
+<td>Upon return, an array containing numbers of edges.
+For object <i>i</i> 
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+the number of edges should be stored 
+in <i>num_edges[i]</i>.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+
+<p>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
+<a NAME="ZOLTAN_NUM_EDGES_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
@@ -1248,6 +1373,177 @@ returned.</td>
 
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_EDGE_LIST_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_EDGE_LIST_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>num_edges</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
+int&nbsp;*<i>nbor_procs</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>ewgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Edge_List_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids, num_edges,
+nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: num_edges
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_EDGE_LIST_MULTI_FN</b> query function returns lists
+of global IDs, processor IDs, and optionally edge weights for objects sharing
+edges with objects specified in the <i>global_ids</i> input array; objects share
+edges when they must share information
+with other objects. The arrays for the returned neighbor lists are
+allocated by Zoltan; their size is determined by a
+calls to <b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or <b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b> query functions.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_EDGE_LIST_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>Array of global IDs of objects whose edge lists should be returned.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>Array of local IDs of objects whose edge lists should be returned.</td>
+</tr>
+
+<tr>
+<td valign=top>&nbsp;&nbsp;&nbsp; <i>num_edges</i></td>
+
+<td>An array containing numbers of edges for each object in <i>global_ids</i>.
+For object <i>i</i> 
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+the number of edges is stored 
+in <i>num_edges[i]</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_global_id</i></td>
+
+<td>Upon return, an array of global IDs of objects sharing edges with the
+objects specified in <i>global_ids</i>.
+For object <i>i</i>
+(specified by <i>global_ids[i*num_gid_entries]</i> and
+<i>local_ids[i*num_lid_entries]</i>, <i>i=0,1,...,num_obj-1</i>), 
+edges are stored in 
+<i>nbor_global_id[sum*num_gid_entries]</i> to 
+<i>nbor_global_id[(sum+num_edges[i])*num_gid_entries-1]</i>, where
+<i>sum</i> = the sum of <i>num_edges[j]</i> for <i>j=0,1,...,i-1</i>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_procs</i></td>
+
+<td>Upon return, an array of processor IDs that identifies where the neighboring
+objects reside. For neighboring object <i>i</i> (stored in
+<i>nbor_global_id[i*num_gid_entries]</i>), the processor owning the neighbor
+is stored in <i>nbor_procs[i]</i>.
+
+</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>wgt_dim</i></td>
+
+<td>The number of weights associated with an edge (typically 1), or 0 if
+edge weights are not requested.  This value is set through the parameter
+<a href="ug_param.html#EDGE_WEIGHT_DIM">EDGE_WEIGHT_DIM</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>ewgts</i></td>
+
+<td>Upon return, an array of edge weights, where <i>ewgts[i*wgt_dim:(i+1)*wgt_dim-1]</i>
+<br>corresponds to the weights for the <i>i</i>th edge. If <i>wgt_dim=0</i>, the
+return value of <i>ewgts</i> is undefined and may be NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+</table>
+
+<br>&nbsp;
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
 <a NAME="ZOLTAN_EDGE_LIST_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -1295,7 +1591,8 @@ of global IDs, processor IDs, and optionally edge weights for objects sharing
 an edge with a given object (i.e., objects that must share information
 with the given object). The arrays for the returned neighbor lists are
 allocated by Zoltan; their size is determined by a
-call to a <b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b> query function.
+call to <b><a href="#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or 
+<b><a href="#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b> query functions.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>

@@ -493,10 +493,12 @@ static int Zoltan_ParMetis_Jostle(
   double *geom_vec;
   ZOLTAN_ID_PTR local_ids;
   ZOLTAN_ID_PTR global_ids;    
+#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   ZOLTAN_ID_PTR lid;        /* Temporary pointer to a local id; used to pass
                                NULL to query fns when NUM_LID_ENTRIES == 0. */
 #endif
+#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   int *input_parts;         /* Initial partitions for objects. */
   int *newproc;             /* New processor for each object. */
   ZOLTAN_COMM_OBJ *comm_plan;
@@ -542,6 +544,17 @@ static int Zoltan_ParMetis_Jostle(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
+  /* Check for outdated/unsupported ParMetis versions. */
+#if (PARMETIS_MAJOR_VERSION < 3) 
+  if (zz->Proc == 0)
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 2.0 is obsolete. Zoltan currently works with this version, but please upgrade to ParMetis 3.1 (or later) soon.");
+  ierr = ZOLTAN_WARN;
+#elif (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
+  if (zz->Proc == 0)
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
+  ierr = ZOLTAN_WARN;
+#endif
+
   /* Check weight dimensions */
   if (zz->Obj_Weight_Dim<0){
     sprintf(msg, "Object weight dimension is %d, "
@@ -569,6 +582,9 @@ static int Zoltan_ParMetis_Jostle(
     edge_wgt_dim = zz->Edge_Weight_Dim;
   }
 
+  /* Default graph type is GLOBAL. */
+  graph_type = GLOBAL_GRAPH;
+
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
   scatter = 1;              /* default */
@@ -576,9 +592,6 @@ static int Zoltan_ParMetis_Jostle(
   Zoltan_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
                        zz->Debug_Proc);
-
-  /* Usually we need the entire global graph. */
-  graph_type = GLOBAL_GRAPH;
 
   /* Are we doing ordering or partitioning? */
   /* Note: If ORDER_METHOD=PARMETIS, then PARMETIS_METHOD=NODEND */
@@ -649,8 +662,8 @@ static int Zoltan_ParMetis_Jostle(
       /* Return error */
       ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
     }
-#if PARMETIS_MAJOR_VERSION >= 3
-    /* Special error checks to avoid totally baffled users of ParMETIS.
+#if (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0)
+    /* Special error checks to avoid incorrect results from ParMetis 3.0.
      * ParMETIS 3.0 Partkway ignores partition sizes for problems with 
      * less than 10000 objects.
      */
@@ -697,13 +710,13 @@ static int Zoltan_ParMetis_Jostle(
   for (i=0; i<num_obj; i++) 
     part[i] = input_parts[i];
 
-  /* Special error checks to avoid certain death in ParMETIS.
+  /* Special error checks to avoid certain death in ParMETIS 3.0.
    * AdaptiveRepart uses input partition number to index into an array 
    * of size num_part.  Thus, it segfaults if an input 
    * partition number >= num_part. 
-   * EBEB: Remove this test when there is a patch or new release for
-   * ParMetis 3. 
+   * Problem fixed in ParMETIS 3.1.
    */
+#if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (strcmp(alg, "ADAPTIVEREPART") == 0) {
     int gmax, maxpart = -1;
     for (i = 0; i < num_obj; i++)
@@ -711,11 +724,12 @@ static int Zoltan_ParMetis_Jostle(
     MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
     if (gmax >= num_part) {
       sprintf(msg, "Partition number %1d >= number of partitions %1d.\n"
-        "ParMETIS 3.0 with %s will fail, please use a different method.",
-         gmax, num_part, alg);
+        "ParMETIS 3.0 with %s will fail, please upgrade to 3.1 or later.",
+        gmax, num_part, alg);
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, msg);
     }
   }
+#endif
 
   /* ParMetis 2 and 3 require integer weights. Convert from float. */
 
@@ -798,23 +812,39 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
+#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
 #if (PARMETIS_MAJOR_VERSION >= 3) 
   /* Get object sizes if requested */ 
-  if (options[PMV3_OPT_USE_OBJ_SIZE] && zz->Get_Obj_Size){
+  if (options[PMV3_OPT_USE_OBJ_SIZE] && 
+      (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi)) {
     vsize = (idxtype *) ZOLTAN_MALLOC(num_obj*sizeof(idxtype));
     if (num_obj && !vsize){
       /* Not enough space */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
-    for (i=0; i<num_obj; i++){
-      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
-      vsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data, 
-                     num_gid_entries, num_lid_entries,
-                     &(global_ids[i*num_gid_entries]), 
-                     lid, &ierr);
+    if (zz->Get_Obj_Size_Multi) {
+      zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data, 
+                       num_gid_entries, num_lid_entries, num_obj,
+                       global_ids, local_ids, vsize, &ierr);
+    }
+    else {
+      for (i=0; i<num_obj; i++){
+        lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
+        vsize[i] = zz->Get_Obj_Size(zz->Get_Obj_Size_Data, 
+                       num_gid_entries, num_lid_entries,
+                       &(global_ids[i*num_gid_entries]), 
+                       lid, &ierr);
+      }
     }
   }
 #endif
+#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
+
+  if (get_geom_data){
+    /* ParMETIS will crash if geometric method and some procs have no nodes. */
+    /* Avoid fatal crash by setting scatter to level 2 or higher. */
+    if (scatter<2) scatter = 2;
+  }
 
   /* Scatter graph? 
    * If data distribution is highly imbalanced, it is better to
@@ -841,9 +871,16 @@ static int Zoltan_ParMetis_Jostle(
     }
   }
 
-  /* EBEB: We need to make sure we don't scatter the graph 
-   * if local ordering (METIS) is used. 
+  /* We need to make sure we don't scatter the graph 
+   * if graph_type = LOCAL_GRAPH, i.e. METIS is used. 
    */
+  if (scatter && (graph_type == LOCAL_GRAPH)){
+    scatter = 0;
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Setting scatter_graph=0 since the graph"
+      " is local on each proc");
+    ierr = ZOLTAN_WARN;
+  }
+
   if (scatter){
     ierr = Zoltan_Scatter_Graph(&vtxdist, &xadj, &adjncy, &vwgt, &vsize,
               &adjwgt, &xyz, ndims, zz, &comm_plan);
@@ -883,7 +920,7 @@ static int Zoltan_ParMetis_Jostle(
   
     /* Special error checks to avoid certain death in ParMETIS */
     if (xadj[num_obj] == 0){
-      /* No edges on a proc is a fatal error in ParMETIS 2.0
+      /* No edges on a proc is a fatal error in ParMETIS 2.0/3.0
        * and in Jostle 1.2. This error test should be removed
        * when the bugs in ParMETIS and Jostle have been fixed.
        */
@@ -894,15 +931,13 @@ static int Zoltan_ParMetis_Jostle(
       } else { /* ParMETIS */
 #if (PARMETIS_MAJOR_VERSION == 2) 
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
-                              "ParMETIS 2.x will likely fail. You should "
-                              "upgrade to ParMETIS 3, or try a different "
-                              "load-balancing method."); 
-#else /* PARMETIS_MAJOR_VERSION == 3 */
+                              "ParMETIS 2.0 will likely fail. Please "
+                              "upgrade to version 3.1 or later.");
+#elif (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
         if (strcmp(alg, "ADAPTIVEREPART") == 0)
           ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "No edges on this proc. "
                                 "ParMETIS 3.0 will likely fail with method "
-                                "AdaptiveRepart. Please try a different "
-                                "load-balancing method."); 
+                                "AdaptiveRepart. Please upgrade to 3.1 or later.");
 #endif
       }
     }
@@ -929,14 +964,14 @@ static int Zoltan_ParMetis_Jostle(
     }
 
     /* Special error checks to avoid certain death in ParMETIS */
-    /* ParMETIS3.0 divides by partition sizes in AdaptiveRepart, */
-    /* so it has a FPE when part_sizes[i] == 0 */
-    if (strcmp(alg, "ADAPTIVEREPART") == 0)
+    /* ParMETIS 3.x divides by partition sizes so it           */
+    /* will produce a FPE error when part_sizes[i] == 0        */
+
+    /* if (strcmp(alg, "ADAPTIVEREPART") == 0) */
       for (i = 0; i < num_part*ncon; i++)
         if (part_sizes[i] == 0) 
-          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Zero-sized partitions requested."
-                                "ParMETIS 3.0 will likely fail. Please try a "
-                                "different load-balancing method."); 
+          ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Zero-sized partition(s) requested! "
+            "ParMETIS 3.x will likely fail. Please use a different method, or remove the zero-sized partitions from the problem.");
 
   }
 #else /* PARMETIS_MAJOR_VERSION < 3 */

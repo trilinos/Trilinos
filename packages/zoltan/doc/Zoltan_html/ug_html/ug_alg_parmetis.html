@@ -81,15 +81,12 @@ suited&nbsp; for dynamic load balancing (for example,&nbsp; adaptive mesh
 refinement). A reasonable strategy is to call PartKway once to obtain a
 good initial balance and&nbsp; later update this balance using AdaptiveRepart
 (Repart* in ParMetis 2.0).
-<p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
-(loops) will be ignored. Multiple edges between a pair of vertices is not
-allowed. All weights must be non-negative. The graph does not have to be
-connected.
-<p>Zoltan is currently compatible with ParMETIS version 2.0 and 3.0.&nbsp;
+<p>Zoltan is currently compatible with ParMETIS versions 3.1 and 2.0.&nbsp;
 There is no guarantee that Zoltan will work correctly if you have a different
-version of ParMETIS on your computer. Source and documentation for ParMETIS
-can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
-home page</a>. As a courtesy service,&nbsp; a compatible version of the
+version of ParMETIS on your computer. (ParMETIS 3.0 will work with Zoltan in most cases, but is not officially supported. ParMETIS 3.1 is highly recommended.
+The 2.0 version will soon become obsolete and may not be supported in future Zoltan versions.) 
+The ParMETIS source code can be obtained from the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS
+home page</a>. As a courtesy service,&nbsp; a recent, compatible version of the
 ParMETIS source code is distributed with Zoltan. However, ParMETIS is a
 completely separate library. If you do not wish to install ParMETIS, it
 is possible to compile Zoltan without any references to ParMETIS&nbsp;
@@ -98,9 +95,12 @@ configuration file <i><a href="ug_usage.html#Building the Library">Utilities/Con
 <p>Note that Zoltan ignores the imbalance tolerance parameter IMBALANCE_TOL
 when ParMETIS 2.0 is used (the default value 1.05 is used), while IMBALANCE_TOL
 works correctly with ParMETIS 3.0.&nbsp; Zoltan supports the multiconstraint
-feature of ParMETIS 3 through multiple object weights (see OBJ_WEIGHT_DIM).
-Some features in ParMETIS 3, like non-uniform partition sizes, are currently
-not supported in Zoltan but will be in future releases.
+feature of ParMETIS 3 through multiple object weights (see <i><a href="ug_param.html#General_Parameters">OBJ_WEIGHT_DIM</a></i>).
+
+<p>The graph given to Zoltan/ParMETIS must be symmetric. Any self edges
+(loops) will be ignored. Multiple edges between a pair of vertices is not
+allowed. All weights must be non-negative. The graph does not have to be
+connected.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -290,8 +290,13 @@ or <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 <tr VALIGN=TOP NOSAVE>
 <td>All but PartGeom:</td>
 
-<td NOSAVE><b><a href="ug_query_lb.html#Graph-based Functions">ZOLTAN_NUM_EDGES_FN</a></b>
-<br><b><a href="ug_query_lb.html#Graph-based Functions">ZOLTAN_EDGE_LIST_FN</a></b></td>
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_MULTI_FN">ZOLTAN_NUM_EDGES_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES_FN">ZOLTAN_NUM_EDGES_FN</a></b>
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_MULTI_FN">ZOLTAN_EDGE_LIST_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b>
+</td>
 </tr>
 </table>
 

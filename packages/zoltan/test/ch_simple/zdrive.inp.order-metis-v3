@@ -1,0 +1,7 @@
+Decomposition Method 	= none
+Zoltan Parameters	= order_method=metis
+Zoltan Parameters	= debug_level=6
+File Type		= Chaco
+File Name		= simple
+Parallel Disk Info	= number=0
+zdrive action = 2

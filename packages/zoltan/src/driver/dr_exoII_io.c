@@ -268,6 +268,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
   int  **sur_elem, *nsurnd;
   ELEM_INFO_PTR elements = mesh->elements;
 
+  double tmp0, tmp1, tmp2;
   float *xptr = NULL, *yptr = NULL, *zptr = NULL;
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -380,6 +381,7 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         }
 
         /* save the connect table as local numbers for the moment */
+        tmp0 = tmp1 = tmp2 = 0.;
         for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++) {
           lnode = connect[cnode] - 1;
           elements[iplace].connect[inode] = lnode;
@@ -395,14 +397,21 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
           switch (mesh->num_dims) {
             case 3:
               elements[iplace].coord[inode][2] = zptr[lnode];
+              tmp2 += zptr[lnode];
               /* FALLTHRU */
             case 2:
               elements[iplace].coord[inode][1] = yptr[lnode];
+              tmp1 += yptr[lnode];
               /* FALLTHRU */
             case 1:
               elements[iplace].coord[inode][0] = xptr[lnode];
+              tmp0 += xptr[lnode];
           }
         } /* End: "for (inode = 0; inode < mesh->eb_nnodes[iblk]; inode++)" */
+
+        elements[iplace].avg_coord[0] = tmp0 / mesh->eb_nnodes[iblk];
+        elements[iplace].avg_coord[1] = tmp1 / mesh->eb_nnodes[iblk];
+        elements[iplace].avg_coord[2] = tmp2 / mesh->eb_nnodes[iblk];
 
         iplace++;
 

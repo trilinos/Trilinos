@@ -47,15 +47,32 @@ its function type is passed in the <i>fn_type</i> argument. When <b><a href="ug_
 is used to register functions, the type of the function is implicit in
 the <i>fn_ptr</i> argument.&nbsp; Each function description below includes
 both its function type and function prototype.
-<p>Some algorithms in Zoltan require that certain query
+<p>
+Query functions that return information about data objects owned by a processor
+come in two forms:  list-based functions that return information about a 
+list of objects, and iterator functions that return information about a single 
+object.
+Users can provide either version of the query function; they need not provide
+both.
+Zoltan calls the list-based functions with the IDs of all objects needed;
+this approach often provides faster performance as it eliminates the overhead
+of multiple function calls.  List-based functions have the word "MULTI" in 
+their function-type name.  If, instead, the application provides iterator
+functions, Zoltan calls the iterator function once for each object whose 
+data is needed.  This approach, while slower, allows Zoltan to use less memory
+for some data.
+<p>
+Some algorithms in Zoltan require that certain query
 functions be registered by the application; for example, geometric partitioning
-algorithms such as Recursive Coordinate Bisection (RCB) require that an
-<b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+algorithms such as Recursive Coordinate Bisection (RCB) require that either a
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> or a 
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b> 
 be registered. When a default value is specified below, the query function
 type is optional; if a function of that type is not registered, the default
 values are used. Details of which query functions are required by particular
 algorithms are included in the <a href="ug_alg.html">Algorithms</a> section.
-<p>Many of the functions have both global and local object identifiers
+<p>
+Many of the functions have both global and local object identifiers
 (IDs) in their argument lists. The global IDs provided by the application
 must be unique across all processors; they are used for identification
 within Zoltan. The local IDs are not used by Zoltan; 

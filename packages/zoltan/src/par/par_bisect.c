@@ -11,9 +11,15 @@
  *    $Revision$
  ****************************************************************************/
 
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "zz_const.h"
+#include "shared.h"
 #include "par_bisect_const.h"
 
 /* EBEB: The following constants, structs, and function prototypes should 
@@ -52,12 +58,14 @@ struct bisector {          /* bisector cut info */
 
 
 /* prototypes */
+#if (RB_MAX_WGTS > 1)
 static void Zoltan_reduce(int, int, int, int, struct bisector*, struct bisector*, int *,
                MPI_Datatype, MPI_Comm);
 static void Zoltan_scan(double *, double *, int, MPI_Comm, int, int, int);
 static void Zoltan_bisector_copy(struct bisector*, struct bisector*);
 static double Zoltan_norm(int mcnorm, int n, double *x, double *scal);
 static void Zoltan_daxpy(int n, double a, double *x, double *y, double *z);
+#endif /* RB_MAX_WGTS > 1 */
 
 /*****************************************************************************/
 /***  Main routine:  Zoltan_RB_find_bisector()                             ***/
@@ -103,6 +111,13 @@ int Zoltan_RB_find_bisector(
 {
 /* Local declarations. */
   char    yo[] = "Zoltan_find_bisector";
+
+#if (RB_MAX_WGTS <= 1)
+
+  ZOLTAN_PRINT_ERROR(proc, yo, "Not applicable when RB_MAX_WGTS <= 1.");
+  return(ZOLTAN_FATAL);
+
+#else /* RB_MAX_WGTS > 1 */
 
   struct bisector *med, *medme;      /* bisector data */
   double  localmax, localmin;        /* lower/upper bounds on this proc */
@@ -911,8 +926,10 @@ End:
 
   return ierr;
 
+#endif /* RB_MAX_WGTS > 1 */
 }
 
+#if (RB_MAX_WGTS > 1) 
 /* merge bisector data structure */
 /* on input:
    in,inout->totallo, totalhi = weight in both partitions on this proc
@@ -1107,3 +1124,10 @@ static void Zoltan_daxpy(int n, double alpha, double *x, double *y, double *z)
   for (i=0; i<n; i++)
     z[i] = alpha*x[i]+y[i];
 }
+
+#endif /* RB_MAX_WGTS > 1 */
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
+

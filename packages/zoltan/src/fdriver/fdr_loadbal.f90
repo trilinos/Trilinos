@@ -253,22 +253,36 @@ type(PARIO_INFO) :: pio_info
     endif
   endif
 
-!  /* Functions for geometry based algorithms */
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_EDGES_FN_TYPE, get_num_edges, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
-                mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
-  endif
+!  /* Functions for graph based algorithms */
+  if (Test_Multi_Callbacks .eq. 1)  then
+    if (Zoltan_Set_Num_Edges_Multi_Fn(zz_obj, get_num_edges_multi, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
 
-! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_EDGE_LIST_FN_TYPE, get_edge_list, &
-!               mesh_wrapper) == ZOLTAN_FATAL) then
-  if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, mesh_wrapper) == ZOLTAN_FATAL) then
-    print *, "fatal:  error returned from Zoltan_Set_Fn()"
-    run_zoltan = .false.
-    goto 9999
+    if (Zoltan_Set_Edge_List_Multi_Fn(zz_obj, get_edge_list_multi, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+
+  else
+    if (Zoltan_Set_Num_Edges_Fn(zz_obj, get_num_edges, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
+
+    if (Zoltan_Set_Edge_List_Fn(zz_obj, get_edge_list, &
+                  mesh_wrapper) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Fn()"
+      run_zoltan = .false.
+      goto 9999
+    endif
   endif
 
   if (Test_Multi_Callbacks .eq. 1) then
@@ -698,6 +712,8 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 integer(Zoltan_INT) :: i
 
+! Not the most efficient implementation -- does not take advantage of multi.
+
   do i = 0, num_obj-1
     if (num_lid_entries .eq. 0) then
       call get_geom(data, num_gid_entries, num_lid_entries, &
@@ -752,6 +768,37 @@ integer(Zoltan_INT) :: lid
 
   get_num_edges = current_elem%nadj
 end function get_num_edges
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+
+subroutine get_num_edges_multi (data, num_gid_entries, num_lid_entries, &
+  num_obj, global_id, local_id, num_edges, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
+integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)
+integer(Zoltan_INT), intent(out) :: num_edges(*), ierr
+integer(Zoltan_INT) :: i
+
+! Not the most efficient implementation -- does not take advantage of multi.
+
+  do i = 0, num_obj-1
+    if (num_lid_entries .eq. 0) then
+      num_edges(i+1) = get_num_edges(data, num_gid_entries, num_lid_entries, &
+                                     global_id(i*num_gid_entries + 1),   &
+                                     local_id,    &
+                                     ierr)
+    else
+      num_edges(i+1) = get_num_edges(data, num_gid_entries, num_lid_entries, &
+                                     global_id(i*num_gid_entries + 1),   &
+                                     local_id(i*num_lid_entries + 1),    &
+                                     ierr)
+    endif
+    if (ierr.ne.ZOLTAN_OK) exit
+  enddo
+
+end subroutine get_num_edges_multi
 
 !/*****************************************************************************/
 !/*****************************************************************************/
@@ -825,7 +872,47 @@ end subroutine get_edge_list
 !/*****************************************************************************/
 !/*****************************************************************************/
 
+subroutine get_edge_list_multi(data, num_gid_entries, num_lid_entries, &
+  num_obj, global_id, local_id, num_edges, nbor_global_id, nbor_procs, &
+  get_ewgts, nbor_ewgts, ierr)
+type(Zoltan_User_Data_2), intent(in) :: data
+integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries, num_obj
+integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*), num_edges(*)
+integer(Zoltan_INT), intent(out) :: nbor_global_id(*)
+integer(Zoltan_INT), intent(out) :: nbor_procs(*)
+integer(Zoltan_INT), intent(in) :: get_ewgts
+real(Zoltan_FLOAT), intent(out) :: nbor_ewgts(*)
+integer(Zoltan_INT), intent(out) :: ierr
+integer(Zoltan_INT) :: sum, i
 
+! Not the most efficient implementation -- does not take advantage of multi.
+
+  sum = 0;
+  do i = 0, num_obj-1
+    if (num_lid_entries .eq. 0) then
+      call get_edge_list (data, num_gid_entries, num_lid_entries, &
+                          global_id(i*num_gid_entries + 1),   &
+                          local_id, &
+                          nbor_global_id(num_gid_entries * sum + 1), &
+                          nbor_procs(sum + 1),  &
+                          get_ewgts, nbor_ewgts(sum * get_ewgts + 1), ierr)
+    else
+      call get_edge_list (data, num_gid_entries, num_lid_entries, &
+                          global_id(i*num_gid_entries + 1),   &
+                          local_id(i*num_lid_entries + 1),  &
+                          nbor_global_id(num_gid_entries * sum + 1), &
+                          nbor_procs(sum + 1),  &
+                          get_ewgts, nbor_ewgts(sum * get_ewgts + 1), ierr)
+    endif
+    sum = sum + num_edges(i+1)
+    if (ierr.ne.ZOLTAN_OK) exit
+  enddo
+
+end subroutine get_edge_list_multi
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
 
 
 subroutine test_drops_rtn(Proc, mesh, pio_info, zz)

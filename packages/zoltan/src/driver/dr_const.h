@@ -74,6 +74,7 @@ struct Element_Description
                            Default is -1 (no ordering done). */
   float    cpu_wgt[MAX_CPU_WGTS]; /* the computational weight(s) associated with the elem */
   float    mem_wgt;	/* the memory weight associated with the elem */
+  double   avg_coord[3];/* average coordinates (centroid) for the element */
   float  **coord;	/* array for the coordinates of the element.
                              for Nemesis meshes, nodal coordinates are stored;
                              for Chaco graphs with geometry, one set of coords
@@ -155,10 +156,12 @@ typedef struct Mesh_Description  MESH_INFO;
 typedef struct Mesh_Description *MESH_INFO_PTR;
 
 /* Structure for the problem description. */
-typedef char Parameter_Pair[2][128]; /* typedef for parameter strings. 
-                                        Parameters are specified as pairs
-                                        of strings:
-                                          param_str = value_str              */
+struct Parameter_Description {
+  char Name[128];     /* parameter name */
+  char Val[128];      /* parameter value */
+  int  Index;         /* index for vector params */
+};
+typedef struct Parameter_Description Parameter_Pair;
 
 struct Problem_Description
 {

@@ -29,7 +29,9 @@ $(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
 		set_geommulti.if		set_geommulti.fn \
 		set_geom.if			set_geom.fn \
 		set_numedges.if 		set_numedges.fn \
+		set_numedgesmulti.if 		set_numedgesmulti.fn \
 		set_edgelist.if			set_edgelist.fn \
+		set_edgelistmulti.if		set_edgelistmulti.fn \
 		set_numobj.if 			set_numobj.fn \
 		set_partition.if 		set_partition.fn \
 		set_partitionmulti.if		set_partitionmulti.fn \

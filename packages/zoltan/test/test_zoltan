@@ -52,8 +52,11 @@ set no_rib = $?ZOLTAN_NO_RIB
 set no_hsfc = $?ZOLTAN_NO_HSFC
 set no_oct = $?ZOLTAN_NO_OCT
 set no_parmetis = $?ZOLTAN_NO_PARMETIS
+set no_order = $?ZOLTAN_NO_ORDER
+set no_reftree = $?ZOLTAN_NO_REFTREE
 set yes_jostle = $?ZOLTAN_YES_JOSTLE
 set yes_fortran = $?ZOLTAN_YES_FORTRAN
+set old_interface = $?ZOLTAN_OLD_INTERFACE
 
 # Parse command-line options. 
 # These options will override the environment variables.
@@ -76,10 +79,16 @@ while ( $#argv )
      @ no_oct = 1
   else if ( "$1" == "-no_parmetis" ) then
      @ no_parmetis = 1
+  else if ( "$1" == "-no_reftree" ) then
+     @ no_reftree = 1
+  else if ( "$1" == "-no_order" ) then
+     @ no_order = 1
   else if ( "$1" == "-yes_jostle" ) then
      @ yes_jostle = 1
   else if ( "$1" == "-yes_fortran" ) then
      @ yes_fortran = 1
+  else if ( "$1" == "-old_interface" ) then
+     @ old_interface = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
   
     if ( $#argv < 2 ) then
@@ -140,6 +149,9 @@ if (! $?run ) then
     case sgi64:
       set run = "mpirun -np"
       breaksw
+    case mpi125:
+      set run = "/Net/local/proj/zoltan/arch/solaris-mpi125/mpich-1.2.5/bin/mpirun -np"
+      breaksw
     case gcc64:
       set no_nemesis = 1
       set run = "mpirun -np"
@@ -172,6 +184,12 @@ if ( $yes_fortran ) then
    set no_nemesis = 1
    set out_tag = fout
 endif
+
+# Old interface?
+if ( $old_interface) then
+   set no_reftree = 1
+endif
+  
 
 # Find the right zdrive to run
 @ found = 0
@@ -245,26 +263,33 @@ if ( $yes_fortran ) then
 # Using F90
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-ts )
-    set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
-    set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
+      set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+    endif
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-ts )
-    set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
-    set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
-    set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
-    set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
-    set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
-    set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
+      set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
+      set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+      set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+      set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+    endif
   endif
   if (! $no_hsfc) then
-    set ch_methods = ( $ch_methods hsfc hsfc-partless hsfc-partmore )
-    set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
-    set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+    set ch_methods = ( $ch_methods hsfc )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
+      set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+    endif
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
@@ -272,17 +297,20 @@ if ( $yes_fortran ) then
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
       set ch_methods = ( $ch_methods partkway partgeom diffusion )
-    else
+    else # $pmversion > 2 
       set ch_methods = ( $ch_methods partkway-v$pmversion \
-        partkway-partless-v$pmversion partkway-partmore-v$pmversion \
-        partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
-        partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
         partgeom-v$pmversion diffusion-v$pmversion \
-        partgeomkway-v$pmversion adaptive-v$pmversion \
-        adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-        adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
-        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
-        adaptive-partlocal5-v$pmversion )
+        partgeomkway-v$pmversion adaptive-v$pmversion )
+      if (! $old_interface) then
+        set ch_methods = ( $ch_methods \
+          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+          adaptive-partlocal5-v$pmversion )
+      endif
     endif
   endif
 else
@@ -295,68 +323,111 @@ else
 
   if (! $no_rcb) then
     set ch_methods = ( $ch_methods rcb rcb-oneproc rcb-ts )
-    set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
-    set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
-    set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rcb-reuse rcb-reuse-ts )
+      set ch_methods = ( $ch_methods rcb-rect rcb-rect-ts )
+      set ch_methods = ( $ch_methods rcb-lock rcb-lock-ts )
+      set ch_methods = ( $ch_methods rcb-set1 rcb-set2 )
+      set ch_methods = ( $ch_methods rcb-set3 rcb-set4 )
+      set ch_methods = ( $ch_methods rcb-set5 rcb-set6 )
+      set ch_methods = ( $ch_methods rcb-partless rcb-partless-ts )
+      set ch_methods = ( $ch_methods rcb-partmore rcb-partmore-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set ch_methods = ( $ch_methods rcb-partlocal4 rcb-partlocal4-ts )
+    endif
     set nem_methods = ( $nem_methods rcb rcb-ts )
-    set nem_methods = ( $nem_methods rcb-partless rcb-partless-ts )
-    set nem_methods = ( $nem_methods rcb-partmore rcb-partmore-ts )
-    set nem_methods = ( $nem_methods rcb-partlocal1 rcb-partlocal1-ts )
-    set nem_methods = ( $nem_methods rcb-partlocal2 rcb-partlocal2-ts )
-    set nem_methods = ( $nem_methods rcb-partlocal3 rcb-partlocal3-ts )
-    set nem_methods = ( $nem_methods rcb-partlocal4 rcb-partlocal4-ts )
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods rcb-reuse rcb-reuse-ts )
+      set nem_methods = ( $nem_methods rcb-rect rcb-rect-ts )
+      set nem_methods = ( $nem_methods rcb-lock rcb-lock-ts )
+      set nem_methods = ( $nem_methods rcb-set1 rcb-set2 )
+      set nem_methods = ( $nem_methods rcb-set3 rcb-set4 )
+      set nem_methods = ( $nem_methods rcb-set5 rcb-set6 )
+      set nem_methods = ( $nem_methods rcb-partless rcb-partless-ts )
+      set nem_methods = ( $nem_methods rcb-partmore rcb-partmore-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal1 rcb-partlocal1-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal2 rcb-partlocal2-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal3 rcb-partlocal3-ts )
+      set nem_methods = ( $nem_methods rcb-partlocal4 rcb-partlocal4-ts )
+    endif
   endif
   if (! $no_rib) then
     set ch_methods = ( $ch_methods rib rib-oneproc rib-ts )
-    set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
-    set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
-    set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
-    set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
-    set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
-    set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods rib-partless rib-partless-ts )
+      set ch_methods = ( $ch_methods rib-partmore rib-partmore-ts )
+      set ch_methods = ( $ch_methods rib-partlocal1 rib-partlocal1-ts )
+      set ch_methods = ( $ch_methods rib-partlocal2 rib-partlocal2-ts )
+      set ch_methods = ( $ch_methods rib-partlocal3 rib-partlocal3-ts )
+      set ch_methods = ( $ch_methods rib-partlocal4 rib-partlocal4-ts )
+    endif
     set nem_methods = ( $nem_methods rib rib-ts )
-    set nem_methods = ( $nem_methods rib-partless rib-partless-ts )
-    set nem_methods = ( $nem_methods rib-partmore rib-partmore-ts )
-    set nem_methods = ( $nem_methods rib-partlocal1 rib-partlocal1-ts )
-    set nem_methods = ( $nem_methods rib-partlocal2 rib-partlocal2-ts )
-    set nem_methods = ( $nem_methods rib-partlocal3 rib-partlocal3-ts )
-    set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods rib-partless rib-partless-ts )
+      set nem_methods = ( $nem_methods rib-partmore rib-partmore-ts )
+      set nem_methods = ( $nem_methods rib-partlocal1 rib-partlocal1-ts )
+      set nem_methods = ( $nem_methods rib-partlocal2 rib-partlocal2-ts )
+      set nem_methods = ( $nem_methods rib-partlocal3 rib-partlocal3-ts )
+      set nem_methods = ( $nem_methods rib-partlocal4 rib-partlocal4-ts )
+    endif
   endif
   if (! $no_hsfc) then
     set ch_methods = ( $ch_methods hsfc hsfc-oneproc )
-    set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
-    set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
-    set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
-    set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+    if (! $old_interface) then
+      set ch_methods = ( $ch_methods hsfc-partless hsfc-partmore )
+      set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
+      set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+    endif
     set nem_methods = ( $nem_methods hsfc )
-    set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
-    set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
-    set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
-    set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )    
+    if (! $old_interface) then
+      set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
+      set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
+      set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
+      set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )    
+    endif
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
     set nem_methods = ( $nem_methods oct0 oct1 oct2 )
   endif
+  if (! $no_reftree) then
+    set nem_methods = ( $nem_methods reftree )
+  endif
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
       set ch_methods = ( $ch_methods partkway partkway-oneproc partkway-cyclic partgeom diffusion )
       set nem_methods = ( $nem_methods partkway partgeom diffusion )
-    else
+    else # $pmversion > 2
       set ch_methods = ( $ch_methods partkway-v$pmversion \
         partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion \
-        partkway-partless-v$pmversion partkway-partmore-v$pmversion \
-        partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
-        partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
         partgeom-v$pmversion diffusion-v$pmversion \
-        partgeomkway-v$pmversion adaptive-v$pmversion \
-        adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-        adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
-        adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
-        adaptive-partlocal5-v$pmversion )
+        partgeomkway-v$pmversion adaptive-v$pmversion )
+      set nem_methods = ( $nem_methods partkway-v$pmversion \
+        partgeomkway-v$pmversion adaptive-v$pmversion )
+      if (! $old_interface) then
+        set ch_methods = ( $ch_methods \
+          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+          adaptive-partlocal5-v$pmversion )
+        set nem_methods = ( $nem_methods \
+          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
+        if (! $no_order) then
+          set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+            order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+        endif
+      endif
     endif
   endif
 endif
@@ -370,6 +441,7 @@ echo "Fortran    = $yes_fortran" >> $logfile
 echo "Run cmd    = $run" >> $logfile
 echo "Run dir    = $cwd" >> $logfile
 echo "Executable = $zdrive" >> $logfile
+echo "Old Interf = $old_interface" >> $logfile
 echo " " >> $logfile
 
 
@@ -397,12 +469,17 @@ if (! $no_chaco ) then
     # Special case for multiweight problems
     if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "brack2_3")) then
        if ($pmversion > 2) then
-          set methods = ( partkway-v$pmversion partgeomkway-v$pmversion adaptive-v$pmversion )
+          set methods = ( partkway-v$pmversion partgeomkway-v$pmversion adaptive-v$pmversion partkway-imbal-v$pmversion )
        else
           set methods = ( )
        endif
     else
        set methods = ( $ch_methods )
+    endif
+
+    # Special case for purecov runs:  don't include brack2_3; it takes too long.
+    if ((${ch_name[1]} == "brack2_3") && ($arch == "purecov")) then
+       set methods = ( )
     endif
 
     # Loop over all methods
@@ -670,10 +747,13 @@ usage:
   echo "   -no_hsfc"
   echo "   -no_oct"
   echo "   -no_parmetis"
+  echo "   -no_reftree"
+  echo "   -no_order"
   echo "   -no_nemesis"
   echo "   -no_chaco"
   echo "   -yes_fortran"
   echo "   -yes_jostle"
+  echo "   -old_interface"
   echo "The default is to run all methods (except Jostle) and file formats."
   exit -1
 

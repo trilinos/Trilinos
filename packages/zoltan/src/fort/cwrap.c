@@ -345,6 +345,18 @@ int Zoltan_Num_Edges_Fort_Wrapper(void *data,
 }
 
 /*****************************************************************************/
+void Zoltan_Num_Edges_Multi_Fort_Wrapper(void *data, 
+  int num_gid_entries, int num_lid_entries, int num_obj,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *num_edges,
+  int *ierr)
+{
+   Zoltan_Current->Get_Num_Edges_Multi_Fort(data,
+                                            &num_gid_entries, &num_lid_entries,
+                                            &num_obj, global_id, local_id, 
+                                            num_edges, ierr);
+}
+
+/*****************************************************************************/
 void Zoltan_Edge_List_Fort_Wrapper(void *data, 
   int num_gid_entries, int num_lid_entries,
   ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
@@ -355,6 +367,21 @@ void Zoltan_Edge_List_Fort_Wrapper(void *data,
                                      global_id, local_id,
                                      nbor_global_id, nbor_procs, &wdim,
                                      nbor_ewgts, ierr);
+}
+
+/*****************************************************************************/
+void Zoltan_Edge_List_Multi_Fort_Wrapper(void *data, 
+  int num_gid_entries, int num_lid_entries, int num_obj,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *num_edges,
+  ZOLTAN_ID_PTR nbor_global_id, int *nbor_procs,
+  int wdim, float *nbor_ewgts, int *ierr)
+{
+   Zoltan_Current->Get_Edge_List_Multi_Fort(data,
+                                            &num_gid_entries, &num_lid_entries,
+                                            &num_obj, global_id, local_id,
+                                            num_edges,
+                                            nbor_global_id, nbor_procs, &wdim,
+                                            nbor_ewgts, ierr);
 }
 
 /*****************************************************************************/
@@ -915,6 +942,16 @@ int Zfw_Set_Fn(int *addr_lb, int *nbytes, ZOLTAN_FN_TYPE *type, void (*fn)(),
       lb->Get_Partition_Fort = (ZOLTAN_PARTITION_FORT_FN *) fn;
       return Zoltan_Set_Fn(lb, *type, 
                (void (*)())Zoltan_Partition_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_NUM_EDGES_MULTI_FN_TYPE:
+      lb->Get_Num_Edges_Multi_Fort = (ZOLTAN_NUM_EDGES_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Num_Edges_Multi_Fort_Wrapper, data);
+      break;
+   case ZOLTAN_EDGE_LIST_MULTI_FN_TYPE:
+      lb->Get_Edge_List_Multi_Fort = (ZOLTAN_EDGE_LIST_MULTI_FORT_FN *) fn;
+      return Zoltan_Set_Fn(lb, *type, 
+               (void (*)())Zoltan_Edge_List_Multi_Fort_Wrapper, data);
       break;
    case ZOLTAN_NUM_EDGES_FN_TYPE:
       lb->Get_Num_Edges_Fort = (ZOLTAN_NUM_EDGES_FORT_FN *) fn;

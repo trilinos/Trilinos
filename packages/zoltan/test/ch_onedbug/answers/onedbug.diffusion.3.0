@@ -1,5 +1,5 @@
 Decomposition Method	= parmetis
-Zoltan Parameters	= remap=0
+Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
 Zoltan Parameters	= parmetis_method=repartldiffusion
 Zoltan Parameters	= obj_weight_dim=1
 Zoltan Parameters	= comm_weight_dim=1

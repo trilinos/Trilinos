@@ -113,6 +113,9 @@ int i;
 
 /*****************************************************************************/
 
+#ifdef ZOLTAN_NEEDED
+/* Commented out since never used. */
+
 int ZOLTAN_LT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
 {
 /* 
@@ -150,6 +153,7 @@ int i;
 
   return(0); /* because a == b */
 }
+#endif /* ZOLTAN_NEEDED */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

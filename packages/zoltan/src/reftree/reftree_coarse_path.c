@@ -155,9 +155,9 @@ int i, j;
    to_add_ptr = (int *) ZOLTAN_MALLOC(sizeof(int)*(MAXVERT+1));
    if (to_add == NULL || to_add_dim == NULL || to_add_ptr == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&to_add);
-      ZOLTAN_FREE(&to_add_dim);
-      ZOLTAN_FREE(&to_add_ptr);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &to_add,
+                                              &to_add_dim,
+                                              &to_add_ptr);
       return(ZOLTAN_MEMERR);
    }
 
@@ -168,9 +168,9 @@ int i, j;
       if (to_add[i] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          for (j=0; j<i; j++) ZOLTAN_FREE(&(to_add[j]));
-         ZOLTAN_FREE(&to_add);
-         ZOLTAN_FREE(&to_add_dim);
-         ZOLTAN_FREE(&to_add_ptr);
+         Zoltan_Multifree(__FILE__, __LINE__, 3, &to_add,
+                                                 &to_add_dim,
+                                                 &to_add_ptr);
          return(ZOLTAN_MEMERR);
       }
    }
@@ -262,9 +262,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
    if (element_list == NULL || num_elem == NULL || elem_dim == NULL ||
        vertex_gid == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-      ZOLTAN_FREE(&element_list);
-      ZOLTAN_FREE(&num_elem);
-      ZOLTAN_FREE(&elem_dim);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                              &num_elem,
+                                              &elem_dim);
       return(ZOLTAN_MEMERR);
    }
    element_list_dim = num_obj;
@@ -275,9 +275,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
       if (element_list[i] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          for (j=0; j<i; j++) ZOLTAN_FREE(&(element_list[j]));
-         ZOLTAN_FREE(&element_list);
-         ZOLTAN_FREE(&num_elem);
-         ZOLTAN_FREE(&elem_dim);
+         Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                 &num_elem,
+                                                 &elem_dim);
          return(ZOLTAN_MEMERR);
       }
    }
@@ -290,9 +290,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
    if (hashtable == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       for (j=0; j<i; j++) ZOLTAN_FREE(&(element_list[j]));
-      ZOLTAN_FREE(&element_list);
-      ZOLTAN_FREE(&num_elem);
-      ZOLTAN_FREE(&elem_dim);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                              &num_elem,
+                                              &elem_dim);
       return(ZOLTAN_MEMERR);
    }
    for (i=0; i<DEFAULT_HASH_TABLE_SIZE; i++)
@@ -344,9 +344,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
                 elem_dim == NULL || vertex_gid == NULL) {
                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
                for (j=0; j<element_list_dim/2; j++) ZOLTAN_FREE(&(element_list[j]));
-               ZOLTAN_FREE(&element_list);
-               ZOLTAN_FREE(&num_elem);
-               ZOLTAN_FREE(&elem_dim);
+               Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                       &num_elem,
+                                                       &elem_dim);
                return(ZOLTAN_MEMERR);
             }
             for (i=element_list_dim/2; i<element_list_dim; i++) {
@@ -356,9 +356,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
                if (element_list[i] == NULL) {
                   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
                   for (j=0; j<i; j++) ZOLTAN_FREE(&(element_list[j]));
-                  ZOLTAN_FREE(&element_list);
-                  ZOLTAN_FREE(&num_elem);
-                  ZOLTAN_FREE(&elem_dim);
+                  Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                          &num_elem,
+                                                          &elem_dim);
                   return(ZOLTAN_MEMERR);
                }
             }
@@ -370,9 +370,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
             if (element_list[vert] == NULL) {
                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
                for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
-               ZOLTAN_FREE(&element_list);
-               ZOLTAN_FREE(&num_elem);
-               ZOLTAN_FREE(&elem_dim);
+               Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                       &num_elem,
+                                                       &elem_dim);
                return(ZOLTAN_MEMERR);
             }
          }
@@ -403,9 +403,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
    if (onpath == NULL || prev == NULL || next == NULL || in == NULL || out == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
-      ZOLTAN_FREE(&element_list);
-      ZOLTAN_FREE(&num_elem);
-      ZOLTAN_FREE(&elem_dim);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                              &num_elem,
+                                              &elem_dim);
       return(ZOLTAN_MEMERR);
    }
    for (i=0; i<num_obj; i++) onpath[i] = FALSE;
@@ -417,9 +417,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
    if (num_neigh == NULL || neigh_dim == NULL || neigh == NULL || shared_vert == NULL) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
-      ZOLTAN_FREE(&element_list);
-      ZOLTAN_FREE(&num_elem);
-      ZOLTAN_FREE(&elem_dim);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                              &num_elem,
+                                              &elem_dim);
       return(ZOLTAN_MEMERR);
    }
 
@@ -431,9 +431,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
       if (num_neigh[i] == NULL || neigh_dim[i] == NULL || neigh[i] == NULL || shared_vert[i] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
-         ZOLTAN_FREE(&element_list);
-         ZOLTAN_FREE(&num_elem);
-         ZOLTAN_FREE(&elem_dim);
+         Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                 &num_elem,
+                                                 &elem_dim);
          return(ZOLTAN_MEMERR);
       }
 
@@ -446,9 +446,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
             if (neigh[i][j] == NULL || shared_vert[i][j] == NULL) {
                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
                for (k=0; k<element_list_dim; k++) ZOLTAN_FREE(&(element_list[k]));
-               ZOLTAN_FREE(&element_list);
-               ZOLTAN_FREE(&num_elem);
-               ZOLTAN_FREE(&elem_dim);
+               Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                       &num_elem,
+                                                       &elem_dim);
                return(ZOLTAN_MEMERR);
             }
          }
@@ -463,9 +463,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
             if (shared_vert[i][j][k] == NULL) {
                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
                for (l=0; l<element_list_dim; l++) ZOLTAN_FREE(&(element_list[l]));
-               ZOLTAN_FREE(&element_list);
-               ZOLTAN_FREE(&num_elem);
-               ZOLTAN_FREE(&elem_dim);
+               Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                                       &num_elem,
+                                                       &elem_dim);
                return(ZOLTAN_MEMERR);
             }
          }
@@ -494,9 +494,9 @@ int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
 
    if (!(*all_triangles)) {
       for (j=0; j<element_list_dim; j++) ZOLTAN_FREE(&(element_list[j]));
-      ZOLTAN_FREE(&element_list);
-      ZOLTAN_FREE(&num_elem);
-      ZOLTAN_FREE(&elem_dim);
+      Zoltan_Multifree(__FILE__, __LINE__, 3, &element_list,
+                                              &num_elem,
+                                              &elem_dim);
    }
 
    return(ZOLTAN_OK);

@@ -63,8 +63,12 @@ extern "C" {
 extern ZOLTAN_ID_PTR ZOLTAN_Malloc_ID(int n, char *file, int line);
 extern void ZOLTAN_PRINT_ID(int n, ZOLTAN_ID_PTR a);
 extern int ZOLTAN_EQ_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
+
+#ifdef ZOLTAN_NEEDED
+/* Commented out since never used */
 extern int ZOLTAN_LT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
 extern int ZOLTAN_GT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
+#endif  /* ZOLTAN_NEEDED */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

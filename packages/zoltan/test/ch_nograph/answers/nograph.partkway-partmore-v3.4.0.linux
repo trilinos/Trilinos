@@ -9,6 +9,6 @@ Parallel Disk Info	= number=0
 zdrive debug level      = 4
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-7	0	-1	-1
-11	0	-1	-1
-19	0	-1	-1
+1	0	-1	-1
+15	0	-1	-1
+16	0	-1	-1

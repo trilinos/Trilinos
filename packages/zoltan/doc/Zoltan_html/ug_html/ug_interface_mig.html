@@ -28,6 +28,20 @@
 
 <h2>
 <a NAME="Migration Functions"></a>Migration Functions</h2>
+Zoltan's migration functions transfer object data to the processors in a
+new decomposition.  Data to be transferred is specified through the
+import/export lists returned by 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
+(or 
+<b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>).
+Alternatively, users may specify their own import/export lists.
+<p>
+The
+migration functions can migrate objects based on their new partition assignments
+and/or their new processor assignments.  Behavior is determined by the 
+<a href="ug_alg.html#MIGRATE_ONLY_PROC_CHANGES"><B>MIGRATE_ONLY_PROC_CHANGES</b></a>
+parameter.
+<p>
 If requested, Zoltan can automatically transfer an application's data between
 processors to realize a new decomposition. This functionality will be
 performed as part of the call to 

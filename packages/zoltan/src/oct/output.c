@@ -61,7 +61,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Number of partition iters: ave = %g, min = %d, max = %d\n", 
 	   ave, min, max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2) 
+  if (STATS_TYPE >= 2) 
     printf("    Proc %d iteration count = %d\n", proc, counters[0]);
 
   MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
@@ -72,7 +72,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Objs sent during gen tree: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d send count = %d\n",proc,counters[1]);
   
   MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
@@ -83,7 +83,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Objs recv during gen tree: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d recv count = %d\n",proc,counters[2]);
   
   MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
@@ -94,7 +94,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Objs sent during balancing: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d send count = %d\n",proc,counters[4]);
   
   MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
@@ -105,7 +105,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Objs recv during balancing: ave = %g, min = %d, max = %d\n",
 	   ave,min,max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d recv count = %d\n",proc,counters[5]);
   
   MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
@@ -115,7 +115,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
   if (proc == print_proc) 
     printf(" Max objs: ave = %g, min = %d, max = %d\n",ave,min,max);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d max objs = %d\n",proc,counters[3]);
 
   counters[3] += (counters[2] - counters[1]);
@@ -133,7 +133,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
   if (proc == print_proc) 
     printf(" Initial Load: ave = %g, min = %f, max = %f\n",ave,min1,max1);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d intial load = %f\n",proc,c[0]);
   
   MPI_Allreduce(&c[1],&sum1,1,MPI_FLOAT,MPI_SUM,zz->Communicator);
@@ -144,7 +144,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Load Before Balancing: ave = %g, min = %f, max = %f\n", 
 	   ave, min1, max1);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d load before balancing = %f\n", proc, c[1]);
   
   c[3] += (c[1] - c[2]);
@@ -156,7 +156,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
     printf(" Load After Balancing: ave = %g, min = %f, max = %f\n", 
 	   ave, min1, max1);
   MPI_Barrier(zz->Communicator);
-  if (STATS_TYPE == 2)
+  if (STATS_TYPE >= 2)
     printf("    Proc %d load after balancing = %f\n", proc, c[3]);
 
   /* timer info */
@@ -169,7 +169,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
       printf(" Start-up time %%: ave = %g, min = %g, max = %g\n",
   	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
     MPI_Barrier(zz->Communicator);
-    if (STATS_TYPE == 2)
+    if (STATS_TYPE >= 2)
       printf("    Proc %d start-up time = %g\n", proc, timers[0]);
     
     MPI_Allreduce(&timers[1],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
@@ -180,7 +180,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
       printf(" Partition time %%: ave = %g, min = %g, max = %g\n",
   	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
     MPI_Barrier(zz->Communicator);
-    if (STATS_TYPE == 2)
+    if (STATS_TYPE >= 2)
       printf("    Proc %d partition time = %g\n",proc, timers[1]);
     
     MPI_Allreduce(&timers[2],&rsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
@@ -191,7 +191,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
       printf(" Migration notice time %%: ave = %g, min = %g, max = %g\n",
   	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
     MPI_Barrier(zz->Communicator);
-    if (STATS_TYPE == 2)
+    if (STATS_TYPE >= 2)
       printf("    Proc %d migration notice time = %g\n",proc,timers[2]);
   
 #if 0
@@ -204,7 +204,7 @@ void Zoltan_Oct_print_stats(ZZ *zz, double timetotal, double *timers, int *count
       printf(" Comm time %%: ave = %g, min = %g, max = %g\n",
   	   ave/timetotal*100.0,rmin/timetotal*100.0,rmax/timetotal*100.0);
     MPI_Barrier(zz->Communicator);
-    if (STATS_TYPE == 2)
+    if (STATS_TYPE >= 2)
       printf("    Proc %d comm time = %g\n",proc,timers[3]);
 #endif
   }

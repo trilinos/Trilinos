@@ -17,6 +17,18 @@
 extern "C" {
 #endif
 
+#ifdef TIMER_CALLBACKS
+/* Code that times how much time is spent in the callback functions.
+ * By default, this code is OFF.
+ */
+double Timer_Callback_Time, Timer_Global_Callback_Time;
+#define START_CALLBACK_TIMER  double stime = MPI_Wtime()
+#define STOP_CALLBACK_TIMER   Timer_Callback_Time += MPI_Wtime() - stime
+#else
+#define START_CALLBACK_TIMER
+#define STOP_CALLBACK_TIMER 
+#endif /* TIMER_CALLBACKS */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -55,7 +67,9 @@ ZOLTAN_GEOM_MULTI_FN get_geom_multi;
 ZOLTAN_GEOM_FN get_geom;
 
 ZOLTAN_NUM_EDGES_FN get_num_edges;
+ZOLTAN_NUM_EDGES_MULTI_FN get_num_edges_multi;
 ZOLTAN_EDGE_LIST_FN get_edge_list;
+ZOLTAN_EDGE_LIST_MULTI_FN get_edge_list_multi;
 
 ZOLTAN_NUM_CHILD_FN get_num_child;
 ZOLTAN_CHILD_LIST_FN get_child_elements;
@@ -97,21 +111,25 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 
   /* Set the user-specified parameters */
   for (i = 0; i < prob->num_params; i++) {
-    ierr = Zoltan_Set_Param(zz, prob->params[i][0], prob->params[i][1]);
+    if (prob->params[i].Index>=0)
+      ierr = Zoltan_Set_Param_Vec(zz, prob->params[i].Name, prob->params[i].Val,
+             prob->params[i].Index);
+    else
+      ierr = Zoltan_Set_Param(zz, prob->params[i].Name, prob->params[i].Val);
     if (ierr == ZOLTAN_FATAL) {
       sprintf(errmsg,
               "fatal: error in Zoltan_Set_Param when setting parameter %s\n",
-              prob->params[i][0]);
+              prob->params[i].Name);
       Gen_Error(0, errmsg);
       return 0;
     }
-    if (strcasecmp(prob->params[i][0], "NUM_GID_ENTRIES") == 0) 
-      Num_GID = atoi(prob->params[i][1]);
-    else if (strcasecmp(prob->params[i][0], "NUM_LID_ENTRIES") == 0) 
-      Num_LID = atoi(prob->params[i][1]);
+    if (strcasecmp(prob->params[i].Name, "NUM_GID_ENTRIES") == 0) 
+      Num_GID = atoi(prob->params[i].Val);
+    else if (strcasecmp(prob->params[i].Name, "NUM_LID_ENTRIES") == 0) 
+      Num_LID = atoi(prob->params[i].Val);
   }
 
-  /* Set the method */
+  /* Set the load-balance method */
   if (Zoltan_Set_Param(zz, "LB_METHOD", prob->method) == ZOLTAN_FATAL) {
     Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param(LB_METHOD)\n");
     return 0;
@@ -268,17 +286,51 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   /* Functions for graph based algorithms */
-  if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
-                    (void *) mesh) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
+  if (Test.Multi_Callbacks) {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
+                      (void (*)()) get_num_edges_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
+                      (void (*)()) get_edge_list_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
+    /* Used in ParMETIS to reduce data movement */
+    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_MULTI_FN_TYPE,
+                      (void (*)()) migrate_elem_size_multi,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
+  }
+  else {
+    if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_EDGES_FN_TYPE, (void (*)()) get_num_edges,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+    if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
+                      (void *) mesh)== ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+#ifdef PARMETIS_V3_1_MEMORY_ERROR_FIXED
+    /* Used in ParMETIS to reduce data movement */
+    if (Zoltan_Set_Fn(zz, ZOLTAN_OBJ_SIZE_FN_TYPE,
+                      (void (*)()) migrate_elem_size,
+                      (void *) mesh) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
+      return 0;
+    }
+#endif /* PARMETIS_V3_1_MEMORY_ERROR_FIXED */
   }
 
-  if (Zoltan_Set_Fn(zz, ZOLTAN_EDGE_LIST_FN_TYPE, (void (*)()) get_edge_list,
-                    (void *) mesh)== ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_Set_Fn()\n");
-    return 0;
-  }
 
   /* Functions for tree-based algorithms */
   if (Zoltan_Set_Fn(zz, ZOLTAN_NUM_COARSE_OBJ_FN_TYPE,
@@ -422,6 +474,10 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     /*
      * Call Zoltan
      */
+#ifdef TIMER_CALLBACKS
+    Timer_Callback_Time = 0.0;
+#endif /* TIMER_CALLBACKS */
+
     MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
     stime = MPI_Wtime();
     if (Zoltan_LB_Partition(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
@@ -437,6 +493,14 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     if (Proc == 0)
       printf("DRIVER:  Zoltan_LB_Partition time = %g\n", maxtime);
     Total_Partition_Time += maxtime;
+
+#ifdef TIMER_CALLBACKS
+    MPI_Allreduce(&Timer_Callback_Time, &Timer_Global_Callback_Time, 
+                   1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("DRIVER:  Callback time = %g\n", Timer_Global_Callback_Time);
+#endif /* TIMER_CALLBACKS */
+
 
     {int mine[2], gmax[2], gmin[2];
     mine[0] = num_imported;
@@ -548,6 +612,8 @@ int get_num_elements(void *data, int *ierr)
 {
 MESH_INFO_PTR mesh;
 
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return 0;
@@ -555,6 +621,8 @@ MESH_INFO_PTR mesh;
   mesh = (MESH_INFO_PTR) data;
 
   *ierr = ZOLTAN_OK; /* set error code */
+
+  STOP_CALLBACK_TIMER;
 
   return(mesh->num_elems);
 }
@@ -572,6 +640,9 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   int i, j;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
+
 
   *ierr = ZOLTAN_OK; 
 
@@ -594,6 +665,8 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
       }
     }
   }
+
+  STOP_CALLBACK_TIMER;
 }
 
 /*****************************************************************************/
@@ -609,6 +682,8 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   int i;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
 
  *ierr = ZOLTAN_OK; 
 
@@ -636,6 +711,8 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
     }
   }
 
+  STOP_CALLBACK_TIMER;
+
   return 1;
 }
 
@@ -654,6 +731,8 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   int i, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -686,6 +765,8 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_OK; 
   }
 
+  STOP_CALLBACK_TIMER;
+
   return(found);
 }
 
@@ -696,6 +777,8 @@ int get_num_geom(void *data, int *ierr)
 {
   MESH_INFO_PTR mesh;
 
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return 0;
@@ -703,6 +786,8 @@ int get_num_geom(void *data, int *ierr)
   mesh = (MESH_INFO_PTR) data;
 
   *ierr = ZOLTAN_OK; /* set error flag */
+
+  STOP_CALLBACK_TIMER;
 
   return(mesh->num_dims);
 }
@@ -716,11 +801,12 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
 {
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, idx;
-  double tmp;
+  int i, idx;
   MESH_INFO_PTR mesh;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -743,14 +829,12 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
    * the coordinates of the nodes in its connect table
    */
   for (i = 0; i < mesh->num_dims; i++) {
-    tmp = 0.0;
-    for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++)
-      tmp += current_elem->coord[j][i];
-
-    coor[i] = tmp / mesh->eb_nnodes[current_elem->elem_blk];
+    coor[i] = current_elem->avg_coord[i];
   }
 
   *ierr = ZOLTAN_OK;
+
+  STOP_CALLBACK_TIMER;
 }
 
 /*****************************************************************************/
@@ -760,15 +844,44 @@ void get_geom_multi(void *data, int num_gid_entries, int num_lid_entries,
               int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
               int num_dim, double *coor, int *ierr)
 {
-ZOLTAN_ID_PTR lid;
-int i;
+ELEM_INFO *elem;
+ELEM_INFO *current_elem;
+MESH_INFO_PTR mesh;
+int i, k, idx;
+int gid = num_gid_entries - 1;
+int lid = num_lid_entries - 1;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
 
   for (i = 0; i < num_obj; i++) {
-    lid = (num_lid_entries ? local_id + i*num_lid_entries : NULL);
-    get_geom(data, num_gid_entries, num_lid_entries,
-             global_id+i*num_gid_entries, lid, coor+i*num_dim, ierr);
+    current_elem = (num_lid_entries
+                    ? &elem[local_id[i*num_lid_entries+lid]]
+                    : search_by_global_id(mesh,
+                             global_id[i*num_gid_entries+gid], &idx));
+
+    if (mesh->eb_nnodes[current_elem->elem_blk] == 0) {
+      /* No geometry info was read. */
+      *ierr = ZOLTAN_FATAL;
+    }
+
+    /*
+     * calculate the geometry of the element by averaging
+     * the coordinates of the nodes in its connect table
+     */
+    for (k = 0; k < mesh->num_dims; k++) {
+      coor[i*num_dim+k] = current_elem->avg_coord[k];
+    }
     if (*ierr != ZOLTAN_OK) break;
   }
+
+  STOP_CALLBACK_TIMER;
 }
 
 /*****************************************************************************/
@@ -783,6 +896,8 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   int lid = num_lid_entries-1;
   int idx;
 
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return 0;
@@ -795,10 +910,115 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
   current_elem = (num_lid_entries 
                     ? &elem[local_id[lid]] 
                     : search_by_global_id(mesh, global_id[gid], &idx));
+  STOP_CALLBACK_TIMER;
 
   return(current_elem->nadj);
 }
 
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_num_edges_multi(
+  void *data, int num_gid_entries, int num_lid_entries, int num_obj,
+  ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id, int *edges_per_obj, 
+  int *ierr)
+{
+  MESH_INFO_PTR mesh;
+  ELEM_INFO *elem, *current_elem;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
+  int i, idx;
+
+  START_CALLBACK_TIMER;
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
+
+  *ierr = ZOLTAN_OK;
+
+  for (i = 0; i < num_obj; i++) {
+    current_elem = (num_lid_entries 
+                    ? &elem[local_id[i*num_lid_entries + lid]] 
+                    : search_by_global_id(mesh, 
+                                          global_id[i*num_gid_entries + gid],
+                                          &idx));
+    edges_per_obj[i] = current_elem->nadj;
+  }
+  STOP_CALLBACK_TIMER;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries, 
+                   int num_obj, ZOLTAN_ID_PTR global_id, ZOLTAN_ID_PTR local_id,
+                   int *edge_per_obj, ZOLTAN_ID_PTR nbor_global_id, 
+                   int *nbor_procs, int get_ewgts, float *nbor_ewgts, int *ierr)
+{
+  MESH_INFO_PTR mesh;
+  ELEM_INFO *elem;
+  ELEM_INFO *current_elem;
+  int i, j, cnt, proc, local_elem, idx;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
+
+  if (get_ewgts > 1) {
+    Gen_Error(0, "Multiple edge weights not supported.");
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  if (data == NULL) {
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+
+  mesh = (MESH_INFO_PTR) data;
+  elem = mesh->elements;
+
+  /* get the processor number */
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+
+  j = 0;
+  for (cnt = 0; cnt < num_obj; cnt++) {
+    current_elem = (num_lid_entries
+                     ? &elem[local_id[cnt * num_lid_entries + lid]] 
+                     : search_by_global_id(mesh,
+                                 global_id[cnt * num_gid_entries + gid], &idx));
+
+    for (i = 0; i < current_elem->adj_len; i++) {
+
+      /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
+      if (current_elem->adj[i] == -1) continue;
+
+      if (current_elem->adj_proc[i] == proc) {
+        local_elem = current_elem->adj[i];
+        nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
+      }
+      else { /* adjacent element on another processor */
+        nbor_global_id[gid+j*num_gid_entries] = current_elem->adj[i];
+      }
+      nbor_procs[j] = current_elem->adj_proc[i];
+
+      if (get_ewgts) {
+        if (current_elem->edge_wgt == NULL)
+          nbor_ewgts[j] = 1.0; /* uniform weights is default */
+        else
+          nbor_ewgts[j] = current_elem->edge_wgt[i];
+      }
+      j++;
+    }
+  }
+
+  *ierr = ZOLTAN_OK;
+  STOP_CALLBACK_TIMER;
+}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -813,6 +1033,8 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   int i, j, proc, local_elem, idx;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -853,6 +1075,7 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   }
 
   *ierr = ZOLTAN_OK;
+  STOP_CALLBACK_TIMER;
 }
 /*****************************************************************************/
 /*****************************************************************************/
@@ -873,6 +1096,8 @@ int gid = num_gid_entries-1;
 int lid = num_lid_entries-1;
 int idx, i;
 int ok;
+
+  START_CALLBACK_TIMER;
 
   *ierr = ZOLTAN_OK;
 
@@ -902,6 +1127,9 @@ int ok;
     for (i = 0; i < *num_vert; i++)
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
   }
+
+  STOP_CALLBACK_TIMER;
+
   return ok;
 }
 
@@ -925,6 +1153,8 @@ int gid = num_gid_entries-1;
 int lid = num_lid_entries-1;
 int idx, i;
 int ok;
+
+  START_CALLBACK_TIMER;
 
   *ierr = ZOLTAN_OK;
 
@@ -955,6 +1185,9 @@ int ok;
     for (i = 0; i < *num_vert; i++)
       vertices[i*num_gid_entries + gid] = current_elem->connect[i];
   }
+
+  STOP_CALLBACK_TIMER;
+
   return ok;
 }
 
@@ -965,7 +1198,9 @@ int get_num_child(void *data, int num_gid_entries, int num_lid_entries,
                   ZOLTAN_ID_PTR global_id,
                   ZOLTAN_ID_PTR local_id, int *ierr)
 {
+  START_CALLBACK_TIMER;
   *ierr = ZOLTAN_OK;
+  STOP_CALLBACK_TIMER;
   return 0;
 }
 
@@ -979,7 +1214,11 @@ void get_child_elements(void *data, int num_gid_entries, int num_lid_entries,
                    ZOLTAN_REF_TYPE *ref_type,
                    ZOLTAN_ID_PTR in_vertex, ZOLTAN_ID_PTR out_vertex, int *ierr)
 {
+  START_CALLBACK_TIMER;
+
   *ierr = ZOLTAN_OK;
+
+  STOP_CALLBACK_TIMER;
 }
 
 /*****************************************************************************/
@@ -995,6 +1234,8 @@ void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
   int idx, i;
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
+
+  START_CALLBACK_TIMER;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -1013,6 +1254,7 @@ void get_partition_multi(void *data, int num_gid_entries, int num_lid_entries,
   }
 
   *ierr = ZOLTAN_OK;
+  STOP_CALLBACK_TIMER;
 }
 
 /*****************************************************************************/
@@ -1028,6 +1270,8 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return -1;
@@ -1041,6 +1285,9 @@ int get_partition(void *data, int num_gid_entries, int num_lid_entries,
 
 
   *ierr = ZOLTAN_OK;
+
+  STOP_CALLBACK_TIMER;
+
   return current_elem->my_part;
 }
 
@@ -1052,6 +1299,9 @@ int get_num_hg_edges(
   int *ierr)
 {
   MESH_INFO_PTR mesh;
+
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return -1;
@@ -1059,6 +1309,9 @@ int get_num_hg_edges(
 
   mesh = (MESH_INFO_PTR) data;
   *ierr = ZOLTAN_OK;
+
+  STOP_CALLBACK_TIMER;
+
   return mesh->nhedges;
 }
 
@@ -1071,6 +1324,8 @@ int get_num_hg_pins(
 {
   MESH_INFO_PTR mesh;
 
+  START_CALLBACK_TIMER;
+
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
     return -1;
@@ -1079,6 +1334,9 @@ int get_num_hg_pins(
   mesh = (MESH_INFO_PTR) data;
 
   *ierr = ZOLTAN_OK;
+
+  STOP_CALLBACK_TIMER;
+
   return mesh->hindex[mesh->nhedges];
 }
 
@@ -1104,6 +1362,8 @@ int get_hg_edge_list(
   int *hindex;
   int Proc;
   int ierr = ZOLTAN_OK;
+
+  START_CALLBACK_TIMER;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
 
@@ -1136,6 +1396,9 @@ int get_hg_edge_list(
   }
 
 End:
+
+  STOP_CALLBACK_TIMER;
+
   return ierr;
 }
 /*****************************************************************************/

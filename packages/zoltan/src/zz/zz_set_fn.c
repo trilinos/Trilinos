@@ -69,9 +69,17 @@ int ierr;
     ierr = Zoltan_Set_Num_Edges_Fn(zz, 
                   (ZOLTAN_NUM_EDGES_FN *) fn, data);
     break;
+  case ZOLTAN_NUM_EDGES_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Num_Edges_Multi_Fn(zz, 
+                  (ZOLTAN_NUM_EDGES_MULTI_FN *) fn, data);
+    break;
   case ZOLTAN_EDGE_LIST_FN_TYPE:
     ierr = Zoltan_Set_Edge_List_Fn(zz, 
                   (ZOLTAN_EDGE_LIST_FN *) fn, data);
+    break;
+  case ZOLTAN_EDGE_LIST_MULTI_FN_TYPE:
+    ierr = Zoltan_Set_Edge_List_Multi_Fn(zz, 
+                  (ZOLTAN_EDGE_LIST_MULTI_FN *) fn, data);
     break;
   case ZOLTAN_NUM_GEOM_FN_TYPE:
     ierr = Zoltan_Set_Num_Geom_Fn(zz, 
@@ -258,6 +266,21 @@ int Zoltan_Set_Partition_Fn(
 
 /*****************************************************************************/
 
+int Zoltan_Set_Num_Edges_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_NUM_EDGES_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Num_Edges_Multi = fn;
+  zz->Get_Num_Edges_Multi_Data = data;
+  zz->Get_Num_Edges = NULL;
+  zz->Get_Num_Edges_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
 int Zoltan_Set_Num_Edges_Fn(
   ZZ *zz, 
   ZOLTAN_NUM_EDGES_FN *fn, 
@@ -266,6 +289,23 @@ int Zoltan_Set_Num_Edges_Fn(
 {
   zz->Get_Num_Edges = fn;
   zz->Get_Num_Edges_Data = data;
+  zz->Get_Num_Edges_Multi = NULL;
+  zz->Get_Num_Edges_Multi_Data = NULL;
+  return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+int Zoltan_Set_Edge_List_Multi_Fn(
+  ZZ *zz, 
+  ZOLTAN_EDGE_LIST_MULTI_FN *fn, 
+  void *data
+)
+{
+  zz->Get_Edge_List_Multi = fn;
+  zz->Get_Edge_List_Multi_Data = data;
+  zz->Get_Edge_List = NULL;
+  zz->Get_Edge_List_Data = NULL;
   return ZOLTAN_OK;
 }
 
@@ -279,6 +319,8 @@ int Zoltan_Set_Edge_List_Fn(
 {
   zz->Get_Edge_List = fn;
   zz->Get_Edge_List_Data = data;
+  zz->Get_Edge_List_Multi = NULL;
+  zz->Get_Edge_List_Multi_Data = NULL;
   return ZOLTAN_OK;
 }
 

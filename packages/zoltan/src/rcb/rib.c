@@ -260,7 +260,9 @@ static int rib_fn(
 
   /* MPI data types and user functions */
 
-  MPI_Comm local_comm = NULL, tmp_comm = NULL;
+  MPI_Comm local_comm, tmp_comm;
+  int free_comm = FALSE;            /* Flag indicating whether MPI_Comm_free
+                                       should be called on local_comm at end. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
@@ -363,8 +365,10 @@ static int rib_fn(
 
   if (zz->Tflops_Special)
      local_comm = zz->Communicator;
-  else
+  else {
      MPI_Comm_dup(zz->Communicator,&local_comm);
+     free_comm = TRUE;
+  }
 
   if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) {
     time2 = Zoltan_Time(zz->Timer);
@@ -716,7 +720,7 @@ End:
 
   /* Free memory allocated by the algorithm.  */
 
-  if (!zz->Tflops_Special && local_comm != NULL) MPI_Comm_free(&local_comm);
+  if (free_comm) MPI_Comm_free(&local_comm);
   ZOLTAN_FREE(&wgts);
   ZOLTAN_FREE(&dotmark);
   ZOLTAN_FREE(&value);

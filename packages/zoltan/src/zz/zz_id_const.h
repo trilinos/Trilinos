@@ -92,8 +92,12 @@ extern "C" {
  * in its computations.)
  */
 #define ZOLTAN_EQ_GID(zz,a,b) ZOLTAN_EQ_ID((zz)->Num_GID,a,b)
+
+#ifdef ZOLTAN_NEEDED
+/* Commented out since never used */
 #define ZOLTAN_LT_GID(zz,a,b) ZOLTAN_LT_ID((zz)->Num_GID,a,b)
 #define ZOLTAN_GT_GID(zz,a,b) ZOLTAN_GT_ID((zz)->Num_GID,a,b)
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -126,7 +126,7 @@ multiple processors or partition sizes are specified using <a href="ug_interface
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="IMBALANCE_TOL"></a><i>IMBALANCE_TOL</i></td>
+<td NOSAVE><a NAME="IMBALANCE_TOL"></a>&nbsp;&nbsp;&nbsp; <i>IMBALANCE_TOL</i></td>
 
 <td>The amount of load imbalance the partitioning algorithm should deem
 acceptable. The load on each processor is computed as the sum of the weights
@@ -137,7 +137,17 @@ shouldn't exceed 1.2.&nbsp;</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a NAME="AUTO_MIGRATE"></a><i>AUTO_MIGRATE</i></td>
+<td NOSAVE><a NAME="MIGRATE_ONLY_PROC_CHANGES"></a>&nbsp;&nbsp;&nbsp; <i>MIGRATE_ONLY_PROC_CHANGES</i></td>
+
+<td>If this value is set to TRUE (non-zero), Zoltan's migration functions will
+migrate only objects moving to new processors.  They will not migrate objects
+for which only the partition number has changed; the objects' processor numbers
+must change as well.  If this value is set to FALSE (zero), Zoltan's migration
+functions will migrate all objects with new partition or processor assignments.
+</td>
+</tr>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><a NAME="AUTO_MIGRATE"></a>&nbsp;&nbsp;&nbsp; <i>AUTO_MIGRATE</i></td>
 
 <td>If this value is set to TRUE (non-zero), Zoltan will automatically
 perform the data migration during calls to <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>
@@ -188,6 +198,12 @@ of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;<
 <td></td>
 
 <td><i>IMBALANCE_TOL</i> = 1.1</td>
+</tr>
+
+<tr VALIGN=TOP>
+<td></td>
+
+<td><i>MIGRATE_ONLY_PROC_CHANGES</i> = 1</td>
 </tr>
 
 <tr VALIGN=TOP>

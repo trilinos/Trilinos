@@ -1,5 +1,5 @@
 Decomposition Method 	= parmetis
-Zoltan Parameters	= remap=0
+Zoltan Parameters	= debug_memory=3,debug_level=10,remap=0
 Zoltan Parameters       = parmetis_method=adaptiverepart
 File Type		= Chaco
 File Name		= onedbug
@@ -7,13 +7,14 @@ Parallel Disk Info	= number=0
 test local partitions   = 5
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-31	0	-1	-1
-32	0	-1	-1
-33	0	-1	-1
-34	0	-1	-1
-37	0	-1	-1
-39	0	-1	-1
-46	0	-1	-1
-54	0	-1	-1
+1	0	-1	-1
+2	0	-1	-1
+3	0	-1	-1
+4	0	-1	-1
+5	0	-1	-1
+6	0	-1	-1
+38	0	-1	-1
+41	0	-1	-1
 58	0	-1	-1
 59	0	-1	-1
+60	0	-1	-1

@@ -153,11 +153,12 @@ int create_random_input(
         start[i] = 0;
       }
       start[nvtxs] = 0;
-      if (fpg != NULL) 
+      if (fpg != NULL) {
         if (vwgt_dim==1)
           fprintf(fpg, "%d %d 010\n", nvtxs, start[nvtxs]);
         else
           fprintf(fpg, "%d %d 010 %d\n", nvtxs, start[nvtxs], vwgt_dim);
+      }
       for (i = 0; i < nvtxs; i++) {
         if (fpg != NULL) 
           for (j = 0; j < vwgt_dim; j++) 

@@ -21,6 +21,9 @@ extern "C" {
 #endif
 
 #include "zoltan.h"
+#ifndef __PARAMS_CONST_H
+#include "params_const.h" /* needed for MAX_PARAM_STRING_LEN */
+#endif
 
 /*
  * Definition of the Zoltan Ordering Struct (ZOS).
@@ -33,7 +36,7 @@ struct Zoltan_Order_Struct {
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
   int *rank;        		/* rank[i] is the rank of gids[i] */
-  char method[80];   		/* Ordering method used */
+  char method[MAX_PARAM_STRING_LEN+1]; /* Ordering method used */
   int  num_separators;          /* Optional: # of separators. */
   int *sep_sizes;               /* Optional: Separator sizes. */
 };
@@ -46,8 +49,8 @@ typedef struct Zoltan_Order_Struct ZOS;
  */
 
 struct Zoltan_Order_Options {
-  char method[80];		/* In: Ordering method. */
-  char order_type[16];		/* In: Ordering is LOCAL or GLOBAL? */
+  char method[MAX_PARAM_STRING_LEN+1];	   /* In: Ordering method. */
+  char order_type[MAX_PARAM_STRING_LEN+1]; /* In: Ordering is LOCAL or GLOBAL? */
   int start_index;		/* In: Permutations start at 0 or 1? */
   int reorder;			/* In: Permute from existing ordering? */
   int use_order_info;		/* In: Put order info into ZOS? */

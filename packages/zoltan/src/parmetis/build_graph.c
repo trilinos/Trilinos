@@ -27,6 +27,11 @@ extern "C" {
 /* Prototypes */
 static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
                         int n);
+static int process_edge_list(ZZ *, int, ZOLTAN_ID_PTR, int, ZOLTAN_ID_PTR, 
+  int *, float *, struct Hash_Node **, int, int, int, int, int *, int *, int *, 
+  float *, int *, int *, int *, int *, int *, int *, int *, struct Edge_Info **,
+  ZOLTAN_ID_PTR *);
+
 /*
  * Build a graph in ParMetis format from Zoltan query functions. 
  * The dynamic arrays are allocated in this function
@@ -55,10 +60,11 @@ int Zoltan_Build_Graph(
     float **ewgts)
 {
   /* Local variables */
-  int nedges, num_edges, cross_edges, max_edges;
+  int  num_edges, cross_edges, max_edges;
   int *nbors_proc, *plist = NULL;
+  int *edges_per_obj = NULL;
   int nsend, nrecv, nself, num_border, max_proc_list_len;
-  int i, i99, j, jj, k, ierr, packet_size, offset, tmp, flag;
+  int i, i99, j, jj, k, ierr, packet_size, offset, tmp;
   float *tmp_ewgts;
   char *sendbuf = NULL, *recvbuf = NULL;
   struct Hash_Node **hashtab = NULL, *hash_nodes = NULL;
@@ -76,6 +82,7 @@ int Zoltan_Build_Graph(
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
+  int sum, edge_list_size;
   int gid_size = num_gid_entries * sizeof(ZOLTAN_ID_TYPE);
   char msg[256];
 
@@ -95,8 +102,10 @@ int Zoltan_Build_Graph(
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
   if (graph_type != NO_GRAPH){
-      if ((zz->Get_Num_Edges == NULL) || (zz->Get_Edge_List == NULL))
-        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "A graph query function is not registered.\n");
+      if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) || 
+          (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL))
+        ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
+              "A graph query function is not registered.\n");
   }
   
   *vtxdist = (idxtype *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(idxtype));
@@ -129,21 +138,8 @@ int Zoltan_Build_Graph(
 
   if (graph_type != NO_GRAPH){
     /* Get edge data */
-    num_edges = 0;
-    max_edges = 0;
-    for (i=0; i< num_obj; i++){
-      lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
-      nedges = zz->Get_Num_Edges(zz->Get_Num_Edges_Data, 
-                                 num_gid_entries, num_lid_entries,
-                                 &(global_ids[i*num_gid_entries]), 
-                                 lid, &ierr);
-      if (ierr){
-        /* Return error */
-        ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Num_Edges.");
-      }
-      num_edges += nedges;
-      if (nedges>max_edges) max_edges = nedges;
-    }
+    Zoltan_Get_Num_Edges_Per_Obj(zz, num_obj, global_ids, local_ids, 
+                                 &edges_per_obj, &max_edges, &num_edges);
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
       printf("[%1d] Debug: num_edges = %d\n", zz->Proc, num_edges);
 
@@ -211,15 +207,21 @@ int Zoltan_Build_Graph(
     }
     
     /* Allocate edge list data */
-    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(zz, max_edges);
-    nbors_proc = (int *)ZOLTAN_MALLOC(max_edges * sizeof(int));
+    if (zz->Get_Edge_List_Multi) 
+      edge_list_size = num_edges;   /* Get all edges at once */
+    else
+      edge_list_size = max_edges;   /* Get one object's edges at a time */
+   
+    nbors_global = ZOLTAN_MALLOC_GID_ARRAY(zz, edge_list_size);
+    nbors_proc = (int *)ZOLTAN_MALLOC(edge_list_size * sizeof(int));
     plist = (int *)ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     if (edge_wgt_dim && max_edges){
-      tmp_ewgts = (float *)ZOLTAN_MALLOC(edge_wgt_dim * max_edges * sizeof(float));
+      tmp_ewgts = (float *)ZOLTAN_MALLOC(edge_wgt_dim * edge_list_size 
+                                                      * sizeof(float));
       *ewgts = (float *)ZOLTAN_MALLOC(edge_wgt_dim * num_edges * sizeof(float));
     }
 
-    if ((max_edges && ((!nbors_global) || (!nbors_proc) ||
+    if ((edge_list_size && ((!nbors_global) || (!nbors_proc) ||
                        (edge_wgt_dim && !(*ewgts)) || 
                        (edge_wgt_dim && !tmp_ewgts))) || (!plist)){
       /* Not enough memory */
@@ -277,125 +279,84 @@ int Zoltan_Build_Graph(
     nself = 0;       /* Number of self-edges in the graph */
     cross_edges = 0; /* Number of edges that cross over to a different proc. */
   
-    for (i=0; i< num_obj; i++){
-      gid_off = i * num_gid_entries;
-      lid_off = i * num_lid_entries;
-      lid = (num_lid_entries ? &(local_ids[lid_off]) : NULL);
+    if (zz->Get_Edge_List_Multi) {
+      zz->Get_Edge_List_Multi(zz->Get_Edge_List_Multi_Data, 
+                              num_gid_entries, num_lid_entries,
+                              num_obj, global_ids, local_ids, edges_per_obj,
+                              nbors_global, nbors_proc, edge_wgt_dim, 
+                              tmp_ewgts, &ierr);
 
-      nedges = zz->Get_Num_Edges(zz->Get_Num_Edges_Data, 
-                                 num_gid_entries, num_lid_entries,
-                                 &(global_ids[gid_off]), lid, 
-                                 &ierr);
-      zz->Get_Edge_List(zz->Get_Edge_List_Data,
-                        num_gid_entries, num_lid_entries,
-                        &(global_ids[gid_off]), lid, 
-                        nbors_global, nbors_proc, edge_wgt_dim, 
-                        tmp_ewgts, &ierr);
-      if (ierr){
-        /* Return error */
-        ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Edge_List.");
+      sum = 0;
+      for (i = 0; i < num_obj; i++) {
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+          printf("[%1d] Debug: i=%d, gid=", zz->Proc, i);
+          ZOLTAN_PRINT_GID(zz, &(global_ids[i*num_gid_entries]));
+          printf("lid=");
+          ZOLTAN_PRINT_LID(zz, 
+                 (num_lid_entries ? &local_ids[i*num_lid_entries] : NULL));
+          printf("nedges=%d\n", edges_per_obj[i]);
+        }
+
+        ierr = process_edge_list(zz, i, &(global_ids[i*num_gid_entries]), 
+                                 edges_per_obj[i], 
+                                 &(nbors_global[sum]), &(nbors_proc[sum]), 
+                                 &(tmp_ewgts[sum*edge_wgt_dim]),
+                                 hashtab, graph_type, num_gid_entries, 
+                                 num_obj, edge_wgt_dim,
+                                 *vtxdist, *xadj, *adjncy, *ewgts, plist,
+                                 &jj, &nself, &cross_edges, &offset, &nsend,
+                                 &max_proc_list_len, &proc_list,
+                                 &proc_list_nbor);
+        if (ierr) {
+          ZOLTAN_PARMETIS_ERROR(ierr, "Error in process_edge_list");
+        }
+        sum += edges_per_obj[i];
       }
+    }
+    else {
+      for (i=0; i< num_obj; i++){
+        gid_off = i * num_gid_entries;
+        lid_off = i * num_lid_entries;
+        lid = (num_lid_entries ? &(local_ids[lid_off]) : NULL);
   
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-        printf("[%1d] Debug: i=%d, gid=", zz->Proc, i);
-        ZOLTAN_PRINT_GID(zz, &(global_ids[gid_off]));
-        printf("lid=");
-        ZOLTAN_PRINT_LID(zz, lid);
-        printf("nedges=%d\n", nedges);
-      }
+        zz->Get_Edge_List(zz->Get_Edge_List_Data,
+                          num_gid_entries, num_lid_entries,
+                          &(global_ids[gid_off]), lid, 
+                          nbors_global, nbors_proc, edge_wgt_dim, 
+                          tmp_ewgts, &ierr);
+        if (ierr){
+          /* Return error */
+          ZOLTAN_PARMETIS_ERROR(ierr, "Error in Get_Edge_List.");
+        }
+  
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+          printf("[%1d] Debug: i=%d, gid=", zz->Proc, i);
+          ZOLTAN_PRINT_GID(zz, &(global_ids[gid_off]));
+          printf("lid=");
+          ZOLTAN_PRINT_LID(zz, lid);
+          printf("nedges=%d\n", edges_per_obj[i]);
+        }
 
-      /* Separate inter-processor edges from the local ones */
-      /* Also remove any self-edges */
-      for (j=0; j<nedges; j++){
-        if (nbors_proc[j] == zz->Proc){
-          /* Local edge */
-          tmp = hash_lookup(zz, hashtab, 
-                            &(nbors_global[j*num_gid_entries]), num_obj);
-          if (tmp == i+(*vtxdist)[zz->Proc]){
-            /* Self-edge! */
-            nself++;
-          }
-          else{
-            /* Copy over edge weights. */
-            for (k=0; k<edge_wgt_dim; k++)
-              (*ewgts)[jj*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
-            /* Put the global number into the adjacency array */
-            (*adjncy)[jj++] = tmp;
-          }
-        } else {
-          /* Inter-processor edge. */
-          cross_edges++;
-          /* Skip this edge if local graphs have been requested. */
-          if (graph_type == LOCAL_GRAPH)
-            /* do nothing */ ;
-          else {
-            /* Check if we already have gid[i] in proc_list with */
-            /* the same destination.                             */
-            flag = 0;
-            if (plist[nbors_proc[j]] < i){
-              /* We need to send info about this edge */
-              flag = 1;
-              nsend++; 
-              plist[nbors_proc[j]] = i;
-            }
-  
-            /* Check if we need to allocate more space for proc_list.*/
-            if (offset == max_proc_list_len){
-              if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-                printf("[%1d] Debug: Allocating more list space, "
-                       "max_proc_list_len = %d, increasing by factor %f\n", 
-                       zz->Proc, max_proc_list_len, REALLOC_FACTOR);
-  
-              max_proc_list_len *= REALLOC_FACTOR;
-              proc_list = (struct Edge_Info *) ZOLTAN_REALLOC(proc_list,
-                           max_proc_list_len*sizeof(struct Edge_Info));
-              proc_list_nbor = ZOLTAN_REALLOC_GID_ARRAY(zz, proc_list_nbor,
-                                max_proc_list_len);
-              if (!proc_list){
-                /* Not enough memory */
-                ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-              }
-            }
-            ptr = &proc_list[offset];
-            ptr->my_gid = &(global_ids[gid_off]);
-            ptr->my_gno = hash_lookup(zz, hashtab, 
-                                      &(global_ids[gid_off]), num_obj);
-            ZOLTAN_SET_GID(zz, &(proc_list_nbor[offset*num_gid_entries]),
-                           &(nbors_global[j*num_gid_entries]));
-            if (flag)
-              ptr->nbor_proc = nbors_proc[j];
-            else
-              ptr->nbor_proc = -1;
-            ptr->adj = &(*adjncy)[jj];
-  
-            if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
-              printf("[%1d] Debug: proc_list[%1d] my_gid=", zz->Proc, offset);
-              ZOLTAN_PRINT_GID(zz, ptr->my_gid);
-              printf(", my_gno=%d, nbor_proc=%d\n", ptr->my_gno, ptr->nbor_proc);
-            }
-  
-            /* Copy over edge weights. */
-            for (k=0; k<edge_wgt_dim; k++)
-              (*ewgts)[jj*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
-  
-            /* Still don't know the global number, need to come back here later */
-            (*adjncy)[jj++] = -1; 
-  
-            offset++;
-          }
-        } /* end inter-proc edge */
-      } /* end edge loop */
-
-      (*xadj)[i+1] = jj; /* NB: We do not count self-edges. */
-      if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
-        printf("[%3d] In %s: xadj[%3d] = %3d\n", zz->Proc, yo, i+1, jj);
-
-    } /* end object loop */
+        ierr = process_edge_list(zz, i, &(global_ids[gid_off]),
+                                 edges_per_obj[i],
+                                 nbors_global, nbors_proc, tmp_ewgts,
+                                 hashtab, graph_type, num_gid_entries, 
+                                 num_obj, edge_wgt_dim,
+                                 *vtxdist, *xadj, *adjncy, *ewgts, plist,
+                                 &jj, &nself, &cross_edges, &offset, &nsend,
+                                 &max_proc_list_len, &proc_list,
+                                 &proc_list_nbor);
+        if (ierr) {
+          ZOLTAN_PARMETIS_ERROR(ierr, "Error in process_edge_list");
+        }
+      } /* end object loop */
+    } /* End zz->Get_Edge_List */
     /* Remark: cross_edges == offset when graph_type==GLOBAL_GRAPH */
 
     ZOLTAN_FREE(&plist);
     ZOLTAN_FREE(&nbors_global);
     ZOLTAN_FREE(&nbors_proc);
+    ZOLTAN_FREE(&edges_per_obj);
     if (tmp_ewgts) ZOLTAN_FREE(&tmp_ewgts);
 
     /* Warn if we removed any self-edges */
@@ -560,12 +521,86 @@ End:
   ZOLTAN_FREE(&plist);
   ZOLTAN_FREE(&hash_nodes);
   ZOLTAN_FREE(&hashtab);
+  ZOLTAN_FREE(&edges_per_obj);
 
   /* Free tmp_ewgts if they haven't been freed already (error occurred) */
   if (tmp_ewgts) ZOLTAN_FREE(ewgts); 
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
+}
+
+/**************************************************************************/
+
+int Zoltan_Get_Num_Edges_Per_Obj(
+  ZZ *zz,
+  int num_obj,
+  ZOLTAN_ID_PTR global_ids,
+  ZOLTAN_ID_PTR local_ids,
+  int **edges_per_obj,
+  int *max_edges,
+  int *num_edges
+)
+{
+/* Calls ZOLTAN_NUM_EDGE_FN or ZOLTAN_NUM_EDGE_MULTI_FN to obtain number
+ * of edges per object.
+ * Returns number of edges per object in array edges_per_obj.
+ * Computes max edges per obj and total edges per obj.
+ */
+char *yo = "Zoltan_Get_Num_Edges_Per_Obj";
+int ierr = ZOLTAN_OK;
+int i;
+int nedges;
+int num_gid_entries = zz->Num_GID;
+int num_lid_entries = zz->Num_LID;
+ZOLTAN_ID_PTR lid;
+
+  *max_edges = *num_edges = 0;
+  if (num_obj) {
+
+    *edges_per_obj = (int *) ZOLTAN_MALLOC(num_obj * sizeof(int));
+    if (*edges_per_obj == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
+    if (zz->Get_Num_Edges_Multi) {
+      zz->Get_Num_Edges_Multi(zz->Get_Num_Edges_Multi_Data,
+                              num_gid_entries, num_lid_entries, num_obj,
+                              global_ids, local_ids, *edges_per_obj, &ierr);
+      if (ierr) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Get_Num_Edges_Multi.");
+        goto End;
+      }
+
+      for (i = 0; i < num_obj; i++) {
+        nedges = (*edges_per_obj)[i];
+        *num_edges += nedges;
+        if (nedges > *max_edges) *max_edges = nedges;
+      }
+    }
+    else {
+      for (i=0; i< num_obj; i++) {
+        lid = (num_lid_entries ? &(local_ids[i*num_lid_entries]) : NULL);
+        nedges = zz->Get_Num_Edges(zz->Get_Num_Edges_Data,
+                                   num_gid_entries, num_lid_entries,
+                                   &(global_ids[i*num_gid_entries]),
+                                   lid, &ierr);
+        if (ierr) {
+          /* Return error */
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Get_Num_Edges.");
+          goto End;
+        }
+        *num_edges += nedges;
+        if (nedges > *max_edges) *max_edges = nedges;
+        (*edges_per_obj)[i] = nedges;
+      }
+    }
+  }
+
+End:
+  return ierr;
 }
 
 
@@ -598,6 +633,140 @@ static int hash_lookup (ZZ *zz, struct Hash_Node **hashtab, ZOLTAN_ID_PTR key,
   return -1;
 }
 
+
+static int process_edge_list(
+  ZZ *zz, 
+  int i,                        /* Object being processed */
+  ZOLTAN_ID_PTR gid,            /* GID of object being processed */
+  int nedges,                   /* Number of edges this GID has */
+  ZOLTAN_ID_PTR nbors_global,   /* GIDs of this object's neighboring vertices */
+  int *nbors_proc,              /* Procs owning the GIDs in nbors_global */
+  float *tmp_ewgts,             /* Edge weights for this GID's edges */
+  struct Hash_Node **hashtab,   /* Hash table for global dense vertex #ing */
+  int graph_type,               /* Global or local? */
+  int num_gid_entries,          /* # of unsigned ints in a GID */
+  int num_obj,                  /* Number of objects on this processor */
+  int edge_wgt_dim,             /* Number of edge weights per edge */
+  int *vtxdist,                 /* Distrib across procs of global dense #ing */
+  int *xadj,                    /* Index of each obj's first edge in adjncy */
+  int *adjncy,                  /* Edges for all objects. */
+  float *ewgts,                 /* Edge weights for all edges */
+  int *plist,                   /* Procs with nbors of this object */
+  int *jj,                      /* Position to store non-self edge in adjncy. */
+  int *nself,                   /* # of self-edges */
+  int *cross_edges,             /* # of edges crossing processor boundaries */
+  int *offset,      
+  int *nsend,                   /* # of edges to be sent to other procs. */
+  int *max_proc_list_len,       /* Max # of entries alloc'ed in proc_list */
+  struct Edge_Info **proc_list, /* Edge info to be sent to other procs */
+  ZOLTAN_ID_PTR *proc_list_nbor /* Global IDs of neighbors of proc_list
+                                   entries.  This array is separate from
+                                   proc_list to prevent individual mallocs
+                                   for nbor global IDs.   */
+)
+{
+/* Perform processing on list of edges for a single object. 
+ * Add edges to graph data structure.
+ * Add off-processor edges to communication lists.
+ * This routine has lots of side effects; it is a subroutine only
+ * to support both single-object and multi-object edge list callbacks.
+ */
+char *yo = "process_edge_list";
+int j, k;
+int tmp, flag;
+struct Edge_Info *ptr;
+int ierr = ZOLTAN_OK;
+
+  /* Separate inter-processor edges from the local ones */
+  /* Also remove any self-edges */
+  for (j=0; j<nedges; j++){
+    if (nbors_proc[j] == zz->Proc){
+      /* Local edge */
+      tmp = hash_lookup(zz, hashtab, 
+                        &(nbors_global[j*num_gid_entries]), num_obj);
+      if (tmp == i+(vtxdist)[zz->Proc]){
+        /* Self-edge! */
+        (*nself)++;
+      }
+      else{
+        /* Copy over edge weights. */
+        for (k=0; k<edge_wgt_dim; k++)
+          ewgts[(*jj)*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
+        /* Put the global number into the adjacency array */
+        adjncy[(*jj)++] = tmp;
+      }
+    } else {
+      /* Inter-processor edge. */
+      (*cross_edges)++;
+      /* Skip this edge if local graphs have been requested. */
+      if (graph_type == LOCAL_GRAPH)
+        /* do nothing */ ;
+      else {
+        /* Check if we already have gid[i] in proc_list with */
+        /* the same destination.                             */
+        flag = 0;
+        if (plist[nbors_proc[j]] < i){
+          /* We need to send info about this edge */
+          flag = 1;
+          (*nsend)++; 
+          plist[nbors_proc[j]] = i;
+        }
+
+        /* Check if we need to allocate more space for proc_list.*/
+        if ((*offset) == (*max_proc_list_len)){
+          if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+            printf("[%1d] Debug: Allocating more list space, "
+                   "max_proc_list_len = %d, increasing by factor %f\n", 
+                   zz->Proc, *max_proc_list_len, REALLOC_FACTOR);
+
+          (*max_proc_list_len) *= REALLOC_FACTOR;
+          (*proc_list) = (struct Edge_Info *) ZOLTAN_REALLOC(*proc_list,
+                       *max_proc_list_len*sizeof(struct Edge_Info));
+          (*proc_list_nbor) = ZOLTAN_REALLOC_GID_ARRAY(zz, *proc_list_nbor,
+                            *max_proc_list_len);
+          if (!(*proc_list)){
+            /* Not enough memory */
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+            ierr = ZOLTAN_MEMERR;
+            goto End;
+          }
+        }
+        ptr = &(*proc_list)[(*offset)];
+        ptr->my_gid = gid;
+        ptr->my_gno = hash_lookup(zz, hashtab, gid, num_obj);
+        ZOLTAN_SET_GID(zz, &((*proc_list_nbor)[(*offset)*num_gid_entries]),
+                       &(nbors_global[j*num_gid_entries]));
+        if (flag)
+          ptr->nbor_proc = nbors_proc[j];
+        else
+          ptr->nbor_proc = -1;
+        ptr->adj = &adjncy[(*jj)];
+
+        if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {
+          printf("[%1d] Debug: proc_list[%1d] my_gid=", zz->Proc, (*offset));
+          ZOLTAN_PRINT_GID(zz, ptr->my_gid);
+          printf(", my_gno=%d, nbor_proc=%d\n", ptr->my_gno, ptr->nbor_proc);
+        }
+
+        /* Copy over edge weights. */
+        for (k=0; k<edge_wgt_dim; k++)
+          ewgts[(*jj)*edge_wgt_dim+k] = tmp_ewgts[j*edge_wgt_dim+k];
+
+        /* Still don't know the global number, need to come back here later */
+        adjncy[(*jj)++] = -1; 
+
+        (*offset)++;
+      }
+    } /* end inter-proc edge */
+  } /* end edge loop */
+
+  xadj[i+1] = *jj; /* NB: We do not count self-edges. */
+  if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
+    printf("[%3d] In %s: xadj[%3d] = %3d\n", zz->Proc, yo, i+1, *jj);
+
+End:
+  return ierr;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

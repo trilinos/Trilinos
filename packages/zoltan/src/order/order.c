@@ -18,11 +18,11 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
-#include "order_const.h"
 #include "key_params.h"
 #include "params_const.h"
 #include "timer_const.h"
 #include "ha_const.h"
+#include "order_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -40,8 +40,8 @@ static PARAM_VARS Order_params[] = {
         { "ORDER_METHOD", NULL, "STRING", 0 },
         { "ORDER_TYPE", NULL, "STRING", 0 },
         { "ORDER_START_INDEX", NULL, "INT", 0 },
-        { "REORDER", NULL, "BOOLEAN", 0 },
-        { "USE_ORDER_INFO", NULL, "BOOLEAN", 0 },
+        { "REORDER", NULL, "INT", 0 },
+        { "USE_ORDER_INFO", NULL, "INT", 0 },
         { NULL, NULL, NULL, 0 } };
 
 int Zoltan_Order(
@@ -120,8 +120,8 @@ int Zoltan_Order(
    */
 
   /* Set default parameter values */
-  strcpy(opt.method, "PARMETIS");
-  strcpy(opt.order_type, "GLOBAL");
+  strncpy(opt.method, "PARMETIS", MAX_PARAM_STRING_LEN);
+  strncpy(opt.order_type, "GLOBAL", MAX_PARAM_STRING_LEN);
   opt.use_order_info = 0;
   opt.start_index = 0;
   opt.reorder = 0;

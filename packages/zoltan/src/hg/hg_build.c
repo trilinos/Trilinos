@@ -78,9 +78,12 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
     }
   }
 
-  else if (zz->Get_Num_Edges != NULL && zz->Get_Edge_List != NULL) {
-     /* Hypergraph callback functions don't exist, but graph functions do;     */
-     /* call the graph callback, build a graph, and convert it to a hypergraph */
+  else if ((zz->Get_Num_Edges != NULL || zz->Get_Num_Edges_Multi != NULL) &&
+           (zz->Get_Edge_List != NULL || zz->Get_Edge_List_Multi != NULL)) {
+    /* 
+     * Hypergraph callback functions don't exist, but graph functions do;
+     * call the graph callback, build a graph, and convert it to a hypergraph. 
+     */
     Graph graph;             /* Temporary graph. */
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");

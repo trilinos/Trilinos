@@ -42,6 +42,27 @@ PROBLEMS EXISTING IN PARMETIS
 (Reported to the ParMETIS development team at the University of Minnesota,
  metis@cs.umn.edu)
 
+Name: vsize array freed in ParMetis 
+Version: ParMETIS 3.0 and 3.1
+Symptom: seg. fault, core dump at runtime
+Description:
+  When calling ParMETIS_V3_AdaptiveRepart with the vsize parameter,
+  ParMetis will try to free the vsize array even if it was
+  allocated in Zoltan. Zoltan will then try to free vsize again
+  later, resulting in a fatal error. As a temporary fix,
+  Zoltan will never call ParMetis with the vsize parameter. 
+Reported: 11/25/2003.
+Status: Acknowledged by George Karypis.
+
+Name: ParMETIS_V3_AdaptiveRepart and ParMETIS_V3_PartKWay crash 
+      for zero-sized partitions.
+Version: ParMETIS 3.1
+Symptom: run-time error "killed by signal 8" on DEC.  FPE, divide-by-zero.
+Description:
+  Metis divides by partition size; thus, zero-sized partitions
+  cause a floating-point exception. 
+Reported: 9/9/2003.
+Status: ?
 
 Name: ParMETIS_V3_AdaptiveRepart dies for zero-sized partitions.
 Version: ParMETIS 3.0
@@ -53,7 +74,7 @@ Description:
    (which don't seem to care about the divide-by-zero), but cause an FPE 
    signal on DEC (Compaq) machines.
 Reported: 1/23/2003.
-Status: Acknowledged by GK, no time estimate for bug fix.
+Status: Fixed in ParMetis 3.1, but new problem appeared.
 
 Name: ParMETIS_V3_AdaptiveRepart crashes when no edges.
 Version: ParMETIS 3.0
@@ -62,7 +83,7 @@ Description:
    Divide-by-zero in ParMETISLib/adrivers.c, function Adaptive_Partition, 
    line 40.
 Reported: 1/23/2003.
-Status: Acknowledged by GK, no time estimate for bug fix.
+Status: Fixed in ParMetis 3.1.
 
 Name: Uninitialized memory read in akwayfm.c.
 Version: ParMETIS 3.0
@@ -70,7 +91,7 @@ Symptom: UMR warning.
 Description:
    UMR in ParMETISLib/akwayfm.c, function Moc_KWayAdaptiveRefine, near line 520.
 Reported: 1/23/2003.
-Status: Acknowledged by GK, no time estimate for bug fix.
+Status: Fixed in ParMetis 3.1.
 
 Name: Memory leak in wave.c
 Version: ParMETIS 3.0
@@ -81,7 +102,7 @@ Description:
    solution, perm, workspace, cand
    We believe the early return near line 111 causes the problem.
 Reported: 1/23/2003.
-Status: Acknowledged by GK, no time estimate for bug fix.
+Status: Fixed in ParMetis 3.1.
 
 Name: tpwgts ignored for small graphs.
 Version: ParMETIS 3.0
@@ -93,7 +114,7 @@ Description:
    (a) the number of vertices is < 10000 and (b) only one weight
    per vertex is given (ncon=1).
 Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/10/30.
-Status: Acknowledged by GK. He said it will be fixed in a few weeks.
+Status: Fixed in ParMetis 3.1.
 
 
 Name: AdaptiveRepart crashes on partless test.
@@ -105,7 +126,7 @@ Description:
    the desired number of partitions, nparts. This shows up
    in Zoltan's "partless" test cases. 
 Reported: Reported to George Karypis and metis@cs.umn.edu on 2002/12/02.
-Status: No reply.
+Status: Fixed in ParMetis 3.1.
 
 
 Name: load imbalance tolerance
@@ -134,15 +155,15 @@ Status: Fixed in version 3.0.
 
 
 Name: no vertices
-Version: ParMETIS 2.0
+Version: ParMETIS 2.0, 3.0, 3.1
 Symptom: segmentation fault at run time
 Description:
    ParMETIS may crash if a processor owns no vertices.
    The extent of this bug is not known (which methods are affected).
    Again, it is unclear if NULL pointers are valid input.
 Reported: Reported to metis@cs.umn.edu on 6 Oct 1999.
-Status: George Karypis says it will be fixed in the next release.
-        Unclear if it has been fixed in version 3.0.
+Status: Fixed in 3.0 and 3.1 for the graph methods, but not the geometric methods.
+        New bug report sent on 2003/08/20.
 
 
 Name: partgeom bug

@@ -259,8 +259,10 @@ int main(int argc, char *argv[])
       if (mesh.data_type == GRAPH)
         for (i = 0; i < mesh.num_elems; i++) {
           for (j = 0; j < mesh.num_dims; j++) {
-            tmp = ((float) rand())/RAND_MAX;
+            /* tmp = ((float) rand())/RAND_MAX; *//* Equiv. to sjplimp's test */
+            tmp = (float) (i % 10) / 10.;
             mesh.elements[i].coord[0][j] += twiddle * (2.0*tmp-1.0);
+            mesh.elements[i].avg_coord[j] = mesh.elements[i].coord[0][j];
           }
         }
     }
@@ -366,7 +368,7 @@ int i;
   fprintf(fp, "\n  Performing load balance using %s.\n", prob->method);
   fprintf(fp, "\tParameters:\n");
   for (i = 0; i < prob->num_params; i++)
-    fprintf(fp, "\t\t%s %s\n", prob->params[i][0], prob->params[i][1]);
+    fprintf(fp, "\t\t%s %s\n", prob->params[i].Name, prob->params[i].Val);
 
   fprintf(fp, "##########################################################\n");
 }

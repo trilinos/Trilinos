@@ -401,7 +401,8 @@ static int get_params (Param *param)
     param->ulen        = 10 ;
     param->tlen        = 5000 ;
 
-    param->debug_level = 1 ;
+/*  param->debug_level = 1 ;  KDD */
+    param->debug_level = 3 ;
     param->name_scheme = DD_TEST_NAME_NUMERIC ;
 
     param->rseed = 31415926 ;

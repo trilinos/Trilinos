@@ -176,30 +176,53 @@ PARAM_VARS * params 		/* structure describing parameters */
 )
 {
 /* Prints the parameter values in PARAM_VARS *param.     */
-PARAM_VARS *param_ptr;       /* pointer to current param */
-param_ptr = params;
+PARAM_VARS *param_ptr = params;       /* pointer to current param */
+int i;
 
     while (param_ptr->name != NULL) {
       if (param_ptr->ptr != NULL) {
         if (!strcmp(param_ptr->type, "INT") || 
             !strcmp(param_ptr->type, "INTEGER")) {
  
+          if (param_ptr->length < 1) 
             printf("ZOLTAN Parameter %s = %d\n", 
                     param_ptr->name, *((int *) param_ptr->ptr));
+          else
+            for (i=0; i<param_ptr->length; i++)
+              printf("ZOLTAN Parameter %s = %d\n", 
+                      param_ptr->name, ((int *) param_ptr->ptr)[i]);
                 
         }
         else if (!strcmp(param_ptr->type, "FLOAT") ||
                  !strcmp(param_ptr->type, "REAL")) {
+          if (param_ptr->length < 1) 
             printf("ZOLTAN Parameter %s = %f\n", 
                     param_ptr->name, *((float *) param_ptr->ptr));
+          else
+            for (i=0; i<param_ptr->length; i++)
+              printf("ZOLTAN Parameter %s = %f\n", 
+                      param_ptr->name, ((float *) param_ptr->ptr)[i]);
+                
         }
         else if (!strcmp(param_ptr->type, "DOUBLE")) {
+          if (param_ptr->length < 1) 
             printf("ZOLTAN Parameter %s = %f\n", 
                     param_ptr->name, *((double *) param_ptr->ptr));
+          else
+            for (i=0; i<param_ptr->length; i++)
+              printf("ZOLTAN Parameter %s = %f\n", 
+                      param_ptr->name, ((double *) param_ptr->ptr)[i]);
+                
         }
         else if (!strcmp(param_ptr->type, "LONG")) {
+          if (param_ptr->length < 1) 
             printf("ZOLTAN Parameter %s = %ld\n", 
                     param_ptr->name, *((long *) param_ptr->ptr));
+          else
+            for (i=0; i<param_ptr->length; i++)
+              printf("ZOLTAN Parameter %s = %ld\n", 
+                      param_ptr->name, ((long *) param_ptr->ptr)[i]);
+                
         }
         else if (!strcmp(param_ptr->type, "STRING")) {
             printf("ZOLTAN Parameter %s = %s\n", 

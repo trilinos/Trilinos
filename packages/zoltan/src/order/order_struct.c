@@ -27,6 +27,10 @@ extern "C" {
  *  This file contains routines to create, access, and destroy 
  *  Zoltan Ordering Structs (ZOS).
  *  These functions are all callable by the application.  
+ *
+ *  NOTE: These routines cannot be used in any useful way with Zoltan 1.5!
+ *  The ordering struct is currently not supported by Zoltan_Order,
+ *  but this may change in future versions.
  */
 /*****************************************************************************/
 /*****************************************************************************/

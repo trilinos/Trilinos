@@ -108,7 +108,9 @@ ZZ *zz;
 
   zz->Get_Partition_Multi = NULL;
   zz->Get_Partition = NULL;
+  zz->Get_Num_Edges_Multi = NULL;
   zz->Get_Num_Edges = NULL;
+  zz->Get_Edge_List_Multi = NULL;
   zz->Get_Edge_List = NULL;
   zz->Get_Num_HG_Edges = NULL;
   zz->Get_HG_Edge_List = NULL;

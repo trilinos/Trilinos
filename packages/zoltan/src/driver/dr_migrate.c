@@ -63,13 +63,11 @@ ZOLTAN_POST_MIGRATE_PP_FN migrate_post_process;
 
 /* Object-based migration callbacks; only one of these or the list-based
  * callbacks are actually needed. */
-ZOLTAN_OBJ_SIZE_FN migrate_elem_size;
 ZOLTAN_PACK_OBJ_FN migrate_pack_elem;
 ZOLTAN_UNPACK_OBJ_FN migrate_unpack_elem;
 
 /* List-based migration callbacks; only one of these or the object-based
  * callbacks are actually needed. */
-ZOLTAN_OBJ_SIZE_MULTI_FN migrate_elem_size_multi;
 ZOLTAN_PACK_OBJ_MULTI_FN migrate_pack_elem_multi;
 ZOLTAN_UNPACK_OBJ_MULTI_FN migrate_unpack_elem_multi;
 
@@ -576,6 +574,8 @@ int adj_elem;
     for (k=0; k<MAX_CPU_WGTS; k++)
       elements[last].cpu_wgt[k] = 0;
     elements[last].mem_wgt = 0;
+    elements[last].avg_coord[0] = elements[last].avg_coord[1] 
+                                = elements[last].avg_coord[2] = 0.;
     elements[last].coord = NULL;
     elements[last].connect = NULL;
     elements[last].adj = NULL;

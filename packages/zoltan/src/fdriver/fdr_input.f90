@@ -119,8 +119,9 @@ type(PARIO_INFO) :: pio_info
 
 !/* local declarations */
   integer, parameter :: file_cmd = 11
-  character(len=MAX_INPUT_STR_LN + 1) :: inp_line, command
+  character(len=MAX_INPUT_STR_LN + 1) :: inp_line, command, temp_string
   integer :: iostat
+  logical :: more_params
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -182,18 +183,33 @@ type(PARIO_INFO) :: pio_info
     endif
 
     if (lowercase(trim(command)) == "zoltan parameters") then
-! assumes only one parameter per command line
 ! assumes there is one blank between "=" and the parameter name
-       prob%params(prob%num_params)%str(0) = lowercase(trim(inp_line(index(inp_line,"=")+2:)))
+       temp_string = lowercase(trim(inp_line(index(inp_line,"=")+2:)))
 ! assumes no blanks between second "=" and the parameter name
 ! skip the input line if there are no parameters specified on it.
-       if (index(prob%params(prob%num_params)%str(0),"=").gt.0) then
-           prob%params(prob%num_params)%str(1) = &
-              lowercase(trim(prob%params(prob%num_params)%str(0)(index(prob%params(prob%num_params)%str(0),"=")+1:)))
-           prob%params(prob%num_params)%str(0) = &
-              lowercase(trim(prob%params(prob%num_params)%str(0)(1:index(prob%params(prob%num_params)%str(0),"=")-1)))
-           prob%num_params = prob%num_params+1
-        endif
+       if (index(temp_string,"=").gt.0) then
+          more_params = .true.
+          do while (more_params)
+             if (index(temp_string, ",").gt.0) then
+                more_params = .true.
+                prob%params(prob%num_params)%str(1) = &
+                    temp_string(index(temp_string,"=")+1:index(temp_string,",")-1)
+             else
+                more_params = .false.
+                prob%params(prob%num_params)%str(1) = &
+                    temp_string(index(temp_string,"=")+1:)
+             endif
+             prob%params(prob%num_params)%str(0) = &
+                 temp_string(1:index(temp_string,"=")-1)
+             prob%num_params = prob%num_params+1
+             if (more_params) then
+                temp_string = temp_string(index(temp_string,",")+1:)
+                do while (temp_string(1:1).eq." ")  !skip white space
+                   temp_string = temp_string(2:)
+                enddo
+             endif
+          enddo
+       endif
     endif
 
     if (lowercase(trim(command)) == "test multi callbacks") then

@@ -38,7 +38,9 @@ extern "C" {
 
 enum Zoltan_Fn_Type {
   ZOLTAN_NUM_EDGES_FN_TYPE,
+  ZOLTAN_NUM_EDGES_MULTI_FN_TYPE,
   ZOLTAN_EDGE_LIST_FN_TYPE,
+  ZOLTAN_EDGE_LIST_MULTI_FN_TYPE,
   ZOLTAN_NUM_GEOM_FN_TYPE,
   ZOLTAN_GEOM_MULTI_FN_TYPE,
   ZOLTAN_GEOM_FN_TYPE,
@@ -221,6 +223,49 @@ typedef int ZOLTAN_NUM_EDGES_FORT_FN(
 
 /*****************************************************************************/
 /*
+ *  Function to return, for a list of object with a given IDs,
+ *  each object's number of edges (i.e., the number of objects with which
+ *  the given object must communicate).
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_obj             --  the number of objects whose IDs are in global_id
+ *                            and local_id.
+ *    global_ids          --  the Global IDs for the objects
+ *    local_ids           --  the Local IDs for the objects
+ *  Output:
+ *    num_edges           --  array containing the number of edges for each
+ *                            object in global_id
+ *    *ierr               --  error code
+ */
+
+typedef void ZOLTAN_NUM_EDGES_MULTI_FN(
+  void *data,              
+  int num_gid_entries, 
+  int num_lid_entries,
+  int num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id,
+  int *num_edges,
+  int *ierr
+);
+
+typedef void ZOLTAN_NUM_EDGES_MULTI_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  int *num_obj,
+  ZOLTAN_ID_PTR global_id, 
+  ZOLTAN_ID_PTR local_id, 
+  int *num_edges,
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
  *  Function to return, for the object with a given ID, 
  *  the object's edge list (i.e., objects with which the given object must
  *  communicate.
@@ -262,6 +307,70 @@ typedef void ZOLTAN_EDGE_LIST_FORT_FN(
   int *num_lid_entries,
   ZOLTAN_ID_PTR global_id, 
   ZOLTAN_ID_PTR local_id, 
+  ZOLTAN_ID_PTR nbor_global_id,
+  int *nbor_procs, 
+  int *wdim, 
+  float *nbor_ewgts, 
+  int *ierr
+);
+
+/*****************************************************************************/
+/*
+ *  Function to return, for an array of objects,
+ *  each object's edge list (i.e., objects with which the given object must
+ *  communicate.
+ *  Input:  
+ *    data                --  pointer to user defined data structure
+ *    num_gid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a global ID
+ *    num_lid_entries     --  number of array entries of type ZOLTAN_ID_TYPE
+ *                            in a local ID
+ *    num_obj             --  the number of objects whose IDs are in global_id
+ *                            and local_id.
+ *    global_ids          --  the Global IDs for the objects
+ *    local_ids           --  the Local IDs for the objects
+ *    num_edges           --  the number of edges for each object.
+ *    wdim                --  dimension of edge weights, or 0 if
+ *                            edge weights are not sought.
+ *  Output:
+ *    nbor_global_ids     --  Array of Global IDs of neighboring objects.
+ *                            Nbors are stored consecutively; 
+ *                            nbor_global_ids[sum:sum+num_edges[i]-1],
+ *                            sum = sum j from 0 to i-1 of num_edges[j],
+ *                            holds nbors for the i-th global_id.
+ *    nbor_procs          --  Array of neighboring procs.  Storage is parallel
+ *                            to nbor_global_ids.
+ *    nbor_ewgts          --  Array of edge weights, where 
+ *                            nbor_ewgts[sum*wdim:(num_edges[i]+sum)*wdim-1],
+ *                            sum = sum j from 0 to i-1 of num_edges[j],
+ *                            corresponds to the weights for edges of the 
+ *                            i-th global_id.
+ *    ierr                --  error code
+ */
+
+typedef void ZOLTAN_EDGE_LIST_MULTI_FN(
+  void *data, 
+  int num_gid_entries, 
+  int num_lid_entries,
+  int num_obj,
+  ZOLTAN_ID_PTR global_ids, 
+  ZOLTAN_ID_PTR local_ids,
+  int *num_edges,
+  ZOLTAN_ID_PTR nbor_global_id, 
+  int *nbor_procs,
+  int wdim, 
+  float *nbor_ewgts, 
+  int *ierr
+);
+
+typedef void ZOLTAN_EDGE_LIST_MULTI_FORT_FN(
+  void *data, 
+  int *num_gid_entries, 
+  int *num_lid_entries,
+  int *num_obj,
+  ZOLTAN_ID_PTR global_ids, 
+  ZOLTAN_ID_PTR local_ids, 
+  int *num_edges,
   ZOLTAN_ID_PTR nbor_global_id,
   int *nbor_procs, 
   int *wdim, 
@@ -1977,9 +2086,21 @@ extern int Zoltan_Set_Partition_Fn(
   void *data_ptr
 );
 
+extern int Zoltan_Set_Num_Edges_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_NUM_EDGES_MULTI_FN *fn_ptr, 
+  void *data_ptr
+);
+
 extern int Zoltan_Set_Num_Edges_Fn(
   struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_EDGES_FN *fn_ptr, 
+  void *data_ptr
+);
+
+extern int Zoltan_Set_Edge_List_Multi_Fn(
+  struct Zoltan_Struct *zz, 
+  ZOLTAN_EDGE_LIST_MULTI_FN *fn_ptr, 
   void *data_ptr
 );
 
