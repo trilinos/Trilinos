@@ -19,7 +19,21 @@ static char *cvs_parmetis_util = "$Id$";
 #include "lb_const.h"
 #include "parmetis_const.h"
 
-/* LB_hashf is a hash function for global ids. LB_GID can be any data type. */
+/* LB_hashf is a hash function for global ids. 
+ *
+ * Input:
+ *   key, a key to look up of type LB_GID (any data type)
+ *   n,   the hash function returns an integer < n
+ *
+ * Return value:
+ *   the hash value, an integer between 0 and n-1
+ *
+ * Algorithm: This version uses bitwise xor and mod. 
+ *            Feel free to replace it with a more sophisticated method.
+ *
+ * Author: Erik Boman, eboman@cs.sandia.gov (9226)
+ */
+
 
 int LB_hashf(LB_GID key, int n)
 {
@@ -37,9 +51,21 @@ int LB_hashf(LB_GID key, int n)
   return (h%n);
 }
 
-/* LB_hash_lookup uses LB_hashf to lookup a certain key */
+/* LB_hash_lookup uses LB_hashf to lookup a key 
+ *
+ * Input:
+ *   hashtab, pointer to the hash table
+ *   key, a key to look up of type LB_GID (any data type)
+ *   n,   dimension of the hash table
+ *
+ * Return value:
+ *   the global number of the element with key key,
+ *   or -1 if the key is not in the hash table
+ *
+ * Author: Erik Boman, eboman@cs.sandia.gov (9226)
+ */
 
-int LB_hash_lookup (struct LB_hash_node **hashtab, int n, LB_GID key)
+int LB_hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
 {
   int i;
   struct LB_hash_node *ptr;
