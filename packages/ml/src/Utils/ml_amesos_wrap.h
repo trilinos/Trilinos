@@ -3,6 +3,8 @@
 #ifndef _MLAMESOSWRAP_
 #define _MLAMESOSWRAP_
 
+#include "ml_include.h"
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {

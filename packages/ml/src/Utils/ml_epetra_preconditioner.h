@@ -1,17 +1,17 @@
-#ifndef _ML_EPETRA_OPERATOR_H_
-#define _ML_EPETRA_OPERATOR_H_
+#ifndef _ML_EPETRA_PRECONDITIONER_H_
+#define _ML_EPETRA_PRECONDITIONER_H_
+
+#include "ml_include.h"
+
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 class Epetra_Map;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
-class Epetra_Operator;
 class Epetra_Comm;
 
-#include "ml_config.h"
-
-#ifdef HAVE_ML_TEUCHOS
-
+#include "Epetra_Operator.h"
 #include "Teuchos_ParameterList.hpp"
 
 using namespace Teuchos;
@@ -82,6 +82,6 @@ protected:
   
 };
 
-#endif
+#endif /* defined ML_EPETRA and ML_TEUCHOS */
 
-#endif /* _ML_EPETRA_OPERATOR_H_ */
+#endif /* _ML_EPETRA_PRECONDITIONER_H_ */
