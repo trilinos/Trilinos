@@ -111,7 +111,7 @@ bool List::getParameter(const string& name, bool nominal)
   PCConstIterator i = params.find(name);
 
   if (i == params.end()) {
-    params[name].setValue(nominal);
+    params[name].setValue(nominal, true);
     i = params.find(name);
   }
 
@@ -127,7 +127,7 @@ int List::getParameter(const string& name, int nominal)
   PCConstIterator i = params.find(name);
 
   if (i == params.end()) {
-    params[name].setValue(nominal);
+    params[name].setValue(nominal, true);
     i = params.find(name);
   }
 
@@ -143,7 +143,7 @@ double List::getParameter(const string& name, double nominal)
   PCConstIterator i = params.find(name);
 
   if (i == params.end()) {
-    params[name].setValue(nominal);
+    params[name].setValue(nominal, true);
     i = params.find(name);
   }
 
@@ -160,7 +160,7 @@ const string& List::getParameter(const string& name, const char* nominal)
   PCConstIterator i = params.find(name);
 
   if (i == params.end()) {
-    params[name].setValue(nominal);
+    params[name].setValue(nominal, true);
     i = params.find(name);
   }
 
@@ -176,7 +176,7 @@ const string& List::getParameter(const string& name, const string& nominal)
   PCConstIterator i = params.find(name);
 
   if (i == params.end()) {
-    params[name].setValue(nominal);
+    params[name].setValue(nominal, true);
     i = params.find(name);
   }
 
@@ -219,7 +219,7 @@ const string& List::getParameter(const string& name, const char* nominal) const
 
   // Save nominal char* value as a string, and return the string value.
   tmpstrings.push_back(nominal);
-  return tmpstrings[tmpstrings.size() - 1];
+  return tmpstrings.back();
 }
 
 const string& List::getParameter(const string& name, const string& nominal) const
@@ -342,7 +342,7 @@ List& List::sublist(const string& name)
   }
 
   // If it does not exist, create a new empty list and return a reference
-  return params[name].setList();
+  return params[name].setList(true);
 }
 
 const List& List::sublist(const string& name) const

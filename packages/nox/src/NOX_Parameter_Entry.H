@@ -57,16 +57,16 @@ public:
   Entry& operator=(const Entry& source);
 
   //! Bool constructor
-  Entry(bool value);
+  Entry(bool value, bool isCreatedByGet = false);
 
   //! Integer constructor
-  Entry(int value);
+  Entry(int value, bool isCreatedByGet = false);
 
   //! Double constructor
-  Entry(double value);
+  Entry(double value, bool isCreatedByGet = false);
 
   //! String constructor
-  Entry(const string& value);
+  Entry(const string& value, bool isCreatedByGet = false);
 
   //! Destructor
   ~Entry();
@@ -75,7 +75,7 @@ public:
    *
    * Functions for handling parameters that are themselves lists.  */
   //@{
-  List& setList();
+  List& setList(bool isCreatedByGet = false);
   List& getListValue();
   const List& getListValue() const;
   //@}
@@ -87,11 +87,11 @@ public:
    * although it doesn't necessarily erase them. Resets 'isused'
    * functionality. */
   //@{ 
-  void setValue(bool value);
-  void setValue(int value);
-  void setValue(double value);
-  void setValue(const char* value);
-  void setValue(const string& value);
+  void setValue(bool value, bool isCreatedByGet = false);
+  void setValue(int value, bool isCreatedByGet = false);
+  void setValue(double value, bool isCreatedByGet = false);
+  void setValue(const char* value, bool isCreatedByGet = false);
+  void setValue(const string& value, bool isCreatedByGet = false);
   //@}
 
   /** @name Is functions. 
@@ -107,6 +107,10 @@ public:
   //@}
 
   
+  //! Return whether or not the value is used; i.e., whether or not
+  //! the value has been retrieved via a get function.
+  bool isUsed() const;
+
   /** @name Get functions. 
    *
    * Returns value of parameter. The value is nonsense if we do not
@@ -120,10 +124,6 @@ public:
   const string& getStringValue() const;
   //@}
 
-  //! Return whether or not the value is used; i.e., whether or not
-  //! the value has been retrieved via a get function.
-  bool isUsed() const;
-
   //! Output the parameter to the given stream. 
   /*! Formats the output as "<type,value>", except in the case of a
     list which just outputs "<sublist>". If the parameter has not yet
@@ -134,7 +134,20 @@ public:
 private:
   
   //! All possible parameter types that this class can store
-  enum EntryType { NONE, BOOL, INT, DOUBLE, STRING, LIST };
+  enum EntryType { 
+    //! No entry type set yet (will be set later by setValue()
+    NONE, 
+    //! Boolean
+    BOOL, 
+    //! Integer
+    INT, 
+    //! Double
+    DOUBLE, 
+    //! String
+    STRING, 
+    //! Sublist
+    LIST 
+  };
 
   //! Type of parameter stored in this object.
   EntryType type;
@@ -155,7 +168,10 @@ private:
   List* lval;		
 
   //! Has this parameter been accessed by a "get" function?
-  mutable bool isused;
+  mutable bool isGotten;
+
+  //! Was this parameter a nominal value assigned by a "get" function?
+  mutable bool isSetByGet;
 
 };
 

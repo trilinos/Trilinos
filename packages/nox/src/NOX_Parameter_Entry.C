@@ -42,7 +42,8 @@ Entry::Entry() :
   dval(0),
   sval(""), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(false)
 {
 }
 
@@ -53,7 +54,8 @@ Entry::Entry(const Entry& source) :
   dval(0),
   sval(""), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(false)
 {
   operator=(source);
 }
@@ -74,51 +76,56 @@ Entry& Entry::operator=(const Entry& source)
     lval = new List(*source.lval);
   }
   
-  isused = source.isused;
+  isGotten = source.isGotten;
+  isSetByGet = source.isSetByGet;
   return *this;
 }
 
-Entry::Entry(bool value) : 
+Entry::Entry(bool value, bool isCreatedByGet) : 
   type(BOOL),
   bval(value),
   ival(0),
   dval(0),
   sval(""), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(isCreatedByGet)
 {
 }
 
-Entry::Entry(int value) : 
+Entry::Entry(int value, bool isCreatedByGet) : 
   type(INT),
   bval(false),
   ival(value),
   dval(0),
   sval(""), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(isCreatedByGet) 
 {
 }
 
-Entry::Entry(double value) : 
+Entry::Entry(double value, bool isCreatedByGet) : 
   type(DOUBLE),
   bval(false),
   ival(0),
   dval(value),
   sval(""), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(isCreatedByGet) 
 {
 }
 
-Entry::Entry(const string& value) : 
+Entry::Entry(const string& value, bool isCreatedByGet) : 
   type(STRING),
   bval(false),
   ival(0),
   dval(0),
   sval(value), 
   lval(NULL),
-  isused(false) 
+  isGotten(false),
+  isSetByGet(isCreatedByGet) 
 {
 }
 
@@ -128,46 +135,52 @@ Entry::~Entry()
     delete lval;
 }
 
-void Entry::setValue(bool value)
+void Entry::setValue(bool value, bool isCreatedByGet)
 {
   type = BOOL;
   bval = value;
-  isused = false;
+  isSetByGet = isCreatedByGet;
+  isGotten = false;
 }
 
-void Entry::setValue(int value)
+void Entry::setValue(int value, bool isCreatedByGet)
 {
   type = INT;
   ival = value;
-  isused = false;
+  isSetByGet = isCreatedByGet;
+  isGotten = false;
 }
 
-void Entry::setValue(double value)
+void Entry::setValue(double value, bool isCreatedByGet)
 {
   type = DOUBLE;
   dval = value;
-  isused = false;
+  isSetByGet = isCreatedByGet;
+  isGotten = false;
 }
 
-void Entry::setValue(const char* value)
+void Entry::setValue(const char* value, bool isCreatedByGet)
 {
   type = STRING;
   sval = value;
-  isused = false;
+  isSetByGet = isCreatedByGet;
+  isGotten = false;
 }
 
-void Entry::setValue(const string& value)
+void Entry::setValue(const string& value, bool isCreatedByGet)
 {
   type = STRING;
   sval = value;
-  isused = false;
+  isSetByGet = isCreatedByGet;
+  isGotten = false;
 }
 
-List& Entry::setList()
+List& Entry::setList(bool isCreatedByGet)
 {
   type = LIST;
   lval = new List();
-  isused = true;
+  isSetByGet = isCreatedByGet;
+  isGotten = true;
   return *lval;
 }
 
@@ -199,49 +212,48 @@ bool Entry::isList() const
 
 bool Entry::getBoolValue() const
 {
-  isused = true;
+  isGotten = true;
   return bval;
 }
 
 int Entry::getIntValue() const
 {
-  isused = true;
+  isGotten = true;
   return ival;
 }
 
 double Entry::getDoubleValue() const
 {
-  isused = true;
+  isGotten = true;
   return dval;
 }
 
 const string& Entry::getStringValue() const
 {
-  isused = true;
+  isGotten = true;
   return sval;
 }
 
 List& Entry::getListValue() 
 {
-  isused = true;
+  isGotten = true;
   return *lval;
 }
 
 const List& Entry::getListValue() const
 {
-  isused = true;
+  isGotten = true;
   return *lval;
 }
 
 bool Entry::isUsed() const
 {
-  return isused;
+  return isGotten;
 }
 
 
 ostream& Entry::leftshift(ostream& stream) const
 {
-  string sep = "     ";
   switch(type) {
   case BOOL: 
     stream << (bval ? "true" : "false");
@@ -261,6 +273,13 @@ ostream& Entry::leftshift(ostream& stream) const
     stream << "(empty non-typed parameter)";
     break;
   }
+
+  if (isSetByGet)
+    cout << "   [default]";
+  else if (!isGotten)
+    cout << "   [unused]";
+  
+
   return stream;
 }
 
