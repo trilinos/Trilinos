@@ -136,7 +136,7 @@ int Zoltan_PHG(
     }
     else {
         int i, p=zz->LB.Num_Global_Parts;
-        PHGraph *hg = &zoltan_hg->PHG;
+        HGraph *hg = &zoltan_hg->PHG;
 
         /* vmap associates original vertices to sub hypergraphs */
         if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
@@ -158,7 +158,7 @@ int Zoltan_PHG(
 
         if (hgp.output_level >= PHG_DEBUG_LIST)     
             uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d bal=%.2f cutl=%.2f\n",
-                    hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hgp.redm_str,
+                    hg->info, hg->nVtx, hg->nEdge, hg->nPins, hgp.redm_str,
                     hgp.coarsepartition_str, hgp.refinement_str, p,
                     Zoltan_PHG_HPart_balance(zz, hg, p, output_parts),
                     Zoltan_PHG_hcut_size_links(hg->comm, hg, output_parts, p));
@@ -196,7 +196,7 @@ void Zoltan_PHG_Free_Structure(ZZ *zz)
   if (zoltan_hg != NULL) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
      &zoltan_hg->Local_IDs, &zoltan_hg->Parts);
-    Zoltan_PHG_HGraph_Free(&zoltan_hg->PHG);
+    Zoltan_HG_HGraph_Free(&zoltan_hg->PHG);
     ZOLTAN_FREE ((void**) &zz->LB.Data_Structure);
   }
 }
@@ -386,7 +386,7 @@ End:
 void Zoltan_PHG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
   ZPHG *zoltan_hg,
-  PHGraph *hg,
+  HGraph *hg,
   FILE *fp
 )
 {
@@ -417,7 +417,7 @@ void Zoltan_PHG_HGraph_Print(
     fprintf(fp, ", %d)\n", i);
   }
 
-  Zoltan_PHG_Print(zz, hg, fp);
+  Zoltan_HG_Print(zz, hg, fp);
   Zoltan_Print_Sync_End(zz->Communicator, 1);
 }
 
@@ -475,8 +475,8 @@ int ierr = ZOLTAN_OK;
   comm->myProc_x = proc % comm->nProc_x;
   comm->myProc_y = proc / comm->nProc_x;
   comm->Communicator = Communicator;
-  comm->Proc = proc;
-  comm->Num_Proc = nProc;
+  comm->myProc = proc;
+  comm->nProc = nProc;
     
   if ((MPI_Comm_split(Communicator, comm->myProc_x, comm->myProc_y, 
                       &comm->col_comm) != MPI_SUCCESS)

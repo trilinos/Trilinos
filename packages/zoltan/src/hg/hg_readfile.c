@@ -18,7 +18,8 @@ extern "C" {
 
 /*  This file is included only in hg_test, not in Zoltan. */
 
-#include "hypergraph.h"
+#include "zz_const.h"
+#include "hg_hypergraph.h"
 #include "dr_hg_readfile.h"
 
 #define BUF_LEN 1000000
@@ -43,7 +44,7 @@ char *yo = "hg_readfile";
       goto End;
       }
 
-   err = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
+   err = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nPins,
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt,
     &hg->EdgeWeightDim, &hg->ewgt, base);
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
@@ -54,7 +55,7 @@ char *yo = "hg_readfile";
    if (*base > 0) {
       /* Convert to zero-based vertex numbers */
       int i;
-      for (i = 0; i < hg->nInput; i++)
+      for (i = 0; i < hg->nPins; i++)
          hg->hvertex[i] -= *base;
       }
 

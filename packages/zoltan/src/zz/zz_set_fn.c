@@ -37,7 +37,7 @@ extern "C" {
 /****************************************************************************/
 /****************************************************************************/
 
-int Zoltan_Set_Fn(ZZ *zz, ZOLTAN_FN_TYPE fn_type, void (*fn)(), void *data)
+int Zoltan_Set_Fn(ZZ *zz, ZOLTAN_FN_TYPE fn_type, void (*fn)(void), void *data)
 {
 /*
  *  Function to initialize a given LB interface function.

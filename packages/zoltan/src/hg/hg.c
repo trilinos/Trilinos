@@ -112,7 +112,7 @@ printf ("RTHRTH: starting\n");
     printf("Hypergraph Stats:\n");
     printf("           nVtxs = %d\n", zoltan_hg->HG.nVtx);
     printf("           nEdge = %d\n", zoltan_hg->HG.nEdge);
-    printf("           nPins = %d\n", zoltan_hg->HG.nInput);
+    printf("           nPins = %d\n", zoltan_hg->HG.nPins);
     for (i = 0; i < zoltan_hg->HG.nEdge; i++)
       if (zoltan_hg->HG.hindex[i+1]-zoltan_hg->HG.hindex[i] > max)
         max = zoltan_hg->HG.hindex[i+1]-zoltan_hg->HG.hindex[i];

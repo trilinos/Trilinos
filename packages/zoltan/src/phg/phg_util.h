@@ -19,30 +19,8 @@
 extern "C" {
 #endif
 
-
 #include <stdarg.h>
-#include "zz_const.h"
-#include "phg.h"
-
-
-
-/* Hypergraph utilities */
-extern void Zoltan_PHG_PHGraph_Init (PHGraph*);
-extern int Zoltan_PHG_HGraph_Free  (PHGraph*);
-extern int Zoltan_PHG_Create_Mirror(ZZ*, PHGraph*);
-extern void Zoltan_PHG_Mirror(int, int *, int *, int, int *, int *);
-
-
-extern void Zoltan_PHG_Graph_Init  (PGraph*);
-extern int Zoltan_PHG_Graph_Free   (PGraph*);
-extern int Zoltan_PHG_Info         (ZZ*, PHGraph*);
-extern int Zoltan_PHG_Check        (ZZ*, PHGraph*);
-extern int Zoltan_PHG_Graph_to_HGraph (ZZ*, PGraph*, PHGraph*);
-extern void Zoltan_PHG_Print (ZZ*, PHGraph*, FILE*);
-
-extern unsigned int Zoltan_PHG_Rand (void);
-extern void         Zoltan_PHG_Srand (unsigned int);
-extern void         Zoltan_PHG_Rand_Perm_Int (int*, int);
+#include "phg_comm.h"
 
     /* UVC: some utility functions not particularly related to hypergraph */
 extern char *uMe(PHGComm *);

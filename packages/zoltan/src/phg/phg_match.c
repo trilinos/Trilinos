@@ -25,11 +25,6 @@ static ZOLTAN_PHG_MATCHING_FN matching_ipm;  /* inner product matching */
 static ZOLTAN_PHG_MATCHING_FN matching_loc;  /* local ipm (in other words HCM:heavy connectivity matching) */
 
 
-/* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
-/* static int graph_connected_components (int, int*, int*, int);             */
-
-static void print_matrix(int*, int*, int, int, int);
-
 /*****************************************************************************/
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 {
@@ -51,7 +46,7 @@ int Zoltan_PHG_Set_Matching_Fn (PHGPartParams *hgp)
 /*****************************************************************************/
 int Zoltan_PHG_Matching (
   ZZ *zz,
-  PHGraph *hg,
+  HGraph *hg,
   Matching match,
   PHGPartParams *hgp)
 {
@@ -94,23 +89,23 @@ End:
    a simple HCM/IPM variant: root of each column procs find HCM using only its local data.
    This matching is implemented just for testing purposes.
  */
-static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
+static int matching_loc(ZZ *zz, HGraph *hg, Matching match)
 {
     int i, j, *eweight=NULL, *adj=NULL, *visit=NULL, degzero=0, matchcnt=0;
     char *yo = "matching_loc";
     PHGComm *hgc=hg->comm;
     struct {
-        int nNonZero;
+        int nPins;
         int rank;
     } rootin, root;
 
     /* find the index of the proc in column group with the most #nonzeros; it will be our root
        proc for computing moves since it has better knowedge about global hypergraph */
-    rootin.nNonZero = hg->nNonZero; 
+    rootin.nPins = hg->nPins; 
     rootin.rank = hgc->myProc_y;
     MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
 
-    uprintf(hgc, "root is %d with %d nonzero\n", root.rank, root.nNonZero);
+    uprintf(hgc, "root is %d with %d nonzero\n", root.rank, root.nPins);
 
     
     if (hgc->myProc_y==root.rank) { /* only root of each column does this */
@@ -123,7 +118,7 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
         }
         for (i=0; i<hg->nVtx; ++i)
             visit[i] = i;
-        Zoltan_PHG_Rand_Perm_Int(visit, hg->nVtx);
+        Zoltan_HG_Rand_Perm_Int(visit, hg->nVtx);
 
         for (i = 0; i<hg->nVtx; ++i) {
             int v = visit[i];
@@ -208,7 +203,7 @@ static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
    matching information 
 */
              
-static int matching_ipm (ZZ *zz, PHGraph *hg, Matching match)
+static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
   int i, j, lno, loop, vertex, maxpsum, *psums, *tsums;
   int count, size, *ip, bestv, bestsum, edgecount, index, *cmatch;
@@ -515,41 +510,6 @@ uprintf (hgc, "exiting ipm matching, loop = %d, count %d of %d\n", loop, count, 
    &m_bestsum, &m_bestv);
   return ZOLTAN_OK;
 }
-
-
-
-/******************************************************************************* 
- * Draws the sparse matrix representation of a hypergraph, with vertices as
- * rows and columns as edges.  Useful for debugging on small inputs */
-static void print_matrix(int *index, int *data, int x, int y, int h)
-{
-    char *matrix = (char*) ZOLTAN_MALLOC (x * y * sizeof(char));
-    int i, j;
- 
-    for (i = 0; i < y; ++i)
-       for (j = 0; j < x; ++j)
-          matrix[i * x + j] = '.';
-
-    if (h)
-       for (i = 0; i < y; ++i)
-          for (j = index[i]; j < index[i + 1]; ++j)
-             matrix[i * x + data[j]] = 'x';
-    else
-       for (i = 0; i < x; ++i)
-          for (j = index[i]; j < index[i + 1]; ++j)
-             matrix[data[j] * x + i] = 'x';
- 
-    for (i = 0; i < y; ++i) {
-       for (j = 0; j < x; ++j)
-          printf("%c ", matrix[i * x + j]);
-       printf("\n");
-       }
-    printf("\n");
-   
-    ZOLTAN_FREE ((void**) &matrix);
-    return;
-}
-
 
 
 /*****************************************************************************/

@@ -24,12 +24,12 @@ extern "C" {
 /* Communication and Distribution variables */
 /********************************************/
 struct PHGCommStruct {
-    /* the following three (Communicator, Proc and Num_Proc) are copies from ZZ
+    /* the following three (Communicator, Proc and nProc) are copies from ZZ
        just for convenience */
   MPI_Comm Communicator;          /*  The MPI Communicator.                  */
-  int Proc;                       /*  The processor's ID within the MPI
+  int myProc;                     /*  The processor's ID within the MPI
                                       Communicator.                          */
-  int Num_Proc;                   /*  The number of processors in the MPI
+  int nProc;                   /*  The number of processors in the MPI
                                       Communicator.                          */
   int nProc_x;    /* number of processors in x-direction of 2D data distrib.  */
   int nProc_y;    /* number of processors in y-direction of 2D data distrib.  */

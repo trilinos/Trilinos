@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-#include "hypergraph.h"
+#include "hg.h"
 
 static ZOLTAN_HG_GLOBAL_PART_FN global_ran;
 static ZOLTAN_HG_GLOBAL_PART_FN global_lin;

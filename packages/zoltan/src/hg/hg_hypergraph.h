@@ -19,12 +19,14 @@
 extern "C" {
 #endif
 
+#include "phg_comm.h"
+    
 typedef struct {
    int info;    /* primarily for debugging recursive algorithms;initially 0 */
    int nVtx;    /* number of vertices, |V| */
    int nEdge;   /* Size of neigh array; 2|E| */
    int nDim;    /* Number of dimensions for a vertex's coordinate */
-   int VertexWeightDim;  /* number of weight dimensions for a vertex */
+   int VtxWeightDim;  /* number of weight dimensions for a vertex */
    int EdgeWeightDim;    /* number of weight dimensions for an edge */
    int redl;             /* Working Reduction limit. */
 
@@ -46,39 +48,62 @@ typedef struct {
 
 
 typedef struct {
-   int info;     /* primarily for debugging recursive algorithms;initially 0 */
-   int nVtx;    /* number of vertices, |V| */
-   int nEdge;   /* number of hyperedges, |E| */
-   int nInput;  /* number of inputs, |I| */
-   int nDim;    /* Number of dimensions of a vertex's coordinate */
-   int VertexWeightDim;  /* number of weight dimensions for a vertex */
-   int EdgeWeightDim;    /* number of weight dimensions for an edge */
-   int redl;             /* Working Reduction limit. */
+  int info;             /* primarily for debugging recursive algorithms;initially 0 */
+  int nVtx;             /* number of vertices on this processor */
+  int nEdge;            /* number of hyperedges on this processor */
+  int nPins;            /* number of pins (nonzeros) on this processor */
+  
+  int VtxWeightDim;     /* number of weight dimensions for a vertex */
+  int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
 
-   /* physical coordinates of each vertex, optional */
-   double *coor; /*  |V| long by CoordinateDim */
+    /* arrays with vertex and edge weights */
+  float *vwgt;    /* weights of vertices, nVtx long by VtxWeightDim */
+  float *ewgt;    /* weights of hypergraph edges, nEdge long by EdgeWeightDim */
+    
+  /* physical coordinates of each vertex, optional */
+  int nDim;         /* number of coordinate dimensions for a vertex */
+  double *coor;     /* |V| long by CoordinateDim */
 
-   /* arrays with vertex and edge weights */
-   float *vwgt;  /* weights of vertices, |V| long by VtxWeightDim */
-   float *ewgt;  /* weights of hypergraph edges, |E| long by EdgeWeightDim */
+  /* arrays to look up vertices given a hyperedge */
+  int *hindex;      /* length nEdge+1 index into hvertex, last is nPins */
+  int *hvertex;     /* length nPins array containing associated vertices */
 
-   /* arrays to look up vertices given a hyperedge */
-   int *hindex;  /* length |E|+1 index into hvertex, last is |P| */
-   int *hvertex; /* length |P| array containing associated vertices */
+  /* arrays to look up hyperedges given a vertex */
+  int *vindex;      /* length nVtx+1 index into vedge, last is nPins */
+  int *vedge;       /* length nPins array containing associated hyperedges */
 
-   /* arrays to look up hyperedges given a vertex */
-   int *vindex;  /* length |V|+1 index into vedge, last is |P| */
-   int *vedge;   /* length |P| array containing associated hyperedges */
+    /* UVCUVC: todo vmap, ratio and redl should be removed from HGraph
+       and some could go to VCycle struct in RCB code */
+  int *vmap;        /* used when recursively dividing for p > 2 */
+  double ratio;     /* split when recursively dividing for p > 2 */
+  int redl;         /* working reduction limit */
 
-   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
-                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
-                     processor n.   KDD:  temporary; may change later. */
-                     
-   int *vmap;     /* used when recursively dividing for p > 2 */
-   double ratio;  /* split when recursively dividing for p > 2 */
-   } HGraph;
+    
+  PHGComm *comm;  /* this is a pointer to storage PHGPartParamsStruct: (set in phg_build)
+                     UVCUVC: I've included here because nProc_x, nProc_y was here
+                     for convenience.
+                   */
+  int *dist_x;    /* distributions of vertices to processor columns. Vertices
+                   * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
+  int *dist_y;    /* distribution of hyperedges to processor rows as above */                  
+    
+} HGraph;
 
 
+extern void Zoltan_HG_Graph_Init  (Graph*);
+extern int Zoltan_HG_Graph_Free   (Graph*);
+
+/* Hypergraph utilities */
+extern void Zoltan_HG_HGraph_Init (HGraph*);
+extern int Zoltan_HG_HGraph_Free  (HGraph*);
+extern int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
+extern int Zoltan_HG_Info         (ZZ*, HGraph*);
+extern int Zoltan_HG_Check        (ZZ*, HGraph*);
+extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
+extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
+extern void Zoltan_HG_Print(ZZ*, HGraph*, FILE*);
+
+    
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

@@ -30,7 +30,7 @@ static int add_to_to_add(int element, ZZ *zz);
 static int initial_cycle(ZZ *zz);
 static int add_around_vertices(ZZ *zz);
 static int add_around_vertex(int vert, ZZ *zz);
-static int get_element_to_add();
+static int get_element_to_add(void);
 static int add_to_cycle(int element);
 static int add_to_cycle_by_element(int elementD, int indexB1, int indexB2);
 static int try_adding_all(int *ierr, ZZ *zz);
@@ -950,7 +950,7 @@ int i, j, k, l, num_share, pass, success, ierr;
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int get_element_to_add()
+static int get_element_to_add(void)
 {
 
 /*

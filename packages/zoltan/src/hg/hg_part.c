@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 /* static double hcut_size_links (ZZ*, HGraph*, int p, Partition);
 */
 /*
@@ -95,7 +95,7 @@ char *yo = "Zoltan_HG_HPart_Lib";
 
   if (hgp->output_level >= HG_DEBUG_LIST) {
      printf("START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d...\n",
-      hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
+      hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
       hgp->redmo_str, hgp->global_str, hgp->local_str, p);
      if (hgp->output_level > HG_DEBUG_LIST) {
         err = Zoltan_HG_Info(zz, hg);
@@ -299,7 +299,7 @@ ZOLTAN_FREE (&t);
      }
   if (hgp->output_level >= HG_DEBUG_LIST)
     printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s-%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
-     hg->info, hg->nVtx, hg->nEdge, hg->nInput, hg->redl, hgp->redm_str,
+     hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
      hgp->redmo_str, hgp->global_str, hgp->local_str, p,
      Zoltan_HG_HPart_balance(zz, hg, p, part),
      Zoltan_HG_hcut_size_links(zz, hg, part));

@@ -37,9 +37,9 @@ extern "C" {
 /****************************************************************************/
 int Zoltan_PHG_Gather_To_All_Procs(
   ZZ *zz, 
-  PHGraph *phg,           /* Input:   Local part of distributed hypergraph */
+  HGraph *phg,           /* Input:   Local part of distributed hypergraph */
   PHGComm *scomm,         /* Input:   Serial PHGComm for use by shg. */
-  PHGraph **gathered_hg   /* Output:  combined hypergraph combined to proc */
+  HGraph **gathered_hg   /* Output:  combined hypergraph combined to proc */
 )
 {
 /* 
@@ -69,7 +69,7 @@ int size[NIDX];          /* array of nvtx, nedge & nnz for the input
 
 int *recv_size = NULL;   /* nvtx, nedge, & nnz for each proc in col or row */
 
-PHGraph *shg;            /* Pointer to the serial hypergraph to be
+HGraph *shg;            /* Pointer to the serial hypergraph to be
                             returned by this function. */
 
 int myProc_x = phg->comm->myProc_x;
@@ -84,19 +84,19 @@ int first_vtx = phg->dist_x[myProc_x];
    *  Set values that we already know. 
    ******************************************************************/
 
-  shg = *gathered_hg = (PHGraph *) ZOLTAN_MALLOC(sizeof(PHGraph));
+  shg = *gathered_hg = (HGraph *) ZOLTAN_MALLOC(sizeof(HGraph));
   if (!shg) MEMORY_ERROR;
 
-  Zoltan_PHG_PHGraph_Init(shg);
+  Zoltan_HG_HGraph_Init(shg);
   shg->nVtx = phg->dist_x[nProc_x];
   shg->nEdge = phg->dist_y[nProc_y];
-  MPI_Allreduce(&(phg->nNonZero), &(shg->nNonZero), 1, MPI_INT, MPI_SUM,
+  MPI_Allreduce(&(phg->nPins), &(shg->nPins), 1, MPI_INT, MPI_SUM,
                 zz->Communicator);
 
   shg->vindex = (int *) ZOLTAN_CALLOC((shg->nVtx+1), sizeof(int));
-  shg->vedge = (int *) ZOLTAN_MALLOC(shg->nNonZero * sizeof(int));
+  shg->vedge = (int *) ZOLTAN_MALLOC(shg->nPins * sizeof(int));
   shg->hindex = (int *) ZOLTAN_CALLOC((shg->nEdge+1), sizeof(int));
-  shg->hvertex = (int *) ZOLTAN_MALLOC(shg->nNonZero * sizeof(int));
+  shg->hvertex = (int *) ZOLTAN_MALLOC(shg->nPins * sizeof(int));
 
   shg->dist_x = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
   shg->dist_y = (int *) ZOLTAN_MALLOC(2 * sizeof(int));
@@ -118,7 +118,7 @@ int first_vtx = phg->dist_x[myProc_x];
 */
 
   if (!shg->vindex || !shg->hindex || 
-      (shg->nNonZero && (!shg->vedge || !shg->hvertex))) 
+      (shg->nPins && (!shg->vedge || !shg->hvertex))) 
     MEMORY_ERROR;
   
 
@@ -135,7 +135,7 @@ int first_vtx = phg->dist_x[myProc_x];
 
   size[VIDX] = phg->nVtx;
   size[EIDX] = phg->nEdge;
-  size[PIDX] = phg->nNonZero;
+  size[PIDX] = phg->nPins;
 
   MPI_Allgather(size, 3, MPI_INT, recv_size, 3, MPI_INT, 
                 phg->comm->col_comm);
@@ -169,7 +169,7 @@ int first_vtx = phg->dist_x[myProc_x];
   
   /* Gather hvertex data for all procs in column */
 
-  for (i = 0; i < phg->nNonZero; i++)
+  for (i = 0; i < phg->nPins; i++)
     send_buf[i] = VTX_LNO_TO_GNO(phg, phg->hvertex[i]);
 
   for (i = 0; i < nProc_y; i++)
@@ -179,7 +179,7 @@ int first_vtx = phg->dist_x[myProc_x];
   for (i = 1; i < nProc_y; i++)
     disp[i] = disp[i-1] + each[i-1];
 
-  MPI_Allgatherv(send_buf, phg->nNonZero, MPI_INT,
+  MPI_Allgatherv(send_buf, phg->nPins, MPI_INT,
                  col_hvertex, each, disp, MPI_INT, phg->comm->col_comm);
 
   /* 
@@ -246,9 +246,9 @@ int first_vtx = phg->dist_x[myProc_x];
     tmpp += recv_size[NIDX*i + PIDX];
   }
 
-  if (tmpp != shg->nNonZero) {
-    printf("%d sum_size[PIDX] %d != shg->nNonZero %d\n", 
-            zz->Proc, tmpp, shg->nNonZero);
+  if (tmpp != shg->nPins) {
+    printf("%d sum_size[PIDX] %d != shg->nPins %d\n", 
+            zz->Proc, tmpp, shg->nPins);
     exit(-1);
   }
 
@@ -295,10 +295,10 @@ int first_vtx = phg->dist_x[myProc_x];
   shg->vindex[0] = 0;
 
   /* Sanity check */
-  if (shg->vindex[shg->nVtx] != shg->nNonZero) {
+  if (shg->vindex[shg->nVtx] != shg->nPins) {
     printf("%d Sanity check failed:  "
-           "shg->vindex %d != nNonZero %d\n", 
-            zz->Proc, shg->vindex[shg->nVtx], shg->nNonZero);
+           "shg->vindex %d != nPins %d\n", 
+            zz->Proc, shg->vindex[shg->nVtx], shg->nPins);
     exit(-1);
   }
 
@@ -311,7 +311,7 @@ int first_vtx = phg->dist_x[myProc_x];
 End:
 
   if (ierr < 0) {
-    Zoltan_PHG_HGraph_Free(*gathered_hg);
+    Zoltan_HG_HGraph_Free(*gathered_hg);
     ZOLTAN_FREE(gathered_hg);
   }
 

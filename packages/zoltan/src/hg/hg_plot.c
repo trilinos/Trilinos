@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 
 /*****************************************************************************/
 void Zoltan_HG_Plot(

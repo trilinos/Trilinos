@@ -524,7 +524,7 @@ void Zoltan_Memory_Stats()
 } /* Zoltan_Memory_Stats */
 
 
-int       Zoltan_Malloc_Num()
+int       Zoltan_Malloc_Num(void)
 {
 /* Return number associated with the most recent malloc call. */
   return (nmalloc);

@@ -27,7 +27,7 @@ typedef struct RL_Node {                /* an entry in the local root list   */
   pOctant oct;                          /* pointer to the root octant        */
 } RList;
 
-extern pRList  RL_initRootList();
+extern pRList  RL_initRootList(void);
 extern pOctant RL_nextRootOctant(pRList *rlist);
 extern int     RL_addRootOctant(pRList rlist, pOctant oct);
 extern int     RL_freeList(pRList *rlist);

@@ -576,11 +576,11 @@ float before,                 /* Amount of data that overlaps between old and */
   if (total_HEcnt) {
     hg.nVtx = max0 + zz->LB.Num_Global_Parts;  
     hg.nEdge = total_HEcnt;
-    hg.nInput = total_HEcnt * 2;   /* two pins per HE */
+    hg.nPins = total_HEcnt * 2;   /* two pins per HE */
     hg.EdgeWeightDim = 1;
     hg.ewgt = (float *) ZOLTAN_MALLOC(total_HEcnt * sizeof(float));
     hg.hindex = (int *) ZOLTAN_MALLOC((total_HEcnt + 1) * sizeof(int));
-    hg.hvertex = (int *) ZOLTAN_MALLOC((hg.nInput) * sizeof(int));
+    hg.hvertex = (int *) ZOLTAN_MALLOC((hg.nPins) * sizeof(int));
     if (!hg.ewgt || !hg.hindex || !hg.hvertex) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;

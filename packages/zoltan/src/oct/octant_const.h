@@ -56,9 +56,9 @@ typedef struct _Octant {            /* octant tree node that has 8 children */
 /* #ifdef LGG_MIGOCT */
 extern void    Zoltan_Oct_setID(pOctant oct, int id);
 /* #endif  *//* LGG_MIGOCT */
-extern void    Zoltan_Oct_initCounters();
-extern pOctant Zoltan_Oct_newremote();
-extern pOctant Zoltan_Oct_new();
+extern void    Zoltan_Oct_initCounters(void);
+extern pOctant Zoltan_Oct_newremote(void);
+extern pOctant Zoltan_Oct_new(void);
 extern int     Zoltan_Oct_id(pOctant oct);
 extern int     Zoltan_Oct_dir(pOctant oct);
 extern int     Zoltan_Oct_mapidx(pOctant oct);

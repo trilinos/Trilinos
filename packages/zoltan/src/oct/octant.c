@@ -19,8 +19,8 @@ extern "C" {
 /*****************************************************************************/
 static int OCT_count;                /* count of all local octants           */
 static int OCT_idcount;              /* count for id's, help with uniqueness */
-static pOctant Zoltan_Oct_mallocremote();
-static pOctant Zoltan_Oct_malloc();
+static pOctant Zoltan_Oct_mallocremote(void);
+static pOctant Zoltan_Oct_malloc(void);
 static int     Zoltan_Oct_nlocal(pOctant oct);
 /*****************************************************************************/
 /*
@@ -28,7 +28,7 @@ static int     Zoltan_Oct_nlocal(pOctant oct);
  *
  * creates space in memory for a new octant
  */
-static pOctant Zoltan_Oct_mallocremote() {
+static pOctant Zoltan_Oct_mallocremote(void) {
   pOctant ptr;                                  /* pointer to the new octant */
   
   ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
@@ -43,7 +43,7 @@ static pOctant Zoltan_Oct_mallocremote() {
  *
  * creates space in memory for a new octant
  */
-static pOctant Zoltan_Oct_malloc() {
+static pOctant Zoltan_Oct_malloc(void) {
   pOctant ptr;                                  /* pointer to the new octant */
   
   ptr=(pOctant) ZOLTAN_MALLOC(sizeof(Octant));                /* allocate space */
@@ -54,7 +54,7 @@ static pOctant Zoltan_Oct_malloc() {
   return(ptr);
 }
 
-void Zoltan_Oct_initCounters() {
+void Zoltan_Oct_initCounters(void) {
   OCT_count = 0;
   OCT_idcount = 0;
 }
@@ -66,7 +66,7 @@ void Zoltan_Oct_initCounters() {
  * create a new octant on the local processor and return
  * a pointer to it.  It will have no parents or children.
  */
-pOctant Zoltan_Oct_newremote() {
+pOctant Zoltan_Oct_newremote(void) {
   pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   
@@ -103,7 +103,7 @@ pOctant Zoltan_Oct_newremote() {
  * create a new octant on the local processor and return
  * a pointer to it.  It will have no parents or children.
  */
-pOctant Zoltan_Oct_new() {
+pOctant Zoltan_Oct_new(void) {
   pOctant new_ptr;                              /* pointer to the new octant */
   int i;                                        /* index counter */
   

@@ -13,17 +13,17 @@
 
 #include "phg.h"
 
-static int split_hypergraph (int *pins[2], PHGraph*, PHGraph*, Partition, int, ZZ*);
+static int split_hypergraph (int *pins[2], HGraph*, HGraph*, Partition, int, ZZ*);
 
 
 
 /* recursively divides problem into 2 parts until all p found */
-int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
+int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
                         PHGPartParams *hgp, int level)
 {
     int i, j, mid, err, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
     Partition part;
-    PHGraph *new;
+    HGraph *new;
     PHGComm *hgc=hg->comm;
     char *yo = "Zoltan_PHG_rdivide";
     
@@ -85,12 +85,12 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         ZOLTAN_FREE (&lpins[0]); /* we don't need lpins */
     }
     
-    if (!(new = (PHGraph*) ZOLTAN_MALLOC (sizeof (PHGraph))))  {
+    if (!(new = (HGraph*) ZOLTAN_MALLOC (sizeof (HGraph))))  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory.");
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
         return ZOLTAN_MEMERR;
     }
-    Zoltan_PHG_PHGraph_Init (new);
+    Zoltan_HG_HGraph_Init (new);
     
     /* recursively divide in two parts and repartition hypergraph */
     err = split_hypergraph (pins, hg, new, part, 0, zz);
@@ -99,7 +99,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         return err;
     }
     err = Zoltan_PHG_rdivide (lo, mid, final, zz, new, hgp, level+1);
-    Zoltan_PHG_HGraph_Free (new);
+    Zoltan_HG_HGraph_Free (new);
     if (err != ZOLTAN_OK) {
         Zoltan_Multifree (__FILE__, __LINE__, 2, &pins[0], &part);
         return err;
@@ -112,7 +112,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
         return err;
     }
     err = Zoltan_PHG_rdivide (mid+1, hi, final, zz, new, hgp, level+1);
-    Zoltan_PHG_HGraph_Free (new);
+    Zoltan_HG_HGraph_Free (new);
     
     /* remove alloc'ed structs */
     ZOLTAN_FREE (&part);
@@ -123,7 +123,7 @@ int Zoltan_PHG_rdivide (int lo, int hi, Partition final, ZZ *zz, PHGraph *hg,
 
 
 
-static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition part,
+static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition part,
                              int partid, ZZ *zz)
 {
     int *tmap = NULL;  /* temporary array mapping from old HGraph info to new */
@@ -167,9 +167,9 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     /* continue allocating memory for dynamic arrays in new HGraph */
     new->vmap    = (int*) ZOLTAN_REALLOC (new->vmap, new->nVtx * sizeof (int));
     new->hindex  = (int*) ZOLTAN_MALLOC ((old->nEdge+1) * sizeof (int));
-    new->hvertex = (int*) ZOLTAN_MALLOC (old->nNonZero * sizeof (int));
+    new->hvertex = (int*) ZOLTAN_MALLOC (old->nPins * sizeof (int));
     if ((new->nVtx && new->vmap == NULL) || new->hindex == NULL || 
-        (old->nNonZero && new->hvertex == NULL))  {
+        (old->nPins && new->hvertex == NULL))  {
         Zoltan_Multifree (__FILE__, __LINE__, 5, &new->vmap, &new->hindex,
                           &new->hvertex, &new->vmap, &tmap);
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Unable to allocate memory 2.");
@@ -178,22 +178,22 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     
     /* fill in hindex and hvertex arrays in new HGraph */
     new->nEdge  = 0;
-    new->nNonZero = 0;
+    new->nPins = 0;
     for (edge = 0; edge < old->nEdge; edge++)
         if (pins[partid][edge]>1) {  /* edge has at least two vertices in partition:
                                         we are skipping size 1 nets */
-            new->hindex[new->nEdge] = new->nNonZero;
+            new->hindex[new->nEdge] = new->nPins;
             for (i = old->hindex[edge]; i < old->hindex[edge+1]; i++)
                 if (tmap [old->hvertex[i]] >= 0)  {
-                    new->hvertex[new->nNonZero] = tmap[old->hvertex[i]];
-                    new->nNonZero++;  
+                    new->hvertex[new->nPins] = tmap[old->hvertex[i]];
+                    new->nPins++;  
                 }
             if (new->ewgt)
                 new->ewgt[new->nEdge] = old->ewgt[edge];
             new->nEdge++;
         }
 
-    new->hindex[new->nEdge] = new->nNonZero;
+    new->hindex[new->nEdge] = new->nPins;
     new->info = old->info;
     new->VtxWeightDim = old->VtxWeightDim;
     new->EdgeWeightDim   = old->EdgeWeightDim;
@@ -214,9 +214,9 @@ static int split_hypergraph (int *pins[2], PHGraph *old, PHGraph *new, Partition
     new->dist_y[0] = 0;
     
     /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
-    new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nNonZero);
+    new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nPins);
     new->hindex = (int*)ZOLTAN_REALLOC(new->hindex, sizeof(int) * (new->nEdge+1));
-    Zoltan_PHG_Create_Mirror (zz, new);
+    Zoltan_HG_Create_Mirror (zz, new);
     
     ZOLTAN_FREE (&tmap);
     return ZOLTAN_OK;

@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 
 
 
@@ -252,7 +252,7 @@ int *vertices = NULL, *stack = NULL;
 char *yo = "matching_rrm";
 
    if (!(vertices = (int*) ZOLTAN_MALLOC (hg->nVtx   * sizeof(int)))
-    || !(stack    = (int*) ZOLTAN_MALLOC (hg->nInput * sizeof(int))) ) {
+    || !(stack    = (int*) ZOLTAN_MALLOC (hg->nPins * sizeof(int))) ) {
        Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;
@@ -299,7 +299,7 @@ int *vertices = NULL, *stack = NULL;
 char *yo = "matching_rrm";
 
    if (!(vertices = (int*) ZOLTAN_MALLOC (hg->nVtx   * sizeof(int)))
-    || !(stack    = (int*) ZOLTAN_MALLOC (hg->nInput * sizeof(int))) ) {
+    || !(stack    = (int*) ZOLTAN_MALLOC (hg->nPins * sizeof(int))) ) {
        Zoltan_Multifree (__FILE__, __LINE__, 2, &stack, &vertices);
        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
        return ZOLTAN_MEMERR;

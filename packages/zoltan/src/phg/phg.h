@@ -19,19 +19,17 @@
 extern "C" {
 #endif
 
-#include "zz_const.h"
-#include "zz_heap.h"
-#include "zz_sort.h"
+#include "hg.h"
+    
 #include "phg_comm.h"
 #include "phg_const.h"
-#include "phg_hypergraph.h"
 #include "phg_util.h"
 #include "params_const.h"
 #include "zoltan_comm.h"
 
 /********************************************************************
  * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 
- * corresponding to local objects (vertices) and a PHGraph as used 
+ * corresponding to local objects (vertices) and a HGraph as used 
  * by the partitioning algorithms. 
  ********************************************************************/
 
@@ -43,7 +41,7 @@ struct Zoltan_PHGraph {
                             /* KDD In parallel version Part may be in HG */
   ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
                                within row communicators. */
-  PHGraph PHG;              /* Hypergraph for initial objects.       */
+  HGraph PHG;              /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_PHGraph ZPHG;
 
@@ -83,52 +81,15 @@ typedef struct Zoltan_PHGraph ZPHG;
     Zoltan_PHG_Gno_To_Proc_Block(gno, (phg)->dist_x, (phg)->comm->nProc_x)
 
 
-/*****************/
-/* Useful macros */
-/*****************/
-
-#define MIN(A,B)  (((A) < (B)) ? (A) : (B))
-#define MAX(A,B)  (((A) > (B)) ? (A) : (B))
-
-#define RANDOM_SEED   123456789   /* (time ((time_t*)NULL)) */
-#define EPS           1e-6        /* small value, like a machine epsilon */
-
-/********************/
-/* Type definitions */
-/********************/
-
-typedef int *Matching;  /* length |V|, matching information of vertices */
-/* If a vertex i is not being contracted (matched) with other vertices,  
- * Matching[i] == i.  If vertices i, j, and k are being contracted together to
- * form one new vertex, Matching[i] == j; Matching[j] == k; and 
- * Matching[k] == i. The cycle (of any length) describes the contraction. 
- */
- 
-typedef int *LevelMap;  /* length |V|, mapping of fine vertices onto coarse 
-                           vertices */
-typedef int *Partition; /* length |V|, partition ID for each vertex */
-
-typedef struct {
-   PHGraph   *hg;
-   Partition part;
-   Matching  match;
-   LevelMap  lmap;
-} PHGraphLevel;
-
 /* Function types for options to hypergraph partitioning */
-
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, PHGraph*, Matching);
-typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, PHGraph*, int, Partition,
+typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching);
+typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, Partition,
                                           struct PHGPartParamsStruct*);
-typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, PHGraph*, int, Partition,
+typedef int ZOLTAN_PHG_REFINEMENT_FN(ZZ*, HGraph*, int, Partition,
                                      struct PHGPartParamsStruct*, float);
 
-/* Function types for edge-weight scaling functions. Placeholder for now; */
-/* if these functions end up having the same argument list for each type, */
-/* do not need separate types here or separate pointers in HGPartParams.  KDD */
-typedef int ZOLTAN_PHG_MATCHING_EWS_FN(ZZ*, PGraph*);
 
     
 /******************************************/
@@ -177,32 +138,31 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /*********************/
 /* Scale Edge Weight */
 /*********************/
-int Zoltan_PHG_Scale_HGraph_Weight (ZZ*, PHGraph*, float*, int);
-int Zoltan_PHG_Scale_Graph_Weight  (ZZ*, PGraph*,  float*, int);
+int Zoltan_PHG_Scale_HGraph_Weight (ZZ*, HGraph*, float*, int);
 
 /**********************/
 /* Matching functions */
 /**********************/
-int Zoltan_PHG_Matching (ZZ*, PHGraph*, Matching, PHGPartParams*);
+int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening(ZZ*, PHGraph*, Matching, PHGraph*, int*);
+int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*);
 
 /*********************************/
 /* Coarse Partitioning functions */
 /*********************************/
-extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, PHGraph*, PHGComm*, PHGraph**);
-extern int Zoltan_PHG_CoarsePartition(ZZ*, PHGraph*, int, Partition, 
+extern int Zoltan_PHG_Gather_To_All_Procs(ZZ*, HGraph*, PHGComm*, HGraph**);
+extern int Zoltan_PHG_CoarsePartition(ZZ*, HGraph*, int, Partition, 
                                       PHGPartParams*);
 ZOLTAN_PHG_COARSEPARTITION_FN *Zoltan_PHG_Set_CoarsePartition_Fn(char*);
 
 /************************/
 /* Refinement functions */ 
 /************************/
-int Zoltan_PHG_Refinement (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
+int Zoltan_PHG_Refinement (ZZ*, HGraph*, int, Partition, PHGPartParams*);
 ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 
 /*****************/
@@ -217,21 +177,21 @@ extern int Zoltan_PHG_gather_slice(
 /* Other Function Prototypes */
 /*****************************/
 
-extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, PHGraph *,
+extern int Zoltan_PHG_rdivide (int,  int, Partition, ZZ *, HGraph *,
                                PHGPartParams *, int);
     
 extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
-extern int Zoltan_PHG_HPart_Lib(ZZ*, PHGraph*, int, Partition, PHGPartParams*, 
+extern int Zoltan_PHG_HPart_Lib(ZZ*, HGraph*, int, Partition, PHGPartParams*, 
                                 int);
-extern int Zoltan_PHG_HPart_Info(ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-extern double Zoltan_PHG_hcut_size_total(PHGComm*, PHGraph*, Partition, int);
-extern double Zoltan_PHG_hcut_size_links(PHGComm*, PHGraph*, Partition, int);    
-extern double Zoltan_PHG_HPart_balance(ZZ*, PHGraph*, int, Partition);
+extern int Zoltan_PHG_HPart_Info(ZZ*, HGraph*, int, Partition, PHGPartParams*);
+extern double Zoltan_PHG_hcut_size_total(PHGComm*, HGraph*, Partition, int);
+extern double Zoltan_PHG_hcut_size_links(PHGComm*, HGraph*, Partition, int);    
+extern double Zoltan_PHG_HPart_balance(ZZ*, HGraph*, int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, PHGPartParams*);
-extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  PHGraph*, FILE*);
+extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*,  HGraph*, FILE*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
-extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, PHGraph*);
+extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
 extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
 

@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 #include "hg.h"
-#include "hypergraph.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
 
@@ -185,8 +184,8 @@ int num_gid_entries = zz->Num_GID;
   /* Build vtxdist as in Zoltan_Build_Graph. */
   /* KDD -- I am guessing we will need this array in parallel; we may not. */
 
-  hg->vtxdist = (int *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(int));
-  if (!(hg->vtxdist)){
+  hg->dist_x = (int *)ZOLTAN_MALLOC((zz->Num_Proc+1)* sizeof(int));
+  if (!(hg->dist_x)){
     /* Not enough memory */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
     goto End;
@@ -195,13 +194,13 @@ int num_gid_entries = zz->Num_GID;
   /* Construct vtxdist[i] = the number of vertices on all procs < i. */
   /* Scan to compute partial sums of the number of objs */
 
-  MPI_Scan (&nVtx, hg->vtxdist, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Scan (&nVtx, hg->dist_x, 1, MPI_INT, MPI_SUM, zz->Communicator);
 
   /* Gather data from all procs */
 
-  MPI_Allgather (&(hg->vtxdist[0]), 1, MPI_INT,
-                 &(hg->vtxdist[1]), 1, MPI_INT, zz->Communicator);
-  hg->vtxdist[0] = 0;
+  MPI_Allgather (&(hg->dist_x[0]), 1, MPI_INT,
+                 &(hg->dist_x[1]), 1, MPI_INT, zz->Communicator);
+  hg->dist_x[0] = 0;
 
   /* Get hyperedge information from application through query functions. */
 
@@ -217,7 +216,7 @@ int num_gid_entries = zz->Num_GID;
    * KDD:  For now, assume application can return number of pins.
    */
 
-  hg->nInput = npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
+  hg->nPins = npins = zz->Get_Num_HG_Pins(zz->Get_Num_HG_Pins_Data, &ierr);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,"Error returned from Get_Max_HG_Edge_Size");
     goto End;
@@ -291,7 +290,7 @@ int num_gid_entries = zz->Num_GID;
     for (i=0; i< nVtx; i++) {
       hash_tab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
-      hash_nodes[i].gno = hg->vtxdist[zz->Proc]+i;
+      hash_nodes[i].gno = hg->dist_x[zz->Proc]+i;
     }
 
     for (i=0; i< nVtx; i++){

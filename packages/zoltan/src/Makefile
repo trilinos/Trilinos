@@ -205,7 +205,7 @@ PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_gather.c \
 		  phg_scale.c \
 		  phg_Vcycle.c phg_rdivide.c phg_util.c \
 		  phg_comm.c
-PHG_INC 	= phg.h phg_hypergraph.h phg_util.h
+PHG_INC 	= phg.h phg_util.h
 
 GDEFINES       += -DZOLTAN_HG
 endif
@@ -214,8 +214,8 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c hg_scale.c \
 		  hg_match.c hg_pack.c hg_rdivide.c \
-		  hg_part.c hg_plot.c hg_util.c
-HG_INC 		= hg.h hypergraph.h hg_util.h
+		  hg_part.c hg_plot.c hg_hypergraph.c hg_util.c
+HG_INC 		= hg.h hg_hypergraph.h hg_util.h
 GDEFINES       += -DZOLTAN_HG
 else
 HG_CSRC		= hg_util.c

@@ -21,7 +21,7 @@ extern "C" {
 /*****************************************************************************/
 void Zoltan_PHG_Plot_2D_Distrib(
   ZZ *zz,
-  PHGraph *phg
+  HGraph *phg
 )
 {
 /* Routine that produces gnuplot output of 2D data distribution in form of 

@@ -10,7 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
 #ifndef __HG_UTIL_H
 #define __HG_UTIL_H
 
@@ -19,30 +18,10 @@
 extern "C" {
 #endif
 
-
-#ifdef HGEXEC
-#include "hypergraph.h"
-#else
-#include "zz_const.h"
-#endif
-
-
-#include "hg_hypergraph.h"
-
-
-
-/* Hypergraph utilities */
-extern void Zoltan_HG_HGraph_Init (HGraph*);
-extern int Zoltan_HG_HGraph_Free  (HGraph*);
-extern int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
-
-extern void Zoltan_HG_Graph_Init  (Graph*);
-extern int Zoltan_HG_Graph_Free   (Graph*);
-extern int Zoltan_HG_Info         (ZZ*, HGraph*);
-extern int Zoltan_HG_Check        (ZZ*, HGraph*);
-extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);
-extern int Zoltan_HG_Graph_to_HGraph(ZZ*, Graph*,  HGraph*);
-extern void Zoltan_HG_Print(ZZ*, HGraph*, FILE*);
+#define EPS                     1e-6
+    
+#define MIN(A,B)                (((A) < (B)) ? (A) : (B))
+#define MAX(A,B)                (((A) > (B)) ? (A) : (B))
 
 extern unsigned int Zoltan_HG_Rand (void);
 extern void         Zoltan_HG_Srand (unsigned int);

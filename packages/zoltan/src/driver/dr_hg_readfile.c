@@ -17,11 +17,8 @@ extern "C" {
 #endif
 
 #include <stdlib.h>
-#ifdef HGEXEC
-#include "hypergraph.h"
-#else
+#include <ctype.h>
 #include "zoltan.h"
-#endif
 
 #include "dr_hg_readfile.h"
 #include "dr_util_const.h"
@@ -408,7 +405,6 @@ static int MM_readfile (
  int *base)
 {
 int err = ZOLTAN_OK;
-char errstr[200];
 int prev_edge;
 int rowhedges=1; /* default is row hyperedge model */
 char *yo = "MM_readfile";
@@ -438,7 +434,7 @@ char *yo = "MM_readfile";
     int ret_code;
     MM_typecode matcode;
     int M, N, nz;   
-    int i, j, k, tmp;
+    int j, k, tmp;
     struct ijv *mat;
 
     if (mm_read_banner(f, &matcode) != 0)

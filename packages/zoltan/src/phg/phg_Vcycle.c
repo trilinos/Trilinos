@@ -55,7 +55,7 @@ int Zoltan_PHG_Set_Part_Options (ZZ *zz, PHGPartParams *hgp)
 
 
 typedef struct _tagVCycle {
-    PHGraph             *hg;         /* for finer==NULL, hg and part contains   */
+    HGraph             *hg;         /* for finer==NULL, hg and part contains   */
     Partition           part;        /* original hg and part, don't delete them */  
     int                 *LevelMap;
     struct _tagVCycle   *finer; 
@@ -83,10 +83,10 @@ static int allocVCycle(VCycle *v)
 }
 
 
-static VCycle *newVCycle(PHGraph *hg, Partition part, int *levmap, VCycle *finer)
+static VCycle *newVCycle(HGraph *hg, Partition part, int *levmap, VCycle *finer)
 {
     VCycle *vcycle=NULL;
-    PHGraph *nhg = NULL;
+    HGraph *nhg = NULL;
     
     if (!(vcycle = (VCycle*) ZOLTAN_MALLOC (sizeof(VCycle)))) 
         return NULL;
@@ -94,7 +94,7 @@ static VCycle *newVCycle(PHGraph *hg, Partition part, int *levmap, VCycle *finer
     if (hg)
         vcycle->hg = hg;
     else {
-        if (!(nhg = vcycle->hg = (PHGraph *) ZOLTAN_MALLOC (sizeof(PHGraph)))) {
+        if (!(nhg = vcycle->hg = (HGraph *) ZOLTAN_MALLOC (sizeof(HGraph)))) {
             ZOLTAN_FREE ((void**) &vcycle);
             return NULL;
         }
@@ -115,7 +115,7 @@ static VCycle *newVCycle(PHGraph *hg, Partition part, int *levmap, VCycle *finer
 /*  Main partitioning function for hypergraph partitioning. */
 int Zoltan_PHG_HPart_Lib (
     ZZ *zz,               /* Zoltan data structure */
-    PHGraph *hg,          /* Input hypergraph to be partitioned */
+    HGraph *hg,          /* Input hypergraph to be partitioned */
     int p,                /* Input:  number partitions to be generated */
     Partition Parts,      /* Output:  partition #s; aligned with vertex arrays. */
     PHGPartParams *hgp,   /* Input:  parameters for hgraph partitioning. */
@@ -124,7 +124,6 @@ int Zoltan_PHG_HPart_Lib (
 {
     VCycle  *vcycle=NULL, *del=NULL;
     int  i, err = ZOLTAN_OK, prevVcnt=2*hg->dist_x[hg->comm->nProc_x];
-    char msg[128];
     char *yo = "Zoltan_PHG_HPart_Lib";
     
     ZOLTAN_TRACE_ENTER(zz, yo);
@@ -145,10 +144,10 @@ int Zoltan_PHG_HPart_Lib (
         
         if (hgp->output_level >= PHG_DEBUG_LIST) {
             uprintf(hg->comm, "START %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d...\n",
-                    hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
+                    hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                     hgp->coarsepartition_str, hgp->refinement_str, p);
             if (hgp->output_level > PHG_DEBUG_LIST) {
-                err = Zoltan_PHG_Info(zz, hg);
+                err = Zoltan_HG_Info(zz, hg);
                 if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
                     goto End;
             }
@@ -207,7 +206,7 @@ int Zoltan_PHG_HPart_Lib (
         
         if (hgp->output_level >= PHG_DEBUG_LIST)     
             uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
-                    hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
+                    hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
                     hgp->coarsepartition_str, hgp->refinement_str, p,
                     Zoltan_PHG_HPart_balance(zz, hg, p, vcycle->part),
                     Zoltan_PHG_hcut_size_links(&hgp->comm, hg, vcycle->part, p));
@@ -229,7 +228,7 @@ int Zoltan_PHG_HPart_Lib (
     vcycle = del;
     while (vcycle) {
         if (vcycle->finer) {
-            Zoltan_PHG_HGraph_Free (vcycle->hg);
+            Zoltan_HG_HGraph_Free (vcycle->hg);
             Zoltan_Multifree (__FILE__, __LINE__, 2, &vcycle->part, &vcycle->LevelMap);
         } else
             ZOLTAN_FREE(&vcycle->LevelMap);
@@ -248,20 +247,20 @@ int Zoltan_PHG_HPart_Lib (
 /****************************************************************************/
 /* Calculates the cutsize of a partition by summing the weight of all edges
    which span more than one part. Time O(|I|). */
-double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, int p)
+double Zoltan_PHG_hcut_size_total (PHGComm *hgc, HGraph *hg, Partition part, int p)
 {
     int i, j, *netpart, *allparts;    
     double cut = 0.0, totalcut=0.0;
     char *yo = "Zoltan_PHG_hcut_size_total";
 
     if (!(netpart = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
-        ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
 
     if (!hgc->myProc_x)
         if (!(allparts = (int*) ZOLTAN_CALLOC (hgc->nProc_x*hg->nEdge, sizeof(int)))) {
-            ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
+            ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
             return ZOLTAN_MEMERR;
         }
 
@@ -311,7 +310,7 @@ double Zoltan_PHG_hcut_size_total (PHGComm *hgc, PHGraph *hg, Partition part, in
    the number of parts it spans across. This value minus one is the
    cutsize of this edge and the total cutsize is the sum of the single
    cutsizes. Time O(|I|). */
-double Zoltan_PHG_hcut_size_links (PHGComm *hgc, PHGraph *hg, Partition part, int p)
+double Zoltan_PHG_hcut_size_links (PHGComm *hgc, HGraph *hg, Partition part, int p)
 {
     int i, j, *cuts=NULL, *rescuts=NULL, *parts, nparts;
     double cut = 0.0, totalcut=0.0;
@@ -319,12 +318,12 @@ double Zoltan_PHG_hcut_size_links (PHGComm *hgc, PHGraph *hg, Partition part, in
     
     if (hg->nEdge) {
         if (!(cuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
-            ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
+            ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
             return ZOLTAN_MEMERR;
         }   
         if (!hgc->myProc_x)
             if (!(rescuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
-                ZOLTAN_PRINT_ERROR(hgc->Proc, yo, "Insufficient memory.");
+                ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
                 return ZOLTAN_MEMERR;
             }
     
@@ -364,7 +363,7 @@ double Zoltan_PHG_hcut_size_links (PHGComm *hgc, PHGraph *hg, Partition part, in
 
 double Zoltan_PHG_HPart_balance (
   ZZ *zz,
-  PHGraph *hg,
+  HGraph *hg,
   int p,
   Partition part
 )

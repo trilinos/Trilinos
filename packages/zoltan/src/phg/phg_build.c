@@ -20,7 +20,8 @@ extern "C" {
 #include "zz_const.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
-
+#include "hg_hypergraph.h"
+    
 #define MEMORY_ERROR { \
   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
   ierr = ZOLTAN_MEMERR; \
@@ -41,9 +42,9 @@ int Zoltan_PHG_Build_Hypergraph(
   PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
 )
 {
-/* allocates and builds hypergraph data structure using callback routines */
-ZPHG *zhg;                     /* Temporary pointer to Zoltan_PHGraph. */
-PHGraph *phgraph;             /* Temporary pointer to HG field */
+/* allocates and builds hypergraph data structure using callback routines */ 
+ZPHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
+HGraph *phgraph;             /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_PHG_Build_Hypergraph";
 
@@ -59,7 +60,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->VtxPlan = NULL;
 
   phgraph = &(zhg->PHG);
-  Zoltan_PHG_PHGraph_Init(phgraph);
+  Zoltan_HG_HGraph_Init(phgraph);
 
   /* just set the pointer of phgraph's comm to hgp's comm */
   phgraph->comm = &hgp->comm;
@@ -85,19 +86,19 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      * Hypergraph callback functions don't exist, but graph functions do;
      * call the graph callback, build a graph, and convert it to a hypergraph. 
      */
-    PGraph graph;             /* Temporary graph. */
+    Graph graph;             /* Temporary graph. */
 
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Graph Callbacks.");
 
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "GRAPH TO HGRAPH CONVERSION MAY NOT BE "
                       "CORRECT IN PARALLEL YET -- KDD KDDKDD");
 
-    Zoltan_PHG_Graph_Init(&graph);
+    Zoltan_HG_Graph_Init(&graph);
     ierr = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
-      Zoltan_PHG_Graph_Free(&graph);
+      Zoltan_HG_Graph_Free(&graph);
       goto End;
     }
 
@@ -106,19 +107,19 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      &(graph.vtxdist), &(graph.nindex), &(graph.neigh), &(graph.ewgt));
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building graph");
-      Zoltan_PHG_Graph_Free(&graph);
+      Zoltan_HG_Graph_Free(&graph);
       goto End;
     }
-
+ 
     graph.nEdge = graph.nindex[graph.nVtx];
-    ierr = Zoltan_PHG_Graph_to_HGraph(zz, &graph, phgraph);
+    ierr = Zoltan_HG_Graph_to_HGraph(zz, &graph, phgraph);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error converting graph to hypergraph");
-      Zoltan_PHG_Graph_Free(&graph);
+      Zoltan_HG_Graph_Free(&graph);
       goto End;
     }
 
-    Zoltan_PHG_Graph_Free(&graph);
+    Zoltan_HG_Graph_Free(&graph);
   }
 
 #ifdef KDDKDD_NO_COORDINATES_FOR_NOW
@@ -134,12 +135,12 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 #endif
 
   if (hgp->check_graph) {
-    ierr = Zoltan_PHG_Check(zz, phgraph);
+    ierr = Zoltan_HG_Check(zz, phgraph);
     if (ierr == ZOLTAN_WARN) {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning returned from Zoltan_PHG_Check");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning returned from Zoltan_HG_Check");
     }
     else if (ierr != ZOLTAN_OK) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_PHG_Check");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_HG_Check");
       goto End;     
     }
   }
@@ -154,7 +155,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
-    Zoltan_PHG_HGraph_Free(&(zhg->PHG));
+    Zoltan_HG_HGraph_Free(&(zhg->PHG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
      &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
   }
@@ -234,7 +235,7 @@ int nEdge, nVtx;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
-PHGraph *phg = &(zhg->PHG);
+HGraph *phg = &(zhg->PHG);
 
 int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
@@ -521,7 +522,7 @@ float frac_x, frac_y;
 
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
-  phg->nNonZero = nnz;
+  phg->nPins = nnz;
   phg->hindex = hindex;
   phg->hvertex = hvertex;
 
@@ -530,9 +531,9 @@ float frac_x, frac_y;
    * KDDKDD -- What should be done with them?
    */
 
-  ierr = Zoltan_PHG_Create_Mirror(zz, phg);
+  ierr = Zoltan_HG_Create_Mirror(zz, phg);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error from Zoltan_PHG_Create_Mirror");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error from Zoltan_HG_Create_Mirror");
     goto End;
   }
 
@@ -555,7 +556,7 @@ float frac_x, frac_y;
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    Zoltan_PHG_HGraph_Free(phg);
+    Zoltan_HG_HGraph_Free(phg);
   }
   
   Zoltan_Multifree(__FILE__, __LINE__, 9,  &app.pins, 

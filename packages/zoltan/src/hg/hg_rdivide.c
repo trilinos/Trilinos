@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 
 static int split_hypergraph (HGraph*, HGraph*, Partition, int, ZZ*);
 
@@ -117,7 +117,7 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
    /* save vertex and edge weights if they exist */
    if (old->vwgt)
        new->vwgt = (float*) ZOLTAN_MALLOC (old->nVtx  * sizeof(float)
-        * old->VertexWeightDim);
+        * old->VtxWeightDim);
    if (old->ewgt)
        new->ewgt = (float*) ZOLTAN_MALLOC (old->nEdge * sizeof(float)
         * old->EdgeWeightDim);
@@ -138,7 +138,7 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
    /* continue allocating memory for dynamic arrays in new HGraph */
    new->vmap    = (int*) ZOLTAN_REALLOC (new->vmap, new->nVtx * sizeof (int));
    new->hindex  = (int*) ZOLTAN_MALLOC ((old->nEdge+1) * sizeof (int));
-   new->hvertex = (int*) ZOLTAN_MALLOC (old->nInput * sizeof (int));
+   new->hvertex = (int*) ZOLTAN_MALLOC (old->nPins * sizeof (int));
    if (new->vmap == NULL || new->hindex == NULL || new->hvertex == NULL)  {
       Zoltan_Multifree (__FILE__, __LINE__, 5, &new->vmap, &new->hindex,
        &new->hvertex, &new->vmap, &tmap);
@@ -148,28 +148,28 @@ static int split_hypergraph (HGraph *old, HGraph *new, Partition part,
 
    /* fill in hindex and hvertex arrays in new HGraph */
    new->nEdge  = 0;
-   new->nInput = 0;
+   new->nPins = 0;
    for (edge = 0; edge < old->nEdge; edge++)  {
-      pins = new->nInput;      /* not yet sure if this edge will be included */
-      new->hindex[new->nEdge] = new->nInput;
+      pins = new->nPins;      /* not yet sure if this edge will be included */
+      new->hindex[new->nEdge] = new->nPins;
       for (i = old->hindex[edge]; i < old->hindex[edge+1]; i++)
          if (tmap [old->hvertex[i]] >= 0)  {
-            new->hvertex[new->nInput] = tmap[old->hvertex[i]];
-            new->nInput++;   /* edge has at least one vertex in partition */
+            new->hvertex[new->nPins] = tmap[old->hvertex[i]];
+            new->nPins++;   /* edge has at least one vertex in partition */
             }
-      if (pins < new->nInput)  {
+      if (pins < new->nPins)  {
          if (new->ewgt)
             new->ewgt[new->nEdge] = old->ewgt[edge];
          new->nEdge++;
          }
       }
-   new->hindex[new->nEdge] = new->nInput;
+   new->hindex[new->nEdge] = new->nPins;
    new->info = old->info;
-   new->VertexWeightDim = old->VertexWeightDim;
+   new->VtxWeightDim = old->VtxWeightDim;
    new->EdgeWeightDim   = old->EdgeWeightDim;
 
    /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
-   new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nInput);
+   new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nPins);
    new->hindex = (int*)ZOLTAN_REALLOC(new->hindex, sizeof(int) * (new->nEdge+1));
    Zoltan_HG_Create_Mirror (zz, new);
 

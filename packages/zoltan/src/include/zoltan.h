@@ -2053,7 +2053,7 @@ extern void Zoltan_Destroy(
 extern int Zoltan_Set_Fn(
   struct Zoltan_Struct *zz,
   ZOLTAN_FN_TYPE fn_type,
-  void (*fn_ptr)(),
+  void (*fn_ptr)(void),
   void *data_ptr
 );
 

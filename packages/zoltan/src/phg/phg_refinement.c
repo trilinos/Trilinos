@@ -44,7 +44,7 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 
 
 /****************************************************************************/
-int Zoltan_PHG_Refinement (ZZ *zz, PHGraph *hg, int p, Partition part,
+int Zoltan_PHG_Refinement (ZZ *zz, HGraph *hg, int p, Partition part,
 PHGPartParams *hgp)
 {
   return hgp->Refinement(zz, hg, p, part, hgp, hgp->bal_tol);
@@ -55,7 +55,7 @@ PHGPartParams *hgp)
 /****************************************************************************/
 static int refine_no (
   ZZ *zz,     /* Zoltan data structure */
-  PHGraph *hg,
+  HGraph *hg,
   int p,
   Partition part,
   PHGPartParams *hgp,
@@ -74,7 +74,7 @@ static int refine_no (
  */
 
 
-static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *gain, HEAP *heap,
+static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part, float *gain, HEAP *heap,
                                    int *pins[2], int *lpins[2], double *weights, double *lweights,
                                    int *mark, int *adj)
 {
@@ -148,7 +148,7 @@ static void fm2_move_vertex_oneway(int v, PHGraph *hg, Partition part, float *ga
 }
 
 
-static void fm2_move_vertex_oneway_nonroot(int v, PHGraph *hg, Partition part, int *lpins[2],
+static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part, int *lpins[2],
                                            double *weights, double *lweights)
 {
     int   pno=part[v], vto=1-pno, j;
@@ -192,7 +192,7 @@ static int fm2_select(HEAP heap[2], double *weights, double *max_weight, double 
 }
 
 
-static void fm2_move_vertex(int v, PHGraph *hg, Partition part, float *gain, HEAP *heap, int *pins[2], int *lpins[2], double *weights, double *lweights, int *mark, int *adj)
+static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, HEAP *heap, int *pins[2], int *lpins[2], double *weights, double *lweights, int *mark, int *adj)
 {
     float oldgain=gain[v];
     int   pno=part[v], vto=1-pno, adjsz=0, j, i;
@@ -276,7 +276,7 @@ static void fm2_move_vertex(int v, PHGraph *hg, Partition part, float *gain, HEA
 
 static int refine_fm2 (
   ZZ *zz,
-  PHGraph *hg,
+  HGraph *hg,
   int p,
   Partition part,
   PHGPartParams *hgp,
@@ -292,7 +292,7 @@ static int refine_fm2 (
     char   *yo="local_fm2";
     PHGComm *hgc=&hgp->comm;
     struct {
-        int nNonZero;
+        int nPins;
         int rank;
     } rootin, root;
 
@@ -309,12 +309,12 @@ static int refine_fm2 (
         return ZOLTAN_FATAL;
     }
     fprintf(fp, "%s\n", uMe(hgc));
-    fprintf(fp, "H(%d, %d, %d)\n", hg->nVtx, hg->nEdge, hg->nNonZero);
+    fprintf(fp, "H(%d, %d, %d)\n", hg->nVtx, hg->nEdge, hg->nPins);
     fprintf(fp, "p=%d  bal_tol = %.3f\n PartVec:\n", p, bal_tol);    
     for (i = 0; i < hg->nVtx; ++i)
         fprintf(fp, "%d ", part[i]);
     fprintf(fp, "\n\n");
-    Zoltan_PHG_Print(zz, hg, fp);
+    Zoltan_HG_Print(zz, hg, fp);
     fclose(fp);
 #endif
 
@@ -329,7 +329,7 @@ static int refine_fm2 (
 
     /* find the index of the proc in column group with the most #nonzeros; it will be our root
        proc for computing moves since it has better knowedge about global hypergraph */
-    rootin.nNonZero = hg->nNonZero; 
+    rootin.nPins = hg->nPins; 
     rootin.rank = hgc->myProc_y;
     MPI_Allreduce(&rootin, &root, 1, MPI_2INT, MPI_MAXLOC, hgc->col_comm);
     

@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 
 /* Local refinement algorithms. */
 static ZOLTAN_HG_LOCAL_REF_FN local_no;
@@ -759,9 +759,9 @@ char   *yo="local_fmkway";
 
   do 
   { int step=0, no_better_steps=0, number_locked=0, best_locked=0;
-    int sour, dest, best_safe, safe, best_heap;
+    int sour, dest, best_safe, best_heap;
     double akt_cutsize=best_cutsize, best_gain;
-    double wgt_i, part_weight_i, part_weight_k, max_part_weight;
+    double max_part_weight;
  
     round++;
     cutsize = best_cutsize;

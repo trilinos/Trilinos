@@ -16,15 +16,17 @@
 extern "C" {
 #endif
 
-#include "phg.h"
 #include <float.h>
+#include "phg.h"
+#include "hg_hypergraph.h"
+
 
 
 
 /****************************************************************************/
 /* Scaling the weight of hypergraph edges. Currently there are 5 methods.
    The default should be number 1. */
-int Zoltan_PHG_Scale_HGraph_Weight (ZZ *zz, PHGraph *hg, float *new_ewgt,
+int Zoltan_PHG_Scale_HGraph_Weight (ZZ *zz, HGraph *hg, float *new_ewgt,
  int scale)
 {
   int i, j;
@@ -130,7 +132,7 @@ int Zoltan_PHG_Scale_HGraph_Weight (ZZ *zz, PHGraph *hg, float *new_ewgt,
 
 /* Scaling the weight of the edges in a graph. There are currently 4
    different methods. Default should be number 1. */
-int Zoltan_PHG_Scale_Graph_Weight (ZZ *zz, PGraph *g, float *new_ewgt, int scale)
+int Zoltan_PHG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
 {
 int   i, j;
 double vwgt_j;

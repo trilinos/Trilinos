@@ -15,8 +15,10 @@
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
-
-#include "hypergraph.h"
+#include <float.h>
+#include <hg_util.h>
+#include "zz_const.h"
+#include "hg_hypergraph.h"
 
 
 

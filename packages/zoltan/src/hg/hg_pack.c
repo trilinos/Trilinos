@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "hypergraph.h"
+#include "hg.h"
 
 
 
@@ -416,7 +416,7 @@ char *yo="packing_lhp";
 
   if (!(del_edge   = (int*) ZOLTAN_CALLOC  (hg->nEdge,    sizeof(int)))
    || !(Vindex     = (int*) ZOLTAN_MALLOC ((hg->nVtx+1) * sizeof(int)))
-   || !(Vindex_old = (int*) ZOLTAN_MALLOC  (hg->nInput  * sizeof(int))) ) {
+   || !(Vindex_old = (int*) ZOLTAN_MALLOC  (hg->nPins  * sizeof(int))) ) {
       Zoltan_Multifree (__FILE__, __LINE__, 3, &del_edge, &Vindex, &Vindex_old);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
