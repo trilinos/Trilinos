@@ -538,7 +538,7 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_release_information NOX Release Information
+/*! \page nox_release_information NOX and LOCA Release Information
 
 NOX/LOCA 4.0 is being released as part of Trilinos 5.0 on March 1st 2005.
 
@@ -548,6 +548,14 @@ What's new in this release:
 <li> Inexact Trust Region Techniques are fully supported (also in the prerelease section).
 <li> Improved support for Epetra objects - The NOX::EpetraNew::Group should be used in place of the NOX::Epetra::Group.  In the future we will be phasing out the NOX::Epetra::Group and replace it with NOX::EpetraNew::Group.
 <li> A multi-physics technique for code coupling has been demonstrated in the test/epetra/Multiphysics directory.  This will be expanded to a generic capability in the next year.
+<li> The %LOCA library can now be built as a shared library using libtool.  See \ref nox_configuration_options for how to do this.  Known issues with this are:
+   <ul>
+   <li> Extra link libraries passed using the --with-libs configure flag should use the "-Lpath -lname" format instead of "path/libname.a"
+   <li> Building %LOCA as a static library on DEC architectures using template repositories does not work.  On these architctures, only build %LOCA as a shared library using the --enable-shared and --disable-static configure flags, or turn off template repositories using the "-tweak" C++ compiler flag.  Note that if the later method is chosen, a large number of warnings will be issued each time an executable is linked against %LOCA.
+   <li> When building shared libraries on SGI systems in 64 bit, one must supply the "-64" C++ compiler flag to not only the compiler and linker through CXXFLAGS and LDFLAGS, but also to libtool using LIBTOOL_CCLINKER_FLAGS or --with-libtool-cclinker-flags.  Also one must turn off template repositories and the template prelinker using the flags "-ptused -no_prelink -no_auto_include".
+   <li> When building shared libraries on Solaris systems, one should add "-xlic_lib=sunperf" to CFLAGS, "-library=sunperf" to CXXFLAGS and LIBTOOL_CCLINKER_FLAGS, and make sure neither of these flags appear in LDFLAGS.
+  </ul>
+<li> A basic, but functional python interface to %NOX and %LOCA now exists.  See \ref nox_configuration_options for how to enable this.  A test exhibiting this functionality can be found in the src/test/lapack/LOCA_python directory.
 </ul>
 
 
@@ -585,6 +593,24 @@ Here is a detailed list and explanation of the %NOX configuration options.
   <li> \c --with-ldflags
     <ul>
       <li> Specify additional linker flags (e.g., "-Ldir")
+    </ul>
+  <li> \c --with-libtool-compiler-flags
+    <ul>
+      <li> Specify additional compiler flags specifically to libtool.  Use 
+           this flag when libtool removes a needed compiler flag passed 
+           through the normal mechanism from the compile line.
+    </ul>
+  <li> \c --with-libtool-linker-flags
+    <ul>
+      <li> Specify additional linker flags specifically to libtool.  Use 
+           this flag when libtool removes a needed linker flag passed 
+           through the normal mechanism from the link line.
+    </ul>
+  <li> \c --with-libtool-cclinker-flags
+    <ul>
+      <li> Specify additional C++ linker flags specifically to libtool.  Use 
+           this flag when libtool removes a needed C++ linker flag passed 
+           through the normal mechanism from the C++ link line.
     </ul>
   <li> \c --with-ar
     <ul>
@@ -624,6 +650,25 @@ Here is a detailed list and explanation of the %NOX configuration options.
    <li> \c FFLAGS  
       <ul>
          <li> Fortran 77 compiler flags <em>(used only in configure tests)</em>
+      </ul>
+   <li> \c LIBTOOL_COMPILER_FLAGS
+      <ul>
+         <li> Specify additional compiler flags specifically to libtool.  Use 
+              this when libtool removes a needed compiler flag passed 
+              through the normal mechanism from the compile line.
+      </ul>
+   <li> \c LIBTOOL_LINKER_FLAGS
+      <ul>
+         <li> Specify additional linker flags specifically to libtool.  Use 
+              this when libtool removes a needed linker flag passed 
+              through the normal mechanism from the link line.
+      </ul>
+   <li> \c LIBTOOL_CCLINKER_FLAGS
+      <ul>
+         <li> Specify additional C++ linker flags specifically to libtool.  
+              Use 
+              this when libtool removes a needed C++ linker flag passed 
+              through the normal mechanism from the C++ link line.
       </ul>
 </ul>
 
