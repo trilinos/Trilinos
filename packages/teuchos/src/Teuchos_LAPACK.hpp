@@ -751,11 +751,11 @@ namespace Teuchos
   }
   
   template<typename OrdinalType>
-  void LAPACK<OrdinalType, double>::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, double* TAU, double* WORK, OrdinalType lwork, OrdinalType* info) const
+  void LAPACK<OrdinalType, double>::GEHRD(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     DGEHRD_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
   }
-  
+
   template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::HSEQR(const char JOB, const char COMPZ, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* H, const OrdinalType ldh, double* WR, double* WI, double* Z, const OrdinalType ldz, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {

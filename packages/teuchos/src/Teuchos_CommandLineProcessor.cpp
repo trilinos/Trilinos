@@ -43,7 +43,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
-	assert(option_val);
+	assert(option_val!=NULL);
 	options_list_[std::string(option_true)]
 		= opt_val_val_t(OPT_BOOL_TRUE,option_val);
 	options_list_[std::string(option_false)]
@@ -58,7 +58,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
-	assert(option_val);
+	assert(option_val!=NULL);
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_INT,option_val);
 	options_documentation_list_.push_back(
@@ -71,7 +71,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
-	assert(option_val);
+	assert(option_val!=NULL);
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_DOUBLE,option_val);
 	options_documentation_list_.push_back(
@@ -84,7 +84,7 @@ void CommandLineProcessor::setOption(
 	,const char    documentation[]
 	)
 {
-	assert(option_val);
+	assert(option_val!=NULL);
 	options_list_[std::string(option_name)]
 		= opt_val_val_t(OPT_STRING,option_val);
 	options_documentation_list_.push_back(

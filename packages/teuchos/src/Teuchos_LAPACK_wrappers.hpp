@@ -40,7 +40,7 @@
 #define DLAMCH_F77  F77_FUNC(slamch,SLAMCH)
 #define DGELS_F77   F77_FUNC(sgels,SGELS)
 #define DGEEV_F77   F77_FUNC(sgeev,SGEEV)
-#define DGEHRS_F77  F77_FUNC(sgehrd,SGEHRD)
+#define DGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
 #define DHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
 #define DORGHR_F77  F77_FUNC(sorghr,SORGHR)
 #define DORMHR_F77  F77_FUNC(sormhr,SORMHR)
