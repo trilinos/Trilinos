@@ -35,8 +35,8 @@ public:
 		const int numrhs, const TYPE tol=1.0e-6, const int maxits=25, 
 		const int block=1, bool vb = false);
 	virtual ~BlockGmres();
-	void GetSolutions(TYPE [], const int);
-	void SetInitGuess(const TYPE [], const int, const int);
+	void GetSolutions(AnasaziMultiVec<TYPE>& soln);
+	void SetInitGuess(AnasaziMultiVec<TYPE>& iguess);
 	void SetRestart(const int);
 	void SetDebugLevel(const int);
 	void SetGmresBlkTols();
@@ -208,24 +208,16 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2);
 		tptr2->MvAddMv(one, *tptr, zero, *tptr);
 		//
-        // Fill up the sol_block with zero vectors, then
+        	// Fill up the sol_block with zero vectors, then
 		// place the remaining (unsolved) initial guesses into the initial portion
 		// of the sol_block.
 		//
-		int numrows = sol_block.GetVecLength();
-		double * array = new double[_blocksize * numrows]; 
-        for (j=0;j<_blocksize;j++){
-			for (i=0; i<numrows; i++){
-				array[i+j*numrows] = 0.0;
-			}
-		}
-		sol_block.SetVecValues(array,numrows);
-		//
+		sol_block.MvInit( 0.0 );
 		//
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-        tptr = _solutions->CloneView(index,num_to_solve); assert(tptr);
+        	tptr = _solutions->CloneView(index,num_to_solve); assert(tptr);
 		for (i=0; i<num_to_solve; i++) {
 			index[i] = i;
 		}
@@ -240,7 +232,6 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		if (tptr2) {
 			delete tptr2; tptr2 = 0;
 		}
-		delete [] array; array=0;
 	}
 	delete [] index; index=0;
 	//
@@ -290,16 +281,35 @@ void BlockGmres<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
 
 
 template <class TYPE>
-void BlockGmres<TYPE>::SetInitGuess(const TYPE x[], const int cols, const int ldx) {
-	if (_startblock==false && cols==_numrhs) {
-		//
-		// Set _solutions to the guesses
-		//
-		_solutions = _rhs.Clone(cols);
-		assert(_solutions);
-		_solutions->SetVecValues( x, ldx );
-		_startblock = true;
-	}
+void BlockGmres<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
+//  This will set the initial guess to the input vector.  If it has less
+//  columns than the number of right hand sides, then the rest of _solutions
+//  will be filled up with random vectors.
+        if (!_startblock) {
+                int i, numvecs = iguess.GetNumberVecs();
+                int* index = new int[ _numrhs ];
+                _solutions = _rhs.Clone(_numrhs); assert(_solutions);
+                if (numvecs < _numrhs) {
+                        for (i=0; i<numvecs; i++) {
+                                index[i] = i;
+                        }
+                        _solutions->SetBlock( iguess, index, numvecs );
+                        for (i=numvecs; i<_numrhs; i++) {
+                                index[i-numvecs] = i;
+                        }       
+                        AnasaziMultiVec<TYPE>* U_vec = _solutions->CloneView( index, _numrhs-numvecs );
+                        assert(U_vec);
+                        U_vec->MvRandom();
+                        delete U_vec;
+                }
+                else {
+                        for (i=0; i<_numrhs; i++) {
+                                index[i] = i;
+                        }
+                        _solutions->SetBlock( iguess, index, _numrhs );
+                }
+                _startblock = true;
+        }
 }
 
 
@@ -369,14 +379,20 @@ void BlockGmres<TYPE>::PrintResids(bool vb)const {
 
 
 template <class TYPE>
-void BlockGmres<TYPE>::GetSolutions(TYPE x[], const int ldx) {
-	if (_solutions) {
-		_solutions->GetVecValues(x,ldx);
+void BlockGmres<TYPE>::GetSolutions(AnasaziMultiVec<TYPE>& soln) {
+	int i, numvecs = soln.GetNumberVecs();
+	if (numvecs > _numrhs) {
+		numvecs = _numrhs;
 	}
-	else {
-		assert(_solutions);
+	int* index = new int[ numvecs ];
+	for (i=0; i<numvecs; i++) {
+		index[i] = i;
 	}
+	soln.SetBlock( *_solutions, index, numvecs );
+
+	delete [] index;
 }
+
 
 template <class TYPE>
 void BlockGmres<TYPE>::Solve (bool vb) {
