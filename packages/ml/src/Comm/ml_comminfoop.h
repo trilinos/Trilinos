@@ -98,6 +98,8 @@ extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                                    ML_Comm *comm);
 extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
                              int start_location, ML_Comm *comm, int );
+extern void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
+                     int start_location, ML_Comm *comm, int overwrite_or_add); 
 
 #ifdef __cplusplus
 }
