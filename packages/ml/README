@@ -1,0 +1,15 @@
+1) Look at the INSTALL file for general hints on compiling ML.
+
+2) Look in the doc directory for documentation.
+
+3) There are several Mailing lists that you can sign up for
+   to get information updates about ML. They can be found
+   at the following address: 
+       http://software.sandia.gov/mailman/listinfo
+
+   For most people, the lists ML-Announce and ML-Users will
+   be of most interest.
+
+4) Finally, there is a bugzilla interface for reporting bugs
+   and enhancement requests. This can be found at 
+       http://software.sandia.gov/bugzilla
