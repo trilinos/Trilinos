@@ -41,7 +41,6 @@
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
 #include "Ifpack_SparseContainer.h"
-#include "Ifpack_AdditiveSchwarz.h"
 #include "Ifpack_Amesos.h"
 #include "AztecOO.h"
 
@@ -72,7 +71,7 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A);
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -111,7 +110,7 @@ int CompareBlockSizes(string PrecType,
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A);
+  Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Prec(A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -158,7 +157,7 @@ bool ComparePointAndBlock(string PrecType,
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
-    Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> Point(A);
+    Ifpack_PointRelaxation Point(A);
     Point.SetParameters(List);
     Point.Compute();
 
@@ -190,7 +189,7 @@ bool ComparePointAndBlock(string PrecType,
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
-    Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Block(A);
+    Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > Block(A);
     Block.SetParameters(List);
     Block.Compute();
 
@@ -246,13 +245,18 @@ bool KrylovTest(string PrecType,
 
   int Iters1, Iters10;
 
+  if (verbose) {
+    cout << "Krylov test: Using " << PrecType 
+         << " with AztecOO" << endl;
+  }
+
   // ============================================== //
   // get the number of iterations with 1 sweep only //
   // ============================================== //
   {
 
     List.set("relaxation: sweeps",1);
-    Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> Point(A);
+    Ifpack_PointRelaxation Point(A);
     Point.SetParameters(List);
     Point.Compute();
 
@@ -277,7 +281,7 @@ bool KrylovTest(string PrecType,
   // ======================================================== //
   {
     List.set("relaxation: sweeps",10);
-    Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> Point(A);
+    Ifpack_PointRelaxation Point(A);
     Point.SetParameters(List);
     Point.Compute();
     LHS.PutScalar(0.0);
@@ -377,7 +381,7 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  bool verbose = (Comm.MyPID() == 0);
+  verbose = (Comm.MyPID() == 0);
 
   for (int i = 1 ; i < argc ; ++i) {
     if (strcmp(argv[i],"-s") == 0) {
@@ -503,8 +507,10 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize(); 
 #endif
-
+  
+  cout << endl;
   cout << "Test `TestRelaxation.exe' passed!" << endl;
+  cout << endl;
   exit(EXIT_SUCCESS);
 }
 
