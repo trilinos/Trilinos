@@ -38,7 +38,6 @@ int      *sizes,		/* variable size of objects (if not NULL) */
 char     *recv_data)		/* array of data I'll own after reverse comm */
 {
     ZOLTAN_COMM_OBJ *plan_reverse;	/* communication data structure */
-    int       my_proc;		/* current processor ID */
     int       total_send_length;/* total message length I send in plan */
     int       max_recv_length;	/* biggest message I recv in plan */
     int       sum_recv_sizes;	/* sum of the item sizes I receive */
@@ -51,8 +50,6 @@ char     *recv_data)		/* array of data I'll own after reverse comm */
       ZOLTAN_COMM_ERROR("Communication plan = NULL.", yo, -1);
       return ZOLTAN_FATAL;
     }
-
-    MPI_Comm_rank(plan->comm, &my_proc);
 
     /* Let Zoltan_Comm_Do check the remaining parameters. */
 

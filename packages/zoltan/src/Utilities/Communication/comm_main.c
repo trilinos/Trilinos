@@ -28,6 +28,7 @@ void set_up_comm_from_send(), check_comm_answer(), print_data();
 void check_comm_answer_reverse(), print_plan();
 int read_comm_problem();
 double drandom();
+void check_comm_info();
 
 
 static int out_level = 1;	/* how much output to generate? */
@@ -60,7 +61,7 @@ struct Answer {
 
 int main(int argc, char *argv[])
 {
-    FILE     *in_file;		/* file with data for problems */
+    FILE     *in_file = NULL;	/* file with data for problems */
     ZOLTAN_COMM_OBJ *plan;	/* communication data structure pointer */
     struct Params params;	/* parameters describing a problem */
     struct Data data;		/* data describing a problem instance */
@@ -116,6 +117,8 @@ if (out_level > 1) printf("%d: About to call comm_create\n", my_proc);
 	Zoltan_Comm_Create(&plan, my_send_data.nvals, my_send_data.proc_dest,
 	    MPI_COMM_WORLD, 1, &nvals_recv);
 
+if (out_level > 1) printf("%d: About to call comm_info\n", my_proc);
+        check_comm_info(plan, &my_send_data, nvals_recv, my_proc);
 
 if (out_level > 2) print_plan("BEFORE RESIZE", plan, my_proc);
 	/* "4" reflects the max_sizes value in gen_comm_data */
@@ -667,6 +670,86 @@ int my_proc)
         }
         printf("\n");
     }
+}
+
+void check_comm_info(
+  ZOLTAN_COMM_OBJ *plan, 
+  struct Data *my_send_data, 
+  int nvals_recv,
+  int my_proc
+)
+{
+int *info_tmp = NULL,  /* Temp bufs for verifying Zoltan_Comm_Info */
+    *info_tmp_send = NULL,
+    *info_tmp_recv = NULL;
+int *info_send_list = NULL,
+    *info_send_procs = NULL,
+    *info_send_lengths = NULL;
+int  info_nsend = 0,
+     info_send_nvals = 0,
+     info_send_size = 0,
+     info_max_send_size = 0;
+int *info_recv_list = NULL,
+    *info_recv_procs = NULL,
+    *info_recv_lengths = NULL;
+int  info_nrecv = 0,
+     info_recv_nvals = 0,
+     info_recv_size = 0,
+     info_total_recv_size = 0;
+int  info_self_msg = 0;
+int  i;
+
+
+    Zoltan_Comm_Info(plan, &info_nsend, NULL, NULL,
+                     &info_send_nvals, NULL, NULL, &info_nrecv, NULL,
+                     NULL, &info_recv_nvals, NULL, NULL, &info_self_msg);
+
+    if (info_send_nvals != my_send_data->nvals)
+        printf("%d Error in Zoltan_Comm_Info info_send_nvals %d != %d\n",
+             my_proc, info_send_nvals, my_send_data->nvals);
+
+    if (info_recv_nvals != nvals_recv)
+        printf("%d Error in Zoltan_Comm_Info info_recv_nvals %d != %d\n",
+             my_proc, info_recv_nvals, nvals_recv);
+
+    info_send_size = 2 * (info_nsend + info_self_msg) + info_send_nvals;
+    info_send_procs = (int *) ZOLTAN_MALLOC(info_send_size * sizeof(int));
+    info_send_lengths = info_send_procs + (info_nsend + info_self_msg);
+    info_send_list = info_send_lengths + (info_nsend + info_self_msg);
+
+    info_recv_size = 2 * (info_nrecv + info_self_msg) + info_recv_nvals;
+    info_recv_procs = (int *) ZOLTAN_MALLOC(info_recv_size * sizeof(int));
+    info_recv_lengths = info_recv_procs + (info_nrecv + info_self_msg);
+    info_recv_list = info_recv_lengths + (info_nrecv + info_self_msg);
+
+    Zoltan_Comm_Info(plan, &info_nsend, info_send_procs, info_send_lengths,
+                     &info_send_nvals, &info_max_send_size, info_send_list, 
+                     &info_nrecv, info_recv_procs, info_recv_lengths,
+                     &info_recv_nvals, &info_total_recv_size,
+                     info_recv_list, &info_self_msg);
+
+    for (i = 0; i < info_send_nvals; i++) 
+        if (info_send_list[i] != my_send_data->proc_dest[i])
+            printf("%d Error in Zoltan_Comm_Info send_list[%d]: %d != %d\n",
+                 my_proc, i, info_send_list[i], my_send_data->proc_dest[i]);
+
+    info_tmp = (int *) ZOLTAN_MALLOC((info_send_nvals + info_recv_nvals)
+                                      * sizeof(int));
+    info_tmp_send = info_tmp;
+    info_tmp_recv = info_tmp_send + info_send_nvals;
+    for (i = 0; i < info_send_nvals; i++)
+        info_tmp_send[i] = my_proc;
+    Zoltan_Comm_Do(plan, 12, (char *) info_tmp_send, sizeof(int), 
+                   (char *) info_tmp_recv);
+
+    for (i = 0; i < info_recv_nvals; i++)
+        if (info_recv_list[i] != info_tmp_recv[i])
+            printf("%d Error in Zoltan_Comm_Info recv_list[%d]: %d != %d\n",
+                 my_proc, i, info_recv_list[i], info_tmp_recv[i]);
+
+    ZOLTAN_FREE(&info_tmp);
+    ZOLTAN_FREE(&info_recv_procs);
+    ZOLTAN_FREE(&info_send_procs);
 }
 
 #ifdef __cplusplus

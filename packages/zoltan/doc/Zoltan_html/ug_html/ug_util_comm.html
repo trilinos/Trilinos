@@ -121,7 +121,10 @@ associated with a communication plan.&nbsp;</blockquote>
 a set of messages each processor wants to send, determines the set of messages
 each processor needs to receive.
 <br><b><a href="#Zoltan_Comm_Sort_Ints">Zoltan_Comm_Sort_Ints</a>:&nbsp; </b>sorts
-an array of integer values.&nbsp;</blockquote>
+an array of integer values.&nbsp;
+<br><b><a href="#Zoltan_Comm_Info">Zoltan_Comm_Info</a>:&nbsp; </b>returns information about a communication plan.
+<br><b><a href="#Zoltan_Comm_Invert_Plan">Zoltan_Comm_Invert_Plan</a>:&nbsp; </b>given a communication plan, converts the plan into a plan for the reverse communication.
+</blockquote>
 </td>
 </tr>
 
@@ -773,6 +776,204 @@ order.&nbsp;</td>
 </tr>
 </table>
 
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Comm_Info"></a>
+<hr>
+int <b>Zoltan_Comm_Info</b>( 
+  struct Comm_Obj *<i>plan</i>,
+  int *<i>nsends</i>,
+  int *<i>send_procs</i>,
+  int *<i>send_lengths</i>,
+  int *<i>send_nvals</i>,
+  int *<i>send_max_size</i>,
+  int *<i>send_list</i>,
+  int *<i>nrecvs</i>,
+  int *<i>recv_procs</i>,
+  int *<i>recv_lengths</i>,
+  int *<i>recv_nvals</i>,
+  int *<i>recv_total_size</i>,
+  int *<i>recv_list</i>,
+  int *<i>self_msg</i>
+)
+<hr><b>Zoltan_Comm_Info</b> returns information about a communication plan.
+All arguments, except the <i>plan</i> itself, may be NULL; values are 
+returned only for non-NULL arguments.  
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; 
+  plan</i></td>
+<td VALIGN=TOP>
+Communication data structure created by 
+<a href="#Zoltan_Comm_Create"><b>Zoltan_Comm_Create</b></a>.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nsends</i></td>
+<td VALIGN=TOP>
+Upon return, the number of processors to which messages are sent; 
+does not include self-messages.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; send_procs</i></td>
+<td VALIGN=TOP>
+Upon return, a list of processors to which messages are sent;
+self-messages are included.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; send_lengths</i></td>
+<td VALIGN=TOP>
+Upon return, the number of values to be sent to each processor
+in <i>send_procs</i>. 
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; send_nvals</i></td>
+<td VALIGN=TOP>
+Upon return, the total number of values to send.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; send_max_size</i></td>
+<td VALIGN=TOP>
+Upon return, the maximum size of a message to be sent; does not
+include self-messages. 
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; send_list</i></td>
+<td VALIGN=TOP>
+Upon return, the processor assignment of each value to be sent.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; nrecvs</i></td>
+<td VALIGN=TOP>
+Upon return, the number of processors from which to receive messages;
+does not include self-messages.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; recv_procs</i></td>
+<td VALIGN=TOP>
+Upon return, a list of processors from which messages are
+received; includes self-messages.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; recv_lengths</i></td>
+<td VALIGN=TOP>
+Upon return, the  number of values to be received from each
+processor in <i>recv_procs</i>. 
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; recv_nvals</i></td>
+<td VALIGN=TOP>
+Upon return, the total number of values to receive.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; recv_total_size</i></td>
+<td VALIGN=TOP>
+Upon return, the total size of items to be received. 
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; recv_list</i></td>
+<td VALIGN=TOP>
+Upon return, the processor assignments of each value to be received.
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; self_msg</i></td>
+<td VALIGN=TOP>
+Upon return, the number of self-messages.
+</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>Error code.</td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Comm_Invert_Plan"></a>
+<hr>
+int <b>Zoltan_Comm_Invert_Plan</b>( 
+  struct Comm_Obj **<i>plan</i>
+)
+<hr>Given a communication plan, <b>Zoltan_Comm_Invert_Plan</b> 
+alters the plan to make it the plan for the reverse communication.
+Information in the input plan is replaced by information for the
+reverse-communication plan.  All receives in the reverse-communication
+plan are blocked; thus, using the inverted plan does not produce the
+same results as 
+<a href="#Zoltan_Comm_Do_Reverse"><b>Zoltan_Comm_Do_Reverse</b></a>.
+If an error occurs within <b>Zoltan_Comm_Invert_Plan</b>, the original plan
+is returned unaltered.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; 
+  plan</i></td>
+<td VALIGN=TOP>
+Communication data structure created by 
+<a href="#Zoltan_Comm_Create"><b>Zoltan_Comm_Create</b></a>; the contents
+of this plan are irretrievably modified by <b>Zoltan_Comm_Invert_Plan</b>.
+</td>
+</tr>
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; int</td>
+
+<td>Error code.</td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
 <hr>
 <br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_util_dd.html">Next:&nbsp;
 Distributed Directory Utility</a>&nbsp; |&nbsp; <a href="ug_util_mem.html">Previous:&nbsp;

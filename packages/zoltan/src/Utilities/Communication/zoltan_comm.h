@@ -52,6 +52,11 @@ extern int Zoltan_Comm_Do(ZOLTAN_COMM_OBJ *, int, char *, int, char *);
 extern int Zoltan_Comm_Do_Reverse(ZOLTAN_COMM_OBJ *, int, char *, int, int *, 
     char *);
 
+extern int Zoltan_Comm_Info(ZOLTAN_COMM_OBJ *, int *, int *, int *, int *,
+  int *, int *, int *, int *, int *, int *, int *, int *, int *);
+
+extern int Zoltan_Comm_Invert_Plan(ZOLTAN_COMM_OBJ **);
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
