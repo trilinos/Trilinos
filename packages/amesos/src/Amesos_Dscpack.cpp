@@ -75,7 +75,8 @@ Amesos_Dscpack::~Amesos_Dscpack(void) {
 int Amesos_Dscpack::SetParameters( Teuchos::ParameterList &ParameterList ) 
 {
 
-  if( (int) &ParameterList == 0 ) return 0;
+  //  Some compilers reject the following cast:
+  //  if( (int) &ParameterList == 0 ) return 0;
 
   if (ParameterList.isSublist("Dscpack") ) {
     Teuchos::ParameterList DscpackParams = ParameterList.sublist("Dscpack") ;

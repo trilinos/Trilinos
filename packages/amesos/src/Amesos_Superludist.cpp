@@ -153,8 +153,8 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;
   
-  // FIXME: ken, this should be commented out because on atlantis it doesn't compile
-  if( (int) &ParameterList == 0 ) return 0;
+  //  Some compilers reject the following cast:
+  //  if( (int) &ParameterList == 0 ) return 0;
 
   if (ParameterList.isSublist("Superludist") ) {
     Teuchos::ParameterList SuperludistParams = ParameterList.sublist("Superludist") ;

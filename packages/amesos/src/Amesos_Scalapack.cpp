@@ -316,7 +316,7 @@ int Amesos_Scalapack::SetParameters( Teuchos::ParameterList &ParameterList ) {
   //
   MaxProcesses_ = - 1; 
 
-  // MS // comment is out to allow compilation on SGI (atlantis)
+  //  Some compilers reject the following cast:
   //  if( &ParameterList == 0 ) return 0;
 
   // MS // now comment it out (only because the list if empty).

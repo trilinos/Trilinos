@@ -343,7 +343,8 @@ int Amesos_Superlu::Factor(){
 
 int Amesos_Superlu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
-  if( &ParameterList == 0 ) return 0;
+  //  Some compilers reject the following cast:
+  //  if( &ParameterList == 0 ) return 0;
 
   if (ParameterList.isSublist("Superlu") ) {
     Teuchos::ParameterList SuperluParams = ParameterList.sublist("Superlu") ;

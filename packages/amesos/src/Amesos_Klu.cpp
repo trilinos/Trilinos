@@ -267,8 +267,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
 int Amesos_Klu::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
-  // MS // Ken, I commented it out because I can't get it compiled
-  // on atlantis
+  //  Some compilers reject the following cast:
   //  if( &ParameterList == 0 ) return 0;
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()' ..." << endl;

@@ -201,8 +201,7 @@ int Amesos_Umfpack::SetParameters( Teuchos::ParameterList &ParameterList ) {
 
   if( debug_ == 1 ) cout << "Entering `SetParameters()'" << endl;
 
-  // MS // Ken, I commented this out because on Atlantis (SGI)
-  // MS // this doesn't compile
+  //  Some compilers reject the following cast:
   //  if(  (int) &ParameterList == 0 ) return 0;
 
   // ========================================= //
