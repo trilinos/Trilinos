@@ -33,7 +33,6 @@ int main(int argc, char *argv[]){
 	    printf("1\n");
 	    /*	    printf("matched %s  %d\n",argv[i],i); */
 	    return 0;
-	    exit(1);
 	  }
         }
       }
