@@ -4,4 +4,16 @@
 #np# List all subdirectories even if one or more are configured/built only
 #np# conditionally.
 
-SUBDIRS = test1 scripts
+if BUILD_TRANSFORM_TESTS
+
+if HAVE_MPI
+
+SUBDIRS = BTF Composite MapColoring SingletonFilter SymmRCM View Overlap Zoltan scripts
+
+else
+
+SUBDIRS = BTF Composite MapColoring SingletonFilter SymmRCM View scripts
+
+endif
+
+endif
