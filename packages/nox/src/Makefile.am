@@ -105,9 +105,7 @@ STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
-        $(srcdir)/NOX_StatusTest_NormWRMS.H \
-        $(srcdir)/NOX_StatusTest_LineSearchStepSize.H \
-        $(srcdir)/NOX_StatusTest_LinearSolverTol.H
+        $(srcdir)/NOX_StatusTest_NormWRMS.H
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
@@ -115,9 +113,7 @@ STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
-        $(srcdir)/NOX_StatusTest_NormWRMS.C \
-        $(srcdir)/NOX_StatusTest_LineSearchStepSize.C \
-        $(srcdir)/NOX_StatusTest_LinearSolverTol.C
+        $(srcdir)/NOX_StatusTest_NormWRMS.C
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H 

@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Solver_LineSearchBased.H"
 #include "NOX_Utils.H"
 
 //#include "/home/rppawlo/Trilinos/packages/epetra/src/Epetra_Vector.h"
@@ -42,33 +43,51 @@
 
 using namespace NOX::StatusTest;
 
-NormWRMS::NormWRMS(double a, double b, double c) :
+NormWRMS::NormWRMS(double rtol_, double atol_, double BDFmult_, double tol_,
+		   double alpha_, double beta_) :
+  rtol(rtol_),
   atolIsScalar(true),
-  atoli(0),
-  factor(c),
+  atol(atol_),
+  atolVec(0),
+  factor(BDFmult_),
+  tolerance(tol_),
+  alpha(alpha_),
+  computedStepSize(1.0),
+  beta(beta_),
+  achievedTol(0.0),
+  status(Unconverged),
   u(0),
-  v(0)
+  v(0),
+  printCriteria2Info(false),
+  printCriteria3Info(false)
 {
-  rtol = a;
-  atol = b;
-  status = Unconverged;
+
 }
 
-NormWRMS::NormWRMS(double a, Abstract::Vector& b, double c) :
+NormWRMS::NormWRMS(double rtol_, Abstract::Vector& atolVec_, double BDFmult_,
+		   double tol_, double alpha_, double beta_) :
+  rtol(rtol_),
   atolIsScalar(false),
-  atoli(0),
-  factor(c),
+  atol(0.0),
+  atolVec(0),
+  factor(BDFmult_),
+  tolerance(tol_),
+  alpha(alpha_),
+  computedStepSize(1.0),
+  beta(beta_),
+  achievedTol(0.0),
+  status(Unconverged),
   u(0),
-  v(0)
+  v(0),
+  printCriteria2Info(false),
+  printCriteria3Info(false)
 {
-  rtol = a;
-  atoli = b.clone();
-  status = Unconverged;
+  atolVec = atolVec_.clone();
 }
 
 NormWRMS::~NormWRMS()
 {
-  delete atoli;
+  delete atolVec;
   delete u;
   delete v;
 }
@@ -87,9 +106,11 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   int niters = problem.getNumIterations();
   if (niters == 0) {
     status = Unconverged;
-    value = -1.0;
+    value = 1.0e+12;
     return status;
   } 
+
+  // **** Begin check for convergence criteria #1 ****
 
   // Create the working vectors if this is the first time this
   // operator is called.
@@ -106,7 +127,7 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
     u->update(rtol, *v, atol);
   }
   else {
-    *u = *atoli;
+    *u = *atolVec;
     u->update(rtol, *v, 1.0);
   }
 
@@ -127,7 +148,61 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // Finally, compute the WRMS norm value by taking the sqrt
   value = sqrt(tmp);
 
-  if (value < 1.0)
+  StatusType status1 = Unconverged;
+  if (value < tolerance)
+    status1 = Converged;
+
+
+  // **** Begin check for convergence criteria #2 ****
+  StatusType status2 = Unconverged;
+  
+  // Determine if the Generic solver is a LineSearchBased solver
+  // If it is not then return a "Converged" status
+  const Solver::Generic* test = 0;
+  test = dynamic_cast<const Solver::LineSearchBased*>(&problem);
+  if (test == 0) {
+    status2 = Converged; 
+  }
+  else {
+    printCriteria2Info = true;
+    computedStepSize = (dynamic_cast<const Solver::LineSearchBased*>(&problem))->getStepSize();
+    
+    if (computedStepSize >= alpha)
+      status2 = Converged;
+  }
+
+  // **** Begin check for convergence criteria #3 ****
+  
+  StatusType status3 = Unconverged;
+  bool outputListExists = false;
+  const NOX::Parameter::List& p = problem.getParameterList();
+  
+  // Make sure the output parameter list exists
+  // If so, get the tolerance from it
+  if (p.isParameterSublist("Direction")) {
+    if (p.sublist("Direction").isParameterSublist("Linear Solver")) {
+      if (p.sublist("Direction").sublist("Linear Solver")
+	  .isParameterSublist("Output")) {
+	
+	outputListExists = true;
+	printCriteria3Info = true;
+	
+	achievedTol = problem.getParameterList().sublist("Direction").sublist("Linear Solver").sublist("Output").getParameter("Scaled Residual", -1.0);
+	
+	if (achievedTol <= beta)
+	    status3 = Converged;
+	
+      }
+    }
+  }
+  
+  if (!outputListExists)
+    status3 = Converged;
+
+  // Determine status of test
+  if ((status1 == Converged) && 
+      (status2 == Converged) &&
+      (status3 == Converged))
     status = Converged;
   
   return status;
@@ -144,7 +219,19 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-    stream << "WRMS-Norm = " << Utils::sci(value) << " < 1.0";
+  stream << "WRMS-Norm = " << Utils::sci(value) << " < " << tolerance;
+  if (printCriteria2Info) {
+    stream << "\n";
+    for (int j = 0; j < indent + 13; j ++)
+      stream << ' ';
+    stream << "(Step Size:  " << Utils::sci(computedStepSize) << " >= " << alpha << ")";
+  }
+  if (printCriteria3Info) {
+    stream << "\n";
+    for (int j = 0; j < indent+ 13; j ++)
+      stream << ' ';
+    stream << "(Lin Solv Tol:  " << Utils::sci(achievedTol) << " < " << beta << ")";
+  }
   stream << endl;
   return stream;
 }

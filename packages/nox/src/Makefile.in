@@ -195,9 +195,7 @@ STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_NormUpdate.H \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
-        $(srcdir)/NOX_StatusTest_NormWRMS.H \
-        $(srcdir)/NOX_StatusTest_LineSearchStepSize.H \
-        $(srcdir)/NOX_StatusTest_LinearSolverTol.H
+        $(srcdir)/NOX_StatusTest_NormWRMS.H
 
 
 STATUSTEST = \
@@ -206,9 +204,7 @@ STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_NormUpdate.C \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
-        $(srcdir)/NOX_StatusTest_NormWRMS.C \
-        $(srcdir)/NOX_StatusTest_LineSearchStepSize.C \
-        $(srcdir)/NOX_StatusTest_LinearSolverTol.C
+        $(srcdir)/NOX_StatusTest_NormWRMS.C
 
 
 UTILS_H = \
@@ -329,9 +325,7 @@ am_libnox_a_OBJECTS = NOX_Abstract_Vector.$(OBJEXT) \
 	NOX_StatusTest_NormUpdate.$(OBJEXT) \
 	NOX_StatusTest_Combo.$(OBJEXT) \
 	NOX_StatusTest_MaxIters.$(OBJEXT) \
-	NOX_StatusTest_NormWRMS.$(OBJEXT) \
-	NOX_StatusTest_LineSearchStepSize.$(OBJEXT) \
-	NOX_StatusTest_LinearSolverTol.$(OBJEXT) NOX_Utils.$(OBJEXT)
+	NOX_StatusTest_NormWRMS.$(OBJEXT) NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -362,8 +356,6 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_TrustRegionBased.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Combo.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_Generic.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_LinearSolverTol.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_MaxIters.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormF.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_StatusTest_NormUpdate.Po \
@@ -480,10 +472,6 @@ NOX_StatusTest_NormUpdate.$(OBJEXT): \
 NOX_StatusTest_Combo.$(OBJEXT): $(srcdir)/NOX_StatusTest_Combo.C
 NOX_StatusTest_MaxIters.$(OBJEXT): $(srcdir)/NOX_StatusTest_MaxIters.C
 NOX_StatusTest_NormWRMS.$(OBJEXT): $(srcdir)/NOX_StatusTest_NormWRMS.C
-NOX_StatusTest_LineSearchStepSize.$(OBJEXT): \
-	$(srcdir)/NOX_StatusTest_LineSearchStepSize.C
-NOX_StatusTest_LinearSolverTol.$(OBJEXT): \
-	$(srcdir)/NOX_StatusTest_LinearSolverTol.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
@@ -518,8 +506,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_TrustRegionBased.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Combo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_Generic.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_LinearSolverTol.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_MaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormF.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_StatusTest_NormUpdate.Po@am__quote@
@@ -852,30 +838,6 @@ NOX_StatusTest_NormWRMS.obj: $(srcdir)/NOX_StatusTest_NormWRMS.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_NormWRMS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_NormWRMS.obj `cygpath -w $(srcdir)/NOX_StatusTest_NormWRMS.C`
-
-NOX_StatusTest_LineSearchStepSize.o: $(srcdir)/NOX_StatusTest_LineSearchStepSize.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_LineSearchStepSize.C' object='NOX_StatusTest_LineSearchStepSize.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_LineSearchStepSize.o `test -f $(srcdir)/NOX_StatusTest_LineSearchStepSize.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_LineSearchStepSize.C
-
-NOX_StatusTest_LineSearchStepSize.obj: $(srcdir)/NOX_StatusTest_LineSearchStepSize.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_LineSearchStepSize.C' object='NOX_StatusTest_LineSearchStepSize.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_LineSearchStepSize.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_LineSearchStepSize.obj `cygpath -w $(srcdir)/NOX_StatusTest_LineSearchStepSize.C`
-
-NOX_StatusTest_LinearSolverTol.o: $(srcdir)/NOX_StatusTest_LinearSolverTol.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_LinearSolverTol.C' object='NOX_StatusTest_LinearSolverTol.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_LinearSolverTol.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_LinearSolverTol.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_LinearSolverTol.o `test -f $(srcdir)/NOX_StatusTest_LinearSolverTol.C || echo '$(srcdir)/'`$(srcdir)/NOX_StatusTest_LinearSolverTol.C
-
-NOX_StatusTest_LinearSolverTol.obj: $(srcdir)/NOX_StatusTest_LinearSolverTol.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_StatusTest_LinearSolverTol.C' object='NOX_StatusTest_LinearSolverTol.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_StatusTest_LinearSolverTol.Po' tmpdepfile='$(DEPDIR)/NOX_StatusTest_LinearSolverTol.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_StatusTest_LinearSolverTol.obj `cygpath -w $(srcdir)/NOX_StatusTest_LinearSolverTol.C`
 
 NOX_Utils.o: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Utils.C' object='NOX_Utils.o' libtool=no @AMDEPBACKSLASH@

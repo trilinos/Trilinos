@@ -38,6 +38,4 @@
 #include "NOX_StatusTest_NormUpdate.H"
 #include "NOX_StatusTest_NormWRMS.H"
 #include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_LineSearchStepSize.H"
-#include "NOX_StatusTest_LinearSolverTol.H"
 #include "NOX_Utils.H"

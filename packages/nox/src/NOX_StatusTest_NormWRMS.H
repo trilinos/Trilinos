@@ -46,30 +46,64 @@ namespace NOX {
 
 namespace StatusTest {
 
-//! Convergence test based on the weighted root mean square norm used in the PVODE code.
+//! Convergence test based on the weighted root mean square norm fo the solution update between iterations.
 /*!
-  Convergence of the nonlinear solver is achieved if the following criteria is met:
+  Convergence of the nonlinear solver is achieved if the following three criteria are met:
+
+  <ol>
+  <li> Weigthed root mean square norm is less than a specified tolerance:
 
   \f[
-  ||E_n||_{rms,w} < 1.0
+  ||\delta x^k||_{wrms} < \mbox{tolerance}
   \f]
  
-  where \f$ E_n \f$ is the vector containing the local error estimate,
-  \f$ E_n = K*(x_n-x_{n-1}) \f$, at nonlinear iteration \f$ n \f$:
+  where \f$ ||\delta x^k||_{wrms} \f$ is the weigthed root mean square norm 
+  at nonlinear iteration \f$ k \f$.  "tolerance" is a user supplied parameter 
+  that defaults to 1.0 (1.0 is used almost universally). The user can change 
+  this value in the constructor by specifying the "tolerance" variable.
+
+  The weighted root mean square norm at iteration \f$ k \f$ is defined by:
 
   \f[
-  ||E_n||_{rms,w} =   \sqrt{ \frac{1}{N} \sum_{i=1}^N \left( \frac {E_{n,i}}{RTOL |x_i| + ATOL_i} \right) ^2  }
+  ||\delta x^k||_{wrms} =   \sqrt{ \frac{1}{N} \sum_{i=1}^N \left( \frac {C*(x^k_i-x^{k-1}_i)}{RTOL |x^{k-1}_i| + ATOL_i} \right) ^2  }
   \f]
 
-  Here, \f$ E_{n,i} \f$ denotes the \f$ i \f$ -th component of \f$ E_n
-  \f$, \f$RTOL \f$ is the relative error tolerance, and \f$ ATOL_i \f$
-  is the absolute error tolerance.  \f$ ATOL_i \f$ can be a scalar or
-  a vector of length \f$ N \f$. \f$ K \f$ is a constant that depends
-  on the time stepping algorithm (which BDF method is chosen).
+  Where \f$ N \f$ is the total number of unknowns in the problem. 
+  \f$ x^k_i \f$ denotes the \f$ i \f$ -th component of the solution 
+  vector \f$ x \f$ at nonlinear iteration \f$ k \f$. \f$ RTOL \f$ is the 
+  relative error tolerance (a scalar value).  \f$ ATOL_i \f$
+  is the absolute error tolerance and can be a scalar or
+  a vector of the same size as the solution vector. 
+  \f$ C \f$ is a scalar value that is typically set to 1.0.  When 
+  NormWRMS is used in conjunction with time stepping algorithms such as
+  Backward Differentiation Formulas (BDF) a different value may be required 
+  based on the specific BDF algorithm utlilized.  The user is free to set 
+  this parameter in the consturctor with the "BDFMultiplier" variable.
+  Defaults to 1.0.
 
-  NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value to -1.0.  Once an iteration has taken place the WRMS Norm value is calculated as above.  
+  NOTE:  If no iterations have been performed, then there is no information for\f$ x_{k-1} \f$ and thus the WRMS norm can not be computed.  If the test is called while the number of iterations is zero (i.e. before an iteration takes place), the code returns the status test as Unconverged and sets the value of the WRMS norm to 1.0e+12.  Once an iteration has taken place the WRMS Norm value is calculated as above.  
 
-  Reference: "PVODE, an ODE %Solver for Parallel Computers", Byrne,
+  <li> If a line search is used, the line search step size, \f$ \lambda \f$, must be greater than a specified step size value, \f$ \alpha \f$:
+
+  \f[ \lambda > \alpha \f]
+
+  The WRMS norm is essentially a stagnation test: i.e. convergence is based on the change in the solution vector, \f$ \delta x = x^n - x^{n-1} \f$ becoming very small.  If a line search is used, the line search algorithm could cut the step length to a small enough value that the \f$ \delta x\f$ is small enough to claim convergence.  This second criteria prevents this premature convergence by the NormWRMS test by insisting that the line search step size be larger than a certain value.  The value \f$ \alpha \f$ can be specified in the constructor with the "alpha" variable.  Defaults to 1.0.  Setting this value > 1.0 essentially eliminates this criteria from the status test.  NOTE: This criteria will only be used if a "Line Search Based" solver is being used (see NOX::Solver::LineSearchBased).
+
+  <li> The achieved linear solver tolerance, \f$ \eta^k \f$ for nonlinear iteration \f$ k \f$, must be less than a specified tolerance value, \f$ \beta \f$:
+
+  \f[ \eta^k < \beta \f]
+
+ The WRMS norm is essentially a stagnation test: i.e. convergence is based on the change in the solution vector, \f$ \delta x = x^n - x^{n-1} \f$ becoming very small.  If Homer Walker's forcing term algorithm is used (see NOX::Direction::Newton for details), then far from the solution when \f$ \eta^k \f$ is large, the linear solver may take so few iterations that \f$ \delta x \f$ is very small.  This can make the WRMS norms small enough to be flagged as converged.  This third criteria makes sure the linear solver makes enough progrss so that \f$ \delta x\f$ is not small enough to force premature convergence in this status test.  The value \f$ \beta \f$ can be specified in the constructor with the "beta" variable.  Defaults to 0.5 (heuristic).  Setting this value >= 1.0 essentially eliminates this criteria from the status test.  NOTE: This criteria will only be used if the "Output" sublist of the "Linear %Solver" sublist sets a "Scaled Residual" parameter value (\f$ \eta^k \f$) to compare against.
+
+  </ol>
+
+  References: 
+
+  (1) "Classics in Applied Mathematics #14: Numerical Solution of 
+  Initial-Value Problems in Differential-Algebraic Equations", 
+  Brennan, K. E., Campbell, S. L., Petzold, L. R., SIAM 1996. 
+
+  (2) "PVODE, an ODE %Solver for Parallel Computers", Byrne,
   G. D., and Hindmarsh, A. C., Center for Applied Scientific Computing
   (CASC), UCRL-JC-132361, Rev. 1, May 1999.
 
@@ -79,17 +113,27 @@ class NormWRMS : public Generic {
 public:
 
   //! Constructor where ATOL is a scalar
-  NormWRMS(double rtol, double atol, double BDFMultiplier = 1.0);
+  NormWRMS(double rtol, 
+	   double atol, 
+	   double BDFMultiplier = 1.0, 
+	   double tolerance = 1.0,
+	   double alpha = 1.0,
+	   double beta = 0.5);
 
   //! Constructor where ATOL is a vector
-  NormWRMS(double rtol, Abstract::Vector& atol, double BDFMultiplier = 1.0);
+  NormWRMS(double rtol,
+	   Abstract::Vector& atol,
+	   double BDFMultiplier = 1.0, 
+	   double tolerance = 1.0,
+	   double alpha = 1.0,
+	   double beta = 0.5);
 
   //! Destructor.
   virtual ~NormWRMS();
 
+  // Derived classes
   virtual StatusType checkStatus(const Solver::Generic& problem);
   virtual StatusType getStatus() const;
-
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
 private:
@@ -100,26 +144,47 @@ private:
   //! Relative tolerance for convergence.
   double rtol;
 
-  //! Absolute tolerance for convergence (scalar).
-  double atol;
-
   //! flag to tell whether atol is a scalar or a vector.
   bool atolIsScalar;
 
+  //! Absolute tolerance for convergence (scalar).
+  double atol;
+
   //! Absolute tolerance for convergence (vector).
-  Abstract::Vector* atoli;
+  Abstract::Vector* atolVec;
 
   //! Time integration method multiplier (BDF Multiplier).
   double factor;
 
+  //! Required tolerance for the NormWRMS to be declared converged.
+  double tolerance;
+
+  //! Minimum step size allowed during a line search for WRMS norm to be flagged as converged.
+  double alpha;
+
+  //! Actual step size used during line search.
+  double computedStepSize;
+  
+  //! Maximum linear solve tolerance allowed for WRMS norm to be flagged as converged.
+  double beta;
+
+  //! Actual tolerance achieved by the linear solver during the last linear solve.
+  double achievedTol;
+
   //! %Status
   StatusType status;
 
-  //! Temporary vector used in computation
+  //! Temporary vector used in computation.
   Abstract::Vector* u;
 
-  //! Temporary vector used in computation
+  //! Temporary vector used in computation.
   Abstract::Vector* v;
+
+  //! Flag that tells the print method whether to print the criteria 2 information.
+  bool printCriteria2Info;
+
+  //! Flag that tells the print method whether to print the criteria 3 information.
+  bool printCriteria3Info;
 
 };
 
