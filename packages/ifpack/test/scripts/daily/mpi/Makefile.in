@@ -96,6 +96,8 @@ install_sh = @install_sh@
 @HAVE_MPI_TRUE@noinst_PROGRAMS = ifpackTestAllMpi
 
 @HAVE_MPI_TRUE@ifpackTestAllMpi_SOURCES = $(srcdir)/ifpackTestAllMpi
+
+@HAVE_MPI_FALSE@EXTRA_DIST = ifpackTestAllMpi
 subdir = test/scripts/daily/mpi
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
