@@ -48,6 +48,12 @@ namespace Anasazi {
     
   public:
     
+    //! Default Constructor
+    SortManager() {};
+
+    //! Destructor
+    virtual ~SortManager() {};
+
     //! Sort the vector of eigenvalues, optionally returning the permutation vector.
     /**
        @param n [in] Size of the array
@@ -58,7 +64,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(int n, TYPE *evals, int *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(int n, TYPE *evals, int *perm = 0) const { return Undefined; };
     
     //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
     /**
@@ -72,7 +78,7 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const { return Undefined; };
     
   };
   

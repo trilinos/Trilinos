@@ -37,6 +37,7 @@
 #include "AnasaziPetraInterface.hpp"
 #include "BelosPetraInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
+#include "AnasaziBasicSort.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
@@ -267,7 +268,7 @@ int main(int argc, char *argv[]) {
 	Anasazi::PetraOp Amat(A);
 	Anasazi::PetraOp Bmat(B);
 	Anasazi::PetraGenOp Aop(BelosOp, B);	
-	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &Aop, &ivec);
+	Anasazi::Eigenproblem<double> MyProblem(&Amat, &Bmat, &ivec, &Aop);
 
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem.SetSymmetric(true);
@@ -276,13 +277,16 @@ int main(int argc, char *argv[]) {
 	MyProblem.SetNEV( nev );
 	MyProblem.SetBlockSize( block );
 
+        // Create a sorting manager to handle the sorting of eigenvalues in the solver
+        Anasazi::BasicSort<double> MySort( which );
+
         // Create an output manager to handle the I/O from the solver
         Anasazi::OutputManager<double> MyOM( MyPID );
         //MyOM.SetVerbosity( 2 );
 
 	// Initialize the Block Arnoldi solver
-	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MyOM, tol, length, 
-						which, step, restarts);
+	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, MySort, MyOM, tol, length, 
+						step, restarts);
 	
 #ifdef UNIX
 	Epetra_Time & timer = *new Epetra_Time(Comm);

@@ -31,12 +31,13 @@
 
 /*!    \class Anasazi::BasicSort
        \brief An implementation of the Anasazi::SortManager that performs a collection
-       of common sorting types.
+       of common sorting techniques.
 
        \author Heidi Thornquist
 */
 
 #include "AnasaziSortManager.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 namespace Anasazi {
 
@@ -45,12 +46,25 @@ namespace Anasazi {
     
   public:
     
+    //! Constructor
+    /**
+       @param which [in] The eigenvalues of interest for this eigenproblem.
+       <ul>
+       <li> "LM" - Largest Magnitude [ default ]
+       <li> "SM" - Smallest Magnitude
+       <li> "LR" - Largest Real 
+       <li> "SR" - Smallest Real 
+       <li> "LI" - Largest Imaginary 
+       <li> "SI" - Smallest Imaginary 
+       </ul>
+    */
     BasicSort( const string which = "LM" ) { _which = which; };
 
-    virtual ~BasicSort(); {}
+    //! Destructor
+    virtual ~BasicSort() {};
 
 
-    //! Sort the vector of eigenvalues, optionally returning the permutation vector.
+    //! Sort the vector of eigenvalues with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
        @param n [in] Size of the array
 
@@ -62,7 +76,7 @@ namespace Anasazi {
     */
     ReturnType sort(int n, TYPE *evals, int *perm = 0) const;
     
-    //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
+    //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
        @param n [in] Size of the array
 
@@ -74,15 +88,267 @@ namespace Anasazi {
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, *perm = 0) const;
+    ReturnType sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
     
   protected: 
     
     string _which;
 
   };
+
+  template<class TYPE>
+  ReturnType BasicSort<TYPE>::sort(int n, TYPE *evals, int *perm) const 
+  {
+    int i, j, tempord;
+    TYPE temp, temp2;
+    Teuchos::LAPACK<int,TYPE> lapack;
+    //
+    // Reset the permutation if it is required.
+    //		
+    if (perm) {
+      for (i=0; i < n; i++) {
+	perm[i] = i;
+      }
+    }
+    //
+    // These methods use an insertion sort method to circument recursive calls.
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of magnitude
+    //---------------------------------------------------------------
+    if (!_which.compare("SM")) {
+      for (j=1; j < n; ++j) {
+	temp = evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	temp2 = evals[j]*evals[j];
+	for (i=j-1; i>=0 && (evals[i]*evals[i])>temp2; --i) {
+	  evals[i+1]=evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	evals[i+1] = temp; 
+	if (perm) 
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of real part
+    //---------------------------------------------------------------
+    if (!_which.compare("SR")) {
+      for (j=1; j < n; ++j) {
+	temp = evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && evals[i]>temp; --i) {
+	  evals[i+1]=evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	evals[i+1] = temp; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of imaginary part
+    // NOTE:  There is no implementation for this since this sorting
+    // method assumes only real eigenvalues.
+    //---------------------------------------------------------------
+    if (!_which.compare("SI")) {
+      return Undefined;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of magnitude
+    //---------------------------------------------------------------
+    if (!_which.compare("LM")) {
+      for (j=1; j < n; ++j) {
+	temp = evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	temp2 = evals[j]*evals[j];
+	for (i=j-1; i>=0 && (evals[i]*evals[i])<temp2; --i) {
+	  evals[i+1]=evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	evals[i+1] = temp; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of real part
+    //---------------------------------------------------------------
+    if (!_which.compare("LR")) {
+      for (j=1; j < n; ++j) {
+	temp = evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && evals[i]<temp; --i) {
+	  evals[i+1]=evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	evals[i+1] = temp; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of imaginary part
+    // NOTE:  There is no implementation for this since this sorting
+    // method assumes only real eigenvalues.
+    //---------------------------------------------------------------
+    if (!_which.compare("LI")) {
+      return Undefined;
+    }
+    
+    // The character string held by this class is not valid.  
+    return Undefined;    
+  }
   
-}
+
+  template<class TYPE>
+  ReturnType BasicSort<TYPE>::sort(int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
+    int i, j, tempord;
+    TYPE temp, tempr, tempi;
+    Teuchos::LAPACK<int,TYPE> lapack;
+    //
+    // Reset the index
+    //		
+    if (perm) {
+      for (i=0; i < n; i++) {
+	perm[i] = i;
+      }
+    }
+    //
+    // These methods use an insertion sort method to circument recursive calls.
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of magnitude
+    //---------------------------------------------------------------
+    if (!_which.compare("SM")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
+	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])>temp; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }	
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of real part
+    //---------------------------------------------------------------
+    if (!_which.compare("SR")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && r_evals[i]>tempr; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }	
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in increasing order of imaginary part
+    //---------------------------------------------------------------
+    if (!_which.compare("SI")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && i_evals[i]>tempi; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of magnitude
+    //---------------------------------------------------------------
+    if (!_which.compare("LM")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
+	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }	
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of real part
+    //---------------------------------------------------------------
+    if (!_which.compare("LR")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && r_evals[i]<tempr; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }	
+      return Ok;
+    }
+    //---------------------------------------------------------------
+    // Sort eigenvalues in decreasing order of imaginary part
+    //---------------------------------------------------------------
+    if (!_which.compare("LI")) {
+      for (j=1; j < n; ++j) {
+	tempr = r_evals[j]; tempi = i_evals[j]; 
+	if (perm)
+	  tempord = perm[j];
+	for (i=j-1; i>=0 && i_evals[i]<tempi; --i) {
+	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
+	  if (perm)
+	    perm[i+1]=perm[i];
+	}
+	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
+	if (perm)
+	  perm[i+1] = tempord;	
+      }
+      return Ok;
+    }
+
+    // The character string held by this class is not valid.  
+    return Undefined;      
+  }
+  
+} // namespace Anasazi
 
 #endif // ANASAZI_BASIC_SORT_HPP
 

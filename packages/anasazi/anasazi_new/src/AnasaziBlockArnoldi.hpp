@@ -35,8 +35,8 @@
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "AnasaziConfigDefs.hpp"
 #include "AnasaziEigenproblem.hpp"
+#include "AnasaziSortManager.hpp"
 #include "AnasaziOutputManager.hpp"
 
 /*!	\class Anasazi::BlockArnoldi
@@ -56,10 +56,10 @@ namespace Anasazi {
     
     //! %Anasazi::BlockArnoldi constructor.
     BlockArnoldi( Eigenproblem<TYPE>& problem, 
+		  SortManager<TYPE>& sm,
 		  OutputManager<TYPE>& om,
 		  const TYPE tol=1.0e-6,
 		  const int length=25, 
-		  const string which="LM", 
 		  const int step=25, 
 		  const int restarts=0 
 		  );
@@ -128,18 +128,17 @@ namespace Anasazi {
     void ComputeResiduals( const bool );
     void ComputeEvecs();
     void Restart();
-    void SortEvals();
     void SetInitBlock();
     void SetBlkTols();
     void CheckBlkArnRed( const int j );
     void CheckSchurVecs( const int j ); 
     Eigenproblem<TYPE> &_problem; // must be passed in by the user
+    SortManager<TYPE> &_sm; // must be passed in by the user
     OutputManager<TYPE> &_om; // must be passed in by the user
     MultiVec<TYPE> *_basisvecs, *_evecr, *_eveci;
     Teuchos::SerialDenseMatrix<int,TYPE> _hessmatrix;
     const int _nev, _length, _block, _restarts, _step;
     const TYPE _residual_tolerance;
-    string _which;
     TYPE *_ritzresiduals, *_actualresiduals, *_evalr, *_evali;
     int *_order;
     int _restartiter, _iter, _jstart, _jend, _nevblock, _defblock;
@@ -154,14 +153,15 @@ namespace Anasazi {
   //
   template <class TYPE>
   BlockArnoldi<TYPE>::BlockArnoldi(Eigenproblem<TYPE> & problem, 
+				   SortManager<TYPE> & sm,
 				   OutputManager<TYPE> & om,
 				   const TYPE tol, 
 				   const int length, 
-				   const string which, 
 				   const int step, 
 				   const int restarts
 				   ): 
     _problem(problem), 
+    _sm(sm),
     _om(om),
     _basisvecs(0), 
     _evecr(0), 
@@ -173,7 +173,6 @@ namespace Anasazi {
     _restarts(restarts),
     _step(step),
     _residual_tolerance(tol),
-    _which(which),
     _ritzresiduals(0), 
     _actualresiduals(0),
     _evalr(0), 
@@ -436,7 +435,6 @@ namespace Anasazi {
       
       cout<<"Block Size :\t"<<_block<<endl;
       cout<<"Requested Eigenvalues : "<<_nev<<endl;
-      cout<<"Requested Ordering : "<<_which<<endl;
       cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
       cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
       //
@@ -1561,7 +1559,10 @@ namespace Anasazi {
     //
     //cout<<"Before sorting the Schur form (H):"<<endl;
     //H.print(cout);	  
-    SortEvals();
+    if (_problem.IsSymmetric())
+      _sm.sort( n, _evalr, _order );
+    else
+      _sm.sort( n, _evalr, _evali, _order );
     //
     // Reorder real Schur factorization, remember to add one to the indices for the
     // fortran call and determine offset.  The offset is necessary since the TREXC
@@ -1677,162 +1678,6 @@ namespace Anasazi {
     //
     delete F_vec;
     delete [] index;
-  }
-  
-  template<class TYPE>
-  void BlockArnoldi<TYPE>::SortEvals() {
-    int i, j, tempord;
-    const int n = _jstart*_block;
-    TYPE temp, tempr, tempi;
-    Teuchos::LAPACK<int,TYPE> lapack;
-    //
-    // Reset the index
-    //		
-    for (i=0; i < n; i++) {
-      _order[i] = i;
-    }
-    //
-    // These methods use an insertion sort method to circument recursive calls.
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("SM")) {
-      if (_problem.IsSymmetric()) {  // The eigenvalues are real
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; 
-	  tempord = _order[j];
-	  temp = _evalr[j]*_evalr[j];
-	  for (i=j-1; i>=0 && (_evalr[i]*_evalr[i])>temp; --i) {
-	    _evalr[i+1]=_evalr[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _order[i+1] = tempord;	
-	}
-      }
-      else {  // The eigenvalues may be complex
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; tempi = _evali[j]; 
-	  tempord = _order[j];
-	  temp=lapack.LAPY2(_evalr[j],_evali[j]);
-	  for (i=j-1; i>=0 && lapack.LAPY2(_evalr[i],_evali[i])>temp; --i) {
-	    _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-	}	
-      }
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("SR")) {
-      if (_problem.IsSymmetric()) {  // The eigenvalues are real
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; 
-	  tempord = _order[j];
-	  for (i=j-1; i>=0 && _evalr[i]>tempr; --i) {
-	    _evalr[i+1]=_evalr[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _order[i+1] = tempord;	
-	}
-      }
-      else {  // The eigenvalues may be complex
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; tempi = _evali[j]; 
-	  tempord = _order[j];
-	  for (i=j-1; i>=0 && _evalr[i]>tempr; --i) {
-	    _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-	}	
-      }
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in increasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!_which.compare("SI")) {
-      for (j=1; j < n; ++j) {
-	tempr = _evalr[j]; tempi = _evali[j]; 
-	tempord = _order[j];
-	for (i=j-1; i>=0 && _evali[i]>tempi; --i) {
-	  _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	  _order[i+1]=_order[i];
-	}
-	_evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-      }
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of magnitude
-    //---------------------------------------------------------------
-    if (!_which.compare("LM")) {
-      if (_problem.IsSymmetric()) {  // The eigenvalues are real
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; 
-	  tempord = _order[j];
-	  temp = _evalr[j]*_evalr[j];
-	  for (i=j-1; i>=0 && (_evalr[i]*_evalr[i])<temp; --i) {
-	    _evalr[i+1]=_evalr[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _order[i+1] = tempord;	
-	}
-      }
-      else {  // The eigenvalues may be complex
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; tempi = _evali[j]; 
-	  tempord = _order[j];
-	  temp=lapack.LAPY2(_evalr[j],_evali[j]);
-	  for (i=j-1; i>=0 && lapack.LAPY2(_evalr[i],_evali[i])<temp; --i) {
-	    _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	    _order[i+1]=_order[i];
-				}
-	  _evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-	}	
-      }
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of real part
-    //---------------------------------------------------------------
-    if (!_which.compare("LR")) {
-      if (_problem.IsSymmetric()) {  // The eigenvalues are real
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; 
-	  tempord = _order[j];
-	  for (i=j-1; i>=0 && _evalr[i]<tempr; --i) {
-	    _evalr[i+1]=_evalr[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _order[i+1] = tempord;	
-	}
-      }
-      else {  // The eigenvalues may be complex
-	for (j=1; j < n; ++j) {
-	  tempr = _evalr[j]; tempi = _evali[j]; 
-	  tempord = _order[j];
-	  for (i=j-1; i>=0 && _evalr[i]<tempr; --i) {
-	    _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	    _order[i+1]=_order[i];
-	  }
-	  _evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-	}	
-      }
-    }
-    //---------------------------------------------------------------
-    // Sort eigenvalues in decreasing order of imaginary part
-    //---------------------------------------------------------------
-    if (!_which.compare("LI")) {
-      for (j=1; j < n; ++j) {
-	tempr = _evalr[j]; tempi = _evali[j]; 
-	tempord = _order[j];
-	for (i=j-1; i>=0 && _evali[i]<tempi; --i) {
-	  _evalr[i+1]=_evalr[i]; _evali[i+1]=_evali[i];
-	  _order[i+1]=_order[i];
-	}
-	_evalr[i+1] = tempr; _evali[i+1] = tempi; _order[i+1] = tempord;	
-      }
-    }
   }
   
   template<class TYPE>
