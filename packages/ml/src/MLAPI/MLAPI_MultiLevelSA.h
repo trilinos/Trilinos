@@ -38,16 +38,91 @@ public:
 
   //! Constructs the hierarchy for given Operator and parameters.
   MultiLevelSA(const Operator FineMatrix, Teuchos::ParameterList& List,
-               const bool ConstructNow = true)
+               const bool ConstructNow = true) :
+    IsComputed_(false)
   {
     FineMatrix_ = FineMatrix;
     List_ = List;
     if (ConstructNow) Compute();
   }
 
-  void Compute() {
+  //! Destructor.
+  virtual ~MultiLevelSA()
+  { }
+
+  // @}
+  // @{ \name Set and Get methods
+
+  //! Returns a copy of the internally stored domain space.
+  const Space GetOperatorDomainSpace() const 
+  {
+    return(FineMatrix_.GetDomainSpace());
+  }
+
+  //! Returns a copy of the internally stored range space.
+  const Space GetOperatorRangeSpace() const 
+  {
+    return(FineMatrix_.GetRangeSpace());
+  }
+
+  //! Returns a copy of the internally stored domain space.
+  inline const Space GetDomainSpace() const 
+  {
+    return(FineMatrix_.GetDomainSpace());
+  }
+
+  //! Returns a copy of the internally stored range space.
+  inline const Space GetRangeSpace() const 
+  {
+    return(FineMatrix_.GetRangeSpace());
+  }
+
+  //! Returns a reference to the restriction operator of level \c i.
+  inline const Operator& R(const int i) const
+  {
+    return(R_[i]);
+  }
+
+  //! Returns a reference to the operator of level \c i.
+  inline const Operator& A(const int i) const
+  {
+    return(A_[i]);
+  }
+
+  //! Returns a reference to the prolongator operator of level \c i.
+  inline const Operator& P(const int i) const
+  {
+    return(P_[i]);
+  }
+
+  //! Returns a reference to the inverse operator of level \c i.
+  inline const InverseOperator& S(const int i) const
+  {
+    return(S_[i]);
+  }
+
+  //! Returns the actual number of levels
+  inline int GetMaxLevels() const
+  {
+    return(MaxLevels_);
+  }
+
+  //! Returns \c true if the hierarchy has been successfully computed, \c false otherwise.
+  inline bool IsComputed() const
+  {
+    return(IsComputed_);
+  }
+
+  // @}
+  // @{ \name Mathematical methods
+
+  //! Computes the hierarchy.
+  void Compute() 
+  {
 
     ResetTimer();
+    StackPush();
+    IsComputed_ = false;
 
     // get parameter from the input list
     int         MaxLevels     = List_.get("max levels", 10);
@@ -182,9 +257,6 @@ public:
     SetLabel("SA, L = " + GetString(MaxLevels_) +
              ", smoother = " + SmootherType);
 
-    // FIXME: update flops!
-    UpdateTime();
-
     if (GetPrintLevel()) {
       ML_print_line("-", 80);
       cout << "final level             = " << level << endl;
@@ -195,79 +267,26 @@ public:
       ML_print_line("-", 80);
     }
 
+    IsComputed_ = true;
+    StackPop();
+    
+    // FIXME: update flops!
+    UpdateTime();
+
   }
-
-  //! Destructor.
-  virtual ~MultiLevelSA()
-  { }
-
-  // @}
-  // @{ \name Set and Get methods
-
-  //! Returns a copy of the internally stored domain space.
-  const Space GetOperatorDomainSpace() const 
-  {
-    return(FineMatrix_.GetDomainSpace());
-  }
-
-  //! Returns a copy of the internally stored range space.
-  const Space GetOperatorRangeSpace() const 
-  {
-    return(FineMatrix_.GetRangeSpace());
-  }
-
-  //! Returns a copy of the internally stored domain space.
-  inline const Space GetDomainSpace() const 
-  {
-    return(FineMatrix_.GetDomainSpace());
-  }
-
-  //! Returns a copy of the internally stored range space.
-  inline const Space GetRangeSpace() const 
-  {
-    return(FineMatrix_.GetRangeSpace());
-  }
-
-  //! Returns a reference to the restriction operator of level \c i.
-  inline const Operator& R(const int i) const
-  {
-    return(R_[i]);
-  }
-
-  //! Returns a reference to the operator of level \c i.
-  inline const Operator& A(const int i) const
-  {
-    return(A_[i]);
-  }
-
-  //! Returns a reference to the prolongator operator of level \c i.
-  inline const Operator& P(const int i) const
-  {
-    return(P_[i]);
-  }
-
-  //! Returns a reference to the inverse operator of level \c i.
-  inline const InverseOperator& S(const int i) const
-  {
-    return(S_[i]);
-  }
-
-  //! Returns the actual number of levels
-  inline int GetMaxLevels() const
-  {
-    return(MaxLevels_);
-  }
-
-  // @}
-  // @{ \name Mathematical methods
 
   //! Applies the preconditioner to \c b_f, returns the result in \c x_f.
   int Apply(const MultiVector& b_f, MultiVector& x_f) const
   {
     ResetTimer();
+    StackPush();
+
+    if (IsComputed() == false)
+      ML_THROW("Method Compute() must be called before Apply()", -1);
     SolveMultiLevelSA(b_f,x_f,0);
     UpdateTime();
 
+    StackPop();
     return(0);
   }
 
@@ -350,7 +369,10 @@ private:
   vector<Operator> P_;
   //! Contains the hierarchy of inverse operators.
   vector<InverseOperator> S_;
+  //! Contains a copy of the input list.
   Teuchos::ParameterList List_;
+  //! \c true if the hierarchy has been successfully computed, \c false otherwise.
+  bool IsComputed_;
 
 };
 

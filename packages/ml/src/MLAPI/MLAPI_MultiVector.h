@@ -241,11 +241,25 @@ public:
     }
   }
 
-  void Delete()
+  //! Deletes the last vector.
+  void Delete(const int v)
   {
-    if (GetNumVectors())
-      RCPValues_.pop_back();
+    StackPush();
+
+    CheckVector(v);
+
+    vector<Teuchos::RefCountPtr<DoubleVector> > NewList;
+
+    for (int i = 0 ; i < GetNumVectors() ; ++i) {
+      if (i != v)
+        NewList.push_back(GetRCPValues(i));
+    }
+
+    RCPValues_ = NewList;
+
     NumVectors_--;
+
+    StackPop();
   }
 
   // @}
@@ -588,14 +602,15 @@ public:
     double Result   = 0.0;
     int n           = GetMyLength();
     double* ptr     = (double*)GetValues(v);
-#if FIXME
     int incr        = 1;
     int i           = IDAMAX_F77(&n, ptr, &incr);
     MyResult        = fabs(ptr[i - 1]);
-#endif
+    // FIXME: delete below
+    /*
     for (int i = 0 ; i < n ; ++i)
       if (MyResult < fabs(ptr[i])) 
         MyResult = fabs(ptr[i]);
+        */
 
     Result          = ML_Comm_GmaxDouble(GetML_Comm(),MyResult);
 
