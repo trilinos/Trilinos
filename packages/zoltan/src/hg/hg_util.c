@@ -58,6 +58,7 @@ void Zoltan_HG_Graph_Init(
   graph->VertexWeightDim = 0 ;
 
   graph->nindex = NULL;
+  graph->vtxdist = NULL;
   graph->neigh  = NULL;
   graph->vwgt   = NULL;
   graph->ewgt   = NULL;
@@ -92,7 +93,7 @@ int Zoltan_HG_Graph_Free(
 {
 /* Frees all memory associated with a graph; does not free the graph itself. */
   if (g != NULL) {
-    ZOLTAN_FREE ((void **) &g->vtxdist);
+    ZOLTAN_FREE ((void **) &(g->vtxdist));
     ZOLTAN_FREE ((void **) &g->nindex);
     ZOLTAN_FREE ((void **) &g->neigh);
     ZOLTAN_FREE ((void **) &g->vwgt);
@@ -308,6 +309,7 @@ int Zoltan_HG_HGraph_to_Graph(
   Zoltan_HG_Graph_Init(g);
   g->info = hg->info;
   g->nVtx = hg->nVtx;
+  g->vtxdist = NULL;
 
 /* copy vertex weights */
   if (hg->vwgt)

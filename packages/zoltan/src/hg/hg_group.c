@@ -228,11 +228,13 @@ static int grouping_heg (ZZ *zz, HGraph *hg, Packing pack)
       best_ewgt = -1.0 ;
       for (j = hg->vindex[vertex] ; j < hg->vindex[vertex+1] ; j++)
          {
+         int size ;
          edge = hg->vedge[j];
-         if (del_edges[edge]==0 &&
-          (hg->ewgt && (hg->ewgt[edge]>best_ewgt || (hg->ewgt[edge]==best_ewgt
-          && hg->hindex[edge+1]-hg->hindex[edge]<best_size))) ||
-          (hg->ewgt==NULL && hg->hindex[edge+1]-hg->hindex[edge]<best_size))
+         size = hg->hindex[edge+1] - hg->hindex[edge] ;
+
+         if (del_edges[edge]==0 && ((hg->ewgt == NULL  && size < best_size)
+          || (hg->ewgt && (hg->ewgt[edge] >  best_ewgt
+                       || (hg->ewgt[edge] == best_ewgt && size < best_size)))))
               {
               best_edge = edge ;
               best_ewgt = hg->ewgt[edge] ;
@@ -240,12 +242,7 @@ static int grouping_heg (ZZ *zz, HGraph *hg, Packing pack)
               }
          }
       if (best_edge == -1)
-         continue ;
-/*
-      for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1] ; j++)
-         for (k=hg->vindex[hg->hvertex[j]]; k<hg->vindex[hg->hvertex[j]+1]; k++)
-            del_edges[hg->vedge[k]] = 1;
-*/
+         continue ;                       /* no suitable edge found */
 
       for (j = hg->hindex[best_edge] ; j < hg->hindex[best_edge+1] ; j++)
          if (pack[hg->hvertex[j]] == hg->hvertex[j])

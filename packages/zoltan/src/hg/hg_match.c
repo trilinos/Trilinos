@@ -92,6 +92,7 @@ int Zoltan_HG_Matching (
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     goto End;
 
+
 End:
   if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Returning error.");

@@ -145,6 +145,7 @@ int Zoltan_HG_HPart_Lib (
        }
     else {
       Graph g;
+
       ierr = Zoltan_HG_HGraph_to_Graph(zz,hg,&g);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         ZOLTAN_FREE((void **) &pack);
@@ -168,6 +169,7 @@ int Zoltan_HG_HPart_Lib (
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
+
     for (i=0; i<hg->nVtx; i++)
        LevelMap[i]=0 ;
 
