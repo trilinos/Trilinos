@@ -198,6 +198,7 @@ int main(int argc, char *argv[])
   int *M_bindx = NULL, *M_data_org = NULL;
   AZ_MATRIX *M_mat, *blockmat;
   ML *ml_M;
+  ML_Operator *Mmat_ml;
   struct aztec_block_data aztec_block_data;
   int *junk1 = NULL, *junk2 = NULL, *junk3 = NULL, *junk4 = NULL;
   AZ_MATRIX *Ke_mat, *Kn_mat;
@@ -831,6 +832,7 @@ if ((jj==0) || (ii==0)) { /* rst dirichlet */
   /* &(ml_M->Amat[0]) is an ML matrix corresponding to M.        */
   ML_Create(&ml_M,1);
   AZ_ML_Set_Amat(ml_M, 0, Nlocal_edges, Nlocal_edges, M_mat, proc_config);
+  Mmat_ml = &(ml_M->Amat[0]);
 
   /* Set rhs */
 
@@ -1675,7 +1677,7 @@ nx = nx--; /* rst dirichlet */
 							 ML_NO, 1.5);
 
   ml_edges->ML_finest_level = N_levels-1;
-   ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, Tmat_array, Tmat_trans_array, &ml_block);
+  ML_Gen_Hierarchy_ComplexMaxwell(ml_edges, Tmat_array, Tmat_trans_array, &ml_block /* , Mmat_ml */ );
    // rst: comment this out to use the original multigrid stuff
    //   ml_edges = ml_block;
 
@@ -2626,7 +2628,7 @@ void compress_matrix(double val[], int bindx[], int N_points)
 
 int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array, 
 				    ML_Operator **Tmat_trans_array,
-				    ML **new_ml)
+				    ML **new_ml /* , ML_Operator *Mmat_ml*/)
 {
 
    int mesh_level, old_mesh_level, i, levels;
@@ -2648,7 +2650,8 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
    levels = 1;
    original = &(ml_edges->Amat[mesh_level]);
    blockmat = &(block_ml->Amat[mesh_level]);
-   ML_make_block_matrix(blockmat, original);
+   ML_make_block_matrix(blockmat, original /* , Mmat_ml */ );
+   /* ML_Operator_Print(blockmat,"Ablock"); */
 
    /* rst: I'm not sure ... but something like the following */
    /* should work for T if needed?                           */
@@ -2670,7 +2673,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      original = &(ml_edges->Pmat[mesh_level]);
      blockmat = &(block_ml->Pmat[mesh_level]);
-     ML_make_block_matrix(blockmat, original);
+     ML_make_block_matrix(blockmat, original /* , NULL */ );
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
@@ -2681,7 +2684,7 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      original = &(ml_edges->Rmat[old_mesh_level]);
      blockmat = &(block_ml->Rmat[old_mesh_level]);
-     ML_make_block_matrix(blockmat, original);
+     ML_make_block_matrix(blockmat, original /* , NULL */ );
      /* This stuff sets the 'to' and 'from' field in P */
      /* which indicates from what level we interpolate */
      /* and to what level the interpolation goes.      */
@@ -2692,7 +2695,13 @@ int ML_Gen_Hierarchy_ComplexMaxwell(ML *ml_edges, ML_Operator **Tmat_array,
 
      original = &(ml_edges->Amat[mesh_level]);
      blockmat = &(block_ml->Amat[mesh_level]);
-     ML_make_block_matrix(blockmat, original);
+     /*  newM = ML_Operator_Create(ml_edges->comm);
+	 ML_rap(&(ml_edges->Rmat[old_mesh_level]), original, 
+	 &(ml_edges->Pmat[mesh_level]), newM, ML_CSR_MATRIX);
+     */
+     
+     /* comment these two out if you want to do rap */
+     ML_make_block_matrix(blockmat, original /* , newM */ );
      blockmat->getrow->pre_comm = ML_CommInfoOP_Create(); 
               /* ugh. The superlu interface seems to not work */
               /* with an empty communication object */
