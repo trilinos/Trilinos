@@ -65,7 +65,7 @@ public:
 	      const DerivUtils& d = DerivUtils());
 
   //! Copy constructor.
-  TPBordGroup(const TPBordGroup& source);
+  TPBordGroup(const TPBordGroup& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! Destructor.
   virtual ~TPBordGroup();
@@ -90,10 +90,10 @@ public:
   virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Set the parameter list in the group to p (pVector = p).  
-  virtual bool setParams(const ParameterVector& p);
+  virtual void setParams(const ParameterVector& p);
 
   //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-  virtual bool computeParams(const ParameterVector& oldParams, 
+  virtual void computeParams(const ParameterVector& oldParams, 
 			     const ParameterVector& direction, 
 			     double step);
 
@@ -103,38 +103,40 @@ public:
   //@{ \name "Compute" functions.
 
   //! Set the solution vector, x, to y.
-  virtual bool setX(const NOX::Abstract::Vector& y);
-  virtual bool setX(const TPBordVector& y);
+  virtual void setX(const NOX::Abstract::Vector& y);
+
+  virtual void setX(const TPBordVector& y);
 
   //! Compute and return solution vector, x, where this.x = grp.x + step * d.
   /*! Let \f$x\f$ denote this group's solution and \f$\hat x\f$ denote
     the solution associated with group \c grp. Then we compute 
     \f[ x = \hat x + \mbox{step} \; d. \f]
   */
-  virtual bool computeX(const NOX::Abstract::Group& g, 
+  virtual void computeX(const NOX::Abstract::Group& g, 
 			const NOX::Abstract::Vector& d,
 			double step);
-  virtual bool computeX(const TPBordGroup& g, const TPBordVector& d,
+
+  virtual void computeX(const TPBordGroup& g, const TPBordVector& d,
 			double step);
 
   //! Compute and return F(x). 
   /*! In other words, return \f$F \equiv F(x)\f$. It's generally
     useful to also compute and stores norm of F(x) at this point for
     later access by the getNormF function. */
-  virtual bool computeF();
+  virtual NOX::Abstract::Group::ReturnType computeF();
 
   //! Compute Jacobian.
   /*! In other words, compute \f$  J_{ij} = \frac{\partial F_i}{\partial x_j} (x)\f$.
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool computeJacobian();
+  virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
   //! Compute and return gradient.
   //! Returns \c false if either F or the Jacobian have not been computed.
   /*! In other words, compute \f$g = J^T F\f$. 
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool computeGradient();
+  virtual NOX::Abstract::Group::ReturnType computeGradient();
 
   //! Compute and return Newton direction, using parameters for nonlinear solve.
   //! Returns \c false if F and/or the Jacobian have not been computed.
@@ -149,12 +151,14 @@ public:
 
   \note If not defined in derived object, returns \c false.
   */
-  virtual bool computeNewton(NOX::Parameter::List& params);
+  virtual NOX::Abstract::Group::ReturnType 
+  computeNewton(NOX::Parameter::List& params);
 
   //! Compute Tangent direction (dx/ds, dp/ds), using parameters
   //! for nonlinear solve.
-  virtual bool computeTangent(NOX::Parameter::List& params,
-                              int paramId);
+  virtual NOX::Abstract::Group::ReturnType 
+  computeTangent(NOX::Parameter::List& params,
+		 int paramId);
 
   //@}
 
@@ -176,8 +180,9 @@ public:
 
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyJacobian(const NOX::Abstract::Vector& input, 
-			     NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  applyJacobian(const NOX::Abstract::Vector& input, 
+		NOX::Abstract::Vector& result) const;
 
   //! Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
 
@@ -190,8 +195,9 @@ public:
 
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-				      NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+			 NOX::Abstract::Vector& result) const;
 
   /*!
     \brief Applies the inverse of the Jacobian matrix to the given input vector.
@@ -212,17 +218,19 @@ public:
 
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyJacobianInverse(NOX::Parameter::List& params, 
-				    const NOX::Abstract::Vector& input, 
-				    NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  applyJacobianInverse(NOX::Parameter::List& params, 
+		       const NOX::Abstract::Vector& input, 
+		       NOX::Abstract::Vector& result) const;
 
   //! Applies the inverse of the diagonal of the Jacobian to the given input vector.
   /*! 
     Only necessary if using NOX::Solver::NonlinearCG.
     \note If not defined in derived object, returns \c false.
   */
-  virtual bool applyJacobianDiagonalInverse(const NOX::Abstract::Vector& input,
-					    NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  applyJacobianDiagonalInverse(const NOX::Abstract::Vector& input,
+			       NOX::Abstract::Vector& result) const;
 
   //! Apply right preconditiong to the given input vector
   /*!
@@ -238,9 +246,10 @@ public:
     The parameters are from the "Linear %Solver" sublist of the
     "%Direction" sublist that is passed to solver during construction.
   */
-  virtual bool applyRightPreconditioning(NOX::Parameter::List& params,
-					 const NOX::Abstract::Vector& input, 
-					 NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  applyRightPreconditioning(NOX::Parameter::List& params,
+			    const NOX::Abstract::Vector& input, 
+			    NOX::Abstract::Vector& result) const;
   //@}
 
   /** @name "Is" functions.
@@ -310,7 +319,7 @@ public:
 
   //@}
 
-  virtual bool print() const;
+  virtual void print() const;
 
 protected:
 
@@ -318,7 +327,7 @@ protected:
   double getBifParam() const;
 
   //! Set bifurcation parameter
-  bool setBifParam(double param);
+  void setBifParam(double param);
 
 protected:
 

@@ -58,17 +58,18 @@ LOCA::Bifurcation::TPBordGroup::TPBordGroup(const Abstract::Group& g,
   tpXVec.getBifParam() = getBifParam();
 }
 
-LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source)
-  : grpPtr(dynamic_cast<Abstract::Group*>(source.grpPtr->clone(NOX::DeepCopy))), 
-    tpXVec(source.tpXVec),
-    tpFVec(source.tpFVec),
-    tpNewtonVec(source.tpNewtonVec),
-    tpTangentVec(source.tpTangentVec),
-    lengthVecPtr(source.lengthVecPtr->clone(NOX::DeepCopy)), 
+LOCA::Bifurcation::TPBordGroup::TPBordGroup(const TPBordGroup& source, 
+					    NOX::CopyType type)
+  : grpPtr(dynamic_cast<Abstract::Group*>(source.grpPtr->clone(type))), 
+    tpXVec(source.tpXVec, type),
+    tpFVec(source.tpFVec, type),
+    tpNewtonVec(source.tpNewtonVec, type),
+    tpTangentVec(source.tpTangentVec, type),
+    lengthVecPtr(source.lengthVecPtr->clone(type)), 
     bifParamId(source.bifParamId),
-    derivResidualParamPtr(source.derivResidualParamPtr->clone(NOX::DeepCopy)),
-    derivNullResidualParamPtr(source.derivNullResidualParamPtr->clone(NOX::DeepCopy)),
-    derivPtr(source.derivPtr->clone(NOX::DeepCopy)),
+    derivResidualParamPtr(source.derivResidualParamPtr->clone(type)),
+    derivNullResidualParamPtr(source.derivNullResidualParamPtr->clone(type)),
+    derivPtr(source.derivPtr->clone(type)),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton) {}
@@ -133,20 +134,20 @@ LOCA::Bifurcation::TPBordGroup::operator=(const TPBordGroup& source)
 NOX::Abstract::Group*
 LOCA::Bifurcation::TPBordGroup::clone(NOX::CopyType type) const 
 {
-  return new TPBordGroup(*this);
+  return new TPBordGroup(*this, type);
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::setParams(const ParameterVector& p) 
 {
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->setParams(p);
+  grpPtr->setParams(p);
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::computeParams(const ParameterVector& oldParams,
 					      const ParameterVector& direction,
 					      double step) 
@@ -155,7 +156,7 @@ LOCA::Bifurcation::TPBordGroup::computeParams(const ParameterVector& oldParams,
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->computeParams(oldParams, direction, step);
+  grpPtr->computeParams(oldParams, direction, step);
 }
 
 const ParameterVector&
@@ -171,7 +172,7 @@ LOCA::Bifurcation::TPBordGroup::getBifParam() const
   return params[bifParamId];
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::setBifParam(double param) 
 {
   ParameterVector params(grpPtr->getParams());
@@ -181,140 +182,171 @@ LOCA::Bifurcation::TPBordGroup::setBifParam(double param)
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->setParams(params);
+  grpPtr->setParams(params);
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::setX(const Vector& y) 
 {
-  return setX( dynamic_cast<const TPBordVector&>(y) );
+  setX( dynamic_cast<const TPBordVector&>(y) );
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::setX(const TPBordVector& y) 
 {
-  bool res;
-
-  res = grpPtr->setX( y.getXVec() );
+  grpPtr->setX( y.getXVec() );
   tpXVec = y;
 
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-
-  return res;
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::computeX(const NOX::Abstract::Group& g, 
 					 const Vector& d,
 					 double step) 
 {
-  return computeX( dynamic_cast<const TPBordGroup&>(g),
-		   dynamic_cast<const TPBordVector&>(d),
-		   step);
+  computeX( dynamic_cast<const TPBordGroup&>(g),
+	    dynamic_cast<const TPBordVector&>(d),
+	    step);
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::computeX(const TPBordGroup& g, 
 					 const TPBordVector& d,
 					 double step) 
 {
-  bool res;
-
-  res = grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
-  tpXVec.update(1.0, g.getX(), step, d, 0.0);
-  res = res & setBifParam(tpXVec.getBifParam());
-
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
 
-  return res;
+  grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
+  tpXVec.update(1.0, g.getX(), step, d, 0.0);
+  setBifParam(tpXVec.getBifParam());
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeF() 
 {
-  bool res = true;
+  if (isValidF)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidF == false) {
-    res = res & grpPtr->computeF();
-    tpFVec.getXVec() = grpPtr->getF();
+  NOX::Abstract::Group::ReturnType res;
 
-    res = res & grpPtr->computeJacobian();
-    res = res & grpPtr->applyJacobian(tpXVec.getNullVec(), 
-				      tpFVec.getNullVec());
+  res = grpPtr->computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  tpFVec.getXVec() = grpPtr->getF();
+  
+  res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-    tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
-    
-    isValidF = true;
-    
-  }
+  res = grpPtr->applyJacobian(tpXVec.getNullVec(), 
+			      tpFVec.getNullVec());
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  tpFVec.getBifParam() = tpXVec.getNullVec().dot(*lengthVecPtr) - 1.0;
+  
+  isValidF = true;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeJacobian() 
 {
-  bool res = computeF();
+  if (isValidJacobian)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidJacobian == false) {
-    res = grpPtr->computeJacobian();
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-    res = res & derivPtr->computeDfDp(*grpPtr, bifParamId, 
-				      *derivResidualParamPtr);
-    res = res & derivPtr->computeDJnDp(*grpPtr, tpXVec.getNullVec(), 
-				       bifParamId,
-				       tpFVec.getNullVec(), 
-				       *derivNullResidualParamPtr);
-    isValidJacobian = true;
-  }
+  res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = derivPtr->computeDfDp(*grpPtr, bifParamId, 
+			      *derivResidualParamPtr);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = derivPtr->computeDJnDp(*grpPtr, tpXVec.getNullVec(), 
+			       bifParamId,
+			       tpFVec.getNullVec(), 
+			       *derivNullResidualParamPtr);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  isValidJacobian = true;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeGradient() 
 {
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
    
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeNewton(NOX::Parameter::List& params) 
 {
-  bool res = computeF();
-  
-  res = res & computeJacobian();
+  if (isValidNewton)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidNewton == false) {
-    applyJacobianInverse(params, tpFVec, tpNewtonVec);
-    tpNewtonVec.scale(-1.0);
-    isValidNewton = true;
-  }
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = applyJacobianInverse(params, tpFVec, tpNewtonVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  tpNewtonVec.scale(-1.0);
+  isValidNewton = true;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::computeTangent(NOX::Parameter::List& params,
                                       int paramID)
 {
-  bool res = computeJacobian();
+  NOX::Abstract::Group::ReturnType res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   NOX::Abstract::Vector* dfdpVec = tpTangentVec.clone(NOX::ShapeCopy);
 
-  res = res && computeDfDp(paramID, *dfdpVec);
+  res = computeDfDp(paramID, *dfdpVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-  res = res && applyJacobianInverse(params, *dfdpVec, tpTangentVec);
+  res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = applyJacobianInverse(params, *dfdpVec, tpTangentVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  tpTangentVec.scale(-1.0);
 
   delete dfdpVec;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::applyJacobian(const Vector& input,
 					      Vector& result) const 
 {
@@ -332,23 +364,29 @@ LOCA::Bifurcation::TPBordGroup::applyJacobian(const Vector& input,
 
   double bifParam = getBifParam();
 
-  bool res;
+  NOX::Abstract::Group::ReturnType res;
 
   // compute J*x
   res = grpPtr->applyJacobian(input_x, *result_x);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // compute J*x + p*dR/dp
   result_x->update(bifParam, *derivResidualParamPtr, 1.0);
 
   // compute J*y
-  res = res & grpPtr->applyJacobian(input_null, *result_null);
+  res = grpPtr->applyJacobian(input_null, *result_null);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // compute J*y + p*dJy/dp
   result_null->update(bifParam, *derivNullResidualParamPtr, 1.0);
 
   // compute (dJy/dx)*x
-  res = res & derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), input_x, 
-				      tpFVec.getNullVec(), *tmp);
+  res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), input_x, 
+				tpFVec.getNullVec(), *tmp);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
   
   // compute (dJy/dx)*x + J*y + p*dJy/dp
   result_null->update(1.0, *tmp, 1.0);
@@ -365,14 +403,14 @@ LOCA::Bifurcation::TPBordGroup::applyJacobian(const Vector& input,
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::applyJacobianTranspose(const Vector& input,
 						       Vector& result) const 
 {
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::applyJacobianInverse(NOX::Parameter::List& params,
 						     const Vector& input,
 						     Vector& result) const 
@@ -395,33 +433,45 @@ LOCA::Bifurcation::TPBordGroup::applyJacobianInverse(NOX::Parameter::List& param
   Vector *d = input_x.clone(NOX::ShapeCopy);
   Vector *derivJ = input_x.clone(NOX::ShapeCopy);
   
-  bool res;
+  NOX::Abstract::Group::ReturnType res;
 
   // Solve J*a = input_x
-  res = res & grpPtr->applyJacobianInverse(params, input_x, *a);
+  res = grpPtr->applyJacobianInverse(params, input_x, *a);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Solve J*b = dR/dp
-  res = res & grpPtr->applyJacobianInverse(params, *derivResidualParamPtr, *b);
+  res = grpPtr->applyJacobianInverse(params, *derivResidualParamPtr, *b);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*a
-  res = res & derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *a, 
-				      tpFVec.getNullVec(), *derivJ);
+  res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *a, 
+				tpFVec.getNullVec(), *derivJ);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute input_null - (dJy/dx)*a
   *derivJ = derivJ->update(1.0, input_null, -1.0);
 
   // Solve J*c = input_null - (dJy/dx)*a
-  res = res & grpPtr->applyJacobianInverse(params, *derivJ, *c);
+  res = grpPtr->applyJacobianInverse(params, *derivJ, *c);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*b
-  res = res & derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *b, 
-				      tpFVec.getNullVec(), *derivJ);
+  res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *b, 
+				tpFVec.getNullVec(), *derivJ);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*b - dJy/dp
   *derivJ = derivJ->update(-1.0, *derivNullResidualParamPtr, 1.0);
 
   // Solve J*d = (dJy/dx)*b - dJy/dp
-  res = res & grpPtr->applyJacobianInverse(params, *derivJ, *d);
+  res = grpPtr->applyJacobianInverse(params, *derivJ, *d);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute result_param = -(input_param - phi^T*c)/(phi^T*d)
   result_param = (input_param- lengthVecPtr->dot(*c))/(lengthVecPtr->dot(*d));
@@ -449,13 +499,13 @@ LOCA::Bifurcation::TPBordGroup::applyJacobianInverse(NOX::Parameter::List& param
 
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const 
 {
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::TPBordGroup::applyRightPreconditioning(NOX::Parameter::List& params, const Vector& input, Vector& result) const 
 {
   const TPBordVector& tp_input = dynamic_cast<const TPBordVector&>(input);
@@ -475,33 +525,44 @@ LOCA::Bifurcation::TPBordGroup::applyRightPreconditioning(NOX::Parameter::List& 
   Vector *c = input_x.clone(NOX::ShapeCopy);
   Vector *d = input_x.clone(NOX::ShapeCopy);
   Vector *derivJ = input_x.clone(NOX::ShapeCopy);
-  bool res;
+
+  NOX::Abstract::Group::ReturnType res;
 
   // Solve J*a = input_x
-  res = res & grpPtr->applyRightPreconditioning(params, input_x, *a);
+  res = grpPtr->applyRightPreconditioning(params, input_x, *a);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Solve J*b = dR/dp
-  res = res & grpPtr->applyRightPreconditioning(params, *derivResidualParamPtr, *b);
+  res = grpPtr->applyRightPreconditioning(params, *derivResidualParamPtr, *b);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*a
-  res = res & derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *a, 
-				      tpFVec.getNullVec(), *derivJ);
+  res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *a, 
+				tpFVec.getNullVec(), *derivJ);
 
   // Compute input_null - (dJy/dx)*a
   *derivJ = derivJ->update(1.0, input_null, -1.0);
 
   // Solve J*c = input_null - (dJy/dx)*a
-  res = res & grpPtr->applyRightPreconditioning(params, *derivJ, *c);
+  res = grpPtr->applyRightPreconditioning(params, *derivJ, *c);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*b
-  res = res & derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *b, 
-				      tpFVec.getNullVec(), *derivJ);
+  res = derivPtr->computeDJnDxa(*grpPtr, tpXVec.getNullVec(), *b, 
+				tpFVec.getNullVec(), *derivJ);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute (dJy/dx)*b - dJy/dp
   *derivJ = derivJ->update(-1.0, *derivNullResidualParamPtr, 1.0);
 
   // Solve J*d = (dJy/dx)*b - dJy/dp
-  res = res & grpPtr->applyRightPreconditioning(params, *derivJ, *d);
+  res = grpPtr->applyRightPreconditioning(params, *derivJ, *d);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute result_param = -(input_param - phi^T*c)/(phi^T*d)
   result_param = (input_param- lengthVecPtr->dot(*c))/(lengthVecPtr->dot(*d));
@@ -596,12 +657,19 @@ LOCA::Bifurcation::TPBordGroup::getNormNewtonSolveResidual() const
 {
   TPBordVector residual = tpFVec;
   
-  applyJacobian(tpNewtonVec, residual);
+  NOX::Abstract::Group::ReturnType res = applyJacobian(tpNewtonVec, residual);
+  if (res != NOX::Abstract::Group::Ok) {
+    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
+	 << " returned not ok" << endl;
+    throw "LOCA Error";
+    return 0.0;
+  }
+
   residual = residual.update(1.0, tpFVec, 1.0);
   return residual.norm();
 }
 
-bool
+void
 LOCA::Bifurcation::TPBordGroup::print() const 
 {
   cout << "Beginning TPBordGroup.print:" << endl;
@@ -654,7 +722,5 @@ LOCA::Bifurcation::TPBordGroup::print() const
 
   cout << "End TPBordGroup.print:" << endl;
   cout << endl;
-
-  return true;
 }
 

@@ -29,7 +29,6 @@
 
 // Primary LOCA Objects
 #include "NOX.H"
-#include "LOCA_Abstract_Vector.H"
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"

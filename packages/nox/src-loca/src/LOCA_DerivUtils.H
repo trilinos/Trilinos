@@ -33,7 +33,7 @@
 #ifndef LOCA_DERIVUTILS_H
 #define LOCA_DERIVUTILS_H
 
-#include "NOX_Abstract_Vector.H" // For CopyType
+#include "NOX_Abstract_Group.H" // For CopyType
 
 namespace LOCA {
   namespace Abstract {
@@ -72,41 +72,46 @@ public:
   virtual DerivUtils* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Compute derivative of f with respect to parameter, identified by param_id
-  virtual bool computeDfDp(LOCA::Abstract::Group& grp, const int param_id,
-                           NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDfDp(LOCA::Abstract::Group& grp, const int param_id,
+	      NOX::Abstract::Vector& result) const;
 
   //! Compute derivative of Jn with respect to particular parameter param_id
-  virtual bool computeDJnDp(LOCA::Abstract::Group& grp,
-                            const NOX::Abstract::Vector& nullVector,
-                            const int param_id, NOX::Abstract::Vector& result)
-                            const;
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDp(LOCA::Abstract::Group& grp,
+	       const NOX::Abstract::Vector& nullVector,
+	       const int param_id, NOX::Abstract::Vector& result) const;
 
   //! Compute derivative of Jn with respect to parameter, given JnVector
-  virtual bool computeDJnDp(LOCA::Abstract::Group& grp,
-                            const NOX::Abstract::Vector& nullVector,
-                            const int param_id,
-                            const NOX::Abstract::Vector& JnVector,
-                            NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDp(LOCA::Abstract::Group& grp,
+	       const NOX::Abstract::Vector& nullVector,
+	       const int param_id,
+	       const NOX::Abstract::Vector& JnVector,
+	       NOX::Abstract::Vector& result) const;
 
   //! Compute vector (Jn)_{x}a  given vector a
-  virtual bool computeDJnDxa(LOCA::Abstract::Group& grp,
-                             const NOX::Abstract::Vector& nullVector,
-                             const NOX::Abstract::Vector& aVector,
-                             NOX::Abstract::Vector& result) const;
-
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDxa(LOCA::Abstract::Group& grp,
+		const NOX::Abstract::Vector& nullVector,
+		const NOX::Abstract::Vector& aVector,
+		NOX::Abstract::Vector& result) const;
+  
   //! Compute vector (Jn)_{x}a  given vector a, given JnVector
-  virtual bool computeDJnDxa(LOCA::Abstract::Group& grp,
-                             const NOX::Abstract::Vector& nullVector,
-                             const NOX::Abstract::Vector& aVector,
-                             const NOX::Abstract::Vector& JnVector,
-                             NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDxa(LOCA::Abstract::Group& grp,
+		const NOX::Abstract::Vector& nullVector,
+		const NOX::Abstract::Vector& aVector,
+		const NOX::Abstract::Vector& JnVector,
+		NOX::Abstract::Vector& result) const;
 
   //! Compute vector (Jn)_{x}a+(Jn)_p given vector a, param_id 
-  virtual bool computeDJnDxaDp(LOCA::Abstract::Group& grp,
-                             const NOX::Abstract::Vector& nullVector,
-                             const NOX::Abstract::Vector& aVector,
-                             const int param_id,
-                             NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType 
+  computeDJnDxaDp(LOCA::Abstract::Group& grp,
+		  const NOX::Abstract::Vector& nullVector,
+		  const NOX::Abstract::Vector& aVector,
+		  const int param_id,
+		  NOX::Abstract::Vector& result) const;
 
 protected:
 

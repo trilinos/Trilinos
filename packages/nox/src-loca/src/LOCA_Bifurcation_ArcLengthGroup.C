@@ -127,17 +127,17 @@ LOCA::Bifurcation::ArcLengthGroup::clone(NOX::CopyType type) const
   return new ArcLengthGroup(*this);
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setParams(const ParameterVector& p) 
 {
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->setParams(p);
+  grpPtr->setParams(p);
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::computeParams(const ParameterVector& oldParams,
 					      const ParameterVector& direction,
 					      double step) 
@@ -146,7 +146,7 @@ LOCA::Bifurcation::ArcLengthGroup::computeParams(const ParameterVector& oldParam
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->computeParams(oldParams, direction, step);
+  grpPtr->computeParams(oldParams, direction, step);
 }
 
 const ParameterVector&
@@ -155,7 +155,7 @@ LOCA::Bifurcation::ArcLengthGroup::getParams() const
   return grpPtr->getParams();
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setArclengthStep(double deltaS) 
 {
   arclengthStep = deltaS;
@@ -163,8 +163,6 @@ LOCA::Bifurcation::ArcLengthGroup::setArclengthStep(double deltaS)
   // Arclength Step appears on RHS but not in Jacobian
   isValidF = false;
   isValidNewton = false;
-
-  return true;
 }
 
 double
@@ -174,7 +172,7 @@ LOCA::Bifurcation::ArcLengthGroup::getArcParam() const
   return params[arcParamId];
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setArcParam(double param) 
 {
   ParameterVector params(grpPtr->getParams());
@@ -184,142 +182,147 @@ LOCA::Bifurcation::ArcLengthGroup::setArcParam(double param)
   isValidJacobian = false;
   isValidNewton = false;
 
-  return grpPtr->setParams(params);
+  grpPtr->setParams(params);
 }
 
-bool
+void 
 LOCA::Bifurcation::ArcLengthGroup::setX(const Vector& y) 
 {
-  return setX( dynamic_cast<const ArcLengthVector&>(y) );
+  setX( dynamic_cast<const ArcLengthVector&>(y) );
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setX(const ArcLengthVector& y) 
 {
-  bool res;
-
-  res = grpPtr->setX( y.getXVec() );
+  grpPtr->setX( y.getXVec() );
   alXVec = y;
 
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
-
-  return res;
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setPrevX(const Vector& y) 
 {
-  return setPrevX( dynamic_cast<const ArcLengthVector&>(y) );
+  setPrevX( dynamic_cast<const ArcLengthVector&>(y) );
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::setPrevX(const ArcLengthVector& y) 
 {
   alPrevXVec = y;
 
   isValidF = false; // Previous vector part of residual equation
   isValidNewton = false;
-
-  return true;
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::computeX(const NOX::Abstract::Group& g, 
 					 const Vector& d,
 					 double step) 
 {
-  return computeX( dynamic_cast<const ArcLengthGroup&>(g),
-		   dynamic_cast<const ArcLengthVector&>(d),
-		   step);
+  computeX( dynamic_cast<const ArcLengthGroup&>(g),
+	    dynamic_cast<const ArcLengthVector&>(d),
+	    step);
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::computeX(const ArcLengthGroup& g, 
-					 const ArcLengthVector& d,
-					 double step) 
+					    const ArcLengthVector& d,
+					    double step) 
 {
-  bool res;
-
-  res = grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
-  alXVec.update(1.0, g.getX(), step, d, 0.0);
-  res = res && setArcParam(alXVec.getArcParam()); 
-
   isValidF = false;
   isValidJacobian = false;
   isValidNewton = false;
 
-  return res;
+  grpPtr->computeX(*(g.grpPtr), d.getXVec(), step);
+  alXVec.update(1.0, g.getX(), step, d, 0.0);
+  setArcParam(alXVec.getArcParam()); 
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeF() 
 {
-  bool res = true;
+  if (isValidF)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidF == false) {
-    res = res && grpPtr->computeF();
+  NOX::Abstract::Group::ReturnType res;
 
-    alFVec.getXVec() = grpPtr->getF();
+  res = grpPtr->computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  alFVec.getXVec() = grpPtr->getF();
+  
+  // Construct residual of arclength equation
+  ArcLengthVector *tmpVec =
+    dynamic_cast<ArcLengthVector *>(alPrevXVec.clone(NOX::DeepCopy));
+  tmpVec->update(1.0, alXVec, -1.0);
+  
+  alFVec.getArcParam() = alTangentVec.dot(*tmpVec) - arclengthStep;
 
-    // Construct residual of arclength equation
-    ArcLengthVector *tmpVec =
-        dynamic_cast<ArcLengthVector *>(alPrevXVec.clone(NOX::DeepCopy));
-    tmpVec->update(1.0, alXVec, -1.0);
-    
-    alFVec.getArcParam() = alTangentVec.dot(*tmpVec) - arclengthStep;
-
-    delete tmpVec;
-    
-    isValidF = true;
-    
-  }
+  delete tmpVec;
+  
+  isValidF = true;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeJacobian() 
 {
-  bool res;
+  if (isValidJacobian)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidJacobian == false) {
-    res = grpPtr->computeJacobian();
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-    res = res && derivPtr->computeDfDp(*grpPtr, arcParamId, 
-				      *derivResidualParamPtr);
-    isValidJacobian = true;
-  }
+  res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = derivPtr->computeDfDp(*grpPtr, arcParamId, 
+			      *derivResidualParamPtr);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  isValidJacobian = true;
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeGradient() 
 {
-  cout << "ERROR: LOCA::Bifurcation::ArcLengthGroup::computeGradient()"
-       << " - not implemented" << endl;
-  throw "LOCA Error";
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
    
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params) 
 {
-  bool res = computeF();
-  
-  res = res && computeJacobian();
+  if (isValidNewton)
+    return NOX::Abstract::Group::Ok;
 
-  if (isValidNewton == false) {
-    applyJacobianInverse(params, alFVec, alNewtonVec);
-    alNewtonVec.scale(-1.0);
-  }
+  NOX::Abstract::Group::ReturnType res = computeF();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+  
+  res = computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  res = applyJacobianInverse(params, alFVec, alNewtonVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
+
+  alNewtonVec.scale(-1.0);
 
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
                                                   int paramId) 
 {
@@ -328,11 +331,17 @@ LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
 
   Vector *dfdpVec = tangent_x.clone(NOX::ShapeCopy);
 
-  bool res = grpPtr->computeJacobian();
+  NOX::Abstract::Group::ReturnType res = grpPtr->computeJacobian();
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-  res = res && grpPtr->computeDfDp(arcParamId, *dfdpVec);
+  res = grpPtr->computeDfDp(arcParamId, *dfdpVec);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
-  res = res && grpPtr->applyJacobianInverse(params, *dfdpVec, tangent_x);
+  res = grpPtr->applyJacobianInverse(params, *dfdpVec, tangent_x);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   tangent_param = sqrt(1.0 + tangent_x.dot(tangent_x));
   
@@ -357,7 +366,7 @@ LOCA::Bifurcation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params,
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::applyJacobian(const Vector& input,
 					      Vector& result) const 
 {
@@ -372,10 +381,12 @@ LOCA::Bifurcation::ArcLengthGroup::applyJacobian(const Vector& input,
 
   double arcParam = al_input.getArcParam();  //ADDED al_input. 
 
-  bool res;
+  NOX::Abstract::Group::ReturnType res;
 
   // compute J*x
   res = grpPtr->applyJacobian(input_x, *result_x);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // compute J*x + p*dR/dp
   result_x->update(arcParam, *derivResidualParamPtr, 1.0);
@@ -390,14 +401,14 @@ LOCA::Bifurcation::ArcLengthGroup::applyJacobian(const Vector& input,
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::applyJacobianTranspose(const Vector& input,
 						       Vector& result) const 
 {
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& params,
 						     const Vector& input,
 						     Vector& result) const 
@@ -414,21 +425,26 @@ LOCA::Bifurcation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& pa
   Vector *a = input_x.clone(NOX::ShapeCopy);
   Vector *b = input_x.clone(NOX::ShapeCopy);
   
-  bool res;
+  NOX::Abstract::Group::ReturnType res;
 
   // Solve J*a = input_x
-  if (input_x.norm() > 0.0)
-    res = res && grpPtr->applyJacobianInverse(params, input_x, *a);
+  if (input_x.norm() > 0.0) {
+    res = grpPtr->applyJacobianInverse(params, input_x, *a);
+    if (res != NOX::Abstract::Group::Ok)
+      return res;
+  }
 
   // Solve J*b = dR/dp
-  res = res && grpPtr->applyJacobianInverse(params, *derivResidualParamPtr, *b);
+  res = grpPtr->applyJacobianInverse(params, *derivResidualParamPtr, *b);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute result_param = 
-  result_param =  (input_param - alTangentVec.getXVec().dot(*a))
+  result_param =  -(input_param - alTangentVec.getXVec().dot(*a))
                 / (alTangentVec.getXVec().dot(*b) - alTangentVec.getArcParam());
 
   // Compute result_x = a + result_param*b 
-  *result_x = result_x->update(1.0, *a, result_param, *b, 0.0);
+  *result_x = result_x->update(1.0, *a, -result_param, *b, 0.0);
 
   al_result.setVec(*result_x, result_param);
 
@@ -440,13 +456,13 @@ LOCA::Bifurcation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& pa
   return res;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::applyJacobianDiagonalInverse(const Vector& input, Vector& result) const 
 {
-  return false;
+  return NOX::Abstract::Group::NotDefined;
 }
 
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Bifurcation::ArcLengthGroup::applyRightPreconditioning(NOX::Parameter::List& params, const Vector& input, Vector& result) const 
 {
   const ArcLengthVector& al_input = dynamic_cast<const ArcLengthVector&>(input);
@@ -460,13 +476,18 @@ LOCA::Bifurcation::ArcLengthGroup::applyRightPreconditioning(NOX::Parameter::Lis
 
   Vector *a = input_x.clone(NOX::ShapeCopy);
   Vector *b = input_x.clone(NOX::ShapeCopy);
-  bool res;
+
+  NOX::Abstract::Group::ReturnType res;
 
   // Solve J*a = input_x
-  res = res && grpPtr->applyRightPreconditioning(params, input_x, *a);
+  res = grpPtr->applyRightPreconditioning(params, input_x, *a);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Solve J*b = dR/dp
-  res = res && grpPtr->applyRightPreconditioning(params, *derivResidualParamPtr, *b);
+  res = grpPtr->applyRightPreconditioning(params, *derivResidualParamPtr, *b);
+  if (res != NOX::Abstract::Group::Ok)
+    return res;
 
   // Compute result_param = 
   result_param =  (input_param - alTangentVec.getXVec().dot(*a))
@@ -550,12 +571,19 @@ LOCA::Bifurcation::ArcLengthGroup::getNormNewtonSolveResidual() const
 {
   ArcLengthVector residual = alFVec;
   
-  applyJacobian(alNewtonVec, residual);
+  NOX::Abstract::Group::ReturnType res = applyJacobian(alNewtonVec, residual);
+  if (res != NOX::Abstract::Group::Ok) {
+    cout << "ERROR: applyJacobian() in getNormNewtonSolveResidual "
+	 << " returned not ok" << endl;
+    throw "LOCA Error";
+    return 0.0;
+  }
+
   residual = residual.update(1.0, alFVec, 1.0);
   return residual.norm();
 }
 
-bool
+void
 LOCA::Bifurcation::ArcLengthGroup::print() const
 {
   cout << "Beginning ArcLengthGroup.print:" << endl;
@@ -577,7 +605,5 @@ LOCA::Bifurcation::ArcLengthGroup::print() const
     cout << "alFVec not computed" << endl;
 
   cout << endl;
-
-  return true;
 }
 

@@ -35,7 +35,6 @@
 
 #include "NOX_Abstract_Group.H"    // base class
 
-#include "LOCA_Abstract_Vector.H"  // for NOX::CopyType
 #include "NOX_Common.H"            // for string 
 #include "LOCA_DerivUtils.H"
 
@@ -114,10 +113,10 @@ public:
 //  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Set the parameter list in the group to p (pVector = p).  
-  virtual bool setParams(const ParameterVector& p) = 0;
+  virtual void setParams(const ParameterVector& p) = 0;
 
   //! Compute a new parameter vector where this.pVector = grp.pVector + step*d.
-  virtual bool computeParams(const ParameterVector& oldParams, 
+  virtual void computeParams(const ParameterVector& oldParams, 
 			     const ParameterVector& direction, 
 			     double step) = 0;
 
@@ -125,14 +124,16 @@ public:
   virtual const ParameterVector& getParams() const = 0;
 
   //! Compute tangent direction
-  virtual bool computeTangent(NOX::Parameter::List& params, int paramID) = 0;
+  virtual NOX::Abstract::Group::ReturnType
+  computeTangent(NOX::Parameter::List& params, int paramID) = 0;
 
   //! Get tangent direction vector, needed for predictor
   virtual const NOX::Abstract::Vector& getTangent() const = 0;
 
-  virtual bool computeDfDp(int paramID, NOX::Abstract::Vector& result);
+  virtual NOX::Abstract::Group::ReturnType
+  computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
-  virtual bool print() const = 0;
+  virtual void print() const = 0;
 protected:
   DerivUtils* derivPtr;
 };

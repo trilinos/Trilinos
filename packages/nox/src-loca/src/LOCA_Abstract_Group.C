@@ -71,33 +71,8 @@ LOCA::Abstract::Group::operator=(const LOCA::Abstract::Group& source)
   return *this;
 }
 
-/*
-bool
-LOCA::Abstract::Group::computeTangent(NOX::Parameter::List& params, 
-                                      int paramID) 
-{
-  bool res = computeJacobian();
-
-  NOX::Abstract::Vector *dfdpVec = tangentVec.clone(NOX::ShapeCopy);
-
-  res = res && computeDfDp(paramID, *dfdpVec);
-
-  res = res && applyJacobianInverse(params, *dfdpVec, tangentVec);
-
-  delete dfdpVec;
-
-  return res;
-}
-*/
-
-bool
+NOX::Abstract::Group::ReturnType
 LOCA::Abstract::Group::computeDfDp(int paramID, NOX::Abstract::Vector& result) 
 {
   return derivPtr->computeDfDp(*this,paramID, result);
 }
-
-//NOX::Abstract::Group*
-//LOCA::Abstract::Group::clone(NOX::CopyType type) const 
-//{
-//  return new Group(*this, type);
-//}

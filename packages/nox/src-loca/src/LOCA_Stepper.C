@@ -197,8 +197,8 @@ StatusType Stepper::step()
 
     curValue += curStepSize;
 
-    if (doFirstOrderPredictor)
-      curGroupPtr->computeX(*curGroupPtr, curGroupPtr->getTangent(), -curStepSize);
+    if (doFirstOrderPredictor) 
+      curGroupPtr->computeX(*curGroupPtr, curGroupPtr->getTangent(), curStepSize);
   }
 
   conParams.setValue(conParamID, curValue);
