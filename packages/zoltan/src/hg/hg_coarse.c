@@ -102,6 +102,9 @@ int Zoltan_HG_Coarsening (
       return ZOLTAN_MEMERR;
     }
     c_hg->hvertex = NULL;
+    ZOLTAN_FREE ((void **) &c_ewgt);
+    ZOLTAN_FREE ((void **) &c_hindex) ;
+    ZOLTAN_FREE ((void **) &c_hvertex) ;
     return Zoltan_HG_Create_Mirror(zz,c_hg);
   }
 

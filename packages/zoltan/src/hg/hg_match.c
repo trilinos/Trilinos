@@ -165,9 +165,8 @@ static int matching_rem (ZZ *zz, HGraph *hg, Graph *g, Matching match, int limit
    int random ;
    char *yo = "matching_rem" ;
 
-   v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
-   v2 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ;
-   if (v1 == NULL || v2 == NULL)
+   if (!(v1 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) ) ||
+       !(v2 = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nEdge) )  )
       {
       ZOLTAN_FREE ((void **) &v1) ;
       ZOLTAN_FREE ((void **) &v2) ;
