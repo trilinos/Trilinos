@@ -44,8 +44,8 @@ using namespace NOX;
 using namespace NOX::Linesearch;
 
 Manager::Manager(const Parameter::List& params) :
-  ptr(NULL),
-  method("")
+  method(""),
+  ptr(NULL)
 {
   if (!isNewMethod(params))
     method = "Full Step";		// default line search
