@@ -848,7 +848,7 @@ int ML_Set_Prolongator_GetrowCommInfo(ML *ml, int level, int neighbor,
 /* ------------------------------------------------------------------------- */
 
 int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
-                     int (*func)(void *, int, double *, int, double *),
+                     int (*func)(ML_Smoother *, int, double *, int, double *),
                      char *str)
 {
    char temp[80], *tptr = NULL;
@@ -885,7 +885,7 @@ int ML_Set_Smoother( ML *ml , int nl , int pre_or_post, void *data,
 int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
         double omega)
 {
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
    char str[80];
 
@@ -934,7 +934,7 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
 int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
                                 double omega)
 {
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
    char str[80];
 
@@ -987,7 +987,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
    double      *nums, **sgs_nums = NULL, *num2;
    double      *val = NULL, temp_omega;
    ML_Operator *Amat;
-   int         (*fun)(void *, int, double *, int, double *);
+   int         (*fun)(ML_Smoother *, int, double *, int, double *);
    void        (*fun2)(void *) = NULL;
    struct ML_CSR_MSRdata *ptr = NULL;
    char        str[80];
@@ -1080,7 +1080,7 @@ int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
                                              int ntimes, double omega)
 {
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status;
    char str[80];
 
@@ -1131,7 +1131,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
 int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
                             double omega, int Nextra, int extra[])
 {
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 0, Nrows, count;
    double *nums, **sgs_nums = NULL, *num2;
    ML_Operator *Amat;
@@ -1212,7 +1212,7 @@ sgs_nums[3] = (double *) extra;
 int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 		 		          int ntimes, double omega)
 {
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 0, *ordering;
 #ifdef ML_TIMING
    double t0;
@@ -1267,7 +1267,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
                                      int ntimes, double omega, int blocksize)
 {
-   int            (*fun)(void *, int, double *, int, double *);
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
    int            start_level, end_level, i, status = 1;
    char           str[80];
@@ -1342,7 +1342,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
                  int ntimes, double omega, int nBlocks, int *blockIndices)
 {
-   int            (*fun)(void *, int, double *, int, double *);
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
    double         myomega;
    ML_Sm_BGS_Data *data;
    char           str[80];
@@ -1394,7 +1394,7 @@ int ML_Gen_Smoother_VBlockJacobi( ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
                       int ntimes, double omega, int nBlocks, int *blockIndices)
 {
-   int            (*fun)(void *, int, double *, int, double *);
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
    char str[80];
 
@@ -1443,7 +1443,7 @@ int ML_Gen_Smoother_VBlockSymGaussSeidel( ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
      int pre_or_post, int ntimes, double omega, int nBlocks, int *blockIndices)
 {
-   int            (*fun)(void *, int, double *, int, double *);
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
    char str[80];
 
@@ -1492,7 +1492,7 @@ int ML_Gen_Smoother_VBlockSymGaussSeidelSequential( ML *ml , int nl,
 int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
                  int ntimes, double omega, int nBlocks, int *blockIndices)
 {
-   int            (*fun)(void *, int, double *, int, double *);
+   int            (*fun)(ML_Smoother *, int, double *, int, double *);
    double         myomega;
    ML_Sm_BGS_Data *data;
    char           str[80];
@@ -1543,7 +1543,7 @@ int ML_Gen_Smoother_VBlockKrylovJacobi( ML *ml , int nl, int pre_or_post,
 
 int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
 {
-   int             (*fun)(void *, int, double *, int, double *);
+   int             (*fun)(ML_Smoother *, int, double *, int, double *);
    int             total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int             offset;
    double          *dble_buf;
@@ -1630,7 +1630,7 @@ int ML_Gen_Smoother_OverlappedDDILUT( ML *ml , int nl, int pre_or_post )
 int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
                                           int ntimes, int length, int *blkinfo)
 {
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int                i, maxblk, offset;
    double             *dble_buf;
@@ -1739,7 +1739,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post,
                                          int ntimes, int length, int *blkinfo )
 {
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2;
    int                i, maxblk, offset;
    double             *dble_buf;
@@ -2110,7 +2110,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
    ML_Operator     *Amat;
    double          *tdiag;
    char             str[80];
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int iii, degree;
    int ntimes = 1;
 
@@ -2246,7 +2246,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
    int              start_level, end_level, i, errCode=0;
    ML_Operator     *Amat;
    char             str[80];
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int ntimes = 1;
 
 #ifdef ML_TIMING
@@ -5680,7 +5680,7 @@ int ML_Gen_Smoother_BlockHiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 
 {
    ML_Sm_BlockHiptmair_Data *data = NULL;
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
    int *BClist=NULL, BClength=0;
    ML_BdryPts *ml_bc;
@@ -5797,7 +5797,7 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 
 {
    ML_Sm_Hiptmair_Data *data;
-   int (*fun)(void *, int, double *, int, double *);
+   int (*fun)(ML_Smoother *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
    int *BClist=NULL, BClength=0;
    ML_BdryPts *ml_bc;

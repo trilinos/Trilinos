@@ -61,7 +61,7 @@ extern void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
         double *, int *, int *, double *, struct AZ_MATRIX_STRUCT  *,
         struct AZ_PREC_STRUCT *));
 
-extern int az_wrap_solvers(void *, int in, double x[], int out, 
+extern int az_wrap_solvers(ML_Smoother *, int in, double x[], int out, 
 	double rhs[]);
 
 extern void AZ_ML_SmootherClean(void *data);

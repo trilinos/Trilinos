@@ -1309,7 +1309,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 /* variable block additive Schwarz                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
+int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
 #ifdef SUPERLU
@@ -1485,7 +1485,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 /* variable block multiplicative Schwarz                                     */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
+int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
 #ifdef SUPERLU
@@ -2149,7 +2149,7 @@ if ( info != 0 && info != (nrows+1) )
 int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
                                           int ntimes, int length, int *blkinfo)
 {
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
    int                i, maxblk, offset;
    double             *dble_buf;
@@ -2258,7 +2258,7 @@ int ML_Gen_Smoother_VBlockAdditiveSchwarz(ML *ml , int nl, int pre_or_post,
 int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *ml , int nl, int pre_or_post,
                                          int ntimes, int length, int *blkinfo )
 {
-   int                (*fun)(void *, int, double *, int, double *);
+   int                (*fun)(ML_Smoother *, int, double *, int, double *);
    int                total_recv_leng, *recv_lengths, *int_buf, *map, *map2; 
    int                i, maxblk, offset;
    double             *dble_buf;

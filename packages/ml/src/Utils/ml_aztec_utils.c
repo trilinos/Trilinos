@@ -1165,7 +1165,7 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
 /*****************************************************************************/
 /*****************************************************************************/
 
-int az_wrap_solvers(void *smoo_in, int in, double x[], int out, 
+int az_wrap_solvers(ML_Smoother *smoo_in, int in, double x[], int out, 
                     double rhs[])
 {
    struct aztec_context *context;

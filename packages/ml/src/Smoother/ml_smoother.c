@@ -326,7 +326,7 @@ int ML_Smoother_Apply(ML_Smoother *pre, int inlen, double sol[],
 /* ************************************************************************* */
 
 int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
-                    int (*internal)(void*,int,double*,int,double *),
+                    int (*internal)(ML_Smoother*,int,double*,int,double *),
                     int (*external)(void*,int,double*,int,double *), 
                     int ntimes, double omega, char *str)
 {
@@ -356,7 +356,7 @@ int ML_Smoother_Set(ML_Smoother *smoo,int internal_or_external,void *data,
 /* weighted Jacobi smoother                                                  */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
+int ML_Smoother_Jacobi(ML_Smoother *sm,int inlen,double x[],int outlen,double rhs[])
 {
    int i, j, n, *cols, allocated_space;
    ML_Operator *Amat;
@@ -479,7 +479,7 @@ int ML_Smoother_Jacobi(void *sm,int inlen,double x[],int outlen,double rhs[])
 /* Gauss-Seidel smoother                                                     */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen, 
+int ML_Smoother_GaussSeidel(ML_Smoother *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
    int iter, i, j, length, allocated_space, *cols, col;
@@ -586,7 +586,7 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
 /* Symmetric Gauss-Seidel smoother                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
+int ML_Smoother_SGS(ML_Smoother *sm,int inlen,double x[],int outlen, double rhs[])
 {
    int iter, i, j, length, allocated_space, *cols, col;
    double dtemp, diag_term, *vals, omega;
@@ -827,7 +827,7 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
 /* ------------------------------------------------------------------------- */
 #ifdef MatrixProductHiptmair
 /* Block Hiptmair Smoother */
-int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen, 
+int ML_Smoother_BlockHiptmair(ML_Smoother *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
   int iter, kk, Nrows, init_guess; 
@@ -1111,7 +1111,7 @@ int ML_Smoother_BlockHiptmair(void *sm, int inlen, double x[], int outlen,
 
 /******************************************************************************/
 
-int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
+int ML_Smoother_Hiptmair(ML_Smoother *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
   int iter, kk, Nrows, init_guess;
@@ -1700,7 +1700,7 @@ vals = &(ATmat_trans_val[ATmat_trans_rowptr[i]]);
 /* sequential Symmetric Gauss-Seidel smoother                                */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_SGSSequential(ML_Smoother *sm,int inlen,double x[],int outlen,
                               double rhs[])
 {
    int           i, j, iter, Nrows, length, allocated_space, *cols, col;
@@ -1820,7 +1820,7 @@ int ML_Smoother_SGSSequential(void *sm,int inlen,double x[],int outlen,
 /* Block Gauss-Seidel smoother                                               */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_BlockGS(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_BlockGS(ML_Smoother *sm,int inlen,double x[],int outlen,
                         double rhs[])
 {
    int            iter, i, j, k, length, allocated_space, *cols, col, one;
@@ -2056,7 +2056,7 @@ int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
 /* Variable size Block Jacobi smoother                                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen, 
+int ML_Smoother_VBlockJacobi(ML_Smoother *sm, int inlen, double x[], int outlen, 
                              double rhs[])
 {
    int            i, j, k, iter, blocksize, one=1, *aggr_offset, *block_indices;
@@ -2253,7 +2253,7 @@ int ML_Smoother_VBlockJacobi(void *sm, int inlen, double x[], int outlen,
 /*  Variable size Block symmetric Gauss Seidel smoother                      */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[], 
+int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[], 
                           int outlen, double rhs[])
 {
    int            i, j, k, iter, blocksize, one=1, *aggr_offset, *block_indices;
@@ -2460,7 +2460,7 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
 /* Variable size Block Gauss Seidel smoother (sequential)                    */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[], 
+int ML_Smoother_VBlockSGSSequential(ML_Smoother *sm, int inlen, double x[], 
                                     int outlen, double rhs[])
 {
    int            i, j, k, iter, blocksize, one=1, *aggr_offset, *block_indices;
@@ -2692,7 +2692,7 @@ int ML_Smoother_VBlockSGSSequential(void *sm, int inlen, double x[],
 /* Variable size Block Jacobi smoother with Krylov                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockKrylovJacobi(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_VBlockKrylovJacobi(ML_Smoother *sm,int inlen,double x[],int outlen,
                                    double rhs[])
 {
    ML_Comm        *comm;
@@ -2711,7 +2711,9 @@ int ML_Smoother_VBlockKrylovJacobi(void *sm,int inlen,double x[],int outlen,
    ML_Krylov_Set_MaxIterations(ml_kry, 3);
    ML_Krylov_Set_Precon(ml_kry, sm);
    ML_Krylov_Set_PrintFreq(ml_kry, 1000);
-   ML_Krylov_Set_PreconFunc(ml_kry, ML_Smoother_VBlockJacobi);
+   ML_Krylov_Set_PreconFunc(ml_kry, 
+			    (int (*)(void*,int,double*,int,double*))
+                            ML_Smoother_VBlockJacobi);
    ML_Krylov_Solve(ml_kry, inlen, rhs, x);
    ML_Krylov_Destroy(&ml_kry);
    return 0;
@@ -2721,7 +2723,7 @@ int ML_Smoother_VBlockKrylovJacobi(void *sm,int inlen,double x[],int outlen,
 /* overlapped Domain decomposition                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_OverlappedILUT(ML_Smoother *sm,int inlen,double x[],int outlen,
                                double rhs[])
 {
    int             i, j, column, *idiag, *mat_ia, *mat_ja, extNrows;
@@ -2801,7 +2803,7 @@ int ML_Smoother_OverlappedILUT(void *sm,int inlen,double x[],int outlen,
 /* variable block additive Schwarz                                           */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockAdditiveSchwarz(void *sm, int inlen, double x[],
+int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
 #ifdef SUPERLU
@@ -2972,7 +2974,7 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 /* variable block multiplicative Schwarz                                     */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_VBlockMultiplicativeSchwarz(void *sm, int inlen, double x[],
+int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x[],
                                       int outlen, double rhs[])
 {
 #ifdef SUPERLU
@@ -5591,7 +5593,7 @@ int ML_Smoother_MSR_SGSdamping(void *sm,int inlen,double x[],int outlen,
 /* Symmetric MSR Gauss-Seidel smoother with no damping.                      */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_MSR_SGSnodamping(ML_Smoother *sm,int inlen,double x[],int outlen,
 				 double rhs[])
 {
    int iter, i, j;
@@ -5720,7 +5722,7 @@ int ML_Smoother_MSR_SGSnodamping(void *sm,int inlen,double x[],int outlen,
 /* Symmetric MSR Gauss-Seidel smoother                                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_MSR_SGS(void *sm,int inlen,double x[],int outlen,double rhs[])
+int ML_Smoother_MSR_SGS(ML_Smoother *sm,int inlen,double x[],int outlen,double rhs[])
 {
    int iter, i, j;
    ML_Operator *Amat;
@@ -5829,7 +5831,7 @@ int ML_Smoother_MSR_SGS(void *sm,int inlen,double x[],int outlen,double rhs[])
 /* Symmetric MSR Gauss-Seidel smoother (different version)                   */
 /* ------------------------------------------------------------------------- */
 
-int ML_MSR_SGSextra(void *sm, int inlen, double x[], int outlen, double rhs[])
+int ML_MSR_SGSextra(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
 {
    int iter, i, j;
    ML_Operator *Amat;
@@ -6099,7 +6101,7 @@ int ML_Smoother_BackGS(void *sm,int inlen,double x[],int outlen,double rhs[])
 /* ask Ray to find out what this function does                               */
 /* ------------------------------------------------------------------------- */
 
-int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_OrderedSGS(ML_Smoother *sm,int inlen,double x[],int outlen,
                            double rhs[])
 {
    int iter, i, ii, j, length, allocated_space, *cols, col;
@@ -6482,7 +6484,7 @@ int DinvA(void *data,  int in, double p[], int out, double ap[])
   return 0;
 }
 
-int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
+int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
                           double rhs[])
 { /****************************************************************************	
    *
@@ -7173,7 +7175,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 
  
  
-int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
+int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
 {
 
    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
@@ -7583,7 +7585,7 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 }
 
 
-int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
+int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[])
 {
 
   ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
@@ -7789,7 +7791,7 @@ if (Amat->comm->ML_mypid == 0)  fflush(stdout);
 }
 
 
-int ML_DiagScaled_1stepKrylov(void *sm, int inlen, double x[], int outlen, 
+int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[], int outlen, 
                               double rhs[])
 {
 

@@ -52,7 +52,7 @@ typedef struct ML_Sm_BlockHiptmair_Data_Struct ML_Sm_BlockHiptmair_Data;
 struct ML_SmootherFunc_Struct 
 {
    int ML_id;
-   int (*internal)(void *, int, double *, int, double *);
+   int (*internal)(ML_Smoother *, int, double *, int, double *);
    int (*external)(void *, int, double *, int, double *);
    void *data;
 };
@@ -230,41 +230,41 @@ extern  int ML_Smoother_Apply(ML_Smoother *,int,Epetra_MultiVector &,
 
 
 extern  int ML_Smoother_Set(ML_Smoother *, int, void *,
-                 int (*internal)(void*,int,double*,int,double *),
+                 int (*internal)(ML_Smoother*,int,double*,int,double *),
                  int (*external)(void*,int,double*,int,double *),
                  int, double, char *);
-extern  int ML_Smoother_Jacobi(void *, int, double *x, int, double *);
-extern  int ML_Smoother_GaussSeidel(void *, int, double *, int, double *);
-extern  int ML_Smoother_SGSSequential(void *, int,double *, int, double *);
-extern  int ML_Smoother_SGS(void *, int, double *, int, double *);
-extern  int ML_Smoother_BlockGS(void *, int, double *, int, double *);
+extern  int ML_Smoother_Jacobi(ML_Smoother *, int, double *x, int, double *);
+extern  int ML_Smoother_GaussSeidel(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_SGSSequential(ML_Smoother *, int,double *, int, double *);
+extern  int ML_Smoother_SGS(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_BlockGS(ML_Smoother *, int, double *, int, double *);
 extern int ML_BlockScaledApply(ML_Operator *Amat, int inlen, double in[],
 			       int outlen, double out[]);
 
-extern  int ML_Smoother_MLS_Apply(void *, int, double *, int, double *);
-extern int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[]);
+extern  int ML_Smoother_MLS_Apply(ML_Smoother *, int, double *, int, double *);
+extern int ML_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, double rhs[]);
 
 #ifdef WKC
 /* WKC -- double * are actually Epetra_MultiVectors */
-extern int ML_Cheby_WKC(void *sm, int inlen, double *x, int outlen, double *rhs);
+extern int ML_Cheby_WKC(ML_Smoother *sm, int inlen, double *x, int outlen, double *rhs);
 #endif
 
-extern int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, 
+extern int ML_complex_Cheby(ML_Smoother *sm, int inlen, double x[], int outlen, 
 			    double rhs[]);
-extern int ML_DiagScaled_1stepKrylov(void *sm, int inlen, double x[],
+extern int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[],
 				     int outlen, double rhs[]);
-extern  int ML_Smoother_ParaSails(void *, int, double *, int, double *);
-extern  int ML_Smoother_ParaSailsSym(void *, int, double *, int, double *);
-extern  int ML_Smoother_ParaSailsTrans(void *, int, double *, int, double *);
-extern  int ML_Smoother_VBlockJacobi(void *,int,double *x,int, double *);
-extern  int ML_Smoother_VBlockKrylovJacobi(void *,int,double*,int,double*);
-extern  int ML_Smoother_VBlockSGS(void *, int, double *x, int, double *);
-extern  int ML_Smoother_VBlockSGSSequential(void*,int,double*,int,double*);
-extern  int ML_Smoother_OverlappedILUT(void *,int,double *x,int,double *);
-extern  int ML_Smoother_VBlockAdditiveSchwarz(void *,int,double*,int,double*);
-extern  int ML_Smoother_VBlockMultiplicativeSchwarz(void *,int,double*,int,double*);
-extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
-extern  int ML_Smoother_BlockHiptmair(void *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSails(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsSym(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_ParaSailsTrans(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_VBlockJacobi(ML_Smoother *,int,double *x,int, double *);
+extern  int ML_Smoother_VBlockKrylovJacobi(ML_Smoother *,int,double*,int,double*);
+extern  int ML_Smoother_VBlockSGS(ML_Smoother *, int, double *x, int, double *);
+extern  int ML_Smoother_VBlockSGSSequential(ML_Smoother*,int,double*,int,double*);
+extern  int ML_Smoother_OverlappedILUT(ML_Smoother *,int,double *x,int,double *);
+extern  int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *,int,double*,int,double*);
+extern  int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *,int,double*,int,double*);
+extern  int ML_Smoother_Hiptmair(ML_Smoother *, int, double *, int, double *);
+extern  int ML_Smoother_BlockHiptmair(ML_Smoother *, int, double *, int, double *);
 
 /* ******************************************************************** */
 /* ******************************************************************** */
@@ -330,15 +330,15 @@ extern   ML *ML_Smoother_Get_Hiptmair_nodal(ML *ml, int level, int);
 /* Ray's functions                                                      */
 /* -------------------------------------------------------------------- */
 
-extern  int ML_MSR_SGSextra(void *, int , double *, int , double *);
+extern  int ML_MSR_SGSextra(ML_Smoother *, int , double *, int , double *);
 extern void ML_MSR_GSextra_Clean(void *data);
 extern  int ML_Smoother_BackGS(void *, int, double *, int, double *);
 extern void ML_Smoother_Clean_OrderedSGS(void *data);
 extern  int ML_Smoother_Gen_Ordering(ML_Operator *Amat, int **data_ptr);
-extern  int ML_Smoother_OrderedSGS(void *sm,int inlen,double x[],int outlen,
+extern  int ML_Smoother_OrderedSGS(ML_Smoother *sm,int inlen,double x[],int outlen,
                                    double rhs[]);
-extern  int ML_Smoother_MSR_SGS(void *, int, double *, int, double *);
-extern int ML_Smoother_MSR_SGSnodamping(void *,int ,double *,int , double *);
+extern  int ML_Smoother_MSR_SGS(ML_Smoother *, int, double *, int, double *);
+extern int ML_Smoother_MSR_SGSnodamping(ML_Smoother *,int ,double *,int , double *);
 extern int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
 					      int outlen, double rhs[]);
 extern int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],

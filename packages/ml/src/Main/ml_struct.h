@@ -294,7 +294,7 @@ extern int ML_Gen_Smoother_VBlockMultiplicativeSchwarz(ML *,int nl,
 extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
 		     int ntimes, double omega, int Nextra, int extra[]);
 extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj,
-                     int (*func)(void *, int, double *, int, double *),
+                     int (*func)(ML_Smoother *, int, double *, int, double *),
                      char *);
 
 extern int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level);
