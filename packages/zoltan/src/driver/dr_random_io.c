@@ -56,7 +56,7 @@ int create_random_input(
   /* Local declarations. */
   char  *yo = "create_random_input";
 
-  int    i, nvtxs, gnvtxs;
+  int    i, j, nvtxs, gnvtxs;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
@@ -82,8 +82,8 @@ int create_random_input(
     /* read the array in on processor 0 */
     nvtxs = pio_info->init_size;
     ndim = pio_info->init_dim;
-    vwgt_dim = 1;
-
+    vwgt_dim = pio_info->init_vwgt_dim;
+    if (vwgt_dim<1) vwgt_dim=1; /* For now, insist on 1 or more weights. */
 
     if (nvtxs <= OUTPUT_FILES_MAX_NVTXS) {
       sprintf(filename, "%s.graph", pio_info->pexo_fname);
@@ -97,7 +97,7 @@ int create_random_input(
       x = (float *) malloc(nvtxs * sizeof(double));
       if (ndim > 1) y = (float *) malloc(nvtxs * sizeof(double));
       if (ndim > 2) z = (float *) malloc(nvtxs * sizeof(double));
-      vwgts = (float *) malloc(nvtxs * sizeof(float));
+      vwgts = (float *) malloc(vwgt_dim*nvtxs * sizeof(float));
       if (!x || (ndim > 1 && !y) || (ndim > 2 && !z) || !vwgts) {
         Gen_Error(0, "fatal: Error allocating memory.");
         return 0;
@@ -130,7 +130,18 @@ int create_random_input(
       }
 
       for (i = 0; i < nvtxs; i++)  {
-        vwgts[i] = ((float) rand())/RAND_MAX;
+        if (pio_info->init_vwgt_dim == 0) 
+          /* Unit weights if no weights were requested. */
+          vwgts[i] = 1.0;
+        else
+          for (j = 0; j < vwgt_dim; j++)  {
+            /* Only assign one of the weight dimensions a weight>0. */
+            /* Modify to get more complicated test cases. */
+            if (j == i%vwgt_dim)
+              vwgts[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+            else
+              vwgts[i*vwgt_dim+j] = 0.0;
+          }
       }
 
       /* KDDSJP:  Need to add edge info here.  Later.  For now, set no edges */
@@ -142,9 +153,15 @@ int create_random_input(
         start[i] = 0;
       }
       start[nvtxs] = 0;
-      if (fpg != NULL) fprintf(fpg, "%d %d 010\n", nvtxs, start[nvtxs]);
+      if (fpg != NULL) 
+        if (vwgt_dim==1)
+          fprintf(fpg, "%d %d 010\n", nvtxs, start[nvtxs]);
+        else
+          fprintf(fpg, "%d %d 010 %d\n", nvtxs, start[nvtxs], vwgt_dim);
       for (i = 0; i < nvtxs; i++) {
-        if (fpg != NULL) fprintf(fpg, "%e ", vwgts[i]);
+        if (fpg != NULL) 
+          for (j = 0; j < vwgt_dim; j++) 
+            fprintf(fpg, "%e ", vwgts[i*vwgt_dim+j]);
         /* KDDSJP Print edges here */
         if (fpg != NULL) fprintf(fpg, "\n");
       }

@@ -146,6 +146,7 @@ int main(int argc, char *argv[])
   pio_info.init_dist_type	= -1;
   pio_info.init_size		= -1;
   pio_info.init_dim 		= -1;
+  pio_info.init_vwgt_dim 	= -1;
   pio_info.pdsk_root[0]		= '\0';
   pio_info.pdsk_subdir[0]	= '\0';
   pio_info.pexo_fname[0]	= '\0';

@@ -53,9 +53,11 @@ struct Parallel_IO
   int     init_dist_procs;     /* How many procs to use in 
                                   the initial distribution.            */
   int     init_size;           /* For NO_FILE (random) input, the 
-                                  of objects to be created. */
+                                  no. of objects to be created. */
   int     init_dim;            /* For NO_FILE (random) input, the 
                                   dimension of the problem (1, 2, or 3D) */
+  int     init_vwgt_dim;       /* For NO_FILE (random) input, the 
+                                  no. of weights per object.           */
 
   /* The root location of the parallel disks */
   char    pdsk_root[FILENAME_MAX+1];

@@ -152,6 +152,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
             pio_info->init_dist_procs = -1;
             pio_info->init_size = 100;  /* default */
             pio_info->init_dim = 3;     /* default */
+            pio_info->init_vwgt_dim = 1;     /* default */
             if(strlen(pio_info->pexo_fname) == 0)
               strcpy(pio_info->pexo_fname, "random");
             while ((cptr = strtok(NULL, ",")) != NULL){ 
@@ -173,6 +174,22 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                   return 0;
                 }
               }
+              else if (strstr(cptr, "obj_weight_dim")) {
+                cptr2 = strchr(cptr, '=');
+                if (cptr2 == NULL) {
+                  Gen_Error(0, "fatal: obj_weight_dim is not specified");
+                  return 0;
+                }
+                cptr2++;
+                if (sscanf(cptr2, "%d", &(pio_info->init_vwgt_dim)) != 1) {
+                  Gen_Error(0, "fatal: obj_weight_dim must be an integer.");
+                  return 0;
+                }
+                if (pio_info->init_vwgt_dim < 0) {
+                  Gen_Error(0, "fatal: invalid obj_weight_dim.");
+                  return 0;
+                }
+              }
               else if (strstr(cptr, "size")) {
                 cptr2 = strchr(cptr, '=');
                 if (cptr2 == NULL) {
@@ -182,6 +199,10 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                 cptr2++;
                 if(sscanf(cptr2, "%d", &(pio_info->init_size)) != 1) {
                   Gen_Error(0, "fatal: initial size must be an integer.");
+                  return 0;
+                }
+                if (pio_info->init_size < 0) {
+                  Gen_Error(0, "fatal: invalid size.");
                   return 0;
                 }
               }
