@@ -32,7 +32,7 @@ balancing in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance<
 <BR>&nbsp;
 
 <P>
-<HR>typedef void <B>LB_FN</B>(struct <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+<HR>typedef int <B>LB_FN</B>(struct <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
 *<I>lb</I>, int *<I>num_import</I>, <B><A HREF="dev_lb_types.html#Macros">LB_GID</A></B>
 **<I>import_global_ids</I>, <B><A HREF="dev_lb_types.html#Macros">LB_LID</A></B>
 **<I>import_local_ids</I>, int **<I>import_procs</I>);&nbsp;
@@ -86,6 +86,18 @@ of the objects to be imported to the processor for the new decomposition.</TD>
 <TD>Upon return, an array of size <I>num_import</I> containing the processor
 IDs of processors owning (in the old decomposition) the objects to be imported
 for the new decomposition.&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD><A HREF="../ug_html/ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
 

@@ -137,7 +137,7 @@ and Intel Paragon. Dependency and object files and the resulting load-balancing
 library file are placed in subdirectories for each architecture. Thus,
 to build the library for Sandia's ASCI Red computer, a user would type
 <BLOCKQUOTE>gmake tflop</BLOCKQUOTE>
-and the resulting library would be stored in Obj_tflop/libdlb.a. Paths
+and the resulting library would be stored in Obj_tflop/libzoltan.a. Paths
 within the top-level Makefile and the Makefiles in the Obj_* subdirectories
 may have to be changed for the user's computing environment.
 <H3>
@@ -145,7 +145,7 @@ may have to be changed for the user's computing environment.
 The library interface is described in the C include file "lbi_const.h";
 this file should be included in all application source files that call
 Zoltan library routines. The application should then be linked with the
-Zoltan library by including -ldlb in the linking command for the application.
+Zoltan library by including -lzoltan in the linking command for the application.
 <BR>&nbsp;
 
 <P>
