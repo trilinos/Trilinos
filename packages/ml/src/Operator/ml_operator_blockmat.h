@@ -41,6 +41,7 @@ extern int ML_Operator_blockmat_getrow(void *, int, int *, int, int *,
 extern int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, 
 				     ML_Operator *original1,
 				     ML_Operator *original2);
+extern void  ML_Operator_blockmatdata_Destroy(void *data);
 #ifdef __cplusplus
 }
 #endif
