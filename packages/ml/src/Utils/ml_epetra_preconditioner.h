@@ -47,18 +47,21 @@ public:
   //! Constructs an MultiLevelPreconditioner with default values.
 
   MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						     bool ComputePrec );
+						     const bool ComputePrec );
 
     //! Constructs an MultiLevelPreconditioner. Retrives parameters (with prefix \c Prefix) from \c List.
   
   MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-			    Teuchos::ParameterList & List, bool, char Prefix[]);
+			    const Teuchos::ParameterList & List,
+			    const bool ComputePrec=true, const char Prefix[]="");
 
-  //! Constructs an MultiLevelPreconditioner. Retrives parameters from \c List.
-
-  MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-			    Teuchos::ParameterList & List, bool);
-
+  //! Constructs an MultiLevelPreconditioner from an ML_Operator. Retrives parameters from \c List.
+  
+  MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
+						      const Teuchos::ParameterList & List,
+						      const bool ComputePrec=true,
+						      const char Prefix[]="" );
+  
   //! Constructs an MultiLevelPreconditioner for Maxwell equations. Retrives parameters from \c List.
   /*! Constructs an MultiLevelPreconditioner for Maxwell equations. The constructor
       requires the edge matrix, the connectivity matrix T, the nodal matrix.
@@ -67,7 +70,8 @@ public:
 			    const Epetra_RowMatrix & TMatrix,
 			    const Epetra_RowMatrix & NodeMatrix,
 			    const Teuchos::ParameterList & List,
-			    const bool, const char Prefix[]);
+			    const bool ComputePrec=true,
+			    const char Prefix[]="");
 
   ~MultiLevelPreconditioner() {
     if( IsComputePreconditionerOK_ ) Destroy_ML_Preconditioner(); 
@@ -137,12 +141,12 @@ public:
   bool HasNormInf() const{return(false);};
   
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
-  const Epetra_Comm & Comm() const{return(Comm_);};
+  const Epetra_Comm & Comm() const{return(*Comm_);};
   
   //! Returns the Epetra_Map object associated with the domain of this operator.
-  const Epetra_Map & OperatorDomainMap() const {return(DomainMap_);};
+  const Epetra_Map & OperatorDomainMap() const {return(*DomainMap_);};
   //! Returns the Epetra_Map object associated with the range of this operator.
-  const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);};
+  const Epetra_Map & OperatorRangeMap() const {return(*RangeMap_);};
   //@}
 
   //! Destroies all structures allocated in \c ComputePreconditioner() if the preconditioner has been computed.
@@ -327,9 +331,9 @@ private:
   int CreateLabel();
   
   int NumLevels_;
-  const Epetra_Map & DomainMap_;
-  const Epetra_Map & RangeMap_;
-  const Epetra_Comm & Comm_;
+  const Epetra_Map * DomainMap_;
+  const Epetra_Map * RangeMap_;
+  const Epetra_Comm * Comm_;
   bool  ownership_;
   int   ProcConfig_[AZ_PROC_SIZE];          // some Aztec's vectors
   int   SmootherOptions_[AZ_OPTIONS_SIZE];
@@ -367,6 +371,9 @@ private:
   double FirstApplicationTime_; // only for first application
   int NumConstructions_;
   double ConstructionTime_;
+
+  // other stuff for old ML's compatibility
+  Epetra_CrsMatrix * RowMatrixAllocated_;
   
 };
  

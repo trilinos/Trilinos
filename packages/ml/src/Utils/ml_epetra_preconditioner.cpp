@@ -318,6 +318,8 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   }
 
   if( NullSpaceToFree_ != 0 ) delete [] NullSpaceToFree_;
+
+  if( RowMatrixAllocated_ ) delete RowMatrixAllocated_;
   
   IsComputePreconditionerOK_ = false;
 
@@ -326,11 +328,9 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
 // ================================================ ====== ==== ==== == =
 
 MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
-						   bool ComputePrec ) :
+						   const bool ComputePrec ) :
   RowMatrix_(&RowMatrix),
-  Comm_(RowMatrix.Comm()),
-  DomainMap_(RowMatrix.OperatorDomainMap()),
-  RangeMap_(RowMatrix.OperatorRangeMap())
+  RowMatrixAllocated_(0)
 {
 
   sprintf(Prefix_,"");
@@ -348,31 +348,10 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
 // ================================================ ====== ==== ==== == =
 
 MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-						    ParameterList & List, bool ComputePrec ) :
+						    const ParameterList & List, const bool ComputePrec,
+						    const char Prefix[] ) :
   RowMatrix_(&RowMatrix),
-  Comm_(RowMatrix.Comm()),
-  DomainMap_(RowMatrix.OperatorDomainMap()),
-  RangeMap_(RowMatrix.OperatorRangeMap())
-{
-  sprintf(Prefix_,"");
-
-  List_ = List;
-  
-  Initialize();
-  
-  // construct hierarchy
-  if( ComputePrec == true ) ComputePreconditioner();
-}
-
-// ================================================ ====== ==== ==== == =
-
-MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
-						    ParameterList & List, bool ComputePrec,
-						    char Prefix[] ) :
-  RowMatrix_(&RowMatrix),
-  Comm_(RowMatrix.Comm()),
-  DomainMap_(RowMatrix.OperatorDomainMap()),
-  RangeMap_(RowMatrix.OperatorRangeMap())
+  RowMatrixAllocated_(0)
 {
   sprintf(Prefix_,"%s",Prefix);
 
@@ -393,9 +372,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 						    const bool ComputePrec,
 						    const char Prefix[] ) :
   RowMatrix_(&EdgeMatrix),
-  Comm_(EdgeMatrix.Comm()),
-  DomainMap_(EdgeMatrix.OperatorDomainMap()),
-  RangeMap_(EdgeMatrix.OperatorRangeMap())
+  RowMatrixAllocated_(0)
 {
   sprintf(Prefix_,"%s",Prefix);
 
@@ -417,8 +394,44 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 
 // ================================================ ====== ==== ==== == =
 
+MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
+						    const ParameterList & List, const bool ComputePrec,
+						    const char Prefix[] )
+{
+
+  // need to wrap an Epetra_RowMatrix around Operator.
+  // This is quite not the best approach for small matrices
+
+  int MaxNumNonzeros;
+  double CPUTime;
+  
+  ML_Operator2EpetraCrsMatrix(Operator,RowMatrixAllocated_,MaxNumNonzeros,
+			      true,CPUTime);
+
+  // this matrix must be freed by dtor. Keep trace of it in this pointer
+  RowMatrix_ = RowMatrixAllocated_;
+
+  // from now on as for the other constructors
+  
+  sprintf(Prefix_,"%s",Prefix);
+
+  List_ = List;
+
+  Initialize();
+
+  // construct hierarchy
+  if( ComputePrec == true ) ComputePreconditioner();
+}
+
+// ================================================ ====== ==== ==== == =
+
 void MultiLevelPreconditioner::Initialize()
 {
+
+  Comm_ = &(RowMatrix_->Comm());
+  DomainMap_ = &(RowMatrix_->OperatorDomainMap());
+  RangeMap_ = &(RowMatrix_->OperatorRangeMap());
+
   verbose_ = false;
   MaxLevels_ = 20;
   IsComputePreconditionerOK_ = false;
@@ -482,7 +495,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   Label_ = new char[80];
   
 #ifdef HAVE_MPI
-  const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm_);
+  const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
 #else
   AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
@@ -745,7 +758,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   sprintf(parameter,"%sprint unused", Prefix_);
   if( List_.isParameter(parameter) ) {
     int ProcID = List_.get(parameter,-2);
-    if( Comm_.MyPID() == ProcID || ProcID == -1 ) PrintUnused();
+    if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
   }
 
   /* ------------------- that's all folks --------------------------------- */
@@ -762,7 +775,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
 void MultiLevelPreconditioner::PrintUnused(int MyPID) 
 {
-  if( Comm_.MyPID() == MyPID ) {
+  if( Comm().MyPID() == MyPID ) {
     PrintLine();
     cout << PrintMsg_ << "Unused parameters:" << endl;
     PrintUnused();
@@ -774,7 +787,7 @@ void MultiLevelPreconditioner::PrintUnused(int MyPID)
 
 void MultiLevelPreconditioner::PrintList(int MyPID) 
 {
-  if( Comm_.MyPID() == MyPID ) {
+  if( Comm().MyPID() == MyPID ) {
     PrintLine();
     cout << List_;
     PrintLine();
@@ -1490,7 +1503,7 @@ void MultiLevelPreconditioner::SetAggregation()
        else if(  CoarsenScheme == "Coupled" ) 
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
        else {
-         if( Comm_.MyPID() == 0 ) {
+         if( Comm().MyPID() == 0 ) {
        cout << ErrorMsg_ << "specified options ("
             << CoarsenScheme << ") not valid. Should be:" << endl;
        cout << ErrorMsg_ << "<METIS> <ParMETIS> <MIS> <Uncoupled> <Coupled> <Hybrid>" << endl;
@@ -1600,7 +1613,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
     sprintf(Label_, "two-level additive DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_ADD;
     if( NumLevels_ != 2 ) {
-      if( Comm_.MyPID() == 0 ) {
+      if( Comm().MyPID() == 0 ) {
 	cerr << ErrorMsg_ << "You asked for `two-level additive DD' but you don't have" << endl
 	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
@@ -1611,7 +1624,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
     sprintf(Label_, "two-level hybrid DD");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID;
     if( NumLevels_ != 2 ) {
-      if( Comm_.MyPID() == 0 ) {
+      if( Comm().MyPID() == 0 ) {
 	cerr << ErrorMsg_ << "You asked for `two-level hybrid DD' but you don't have" << endl
 	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
@@ -1622,7 +1635,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
     sprintf(Label_, "two-level hybrid DD (2)");
     ml_->ML_scheme = ML_TWO_LEVEL_DD_HYBRID_2;
     if( NumLevels_ != 2 ) {
-      if( Comm_.MyPID() == 0 ) {
+      if( Comm().MyPID() == 0 ) {
 	cerr << ErrorMsg_ << "You asked for `two-level hybrid DD (2)' but you don't have" << endl
 	     << ErrorMsg_ << "exacty two levels. Now continue, but check you input..." << endl;
       }
@@ -1636,7 +1649,7 @@ void MultiLevelPreconditioner::SetPreconditioner()
     ml_->ML_scheme = ML_MGV;
   } else {
 
-    if( Comm_.MyPID() == 0 ) {
+    if( Comm().MyPID() == 0 ) {
       cerr << ErrorMsg_ << "`prec type' has an incorrect value. It should be" << endl
 	   << ErrorMsg_ << "<1-level postsmoothing only> / <two-level additive DD>" << endl
 	   << ErrorMsg_ << "<two-level hybrid DD> / <two-level hybrid DD (2)>" << endl;
@@ -1694,7 +1707,7 @@ void MultiLevelPreconditioner::SetNullSpace()
 
     Epetra_Time Time(Comm());
     
-    if( NullSpacePtr != NULL && Comm_.MyPID() == 0 ) {
+    if( NullSpacePtr != NULL && Comm().MyPID() == 0 ) {
       cerr << ErrorMsg_ << "Null space vectors is not NULL!" << endl
 	   << ErrorMsg_ << "Now reallocating memory and computing null space " << endl
 	   << ErrorMsg_ << "using eigenvectors estimates, for " << NullSpaceDim << " vector(s)..." << endl;
@@ -1726,7 +1739,7 @@ void MultiLevelPreconditioner::SetNullSpace()
     double * start = NullSpacePtr;
     if( UseDefaultVectors ) start += NumPDEEqns_*LDA;
     
-    Epetra_MultiVector EigenVectors(View,DomainMap_,start,LDA, NullSpaceDim);
+    Epetra_MultiVector EigenVectors(View,OperatorDomainMap(),start,LDA, NullSpaceDim);
     
     EigenVectors.Random();
     
