@@ -1,0 +1,5 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= parmetis_method=partkway
+File Type		= Chaco, initial distribution = cyclic
+File Name		= simple
+Parallel Disk Info	= number=0
