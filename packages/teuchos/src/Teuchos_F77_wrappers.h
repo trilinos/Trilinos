@@ -9,48 +9,65 @@
 
 /* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
 
-#if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
+#if defined(CRAY_T3X)
 
-#  if defined(CRAY_T3X)
+#  include <fortran.h>
+#  define F77_CALL_PREFIX
+#  define FORTRAN_CHAR_1_ARG(ARG_NAME) fcd* ARG_NAME
+#  define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const fcd& ARG_NAME
+#  define FORTRAN_CHAR_1_ARG_CALL(ARG_NAME) ARG_NAME
 
-#    include <fortran.h>
-#    define F77_CALL_PREFIX
-#    define FORTRAN_CHAR_1_ARG(ARG_NAME) fcd ARG_NAME
-#    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const fcd ARG_NAME
+#elif defined(INTEL_CXML)
 
-#  elif defined(INTEL_CXML)
+#  define F77_CALL_PREFIX __stdcall 
+#  define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME, unsigned int
+#  define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char& ARG_NAME, unsigned int
+#  define FORTRAN_CHAR_1_ARG_CALL(ARG_NAME) ARG_NAME, 1
 
-#    define F77_CALL_PREFIX __stdcall 
-#    define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME, unsigned int
-#    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char* ARG_NAME, unsigned int
+#elif defined(INTEL_MKL)
 
-#  elif defined(INTEL_MKL)
+#  define F77_CALL_PREFIX
+#  define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
+#  define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char& ARG_NAME
+#  define FORTRAN_CHAR_1_ARG_CALL(ARG_NAME) ARG_NAME, 1
 
-#    define F77_CALL_PREFIX
-#    define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
-#    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char* ARG_NAME
+#else
 
-#  else
+#  define F77_CALL_PREFIX
+#  define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
+#  define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char& ARG_NAME
+#  define FORTRAN_CHAR_1_ARG_CALL(ARG_NAME) ARG_NAME
 
-#    define F77_CALL_PREFIX
-#    define FORTRAN_CHAR_1_ARG(ARG_NAME) char* ARG_NAME
-#    define FORTRAN_CONST_CHAR_1_ARG(ARG_NAME) const char* ARG_NAME
-
-#  endif
+#endif
 
 /* RAB: 20030924: ToDo: Find a way to see if const is supported or not by C or
    just decide that this will only be for C++ code and be done with it. */
 
-#endif
-
 /* External macros */
 
-#define FORTRAN_NAME_UL(UNAME,LNAME) F77_FUNC(UNAME,LNAME)
+#define FORTRAN_NAME_UL(UNAME,LNAME) F77_FUNC(LNAME,UNAME)
 
 #define FORTRAN_FUNC_DECL_UL(TYPE,UFUNC_NAME,LFUNC_NAME) TYPE F77_CALL_PREFIX FORTRAN_NAME_UL(UFUNC_NAME,LFUNC_NAME)
 
 #define FORTRAN_FUNC_CALL_UL(UFUNC_NAME,LFUNC_NAME) FORTRAN_NAME_UL(UFUNC_NAME,LFUNC_NAME)
 
-#define FORTRAN_COMMMON_BLOCK_NAME_UL(UNAME,LNAME)  FORTRAN_NAME_UL(UFUNC_NAME,LFUNC_NAME)
+#define FORTRAN_COMMMON_BLOCK_NAME_UL(UNAME,LNAME)  FORTRAN_NAME_UL(UNAME,LNAME)
+
+// These are the platform dependent C++ equivalents of fortran types
+// RAB: 2003/11/20: ToDo: Move this into Teuchos namespace at some point
+namespace FortranTypes {
+
+typedef int							f_int;					// INTEGER
+typedef float						f_real;					// REAL
+typedef double						f_dbl_prec;				// DOUBLE PRECISION
+typedef int							f_logical;				// LOGICAL
+typedef char						f_char;					// CHARACTER*1
+typedef unsigned int				f_char_len;				// length argument for a CHARACTER*(*)
+//typedef std::complex<f_real>		f_complex;				// COMPLEX
+//typedef std::complex<f_dbl_prec>	f_complex_16;			// COMPLEX*16
+
+enum {	F_TRUE = true, F_FALSE = false }; // Let compiler figure this out!
+
+} // namespace FortranTypes
 
 #endif // _TEUCHOS_F77_WRAPPERS_H_
