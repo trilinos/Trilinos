@@ -68,7 +68,7 @@ echo `uname -a` >>& $file
 
 		    rm valg.out.pid*
 		    echo `pwd`
-		    valgrind --logfile=valg.out --leak-check=yes --suppressions=Suppressions.in ./TestOptions.exe
+		    valgrind --logfile=valg.out --leak-check=yes --suppressions=Suppressions.exe ./TestOptions.exe
 		    set save_status=$status
                     #
                     #  The following checks for memory leaks reported by valgrind.  
@@ -79,7 +79,7 @@ echo `uname -a` >>& $file
 		    # A test failed.
 			set AnError = True
 			echo "  ******** Test failed ********" >>& $file
-		        valgrind --logfile=valg.out --leak-check=yes --suppressions=Suppressions.in ./TestOptions.exe  -v >> $file
+		        valgrind --logfile=valg.out --leak-check=yes --suppressions=Suppressions.exe ./TestOptions.exe  -v >> $file
 			foreach  i ( valg.out.pid* ) 
 			  echo "" >> $file
 			  echo " $i " >> $file
