@@ -1,3 +1,31 @@
+C @HEADER
+C ************************************************************************
+C 
+C          Trilinos: An Object-Oriented Solver Framework
+C              Copyright (2002) Sandia Corporation
+C 
+C Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+C license for use of this work by or on behalf of the U.S. Government.
+C 
+C This program is free software; you can redistribute it and/or modify
+C it under the terms of the GNU General Public License as published by
+C the Free Software Foundation; either version 2, or (at your option)
+C any later version.
+C   
+C This program is distributed in the hope that it will be useful, but
+C WITHOUT ANY WARRANTY; without even the implied warranty of
+C MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+C General Public License for more details.
+C   
+C You should have received a copy of the GNU General Public License
+C along with this program; if not, write to the Free Software
+C Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+C 
+C Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+C 
+C ************************************************************************
+C @HEADER
+*/
 C====================================================================
 C ------------------------
 C | CVS File Information |
@@ -14,16 +42,6 @@ C
 C $Name$
 C====================================================================*/
 
-C
-C***********************************************************************
-C      Copyright 1995, Sandia Corporation.  The United States Government
-C      retains a nonexclusive license in this software as prescribed in
-C      AL 88-1 and AL 91-7.  Export of this program may require a
-C      license from the United States Government.
-C***********************************************************************
-C
-C
-C
        program main
 C
 C---------------------------------------------------------------
