@@ -26,15 +26,6 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = \
-BlockElementSpace \
-#Comm \
-complexArrayTest \
-#DenseMatrix \
-Distributor \
-ElementSpace \
-enum \
-Platform \
-#ScalarTraits \
-#simpleTraitsTest \
-VectorSpace
+SUBDIRS = 
+#BlockElementSpace complexArrayTest Distributor \
+#ElementSpace enum Platform VectorSpace

@@ -55,12 +55,6 @@ AC_CONFIG_SRCDIR(/src/Tpetra_ElementSpace.hpp)
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
 
-#
-# #np# This a a subdirectory of Trilinos/packages/new_package that contains
-# #np# a number of useful m4 files.  Any package that uses these m4 files
-# #np# will have to add them to the repository.  The m4 files perform various
-# #np# common checks and set common variable values to minimize redundant work.
-#p
 AC_CONFIG_AUX_DIR(config)
 
 # Configure should create src/Tpetra_config.h from src/Tpetra_config.h.in
@@ -256,11 +250,8 @@ AC_CXX_STD_SPRINTF
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#  #np# - These options can disable the tests and examples of a package.
-#  #np# - Packages that do not have tests or examples should #-out the 
-#  #np# - option(s) that does (do) not apply.
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-#AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")

@@ -68,5 +68,3 @@ EXAMPLE_SUBDIR=example
 endif
 
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
-
-
