@@ -38,21 +38,21 @@
 namespace NOX {
 namespace LineSearch {
 
-//! Use Secant linesearch adapted from Shewchuk
+//! Use Secant linesearch 
 /*!
 
   This is a linesearch in which nonlinear iterations for the step length
-  (scalar) are performed using a quasi-Newton (secant) method adapted from
-  Shewchuk, "An Introduction to the Conjugate Gradient Method Without the
-  Agonizing Pain, ed 1 1/4," 1994.
+  \f$ \alpha \f$ are performed using a quasi-Newton (secant) method.  This
+  involves iterating for \f$ \alpha \f$ using the following:
+
+  \f[ 
+    \alpha = -\frac{ F(x)^T s }{ F(x+ \alpha s)^T s - F(x)^T s } 
+  \f]
 
   This linesearch is not currently constrained by conditions such as those of
   Wolfe or Armijo-Goldstein but rather is free to sample any step length in
   hopes of finding a very accurate minimization of the objective function in
-  the search direction provided.  The method assumes that locally the negative 
-  of the computed residual serves as the gradient of the function to be
-  minimized.  Highly accurate linesearch is expected to help convergence
-  of nonlinearCG.
+  the search direction provided.  
 
   This line search can be called via NOX::LineSearch::Manager.
  
@@ -66,9 +66,6 @@ namespace LineSearch {
     (defaults to value for "Default Step")
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
-
-  - Initialization of the numerically approximated Hessian is done using
-    a backward difference with perturbation (initial step length) of -1.e-5.
 
   \author Russ Hopper, Org. 9233, Sandia National Labs
 
@@ -94,23 +91,23 @@ public:
   
 private:
 
-   //! Computed correction to step length; nonlinear iterations for 
-   //! step length are assumed to be converged when abs(alpha) < 1.e-8
-  double alpha;
+  //! Relative change in computed step length; secant iterations for 
+  //! step length are assumed to be converged when abs(relStepChange) < 1.e-6
+  double relStepChange;
 
-   //! Minimum step length (i.e., when we give up)
+  //! Minimum step length (i.e., when we give up)
   double minstep;
 
-   //! Best step length found so far
-  double bestStep;
+  // Best step length found so far -- currently unused, RH
+  //double bestStep;
  
- //! Default step
+  //! Default step
   double defaultstep;
 
   //! Default step for linesearch failure
   double recoverystep;
 
-  //! Maximum itersions
+  //! Maximum iterations
   int maxiters;
 
 };

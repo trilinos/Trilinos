@@ -56,101 +56,89 @@ bool Secant::reset(Parameter::List& params)
   minstep = params.getParameter("Minimum Step", 1.0e-12);
   defaultstep = params.getParameter("Default Step", 1.0);
   recoverystep = params.getParameter("Recovery Step", defaultstep);
-  maxiters = params.getParameter("Max Iters", 100);
+  maxiters = params.getParameter("Max Iters", 20);
   return true;
 }
 
-bool Secant::compute(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
+bool Secant::compute(Abstract::Group& newgrp, 
+		     double& step, 
+	             const Abstract::Group& oldgrp, 
+		     const Abstract::Vector& dir) 
 {
 
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
-  double fmin = 10.0*oldf; // Allowable proximity to oldf for bestStep
-  double newf = 0.;
-  bool isfailed = false;
+  double oldfprime = dir.dot(oldgrp.getF()); 
+  bool ok = true; // use to check return status in function calls
 
-  alpha = 1.e-5; // Used in a backward difference approximation for
-		 // initialization of the numerical hessian
-  newgrp.computeX(oldgrp, dir, -alpha);
-  newgrp.computeF(); // Assumed gradient direction for this linesearch
-  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
-
-  double etaOld = dir.dot(newgrp.getF());
-  double eta;
-
-  int niters = 1;
-
-  step = 0.;
+  step = 1.0; // Could use different, user specified initial step
   newgrp.computeX(oldgrp, dir, step);
+  newgrp.computeF(); // Assumed gradient direction for this linesearch
+  double newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+
+  int niters = 0;
 
   if (Utils::doPrint(Utils::InnerIteration)) {
     cout << "\n" << Utils::fill(72) << "\n" << "-- Secant Line Search -- \n";
+    cout << setw(3) << niters << ":";
+    cout << " step = " << Utils::sci(step);
+    cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
+    cout << " newf = " << Utils::sci(sqrt(2.*newf));
+    //cout << endl;
   }
 
-  while ((abs(alpha)>1.e-8) && (niters<=maxiters)) { 
+  relStepChange = step; // tolerance is hard-coded for now, RH
+  double oldstep = 0.;
 
+  while ( niters<maxiters && relStepChange>1.e-6 ) { 
+
+    niters++;
+
+    oldstep = step;
+    step = - step * oldfprime/(dir.dot(newgrp.getF())-oldfprime);
+    newgrp.computeX(oldgrp, dir, step);
     newgrp.computeF();
     newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
 
     if (Utils::doPrint(Utils::InnerIteration)) {
+      cout << endl;
       cout << setw(3) << niters << ":";
-      cout << " alpha = " << Utils::sci(alpha);
       cout << " step = " << Utils::sci(step);
       cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
       cout << " newf = " << Utils::sci(sqrt(2.*newf));
-      cout << endl;
+      //cout << endl;
     }
 
-    eta = dir.dot(newgrp.getF());
-
-    if(newf < fmin) {
-      bestStep = step;
-      fmin = newf;
-    }
-
-    alpha = alpha*(eta/(etaOld-eta));
-    step += alpha;
-    niters++;
-
-    newgrp.computeX(oldgrp, dir, step);
-    etaOld = eta;
-
-    //   Bounds on step length could be enforced here
+    // Update relative change in step size used in convergence check
+    if( fabs(oldstep)<minstep ) 
+      relStepChange = fabs(step - oldstep);
+    else 
+      relStepChange = fabs(step - oldstep) / oldstep;
 
   } // end while loop
 
 
-  newgrp.computeF();
-  newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+  // Now check acceptability of computed step
 
-  if ((newf < oldf) && (abs(step)>minstep)) {
-    if (Utils::doPrint(Utils::InnerIteration)) {
-        cout << setw(3) << niters << ":";
-        cout << " alpha = " << Utils::sci(alpha);
-        cout << " step = " << Utils::sci(step);
-        cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
-        cout << " newf = " << Utils::sci(sqrt(2.*newf));
-        cout << " (STEP ACCEPTED!)" << endl;
-        cout << Utils::fill(72) << "\n" << endl;
-    }
-  }
-
-  else {
-    step = bestStep; // Could also use Recovery step here
+  if( step<minstep) { 
+    step = recoverystep;
     newgrp.computeX(oldgrp, dir, step);
-    newgrp.computeF();
+    newgrp.computeF(); 
     newf = 0.5*newgrp.getNormF()*newgrp.getNormF();  
+    niters++;
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << Utils::fill(5,' ') << "alpha = " << Utils::sci(alpha);
-      cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
-      cout << Utils::fill(1,' ') << "oldf = " << Utils::sci(sqrt(2.*oldf));
-      cout << Utils::fill(1,' ') << "newf = " << Utils::sci(sqrt(2.*newf));
-      cout << " (USING BEST CURRENT STEP!)" << endl;
-      cout << Utils::fill(72) << "\n" << endl;
+      cout << endl;
+      cout << setw(3) << niters << ":";
+      cout << " step = " << Utils::sci(step);
+      cout << " oldf = " << Utils::sci(sqrt(2.*oldf));
+      cout << " newf = " << Utils::sci(sqrt(2.*newf));
+      cout << " (USING RECOVERY STEP!)" << endl;
+      cout << endl;
     }
-    // isfailed = true; // Relaxed severity of failure for now
-    return(!isfailed);
   }
+  else 
+    if (Utils::doPrint(Utils::InnerIteration)) 
+      cout << " (STEP ACCEPTED!)" << endl;
+
   return true;
 }
 
