@@ -213,16 +213,17 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
     if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
       printf("Amesos (level %d) : Now re-building with KLU\n",curr_level);
 #else
-    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
       cout << "Amesos (level " << curr_level
 	   << ") : This coarse solver is not available." << endl;
       cout << "Amesos (level " << curr_level
 	   << ") : Now re-building with KLU\n";
+    }
 #endif
     A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
     if( A_Base == 0 ) {
       if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
-	cerr << "Amesos:ERROR: not Amesos solver is available!" << endl;
+	cerr << "*ML*ERR* no Amesos solver is available!" << endl;
       }
       exit( EXIT_FAILURE );
     }
