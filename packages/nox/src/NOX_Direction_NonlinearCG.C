@@ -128,13 +128,19 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
       ok = soln.computeJacobian();
       if (ok != Abstract::Group::Ok) {
         if (Utils::doPrint(Utils::Warning))
-          cout << "NOX::Direction::Newton::compute - "
+          cout << "NOX::Direction::NonlinearCG::compute - "
                << "Unable to compute Jacobian." << endl;
         return false;
       }
     tmpVec = dir;
-    // RHooper --> still need to convert to applyRightPreconditioning
-    //    ok = soln.applyJacobianDiagonalInverse(tmpVec, dir);
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+                                        tmpVec, dir);
+    if (ok != Abstract::Group::Ok) {
+      if (Utils::doPrint(Utils::Warning))
+        cout << "NOX::Direction::NonlinearCG::compute - "
+             << "Unable to apply Right Preconditioner." << endl;
+      return false;
+    }
   }
 
   dir.scale(-1.0);
