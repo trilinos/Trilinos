@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
   // =========================================== //
 
   CrsMatrixGallery Gallery("recirc_2d", Comm);
-  Gallery.Set("problem_size", 10000);
+  Gallery.Set("problem_size", 900);
   Gallery.Set("num_vectors", 5);
 
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
@@ -143,6 +143,7 @@ int main(int argc, char *argv[]) {
   Amesos Factory;  
   
   vector<string> SolverType;
+  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
@@ -227,12 +228,23 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#else
+#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   puts("Please configure AMESOS with --enable-triutils");
   puts("to run this example");
   
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return(0);
 }
 

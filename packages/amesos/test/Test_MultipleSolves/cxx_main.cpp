@@ -152,12 +152,23 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#else
+#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   puts("Please configure AMESOS with --enable-triutils");
   puts("to run this example");
   
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return(0);
 }
 

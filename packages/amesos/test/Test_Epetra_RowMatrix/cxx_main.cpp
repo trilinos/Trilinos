@@ -35,14 +35,15 @@ void TestAmesos(char ProblemType[],
   assert (Solver != 0);
 
   // Both sentences should work
-  //    Solver->SetUseTranspose(UseTranspose);
-  AmesosList.set("UseTranspose",UseTranspose);
+  Solver->SetUseTranspose(UseTranspose);
+  //AmesosList.set("UseTranspose",UseTranspose);
 
   Solver->SetParameters(AmesosList);
 
   // create a rhs corresponding to lhs or 1's
   lhs->PutScalar(1.0);
   A->Multiply(UseTranspose,*lhs,*rhs);
+  lhs->PutScalar(0.0);
 
   Epetra_Time Time(A->Comm());
   Epetra_Time StartTime(A->Comm());
@@ -126,8 +127,8 @@ int main(int argc, char *argv[]) {
 #endif
 
   CrsMatrixGallery Gallery("recirc_2d", Comm);
-  Gallery.Set("problem_size", 10000);
-  Gallery.Set("num_vectors", 5);
+  Gallery.Set("problem_size", 16);
+  Gallery.Set("num_vectors", 2);
 
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
   Epetra_RowMatrix* RowA = Problem->GetMatrix();
@@ -140,20 +141,16 @@ int main(int argc, char *argv[]) {
   Amesos Factory;  
   
   vector<string> SolverType;
+  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Dscpack");
+//  SolverType.push_back("Amesos_Dscpack");
 
   for (int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
-
-    if (Solver == "Amesos_Umfpack")
-      continue;
-    if (Solver == "Amesos_Dscpack")
-      continue;
 
     if (Factory.Query((char*)Solver.c_str())) {
       {
@@ -166,7 +163,7 @@ int main(int argc, char *argv[]) {
 	// solve with matrix
 	if (Solver != "Amesos_Superludist") {// still not implementes
 	  Teuchos::ParameterList AmesosList;
-	  TestAmesos((char*)Solver.c_str(), AmesosList, false, &A, LHS, RHS,
+	  TestAmesos((char*)Solver.c_str(), AmesosList, true, &A, LHS, RHS,
 		     TotalErrorResidual, TotalErrorExactSol );
 	}
       }
@@ -191,10 +188,12 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #endif
 
-  if (TotalErrorResidual < 1e-9) 
-    return( EXIT_SUCCESS );
+  if (TotalErrorResidual < 1e-9) {
+    system("touch Amesos_OK");
+    exit(EXIT_SUCCESS);
+  }
   else
-    return( EXIT_FAILURE );
+    exit(EXIT_FAILURE);
 
 }
 
@@ -204,12 +203,23 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#else
+#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   puts("Please configure AMESOS with --enable-triutils");
   puts("to run this example");
   
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return(0);
 }
 

@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
   // =========================================== //
 
   VbrMatrixGallery VbrGallery("recirc_2d", Comm);
-  VbrGallery.Set("problem_size", 10000);
+  VbrGallery.Set("problem_size", 900);
   VbrGallery.Set("num_vectors", 5);
 
   Epetra_LinearProblem* VbrProblem = VbrGallery.GetLinearProblem();
@@ -142,21 +142,16 @@ int main(int argc, char *argv[]) {
   Amesos Factory;  
   
   vector<string> SolverType;
+  SolverType.push_back("Amesos_Lapack");
   SolverType.push_back("Amesos_Klu");
   SolverType.push_back("Amesos_Umfpack");
   SolverType.push_back("Amesos_Superlu");
   SolverType.push_back("Amesos_Superludist");
   SolverType.push_back("Amesos_Mumps");
-  SolverType.push_back("Amesos_Dscpack");
+//  SolverType.push_back("Amesos_Dscpack");
 
   for (int i = 0 ; i < SolverType.size() ; ++i) {
     string Solver = SolverType[i];
-
-    if (Solver == "Amesos_Umfpack") 
-      continue;
-
-    if (Solver == "Amesos_Dscpack") 
-      continue;
 
     if (Factory.Query((char*)Solver.c_str())) {
       {
@@ -207,12 +202,23 @@ int main(int argc, char *argv[]) {
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef HAVE_MPI
+#include "mpi.h"
+#else
+#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
   puts("Please configure AMESOS with --enable-triutils");
   puts("to run this example");
   
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return(0);
 }
 
