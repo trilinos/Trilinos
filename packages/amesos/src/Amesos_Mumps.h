@@ -69,7 +69,7 @@ extern "C" {
   parameters, in particular tuning parameters, are unique to each
   solver.
 
-  MUMPS will not perform and column permutation on a matrix provided
+  MUMPS will not perform column permutation on a matrix provided
   in distributed form.  Amesos_Mumps will match this, allowing
   column permutation only if the matrix is provided in serial form.
   This is unfortunate because it is an exception to the general rule
@@ -205,7 +205,7 @@ public:
 
 
   //! Returns the Schur complement matrix as an Epetra_CrsMatrix.
-  /*! Returns the (dense) SSchur complement matrix as an Epetra_CrsMatrix. This
+  /*! Returns the (dense) Schur complement matrix as an Epetra_CrsMatrix. This
       matrix is defined on all the processes in the Epetra Communicator. However,
       it has rows on the host process only.
       If \in flag : if \c true, MUMPS will compute the Schur complement matrix,
@@ -216,8 +216,8 @@ public:
   int ComputeSchurComplement(bool flag,
 			     int NumSchurComplementRows, int * SchurComplementRows);
 
-  //! Returns the Sschur complement in an Epetra_CrsMatrix on host only.
-  /*! Returns the Sschur complement in an Epetra_CrsMatrix on host only. Note that
+  //! Returns the Schur complement in an Epetra_CrsMatrix on host only.
+  /*! Returns the Schur complement in an Epetra_CrsMatrix on host only. Note that
       no checks are performed to see whether this action is legal or not (that is,
       if the call comes after the solver has been invocated).
       Epetra_CrsMatrix must be freed by the user!
@@ -225,6 +225,11 @@ public:
   Epetra_CrsMatrix * GetCrsSchurComplement();
 
   //! Returns the Schur complement as a SerialDenseMatrix (on host only).
+  /*! Returns the Schur complement in an Epetra_SerialDenseMatrix on host only. Note that
+      no checks are performed to see whether this action is legal or not (that is,
+      if the call comes after the solver has been invocated).
+      Epetra_SerialDenseMatrix must be freed by the user!
+  */
   Epetra_SerialDenseMatrix * GetDenseSchurComplement();
   
   //! Returns the current UseTranspose setting.

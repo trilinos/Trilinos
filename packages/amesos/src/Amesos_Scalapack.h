@@ -31,8 +31,6 @@
 
 #include "Amesos_SCALAPACK_wrappers.h"
 
-
-
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
 #include "Epetra_LinearProblem.h"
@@ -53,6 +51,25 @@
 that are not particularly sparse.  ScaLAPACK solves matrices
 for which the fill-in is roughly 10% to 20% of the matrix size 
 in time comparable to that achieve by other Amesos classes.
+
+<h1>Limitations:</h1>
+
+<p>None of the following limitations would be particularly difficult to remove.
+
+<br /><br /><p>The present implementation will only be efficient for matrices 
+in the range of n=400 to n=4000. 
+
+<br /><br /><p>The present implementation limits the number of right hand sides 
+to the number of rows assigned to each process.  i.e. nrhs < n/p.  This limitation
+would be easy to remove.  
+
+<br /><br /><p>The present implementation does not take advantage of
+symmetric or symmetric positive definite matrices, although ScaLAPACK has 
+separate routines to  take advantages of such matrices.
+
+<br /><br /><p>The present implementation does not call LAPACK codes
+for matrices which are small enough to be handled more efficiently on
+a single processor.
 
 */
 
@@ -98,7 +115,7 @@ public:
 
       preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
+      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)  NOT IMPLEMENTED
       <li>The non-zero structure of the matrix should not have changed
       since the last call to SymbolicFactorization().  Irrelevant for
       Amesos_Scalapack.
@@ -122,7 +139,10 @@ public:
 
       preconditions:<ul>
       <li>GetProblem().GetOperator() != 0 (return -1)
-      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)
+      <li>MatrixShapeOk(GetProblem().GetOperator()) == true (return -6)   NOT IMPLEMENTED
+      <li>X and B must have the same shape (NOT CHECKED)
+      <li>X and B must have fewer than nb right hand sides.  (nb >=n/p and unless the 
+heuristic for the number of processes to use is overridden, nb >= 200).  assert() 
       <li>GetProblem()->CheckInput (see Epetra_LinearProblem::CheckInput() for return values)
       <li>The matrix should not have changed
           since the last call to NumericFactorization().

@@ -127,7 +127,8 @@ extern "C" {
   /* Double precision ScaLAPACK linear solvers */
   void PREFIX PDGETRF_F77(const int* m, const int* n, double* A, const int* Ai, const int* Aj, 
 			  const int* DescA, int* ipiv, int* info);
-  void PREFIX PDGETRS_F77(const int* n, const int* nrhs, const double* A, const int* Ai, const int* Aj, 
+  void PREFIX PDGETRS_F77(Epetra_fcd, const int* n, const int* nrhs, 
+			  const double* A, const int* Ai, const int* Aj, 
 			  const int* DescA, const int* ipiv, double* X, const int* Xi, const int* Xj,
 			  const int* DescX, int* info);
 
