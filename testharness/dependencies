@@ -71,6 +71,9 @@ nox = \
 loca = \
 --enable-loca
 
+pliris = \
+--enable-pliris
+
 superludist = \
 --enable-superludist
 
