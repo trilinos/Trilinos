@@ -199,11 +199,8 @@ void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
 {
 
   int i,iaggre;
-  double Ri;
   int N_fine = finer_level.Nlocal;
-  int Naggregates = finer_level.Naggregates;
   int *graph_decomposition = finer_level.graph_decomposition;
-  int local_or_global = finer_level.local_or_global;
   double *x = finer_level.x;
   double *y = finer_level.y;
   double *z = finer_level.z;
@@ -214,7 +211,6 @@ void ML_Aggregate_ComputeBox( ML_Aggregate_Viz_Stats finer_level,
   double* zmin;
   double* zmax;
   double * dtemp;
-  double Hi;
   
   /* ------------------- execution begins --------------------------------- */
 
@@ -570,7 +566,7 @@ void ML_Aggregate_AnalyzeVector( int Nlocal,
 				 double *std_vec,
 				 ML_Comm *comm ) 
 {
-  int i, j, N;
+  int i, N;
   double d, dmin, dmax, sum;
   double avg, std;
 
@@ -712,14 +708,13 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
 				      char *base_filename )
 {
 
-  int i, j, ilevel, iaggre;
+  int i, ilevel, iaggre;
   int Nlocal, Naggregates;
   char graphfile[132];
   ML_Aggregate_Viz_Stats * info;
   int dim;
-  double *RorH = NULL;
   double dmin, davg, dmax, dstd;
-  int  imin, iavg, imax, istd;
+  int  imin, iavg, imax;
   ML_Comm *comm;
   int finest_level = ml->ML_finest_level;
   int coarsest_level = ml->ML_coarsest_level;
@@ -729,7 +724,7 @@ int ML_Aggregate_VizAndStats_Compute( ML *ml, ML_Aggregate *ag,
   int begin, end, diff;
   int radius;
   int * itemp = NULL, * itemp2 = NULL;
-  double * dtemp = NULL, * dtemp2 = NULL, dsum;
+  double * dtemp = NULL, dsum;
   int Nrows, Naggregates_global, Nrows_global, offset;
   
   /* ------------------- execution begins --------------------------------- */
@@ -1173,20 +1168,17 @@ int ML_Info_DomainDecomp( ML_Aggregate_Viz_Stats info,
 			  ML_Comm *comm, double *H, double *h )
 {
 
-  int i,j, irow, col;  
+  int j, irow, col;  
   ML_Operator *Amatrix = (ML_Operator *)(info.Amatrix);
   int N_dimensions;
   double *x = info.x;
   double *y = info.y;
   double *z = info.z;
-  int mypid = comm->ML_mypid;
-  int nprocs = comm->ML_nprocs;
   int Nrows = Amatrix->getrow->Nrows;
   int allocated = 0;
   int * rowi_col = NULL;
   int rowi_N;
   double * rowi_val = NULL;
-  int offset;
   double xmin, xmax, ymin, ymax, zmin, zmax, h_row;
   double x_row, x_col, y_row, y_col, z_row, z_col;
   

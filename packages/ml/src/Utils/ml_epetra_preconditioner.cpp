@@ -96,8 +96,6 @@ double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
   ML_Smoother *pre,  *post;
   ML_CSolve   *csolve;
   
-  double * sols;
-   
   Amat     = curr->Amat;
   Rmat     = curr->Rmat;
   pre      = curr->pre_smoother;
@@ -436,7 +434,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
-  sprintf(Prefix_,"");
+  Prefix_[0] = '\0';
 
   /* ********************************************************************** */
   /* Parse command line to get main options                                 */
@@ -621,7 +619,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     
     ML_Create(&ml_,MaxCreationLevels);
 
-    int NumMyRows, osize;
+    int NumMyRows;
     
     NumMyRows = RowMatrix_->NumMyRows();
     int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
@@ -830,7 +828,6 @@ int MultiLevelPreconditioner::CreateLabel()
   int i = ml_->ML_finest_level;
   char finest[80];
   char coarsest[80];
-  char label[80];
   finest[0] = '\0';
   coarsest[0] = '\0';
   
@@ -1419,8 +1416,8 @@ void MultiLevelPreconditioner::SetNullSpace()
     
     EigenVectors.Random();
     
-    double RealEigenvalues[NullSpaceDim];
-    double ImagEigenvalues[NullSpaceDim];
+    double * RealEigenvalues = new double[NullSpaceDim];
+    double * ImagEigenvalues = new double[NullSpaceDim];
     
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
     // Also, I keep it local (not use EigenList_
@@ -1446,7 +1443,10 @@ void MultiLevelPreconditioner::SetNullSpace()
        << "ML_Anasazi ERROR: for eigen-analysis." << endl;
      exit( EXIT_FAILURE );
 #endif
-  
+
+     delete [] RealEigenvalues;
+     delete [] ImagEigenvalues;
+     
   }
 
 }
@@ -1978,7 +1978,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   List.set(parameter,"decreasing");
 
   // aggregation: Uncoupled for first levels, then MIS
-  sprintf(parameter,"%saggregation: type",Prefix_,MaxLevels-1);
+  sprintf(parameter,"%saggregation: type",Prefix_);
   List.set(parameter,"Hybrid");
 
   // optimal value for smoothed aggregation
@@ -2022,7 +2022,9 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   // print unused parameters on proc 0
   sprintf(parameter,"%sprint unused",Prefix_);
   List.set(parameter,0);
-    
+
+  return 0;
+  
 }
 
 // ============================================================================

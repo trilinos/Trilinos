@@ -2204,13 +2204,11 @@ int ML_Gen_MultiLevelHierarchy(ML *ml, int fine_level,
 
 int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 {
-   int         Ncoarse, Nfine, gNfine, gNcoarse, jj;
+   int         Nfine, gNfine;
    double      max_eigen = -1.;
-   ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+   ML_Operator *Amat;
    ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
-   ML_Krylov   *kdata;
-   ML_Operator *t2 = NULL, *t3 = NULL;
    ML_Aggregate *ag = (ML_Aggregate *) data;
    struct ML_Field_Of_Values * fov;
    double dtemp, dtemp2, eta;
@@ -2342,18 +2340,16 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
 int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 {
 
-  ML_Operator *Amat, *Pmatrix = NULL, *AGGsmoother = NULL;
+  ML_Operator *Amat;
   ML_Operator **prev_P_tentatives;
-  struct      ML_AGG_Matrix_Context widget;
   ML_Krylov   *kdata;
-  ML_Operator *t3 = NULL;
   ML_Aggregate *ag = (ML_Aggregate *) data;
 
-  prev_P_tentatives = (ML_Operator **) ag->P_tentative;
-  
   struct ML_Field_Of_Values * fov;
   double dtemp, dtemp2, eta;
   char str[80];
+
+  prev_P_tentatives = (ML_Operator **) ag->P_tentative;
   
   Amat = &(ml->Amat[level]);
 
@@ -2419,5 +2415,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
     ML_Gen_Restrictor_TransP(ml, level, next);
     
   }
+
+  return 0;
   
 }

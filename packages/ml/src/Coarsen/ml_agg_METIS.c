@@ -148,7 +148,6 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
   int Nlevels = ml->ML_num_levels;
   
   /* ********************************************************************** */
@@ -234,8 +233,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
-  int Nlevels = ml->ML_num_levels;
+  int Nlevels;
 
   /* ********************************************************************** */
   /* control on the input parameters                                        */
@@ -302,8 +300,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
-  int Nlevels = ml->ML_num_levels;
+  int Nlevels;
 
   /* ********************************************************************** */
   /* control on the input parameters                                        */
@@ -472,7 +469,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   int mypid = comm->ML_mypid;
   double t0;
   int nbytes, nbytes_max;
-  ML_Aggregate_Options aggr_options;
 #ifdef METIS_DEBUG
   FILE *fp;
   char filename[80];
@@ -760,7 +756,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 
   int i, j,jj,  count, count2, col;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
-  int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
+  int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
   idxtype *part=NULL;
   ML_Comm * comm;
@@ -772,11 +768,9 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int ok = 0;
   int * nodes_per_aggre = NULL;
   double t0;
-  int start, end, freeptr, nextptr;
   int * dep = NULL;
   int NcenterNodes;
   int * perm = NULL;
-  FILE *fp;
   char str[80];
   struct amalg_drop * temp;
   double * scaled_diag;
@@ -1073,7 +1067,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 		   "*ML*WRN* something went **VERY** wrong in calling METIS\n"
 		   "*ML*WRN* try to ask for a smaller number of subdomains\n"
 		   "*ML*WRN* I will put all the nodes into one aggregate...\n"
-		   "*ML*WRN* (file %x, line %d)\n",
+		   "*ML*WRN* (file %s, line %d)\n",
 		   __FILE__,
 		   __LINE__ );
 	}
@@ -1227,30 +1221,23 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 			       ML_Operator **Pmatrix, ML_Comm *comm)
 {
   unsigned int nbytes, length;
-   int     i, j, jj, k, m, Nrows, exp_Nrows;
+   int     i, j,  k, Nrows, exp_Nrows;
    int     diff_level;
    double  printflag;
    int     aggr_count, index, mypid, num_PDE_eqns;
    int     *aggr_index = NULL, nullspace_dim;
    int     Ncoarse, count;
-   int     max_count, *new_ia = NULL, *new_ja = NULL, new_Nrows;
-   int     exp_Ncoarse, new_N_recv;
+   int     *new_ia = NULL, *new_ja = NULL, new_Nrows;
+   int     exp_Ncoarse;
    int     *aggr_cnt_array = NULL;
-   int     level, index3, count3, max_agg_size;
+   int     level, index3, max_agg_size;
    int     **rows_in_aggs = NULL, lwork, info;
-   double  dcompare1, *new_val = NULL, epsilon;
+   double  *new_val = NULL, epsilon;
    double  *nullspace_vect = NULL, *qr_tmp = NULL;
    double  *tmp_vect = NULL, *work = NULL, *new_null = NULL;
    ML_SuperNode          *aggr_head = NULL, *aggr_curr, *supernode;
    struct ML_CSR_MSRdata *csr_data;
-   ML_GetrowFunc         *getrow_obj;
-   USR_REQ               *request=NULL;
-   struct ML_CSR_MSRdata *temp;
-   int                   allocated = 0, *rowi_col = NULL, rowi_N, current;
-   double                *rowi_val = NULL, *dtemp;
    int                   total_nz = 0;
-   int                   count2;
-   ML_agg_indx_comm      agg_indx_comm;
    char str[80];
    
    int reorder_flag;
@@ -1468,7 +1455,7 @@ int agg_offset, vertex_offset;
 	 if( aggr_count < 1 ) {
 	   fprintf( stderr,
 		    "*ML*WRN* something weird happened... Check the code !!\n"
-		    "*ML*WRN* (file %x, line %d)\n",
+		    "*ML*WRN* (file %s, line %d)\n",
 		    __FILE__,
 		    __LINE__ );
 	   aggr_count = 1;

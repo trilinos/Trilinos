@@ -190,7 +190,6 @@ int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag,
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int diff_level;
   int Nlevels = ml->ML_num_levels;
   double debug_starting_time;
   
@@ -284,7 +283,6 @@ static int ML_BuildReorderedOffset( int starting_offset[],
 {
 
   int i, iaggre, aggre_owner;
-  int Nrows = starting_offset[Nprocs];
   int mod;
   int local_aggre = 0;
   double debug_starting_time;
@@ -360,7 +358,7 @@ static int ML_BuildReorderedDecomposition( int starting_decomposition[],
 					    USR_COMM comm )
 {
 
-  int i, j, iaggre;
+  int i, iaggre;
   int Nprocs;
   int * count = NULL,  * offset = NULL, * offset2 = NULL;
   double debug_starting_time;
@@ -454,7 +452,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   int i, j,jj,  count;
   int Nrows, Nghosts;
-  int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
+  int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
   idxtype *part=NULL;
   ML_Comm * comm = Amatrix->comm;
@@ -777,7 +775,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 		     "*ML*WRN* something went **VERY** wrong in calling ParMETIS\n"
 		     "*ML*WRN* try to ask for a smaller number of subdomains\n"
 		     "*ML*WRN* I will put all the nodes into one aggregate...\n"
-		     "*ML*WRN* (file %x, line %d)\n",
+		     "*ML*WRN* (file %s, line %d)\n",
 		     __FILE__,
 		     __LINE__ );
 	  }
@@ -849,7 +847,7 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
 
   return N_parts;
   
-} /* ML_DecomposeGraph_with_ParMETIS *
+} /* ML_DecomposeGraph_with_ParMETIS */
 
 /* ======================================================================== */
 /*!
@@ -870,41 +868,25 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 				  ML_Operator **Pmatrix, ML_Comm *comm)
 {
    unsigned int nbytes, length;
-   int     i, j, jj, k, m, Nrows, exp_Nrows,  N_bdry_nodes;
-   int     N_neighbors, diff_level, Nrows_global;
+   int     i, j, jj, k, Nrows, exp_Nrows,  N_bdry_nodes;
+   int     diff_level, Nrows_global;
    double  printflag;
-   int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
    int     aggr_count, index, mypid, num_PDE_eqns;
-   int     *aggr_index = NULL, *itmp_array = NULL, nullspace_dim;
-   int     Ncoarse, count, *int_buf = NULL;
-   int     *int_buf2, procnum;
-   int     index4, *new_send_leng = NULL, new_N_send;
-   int     *new_send_neighbors = NULL, *new_send_list = NULL;
-   int     max_count, *new_ia = NULL, *new_ja = NULL, new_Nrows;
-   int     *new_recv_leng=NULL, exp_Ncoarse, new_N_recv;
-   int     *new_recv_neighbors=NULL, *aggr_cnt_array = NULL;
-   int     level, index3, count3, *recv_list = NULL, max_agg_size;
+   int     *aggr_index = NULL, nullspace_dim;
+   int     Ncoarse, count;
+   int     *new_ia = NULL, *new_ja = NULL, new_Nrows;
+   int     *aggr_cnt_array = NULL;
+   int     level, index3, max_agg_size;
    int     **rows_in_aggs = NULL, lwork, info;
-   double  dcompare1, *new_val = NULL, epsilon;
-   double  *dble_buf = NULL, *nullspace_vect = NULL, *qr_tmp = NULL;
-   double  *tmp_vect = NULL, *work = NULL, *new_null = NULL, *comm_val = NULL;
-   double  *dble_buf2;
+   double  *new_val = NULL, epsilon;
+   double  *nullspace_vect = NULL, *qr_tmp = NULL;
+   double  *tmp_vect = NULL, *work = NULL, *new_null = NULL;
    ML_SuperNode          *aggr_head = NULL, *aggr_curr, *supernode;
    struct ML_CSR_MSRdata *csr_data;
-   ML_Aggregate_Comm     *aggr_comm;
-   ML_GetrowFunc         *getrow_obj;
-   USR_REQ               *request=NULL;
-   struct ML_CSR_MSRdata *temp;
-   char                  *vtype, *state, *bdry;
    double                *starting_amalg_bdry, *reordered_amalg_bdry;
-   int                   nvertices, *vlist;
-   int                   max_element, Nghost;
-   int                   allocated = 0, *rowi_col = NULL, rowi_N, current;
-   double                *rowi_val = NULL, *dtemp;
-   int                   *templist, **proclist, *temp_index;
-   int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
-   int                   total_nz = 0;
-   int                   count2;
+   int                   Nghost;
+   int                   allocated = 0, *rowi_col = NULL, rowi_N;
+   double                *rowi_val = NULL;
    int Nnonzeros = 0, Nnonzeros2 = 0;
    int optimal_value;
    
@@ -933,15 +915,15 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int * nodes_per_aggre = NULL;
    int * starting_decomposition = NULL;
    int * reordered_decomposition = NULL;
-   ML_Operator * QQ = NULL, * QQ2 = NULL;
+   ML_Operator * QQ = NULL;
    ML_Operator *Pstart = NULL;
    int starting_aggr_count;
-   double *xxx, *yyy;
    char str[80];
    double * new_nullspace_vect = NULL;
-   double * old_nullspace_vect = NULL;
    int * graph_decomposition = NULL;
    double debug_starting_time;
+   int exp_Ncoarse;
+   
    
    /* ------------------- execution begins --------------------------------- */
 
@@ -1101,7 +1083,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
      if( starting_aggr_count < 1 ) starting_aggr_count = 1;
      /* 'sto xxxcio e` un po` piu` difficile, non ne ho idea, piglio
 	a caso... */
-     desired_aggre_per_proc = ML_max( 100, Nrows );
+     desired_aggre_per_proc = ML_max( 128, Nrows );
        
    } else {
 
@@ -1687,7 +1669,7 @@ int ML_Aggregate_CoarsenParMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
                   else {
 		    fprintf( stderr,
 			     "*ML*ERR* error in QR factorization within ParMETIS aggregation\n"
-			     "*ML*ERR* (file %d, line %d)\n",
+			     "*ML*ERR* (file %s, line %d)\n",
 			     __FILE__,
 			     __LINE__ );
 		    exit( EXIT_FAILURE );

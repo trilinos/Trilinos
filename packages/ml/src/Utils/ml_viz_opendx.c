@@ -27,9 +27,6 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   int i;
   int N_procs = comm->ML_nprocs;
   int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
-  int choice = 1;
-  int max_N_parts;
-  int mypid = comm->ML_mypid;
   
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm->USR_comm);
 
@@ -136,7 +133,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   double * rowi_val = NULL;
   int offset;
   int *values;
-  int max_Naggregates, global, ok;
+  int max_Naggregates, ok;
   int shuffle, * reorder = NULL;
   
   /* ------------------- execution begins --------------------------------- */
@@ -145,7 +142,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
     fprintf( stderr,
 	     "*ML*ERR* number of rows and lenght of graph_decomposition\n"
 	     "*ML*ERR* differs (%d - %d)\n"
-	     "*ML*ERR* (file %d, liine %d)\n",
+	     "*ML*ERR* (file %s, liine %d)\n",
 	     Nrows,
 	     Nlocal,
 	     __FILE__,

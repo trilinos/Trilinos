@@ -402,9 +402,6 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   Epetra_SerialComm Comm;
 #endif
   
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
   Epetra_Map StartingMap(-1,StartingNumElements*NumPDEEqns,0,Comm);
   Epetra_Map ReorderedMap(-1,ReorderedNumElements*NumPDEEqns,0,Comm);
   
@@ -540,10 +537,7 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
 
   Epetra_MpiComm Comm( mpi_communicator );
 
-  int MyPID = Comm.MyPID();
-  int NumProc = Comm.NumProc();
-
-  if( NumProc == 1 ) return NULL;
+  if( Comm.NumProc() == 1 ) return NULL;
 
   Epetra_Map StartingMap(-1,StartingNumElements,0,Comm);
   Epetra_Map ReorderedMap(-1,ReorderedNumElements,0,Comm);
@@ -619,8 +613,6 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
     Nghost_nodes = Ke->getrow->pre_comm->total_rcv_length;
   }
 
-  int dummy;
-  
   Nnodes = Ke->invec_leng;
   Nrows = Ke->outvec_leng;
 
@@ -698,8 +690,6 @@ int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
 
     NumNonzeros = 0;
     for (int j = 0; j < ncnt; j++) {
-      int itemp; // check this out
-      double dtemp;
       if (colVal[j] != 0.0) {
 	colInd[NumNonzeros] = global_nodes_as_int[colInd[j]];
 	colVal[NumNonzeros] = colVal[j];
