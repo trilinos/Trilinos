@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_commc_id = "$Id$";
-#endif
 
 /* irregular communiction functions for C and F77 - Apr 1998
 

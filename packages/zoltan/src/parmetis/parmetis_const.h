@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_parmetis_const_h_id = "$Id$";
-#endif
 
 /* Data structures used in parmetis interface routines */
 

@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_keyparams_id = "$Id$";
-#endif
 
 #include <stdio.h>
 #include "lb_const.h"

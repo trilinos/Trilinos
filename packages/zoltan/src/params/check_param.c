@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_checkparamc_id = "$Id$";
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>

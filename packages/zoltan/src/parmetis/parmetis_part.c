@@ -12,9 +12,6 @@
  * $Revision$
  *
  *====================================================================*/
-#ifndef lint
-static char *cvs_parmetis_part_id = "$Id$";
-#endif
 
 /* #define LB_DEBUG */   /* turn on debug print statements? */
 
