@@ -50,7 +50,7 @@ inout_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
   $(top_builddir)/../triutils/src/libtriutils.a \
-  $(BLAS_LIBS) \
   $(LIBS) \
+  $(BLAS_LIBS) \
   $(FLIBS)
 

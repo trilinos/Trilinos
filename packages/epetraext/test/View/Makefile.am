@@ -47,8 +47,8 @@ View_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
 View_test_LDADD = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
-  $(BLAS_LIBS) \
   $(LIBS) \
+  $(BLAS_LIBS) \
   $(FLIBS)
 
 
