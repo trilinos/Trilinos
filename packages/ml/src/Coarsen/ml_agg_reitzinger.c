@@ -55,13 +55,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Aggregate_Set_Threshold( ag, 0.0);
   }
   Tfine = Tmat;
-  ml_edges->ML_finest_level = fine_level;
+
   /********************************************************************/
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
   /*------------------------------------------------------------------*/
   Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros; 
   Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
+  ml_edges->ML_finest_level = fine_level;
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
@@ -469,10 +470,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      for (i = 0; i < csr_data->rowptr[Rn_coarse->outvec_leng]; i++)
        if (csr_data->values[i] != 0) csr_data->values[i] = 1.;
    
-     /********************************************************************/
-     /* Create Tcoarse_trans.                                            */
-     /*------------------------------------------------------------------*/
-
      /* Check that both dimensions of T are strictly greater than 0. 
         If not, clean up & break from main loop. */
      i = Tcoarse->outvec_leng;
@@ -501,6 +498,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         }
         break; /* from main loop */
      }
+
+     /********************************************************************/
+     /* Create Tcoarse_trans.                                            */
+     /*------------------------------------------------------------------*/
 
      Tcoarse_trans = ML_Operator_Create(ml_edges->comm);
      ML_Operator_Transpose_byrow(Tcoarse, Tcoarse_trans);
@@ -895,7 +896,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 
     if (Tfine->comm->ML_mypid==0 )
     {
-      if (Nnz_finegrid == 0) 
+      if (Nnz_finegrid <= 0) 
          printf("Number of nonzeros on finest grid not given! Complexity not computed!\n");
       else
          printf("Multilevel complexity is %e\n",
