@@ -635,8 +635,34 @@ devices. Both of these behaviors result in code that is hard to read.
 \item Functions that don't take any paramer should use an empty parameter
 list, and not say void.
 \item Always define a pointer when you  declarare it. Either set it equal to
-an address in memory, or set it equal to zero.
+an address in memory, or set it equal to zero. If you don't define a pointer
+as you declare it, you will never know if it will be accessed before you
+assign to it. This goes both for local variables, and for class members in
+constructors.
 \item Use zero (0) instead of NULL in C++ code.
+\item Always inlcude a default case in a \verb!switch! statment, or in a
+sequence of \verb!if-else!'s.
+\item Do not use spaces around `.' or `->', or between unay operators and
+operands.
+\item Always provide a space on both sides of `=' signs and all loginal
+operators.
+\item Use parenthesis to make the code readable.
+\item The block of any \verb!if! statement should always follow on a separate
+line.
+\begin{verbatim}
+if (/*Something*/) i++; // No!
+
+if (/*Something*/)      // Yes!
+  i++;
+\end{verbatim}
+\item Operators should have a space on both sides of them. 
+(Exception if the \verb!*! and \verb!&! deferencing operators.). This makes it
+easier to distringuish which usage is intended.
+\begin{veratim}
+int* a   // defining a pointer to int
+a * b    // multiplying two variables
+*a       // deferencing a pointer
+\end{verbatim}
 \end{itemize}
 
 \subsection{File Naming Conversions}
@@ -717,12 +743,22 @@ a comma following all but the last one, and the opening curl brace of the
 \item The characters `\verb!*!' and `\verb!&!' should be
 written in the following way:
 \begin{verbatim}
-int * pointer;
-double & ref;
+int* pointer;
+double& ref;
 \end{verbatim}
+Instead of saying the \verb!*i! is of type \verb!int!, say that \verb!i! is of
+  type \verb!int*!.
 \item Whenever possible, we prefer member initialization to assignment in the
   body of the constructor.
 \item Declare only one variable per line.
+\begin{verbatim}
+int i,j; // No!
+int i;
+int j;
+\end{verbatim}
+This is mainly to avoid confusion resulting from mixing \verb!int! and
+  \verb!int *! declarations, and also to give room for additional comments
+  (when required).
 \item The inclusion of every non-C++ header file must be surrounded by
   the extern "C" { } construct.
 \item Function calls that are intended to be called from C that take input-only struct arguments may wish to use pointers, since C does not have references. Such pointers must, of course, be declared const.
@@ -748,10 +784,10 @@ if (x is true) {
 However, there is one special case, namely functions: they have the
 opening brace at the beginning of the next line, thus:
 \begin{verbatim}
-        int function(int x)
-        {
-                body of function
-        }
+int function(int x)
+{
+  body of function
+}
 \end{verbatim}
 
 Note that the closing brace is empty on a line of its own, except in
@@ -759,19 +795,22 @@ the cases where it is followed by a continuation of the same statement,
 ie a "while" in a do-statement or an "else" in an if-statement, like
 this:
 \begin{verbatim}
-        do {
-                body of do-loop
-        } while (condition);
+do {
+  body of do-loop
+} while (condition);
 \end{verbatim}
-and
+\item An else statement following an if should begin on the line following the
+i's closing brace.
 \begin{verbatim}
-        if (x == y) {
-                ..
-        } else if (x > y) {
-                ...
-        } else {
-                ....
-        }
+if (x == y) {
+  ...
+}
+else if (x > y) {
+  ...
+}
+else {
+  ...
+}
 \end{verbatim}
 \item Do not put spaces between function names and the parenthesis that
   starts the list of arguments. It makes it less obvious that the list
