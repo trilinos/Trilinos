@@ -23,6 +23,18 @@ extern "C" {
 #define AZ_ONLY_PRECONDITIONER  -7778
 
 #include "az_aztec.h"
+
+/******************************************************************************/
+/* structure/function to wrap Aztec subblocks into a large Aztec matrix.      */
+/******************************************************************************/
+struct AZ_MAT_blockmat_data {
+  int N, Nghost;
+  AZ_MATRIX *Ke;
+  AZ_MATRIX *M;
+};
+
+
+
 struct aztec_context {
    AZ_MATRIX *Amat; 
    AZ_PRECOND *Prec;
@@ -178,6 +190,8 @@ extern void AZ_zeroDirichletcolumns(AZ_MATRIX *Amat, double rhs[],
 				    int proc_config[] );
 extern int ML_Tmat_applyDirichletBC(ML_Operator **Tmat, int *dirichlet_rows,
                              int num_dirichlet_rows);
+extern void AZ_block_matvec(double *, double *, AZ_MATRIX *, int *);
+
 #endif
 
 #ifdef __cplusplus

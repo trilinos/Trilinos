@@ -2428,6 +2428,60 @@ int ML_Aggregate_AztecRead(ML_Aggregate *ag) {
     return 0;
 }
 
+/*****************************************************************/
+/* Aztec block matvec function that corresponds to an equivalent */
+/* real form                                                     */
+/*                    |  Ke    -M  |  | x |       | b |          */
+/*                    |   M    Ke  |  | y |   =   | c |          */
+/* to solve the problem                                          */
+/*                    (Ke + i M ) (x + i y) = b + i c            */
+/* where Ke and M are Aztec matrices.                            */ 
+/*****************************************************************/
+
+void AZ_block_matvec(double *x, double *y, AZ_MATRIX *Amat,
+                             int proc_config[])
+{
+  struct AZ_MAT_blockmat_data *AZ_MAT_blockmat_data;
+  double *z, *x_pad;
+  int i;
+
+  AZ_MAT_blockmat_data = (struct AZ_MAT_blockmat_data *) AZ_get_matvec_data(Amat);
+
+  z     = (double *) AZ_allocate((AZ_MAT_blockmat_data->N+1)*sizeof(double));
+
+  /* Copy the first part of 'x' so that we can leave space for the ghost */
+  /* variables. NOTE: We are assuming that we do not have to copy the    */
+  /* second half of the vector as there is already space for these ghost */
+  /* variables at the end of 'x'.                                        */
+
+  x_pad = (double *) AZ_allocate((AZ_MAT_blockmat_data->N+
+				  AZ_MAT_blockmat_data->Nghost+1)*sizeof(double));
+  for (i = 0; i < AZ_MAT_blockmat_data->N; i++) x_pad[i] = x[i];
+
+  AZ_MAT_blockmat_data->Ke->matvec( x_pad, y, AZ_MAT_blockmat_data->Ke, proc_config);
+
+  if (AZ_MAT_blockmat_data->M != NULL) {
+      AZ_MAT_blockmat_data->M->matvec(&(x[AZ_MAT_blockmat_data->N]), z, 
+				  AZ_MAT_blockmat_data->M, proc_config);
+      for (i = 0; i < AZ_MAT_blockmat_data->N; i++) y[i] -= z[i];
+  }
+
+ AZ_MAT_blockmat_data->Ke->matvec(&(x[AZ_MAT_blockmat_data->N]),
+                              &(y[AZ_MAT_blockmat_data->N]),
+                              AZ_MAT_blockmat_data->Ke, proc_config);
+
+  if (AZ_MAT_blockmat_data->M != NULL) {
+    AZ_MAT_blockmat_data->M->matvec( x_pad, z, AZ_MAT_blockmat_data->M, proc_config);
+    for (i = 0; i < AZ_MAT_blockmat_data->N; i++) y[i+AZ_MAT_blockmat_data->N] += z[i];
+  }
+  else printf("Block matrix appears to be diagonal!!\n");
+
+  AZ_free(z);
+  AZ_free(x_pad);
+}
+
+
+
 #else
 
 /* to satisfy the requirement of certain compilers */
