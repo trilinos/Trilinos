@@ -251,8 +251,8 @@ public:
   }
 
   //! Returns the label of \c this object.
-  char* Label() const{
-    return((char*)Label_);
+  const char* Label() const{
+    return(Label_);
   }
 
   //! Returns a reference to the internally stored pointer to Epetra_RowMatrix.

@@ -296,7 +296,7 @@ class Ifpack_ILU: public Ifpack_Preconditioner {
   const Epetra_CrsMatrix & U() const {return(*U_);};
 
   //! Returns a character string describing the operator
-  char * Label() const {return((char*)Label_);}
+  const char * Label() const {return(Label_);}
       
   int SetLabel(const char* Label)
   {

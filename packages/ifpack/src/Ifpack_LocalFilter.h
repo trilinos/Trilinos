@@ -330,8 +330,8 @@ public:
 
 const Epetra_BlockMap& Map() const;
 
-char* Label() const{
-  return((char*)Label_);
+const char* Label() const{
+  return(Label_);
 };
 
 private:

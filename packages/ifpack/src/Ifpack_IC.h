@@ -258,9 +258,9 @@ class Ifpack_IC: public Ifpack_Preconditioner {
     const Epetra_Comm & Comm() const{return(Comm_);};
   //@}
 
-    char* Label() const
+    const char* Label() const
     {
-      return((char*)Label_);
+      return(Label_);
     }
 
     int SetLabel(const char* Label)

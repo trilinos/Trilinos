@@ -149,7 +149,7 @@ public:
   //@{ \name Atribute access functions
 
     //! Returns a character string describing the operator
-    virtual char * Label() const;
+    virtual const char * Label() const;
 
     //! Returns the current UseTranspose setting.
     virtual bool UseTranspose() const;
@@ -694,9 +694,9 @@ double Ifpack_AdditiveSchwarz<T>::NormInf() const
 
 //==============================================================================
 template<typename T>
-char * Ifpack_AdditiveSchwarz<T>::Label() const
+const char * Ifpack_AdditiveSchwarz<T>::Label() const
 {
-  return((char*)Label_.c_str());
+  return(Label_.c_str());
 }
 
 //==============================================================================

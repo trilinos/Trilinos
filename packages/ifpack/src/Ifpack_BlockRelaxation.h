@@ -157,7 +157,7 @@ public:
     IFPACK_CHK_ERR(-1); // FIXME: can I work with the transpose?
   }
 
-  virtual char * Label() const;
+  virtual const char * Label() const;
  
   //! Returns the current UseTranspose setting.
   virtual bool UseTranspose() const
@@ -421,9 +421,9 @@ Ifpack_BlockRelaxation<T>::~Ifpack_BlockRelaxation()
 
 //==============================================================================
 template<typename T>
-char* Ifpack_BlockRelaxation<T>::Label() const
+const char* Ifpack_BlockRelaxation<T>::Label() const
 {
-  return(const_cast<char*>(Label_.c_str()));
+  return(Label_.c_str());
 }
 
 //==============================================================================

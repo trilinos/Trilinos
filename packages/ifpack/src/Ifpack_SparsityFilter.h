@@ -183,8 +183,8 @@ public:
     return(A_.Map());
   }
 
-  char* Label() const{
-    return((char*)Label_);
+  const char* Label() const{
+    return(Label_);
   }
 
 private:

@@ -184,8 +184,8 @@ public:
     return(*(const Epetra_BlockMap*)Map_);
   }
 
-  char* Label() const{
-    return((char*)Label_);
+  const char* Label() const{
+    return(Label_);
   }
 
   int SolveSingletons(const Epetra_MultiVector& RHS, 

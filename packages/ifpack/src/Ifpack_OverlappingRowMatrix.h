@@ -274,8 +274,8 @@ public:
 
 const Epetra_BlockMap& Map() const;
 
-char* Label() const{
-  return((char*)Label_.c_str());
+const char* Label() const{
+  return(Label_.c_str());
 };
 
 int OverlapLevel() const

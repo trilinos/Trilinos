@@ -154,9 +154,9 @@ public:
 
   //@{ \name Atribute access functions
 
-  virtual char * Label() const
+  virtual const char * Label() const
   {
-    return((char*)Label_.c_str());
+    return(Label_.c_str());
   }
 
   //! Returns the current UseTranspose setting.
