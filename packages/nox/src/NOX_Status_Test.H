@@ -33,8 +33,7 @@
 #ifndef NOX_STATUS_TEST_H
 #define NOX_STATUS_TEST_H
 
-// Forward declaration
-class ostream;
+#include "NOX_Common.H"		// for ostream
 
 namespace NOX {
 

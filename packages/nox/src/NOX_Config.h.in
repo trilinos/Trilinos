@@ -1,4 +1,4 @@
-/* src/NOX_Config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/NOX_Config.h.in.  Generated automatically from configure.ac by autoheader.  */
 
 /* define if we can include <cmath> */
 #undef HAVE_CMATH

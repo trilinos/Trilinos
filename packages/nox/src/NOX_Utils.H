@@ -33,6 +33,8 @@
 #ifndef NOX_UTILS_H
 #define NOX_UTILS_H
 
+#include "NOX_Common.H"
+
 // Forward declarations
 namespace NOX {
 namespace Parameter {
@@ -40,7 +42,6 @@ class List;
 }
 }
 
-class ostream;
 
 namespace NOX {
 

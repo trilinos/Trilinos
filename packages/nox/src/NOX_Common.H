@@ -71,9 +71,17 @@
 #include <string>
 #endif
 
-
 #include <vector>
 #include <map>
+
+using namespace std;
+
+// Some compilers don't like this - particularly DEC!
+// Others require it - particularily AIX!
+#ifndef NO_USING_STD_OSTREAM
+using std::ostream;
+#endif
+
 using std::map;
 using std::vector;
 

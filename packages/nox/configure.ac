@@ -169,7 +169,7 @@ LIBS="${LIBS} ${withval}"
 ]
 )
 
-AC_MSG_CHECKING(whether we are using mpi)
+AC_MSG_CHECKING(whether we are using MPI)
 AC_MSG_RESULT([${USE_MPI}])
 
 # ------------------------------------------------------------------------
@@ -264,7 +264,7 @@ AC_MSG_RESULT($COPTIONS)
 fi
 
 AC_MSG_CHECKING([for extra C++ flags])
-if test X$CXXOPTIONS = X; then
+if test X"$CXXOPTIONS" = X; then
 AC_MSG_RESULT(none)
 else
 AC_MSG_RESULT($CXXOPTIONS)
@@ -407,6 +407,8 @@ AC_CHECK_FUNCS([pow sqrt])
 # Trilinos
 # ------------------------------------------------------------------------
 
+# Case I: Using standard Trilinos directory structure
+# (a) Check if TRILINOS_HOME is valid
 if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
 
    AC_MSG_CHECKING(whether TRILINOS_HOME is defined)
@@ -426,6 +428,8 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
    fi
 fi
 
+# Case I: Using standard Trilinos directory structure
+# (b): Set Trilinos variables
 if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
 
    AC_MSG_CHECKING(whether TRILINOS_ARCH is defined)
@@ -434,14 +438,14 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
    else
       case $target in
 	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
-	TRILINOS_ARCH="IBMSP"
-	;;
+  	  TRILINOS_ARCH="AIX"
+	  ;;
 	alpha-unknown-linux-gnu)
-	TRILINOS_ARCH="LINUXALPHA"
-	;;	
+	  TRILINOS_ARCH="LINUXALPHA"
+	  ;;	
 	*)
-	TRILINOS_ARCH="LINUX"
-  	;;
+	  TRILINOS_ARCH="LINUX"
+  	  ;;
       esac
       AC_MSG_RESULT([no (using ${TRILINOS_ARCH})])
    fi
@@ -472,10 +476,11 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
    TRILINOS_EPETRA_INC=${TRILINOS_HOME}/packages/epetra/src
    TRILINOS_AZTECOO_INC=${TRILINOS_HOME}/packages/aztecoo/src
    TRILINOS_LIB_DIR=${TRILINOS_HOME}/lib/${TRILINOS_TARGET}
-
 fi
 
 
+# Case II: Using Trilinos ARCH directory (ala Xyce)
+# (a) Check is trilinos-arch-dir is valid
 if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
 
    AC_MSG_CHECKING(whether TRILINOS_ARCH_DIR is valid)
@@ -489,6 +494,8 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
 
 fi
 
+# Case II: Using Trilinos ARCH directory (ala Xyce)
+# (b) Set Trilinos variables
 if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
 
    if test ${USE_MPI} = yes; then
@@ -503,46 +510,65 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} = Xyes; then
 
 fi
 
+# Set up flags for test compiles and links below
 if test ${USE_TRILINOS} = yes; then
-
    LDFLAGS="-L${TRILINOS_LIB_DIR} $LDFLAGS"
-   TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
+fi
 
-  AC_LANG_SAVE
-  # Find a valid y12m
+# Find a valid y12m
+if test ${USE_TRILINOS} = yes; then
   AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(y12mae,[y12m])
+  AC_SEARCH_LIBS(y12mae,[y12m],,DONT_HAVE_LIBY12M="no")
+  if test -e "$DONT_HAVE_LIBY12M"; then
+    echo "------------------------------------------------------------------------"
+    echo "Could not link to the Y12M library. This library is distributed with"
+    echo "Trilinos as an external package. Specify LDFLAGS on the configure line"
+    echo "to specify the name and/or path to the library."
+    echo "------------------------------------------------------------------------"
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi
+fi
+
+# Find g2c if it exists (don't seem to need this if it's not there)
+if test ${USE_TRILINOS} = yes; then
   AC_LANG_C
   AC_SEARCH_LIBS(s_copy,[g2c])
-  # Find a valid blas and lapack library
+fi
+
+# Find valid BLAS
+if test ${USE_TRILINOS} = yes; then
   AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dcopy,[cxml blas])
-  AC_SEARCH_LIBS(dgetrs,[cxml lapack])
-  AC_LANG_CPLUSPLUS
-  AC_LANG_RESTORE
-
-  # I don't know how to check for epetra and aztecoo using
-  # AC_CHECK_LIB, so instead I'll just check that they exist
-  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
-
-  AC_MSG_CHECKING(for epetra)
-  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
-    AC_MSG_RESULT(yes)
-  else
-    AC_MSG_RESULT(no)
+  AC_SEARCH_LIBS(dcopy,[cxml blas],,DONT_HAVE_BLAS="no")
+  if test -e "$DONT_HAVE_LIBBLAS"; then
+    echo "------------------------------------------------------------------------"
+    echo "Could not link to the BLAS library. It can be obtained at"
+    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
+    echo "specify the name and/or path to the library."
+    echo "------------------------------------------------------------------------"
     AC_MSG_NOTICE([DISABLING TRILINOS!!])
     USE_TRILINOS=no
-  fi  
+  fi
+fi
 
-  AC_MSG_CHECKING(for aztecoo)
-  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
-    AC_MSG_RESULT(yes)
-  else
-    AC_MSG_RESULT(no)
+# Find valid LAPACK
+if test ${USE_TRILINOS} = yes; then
+  AC_LANG_FORTRAN77
+  AC_SEARCH_LIBS(dgetrs,[cxml lapack],,DONT_HAVE_LIBLAPACK="no")
+  if test -e "$DONT_HAVE_LIBLAPACK"; then
+    echo "------------------------------------------------------------------------"
+    echo "Could not link to the LAPACK library. It can be obtained at"
+    echo "http://www.netlib.org/lapack. Specify LDFLAGS on the configure line to"
+    echo "specify the name and/or path to the library."
+    echo "------------------------------------------------------------------------"
     AC_MSG_NOTICE([DISABLING TRILINOS!!])
     USE_TRILINOS=no
-  fi  
+  fi
 
+fi
+
+# Check for ifpack
+if test ${USE_TRILINOS} = yes; then
   AC_MSG_CHECKING(for ifpack)
   if test -f ${TRILINOS_LIB_DIR}/libifpack.a; then
     AC_MSG_RESULT(yes)
@@ -551,7 +577,36 @@ if test ${USE_TRILINOS} = yes; then
     AC_MSG_NOTICE([DISABLING TRILINOS!!])
     USE_TRILINOS=no
   fi  
+fi
 
+# Check for aztecoo
+if test ${USE_TRILINOS} = yes; then
+  AC_MSG_CHECKING(for aztecoo)
+  if test -f ${TRILINOS_LIB_DIR}/libaztecoo.a; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi  
+fi
+
+# Check for epetra
+if test ${USE_TRILINOS} = yes; then
+  AC_MSG_CHECKING(for epetra)
+  if test -f ${TRILINOS_LIB_DIR}/libepetra.a; then
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_NOTICE([DISABLING TRILINOS!!])
+    USE_TRILINOS=no
+  fi  
+fi
+
+# If we make it through all the tests, define the correct libs and includes!!
+if test ${USE_TRILINOS} = yes; then
+  LIBS="-lepetra -laztecoo -lifpack ${LIBS}"
+  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} -I${TRILINOS_EPETRA_INC} -I${TRILINOS_AZTECOO_INC}"
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
