@@ -70,8 +70,7 @@ Amesos_EpetraBaseSolver::Amesos_EpetraBaseSolver(const Epetra_LinearProblem & Pr
   ConvTime_(0.0),
   MatrixProperty_(AMESOS_UNSYM)
 {
-  ParameterList_ = & ParameterList;
-
+  ParameterList_ = const_cast<Teuchos::ParameterList *>(& ParameterList);
 }
  
 //=============================================================================

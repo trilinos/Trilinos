@@ -254,7 +254,7 @@ public:
   bool MatrixShapeOK() const;  
 
 protected:
-  const Teuchos::ParameterList * ParameterList_;
+  Teuchos::ParameterList * ParameterList_;
 
 private:
 
