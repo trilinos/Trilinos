@@ -1,5 +1,6 @@
 /*Paul
 04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
+03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
 */
 
 #ifndef _TPETRA_COMM_H_
@@ -9,15 +10,9 @@
 
 namespace Tpetra {
 
-// forward declarations
-template<class OrdinalType> class Directory;
-template<class OrdinalType> class ElementSpace;
-
 //! Tpetra::Comm:  The Tpetra Communication Abstract Base Class.
 /*! The Tpetra Comm class is an interface that encapsulates the general
   information and services needed for other Tpetra classes to run on a parallel computer.
-  A Comm object is required for building all Tpetra ElementSpace and BlockElementSpace objects,
-  as well as for most other Tpetra objects.
   
   Comm currently has one default implementation, via SerialComm, for serial execution.
   (A second default implementation is planned. MpiComm will be for MPI
@@ -26,9 +21,6 @@ template<class OrdinalType> class ElementSpace;
   manipulation of linear algebra objects.  Most Comm interfaces are similar to MPI
   interfaces, except that the type of data is not required as an argument since C++ can bind
   to the appropriate interface based on argument typing.
-
-  Any implementation of the Comm interface is also responsible for generating
-  Tpetra::Distributor and Tpetra::Directory objects.
 */
 
 template<class PacketType, class OrdinalType>
@@ -129,28 +121,6 @@ class Comm {
            On entry, contains the length of the list of values.
   */
   virtual void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType count) const = 0;
-  //@}
-
-  //@{ \name Attribute Accessor Methods
-  //! Returns the imageID of the calling image. 
-  /*! In serial mode returns 0.
-   */
-  virtual int getMyImageID() const = 0;
-  
-  //! Returns total number of images in the communicator. 
-  /*! In serial mode returns 1.
-   */
-  virtual int getNumImages() const = 0;
-  //@}
-
-  //@{ \name Gather/Scatter and Directory Constructors
-  //! Create a directory object for the given Tpetra::ElementSpace.
-    virtual Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const = 0;
-  //@}
-  
-  //@{ \name I/O Methods
-  //! Print object to an output stream.
-  virtual void printInfo(ostream& os) const = 0;
   //@}
 	
 }; // class Comm

@@ -4,6 +4,7 @@
 15-June-2002 Changed constructors to all take ElementSpace objects. Changed some ints to ordinalTypes.
 01-August-2002 Real writeup starts. Minor changes.
 06-August-2002 Switched to images.
+03-Sept-2002 Added == and != operators
 */
 
 #ifndef _TPETRA_BLOCKELEMENTSPACE_H_
@@ -95,8 +96,10 @@ OrdinalType getMaxElementSize() const {return(maxGlobalSize_);};
 //! Returns true if all elements have a constant size, returns false otherwise.
 bool isConstantElementSize() const {return(constantSize_);};
 
-//! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. Also implemented as the == operator.
+//! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. Also implemented through the == and != operators.
 bool isSameAs(const BlockElementSpace<OrdinalType>& BlockElementSpace) const;
+bool operator==(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {return(isSameAs(BlockElementSpace));};
+bool operator!=(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {return(!isSameAs(BlockElementSpace));};
 
 //@}
 

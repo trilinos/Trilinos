@@ -312,12 +312,9 @@ void ElementSpace<OrdinalType>::getMyGlobalElements(OrdinalType* elementList) co
 //=======================================================================
 template<typename OrdinalType>
 OrdinalType* ElementSpace<OrdinalType>::getMyGlobalElements() const {
-	cout << "ES(gMGE): beginning gMGE()" << endl;
 	OrdinalType numMyElements = getNumMyElements();
   if((myGlobalElements_ == 0) && (numMyElements > 0)) {
-		cout << "ES(gMGE): allocating mGE child" << endl;
 		myGlobalElements_ = new OrdinalType[numMyElements];
-		cout << "ES(gMGE): calling gMGE(OT*)" << endl;
     getMyGlobalElements(myGlobalElements_);
   }
   return(myGlobalElements_);
@@ -356,9 +353,7 @@ bool ElementSpace<OrdinalType>::isSameAs (const ElementSpace<OrdinalType>& Eleme
 //=======================================================================
 template<typename OrdinalType>
 void ElementSpace<OrdinalType>::print(ostream& os) const {
-	cout << "ES(print): init mGE1" << endl;
   OrdinalType* myGlobalElements1 = getMyGlobalElements();
-	cout << "ES(print): getting Comm info" << endl;
   OrdinalType myImageID = comm().getMyImageID();
   OrdinalType numImages = comm().getNumImages();
   

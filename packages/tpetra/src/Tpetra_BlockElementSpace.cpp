@@ -235,9 +235,9 @@ void BlockElementSpace<OrdinalType>::getElementSizeList(OrdinalType* elementSize
 //=======================================================================
 template<typename OrdinalType>
 OrdinalType* BlockElementSpace<OrdinalType>::getPointToElementList() const {
-	OrdinalType nME = elementSpace().getNumMyElements();
-  if((pointToElementList_ == 0) && (nME > 0)) {
-    pointToElementList_ = new OrdinalType[nME];
+	OrdinalType numPoints = getNumMyPoints();
+  if((pointToElementList_ == 0) && (numPoints > 0)) {
+    pointToElementList_ = new OrdinalType[numPoints];
     getPointToElementList(pointToElementList_);
   }
   return(pointToElementList_);
@@ -263,10 +263,10 @@ void BlockElementSpace<OrdinalType>::getPointToElementList(OrdinalType* pointToE
 //=======================================================================
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::print(ostream& os) const {
-  OrdinalType* elementSizeList1 = getElementSizeList();
-  OrdinalType* firstPointList1 = getFirstPointInElementList();
-  OrdinalType* pointToElementList1 = getPointToElementList();
-
+	OrdinalType* elementSizeList1 = getElementSizeList();
+  OrdinalType* firstPointList1 = getFirstPointInElementList(); 
+  OrdinalType* pointToElementList1 = getPointToElementList(); 
+ 
   int myImageID = elementSpace().comm().getMyImageID();
   int numImages = elementSpace().comm().getNumImages();
 
@@ -302,14 +302,13 @@ void BlockElementSpace<OrdinalType>::print(ostream& os) const {
       os << "\nPointToElementList"; os << endl;
       for(OrdinalType i = 0; i < numMyPoints_; i++)
 				os << pointToElementList1[i] << " ";
-      os << endl;
+			os << endl;
       os << flush;
     }
-  }
-	//cout << "BES(print): calling gMGE() from tmp pointer" << endl;
-	//OrdinalType* tmp = elementSpace().getMyGlobalElements();
-	//cout << "BES(print): printing ES" << endl;
+	}
+
   elementSpace().print(os);
+
   // global ops to let I/O complete done by elementSpace::print.
 }
 

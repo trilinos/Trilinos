@@ -1,5 +1,6 @@
 /*Paul
 04-Aug-2002 Status: Templated for class T. All Epetra methods except Distributor. Fully documented. Switched to images.
+03-Sept-2002 Took out Directory and ImageID methods. Templated for PacketType, OrdinalType.
 */
 
 #ifndef _TPETRA_SERIALCOMM_H_
@@ -9,10 +10,6 @@
 #include "Tpetra_Object.h"
 
 namespace Tpetra {
-
-// forward declarations
-template<class OrdinalType> class ElementSpace;
-template<class OrdinalType> class Directory;
 
 //! Tpetra::SerialComm:  The Tpetra Serial Communication Class.
 /*! The SerialComm class is an implementation of Tpetra::Comm, providing the general
@@ -129,26 +126,6 @@ public:
            On entry, contains the length of the list of values.
   */
   void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType count) const;
-  //@}
-
-  //@{ \name Attribute Accessor Members
-  //! Returns the ImageID of the memory image that called it.
-  int getMyImageID() const {return(0);};
-  	
-  //! Returns the total number of memory images in the communicator.
-  int getNumImages() const {return(1);};
-  //@}
-
-  //@{ \name Gather/Scatter and Directory Constructors
-  //! Create a directory object for the given ElementSpace.
-  Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const;
-  //@}
-
-  //@{ \name I/O Methods
-  //! Print method that implements Tpetra::Object virtual print method
-  void print(ostream& os) const;
-  //! Print method that implements Tpetra::Comm virtual printInfo method
-  void printInfo(ostream& os) const {print(os);};
   //@}
 
 }; // class SerialComm

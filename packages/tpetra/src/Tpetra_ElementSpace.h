@@ -11,6 +11,7 @@
 24-July-2002 everything including directory. untemplated. gMGE & print still not const.
 27-July-2002 gMGE & print const, templated for OrdinalType.
 06-Aug-2002 Switched to images.
+03-Sept-2002 Added == and != operators.
 */
 
 #ifndef _TPETRA_ELEMENTSPACE_H_
@@ -129,8 +130,10 @@ bool isContiguous() const {return(contiguous_);};
 //! Returns true if this ElementSpace is distributed across more than one image, returns false otherwise.
 bool isGlobal() const {return(global_);};
 
-//! Returns true if the ElementSpace passed in is identical to this ElementSpace. Also implemented as the == operator.
+//! Returns true if the ElementSpace passed in is identical to this ElementSpace. Also implemented through the == and != operators.
 bool isSameAs(const ElementSpace<OrdinalType>& ElementSpace) const;
+bool operator==(const ElementSpace<OrdinalType>& ElementSpace) const {return(isSameAs(ElementSpace));};
+bool operator!=(const ElementSpace<OrdinalType>& ElementSpace) const {return(!isSameAs(ElementSpace));};
 
 //@}
 
