@@ -2994,7 +2994,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    struct ML_CSR_MSRdata *matdata;
    int *row_ptr, i, j, k;
    double *val_ptr;
-   double *dbl_arg1;
+   double *dbl_arg1, *diagonal;
 #ifdef ML_TIMING_DETAILED
    double t0;
 
@@ -3093,6 +3093,21 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    else
    {
       ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_MSR_MATRIX);
+
+      /* Some garbage code to fix up the case when sigma is */
+      /* very small and so tmpmat is very small. Probably   */
+      /* something better should be put in here!!!!         */
+
+      matdata = (struct ML_CSR_MSRdata *) (tmpmat->data);
+      if (tmpmat->diagonal != NULL) {
+	ML_DVector_GetDataPtr( tmpmat->diagonal, &diagonal);
+	for (i = 0; i < tmpmat->outvec_leng; i++) {
+	  if ( fabs(diagonal[i]) < 1.0e-10)  {
+	    matdata->values[i] = 1.;
+	    diagonal[i] = 1.;
+	  }
+	}
+      }
    }
 /*
    kdata = ML_Krylov_Create( tmpmat->comm );
