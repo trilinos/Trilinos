@@ -171,7 +171,7 @@ int i, j;
    
   if (partdist != NULL) {
     procdist = zz->LB.ProcDist 
-             = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+             = (int *) ZOLTAN_MALLOC((zz->Num_Proc+1) * sizeof(int));
     if (procdist == NULL) {
       ierr = ZOLTAN_MEMERR;
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
