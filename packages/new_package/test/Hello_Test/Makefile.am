@@ -1,5 +1,5 @@
 #@HEADER
-## ************************************************************************
+# ************************************************************************
 # 
 #                     New_Package Example Package
 #                 Copyright (2004) Sandia Corporation
@@ -24,27 +24,16 @@
 # Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
 # 
 # ************************************************************************
-@HEADER
-# Scripts in this directory are automatically detected by the test harness
-# if set up to build properly below.  Scripts are executed by the test harness.
+#@HEADER
+#Builds a simple tester program.  Note that executables must end with a .exe
+#to allow certain proprietary operating systems to use them.
 
-#np# This Makefile.am basically copies the "autotoolsTestAll" script from the 
-#np# source tree to the build tree and gives it a .exe extension.  To set up
-#np# multiple scripts, list all scripts in the "PROGRAMS" primary and create
-#np# a (script_name)_SOURCES primary and make rule for each script.  Don't 
-#np# forget to get rid of the "autotoolsTestAll" example.  This  directory 
-#np# is for serial scripts only.  Keep all rules and primaries within 
-#np# the "else" portion of the "if HAVE_MPI" statement.
+bin_PROGRAMS = Hello_Test.exe
 
-EXEEXT = .exe
-# Nothing should be done for an mpi build
-if HAVE_MPI
-else
+Hello_Test_exe_SOURCES = Hello_Test.cpp
 
-noinst_PROGRAMS = autotoolsTestAllSerial
+Hello_Test_exe_DEPENDENCIES = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a
 
-autotoolsTestAllSerial_SOURCES = $(srcdir)/autotoolsTestAllSerial
+Hello_Test_exe_LDADD = $(top_builddir)/src/libnew_package.a $(top_builddir)/../epetra/src/libepetra.a $(LIBS) $(BLAS_LIBS) $(FLIBS)
 
-autotoolsTestAllSerial$(EXEEXT): $(srcdir)/autotoolsTestAllSerial
-	cp $ $(srcdir)/autotoolsTestAllSerial autotoolsTestAllSerial$(EXEEXT)
-endif
+AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../new_package/src -I$(top_builddir)../new_package/src

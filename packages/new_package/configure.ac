@@ -275,8 +275,8 @@ AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 #  #np# - These options can disable the tests and examples of a package.
 #  #np# - Packages that do not have tests or examples should #-out the 
 #  #np# - option(s) that does (do) not apply.
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
-#AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
@@ -383,6 +383,15 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
+		test/Makefile
+		test/Hello_Test/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile
+		test/scripts/daily/mpi/Makefile
+		test/scripts/weekly/Makefile
+		test/scripts/weekly/serial/Makefile
+		test/scripts/weekly/mpi/Makefile
 		])
 
 AC_OUTPUT()

@@ -1,0 +1,9 @@
+#!/usr/bin/perl
+
+@results = `./../../../Hello_Test/Hello_Test.exe`;
+
+if(pop(@results) eq "Test Passed!"){
+    exit(0);
+}else{
+    exit(1);
+}
