@@ -120,6 +120,7 @@ TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
 	$(top_builddir)/amd/src/libamd.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
 
@@ -127,6 +128,7 @@ TestOptions_CXXFLAGS = -I$(top_srcdir)/src
 
 TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(AMESOS_LIBS) \
         $(LAPACK_LIBS) \

@@ -1,5 +1,5 @@
 #include "Epetra_Comm.h"
-#include "Amesos_Parameter_List.h"
+#include "Teuchos_ParameterList.hpp"
 #include "Amesos_Factory.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -24,10 +24,10 @@ int TestOtherClasses(AmesosClassType AmesosClass,
   const Epetra_Comm& Comm = Amat->Comm();
 
 {
-   AMESOS::Parameter::List ParamList ;
+   Teuchos::ParameterList ParamList ;
    ParamList.setParameter( "Redistribute", true );
    ParamList.setParameter( "AddZeroToDiag", true );
-   AMESOS::Parameter::List& SuperludistParams = ParamList.sublist("Superludist") ;
+   Teuchos::ParameterList& SuperludistParams = ParamList.sublist("Superludist") ;
    SuperludistParams.setParameter( "ReuseSymbolic", true );
    SuperludistParams.setParameter( "MaxProcesses", 2 );
    //  ParamList.print( cerr, 10 ) ; 

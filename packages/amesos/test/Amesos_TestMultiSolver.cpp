@@ -309,7 +309,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
     } else if ( SparseSolver == SCALAPACK ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Scalapack scalapack( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( scalapack.SetUseTranspose( transpose ) ); 
     
@@ -337,7 +337,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #endif
 #ifdef HAVE_AMESOS_SUPERLU
     } else if ( SparseSolver == SUPERLU ) { 
-      AMESOS::Parameter::List ParamList ;
+      Teuchos::ParameterList ParamList ;
       Amesos_Superlu superlu( Problem, ParamList ) ; 
       EPETRA_CHK_ERR( superlu.SetUseTranspose( transpose ) ); 
     

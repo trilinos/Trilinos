@@ -86,7 +86,7 @@ AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-###AC_PREREQ(2.59)
+AC_PREREQ(2.59)
 
 # Specify revision number of configure.ac that was used to generate
 # configure.

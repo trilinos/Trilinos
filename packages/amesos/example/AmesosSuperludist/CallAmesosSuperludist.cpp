@@ -469,7 +469,8 @@ int main(int argc, char *argv[])
    
    errors += SubTest( Comm, ParamList ) ; 
  }
-  
+
+cout << "AAAAAA" << endl;  
 
  {
    Teuchos::ParameterList ParamList ;
@@ -482,7 +483,9 @@ int main(int argc, char *argv[])
    
    errors += SubTest( Comm, ParamList ) ; 
  }
-  
+
+ cout << "AAdddAAAA" << endl;  
+
  {
    Teuchos::ParameterList ParamList ;
    ParamList.setParameter( "Redistribute", false );
@@ -495,7 +498,8 @@ int main(int argc, char *argv[])
    errors += SubTest( Comm, ParamList ) ; 
  }
   
-  
+  cout << "AAAAAAAAAaaaaa" << endl;
+
  {
    Teuchos::ParameterList ParamList ;
    ParamList.setParameter( "Redistribute", false );
@@ -547,6 +551,7 @@ int main(int argc, char *argv[])
    errors += SubTest( Comm, ParamList ) ; 
  }
   
+cout << "AAAAAA" << endl;
   
  {
    Teuchos::ParameterList ParamList ;
@@ -559,6 +564,8 @@ int main(int argc, char *argv[])
    
    errors += SubTest( Comm, ParamList ) ; 
  }
+
+cout << "AajsdfhsAAAAA" << endl;
   
   
  {

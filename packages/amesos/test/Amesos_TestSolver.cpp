@@ -329,7 +329,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_SUPERLU
     } else if ( SparseSolver == SUPERLU ) {
 
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Superlu A_superlu( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_superlu.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_superlu.SymbolicFactorization(  ) ); 
@@ -340,7 +340,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 #ifdef HAVE_AMESOS_SCALAPACK
     } else if ( SparseSolver == SCALAPACK ) {
 
-	AMESOS::Parameter::List ParamList ;
+	Teuchos::ParameterList ParamList ;
 	Amesos_Scalapack A_scalapack( Problem, ParamList ) ; 
 	EPETRA_CHK_ERR( A_scalapack.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_scalapack.SymbolicFactorization(  ) ); 

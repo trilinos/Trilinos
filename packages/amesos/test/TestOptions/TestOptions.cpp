@@ -134,7 +134,7 @@ int TestOneMatrix(
   //  Compute the reciprocal condition number using Amesos_UMFPACK via the Amesos_Factory interface
   //
   CreateCrsMatrix( filename, Comm, false, false, Amat ) ;
-  AMESOS::Parameter::List ParamList ;
+  Teuchos::ParameterList ParamList ;
   Epetra_LinearProblem Problem;
   Amesos_Factory Afactory;
 
