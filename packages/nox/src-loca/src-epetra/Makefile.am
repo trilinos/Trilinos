@@ -41,11 +41,13 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra.H \
 	$(srcdir)/LOCA_Epetra_Group.H \
 	$(srcdir)/LOCA_Epetra_Interface.H \
-	$(srcdir)/LOCA_Epetra_BorderedOp.H
+	$(srcdir)/LOCA_Epetra_BorderedOp.H \
+	$(srcdir)/LOCA_Epetra_HouseholderJacOp.H
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_Group.C \
-	$(srcdir)/LOCA_Epetra_BorderedOp.C
+	$(srcdir)/LOCA_Epetra_BorderedOp.C \
+	$(srcdir)/LOCA_Epetra_HouseholderJacOp.C
 
 LOCA_EPETRANEW_H = \
 	$(srcdir)/LOCA_EpetraNew_Group.H \

@@ -42,6 +42,7 @@
 #include "LOCA_Utils.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Epetra_BorderedOp.H"
+#include "LOCA_Epetra_HouseholderJacOp.H"
 
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -301,6 +302,103 @@ LOCA::Epetra::Group::computeScaledDotProduct(
 
     return d;
   }
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::Group::applyHouseholderJacobianInverse(
+					  NOX::Parameter::List& p,
+					  const NOX::Abstract::Vector& cf,
+					  const NOX::Abstract::Vector& cdfdp,
+					  const NOX::Abstract::Vector& cux,
+					  double up, double beta,
+					  NOX::Abstract::Vector& result_x,
+					  double& result_p) const
+{
+  // Get non-const input
+  NOX::Abstract::Vector& f = const_cast<NOX::Abstract::Vector&>(cf);
+  NOX::Abstract::Vector& dfdp = const_cast<NOX::Abstract::Vector&>(cdfdp);
+  NOX::Abstract::Vector& ux = const_cast<NOX::Abstract::Vector&>(cux);
+
+  // cast vectors to nox epetra vectors
+  NOX::Epetra::Vector& nox_epetra_f = 
+    dynamic_cast<NOX::Epetra::Vector&>(f);
+  NOX::Epetra::Vector& nox_epetra_dfdp = 
+    dynamic_cast<NOX::Epetra::Vector&>(dfdp);
+  NOX::Epetra::Vector& nox_epetra_ux = 
+    dynamic_cast<NOX::Epetra::Vector&>(ux);
+  NOX::Epetra::Vector& nox_epetra_result_x = 
+    dynamic_cast<NOX::Epetra::Vector&>(result_x);
+  
+  // Get underlying epetra vectors
+  Epetra_Vector& epetra_f = nox_epetra_f.getEpetraVector();
+  Epetra_Vector& epetra_dfdp = nox_epetra_dfdp.getEpetraVector();
+  Epetra_Vector& epetra_ux = nox_epetra_ux.getEpetraVector();
+  Epetra_Vector& epetra_result_x = nox_epetra_result_x.getEpetraVector();
+
+  // Create preconditioner
+  createIfpackPreconditioner(p);
+
+  // Get Jacobian, preconditioner operators
+  const Epetra_Operator& cjac = sharedJacobian.getOperator();
+  Epetra_Operator& jac = const_cast<Epetra_Operator&>(cjac);
+  Epetra_Operator& prec = *ifpackPreconditioner;
+
+  // Build Householder projection-Jacobian operator
+  LOCA::Epetra::HouseholderJacOp houseJac(jac, epetra_dfdp, epetra_ux,
+					  up, beta);
+
+  // Initialize operator
+  houseJac.init(epetra_result_x);
+
+  // Create Epetra linear problem object for the linear solve
+  Epetra_LinearProblem Problem(&houseJac, &epetra_result_x, &epetra_f);
+
+  // Set the default Problem parameters to "hard" (this sets Aztec defaults
+  // during the AztecOO instantiation)
+  Problem.SetPDL(hard);
+
+  // Create the solver. 
+  AztecOO houseAztecSolver(Problem);
+
+  // Set specific Aztec parameters requested by NOX
+  setBorderedAztecOptions(p, houseAztecSolver);
+
+  // Set preconditioner
+  houseAztecSolver.SetPrecOperator(&prec);
+
+  // Get linear solver convergence parameters
+  int maxit = p.getParameter("Max Iterations", 400);
+  double tol = p.getParameter("Tolerance", 1.0e-6);
+  
+  // Solve linear problem
+  int aztecStatus = houseAztecSolver.Iterate(maxit, tol);
+
+  // Set the output parameters in the "Output" sublist
+  NOX::Parameter::List& outputList = p.sublist("Output");
+  int prevLinIters = 
+    outputList.getParameter("Total Number of Linear Iterations", 0);
+  int curLinIters = houseAztecSolver.NumIters();
+  double achievedTol = houseAztecSolver.ScaledResidual();
+
+  outputList.setParameter("Number of Linear Iterations", curLinIters);
+  outputList.setParameter("Total Number of Linear Iterations", 
+			  (prevLinIters + curLinIters));
+  outputList.setParameter("Achieved Tolerance", achievedTol);
+
+  // Destroy preconditioner
+  destroyPreconditioner();
+
+  // Apply Householder transformation to result
+  result_p = 0.0;
+  houseJac.applyHouse(epetra_result_x, result_p);
+
+  // Finalize operator
+  houseJac.finish();
+
+  if (aztecStatus != 0) 
+    return NOX::Abstract::Group::NotConverged;
+  
+  return NOX::Abstract::Group::Ok;
 }
     
 NOX::Abstract::Group::ReturnType 
