@@ -581,33 +581,7 @@ report($SUMMARY);
             
                 # locate all test dirs under Trilinos/packages        
                 chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";        
-                my @testDirs = `find packages/ -name test -print`; 
-                
-                # Resolve MPIGO_CMD ============================================
-        		
-        		# use config-file-supplied option if present, else, guess.
-        		
-        		if (defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} && 
-        		    defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'}[0]) {
-        		    
-        		    $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";
-        		    
-        		} else {
-                
-            		# Figure out how to run an mpi job.
-            		my $result;       # success=0, failure=nonzero
-                
-            		$result = $ENV{"HOSTNAME"};
-            		if (!$result) {
-            		  $result = $ENV{"HOST"};
-            		}
-            		if ($result =~ /stratus/) {
-            		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
-            		} else {
-            		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
-            		}
-        		
-        		}
+                my @testDirs = `find packages/ -name test -print`;
  
                 # run all tests 
                 foreach my $testDir (@testDirs) {
@@ -1900,11 +1874,31 @@ report($SUMMARY);
             }         
         }         
         
-        # if MPIGO_CMD is specified, enforce on and only one trailing space
+        # if MPIGO_CMD is specified, enforce one and only one trailing space
         if (defined $options{'MPIGO_CMD'} && defined $options{'MPIGO_CMD'}[0]) {
             $options{'MAKE_FLAGS'}[0] =~ s/\s*$//;  # trim trailing spaces
             $options{'MAKE_FLAGS'}[0] .= " ";       # append trailing space 
-        }
+        } 
+                
+        # Resolve MPIGO_CMD		
+		# use config-file-supplied option if present, else, guess.		
+		if (defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} && 
+		    defined $options{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'}[0]) {		    
+		    $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "$options{'MPIGO_CMD'}[0]";		    
+		} else {        
+    		# Figure out how to run an mpi job.
+    		my $result;       # success=0, failure=nonzero
+        
+    		$result = $ENV{"HOSTNAME"};
+    		if (!$result) {
+    		  $result = $ENV{"HOST"};
+    		}
+    		if ($result =~ /stratus/) {
+    		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "prun -n ";
+    		} else {
+    		  $ENV{'TRILINOS_TEST_HARNESS_MPIGO_COMMAND'} = "mpirun -np ";
+    		}		
+		}
         
         # if MAKE_FLAGS are specified, but don't begin with a '-', add one
         if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
