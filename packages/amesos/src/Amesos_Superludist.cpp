@@ -884,12 +884,12 @@ int Amesos_Superludist::Solve() {
   }
 
   SolveTime_ += Time.ElapsedTime();
-  return; 
+  return 0;
 }
 
 void Amesos_Superludist::PrintStatus() 
 {
-  if( Comm().MyPID() ) return 0;
+  if( Comm().MyPID() ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
 
