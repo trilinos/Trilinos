@@ -139,7 +139,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
    {
       dest = sendProc[i];
       leng = sendLeng[i] * sizeof( double );
-      dbuf = (double *) malloc( leng * sizeof(double) );
+      dbuf = (double *) malloc( leng );
       tempList = sendList[i];
       for ( j = 0; j < sendLeng[i]; j++ ) {
          dbuf[j] = vec[tempList[j]];
