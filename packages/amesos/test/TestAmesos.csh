@@ -103,8 +103,9 @@ mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 0 1e-9 1e-4  >>SST
 #
 #  Test some tranpose solves
 #
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 1 1 1e-10 1e-4  >>SST.stdout
-mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 1 1 1 1 1e-10 1e-4  >>SST.stdout
+mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   ImpcolB.rua 0 1 1 1 1e-11 1e-12  >>SST.stdout
+mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   ImpcolA.rua 1 1 1 1 1e-11 1e-12  >>SST.stdout
+
 
 #
 #  Test blocked right hand sides
@@ -132,6 +133,24 @@ mpirun -np 4 cxx_AME_mpi.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SS
 #  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
 #  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
 #  COMMENT - I can't build this on atlantis today    mpirun -np 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
+
+#
+#  Test some triplet files
+#  The .triU files are unsymmatric, the .triS files are symmetric, providing 
+#  either the upper or lower triangular part.
+#
+mpirun -np 1 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+mpirun -np 3 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+
+mpirun -np 1 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+mpirun -np 2 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+
+mpirun -np 1 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+mpirun -np 6 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+
+
+mpirun -np 1 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+mpirun -np 4 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 
 echo "\nCOMMENT End TestAmesos.csh" >> SST.summary 

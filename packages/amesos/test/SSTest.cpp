@@ -327,6 +327,8 @@ main(int argc, char **argv)
 	
 
 
+ Comm.Broadcast( &exit_value, 1, 0 ) ; 
+
   if ( exit_value == 0 ) { 
 
     AMESOS_MatrixType MatrixType = AMESOS_Serial ; 

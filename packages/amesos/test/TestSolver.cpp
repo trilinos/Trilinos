@@ -1,3 +1,5 @@
+#include <string>
+#include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
@@ -10,7 +12,6 @@
 #endif
 #include "SuperludistOO.h"
 #include "AztecOO.h"
-
 #if 0 
 #include "UmfpackOO.h"
 #include "SpoolesOO.h"
@@ -52,7 +53,6 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
 		 bool transpose, 
 		 int special, AMESOS_MatrixType matrix_type ) {
 
-
   int iam = Comm.MyPID() ;
 
   //  int whatever;
@@ -66,10 +66,25 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
    
-  // Call routine to read in HB problem
-  Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
-			       readb, readxexact);
-
+  string FileName = matrix_file ;
+  int FN_Size = FileName.size() ; 
+  string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
+  cout << " last five bytes = " << LastFiveBytes << endl ; 
+  if ( LastFiveBytes == ".triU" ) { 
+    // Call routine to read in unsymmetric Triplet matrix
+    Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
+				      readb, readxexact);
+  } else {
+    if ( LastFiveBytes == ".triS" ) { 
+      // Call routine to read in symmetric Triplet matrix
+      Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
+					readb, readxexact);
+    } else {
+      // Call routine to read in HB problem
+      Trilinos_Util_ReadHb2Epetra( matrix_file, Comm, readMap, readA, readx, 
+				   readb, readxexact);
+    }
+  }
 
   Epetra_CrsMatrix transposeA(Copy, *readMap, 0);
   Epetra_CrsMatrix *serialA ; 
@@ -80,9 +95,6 @@ int TestSolver( Epetra_Comm &Comm, char *matrix_file,
   } else {
     serialA = readA ; 
   }
-
-  
-
 
   Epetra_RowMatrix * passA = 0; 
   Epetra_Vector * passx = 0; 

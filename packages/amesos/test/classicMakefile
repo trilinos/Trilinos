@@ -19,8 +19,11 @@ TEST_C =
 #  At present this only works on single process runs.
 #
 SRC_CXX = 
-SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp 
 SRC_CXX = Comm_assert_equal.cpp 
+SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
+	Trilinos_Util_ReadTriples2Epetra.cpp   
+SRC_CXX =  Comm_assert_equal.cpp Trilinos_Util_CountTriples.cpp \
+	Trilinos_Util_ReadTriples2Epetra.cpp   
 
 #=======================================================================
 # test source files
@@ -38,7 +41,10 @@ TEST_F =
 DEBUG_INCLUDE = Comm_assert_equal.h 
 TEST_INCLUDE = TestSolver.h \
 	SparseDirectTimingVars.h \
-	SparseSolverResult.h $(DEBUG_INCLUDE)
+	SparseSolverResult.h \
+	Trilinos_Util_ReadTriples2Epetra.h \
+	Trilinos_Util_CountTriples.h  \
+	$(DEBUG_INCLUDE) 
 
 TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC
 SDT =  -DSPARSE_DIRECT_TIMINGS
@@ -50,7 +56,8 @@ include ./Makefile.template
 #=======================================================================
 TEST_CSH = TestAmesos.csh TestAmesosJanus.csh TestAmesosSerial.csh
 TEST_MATRICES = SuperLU.rua ImpcolA.rua ImpcolB.rua ImpcolC.rua ImpcolD.rua \
-	ImpcolE.rua fidapm05.rua bcsstk18.rsa bcsstk24.rsa
+	ImpcolE.rua fidapm05.rua bcsstk18.rsa bcsstk24.rsa \
+	Khead.triS K4989.triS K5000.triS SuperLU.triU
 
 #=======================================================================
 # Ken's debug rules for compiling C code 

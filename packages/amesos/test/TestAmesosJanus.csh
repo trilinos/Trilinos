@@ -134,6 +134,23 @@ yod -sz 1 cxx_AME_mpi.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout
 yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk18.rsa 0 1 1 0 1e30 1e30  >>SST.stdout
 yod -sz 1 cxx_AME_mpi.exe AZTEC   bcsstk24.rsa 1 1 1 0 1e30 1e30  >>SST.stdout
 
+#
+#  Test some triplet files
+#  The .triU files are unsymmatric, the .triS files are symmetric, providing 
+#  either the upper or lower triangular part.
+#
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+yod -sz 3 cxx_AME_mpi.exe SuperLUdist SuperLU.triU 0 1 1 0 1e-14 1e-14 >>SST.stdout
+
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+yod -sz 2 cxx_AME_mpi.exe SuperLUdist K4989.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+yod -sz 4 cxx_AME_mpi.exe SuperLUdist K5000.triS 0 1 1 0 1e-10 1e-8 >>SST.stdout
+
+
+yod -sz 1 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
+yod -sz 6 cxx_AME_mpi.exe SuperLUdist Khead.triS 0 1 1 0 1e-13 1e-9 >>SST.stdout
 
 echo "\nCOMMENT End TestAmesosJanus.csh" >> SST.summary 
 
