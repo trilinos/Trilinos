@@ -21,15 +21,19 @@
 #define OPTION_DBGLVL           3
 #define MAX_OPTIONS             4  /* Total number of options +1 */
 
-/* Data structures used in parmetis interface routines */
+/* Misc defs to be used with MPI */
+#define TAG1  32001
+#define TAG2  32002
 
-struct LB_vtx_list {
-  int length;     /* Length of (remainder of ) list */
+/* Data structures used in ParMetis interface routines */
+
+struct LB_edge_info {
   LB_GID my_gid;     /* Global id of local vtx */
-  int my_gno;     /* Global number of local vtx */
+  int my_gno;        /* Global number of local vtx */
   LB_GID nbor_gid;   /* Global id of off-proc vtx */
-  int * adj;      /* Pointer to adjcny array */
-  struct LB_vtx_list * next;
+  int nbor_proc;     /* Proc id for the neighboring proc */
+  int *adj;          /* Pointer to adjcny array */
+  int send;          /* Send this data to another proc? */
 };
 
 struct LB_hash_node {
@@ -50,14 +54,13 @@ extern int LB_hash_lookup (struct LB_hash_node **, LB_GID, int);
  * NB: Make sure these defs are consistent with those in your 
  * ParMetis installation !
 */
-#define IDXTYPE_INT
 
-#ifdef IDXTYPE_INT
-typedef int idxtype;
-#define IDX_DATATYPE    MPI_INT
-#else
+#ifdef IDXTYPE_IS_SHORT
 typedef short idxtype;
 #define IDX_DATATYPE    MPI_SHORT
+#else /* the default is int */
+typedef int idxtype;
+#define IDX_DATATYPE    MPI_INT
 #endif
 
 /* ParMetis 2.0 function prototypes */

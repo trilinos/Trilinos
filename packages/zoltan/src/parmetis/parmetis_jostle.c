@@ -20,15 +20,15 @@
 #include "parmetis_jostle_const.h"
 #include "params_const.h"
 #include "timer_const.h"
-#include <string.h>
 
-/* #define LB_DEBUG */   /* turn on debug print statements? */
+/* #define LB_DEBUG      Turn on debug print statements? */
 
-/************************  prototypes ************************/
+/***************  prototypes for internal functions ********************/
 
 static int LB_ParMetis_Jostle(LB *lb, int *num_imp, LB_GID **imp_gids,
   LB_LID **imp_lids, int **imp_procs, int *num_exp, LB_GID **exp_gids,
   LB_LID **exp_lids, int **exp_procs, char *alg, int  *options);
+static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n);
 
 /**********************************************************/
 /* Interface routine for ParMetis. This is just a simple  */
@@ -208,28 +208,27 @@ int LB_Jostle(
 }
 
 /****************************************************************/
-/* The routine that constructs the required data structures     */
+/* This routine constructs the required graph data structures   */
 /* and calls ParMetis or Jostle.                                */
+/*                                                              */
+/* Author: Erik Boman, eboman@cs.sandia.gov (9226)              */
 /****************************************************************/
 
 #if (defined(LB_JOSTLE) || !defined(LB_NO_PARMETIS))
 /* Misc. local constants */
-#define CHUNKSIZE 10  /* Number of list nodes to allocate in one chunk. */
+#define CHUNKSIZE 20  /* Number of nodes to allocate in one chunk. */
 
 /* Macro to free all allocated memory */
 #define FREE_MY_MEMORY \
-  { int i; \
+  { \
   LB_FREE(&vtxdist); LB_FREE(&xadj); LB_FREE(&adjncy); \
   LB_FREE(&vwgt); LB_FREE(&adjwgt); LB_FREE(&part); \
   LB_FREE(&float_vwgt); LB_FREE(&xyz); \
-  LB_FREE(&sendbuf); LB_FREE(&recvbuf); LB_FREE(&request); \
-  LB_FREE(&status); LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
+  LB_FREE(&sendbuf); LB_FREE(&recvbuf); \
+  LB_FREE(&hash_nodes); LB_FREE(&hashtab); \
   LB_FREE(&nbors_proc); LB_FREE(&nbors_global); \
   LB_FREE(&local_ids); LB_FREE(&global_ids); \
-  if (proc_nodes !=NULL) \
-    for (i=0; proc_nodes[i] != NULL; i++) \
-      LB_FREE(&(proc_nodes[i])); \
-  LB_FREE(&proc_nodes); LB_FREE(&proc_list); \
+  LB_FREE(&proc_list); LB_FREE(&plist); \
   }
 
 static int LB_ParMetis_Jostle(
@@ -246,22 +245,22 @@ static int LB_ParMetis_Jostle(
   int  *options       /* ParMetis option array */
 )
 {
-  int i, j, ierr, size, flag, offset, hi, row, ndims;
-  int num_obj, nedges, num_edges, sum_edges, max_edges, edgecut;
-  int *nbors_proc;
-  int nsend, wgtflag, numflag;
+  static char *yo = "LB_ParMetis_Jostle";
+  int i, j, k, ierr, packet_size, offset, tmp, flag, ndims;
+  int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
+  int *nbors_proc, *plist;
+  int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   int network[4] = {0, 1, 1, 1};
   float  max_wgt, *float_vwgt, *xyz;
   double geom_vec[6];
-  struct LB_vtx_list  **proc_list, **proc_nodes, *ptr;
+  struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
   LB_LID *local_ids;
-  LB_GID *global_ids, *nbors_global;
+  LB_GID *global_ids, *nbors_global, *ptr_gid;
   char *sendbuf, *recvbuf;
-  MPI_Request *request;
-  MPI_Status *status;
+  struct Comm_Obj *comm_plan;
   double times[5];
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle and ParMETIS.  Don't   */
@@ -270,7 +269,7 @@ static int LB_ParMetis_Jostle(
 
 #ifdef LB_DEBUG
   int i99, *p99;
-  printf("[%1d] Debug: Entering LB_ParMetis_Jostle()\n", lb->Proc);
+  printf("[%1d] Debug: Entering %s\n", lb->Proc, yo);
 #endif
 
   /* Set default return values (in case of early exit) */
@@ -283,13 +282,11 @@ static int LB_ParMetis_Jostle(
   nbors_proc = NULL;
   vtxdist = xadj = adjncy = adjptr = vwgt = adjwgt = part = NULL;
   float_vwgt = xyz = NULL;
-  proc_list = proc_nodes = NULL;
-  ptr = NULL;
+  ptr = proc_list = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
   sendbuf = recvbuf = NULL;
-  request = NULL;
-  status = NULL;
+  plist = NULL;
 
 #ifdef LB_DEBUG
     printf("[%1d] Debug: alg=%s, Obj_Weight_Dim=%d, Comm_Weight_Dim=%d\n", lb->Proc, 
@@ -395,7 +392,7 @@ static int LB_ParMetis_Jostle(
       if (nedges>max_edges) max_edges = nedges;
     }
 #ifdef LB_DEBUG
-    printf("[%1d] Debug: Sum_edges = %d\n", lb->Proc, num_edges);
+    printf("[%1d] Debug: num_edges = %d\n", lb->Proc, num_edges);
 #endif
   
     /* Allocate space for ParMETIS data structs */
@@ -443,48 +440,56 @@ static int LB_ParMetis_Jostle(
       hashtab[j] = &hash_nodes[i];
     }
   
+    /* Estimate the number of inter-proc edges. 
+     * First estimate the number of border objects 
+     * based on a 2d regular grid. (We could alternatively
+     * use Get_Num_Border_Obj but this could be expensive
+     * and the function may not be reqistered. )
+     */
+    num_border = 4*sqrt((double) num_obj);
+    if (num_border > num_obj) num_border = num_obj;
+     
+    /* Assume that the edges are evenly distributed among the objs. */
+    max_proc_list_len = num_edges * num_border / num_obj;
     
     /* Allocate edge list data */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
-    proc_list = (struct LB_vtx_list **) LB_MALLOC(lb->Num_Proc *
-      sizeof(struct LB_vtx_list *) );
-    proc_nodes = (struct LB_vtx_list **) LB_MALLOC((num_edges/CHUNKSIZE+2) *
-      sizeof(struct LB_vtx_list *) );
+    proc_list = (struct LB_edge_info *) LB_MALLOC(max_proc_list_len *
+      sizeof(struct LB_edge_info) );
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
-        (!proc_list) || (!proc_nodes)){
+        (!proc_list) ){
       /* Not enough memory */
       printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
       FREE_MY_MEMORY;
       return LB_MEMERR;
     }
   
-    /* proc_list[i] will contain a pointer to a linked list of data 
-     * to send to processor i. proc_nodes is a list of pointers
-     * to chunks of list elements we have MALLOC'ed. The motivation
-     * for this design is to reduce the number of calls to
-     * MALLOC.  We could have reduced it into a single MALLOC 
+    /* proc_list[i] will contain a struct with data to send
+     * to another processor. We don't know yet the total number
+     * of inter-proc edges so we may have to adjust the size of 
+     * proc_list through REALLOC.  We add a chunk of space at a time.
+     * The motivation for this design is to reduce the number of calls
+     * to REALLOC.  We could have reduced it into a single MALLOC 
      * if we were willing to call the query function get_edge_list 
      * twice for every object, but that is probably
      * even more expensive.
+     *
+     * Note that proc_list may contain duplicate elements.
+     * These are eliminated before the communication phase.
      */
-    for (i=0; i< lb->Num_Proc; i++){
-      proc_list[i] = NULL;
-    }
-    for (i=0; i< num_edges/CHUNKSIZE+2; i++){
-      proc_nodes[i] = NULL;
-    }
-  
-    row = 0;        /* Index to current row in proc_nodes */
-    offset = 0;     /* Index of next available node in proc_nodes[row] */
-    nsend = 0;      /* # procs to send to */
+    
+    nsend = 0;      /* Number of objects we need to send info about */
+    offset = 0;     /* Index of next available node in proc_list */
     adjptr = adjncy;
+    ptr = proc_list;
     xadj[0] = 0;
   
     for (i=0; i< num_obj; i++){
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], &ierr);
       xadj[i+1] = xadj[i] + nedges;
+      tmp = offset;
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
           nbors_global, nbors_proc, lb->Comm_Weight_Dim, adjwgt, &ierr);
       if (ierr){
@@ -502,197 +507,204 @@ static int LB_ParMetis_Jostle(
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
-          *adjptr++ = LB_hash_lookup(hashtab, nbors_global[j], num_obj);
+          *adjptr++ = hash_lookup(hashtab, nbors_global[j], num_obj);
         } else {
-          /* Inter-processor edge; add it to beginning of the list. */
-          /* Check whether we need to allocate more space */
-          if (offset == 0){
-            proc_nodes[row] = (struct LB_vtx_list *) LB_MALLOC(CHUNKSIZE*sizeof(struct LB_vtx_list));
+          /* Inter-processor edge. */
+          /* Check if we already have gid[i] in proc_list with */
+          /* the same destination.                             */
+          flag = 1; /* flag=1 means send this data */
+          for (k=tmp; k<offset; k++){
+            if (proc_list[k].nbor_proc == nbors_proc[j]){
+              flag = 0;
+              break;
+            }
+          }
+          if (flag){
+            nsend++; /* We need to send info about this edge */
+          }
+
+          /* Check if we need to allocate more space for proc_list.*/
+          if (offset == max_proc_list_len){
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: Allocating more list space, row = %d\n", 
-          lb->Proc, row);
+            printf("[%1d] Debug: Allocating more list space, max_proc_list_len = %d, increasing by %d\n", lb->Proc, max_proc_list_len, CHUNKSIZE);
 #endif
-            if (!proc_nodes[row]){
+            max_proc_list_len += CHUNKSIZE;
+            proc_list = (struct LB_edge_info *) LB_REALLOC(proc_list,
+                         max_proc_list_len*sizeof(struct LB_edge_info));
+            if (!proc_list){
               /* Not enough memory */
               printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
               FREE_MY_MEMORY;
               return LB_MEMERR;
             }
-          } 
-          /* Set ptr to point to next available node */
-          ptr = &(proc_nodes[row][offset]);
-          ptr->next = proc_list[nbors_proc[j]];
-          if (ptr->next == NULL){
-            ptr->length = 1;
-            nsend++;
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: creating new list, nsend =%d\n", lb->Proc, nsend);
-#endif
-          } else {
-            ptr->length = ptr->next->length + 1;
-#ifdef LB_DEBUG
-          printf("[%1d] Debug: appending to proc_list[%1d], new length =%d\n", 
-          lb->Proc, nbors_proc[j], ptr->length);
-#endif
           }
+          ptr = &proc_list[offset];
           ptr->my_gid = global_ids[i];
-          ptr->my_gno = LB_hash_lookup(hashtab, global_ids[i], num_obj);
+          ptr->my_gno = hash_lookup(hashtab, global_ids[i], num_obj);
           ptr->nbor_gid = nbors_global[j];
-          ptr->adj = adjptr++;
-          proc_list[nbors_proc[j]] = ptr;
-
+          ptr->nbor_proc = nbors_proc[j];
+          ptr->adj = adjptr;
+          ptr->send = flag;
+#ifdef LB_DEBUG
+          printf("[%1d] Debug: proc_list[%1d] my_gid=%d, my_gno=%d, nbor_proc=%d, send=%d\n",
+              lb->Proc, offset, ptr->my_gid, ptr->my_gno, ptr->nbor_proc, ptr->send);
+#endif
+          *adjptr++ = -1; /* We need to come back here later */
           offset++;
-          if (offset == CHUNKSIZE){
-            offset = 0;
-            row++;
-          }
         }
       }
     }
+    cross_edges = offset;
+
     /* Sanity check */
     if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
-      printf("Warning: Internal error in LB_ParMetis, incorrect pointer\n");
+      printf("[%1d] ERROR: Internal error in %s, incorrect pointer.\n",
+             lb->Proc, yo);
       printf("adjptr-adjncy =%d, #edges =%d\n", ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
+      FREE_MY_MEMORY;
+      return LB_FATAL;
     }
   
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: nsend =%d\n", lb->Proc, nsend);
-#endif
+      /* Exchange info between processors to resolve global number 
+       * for objects that are off-proc.
+       */
   
-      /* Exchange info between processors to resolve global_number */
-  
-      /* Determine required buffer sizes */
-      max_edges = 0;
-      sum_edges = 0;
-      for (i=0; i<lb->Num_Proc; i++){
-        if (proc_list[i] != NULL){
-           sum_edges += proc_list[i]->length;
-           if (proc_list[i]->length > max_edges) 
-             max_edges = proc_list[i]->length;
-#ifdef LB_DEBUG
-   printf("[%1d] Debug: Proc_list[%1d] has length %d, first elem = (%d,%d)\n", 
-   lb->Proc, i, proc_list[i]->length, proc_list[i]->my_gid, proc_list[i]->my_gno);
-#endif
-        }
-      }
-  
-      /* Allocate buffers */
-      size = sizeof(LB_GID) + sizeof(int);
-      sendbuf = (char *) LB_MALLOC(max_edges*size);
-      recvbuf = (char *) LB_MALLOC(sum_edges*size);
-      request = (MPI_Request *) LB_MALLOC(nsend*sizeof(MPI_Request));
-      status  = (MPI_Status *) LB_MALLOC(nsend*sizeof(MPI_Status));
-      if ((max_edges && !sendbuf) || (sum_edges && !recvbuf) || 
-          (nsend && !request) || (nsend && !status)){
+      /* Allocate send buffer */
+      packet_size = sizeof(LB_GID) + sizeof(int);
+      sendbuf = (char *) LB_MALLOC(nsend * packet_size);
+      plist = (int *) LB_MALLOC(nsend * sizeof(int));
+
+      if (nsend && (!sendbuf || !plist) ){
         /* Not enough space */
         printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
         FREE_MY_MEMORY;
         return LB_MEMERR;
       }
 
-      /* Issue the recvs */
+      /* Pack the data to send */
+#ifdef LB_DEBUG
+      printf("[%1d] Debug: %d messages to send.\n", lb->Proc, nsend);
+#endif
       offset = 0;
       j = 0;
-      for (i=0; i<lb->Num_Proc; i++){
-        if (proc_list[i] != NULL){
+      for (i=0, ptr=proc_list; i<cross_edges; i++, ptr++){
+        if (ptr->send){
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: Ready to receive from proc %d\n", lb->Proc, i);
+          printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
+            ptr->my_gid, ptr->my_gno, ptr->nbor_proc);
 #endif
-          MPI_Irecv(&recvbuf[offset], proc_list[i]->length * size,
-            MPI_BYTE, i, 1, lb->Communicator, &request[j]);
-          offset += proc_list[i]->length * size;
-          j++;
+          memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
+          offset += sizeof(LB_GID);
+          memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
+          offset += sizeof(int);
+          plist[j++] = ptr->nbor_proc;
         }
       }
+
+      /* Create the communication plan */
 #ifdef LB_DEBUG
-      printf("[%1d] Debug: Finished issuing the recvs\n", lb->Proc);
+      printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
+        lb->Proc, nsend);
 #endif
-      /* Barrier is required when we use Rsend */
-      MPI_Barrier(lb->Communicator);
-      /* Issue the sends */
-      for (i=0; i<lb->Num_Proc; i++){
-        if (proc_list[i] != NULL){
-          /* Pack data to send to proc i */
-          offset = 0;
-          for (ptr = proc_list[i]; ptr != NULL; ptr = ptr->next){
-#ifdef LB_DEBUG
-            printf("[%1d] Debug: Sending (%d,%d) to proc %d\n", lb->Proc, 
-              ptr->my_gid, ptr->my_gno, i);
-#endif
-            memcpy(&sendbuf[offset], (char *) &(ptr->my_gid), sizeof(LB_GID)); 
-            offset += sizeof(LB_GID);
-            memcpy(&sendbuf[offset], (char *) &(ptr->my_gno), sizeof(int)); 
-            offset += sizeof(int);
-          }
-          MPI_Rsend(sendbuf, proc_list[i]->length *size,
-            MPI_BYTE, i, 1, lb->Communicator);
-        }
+      ierr = LB_Comm_Create( &comm_plan, nsend, plist, comm, TAG1, &nrecv);
+      if (ierr){
+        /* Return error code */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return (ierr);
+      }
+
+      /* Allocate recv buffer */
+      recvbuf = (char *) LB_MALLOC(nrecv * packet_size);
+      if (nrecv && (!sendbuf || !plist) ){
+        /* Not enough space */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return LB_MEMERR;
       }
 #ifdef LB_DEBUG
-      printf("[%1d] Debug: Finished issuing the sends\n", lb->Proc);
+      printf("[%1d] Debug: Ready to receive %d packets.\n", 
+        lb->Proc, nrecv);
 #endif
-      /* Wait for all */
-      MPI_Waitall(nsend, request, status);
-#ifdef LB_DEBUG
-      printf("[%1d] Debug: received %d pairs of data from %d procs.\n", 
-        lb->Proc, sum_edges, nsend);
-      printf("[%1d] Debug: received data: ", lb->Proc);
-      p99 = (int *)recvbuf;
-      for (i99=0; i99<sum_edges; i99++){
-        printf("(%d %d) ", p99[2*i99], p99[2*i99+1]);
+
+      /* Do the communication */
+      ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
+      if (ierr){
+        /* Return error code */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return (ierr);
       }
-      printf("\n");
-#endif
+
+      /* Destroy the comm. plan */
+      LB_Comm_Destroy( &comm_plan);
     
-      /* Unpack data into ParMETIS struct */
-      /* Resolve off-proc global_ids. */
-      size = sizeof(LB_GID) + sizeof(int);
-      hi = 0;
-      for (i=0; i<lb->Num_Proc; i++){
-        if (proc_list[i] != NULL){
-          offset = hi;
-          hi = offset + (proc_list[i]->length)*size;
-          for (ptr = proc_list[i]; ptr != NULL; ){
+      /* Unpack data into the ParMETIS/Jostle struct.
+       * Resolve off-proc global numbers by:
+       * 1) Insert global ids from recvbuf into hash table;
+       * 2) Look up missing references in proc_list 
+       *    using the hash table.
+       */
+
+      /* Change hash table to contain only border objects */
+      /* that we received from other procs.               */
+      hash_nodes = (struct LB_hash_node *)LB_REALLOC(hash_nodes,
+        nrecv * sizeof(struct LB_hash_node));
+      hashtab = (struct LB_hash_node **) LB_REALLOC(hashtab,
+        nrecv * sizeof(struct LB_hash_node *) );
+      if (nrecv && ((!hash_nodes) || (!hashtab))){
+        /* Not enough memory */
+        printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
+        FREE_MY_MEMORY;
+        return LB_MEMERR;
+      }
+      
+      /* Copy data from recvbuf into hash table nodes */
+      for (i=0; i< nrecv; i++){
+        hashtab[i] = NULL;
+        hash_nodes[i].gid = *((LB_GID *)&recvbuf[i*packet_size]);
+        hash_nodes[i].gno = *((int *)&recvbuf[i*packet_size+sizeof(LB_GID)]);
+        /* Do we need to pad for byte alignment? */
+      }
+    
+      /* Insert nodes into hash table */
+      for (i=0; i< nrecv; i++){
+        j = LB_hashf(hash_nodes[i].gid, nrecv);
+        hash_nodes[i].next = hashtab[j];
+        hashtab[j] = &hash_nodes[i];
 #ifdef LB_DEBUG
-            printf("[%1d] Debug: Matching data from proc %d, offset=%d, hi=%d\n", 
-              lb->Proc, i, offset, hi);
+        printf("[%1d] Debug: Hashed GID %d to %d, gno = %d\n",
+          lb->Proc, hash_nodes[i].gid, j, hash_nodes[i].gno);
 #endif
-            /* Look for matching global_id in recvbuf */
-            /* The sought gid should be in recvbuf between offset and hi */
-            flag = 0;
-            for (j=offset; j<hi; j += size){
-              if (LB_EQ_GID(*((LB_GID *)&recvbuf[j]), ptr->nbor_gid)){
-#ifdef LB_DEBUG
-                printf("[%1d] Debug: Matched %d\n", lb->Proc, ptr->nbor_gid);
-#endif
-                /* Found match. */
-                flag = 1;
-                /* Insert the global number into adjncy vector */
-                *(ptr->adj) = *((int *)&recvbuf[j+sizeof(LB_GID)]); 
-                /* Advance pointer to next unidentified GID */
-                ptr = ptr->next;
-                break;
-              }
-            }
-            if (!flag){
-               /* Error in algorithm! */
-               printf("WARNING: Internal error in LB_ParMetis_Part, could not resolve off-proc ID.\n");
-            }
-          }
+      }
+
+      for (i=0; i<cross_edges; i++){
+        /* Look up unresolved global_ids */
+        if ((tmp=hash_lookup(hashtab, proc_list[i].nbor_gid, nrecv)) <0){
+          /* Error. This should never happen! */
+          printf("[%1d] ERROR: Internal error in %s. "
+                 "Off-proc global ID %d is not in hash table.\n", 
+                 lb->Proc, yo, proc_list[i].nbor_gid);
+          FREE_MY_MEMORY;
+          return LB_FATAL;
         }
+        else{
+          /* Insert the global number into adjncy vector */
+          *(proc_list[i].adj) = tmp;
+#ifdef LB_DEBUG
+          printf("[%1d] Debug: GID %d has global number %d\n",
+            lb->Proc, proc_list[i].nbor_gid, tmp);
+#endif
+        }
+        
       }
       /* Free space for communication data */
       LB_FREE(&sendbuf);
       LB_FREE(&recvbuf);
-      LB_FREE(&request);
-      LB_FREE(&status);
   
     /* Free space for temp data structures */
-    for (i=0; proc_nodes[i] != NULL; i++){
-      LB_FREE(&(proc_nodes[i]));
-    }
-    LB_FREE(&proc_nodes);
     LB_FREE(&proc_list);
+    LB_FREE(&plist);
     LB_FREE(&nbors_global);
     LB_FREE(&nbors_proc);
     LB_FREE(&hash_nodes);
@@ -774,7 +786,7 @@ static int LB_ParMetis_Jostle(
   if (strcmp(alg, "JOSTLE") == 0){
     offset = 0;            /* Index of the first object/node. */
     j = 0;                 /* Dummy variable for Jostle */
-    hi = vtxdist[num_obj]; /* Global number of objects */ 
+    tmp = vtxdist[num_obj]; /* Global number of objects */ 
     ndims = 1;             /* Topological dimension of the computer */
     network[1] = lb->Num_Proc;
     /* Convert xadj and vtxdist arrays to Jostle format */
@@ -784,12 +796,12 @@ static int LB_ParMetis_Jostle(
     }
 #ifdef LB_JOSTLE
     jostle_env("format = contigous");
-    pjostle(&hi, &offset, &num_obj, &j, vtxdist, 
+    pjostle(&tmp, &offset, &num_obj, &j, vtxdist, 
        xadj, vwgt, part, &num_edges, adjncy, adjwgt, network,
        NULL, &(options[0]), &ndims, NULL); 
 #else
-    /* We don't have Jostle yet */
-    printf("Sorry, Jostle is not available yet.\n");
+    /* We don't have Jostle */
+    printf("Sorry, Jostle is not available on this system.\n");
     FREE_MY_MEMORY;
     return LB_FATAL;
 #endif
@@ -993,3 +1005,30 @@ char *val)                      /* value of variable */
     return(status);
 }
 
+/*******************************************************************
+ * hash_lookup uses LB_hashf to lookup a key 
+ *
+ * Input:
+ *   hashtab, pointer to the hash table
+ *   key, a key to look up of type LB_GID (any data type)
+ *   n,   dimension of the hash table
+ *
+ * Return value:
+ *   the global number of the element with key key,
+ *   or -1 if the key is not in the hash table
+ *
+ *******************************************************************/
+
+static int hash_lookup (struct LB_hash_node **hashtab, LB_GID key, int n)
+{
+  int i;
+  struct LB_hash_node *ptr;
+
+  i = LB_hashf(key, n);
+  for (ptr=hashtab[i]; ptr != NULL; ptr = ptr->next){
+    if (LB_EQ_GID(ptr->gid, key))
+      return (ptr->gno);
+  }
+  /* Key not in hash table */
+  return -1;
+}
