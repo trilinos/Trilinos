@@ -92,8 +92,10 @@ namespace Teuchos {
   {
     //! Madatory typedef for result of magnitude
     typedef T magnitudeType;
-    //! Does this scalar type have machine-specific parameters.
-    static inline bool haveMachineParameters() { return false; };
+		//! Determines of scalar type supports relational operators such as <, >, <=, >=.
+		static const bool isComparable = false;
+    //! Does this scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
+		static const bool hasMachineParameters = false;
     //! Returns relative machine precision.
     static inline magnitudeType eps()   { return UndefinedScalarTraits<T>::notDefined(); };
     //! Returns safe minimum (sfmin), such that 1/sfmin does not overflow.
@@ -142,7 +144,8 @@ namespace Teuchos {
   struct ScalarTraits<int>
   {
     typedef int magnitudeType;
-    static inline bool haveMachineParameters() { return false; };
+		static const bool isComparable = true;
+		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static inline magnitudeType magnitude(int a) { return ::abs(a); };
     static inline int zero()  { return 0; };
@@ -161,7 +164,8 @@ namespace Teuchos {
   struct ScalarTraits<float>
   {
     typedef float magnitudeType;
-    static inline bool haveMachineParameters() { return true; };
+		static const bool isComparable = true;
+		static const bool hasMachineParameters = true;
     static inline float eps()   {
 #ifdef HAVE_NUMERIC_LIMITS
       return std::numeric_limits<float>::epsilon();
@@ -255,7 +259,8 @@ namespace Teuchos {
   struct ScalarTraits<double>
   {
     typedef double magnitudeType;
-    static inline bool haveMachineParameters() { return true; };
+		static const bool isComparable = true;
+		static const bool hasMachineParameters = true;
     static inline double eps()   {
 #ifdef HAVE_NUMERIC_LIMITS
       return std::numeric_limits<double>::epsilon();
@@ -351,7 +356,7 @@ namespace Teuchos {
   struct ScalarTraits<mpf_class>
   {
     typedef mpf_class magnitudeType;
-    static inline bool haveMachineParameters() { return false; };
+		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static magnitudeType magnitude(mpf_class a) { return abs(a); };
     static inline mpf_class zero() { mpf_class zero = 0.0; return zero; };
@@ -377,7 +382,8 @@ namespace Teuchos {
   struct ScalarTraits<mp_real>
   {
     typedef mp_real magnitudeType;
-    static inline bool haveMachineParameters() { return false; };
+		static const bool isComparable = true;
+		static const bool hasMachineParameters = false;
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
     static magnitudeType magnitude(mp_real a) { return abs(a); };
     static inline mp_real zero() { mp_real zero = 0.0; return zero; };
@@ -413,7 +419,8 @@ namespace Teuchos {
     typedef ::complex<T>     ComplexT;
 #endif
     typedef typename ScalarTraits<T>::magnitudeType magnitudeType;
-    static inline bool haveMachineParameters() { return true; };
+		static const bool isComparable = false;
+		static const bool hasMachineParameters = true;
     static inline magnitudeType eps()          { return ScalarTraits<magnitudeType>::eps(); };
     static inline magnitudeType sfmin()        { return ScalarTraits<magnitudeType>::sfmin(); };
     static inline magnitudeType base()         { return ScalarTraits<magnitudeType>::base(); };
