@@ -169,7 +169,8 @@ static void evals2(
      double *eval2              /* middle eigenvalue */
 )
 {
-     double M[2][2];            /* normalized version of matrix */
+     double M[2][2] = {{0.,0.},
+                       {0.,0.}};/* normalized version of matrix */
      double b, c;               /* coefficents of cubic equation */
      double root1, root2;       /* roots of quadratic */
      double xmax;               /* largest matrix element */
