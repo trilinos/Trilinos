@@ -1,0 +1,21 @@
+To build the matrix solver driver, type 'make'.  You will need to modify
+the makefile for non-SGI.
+
+To run, type one of the follow 3 commands:
+
+driver abs
+driver ltra3
+driver e1480
+
+Each reads a different matrix.
+The e1480 case will give some miscompares, which occur for a known reason.
+This is because the initial ordering of the matrix is different from in
+the running code that uotputted the matrix, and the reordering routine
+is not deterministic (presumably to save time).  The errors look large
+enough (in my opinion) to warrent a more conservative but slower reorder.
+
+Anyway, the errors in e1480 are OK.
+
+Trouble, questions or just want to talk?
+
+Dave Shirley 844-1811
