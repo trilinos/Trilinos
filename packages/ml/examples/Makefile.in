@@ -150,12 +150,12 @@ am__DEPENDENCIES_6 =
 @ML_STANDALONE_MODE_FALSE@am__DEPENDENCIES_7 =  \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_1) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_2) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_3) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_4) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_5) \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_6) \
@@ -523,12 +523,12 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 #
 @ML_STANDALONE_MODE_FALSE@ml_libs = $(top_builddir)/src/libml.a        \
 @ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-@ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../epetra/src/libepetra.a \
 @ML_STANDALONE_MODE_FALSE@                ${ifpack_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${amesos_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${anasazi_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${teuchos_lib} \
 @ML_STANDALONE_MODE_FALSE@                ${triutils_lib} \
+@ML_STANDALONE_MODE_FALSE@                $(top_builddir)/../epetra/src/libepetra.a \
 @ML_STANDALONE_MODE_FALSE@                $(LIBS) \
 @ML_STANDALONE_MODE_FALSE@                $(LAPACK_LIBS)                            \
 @ML_STANDALONE_MODE_FALSE@                $(BLAS_LIBS)                            \

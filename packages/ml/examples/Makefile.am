@@ -168,12 +168,12 @@ endif
 #
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-                $(top_builddir)/../epetra/src/libepetra.a \
                 ${ifpack_lib} \
                 ${amesos_lib} \
                 ${anasazi_lib} \
                 ${teuchos_lib} \
                 ${triutils_lib} \
+                $(top_builddir)/../epetra/src/libepetra.a \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
