@@ -34,6 +34,7 @@ tools described in <A HREF="ug_interface_mig.html">Migration Functions</A>:
 <BR><B><A HREF="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A></B></BLOCKQUOTE>
 Optional, additional query functions for migration may also be registered:
 <BLOCKQUOTE><B><A HREF="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</A></B>
+<br><B><A HREF="#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</A></B>
 <BR><B><A HREF="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%">
@@ -251,6 +252,151 @@ destination processors.</TD>
 </TR>
 </TABLE>
 &nbsp;
+
+<P>
+<HR WIDTH="100%">
+<TABLE WIDTH="100%" NOSAVE >
+<TR NOSAVE>
+<TD VALIGN=TOP NOSAVE>C:</TD>
+
+<TD><A NAME="LB_MID_MIGRATE_FN"></A>typedef void <B>LB_MID_MIGRATE_FN</B>(void
+*<I> data</I>, int <I>num_import</I>, <B>LB_GID </B>*<I> import_global_ids</I>,
+<B>LB_LID</B> *<I> import_local_ids</I>, int *<I> import_procs</I>, int
+<I>num_export</I>, <B>LB_GID </B>*<I> export_global_ids</I>, <B>LB_LID
+</B>*<I> export_local_ids</I>, int *<I> export_procs</I>,<I> </I>int<I>
+*ierr</I>);&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR NOSAVE>
+<TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
+
+<TD> SUBROUTINE <B><I>Mid_Migrate</I></B>(<I>data, num_import,
+import_global_ids, import_local_ids, import_procs, num_export,
+export_global_ids, export_local_ids, export_procs, ierr</I>)&nbsp;
+<BR>&lt;<I>type-data</I>>, INTENT(INOUT) :: data&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<BR>&lt;<I>type-gid</I>>, INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<BR>&lt;<I>type-lid</I>>, INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<BR>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<BR>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
+
+<P>&lt;<I>type-gid</I>> can be either INTEGER(LB_INT) or TYPE(LB_GID)&nbsp;
+<BR>&lt;<I>type-lid</I>> can be either INTEGER(LB_INT) or TYPE(LB_LID)&nbsp;
+<BR>&lt;<I>type-data</I>> can be any of INTEGER(LB_INT), DIMENSION(*) or
+REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<I>x</I>)
+where <I>x</I> is 1, 2, 3 or 4. See the section on
+<A HREF="ug_fortran_api.html#fortran ug api query"> Fortran query functions</A>
+for an explanation.&nbsp;
+</TD>
+</TR>
+</TABLE>
+
+<HR WIDTH="100%">An <B>LB_MID_MIGRATE_FN</B> query function performs any
+processing desired by the application between the packing and unpacking of
+objects being migrated. If it is registered, it is called
+after export objects are packed in <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>; imported objects are unpacked after the 
+<b>LB_MID_MIGRATE_FN</b> query function is called.
+The arguments passed to <B><A HREF="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>
+are made available for use in the processing routine.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Function Type:</B></TD>
+
+<TD><B>LB_MID_MIGRATE_FN_TYPE</B></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Parameters:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; data</I></TD>
+
+<TD>Pointer to user-defined data.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_import</I></TD>
+
+<TD>The number of objects that will be received by this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_global_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the global IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_local_ids</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the local IDs of objects
+to be received by this processor. This array may be NULL, as the processor
+does not necessarily need to know which objects it will receive.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; import_procs</I></TD>
+
+<TD>An array of size <I>num_import</I> listing the processor IDs of the
+source processors. This array may be NULL, as the processor does not necessarily
+need to know from which processors it will be receiving objects.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; num_export</I></TD>
+
+<TD>The number of objects that will be sent from this processor to other
+processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_global_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the global IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_local_ids</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the local IDs of objects
+to be sent from this processor.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; export_procs</I></TD>
+
+<TD>An array of size <I>num_export</I> listing the processor IDs of the
+destination processors.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; ierr</I></TD>
+
+<TD>Error code to be set by function.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><B>Default:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP></TD>
+
+<TD>No processing is done if an <B>LB_MID_MIGRATE_FN</B> is not registered.</TD>
+</TR>
+</TABLE>
+&nbsp;
+
 <BR>
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >

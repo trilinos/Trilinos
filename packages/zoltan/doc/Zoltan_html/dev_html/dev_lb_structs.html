@@ -479,7 +479,7 @@ to the user. Set in <b><a href="dev_util_params.html#LB_Set_Param">LB_Set_Param<
 
 <tr>
 <td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</a>
-*<i> Pre_Process</i></td>
+*<i> Pre_Migrate</i></td>
 
 <td>A pointer to an application-registered function that performs pre-processing
 for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
@@ -487,15 +487,32 @@ before data migration is performed. Set in <b><a href="../ug_html/ug_interface_i
 </tr>
 
 <tr>
-<td VALIGN=TOP>void <i>*Pre_Process_Data</i></td>
+<td VALIGN=TOP>void <i>*Pre_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Pre_Process</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.</td>
+pointed to by <i>Pre_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</a>
+*<i> Mid_Migrate</i></td>
+
+<td>A pointer to an application-registered function that performs processing
+between the packing and unpacking operations in 
+<b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>.
+Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>void <i>*Mid_Migrate_Data</i></td>
+
+<td>A pointer to data provided by the user that will be passed to the function
+pointed to by <i>Mid_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE><a href="../ug_html/ug_query_mig.html#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</a>
-*<i>Post_Process</i></td>
+*<i>Post_Migrate</i></td>
 
 <td>A pointer to an application-registered function that performs post-processing
 for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
@@ -503,10 +520,10 @@ after data migration is performed. Set in <b><a href="../ug_html/ug_interface_in
 </tr>
 
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE>void *<i>Post_Process_Data</i></td>
+<td VALIGN=TOP NOSAVE>void *<i>Post_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Post_Process</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;</td>
+pointed to by <i>Post_Migrate</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;</td>
 </tr>
 
 <tr>

@@ -215,7 +215,10 @@ calls an application-registered function (<B><A HREF="ug_query_mig.html#LB_OBJ_S
 to obtain the size of a migrating object's data. For each object, it calls
 an application-registered packing routine (<B><A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A></B>)
 to load communication buffers. It communicates the buffers to the destination
-processors. Finally, for each object received, it calls an application-registered
+processors. If a migration mid-processing routine 
+(<b><a href="ug_query_mig.html#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN_TYPE</a></b>)
+is registered, <b>LB_Help_Migrate</b> calls it after the communication.
+Finally, for each object received, it calls an application-registered
 unpacking routine (<B><A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A></B>)
 to move the data from the received communication buffer into the new processor's
 data structures.
