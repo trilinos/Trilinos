@@ -181,6 +181,7 @@ virtual int SetLabel()
 {
   Label_ = "Ifpack_BlockGaussSeidel, # blocks = "
     + Ifpack_toString(NumLocalBlocks());
+  return(0);
 }
 
 };
