@@ -28,4 +28,7 @@
 
 SUBDIRS = MultiLevelPreconditioner_NonSym \
 	  MultiLevelPreconditioner_Sym \
+	  MultiLevelPreconditioner_Maxwell \
+	  VerySimple \
+	  AztecSimple \
 	  scripts
