@@ -2,19 +2,15 @@ dnl Available from the GNU Autoconf Macro Archive at:
 dnl http://www.gnu.org/software/ac-archive/htmldoc/ac_pkg_swig.html
 dnl
 AC_DEFUN([AC_PROG_SWIG],[
-	# Added by ETP 12/21/04
-	# Allow swig binary to be specified with --with-swig=...
-	# and only search for swig if it is not specified
-	AC_ARG_WITH(swig,
-		[AC_HELP_STRING([--with-swig],[specify swig binary to use])],
-		[SWIG=$withval])
 	if test -z "$SWIG"; then
         	AC_PATH_PROG([SWIG],[swig])
 	fi
         if test -z "$SWIG" ; then
                 AC_MSG_WARN([cannot find 'swig' program. You should look at http://www.swig.org])
                 SWIG='echo "Error: SWIG is not installed. You should look at http://www.swig.org" ; false'
-        elif test -n "$1" ; then
+        else
+	    AC_MSG_NOTICE([SWIG executable is '$SWIG'])
+	    if test -n "$1" ; then
                 AC_MSG_CHECKING([for SWIG version])
                 [swig_version=`$SWIG -version 2>&1 | grep 'SWIG Version' | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/g'`]
                 AC_MSG_RESULT([$swig_version])
@@ -57,7 +53,6 @@ AC_DEFUN([AC_PROG_SWIG],[
                                 AC_MSG_WARN([SWIG version >= $1 is required.  You have $swig_version.  You should look at http://www.swig.org])
                                 SWIG='echo "Error: SWIG version >= $1 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
                         else
-                                AC_MSG_NOTICE([SWIG executable is '$SWIG'])
                                 SWIG_LIB=`$SWIG -swiglib`
                                 AC_MSG_NOTICE([SWIG library directory is '$SWIG_LIB'])
                         fi
@@ -65,6 +60,7 @@ AC_DEFUN([AC_PROG_SWIG],[
                         AC_MSG_WARN([cannot determine SWIG version])
                         SWIG='echo "Error: Cannot determine SWIG version.  You should look at http://www.swig.org" ; false'
                 fi
+            fi
         fi
         AC_SUBST([SWIG_LIB])
 ])

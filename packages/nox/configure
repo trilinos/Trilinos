@@ -465,7 +465,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 AR ac_ct_AR RANLIB ac_ct_RANLIB HAVE_DOXYGEN_DOT USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR HAVE_MPI_TRUE HAVE_MPI_FALSE EGREP BUILD_LIBNOXLAPACK_TRUE BUILD_LIBNOXLAPACK_FALSE BUILD_LAPACK_EXAMPLES_TRUE BUILD_LAPACK_EXAMPLES_FALSE BUILD_LIBNOXEPETRA_TRUE BUILD_LIBNOXEPETRA_FALSE BUILD_EPETRA_EXAMPLES_TRUE BUILD_EPETRA_EXAMPLES_FALSE BUILD_LIBNOXPETSC_TRUE BUILD_LIBNOXPETSC_FALSE BUILD_PETSC_EXAMPLES_TRUE BUILD_PETSC_EXAMPLES_FALSE BUILD_LIBNOXTSF_TRUE BUILD_LIBNOXTSF_FALSE BUILD_TSF_EXAMPLES_TRUE BUILD_TSF_EXAMPLES_FALSE BUILD_LIBNOXBELOS_TRUE BUILD_LIBNOXBELOS_FALSE BUILD_BELOS_EXAMPLES_TRUE BUILD_BELOS_EXAMPLES_FALSE BUILD_LIBLOCA_TRUE BUILD_LIBLOCA_FALSE BUILD_PYTHON_TRUE BUILD_PYTHON_FALSE IMPORT_LAPACK IMPORT_EPETRA LN_S ECHO CPP LIBTOOL HAVE_SWIG_TRUE HAVE_SWIG_FALSE GNU_HAVE_SWIG SWIG SWIG_LIB PYTHON PYTHON_VERSION PYTHON_PREFIX PYTHON_EXEC_PREFIX PYTHON_PLATFORM pythondir pkgpythondir pyexecdir pkgpyexecdir PYTHON_CPPFLAGS PYTHON_LDFLAGS PYTHON_SITE_PKG PYTHON_EXTRA_LIBS SWIG_PYTHON_OPT SWIG_PYTHON_CPPFLAGS BUILD_NOX_MULTIVECS_TRUE BUILD_NOX_MULTIVECS_FALSE HAVE_NOX_MULTIVECS_SUBST BUILD_NOX_ANY_TRUE BUILD_NOX_ANY_FALSE HAVE_NOX_ANY_SUBST BUILD_LIBLOCALAPACK_TRUE BUILD_LIBLOCALAPACK_FALSE BUILD_LOCA_LAPACK_EXAMPLES_TRUE BUILD_LOCA_LAPACK_EXAMPLES_FALSE BUILD_LIBLOCAEPETRA_TRUE BUILD_LIBLOCAEPETRA_FALSE BUILD_LOCA_EPETRA_EXAMPLES_TRUE BUILD_LOCA_EPETRA_EXAMPLES_FALSE BUILD_LAPACK_TESTS_TRUE BUILD_LAPACK_TESTS_FALSE BUILD_LOCA_LAPACK_TESTS_TRUE BUILD_LOCA_LAPACK_TESTS_FALSE ADDON_lapack_TESTS ADDON_loca_lapack_TESTS BUILD_EPETRA_TESTS_TRUE BUILD_EPETRA_TESTS_FALSE BUILD_LOCA_EPETRA_TESTS_TRUE BUILD_LOCA_EPETRA_TESTS_FALSE ADDON_epetra_TESTS ADDON_loca_epetra_TESTS BUILD_PETSC_TESTS_TRUE BUILD_PETSC_TESTS_FALSE BUILD_LOCA_PETSC_TESTS_TRUE BUILD_LOCA_PETSC_TESTS_FALSE ADDON_petsc_TESTS ADDON_loca_petsc_TESTS BUILD_PYTHON_TESTS_TRUE BUILD_PYTHON_TESTS_FALSE BUILD_LOCA_PYTHON_TESTS_TRUE BUILD_LOCA_PYTHON_TESTS_FALSE ADDON_python_TESTS ADDON_loca_python_TESTS BUILD_LOCAANASAZI_TRUE BUILD_LOCAANASAZI_FALSE BUILD_LIBLOCAMF_TRUE BUILD_LIBLOCAMF_FALSE FLIBS BLAS_LIBS LAPACK_LIBS MF_INCDIR TRILINOS_CXXFLAGS MF_LIBDIR PETSC_CXXFLAGS CXXREPOS BUILD_PRERELEASE_TRUE BUILD_PRERELEASE_FALSE WITH_PRERELEASE_SUBST ac_aux_dir abs_builddir abs_top_builddir MPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1095,12 +1095,12 @@ Optional Packages:
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include]
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib]
   --with-trilinos         building inside Trilinos directory structure
-  --with-swig             specify swig binary to use
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-tags[=TAGS]
                           include additional configurations [automatic]
+  --with-swig             enable swig and set swig binary
   --with-loca-anasazi     compile anasazi support into libloca
   --with-loca-mf          compile MF support into libloca
   --with-blas=<lib>       use BLAS library <lib>
@@ -6588,341 +6588,6 @@ fi
 
 fi
 
-# Configure swig
-if test X${BUILD_PYTHON} = Xyes; then
-
-	# Added by ETP 12/21/04
-	# Allow swig binary to be specified with --with-swig=...
-	# and only search for swig if it is not specified
-
-# Check whether --with-swig or --without-swig was given.
-if test "${with_swig+set}" = set; then
-  withval="$with_swig"
-  SWIG=$withval
-fi;
-	if test -z "$SWIG"; then
-        	# Extract the first word of "swig", so it can be a program name with args.
-set dummy swig; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_SWIG+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $SWIG in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_SWIG="$SWIG" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_SWIG="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  ;;
-esac
-fi
-SWIG=$ac_cv_path_SWIG
-
-if test -n "$SWIG"; then
-  echo "$as_me:$LINENO: result: $SWIG" >&5
-echo "${ECHO_T}$SWIG" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-	fi
-        if test -z "$SWIG" ; then
-                { echo "$as_me:$LINENO: WARNING: cannot find 'swig' program. You should look at http://www.swig.org" >&5
-echo "$as_me: WARNING: cannot find 'swig' program. You should look at http://www.swig.org" >&2;}
-                SWIG='echo "Error: SWIG is not installed. You should look at http://www.swig.org" ; false'
-        elif test -n "1.3.23" ; then
-                echo "$as_me:$LINENO: checking for SWIG version" >&5
-echo $ECHO_N "checking for SWIG version... $ECHO_C" >&6
-                swig_version=`$SWIG -version 2>&1 | grep 'SWIG Version' | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/g'`
-                echo "$as_me:$LINENO: result: $swig_version" >&5
-echo "${ECHO_T}$swig_version" >&6
-                if test -n "$swig_version" ; then
-                        # Calculate the required version number components
-                        required=1.3.23
-                        required_major=`echo $required | sed 's/[^0-9].*//'`
-                        if test -z "$required_major" ; then
-                                required_major=0
-                        fi
-                        required=`echo $required | sed 's/[0-9]*[^0-9]//'`
-                        required_minor=`echo $required | sed 's/[^0-9].*//'`
-                        if test -z "$required_minor" ; then
-                                required_minor=0
-                        fi
-                        required=`echo $required | sed 's/[0-9]*[^0-9]//'`
-                        required_patch=`echo $required | sed 's/[^0-9].*//'`
-                        if test -z "$required_patch" ; then
-                                required_patch=0
-                        fi
-                        # Calculate the available version number components
-                        available=$swig_version
-                        available_major=`echo $available | sed 's/[^0-9].*//'`
-                        if test -z "$available_major" ; then
-                                available_major=0
-                        fi
-                        available=`echo $available | sed 's/[0-9]*[^0-9]//'`
-                        available_minor=`echo $available | sed 's/[^0-9].*//'`
-                        if test -z "$available_minor" ; then
-                                available_minor=0
-                        fi
-                        available=`echo $available | sed 's/[0-9]*[^0-9]//'`
-                        available_patch=`echo $available | sed 's/[^0-9].*//'`
-                        if test -z "$available_patch" ; then
-                                available_patch=0
-                        fi
-                        if test $available_major -ne $required_major \
-                                -o $available_minor -ne $required_minor \
-                                -o $available_patch -lt $required_patch ; then
-                                { echo "$as_me:$LINENO: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&5
-echo "$as_me: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&2;}
-                                SWIG='echo "Error: SWIG version >= 1.3.23 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
-                        else
-                                { echo "$as_me:$LINENO: SWIG executable is '$SWIG'" >&5
-echo "$as_me: SWIG executable is '$SWIG'" >&6;}
-                                SWIG_LIB=`$SWIG -swiglib`
-                                { echo "$as_me:$LINENO: SWIG library directory is '$SWIG_LIB'" >&5
-echo "$as_me: SWIG library directory is '$SWIG_LIB'" >&6;}
-                        fi
-                else
-                        { echo "$as_me:$LINENO: WARNING: cannot determine SWIG version" >&5
-echo "$as_me: WARNING: cannot determine SWIG version" >&2;}
-                        SWIG='echo "Error: Cannot determine SWIG version.  You should look at http://www.swig.org" ; false'
-                fi
-        fi
-
-
-
-
-
-        SWIG="$SWIG -c++"
-
-
-
-#        SWIG="$SWIG -noruntime"
-#        SWIG="$SWIG -c"
-	SWIG="$SWIG"
-
-
-
-
-
-        # Find any Python interpreter.
-    if test -z "$PYTHON"; then
-      PYTHON=:
-      for ac_prog in python python2 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
-if test "${ac_cv_path_PYTHON+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  case $PYTHON in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-
-  ;;
-esac
-fi
-PYTHON=$ac_cv_path_PYTHON
-
-if test -n "$PYTHON"; then
-  echo "$as_me:$LINENO: result: $PYTHON" >&5
-echo "${ECHO_T}$PYTHON" >&6
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-  test -n "$PYTHON" && break
-done
-
-    fi
-    am_display_PYTHON=python
-
-
-  if test "$PYTHON" = :; then
-      { { echo "$as_me:$LINENO: error: no suitable Python interpreter found" >&5
-echo "$as_me: error: no suitable Python interpreter found" >&2;}
-   { (exit 1); exit 1; }; }
-  else
-
-
-  echo "$as_me:$LINENO: checking for $am_display_PYTHON version" >&5
-echo $ECHO_N "checking for $am_display_PYTHON version... $ECHO_C" >&6
-if test "${am_cv_python_version+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  am_cv_python_version=`$PYTHON -c "import sys; print sys.version[:3]"`
-fi
-echo "$as_me:$LINENO: result: $am_cv_python_version" >&5
-echo "${ECHO_T}$am_cv_python_version" >&6
-  PYTHON_VERSION=$am_cv_python_version
-
-
-
-  PYTHON_PREFIX='${prefix}'
-
-  PYTHON_EXEC_PREFIX='${exec_prefix}'
-
-
-
-  echo "$as_me:$LINENO: checking for $am_display_PYTHON platform" >&5
-echo $ECHO_N "checking for $am_display_PYTHON platform... $ECHO_C" >&6
-if test "${am_cv_python_platform+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  am_cv_python_platform=`$PYTHON -c "import sys; print sys.platform"`
-fi
-echo "$as_me:$LINENO: result: $am_cv_python_platform" >&5
-echo "${ECHO_T}$am_cv_python_platform" >&6
-  PYTHON_PLATFORM=$am_cv_python_platform
-
-
-
-
-                echo "$as_me:$LINENO: checking for $am_display_PYTHON script directory" >&5
-echo $ECHO_N "checking for $am_display_PYTHON script directory... $ECHO_C" >&6
-if test "${am_cv_python_pythondir+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX')" 2>/dev/null ||
-     echo "$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages"`
-fi
-echo "$as_me:$LINENO: result: $am_cv_python_pythondir" >&5
-echo "${ECHO_T}$am_cv_python_pythondir" >&6
-  pythondir=$am_cv_python_pythondir
-
-
-
-  pkgpythondir=\${pythondir}/$PACKAGE
-
-
-            echo "$as_me:$LINENO: checking for $am_display_PYTHON extension module directory" >&5
-echo $ECHO_N "checking for $am_display_PYTHON extension module directory... $ECHO_C" >&6
-if test "${am_cv_python_pyexecdir+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX')" 2>/dev/null ||
-     echo "${PYTHON_EXEC_PREFIX}/lib/python${PYTHON_VERSION}/site-packages"`
-fi
-echo "$as_me:$LINENO: result: $am_cv_python_pyexecdir" >&5
-echo "${ECHO_T}$am_cv_python_pyexecdir" >&6
-  pyexecdir=$am_cv_python_pyexecdir
-
-
-
-  pkgpyexecdir=\${pyexecdir}/$PACKAGE
-
-
-
-  fi
-
-
-
-	#
-	# should allow for checking of python version here...
-	#
-
-
-	# Check for Python include path
-	echo "$as_me:$LINENO: checking for Python include path" >&5
-echo $ECHO_N "checking for Python include path... $ECHO_C" >&6
-	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
-	for i in "$python_path/include/python$PYTHON_VERSION/" "$python_path/include/python/" "$python_path/" ; do
-		python_path=`find $i -type f -name Python.h -print | sed "1q"`
-		if test -n "$python_path" ; then
-			break
-		fi
-	done
-	python_path=`echo $python_path | sed "s,/Python.h$,,"`
-	echo "$as_me:$LINENO: result: $python_path" >&5
-echo "${ECHO_T}$python_path" >&6
-	if test -z "$python_path" ; then
-		{ { echo "$as_me:$LINENO: error: cannot find Python include path" >&5
-echo "$as_me: error: cannot find Python include path" >&2;}
-   { (exit 1); exit 1; }; }
-	fi
-	PYTHON_CPPFLAGS=-I$python_path
-
-
-	# Check for Python library path
-	echo "$as_me:$LINENO: checking for Python library path" >&5
-echo $ECHO_N "checking for Python library path... $ECHO_C" >&6
-	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
-	for i in "$python_path/lib/python$PYTHON_VERSION/config/" "$python_path/lib/python$PYTHON_VERSION/" "$python_path/lib/python/config/" "$python_path/lib/python/" "$python_path/" ; do
-		python_path=`find $i -type f -name libpython$PYTHON_VERSION.* -print | sed "1q"`
-		if test -n "$python_path" ; then
-			break
-		fi
-	done
-	python_path=`echo $python_path | sed "s,/libpython.*$,,"`
-	echo "$as_me:$LINENO: result: $python_path" >&5
-echo "${ECHO_T}$python_path" >&6
-	if test -z "$python_path" ; then
-		{ { echo "$as_me:$LINENO: error: cannot find Python library path" >&5
-echo "$as_me: error: cannot find Python library path" >&2;}
-   { (exit 1); exit 1; }; }
-	fi
-	PYTHON_LDFLAGS="-L$python_path -lpython$PYTHON_VERSION"
-
-	#
-	python_site=`echo $python_path | sed "s/config/site-packages/"`
-	PYTHON_SITE_PKG=$python_site
-
-	#
-	# libraries which must be linked in when embedding
-	#
-	echo "$as_me:$LINENO: checking python extra libraries" >&5
-echo $ECHO_N "checking python extra libraries... $ECHO_C" >&6
-	PYTHON_EXTRA_LIBS=`$PYTHON -c "import distutils.sysconfig; \
-                conf = distutils.sysconfig.get_config_var; \
-                print conf('LOCALMODLIBS')+' '+conf('LIBS')"
-	echo "$as_me:$LINENO: result: $PYTHON_EXTRA_LIBS" >&5
-echo "${ECHO_T}$PYTHON_EXTRA_LIBS" >&6`
-
-
-
-
-
-        test "x" != "xno" || swig_shadow=" -noproxy"
-        SWIG_PYTHON_OPT=-python$swig_shadow
-
-        SWIG_PYTHON_CPPFLAGS=$PYTHON_CPPFLAGS
-
-
-fi
-
 # Determine which addon libraries to support in Python
 IMPORT_LAPACK=0
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_lapack} = Xyes; then
@@ -7499,7 +7164,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 7502 "configure"' > conftest.$ac_ext
+  echo '#line 7167 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -8956,11 +8621,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8959: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8624: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8963: \$? = $ac_status" >&5
+   echo "$as_me:8628: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9199,11 +8864,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9202: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8867: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:9206: \$? = $ac_status" >&5
+   echo "$as_me:8871: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -9259,11 +8924,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:9262: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8927: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:9266: \$? = $ac_status" >&5
+   echo "$as_me:8931: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11444,7 +11109,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11447 "configure"
+#line 11112 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11542,7 +11207,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 11545 "configure"
+#line 11210 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -13735,11 +13400,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13738: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13403: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13742: \$? = $ac_status" >&5
+   echo "$as_me:13407: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -13795,11 +13460,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13798: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13463: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13802: \$? = $ac_status" >&5
+   echo "$as_me:13467: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15156,7 +14821,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15159 "configure"
+#line 14824 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15254,7 +14919,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 15257 "configure"
+#line 14922 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16091,11 +15756,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16094: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15759: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16098: \$? = $ac_status" >&5
+   echo "$as_me:15763: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -16151,11 +15816,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16154: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:15819: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16158: \$? = $ac_status" >&5
+   echo "$as_me:15823: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18190,11 +17855,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18193: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:17858: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18197: \$? = $ac_status" >&5
+   echo "$as_me:17862: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18433,11 +18098,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18436: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18101: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18440: \$? = $ac_status" >&5
+   echo "$as_me:18105: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings
@@ -18493,11 +18158,11 @@ else
    -e 's:.*FLAGS}? :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18496: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18161: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18500: \$? = $ac_status" >&5
+   echo "$as_me:18165: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20678,7 +20343,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20681 "configure"
+#line 20346 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -20776,7 +20441,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 20779 "configure"
+#line 20444 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -21794,6 +21459,365 @@ LIBTOOL='$(SHELL) $(top_builddir)/libtool'
 fi
 
 # ------------------------------------------------------------------------
+# Configure swig
+# ------------------------------------------------------------------------
+
+
+# Check whether --with-swig or --without-swig was given.
+if test "${with_swig+set}" = set; then
+  withval="$with_swig"
+  WITH_SWIG=yes
+	     if test X${withval} != Xyes ; then
+	     	SWIG=$withval
+	     fi
+else
+  WITH_SWIG=no
+fi;
+echo "$as_me:$LINENO: checking whether we should enable swig support" >&5
+echo $ECHO_N "checking whether we should enable swig support... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${WITH_SWIG}" >&5
+echo "${ECHO_T}${WITH_SWIG}" >&6
+
+
+if test X${WITH_SWIG} = Xyes; then
+  HAVE_SWIG_TRUE=
+  HAVE_SWIG_FALSE='#'
+else
+  HAVE_SWIG_TRUE='#'
+  HAVE_SWIG_FALSE=
+fi
+
+GNU_HAVE_SWIG=${WITH_SWIG}
+
+
+if test X${BUILD_PYTHON} = Xyes && test X${WITH_SWIG} = Xyes; then
+
+	if test -z "$SWIG"; then
+        	# Extract the first word of "swig", so it can be a program name with args.
+set dummy swig; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_SWIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $SWIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SWIG="$SWIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SWIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+SWIG=$ac_cv_path_SWIG
+
+if test -n "$SWIG"; then
+  echo "$as_me:$LINENO: result: $SWIG" >&5
+echo "${ECHO_T}$SWIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+	fi
+        if test -z "$SWIG" ; then
+                { echo "$as_me:$LINENO: WARNING: cannot find 'swig' program. You should look at http://www.swig.org" >&5
+echo "$as_me: WARNING: cannot find 'swig' program. You should look at http://www.swig.org" >&2;}
+                SWIG='echo "Error: SWIG is not installed. You should look at http://www.swig.org" ; false'
+        else
+	    { echo "$as_me:$LINENO: SWIG executable is '$SWIG'" >&5
+echo "$as_me: SWIG executable is '$SWIG'" >&6;}
+	    if test -n "1.3.23" ; then
+                echo "$as_me:$LINENO: checking for SWIG version" >&5
+echo $ECHO_N "checking for SWIG version... $ECHO_C" >&6
+                swig_version=`$SWIG -version 2>&1 | grep 'SWIG Version' | sed 's/.*\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\).*/\1/g'`
+                echo "$as_me:$LINENO: result: $swig_version" >&5
+echo "${ECHO_T}$swig_version" >&6
+                if test -n "$swig_version" ; then
+                        # Calculate the required version number components
+                        required=1.3.23
+                        required_major=`echo $required | sed 's/[^0-9].*//'`
+                        if test -z "$required_major" ; then
+                                required_major=0
+                        fi
+                        required=`echo $required | sed 's/[0-9]*[^0-9]//'`
+                        required_minor=`echo $required | sed 's/[^0-9].*//'`
+                        if test -z "$required_minor" ; then
+                                required_minor=0
+                        fi
+                        required=`echo $required | sed 's/[0-9]*[^0-9]//'`
+                        required_patch=`echo $required | sed 's/[^0-9].*//'`
+                        if test -z "$required_patch" ; then
+                                required_patch=0
+                        fi
+                        # Calculate the available version number components
+                        available=$swig_version
+                        available_major=`echo $available | sed 's/[^0-9].*//'`
+                        if test -z "$available_major" ; then
+                                available_major=0
+                        fi
+                        available=`echo $available | sed 's/[0-9]*[^0-9]//'`
+                        available_minor=`echo $available | sed 's/[^0-9].*//'`
+                        if test -z "$available_minor" ; then
+                                available_minor=0
+                        fi
+                        available=`echo $available | sed 's/[0-9]*[^0-9]//'`
+                        available_patch=`echo $available | sed 's/[^0-9].*//'`
+                        if test -z "$available_patch" ; then
+                                available_patch=0
+                        fi
+                        if test $available_major -ne $required_major \
+                                -o $available_minor -ne $required_minor \
+                                -o $available_patch -lt $required_patch ; then
+                                { echo "$as_me:$LINENO: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&5
+echo "$as_me: WARNING: SWIG version >= 1.3.23 is required.  You have $swig_version.  You should look at http://www.swig.org" >&2;}
+                                SWIG='echo "Error: SWIG version >= 1.3.23 is required.  You have '"$swig_version"'.  You should look at http://www.swig.org" ; false'
+                        else
+                                SWIG_LIB=`$SWIG -swiglib`
+                                { echo "$as_me:$LINENO: SWIG library directory is '$SWIG_LIB'" >&5
+echo "$as_me: SWIG library directory is '$SWIG_LIB'" >&6;}
+                        fi
+                else
+                        { echo "$as_me:$LINENO: WARNING: cannot determine SWIG version" >&5
+echo "$as_me: WARNING: cannot determine SWIG version" >&2;}
+                        SWIG='echo "Error: Cannot determine SWIG version.  You should look at http://www.swig.org" ; false'
+                fi
+            fi
+        fi
+
+
+
+
+
+        SWIG="$SWIG -c++"
+
+
+
+#        SWIG="$SWIG -noruntime"
+#        SWIG="$SWIG -c"
+	SWIG="$SWIG"
+
+
+
+
+
+        # Find any Python interpreter.
+    if test -z "$PYTHON"; then
+      PYTHON=:
+      for ac_prog in python python2 python2.4 python2.3 python2.2 python2.1 python2.0 python1.6 python1.5
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PYTHON+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PYTHON in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PYTHON="$PYTHON" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PYTHON="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  ;;
+esac
+fi
+PYTHON=$ac_cv_path_PYTHON
+
+if test -n "$PYTHON"; then
+  echo "$as_me:$LINENO: result: $PYTHON" >&5
+echo "${ECHO_T}$PYTHON" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$PYTHON" && break
+done
+
+    fi
+    am_display_PYTHON=python
+
+
+  if test "$PYTHON" = :; then
+      { { echo "$as_me:$LINENO: error: no suitable Python interpreter found" >&5
+echo "$as_me: error: no suitable Python interpreter found" >&2;}
+   { (exit 1); exit 1; }; }
+  else
+
+
+  echo "$as_me:$LINENO: checking for $am_display_PYTHON version" >&5
+echo $ECHO_N "checking for $am_display_PYTHON version... $ECHO_C" >&6
+if test "${am_cv_python_version+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  am_cv_python_version=`$PYTHON -c "import sys; print sys.version[:3]"`
+fi
+echo "$as_me:$LINENO: result: $am_cv_python_version" >&5
+echo "${ECHO_T}$am_cv_python_version" >&6
+  PYTHON_VERSION=$am_cv_python_version
+
+
+
+  PYTHON_PREFIX='${prefix}'
+
+  PYTHON_EXEC_PREFIX='${exec_prefix}'
+
+
+
+  echo "$as_me:$LINENO: checking for $am_display_PYTHON platform" >&5
+echo $ECHO_N "checking for $am_display_PYTHON platform... $ECHO_C" >&6
+if test "${am_cv_python_platform+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  am_cv_python_platform=`$PYTHON -c "import sys; print sys.platform"`
+fi
+echo "$as_me:$LINENO: result: $am_cv_python_platform" >&5
+echo "${ECHO_T}$am_cv_python_platform" >&6
+  PYTHON_PLATFORM=$am_cv_python_platform
+
+
+
+
+                echo "$as_me:$LINENO: checking for $am_display_PYTHON script directory" >&5
+echo $ECHO_N "checking for $am_display_PYTHON script directory... $ECHO_C" >&6
+if test "${am_cv_python_pythondir+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  am_cv_python_pythondir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(0,0,prefix='$PYTHON_PREFIX')" 2>/dev/null ||
+     echo "$PYTHON_PREFIX/lib/python$PYTHON_VERSION/site-packages"`
+fi
+echo "$as_me:$LINENO: result: $am_cv_python_pythondir" >&5
+echo "${ECHO_T}$am_cv_python_pythondir" >&6
+  pythondir=$am_cv_python_pythondir
+
+
+
+  pkgpythondir=\${pythondir}/$PACKAGE
+
+
+            echo "$as_me:$LINENO: checking for $am_display_PYTHON extension module directory" >&5
+echo $ECHO_N "checking for $am_display_PYTHON extension module directory... $ECHO_C" >&6
+if test "${am_cv_python_pyexecdir+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  am_cv_python_pyexecdir=`$PYTHON -c "from distutils import sysconfig; print sysconfig.get_python_lib(1,0,prefix='$PYTHON_EXEC_PREFIX')" 2>/dev/null ||
+     echo "${PYTHON_EXEC_PREFIX}/lib/python${PYTHON_VERSION}/site-packages"`
+fi
+echo "$as_me:$LINENO: result: $am_cv_python_pyexecdir" >&5
+echo "${ECHO_T}$am_cv_python_pyexecdir" >&6
+  pyexecdir=$am_cv_python_pyexecdir
+
+
+
+  pkgpyexecdir=\${pyexecdir}/$PACKAGE
+
+
+
+  fi
+
+
+
+	#
+	# should allow for checking of python version here...
+	#
+
+
+	# Check for Python include path
+	echo "$as_me:$LINENO: checking for Python include path" >&5
+echo $ECHO_N "checking for Python include path... $ECHO_C" >&6
+	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
+	for i in "$python_path/include/python$PYTHON_VERSION/" "$python_path/include/python/" "$python_path/" ; do
+		python_path=`find $i -type f -name Python.h -print | sed "1q"`
+		if test -n "$python_path" ; then
+			break
+		fi
+	done
+	python_path=`echo $python_path | sed "s,/Python.h$,,"`
+	echo "$as_me:$LINENO: result: $python_path" >&5
+echo "${ECHO_T}$python_path" >&6
+	if test -z "$python_path" ; then
+		{ { echo "$as_me:$LINENO: error: cannot find Python include path" >&5
+echo "$as_me: error: cannot find Python include path" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	PYTHON_CPPFLAGS=-I$python_path
+
+
+	# Check for Python library path
+	echo "$as_me:$LINENO: checking for Python library path" >&5
+echo $ECHO_N "checking for Python library path... $ECHO_C" >&6
+	python_path=`echo $PYTHON | sed "s,/bin.*$,,"`
+	for i in "$python_path/lib/python$PYTHON_VERSION/config/" "$python_path/lib/python$PYTHON_VERSION/" "$python_path/lib/python/config/" "$python_path/lib/python/" "$python_path/" ; do
+		python_path=`find $i -type f -name libpython$PYTHON_VERSION.* -print | sed "1q"`
+		if test -n "$python_path" ; then
+			break
+		fi
+	done
+	python_path=`echo $python_path | sed "s,/libpython.*$,,"`
+	echo "$as_me:$LINENO: result: $python_path" >&5
+echo "${ECHO_T}$python_path" >&6
+	if test -z "$python_path" ; then
+		{ { echo "$as_me:$LINENO: error: cannot find Python library path" >&5
+echo "$as_me: error: cannot find Python library path" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+	PYTHON_LDFLAGS="-L$python_path -lpython$PYTHON_VERSION"
+
+	#
+	python_site=`echo $python_path | sed "s/config/site-packages/"`
+	PYTHON_SITE_PKG=$python_site
+
+	#
+	# libraries which must be linked in when embedding
+	#
+	echo "$as_me:$LINENO: checking python extra libraries" >&5
+echo $ECHO_N "checking python extra libraries... $ECHO_C" >&6
+	PYTHON_EXTRA_LIBS=`$PYTHON -c "import distutils.sysconfig; \
+                conf = distutils.sysconfig.get_config_var; \
+                print conf('LOCALMODLIBS')+' '+conf('LIBS')"
+	echo "$as_me:$LINENO: result: $PYTHON_EXTRA_LIBS" >&5
+echo "${ECHO_T}$PYTHON_EXTRA_LIBS" >&6`
+
+
+
+
+
+        test "x" != "xno" || swig_shadow=" -noproxy"
+        SWIG_PYTHON_OPT=-python$swig_shadow
+
+        SWIG_PYTHON_CPPFLAGS=$PYTHON_CPPFLAGS
+
+
+fi
+
+# ------------------------------------------------------------------------
 # Multivector check
 # ------------------------------------------------------------------------
 
@@ -22524,7 +22548,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:22527: \"$ac_link\") >&5
+(eval echo $as_me:22551: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -22602,7 +22626,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:22605: \"$ac_link\") >&5
+(eval echo $as_me:22629: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23601,7 +23625,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:23604: \"$ac_link\") >&5
+(eval echo $as_me:23628: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -23679,7 +23703,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:23682: \"$ac_link\") >&5
+(eval echo $as_me:23706: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -39204,7 +39228,7 @@ echo "${ECHO_T}$WITH_PRERELEASE" >&6
 # Output files
 # ------------------------------------------------------------------------
 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-tsf/Makefile example-tsf/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile python/Makefile python/__init__.py src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile src-loca/python/Makefile src-loca/python/__init__.py test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/lapack/LOCA_python/Makefile test/lapack/LOCA_python/setpath.py test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile doc/Makefile doc/Doxyfile src/Makefile src-lapack/Makefile example-lapack/Makefile src-tsf/Makefile example-tsf/Makefile src-epetra/Makefile example-epetra/Makefile example-epetra/DS6.5.1/Makefile example-epetra/1Dfem_linear/Makefile example-epetra/1Dfem_nonlinear/Makefile example-epetra/1Dfem_nonlinearColoring/Makefile example-epetra/1Dtransfem_nonlinear/Makefile example-epetra/Brusselator/Makefile example-epetra/Brusselator_Split/Makefile example-epetra/Brusselator_EpetraNew/Makefile example-epetra/Suite/Makefile src-petsc/Makefile example-petsc/Makefile example-petsc/DS6.5.1/Makefile example-petsc/1Dfd_nonlinear/Makefile src-belos/Makefile example-belos/Makefile example-belos/epetra/Makefile example-belos/epetra/1Dfem_nonlinear/Makefile python/Makefile python/GNUmakefile python/__init__.py src-loca/Makefile src-loca/doc/Makefile src-loca/src/Makefile src-loca/src-epetra/Makefile src-loca/src-lapack/Makefile src-loca/src-mf/Makefile src-loca/example-epetra/Makefile src-loca/example-epetra/1Dfem/Makefile src-loca/example-epetra/Tcubed/Makefile src-loca/example-epetra/Tcubed_epetra_new/Makefile src-loca/example-epetra/Brusselator_xyzt/Makefile src-loca/example-lapack/Makefile src-loca/example-lapack/Chan/Makefile src-loca/example-lapack/1Dfd_pitchfork/Makefile src-loca/example-lapack/Brusselator/Makefile src-loca/python/Makefile src-loca/python/GNUmakefile src-loca/python/__init__.py test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/serial/Makefile test/scripts/daily/serial/noxTestAll test/scripts/daily/mpi/Makefile test/scripts/daily/mpi/noxTestAllMpi test/utils/Makefile test/lapack/Makefile test/lapack/NOX/Makefile test/lapack/NOX_NewTest/Makefile test/lapack/NOX_Group/Makefile test/lapack/LOCA_NewTest/Makefile test/lapack/LOCA_Group/Makefile test/lapack/LOCA_ChanProblem/Makefile test/lapack/LOCA_python/Makefile test/lapack/LOCA_python/setpath.py test/epetra/Makefile test/epetra/NOX_NewTest/Makefile test/epetra/NOX_Vector/Makefile test/epetra/NOX_Group/Makefile test/epetra/LOCA_NewTest/Makefile test/epetra/LOCA_Group/Makefile test/epetra/1Dfem/Makefile test/epetra/MultiPhysics/Makefile test/petsc/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -39442,6 +39466,13 @@ if test -z "${BUILD_PYTHON_TRUE}" && test -z "${BUILD_PYTHON_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_PYTHON\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_PYTHON\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_SWIG_TRUE}" && test -z "${HAVE_SWIG_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_SWIG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_SWIG\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -40064,6 +40095,7 @@ do
   "example-belos/epetra/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/Makefile" ;;
   "example-belos/epetra/1Dfem_nonlinear/Makefile" ) CONFIG_FILES="$CONFIG_FILES example-belos/epetra/1Dfem_nonlinear/Makefile" ;;
   "python/Makefile" ) CONFIG_FILES="$CONFIG_FILES python/Makefile" ;;
+  "python/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES python/GNUmakefile" ;;
   "python/__init__.py" ) CONFIG_FILES="$CONFIG_FILES python/__init__.py" ;;
   "src-loca/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/Makefile" ;;
   "src-loca/doc/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/doc/Makefile" ;;
@@ -40081,6 +40113,7 @@ do
   "src-loca/example-lapack/1Dfd_pitchfork/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/1Dfd_pitchfork/Makefile" ;;
   "src-loca/example-lapack/Brusselator/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/example-lapack/Brusselator/Makefile" ;;
   "src-loca/python/Makefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/python/Makefile" ;;
+  "src-loca/python/GNUmakefile" ) CONFIG_FILES="$CONFIG_FILES src-loca/python/GNUmakefile" ;;
   "src-loca/python/__init__.py" ) CONFIG_FILES="$CONFIG_FILES src-loca/python/__init__.py" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
@@ -40296,6 +40329,15 @@ s,@BUILD_LIBLOCA_TRUE@,$BUILD_LIBLOCA_TRUE,;t t
 s,@BUILD_LIBLOCA_FALSE@,$BUILD_LIBLOCA_FALSE,;t t
 s,@BUILD_PYTHON_TRUE@,$BUILD_PYTHON_TRUE,;t t
 s,@BUILD_PYTHON_FALSE@,$BUILD_PYTHON_FALSE,;t t
+s,@IMPORT_LAPACK@,$IMPORT_LAPACK,;t t
+s,@IMPORT_EPETRA@,$IMPORT_EPETRA,;t t
+s,@LN_S@,$LN_S,;t t
+s,@ECHO@,$ECHO,;t t
+s,@CPP@,$CPP,;t t
+s,@LIBTOOL@,$LIBTOOL,;t t
+s,@HAVE_SWIG_TRUE@,$HAVE_SWIG_TRUE,;t t
+s,@HAVE_SWIG_FALSE@,$HAVE_SWIG_FALSE,;t t
+s,@GNU_HAVE_SWIG@,$GNU_HAVE_SWIG,;t t
 s,@SWIG@,$SWIG,;t t
 s,@SWIG_LIB@,$SWIG_LIB,;t t
 s,@PYTHON@,$PYTHON,;t t
@@ -40313,12 +40355,6 @@ s,@PYTHON_SITE_PKG@,$PYTHON_SITE_PKG,;t t
 s,@PYTHON_EXTRA_LIBS@,$PYTHON_EXTRA_LIBS,;t t
 s,@SWIG_PYTHON_OPT@,$SWIG_PYTHON_OPT,;t t
 s,@SWIG_PYTHON_CPPFLAGS@,$SWIG_PYTHON_CPPFLAGS,;t t
-s,@IMPORT_LAPACK@,$IMPORT_LAPACK,;t t
-s,@IMPORT_EPETRA@,$IMPORT_EPETRA,;t t
-s,@LN_S@,$LN_S,;t t
-s,@ECHO@,$ECHO,;t t
-s,@CPP@,$CPP,;t t
-s,@LIBTOOL@,$LIBTOOL,;t t
 s,@BUILD_NOX_MULTIVECS_TRUE@,$BUILD_NOX_MULTIVECS_TRUE,;t t
 s,@BUILD_NOX_MULTIVECS_FALSE@,$BUILD_NOX_MULTIVECS_FALSE,;t t
 s,@HAVE_NOX_MULTIVECS_SUBST@,$HAVE_NOX_MULTIVECS_SUBST,;t t

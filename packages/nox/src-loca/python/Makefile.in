@@ -47,7 +47,41 @@
 # Swig interface files
 # ------------------------------------------------------------------------
 
-SOURCES = $(nodist__Abstract_la_SOURCES) $(nodist__Bifurcation_la_SOURCES) $(nodist__Chan_la_SOURCES) $(nodist__Continuation_la_SOURCES) $(nodist__Homotopy_la_SOURCES) $(nodist__LAPACK_la_SOURCES) $(nodist__MultiContinuation_la_SOURCES) $(nodist__TimeDependent_la_SOURCES) $(dist__TopLevel_la_SOURCES) $(nodist__TopLevel_la_SOURCES)
+# @HEADER
+# ************************************************************************
+# 
+#            NOX: An Object-Oriented Nonlinear Solver Package
+#                 Copyright (2002) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#                                                                                 
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA                                                                                
+# Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+# (rppawlo@sandia.gov), Sandia National Laboratories.
+# 
+# ************************************************************************
+# @HEADER
+
+# ------------------------------------------------------------------------
+# Rules for building python interface files using swig.  Automatic 
+# dependency tracking for swig interface files is implemented.
+# ------------------------------------------------------------------------
+
+SOURCES = $(_Abstract_la_SOURCES) $(_Bifurcation_la_SOURCES) $(_Chan_la_SOURCES) $(_Continuation_la_SOURCES) $(_Homotopy_la_SOURCES) $(_LAPACK_la_SOURCES) $(_MultiContinuation_la_SOURCES) $(_TimeDependent_la_SOURCES) $(_TopLevel_la_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -70,9 +104,11 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
+DIST_COMMON = $(am__dist_locaPythonexec_PYTHON_DIST) \
+	$(srcdir)/GNUmakefile.in $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in $(srcdir)/__init__.py.in \
+	$(top_srcdir)/config/swig.am
 subdir = src-loca/python
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/__init__.py.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_namespaces.m4 \
 	$(top_srcdir)/config/ac_cxx_stl_map_key_const.m4 \
@@ -88,8 +124,8 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
-CONFIG_CLEAN_FILES = __init__.py
-am__installdirs = $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir)
+CONFIG_CLEAN_FILES = GNUmakefile __init__.py
+am__installdirs = $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir)
 locaPythonexecLTLIBRARIES_INSTALL = $(INSTALL)
 LTLIBRARIES = $(locaPythonexec_LTLIBRARIES)
 am__DEPENDENCIES_1 =
@@ -97,43 +133,39 @@ am__DEPENDENCIES_2 = $(top_builddir)/src-loca/src/libloca.la \
 	$(top_builddir)/src/libnox.a $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1)
 _Abstract_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__Abstract_la_OBJECTS = _Abstract_la-wrap_LOCA_Abstract.lo
-_Abstract_la_OBJECTS = $(nodist__Abstract_la_OBJECTS)
+am__Abstract_la_OBJECTS = _Abstract_la-wrap_LOCA_Abstract.lo
+_Abstract_la_OBJECTS = $(am__Abstract_la_OBJECTS)
 _Bifurcation_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__Bifurcation_la_OBJECTS =  \
-	_Bifurcation_la-wrap_LOCA_Bifurcation.lo
-_Bifurcation_la_OBJECTS = $(nodist__Bifurcation_la_OBJECTS)
+am__Bifurcation_la_OBJECTS = _Bifurcation_la-wrap_LOCA_Bifurcation.lo
+_Bifurcation_la_OBJECTS = $(am__Bifurcation_la_OBJECTS)
 am__DEPENDENCIES_3 =  \
 	$(top_builddir)/src-loca/src-lapack/liblocalapack.la \
 	$(top_builddir)/src-lapack/libnoxlapack.a
 _Chan_la_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
-nodist__Chan_la_OBJECTS = _Chan_la-wrap_LOCA_Chan.lo \
+am__Chan_la_OBJECTS = _Chan_la-wrap_LOCA_Chan.lo \
 	_Chan_la-ChanProblemInterface.lo
-_Chan_la_OBJECTS = $(nodist__Chan_la_OBJECTS)
+_Chan_la_OBJECTS = $(am__Chan_la_OBJECTS)
 _Continuation_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__Continuation_la_OBJECTS =  \
+am__Continuation_la_OBJECTS =  \
 	_Continuation_la-wrap_LOCA_Continuation.lo
-_Continuation_la_OBJECTS = $(nodist__Continuation_la_OBJECTS)
+_Continuation_la_OBJECTS = $(am__Continuation_la_OBJECTS)
 _Homotopy_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__Homotopy_la_OBJECTS = _Homotopy_la-wrap_LOCA_Homotopy.lo
-_Homotopy_la_OBJECTS = $(nodist__Homotopy_la_OBJECTS)
+am__Homotopy_la_OBJECTS = _Homotopy_la-wrap_LOCA_Homotopy.lo
+_Homotopy_la_OBJECTS = $(am__Homotopy_la_OBJECTS)
 _LAPACK_la_DEPENDENCIES = $(am__DEPENDENCIES_3) $(am__DEPENDENCIES_2)
-nodist__LAPACK_la_OBJECTS = _LAPACK_la-wrap_LOCA_LAPACK.lo
-_LAPACK_la_OBJECTS = $(nodist__LAPACK_la_OBJECTS)
+am__LAPACK_la_OBJECTS = _LAPACK_la-wrap_LOCA_LAPACK.lo
+_LAPACK_la_OBJECTS = $(am__LAPACK_la_OBJECTS)
 _MultiContinuation_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__MultiContinuation_la_OBJECTS =  \
+am__MultiContinuation_la_OBJECTS =  \
 	_MultiContinuation_la-wrap_LOCA_MultiContinuation.lo
-_MultiContinuation_la_OBJECTS =  \
-	$(nodist__MultiContinuation_la_OBJECTS)
+_MultiContinuation_la_OBJECTS = $(am__MultiContinuation_la_OBJECTS)
 _TimeDependent_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-nodist__TimeDependent_la_OBJECTS =  \
+am__TimeDependent_la_OBJECTS =  \
 	_TimeDependent_la-wrap_LOCA_TimeDependent.lo
-_TimeDependent_la_OBJECTS = $(nodist__TimeDependent_la_OBJECTS)
+_TimeDependent_la_OBJECTS = $(am__TimeDependent_la_OBJECTS)
 _TopLevel_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-dist__TopLevel_la_OBJECTS =
-nodist__TopLevel_la_OBJECTS = _TopLevel_la-wrap_LOCA_TopLevel.lo
-_TopLevel_la_OBJECTS = $(dist__TopLevel_la_OBJECTS) \
-	$(nodist__TopLevel_la_OBJECTS)
+am__TopLevel_la_OBJECTS = _TopLevel_la-wrap_LOCA_TopLevel.lo
+_TopLevel_la_OBJECTS = $(am__TopLevel_la_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -164,14 +196,22 @@ LTCOMPILE = $(LIBTOOL) --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(nodist__Abstract_la_SOURCES) \
-	$(nodist__Bifurcation_la_SOURCES) $(nodist__Chan_la_SOURCES) \
-	$(nodist__Continuation_la_SOURCES) \
-	$(nodist__Homotopy_la_SOURCES) $(nodist__LAPACK_la_SOURCES) \
-	$(nodist__MultiContinuation_la_SOURCES) \
-	$(nodist__TimeDependent_la_SOURCES) \
-	$(dist__TopLevel_la_SOURCES) $(nodist__TopLevel_la_SOURCES)
-DIST_SOURCES = $(dist__TopLevel_la_SOURCES)
+SOURCES = $(_Abstract_la_SOURCES) $(_Bifurcation_la_SOURCES) \
+	$(_Chan_la_SOURCES) $(_Continuation_la_SOURCES) \
+	$(_Homotopy_la_SOURCES) $(_LAPACK_la_SOURCES) \
+	$(_MultiContinuation_la_SOURCES) $(_TimeDependent_la_SOURCES) \
+	$(_TopLevel_la_SOURCES)
+DIST_SOURCES = $(_Abstract_la_SOURCES) $(_Bifurcation_la_SOURCES) \
+	$(_Chan_la_SOURCES) $(_Continuation_la_SOURCES) \
+	$(_Homotopy_la_SOURCES) $(_LAPACK_la_SOURCES) \
+	$(_MultiContinuation_la_SOURCES) $(_TimeDependent_la_SOURCES) \
+	$(_TopLevel_la_SOURCES)
+am__dist_locaPythonexec_PYTHON_DIST = $(srcdir)/TopLevel.py \
+	$(srcdir)/Continuation.py $(srcdir)/MultiContinuation.py \
+	$(srcdir)/Homotopy.py $(srcdir)/TimeDependent.py \
+	$(srcdir)/Bifurcation.py $(srcdir)/Abstract.py \
+	$(srcdir)/LAPACK.py $(srcdir)/Chan.py
+dist_locaPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
 nodist_locaPythonexecPYTHON_INSTALL = $(INSTALL_DATA)
 py_compile = $(top_srcdir)/config/py-compile
 ETAGS = etags
@@ -280,11 +320,14 @@ EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
 FLIBS = @FLIBS@
+GNU_HAVE_SWIG = @GNU_HAVE_SWIG@
 HAVE_DOXYGEN_DOT = @HAVE_DOXYGEN_DOT@
 HAVE_MPI_FALSE = @HAVE_MPI_FALSE@
 HAVE_MPI_TRUE = @HAVE_MPI_TRUE@
 HAVE_NOX_ANY_SUBST = @HAVE_NOX_ANY_SUBST@
 HAVE_NOX_MULTIVECS_SUBST = @HAVE_NOX_MULTIVECS_SUBST@
+HAVE_SWIG_FALSE = @HAVE_SWIG_FALSE@
+HAVE_SWIG_TRUE = @HAVE_SWIG_TRUE@
 IMPORT_EPETRA = @IMPORT_EPETRA@
 IMPORT_LAPACK = @IMPORT_LAPACK@
 INSTALL_DATA = @INSTALL_DATA@
@@ -394,18 +437,18 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 LOCA_INTERFACES = \
-	LOCA_TopLevel.i \
-	LOCA_Continuation.i \
-	LOCA_MultiContinuation.i \
-	LOCA_Homotopy.i \
-	LOCA_TimeDependent.i \
-	LOCA_Bifurcation.i \
-	LOCA_Abstract.i 
+	$(srcdir)/LOCA_TopLevel.i \
+	$(srcdir)/LOCA_Continuation.i \
+	$(srcdir)/LOCA_MultiContinuation.i \
+	$(srcdir)/LOCA_Homotopy.i \
+	$(srcdir)/LOCA_TimeDependent.i \
+	$(srcdir)/LOCA_Bifurcation.i \
+	$(srcdir)/LOCA_Abstract.i 
 
 @BUILD_LIBLOCALAPACK_FALSE@LAPACK_INTERFACES = 
 @BUILD_LIBLOCALAPACK_TRUE@LAPACK_INTERFACES = \
-@BUILD_LIBLOCALAPACK_TRUE@	LOCA_LAPACK.i \
-@BUILD_LIBLOCALAPACK_TRUE@	LOCA_Chan.i
+@BUILD_LIBLOCALAPACK_TRUE@	$(srcdir)/LOCA_LAPACK.i \
+@BUILD_LIBLOCALAPACK_TRUE@	$(srcdir)/LOCA_Chan.i
 
 INTERFACES = $(LOCA_INTERFACES) $(LAPACK_INTERFACES)
 
@@ -413,18 +456,18 @@ INTERFACES = $(LOCA_INTERFACES) $(LAPACK_INTERFACES)
 # Generated swig wrapper files
 # ------------------------------------------------------------------------
 LOCA_WRAPPERS = \
-	TopLevel.py \
-	Continuation.py \
-	MultiContinuation.py \
-	Homotopy.py \
-	TimeDependent.py \
-	Bifurcation.py \
-	Abstract.py 
+	$(srcdir)/TopLevel.py \
+	$(srcdir)/Continuation.py \
+	$(srcdir)/MultiContinuation.py \
+	$(srcdir)/Homotopy.py \
+	$(srcdir)/TimeDependent.py \
+	$(srcdir)/Bifurcation.py \
+	$(srcdir)/Abstract.py 
 
 @BUILD_LIBLOCALAPACK_FALSE@LAPACK_WRAPPERS = 
 @BUILD_LIBLOCALAPACK_TRUE@LAPACK_WRAPPERS = \
-@BUILD_LIBLOCALAPACK_TRUE@	LAPACK.py \
-@BUILD_LIBLOCALAPACK_TRUE@	Chan.py 
+@BUILD_LIBLOCALAPACK_TRUE@	$(srcdir)/LAPACK.py \
+@BUILD_LIBLOCALAPACK_TRUE@	$(srcdir)/Chan.py 
 
 WRAPPERS = $(LOCA_WRAPPERS) $(LAPACK_WRAPPERS)
 
@@ -461,17 +504,15 @@ locaPythonexecdir = $(prefix)/python/LOCA
 # ------------------------------------------------------------------------
 # Python files to be installed by 'make install-exec'
 # ------------------------------------------------------------------------
-@BUILD_PYTHON_TRUE@nodist_locaPythonexec_PYTHON = $(WRAPPERS) __init__.py
+
+# __init.py__ is not distributed because it is created by configure
+@BUILD_PYTHON_TRUE@nodist_locaPythonexec_PYTHON = __init__.py
+@BUILD_PYTHON_TRUE@dist_locaPythonexec_PYTHON = $(WRAPPERS) 
 
 # ------------------------------------------------------------------------
 # Extra files to be installed by 'make dist'
 # ------------------------------------------------------------------------
 EXTRA_DIST = $(INTERFACES)
-
-# ------------------------------------------------------------------------
-# Files to be deleted by 'make clean'
-# ------------------------------------------------------------------------
-CLEANFILES = wrap_* $(WRAPPERS)
 SWIG_PYTHON_LIBS = 
 SWIG_LOCA_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
 	-I$(top_srcdir)/src \
@@ -499,8 +540,10 @@ SWIG_LAPACK_LIBADD = \
 # ------------------------------------------------------------------------
 # Definitions for _TopLevel.la
 # ------------------------------------------------------------------------
-nodist__TopLevel_la_SOURCES = wrap_LOCA_TopLevel.C Utils_enums.H
-dist__TopLevel_la_SOURCES = Utils_enums.H
+_TopLevel_la_SOURCES = \
+	$(srcdir)/wrap_LOCA_TopLevel.C \
+	$(srcdir)/Utils_enums.H
+
 _TopLevel_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _TopLevel_la_LDFLAGS = $(SWIG_LDFLAGS)
 _TopLevel_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -508,7 +551,7 @@ _TopLevel_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Contination.la
 # ------------------------------------------------------------------------
-nodist__Continuation_la_SOURCES = wrap_LOCA_Continuation.C
+_Continuation_la_SOURCES = $(srcdir)/wrap_LOCA_Continuation.C
 _Continuation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _Continuation_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Continuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -516,7 +559,7 @@ _Continuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _MultiContination.la
 # ------------------------------------------------------------------------
-nodist__MultiContinuation_la_SOURCES = wrap_LOCA_MultiContinuation.C
+_MultiContinuation_la_SOURCES = $(srcdir)/wrap_LOCA_MultiContinuation.C
 _MultiContinuation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _MultiContinuation_la_LDFLAGS = $(SWIG_LDFLAGS)
 _MultiContinuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -524,7 +567,7 @@ _MultiContinuation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Homotopy.la
 # ------------------------------------------------------------------------
-nodist__Homotopy_la_SOURCES = wrap_LOCA_Homotopy.C
+_Homotopy_la_SOURCES = $(srcdir)/wrap_LOCA_Homotopy.C
 _Homotopy_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _Homotopy_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Homotopy_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -532,7 +575,7 @@ _Homotopy_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _TimeDependent.la
 # ------------------------------------------------------------------------
-nodist__TimeDependent_la_SOURCES = wrap_LOCA_TimeDependent.C
+_TimeDependent_la_SOURCES = $(srcdir)/wrap_LOCA_TimeDependent.C
 _TimeDependent_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _TimeDependent_la_LDFLAGS = $(SWIG_LDFLAGS)
 _TimeDependent_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -540,7 +583,7 @@ _TimeDependent_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Bifurcation.la
 # ------------------------------------------------------------------------
-nodist__Bifurcation_la_SOURCES = wrap_LOCA_Bifurcation.C
+_Bifurcation_la_SOURCES = $(srcdir)/wrap_LOCA_Bifurcation.C
 _Bifurcation_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _Bifurcation_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Bifurcation_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -548,7 +591,7 @@ _Bifurcation_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Abstract.la
 # ------------------------------------------------------------------------
-nodist__Abstract_la_SOURCES = wrap_LOCA_Abstract.C
+_Abstract_la_SOURCES = $(srcdir)/wrap_LOCA_Abstract.C
 _Abstract_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS)
 _Abstract_la_LDFLAGS = $(SWIG_LDFLAGS)
 _Abstract_la_LIBADD = $(SWIG_LOCA_LIBADD)
@@ -556,7 +599,7 @@ _Abstract_la_LIBADD = $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _LAPACK.la
 # ------------------------------------------------------------------------
-nodist__LAPACK_la_SOURCES = wrap_LOCA_LAPACK.C
+_LAPACK_la_SOURCES = $(srcdir)/wrap_LOCA_LAPACK.C
 _LAPACK_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS) $(SWIG_LAPACK_CXXFLAGS)
 _LAPACK_la_LDFLAGS = $(SWIG_LDFLAGS)
 _LAPACK_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
@@ -564,10 +607,10 @@ _LAPACK_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
 # ------------------------------------------------------------------------
 # Definitions for _Chan.la
 # ------------------------------------------------------------------------
-nodist__Chan_la_SOURCES = \
-	wrap_LOCA_Chan.C \
+_Chan_la_SOURCES = \
+	$(srcdir)/wrap_LOCA_Chan.C \
 	$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.H \
-	$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C
+	$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C 
 
 _Chan_la_CXXFLAGS = $(SWIG_LOCA_CXXFLAGS) $(SWIG_LAPACK_CXXFLAGS)
 _Chan_la_LDFLAGS = $(SWIG_LDFLAGS)
@@ -577,11 +620,16 @@ _Chan_la_LIBADD = $(SWIG_LAPACK_LIBADD) $(SWIG_LOCA_LIBADD)
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+CLEANFILES = $(DEPDIR)/*.Pi
+
+#$(srcdir)/wrap_%.C: $(srcdir)/%.i 
+#	$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS) -o $@ $<
+@HAVE_SWIG_TRUE@SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .C .lo .o .obj
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/config/swig.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -610,6 +658,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+GNUmakefile: $(top_builddir)/config.status $(srcdir)/GNUmakefile.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 __init__.py: $(top_builddir)/config.status $(srcdir)/__init__.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-locaPythonexecLTLIBRARIES: $(locaPythonexec_LTLIBRARIES)
@@ -699,77 +749,77 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
 
-_Abstract_la-wrap_LOCA_Abstract.o: wrap_LOCA_Abstract.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.o -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.o `test -f 'wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`wrap_LOCA_Abstract.C; \
+_Abstract_la-wrap_LOCA_Abstract.o: $(srcdir)/wrap_LOCA_Abstract.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.o -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.o `test -f '$(srcdir)/wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Abstract.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Po"; else rm -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Po' tmpdepfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.o `test -f 'wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`wrap_LOCA_Abstract.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.o `test -f '$(srcdir)/wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Abstract.C
 
-_Abstract_la-wrap_LOCA_Abstract.obj: wrap_LOCA_Abstract.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.obj -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.obj `if test -f 'wrap_LOCA_Abstract.C'; then $(CYGPATH_W) 'wrap_LOCA_Abstract.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Abstract.C'; fi`; \
+_Abstract_la-wrap_LOCA_Abstract.obj: $(srcdir)/wrap_LOCA_Abstract.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.obj -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.obj `if test -f '$(srcdir)/wrap_LOCA_Abstract.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Abstract.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Abstract.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Po"; else rm -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Po' tmpdepfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.obj `if test -f 'wrap_LOCA_Abstract.C'; then $(CYGPATH_W) 'wrap_LOCA_Abstract.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Abstract.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.obj `if test -f '$(srcdir)/wrap_LOCA_Abstract.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Abstract.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Abstract.C'; fi`
 
-_Abstract_la-wrap_LOCA_Abstract.lo: wrap_LOCA_Abstract.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.lo -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.lo `test -f 'wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`wrap_LOCA_Abstract.C; \
+_Abstract_la-wrap_LOCA_Abstract.lo: $(srcdir)/wrap_LOCA_Abstract.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -MT _Abstract_la-wrap_LOCA_Abstract.lo -MD -MP -MF "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" -c -o _Abstract_la-wrap_LOCA_Abstract.lo `test -f '$(srcdir)/wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Abstract.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo" "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Plo"; else rm -f "$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Abstract.C' object='_Abstract_la-wrap_LOCA_Abstract.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.Plo' tmpdepfile='$(DEPDIR)/_Abstract_la-wrap_LOCA_Abstract.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.lo `test -f 'wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`wrap_LOCA_Abstract.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Abstract_la_CXXFLAGS) $(CXXFLAGS) -c -o _Abstract_la-wrap_LOCA_Abstract.lo `test -f '$(srcdir)/wrap_LOCA_Abstract.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Abstract.C
 
-_Bifurcation_la-wrap_LOCA_Bifurcation.o: wrap_LOCA_Bifurcation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.o -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.o `test -f 'wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`wrap_LOCA_Bifurcation.C; \
+_Bifurcation_la-wrap_LOCA_Bifurcation.o: $(srcdir)/wrap_LOCA_Bifurcation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.o -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.o `test -f '$(srcdir)/wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Bifurcation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Po"; else rm -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Po' tmpdepfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.o `test -f 'wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`wrap_LOCA_Bifurcation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.o `test -f '$(srcdir)/wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Bifurcation.C
 
-_Bifurcation_la-wrap_LOCA_Bifurcation.obj: wrap_LOCA_Bifurcation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.obj -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.obj `if test -f 'wrap_LOCA_Bifurcation.C'; then $(CYGPATH_W) 'wrap_LOCA_Bifurcation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Bifurcation.C'; fi`; \
+_Bifurcation_la-wrap_LOCA_Bifurcation.obj: $(srcdir)/wrap_LOCA_Bifurcation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.obj -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.obj `if test -f '$(srcdir)/wrap_LOCA_Bifurcation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Bifurcation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Bifurcation.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Po"; else rm -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Po' tmpdepfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.obj `if test -f 'wrap_LOCA_Bifurcation.C'; then $(CYGPATH_W) 'wrap_LOCA_Bifurcation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Bifurcation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.obj `if test -f '$(srcdir)/wrap_LOCA_Bifurcation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Bifurcation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Bifurcation.C'; fi`
 
-_Bifurcation_la-wrap_LOCA_Bifurcation.lo: wrap_LOCA_Bifurcation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.lo -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.lo `test -f 'wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`wrap_LOCA_Bifurcation.C; \
+_Bifurcation_la-wrap_LOCA_Bifurcation.lo: $(srcdir)/wrap_LOCA_Bifurcation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -MT _Bifurcation_la-wrap_LOCA_Bifurcation.lo -MD -MP -MF "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.lo `test -f '$(srcdir)/wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Bifurcation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo" "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Plo"; else rm -f "$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Bifurcation.C' object='_Bifurcation_la-wrap_LOCA_Bifurcation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.Plo' tmpdepfile='$(DEPDIR)/_Bifurcation_la-wrap_LOCA_Bifurcation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.lo `test -f 'wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`wrap_LOCA_Bifurcation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Bifurcation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Bifurcation_la-wrap_LOCA_Bifurcation.lo `test -f '$(srcdir)/wrap_LOCA_Bifurcation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Bifurcation.C
 
-_Chan_la-wrap_LOCA_Chan.o: wrap_LOCA_Chan.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.o -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.o `test -f 'wrap_LOCA_Chan.C' || echo '$(srcdir)/'`wrap_LOCA_Chan.C; \
+_Chan_la-wrap_LOCA_Chan.o: $(srcdir)/wrap_LOCA_Chan.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.o -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.o `test -f '$(srcdir)/wrap_LOCA_Chan.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Chan.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Po"; else rm -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Po' tmpdepfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.o `test -f 'wrap_LOCA_Chan.C' || echo '$(srcdir)/'`wrap_LOCA_Chan.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.o `test -f '$(srcdir)/wrap_LOCA_Chan.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Chan.C
 
-_Chan_la-wrap_LOCA_Chan.obj: wrap_LOCA_Chan.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.obj -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.obj `if test -f 'wrap_LOCA_Chan.C'; then $(CYGPATH_W) 'wrap_LOCA_Chan.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Chan.C'; fi`; \
+_Chan_la-wrap_LOCA_Chan.obj: $(srcdir)/wrap_LOCA_Chan.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.obj -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.obj `if test -f '$(srcdir)/wrap_LOCA_Chan.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Chan.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Chan.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Po"; else rm -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Po' tmpdepfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.obj `if test -f 'wrap_LOCA_Chan.C'; then $(CYGPATH_W) 'wrap_LOCA_Chan.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Chan.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.obj `if test -f '$(srcdir)/wrap_LOCA_Chan.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Chan.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Chan.C'; fi`
 
-_Chan_la-wrap_LOCA_Chan.lo: wrap_LOCA_Chan.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.lo -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.lo `test -f 'wrap_LOCA_Chan.C' || echo '$(srcdir)/'`wrap_LOCA_Chan.C; \
+_Chan_la-wrap_LOCA_Chan.lo: $(srcdir)/wrap_LOCA_Chan.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-wrap_LOCA_Chan.lo -MD -MP -MF "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" -c -o _Chan_la-wrap_LOCA_Chan.lo `test -f '$(srcdir)/wrap_LOCA_Chan.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Chan.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo" "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Plo"; else rm -f "$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Chan.C' object='_Chan_la-wrap_LOCA_Chan.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.Plo' tmpdepfile='$(DEPDIR)/_Chan_la-wrap_LOCA_Chan.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.lo `test -f 'wrap_LOCA_Chan.C' || echo '$(srcdir)/'`wrap_LOCA_Chan.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-wrap_LOCA_Chan.lo `test -f '$(srcdir)/wrap_LOCA_Chan.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Chan.C
 
 _Chan_la-ChanProblemInterface.o: $(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -MT _Chan_la-ChanProblemInterface.o -MD -MP -MF "$(DEPDIR)/_Chan_la-ChanProblemInterface.Tpo" -c -o _Chan_la-ChanProblemInterface.o `test -f '$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C' || echo '$(srcdir)/'`$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C; \
@@ -795,149 +845,149 @@ _Chan_la-ChanProblemInterface.lo: $(top_srcdir)/src-loca/example-lapack/Chan/Cha
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Chan_la_CXXFLAGS) $(CXXFLAGS) -c -o _Chan_la-ChanProblemInterface.lo `test -f '$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C' || echo '$(srcdir)/'`$(top_srcdir)/src-loca/example-lapack/Chan/ChanProblemInterface.C
 
-_Continuation_la-wrap_LOCA_Continuation.o: wrap_LOCA_Continuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.o -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.o `test -f 'wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`wrap_LOCA_Continuation.C; \
+_Continuation_la-wrap_LOCA_Continuation.o: $(srcdir)/wrap_LOCA_Continuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.o -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.o `test -f '$(srcdir)/wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Continuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Po"; else rm -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Po' tmpdepfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.o `test -f 'wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`wrap_LOCA_Continuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.o `test -f '$(srcdir)/wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Continuation.C
 
-_Continuation_la-wrap_LOCA_Continuation.obj: wrap_LOCA_Continuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.obj -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.obj `if test -f 'wrap_LOCA_Continuation.C'; then $(CYGPATH_W) 'wrap_LOCA_Continuation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Continuation.C'; fi`; \
+_Continuation_la-wrap_LOCA_Continuation.obj: $(srcdir)/wrap_LOCA_Continuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.obj -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.obj `if test -f '$(srcdir)/wrap_LOCA_Continuation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Continuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Continuation.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Po"; else rm -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Po' tmpdepfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.obj `if test -f 'wrap_LOCA_Continuation.C'; then $(CYGPATH_W) 'wrap_LOCA_Continuation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Continuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.obj `if test -f '$(srcdir)/wrap_LOCA_Continuation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Continuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Continuation.C'; fi`
 
-_Continuation_la-wrap_LOCA_Continuation.lo: wrap_LOCA_Continuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.lo -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.lo `test -f 'wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`wrap_LOCA_Continuation.C; \
+_Continuation_la-wrap_LOCA_Continuation.lo: $(srcdir)/wrap_LOCA_Continuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -MT _Continuation_la-wrap_LOCA_Continuation.lo -MD -MP -MF "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" -c -o _Continuation_la-wrap_LOCA_Continuation.lo `test -f '$(srcdir)/wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Continuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo" "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Plo"; else rm -f "$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Continuation.C' object='_Continuation_la-wrap_LOCA_Continuation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.Plo' tmpdepfile='$(DEPDIR)/_Continuation_la-wrap_LOCA_Continuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.lo `test -f 'wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`wrap_LOCA_Continuation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Continuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _Continuation_la-wrap_LOCA_Continuation.lo `test -f '$(srcdir)/wrap_LOCA_Continuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Continuation.C
 
-_Homotopy_la-wrap_LOCA_Homotopy.o: wrap_LOCA_Homotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.o -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.o `test -f 'wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`wrap_LOCA_Homotopy.C; \
+_Homotopy_la-wrap_LOCA_Homotopy.o: $(srcdir)/wrap_LOCA_Homotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.o -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.o `test -f '$(srcdir)/wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Homotopy.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Po"; else rm -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Po' tmpdepfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.o `test -f 'wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`wrap_LOCA_Homotopy.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.o `test -f '$(srcdir)/wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Homotopy.C
 
-_Homotopy_la-wrap_LOCA_Homotopy.obj: wrap_LOCA_Homotopy.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.obj -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.obj `if test -f 'wrap_LOCA_Homotopy.C'; then $(CYGPATH_W) 'wrap_LOCA_Homotopy.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Homotopy.C'; fi`; \
+_Homotopy_la-wrap_LOCA_Homotopy.obj: $(srcdir)/wrap_LOCA_Homotopy.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.obj -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.obj `if test -f '$(srcdir)/wrap_LOCA_Homotopy.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Homotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Homotopy.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Po"; else rm -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Po' tmpdepfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.obj `if test -f 'wrap_LOCA_Homotopy.C'; then $(CYGPATH_W) 'wrap_LOCA_Homotopy.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Homotopy.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.obj `if test -f '$(srcdir)/wrap_LOCA_Homotopy.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_Homotopy.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_Homotopy.C'; fi`
 
-_Homotopy_la-wrap_LOCA_Homotopy.lo: wrap_LOCA_Homotopy.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.lo -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.lo `test -f 'wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`wrap_LOCA_Homotopy.C; \
+_Homotopy_la-wrap_LOCA_Homotopy.lo: $(srcdir)/wrap_LOCA_Homotopy.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -MT _Homotopy_la-wrap_LOCA_Homotopy.lo -MD -MP -MF "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" -c -o _Homotopy_la-wrap_LOCA_Homotopy.lo `test -f '$(srcdir)/wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Homotopy.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo" "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Plo"; else rm -f "$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_Homotopy.C' object='_Homotopy_la-wrap_LOCA_Homotopy.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.Plo' tmpdepfile='$(DEPDIR)/_Homotopy_la-wrap_LOCA_Homotopy.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.lo `test -f 'wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`wrap_LOCA_Homotopy.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_Homotopy_la_CXXFLAGS) $(CXXFLAGS) -c -o _Homotopy_la-wrap_LOCA_Homotopy.lo `test -f '$(srcdir)/wrap_LOCA_Homotopy.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_Homotopy.C
 
-_LAPACK_la-wrap_LOCA_LAPACK.o: wrap_LOCA_LAPACK.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.o -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.o `test -f 'wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`wrap_LOCA_LAPACK.C; \
+_LAPACK_la-wrap_LOCA_LAPACK.o: $(srcdir)/wrap_LOCA_LAPACK.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.o -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.o `test -f '$(srcdir)/wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_LAPACK.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Po"; else rm -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Po' tmpdepfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.o `test -f 'wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`wrap_LOCA_LAPACK.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.o `test -f '$(srcdir)/wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_LAPACK.C
 
-_LAPACK_la-wrap_LOCA_LAPACK.obj: wrap_LOCA_LAPACK.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.obj -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.obj `if test -f 'wrap_LOCA_LAPACK.C'; then $(CYGPATH_W) 'wrap_LOCA_LAPACK.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_LAPACK.C'; fi`; \
+_LAPACK_la-wrap_LOCA_LAPACK.obj: $(srcdir)/wrap_LOCA_LAPACK.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.obj -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.obj `if test -f '$(srcdir)/wrap_LOCA_LAPACK.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_LAPACK.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_LAPACK.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Po"; else rm -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Po' tmpdepfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.obj `if test -f 'wrap_LOCA_LAPACK.C'; then $(CYGPATH_W) 'wrap_LOCA_LAPACK.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_LAPACK.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.obj `if test -f '$(srcdir)/wrap_LOCA_LAPACK.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_LAPACK.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_LAPACK.C'; fi`
 
-_LAPACK_la-wrap_LOCA_LAPACK.lo: wrap_LOCA_LAPACK.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.lo -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.lo `test -f 'wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`wrap_LOCA_LAPACK.C; \
+_LAPACK_la-wrap_LOCA_LAPACK.lo: $(srcdir)/wrap_LOCA_LAPACK.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -MT _LAPACK_la-wrap_LOCA_LAPACK.lo -MD -MP -MF "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" -c -o _LAPACK_la-wrap_LOCA_LAPACK.lo `test -f '$(srcdir)/wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_LAPACK.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo" "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Plo"; else rm -f "$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_LAPACK.C' object='_LAPACK_la-wrap_LOCA_LAPACK.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.Plo' tmpdepfile='$(DEPDIR)/_LAPACK_la-wrap_LOCA_LAPACK.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.lo `test -f 'wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`wrap_LOCA_LAPACK.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_LAPACK_la_CXXFLAGS) $(CXXFLAGS) -c -o _LAPACK_la-wrap_LOCA_LAPACK.lo `test -f '$(srcdir)/wrap_LOCA_LAPACK.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_LAPACK.C
 
-_MultiContinuation_la-wrap_LOCA_MultiContinuation.o: wrap_LOCA_MultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.o -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.o `test -f 'wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`wrap_LOCA_MultiContinuation.C; \
+_MultiContinuation_la-wrap_LOCA_MultiContinuation.o: $(srcdir)/wrap_LOCA_MultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.o -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.o `test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_MultiContinuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Po"; else rm -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Po' tmpdepfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.o `test -f 'wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`wrap_LOCA_MultiContinuation.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.o `test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_MultiContinuation.C
 
-_MultiContinuation_la-wrap_LOCA_MultiContinuation.obj: wrap_LOCA_MultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj `if test -f 'wrap_LOCA_MultiContinuation.C'; then $(CYGPATH_W) 'wrap_LOCA_MultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_MultiContinuation.C'; fi`; \
+_MultiContinuation_la-wrap_LOCA_MultiContinuation.obj: $(srcdir)/wrap_LOCA_MultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj `if test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_MultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_MultiContinuation.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Po"; else rm -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Po' tmpdepfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj `if test -f 'wrap_LOCA_MultiContinuation.C'; then $(CYGPATH_W) 'wrap_LOCA_MultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_MultiContinuation.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.obj `if test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_MultiContinuation.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_MultiContinuation.C'; fi`
 
-_MultiContinuation_la-wrap_LOCA_MultiContinuation.lo: wrap_LOCA_MultiContinuation.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo `test -f 'wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`wrap_LOCA_MultiContinuation.C; \
+_MultiContinuation_la-wrap_LOCA_MultiContinuation.lo: $(srcdir)/wrap_LOCA_MultiContinuation.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -MT _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo -MD -MP -MF "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo `test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_MultiContinuation.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo" "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Plo"; else rm -f "$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_MultiContinuation.C' object='_MultiContinuation_la-wrap_LOCA_MultiContinuation.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.Plo' tmpdepfile='$(DEPDIR)/_MultiContinuation_la-wrap_LOCA_MultiContinuation.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo `test -f 'wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`wrap_LOCA_MultiContinuation.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_MultiContinuation_la_CXXFLAGS) $(CXXFLAGS) -c -o _MultiContinuation_la-wrap_LOCA_MultiContinuation.lo `test -f '$(srcdir)/wrap_LOCA_MultiContinuation.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_MultiContinuation.C
 
-_TimeDependent_la-wrap_LOCA_TimeDependent.o: wrap_LOCA_TimeDependent.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.o -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.o `test -f 'wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`wrap_LOCA_TimeDependent.C; \
+_TimeDependent_la-wrap_LOCA_TimeDependent.o: $(srcdir)/wrap_LOCA_TimeDependent.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.o -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.o `test -f '$(srcdir)/wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TimeDependent.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Po"; else rm -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Po' tmpdepfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.o `test -f 'wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`wrap_LOCA_TimeDependent.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.o `test -f '$(srcdir)/wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TimeDependent.C
 
-_TimeDependent_la-wrap_LOCA_TimeDependent.obj: wrap_LOCA_TimeDependent.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.obj -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.obj `if test -f 'wrap_LOCA_TimeDependent.C'; then $(CYGPATH_W) 'wrap_LOCA_TimeDependent.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TimeDependent.C'; fi`; \
+_TimeDependent_la-wrap_LOCA_TimeDependent.obj: $(srcdir)/wrap_LOCA_TimeDependent.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.obj -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.obj `if test -f '$(srcdir)/wrap_LOCA_TimeDependent.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TimeDependent.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_TimeDependent.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Po"; else rm -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Po' tmpdepfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.obj `if test -f 'wrap_LOCA_TimeDependent.C'; then $(CYGPATH_W) 'wrap_LOCA_TimeDependent.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TimeDependent.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.obj `if test -f '$(srcdir)/wrap_LOCA_TimeDependent.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TimeDependent.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_TimeDependent.C'; fi`
 
-_TimeDependent_la-wrap_LOCA_TimeDependent.lo: wrap_LOCA_TimeDependent.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.lo -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.lo `test -f 'wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`wrap_LOCA_TimeDependent.C; \
+_TimeDependent_la-wrap_LOCA_TimeDependent.lo: $(srcdir)/wrap_LOCA_TimeDependent.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -MT _TimeDependent_la-wrap_LOCA_TimeDependent.lo -MD -MP -MF "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.lo `test -f '$(srcdir)/wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TimeDependent.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo" "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Plo"; else rm -f "$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TimeDependent.C' object='_TimeDependent_la-wrap_LOCA_TimeDependent.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.Plo' tmpdepfile='$(DEPDIR)/_TimeDependent_la-wrap_LOCA_TimeDependent.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.lo `test -f 'wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`wrap_LOCA_TimeDependent.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TimeDependent_la_CXXFLAGS) $(CXXFLAGS) -c -o _TimeDependent_la-wrap_LOCA_TimeDependent.lo `test -f '$(srcdir)/wrap_LOCA_TimeDependent.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TimeDependent.C
 
-_TopLevel_la-wrap_LOCA_TopLevel.o: wrap_LOCA_TopLevel.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.o -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.o `test -f 'wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`wrap_LOCA_TopLevel.C; \
+_TopLevel_la-wrap_LOCA_TopLevel.o: $(srcdir)/wrap_LOCA_TopLevel.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.o -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.o `test -f '$(srcdir)/wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TopLevel.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Po"; else rm -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Po' tmpdepfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.o `test -f 'wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`wrap_LOCA_TopLevel.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.o `test -f '$(srcdir)/wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TopLevel.C
 
-_TopLevel_la-wrap_LOCA_TopLevel.obj: wrap_LOCA_TopLevel.C
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.obj -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.obj `if test -f 'wrap_LOCA_TopLevel.C'; then $(CYGPATH_W) 'wrap_LOCA_TopLevel.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TopLevel.C'; fi`; \
+_TopLevel_la-wrap_LOCA_TopLevel.obj: $(srcdir)/wrap_LOCA_TopLevel.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.obj -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.obj `if test -f '$(srcdir)/wrap_LOCA_TopLevel.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TopLevel.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_TopLevel.C'; fi`; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Po"; else rm -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Po' tmpdepfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.obj `if test -f 'wrap_LOCA_TopLevel.C'; then $(CYGPATH_W) 'wrap_LOCA_TopLevel.C'; else $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TopLevel.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.obj `if test -f '$(srcdir)/wrap_LOCA_TopLevel.C'; then $(CYGPATH_W) '$(srcdir)/wrap_LOCA_TopLevel.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/wrap_LOCA_TopLevel.C'; fi`
 
-_TopLevel_la-wrap_LOCA_TopLevel.lo: wrap_LOCA_TopLevel.C
-@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.lo -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.lo `test -f 'wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`wrap_LOCA_TopLevel.C; \
+_TopLevel_la-wrap_LOCA_TopLevel.lo: $(srcdir)/wrap_LOCA_TopLevel.C
+@am__fastdepCXX_TRUE@	if $(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -MT _TopLevel_la-wrap_LOCA_TopLevel.lo -MD -MP -MF "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" -c -o _TopLevel_la-wrap_LOCA_TopLevel.lo `test -f '$(srcdir)/wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TopLevel.C; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo" "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Plo"; else rm -f "$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/wrap_LOCA_TopLevel.C' object='_TopLevel_la-wrap_LOCA_TopLevel.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.Plo' tmpdepfile='$(DEPDIR)/_TopLevel_la-wrap_LOCA_TopLevel.TPlo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.lo `test -f 'wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`wrap_LOCA_TopLevel.C
+@am__fastdepCXX_FALSE@	$(LIBTOOL) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(_TopLevel_la_CXXFLAGS) $(CXXFLAGS) -c -o _TopLevel_la-wrap_LOCA_TopLevel.lo `test -f '$(srcdir)/wrap_LOCA_TopLevel.C' || echo '$(srcdir)/'`$(srcdir)/wrap_LOCA_TopLevel.C
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -948,6 +998,29 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
+install-dist_locaPythonexecPYTHON: $(dist_locaPythonexec_PYTHON)
+	@$(NORMAL_INSTALL)
+	$(mkdir_p) $(DESTDIR)$(locaPythonexecdir)
+	@list='$(dist_locaPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
+	  if test -f "$$p"; then b=; else b="$(srcdir)/"; fi; \
+	  if test -f $$b$$p; then \
+	    d=`echo $$p | sed -e 's,^.*/,,'`; \
+	    dlist="$$dlist $$d"; \
+	    echo " $(dist_locaPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(locaPythonexecdir)/$$d"; \
+	    $(dist_locaPythonexecPYTHON_INSTALL) $$b$$p $(DESTDIR)$(locaPythonexecdir)/$$d; \
+	  else :; fi; \
+	done; \
+	test -z "$$dlist" || \
+	PYTHON=$(PYTHON) $(py_compile) --basedir $(DESTDIR)$(locaPythonexecdir) $$dlist
+
+uninstall-dist_locaPythonexecPYTHON:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_locaPythonexec_PYTHON)'; dlist=''; for p in $$list; do\
+	  d=`echo $$p | sed -e 's,^.*/,,'`; \
+	  rm -f $(DESTDIR)$(locaPythonexecdir)/$$d; \
+	  rm -f $(DESTDIR)$(locaPythonexecdir)/$${d}c; \
+	  rm -f $(DESTDIR)$(locaPythonexecdir)/$${d}o; \
+	done
 install-nodist_locaPythonexecPYTHON: $(nodist_locaPythonexec_PYTHON)
 	@$(NORMAL_INSTALL)
 	$(mkdir_p) $(DESTDIR)$(locaPythonexecdir)
@@ -1019,6 +1092,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
 distdir: $(DISTFILES)
+	$(mkdir_p) $(distdir)/$(srcdir) $(distdir)/../../config
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
@@ -1049,7 +1123,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(LTLIBRARIES)
 installdirs:
-	$(mkdir_p) $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir)
+	$(mkdir_p) $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir) $(DESTDIR)$(locaPythonexecdir)
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -1099,7 +1173,8 @@ info-am:
 
 install-data-am:
 
-install-exec-am: install-locaPythonexecLTLIBRARIES \
+install-exec-am: install-dist_locaPythonexecPYTHON \
+	install-locaPythonexecLTLIBRARIES \
 	install-nodist_locaPythonexecPYTHON
 
 install-info: install-info-am
@@ -1126,33 +1201,43 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-locaPythonexecLTLIBRARIES \
+uninstall-am: uninstall-dist_locaPythonexecPYTHON uninstall-info-am \
+	uninstall-locaPythonexecLTLIBRARIES \
 	uninstall-nodist_locaPythonexecPYTHON
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
 	clean-libtool clean-locaPythonexecLTLIBRARIES ctags distclean \
 	distclean-compile distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-exec \
-	install-exec-am install-info install-info-am \
-	install-locaPythonexecLTLIBRARIES install-man \
-	install-nodist_locaPythonexecPYTHON install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
+	install install-am install-data install-data-am \
+	install-dist_locaPythonexecPYTHON install-exec install-exec-am \
+	install-info install-info-am install-locaPythonexecLTLIBRARIES \
+	install-man install-nodist_locaPythonexecPYTHON install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am uninstall-info-am \
+	tags uninstall uninstall-am \
+	uninstall-dist_locaPythonexecPYTHON uninstall-info-am \
 	uninstall-locaPythonexecLTLIBRARIES \
 	uninstall-nodist_locaPythonexecPYTHON
 
 
-# ------------------------------------------------------------------------
-# Local rules
-# ------------------------------------------------------------------------
+$(srcdir)/%.py: $(srcdir)/wrap_%.C
 
-%.py: wrap_%.C
+@HAVE_SWIG_TRUE@$(srcdir)/wrap_%.C: $(srcdir)/%.i 
+@HAVE_SWIG_TRUE@	if $(SWIGCOMPILE) -MMD -MF "$(DEPDIR)/$*.Tpi" -o $@ $<; \
+@HAVE_SWIG_TRUE@	then mv -f "$(DEPDIR)/$*.Tpi" "$(DEPDIR)/$*.Pi"; else rm -f "$(DEPDIR)/$*.Tpi"; exit 1; fi
 
-wrap_%.C: %.i 
-	$(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_CXXFLAGS) -o $@ $<
+@HAVE_SWIG_FALSE@$(srcdir)/wrap_%.C: $(srcdir)/%.i 
+@HAVE_SWIG_FALSE@	@echo 'Error swig is not enabled and'
+@HAVE_SWIG_FALSE@	@echo '$@ is out-of-date with respect to $<.'
+@HAVE_SWIG_FALSE@	@echo 'Rerun configure with --with-swig=[path-to-swig].'
+@HAVE_SWIG_FALSE@	@exit 1
+
+swigclean:
+	rm -f $(srcdir)/wrap_* $(WRAPPERS) 
+
+# Include swig rules
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

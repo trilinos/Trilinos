@@ -788,14 +788,6 @@ else
   AM_CONDITIONAL(BUILD_PYTHON, false)
 fi
 
-# Configure swig
-if test X${BUILD_PYTHON} = Xyes; then
-  AC_PROG_SWIG(1.3.23)
-  SWIG_ENABLE_CXX
-  SWIG_MULTI_MODULE_SUPPORT
-  SWIG_PYTHON
-fi
-
 # Determine which addon libraries to support in Python
 IMPORT_LAPACK=0
 if test X${BUILD_PYTHON} = Xyes && test X${ADDON_lapack} = Xyes; then
@@ -828,6 +820,29 @@ if test X${BUILD_LIBLOCA} = Xyes || test X${BUILD_PYTHON} = Xyes; then
   # Configure libtool
   AC_PROG_LIBTOOL
 
+fi
+
+# ------------------------------------------------------------------------
+# Configure swig
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(swig,
+	    [AC_HELP_STRING([--with-swig],[enable swig and set swig binary])],
+	    [WITH_SWIG=yes
+	     if test X${withval} != Xyes ; then
+	     	SWIG=$withval
+	     fi],
+            [WITH_SWIG=no])
+AC_MSG_CHECKING(whether we should enable swig support)
+AC_MSG_RESULT([${WITH_SWIG}])
+AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
+
+if test X${BUILD_PYTHON} = Xyes && test X${WITH_SWIG} = Xyes; then
+  AC_PROG_SWIG(1.3.23)
+  SWIG_ENABLE_CXX
+  SWIG_MULTI_MODULE_SUPPORT
+  SWIG_PYTHON
 fi
 
 # ------------------------------------------------------------------------
@@ -1817,6 +1832,7 @@ AC_CONFIG_FILES([
 		example-belos/epetra/Makefile
 		example-belos/epetra/1Dfem_nonlinear/Makefile
 		python/Makefile
+		python/GNUmakefile
 		python/__init__.py
 		src-loca/Makefile
 		src-loca/doc/Makefile
@@ -1834,6 +1850,7 @@ AC_CONFIG_FILES([
 		src-loca/example-lapack/1Dfd_pitchfork/Makefile
 		src-loca/example-lapack/Brusselator/Makefile
 		src-loca/python/Makefile
+		src-loca/python/GNUmakefile
 		src-loca/python/__init__.py
                 test/Makefile
                 test/scripts/Makefile
