@@ -29,8 +29,9 @@
 #ifndef TPETRA_VECTOR_HPP
 #define TPETRA_VECTOR_HPP
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Object.hpp"
-#include "Tpetra_ConfigDefs.hpp" // for STL vector, algorithm, numeric
+#include "Tpetra_OutputObject.hpp" // for STL vector, algorithm, numeric
 #include "Tpetra_VectorSpace.hpp"
 #include <Teuchos_CompObject.hpp>
 #include <Teuchos_BLAS.hpp>

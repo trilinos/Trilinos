@@ -101,7 +101,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-  codeCoverage<OrdinalType>((verbose && debug), rank, size);
+  codeCoverage<OrdinalType>(verbose, debug, rank, size);
 	
 	// ======================================================================
 	// actual testing section - affects return code
@@ -166,7 +166,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
 
 //======================================================================
 template <typename OrdinalType>
-void codeCoverage(bool verbose, int rank, int size) { 
+void codeCoverage(bool verbose, bool debug, int rank, int size) { 
   if(verbose) outputSubHeading("Starting code coverage section...");
 
   if(verbose) cout << "Creating Platform and Comm..." << endl;

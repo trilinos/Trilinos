@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
   int ierr = 0;
   
   // call the actual test routines
-	ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
+  ierr += unitTests<int, int>(verbose, debug, myImageID, numImages);
 	ierr += unitTests<int, double>(verbose, debug, myImageID, numImages);
   ierr += unitTests<int, complex<double> >(verbose, debug, myImageID, numImages);
   
@@ -100,7 +100,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 	// ======================================================================
 	// code coverage section - just call functions, no testing
 	// ======================================================================
-  codeCoverage<OrdinalType, ScalarType>((verbose && debug), myImageID, numImages);
+  codeCoverage<OrdinalType, ScalarType>(verbose, debug, myImageID, numImages);
 	
 	// ======================================================================
 	// actual testing section - affects return code
@@ -172,7 +172,7 @@ int unitTests(bool verbose, bool debug, int myImageID, int numImages) {
 
 //======================================================================
 template <typename OrdinalType, typename ScalarType>
-void codeCoverage(bool verbose, int myImageID, int numImages) { 
+void codeCoverage(bool verbose, bool debug, int myImageID, int numImages) { 
   if(verbose) outputSubHeading("Starting code coverage section...");
 
 #ifdef TPETRA_MPI

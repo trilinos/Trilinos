@@ -182,7 +182,7 @@ namespace Tpetra {
 			///pointID -= elementSpace().getIndexBase(); // convert from indexBase-based to zero-based counting.
 			if(pointID < 0 || pointID > getNumMyPoints())
 				throw reportError("PointID " + toString(pointID) + " was not found on this image.", 1);
-			if(isConstantSize()) {
+			if(isConstantElementSize()) {
 				elementID = pointID / getElementSize();
 				elementOffset = pointID % getElementSize();
 			}
@@ -211,7 +211,7 @@ namespace Tpetra {
 		OrdinalType getElementSize(OrdinalType LID) const {
 			if(elementSpace().isMyLID(LID) == false)
 				throw reportError("Local ID " + toString(LID) + " was not found on this image.", 2);
-			if(isConstantSize())
+			if(isConstantElementSize())
 				return(getElementSize());
 			else {
 				///LID -= elementSpace().getIndexBase(); // convert to zero-based counting.
