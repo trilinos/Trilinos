@@ -29,7 +29,30 @@
 \section{TriUtils}
 \label{chap:triutils}
 
+Triutils is a collection of various utilities, that can help development
+and testing. Mainly, triutils contains functions or classes to generate
+matrices in various formats (MSR, VBR, Epetra), to read matrices (in HB
+or COO format), to convert matrices from one format to another, and to
+process the command line. Programs using triutils should include the
+file \verb!Trilinos_Util.h!.
+
+\medskip
+
+In this Chapter, we will present:
+\begin{itemize}
+\item How to read a matrix (and possibly right-hand side and solution
+  vectors) from an Harwell/Boeing file format (in
+  Section~\ref{sec:triutils:reading});
+\item How to retrive a parameter specified on the command line (in
+  Section~\ref{sec:triutils:shell}). 
+\end{itemize}
+
+%%%
+%%%
+%%%
+
 \subsection{Reading a HB problem}
+\label{sec:triutils:reading}
 
 It is possible to read matrix, solution and right-hand side, from a file
 written in the Harwell/Boeing format. This is done in \newline
@@ -49,11 +72,16 @@ The HB problem is read with the instruction
 Trilinos_Util_ReadHb2Epetra(FileName, Comm, readMap, readA, readx, 
                             readb, readxexact);   
 \end{verbatim}
-Note that this has created an Epetra\_Matrix and two Epetra\_Vectors,
-with all the elements assigned to processor zero. This is because the HB
-file does not contain any information about the distribution of the
-elements to the processors. To solve the linear problem in parallel, the
-user must specify a map.  For instance, we can use a linear map:
+Here, \verb!Comm! is an Epetra\_SerialComm or Epetra\_MpiComm object,
+and \verb!FileName! an array of character containing the name of the HB
+file.
+
+This creates an Epetra\_Matrix and two Epetra\_Vectors, with all the
+elements assigned to processor zero. This is because the HB file does
+not contain any information about the distribution of the elements to
+the processors.  Should the user need to solve the linear problem in
+parallel, thus he has to redistributed \verb!readA!. In this case, the
+first step is to specify a map.  For instance, we can use a linear map:
 \begin{verbatim}
 int NumGlobalElements = readMap->NumGlobalElements();
 Epetra_Map map(NumGlobalElements,0,Comm);
@@ -80,18 +108,20 @@ delete readb;
 delete readxexact;
 delete readMap;
 \end{verbatim}
+and solve the distributed linear system with the method of choice.
 
 %%%
 %%%
 %%%
 
 \subsection{ShellOptions}
+\label{sec:triutils:shell}
 
 ShellOptions is a class to manage the input arguments and shell
 variables.  With this class, it is easy to handle input line arguments
 and shell variables. For instance, the user can write 
 \begin{verbatim}
-$ ./a.out -nx 10 -tol 1e-6 -solver=cg 
+$ ./ex2.exe -nx 10 -tol 1e-6 -solver=cg 
 \end{verbatim}
 and then easily retrieve the value of {\tt nx}, {\tt tol}, and {\tt solver}.
  

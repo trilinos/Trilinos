@@ -29,14 +29,14 @@
 \section{Introduction}
 
 The Trilinos Project is an effort to facilitate the design, development,
-integration and ongoing support of mathematical software libraries. In
-particular, the goal of the Trilinos Project is develop parallel solver
-algorithms and libraries within an object-oriented software framework
-for the solution of large-scale, complex multiphysics engineering and
-scientific applications. The emphasis is on developing robust, scalable
-algorithm in a software framework, using abstract interfaces for
-flexible interoperability of components while providing a full-featured
-set of concrete classes that implement all abstract interfaces.
+integration and ongoing support of mathematical software libraries.
+Goal of the Trilinos Project is develop parallel solver algorithms and
+libraries within an object-oriented software framework for the solution
+of large-scale, complex multiphysics engineering and scientific
+applications. The emphasis is on developing robust, scalable algorithm
+in a software framework, using abstract interfaces for flexible
+interoperability of components while providing a full-featured set of
+concrete classes that implement all abstract interfaces.
 
 %%%
 %%%
@@ -70,7 +70,7 @@ implementation issues, while the last Chapters will have a more
 ``mathematical'' taste.
 
 Each package offers sophisticated features, that cannot be ``unleashed''
-at a very first usage. For each package, wew will outline only the basic
+at a very first usage. For each package, we will outline only the basic
 features, and we refer to the documentation of each package for a more
 involved usage. Our goal is to present enough material so that the
 reader can successfully use the described packages.  In fact, for new
@@ -99,7 +99,7 @@ structure, a typical user will probably --- at least at the beginning
   and functionality, but also provides significant new functionality.
 \item {\bf IFPACK}. This is a package to perform various incomplete
   factorizations, and it is here used in conjunction with AztecOO.
-\item {\bf ML}. This is an algebraic multilevel preconditioned package, which
+\item {\bf ML}. This is an algebraic multilevel preconditioner package, which
   provided scalable preconditioning capabilities for a variety of
   problem classes. It is here used in conjunction with AztecOO.
 \item {\bf Amesos}. This package provides a common interface to various
@@ -143,7 +143,7 @@ accomplished using Trilinos.
     Meros$^\star$ \\\hline
     Templated interface to BLAS and LAPACK, arbitrary-precision
     arithmetic, parameter lists:& Teuchos$^\star$ \\\hline
-    Define abstract interfaces to vectors, linear operators, and solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$    \\
+    Definition of abstract interfaces to vectors, linear operators, and solvers:& TSF$^\star$, TSFCore$^\star$, TSFExtended$^\star$    \\
     \hline
   \end{tabular}
   \caption{Partial overview of what can be done with Trilinos. $\star$:
@@ -151,8 +151,8 @@ accomplished using Trilinos.
   \label{tab:tripackages}
 \end{table}
 
-This tutorial is divided into 7 chapters:
-\begin{enumerate}
+This tutorial is divided into 10 chapters:
+\begin{itemize}
 \item Chapter \ref{chap:epetra_vec} describes the Epetra\_Vector class;
 \item Chapter \ref{chap:epetra_mat} introduces the Epetra\_Matrix
   class; 
@@ -168,7 +168,7 @@ This tutorial is divided into 7 chapters:
   nonlinear solver package, NOX.
 \item Chapter \ref{chap:triutils} presents some tools provided with the
   Triutils package. 
-\end{enumerate}
+\end{itemize}
 
 \begin{remark}
   As already pointed out, Epetra objects are meant to be the ``common
@@ -196,11 +196,12 @@ addresses many topics, including the development tools used by Trilinos'
 developers, and how to include a new package\footnote{ Trilinos provides
   a variety of services to a developer wanting to integrate a package
   into Trilinos.  They include Autoconf~\cite{Autoconf},
-  Automake~\cite{Automake} and Libtool~\cite{Libtool} provide a robust,
-  full-featured set of tools for building software across a broad set of
-  platforms.  Although these tools are not official standards, they are
-  widely used.  All existing Trilinos packages use Autoconf and
-  Automake.  Libtool support will be added in future releases.}.
+  Automake~\cite{Automake} and Libtool~\cite{Libtool}. Those tools
+  provide a robust, full-featured set of tools for building software
+  across a broad set of platforms.  Although these tools are not
+  official standards, they are widely used.  All existing Trilinos
+  packages use Autoconf and Automake.  Libtool support will be added in
+  future releases.}.
 
 %%%
 %%%
@@ -314,7 +315,7 @@ in line 5.
 
 To run the compiled example in a sequential environment, simply type
 \begin{verbatim}
-$ ./ex2.exe
+$ ./ex1.exe
 \end{verbatim}
 In a MPI environment, the user might have to
 use an instruction of type

@@ -42,10 +42,10 @@ Epetra\_MultiVector objects.
 The Amesos package has been designed to face some of the challenges of
 direct solution of linear systems. In fact, many solvers have been
 proposed in the last years, and often each of them requires different
-input formats for the linear system matrix. Unfortunately, it is not
-uncommon that the interface changes between revisions. Amesos aims to
-solve those problems, furnishing a clean, consistent interface to many
-direct solvers.
+input formats for the linear system matrix. Moreover, it is not uncommon
+that the interface changes between revisions. Amesos aims to solve those
+problems, furnishing a clean, consistent interface to many direct
+solvers.
 
 Using Amesos, users can interface their codes with a (large) variety of
 direct linear solvers, sequential or parallel, simply by a code
@@ -61,7 +61,9 @@ packages required by Amesos. Then, the Chapter will present the use of
 Amesos objects, to interface with the following packages:
 \begin{itemize}
 \item UMFPACK, version 4.1 (in Section~\ref{sec:umfpack});
-\item SuperLUdist, version 2.0 (in Section~\ref{sec:superludist}).
+\item SuperLUdist, version 2.0 (in Section~\ref{sec:superludist});
+\item A generic interface to various direct solvers is presented (in
+  Section~\ref{sec:amesos_generic}).
 \end{itemize}
 
 %%%
@@ -74,26 +76,28 @@ Amesos objects, to interface with the following packages:
 Amesos is an interface to other packages, mainly developed outside the
 Trilinos framework\footnote{Currently, SuperLU is included in the
   Trilinos framework.}. In order to use those packages, the user should
-check carefully copyright and licensing of those third party codes.
-Please refer to the web page for the package that you are interested in
-for details. Amesos supports a variety of direct solvers for linear
-systems of equations, and you are likely to use Amesos with only few of
-them. We suggest to define the shell variable \verb!TRILINOS_3PL!  to
-define the directory used to stored third-part packages. For instance,
-under BASH you may have a line of type
+carefully check copyright and licensing of those third party codes.
+Please refer to the web page or the documentation of each particular
+package for details. 
+
+Amesos supports a variety of direct solvers for linear systems of
+equations, and you are likely to use Amesos with only few of them. We
+suggest to define the shell variable \verb!TRILINOS_3PL!  to define the
+directory used to stored third-part packages. For instance, under BASH,
+you may have a line of type
 \begin{verbatim}
 export TRILINOS_3PL=/home/msala/Trilinos3PL
 \end{verbatim}
 in your \verb!.bashrc! file. Then, you may decide to create a directory
-to hold include files and libraries. For instance, to run LINUX with
-MPI:
+to hold include files and libraries. For instance, to compile under
+LINUX with MPI:
 \begin{verbatim}
 $ mkdir ${TRILINOS_3PL}/LINUX_MPI
 $ mkdir ${TRILINOS_3PL}/LINUX_MPI/include
 $ mkdir ${TRILINOS_3PL}/LINUX_MPI/lib
 \end{verbatim}
 (Note that this will reflect the directory structure used by Trilinos,
-see Section~\ref{sec:installing}). While installing a package, you can
+see Section~\ref{sec:installing}.) While installing a package, you can
 now copy all include files and libraries in these directories.
 
 Using this setting, you can configure Amesos with a command of type
@@ -112,10 +116,6 @@ packages covered in this Chapter.
 
 For more details about the configuration options of Amesos, please refer
 to Amesos documentation.
-
-\begin{remark}
-  Amesos can handle multiple right-hand side using Epetra\_MultiVectors.
-\end{remark}
 
 %%%
 %%%
@@ -214,10 +214,12 @@ Amesos_BaseSolver * AmesosProblem;
 
 switch( choice ) {
 case ML_SOLVE_WITH_AMESOS_UMFPACK:
-    AmesosProblem = new Amesos_Umfpack( *LinearProblem, ParamList );
+    AmesosProblem = 
+      new Amesos_Umfpack( *LinearProblem, ParamList );
     break;
   case ML_SOLVE_WITH_AMESOS_SUPERLUDIST:
-    AmesosProblem = new Amesos_Superludist( *LinearProblem, ParamList );
+    AmesosProblem = 
+      new Amesos_Superludist( *LinearProblem, ParamList );
     break;
   default:
     cerr << ``Error'' << endl;

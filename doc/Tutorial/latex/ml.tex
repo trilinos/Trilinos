@@ -29,23 +29,24 @@
 \section{Multilevel Methods with ML}
 \label{chap:ml}
 
-The ML package defines a class of preconditioner based on multilevel
+The ML package defines a class of preconditioners based on multilevel
 methods~\cite{TuminaroTong:00a}. While technically any linear system can
 be considered, ML should be used on linear systems on linear systems,
 like elliptic PDEs, that are known to work well with multilevel methods.
 
 ML is a large package, that can be used to a variety of purposes. ML
-provides multilevel solvers, as well as multilevel preconditioners.
+provides multilevel solvers, as well as multilevel preconditioners, and
+it can handle geometric as well as algebraic methods.
 
 In this Chapter we present:
 \begin{itemize}
-\item Outline the basic issued of multilevel schemes (in
+\item Outline the basic issues of multilevel schemes (in
   Section~\ref{ml:theoretical});
-\item How to use ML objects as a preconditioner for an AztecOO solver
-  (in Section~\ref{sec:ml_prec});
-\item How to implement two-level domain decomposition methods, with a
-  coarse grid defined using aggregation procedures (in
-  Section~\ref{sec:ml_DD}).
+\item Present the use of ML objects as a preconditioner for an AztecOO
+  solver objects (in Section~\ref{sec:ml_prec});
+\item Outline the steps required to implement two-level domain
+  decomposition methods, with a coarse grid defined using aggregation
+  procedures (in Section~\ref{sec:ml_DD}).
 \end{itemize}
 
 As other Trilinos packages, ML can be compiled and run independently
@@ -63,19 +64,20 @@ C++ code), then we refer to the ML guide, contained in the
 \label{ml:theoretical}
 
 Aim of this Section is to briefly present some aspects on multilevel
-methods, to establish a notation. The Section is not supposed to be
-exhaustive, nor complete on this subject. The reader is referred to the
-existing literature for a rigorous presentation.
+methods. The Section is not supposed to be exhaustive, nor complete on
+this subject. The reader is referred to the existing literature for a
+rigorous presentation.
 
 \medskip
 
-Multigrid methods require the operator to be defined on a sequence of
-coarser grids, an iterative method that evolves the solution (called a
+Multilevel methods require the operator to be defined on a sequence of
+coarser spaces, an iterative method that evolves the solution (called a
 smoother) and interpolation operators that transfer information between
-the grids. The principle behind the algorithm is that the high-frequency
-errors can be efficiently solved on the fine grid, while the
-low-frequency are treated on the coarser one, where there frequencies
-manifest themselves as high-frequencies.  Geometric multigrid (GMG)
+the spaces. The principle behind the algorithm is that the
+high-frequency errors can be efficiently solved on the fine space, while
+the low-frequency are treated on the coarser one, where there
+frequencies manifest themselves as high-frequencies. A very popular
+multilevel methods are multigrid methods.  Geometric multigrid (GMG)
 methods cannot be applied without the existence of an underlying grid
 (this is their major limitation). This led to the development of
 algebraic multigrid method (AMG), initiated by Ruge and St\"uben.  In
@@ -106,6 +108,18 @@ In the above method, $S_k^1$ and $S_k^2$ are two smoothers, $R_{k-1,k}$
 is a restriction operator from level $k$ to $k-1$, and $P_{k,k-1}$ is a
 prolongator from $k-1$ to $k$.
 
+In a variational setting, the matrices $A_k$ can be constructed as
+\[
+A_k = R_{k-1,k} A_k P_{k,k-1}.
+\]
+Alternatively, when a grid is available at level $k-1$, one can
+discretize the PDE operator on grid $k-1$.
+
+\begin{remark}
+  In this tutorial, we will consider multilevel methods based on
+  aggregation schemes only.
+\end{remark}
+
 %%%
 %%%
 %%%
@@ -122,9 +136,9 @@ structure is usually called \verb!ml_handle!:
 ML *ml_handle;
 \end{verbatim}
 
-Let us suppose that we intend to use ML as a ``black-box'' (or gray-box)
-multilevel preconditioner, using aggregation procedures to define the
-multilevel hierarchy. The variable 
+We intend to use ML as a ``black-box'' (or gray-box) multilevel
+preconditioner, using aggregation procedures to define the multilevel
+hierarchy. The variable
 \begin{verbatim}
 int N_levels = 10;
 \end{verbatim}
@@ -149,7 +163,7 @@ EpetraMatrix2MLMatrix(ml_handle, 0, &A);
 \end{verbatim}
 Note that \verb!A! is {\sl not} converted to ML format. Instead, proper
 wrappers are defined.  (Here, \verb!A! is the Epetra matrix for which we
-aim to construct a preconditioner.)
+aim to construct a multilevel preconditioner.)
 
 ML requires another structure, called ML\_Aggregate, to store the
 information about the aggregates at various levels:
@@ -327,17 +341,12 @@ process as
 ML_Aggregate_Set_LocalNumber( ml_handle, agg_object, 0, 4 );
 \end{verbatim}
 
-We still have to define the smoother, which is a one-level domain
-decomposition, as implemented in the AztecOO library:
-\begin{verbatim}
-FIXME...
-\end{verbatim}
+As smoother, we can adopt a subdomain-based Gauss-Seidel smoother.
 
 The creation of the multilevel hierarchy and the solution of the linear
 system will be as reported in Section~\ref{sec:ml_prec}.
 
 The entire code is reported in \TriExe{ml/ex2.cpp}.
-
 
 %%%
 %%%

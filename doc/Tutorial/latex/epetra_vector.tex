@@ -327,13 +327,14 @@ data access modes:
   user-provided data. In this case, the user data is not needed after
   construction;
 \item \verb!View! mode: Creates a ``view'' of the user's data. In this
-  case, the user data is required to remain untouched for the life of the
-  vector. It is worth noting that the View mode is very dangerous from
-  a data hiding perspective. Therefore, users are strongly encouraged to
-  develop code using Copy mode first and only use View mode in a
-  secondary optimization phase. To use the View mode, the user has to
-  define the vector entries using a double vector (of appropriate size),
-  than construct an Epetra\_Vector with an instruction of type  
+  case, the user data is required to remain untouched for the life of
+  the vector (or modified carefully). It is worth noting that the View
+  mode is very dangerous from a data hiding perspective. Therefore,
+  users are strongly encouraged to develop code using Copy mode first
+  and only use View mode in a secondary optimization phase. To use the
+  View mode, the user has to define the vector entries using a double
+  vector (of appropriate size), than construct an Epetra\_Vector with an
+  instruction of type
 \begin{verbatim}
   Epetra_Vector z(View,Map,double_vector);
 \end{verbatim}
@@ -370,7 +371,7 @@ for( int i=0 ; i<MyLength ; ++i ) x_values[i] *= 10;
 for( int i=0 ; i<MyLength ; ++i ) 
   x.ReplaceMyValues( 1, 0, x_values+i, &i );
 \end{verbatim}
-(The complete source is reported in file \TriExe{epetra/ex5.cpp}.)  It
+(File \TriExe{epetra/ex5.cpp} reported the complete source.)  It
 is important to note that \verb!ExtractCopy! does not give access to the
 vector elements, but only copies them into the user-provided array.  The
 user must commit those changes to the vector object, using, for

@@ -52,26 +52,22 @@ problems, Epetra furnishes the Epetra\_Time class.  Epetra\_Time is
 meant to insulate the user from the specifics of timing among a variety
 of platforms.
 
-Using Epetra\_Time, it is possible to measure the wall-clock time and
-the elapsed time. We recall that wall-clock time is the time elapsed
-between the beginning and the end of a program phase. Elapsed time,
-instead, it the CPU time required to complete this phase. Of course
-elapsed time (on a single CPU machine) will be less than wall-clock
-time, since the CPU is shared with various system processes and possibly
-other users.
+Using Epetra\_Time, it is possible to measure the elapsed time. This is
+the time elapsed between two phases of a program.
 
 A Epetra\_Time object is defined as
 \begin{verbatim}
 Epetra_Time time(Comm);
 \end{verbatim}
-To compute wall-clock or elapsed time required by a piece of code,
-then user should put the instruction
+To compute the elapsed time required by a piece of code, then user
+should put the instruction
 \begin{verbatim}
 time.ResetStartTime();
 \end{verbatim}
-before the code to the timed. Then, 
-the methods \verb!ElapsedTime()! and \verb!WallTime()! will return the
-elapsed time and wall-clock time, respectively.
+before the code to the timed. Then, the methods \verb!ElapsedTime()! and
+\verb!WallTime()! will return the elapsed time and wall-clock time,
+respectively. \verb!ElapsedTime()!  returns the elapsed time from the
+creation of {\sl this} object.
 
 %%%
 %%%
@@ -240,8 +236,7 @@ and we can apply this operator to a vector as:
   DiagOp.Apply(x,y);
 \end{verbatim}
 
-The entire source can be found in
-\TriExe{epetra/ex21.cpp}. 
+\TriExe{epetra/ex21.cpp} reportes the entire source code.
 
 \begin{remark}
   The clear disadvantage of deriving Epetra\_Operator or

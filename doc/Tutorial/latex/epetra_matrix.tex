@@ -95,8 +95,10 @@ intended to provide a very basic support for dense rectangular matrices.
 
 To access the matrix element at the i-th row and the j-th column, it is
 possible to use the parenthesis operator (\verb!A(i,j)!), or the bracket
-operator (\verb!A[j][i]!, note that i and j are reversed).
-
+operator (\verb!A[j][i]!, note that i and j are reversed). The bracket
+approach is in general faster, as the compiler can inline the
+corresponding function. Instead, some compiler have problems to inline
+the parenthesis operator.
 
 As an example of the use of this class, in the following code we
 consider a matrix-matrix product between two rectangular matrices

@@ -46,8 +46,6 @@ In this Chapter, we will
 \item Set the notation (in Section~\ref{sec:ifpack_theoretical});
 \item Show how to compute incomplete Cholesky factorizations (in
   Section~\ref{sec:ifpack_chol});
-\item Present IFPACK's ILUT-type factorizations (in
-  Section~\ref{sec:ifpack_ilut});
 \item Present IFPACK's RILU-type factorizations (in
   Section~\ref{sec:ifpack_rilu}).
 \end{itemize}
@@ -196,15 +194,14 @@ incomplete Cholesky factorization.
 %%%
 %%%
 
-\subsection{ILU  Factorizations}
-\label{sec:ifpack_ilut}
+\subsection{RILU  Factorizations}
+\label{sec:ifpack_rilu}
 
 IFPACK implements various incomplete factorization for non-symmetric
-matrices. In this Section, we will consider the Epetra\_CrsIlut clas,
-that can be used to produce ILUT factorization of a
-Epetra\_CrsMatrix. The class required an Ifpack\_OverlapGraph in the
-construction phase. This means that the factorization is split into two
-parts:
+matrices. In this Section, we will consider the Epetra\_CrsRiluk class,
+that can be used to produce RILU factorization of a Epetra\_CrsMatrix.
+The class required an Ifpack\_OverlapGraph in the construction phase.
+This means that the factorization is split into two parts:
 \begin{enumerate}
 \item Definition of the level filled graph;
 \item Computation of the factors.
@@ -215,10 +212,11 @@ different entries but with the same sparsity pattern. An
 Ifpack\_IlukGraph object of an Epetra matrix \verb!A! can be constructed
 as
 \begin{verbatim}
-Ifpack_IlukGraph * Graph = NULL;
-Graph = Ifpack_IlukGraph(A.Graph(),LevelFill,LevelOverlap);
+Ifpack_IlukGraph Graph = 
+  Ifpack_IlukGraph(A.Graph(),LevelFill,LevelOverlap);
 \end{verbatim}
 Here, \verb!LevelOverlap! is the required overlap among the subdomains.
+
 A call to \verb!ConstructFilledGraph()! completes the process.
 
 \begin{remark}
@@ -230,9 +228,9 @@ A call to \verb!ConstructFilledGraph()! completes the process.
   subsequent operations.
 \end{remark}
 
-At this point, we can create an Ifpack\_CrsIlut object,
+At this point, we can create an Ifpack\_CrsRiluk object,
 \begin{verbatim}
-ILUT = Ifpack_CrsIlut(*Graph);
+ILUT = Ifpack_CrsRiluk(Graph);
 \end{verbatim}
 This phase defined the graph for the incomplete factorization, without
 computing the actual values of the $L_i$ and $U_i$ factors. Instead,
@@ -246,31 +244,24 @@ solver.SetPrecOperator(ILUK);
 \end{verbatim}
 where \verb!solver! is an AztecOO pbject.
 \smallskip
-Example \TriExe{ifpack/ex2.cpp} shows the use of Ifpack\_CrsIlut class.
+Example \TriExe{ifpack/ex2.cpp} shows the use of Ifpack\_CrsRiluk class.
 
-%%%
-%%%
-%%%
-
-\subsection{RILU  Factorizations}
-\label{sec:ifpack_rilu}
+\medskip
 
 The application of the incomplete factors to a global vector, $z =
-(L_iU_i^{-1} r$, results in redundant approximation for any element of
+(L_iU_i^{-1}) r$, results in redundant approximation for any element of
 $z$ that correspond to rows that are part of more than one local ILU
-factor. The OverlapMode defines how those redundant values are
-managed. OverlapMode is an Epetra\_CombinedMode enum, that can assume
-the following values: {\tt Add, Zero, Insert, Average, AbxMax}. The
-default is to zero out all the values of $z$ for rows that were not part
-of the original matrix row distribution.
+factor. The OverlapMode defines how those redundant values are managed.
+OverlapMode is an Epetra\_CombinedMode enum, that can assume the
+following values: {\tt Add, Zero, Insert, Average, AbxMax}. The default
+is to zero out all the values of $z$ for rows that were not part of the
+original matrix row distribution.
 
-A technique, sometimes called relaxation, can be used to obtain RILU
-factorization. If RelaxValue (set by \verb!SetRelaxValue()!) is
-different from zero, the extra-term, dropped during the factorization,
-are not dropped. This can be of help for operators that should have zero
-row-sum. 
-
-RILU factorizations are defined by the Ifpack\_CrsRiluk class.
+%A technique, sometimes called relaxation, can be used to obtain RILU
+%factorization. If RelaxValue (set by \verb!SetRelaxValue()!) is
+%different from zero, the extra-term, dropped during the factorization,
+%are not dropped. This can be of help for operators that should have zero
+%row-sum. 
 
 %%%
 %%%

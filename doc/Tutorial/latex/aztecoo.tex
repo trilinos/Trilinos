@@ -159,7 +159,10 @@ To solve a linear system with AztecOO, one must create an
 Epetra_LinearProblem Problem(&A,&x,&b);
 \end{verbatim}
 where \verb!A! is an Epetra matrix, and \verb!x,b! two Epetra
-(multi-)vectors. Then, the user must create an AztecOO object,
+vectors\footnote{At the current stage of development, AztecOO does not
+  handle Epetra\_MultiVectors. It accepts Multi\_Vectors, but it will
+  solve the linear system corresponding to the first multivector only.}.
+Then, the user must create an AztecOO object,
 \begin{verbatim}
 AztecOO Solver(Problem);
 \end{verbatim}
@@ -296,9 +299,10 @@ different (although of the same size).
 \begin{verbatim}
 Epetra_CrsMatrix P(A);
 \end{verbatim}
-Then, we create the linear problem which will be used as preconditioner.
-This requires several steps.  (Note that all the \verb!P! prefix identifies
-preconditioner' objects.)
+(This operation is in general expensive as involves the copy
+constructor.)  Then, we create the linear problem which will be used as
+preconditioner.  This requires several steps.  (Note that all the
+\verb!P! prefix identifies preconditioner' objects.)
 \begin{enumerate}
 \item We create the linear system solve at each prec step, and and we
   assign the linear operator (in this case, the matrix A itself)
