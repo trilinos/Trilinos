@@ -1,7 +1,9 @@
 #@HEADER
 #@HEADER
 
-#SUBDIRS = ImportExport petra_power_method InverseIteration \
-#          petra_howle petra_transpose petra_nonlinear verySimple
-SUBDIRS = petra_power_method verySimple
+#np# Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
+
+SUBDIRS = example1
 

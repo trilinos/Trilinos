@@ -1,7 +1,7 @@
 #@HEADER
 #@HEADER
+#np# Set 'SUBDIRS= (list all subdirectories that are autotool'ed here)'
+#np# List all subdirectories even if one or more are configured/built only
+#np# conditionally.
 
-SUBDIRS = BlockMap CrsGraph CrsMatrix CrsRectMatrix \
-FECrsMatrix FEVector ImportExport Map MapColoring \
-MultiVector Object SerialDense SerialSpdDense \
-VbrMatrix Vector Comm scripts
+SUBDIRS = test1 scripts
