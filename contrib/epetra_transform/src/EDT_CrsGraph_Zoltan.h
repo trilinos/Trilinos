@@ -11,6 +11,8 @@ class CrsGraph_Zoltan : public SameTypeDistTransform<Epetra_CrsGraph> {
 
  public:
 
+  ~CrsGraph_Zoltan() {}
+
   CrsGraph_Zoltan( const std::string & part_method = std::string("PartKway") )
   : partitionMethod_(part_method)
   {}

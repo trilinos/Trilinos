@@ -167,21 +167,21 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_BTF::operator()( const Epetra_CrsGraph &
 cout << i << "\t" << rowperm_t[i] << "\t" << colperm[i] << "\t" << myElements[i] << endl;
   }
 
-  Epetra_Map * DomainMap = new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() );
-  Epetra_Map * RangeMap = new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() );
+  Epetra_Map * RowMap = new Epetra_Map( n, n, &newDomainElements[0], OldMap.IndexBase(), OldMap.Comm() );
+  Epetra_Map * DomainMap = new Epetra_Map( n, n, &newRangeElements[0], OldMap.IndexBase(), OldMap.Comm() );
 
 #ifdef BTF_VERBOSE
+  cout << "New Row Map\n";
+  cout << *RowMap << endl;
   cout << "New Domain Map\n";
   cout << *DomainMap << endl;
-  cout << "New Range Map\n";
-  cout << *RangeMap << endl;
 #endif
 
   //Generate New Graph
-  std::auto_ptr<Epetra_CrsGraph> NewGraph( new Epetra_CrsGraph( Copy, *DomainMap, 0 ) );
-  Epetra_Import Importer( *DomainMap, OldMap );
+  std::auto_ptr<Epetra_CrsGraph> NewGraph( new Epetra_CrsGraph( Copy, *RowMap, 0 ) );
+  Epetra_Import Importer( *RowMap, OldMap );
   NewGraph->Import( original, Importer, Insert );
-  NewGraph->TransformToLocal( DomainMap, RangeMap );
+  NewGraph->TransformToLocal( DomainMap, RowMap );
 
 #ifdef BTF_VERBOSE
   cout << "New CrsGraph\n";

@@ -14,6 +14,8 @@ class Transform
 
  public:
 
+  virtual ~Transform() {}
+
   virtual std::auto_ptr<newType> operator()( const originalType & old ) = 0;
 
   virtual std::auto_ptr<originalType> reverse( const newType & old ) { return std::auto_ptr<originalType>(0); }
@@ -21,7 +23,7 @@ class Transform
 };
 
 template<class T>
-struct SameTypeTransform : public Transform<T,T> {};
+struct SameTypeTransform : public Transform<T,T> { virtual ~SameTypeTransform() {} };
 
 } //namespace Epetra_Transform
   

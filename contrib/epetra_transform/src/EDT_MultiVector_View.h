@@ -15,6 +15,8 @@ class MultiVector_View : public SameTypeDistTransform<Epetra_MultiVector> {
 
  public:
 
+  ~MultiVector_View() {}
+
   MultiVector_View( const Epetra_BlockMap & orig_map,
                     const Epetra_BlockMap & new_map,
                     const int num_vec = -1 )

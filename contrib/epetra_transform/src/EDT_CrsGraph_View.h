@@ -13,6 +13,8 @@ class CrsGraph_View : public SameTypeDistTransform<Epetra_CrsGraph> {
 
  public:
 
+  ~CrsGraph_View() {}
+
   CrsGraph_View( const Epetra_BlockMap & orig_map,
                  const Epetra_BlockMap & new_map )
   : OrigMap_(orig_map),

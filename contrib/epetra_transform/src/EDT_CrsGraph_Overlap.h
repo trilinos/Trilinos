@@ -5,13 +5,17 @@ class Epetra_CrsGraph;
 
 namespace Epetra_Transform {
 
-class CrsGraph_BTF : public SameTypeDistTransform<Epetra_CrsGraph> {
+class CrsGraph_Overlap : public SameTypeDistTransform<Epetra_CrsGraph> {
+
+  const int levelOverlap_;
 
  public:
 
-  ~CrsGraph_BTF() {}
+  ~CrsGraph_Overlap() {}
 
-  CrsGraph_BTF() {}
+  CrsGraph_Overlap( const int overlap )
+  : levelOverlap_(overlap)
+  {}
 
   std::auto_ptr<Epetra_CrsGraph> operator()( const Epetra_CrsGraph & original );
 

@@ -13,6 +13,8 @@ class CrsMatrix_View : public SameTypeDistTransform<Epetra_CrsMatrix> {
 
  public:
 
+  ~CrsMatrix_View() {}
+
   CrsMatrix_View( const Epetra_CrsGraph & orig_graph,
                   const Epetra_CrsGraph & new_graph )
   : OrigGraph_(orig_graph),

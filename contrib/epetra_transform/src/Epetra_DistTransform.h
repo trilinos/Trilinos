@@ -9,6 +9,7 @@ namespace Epetra_Transform {
 template<class T,class U>
 struct DistTransform : public Transform<T,U>
 {
+  virtual ~DistTransform() {}
 
   virtual std::auto_ptr<Epetra_Import> importer() { return std::auto_ptr<Epetra_Import>(0); }
   virtual std::auto_ptr<Epetra_Export> exporter() { return std::auto_ptr<Epetra_Export>(0); }
@@ -16,7 +17,7 @@ struct DistTransform : public Transform<T,U>
 };
 
 template<class T>
-struct SameTypeDistTransform : public DistTransform<T,T> {};
+struct SameTypeDistTransform : public DistTransform<T,T> { virtual ~SameTypeDistTransform() {} };
 
 } //namespace Epetra_Transform
   
