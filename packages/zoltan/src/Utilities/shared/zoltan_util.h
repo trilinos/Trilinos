@@ -37,15 +37,15 @@
 
 #define ZOLTAN_TRACE_ENTER(proc,yo,str) \
   printf("ZOLTAN (Processor %d) Entering %s  %s\n", (proc), (yo), \
-         ((str) ? (str) : " "));
+         ((str) != NULL ? (str) : " "));
 
 #define ZOLTAN_TRACE_EXIT(proc,yo,str) \
   printf("ZOLTAN (Processor %d) Leaving %s  %s\n", (proc), (yo), \
-         ((str) ? (str) : " "));
+         ((str) != NULL ? (str) : " "));
 
 #define ZOLTAN_PRINT_INFO(proc,yo,str) \
   printf("ZOLTAN (Processor %d) %s: %s\n", (proc), (yo), \
-         ((str) ? (str) : " "));
+         ((str) != NULL ? (str) : " "));
 
 
 #endif /* !__ZOLTAN_UTIL_H */
