@@ -768,7 +768,7 @@ int ML_Gen_Smoother_Jacobi( ML *ml , int nl, int pre_or_post, int ntimes,
         double omega) 
 {
    int (*fun)(void *, int, double *, int, double *);
-   int start_level, end_level, i, status;
+   int start_level, end_level, i, status = 1;
    char str[80];
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
@@ -817,7 +817,7 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
                                 double omega)
 {
    int (*fun)(void *, int, double *, int, double *);
-   int start_level, end_level, i, status;
+   int start_level, end_level, i, status = 1;
    char str[80];
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
@@ -864,7 +864,7 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post, 
                                    int ntimes, double omega)
 {
-   int         start_level, end_level, i, j, status, Nrows, count;
+   int         start_level, end_level, i, j, status = 0, Nrows, count;
    int         *bindx;
    double      *nums, **sgs_nums = NULL, *num2;
    double      *val = NULL, temp_omega;
@@ -958,7 +958,7 @@ int ML_Gen_SmootherGSextra( ML *ml , int nl, int pre_or_post, int ntimes,
                             double omega, int Nextra, int extra[])
 {
    int (*fun)(void *, int, double *, int, double *);
-   int start_level, end_level, i, status, Nrows, count;
+   int start_level, end_level, i, status = 0, Nrows, count;
    double *nums, **sgs_nums = NULL, *num2;
    ML_Operator *Amat;
    struct ML_CSR_MSRdata *ptr = NULL;
@@ -1039,7 +1039,7 @@ int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
 		 		          int ntimes, double omega)
 {
    int (*fun)(void *, int, double *, int, double *);
-   int start_level, end_level, i, status, *ordering;
+   int start_level, end_level, i, status = 0, *ordering;
 #ifdef ML_TIMING
    double t0;
 #endif
@@ -1095,7 +1095,7 @@ int ML_Gen_Smoother_BlockGaussSeidel(ML *ml , int nl, int pre_or_post,
 {
    int            (*fun)(void *, int, double *, int, double *);
    ML_Sm_BGS_Data *data;
-   int            start_level, end_level, i, status;
+   int            start_level, end_level, i, status = 1;
    char           str[80];
 #ifdef ML_TIMING
    double         t0;
@@ -1683,7 +1683,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
 #ifdef PARASAILS
    int            (*fun1)(void *, int, double *, int, double *);
    int            (*fun2)(void *, int, double *, int, double *);
-   int            start_level, end_level, i, status;
+   int            start_level, end_level, i, status = 1;
    int            row, start_row, end_row, row_length;
 
    Matrix *mat;
@@ -2089,7 +2089,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
 int ML_Iterate(ML *ml, double *sol, double *rhs)
 {
    int  i = 0, count = 0;
-   double res_norm, prev_res_norm = -1.0, reduction, r0/*, old_reduction = 10.*/;
+   double res_norm, prev_res_norm = -1.0, reduction, r0 = 0.0 /*, old_reduction = 10.*/;
 
    reduction = 1.;
 
@@ -2911,13 +2911,13 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
 	int approx_all_zeros, ML_Comm *comm)
 {
    int         i, lengc, lengf;
-   double      *res,  *sol2, *rhs2, res_norm = 0.;
+   double      *res,  *sol2 = NULL, *rhs2 = NULL, res_norm = 0.;
    ML_Operator *Amat, *Rmat;
    ML_Smoother *pre,  *post;
    ML_CSolve   *csolve;
    static int fine_size = 0;
 
-#ifdef RAP_CHECK
+#ifdef RAP2_CHECK
    double    norm1, norm2;
 #endif
 
@@ -3476,7 +3476,7 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
 struct ML_CSR_MSRdata *temp_ptr;
 ML *subml;
-int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
+int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
 #ifdef ML_TIMING
    double t0;
 
@@ -3742,7 +3742,7 @@ int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
    SuperMatrix       *A;
    ML_Matrix_DCSR    *csr_mat, *csr2_mat;
    struct ML_CSR_MSRdata *temp_ptr;
-int nblocks = 1, *block_list, old_upper, count, newptr, me, nnzs;
+int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
    ML *subml;
 
    /* ----------------------------------------------------------------- */
