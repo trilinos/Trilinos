@@ -297,7 +297,10 @@ AC_CXX_STD_SPRINTF
 # Following options are ON by default
 #####################################
 TAC_ARG_ENABLE_OPTION(epetra, [Enable Epetra support], ML_EPETRA, yes)
+AM_CONDITIONAL(ML_USING_EPETRA, test "X$ac_cv_use_epetra" = "Xyes")
+
 TAC_ARG_ENABLE_OPTION(aztecoo, [Enable Aztecoo support], ML_AZTEC, yes)
+AM_CONDITIONAL(ML_USING_AZTECOO, test "X$ac_cv_use_aztecoo" = "Xyes")
 
 #if we're not using aztecoo, then build certain ML examples
 #without dependencies on libepetra.a  or libaztecoo.a
