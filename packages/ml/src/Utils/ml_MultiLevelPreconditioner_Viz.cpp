@@ -174,6 +174,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // prepare output format. Now it can be:
   // - OpenDX (1D/2D/3D)
   // - XD3D (2D only)
+  // - Paraview, or any other package that can read .vtk files (1D/2D/3D)
 
   int Format;
   string FileFormat = List_.get("viz: output format", "xyz");
@@ -202,7 +203,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   // Note that this requires the new version of the
   // visualization routines. OpenDX cannot visualize vectors.
 
-  if( ( VizPreSmoother || VizPostSmoother || VizCycle ) && ( Format == 0 ) ) {
+  if( ( VizPreSmoother || VizPostSmoother || VizCycle ) && ( Format == 0) ) {
     cerr << endl;
     cerr << ErrorMsg_ << "Option `viz: output format' == `dx' cannot be used" << endl
          << ErrorMsg_ << "to visualize the effect of smoothers and cycle." << endl;
@@ -212,6 +213,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     VizCycle = false;
   }
 
+/*
   if (Format == 2) {
     // only aggregate visualization is supported right now
     // paraview should be able to visualize vectors, however
@@ -219,6 +221,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
     VizPostSmoother = false;
     VizCycle = false;
   }
+*/
 
   if( verbose_ ) 
     cout << endl << "- visualization:" << endl << endl;
