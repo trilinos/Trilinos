@@ -14,8 +14,8 @@
 using namespace std;
 using namespace Kokkos;
 
-#define OTYPE short
-#define STYPE float
+#define OTYPE int
+#define STYPE double
 #define MULTCLASS BaseSparseMultiply
 
 template<typename TYPE>

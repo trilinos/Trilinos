@@ -280,9 +280,8 @@ int compareMultiVecs(const DMultiVector & v1, const DMultiVector & v2, bool verb
     for (OTYPE i=0; i<v1.getNumRows(); i++) sum += v1v[i] - v2v[i];
   }
   
-  if (sum<0.0) sum = - sum;
   if (verbose) cout << "Difference between exact and computed multivectors = " << sum << endl;
-  if (!(sum<1.0E-4)) {
+  if (!(abs(sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }
@@ -295,10 +294,9 @@ int compareVecs(const DVector & v1, const DVector & v2, bool verbose) {
   STYPE * v1v = v1.getValues();
   STYPE * v2v = v2.getValues();
   for (OTYPE i=0; i < v1.getLength(); i++) sum += v1v[i] - v2v[i];
-  if (sum<0.0) sum = - sum;
 
   if (verbose) cout << "Difference between exact and computed vectors = " << sum << endl;  
-  if (!(sum<1.0E-4)) {
+  if (!(abs(sum)<1.0E-4)) {
     if (verbose) cout << "********** Difference too large **********" << endl;
     return(1); 
   }
