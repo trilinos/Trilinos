@@ -83,8 +83,13 @@ namespace LOCA {
     //! Return the current solution group.
     virtual LOCA::Continuation::AbstractGroup& getSolutionGroup();
 
-    //! Return the current underlying group.
-    virtual LOCA::Continuation::AbstractGroup& getUnderlyingGroup();
+    //! Return the current bifurcation group.
+    /*!
+     * If the current bifurcation method is "None", then the returned group
+     * is the same as getSolutionGroup(), otherwise this method returns the
+     * current bifurcation group (e.g., a turning point group).
+     */
+    virtual LOCA::Continuation::AbstractGroup& getBifurcationGroup();
 
     //! Return the output parameters from the stepper algorithm.
     virtual const NOX::Parameter::List& getParameterList() const;

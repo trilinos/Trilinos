@@ -344,9 +344,9 @@ LOCA::Stepper::finish(LOCA::Abstract::Iterator::IteratorStatus iteratorStatus)
     // Save previous successful step information
     *prevGroupPtr = *curGroupPtr;
 
-    // Get underyling solution group
+    // Get bifurcation group if there is one, or solution group if not
     LOCA::Continuation::AbstractGroup& underlyingGroup
-      = dynamic_cast<LOCA::Continuation::AbstractGroup&>(getSolutionGroup());
+      = dynamic_cast<LOCA::Continuation::AbstractGroup&>(getBifurcationGroup());
 
     // Make a copy of the parameter list, change continuation method to
     // natural
@@ -617,13 +617,13 @@ LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
 LOCA::Continuation::AbstractGroup&
 LOCA::Stepper::getSolutionGroup()
 {
-  return curGroupPtr->getUnderlyingGroup();
+  return curGroupPtr->getBaseLevelUnderlyingGroup();
 }
 
 LOCA::Continuation::AbstractGroup&
-LOCA::Stepper::getUnderlyingGroup()
+LOCA::Stepper::getBifurcationGroup()
 {
-  return curGroupPtr->getBaseLevelUnderlyingGroup();
+  return curGroupPtr->getUnderlyingGroup();
 }
 
 const NOX::Parameter::List&
