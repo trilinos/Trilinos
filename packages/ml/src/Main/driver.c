@@ -1,9 +1,10 @@
 #ifdef ML_MPI
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "ml_include.h"
 
-main(int argc, char *argv[])
+void main(int argc, char *argv[])
 {
    int i, j, nrows, *mat_ia, *mat_ja, startRow, mypid, scheme, globalN;
    int nprocs, nullDim, method;
