@@ -96,8 +96,8 @@ else {
 # Send email to $database_mgr and $recipient when the software is downloaded.
 # This email will be used to create the database for SNL Tech. Transfer.
 
-$database_mgr = "kddevin\@cs.sandia.gov";
-open(MAIL, "|/usr/lib/sendmail -f "Zoltan_Download" -i $database_mgr $recipient") || dienow "Unable to send mail.";
+$database_mgr = "kddevin\@sandia.gov";
+open(MAIL, "|/usr/lib/sendmail -f GNU_LGPL_Download -i $database_mgr $recipient") || dienow "Unable to send mail.";
 print MAIL "$pkg|$ul|$in{email}|$in{name}|$in{company}|$in{addr1}|$in{addr2}|$in{city}|$in{state}|$in{zip}|$in{country}|$ENV{'REMOTE_ADDR'}\n\n";
 close MAIL;
 
