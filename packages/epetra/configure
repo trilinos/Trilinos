@@ -1804,10 +1804,11 @@ fi;
 if test "${with_mpi_compilers+set}" = set; then
   withval="$with_mpi_compilers"
 
-  if test X${withval} = Xyes; then
+  if test X${withval} != Xno; then
     HAVE_PKG_MPI=yes
-    # Check for mpicxx, if it does not exist, use mpiCC instead.
-    # Extract the first word of "mpicxx", so it can be a program name with args.
+    if test X${withval} = Xyes; then
+      # Check for mpicxx, if it does not exist, use mpiCC instead.
+      # Extract the first word of "mpicxx", so it can be a program name with args.
 set dummy mpicxx; ac_word=$2
 echo "$as_me:$LINENO: checking for $ac_word" >&5
 echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
@@ -1843,10 +1844,9 @@ else
 echo "${ECHO_T}no" >&6
 fi
 
-    MPI_CC=mpicc
-    MPI_F77=mpif77
-  else
-    if test X${withval} != Xno; then
+      MPI_CC=mpicc
+      MPI_F77=mpif77
+    else
       MPI_TEMP_CXX=${withval}/mpicxx
       if test -f ${MPI_TEMP_CXX}; then
         MPI_CXX=${MPI_TEMP_CXX}
@@ -1855,7 +1855,6 @@ fi
       fi
       MPI_CC=${withval}/mpicc
       MPI_F77=${withval}/mpif77
-
     fi
   fi
 
@@ -3250,7 +3249,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3253:" \
+echo "$as_me:3252:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5622,7 +5621,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5625: \"$ac_link\") >&5
+(eval echo $as_me:5624: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5701,7 +5700,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5704: \"$ac_link\") >&5
+(eval echo $as_me:5703: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7974,7 +7973,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7977: \"$ac_link\") >&5
+(eval echo $as_me:7976: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8053,7 +8052,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8056: \"$ac_link\") >&5
+(eval echo $as_me:8055: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

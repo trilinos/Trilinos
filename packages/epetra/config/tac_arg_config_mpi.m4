@@ -39,14 +39,14 @@ AC_ARG_WITH(mpi,
 AC_ARG_WITH(mpi-compilers,
 [AC_HELP_STRING([--with-mpi-compilers=PATH],[use MPI C++ compiler mpicxx, or mpiCC (if mpicxx not available), MPI C compiler mpicc and MPI Fortran compiler mpif77 found in PATH (PATH optional).  Enables MPI])],
 [
-  if test X${withval} = Xyes; then
-    HAVE_PKG_MPI=yes 
-    # Check for mpicxx, if it does not exist, use mpiCC instead.
-    AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
-    MPI_CC=mpicc
-    MPI_F77=mpif77
-  else
-    if test X${withval} != Xno; then
+  if test X${withval} != Xno; then
+    HAVE_PKG_MPI=yes
+    if test X${withval} = Xyes; then
+      # Check for mpicxx, if it does not exist, use mpiCC instead.
+      AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
+      MPI_CC=mpicc
+      MPI_F77=mpif77
+    else
       MPI_TEMP_CXX=${withval}/mpicxx
       if test -f ${MPI_TEMP_CXX}; then
         MPI_CXX=${MPI_TEMP_CXX}
@@ -55,7 +55,6 @@ AC_ARG_WITH(mpi-compilers,
       fi
       MPI_CC=${withval}/mpicc
       MPI_F77=${withval}/mpif77
-
     fi
   fi
 ]
