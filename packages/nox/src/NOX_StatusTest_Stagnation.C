@@ -56,16 +56,20 @@ NOX::StatusTest::Stagnation::checkStatus(const Solver::Generic& problem)
 {
   status = Unconverged;
 
+  // First time through we don't do anything
+  int niters = problem.getNumIterations(); 
+  if (niters == 0) {
+    lastIteration = 0;
+    return Unconverged;
+  } 
+
   // Make sure we have not already counted the last nonlinear iteration.
   // This protects against multiple calls to checkStatus() in between 
   // nonlinear iterations.
   bool isCounted = false;
-  int niters = problem.getNumIterations();  
   if (niters == lastIteration) {
     isCounted = true;
   }
-  else if (niters == 0) 
-    return Unconverged;
   else
     lastIteration = niters;
 
