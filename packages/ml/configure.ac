@@ -104,8 +104,6 @@ AC_PREREQ(2.52)
 
 TAC_ARG_CONFIG_MPI
 
-TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
-
 AC_PROG_CXX(CC g++ gcc c++ cxx)
 
 TAC_ARG_ENABLE_OPTION(ml_multiple_rhs, [experimental], ML_MULTIPLE_RHS, no)
@@ -133,7 +131,8 @@ TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
-#TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+TAC_ARG_WITH_LIBS(libs, LIBS)
+TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
 # ------------------------------------------------------------------------
 # Alternate archiver
@@ -285,9 +284,9 @@ AM_CONDITIONAL(ML_STANDALONE_MODE, test "X$ac_cv_use_ml_aztecoo" != "Xyes")
 ###########################
 # these are OFF by default
 ###########################
- TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure LIB="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
+ TAC_ARG_WITH_PACKAGE(ml_superlu, [Enable SuperLU support.  Note 1: SuperLU is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu" --with-ldflags="-L<SuperLU-library-path>" --with-incdirs="<SuperLU-include-path>".], ML_SUPERLU, no)
 #
- TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure LIB="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
+ TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [Enable SuperLU_DIST support.  Note 1: SuperLU_DIST is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location and name of the SuperLU_DIST headers and libraries like so: configure --with-libs="<other libraries> -lsuperlu_dist" --with-ldflags="-L<SuperLU_DIST-library-path>" --with-incdirs="<SuperLU_DIST-include-path>".], ML_SUPERLU_DIST, no)
  
 # Note 2: You must also specify the location of the SuperLU_DIST headers and libraries via the configure options --with-ldflags=<SuperLU_DIST-library-path/library-name> and --with-incdirs=SuperLU_DIST-include-directory.], ML_SUPERLU_DIST, no)
 #
@@ -309,13 +308,13 @@ AM_CONDITIONAL(ML_BENCHMARKING, test "X$ac_cv_use_ml_benchmarking" != "Xno")
 #  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  ml requires at least one or the other.]])
 #fi
 
-TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries like so: configure LIB="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
+TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of the METIS headers and libraries like so: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
 TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x.  Note
 1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure LIB="<other libraries> -lparmetis" --with-ldflags="-L<ParMETIS-library-path>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) #
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<ParMETIS-library-path>" and --with-incdirs="-I<ParMETIS-include-directory>".], ML_PARMETIS_2x, no) #
 TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x.  Note
 1: ParMETIS is a third party library.  As such, configure assumes that it has
-already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure LIB="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) #
+already been built.  Note 2: You must also specify the location of the ParMETIS headers and libraries like so:  configure --with-libs="<other libraries> -lparmetis" --with-ldflags="-L<METIS-library-path>" --with-incdirs="-I<ParMETIS-include-directory>". Note 3: You also need to specify --with-ml_metis, and the location of the METIS library (after that of the ParMETIS one).], ML_PARMETIS_3x, no) #
 #
 
 AC_ARG_WITH(ml-64bit-integer,

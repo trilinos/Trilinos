@@ -902,8 +902,6 @@ Optional Packages:
                           use -I
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib] Do not use
                           -L
-  --with-ldflags          additional LDFLAGS flags to be added: will prepend
-                          to LDFLAGS
   --with-ccflags          additional CCFLAGS flags to be added: will prepend
                           to CCFLAGS
   --with-cxxflags         additional CXXFLAGS flags to be added: will
@@ -912,6 +910,11 @@ Optional Packages:
                           to CFLAGS
   --with-fflags           additional FFLAGS flags to be added: will prepend
                           to FFLAGS
+  --with-libs             List additional libraries here. For example,
+                          --with-libs=-lsuperlu or
+                          --with-libs=/path/libsuperlu.a
+  --with-ldflags          additional LDFLAGS flags to be added: will prepend
+                          to LDFLAGS
   --with-ar               override archiver command (default is "ar cru")
   --with-ml_epetra        Enable Epetra support (default is yes)
   --with-ml_aztecoo       Enable Aztecoo support (default is yes)
@@ -922,7 +925,7 @@ Optional Packages:
                           party library. As such, configure assumes that it
                           has already been built. Note 2: You must also
                           specify the location and name of the SuperLU headers
-                          and libraries like so: configure LIB="<other
+                          and libraries like so: configure --with-libs="<other
                           libraries> -lsuperlu"
                           --with-ldflags="-L<SuperLU-library-path>"
                           --with-incdirs="<SuperLU-include-path>". (default is
@@ -932,7 +935,8 @@ Optional Packages:
                           that it has already been built. Note 2: You must
                           also specify the location and name of the
                           SuperLU_DIST headers and libraries like so:
-                          configure LIB="<other libraries> -lsuperlu_dist"
+                          configure --with-libs="<other libraries>
+                          -lsuperlu_dist"
                           --with-ldflags="-L<SuperLU_DIST-library-path>"
                           --with-incdirs="<SuperLU_DIST-include-path>".
                           (default is no)
@@ -941,8 +945,8 @@ Optional Packages:
                           library. As such, configure assumes that it has
                           already been built. Note 2: You must also specify
                           the location of the METIS headers and libraries like
-                          so: configure LIB="<other libraries> -lmetis"
-                          --with-ldflags="-L<METIS-library-path>" and
+                          so: configure --with-libs="<other libraries>
+                          -lmetis" --with-ldflags="-L<METIS-library-path>" and
                           --with-incdirs="<METIS-include-path>". (default is
                           no)
   --with-ml_parmetis2x    Enable ParMETIS support, version 2.x. Note 1:
@@ -950,7 +954,7 @@ Optional Packages:
                           configure assumes that it has already been built.
                           Note 2: You must also specify the location of the
                           ParMETIS headers and libraries like so: configure
-                          LIB="<other libraries> -lparmetis"
+                          --with-libs="<other libraries> -lparmetis"
                           --with-ldflags="-L<ParMETIS-library-path>" and
                           --with-incdirs="-I<ParMETIS-include-directory>".
                           (default is no)
@@ -959,7 +963,7 @@ Optional Packages:
                           configure assumes that it has already been built.
                           Note 2: You must also specify the location of the
                           ParMETIS headers and libraries like so: configure
-                          LIB="<other libraries> -lparmetis"
+                          --with-libs="<other libraries> -lparmetis"
                           --with-ldflags="-L<METIS-library-path>"
                           --with-incdirs="-I<ParMETIS-include-directory>".
                           Note 3: You also need to specify --with-ml_metis,
@@ -2290,25 +2294,6 @@ echo "$as_me: error: MPI Fortran 77 compiler (${MPI_F77}) not found." >&2;}
 fi
 
 
-
-echo "$as_me:$LINENO: checking whether additional LDFLAGS flags should be added" >&5
-echo $ECHO_N "checking whether additional LDFLAGS flags should be added... $ECHO_C" >&6
-
-# Check whether --with-ldflags or --without-ldflags was given.
-if test "${with_ldflags+set}" = set; then
-  withval="$with_ldflags"
-
-LDFLAGS="${withval} ${LDFLAGS}"
-echo "$as_me:$LINENO: result: LDFLAGS = ${LDFLAGS}" >&5
-echo "${ECHO_T}LDFLAGS = ${LDFLAGS}" >&6
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-
-fi;
-
-
 ac_ext=cc
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3613,7 +3598,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3616:" \
+echo "$as_me:3601:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3900,7 +3885,43 @@ echo "${ECHO_T}no" >&6
 
 fi;
 
-#TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
+
+echo "$as_me:$LINENO: checking whether additional libraries are needed" >&5
+echo $ECHO_N "checking whether additional libraries are needed... $ECHO_C" >&6
+
+# Check whether --with-libs or --without-libs was given.
+if test "${with_libs+set}" = set; then
+  withval="$with_libs"
+
+LIBS="${withval} ${LIBS}"
+echo "$as_me:$LINENO: result: LIBS = ${LIBS}" >&5
+echo "${ECHO_T}LIBS = ${LIBS}" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
+
+
+echo "$as_me:$LINENO: checking whether additional LDFLAGS flags should be added" >&5
+echo $ECHO_N "checking whether additional LDFLAGS flags should be added... $ECHO_C" >&6
+
+# Check whether --with-ldflags or --without-ldflags was given.
+if test "${with_ldflags+set}" = set; then
+  withval="$with_ldflags"
+
+LDFLAGS="${withval} ${LDFLAGS}"
+echo "$as_me:$LINENO: result: LDFLAGS = ${LDFLAGS}" >&5
+echo "${ECHO_T}LDFLAGS = ${LDFLAGS}" >&6
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi;
+
 
 # ------------------------------------------------------------------------
 # Alternate archiver
@@ -6326,7 +6347,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:6329: \"$ac_link\") >&5
+(eval echo $as_me:6350: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6406,7 +6427,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6409: \"$ac_link\") >&5
+(eval echo $as_me:6430: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8837,7 +8858,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8840: \"$ac_link\") >&5
+(eval echo $as_me:8861: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8917,7 +8938,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8920: \"$ac_link\") >&5
+(eval echo $as_me:8941: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

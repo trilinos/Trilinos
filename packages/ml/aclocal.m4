@@ -1047,6 +1047,37 @@ if test -n "${MPI_F77}"; then
 fi
 ])
 
+dnl @synopsis TAC_ARG_ENABLE_OPTION(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
+dnl
+dnl Test for --enable-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
+dnl Also calls AC_DEFINE to define HAVE_${HAVE_NAME} if value is not equal to "no"
+dnl
+dnl Use this macro to facilitate definition of options in a package.  For example:
+dnl 
+dnl TAC_ARG_ENABLE_OPTION(threads, [enable shared memory threads], THREADS, no)
+dnl 
+dnl will test for --enable-threads when configure is run.  If it is defined (and not set to "no")
+dnl then HAVE_THREADS will be defined, Otherwise HAVE_THREADS will not be defined.
+dnl
+dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl
+AC_DEFUN([TAC_ARG_ENABLE_OPTION],
+[
+AC_ARG_ENABLE([$1],
+AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
+ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
+
+AC_MSG_CHECKING(whether to use [$1])
+
+if test "X$ac_cv_use_$1" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_$3],1,[Define if want to build with $1 enabled])
+else
+  AC_MSG_RESULT(no)
+fi
+])
+
+
 dnl @synopsis TAC_ARG_WITH_FLAGS(lcase_name, UCASE_NAME)
 dnl
 dnl Test for --with-lcase_name="compiler/loader flags".  if defined, prepend 
@@ -1079,36 +1110,36 @@ AC_MSG_RESULT(no)
 ])
 
 
-dnl @synopsis TAC_ARG_ENABLE_OPTION(FEATURE_NAME, FEATURE_DESCRIPTION, HAVE_NAME, DEFAULT_VAL)
+dnl @synopsis TAC_ARG_WITH_LIBS
 dnl
-dnl Test for --enable-${FEATURE_NAME} and set to DEFAULT_VAL value if feature not specified.
-dnl Also calls AC_DEFINE to define HAVE_${HAVE_NAME} if value is not equal to "no"
-dnl
-dnl Use this macro to facilitate definition of options in a package.  For example:
+dnl Test for --with-libs="name(s)".
 dnl 
-dnl TAC_ARG_ENABLE_OPTION(threads, [enable shared memory threads], THREADS, no)
+dnl Prepends the specified name(s) to the list of libraries to link 
+dnl with.  
+dnl
+dnl Example use
+dnl
+dnl TAC_ARG_WITH_LIBS
 dnl 
-dnl will test for --enable-threads when configure is run.  If it is defined (and not set to "no")
-dnl then HAVE_THREADS will be defined, Otherwise HAVE_THREADS will not be defined.
+dnl tests for --with-libs and pre-pends to LIBS
 dnl
-dnl @author Mike Heroux <mheroux@cs.sandia.gov>
+dnl @author Jim Willenbring <jmwille@sandia.gov>
 dnl
-AC_DEFUN([TAC_ARG_ENABLE_OPTION],
+AC_DEFUN([TAC_ARG_WITH_LIBS],
 [
-AC_ARG_ENABLE([$1],
-AC_HELP_STRING([--enable-$1],[$2 (default is [$4])]),
-ac_cv_use_$1=$enableval, ac_cv_use_$1=$4)
-
-AC_MSG_CHECKING(whether to use [$1])
-
-if test "X$ac_cv_use_$1" != "Xno"; then
-  AC_MSG_RESULT(yes)
-  AC_DEFINE([HAVE_$3],1,[Define if want to build with $1 enabled])
-else
-  AC_MSG_RESULT(no)
-fi
-])
-
+AC_MSG_CHECKING([whether additional libraries are needed])
+AC_ARG_WITH(libs,
+AC_HELP_STRING([--with-libs], 
+[List additional libraries here.  For example, --with-libs=-lsuperlu
+or --with-libs=/path/libsuperlu.a]),
+[
+LIBS="${withval} ${LIBS}"
+AC_MSG_RESULT([LIBS = ${LIBS}])
+],
+AC_MSG_RESULT(no)
+)
+]
+)
 
 dnl @synopsis TAC_ARG_WITH_AR
 dnl
