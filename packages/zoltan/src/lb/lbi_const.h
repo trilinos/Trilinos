@@ -415,7 +415,13 @@ extern void LB_Set_Help_Migrate(struct LB_Struct *, int);
  *    LB_TAG **          --  Array of load-balancing tags for objects that
  *                           need to be exported to establish the new
  *                           decomposition.
+ *  
+ *  Returned value: zero --  No changes to the decomposition were made by the
+ *                           load-balancing algorithm; migration is not needed.
+ *                  one  --  A new decomposition is suggested by the
+ *                           load-balancer; migration is needed to establish
+ *                           the new decomposition.
  */
 
-extern void LB_Balance(struct LB_Struct *, int *, LB_TAG **, int *, LB_TAG **);
+extern int LB_Balance(struct LB_Struct *, int *, LB_TAG **, int *, LB_TAG **);
 

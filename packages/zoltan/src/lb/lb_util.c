@@ -135,11 +135,11 @@ COMM_OBJ *comm_plan;     /* Communication object returned
     printf("DLBLIB %d %s Entering HELP_MIGRATE %d %d\n",
             LB_Proc, yo, num_import, num_export);
 
-  if (lb->Migrate.Pre_Process != NULL)
+  if (lb->Migrate.Pre_Process != NULL) {
     lb->Migrate.Pre_Process(num_import, import_objs, num_export, export_objs);
-
-  if (LB_Debug > 5)
-    printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
+    if (LB_Debug > 5)
+      printf("DLBLIB %d %s Done Pre-Process\n", LB_Proc, yo);
+  }
 
   size = lb->Migrate.Get_Obj_Data_Size(lb->Object_Type);
 

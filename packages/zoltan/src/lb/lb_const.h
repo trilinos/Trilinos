@@ -50,7 +50,8 @@ typedef void LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE(LB_ID object, char *start_pos_in_b
  */
 
 typedef enum LB_Method {
-  RCB = 0,
+  NONE = -1,
+  RCB,
   OCTPART,
   WHEAT,
   LB_MAX_METHODS                  /*  This entry should always be last.      */

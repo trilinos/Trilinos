@@ -222,6 +222,10 @@ int i;
     lb->Method = OCTPART;
     lb->LB_Fn = oct_init;
   }
+  else if (strcasecmp(method_name, "NONE") == 0) {
+    lb->Method = NONE;
+    lb->LB_Fn = NULL;
+  }
 
   /*
    *  SET OTHER METHODS HERE!!
@@ -354,7 +358,7 @@ char *yo = "LB_Set_Help_Migrate";
 /****************************************************************************/
 /****************************************************************************/
 
-void LB_Balance(
+int LB_Balance(
   LB *lb, 
   int *num_import_objs,       /* The number of non-local objects in the
                                  processor's new decomposition.            */
@@ -372,27 +376,50 @@ void LB_Balance(
  * Main user-call for load-balancing.
  * Input:  a load-balancing object with appropriate function pointers set.
  * Output: ???
+ *   Return zero if the decomposition is unchanged by load-balancing;
+ *   Return one otherwise.
  */
 
+char *yo = "LB_Balance";
 int num_objs;                  /* Set to the new number of objects on 
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
                                   keeps from the old decomposition.         */
+int gmax_imports;              /* Maximum number of imported objects over 
+                                  all processors.                           */
 double LB_start_time, LB_end_time;
 double LB_time[2], LB_max_time[2];
 
-
-/* <<<<<<< lb.c
-
-   =======
-   */
   LB_start_time = MPI_Wtime();
-  /*
-    >>>>>>> 1.9
-    */
+
+  if (lb->Method == NONE) {
+    if (LB_Proc == 0)
+      printf("%s Balancing method selected == NONE; no balancing performed\n",
+              yo);
+
+    return 0;
+  }
+
   perform_error_checking(lb);
 
   lb->LB_Fn(lb, &num_objs, &num_keep, num_import_objs, import_objs);
+
+  MPI_Allreduce(num_import_objs, &gmax_imports, 1, MPI_INT, MPI_MAX, 
+                MPI_COMM_WORLD);
+
+  if (gmax_imports == 0) {
+
+    /*
+     *  Decomposition was not changed by the load balancing; no migration
+     *  is needed.
+     */
+
+    if (LB_Proc == 0)
+      printf("%s No changes to the decomposition due to load-balancing; "
+             "no migration is needed.\n", yo);
+
+    return 0;
+  }
 
   compute_destinations(lb, *num_import_objs, *import_objs, 
                        num_export_objs, export_objs);
@@ -427,6 +454,8 @@ double LB_time[2], LB_max_time[2];
   }
 
   clean_up(lb);
+
+  return 1;
 }
 
 /****************************************************************************/
