@@ -171,15 +171,19 @@ int main(int argc, char *argv[])
     // define the space for fine level vectors and operators.
     Space FineSpace(NumGlobalElements);
 
-    Matrix MatA(FineSpace, FineSpace);
+    DistributedMatrix MatA(FineSpace, FineSpace);
 
-    for (int i = 0 ; i < NumGlobalElements ; ++i) {
-      MatA(i, i) = 2.0; //  - LambdaMin;
-      if (i)
-        MatA(i, i - 1) = - 1.0;
-      if (i != NumGlobalElements - 1)
-        MatA(i, i + 1) = - 1.0;
+    // assembel the matrix on processor 0 only
+    if (GetMyPID() == 0) {
+      for (int i = 0 ; i < NumGlobalElements ; ++i) {
+        MatA.SetElement(i, i, 2.0); //  - LambdaMin;
+        if (i)
+          MatA.SetElement(i, i - 1, - 1.0);
+        if (i != NumGlobalElements - 1)
+          MatA.SetElement(i, i + 1, - 1.0);
+      }
     }
+    MatA.FillComplete();
 
     // wrap MatA as an Operator
     Operator A(FineSpace, FineSpace, &MatA, false);

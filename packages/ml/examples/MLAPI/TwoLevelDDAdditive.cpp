@@ -31,12 +31,6 @@
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
 
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
 #include "Teuchos_ParameterList.hpp"
 #include "ml_include.h"
 #include "MLAPI.h"
@@ -172,9 +166,6 @@ int main(int argc, char *argv[])
   
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_Comm Comm(MPI_COMM_WORLD);
 #endif
 
   // Initialize the workspace and set the output level
