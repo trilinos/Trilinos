@@ -46,7 +46,8 @@ LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
   paramVec(grpPtr->getParams()),
   conParam(0.0),
   conParamID(-1),
-  conParamLabel("Homotopy Continuation Parameter")
+  conParamLabel("Homotopy Continuation Parameter"),
+  ownsGroup(false)
 {
   // construct a random vector for the problem 
   randomVecPtr->random();
@@ -80,7 +81,8 @@ LOCA::HomotopyGroup::HomotopyGroup(NOX::Parameter::List& locaSublist,
   paramVec(grpPtr->getParams()),
   conParam(0.0),
   conParamID(-1),
-  conParamLabel("Homotopy Continuation Parameter")
+  conParamLabel("Homotopy Continuation Parameter"),
+  ownsGroup(false)
 {
   // construct a random vector for the problem 
   *randomVecPtr = randomVector;
@@ -111,7 +113,8 @@ LOCA::HomotopyGroup::HomotopyGroup(const LOCA::HomotopyGroup& source,
   paramVec(source.paramVec),
   conParam(source.conParam),
   conParamID(source.conParamID),
-  conParamLabel(source.conParamLabel)
+  conParamLabel(source.conParamLabel),
+  ownsGroup(true)
 {
   if (source.newtonVecPtr != 0)
     newtonVecPtr = source.newtonVecPtr->clone(type);
@@ -138,7 +141,8 @@ LOCA::HomotopyGroup::HomotopyGroup(const LOCA::HomotopyGroup& source,
 
 LOCA::HomotopyGroup::~HomotopyGroup() 
 {
-  delete grpPtr;
+  if (ownsGroup) 
+    delete grpPtr;
   delete gVecPtr;
   delete randomVecPtr;
   delete newtonVecPtr;
