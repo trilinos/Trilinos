@@ -1423,6 +1423,9 @@ ReComputePreconditioner()
   // re-build the preconditioner //
   // =========================== //
 
+  int OutputLevel = List_.get("output", 10);  
+  ML_Set_PrintLevel(OutputLevel);
+
   Epetra_Time Time(Comm());
   Epetra_Time InitialTime(Comm());
   {
