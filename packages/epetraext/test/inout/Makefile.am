@@ -41,7 +41,9 @@ inout_test_DEPENDENCIES = \
 inout_test_CXXFLAGS = -I$(top_srcdir)/src/inout \
                             -I$(top_builddir)/src \
                             -I$(top_srcdir)/../epetra/src \
-                            -I$(top_builddir)/../epetra/src
+                            -I$(top_builddir)/../epetra/src \
+                            -I$(top_srcdir)/../triutils/src \
+                            -I$(top_builddir)/../triutils/src
 
 inout_test_LDADD = \
   $(top_builddir)/src/transform/libepetraext_inout.a \
