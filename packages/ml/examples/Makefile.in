@@ -22,7 +22,7 @@
 #with aztecoo and epetra support enabled, then a c++ linker is invoked
 #for ML's interfaces to those two packages.
 
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_aztecoo_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_MultiLevelOperator_SOURCES) $(ml_example_MultiLevelPreconditioner_SOURCES) $(ml_example_MultiLevelPreconditioner_2level_SOURCES) $(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) $(ml_example_MultiLevelPreconditioner_analyze_SOURCES) $(ml_example_MultiLevelPreconditioner_filtering_SOURCES) $(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) $(ml_example_MultiLevelPreconditioner_vbr_SOURCES) $(ml_example_MultiLevelPreconditioner_viz_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_aztecoo_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_MultiLevelOperator_SOURCES) $(ml_example_MultiLevelPreconditioner_SOURCES) $(ml_example_MultiLevelPreconditioner_2level_SOURCES) $(ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES) $(ml_example_MultiLevelPreconditioner_analyze_SOURCES) $(ml_example_MultiLevelPreconditioner_filtering_SOURCES) $(ml_example_MultiLevelPreconditioner_maxwell_SOURCES) $(ml_example_MultiLevelPreconditioner_vbr_SOURCES) $(ml_example_MultiLevelPreconditioner_viz_SOURCES) $(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -70,6 +70,7 @@ host_triplet = @host@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztecoo$(EXEEXT)
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
@@ -99,6 +100,7 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_multiple_rhs$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_aztecoo$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide$(EXEEXT) \
@@ -126,7 +128,8 @@ host_triplet = @host@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_vbr$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_viz$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_analyze$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_MultiLevelPreconditioner_maxwell$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_matrix_AIJ$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS =  \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
@@ -311,6 +314,12 @@ am__ml_read_elas_SOURCES_DIST = $(srcdir)/ml_read_elas.c
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_DEPENDENCIES =  \
 @ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
+am__ml_read_matrix_AIJ_SOURCES_DIST =  \
+	$(srcdir)/ml_read_matrix_AIJ.cpp
+@ML_STANDALONE_MODE_FALSE@am_ml_read_matrix_AIJ_OBJECTS = ml_read_matrix_AIJ-ml_read_matrix_AIJ.$(OBJEXT)
+ml_read_matrix_AIJ_OBJECTS = $(am_ml_read_matrix_AIJ_OBJECTS)
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_DEPENDENCIES =  \
+@ML_STANDALONE_MODE_FALSE@	$(am__DEPENDENCIES_9)
 am__ml_read_maxwell_SOURCES_DIST = $(srcdir)/ml_read_maxwell.c
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@am_ml_read_maxwell_OBJECTS = ml_read_maxwell-ml_read_maxwell.$(OBJEXT)
 ml_read_maxwell_OBJECTS = $(am_ml_read_maxwell_OBJECTS)
@@ -377,6 +386,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_readfile-ml_readfile.Po \
@@ -409,11 +419,11 @@ SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) \
 	$(ml_example_MultiLevelPreconditioner_vbr_SOURCES) \
 	$(ml_example_MultiLevelPreconditioner_viz_SOURCES) \
 	$(ml_multiple_rhs_SOURCES) $(ml_read_elas_SOURCES) \
-	$(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) \
-	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
-	$(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) \
-	$(mlaz_example_SOURCES) $(mlguide_SOURCES) \
-	$(mlguide_par_SOURCES)
+	$(ml_read_matrix_AIJ_SOURCES) $(ml_read_maxwell_SOURCES) \
+	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
+	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
+	$(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) \
+	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_aztec_simple_METIS_SOURCES_DIST) \
 	$(am__ml_aztec_simple_ParMETIS_SOURCES_DIST) \
@@ -433,6 +443,7 @@ DIST_SOURCES = $(am__ml_aztec_simple_SOURCES_DIST) \
 	$(am__ml_example_MultiLevelPreconditioner_viz_SOURCES_DIST) \
 	$(am__ml_multiple_rhs_SOURCES_DIST) \
 	$(am__ml_read_elas_SOURCES_DIST) \
+	$(am__ml_read_matrix_AIJ_SOURCES_DIST) \
 	$(am__ml_read_maxwell_SOURCES_DIST) \
 	$(am__ml_read_salsa_SOURCES_DIST) \
 	$(am__ml_readfile_SOURCES_DIST) $(am__ml_recirc_SOURCES_DIST) \
@@ -605,6 +616,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_viz_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_SOURCES = $(srcdir)/ml_read_matrix_AIJ.cpp
 @ML_STANDALONE_MODE_FALSE@ml_multiple_rhs_SOURCES = $(srcdir)/ml_multiple_rhs.cpp
 @ML_STANDALONE_MODE_FALSE@ml_aztecoo_SOURCES = $(srcdir)/ml_aztecoo.cpp
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -780,6 +792,10 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_analyze_LINK = ${mllink}
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_CXXFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_read_matrix_AIJ_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_example_MultiLevelPreconditioner_maxwell_LDADD = ${ml_libs}
@@ -888,6 +904,9 @@ ml_multiple_rhs$(EXEEXT): $(ml_multiple_rhs_OBJECTS) $(ml_multiple_rhs_DEPENDENC
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
 	$(ml_read_elas_LINK) $(ml_read_elas_LDFLAGS) $(ml_read_elas_OBJECTS) $(ml_read_elas_LDADD) $(LIBS)
+ml_read_matrix_AIJ$(EXEEXT): $(ml_read_matrix_AIJ_OBJECTS) $(ml_read_matrix_AIJ_DEPENDENCIES) 
+	@rm -f ml_read_matrix_AIJ$(EXEEXT)
+	$(ml_read_matrix_AIJ_LINK) $(ml_read_matrix_AIJ_LDFLAGS) $(ml_read_matrix_AIJ_OBJECTS) $(ml_read_matrix_AIJ_LDADD) $(LIBS)
 ml_read_maxwell$(EXEEXT): $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_DEPENDENCIES) 
 	@rm -f ml_read_maxwell$(EXEEXT)
 	$(ml_read_maxwell_LINK) $(ml_read_maxwell_LDFLAGS) $(ml_read_maxwell_OBJECTS) $(ml_read_maxwell_LDADD) $(LIBS)
@@ -941,6 +960,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_MultiLevelPreconditioner_viz-ml_example_MultiLevelPreconditioner_viz.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_readfile-ml_readfile.Po@am__quote@
@@ -1430,6 +1450,22 @@ ml_multiple_rhs-ml_multiple_rhs.obj: $(srcdir)/ml_multiple_rhs.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.Po' tmpdepfile='$(DEPDIR)/ml_multiple_rhs-ml_multiple_rhs.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_multiple_rhs_CPPFLAGS) $(CPPFLAGS) $(ml_multiple_rhs_CXXFLAGS) $(CXXFLAGS) -c -o ml_multiple_rhs-ml_multiple_rhs.obj `if test -f '$(srcdir)/ml_multiple_rhs.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_multiple_rhs.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_multiple_rhs.cpp'; fi`
+
+ml_read_matrix_AIJ-ml_read_matrix_AIJ.o: $(srcdir)/ml_read_matrix_AIJ.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -MT ml_read_matrix_AIJ-ml_read_matrix_AIJ.o -MD -MP -MF "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.o `test -f '$(srcdir)/ml_read_matrix_AIJ.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_matrix_AIJ.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po"; else rm -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_read_matrix_AIJ.cpp' object='ml_read_matrix_AIJ-ml_read_matrix_AIJ.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.o `test -f '$(srcdir)/ml_read_matrix_AIJ.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_read_matrix_AIJ.cpp
+
+ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj: $(srcdir)/ml_read_matrix_AIJ.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -MT ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj -MD -MP -MF "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo" "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po"; else rm -f "$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ml_read_matrix_AIJ.cpp' object='ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.Po' tmpdepfile='$(DEPDIR)/ml_read_matrix_AIJ-ml_read_matrix_AIJ.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(ml_read_matrix_AIJ_CPPFLAGS) $(CPPFLAGS) $(ml_read_matrix_AIJ_CXXFLAGS) $(CXXFLAGS) -c -o ml_read_matrix_AIJ-ml_read_matrix_AIJ.obj `if test -f '$(srcdir)/ml_read_matrix_AIJ.cpp'; then $(CYGPATH_W) '$(srcdir)/ml_read_matrix_AIJ.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ml_read_matrix_AIJ.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
