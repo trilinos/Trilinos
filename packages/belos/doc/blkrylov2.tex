@@ -179,15 +179,16 @@ several vectors at a time, a significant benefit results for this
 user group. The second group consists of users with extremely
 difficult linear systems (poorly conditioned) that typically arise
 from high-fidelity multi-physics simulations. It was pointed out
-in \cite{Ol80} that a block conjugate gradient (CG) implementation
-was more robust that a single CG implementation for symmetric
-positive definite (SPD) matrices containing several extreme
-eigenvalues widely separated from the others. The third group is
-users who have multiple simultaneous right-hand sides to solve.
-The above discussion using exact arithmetic bounds suggests that a
-block Krylov implementation may be able to find the solution to
-all right-hand sides in a fraction of the total number of
-iterations required to solve for each right-hand side separately.
+in \cite{olea:80} that a block conjugate gradient (CG)
+implementation was more robust that a single CG implementation for
+symmetric positive definite (SPD) matrices containing several
+extreme eigenvalues widely separated from the others. The third
+group is users who have multiple simultaneous right-hand sides to
+solve. The above discussion using exact arithmetic bounds suggests
+that a block Krylov implementation may be able to find the
+solution to all right-hand sides in a fraction of the total number
+of iterations required to solve for each right-hand side
+separately.
 
 Block generalizations of Krylov subspace methods are not new,
 however, good robust implementations are needed in order to make
@@ -261,8 +262,8 @@ from the context.
 Block generalizations of the well known CG algorithm \cite{HS52}
 for solving linear systems involving an SPD coefficient matrix
 $\bA$ are not new. For example, they have been studied in
-\cite{Ol80}, and more recently in (\cite{FOP95}, \cite{NY95}, and
-\cite{DUB01}).
+\cite{olea:80}, and more recently in (\cite{FOP95}, \cite{NY95},
+and \cite{DUB01}).
 
 Analogous to the common single CG method, the block CG method for
 solving the block linear system of equations
@@ -325,7 +326,7 @@ CG method is given in Figure \ref{fig:blkomin} below.
 
 The blocks of direction and residual vectors produced by the block
 CG algorithm satisfy the following block orthogonality properties
-(see for example \cite{Ol80}):
+(see for example \cite{olea:80}):
 
  \eq
  \begin{array}{rcl}
@@ -353,7 +354,7 @@ be written using different formulas. For example,
   \end{array}
  \edm
 With these formulas, we obtain the more common implementation of
-the block CG method studied in \cite{Ol80}. When $s=1$, this
+the block CG method studied in \cite{olea:80}. When $s=1$, this
 yields the well known single vector CG implementation. That the
 coefficients can be written using these different formulas was
 proven in \cite{HS52} for the single right-hand side CG
@@ -373,9 +374,9 @@ computation of the coefficient matrix $[\beta_i]$. Thus, this
 formulation may be advantageous numerically since we only need to
 be concerned explicitly with the rank of one quantity.
 
-In \cite{Ol80} it was shown that the ranks of the direction vector
-blocks $\bP^{(j)}$ and the residual blocks $\bR^{(j)}$ are the
-same for every $j$. It follows that the linear independence
+In \cite{olea:80} it was shown that the ranks of the direction
+vector blocks $\bP^{(j)}$ and the residual blocks $\bR^{(j)}$ are
+the same for every $j$. It follows that the linear independence
 (dependence) of these blocks can be monitored via an
 orthogonalization procedure involving just the direction vector
 blocks. Once a new block of direction vectors are computed,
@@ -385,7 +386,7 @@ procedure,
   \bP^{(i+1)} = {\hat \bP}^{(i+1)} \bG_{i+1}, \qquad {\hat \bP}^{(i+1)T}{\hat
   \bP}^{(i+1)}= I_{(s,s)}.
   \edm
-In an analogous manner to that mentioned in \cite{Ol80}, a
+In an analogous manner to that mentioned in \cite{olea:80}, a
 deflation procedure could be incorporated into the algorithm given
 in Figure \ref{fig:blkomin} to prevent breakdowns.
 
@@ -509,14 +510,14 @@ the number of these indices.  As the name implies, the converged
 indices, $[cidx]$, are the indices in the current residual block
 that correspond to residuals that have converged according to some
 user specified residual tolerance, $ctol$, and $numconv$ refers to
-the number of converged residuals. In order for proper execution
-of the block algorithm, $ctol$ must be chosen to be greater than
-or equal to $rtol$. Thus, $[ridx]$ and $[cidx]$ can be different
-sets. This distinction was made for numerical reasons, since
-residuals that have converged according to some user specified
-tolerance may still be large enough to be used to generate new
-linearly independent direction vectors, and thus, further assist
-in the convergence of the block linear system.
+the number of converged residuals. For proper execution of the
+block algorithm, $ctol$ must be chosen to be greater than or equal
+to $rtol$. Thus, $[ridx]$ and $[cidx]$ can be different sets. This
+distinction was made for numerical reasons, since residuals that
+have converged according to some user specified tolerance may
+still be large enough to be used to generate new linearly
+independent direction vectors, and thus, further assist in the
+convergence of the block linear system.
 
 Let ${\hat \bP}^{(i)}_{[piidx]}$ denote the columns of the $n
 \times s$ matrix of direction vectors ${\hat \bP}^{(i)}$ that are
@@ -1190,7 +1191,7 @@ It's great!
 
 \bibitem[1]{AMS90} S. F. Ashby, T. A. Manteuffel and P. E.
 Saylor, {\em A Taxonomy for Conjugate Gradient Methods}, SIAM J.
-Numer. Anal., 26 (1990), pp. 1542-1568.
+Numer. Anal., 27 (1990), pp. 1542-1568.
 
 \bibitem[2]{bcrr:98} J. Baglama, D. Calvetti, L. Reichel, and A.
 Ruttan, {\em Computation of a few close eigenvalues of a large
@@ -1256,7 +1257,7 @@ Definite Linear Systems On Parallel Computers, I: General
 Iterative Scheme}, SIAM J. Matrix Anal. Appl., Vol. 16, No 4,
 (1995), pp. 1135-1153.
 
-\bibitem[16]{Ol80} D. P. O'Leary, {\em The Block Conjugate Gradient
+\bibitem[16]{olea:80} D. P. O'Leary, {\em The Block Conjugate Gradient
 Algorithm and Related Methods}, Linear Algebra And Its
 Applications, 29 (1980), pp. 293-322.
 
