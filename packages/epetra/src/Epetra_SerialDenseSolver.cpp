@@ -58,6 +58,7 @@ void Epetra_SerialDenseSolver::InitPointers()
   FERR_ = 0;
   BERR_ = 0;
   Factor_ =0;
+  Matrix_ =0;
   AF_ = 0;
   IPIV_ = 0;
   WORK_ = 0;

@@ -1832,11 +1832,18 @@ int Epetra_CrsMatrix::RightScale(const Epetra_Vector& x) {
 //=============================================================================
 double Epetra_CrsMatrix::NormInf() const {
 
+#if 0
+  //
+  //  Commenting this section out disables caching, ie. 
+  //  causes the norm to be computed each time NormInf is called.
+  //  See bug #1151 for a full discussion.  
+  //
   double MinNorm ; 
   Comm().MinAll( &NormInf_, &MinNorm, 1 ) ; 
 
   if( MinNorm >= 0.0) 
     return(NormInf_);
+#endif
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
@@ -1876,11 +1883,18 @@ double Epetra_CrsMatrix::NormInf() const {
 //=============================================================================
 double Epetra_CrsMatrix::NormOne() const {
 
+#if 0
+  //
+  //  Commenting this section out disables caching, ie. 
+  //  causes the norm to be computed each time NormOne is called.  
+  //  See bug #1151 for a full discussion.  
+  //
   double MinNorm ; 
   Comm().MinAll( &NormOne_, &MinNorm, 1 ) ; 
 
   if( MinNorm >= 0.0) 
     return(NormOne_);
+#endif
 
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.

@@ -703,11 +703,12 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
     delete [] Rowinds;
   }
   //
-  //  NormOne() and NormInf() will return cached values
+  //  NormOne() and NormInf() will NOT return cached values
+  //  See bug #1151
   //
 
-  EPETRA_TEST_ERR( ! (AnormOne == A->NormOne( )), ierr ); 
-  EPETRA_TEST_ERR( ! (AnormInf == A->NormInf( )), ierr );
+  EPETRA_TEST_ERR( ! (AnormOne != A->NormOne( )), ierr ); 
+  EPETRA_TEST_ERR( ! (AnormInf != A->NormInf( )), ierr );
   //
   //  On Process 0, let the class know that NormInf_ and NormOne_ are
   //  out of date.  
