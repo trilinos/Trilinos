@@ -1254,7 +1254,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    context->Amat = Amat;
    context->near_bdry = NULL;
    ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
-   ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
+   MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
    newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
    newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
    ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
@@ -1546,8 +1546,10 @@ int ML_AGG_DD_Matvec(void *obj,int leng1,double p[],int leng2,double ap[])
    void          *getrowdata;
    struct ML_AGG_Matrix_Context *context;
    ML_GetrowFunc                 *getrow_obj;
+   ML_Operator  *mat_in;
 
-   context = (struct ML_AGG_Matrix_Context *) obj;
+   mat_in = (ML_Operator *) obj;
+   context = (struct ML_AGG_Matrix_Context *) ML_Get_MyMatvecData(mat_in);
    Amat    = (ML_Operator *) context->Amat;
    nRows   = Amat->outvec_leng;
    if ( nRows != leng1 || leng1 != leng2 )
@@ -1895,7 +1897,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
       context->Amat = Amat;
       context->near_bdry = NULL;
       ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
-      ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
+      MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
       newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
       newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
       ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);

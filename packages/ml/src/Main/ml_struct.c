@@ -5004,7 +5004,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       temp_ptr->values = mat_val;
       ML_Create(&subml, 1);
       ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
-      ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
+      MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
       ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL,
@@ -5264,7 +5264,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Operator_Set_Getrow(&(subml->Amat[0]), ML_INTERNAL,
                              subml->Amat[0].outvec_leng, CSR_getrow);
 
-      ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
+      MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
       ML_free(temp_ptr);

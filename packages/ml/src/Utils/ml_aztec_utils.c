@@ -106,7 +106,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
      vbr_mat->cpntr       = Amat->cpntr;
      vbr_mat->rpntr       = Amat->rpntr;
      context->getrowstuff = (void *) vbr_mat;
-     ML_Set_Amatrix_Getrow(ml_handle,level,az_vbrgetrow_wrapper,az_comm_wrapper,
+     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_vbrgetrow_wrapper,az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
 
      AZ_ML_set_vbrdiagonal(ml_handle,  level, Amat);
@@ -127,7 +127,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    }
 	 else if (Amat->matrix_type ==AZ_USER_MATRIX) {
 		 context->getrowstuff = (void *)Amat->matvec_data;
-     ML_Set_Amatrix_Getrow(ml_handle,level,az_usergetrow_wrapper,az_comm_wrapper,
+     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_usergetrow_wrapper,az_comm_wrapper,
 													 isize+(Amat->data_org)[AZ_N_external]);
      AZ_ML_set_userdiagonal(ml_handle,  level, Amat);
 	 }
@@ -295,12 +295,19 @@ int az_vbrgetrow_wrapper(void *data, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;
+   void *temp1;
+   int status;
+   ML_Operator *mat_in;
 
-   context = (struct aztec_context *) data;   
-
-   return(VBR_cnst_blk_getrows(context->getrowstuff, N_requested_rows,
-			       requested_rows,allocated_space,
-			       columns, values, row_lengths) );
+   mat_in = (ML_Operator *) data;
+   context   = (struct aztec_context *) ML_Get_MyGetrowData(mat_in);
+   temp1     = (void *) context;
+   mat_in->data = context->getrowstuff;
+   status = VBR_cnst_blk_getrows(mat_in, N_requested_rows,
+				 requested_rows,allocated_space,
+				 columns, values, row_lengths); 
+   mat_in->data = temp1;
+   return(status);
 }
 
 /***************************************************************************/
@@ -311,14 +318,18 @@ int az_usergetrow_wrapper(void *data, int N_requested_rows, int requested_rows[]
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    struct aztec_context *context;
-	 AZ_MATRIX *Amat;
+   AZ_MATRIX *Amat;
+   void *temp1;
+   int status;
+   ML_Operator *mat_in;
 
-   context = (struct aztec_context *) data;   
+   mat_in = (ML_Operator *) data;
+   context   = (struct aztec_context *) ML_Get_MyGetrowData(mat_in);
 
    Amat=(AZ_MATRIX *)context->Amat;
 
    return(Amat->getrow(columns, values, row_lengths, Amat, N_requested_rows,
-											 requested_rows,allocated_space));
+		       requested_rows,allocated_space));
 }
 
 /***************************************************************************/
