@@ -26,58 +26,58 @@ $(ZOD)/fwrap.o: 	$(ZOD)/fwrap.f90 \
 	$(F90) -c $(ZOM) $(ZOD)/fwrap.f90
 	/bin/mv *.o *.mod $(ZOD)
 
-$(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp \
-			set_numgeom.if		set_numgeom.fn \
-			set_numgeom.if.lbif \
-			set_geom.if		set_geom.fn \
-			set_geom.if.lbif \
-			set_numedges.if 	set_numedges.fn \
-			set_numedges.if.lbif \
-			set_edgelist.if		set_edgelist.fn \
-			set_edgelist.if.lbif \
-			set_numobj.if 		set_numobj.fn \
-			set_numobj.if.lbif \
-			set_objlist.if		set_objlist.fn \
-			set_objlist.if.lbif \
-			set_firstobj.if		set_firstobj.fn \
-			set_firstobj.if.lbif \
-			set_nextobj.if		set_nextobj.fn \
-			set_nextobj.if.lbif \
-			set_numborderobj.if	set_numborderobj.fn \
-			set_numborderobj.if.lbif \
-			set_borderobjlist.if	set_borderobjlist.fn \
-			set_borderobjlist.if.lbif \
-			set_firstborderobj.if	set_firstborderobj.fn \
-			set_firstborderobj.if.lbif \
-			set_nextborderobj.if	set_nextborderobj.fn \
-			set_nextborderobj.if.lbif \
-			set_premigrate.if	set_premigrate.fn \
-			set_premigrate.if.lbif \
-			set_midmigrate.if	set_midmigrate.fn \
-			set_midmigrate.if.lbif \
-			set_postmigrate.if	set_postmigrate.fn \
-			set_postmigrate.if.lbif \
-			set_objsize.if		set_objsize.fn \
-			set_objsize.if.lbif \
-			set_packobj.if		set_packobj.fn \
-			set_packobj.if.lbif \
-			set_unpackobj.if	set_unpackobj.fn \
-			set_unpackobj.if.lbif \
-			set_numchild.if 	set_numchild.fn \
-			set_numchild.if.lbif \
-			set_childweight.if 	set_childweight.fn \
-			set_childweight.if.lbif \
-			set_childlist.if 	set_childlist.fn \
-			set_childlist.if.lbif \
-			set_numcoarseobj.if 	set_numcoarseobj.fn \
-			set_numcoarseobj.if.lbif \
-			set_coarseobjlist.if 	set_coarseobjlist.fn \
-			set_coarseobjlist.if.lbif \
-			set_firstcoarseobj.if	set_firstcoarseobj.fn \
-			set_firstcoarseobj.if.lbif \
-			set_nextcoarseobj.if	set_nextcoarseobj.fn \
-			set_nextcoarseobj.if.lbif \
-			$(ZOD)/sppr $(ZOD)/sppr_header
+$(ZOD)/fwrap.f90: 	fwrap.fpp lbif.fpp lbfn.fpp \
+		set_numgeom.if			set_numgeom.fn \
+		set_geom.if			set_geom.fn \
+		set_numedges.if 		set_numedges.fn \
+		set_edgelist.if			set_edgelist.fn \
+		set_numobj.if 			set_numobj.fn \
+		set_objlist.if			set_objlist.fn \
+		set_firstobj.if			set_firstobj.fn \
+		set_nextobj.if			set_nextobj.fn \
+		set_numborderobj.if		set_numborderobj.fn \
+		set_borderobjlist.if		set_borderobjlist.fn \
+		set_firstborderobj.if		set_firstborderobj.fn \
+		set_nextborderobj.if		set_nextborderobj.fn \
+		set_premigrate.if		set_premigrate.fn \
+		set_midmigrate.if		set_midmigrate.fn \
+		set_postmigrate.if		set_postmigrate.fn \
+		set_objsize.if			set_objsize.fn \
+		set_packobj.if			set_packobj.fn \
+		set_unpackobj.if		set_unpackobj.fn \
+		set_numchild.if 		set_numchild.fn \
+		set_childweight.if 		set_childweight.fn \
+		set_childlist.if 		set_childlist.fn \
+		set_numcoarseobj.if 		set_numcoarseobj.fn \
+		set_coarseobjlist.if 		set_coarseobjlist.fn \
+		set_firstcoarseobj.if		set_firstcoarseobj.fn \
+		set_nextcoarseobj.if		set_nextcoarseobj.fn \
+		set_numgeom.if.lbif		set_numgeom.fn.lbfn \
+		set_geom.if.lbif		set_geom.fn.lbfn \
+		set_numedges.if.lbif 		set_numedges.fn.lbfn \
+		set_edgelist.if.lbif		set_edgelist.fn.lbfn \
+		set_numobj.if.lbif 		set_numobj.fn.lbfn \
+		set_objlist.if.lbif		set_objlist.fn.lbfn \
+		set_firstobj.if.lbif		set_firstobj.fn.lbfn \
+		set_nextobj.if.lbif		set_nextobj.fn.lbfn \
+		set_numborderobj.if.lbif	set_numborderobj.fn.lbfn \
+		set_borderobjlist.if.lbif	set_borderobjlist.fn.lbfn \
+		set_firstborderobj.if.lbif	set_firstborderobj.fn.lbfn \
+		set_nextborderobj.if.lbif	set_nextborderobj.fn.lbfn \
+		set_premigrate.if.lbif		set_premigrate.fn.lbfn \
+		set_midmigrate.if.lbif		set_midmigrate.fn.lbfn \
+		set_postmigrate.if.lbif		set_postmigrate.fn.lbfn \
+		set_objsize.if.lbif		set_objsize.fn.lbfn \
+		set_packobj.if.lbif		set_packobj.fn.lbfn \
+		set_unpackobj.if.lbif		set_unpackobj.fn.lbfn \
+		set_numchild.if.lbif 		set_numchild.fn.lbfn \
+		set_childweight.if.lbif 	set_childweight.fn.lbfn \
+		set_childlist.if.lbif 		set_childlist.fn.lbfn \
+		set_numcoarseobj.if.lbif 	set_numcoarseobj.fn.lbfn \
+		set_coarseobjlist.if.lbif 	set_coarseobjlist.fn.lbfn \
+		set_firstcoarseobj.if.lbif	set_firstcoarseobj.fn.lbfn \
+		set_nextcoarseobj.if.lbif	set_nextcoarseobj.fn.lbfn \
+		$(ZOD)/sppr $(ZOD)/sppr_header
 	/bin/cp $(ZOD)/sppr_header sppr_header
 	$(ZOD)/sppr < fwrap.fpp > $(ZOD)/fwrap.f90
 

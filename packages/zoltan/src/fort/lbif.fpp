@@ -220,11 +220,11 @@ interface LB_Initialize
 end interface
 
 interface LB_Create
-   module procedure Zf90_Create
+   module procedure LBf90_Create
 end interface
 
 interface LB_Destroy
-   module procedure Zf90_Destroy
+   module procedure LBf90_Destroy
 end interface
 
 interface LB_Memory_Stats
@@ -232,38 +232,38 @@ interface LB_Memory_Stats
 end interface
 
 interface LB_Set_Fn
-   module procedure Zf90_Set_Fn0f
-   module procedure Zf90_Set_Fn1f
-   module procedure Zf90_Set_Fn2f
-   module procedure Zf90_Set_Fn3f
-   module procedure Zf90_Set_Fn4f
-   module procedure Zf90_Set_Fn5f
-   module procedure Zf90_Set_Fn6f
-   module procedure Zf90_Set_Fn7f
-   module procedure Zf90_Set_Fn0s
-   module procedure Zf90_Set_Fn1s
-   module procedure Zf90_Set_Fn2s
-   module procedure Zf90_Set_Fn3s
-   module procedure Zf90_Set_Fn4s
-   module procedure Zf90_Set_Fn5s
-   module procedure Zf90_Set_Fn6s
-   module procedure Zf90_Set_Fn7s
+   module procedure LBf90_Set_Fn0f
+   module procedure LBf90_Set_Fn1f
+   module procedure LBf90_Set_Fn2f
+   module procedure LBf90_Set_Fn3f
+   module procedure LBf90_Set_Fn8f
+   module procedure LBf90_Set_Fn9f
+   module procedure LBf90_Set_FnAf
+   module procedure LBf90_Set_FnBf
+   module procedure LBf90_Set_Fn0s
+   module procedure LBf90_Set_Fn1s
+   module procedure LBf90_Set_Fn2s
+   module procedure LBf90_Set_Fn3s
+   module procedure LBf90_Set_Fn8s
+   module procedure LBf90_Set_Fn9s
+   module procedure LBf90_Set_FnAs
+   module procedure LBf90_Set_FnBs
 end interface
 
 interface LB_Set_Method
-   module procedure Zf90_LB_Set_Method
+   module procedure LBf90_LB_Set_Method
 end interface
 
 interface LB_Set_Param
-   module procedure Zf90_Set_Param
+   module procedure LBf90_Set_Param
 end interface
 
 interface LB_Balance
-   module procedure Zf90_LB_Balance
+   module procedure LBf90_LB_Balance
 end interface
 
 interface LB_Eval
-   module procedure Zf90_LB_Eval
+   module procedure LBf90_LB_Eval
 end interface
 
 interface LB_Free_Data
@@ -271,23 +271,193 @@ interface LB_Free_Data
 end interface
 
 interface LB_Point_Assign
-   module procedure Zf90_LB_Point_Assign
+   module procedure LBf90_LB_Point_Assign
 end interface
 
 interface LB_Box_Assign
-   module procedure Zf90_LB_Box_Assign
+   module procedure LBf90_LB_Box_Assign
 end interface
 
 interface LB_Compute_Destinations
-   module procedure Zf90_Compute_Destinations
+   module procedure LBf90_Compute_Destinations
 end interface
 
 interface LB_Help_Migrate
-   module procedure Zf90_Help_Migrate
+   module procedure LBf90_Help_Migrate
 end interface
 
 ! TEMP child_order
 interface LB_Get_Child_Order
-   module procedure Zf90_LB_Get_Child_Order
+   module procedure LBf90_Reftree_Get_Child_Order
+end interface
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn8f"
+function Zfw_Set_Fn8f(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_Fn8f
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+integer(Zoltan_INT), external :: fn_ptr
+#endif
+type(LB_User_Data_1) INTENT_IN data
+end function Zfw_Set_Fn8f
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn8s"
+function Zfw_Set_Fn8s(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_Fn8s
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+external fn_ptr
+#endif
+type(LB_User_Data_1) INTENT_IN data
+end function Zfw_Set_Fn8s
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn9f"
+function Zfw_Set_Fn9f(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_Fn9f
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+integer(Zoltan_INT), external :: fn_ptr
+#endif
+type(LB_User_Data_2) INTENT_IN data
+end function Zfw_Set_Fn9f
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn9s"
+function Zfw_Set_Fn9s(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_Fn9s
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+external fn_ptr
+#endif
+type(LB_User_Data_2) INTENT_IN data
+end function Zfw_Set_Fn9s
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn10f"
+function Zfw_Set_FnAf(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_FnAf
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+integer(Zoltan_INT), external :: fn_ptr
+#endif
+type(LB_User_Data_3) INTENT_IN data
+end function Zfw_Set_FnAf
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn10s"
+function Zfw_Set_FnAs(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_FnAs
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+external fn_ptr
+#endif
+type(LB_User_Data_3) INTENT_IN data
+end function Zfw_Set_FnAs
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn11f"
+function Zfw_Set_FnBf(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_FnBf
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+integer(Zoltan_INT), external :: fn_ptr
+#endif
+type(LB_User_Data_4) INTENT_IN data
+end function Zfw_Set_FnBf
+end interface
+
+interface
+!NAS$ ALIEN "F77 zfw_set_fn11s"
+function Zfw_Set_FnBs(lb,nbytes,fn_type,fn_ptr,data)
+use zoltan_types
+use lb_user_const
+#ifdef NASOFTWARE
+use nas_system
+#endif
+implicit none
+integer(Zoltan_INT) :: Zfw_Set_FnBs
+integer(Zoltan_INT), dimension(*) INTENT_IN lb
+integer(Zoltan_INT) INTENT_IN nbytes, fn_type
+#ifdef NASOFTWARE
+type(address), intent(in) :: fn_ptr
+#else
+external fn_ptr
+#endif
+type(LB_User_Data_4) INTENT_IN data
+end function Zfw_Set_FnBs
 end interface
 

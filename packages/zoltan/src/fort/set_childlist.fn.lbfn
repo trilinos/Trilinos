@@ -1,0 +1,264 @@
+
+function LBf90_Set_Child_List_Fn0s(lb,fn_ptr)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn0s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(dummy,num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  integer(Zoltan_INT), intent(in)  :: dummy(*)
+  integer(Zoltan_INT), intent(in)  :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr))
+#else
+LBf90_Set_Child_List_Fn0s = Zfw_Set_Fn0s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr)
+#endif
+end function LBf90_Set_Child_List_Fn0s
+
+
+function LBf90_Set_Child_List_Fn1s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn1s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  integer(Zoltan_INT) INTENT_IN data(*)
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+integer(Zoltan_INT) INTENT_IN data(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_Fn1s = Zfw_Set_Fn1s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_Fn1s
+
+
+function LBf90_Set_Child_List_Fn2s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn2s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  real(Zoltan_FLOAT) INTENT_IN data(*)
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+real(Zoltan_FLOAT) INTENT_IN data(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_Fn2s = Zfw_Set_Fn2s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_Fn2s
+
+
+function LBf90_Set_Child_List_Fn3s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn3s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  real(Zoltan_DOUBLE) INTENT_IN data(*)
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+real(Zoltan_DOUBLE) INTENT_IN data(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_Fn3s = Zfw_Set_Fn3s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_Fn3s
+
+
+function LBf90_Set_Child_List_Fn8s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn8s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  use lb_user_const
+  use zoltan_user_data
+  type(LB_User_Data_1) INTENT_IN data
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_1) INTENT_IN data
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn8s = Zfw_Set_Fn8s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_Fn8s = Zfw_Set_Fn8s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_Fn8s
+
+
+function LBf90_Set_Child_List_Fn9s(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_Fn9s
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data,num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  use lb_user_const
+  use zoltan_user_data
+  type(LB_User_Data_2) INTENT_IN data
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_2) INTENT_IN data
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_Fn9s = Zfw_Set_Fn9s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_Fn9s = Zfw_Set_Fn9s(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_Fn9s
+
+
+function LBf90_Set_Child_List_FnAs(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_FnAs
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  use lb_user_const
+  use zoltan_user_data
+  type(LB_User_Data_3) INTENT_IN data
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_3) INTENT_IN data
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_FnAs = Zfw_Set_FnAs(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_FnAs = Zfw_Set_FnAs(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_FnAs
+
+
+function LBf90_Set_Child_List_FnBs(lb,fn_ptr,data)
+integer(Zoltan_INT) :: LBf90_Set_Child_List_FnBs
+type(LB_Struct) INTENT_IN lb
+interface
+  subroutine fn_ptr(data, num_gid_entries, num_lid_entries, parent_gid, &
+    parent_lid, child_gids, child_lids, assigned, num_vert, vertices, &
+    reftype, in_vertex, out_vertex, ierr)
+  use zoltan_types
+  use lb_user_const
+  use zoltan_user_data
+  type(LB_User_Data_4) INTENT_IN data
+  integer(Zoltan_INT), intent(in) :: num_gid_entries, num_lid_entries
+  integer(Zoltan_INT), intent(in)  :: parent_gid(*), parent_lid(*)
+  integer(Zoltan_INT), intent(out) :: child_gids(*), child_lids(*)
+  integer(Zoltan_INT), intent(out) :: assigned(*), num_vert(*), vertices(*)
+  integer(Zoltan_INT), intent(out) :: in_vertex(*), out_vertex(*)
+  integer(Zoltan_INT), intent(out) :: reftype, ierr
+  end subroutine fn_ptr
+end interface
+type(LB_User_Data_4) INTENT_IN data
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: lb_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   lb_addr(i) = ichar(lb%addr%addr(i:i))
+end do
+#ifdef NASOFTWARE
+LBf90_Set_Child_List_FnBs = Zfw_Set_FnBs(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,loc(fn_ptr),data)
+#else
+LBf90_Set_Child_List_FnBs = Zfw_Set_FnBs(lb_addr,nbytes,ZOLTAN_CHILD_LIST_FN_TYPE%choice,fn_ptr,data)
+#endif
+end function LBf90_Set_Child_List_FnBs
+
+
