@@ -188,7 +188,12 @@ class Epetra_Comm;
      between the call to SymbolicFactorization() and the call to
      NumericFactorization(), it is possible that a change to the 
      matrix will cause a potentially catastrophic error.  
+
+     <H1>Adding concrete classes which implement the Amesos_BaseSolver class</H1>
     
+     See amesos/configuration for a list of files added or modified to create 
+     the Amesos_Umfpack concrete class.
+
 */    
 
 class Amesos_BaseSolver {
