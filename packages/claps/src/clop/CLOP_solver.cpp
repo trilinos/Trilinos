@@ -7,6 +7,9 @@
 #include "myzero.hpp"
 #include <algorithm>
 
+#include "Claps_ConfigDefs.h"  // for definition of F77_FUNC
+
+#define DSTEV_F77 F77_FUNC(dstev,DSTEV)
 
 extern "C"{
   void metis_partgraphrecursive(int *n, int *xadj, int *adjncy, int *vwgt,
@@ -16,8 +19,8 @@ extern "C"{
   void metis_partgraphkway(int *n, int *xadj, int *adjncy, int *vwgt,
 			   int *adjwgt, int *wgtflag, int *numflag, 
 			   int *nparts, int *options, int *edgecut, int *part);
-  void dstev_(char* N, int* i, double Dtri[], double Etri[], double* Z, 
-	      int* one, double* WORK, int* INFO, long lengthN); 
+  void DSTEV_F77(char* N, int* i, double Dtri[], double Etri[], double* Z, 
+		 int* one, double* WORK, int* INFO, long lengthN); 
 }
 
 CLOP_solver::CLOP_solver(const Epetra_CrsMatrix* AStandard_,
@@ -1818,7 +1821,7 @@ void CLOP_solver::calculate_condition(int miter)
       Dtri[j]   = (pApa[j-1]*betaa[j]*betaa[j]+pApa[j])/rhoa[j]/rhoa[j];
       Etri[j-1] = -pApa[j-1]*betaa[j]/rhoa[j-1]/rhoa[j];
     }
-    dstev_(&N, &ip1, Dtri, Etri, &Z, &one, &WORK, &INFO, 1); 
+    DSTEV_F77(&N, &ip1, Dtri, Etri, &Z, &one, &WORK, &INFO, 1); 
     if (INFO != 0) {
       cout << "error in call to DSTEV in CLASP_solver::calculate_condition" 
 	   << endl;

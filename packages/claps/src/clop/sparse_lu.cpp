@@ -117,7 +117,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   //
   IWSIZE=4*N;
   if (order_opt == 1) {
-    ordmmd2_(N,XLINDX,LINDX,INVP,PERM,IWSIZE,IWORK,NSUB,IFLAG);
+    ORDMMD2_F77(N,XLINDX,LINDX,INVP,PERM,IWSIZE,IWORK,NSUB,IFLAG);
     if (IFLAG != 0) {
       cout << "error in call to ordmmd2 in sparse_lu::factor" << endl;
       cout << "ORDMMD2 IFLAG=" << IFLAG << endl;
@@ -135,8 +135,8 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   // symbolic factorization initialization
   //
   IWSIZE=7*N+3;
-  sfinit_(N,NADJ,XADJ,ADJ,PERM,INVP,MAXSUP,DEFBLK,COLCNT,
-	  NNZL,NSUB,NSUPER,XSUPER,SNODE,IWSIZE,IWORK,IFLAG);
+  SFINIT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,MAXSUP,DEFBLK,COLCNT,
+	     NNZL,NSUB,NSUPER,XSUPER,SNODE,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
     cout << "error in call to sfinit in sparse_lu::factor" << endl;
     cout << "SFINIT IFLAG=" << IFLAG << endl;
@@ -150,8 +150,8 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
     delete [] LINDX;
     LINDX = new int[NSUB];
   }
-  symfct_(N,NADJ,XADJ,ADJ,PERM,INVP,COLCNT,NSUPER,XSUPER,
-          SNODE,NSUB,XLINDX,LINDX,XLNZ,IWSIZE,IWORK,IFLAG);
+  SYMFCT_F77(N,NADJ,XADJ,ADJ,PERM,INVP,COLCNT,NSUPER,XSUPER,
+	     SNODE,NSUB,XLINDX,LINDX,XLNZ,IWSIZE,IWORK,IFLAG);
   if (IFLAG != 0) {
     cout << "error in call to symfct in sparse_lu::factor" << endl;
     cout << "SYMFCT IFLAG=" << IFLAG << endl;
@@ -173,7 +173,7 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   //
   // numerical factorization
   //
-  bfinit_(NSUPER,XSUPER,SNODE,XLINDX,LINDX,TMPSIZ,RWSIZE);
+  BFINIT_F77(NSUPER,XSUPER,SNODE,XLINDX,LINDX,TMPSIZ,RWSIZE);
   if (TMPSIZ < 1) TMPSIZ=1;
   TMPSIZ=2*TMPSIZ;
   double* TMPVEC = new double[TMPSIZ];
@@ -185,9 +185,9 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
   //  EPS=DLAMCH('EPS');
   TOL=EPS*ANORM;
   IWSIZE = 3*N + 2*NSUPER;
-  blkldl_(NSUPER,XSUPER,SNODE,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,ASDEF,NDEF,
-	  LBDEF,DEF,TOL,IPROW,IPCOL,TMPSIZ,TMPVEC,IWSIZE,IWORK,
-          RWSIZE,RWORK,IFLAG);
+  BLKLDL_F77(NSUPER,XSUPER,SNODE,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,ASDEF,NDEF,
+	     LBDEF,DEF,TOL,IPROW,IPCOL,TMPSIZ,TMPVEC,IWSIZE,IWORK,
+	     RWSIZE,RWORK,IFLAG);
   if (IFLAG != 0) {
     cout << "error in call to blkldl in sparse_lu::factor" << endl;
     cout << "BLKLDL IFLAG=" << IFLAG << endl;
@@ -203,8 +203,8 @@ int sparse_lu::factor(int N_, int NNZ, int COLPTR[], int ROWIDX[],
     //
     NS = new double [N*NDEF];
     LDNS=N;
-    blkns_(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
-	   DEF,IPCOL,INVP,NS,LDNS,RWORK);
+    BLKNS_F77(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
+	      DEF,IPCOL,INVP,NS,LDNS,RWORK);
     cout << "null space dimension = " << NDEF << endl;
     /*
     cout << "NS = " << endl;
@@ -244,8 +244,8 @@ int sparse_lu::sol(int NRHS, double RHS[], double SOL[], double TEMP[])
   int LSOL=N;
   //  cout << "LBDEF = " << LBDEF << endl;
   //  cout << "NDEF  = " << NDEF << endl;
-  blkslvn_(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
-	   DEF,IPROW,IPCOL,PERM,INVP,LRHS,NRHS,RHS,LSOL,SOL,N,TEMP);
+  BLKSLVN_F77(NSUPER,XSUPER,XLINDX,LINDX,XLNZ,LNZ,DEFBLK,NDEF,LBDEF,
+	      DEF,IPROW,IPCOL,PERM,INVP,LRHS,NRHS,RHS,LSOL,SOL,N,TEMP);
   return 0;
 }
 

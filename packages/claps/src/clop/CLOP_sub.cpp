@@ -2,15 +2,22 @@
 #include "CRD_utils.hpp"
 //#include "../include/sort_prototypes.h"
 #include <assert.h>
+
+#include "Claps_ConfigDefs.h"  // for definition of F77_FUNC
+
+#define DGELSS_F77 F77_FUNC(dgelss,DGELSS)
+#define DGEQPF_F77 F77_FUNC(dgeqpf,DGEQPF)
+#define DSYEV_F77 F77_FUNC(dsyev,DSYEV)
+
 extern "C"{
-  void dgelss_(int* M, int* N, int* NRHS, double A[], int* LDA, double B[],
-	       int* LDB, double S[], double* RCOND, int* RANK, double WORK[], 
-	       int* LWORK, int* INFO);
-  void dgeqpf_(int* M, int* N, double A[], int* LDA, int JPVT[],
-	       double TAU[], double WORK[], int* INFO);
-  void dsyev_(char* JOBZ, char* UPLO, int* N, double A[], int* LDA, double W[],
-	      double WORK[], int* LWORK, int* INFO, long lengthA, 
-	      long lengthB); 
+  void DGELSS_F77(int* M, int* N, int* NRHS, double A[], int* LDA, double B[],
+		  int* LDB, double S[], double* RCOND, int* RANK, 
+		  double WORK[], int* LWORK, int* INFO);
+  void DGEQPF_F77(int* M, int* N, double A[], int* LDA, int JPVT[],
+		  double TAU[], double WORK[], int* INFO);
+  void DSYEV_F77(char* JOBZ, char* UPLO, int* N, double A[], int* LDA, 
+		 double W[], double WORK[], int* LWORK, int* INFO, 
+		 long lengthA, long lengthB); 
 }
 
 CLOP_sub::CLOP_sub()
@@ -237,7 +244,7 @@ void CLOP_sub::genpu(const Epetra_IntVector *LD,
   char JOBZ('V'), UPLO('U');
   double S[60];
   for (i=0; i<nrhs*nrhs; i++) rhs[i] = temp[i];
-  dsyev_(&JOBZ, &UPLO, &nrhs, temp, &nrhs, S, WORK, &LWORK, &INFO, 1, 1);
+  DSYEV_F77(&JOBZ, &UPLO, &nrhs, temp, &nrhs, S, WORK, &LWORK, &INFO, 1, 1);
   assert(INFO == 0);
   nneg = 0;
   double max_mag(0), tol_neg_eig(1e-8);
@@ -263,8 +270,8 @@ void CLOP_sub::genpu(const Epetra_IntVector *LD,
   double rhs_sol[60], sol_sol[60];
   myzero(rhs, nrhs*nrhs);
   for (i=0; i<nrhs; i++) rhs[i*(nrhs+1)] = 1;
-  dgelss_(&nrhs, &nrhs, &nrhs, temp, &nrhs, rhs, &nrhs, S, &RCOND, &RANK,
-	  WORK, &LWORK, &INFO);
+  DGELSS_F77(&nrhs, &nrhs, &nrhs, temp, &nrhs, rhs, &nrhs, S, &RCOND, &RANK,
+	     WORK, &LWORK, &INFO);
   assert(INFO == 0);
   //
   // calculate diagonal of flexibility matrix
@@ -372,7 +379,8 @@ void CLOP_sub::construct_coarse1(const Epetra_CrsMatrix *A, double rhs[],
   double *dwork = new double[3*csdim];
   memcpy(temp, Phi, nnz_Phi*sizeof(double));
   myzero(jpvt, csdim);
-  if (ndof > 0) dgeqpf_(&ndof, &csdim, temp, &ndof, jpvt, tau, dwork, &INFO);
+  if (ndof > 0)  
+    DGEQPF_F77(&ndof, &csdim, temp, &ndof, jpvt, tau, dwork, &INFO);
   else INFO = 0;
   assert(INFO == 0);
   if (csdim_max > ndof) csdim_max = ndof;
