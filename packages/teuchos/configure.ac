@@ -40,7 +40,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(teuchos, 0.1, hkthorn@sandia.gov)
+AC_INIT(teuchos, 1.0, hkthorn@sandia.gov)
 
 # Hello World!
 #  #np# - package name below
@@ -243,8 +243,8 @@ AC_CXX_MUTABLE
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
 AC_CXX_STD_IOS_BASE_FMTFLAGS
-AC_CXX_STD_SPRINTF
 AC_CXX_TEMPLATE_QUALIFIER
+AC_CXX_STD_SPRINTF
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built
