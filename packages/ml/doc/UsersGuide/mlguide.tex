@@ -14,6 +14,7 @@
 \newcommand{\Aztecoo}  {{\sc AztecOO}}
 \newcommand{\aztecoo}  {{\Aztecoo}}
 \newcommand{\epetra}  {{\sc Epetra}}
+\newcommand{\epetraext}  {{\sc Epetraext}}
 \newcommand{\ML}     {{\bf ML}}
 \newcommand{\trilinos}  {{\sc Trilinos}}
 \newcommand{\amesos}  {{\sc Amesos}}
@@ -29,6 +30,11 @@
 \newcommand{\ifpack}  {{\sc Ifpack}}
 \newcommand{\parasails}  {{\sc ParaSails}}
 \newcommand{\teuchos}  {{\sc Teuchos}}
+\newcommand{\newpackage}  {{\sc new\_package}}
+\newcommand{\nox}  {{\sc NOX}}
+\newcommand{\loca}  {{\sc Loca}}
+\newcommand{\be}  {\begin{enumerate}}
+\newcommand{\ee}  {\end{enumerate}}
 
 %
 % ***********************************************************************
@@ -281,6 +287,43 @@ complete the specification of the multigrid method, smoothers must be
 supplied on each level.  There are several smoothers within \ML\ or an
 iterative solver package can be used, or users can write their own
 smoother (see Section \ref{multigrid options}).
+%
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Quick Start}
+\label{quick start}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+This section is intended for the impatient user.
+It's assumed that you've already have a local copy of Trilinos.
+Using the instructions here, your build of Trilinos will have the following
+libraries: \aztecoo, \epetra, \epetraext, \ifpack, \loca, \ML, \newpackage,
+\nox, and \teuchos.
+\be
+\item \verb!cd! into the Trilinos directory.
+\item Make a build directory, e.g., \verb!mkdir sandbox!.
+\item \verb!cd sandbox!.
+\item Configure Trilinos:
+  \be
+  \item   \verb!../configure --enable-teuchos ! if you do not want to use MPI.
+  \item   \verb!../configure  --enable-teuchos --with-mpi-compilers=/usr/local/mpich/bin! (or wherever your MPI compilers are
+located) to use MPI.
+  \ee
+\item Build Trilinos: \verb!make!.\footnote{If you are using GNU's make on a
+machine with more than one processor, then you can speed up the
+build with {\tt make -j XX}, where {\tt XX} is the number of processors.}
+\item If your build finished without errors, you should see the directory\\
+\verb!Trilinos/sandbox/packages/!, with subdirectories below that for
+each individual library.   \ML's subdirectory, \verb!ml!, should contain
+files \verb!config.log!, \verb!config.status!, \verb!Makefile!, and
+\verb!Makefile.export!, and directories \verb!src! and \verb!examples!.
+Directory \verb!src! contains object files and \verb!libml.a!.
+Directory \verb!examples! contains executables with extension \verb!.exe!,
+symbolic links to the corresponding source code, and object files.
+Directory \verb!\test! is intended primarily for developers and can be ignored.
+\item Look in \verb!Trilinos/sandbox/packages/ml/examples! for examples of how
+to use \ML.
+\ee
 %
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
