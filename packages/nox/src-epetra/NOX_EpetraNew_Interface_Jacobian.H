@@ -42,9 +42,11 @@ namespace NOX {
 namespace EpetraNew {
 namespace Interface {
 
-  /*! \brief Used by NOX::Epetra::Group to provide a link to the
-    external code Jacobian fills.
+  /*! \brief Used by NOX::EpetraNew to provide a link to the
+    external code for Jacobian fills.
 
+    This is only required if the user wishes to supply their own Jacobian 
+    operator.   
   */
 class Jacobian {
 

@@ -47,9 +47,12 @@ namespace NOX {
 namespace EpetraNew {
 namespace Interface {
 
-  /*! Used by NOX::Epetra::Group to provide a link to the external
-    code for Preconditioner fills if needed.
-   */
+  /*! \brief Used by NOX::EpetraNew to provide a link to the
+    external code for Precondtioner fills.
+    
+    This is only required if the user wishes to supply their own 
+    preconditioner operator.   
+  */
 class Preconditioner {
 
 public:

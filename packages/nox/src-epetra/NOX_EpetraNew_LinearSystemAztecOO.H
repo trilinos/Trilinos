@@ -76,28 +76,30 @@ to the Aztec linear solver.  This class handles construction
 of both the preconditioners and AztecOO solver.  All options are
 determined through parameter lists and the basic constructors. 
 
-<B>Constructing a Linear System</B>
+<B>Constructing a %Linear System</B>
+
 There are four different constructors that can be used.  The difference
 between constructors is based on whether the user supplies a 
 Jacobian, a preconditioner, neither or both.  
 
 If a Jacobian is not supplied then this object can create an internally constructed Jacobian based on a Finite Difference or Matrif-Free object.  The user can specify which type of object to use by setting the parameter "Jacbian Operator" in the parameter list.  The choices are "Matrix-Free" or "Finite Difference".
 
-The user can supply their own preconditioner as an Epetra_Operator, or they can supply their own matrix (an Epetra_RowMatrix derived object) that can be used by one of the internal preconditioner libraries (currently aztecoo or ifpack).  If they supply their own preconditioner the object must implement the Epetra_Operator::ApplyInverse method.  This is the method called during the linear solve to introduce preconditoning into aztecoo.  If the user supplies a matrix to be used with an internal preconditioner, it must be derived from the Epetra_RowMatrix class and must implement all functionality.   
-If a Preconditioner is not supplied, then this object can create an internal preconditioner matrix by finite differencing or it can use the Jacobian operator if the Jacobian derives from the Epetra_RowMatrix class.   The user can specify which type of object to use by setting the parameter "Preconditioner Operator" in the parameter list.  The choices are "Use Jacobian" or "Finite Difference".
+The user can supply their own preconditioner as an Epetra_Operator, or they can supply their own matrix (an Epetra_RowMatrix derived object) that can be used by one of the internal preconditioner libraries (currently aztecoo or ifpack).  If they supply their own preconditioner the object must implement the Epetra_Operator::ApplyInverse method.  This is the method called during the linear solve to introduce preconditoning into aztecoo.  If the user supplies a matrix to be used with an internal preconditioner, it must be derived from the Epetra_RowMatrix class and must implement all functionality in the Epetra_RowMatrix.  If a Preconditioner is not supplied, then this object can create an internal preconditioner matrix by finite differencing or it can use the Jacobian operator if the Jacobian derives from the Epetra_RowMatrix class.   The user can specify which type of object to use by setting the parameter "Preconditioner Operator" in the parameter list.  The choices are "Use Jacobian" or "Finite Difference".
 
-The Jacobian and preconditioner each require an interface to update the objects state with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::EpetraNew::Interface::Required,   NOX::EpetraNew::Interface::Jacobian, and NOX::EpetraNew::Interface::Preconditioner.  
+The Jacobian and preconditioner each require an interface to update the state of the operator with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::EpetraNew::Interface::Required,   NOX::EpetraNew::Interface::Jacobian, and NOX::EpetraNew::Interface::Preconditioner.  
 
-NOX::EpetraNew::Interface::Required supplies the computeF() function so codes can tell NOX what the nonlinear equations are.  This is the minimum requirement to run nox throught the epetra interface.  LinearSolverAztecOO requires this in some constructors so that if a JAcobian or preconditoner is not supplied, it will use computeF to estimate J or M via finite differences or directional derivatives.
+NOX::EpetraNew::Interface::Required supplies the computeF() function so codes can tell NOX what the nonlinear equations are.  This is the minimum requirement to run nox through the epetra interface.  LinearSolverAztecOO requires this in some constructors so that if a Jacobian or preconditoner is not supplied, it will use computeF from the Required interface to estimate the Jacobian or preconditioner via finite differences or directional derivatives.
 
 NOX::EpetraNew::Interface::Jacobian is used for updating a user supplied Jacobian opertor with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a Jacobian operator.
 
 NOX::EpetraNew::Interface::Preconditioner is used for updating a user supplied preconditioner opertor/matrix with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a preconditioner operator.
 
 <B>"Linear %Solver" sublist parameters</B>
-A NOX::ParameterList called linearSolverParams is required in the various constructors and during some method calls such as applyJacobianInverse().  Typically, this list is the "Linear %Solver" sublist found in the nox parameter list.  The following parameters can be set in the linear solver sublist and are vaild for the NOX::EpetraNew::LinearSolverAztecOO object:<ul>
+
+A NOX::ParameterList called linearSolverParams is required in the various constructors and during some method calls such as applyJacobianInverse() and applyRightPreconditioning().  Typically, this list is the "Linear %Solver" sublist found in the nox parameter list.  The following parameters can be set in the linear solver sublist and are vaild for the NOX::EpetraNew::LinearSolverAztecOO object:<ul>
 
 <li> "Aztec %Solver" - Determine the iterative technique used in the solve.  The following options are valid:
+
   <ul> 
   <li> "GMRES" - Restarted generalized minimal residual (default).
   <li> "CG" - Conjugate gradient.
@@ -113,6 +115,7 @@ the maximum size of the Krylov subspace (defaults to 300).
 <li> "Orthogonalization" - The orthogonalization routine used for the
 Gram-Schmidt orthogonalization procedure in Aztec.  The following
 options are valid:
+
   <ul> 
   <li> "Classical" - (default).
   <li> "Modified" 
@@ -122,6 +125,7 @@ options are valid:
 that is used for determining the convergence of the linear solver.
 See the Aztec 2.1 manual for more information.  The following options
 are valid:
+
   <ul>
   <li> "r0" - (default)
   <li> "rhs"
@@ -130,7 +134,7 @@ are valid:
   <li> "sol"
   </ul>
  
-<li> "Tolerance" - tolerance used by AztecOO to determine if an iterative linear solve has converged. 
+<li> "Tolerance" - Tolerance used by AztecOO to determine if an iterative linear solve has converged. 
 
 <li> "Ill-Conditioning Threshold" - If the upper hessenberg matrix
 during GMRES generates a condition number greater than this parameter
@@ -144,7 +148,7 @@ call to NOX::Epetra::Group::applyRightPreconditioning().  This is NOT a
 recomended approach.
 
 <li> "Max Iterations" - maximum number of iterations in the 
-linear solve.  Defaults to 
+linear solve.  Default is 400.
 
 <li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
 
@@ -154,24 +158,21 @@ AztecOO flags: AZ_none, AZ_last, or AZ_all as a value. Defaults to
 AZ_last.
 
 <li> "Jacobian Operator" - When a constructor does not require a Jacobian operator, the linear system withh create a default operator using:
+
   <ul>
   <li> "Matrix-Free" (default)
   <li> "Finite Difference"
   </ul>
 
 
-<li> "Preconditioner" - Preconditioning of the linear system also has
-multiple options that may depend on the types of Jacobian and 
-preconditioner operators supplied.The valid options are listed
-below:
+<li> "Preconditioner" - Sets the choice of the preconditioner to use during linear solves. The validity of the choice of preconditioner will depend on the types of operators that are available for the Jacobian and preconditioner.  NOTE: This flag will override any constructor details.  For example, if you supply a preconditioner operator in the constructor, it will not be used if this flag is set to "None".  If you supply an Epetra_Operator for the preconditioner but the "Preconditioner" flag is set to "AztecOO" (this requires an Epetra_RowMatrix for the preconditioner operator), this object will exit with a failure.  The valid options and any requirements on the operator type are listed below:
+
   <ul> 
   <li> "None" - No preconditioning.  (default)
-  <li> "AztecOO" - AztecOO internal preconditioner.  This requires an object that derives from the Epetra_RowMatrix class.  
-  <li> "Ifpack" -  Ifpack internal preconditioner.  This requires an object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the JAcobian derives from an Epetra_RowMatrix.  
-  <li> "User Defined" - The user supplies an
-  Epetra_Operator derived class or a NOX::Epetra::Operator derived
-  class.  A vector will be preconditioned through calls to the
-  ApplyInverse() function of the Epetra_Operator class.  
+  <li> "AztecOO" - AztecOO internal preconditioner.  This requires a preconditioner operator that derives from the Epetra_RowMatrix class.  
+  <li> "Ifpack" -  Ifpack internal preconditioner.  This requires a preconditioner object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the Jacobian derives from an Epetra_RowMatrix.  
+  <li> "User Defined" - The user supplies an Epetra_Operator derived 
+  class.  Users must implement at a minimum the ApplyInverse() function of the Epetra_Operator class since preconditioning of vectors is accomplished through calls to this method.  
   </ul>
 
 <li> "Jacobian Operator" - If a constructor is used that does not supply a Jacobian operator, nox will create an internal Jacobian operator.  This flag is ONLY valid in such cases.  This will determine which Operator is used:
@@ -192,13 +193,13 @@ parameters that can be set are shown
 below (See the Aztec 2.1 manual for more information):
 
   <ul>
-  <li> "ilu" with additional parameters:
+  <li> "ilu" - ilu preconditioning.  This choice allows the following  additional parameters to be specified:
   <ul>
   <li> "Overlap" - defaults to 0.0
   <li> "Graph Fill" - defaults to 0.0
   </ul> 
 
-  <li> "ilut" with additional parameters:
+  <li> "ilut" - iluy preconditioning. This choice allows the following  additional parameters to be specified:
   <ul>
   <li> "Overlap" - defaults to 0.0
   <li> "Fill Factor" - defaults to 1.0
@@ -238,19 +239,19 @@ options are valid:
   <li> "Enabled" 
   </ul>
 
-<li> "Use Adaptive Linear Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".  (NOTE: This parameter is currently NOT supported)
+<li> "Use Adaptive %Linear %Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".  (NOTE: This parameter is currently NOT supported)
 
-<li> "Max Adaptive Solve Iterations" - (integer) Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.  (NOTE: This parameter is currently NOT supported)
+<li> "Max Adaptive %Solve Iterations" - (integer) Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.  (NOTE: This parameter is currently NOT supported)
 
-<li> "Output Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
+<li> "Output %Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
 
 </ul>
 
 <B>"Output" sublist</B>
 
-The parameter list passed into the group during a computeNewton() or
-ApplyJacobianInverse() will have an "Output" sublist created that
-contains the following parameters:
+The parameter list passed in during calls to ApplyJacobianInverse() 
+will have an "Output" sublist created that contains the following 
+parameters if the flag "Output %Solver Details" is set to true:
 
 <ul>
 
