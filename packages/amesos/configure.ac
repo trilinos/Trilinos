@@ -277,6 +277,10 @@ if test "X$ac_cv_use_amesos_slud" = "Xno"; then
 fi
 AM_CONDITIONAL(NEED_PARAMETER_LIST, false ) 
 
+if test "$target" = "alpha*-dec-osf*" ; then
+   CXXCXXFLAGS = "-ptr ../src/cxx_repository ${CXXFLAGS}"
+fi
+
 
 
 #
@@ -384,7 +388,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h)
 
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
-    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
+    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdirstratus1:~/Trilinos> } , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_dscpacklib} ${LDFLAGS}"
