@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
   MLList.set("smoother: aztec params", params);
 
   // create the preconditioner object and compute hierarchy
-  Epetra_ML::MultiLevelPreconditioner * MLPrec = new Epetra_ML::MultiLevelPreconditioner(*A, MLList, true);
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // verify unused parameters
   if( Comm.MyPID() == 0 && ) MLPrec->PrintUnused();
