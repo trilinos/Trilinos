@@ -52,11 +52,25 @@ public:
 	//! This method puts the imaginary part of the computed eigenvectors in %ievecs.
 	void getiEvecs(AnasaziMultiVec<TYPE>& ievecs);
 
-	//! This method returns the real part of the computed eigenvalues.
+	//! This method returns the real part of the \c nev computed eigenvalues.
 	TYPE * getEvals();
+
+	//! This method returns a requested number of computed eigenvalues.
+	/*! The input \c num can be greater than \c nev, but the method will only return
+	the number of eigenvalues it has approximations to.  On exit, \c num will be the
+	number of eigenvalue approximations that were returned 
+	*/
+	TYPE * getEvals( int num );
 
 	//! This method returns the imaginary part of the computed eigenvalues.
 	TYPE * getiEvals();
+
+	//! This method returns a requested number of computed eigenvalues.
+	/*! The input \c num can be greater than \c nev, but the method will only return
+	the number of eigenvalues it has approximations to.  On exit, \c num will be the
+	number of eigenvalue approximations that were returned 
+	*/
+	TYPE * getiEvals( int num );
 
 	//! This method returns the residuals for the computed eigenpairs.
 	TYPE * getResiduals();
@@ -250,10 +264,40 @@ TYPE * BlockArnoldi<TYPE>::getEvals() {
 }
 
 template <class TYPE>
+TYPE * BlockArnoldi<TYPE>::getEvals( int num ) {
+	int i;
+	// Correct the value of num if it's greater than the number of eigenvalue
+	// approximations available.
+	if ( num > _jstart*_block ) { num = _jstart*_block; }
+
+	// Now copy the eigenvalues.
+	TYPE *temp_evals = new TYPE[ num ];
+	for (i=0; i<num; i++) {
+		temp_evals[i] = _evalr[i];
+	}
+	return temp_evals;		
+}
+
+template <class TYPE>
 TYPE * BlockArnoldi<TYPE>::getiEvals() {
 	int i;
 	TYPE *temp_evals = new TYPE[ _nev ];
 	for (i=0; i<_nev; i++) {
+		temp_evals[i] = _evali[i];
+	}
+	return temp_evals;		
+}
+
+template <class TYPE>
+TYPE * BlockArnoldi<TYPE>::getiEvals( int num ) {
+	int i;
+	// Correct the value of num if it's greater than the number of eigenvalue
+	// approximations available.
+	if ( num > _jstart*_block ) { num = _jstart*_block; }
+
+	// Now copy the eigenvalues.
+	TYPE *temp_evals = new TYPE[ num ];
+	for (i=0; i<num; i++) {
 		temp_evals[i] = _evali[i];
 	}
 	return temp_evals;		
@@ -1248,30 +1292,61 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 	// Sort the eigenvectors, if symmetric problem don't worry about complex
 	// eigenvectors.
 	//
+	// Initialize imaginary part of eigenvector to zero, so we won't have to deal
+	// with tracking it when complex eigenvalues are present.
+	_eveci->MvInit(zero);
+	//
 	if (_issym) {
 		_evecr->SetBlock( *evecstemp, index, _nev );
 	} else {  // Right now only the real part of the eigenvector is being set!
-		AnasaziMultiVec<TYPE>* evecstempi = _basisvecs->Clone( n );
-		evecstempi->MvAddMv( -one, *evecstemp, zero, *evecstemp );
 		int conjprs=0;
-		int * _orderr = new int [ _nev ];
-		int * _orderi = new int [ _nev ];
+		int * indexr = new int [ _nev ];
+		int * indexi = new int [ _nev ];
 		i = 0;
 		while ( i<_nev ) {	
 			if (_evali[i] != zero) {
-				_orderr[i] = i;
-				_orderr[i+1] = i;										
-				i = i+2; conjprs++;
+				// Note where real part of eigenvector is.
+				indexr[i] = i;
+				indexr[i+1] = i;	
+
+				// Note where imaginary part of eigenvector is.
+				indexi[i] = i+1;
+
+				// Increment counters.
+				conjprs++;
+				i = i+2; 				
 			} else {
-				_orderr[i] = i;
-				i++;
+				// Note where real part of eigenvector is.
+				// We don't have to do anything for the imaginary
+				// part since we initialized the vectors to zero.
+				indexr[i] = i;
+				i++;			
 			}
 		}
-		cout<< "There are "<< conjprs <<" conjugate pairs of eigenvalues"
-			<<endl;
-		AnasaziMultiVec<TYPE>* evecstemp2 = evecstemp->CloneView( _orderr, _nev );
+		// Set the real part of the eigenvectors.
+		AnasaziMultiVec<TYPE>* evecstemp2 = evecstemp->CloneView( indexr, _nev );
 		_evecr->SetBlock( *evecstemp2, index, _nev );
-		delete evecstempi, evecstemp2;
+	
+		// Set the imaginary part of the eigenvectors if conjugate pairs exist.
+		if (conjprs) {	
+			// Set conjugate part of imaginary eigenvectors first.
+			AnasaziMultiVec<TYPE>* evecstempi = evecstemp->CloneView( indexi, conjprs );
+			AnasaziMultiVec<TYPE>* eveci1 = _eveci->CloneView( indexi, conjprs );
+			eveci1->MvAddMv( -one, *evecstempi, zero, *evecstempi );
+
+			// Change indexi to obtain previous eigenvectors imaginary part.
+			for (i=0; i<conjprs; i++) { indexi[i]--; }
+			// Now set non-conjugate part of imaginary eigenvectors.
+			AnasaziMultiVec<TYPE>* eveci2 = _eveci->CloneView( indexi, conjprs );
+			eveci2->MvAddMv( one, *evecstempi, zero, *evecstempi );
+	
+			// Clean up.
+			delete evecstempi, eveci1, eveci2;
+		}
+
+		// Clean up.
+		delete evecstemp2;
+		delete [] indexr,indexi;
 	}
 
 	_isevecscurrent = true;

@@ -112,6 +112,12 @@ public:
 	//
 	virtual void MvPrint();
 	//
+	// Return a pointer to specific NOX::Abstract::Vector for LOCA computation.
+	// If index is not a valid index for this multivec, then nothing is done.
+	// NOTE:  This method is not included in the AnasaziMultiVec virtual base class.
+	//
+	virtual void GetNOXVector( NOX::Abstract::Vector& Vec, int index );
+	// 
 private:
 // Data container
  	vector< NOX::Abstract::Vector* > mvPtrs;
@@ -363,6 +369,14 @@ void AnasaziLOCAVec<TYPE>::MvInit ( TYPE alpha )
 template<class TYPE>
 void AnasaziLOCAVec<TYPE>::MvPrint() {
 //	cout << *this << endl;
+}
+//
+//  return individual NOX Vector
+//
+template<class TYPE>
+void AnasaziLOCAVec<TYPE>::GetNOXVector( NOX::Abstract::Vector& Vec, int index ) 
+{
+	if (index < mvPtrs.size()) { Vec = *(mvPtrs[index]->clone(NOX::DeepCopy)); }
 }
 
 ///////////////////////////////////////////////////////////////
