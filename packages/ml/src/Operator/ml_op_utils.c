@@ -412,7 +412,9 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
  *    - pnode_part[nLocalNd]: local nodes to block map (out)
  *
  */
+#ifdef METIS
 #include "metis.h"
+#endif
 int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
                          int *pnode_part,
                          int *ndwts /*=NULL*/, int *egwts/*=NULL*/,
