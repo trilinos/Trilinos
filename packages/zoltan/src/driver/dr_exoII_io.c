@@ -914,7 +914,8 @@ int write_elem_vars(
   PARIO_INFO_PTR pio_info, 
   int num_exp, 
   ZOLTAN_ID_PTR exp_gids,
-  int *exp_procs
+  int *exp_procs,
+  int *exp_to_part
 )
 {
 /* Routine to write processor assignments per element to the nemesis files. */
@@ -969,9 +970,11 @@ char *str = "Proc";
       if (mesh->elements[i].elem_blk == iblk) {
         /* Element is in block; see whether it is to be exported. */
         if ((tmp=in_list(mesh->elements[i].globalID, num_exp, (int *) exp_gids)) != -1)
-          vars[j++] = (float) (exp_procs[tmp]);
+          vars[j++] = (Plot_Partitions ? (float) (exp_to_part[tmp]) 
+                                       : (float) (exp_procs[tmp]));
         else
-          vars[j++] = (float) (Proc);
+          vars[j++] = (Plot_Partitions ? mesh->elements[i].my_part 
+                                       : (float) (Proc));
       }
     }
     if (ex_put_elem_var(pexoid, 1, 1, mesh->eb_ids[iblk], 

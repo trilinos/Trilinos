@@ -170,9 +170,12 @@ typedef struct Problem_Description *PROB_INFO_PTR;
 /* Global variables for driver */
 extern int Debug_Driver;
 extern int Test_DDirectory;
+extern int Test_Drops;
 extern int Test_Multi_Callbacks;
 extern int Test_Null_Import_Lists;
 extern int Gnuplot_Output;
+extern int Nemesis_Output;
+extern int Plot_Partitions;
 extern int Print_Mesh_Info_File;
 extern int Number_Iterations;
 extern int Driver_Action;

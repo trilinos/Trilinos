@@ -47,10 +47,12 @@ int output_gnu(char *cmd_file,
  * results.
  * We'll do 3D problems later.
  *
- * One gnuplot file is written for each processor.  
-
+ * One gnuplot file is written for each partition.  
+ * When number of partitions == number of processors, there is one file per
+ * processor.
+ *
  * For Chaco input files, the file written contains coordinates of owned
- * nodes and all nodes on that processor connected to the owned nodes. When
+ * nodes and all nodes in that partition connected to the owned nodes. When
  * drawn "with linespoints", the subdomains are drawn, but lines connecting the
  * subdomains are not drawn.
  *
@@ -70,8 +72,14 @@ int output_gnu(char *cmd_file,
   int    nbor, num_nodes;
   char  *datastyle;
   int    i, j;
-
-  FILE  *fp;
+  int    prev_part = -1;
+  int    max_part = -1;
+  int    gmax_part = Num_Proc-1;
+  int    gnum_part = Num_Proc;
+  int   *parts;
+  int   *index;
+  int   *elem_index;
+  FILE  *fp = NULL;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -90,14 +98,37 @@ int output_gnu(char *cmd_file,
     return 0;
   }
 
+  /* 
+   * Build arrays of partition number to sort by.  Index and elem_index arrays 
+   * will be used even when plotting by processor numbers (for generality), 
+   * so build it regardless. 
+   */
+  parts = (int *) malloc(3 * mesh->num_elems * sizeof(int));
+  index = parts + mesh->num_elems;
+  elem_index = index + mesh->num_elems;
+  for (j = 0, i = 0; i < mesh->elem_array_len; i++) {
+    current_elem = &(mesh->elements[i]);
+    if (current_elem->globalID >= 0) {
+      if (current_elem->my_part > max_part) max_part = current_elem->my_part;
+      parts[j] = (Plot_Partitions ? current_elem->my_part : Proc);
+      index[j] = j;
+      elem_index[j] = i;
+      j++;
+    }
+  }
+  if (Plot_Partitions) {
+    /* Sort by partition numbers.  Assumes # parts >= # proc. */
+    sort_index(mesh->num_elems, parts, index);
+    MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    gnum_part = gmax_part + 1;
+  }
+
   /* generate the parallel filename for this processor */
   strcpy(ctemp, pio_info->pexo_fname);
   strcat(ctemp, ".");
   strcat(ctemp, tag);
   strcat(ctemp, ".gnu");
-  gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
 
-  fp = fopen(par_out_fname, "w");
 
   if (pio_info->file_type == CHACO_FILE) {
     /* 
@@ -106,15 +137,26 @@ int output_gnu(char *cmd_file,
      * coordinates.
      */
     datastyle = "linespoints";
-    for (i = 0; i < mesh->elem_array_len; i++) {
-      current_elem = &(mesh->elements[i]);
-      if (current_elem->globalID >= 0) {
-        /* Include the point itself, so that even if there are no edges,
-         * the point will appear.  */
-        fprintf(fp, "\n%e %e\n", 
-                current_elem->coord[0][0], current_elem->coord[0][1]);
-        for (j = 0; j < current_elem->nadj; j++) {
-          if (current_elem->adj_proc[j] == Proc) {
+    for (i = 0; i < mesh->num_elems; i++) {
+      current_elem = &(mesh->elements[elem_index[index[i]]]);
+      if (parts[index[i]] != prev_part) {
+        if (fp != NULL) fclose(fp);
+        gen_par_filename(ctemp, par_out_fname, pio_info, 
+                         parts[index[i]], Num_Proc);
+        fp = fopen(par_out_fname, "w");
+        prev_part = parts[index[i]];
+      }
+    
+      /* Include the point itself, so that even if there are no edges,
+       * the point will appear.  */
+      fprintf(fp, "\n%e %e\n", 
+              current_elem->coord[0][0], current_elem->coord[0][1]);
+      for (j = 0; j < current_elem->nadj; j++) {
+        if (current_elem->adj_proc[j] == Proc) {  /* Nbor is on same proc */
+          if (!Plot_Partitions || 
+              mesh->elements[current_elem->adj[j]].my_part == 
+                             current_elem->my_part) {  
+            /* Not plotting partitions, or nbor is in same partition */
             /* Plot the edge.  Need to include current point and nbor point
              * for each edge. */
             fprintf(fp, "\n%e %e\n", 
@@ -133,17 +175,33 @@ int output_gnu(char *cmd_file,
      *  For each element of Nemesis input file, print the coordinates of its
      *  nodes.  No need to follow neighbors, as decomposition is by elements.
      */
+    double sum[2];
     datastyle = "lines";
-    for (i = 0; i < mesh->elem_array_len; i++) {
-      current_elem = &(mesh->elements[i]);
-      if (current_elem->globalID >= 0) {
-        num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
-        for (j = 0; j < num_nodes; j++) {
-          fprintf(fp, "%e %e\n", 
-                  current_elem->coord[j][0], current_elem->coord[j][1]);
-        }
-        fprintf(fp, "\n");
+    for (i = 0; i < mesh->num_elems; i++) {
+      current_elem = &(mesh->elements[elem_index[index[i]]]);
+      if (parts[index[i]] != prev_part) {
+        if (fp != NULL) fclose(fp);
+        gen_par_filename(ctemp, par_out_fname, pio_info, 
+                         parts[index[i]], Num_Proc);
+        fp = fopen(par_out_fname, "w");
+        prev_part = parts[index[i]];
       }
+      num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
+      sum[0] = sum[1] = 0.0;
+      for (j = 0; j < num_nodes; j++) {
+        fprintf(fp, "%e %e\n", 
+                current_elem->coord[j][0], current_elem->coord[j][1]);
+        sum[0] += current_elem->coord[j][0];
+        sum[1] += current_elem->coord[j][1];
+      }
+      fprintf(fp, "\n");
+      /* Print small + in center of element */
+      sum[0] /= num_nodes;
+      sum[1] /= num_nodes;
+      fprintf(fp, "%e %e\n",   sum[0] - 0.001, sum[1]);
+      fprintf(fp, "%e %e\n\n", sum[0] + 0.001, sum[1]);
+      fprintf(fp, "%e %e\n",   sum[0], sum[1] - 0.001);
+      fprintf(fp, "%e %e\n\n", sum[0], sum[1] + 0.001);
     }
   }
   else {  /* Hypergraph file */
@@ -151,6 +209,7 @@ int output_gnu(char *cmd_file,
   }
     
   fclose(fp);
+  safe_free((void **) &parts);
 
   if (Proc == 0) {
     /* Write gnu master file with gnu commands for plotting */
@@ -172,10 +231,10 @@ int output_gnu(char *cmd_file,
     strcat(ctemp, ".");
     strcat(ctemp, tag);
     strcat(ctemp, ".gnu");
-    for (i = 0; i < Num_Proc; i++) {
+    for (i = 0; i < gnum_part; i++) {
       gen_par_filename(ctemp, par_out_fname, pio_info, i, Num_Proc);
       fprintf(fp, "\"%s\"", par_out_fname);
-      if (i != Num_Proc-1) {
+      if (i != gnum_part-1) {
         fprintf(fp, ",\\\n");
       }
     }

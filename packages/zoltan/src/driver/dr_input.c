@@ -193,6 +193,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** Box- and Point-drop testing flag ******/
+      else if (token_compare(cptr, "test drops")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Test_Drops) != 1) {
+          Gen_Error(0, "fatal: test drops must be an integer.");
+          return 0;
+        }
+      }
+
       /****** DDirectory testing flag ******/
       else if (token_compare(cptr, "test ddirectory")) {
         cptr = strtok(NULL, "\t=");
@@ -213,7 +223,27 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
-      /****** Generate GNUplot output? ******/
+      /****** Plot processor numbers or partitions? ******/
+      else if (token_compare(cptr, "plot partitions")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Plot_Partitions) != 1) {
+          Gen_Error(0, "fatal: plot partitions indicator must be an integer.");
+          return 0;
+        }
+      }
+
+      /****** Generate Nemesis output? ******/
+      else if (token_compare(cptr, "nemesis output")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Nemesis_Output) != 1) {
+          Gen_Error(0, "fatal: nemesis output indicator must be an integer.");
+          return 0;
+        }
+      }
+
+      /****** Generate ASCII mesh file? ******/
       else if (token_compare(cptr, "print mesh info file")) {
         cptr = strtok(NULL, "\t=");
         strip_string(cptr, " \t\n");
@@ -559,16 +589,36 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /* local declarations */
   int ctrl_id;
   int size;
+  int int_params[11];  /* Make sure this array is large enough */
 /***************************** BEGIN EXECUTION ******************************/
+  
+  int j = 0;
+  int_params[j++] = Debug_Driver;
+  int_params[j++] = Test_DDirectory;
+  int_params[j++] = Test_Multi_Callbacks;
+  int_params[j++] = Test_Null_Import_Lists;
+  int_params[j++] = Gnuplot_Output;
+  int_params[j++] = Nemesis_Output;
+  int_params[j++] = Plot_Partitions;
+  int_params[j++] = Print_Mesh_Info_File;
+  int_params[j++] = Number_Iterations;
+  int_params[j++] = Driver_Action;
+  int_params[j++] = Test_Drops;
 
-  MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Test_DDirectory, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Test_Multi_Callbacks, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Test_Null_Import_Lists, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Gnuplot_Output, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Print_Mesh_Info_File, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&Driver_Action, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
+
+  j = 0;
+  Debug_Driver           = int_params[j++];
+  Test_DDirectory        = int_params[j++];
+  Test_Multi_Callbacks   = int_params[j++];
+  Test_Null_Import_Lists = int_params[j++];
+  Gnuplot_Output         = int_params[j++];
+  Nemesis_Output         = int_params[j++];
+  Plot_Partitions        = int_params[j++];
+  Print_Mesh_Info_File   = int_params[j++];
+  Number_Iterations      = int_params[j++];
+  Driver_Action          = int_params[j++];
+  Test_Drops             = int_params[j++];
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 

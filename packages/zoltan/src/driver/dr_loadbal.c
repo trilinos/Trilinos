@@ -274,30 +274,28 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
 
 #ifdef ZOLTAN_NEMESIS
-    if (pio_info->file_type == NEMESIS_FILE && Gnuplot_Output) {
+    if (pio_info->file_type == NEMESIS_FILE && Nemesis_Output) {
       i = write_elem_vars(Proc, mesh, pio_info, num_exported, export_gids,
-                          export_procs);
+                          export_procs, export_to_part);
     }
 #endif
   
-    if (Proc == 0) {
+    if (Test_Drops) {
       double x[] = {0.0L, 0.0L, 0.0L} ;
       int proc ;
       int status ;
-      status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
-      if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
-    }
-  
-    if (Proc == 0) {
       double xlo, ylo, zlo ;
       double xhi, yhi, zhi ;
       int procs[1000] ;
       int count ;
-      int status ;
   
+      status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
+      if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
+
       xlo = ylo = zlo = 0.0L ;
       xhi = yhi = zhi = 1.0L ;
-      status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
+      status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, 
+                                     &count) ;
       if (status != ZOLTAN_OK) printf ("Box_Assign returned an error\n") ;
     }
   

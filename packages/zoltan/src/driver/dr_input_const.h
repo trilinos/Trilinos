@@ -106,7 +106,8 @@ extern int write_elem_vars(
   PARIO_INFO_PTR pio_info,
   int num_exp,
   ZOLTAN_ID_PTR exp_gids,
-  int *exp_procs
+  int *exp_procs,
+  int *exp_to_part
 );
 
 extern int read_chaco_mesh(
