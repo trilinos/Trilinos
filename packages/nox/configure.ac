@@ -76,13 +76,134 @@ AC_REVISION($Revision$)
 # Configure command line options
 # ------------------------------------------------------------------------
 
+AC_ARG_ENABLE(debug,
+[  --enable-debug          Compile with debugging options],
+[
+case $enableval in
+  yes)
+    DEBUG=yes
+    CXXFLAGS="${CXXFLAGS} -g"
+    CFLAGS="${CFLAGS} -g"
+  ;;
+  opt)
+    DEBUG=opt
+    CXXFLAGS="${CXXFLAGS} -O2"
+    CFLAGS="${CFLAGS} -O2"
+  ;;
+  no)
+    DEBUG=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-debug ($enableval)])
+  ;;
+esac
+],
+[DEBUG=no]
+)
+AC_MSG_CHECKING(whether debugging is on)
+AC_MSG_RESULT([${DEBUG}])
+
+AC_ARG_ENABLE(mpi,
+[  --enable-mpi            Enable MPI.],
+[
+case $enableval in
+  yes)
+    USE_MPI=yes 
+    USE_MPI_COMPILER=yes
+  ;;
+  no)
+    USE_MPI=no
+  ;;
+  *)
+    AC_MSG_ERROR([Invalid value for --enable-mpi ($enableval)])
+  ;;
+esac
+],
+[USE_MPI=no]
+)
+
+AC_ARG_WITH(mpiinc,
+[  --with-mpiinc           Specify MPI includes (enables MPI)],
+[
+USE_MPI=yes
+USE_MPI_COMPILER=no
+AC_MSG_CHECKING(user-defined MPI includes)
+AC_MSG_RESULT([${withval}])
+CPPFLAGS="${CPPFLAGS} ${withval}"
+]
+)
+
+AC_ARG_WITH(mpilib,
+[  --with-mpilib           Specify MPI libraries (enables MPI)],
+[
+USE_MPI=yes
+USE_MPI_COMPILER=no
+AC_MSG_CHECKING(user-defined MPI libraries)
+AC_MSG_RESULT([${withval}])
+LIBS="${LIBS} ${withval}"
+]
+)
+
+AC_MSG_CHECKING(whether we are using mpi)
+AC_MSG_RESULT([${USE_MPI}])
+
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
+if test X${USE_MPI} = Xyes; then
+
+  if test -z "$CC" && test X${USE_MPI_COMPILER} = Xyes; then
+    AC_MSG_CHECKING(for mpicc)
+    AC_CHECK_PROG(MPICC_EXISTS, mpicc, yes, no)
+    if test X${MPICC_EXISTS} = Xyes; then
+      CC=mpicc
+    fi
+  fi
+
+  if test -z "$CXX" && test X${USE_MPI_COMPILER} = Xyes; then
+    AC_MSG_CHECKING(for mpiCC)
+    AC_CHECK_PROG(MPICXX_EXISTS, mpiCC, yes, no)
+    if test X${MPICXX_EXISTS} = Xyes; then
+      CXX=mpiCC
+    fi
+  fi
+
+fi
+
 AC_PROG_CC
 AC_PROG_CXX
 AC_PROG_RANLIB
+
+# ------------------------------------------------------------------------
+# MPI check
+# ------------------------------------------------------------------------
+
+if test X${USE_MPI} = Xyes; then
+
+  AC_LANG_SAVE
+
+  AC_LANG_C
+  AC_MSG_CHECKING(whether MPI will link using C compiler)
+  AC_TRY_LINK([#include <mpi.h>],
+  [int c; char** v; MPI_Init(&c,&v);],
+  [AC_MSG_RESULT(yes)],
+  [AC_MSG_RESULT(no)
+   AC_MSG_ERROR(MPI cannot link)]
+  )
+
+  AC_LANG_CPLUSPLUS 
+  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
+  AC_TRY_LINK([#include <mpi.h>],
+  [int c; char** v; MPI_Init(&c,&v);],
+  [AC_MSG_RESULT(yes)], 
+  [AC_MSG_RESULT(no)  
+   AC_MSG_ERROR(MPI cannot link)]
+  )
+
+  AC_LANG_RESTORE
+
+fi
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -157,7 +278,7 @@ CPPFLAGS="${CPPFLAGS} ${XTRAFLAGS} ${XTRAINC}"
 
 AC_TRILINOS
 
-if test ${USE_TRILINOS} = yes; then
+if test X${USE_TRILINOS} = Xyes; then
    AM_CONDITIONAL(BUILD_NOXEPETRA, true)
 else
    AM_CONDITIONAL(BUILD_NOXEPETRA, false)
