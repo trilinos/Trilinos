@@ -866,24 +866,36 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	    desired_aggre_per_proc );
    } 
    
-   N_dimensions = ml_ag->N_dimensions;
-   old_nodal_coord = ml_ag->nodal_coord[abs(diff_level)];
+   N_dimensions = Amatrix->grid_info->Ndim;
+   old_x = Amatrix->grid_info->x;
+   old_y = Amatrix->grid_info->y;
+   old_z = Amatrix->grid_info->z;
 
-   /* RAY: this is the place for Zoltan... 
-    * Vectors old_x, old_y and old_z contains the coordinates
-    * for each (block) node. They still refer to the current
-    * distribution of rows. Later, these vectors are redefined
-    * for the new layout of local rows.
-    */
-   old_x = old_nodal_coord;
-   if (N_dimensions > 1 && old_x)
-     old_y = old_nodal_coord + Nrows;
-   else
-     old_y = 0;
-   if (N_dimensions > 2 && old_x)
-     old_z = old_nodal_coord + 2 * Nrows;
-   else
-     old_z = 0;
+   if (N_dimensions >= 1 && old_x == NULL)
+   {
+     fprintf(stderr,
+             "*ML*ERR* null x pointer!\n"
+             "*ML*ERR* (file %s, line %d)\n",
+             __FILE__, __LINE__);
+     exit(EXIT_FAILURE);
+   }
+
+   if (N_dimensions >= 2 && old_y == NULL)
+   {
+     fprintf(stderr,
+             "*ML*ERR* null y pointer!\n"
+             "*ML*ERR* (file %s, line %d)\n",
+             __FILE__, __LINE__);
+     exit(EXIT_FAILURE);
+   }
+   if (N_dimensions == 3 && old_z == NULL)
+   {
+     fprintf(stderr,
+             "*ML*ERR* null z pointer!\n"
+             "*ML*ERR* (file %s, line %d)\n",
+             __FILE__, __LINE__);
+     exit(EXIT_FAILURE);
+   }
 
    /* Amatrix is the *amalgamated* matrix.
     *
@@ -1636,7 +1648,6 @@ int ML_Aggregate_CoarsenZoltan(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 
    /* ------------------- that's all folks --------------------------------- */
 
-   printf("finishing here from process %d\n", mypid);
    return Ncoarse*nullspace_dim;
 
 } /* ML_Aggregate_CoarsenZoltan */
