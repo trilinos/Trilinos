@@ -137,10 +137,11 @@ class EpetraSerialDenseTestCase(unittest.TestCase):
         sys.Invert()
         idty = Epetra.SerialDenseMatrix(size,size)
         idty.Multiply("N","N",1,sdm,inv,0)
-        for i in range(size):
-            for j in range(size):
-                if i==j: self.assertAlmostEqual(idty[i,j],1.0,10)
-                else:    self.assertAlmostEqual(idty[i,j],0.0,10)
+        if "assertAlmostEqual" in dir(unittest.TestCase):
+            for i in range(size):
+                for j in range(size):
+                    if i==j: self.assertAlmostEqual(idty[i,j],1.0,10)
+                    else:    self.assertAlmostEqual(idty[i,j],0.0,10)
 
 ##########################################################################
 
