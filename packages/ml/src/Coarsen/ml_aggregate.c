@@ -997,14 +997,6 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* check to see which aggregation algorithm to use */
 
    ndofs = Amatrix->outvec_leng;
-   if ( ndofs < 250 ) ndofs = 0; else ndofs = 1;
-   ML_gsum_scalar_int(&ndofs, &i, comm);
-   /*
-   gmin = ML_gmax_double((double) (-1.0 * Amatrix->outvec_leng) , comm);
-   if (comm->ML_mypid == 0)
-      printf("Smallest Amatrix->outvec_leng = %d\n", (int) (-1 * gmin));
-   */
-   nprocs = comm->ML_nprocs;
    /*MS*/
    if( ag->coarsen_scheme_level == NULL ) {
      coarsen_scheme = ag->coarsen_scheme;
@@ -1012,6 +1004,19 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
      coarsen_scheme = ag->coarsen_scheme_level[ag->cur_level];
    }
    /*ms*/
+   if (coarsen_scheme == ML_AGGR_HYBRIDUM) {
+     if ( ndofs < 250 ) ndofs = 0; else ndofs = 1;
+   }
+   else {
+     if ( ndofs < 2 ) ndofs = 0; else ndofs = 1;
+   }
+   ML_gsum_scalar_int(&ndofs, &i, comm);
+   /*
+   gmin = ML_gmax_double((double) (-1.0 * Amatrix->outvec_leng) , comm);
+   if (comm->ML_mypid == 0)
+      printf("Smallest Amatrix->outvec_leng = %d\n", (int) (-1 * gmin));
+   */
+   nprocs = comm->ML_nprocs;
    if ( ndofs == nprocs ) 
    {
       if (coarsen_scheme == ML_AGGR_UNCOUPLED) 
@@ -1060,7 +1065,9 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
 /*ms*/
       else
       {
-         (*Pmatrix) = NULL;
+         /* The following can cause a memory leak.  This is now 
+            freed in ML_AGG_Gen_Prolongator() in ml_agg_genP.c. */
+         /*(*Pmatrix) = NULL;*/
          return 0;
       }
    }
