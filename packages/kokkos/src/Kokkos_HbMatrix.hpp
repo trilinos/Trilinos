@@ -235,11 +235,11 @@ int HbMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, 
   pntr_ = pntr;
   allIndices_ = indx;
 
-  isClassicHbMatrix_ = true;
 
   if (isRowOriented_) numEntries_ = pntr_[numRows_];
   else numEntries_ = pntr_[numCols_];
   
+  isClassicHbMatrix_ = true;
   return(0);
 }
 
@@ -276,6 +276,7 @@ int HbMatrix<OrdinalType, ScalarType>::initializeStructure(OrdinalType numRows, 
     for (int i=0; i<numCols_; i++)
       numEntries_ += profile_[i];
   
+  isClassicHbMatrix_ = false;
   return(0);
 }
 

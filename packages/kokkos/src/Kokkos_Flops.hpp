@@ -61,7 +61,7 @@ namespace Kokkos {
       : flops_(0.0){};
 
     //! Flops Destructor.
-    virtual ~Flops(void);
+    virtual ~Flops(void){};
     //@}
 
 

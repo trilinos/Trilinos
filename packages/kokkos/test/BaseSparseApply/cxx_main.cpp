@@ -1,9 +1,12 @@
 #include <iostream>
 #include <string>
+#include <complex>
 #include "Kokkos_DenseMultiVector.hpp"
 #include "Kokkos_DenseVector.hpp"
 #include "Kokkos_HbMatrix.hpp"
 #include "Kokkos_BaseSparseMultiply.hpp"
+#include "Kokkos_Time.hpp"
+#include "Kokkos_Flops.hpp"
 #include "GenerateHbProblem.hpp"
 
 using namespace std;
@@ -56,7 +59,10 @@ int main(int argc, char* argv[])
   DVector * x;
   DVector * b;
   DVector * xexact;
-  OTYPE nx = 10;
+  DMultiVector * xm;
+  DMultiVector * bm;
+  DMultiVector * xexactm;
+  OTYPE nx = 300;
   OTYPE ny = nx;
   OTYPE npoints = 7;
  
@@ -65,13 +71,16 @@ int main(int argc, char* argv[])
 
   OTYPE numEquations = nx*ny;
   OTYPE numEntries; 
+    if (verbose) cout << "Size of Ordinal Type (in bytes) = " << sizeof(OTYPE) << endl
+		      << "Size of Scalar  Type (in bytes) = " << sizeof(STYPE) << endl;
+
   {
     bool generateClassicHbMatrix = true;
     bool isRowOriented = true;
     KokkosTest::GenerateHbProblem<OTYPE, STYPE>
       problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
     
-    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********"<<endl<<endl;
+    if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Classic HbMatrix **********" << " Dim = " << numEquations <<endl<<endl;
     
     // Check output objects
     if (verbose) cout <<"Checking Attribute accessors ";
@@ -85,21 +94,33 @@ int main(int argc, char* argv[])
     Kokkos::BaseSparseMultiply<OTYPE, STYPE> opA;
     opA.initializeStructure(*A, true);
     opA.initializeValues(*A, true);
+    
+    Kokkos::Flops counter;
+    opA.setFlopCounter(counter);
+    Kokkos::Time timer;
 
-    opA.apply(*xexact, *x); // Use x for results
+    for (int ii=0; ii<20; ii++)
+      opA.apply(*xexact, *x); // Use x for results
+
+    double opAtime = timer.elapsedTime();
+    double opAflops = opA.getFlops();
+
+    double mflops = opAflops/opAtime/1000000.0;
     
     STYPE * bv = b->getValues();
     STYPE * xv = x->getValues();
     STYPE sum = 0.0;
     for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
     if (verbose) cout << "Difference between exact and computed = " << sum << endl;
+    if (verbose) cout << "MFLOPS = " << mflops << endl;
   }
   {
     bool generateClassicHbMatrix = false;
     bool isRowOriented = false;
+    OTYPE nrhs = 10;
     
     KokkosTest::GenerateHbProblem<OTYPE, STYPE>
-      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
+      problem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, nrhs, A, xm, bm, xexactm, numEntries);
     
     if (verbose) cout<<endl<<"********** CHECKING KOKKOS  Generalized HbMatrix **********"<<endl<<endl;
     
@@ -112,6 +133,28 @@ int main(int argc, char* argv[])
     } else {
       if (verbose) cout << "successful."<<endl;
     }
+    Kokkos::BaseSparseMultiply<OTYPE, STYPE> opA;
+    opA.initializeStructure(*A, true);
+    opA.initializeValues(*A, true);
+    
+    Kokkos::Flops counter;
+    opA.setFlopCounter(counter);
+    Kokkos::Time timer;
+
+    for (int ii=0; ii<20; ii++)
+      opA.apply(*xexactm, *xm); // Use x for results
+
+    double opAtime = timer.elapsedTime();
+    double opAflops = opA.getFlops();
+
+    double mflops = opAflops/opAtime/1000000.0;
+    
+    STYPE * bv = bm->getValues(0);
+    STYPE * xv = xm->getValues(0);
+    STYPE sum = 0.0;
+    for (OTYPE i=0; i<numEquations; i++) sum += xv[i] - bv[i];
+    if (verbose) cout << "Difference between exact and computed = " << sum << endl;
+    if (verbose) cout << "MFLOPS = " << mflops << endl;
   }
   //
   // If a test failed output the number of failed tests.

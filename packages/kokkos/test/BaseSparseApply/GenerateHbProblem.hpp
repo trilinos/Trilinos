@@ -143,12 +143,13 @@ namespace KokkosTest {
     OrdinalType numEquations;
     OrdinalType nrhsv;
 
-  OrdinalType ** indices;
-  ScalarType ** values;
-  OrdinalType * pointers;
-  OrdinalType * allIndices;
-  ScalarType * allValues;
-  OrdinalType * profiles;
+    OrdinalType ** indices;
+    ScalarType ** values;
+    OrdinalType * pointers;
+    OrdinalType * allIndices;
+    ScalarType * allValues;
+    OrdinalType * profiles;
+    bool generateClassicHbMatrix_;
   };
 } // namespace KokkosTest
 
@@ -181,7 +182,9 @@ GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
   pointers(0),
   allIndices(0),
   allValues(0),
-  profiles(0) {
+  profiles(0),
+  generateClassicHbMatrix_(generateClassicHbMatrix) 
+ {
   GenerateProblem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, A, x, b, xexact, numEntries);
 }
   
@@ -213,7 +216,8 @@ GenerateHbProblem(bool generateClassicHbMatrix, bool isRowOriented,
   pointers(0),
   allIndices(0),
   allValues(0),
-  profiles(0) {
+  profiles(0),
+  generateClassicHbMatrix_(generateClassicHbMatrix) {
   GenerateProblem(generateClassicHbMatrix, isRowOriented, nx, ny, npoints, xoff, yoff, nrhs, A, x, b, xexact, numEntries);
 }
   
@@ -270,10 +274,22 @@ GenerateProblem(bool generateClassicHbMatrix, bool isRowOriented,
   bv = new ScalarType*[nrhs];
   xexactv = new ScalarType*[nrhs];
 
-  for (i=0; i<nrhs; i++) {
-    xv[i] = new ScalarType[numEquations];
-    bv[i] = new ScalarType[numEquations];
-    xexactv[i] = new ScalarType[numEquations];
+  if (generateClassicHbMatrix) {
+    xv[0] = new ScalarType[numEquations*nrhs];
+    bv[0] = new ScalarType[numEquations*nrhs];
+    xexactv[0] = new ScalarType[numEquations*nrhs];
+    for (i=1; i<nrhs; i++) {
+    xv[i] = xv[0]+numEquations*i;
+    bv[i] = bv[0]+numEquations*i;
+    xexactv[i] = xexactv[0]+numEquations*i;
+    }
+  }
+  else {
+    for (i=0; i<nrhs; i++) {
+      xv[i] = new ScalarType[numEquations];
+      bv[i] = new ScalarType[numEquations];
+      xexactv[i] = new ScalarType[numEquations];
+    }
   }
 
   for (i=0; i<nrhs; i++)
@@ -395,15 +411,18 @@ GenerateHbProblem<OrdinalType, ScalarType>::
   if (Ad!=0) delete Ad;
 
   if (xv!=0) {
-    for (i=0; i<nrhsv; i++) if (xv[i]!=0) delete [] xv[i];
+    if (generateClassicHbMatrix_) delete [] xv[0];
+    else for (i=0; i<nrhsv; i++) if (xv[i]!=0) delete [] xv[i];
     delete [] xv;
   }
   if (bv!=0) {
-    for (i=0; i<nrhsv; i++) if (bv[i]!=0) delete [] bv[i];
+    if (generateClassicHbMatrix_) delete [] bv[0];
+    else for (i=0; i<nrhsv; i++) if (bv[i]!=0) delete [] bv[i];
     delete [] bv;
   }
   if (xexactv!=0) {
-    for (i=0; i<nrhsv; i++) if (xexactv[i]!=0) delete [] xexactv[i];
+    if (generateClassicHbMatrix_) delete [] xexactv[0];
+    else for (i=0; i<nrhsv; i++) if (xexactv[i]!=0) delete [] xexactv[i];
     delete [] xexactv;
   }
   if (indices!=0) {

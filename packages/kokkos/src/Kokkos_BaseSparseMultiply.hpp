@@ -196,6 +196,7 @@ namespace Kokkos {
 
     OrdinalType ** indices_;
     OrdinalType * profile_;
+    double costOfMatVec_;
 
   };
 
@@ -216,7 +217,8 @@ namespace Kokkos {
       numEntries_(0),
       values_(0),
       indices_(0),
-      profile_(0)  {
+      profile_(0),
+      costOfMatVec_(0) {
   }
 
   //==============================================================================
@@ -236,7 +238,8 @@ namespace Kokkos {
       numEntries_(source.numEntries_),
       values_(source.values_),
       indices_(source.indices_),
-      profile_(source.profile_) {
+      profile_(source.profile_),
+      costOfMatVec_(source.costOfMatVec_) {
 
     copyStructure();
     copyValues();
@@ -381,6 +384,7 @@ namespace Kokkos {
     numRows_ = A.getNumRows();
     numCols_ = A.getNumCols();
     numEntries_ = A.getNumEntries();
+    numRC_ = numCols_;
     if (isRowOriented_) numRC_ = numRows_;
 
     profile_ = new OrdinalType[numRC_];
@@ -405,6 +409,7 @@ namespace Kokkos {
 	OrdinalType * old_indices = indices_[i];
 	for (j=0; j<numIndices; j++) new_indices[j] = old_indices[j];
       }
+    costOfMatVec_ = 2.0 * ((double) numEntries_);
     haveStructure_ = true;
     return(0);
   }
@@ -491,6 +496,7 @@ namespace Kokkos {
 	  yp[curIndices[j]] += curValues[j] * xp[i];
       }
     }
+    updateFlops(costOfMatVec_);
     return(0);
   }
 
@@ -516,10 +522,6 @@ namespace Kokkos {
 
     ScalarType ** xp = x.getValues();
     ScalarType ** yp = y.getValues();
-
-    for (k=0; k<numVectors; k++)
-      for(i = 0; i < numRC_; i++)
-	yp[k][i] = 0.0; // Initialize y
 
     if ((isRowOriented_ && !transA) ||
 	(!isRowOriented_ && transA)) {
@@ -552,6 +554,7 @@ namespace Kokkos {
 	}
       }
     }
+    updateFlops(costOfMatVec_ * ((double) numVectors));
     return(0);
   }
 

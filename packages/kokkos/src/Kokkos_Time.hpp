@@ -31,11 +31,11 @@
 #define KOKKOS_TIME_H
 
 #ifdef ICL
-#include <time.hpp>
+#include <time.h>
 #else
-#include <sys/time.hpp>
+#include <sys/time.h>
 #ifndef MINGW
-#include <sys/resource.hpp>
+#include <sys/resource.h>
 #endif
 #endif
 
@@ -59,7 +59,7 @@ namespace Kokkos {
       elapsed time on the calling processor.  StartTime is also set
       for use with the ElapsedTime function.
     */
-    Time(void) {startTime_ = wallTime();};
+    Time() {startTime_ = wallTime();};
 
     //! Time Copy Constructor.
     /*! Makes an exact copy of an existing Time instance.
@@ -72,7 +72,7 @@ namespace Kokkos {
       timed by putting it between two calls to wallTime and taking the
       difference of the times.
     */
-    double wallTime(void) {
+    double wallTime() const {
 #ifdef ICL
 
       clock_t start;
@@ -100,14 +100,14 @@ namespace Kokkos {
 
 #endif
 
-    } const;
+    };
 
     //! Kokkos_Time function to reset the start time for a timer object.
     /*! Resets the start time for the timer object to the current time
       A code section can be 
       timed by putting it between a call to ResetStartTime and ElapsedTime.
     */
-    void resetStartTime(void){
+     void resetStartTime(){
       startTime_ = wallTime();
       return;
     };
@@ -119,14 +119,14 @@ namespace Kokkos {
       timed by putting it between the Kokkos_Time constructor and a call to 
       ElapsedTime, or between a call to ResetStartTime and ElapsedTime.
     */
-    double elapsedTime(void) {
+    double elapsedTime() const {
       return(wallTime()-startTime_);
-    } const;
+    };
 
     //! Kokkos_Time Destructor.
     /*! Completely deletes a Kokkos_Time object.  
      */
-    virtual ~Time(void){};
+    virtual ~Time(){};
 
   private:
 
