@@ -807,12 +807,12 @@ AC_SUBST(ac_aux_dir)
 #
 #  Temporarily disabled until I make it dependent on --enable-amesos-dscpack
 #
-#		example/Makefile
-#		example/AmesosDscpack/Makefile
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		test/Makefile
+		example/Makefile
+		example/AmesosDscpack/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile

@@ -10306,9 +10306,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 #
 #  Temporarily disabled until I make it dependent on --enable-amesos-dscpack
 #
-#		example/Makefile
-#		example/AmesosDscpack/Makefile
-                                                                      ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
+                                                                                          ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile example/Makefile example/AmesosDscpack/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -11030,6 +11028,8 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "example/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
+  "example/AmesosDscpack/Makefile" ) CONFIG_FILES="$CONFIG_FILES example/AmesosDscpack/Makefile" ;;
   "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
   "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
   "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
