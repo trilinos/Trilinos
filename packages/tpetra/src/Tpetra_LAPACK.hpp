@@ -6,7 +6,7 @@
 #ifndef _TPETRA_LAPACK_HPP_
 #define _TPETRA_LAPACK_HPP_
 
-#include "Tpetra_Object.h"
+#include "Tpetra_Object.hpp"
 
 namespace Tpetra
 {

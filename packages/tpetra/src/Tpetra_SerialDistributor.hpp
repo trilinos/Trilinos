@@ -4,6 +4,7 @@
 23-Nov-2002 Default constructor modified, argument commented out
             do methods temporarily renamed to Do
 25-Nov-2002 do methods fixed.
+06-Feb-2003 Updated const syntax.
 */
 
 #ifndef _TPETRA_SERIALDISTRIBUTOR_HPP_
@@ -32,7 +33,7 @@ namespace Tpetra {
   SerialDistributor() : Object("Tpetra::Distributor[Serial]") {};
 
   //! Copy Constructor
-  SerialDistributor(const SerialDistributor<PacketType, OrdinalType>& Plan) : Object(Plan.label()) {};
+  SerialDistributor(SerialDistributor<PacketType, OrdinalType> const& plan) : Object(plan.label()) {};
 
   //! Clone method
 	Distributor<PacketType, OrdinalType>* clone() {
@@ -47,12 +48,12 @@ namespace Tpetra {
 
 	//@{ \name Gather/Scatter Constructors
   //! Create Distributor object using list of Image IDs to send to
-  void createFromSends(const OrdinalType& numExportIDs, const OrdinalType* exportImageIDs,
-											 const bool& deterministic, OrdinalType& numRemoteIDs ) 
+  void createFromSends(OrdinalType const& numExportIDs, OrdinalType const* exportImageIDs,
+											 bool const& deterministic, OrdinalType& numRemoteIDs ) 
 		{throw reportError("This method should never be called.", -1);};
 	//! Create Distributor object using list of Image IDs to receive from
-	void createFromRecvs(const OrdinalType& numRemoteIDs, const OrdinalType* remoteGIDs, 
-											 const OrdinalType* remoteImageIDs, const bool& deterministic, 
+	void createFromRecvs(OrdinalType const& numRemoteIDs, OrdinalType const* remoteGIDs, 
+											 OrdinalType const* remoteImageIDs, bool const& deterministic, 
 											 OrdinalType& numExportIDs, OrdinalType*& exportGIDs, 
 											 OrdinalType*& exportImageIDs)
 		{throw reportError("This method should never be called.", -1);};
@@ -60,47 +61,47 @@ namespace Tpetra {
 	
 	//@{ \name Constant Size
 	//! do
-  void doPostsAndWaits       (PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) 
+  void doPostsAndWaits       (PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) 
 		{throw reportError("This method should never be called.", -1);};
 	//! doReverse
-  void doReversePostsAndWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs)
+  void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 
 	//! doPosts
-  void doPosts(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs)
+  void doPosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//! doWaits
-  void doWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs)
+  void doWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 
 	//! doReversePosts
-  void doReversePosts(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs)
+  void doReversePosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//! doReverseWaits
-  void doReverseWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs)
+  void doReverseWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//@}
 
 	//@{ \name Non-Constant Size
 	//! do
-  void doPostsAndWaits       (PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doPostsAndWaits       (PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//! doReverse
-  void doReversePostsAndWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 
 	//! doPosts
-  void doPosts(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doPosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//! doWaits
-  void doWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 
 	//! doReversePosts
-  void doReversePosts(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doReversePosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//! doReverseWaits
-  void doReverseWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs)
+  void doReverseWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs)
 		{throw reportError("This method should never be called.", -1);};
 	//@}
 

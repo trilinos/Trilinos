@@ -2,6 +2,7 @@
 12-Nov-2002 Rewritten for new templating scheme.
 19-Nov-2002 myImageID and numImages moved back to Comm, print method updated
 23-Nov-2002 Distributor methods added, distributor arguments commented out.
+06-Feb-2003 Updated const syntax, reordered <ST,OT> to <OT,ST>
 */
 
 #ifndef _TPETRA_SERIALPLATFORM_HPP_
@@ -20,15 +21,15 @@ template<typename OrdinalType> class ElementSpace;
 
 	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
 
- template<typename ScalarType, typename OrdinalType>
-	class SerialPlatform : public Object, public virtual Platform<ScalarType, OrdinalType> {
+ template<typename OrdinalType, typename ScalarType>
+	class SerialPlatform : public Object, public virtual Platform<OrdinalType, ScalarType> {
 	public:
 
 		//@{ \name Constructor/Destructor Methods
 		//! Constructor
 		SerialPlatform() : Object("Tpetra::Platform[Serial]") {};
 		//! Copy constructor
-		SerialPlatform(const SerialPlatform<ScalarType, OrdinalType>& Platform) : Object(Platform.label()) {};
+		SerialPlatform(SerialPlatform<OrdinalType, ScalarType> const& platform) : Object(platform.label()) {};
 		//! Destructor
 		~SerialPlatform() {};
 		//@}
@@ -50,19 +51,21 @@ template<typename OrdinalType> class ElementSpace;
 		//! Distributor Instances
 		Distributor<ScalarType, OrdinalType>* createScalarDistributor() const {
 			// static_cast casts SerialDistributor* to Distributor*
-			Distributor<ScalarType, OrdinalType>* distributor = static_cast<Distributor<ScalarType, OrdinalType>*>(new SerialDistributor<ScalarType, OrdinalType>(/*createScalarComm()*/));
+			Distributor<ScalarType, OrdinalType>* distributor = 
+				static_cast<Distributor<ScalarType, OrdinalType>*>(new SerialDistributor<ScalarType, OrdinalType>());
 			return(distributor);
 		};
 		Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const {
 			// static_cast casts SerialDistributor* to Distributor*
-			Distributor<OrdinalType, OrdinalType>* distributor = static_cast<Distributor<OrdinalType, OrdinalType>*>(new SerialDistributor<OrdinalType, OrdinalType>(/*createOrdinalComm()*/));
+			Distributor<OrdinalType, OrdinalType>* distributor = 
+				static_cast<Distributor<OrdinalType, OrdinalType>*>(new SerialDistributor<OrdinalType, OrdinalType>());
 			return(distributor);
 		};
 
 		//! Directory Instance
-		Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const {
+		Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const {
 		  // static_cast casts SerialDirectory* to Directory*
-		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(ElementSpace)); 
+		  Directory<OrdinalType>* dir = static_cast<Directory<OrdinalType>*>(new SerialDirectory<OrdinalType>(elementSpace)); 
 		  return(dir);
 		};
 

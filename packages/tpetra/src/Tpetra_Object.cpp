@@ -2,6 +2,7 @@
 27-May-2002 General cleanup. Changed method names to fit namingConvention. Moved some code in from Tpetra::Object.h. Commented out reportError method.
 09-June-2002 Switched comment format.
 06-August-2002 Changed to images (nothing changed). Also touched up a few things.
+04-Feb-2003 Moved reportError method into seperate file.
 */
 
 namespace Tpetra
@@ -44,18 +45,6 @@ int Object::getTracebackMode()
 void Object::print(ostream& os) const
 {
   // os << label_; // No need to print label, since ostream does it already
-}
-//=============================================================================
-int Tpetra::Object::reportError(const string message, int errorCode) const
-{
-#ifndef TPETRA_NO_ERROR_REPORTS
-  // NOTE:  We are extracting a C-style string from Message because 
-  //        the SGI compiler does not have a real string class with 
-  //        the << operator.  Some day we should get rid of ".c_str()"
-  cerr << endl << "Error in Tpetra Object with label:  " << label_ << endl
-       << "Tpetra Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
-#endif
-  return(errorCode);
 }
 //=============================================================================
 Object::~Object()  

@@ -3,6 +3,7 @@
 19-Nov-2002 Templated for <PT,OT>, modified slightly.
 23-Nov-2002 do methods named Do temporarily
 25-Nov-2002 do methods fixed
+06-Feb-2003 Updated const syntax.
 */
 
 #ifndef _TPETRA_DISTRIBUTOR_HPP_
@@ -48,8 +49,8 @@ class Distributor {
     \param numRemoteIDs Out
            Number of IDs this image will be receiving.
   */
-  virtual void createFromSends(const OrdinalType& numExportIDs, const OrdinalType* exportImageIDs,
-															 const bool& deterministic, OrdinalType& numRemoteIDs ) = 0;
+  virtual void createFromSends(OrdinalType const& numExportIDs, OrdinalType const* exportImageIDs,
+															 bool const& deterministic, OrdinalType& numRemoteIDs ) = 0;
 
   //! Create Distributor object using list of Remote global IDs and corresponding ImageIDs
   /*! Take a list of global IDs and construct a plan for efficiently scattering to these images.
@@ -67,8 +68,8 @@ class Distributor {
     \param exportImageIDs Out
            List of images that will get the exported IDs.
   */
-  virtual void createFromRecvs(const OrdinalType& numRemoteIDs, const OrdinalType* remoteGIDs, 
-															 const OrdinalType* remoteImageIDs, const bool& deterministic, 
+  virtual void createFromRecvs(OrdinalType const& numRemoteIDs, OrdinalType const* remoteGIDs, 
+															 OrdinalType const* remoteImageIDs, bool const& deterministic, 
 															 OrdinalType& numExportIDs, OrdinalType*& exportGIDs, 
 															 OrdinalType*& exportImageIDs) = 0;
   //@}
@@ -76,41 +77,41 @@ class Distributor {
   //@{ \name Execute Gather/Scatter Operations (Constant size objects)
 
   //! Execute plan on buffer of export objects in a single step
-  virtual void doPostsAndWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doPostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
 
   //! Execute reverse of plan on buffer of export objects in a single step
-  virtual void doReversePostsAndWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  virtual void doPosts(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doPosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
   //! Wait on a set of posts
-  virtual void doWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
 
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  virtual void doReversePosts(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doReversePosts(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
 
   //! Wait on a reverse set of posts
-  virtual void doReverseWaits(PacketType* export_objs, const OrdinalType& obj_size, PacketType* import_objs) = 0;
+  virtual void doReverseWaits(PacketType* export_objs, OrdinalType const& obj_size, PacketType* import_objs) = 0;
   //@}
 
   //@{ \name Execute Gather/Scatter Operations (Non-constant size objects)
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
-  virtual void doPostsAndWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doPostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
 
   //! Execute reverse of plan on buffer of export objects in a single step (object size may vary)
-  virtual void doReversePostsAndWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doReversePostsAndWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  virtual void doPosts(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doPosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
   //! Wait on a set of posts
-  virtual void doWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
 
   //! Do reverse post of buffer of export objects (can do other local work before executing Waits)
-  virtual void doReversePosts(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doReversePosts(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
 
   //! Wait on a reverse set of posts
-  virtual void doReverseWaits(PacketType* export_objs, const OrdinalType*& obj_size, PacketType* import_objs) = 0;
+  virtual void doReverseWaits(PacketType* export_objs, OrdinalType const*& obj_size, PacketType* import_objs) = 0;
   //@}
 
   //@{ \name I/O Methods

@@ -4,6 +4,7 @@
 12-Oct-2002 Added some consts (still some left).
 12-Nov-2002 Changed remaining template<class...> to template<typename...>
 19-Nov-2002 myImageID and numImages moved back from Platform, print method updated
+06-Feb-2003 Updated const syntax.
 */
 
 #ifndef _TPETRA_SERIALCOMM_HPP_
@@ -34,7 +35,7 @@ public:
   //! Copy constructor
   /*! Makes an exact copy of an existing SerialComm instance.
   */
-  SerialComm(const SerialComm<PacketType, OrdinalType>& Comm);
+  SerialComm(SerialComm<PacketType, OrdinalType> const& comm);
   
   //! Destructor.
   /*! Completely deletes a SerialComm object.  
@@ -70,7 +71,7 @@ public:
     \param root In
            On entry, contains the imageID from which all images will receive a copy of myVals.
   */
-  void broadcast(PacketType* myVals, const OrdinalType count, const int root) const {};
+  void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {};
   //@}
 
   //@{ \name Gather Methods
@@ -83,7 +84,7 @@ public:
     \param count In
            On entry, contains the length of the list of myVals.
   */
-  void gatherAll(PacketType* myVals, PacketType* allVals, const OrdinalType count) const;
+  void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const;
   //@}
 
   //@{ \name Sum Methods
@@ -97,7 +98,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void sumAll(PacketType* partialSums, PacketType* globalSums, const OrdinalType count) const;
+  void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const;
   //@}
 	
   //@{ \name Max/Min Methods
@@ -111,7 +112,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, const OrdinalType count) const;
+  void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const;
   //! SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param partialMins In
@@ -122,7 +123,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void minAll(PacketType* partialMins, PacketType* globalMins, const OrdinalType count) const;
+  void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const;
   //@}
 
   //@{ \name Parallel Prefix Methods
@@ -135,7 +136,7 @@ public:
     \param count In
            On entry, contains the length of the list of values.
   */
-  void scanSum(PacketType* myVals, PacketType* scanSums, const OrdinalType count) const;
+  void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const;
   //@}
 
 	//@{ \name I/O Methods

@@ -7,35 +7,55 @@
 #include "Tpetra_ScalarTraits.hpp"
 
 namespace Tpetra {
-  // Tpetra::BLAS constructor
-  template<class scalarType> BLAS<scalarType>::BLAS(void) {}
-  
-  // Tpetra::BLAS copy constructor
-  template<class scalarType> BLAS<scalarType>::BLAS(const BLAS<scalarType>& BLAS) {}
-  
-  // Tpetra::BLAS destructor
-  template<class scalarType> BLAS<scalarType>::~BLAS() {}
-  
+
+	template<typename OrdinalType, typename ScalarType>
+	class BLAS {
+		
+	};
+
+	template<>
+	class BLAS<OrdinalType, float> {
+
+	};
+
+	template<>
+	class BLAS<OrdinalType, double> {
+
+	};
+
+	template<>
+	class BLAS<OrdinalType, complex<float> > {
+
+	};
+
+	template<>
+	class BLAS<OrdinalType, complex<double> > {
+
+	};
+
+
   // GEMM to sgemm shim (float)
   template<> 
-  void BLAS<float>::GEMM(char TRANSA, char TRANSB, int M, int N, int K, float ALPHA, float * A, 
-      int LDA, float * B, int LDB, float BETA, float * C, int LDC) const
+  void BLAS<float>::GEMM(char TRANSA, char TRANSB, int M, int N, int K, float ALPHA, float* A, 
+												 int LDA, float* B, int LDB, float BETA, float* C, int LDC) const
   {
     sgemm_(&TRANSA, &TRANSB, &M, &N, &K, &ALPHA, A, &LDA, B, &LDB, &BETA, C, &LDC);
   }
 
   // GEMM to dgemm shim (double)
-  template<> void BLAS<double>::GEMM(char TRANSA, char TRANSB, int M, int N, int K, double ALPHA, 
-      double * A, int LDA, double * B, int LDB, double BETA, double * C, int LDC) const
+  template<> 
+	void BLAS<double>::GEMM(char TRANSA, char TRANSB, int M, int N, int K, double ALPHA, 
+													double* A, int LDA, double * B, int LDB, double BETA, double * C, int LDC) const
   {
     dgemm_(&TRANSA, &TRANSB, &M, &N, &K, &ALPHA, A, &LDA, B, &LDB, &BETA, C, &LDC);
   }
   
   // GEMM generic loopset (other)
-  template<class scalarType> void BLAS<scalarType>::GEMM(char TRANSA, char TRANSB, int M, int N, 
-      int K, scalarType ALPHA, scalarType * A, int LDA, scalarType * B, int LDB, scalarType BETA, 
-      scalarType * C, int LDC) const
-  {
+  template<class scalarType> 
+	void BLAS<scalarType>::GEMM(char TRANSA, char TRANSB, int M, int N, int K, scalarType ALPHA, 
+															scalarType* A, int LDA, scalarType* B, int LDB, scalarType BETA, 
+															scalarType* C, int LDC) const
+	{
     int incra, incca, incrb, inccb;
     
     if (TRANSA=='N')
@@ -59,9 +79,9 @@ namespace Tpetra {
       incrb = 1;
     }
   
-    scalarType * curC = C;
-    scalarType * curB = B;
-    scalarType * curA = A;
+    scalarType* curC = C;
+    scalarType* curB = B;
+    scalarType* curA = A;
     scalarType zero = ScalarTraits<scalarType>::zero();
     scalarType one =  ScalarTraits<scalarType>::one();
 
@@ -76,8 +96,8 @@ namespace Tpetra {
     {
       for (int j=0; j<N; j++)
       {
-	scalarType * tmpB = curB;
-	scalarType * tmpA = curA;
+	scalarType* tmpB = curB;
+	scalarType* tmpA = curA;
 	scalarType  tmpC = zero;
 	for (int l=0; l<K; l++)
 	{
@@ -85,7 +105,7 @@ namespace Tpetra {
 	  tmpA += incra;
 	  tmpB += inccb;
 	}
-	*curC += ALPHA*tmpC;
+	*curC += ALPHA * tmpC;
 	curC += LDC;
 	curB += incrb;
       }

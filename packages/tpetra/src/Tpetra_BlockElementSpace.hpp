@@ -8,6 +8,7 @@
 16-Oct-2002 Updated for BESData
 12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
 14-Nov-2002 Changed slightly for switch to massive constructor call
+27-Jan-2003 Updated for .hpp and for new const syntax.
 */
 
 #ifndef _TPETRA_BLOCKELEMENTSPACE_HPP_
@@ -48,10 +49,10 @@ BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType elementSi
 BlockElementSpace(ElementSpace<OrdinalType>& ElementSpace, OrdinalType* elementSizeList);
 
 //! Tpetra::BlockElementSpace copy constructor.
-BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace);
+BlockElementSpace(BlockElementSpace<OrdinalType> const& BlockElementSpace);
 
 //! Tpetra::BlockElementSpace destructor.
- ~BlockElementSpace() { /*cout << "BES destructor called." << endl;*/};
+~BlockElementSpace() {};
 
 //@}
 
@@ -60,7 +61,8 @@ BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace);
 
 //! Returns the image IDs, corresponding local index values, and element sizes for a given list of global indices.
 /*! Theimage IDs, local index values, and element sizes are placed into arrays passed in by the user. The list of global indices used to create these is also passed in by the user. Exceptions might be thrown. */ 
-void getRemoteIDList(const OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, OrdinalType* LIDList, OrdinalType* elementSizeList) const;
+void getRemoteIDList(OrdinalType numIDs, OrdinalType* GIDList, OrdinalType* imageIDList, 
+										 OrdinalType* LIDList, OrdinalType* elementSizeList) const;
 
 //! Returns the local ID of the element that contains the given local Point ID, and the offset of the point in that element.
 /*! The local ID and offset are placed in OrdinalType variables passed in by reference by the user. */
@@ -104,9 +106,9 @@ OrdinalType getMaxElementSize() const {return(BlockElementSpaceData_->maxGlobalS
 bool isConstantElementSize() const {return(BlockElementSpaceData_->constantSize_);};
 
 //! Returns true if this BlockElementSpace is identical to the one passed in, returns false otherwise. Also implemented through the == and != operators.
-bool isSameAs(const BlockElementSpace<OrdinalType>& BlockElementSpace) const;
-bool operator==(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {return(isSameAs(BlockElementSpace));};
-bool operator!=(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {return(!isSameAs(BlockElementSpace));};
+bool isSameAs(BlockElementSpace<OrdinalType> const& BlockElementSpace) const;
+bool operator==(BlockElementSpace<OrdinalType> const& BlockElementSpace) const {return(isSameAs(BlockElementSpace));};
+bool operator!=(BlockElementSpace<OrdinalType> const& BlockElementSpace) const {return(!isSameAs(BlockElementSpace));};
 
 //@}
 
@@ -114,15 +116,15 @@ bool operator!=(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {
 //@{ \name Array Accessor Functions. Each of these methods is implemented twice, one that returns a pointer, and one that copies the array into one passed in by the user.
 
 //! Returns a pointer to array of the sizes of all the elements that belong to the calling image.
-const OrdinalType* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
+OrdinalType const* getElementSizeList() const {return(BlockElementSpaceData_->elementSizeList_);};
 void getElementSizeList(OrdinalType* elementSizeList) const;
 
 //! Returns a pointer to the internal array of the mapping between the local elements, and the first local point number in each element.
-const OrdinalType* getFirstPointInElementList() const;
+OrdinalType const* getFirstPointInElementList() const;
 void getFirstPointInElementList(OrdinalType* firstPointInElementList) const;
 
 //! Returns a pointer to an array that lists the LID of the element that each point belongs to.
-const OrdinalType* getPointToElementList() const;
+OrdinalType const* getPointToElementList() const;
 void getPointToElementList(OrdinalType* pointToElementList) const;
 
 //@}
@@ -134,7 +136,7 @@ void getPointToElementList(OrdinalType* pointToElementList) const;
 void print(ostream& os) const;
 
 //! Access function for ElementSpace object.
-const ElementSpace<OrdinalType>& elementSpace() const {return(*BlockElementSpaceData_->ElementSpace_);};
+ElementSpace<OrdinalType> const& elementSpace() const {return(*BlockElementSpaceData_->ElementSpace_);};
 
 //@}
 

@@ -6,6 +6,8 @@
 16-Oct-2002 Updated to use BESData
 12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
 24-Nov-2002 Updated for imageID methods moved back to Comm. Changed to use massive BESData constructor calls.
+27-Jan-2003 Updated for .hpp and for new const syntax.
+06-Feb-2003 Tweaked a lil, retested.
 */
 
 namespace Tpetra {
@@ -100,13 +102,13 @@ BlockElementSpace<OrdinalType>::BlockElementSpace(ElementSpace<OrdinalType>& Ele
 
 //=======================================================================
 template<typename OrdinalType>
-BlockElementSpace<OrdinalType>::BlockElementSpace(BlockElementSpace<OrdinalType>& BlockElementSpace) 
+BlockElementSpace<OrdinalType>::BlockElementSpace(BlockElementSpace<OrdinalType> const& BlockElementSpace) 
   : Object(BlockElementSpace.label())
 	, BlockElementSpaceData_(BlockElementSpace.BlockElementSpaceData_) {}
 
 //=======================================================================
 template<typename OrdinalType>
-void BlockElementSpace<OrdinalType>::getRemoteIDList(const OrdinalType numIDs, const OrdinalType* GIDList, OrdinalType* imageIDList, 
+void BlockElementSpace<OrdinalType>::getRemoteIDList(OrdinalType numIDs, OrdinalType* GIDList, OrdinalType* imageIDList, 
 																										 OrdinalType* LIDList, OrdinalType* elementSizeList) const {
   elementSpace().getRemoteIDList(numIDs, GIDList, imageIDList, LIDList);
 
@@ -160,7 +162,7 @@ OrdinalType BlockElementSpace<OrdinalType>::getElementSize(OrdinalType LID) cons
 
 //=======================================================================
 template<typename OrdinalType>
-bool BlockElementSpace<OrdinalType>::isSameAs(const BlockElementSpace<OrdinalType>& BlockElementSpace) const {
+bool BlockElementSpace<OrdinalType>::isSameAs(BlockElementSpace<OrdinalType> const& BlockElementSpace) const {
   if(this == &BlockElementSpace)
     return(true);
   // check to make sure ElementSpaces match.
@@ -202,7 +204,7 @@ void BlockElementSpace<OrdinalType>::getElementSizeList(OrdinalType* elementSize
 //=======================================================================
 // LID -> lowest PointID contained in that element
 template<typename OrdinalType>
-const OrdinalType* BlockElementSpace<OrdinalType>::getFirstPointInElementList() const {
+OrdinalType const* BlockElementSpace<OrdinalType>::getFirstPointInElementList() const {
 	OrdinalType nME = elementSpace().getNumMyElements();
 	if((BlockElementSpaceData_->firstPointList_ == 0) && (nME > 0)) {
 		OrdinalType* tmpPtr = new OrdinalType[nME];
@@ -227,7 +229,7 @@ void BlockElementSpace<OrdinalType>::getFirstPointInElementList(OrdinalType* fir
 //=======================================================================
 // pointID -> LID containing that point
 template<typename OrdinalType>
-const OrdinalType* BlockElementSpace<OrdinalType>::getPointToElementList() const {
+OrdinalType const* BlockElementSpace<OrdinalType>::getPointToElementList() const {
 	OrdinalType numPoints = getNumMyPoints();
 	if((BlockElementSpaceData_->pointToElementList_ == 0) && (numPoints > 0)) {
 		OrdinalType* tmpPtr = new OrdinalType[numPoints];
@@ -261,9 +263,9 @@ void BlockElementSpace<OrdinalType>::getPointToElementList(OrdinalType* pointToE
 //=======================================================================
 template<typename OrdinalType>
 void BlockElementSpace<OrdinalType>::print(ostream& os) const {
-	const	OrdinalType* elementSizeList1 = getElementSizeList();
-  const OrdinalType* firstPointList1 = getFirstPointInElementList(); 
-  const OrdinalType* pointToElementList1 = getPointToElementList(); 
+	OrdinalType const* elementSizeList1 = getElementSizeList();
+  OrdinalType const* firstPointList1 = getFirstPointInElementList(); 
+  OrdinalType const* pointToElementList1 = getPointToElementList(); 
  
   int myImageID = elementSpace().comm().getMyImageID();
   int numImages = elementSpace().comm().getNumImages();

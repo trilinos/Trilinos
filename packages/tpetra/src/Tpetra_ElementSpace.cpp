@@ -11,6 +11,7 @@
 22-Oct-2002 Modified slightly - ESData constructor now takes Comm* argument
 12-Nov-2002 Updated to use createOrdinalComm() instead of createComm()
 24-Nov-2002 Updated for imageID methods moved back to Comm
+27-Jan-2003 Updated for .hpp and for new const syntax.
 */
 
 #include "Tpetra_Platform.hpp"
@@ -21,7 +22,7 @@ namespace Tpetra {
 //=======================================================================
 template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType indexBase, 
-																				const Platform<OrdinalType, OrdinalType>& Platform)
+																				Platform<OrdinalType, OrdinalType> const& Platform)
   : Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
@@ -65,7 +66,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 //=======================================================================
 template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType indexBase, 
-																				const Platform<OrdinalType, OrdinalType>& Platform)
+																				Platform<OrdinalType, OrdinalType> const& Platform)
 	: Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
@@ -117,7 +118,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 //=======================================================================
 template<typename OrdinalType>
 ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalType numMyElements, OrdinalType* elementList, 
-																				OrdinalType indexBase, const Platform<OrdinalType, OrdinalType>& Platform)
+																				OrdinalType indexBase, Platform<OrdinalType, OrdinalType> const& Platform)
   : Object("Tpetra::ElementSpace")
 	, ElementSpaceData_()
 {
@@ -178,7 +179,7 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 // copy constructor
 //=======================================================================
 template<typename OrdinalType>
-ElementSpace<OrdinalType>::ElementSpace (const ElementSpace<OrdinalType>& ElementSpace) 
+ElementSpace<OrdinalType>::ElementSpace (ElementSpace<OrdinalType> const& ElementSpace) 
   : Object(ElementSpace.label())
 	, ElementSpaceData_(ElementSpace.ElementSpaceData_)
 {}
@@ -269,7 +270,7 @@ OrdinalType* ElementSpace<OrdinalType>::getMyGlobalElements() const {
 
 //=======================================================================
 template<typename OrdinalType>
-bool ElementSpace<OrdinalType>::isSameAs (const ElementSpace<OrdinalType>& ElementSpace) const {
+bool ElementSpace<OrdinalType>::isSameAs (ElementSpace<OrdinalType> const& ElementSpace) const {
   if (this == &ElementSpace) 
     return(true);
   if (getMinAllGID() != ElementSpace.getMinAllGID() || 

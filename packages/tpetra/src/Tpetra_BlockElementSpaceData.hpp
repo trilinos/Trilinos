@@ -3,6 +3,7 @@
 14-Oct-2002 Continued.
 12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
 24-Nov-2002 Rewritten with massive constructor call.
+27-Jan-2003 Updated for .hpp and for new const syntax.
 */
 
 #ifndef _TPETRA_BLOCKELEMENTSPACEDATA_HPP_
@@ -14,16 +15,16 @@ template<typename OrdinalType>
 class BlockElementSpaceData : public Object {
 	friend class BlockElementSpace<OrdinalType>;
  public:
-	BlockElementSpaceData(const ElementSpace<OrdinalType>& ElementSpace, 
-												const bool constantSize, 
-												const OrdinalType elementSize,
-												const OrdinalType numMyPoints,
-												const OrdinalType numGlobalPoints,
-												const OrdinalType minMySize,
-												const OrdinalType maxMySize,
-												const OrdinalType minGlobalSize,
-												const OrdinalType maxGlobalSize,
-												const OrdinalType* elementSizeList) 
+	BlockElementSpaceData(ElementSpace<OrdinalType> const& ElementSpace, 
+												bool const constantSize, 
+												OrdinalType const elementSize,
+												OrdinalType const numMyPoints,
+												OrdinalType const numGlobalPoints,
+												OrdinalType const minMySize,
+												OrdinalType const maxMySize,
+												OrdinalType const minGlobalSize,
+												OrdinalType const maxGlobalSize,
+												OrdinalType const* elementSizeList) 
 		: Object("Tpetra::BlockElementSpaceData")
 		, ElementSpace_(&ElementSpace) 
 		, constantSize_(constantSize)
@@ -40,39 +41,33 @@ class BlockElementSpaceData : public Object {
 		{};
 
 	~BlockElementSpaceData() {
-		//cout << "BESData destructor called." << endl;
-		//cout << "BESData destructor starting firstPointList." << endl;
 		if(firstPointList_ != 0) {
 			delete[] firstPointList_;
 			firstPointList_ = 0;
 		}
-		//cout << "BESData destructor starting pointToElementList." << endl;
 		if(pointToElementList_ != 0) {
 			delete[] pointToElementList_;
 			pointToElementList_ = 0;
 		}
-		//cout << "BESData destructor starting elementSizeList." << endl;
 		if(elementSizeList_ != 0) {
-			//cout << "BESData destructor about to delete eSL." << endl;
 			delete[] elementSizeList_;
 			elementSizeList_ = 0;
 		}
-		//cout << "BESData destructor finished." << endl;
 	};
 
  protected:
-	const ElementSpace<OrdinalType>* const ElementSpace_;
-	const bool constantSize_;
-	const OrdinalType elementSize_;
-	const OrdinalType numMyPoints_;
-	const OrdinalType numGlobalPoints_;
-	const OrdinalType minMySize_;
-	const OrdinalType maxMySize_;
-	const OrdinalType minGlobalSize_;
-	const OrdinalType maxGlobalSize_;
-	const OrdinalType* elementSizeList_;
-	const OrdinalType* pointToElementList_;
-	const OrdinalType* firstPointList_;
+	ElementSpace<OrdinalType> const* ElementSpace_;
+	bool const constantSize_;
+	OrdinalType const elementSize_;
+	OrdinalType const numMyPoints_;
+	OrdinalType const numGlobalPoints_;
+	OrdinalType const minMySize_;
+	OrdinalType const maxMySize_;
+	OrdinalType const minGlobalSize_;
+	OrdinalType const maxGlobalSize_;
+	OrdinalType const* elementSizeList_;
+	OrdinalType const* pointToElementList_;
+	OrdinalType const* firstPointList_;
 
 }; // class BlockElementSpaceData
 

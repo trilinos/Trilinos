@@ -4,6 +4,7 @@
 12-Nov-2002 Rewritten with new templating scheme.
 19-Nov-2002 myImageID and numImages moved back to Comm.
 23-Nov-2002 Distributor methods added.
+06-Feb-2003 Updated const syntax, reordered <ST,OT> to <OT,ST>
 */
 
 #ifndef _TPETRA_PLATFORM_HPP_
@@ -30,7 +31,7 @@ template<typename OrdinalType> class ElementSpace;
 		anything about the platform they're running on, or any implementation-specific details.
 */
 
-template<typename ScalarType, typename OrdinalType>
+template<typename OrdinalType, typename ScalarType>
 class Platform {
 public:
 
@@ -47,7 +48,7 @@ public:
 		virtual Distributor<ScalarType, OrdinalType>* createScalarDistributor() const = 0;
 		virtual Distributor<OrdinalType, OrdinalType>* createOrdinalDistributor() const = 0;
 		//! Directory Instance
-		virtual Directory<OrdinalType>* createDirectory(const ElementSpace<OrdinalType>& ElementSpace) const = 0;
+		virtual Directory<OrdinalType>* createDirectory(ElementSpace<OrdinalType> const& elementSpace) const = 0;
 		//@}
 
 		//@{ \name I/O Methods

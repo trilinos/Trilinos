@@ -1,9 +1,5 @@
 /*Paul
-07-Oct-2002 ElementSpaceData move started
-13-Oct-2002 Rewritten with massive constructor call
-22-Oct-2002 Modified slightly - ESData constructor now takes Comm* argument
-12-Nov-2002 Updated to use createOrdinalComm() instead of createComm() (nothing changed)
-25-Nov-2002 Member definitions moved around to match declaration order.
+26-Jan-2003 Updated for .hpp and for new const syntax.
 */
 
 #ifndef _TPETRA_ELEMENTSPACEDATA_HPP_
@@ -15,21 +11,21 @@ template<typename OrdinalType>
 class ElementSpaceData : public Object {
 	friend class ElementSpace<OrdinalType>;
  public:
-	ElementSpaceData(const OrdinalType indexBase, 
-									 const OrdinalType numGlobalElements,
-									 const OrdinalType numMyElements,
-									 const OrdinalType minAllGID,
-									 const OrdinalType maxAllGID,
-									 const OrdinalType minMyGID,
-									 const OrdinalType maxMyGID,
-									 const map<OrdinalType, OrdinalType> lgMap,
-									 const map<OrdinalType, OrdinalType> glMap,
-									 const bool contiguous,
-									 const Platform<OrdinalType, OrdinalType>& Platform,
-									 const Comm<OrdinalType, OrdinalType>* Comm)
+	ElementSpaceData(OrdinalType const indexBase, 
+									 OrdinalType const numGlobalElements,
+									 OrdinalType const numMyElements,
+									 OrdinalType const minAllGID,
+									 OrdinalType const maxAllGID,
+									 OrdinalType const minMyGID,
+									 OrdinalType const maxMyGID,
+									 map<OrdinalType, OrdinalType> const lgMap,
+									 map<OrdinalType, OrdinalType> const glMap,
+									 bool const contiguous,
+									 Platform<OrdinalType, OrdinalType> const& platform,
+									 Comm<OrdinalType, OrdinalType> const* comm)
 		: Object("Tpetra::ElementSpaceData")
-		, Platform_(&Platform) 
-		, Comm_(Comm) 
+		, Platform_(&platform) 
+		, Comm_(comm) 
 		, numGlobalElements_(numGlobalElements)
 		, numMyElements_(numMyElements)
 		, indexBase_(indexBase)
@@ -63,21 +59,21 @@ class ElementSpaceData : public Object {
 	};
 
  protected:
-	const Platform<OrdinalType, OrdinalType>* Platform_;
-	const Comm<OrdinalType, OrdinalType>* Comm_;
-	const OrdinalType numGlobalElements_;
-	const OrdinalType numMyElements_;
-	const OrdinalType indexBase_;
-	const OrdinalType minLID_;
-	const OrdinalType maxLID_;
-	const OrdinalType minMyGID_;
-	const OrdinalType maxMyGID_;
-	const OrdinalType minAllGID_;
-	const OrdinalType maxAllGID_;
-	const bool contiguous_;
-	const bool global_;
+	Platform<OrdinalType, OrdinalType> const* Platform_;
+	Comm<OrdinalType, OrdinalType> const* Comm_;
+	OrdinalType const numGlobalElements_;
+	OrdinalType const numMyElements_;
+	OrdinalType const indexBase_;
+	OrdinalType const minLID_;
+	OrdinalType const maxLID_;
+	OrdinalType const minMyGID_;
+	OrdinalType const maxMyGID_;
+	OrdinalType const minAllGID_;
+	OrdinalType const maxAllGID_;
+	bool const contiguous_;
+	bool const global_;
   map<OrdinalType, OrdinalType> lgMap_;
-  const map<OrdinalType, OrdinalType> glMap_;
+  map<OrdinalType, OrdinalType> const glMap_;
 	OrdinalType* myGlobalElements_;
 	Directory<OrdinalType>* Directory_;
 

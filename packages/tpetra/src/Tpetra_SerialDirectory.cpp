@@ -3,6 +3,7 @@
 06-August-2002 Changed to images.
 21-Sept-2002 Comm/Platform split
 23-Nov-2002 Updated for myImageID moved back to Comm
+06-Feb-2003 Updated const syntax
 */
 
 #include "Tpetra_ElementSpace.hpp"
@@ -10,24 +11,27 @@
 namespace Tpetra {
 
 // default constructor
-template<class OrdinalType>
-SerialDirectory<OrdinalType>::SerialDirectory(const ElementSpace<OrdinalType>& ElementSpace) 
+template<typename OrdinalType>
+SerialDirectory<OrdinalType>::SerialDirectory(ElementSpace<OrdinalType> const& elementSpace) 
 	: Object("Tpetra::Directory[Serial]") 
-	, ElementSpace_(&ElementSpace) {}
+	, ElementSpace_(&elementSpace) {}
 
 // copy constructor
-template<class OrdinalType>
-SerialDirectory<OrdinalType>::SerialDirectory(const SerialDirectory<OrdinalType>& Directory) 
-	: Object(Directory.label()) 
-	, ElementSpace_(Directory.ElementSpace_) {}
+template<typename OrdinalType>
+SerialDirectory<OrdinalType>::SerialDirectory(const SerialDirectory<OrdinalType>& directory) 
+	: Object(directory.label()) 
+	, ElementSpace_(directory.ElementSpace_) {}
 
 // destructor
-template<class OrdinalType>
+template<typename OrdinalType>
 SerialDirectory<OrdinalType>::~SerialDirectory() {}
 
 // query method
-template<class OrdinalType>
-void SerialDirectory<OrdinalType>::getDirectoryEntries(OrdinalType numEntries, const OrdinalType* globalEntries, OrdinalType* images, OrdinalType* localEntries) const {
+template<typename OrdinalType>
+void SerialDirectory<OrdinalType>::getDirectoryEntries(OrdinalType numEntries, 
+																											 OrdinalType const* globalEntries, 
+																											 OrdinalType* images, 
+																											 OrdinalType* localEntries) const {
 	int imageID = ElementSpace_->comm().getMyImageID();
 	for(OrdinalType i = 0; i < numEntries; i++) {
 		if(!ElementSpace_->isMyGID(globalEntries[i]))

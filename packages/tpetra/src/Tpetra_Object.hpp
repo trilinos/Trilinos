@@ -3,6 +3,7 @@
 06-August-2002 Changed to images (nothing changed). Also touched up the documentation a bit, and updated some naming conventions.
 12-Oct-2002 Updated for Common->Compiler_Directives renaming.
 30-Oct-2002 Updated for Compiler_Directives -> ConfigDefs renaming.
+04-Feb-2003 Moved reportError method into seperate file.
 */
 
 #ifndef _TPETRA_OBJECT_HPP_
@@ -11,6 +12,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CombineMode.hpp"
 #include "Tpetra_DataAccess.hpp"
+//#include "Tpetra_ReportError.hpp"
 
 namespace Tpetra
 {
@@ -40,7 +42,7 @@ class Object
   //! Object Copy Constructor.
   /*! Makes an exact copy of an existing Object instance.
   */
-  Object(const Object& Obj);
+  Object(const Object& obj);
 
   //! Object Destructor.
   /*! Completely deletes an Object object.  
@@ -85,10 +87,17 @@ class Object
   //! Print method
   virtual void print(ostream& os) const;
 
-  //! Error reporting method.
-  virtual int reportError(const string message, int errorCode) const;
-  //@}
-
+	//! Error reporting method.
+	virtual int reportError(const string message, int errorCode) const {
+  // NOTE:  We are extracting a C-style string from Message because 
+  //        the SGI compiler does not have a real string class with 
+  //        the << operator.  Some day we should get rid of ".c_str()"
+#ifndef TPETRA_NO_ERROR_REPORTS
+		cerr << endl << "Error in Tpetra Object with label: " << label_ << endl 
+				 << "Tpetra Error:  " << message.c_str() << "  Error Code:  " << errorCode << endl;
+#endif
+		return(errorCode);
+	}
   
 // tracebackMode controls how much traceback information is printed when run time 
 // integer errors are detected:

@@ -2,6 +2,7 @@
 27-July-2002 Templated for OrdinalType.
 06-August-2002 Changed to images. Documentation added.
 21-Sept-2002 Comm/Platform split
+06-Feb-2003 Updated const syntax.
 */
 
 #ifndef _TPETRA_SERIALDIRECTORY_HPP_
@@ -13,7 +14,7 @@
 namespace Tpetra {
 
 // forward declaration
-template<class OrdinalType> class ElementSpace;
+template<typename OrdinalType> class ElementSpace;
 
 //! Tpetra::SerialDirectory: This class is a serial implementation of Directory.  Its interface allows ElementSpace and BlockElementSpace objects to reference non-local elements.
 
@@ -26,16 +27,16 @@ template<class OrdinalType> class ElementSpace;
 		This class currently has two constructors, one that takes an ElementSpace object, and a copy constructor.
 */
 
-template<class OrdinalType>
+template<typename OrdinalType>
 class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
  public:
 	
 	//@{ \name Constructors/Destructor.
   //! constructor
-  SerialDirectory(const ElementSpace<OrdinalType>& ElementSpace);
+  SerialDirectory(ElementSpace<OrdinalType> const& elementSpace);
   
   //! copy constructor
-  SerialDirectory(const SerialDirectory<OrdinalType>& Directory);
+  SerialDirectory(SerialDirectory<OrdinalType> const& directory);
   
   //! destructor.
   ~SerialDirectory();
@@ -59,11 +60,12 @@ class SerialDirectory : public Object, public virtual Directory<OrdinalType> {
            localEntries - User allocated array of length at least NumEntries.  On return contains the local ID of
 	   the global on the owning image. If LocalEntries is zero, no local ID information is returned.
   */
-  void getDirectoryEntries(OrdinalType numEntries, const OrdinalType* globalEntries, OrdinalType* images, OrdinalType* localEntries) const;
+  void getDirectoryEntries(OrdinalType numEntries, OrdinalType const* globalEntries, 
+													 OrdinalType* images, OrdinalType* localEntries) const;
 	//@}
 
  private:
-  const ElementSpace<OrdinalType>* ElementSpace_;
+  ElementSpace<OrdinalType> const* ElementSpace_;
 
 }; // class SerialDirectory
 

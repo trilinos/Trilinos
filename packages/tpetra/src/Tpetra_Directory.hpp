@@ -2,6 +2,7 @@
 27-July-2002 Status: Templated for OrdinalType. Almost trivial SerialDirectory only implementation.
 06-August-2002 Changed to images.
 21-Sept-2002 Comm/Platform split
+06-Feb-2003 Updated const syntax.
 */
 
 #ifndef _TPETRA_DIRECTORY_HPP_
@@ -16,7 +17,7 @@ namespace Tpetra {
     of non-local elements.
 */
 
-template<class OrdinalType>
+template<typename OrdinalType>
 class Directory {
   public:
 
@@ -44,7 +45,8 @@ class Directory {
 	   the global on the owning image. If LocalEntries is zero, no local ID information is returned.
   */
 
-  virtual void getDirectoryEntries(OrdinalType numEntries, const OrdinalType* globalEntries, OrdinalType* images, OrdinalType* localEntries) const = 0;
+  virtual void getDirectoryEntries(OrdinalType numEntries, OrdinalType const* globalEntries, 
+																	 OrdinalType* images, OrdinalType* localEntries) const = 0;
 	
 }; // class Directory
 
