@@ -827,8 +827,10 @@ user may define a code like:
   MLPrec->DestroyPreconditioner();
 
   // re-compute the elements of A
-  // now re-compute the preconditioner
+  // now re-compute the preconditioner, using either
   MLPrec->ComputePreconditioner();
+  // or
+  MLPrec->ReComputePreconditioner();
 
   // re-solve the linear system
 
@@ -839,7 +841,15 @@ In this fragment of code, the user defines the \ML\ preconditioner, but
 the preconditioner is created only with the call \verb!ComputePreconditioner()!.
  This may
 be useful, for example, when \ML\ is used in conjunction with
-nonlinear solvers (like {\sc Nox}~\cite{NOX-home-page}).
+nonlinear solvers (like {\sc Nox}~\cite{NOX-home-page}). Method
+\verb!ReComputePreconditioner()! can be used to recompute the preconditioner
+using already available information about the aggregates.
+\verb!ReComputePreconditioner()! reuses the already computed tentative
+prolongator, then recomputes the smoothed prolongators and the other
+components of the hierarchy, like smoothers and coarse solver\footnote{Note
+  that the hierarchy produced by {\tt ReComputePreconditioner()} can 
+  differ from that produced by {\tt ComputePreconditioner()} for
+  non-zero threshold values.}. 
 
 \subsection{Example 2: ml\_2level\_DD.cpp}
 \label{parameter list ex. 2}
@@ -1110,6 +1120,9 @@ value is not considered for {\tt Epetra\_VbrMatrix} objects, as in this
 case is obtained from the block map used to construct the object. Note
 that only block maps with constant element size can be
 considered. Default: 1.}
+
+\choicebox{\tt cycle applications}{[{\tt int}] Number of applications of the
+  multilevel V-cycle. Default: 1.}
 
 %------------------------------------%
 \subsubsection{Aggregation Parameters}
