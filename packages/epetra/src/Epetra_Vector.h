@@ -390,7 +390,7 @@ class Epetra_Vector : public Epetra_MultiVector {
 			\warning This method is extremely dangerous and should only be used by experts.
 	*/
 
-	int ResetView(double * Values) {EPETRA_CHK_ERR(Epetra_MultiVector::ResetView(&Values));};
+	int ResetView(double * Values) {EPETRA_CHK_ERR(Epetra_MultiVector::ResetView(&Values)); return(0);};
 	//@}
  private:
 

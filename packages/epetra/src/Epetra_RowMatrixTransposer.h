@@ -122,8 +122,8 @@ class Epetra_RowMatrixTransposer {
 	Epetra_CrsMatrix * TransposeMatrix_;
 	Epetra_Export * TransposeExporter_;
 	Epetra_Map * TransposeRowMap_;
-	bool MakeDataContiguous_;
 	bool TransposeCreated_;
+	bool MakeDataContiguous_;
 	int NumMyRows_;
 	int NumMyCols_;
 	int MaxNumEntries_;
