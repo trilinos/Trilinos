@@ -32,7 +32,6 @@ static ZOLTAN_HG_MATCHING_FN matching_w3;       /* post matching optimizer */
 ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str)
 {
   static int srand_set ;
-
   if (srand_set == 0)
      {
      srand_set = 1 ;
@@ -45,7 +44,6 @@ ZOLTAN_HG_MATCHING_FN *Zoltan_HG_Set_Matching_Fn(char *str)
   else if (strcasecmp(str, "grm") == 0)  return matching_grm;
   else if (strcasecmp(str, "lhm") == 0)  return matching_lhm;
   else if (strcasecmp(str, "pgm") == 0)  return matching_pgm;
-
   else                                   return NULL;
 }
 

@@ -53,6 +53,7 @@ ZOLTAN_HG_GROUPING_FN *Zoltan_HG_Set_Grouping_Fn(char *str)
 
 int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
 { int   i, j;
+  int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, weight, sum1, sum2;
   char  *yo = "Zoltan_HG_Grouping";
@@ -82,7 +83,7 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
       hg->ewgt[i] = (old_ewgt?old_ewgt[i]:1.0)/sum1;
   }
 
-  ierr = hgp->grouping(zz,hg,pack);
+  ierr = hgp->grouping(zz,hg,pack,limit);
   ZOLTAN_FREE ((void **) &hg->ewgt);
   hg->ewgt = old_ewgt;
   return ierr;
@@ -91,8 +92,8 @@ int Zoltan_HG_Grouping (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
 
 /****************************************************************************/
 
-static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                                    /* limit is defined for future use */
    int i, j, vertex, first_vertex ;
    char *yo = "grouping_mxg" ;
 
@@ -116,8 +117,8 @@ static int grouping_mxg (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                               /* limit is defined for future use */
    int i, j, *edges=NULL, edge, random, vertex, first_vertex ;
    char *yo = "grouping_reg" ;
 
@@ -156,8 +157,8 @@ static int grouping_reg (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                                     /* limit is defined for future use */
    int i, j, edge, random, *vertices=NULL, vertex, first_vertex, count ;
    char *yo = "grouping_rrg" ;
 
@@ -201,8 +202,8 @@ static int grouping_rrg (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int grouping_heg (ZZ *zz, HGraph *hg, Packing pack)
-{
+static int grouping_heg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                /* limit is defined for future use */
    int   i, j, *vertices=NULL, *del_edges=NULL, vertex, first_vertex, edge,
          number, best_edge, best_size;
    float best_ewgt;
@@ -310,8 +311,9 @@ int start, int end)
 
 /****************************************************************************/
 
-static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex ;
+static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                      /* limit is defined for future use */
+  int   i, j, *size=NULL, *sorted=NULL, first_vertex, vertex ;
   char *yo = "grouping_grg" ;
 
   for (i=0; i<hg->nVtx; i++)
@@ -353,8 +355,9 @@ static int grouping_grg (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int grouping_deg (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, *size=NULL, *sorted=NULL, vertex, first_vertex;
+static int grouping_deg (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                        /* limit is defined for future use */
+  int   i, j, *size=NULL, *sorted=NULL, vertex, first_vertex;
   char *yo = "grouping_deg" ;
 
   for (i=0; i<hg->nVtx; i++)

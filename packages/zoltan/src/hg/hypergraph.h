@@ -147,9 +147,9 @@ int Zoltan_HG_HGraph_to_Graph(ZZ *, HGraph *, Graph *);
 int Zoltan_HG_Graph_to_HGraph(ZZ *, Graph *, HGraph *);
 
 /* Function types for options to hypergraph partitioning */
-typedef int ZOLTAN_HG_PACKING_FN(ZZ *, HGraph *, Packing);
+typedef int ZOLTAN_HG_PACKING_FN(ZZ *, HGraph *, Packing, int);
 typedef int ZOLTAN_HG_MATCHING_FN (ZZ *, Graph *, Matching, int);
-typedef int ZOLTAN_HG_GROUPING_FN (ZZ *, HGraph *, Packing) ;
+typedef int ZOLTAN_HG_GROUPING_FN (ZZ *, HGraph *, Packing, int) ;
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ *, HGraph *, int, Partition);
 typedef int ZOLTAN_HG_LOCAL_REF_FN(ZZ *, HGraph *);
 

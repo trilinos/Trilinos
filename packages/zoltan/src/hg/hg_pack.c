@@ -54,6 +54,7 @@ ZOLTAN_HG_PACKING_FN *Zoltan_HG_Set_Packing_Fn(char *str)
 
 int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
 { int   i, j;
+  int   limit=0 ;   /* reserved for future use */
   int   ierr = ZOLTAN_OK;
   float *old_ewgt=NULL, weight, sum1, sum2;
   char  *yo = "Zoltan_HG_Packing";
@@ -83,7 +84,7 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
       hg->ewgt[i] = (old_ewgt?old_ewgt[i]:1.0)/sum1;
   }
 
-  ierr = hgp->packing(zz,hg,pack);
+  ierr = hgp->packing(zz,hg,pack, limit);
   ZOLTAN_FREE ((void **) &hg->ewgt);
   hg->ewgt = old_ewgt;
   return ierr;
@@ -91,8 +92,8 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGParams *hgp)
 
 /****************************************************************************/
 
-static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                    /* limit is defined for future use */
    int i, j ;
    char *yo = "packing_mxp" ;
 
@@ -116,8 +117,8 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int packing_rep (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                              /* limit is defined for future use */
    int i, j, *edges=NULL, edge, random ;
    char *yo = "packing_rep" ;
 
@@ -154,8 +155,8 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack)
-   {
+static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int limit)
+   {                                      /* limit is defined for future use */
    int i, j, k, edge, random, *vertices=NULL, vertex ;
    int *del_edges=NULL, count ;
    char *yo = "packing_rrp" ;
@@ -221,8 +222,8 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int packing_hep (ZZ *zz, HGraph *hg, Packing pack)
-{
+static int packing_hep (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                   /* limit is defined for future use */
    int   i, j, k, *vertices=NULL, *del_edges=NULL, vertex, edge,
          number, best_edge, best_size;
    float best_ewgt;
@@ -323,8 +324,9 @@ int start, int end)
 
 /****************************************************************************/
 
-static int packing_grp (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, *size=NULL, *sorted=NULL;
+static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                         /* limit is defined for future use */
+  int   i, j, *size=NULL, *sorted=NULL;
   char *yo = "packing_grp" ;
 
   for (i=0; i<hg->nVtx; i++)
@@ -413,8 +415,9 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
 
 /****************************************************************************/
 
-static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack)
-{ int	i, *Vindex=NULL, *del_edge=NULL;
+static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                      /* limit is defined for future use */
+  int	i, *Vindex=NULL, *del_edge=NULL;
   char *yo = "packing_lhp" ;
 
   for (i=0; i<hg->nVtx; i++)
@@ -444,8 +447,9 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, k, vertex, edge, *pack1=pack, *pack2=NULL, *Pack=pack,
+static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                         /* limit is defined for future use */
+ int   i, j, k, vertex, edge, *pack1=pack, *pack2=NULL, *Pack=pack,
         *taken_edge=NULL, *taken_vertex=NULL, cur_edge, best_edge;
   float	best_weight, w1=0.0, w2=0.0;
   char *yo = "packing_pgp" ;
@@ -513,8 +517,9 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack)
 
 /****************************************************************************/
 
-static int packing_dep (ZZ *zz, HGraph *hg, Packing pack)
-{ int   i, j, *size=NULL, *sorted=NULL, vertex, first_vertex;
+static int packing_dep (ZZ *zz, HGraph *hg, Packing pack, int limit)
+{                                    /* limit is defined for future use */
+  int   i, j, *size=NULL, *sorted=NULL, vertex, first_vertex;
   char *yo = "packing_dep" ;
 
   for (i=0; i<hg->nVtx; i++)
