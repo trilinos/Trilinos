@@ -55,7 +55,7 @@ public:
   ///
   typedef T  primitiveType;
   ///
-  static int numPrimitiveObjs( const T& obj ) { return 1; }
+  static int numPrimitiveObjs() { return 1; }
   ///
   static void extractPrimitiveObjs(
     const T                &obj
@@ -92,7 +92,7 @@ public:
   ///
   typedef T  primitiveType;
   ///
-  static int numPrimitiveObjs( const std::complex<T>& obj ) { return 2; }
+  static int numPrimitiveObjs() { return 2; }
   ///
   static void extractPrimitiveObjs(
     const std::complex<T>  &obj
