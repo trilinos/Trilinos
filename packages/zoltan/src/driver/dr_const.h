@@ -180,6 +180,7 @@ struct Test_Flags {
                                ways. */
   int Drops;                /* Exercises point- and box-assign. */
   int Multi_Callbacks;      /* Exercises list-based callback functions. */
+  int Gen_Files;            /* Exercise output file generation. */
   int Null_Lists;           /* Exercises null import or export lists to
                                Zoltan_Migrate. */
 };

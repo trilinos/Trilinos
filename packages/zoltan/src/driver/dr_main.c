@@ -96,6 +96,7 @@ int main(int argc, char *argv[])
   Test.Local_Partitions = 0;
   Test.Drops = 0;
   Test.Multi_Callbacks = 0;
+  Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
 
   Output.Gnuplot = 0;

@@ -206,7 +206,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
 
-  /* Free tenmporary arrays for partition sizes. */
+  /* Free temporary arrays for partition sizes. */
   safe_free((void **) &psize);
   safe_free((void **) &partid);
 
@@ -395,6 +395,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
   ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
+  char fname[128];
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -410,6 +411,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       driver_eval(mesh);
       i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
       if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
+    }
+    if (Test.Gen_Files) {
+      /* Write output files. */
+      strcpy(fname, pio_info->pexo_fname);
+      strcat(fname, ".before");
+      Zoltan_Generate_Files(zz, fname, 1);
     }
   
     /*
@@ -475,6 +482,12 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       driver_eval(mesh);
       i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
       if (i) printf("Warning: Zoltan_LB_Eval returned code %d\n", i);
+    }
+    if (Test.Gen_Files) {
+      /* Write output files. */
+      strcpy(fname, pio_info->pexo_fname);
+      strcat(fname, ".after");
+      Zoltan_Generate_Files(zz, fname, 1);
     }
   
     if (Test.Drops) 

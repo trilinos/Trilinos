@@ -277,6 +277,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** file generation testing flag ******/
+      else if (token_compare(cptr, "test generate files")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Test.Gen_Files) != 1) {
+          Gen_Error(0, "fatal: test file generation must be an integer.");
+          return 0;
+        }
+      }
+
       /****** Generate GNUplot output? ******/
       else if (token_compare(cptr, "gnuplot output")) {
         cptr = strtok(NULL, "\t=");
@@ -670,6 +680,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
   int_params[j++] = Number_Iterations;
   int_params[j++] = Driver_Action;
   int_params[j++] = Test.Drops;
+  int_params[j++] = Test.Gen_Files;
 
   MPI_Bcast(int_params, j, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -686,6 +697,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
   Number_Iterations      = int_params[j++];
   Driver_Action          = int_params[j++];
   Test.Drops             = int_params[j++];
+  Test.Gen_Files         = int_params[j++];
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 
