@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
   // create a parameter list for ML options
   ParameterList MLList;
 
-  // set defaults for classic smoothed aggregation
+  // set defaults
   ML_Epetra::SetDefaults("SA",MLList);
   
   // overwrite some parameters. Please refer to the user's guide
@@ -123,13 +123,15 @@ int main(int argc, char *argv[])
   // maximum number of levels
   MLList.set("max levels",3);
   MLList.set("increasing or decreasing","increasing");
-  MLList.set("smoother: type", "Gauss-Seidel");
+  MLList.set("smoother: type", "symmetric Gauss-Seidel");
 
-  // aggregation scheme set to Uncoupled. Note that MIS can be
+  // aggregation scheme set to METIS. Note that MIS can be
   // visualized only for serial runs, while Uncoupled, METIS and
   // ParMETIS for serial and parallel runs.
-  MLList.set("aggregation: type", "Uncoupled");
-  
+  MLList.set("aggregation: type", "METIS");
+  MLList.set("aggregation: local aggregates (level 0)", 16);
+  MLList.set("aggregation: local aggregates (level 1)", 2);
+
   // ============== visualization with OpenDX. ==================
   // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
@@ -143,6 +145,11 @@ int main(int argc, char *argv[])
   // - set "viz: postsmoother" to visualize the effect of postsmoother
   // - set "viz: equation to plot" to the number of equation to 
   //   be plotted (for vector problems only)
+  // - set "viz: print starting solution" to print on file 
+  //   the starting solution vector, that was used for pre-
+  //   and post-smoothing, and for the cycle. This may help to
+  //   understand whether the smoothed solution is "smooth" 
+  //   or not.
   //
   // NOTE: the options above work only for "viz: output format" == "xyz"
   // (default value). If "viz: output format" == "dx", the user
@@ -155,6 +162,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: presmoother", true);
   MLList.set("viz: postsmoother", true);
   MLList.set("viz: equation to plot", 1);
+  MLList.set("viz: print starting solution", true);
 
   // ============== end of visualization parameters =============
 
