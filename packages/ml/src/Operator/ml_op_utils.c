@@ -440,7 +440,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
   double *val = NULL;
   int allocated = 0, row_length, j;
   /* FILE *fp; */
-#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+#if ( defined(HAVE_ML_PARMETIS_3x) )
    int *map = NULL, itemp1, itemp2, nprocs, myid;
    idxtype ncon, *tpwts = NULL, *vtxdist = NULL;
    float ubvec, itr;
@@ -452,7 +452,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     for( ii = 0 ; ii < nLocalNd ; ii++ ) pnode_part[ii] = 0;
     return 0;
   }
-#if ! ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+#if ! (  defined(HAVE_ML_PARMETIS_3x) )
   if (metis_or_parmetis == ML_USEPARMETIS) {
     for( ii = 0 ; ii < nLocalNd ; ii++ ) pnode_part[ii] = 0;
     return 1;
@@ -490,7 +490,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     }
     xadj[nLocalNd] = ii;
   }
-#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+#if (  defined(HAVE_ML_PARMETIS_3x) )
   else {
     ML_create_unique_id(nLocalNd, &map, matrix->getrow->pre_comm, matrix->comm);
     ii = 0;
@@ -557,7 +557,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, int *nblk,
     if (blks    != NULL) ML_free(blks);
   }
 
-#if ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+#if ( defined(HAVE_ML_PARMETIS_3x) )
   else {
     nprocs = matrix->comm->ML_nprocs;
     myid   = matrix->comm->ML_mypid;
