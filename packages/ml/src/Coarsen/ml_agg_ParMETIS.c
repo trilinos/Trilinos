@@ -88,7 +88,13 @@ extern void ML_DestroyQ(void);
 /* ********************************************************************** */
 
 #if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "parmetis.h"
+#ifdef __cplusplus
+}
+#endif
 #else
 #define idxtype int
 #endif

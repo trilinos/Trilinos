@@ -49,7 +49,14 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
  ********************************************************************** */
 
 #ifdef HAVE_ML_METIS
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "metis.h"
+#ifdef __cplusplus
+}
+#endif
+
 #else
 #define idxtype int
 #endif
