@@ -392,54 +392,6 @@ int find_inter(const int set1[], const int set2[], const int length1,
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void sort_int(int n, int ra[])
-
-/*
-*       Numerical Recipies in C source code
-*       modified to have first argument an integer array
-*
-*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
-*       heapsort algorithm.
-*
-*/
-
-{
-  int   l, j, ir, i;
-  int   rra;
-  /*
-   *  No need to sort if one or fewer items.
-   */
-  if (n <= 1) return;
-
-  l=n >> 1;
-  ir=n-1;
-  for (;;) {
-    if (l > 0)
-      rra=ra[--l];
-    else {
-      rra=ra[ir];
-      ra[ir]=ra[0];
-      if (--ir == 0) {
-        ra[0]=rra;
-        return;
-      }
-    }
-    i=l;
-    j=(l << 1)+1;
-    while (j <= ir) {
-      if (j < ir && ra[j] < ra[j+1]) ++j;
-      if (rra < ra[j]) {
-        ra[i]=ra[j];
-        j += (i=j)+1;
-      }
-      else j=ir+1;
-    }
-    ra[i]=rra;
-  }
-}
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
 void safe_free(void **ptr) {
   if (*ptr != NULL) {
     free(*ptr);
@@ -502,6 +454,63 @@ void sort2_index(int n, int ra[], int sa[], int indx[])
         ++j;
       if ((rra <  ra[indx[j]]) ||
           (rra == ra[indx[j]] && ssa < sa[indx[j]])) {
+        indx[i] = indx[j];
+        j += (i=j)+1;
+      }
+      else j=ir+1;
+    }
+    indx[i]=irra;
+  }
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+void sort_index(int n, int ra[], int indx[])
+
+/*
+*       Numerical Recipies in C source code
+*       modified to have first argument an integer array
+*
+*       Sorts the array ra[0,..,(n-1)] in ascending numerical order using
+*       heapsort algorithm. 
+*       Array ra is not reorganized.  An index array indx is built that
+*       gives the new order.
+*
+*/
+
+{
+  int   l, j, ir, i;
+  int   rra, irra;
+
+  /*
+   *  No need to sort if one or fewer items.
+   */
+  if (n <= 1) return;
+
+  l=n >> 1;
+  ir=n-1;
+  for (;;) {
+    if (l > 0) {
+      rra=ra[indx[--l]];
+      irra = indx[l];
+    }
+    else {
+      rra=ra[indx[ir]];
+      irra=indx[ir];
+     
+      indx[ir]=indx[0];
+      if (--ir == 0) {
+        indx[0]=irra;
+        return;
+      }
+    }
+    i=l;
+    j=(l << 1)+1;
+    while (j <= ir) {
+      if (j < ir && 
+          (ra[indx[j]] <  ra[indx[j+1]]))
+        ++j;
+      if (rra <  ra[indx[j]]) {
         indx[i] = indx[j];
         j += (i=j)+1;
       }

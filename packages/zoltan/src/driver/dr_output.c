@@ -153,6 +153,10 @@ int output_results(char *cmd_file,
   char   par_out_fname[FILENAME_MAX+1], ctemp[FILENAME_MAX+1];
 
   int   *global_ids = NULL;
+  int   *parts = NULL;
+  int   *perm = NULL;
+  int   *invperm = NULL;
+  int   *index = NULL;
   int    i, j;
 
   FILE  *fp;
@@ -161,21 +165,29 @@ int output_results(char *cmd_file,
   DEBUG_TRACE_START(Proc, yo);
 
   if (mesh->num_elems) {
-     global_ids = (int *) malloc(mesh->num_elems * sizeof(int));
+     global_ids = (int *) malloc(5 * mesh->num_elems * sizeof(int));
      if (!global_ids) {
        Gen_Error(0, "fatal: insufficient memory");
        return 0;
      }
+     parts = global_ids + mesh->num_elems;
+     perm = parts + mesh->num_elems;
+     invperm = perm + mesh->num_elems;
+     index = invperm + mesh->num_elems;
   }
 
   for (i = j = 0; i < mesh->elem_array_len; i++) {
     if (mesh->elements[i].globalID >= 0) {
       global_ids[j] = mesh->elements[i].globalID;
+      parts[j] = mesh->elements[i].my_part;
+      perm[j] = mesh->elements[i].perm_value;
+      invperm[j] = mesh->elements[i].invperm_value;
+      index[j] = j;
       j++;
     }
   }
 
-  sort_int(mesh->num_elems, global_ids);
+  sort_index(mesh->num_elems, global_ids, index);
 
   /* generate the parallel filename for this processor */
   strcpy(ctemp, pio_info->pexo_fname);
@@ -188,8 +200,11 @@ int output_results(char *cmd_file,
     echo_cmd_file(fp, cmd_file);
 
   fprintf(fp, "Global element ids assigned to processor %d\n", Proc);
-  for (i = 0; i < mesh->num_elems; i++)
-    fprintf(fp, "%d\n", global_ids[i]);
+  fprintf(fp, "GID\tPart\tPerm\tIPerm\n");
+  for (i = 0; i < mesh->num_elems; i++) {
+    j = index[i];
+    fprintf(fp, "%d\t%d\t%d\t%d\n", global_ids[j], parts[j], perm[j], invperm[j]);
+  }
 
   fclose(fp);
   free(global_ids);

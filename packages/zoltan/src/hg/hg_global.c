@@ -38,7 +38,6 @@ ZOLTAN_HG_GLOBAL_PART_FN *Zoltan_HG_Set_Global_Part_Fn(char *str)
 
 /****************************************************************************/
 
-extern int srand_set;
 
 static int global_ran (
   ZZ *zz, 
@@ -51,11 +50,6 @@ static int global_ran (
   float *weight=NULL;
   char *yo = "global_ran" ;
 
-  if (!srand_set)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
 
   order = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx);
   weight = (float *) ZOLTAN_MALLOC (sizeof (float) * p);

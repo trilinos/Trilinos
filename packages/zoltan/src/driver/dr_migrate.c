@@ -536,6 +536,9 @@ int adj_elem;
     /* clear elements[last] */
     elements[last].globalID = -1;
     elements[last].border = 0;
+    elements[last].my_part = -1;
+    elements[last].perm_value = -1;
+    elements[last].invperm_value = -1;
     elements[last].nadj = 0;
     elements[last].adj_len = 0;
     elements[last].elem_blk = -1;
@@ -624,7 +627,7 @@ int idx;
 /*****************************************************************************/
 void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
                        ZOLTAN_ID_PTR elem_gid, ZOLTAN_ID_PTR elem_lid,
-                       int mig_proc, int elem_data_size, char *buf, int *ierr)
+                       int mig_part, int elem_data_size, char *buf, int *ierr)
 {
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem, *elem_mig;
@@ -651,6 +654,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
                    ? &(elem[elem_lid[lid]])
                    : search_by_global_id(mesh, elem_gid[gid], &idx));
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
+  current_elem->my_part = mig_part;
 
   elem_mig = (ELEM_INFO *) buf; /* this is the element struct to be migrated */
 

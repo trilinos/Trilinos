@@ -341,6 +341,9 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
         elements[iplace].border = 0;
         elements[iplace].globalID = emap[iplace];
         elements[iplace].elem_blk = iblk;
+        elements[iplace].my_part = Proc;
+        elements[iplace].perm_value = -1;
+        elements[iplace].invperm_value = -1;
         elements[iplace].nadj = 0;
         elements[iplace].adj_len = 0;
         /* weights are 1 for now */

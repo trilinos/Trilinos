@@ -1,7 +1,8 @@
 Global element ids assigned to processor 2
-3
-4
-5
-9
-10
-15
+GID	Part	Perm	IPerm
+3	2	-1	-1
+4	2	-1	-1
+5	2	-1	-1
+9	2	-1	-1
+10	2	-1	-1
+15	2	-1	-1

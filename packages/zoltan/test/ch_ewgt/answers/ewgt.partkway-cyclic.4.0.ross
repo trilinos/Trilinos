@@ -5,9 +5,10 @@ File Type		= Chaco, initial distribution = cyclic
 File Name		= ewgt
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
-17
-21
-22
-23
-24
-25
+GID	Part	Perm	IPerm
+17	0	-1	-1
+21	0	-1	-1
+22	0	-1	-1
+23	0	-1	-1
+24	0	-1	-1
+25	0	-1	-1

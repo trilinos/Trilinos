@@ -279,6 +279,7 @@ static int fill_elements(
     else
       mesh->elements[i].cpu_wgt[0] = 1.0;
     mesh->elements[i].elem_blk = 0; /* only one elem block for all vertices */
+    mesh->elements[i].my_part = Proc;  /* Initial partition is starting proc.*/
     if (mesh->num_dims > 0) {
       /* One set of coords per element. */
       mesh->elements[i].connect = (int *) malloc(sizeof(int));

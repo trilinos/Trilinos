@@ -21,7 +21,6 @@ extern "C" {
 static float hcut_size_links (ZZ *, HGraph *, int, Partition);
 static float hcut_size_total (HGraph *, Partition);
 
-int srand_set = 0;
 
 /****************************************************************************/
 int Zoltan_HG_Set_Options(ZZ *zz, HGParams *hgp)
@@ -29,6 +28,8 @@ int Zoltan_HG_Set_Options(ZZ *zz, HGParams *hgp)
 /* Routine to set function pointers corresponding to input-string options. */
 char *yo = "Zoltan_HG_Set_Options";
 int ierr = ZOLTAN_OK;
+
+  srand ((unsigned long) RANDOM_SEED) ;
 
   /* Set reduction method.  Check for packing first; then matching; then grouping. */
   hgp->matching = NULL;
@@ -96,7 +97,7 @@ int Zoltan_HG_HPart_Lib (
      hgp->local_str,p);
   if (zz->Debug_Level > ZOLTAN_DEBUG_LIST) {
     ierr = Zoltan_HG_Info(zz,hg);
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) 
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       goto End;
   }
 
@@ -134,6 +135,14 @@ int Zoltan_HG_HPart_Lib (
         goto End;
       }
     }
+    else if (hgp->grouping != NULL)
+       {
+       ierr = Zoltan_HG_Grouping (zz,hg,pack,hgp) ;
+       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+          ZOLTAN_FREE((void **) &pack);
+          goto End;
+          }
+       }
     else {
       Graph g;
       ierr = Zoltan_HG_HGraph_to_Graph(zz,hg,&g);

@@ -5,4 +5,5 @@ File Type		= Chaco, initial distribution = file
 File Name		= drake
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
-1
+GID	Part	Perm	IPerm
+1	0	-1	-1

@@ -75,9 +75,10 @@ int find_inter (
 );
 
 extern
-void sort_int (
+void sort_index (
   int n,
-  int ra[]
+  int ra[],
+  int indx[]
 );
 
 extern void sort2_index(int n, int ra[], int sa[], int indx[]);

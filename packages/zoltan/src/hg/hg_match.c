@@ -115,18 +115,11 @@ static int matching_mxm (ZZ *zz, Graph *g, Matching match, int limit)
   return ZOLTAN_OK;
 }
 
-extern int srand_set;
 
 static int matching_rem (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0, *vertices, vertex, vertex_deg, number, neighbor=0;
   float w;
   char *yo = "matching_rem" ;
-
-  if (!srand_set)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
 
   vertices = (int *) ZOLTAN_MALLOC (sizeof (int) * g->nVtx);
   if (vertices == NULL)
@@ -161,12 +154,6 @@ static int matching_hem (ZZ *zz, Graph *g, Matching match, int limit)
 { int   i, j, size=0, *vertices, vertex, number, best_neighbor=0;
   float best_ewgt;
   char *yo = "matching_hem" ;
-
-  if (!srand_set)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
 
   if (!g->ewgt)
      return matching_rem(zz,g,match,limit);

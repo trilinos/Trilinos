@@ -6,7 +6,6 @@
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
-
  *    $Author$
  *    $Date$
  *    $Revision$
@@ -18,8 +17,6 @@ extern "C" {
 #endif
 
 #include "hypergraph.h"
-
-extern int srand_set;   /* flag indicating random number generator is seeded */
 
 static ZOLTAN_HG_PACKING_FN packing_mxp;  /* maximal packing */
 static ZOLTAN_HG_PACKING_FN packing_rep;  /* random edge packing */
@@ -116,12 +113,6 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack)
    int i, j, *edges=NULL, edge, random ;
    char *yo = "packing_rep" ;
 
-   if (!srand_set)
-      {
-      srand_set = 1 ;
-      srand ((unsigned long) RANDOM_SEED) ;
-      }
-
    edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
    if (edges == NULL)
       {
@@ -160,12 +151,6 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack)
    int i, j, k, edge, random, *vertices=NULL, vertex ;
    int *del_edges=NULL, count ;
    char *yo = "packing_rrp" ;
-
-   if (!srand_set)
-      {
-      srand_set = 1 ;
-      srand ((unsigned long) RANDOM_SEED) ;
-      }
 
    vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx) ;
    del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
@@ -234,12 +219,6 @@ static int packing_hep (ZZ *zz, HGraph *hg, Packing pack)
          number, best_edge, best_size;
    float best_ewgt;
    char  *yo = "packing_hep" ;
-
-   if (!srand_set)
-     {
-     srand_set = 1 ;
-     srand ((unsigned long) RANDOM_SEED) ;
-     }
 
    vertices  = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nVtx) ;
    del_edges = (int *) ZOLTAN_MALLOC (sizeof (int) * hg->nEdge) ;
