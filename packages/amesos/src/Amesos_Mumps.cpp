@@ -74,6 +74,8 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   CrsSchurComplement_(0),
   DenseSchurComplement_(0),
   IsComputeSchurComplementOK_(false),
+  ComputeTrueResidual_(false),
+  ComputeVectorNorms_(false),
   RowSca_(0),
   ColSca_(0),
   PermIn_(0),
@@ -110,6 +112,10 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   // SetICNTL(pos,value) and SetCNTL(pos,value).
   for( int i=0 ; i<40 ; ++i ) icntl_[i] = DEF_VALUE_INT;
   for( int i=0 ; i<5 ; ++i ) cntl_[i] = DEF_VALUE_DOUBLE;
+
+  Teuchos::ParameterList ParamList;
+  SetParameters( ParamList );
+  
 }
 
 //=============================================================================
@@ -532,7 +538,7 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   // solve problem with transpose
   if( ParameterList.isParameter("UseTranspose") )
     SetUseTranspose(ParameterList.get("UseTranspose",false));
-
+  
   // ignore all elements below given tolerance
   if( ParameterList.isParameter("Threshold") )
     Threshold_ = ParameterList.get("Threshold", 0.0);
