@@ -240,37 +240,43 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
   Assumption: the array "match" contains only the local (to column)
    matching information 
 */
-             
+  
+#define PHASE3 3      /* communication size is 3 ints */
+#define PHASE4 2      /* communication size is 2 ints */
+#define LOOP_FACTOR 8 /* forces ncandidates to have enough degrees of freedom */ 
+#define PIN_FACTOR  2 /* oversizes a Malloc() to avoid future Realloc()s */
+#define THRESHOLD 0   /* ignore inner products (i.p.) less than threshold */
+       
 static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
 {
-  int i, j, k, lno, loop, vertex, *psums, *tsums, *order, *c_order, pincnt;
-  int count, size, *ip, bestv, bestsum, edgecount, pins, *cmatch;
-  int ncandidates, nloop;
-  int *select, pselect;
-  int *m_gno;
-  int *m_vindex, *m_vedge;  /* zero-based loopup of edges by vertex */
-  int *m_bestsum, *m_bestv; /* column's best results for each matched vertex */
-  int *b_gno, *b_bestsum;
-  char *buffer, *rbuffer;    /* send and rec buffers */
-  int *displs, *each_size, *each_count, total_count;
+  int i, j, k, lno, loop, vertex, *psums=NULL, *tsums=NULL, *order=NULL;
+  int *c_order=NULL, pincnt, count, size, *ip, bestv, bestsum, edgecount, pins;
+  int *cmatch=NULL, ncandidates, nrounds, *select=NULL, pselect;
+  int *m_gno=NULL;
+  int *m_vindex=NULL, *m_vedge=NULL;  /* zero-based loopup of edges by vertex */
+  int *m_bestsum=NULL, *m_bestv=NULL; /* col's best results for matched vertex */
+  int *b_gno=NULL, *b_bestsum=NULL;
+  char *buffer=NULL, *rbuffer=NULL;    /* send and rec buffers */
+  int *displs=NULL, *each_size=NULL, *each_count=NULL, total_count;
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
-  
-  nloop = hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * 8);
-  ncandidates = hg->nVtx/nloop/2 + 1;
+   
+  /* determine number of basic matching rounds scaled by number of procs */
+  nrounds = hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * LOOP_FACTOR);
+  ncandidates = hg->nVtx/nrounds/2 + 1;  /* 2: each match removes 2 vertices */
         
-  c_order = order = psums = tsums = select = cmatch = each_size = displs = NULL;
-  buffer = rbuffer = NULL;
-  each_count = NULL;
+  /* allocate storage proportional to number of local vertices */  
   if (hg->nVtx > 0 && (
-      !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
+      !(b_gno     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+   || !(b_bestsum = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
+   || !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
    || !(psums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(tsums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))))     {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
-  
+    
   /* match[] is local slice of global matching array.  It uses local numbering 
    * (zero-based) initially, match[i] = i.  After matching, match[i]=i indicates
    * an unmatched vertex. A matching between vertices i & j is indicated by 
@@ -278,13 +284,14 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
    * indicated my a negative number, -(gno+1), which must use global numbers
    * (gno's).        */
   for (i = 0; i < hg->nVtx; i++)
-    match[i] = i;   
+    match[i] = i;                /* initialize match array to all unmatched */
    
-  /* order[] is used to impliemnet alternative vertex selection algorithms:
+  /* order[] is used to impliement alternative vertex visiting algorithms:
    * natural (lno), random, weight order, vertex size, etc. */
   for (i = 0; i < hg->nVtx; i++)
-     order[i] = i;
-         
+     order[i] = i;     /* select (visit) vertices in lno order */
+
+  /* randomly select matching candidates from available vertices */
   for (i = 0; i < hg->nVtx; i++)  {
     lno = Zoltan_HG_Rand () % hg->nVtx;
     /* swap current vertex with randomly selected vertex */
@@ -294,56 +301,52 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
     }
 
   if (hgc->nProc_x > 0 && (
-      !(select    = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
-   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
-   || !(each_count= (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))         
-   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
+      !(select     = (int*) ZOLTAN_MALLOC (ncandidates  * sizeof(int)))
+   || !(each_size  = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
+   || !(each_count = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))         
+   || !(displs     = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
   
   /* need to determine global total of ncandidates to allocate storage */
   MPI_Allgather (&ncandidates, 1, MPI_INT, each_count, 1, MPI_INT, hgc->row_comm);
-     
-  total_count= 0;
+  total_count = 0;
   for (i = 0; i < hgc->nProc_x; i++)
     total_count += each_count[i];
-  m_vedge = m_vindex = m_gno = m_bestsum = m_bestv = b_gno = b_bestsum = 0;
+  
+  /* malloc m_vedge by PIN_FACTOR to avoid too many REALLOC()s later */
   if (hg->nPins > 0 && 
-   !(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 3 * sizeof(int))))  {
+   !(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * PIN_FACTOR * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
-  pincnt = 3 * hg->nPins;   
+  pincnt = PIN_FACTOR * hg->nPins;
+  
+  /* Allocate storage proporational to global number of candidates */
   if (total_count > 0 &&  (
-      !(c_order  = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
-   || !(m_vindex = (int*) ZOLTAN_MALLOC ((total_count+1) * sizeof(int)))
-   || !(m_gno    = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
-   || !(m_bestsum= (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
-   || !(m_bestv  = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))))  {
-     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-     return ZOLTAN_MEMERR;
-     }
-     
-  if (hg->nVtx > 0 && (
-      !(b_gno     = (int*) ZOLTAN_MALLOC  (hg->nVtx * sizeof(int)))
-   || !(b_bestsum = (int*) ZOLTAN_MALLOC  (hg->nVtx * sizeof(int)))))  {
+      !(c_order   = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
+   || !(m_vindex  = (int*) ZOLTAN_MALLOC ((total_count+1) * sizeof(int)))
+   || !(m_gno     = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
+   || !(m_bestsum = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))
+   || !(m_bestv   = (int*) ZOLTAN_MALLOC  (total_count    * sizeof(int)))))  {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
                         
-  /* Loop processing ncandidates vertices per column each pass. Each loop has 4 phases:
+  /* Loop processing ncandidates vertices per column each round.
+   * Each loop has 4 phases:
    * Phase 1: send ncandidates vertices for global matching - horizontal communication
    * Phase 2: sum  inner products, find best        - vertical communication
    * Phase 3: return best sums to owning column     - horizontal communication
    * Phase 4: return actual match selections        - horizontal communication 
    *
-   * No conflict resolution phase required because we make sure we never
-   * generate a possible match conflict. 
+   * No conflict resolution phase required because prelocking a potential match
+   * prevents conflicts.
    */
 
   pselect = 0;                    /* marks position in vertices to be selected */
-  for (loop = 0; loop < nloop; loop++)  {
+  for (loop = 0; loop < nrounds; loop++)  {
      
      /************************ PHASE 1: ***************************************/
      
@@ -369,27 +372,31 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      size = 0;
      for (i = 0; i < ncandidates; i++)
        size += (hg->vindex[select[i]+1] - hg->vindex[select[i]]); 
-     size += (2 * ncandidates);       /* append size of vtx and counts headers */
+     size += (2 * ncandidates);    /* 2: append size of vtx and counts headers */
                     
      MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);  
 
+     /* setup arrays necessary for future MPI_Allgatherv */
      displs[0] = size = 0;
      for (i = 0; i < hgc->nProc_x; i++)
        size += each_size[i];                 /* compute total size of rbuffer */
      for (i = 1; i < hgc->nProc_x; i++)
        displs[i] = displs[i-1] + each_size[i-1];    /* message displacements */
         
+     /* allocate send buffer */  
      if (each_size[hgc->myProc_x] > 0
       && !(buffer =(char*)ZOLTAN_MALLOC(each_size[hgc->myProc_x]*sizeof(int)))){
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
      }          
+     
+     /* allocate receive buffers */
      if (size > 0 && !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))  {
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
      }          
              
-     /* Message is list of <gno, gno's edge count, list of edge gno's> */
+     /* fill messages as list of <gno, gno's edge count, list of edge gno's> */
      ip = (int*) buffer;
      for (i = 0; i < ncandidates; i++)   {
        *ip++ = VTX_LNO_TO_GNO (hg, select[i]);                 /* vertex gno */
@@ -413,12 +420,13 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        edgecount   = *ip++;
        
        if (pincnt < pins + edgecount)  {
+         /* need to realloc() m_vedge array */
          m_vedge = (int*)ZOLTAN_REALLOC(m_vedge, (pins+edgecount) * sizeof(int));
          if (!m_vedge)  {
            ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
            return ZOLTAN_MEMERR;
          }     
-         pincnt += edgecount;
+         pincnt += edgecount;  /* pincnt is "high water" size of m_vedge array */
        }
         
        while (edgecount-- > 0)
@@ -428,9 +436,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
           
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);            
                
+     /* initialize array to process recv'd candidates in random order */
      for (i = 0; i < total_count; i++)
        c_order[i] = i;
-         
      for (i = 0; i < total_count; i++)  {
        lno = Zoltan_HG_Rand () % total_count;
        /* swap current vertex with randomly selected vertex */
@@ -439,7 +447,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        c_order[i]   = vertex;
      }
          
-     /* for each match vertex, compute all local partial inner products */
+     /* for each candidate vertex, compute all local partial inner products */
      for (k = 0; k < total_count; k++)  {
        vertex = c_order[k];
        for (i = 0; i < hg->nVtx; i++)
@@ -449,7 +457,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
          for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
            ++psums [hg->hvertex[j]];                       /* unweighted??? */
               
-       /* if local vtx, remove self inner product which is a false maximum */
+       /* if also a local vtx, remove self inner product (false maximum) */
        if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)
          psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
                   
@@ -465,12 +473,13 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
            m_bestsum[vertex] = tsums[i];
            m_bestv  [vertex] = i;
          }    
-       cmatch [m_bestv[vertex]] = -1;      /* mark pending match */       
+       cmatch [m_bestv[vertex]] = -1; /* mark pending match to avoid conflicts */
      }
         
      /************************ PHASE 3: **************************************/
 
-     size = 3 * total_count;     
+     /* allocate buffers to send back best results information */
+     size = PHASE3 * total_count;     
      if (size > 0 && (
          !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int) * hgc->nProc_x))
       || !(buffer  = (char*) ZOLTAN_MALLOC (size * sizeof(int)))))    {
@@ -478,28 +487,34 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
          return ZOLTAN_MEMERR;
      }  
                       
-     /* prepare send buffer */       
+     /* fill send buffer with candidate's id, best match gno, and best i.p. */       
      ip = (int*) buffer; 
      for (vertex = 0; vertex < total_count; vertex++)  {
-       *ip++ = m_gno [vertex];
-       *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);     
-       *ip++ = m_bestsum [vertex];
+       *ip++ = m_gno [vertex];                         /* candidate's gno */
+       *ip++ = VTX_LNO_TO_GNO (hg, m_bestv [vertex]);  /* best match gno */   
+       *ip++ = m_bestsum [vertex];                     /* best i.p. value */
      }
       
-     /* send/rec to all columns in my row */     
+     /* send/rec best results information to all columns in my row */     
      MPI_Allgather(buffer, size, MPI_INT, rbuffer, size, MPI_INT, hgc->row_comm);
              
+     /* initialize the array to hold the best reported i.p. from each proc */
      for (i = 0; i < hg->nVtx; i++)
-       b_bestsum[i] = -2;   
+       b_bestsum[i] = -1;                /* any negative value will work */
                  
+     /* read each message (candidate id, best match id, and best i.p.) */  
      ip = (int*) rbuffer;
      for (i = 0; i < total_count * hgc->nProc_x; i++)   {
        vertex  = *ip++;
        bestv   = *ip++;
        bestsum = *ip++;
        
+       /* ignore messages whose candidate I don't own */
        if (VTX_TO_PROC_X (hg, vertex) != hgc->myProc_x)
-          continue;    
+          continue;
+           
+       /* if I own the candidate, replace current i.p. with better */
+       /* Note: ties are broken to favor local vs. global matches */   
        lno =  VTX_GNO_TO_LNO (hg, vertex);  
        if ((bestsum > b_bestsum [lno]) || (bestsum == b_bestsum[lno]
         && VTX_TO_PROC_X (hg, b_gno[lno]) != hgc->myProc_x
@@ -512,28 +527,36 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);
      
      /************************ PHASE 4: ***************************************/
+     
+     /* need to tell everyone, which matches I accepted/rejected */
+     /* first prepare to send matches back using MPI_ALLGATHERV */
      displs[0] = 0;
      for (i = 0; i < hgc->nProc_x; i++)
-        each_size[i] =  2 * each_count[i];
+        each_size[i] = PHASE4 * each_count[i];
      for (i = 1; i < hgc->nProc_x; i++)
         displs[i] = displs[i-1] + each_size[i-1];
           
-     if (!(buffer  = (char*) ZOLTAN_MALLOC (2 * ncandidates * sizeof(int)))
-      || !(rbuffer = (char*) ZOLTAN_MALLOC (2 * total_count * sizeof(int))))  {
+     /* allocate message send/rec buffers */   
+     if (!(buffer  = (char*) ZOLTAN_MALLOC(PHASE4 * ncandidates * sizeof(int)))
+      || !(rbuffer = (char*) ZOLTAN_MALLOC(PHASE4 * total_count * sizeof(int)))){
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
      }  
-                             
+        
+     /* fill send buffer with messages. A message is two matched gno's */
+     /* Note: match to self if inner product is below threshold */                     
      ip = (int*) buffer; 
      for (i = 0; i < ncandidates; i++)   {
        *ip++ = VTX_LNO_TO_GNO (hg, select[i]);
-       *ip++ = (b_bestsum [select[i]] > 0) 
-         ? b_gno[select[i]] : VTX_LNO_TO_GNO (hg, select[i]);
+       *ip++ = (b_bestsum [select[i]] > THRESHOLD) 
+         ? b_gno[select[i]] : VTX_LNO_TO_GNO (hg, select[i]); 
      }
            
-     MPI_Allgatherv(buffer, 2 * ncandidates, MPI_INT, rbuffer, each_size, displs,
-      MPI_INT, hgc->row_comm);
+     MPI_Allgatherv(buffer, PHASE4 * ncandidates, MPI_INT, rbuffer, each_size,
+      displs, MPI_INT, hgc->row_comm);
      
+     /* extract messages. If I own either gno, process it. */
+     /* Note: -gno-1 designates an external match */ 
      ip = (int*) rbuffer;                   
      for (i = 0; i < total_count; i++)  {
        bestv  = *ip++;
