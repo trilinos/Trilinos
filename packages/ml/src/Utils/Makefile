@@ -37,7 +37,7 @@ CFLAGS=$(ARCH_FLAGS) $(DEFINES) $(INCLUDES)
 
 ML_C = ml_aztec_utils.c   ml_intlist.c     ml_lapack.c \
        ml_memory.c        ml_rbm.c         ml_utils.c \
-       ml_vec.c
+       ml_vec.c           ml_twogrid_analysis.c
 
 #=======================================================================
 # ML include files
@@ -45,7 +45,7 @@ ML_C = ml_aztec_utils.c   ml_intlist.c     ml_lapack.c \
 
 ML_INC = ml_lapack.h     ml_aztec_utils.h    ml_intlist.h \
          ml_memory.h     ml_rbm.h            ml_utils.h \
-         ml_vec.h
+         ml_vec.h        ml_twogrid_analysis.h
 
 #=======================================================================
 # copy object files to library directory
@@ -85,6 +85,9 @@ ml_utils.o : ml_utils.c ../Comm/ml_comm.h ../Include/ml_defs.h ml_utils.h
 ml_vec.o : ml_vec.c ../Comm/ml_comm.h ../Include/ml_defs.h ml_vec.h \
            ml_memory.h
 	$(CC) -c $(CFLAGS) ml_vec.c -o $@
+
+ml_twogrid_analysis.o : ml_twogrid_analysis.c ml_twogrid_analysis.h
+	$(CC) -c $(CFLAGS) ml_twogrid_analysis.c -o $@
 
 #=======================================================================
 
