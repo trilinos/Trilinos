@@ -170,7 +170,6 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
   double newPhi = computePhi(newGrp);
   double newValue = computeValue(newGrp, newPhi);
 
-
   bool isConverged = false;
   bool isFailed = false;
   int nIters = 1;
@@ -202,13 +201,37 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
       break;
     }
 
-    if ((nIters == 1) || (interpolationType == Quadratic)) 
+    if (interpolationType == Quadratic3)
     {
+      /* 3-Point Quadratic Interpolation */
+
+      prevPrevPhi = prevPhi;
+      prevPhi = newPhi;
+      prevPrevStep = prevStep;
+      prevStep = step;
+      
+      if (nIters == 1)
+      {
+	step = 0.5 * step;
+      }
+      else
+      {
+	double c1 = prevStep * prevStep * (prevPrevPhi - oldPhi) - 
+	  prevPrevStep * prevPrevStep * (prevPhi - oldPhi);
+	double c2 = prevPrevStep * (prevPhi - oldPhi) - 
+	  prevStep * (prevPrevPhi - oldPhi);
+	
+	if (c1 < 0)
+	  step = -0.5 * c1 / c2;
+      }
+    }
+
+    else if ((nIters == 1) || (interpolationType == Quadratic)) 
+    {
+      /* Quadratic Interpolation */
 
       prevPhi = newPhi;
       prevStep = step;
-
-      /* Quadratic Interpolation */
 
       step = - (oldSlope * prevStep * prevStep) / (2.0 * (prevPhi - oldPhi - prevStep * oldSlope)) ;
 
@@ -216,13 +239,13 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp,
 
     else 
     {
+      /*   Cubic Interpolation */
+
       prevPrevPhi = prevPhi;
       prevPhi = newPhi;
       prevPrevStep = prevStep;
       prevStep = step;
       
-      /*   Cubic Interpolation */
-
       double term1 = prevPhi - oldPhi - prevStep * oldSlope ;
       double term2 = prevPrevPhi - oldPhi - prevPrevStep * oldSlope ;
       

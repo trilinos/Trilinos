@@ -103,20 +103,20 @@ namespace LineSearch {
   k-1 \f$st approximation to the step. For the cubit fit, we
   additionally include \f$\phi(\lambda{k-2})\f$.
 
-  The first interpolation step is always quadratic.  Depending on the
-  choice of "Interpolation Type" parameter, the
-  following steps are either quadratic or cubic.
+  The steps are calculated iteratively as follows, depending on the
+  choice of "Interpolation Type".
   
-  If we are using a <b>quadratic model</b>, the \f$k\f$-th step approximation is
-  calculated as
+  <ul>
+
+  <li> "Quadratic" - We construct a quadratic model of \f$\phi\f$, and solve for \f$\lambda\f$ to get
 
   \f[ 
   \lambda_{k} = \frac{-\phi'(0) \lambda_{k-1}^2 }{2 \left[ \phi(\lambda_{k-1}) - \phi(0) 
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  If we are using a <b>cubic model</b>, the \f$k\f$-th step (\f$ k>1
-  \f$) approximation is calculated as
+  <li> "Cubic" - We construct a cubic model of \f$\phi\f$, and solve for
+  \f$\lambda\f$. We use the quadratic model to solve for \f$\lambda_1\f$; otherwise,
 
   \f[ 
   \lambda_k = \frac{-b+\sqrt{b^2-3a \phi'(0)}}{3a} 
@@ -136,8 +136,24 @@ namespace LineSearch {
                               \phi'(0)\lambda_{k-2} \end{array} \right]
   \f]
 
-  In either case, see computeSlope() for details on how \f$ \phi'(0) \f$ is
-  calculated.
+  <li> "Quadratic3" - We construct a quadratic model of \f$\phi\f$ using
+  \f$\phi(0)\f$, \f$ \phi(\lambda_{k-1}) \f$ , and
+  \f$\phi(\lambda_{k-2})\f$. No derivative information for \f$\phi\f$
+  is used. We let \f$\lambda_1 = \frac{1}{2} \lambda_0\f$, and otherwise
+  
+  \f[
+
+  \lambda_k = - \frac{1}{2}
+  \frac{\lambda_{k-1}^2 [\phi(\lambda_{k-2}) -\phi(0)]
+  - \lambda_{k-2}^2 [\phi(\lambda_{k-1}) -\phi(0)]}
+  {\lambda_{k-2} [\phi(\lambda_{k-1}) -\phi(0)]
+  - \lambda_{k-1} [\phi(\lambda_{k-2}) -\phi(0)]}
+  \f]
+
+  <ul>
+
+  For "Quadratic" and "Cubic", see computeSlope() for details on how
+  \f$ \phi'(0) \f$ is calculated.
 
   <B> Bounds on the step length </B> 
  
@@ -481,10 +497,15 @@ protected:
 
   //! Interpolation types used by compute().
   enum InterpolationType {
+
     //! Use quadratic interpolation throughout
     Quadratic, 
+
     //! Use quadratic interpolation in the first inner iteration and cubic interpolation otherwise
-    Cubic
+    Cubic,
+
+    //! Use a 3-point quadratic line search. (The second step is 0.5 times the default step.)
+    Quadratic3
   };
 
   //! Type of recovery step to use
