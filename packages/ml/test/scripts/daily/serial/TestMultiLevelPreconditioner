@@ -82,7 +82,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f ( MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym )
+foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell )
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
