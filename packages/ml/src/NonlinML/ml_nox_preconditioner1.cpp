@@ -58,37 +58,10 @@
  |  Constructor (public)                                     m.gee 11/04|
  *----------------------------------------------------------------------*/
 ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
-                     ML_NOX::Ml_Nox_Fineinterface&    interface,
-                     bool                             matrixfree,
-                     bool                             matfreelev0,
-                     double                           fd_alpha,
-                     double                           fd_beta,
-                     bool                             fd_centered,
-                     bool                             linearPrec,
-                     bool                             isnlnCG,
-                     int                              nitersCG,
-                     double                           FAS_normF,      
-                     double                           FAS_nupdate,    
-                     int                              FAS_prefinesmooth,    
-                     int                              FAS_presmooth,  
-                     int                              FAS_postsmooth,
-                     int                              FAS_postfinesmooth, 
-                     int                              FAS_maxcycle,   
-                     int                              N_levels,
-                     int                              ml_printlevel,
-                     int                              ml_numPDE,
-                     int                              ml_dim_nullsp,
-                     string                           coarsentype,
-                     int                              nnodeperagg,
-                     string                           smoothertype,
-                     string                           finesmoothertype,
-                     int                              nsmooth[],
-                     string                           coarsesolve,
-                     int                              maxcoarsesize,
-                     int                              offset,
-                     Epetra_Map&                      dm, 
-                     Epetra_Map&                      rm, 
-                     Epetra_Comm&                     comm):
+                              ML_NOX::Ml_Nox_Fineinterface&    interface,
+                              Epetra_Map&                      dm, 
+                              Epetra_Map&                      rm, 
+                              Epetra_Comm&                     comm):
 interface_(interface),
 DomainMap_(dm),
 RangeMap_(rm),
@@ -98,11 +71,12 @@ comm_(comm)
   label_         = "ML_Nox_Preconditioner";
 
   // some flags
-  ismatrixfree_ = matrixfree;
-  matfreelev0_  = matfreelev0;
-  islinearPrec_ = linearPrec;
-  isnlnCG_      = isnlnCG;
+  ismatrixfree_ = true;
+  matfreelev0_  = true;
+  islinearPrec_ = false;
+  isnlnCG_      = true;
 
+  // set some default values
   // default values (some of them derived and not supported)
   usetranspose_        = false;
   isinit_              = false;
@@ -116,196 +90,278 @@ comm_(comm)
   ncalls_NewPrec_      = 0;
   n_nlnlevel_          = 0;
   nlnLevel_            = 0;
-  FAS_normF_           = 1.0;
-  FAS_nupdate_         = 1.0;
-  FAS_prefinesmooth_   = 0;
-  FAS_presmooth_       = 0;
-  FAS_postsmooth_      = 0;
-  FAS_postfinesmooth_  = 0;
-  FAS_maxcycle_        = 0;
+  fd_alpha_            = 1.0e-07;
+  fd_beta_             = 1.0e-06;
+  fd_centered_         = false;
+  FAS_normF_           = 1.0e-05;
+  FAS_nupdate_         = 1.0e-05;
+  FAS_prefinesmooth_   = 2;
+  FAS_presmooth_       = 2;
+  FAS_postsmooth_      = 2;
+  FAS_postfinesmooth_  = 2;
+  FAS_maxcycle_        = 250;
   noxsolver_           = 0;
-  nitersCG_            = nitersCG;
+  nitersCG_            = 80;
+  offset_newPrec_      = 100;
 
-  // ML handles
-  ml_              = 0;
-  ag_              = 0;
-  ml_coarsestlev_  = 0;
-  ml_nlevel_       = 0;
-  ml_nblocks_      = 0;
-  ml_blocks_       = 0;
-  ml_block_pde_    = 0;
-    
-  // check plausibility of matrixfree and linear preconditioner flags
-  if (ismatrixfree_ && islinearPrec_ && matfreelev0_==false)
-     if (smoothertype=="Jacobi" || coarsesolve=="Jacobi" || 
-         finesmoothertype=="Jacobi")
-     {
-       cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-            << "**ERR**: no matrixfree linear preconditioner with Jacobi smoothers\n"
-            << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-     }
-  
-  // offset of preconditioner-recomputation
-  offset_newPrec_ = offset;
-  if (offset_newPrec_ < 1)
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: offset_newPrec_ out of range ( > 0 ): " << offset_newPrec_ << "\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-  
-  // ML printlevel
-  ml_printlevel_   = ml_printlevel;
-  if ( ml_printlevel_ < 0 || ml_printlevel_ > 10 )
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: ml_printlevel out of range ( 0 - 10 ): " << ml_printlevel << "\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-  
-  // ML max. number of levels
-  ml_N_levels_     = N_levels;
-  if (ml_N_levels_ < 1)
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: N_levels < 1\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-  
-  // number of dofs per node
-  ml_numPDE_ = ml_numPDE;
-  if (ml_numPDE_ < 1 )
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: ml_numPDE_ ( > 0 ): " << ml_numPDE_ << " out of range \n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-  
-  // dimension of nullspace
-  ml_dim_nullsp_ = ml_dim_nullsp;
-  if (ml_dim_nullsp_ < 1 )
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: ml_dim_nullsp ( > 0 ): " << ml_dim_nullsp_ << " out of range \n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
+  // ML stuff
+  ml_               = 0;
+  ag_               = 0;
+  ml_coarsestlev_   = 0;
+  ml_nlevel_        = 0;
+  ml_nblocks_       = 0;
+  ml_blocks_        = 0;
+  ml_block_pde_     = 0;
+  ml_N_levels_      = 3;
+  ml_numPDE_        = 3;
+  ml_dim_nullsp_    = 3;
+  ml_coarsentype_   = "Uncoupled";
+  ml_printlevel_    = 8;
+  ml_nnodeperagg_   = 9;
+  ml_smoothertype_  = "SGS";
+  ml_fsmoothertype_ = "SGS";
+  ml_coarsesolve_   = "AmesosKLU";
+  ml_maxcoarsesize_ = 50;
+  ml_nsmooth_       = new int[ml_N_levels_];
+  for (int i=0; i<ml_N_levels_; i++) ml_nsmooth_[i] = 3;
 
-  // set type of coarsening algorithm
-  ml_coarsentype_ = coarsentype;
-  if (ml_coarsentype_ != "Uncoupled" && ml_coarsentype_ != "MIS" && 
-      ml_coarsentype_ != "METIS" && ml_coarsentype_ != "VBMETIS")
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: coarsen type: " << ml_coarsentype_ << " not recognized!\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;  
-  }
-  
-  // set objective number of nodes per aggregate
-  ml_nnodeperagg_ = nnodeperagg;
-  if (ml_coarsentype_ == "METIS" || ml_coarsentype_ == "VBMETIS")
-     if (ml_nnodeperagg_ < 9)
-        cout << "**WRN**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**WRN**: Coasening-Parameter ml_nnodeperagg_ extremely small ( < 9 ): " << ml_nnodeperagg_ << "\n";
-  
-  // set type of smoother
-  ml_smoothertype_ = smoothertype;
-  if (ml_smoothertype_ != "SGS" && ml_smoothertype_ != "BSGS" && 
-      ml_smoothertype_ != "Jacobi" &&
-      ml_smoothertype_ != "AmesosKLU")
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: smoother type: " << ml_smoothertype_ << " not recognized!\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;  
-  }
-  
-  // set type of smoother
-  ml_fsmoothertype_ = finesmoothertype;
-  if (ml_fsmoothertype_ != "SGS" && ml_fsmoothertype_ != "BSGS" && 
-      ml_fsmoothertype_ != "Jacobi" &&
-      ml_fsmoothertype_ != "AmesosKLU")
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: fine level smoother type: " << ml_fsmoothertype_ << " not recognized!\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;  
-  }
-  
-  // set number of smoothing steps
-  ml_nsmooth_ = new int[ml_N_levels_];
-  int i;
-  for (i=0; i<ml_N_levels_; i++)
-    ml_nsmooth_[i] = nsmooth[i];
-
-  // set coarse solver
-  ml_coarsesolve_ = coarsesolve;
-  if (ml_coarsesolve_ != "SGS" && ml_coarsesolve_ != "BSGS" && 
-      ml_coarsesolve_ != "Jacobi" && ml_coarsesolve_ != "AmesosKLU")
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: coarse solver: " << ml_coarsesolve_ << " not recognized!\n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;  
-  }
-  
-  // set size of coarsest grid
-  if (maxcoarsesize<1)
-  {
-    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-         << "**ERR**: maxcoarsesize ( > 0 ): " << maxcoarsesize << " < out of range \n"
-         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-  }
-  ml_maxcoarsesize_ = maxcoarsesize;
-
-  // set params for nonlinear preconditioner
-  if (!islinearPrec_)
-  {
-     FAS_normF_          = FAS_normF;
-     FAS_nupdate_        = FAS_nupdate;
-     FAS_prefinesmooth_  = FAS_prefinesmooth;
-     FAS_presmooth_      = FAS_presmooth;
-     FAS_postsmooth_     = FAS_postsmooth;
-     FAS_postfinesmooth_ = FAS_postfinesmooth;
-     FAS_maxcycle_       = FAS_maxcycle;
-     
-     if (FAS_presmooth_<0)
-     {
-        cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**ERR**: FAS_presmooth_ ( >= 0 ): " << FAS_presmooth_ << " out of range \n"
-             << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-     }
-     if (FAS_postsmooth_<1)
-     {
-        cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**ERR**: FAS_postsmooth_ ( > 0 ): " << FAS_postsmooth_ << " out of range \n"
-             << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-     }
-     if (FAS_maxcycle_<1)
-     {
-        cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**ERR**: FAS_maxcycle_ ( > 0 ): " << FAS_maxcycle_ << " out of range \n"
-             << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
-     }
-  }
-  
-  // set finite differencing parameters
-  if (ismatrixfree_)
-  {
-     if (fd_alpha < 1.0e-12 || fd_alpha > 1.0e-02)
-     {
-        cout << "**WRN**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**WRN**: FD-Parameter fd_alpha extremely small/large: " << fd_alpha << "\n"
-             << "**WRN**: recommended: 1.0e-12 < fd_alpha < 1.0e-02\n";
-     }
-     if (fd_beta < 1.0e-12 || fd_beta > 1.0e-02)
-     {
-        cout << "**WRN**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
-             << "**WRN**: FD-Parameter fd_beta extremely small/large: " << fd_beta << "\n"
-             << "**WRN**: recommended: 1.0e-12 < fd_beta < 1.0e-02\n";
-     }
-  }
-  fd_alpha_    = fd_alpha;
-  fd_beta_     = fd_beta;
-  fd_centered_ = fd_centered;
   return;
 }
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetCoarsenType(string coarsentype, 
+                                                   int maxlevel,
+                                                   int maxcoarsesize,
+                                                   int nnodeperagg)
+{
+  if (coarsentype != "Uncoupled" && coarsentype != "MIS" && 
+      coarsentype != "METIS" && coarsentype != "VBMETIS")
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetCoarsenType:\n"
+         << "**ERR**: coarsen type: " << coarsentype << " not recognized!\n"
+         << "**ERR**: Using previously set coarsen method: " << ml_coarsentype_ << endl
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    coarsentype = ml_coarsentype_;
+  }
+  
+  if (maxlevel<2)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetCoarsenType:\n"
+         << "**ERR**: maxlevel < 2 out of range, minimum is 2 level!\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    maxlevel=2;
+  }
+  
+  ml_N_levels_      = maxlevel;
+  ml_coarsentype_   = coarsentype;
+  ml_nnodeperagg_   = nnodeperagg;
+  ml_maxcoarsesize_ = maxcoarsesize;
+
+  return true;
+}                              
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetSmoothers(string finesmoothertype, 
+                                                 string smoothertype, 
+                                                 string coarsesolve)
+{
+  if (smoothertype != "SGS" && 
+      smoothertype != "Jacobi" &&
+      smoothertype != "AmesosKLU")
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
+         << "**ERR**: smoother type: " << smoothertype << " not recognized!\n"
+         << "**ERR**: using previous smoother: " << ml_smoothertype_ << endl
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n";   
+  }
+  else
+     ml_smoothertype_ = smoothertype;
+
+  if (finesmoothertype != "SGS" && 
+      finesmoothertype != "Jacobi" &&
+      finesmoothertype != "AmesosKLU")
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetSmoothers:\n"
+         << "**ERR**: fine level smoother type: " << finesmoothertype << " not recognized!\n"
+         << "**ERR**: using previous smoother: " << ml_fsmoothertype_ << endl
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+  }
+  else
+     ml_fsmoothertype_ = finesmoothertype;
+  
+  if (coarsesolve != "SGS" && 
+      coarsesolve != "Jacobi" && 
+      coarsesolve != "AmesosKLU")
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::ML_Nox_Preconditioner:\n"
+         << "**ERR**: coarse solver: " << coarsesolve << " not recognized!\n"
+         << "**ERR**: using previous coarse solver: " << ml_coarsesolve_ << endl
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n";
+  }
+  else
+     ml_coarsesolve_ = coarsesolve;
+  return true;
+}                              
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetPrintLevel(int printlevel)
+{
+  if (printlevel<0 || printlevel>10)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetPrintLevel:\n"
+         << "**ERR**: printlevel out of range, using previous one\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    return false;     
+  }
+  ml_printlevel_ = printlevel;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetRecomputeOffset(int offset)
+{ 
+  if (offset<0)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetRecomputeOffset:\n"
+         << "**ERR**: offset out of range, using previous one\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    return false;     
+  }
+  offset_newPrec_ = offset;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetDimensions(int numPDE, int dimNS)
+{ 
+  if (numPDE<1)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetDimensions:\n"
+         << "**ERR**: numPDE out of range, using previous one\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+  }
+  else
+     ml_numPDE_ = numPDE;
+     
+  if (dimNS<0)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetDimensions:\n"
+         << "**ERR**: dimNS<0 out of range using dimNS = numPDE\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n";
+    dimNS = numPDE;
+  }
+  if (dimNS<numPDE)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetDimensions:\n"
+         << "**ERR**: dimNS<numPDE bad choice\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n";
+    
+  }
+  ml_dim_nullsp_ = dimNS;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetSmootherSweeps(int* nsmooth)
+{ 
+  for (int i=0; i<ml_N_levels_; i++)
+  if (nsmooth[i]<0)
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetSmootherSweeps:\n"
+         << "**ERR**: nsmooth[i]<0 out of range, using nsmooth[i]=0\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; 
+    nsmooth[i] = 0;
+  }
+  if (ml_nsmooth_) delete [] ml_nsmooth_;
+  ml_nsmooth_ = new int[ml_N_levels_];
+  for (int i=0; i<ml_N_levels_; i++)
+     ml_nsmooth_[i] = nsmooth[i];
+     
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetConvergenceCriteria(double FAS_normF, 
+                                                           double FAS_nupdate)
+{ 
+  FAS_normF_   = FAS_normF;
+  FAS_nupdate_ = FAS_nupdate;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetFiniteDifferencing(bool centered,
+                                                          double alpha,
+                                                          double beta)
+{ 
+  fd_alpha_    = alpha;
+  fd_beta_     = beta;
+  fd_centered_ = centered;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetFAScycle(int prefsmooth,int presmooth,
+                                                int postsmooth,int postfsmooth,
+                                                int maxcycle)
+{ 
+  FAS_prefinesmooth_    = prefsmooth;
+  FAS_presmooth_        = presmooth;
+  FAS_postsmooth_       = postsmooth;
+  FAS_postfinesmooth_   = postfsmooth;
+  FAS_maxcycle_         = maxcycle;
+  return true;
+}                              
+
+/*----------------------------------------------------------------------*
+ |  Set methods for flags/data (public)                      m.gee 03/05|
+ *----------------------------------------------------------------------*/
+bool ML_NOX::ML_Nox_Preconditioner::SetNonlinearMethod(bool islinPrec, 
+                                                       bool isnlnCG, 
+                                                       bool ismatrixfree, 
+                                                       bool ismatfreelev0)
+{ 
+  islinearPrec_ = islinPrec;
+  ismatrixfree_ = ismatrixfree;
+  matfreelev0_  = ismatfreelev0;
+  isnlnCG_      = isnlnCG;
+  if (islinPrec && ismatrixfree && !ismatfreelev0 &&
+      (ml_fsmoothertype_== "Jacobi" || 
+       ml_smoothertype_ == "Jacobi" ||
+       ml_coarsesolve_  == "Jacobi"))
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetNonlinearMethod:\n"
+         << "**ERR**: linearPrec && matrixfree & Jacobi smoother doesn't work!\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+  }
+  if (!islinPrec && !isnlnCG && ismatrixfree && !ismatfreelev0 &&
+      (ml_fsmoothertype_== "Jacobi" || 
+       ml_smoothertype_ == "Jacobi" ||
+       ml_coarsesolve_  == "Jacobi"))
+  {
+    cout << "**ERR**: ML_Nox_Preconditioner::SetNonlinearMethod:\n"
+         << "**ERR**: NonlinPrec && matrixfree & Newton smoother && Jacobi doesn't work!\n"
+         << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+  }
+     
+  return true;
+}                              
 
 /*----------------------------------------------------------------------*
  |  Destructor (public)                                      m.gee 11/04|

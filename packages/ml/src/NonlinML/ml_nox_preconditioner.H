@@ -78,8 +78,6 @@
 // it is derived from Epetra_RowMatrix so the ml - Epetra_RowMatrix - wrapper will take it
 #include "ml_Epetra_wrap_CrsGraph_as_RowMatrix.H"
 
-
-
 // interface to user code on fine level
 #include "ml_nox_fineinterface.H"
 
@@ -98,49 +96,38 @@ class  ML_Nox_Preconditioner : public virtual Epetra_Operator,
 {
 public:
   // constructor
-  explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface&    interface,
-                                 bool                             matrixfree,
-                                 bool                             matfreelev0,
-                                 double                           fd_alpha,
-                                 double                           fd_beta,
-                                 bool                             fd_centered,
-                                 bool                             linearPrec,
-                                 bool                             isnlnCG,
-                                 int                              nitersCG,
-                                 double                           FAS_normF,      
-                                 double                           FAS_nupdate,
-                                 int                              FAS_prefinesmooth,    
-                                 int                              FAS_presmooth,  
-                                 int                              FAS_postsmooth,
-                                 int                              FAS_postfinesmooth, 
-                                 int                              FAS_maxcycle,   
-                                 int                              N_levels,
-                                 int                              ml_printlevel,
-                                 int                              ml_numPDE,
-                                 int                              ml_dim_nullsp,
-                                 string                           coarsentype,
-                                 int                              nnodeperagg,
-                                 string                           smoothertype,
-                                 string                           finesmoothertype,
-                                 int                              nsmooth[],
-                                 string                           coarsesolve,
-                                 int                              maxcoarsesize,
-                                 int                              offset,
-                                 Epetra_Map&                      dm, 
-                                 Epetra_Map&                      rm, 
-                                 Epetra_Comm&                     comm);
+  explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
+                                 Epetra_Map&                   dm,
+                                 Epetra_Map&                   rm,
+                                 Epetra_Comm&                  comm);
+
 
   // destructor
   ~ML_Nox_Preconditioner();
 
-  // derived from Epetra_Operator
+  //=================================== methods to set flags and info
+  bool SetNonlinearMethod(bool islinPrec, bool isnlnCG, bool ismatrixfree, bool ismatfreelev0);
+  bool SetCoarsenType(string coarsentype,int maxlevel,int maxcoarsesize,
+                      int nnodeperagg);
+  bool SetSmoothers(string finesmoothertype,string smoothertype,
+                    string coarsesolve);
+  bool SetPrintLevel(int printlevel); 
+  bool SetRecomputeOffset(int offset);
+  bool SetDimensions(int numPDE, int dimNS);
+  bool SetSmootherSweeps(int* nsmooth);
+  bool SetConvergenceCriteria(double FAS_normF, double FAS_nupdate);
+  bool SetFAScycle(int prefsmooth,int presmooth,int postsmooth,int postfsmooth,
+                   int maxcycle);
+  bool SetFiniteDifferencing(bool centered,double alpha,double beta);
+ //====================================================================
+
+  // derived from Epetra_Operator, apply preconditioner
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
 
   // derived from Epetra_Operator
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   { cout << "ML_Nox_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
          << "Use ApplyInverse\n";throw -1;return(-1);}
-    
     
   int SetUseTranspose(bool UseTranspose);
 
@@ -170,8 +157,8 @@ public:
   virtual bool computePreconditioner(const Epetra_Vector& x,
 				     NOX::Parameter::List* precParams = 0);
   
-  // nonlinear multigrid FAS-solver
-  int solve() ;
+  // nonlinear multigrid FAS-solver (opposed of preconditioner)
+  int solve();
 
 private:
   // don't want copy-ctor and = operator
@@ -215,7 +202,6 @@ private:
   bool                                  matfreelev0_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   bool                                  isnlnCG_;          // switch between nlnCG and Newton's method
-
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
   Epetra_Comm&                          comm_;             // the communicator;
