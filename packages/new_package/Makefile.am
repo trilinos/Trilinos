@@ -53,9 +53,24 @@ ACLOCAL	= aclocal -I config
 ## Additional files to be included in distribution for 'make dist'
 ## #######################################################################
 EXTRA_DIST = bootstrap \
-	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
-	config/depcomp
+config/install-sh config/ac_cxx_bool.m4 \
+config/ac_cxx_have_std.m4 config/missing \
+config/ac_cxx_have_stl.m4 config/mkinstalldirs \
+config/ac_cxx_mutable.m4 config/tac_arg_check_mpi.m4 \
+config/ac_cxx_namespaces.m4 config/tac_arg_config_mpi.m4 \
+config/ac_cxx_new_for_scoping.m4 \
+config/ac_cxx_reinterpret_cast.m4 config/tac_arg_enable_compiler_options.m4 \
+config/tac_arg_enable_feature.m4 \
+config/ac_cxx_std_sprintf.m4 config/tac_arg_enable_option.m4 \
+config/ac_prompt_user.m4 config/tac_arg_with_ar.m4 \
+config/ac_prompt_user_no_define.m4 config/tac_arg_with_blaslib.m4 \
+config/acx_blas.m4 config/tac_arg_with_compiler.m4 \
+config/acx_check_dos_filesys.m4	config/tac_arg_with_flags.m4 \
+config/acx_lapack.m4 config/tac_arg_with_incdirs.m4 \
+config/acx_pthread.m4 config/tac_arg_with_lapacklib.m4 \
+config/config.guess config/tac_arg_with_libdirs.m4 \
+config/config.sub config/tac_arg_with_package.m4 \
+config/depcomp
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
