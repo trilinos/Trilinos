@@ -55,9 +55,12 @@ void TestAmesos(char ProblemType[],
   Epetra_MultiVector   * rhs     = Problem.GetRHS();
   Epetra_RowMatrix     * A       = Problem.GetMatrix();
 
+  // create an empty linear problem; Amesos should work with this too
+  Epetra_LinearProblem Problem2;
+  
   Amesos A_Factory;
   
-  Amesos_BaseSolver * Solver = A_Factory.Create(ProblemType, Problem);
+  Amesos_BaseSolver * Solver = A_Factory.Create(ProblemType, Problem2);
 
   if( Solver ) {
 
@@ -74,13 +77,20 @@ void TestAmesos(char ProblemType[],
     Epetra_Time Time(A->Comm());
     Epetra_Time StartTime(A->Comm());
 
+    // set the problem here
+    Problem2.SetOperator(A);
+    
     Solver->SymbolicFactorization();
     double TimeForSymbolicFactorization = Time.ElapsedTime();
   
     Time.ResetStartTime();
     Solver->NumericFactorization();
     double TimeForNumericFactorization = Time.ElapsedTime();
-   
+
+    // set sol and rhs here
+    Problem2.SetLHS(lhs);
+    Problem2.SetRHS(rhs);
+    
     Time.ResetStartTime();
     Solver->Solve();
     double TimeForSolve = Time.ElapsedTime();
@@ -110,6 +120,10 @@ void TestAmesos(char ProblemType[],
       cout << msg << "......Time for Numeric Factorization  = " << TimeForNumericFactorization << endl;
       cout << msg << "......Time for Solve                  = " << TimeForSolve << endl;
       cout << msg << "......Total Time = " << StartTime.ElapsedTime() << endl;
+
+      if( Norm > 1e-9 ) {
+	cerr << end << msg << " WARNING : TEST FAILED!" << endl << endl;
+      }
     }
 
     TotalErrorExactSol += sqrt(d_tot);
