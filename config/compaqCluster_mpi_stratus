@@ -1,3 +1,4 @@
 .././configure --enable-referencey12m --with-cxxflags="-DMPI_NO_CPPBIND" \
+EPETRA_TEMPLATE_OBJS="./cxx_repository/*.o" \
 --enable-mpi --with-mpi-cxx=cxx --with-mpi-cc=cc \
 --with-mpi-f77=f77 --with-mpi-libs=-lmpi
