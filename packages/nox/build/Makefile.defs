@@ -16,7 +16,7 @@ include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
 # Petra communication defines
 PETRA_COMM_SERIAL          = SERIAL
-PETRA_COMM_MPI             = PETRA_MPI
+PETRA_COMM_MPI             = EPETRA_MPI
 PETRA_COMM                 = $(PETRA_COMM_$(TRILINOS_COMM))
 
 # NLSPACK communication defines

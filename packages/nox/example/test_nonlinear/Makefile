@@ -42,4 +42,4 @@ $(TARGET): $(TEST_OBJ) $(LIBASCI_NLS)
 
 clean:
 	@echo "junk" > dummy.o
-	@rm -f *.o  *~ $(TARGET_MPI) $(TARGET_SERIAL)
+	@rm -f *.o  *~ $(TARGET_MPI) $(TARGET_SERIAL) output.*

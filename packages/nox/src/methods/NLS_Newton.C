@@ -52,16 +52,20 @@ void NLS_Newton::resetParameters(NLS_ParameterList& p)
 
 NLS_Method::STATUS NLS_Newton::getStatus() 
 {
-  
-
+  double norm_k;
+  double norm_km1;
+  if (NLS_Utilities::doAllPrint(1)) {
+    norm_k = soln.getNormRHS();
+    norm_km1 = oldsoln.getNewton().norm();
+  }
   if (NLS_Utilities::doPrint(1)) {
     cout.setf(ios::scientific);
     cout.precision(NLS_Utilities::precision);
     cout << "\n" << stars;
     cout << "Newton Step " << niter 
-	 << " : Residual Norm = " << setw(NLS_Utilities::precision + 6) << soln.getNormRHS()
+	 << " : Residual Norm = " << setw(NLS_Utilities::precision + 6) << norm_k
 	 << "  Step = " << setw(NLS_Utilities::precision + 6) << step
-	 << "  Update Norm = " << setw(NLS_Utilities::precision + 6) << oldsoln.getNewton().norm();
+	 << "  Update Norm = " << setw(NLS_Utilities::precision + 6) << norm_km1;
     cout << "\n" << stars << endl;
     cout.unsetf(ios::scientific);
   }
