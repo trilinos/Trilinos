@@ -13,6 +13,7 @@ integer, parameter :: &
 integer, parameter :: LB_PTR_LENGTH = 4
 
 type LB_PTR
+   sequence
    character(len=LB_PTR_LENGTH) :: addr
 end type LB_PTR
 

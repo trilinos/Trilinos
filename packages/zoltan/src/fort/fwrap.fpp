@@ -83,6 +83,7 @@ public :: &
 
 type LB_Struct
    private
+   sequence
    type(LB_PTR) :: addr
 #ifdef ABSOFT
 ! workaround for a bug in the Absoft compiler
@@ -1575,7 +1576,7 @@ subroutine f90LB_Eval(lb,print_stats,nobj,obj_wgt, &
 type(LB_Struct) INTENT_IN lb
 logical INTENT_IN print_stats
 integer(LB_INT), intent(out) :: nobj, cut_wgt, nboundary, nadj, ierr
-real(LB_FLOAT), intent(out) :: obj_wgt(:)
+real(LB_FLOAT), intent(out) :: obj_wgt(*)
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i, int_print_stats
 nbytes = LB_PTR_LENGTH
@@ -1710,7 +1711,7 @@ end function f90LB_Free_Data22
 function f90LB_Point_Assign(lb,coords,proc)
 integer(LB_INT) :: f90LB_Point_Assign
 type(LB_Struct) INTENT_IN lb
-real(LB_DOUBLE), dimension(:) INTENT_IN coords
+real(LB_DOUBLE), dimension(*) INTENT_IN coords
 integer(LB_INT), intent(out) :: proc
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
@@ -1725,7 +1726,7 @@ function f90LB_Box_Assign(lb,xmin,ymin,zmin,xmax,ymax,zmax,procs,numprocs)
 integer(LB_INT) :: f90LB_Box_Assign
 type(LB_Struct) INTENT_IN lb
 real(LB_DOUBLE) INTENT_IN xmin,ymin,zmin,xmax,ymax,zmax
-integer(LB_INT), intent(out), dimension(:) :: procs
+integer(LB_INT), intent(out), dimension(*) :: procs
 integer(LB_INT), intent(out) :: numprocs
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
