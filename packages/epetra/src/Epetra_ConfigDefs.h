@@ -287,7 +287,7 @@ const int DefaultTracebackMode = 1;
                                   (epetra_err > 0 && Epetra_Object::GetTracebackMode() > 1)) { \
                       cerr << "Epetra ERROR " << epetra_err << ", " \
                            << __FILE__ << ", line " << __LINE__ << endl; }\
-                      if (epetra_err !=0) return(epetra_err);  }\
+                      if (epetra_err < 0) return(epetra_err);  }\
                    }
 
 // Extension of same macro for pointer, returns zero if bad
