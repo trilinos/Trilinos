@@ -88,7 +88,7 @@ bool AztecOO_StatusTestCombo::ResidualVectorRequired() const
   // If any of the StatusTest object require the residual vector, then return true.
 
   // Recursively test this property.
-  for (std::vector<AztecOO_StatusTest * const>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
+  for (std::vector<AztecOO_StatusTest * >::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
     AztecOO_StatusTest* ptr = dynamic_cast<AztecOO_StatusTest*>(*i);
     if (ptr != NULL)
