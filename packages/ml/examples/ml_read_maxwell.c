@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
   start_time = AZ_second();
 
   options[AZ_scaling] = AZ_none;
-  
+
   /********************************************************************/
   /* Convert the two discretization matrices (Ke_mat and Kn_mat) to   */
   /* ML matrices and stuff them into the ml grid hierarchies.         */
@@ -638,9 +638,9 @@ int main(int argc, char *argv[])
   }
 
 
-  coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes, N_levels-1,
-				       ML_DECREASING, ag, Tmat, Tmat_trans, &Tmat_array,
-&Tmat_trans_array);
+  coarsest_level = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges, ml_nodes,
+                       N_levels-1, ML_DECREASING, ag, Tmat, Tmat_trans,
+					   &Tmat_array, &Tmat_trans_array);
 
 
   coarsest_level = N_levels - coarsest_level;
@@ -671,10 +671,8 @@ int main(int argc, char *argv[])
 
      else if (ML_strcmp(context->smoother,"Hiptmair") == 0)
 	 {
-       printf("a: only doing pre smoothing\n");
-         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
-		                          1.,Tmat_array,
-								  Tmat_trans_array);
+         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+		                          1.,Tmat_array, Tmat_trans_array);
      }
      /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
      /* In parallel, it is not a true Gauss-Seidel in that each processor */
@@ -752,8 +750,7 @@ int main(int argc, char *argv[])
 
    else if (ML_strcmp(context->coarse_solve,"Hiptmair") == 0)
    {
-       printf("b: only doing pre smoothing\n");
-       ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_PRESMOOTHER,
+       ML_Gen_Smoother_Hiptmair(ml_edges , coarsest_level, ML_BOTH,
 	                            nsmooth,1.,&(Tmat_array[coarsest_level]),
 								&(Tmat_trans_array[coarsest_level]));
    }
