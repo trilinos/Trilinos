@@ -290,7 +290,8 @@ void init_options(int options[], double params[])
   options[AZ_conv]     = AZ_r0;
   options[AZ_output]   = 1;
   options[AZ_pre_calc] = AZ_calc;
-  options[AZ_max_iter] = 1550;
+  options[AZ_max_iter] = 1550; 
+  /*  options[AZ_max_iter] = 5;    MB */
   options[AZ_poly_ord] = 5;
 /*
   options[AZ_overlap]  = AZ_none;
@@ -569,6 +570,9 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
 
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
+	 /* MB
+	    ML_Gen_Smoother_MLS(ml, level, ML_BOTH, nsmooth);
+	 */
       }
 
       if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
