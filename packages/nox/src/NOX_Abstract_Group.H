@@ -129,8 +129,8 @@ public:
   //! Returns \c false if F and/or the Jacobian have not been computed.
   /*! Solve \f$Js = -F\f$ for \f$s\f$.  
 
-  The parameters are from the "Linear Solver" sublist of the
-  "Direction" sublist that is passed to solver during construction.
+  The parameters are from the "Linear %Solver" sublist of the
+  "%Direction" sublist that is passed to solver during construction.
 
   The parameter "Tolerance" may be added/modified in the list of
   parameters - this is the ideal solution tolerance for an iterative
@@ -251,10 +251,21 @@ public:
   //! Return Newton direction.
   virtual const Vector& getNewton() const = 0;
 
-  //! Return 2-norm of (Js + F) where J is the Jacobian, s is the Newton direction and F is the function evaluation. 
-  /*! This is the error in the linear model for the particular Newton step.
-    In other words, \f[ ||Js + f||_2 \f] */
-  virtual double getNewtonSolveResidual() const;
+  /*!
+    \brief Return the norm of the Newton solve residual.
+  
+    This is the error in the linear model for the particular Newton step.
+    In other words, 
+
+    \f[ ||Js - (-F)||_2 \f] 
+
+    where \f$J\f$ is the Jacobian calculated by computeJacobian(),
+    \f$s\f$ is the Newton step calculated by computeNewton(), and
+    \f$F\f$ is the function value calulated by computeF().
+
+    \note Returns -1 if there is an error in calculating the linear residual.
+  */
+  virtual double getNormNewtonSolveResidual() const;
 
   //@}
 
