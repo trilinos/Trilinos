@@ -98,6 +98,8 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose);
 
 int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose);
 
+int checkEarlyDelete(Epetra_Comm& comm, bool verbose);
+
 //
 //  ConvertVbrToCrs is a crude but effective way to convert a Vbr matrix to a Crs matrix
 //  Caller is responsible for deleting the CrsMatrix CrsOut
@@ -867,7 +869,10 @@ int TestMatrix( Epetra_Comm& Comm, bool verbose, bool debug,
   EPETRA_TEST_ERR((A->IndicesAreGlobal()),ierr);
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
-  //  B was changed to a pointer so that we could delete it before the underlying graph is deleted.  See Bug #1116
+  //  B was changed to a pointer so that we could delete it before the
+  //  underlying graph is deleted.  This was necessary before Bug #1116 was
+  //  fixed, to avoid seg-faults. Bug #1116 is now fixed so this is no longer
+  //  an issue.
   Epetra_VbrMatrix* B = new Epetra_VbrMatrix(*A);
 
   EPETRA_TEST_ERR(!(check(*B, NumMyEquations, NumGlobalEquations, NumMyNonzeros, NumGlobalNonzeros, 
@@ -1299,6 +1304,7 @@ int main(int argc, char *argv[])
 
   EPETRA_TEST_ERR( checkMatvecSameVectors(Comm, verbose), ierr);
 
+  EPETRA_TEST_ERR( checkEarlyDelete(Comm, verbose), ierr);
 
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
@@ -1929,6 +1935,67 @@ int checkMatvecSameVectors(Epetra_Comm& comm, bool verbose)
       return(-1);
     }
   }
+
+  return(0);
+}
+
+int checkEarlyDelete(Epetra_Comm& comm, bool verbose)
+{
+  int localProc = comm.MyPID();
+  int numProcs = comm.NumProc();
+  int myFirstRow = localProc*3;
+  int myLastRow = myFirstRow+2;
+  int numMyRows = myLastRow - myFirstRow + 1;
+  int numGlobalRows = numProcs*numMyRows;
+  int i,ierr;
+
+  int elemSize = 2;
+  int num_off_diagonals = 1;
+
+  epetra_test::matrix_data matdata(numGlobalRows, numGlobalRows,
+                                   num_off_diagonals, elemSize);
+
+  Epetra_BlockMap map(numGlobalRows, numMyRows, elemSize, 0, comm);
+
+  Epetra_VbrMatrix* A = new Epetra_VbrMatrix(Copy, map, num_off_diagonals*2+1);
+
+  int* rows = matdata.rows();
+  int* rowlengths = matdata.rowlengths();
+  int** colindices = matdata.colindices();
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+
+    EPETRA_TEST_ERR( A->BeginInsertGlobalValues(i, rowlengths[i],
+                                               colindices[i]), ierr);
+
+    for(int j=0; j<rowlengths[i]; ++j) {
+      EPETRA_TEST_ERR( A->SubmitBlockEntry(matdata.coefs(i,colindices[i][j]),
+                                           elemSize, elemSize, elemSize), ierr);
+    }
+
+    EPETRA_TEST_ERR( A->EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( A->FillComplete(), ierr);
+
+  Epetra_VbrMatrix B(Copy, A->Graph());
+
+  delete A;
+
+  for(i=myFirstRow; i<=myLastRow; ++i) {
+
+    EPETRA_TEST_ERR( B.BeginReplaceGlobalValues(i, rowlengths[i],
+                                               colindices[i]), ierr);
+
+    for(int j=0; j<rowlengths[i]; ++j) {
+      EPETRA_TEST_ERR( B.SubmitBlockEntry(matdata.coefs(i,colindices[i][j]),
+                                           elemSize, elemSize, elemSize), ierr);
+    }
+
+    EPETRA_TEST_ERR( B.EndSubmitEntries(), ierr);
+  }
+
+  EPETRA_TEST_ERR( B.FillComplete(), ierr);
 
   return(0);
 }

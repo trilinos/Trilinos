@@ -118,7 +118,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(Epetra_DataAccess CV, const Epetra_CrsGraph &
   : Epetra_DistObject(Graph.RowMap(), "Epetra::VbrMatrix"),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_((Epetra_CrsGraph*) &Graph),
+    Graph_(new Epetra_CrsGraph(Graph)),
     Allocated_(false),
     StaticGraph_(true),
     constructedWithFilledGraph_(false),
@@ -137,7 +137,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
   : Epetra_DistObject(Source),
     Epetra_CompObject(),
     Epetra_BLAS(),
-    Graph_(Source.Graph_),
+    Graph_(new Epetra_CrsGraph(Source.Graph())),
     Allocated_(Source.Allocated_),
     StaticGraph_(true),
     UseTranspose_(Source.UseTranspose_),
@@ -160,7 +160,6 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
 
   DeleteMemory();
 
-  Graph_ = src.Graph_;
   Allocated_ = src.Allocated_;
   StaticGraph_ = src.StaticGraph_;
   UseTranspose_ = src.UseTranspose_;
@@ -168,9 +167,10 @@ Epetra_VbrMatrix& Epetra_VbrMatrix::operator=(const Epetra_VbrMatrix& src)
   CV_ = src.CV_;
 
   InitializeDefaults();
-  if (!src.StaticGraph()) {
-    Graph_ = new Epetra_CrsGraph(src.Graph());
-  }
+
+  //our Graph_ member was delete in DeleteMemory() so we don't need to
+  //delete it now before re-creating it.
+  Graph_ = new Epetra_CrsGraph(src.Graph());
 
   int err = Allocate();
   assert( err == 0 );
@@ -410,7 +410,8 @@ void Epetra_VbrMatrix::DeleteMemory()
   Allocated_ = false;
 
   // cout << __FILE__ << " " << __LINE__ << endl ; 
-  if (!StaticGraph())   delete Graph_; // We created the graph, so must delete it.
+  delete Graph_; // We created the graph, so must delete it.
+  Graph_ = 0;
   // cout << __FILE__ << " " << __LINE__ << endl ; 
 
 }
@@ -3063,6 +3064,12 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
 	  os.width(10);
 	  os <<  BlockIndices1[j]; os << "    " << endl;
 	  os.width(20);
+
+          if (Entries1[j] == 0) {
+            os << "Block Entry == NULL"<<endl;
+            continue;
+          }
+
 	  Epetra_SerialDenseMatrix entry(View, Entries1[j]->A(), Entries1[j]->LDA(),
 					 RowDim1, Entries1[j]->N());
 	  os << entry; os << "    ";
