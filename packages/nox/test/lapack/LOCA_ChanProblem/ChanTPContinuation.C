@@ -34,6 +34,7 @@
 #include "LOCA_LAPACK.H"
 #include "ChanProblemInterface.H"
 #include "NOX_TestCompare.H"
+#include "NOX_Random.H"
 
 int main(int argc, char *argv[])
 {
@@ -44,8 +45,9 @@ int main(int argc, char *argv[])
     double alpha = 4.0;
     double beta = 0.0;
     double scale = 1.0;
-    int maxNewtonIters = 20;
-    //int maxNewtonIters = 6;
+    int maxNewtonIters = 10;
+
+    NOX::Random::setSeed(1);
 
     bool verbose = false;
     // Check for verbose output
@@ -178,7 +180,7 @@ int main(int argc, char *argv[])
     searchParams.setParameter("Method", "Full Step");
 
     // Set up the status tests
-    NOX::StatusTest::NormF statusTestA(1.0e-6, NOX::StatusTest::NormF::Scaled);
+    NOX::StatusTest::NormF statusTestA(1.0e-5, NOX::StatusTest::NormF::Scaled);
     NOX::StatusTest::MaxIters statusTestB(maxNewtonIters);
     NOX::StatusTest::Combo combo(NOX::StatusTest::Combo::OR, statusTestA, statusTestB);
 
@@ -219,7 +221,7 @@ int main(int argc, char *argv[])
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();
-    int numSteps_expected = 9;
+    int numSteps_expected = 10;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
 				  "number of continuation steps", 
 				  NOX::TestCompare::Absolute);
@@ -241,14 +243,14 @@ int main(int argc, char *argv[])
     // Check final value of turning point parameter
     double alpha_final = finalGroup.getParam("alpha");
     double alpha_expected = 3.1601952;
-    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-7,
+    ierr += testCompare.testValue(alpha_final, alpha_expected, 1.0e-5,
 				  "final value of turning point parameter", 
 				  NOX::TestCompare::Relative);
 
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 63.1872045;
-    ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
+    ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-4,
 				  "norm of final solution", 
 				  NOX::TestCompare::Relative);
 

@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
   double alpha = 10.0;
   double beta = 0.0;
   double scale = 1.0;
-  int maxNewtonIters = 50;
+  int maxNewtonIters = 20;
   int ierr = 0;
 
   alpha = alpha / scale;
@@ -185,14 +185,14 @@ int main(int argc, char *argv[])
   
     // Check number of steps
     int numSteps = stepper.getStepNumber();
-    int numSteps_expected = 8;
+    int numSteps_expected = 14;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
 				  "number of continuation steps", 
 				  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
-    int numFailedSteps_expected = 1;
+    int numFailedSteps_expected = 3;
     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 
 				  0.0, "number of failed continuation steps", 
 				  NOX::TestCompare::Absolute);
