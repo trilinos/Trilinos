@@ -46,7 +46,7 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Transpose::operator()( const Epetra_CrsG
         TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
     }
 
-    Epetra_CrsGraph SharedTransGraph( View, original.ImportMap(), &TransNumNZ[0] );
+    Epetra_CrsGraph SharedTransGraph( View, original.ImportMap(), RowMap, &TransNumNZ[0] );
     for( int i = 0; i < nCols; ++i )
       if( TransNumNZ[i] ) SharedTransGraph.InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );
     SharedTransGraph.TransformToLocal();
@@ -81,7 +81,7 @@ std::auto_ptr<Epetra_CrsGraph> CrsGraph_Transpose::operator()( const Epetra_CrsG
         if( Indices[j] < nRows ) TransIndices[ Indices[j] ][ TransNumNZ[ Indices[j] ]++ ] = i;
     }
 
-    TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, &TransNumNZ[0] );
+    TransposeGraph = new Epetra_CrsGraph( Copy, RowMap, RowMap, &TransNumNZ[0] );
 
     for( int i = 0; i < nRows; ++i )
       if( TransNumNZ[i] ) TransposeGraph->InsertMyIndices( i, TransNumNZ[i], &TransIndices[i][0] );

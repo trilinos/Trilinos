@@ -32,7 +32,7 @@ std::auto_ptr<Epetra_MapColoring> CrsGraph_MapColoring::operator()( const Epetra
   cout << endl << "Delta: " << Delta << endl;
 
   //Generation of Local Distance-2 Adjacency Graph
-  Epetra_CrsGraph Adj2( Copy, RowMap, 0 );
+  Epetra_CrsGraph Adj2( Copy, RowMap, RowMap, 0 );
   int NumAdj1Indices;
   int * Adj1Indices;
   for( int i = 0; i < nRows; ++i )
