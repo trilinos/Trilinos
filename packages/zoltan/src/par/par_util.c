@@ -547,7 +547,7 @@ void LB_Print_Stats (LB *lb, double x, char *msg)
 
   if (lb->Proc == 0 && sum != 0.0)
     printf("%s: Max: %g, Sum: %g, Imbal.: %g\n",
-            msg, max, sum, max*(lb->Num_Proc)/sum-1.);
+            msg, max, sum, max*(lb->Num_Proc)/sum);
 
 }
 
