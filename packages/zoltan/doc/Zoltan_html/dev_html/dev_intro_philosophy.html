@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Philosophy</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,31 +18,22 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_intro_coding.html">Next</a>&nbsp; |&nbsp; <a href="dev_intro.html">Previous</a></i></b></div>
 
-   <TITLE> Zoltan Developer's Guide:  Philosophy</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_intro_coding.html">Next</a>&nbsp; |&nbsp; <a href="dev_intro.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="philosophy"></A>Philosophy of Zoltan</H2>
+<h2>
+<a NAME="philosophy"></a>Philosophy of Zoltan</h2>
 The Zoltan load-balancing library is designed to be a general-purpose tool-kit
 providing a variety of dynamic load-balancing algorithms to a wide range
-of scientific applications (see the <A HREF="../ug_html/ug.html">Zoltan
-User's Guide</A>). To enable general use of the library, the library does
+of scientific applications (see the <a href="../ug_html/ug.html">Zoltan
+User's Guide</a>). To enable general use of the library, the library does
 not directly access the data structures of an application. Instead, the
 library obtains information it needs to perform load balancing through
 an object-oriented interface between the load-balancing library and the
-application [<A HREF="dev_refs.html#HD99">Hendrickson and Devine</A>].
+application [<a href="dev_refs.html#HD99">Hendrickson and Devine</a>].
 This interface uses call-back query functions to gather information. An
 application developer must write and register these query functions before
 using the load-balancing library. The intent, however, is that the number
@@ -43,119 +42,111 @@ to easily interface with the library. In addition, new load-balancing algorithm
 development would use the same query functions as previous algorithms,
 enabling applications to use new algorithms without changes to the query
 functions.
+<p>An example of the interaction between an application and the load-balancing
+library is shown in the <a href="#interact figure">figure</a> below. An
+application creates a load-balancing data structure <i>lb</i> through a
+call to
+<b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.
+This load-balancing structure stores pointers to registered functions and
+data structures for a particular instance of load balancing. The application
+selects the load-balancing method for <i>lb</i> through a call to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
+Through calls to <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,&nbsp;
+the application registers the application query functions <i>user_return_coords_fn</i>,
+<i>user_return_num_elems_fn</i>, and <i>user_return_elem_list_fn</i> to
+return the coordinates of an object, the number of objects, and a list
+of objects, respectively. The application then calls <b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+to compute a new decomposition. The load-balancing library follows pointers
+to the registered functions to build the data structures it needs to perform
+load balancing. It follows the <i>lb->Get_Num_Obj</i> pointer to <i>user_return_num_elems_fn</i>
+to obtain the number of objects assigned to the processor. It then follows
+the <i>lb->Get_Obj_List</i> pointer to <i>user_return_elem_list_fn</i>
+to get a list of the objects. For each object, it follows the <i>lb->Get_Geom</i>
+pointer to <i>user_return_coords_fn</i> to get the coordinates of the object.
+After gathering this data, the load-balancing library can perform the desired
+load balancing.
+<br>&nbsp;
+<br>&nbsp;
+<table CELLSPACING=0 CELLPADDING=0 WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td NOSAVE><a NAME="interact figure"></a><font size=-1>Application</font>
+<table BORDER=2 WIDTH="80%" NOSAVE >
+<tr>
+<td><font size=-1>.</font>..
+<br>/<tt>* <i>Register method and application query functions</i> */</tt>
+<br><tt>lb = LB_Create(MPI_COMM_WORLD);</tt>
+<br><tt>LB_Set_Method(lb, "RCB");</tt>
+<br><tt>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,(void (*)())user_return_coords_fn,
+NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,(void (*)())user_return_num_elems_fn,NULL);</tt>
+<br><tt>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,(void (*)())user_return_elem_list_fn,NULL);</tt>
+<br><tt>...</tt>
+<br><tt>/* <i>Call the load balancer</i> */</tt>
+<br><tt>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);&nbsp;</tt></td>
+</tr>
+</table>
+&nbsp;</td>
+</tr>
 
-<P>An example of the interaction between an application and the load-balancing
-library is shown in the <A HREF="#interact figure">figure</A> below. An
-application creates a load-balancing data structure <I>lb</I> through a call to
-<B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>. 
-This load-balancing structure stores pointers to
-registered functions and data structures for a particular instance of load
-balancing. The application selects the load-balancing method for <I>lb</I>
-through a call to 
-<B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
-Then the application registers
-the application query functions <I>user_return_coords_fn</I>, <I>user_return_num_elems_fn</I>,
-and <I>user_return_elem_list_fn</I> to return the coordinates of an object,
-the number of objects, and a list of objects, respectively. The application
-then calls 
-<B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B> 
-to compute a new decomposition. The load-balancing
-library follows pointers to the registered functions to build the data
-structures it needs to perform load balancing. It follows the <I>lb->Get_Num_Obj</I>
-pointer to <I>user_return_num_elems_fn</I> to obtain the number of objects
-assigned to the processor. It then follows the <I>lb->Get_Obj_List</I>
-pointer to <I>user_return_elem_list_fn</I> to get a list of the objects.
-For each object, it follows the <I>lb->Get_Geom</I> pointer to <I>user_return_coords_fn</I>
-to get the coordinates of the object. After gathering this data, the load-balancing
-library can perform the desired load balancing.
-<BR>&nbsp;
-<BR>&nbsp;
-<TABLE CELLSPACING=0 CELLPADDING=0 WIDTH="100%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE><A NAME="interact figure"></A><FONT SIZE=-1>Application</FONT>
-<TABLE BORDER=2 WIDTH="80%" NOSAVE >
-<TR>
-<TD><FONT SIZE=-1>.</FONT>..
-<BR>/<TT>* <I>Register method and application query functions</I> */</TT>
-<BR><TT>lb = LB_Create(MPI_COMM_WORLD);</TT>
-<BR><TT>LB_Set_Method(lb, "RCB");</TT>
-<BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,(void (*)())user_return_coords_fn, NULL);</TT>
-<BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,(void (*)())user_return_num_elems_fn,NULL);</TT>
-<BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,(void (*)())user_return_elem_list_fn,NULL);</TT>
-<BR><TT>...</TT>
-<BR><TT>/* <I>Call the load balancer</I> */</TT>
-<BR><TT>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;num_exp,&amp;exp_glob_ids,&amp;exp_loc_ids,&amp;exp_procs);&nbsp;</TT></TD>
-</TR>
-</TABLE>
-<TT></TT>&nbsp;</TD>
-</TR>
+<tr>
+<td>
+<center><img SRC="figures/arrow.gif" height=48 width=112></center>
+</td>
+</tr>
 
-<TR>
-<TD>
-<CENTER><IMG SRC="figures/arrow.gif" HEIGHT=48 WIDTH=112></CENTER>
-</TD>
-</TR>
-
-<TR>
-<TD>
-<DIV ALIGN=right><FONT SIZE=-1>Dynamic Load Balancer</FONT></DIV>
-
-<DIV ALIGN=right><TABLE BORDER=2 WIDTH="80%" NOSAVE >
-<TR>
-<TD><TT>...</TT>
-<BR><TT>/* <I>call registered functions to build LB data structures.</I>*/</TT>
-<BR><TT>/* <I>get the number of objects assigned to the processor.</I>
-*/</TT>
-<BR><TT>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);&nbsp;</TT><TT></TT>
-
-<P><TT>/* <I>allocate memory for object global and local IDs.</I> */</TT>
-<BR><TT>global_ids = Allocate array of size num_objs for global IDs;</TT>
-<BR><TT>local_ids = Allocate array of size num_objs for local IDs;</TT><TT></TT>
-
-<P><TT>/* <I>get lists of object IDs from the application.</I> */</TT>
-<BR><TT>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,&nbsp;</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids);&nbsp;</TT><TT></TT>
-
-<P><TT>/* <I>allocate memory for the load-balancing data structures.</I>*/</TT>
-<BR><TT>/* <I>store pointer to that data in the lb structure. </I>*/</TT>
-<BR><TT>data = <I>Allocate array of size num_objs for object data</I>;</TT>
-<BR><TT>lb->Data_Structure = (void *) data;</TT><TT></TT>
-
-<P><TT>/* <I>initialize load-balancing data structure; get geometry</I>
-*/</TT>
-<BR><TT>/* <I>info for each object.</I> */</TT>
-<BR><TT>for (i = 0; i &lt; num_objs; i++) {</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; data[i].Global_Tag = global_ids[i];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; data[i].Local_Tag = local_ids[i];</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-local_ids[i], data[i].Coords);</TT>
-<BR><TT>}</TT>
-<BR><TT>/* <I>perform balancing on lb->Data_Structure.</I> */</TT>
-<BR><TT>...</TT></TD>
-</TR>
-</TABLE></DIV>
-<TT></TT>&nbsp;</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>An example of the interaction between an application
-and the load-balancing library.</I></CAPTION>
-</TABLE>
+<tr>
+<td>
+<div align=right><font size=-1>Dynamic Load Balancer</font></div>
 &nbsp;
+<div ALIGN=right><table BORDER=2 WIDTH="80%" NOSAVE >
+<tr>
+<td><tt>...</tt>
+<br><tt>/* <i>call registered functions to build LB data structures.</i>*/</tt>
+<br><tt>/* <i>get the number of objects assigned to the processor.</i>
+*/</tt>
+<br><tt>num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);&nbsp;</tt>
+<p><tt>/* <i>allocate memory for object global and local IDs.</i> */</tt>
+<br><tt>global_ids = Allocate array of size num_objs for global IDs;</tt>
+<br><tt>local_ids = Allocate array of size num_objs for local IDs;</tt>
+<p><tt>/* <i>get lists of object IDs from the application.</i> */</tt>
+<br><tt>lb->Get_Obj_List(lb->Get_Obj_List_Data, global_ids,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids);&nbsp;</tt>
+<p><tt>/* <i>allocate memory for the load-balancing data structures.</i>*/</tt>
+<br><tt>/* <i>store pointer to that data in the lb structure. </i>*/</tt>
+<br><tt>data = <i>Allocate array of size num_objs for object data</i>;</tt>
+<br><tt>lb->Data_Structure = (void *) data;</tt>
+<p><tt>/* <i>initialize load-balancing data structure; get geometry</i>
+*/</tt>
+<br><tt>/* <i>info for each object.</i> */</tt>
+<br><tt>for (i = 0; i &lt; num_objs; i++) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; data[i].Global_Tag = global_ids[i];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; data[i].Local_Tag = local_ids[i];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; lb->Get_Geom(lb->Get_Geom_Data, global_ids[i],</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+local_ids[i], data[i].Coords);</tt>
+<br><tt>}</tt>
+<br><tt>/* <i>perform balancing on lb->Data_Structure.</i> */</tt>
+<br><tt>...</tt></td>
+</tr>
+</table></div>
+&nbsp;</td>
+</tr>
 
-<P>In developing new load-balancing algorithms for the library, the developer
+<caption ALIGN=BOTTOM><i>An example of the interaction between an application
+and the load-balancing library.</i></caption>
+</table>
+
+<p>In developing new load-balancing algorithms for the library, the developer
 must write the code that calls the query functions to build the needed
 data structures for the algorithm. However, the application need not change
 its query functions. Thus, new algorithms can be added to the library and
 used by an application with minimal effort on the part of the application
 coder.
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_intro_coding.html">Next:&nbsp;
-Coding Principles</A>&nbsp; | <A HREF="dev_intro.html">Previous:&nbsp;
-Introduction</A>]
-</BODY>
-</HTML>
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_intro_coding.html">Next:&nbsp;
+Coding Principles</a>&nbsp; | <a href="dev_intro.html">Previous:&nbsp;
+Introduction</a>]
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  Initialization Interface</title>
@@ -30,7 +30,8 @@ Functions used to initialize the library and load-balancing data structures
 are described below:
 <ul><a href="#LB_Initialize">LB_Initialize</a>
 <br><a href="#LB_Create">LB_Create</a>
-<br><a href="#LB_Set_Fn">LB_Set_Fn</a></ul>
+<br><a href="#LB_Set_Fn">LB_Set_Fn</a>
+<br><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></ul>
 
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -54,23 +55,20 @@ char **<i> argv</i>, float *<i> ver</i>);</td>
 </table>
 
 <hr WIDTH="100%">The <b>LB_Initialize</b> function initializes values needed
-in the load-balancing tools. 
-If the application
-uses MPI, this function should be called after calling <b>MPI_Init</b>.
-If the application does not use MPI, this function calls <b>MPI_Init</b>
-for use by the load balancer. 
-This function is called with the <i>argc</i>
-and <i>argv</i> command-line arguments from the main program, which are used
-if <b>LB_Initialize</b> calls <b>MPI_Init</b>.
-From C,&nbsp; if <b>MPI_Init</b> has already
-been called, the <i>argc</i> and <i>argv</i> arguments may have any value
-because their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
+in the load-balancing tools. If the application uses MPI, this function
+should be called after calling <b>MPI_Init</b>. If the application does
+not use MPI, this function calls <b>MPI_Init</b> for use by the load balancer.
+This function is called with the <i>argc</i> and <i>argv</i> command-line
+arguments from the main program, which are used if <b>LB_Initialize</b>
+calls <b>MPI_Init</b>. From C,&nbsp; if <b>MPI_Init</b> has already been
+called, the <i>argc</i> and <i>argv</i> arguments may have any value because
+their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
 or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
-<i>ver</i> does NOT have to be passed as a keyword argument.
-<p>
-<b>LB_Initialize</b> returns the version of the dynamic
-load-balancing library so that users can verify which version of the library
-their application is linked to. 
+<i>ver</i>
+does NOT have to be passed as a keyword argument.
+<p><b>LB_Initialize</b> returns the version of the dynamic load-balancing
+library so that users can verify which version of the library their application
+is linked to.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -177,7 +175,9 @@ be fatal.</td>
 
 <td><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b> (struct <b>LB_Struct </b>*
 <i>lb,
-</i><b>LB_FN_TYPE</b> <i>fn_type</i>, void (*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
+</i><b>LB_FN_TYPE
+</b><i>fn_type</i>,
+void (*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -198,8 +198,10 @@ query functions</a> for an explanation.&nbsp;</td>
 </table>
 
 <hr WIDTH="100%"><b>LB_Set_Fn</b> registers an application-supplied query
-function in the load-balancing library. Both load-balancing and migration
-functions are registered through calls to <b>LB_Set_Fn</b> .
+function in the load-balancing structure. Both load-balancing and migration
+functions can be registered through calls to <b>LB_Set_Fn</b>.&nbsp; To
+register functions while maintaining strict type-checking of the <i>fn_ptr</i>
+argument, see <b><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -232,7 +234,7 @@ Query Functions</a> for possible function types.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>A pointer to user defined data that will be passed, as an argument,
-to the function pointed to by fn_ptr. In C it may be NULL. In Fortran
+to the function pointed to by <i>fn_ptr</i>. In C it may be NULL. In Fortran
 it may be omitted.</td>
 </tr>
 
@@ -249,9 +251,102 @@ it may be omitted.</td>
 </tr>
 </table>
 
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td><a NAME="LB_Set_Specific_Fn"></a>int <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>
+(struct <b>LB_Struct </b>*
+<i>lb,&nbsp;</i> &lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>
+(*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>Not yet available.</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">The interface functions <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>,
+where <b>&lt;<i><a href="ug_query.html">lb_fn_type</a></i>></b> is one
+of the query function types, register specific types of <a href="ug_query.html">application-supplied
+query functions</a> in the load-balancing structure. One interface function
+exists for each type of query function.&nbsp; For example, <b>LB_Set_Num_Geom_Fn</b>
+registers a query function of type <b><a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>.&nbsp;
+Each load-balancing and migration query function has an associated <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.&nbsp;
+A complete list of these functions is included in <i>lb/lbi_const.h.</i>
+<p>Query functions can be registered using either <b><a href="#LB_Set_Fn">LB_Set_Fn</a></b>
+or <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.
+<br><b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn </b>provides strict type checking
+of the <i>fn_ptr</i> argument; the argument's type is specified for each
+<b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.&nbsp;
+<b><a href="#LB_Set_Fn">LB_Set_Fn</a></b> does not provide this strict
+type checking, as the pointer to the registered function is cast to a void
+pointer.
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+
+<td>Pointer to the load-balancing structure created by
+<b><a href="#LB_Create">LB_Create</a></b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fn_ptr</i></td>
+
+<td>A pointer to the application-supplied query function being registered.&nbsp;
+The type of the pointer matches &lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>
+in the name <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>A pointer to user defined data that will be passed, as an argument,
+to the function pointed to by fn_ptr. In C it may be NULL. In Fortran it
+may be omitted.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+
+<tr>
+<td><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE></td>
+
+<td VALIGN=TOP NOSAVE>The interface function
+<br>&nbsp;&nbsp;&nbsp; int <b>LB_Set_Geom_Fn</b>(struct <b>LB_Struct</b>
+*lb, <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b> (*fn_ptr)(),
+void *data);
+<br>registers an <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
+query function.</td>
+</tr>
+</table>
+
 <p>
-<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
-<a href="ug_interface_lb.html">Next:&nbsp;
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_lb.html">Next:&nbsp;
 Load-Balancing Functions</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous:&nbsp;
 Zoltan Interface Functions</a>]
 </body>
