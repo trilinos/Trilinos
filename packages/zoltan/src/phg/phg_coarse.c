@@ -34,12 +34,11 @@ int Zoltan_PHG_Coarsening
   PHGraph  *c_hg,       /* points to a working copy of hg structure */
   int      *LevelMap)   /* information to reverse coarsenings later */
 {
-  int i, j, old, vertex, new_vertex, edge, *ip, me;
-  int err, size, count, *list;
-  int *cmatch, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
+  int i, j, vertex, edge, *ip, me, size, count;
+  int *cmatch=NULL, *list=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
   float *c_ewgt=NULL;
   char *buffer=NULL, *rbuffer=NULL;
-  int *displs, *each_size;
+  int *displs=NULL, *each_size=NULL;
   PHGComm *hgc = hg->comm;
   char *yo = "Zoltan_PHG_Coarsening";
 
@@ -88,9 +87,8 @@ int Zoltan_PHG_Coarsening
       c_hg->nVtx++;
       vertex = i;
       while (cmatch[vertex] >= 0)  {
-        old         =  vertex;
-        vertex      =  cmatch[old];
-        cmatch[old] = -cmatch[old] - 1;  /* flag this as done already */
+        cmatch[vertex] = -cmatch[vertex] - 1;  /* flag this as done already */      
+        vertex         =  cmatch[vertex];
       }
     }
   }
@@ -124,10 +122,9 @@ int Zoltan_PHG_Coarsening
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
      *ip++ = VTX_LNO_TO_GNO (hg, list[i]);       /* destination vertex gno */        
-     *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */
-                                                              /* weights??? */
+     *ip++ = hg->vindex[list[i]+1] - hg->vindex[list[i]];   /* count */                                                             /* weights??? */
      for (j = hg->vindex[list[i]]; j < hg->vindex[list[i]+1]; j++)
-       *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);                                   /* edges */
+       *ip++ = EDGE_LNO_TO_GNO (hg, hg->vedge[j]);        /* edges */                           /* edges */
   }
           
   MPI_Allgatherv (buffer, count, MPI_INT, rbuffer, each_size, displs, MPI_INT,
@@ -157,38 +154,40 @@ int Zoltan_PHG_Coarsening
   /* Coarsen vertices (create vindex, vedge), sum up coarsened vertex weights */
   c_hg->nNonZero = 0;   /* count of coarsened pins */
   c_hg->nVtx     = 0;   /* count of coarsened vertices */
-  new_vertex     = 0;       /* counts LevelMap entries */
   for (i = 0; i < hg->nVtx; i++)  {
-    if (match[i] < 0 && cmatch[i] < 0)      /* match to external vertex */                  
-       LevelMap [new_vertex++] = match[i];  /* negative value => external vtx */         
+    if (match[i] < 0 && cmatch[i] < 0)        /* match to external vertex */                  
+       LevelMap [i] = match[i];         /* negative value => external vtx */         
     else if (match[i] < 0) {                /* match from external vertex */
-       LevelMap[i] = new_vertex;
+       LevelMap[i] = c_hg->nVtx;
       
-/*       c_hg->vwgt  [c_hg->nVtx] = hg->vwgt ? hg->vwgt[i] : 1.0;  */
-
+/*      c_hg->vwgt[c_hg->nVtx] += vlist[k]->weight;     */
        c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
-       ip = ((int*) buffer) + i;
+       
+       ip = ((int*) rbuffer) + i;
        count = *++ip;
        for (j = 0; j < count; j++)  {
           edge = EDGE_GNO_TO_LNO (hg, *ip++);
           used_edges [edge]     = i+1;
           c_hg->vedge[c_hg->nNonZero++] = edge;
        }
-
-/*      c_hg->vwgt[c_hg->nVtx] += vlist[k]->weight;     */
-
-      new_vertex++;
-      c_hg->nVtx++;          
+       
+       c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;
+       for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
+         if (used_edges [hg->vedge[j]] <= i)  {
+           used_edges [hg->vedge[j]]     = i+1;          
+           c_hg->vedge[c_hg->nNonZero++] = hg->vedge[j];
+         }      
+       }        
+       c_hg->nVtx++;          
     }
     else if (match[i] >= 0 && cmatch[i] < 0)   /* match, pack, group my vtx's */
       c_hg->vindex[c_hg->nVtx] = c_hg->nNonZero;
-      
       vertex = i;
       while (cmatch[vertex] < 0)  {    
-        LevelMap[vertex] = new_vertex;      
+        LevelMap[vertex] = c_hg->nVtx;    
         c_hg->vwgt[c_hg->nVtx] += hg->vwgt ? hg->vwgt[vertex] : 1.0;  
 
-        for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)  {
+        for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++)  {
           if (used_edges [hg->vedge[j]] <= i)  {
             used_edges [hg->vedge[j]]     = i+1;          
             c_hg->vedge[c_hg->nNonZero++] = hg->vedge[j];
@@ -197,7 +196,6 @@ int Zoltan_PHG_Coarsening
         cmatch[vertex] = -cmatch[vertex] - 1;
         vertex         =  cmatch[vertex];
       }
-      new_vertex++;
       c_hg->nVtx++;
     }
     
@@ -212,10 +210,8 @@ int Zoltan_PHG_Coarsening
       return ZOLTAN_MEMERR;
     }
     c_hg->vedge = NULL;
-
   }
   else  {
-    /* RTHRTH: NOTE removed code per Umit's speedup hack from serial version HERE*/  
     c_hg->ewgt   = c_ewgt;
     c_hg->vindex = c_vindex;
     c_hg->vedge  = c_vedge;
