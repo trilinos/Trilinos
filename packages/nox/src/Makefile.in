@@ -159,14 +159,16 @@ STATUS_H = \
 	$(srcdir)/NOX_Status_AbsResid.H \
 	$(srcdir)/NOX_Status_Combo.H \
 	$(srcdir)/NOX_Status_MaxResid.H \
-	$(srcdir)/NOX_Status_RelResid.H 
+	$(srcdir)/NOX_Status_RelResid.H \
+	$(srcdir)/NOX_Status_MaxIters.H 
 
 
 STATUS = \
 	$(srcdir)/NOX_Status_AbsResid.C \
 	$(srcdir)/NOX_Status_Combo.C \
 	$(srcdir)/NOX_Status_MaxResid.C \
-	$(srcdir)/NOX_Status_RelResid.C 
+	$(srcdir)/NOX_Status_RelResid.C \
+	$(srcdir)/NOX_Status_MaxIters.C 
 
 
 UTILS_H = \
@@ -268,7 +270,8 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Newton.$(OBJEXT) NOX_Status_AbsResid.$(OBJEXT) \
 	NOX_Status_Combo.$(OBJEXT) NOX_Status_MaxResid.$(OBJEXT) \
-	NOX_Status_RelResid.$(OBJEXT) NOX_Utils.$(OBJEXT)
+	NOX_Status_RelResid.$(OBJEXT) NOX_Status_MaxIters.$(OBJEXT) \
+	NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
 libnoxepetra_a_AR = $(AR) cru
 libnoxepetra_a_LIBADD =
@@ -293,6 +296,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Newton.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_AbsResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Combo.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxIters.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Utils.Po \
@@ -391,6 +395,7 @@ NOX_Status_AbsResid.$(OBJEXT): $(srcdir)/NOX_Status_AbsResid.C
 NOX_Status_Combo.$(OBJEXT): $(srcdir)/NOX_Status_Combo.C
 NOX_Status_MaxResid.$(OBJEXT): $(srcdir)/NOX_Status_MaxResid.C
 NOX_Status_RelResid.$(OBJEXT): $(srcdir)/NOX_Status_RelResid.C
+NOX_Status_MaxIters.$(OBJEXT): $(srcdir)/NOX_Status_MaxIters.C
 NOX_Utils.$(OBJEXT): $(srcdir)/NOX_Utils.C
 libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES) 
 	-rm -f libnox.a
@@ -422,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Newton.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_AbsResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Combo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxIters.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_MaxResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelResid.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
@@ -587,6 +593,18 @@ NOX_Status_RelResid.obj: $(srcdir)/NOX_Status_RelResid.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_RelResid.Po' tmpdepfile='$(DEPDIR)/NOX_Status_RelResid.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_RelResid.obj `cygpath -w $(srcdir)/NOX_Status_RelResid.C`
+
+NOX_Status_MaxIters.o: $(srcdir)/NOX_Status_MaxIters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxIters.C' object='NOX_Status_MaxIters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxIters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxIters.o `test -f $(srcdir)/NOX_Status_MaxIters.C || echo '$(srcdir)/'`$(srcdir)/NOX_Status_MaxIters.C
+
+NOX_Status_MaxIters.obj: $(srcdir)/NOX_Status_MaxIters.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Status_MaxIters.C' object='NOX_Status_MaxIters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_MaxIters.Po' tmpdepfile='$(DEPDIR)/NOX_Status_MaxIters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Status_MaxIters.obj `cygpath -w $(srcdir)/NOX_Status_MaxIters.C`
 
 NOX_Utils.o: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Utils.C' object='NOX_Utils.o' libtool=no @AMDEPBACKSLASH@
