@@ -1,9 +1,4 @@
 #!/bin/csh
-#
-#  The only change that I made to change this from dscpack to klu 
-#  was to replace the single occurence of dscpack with klu
-#  I also added HAVE_AMESOS_KLU to Makefile.am in this directory.
-#
 ## NOTE: Those wishing to cusomize this script to run test exe's
 ## that have already been autotool'ed should read lines beginning with '##'
 
@@ -61,7 +56,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach g  ( AmesosSuperludistShort.exe )
+foreach g  ( AmesosShortScript.exe )
 		echo "############" $g "##############" >>& $file
 		if( "$2" == "True" ) then
 		    source $g 
