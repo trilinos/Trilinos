@@ -30,7 +30,11 @@
 #ifndef _NOX_OFFBLOCK_MANAGER_H
 #define _NOX_OFFBLOCK_MANAGER_H
 
+
 #include "NOX.H"
+// Currently, this class can only be used with builds which include EpetraExt !!
+#ifdef HAVE_NOX_EPETRAEXT
+
 #include "NOX_Epetra.H"
 
 #include "Problem_Interface.H"
@@ -179,7 +183,6 @@ private:
 //  NOX::Parameter::List* nlParams;           // NLSolver parameter list
 //  NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
 
-#ifdef HAVE_NOX_EPETRAEXT
   // These allow off-diagonal block contributions representing
   // inter-problem coupling computed via FDC
   EpetraExt::CrsGraph_MapColoring* mapColoring;
@@ -190,8 +193,8 @@ private:
 //  Epetra_Operator* matrixOperator;
   NOX::EpetraNew::LinearSystemAztecOO* linearSystem;
   NOX::EpetraNew::Group* group;    
+};
+
 #endif
 
-
-};
 #endif

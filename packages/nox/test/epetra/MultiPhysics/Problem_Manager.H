@@ -35,10 +35,9 @@
 
 #include "Problem_Interface.H"
 #include "GenericEpetraProblem.H"
-//#include "OffBlock_Manager.H"
-class OffBlock_Manager;
 
 #ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
+class OffBlock_Manager;
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #endif  
@@ -98,8 +97,10 @@ public:
   // Set all groups with the current solution contained in each problem
   bool setAllGroupX();
 
+#ifdef HAVE_NOX_EPETRAEXT       // Use epetraext package in Trilinos
   // Set all off-block groups with the current composite-size solution
   bool setAllOffBlockGroupX(const Epetra_Vector&);
+#endif
 
   // Reset all problems by copying the current solution into the old solution
   // Needed for time-dependent problems
@@ -207,14 +208,6 @@ private:
   // These containers allow off-diagonal block contributions representing
   // inter-problem coupling
   map<int, vector<OffBlock_Manager*> > OffBlock_Managers;    
-//  map<int, vector<Epetra_CrsGraph*> > Off_Graphs;    
-//  map<int, vector<EpetraExt::CrsGraph_MapColoring*> > Off_TmpMapColorings;
-//  map<int, vector<Epetra_MapColoring*> > Off_ColorMaps;
-//  map<int, vector<EpetraExt::CrsGraph_MapColoringIndex*> > Off_ColorMapIndexSets;
-//  map<int, vector<vector<Epetra_IntVector>*> > Off_ColumnsSets;
-//  map<int, vector<Epetra_Operator*> > Off_MatrixOperators;
-//  map<int, vector<NOX::EpetraNew::LinearSystemAztecOO*> > Off_LinearSystems;
-//  map<int, vector<NOX::EpetraNew::Group*> > Off_Groups;    
 #endif
 
 

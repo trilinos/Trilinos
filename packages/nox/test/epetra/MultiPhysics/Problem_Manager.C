@@ -74,6 +74,12 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
   nlParams(0),
   statusTest(0)
 {
+  // Unset doOffBlocks flag if this build does not include the required 
+  // EpetraExt library intreface
+#ifndef HAVE_NOX_EPETRAEXT
+  doOffBlocks = false;
+#endif
+
   // Create a problem interface to the manager
   compositeProblemInterface = new Problem_Interface(*this);
 
@@ -471,6 +477,7 @@ bool Problem_Manager::setAllGroupX()
   }
 }
 
+#ifdef HAVE_NOX_EPETRAEXT
 bool Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
 {
   map<int, vector<OffBlock_Manager*> >::iterator offBlockIter = 
@@ -488,6 +495,7 @@ bool Problem_Manager::setAllOffBlockGroupX(const Epetra_Vector &inVec)
       managerVec[i]->getGroup().setX(inVec);
   }
 }
+#endif
 
 void Problem_Manager::resetProblems()
 { 
@@ -562,6 +570,7 @@ bool Problem_Manager::computeAllJacobian()
 
 
     if( doOffBlocks ) {
+#ifdef HAVE_NOX_EPETRAEXT
 
       fillTime.ResetStartTime();
   
@@ -576,6 +585,7 @@ bool Problem_Manager::computeAllJacobian()
           printf("\n\tTime to fill Jacobian %d (%d) --> %e sec. \n\n",
                       probId, i, fillTime.ElapsedTime());
       }
+#endif
     }
   }
 }
@@ -804,7 +814,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
 
     // Add off-diagonal FDC block contributions if waranted
     if( doOffBlocks ) {
-
+#ifdef HAVE_NOX_EPETRAEXT
       // Loop over each problem on which this one depends
       for( int k = 0; k<problem.auxProblems.size(); k++) {
 
@@ -843,6 +853,7 @@ void Problem_Manager::copyProblemJacobiansToComposite()
         // Sync up processors to be safe
         Comm->Barrier();
       }
+#endif
     }
   }
 #ifdef DEBUG
@@ -1110,8 +1121,10 @@ bool Problem_Manager::evaluate(
 
   // If used, give each off-block FDC manager a copy of the current total
   // solution vector
+#ifdef HAVE_NOX_EPETRAEXT
   if( fillMatrix && doOffBlocks )
     setAllOffBlockGroupX(*solnVector);
+#endif
 
   // This is needed for FDC since each FDC group needs the whole compositeSoln
 //  cout << "\n\n\tmySolnVector : " << mySolnVector
@@ -1202,7 +1215,8 @@ void Problem_Manager::generateGraph()
   // accommodate off-diagonal blocks and 2) these blocks are packaged as
   // individual NOX::EpetreNew::Group's owneed by the manager.
 
-  if( doOffBlocks ) { 
+  if( doOffBlocks ) {
+#ifdef HAVE_NOX_EPETRAEXT
 
     problemIter = Problems.begin();
 
@@ -1313,6 +1327,7 @@ void Problem_Manager::generateGraph()
       OffBlock_Managers.insert( pair<int, vector<OffBlock_Manager*> >
                          (probId, OffBlock_ManagersVec) );
     }
+#endif
   } // end doOffBlocks
 
   AA->TransformToLocal();

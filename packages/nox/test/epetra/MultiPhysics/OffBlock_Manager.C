@@ -27,7 +27,12 @@
 // ************************************************************************
 //@HEADER
                                                                                 
+
 #include "NOX.H"
+
+// Currently, this class can only be used with builds which include EpetraExt !!
+#ifdef HAVE_NOX_EPETRAEXT
+
 #include "NOX_Epetra.H"
 // Trilinos Objects
 #ifdef HAVE_MPI
@@ -255,3 +260,5 @@ void OffBlock_Manager::createFDCobjects()
     exit(0);
 #endif
 }
+
+#endif 
