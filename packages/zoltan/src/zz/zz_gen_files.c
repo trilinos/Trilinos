@@ -296,6 +296,7 @@ End:
   ZOLTAN_FREE(&vtxdist);
   ZOLTAN_FREE(&xadj);
   ZOLTAN_FREE(&adjncy);
+  ZOLTAN_FREE(&adjproc);
   ZOLTAN_FREE(&global_ids);
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&float_vwgt);
