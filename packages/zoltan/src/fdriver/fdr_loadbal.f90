@@ -90,7 +90,6 @@ type(PROB_INFO) :: prob
     return
   endif
 
-
 !  /* Set the user-specified parameters */
   do i = 0, prob%num_params-1
     ierr = LB_Set_Param(lb_obj, trim(prob%params(i)%str(0)), &
@@ -244,6 +243,11 @@ integer(LB_INT) function get_first_element(data, &
 
   type(ELEM_INFO), pointer :: elem(:)
   type(MESH_INFO), pointer :: mesh_data
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -254,11 +258,11 @@ integer(LB_INT) function get_first_element(data, &
     return
   endif
   
-  local_id(1) = 0
-  global_id(1) = elem(local_id(1))%globalID
+  if (num_lid_entries.gt.0) local_id(lid) = 0
+  global_id(gid) = elem(0)%globalID
 
   if (wdim>0) then
-    wgt = elem(local_id(1))%cpu_wgt
+    wgt = elem(0)%cpu_wgt
   endif
 
   if (wdim>1) then
@@ -285,8 +289,14 @@ integer(LB_INT) function get_next_element(data, &
   integer(LB_INT) :: ierr
 
   integer(LB_INT) :: found
-  type(ELEM_INFO), pointer :: elem(:)
+  type(ELEM_INFO), pointer :: elem(:), current_elem
   type(MESH_INFO), pointer :: mesh_data
+  integer(LB_INT) :: idx
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   found = 0
   mesh_data => data%ptr
@@ -298,13 +308,21 @@ integer(LB_INT) function get_next_element(data, &
     return
   endif
   
-  if (local_id(1)+1 < Mesh%num_elems) then
+  if (num_lid_entries.gt.0) then
+    idx = local_id(lid);
+    current_elem => elem(idx);
+  else 
+    !/* testing zero-length local IDs; search by global ID for current elem */
+    current_elem => search_by_global_id(mesh, global_id(gid), idx)
+  endif
+
+  if (idx+1 < Mesh%num_elems) then
     found = 1
-    next_local_id(1) = local_id(1) + 1
-    next_global_id(1) = elem(next_local_id(1))%globalID
+    if (num_lid_entries.gt.0) next_local_id(lid) = idx + 1
+    next_global_id(gid) = elem(idx+1)%globalID
 
     if (wdim>0) then
-      next_wgt = elem(next_local_id(1))%cpu_wgt
+      next_wgt = elem(idx+1)%cpu_wgt
     endif
 
     if (wdim>1) then
@@ -346,6 +364,12 @@ integer(LB_INT) :: ierr
   type(MESH_INFO), pointer :: mesh_data
   integer(LB_INT) :: i, j
   real(LB_DOUBLE) :: tmp
+  integer(LB_INT) :: idx
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -355,7 +379,11 @@ integer(LB_INT) :: ierr
     return
   endif
 
-  current_elem => elem(local_id(1))
+  if (num_lid_entries.gt.0) then
+    current_elem => elem(local_id(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+  endif
 
   if (Mesh%eb_nnodes(current_elem%elem_blk) == 0) then
     !/* No geometry info was read. */
@@ -390,8 +418,14 @@ integer(LB_INT) :: global_id(*)
 integer(LB_INT) :: local_id(*)
 integer(LB_INT) :: ierr
 
-type(ELEM_INFO), pointer :: elem(:)
+type(ELEM_INFO), pointer :: elem(:), current_elem
 type(MESH_INFO), pointer :: mesh_data
+integer(LB_INT) :: idx
+integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -402,9 +436,15 @@ type(MESH_INFO), pointer :: mesh_data
     return
   endif
 
+  if (num_lid_entries.gt.0) then
+    current_elem => elem(local_id(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+  endif
+
   ierr = LB_OK;
 
-  get_num_edges = elem(local_id(1))%nadj
+  get_num_edges = current_elem%nadj
 end function get_num_edges
 
 !/*****************************************************************************/
@@ -424,6 +464,12 @@ real(LB_FLOAT)  :: nbor_ewgts(*)
   type(ELEM_INFO), pointer :: current_elem
   type(MESH_INFO), pointer :: mesh_data
   integer(LB_INT) :: i, j, proc, local_elem, mpierr
+  integer(LB_INT) :: idx
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elem => mesh_data%elements
@@ -433,7 +479,11 @@ real(LB_FLOAT)  :: nbor_ewgts(*)
     return
   endif
 
-  current_elem => elem(local_id(1))
+  if (num_lid_entries.gt.0) then
+    current_elem => elem(local_id(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, global_id(gid), idx)
+  endif
 
 !  /* get the processor number */
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
@@ -446,9 +496,9 @@ real(LB_FLOAT)  :: nbor_ewgts(*)
 
     if (current_elem%adj_proc(i) == proc) then
       local_elem = current_elem%adj(i)
-      nbor_global_id(1+(j-1)*num_gid_entries) = elem(local_elem)%globalID
+      nbor_global_id(gid+(j-1)*num_gid_entries) = elem(local_elem)%globalID
     else  ! /* adjacent element on another processor */
-      nbor_global_id(1+(j-1)*num_gid_entries) = current_elem%adj(i)
+      nbor_global_id(gid+(j-1)*num_gid_entries) = current_elem%adj(i)
     endif
     nbor_procs(j) = current_elem%adj_proc(i)
 

@@ -47,7 +47,7 @@ use dr_const
 implicit none
 private
 
-public :: migrate_elements
+public :: migrate_elements, search_by_global_id
 
 !/*****************************************************************************/
 !/*
@@ -131,7 +131,7 @@ type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
     migrate_elements = .false.; return
   endif
 
-  if (LB_Help_Migrate(lb_obj, num_gid_entries, num_lid_entries, &
+  if (LB_Help_Migrate(lb_obj, &
                       num_imp, imp_gids, imp_lids, imp_procs, &
                       num_exp, exp_gids, exp_lids, exp_procs) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Help_Migrate()"
@@ -164,9 +164,15 @@ integer(LB_INT) :: new_proc  !/* New processor assignment for nbor element.
 integer(LB_INT) :: exp_elem  !/* index of an element being exported */
 integer(LB_INT) :: bor_elem  !/* index of an element along the processor border
 integer(LB_INT), allocatable :: send_vec(:), recv_vec(:) !/* Communication vecs.
-type(ELEM_INFO), pointer :: elements(:), tmp(:)
+type(ELEM_INFO), pointer :: elements(:), tmp(:), exp_elem_ptr
 type(MESH_INFO), pointer :: mesh_data
 logical :: flag
+integer(LB_INT) :: idx
+integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elements => mesh_data%elements
@@ -224,7 +230,12 @@ logical :: flag
   end do
 
   do i = 1, num_export
-    exp_elem = export_local_ids(1 + (i-1)*num_lid_entries)
+    if (num_lid_entries.gt.0) then
+      exp_elem = export_local_ids(lid + (i-1)*num_lid_entries)
+    else
+      exp_elem_ptr => search_by_global_id(mesh_data, &
+                       export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
+    endif
     New_Elem_Index(exp_elem) = -1
     proc_ids(exp_elem) = export_procs(i)
   end do
@@ -235,7 +246,7 @@ logical :: flag
       if (New_Elem_Index(j) == -1) exit
     end do
 
-    New_Elem_Index(j) = import_global_ids(1+(i-1)*num_gid_entries)
+    New_Elem_Index(j) = import_global_ids(gid+(i-1)*num_gid_entries)
   end do
 
 !  /* 
@@ -245,7 +256,12 @@ logical :: flag
 !  /* Set change flag for elements whose adjacent elements are being exported */
 
   do i = 1, num_export
-    exp_elem = export_local_ids(1+(i-1)*num_lid_entries)
+    if (num_lid_entries.gt.0) then
+      exp_elem = export_local_ids(lid + (i-1)*num_lid_entries)
+    else
+      exp_elem_ptr => search_by_global_id(mesh_data, &
+                       export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
+    endif
     do j = 0, elements(exp_elem)%adj_len-1
 
 !     /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
@@ -449,6 +465,11 @@ type(MESH_INFO), pointer :: mesh_data
         end do
       endif
     end do
+
+    !/* Update New_Elem_Index */
+    New_Elem_Index(i) = New_Elem_Index(last)
+    New_Elem_Index(last) = -1
+
     element(last)%globalID = -1
     element(last)%border = 0
     element(last)%nadj = 0
@@ -475,48 +496,33 @@ end subroutine migrate_post_process
 !/*****************************************************************************/
 !/*****************************************************************************/
 !/*****************************************************************************/
-integer(LB_INT) function migrate_elem_size(data, ierr)
+integer(LB_INT) function migrate_elem_size(data, num_gid_entries, num_lid_entries, elem_gid, elem_lid, ierr)
 type(LB_User_Data_2) :: data
 integer(LB_INT) :: ierr
+integer(LB_INT) :: num_gid_entries, num_lid_entries
+integer(LB_INT) :: elem_gid(*), elem_lid(*)
 !/*
 ! * Function to return size of element information for a single element.
 ! */
 
-integer(LB_INT) :: max_adj_len = 0 !/* Max. adj_len. over all local elements.
-integer(LB_INT), save :: gmax_adj_len = 0 !/* Max. adj_len. over all elements.
-integer(LB_INT) :: max_nnodes = 0 !/* Max. num of nodes/elem over all local elems.*/
-integer(LB_INT), save :: gmax_nnodes = 0 !/* Max. num of nodes/elem over all elems.      */
-integer(LB_INT) :: i, size, mpierr
-type(ELEM_INFO), pointer :: elements(:)
-integer(LB_INT) :: retval(1) ! an array of length 1 for MPI return arrays
+integer(LB_INT) :: size
+type(ELEM_INFO), pointer :: elements(:), current_elem
 integer, parameter :: SIZE_OF_INT = 4, SIZE_OF_FLOAT = 4
 type(MESH_INFO), pointer :: mesh_data
+integer(LB_INT) :: idx, num_nodes
+integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   mesh_data => data%ptr
   elements => mesh_data%elements
   ierr = LB_OK
-
-!  /* 
-!   * Compute global max of adj_len and nnodes.  Communication package requires
-!   * all elements' data to have the same size.
-!   */
-
-  if (gmax_adj_len == 0) then
-    do i = 0, Mesh%num_elems-1
-      if (elements(i)%adj_len > max_adj_len) max_adj_len = elements(i)%adj_len
-    end do
-    call MPI_Allreduce(max_adj_len, retval, 1, MPI_INTEGER, MPI_MAX, &
-                  MPI_COMM_WORLD, mpierr)
-    gmax_adj_len = retval(1)
-  endif
-
-  if (gmax_nnodes == 0) then
-    do i = 0, Mesh%num_el_blks-1
-      if (Mesh%eb_nnodes(i) > max_nnodes) max_nnodes = Mesh%eb_nnodes(i)
-    end do
-    call MPI_Allreduce(max_nnodes, retval, 1, MPI_INTEGER, MPI_MAX, &
-                       MPI_COMM_WORLD, mpierr)
-    gmax_nnodes = retval(1)
+  if (num_lid_entries.gt.0) then
+    current_elem => elements(elem_lid(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, elem_gid(gid), idx)
   endif
 
 !  /*
@@ -524,22 +530,23 @@ type(MESH_INFO), pointer :: mesh_data
 !   */
 
   size = 5 * SIZE_OF_INT + 2 * SIZE_OF_FLOAT
+  num_nodes =  mesh_data%eb_nnodes(current_elem%elem_blk)
  
 !  /* Add space for connect table. */
   if (Mesh%num_dims > 0) then
-    size = size + gmax_nnodes * SIZE_OF_INT
+    size = size + num_nodes * SIZE_OF_INT
   endif
 
 !  /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
-  size = size + gmax_adj_len * 2 * SIZE_OF_INT
+  size = size + current_elem%adj_len * 2 * SIZE_OF_INT
 
 !  /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) then
-    size = size + gmax_adj_len * SIZE_OF_FLOAT
+    size = size + current_elem%adj_len * SIZE_OF_FLOAT
   endif
 
 !  /* Add space for coordinate info */
-  size = size + gmax_nnodes * Mesh%num_dims * SIZE_OF_FLOAT
+  size = size + num_nodes * Mesh%num_dims * SIZE_OF_FLOAT
   
   migrate_elem_size = size
 end function migrate_elem_size
@@ -555,6 +562,7 @@ integer(LB_INT) :: num_gid_entries, num_lid_entries
 integer(LB_INT) :: elem_gid(*), elem_lid(*)
 integer(LB_INT) :: mig_proc, elem_data_size, ierr
 integer(LB_INT) :: buf(*)
+integer(LB_INT) :: idx
 
 ! NOTE: this assumes that a float is no bigger than an int
 !       (see the use of the transfer function)
@@ -567,12 +575,22 @@ integer(LB_INT) :: buf(*)
   integer(LB_INT) :: num_nodes
   integer(LB_INT) :: mpierr
   type(MESH_INFO), pointer :: mesh_data
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+  integer(LB_INT) :: lid
+
+  gid = num_gid_entries;
+  lid = num_lid_entries;
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
   mesh_data => data%ptr
   elem => mesh_data%elements !/* this is the head of the element struct array */
-  current_elem => elem(elem_lid(1))
+
+  if (num_lid_entries.gt.0) then
+    current_elem => elem(elem_lid(lid))
+  else
+    current_elem => search_by_global_id(mesh_data, elem_gid(gid), idx)
+  endif
   num_nodes = Mesh%eb_nnodes(current_elem%elem_blk)
 
 !  /*
@@ -676,6 +694,9 @@ integer(LB_INT) :: buf(*)
   integer(LB_INT) :: i, j, idx, mpierr, allocstat
   integer(LB_INT) :: proc
   type(MESH_INFO), pointer :: mesh_data
+  integer(LB_INT) :: gid  ! Temporary variables to change positioning of IDs.
+
+  gid = num_gid_entries;
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
@@ -687,7 +708,7 @@ integer(LB_INT) :: buf(*)
   mesh_data => data%ptr
   elem => mesh_data%elements
 
-  idx = in_list(elem_gid(1), New_Elem_Index_Size, New_Elem_Index)
+  idx = in_list(elem_gid(gid), New_Elem_Index_Size, New_Elem_Index)
   if (idx == -1) then
     print *, "fatal: Unable to locate position for element"
     ierr = LB_FATAL
@@ -828,5 +849,39 @@ integer, allocatable :: status(:,:), req(:)
 
   deallocate(status,req)
 end subroutine boundary_exchange
+
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*****************************************************************************/
+!/*
+! * Function that searchs for an element based upon its global ID.
+! * This function does not provide the most efficient implementation of
+! * the query functions; more efficient implementation uses local IDs
+! * to directly access element info.  However, this function is useful
+! * for testing Zoltan when the number of entries in a local ID
+! * (NUM_LID_ENTRIES) is zero.
+! */
+function search_by_global_id(mesh, global_id, idx)
+type(ELEM_INFO), pointer :: search_by_global_id
+type(MESH_INFO),pointer :: mesh
+integer(LB_INT) :: global_id
+integer(LB_INT) :: idx
+integer(LB_INT) :: i
+type(ELEM_INFO),pointer :: elem(:), found_elem
+
+
+  elem => mesh%elements
+  nullify(found_elem);
+
+  do i = 0, mesh%elem_array_len-1
+    if (elem(i)%globalID == global_id) then
+      found_elem => elem(i);
+      idx = i;
+    endif
+  enddo
+
+  search_by_global_id => found_elem;
+
+end function search_by_global_id
 
 end module dr_migrate
