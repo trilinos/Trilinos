@@ -115,13 +115,13 @@ wrappers:
 	cd src && make
 
 build: wrappers
-	./setup.py build
+	$(srcdir)/setup.py build
 
 install: build
-	./setup.py install
+	$(srcdir)/setup.py install
 
 clean:
-	./setup.py clean
+	$(srcdir)/setup.py clean
 
 test:
 	cd test && make test

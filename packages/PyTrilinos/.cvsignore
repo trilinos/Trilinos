@@ -1,5 +1,4 @@
 .DS_Store
-Makefile.in
 Makefile
 TAGS
 config.log

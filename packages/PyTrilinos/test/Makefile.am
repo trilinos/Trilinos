@@ -98,7 +98,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 TEST_SUITE = testEpetra testEpetraExt testNOX testExample
 
-test: $(TEST_SUITE)
+check-am: $(TEST_SUITE)
 
 testEpetra:
 	./$@.py
