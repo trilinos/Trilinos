@@ -394,6 +394,35 @@ AC_TRY_LINK([#include <cmath>],[],
 ]
 )
 
+# can we say using std::ostream?
+AC_LANG_SAVE
+
+AC_LANG_CPLUSPLUS 
+AC_MSG_CHECKING(whether "using std::ostream" is okay)
+AC_TRY_LINK(
+[
+#ifdef HAVE_IOSTREAM
+#include <iostream>
+#elif defined(HAVE_IOSTREAM_H)
+#include <iostream.h>
+#else
+// Try to include it anyway
+#include <iostream>
+#endif
+],
+[
+using std::ostream;
+],
+[AC_MSG_RESULT(yes)], 
+[
+  AC_MSG_RESULT(no)  
+  AC_DEFINE(NO_USING_STD_OSTREAM,,[define is "using std::ostream" is okay])
+]
+)
+
+AC_LANG_RESTORE
+
+
 # ------------------------------------------------------------------------
 # Checks for libraries
 # ------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-/* src/NOX_Config.h.in.  Generated automatically from configure.ac by autoheader.  */
+/* src/NOX_Config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* define if we can include <cmath> */
 #undef HAVE_CMATH
@@ -38,6 +38,9 @@
 
 /* define if we can include <string> */
 #undef HAVE_STRING
+
+/* define is "using std::ostream" is okay */
+#undef NO_USING_STD_OSTREAM
 
 /* Name of package */
 #undef PACKAGE
