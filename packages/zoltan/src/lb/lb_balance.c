@@ -130,14 +130,6 @@ double lb_time[2] = {0.0,0.0};
   }
 
   /*
-   *  Initializations and error checking.
-   */
-
-  LB_perform_error_checking(lb);
-
-  LB_TRACE_DETAIL(lb, yo, "Done error checking");
-
-  /*
    *  Construct the heterogenous machine description.
    */
 

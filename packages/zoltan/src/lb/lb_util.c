@@ -19,15 +19,6 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_perform_error_checking(LB *lb)
-{
-/* 
- *  Routine to make sure required functions are defined for the given method.
- *  Num_Objs, comm rtns should be defined for all methods.  
- */
-
-}
-
 /* 
  * This function gets a list of objects one way or the other,
  * i.e., by calling either Get_Obj_List or Get_First_Obj+Get_Next_Obj.
