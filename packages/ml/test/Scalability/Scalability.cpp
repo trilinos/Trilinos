@@ -78,9 +78,32 @@ using namespace Trilinos_Util;
 // $ mpirun -np 4 ./Scalability.exe --matrix=laplace_2d --size=90000
 // $ mpirun -np 8 ./Scalability.exe --matrix=laplace_2d --size=90000
 //
-// The time per iteration required by AztecOO should be roughtly constant.
+// If you have a parallel machine, then the time per iteration (TPI) should
+// decrease linearly. If you have a single-processor machine, then the
+// TPI should remain roughly constant.
 //
+// Here there are some results obtained on a single-processor LINUX
+// (Intel(R) Pentium(R) M processor 1700MHz, GNU compilers, LAM/MPI)
+// (TPI should remain constant)
 // 
+// Processors      TPI
+// ----------      ---
+//  1               0.29618
+//  2               0.301127
+//  4               0.305803
+//  8               0.315509
+//
+// Here are instead some results obtained on a LINUX cluster
+// (TPI * NumProcs should remain constant)
+//
+// Processors      TPI
+// ----------      ---
+//  1               0.96114
+//  2               0.48463
+//  4               0.25713 
+//  8               
+//  
+//  
 // Author: Marzio Sala, SNL 9214
 // Last modified: Nov-04
 // 
