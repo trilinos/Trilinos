@@ -255,6 +255,7 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
     ZOLTAN_TRACE_EXIT(zz, yo);
     return(ierr);
   }
+  sum_vert = 0;
 
   /*
    * Get the objects, if the number is not 0
@@ -300,7 +301,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
                               local_gids, local_lids, 
                               assigned, num_vert, vertices,
                               &in_order, in_vertex, out_vertex, &ierr);
-      sum_vert = 0;
       for (i=0; i<num_obj; i++) {
         sum_vert += num_vert[i];
       }
@@ -328,7 +328,6 @@ int nlid_ent = zz->Num_LID;  /* number of array entries in a local ID */
    * Get objects via first/next
    */
 
-      sum_vert = 0;
       count = 0;
       lid = (nlid_ent ? &(local_lids[count*nlid_ent]) : NULL);
       found = zz->Get_First_Coarse_Obj(zz->Get_First_Coarse_Obj_Data,
