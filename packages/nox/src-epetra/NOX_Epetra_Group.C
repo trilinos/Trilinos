@@ -831,7 +831,14 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
   }
 
   // Solve Aztec problem
-  int aztecStatus = aztecSolver->Iterate(maxit, tol);
+  int aztecStatus = -1;
+  if (p.getParameter("Use Adaptive Linear Solve", false)) {
+    aztecSolver->SetUseAdaptiveDefaultsTrue();
+    aztecStatus = aztecSolver->AdaptiveIterate(maxit, 
+		   p.getParameter("Max Adaptive Solve Attempts", 5), tol);
+  }
+  else
+    aztecStatus = aztecSolver->Iterate(maxit, tol);
 
   // Unscale the linear problem
   if (scalingOption == "Row Sum") {

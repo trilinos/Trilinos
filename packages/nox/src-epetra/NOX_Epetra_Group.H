@@ -298,6 +298,10 @@ options are valid:
   <li> "Enabled" 
   </ul>
 
+<li> "Use Adaptive Linear Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".
+
+<li> "Max Adaptive Solve Iterations" - Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.
+
 </ul>
 
 <B>"Output" sublist</B>
