@@ -45,11 +45,11 @@ Print Level                  = 1
 -----------------------------------------------
 Max Number of Levels         = 4
 Type of Smoother             = SymGaussSeidel 
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                              [Parasails, GaussSeidel, SymGaussSeidel, Poly,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 7
 Coarse grid solver           = SuperLU
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                              [Parasails, GaussSeidel, SymGaussSeidel, Poly,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis,
 #                               SuperLU]
 Coarse Grid iterations       = 1

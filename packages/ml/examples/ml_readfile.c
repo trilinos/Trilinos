@@ -52,11 +52,11 @@ Tolerance                    = 1.0e-11
 -----------------------------------------------
 Max Number of Levels         = 4
 Type of Smoother             = SymGaussSeidel 
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                              [Parasails, GaussSeidel, SymGaussSeidel, Poly, 
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis]
 Smoother steps per level     = 7
 Coarse grid solver           = SuperLU
-#                              [Parasails, GaussSeidel, SymGaussSeidel, 
+#                              [Parasails, GaussSeidel, SymGaussSeidel, Poly,
 #                               BlockGaussSeidel, Aggregate, Jacobi, Metis,
 #                               SuperLU]
 Coarse Grid iterations       = 1
@@ -408,6 +408,9 @@ int main(int argc, char *argv[])
      else if (ML_strcmp(context->smoother,"SymGaussSeidel") == 0) {
        ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
      }
+     else if (ML_strcmp(context->smoother,"Poly") == 0) {
+       ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., nsmooth);
+     }
      else if (ML_strcmp(context->smoother,"BlockGaussSeidel") == 0) {
        ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
 					 num_PDE_eqns);
@@ -466,6 +469,9 @@ int main(int argc, char *argv[])
 
    else if (ML_strcmp(context->coarse_solve,"GaussSeidel") == 0) {
        ML_Gen_Smoother_GaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
+   }
+   else if (ML_strcmp(context->coarse_solve,"Poly") == 0) {
+     ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, 30., nsmooth);
    }
    else if (ML_strcmp(context->coarse_solve,"SymGaussSeidel") == 0) {
        ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
