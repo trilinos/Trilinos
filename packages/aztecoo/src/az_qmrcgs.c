@@ -188,7 +188,8 @@ void AZ_pqmrs(double b[], double x[], double weight[], int options[],
      to the same function later.  
   */
   scaled_r_norm = DDOT_F77(&N, r_cgs, &one, r_cgs, &one);
-  AZ_gdot_vec(1, &scaled_r_norm, &est_residual, proc_config);  
+  AZ_gdot_vec(1, &scaled_r_norm, &est_residual, proc_config); 
+  scaled_r_norm = sqrt(scaled_r_norm);
   est_residual = scaled_r_norm;
 
   AZ_compute_global_scalars(Amat, x, b, r_cgs,

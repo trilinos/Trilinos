@@ -89,7 +89,7 @@ void AZ_pbicgstab(double b[], double x[], double weight[], int options[],
   double          *v, *r, *rtilda, *p, *phat, *s, *shat;
   double          omega = 1.0, dot_vec[2], tmp[2], init_time = 0.0;
   double          rhonm1 = 1.0, rhon, sigma, brkdown_tol = DBL_EPSILON;
-  double          scaled_r_norm, actual_residual = -1.0, rec_residual;
+  double          scaled_r_norm= -1.0, actual_residual = -1.0, rec_residual= -1.0;
   double          dtemp;
   int          *data_org, str_leng, first_time = AZ_TRUE;
   char         label[64],suffix[32], prefix[64];
