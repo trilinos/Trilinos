@@ -1,0 +1,12 @@
+Decomposition Method	= octpart
+Zoltan Parameters       = debug_memory=3,debug_level=10,remap=0
+Zoltan Parameters	= oct_method=1
+Zoltan Parameters	= oct_maxobjects=1
+Zoltan Parameters	= oct_minobjects=1
+Zoltan Parameters       = obj_weight_dim=1
+Zoltan Parameters       = comm_weight_dim=1
+Zoltan Parameters       = oct_output_level=3
+File Type		= Chaco
+File Name		= onedbug
+Parallel Disk Info	= number=0
+test local partitions   = 5

@@ -293,6 +293,7 @@ if ( $yes_fortran ) then
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
@@ -391,7 +392,11 @@ else
   endif
   if (! $no_oct) then
     set ch_methods = ( $ch_methods oct0 oct1 oct2 )
+    set ch_methods = ( $ch_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
+    set ch_methods = ( $ch_methods oct0-partlocal6 oct1-partlocal6 oct2-partlocal6 )
+    set ch_methods = ( $ch_methods oct0-partlocal7 oct1-partlocal7 oct2-partlocal7 )
     set nem_methods = ( $nem_methods oct0 oct1 oct2 )
+    set nem_methods = ( $nem_methods oct0-partlocal3 oct1-partlocal3 oct2-partlocal3 )
   endif
   if (! $no_reftree) then
     set nem_methods = ( $nem_methods reftree )
