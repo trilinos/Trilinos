@@ -28,7 +28,7 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = hello_test
+noinst_PROGRAMS = hello_test  RunValgrind
 
 hello_test_SOURCES = $(srcdir)/cxx_main.cpp
 
@@ -49,6 +49,18 @@ hello_test_CXXFLAGS = -I$(top_srcdir)/src
 hello_test_LDADD = $(top_builddir)/src/libnew_package.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(BLAS_LIBS) $(FLIBS)
+
+#
+#  This is a crude but effective way to move files from the source tree to the build tree
+#  We recommend renaming files because, although we recommend against the practice, some
+#  users will configure and build in the same tree.
+#
+#  This requires at least one file to end in .exe (or whatever EXEEXT is set to).
+#  The other files can have arbitrary names. (In this case Suppressions)
+#
+RunValgrind$(EXEEXT): $(srcdir)/RunValgrind
+	cp  $(srcdir)/RunValgrind  RunValgrind$(EXEEXT)
+	cp  $(srcdir)/In_Suppressions Suppressions
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
