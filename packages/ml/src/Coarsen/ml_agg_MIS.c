@@ -2325,7 +2325,7 @@ int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 	   number_connections[current_agg] = 0;
 	 }
        }
-       if (best_score < 0) aggr_index[i] = *aggr_count++;
+       if (best_score < 0) aggr_index[i] = (*aggr_count)++;
        else {
 	 aggr_index[i] = best_agg;
 	 agg_incremented[best_agg]++;
