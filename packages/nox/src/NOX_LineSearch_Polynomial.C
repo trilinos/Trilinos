@@ -360,31 +360,29 @@ bool NOX::LineSearch::Polynomial::checkConvergence(double newValue, double oldVa
       return true;
   }
   
+  bool returnVal = false;
   switch (suffDecrCond)
   {
-
-  case ArmijoGoldstein:
     
-    return (newValue <= oldValue + alpha * step * oldSlope);
+  case ArmijoGoldstein:
+    returnVal = (newValue <= oldValue + alpha * step * oldSlope);
     break;
-
   case AredPred:
     {
       double newEta = 1.0 - step * (1.0 - eta);
-      return (newValue <= oldValue * (1.0 - alpha * (1.0 - newEta)));
+      returnVal = (newValue <= oldValue * (1.0 - alpha * (1.0 - newEta)));
       break;
     }
   case None:
-
-    return true;
+    returnVal = true;
     break;
-
   default:
-
+    
     cerr << "NOX::LineSearch::Polynomial::isSufficientDecrease - Unknown convergence criteria" << endl;
     throw "NOX Error";
-
+    
   }
+  return returnVal;
 }
 
 bool NOX::LineSearch::Polynomial::updateGrp(NOX::Abstract::Group& newGrp, 
