@@ -124,6 +124,8 @@ libnoxexample_a_SOURCES = \
 	$(srcdir)/NOX_Example_Group.C 
 
 
+libnoxexample_a_CXXFLAGS = -I$(top_srcdir)/src
+
 rosenbrock_SOURCES = $(srcdir)/Rosenbrock.C
 
 rosenbrock_DEPENDENCIES = $(top_builddir)/src/libnox.a $(top_builddir)/example/libnoxexample.a 
@@ -141,8 +143,10 @@ LIBRARIES = $(noinst_LIBRARIES)
 
 libnoxexample_a_AR = $(AR) cru
 libnoxexample_a_LIBADD =
-am_libnoxexample_a_OBJECTS = NOX_Example_Vector.$(OBJEXT) \
-	NOX_Example_Matrix.$(OBJEXT) NOX_Example_Group.$(OBJEXT)
+am_libnoxexample_a_OBJECTS = \
+	libnoxexample_a-NOX_Example_Vector.$(OBJEXT) \
+	libnoxexample_a-NOX_Example_Matrix.$(OBJEXT) \
+	libnoxexample_a-NOX_Example_Group.$(OBJEXT)
 libnoxexample_a_OBJECTS = $(am_libnoxexample_a_OBJECTS)
 @BUILD_EXAMPLES_TRUE@noinst_PROGRAMS = rosenbrock$(EXEEXT)
 @BUILD_EXAMPLES_FALSE@noinst_PROGRAMS =
@@ -158,9 +162,9 @@ CPPFLAGS = @CPPFLAGS@
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/NOX_Example_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Example_Matrix.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Example_Vector.Po \
+@AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/rosenbrock-Rosenbrock.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -193,9 +197,12 @@ AR = ar
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-NOX_Example_Vector.$(OBJEXT): $(srcdir)/NOX_Example_Vector.C
-NOX_Example_Matrix.$(OBJEXT): $(srcdir)/NOX_Example_Matrix.C
-NOX_Example_Group.$(OBJEXT): $(srcdir)/NOX_Example_Group.C
+libnoxexample_a-NOX_Example_Vector.$(OBJEXT): \
+	$(srcdir)/NOX_Example_Vector.C
+libnoxexample_a-NOX_Example_Matrix.$(OBJEXT): \
+	$(srcdir)/NOX_Example_Matrix.C
+libnoxexample_a-NOX_Example_Group.$(OBJEXT): \
+	$(srcdir)/NOX_Example_Group.C
 libnoxexample.a: $(libnoxexample_a_OBJECTS) $(libnoxexample_a_DEPENDENCIES) 
 	-rm -f libnoxexample.a
 	$(libnoxexample_a_AR) libnoxexample.a $(libnoxexample_a_OBJECTS) $(libnoxexample_a_LIBADD)
@@ -214,9 +221,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Example_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Example_Matrix.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Example_Vector.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/rosenbrock-Rosenbrock.Po@am__quote@
 
 distclean-depend:
@@ -234,41 +241,41 @@ distclean-depend:
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
 
-NOX_Example_Vector.o: $(srcdir)/NOX_Example_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='NOX_Example_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Vector.o: $(srcdir)/NOX_Example_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='libnoxexample_a-NOX_Example_Vector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Vector.o `test -f $(srcdir)/NOX_Example_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Vector.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Vector.o `test -f $(srcdir)/NOX_Example_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Vector.C
 
-NOX_Example_Vector.obj: $(srcdir)/NOX_Example_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='NOX_Example_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Vector.obj: $(srcdir)/NOX_Example_Vector.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Vector.C' object='libnoxexample_a-NOX_Example_Vector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Vector.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Vector.obj `cygpath -w $(srcdir)/NOX_Example_Vector.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Vector.obj `cygpath -w $(srcdir)/NOX_Example_Vector.C`
 
-NOX_Example_Matrix.o: $(srcdir)/NOX_Example_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='NOX_Example_Matrix.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Matrix.o: $(srcdir)/NOX_Example_Matrix.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='libnoxexample_a-NOX_Example_Matrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Matrix.o `test -f $(srcdir)/NOX_Example_Matrix.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Matrix.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Matrix.o `test -f $(srcdir)/NOX_Example_Matrix.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Matrix.C
 
-NOX_Example_Matrix.obj: $(srcdir)/NOX_Example_Matrix.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='NOX_Example_Matrix.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Matrix.obj: $(srcdir)/NOX_Example_Matrix.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Matrix.C' object='libnoxexample_a-NOX_Example_Matrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Matrix.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Matrix.obj `cygpath -w $(srcdir)/NOX_Example_Matrix.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Matrix.obj `cygpath -w $(srcdir)/NOX_Example_Matrix.C`
 
-NOX_Example_Group.o: $(srcdir)/NOX_Example_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='NOX_Example_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Group.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Group.o: $(srcdir)/NOX_Example_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='libnoxexample_a-NOX_Example_Group.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Group.o `test -f $(srcdir)/NOX_Example_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Group.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Group.o `test -f $(srcdir)/NOX_Example_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Example_Group.C
 
-NOX_Example_Group.obj: $(srcdir)/NOX_Example_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='NOX_Example_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/NOX_Example_Group.TPo' @AMDEPBACKSLASH@
+libnoxexample_a-NOX_Example_Group.obj: $(srcdir)/NOX_Example_Group.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Example_Group.C' object='libnoxexample_a-NOX_Example_Group.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.Po' tmpdepfile='$(DEPDIR)/libnoxexample_a-NOX_Example_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Example_Group.obj `cygpath -w $(srcdir)/NOX_Example_Group.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxexample_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxexample_a-NOX_Example_Group.obj `cygpath -w $(srcdir)/NOX_Example_Group.C`
 
 rosenbrock-Rosenbrock.o: $(srcdir)/Rosenbrock.C
 @AMDEP_TRUE@	source='$(srcdir)/Rosenbrock.C' object='rosenbrock-Rosenbrock.o' libtool=no @AMDEPBACKSLASH@
