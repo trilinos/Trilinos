@@ -1,0 +1,34 @@
+Q1)  When I run bootstrap, I see warnings, "do not use m4_patsubst" and 
+"do not use m4_regexp"
+
+A1) The bootstrap should complete without any errors, however, at this
+time it is not uncommon to have the following warnings:
+
+configure.ac:63: warning: do not use m4_patsubst: use patsubst or m4_bpatsubst
+configure.ac:341: warning: do not use m4_regexp: use regexp or m4_bregexp
+
+These warnings will be fixed in the future.
+
+Q2)  When I run configure in the build directory, it uses object code in 
+the source directory.  
+
+A2) If you wish to configure in a separate build directory (which is
+highly recommended) you must not run configure or make in the source
+directory.  If you have done so, you will have to get rid of all
+conflicting files.  The only way that I know of to guarantee this is
+to start from scratch (checkout a clean set of files and copy your
+source files over).  In principle, "make distclean" should do this,
+but I have mixed success with this.
+
+Q3)  The compiler complains that PACKAGE is defined twice.
+
+A3)  PACKAGE is defined in Epetra_config.h and also in
+YourPackage_config.h.  Consider including YourPackage_config.h first
+before any other include files.
+
+Q4) Some systems offer <stdio> but not <stdio.h> others offer
+<stdio.h> and not <stdio>.
+
+A4) Do not include <Stdio> or <stdio.h> directly.  Include
+Epetra_ConfigDefs.h (also included in almost any Epetra.*.h file)  
+
