@@ -1,4 +1,12 @@
 
+Sample build scripts for various platforms can be found in:
+Trilinos/sampleScripts
+
+Please note that these sample scripts are only a starting 
+point for you to develop a script that works for your own platform.
+If you encounter difficulties, please consult the following 
+documentation.
+
 
 All Trilinos documentation can be found at the Trilinos website:
 
