@@ -10,7 +10,6 @@
  *    $Date$
  *    $Revision$
  ****************************************************************************/
-
  
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -158,6 +157,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
     float *lips, *gips; /* local and global inner products */
     float *ptr;
     char  *sendbuf, *recvbuf; /* comm buffers */
+    char   msg[160];          /* error messages */
     char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
     float lquality[3] = {0,0,0}; /* local  matchcount, matchweight */
@@ -181,7 +181,6 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
 
     /* Do dense communication for small problems. */
     dense_comm = (hg->nVtx < 2*MAX_NNZ);
-    /* dense_comm = 1;  EBEB */
 
     if (!dense_comm){
 
@@ -245,7 +244,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
 #endif
 
         if (dense_comm){
-          /* dense communication */
+          /* dense communication: treat lips & gips as dense vectors */
           MPI_Reduce(lips, gips, hg->nVtx, MPI_FLOAT, MPI_SUM, 0,
             hgc->col_comm);              
           /* clear lips array for next iter  */
@@ -257,7 +256,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
           /* sparse communication */
           /* we send partial inner products to root row */
 
-          /* pack data into send buffer */
+          /* pack data into send buffer as pairs (index, value) */
           ptr = (float *) sendbuf;
 #ifdef DEBUG_EB
           printf("Debug: Send data; myProc_y=%d, v1=%d\n", hgc->myProc_y, v1);
@@ -285,6 +284,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
           else {
             /* pick highest values if too many nonzeros */
             /* naive algorithm to find top MAX_NNZ values */ 
+            /* quickselect would be faster! */
 #ifdef DEBUG_EB
             printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
                 nadj, MAX_NNZ);
@@ -313,13 +313,18 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
             nadj = 0;
             for (i=0; i<hgc->nProc_y; i++){
 #ifdef DEBUG_EB
-              printf("Debug: Received data, v1=%d, i=%d\n", v1, i);
+              printf("Debug: Received data, v1=%d, col=%d\n", v1, i);
 #endif
               ptr = (float *) recvbuf;
               ptr += i*2*MAX_NNZ;
               for (j=0; j<MAX_NNZ; j++){
                 v2 = *ptr++;
                 if (v2<0) break; /* skip to data from next proc */
+                /* EBEB Sanity check for debugging */
+                if (v2 > hg->nVtx){
+                  sprintf(msg, "vertex %d > %d is out of range!\n", v2, hg->nVtx);
+                  ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
+                }
 #ifdef DEBUG_EB
                 printf(" %d %4.2f, ", v2, *ptr);
 #endif

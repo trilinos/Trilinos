@@ -43,6 +43,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
                                        &coarse_part_gr4,
                                        &coarse_part_ran,
                                        &coarse_part_lin,
+                                       &coarse_part_rip,
                                        &coarse_part_ripk,
                                       };
 
@@ -76,7 +77,7 @@ char *str, *str2;
   else if (!strcasecmp(str, "ran"))   return coarse_part_ran;
   else if (!strcasecmp(str, "lin"))   return coarse_part_lin;
   else if (!strcasecmp(str, "rip"))   return coarse_part_rip;
-  else if (!strcasecmp(str, "ripk"))   return coarse_part_ripk;
+  else if (!strcasecmp(str, "ripk"))  return coarse_part_ripk;
   else if (!strcasecmp(str, "gr0"))   return coarse_part_gr0;
   else if (!strcasecmp(str, "gr1"))   return coarse_part_gr1;
   else if (!strcasecmp(str, "gr2"))   return coarse_part_gr2;
@@ -540,7 +541,7 @@ static int coarse_part_rip (
  * 
  * This is a fast method but better than pure random.
  * 
- * EBEB: We could iterate and obtain a k-means clustering method. 
+ * Future: We could iterate and obtain a k-means clustering method. 
  */
 static int coarse_part_ripk (
   ZZ *zz,
@@ -592,6 +593,8 @@ static int coarse_part_ripk (
         iprod = 0.0;
         for (k=hg->vindex[i]; k<hg->vindex[i+1]; k++) {
           j = hg->vedge[k];
+          /* EBEB We could improve memory/cache performance by
+                  computing all p inner products simultaneously. */
           iprod += ran[pp*(hg->nEdge)+j]*(hg->ewgt ? hg->ewgt[j] : 1.0);
         }
         /* Scale iprod value by target part weight to ensure balance. */
