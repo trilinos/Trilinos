@@ -141,29 +141,29 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 /* code adapted from serial matching_ipm method */
 static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
-    int   i, j, n, v1, v2, edge, maxip, maxindex;
+    int   i, j, v1, v2, edge, maxip, maxindex;
     int   matchcount=0;
-    int   *ips, *gips, *adj;
+    float *lips, *gips; /* local and global inner products */
     char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
 
-    if (!(ips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
-     || !(gips = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
-     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))) {
-        Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &gips, &adj);
+    lips = gips = NULL;
+
+    if (!(lips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
+     || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))){
+        Zoltan_Multifree(__FILE__, __LINE__, 2, &lips, &gips);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
     for (i = 0; i < hg->nVtx; i++)
-        ips[i] = 0;
+        lips[i] = 0;
         
     /* for every vertex */
     for (v1 = 0; v1 < hg->nVtx; v1++) {
         if (match[v1] != v1)
             continue;
-        
-        n = 0; /* number of neighbors */
+
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
             edge = hg->vedge[i];
@@ -176,16 +176,15 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
                      row swapping goes here
                 } 
                 */
-                if (!ips[v2]++) /* TODO: use edge weight */
-                    adj[n++] = v2;
+                lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
             }
         }
 
         /* sum up local inner products along proc column */
         /* for now, sum up i.p. value for all vertices; this is slow! */
         /* to do: 1) ignore vertices already matched 
-                  2) use "superrows" with only nonzero values */
-        MPI_Allreduce(ips, gips, hg->nVtx, MPI_INT, MPI_SUM, hgc->col_comm);              
+                  2) use sparse communication for a chunk of vertices */
+        MPI_Allreduce(lips, gips, hg->nVtx, MPI_FLOAT, MPI_SUM, hgc->col_comm);              
         /* now choose the vector with greatest inner product */
         /* all processors in a column should get the same answer */
         maxip = 0;
@@ -196,9 +195,10 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
                 maxip = gips[v2];
                 maxindex = v2;
             }
-            ips[v2] = 0;
+            lips[v2] = gips[v2] = 0;   /* clear for next iteration */
         }
-        if (maxindex != -1) {
+        /* match if inner product > 0 */
+        if (maxindex > -1 && maxip > 0) {
             match[v1] = maxindex;
             match[maxindex] = v1;
             matchcount++;
@@ -217,7 +217,7 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     printf("\n");
     */
 
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &gips, &adj);
+    Zoltan_Multifree(__FILE__, __LINE__, 2, &lips, &gips);
     return ZOLTAN_OK;
 }
 
