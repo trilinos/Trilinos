@@ -35,6 +35,7 @@
 
 #include "NOX_Abstract_Group.H"	// base class
 #include "NOX_Petsc_Vector.H"	// class data element
+#include "NOX_Common.H" // class data element (string)
 
 #include "petscsnes.h"	
 #include "petscsles.h"	
@@ -54,13 +55,13 @@ namespace NOX {
 namespace Petsc {
 
 //! Concrete implementation of NOX::Abstract::Group for %Petsc.
-class Group : public Abstract::Group {
+class Group : virtual public Abstract::Group {
 
 public:
 
   //! Constructor.
   Group(const Parameter::List& params, Interface& i,
-             Vec& x, Mat& J, string jType);
+             Vec& x, Mat& J);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared Jacobian. */

@@ -46,7 +46,7 @@ using namespace NOX;
 using namespace NOX::Petsc;
 
 Group::Group(const Parameter::List& params, Interface& i,
-             Vec& x, Mat& J, string jType) :
+             Vec& x, Mat& J) :
   xVector(x), // deep copy x     
   RHSVector(x, ShapeCopy), // new vector of same size
   gradVector(x, ShapeCopy), // new vector of same size
@@ -54,7 +54,7 @@ Group::Group(const Parameter::List& params, Interface& i,
   tmpVectorPtr(NULL),
   sharedJacobianPtr(new SharedJacobian(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
-  jacType(jType),
+  jacType("User Supplied"), // the only option for now
   userInterface(i)
 {
   resetIsValid();
@@ -211,7 +211,7 @@ Abstract::Group::ReturnType Group::computeF()
   if(status == false) {
     cout << "ERROR: Petsc::Group::computeF() - fill failed!!!"
          << endl;
-    throw "NOX Error: Fill Failed";
+    throw "NOX Error: RHS Fill Failed";
   }
 
   normRHS = RHSVector.norm();
@@ -241,7 +241,7 @@ Abstract::Group::ReturnType Group::computeJacobian()
     if (status == false) {
       cout << "ERROR: Petsc::Group::computeJacobian() - fill failed!!!"
            << endl;
-      throw "NOX Error: Fill Failed";
+      throw "NOX Error: Jacobian Fill Failed";
     }
   }
   else if(jacType == "Finite Difference") {
@@ -365,7 +365,7 @@ Group::applyJacobian(const Vector& input, Vector& result) const
   if (!isJacobian()) 
     return Abstract::Group::BadDependency;
 
-  // Get a reference to the Jacobian (it's validity was check above)
+  // Get a reference to the Jacobian (it's validity was checked above)
   const Mat& Jacobian = sharedJacobian.getJacobian();
 
   // Apply the Jacobian
@@ -404,12 +404,10 @@ Group::applyRightPreconditioning(const Vector& input, Vector& result) const
 
   // Here a default to jacobi (jacobian-diagonal-inverse) is established
   // but can be overridden via specification of pc_type in .petscrc
-
   //ierr = PCSetType(pc, PCJACOBI);CHKERRQ(ierr);
 
   // This allows more general preconditioning via specification of -pc_type 
   // in .petscrc
-
   ierr = PCSetFromOptions(pc);CHKERRQ(ierr);
 
   /*
