@@ -729,7 +729,6 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   else                               Direction = ML_DECREASING;
 
   if( SolvingMaxwell_ == false ) 
-#define MARZIO
 #ifdef MARZIO
     NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 #else

@@ -2318,7 +2318,7 @@ int ML_MultiLevel_Gen_Restriction(ML *ml,int level, int next, void *data)
 	       __FILE__,
 	       __LINE__ );
     
-      //      exit( EXIT_FAILURE );
+      exit( EXIT_FAILURE );
     }  
     
     /* ********************************************************************** */
