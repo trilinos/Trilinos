@@ -121,7 +121,7 @@ You do this with a command of the type
 \begin{verbatim}
 ./configure --prefix=${TRILINOS_HOME}/LINUX_MPI \
 --enable-mpi --with-mpi-compilers \
---enable-epetraext-zoltan \
+--enable-epetraext --enable-epetraext-zoltan \
 --with-trilinos3pldir=${TRILINOS_3PL} \
 --with-ldflags="-L${TRILINOS_3PL}/LINUX_MPI/lib" \
 --with-incdirs="-I${TRILINOS_3PL}/LINUX_MPI/include"
@@ -130,11 +130,42 @@ You do this with a command of the type
 Then type \verb!make! and \verb!make install! as usual.
 
 \section{Load-balancing with Zoltan via EpetraExt}
+Sparse matrix computations can be load-balanced through
+the class \verb!EpetraExt::Zoltan_CrsGraph!. This is
+a transform that takes an Epetra\_CrsGraph as input
+and creates a new Epetra\_CrsGraph that is better load-balanced.
+In order to redistribute data, one needs the map of the load-balanced
+graph. This can be used to create an importer or exporter. 
 
-TO COME:
-Simple example using Zoltan\_CrsGraph. 
-Second example using Transforms.
+For example, say we have a Epetra\_CrsMatrix that we want to load-balance.
+First create a transform:
+\begin{verbatim}
+  EpetraExt::Zoltan_CrsGraph ZoltanTrans;
+\end{verbatim}
+Next apply the transform to the graph of the matrix:
+\begin{verbatim}
+  Epetra_CrsMatrix A;
+  Epetra_CrsGraph & BalGraph = ZoltanTrans(const_cast<Epetra_CrsGraph&>
+      (A.Graph()));
+\end{verbatim}
+The const\_cast is necessary, even though normally the input graph does not 
+change.
+Now we can create an exporter to export data from the old distribution 
+to the new distribution:
+\begin{verbatim}
+  Epetra_Export exporter(A.Graph().RowMap(), BalGraph.RowMap());
+  Epetra_CrsMatrix BalA(Copy, BalGraph);
+  BalA.Export(A, exporter, Insert);
+\end{verbatim}
 
+For a complete example, see \TriExe{epetraext/ex1.cpp}.
+There are higher-level ways to do the data repartitioning. For example,
+if you have a LinearProblem, use \verb!EpetraExt::LinearProblem_GraphTrans!.
+
+Note that currently the only load-balancing method in Zoltan supported
+by the EpetraExt is graph partitioning via ParMetis. More
+options may be added in the future if there is demand. Also,
+there is no Epetraext/Zoltan transform for Epetra\_CrsMatrix yet.
 
 \subsection{Load-balancing with Zoltan in other ways}
 
