@@ -166,6 +166,7 @@ DIRECTION = \
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
         $(srcdir)/NOX_Parameter_Arbitrary.H \
+        $(srcdir)/NOX_Parameter_UserNorm.H \
 	$(srcdir)/NOX_Parameter_List.H 
 
 PARAMETER = \

@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 //@HEADER
 // ************************************************************************
 // 
@@ -27,16 +30,44 @@
 // ************************************************************************
 //@HEADER
 
-// Primary NOX Objects
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Solver_Manager.H"
-#include "NOX_Parameter_List.H"
-#include "NOX_Parameter_UserNorm.H"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_Utils.H"
+#ifndef NOX_PARAMETER_USERNORM_H
+#define NOX_PARAMETER_USERNORM_H
+
+#include "NOX_Parameter_Arbitrary.H" // base class
+
+#include "NOX_Common.H"  // for ostream
+
+// Forward declaration
+namespace NOX {
+  namespace Abstract {
+    class Vector;
+  }
+}
+
+namespace NOX {
+
+//! %NOX %Epetra support.
+namespace Parameter {
+
+//! Derived from NOX::Parameter::Arbitrary class to support a user defined norm that can be passed in throught the parameter list.
+/*!
+This class is used by NOX::Direction::Newton for computing spcialized norms for the adjustable forcing term.
+*/
+class UserNorm : public virtual NOX::Parameter::Arbitrary {
+
+ public:			
+
+  //! Default Constructor.
+  UserNorm(){};
+
+  //! Destructor.
+  ~UserNorm(){};
+
+  //! Computes a user defined norm based on the input vector.
+  virtual double computeNorm(const NOX::Abstract::Vector& input) const = 0;
+
+};
+} // namespace Epetra
+} // namespace NOX
+
+#endif
