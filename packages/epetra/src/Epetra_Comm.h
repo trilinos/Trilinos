@@ -66,7 +66,7 @@ class Epetra_Comm {
   //@{ \name Broadcast Methods
   //! Epetra_Comm Broadcast function.
   /*!Take list of input values from the root processor and sends to all other processors.
-    \param Values InOut
+    \param MyVals InOut
            On entry, the root processor contains the list of values.  On exit,
 	   all processors will have the same list of values.  Note that values must be
 	   allocated on all processor before the broadcast.
@@ -80,7 +80,7 @@ class Epetra_Comm {
 
   //! Epetra_Comm Broadcast function.
   /*!Take list of input values from the root processor and sends to all other processors.
-    \param Values InOut
+    \param MyVals InOut
            On entry, the root processor contains the list of values.  On exit,
 	   all processors will have the same list of values.  Note that values must be
 	   allocated on all processor before the broadcast.
@@ -98,9 +98,9 @@ class Epetra_Comm {
   /*! Take list of input values from all processors in the communicator and creates an ordered contiguous list of
     those values on each processor.
     \param MyVals In
-           On entry, contains the list of values, to be sent to all processors.
+           On entry, contains the list of values to be sent to all processors.
     \param AllVals Out
-           On exit, contains the list of values from all processors. Must by of size NumProc*Count.
+           On exit, contains the list of values from all processors. Must be of size NumProc*Count.
     \param Count In
            On entry, contains the length of the list of MyVals.
   */
@@ -111,9 +111,9 @@ class Epetra_Comm {
   /*!Take list of input values from all processors in the communicator and creates an ordered contiguous list of
     those values on each processor.
     \param MyVals In
-           On entry, contains the list of values, to be sent to all processors.
+           On entry, contains the list of values to be sent to all processors.
     \param AllVals Out
-           On exit, contains the list of values from all processors. Must by of size NumProc*Count.
+           On exit, contains the list of values from all processors. Must be of size NumProc*Count.
     \param Count In
            On entry, contains the length of the list of MyVals.
   */
@@ -155,10 +155,10 @@ class Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally;
+	   using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -169,23 +169,23 @@ class Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the max and returns the
     max to all processors.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally;
+	   using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
   virtual int MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const = 0;
 
   //! Epetra_Comm Global Min function.
-  /*! Take list of input values from all processors in the communicator, computes the max and returns the
-    max to all processors.
+  /*! Take list of input values from all processors in the communicator, computes the min and returns the
+    min to all processors.
     \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial mins computed locally;
+	   using these Partial Mins, the min across all processors will be computed.
     \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -193,13 +193,13 @@ class Epetra_Comm {
 
 
   //! Epetra_Comm Global Min function.
-  /*! Take list of input values from all processors in the communicator, computes the max and returns the
-    max to all processors.
+  /*! Take list of input values from all processors in the communicator, computes the min and returns the
+    min to all processors.
     \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial mins computed locally;
+	   using these Partial Mins, the min across all processors will be computed.
     \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
