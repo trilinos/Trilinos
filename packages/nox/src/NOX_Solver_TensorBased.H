@@ -46,7 +46,7 @@ namespace Solver {
      </ul>
 </ul>
 
-    \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+    \author Brett Bader (CU-Boulder)
 */
 
 class TensorBased : public Generic {
@@ -76,6 +76,9 @@ protected:
   //! Prints the current iteration information.
   virtual void printUpdate();
 
+  //! Sets the output parameters for the solver in an "Output" sublist
+  bool setOutputParameters(); 
+
 protected:
   
   //! Current solution.
@@ -99,10 +102,7 @@ protected:
   StatusTest::Generic* testptr;		
 
   //! Input parameters.
-  Parameter::List iparams;	
-
-  //! Output paramters.
-  mutable Parameter::List oparams; 
+  Parameter::List params;	
 
   //! %Search %Direction. 
   Direction::Manager direction; 
@@ -111,7 +111,16 @@ protected:
   double step;			
 
   //! Number of nonlinear iterations.
-  int niter;                    
+  int niter;
+
+  //! Number of linesearch iterations.
+  int totalNumLSIterations;
+
+  //! Number of failed linesearches.
+  int totalNumFailedLineSearches;
+
+  //! Number of failed linesearches.
+  int totalNumLSSteps;
 
   //! %Status of nonlinear solver.
   StatusTest::StatusType status;
@@ -119,12 +128,6 @@ protected:
   //! "alpha" parameter in Armijo-Goldstein sufficient decrease condition.
   double alpha;
   
-private:
-
-  /*! \brief Compute the correct norm (according to the input
-      parameters) of the given grp. 
-  */
-  double getNormF(const Abstract::Group& grp) const;
 
 private:  
 

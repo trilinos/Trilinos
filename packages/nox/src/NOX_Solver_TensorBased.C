@@ -34,8 +34,8 @@ TensorBased::TensorBased(Abstract::Group& xgrp, StatusTest::Generic& t, const Pa
   dirptr(xgrp.getX().clone(ShapeCopy)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
   testptr(&t),			// pointer to t
-  iparams(p),			// copy p
-  direction(iparams.sublist("Direction")) // initialize direction
+  params(p),			// copy p
+  direction(params.sublist("Direction")) // initialize direction
 {
   init();
 }
@@ -46,37 +46,28 @@ void TensorBased::init()
   // Initialize 
   step = 0;
   niter = 0;
+  totalNumLSSteps = 0;
+  totalNumLSIterations = 0;
+  totalNumFailedLineSearches = 0;
   status = StatusTest::Unconverged;
 
-  // Initialize linesearch parameters
-  Parameter::List& params = iparams.sublist("Line Search");
-  minStep = params.getParameter("Minimum Step", 1.0e-12);
-  defaultStep = params.getParameter("Default Step", 1.0);
-  recoveryStep = params.getParameter("Recovery Step", defaultStep);
-  maxiters = params.getParameter("Max Iters", 100);
-  alpha = params.getParameter("Alpha Factor", 1.0e-4);
-  const string tmp = params.getParameter("Decrease Condition", "Max Norm");
-
-
-  // bwb - probably could remove this when removing getNormF()
-  if (tmp == "Max Norm")
-    normtype = NOX::Abstract::Vector::MaxNorm;
-  else if (tmp == "Two Norm")
-    normtype = NOX::Abstract::Vector::TwoNorm;
-  else {
-    cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
-         << "\" for \"Decrease Condition\"" << endl;
-    throw "NOX Error";
-  }
+  // Initialize linesearch parameters for this solver object
+  Parameter::List& lsparams = params.sublist("Line Search");
+  minStep = lsparams.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = lsparams.getParameter("Default Step", 1.0);
+  recoveryStep = lsparams.getParameter("Recovery Step", defaultStep);
+  maxiters = lsparams.getParameter("Max Iters", 100);
+  alpha = lsparams.getParameter("Alpha Factor", 1.0e-4);
 
   // Set up utilities (i.e., set print processor, etc)
-  Utils::setUtils(iparams);
+  Utils::setUtils(params);
   
   // Print out initialization information
   if (Utils::doPrint(Utils::Parameters)) {
     cout << "\n" << Utils::fill(72) << "\n";
-    cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    iparams.print(cout,5);
+    cout << "\n-- Parameters Used in Nonlinear Solver --\n\n";
+    params.print(cout,5);
+    cout << "\n" << Utils::fill(72) << "\n";
   }
 
   // Compute F of initial guess
@@ -110,8 +101,8 @@ bool TensorBased::reset(Abstract::Group& xgrp, StatusTest::Generic& t, const Par
 {
   solnptr = &xgrp;
   testptr = &t;
-  iparams = p;
-  direction.reset(iparams.sublist("Direction"));
+  params = p;
+  direction.reset(params.sublist("Direction"));
   init();
 
   return true;
@@ -174,7 +165,7 @@ NOX::StatusTest::StatusType TensorBased::iterate()
       cout << "-- Std. Tensor Line Search -- \n";
     }
   
-    int niters = 1;
+    int lsIterations = 1;
     step = defaultStep;
     soln.computeX(oldsoln, dir, step);
     soln.computeF();    
@@ -183,15 +174,18 @@ NOX::StatusTest::StatusType TensorBased::iterate()
 
     if (newf >= oldf + alpha*step*fprime) {
 
+      totalNumLSSteps++;
+
       if (Utils::doPrint(Utils::InnerIteration)) {
-	cout << setw(3) << niters << ":";
+	cout << setw(3) << lsIterations << ":";
 	cout << " step = " << Utils::sci(step);
 	cout << " oldf = " << Utils::sci(oldf);
 	cout << " newf = " << Utils::sci(newf);
 	cout << endl;
       }
       
-      if (fprime >= 0) {   // tensor step is not a descent direction
+      // Is the tensor step a descent direction?  If not, switch to Newton
+      if (fprime >= 0) {
 	dir = oldsoln.getNewton();
 	oldsoln.applyJacobian(dir,*tmpvecptr);
 	fprime = tmpvecptr->dot(oldsoln.getF());
@@ -200,7 +194,8 @@ NOX::StatusTest::StatusType TensorBased::iterate()
 	step = step * 0.5;
       }
 
-      niters ++;
+      // Update the number of linesearch iterations
+      lsIterations ++;
       
       soln.computeX(oldsoln, dir, step);
       soln.computeF();
@@ -210,17 +205,18 @@ NOX::StatusTest::StatusType TensorBased::iterate()
       while (newf >= oldf + alpha*step*fprime  &&  !isFailed) {  
       
 	if (Utils::doPrint(Utils::InnerIteration)) {
-	  cout << setw(3) << niters << ":";
+	  cout << setw(3) << lsIterations << ":";
 	  cout << " step = " << Utils::sci(step);
 	  cout << " oldf = " << Utils::sci(oldf);
 	  cout << " newf = " << Utils::sci(newf);
 	  cout << endl;
 	}
 	
-	niters ++;
+	lsIterations ++;
 	step = step * 0.5;
 
-	if ((step < minStep) || (niters > maxiters)) {
+	if ((step < minStep) || (lsIterations > maxiters)) {
+	  totalNumFailedLineSearches++;
 	  isFailed = true;
 	  step = recoveryStep;
 	  cout << Utils::fill(5,' ') << "step = " << Utils::sci(step);
@@ -232,13 +228,13 @@ NOX::StatusTest::StatusType TensorBased::iterate()
 
 	soln.computeX(oldsoln, dir, step);
 	soln.computeF();    
-	/* newf = getNormF(soln); */ // bwb - old, could also remove getNormF()
+
 	newf = 0.5*soln.getNormF()*soln.getNormF();
       }
     }
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << setw(3) << niters << ":";
+      cout << setw(3) << lsIterations << ":";
       cout << " step = " << Utils::sci(step);
       cout << " oldf = " << Utils::sci(oldf);
       cout << " newf = " << Utils::sci(newf);
@@ -250,6 +246,7 @@ NOX::StatusTest::StatusType TensorBased::iterate()
     }
 
     ok = !isFailed;
+    totalNumLSIterations += lsIterations - 1;
   }
 
 
@@ -290,6 +287,18 @@ NOX::StatusTest::StatusType TensorBased::solve()
     printUpdate();
   }
 
+  setOutputParameters();
+
+  /*
+  // Print out initialization information
+  if (Utils::doPrint(Utils::Parameters)) {
+    cout << "\n" << Utils::fill(72) << "\n";
+    cout << "\n-- Parameters Used in Nonlinear Solver --\n\n";
+    params.print(cout,5);
+    cout << "\n" << Utils::fill(72) << "\n";
+  }
+  */
+
   return status;
 }
 
@@ -310,9 +319,7 @@ int TensorBased::getNumIterations() const
 
 const Parameter::List& TensorBased::getParameterList() const
 {
-  oparams.setParameter("Nonlinear Iterations", niter);
-  oparams.setParameter("2-Norm of Residual", solnptr->getNormF());
-  return oparams;
+  return params;
 }
 
 
@@ -361,11 +368,20 @@ void TensorBased::printUpdate()
   }
 }
 
-// private
-
-double TensorBased::getNormF(const Abstract::Group& grp) const
+bool TensorBased::setOutputParameters() 
 {
-  return (normtype == NOX::Abstract::Vector::MaxNorm) ? 
-    grp.getF().norm(normtype) : grp.getNormF();
+  NOX::Parameter::List& outputList = params.sublist("Output");
+
+  outputList.setParameter("Nonlinear Iterations", niter);
+  outputList.setParameter("2-Norm of Residual", solnptr->getNormF());
+  outputList.setParameter("Total Number of Line Search Iterations", 
+			  totalNumLSIterations);
+  outputList.setParameter("Total Number of Failed Line Searches", 
+			  totalNumFailedLineSearches);
+  outputList.setParameter("Total Number Steps Requiring Line Search", 
+			  totalNumLSSteps);
+
+  return true;
 }
+
 
