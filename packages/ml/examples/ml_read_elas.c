@@ -40,6 +40,7 @@ double parasails_thresh     = 0.01;
 int    parasails_nlevels    = 0;
 double parasails_filter     = 0.;
 double parasails_loadbal    = 0.;
+int    which_filename = 0;
 
 
   int    *data_org = NULL, *update = NULL, *external = NULL;
@@ -225,18 +226,17 @@ double max_diag, min_diag, max_sum, sum;
   /* read in the rigid body modes */
 
    Nrigid = 0;
-#ifdef MB_MODIF
+
   /* to ensure compatibility with RBM dumping software */
    if (proc_config[AZ_node] == 0) {
+
       sprintf(filename,"rigid_body_mode%02d",Nrigid+1);
       while( (fp = fopen(filename,"r")) != NULL) {
+	which_filename = 1;
           fclose(fp);
           Nrigid++;
           sprintf(filename,"rigid_body_mode%02d",Nrigid+1);
       }
-    }
-#else
-   if (proc_config[AZ_node] == 0) {
       sprintf(filename,"rigid_body_mode%d",Nrigid+1);
       while( (fp = fopen(filename,"r")) != NULL) {
           fclose(fp);
@@ -244,7 +244,7 @@ double max_diag, min_diag, max_sum, sum;
           sprintf(filename,"rigid_body_mode%d",Nrigid+1);
       }
     }
-#endif
+
     Nrigid = AZ_gsum_int(Nrigid,proc_config);
 
     if (Nrigid != 0) {
@@ -262,13 +262,9 @@ double max_diag, min_diag, max_sum, sum;
 
 
     for (i = 0; i < Nrigid; i++) {
-#ifdef MB_MODIF
-       sprintf(filename,"rigid_body_mode%02d",i+1);
+       if (which_filename == 1) sprintf(filename,"rigid_body_mode%02d",i+1);
+       else sprintf(filename,"rigid_body_mode%d",i+1);
        AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
-#else
-       sprintf(filename,"rigid_body_mode%d",i+1);
-       AZ_input_msr_matrix(filename,update,&mode,&garbage,N_update,proc_config);
-#endif
 
        /* here is something to stick a rigid body mode as the initial */
        /* The idea is to solve A x = 0 without smoothing with a two   */
@@ -439,14 +435,15 @@ double max_diag, min_diag, max_sum, sum;
       */
       num_PDE_eqns = 6;
    }
+   /* Choose coarse grid solver: mls, superlu, symGS, or Aztec */
+
    /*
    ML_Gen_Smoother_MLS(ml, coarsest_level, ML_BOTH, nsmooth); 	   
-   ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
-   ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
    */
+   ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
+   /*
+   ML_Gen_Smoother_SymGaussSeidel(ml , coarsest_level, ML_BOTH, nsmooth,1.);
 
-
-   /* Aztec smoother on the coarsest grid */
 
    old_prec = options[AZ_precond];
    old_sol  = options[AZ_solver];
@@ -466,6 +463,7 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_precond] = old_prec;
    options[AZ_solver] = old_sol;
    params[AZ_tol] = old_tol;
+   */
 
 
 #ifdef RST_MODIF
@@ -479,7 +477,6 @@ double max_diag, min_diag, max_sum, sum;
 #endif
 	
    options[AZ_solver]   = AZ_cg;
-   options[AZ_solver]   = AZ_gmres;
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
@@ -563,9 +560,9 @@ printf("hey .... should we do something here?\n");
       options[AZ_conv] = AZ_r0;
       params[AZ_tol] = 1.0e-8;
       /* ML_Iterate(ml, xxx, rhs); */
-alpha = AZ_gdot(N_update, xxx, xxx, proc_config);
+alpha = sqrt(AZ_gdot(N_update, xxx, xxx, proc_config));
 printf("init guess = %e\n",alpha);
-alpha = AZ_gdot(N_update, rhs, rhs, proc_config);
+alpha = sqrt(AZ_gdot(N_update, rhs, rhs, proc_config));
 printf("rhs = %e\n",alpha);
 #ifdef SCALE_ME
 	ML_MSR_scalerhs(rhs, scaling_vect, data_org[AZ_N_internal] +
