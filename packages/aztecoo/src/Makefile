@@ -88,7 +88,7 @@ az_tools.c	     az_util.c
 
 AZTEC_F = az_reorder.f
 
-AZTEC_CC = AZOO_iterate.cpp Aztec2Petra.cpp AztecOO.cpp
+AZTEC_CC = AZOO_iterate.cpp Aztec2Petra.cpp AztecOO.cpp AztecOO_Operator.cpp
 
 #=======================================================================
 # AZTEC include files
