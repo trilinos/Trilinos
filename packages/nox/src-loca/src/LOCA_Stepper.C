@@ -620,6 +620,12 @@ LOCA::Stepper::getSolutionGroup()
   return curGroupPtr->getUnderlyingGroup();
 }
 
+LOCA::Continuation::AbstractGroup&
+LOCA::Stepper::getUnderlyingGroup()
+{
+  return curGroupPtr->getBaseLevelUnderlyingGroup();
+}
+
 const NOX::Parameter::List&
 LOCA::Stepper::getParameterList() const
 {

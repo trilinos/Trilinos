@@ -83,6 +83,9 @@ namespace LOCA {
     //! Return the current solution group.
     virtual LOCA::Continuation::AbstractGroup& getSolutionGroup();
 
+    //! Return the current underlying group.
+    virtual LOCA::Continuation::AbstractGroup& getUnderlyingGroup();
+
     //! Return the output parameters from the stepper algorithm.
     virtual const NOX::Parameter::List& getParameterList() const;
 
