@@ -1109,6 +1109,9 @@ fi
 AM_CONDITIONAL(BUILD_PRERELEASE, test X${WITH_PRERELEASE} = Xyes)
 AC_SUBST(WITH_PRERELEASE_SUBST)
 
+AC_MSG_CHECKING([whether or not we should build prerelease code])
+AC_MSG_RESULT($WITH_PRERELEASE)
+
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
