@@ -150,6 +150,7 @@ struct ML_Sm_Hiptmair_Data_Struct
    double *edge_update;
    double max_eig;
    double omega;
+   int    print;
 };
 
 /* ******************************************************************** */
@@ -198,7 +199,7 @@ extern  int ML_Smoother_Hiptmair(void *, int, double *, int, double *);
 extern  int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data);
 extern  int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data**,
                          ML_Operator*, ML_Operator*, ML_Operator*,
-                         ML_Operator*, int, int*, double);
+                         ML_Operator*, int, int*, double, int);
 extern void ML_Smoother_Destroy_Hiptmair_Data(void *data);
 extern  int ML_Smoother_Create_BGS_Data(ML_Sm_BGS_Data **data);
 extern void ML_Smoother_Destroy_BGS_Data(void *data);
