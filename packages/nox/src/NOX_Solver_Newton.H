@@ -85,8 +85,8 @@ public:
   virtual Status::StatusType getStatus();
   virtual Status::StatusType iterate();
   virtual Status::StatusType solve();
-  virtual Abstract::Group& getSolutionGroup() const;
-  virtual Abstract::Group& getPreviousSolutionGroup() const;
+  virtual const Abstract::Group& getSolutionGroup() const;
+  virtual const Abstract::Group& getPreviousSolutionGroup() const;
   virtual int getNumIterations() const;
   virtual const Parameter::List& getOutputParameters() const;
 
@@ -102,7 +102,7 @@ protected:
 protected:
   
   //! Current solution.
-  Abstract::Group& soln;		
+  Abstract::Group* solnptr;		
 
   //! Previous solution pointer. 
   /*! We have both a pointer and a reference because we need to create
@@ -119,10 +119,10 @@ protected:
   Abstract::Vector& dir;
 
   //! Stopping test.
-  Status::Test& test;		
+  Status::Test* testptr;		
 
   //! Input parameters.
-  Parameter::List& iparams;	
+  Parameter::List* iparamsptr;	
 
   //! Output paramters.
   mutable Parameter::List oparams; 

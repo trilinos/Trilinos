@@ -36,13 +36,13 @@ using namespace NOX;
 using namespace NOX::Solver;
 
 Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
-  soln(xgrp),			// reference to xgrp
+  solnptr(&xgrp),		// pointer to xgrp
   oldsolnptr(xgrp.clone(DeepCopy)), // create via clone
   oldsoln(*oldsolnptr),		// reference to just-created pointer
   dirptr(xgrp.getX().clone(CopyShape)), // create via clone 
   dir(*dirptr),			// reference to just-created pointer
-  test(t),			// reference to t
-  iparams(p),			// reference to p
+  testptr(&t),			// pointer to t
+  iparamsptr(&p),		// pointer to p
   oparams(),			// empty list
   linesearch(p.sublist("Line Search")), // initialize line search
   step(0.0),			// initialize to zero
@@ -54,15 +54,15 @@ Newton::Newton(Abstract::Group& xgrp, Status::Test& t, Parameter::List& p) :
 
     cout << "\n" << Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver on Print Processor --\n\n";
-    iparams.print(cout,5);
+    iparamsptr->print(cout,5);
     cout << "\n-- Status Tests Passed to Nonlinear Solver on Print Processor --\n\n";
-    test.print(cout, 5);
+    testptr->print(cout, 5);
     cout <<"\n" << Utils::fill(72) << "\n";
 
   }
 
   // Compute RHS of initital guess
-  soln.computeRHS();
+  solnptr->computeRHS();
 }
 
 Newton::~Newton() 
@@ -77,12 +77,16 @@ void Newton::resetInputParameters(Parameter::List& p)
 
 Status::StatusType Newton::getStatus()
 {
-  status = test(*this);
+  status = testptr->operator()(*this);
   return status;
 }
 
 Status::StatusType Newton::iterate()
 {
+  // Copy pointers into temporary references
+  Abstract::Group& soln = *solnptr;
+  Status::Test& test = *testptr;
+
   // Reset forcing term.
   resetForcingTerm();
 
@@ -91,7 +95,7 @@ Status::StatusType Newton::iterate()
 
   // Compute Newton direction for current solution.
   /* NOTE FROM TAMMY: Need to check the return status! */
-  soln.computeNewton(iparams.sublist("Linear Solver"));
+  soln.computeNewton(iparamsptr->sublist("Linear Solver"));
 
   // Set search direction.
   dir = soln.getNewton();
@@ -118,7 +122,7 @@ Status::StatusType Newton::iterate()
 
 Status::StatusType Newton::solve()
 {
-  status = test(*this);
+  status = testptr->operator()(*this);
   printUpdate();
 
   // Iterate until converged or failed
@@ -130,12 +134,12 @@ Status::StatusType Newton::solve()
   return status;
 }
 
-Abstract::Group& Newton::getSolutionGroup() const
+const Abstract::Group& Newton::getSolutionGroup() const
 {
-  return soln;
+  return *solnptr;
 }
 
-Abstract::Group& Newton::getPreviousSolutionGroup() const
+const Abstract::Group& Newton::getPreviousSolutionGroup() const
 {
   return oldsoln;
 }
@@ -148,7 +152,7 @@ int Newton::getNumIterations() const
 const Parameter::List& Newton::getOutputParameters() const
 {
   oparams.setParameter("Nonlinear Iterations", niter);
-  oparams.setParameter("2-Norm of Residual", soln.getNormRHS());
+  oparams.setParameter("2-Norm of Residual", solnptr->getNormRHS());
   return oparams;
 }
 
@@ -160,7 +164,7 @@ void Newton::printUpdate()
 
   // All processes participate in the computation of these norms...
   if (Utils::doAllPrint(Utils::OuterIteration)) {
-    norm_k = soln.getNormRHS();
+    norm_k = solnptr->getNormRHS();
     norm_newton = (niter > 0) ? oldsoln.getNewton().norm() : 0;
   }
 
@@ -181,7 +185,7 @@ void Newton::printUpdate()
   if ((status != 0) && (Utils::doPrint(Utils::OuterIteration))) {
     cout << Utils::fill(72) << "\n";
     cout << "-- Final Status Test Results --\n";    
-    test.print(cout);
+    testptr->print(cout);
     cout << Utils::fill(72) << "\n";
   }
 }
@@ -195,17 +199,17 @@ void Newton::resetForcingTerm()
   if (niter == 0)
     return;
 
-  if ((!iparams.isParameter("Forcing Term Method")) ||
-      (iparams.isParameterEqual("Forcing Term Method", "None")))
+  if ((!iparamsptr->isParameter("Forcing Term Method")) ||
+      (iparamsptr->isParameterEqual("Forcing Term Method", "None")))
     return;
 
   // Get forcing term parameters.
-  const string method = iparams.getParameter("Forcing Term Method", "");
-  const double eta_min = iparams.getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
-  const double eta_max = iparams.getParameter("Forcing Term Maximum Tolerance", 0.01);
+  const string method = iparamsptr->getParameter("Forcing Term Method", "");
+  const double eta_min = iparamsptr->getParameter("Forcing Term Minimum Tolerance", 1.0e-6);
+  const double eta_max = iparamsptr->getParameter("Forcing Term Maximum Tolerance", 0.01);
 
   // Get linear solver parameter list and current tolerance.
-  Parameter::List& lsparams = iparams.sublist("Linear Solver");
+  Parameter::List& lsparams = iparamsptr->sublist("Linear Solver");
   const double eta_km1 = lsparams.getParameter("Tolerance", 0.0);
 
   // New forcing term.
@@ -239,7 +243,7 @@ void Newton::resetForcingTerm()
     const double normpredrhs = predrhs->norm();
 
     // Get other norms
-    const double normrhs = soln.getNormRHS();
+    const double normrhs = solnptr->getNormRHS();
     const double normoldrhs = oldsoln.getNormRHS();
 
     // Compute forcing term
@@ -263,10 +267,10 @@ void Newton::resetForcingTerm()
     
   else if (method == "Type 2") {  
     
-    const double normrhs = soln.getNormRHS();
+    const double normrhs = solnptr->getNormRHS();
     const double normoldrhs = oldsoln.getNormRHS();
-    const double alpha = iparams.getParameter("Forcing Term Alpha", 1.5);
-    const double gamma = iparams.getParameter("Forcing Term Gamma", 0.9);
+    const double alpha = iparamsptr->getParameter("Forcing Term Alpha", 1.5);
+    const double gamma = iparamsptr->getParameter("Forcing Term Gamma", 0.9);
     const double residual_ratio = normrhs / normoldrhs;
     
     eta_k = gamma * pow(residual_ratio, alpha);
