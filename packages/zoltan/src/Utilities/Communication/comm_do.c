@@ -73,7 +73,6 @@ int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
 {
     char     *send_buff;	/* space to buffer outgoing data */
-    MPI_Status status;		/* return from Waitany */
     int       my_proc;		/* processor ID */
     int       self_recv_address;/* where in recv_data self info starts */
     int       self_num;		/* where in send list my_proc appears */
@@ -317,19 +316,10 @@ char *send_data,		/* array of data I currently own */
 int nbytes,			/* multiplier for sizes */
 char *recv_data)		/* array of data I'll own after comm */
 {
-    char     *send_buff;	/* space to buffer outgoing data */
     MPI_Status status;		/* return from Waitany */
     int       my_proc;		/* processor ID */
-    int       self_recv_address;/* where in recv_data self info starts */
     int       self_num;		/* where in send list my_proc appears */
-    int       offset;		/* offset into array I'm copying into */
-    int       self_index;	/* send offset for data I'm keeping */
-    int       out_of_mem;	/* am I out of memory? */
-    int       nblocks;		/* number of procs who need my data */
-    int       proc_index;	/* loop counter over procs to send to */
     int       i, j, k, jj;	/* loop counters */
-
-    static char *yo = "Zoltan_Comm_Do_Wait";
 
     MPI_Comm_rank(plan->comm, &my_proc);    
     

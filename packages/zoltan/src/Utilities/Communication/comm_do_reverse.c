@@ -157,13 +157,7 @@ int       nbytes,		/* # bytes per data item */
 int      *sizes,		/* variable size of objects (if not NULL) */
 char     *recv_data)		/* array of data I'll own after reverse comm */
 {
-    int       total_send_length;/* total message length I send in plan */
-    int       max_recv_length;	/* biggest message I recv in plan */
-    int       sum_recv_sizes;	/* sum of the item sizes I receive */
     int       comm_flag;		/* status flag */
-    int       i;		/* loop counter */
-    static char *yo = "Zoltan_Comm_Do_Reverse_Wait";
-
     
     comm_flag = Zoltan_Comm_Do_Wait(plan_reverse, tag, send_data, nbytes, recv_data);
         
