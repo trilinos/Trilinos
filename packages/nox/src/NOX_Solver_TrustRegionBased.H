@@ -176,7 +176,7 @@ sublist based to the solver.
 - "Minimum Trust Region Radius" (\f$\Delta_{\min}\f$) - Minimum allowable trust region
   radius. Defaults to 1.0e-6.
 
-- "Maximum Trust Region Radius" (\f$\Delta_{\max}\f$) - Minimum allowable trust region
+- "Maximum Trust Region Radius" (\f$\Delta_{\max}\f$) - Maximum allowable trust region
   radius. Defaults to 1.0e+10.
 
 - "Minimum Improvement Ratio" (\f$\rho_{\min}\f$) - Minimum improvement ratio to accept
