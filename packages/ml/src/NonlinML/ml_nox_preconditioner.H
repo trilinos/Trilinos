@@ -1,5 +1,4 @@
 /*
-#@HEADER
 # ************************************************************************
 #
 #               ML: A Multilevel Preconditioner Package
@@ -26,12 +25,21 @@
 # (rstumin@sandia.gov).
 #
 # ************************************************************************
-#@HEADER
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file ml_nox_preconditioner.H
+ *
+ * \class ML_Nox_Preconditioner
+ *
+ * \brief ML nonlinear preconditioner and solver
+ *
+ * \date Last update do Doxygen: 31-Mar-05
+ *
+ */
 // ML-headers
 #include "ml_common.h"
 
@@ -88,77 +96,330 @@ class Epetra_MultiVector;
 class Epetra_BlockMap;
 class Epetra_Comm;
 class Nox_Problem_Interface;
-
+//! ML_NOX: default namespace for all ML/NOX nonlinear methods
 namespace ML_NOX
 {
+/*!
+ 
+   \brief ML_Nox_Preconditioner: a class to define a multilevel nonlinear preconditioner and solver
+
+   Class ML_NOX::ML_Nox_Preconditioner defines an algebraic nonlinear preconditioner
+   or solver that is based on a full approximation scheme (FAS) approach and
+   is implemented making use of NOX' nonlinear solver capabilities.
+   It operates on Epetra objects and implements an Epetra_Operator to be easily
+   used as a preconditioner to some outer nonlinear iteration.
+   It also implements the NOX::EpetraNew::Interface::Preconditioner from NOX
+   so it can serve as it's own interface (see NOX documentation for details).
+   In this class several methods and options can be chosen, which are described in the
+   parameter set functions
+   
+  
+    To make use of the full functionality of this class it 
+    requires ML to be configured with the following options:
+    - \c --with-ml_nox
+    - \c --enable-epetra
+    - \c --enable-epetraext
+    - \c --enable-nox
+    - \c --enable-nox-epetra
+    - \c --enable-prerelease
+    - \c --enable-aztecoo
+    - \c --enable-amesos
+    
+   \note
+    Currently, using this class makes it necessary to configure and make install
+    of Trilinos WITHOUT the --with-ml_nox, and then repeating the configure
+    and make install process WITH the --with-ml_nox option to be able to resolve the
+    dependencies of this class on NOX header files
+
+    \author Michael Gee, SNL 9214
+*/  
 class  ML_Nox_Preconditioner : public virtual Epetra_Operator, 
                                public NOX::EpetraNew::Interface::Preconditioner
 {
 public:
-  // constructor
+
+  
+
+  //! Constructs an ML_Nox_Preconditioner class with default values.
+  /*! 
+   Constructs a ML_Nox_Preconditioner class and sets a set of default values.
+   This constructor does NOT actually create the Multilevel hierarchy and the
+   methods, this is done by a call to computePreconditioner.
+   \param interface (In) : ref to an ML_NOX::Ml_Nox_Fineinterface derived class
+   \param dm        (In) : ref to the fine level DomainMap
+   \param rm        (In) : ref to the fine level RangeMap
+   \param comm      (In) : the Epetra_Comm to be used
+   */
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface& interface,
                                  Epetra_Map&                   dm,
                                  Epetra_Map&                   rm,
                                  Epetra_Comm&                  comm);
 
+  
 
-  // destructor
+  //! Destroys the preconditioner.
+  /*! 
+   Destroys the ML_Nox_Preconditioner.
+   */
   ~ML_Nox_Preconditioner();
 
-  //=================================== methods to set flags and info
+  
+
+  //! Set the type of nonlinear method to be used.
+  /*! 
+   Set the type of nonlinear method to be used on each level of the hierarchy
+   \param islinPrec (In) :     if true, compute a linear multigrid operator,
+                               if false, create a FAS multilevel hierarchy
+   \param isnlnCG   (In) :     if true, use precond. nlnCG on all levels as smoother,
+                               if false, use quasi-Newton method as smoother.
+   \param ismatrixfree (In) :  if true, use Finite Differencing to construct the Jacobians
+                               on all levels. In this case, the preconditioner will
+                               ask for a Epetra_CrsGraph through the fine level interface
+                               and will build a plain aggregation hierarchy based on it.
+                               If Jacobi is chosen as a smoother on any level, on that level
+                               only the main diagonal of the Jacobian will be computed.
+                               If false, the preconditioner will ask for an Epetra_CrsMatrix
+                               and an Epetra_CrsGraph through the fine level interface and will
+                               construct a smoothed aggregation MG hierarchy based on it.
+                               Coarse level operators will then be Galerkin.
+   \param ismatfreelev0 (In) : if true AND ismatrixfree==true, the preconditioner
+                               will construct a finite difference Jacobian on the fine level and
+                               then will use it to construct a smoothed aggregation hierarchy. 
+                               Coarse level operators will be Galerkin. Option has no effect when
+                               ismatrixfree==false.
+   */
   bool SetNonlinearMethod(bool islinPrec, bool isnlnCG, bool ismatrixfree, bool ismatfreelev0);
+
+  //! Set type of coarsening algorithm to be used.
+  /*! 
+   Set type of coarsening algorithm to be used. Currently, this class recognizes
+   the ML-coarsening schemes Uncoupled, METIS and VBMETIS.
+   \param coarsentype   (In) : string giving the coarsening scheme, 
+                               currently "Uncoupled", "METIS" and "VBMETIS" are
+                               recognized
+   \param maxlevel      (In) : maximum number of levels to generate
+   \param maxcoarsesize (In) : coarse grid size to stop coarsening when reached
+   \param nnodeperagg   (In) : objective how many nodes to put in one aggregate for
+                               coarsening schemes "METIS" and "VBMETIS".
+   */
   bool SetCoarsenType(string coarsentype,int maxlevel,int maxcoarsesize,
                       int nnodeperagg);
+
+  //! Set type of smoother.
+  /*! 
+   Set type of smoother. Currently, this class recognizes
+   the ML-smoothers Jacobi, SGS and AmesosKLU.
+   \param finesmoothertype (In) : string giving the fine level smoother, 
+                               currently "Jacobi", "SGS" and "AmesosKLU" are
+                               recognized.
+   \param smoothertype     (In) : string giving the smoother on all
+                                  intermediate levels,  currently "Jacobi", "SGS" and "AmesosKLU" are
+                               recognized.
+   \param coarsesolve      (In) : string giving the smoother on the coarsest level,  
+                                  currently "Jacobi", "SGS" and "AmesosKLU" are
+                                 recognized.
+   */
   bool SetSmoothers(string finesmoothertype,string smoothertype,
                     string coarsesolve);
-  bool SetPrintLevel(int printlevel); 
-  bool SetRecomputeOffset(int offset);
-  bool SetDimensions(int numPDE, int dimNS);
+
+
+  //! Set number of sweeps of smoother.
+  /*! 
+   Set number of sweeps of smoother.
+   \param nsmooth (In) : Vector of length maxlevel obtaining number of smoother sweeps
+                         to apply on each level (0 is finest level and increasing).
+                         Can be destroyed by user directly after this method.
+   */
   bool SetSmootherSweeps(int* nsmooth);
+  //! Set the ML print level.
+  /*! 
+   Set the ML print level between 0 and 10.
+   */
+  bool SetPrintLevel(int printlevel); 
+
+
+  //! Set the offset for recomputing this preconditioner.
+  /*! 
+   Set the offset for recomputing this preconditioner. Every offset times, the
+   preconditioner is applied it will recreate itself and will use the
+   fine level interface to obtain either a new fine level Jacobian or
+   to compute a Finite Differencing - Jacobian.
+   \param offset (In) : How often to apply this preconditioner before recomputing it.
+   */
+  bool SetRecomputeOffset(int offset);
+
+  //! Set dimensions for the PDE and the Nullspace.
+  /*! 
+   Set dimensions for the PDE and the Nullspace. 
+   \param numPDE (In) : Number of PDE equations, normally number of dofs per node.
+   \param dimNS (In)  : Dimension of the nullspace. The preconditioner will ask for 
+                        the Nullspace through the fine level interface. If know
+                        Nullspace is supplied there, the default Nullspace is used 
+                        and a warning is printed.
+   */
+  bool SetDimensions(int numPDE, int dimNS);
+
+  //! Set convergence criteria for nonlinear preconditioner.
+  /*! 
+   Set convergence criteria for nonlinear preconditioner. Takes effect for
+   islinPrec==false only.
+   \param FAS_normF   (In) : Residual norm a  nonlinear iteration on some level is
+                             considered converged.
+   \param FAS_nupdate (In)  : Norm of stepsize a nonlinear iteration on some level is
+                             considered converged.
+   */
   bool SetConvergenceCriteria(double FAS_normF, double FAS_nupdate);
+
+  //! Set cycle for nonlinear preconditioner. 
+  /*! 
+   Set cycle for nonlinear preconditioner. Takes effect for
+   islinPrec==false only.
+   \param prefsmooth   (In) : maximum number of nonlinear iterations to take 
+                             as a presmoothing step on finest level
+   \param presmooth (In)  : maximum number of nonlinear iterations to take 
+                             as a presmoothing step on coarse levels
+   \param postsmooth (In)  : maximum number of nonlinear iterations to take 
+                             as a postsmoothing step on coarse levels
+   \param postfsmooth (In)  : maximum number of nonlinear iterations to take 
+                             as a postsmoothing step on finest level
+   \param maxcycle (In)  : maximum number of nonlinear MG cycles to take
+                           before we give up
+   */
+
   bool SetFAScycle(int prefsmooth,int presmooth,int postsmooth,int postfsmooth,
                    int maxcycle);
-  bool SetFiniteDifferencing(bool centered,double alpha,double beta);
- //====================================================================
 
-  // derived from Epetra_Operator, apply preconditioner
+  //! Set finite differencing method.
+  /*! 
+   Set finite differencing method. Takes effect for
+   ismatrixfree==true only.
+   \param centered   (In) : if true, use centered finite differencing, else use
+                            forward finite differencing (true is twice the cost)
+   \param alpha (In)  : perturbation parameter, see EpetraExt manual
+   \param beta (In)  : perturbation parameter, see EpetraExt manual
+   */
+  bool SetFiniteDifferencing(bool centered,double alpha,double beta);
+
+  //! Register the outer Nox iterative method with the nonlinear preconditioner.
+  /*! 
+   Register the outer Nox iterative method with the nonlinear preconditioner.
+   This is necessary, because the outer NOX iterative method will provide the
+   nonlinear preconditioner with current solution and residual. Necessary only
+   in the islinearPrec==false case and when used as a preconditioner. If used as
+   stand-alone solver, this is not necessary.
+   \param noxsolver   (In) : ptr to the NOX::Solver::Manager of the outer
+                             Nox iterative method.
+   */
+  bool set_nox_solver(NOX::Solver::Manager* noxsolver) {noxsolver_ = noxsolver; return true;} 
+  
+  
+
+  //! Returns the label of this class.
+  /*! 
+   Returns the label of this class.
+   */
+  char* Label() const {return(&(label_[0]));}
+
+  //! get Comm of this class
+  /*! 
+   Derived from Epetra_Operator, returns ref to the Epetra_Comm of this class 
+   */
+  const Epetra_Comm & Comm() const {return(comm_);}
+
+  //! Get fine level OperatorDomainMap.
+  /*! 
+   Derived from Epetra_Operator, get fine level OperatorDomainMap.
+   */
+  const Epetra_Map & OperatorDomainMap() const {return(DomainMap_);}
+
+  //! Get fine level OperatorRangeMap.
+  /*! 
+   Derived from Epetra_Operator, get fine level OperatorRangeMap.
+   */
+  const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);}
+  
+  //! Check initialization flag of the instant of this class
+  /*! 
+   check the init-flag of this instant, if false, ApplyInverse will throw an error.
+   */
+  const bool isinit() const {return(isinit_);}
+  
+  //! Set the initialization flag of the instant of this class
+  /*! 
+   Set the init-flag of this instant.
+   */
+  const bool setinit(bool flag) {isinit_=flag; return(true);}
+
+  //! Get the offset to recompute this preconditioner.
+  /*! 
+   Get the offset to recompute this preconditioner.
+   */
+  int getoffset() {return(offset_newPrec_);} 
+
+  
+
+  // derived from NOX::EpetraNew::Interface::Preconditioner
+  //! Construct the preconditioner.
+  /*! 
+   Construct the preconditioner. This is derived from the 
+   NOX::EpetraNew::Interface::Preconditioner class. Nox will use this to
+   (re)compute the preconditioner.
+   \param x   (In) : Vector of the current solution
+   \param precParams (In)  : ignored
+   */
+  virtual bool computePreconditioner(const Epetra_Vector& x,
+				     NOX::Parameter::List* precParams = 0);
+  
+  //! ApplyInverse the preconditioner
+  /*! 
+   ApplyInverse the preconditioner. Method is derived from Epetra_Operator. 
+   \param X   (In) : Epetra_MultiVector matching the fine level map of this
+                     preconditioner
+   \param Y (Out)  : Epetra_MultiVector containing the result on output
+   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
 
-  // derived from Epetra_Operator
+  // Apply the nonlinear multigrid FAS-solver
+  //! Apply the nonlinear multigrid FAS-solver. 
+  /*! 
+   Apply the nonlinear multigrid FAS-solver. 
+   This preconditioner can act as a stand-alone FAS-Solver. Will throw an error,
+   if islinearPrec==true; 
+   */
+  int solve();
+
+  //! Apply the preconditioner, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
   { cout << "ML_Nox_Preconditioner::Apply does not make sense for an ML-Multilevel Operator\n"
          << "Use ApplyInverse\n";throw -1;return(-1);}
     
+  //! SetUseTranspose, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   int SetUseTranspose(bool UseTranspose);
 
+  //! NormInf, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   double NormInf() const {return(-1.0);}
 
-  char* Label() const {return(&(label_[0]));}
 
+  //! UseTranspose, not implemented.
+  /*! 
+   Derived from Epetra_Operator, not implemented. 
+   */
   bool UseTranspose() const {return(usetranspose_);}
 
+  //! HasNormInf, not implemented.
+  /*! 
+   Derived from Epetra_Operator, always returns false. 
+   */
   bool HasNormInf() const {return(false);}
-
-  const Epetra_Comm & Comm() const {return(comm_);}
-
-  const Epetra_Map & OperatorDomainMap() const {return(DomainMap_);}
-
-  const Epetra_Map & OperatorRangeMap() const {return(RangeMap_);}
-  
-  const bool isinit() const {return(isinit_);}
-  
-  const bool setinit(bool flag) {isinit_=flag; return(true);}
-
-  int getoffset() {return(offset_newPrec_);} 
-  
-  bool set_nox_solver(NOX::Solver::Manager* noxsolver) {noxsolver_ = noxsolver; return true;} 
-  
-  // derived from NOX::EpetraNew::Interface::Preconditioner
-  virtual bool computePreconditioner(const Epetra_Vector& x,
-				     NOX::Parameter::List* precParams = 0);
-  
-  // nonlinear multigrid FAS-solver (opposed of preconditioner)
-  int solve();
 
 private:
   // don't want copy-ctor and = operator

@@ -58,6 +58,7 @@ INPUT                 += ../../../../Trilinos/packages/ml/src/Utils
 INPUT                 += ../../../../Trilinos/packages/ml/src/Coarsen 
 INPUT                 += ../../../../Trilinos/packages/ml/src/Main
 INPUT                 += ../../../../Trilinos/packages/ml/src/MLAPI
+INPUT                 += ../../../../Trilinos/packages/ml/src/NonlinML
 
 FILE_PATTERNS          = ml_MultiLevelPreconditioner*.cpp
 FILE_PATTERNS         += ml_epetra_utils.h 
@@ -72,6 +73,9 @@ FILE_PATTERNS         += ml_aggregate.h
 FILE_PATTERNS         += ml_RowMatrix.h
 FILE_PATTERNS         += ml_Ifpack_ML.h
 FILE_PATTERNS         += MLAPI*.h
+FILE_PATTERNS         += ml_nox_preconditioner.H
+FILE_PATTERNS         += ml_nox_preconditioner*.cpp
+FILE_PATTERNS         += ml_nox_fineinterface.H
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples/BasicExamples 
 EXAMPLE_PATH          += ../../../../Trilinos/packages/ml/examples/Advanced 
@@ -90,3 +94,4 @@ PREDEFINED            += HAVE_ML_TEUCHOS HAVE_MPI HAVE_ML_MPI ML_MPI HAVE_ML_TRI
 PREDEFINED            += HAVE_ML_METIS HAVE_ML_PARMETIS2X HAVE_ML_PARMETIS3X 
 PREDEFINED            += HAVE_ML_AMESOS HAVE_ML_AZTECOO ML_WITH_EPETRA
 PREDEFINED            += HAVE_ML_MLAPI
+PREDEFINED            += HAVE_ML_NOX

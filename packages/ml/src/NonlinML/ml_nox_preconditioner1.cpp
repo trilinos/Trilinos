@@ -32,6 +32,16 @@
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
 /* person and disclaimer.                                               */
 /* ******************************************************************** */
+/*!
+ * \file ml_nox_preconditioner1.cpp
+ *
+ * \class ML_Nox_Preconditioner
+ *
+ * \brief ML nonlinear preconditioner and solver
+ *
+ * \date Last update do Doxygen: 31-Mar-05
+ *
+ */
 // ML-headers
 #include "ml_common.h"
 
