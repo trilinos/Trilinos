@@ -92,11 +92,11 @@ am__objects_1 = ml_agg_uncoupled.$(OBJEXT) ml_amg.$(OBJEXT) \
 	ml_agg_coupled.$(OBJEXT) ml_amg_genP.$(OBJEXT) \
 	ml_check.$(OBJEXT) ml_agg_dd.$(OBJEXT) ml_agg_genP.$(OBJEXT) \
 	ml_amg_MIS.$(OBJEXT) ml_agg_MIS.$(OBJEXT) \
-	ml_agg_METIS.$(OBJEXT) ml_agg_ParMETIS.$(OBJEXT) \
-	ml_aggregate.$(OBJEXT) ml_ggraph.$(OBJEXT) \
-	ml_agg_reitzinger.$(OBJEXT) ml_gridagx.$(OBJEXT) \
-	ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) ml_grid.$(OBJEXT) \
-	ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
+	ml_agg_METIS.$(OBJEXT) ml_agg_Zoltan.$(OBJEXT) \
+	ml_agg_ParMETIS.$(OBJEXT) ml_aggregate.$(OBJEXT) \
+	ml_ggraph.$(OBJEXT) ml_agg_reitzinger.$(OBJEXT) \
+	ml_gridagx.$(OBJEXT) ml_pde.$(OBJEXT) ml_bdrypts.$(OBJEXT) \
+	ml_grid.$(OBJEXT) ml_gridfunc.$(OBJEXT) ml_setup.$(OBJEXT) \
 	ml_elementagx.$(OBJEXT) ml_get_basis.$(OBJEXT) \
 	ml_mapper.$(OBJEXT) ml_struct.$(OBJEXT) driver.$(OBJEXT) \
 	mli_solver.$(OBJEXT) ml_seg_precond.$(OBJEXT) ml_ggb.$(OBJEXT) \
@@ -154,6 +154,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_METIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_MIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_ParMETIS.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_agg_Zoltan.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_coupled.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_dd.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_agg_genP.Po \
@@ -377,6 +378,7 @@ $(srcdir)/FEGrid/ml_gridagx.h \
 $(srcdir)/FEGrid/ml_pde.h       $(srcdir)/FEGrid/ml_bdrypts.h \
 $(srcdir)/Coarsen/ml_agg_reitzinger.h \
 $(srcdir)/Coarsen/ml_agg_METIS.h \
+$(srcdir)/Coarsen/ml_agg_Zoltan.h \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.h \
 $(srcdir)/FEGrid/ml_gridfunc.h \
 $(srcdir)/FEGrid/ml_setup.h \
@@ -416,6 +418,7 @@ $(srcdir)/Coarsen/ml_agg_genP.c \
 $(srcdir)/Coarsen/ml_amg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_MIS.c \
 $(srcdir)/Coarsen/ml_agg_METIS.c \
+$(srcdir)/Coarsen/ml_agg_Zoltan.c \
 $(srcdir)/Coarsen/ml_agg_ParMETIS.c \
 $(srcdir)/Coarsen/ml_aggregate.c \
 $(srcdir)/Coarsen/ml_ggraph.c \
@@ -570,28 +573,42 @@ DIST_H =
 DIST = 
 COMP_H = 
 COMP = 
+@ML_USING_AZTECOO_FALSE@aztecoo_incdir = 
 
 #np# List locations of include files within Trilinos but outside of this 
 #np# package
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
-#  
-AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-              -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
-              -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src \
-              -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
-              -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-              -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src \
-              -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src \
-              -I$(srcdir)/Comm \
-              -I$(srcdir)/Operator \
-              -I$(srcdir)/Smoother \
-              -I$(srcdir)/Coarsen \
-              -I$(srcdir)/Krylov \
-              -I$(srcdir)/Main \
-              -I$(srcdir)/FEGrid \
-              -I$(srcdir)/Utils \
-              -I$(srcdir)/Include
+#
+@ML_USING_AZTECOO_TRUE@aztecoo_incdir = -I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src
+@ML_USING_AMESOS_FALSE@amesos_incdir = 
+@ML_USING_AMESOS_TRUE@amesos_incdir = -I$(top_srcdir)/../amesos/src -I$(top_builddir)/../amesos/src
+@ML_USING_IFPACK_FALSE@ifpack_incdir = 
+@ML_USING_IFPACK_TRUE@ifpack_incdir = -I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src
+@ML_USING_TEUCHOS_TRUE@teuchos_incdir = -I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
+@ML_USING_TEUCHOS_FALSE@teucho_incdir = 
+@ML_USING_ANASAZI_FALSE@anasazi_incdir = 
+@ML_USING_ANASAZI_TRUE@anasazi_incdir = -I$(top_srcdir)/../anasazi/src -I$(top_builddir)/../anasazi/src
+@ML_USING_TRIUTILS_FALSE@triutils_incdir = 
+@ML_USING_TRIUTILS_TRUE@triutils_incdir = -I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src
+@ML_USING_EPETRA_FALSE@epetra_incdir = 
+@ML_USING_EPETRA_TRUE@epetra_incdir = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = -I$(srcdir)/Comm \
+	-I$(srcdir)/Operator \
+	-I$(srcdir)/Smoother \
+	-I$(srcdir)/Coarsen \
+	-I$(srcdir)/Krylov \
+	-I$(srcdir)/Main \
+	-I$(srcdir)/FEGrid \
+	-I$(srcdir)/Utils \
+	-I$(srcdir)/Include \
+	$(aztecoo_incdir) \
+	$(ifpack_incdir) \
+	$(amesos_incdir) \
+	$(teuchos_incdir) \
+	$(anasazi_incdir) \
+	$(triutils_incdir) \
+	$(epetra_incdir)
 
 
 # ------------------------------------------------------------------------
@@ -778,6 +795,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_METIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_MIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_ParMETIS.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_Zoltan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_coupled.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_dd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_agg_genP.Po@am__quote@
@@ -1018,6 +1036,22 @@ ml_agg_METIS.obj: $(srcdir)/Coarsen/ml_agg_METIS.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_METIS.Po' tmpdepfile='$(DEPDIR)/ml_agg_METIS.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_METIS.obj `if test -f '$(srcdir)/Coarsen/ml_agg_METIS.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_METIS.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_METIS.c'; fi`
+
+ml_agg_Zoltan.o: $(srcdir)/Coarsen/ml_agg_Zoltan.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_Zoltan.o -MD -MP -MF "$(DEPDIR)/ml_agg_Zoltan.Tpo" -c -o ml_agg_Zoltan.o `test -f '$(srcdir)/Coarsen/ml_agg_Zoltan.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_Zoltan.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_agg_Zoltan.Tpo" "$(DEPDIR)/ml_agg_Zoltan.Po"; else rm -f "$(DEPDIR)/ml_agg_Zoltan.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_agg_Zoltan.c' object='ml_agg_Zoltan.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_Zoltan.Po' tmpdepfile='$(DEPDIR)/ml_agg_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_Zoltan.o `test -f '$(srcdir)/Coarsen/ml_agg_Zoltan.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_Zoltan.c
+
+ml_agg_Zoltan.obj: $(srcdir)/Coarsen/ml_agg_Zoltan.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_Zoltan.obj -MD -MP -MF "$(DEPDIR)/ml_agg_Zoltan.Tpo" -c -o ml_agg_Zoltan.obj `if test -f '$(srcdir)/Coarsen/ml_agg_Zoltan.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_Zoltan.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_Zoltan.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/ml_agg_Zoltan.Tpo" "$(DEPDIR)/ml_agg_Zoltan.Po"; else rm -f "$(DEPDIR)/ml_agg_Zoltan.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Coarsen/ml_agg_Zoltan.c' object='ml_agg_Zoltan.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/ml_agg_Zoltan.Po' tmpdepfile='$(DEPDIR)/ml_agg_Zoltan.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ml_agg_Zoltan.obj `if test -f '$(srcdir)/Coarsen/ml_agg_Zoltan.c'; then $(CYGPATH_W) '$(srcdir)/Coarsen/ml_agg_Zoltan.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Coarsen/ml_agg_Zoltan.c'; fi`
 
 ml_agg_ParMETIS.o: $(srcdir)/Coarsen/ml_agg_ParMETIS.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ml_agg_ParMETIS.o -MD -MP -MF "$(DEPDIR)/ml_agg_ParMETIS.Tpo" -c -o ml_agg_ParMETIS.o `test -f '$(srcdir)/Coarsen/ml_agg_ParMETIS.c' || echo '$(srcdir)/'`$(srcdir)/Coarsen/ml_agg_ParMETIS.c; \
