@@ -105,6 +105,7 @@ class Epetra_BasicDirectory: public virtual Epetra_Directory {
 
   int * ProcList_;
   int * LocalIndexList_;
+  int * SizeList_;
 
   int * AllMinGIDs_;
   

@@ -37,6 +37,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BlockMap & Map)
     DirectoryMap_(0),
     ProcList_(0),
     LocalIndexList_(0),
+    SizeList_(0),
     AllMinGIDs_(0)
 {
 
@@ -75,6 +76,7 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     DirectoryMap_(0),
     ProcList_(0),
     LocalIndexList_(0),
+    SizeList_(0),
     AllMinGIDs_(0)
 {
   int i;
@@ -91,6 +93,10 @@ Epetra_BasicDirectory::Epetra_BasicDirectory(const Epetra_BasicDirectory & Direc
     LocalIndexList_ = new int[Dir_NumMyElements];
     for (int i=0; i<Dir_NumMyElements; i++) LocalIndexList_[i] = Directory.LocalIndexList_[i];
     }
+  if (Directory.SizeList_!=0) {
+    SizeList_ = new int[Dir_NumMyElements];
+    for (int i=0; i<Dir_NumMyElements; i++) SizeList_[i] = Directory.SizeList_[i];
+    }
   if (Directory.AllMinGIDs_!=0) {
     int NumProc = Map_->Comm().NumProc();
     AllMinGIDs_ = new int[NumProc+1];
@@ -105,11 +111,13 @@ Epetra_BasicDirectory::~Epetra_BasicDirectory()
   if( DirectoryMap_ != 0 ) delete DirectoryMap_;
   if( ProcList_ != 0 ) delete [] ProcList_;
   if( LocalIndexList_ != 0 ) delete [] LocalIndexList_;
+  if( SizeList_ != 0 ) delete [] SizeList_;
   if( AllMinGIDs_ != 0 ) delete [] AllMinGIDs_;
 
   DirectoryMap_ = 0;
   ProcList_ = 0 ;
   LocalIndexList_ = 0;
+  SizeList_ = 0;
   AllMinGIDs_ = 0;
 }
 
@@ -118,7 +126,7 @@ Epetra_BasicDirectory::~Epetra_BasicDirectory()
 int Epetra_BasicDirectory::Generate()
 {
   int i;
-
+  bool SizeIsConst = Map_->ConstantElementSize();
   int MinAllGID = Map_->MinAllGID();
   int MaxAllGID = Map_->MaxAllGID();
   // DirectoryMap will have a range of elements from the minimum to the maximum
@@ -137,13 +145,14 @@ int Epetra_BasicDirectory::Generate()
   if (Dir_NumMyElements>0) {
     ProcList_ = new int[ Dir_NumMyElements ];
     LocalIndexList_ = new int[ Dir_NumMyElements ];
-    
+    if (!SizeIsConst) SizeList_ = new int[ Dir_NumMyElements ];
     // Initialize values to -1 in case the user global element list does
     // fill all IDs from MinAllGID to MaxAllGID (e.g., allows global indices to be 
     // all even integers.
     for (i=0; i<Dir_NumMyElements; i++) {
       ProcList_[i] = -1;
       LocalIndexList_[i] = -1;
+      if (!SizeIsConst) SizeList_[i] = -1;
     }
   }
 
@@ -175,36 +184,45 @@ int Epetra_BasicDirectory::Generate()
 
   int * export_elements = 0;
   int * import_elements = 0;
+  int * ElementSizeList = 0;
+  int packetSize = 3; // Assume we will send GIDs, PIDs and LIDs (will increase to 4 if also sending sizes)
 
   if (Map_NumMyElements>0) {
-    export_elements = new int[ 3 * Map_NumMyElements ];
-
+    if (!SizeIsConst) {
+      packetSize++; // Must send element size info also
+      ElementSizeList = Map_->ElementSizeList();
+    }
+    export_elements = new int[ packetSize * Map_NumMyElements ];
+    int * ptr = export_elements;
     for( i = 0; i < Map_NumMyElements; i++ )
       {
-	export_elements[3*i] = Map_MyGlobalElements[i];
-	export_elements[3*i+1] = MyPID;
-	export_elements[3*i+2] = i;
+	*ptr++ = Map_MyGlobalElements[i];
+	*ptr++ = MyPID;
+	*ptr++ = i;
+	if (!SizeIsConst) *ptr++ = ElementSizeList[i];
       }
   }
 
-  if (num_recvs>0) import_elements = new int[ 3 * num_recvs ];
-  //for (i=0; i< 3*num_recvs; i++) import_elements[i] = 0;
+  if (num_recvs>0) import_elements = new int[ packetSize * num_recvs ];
+  //for (i=0; i< packetSize*num_recvs; i++) import_elements[i] = 0;
 
   EPETRA_CHK_ERR(Distor->Do(reinterpret_cast<char *> (export_elements), 
-		  3 * sizeof( int ),
+		  packetSize * sizeof( int ),
 		  reinterpret_cast<char *> (import_elements) ));
 
   
   //bool MYPID = (Map_->Comm().MyPID()==0);
   int curr_LID;
   //if (MYPID) cout << "Processor " << Map_->Comm().MyPID()<< "  num_recvs = "<< num_recvs << endl << flush;
+  int * ptr = import_elements;
   for( i = 0; i < num_recvs; i++ )
   {
-    curr_LID = DirectoryMap_->LID(import_elements[3*i]); // Convert incoming GID to Directory LID
+    curr_LID = DirectoryMap_->LID(*ptr++); // Convert incoming GID to Directory LID
     //if (MYPID) cout << " Receive ID = " << i << "  GID = " << import_elements[3*i] << "  LID = " << curr_LID << endl << flush;
     assert(curr_LID !=-1); // Internal error
-    ProcList_[ curr_LID ] = import_elements[3*i+1];
-    LocalIndexList_[ curr_LID ] = import_elements[3*i+2];
+    ProcList_[ curr_LID ] = *ptr++;
+    LocalIndexList_[ curr_LID ] = *ptr++;
+    if (!SizeIsConst) SizeList_[ curr_LID ] = *ptr++;
   }
 
   if (import_elements!=0) delete [] import_elements;
@@ -413,7 +431,7 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
 	assert(curr_LID!=-1); // Internal error 
 	*ptr++ = ProcList_[ curr_LID ];
 	if (DoLIDs) *ptr++ = LocalIndexList_[curr_LID];
-	if (DoSizes) *ptr++ = ElementSizeList[curr_LID];
+	if (DoSizes) *ptr++ = SizeList_[curr_LID];
       }
   }
 
@@ -453,15 +471,19 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
 void Epetra_BasicDirectory::Print( ostream & os) const {
   
   int MyPID;
-  if( DirectoryMap_ != 0 )
-  {
+  if( DirectoryMap_ != 0 ) {
+    bool SizeIsConst = Map_->ConstantElementSize();
     MyPID = DirectoryMap_->Comm().MyPID();
     os << MyPID << " Epetra_BasicDirectory Object: "
       << DirectoryMap_->NumMyElements() << endl;
-    for( int i = 0; i < DirectoryMap_->NumMyElements(); i++ )
+    for( int i = 0; i < DirectoryMap_->NumMyElements(); i++ ) {
       os << " " << i << " " << ProcList_[i] << " "
-        << LocalIndexList_[i] << endl;
-     os << endl;
+	 << LocalIndexList_[i];
+      if (!SizeIsConst)
+	os  << " " <<  SizeList_[i];
+      os << endl;
+      os << endl;
+    }
   }
   else
   {
