@@ -219,11 +219,11 @@ static int split_hypergraph (int *pins[2], HGraph *old, HGraph *new, Partition p
   }
   MPI_Scan(&new->nVtx, new->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
   MPI_Allgather(new->dist_x, 1, MPI_INT, &(new->dist_x[1]), 1, MPI_INT, hgc->row_comm);
-   new->dist_x[0] = 0;
-    
+  new->dist_x[0] = 0;
+  
   MPI_Scan(&new->nEdge, new->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
   MPI_Allgather(new->dist_y, 1, MPI_INT, &(new->dist_y[1]), 1, MPI_INT, hgc->col_comm);
-   new->dist_y[0] = 0;
+  new->dist_y[0] = 0;
     
   /* shrink hindex, hvertex arrays to correct size & determine vindex, vedge */
   new->hvertex = (int*)ZOLTAN_REALLOC(new->hvertex, sizeof(int) * new->nPins);

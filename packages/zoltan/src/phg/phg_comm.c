@@ -20,6 +20,7 @@ extern "C" {
     
 #include "phg.h"
 
+#if 0
 /* 
  * note: we need to change this so that we keep the plan around for
  * multiple uses.  what is the best way?
@@ -256,6 +257,7 @@ int Zoltan_PHG_gather_slice_root(int nProc_x, int nProc_y, int myProc_x,
                 sbuff_size, sbuff, rbuff_size, rbuff, comm);
 }
 
+#endif
 
 #ifdef __cplusplus
 } /* close extern "C" */
