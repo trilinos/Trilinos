@@ -8,6 +8,8 @@
 #define __cplusplus
 #endif
 
+#ifdef HAVE_CONFIG_H
+
 /*
  * The macros PACKAGE, PACKAGE_NAME, etc, get defined for each package and need to
  * be undef'd here to avoid warnings when this file is included from another package.
@@ -41,9 +43,7 @@
 #undef VERSION
 #endif
 
-#ifdef HAVE_CONFIG_H
 #include "Teuchos_config.h"
-#endif
 
 // configs from ScalarTraits
 
@@ -73,12 +73,6 @@
 #include <iostream.h>
 #endif
   
-#ifdef HAVE_IOMANIP
-#include <iomanip>
-#else
-#include <iomanip.h>
-#endif
-
 #ifdef HAVE_CSTDIO
 #include <cstdio>
 #else
@@ -129,6 +123,8 @@
 #include <strings.h>
 #endif
 
+using namespace std;
+
 #ifndef TFLOP
 #ifdef HAVE_CMATH
 #include <cmath>
@@ -149,13 +145,42 @@ using std::istream;
 using std::ostream;  
 using std::cerr;
 using std::cout;
-using std::cerr;
-using std::cout;
 using std::endl;
-using std::swap;  
+#endif
+#ifdef HAVE_COMPLEX
+using std::complex;
 #endif
 
+#endif /* TFLOP */
+
+#else
+
+#include <iostream>
+#include <string>
+
+#if defined(SGI) || defined(SGI64) || defined(SGI32) || defined(CPLANT) || defined (TFLOP)
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <assert.h>
+#include <math.h>
+
+#else
+
+#include <cstdlib>
+#include <cstdio>
+#include <cassert>
+#include <cmath>
+
 #endif
+
+#include <vector>
+#include <map>
+#include <algorithm>
+
+using namespace std;
+
+#endif /* end HAVE_CONFIG_H */
 
 #ifdef TEUCHOS_SIMULATE_BOOL
 
@@ -203,7 +228,5 @@ const double Teuchos_Underflow = 2.23E-308;
 #define TEUCHOS_CHK_PTR(a) { return(a);}
 #define TEUCHOS_CHK_REF(a) { return(a);}
 const int Teuchos_DefaultTracebackMode = 1; // Default value for traceback behavior
-
-//} // namespace Teuchos
 
 #endif // _TEUCHOS_CONFIGDEFS_HPP_

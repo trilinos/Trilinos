@@ -13,8 +13,8 @@
 #include "Teuchos_ConfigDefs.hpp"
 #ifndef NO_COMPLEX
 #include <complex>
-#define ComplexFloat std::complex<float>
-#define ComplexDouble std::complex<double>
+#define ComplexFloat complex<float>
+#define ComplexDouble complex<double>
 #endif
 
 #ifdef HAVE_TEUCHOS_ARPREC
@@ -98,7 +98,7 @@ namespace Teuchos {
     static inline int one()   { return 1; };
     static inline int random() { return rand(); };
     static inline const char * name() { return "int"; };
-    static inline int squareroot(int x) { return (int)sqrt(x); };
+    static inline int squareroot(int x) { return (int)::sqrt(x); };
   };
   
   
