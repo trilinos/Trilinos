@@ -35,6 +35,9 @@
 #include "ml_elementagx.h"
 #include "ml_intlist.h"
 #include "ml_operatoragx.h"
+#include "ml_xyt.h"
+#include "ml_op_utils.h"
+#include "ml_agg_reitzinger.h"
 
 #ifdef __cplusplus
 extern "C"
