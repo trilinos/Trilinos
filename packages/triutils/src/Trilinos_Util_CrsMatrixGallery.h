@@ -397,6 +397,8 @@ protected:
   // parameters
   int nx_, ny_, nz_;
   int mx_, my_, mz_;
+
+  double lx_, ly_, lz_;
   
   int NumPDEEqns_;
   

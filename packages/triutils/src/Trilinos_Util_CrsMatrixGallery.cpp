@@ -282,6 +282,15 @@ int Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const double va
   } else if( parameter == "alpha" ) {
     alpha_ = value;
     return 0;
+  } else if( parameter == "lx" ) {
+    lx_ = value;
+    return 0;
+  } else if( parameter == "ly" ) {
+    ly_ = value;
+    return 0;
+  } else if( parameter == "lz" ) {
+    lz_ = value;
+    return 0;
   }
 
   cerr << ErrorMsg << "input string not valid\n";
@@ -371,19 +380,22 @@ int Trilinos_Util::CrsMatrixGallery::Set(Trilinos_Util::CommandLineParser & CLP)
   }
   
   // all options with doubles
-  Options[0] = "a";
-  Options[1] = "b";
-  Options[2] = "c";
-  Options[3] = "d";
-  Options[4] = "e";
-  Options[5] = "f";
-  Options[6] = "g";
-  Options[7] = "conv";
-  Options[8] = "diff";
-  Options[9] = "source";
+  Options[0]  = "a";
+  Options[1]  = "b";
+  Options[2]  = "c";
+  Options[3]  = "d";
+  Options[4]  = "e";
+  Options[5]  = "f";
+  Options[6]  = "g";
+  Options[7]  = "conv";
+  Options[8]  = "diff";
+  Options[9]  = "source";
   Options[10] = "alpha";
+  Options[11] = "lx";
+  Options[12] = "ly";
+  Options[13] = "lz";
   
-  for( int i=0 ; i<11 ; i++ ) {
+  for( int i=0 ; i<14 ; i++ ) {
     string parameter = "-"+Options[i];
     
     if( CLP.Has(parameter) == true ) {
@@ -550,6 +562,11 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 	exit( EXIT_FAILURE );
       }
     }
+
+    if( verbose_ == true ) {
+      cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << endl;
+    }
+
   }
     
   else if( name_ == "laplace_3d" || name_ == "cross_stencil_3d" ) {
@@ -562,6 +579,10 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 	cerr << ErrorMsg << "It should be a perfect cube" << endl;
 	exit( EXIT_FAILURE );
       }
+    }
+    
+    if( verbose_ == true ) {
+      cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << ", nz = " << nz_ << endl;
     }
 
   } else if( name_ == "hb" || name_ == "matrix_market" ||
@@ -601,13 +622,24 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       if( mx_ == -1 || my_ == -1 ) {
 	mx_ = (int)sqrt((double)(comm_->NumProc()));
 	my_ = mx_;
+	
 	if( mx_ * my_ != comm_->NumProc() ) {
 	  cerr << ErrorMsg << "number of processes must be perfect square\n"
 	       << ErrorMsg << "otherwise set mx and my\n";
 	  exit( EXIT_FAILURE );
 	}
+      } else {
+	if( mx_ * my_ != comm_->NumProc() ) {
+	  cerr << ErrorMsg << "mx*my != number of processes ("
+	       << mx_ * my_ << " != " << comm_->NumProc()  << ")" << endl;
+	  exit( EXIT_FAILURE );
+	}
       }
 
+      if( verbose_ == true ) {
+	cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << endl;
+      }
+      
       SetupCartesianGrid2D();
 
       // how to divide the axis
@@ -616,8 +648,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       int mody = (ny_+(ny_%my_))/my_;
       
       int MyPID = comm_->MyPID(), startx, starty, endx, endy;
-      int xpid = MyPID/mx_;
-      int ypid = MyPID%my_;
+      int xpid = MyPID%mx_;
+      int ypid = MyPID/mx_;
       
       startx = xpid*modx;
       if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
@@ -656,8 +688,19 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
 	       << ErrorMsg << "otherwise set mx, my, and mz\n";
 	  exit( EXIT_FAILURE );
 	}
+      } else {
+	if( mx_ * my_ * mz_ != comm_->NumProc() ) {
+	  cerr << ErrorMsg << "mx*my*mz != number of processes ("
+	       << mx_ * my_ * mz_ << " != " << comm_->NumProc()
+	       << ")\n";
+	  exit( EXIT_FAILURE );
+	}
       }
 
+      if( verbose_ == true ) {
+	cout << OutputMsg << "mx = " << mx_ << ", my = " << my_ << ", mz = " << mz_ << endl;
+      }
+      
       SetupCartesianGrid3D();
       
       // how to divide the axis
@@ -669,8 +712,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
       int MyPID = comm_->MyPID(), startx, starty, startz, endx, endy, endz;
       int mxy  = mx_*my_;
       int zpid = MyPID/mxy;
-      int xpid = (MyPID%mxy)/mx_;
-      int ypid = (MyPID%mxy)%my_;
+      int xpid = (MyPID%mxy)%mx_;
+      int ypid = (MyPID%mxy)/mx_;
 
       startx = xpid*modx;
       if( (xpid+1)*modx < nx_ ) endx = (xpid+1)*modx;
@@ -918,7 +961,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
       // always suppose to have Dirichlet boundary
       // conditions, and those points have already been eliminated
       // from the matrix
-      double hx = 1.0/(NumGlobalElements_+1);
+      double hx = lx_/(NumGlobalElements_+1);
       for( int i=0 ; i<NumMyElements_ ; i++ ) {
 	double x = (MyGlobalElements_[i]+1)*hx;
 	(*ExactSolution_)[i] = x*(1.-x);
@@ -928,8 +971,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateExactSolution(void)
 
       SetupCartesianGrid2D();
       
-      double hx = 1.0/(nx_+1);
-      double hy = 1.0/(ny_+1);
+      double hx = lx_/(nx_+1);
+      double hy = ly_/(ny_+1);
       
       for( int i=0 ; i<NumMyElements_ ; ++i ) {
 	int ix, iy;
@@ -1019,8 +1062,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
 
     SetupCartesianGrid2D();
     
-    double hx = 1.0/(nx_+1);
-    double hy = 1.0/(ny_+1);
+    double hx = lx_/(nx_+1);
+    double hy = ly_/(ny_+1);
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
@@ -1045,8 +1088,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
 
     SetupCartesianGrid2D();
     
-    double hx = 1.0/(nx_+1);
-    double hy = 1.0/(ny_+1);
+    double hx = lx_/(nx_+1);
+    double hy = ly_/(ny_+1);
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
@@ -1067,8 +1110,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateRHS(void)
 
     SetupCartesianGrid2D();
     
-    double hx = 1.0/(nx_+1);
-    double hy = 1.0/(ny_+1);
+    double hx = lx_/(nx_+1);
+    double hy = ly_/(ny_+1);
     
     for( int i=0 ; i<NumMyElements_ ; ++i ) {
       int ix, iy;
@@ -1289,7 +1332,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2d(void)
   int left, right, lower, upper;
     
   matrix_ = new Epetra_CrsMatrix(Copy,*map_,5);
-    
+
   // Add  rows one-at-a-time
     
   double Values[4], diag;
@@ -1548,18 +1591,20 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d(void)
 
   SetupCartesianGrid2D();
 
-  double hx = 1.0/(nx_+1);
-  double hy = 1.0/(ny_+1);
+  double hx = lx_/(nx_+1);
+  double hy = ly_/(ny_+1);
 
   if( verbose_ == true ) {
     cout << OutputMsg << "Creating matrix `laplace_2d'...\n";
     if( Scaling ) {
       cout << OutputMsg << "nx = " << nx_ << ", ny = " << ny_ << endl;
-      cout << OutputMsg << "hx = " << hx << ", hy = " << hy << endl;
     }
   }
 
   if( Scaling ) {
+    if( Scaling ) {
+      cout << OutputMsg << "hx = " << hx << ", hy = " << hy << endl;
+    }
     a_ = 2.0/(hx*hx) + 2.0/(hy*hy);
     b_ = -1.0/(hx*hx);
     c_ = -1.0/(hx*hx);
@@ -1618,8 +1663,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2d(void)
   VectorD_->PutScalar(0.0);
   VectorE_->PutScalar(0.0);
   
-  double hx = 1.0/(nx_+1);
-  double hy = 1.0/(ny_+1);
+  double hx = lx_/(nx_+1);
+  double hy = ly_/(ny_+1);
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
@@ -1698,8 +1743,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixRecirc2dDivFree(void)
   VectorD_->PutScalar(0.0);
   VectorE_->PutScalar(0.0);
   
-  double hx = 1.0/(nx_+1);
-  double hy = 1.0/(ny_+1);
+  double hx = lx_/(nx_+1);
+  double hy = ly_/(ny_+1);
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
@@ -1787,8 +1832,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixUniFlow2d(void)
   VectorD_->PutScalar(0.0);
   VectorE_->PutScalar(0.0);
   
-  double hx = 1.0/(nx_+1);
-  double hy = 1.0/(ny_+1);
+  double hx = lx_/(nx_+1);
+  double hy = ly_/(ny_+1);
 
   for( int i=0 ; i<NumMyElements_ ; ++i ) {
     int ix, iy;
@@ -2781,6 +2826,10 @@ void Trilinos_Util::CrsMatrixGallery::ZeroOutData()
   nx_ = -1;    ny_ = -1;     nz_ = -1;
   mx_ = -1;    mx_ = -1;     mz_ = -1;
 
+  lx_ = 1.0;
+  ly_ = 1.0;
+  lz_ = 1.0;
+  
   a_ = UNDEF, b_ = UNDEF, c_ = UNDEF, d_ = UNDEF, e_ = UNDEF, f_ = UNDEF, g_ = UNDEF;
   alpha_ = UNDEF;
   beta_  = UNDEF;
