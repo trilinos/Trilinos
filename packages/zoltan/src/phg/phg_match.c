@@ -77,17 +77,32 @@ char  *yo = "Zoltan_PHG_Matching";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Scale the weight of the edges */
-  if (hgp->ews) {
+  if (hgp->edge_scaling) {
      if (!(new_ewgt = (float*) ZOLTAN_MALLOC (hg->nEdge * sizeof(float)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         err = ZOLTAN_MEMERR;
         goto End;
      }
  
-     Zoltan_PHG_Scale_Weights (zz, hg, new_ewgt, hgp);
+     Zoltan_PHG_Scale_Edges (zz, hg, new_ewgt, hgp);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
   }
+
+  /* Create/update scale vector for vertices for inner product */
+  if (hgp->vtx_scaling) {
+     if (hgp->vtx_scal==NULL){  /* first level in V-cycle */
+        if (!(hgp->vtx_scal = (float*) ZOLTAN_MALLOC (hg->nVtx * 
+                               sizeof(float)))) {
+           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+           err = ZOLTAN_MEMERR;
+           goto End;
+        }
+     }
+ 
+     Zoltan_PHG_Scale_Vtx (zz, hg, hgp);
+  }
+
 
   /* Do the matching */
   if (hgp->locmatching) {  /* run local matching */
@@ -115,7 +130,7 @@ char  *yo = "Zoltan_PHG_Matching";
 End: 
 
   /* Restore the old edge weights if scaling was used. */
-  if (hgp->ews)
+  if (hgp->edge_scaling)
       hg->ewgt = old_ewgt;
 
   ZOLTAN_FREE ((void**) &new_ewgt);

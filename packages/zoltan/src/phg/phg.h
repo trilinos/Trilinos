@@ -115,7 +115,9 @@ struct PHGPartParamsStruct {
   ZOLTAN_HG_MATCHING_FN  *locmatching;   /* Pointer to local Matching function */
   ZOLTAN_HG_MATCHING_FN  *matching_opt;  /* Pointers to Matching optimization  */
     
-  int ews;                             /* type of hyperedge weight scaling */
+  int edge_scaling;                    /* type of hyperedge weight scaling */
+  int vtx_scaling;                     /* type of vertex scaling for inner product */
+  float *vtx_scal;                     /* vtx scaling array */
   int LocalCoarsePartition;            /* 1 -> apply coarse partitioner locally;
                                           0 -> gather entire HG to each proc
                                           and apply coarse partitioner. */
@@ -159,7 +161,8 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /**********************/
 int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
-int Zoltan_PHG_Scale_Weights (ZZ*, HGraph*, float*, PHGPartParams*);
+int Zoltan_PHG_Scale_Edges (ZZ*, HGraph*, float*, PHGPartParams*);
+int Zoltan_PHG_Scale_Vtx (ZZ*, HGraph*, PHGPartParams*);
 int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 
 /**************/

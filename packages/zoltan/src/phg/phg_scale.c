@@ -32,7 +32,7 @@ extern "C" {
    EBEB: Removed Robert's serial scaling methods. 
          We should look at these later.
  */
-int Zoltan_PHG_Scale_Weights (ZZ *zz, HGraph *hg, float *new_ewgt, 
+int Zoltan_PHG_Scale_Edges (ZZ *zz, HGraph *hg, float *new_ewgt, 
                              PHGPartParams *hgp)
 {
 int    i, err;
@@ -49,7 +49,7 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
     return ZOLTAN_MEMERR;
   }
 
-  switch (hgp->ews){
+  switch (hgp->edge_scaling){
 
   case 0:
     /* copy current weights; no scaling. */
@@ -78,9 +78,9 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
       /* printf("[%1d] Debug: Hyperedge %d has size %d\n", 
          zz->Proc, i, size[i]); */
       if (size[i]>1) {
-        if (hgp->ews==1)
+        if (hgp->edge_scaling==1)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) / (size[i]-1.0);
-        else if (hgp->ews==2)
+        else if (hgp->edge_scaling==2)
           new_ewgt[i] = (hg->ewgt ? hg->ewgt[i] : 1.0) * 2.0 / 
                         (size[i]*(size[i]-1.0));
       }
@@ -101,6 +101,17 @@ static char *yo = "Zoltan_PHG_Scale_Weights";
   return err;
 }
 
+/**********************************************************************
+  Scaling routine for vertices. This creates an array that is only
+  used to modify the inner product in the matching.
+***********************************************************************/
+
+int Zoltan_PHG_Scale_Vtx (ZZ *zz, HGraph *hg, PHGPartParams *hgp)
+{
+  /* Dummy routine for now. */ 
+  return ZOLTAN_OK;
+}
+ 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
