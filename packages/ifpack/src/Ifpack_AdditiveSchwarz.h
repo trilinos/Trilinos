@@ -288,38 +288,17 @@ public:
   //! Returns the number of flops in the initialization phase.
   virtual double InitializeFlops() const
   {
-    if (Inverse_ == 0)
-      return (0.0);
-    else {
-      double partial = Inverse_->InitializeFlops();
-      double total;
-      Comm().SumAll(&partial, &total, 1);
-      return(total);
-    }
+    return(InitializeFlops_);
   }
 
   virtual double ComputeFlops() const
   {
-    if (Inverse_ == 0)
-      return (ComputeFlops_);
-    else {
-      double partial = Inverse_->ComputeFlops();
-      double total;
-      Comm().SumAll(&partial, &total, 1);
-      return(ComputeFlops_ + total);
-    }
+    return(ComputeFlops_);
   }
 
   virtual double ApplyInverseFlops() const
   {
-    if (Inverse_ == 0)
-      return (ApplyInverseFlops_);
-    else {
-      double partial = Inverse_->ApplyInverseFlops();
-      double total;
-      Comm().SumAll(&partial, &total, 1);
-      return(ApplyInverseFlops_ + total);
-    }
+    return(ApplyInverseFlops_);
   }
 
   //! Returns the level of overlap.
@@ -404,6 +383,8 @@ protected:
   double ComputeTime_;
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
+  //! Contains the number of flops for Initialize().
+  double InitializeFlops_;
   //! Contains the number of flops for Compute().
   double ComputeFlops_;
   //! Contain sthe number of flops for ApplyInverse().
@@ -441,8 +422,9 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix,
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  ComputeFlops_(0),
-  ApplyInverseFlops_(0),
+  InitializeFlops_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   Time_(0)
 {
   if (Matrix_->Comm().NumProc() == 1)
@@ -618,7 +600,14 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   IsInitialized_ = true;
   ++NumInitialize_;
   InitializeTime_ += Time_->ElapsedTime();
-  // flops are summed up in method InitializeFlops()
+
+  // count flops by summing up all the InitializeFlops() in each
+  // Inverse. Each Inverse() can only give its flops -- it acts on one
+  // process only
+  double partial = Inverse_->InitializeFlops();
+  double total;
+  Comm().SumAll(&partial, &total, 1);
+  InitializeFlops_ += total;
 
   return(0);
 }
@@ -640,8 +629,14 @@ int Ifpack_AdditiveSchwarz<T>::Compute()
   IsComputed_ = true; // need this here for Condest(Ifpack_Cheap)
   ++NumCompute_;
   ComputeTime_ += Time_->ElapsedTime();
-  // flops are summed up in method ComputeFlops()
 
+  // sum up flops
+  double partial = Inverse_->ComputeFlops();
+  double total;
+  Comm().SumAll(&partial, &total, 1);
+  ComputeFlops_ += total;
+
+  // reset the Label
   string R = "";
   if (UseReordering_)
     R = ReorderingType_ + " reord, ";
@@ -743,6 +738,11 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Epetra_MultiVector* OverlappingY;
   Epetra_MultiVector* Xtmp = 0;
 
+  // for flop count, see bottom of this function
+  double pre_partial = Inverse_->ApplyInverseFlops();
+  double pre_total;
+  Comm().SumAll(&pre_partial, &pre_total, 1);
+
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
     OverlappingX = new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
@@ -808,6 +808,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (Xtmp)
     delete Xtmp;
 
+  // add flops. Note the we only have to add the newly counted
+  // flops -- and each Inverse returns the cumulative sum
+  double partial = Inverse_->ApplyInverseFlops();
+  double total;
+  Comm().SumAll(&partial, &total, 1);
+  ApplyInverseFlops_ += total - pre_total;
+
   // FIXME: right now I am skipping the overlap and singletons
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
@@ -821,43 +828,47 @@ template<typename T>
 std::ostream& Ifpack_AdditiveSchwarz<T>::
 Print(std::ostream& os) const
 {
-  if( Matrix().Comm().MyPID())
+  double IF = InitializeFlops();
+  double CF = ComputeFlops();
+  double AF = ApplyInverseFlops();
+
+  if (Matrix().Comm().MyPID())
     return(os);
 
-    os << endl;
-    os << "================================================================================" << endl;
-    os << "Ifpack_AdditiveSchwarz, overlap level = " << OverlapLevel_ << endl;
-    if (CombineMode_ == Insert)
-      os << "Combine mode                          = Insert" << endl;
-    else if (CombineMode_ == Add)
-      os << "Combine mode                          = Add" << endl;
-    else if (CombineMode_ == Zero)
-      os << "Combine mode                          = Zero" << endl;
-    else if (CombineMode_ == Average)
-      os << "Combine mode                          = Average" << endl;
-    else if (CombineMode_ == AbsMax)
-      os << "Combine mode                          = AbsMax" << endl;
+  os << endl;
+  os << "================================================================================" << endl;
+  os << "Ifpack_AdditiveSchwarz, overlap level = " << OverlapLevel_ << endl;
+  if (CombineMode_ == Insert)
+    os << "Combine mode                          = Insert" << endl;
+  else if (CombineMode_ == Add)
+    os << "Combine mode                          = Add" << endl;
+  else if (CombineMode_ == Zero)
+    os << "Combine mode                          = Zero" << endl;
+  else if (CombineMode_ == Average)
+    os << "Combine mode                          = Average" << endl;
+  else if (CombineMode_ == AbsMax)
+    os << "Combine mode                          = AbsMax" << endl;
 
-    os << "Condition number estimate             = " << Condest_ << endl;
-    os << "Global number of rows                 = " << Matrix_->NumGlobalRows() << endl;
+  os << "Condition number estimate             = " << Condest_ << endl;
+  os << "Global number of rows                 = " << Matrix_->NumGlobalRows() << endl;
 
-    os << endl;
-    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
-    os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize()
-       << "  " << std::setw(15) << InitializeTime() 
-       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * InitializeFlops() / InitializeTime() << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute() 
-       << "  " << std::setw(15) << ComputeTime()
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
-       << "  " << std::setw(15) << ApplyInverseTime()
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() 
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << endl;
-    os << "================================================================================" << endl;
-    os << endl;
+  os << endl;
+  os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
+  os << "-----           -------   --------------       ------------     --------" << endl;
+  os << "Initialize()    "   << std::setw(5) << NumInitialize()
+     << "  " << std::setw(15) << InitializeTime() 
+     << "  " << std::setw(15) << 1.0e-6 * IF 
+     << "  " << std::setw(15) << 1.0e-6 * IF / InitializeTime() << endl;
+  os << "Compute()       "   << std::setw(5) << NumCompute() 
+     << "  " << std::setw(15) << ComputeTime()
+     << "  " << std::setw(15) << 1.0e-6 * CF
+     << "  " << std::setw(15) << 1.0e-6 * CF / ComputeTime() << endl;
+  os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse() 
+     << "  " << std::setw(15) << ApplyInverseTime()
+     << "  " << std::setw(15) << 1.0e-6 * AF
+     << "  " << std::setw(15) << 1.0e-6 * AF / ApplyInverseTime() << endl;
+  os << "================================================================================" << endl;
+  os << endl;
 
   return(os);
 }

@@ -79,16 +79,16 @@ int main(int argc, char *argv[])
 
   // create the preconditioner. For valid PrecType values,
   // please check the documentation
-  string PrecType = "ICT"; // incomplete Cholesky, level-of-fill
-                            // based on values 
-  int OverlapLevel = 2; // must be >= 0. If Comm.NumProc() == 1,
+  string PrecType = "ILU"; // incomplete LU
+  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
                         // it is ignored.
 
   Ifpack_Preconditioner* Prec = Factory.Create(PrecType, A, OverlapLevel);
   assert(Prec != 0);
 
-  // specify parameters for ICT
-  List.set("fact: level-of-fill", 0);
+  // specify parameters for ILU
+  List.set("fact: drop tolerance", 1e-9);
+  List.set("fact: level-of-fill", 1);
 
   // sets the parameters
   IFPACK_CHK_ERR(Prec->SetParameters(List));
@@ -135,6 +135,8 @@ int main(int argc, char *argv[])
 
   // .. and here we solve
   Solver.Iterate(1550,1e-8);
+
+  cout << *Prec;
 
   // delete the preconditioner
   delete Prec;

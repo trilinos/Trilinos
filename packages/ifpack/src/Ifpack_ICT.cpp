@@ -64,6 +64,8 @@ Ifpack_ICT::Ifpack_ICT(const Epetra_RowMatrix* A) :
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   Time_(Comm())
 {
 }
@@ -126,7 +128,8 @@ int Ifpack_ICT::Initialize()
 }
 
 //==========================================================================
-int Ifpack_ICT::Compute() {
+int Ifpack_ICT::Compute() 
+{
 
   if (!IsInitialized()) 
     IFPACK_CHK_ERR(Initialize());
@@ -151,20 +154,19 @@ int Ifpack_ICT::Compute() {
                                      &RowValues[0],&RowIndices[0]));
 
   // modify diagonal
+  double diag_val = 0.0;
   for (int i = 0 ;i < RowNnz ; ++i) {
     if (RowIndices[i] == 0) {
       double& v = RowValues[i];
-      v = AbsoluteThreshold() * EPETRA_SGN(v) + RelativeThreshold() * v;
+      diag_val = AbsoluteThreshold() * EPETRA_SGN(v) +
+        RelativeThreshold() * v;
       break;
     }
   }
 
-  // FIXME???
-  assert (RowIndices[0] == 0); // NOTE: assume ordered indices
-
-  RowValues[0] = sqrt(RowValues[0]);
-  EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&(RowValues[0]),
-                                        &(RowIndices[0])));
+  diag_val = sqrt(diag_val);
+  int diag_idx = 0;
+  EPETRA_CHK_ERR(H_->InsertGlobalValues(0,1,&diag_val, &diag_idx));
 
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
@@ -296,7 +298,9 @@ int Ifpack_ICT::Compute() {
 #endif
 
   IsComputed_ = true;
-  ComputeFlops_ += flops;
+  double TotalFlops; // sum across all the processors
+  A_.Comm().SumAll(&flops, &TotalFlops, 1);
+  ComputeFlops_ += TotalFlops;
   ++NumCompute_;
   ComputeTime_ += Time_.ElapsedTime();
 
@@ -331,6 +335,7 @@ int Ifpack_ICT::ApplyInverse(const Epetra_MultiVector& X,
   if (Xcopy != &X)
     delete Xcopy;
 
+  // these are global flop count
   ApplyInverseFlops_ += 4.0 * H_->NumGlobalNonzeros();
 
   ++NumApplyInverse_;

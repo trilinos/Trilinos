@@ -66,6 +66,8 @@ Ifpack_ILUT::Ifpack_ILUT(const Epetra_RowMatrix* A) :
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   Time_(Comm())
 { }
 
@@ -186,13 +188,14 @@ int Ifpack_ILUT::Compute()
   IFPACK_CHK_ERR(L_->InsertGlobalValues(0,1,&(RowValuesU[0]),
                                         &(RowIndicesU[0])));
 
-
   vector<double> AbsRow((int)(A_.MaxNumEntries() * LevelOfFill() * 10)); // a bit overestimated
 
   // =================== //
   // start factorization //
   // =================== //
   
+  double this_proc_flops = 0.0;
+
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
 
     // get row `row_i' of the matrix, store in U pointers
@@ -254,7 +257,10 @@ int Ifpack_ILUT::Compute()
           break;
         }
       }
-      assert (DiagonalValueK != 0.0);
+      
+      // FIXME: this should never happen!
+      if (DiagonalValueK == 0.0)
+        DiagonalValueK = AbsoluteThreshold();
       
       where = SingleRowU.find(col_k);
       if (where != SingleRowU.end() && 
@@ -278,7 +284,7 @@ int Ifpack_ILUT::Compute()
       }
     }
 
-    ComputeFlops_ += 1.0 + flops;
+    this_proc_flops += 1.0 * flops;
 
     double cutoff = DropTolerance();
     double DiscardedElements = 0.0;
@@ -346,6 +352,10 @@ int Ifpack_ILUT::Compute()
                                             &row_i));
     }
   }
+
+  double tf;
+  Comm().SumAll(&this_proc_flops, &tf, 1);
+  ComputeFlops_ += tf;
 
   IFPACK_CHK_ERR(L_->FillComplete());
   IFPACK_CHK_ERR(U_->FillComplete());

@@ -63,6 +63,8 @@ Ifpack_ILU::Ifpack_ILU(Epetra_RowMatrix* Matrix) :
   LevelOfFill_(0),
   IsInitialized_(false),
   IsComputed_(false),
+  ComputeFlops_(0.0),
+  ApplyInverseFlops_(0.0),
   Time_(Comm())
 {
 #ifdef HAVE_IFPACK_TEUCHOS
@@ -449,6 +451,9 @@ int Ifpack_ILU::Compute()
   total_flops += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
   if (RelaxValue_!=0.0) total_flops += 2 * (double)D_->GlobalLength(); // Accounts for relax update of diag
 
+  // add to this object's counter
+  ComputeFlops_ += total_flops;
+  
   delete [] InI;
   delete [] InV;
   delete [] colflag;
@@ -524,10 +529,6 @@ int Ifpack_ILU::Multiply(bool Trans, const Epetra_MultiVector& X,
     IFPACK_CHK_ERR(Y.Update(1.0, Y1temp, 1.0)); 
   } 
 
-  // approx is the number of nonzeros in L and U
-  ApplyInverseFlops_ += X.NumVectors() * 4 * 
-    (L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros());
-
   return(0);
 }
 
@@ -557,6 +558,10 @@ int Ifpack_ILU::ApplyInverse(const Epetra_MultiVector& X,
 
   if (Xcopy != &X)
     delete Xcopy;
+
+  // approx is the number of nonzeros in L and U
+  ApplyInverseFlops_ += X.NumVectors() * 4 * 
+    (L_->NumGlobalNonzeros() + U_->NumGlobalNonzeros());
 
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_.ElapsedTime();

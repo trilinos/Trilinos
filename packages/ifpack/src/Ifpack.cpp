@@ -43,7 +43,7 @@ Ifpack_Preconditioner* Ifpack::Create(const string PrecType,
   else if (PrecType == "Amesos") {
     return(new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(Matrix,Overlap));
   }
-  else if (PrecType == "Amesos stand-alone") {
+  else if (PrecType == "Amesos stand-alone" || PrecType == "LU") {
     return(new Ifpack_Amesos(Matrix));
   }
 #endif

@@ -285,7 +285,7 @@ int Ifpack_IC::Compute() {
   A_.Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
 
   ComputeFlops_ += total_flops; 
-  // Now count the rest
+  // Now count the rest. NOTE: those flops are *global*
   ComputeFlops_ += (double) U_->NumGlobalNonzeros(); // Accounts for multiplier above
   ComputeFlops_ += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
 
