@@ -1,5 +1,6 @@
 %
 \section{Introduction to {}\texttt{RefCountPtr<>}}
+\label{rcp:sec:intro}
 %
 
 Described herein is the templated class {}\texttt{RefCountPtr<>}
@@ -487,10 +488,10 @@ On the other had, C++ adds to C the concpets of {}\texttt{const} and
 references (i.e.~{}\texttt{type\&}) in addition to pointers
 (i.e.~{}\texttt{type*}).  This makes deciding how to pass arguments in
 C++ much more complicated than in other languages.  These features,
-which added to C++ for very good technical reasons, when guided by
-commonsense idioms can make it more-or-less clear how arguments sholud
-be passed to and from functions in C++ based on their purpose.  This
-discussion presents some of these idioms and how
+which where added to C++ for very good technical reasons, when guided
+by commonsense idioms can make it more-or-less clear how arguments
+sholud be passed to and from functions in C++ based on their purpose.
+This discussion presents some of these idioms and how
 {}\texttt{RefCountPtr<>} fits in.
 
 In many respects C++ is a highly expressive programming language where
@@ -638,28 +639,31 @@ features here.
 \subsection{Accessing reference-count information}
 %
 
-{}\texttt{RefCountPtr<>} contains the member functions
+In most situations, clients do not need to know anything about
+reference counts but there are use cases where it is helpful if
+clients can query as to reference-count information.  For this
+purpose, {}\texttt{RefCountPtr<>} contains the member functions
 %
 {\scriptsize\begin{verbatim}
 template<class T> int  RefCountPtr<T>::count() const {...}
 template<class T> bool RefCountPtr<T>::has_ownership() const {...}
 \end{verbatim}}
 %
-\noindent{}
-which can be used to ascertain the status of a
+{}\noindent{}which can be used to ascertain the status of a
 reference-counted object.  Specifically, if {}\texttt{ptr} is a
-{}\texttt{RefCountPtr<A>} object and {}\texttt{(ptr.count()==1 \&\&
+{}\texttt{RefCountPtr<>} object and {}\texttt{(ptr.count()==1 \&\&
 ptr.has\_ownership())==true} then the client that owns {}\texttt{ptr}
 (where {}\texttt{ptr} is perhaps as a private data member) can infer
-that it is the only client that has a reference to this object and
-therefore, this client is free to change the object freely without
-worry that such a change will affect another client.
+that it is the only client that has a reference to the underlying
+reference-counted object and, therefore, this client is free to change
+the object freely without worry that such a change will affect another
+client.
 
 This type of information must be used very carefully but can be very
-helpful in simplifying the logic in cerain types of applications. If
-this type of logic is to be used then it must be documented very
-clearly since it is easy to falsely show a reference count higher than
-the number of clients that really own {}\texttt{RefCountPtr<>} objects to
+helpful in simplifying the logic in cerain types of use cases. If this
+type of logic is to be used then it must be documented very clearly
+since it is easy to falsely show a reference count higher than the
+number of clients that really own {}\texttt{RefCountPtr<>} objects to
 the reference-counted object.
 
 %
@@ -882,16 +886,16 @@ of these situations include:
 \item
 When reference counts for objects are managed by requiring clients to
 explictly call increment and deincrement functions such as is the case
-in CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}.  Such a approach
-is also presented in {}\cite[Item 29]{ref:meyers_1996}) ad the ``A
-Reference-Counting Base Class'' subsection.  In these protocals
-dellocation occurs when this other reference count goes to zero behind
-the scenes.
+in CORBA {}\cite{ref:corba} and COM {}\cite{ref:com}.  Such an
+approach is also presented in {}\cite[Item 29]{ref:meyers_1996}) in
+the subsection ``A Reference-Counting Base Class''.  In these
+protocals, dellocation occurs automatically behind the scenes when
+this other reference count goes to zero.
 \item
 When objects are managed by certain types of object databases.  In
 some object databases, an object that is grabed from the database must
-explictly returned to the database in order to allow proper object
-deletion latter.
+be explictly returned to the database in order to allow proper object
+deletion to take place later.
 \item
 A different reference-counted pointer class is used to initially get
 access to the managed object.  For example, if some peer code works
