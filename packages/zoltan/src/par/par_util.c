@@ -159,7 +159,15 @@ int LB_find_median(
   MPI_Allreduce(&wtsum,&weight,1,MPI_DOUBLE,MPI_SUM,local_comm);
   MPI_Allreduce(&wtmax,&tolerance,1,MPI_DOUBLE,MPI_MAX,local_comm);
 
-  tolerance *= 1.0 + TINY;
+  tolerance *= 0.5 + TINY;  /* ctv - changed from        1.0 + TINY
+               The larger tolerance allowed one side of the cut to be larger
+               than the target weight by a node of largest weight (the other
+               side would be smaller by the same amount).  In that case a
+               node of largest weight could be moved from the side whose weight
+               is larger than its target to the other side and they would both
+               be in balance with the target weight.  A tolerance less than
+               half of the largest weight would allow infinite looping as a
+               node of largest weight was passed back and forth. */
   targetlo = fractionlo * weight;
   targethi = weight - targetlo;
 
