@@ -69,6 +69,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-SUBDIRS = src test
+
+if BUILD_TESTS
+TEST_SUBDIR=test
+endif
+
+SUBDIRS = src $(TEST_SUBDIR) 
 
 

@@ -165,10 +165,18 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
+
 #  #np# - Most packages should have an example and a full suite 
 #  of tests.  At present, new_package only offers src and example.
-# SUBDIRS = src example test 
-SUBDIRS = src example
+#  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
+
+#if BUILD_TESTS
+#TEST_SUBDIR=test
+#endif
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = example
+
+#SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -184,7 +192,7 @@ DIST_COMMON = README Makefile.am Makefile.in aclocal.m4 \
 	config/config.guess config/config.sub config/depcomp \
 	config/install-sh config/missing config/mkinstalldirs configure \
 	configure.ac
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src example
 all: all-recursive
 
 .SUFFIXES:
@@ -338,7 +346,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \

@@ -83,6 +83,11 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #  #np# - Most packages should have an example and a full suite 
 #  of tests.  At present, new_package only offers src and example.
 # SUBDIRS = src example test 
-SUBDIRS = src utils example
+
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif
+
+SUBDIRS = src utils $(EXAMPLE_SUBDIR)
 
 

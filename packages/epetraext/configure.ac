@@ -256,6 +256,13 @@ TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface suppo
 AM_CONDITIONAL(HAVE_EPETRAEXT_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
 
 # ------------------------------------------------------------------------
+# Checks if tests should be built
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 

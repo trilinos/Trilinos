@@ -64,4 +64,21 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## #######################################################################
 ## Subdirectories to be make'd recursively
 ## #######################################################################
-SUBDIRS = src test example
+
+#The test for AztecOO depends on an example, so we just build the examples
+#if the tests are going to be built.
+
+if BUILD_TESTS
+TEST_SUBDIR=test
+EXAMPLE_SUBDIR=example
+else
+
+if BUILD_EXAMPLES
+EXAMPLE_SUBDIR=example
+endif
+
+endif
+
+SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+
+

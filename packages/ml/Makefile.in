@@ -152,7 +152,9 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	$(AUX_DIST) 
 
 
-SUBDIRS = src examples
+@BUILD_EXAMPLES_TRUE@EXAMPLE_SUBDIR = examples
+
+SUBDIRS = src $(EXAMPLE_SUBDIR)
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
@@ -168,7 +170,7 @@ DIST_COMMON = README INSTALL Makefile.am Makefile.in aclocal.m4 \
 	config/compile config/config.guess config/config.sub \
 	config/depcomp config/install-sh config/missing \
 	config/mkinstalldirs configure configure.ac
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = src examples
 all: all-recursive
 
 .SUFFIXES:
@@ -322,7 +324,7 @@ distdir: $(DISTFILES)
 	    || exit 1; \
 	  fi; \
 	done
-	list='$(SUBDIRS)'; for subdir in $$list; do \
+	list='$(DIST_SUBDIRS)'; for subdir in $$list; do \
 	  if test "$$subdir" = .; then :; else \
 	    test -d $(distdir)/$$subdir \
 	    || mkdir $(distdir)/$$subdir \
