@@ -560,8 +560,9 @@ FILE *fp;
    free(temp_leng);
    free(tem2_index);
    free(temp_index);
-   free(rowi_col);
-   free(rowi_val);
+   free(rowi_col); rowi_col = NULL;
+   free(rowi_val); rowi_val = NULL;
+   allocated = 0;
    free(recv_list);
 
 #ifdef ML_AGGR_MARKINAGGR
@@ -1407,7 +1408,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
 
    nnzs = new_ia[Nrows];
 
-   count = 0; allocated = 0; rowi_col = NULL; rowi_val = NULL;
+   count = 0;
    for (i = 0; i < Nrows; i++) {
       ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
                         &rowi_N, 0);
@@ -1423,6 +1424,8 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
       }
    }
    free(rowi_col); free(rowi_val);
+   rowi_col = NULL; rowi_val = NULL;
+   allocated = 0; 
 
    if (Nrows > 0) old_upper = new_ia[0];
    for (i = 0; i < Nrows; i++) {
@@ -1448,7 +1451,7 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    good = (int *) malloc(Nrows*sizeof(int));
    bad  = (int *) malloc(Nrows*sizeof(int));
    for (i = 0; i < Nrows; i++) { good[i] = 0; bad[i] = 0; }
-   count = 0; allocated = 0; rowi_col = NULL; rowi_val = NULL;
+   count = 0; 
    for (i = 0; i < Nrows; i++) {
       /* figure out my aggregate */
       myagg = -1;
@@ -1502,6 +1505,11 @@ for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);
    }
    fclose(fp);
    printf("total number of connections counted is %d\n",myagg);
+   free(bad);
+   free(good);
+   free(rowi_col); rowi_col = NULL;
+   free(rowi_val); rowi_val = NULL;
+   allocated = 0;
 #endif
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
