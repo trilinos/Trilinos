@@ -769,7 +769,7 @@ int Epetra_MpiDistributor::Resize_( int * sizes )
     bool match = true; 
     for( i = 0; i < nexports_; ++i )
       match = match && (sizes_[i]==sizes[i]);
-    int matched = match?0:1;
+    int matched = match?1:0;
     int match_count = 0;
     MPI_Allreduce( &matched, &match_count, 1, MPI_INT, MPI_SUM, comm_ );
     if( match_count == nprocs )
