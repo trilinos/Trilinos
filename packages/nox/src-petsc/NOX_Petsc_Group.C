@@ -59,13 +59,14 @@ Group::Group(const Parameter::List& params, Interface& i,
 {
   resetIsValid();
 
-  if(jacType == "Finite Difference") {
-    int ierr = MatGetColoring(J, MATCOLORING_NATURAL, isColoring);
-    ierr = MatFDColoringCreate(J, *isColoring, matColoring);
-    //ierr = MatFDColoringSetFunction(matColoring, 
-    //            (int (*)(void))ResidualPetscWrapper,
-    //            PETSC_NULL);
-  }
+  // This is material for FD jacobian and is not used for now --> RHooper
+  //if(jacType == "Finite Difference") {
+  //  int ierr = MatGetColoring(J, MATCOLORING_NATURAL, isColoring);
+  //  ierr = MatFDColoringCreate(J, *isColoring, matColoring);
+  //  ierr = MatFDColoringSetFunction(matColoring, 
+  //              (int (*)(void))ResidualPetscWrapper,
+  //              PETSC_NULL);
+  //}
 }
 
 Group::Group(const Group& source, CopyType type) :
@@ -78,8 +79,6 @@ Group::Group(const Group& source, CopyType type) :
   sharedJacobian(source.sharedJacobian),
   userInterface(source.userInterface),
   jacType(source.jacType)
-  //precType(source.precType),
-  //precOption(source.precOption),
 {
   switch (type) {
     
@@ -241,10 +240,8 @@ bool Group::computeJacobian()
     }
   }
   else if(jacType == "Finite Difference") {
-
-    cout << " Made it here !!!\n\n";
-    cin.get();
- 
+    cout << "Finite Difference evaluation not yet supported !!\n\n";
+    throw "NOX Error";
   }
 
   // Update status
@@ -298,7 +295,7 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   }
   
   // Get the Jacobian
-  Mat& Jacobian = sharedJacobian.getJacobian(this); // Check this, RH
+  Mat& Jacobian = sharedJacobian.getJacobian(this);
 
   // Create Petsc SLES problem for the linear solve
 
@@ -442,14 +439,6 @@ bool Group::preconditionVector(const Vector& input, Vector& result) const
   // Get petsc reference to the result vector
   Vec& r = result.getPetscVector();
 
-//  // Allocate the extra tmpVectorPtr if necessary
-//  if (tmpVectorPtr == NULL)
-//    tmpVectorPtr = new Vec;
-//  VecDuplicate(r, tmpVectorPtr);
-//
-//  // Get the reference to the temporary vector
-//  Vec& tmpVector = *tmpVectorPtr;
-
   // Set up preconditioner context
   PC pc;
 
@@ -501,12 +490,13 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
 }
 
 
-int Group::ResidualPetscWrapper(SNES, Vec& xx, Vec& fx, void*)
-{
-  bool status = userInterface.computeF(xx, fx);
-
-  return(0);
-}
+// This is intended for FD Jacobian computation --> RHooper
+//int Group::ResidualPetscWrapper(SNES, Vec& xx, Vec& fx, void*)
+//{
+//  bool status = userInterface.computeF(xx, fx);
+//
+//  return(0);
+//}
   
 
 bool Group::isF() const 
@@ -574,29 +564,4 @@ const Abstract::Vector& Group::getNewton() const
   return NewtonVector;
 }
 
-// LOCA specific member functions -- not implemented
-
-bool Group::setParameter(string param, double value)
-{
-  cerr << "Function not supported for Petsc Group" << endl;
-  return false;
-}
-
-bool Group::setRHS(const NOX::Abstract::Vector& input)
-{
-  cerr << "Function not supported for Petsc Group" << endl;
-  return false;
-}
-
-bool Group::isMassMatrix() const
-{
-  cerr << "Function not supported for Petsc Group" << endl;
-  return false;
-}
-
-bool Group::computeMassMatrix()
-{
-  cerr << "Function not supported for Petsc Group" << endl;
-  return false;
-}
 

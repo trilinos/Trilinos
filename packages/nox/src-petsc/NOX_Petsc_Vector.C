@@ -223,18 +223,3 @@ int Vector::length() const
   VecGetSize(*petscVec, &size);
   return size;
 }
-
-bool Vector::multiply(double gamma, const NOX::Abstract::Vector& A,
-              const NOX::Abstract::Vector& B, double alpha)
-{
-  cerr << "Function not supported for Petsc Vector class" << endl;
-  return false;
-}
-
-bool Vector::random()
-{
-  cerr << "Function not supported for Petsc Vector class" << endl;
-  return false;
-}
-
-

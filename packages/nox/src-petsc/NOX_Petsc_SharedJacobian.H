@@ -38,18 +38,17 @@
 namespace NOX {
 namespace Petsc {
 
-class Group;			// forward declaration
+class Group;  // forward declaration
 
   /*! \brief Shared Jacobian for NOX::Petsc::Group objects.
    * 
    * Due to the size of the Jacobian, we cannot afford to have
    * multiple copies. Instead we implement a shared Jacobian that
-   * that all groups use. 
+   * all groups use. 
    *
-   * NOTE: I have added a preconditioner Matrix to the SharedJacobian
+   * NOTE: An additional matrix is included with the SharedJacobian
    * in anticipation of having a separate Matrix for the Jacobian 
-   * and the Preconditioner.  This option will be in Trilinos by the end 
-   * of Feb 02. 
+   * and the Preconditioner.  This option will be available in the future.
    */
 
 class SharedJacobian {
@@ -82,10 +81,10 @@ public:
 
 protected:
 
-  //! Pointer to Epetra Jacobian matrix 
+  //! Pointer to Petsc Jacobian matrix 
   Mat* jacobian;
 
-  //! Pointer to Epetra Preconditioning Matrix 
+  //! Pointer to Petsc Preconditioning Matrix 
   Mat* prec;
 
   //! Pointer to const group that owns Jacobian

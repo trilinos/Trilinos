@@ -58,8 +58,6 @@ class Group : public Abstract::Group {
 
 public:
 
-//  friend int ::ResidualPetscWrapper(SNES, Vec& xx, Vec& fx, void*);
-
   //! Constructor.
   Group(const Parameter::List& params, Interface& i,
              Vec& x, Mat& J, string jType);
@@ -120,10 +118,21 @@ public:
   //! See above
   virtual bool applyJacobianDiagonalInverse(const Abstract::Vector& input, Abstract::Vector& result) const;
   
-  virtual bool preconditionVector(const Vector& input, Vector& result) const;
-  //! See above
-  virtual bool preconditionVector(const Abstract::Vector& input, Abstract::Vector& result) const;
-  
+  /*! 
+      \brief Preconditions a vector using one of the available methods in %Petsc
+ 
+      Currently, the preconditioning method corresponds to whatever
+      is available in the user's %Petsc installation and is specified
+      in the local \b .petscrc file.  For example, a direct solve can
+      be accomplished by specifying \b -pc_type \b lu (serial only),
+      whereas diagonal scaling can be achieved via \b -pc_type \b jacobi.
+  */ 
+  virtual bool preconditionVector(const Vector& input, 
+                                  Vector& result) const; 
+  //! See above 
+  virtual bool preconditionVector(const Abstract::Vector& input, 
+                                  Abstract::Vector& result) const;
+
   //@}
 
   /** @name "Is" functions
@@ -160,16 +169,6 @@ public:
   //@}
 
   virtual Abstract::Group* clone(CopyType type = DeepCopy) const;
-
-  //@{ \name LOCA Specific Methods.
-
-  virtual bool setParameter(string param, double value);
-  virtual bool setRHS(const NOX::Abstract::Vector& input);
-  virtual bool isMassMatrix() const;
-  virtual bool computeMassMatrix();
-
-  //@}
-
 
 protected:
 
@@ -215,13 +214,6 @@ protected:
 
   //! Specification of Jacobian Type
   string jacType;
-
-  //! A wrapper function for Petsc Finite Difference Jacobian
-  int ResidualPetscWrapper(SNES, Vec&, Vec&, void*);
-
-  //! Objects needed for Petsc Finite Difference approx to Jacobian
-  ISColoring* isColoring;
-  MatFDColoring* matColoring;
 
   //! Reference to the user supplied interface functions
   Interface& userInterface;

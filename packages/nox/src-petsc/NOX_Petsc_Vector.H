@@ -36,9 +36,6 @@
 #include "petscvec.h" 
 #include "NOX_Abstract_Vector.H" // base class
 
-// Forward declaration
-//class Epetra_Vector;  Is this needed, RH ??
-
 namespace NOX {
 
 //! %NOX %Petsc support.
@@ -55,7 +52,7 @@ class Vector : public Abstract::Vector {
   //! Destruct Vector.
   ~Vector();
 
-  //@{ \name Access to underlying Petra vector.
+  //@{ \name Access to underlying Petsc vector.
 
   //! Get reference to underlying Petsc vector.
   virtual Vec& getPetscVector();
@@ -135,13 +132,6 @@ class Vector : public Abstract::Vector {
   //@}
 
   virtual int length() const;
-
-  //@{ \name LOCA Specific Methods.
-
-  virtual bool multiply(double gamma, const NOX::Abstract::Vector& A,
-                        const NOX::Abstract::Vector& B, double alpha);
-  virtual bool random();
-
 
  private:
   

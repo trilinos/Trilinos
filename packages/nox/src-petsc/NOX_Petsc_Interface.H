@@ -38,15 +38,14 @@
 namespace NOX {
 namespace Petsc {
 
-  /*! \brief Used by NOX::Petra::Group to provide a link to the
-   *  external code for RHS and Jacobian fills ()if needed. */
+  /*! \brief Used by NOX::Petsc::Group to provide a link to the
+   *  external code for F and Jacobian evaluations (if needed). */
   /*! At a minimum the user must supply a computeF().  
    * If the user is supplying their own Petsc Mat for the Jacobian,
-   * then they must supply a computeJacobian().  If computeJacobian is
-   * not supplied, a Matrix-Free or Finite Differencing Petsc Mat
-   * can be used in NOX.  Preconditioning functions are only  needed 
-   * if the user wishes to supply their own preconditioner.  Otherwise
-   * Petsc SLES has built-in preconditioners to use.  */
+   * then they must supply a computeJacobian().  Preconditioning 
+   * functions are only needed if the user wishes to supply their own 
+   * preconditioner.  Otherwise Petsc SLES has built-in preconditioners 
+   * to use.  */
 class Interface {
 
 public:
@@ -57,7 +56,7 @@ public:
   //! Destructor
   virtual ~Interface() {};
 
-  //! Compute RHS given the specified input vector, x.  Returns true if computation was successful.
+  //! Compute F given the specified input vector, x.  Returns true if computation was successful.
   virtual bool computeF(const Vec& x, Vec& RHS) = 0;
   
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.

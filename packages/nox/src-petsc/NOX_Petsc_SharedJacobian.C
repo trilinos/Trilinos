@@ -31,7 +31,6 @@
 //@HEADER
 
 #include "NOX_Petsc_SharedJacobian.H" // class definition
-// External include from Trilinos
 #include "petscmat.h"
 
 using namespace NOX::Petsc;
@@ -49,7 +48,6 @@ SharedJacobian::SharedJacobian(Mat& j, Mat& p)
 
 SharedJacobian::~SharedJacobian()
 {
-  // Do nothing
 }
 
 Mat& SharedJacobian::getJacobian(const Group* newowner)
