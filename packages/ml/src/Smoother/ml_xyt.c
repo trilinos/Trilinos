@@ -15,13 +15,13 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    int i, j, Nsend, Nrecv, N_procs, N_bits;
 #ifdef out
    int jj, kk, *global_numbering, mask2, sub_mask, old_Ncount,
-       mask, proc;
+       mask, proc, N_count;
 #endif
    int start;
    int Nrows;
    ML_Operator *Amat, *omatrix;
    ML_CommInfoOP *getrow_comm;
-   int total_rows, sep_space, N_count;
+   int total_rows, sep_space;
    double *dmapper;
    int N_nz, allocated, *bindx, *row_ptr, row_length, max_nz_per_row;
    int *neighbors;
@@ -84,9 +84,9 @@ void setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    sep     = (int *) malloc(sep_space*sizeof(int));
    s_sizes = (int *) malloc( (N_bits+2)*sizeof(int) );
-   N_count = 0;
    *Nseparators = N_bits + 1;
 #ifdef out
+   N_count = 0;
    proc    = my_ml->comm->ML_mypid;
    old_Ncount = N_count;
    sub_mask = 0;
@@ -579,7 +579,7 @@ int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
 double total_submv = 0.;
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, j, k, Nrows, *bindx;
+   int i, k, Nrows, *bindx;
    double *val, sum;
    struct ML_CSR_MSRdata *temp;
    int *row_ptr;
@@ -651,7 +651,7 @@ int ML_submv(ML_Operator *Amat, double p[], double ap[])
 }
 int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, j, k, Nrows, total_send, total_rcv, nzeros, *cols, col, allocated_space, length;
+   int i, j, Nrows, total_send, total_rcv, *cols, col, allocated_space, length;
    double *p2, *vals, dtemp;
    ML_CommInfoOP *getrow_comm;
 
