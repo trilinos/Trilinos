@@ -39,7 +39,7 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=4, N_levels=9, nsmooth=1;
+	int num_PDE_eqns=5, N_levels=9, nsmooth=1;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -94,7 +94,6 @@ int  nblocks, *blocks;
 #else
 	fscanf(fp,"%d",&leng);
 #endif
-printf("the length is %d\n",leng);
 
 	fclose(fp);
 
@@ -108,7 +107,6 @@ printf("the length is %d\n",leng);
 	
   AZ_read_update(&N_update, &update, proc_config, N_grid_pts, num_PDE_eqns,
                  AZ_linear);
-	
 	
   AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
@@ -132,6 +130,7 @@ printf("the length is %d\n",leng);
   start_time = AZ_second();
 	
   ML_Create(&ml, N_levels);
+  ML_Set_PrintLevel(3);
 			
 			
   /* set up discretization matrix and matrix vector function */
