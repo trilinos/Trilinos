@@ -20,7 +20,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *vec, *Tcoarse_vec, *Pn_vec, *Tfine_Pn_vec;
   int i1, old_nzptr, i3, *index;
   int *encoded_dir_node, *temp_bindx, Npos_dirichlet = 0, Nneg_dirichlet = 0;
-  int Nnondirichlet;
+  int Nnondirichlet, Nnz_finegrid, Nnz_allgrids;
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *temp_val, d1, d2;
 
   /*
@@ -46,6 +46,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   /* Set up the operators corresponding to regular unsmoothed         */
   /* aggregation on the nodal matrix.                                 */
   /*------------------------------------------------------------------*/
+  Nnz_finegrid = ml_edges->Amat[fine_level].N_nonzeros;
+  Nnz_allgrids = ml_edges->Amat[fine_level].N_nonzeros;
 
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
@@ -711,9 +713,16 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
+     Nnz_allgrids += ml_edges->Amat[grid_level].N_nonzeros;
+
 
      Tfine = Tcoarse;
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
+
+  if (Tfine->comm->ML_mypid==0 && ag->print_flag < ML_Get_PrintLevel())
+    printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
+	   ((double) Nnz_finegrid));
+
 
   ML_free(bindx);
   ML_free(val);
