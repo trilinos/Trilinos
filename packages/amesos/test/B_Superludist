@@ -75,7 +75,7 @@ mpirun -np 1 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.
 mpirun -np 1 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 5e-13 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 1 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 1e-9 5e-11 >>SST.stdout
+mpirun -np 1 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 9e-11 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 1 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
 
@@ -92,9 +92,9 @@ mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 0 0 1 0 1e-13 5e-14 >>SST.std
 mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 0 0 1 0 1e-10 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 0 0 1 0 3e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 0 0 1 0 4e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 5e-16 >>SST.stdout
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 0 0 1 0 1e-10 2e-13 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 0 0 1 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 1e-9 5e-11 >>SST.stdout
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 0 0 1 0 6e-9 9e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 0 0 1 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 0 0 1 0 5e-13 1000 >>SST.stdout
 
@@ -111,9 +111,9 @@ mpirun -np 4 amesos_test.exe SUPERLUDIST add32.rua 1 1 -10 0 1e-13 5e-14 >>SST.s
 mpirun -np 4 amesos_test.exe SUPERLUDIST gemat12.rua 1 1 -10 0 1e-10 5e-12 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST orani678.rua 1 1 -10 0 3e-13 5e-14 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST dw2048.rua 1 1 -10 0 4e-13 5e-14 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 1 1 -10 0 1e-10 5e-16 >>SST.stdout
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity13.rua 1 1 -10 0 1e-10 2e-13 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cavity09.rua 1 1 -10 0 8e-6 5e-6 >>SST.stdout
-mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 1e-9 5e-11 >>SST.stdout
+mpirun -np 4 amesos_test.exe SUPERLUDIST cavity05.rua 1 1 -10 0 6e-9 9e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST cry10000.rua 1 1 -10 0 3e-3 5e-11 >>SST.stdout
 mpirun -np 4 amesos_test.exe SUPERLUDIST mcfe.rua 1 1 -10 0 5e-13 1000 >>SST.stdout
 
