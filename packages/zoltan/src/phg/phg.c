@@ -165,8 +165,9 @@ static int Zoltan_PHG_Initialize_Params(
   PHGPartParams *hgp
 )
 {
-int ierr;
-
+  int ierr;
+  char *yo = "Zoltan_PHG_Initalize_Params";
+  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL",  (void*) &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X",          (void*) &(hgp->nProc_x));
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y",          (void*) &(hgp->nProc_y));
@@ -198,11 +199,18 @@ int ierr;
   ierr = set_proc_distrib(zz->Proc, zz->Num_Proc, &hgp->nProc_x, &hgp->nProc_y,
                           &hgp->myProc_x, &hgp->myProc_y);
   if (ierr != ZOLTAN_OK) 
-    goto End;
+      goto End;
 
+  if ((MPI_Comm_split(zz->Communicator, hgp->myProc_x, hgp->myProc_y, &hgp->col_comm) != MPI_SUCCESS)
+      || (MPI_Comm_split(zz->Communicator, hgp->myProc_y, hgp->myProc_x, &hgp->row_comm) != MPI_SUCCESS)) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "MPI_Comm_Split failed");
+      return ZOLTAN_FATAL;
+  }
+/*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
+  
   /* Convert strings to function pointers. */
   ierr = Zoltan_PHG_Set_Part_Options (zz, hgp);
-
+  
 End:
   return ierr;
 }

@@ -151,6 +151,8 @@ struct PHGPartParamsStruct {
                   /* nProc_x * nProc_y should equal number of processors!     */
   int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
   int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
+  MPI_Comm row_comm; /* my processor's row communicator */
+  MPI_Comm col_comm; /* my processor's column communicator */
 };
 
 typedef struct PHGPartParamsStruct PHGPartParams;
@@ -246,8 +248,8 @@ extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_HPart_Lib(ZZ*, PHGraph*, int, Partition, PHGPartParams*, 
                                 int);
 extern int Zoltan_PHG_HPart_Info(ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-extern double Zoltan_PHG_hcut_size_total(PHGraph*, Partition);
-extern double Zoltan_PHG_hcut_size_links(ZZ*, PHGraph*, Partition);
+extern double Zoltan_PHG_hcut_size_total(ZZ*, PHGraph*, Partition, PHGPartParams*, int);
+extern double Zoltan_PHG_hcut_size_links(ZZ*, PHGraph*, Partition, PHGPartParams*, int);    
 extern double Zoltan_PHG_HPart_balance(ZZ*, PHGraph*, int, Partition);
 
 extern int Zoltan_PHG_move_vertex(PHGraph*, int, int, int, int*, int**, double*,

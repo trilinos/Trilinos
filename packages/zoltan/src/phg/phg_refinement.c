@@ -19,6 +19,7 @@ extern "C" {
 #include "phg.h"
 
 static ZOLTAN_PHG_REFINEMENT_FN refine_no;
+static ZOLTAN_PHG_REFINEMENT_FN refine_fm2;
 static ZOLTAN_PHG_REFINEMENT_FN refine_grkway;
 
 /****************************************************************************/
@@ -27,6 +28,7 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 {
   
   if      (!strcasecmp(str, "grkway"))         return refine_grkway;
+  if      (!strcasecmp(str, "fm2"))            return refine_fm2;  
   else if (!strcasecmp(str, "no"))             return refine_no;
   else                                         return NULL;
 }
@@ -57,36 +59,125 @@ static int refine_no (
 
 
 
-/****************************************************************************/
-/*
-static int gain_check (PHGraph *hg, double *gain, int *part, int **cut)
+/*****************************************************************************/
+/* 2-way Parallel FM refinement                                              */
+static char *uMe(ZZ *zz, PHGPartParams *hgp)
 {
-  double g;
-  int vertex, j, edge;
+    static char msg[1024];
 
-  for (vertex = 0; vertex < hg->nVtx; vertex++) {
-    g = 0.0;
-    for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
-      edge = hg->vedge[j];
-      if (cut[part[vertex]][edge] == 1)
-        g += (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
-      else if (cut[1-part[vertex]][edge] == 0)
-        g -= (hg->ewgt ? (hg->ewgt[edge]) : 1.0);
-    }
-    if (g != gain[vertex]) {
-      printf("Wrong gain %f %f\n", g, gain[vertex]);
-      return ZOLTAN_FATAL;
-    }
-  }
-
-  return ZOLTAN_OK;
+    sprintf(msg, "<%d/%d>: (%d,%d)/[%d,%d] ->", zz->Proc, zz->Num_Proc, hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y);
+    return msg;
 }
-*/
+
+static int refine_fm2 (
+  ZZ *zz,
+  PHGraph *hg,
+  int p,
+  Partition part,
+  PHGPartParams *hgp,
+  float bal_tol
+)
+{
+    int    i, j, vertex, edge, *pins[2], *tpins[2], *moves;
+    double total_weight, weights[2], tweights[2], max_weight[2];
+    double cutsize, best_cutsize, *gain = 0;
+    HEAP   heap[2];
+    char   *yo="local_fm2";
+    
+    double ratio = hg->ratio, error, best_error;
+    int    best_imbalance, imbalance;
+
+#ifdef _DEBUG    
+    FILE *fp;
+    char fname[512];
+    int i;
+
+    sprintf(fname, "uvc-phg-debug.%d.txt", zz->Proc);    
+    fp = fopen(fname, "w");
+    if (!fp) {
+        printf ("failed to open debug file '%s'\n", fname);
+        return ZOLTAN_FATAL;
+    }
+    fprintf(fp, "Process (%d, %d) of [%d, %d]\n", hg->myProc_x, hg->myProc_y, hg->nProc_x, hg->nProc_y);
+    fprintf(fp, "H(%d, %d, %d)\n", hg->nVtx, hg->nEdge, hg->nNonZero);
+    fprintf(fp, "p=%d  bal_tol = %.3f\n PartVec:\n", p, bal_tol);    
+    for (i = 0; i < hg->nVtx; ++i)
+        fprintf(fp, "%d ", part[i]);
+    fprintf(fp, "\n\n");
+    Zoltan_PHG_Print(zz, hg, fp);
+    fclose(fp);
+#endif
+
+    if (p != 2) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for phg_fm2.");
+        return ZOLTAN_FATAL;
+    }
+    
+    if (hg->nEdge == 0)
+        return ZOLTAN_OK;
+    
+    /* Calculate the weights in each partition and total, then maxima */
+    weights[0] = weights[1] = 0.0;
+    tweights[0] = tweights[1] = 0.0;
+    if (hg->vwgt)  
+        for (i = 0; i < hg->nVtx; i++)
+            tweights[part[i]] += hg->vwgt[i];
+    else  
+        for (i = 0; i < hg->nVtx; i++)
+            tweights[part[i]] += 1.0;
+
+    MPI_Allreduce(tweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgp->row_comm);
+    total_weight = weights[0] + weights[1];
+    max_weight[0] = total_weight * bal_tol *      ratio;
+    max_weight[1] = total_weight * bal_tol * (1 - ratio);
+
+    printf("%s W:(%.2lf, %.2lf) MaxW:(%.2lf, %.2lf)\n", uMe(zz, hgp), weights[0], weights[1], max_weight[0], max_weight[1]);
+    
+    if (!(pins[0]    = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+        || !(tpins[0] = (int*)   ZOLTAN_CALLOC(2 * hg->nEdge, sizeof(int)))
+        || !(moves  = (int*)   ZOLTAN_CALLOC    (hg->nVtx,  sizeof(int)))
+        || !(gain   = (double*)ZOLTAN_CALLOC    (hg->nVtx,  sizeof(double))) ) {
+         Zoltan_Multifree(__FILE__,__LINE__, 3, &pins[0], &moves, &gain);
+         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+         return ZOLTAN_MEMERR;
+    }
+    pins[1] = &(pins[0][hg->nEdge]);
+    tpins[1] = &(tpins[0][hg->nEdge]);
+
+    /* Initial calculation of the pins distribution  */
+    for (i = 0; i < hg->nEdge; ++i)
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+            ++(tpins[part[hg->hvertex[j]]][i]);
+
+    MPI_Allreduce(tpins[0], pins[0], 2*hg->nEdge, MPI_INT, MPI_SUM, hgp->row_comm); 
+    cutsize = 0.0;
+    for (i=0; i < hg->nEdge; ++i) {
+        if (pins[0][i] && pins[1][i])
+            cutsize += (hg->ewgt ? hg->ewgt[i] : 1.0);
+    }
+
+    /* Just for debugging */
+    best_cutsize = Zoltan_PHG_hcut_size_total(zz, hg, part, hgp, p);
+    error = Zoltan_PHG_hcut_size_links(zz, hg, part, hgp, p);
+    printf("%s: Initial cutsize=%.2lf Verify: total=%.2lf links=%.2lf\n", uMe(zz, hgp), cutsize,
+           best_cutsize,
+           error);
+    if (error!=cutsize || best_cutsize!=cutsize) {
+        Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &tpins[0], &moves, &gain);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid cut!!!");
+    }
+    /* debuggging code ends here */
+        
+
+    
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &pins[0], &tpins[0], &moves, &gain);
+    return ZOLTAN_OK;
+}
 
 
 
-/***************************************************************************/
 
+/*****************************************************************************/
 /* This algorithm is loosely based on "A Coarse-Grained Parallel Formulation */
 /* of Multilevel k-way Graph Partitioning Algorithm", Karypis & Kumar, 1997. */
 /* It is implemented in serial as a testbed for future parallel development  */
@@ -100,10 +191,9 @@ typedef struct
    int   destination;
    } Vdata;
 
-static int isabove (int origin, int test, int p);
-static int isbelow (int origin, int test, int p);
-static int comparison  (const void*, const void*);
-static int comparison2 (const void*, const void*);
+
+static int comparison_gain_weight_no  (const void*, const void*);
+static int comparison_weight (const void*, const void*);
 
 static int refine_grkway (
   ZZ *zz,
@@ -127,7 +217,7 @@ static int refine_grkway (
   int found, smallpart;
   int **up, *upstore;
 
-  /* allocate necessary storage for heaps and weight calculation */
+  /* Allocate necessary storage for heaps and weight calculation */
   if  (!(part_weight = (double*) ZOLTAN_CALLOC (p,         sizeof (double)))
    ||  !(gain        = (double*) ZOLTAN_CALLOC (p,         sizeof (double)))
    ||  !(cuts        = (int**)   ZOLTAN_CALLOC (hg->nEdge, sizeof (int)))
@@ -204,7 +294,7 @@ for (i = 0; i < p; i++)
       ++listend[ipart];
     }
     for (ipart = 0; ipart < p; ipart++)
-      qsort (lists[ipart], listend[ipart], sizeof (Vdata), comparison2);
+      qsort (lists[ipart], listend[ipart], sizeof (Vdata), comparison_weight);
 
     for (ipart = 0; ipart < p; ipart++)
       for (i = 0;  (part_weight[ipart] > max_weight) && (i < listend[ipart]); i++)  {
@@ -279,7 +369,7 @@ for (i = 0; i < p; i++)
     } /* end of loop over all vertices */
 
     for (ipart = 0; ipart < p; ipart++)
-      qsort (lists[ipart], listend[ipart], sizeof (Vdata), comparison);
+      qsort (lists[ipart], listend[ipart], sizeof (Vdata), comparison_gain_weight_no);
 
     /* make moves while balance is OK */
     for (ipart = 0; ipart < p; ipart++)
@@ -310,7 +400,7 @@ for (i = 0; i < p; i++)
    
 
 /* note: sort is normally asending order, need the opposite!  */
-static int comparison (const void *a, const void *b)
+static int comparison_gain_weight_no (const void *a, const void *b)
 {
   if (((Vdata*)a)->gain < ((Vdata*)b)->gain)       return  1;
   if (((Vdata*)a)->gain > ((Vdata*)b)->gain)       return -1;
@@ -326,7 +416,7 @@ static int comparison (const void *a, const void *b)
 
 
 
-static int comparison2 (const void *a, const void *b)
+static int comparison_weight (const void *a, const void *b)
 {
   if (((Vdata*)a)->weight > ((Vdata*)b)->weight)   return  1;
   if (((Vdata*)a)->weight < ((Vdata*)b)->weight)   return -1;

@@ -215,12 +215,13 @@ int Zoltan_PHG_HPart_Lib (
       goto End;
   }
   if (hgp->output_level >= PHG_DEBUG_LIST)
-    printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f\n",
-     hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
-     hgp->coarsepartition_str, hgp->refinement_str, p,
-     Zoltan_PHG_HPart_balance(zz, hg, p, part),
-     Zoltan_PHG_hcut_size_links(zz, hg, part));
-
+      printf("FINAL %3d |V|=%6d |E|=%6d |I|=%6d %d/%s/%s-%s p=%d bal=%.2f cutl=%.2f, %.2f\n",
+             hg->info, hg->nVtx, hg->nEdge, hg->nNonZero, hg->redl, hgp->redm_str,
+             hgp->coarsepartition_str, hgp->refinement_str, p,
+             Zoltan_PHG_HPart_balance(zz, hg, p, part),
+             Zoltan_PHG_hcut_size_total(zz, hg, part, hgp, p),
+             Zoltan_PHG_hcut_size_links(zz, hg, part, hgp, p));
+  
   if (hgp->output_level >= PHG_DEBUG_PLOT)
     Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, part,
      "partitioned plot");
@@ -235,19 +236,59 @@ End:
 /****************************************************************************/
 /* Calculates the cutsize of a partition by summing the weight of all edges
    which span more than one part. Time O(|I|). */
-double Zoltan_PHG_hcut_size_total (PHGraph *hg, Partition part)
+double Zoltan_PHG_hcut_size_total (ZZ *zz, PHGraph *hg, Partition part, PHGPartParams *hgp, int p)
 {
-  int i, j, hpart;
-  double cut = 0.0;
+    int i, j, *netpart, *allparts;    
+    double cut = 0.0, totalcut=0.0;
+    char *yo = "Zoltan_PHG_hcut_size_total";
+    
+    if (!(netpart = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    
+    if (!hg->myProc_x)
+        if (!(allparts = (int*) ZOLTAN_CALLOC (hgp->nProc_x*hg->nEdge, sizeof(int)))) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
 
-  for (i = 0; i < hg->nEdge; i++) {
-    hpart = part[hg->hvertex[hg->hindex[i]]];
-    for (j = hg->hindex[i] + 1; j < hg->hindex[i+1]
-     && part[hg->hvertex[j]] == hpart; j++);
-      if (j != hg->hindex[i+1])
-        cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
-  }
-  return cut;
+    for (i = 0; i < hg->nEdge; ++i) 
+        if (hg->hindex[i]>=hg->hindex[i+1])
+            netpart[i] = -1;
+        else {
+            j = hg->hindex[i];
+            netpart[i] = part[hg->hvertex[j]];
+            for (++j; j < hg->hindex[i+1]
+                     && part[hg->hvertex[j]] == netpart[i]; ++j);
+            if (j != hg->hindex[i+1])
+                netpart[i] = -2;
+    }
+
+    MPI_Gather(netpart, hg->nEdge, MPI_INT, allparts, hg->nEdge, MPI_INT, 0, hgp->row_comm);
+    ZOLTAN_FREE ((void**) &netpart);
+
+    if (!hg->myProc_x) {
+        for (i = 0; i < hg->nEdge; ++i) {
+            int p=-1;
+            for (j = 0; j<hgp->nProc_x; ++j)
+                if (allparts[j*hg->nEdge+i]==-2)
+                    break;
+                else if (allparts[j*hg->nEdge+i]>=0) {
+                    if (p==-1)
+                        p = allparts[j*hg->nEdge+i];
+                    else if (p != allparts[j*hg->nEdge+i])
+                        break;
+                }            
+            if (j<hgp->nProc_x)
+                cut += (hg->ewgt ? hg->ewgt[i] : 1.0);
+        }
+        
+        ZOLTAN_FREE ((void**) &allparts);
+        MPI_Reduce(&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgp->col_comm);
+    }
+    MPI_Bcast(&totalcut, 1, MPI_DOUBLE, 0, zz->Communicator);
+    return totalcut;    
 }
 
 
@@ -257,32 +298,45 @@ double Zoltan_PHG_hcut_size_total (PHGraph *hg, Partition part)
    the number of parts it spans across. This value minus one is the
    cutsize of this edge and the total cutsize is the sum of the single
    cutsizes. Time O(|I|). */
-double Zoltan_PHG_hcut_size_links (ZZ *zz, PHGraph *hg, Partition part)
+double Zoltan_PHG_hcut_size_links (ZZ *zz, PHGraph *hg, Partition part, PHGPartParams *hgp, int p)
 {
-  int i, j, p=0, *parts, nparts;
-  double cut = 0.0;
-  char *yo = "Zoltan_PHG_hcut_size_links";
-
-  for (i=0; i<hg->nVtx; i++)
-    p = MAX(p,part[i]);
-  p++;
-
-  if (!(parts = (int*) ZOLTAN_CALLOC (p, sizeof(int)))) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
-    return ZOLTAN_MEMERR;
-  }
-
-  for (i = 0; i < hg->nEdge; i++) {
-    nparts = 0;
-    for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
-      if (parts[part[hg->hvertex[j]]] < i+1)
-        nparts++;
-      parts[part[hg->hvertex[j]]] = i + 1;
+    int i, j, *cuts, *rescuts, *parts, nparts;
+    double cut = 0.0, totalcut=0.0;
+    char *yo = "Zoltan_PHG_hcut_size_links";
+    
+    if (!(cuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }   
+    if (!hg->myProc_x)
+        if (!(rescuts = (int*) ZOLTAN_CALLOC (p*hg->nEdge, sizeof(int)))) {
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+            return ZOLTAN_MEMERR;
+        }
+    
+    for (i = 0; i < hg->nEdge; ++i) {
+        parts = &cuts[i*p];
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j) 
+            ++parts[part[hg->hvertex[j]]];
     }
-    cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
-  }
-  ZOLTAN_FREE ((void**) &parts);
-  return cut;
+    
+    MPI_Reduce(cuts, rescuts, p*hg->nEdge, MPI_INT, MPI_SUM, 0, hgp->row_comm);
+    ZOLTAN_FREE ((void**) &cuts);
+
+    if (!hg->myProc_x) {
+        for (i = 0; i < hg->nEdge; ++i) {
+            parts = &rescuts[i*p];
+            for (j=nparts=0; j<p; ++j)
+                if (parts[j])
+                    ++nparts;
+            cut += (nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0);
+        }        
+        ZOLTAN_FREE ((void**) &rescuts);
+
+        MPI_Reduce(&cut, &totalcut, 1, MPI_DOUBLE, MPI_SUM, 0, hgp->col_comm);
+    }
+    MPI_Bcast(&totalcut, 1, MPI_DOUBLE, 0, zz->Communicator);
+    return totalcut;
 }
 
 
@@ -393,7 +447,7 @@ int Zoltan_PHG_HPart_Info (
 
   printf ("EDGE-based:\n");
   printf (" Cuts(total/links)  : %.3f %.3f\n",
-   Zoltan_PHG_hcut_size_total(hg,part),Zoltan_PHG_hcut_size_links(zz,hg,part));
+   Zoltan_PHG_hcut_size_total(zz, hg, part, hgp, p), Zoltan_PHG_hcut_size_links(zz, hg, part, hgp, p));
   printf ("----------------------------------------------------------------\n");
 
   return ZOLTAN_OK;
