@@ -89,6 +89,17 @@ bool NOX::LineSearch::Polynomial::reset(Parameter::List& params)
   totalNumNonTrivialLineSearches = 0;
   totalNumFailedLineSearches = 0;
   totalNumIterations = 0;
+
+  allowIncrease = params.isParameter("Allowed Relative Increase");
+  if(allowIncrease) {
+    relIncrease = params.getParameter("Allowed Relative Increase", 1.e2);
+    numAllowed = params.getParameter("Maximum Increase Steps", maxIters);
+    if(relIncrease<=0) {
+      cerr << "NOX::LineSearch::NM_Polynomial::reset - Invalid \"Allowed Relative Increase\"" << endl;
+      throw "NOX Error";
+    }
+  }
+
   return true;
 }
 
@@ -133,8 +144,12 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     isFailed = true;
   else if (doForceInterpolation)
     isConverged = false;
-  else
+  else {
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
+    if(allowIncrease)
+      isConverged = (isConverged || 
+                     isIncreaseAllowed(newf, oldf, totalNumLineSearchCalls) );
+  }
 
   // Increment the number of newton steps requiring a line search
   if (!isConverged)
@@ -225,6 +240,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     
     eta = 1.0 - step * (1.0 - eta);
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
+    if(allowIncrease)
+      isConverged = (isConverged || 
+                     isIncreaseAllowed(newf, oldf, totalNumLineSearchCalls) );
     
   } // End while loop 
 
