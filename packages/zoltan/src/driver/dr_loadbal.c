@@ -332,7 +332,7 @@ int get_num_edges(void *data, LB_GID global_id, LB_LID local_id, int *ierr)
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-void edge_list_fn (void *data, LB_GID global_id, LB_LID local_id,
+void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
                    LB_GID *nbor_global_id, int *nbor_procs,
                    int get_ewgts, int *nbor_ewgts, int *ierr)
 {
