@@ -1456,7 +1456,6 @@ for ( i = 0; i < Nrows; i++ )
    for ( j = new_ia[i]; j < new_ia[i+1]; j++ )
       printf("P(%4d,%4d) = %e\n", i, new_ja[j], new_val[j]);
 */
-   (*Pmatrix) = ML_Operator_Create(comm);
    ML_Operator_Set_ApplyFuncData(*Pmatrix, Ncoarse, Nrows, ML_EMPTY, csr_data, 
                                  Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
