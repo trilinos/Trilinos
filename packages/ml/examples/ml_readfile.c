@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 
   AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
 
-  AZ_transform(proc_config, &external, bindx, val,  update, &update_index,
+  AZ_transform_norowreordering(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
 	       AZ_MSR_MATRIX);
 	
