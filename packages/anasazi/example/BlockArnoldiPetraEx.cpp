@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
 
 	int MyPID = Comm.MyPID();
 	int NumProc = Comm.NumProc();
-	std::cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<std::endl;
+	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
 	bool verbose = (MyPID==0);
 
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
 
 #ifdef UNIX
 	if (verbose)
-		std::cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << std::endl;
+		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
 #endif
 
 
