@@ -1,4 +1,4 @@
-#!/bin/csh
+#!/bin/csh -x
 
 #@HEADER
 # ************************************************************************
@@ -124,9 +124,9 @@ echo `uname -a` >>& $file
 # here, the pwd is ml/test
 #foreach f ( 2d_Poisson )
 foreach f ( ${TEST_SUBDIRS} )
-	cd $f
-    echo "pwd = $PWD"
-    echo "directory contents of $f:"
+	cd ${f}
+    echo "pwd = ${PWD}"
+    echo "directory contents of ${f}:"
     ls
 	foreach g(*.csh)
 		echo "############" $g "##############" >>& ../$file
