@@ -36,7 +36,7 @@ static PARAM_VARS Jostle_params[] = {
         { "JOSTLE_GATHER_THRESHOLD", NULL, "INT" },
         { "JOSTLE_MATCHING", NULL, "STRING" },
         { "JOSTLE_REDUCTION", NULL, "STRING" },
-        { "JOSTLE_CONNECT", NULL, "INT" },
+        { "JOSTLE_CONNECT", NULL, "STRING" },
         { NULL, NULL, NULL } };
 
 /**********  parameters structure used by both ParMetis and Jostle **********/
@@ -153,7 +153,8 @@ int LB_Jostle(
   char blank[MAX_PARAM_STRING_LEN+1]; 
   char matching[MAX_PARAM_STRING_LEN+1];
   char reduction[MAX_PARAM_STRING_LEN+1];
-  int  i, option, threshold, gather_threshold, connect; 
+  char connect[MAX_PARAM_STRING_LEN+1];
+  int  i, option, threshold, gather_threshold; 
   int num_proc = lb->Num_Proc;     /* Temporary variables whose addresses are */
   int proc = lb->Proc;             /* passed to Jostle. We don't              */
   MPI_Comm comm = lb->Communicator;/* want to risk letting external packages  */
@@ -176,9 +177,9 @@ int LB_Jostle(
   /* Set parameters */
   threshold = 0;
   gather_threshold = 0;
-  connect = 0;
   matching[0] = '\0';
   reduction[0] = '\0';
+  connect[0] = '\0';
   LB_Bind_Param(Jostle_params, "JOSTLE_OUTPUT_LEVEL", 
                 (void *) &option);
   LB_Bind_Param(Jostle_params, "JOSTLE_THRESHOLD",    
@@ -190,7 +191,7 @@ int LB_Jostle(
   LB_Bind_Param(Jostle_params, "JOSTLE_REDUCTION",    
                 (void *) reduction);
   LB_Bind_Param(Jostle_params, "JOSTLE_CONNECT",    
-                (void *) &connect);
+                (void *) connect);
 
   LB_Assign_Param_Vals(lb->Params, Jostle_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc); 
@@ -206,11 +207,6 @@ int LB_Jostle(
     sprintf(str, "gather threshold = %d", gather_threshold);
     jostle_env(str);
   }
-  if (connect){
-    sprintf(str, "%s", blank);
-    sprintf(str, "connect = %d", connect);
-    jostle_env(str);
-  }
   if (matching[0]){
     sprintf(str, "%s", blank);
     sprintf(str, "matching = %s", matching);
@@ -219,6 +215,11 @@ int LB_Jostle(
   if (reduction[0]){
     sprintf(str, "%s", blank);
     sprintf(str, "reduction = %s", reduction);
+    jostle_env(str);
+  }
+  if (connect[0]){
+    sprintf(str, "%s", blank);
+    sprintf(str, "connect = %s", connect);
     jostle_env(str);
   }
 
@@ -282,14 +283,15 @@ static int LB_ParMetis_Jostle(
 {
   static char *yo = "LB_ParMetis_Jostle";
   int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
-  int obj_wgt_dim, comm_wgt_dim, check_graph, scale; 
+  int obj_wgt_dim, comm_wgt_dim, check_graph, scaled_wgt_max; 
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part;
   int network[4] = {0, 1, 1, 1};
-  float  *float_vwgt, *xyz, *max_wgt;
+  float *float_vwgt, *xyz, scale, min_wgt, max_wgt; 
+  float min_wgt_local, max_wgt_local;
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -315,7 +317,7 @@ static int LB_ParMetis_Jostle(
    */
   nbors_proc = NULL;
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
-  float_vwgt = max_wgt = xyz = NULL;
+  float_vwgt = xyz = NULL;
   ptr = proc_list = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
@@ -355,10 +357,10 @@ static int LB_ParMetis_Jostle(
   }
 
   /* Get parameter options shared by ParMetis and Jostle */
-  scale = 100;     /* default */
-  check_graph = 1; /* default */
+  scaled_wgt_max = 32000;   /* default */
+  check_graph = 1;          /* default */
   LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
-  LB_Bind_Param(Graph_params, "SCALED_WEIGHT_MAX", (void *) &scale);
+  LB_Bind_Param(Graph_params, "SCALED_WEIGHT_MAX", (void *) &scaled_wgt_max);
   LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
@@ -793,40 +795,49 @@ static int LB_ParMetis_Jostle(
     if (obj_wgt_dim){
       vwgt = (idxtype *)LB_MALLOC(obj_wgt_dim*num_obj
                           * sizeof(idxtype));
-      max_wgt = (float *)LB_MALLOC(2*obj_wgt_dim * sizeof(float));
 
-      /* Compute local max of the obj weights (for each dimension ) */
-      for (j=0; j<obj_wgt_dim; j++)
-        max_wgt[j] = 0;
-      for (i=0; i<num_obj; i++){
-        for (j=0; j<obj_wgt_dim; j++){
-          if (float_vwgt[i*obj_wgt_dim+j]>max_wgt[j]) 
-              max_wgt[j] = float_vwgt[i*obj_wgt_dim+j];
-        }
+      /* Compute local min & max of the obj weights (over all dimensions) */
+      min_wgt_local = MAXFLOAT;
+      max_wgt_local = 0;
+      for (i=0; i<num_obj*obj_wgt_dim; i++){
+        if ((float_vwgt[i]>0) && (float_vwgt[i]<max_wgt_local)) 
+          min_wgt_local = float_vwgt[i];
+        if (float_vwgt[i]>max_wgt_local) 
+          max_wgt_local = float_vwgt[i];
       }
-      /* Compute global max of the obj weights (for each dimension ) */
-      MPI_Allreduce(max_wgt, &max_wgt[obj_wgt_dim], obj_wgt_dim, 
+      /* Compute global min & max of the obj weights */
+      MPI_Allreduce(&max_wgt_local, &max_wgt, obj_wgt_dim, 
+          MPI_FLOAT, MPI_MAX, lb->Communicator);
+      MPI_Allreduce(&min_wgt_local, &min_wgt, obj_wgt_dim, 
           MPI_FLOAT, MPI_MAX, lb->Communicator);
 
       if (lb->Debug_Level >= LB_DEBUG_ALL)
-        printf("[%1d] Debug: Converting vertex weights, scale = %d, "
-               "max_wgt = %g\n", 
-               lb->Proc, scale, max_wgt[obj_wgt_dim]);
+        printf("[%1d] Debug: Converting vertex weights, scaled_wgt_max = %d, "
+               "min_wgt = %d, max_wgt = %g\n", lb->Proc, scaled_wgt_max, 
+               min_wgt, max_wgt);
 
       /* Convert weights to integers between 1 and SCALED_WEIGHT_MAX */
-      jj = 0;
-      for (i=0; i<num_obj; i++){
-        for (j=0; j<obj_wgt_dim; j++, jj++){
-          if (scale>0)
-             vwgt[jj] = (int)ceil(float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
-          else if (scale<0)
-             vwgt[jj] = (int) (-float_vwgt[jj]*scale/max_wgt[obj_wgt_dim +j]);
-          else /* scale == 0 */
-             vwgt[jj] = (int) float_vwgt[jj];
-        }
+      scale = 1;
+      if (min_wgt == MAXFLOAT){
+        fprintf(stderr, "ZOLTAN ERROR: All object weights are zero.\n");
+        FREE_MY_MEMORY;
+        LB_TRACE_EXIT(lb, yo);
+        return LB_FATAL;
+      }
+      if (scaled_wgt_max){
+        /* First try to scale the smallest weight to 1 */
+        scale = 1./min_wgt;
+        /* Check if max weight becomes too large. Adjust if necessary. */
+        if (scale*max_wgt > scaled_wgt_max)
+          scale = scaled_wgt_max/max_wgt;
+      }
+      for (i=0; i<num_obj*obj_wgt_dim; i++){
+        if (scale==1)
+           vwgt[i] = (int) float_vwgt[i];
+        else
+           vwgt[i] = (int) ceil(float_vwgt[i]*scale);
       }
       LB_FREE(&float_vwgt);
-      LB_FREE(&max_wgt);
     }
 
   } /* end get_graph_data */
