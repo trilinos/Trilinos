@@ -35,42 +35,51 @@ namespace EpetraExt {
 // EpetraExt::BlockVector Constructor
 BlockVector::BlockVector(
       const Epetra_BlockMap & BaseMap,
-      const Epetra_BlockMap & GlobalMap )
+      const Epetra_BlockMap & GlobalMap,
+      int NumBlocks )
   : Epetra_Vector( GlobalMap ),
-    BaseMap_( BaseMap )
+    BaseMap_( BaseMap ),
+    NumBlocks_( NumBlocks )
 {
-  AllocateBlock_();
+  AllocateBlocks_();
 }
 
 //==========================================================================
 // Copy Constructor
 BlockVector::BlockVector(const BlockVector& Source)
   : Epetra_Vector( dynamic_cast<const Epetra_Vector &>(Source) ),
-    BaseMap_( Source.BaseMap_ )
+    BaseMap_( Source.BaseMap_ ),
+    NumBlocks_( Source.NumBlocks_ )
 {
-  AllocateBlock_();
+  AllocateBlocks_();
 }
 
 //=========================================================================
 BlockVector::~BlockVector()
 {
-  DeleteBlock_();
+  DeleteBlocks_();
 }
 
 //=========================================================================
-void BlockVector::AllocateBlock_(void)
+void BlockVector::AllocateBlocks_(void)
 {
   double * Ptrs;
   ExtractView( &Ptrs );
 
-  Block_ = new Epetra_Vector( View, BaseMap_, Ptrs );
+  Blocks_.resize( NumBlocks_ );
+  int NumElements = BaseMap_.NumMyElements();
+  for( int i = 0; i < NumBlocks_; ++i )
+    Blocks_[i] = new Epetra_Vector( View, BaseMap_, Ptrs+(i*NumElements) );
 }
 
 //=========================================================================
-void BlockVector::DeleteBlock_(void)
+void BlockVector::DeleteBlocks_(void)
 {
-  if( Block_ ) delete Block_;
-  Block_ = 0;
+  for( int i = 0; i < NumBlocks_; ++i )
+  {
+    delete Blocks_[i];
+    Blocks_[i] = 0;
+  }
 }
 
 } //namespace EpetraExt

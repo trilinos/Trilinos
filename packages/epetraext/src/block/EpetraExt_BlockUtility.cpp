@@ -37,8 +37,8 @@ using std::vector;
 //==============================================================================
 Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
         const Epetra_CrsGraph & BaseGraph,
-        const vector<int> & RowStencil,
-        int RowIndex,
+        const vector< vector<int> > & RowStencil,
+        const vector<int> & RowIndices,
         const Epetra_Comm & GlobalComm ) 
 {
   const Epetra_BlockMap & BaseMap = BaseGraph.RowMap();
@@ -50,17 +50,23 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
   while( Offset < MaxGID ) Offset *= 10;
 
   //Get Base Global IDs
+  int NumBlockRows = RowIndices.size();
   int Size = BaseMap.NumMyElements();
+  int TotalSize = NumBlockRows * Size;
   vector<int> GIDs(Size);
   BaseMap.MyGlobalElements( &GIDs[0] );
 
-  for( int i = 0; i < Size; ++i )
-    GIDs[i] += RowIndex * Offset;
+  vector<int> GlobalGIDs( TotalSize );
+  for( int i = 0; i < NumBlockRows; ++i )
+  {
+    for( int j = 0; j < Size; ++j )
+      GIDs[i*Size+j] += RowIndices[i] * Offset;
+  }
 
   int GlobalSize;
-  GlobalComm.SumAll( &Size, &GlobalSize, 1 );
+  GlobalComm.SumAll( &TotalSize, &GlobalSize, 1 );
 
-  Epetra_Map GlobalMap( GlobalSize, Size, &GIDs[0], BaseIndex, GlobalComm );
+  Epetra_Map GlobalMap( GlobalSize, TotalSize, &GlobalGIDs[0], BaseIndex, GlobalComm );
 
   int MaxIndices = BaseGraph.MaxNumIndices();
   vector<int> Indices(MaxIndices);
@@ -70,24 +76,28 @@ Epetra_CrsGraph * BlockUtility::GenerateBlockGraph(
                                dynamic_cast<Epetra_BlockMap&>(GlobalMap),
                                0 );
 
-  int StencilSize = RowStencil.size();
-  for( int i = 0; i < Size; ++i )
+  for( int i = 0; i < NumBlockRows; ++i )
   {
-    int BaseRow = BaseMap.GID(i);
-    int GlobalRow = GlobalMap.GID(i);
-
-    BaseGraph.ExtractGlobalRowCopy( BaseRow, MaxIndices, NumIndices, &Indices[0] );
-    for( int j = 0; j < StencilSize; ++j )
+    int StencilSize = RowStencil[i].size();
+    for( int j = 0; j < Size; ++j )
     {
-      int ColOffset = (RowIndex+RowStencil[j]) * Offset;
-      if( j > 0 ) ColOffset -= (RowIndex+RowStencil[j-1]) * Offset;
+      int BaseRow = BaseMap.GID(j);
+      int GlobalRow = GlobalMap.GID(j+i*Size);
 
-      for( int k = 0; k < NumIndices; ++k )
-        Indices[k] += ColOffset;
+      BaseGraph.ExtractGlobalRowCopy( BaseRow, MaxIndices, NumIndices, &Indices[0] );
+      for( int k = 0; k < StencilSize; ++k )
+      {
+        int ColOffset = (RowIndices[i]+RowStencil[i][k]) * Offset;
+        if( k > 0 ) ColOffset -= (RowIndices[i]+RowStencil[i][k-1]) * Offset;
 
-      GlobalGraph->InsertGlobalIndices( GlobalRow, NumIndices, &Indices[0] );
+        for( int l = 0; l < NumIndices; ++l )
+          Indices[l] += ColOffset;
+
+        GlobalGraph->InsertGlobalIndices( GlobalRow, NumIndices, &Indices[0] );
+      }
     }
   }
+
   GlobalGraph->TransformToLocal();
   
   return GlobalGraph;

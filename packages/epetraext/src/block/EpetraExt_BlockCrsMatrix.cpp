@@ -40,8 +40,22 @@ BlockCrsMatrix::BlockCrsMatrix(
         const vector<int> & RowStencil,
         int RowIndex,
         const Epetra_Comm & GlobalComm  ) 
-  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndex, GlobalComm )) ),
-    RowIndex_( RowIndex ),
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, vector< vector<int> >(1,RowStencil), vector<int>(1,RowIndex), GlobalComm )) ),
+    RowIndices_( vector<int>(1,RowIndex) ),
+    RowStencil_( vector< vector<int> >(1,RowStencil) ),
+    BaseGraph_( BaseGraph )
+{
+  AllocateBlocks_();
+}
+
+//==============================================================================
+BlockCrsMatrix::BlockCrsMatrix(
+        const Epetra_CrsGraph & BaseGraph,
+        const vector< vector<int> > & RowStencil,
+        const vector<int> & RowIndices,
+        const Epetra_Comm & GlobalComm  ) 
+  : Epetra_CrsMatrix( Copy, *(BlockUtility::GenerateBlockGraph( BaseGraph, RowStencil, RowIndices, GlobalComm )) ),
+    RowIndices_( RowIndices ),
     RowStencil_( RowStencil ),
     BaseGraph_( BaseGraph )
 {
@@ -51,7 +65,7 @@ BlockCrsMatrix::BlockCrsMatrix(
 //==============================================================================
 BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix ) 
   : Epetra_CrsMatrix( dynamic_cast<const Epetra_CrsMatrix &>( Matrix ) ),
-    RowIndex_( Matrix.RowIndex_ ),
+    RowIndices_( Matrix.RowIndices_ ),
     RowStencil_( Matrix.RowStencil_ ),
     BaseGraph_( Matrix.BaseGraph_ )
 {
@@ -72,6 +86,8 @@ void BlockCrsMatrix::AllocateBlocks_()
   const Epetra_BlockMap & BaseRowMap = BaseGraph_.RowMap();
   const Epetra_BlockMap & RowMap = Graph().RowMap();
 
+  int NumBaseRows = BaseGraph_.NumMyRows();
+  int NumBlockRows = RowIndices_.size();
   int NumMyRows = Graph().NumMyRows();
 
   vector<int> BaseNumIndices( NumMyRows );
@@ -83,29 +99,37 @@ void BlockCrsMatrix::AllocateBlocks_()
   vector<double*> Values( NumMyRows );
   vector<int> NumValues( NumMyRows );
 
-  for( int i = 0; i < NumMyRows; ++i )
-    ExtractMyRowView( i, NumValues[i], Values[i] );
+  Blocks_.resize( NumBlockRows );
 
-  int NumBlockCols = RowStencil_.size();
-  Blocks_.resize( NumBlockCols );
-
-  for( int i = 0; i < NumBlockCols; ++ i )
+  for( int i = 0; i < NumBlockRows; ++i )
   {
-    Epetra_CrsMatrix * bMat = new Epetra_CrsMatrix( View, BaseGraph_ );
+    for( int j = 0; j < NumMyRows; ++i )
+      ExtractMyRowView( i*NumMyRows+j, NumValues[i], Values[i] );
 
-    for( int j = 0; j < NumMyRows; ++j )
-      bMat->InsertMyValues( j, BaseNumIndices[j], Values[j]+i*BaseNumIndices[j], BaseIndices[j] );
+    int NumBlockCols = RowStencil_[i].size();
+    Blocks_[i].resize( NumBlockCols );
 
-    Blocks_[i] = bMat;
+    for( int j = 0; j < NumBlockCols; ++j )
+    {
+      Epetra_CrsMatrix * bMat = new Epetra_CrsMatrix( View, BaseGraph_ );
+
+      for( int k = 0; k < NumMyRows; ++k )
+        bMat->InsertMyValues( k, BaseNumIndices[k], Values[k]+j*BaseNumIndices[k], BaseIndices[k] );
+
+      Blocks_[i][j] = bMat;
+    }
   }
 }
 
 //==============================================================================
 void BlockCrsMatrix::DeleteBlocks_()
 {
-  int NumBlockCols = RowStencil_.size();
-  for( int i = 0; i < NumBlockCols; ++i )
-    delete Blocks_[i];
+  for( int i = 0; i < RowIndices_.size(); ++i )
+  {
+    int NumBlockCols = RowStencil_[i].size();
+    for( int j = 0; j < NumBlockCols; ++j )
+      delete Blocks_[i][j];
+  }
 
   Blocks_.clear();
 }

@@ -29,6 +29,8 @@
 #include "EpetraExt_BlockMultiVector.h"
 #include "Epetra_Map.h"
 
+using std::vector;
+
 namespace EpetraExt {
 
 //=============================================================================
@@ -38,40 +40,71 @@ BlockMultiVector::BlockMultiVector(
       const Epetra_BlockMap & GlobalMap,
       int NumVectors )
   : Epetra_MultiVector( GlobalMap, NumVectors ),
-    BaseMap_( BaseMap )
+    BaseMap_( BaseMap ),
+    NumBlocks_(1)
 {
-  AllocateBlock_();
+  AllocateBlocks_();
+}
+
+//=============================================================================
+// EpetraExt::BlockMultiVector Constructor
+BlockMultiVector::BlockMultiVector(
+      const Epetra_BlockMap & BaseMap,
+      const Epetra_BlockMap & GlobalMap,
+      int NumBlocks,
+      int NumVectors )
+  : Epetra_MultiVector( GlobalMap, NumVectors ),
+    BaseMap_( BaseMap ),
+    NumBlocks_(NumBlocks)
+{
+  AllocateBlocks_();
 }
 
 //==========================================================================
 // Copy Constructor
 BlockMultiVector::BlockMultiVector(const BlockMultiVector& Source)
   : Epetra_MultiVector( dynamic_cast<const Epetra_MultiVector &>(Source) ),
-    BaseMap_( Source.BaseMap_ )
+    BaseMap_( Source.BaseMap_ ),
+    NumBlocks_( Source.NumBlocks_ )
 {
-  AllocateBlock_();
+  AllocateBlocks_();
 }
 
 //=========================================================================
 BlockMultiVector::~BlockMultiVector()
 {
-  DeleteBlock_();
+  DeleteBlocks_();
 }
 
 //=========================================================================
-void BlockMultiVector::AllocateBlock_(void)
+void BlockMultiVector::AllocateBlocks_(void)
 {
-  double ** Ptrs;
-  ExtractView( &Ptrs );
+  int NumElements = BaseMap_.NumMyElements();
+  Ptrs_.resize(NumBlocks_);
+  for( int i = 0; i < NumBlocks_; ++i ) Ptrs_[i] = new double*[NumVectors()];
 
-  Block_ = new Epetra_MultiVector( View, BaseMap_, Ptrs, NumVectors() );
+  double ** OrigPtrs;
+  ExtractView( &OrigPtrs );
+
+  for( int i = 0; i < NumBlocks_; ++i )
+  {
+    for( int j = 0; j < NumVectors(); ++j )
+      Ptrs_[i][j] = OrigPtrs[j]+(i*NumElements);
+
+    Blocks_[i] = new Epetra_MultiVector( View, BaseMap_, Ptrs_[i], NumVectors() );
+  }
 }
 
 //=========================================================================
-void BlockMultiVector::DeleteBlock_(void)
+void BlockMultiVector::DeleteBlocks_(void)
 {
-  if( Block_ ) delete Block_;
-  Block_ = 0;
+  for( int i = 0; i < NumBlocks_; ++i )
+  {
+    delete Blocks_[i];
+    Blocks_[i] = 0;
+    delete [] Ptrs_[i];
+    Ptrs_[i] = 0;
+  }
 }
 
 } //namespace EpetraExt

@@ -61,6 +61,18 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   */
   BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector<int> & RowStencil, int RowIndex, const Epetra_Comm & GlobalComm );
   
+  //! BlockCrsMatrix constuctor with multiple block rows per processor.
+  /*! Creates a BlockCrsMatrix object and allocates storage.  
+    
+	\param In
+	BaseGraph - Graph determining individual block structure, can be distrib. over subset of proc.'s
+	\param In 
+	RowStencil - Describes the stencil for block row on this processor (i.e. (-1 0 1) centered difference)
+	\param In
+	RowIndices - Defines the indices used for this block row.
+  */
+  BlockCrsMatrix( const Epetra_CrsGraph & BaseGraph, const std::vector< std::vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
+  
   //! Copy constructor.
   BlockCrsMatrix( const BlockCrsMatrix & Matrix );
 
@@ -69,13 +81,14 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
   //@}
   
   //! Block Access
-  Epetra_CrsMatrix & Block( int Column ) { return *(Blocks_[Column]); }
+  Epetra_CrsMatrix & Block( int Column ) { return *(Blocks_[0][Column]); }
+  Epetra_CrsMatrix & Block( int Row, int Column ) { return *(Blocks_[Row][Column]); }
 
   //! Local Stencil Info
-  const vector<int> & Stencil() { return RowStencil_; }
+  const std::vector<int> & Stencil( int i = 0 ) { return RowStencil_[i]; }
 
   //! RowIndex
-  int RowIndex() { return RowIndex_; }
+  int RowIndex( int i = 0 ) { return RowIndices_[i]; }
 	
  protected:
 
@@ -84,11 +97,11 @@ class BlockCrsMatrix: public Epetra_CrsMatrix {
 
   Epetra_CrsGraph BaseGraph_;
 
-  std::vector<int> RowStencil_;
+  std::vector< std::vector<int> > RowStencil_;
 
-  std::vector<Epetra_CrsMatrix*> Blocks_;
+  std::vector< std::vector<Epetra_CrsMatrix*> > Blocks_;
 
-  int RowIndex_; 
+  std::vector<int> RowIndices_; 
 
 };
 

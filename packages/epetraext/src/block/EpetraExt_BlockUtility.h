@@ -42,17 +42,17 @@ namespace EpetraExt {
 class BlockUtility {
  public:
 
-  //! BlockCrsMatrix constuctor with one block row per processor.
+  //! BlockCrsMatrix constuctor
   /*! Creates a BlockGraph object
     
 	\param In
 	BaseGraph - Graph determining individual block structure, can be distrib. over subset of proc.'s
 	\param In 
-	RowStencil - Describes the stencil for block row on this processor (i.e. (-1 0 1) centered difference)
+	RowStencil - Describes the stencil for block rows on this processor (i.e. (-1 0 1) centered difference)
 	\param In
-	RowIndex - Defines the index used for this block row.
+	RowIndices - Defines the indices for local block rows
   */
-  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector<int> & RowStencil, int RowIndex, const Epetra_Comm & GlobalComm );
+  static Epetra_CrsGraph * GenerateBlockGraph( const Epetra_CrsGraph & BaseGraph, const std::vector< vector<int> > & RowStencil, const std::vector<int> & RowIndices, const Epetra_Comm & GlobalComm );
   
 };
 
