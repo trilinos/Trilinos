@@ -96,10 +96,10 @@ int main(int argc, char *argv[])
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
-  //searchParams.setParameter("Method", "Full Step");
+  searchParams.setParameter("Method", "Full Step");
   //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
-  searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "Polynomial");
   //searchParams.setParameter("Method", "Secant");
   searchParams.setParameter("Max Iters", 15);
   //searchParams.setParameter("Method", "More'-Thuente");

@@ -122,8 +122,8 @@ EPETRA_H = \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_Interface.H \
-	$(srcdir)/NOX_Epetra_Preconditioner.H \
-	$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.H
+	$(srcdir)/NOX_Epetra_Operator.H \
+	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H
 
 
 EPETRA = \
@@ -132,7 +132,7 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_SharedOperator.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
-	$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
+	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
 
 
@@ -190,7 +190,7 @@ am_libnoxepetra_a_OBJECTS = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_SharedOperator.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
 	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.$(OBJEXT)
+	libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT)
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -203,7 +203,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedOperator.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -271,8 +271,8 @@ libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_MatrixFree.C
 libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT): \
 	$(srcdir)/NOX_Epetra_FiniteDifference.C
-libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
+libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.$(OBJEXT): \
+	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
 	-rm -f libnoxepetra.a
 	$(libnoxepetra_a_AR) libnoxepetra.a $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_LIBADD)
@@ -287,7 +287,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po@am__quote@
 
@@ -366,17 +366,17 @@ libnoxepetra_a-NOX_Epetra_FiniteDifference.obj: $(srcdir)/NOX_Epetra_FiniteDiffe
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.obj `cygpath -w $(srcdir)/NOX_Epetra_FiniteDifference.C`
 
-libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.o: $(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C' object='libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.TPo' @AMDEPBACKSLASH@
+libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.o: $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' object='libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.o `test -f $(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.o `test -f $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
-libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.obj: $(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C' object='libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.TPo' @AMDEPBACKSLASH@
+libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.obj: $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C' object='libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Preconditioner_Jacobi.obj `cygpath -w $(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Operator_JacobiPrec.obj `cygpath -w $(srcdir)/NOX_Epetra_Operator_JacobiPrec.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgincludeHEADERS: $(pkginclude_HEADERS)

@@ -22,7 +22,7 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#include "NOX_Epetra_Preconditioner_Jacobi.H" 
+#include "NOX_Epetra_Operator_JacobiPrec.H" 
 
 #include "Epetra_RowMatrix.h"
 #include "Epetra_BlockMap.h"
@@ -117,8 +117,8 @@ const Epetra_BlockMap& JacobiPreconditioner::RangeMap () const
 {
   return diagonalVector.Map();
 }
-bool JacobiPreconditioner::computePreconditioner(const Epetra_Vector& x, 
-					     const Epetra_Operator* jacobianPtr) 
+bool JacobiPreconditioner::compute(const Epetra_Vector& x, 
+				   const Epetra_Operator* jacobianPtr) 
 {
   // We need a Jacobian pointer
   if (jacobianPtr == NULL) {

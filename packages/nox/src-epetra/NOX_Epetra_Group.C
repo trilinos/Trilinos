@@ -36,7 +36,7 @@
 #include "NOX_Parameter_List.H"
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_Preconditioner.H"
+#include "NOX_Epetra_Operator.H"
 
 // External include files - linking to Aztec00 and Epetra in Trilinos
 #include "AztecOO.h"
@@ -58,12 +58,22 @@ Group::Group(const Parameter::List& params, Interface& i,
   tmpVectorPtr(0),
   sharedJacobianPtr(new SharedOperator(J)), // pass J to SharedJacobian
   sharedJacobian(*sharedJacobianPtr), // pass J to SharedJacobian
-  sharedPreconditionerPtr(0),  // A separate preconditioner is not supplied
+  sharedPreconditionerPtr(0),  // separate preconditioner is not used in this ctor
   userInterface(i)
 {
+  // Set all isValid flags to false
   resetIsValid();
 
-  setLinearSolver(params);
+  // Set the operators
+  jacobianOperatorType = getOperatorType(J);
+  preconditionerOperatorType = None; // This ctor is for one operator only!
+
+  // Set the requested preconditioning.  Defaults to "None".
+  preconditioner = params.getParameter("Preconditioning", "None");
+
+  // Make sure the correct underlying objects were supplied for the requested
+  // preconditioning options.
+  checkOperatorConsistency();
 }
 
 Group::Group(const Parameter::List& params, Interface& i, 
@@ -78,9 +88,19 @@ Group::Group(const Parameter::List& params, Interface& i,
   sharedPreconditionerPtr(new SharedOperator(M)), // pass M to SharedOperator
   userInterface(i)
 {
+  // Set all isValid flags to false
   resetIsValid();
 
-  setLinearSolver(params);
+  // Set the operators
+  jacobianOperatorType = getOperatorType(J);
+  preconditionerOperatorType = getOperatorType(M); 
+
+  // Set the requested preconditioning.  Defaults to "None".
+  preconditioner = params.getParameter("Preconditioning", "None");
+
+  // Make sure the correct underlying objects were supplied for the requested
+  // preconditioning options.
+  checkOperatorConsistency();
 }
 
 Group::Group(const Group& source, CopyType type) :
@@ -93,10 +113,9 @@ Group::Group(const Group& source, CopyType type) :
   sharedJacobian(source.sharedJacobian),
   sharedPreconditionerPtr(source.sharedPreconditionerPtr),
   userInterface(source.userInterface),
-  jacType(source.jacType),
-  precOption(source.precOption),
-  precType(source.precType),
-  aztecPrec(source.aztecPrec)
+  jacobianOperatorType(source.jacobianOperatorType),
+  preconditionerOperatorType(source.preconditionerOperatorType),
+  preconditioner(source.preconditioner)
 {
  
   switch (type) {
@@ -107,15 +126,14 @@ Group::Group(const Group& source, CopyType type) :
     isValidGrad = source.isValidGrad;
     isValidNewton = source.isValidNewton;
     isValidJacobian = source.isValidJacobian;
-    isValidPreconditioner = source.isValidPreconditioner;
     normRHS = source.normRHS;
     
     // New copy takes ownership of the shared Jacobian
     if (isValidJacobian)
       sharedJacobian.getOperator(this);
 
-    // New copy takes ownership of the shared Preconditioning Matrix
-    if (isValidPreconditioner)
+    // New copy takes ownership of the shared preconditioning matrix
+    if (sharedPreconditionerPtr != 0)
       sharedPreconditionerPtr->getOperator(this);
 
     break;
@@ -144,10 +162,9 @@ void Group::resetIsValid() //private
   isValidJacobian = false;
   isValidGrad = false;
   isValidNewton = false;
-  isValidPreconditioner = false;
 }
 
-void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
+void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 {
   // Set the Aztec Solver
   string linearSolver = p.getParameter("Aztec Solver", "GMRES");
@@ -171,48 +188,47 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec)
   }
  
   // Preconditioning Matrix Type 
-  if (precOption == "None")
+  if (preconditioner == "None")
     aztec.SetAztecOption(AZ_precond, AZ_none);
 
   // Preconditioning where AztecOO inverts the Preconditioning Matrix
-  if ((precOption == "AztecOO: Jacobian Matrix") || 
-      (precOption == "AztecOO: User RowMatrix")) {
+  if ((preconditioner == "AztecOO: Jacobian Matrix") || 
+      (preconditioner == "AztecOO: User RowMatrix")) {
     
-    string aztecPrec;
-    aztecPrec = p.getParameter("Aztec Preconditioner", "ilu");
-    
-    if (aztecPrec == "ilu") {
+    string aztecPreconditioner = p.getParameter("Aztec Preconditioner", "ilu");
+
+    if (aztecPreconditioner == "ilu") {
       aztec.SetAztecOption(AZ_precond, AZ_dom_decomp);
       aztec.SetAztecOption(AZ_overlap, p.getParameter("Overlap", 0));
       aztec.SetAztecOption(AZ_subdomain_solve, AZ_ilu);
       aztec.SetAztecOption(AZ_graph_fill, p.getParameter("Graph Fill", 0));
     }
-    else if (aztecPrec == "ilut") { 
+    else if (aztecPreconditioner == "ilut") { 
       aztec.SetAztecOption(AZ_precond, AZ_dom_decomp);
       aztec.SetAztecOption(AZ_overlap, p.getParameter("Overlap", 0));
       aztec.SetAztecOption(AZ_subdomain_solve, AZ_ilut);
       aztec.SetAztecParam(AZ_drop, p.getParameter("Drop Tolerance", 0.0));
       aztec.SetAztecParam(AZ_ilut_fill, p.getParameter("Fill Factor", 1.0));
     }
-    else if (aztecPrec == "Jacobi") {
+    else if (aztecPreconditioner == "Jacobi") {
       aztec.SetAztecOption(AZ_precond, AZ_Jacobi);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
     }
-    else if (aztecPrec == "Symmetric Gauss-Siedel") {
+    else if (aztecPreconditioner == "Symmetric Gauss-Siedel") {
       aztec.SetAztecOption(AZ_precond, AZ_sym_GS);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Steps", 3));
     }
-    else if (aztecPrec == "Polynomial") {
+    else if (aztecPreconditioner == "Polynomial") {
       aztec.SetAztecOption(AZ_precond, AZ_Neumann);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Polynomial Order", 3));
     }
-    else if (aztecPrec == "Least-squares Polynomial") {
+    else if (aztecPreconditioner == "Least-squares Polynomial") {
       aztec.SetAztecOption(AZ_precond, AZ_ls);
       aztec.SetAztecOption(AZ_poly_ord, p.getParameter("Polynomial Order", 3));
     }
     else {
       cout << "ERROR: NOX::Epetra::Group::setAztecOptions" << endl
-	   << "\"Aztec Preconditioner\" parameter \"" << aztecPrec
+	   << "\"Aztec Preconditioner\" parameter \"" << aztecPreconditioner
 	   << "\" is invalid!" << endl;
       throw "NOX Error";
     }
@@ -248,7 +264,6 @@ Abstract::Group& Group::operator=(const Group& source)
   isValidGrad = source.isValidGrad;
   isValidNewton = source.isValidNewton;
   isValidJacobian = source.isValidJacobian;
-  isValidPreconditioner = source.isValidPreconditioner;
 
   // Only copy vectors that are valid
   if (isValidRHS) {
@@ -266,15 +281,14 @@ Abstract::Group& Group::operator=(const Group& source)
   if (isValidJacobian)
     sharedJacobian.getOperator(this);
     
-  // If valid, this takes ownership of the shared preconditioning matrix
-  if (isValidPreconditioner)
-    sharedJacobian.getOperator(this);
+  // Takes ownership of the shared preconditioning matrix
+  if (sharedPreconditionerPtr != 0) 
+    sharedPreconditionerPtr->getOperator(this);
     
   // Copy linear solver options
-  jacType = source.jacType;
-  precOption = source.precOption;
-  precType = source.precType;
-  aztecPrec = source.aztecPrec;
+  jacobianOperatorType = source.jacobianOperatorType;
+  preconditionerOperatorType = source.preconditionerOperatorType;
+  preconditioner = source.preconditioner;
 
   return *this;
 }
@@ -339,21 +353,24 @@ bool Group::computeJacobian()
   // Take ownership of the Jacobian and get a reference to the underlying operator
   Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
 
-  // Fill the Jacobian
-  // Need to add a check here to find out if computing the Jacobian was successful.  
+  // Fill the Jacobian 
   bool status = false;
   
-  if (jacType == EpetraOperatorJac) {
+  if ((jacobianOperatorType == EpetraOperator) || 
+      (jacobianOperatorType == EpetraRowMatrix)) {
     status = userInterface.computeJacobian(xVector.getEpetraVector(), Jacobian);
   }
-  else if (jacType == NoxFiniteDifferenceJac) {
+  else if (jacobianOperatorType == NoxOperator) {
+    status = (dynamic_cast<Operator&>(Jacobian)).compute(xVector.getEpetraVector(), &Jacobian);
+  }
+  else if (jacobianOperatorType == NoxFiniteDifferenceRowMatrix) {
     status = (dynamic_cast<FiniteDifference&>(Jacobian)).computeJacobian(xVector.getEpetraVector(), Jacobian);
   }
-  else if (jacType == NoxMatrixFreeJac) {
+  else if (jacobianOperatorType == NoxMatrixFreeOperator) {
     status = (dynamic_cast<MatrixFree&>(Jacobian)).computeJacobian(xVector.getEpetraVector(), Jacobian);
   }
   else {
-    cout << "ERROR: NOX::Epetra::Group::computeJacobian() - jacType flag is "
+    cout << "ERROR: NOX::Epetra::Group::computeJacobian() - jacobianOperatorType flag is "
 	 << "not valid!" << endl;
     throw "NOX Error";
   }
@@ -364,7 +381,7 @@ bool Group::computeJacobian()
     throw "NOX Error: Fill Failed";
   } 
 
-  // Update status
+  // Update status of Jacobian wrt solution vector
   isValidJacobian = true;
 
   return status;
@@ -417,37 +434,8 @@ bool Group::computeNewton(NOX::Parameter::List& p)
     throw "NOX Error";
   }
   
-  // Get the Jacobian 
-  /* (Have to get non-const version which requires reasserting
-   * ownership. This is due to the design of Epetra_LinearProblem class). 
-   */
-  Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
-
   // Create Epetra problem for the linear solve
-  Epetra_LinearProblem Problem(&Jacobian, 
-  			       &(NewtonVector.getEpetraVector()), 
-			       &(RHSVector.getEpetraVector()));
-
-  // Set the default Problem parameters to "hard" (this sets Aztec defaults
-  // during the AztecOO instantiation)
-  Problem.SetPDL(hard);
-
-  // Create aztec problem
-  AztecOO aztec(Problem);    
-
-  // Set specific Aztec parameters requested by NOX
-  setAztecOptions(p, aztec);
-
-  // Compute and set the Preconditioner in AztecOO if needed
-  if (precOption != "None") {
-    computePreconditioner(aztec);
-  }
-
-  int maxit = p.getParameter("Max Iterations", 400);
-  double tol = p.getParameter("Tolerance", 1.0e-6);
-
-  // Solve Aztec problem
-  aztec.Iterate(maxit, tol);
+  applyJacobianInverse(p, RHSVector, NewtonVector);
 
   // Scale soln by -1
   NewtonVector.scale(-1.0);
@@ -457,27 +445,6 @@ bool Group::computeNewton(NOX::Parameter::List& p)
 
   // Return solution
   return true;
-}
-
-bool Group::computePreconditioner()
-{
-  cout << "NOX::Epetra::Group::computePreconditioner() NOT Implemented yet!!" << endl;
-  exit(0);
-
-  /* RPP: This will come online soon 
-
-  // Skip if the preconditioning matrix is already valid
-  if (isPreconditioner())
-    return true;
-
-  // Take ownership of the Preconditioner and get a reference to the underlying operator
-  Epetra_Operator& prec = sharedPreconditioner.getOperator(this);
-
-  // Fill the Preconditioning matrix
-
-  //RPP: Move over the computePreconditioner() method into here!!
-
-  */
 }
 
 bool Group::applyJacobian(const Abstract::Vector& input, Abstract::Vector& result) const
@@ -501,6 +468,56 @@ bool Group::applyJacobian(const Vector& input, Vector& result) const
   (const_cast <Epetra_Operator&>(Jacobian)).SetUseTranspose(NoTranspose);
   Jacobian.Apply(input.getEpetraVector(), result.getEpetraVector());
 
+  return true;
+}
+
+bool Group::applyJacobianInverse (Parameter::List &p, const Abstract::Vector &input, Abstract::Vector &result) const
+{
+  const Vector& epetraInput = dynamic_cast<const Vector&>(input);
+  Vector& epetraResult = dynamic_cast<Vector&>(result);
+  return applyJacobianInverse(p, epetraInput, epetraResult);
+}
+
+bool Group::applyJacobianInverse (Parameter::List &p, const Vector &input, Vector &result) const
+{
+  // Get the Jacobian 
+  /* Have to get non-const version which requires reasserting
+   * ownership. 
+   */
+  Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
+
+  // Epetra_LinearProblem does not allow for const vectors
+  Vector& nonConstInput = const_cast<Vector&>(input);
+
+  // Create Epetra problem for the linear solve
+  Epetra_LinearProblem Problem(&Jacobian, 
+  			       &(result.getEpetraVector()), 
+			       &(nonConstInput.getEpetraVector()));
+
+  // Set the default Problem parameters to "hard" (this sets Aztec defaults
+  // during the AztecOO instantiation)
+  Problem.SetPDL(hard);
+
+  // Create aztec problem
+  AztecOO aztec(Problem);    
+
+  // Set specific Aztec parameters requested by NOX
+  setAztecOptions(p, aztec);
+
+  // Compute and set the Preconditioner in AztecOO if needed
+  if (preconditioner != "None") {
+    computePreconditioner(aztec);
+  }
+
+  int maxit = p.getParameter("Max Iterations", 400);
+  double tol = p.getParameter("Tolerance", 1.0e-6);
+
+  // Solve Aztec problem
+  int aztecStatus = aztec.Iterate(maxit, tol);
+
+  if (aztecStatus != 0) 
+    return false;
+  
   return true;
 }
 
@@ -575,33 +592,6 @@ bool Group::applyJacobianDiagonalInverse(const Vector& input, Vector& result) co
   return true;
 }
 
-bool Group::applyPreconditionerInverse(const Abstract::Vector& input, Abstract::Vector& result) const
-{
-  const Vector& epetrainput = dynamic_cast<const Vector&> (input);
-  Vector& epetraresult = dynamic_cast<Vector&> (result);
-  return applyPreconditionerInverse(epetrainput, epetraresult);
-}
-
-bool Group::applyPreconditionerInverse(const Vector& input, Vector& result) const
-{
-  return applyJacobianDiagonalInverse(input, result);
-
-  /* RPP: Stuff below will come online soon 
-  if (isPreconditioner()) {
-    NOX::Epetra::Preconditioner* prec = dynamic_cast<NOX::Epetra::Preconditoner*>(&(sharedPreconditioner.getOperator()));
-    return prec.ApplyInverse(input.getEpetraVector(), result.getEpetraVector());
-  }
-  else {
-    cout << "ERROR: NOX::Epetra::Group::applyPreconditionerInverse() - is only "
-	 << "implemented for a User Supplied Preconditioner through the "
-	 << "NOX::Epetra::Preconditioner interface!" << endl;
-    throw "NOX Error";
-  }
-  return false;
-  */
-}
-
-
 bool Group::applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const
 {
   const Vector& epetrainput = dynamic_cast<const Vector&> (input);
@@ -648,11 +638,6 @@ bool Group::isGradient() const
 bool Group::isNewton() const 
 {   
   return isValidNewton;
-}
-
-bool Group::isPreconditioner() const
-{
-  return isValidPreconditioner;
 }
 
 const Abstract::Vector& Group::getX() const 
@@ -716,20 +701,14 @@ Interface& Group::getUserInterface()
   return userInterface;
 }
 
-bool Group::setLinearSolver(const Parameter::List& params) 
+bool Group::checkOperatorConsistency() 
 {
 
-  // Set the type of the Jacobian operator 
-  jacType = getJacobianType();
-
-  // Set the requested preconditioning option.  Defaults to "None".
-  precOption = params.getParameter("Preconditioning", "None");
-
-  // Check that the requested preconditioning option (precOption) has 
+  // Checks that the requested preconditioning option (preconditioner) has 
   // the correct objects avalable 
   Epetra_RowMatrix* test = 0;
 
-  if (precOption == "AztecOO: Jacobian Matrix") {
+  if (preconditioner == "AztecOO: Jacobian Matrix") {
 
     // Get a reference to the Jacobian 
     Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
@@ -739,7 +718,7 @@ bool Group::setLinearSolver(const Parameter::List& params)
 
     if (test == 0) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
-	   << "\"Preconditioning\" with value \"" << precOption
+	   << "\"Preconditioning\" with value \"" << preconditioner
 	   << "\" requires an Epetra_RowMatrix object for the Jacobian!" 
 	   << endl;
       cout << "Matrx-Free Jacobians can not be used for preconditioners!"
@@ -747,57 +726,49 @@ bool Group::setLinearSolver(const Parameter::List& params)
       throw "NOX Error";
     }
   }
-  else if (precOption == "AztecOO: User RowMatrix") {
+  else if (preconditioner == "AztecOO: User RowMatrix") {
     
-    // Set the type of Preconditioning operator
-    precType = getPrecType();
-
-    // Get a reference to the Preconditioner 
-    /* NOTE:SharedJacobian.getPrec() print a WARNING if no 
-     * preconditioner was supplied.  We'll throw an error and explain why. 
-     */   
-    Epetra_Operator& Prec = sharedPreconditionerPtr->getOperator(this);
-
-    // The Preconditioning Operator MUST BE an Epetra_RowMatrix
-    test = dynamic_cast<Epetra_RowMatrix*>(&Prec);
-    
-    if (test == 0) {
+    // Make sure the operator was supplied by the user
+    if (sharedPreconditionerPtr == 0) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
-	   << "\"Preconditioning\" with value \"" << precOption
+	   << "\"Preconditioning\" with value \"" << preconditioner
 	   << "\" requires a NOX::Epetra::Group constructor with "
-	   << "separate objects for the Jacobian and preconditioner!" << endl;
-      cout << "Make sure the preconditioner is an Epetra_RowMatrix object!"
+	   << "separate objects for the Jacobian and preconditioner!" << endl
 	   << endl;
       throw "NOX Error";
     }
-  }
-  else if (precOption == "User Supplied Preconditioner") {
 
-    // Set the type of Preconditioning operator
-    precType = getPrecType();
-
-    // Get a reference to the Preconditioner
-    /* NOTE:SharedJacobian.getPrec() print a WARNING if no 
-     * preconditioner was supplied.  We'll throw an error and explain why. 
-     */   
-    const Epetra_Operator& Prec = sharedPreconditionerPtr->getOperator();
-    if (&Prec == 0) {
+    // The Preconditioning Operator MUST BE an Epetra_RowMatrix
+    Epetra_Operator& Prec = sharedPreconditionerPtr->getOperator(this);
+    test = dynamic_cast<Epetra_RowMatrix*>(&Prec);
+    if (test == 0) {
       cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
-	   << "\"Preconditioning\" with value \"" << precOption
+	   << "\"Preconditioning\" with value \"" << preconditioner
+	   << "\" requires an Epetra_RowMatrix object for the "
+	   << "preconditioner!" << endl;
+      throw "NOX Error";
+    }
+  }
+  else if (preconditioner == "User Supplied Preconditioner") {
+
+    // Make sure the operator was supplied by the user
+    if (sharedPreconditionerPtr == 0) {
+      cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
+	   << "\"Preconditioning\" with value \"" << preconditioner
 	   << "\" requires a NOX::Epetra::Group constructor with "
 	   << "separate objects for the Jacobian and preconditioner!" << endl; 
       throw "NOX Error";
     }
     
   }
-  else if (precOption == "None") {
-    // Do nothing. This is a valid argument and won't cause a throw - 
-    // see next "else" statement.
+  else if (preconditioner == "None") {
+    // Do nothing. This is a valid argument and won't cause a throw but we still
+    // want to catch mis-spelled "Preconditioner" flags (see next "else").
   } 
   else {
     // An invalid choice was found 
     cout << "ERROR: NOX::Epetra::Group::setLinearSolver() - The flag "
-	 << "\"" << precOption << "\" is not a valid choice for the " 
+	 << "\"" << preconditioner << "\" is not a valid choice for the " 
 	 << "parameter \"Preconditioning\"!" << endl;
       throw "NOX Error";
   }
@@ -806,19 +777,19 @@ bool Group::setLinearSolver(const Parameter::List& params)
   return true;
 }
 
-bool Group::computePreconditioner(AztecOO& aztec)
+bool Group::computePreconditioner(AztecOO& aztec) const
 {
   
-  if (precOption == "AztecOO: Jacobian Matrix") {
+  if (preconditioner == "AztecOO: Jacobian Matrix") {
     // Do nothing, the Jacobian has already been evaluated at the
     // current solution.
   }
-  else if (precOption == "AztecOO: User RowMatrix") {
+  else if (preconditioner == "AztecOO: User RowMatrix") {
     
     Epetra_RowMatrix& precMatrix = 
       dynamic_cast<Epetra_RowMatrix&>(sharedPreconditionerPtr->getOperator(this));
     
-    if (precType == NoxFiniteDifferencePrec) {
+    if (preconditionerOperatorType == NoxFiniteDifferenceRowMatrix) {
       (dynamic_cast<FiniteDifference&>(precMatrix))
 	.computePreconditioner(xVector.getEpetraVector(), precMatrix);
     }
@@ -827,19 +798,19 @@ bool Group::computePreconditioner(AztecOO& aztec)
     
     aztec.SetPrecMatrix(&precMatrix);
   }
-  else if (precOption == "User Supplied Preconditioner") {
+  else if (preconditioner == "User Supplied Preconditioner") {
     
     Epetra_Operator& precOperator = sharedPreconditionerPtr->getOperator(this);
 
-    // Fro user supplied Precs the user may supply them in one of two ways:
-    if (precType == NoxPreconditioner) {
-      // (1) Use a NOX::Epetra::Preconditioner derived object
+    // For user supplied Precs the user may supply them in one of two ways:
+    if (preconditionerOperatorType == NoxOperator) {
+      // (1) Use a NOX::Epetra::Operator derived object
       const Epetra_Operator* jacobianPtr = 0; 
       if (isJacobian())
 	jacobianPtr = &sharedJacobian.getOperator();
 
-      (dynamic_cast<NOX::Epetra::Preconditioner&>(precOperator))
-	.computePreconditioner(xVector.getEpetraVector(), jacobianPtr);
+      (dynamic_cast<NOX::Epetra::Operator&>(precOperator))
+	.compute(xVector.getEpetraVector(), jacobianPtr);
     }
     else {
       // (2) Supply an Epetra_Operator derived class and implement 
@@ -853,46 +824,31 @@ bool Group::computePreconditioner(AztecOO& aztec)
   return true;
 }
 
-Group::JacType Group::getJacobianType()
+Group::OperatorType Group::getOperatorType(const Epetra_Operator& Op)
 {
+  // NOTE: The order in which the following tests occur is important!
+  const Epetra_Operator* testOperator = 0;
   
-  // Get a reference to the Jacobian 
-  Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
+  // Is it a NOX::Epetra::MatrixFree Operator?
+  testOperator = dynamic_cast<const MatrixFree*>(&Op);
+  if (testOperator != 0) 
+    return NoxMatrixFreeOperator; 
+  
+  // Is it a NOX::Epetra::Finite Difference Operator?
+  testOperator = dynamic_cast<const FiniteDifference*>(&Op);
+  if (testOperator != 0) 
+    return NoxFiniteDifferenceRowMatrix; 
+  
+  // Is it a NOX::Epetra::Operator ?
+  testOperator = dynamic_cast<const Operator*>(&Op);
+  if (testOperator != 0) 
+    return NoxOperator; 
 
-  Epetra_Operator* test = 0;
-  
-  // Is it a Matrix-Free Jacobian?
-  test = dynamic_cast<MatrixFree*>(&Jacobian);
-  if (test != 0) 
-    return NoxMatrixFreeJac; 
-  
-  // Is it a Finite Difference Jacobian?
-  test = dynamic_cast<FiniteDifference*>(&Jacobian);
-  if (test != 0) 
-    return NoxFiniteDifferenceJac; 
-  
-  // Otherwise it must be a user supplied Epetra_Operator or Epetra_RowMatrix.
-  return EpetraOperatorJac;
-  
-}
+  // Is it an Epetra_RowMatrix ?
+  testOperator = dynamic_cast<const Epetra_RowMatrix*>(&Op);
+  if (testOperator != 0) 
+    return EpetraRowMatrix; 
 
-Group::PrecType Group::getPrecType()
-{
-  // Get a reference to the preconditioner 
-  Epetra_Operator& precMatrix = sharedPreconditionerPtr->getOperator(this);
-
-  Epetra_Operator* test = 0;
-  
-  // Is it a "Finite Difference" object?
-  test = dynamic_cast<FiniteDifference*>(&precMatrix);
-  if (test != 0) 
-    return NoxFiniteDifferencePrec; 
-  
-  // Is it a NOX::Epetra::Preconditioner object?
-  test = dynamic_cast<NOX::Epetra::Preconditioner*>(&precMatrix);
-  if (test != 0) 
-    return NoxPreconditioner; 
-  
-  // Otherwise it must be a user supplied Epetra_Operator or  Epetra_RowMatrix.
-  return EpetraOperatorPrec;
+  // Otherwise it must be an Epetra_Operator!
+  return EpetraOperator;
 }

@@ -6,6 +6,6 @@
 #include "NOX_Epetra_SharedOperator.H"
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_FiniteDifference.H"
-#include "NOX_Epetra_Preconditioner.H"
-#include "NOX_Epetra_Preconditioner_Jacobi.H"
+#include "NOX_Epetra_Operator.H"
+#include "NOX_Epetra_Operator_JacobiPrec.H"
 

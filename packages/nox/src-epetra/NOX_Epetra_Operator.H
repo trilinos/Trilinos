@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_PRECONDITIONER_H_
-#define _EPETRA_PRECONDITIONER_H_
+#ifndef _NOX_EPETRA_OPERATOR_H_
+#define _NOX_EPETRA_OPERATOR_H_
 
 #include "Epetra_Comm.h"
 #include "Epetra_Operator.h"	// base class
@@ -40,20 +40,20 @@ namespace NOX {
 
 namespace Epetra {
 
-/*! \brief Pure virtual class for creating a preconditioner for NOX.
-  Essentailly, NOX will compute the preconditioner with a call to 
-  computePreconditioner().  Then the ApplyInverse() will be called 
-  during the linear solves to precondition the solution.
+/*! \brief Pure virtual class for creating an Operator for NOX.
+  This class derives from the Epetra_Operator class with a single
+  additional method: compute().    This allows the user to supply their own
+  preconditioner or jacobian operators.
  */
-class Preconditioner : public Epetra_Operator {
+class Operator : public Epetra_Operator {
       
  public:
 
   //! Constructor 
-  Preconditioner(){};
+  Operator(){};
 
   //! Pure virtual destructor
-  virtual ~Preconditioner(){};
+  virtual ~Operator(){};
 
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -116,11 +116,11 @@ class Preconditioner : public Epetra_Operator {
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
   virtual const Epetra_BlockMap& RangeMap () const = 0;
 
-  //! Compute the Preconditioner given the specified input vector, x.  This may need access to the Jacobian so we allow a second argument, an Epetra_Operator that points to the Jacobian to be passed in.  Returns true if computation was successful.
-  virtual bool computePreconditioner(const Epetra_Vector& x, const Epetra_Operator* Jacobian = 0) = 0;
+  //! Compute the Operator given the specified input vector, x. In some cases the compute function may need additional information from an auxiliary operator, so we allow for one to be supplied.  For example, if a preconditioner is implemented that relies on a separate Jacobian matrix, it could take the Jacobian as the second argument and extract the required information.
+  virtual bool compute(const Epetra_Vector& x, const Epetra_Operator* J) = 0;
 
 };
 } // namespace Epetra
 } // namespace NOX
 
-#endif /* _EPETRA_PRECONDITIONER_H_ */
+#endif /* _NOX_EPETRA_OPERATOR_H_ */

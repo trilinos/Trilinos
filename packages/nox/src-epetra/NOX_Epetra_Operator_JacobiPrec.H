@@ -32,7 +32,7 @@
 //#include "Epetra_Import.h"
 //#include "Epetra_Vector.h"
 
-#include "NOX_Epetra_Preconditioner.H"
+#include "NOX_Epetra_Operator.H"
 
 // Forward Declarations
 //class Epetra_Comm;
@@ -44,7 +44,7 @@ namespace Epetra {
 
 /*! \brief Concrete implementation of the NOX::Epetra::Preconditioner class for Jacobi (Diagonal) Preconditioning.
  */
-class JacobiPreconditioner : public Preconditioner {
+class JacobiPreconditioner : public Operator {
       
  public:
 
@@ -75,7 +75,7 @@ class JacobiPreconditioner : public Preconditioner {
   virtual const Epetra_BlockMap& RangeMap () const;
 
   //! takes in the current solution vector and the Jacobian Epetra_Operator.  This function then computes the diagonal and stores it in an Epetra_Vector.
-  virtual bool computePreconditioner(const Epetra_Vector& x, const Epetra_Operator* Jacobian = 0);
+  virtual bool compute(const Epetra_Vector& x, const Epetra_Operator* Jacobian = 0);
 
 private:
   

@@ -45,8 +45,8 @@ EPETRA_H = \
         $(srcdir)/NOX_Epetra_MatrixFree.H \
         $(srcdir)/NOX_Epetra_FiniteDifference.H \
 	$(srcdir)/NOX_Epetra_Interface.H \
-	$(srcdir)/NOX_Epetra_Preconditioner.H \
-	$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.H
+	$(srcdir)/NOX_Epetra_Operator.H \
+	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.H
 
 EPETRA = \
 	$(srcdir)/NOX_Epetra_Vector.C \
@@ -54,7 +54,7 @@ EPETRA = \
 	$(srcdir)/NOX_Epetra_SharedOperator.C \
         $(srcdir)/NOX_Epetra_MatrixFree.C \
         $(srcdir)/NOX_Epetra_FiniteDifference.C \
-	$(srcdir)/NOX_Epetra_Preconditioner_Jacobi.C
+	$(srcdir)/NOX_Epetra_Operator_JacobiPrec.C
 
 # ------------------------------------------------------------------------
 # Noxepetra library specifications
