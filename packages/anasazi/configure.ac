@@ -364,7 +364,6 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		example/Makefile
-		utils/Makefile
 		])
 
 AC_OUTPUT()

@@ -90,6 +90,6 @@ EXAMPLE_SUBDIR=example
 endif
 endif
 
-SUBDIRS = src utils $(EXAMPLE_SUBDIR)
+SUBDIRS = src $(EXAMPLE_SUBDIR)
 
 
