@@ -68,10 +68,10 @@ public:
   virtual Status::StatusType solve() = 0;
 
   //! Return a reference to the current solution group.
-  virtual Abstract::Group& getSolutionGroup() const = 0;
+  virtual const Abstract::Group& getSolutionGroup() const = 0;
 
   //! Return a reference to the previous solution group.
-  virtual Abstract::Group& getPreviousSolutionGroup() const = 0;
+  virtual const Abstract::Group& getPreviousSolutionGroup() const = 0;
 
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;

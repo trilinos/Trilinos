@@ -67,12 +67,12 @@ Status::StatusType Manager::solve()
   return ptr->solve();
 }
 
-Abstract::Group& Manager::getSolutionGroup() const
+const Abstract::Group& Manager::getSolutionGroup() const
 {
   return ptr->getSolutionGroup();
 }
 
-Abstract::Group& Manager::getPreviousSolutionGroup() const
+const Abstract::Group& Manager::getPreviousSolutionGroup() const
 {
   return ptr->getPreviousSolutionGroup();
 }

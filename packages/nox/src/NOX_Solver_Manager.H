@@ -40,9 +40,9 @@ public:
 
   Status::StatusType solve();
 
-  Abstract::Group& getSolutionGroup() const;
-
-  Abstract::Group& getPreviousSolutionGroup() const;
+  const Abstract::Group& getSolutionGroup() const;
+  
+  const Abstract::Group& getPreviousSolutionGroup() const;
 
   int getNumIterations() const;
 
