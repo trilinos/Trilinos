@@ -50,7 +50,7 @@ int      *proc)			/* processor that point lands in */
    treept = rcb->Tree_Ptr;
    if (treept[0].dim < 0) {	/* RCB tree was never created. */
      fprintf(stderr, "ERROR: No RCB tree not saved for Point_Assign.\n"); 
-     fprintf(stderr, "       Must set parameter RCB_TREE to 1.\n"); 
+     fprintf(stderr, "       Must set parameter KEEP_CUTS to 1.\n"); 
      *proc = -1;
      return(LB_FATAL);
    }

@@ -79,7 +79,7 @@ char *val)			/* value of variable */
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
-        { "RCB_TREE", NULL, "INT" },
+        { "KEEP_CUTS", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, RCB_params, &result, &index);
@@ -128,7 +128,7 @@ int LB_rcb(
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
-        { "RCB_TREE", NULL, "INT" },
+        { "KEEP_CUTS", NULL, "INT" },
 	{ NULL, NULL, NULL } };
     
     RCB_params[0].ptr = (void *) &overalloc;
