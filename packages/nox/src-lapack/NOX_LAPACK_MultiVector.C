@@ -206,7 +206,7 @@ NOX::LAPACK::MultiVector::augment(const NOX::LAPACK::MultiVector& source)
   return *this;
 }
 
-NOX::Abstract::Vector*
+NOX::Abstract::Vector&
 NOX::LAPACK::MultiVector::operator [] (int i)
 {
   if ( i < 0 || i > numCols ) {
@@ -217,10 +217,10 @@ NOX::LAPACK::MultiVector::operator [] (int i)
   if (noxVectors[i] == NULL) {
     noxVectors[i] = new NOX::LAPACK::Vector(len, vecPtrs[i], true);
   }
-  return noxVectors[i];
+  return *(noxVectors[i]);
 }
 
-const NOX::Abstract::Vector*
+const NOX::Abstract::Vector&
 NOX::LAPACK::MultiVector::operator [] (int i) const
 {
   if ( i < 0 || i > numCols ) {
@@ -231,19 +231,7 @@ NOX::LAPACK::MultiVector::operator [] (int i) const
   if (noxVectors[i] == NULL) {
     noxVectors[i] = new NOX::LAPACK::Vector(len, vecPtrs[i], true);
   }
-  return noxVectors[i];
-}
-
-void 
-NOX::LAPACK::MultiVector::copyVector(NOX::Abstract::Vector& vec, int i) const
-{
-  checkIndex(i);
-
-  NOX::LAPACK::Vector& lapackVec = 
-    dynamic_cast<NOX::LAPACK::Vector&>(vec);
-
-  for (int j=0; j<len; j++) 
-    lapackVec(j) = vecPtrs[i][j];
+  return *(noxVectors[i]);
 }
 
 NOX::Abstract::MultiVector& 

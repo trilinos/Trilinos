@@ -237,7 +237,7 @@ NOX::Epetra::MultiVector::augment(const NOX::Epetra::MultiVector& source) {
   return *this;
 }
 
-NOX::Abstract::Vector*
+NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i)
 {
   if ( i < 0 || i > noxEpetraVectors.size() ) {
@@ -250,10 +250,10 @@ NOX::Epetra::MultiVector::operator [] (int i)
     noxEpetraVectors[i] = new NOX::Epetra::Vector(*epetra_vec, NOX::DeepCopy,
 						  true);
   }
-  return noxEpetraVectors[i];
+  return *(noxEpetraVectors[i]);
 }
 
-const NOX::Abstract::Vector*
+const NOX::Abstract::Vector&
 NOX::Epetra::MultiVector::operator [] (int i) const
 {
   if ( i < 0 || i > noxEpetraVectors.size() ) {
@@ -266,15 +266,7 @@ NOX::Epetra::MultiVector::operator [] (int i) const
     noxEpetraVectors[i] = new NOX::Epetra::Vector(*epetra_vec, NOX::DeepCopy,
 						  true);
   }
-  return noxEpetraVectors[i];
-}
-
-void
-NOX::Epetra::MultiVector::copyVector(NOX::Abstract::Vector& vec, int i) const
-{
-  NOX::Epetra::Vector& epetraVec = 
-    dynamic_cast<NOX::Epetra::Vector&>(vec);
-  epetraVec.getEpetraVector() = *(epetraMultiVec->operator()(i));
+  return *(noxEpetraVectors[i]);
 }
 
 NOX::Abstract::MultiVector& 
