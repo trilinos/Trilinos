@@ -18,6 +18,7 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
+	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_BLAS.hpp \
 	$(srcdir)/Teuchos_BLAS_wrappers.hpp \
 	$(srcdir)/Teuchos_CombineMode.hpp \
@@ -28,6 +29,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_Flops.hpp \
 	$(srcdir)/Teuchos_LAPACK.hpp \
 	$(srcdir)/Teuchos_LAPACK_wrappers.hpp \
+	$(srcdir)/Teuchos_map.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_PacketTraits.hpp \
@@ -52,7 +54,6 @@ CORE = \
 	$(srcdir)/Teuchos_Utils.cpp
 
 EXTRA_EXPERIMENTAL_H = \
-	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
