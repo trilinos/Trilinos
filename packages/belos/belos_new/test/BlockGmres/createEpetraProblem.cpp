@@ -27,6 +27,7 @@
 // @HEADER
 
 #include "createEpetraProblem.hpp"
+#include "Teuchos_Workspace.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MultiVector.h"
@@ -87,8 +88,8 @@ int Belos::createEpetraProblem(
   for(i = 1; i < argc; i++)
     {
       if(argv[i][0] == '-' && argv[i][1] == 'v') {
-	verbose = (MyPID == 0);
-	if(i==1) file_arg = 2;
+        verbose = (MyPID == 0);
+        if(i==1) file_arg = 2;
       }
     }
   //
@@ -157,6 +158,12 @@ int Belos::createEpetraProblem(
     *X = rcp(new Epetra_MultiVector(*epetraMap, 1 ));
     Teuchos::set_extra_data( epetraMap, "X::Map", X );
   }
+  //
+  // Create workspace
+  //
+  Teuchos::set_default_workspace_store(
+    Teuchos::rcp(new Teuchos::WorkspaceStoreInitializeable(static_cast<size_t>(2e+6)))
+    );
   //
   // Free up memory
   //

@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
     cout << numrhs << " right-hand side(s) -- using a block size of " << block
 	 << endl << endl;
   }
-  timer.start();
+  timer.start(true);
   MyBlockGmres.Solve();
   timer.stop();
   //

@@ -139,14 +139,17 @@ int main(int argc, char *argv[]) {
       cout << numrhs << " right-hand side(s) -- using a block size of " << block
            << endl << endl;
     }
-    timer.start();
+    timer.start(true);
     MyBlockCG.Solve();
     timer.stop();
 
     if( My_Test.GetStatus() != Belos::Converged ) success = false;
 
+    if(verbose)
+      Teuchos::print_memory_usage_stats(Teuchos::get_default_workspace_store().get(),std::cout);
+
   }
-    catch( const std::exception &excpt ) {
+  catch( const std::exception &excpt ) {
     if(verbose)
       std::cerr << "*** Caught a standard exception : " << excpt.what() << std::endl;
     success = false;

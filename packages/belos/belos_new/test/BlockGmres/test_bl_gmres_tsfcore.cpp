@@ -150,11 +150,14 @@ int main(int argc, char *argv[]) {
 	   << endl << endl;
     }
   
-    timer.start();
+    timer.start(true);
     MyBlockGmres.Solve();
     timer.stop();
 
     if( My_Test.GetStatus() != Belos::Converged ) success = false;
+
+    if(verbose)
+      Teuchos::print_memory_usage_stats(Teuchos::get_default_workspace_store().get(),std::cout);
 
   }
   catch( const std::exception &excpt ) {

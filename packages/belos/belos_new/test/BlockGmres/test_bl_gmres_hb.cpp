@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 		 << endl << endl;
   }
   
-  timer.start();
+  timer.start(true);
   MyBlockGmres.Solve();
   timer.stop();
   

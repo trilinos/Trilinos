@@ -141,18 +141,22 @@ int main(int argc, char *argv[]) {
     //
     const Epetra_Map &Map = A->RowMap();
     const int NumGlobalElements = Map.NumGlobalElements();
-    int numrhs = 15;  // total number of right-hand sides to solve for
+    //int numrhs = 15;  // total number of right-hand sides to solve for
+    int numrhs = 10;
     int block = 10;  // blocksize used by solver
+    //int block = 5;
+    //int block = 15;
     int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
     double tol = 1.0e-6;  // relative residual tolerance
     //
     //*****Construct solution vector and random right-hand-sides *****
     //
     RefCountPtr<Epetra_MultiVector> B = rcp( new Epetra_MultiVector(*rowMap, numrhs) );
+    B->SetSeed(0);
+    B->Random();
     RefCountPtr<Epetra_MultiVector> X = rcp( new Epetra_MultiVector(*rowMap, numrhs) );
     TSFCore::EpetraMultiVector rhs( B, vs );
     TSFCore::EpetraMultiVector soln( X, vs );
-    MVT::MvRandom( rhs );
     //
     //*****Create Linear Problem for Belos Solver
     //
@@ -196,11 +200,14 @@ int main(int argc, char *argv[]) {
       cout << numrhs << " right-hand side(s) -- using a block size of " << block
            << endl << endl;
     }
-    timer.start();
+    timer.start(true);
     MyBlockCG.Solve();	
     timer.stop();
     //
     if (My_Test.GetStatus() != Belos::Converged ) success = false; 
+    //
+    if(verbose)
+      Teuchos::print_memory_usage_stats(Teuchos::get_default_workspace_store().get(),std::cout);
     //
     // Compute actual residuals.
     //
