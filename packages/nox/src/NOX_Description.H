@@ -624,7 +624,7 @@ check out a copy to your local machine.  Be sure to correctly set your
 <li>
 To check out nox:
 \verbatim
-cvs -d :ext:username@hopper.ca.sandia.gov:/space/CVS checkout -P nox
+cvs -d :ext:username@software.sandia.gov:/space/CVS checkout -P nox
 \endverbatim
 
 <li>
