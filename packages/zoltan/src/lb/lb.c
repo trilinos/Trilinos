@@ -371,10 +371,8 @@ int LB_Set_Method(LB *lb, char *method_name)
    *  Convert method_name to all upper case.
    *  Do not change the original string.
    */
-  method_upper = (char *)LB_MALLOC((strlen(method_name)+1)*sizeof(char));
-  for (i=strlen(method_name); i>=0; i--){
-      method_upper[i] = toupper(method_name[i]);
-  }
+
+  LB_clean_string(method_name, &method_upper);
 
   if (strcmp(method_upper, "RCB") == 0) {
     lb->Method = RCB;
