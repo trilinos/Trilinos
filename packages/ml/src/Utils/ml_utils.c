@@ -2338,7 +2338,11 @@ double ML_srandom1(int *seed)
 #include <stdarg.h>
 int pr_error(char *fmt,  ... ) 
 {
+  char ml_message_string[800];
   va_list ap;
+  va_start(ap, fmt);
+  vsprintf(ml_message_string,fmt, ap);
+  /*
   char *p;
   int  ival;
   double dval;
@@ -2360,9 +2364,14 @@ int pr_error(char *fmt,  ... )
         break;
      }
   }
+  */
   va_end(ap);
-  fflush(stdout);
+  fprintf(stderr,"\n%sn",ml_message_string);
+#ifdef ML_MPI
+  MPI_Abort(MPI_COMM_WORLD,1);
+#else
   exit(1);
+#endif
   return(1);
 }
 
