@@ -123,7 +123,6 @@ Epetra_SerialDenseMatrix::Epetra_SerialDenseMatrix(const Epetra_SerialDenseMatri
 		}
 		else {
 			A_ = 0;
-			A_ = false;
 		}
 	}
 }
