@@ -28,7 +28,7 @@ MPI_VERSION 		= lam
 
 ifeq "$(F90_COMPILER)" "absoft"
 F90 = abf90
-FFLAGS = -g -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_ -lU77
+FFLAGS = -YEXT_NAMES=LCS -YCFRL=1 -YEXT_SFX=_ -lU77
 F90CFLAGS = -DFMANGLE=UNDERSCORE
 SPPR_HEAD = spprinc.absoft
 FARG = farg_typical
@@ -36,7 +36,7 @@ F90_MODULE_PREFIX = -p
 else
 ifeq "$(F90_COMPILER)" "fujitsu"
 F90 = f95
-FFLAGS = -g -Am -X9 -static-flib
+FFLAGS = -Am -X9 -static-flib
 F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
 SPPR_HEAD = spprinc.most
 FARG = farg_typical
@@ -44,7 +44,7 @@ F90_MODULE_PREFIX = -I
 else
 ifeq "$(F90_COMPILER)" "lahey"
 F90 = lf95
-FFLAGS = -g --staticlink
+FFLAGS = --staticlink
 F90CFLAGS = -DFMANGLE=UNDERSCORE -DFUJITSU
 SPPR_HEAD = spprinc.most
 FARG = farg_typical
@@ -52,7 +52,7 @@ F90_MODULE_PREFIX = -I
 else
 ifeq "$(F90_COMPILER)" "nas"
 F90 = nasf95
-FFLAGS = -g -nocheckint
+FFLAGS = -nocheckint
 F90CFLAGS = -DFMANGLE=UNDERSCORE
 SPPR_HEAD = spprinc.nas
 FARG = farg_nas
@@ -68,7 +68,7 @@ F90_MODULE_PREFIX = -I
 else
 ifeq "$(F90_COMPILER)" "psr"
 F90 = psrf90
-FFLAGS = -g
+FFLAGS =
 F90CFLAGS = -DFMANGLE=UNDERSCORE
 SPPR_HEAD = spprinc.most
 FARG = farg_typical
@@ -77,7 +77,7 @@ F90_MODULE_PREFIX = -H
 else
 # default is NAG
 F90 = nagf95
-FFLAGS = -g -mismatch -gline -C
+FFLAGS = -mismatch
 F90CFLAGS = -DFMANGLE=UNDERSCORE
 SPPR_HEAD = spprinc.most
 FARG = farg_nagf95
@@ -104,7 +104,7 @@ endif
 
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O
-CFLAGS 			= $(DBG_FLAGS)
+CFLAGS 			= $(OPT_FLAGS)
 
 LOCAL_F90		= $(F90)
 
