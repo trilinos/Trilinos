@@ -4,13 +4,16 @@
 #ifndef _TEUCHOS_BLAS_WRAPPERS_HPP_
 #define _TEUCHOS_BLAS_WRAPPERS_HPP_
 
+#include "Teuchos_ConfigDefs.hpp"
+#include <stdio.h>
+#include <string.h>
+
 /*! \file Teuchos_BLAS_wrappers.h  
     \brief The Templated Petra BLAS Class.
 
     Lots of cryptic Fortranish #defines here.  More info on how and why 
     to be added at a later date when Paul gets around to it.
 */
-
 
 /* Define fcd (Fortran Teuchos_fcd descriptor) for non-standard situations */
 
@@ -23,17 +26,60 @@
 #define PREFIX
 #define Teuchos_fcd fcd 
 
+#define DASUM_F77   F77_FUNC(sasum,DASUM) 
+#define DAXPY_F77   F77_FUNC(saxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(scopy,DCOPY)
+#define DDOT_F77    F77_FUNC(sdot,DDOT)
+#define DNRM2_F77   F77_FUNC(snrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(sscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(isamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(sgemv,DGEMV)
+#define DGER_F77    F77_FUNC(sger,DGER)
+#define DTRMV_F77   F77_FUNC(strmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(sgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(ssymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(strmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(strsm,DTRSM)
 
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall 
 #define Teuchos_fcd char *, unsigned int 
 
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)  
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
 #elif defined(INTEL_MKL)
 
 #define PREFIX
 #define Teuchos_fcd char *
+
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)  
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
 #endif 
 
@@ -54,16 +100,35 @@
 #define Teuchos_fcd char * 
 
 /* In the future use autoconf's definition of F77_FUNC */ 
+
+#ifndef HAVE_CONFIG_H
+
 #ifdef F77_FUNC
 #undef F77_FUNC
 #endif
 
-/* Define to a macro mangling the given C identifier (in lower and upper
-   case), which must not contain underscores, for linking with Fortran. */
+#ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
+#define F77_FUNC(lcase,UCASE) lcase
+#else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
 #define F77_FUNC(lcase,UCASE) lcase ## _
+#endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 
-/* As F77_FUNC, but for C identifiers containing underscores. */
-#define F77_FUNC_(lcase,UCASE) lcase ## __
+#endif /* HAVE_CONFIG_H */
+
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM) 
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
 #endif
 
@@ -86,90 +151,75 @@
 #define STRMM_F77   F77_FUNC(strmm,STRMM)
 #define STRSM_F77   F77_FUNC(strsm,STRSM)
 
-#define DASUM_F77   F77_FUNC(dasum,DASUM)
-#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
-#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
-#define DDOT_F77    F77_FUNC(ddot,DDOT)
-#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
-#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
-#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
-#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
-#define DGER_F77    F77_FUNC(dger,DGER)
-#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
-#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
-#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
-#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
-#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
 /* Double precision BLAS 1 */
-double DASUM_F77(int* n, double x[], int* incx);
-void DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
-void DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
-double DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
-double DNRM2_F77(int* n, double x[], int* incx); 
-void DSCAL_F77(int* n, double* alpha, double *x, int* incx);
-int IDAMAX_F77(int* n, double *x, int* incx);
+double PREFIX DASUM_F77(int* n, double x[], int* incx);
+void PREFIX DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
+void PREFIX DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
+double PREFIX DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
+double PREFIX DNRM2_F77(int* n, double x[], int* incx); 
+void PREFIX DSCAL_F77(int* n, double* alpha, double *x, int* incx);
+int PREFIX IDAMAX_F77(int* n, double *x, int* incx);
 
 /* Single precision BLAS 1 */ 
-float SASUM_F77(int* n, float x[], int* incx);
-void SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
-void SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
-float SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
-float SNRM2_F77(int* n, float x[], int* incx); 
-void SSCAL_F77(int* n, float* alpha, float *x, int* incx);
-int ISAMAX_F77(int* n, float *x, int* incx);
+float PREFIX SASUM_F77(int* n, float x[], int* incx);
+void PREFIX SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
+void PREFIX SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
+float PREFIX SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
+float PREFIX SNRM2_F77(int* n, float x[], int* incx); 
+void PREFIX SSCAL_F77(int* n, float* alpha, float *x, int* incx);
+int PREFIX ISAMAX_F77(int* n, float *x, int* incx);
 
 /* Double precision BLAS 2 */
-void DGEMV_F77(Teuchos_fcd, int* m, int* n, double* alpha, double A[], int* lda,
+void PREFIX DGEMV_F77(Teuchos_fcd, int* m, int* n, double* alpha, double A[], int* lda,
                  double x[], int* incx, double* beta, double y[], int* incy);
-void DTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n, 
+void PREFIX DTRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n, 
                 double *a, int *lda, double *x, int *incx); 
-void DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y,
+void PREFIX DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y,
                int *incy, double *a, int *lda);
 
 
 /* Single precision BLAS 2 */
-void SGEMV_F77(Teuchos_fcd, int* m, int* n, float* alpha, float A[], int* lda,
+void PREFIX SGEMV_F77(Teuchos_fcd, int* m, int* n, float* alpha, float A[], int* lda,
                  float x[], int* incx, float* beta, float y[], int* incy);
-void STRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n,
+void PREFIX STRMV_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, int *n,
                 float *a, int *lda, float *x, int *incx); 
-void SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y,
+void PREFIX SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y,
                int *incy, float *a, int *lda);
 
 /* Double precision BLAS 3 */
-void DGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * 
+void PREFIX DGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * 
                 n, int *k, double *alpha, double *a, int *lda, 
                 double *b, int *ldb, double *beta, double *c, int *ldc);
-void DSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
+void PREFIX DSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
                 double *alpha, double *a, int *lda, 
                 double *b, int *ldb, double *beta, double *c, int *ldc);
-void DTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
+void PREFIX DTRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,  
                 int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
-void DTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
+void PREFIX DTRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
                 int *m, int *n, double *alpha, double *a, int *
                 lda, double *b, int *ldb);
 
 /* Single precision BLAS 3 */
-void SGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int *
+void PREFIX SGEMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int *
                 n, int *k, float *alpha, float *a, int *lda, 
                 float *b, int *ldb, float *beta, float *c, int *ldc);
-void SSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
+void PREFIX SSYMM_F77(Teuchos_fcd, Teuchos_fcd, int *m, int * n,
                 float *alpha, float *a, int *lda, 
                 float *b, int *ldb, float *beta, float *c, int *ldc);
-void STRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
+void PREFIX STRMM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, 
                 int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
-void STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
+void PREFIX STRSM_F77(Teuchos_fcd, Teuchos_fcd, Teuchos_fcd, Teuchos_fcd,
                 int *m, int *n, float *alpha, float *a, int *
                 lda, float *b, int *ldb);
 
-void XERBLA_F77(Teuchos_fcd, int *info);
 
 #ifdef __cplusplus
 }
 #endif
+
 #endif // end of TEUCHOS_BLAS_WRAPPERS_HPP_
