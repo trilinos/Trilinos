@@ -1293,7 +1293,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
 {
   int i, j, tmp, ierr, proc; 
   int *nonint, *nonint_local; 
-  float *scale, *sum_wgt_local, *sum_wgt;
+  float *scale, *sum_wgt_local, *sum_wgt, *max_wgt_local, *max_wgt;
   static char *yo = "scale_round_weights";
 
   ierr = LB_OK;
@@ -1312,32 +1312,41 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       scale = (float *)LB_MALLOC(dim*sizeof(float));
       sum_wgt = (float *)LB_MALLOC(dim*sizeof(float));
       sum_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
-      if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local)){
+      max_wgt = (float *)LB_MALLOC(dim*sizeof(float));
+      max_wgt_local = (float *)LB_MALLOC(dim*sizeof(float));
+      if (!(nonint && nonint_local && scale && sum_wgt && sum_wgt_local
+           && max_wgt && max_wgt_local)){
         LB_PRINT_ERROR(proc, yo, "Out of memory.");
         LB_FREE(&nonint);
         LB_FREE(&nonint_local);
         LB_FREE(&scale);
         LB_FREE(&sum_wgt);
         LB_FREE(&sum_wgt_local);
+        LB_FREE(&max_wgt);
+        LB_FREE(&max_wgt_local);
         return LB_MEMERR;
       }
       /* Initialize */
       for (j=0; j<dim; j++){
         nonint_local[j] = 0;
         sum_wgt_local[j] = 0;
+        max_wgt_local[j] = 0;
       }
 
       /* Compute local sums of the weights */
       /* Check if all weights are integers */
+#define EPSILON (1e-5)
       for (i=0; i<n; i++){
         for (j=0; j<dim; j++){
           if (!nonint_local[j]){ 
             tmp = fwgts[i*dim+j]; /* Converts to nearest int */
-            if (fabs((double)tmp-fwgts[i*dim+j]) > .001){
+            if (fabs((double)tmp-fwgts[i*dim+j]) > EPSILON){
               nonint_local[j] = 1;
             }
           }
           sum_wgt_local[j] += fwgts[i*dim+j];
+          if (fwgts[i*dim+j] > max_wgt_local[j])
+            max_wgt_local[j] = fwgts[i*dim+j]; 
         }
       }
       /* Compute global sum of the weights */
@@ -1345,12 +1354,14 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
           MPI_INT, MPI_LOR, comm);
       MPI_Allreduce(sum_wgt_local, sum_wgt, dim, 
           MPI_FLOAT, MPI_SUM, comm);
+      MPI_Allreduce(max_wgt_local, max_wgt, dim, 
+          MPI_FLOAT, MPI_MAX, comm);
 
       /* Calculate scale factor */
       for (j=0; j<dim; j++){
         scale[j] = 1.;
-        /* Scale unless all weights are integers */
-        if (nonint[j] || (sum_wgt[j] > max_wgt_sum)){
+        /* Scale unless all weights are integers (not all zero) */
+        if (nonint[j] || (max_wgt[j] <= EPSILON) || (sum_wgt[j] > max_wgt_sum)){
           scale[j] = max_wgt_sum/sum_wgt[j];
         }
       }
@@ -1367,7 +1378,7 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
       }
 
       if ((debug_level >= LB_DEBUG_ALL) && (proc==0)){
-        printf("Zoltan debug: scaling weights with scale factors = ");
+        printf("ZOLTAN DEBUG in %s: scaling weights with scale factors = ", yo);
         for (j=0; j<dim; j++)
           printf("%f ", scale[j]);
         printf("\n");
@@ -1388,9 +1399,12 @@ static int scale_round_weights(float *fwgts, idxtype *iwgts, int n, int dim,
     LB_FREE(&scale);
     LB_FREE(&sum_wgt);
     LB_FREE(&sum_wgt_local);
+    LB_FREE(&max_wgt);
+    LB_FREE(&max_wgt_local);
   }
   return ierr;
 }
+#undef EPSILON
 
 #endif /* defined (LB_JOSTLE) || defined (LB_PARMETIS) */
 
