@@ -1901,7 +1901,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
 
 
 int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
-			double eig_ratio)
+			double eig_ratio, int deg)
 {
    int              start_level, end_level, i, j, errCode=0;   
    struct MLSthing *widget;
@@ -1935,12 +1935,16 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
    degree = 1;
 
 #ifdef NEWMLS
+   /*
    if (ml->comm->ML_mypid == 0) {
      printf("Enter -k to do a kth degree MLS or k (where k > 0)\n");
      printf("to do kth degree Cheby over high frequencies\n");
      scanf("%d",&iii);
+     iii = deg;
    }
    ML_gsum_vec_int(&jjj, &iii, 1, ml->comm);
+   */
+   iii = deg;
    if (iii >= 0) {
      fun = ML_Cheby;
      degree = iii;
@@ -1989,6 +1993,11 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post, int ntimes,
 	 widget->pAux     = NULL;   /* currently reserved */
 	 widget->res      = NULL;   /* currently reserved */
 	 widget->y        = NULL;   /* currently reserved */
+     /*
+            Ray -- I think that the next line should be changed from 4 to
+            27 = 3^3 in the 3D case.  Is this right?  I'm leaving it as is
+            for right now.  JJH
+     */
 	 if (eig_ratio >= 4.) widget->eig_ratio = eig_ratio;
 	 else widget->eig_ratio = 20.;
 
