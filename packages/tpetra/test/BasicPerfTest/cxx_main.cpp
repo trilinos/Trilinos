@@ -32,7 +32,7 @@
 
 //function prototypes
 void doSumRuns(int size, int numRuns, bool verbose);
-void doSum(int const size, double& timeA, double& timeB, double& timeC, double& timeD);
+void doSum(int const size, double& timeA, double& timeB, double& timeC, double& timeD, double& timeE);
 
 int main(int argc, char* argv[]) {
 	// initialize verbose & debug flags
@@ -62,7 +62,8 @@ int main(int argc, char* argv[]) {
 	cout.setf(ios::left, ios::adjustfield);
 	cout << setw(20) << "Size" << setw(20) << "Pointer Arith." 
 			 << setw(20) << "Pointer(optimized)" << setw(20) << "Array offset" 
-			 << setw(20) << "STL accumulate" << setw(20) << "Row time" << endl;
+			 << setw(20) << "STL accumulate" << setw(20) << "STL iterator" 
+       << setw(20) << "Row time" << endl;
 	
 	int size = base;
 	for(int i = 0; i < iterations; i++, size *= base)
@@ -76,7 +77,8 @@ void doSumRuns(int size, int numRuns, bool verbose) {
 	double totalTimeB = 0.0;
 	double totalTimeC = 0.0;
 	double totalTimeD = 0.0;
-	double timeA, timeB, timeC, timeD;
+  double totalTimeE = 0.0;
+	double timeA, timeB, timeC, timeD, timeE;
 
 	//cout.setf(ios::scientific, ios::floatfield);
 	//cout.setf(ios::showpoint);
@@ -86,11 +88,12 @@ void doSumRuns(int size, int numRuns, bool verbose) {
 	wholeloop.start();
 
 	for(int i = 0; i < numRuns; i++) {
-		doSum(size, timeA, timeB, timeC, timeD);
+		doSum(size, timeA, timeB, timeC, timeD, timeE);
 		totalTimeA += timeA;
 		totalTimeB += timeB;
 		totalTimeC += timeC;
 		totalTimeD += timeD;
+    totalTimeE += timeE;
 
 		if(verbose) {
 			cout << setw(20) << size 
@@ -98,6 +101,7 @@ void doSumRuns(int size, int numRuns, bool verbose) {
 					 << setw(20) << timeB 
 					 << setw(20) << timeC
 					 << setw(20) << timeD
+           << setw(20) << timeE
 					 << endl;
 		}
 	}
@@ -106,6 +110,7 @@ void doSumRuns(int size, int numRuns, bool verbose) {
 	totalTimeB /= static_cast<double> (numRuns);
 	totalTimeC /= static_cast<double> (numRuns);
 	totalTimeD /= static_cast<double> (numRuns);
+  totalTimeE /= static_cast<double> (numRuns);
 
 	wholeloop.stop();
 
@@ -115,29 +120,32 @@ void doSumRuns(int size, int numRuns, bool verbose) {
 			 << setw(20) << totalTimeB 
 			 << setw(20) << totalTimeC
 			 << setw(20) << totalTimeD
+       << setw(20) << totalTimeE
 			 << setw(20) << wholeloop.totalElapsedTime()
 			 << endl;
 	if(verbose) cout << "--------------------------------------------------------------------------------\n";
 
 }
 
-void doSum(int const size, double& timeA, double& timeB, double& timeC, double& timeD) {
+void doSum(int const size, double& timeA, double& timeB, double& timeC, double& timeD, double& timeE) {
 	// initialize vector of user-specified size, and set elements to random values.
 	std::vector<double> vector1(size, 0.0); 
 	for(int i = 0; i < size; i++)
 		vector1[i] = Teuchos::ScalarTraits<double>::random();
 
-	// create 4 timer objects
+	// create timer objects
 	Teuchos::Time timerA("pointer arithmetic");
 	Teuchos::Time timerB("pointer arithmetic (optimized)");
 	Teuchos::Time timerC("array offset");
 	Teuchos::Time timerD("stl accumulate");
+  Teuchos::Time timerE("stl iterator");
 
-	// create 4 double variables to store results in
+	// create double variables to store results in
 	double sumA = 0.0;
 	double sumB = 0.0;
 	double sumC = 0.0;
 	double sumD = 0.0;
+  double sumE = 0.0;
 
 	// Time using pointer arithmetic
 	timerA.start();
@@ -166,8 +174,18 @@ void doSum(int const size, double& timeA, double& timeB, double& timeC, double& 
 	sumD = accumulate(vector1.begin(), vector1.end(), 0.0);
 	timerD.stop();
 
+  // Time using STL iterator
+  timerE.start();
+  std::vector<double>::iterator ii = vector1.begin();
+  for(int i = 0; i < size; i++)
+    sumE += *ii++;
+  timerE.stop();
+  
+  //cout << "sums: " << sumA << ", " << sumB << ", " << sumC << ", " << sumD << ", " << sumE << endl;
+
 	timeA = timerA.totalElapsedTime();
 	timeB = timerB.totalElapsedTime();
 	timeC = timerC.totalElapsedTime();
 	timeD = timerD.totalElapsedTime();
+  timeE = timerE.totalElapsedTime();
 }
