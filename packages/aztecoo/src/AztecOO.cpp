@@ -195,6 +195,8 @@ int AztecOO::SetUserOperator(Epetra_Operator * UserOperator) {
   }
   UserOperator_ = UserOperator;
 
+  SetProcConfig(UserOperator_->Comm());
+
   N_local_ =  UserOperator_->RangeMap().NumMyPoints();
 
   Amat_ = AZ_matrix_create(N_local_);
@@ -281,6 +283,7 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
   }
 
   PrecOperator_ = PrecOperator;
+  SetProcConfig(PrecOperator_->Comm());
 
   if (Amat_==0) EPETRA_CHK_ERR(-2); // UserOperator must be defined first
 
@@ -404,6 +407,8 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 					       struct AZ_PREC_STRUCT *),
 					      void *p_data)
 {
+  if (Amat_==0) EPETRA_CHK_ERR(-1); // No matrix yet
+  EPETRA_CHK_ERR(DestroyPreconditioner()); // Delete existing preconditioner if one exists
   Prec_ = AZ_precond_create(Amat_,prec_function, p_data);
   options_[AZ_precond] = AZ_user_precond;
 
@@ -413,16 +418,18 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 //=============================================================================
 int AztecOO::ConstructPreconditioner(double & condest) {
 
-  if (PrecMatrix_==0) return(-1); // No matrix yet
+  if (PrecMatrix_==0) EPETRA_CHK_ERR(-1); // No matrix yet
 
   int precond_flag = options_[AZ_precond];
 
   if (precond_flag) {
 
   // Create default Aztec preconditioner if one not defined
-  if (Prec_==0) Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
-
-  AZ_mk_context(options_, params_, Amat_->data_org, Prec_, proc_config_);
+  if (Prec_==0) {
+    if (Amat_==0)  EPETRA_CHK_ERR(-2); // No Amat to use for building preconditioner
+    Prec_ = AZ_precond_create(Amat_, AZ_precondition, NULL);
+    AZ_mk_context(options_, params_, Amat_->data_org, Prec_, proc_config_);
+  }
 
 
     int NN = PrecMatrix_->NumMyCols();
