@@ -334,6 +334,12 @@
      \f[ u = M^{-1} v, \f]
      where \f$u\f$ is the input vector and \f$v\f$ is the result vector.
 
+     If <em>useTranspose</em> is true, then the transpose of the 
+     preconditioner is applied:  
+     \f[ u = {M^{-1}}^T v, \f]
+     The transpose preconditioner is currently only required for 
+     Tensor methods. 
+
      The "Tolerance" parameter specifies that the
      solution should be such that
      \f[
