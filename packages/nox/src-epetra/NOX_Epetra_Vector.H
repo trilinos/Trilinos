@@ -79,7 +79,7 @@ class Vector : public virtual NOX::Abstract::Vector {
   //@{ \name Initialization methods.
 
   // derived
-  virtual NOX::Abstract::Vector& init(double value);
+  virtual NOX::Abstract::Vector& init(double gamma);
 
   // derived
   virtual NOX::Abstract::Vector& random(bool useSeed = false, int seed = 1);
