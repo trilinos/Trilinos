@@ -306,16 +306,18 @@ int main(int argc, char *argv[]) {
 	MyProblem.AInProd( one, evecr, evecr, dmatr );
 	double compeval;
 
-	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-	cout<<"Real Part \t Rayleigh Error"<<endl;
-	for (i=0; i<nev; i++) {
-		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<abs(compeval-one/evalr[i])<<endl;
+	if (verbose) {
+	  // output results to screen
+	  MyBlockArnoldi.currentStatus();
+	  
+	  cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
+	  cout<<"Real Part \t Rayleigh Error"<<endl;
+	  for (i=0; i<nev; i++) {
+	    compeval = dmatr(i,i);
+	    cout<<compeval<<"\t"<<abs(compeval-one/evalr[i])<<endl;
+	  }
+
 	}
-
-	// output results to screen
-	MyBlockArnoldi.currentStatus();
-
 
 #ifdef UNIX
 	if (verbose)
@@ -326,6 +328,13 @@ int main(int argc, char *argv[]) {
 	// Release all objects
         if (resids) delete [] resids;
 	if (evalr) delete [] evalr;
+	if (ICT) delete ICT;
+
+	delete [] NumNz;
+	delete [] MyGlobalElements;
+	delete [] Indices;
+	delete [] ValuesA;
+	delete [] ValuesB;
 
 	delete &A, &B;
 	delete &Map;

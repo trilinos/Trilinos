@@ -497,6 +497,77 @@ ReturnType PetraGenOp<TYPE>::Apply ( const MultiVec<TYPE>& x,
 	}	
 }
 
+///////////////////////////////////////////////////////////////
+//--------template class AnasaziPetraSymOp---------------------
+template <class TYPE> 
+class PetraSymOp : public virtual Operator<TYPE> {
+public:
+  PetraSymOp(const Epetra_Operator& Op );
+  ~PetraSymOp();
+  ReturnType Apply ( const MultiVec<TYPE>& x, 
+		     MultiVec<TYPE>& y ) const;
+private:
+  const Epetra_Operator& Epetra_Op;
+};
+//-------------------------------------------------------------
+//
+// implementation of the AnasaziPetraSymOp class.
+//
+////////////////////////////////////////////////////////////////////
+//
+// AnasaziOperator constructors
+//
+template <class TYPE>
+PetraSymOp<TYPE>::PetraSymOp(const Epetra_Operator& Op) 
+  : Epetra_Op(Op)
+{
+}
+
+template <class TYPE>
+PetraSymOp<TYPE>::~PetraSymOp() 
+{
+}
+//
+// AnasaziOperator applications
+//
+template <class TYPE>
+ReturnType PetraSymOp<TYPE>::Apply ( const MultiVec<TYPE>& x, 
+						  MultiVec<TYPE>& y ) const 
+{
+	int info=0;
+	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
+	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
+	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+	Epetra_MultiVector* temp_vec = new Epetra_MultiVector( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
+
+	assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
+	//
+	// Need to cast away constness because the member function Apply
+	// is not declared const.
+	//
+	// Compute A*x
+	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *temp_vec );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Transpose the operator
+	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Compute A^T*(A*x)
+	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *temp_vec, *vec_y );
+	if (info!=0) { delete temp_vec; return Failed; }
+
+	// Un-transpose the operator
+	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false );
+	delete temp_vec;
+
+	if (info==0)
+		return Ok; 
+	else
+		return Failed; 
+}
+
+
 } // end of Anasazi namespace 
 
 #endif 

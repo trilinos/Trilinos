@@ -187,7 +187,8 @@ int main(int argc, char *argv[]) {
         MyBlockArnoldi.getiEvecs( eveci );
 
         // output results to screen
-        MyBlockArnoldi.currentStatus();
+	if (verbose)
+	  MyBlockArnoldi.currentStatus();
 
 #ifdef UNIX
         if (verbose)

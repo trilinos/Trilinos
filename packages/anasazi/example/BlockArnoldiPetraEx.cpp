@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 	int NumProc = Comm.NumProc();
 	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
-	//bool verbose = (MyPID==0);
+	bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.
@@ -277,7 +277,8 @@ int main(int argc, char *argv[]) {
 	MyBlockArnoldi.getiEvecs( eveci );
 
 	// Output results to screen
-	MyBlockArnoldi.currentStatus();
+	if (verbose) 
+	  MyBlockArnoldi.currentStatus();
 	
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
@@ -287,8 +288,10 @@ int main(int argc, char *argv[]) {
 	Teuchos::SerialDenseMatrix<int,double> Breal2(nev,nev), Bimag2(nev,nev);
 	double* normA = new double[nev];
 	double* tempnrm = new double[nev];
-	cout<<endl<< "Actual Residuals"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
+	if (verbose) {
+	  cout<<endl<< "Actual Residuals"<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	}
 	Breal.putScalar(0.0); Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { Breal(i,i) = evalr[i]; Bimag(i,i) = evali[i]; }
 	Amat.ApplyMatrix( evecr, tempAevec );
@@ -310,13 +313,15 @@ int main(int argc, char *argv[]) {
 	    i++;
 	  }
 	}
-	cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
-	for (i=0; i<nev; i++) {
-	  cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
-	}  
-	cout<<"------------------------------------------------------"<<endl;
-	
+	if (verbose) {
+	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	  for (i=0; i<nev; i++) {
+	    cout<< evalr[i] << "\t\t" << evali[i] << "\t\t"<< normA[i] << endl;
+	  }  
+	  cout<<"------------------------------------------------------"<<endl;
+	}
+
 #ifdef UNIX
 	if (verbose)
 		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;

@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(BlockArnoldiPetraEx_SOURCES) $(BlockArnoldiPetraExGen_SOURCES) $(BlockArnoldiPetraExHb_SOURCES)
+SOURCES = $(BlockArnoldiPetraEx_SOURCES) $(BlockArnoldiPetraExGen_SOURCES) $(BlockArnoldiPetraExHb_SOURCES) $(BlockArnoldiPetraExSVD_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -41,7 +41,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) \
-	BlockArnoldiPetraEx$(EXEEXT)
+	BlockArnoldiPetraEx$(EXEEXT) BlockArnoldiPetraExSVD$(EXEEXT)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -82,12 +82,16 @@ BlockArnoldiPetraExGen_OBJECTS = $(am_BlockArnoldiPetraExGen_OBJECTS)
 am_BlockArnoldiPetraExHb_OBJECTS =  \
 	BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.$(OBJEXT)
 BlockArnoldiPetraExHb_OBJECTS = $(am_BlockArnoldiPetraExHb_OBJECTS)
+am_BlockArnoldiPetraExSVD_OBJECTS =  \
+	BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.$(OBJEXT)
+BlockArnoldiPetraExSVD_OBJECTS = $(am_BlockArnoldiPetraExSVD_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/BlockArnoldiPetraExGen-BlockArnoldiPetraExGen.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po
+@AMDEP_TRUE@	./$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -95,10 +99,12 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(BlockArnoldiPetraEx_SOURCES) \
 	$(BlockArnoldiPetraExGen_SOURCES) \
-	$(BlockArnoldiPetraExHb_SOURCES)
+	$(BlockArnoldiPetraExHb_SOURCES) \
+	$(BlockArnoldiPetraExSVD_SOURCES)
 DIST_SOURCES = $(BlockArnoldiPetraEx_SOURCES) \
 	$(BlockArnoldiPetraExGen_SOURCES) \
-	$(BlockArnoldiPetraExHb_SOURCES)
+	$(BlockArnoldiPetraExHb_SOURCES) \
+	$(BlockArnoldiPetraExSVD_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-exec-recursive install-info-recursive \
@@ -229,6 +235,7 @@ target_vendor = @target_vendor@
 #if BUILD_TRIUTILS
 ANASAZI_BIRAM_EX_HB = BlockArnoldiPetraExHb
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
+BlockArnoldiPetraExSVD_SOURCES = $(srcdir)/BlockArnoldiPetraExSVD.cpp
 BlockArnoldiPetraExHb_SOURCES = $(srcdir)/BlockArnoldiPetraExHb.cpp
 BlockArnoldiPetraExGen_SOURCES = $(srcdir)/BlockArnoldiPetraExGen.cpp
 
@@ -246,10 +253,18 @@ BlockArnoldiPetraEx_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
-BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils
-
-#np# List libraries that np is dependent on.
+BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src
 BlockArnoldiPetraEx_LDADD = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+BlockArnoldiPetraExSVD_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a 
+
+BlockArnoldiPetraExSVD_CXXFLAGS = -I$(top_srcdir)/src 
+BlockArnoldiPetraExSVD_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
@@ -337,6 +352,9 @@ BlockArnoldiPetraExGen$(EXEEXT): $(BlockArnoldiPetraExGen_OBJECTS) $(BlockArnold
 BlockArnoldiPetraExHb$(EXEEXT): $(BlockArnoldiPetraExHb_OBJECTS) $(BlockArnoldiPetraExHb_DEPENDENCIES) 
 	@rm -f BlockArnoldiPetraExHb$(EXEEXT)
 	$(CXXLINK) $(BlockArnoldiPetraExHb_LDFLAGS) $(BlockArnoldiPetraExHb_OBJECTS) $(BlockArnoldiPetraExHb_LDADD) $(LIBS)
+BlockArnoldiPetraExSVD$(EXEEXT): $(BlockArnoldiPetraExSVD_OBJECTS) $(BlockArnoldiPetraExSVD_DEPENDENCIES) 
+	@rm -f BlockArnoldiPetraExSVD$(EXEEXT)
+	$(CXXLINK) $(BlockArnoldiPetraExSVD_LDFLAGS) $(BlockArnoldiPetraExSVD_OBJECTS) $(BlockArnoldiPetraExSVD_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -347,6 +365,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockArnoldiPetraEx-BlockArnoldiPetraEx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockArnoldiPetraExGen-BlockArnoldiPetraExGen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -411,6 +430,22 @@ BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.obj: $(srcdir)/BlockArnoldiPetraExHb
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExHb_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraExHb-BlockArnoldiPetraExHb.obj `if test -f '$(srcdir)/BlockArnoldiPetraExHb.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockArnoldiPetraExHb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockArnoldiPetraExHb.cpp'; fi`
+
+BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.o: $(srcdir)/BlockArnoldiPetraExSVD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExSVD_CXXFLAGS) $(CXXFLAGS) -MT BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.o -MD -MP -MF "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo" -c -o BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.o `test -f '$(srcdir)/BlockArnoldiPetraExSVD.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockArnoldiPetraExSVD.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo" "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po"; else rm -f "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockArnoldiPetraExSVD.cpp' object='BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExSVD_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.o `test -f '$(srcdir)/BlockArnoldiPetraExSVD.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockArnoldiPetraExSVD.cpp
+
+BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.obj: $(srcdir)/BlockArnoldiPetraExSVD.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExSVD_CXXFLAGS) $(CXXFLAGS) -MT BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.obj -MD -MP -MF "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo" -c -o BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.obj `if test -f '$(srcdir)/BlockArnoldiPetraExSVD.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockArnoldiPetraExSVD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockArnoldiPetraExSVD.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo" "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po"; else rm -f "$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockArnoldiPetraExSVD.cpp' object='BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.Po' tmpdepfile='$(DEPDIR)/BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockArnoldiPetraExSVD_CXXFLAGS) $(CXXFLAGS) -c -o BlockArnoldiPetraExSVD-BlockArnoldiPetraExSVD.obj `if test -f '$(srcdir)/BlockArnoldiPetraExSVD.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockArnoldiPetraExSVD.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockArnoldiPetraExSVD.cpp'; fi`
 uninstall-info-am:
 
 # This directory's subdirectories are mostly independent; you can cd

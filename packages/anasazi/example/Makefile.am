@@ -13,9 +13,11 @@ endif
 ANASAZI_BIRAM_EX_HB = BlockArnoldiPetraExHb
 #endif 
 
-noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) $(ANASAZI_BIRAM_EX_HB) BlockArnoldiPetraEx 
+noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) $(ANASAZI_BIRAM_EX_HB) BlockArnoldiPetraEx BlockArnoldiPetraExSVD
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
+
+BlockArnoldiPetraExSVD_SOURCES = $(srcdir)/BlockArnoldiPetraExSVD.cpp
 
 BlockArnoldiPetraExHb_SOURCES = $(srcdir)/BlockArnoldiPetraExHb.cpp
 
@@ -35,10 +37,20 @@ BlockArnoldiPetraEx_DEPENDENCIES = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a 
 
-BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/utils
+BlockArnoldiPetraEx_CXXFLAGS = -I$(top_srcdir)/src
 
-#np# List libraries that np is dependent on.
 BlockArnoldiPetraEx_LDADD = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a \
+	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+
+BlockArnoldiPetraExSVD_DEPENDENCIES = \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a 
+
+BlockArnoldiPetraExSVD_CXXFLAGS = -I$(top_srcdir)/src 
+
+BlockArnoldiPetraExSVD_LDADD = \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
