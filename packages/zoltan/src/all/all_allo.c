@@ -147,18 +147,21 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
       switch(type) {
       case LB_SPECIAL_MALLOC_INT:
          *array = (int *) LB_MALLOC(size*sizeof(int));
+         if (*array==NULL) success=0;
          break;
       case LB_SPECIAL_MALLOC_GID:
          *array = LB_MALLOC_GID_ARRAY(lb, size);
+         if (*array==NULL) success=0;
          break;
       case LB_SPECIAL_MALLOC_LID:
          *array = LB_MALLOC_LID_ARRAY(lb, size);
+         if (lb->Num_LID > 0 && *array==NULL) success = 0;
          break;
       default:
 	 LB_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
          *array = NULL;
+         success = 0;
       }
-      if (*array==NULL) success=0;
    }
    return success;
 }
