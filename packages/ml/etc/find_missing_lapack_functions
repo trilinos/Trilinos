@@ -156,5 +156,8 @@ chmod +x la_defs; ./la_defs
 #####################################################
 
 \rm -f .thedefs
-grep FUNC la_defs > .thedefs
+no_lines=`cat la_defs | wc | sed "s/^ *//" | sed "s/ .*//"`
+lineslessone=`expr ${no_lines} - 1`
+tail -${lineslessone} la_defs | grep FUNC > .thedefs
 \rm -f la_defs temprog.c temprog.o ml_lapack.c .errors ml_lapack1.o 
+
