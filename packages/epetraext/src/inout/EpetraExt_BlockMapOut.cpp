@@ -95,7 +95,7 @@ int BlockMapToMatrixMarketFile( const char *filename, const Epetra_BlockMap & ma
       fprintf(handle, "%% %d \n", map.IndexBase());
       fprintf(handle, "%%NumGlobalElements: Total number of GIDs in map:\n");
       fprintf(handle, "%% %d \n", map.NumGlobalElements());
-      fprintf(handle, "%%NumMyElements: BlockMap lengths per processor:\n", map.Comm().NumProc());
+      fprintf(handle, "%%NumMyElements: BlockMap lengths per processor:\n");
       for ( int i=0; i< v2.MyLength(); i++) fprintf(handle, "%% %d\n", v2[i]);
       
       if (mm_write_mtx_array_size(handle, M, N)) return(-1);
@@ -175,7 +175,7 @@ int writeBlockMap(FILE * handle, int length, const int * v1, const int * v2, boo
 
   for (int i=0; i<length; i++) {
     fprintf(handle, "%d", v1[i]);
-    if (doSizes) fprintf(handle, "%d", v2[i]);
+    if (doSizes) fprintf(handle, " %d", v2[i]);
     fprintf(handle, "\n");
   }
   return(0);
