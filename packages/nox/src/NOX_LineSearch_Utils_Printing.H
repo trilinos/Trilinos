@@ -65,11 +65,23 @@ public:
   virtual ~Printing();
 
 
-  //! Print out step information
+  //! Print out step information for the inner iterations of a line search algorithm.
   /*!
-    NEED TO INSERT EXMAPLE OUTPUT HERE
+    Example of output from the inner iterations of a Polynomial line search:
+
+\verbatim
+************************************************************************
+-- Polynomial Line Search -- 
+  1: step = 1.000e+00 oldf = 2.403e+00 newf = 1.076e+03
+  2: step = 1.000e-01 oldf = 2.403e+00 newf = 4.440e+00
+  3: step = 1.000e-02 oldf = 2.403e+00 newf = 2.394e+00 (STEP ACCEPTED!)
+************************************************************************
+\endverbatim
+    
+NOTE: The values of oldf and newf that are printed are different than the values passed in to the printStep method call if unscaleF is true (default is true).  Most line searches define oldf and newf as \f$ f(x) = \frac{1}{2}\| F(x) \|^2 \f$.  We would rather print \f$ \| F(x) \| \f$ to coincide with the outer iteration f value.  Therefore we need to unscale the incoming oldf and newf values so we print the norm of \f$ F \f$ as opposed to the norm of \f$ f \f$. This scaling can be turned off by setting unscaleF to false.
+
   */
-  void printStep(int n, double step, double oldf, double newf, const string s = "") const;
+  void printStep(int n, double step, double oldf, double newf, const string s = "", bool unscaleF = true) const;
 
 };
 } // namespace Utils

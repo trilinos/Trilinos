@@ -45,14 +45,20 @@ NOX::LineSearch::Utils::Printing::~Printing()
 
 }
 
-void NOX::LineSearch::Utils::Printing::printStep(int n, double step, double oldf, double newf, const string s) const
+void NOX::LineSearch::Utils::Printing::printStep(int n, double step, double oldf, double newf, const string s, bool unscaleF) const
 {
   if (isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
     cout << setw(3) << n << ":";
     cout << NOX::Utils::fill(1,' ') << "step = " << sciformat(step);
-    cout << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(sqrt(2. * oldf));
-    cout << NOX::Utils::fill(1,' ') << "newf = " << sciformat(sqrt(2. * newf));
+    if (unscaleF == true) {
+      cout << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(sqrt(2. * oldf));
+      cout << NOX::Utils::fill(1,' ') << "newf = " << sciformat(sqrt(2. * newf));
+    }
+    else {
+      cout << NOX::Utils::fill(1,' ') << "oldf = " << sciformat(oldf);
+      cout << NOX::Utils::fill(1,' ') << "newf = " << sciformat(newf);
+    }
     if (!s.empty()) 
     {
       cout << " " << s << "\n";
