@@ -148,6 +148,12 @@ public:
   virtual void outputResults(NOX::Solver::Manager& solver, 
                              NOX::Parameter::List& printParams);
 
+  // Provide for transient inherited problems
+  virtual void setdt( double dt );
+
+  // Provide for transient inherited problems
+  virtual double getdt() const;
+
 protected:
 
   // inserts the global column indices into the Graph

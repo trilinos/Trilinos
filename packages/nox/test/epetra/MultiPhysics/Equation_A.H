@@ -73,7 +73,10 @@ public:
 		Epetra_Vector *rhsVector);
 
   // Accesor function for time step
-  double getdt();
+  double getdt() const { return dt; }
+
+  // Accesor function for setting time step
+  void setdt( double dt_ ) { dt = dt_;}
 
   // Return a reference to the Epetra_Vector with the old solution
   Epetra_Vector& getOldSoln();

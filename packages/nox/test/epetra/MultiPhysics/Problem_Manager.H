@@ -93,6 +93,9 @@ public:
   // on which it depends
   void syncAllProblems();
 
+  // Set all problems with the same time step size
+  void setAlldt( double dt);
+
   // Set the solver group solution using the current solution contained 
   // in the problem
   void setGroupX(int id);

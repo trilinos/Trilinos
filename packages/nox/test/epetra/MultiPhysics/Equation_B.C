@@ -44,8 +44,7 @@ Equation_B::Equation_B(Epetra_Comm& comm, int numGlobalNodes,
                                            string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xmin(0.0),
-  xmax(1.0),
-  dt(2.0e-1)
+  xmax(1.0)
 {
 
   // Create mesh and solution vectors
@@ -177,8 +176,11 @@ bool Equation_B::evaluate(
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
+  {
     dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
                    *Importer, Insert);
+    //cout << "depSoln[" << i << "] :" << dep[i] << endl;
+  }
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder
@@ -203,7 +205,9 @@ bool Equation_B::evaluate(
   double xx[2];
   double uu[2]; 
   double uuold[2];
-  vector<double*> ddep(numDep, new double[2]);
+  vector<double*> ddep(numDep);
+  for( int i = 0; i<numDep; i++)
+    ddep[i] = new double[2];
   Basis basis;
   
   int id_temp; // Index for needed dependent Species vector
@@ -221,6 +225,7 @@ bool Equation_B::evaluate(
   else
     id_temp = id_ptr->second;
 
+  //
   id_ptr = nameToMyIndex.find("Burgers");
   if( id_ptr == nameToMyIndex.end() ) {
     cout << "WARNING: Equation_B (\"" << myName << "\") could not get "
@@ -229,6 +234,7 @@ bool Equation_B::evaluate(
   }
   else
     id_vel = id_ptr->second;
+    //
 
   // Zero out the objects that will be filled
   if ( fillMatrix ) A->PutScalar(0.0);
@@ -342,11 +348,6 @@ Epetra_Vector& Equation_B::getOldSoln()
   return *oldSolution;
 } 
   
-double Equation_B::getdt()
-{
-  return dt;
-}
-
 void Equation_B::generateGraph()
 {
   

@@ -44,10 +44,9 @@
 Burgers::Burgers(Epetra_Comm& comm, int numGlobalNodes, string name_) :
   GenericEpetraProblem(comm, numGlobalNodes, name_),
   xFactor(5.0),
-  viscosity(0.005),
+  viscosity(0.010),
   xmin(0.0),
-  xmax(1.0),
-  dt(0.20)
+  xmax(1.0)
 {
 
   // Create the nodal coordinates
@@ -109,11 +108,13 @@ bool Burgers::initializeSoln()
 {
   Epetra_Vector& x = *xptr;
 
+  double pi = 4.0*atan(1.0);
   double arg;
   for(int i=0; i<NumMyNodes; i++) {
     arg = ( 20.0 * x[i] - 10.0 ) / xFactor;
     (*initialSolution)[i] = (1.0 - ( exp(arg) - exp(-arg) ) /
                                    ( exp(arg) + exp(-arg) )) - 1.0;
+//    (*initialSolution)[i] = 1.0*sin(2.0*pi*x[i]);
   }
 
   *oldSolution = *initialSolution;
@@ -151,8 +152,11 @@ bool Burgers::evaluate(
   // FD coloring in parallel.
   uold.Import(*oldSolution, *Importer, Insert);
   for( int i = 0; i<numDep; i++ )
+  {
     dep[i].Import(*(depSolutions.find(depProblems[i])->second), 
                    *Importer, Insert);
+    //cout << "depSoln[" << i << "] :" << dep[i] << endl;
+  }
   xvec.Import(*xptr, *Importer, Insert);
   if( flag == NOX::EpetraNew::Interface::Required::FD_Res)
     // Overlap vector for solution received from FD coloring, so simply reorder
@@ -174,11 +178,14 @@ bool Burgers::evaluate(
   double xx[2];
   double uu[2];
   double uuold[2];
-  vector<double*> ddep(numDep, new double[2]);
+  vector<double*> ddep(numDep);
+  for( int i = 0; i<numDep; i++)
+    ddep[i] = new double[2];
   Basis basis;
 
   int id_temp; // Index for needed dependent Temperature vector
 
+  //
   map<string, int>::iterator id_ptr = nameToMyIndex.find("Temperature");
   if( id_ptr == nameToMyIndex.end() ) {
     cout << "WARNING: Burgers (\"" << myName << "\") could not get "
@@ -187,6 +194,7 @@ bool Burgers::evaluate(
   }
   else
     id_temp = id_ptr->second;
+    //
 
   // Zero out the objects that will be filled
   if ((flag == MATRIX_ONLY) || (flag == ALL)) i=A->PutScalar(0.0);
@@ -221,7 +229,8 @@ bool Burgers::evaluate(
 	    (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
               +basis.wt*basis.dx*(
                 (basis.uu-basis.uuold)/dt*basis.phi[i] +
-                (1.0/(basis.dx*basis.dx))*viscosity*pow(basis.ddep[id_temp],1.5)
+                (1.0/(basis.dx*basis.dx))*viscosity*pow(1.0*(basis.ddep[id_temp]-0.2),1.5)
+                //(1.0/(basis.dx*basis.dx))*viscosity
                   *basis.duu*basis.dphide[i] -
                 (1.0/basis.dx)*0.5*basis.uu*basis.uu*basis.dphide[i]);
 	  }
@@ -303,11 +312,6 @@ Epetra_Vector& Burgers::getExactSoln(double time)
 Epetra_Vector& Burgers::getOldSoln()
 {
   return *oldSolution;
-}
-  
-double Burgers::getdt()
-{
-  return dt;
 }
   
 void Burgers::generateGraph()

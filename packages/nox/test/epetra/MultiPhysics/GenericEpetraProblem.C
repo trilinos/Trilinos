@@ -176,6 +176,16 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
   fclose(ifp);
 }
 
+void GenericEpetraProblem::setdt( double dt )
+{
+  cout << "No-op : Implement time dependence in inherited problem !!" << endl;
+}
+
+double GenericEpetraProblem::getdt() const
+{
+  cout << "No-op : Implement time dependence in inherited problem !!" << endl;
+}
+
 Epetra_Vector& GenericEpetraProblem::getMesh()
 {
   assert( xptr != 0 ); // Mesh vector had better exist

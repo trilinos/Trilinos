@@ -435,6 +435,23 @@ void Problem_Manager::syncAllProblems()
     (*problemIter).second->doTransfer();
 }
 
+void Problem_Manager::setAlldt( double dt )
+{
+  if(Problems.empty()) {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and set the corresponding group
+  // solution vector (used by NOX) with the problem's (used by application)
+  for( ; problemIter != problemLast; ++problemIter)
+    problemIter->second->setdt(dt);
+}
+
 void Problem_Manager::setGroupX(int probId)
 {
   GenericEpetraProblem *problem = Problems.find(probId)->second;

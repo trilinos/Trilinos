@@ -272,6 +272,7 @@ int main(int argc, char *argv[])
   //  problemManager.createDependency("Temperature", "Species");
     problemManager.createDependency(ProblemA, ProblemB);
     problemManager.createDependency(ProblemA, burgers);
+//    problemManager.createDependency(ProblemA, burgers);
   //  problemManager.createDependency(ProblemA2, ProblemB3);
     problemManager.createDependency(ProblemB, ProblemA);
     problemManager.createDependency(ProblemB, burgers);
@@ -288,9 +289,8 @@ int main(int argc, char *argv[])
     int maxTimeSteps = 100;
     int timeStep = 0;
     double time = 0.;
-    double dt = ProblemA.getdt();
-    if( dt != ProblemB.getdt() )
-      cout << "WARNING: Time steps differ between problems !!" << endl;
+    double dt = 0.100;
+    problemManager.setAlldt(dt);
     
     // Print initial solution
     char file_name[25];
