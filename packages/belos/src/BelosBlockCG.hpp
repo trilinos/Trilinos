@@ -26,6 +26,7 @@
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_OrdinalTraits.hpp"
 #include "BelosConfigDefs.hpp"
 
 /*!	\class Belos::BlockCG
@@ -219,11 +220,11 @@ void BlockCG<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 				     Anasazi::MultiVec<TYPE>& rhs_block,  
 				     int num_to_solve) {
 	//
-	int i,j;
+	int i;
 	int *index = new int[_blocksize]; assert(index!=NULL);
 	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
-	const TYPE one=1.0;
-	const TYPE zero=0.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	//
 	// Logic to handle the number of righthand sides solved
 	// for at this iteration.
@@ -291,8 +292,8 @@ void BlockCG<TYPE>::ExtractCurSolnBlock(Anasazi::MultiVec<TYPE>& sol_block,
 										  int num_to_solve) {
 	//
 	int i;
-	const TYPE one = 1.0;
-	const TYPE zero = 0.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	int * index = new int[_blocksize + _numrhs]; assert(index!=NULL);
 	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
 	//
@@ -344,7 +345,7 @@ void BlockCG<TYPE>::TrueResiduals (bool vb) {
 	_rhs.MvNorm(norms_rhs);
 	
 	_trueresids = new TYPE[AX->GetNumberVecs()]; assert(_trueresids!=NULL);
-	const TYPE one=1.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
 	AX->MvAddMv(one, _rhs, -one, *AX);	
 	AX->MvNorm(_trueresids);
 	if(vb){
@@ -419,8 +420,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	int i,j,k,num_ind;
 	int cur_blksz, ind_blksz, prev_ind_blksz, num_conv, numrhs_to_solve;
 	bool pflg, exit_flg = false;
-	const TYPE one=1.0;
-	const TYPE zero=0.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
 	Anasazi::MultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
 	Anasazi::MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0, *AP_prev=0;
 	Anasazi::MultiVec<TYPE> *temp_block=0, *PC_resid=0;
@@ -684,7 +685,6 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		  char UPLO = 'U';
 		  int ii = 0;
 		  int * info = &ii;
-		  int numrhs = _numrhs;
 		  Teuchos::LAPACK<int,TYPE> lapack;
 		   //
 		   // 1)
@@ -993,10 +993,9 @@ void BlockCG<TYPE>::QRFactorDef (Anasazi::MultiVec<TYPE>& VecIn,
 	TYPE * R = FouierR.values();
 	Anasazi::MultiVec<TYPE> *qj = 0, *Qj = 0;
 	Teuchos::SerialDenseVector<int,TYPE> rj;
-	const int IntOne=1;
-	const int IntZero=0;
-	const TYPE zero=0.0;
-	const TYPE one=1.0;
+	const int IntOne = Teuchos::OrdinalTraits<int>::one();
+	const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
 	TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn!=NULL);
 	//
 	//
@@ -1109,8 +1108,8 @@ void BlockCG<TYPE>::CheckCGOrth(Anasazi::MultiVec<TYPE>& P1, Anasazi::MultiVec<T
   // This routine computes P2^T * A * P1
   // Checks the orthogonality wrt A between any two blocks of multivectors with the same length
   //
-  const TYPE one = 1.0;
-  const TYPE zero = 0.0;
+  const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   int i, k;
   int veclen1 = P1.GetVecLength();
   int veclen2 = P2.GetVecLength();
@@ -1201,7 +1200,7 @@ template<class TYPE>
 void BlockCG<TYPE>::CheckCGResids(Anasazi::MultiVec<TYPE>& X, Anasazi::MultiVec<TYPE>& B, bool vb) const {
 	//
 	int i;
-	const TYPE one = 1.0;
+	const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
 	//
 	Anasazi::MultiVec<TYPE> *AX = X.CloneCopy(); assert(AX!=NULL);
 	Anasazi::MultiVec<TYPE> *TR = X.CloneCopy(); assert(TR!=NULL);
