@@ -46,10 +46,11 @@
 #define ICNTL(I) icntl[(I)-1]
 #define CNTL(I)  cntl[(I)-1]
 #define INFOG(I) infog[(I)-1]
+#define INFO(I) info[(I)-1]
 #define RINFOG(I) rinfog[(I)-1]
 
-#define DEF_VALUE_INT -123456789
-#define DEF_VALUE_DOUBLE -123456.789
+const int DEF_VALUE_INT = -123456789;
+const double DEF_VALUE_DOUBLE = -123456.789;
   
 //=============================================================================
 
@@ -58,7 +59,9 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   Amesos_EpetraBaseSolver(prob,ParameterList),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
-  KeepMatrixDistributed_(true) ,
+  KeepMatrixDistributed_(false),
+  MaxProcs_(-1),
+  MaxProcsInputMatrix_(-1),
   UseMpiCommSelf_(false),
   Map_(0),
   NumMUMPSNonzeros_(0),
@@ -82,9 +85,12 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   TargetVector_(0),
   verbose_(0),
   AddZeroToDiag_(false),
+  AddToDiag_(0.0),
   PrintTiming_(true),
   PrintStatistics_(true),
-  Threshold_(0.0)
+  Threshold_(0.0),
+  TimeToShipMatrix_(0.0),
+  MUMPSComm_(0)
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
@@ -105,8 +111,8 @@ int Amesos_Mumps::Destroy()
   // destroy instance of the package
   MDS.job = -2;
 
-  dmumps_c(&MDS);
-
+  if( Comm().MyPID() < MaxProcs_ ) dmumps_c(&MDS);
+  
   if( Redistor_ ) delete Redistor_;
   if( TargetVector_ ) delete TargetVector_;
   
@@ -120,14 +126,16 @@ Amesos_Mumps::~Amesos_Mumps(void)
 
   Destroy();
   
-  if( Row ) delete Row;
-  if( Col ) delete Col;
-  if( Val ) delete Val;
+  if( Row ) { delete Row; Row = 0; }
+  if( Col ) { delete Col; Col = 0; }
+  if( Val ) { delete Val; Val = 0; }
 
   if( IsComputeSchurComplementOK_ && Comm().MyPID() == 0 ) {
     delete [] MDS.schur;
   }
-  
+
+  if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
+  MUMPSComm_ = 0;
 }
 
 //=============================================================================
@@ -144,14 +152,14 @@ int Amesos_Mumps::ConvertToTriplet()
   // MS // then decomposed and reshipped by MUMPS
 
   // MS // be sure that those vectors are empty. Allocate them
-  
+
   if( Row ) delete Row;
   if( Col ) delete Col;
   if( Val ) delete Val;
 
-  Row = new Epetra_IntSerialDenseVector( NumMyNonzeros() ) ;  
-  Col = new Epetra_IntSerialDenseVector( NumMyNonzeros() ) ;  
-  Val = new Epetra_SerialDenseVector( NumMyNonzeros() ) ;  
+  Row = new Epetra_IntSerialDenseVector( NumMyNonzeros()+1);
+  Col = new Epetra_IntSerialDenseVector( NumMyNonzeros()+1 );
+  Val = new Epetra_SerialDenseVector( NumMyNonzeros()+1 );
 
   NumMyMUMPSNonzeros_ = 0;
   
@@ -182,13 +190,24 @@ int Amesos_Mumps::ConvertToTriplet()
 
     for( int i=0 ; i<NumIndices ; ++i ) {
       if( abs(MatrixValues[i]) >= Threshold_ ) {
-	if( RowIndices[i] == ColIndices[i] ) FoundDiagonal = true;
 	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
 	(*Col)[NumMyMUMPSNonzeros_] = ColIndices[i]+diff;
 	(*Val)[NumMyMUMPSNonzeros_] = MatrixValues[i];
+#ifdef LATER
+	if( RowIndices[i] == ColIndices[i] ) {
+	  FoundDiagonal = true;
+	  (*Val)[NumMyMUMPSNonzeros_] += AddToDiag_;
+	}
+#endif
 	NumMyMUMPSNonzeros_++;
       }
-      // to add: zero on diagonal
+#ifdef LATER
+      if( AddDiagElement_ && FoundDiagonal_ == false ) {
+	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
+	(*Col)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
+	(*Val)[NumMyMUMPSNonzeros_] = AddToDiag_;
+      }
+#endif
     }
   }
 
@@ -199,45 +218,12 @@ int Amesos_Mumps::ConvertToTriplet()
   
   if( KeepMatrixDistributed_ == false ) {
 
-    Epetra_IntSerialDenseVector * OldRow = Row;
-    Epetra_IntSerialDenseVector * OldCol = Col;
-    Epetra_SerialDenseVector * OldVal = Val;
-
-    Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);
-
-    if( Comm().MyPID() != 0 ) NumMUMPSNonzeros_ = 0;
-      
-    Row = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_);
-    Col = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_);
-    Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_);
-
-    Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
+    RedistributeMatrix(1);
     
-    Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
-    Epetra_Import OldToNew(NewNnz,OldNnz);
+  } else if( MaxProcsInputMatrix_ != Comm().NumProc() ) {
 
-    Epetra_IntVector GOldRow(View,OldNnz,OldRow->Values());
-    Epetra_IntVector GOldCol(View,OldNnz,OldCol->Values());
-    Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
-
-    Epetra_IntVector GRow(View,NewNnz,Row->Values());
-    Epetra_IntVector GCol(View,NewNnz,Col->Values());
-    Epetra_Vector GVal(View,NewNnz,Val->Values());
+    RedistributeMatrix(MaxProcsInputMatrix_);
     
-    GRow.Import(GOldRow,OldToNew,Insert);
-    GCol.Import(GOldCol,OldToNew,Insert);
-    GVal.Import(GOldVal,OldToNew,Insert);
-
-    delete OldRow; OldRow = 0;
-    delete OldCol; OldCol = 0;
-    delete OldVal; OldVal = 0;
-
-    if( Comm().MyPID() != 0 ) {
-      delete Row; Row = 0;
-      delete Col; Col = 0;
-      delete Val; Val = 0;
-    }
-
   } else {
 
     NumMUMPSNonzeros_ = NumMyMUMPSNonzeros_;
@@ -245,12 +231,99 @@ int Amesos_Mumps::ConvertToTriplet()
   }
 
   if( PrintTiming_ && Comm().MyPID() == 0 )
-    cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
+    cout << "Amesos_Mumps : Time to convert matrix values to MUMPS format = "
 	 << Time.ElapsedTime() << " (s)" << endl;
   
   AddToConvTime(Time.ElapsedTime());  
   
   return 0;
+
+}
+
+//=============================================================================
+
+void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
+{
+
+  if( verbose_ == 3 ) cout << "Entering `RedistributeMatrix' ..." << endl;
+  
+  Epetra_Time T(Comm());
+
+  Epetra_IntSerialDenseVector * OldRow = Row;
+  Epetra_IntSerialDenseVector * OldCol = Col;
+  Epetra_SerialDenseVector * OldVal = Val;
+
+  Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);
+
+  int local = NumMUMPSNonzeros_ / NumProcs;
+  if( Comm().MyPID() == 0 ) local += NumMUMPSNonzeros_%NumProcs;
+
+  if( Comm().MyPID() < NumProcs ) NumMUMPSNonzeros_ = local;
+  else                            NumMUMPSNonzeros_ = 0;
+
+  Row = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
+  Col = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
+  Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_+1);
+
+  Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
+    
+  Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
+  Epetra_Import OldToNew(NewNnz,OldNnz);
+
+  Epetra_IntVector GOldRow(View,OldNnz,OldRow->Values());
+  Epetra_IntVector GOldCol(View,OldNnz,OldCol->Values());
+  Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
+
+  Epetra_IntVector GRow(View,NewNnz,Row->Values());
+  Epetra_IntVector GCol(View,NewNnz,Col->Values());
+  Epetra_Vector GVal(View,NewNnz,Val->Values());
+
+  GRow.Import(GOldRow,OldToNew,Insert);
+  GCol.Import(GOldCol,OldToNew,Insert);
+  GVal.Import(GOldVal,OldToNew,Insert);
+
+  if( OldRow ) { delete OldRow; OldRow = 0; }
+  if( OldCol ) { delete OldCol; OldCol = 0; }
+  if( OldVal ) { delete OldVal; OldVal = 0; }
+
+  TimeToShipMatrix_ += T.ElapsedTime();
+  
+}
+
+//=============================================================================
+
+void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
+{
+
+  if( verbose_ == 3 ) cout << "Entering `RedistributeMatrixValues' ..." << endl;
+
+  // I suppose that NumMyMUMPSNonzeros_ has been computed
+  // before calling this method.
+  
+  Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);    
+
+  Epetra_SerialDenseVector * OldVal = Val;
+
+  int local = NumMUMPSNonzeros_ / NumProcs;
+  if( Comm().MyPID() == 0 ) local += NumMUMPSNonzeros_%NumProcs;
+  
+  if( Comm().MyPID() < NumProcs ) NumMUMPSNonzeros_ = local;
+  else                            NumMUMPSNonzeros_ = 0;
+
+  Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_);
+  
+  Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
+  
+  Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
+  Epetra_Import OldToNew(NewNnz,OldNnz);
+  
+  Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
+  
+  Epetra_Vector GVal(View,NewNnz,Val->Values());
+  
+  GVal.Import(GOldVal,OldToNew,Insert);
+  
+  if( OldVal ) { delete OldVal; OldVal = 0; }
 
 }
 
@@ -294,11 +367,11 @@ int Amesos_Mumps::ConvertToTripletValues()
     GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
 
     for( int i=0 ; i<NumIndices ; ++i ) {
-      // following if : please test me................................
-      //      if( MatrixValues[i] != 0.0 ) {
+      if( abs(MatrixValues[i]) >= Threshold_ ) {
+	
 	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
 	NumMUMPSNonzerosValues++;
-	//      }
+      }
     }
   }
 
@@ -314,32 +387,14 @@ int Amesos_Mumps::ConvertToTripletValues()
   
   if( KeepMatrixDistributed_ == false ) {
 
-    Epetra_SerialDenseVector * OldVal = Val;
-
-    Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);
-
-    if( Comm().MyPID() != 0 ) NumMUMPSNonzeros_ = 0;
-      
-    Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_);
-
-    Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
+    RedistributeMatrixValues(1);
     
-    Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
-    Epetra_Import OldToNew(NewNnz,OldNnz);
+  } else if( MaxProcsInputMatrix_ != Comm().NumProc() ) {
 
-    Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
+    RedistributeMatrixValues(MaxProcsInputMatrix_);
 
-    Epetra_Vector GVal(View,NewNnz,Val->Values());
-    
-    GVal.Import(GOldVal,OldToNew,Insert);
-
-    delete OldVal; OldVal = 0;
-
-    if( Comm().MyPID() != 0 ) {
-      delete Val; Val = 0;
-    }
   } else {
-
+    
     NumMUMPSNonzeros_ = NumMyMUMPSNonzeros_;
 
   }
@@ -349,7 +404,7 @@ int Amesos_Mumps::ConvertToTripletValues()
 	 << Time.ElapsedTime() << " (s)" << endl;
   
   AddToConvTime(Time.ElapsedTime());  
- 
+  
   return 0;
 
 }
@@ -456,13 +511,24 @@ int Amesos_Mumps::ReadParameterList()
     cerr << "Amesos_Mumps Warning: AddZeroToDiag not yet implemented." << endl;
   }
   
-  PrintTiming_ = ParameterList_->get("PrintTiming", true);
+  PrintTiming_ = ParameterList_->get("PrintTiming", false);
 
-  PrintStatistics_ = ParameterList_->get("PrintStatistics", true);
+  PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
 
   ComputeVectorNorms_ = ParameterList_->get("ComputeVectorNorms",false);
 
   ComputeTrueResidual_ = ParameterList_->get("ComputeTrueResidual",false);
+
+  KeepMatrixDistributed_ = ParameterList_->get("KeepMatrixDistributed",true);
+
+  int OptNumProcs = (int)sqrt(1.0*Comm().NumProc());
+  if( OptNumProcs < 1 ) OptNumProcs = 1;
+  
+  MaxProcs_ = ParameterList_->get("MaxProcs",OptNumProcs);
+
+  verbose_ = ParameterList_->get("OutputLevel",0);
+
+  MaxProcsInputMatrix_ = ParameterList_->get("MaxProcsInputMatrix",OptNumProcs);
 
   // retrive MUMPS' parameters
   
@@ -512,6 +578,30 @@ int Amesos_Mumps::ReadParameterList()
      }
      // that's all folks
   }  
+
+  // ================ //
+  // check parameters //
+  // ================ //
+
+  // one proc ==> consider as of matrix is not distributed
+  if( Comm().NumProc() == 1 ) KeepMatrixDistributed_ = false;
+
+  // if MaxProcsInputMatrix_ == 1 ==> ship matrix to processor 1,
+  // and proceed as if KeepMatrixDistributed is false
+  if( MaxProcsInputMatrix_ == 1 ) KeepMatrixDistributed_ = false;
+  
+  // -1 means use all available processes
+  if( MaxProcs_ == -1 ||  MaxProcs_ > Comm().NumProc() )
+    MaxProcs_ = Comm().NumProc();
+
+  // cannot distribute input matrix to this number,
+  // use all the processes instead
+  if( MaxProcsInputMatrix_ > Comm().NumProc() ||
+      (MaxProcs_ != -1 && MaxProcsInputMatrix_ > MaxProcs_) ) {
+    MaxProcsInputMatrix_ = Comm().NumProc();
+  }
+  
+
   return 0;
 }
 
@@ -527,10 +617,6 @@ int Amesos_Mumps::PerformSymbolicFactorization()
    Destroy();
   }
 
-  if( Comm().NumProc() == 1 ) {
-      KeepMatrixDistributed_ = false;
-  }
-  
   Epetra_Time Time(Comm());
 
   if( IsLocal() || UseMpiCommSelf_ ) {
@@ -544,28 +630,53 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 #else
     MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
 #endif
+  } else {
+    
+    if( MaxProcs_ != Comm().NumProc() ) {
+
+      if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
+      
+      int * ProcsInGroup = new int[MaxProcs_];
+      for( int i=0 ; i<MaxProcs_ ; ++i ) ProcsInGroup[i] = i;
+      MPI_Group OrigGroup, MumpsGroup;
+      MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
+
+      MPI_Group_incl(OrigGroup, MaxProcs_, ProcsInGroup, &MumpsGroup);
+      
+      MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
+
+      MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
+
+      delete [] ProcsInGroup;
+
+    } else {
+      // use MPI_COMM_WORLD
+      // FIXME: should use the comm in Epetra_MpiComm()
+      MDS.comm_fortran = -987654 ;  
+    }
   }
-  else
-    MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
   
   //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
-
+  
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
   MDS.sym = MatrixProperty();
 
-  dmumps_c( &MDS ) ;   //  Initialize MUMPS 
-
-  // check the error flag. MUMPS is siccessful only if
+  if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;   //  Initialize MUMPS 
+  CheckError();
+  
+  // check the error flag. MUMPS is successful only if
   //  infog(1) is zereo
   MDS.n = NumGlobalRows() ;
-  
+
   // fix pointers for nonzero pattern of A. Numerical values
   // will be entered in PerformNumericalFactorization()
   if( KeepMatrixDistributed_ ) {
     MDS.nz_loc = NumMUMPSNonzeros_;
-    MDS.irn_loc = Row->Values(); 
-    MDS.jcn_loc = Col->Values(); 
+    if( Comm().MyPID() < MaxProcs_ ) {
+      MDS.irn_loc = Row->Values(); 
+      MDS.jcn_loc = Col->Values();
+    }
   } else {
     if( Comm().MyPID() == 0 ) {
       MDS.nz = NumMUMPSNonzeros_;
@@ -573,8 +684,8 @@ int Amesos_Mumps::PerformSymbolicFactorization()
       MDS.jcn = Col->Values(); 
     }
   }
-    
-   // scaling if provided by the user
+
+  // scaling if provided by the user
   if( RowSca_ != 0 ) {
     MDS.rowsca = RowSca_;
     MDS.colsca = ColSca_;
@@ -593,14 +704,11 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   SetICNTLandCNTL(); // initialize icntl and cntl. NOTE: I initialize those vectors
                      // here, and I don't change them anymore. This is not that much
                      // a limitation, though
-  
-  dmumps_c( &MDS ) ;  // Perform symbolic factorization
-  // check the error flag. MUMPS is successful only if
-  // infog(1) is zereo
-  if( MDS.INFOG(1)!=0 && verbose_ ) 
-  EPETRA_CHK_ERR( MDS.INFOG(1) );
-  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
 
+  // Perform symbolic factorization
+  if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
+  CheckError();
+  
   if( PrintTiming_ && Comm().MyPID() == 0 )
     cout << "Amesos_Mumps : Time for symbolic factorization = "
 	 << Time.ElapsedTime() << " (s)" << endl;
@@ -624,19 +732,19 @@ int Amesos_Mumps::PerformNumericFactorization( )
 
   // set vector for matrix entries. User may have changed it
   // since PerformSymbolicFactorization() has been called
-  if( KeepMatrixDistributed_ ) MDS.a_loc = Val->Values();
-  else {
+
+  if( KeepMatrixDistributed_ ) {
+    if( Comm().MyPID() < MaxProcs_ ) MDS.a_loc = Val->Values();
+  } else {
     if( Comm().MyPID() == 0 ) {
       MDS.a = Val->Values();
     }
   }
-  
+
   MDS.job = 2  ;     // Request numeric factorization
-  dmumps_c( &MDS ) ;  // Perform numeric factorization
-  // check the error flag. MUMPS is siccessful only if
-  // infog(1) is zereo
-  EPETRA_CHK_ERR( MDS.INFOG(1) );
-  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+  // Perform numeric factorization
+  if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
+  CheckError();
 
   if( PrintTiming_ && Comm().MyPID() == 0 )
     cout << "Amesos_Mumps : Time for numeric factorization = "
@@ -813,12 +921,8 @@ int Amesos_Mumps::Solve()
 	for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
 	MDS.rhs = (*vecX)[j];
 	MDS.job = 3  ;     // Request solve
-	dmumps_c( &MDS ) ;  // Perform solve
-	// check the error flag. MUMPS is siccessful only if
-	// infog(1) is zereo
-        EPETRA_CHK_ERR( MDS.INFOG(1) );
-  	if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
-
+	if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
+	CheckError();
       }
     }
   } else {
@@ -832,11 +936,8 @@ int Amesos_Mumps::Solve()
 	MDS.rhs = (*TargetVector_)[j];
       }
       MDS.job = 3  ;     // Request solve
-      dmumps_c( &MDS ) ;  // Perform solve
-      // check the error flag. MUMPS is siccessful only if
-      // infog(1) is zereo
-      EPETRA_CHK_ERR( MDS.INFOG(1) );
-      if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+      if( Comm().MyPID() < MaxProcs_ )dmumps_c( &MDS ) ;  // Perform solve
+      CheckError();
     }
 
     TimeForRedistor.ResetStartTime();
@@ -969,21 +1070,29 @@ int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 
 int Amesos_Mumps::PrintInformation() 
 {
-  if( Comm().MyPID() ) return 0;
+
+  if( Comm().MyPID() != 0  ) return 0;
 
   cout << "------------ : ---------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : global information for all phases" << endl;
   cout << "------------ : ---------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Matrix has " << NumGlobalRows() << " rows"
        << " and " << NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << endl;
+  cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << endl;
+  cout << "Amesos_Mumps : Input matrix distributed over " << MaxProcsInputMatrix_ << " process(es)" << endl;
+  
+  if( KeepMatrixDistributed_ == false )
+    cout << "Amesos_Mumps : Time to ship matrix to process 0 = "
+	 << TimeToShipMatrix_ << " (s)" << endl;
   cout << "Amesos_Mumps : Time to convert matrix into MUMPS format = "
-       << GetConvTime() << " (s) " << endl;
+       << GetConvTime() << " (s)" << endl;
   cout << "Amesos_Mumps : Symbolic factorization time = "
-       << GetSymFactTime() << " (s) " << endl;
+       << GetSymFactTime() << " (s)" << endl;
   cout << "Amesos_Mumps : Numerical factorization time = "
-       << GetSymFactTime() << " (s) " << endl;
+       << GetSymFactTime() << " (s)" << endl;
   cout << "Amesos_Mumps : Solution time = "
-       << GetSymFactTime() << " (s) " << endl;
+       << GetSymFactTime() << " (s)" << endl;
   cout << "Amesos_Mumps : Estimated FLOPS for elimination = "
        << MDS.RINFOG(1) << endl;
   cout << "Amesos_Mumps : Total FLOPS for assembly = "
@@ -1000,11 +1109,9 @@ int Amesos_Mumps::PrintInformation()
   cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
        << "Amesos_Mumps : for running factorization = "
        << MDS.INFOG(16) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
-       << "Amesos_Mumps : for running factorization = "
+  cout << "Amesos_Mumps : for running factorization = "
        << MDS.INFOG(17) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
-       << "Amesos_Mumps : Allocated during factorization = "
+  cout << "Amesos_Mumps : Allocated during factorization = "
        << MDS.INFOG(19) << " Mbytes" << endl;
  cout << "------------ : ---------------------------------------------------------" << endl;
  
@@ -1012,11 +1119,16 @@ int Amesos_Mumps::PrintInformation()
   
 }
 
+// ================================================ ====== ==== ==== == =
+
 int Amesos_Mumps::SetICNTL(int * icntl)
 {
   for( int i=0 ; i<40 ; ++i ) icntl_[i] = icntl[i];
   return 0;
+
 }
+
+// ================================================ ====== ==== ==== == =
 
 int Amesos_Mumps::SetCNTL(double * cntl)  
 {
@@ -1024,3 +1136,30 @@ int Amesos_Mumps::SetCNTL(double * cntl)
   return 0;
 }
  
+// ================================================ ====== ==== ==== == =
+
+void Amesos_Mumps::CheckError() 
+{
+  
+  bool Wrong = MDS.INFOG(1) != 0 && Comm().MyPID() < MaxProcs_;
+  
+  // an error occurred in MUMPS. Print out information and quit.
+
+  if( Comm().MyPID() == 0 && Wrong ) {
+    cerr << "Amesos_Mumps : ERROR" << endl;
+    cerr << "Amesos_Mumps : INFOG(1) = " << MDS.INFOG(1);
+    cerr << "Amesos_Mumps : INFOG(2) = " << MDS.INFOG(2);
+  }
+  
+  if( MDS.INFO(1) != 0 && Wrong ) {
+    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
+	 << ", INFO(1) = " << MDS.INFO(1);
+    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
+	 << ", INFO(2) = " << MDS.INFO(2);
+  }
+
+  if( Wrong ) exit( EXIT_FAILURE );
+  
+}
+
+

@@ -87,6 +87,8 @@ extern "C" {
   \Note This class should be used with MUMPS 4.3 or 4.3.1 (never tested
   with older versions of MUMPS, and developed with 4.3.1).
 
+  \author Marzio Sala, 9214
+  
 */
 class Amesos_Mumps : public Amesos_EpetraBaseSolver { 
 
@@ -314,12 +316,24 @@ public:
     return (MDS.infog);
   }
 
-  int SetKeepMatrixDistributed(bool flag) 
+  int SetKeepMatrixDistributed(const bool flag) 
   {
     KeepMatrixDistributed_ = flag;
     return 0;
   }
-
+  
+  int SetMaxProcs(const int MaxProcs) 
+  {
+    MaxProcs_ = MaxProcs;
+    return 0;
+  }
+  
+  int SetMaxProcsInputMatrix(const int MaxProcsInputMatrix) 
+  {
+    MaxProcsInputMatrix_ = MaxProcsInputMatrix;
+    return 0;
+  }
+  
   int SetICNTL(int * ictnl);
   
   int SetICNTL(int pos, int value);
@@ -371,6 +385,8 @@ private:
   */
   int PerformNumericFactorization(); 
 
+  void CheckError();
+  
   void SetICNTLandCNTL();
 
   void SetUseMpiCommSelf() {
@@ -381,6 +397,10 @@ private:
   {
     return (const Teuchos::ParameterList *) &ParameterList_;
   }
+
+  void RedistributeMatrix(const int NumProcs);
+
+  void RedistributeMatrixValues(const int NumProcs);
   
  protected:
 
@@ -410,6 +430,9 @@ private:
                                          // triplet format. Then, MUMPS will take care
                                          // of reditribution. If true, the input
                                          // distributed matrix is passed to MUMPS.
+
+  int MaxProcs_;
+  int MaxProcsInputMatrix_;
   
   const Epetra_Map * Map_;
 
@@ -419,6 +442,8 @@ private:
   
   bool UseTranspose_;
   bool AddZeroToDiag_;
+  double AddToDiag_;
+  
   bool PrintTiming_;
   bool PrintStatistics_;
   bool ComputeVectorNorms_;
@@ -446,6 +471,13 @@ private:
 
   Epetra_MultiVector * TargetVector_;
 
+  // some timing internal to MUMPS
+  double TimeToShipMatrix_;
+
+#ifdef EPETRA_MPI
+  MPI_Comm MUMPSComm_;
+#endif
+  
 };  // End of  class Amesos_Mumps
 
 #endif /* _AMESOS_MUMPS_H_ */
