@@ -151,10 +151,6 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 #define PHG_DEBUG_PLOT 4
 
 
-/*********************/
-/* Scale Edge Weight */
-/*********************/
-int Zoltan_PHG_Scale_HGraph_Weight (ZZ*, HGraph*, float*, int);
 
 /**********************/
 /* Matching functions */

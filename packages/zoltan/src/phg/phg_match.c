@@ -81,7 +81,7 @@ char  *yo = "Zoltan_PHG_Matching";
         err = ZOLTAN_MEMERR;
         goto End;
      }
-     Zoltan_PHG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
+     Zoltan_HG_Scale_HGraph_Weight (zz, hg, new_ewgt, hgp->ews);
      old_ewgt = hg->ewgt;
      hg->ewgt = new_ewgt;
   }
