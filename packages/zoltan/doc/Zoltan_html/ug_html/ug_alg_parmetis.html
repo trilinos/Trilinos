@@ -54,7 +54,7 @@ a good partitioning that is also "similar" in some sense to the existing
 partitioning. This keeps the migration cost low. All the problems described
 above are NP-hard so no efficient exact algorithm is known. We remark that
 in Zoltan, the number of partitions is always the same as the number of
-processes (which is normally equal to the number of processors).
+MPI processes (which is normally equal to the number of processors).
 <p>We only give a brief summary of the various ParMETIS methods here; for
 more details see the <a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>
 documentation. The methods fall into three categories:
@@ -136,7 +136,7 @@ refinement&nbsp;
 
 <td>Amount of output the load-balancing algorithm should produce.&nbsp;
 <br>0 = no output, 1 = print timing info. Turning on more bits displays
-more information (for example, 3=1+2, 5=1+4, 6=2+4).</td>
+more information (for example, 3=1+2, 5=1+4, 7=1+2+4).</td>
 </tr>
 
 <tr>
@@ -162,9 +162,11 @@ only be used during debugging).</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
 
-<td NOSAVE>Scatter graph data approximately equally among the processors
-before calling the partitioner:  0 = don't scatter, 1 = scatter if there
-is a great imbalance, 2 = always scatter.&nbsp;</td>
+<td NOSAVE>Scatter graph data by distributing contiguous chunks of objects
+(vertices)&nbsp; of roughly equal size to each processor before calling
+the partitioner? 0 = don't scatter, 1 = scatter only if all objects are
+on a single processor, 2 = scatter if at least one processor owns no objects
+(recommended to avoid a bug in ParMETIS 2.0.0),&nbsp; 3 = always scatter.&nbsp;</td>
 </tr>
 
 <tr>

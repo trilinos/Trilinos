@@ -111,9 +111,11 @@ only be used during debugging).</td>
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; <i>SCATTER_GRAPH</i></td>
 
-<td NOSAVE>Scatter graph data approximately equally among the processors
-before calling the partitioner? 0 = don't scatter, 1 = scatter if there
-is a great imbalance, 2 = always scatter.&nbsp;</td>
+<td NOSAVE>Scatter graph data by distributing contiguous chunks of objects
+(vertices)&nbsp; of roughly equal size to each processor before calling
+the partitioner? 0 = don't scatter, 1 = scatter only if all objects are
+on a single processor, 2 = scatter if at least one processor owns no objects,&nbsp;
+3 = always scatter.&nbsp;&nbsp;</td>
 </tr>
 
 <tr>
