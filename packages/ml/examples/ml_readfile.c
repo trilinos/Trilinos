@@ -334,6 +334,7 @@ int main(int argc, char *argv[])
       sprintf(filename,"rigid_body_mode%d",i+1);
       AZ_input_msr_matrix(filename, update, &mode, &garbage, N_update, 
                           proc_config);
+      AZ_reorder_vec(mode, data_org, update_index, NULL);
 
    /*
     *  Rescale matrix/rigid body modes and checking 
@@ -524,7 +525,7 @@ int main(int argc, char *argv[])
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
    options[AZ_output]   = 1;
-   options[AZ_max_iter] = 300;
+   options[AZ_max_iter] = 500;
    options[AZ_poly_ord] = 5;
    options[AZ_kspace]   = 130;
    params[AZ_tol]       = context->tol;
@@ -544,7 +545,7 @@ int main(int argc, char *argv[])
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-      AZ_input_msr_matrix("initguessfile", update, &rhs, &garbage, N_update, 
+      AZ_input_msr_matrix("initguessfile", update, &xxx, &garbage, N_update, 
                           proc_config);
 /*
       ch = getc(fp);
@@ -559,7 +560,7 @@ int main(int argc, char *argv[])
    }
    else if (proc_config[AZ_node]== 0) printf("taking 0 initial guess \n");
 
-   AZ_reorder_vec(rhs, data_org, update_index, NULL);
+   AZ_reorder_vec(xxx, data_org, update_index, NULL);
 
    /* if Dirichlet BC ... put the answer in */
 
@@ -610,17 +611,17 @@ int main(int argc, char *argv[])
    if (proc_config[AZ_node] == 0) 
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
-   if (proc_config[AZ_node] == 0) {
+   if (proc_config[AZ_node] == 0) 
      printf("Printing out a few entries of the solution ...\n");
-     for (j = 0; j < Amat->data_org[AZ_N_internal] +
-	    Amat->data_org[AZ_N_border]; j++) {
-       if ((update[j] == 7) || (update[j] == 23) || (update[j] == 47) ||
-	   (update[j] == 101) || (update[j] == 171))
+
+   for (j = 0; j < Amat->data_org[AZ_N_internal] +
+	  Amat->data_org[AZ_N_border]; j++) {
+     if ((update[j] == 7) || (update[j] == 23) || (update[j] == 47) ||
+	 (update[j] == 101) || (update[j] == 171) )
        {
 	 printf("solution(gid = %d) = %10.4e\n",
 		update[j],xxx[update_index[j]]);
        }
-     }
    }
 
    ML_Aggregate_Destroy(&ag);
