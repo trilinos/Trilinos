@@ -7923,6 +7923,66 @@ int ML_DiagScaled_1stepKrylov(ML_Smoother *sm, int inlen, double x[], int outlen
 
 }
 
+int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,double x[],
+			       int outlen, double b[])
+{
+  ML *sub_ml;
+  ML_Operator *Afine;
+
+  ML_Operator *newA;
+  int i, j, nn;
+  double *res, *res_over, *x_over;
+  ML_CommInfoOP *nonOverlapped_2_Overlapped;
+
+  Afine  = sm->my_level->Amat;
+  sub_ml = (ML *) sm->smoother->data;
+  /* compute the residual */
+	
+  nn = Afine->invec_leng;
+  nonOverlapped_2_Overlapped = (ML_CommInfoOP *) sub_ml->void_options;
+  res = (double *) ML_allocate(sizeof(double)*(nn));
+
+  ML_Operator_Apply(Afine, Afine->invec_leng, x, Afine->outvec_leng, res);
+  for (i = 0; i < nn; i++) res[i] = b[i] - res[i];
+      
+  /* Get the overlapped residual */
+
+  res_over=(double *) ML_allocate(sizeof(double)*(sub_ml->Amat[0].invec_leng));
+  for (i = 0; i < Afine->invec_leng; i++) res_over[i] = res[i];
+
+  ML_exchange_bdry(res_over, nonOverlapped_2_Overlapped,
+		   sub_ml->Amat[0].invec_leng, Afine->comm,ML_OVERWRITE,NULL);
+  if (Afine->comm->ML_mypid == -3) { /* wipe out all but proc 0 */
+    for (i = 0; i < sub_ml->Amat[0].invec_leng; i++) res_over[i] = 0.;
+  }
+  x_over   = (double *) ML_allocate(sizeof(double)*(
+				       sub_ml->Amat[0].invec_leng));
+  for (i = 0; i < sub_ml->Amat[0].invec_leng; i++) x_over[i] = 0.;
+		
+  ML_Iterate(sub_ml, x_over, res_over); 
+
+  ML_reverse_exchange(x_over,nonOverlapped_2_Overlapped,
+		      sub_ml->Amat[0].invec_leng,Afine->comm);
+
+  /* copy x_overlapped to x */
+
+  for (i = 0; i < Afine->invec_leng; i++) x[i] += x_over[i];      
+
+  ML_free(x_over);
+  ML_free(res_over);
+  ML_free(res);
+
+  return 0;
+}
+void ML_Smoother_DestroySubdomainOverlap(void *data)
+{
+  ML *sub_ml;
+
+  sub_ml = (ML *) data;
+  ML_CommInfoOP_Destroy( (ML_CommInfoOP **) 
+			 &((sub_ml)->void_options));
+  ML_Destroy(&sub_ml);
+}
 
 
 

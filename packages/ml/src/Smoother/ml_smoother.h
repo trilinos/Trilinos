@@ -262,6 +262,12 @@ extern  int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *,int,double*,int,doub
 extern  int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *,int,double*,int,double*);
 extern  int ML_Smoother_Hiptmair(ML_Smoother *, int, double *, int, double *);
 extern  int ML_Smoother_BlockHiptmair(ML_Smoother *, int, double *, int, double *);
+extern int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,
+					    double x[],int outlen, double b[]);
+
+extern void ML_Smoother_DestroySubdomainOverlap(void *data);
+
+
 
 /* ******************************************************************** */
 /* ******************************************************************** */
