@@ -2863,7 +2863,7 @@ int ML_Iterate(ML *ml, double *sol, double *rhs)
 /* set to 1 to use another ML cycle after ggb, to 0 otherwise                */
 /*-------------------------------------------------------------------------- */
 
-static int ML_ggb_SymmetricCycle = 1;
+static int ML_ggb_SymmetricCycle = 0;
 int ML_ggb_Set_SymmetricCycle(int flag) 
 {
   ML_ggb_SymmetricCycle = flag;
@@ -2880,11 +2880,10 @@ int ML_ggb_Set_CoarseSolver(int flag)
 /*****************************************************************************/
 /* solve using V-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
-
 int ML_Solve_MGV( ML *ml , double *din, double *dout)
 {
-   int    i, leng, dir_leng, *dir_list, k, level;
-   double *diag, *scales, *din_temp;
+  int    i, leng, dir_leng, *dir_list, k, level;
+  double *diag, *scales, *din_temp, *dout_tmp;
    ML     *ml_ggb;
 
    /* ------------------------------------------------------------ */
@@ -2938,71 +2937,227 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
    /* call MG v-cycle                                              */
    /* ------------------------------------------------------------ */
 
-   ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-                ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+   if (ml->void_options == NULL)
+     
+     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		 ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
 
-   /* Input and output vectors are switched */
-
-   if (ml->void_options != NULL) {
-     ml_ggb = (ML *) ml->void_options;
-
-
-     ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
-		 din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
-
-    /*
-      
+   else
      {
-       int      lengc, lengf;
-       double  *rhs2, *sol2, *temp2, *res; 
-       ML_Operator *Rmat, *Qtilde;
        
-       Rmat   = &(ml_ggb->Rmat[1]);
-       Qtilde = (ML_Operator *) ml_ggb->void_options;
+       ml_ggb = (ML *) ml->void_options;
        
-       lengc = Rmat->outvec_leng;
-       lengf = leng;
+#define GGBcycFirst
        
-       rhs2  = (double *) ML_allocate(lengc*sizeof(double));
-       sol2  = (double *) ML_allocate(lengc*sizeof(double));
-       temp2 = (double *) ML_allocate(lengc*sizeof(double));
-       res   = (double *) ML_allocate(lengf*sizeof(double));
+#ifdef GGBcycFirst
+       double *sol;
        
+       sol  = (double *) ML_allocate(leng*sizeof(double));
+    
        
-       ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, din_temp, lengc, rhs2);
-       ML_Operator_Apply(Qtilde, lengf, dout, lengc, temp2);
-     
-       for ( i = 0; i < lengc; i++ ) {
-	 rhs2[i] = rhs2[i] - temp2[i];
-	 sol2[i] = 0.0;
-       }
+       /* Manualy perform the 2 level GGB cycle */       
+       ML_Cycle_GGB(ml_ggb, sol, din_temp);
        
-       ML_Cycle_MG( Rmat->to, sol2, rhs2, ML_ZERO,ml_ggb->comm, 
-		  ML_NO_RES_NORM, ml);
-       
-       ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat,lengc,sol2,lengf,
-					res);
-     
-       for ( i = 0; i < lengf; i++ ) dout[i] += res[i];
-       
-       
-       ML_free(sol2);
-       ML_free(rhs2);
-       ML_free(temp2);
-       ML_free(res);
-     }
-     */
-
-     /* "after cycle" only if required (default is yes) */
-     if( ML_ggb_SymmetricCycle == 1 ) {
        ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
-		   ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
-     }
-   }
+		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+       
+       /* Add both solutions to get the right one */ 
+       for ( i = 0; i < leng; i++ ) dout[i] += sol[i];    
+       ML_free(sol);
+       
+#endif
+       
+       
+#ifdef GGBcycSecond
+       
+       /* First do the MG part */
+       ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		   ML_ZERO, ml->comm, ML_NO_RES_NORM, ml);
+   
 
+       /* Manualy perform the 2 level GGB cycle */
+       ML_Cycle_GGB(ml_ggb, dout, din_temp);
+
+#endif
+       
+       /*
+	 
+       ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout,
+       din_temp, ML_NONZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
+       */          
+              
+       /* Trying the additive version (== doesn't work) */
+       /*     
+	      dout_tmp = (double*) ML_allocate( leng * sizeof(double) );
+	      for ( i = 0; i < leng; i++ )        dout_tmp[i] = 0.0;
+	      
+	      ML_Cycle_MG(&(ml_ggb->SingleLevel[ml_ggb->ML_finest_level]), dout_tmp,
+	      din_temp, ML_ZERO, ml_ggb->comm, ML_NO_RES_NORM, ml_ggb);
+	      
+	      for ( i = 0; i < leng; i++ )  dout[i] = dout[i] + dout_tmp[i];
+	      ML_free(dout_tmp);
+       */
+       
+
+       
+       /* In the cheap cycle we do the two level cycle manualy saving a mat vec */
+       
+       
+       /* "after cycle" only if required (default is yes) */
+       if( ML_ggb_SymmetricCycle == 1 ) {
+	 ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+		     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+       }
+
+
+     }
+   
+   
+   /*
+     ML_Cycle_MG(&(ml->SingleLevel[ml->ML_finest_level]), dout, din_temp,
+     ML_NONZERO, ml->comm, ML_NO_RES_NORM, ml);
+   */
+   
    ML_free(din_temp);
    return 0;
 }
+
+/*****************************************************************************/
+/* 2 Level GGB cycle performed manualy to save mat-vec                       */
+/*-------------------------------------------------------------------------- */
+
+extern int ML_Cycle_GGB(ML *ml_ggb, double *sol, double *rhs)
+{
+  
+
+  int      lengc, lengf, i;
+  double  *rhs0, *sol0; 
+  ML_Operator *Rmat, *Qtilde, *Pmat;
+  
+
+  
+  Rmat   = &(ml_ggb->Rmat[1]);
+  Pmat   = &(ml_ggb->Pmat[0]);
+  
+  /* Haim Trying Dense Mat vec */
+  
+
+
+  lengc = Rmat->outvec_leng;
+  lengf = Pmat->outvec_leng;
+  
+  rhs0  = (double *) ML_allocate(lengc*sizeof(double));
+  sol0  = (double *) ML_allocate(lengc*sizeof(double));
+  
+
+#ifdef GGBcycFirst       
+  double  *tmp1;
+  tmp1  = (double *) ML_allocate(lengf*sizeof(double));
+
+  /* get Q'*b */
+  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
+   
+  /* Solve coarse grid problem */
+  ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
+ 
+    
+  /* Need to do it anyway */
+  ML_Operator_Apply(Pmat, lengc, sol0, lengf, sol);
+  
+  
+  
+  /* Use this option if A*Q was stored in the process of computing rap in GGB build */
+  /* #define store_AQ */
+#ifdef store_AQ 
+
+    
+  /* Qtilde = Q'*A  qas stored in the coarse grid build */
+  Qtilde = (ML_Operator *) ml_ggb->void_options; 
+  
+  
+  /* Interpolate to fine mesh */ /* Here we should put Qtilde */
+  ML_Operator_Apply(Qtilde, lengc, sol0, lengf, tmp1);
+
+
+#else
+
+  /* Compute K*u . Can drop this line after we put Qtilde*/ 
+  ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp1);
+#endif
+    
+  /* Correct the residual term */
+  for ( i = 0; i < lengf; i++ ) rhs[i] = rhs[i] - tmp1[i];
+  
+  ML_free(tmp1);
+  
+#endif
+
+
+#ifdef GGBcycSecond
+       /* We need to compute the following coarse grid correction:  
+        *	  u = u + Q*(Ac)^(-1) *Q'A*r =
+	*           = u + Q*(Ac)^(-1) *(Qtilde*u - Q'*b)	  
+       */  
+  double *tmp1, *tmp2;
+  tmp1  = (double *) ML_allocate(lengc*sizeof(double));
+  tmp2  = (double *) ML_allocate(lengf*sizeof(double));
+
+
+#ifdef store_QtransA       
+
+  /* Qtilde = Q'*A  qas stored in the coarse grid build */
+  Qtilde = (ML_Operator *) ml_ggb->void_options; 
+
+  
+  /* get Q'*b */
+  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
+  
+  
+  /* get Qtilde*u */
+  ML_Operator_Apply(Qtilde, lengf, sol, lengc, tmp1);
+   
+  /* compute   Qtilde*u - Q'*b. which forms the right hand side of the coarse grid */
+  for ( i = 0; i < lengc; i++ )  rhs0[i] =  rhs0[i] - tmp1[i];
+  
+#else 
+  
+  /* first compute K*u */
+  ML_Operator_Apply( &(ml_ggb->Amat[1]), lengf, sol, lengf, tmp2);
+  
+  /* Get the fine grid residual */
+  for ( i = 0; i < lengf; i++ )  rhs[i] =  rhs[i] - tmp2[i];
+  
+  /* Compute the rhs on the coarse grid */
+  ML_Operator_Apply(Rmat, lengf, rhs, lengc, rhs0);
+ 
+#endif  
+  
+  /* Solve coarse grid problem */
+  ML_CSolve_Apply( Rmat->to->csolve, lengc, sol0, lengc, rhs0);  
+
+  /* Interpolate to fine mesh */
+  ML_Operator_Apply(Pmat, lengc, sol0, lengf, tmp2);
+  
+  /* Correct the solution */
+  for ( i = 0; i < lengf; i++ ) sol[i] += tmp2[i];
+
+       
+  ML_free(tmp1);
+  ML_free(tmp2);
+
+#endif
+
+
+
+
+
+
+  ML_free(sol0);
+  ML_free(rhs0);
+ 
+  return 1;
+}
+
 /*****************************************************************************/
 /* solve using Full MGV-cycle multigrid                                             */
 /*-------------------------------------------------------------------------- */
@@ -3365,7 +3520,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       if ( ( approx_all_zeros != ML_ZERO ) ||
            ( pre->smoother->ML_id != ML_EMPTY ) )
       {
-         ML_Operator_Apply(Amat, lengf, sol, lengf, res);
+   	ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
       }
       else for ( i = 0; i < lengf; i++ ) res[i] = rhss[i];
@@ -4440,7 +4595,8 @@ int ML_Gen_Amatrix_Global(ML_Matrix_DCSR *inmat, ML_Matrix_DCSR *outmat,
    mat_a      = inmat->mat_a;
    N_internal = inmat->mat_n;
    nnz        = mat_ia[N_internal];
-   if ( inmat->comminfo->neighbors != NULL ) {
+
+     if ((inmat->comminfo != NULL)) {
       N_external  = inmat->comminfo->total_rcv_length;
       N_total     = N_internal + N_external;
    } else {
@@ -5242,7 +5398,7 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
    *block_list = (int *) ML_allocate(ml->Amat[level].outvec_leng*sizeof(int));
    if (*block_list == NULL)
       pr_error("ML_Gen_Blocks_Metis: out of space\n");
-
+ 
    ML_Operator_BlockPartition(&(ml->Amat[level]), ml->Amat[level].outvec_leng,
                              nblocks, *block_list, NULL, NULL, 0,
 			      ML_USEMETIS);
@@ -5734,14 +5890,22 @@ edge_smoother, edge_args, nodal_smoother, nodal_args );
 
 int ML_build_ggb(ML *ml, void *data)
 {
-
-  ML                    *ml_ggb;
+  
+  ML                    *ml_ggb=NULL;
   int                    Nrows, Ncols, Nlocal, Nnz;
-  ML_Operator           *Pmat;
-  struct ML_CSR_MSRdata *csr_data, *mydata;
+  ML_Operator           *Pmat=NULL, *Qtilde=NULL;
+  struct ML_CSR_MSRdata *csr_data, *mydata, *Qtilde_data;
   int                   *NeighborList, *IndList;
   int                    Nneighbors, nprocs, i;
   char str[80];
+  double *zdata, *rap, *values;
+  int count, j;
+  double *temp;
+#ifdef ML_TIMING
+   double t0;
+   t0 = GetClock();
+#endif
+
   
   mydata   = (struct ML_CSR_MSRdata *) data;
   csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
@@ -5751,15 +5915,290 @@ int ML_build_ggb(ML *ml, void *data)
   Nrows = mydata->Nrows;
   Nnz   = mydata->Nnz;
 
-  csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
-  csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
-  csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
 
-
-  /* Imported information about Prolongator */
+  /* Imported information of the Prolongator */
   csr_data->rowptr  =  mydata->rowptr;
   csr_data->columns =  mydata->columns;
   csr_data->values  =  mydata->values;
+
+  if (ml->void_options != NULL) exit(1);  
+  ml->void_options = NULL;
+  ML_Create( &ml_ggb, 2);
+
+  Pmat = &(ml_ggb->Pmat[0]);
+
+  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]),
+			      &(ml->Amat[ml->ML_finest_level]));
+
+ 
+  /* Put sizes and function pointers into ml_ggb */
+  
+  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]),
+			  &(ml_ggb->SingleLevel[1]));
+
+  
+  /* Only processor 0 has the coarse vector information */
+
+  if (ml_ggb->comm->ML_mypid == 0) 
+    ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
+				  Nrows, NULL, 0);
+   
+  else 
+    ML_Operator_Set_ApplyFuncData(Pmat, 0, Nrows, ML_EMPTY, csr_data,
+				  Nrows, NULL, 0);
+  
+  
+  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec); 
+  /*  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_matvec);  */
+
+  nprocs  = ml_ggb->comm->ML_nprocs;           /* Number of processors */  
+  Nlocal  =  Pmat->invec_leng;                 /* size of coarse grid vector  */
+    
+  NeighborList =  (int *) ML_allocate(sizeof(int)*(nprocs-1));  
+  IndList      =  (int *) ML_allocate(sizeof(int)*Ncols);  
+  
+  /* processor 0  communicates with all the processors, however all the other
+     nodes communicate only with processor 0    */
+  
+  if (ml_ggb->comm->ML_mypid == 0) {
+    
+    /* Construct neighbor list for processor 0  */
+    for (i = 1; i < nprocs; i++)  NeighborList[i-1] = i;    
+    Nneighbors = nprocs-1;
+    
+    /* indices of in-comming vector (coarse vector)   */
+    for (i = 0; i < Ncols; i++) IndList[i] = i;
+    
+    /* set communication for processor 0                 */
+    ML_CommInfoOP_Set_neighbors(&(Pmat->getrow->pre_comm), Nneighbors, 
+				NeighborList,ML_OVERWRITE, NULL, 0);
+    
+    /* information is sent to the other but not recieved  */
+    for (i = 0; i < Nneighbors; i++) 
+      ML_CommInfoOP_Set_exch_info(Pmat->getrow->pre_comm, NeighborList[i],
+				  0,     NULL , Ncols, IndList ); 
+    
+  }
+  else {
+    Nneighbors      = 1;
+    NeighborList[0] = 0;   
+    
+    
+    /* indices of in-comming vector (coarse vector)  */
+    for (i = 0; i < Ncols; i++) IndList[i] = i;
+    
+    /* set communication for all other processors                 */
+    ML_CommInfoOP_Set_neighbors(&(Pmat->getrow->pre_comm), Nneighbors, 
+				NeighborList,ML_OVERWRITE, NULL, 0);
+    
+    /* recieve information from processor 0 */
+    ML_CommInfoOP_Set_exch_info(Pmat->getrow->pre_comm, 0,
+  		 		Ncols,    IndList , 0, NULL );
+ 
+  }
+  Pmat->data_destroy   = ML_OnlyFreeTopLevelDataPtr;
+
+
+  /*  Pmat->getrow->pre_comm = ML_CommInfoOP_Create();
+      sprintf(str,"%d:",ml_ggb->comm->ML_mypid);
+      ML_CommInfoOP_Print(Pmat->getrow->pre_comm, str);
+  */
+
+  ML_free(NeighborList);
+  ML_free(IndList);
+
+    
+  /* ML_Operator_Print(Pmat, "Pmat"); */
+
+  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
+ 
+
+  /* #define newrap */
+#ifdef newrap
+
+
+  zdata = (double *) ML_allocate( Ncols * Nrows*sizeof(double));
+  temp  = (double *) ML_allocate( Nrows*sizeof(double));
+  values = csr_data->values;
+
+
+#define store_AQ  
+
+#ifdef store_AQ  
+  /* Define Qtilde = K*Q;  to be used later in the GGB cycle (GGB first) */
+  Qtilde_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  Qtilde_data->values  =  (double *) ML_allocate((Ncols*Nrows+1)*sizeof(double));
+  Qtilde_data->columns =  (int *) ML_allocate(sizeof(int)*(Nrows*Ncols+1));
+  Qtilde_data->rowptr  =  (int *) ML_allocate(sizeof(int)*(Nrows+1));
+  
+#endif
+
+  values = csr_data->values;
+  
+  /* Compute the A*Q and store in CSR format for later use */
+  for (i = 0; i < Ncols; i++) {
+    for (j = 0; j < Nrows; j++) temp[j] = values[j*Ncols+i];
+    
+     ML_Operator_Apply( &(ml_ggb->Amat[1]),Nrows, temp,  Nrows, &(zdata[i*Nrows]));
+   
+
+#ifdef store_AQ      
+    for (j = 0; j < Nrows; j++) Qtilde_data->values[j*Ncols+i] = zdata[i*Nrows+j];
+    
+#endif   
+}
+
+#ifdef store_AQ  
+
+  
+  for (j = 0; j < Nrows+1; j++)      Qtilde_data->rowptr[j]  = mydata->rowptr[j];
+  for (j = 0; j < Nrows*Ncols; j++)  Qtilde_data->columns[j] = mydata->columns[j];
+    
+
+  /* Define Qtilde */
+  Qtilde = ML_Operator_Create(NULL);
+  ML_CommInfoOP_Clone(  &(Qtilde->getrow->pre_comm),  Pmat->getrow->pre_comm);
+  
+  
+  if (ml_ggb->comm->ML_mypid == 0) 
+    ML_Operator_Set_ApplyFuncData(Qtilde, Ncols, Nrows, ML_EMPTY, Qtilde_data,
+				  Nrows, NULL, 0);
+  else 
+    
+    ML_Operator_Set_ApplyFuncData(Qtilde, 0, Nrows, ML_EMPTY, Qtilde_data,
+				  Nrows, NULL, 0);
+  
+  
+  
+  ML_Operator_Set_Getrow(Qtilde, ML_EXTERNAL, Nrows, CSR_getrows);
+  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL, CSR_densematvec); 
+  Qtilde->data_destroy = ML_CSR_MSRdata_Destroy;
+
+  
+  ml_ggb->void_options = (void *) Qtilde;
+#endif
+  /* 
+ printf("before the dump\n"); fflush(stdout);
+  ML_Operator_Print(Qtilde, "Qtilde_print");
+  while(1 == 1) ;
+  ML_CommInfoOP_Print( (Qtilde->getrow->pre_comm),  "Qcomm");
+  ML_Operator_Dump(Qtilde, NULL, NULL,"Qtilde", ML_TRUE);
+  printf("after the dump\n"); fflush(stdout);
+  */
+  
+
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  rap = (double *) ML_allocate( Ncols * Ncols * sizeof(double));
+  csr_data->columns =  (int *) ML_allocate(sizeof(int)*(Ncols*Ncols+1));
+  csr_data->rowptr  =  (int *) ML_allocate(sizeof(int)*(Ncols+1));
+  
+  count = 0;
+  for (i = 0; i < Ncols; i++) {
+    for (j = 0; j < Nrows; j++) temp[j] = values[j*Ncols+i];
+    
+    for (j = 0; j < Ncols; j++) {
+      csr_data->columns[count] = j;
+      csr_data->rowptr[i] = Ncols*i;
+   
+      rap[count++] = ML_gdot(Nrows, temp,
+			     &(zdata[j*Nrows]), ml->comm);
+      
+    }
+  }
+  /*  ML_gsum_vec_dbl(rap, Ncols*Ncols, ml->comm); */
+
+  
+
+  csr_data->rowptr[Ncols] = Ncols*Ncols;
+  csr_data->values  =  rap;
+
+ if (ml_ggb->comm->ML_mypid == 0)
+   ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), Ncols, Ncols, ML_EMPTY, csr_data,
+				 Ncols, NULL, 0);
+ else 
+  ML_Operator_Set_ApplyFuncData( &(ml_ggb->Amat[0]), 0, 0, ML_EMPTY, csr_data,
+				 0, NULL, 0);
+ 
+  
+  ML_Operator_Set_Getrow(&(ml_ggb->Amat[0]), ML_EXTERNAL, Ncols, CSR_getrows);
+  ML_Operator_Set_ApplyFunc (&(ml_ggb->Amat[0]), ML_INTERNAL, CSR_densematvec); 
+  ml_ggb->Amat[0].getrow->pre_comm = ML_CommInfoOP_Create();
+
+  ml_ggb->Amat[0].data_destroy = ML_CSR_MSRdata_Destroy;
+
+  
+  ML_free(zdata);
+  ML_free(temp);
+
+
+#ifdef ML_TIMING
+   ml_ggb->Amat[0].build_time = GetClock() - t0;
+   ml_ggb->timing->total_build_time   +=    ml_ggb->Amat[0].build_time;
+#endif
+
+
+#else
+  ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
+#endif
+
+  switch( ML_ggb_CoarseSolver ) {
+  case 1:
+    /* superlu, default solver */
+    ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
+    break;
+  case 2:
+    /* amesos, now default is KLU */
+    ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
+    break;
+  default:
+    printf("ERROR: coarse solver for GGB not correct\n");
+    exit( EXIT_FAILURE );
+  }
+
+    
+  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
+
+
+  ml->void_options = (void *) ml_ggb;
+  
+  return 1;
+}
+
+
+
+void ML_build_ggb_cheap(ML *ml, void *data)
+{
+  ML                    *ml_ggb;
+  int                    Nrows, Ncols, Nlocal, Nnz;
+  ML_Operator           *Pmat,  *Qtilde, *Amat_trans;
+  struct ML_CSR_MSRdata *csr_data, *mydata;
+  int                   *NeighborList, *IndList;
+  int                    Nneighbors, nprocs, i;
+  char str[80];
+  double *zdata, *rap, *values;
+  int count, j;
+  double *temp;
+#ifdef ML_TIMING
+   double t0;
+   t0 = GetClock();
+#endif
+
+  
+  mydata   = (struct ML_CSR_MSRdata *) data;
+  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata));
+  
+
+  Ncols = mydata->Ncols;
+  Nrows = mydata->Nrows;
+  Nnz   = mydata->Nnz;
+
+
+  /* Imported information of the Prolongator */
+  csr_data->rowptr  =  mydata->rowptr;
+  csr_data->columns =  mydata->columns;
+  csr_data->values  =  mydata->values;
+
 
 
   ML_Create( &ml_ggb, 2);
@@ -5841,95 +6280,35 @@ int ML_build_ggb(ML *ml, void *data)
       sprintf(str,"%d:",ml_ggb->comm->ML_mypid);
       ML_CommInfoOP_Print(Pmat->getrow->pre_comm, str);
   */
-
+  
   ML_free(NeighborList);
   ML_free(IndList);
-
+  
     
   /* ML_Operator_Print(Pmat, "Pmat"); */
 
   ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
-  /*  ML_Operator_Set_ApplyFunc (&(ml_ggb->Rmat[1]), ML_INTERNAL,
-      CSR_densematvec); */
 
-  ML_Gen_AmatrixRAP(ml_ggb, 1, 0);
+  /* Define Qtilde */
 
-  switch( ML_ggb_CoarseSolver ) {
-  case 1:
-    /* superlu, default solver */
-    ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
-    break;
-  case 2:
-    /* amesos, now default is KLU */
-    ML_Gen_Smoother_Amesos(ml_ggb, 0, ML_AMESOS_KLU, -1);
-    break;
-  default:
-    printf("ERROR: coarse solver for GGB not correct\n");
-    exit( EXIT_FAILURE );
-  }
-    
-  ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
-
-
-  ml->void_options = (void *) ml_ggb;
-
-  return 1;
-}
-
-
-
-void ML_build_ggb_cheap(ML *ml, void *data)
-{
-  ML *ml_ggb;
-  int Nrows, Ncols, Nnz;
-  ML_Operator *Pmat, *Qtilde;
-  struct ML_CSR_MSRdata *csr_data, *mydata;
-
-  mydata   = (struct ML_CSR_MSRdata *) data;
-  csr_data = (struct ML_CSR_MSRdata *) ML_allocate(sizeof(struct ML_CSR_MSRdata)); 
-  
-
-  Ncols = mydata->Ncols;
-  Nrows = mydata->Nrows;
-  Nnz   = mydata->Nnz;
-
-  csr_data->rowptr  = (int    *) ML_allocate(sizeof(int)*(Nrows+1));
-  csr_data->columns = (int    *) ML_allocate(sizeof(int)*(Nnz+1));
-  csr_data->values  = (double *) ML_allocate(sizeof(double)*(Nnz+1));
-
-  
-  /* Imported information about Prolongator */
-  csr_data->rowptr  =  mydata->rowptr;
-  csr_data->columns =  mydata->columns;
-  csr_data->values  =  mydata->values;
-
-
-  ML_Create( &ml_ggb, 2);  /* Haim: make the '2' N_levels */
-
-  Pmat = &(ml_ggb->Pmat[0]);
-
-  ML_Operator_halfClone_Init( &(ml_ggb->Amat[1]), /* make 1 N_levels-1 */
-			      &(ml->Amat[ml->ML_finest_level]));
-  
-  ML_Operator_Set_1Levels(Pmat, &(ml_ggb->SingleLevel[0]), 
-			  &(ml_ggb->SingleLevel[1]));
-  ML_Operator_Set_ApplyFuncData(Pmat, Ncols, Nrows, ML_EMPTY, csr_data,
-				Nrows, NULL, 0);
-  ML_Operator_Set_Getrow(Pmat, ML_EXTERNAL, Nrows, CSR_getrows);
-  ML_Operator_Set_ApplyFunc (Pmat, ML_INTERNAL, CSR_densematvec);
-
-  /* ML_Operator_Print(Pmat, "Pmat"); */
- 
-  ML_Gen_Restrictor_TransP(ml_ggb, 1, 0);
- 
   Qtilde = ML_Operator_Create(Pmat->comm);
+
   ML_2matmult(&(ml_ggb->Rmat[1]), &(ml_ggb->Amat[1]),
 	      Qtilde, ML_CSR_MATRIX );
+  
   ML_2matmult(Qtilde, &(ml_ggb->Pmat[0]), &(ml_ggb->Amat[0]),
 	      ML_MSR_MATRIX );
+  
+  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL,CSR_densematvec);
+  
+  
+  
 
-  ML_Operator_Set_ApplyFunc (Qtilde, ML_INTERNAL,CSR_matvec);
 
+#ifdef ML_TIMING
+  ml_ggb->Amat[0].build_time = GetClock() - t0;
+  ml_ggb->timing->total_build_time   +=    ml_ggb->Amat[0].build_time;
+#endif
 
   ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
   ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
@@ -5982,7 +6361,7 @@ void ML_build_ggb_fat(ML *ml, void *data)
   ML_Aggregate_Set_NullSpace(ag, num_PDE_eqns, Ncols, mydata->values, Nrows);
   coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml_ggb, N_levels-1,ML_DECREASING, ag);
 
-    ML_Operator_Print(&(ml_ggb->Pmat[0]), "Pmat"); 
+  /*  ML_Operator_Print(&(ml_ggb->Pmat[0]), "Pmat");  */
 
   ML_Gen_CoarseSolverSuperLU( ml_ggb, 0);
   ML_Gen_Solver(ml_ggb, ML_MGV, 1, 0);
