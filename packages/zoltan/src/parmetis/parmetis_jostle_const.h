@@ -16,6 +16,7 @@
 #define __PARMETIS_JOSTLE_CONST_H
 
 #include <limits.h>
+#include "comm_const.h"
 
 /* ParMetis option defs. These must be identical to the defs
  * in defs.h in the version of ParMetis you are using!
@@ -28,6 +29,9 @@
 /* Misc. defs to be used with MPI */
 #define TAG1  32001
 #define TAG2  32002
+#define TAG3  32003
+#define TAG4  32004
+#define TAG5  32005
 
 /* Misc. local constants */
 #define CHUNKSIZE 20  /* Number of nodes to allocate in one chunk. */
@@ -73,6 +77,10 @@ extern int LB_Set_Jostle_Param(char *, char *);
 extern int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
               idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
               int vwgt_dim, int ewgt_dim, int check_graph);
+extern int LB_scatter_graph(int have_graph, idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
+              idxtype **vwgt, idxtype **adjwgt, float   **xyz, int     ndims,
+              LB      *lb, struct Comm_Obj **plan);
+
 
 /* ParMetis 2.0 function prototypes */
 extern void ParMETIS_PartKway(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
@@ -85,7 +93,7 @@ extern void ParMETIS_RepartRemap(idxtype *, idxtype *, idxtype *, idxtype *, idx
 extern void ParMETIS_RepartMLRemap(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
 
 
-/* Parallel Jostle 1.1.x function prototypes */
+/* Parallel Jostle 1.2 function prototypes */
 extern void jostle_env(char *);
 extern void pjostle_init(int *, int *);
 extern void pjostle(int *, int *, int *, int *, int *, int *,

@@ -43,6 +43,7 @@ static PARAM_VARS Jostle_params[] = {
 /**********  parameters structure used by both ParMetis and Jostle **********/
 static PARAM_VARS Graph_params[] = {
         { "CHECK_GRAPH", NULL, "INT" },
+        { "SCATTER_GRAPH", NULL, "INT" },
         { NULL, NULL, NULL } };
 
 /***************  prototypes for internal functions ********************/
@@ -300,13 +301,13 @@ static int LB_ParMetis_Jostle(
 {
   static char *yo = "LB_ParMetis_Jostle";
   int i, j, jj, ierr, packet_size, offset, tmp, flag, ndims; 
-  int obj_wgt_dim, comm_wgt_dim, check_graph;
+  int obj_wgt_dim, comm_wgt_dim, check_graph, scatter;
   int num_obj, nedges, num_edges, cross_edges, max_edges, edgecut;
   int *nbors_proc, *plist;
   int nsend, nrecv, wgtflag, numflag, num_border, max_proc_list_len;
   int get_graph_data, get_geom_data, get_times; 
-  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part;
-  int nonint_wgt;
+  idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part, *part2;
+  int nonint_wgt, tmp_num_obj;
   float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local; 
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
@@ -386,13 +387,16 @@ static int LB_ParMetis_Jostle(
 
   /* Get parameter options shared by ParMetis and Jostle */
   check_graph = 1;          /* default */
+  scatter = 0;              /* default */
   LB_Bind_Param(Graph_params, "CHECK_GRAPH", (void *) &check_graph);
+  LB_Bind_Param(Graph_params, "SCATTER_GRAPH", (void *) &scatter);
   LB_Assign_Param_Vals(lb->Params, Graph_params, lb->Debug_Level, lb->Proc,
                        lb->Debug_Proc);
 
   /* Most ParMetis methods use only graph data */
   get_graph_data = 1;
   get_geom_data = 0;
+  ndims = 0;
 
   /* Some algorithms use geometry data */
   if (strcmp(alg, "PARTGEOMKWAY") == 0){
@@ -908,7 +912,7 @@ static int LB_ParMetis_Jostle(
     }
     /* Allocate space for the geometry data */
     xyz = (float *) LB_MALLOC(ndims*num_obj * sizeof(float));
-    if (!xyz){
+    if (ndims && num_obj && !xyz){
       /* Not enough space */
       FREE_MY_MEMORY;
       LB_TRACE_EXIT(lb, yo);
@@ -929,11 +933,30 @@ static int LB_ParMetis_Jostle(
     }
   }
 
+  tmp_num_obj = num_obj;
+  if (scatter==1){
+    /* Decide if the data imbalance is so bad that we should scatter the graph. */
+    /* Current test: Scatter if at least half the processors have no objects. */
+    if (num_obj==0)
+      tmp = 1;
+    else 
+      tmp = 0;
+    MPI_Allreduce(&tmp, &j, 1, MPI_INT, MPI_SUM, lb->Communicator);
+    if (2*j < lb->Num_Proc)
+      scatter = 0;
+  }
+
+  if (scatter){
+    ierr = LB_scatter_graph(get_graph_data, &vtxdist, &xadj, &adjncy, &vwgt, &adjwgt, &xyz, ndims, 
+              lb, &comm_plan);
+    tmp_num_obj = vtxdist[lb->Proc+1]-vtxdist[lb->Proc];
+  }
+
   /* Get ready to call ParMETIS or Jostle */
   edgecut = -1; 
   wgtflag = 2*(obj_wgt_dim>0) + (comm_wgt_dim>0); /* Multidim wgts not supported yet */
   numflag = 0;
-  part = (idxtype *)LB_MALLOC((num_obj+1) * sizeof(idxtype));
+  part = (idxtype *)LB_MALLOC((tmp_num_obj+1) * sizeof(idxtype));
   if (!part){
     /* Not enough memory */
     FREE_MY_MEMORY;
@@ -966,7 +989,7 @@ static int LB_ParMetis_Jostle(
     ndims = 1;             /* Topological dimension of the computer */
     network[1] = lb->Num_Proc;
     /* Convert xadj array to Jostle format (degree) */
-    for (i=0; i<num_obj; i++){
+    for (i=0; i<tmp_num_obj; i++){
       xadj[i] = xadj[i+1] - xadj[i];
     }
     /* Convert vtxdist array to Jostle format (degree) */
@@ -1057,6 +1080,17 @@ static int LB_ParMetis_Jostle(
   if (obj_wgt_dim) LB_FREE(&vwgt);
   if (comm_wgt_dim) LB_FREE(&adjwgt);
 
+  /* If we have been using a scattered graph, convert partition result back to original distribution */
+  if (scatter){
+    /* Allocate space for partition array under original distribution */
+    part2 = (idxtype *) LB_MALLOC(num_obj*sizeof(idxtype)); 
+    /* Use reverse communication to compute the partition array under the original distribution */
+    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), (char *) part2);
+    LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
+    LB_FREE(&part); /* We don't need the partition array with the scattered distribution any more */
+    part = part2;   /* part is now the partition array under the original distribution */
+  }
+ 
   /* Determine number of objects to export */
   nsend = 0;
   for (i=0; i<num_obj; i++)
