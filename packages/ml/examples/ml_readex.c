@@ -139,29 +139,18 @@ start_time = AZ_second();
 	
 	for (level = N_levels-1; level > coarsest_level; level--) {
 		
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
-		ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
-/*
-                nblocks = ML_Aggregate_Get_AggrCount( ag, level );
-                ML_Aggregate_Get_AggrMap( ag, level, &blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_PRESMOOTHER, nsmooth,
-                                                 nblocks, blocks);
-                ML_Gen_Smoother_VBlockGaussSeidel( ml , level, ML_POSTSMOOTHER, nsmooth,
-                                                 nblocks, blocks);
-*/
-/*
-		ML_Gen_Smoother_GaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth);
-		ML_Gen_Smoother_GaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth);    
-*/
-		
-		/*	ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth, 0.67, num_PDE_eqns);
-				ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth, 0.67, num_PDE_eqns); */
+          /* This is the symmetric Gauss-Seidel smoothing. In parallel,    */
+          /* it is not a true Gauss-Seidel in that each processor          */
+          /* does a Gauss-Seidel on its local submatrix independent of the */
+          /* other processors.                                             */
 
-/*
-			ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
-			ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
-*/
-		
+	  ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_PRESMOOTHER, nsmooth,1.);
+	  ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
+
+          /*
+	  ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
+	  ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
+          */
 		
 	}
 	
