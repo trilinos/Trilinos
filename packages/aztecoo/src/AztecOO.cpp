@@ -231,7 +231,8 @@ int AztecOO::SetUserMatrix(Epetra_RowMatrix * UserMatrix) {
   AZ_set_MATFREE_getrow(Amat_, (void *) UserMatrix_, Epetra_Aztec_getrow,
 			Epetra_Aztec_comm_wrapper,N_ghost,proc_config_);
 
-  EPETRA_CHK_ERR(SetPrecMatrix(UserMatrix));
+  // If preconditioner not defined, set up to possibly use native Aztec precons
+  if (Prec_==0) EPETRA_CHK_ERR(SetPrecMatrix(UserMatrix));
   return(0);
 }
 
@@ -459,6 +460,10 @@ int AztecOO::DestroyPreconditioner() {
     AZ_precond_destroy(&Prec_);
     Prec_ = 0;
     options_[AZ_pre_calc] = AZ_calc;
+  }
+  if (Pmat_ != 0) {
+    AZ_matrix_destroy(&Pmat_);
+    Pmat_ = 0;
   }
   return(0);
 }
