@@ -55,6 +55,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   // allocate some memory if the user is not passing the vectors.
   // This is cute, but it may cause memory leaks.
 
+#ifdef HAVE_ML_AZTECOO
   bool SetDefaults = false;
   if (options == NULL || params == NULL)
     SetDefaults = true;
@@ -63,6 +64,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   if (params  == NULL) params  = new double[AZ_PARAMS_SIZE];
   if (SetDefaults)
     AZ_defaults(options,params);
+#endif
 
   if( ProblemType == "SA" ) {
     ML_CHK_ERR( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );

@@ -74,6 +74,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   string PreOrPostSmoother = List_.get(parameter,"both");
 
   sprintf(parameter,"%ssmoother: type", Prefix_.c_str());
+#ifndef HAVE_ML_AZTECOO
+  string Smoother = List_.get(parameter,"symmetric Gauss-Seidel");
+#else
   string Smoother = List_.get(parameter,"Aztec");
 
   sprintf(parameter,"%ssmoother: Aztec options", Prefix_.c_str());
@@ -87,6 +90,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   sprintf(parameter,"%ssmoother: Aztec as solver", Prefix_.c_str());
   bool AztecSmootherAsASolver = List_.get(parameter,false);
   int aztec_its;
+#endif
 
   sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_.c_str());
   int MLSPolynomialOrder = List_.get(parameter,3);
