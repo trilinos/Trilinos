@@ -12,6 +12,7 @@
 
 #include "ml_operator.h"
 #include <string.h>
+#include <assert.h>
 
 /************************************************************************/
 /* Create an ML_matrix and initialize relevant fields.                  */
@@ -87,6 +88,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->num_PDEs            = 1;
    mat->num_rigid           = 1;
    mat->N_total_cols_est    = -1;
+   mat->subspace            = NULL;
    return 0;
 }
 
@@ -96,6 +98,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
 
 int ML_Operator_Clean( ML_Operator *mat)
 {
+   int i;
 #ifdef ML_TIMING_DETAILED
    double t1;
 #endif
@@ -138,6 +141,13 @@ int ML_Operator_Clean( ML_Operator *mat)
 
    if (mat->sub_matrix != NULL) ML_Operator_Destroy(&(mat->sub_matrix));
    if (mat->sub_matrix1 != NULL) ML_Operator_Destroy(&(mat->sub_matrix1));
+   if ((mat->subspace != NULL) && (mat->subspace->data_destroy != NULL))
+      mat->subspace->data_destroy(&(mat->subspace->basis_vectors));
+   if (mat->subspace != NULL) {
+     ML_free(mat->subspace->VAV);
+     ML_free(mat->subspace->pivots);
+     ML_free(mat->subspace);
+   }
    if ((mat->data_destroy != NULL) && (mat->data != NULL)) {
 		 /*printf("ready to call destroy %u\n",mat->data); */
       mat->data_destroy(mat->data);
@@ -231,6 +241,7 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->N_total_cols_est    = -1;
    mat->lambda_max = original->lambda_max;
    mat->lambda_min = original->lambda_min;
+   mat->subspace            = original->subspace;
    return 1;
 }
 
@@ -243,6 +254,7 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
   if (mat == NULL) return 0;
    mat->sub_matrix = NULL;
    mat->sub_matrix1 = NULL;
+   mat->subspace = NULL;
    mat->diagonal   = NULL;
    mat->getrow->row_map = NULL;
    mat->getrow->loc_glob_map = NULL;
@@ -1356,4 +1368,35 @@ double ML_Operator_GetMaxEig(ML_Operator *Amat)
   else lambda_max = Amat->lambda_max;
 
   return lambda_max;
+}
+
+/******************************************************************************/
+
+int ML_Operator_SetSubspace(ML *ml, double **vectors, int numvecs, int vecleng)
+{
+   ML_Operator *Amat;
+   int i;
+
+   Amat = &(ml->Amat[ml->ML_finest_level]);
+   if (Amat->subspace == NULL) {
+     Amat->subspace = (ML_Operator_Subspace *)
+                      ML_allocate(sizeof(ML_Operator_Subspace));
+     if (Amat->subspace == NULL) {
+       printf("ML_Operator_SetSubspace: cannot allocate space\n");
+       exit(1);
+     }
+   }
+   Amat->subspace->basis_vectors = vectors;
+   Amat->subspace->dimension = numvecs;
+   Amat->subspace->vecleng = vecleng;
+   Amat->subspace->VAVdone = 0;
+   Amat->subspace->data_destroy = NULL;
+
+   Amat->subspace->VAV = (double *)
+                         ML_allocate( numvecs * numvecs * sizeof(double) );
+   Amat->subspace->pivots = (int *) ML_allocate( numvecs * sizeof(int) );
+
+   assert(numvecs <= ML_MAX_SUBSPACE_DIM);
+
+   return 0;
 }
