@@ -29,7 +29,6 @@ extern "C" {
  */
 
 
-
 /******************************************************************************/
 /*  Parameters structure for parallel HG method.  */
 static PARAM_VARS PHG_params[] = {
