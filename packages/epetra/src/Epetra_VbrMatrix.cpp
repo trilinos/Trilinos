@@ -1585,7 +1585,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
     }
   }
   int NumMyRows_ = NumMyRows();
-  for (int i=0; i < NumMyRows_; i++) {
+  {for (int i=0; i < NumMyRows_; i++) {
     double scale = xp[i];
     if (scale<Epetra_MinDouble) {
       if (scale==0.0) ierr = 1; // Set error to 1 to signal that zero row/col sum found (supercedes ierr = 2)
@@ -1594,7 +1594,7 @@ int Epetra_VbrMatrix::InverseSums(bool DoRows, Epetra_Vector& x) const {
     }
     else
       xp[i] = 1.0/scale;
-  }
+  }}
   UpdateFlops(NumGlobalNonzeros());
 
   EPETRA_CHK_ERR(ierr);
@@ -1881,6 +1881,7 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_DistObject & Source,int NumExp
 				      char * & Imports, 
 				     int & SizeOfPacket, Epetra_Distributor & Distor){
   
+
   const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
   double * DoubleExports = 0;
@@ -1973,8 +1974,8 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
      && CombineMode != Insert )
     EPETRA_CHK_ERR(-1); // CombineMode not supported, default to mode Zero
 
-  const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
 
+  const Epetra_VbrMatrix & A = dynamic_cast<const Epetra_VbrMatrix &>(Source);
   int NumBlockEntries;
   int * BlockIndices;
   int RowDim, * ColDims;
@@ -2087,7 +2088,7 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
     Comm().Barrier();
   }
 
-  for (int iproc=0; iproc < NumProc; iproc++) {
+  {for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumBlockRows1 = NumMyBlockRows();
       int MaxNumBlockEntries1 = MaxNumBlockEntries();
@@ -2136,7 +2137,7 @@ void Epetra_VbrMatrix::Print(ostream& os) const {
     Comm().Barrier();
     Comm().Barrier();
     Comm().Barrier();
-  }
+  }}
 
   return;
 }

@@ -35,11 +35,11 @@ class Epetra_HashTable
   {
     Container_ = new Node * [Size_];
     for( int i = 0; i < Size_; ++i ) Container_[i] = 0;
-    for( int i = 0; i < Size_; ++i )
+    {for( int i = 0; i < Size_; ++i )
     {
       Node * ptr = obj.Container_[i];
       while( ptr ) { Add( ptr->Key, ptr->Value ); ptr = ptr->Ptr; }
-    }
+    }}
   }
 
   ~Epetra_HashTable()

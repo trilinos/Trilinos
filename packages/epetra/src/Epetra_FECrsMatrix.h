@@ -25,7 +25,7 @@
 #ifndef _EPETRA_FECRSMATRIX_H_
 #define _EPETRA_FECRSMATRIX_H_
 
-#include <Epetra_CrsMatrix.h>
+#include "Epetra_CrsMatrix.h"
 class Epetra_Map;
 
 /** Epetra Finite-Element CrsMatrix. This class provides the ability to

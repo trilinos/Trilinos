@@ -458,7 +458,8 @@ bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow, int Index, int Start, int & L
   int * Indices = Indices_[LocalRow];
 
   // If we have transformed the column indices, we must map this global Index to local
-  if (IndicesAreGlobal()) EPETRA_CHK_ERR(-2); // Indices must be local
+  if (IndicesAreGlobal()) 
+		throw ReportError("Epetra_CrsGraph::FindMyIndexLoc", -1);// Indices must be local
 
   int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
   for (j=0; j< NumIndices; j++) {
@@ -507,10 +508,10 @@ int Epetra_CrsGraph::ComputeGlobalConstants() {
 
   NumMyEntries_ = 0; // Compute Number of Nonzero entries and max
   MaxNumIndices_ = 0;
-  for (int i=0; i< NumMyBlockRows_; i++) {
+  {for (int i=0; i< NumMyBlockRows_; i++) {
     NumMyEntries_ += NumIndicesPerRow_[i];
     MaxNumIndices_ = EPETRA_MAX(MaxNumIndices_,NumIndicesPerRow_[i]);
-  }
+  }}
   
 
   // Case 1:  Constant block size (including blocksize = 1)
@@ -998,8 +999,9 @@ int Epetra_CrsGraph::CopyAndPermute(const Epetra_DistObject & Source,
 					 int NumSameIDs, 
 					 int NumPermuteIDs, int * PermuteToLIDs,
 					 int *PermuteFromLIDs) {
-  
+ 
   const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
+
   int i;
   
   int Row, NumIndices;
@@ -1067,6 +1069,7 @@ int Epetra_CrsGraph::PackAndPrepare(const Epetra_DistObject & Source,
 				     char * & Imports, 
 				     int & SizeOfPacket, Epetra_Distributor & Distor) {
   
+
   const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
   
   int * IntExports = 0;
@@ -1124,11 +1127,21 @@ int Epetra_CrsGraph::UnpackAndCombine(const Epetra_DistObject & Source,
 				      Epetra_Distributor & Distor, Epetra_CombineMode CombineMode) {
 
 
-  const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
 
-  int GlobalMaxNumIndices = A.GlobalMaxNumIndices();
-  int IntPacketSize = GlobalMaxNumIndices + 2;
   if (NumImportIDs<=0) return(0);
+
+  int GlobalMaxNumIndices = 0;
+  int IntPacketSize = 0;
+
+  try {
+    const Epetra_CrsGraph & A = dynamic_cast<const Epetra_CrsGraph &>(Source);
+    GlobalMaxNumIndices = A.GlobalMaxNumIndices();
+    IntPacketSize = GlobalMaxNumIndices + 2;
+  }
+  catch (...) {
+    EPETRA_CHK_ERR(-1); // Bad cast
+  }
+
 
 
   int NumIndices;

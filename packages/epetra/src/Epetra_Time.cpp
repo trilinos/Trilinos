@@ -51,7 +51,7 @@ double Epetra_Time::WallTime(void) const
 #elif ICL
 
    clock_t start;
-   double duration;
+   //double duration;
 
    start = clock();
   return (double)( start ) / CLOCKS_PER_SEC;

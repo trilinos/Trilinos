@@ -672,8 +672,10 @@ int Epetra_MultiVector::PutScalar(double ScalarConstant) {
 }
 //=========================================================================
 int Epetra_MultiVector::CheckSizes(const Epetra_DistObject& Source) {
+
   const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
-  if (NumVectors()!=A.NumVectors()) {EPETRA_CHK_ERR(-1)};
+
+  if (NumVectors()!=A.NumVectors()) {EPETRA_CHK_ERR(-3)};
   return(0);
 }
 
@@ -681,6 +683,7 @@ int Epetra_MultiVector::CheckSizes(const Epetra_DistObject& Source) {
 int Epetra_MultiVector::CopyAndPermute(const Epetra_DistObject& Source, int NumSameIDs, 
 				       int NumPermuteIDs, int * PermuteToLIDs, 
 				       int *PermuteFromLIDs) {
+
 
   const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
 
@@ -785,8 +788,8 @@ int Epetra_MultiVector::PackAndPrepare(const Epetra_DistObject & Source, int Num
 				      int & SizeOfPacket, Epetra_Distributor & Distor) {
 
 
-  const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
 
+  const Epetra_MultiVector & A = dynamic_cast<const Epetra_MultiVector &>(Source);
   int i, j, jj, k;
 
   double **From = A.Pointers();

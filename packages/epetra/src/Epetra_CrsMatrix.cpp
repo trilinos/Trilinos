@@ -1335,6 +1335,7 @@ int Epetra_CrsMatrix::CopyAndPermute(const Epetra_DistObject & Source, int NumSa
 				     int *PermuteFromLIDs) {
   
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
+
   int i;
   
   int Row, NumEntries;
@@ -1419,8 +1420,9 @@ int Epetra_CrsMatrix::PackAndPrepare(const Epetra_DistObject & Source,
 				     char * & Imports, 
 				     int & SizeOfPacket, Epetra_Distributor & Distor) {
   
+
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
-  
+
   double * DoubleExports = 0;
   double * DoubleImports = 0;
   int GlobalMaxNumEntries = A.GlobalMaxNumEntries();
@@ -1494,6 +1496,7 @@ int Epetra_CrsMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
       && CombineMode != Insert
       && CombineMode != Zero )
     EPETRA_CHK_ERR(-1); //Unsupported CombineMode, defaults to Zero
+
 
   const Epetra_CrsMatrix & A = dynamic_cast<const Epetra_CrsMatrix &>(Source);
   int NumEntries;
@@ -1594,7 +1597,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
     Comm().Barrier();
   }
 
-  for (int iproc=0; iproc < NumProc; iproc++) {
+  {for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int NumMyRows1 = NumMyRows();
       int MaxNumIndices = MaxNumEntries();
@@ -1641,7 +1644,7 @@ void Epetra_CrsMatrix::Print(ostream& os) const {
     RowMap().Comm().Barrier();
     RowMap().Comm().Barrier();
     RowMap().Comm().Barrier();
-  }
+  }}
 
   return;
 }

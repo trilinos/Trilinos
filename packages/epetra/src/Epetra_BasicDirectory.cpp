@@ -406,13 +406,13 @@ int Epetra_BasicDirectory::GetDirectoryEntries( const int NumEntries,
 
   //Check for unfound GlobalEntries and set cooresponding Procs to -1
   int NumMissing = 0;
-  for( int i = 0; i < NumEntries; ++i )
+  {for( int i = 0; i < NumEntries; ++i )
     if( dir_procs[i] == -1 )
     {
       Procs[i] = -1;
       if (DoLIDs) LocalEntries[i] = -1;
       ++NumMissing;
-    }
+  }}
 
   int num_sends;
   int * send_gids = 0;

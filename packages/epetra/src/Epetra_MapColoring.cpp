@@ -130,26 +130,26 @@ int Epetra_MapColoring::GenerateLists() const {
   ColorIDs_ = new Epetra_HashTable(NumColors_);
   ListOfColors_ = new int[NumColors_];
   ListItem * CurItem = FirstColor_;
-  for (int i=0; i<NumColors_; i++) {
+  {for (int i=0; i<NumColors_; i++) {
     ColorIDs_->Add(CurItem->ItemValue, i); // Create hash table entry
     ListOfColors_[i] = CurItem->ItemValue; // Put color value in a list of colors
     CurItem = CurItem->NextItem;
-  }
+  }}
   Epetra_Util util;
   util.Sort(true, NumColors_, ListOfColors_, 0, 0, 0, 0); // Sort List of colors in ascending order
   // Count the number of IDs of each color
   ColorCount_ = new int[NumColors_];
-  for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;
-  for (int i=0; i<NumMyElements; i++) ColorCount_[ColorIDs_->Get(ElementColors_[i])]++;
+  {for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;}
+  {for (int i=0; i<NumMyElements; i++) ColorCount_[ColorIDs_->Get(ElementColors_[i])]++;}
 
   // Finally build list of IDs grouped by color
   ColorLists_ = new int *[NumColors_];
-  for (int i=0; i<NumColors_; i++) ColorLists_[i] = new int[ColorCount_[i]];
-  for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0; // Reset so we can use for counting
-  for (int i=0; i<NumMyElements; i++) {
+  {for (int i=0; i<NumColors_; i++) ColorLists_[i] = new int[ColorCount_[i]];}
+  {for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;} // Reset so we can use for counting
+  {for (int i=0; i<NumMyElements; i++) {
     int j = ColorIDs_->Get(ElementColors_[i]);
     ColorLists_[j][ColorCount_[j]++] = i;
-  }
+  }}
   ListsAreValid_ = true;
   ListsAreGenerated_ = true;
 
@@ -210,8 +210,8 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
   for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
   int * MapElementSizes = Map().ElementSizeList();
 
-  for (int i=0; i<NumElements; i++) 
-    ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];
+  {for (int i=0; i<NumElements; i++) 
+    ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];}
 
   Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, 
 					      ColorElementSizes,
@@ -271,24 +271,24 @@ void Epetra_MapColoring::Print(ostream& os) const {
     << " Coloring information arranged by color" << endl 
     << " **************************************" << endl
     << endl;
-  for (int iproc=0; iproc < NumProc; iproc++) {
+  {for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (NumColors()==0) os << " No colored elements on processor " << MyPID << endl;
       else {
-	os << "Number of colors in map = " << NumColors() << endl
-	   << "Default color           = " << DefaultColor() << endl << endl;
-	if (MyPID==0) {
-	  os.width(8);
-	  os <<  "     MyPID"; os << "    ";
-	  os.width(12);
-	  os <<  "LID  ";
-	  os.width(20);
-	  os <<  "Color  ";
-	  os << endl;
-	}
-	int * ColorValues = ListOfColors();
-	for (int ii=0; ii<NumColors(); ii++) {
-	  int CV = ColorValues[ii];
+        os << "Number of colors in map = " << NumColors() << endl
+	         << "Default color           = " << DefaultColor() << endl << endl;
+        if (MyPID==0) {
+	        os.width(8);
+	        os <<  "     MyPID"; os << "    ";
+	        os.width(12);
+	        os <<  "LID  ";
+	        os.width(20);
+	        os <<  "Color  ";
+	        os << endl;
+        }
+	      int * ColorValues = ListOfColors();
+	      for (int ii=0; ii<NumColors(); ii++) {
+	        int CV = ColorValues[ii];
 	  int ColorCount = NumElementsWithColor(CV);
 	  int * LIDList = ColorLIDList(CV);
 	  
@@ -310,7 +310,7 @@ void Epetra_MapColoring::Print(ostream& os) const {
     Map().Comm().Barrier();
     Map().Comm().Barrier();
     Map().Comm().Barrier();
-  }
+  }}
   return;
 }
 //=========================================================================
@@ -348,6 +348,7 @@ int Epetra_MapColoring::PackAndPrepare(const Epetra_DistObject & Source, int Num
 				      int & LenExports, char * & Exports, int & LenImports, 
 				      char * & Imports, 
 				      int & SizeOfPacket, Epetra_Distributor & Distor) {
+
 
 
   const Epetra_MapColoring & A = dynamic_cast<const Epetra_MapColoring &>(Source);
