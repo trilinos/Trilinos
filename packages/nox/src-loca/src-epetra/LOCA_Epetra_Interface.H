@@ -42,6 +42,10 @@ class Epetra_RowMatrix;
 class Epetra_Operator;
 
 namespace LOCA {
+  class ParameterVector;
+}
+
+namespace LOCA {
 namespace Epetra {
 
   /*! \brief Used by LOCA::Epetra::Group to provide a link to the
@@ -53,7 +57,7 @@ namespace Epetra {
    * can be used in NOX.  Preconditioning functions are only  needed 
    * if the user wishes to supply their own preconditioner.  Otherwise
    * Aztec has built-in preconditioners to use.  */
-class Interface : NOX::Epetra::Interface {
+class Interface : public NOX::Epetra::Interface {
 
 public:
  
@@ -63,16 +67,8 @@ public:
   //! Destructor
   virtual ~Interface() {};
 
-  virtual bool computeF(const Epetra_Vector& x, Epetra_Vector& RHS) = 0;
-  
-  virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac) = 0;
-
-  virtual bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M) = 0;
-
-  virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M) = 0;
-
-  //! Sets a parameter value in the application code.  
-  virtual bool setParameter(string paramName, double value) = 0;
+  //! Set the parameters in the user's app prior to calling one of the compute functions.
+  virtual bool setParameters(const ParameterVector& p) = 0;
 
 };
 } // namespace Epetra

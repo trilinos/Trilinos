@@ -34,14 +34,11 @@
 #define LOCA_EPETRA_VECTOR_H
 
 #include "LOCA_Abstract_Vector.H" // base class
+#include "NOX_Epetra_Vector.H"    // base class
 
 // Forward declarations
 class Epetra_Vector;
-namespace NOX{
-  namespace Epetra {
-    class Vector; 
-  }
-}
+
 
 namespace LOCA {
 
@@ -49,23 +46,18 @@ namespace LOCA {
 namespace Epetra {
 
 //! Implementation of LOCA::Abstract::Vector for %Epetra vectors.
-class Vector : public Abstract::Vector {
+class Vector : public virtual LOCA::Abstract::Vector, public virtual NOX::Epetra::Vector {
 
  public:			
 
   //! Construct by copying map and/or elements of an Epetra_Vector.
-  Vector(const Epetra_Vector& source, CopyType type = DeepCopy);
+  Vector(const Epetra_Vector& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! Destruct Vector.
   ~Vector();
 
-  //@{ \name Access to underlying NOX/Epetra vector.
+  //@{ \name Access to underlying Epetra vector.
 
-  //! Get reference to underlying NOX::Epetra::Vector.
-  virtual NOX::Epetra::Vector& getNoxVector();
-  //! Get const reference to underlying NOX::Epetra::Vector.
-  virtual const NOX::Epetra::Vector& getNoxVector() const;
- 
   //! Get reference to underlying Epetra vector.
   virtual Epetra_Vector& getEpetraVector();
   //! Get const reference to underlying Epetra vector.
@@ -79,20 +71,22 @@ class Vector : public Abstract::Vector {
 
   virtual Abstract::Vector& random();
 
-  //! Copies source vector into "this".
-  virtual Abstract::Vector& operator=(const Epetra_Vector& y);
-
   virtual Abstract::Vector& operator=(const Vector& y);
   //! See above.
   virtual Abstract::Vector& operator=(const Abstract::Vector& y);
+  //! See above.
+  virtual Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
   
+  //! Copies source vector into "this".
+  virtual Abstract::Vector& operator=(const Epetra_Vector& y);
+
   virtual Abstract::Vector& abs(const Vector& y);
   //! See above.
-  virtual Abstract::Vector& abs(const Abstract::Vector& y);
+  virtual Abstract::Vector& abs(const NOX::Abstract::Vector& y);
 
   virtual Abstract::Vector& reciprocal(const Vector& y);
   //! See above.
-  virtual Abstract::Vector& reciprocal(const Abstract::Vector& y);
+  virtual Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
 
   //@}
 
@@ -103,27 +97,31 @@ class Vector : public Abstract::Vector {
   virtual Abstract::Vector& scale(const Vector& a);
 
   //! See above
-  virtual Abstract::Vector& scale(const Abstract::Vector& a);
+  virtual Abstract::Vector& scale(const NOX::Abstract::Vector& a);
 
-  virtual Abstract::Vector& update(double alpha, const Vector& a, 
-			     double gamma = 0.0);
+  virtual Abstract::Vector& update(double alpha, 
+				   const Vector& a, 
+				   double gamma = 0.0);
   //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
-			     double gamma = 0.0);
+  virtual Abstract::Vector& update(double alpha, 
+				   const NOX::Abstract::Vector& a, 
+				   double gamma = 0.0);
 
   virtual Abstract::Vector& update(double alpha, const Vector& a, 
 			     double beta, const Vector& b,
 			     double gamma = 0.0);
   //! See above.
-  virtual Abstract::Vector& update(double alpha, const Abstract::Vector& a, 
-			     double beta, const Abstract::Vector& b,
-			     double gamma = 0.0);
+  virtual Abstract::Vector& update(double alpha, 
+				   const NOX::Abstract::Vector& a, 
+				   double beta, 
+				   const NOX::Abstract::Vector& b,
+				   double gamma = 0.0);
 
   //@}
 
   //@{ \name Creating new Vectors. 
 
-  virtual Abstract::Vector* clone(CopyType type = DeepCopy) const;
+  virtual Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //@}
 
@@ -133,7 +131,7 @@ class Vector : public Abstract::Vector {
 
   virtual double norm(const Vector& weights) const;
   //! See above.
-  virtual double norm(const Abstract::Vector& weights) const;
+  virtual double norm(const NOX::Abstract::Vector& weights) const;
 
   //@}
 
@@ -141,16 +139,13 @@ class Vector : public Abstract::Vector {
 
   virtual double dot(const Vector& y) const;
   //! See above.
-  virtual double dot(const Abstract::Vector& y) const;
+  virtual double dot(const NOX::Abstract::Vector& y) const;
 
   //@}
 
   virtual int length() const;
 
- protected:
-  
-  //! Pointer to a NOX::Epetra::Vector owned by this object
-  NOX::Epetra::Vector* noxVec;
+  virtual bool print() const;
 
 };
 } // namespace Epetra
