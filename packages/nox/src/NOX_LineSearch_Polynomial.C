@@ -117,21 +117,13 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
   // Get Old F
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  double oldf = 0.0;
-  if (convCriteria == AredPred)
-    oldf = oldGrp.getNormF();
-  else 
-    oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
+  double oldf = 0.5 * oldGrp.getNormF() * oldGrp.getNormF();  
 
   // Get New F
   step = defaultStep;
   newGrp.computeX(oldGrp, dir, step);
   newGrp.computeF();
-  double newf = 0;
-  if (convCriteria == AredPred)
-    newf = newGrp.getNormF();
-  else 
-    newf = 0.5 * newGrp.getNormF() * newGrp.getNormF();  
+  double newf = 0.5 * newGrp.getNormF() * newGrp.getNormF();  
 
   // Get the linear solve tolerance if doing ared/pred for conv criteria
   double eta_original = 0.0;
@@ -146,9 +138,6 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
   bool isConverged = false;
   bool isFailed = false;
   double slope = slopeObj.computeSlope(dir, oldGrp);
-
-  if (convCriteria == AredPred)
-    slope = slope / oldf;
 
   if (slope >= 0)
     isFailed = true;
@@ -180,10 +169,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       break;
     }
 	
-    if (convCriteria == AredPred)
-      print.printStep(nIters, step, oldf, newf, "", false);
-    else
-      print.printStep(nIters, step, oldf, newf);
+    print.printStep(nIters, step, oldf, newf);
     
     counter.incrementNumIterations();
     nIters ++;
@@ -221,8 +207,6 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 	break;
       }
       
-      // The folowing has been removed at the request of Homwer Walker
-      /*
       if (fabs(a) < 1.e-12) 
       {
 	tempStep = -slope / (2.0 * b);
@@ -231,17 +215,9 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
       {
 	tempStep = (-b + sqrt(disc))/ (3.0 * a);
       }
-      */
-      // Homer suggests this test be used instead:
-      if (b < 0)
-        tempStep = (-b + sqrt(disc))/ (3.0 * a);
-      else
-        tempStep = -slope/(b + sqrt(disc));
-      
-      /* Also removed at the request of Homer Walker
+
       if (tempStep > 0.5 * step) 
 	tempStep = 0.5 * step ;
-      */
 
     }
     
@@ -250,13 +226,10 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
 
     if (tempStep < minBoundFactor * step) 
       step *= minBoundFactor;
-    // Changed the following line at Homer Walker's request.
-    //else if ((nIters > 2) && (tempStep > maxBoundFactor * step))
-    else if (tempStep > maxBoundFactor * step)
+    else if ((nIters > 2) && (tempStep > maxBoundFactor * step))
       step *= maxBoundFactor;
     else 
       step = tempStep;
-
 
     if (step < minStep) 
     {
@@ -265,11 +238,8 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     }
     
     newGrp.computeX(oldGrp, dir, step);
-    newGrp.computeF();  
-    if (convCriteria == AredPred)
-      newf = newGrp.getNormF();
-    else
-      newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
+    newGrp.computeF(); 
+    newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
     
     eta = 1.0 - step * (1.0 - eta_original);
     isConverged = isSufficientDecrease(newf, oldf, step, slope, eta);
@@ -287,10 +257,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     step = recoveryStep;
     newGrp.computeX(oldGrp, dir, step);
     newGrp.computeF();
-    if (convCriteria == AredPred)
-      newf = newGrp.getNormF();
-    else    
-      newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
+    newf = 0.5 * newGrp.getNormF() * newGrp.getNormF(); 
 
     eta = 1.0 - step * (1.0 - eta_original);
     paramsPtr->setParameter("Adjusted Tolerance", eta);
@@ -298,10 +265,7 @@ bool NOX::LineSearch::Polynomial::compute(Abstract::Group& newGrp, double& step,
     message = "(USING RECOVERY STEP!)";
   }
 
-  if (convCriteria == AredPred)
-    print.printStep(nIters, step, oldf, newf, message, false);
-  else
-    print.printStep(nIters, step, oldf, newf, message);
+  print.printStep(nIters, step, oldf, newf, message);
   paramsPtr->setParameter("Adjusted Tolerance", eta);
   counter.setValues(*paramsPtr);
   return (!isFailed);

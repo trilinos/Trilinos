@@ -64,14 +64,9 @@ namespace LineSearch {
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the function <br><br>
-  - For Armijo-Goldstein conditions:  
+  The line search attempts to minimize the function:  
   \f[ 
   \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
-  \f]
-  - For Ared/Pred conditions:
-  \f[ 
-  \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)||_2 
   \f]
 
   where \f$ \lambda \f$ is the step length.  
@@ -100,7 +95,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ for Armijo-Goldstein conditions and \f$ \phi'(0) = \frac{s^T \left(J_{\rm old}^T F_{\rm old} \right)} {\|F_{\rm old} \|_2 } \f$ for Ared/Pred conditions.
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$.
 
   If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
@@ -128,10 +123,10 @@ namespace LineSearch {
   The line search iterates over the computation of \f$ \lambda \f$ until:
 
 - The "Convergence Criteria" is met (the user has two choices): 
-  -# "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le
-     f(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
-  -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
-     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
+  -# "Armijo-Goldstein" conditions: \f$ \phi (x_{n-1}+ \lambda s) \le
+     \phi (x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
+  -# "Ared/Pred" conditions: \f$ \| \phi (x_{\rm old}+ \lambda s) \| \le
+     \| \phi (x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
      solve tolerance in the inexact Newton method. 
   -# "None" - If "Force Interpolation" is true, accept the result of
      the first interpolation. Otherwise, accept the default step.
