@@ -349,7 +349,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param Out
 		Indices - Extracted global column indices for the corresponding values.
 	  
-    \return Integer error code, set to 0 if successful.
+    \return Integer error code, set to 0 if successful, non-zero if global row is not owned by calling process
+or if the number of entries in this row exceed the Length parameter.
   */
 	int ExtractGlobalRowCopy(int GlobalRow, int Length, int& NumEntries, double* Values, int* Indices) const;
 
@@ -375,7 +376,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		GlobalRow - Global row to extract.
     \param In
-		Length - Length of Values and Indices.
+		Length - Length of Values.
     \param Out
 		NumEntries - Number of nonzero entries extracted.
     \param Out
@@ -390,7 +391,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		MyRow - Local row to extract.
     \param In
-		Length - Length of Values and Indices.
+		Length - Length of Values.
     \param Out
 		NumEntries - Number of nonzero entries extracted.
     \param Out

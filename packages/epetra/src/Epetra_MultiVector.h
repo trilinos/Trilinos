@@ -377,9 +377,14 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
     specified local row must correspond to a GID owned by the map of the multivector on the
     calling processor.  In other words, this method does not perform cross-processor communication.
 
-    If the map associated with this multivector is an Epetra_BlockMap, only the first point entry associated
-    with the local row will be modified.  To modify a different point entry, use the other version of
-    this method
+    This method is intended for use with vectors based on an Epetra_Map.  If used 
+    on a vector based on a non-trivial Epetra_BlockMap, this will update only block 
+    row 0, i.e. 
+
+    Epetra_MultiVector::ReplaceMyValue  (  MyRow,  VectorIndex,  ScalarValue )  is 
+    equivalent to:  
+    Epetra_MultiVector::ReplaceMyValue  (  0, MyRow,  VectorIndex,  ScalarValue )
+
 
     \param In
     MyRow - Row of Multivector to modify in local index space.
@@ -517,12 +522,12 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   
   //! Set user-provided addresses of A and MyLDA.
   /*!
-    \param Out
-    A - Address of a pointer to that will be set to point to the values of the multi-vector.  
+    \param 
+    A (Out) - Address of a pointer to that will be set to point to the values of the multi-vector.  
     The first vector will be at the memory pointed to by A.
     The second vector starts at A+MyLDA, the third at A+2*MyLDA, and so on.
-    \param In
-    MyLDA - Address of the "Leading Dimension", or stride between vectors in memory.
+    \param 
+    MyLDA (Out) - Address of the "Leading Dimension", or stride between vectors in memory.
     \warning This value refers to the stride on the calling processor.  Thus it is a
     local quantity, not a global quantity.
 
@@ -534,8 +539,8 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
 
   //! Set user-provided addresses of ArrayOfPointers.
   /*!
-    \param Out
-    ArrayOfPointers - Address of array of pointers to memory space that will set to the
+    \param 
+    ArrayOfPointers (Out) - Address of array of pointers to memory space that will set to the
     multi-vector array of pointers, such that ArrayOfPointers[i] points to the memory
     location where the ith vector is located.
 

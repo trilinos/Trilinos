@@ -44,7 +44,7 @@ class Epetra_Distributor;
 
     This class currently has one constructor, taking two Epetra_Map or Epetra_BlockMap objects.  
     The first map specifies the global IDs of elements that we want to import later. The
-    secpnd map specifies the global IDs that are owned by the calling processor.  
+    second map specifies the global IDs that are owned by the calling processor.  
 */
 
 class Epetra_Import: public Epetra_Object {
@@ -120,7 +120,7 @@ rows of the matrix A) each processor will need to import elements of x that
 are not local.  To do this, we build a target map on each processor as follows:
 \verbatim
     PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements
-    0  1  2  3  8        2  3  4  5         0  5  6  7  8
+    0  1  2  3  8        2  3  4  5 6       0  5  6  7  8
 \endverbatim
 
 The above list is the elements that will be needed to perform the matrix vector multiplication locally on each processor.
