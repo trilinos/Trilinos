@@ -37,12 +37,12 @@
 
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member
 #include "NOX_LineSearch_Utils_Counters.H"  // class data member
-#include "NOX_LineSearch_Utils_Slope.H"  // class data member
+#include "NOX_LineSearch_Utils_Slope.H"     // class data member
 
 namespace NOX {
 namespace LineSearch {
 
-//! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2.
+//! Use quad/cubic polynomial fit from Dennis & Schnabel Sec. 6.3.2 with modifications for Homer Walker's Ared/Pred inexact Newton methods.
 /*!
   
   This line search is based on materials in the following books:
@@ -54,16 +54,26 @@ namespace LineSearch {
   - Section 3.4 of "Numerical Optimization," Jorge Nocedal and Stephen
     J. Wright, Springer, 1999.
 
+  - "An Inexact Newton Method for Fully Coupled Solution of the Navier-Stokes 
+    Equations with Heat and Mass Transfer", Shadid, J. N., Tuminaro, R. S., 
+    and Walker, H. F., Journal of Computational Physics, 137, 155-185 (1997)
+
   The line search can be called via NOX::LineSearch::Manager.
  
   We are given the following information at %solver step \f$ n \f$: 
   -# Old solution group: \f$ x_{\rm old} \f$ 
   -# Direction vector: \f$ s \f$ 
 
-  The line search attempts to minimize the function 
+  The line search attempts to minimize the function <br><br>
+  - For Armijo-Goldstein conditions:  
   \f[ 
   \phi(\lambda) \equiv \frac{1}{2}||F (x_{\rm old} + \lambda s)||_2^2 
   \f]
+  - For Ared/Pred conditions:
+  \f[ 
+  \phi(\lambda) \equiv ||F (x_{\rm old} + \lambda s)||_2 
+  \f]
+
   where \f$ \lambda \f$ is the step length.  
 
   We compute \f$ \lambda \f$ based on polynomial fits to information
@@ -90,7 +100,7 @@ namespace LineSearch {
   -\phi'(0) \lambda_{k-1} \right]} 
   \f]
 
-  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$.
+  where \f$ \phi'(0) = s^T \left(J_{\rm old}^T F_{\rm old} \right) \f$ for Armijo-Goldstein conditions and \f$ \phi'(0) = \frac{s^T \left(J_{\rm old}^T F_{\rm old} \right)} {\|F_{\rm old} \|_2 } \f$ for Ared/Pred conditions.
 
   If we are using a \b cubic \b model, the \f$k\f$-th step (\f$ k>1
   \f$) approximation is calculated as
@@ -120,8 +130,8 @@ namespace LineSearch {
 - The "Convergence Criteria" is met (the user has two choices): 
   -# "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le
      f(x_{n-1}) +\alpha \lambda \phi'(0) \f$ 
-  -# "Ared/Pred" conditions: \f$ f(x_{n-1}+ \lambda s) \le
-     f(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
+  -# "Ared/Pred" conditions: \f$ \| F(x_{\rm old}+ \lambda s) \| \le
+     \| F(x_{\rm old}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear
      solve tolerance in the inexact Newton method. 
   -# "None" - If "Force Interpolation" is true, accept the result of
      the first interpolation. Otherwise, accept the default step.
@@ -173,7 +183,7 @@ namespace LineSearch {
 
   - "Max Bounds Factor" - \f$ \gamma_{max} \f$, the factor that limits
     the maximum size of the new step based on the previous step
-    (defaults to 0.9)
+    (defaults to 0.5)
 
   - "Force Interpolation" (boolean) - Set to true at least one
     interpolation step should be used. The default is false which
