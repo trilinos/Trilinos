@@ -15,6 +15,8 @@
 #include "comm_const.h"
 #include "create_proc_list_const.h"
 
+static void LB_Gather(int *, int *, int, int, int, MPI_Comm);
+
 int LB_Create_Proc_List(
      LB       *lb,            /* Load-balancing structure. */
      int       set,           /* set that processor is in */
@@ -44,45 +46,47 @@ int LB_Create_Proc_List(
      int  s, sp;              /* temporary sums on number of dots */
      int  num_to;             /* number of dots to send to a processor */
      int  i, j, k;            /* loop indexes */
-     int *tmp_send;           /* temporary for Tflops_Special */
-     int *tmp_rem;            /* temporary for Tflops_Special */
-     int *tmp_sets;           /* temporary for Tflops_Special */
+     int *tmp_send;           /* Work vector */
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
-     MPI_Comm_size(comm, &nprocs);
-     if ((send = (int *) LB_MALLOC(nprocs*sizeof(int))) == NULL)
+     if (lb->Tflops_Special) {
+        nprocs = numprocs;
+        rank -= proclower;
+     }
+     else
+        MPI_Comm_size(comm, &nprocs);
+
+     if ((send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL)
         return LB_MEMERR;
-     if ((rem = (int *) LB_MALLOC(nprocs*sizeof(int))) == NULL) {
+     if ((tmp_send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL) {
         LB_FREE(&send);
         return LB_MEMERR;
      }
-     if ((sets = (int *) LB_MALLOC(nprocs*sizeof(int))) == NULL) {
-        LB_FREE(&send);
-        LB_FREE(&rem);
-        return LB_MEMERR;
-     }
+     rem = &send[nprocs];
+     sets = &send[2*nprocs];
 
      /* gather number of outgoing and remaining dots across processors */
-     rem[rank] = dotnum - outgoing;
-     MPI_Allgather(&rem[rank], 1, MPI_INT, rem, 1, MPI_INT, comm);
-     send[rank] = outgoing;
-     MPI_Allgather(&send[rank], 1, MPI_INT, send, 1, MPI_INT, comm);
-     sets[rank] = set;
-     MPI_Allgather(&sets[rank], 1, MPI_INT, sets, 1, MPI_INT, comm);
 
      if (lb->Tflops_Special) {
-        tmp_send = &send[proclower];
-        tmp_rem = &rem[proclower];
-        tmp_sets = &sets[proclower];
-        rank -= proclower;
-        nprocs = numprocs;
+        for (i = 3*nprocs-1; i >= 0; i--)
+           send[i] = 0;
+        send[rank] = outgoing;
+        send[rank+nprocs] = dotnum - outgoing;
+        send[rank+2*nprocs] = set;
+        LB_Gather(send, tmp_send, proclower, rank, nprocs, comm);
      }
      else {
-        tmp_send = send;
-        tmp_rem = rem;
-        tmp_sets = sets;
+        for (i = 3*nprocs-1; i >= 0; i--)
+           tmp_send[i] = 0;
+        tmp_send[rank] = outgoing;
+        tmp_send[rank+nprocs] = dotnum - outgoing;
+        tmp_send[rank+2*nprocs] = set;
+        i = 3*nprocs;
+        MPI_Allreduce(tmp_send, send, i, MPI_INT, MPI_SUM, comm);
      }
+
+     LB_FREE(&tmp_send);
 
      /* Convert processor numbers to local (for this communicator) numbering
         and determine which subset of processors a processor is in. */
@@ -90,10 +94,10 @@ int LB_Create_Proc_List(
      /* to determine the number of dots (a) that will be on each of the
         processors in the other group, start with the average */
      for (i = sum_send = sum_rem = 0; i < nprocs; i++)
-        if (tmp_sets[i] == set)
-           sum_send += tmp_send[i];
+        if (sets[i] == set)
+           sum_send += send[i];
         else {
-           sum_rem += tmp_rem[i];
+           sum_rem += rem[i];
            np_other++;
         }
 
@@ -106,8 +110,8 @@ int LB_Create_Proc_List(
         k = 0;
         while (!k) {
            for (i = s = 0; i < nprocs; i++)
-              if (tmp_sets[i] != set && tmp_rem[i] < a)
-                 s += a - tmp_rem[i];
+              if (sets[i] != set && rem[i] < a)
+                 s += a - rem[i];
            if (s == sum_send)
               k = 1;
            else if (s < sum_send) {
@@ -130,12 +134,12 @@ int LB_Create_Proc_List(
         The variable send is now the number that will be received by each
         processor only in the other part */
      for (i = s = 0; i < nprocs; i++)
-        if (tmp_sets[i] != set && tmp_rem[i] < a)
-           s += tmp_send[i] = a - tmp_rem[i];
+        if (sets[i] != set && rem[i] < a)
+           s += send[i] = a - rem[i];
      while (s < sum_send)
         for (i = 0; i < nprocs && s < sum_send; i++)
-           if (tmp_sets[i] != set && (tmp_send[i] || !s)) {
-              tmp_send[i]++;
+           if (sets[i] != set && (send[i] || !s)) {
+              send[i]++;
               s++;
            }
 
@@ -149,11 +153,11 @@ int LB_Create_Proc_List(
      if (outgoing) {
         if (lb->Tflops_Special) a = outgoing;    /* keep outgoing around in a */
         for (i = j = 0; i < rank; i++)
-           if (tmp_sets[i] == set)               /* only overwrote other half */
-              j += tmp_send[i];
+           if (sets[i] == set)                   /* only overwrote other half */
+              j += send[i];
         for (i = k = 0; k <= j; i++)
-           if (tmp_sets[i] != set)
-              k += tmp_send[i];
+           if (sets[i] != set)
+              k += send[i];
         i--;
         num_to = (outgoing < (k - j)) ? outgoing : (k - j);
         for (k = 0; k < num_to; k++)
@@ -161,9 +165,9 @@ int LB_Create_Proc_List(
         outgoing -= num_to;
         while (outgoing > 0) {
            i++;
-           while (tmp_sets[i] == set)
+           while (sets[i] == set)
               i++;
-           num_to = (outgoing < tmp_send[i]) ? outgoing : tmp_send[i];
+           num_to = (outgoing < send[i]) ? outgoing : send[i];
            outgoing -= num_to;
            for (j = 0; j < num_to; j++, k++)
               proclist[k] = i;
@@ -175,8 +179,64 @@ int LB_Create_Proc_List(
 
      /* free memory and return */
      LB_FREE(&send);
-     LB_FREE(&rem);
-     LB_FREE(&sets);
 
      return LB_OK;
+}
+
+static void LB_Gather(
+   int *send,                 /* input/output array */
+   int *tmp_send,             /* temporary array */
+   int proclower,             /* smallest numbered processor in partition */
+   int rank,                  /* processor number within partition */
+   int nprocs,                /* number of processors in this partition */
+   MPI_Comm comm              /* MPI Communicator */
+)
+{
+   int tag = 32100;           /* message tag */
+   int partner;               /* message partner in binary exchange */
+   int to;                    /* message partner not in binary exchange */
+   int mask;                  /* mask to determine communication partner */
+   int nprocs_small;          /* largest power of 2 contained in nprocs */
+   int hbit;                  /* 2^hbit = nproc_small */
+   int len;                   /* message length */
+   int i;                     /* loop counter */
+   MPI_Status status;
+
+   /* This routine sums a vector of integers on a subset of processors */
+
+   len = 3*nprocs;
+
+   /* Find next lower power of 2. */
+   for (hbit = 0; (nprocs >> hbit) != 1; hbit++);
+
+   nprocs_small = 1 << hbit;
+   if (nprocs_small * 2 == nprocs) {
+      nprocs_small *= 2;
+      hbit++;
+   }
+
+   to = proclower + (rank ^ nprocs_small);
+   if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
+      MPI_Send(send, len, MPI_INT, to, tag, comm);
+      tag += hbit + 1;
+      MPI_Recv(send, len, MPI_INT, to, tag, comm, &status);
+   }
+   else {   /* processors within greatest power of 2 */
+      if (rank + nprocs_small < nprocs) {
+         MPI_Recv(tmp_send, len, MPI_INT, to, tag, comm, &status);
+         for (i = 0; i < len; i++)
+            send[i] += tmp_send[i];
+      }
+      for (mask = nprocs_small >> 1; mask; mask >>= 1) { /* binary exchange */
+         tag++;
+         partner = proclower + (rank ^ mask);
+         MPI_Send(send, len, MPI_INT, partner, tag, comm);
+         MPI_Recv(tmp_send, len, MPI_INT, partner, tag, comm, &status);
+         for (i = 0; i < len; i++)
+            send[i] += tmp_send[i];
+      }
+      tag++;
+      if (rank + nprocs_small < nprocs)
+         MPI_Send(send, len, MPI_INT, to, tag, comm);
+   }
 }

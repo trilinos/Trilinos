@@ -17,6 +17,7 @@
 extern int LB_find_median(LB *lb, double *dots, double *wgts, int *dotmark,
   int dotnum, int proc, double fractionlo, MPI_Comm local_comm,
   double *valuehalf, int first_guess, int *counter, int nprocs, int num_procs,
-  int proclower);
+  int proclower, int wgtflag, double valuemin, double valuemax, double weight,
+  double *weightlo, double *weighthi, int *dotlist);
 
 #endif

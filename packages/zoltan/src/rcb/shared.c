@@ -45,7 +45,14 @@ int LB_RB_Build_Structure(
                                    allocated on this processor. */
   int *num_geom,                /* # values per object used to describe
                                    the geometry.                       */
-  int wgtflag)                  /* true is dot weights are to be used. */
+  int wgtflag,                  /* true is dot weights are to be used. */
+  int use_ids                   /* true if global and local IDs are to be
+                                   kept for RCB or RIB.  In all cases, the 
+                                   IDs are allocated and used in Zoltan 
+                                   callback functions.  Then, if use_ids is
+                                   false, the IDs are deallocated before
+                                   this function exits.                */
+)
 {
 /*
  *  Function to build the geometry-based data structures for 
@@ -138,6 +145,15 @@ int i, ierr = 0;
     LB_FREE(&objs_wgt);
   }
 
+  if (!use_ids) {
+    /* 
+     * Do not need IDs in RCB or RIB.  Don't store, manipulate or
+     * communicate any IDs.  
+     */
+    LB_FREE(global_ids);
+    LB_FREE(local_ids);
+  }
+
   return(LB_OK);
 }
 
@@ -205,6 +221,9 @@ int LB_RB_Send_Outgoing(
                                        4 = most dot memory this proc ever allocs
                                        5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
+  int use_ids,                      /* true if global and local IDs are to be
+                                       kept for RCB or RIB.  The IDs must be
+                                       communicated if use_ids is true.  */
   MPI_Comm local_comm,
   int proclower,                    /* smallest processor for Tflops_Special */
   int numprocs                      /* number of processors for Tflops_Special*/
@@ -245,7 +264,7 @@ int LB_RB_Send_Outgoing(
 
   ierr = LB_RB_Send_Dots(lb, gidpt, lidpt, dotpt, dotmark, proc_list, outgoing,
                          dotnum, dotmax, set, allocflag, overalloc, stats,
-                         counters, local_comm);
+                         counters, use_ids, local_comm);
 
   if (outgoing) LB_FREE(&proc_list);
 
@@ -279,6 +298,10 @@ int LB_RB_Send_Dots(
                                        3 = most dots this proc ever owns
                                        4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
+  int use_ids,                      /* true if global and local IDs are to be
+                                       kept for RCB or RIB (for Return_Lists 
+                                       or high Debug_Levels).  The IDs must be
+                                       communicated if use_ids is true.  */
   MPI_Comm local_comm
 )
 {
@@ -287,9 +310,9 @@ int LB_RB_Send_Dots(
   char *yo = "LB_RB_Send_Outgoing";
   int dotnew;                       /* # of new dots after send/recv */
   int keep, incoming;               /* message exchange counters */
-  LB_ID_PTR gidbuf;                 /* communication buffer for global IDs. */
-  LB_ID_PTR lidbuf;                 /* communication buffer for local IDs.  */
-  struct Dot_Struct *dotbuf;        /* communication buffer for dots. */
+  LB_ID_PTR gidbuf = NULL;          /* communication buffer for global IDs. */
+  LB_ID_PTR lidbuf = NULL;          /* communication buffer for local IDs.  */
+  struct Dot_Struct *dotbuf = NULL; /* communication buffer for dots. */
   struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
   int message_tag = 32760;          /* message tag */
   int num_gid_entries = lb->Num_GID;
@@ -314,11 +337,17 @@ int LB_RB_Send_Dots(
     *allocflag = 1;
     *dotmax = (int) (overalloc * dotnew);
     if (*dotmax < dotnew) *dotmax = dotnew;
-    *gidpt = LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
-    *lidpt = LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
+    if (use_ids) {
+      *gidpt = LB_REALLOC_GID_ARRAY(lb, *gidpt, *dotmax);
+      *lidpt = LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
+      if (!*gidpt || (num_lid_entries && !*lidpt)) {
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+    }
     *dotpt = (struct Dot_Struct *) 
              LB_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
-    if (!*gidpt || (num_lid_entries && !*lidpt) || !*dotpt) {
+    if (!*dotpt) {
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
@@ -335,11 +364,20 @@ int LB_RB_Send_Dots(
   /* malloc comm send buffer */
 
   if (outgoing > 0) {
-    gidbuf = LB_MALLOC_GID_ARRAY(lb, outgoing);
-    lidbuf = LB_MALLOC_LID_ARRAY(lb, outgoing);
+    if (use_ids) {
+      gidbuf = LB_MALLOC_GID_ARRAY(lb, outgoing);
+      lidbuf = LB_MALLOC_LID_ARRAY(lb, outgoing);
+      if (!gidbuf || (num_lid_entries && !lidbuf)) {
+        LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        LB_FREE(&gidbuf);
+        LB_FREE(&lidbuf);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+    }
     dotbuf = (struct Dot_Struct *)
               LB_MALLOC(outgoing * sizeof(struct Dot_Struct));
-    if (!gidbuf || (num_lid_entries && !lidbuf) || !dotbuf) {
+    if (!dotbuf) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&gidbuf);
       LB_FREE(&lidbuf);
@@ -348,11 +386,6 @@ int LB_RB_Send_Dots(
       return LB_MEMERR;
     }
   }
-  else {
-    gidbuf = NULL;
-    lidbuf = NULL;
-    dotbuf = NULL;
-  }
 
   /* fill buffer with dots that are marked for sending */
   /* pack down the unmarked ones */
@@ -360,44 +393,34 @@ int LB_RB_Send_Dots(
   keep = outgoing = 0;
   for (i = 0; i < *dotnum; i++) {
     if (dotmark[i] != set) {
-      LB_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
-                     &((*gidpt)[i*num_gid_entries]));
-      LB_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
-                     &((*lidpt)[i*num_lid_entries]));
+      if (use_ids) {
+        LB_SET_GID(lb, &(gidbuf[outgoing*num_gid_entries]), 
+                       &((*gidpt)[i*num_gid_entries]));
+        LB_SET_LID(lb, &(lidbuf[outgoing*num_lid_entries]), 
+                       &((*lidpt)[i*num_lid_entries]));
+      }
       memcpy((char *) &dotbuf[outgoing], (char *) &((*dotpt)[i]), 
              sizeof(struct Dot_Struct));
       outgoing++;
     }
     else {
-      LB_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
-                     &((*gidpt)[i*num_gid_entries]));
-      LB_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
-                     &((*lidpt)[i*num_lid_entries]));
+      if (use_ids) {
+        LB_SET_GID(lb, &((*gidpt)[keep*num_gid_entries]), 
+                       &((*gidpt)[i*num_gid_entries]));
+        LB_SET_LID(lb, &((*lidpt)[keep*num_lid_entries]), 
+                       &((*lidpt)[i*num_lid_entries]));
+      }
       memcpy((char *) &((*dotpt)[keep]), (char *) &((*dotpt)[i]), 
              sizeof(struct Dot_Struct));
       keep++;
     }
   }
 
-  /* Communicate Global IDs */
-  ierr = LB_Comm_Do(cobj, message_tag, (char *) gidbuf, 
-                    sizeof(LB_ID_TYPE)*num_gid_entries,
-                    (char *) &((*gidpt)[keep*num_gid_entries]));
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-    LB_FREE(&gidbuf);
-    LB_FREE(&lidbuf);
-    LB_FREE(&dotbuf);
-    LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
-  }
-
-  /* Communicate Local IDs, if any */
-  if (num_lid_entries) {
-    message_tag--;
-    ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
-                      sizeof(LB_ID_TYPE)*num_lid_entries,
-                      (char *) &((*lidpt)[keep*num_lid_entries]));
+  if (use_ids) {
+    /* Communicate Global IDs */
+    ierr = LB_Comm_Do(cobj, message_tag, (char *) gidbuf, 
+                      sizeof(LB_ID_TYPE)*num_gid_entries,
+                      (char *) &((*gidpt)[keep*num_gid_entries]));
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
       LB_FREE(&gidbuf);
@@ -405,6 +428,22 @@ int LB_RB_Send_Dots(
       LB_FREE(&dotbuf);
       LB_TRACE_EXIT(lb, yo);
       return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    }
+
+    /* Communicate Local IDs, if any */
+    if (num_lid_entries) {
+      message_tag--;
+      ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
+                        sizeof(LB_ID_TYPE)*num_lid_entries,
+                        (char *) &((*lidpt)[keep*num_lid_entries]));
+      if (ierr != COMM_OK && ierr != COMM_WARN) {
+        LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+        LB_FREE(&gidbuf);
+        LB_FREE(&lidbuf);
+        LB_FREE(&dotbuf);
+        LB_TRACE_EXIT(lb, yo);
+        return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      }
     }
   }
 
@@ -423,8 +462,10 @@ int LB_RB_Send_Dots(
 
   ierr = LB_Comm_Destroy(&cobj);
 
-  LB_FREE(&gidbuf);
-  LB_FREE(&lidbuf);
+  if (use_ids) {
+    LB_FREE(&gidbuf);
+    LB_FREE(&lidbuf);
+  }
   LB_FREE(&dotbuf);
     
   *dotnum = dotnew;
@@ -523,6 +564,24 @@ int num_lid_entries = lb->Num_LID;
   }
 
   return(LB_OK);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_Use_IDs(LB *lb)
+{
+/* Function that returns a flag indicating whether or not global and
+ * local IDs should be stored, manipulated, and communicated within the
+ * RCB and RIB algorithms.  
+ * IDs are used for two purposes in RCB and RIB:
+ * 1.  To build import lists.  When Return_Lists == NONE, import lists are not
+ * built, so there is no need to carry along the IDs,
+ * 2.  To be printed as debugging information.  Only for high debug levels are
+ * the IDs printed; for lower levels, the IDs need not be carried along.
+ */
+  return (lb->Return_Lists || (lb->Debug_Level >= LB_DEBUG_ALL));
 }
 
 /*****************************************************************************/

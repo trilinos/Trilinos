@@ -19,12 +19,14 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RIB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag)
+int LB_RIB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
+                           int use_ids)
 {
 /* Function to build the geometry-based data structures for RIB method. */
 char           *yo = "LB_RIB_Build_Structure";
 RIB_STRUCT     *rib;                  /* Data structure for RIB.             */
-int            ierr = 0;
+struct rib_tree *treeptr;
+int            i, ierr = 0;
 
   /* Allocate an RIB data structure for this load balancing structure.
      If the previous data structure is still there, free the Dots and IDs first;
@@ -49,6 +51,14 @@ int            ierr = 0;
       LB_RIB_Free_Structure(lb);
       return(LB_MEMERR);
     }
+    /* initialize Tree_Ptr */
+    for (i = 0; i < lb->Num_Proc; i++) {
+      treeptr = &(rib->Tree_Ptr[i]);
+      treeptr->cm[0] = treeptr->cm[1] = treeptr->cm[2] = 0.0;
+      treeptr->ev[0] = treeptr->ev[1] = treeptr->ev[2] = 0.0;
+      treeptr->cut = 0.0;
+      treeptr->parent = treeptr->left_leaf = treeptr->right_leaf = 0;
+    }
   }
   else {
     rib = (RIB_STRUCT *) lb->Data_Structure;
@@ -59,7 +69,7 @@ int            ierr = 0;
 
   ierr = LB_RB_Build_Structure(lb, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), num_obj, max_obj, &(rib->Num_Geom),
-                               wgtflag);
+                               wgtflag, use_ids);
   if (ierr) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
     LB_RIB_Free_Structure(lb);

@@ -16,7 +16,7 @@
 
 #include "shared_const.h"
 
-/* Data structures for parallel inertial recursive bisection method */
+/* Data structures for parallel recursive inertial bisection method */
 
 struct rib_tree {               /* tree of rib method cuts */
     double    cm[3];            /* center of mass */
@@ -28,14 +28,16 @@ struct rib_tree {               /* tree of rib method cuts */
 };
 
 typedef struct RIB_Struct {
-    LB_ID_PTR Global_IDs;
-    LB_ID_PTR Local_IDs;
+    LB_ID_PTR Global_IDs;       /* This array is NOT used if LB_Use_IDs returns
+                                   FALSE.   */
+    LB_ID_PTR Local_IDs;        /* This array is NOT used if LB_Use_IDs returns
+                                   FALSE.   */
     struct Dot_Struct *Dots;
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
 } RIB_STRUCT;
 
-extern int LB_RIB_Build_Structure(LB *, int *, int *, int);
+extern int LB_RIB_Build_Structure(LB *, int *, int *, int, int);
 extern void LB_RIB_Free_Structure(LB *);
 extern int LB_Set_RIB_Param(char *, char *);
 

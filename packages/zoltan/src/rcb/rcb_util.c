@@ -19,7 +19,8 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag)
+int LB_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag,
+                           int use_ids)
 {
 /*
  *  Function to build the geometry-based data structures for 
@@ -27,6 +28,7 @@ int LB_RCB_Build_Structure(LB *lb, int *num_obj, int *max_obj, int wgtflag)
  */
 char *yo = "LB_RCB_Build_Structure";
 RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
+struct rcb_tree *treeptr;
 int i, ierr = 0;
 int num_geom;
 
@@ -57,9 +59,14 @@ int num_geom;
       LB_RCB_Free_Structure(lb);
       return(LB_MEMERR);
     }
-    /* initialize dim to -1 to prevent use of cut */
-    for (i = 0; i < lb->Num_Proc; i++)
-       rcb->Tree_Ptr[i].dim = -1;
+    /* initialize Tree_Ptr */
+    for (i = 0; i < lb->Num_Proc; i++) {
+       treeptr = &(rcb->Tree_Ptr[i]);
+       /* initialize dim to -1 to prevent use of cut */
+       treeptr->dim = -1;
+       treeptr->cut = 0.0;
+       treeptr->parent = treeptr->left_leaf = treeptr->right_leaf = 0;
+    }
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
@@ -70,7 +77,7 @@ int num_geom;
 
   ierr = LB_RB_Build_Structure(lb, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), num_obj, max_obj, &num_geom,
-                               wgtflag);
+                               wgtflag, use_ids);
   if (ierr) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_RB_Build_Structure.");
     LB_RCB_Free_Structure(lb);

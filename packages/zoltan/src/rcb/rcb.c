@@ -53,6 +53,7 @@
 
 static int rcb_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
                  int, int, int, int, int);
+static void print_rcb_tree(LB *, struct rcb_tree *);
 
 
 /*  Parameters structure for RCB method.  Used in  */
@@ -175,8 +176,8 @@ static int rcb_fn(
 {
   char    yo[] = "rcb_fn";
   int     proc,nprocs;              /* my proc id, total # of procs */
-  LB_ID_PTR gidpt;                  /* pointer to rcb->Global_IDs. */
-  LB_ID_PTR lidpt;                  /* pointer to rcb->Local_IDs. */
+  LB_ID_PTR gidpt = NULL;           /* pointer to rcb->Global_IDs. */
+  LB_ID_PTR lidpt = NULL;           /* pointer to rcb->Local_IDs. */
   struct Dot_Struct *dotpt;         /* pointer to rcb->Dots. */
   struct rcb_box boxtmp;            /* tmp rcb box */
   int     pdotnum;                  /* # of dots - decomposition changes it */
@@ -219,16 +220,25 @@ static int rcb_fn(
   int     reuse_count[7];           /* counter (as above) for reuse to record
                                        the number of dots premoved */
   int     i,j;                      /* local variables */
+  int     use_ids;                  /* When true, global and local IDs will be
+                                       stored along with dots in the RCB_STRUCT.
+                                       When false, storage, manipulation, and
+                                       communication of IDs is avoided.     
+                                       Set by call to LB_Use_IDs().         */
 
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
   struct rcb_tree *treept = NULL;   /* tree of RCB cuts - only single cut on 
-                                      exit */
+                                       exit */
 
   double start_time, end_time;
   double lb_time[2];
-  int tmp_nprocs;                   /* added for Tflops_Special */
-  int old_nprocs;                   /* added for Tflops_Special */
+  int    tmp_nprocs;                /* added for Tflops_Special */
+  int    old_nprocs;                /* added for Tflops_Special */
+  double weight;                    /* weight for current partition */
+  double weightlo;                  /* weight of lower side of cut */
+  double weighthi;                  /* weight of upper side of cut */
+  int *dotlist;                     /* list of dots for find_median */
 
   /* MPI data types and user functions */
 
@@ -248,13 +258,21 @@ static int rcb_fn(
   proc = lb->Proc;
   nprocs = lb->Num_Proc;
 
+  /* initializations */
+
+  /* 
+   * Determine whether to store, manipulate, and communicate global and 
+   * local IDs.
+   */
+  use_ids = LB_Use_IDs(lb);
+
   /*
    *  Build the RCB Data structure and 
    *  set pointers to information in it.
    */
 
   start_time = LB_Time(lb->Timer);
-  ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+  ierr = LB_RCB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
     LB_PRINT_ERROR(proc, yo, 
                    "Error returned from LB_RCB_Build_Structure.");
@@ -311,11 +329,20 @@ static int rcb_fn(
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
+    dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+    if (dotlist == NULL) {
+      LB_FREE(&wgts);
+      LB_FREE(&dotmark);
+      LB_FREE(&coord);
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
   }
   else {
     dotmark = NULL;
     coord = NULL;
     wgts = NULL;
+    dotlist = NULL;
   }
 
   /* if reuse is turned on, turn on gen_tree since it is needed. */
@@ -349,7 +376,8 @@ static int rcb_fn(
       allocflag = 0;
       ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
                              outgoing, &dotnum, &dotmax, proc, &allocflag,
-                             overalloc, stats, reuse_count, lb->Communicator);
+                             overalloc, stats, reuse_count, use_ids,
+                             lb->Communicator);
       if (ierr) {
         LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
         LB_FREE(&proc_list);
@@ -386,10 +414,16 @@ static int rcb_fn(
 
   MPI_Op_create(&LB_rcb_box_merge,1,&box_op);
 
-  /* set dot weights = 1.0 if user didn't */
+  /* set dot weights = 1.0 if user didn't and determine total weight */
 
-  if (!wgtflag)
+  if (!wgtflag) {
     for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
+    weightlo = (double) dotnum;
+  }
+  else
+    for (weightlo = 0.0, i=0; i < dotnum; i++)
+       weightlo += dotpt[i].Weight;
+  MPI_Allreduce(&weightlo, &weight, 1, MPI_DOUBLE, MPI_SUM, lb->Communicator);
 
   if (check_geom) {
     ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
@@ -477,6 +511,7 @@ static int rcb_fn(
       LB_FREE(&dotmark);
       LB_FREE(&coord);
       LB_FREE(&wgts);
+      LB_FREE(&dotlist);
       dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
         LB_TRACE_EXIT(lb, yo);
@@ -490,6 +525,14 @@ static int rcb_fn(
       }
       wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
+        LB_FREE(&dotmark);
+        LB_FREE(&coord);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+      if (dotlist == NULL) {
+        LB_FREE(&wgts);
         LB_FREE(&dotmark);
         LB_FREE(&coord);
         LB_TRACE_EXIT(lb, yo);
@@ -516,7 +559,9 @@ static int rcb_fn(
 
     if (!LB_find_median(lb, coord, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess, &(counters[0]),
-                        nprocs, old_nprocs, proclower)) {
+                        nprocs, old_nprocs, proclower, wgtflag, rcbbox->lo[dim],
+                        rcbbox->hi[dim], weight, &weightlo, &weighthi,
+                        dotlist)) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_find_median.");
       LB_FREE(&dotmark);
       LB_FREE(&coord);
@@ -524,6 +569,11 @@ static int rcb_fn(
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
+
+    if (set)    /* set weight for current partition */
+       weight = weighthi;
+    else
+       weight = weightlo;
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) time3 = LB_Time(lb->Timer);
 
@@ -553,7 +603,7 @@ static int rcb_fn(
     allocflag = 0;
     ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
-                               stats, counters, local_comm, proclower,
+                               stats, counters, use_ids, local_comm, proclower,
                                old_nprocs);
     if (ierr) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
@@ -605,6 +655,7 @@ static int rcb_fn(
   LB_FREE(&coord);
   LB_FREE(&wgts);
   LB_FREE(&dotmark);
+  LB_FREE(&dotlist);
 
   end_time = LB_Time(lb->Timer);
   lb_time[1] = end_time - start_time;
@@ -639,6 +690,7 @@ static int rcb_fn(
   /*  build return arguments */
 
   if (lb->Return_Lists) {
+    /* lb->Return_Lists is true ==> use_ids is true */
     *num_import = dotnum - dottop;
     if (*num_import > 0) {
       ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
@@ -652,15 +704,18 @@ static int rcb_fn(
     }
   }
 
+  if (lb->Debug_Level >= LB_DEBUG_ALL)
+    print_rcb_tree(lb, &(treept[proc]));
+
   if (gen_tree) {
     MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
-       treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
+      treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
     treept[0].dim = 0;
     for (i = 1; i < nprocs; i++)
-       if (treept[i].parent > 0)
-          treept[treept[i].parent - 1].left_leaf = i;
-       else if (treept[i].parent < 0)
-          treept[-treept[i].parent - 1].right_leaf = i;
+      if (treept[i].parent > 0)
+        treept[treept[i].parent - 1].left_leaf = i;
+      else if (treept[i].parent < 0)
+        treept[-treept[i].parent - 1].right_leaf = i;
   }
   else {
     treept[0].dim = -1;
@@ -680,6 +735,7 @@ static int rcb_fn(
   }
 
   if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    /* lb->Debug_Level >= LB_DEBUG_ALL ==> use_ids is true */
     LB_RB_Print_All(lb, rcb->Global_IDs, rcb->Dots, 
                     pdotnum, pdottop, *num_import,
                     *import_global_ids, *import_procs);
@@ -725,4 +781,16 @@ void LB_rcb_box_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
     if (box1->hi[i] > box2->hi[i])
       box2->hi[i] = box1->hi[i];
   }
+}
+
+static void print_rcb_tree(LB *lb, struct rcb_tree *treept)
+{
+  LB_Print_Sync_Start(lb->Communicator, TRUE);
+  printf("Proc %d:  Tree Struct:\n", lb->Proc);
+  printf("          cut        = %e\n", treept->cut);
+  printf("          dim        = %d\n", treept->dim);
+  printf("          parent     = %d\n", treept->parent);
+  printf("          left_leaf  = %d\n", treept->left_leaf);
+  printf("          right_leaf = %d\n", treept->right_leaf);
+  LB_Print_Sync_End(lb->Communicator, TRUE);
 }

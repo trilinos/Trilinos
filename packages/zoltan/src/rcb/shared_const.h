@@ -30,18 +30,18 @@ struct Dot_Struct {	        /* dot = point in 3-space */
 };
 
 extern int LB_RB_Build_Structure(LB *, LB_ID_PTR *, LB_ID_PTR *, 
-  struct Dot_Struct **, int *, int *, int *, int);
+  struct Dot_Struct **, int *, int *, int *, int, int);
 
 extern void LB_RB_Print_All(LB *, LB_ID_PTR , struct Dot_Struct *,
   int , int , int , LB_ID_PTR , int *);
 
 extern int LB_RB_Send_Outgoing(LB *, LB_ID_PTR *, LB_ID_PTR *,
   struct Dot_Struct **, int *, int *, int *, int *, int, int *, double, int,
-  int *, MPI_Comm, int, int);
+  int *, int, MPI_Comm, int, int);
 
 extern int LB_RB_Send_Dots(LB *, LB_ID_PTR *, LB_ID_PTR *,
   struct Dot_Struct **, int *, int *, int, int *, int *, int, int *, double,
-  int, int *, MPI_Comm);
+  int, int *, int, MPI_Comm);
 
 extern int LB_RB_Return_Arguments(LB *, LB_ID_PTR, LB_ID_PTR, 
   struct Dot_Struct *, int, LB_ID_PTR *, LB_ID_PTR *, int **, int);
@@ -53,5 +53,7 @@ extern int LB_RB_check_geom_output(LB *, struct Dot_Struct *,
 
 extern void LB_RB_stats(LB *, double, struct Dot_Struct *, int , double *, 
   int *, int, int *, void *, int);
+
+extern int LB_Use_IDs(LB *);
 
 #endif

@@ -31,6 +31,7 @@
    can extend "Dot_Struct" data structure in calling program, see shared_const.h
    returned tree only contains one cut on each proc,
    need to do MPI_Allgather if wish to collect it on all procs */
+#define MYHUGE 1.0e30
 
 /*  RIB_OUTPUT_LEVEL = 0  No statistics logging */
 /*  RIB_OUTPUT_LEVEL = 1  Log times and counts, print summary */
@@ -41,6 +42,9 @@
 
 static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
             int, int, int, int);
+static void print_rib_tree(LB *, struct rib_tree *);
+/* for Tflops_Special */
+static void LB_min_max(double *, double *, int, int, int, MPI_Comm);
 
 /*  Parameters structure for RIB method.  Used in  */
 /*  LB_Set_RIB_Param and LB_RIB.                      */
@@ -150,8 +154,8 @@ static int rib_fn(
 {
   char    yo[] = "rib_fn";
   int     proc,nprocs;        /* my proc id, total # of procs */
-  LB_ID_PTR gidpt;            /* local global IDs array. */
-  LB_ID_PTR lidpt;            /* local local IDs array. */
+  LB_ID_PTR gidpt = NULL;     /* local global IDs array. */
+  LB_ID_PTR lidpt = NULL;     /* local local IDs array. */
   struct Dot_Struct *dotpt;   /* local dot arrays */
   int     pdotnum;            /* # of dots - decomposition changes it */
   int     pdottop;            /* dots >= this index are new */
@@ -192,6 +196,12 @@ static int rib_fn(
                                  5 = # of times a previous cut is re-used
                                  6 = # of reallocs of dot array */
   int     i;                  /* local variables */
+  int     use_ids;            /* When true, global and local IDs will be
+                                 stored along with dots in the RCB_STRUCT.
+                                 When false, storage, manipulation, and
+                                 communication of IDs is avoided.     
+                                 Set by call to LB_Use_IDs().         */
+
 
   RIB_STRUCT *rib = NULL;     /* Pointer to data structures for RIB */
   struct rib_tree *treept = NULL; /* tree of cuts - single cut on exit*/
@@ -200,6 +210,12 @@ static int rib_fn(
   double lb_time[2];
   int tmp_nprocs;             /* added for Tflops_Special */
   int old_nprocs;             /* added for Tflops_Special */
+  double valuelo;             /* smallest value of value[i] */
+  double valuehi;             /* largest value of value[i] */
+  double weight;              /* weight for current partition */
+  double weightlo;            /* weight of lower side of cut */
+  double weighthi;            /* weight of upper side of cut */
+  int *dotlist;               /* list of dots for find_median */
 
   /* MPI data types and user functions */
 
@@ -217,12 +233,18 @@ static int rib_fn(
   nprocs = lb->Num_Proc;
 
   /*
+   * Determine whether to store, manipulate, and communicate global and
+   * local IDs.
+   */
+  use_ids = LB_Use_IDs(lb);
+
+  /*
    *  Build the RIB Data structure and
    *  set pointers to information in it.
    */
 
   start_time = LB_Time(lb->Timer);
-  ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag);
+  ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
   if (ierr == LB_FATAL || ierr == LB_MEMERR) {
     LB_PRINT_ERROR(proc, yo, "Error returned from LB_RIB_Build_Structure.");
     LB_TRACE_EXIT(lb, yo);
@@ -275,17 +297,32 @@ static int rib_fn(
       LB_TRACE_EXIT(lb, yo);
       return LB_MEMERR;
     }
+    dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+    if (dotlist == NULL) {
+      LB_FREE(&wgts);
+      LB_FREE(&dotmark);
+      LB_FREE(&value);
+      LB_TRACE_EXIT(lb, yo);
+      return LB_MEMERR;
+    }
   }
   else {
     dotmark = NULL;
     value = NULL;
     wgts = NULL;
+    dotlist = NULL;
   }
 
-  /* set dot weights = 1.0 if user didn't */
+  /* set dot weights = 1.0 if user didn't and determine total weight */
 
-  if (!wgtflag)
+  if (!wgtflag) {
     for (i = 0; i < dotnum; i++) dotpt[i].Weight = 1.0;
+    weightlo = (double) dotnum;
+  }
+  else
+    for (weightlo = 0.0, i=0; i < dotnum; i++)
+       weightlo += dotpt[i].Weight;
+  MPI_Allreduce(&weightlo, &weight, 1, MPI_DOUBLE, MPI_SUM, lb->Communicator);
 
   if (check_geom) {
     ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
@@ -342,6 +379,7 @@ static int rib_fn(
       LB_FREE(&dotmark);
       LB_FREE(&value);
       LB_FREE(&wgts);
+      LB_FREE(&dotlist);
       dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
         LB_TRACE_EXIT(lb, yo);
@@ -355,6 +393,14 @@ static int rib_fn(
       }
       wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
+        LB_FREE(&dotmark);
+        LB_FREE(&value);
+        LB_TRACE_EXIT(lb, yo);
+        return LB_MEMERR;
+      }
+      dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
+      if (dotlist == NULL) {
+        LB_FREE(&wgts);
         LB_FREE(&dotmark);
         LB_FREE(&value);
         LB_TRACE_EXIT(lb, yo);
@@ -379,17 +425,36 @@ static int rib_fn(
              ierr = LB_inertial1d(dotpt, dotnum, wgtflag, cm, evec, value);
              break;
        }
+       valuelo = MYHUGE;
+       valuehi = -MYHUGE;
+       for (i = 0; i < dotnum; i++) {
+          if (value[i] < valuelo) valuelo = value[i];
+          if (value[i] > valuehi) valuehi = value[i];
+       }
+       if (lb->Tflops_Special)
+          LB_min_max(&valuelo, &valuehi, proclower, proc, old_nprocs,
+                     local_comm);
+       else {
+          valuehalf = valuehi;
+          MPI_Allreduce(&valuehalf,&valuehi,1,MPI_DOUBLE,MPI_MAX,local_comm);
+          valuehalf = valuelo;
+          MPI_Allreduce(&valuehalf,&valuelo,1,MPI_DOUBLE,MPI_MIN,local_comm);
+       }
     }
-    else                      /* For Tflops_Special initialize value */
+    else {                    /* For Tflops_Special initialize value */
        for (i = 0; i < dotmax; i++)
           value[i] = 0.0;
+       valuelo = valuehi = 0.0;
+    }
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
       time2 = LB_Time(lb->Timer);
 
     if (!LB_find_median(lb, value, wgts, dotmark, dotnum, proc, fractionlo,
                         local_comm, &valuehalf, first_guess,
-                        &(counters[0]), nprocs, old_nprocs, proclower)) {
+                        &(counters[0]), nprocs, old_nprocs, proclower,
+                        wgtflag, valuelo, valuehi, weight, &weightlo,
+                        &weighthi, dotlist)) {
       LB_PRINT_ERROR(proc, yo, "Error returned from find_median.");
       LB_FREE(&dotmark);
       LB_FREE(&value);
@@ -397,6 +462,11 @@ static int rib_fn(
       LB_TRACE_EXIT(lb, yo);
       return LB_FATAL;
     }
+
+    if (set)    /* set weight for current partition */
+       weight = weighthi;
+    else
+       weight = weightlo;
 
     if (stats || (lb->Debug_Level >= LB_DEBUG_ATIME)) 
       time3 = LB_Time(lb->Timer);
@@ -424,7 +494,7 @@ static int rib_fn(
 
     ierr = LB_RB_Send_Outgoing(lb, &gidpt, &lidpt, &dotpt, dotmark, &dottop,
                                &dotnum, &dotmax, set, &allocflag, overalloc,
-                               stats, counters, local_comm, proclower,
+                               stats, counters, use_ids, local_comm, proclower,
                                old_nprocs);
     if (ierr) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Outgoing.");
@@ -474,6 +544,7 @@ static int rib_fn(
   LB_FREE(&value);
   LB_FREE(&wgts);
   LB_FREE(&dotmark);
+  LB_FREE(&dotlist);
 
   end_time = LB_Time(lb->Timer);
   lb_time[1] = end_time - start_time;
@@ -508,6 +579,7 @@ static int rib_fn(
   /*  build return arguments */
 
   if (lb->Return_Lists) {
+    /* lb->Return_Lists is true ==> use_ids is true */
     *num_import = dotnum - dottop;
     if (*num_import > 0) {
       ierr = LB_RB_Return_Arguments(lb, gidpt, lidpt, dotpt, *num_import,
@@ -521,6 +593,9 @@ static int rib_fn(
       }
     }
   }
+
+  if (lb->Debug_Level >= LB_DEBUG_ALL)
+    print_rib_tree(lb, &(treept[proc]));
 
   if (gen_tree) {
     MPI_Allgather(&treept[proc], sizeof(struct rib_tree), MPI_BYTE,
@@ -549,6 +624,7 @@ static int rib_fn(
   }
 
   if (lb->Debug_Level >= LB_DEBUG_ALL) {
+    /* lb->Debug_Level >= LB_DEBUG_ALL ==> use_ids is true */
     LB_RB_Print_All(lb, rib->Global_IDs, rib->Dots, 
                     pdotnum, pdottop, *num_import, 
                     *import_global_ids, *import_procs);
@@ -569,4 +645,83 @@ static int rib_fn(
   LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
   return(LB_OK);
+}
+
+static void print_rib_tree(LB *lb, struct rib_tree *treept)
+{
+  LB_Print_Sync_Start(lb->Communicator, TRUE);
+  printf("Proc %d:  Tree Struct:\n", lb->Proc);
+  printf("          cm         = (%e,%e,%e)\n", 
+         treept->cm[0], treept->cm[1], treept->cm[2]);
+  printf("          ev         = (%e,%e,%e)\n", 
+         treept->ev[0], treept->ev[1], treept->ev[2]);
+  printf("          cut        = %e\n", treept->cut);
+  printf("          parent     = %d\n", treept->parent);
+  printf("          left_leaf  = %d\n", treept->left_leaf);
+  printf("          right_leaf = %d\n", treept->right_leaf);
+  LB_Print_Sync_End(lb->Communicator, TRUE);
+}
+
+static void LB_min_max(
+   double   *min,             /* minimum value */
+   double   *max,             /* maximum value */
+   int      proclower,        /* smallest processor in partition */
+   int      proc,             /* rank of processor in global partition */
+   int      nprocs,           /* number of processors in partition */
+   MPI_Comm comm
+)
+{
+   double   tmp[2], tmp1[2];  /* temporaries for min/max */
+   int      tag = 32100;      /* message tag */
+   int      rank;             /* rank of processor in partition */
+   int      partner;          /* message partner in binary exchange */
+   int      to;               /* message partner not in binary exchange */
+   int      mask;             /* mask to determine communication partner */
+   int      nprocs_small;     /* largest power of 2 contained in nprocs */
+   int      hbit;             /* 2^hbit = nproc_small */
+   int      i;                /* loop counter */
+   MPI_Status status;
+
+   /* This routine finds the global min of min and the global max of max */
+
+   rank = proc - proclower;
+   tmp[0] = *min;
+   tmp[1] = *max;
+
+   /* Find next lower power of 2. */
+   for (hbit = 0; (nprocs >> hbit) != 1; hbit++);
+ 
+   nprocs_small = 1 << hbit;
+   if (nprocs_small * 2 == nprocs) {
+      nprocs_small *= 2;
+      hbit++;
+   }
+ 
+   to = proclower + (rank ^ nprocs_small);
+   if (rank & nprocs_small) {  /* processors greater than largest power of 2 */
+      MPI_Send(tmp, 2, MPI_DOUBLE, to, tag, comm);
+      tag += hbit + 1;
+      MPI_Recv(tmp, 2, MPI_DOUBLE, to, tag, comm, &status);
+   }
+   else {   /* processors within greatest power of 2 */
+      if (rank + nprocs_small < nprocs) {
+         MPI_Recv(tmp1, 2, MPI_DOUBLE, to, tag, comm, &status);
+         if (tmp1[0] < tmp[0]) tmp[0] = tmp1[0];
+         if (tmp1[1] > tmp[1]) tmp[1] = tmp1[1];
+      }  
+      for (mask = nprocs_small >> 1; mask; mask >>= 1) { /* binary exchange */
+         tag++;
+         partner = proclower + (rank ^ mask);
+         MPI_Send(tmp, 2, MPI_DOUBLE, partner, tag, comm);
+         MPI_Recv(tmp1, 2, MPI_DOUBLE, partner, tag, comm, &status);
+         if (tmp1[0] < tmp[0]) tmp[0] = tmp1[0];
+         if (tmp1[1] > tmp[1]) tmp[1] = tmp1[1];
+      }  
+      tag++;
+      if (rank + nprocs_small < nprocs)
+         MPI_Send(tmp, 2, MPI_DOUBLE, to, tag, comm);
+   }
+
+   *min = tmp[0];
+   *max = tmp[1];
 }

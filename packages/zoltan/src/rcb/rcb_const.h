@@ -43,18 +43,22 @@ typedef struct RCB_Struct {
                                 Dots[i] starts in Global_IDs[i*lb->Num_GID].
                                 Because lb->Num_GID is determined at runtime,
                                 this info is most easily stored, allocated and
-                                reallocated separately from Dots. */
+                                reallocated separately from Dots. 
+                                This array is NOT used if LB_Use_IDs returns
+                                FALSE.   */
   LB_ID_PTR Local_IDs;       /* Pointer to array of local IDs; local ID of 
                                 Dots[i] starts in Local_IDs[i*lb->Num_LID].
                                 Because lb->Num_LID is determined at runtime,
                                 this info is most easily stored, allocated and
-                                reallocated separately from Dots. */
+                                reallocated separately from Dots. 
+                                This array is NOT used if LB_Use_IDs returns
+                                FALSE.   */
   struct Dot_Struct *Dots;     
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
 } RCB_STRUCT;
 
-extern int LB_RCB_Build_Structure(LB *, int *, int *, int);
+extern int LB_RCB_Build_Structure(LB *, int *, int *, int, int);
 extern void LB_RCB_Free_Structure(LB *);
 extern int LB_Set_RCB_Param(char *, char *);
 
