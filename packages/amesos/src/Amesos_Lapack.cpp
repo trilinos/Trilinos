@@ -259,9 +259,9 @@ int Amesos_Lapack::SolveSerial(Epetra_MultiVector& X,
       DenseB(i,j) = B[j][i];
 
   DenseSolver_.SetVectors(DenseX,DenseB);
-  (DenseSolver_.Solve());
+  AMESOS_CHK_ERR(DenseSolver_.Solve());
 
-  for (int i = 0 ; i < NumMyRows() ; ++i)
+  for (int i = 0 ; i < NumGlobalRows() ; ++i)
     for (int j = 0 ; j < NumVectors ; ++j)
        X[j][i] = DenseX(i,j);
 
