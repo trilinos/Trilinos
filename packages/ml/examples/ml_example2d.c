@@ -546,18 +546,20 @@ null_vect[ i*ndim+ leng + 1 ]=-1.;
       /* set up smoothers */
 
       for (level = N_levels-1; level > coarsest_level; level--) {
+/*
          ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
                                 parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
+*/
 
 /*
          ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, .67);
          ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth, .67 );
+*/
 
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_PRESMOOTHER, nsmooth,1.);
          ML_Gen_Smoother_SymGaussSeidel(ml, level, ML_POSTSMOOTHER, nsmooth,1.);
-*/
       }
 
       if (coarse_iterations == 0) ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
