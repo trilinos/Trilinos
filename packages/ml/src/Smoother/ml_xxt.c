@@ -1,40 +1,25 @@
-/* ******************************************************************** */
-/* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */ 
-/* ******************************************************************** */
-
-/* ******************************************************************** */
-/* ******************************************************************** */
-/* ML interface to XXT (by Henry Tufo) :                                */
-/*   Author : Ray Tuminaro (SNL)                                        */
-/*   Date   : July, 2000                                                */
-/* ******************************************************************** */
-
 #include "ml_include.h"
 extern int ML_gpartialsum_int(int val, ML_Comm *comm);
-extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, 
-                  int *cur_length, int total_length,int sub_mask);
-extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
-                  int start_location, int total_send, ML_Comm *comm,
-                  int mask);
 
-/* ******************************************************************** */
-/* setup for XXT                                                        */
-/* -------------------------------------------------------------------- */
-
-int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
+extern int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
+                    int total_length,int sub_mask);
+setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
         int **sep_size, int *Nseparators, int *Nlocal, int *Nghost,
-        ML_Operator **matvec_data) 
-{
-   int           i, j, jj, kk, Nrows, start, *sep, *s_sizes, *mapper;
-   int           Nsend, Nrecv, N_procs, N_bits, mask, proc, mask2;
-   int           total_rows, sep_space, sub_mask, N_count, old_Ncount;
-   int           N_nz, allocated, *bindx, *row_ptr, row_length;
-   int           *neighbors, max_nz_per_row;
-   double        *dmapper, *val;
-   ML_Operator   *Amat, *omatrix;
+        ML_Operator **matvec_data) {
+
+   int *sep, *s_sizes, *mapper;
+   int i, j, jj, kk, *global_numbering, Nsend, Nrecv, N_procs, N_bits;
+   int start, mask2;
+   int Nrows;
+   ML_Operator *Amat, *omatrix;
    ML_CommInfoOP *getrow_comm;
-   struct        ML_CSR_MSRdata *temp;
+   int total_rows, sep_space, sub_mask, N_count, old_Ncount, mask, proc;
+   double *dmapper;
+   int N_nz, allocated, *bindx, *row_ptr, row_length, max_nz_per_row;
+   int *neighbors;
+   double *val;
+   struct ML_CSR_MSRdata *temp;
+int kkk;
 
    Amat = &(my_ml->Amat[grid0]);
    if (Amat->matvec->ML_id == ML_EMPTY)
@@ -42,6 +27,7 @@ int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    if (Amat->getrow->ML_id == ML_EMPTY)
       perror("Get row not set!!! Can't setup henry\n");
+
 
    Nrows = Amat->getrow->Nrows;
    getrow_comm = Amat->getrow->pre_comm;
@@ -52,14 +38,12 @@ int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    N_procs = my_ml->comm->ML_nprocs;
    proc    = my_ml->comm->ML_mypid;
    *Nlocal = Nrows;
-
    /* generate a unique numbering */
 
    start = ML_gpartialsum_int(Nrows, my_ml->comm);
 
    Nrecv = 0; Nsend = 0;
-   for (i = 0; i < getrow_comm->N_neighbors; i++) 
-   {
+   for (i = 0; i < getrow_comm->N_neighbors; i++) {
       Nrecv += getrow_comm->neighbors[i].N_rcv;
       Nsend += getrow_comm->neighbors[i].N_send;
    }
@@ -77,8 +61,7 @@ int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
 
    N_bits = 0;
    i      = N_procs;
-   while( i > 1) 
-   {
+   while( i > 1) {
      i = i/2;
      N_bits++;
    }
@@ -97,50 +80,47 @@ int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    *Nseparators = N_bits + 1;
    old_Ncount = N_count;
    mask2 = 0;
-   for (j = N_bits-1 ; j >= 0; j--) 
-   {
-      mask = 1<<j;
-      if ( (mask & proc) == 0) 
-      {
-         for (i = 0; i < getrow_comm->N_neighbors; i++) 
-         {
-            if (((mask2 & proc) == (mask2 & getrow_comm->neighbors[i].ML_id)) &
-                ((mask & getrow_comm->neighbors[i].ML_id) != 0) ) 
-            {
-               for (jj = 0; jj < getrow_comm->neighbors[i].N_send; jj++) 
-               {
-                  kk = getrow_comm->neighbors[i].send_list[jj];
-                  if (mapper[kk] > 0) 
-                  {
-                     sep[N_count++] = mapper[kk];
-                     mapper[kk] = -mapper[kk];
-                  }
-               }
-            }
-         }
-      }
-      mask2 += mask;
-      i = N_count - old_Ncount;
-      ML_Comm_subGappendInt(my_ml->comm, &(sep[old_Ncount]),&i,
-                            sep_space-old_Ncount, sub_mask);
+   for (j = N_bits-1 ; j >= 0; j--) {
+     mask = 1<<j;
+     if ( (mask & proc) == 0) {
+        for (i = 0; i < getrow_comm->N_neighbors; i++) {
+           if (((mask2 & proc) == (mask2 & getrow_comm->neighbors[i].ML_id)) &
+               ((mask & getrow_comm->neighbors[i].ML_id) != 0) ) {
+              for (jj = 0; jj < getrow_comm->neighbors[i].N_send; jj++) {
+                kk = getrow_comm->neighbors[i].send_list[jj];
+                if (mapper[kk] > 0) {
+                   sep[N_count++] = mapper[kk];
+                   mapper[kk] = -mapper[kk];
+                }
+              }
+           }
+        }
+     }
+     mask2 += mask;
+     i = N_count - old_Ncount;
+     ML_Comm_subGappendInt(my_ml->comm, &(sep[old_Ncount]),&i,
+                           sep_space-old_Ncount, sub_mask);
 
-      ML_sort(i, &(sep[old_Ncount]) );
 
-      sub_mask += mask;
-      s_sizes[N_bits-1-j] = i;
-      old_Ncount += i;
-      N_count = old_Ncount;
-   }
+     ML_sort(i, &(sep[old_Ncount]) );
 
-   /* take the domain interior as the last separator */
+     sub_mask += mask;
+     s_sizes[N_bits-1-j] = i;
+     old_Ncount += i;
+     N_count = old_Ncount;
 
-   N_count = old_Ncount;
-   for (i = 0; i < Nrows; i++) {
+  }
+
+  /* take the domain interior as the last separator */
+
+  N_count = old_Ncount;
+  for (i = 0; i < Nrows; i++) {
       if (mapper[i] > 0) sep[N_count++] = mapper[i];
-   }
-   s_sizes[N_bits] = N_count - old_Ncount;
+  }
+  s_sizes[N_bits] = N_count - old_Ncount;
 
-   for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = fabs(mapper[i]);
+
+  for (i = 0; i < Nrows+Nrecv; i++) mapper[i] = fabs(mapper[i]);
 
    /* generate a matrix-vector product (with sub communication) */
 
@@ -163,17 +143,15 @@ int setup_henry(ML *my_ml, int grid0, int **imapper, int **separator,
    N_nz = 0;
    row_ptr[0] = N_nz;
    max_nz_per_row = 0;
-   for (i = 0; i < Nrows; i++) 
-   {
+   for (i = 0; i < Nrows; i++) {
       ML_get_matrix_row(Amat, 1, &i, &allocated, &bindx, &val,
                         &row_length, N_nz);
-#ifdef ML_XXT_DEBUG
-if (proc == 0) 
-{
-   for(kkk = 0; kkk < row_length; kkk++) 
-      printf("A(%d,%d) = %e\n",i,bindx[N_nz+kkk],val[N_nz+kkk]);
+/*
+if (proc == 0) {
+for(kkk = 0; kkk < row_length; kkk++) 
+   printf("A(%d,%d) = %e\n",i,bindx[N_nz+kkk],val[N_nz+kkk]);
 }
-#endif
+*/
       N_nz += row_length;
       if (row_length > max_nz_per_row) max_nz_per_row = row_length;
       row_ptr[i+1] = N_nz;
@@ -183,7 +161,7 @@ if (proc == 0)
    temp->values        = val;
    temp->rowptr        = row_ptr;
 
-   omatrix = ML_Operator_Create(my_ml->comm);
+   omatrix = ML_Operator_Create();
    omatrix->data_destroy = ML_CSR_MSRdata_Destroy;
    ML_Operator_Set_1Levels(omatrix, Amat->from, Amat->to);
    ML_Operator_Set_ApplyFuncData(omatrix, Amat->invec_leng,
@@ -195,6 +173,7 @@ if (proc == 0)
    omatrix->max_nz_per_row = max_nz_per_row;
    omatrix->N_nonzeros     = N_nz;
    ML_Operator_Set_ApplyFunc (omatrix, ML_INTERNAL, CSR_matvec);
+
 
    neighbors = (int *) malloc(sizeof(int)*getrow_comm->N_neighbors);
    for (i = 0; i < getrow_comm->N_neighbors; i++)
@@ -212,11 +191,12 @@ if (proc == 0)
                         getrow_comm->neighbors[i].N_send,
                         getrow_comm->neighbors[i].send_list);
 
-   *matvec_data = omatrix;
-   *separator = sep;
-   *sep_size  = s_sizes;
-   *imapper   = mapper;
-   return 1;
+
+
+  *matvec_data = omatrix;
+  *separator = sep;
+  *sep_size  = s_sizes;
+  *imapper   = mapper;
 }
 
 /*************************************************************************/
@@ -262,48 +242,18 @@ int ML_gpartialsum_int(int val, ML_Comm *comm)
 {
 
   /* local variables */
-#ifdef out
 
   int   type;             /* type of next message */
   int   partner;          /* processor I exchange with */
   int   mask;             /* bit pattern identifying partner */
   int   hbit;             /* largest nonzero bit in nprocs */
   int   nprocs_small;     /* largest power of 2 <= nprocs */
-  int   node, nprocs, temp;
+  int   k;
+  int   node, nprocs;
   char *yo = "ML_gpartial_sum_int: ";
+  int   partial_sum = 0, temp;
+
   USR_REQ     request;  /* Message handle */
-#endif
-  int   partial_sum = 0;
-  int   *allvalues, *itemp;
-
-
-int i;
-
-  itemp = (int *) ML_allocate(comm->ML_nprocs*sizeof(int));
-  allvalues = (int *) ML_allocate(comm->ML_nprocs*sizeof(int));
-  if (allvalues == NULL) pr_error("ML_gpartialsum_int: out of space\n");
-  for (i = 0; i < comm->ML_nprocs; i++) allvalues[i] = 0;
-  allvalues[comm->ML_mypid] = val;
-  ML_gsum_vec_int(allvalues, itemp, comm->ML_nprocs, comm);
-/*
-if (comm->ML_mypid == 0) 
-   for (i = 0; i < comm->ML_nprocs; i++ ) printf("vvv(%d) = %d\n",i,allvalues[i]);
-*/
-
-  for (i = 0; i < comm->ML_mypid; i++) partial_sum += allvalues[i];
-
-/*
-printf("%d: partial sum %d\n",comm->ML_mypid,partial_sum);
-*/
-  
-  ML_free(itemp);
-  ML_free(allvalues);
-  return(partial_sum);
-
-#ifdef out
-
-  partial_sum = 0;
-
 
   /*********************** first executable statment *****************/
 
@@ -429,18 +379,16 @@ printf("%d: partial sum %d\n",comm->ML_mypid,partial_sum);
     }
   }
   return(partial_sum);
-#endif
 
 } /* ML_gpartial_sum_int */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
+
 
 int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length, 
                     int total_length,int sub_mask)
 {
    int     mask, partner, hbit, msgtype, msgbase=145;
-   int     nbytes, mypid, nprocs, sub_cube, nprocs_small;
+   int     i, k, nbytes, mypid, nprocs, sub_cube, nprocs_small;
    USR_REQ Request;
 
   /*********************** first executable statment *****************/
@@ -473,17 +421,15 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 
     /* post receives on the hypercube portion of the machine partition */
 
-    if ((sub_mask & partner) == sub_cube) 
-    {
-       if ( com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
+if ((sub_mask & partner) == sub_cube) {
+    if ( com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                        (total_length - *cur_length) * sizeof(int), &partner,
-                       &msgtype, com_ptr->USR_comm, (void *) &Request) ) 
-       {
-         (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
+                       &msgtype, com_ptr->USR_comm, (void *) &Request) ) {
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
                      "type = %d\n", mypid, msgtype);
-         exit(-1);
-       }
+      exit(-1);
     }
+}
   }
   else if (mypid & nprocs_small) {
 
@@ -492,26 +438,26 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
      * largest hypercube to the hypercube portion.
      */
 
-     if ((sub_mask & partner) == sub_cube) {
-        if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int), 
-    			       partner, msgtype, com_ptr->USR_comm)) {
-          (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
+if ((sub_mask & partner) == sub_cube) {
+    if (com_ptr->USR_sendbytes((void *) vals, (*cur_length)*sizeof(int), 
+			       partner, msgtype, com_ptr->USR_comm)) {
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
                      "type = %d\n", mypid, msgtype);
-          exit(-1);
-        }
-     }
+      exit(-1);
+    }
+}
   }
 
   if (mypid + nprocs_small < nprocs) {
 
     /* wait to receive the messages */
 
-     if ((sub_mask & partner) == sub_cube) {
-         nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
+if ((sub_mask & partner) == sub_cube) {
+    nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
                           (total_length - *cur_length)*sizeof(int), &partner,
                           &msgtype, com_ptr->USR_comm, (void *) &Request);
-         (*cur_length) += (nbytes / sizeof(int));
-     }
+    (*cur_length) += (nbytes / sizeof(int));
+}
   }
 
   /* Now do a binary exchange on nprocs_small nodes. */
@@ -519,27 +465,27 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
   if (!(mypid & nprocs_small)) {
     for (mask = nprocs_small >> 1; mask; mask >>= 1) {
       partner = mypid ^ mask;
-      if ((sub_mask & partner) == sub_cube) {
-         if (com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
+if ((sub_mask & partner) == sub_cube) {
+      if (com_ptr->USR_irecvbytes((void *) &(vals[*cur_length]),
                         (total_length - *cur_length)*sizeof(int), &partner,
                         &msgtype, com_ptr->USR_comm, (void *) &Request)) {
-           (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
+        (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
                        "type = %d\n", mypid, msgtype);
-           exit(-1);
-         }
+        exit(-1);
+      }
 
-         if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), 
+      if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), 
 			partner, msgtype, com_ptr->USR_comm)) {
-           (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
+        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
                        "type = %d\n", mypid, msgtype);
-           exit(-1);
-         }
+        exit(-1);
+      }
 
-         nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
+      nbytes = com_ptr->USR_waitbytes((void *) &(vals[*cur_length]),
                             (total_length - *cur_length)*sizeof(int), &partner,
                             &msgtype, com_ptr->USR_comm, (void *) &Request);
-         (*cur_length) += (nbytes / sizeof(int));
-      }
+      (*cur_length) += (nbytes / sizeof(int));
+}
     }
   }
 
@@ -547,45 +493,45 @@ int ML_Comm_subGappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 
   partner = mypid ^ nprocs_small;
   if (mypid & nprocs_small) {
-    if ((sub_mask & partner) == sub_cube) 
-    {
-       if (com_ptr->USR_irecvbytes((void *) vals, total_length*sizeof(int),
+if ((sub_mask & partner) == sub_cube) {
+    if (com_ptr->USR_irecvbytes((void *) vals, total_length*sizeof(int),
 			&partner,&msgtype,com_ptr->USR_comm,(void *) &Request)){
-         (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
+      (void) fprintf(stderr, "ERROR on node %d\nread failed, message "
                      "type = %d\n", mypid, msgtype);
-         exit(-1);
-       }
+      exit(-1);
     }
+}
   }
 
   else if (mypid+nprocs_small < nprocs ) {
-    if ((sub_mask & partner) == sub_cube) {
-      if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), partner,
+if ((sub_mask & partner) == sub_cube) {
+    if (com_ptr->USR_sendbytes((void *) vals, *cur_length*sizeof(int), partner,
 				msgtype, com_ptr->USR_comm )) {
-        (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
-                       "type = %d\n", mypid, msgtype);
-        exit(-1);
-      }
+      (void) fprintf(stderr, "ERROR on node %d\nwrite failed, message "
+                     "type = %d\n", mypid, msgtype);
+      exit(-1);
     }
+}
   }
 
   if (mypid & nprocs_small) {
-    if ((sub_mask & partner) == sub_cube) {
-      nbytes = com_ptr->USR_waitbytes((void *) vals, total_length*sizeof(int), 
+if ((sub_mask & partner) == sub_cube) {
+    nbytes = com_ptr->USR_waitbytes((void *) vals, total_length*sizeof(int), 
 			  &partner,&msgtype,com_ptr->USR_comm,(void *)&Request);
-      (*cur_length) = (nbytes / sizeof(int));
-    }
+    (*cur_length) = (nbytes / sizeof(int));
+}
   }
-  return 1;
 
 } /* ML_gappend */
 
-/* ******************************************************************** */
-/* ******************************************************************** */
+extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
+                      int start_location, int total_send, ML_Comm *comm,
+                      int mask);
 
-int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)
+/*int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)*/
+int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
-   int i, k, Nrows, *bindx, total_send, total_rcv;
+   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
    double *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;
@@ -623,13 +569,101 @@ int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)
   }
   return(1);
 }
+int ML_submv(ML_Operator *Amat, double p[], double ap[])
+{
+   int i, j, k, Nrows, total_send, total_rcv, nzeros, *col, allocated_space;
+   double *p2, *vals, sum;
+   ML_CommInfoOP *getrow_comm;
 
-/* ******************************************************************** */
-/* ******************************************************************** */
+   Nrows = Amat->matvec->Nrows;
+   allocated_space = Amat->max_nz_per_row+1;
+   cols = (int    *) malloc(allocated_space*sizeof(int   ));
+   vals = (double *) malloc(allocated_space*sizeof(double));
+   if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");
 
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      total_send = 0;
+      total_rcv = 0;
+      for (i = 0; i < getrow_comm->N_neighbors; i++) {
+         total_send += getrow_comm->neighbors[i].N_send;
+         total_rcv += getrow_comm->neighbors[i].N_rcv;
+      }
+      p2 = (double *) ML_allocate((Nrows+total_rcv+1)*sizeof(double));
+      for (i = 0; i < Nrows+total_rcv; i++) p2[i] = p[i];
+   }
+   else p2 = p;
+
+  for (i = 0; i < Nrows; i++) {
+     ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+     dtemp = 0.;
+     for (j = 0; j < length; j++)
+     {
+        col = cols[j];
+        dtemp += vals[j]*p2[col];
+     }
+     ap[i] = dtemp;
+
+
+  }
+
+  if (getrow_comm != NULL) {
+     for (i = 0; i < Nrows; i++) p[i] = p2[i];
+     ML_free(p2);
+  }
+  return(1);
+}
+int ML_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
+{
+   int i, j, k, Nrows, total_send, total_rcv, nzeros, *col, allocated_space;
+   double *p2, *vals, sum;
+   ML_CommInfoOP *getrow_comm;
+
+   Nrows = Amat->matvec->Nrows;
+   allocated_space = Amat->max_nz_per_row+1;
+   cols = (int    *) malloc(allocated_space*sizeof(int   ));
+   vals = (double *) malloc(allocated_space*sizeof(double));
+   if (vals == NULL) pr_error("Error in ML_submatvec(): Not enough space\n");
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      total_send = 0;
+      total_rcv = 0;
+      for (i = 0; i < getrow_comm->N_neighbors; i++) {
+         total_send += getrow_comm->neighbors[i].N_send;
+         total_rcv += getrow_comm->neighbors[i].N_rcv;
+      }
+      p2 = (double *) ML_allocate((Nrows+total_rcv+1)*sizeof(double));
+      for (i = 0; i < Nrows; i++) p2[i] = p[i];
+      for (i = Nrows; i < Nrows+total_rcv; i++) p2[i] = 0.0;
+      ML_subexchange_bdry(p2,getrow_comm, Nrows,total_send,Amat->to->comm,mask);
+   }
+   else p2 = p;
+
+  for (i = 0; i < Nrows; i++) {
+     ML_get_matrix_row(Amat, 1, &i , &allocated_space , &cols, &vals,
+                           &length, 0);
+     dtemp = 0.;
+     for (j = 0; j < length; j++)
+     {
+        col = cols[j];
+        dtemp += vals[j]*p2[col];
+     }
+     ap[i] = dtemp;
+
+
+  }
+
+  if (getrow_comm != NULL) {
+     for (i = 0; i < Nrows; i++) p[i] = p2[i];
+     ML_free(p2);
+  }
+  return(1);
+}
 int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
 {
-   int i, k, Nrows, *bindx, total_send, total_rcv;
+   int i, j, k, Nrows, *bindx, total_send, total_rcv, bindx_row, nzeros;
    double *p2, *val, sum;
    struct ML_CSR_MSRdata *temp;
    ML_CommInfoOP *getrow_comm;
@@ -669,7 +703,6 @@ int CSR_submatvec(ML_Operator *Amat, double p[], double ap[], int mask)
   }
   return(1);
 }
-
 /******************************************************************************/
 /******************************************************************************/
 /******************************************************************************/
@@ -708,7 +741,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 {
   register double *ptrd;
   double          *ptr_send_list, *ptr_recv_list, *orig_ptr;
-  int              type, N_neighbors, *temp, i, j, rtype;
+  int              type, N_neighbors, *temp, i, j, k, rtype;
   int             proc, sub_proc;
   USR_REQ         *request;
   ML_NeighborList *neighbor;
@@ -772,7 +805,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
     neighbor = &(comm_info->neighbors[i]);
     rtype = type;   j = sizeof(double)* neighbor->N_rcv;
     if ((neighbor->ML_id & mask) == sub_proc ) {
-       comm->USR_waitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
+       k = comm->USR_waitbytes((void *) ptr_recv_list, j, &(neighbor->ML_id),
                         &rtype, comm->USR_comm, request+i);
     }
     ptr_recv_list         += neighbor->N_rcv;
