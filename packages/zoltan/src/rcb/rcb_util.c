@@ -131,54 +131,56 @@ int i, ierr = 0;
    */
 
   if (lb->Get_Obj_List != NULL) {
+    if (*num_obj) {
 
-    /*
-     *  Call the application for the IDs of all objects and initialize the
-     *  dot for each object.
-     */
+      /*
+       *  Call the application for the IDs of all objects and initialize the
+       *  dot for each object.
+       */
 
-    objs_global = (LB_GID *) LB_Malloc((*num_obj)*sizeof(LB_GID),
-        __FILE__, __LINE__);
-    objs_local  = (LB_LID *) LB_Malloc((*num_obj)*sizeof(LB_LID),
-        __FILE__, __LINE__);
-    objs_wgt    = (float  *) LB_Malloc((*num_obj)*sizeof(float),
-        __FILE__, __LINE__);
-    if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
-              lb->Proc, yo);
+      objs_global = (LB_GID *) LB_Malloc((*num_obj)*sizeof(LB_GID),
+          __FILE__, __LINE__);
+      objs_local  = (LB_LID *) LB_Malloc((*num_obj)*sizeof(LB_LID),
+          __FILE__, __LINE__);
+      objs_wgt    = (float  *) LB_Malloc((*num_obj)*sizeof(float),
+          __FILE__, __LINE__);
+      if (objs_global == NULL || objs_local == NULL || objs_wgt == NULL) {
+        fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
+                lb->Proc, yo);
+        LB_FREE(&objs_global);
+        LB_FREE(&objs_local);
+        LB_FREE(&objs_wgt);
+        LB_RCB_Free_Structure(lb);
+        return(LB_MEMERR);
+      }
+
+      lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, 
+                       wgtflag, objs_wgt, &ierr);
+      if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+        fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
+                        "Get_Obj_List.\n", lb->Proc, yo);
+        LB_FREE(&objs_global);
+        LB_FREE(&objs_local);
+        LB_FREE(&objs_wgt);
+        LB_RCB_Free_Structure(lb);
+        return(ierr);
+      }
+
+      for (i = 0; i < *num_obj; i++) {
+        ierr = initialize_dot(lb, &(rcb->Dots[i]), objs_global[i],
+                              objs_local[i], wgtflag, objs_wgt[i]);
+        if (ierr == LB_FATAL || ierr == LB_MEMERR) 
+          break;
+      }
       LB_FREE(&objs_global);
       LB_FREE(&objs_local);
       LB_FREE(&objs_wgt);
-      LB_RCB_Free_Structure(lb);
-      return(LB_MEMERR);
-    }
-
-    lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, 
-                     wgtflag, objs_wgt, &ierr);
-    if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-      fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
-                      "Get_Obj_List.\n", lb->Proc, yo);
-      LB_FREE(&objs_global);
-      LB_FREE(&objs_local);
-      LB_FREE(&objs_wgt);
-      LB_RCB_Free_Structure(lb);
-      return(ierr);
-    }
-
-    for (i = 0; i < *num_obj; i++) {
-      ierr = initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i],
-                            wgtflag, objs_wgt[i]);
-      if (ierr == LB_FATAL || ierr == LB_MEMERR) 
-        break;
-    }
-    LB_FREE(&objs_global);
-    LB_FREE(&objs_local);
-    LB_FREE(&objs_wgt);
-    if (ierr == LB_FATAL || ierr == LB_MEMERR) {
-      fprintf(stderr, "[%d] Error in %s: Error returned from "
-                      "initialize_dot.\n", lb->Proc, yo);
-      LB_RCB_Free_Structure(lb);
-      return(ierr);
+      if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+        fprintf(stderr, "[%d] Error in %s: Error returned from "
+                        "initialize_dot.\n", lb->Proc, yo);
+        LB_RCB_Free_Structure(lb);
+        return(ierr);
+      }
     }
   }
   else if (lb->Get_First_Obj != NULL && lb->Get_Next_Obj != NULL) {
