@@ -1,9 +1,31 @@
-/*****************************************************************************/
-/* Copyright 2002, Sandia Corporation. The United States Government retains  */
-/* a nonexclusive license in this software as prescribed in AL 88-1 and AL   */
-/* 91-7. Export of this program may require a license from the United States */
-/* Government.                                                               */
-/*****************************************************************************/
+
+//@HEADER
+// ************************************************************************
+// 
+//               ML: A Multilevel Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
 
 // Example of wrappers for Aztec MSR or VBR matrices to Epetra_RowMatrix.
 //
@@ -11,7 +33,7 @@
 // ml_aztec_simple.cpp and ml_aztec_simple_METIS.cpp), then creates the
 // Epetra objects required by the class ML_Epetra::MultiLevelPreconditioner.
 //
-// Function Aztec2Petra (contained in the aztecoo package) is used.
+// This example makes use of Aztec2Petra() (contained in the aztecoo package).
 // This function creates shallow copies for vectors and for VBR matrices,
 // while MSR matrices (as in this example) are deep copied. The user
 // has to delete the created objects. For more details, please refer
@@ -24,24 +46,24 @@
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
-#include "ml_include.h"
 
 #ifdef HAVE_MPI
 #include "mpi.h"
 #endif
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "Aztec2Petra.h"
+#include "Teuchos_ParameterList.hpp"
 
 // includes required by ML
 #include "ml_epetra_preconditioner.h"
-#include "Teuchos_ParameterList.hpp"
+#include "ml_include.h"
 
+// data required by this example to build the Aztec matrix
 struct partition_data {               
   int *my_global_ids;      /* my_global_ids[i]: id of ith local unknown.     */
   int *needed_external_ids;/* global ids of ghost unknowns.                  */
@@ -53,11 +75,12 @@ struct partition_data {
   int Nghost;              /* number of ghost variables on processor.        */
 };
 
-/*****************************************************************************/
-/* Function definitions.                                                     */
-/*****************************************************************************/
 extern void        BuildPartition(struct partition_data *Partition);
 extern AZ_MATRIX   *BuildMatrix(struct partition_data *);
+
+// ============== //
+// example driver //
+// ============== //
 
 int main(int argc, char *argv[])
 {
@@ -132,7 +155,11 @@ int main(int argc, char *argv[])
   // examples.
   ML_Epetra::SetDefaults("DD",MLList);
 
+  // solve with symmetric Gauss-Seidel
+  MLList.set("smoother: type", "symmetric Gauss-Seidel");
+
   // create the preconditioner object and compute hierarchy
+  // (see comments contained in file ml_example_epetra_preconditioner.cpp)
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*EpetraMatrix, MLList, true);
 
   // tell AztecOO to use this preconditioner, then solve
@@ -142,11 +169,15 @@ int main(int argc, char *argv[])
   // solve with AztecOO //
   // ================== //
 
-  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  // GMRES is required if the preconditioner is non-symmetric (this
+  // depends on user's options). AZ_cg can be used for symmetric
+  // preconditioners
+
+  solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-12 tolerance  
-  solver.Iterate(500, 1e-12);
+  // solve with 500 iterations and 1e-5 tolerance  
+  solver.Iterate(500, 1e-5);
 
   // =========== //
   // free memory //

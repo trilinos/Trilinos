@@ -1,11 +1,43 @@
+
+//@HEADER
+// ************************************************************************
+// 
+//               ML: A Multilevel Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
 #include "ml_config.h"
 
-#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
+// The C++ interface of ML (more precisely,
+// ML_Epetra::MultiLevelPreconditioner), required Trilinos to be
+// configured with --enable-epetra --enable-teuchos. This example
+// required --enable-triutils (for the definition of the linear systems)
 
-#include "ml_include.h"
+#if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -14,22 +46,23 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
-#include "Epetra_IntVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Time.h"
 #include "AztecOO.h"
-
-// includes required by ML
-#include "ml_epetra_preconditioner.h"
-
 #include "Trilinos_Util_CrsMatrixGallery.h"
+// includes required by ML
+
+#include "ml_include.h"
+#include "ml_epetra_preconditioner.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
+
+// ============== //
+// example driver //
+// ============== //
 
 int main(int argc, char *argv[])
 {
@@ -41,20 +74,28 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  Epetra_Time Time(Comm);
-
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
-  // Various matrix examples are supported; please refer to the
+  // Several matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
+  // Most of the examples using the ML_Epetra::MultiLevelPreconditioner
+  // class are based on Epetra_CrsMatrix. Example
+  // `ml_example_epetra_preconditioner_vbr.cpp' shows how to define a
+  // Epetra_VbrMatrix.
   
+  // `laplace_2d' is a symmetric matrix; an example of non-symmetric
+  // matrices is `recirc_2d' (advection-diffusion in a box, with
+  // recirculating flow). The number of nodes must be a square number
+
   CrsMatrixGallery Gallery("laplace_2d", Comm);
   Gallery.Set("problem_size", 10000);
   
-  // retrive pointers for linear system matrix and linear problem
+  // The following methods of CrsMatrixGallery are used to get pointers
+  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
+
   Epetra_RowMatrix * A = Gallery.GetMatrix();
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
-  // Construct a solver object for this problem
+  // As we wish to use AztecOO, we need to construct a solver object for this problem
   AztecOO solver(*Problem);
 
   // =========================== begin of ML part ===========================
@@ -79,10 +120,11 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("aggregation: type (level 3)", "MIS");
   
-  // smoother is Gauss-Seidel. Example file 
+  // smoother is symmetric Gauss-Seidel. Example file 
   // ml_example_epetra_preconditioner_2level.cpp shows how to use
   // AZTEC's preconditioners as smoothers
-  MLList.set("smoother: type","Gauss-Seidel");
+
+  MLList.set("smoother: type","symmetric Gauss-Seidel");
 
   // use both pre and post smoothing
   MLList.set("smoother: pre or post", "both");
@@ -90,10 +132,15 @@ int main(int argc, char *argv[])
   // solve with serial direct solver KLU
   MLList.set("coarse: type","Amesos_KLU");
   
-  // create the preconditioner object and compute hierarchy
+  // create the preconditioning object. We suggest to use `new' and
+  // `delete' because the destructor contains some calls to MPI (as
+  // required by ML and possibly Amesos). This is an issue only if the
+  // destructor is called **after** MPI_Finalize().
+
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
-  // verify unused parameters on process 0
+  // verify unused parameters on process 0 (put -1 to print on all
+  // processes)
   MLPrec->PrintUnused(0);
 
   // tell AztecOO to use this preconditioner, then solve
@@ -105,11 +152,15 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
+  // The problem should converge as follows:
+  //
+  // proc       iterations       condition number
+  //   1             14               1.78
+  //   2             15               2.39
+  //   4             15               2.20
+
   solver.Iterate(500, 1e-12);
 
-  // print out some information about the preconditioner
-  //cout << MLPrec->GetOutputList();
-  
   delete MLPrec;
   
   // compute the real residual
@@ -121,7 +172,6 @@ int main(int argc, char *argv[])
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff << endl;
-    cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
 #ifdef EPETRA_MPI

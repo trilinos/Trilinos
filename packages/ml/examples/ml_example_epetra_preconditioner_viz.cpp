@@ -1,11 +1,44 @@
+
+//@HEADER
+// ************************************************************************
+// 
+//               ML: A Multilevel Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// 
+// ************************************************************************
+//@HEADER
+
 #ifndef HAVE_CONFIG_H
 #define HAVE_CONFIG_H
 #endif
+
+// The following header file contains macro definitions for ML. In particular, HAVE_ML_EPETRA,
+// HAVE_ML_TEUCHOS, HAVE_ML_TRIUTILS are defines in this file.
 #include "ml_config.h"
 
+// the following code cannot be compiled without these Trilinos
+// packages. Note that triutils is required in the examples only (to
+// generate the linear system), not by the ML library
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_TRIUTILS)
-
-#include "ml_include.h"
 
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -17,16 +50,15 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_SerialDenseVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_LinearProblem.h"
-#include "Epetra_Time.h"
 #include "AztecOO.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
 
-// includes required by ML
+#include "ml_include.h"
 #include "ml_epetra_preconditioner.h"
 
-#include "Trilinos_Util_CrsMatrixGallery.h"
+
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -41,8 +73,6 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
-  Epetra_Time Time(Comm);
-
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
@@ -54,7 +84,7 @@ int main(int argc, char *argv[])
   int NumPDEEqns = 5;
 
   VbrMatrixGallery Gallery("laplace_2d_9pt", Comm);
-  Gallery.Set("problem_size", 10000);
+  Gallery.Set("problem_size", 900);
 
   // retrive pointers for linear system matrix and linear problem
   Epetra_RowMatrix * A = Gallery.GetVbrMatrix(NumPDEEqns);
@@ -62,13 +92,12 @@ int main(int argc, char *argv[])
 
   // Construct a solver object for this problem
   AztecOO solver(*Problem);
-  // get coordinates of points (for Cartesian grid)
 
   // =========================== definition of coordinates =================
   
-  double * x_coord;
-  double * y_coord;
-  double * z_coord; // the problem is 2D, here z_coord will be NULL
+  double * x_coord = 0;
+  double * y_coord = 0;
+  double * z_coord = 0; // the problem is 2D, here z_coord will be NULL
   
   // use the following triutils matrix gallery function to get the
   // coordinates for a Cartesian grid. Note however that the
@@ -101,17 +130,20 @@ int main(int argc, char *argv[])
   MLList.set("aggregation: type", "Uncoupled");
   
   // ============== visualization with OpenDX. ==================
-  // - set "viz: enable" to false to disable visualization and
+  // - set "viz: enable" to `false' to disable visualization and
   //   statistics.
   // - "viz: dimensions" is the number of dimensions, from 1 to 3
   // - "viz: z-coordinates" can be used for 3D problems.
+
   MLList.set("viz: enable", true);
   MLList.set("viz: dimensions", 2);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
+
   // ============== end of visualization parameters =============
 
   // create the preconditioner object and compute hierarchy
+  // See comments in "ml_example_epetra_preconditioner.cpp"
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
 
   // tell AztecOO to use this preconditioner, then solve
@@ -123,7 +155,7 @@ int main(int argc, char *argv[])
   solver.SetAztecOption(AZ_output, 32);
 
   // solve with 500 iterations and 1e-12 tolerance  
-  solver.Iterate(500, 1e-12);
+  //solver.Iterate(500, 1e-12);
 
   delete MLPrec;
   
@@ -136,9 +168,13 @@ int main(int argc, char *argv[])
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff << endl;
-    cout << "Total Time = " << Time.ElapsedTime() << endl;
   }
 
+  // delete memory for coordinates
+  if( x_coord ) delete [] x_coord;
+  if( y_coord ) delete [] y_coord;
+  if( z_coord ) delete [] z_coord;
+  
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
