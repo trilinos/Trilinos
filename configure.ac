@@ -192,7 +192,10 @@ with the name of the package) and type "configure --help".
 
 A list of configuration options that are common to all
 Trilinos packages can be found on the web at
-"http://software.sandia.gov/Trilinos/config_options.html".])
+"http://software.sandia.gov/Trilinos/config_options.html".
+Many of the descriptions of the options found at this
+webpage are more detailed than those found using
+"configure --help".])
 
 AC_CONFIG_FILES([
 		Makefile
