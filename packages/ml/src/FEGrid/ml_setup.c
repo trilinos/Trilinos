@@ -1116,7 +1116,7 @@ void ML_exchange_candidates(ML_IntList *inlist, void *fgrid,
       nbytes = sendproc_cnt * sizeof(int);
       ML_memory_alloc((void**) &send_proc, nbytes, "sp1" );
       ML_memory_alloc((void**) &send_leng, nbytes, "sl1" );
-      ML_memory_alloc((void**) &send_list, nbytes, "st1" );
+      ML_memory_alloc((void**) &send_list, nbytes*sizeof(int *)/sizeof(int), "st1" );
    }
    else
    {
