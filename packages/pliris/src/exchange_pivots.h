@@ -28,4 +28,17 @@
 // @HEADER
 */
 
+
+#ifndef __EXCHANGE_PIVOTSH__
+#define __EXCHANGE_PIVOTSH__
+
+#ifdef __cplusplus
+extern "C" {
+#endif 
+
 void	exchange_pivots(int *);
+
+#ifdef __cplusplus
+}
+#endif 
+#endif 

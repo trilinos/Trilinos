@@ -28,6 +28,14 @@
 // @HEADER
 */
 
+
+#ifndef __DISTRIBUTE__
+#define __DISTRIBUTE__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void distmat_(
                 int *,
                 int *,
@@ -39,3 +47,10 @@ void distmat_(
                 int *,
                 int *,
                 int *) ;
+
+#ifdef __cplusplus
+}
+#endif
+
+
+#endif
