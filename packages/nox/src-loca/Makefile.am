@@ -29,4 +29,11 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = src src-epetra src-lapack example-epetra example-lapack
+SUBDIRS = doc src src-epetra src-lapack example-epetra example-lapack
+
+## #######################################################################
+## Documentation
+## #######################################################################
+
+dox:
+	cd doc; $(MAKE) dox
