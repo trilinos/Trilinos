@@ -138,7 +138,6 @@ CommandLineProcessor::parse(
 	const std::string  pause_opt = "pause-for-debugging";
 #ifdef HAVE_MPI
 	int procRank = -1;
-	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 #endif
 	for( int i = 1; i < argc; ++i ) {
 		bool gov_return = get_opt_val( argv[i], &opt_name, &opt_val_str );
@@ -160,6 +159,7 @@ CommandLineProcessor::parse(
 		}
 		if( opt_name == pause_opt ) {
 #ifdef HAVE_MPI
+			if(procRank < 0 ) MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 			if(procRank == 0) {
 #endif
 				std::cerr << "\nType 0 and press enter to continue : ";
@@ -216,8 +216,10 @@ CommandLineProcessor::parse(
 void CommandLineProcessor::printHelpMessage( const char program_name[], std::ostream &out ) const
 {
 #ifdef HAVE_MPI
-	int procRank = -1;
-	MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
+	int procRank = 0;
+	int mpiInitialized;
+	MPI_Initialized(&mpiInitialized);
+	if(mpiInitialized) MPI_Comm_rank( MPI_COMM_WORLD, &procRank );
 	if (procRank == 0) {
 #endif
 	using std::setw;

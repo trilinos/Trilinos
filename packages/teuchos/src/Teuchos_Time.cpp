@@ -31,10 +31,9 @@
 
 #include "Teuchos_Time.hpp"
 
+#include <time.h>
 #ifdef HAVE_MPI
 #include "mpi.h"
-#elif ICL
-#include <time.h>
 #else
 #include <sys/time.h>
 #ifndef MINGW
@@ -73,16 +72,32 @@ double Time::wallTime()
 {
   /* KL: warning: this code is probably not portable! */
   /* HT: have added some preprocessing to address problem compilers */
+	/* RAB: I modifed so that timer will work if MPI support is compiled in but not initialized */
 #ifdef HAVE_MPI
 
-  return(MPI_Wtime());
+	int mpiInitialized;
+	MPI_Initialized(&mpiInitialized);
+
+	if( mpiInitialized ) {
+
+		return(MPI_Wtime());
+
+	}
+	else {
+
+		clock_t start;
+
+		start = clock();
+		return( (double)( start ) / CLOCKS_PER_SEC );
+
+	}
 
 #elif ICL
 
-  clock_t start;
+		clock_t start;
 
-  start = clock();
-  return( (double)( start ) / CLOCKS_PER_SEC );
+		start = clock();
+		return( (double)( start ) / CLOCKS_PER_SEC );
 
 #else
 
