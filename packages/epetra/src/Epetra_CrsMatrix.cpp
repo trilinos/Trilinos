@@ -303,7 +303,7 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 {
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
-  if(IndicesAreContiguous()) 
+  if(IndicesAreContiguous() && CV_==Copy) 
     EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
   Graph_->SetIndicesAreLocal(true);
 
