@@ -451,7 +451,9 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match, PHGPartParams *h
 #define PSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
 #define TSUM_THRESHOLD 0.0    /* ignore inner products (i.p.) < threshold */
 #define IPM_TAG        28731
-
+#define HEADER_COUNT    4     /* number of integers in header for messages
+                                 in fixed sized in Phase 2 send buffer  */
+                                 
 /* This routine encapsulates the common calls to use the Zoltan unstructured
 ** communications library for the matching code */
 static int communication_by_plan (ZZ* zz, int nsend, int* dest, int* size, 
@@ -509,7 +511,7 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
   send = dest = size = rec = index = aux = visit = cmatch = select = NULL;
   permute = edgebuf = NULL;
   nPermute = nDest = nSize = nIndex = nAux = 1 + MAX(nTotal, nVtx);
-  nSend = nRec = nEdgebuf                  = 1 + MAX(nPins, nVtx+2);
+  nSend = nRec = nEdgebuf                  = HEADER_COUNT + MAX(nPins, nVtx+2);
   
   if (hg->nVtx)  
     if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof (int)))
@@ -681,8 +683,10 @@ int *master_data = NULL, *master_procs = NULL, *mp = NULL, nmaster = 0;
         }     
         if (count == 0)
           continue;
-                    
-        msgsize = 4 + 2 * count;       /* row, col, gno, count of <lno, psum> */
+
+         /* HEADER_COUNT (row, col, gno, count of <lno, psum> pairs) */                    
+        msgsize = HEADER_COUNT + 2 * count;
+
         if (sendsize + msgsize <= nSend)  {
           /* current partial sums fit, so put them into the send buffer */
           dest[nsend]   = gno % hgc->nProc_y;  /* processor to compute tsum */
