@@ -4,6 +4,7 @@
 #include "ml_common.h"
 #include "ml_lapack.h"
 #include "ml_memory.h"
+#include "ml_comm.h"
 
 #define DMOUT_F77   F77_FUNC(dmout,DMOUT)
 #define PDMOUT_F77  F77_FUNC(pdmout,PDMOUT)
@@ -18,7 +19,7 @@ extern "C"
 
 
 
-  extern int ml_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
+  extern int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a, 
 			   int *lda, int *idigit);
   
   extern int ml_pdneupc__(int *comm, 

@@ -382,13 +382,14 @@ int cCSR_getrows(void *data, int N_requested_rows, int requested_rows[],
 /* getrows() function for a vector (i.e. matrix with 1 column).      */
 /*********************************************************************/
 
-int VECTOR_getrows(ML_Operator *mat, int N_requested_rows, int requested_rows[],
+int VECTOR_getrows(void *mat_in, int N_requested_rows, int requested_rows[],
    int allocated_space, int columns[], double values[], int row_lengths[])
 {
    double *temp;
    int    i;
+   ML_Operator *mat;
 
-
+   mat = (ML_Operator *) mat_in;
    temp = (double *) ML_Get_MyGetrowData(mat);
 
    if (allocated_space < N_requested_rows) return(0);
@@ -436,7 +437,13 @@ int VBR_cnst_blk_getrows(void *data, int N_requested_rows, int requested_rows[],
    int blk_row, count, N_rows, N_cols, row_offset, i, j, ii, start, k;
    int *cpntr, *bindx, *rpntr, *indx, *bpntr, step, row;
    double *val;
+   /* Want to get rid of all references to external functions, but we 
+      are not finished with this one yet. 
+   ML_Operator *Amat_in;
 
+   Amat_in = (ML_Operator *) data;
+   input_matrix = (struct ML_vbrdata *) ML_Get_MyGetrowData(Amat_in);
+   */
    input_matrix = (struct ML_vbrdata *) data;
    bindx  = input_matrix->bindx;
    val    = input_matrix->val;

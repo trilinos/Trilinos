@@ -13,7 +13,7 @@
 #define TRUE_ (1)
 #include "ml_eigf2c.h"
 
-int ml_pdmout__(int *comm, int *lout, int *m, int *n, double *a, 
+int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a, 
 		  int *lda, int *idigit)
 {
     /* System generated locals */

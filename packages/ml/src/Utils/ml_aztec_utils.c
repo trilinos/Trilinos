@@ -301,7 +301,7 @@ int az_usergetrow_wrapper(void *data, int N_requested_rows, int requested_rows[]
 
    context = (struct aztec_context *) data;   
 
-	 Amat=(AZ_MATRIX *)context->Amat;
+   Amat=(AZ_MATRIX *)context->Amat;
 
    return(Amat->getrow(columns, values, row_lengths, Amat, N_requested_rows,
 											 requested_rows,allocated_space));
@@ -1146,14 +1146,16 @@ void ML_Gen_SmootherAztec(ML *ml_handle, int level, int options[],
 /*****************************************************************************/
 /*****************************************************************************/
 
-int az_wrap_solvers(ML_Smoother *smoo, int in, double x[], int out, 
+int az_wrap_solvers(void *smoo_in, int in, double x[], int out, 
                     double rhs[])
 {
    struct aztec_context *context;
    int    *data_org, i, n, n2;
    double *p2, alpha = 1.; 
    double temp, *global_rhs, *global_x, *orig_x = NULL;
+   ML_Smoother *smoo;
 
+   smoo    = (ML_Smoother *) smoo_in;
    context = (struct aztec_context *) ML_Get_MySmootherData(smoo);
    data_org = context->Amat->data_org;
 

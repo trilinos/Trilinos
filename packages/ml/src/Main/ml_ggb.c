@@ -134,7 +134,8 @@ void  ML_ARPACK_driver(char which[],
   /* FILE       *ifp; */
   ML_Operator *Amat;
 
-  int    comm;                                          /* MPI communicator */
+
+  USR_COMM  comm;                                      /* MPI communicator */
   double tm;
 
   /********************************  Begin ************************************/
