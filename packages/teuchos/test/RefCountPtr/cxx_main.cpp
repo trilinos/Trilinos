@@ -307,8 +307,8 @@ int main( int argc, char* argv[] ) {
 		a_ptr1 = rcp(new B1); // before the new reference is set.
 		a_ptr1 = rcp(new B2); // ""
 		a_ptr1 = rcp(new C);  // ""
-		d_ptr1 = rcp(new D);                        // ""
-		d_ptr1 = rcp(new E);                        // ""
+		d_ptr1 = rcp(new D);  // ""
+		d_ptr1 = rcp(new E);  // ""
 
 		// Assign pointers to some automatic objects that do not need deleted.
 		// We can do this but we need to remove ownership of the pointer
@@ -366,7 +366,7 @@ int main( int argc, char* argv[] ) {
 		d_ptr1 = Teuchos::null;
 
 		if(verbose)
-			std::cout << "RefCountPtr<...> seems to checks out!\n";
+			std::cout << "RefCountPtr<...> seems to check out!\n";
 
 	} // end try
 	catch( const std::exception &excpt ) {
