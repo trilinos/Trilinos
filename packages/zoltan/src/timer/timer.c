@@ -36,7 +36,7 @@ char *val)                      /* value of variable */
 {
     PARAM_UTYPE result;         /* value returned from Check_Param */
     int index;                  /* index returned from Check_Param */
-    int i, status;
+    int status;
     PARAM_VARS timer_params[] = {
         { "TIMER", &Timer, "STRING" },
         { NULL, NULL, NULL }
