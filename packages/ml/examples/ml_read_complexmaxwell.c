@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
   ML *ml_edges, *ml_nodes;
   ML *ml_block;
   FILE *fp;
-  int i, j, Nrigid, *garbage= NULL, nblocks, *blocks;
+  int i, j, Nrigid, *garbage= NULL, nblocks, *blocks = NULL;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
   double *mode, *rigid, alpha;
@@ -302,6 +302,7 @@ int main(int argc, char *argv[])
   N_levels = context->N_levels;
   nsmooth   = context->nsmooth;
   num_PDE_eqns = context->N_dofPerNode;
+  ML_Set_PrintLevel(context->output_level);
 #else
   context = (struct reader_context *) malloc(sizeof(struct reader_context));
   ML_Reader_InitContext(context);
@@ -1753,6 +1754,7 @@ nx = nx--; /* rst dirichlet */
 	{
 	  nodal_smoother = (void *) ML_Gen_Smoother_SymGaussSeidel;
 	  edge_smoother  = (void *) ML_Gen_Smoother_SymGaussSeidel;
+/* edge_smoother  = (void *) ML_Gen_Smoother_VBlockSymGaussSeidel; */
 	  nodal_omega    = ML_DDEFAULT;
 	  edge_omega     = ML_DDEFAULT;
 	  nodal_args = ML_Smoother_Arglist_Create(3);
@@ -1762,7 +1764,10 @@ nx = nx--; /* rst dirichlet */
         arg arrays the same length. */
 	  ML_Smoother_Arglist_Set(nodal_args, 2, &reduced_smoother_flag);
 
-	  edge_args = ML_Smoother_Arglist_Create(3);
+	  if (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel)
+	    edge_args = ML_Smoother_Arglist_Create(5);
+	  else
+	    edge_args = ML_Smoother_Arglist_Create(3);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	  ML_Smoother_Arglist_Set(edge_args, 1, &edge_omega);
       /* if flag is nonzero, in Hiptmair do edge/nodal combination on pre-
@@ -1810,6 +1815,15 @@ nx = nx--; /* rst dirichlet */
           /* Setting omega to any other value will override the automatic
              calculation in ML_Smoother_Gen_Hiptmair_Data. */
           omega = (double) ML_DEFAULT;
+	  if (edge_smoother == (void *) ML_Gen_Smoother_VBlockSymGaussSeidel) {
+	    nblocks = ml_edges->Amat[level].outvec_leng/2;
+	    blocks = (int *) ML_allocate(sizeof(int)*
+					ml_edges->Amat[level].outvec_leng);
+	    for (i =0; i < nblocks; i++) blocks[i] = i;
+	    for (i =0; i < nblocks; i++) blocks[nblocks+i] = i;
+	    ML_Smoother_Arglist_Set(edge_args, 3, &nblocks);
+	    ML_Smoother_Arglist_Set(edge_args, 4, blocks);
+	  }
 	  if (edge_smoother == (void *) ML_Gen_Smoother_MLS) {
 	    edge_eig_ratio[level] = eig_ratio_tol;
 	    nodal_eig_ratio[level] = eig_ratio_tol;
@@ -1839,12 +1853,11 @@ nx = nx--; /* rst dirichlet */
 	    ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
 	  }
       if (level == N_levels-1)
-         ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
+         ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, Tmatbc, edge_smoother,
                       edge_args, nodal_smoother,nodal_args);
       else
-	      //jes
-         ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
+         ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
                       Tmat_array, Tmat_trans_array, NULL, edge_smoother,
 		      edge_args, nodal_smoother,nodal_args);
 	  }
@@ -1951,12 +1964,12 @@ nx = nx--; /* rst dirichlet */
     }
     if (coarsest_level == N_levels-1)
 	    //jes
-       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
+       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
 				Tmat_array, Tmat_trans_array, Tmatbc, 
 edge_smoother,edge_args, nodal_smoother,nodal_args);
     else
 	    //jes
-       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_BOTH, nsmooth,
+       ML_Gen_Smoother_BlockHiptmair(ml_edges, level, ML_PRESMOOTHER, nsmooth,
 				Tmat_array, Tmat_trans_array, NULL, 
 				edge_smoother,edge_args, nodal_smoother,nodal_args);
   }
@@ -2102,7 +2115,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 10; 
+  options[AZ_max_iter] = 100; 
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 30;
   options[AZ_orthog]   = AZ_classic;
@@ -2367,12 +2380,10 @@ blockmat->matvec(xxx, rhs, blockmat, proc_config);
  fclose(fp);
    */
 
-   // rst: line below should be commented out to turn on ml preconditioning
-   //   options[AZ_precond] = AZ_none; 
    /* rst: toggle these two to switch between regular and 2x2 block system */
-     AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,  
-   //  AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,
-	      Pmat, scaling); 
+   AZ_iterate(xxx, rhs, options, params, status, proc_config, blockmat,
+   /*  AZ_iterate(xxx, rhs, options, params, status, proc_config, Ke_mat,*/
+	      Pmat, scaling);
 
     options[AZ_pre_calc] = AZ_reuse;
     /*
@@ -2841,18 +2852,22 @@ int block_matvec(void *data, int inlen, double invec[],
 				     invec, outlen/2, outvec);
 
   /* multiply by (1,2) block (-mass)*/
-  ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
+  if (ml_operator_wrapper->offdiag_matvec != NULL) {
+    ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
 				     &(invec[inlen/2]), outlen/2, z);
-  for (i=0; i< outlen/2; i++) outvec[i] -= z[i];
+    for (i=0; i< outlen/2; i++) outvec[i] -= z[i];
+  }
   /***********/
   /* multiply by (2,2) block (stiffness)*/
   ml_operator_wrapper->diag_matvec(ml_operator_wrapper->diag_matvec_data, inlen/2,
 				     &(invec[inlen/2]), outlen/2, 
 				     &(outvec[outlen/2]));
   /* multiply by (2,1) block (mass)*/
-  ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
+  if (ml_operator_wrapper->offdiag_matvec != NULL) {
+    ml_operator_wrapper->offdiag_matvec(ml_operator_wrapper->offdiag_matvec_data, inlen/2,
 				     invec, outlen/2, z);
-  for (i=0; i < outlen/2; i++) outvec[i+outlen/2] += z[i];
+    for (i=0; i < outlen/2; i++) outvec[i+outlen/2] += z[i];
+  }
 
   ML_free(z);
 }
@@ -2905,7 +2920,7 @@ int block_getrow(void *data, int N_requested,
 {
   ML_Operator *mat;
   struct ml_operator_wrapper *ml_operator_wrapper;
-  int newrow, status, i;
+  int newrow, status = 1, i;
   int *workcol;
   double *workval;
   int work_lengths[1];
@@ -2915,6 +2930,8 @@ int block_getrow(void *data, int N_requested,
 
   workcol = ml_operator_wrapper->cols;
   workval = ml_operator_wrapper->vals;
+  work_lengths[0] = 0;
+  row_lengths[0] = 0;
 
   if (N_requested != 1) return(1);
 
@@ -2922,16 +2939,20 @@ int block_getrow(void *data, int N_requested,
   if (requested_rows[0] < mat->outvec_leng/2)
   {
     /* (1,1) block */
-    ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
+    status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
 				      N_requested, requested_rows, allocated, 
 				      columns, values, row_lengths);
-    /* (1,2) block */
-    ml_operator_wrapper->offdiag_getrow(ml_operator_wrapper->offdiag_getrow_data,
+    if (status == 0) return(status);
+    if (ml_operator_wrapper->offdiag_getrow != NULL) {
+      /* (1,2) block */
+      status = ml_operator_wrapper->offdiag_getrow(ml_operator_wrapper->offdiag_getrow_data,
 				      N_requested, requested_rows, 100, 
 				      workcol, workval, work_lengths);
+      if (status == 0) return(status);
+    }
     for (i=0; i< work_lengths[0]; i++) {
-	workcol[i] += mat->invec_leng/2;
-	workval[i] = -workval[i];     /* josh says -M */
+      workcol[i] += mat->invec_leng/2;
+      workval[i] = -workval[i];     /* josh says -M */
     }
 
   }
@@ -2943,6 +2964,8 @@ int block_getrow(void *data, int N_requested,
     status = ml_operator_wrapper->diag_getrow(ml_operator_wrapper->diag_getrow_data,
 					N_requested, &newrow, 100, 
 					workcol, workval, work_lengths);
+    if (status == 0) return(status);
+
     /* post process data so that columns correspond to (2,2) block */
     if (status != 0) {
       for (i = 0; i < work_lengths[0]; i++) 
@@ -2950,16 +2973,18 @@ int block_getrow(void *data, int N_requested,
     }
 
     /* (2,1) block */
-    status = ml_operator_wrapper->offdiag_getrow(
+    if (ml_operator_wrapper->offdiag_getrow != NULL) {
+      status = ml_operator_wrapper->offdiag_getrow(
 		                      ml_operator_wrapper->offdiag_getrow_data,
 				      N_requested, &newrow, allocated, 
 				      columns, values, row_lengths);
-  }
+      if (status == 0) return(status);
 
+    }
+  }
   /*make sure columns is long enough for the concatenation*/
   if (row_lengths[0] + work_lengths[0] > allocated) {
-    realloc(columns, (row_lengths[0] + work_lengths[0]) * sizeof(int) );
-    realloc(values, (row_lengths[0] + work_lengths[0]) * sizeof(double) );
+    return(0);
   }
 
   for (i=0; i<work_lengths[0]; i++) {
@@ -2967,6 +2992,7 @@ int block_getrow(void *data, int N_requested,
     values[i + row_lengths[0]] = workval[i];
   }
   row_lengths[0] += work_lengths[0]; 
+  return(1);
 }
 
 /******************************************************************************/
@@ -3010,10 +3036,13 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
   } //if
 
   /* setup matvec for offdiagonal part */
+
+  ml_operator_wrapper->offdiag_matvec = NULL;
+  ml_operator_wrapper->offdiag_matvec_data = NULL;
   if (original2 != NULL) {
     if (original2->matvec->ML_id == ML_INTERNAL) {
       ml_operator_wrapper->offdiag_matvec = original2->matvec->internal;
-      ml_operator_wrapper->offdiag_matvec_data = original2->data;
+      ml_operator_wrapper->offdiag_matvec_data = original2;
     }
     else {
       ml_operator_wrapper->offdiag_matvec = original2->matvec->external;
@@ -3036,6 +3065,9 @@ int  ML_make_block_matrix(ML_Operator *blockmat, ML_Operator *original1,
     ml_operator_wrapper->diag_getrow = original1->getrow->external;
     ml_operator_wrapper->diag_getrow_data = original1->data;
   }
+
+  ml_operator_wrapper->offdiag_getrow = NULL;
+  ml_operator_wrapper->offdiag_getrow_data = NULL;
 
   /* set getrow for offdiagonal block */
   if (original2 != NULL) {
