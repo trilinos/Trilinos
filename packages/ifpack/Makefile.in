@@ -80,7 +80,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src test
+DIST_SUBDIRS = src test doc
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -256,7 +256,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 
 #SUBDIRS = src example test doc
 @BUILD_TESTS_TRUE@TEST_SUBDIR = test
-SUBDIRS = src $(TEST_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) doc
 all: all-recursive
 
 .SUFFIXES:

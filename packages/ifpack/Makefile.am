@@ -65,4 +65,4 @@ if BUILD_TESTS
 TEST_SUBDIR=test
 endif
 
-SUBDIRS = src $(TEST_SUBDIR)
+SUBDIRS = src $(TEST_SUBDIR) doc

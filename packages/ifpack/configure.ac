@@ -411,6 +411,7 @@ AC_CONFIG_FILES([
                 Makefile.export
 		src/Makefile
 		src/Makefile.include
+                doc/Makefile
 		example/Makefile
 		example/Makefile.include
 		test/Makefile

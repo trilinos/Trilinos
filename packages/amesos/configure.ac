@@ -52,7 +52,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT([amesos],[1.1d],[kstanley@cs.utk.edu])
+AC_INIT([amesos],[2.0],[kstanley@cs.utk.edu])
 
 # Hello World!
 echo "----------------------------------------"
@@ -734,8 +734,9 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
-		test/Makefile
+                doc/Makefile
 		example/Makefile
+		test/Makefile
 		test/Test_Basic/Makefile
 		test/Test_Epetra_RowMatrix/Makefile
 		test/Test_Epetra_CrsMatrix/Makefile
