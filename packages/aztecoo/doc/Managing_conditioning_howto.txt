@@ -1,0 +1,188 @@
+   Managing Preconditioner Conditioning via Threshold Parameters
+
+
+---------------
+1: Introduction
+---------------
+
+A major hurdle in using preconditioned iterative methods for solving complex
+engineering models is developing robust preconditioners.  Incomplete
+factorizations, either as a global preconditioner or as a subdomain
+preconditioner in a domain decomposition setting, are some of the
+more robust general-purpose approaches available.  At the same time,
+these preconditioners can result in very poorly conditioned factors that 
+eliminate any possibility of convergence because application of the
+preconditioner produces unusable values.  In other words, performing
+the forward/back solve results in values that are meaningless.
+
+1.1: A priori Diagonal Perturbations
+------------------------------------
+
+One way to address this problem is to compute the incomplete
+factorization using a related but better conditioned matrix.  We can
+accomplish this by selectively replacing diagonal values of the matrix,
+prior to factorization, with other values that will improve the
+stability of the factorization.  Usually we replace the diagonal
+values with values that are larger in magnitude, making the matrix
+more diagonally dominant.
+
+If we were to replace the diagonal values with extremely large
+numbers, then the factorization would essentially be a Jacobi scaling
+preconditioner, because off-digaonal terms would be irrelevant.
+Thus, diagonal perturbations can be thought of as establishing a continuum 
+of preconditioners with endpoints being the original incomplete
+factorization and Jacobi scaling.  At the one endpoint (original
+incomplete factorization), the factorization is accurate, but too 
+poorly conditioned.  At other endpoint (Jacobi scaling), the 
+factorization is perfectly conditioned but inaccurate.  Most of the
+time, finding the most accurate factorization (smallest modification
+of the diagonal values) that is still produces stable forward/back
+solve computations is the best preconditioner.
+
+1.2: Dynamic Diagonal Perturbations
+-----------------------------------
+
+Another approach to stabilizing the factorization is to modify
+diagonal values as the factorization is being computed, making sure
+the the diagonal pivots do not become too small.  For scalar diagonal
+entries, this approach has not been very useful.  Although we can make
+sure the diagonal values stay above a threshold, in practice this does 
+not prevent the factorization from becoming too ill-conditioned.  
+
+However, with block-entry matrices, where the diagonals are dense
+matrices, it is fruitful to consider dynamic perturbations.  In this
+situation, as we compute the factorization and prepare to apply the
+inverse of a block diagonal entry, we perform a singular value
+decomposition (SVD) on the block diagonal entry and replace any small
+singular values with a threshold value.  We then construct the inverse
+of the block diagonal entry using the modified singular values.
+
+
+------------------------------------
+2: Detecting Ill-conditioned Factors
+------------------------------------
+
+An essential aspect of managing the condition number of
+preconditioners is being able to estimate the condition number of the
+preconditioner.  A simple, low-cost method for obtaining a lower bound
+on the preconditioner condition number is to compute
+$\|(LU)^{-1}e\|_\infty, e = (1, 1, \ldots, 1)^T$, 
+the inf-norm of the forward/back solve applied the vector of all ones.
+The cost of this estimate is roughly one forward/back solve and a vector
+update, and can be computed using the standard forward/back solve
+routine needed by the iterative solver.  In fact, it is easy to provide 
+this estimate for any preconditioner via a very simple function.
+
+
+-----------------------------------------------------------
+3: Strategies for Managing Preconditioner Condition Numbers
+-----------------------------------------------------------
+
+Without any prior knowledge of a problem, the first step to take when
+computing a preconditioner is to compute the original factors without
+any diagonal perturbation.  This usually gives the most accurate
+factorization and, if the condition estimate of the factors is not too
+big, will lead to the best convergence.  If the condition estimate of
+the original factors is larger than machine precision, say greater
+than 1.0e15, then it is possible that the factorization will destroy
+convergence of the iterative solver.  This will be evident if the
+iterative solver does starts to diverge, stagnates, or aborts because
+it detects ill-conditioning.  In these cases, diagonal perturbations 
+may be effective.  If the condition estimate of the preconditioner is 
+well below machine precision (less than 1.0e13) and you are not achieving
+convergence, then diagonal perturbation will probably not be useful.  
+Instead, you should try to construct a more accurate factorization by
+increasing fill.
+
+3.1: Strategies for a priori Diagonal Perturbations
+---------------------------------------------------
+
+The goal when applying a priori perturbations is find a minimal
+perturbation that reduces the condition estimate below machine
+precision (roughly 1.0e16).  There are two floating point parameters
+that can be adjusted to achieve this goal:
+
+  params[AZ_athresh] - Absolute threshold value for diagonal perturbation.
+                       Add this value (using the sign of the original
+                       diagonal value) to the diagonal.
+
+
+  params[AZ_rthresh] - Relative threshold value for diagonal perturbation.  
+                       Multiply the original diagonal by this value.
+
+Precisely, prior to factorization, we replace each diagonal value d with:
+
+d = d*AZ_rthresh + sign(d)*AZ_athresh
+
+In practice, we have found that choosing AZ_athresh between 1.0e-05 and 1.0e-1
+and AZ_rthresh between 1.0 and 1.1 is most effective, but our experience 
+is limited and certainly other values may be more effective for some problems.
+
+A simple strategy would be:
+
+1) Set AZ_athresh = 0.0, AZ_rthresh = 1.0 at first (default values).
+
+2) If poor convergence:
+   Set AZ_athresh = 1.0e-5, AZ_rthresh = 1.0.
+
+3) If still poor convergence:
+   Set AZ_athresh = 1.0e-5, AZ_rthresh = 1.01.
+
+4) If still poor convergence:
+   Set AZ_athresh = 1.0e-2, AZ_rthresh = 1.0.
+
+5) If still poor convergence:
+   Set AZ_athresh = 1.0e-2, AZ_rthresh = 1.01.
+
+6) If still poor convergence, continue alternate increases in
+   the two threshold values.
+
+
+
+3.2: Strategies for Dynamic Block Diagonal Perturbations
+--------------------------------------------------------
+
+The same general goal (of a priori perturbations) is valid for dynamic 
+block diagonal perturbations.  Specifically, we want to choose values of 
+AZ_athresh and AZ_rthresh that make minimal perturbations, if any, to the 
+block diagonal values.  For dynamic perturbations, we have the same 
+AZ_athresh and AZ_rthresh parameters.  However, the meaning of the 
+parameters is different.
+
+Specifically:
+
+  params[AZ_athresh] - Absolute threshold value for block diagonal
+                       compensation.  Replace singular value if
+                       less than this value.
+
+
+  params[AZ_rthresh] - Relative threshold value for block diagonal
+                       compensation.  Replace singular value if
+                       ratio of it with largest singular value
+                       is less that this value.
+
+A simple strategy would be:
+
+1) Set AZ_athresh = AZ_rthresh = 0 at first.
+
+2) If poor convergence:
+   Set AZ_athresh = AZ_rthresh = 1.0E-14.
+
+3) If still poor convergence:
+   Set AZ_athresh = AZ_rthresh = 1.0E-3.
+
+
+
+
+Further information
+-------------------
+
+If you have questions or comments, or would like to relate you
+experience using these techniqes to the author, please contact
+
+Mike Heroux
+Applied Mathematics Department, Dept 9214
+Sandia National Labs
+1-320-845-7695
+maherou@sandia.gov
+

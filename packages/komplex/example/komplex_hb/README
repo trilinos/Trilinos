@@ -1,0 +1,104 @@
+
+/*******************************************************************************
+ * Copyright 1995, Sandia Corporation.  The United States Government retains a *
+ * nonexclusive license in this software as prescribed in AL 88-1 and AL 91-7. *
+ * Export of this program may require a license from the United States         *
+ * Government.                                                                 *
+ ******************************************************************************/
+
+This directory contains two test routines.  
+
+NOTE: You must follow the instructions in the files INSTALL and 
+      komplex_INSTALL before trying to compile the test routines.
+
+
+Test routine #1
+---------------
+
+The first test routine is simple.c.  This file constructs an artificial 
+complex linear system that is guaranteed to converge in 20 iterations, 
+independent of problem size or number of processors used.  To build the 
+executable "simple", type:
+
+make simple
+
+or (on SGIs and other machines with bad make utilities) type:
+
+gmake simple
+
+
+Test routine #2
+---------------
+
+The second test routine is in main.c.  This test routine exercises a
+variety of komplex options and solves a complex system that is
+contained in two Harwell-Boeing data files.  Depending on compile options, 
+the make command builds one of four different executables:
+
+az_komplex_serial_msr - Serial execution using MSR data structure
+az_komplex_mpi_msr    - Parallel execution using MSR data structure
+az_komplex_serial_msr - Serial execution using VBR data structure
+az_komplex_mpi_msr    - Parallel execution using VBR data structure
+
+The MSR executables requires four arguments.
+
+Argument 1: Type of system to convert to komplex formulation: 
+
+  c2k -  Test program constructs a complex problem and calls
+         appropriate komplex routines to solve it.
+
+ ri2k -  Test program constructs a real/imaginary problem and calls
+         appropriate komplex routines to solve it.
+
+  g2k -  Test program constructs a general problem and calls
+         appropriate komplex routines to solve it.
+
+Argument 2: Type of indices:
+
+  global - Construct input matrices using global index space.  The
+           index values in bindx (the Aztec MSR/VBR index vector) refer to the
+           global indexing of the matrix, not a tranformed index space used on
+           each processor.  Global indices are what the user typically uses to 
+           construct their problem.
+  local  - Construct input matrices using local index space.  The
+           index values in bindx (the Aztec MSR/VBR index vector) refer to the 
+           local indexing of the matrix, typically the local index values are
+           obtained by calling AZ_transform.
+
+Argument 3: File name of a Harwell-Boeing format file containing the
+            first matrix structure and values.  The exact use of this
+            matrix will depend on the choice of Argument 1.
+
+Argument 4: File name of a Harwell-Boeing format file containing the
+            second matrix structure and values.The exact use of this
+            matrix will depend on the choice of Argument 1.
+
+
+The VBR executables require an additional argument.
+
+Argument 5: The block size to use for partitioning the input matrices
+            into variable block matrices.
+
+To make the executables:
+
+1) Use the set_makefiles and set_komplex_makefiles commands to select
+   the target machine and communication mode.
+
+2) Make Aztec and Komplex by going to the lib and komplex_lib
+   directories and typing "make".
+
+3) Make the test executable by going to the komplex_app directory
+(here) and typing (you may need to use gmake instead of make):
+  make FORMAT=MSR - to get the MSR version.
+  make FORMAT=VBR - to get the VBR version.
+
+Note that the communication option for the test executable has already
+been selected by Step 1.
+
+Summary:
+
+az_komplex_[serial|mpi]_msr [c2k|ri2k|g2k] [global|local] \
+                            First_HB_file Second_HB_file
+
+az_komplex_[serial|mpi]_vbr [c2k|ri2k|g2k] [global|local] \
+                            First_HB_file Second_HB_file block_size

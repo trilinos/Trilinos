@@ -1,0 +1,97 @@
+/*! \mainpage TSF: The Trilinos Solver Framework
+\htmlonly
+<center>
+<img align=center lowsrc="../stringOfPearls.jpg" src="../stringOfPearls.jpg" 
+     width=500 height=500 alt="Trilinos"><br>
+</center>
+\endhtmlonly
+
+\section intro Introduction
+The Trilinos Solver Framework (TSF) provides a hierarchy of abstract
+classes for defining and solving linear and nonlinear problems,
+eigenproblems and time-dependent problems.  TSF is part of the
+Trilinos Project.  In addition to TSF, Trilinos provides a rich set of
+solvers and preconditioners, implemented in terms of TSF interfaces and 
+a library of robust 
+parallel distributed memory concrete classes that provide a solid
+foundation of existing solvers that is easily extended.
+
+\section startup TSF Details
+
+\subsection formulations TSF Classes
+
+TSF contains a number of classes.  They can be categorized as follows:
+
+<ul> 
+
+<li> Utility classes.
+
+<ol>
+
+<li> Parameter classes:  TSF::Parameter and TSF::ParameterList classes - 
+The only concrete classes in TSF, these classes allows the definition
+of parameters that are used to define the behavior of TSF
+preconditioners and solvers.  Users define a TSF::ParameterList object
+that is passed in to the setup() method of any of the TSF
+preconditioenrs and solvers.  A given TSF solver or preconditioner can
+query the TSF::ParameterList for parameters that are meaningful to it.
+
+</ol>
+
+<li> Vector and matrix classes.  Specify the behavior of the TSF
+matrices and vectors.
+
+<ol>
+<li> TSF::MultiVector - A fundamental TSF base class.  Provides
+basic interfaces for using vectors and multivectors.
+<li> More coming...
+</ol>
+
+<li> Operator classes.  Specify the behavior of the TSF operators.
+
+<ol>
+<li> TSF::Operator - A fundamental TSF base class.  Provides
+basic interfaces for a general mathematical operator.
+<li> More coming...
+</ol>
+
+<li> Problem classes.  Specify the behavior of the TSF problems.
+
+<ol>
+<li> TSF::Problem - Another fundamental TSF base class.  Provide basic
+interface for defining a mathematical problem.
+
+<li> More coming...
+
+</ol>
+
+<li> Solver classes.  Specify the behavior of the TSF solvers.
+
+<ol>
+<li> TSF::Solver - Another TSF base class.  Provide basic
+interface for defining a solver.
+
+<li> More coming...
+
+</ol>
+
+</ul>
+     
+
+\subsection trilinos Trilinos and Petra
+
+TSF is almost entirely pure virtual classes and in principle almost
+any solver can be used to implement the TSF interfaces.  At the same
+time, there are a number of existing implementations of TSF interfaces
+provided as part of the Trilinos project.  Specifically, Petra provides
+a default matrix and vector implementation for the TSF vector and
+matrix interfaces.
+
+\subsection example Example Code
+The following example code builds a TSF::ParameterList object and
+tests its parameters.
+This example program can be found in the file
+Trilinos/tests/TSF/cc_main.cc.  
+
+\verbinclude cc_main.cc
+*/
