@@ -30,12 +30,6 @@ EXEEXT = .exe
 # Nothing should be done for a serial build
 if  HAVE_MPI
 
-if HAVE_AMESOS_SLUD
-SLUDIST_TEST = TestOldSuperludist 
-else
-SLUDIST_TEST = 
-endif
-
 if HAVE_AMESOS_DSCPACK
 DSCPACK_TEST = TestDscpack
 else
@@ -79,15 +73,8 @@ MUMPS_TEST =
 endif
 
 
-noinst_PROGRAMS = $(SLUDIST_TEST) $(DSCPACK_TEST) $(UMFPACK_TEST) \
+noinst_PROGRAMS = $(DSCPACK_TEST) $(UMFPACK_TEST) \
 	$(MUMPS_TEST) $(KLU_TEST) $(SUPERLUDIST_TEST) $(SCALAPACK_TEST)
-
-if HAVE_AMESOS_SLUD
-TestOldSuperludist_SOURCES = $(srcdir)/TestOldSuperludist
-
-TestOldSuperludist$(EXEEXT): $(srcdir)/TestOldSuperludist
-	cp $(srcdir)/TestOldSuperludist TestOldSuperludist$(EXEEXT) 
-endif
 
 if HAVE_AMESOS_DSCPACK
 TestDscpack_SOURCES = $(srcdir)/TestDscpack

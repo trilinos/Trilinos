@@ -37,6 +37,17 @@
 #  to allow cofigure to work on cross-compiled systems.  This is far from 
 #  ideal as many files ought to be checked on cross-compiled systems. 
 
+
+#
+#  Changes made April 2004:
+#    Each Amesos class will:
+#       1)  First try to compile without specifying the library.  This allows
+#           the user to specify the needed third party library at compile time.
+#       2)  Next try to compile with -lsuperludist.  This allows the user to specify 
+#           the directory while using the default name for the library
+#       3)  Then try the existing Triliinos3PL scheme. 
+#
+
 # ------------------------------------------------------------------------
 # Initialization 
 # ------------------------------------------------------------------------
@@ -265,18 +276,6 @@ AC_F77_WRAPPERS
 # Checks for libraries
 # ------------------------------------------------------------------------
 
-  # Find valid SuperLU Dist and Kundert libraries
-### In the future we need to be able to disable dependence on Kundert lib
-
-## if test "X$ADDON_SLUD" != "Xno"; then
-##   AC_SEARCH_LIBS(pdgssvx,[superludist],,
-##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-## fi
-
-dnl Replace `main' with a function in -lm:
-#AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
 dnl Check for user-specified names for LAPACK and BLAS
 TAC_ARG_WITH_BLASLIB
 # ------------------------------  ABC
@@ -291,7 +290,7 @@ TAC_ARG_WITH_LAPACKLIB
 # Checks for addons
 # ------------------------------------------------------------------------
 
-TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], must_specify_trilinos3pldir )
+TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], trilinos3pldir_not_specified )
 
 ## echo "  tac_with_trilinos3pldir =  ${tac_with_trilinos3pldir} " 
 TAC_CHECK_FILE(${tac_with_trilinos3pldir})
@@ -300,14 +299,8 @@ TAC_CHECK_FILE(${tac_with_trilinos3pldir})
 #  --enable-amesos-slud, --with-amesos-sluddir, --with-amesos-sludlib, 
 #    --with-amesos-sludincdir
 #
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud, [Enable Amesos interface support for SuperLU Dist], 
-		AMESOS_SLUD, no)
-
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, superludist, [Enable Amesos interface support for SuperLU Dist], 
 		AMESOS_SUPERLUDIST, no)
-
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for SuperLU Dist 2.0 (requires amesos-slud)], 
-		AMESOS_SLUD2, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
 		AMESOS_DSCPACK, no)
@@ -328,9 +321,6 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, mumps, [Enable Amesos interface support for 
 		AMESOS_MUMPS, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB(amesos, mumps_mpi_c2f, [Enable conversion from C++ MPI commnicator to FORTRAN MPI communicator.], AMESOS_MPI_C2F, yes) 
-
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
-		AMESOS_SLUS, no)
 
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
 		AMESOS_KUNDERT, no)
@@ -374,41 +364,70 @@ AC_LANG([C])
 if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details]])
+    AC_MSG_ERROR([[Amesos_Superludist requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details]])
   fi
 
   TAC_ARG_WITH_SUB( amesos, superludistdir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST_2.0 )
   TAC_CHECK_FILE(${tac_with_amesos_superludistdir})
 
-  TAC_ARG_WITH_SUB( amesos, superludistlib, [Set SuperLU dist library],  ${tac_with_amesos_superludistdir}/libsuperludist.a )
-  TAC_CHECK_FILE(${tac_with_amesos_superludistlib})
-
-  TAC_ARG_WITH_SUB( amesos, superludistincdir, [Set SuperLU dist include directory],  ${tac_with_amesos_superludistdir}/SRC )
-  TAC_CHECK_FILE(${tac_with_amesos_superludistincdir})
-
 #
-# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#       1)  First try to compile without specifying the library.  This allows
+#           the user to specify the needed third party library at compile time.
 #
+  SAVE_LIBS="${LIBS}"
+  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  AC_TRY_LINK_FUNC(pdgssvx,superludist_lib_ok="yes",superludist_lib_ok="no")
+     
 
 
-  TAC_CHECK_FILE(${tac_with_amesos_superludistincdir}/supermatrix.h)
+  if test "X$superludist_lib_ok" != "Xyes"; then
+#
+#       2)  Next try to compile with -lsuperludist.  This allows the user to specify 
+#           the directory while using the default name for the library
+     LIBS=" -lsuperludist ${LIBS}"
 
-  TAC_CHECK_FILE(${tac_with_amesos_superludistincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))
+     AC_TRY_LINK_FUNC(pdgssvx,superludist_with_lib="yes",superludist_with_lib="no")
 
+     if test "X$superludist_with_lib" == "Xyes"; then
+       amesos_libs="${amesos_libs} -lsuperludist"
+     else
+#       3)  Then try the existing Triliinos3PL scheme. 
+#
+       TAC_ARG_WITH_SUB( amesos, superludistlib, [Set SuperLU dist library],  
+                         ${tac_with_amesos_superludistdir}/libsuperludist.a )
+       TAC_CHECK_FILE(${tac_with_amesos_superludistlib})
+       LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+       amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
+     fi
+  fi
+#
+#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
+#   we give up
+#
+   AC_TRY_LINK_FUNC( set_default_options,
+                       AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
 
-##  LDFLAGS="${tac_with_amesos_superludistlib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
-
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(set_default_options,AC_DEFINE(OLD_SUPERLUDIST,,[Define if we are using the old Superludist]) ) 
-     AC_TRY_LINK_FUNC(pdgssvx,,
-      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
+   AC_TRY_LINK_FUNC(pdgssvx,,
+      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/username/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
-  amesos_libs="${amesos_libs} ${tac_with_amesos_superludistlib}"
+
+#
+#  First try to find superlu_ddefs.h without using the SuperLU dist incude directory
+#
+  AC_CHECK_HEADERS([superlu_ddefs.h],,,)
+
+  if test "X$ac_cv_header_superlu_ddefs_h" != "Xyes"; then
+#
+#   if we can't find supelu_ddefs.h in the include search path, look for it in superludistincir
+#   which defaults to Trilinos3PL/SuperLU_DIST_2.0/SRC
+#
+    TAC_ARG_WITH_SUB( amesos, superludistincdir, [Set SuperLU dist include directory],  ${tac_with_amesos_superludistdir}/SRC )
+
+    TAC_CHECK_FILE(${tac_with_amesos_superludistincdir}/superlu_ddefs.h,,
+      AC_MSG_ERROR([[Cannot find superlu_ddefs.h in ${tac_with_amesos_superludistincdir} , specify a location using --with-amesos-superludistincdir, --with-amesos-superludistdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
+
+    CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
+  fi
 
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
@@ -416,76 +435,6 @@ else
   AM_CONDITIONAL(HAVE_AMESOS_SUPERLUDIST, false ) 
 fi
 
-
-
-
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU distributed include directory
-#    Make sure that pdgssvx is in the SuperLU distributed library
-#
-
-if test "X$ac_cv_use_amesos_slud" != "Xno"; then
-
-  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/trilinos/packages/amesos/ for details]])
-  fi
-
-  TAC_ARG_WITH_SUB( amesos, sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
-  TAC_CHECK_FILE(${tac_with_amesos_sluddir})
-
-  TAC_ARG_WITH_SUB( amesos, sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
-  TAC_CHECK_FILE(${tac_with_amesos_sludlib})
-
-  TAC_ARG_WITH_SUB( amesos, sludincdir, [Set SuperLU dist include directory],  ${tac_with_amesos_sluddir}/SRC )
-  TAC_CHECK_FILE(${tac_with_amesos_sludincdir})
-
-#
-# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
-#
-
-
-  TAC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
-
-  TAC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))
-
-
-##  LDFLAGS="${tac_with_amesos_sludlib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_sludincdir} ${CXXFLAGS}"
-
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sludlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(pdgssvx,,
-      AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
-    LIBS="${SAVE_LIBS}"
-  amesos_libs="${amesos_libs} ${tac_with_amesos_sludlib}"
-
-  AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
-else
-  AM_CONDITIONAL(HAVE_AMESOS_SLUD, false ) 
-fi
-
-AC_MSG_CHECKING([ Here we are above the slud2 stuff  ])
-
-if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
-  AC_MSG_CHECKING([ Here we are inside the slud2 conditional ])
-
-  if test "X$ac_cv_use_amesos_slud" != "Xno"; then
-     AC_MSG_CHECKING([ Here we are inside both the slud2/slud conditional ])
-     AM_CONDITIONAL(HAVE_AMESOS_SLUD2, true )
-  else 
-     AC_MSG_CHECKING([ Here we are inside the slud else clause ])
-     AC_MSG_ERROR([Cannot enable slud2 without enabling slud.])
-  fi 
-
-else 
-    AC_MSG_CHECKING([ Here we are in the slud2 esle clause  ])
-   AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
-fi
-  AC_MSG_CHECKING([ Here we are after the slud2 stuff ])
 
 
 #
@@ -506,36 +455,80 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   TAC_ARG_WITH_SUB( amesos, dscpackdir, [Set DSCPACK directory],  ${tac_with_trilinos3pldir}/DSCPACK1.0 )
   TAC_CHECK_FILE(${tac_with_amesos_dscpackdir})
 
-  TAC_ARG_WITH_SUB( amesos, dscpacklib, [Set DSCPACK library],  ${tac_with_amesos_dscpackdir}/DSC_LIB/dsclibdbl.a )
-  TAC_CHECK_FILE(${tac_with_amesos_dscpacklib})
-
-  TAC_ARG_WITH_SUB( amesos, dscpackincdir, [Set DSCPACK include directory],  ${tac_with_amesos_dscpackdir}/DSC_LIB )
-  TAC_CHECK_FILE(${tac_with_amesos_dscpackincdir})
-
 #
-# This is a bad way to check for dscmain.h, it won't pick dscmain.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#       1)  First try to compile without specifying the library.  This allows
+#           the user to specify the needed third party library at compile time.
 #
+  SAVE_LIBS="${LIBS}"
+  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  AC_TRY_LINK_FUNC(DSC_CloseSolver,dscpack_lib_ok="yes",dscpack_lib_ok="no")
+     AC_MSG_CHECKING( 465 ) 
+     AC_MSG_RESULT( 465 ) 
+     
+  if test "X$dscpack_lib_ok" != "Xyes"; then
+#
+#       2)  Next try to compile with -ldscdbl.  This allows the user to specify 
+#           the directory while using the default name for the library
+     LIBS=" -ldscdbl ${LIBS}"
 
+     AC_MSG_CHECKING( 472 ) 
+     AC_MSG_RESULT( 472 ) 
+     AC_TRY_LINK_FUNC(DSC_CloseSolver,dscpack_lib_ok="yes",dscpack_lib_ok="no")
 
-  TAC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h)
-
-  TAC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
-    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
-
-
-##  LDFLAGS="${tac_with_amesos_dscpacklib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_dscpackincdir} ${CXXFLAGS}"
-
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_dscpacklib} ${MPI_LIBS} ${BLAS_LIBS} ${FLIBS} ${LIBS}"
+     if test "X$dscpack_lib_ok" == "Xyes"; then
+     AC_MSG_CHECKING( 480 ) 
+     AC_MSG_RESULT( 480 ) 
+       amesos_libs="${amesos_libs} -ldscdbl"
+     else
+#       3)  Then try the existing Triliinos3PL scheme with dsclibdbl.a as the default library
+#
+       TAC_ARG_WITH_SUB( amesos, dscpacklib, [Set DSCPACK library],  
+                         ${tac_with_amesos_dscpackdir}/DSC_LIB/dsclibdbl.a )
+       TAC_CHECK_FILE(${tac_with_amesos_dscpacklib})
+       LIBS="${tac_with_amesos_dscpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+       AC_TRY_LINK_FUNC(DSC_CloseSolver,dscpack_lib_ok="yes",dscpack_lib_ok="no")
+        if test "X$dscpack_lib_ok" == "Xyes"; then
+     AC_MSG_CHECKING( 488 ) 
+     AC_MSG_RESULT( 488 ) 
+          amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
+       else
+#         4)  Then try  the existing Triliinos3PL scheme with libdscdbl.a as the default library
+#
+     AC_MSG_CHECKING( 493 ) 
+     AC_MSG_RESULT( 493 ) 
+          LIBS="${tac_with_amesos_dscpackdir}/DSC_LIB/libdscdbl.a ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+          amesos_libs="${amesos_libs} ${tac_with_amesos_dscpackdir}/DSC_LIB/libdscdbl.a"
+       fi
+     fi
+  fi
+#
+#   At this point, LIBS and amesos_libs both have our best shot, if they don't work now
+#   we give up
+#
      AC_TRY_LINK_FUNC(DSC_CloseSolver,,
-      AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+      AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/username/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
+
+#
+#  First try to find dscmain.h without using the DSCPACK incude directory
+#
+  AC_CHECK_HEADERS([dscmain.h],,,)
+
+  if test "X$ac_cv_header_dscmain_h" != "Xyes"; then
+#
+#   if we can't find dscmain.h in the include search path, look for it in dscmainincdir
+#   which defaults to Trilinos3PL/DSCPACK1.0/SRC
+#
+    TAC_ARG_WITH_SUB( amesos, dscpackincdir, [Set DSCPACK include directory],  ${tac_with_amesos_dscpackdir}/DSC_LIB )
+
+    TAC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
+      AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
+
+    CXXFLAGS="-I${tac_with_amesos_dscpackincdir} ${CXXFLAGS}"
+  fi
+
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-  amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
 else
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
 fi
@@ -557,45 +550,127 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   TAC_ARG_WITH_SUB( amesos, umfpackdir, [Set UMFPACK directory],  ${tac_with_trilinos3pldir}/UMFPACKv4.1/ )
   TAC_CHECK_FILE(${tac_with_amesos_umfpackdir})
 
-  TAC_ARG_WITH_SUB( amesos, umfpacklib, [Set UMFPACK library],  ${tac_with_amesos_umfpackdir}UMFPACK/Lib/libumfpack.a )
-  TAC_CHECK_FILE(${tac_with_amesos_umfpacklib})
+#
+#       1)  First try to compile without specifying the library.  This allows
+#           the user to specify the needed third party library at compile time.
+#
+  SAVE_LIBS="${LIBS}"
+  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  AC_TRY_LINK_FUNC(umfdi_local_search,umfpack_lib_ok="yes",umfpack_lib_ok="no")
+     
+  AC_MSG_RESULT( checkpoint umfpack  A ) 
+  AC_MSG_RESULT( checkpoint umfpack  A ) 
+  if test "X$umfpack_lib_ok" != "Xyes"; then
+#
+#       2)  Next try to compile with -lumfpack.  This allows the user to specify 
+#           the directory while using the default name for the library
+     LIBS=" -lumfpack ${LIBS}"
 
-  TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set UMFPACK AMD library],  ${tac_with_amesos_umfpackdir}AMD/Lib/libamd.a )
-  TAC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
+     AC_MSG_RESULT( checkpoint umfpack  B ) 
+     AC_MSG_RESULT( checkpoint umfpack  B ) 
+     AC_TRY_LINK_FUNC(umfdi_local_search,umfpack_with_lib="yes",umfpack_with_lib="no")
 
-  TAC_ARG_WITH_SUB( amesos, umfpackincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}UMFPACK/Include )
-  TAC_CHECK_FILE(${tac_with_amesos_umfpackincdir})
+     if test "X$umfpack_with_lib" == "Xyes"; then
+       amesos_libs="${amesos_libs} -lumfpack"
+       AC_MSG_RESULT( checkpoint umfpack  C ) 
+       AC_MSG_RESULT( checkpoint umfpack  C ) 
+     else
+#       3)  Then try the existing Triliinos3PL scheme. 
+#
+       AC_MSG_RESULT( checkpoint umfpack  D ) 
+       AC_MSG_RESULT( checkpoint umfpack  D ) 
+       TAC_ARG_WITH_SUB( amesos, umfpacklib, [Set UMFPACK library],  
+                         ${tac_with_amesos_umfpackdir}/UMFPACK/Lib/libumfpack.a )
+       TAC_CHECK_FILE(${tac_with_amesos_umfpacklib})
+       LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+       amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib}"
+     fi
+  fi
 
-  TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK AMD include directory],  ${tac_with_amesos_umfpackdir}AMD/Include )
-  TAC_CHECK_FILE(${tac_with_amesos_umfpackincdir})
+  AC_TRY_LINK_FUNC(umfdi_local_search,,
+  AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/username/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+
+
 
 #
-# This is a bad way to check for umfpack.h, it won't pick umfpack.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#       1)  First try to compile without specifying the library.  This allows
+#           the user to specify the needed third party library at compile time.
 #
+  SAVE_LIBS="${LIBS}"
+  AC_TRY_LINK_FUNC(amd_defaults,amd_lib_ok="yes",amd_lib_ok="no")
+     
+  AC_MSG_RESULT( checkpoint amd  A ) 
+  AC_MSG_RESULT( checkpoint amd  A ) 
+  if test "X$amd_lib_ok" != "Xyes"; then
+#
+#       2)  Next try to compile with -lamd.  This allows the user to specify 
+#           the directory while using the default name for the library
+     LIBS=" -lamd ${LIBS}"
 
-  TAC_CHECK_FILE(${tac_with_amesos_umfpackincdir}/umfpack.h,,
-    AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
+     AC_MSG_RESULT( checkpoint amd  B ) 
+     AC_MSG_RESULT( checkpoint amd  B ) 
+     AC_TRY_LINK_FUNC(amd_defaults,amd_with_lib="yes",amd_with_lib="no")
+
+     if test "X$amd_with_lib" == "Xyes"; then
+       AC_MSG_RESULT( checkpoint amd  C ) 
+       AC_MSG_RESULT( checkpoint amd  C ) 
+       amesos_libs="${amesos_libs} -lamd"
+     else
+#       3)  Then try the existing Triliinos3PL scheme. 
+#
+       AC_MSG_RESULT( checkpoint amd D ) 
+       AC_MSG_RESULT( checkpoint amd D ) 
+       TAC_ARG_WITH_SUB( amesos, umfpackamdlib, [Set AMD library],  
+                         ${tac_with_amesos_umfpackdir}/AMD/Lib/libamd.a )
+       TAC_CHECK_FILE(${tac_with_amesos_umfpackamdlib})
+       LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${SAVE_LIBS}"
+       amesos_libs="${amesos_libs} ${tac_with_amesos_umfpackamdlib}"
+     fi
+  fi
+
+  AC_TRY_LINK_FUNC(amd_defaults,,
+  AC_MSG_ERROR([[Cannot find UMFPACK's AMD library, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpackamdlib=/home/username/Trilinos3PL/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+
+  LIBS="${SAVE_LIBS}"
+
+#
+#  First try to find umfpack.h without using the UMFPACK incude directory
+#
+  AC_CHECK_HEADERS([umfpack.h],,,)
+
+  if test "X$ac_cv_header_umfpack_h" != "Xyes"; then
+#
+#   if we can't find umfpack.h in the include search path, look for it in umfpackincir
+#   which defaults to Trilinos3PL/UMFPACKv4.1/UMFPACK/Include
+#
+    TAC_ARG_WITH_SUB( amesos, umfpackincdir, [Set UMFPACK include directory],  
+                      ${tac_with_amesos_umfpackdir}/UMFPACK/Include )
+
+    TAC_CHECK_FILE(${tac_with_amesos_umfpackincdir}/umfpack.h,,
+      AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpackincdir} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
+
+    CXXFLAGS="-I${tac_with_amesos_umfpackincdir} ${CXXFLAGS}"
+  fi
 
 
-  TAC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
-    AC_MSG_ERROR([[Cannot find umfpack.h in ${tac_with_amesos_umfpack} , specify a location using --with-amesos-umfpackincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
+#
+#  First try to find amd.h without using the UMFPACK AMD incude directory
+#
+  AC_CHECK_HEADERS([amd.h],,,)
 
+  if test "X$ac_cv_header_amd_h" != "Xyes"; then
+#
+#   if we can't find amd.h in the include search path, look for it in umfpackamdincdir
+#   which defaults to Trilinos3PL/UMFPACKv4.1/AMD/Include
+#
+    TAC_ARG_WITH_SUB( amesos, umfpackamdincdir, [Set UMFPACK include directory],  ${tac_with_amesos_umfpackdir}/AMD/Include )
 
-##  LDFLAGS="${tac_with_amesos_umfpacklib} ${LDFLAGS}"
+    TAC_CHECK_FILE(${tac_with_amesos_umfpackamdincdir}/amd.h,,
+      AC_MSG_ERROR([[Cannot find amd.h in ${tac_with_amesos_umfpackamdincdir} , specify a location using --with-amesos-umfpackamdincdir, --with-amesos-umfpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]) )
 
-  CXXFLAGS="-I${tac_with_amesos_umfpackincdir} -I${tac_with_amesos_umfpackamdincdir}   ${CXXFLAGS}"
-  CPPFLAGS="-I${tac_with_amesos_umfpackincdir} -I${tac_with_amesos_umfpackamdincdir}   ${CPPFLAGS}"
+    CXXFLAGS="-I${tac_with_amesos_umfpackamdincdir} ${CXXFLAGS}"
+  fi
 
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(umfdi_local_search,,
-      AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-
-    LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(amd_defaults,,
-      AC_MSG_ERROR([[Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-    LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_UMFPACK, true ) 
   AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
   amesos_libs="${amesos_libs} ${tac_with_amesos_umfpacklib} ${tac_with_amesos_umfpackamdlib}"
@@ -625,46 +700,140 @@ fi
 
 
 
+#   April 23, 2004 - None of the blacs, cblacs, scalapack or mumps stuff is tested at this point.
+
+
+
 #
-#  Look for scalapack and blacs libraries 
+#  Look for scalapack, blacs and cblacs libraries 
 #    if --enable-amesos-scalapack or --enable-amesos-mumps
 #
 if test "X$ac_cv_use_amesos_scalapack" != "Xno" || 
    test "X$ac_cv_use_amesos_mumps" != "Xno"; then
-      TAC_ARG_WITH_SUB( amesos, scalapackdir, [Set scalapack directory],  ${tac_with_trilinos3pldir}/scalapack )
-      TAC_CHECK_FILE(${tac_with_amesos_scalapackdir})
 
-      TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set scalapack library],  ${tac_with_amesos_scalapackdir}/libscalapack.a )
-      TAC_CHECK_FILE(${tac_with_amesos_scalapacklib})
+#
+#   BLACS library
+#
+  TAC_ARG_WITH_SUB( amesos, blacsdir, [Set BLACS directory],  ${tac_with_trilinos3pldir}/BLACS/LIB )
+  TAC_CHECK_FILE(${tac_with_amesos_blacsdir})
 
-      TAC_ARG_WITH_SUB( amesos, blacsdir, [Set blacs directory],  ${tac_with_trilinos3pldir}/BLACS/LIB/ )
-      TAC_CHECK_FILE(${tac_with_amesos_blacsdir})
+  SAVE_LIBS="${LIBS}"
+  LIBS="${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+  AC_F77_FUNC(dgebs2d)
 
-      TAC_ARG_WITH_SUB( amesos, blacslib, [Set blacs library],  ${tac_with_amesos_blacsdir}/libblacs.a )
-      TAC_CHECK_FILE(${tac_with_amesos_blacslib})
+  AC_TRY_LINK_FUNC($dgebs2d,blacs_lib_ok="yes",blacs_lib_ok="no")
+     
+  AC_MSG_RESULT( checkpoint blacs  A ) 
+  AC_MSG_RESULT( checkpoint blacs  A ) 
+  if test "X$blacs_lib_ok" != "Xyes"; then
+     SCALIBS ="${LIBS}" 
+     LIBS=" -lblacs ${LIBS}"
 
-      TAC_ARG_WITH_SUB( amesos, blacsclib, [Set blacs C library],  ${tac_with_amesos_blacsdir}/libcblacs.a )
-      TAC_CHECK_FILE(${tac_with_amesos_blacsclib})
+     AC_MSG_RESULT( checkpoint blacs  B ) 
+     AC_MSG_RESULT( checkpoint blacs  B ) 
+     AC_TRY_LINK_FUNC($dgebs2d,blacs_with_lib="yes",blacs_with_lib="no")
 
-      AC_F77_FUNC(dgebs2d)
+     if test "X$blacs_with_lib" == "Xyes"; then
+       SCALIBS ="${LIBS}" 
+       amesos_libs="${amesos_libs} -lblacs"
+       AC_MSG_RESULT( checkpoint blacs  C ) 
+       AC_MSG_RESULT( checkpoint blacs  C ) 
+     else
+       AC_MSG_RESULT( checkpoint blacs  D ) 
+       AC_MSG_RESULT( checkpoint blacs  D ) 
+       TAC_ARG_WITH_SUB( amesos, blacslib, [Set BLACS library],  
+                         ${tac_with_amesos_blacsdir}/libblacs.a )
+       TAC_CHECK_FILE(${tac_with_amesos_blacslib},blacs_from_t3pl="yes",blacs_from_t3pl="no")
+       if test "X$blacs_from_t3pl" == "Xyes"; then
+          amesos_libs="${amesos_libs} ${tac_with_amesos_blacslib}"
+          SCALIBS =" ${tac_with_amesos_blacslib} ${LIBS}" 
+       fi
+     fi
+  fi
 
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_blacslib}  ${tac_with_amesos_cblacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC($dgebs2d,,
-      AC_MSG_ERROR([[Cannot find blacs library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacsdir=/home/kstanley/Trilinos3PL/BLACS/LIB).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-    LIBS="${SAVE_LIBS}"
+  AC_TRY_LINK_FUNC($dgebs2d,,
+  AC_MSG_ERROR([[Cannot find the BLACS library, specify a location using --with-amesos-blacslib, (ex. --with-amesos-blacslib=/home/username/Trilinos3PL/BLACS/LIB/libblacs.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 
-      AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
-      AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
-      amesos_libs="${amesos_libs} ${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib} ${tac_with_amesos_blacsclib}  ${tac_with_amesos_blacslib} "
 
-      AC_F77_FUNC(pdgetrf)
+#
+#      CBLACS library
+#  Look for the cblacs library - some implementations of either ScaLAPACK or MUMPS may need 
+#  the cblacs library.  Other implementations do not.  If we find the cblacs, we include it 
+#  in the search path, if we don't, we hope for the best.
+#
+  LIBS="${SCALIBS}"
+  AC_TRY_LINK_FUNC(Cblacs_pinfo,cblacs_lib_ok="yes",cblacs_lib_ok="no")
+  AC_MSG_RESULT( checkpoint cblacs  A ) 
+  AC_MSG_RESULT( checkpoint cblacs  A ) 
+  if test "X$cblacs_lib_ok" != "Xyes"; then
+     LIBS=" -lcblacs ${LIBS}"
 
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_scalapacklib} ${tac_with_amesos_blacslib}  ${tac_with_amesos_cblacslib} ${tac_with_amesos_blacslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC($pdgetrf,,
-      AC_MSG_ERROR([[Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/kstanley/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-    LIBS="${SAVE_LIBS}"
+     AC_MSG_RESULT( checkpoint cblacs  B ) 
+     AC_MSG_RESULT( checkpoint cblacs  B ) 
+     AC_TRY_LINK_FUNC(Cblacs_pinfo,cblacs_with_lib="yes",cblacs_with_lib="no")
+
+     if test "X$cblacs_with_lib" == "Xyes"; then
+       SCALIBS ="-lcblacs ${SCALIBS}" 
+       amesos_libs="${amesos_libs} -lcblacs"
+       AC_MSG_RESULT( checkpoint cblacs  C ) 
+       AC_MSG_RESULT( checkpoint cblacs  C ) 
+     else
+       AC_MSG_RESULT( checkpoint cblacs  D ) 
+       AC_MSG_RESULT( checkpoint cblacs  D ) 
+       TAC_ARG_WITH_SUB( amesos, cblacslib, [Set CBLACS library],  
+                         ${tac_with_amesos_blacsdir}/libcblacs.a )
+       TAC_CHECK_FILE(${tac_with_amesos_cblacslib},cblacs_from_t3pl="yes",cblacs_from_t3pl="no")
+       if test "X$cblacs_from_t3pl" == "Xyes"; then
+          SCALIBS =" ${tac_with_amesos_cblacslib} ${SCALIBS}" 
+          amesos_libs="${amesos_libs} ${tac_with_amesos_cblacslib}"
+       fi
+     fi
+  fi
+fi
+#
+#  No check here because not all implementations require the cblacs library
+#
+
+#
+#    SCALAPACK library
+#
+if test "X$ac_cv_use_amesos_scalapack" != "Xno"; then
+
+  AC_F77_FUNC(pdgetrf)
+  LIBS="${SCALIBS}"
+  AC_TRY_LINK_FUNC($pdgetrf,scalapack_lib_ok="yes",scalapack_lib_ok="no")
+  AC_MSG_RESULT( checkpoint scalapack  A ) 
+  AC_MSG_RESULT( checkpoint scalapack  A ) 
+  if test "X$scalapack_lib_ok" != "Xyes"; then
+     LIBS=" -lscalapack ${LIBS}"
+
+     AC_MSG_RESULT( checkpoint scalapack  B ) 
+     AC_MSG_RESULT( checkpoint scalapack  B ) 
+     AC_TRY_LINK_FUNC($pdgetrf,scalapack_with_lib="yes",scalapack_with_lib="no")
+
+     if test "X$scalapack_with_lib" == "Xyes"; then
+       amesos_libs=" -lscalapack ${amesos_libs}"
+       AC_MSG_RESULT( checkpoint scalapack  C ) 
+       AC_MSG_RESULT( checkpoint scalapack  C ) 
+     else
+       AC_MSG_RESULT( checkpoint scalapack  D ) 
+       AC_MSG_RESULT( checkpoint scalapack  D ) 
+       TAC_ARG_WITH_SUB( amesos, scalapacklib, [Set SCALAPACK library],  
+                         ${tac_with_amesos_blacsdir}/libscalapack.a )
+       TAC_CHECK_FILE(${tac_with_amesos_scalapacklib},scalapack_from_t3pl="yes",scalapack_from_t3pl="no")
+       if test "X$scalapack_from_t3pl" == "Xyes"; then
+          LIBS =" ${tac_with_amesos_scalapacklib} ${SCALIBS}" 
+          amesos_libs="${tac_with_amesos_scalapacklib} ${amesos_libs}"
+       fi
+     fi
+  fi
+  SCALIBS = ${LIBS}
+  AC_TRY_LINK_FUNC($pdgetrf,,
+  AC_MSG_ERROR([[Cannot find scalapack library, specify a location using --with-amesos-scalapacklib, (ex. --with-amesos-scalapacklib=/home/username/Trilinos3PL/SuperLU_DIST_2.0/libsuperludist.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+
+  LIBS="${SAVE_LIBS}"
+  AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, true ) 
+  AM_CONDITIONAL(NEED_PARAMETER_LIST, true ) 
 
 else
   AM_CONDITIONAL(HAVE_AMESOS_SCALAPACK, false ) 
@@ -687,17 +856,22 @@ fi
 #
 if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 
+   ${LIBS} = ${SCALIBS}
+
+#
+#  We don't check do as thorough a check for Mumps at this point.  In fact, we don't do much of a check 
+#  at all.
+#
   TAC_ARG_WITH_SUB( amesos, mumpsdir, [Set MUMPS directory],  ${tac_with_trilinos3pldir}/MUMPS_4.2_beta/ )
   TAC_CHECK_FILE(${tac_with_amesos_mumpsdir})
 
-    TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}/lib/libdmumps.a )
-    TAC_CHECK_FILE(${tac_with_amesos_mumpslib})
+  TAC_ARG_WITH_SUB( amesos, mumpslib, [Set MUMPS library],  ${tac_with_amesos_mumpsdir}/lib/libdmumps.a )
+  TAC_CHECK_FILE(${tac_with_amesos_mumpslib})
 
-    TAC_ARG_WITH_SUB( amesos, mumpspordlib, [Set MUMPS PORD library],  ${tac_with_amesos_mumpsdir}/lib/libpord.a )
-    TAC_CHECK_FILE(${tac_with_amesos_mumpspordlib})
+  TAC_ARG_WITH_SUB( amesos, mumpspordlib, [Set MUMPS PORD library],  ${tac_with_amesos_mumpsdir}/lib/libpord.a )
+  TAC_CHECK_FILE(${tac_with_amesos_mumpspordlib})
 
-
-  TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory],  ${tac_with_amesos_mumpsdir}include )
+  TAC_ARG_WITH_SUB( amesos, mumpsincdir, [Set MUMPS include directory],  ${tac_with_amesos_mumpsdir}/include )
   TAC_CHECK_FILE(${tac_with_amesos_mumpsincdir})
 
 #
@@ -705,14 +879,21 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
 #
 
+#
+#  First try to find amd.h without using the UMFPACK AMD incude directory
+#
+  AC_CHECK_HEADERS([dmumps_c.h],,,)
+
+  if test "X$ac_cv_header_dmumps_c_h" != "Xyes"; then
+#
+#   if we can't find dmumps_c.h in the include search path, look for it in mumpsincdir
+#   which defaults to Trilinos3PL/MUMPS_4.2_beta/include
+#
   TAC_CHECK_FILE(${tac_with_amesos_mumpsincdir}/dmumps_c.h,,
     AC_MSG_ERROR([[Cannot find dmumps_c.h in ${tac_with_amesos_mumps} , specify a location using --with-amesos-mumpsincdir, --with-amesos-mumpsdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
 
-
-##  LDFLAGS="${tac_with_amesos_mumpslib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
-
+    CXXFLAGS="-I${tac_with_amesos_mumpsincdir} ${CXXFLAGS}"
+  fi
 
 #
 #    The following attempt to confirm that libmumps.a and lidpord.a are the right libraries
@@ -723,10 +904,10 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 #    SAVE_LIBS="${LIBS}"
 #      LIBS="${tac_with_amesos_mumpslib} ${MPI_LIBS} ${LIBS}"
 #      AC_TRY_LINK_FUNC(dmumps_164_,,
-#      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+#      AC_MSG_ERROR([[Cannot find the MUMPS library, specify a location using --with-amesos-mumpslib, (ex. --with-amesos-mumpslib=/home/username/Trilinos3PL/MUMPS_4.2_beta/lib/libdmumps.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 #    LIBS="${tac_with_amesos_mumpspordlib} ${MPI_LIBS} ${LIBS}"
 #      AC_TRY_LINK_FUNC(qsortUpInts,,
-#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-mumpslib=/home/kstanley/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+#      AC_MSG_ERROR([[Cannot find the PORD library needed by MUMPS, specify a location using --with-amesos-mumpspordlib, (ex. --with-amesos-mumpslib=/home/username/Trilinos3PL/MUMPS_4.2_beta/lib/libpord.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
 #    LIBS="${SAVE_LIBS}"
 #
 #  Notes for running with the Intel fortran 90 compiler (ifort):
@@ -741,60 +922,6 @@ if test "X$ac_cv_use_amesos_mumps" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_MUMPS, false ) 
 fi
-
-
-
-
-#
-#  --enable-amesos-slus, --with-amesos-slusdir, --with-amesos-sluslib, 
-#    --with-amesos-slusincdir
-#
-#
-#  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU serial include directory
-#    Make sure that SuperLU_timer is in the SuperLU serial library
-#
-
-if test "X$ac_cv_use_amesos_slus" != "Xno"; then
-
-  TAC_ARG_WITH_SUB( amesos, slusdir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
-  TAC_CHECK_FILE(${tac_with_amesos_slusdir})
-
-  TAC_ARG_WITH_SUB( amesos, sluslib, [Set SuperLU serial library],  ${tac_with_amesos_slusdir}/libsuperlu.a )
-  TAC_CHECK_FILE(${tac_with_amesos_sluslib})
-
-  TAC_ARG_WITH_SUB( amesos, slusincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_slusdir}/SRC )
-  TAC_CHECK_FILE(${tac_with_amesos_slusincdir})
-
-#
-# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
-# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
-#
-
-
-  TAC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h)
-
-  TAC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]] ))
-
-
-##  LDFLAGS="${tac_with_amesos_sluslib} ${LDFLAGS}"
-
-  CXXFLAGS="-I${tac_with_amesos_slusincdir} ${CXXFLAGS}"
-
-    SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sluslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-    LIBS="${SAVE_LIBS}"
-  amesos_libs=" ${tac_with_amesos_sluslib} ${amesos_libs}"
-
-  AM_CONDITIONAL(HAVE_AMESOS_SLUS, true ) 
-else
-  AM_CONDITIONAL(HAVE_AMESOS_SLUS, false ) 
-fi
-
-
 
 
 #
@@ -837,7 +964,7 @@ if test "X$ac_cv_use_amesos_superlu" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_superlulib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-superlulib, (ex. --with-amesos-superlulib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-superlulib, (ex. --with-amesos-superlulib=/home/username/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
   amesos_libs=" ${tac_with_amesos_superlulib} ${amesos_libs}"
 
@@ -896,28 +1023,6 @@ fi
 # AC_LANG_POP
 
 AC_SUBST(AMESOS_LIBS,${amesos_libs}) 
-
-
-## AC_ARG_ENABLE(amesos-slud,
-## [AC_HELP_STRING([--enable-amesos-slud],[compile SuperLU Dist interface])],
-## [ADDON_SLUD=$enableval],
-## [ADDON_SLUD=yes]
-## )
-## AM_CONDITIONAL(BUILD_SLUDIST, test X${ADDON_SLUD} = "Xyes")
-
-## AC_ARG_ENABLE(amesos-slus,
-## [AC_HELP_STRING([--enable-amesos-slus],[compile SuperLU Serial interface])],
-## [ADDON_SLUS=$enableval],
-## [ADDON_SLUS=yes]
-## )
-## AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
-
-## AC_ARG_ENABLE(amesos-kundert,
-## [AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],
-## [ADDON_KS=$enableval],
-## [ADDON_KS=no]
-## )
-## AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, test X${ADDON_KS} = "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics

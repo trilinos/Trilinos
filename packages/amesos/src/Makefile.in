@@ -129,8 +129,7 @@ am__libamesos_a_SOURCES_DIST = $(srcdir)/DscpackOO.cpp \
 	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
 	$(srcdir)/EpetraExt_Redistor.cpp $(srcdir)/Amesos.cpp \
 	$(srcdir)/Amesos_Superlu.cpp $(srcdir)/Amesos_Superludist.cpp \
-	$(srcdir)/SuperludistOO.cpp $(srcdir)/Superludist2_OO.cpp \
-	$(srcdir)/Epetra_SLU.cpp $(srcdir)/Epetra_CrsKundertSparse.cpp \
+	$(srcdir)/Epetra_CrsKundertSparse.cpp \
 	$(srcdir)/ksparse/alloc.c $(srcdir)/ksparse/smplinkrows.c \
 	$(srcdir)/ksparse/spbuild.c $(srcdir)/ksparse/spoutput.c \
 	$(srcdir)/ksparse/spsolve.c $(srcdir)/ksparse/driver.c \
@@ -163,10 +162,7 @@ am__objects_7 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_SUPERLU_TRUE@am__objects_8 = Amesos_Superlu.$(OBJEXT)
 @HAVE_AMESOS_SUPERLUDIST_TRUE@am__objects_9 =  \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	Amesos_Superludist.$(OBJEXT)
-@HAVE_AMESOS_SLUD_TRUE@am__objects_10 = SuperludistOO.$(OBJEXT)
-@HAVE_AMESOS_SLUD2_TRUE@am__objects_11 = Superludist2_OO.$(OBJEXT)
-@HAVE_AMESOS_SLUS_TRUE@am__objects_12 = Epetra_SLU.$(OBJEXT)
-@HAVE_AMESOS_KUNDERT_TRUE@am__objects_13 =  \
+@HAVE_AMESOS_KUNDERT_TRUE@am__objects_10 =  \
 @HAVE_AMESOS_KUNDERT_TRUE@	Epetra_CrsKundertSparse.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	alloc.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	smplinkrows.$(OBJEXT) \
@@ -174,12 +170,11 @@ am__objects_7 = Amesos.$(OBJEXT)
 @HAVE_AMESOS_KUNDERT_TRUE@	spsolve.$(OBJEXT) driver.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spalloc.$(OBJEXT) spfactor.$(OBJEXT) \
 @HAVE_AMESOS_KUNDERT_TRUE@	spsmp.$(OBJEXT) sputils.$(OBJEXT)
-am__objects_14 = CrsMatrixTranspose.$(OBJEXT)
+am__objects_11 = CrsMatrixTranspose.$(OBJEXT)
 am_libamesos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
-	$(am__objects_12) $(am__objects_13) $(am__objects_14)
+	$(am__objects_9) $(am__objects_10) $(am__objects_11)
 libamesos_a_OBJECTS = $(am_libamesos_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I.
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -197,11 +192,9 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/DscpackOO.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Redistor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Epetra_CrsKundertSparse.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Epetra_SLU.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Superludist2_OO.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/SuperludistOO.Po ./$(DEPDIR)/alloc.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/cbtf.Po ./$(DEPDIR)/driver.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/klu.Po ./$(DEPDIR)/klu_btf_analyze.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/alloc.Po ./$(DEPDIR)/cbtf.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/driver.Po ./$(DEPDIR)/klu.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/klu_btf_analyze.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_factor.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_free_numeric.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/klu_btf_free_symbolic.Po \
@@ -236,10 +229,8 @@ am__include_HEADERS_DIST = $(srcdir)/Amesos_Dscpack.h \
 	$(srcdir)/Amesos_EpetraBaseSolver.h \
 	$(srcdir)/EpetraExt_Redistor.h $(srcdir)/Amesos.h \
 	$(srcdir)/Amesos_Superlu.h $(srcdir)/Amesos_Superludist.h \
-	$(srcdir)/SuperludistOO.h $(srcdir)/Superludist2_OO.h \
-	$(srcdir)/Epetra_SLU.h $(srcdir)/Epetra_CrsKundertSparse.h \
-	Amesos_BaseSolver.h Amesos_ConfigDefs.h \
-	$(srcdir)/Amesos_BaseSolver.h
+	$(srcdir)/Epetra_CrsKundertSparse.h Amesos_BaseSolver.h \
+	Amesos_ConfigDefs.h $(srcdir)/Amesos_BaseSolver.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -264,6 +255,7 @@ BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -290,12 +282,6 @@ HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
 HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
-HAVE_AMESOS_SLUD2_FALSE = @HAVE_AMESOS_SLUD2_FALSE@
-HAVE_AMESOS_SLUD2_TRUE = @HAVE_AMESOS_SLUD2_TRUE@
-HAVE_AMESOS_SLUD_FALSE = @HAVE_AMESOS_SLUD_FALSE@
-HAVE_AMESOS_SLUD_TRUE = @HAVE_AMESOS_SLUD_TRUE@
-HAVE_AMESOS_SLUS_FALSE = @HAVE_AMESOS_SLUS_FALSE@
-HAVE_AMESOS_SLUS_TRUE = @HAVE_AMESOS_SLUS_TRUE@
 HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
@@ -401,14 +387,6 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_SUPERLUDIST_TRUE@SUPERLUDIST = \
 @HAVE_AMESOS_SUPERLUDIST_TRUE@	$(srcdir)/Amesos_Superludist.cpp
 
-@HAVE_AMESOS_SLUD_FALSE@SLUDIST_H = 
-@HAVE_AMESOS_SLUD_TRUE@SLUDIST_H = \
-@HAVE_AMESOS_SLUD_TRUE@	$(srcdir)/SuperludistOO.h
-
-@HAVE_AMESOS_SLUD_FALSE@SLUDIST = 
-@HAVE_AMESOS_SLUD_TRUE@SLUDIST = \
-@HAVE_AMESOS_SLUD_TRUE@	$(srcdir)/SuperludistOO.cpp
-
 @NEED_PARAMETER_LIST_FALSE@PARAM_H = 
 
 #
@@ -510,22 +488,6 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/Amesos_EpetraBaseSolver.cpp \
 @HAVE_AMESOS_MUMPS_TRUE@	$(srcdir)/EpetraExt_Redistor.cpp
 
-@HAVE_AMESOS_SLUD2_FALSE@SLUDIST2_H = 
-@HAVE_AMESOS_SLUD2_TRUE@SLUDIST2_H = \
-@HAVE_AMESOS_SLUD2_TRUE@	$(srcdir)/Superludist2_OO.h
-
-@HAVE_AMESOS_SLUD2_FALSE@SLUDIST2 = 
-@HAVE_AMESOS_SLUD2_TRUE@SLUDIST2 = \
-@HAVE_AMESOS_SLUD2_TRUE@	$(srcdir)/Superludist2_OO.cpp
-
-@HAVE_AMESOS_SLUS_FALSE@SLUSERIAL_H = 
-@HAVE_AMESOS_SLUS_TRUE@SLUSERIAL_H = \
-@HAVE_AMESOS_SLUS_TRUE@       $(srcdir)/Epetra_SLU.h
-
-@HAVE_AMESOS_SLUS_FALSE@SLUSERIAL = 
-@HAVE_AMESOS_SLUS_TRUE@SLUSERIAL = \
-@HAVE_AMESOS_SLUS_TRUE@       $(srcdir)/Epetra_SLU.cpp
-
 @HAVE_AMESOS_KUNDERT_FALSE@KUNDERT_H = 
 @HAVE_AMESOS_KUNDERT_TRUE@KUNDERT_H = \
 @HAVE_AMESOS_KUNDERT_TRUE@       $(srcdir)/Epetra_CrsKundertSparse.h
@@ -598,9 +560,6 @@ AMESOS_H = \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
-	$(SLUDIST_H) \
-	$(SLUDIST2_H) \
-	$(SLUSERIAL_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h
@@ -615,9 +574,6 @@ libamesos_a_SOURCES = \
 	$(FACTORY) \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
-	$(SLUDIST) \
-	$(SLUDIST2) \
-	$(SLUSERIAL) \
 	$(KUNDERT) \
 	$(COMP)
 
@@ -775,9 +731,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/DscpackOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Redistor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_CrsKundertSparse.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Epetra_SLU.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Superludist2_OO.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SuperludistOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cbtf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driver.Po@am__quote@
@@ -1360,54 +1313,6 @@ Amesos_Superludist.obj: $(srcdir)/Amesos_Superludist.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Amesos_Superludist.Po' tmpdepfile='$(DEPDIR)/Amesos_Superludist.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Amesos_Superludist.obj `if test -f '$(srcdir)/Amesos_Superludist.cpp'; then $(CYGPATH_W) '$(srcdir)/Amesos_Superludist.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Amesos_Superludist.cpp'; fi`
-
-SuperludistOO.o: $(srcdir)/SuperludistOO.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SuperludistOO.o -MD -MP -MF "$(DEPDIR)/SuperludistOO.Tpo" -c -o SuperludistOO.o `test -f '$(srcdir)/SuperludistOO.cpp' || echo '$(srcdir)/'`$(srcdir)/SuperludistOO.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SuperludistOO.Tpo" "$(DEPDIR)/SuperludistOO.Po"; else rm -f "$(DEPDIR)/SuperludistOO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.o `test -f '$(srcdir)/SuperludistOO.cpp' || echo '$(srcdir)/'`$(srcdir)/SuperludistOO.cpp
-
-SuperludistOO.obj: $(srcdir)/SuperludistOO.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SuperludistOO.obj -MD -MP -MF "$(DEPDIR)/SuperludistOO.Tpo" -c -o SuperludistOO.obj `if test -f '$(srcdir)/SuperludistOO.cpp'; then $(CYGPATH_W) '$(srcdir)/SuperludistOO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuperludistOO.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/SuperludistOO.Tpo" "$(DEPDIR)/SuperludistOO.Po"; else rm -f "$(DEPDIR)/SuperludistOO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SuperludistOO.cpp' object='SuperludistOO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/SuperludistOO.Po' tmpdepfile='$(DEPDIR)/SuperludistOO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SuperludistOO.obj `if test -f '$(srcdir)/SuperludistOO.cpp'; then $(CYGPATH_W) '$(srcdir)/SuperludistOO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SuperludistOO.cpp'; fi`
-
-Superludist2_OO.o: $(srcdir)/Superludist2_OO.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Superludist2_OO.o -MD -MP -MF "$(DEPDIR)/Superludist2_OO.Tpo" -c -o Superludist2_OO.o `test -f '$(srcdir)/Superludist2_OO.cpp' || echo '$(srcdir)/'`$(srcdir)/Superludist2_OO.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Superludist2_OO.Tpo" "$(DEPDIR)/Superludist2_OO.Po"; else rm -f "$(DEPDIR)/Superludist2_OO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Superludist2_OO.cpp' object='Superludist2_OO.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Superludist2_OO.Po' tmpdepfile='$(DEPDIR)/Superludist2_OO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Superludist2_OO.o `test -f '$(srcdir)/Superludist2_OO.cpp' || echo '$(srcdir)/'`$(srcdir)/Superludist2_OO.cpp
-
-Superludist2_OO.obj: $(srcdir)/Superludist2_OO.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Superludist2_OO.obj -MD -MP -MF "$(DEPDIR)/Superludist2_OO.Tpo" -c -o Superludist2_OO.obj `if test -f '$(srcdir)/Superludist2_OO.cpp'; then $(CYGPATH_W) '$(srcdir)/Superludist2_OO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Superludist2_OO.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Superludist2_OO.Tpo" "$(DEPDIR)/Superludist2_OO.Po"; else rm -f "$(DEPDIR)/Superludist2_OO.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Superludist2_OO.cpp' object='Superludist2_OO.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Superludist2_OO.Po' tmpdepfile='$(DEPDIR)/Superludist2_OO.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Superludist2_OO.obj `if test -f '$(srcdir)/Superludist2_OO.cpp'; then $(CYGPATH_W) '$(srcdir)/Superludist2_OO.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Superludist2_OO.cpp'; fi`
-
-Epetra_SLU.o: $(srcdir)/Epetra_SLU.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_SLU.o -MD -MP -MF "$(DEPDIR)/Epetra_SLU.Tpo" -c -o Epetra_SLU.o `test -f '$(srcdir)/Epetra_SLU.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_SLU.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_SLU.Tpo" "$(DEPDIR)/Epetra_SLU.Po"; else rm -f "$(DEPDIR)/Epetra_SLU.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_SLU.cpp' object='Epetra_SLU.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_SLU.Po' tmpdepfile='$(DEPDIR)/Epetra_SLU.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SLU.o `test -f '$(srcdir)/Epetra_SLU.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_SLU.cpp
-
-Epetra_SLU.obj: $(srcdir)/Epetra_SLU.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_SLU.obj -MD -MP -MF "$(DEPDIR)/Epetra_SLU.Tpo" -c -o Epetra_SLU.obj `if test -f '$(srcdir)/Epetra_SLU.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_SLU.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_SLU.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Epetra_SLU.Tpo" "$(DEPDIR)/Epetra_SLU.Po"; else rm -f "$(DEPDIR)/Epetra_SLU.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Epetra_SLU.cpp' object='Epetra_SLU.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Epetra_SLU.Po' tmpdepfile='$(DEPDIR)/Epetra_SLU.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Epetra_SLU.obj `if test -f '$(srcdir)/Epetra_SLU.cpp'; then $(CYGPATH_W) '$(srcdir)/Epetra_SLU.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Epetra_SLU.cpp'; fi`
 
 Epetra_CrsKundertSparse.o: $(srcdir)/Epetra_CrsKundertSparse.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Epetra_CrsKundertSparse.o -MD -MP -MF "$(DEPDIR)/Epetra_CrsKundertSparse.Tpo" -c -o Epetra_CrsKundertSparse.o `test -f '$(srcdir)/Epetra_CrsKundertSparse.cpp' || echo '$(srcdir)/'`$(srcdir)/Epetra_CrsKundertSparse.cpp; \

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestDscpack_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestOldSuperludist_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
+SOURCES = $(TestDscpack_SOURCES) $(TestKlu_SOURCES) $(TestMumps_SOURCES) $(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -67,7 +67,7 @@ POST_UNINSTALL = :
 host_triplet = @host@
 @HAVE_MPI_TRUE@noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) \
 @HAVE_MPI_TRUE@	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5) \
-@HAVE_MPI_TRUE@	$(am__EXEEXT_6) $(am__EXEEXT_7)
+@HAVE_MPI_TRUE@	$(am__EXEEXT_6)
 subdir = test/scripts/daily/mpi
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,16 +99,15 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-@HAVE_AMESOS_SLUD_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_1 = TestOldSuperludist$(EXEEXT)
-@HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_2 =  \
+@HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_1 =  \
 @HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@	TestDscpack$(EXEEXT)
-@HAVE_AMESOS_UMFPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_3 =  \
+@HAVE_AMESOS_UMFPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_2 =  \
 @HAVE_AMESOS_UMFPACK_TRUE@@HAVE_MPI_TRUE@	TestUmfpack$(EXEEXT)
-@HAVE_AMESOS_MUMPS_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_4 =  \
+@HAVE_AMESOS_MUMPS_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_3 =  \
 @HAVE_AMESOS_MUMPS_TRUE@@HAVE_MPI_TRUE@	TestMumps$(EXEEXT)
-@HAVE_AMESOS_KLU_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_5 = TestKlu$(EXEEXT)
-@HAVE_AMESOS_SUPERLUDIST_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_6 = TestSuperlud$(EXEEXT)
-@HAVE_AMESOS_SCALAPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_7 = TestScalapack$(EXEEXT)
+@HAVE_AMESOS_KLU_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_4 = TestKlu$(EXEEXT)
+@HAVE_AMESOS_SUPERLUDIST_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_5 = TestSuperlud$(EXEEXT)
+@HAVE_AMESOS_SCALAPACK_TRUE@@HAVE_MPI_TRUE@am__EXEEXT_6 = TestScalapack$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am__TestDscpack_SOURCES_DIST = $(srcdir)/TestDscpack
 am_TestDscpack_OBJECTS =
@@ -122,10 +121,6 @@ am__TestMumps_SOURCES_DIST = $(srcdir)/TestMumps
 am_TestMumps_OBJECTS =
 TestMumps_OBJECTS = $(am_TestMumps_OBJECTS)
 TestMumps_LDADD = $(LDADD)
-am__TestOldSuperludist_SOURCES_DIST = $(srcdir)/TestOldSuperludist
-am_TestOldSuperludist_OBJECTS =
-TestOldSuperludist_OBJECTS = $(am_TestOldSuperludist_OBJECTS)
-TestOldSuperludist_LDADD = $(LDADD)
 am__TestScalapack_SOURCES_DIST = $(srcdir)/TestScalapack
 am_TestScalapack_OBJECTS =
 TestScalapack_OBJECTS = $(am_TestScalapack_OBJECTS)
@@ -144,12 +139,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestDscpack_SOURCES) $(TestKlu_SOURCES) \
-	$(TestMumps_SOURCES) $(TestOldSuperludist_SOURCES) \
-	$(TestScalapack_SOURCES) $(TestSuperlud_SOURCES) \
-	$(TestUmfpack_SOURCES)
+	$(TestMumps_SOURCES) $(TestScalapack_SOURCES) \
+	$(TestSuperlud_SOURCES) $(TestUmfpack_SOURCES)
 DIST_SOURCES = $(am__TestDscpack_SOURCES_DIST) \
 	$(am__TestKlu_SOURCES_DIST) $(am__TestMumps_SOURCES_DIST) \
-	$(am__TestOldSuperludist_SOURCES_DIST) \
 	$(am__TestScalapack_SOURCES_DIST) \
 	$(am__TestSuperlud_SOURCES_DIST) \
 	$(am__TestUmfpack_SOURCES_DIST)
@@ -172,6 +165,7 @@ BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -198,12 +192,6 @@ HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
 HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
-HAVE_AMESOS_SLUD2_FALSE = @HAVE_AMESOS_SLUD2_FALSE@
-HAVE_AMESOS_SLUD2_TRUE = @HAVE_AMESOS_SLUD2_TRUE@
-HAVE_AMESOS_SLUD_FALSE = @HAVE_AMESOS_SLUD_FALSE@
-HAVE_AMESOS_SLUD_TRUE = @HAVE_AMESOS_SLUD_TRUE@
-HAVE_AMESOS_SLUS_FALSE = @HAVE_AMESOS_SLUS_FALSE@
-HAVE_AMESOS_SLUS_TRUE = @HAVE_AMESOS_SLUS_TRUE@
 HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
@@ -293,10 +281,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_AMESOS_SLUD_FALSE@@HAVE_MPI_TRUE@SLUDIST_TEST = 
-# Nothing should be done for a serial build
-@HAVE_AMESOS_SLUD_TRUE@@HAVE_MPI_TRUE@SLUDIST_TEST = TestOldSuperludist 
 @HAVE_AMESOS_DSCPACK_FALSE@@HAVE_MPI_TRUE@DSCPACK_TEST = 
+# Nothing should be done for a serial build
 @HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@DSCPACK_TEST = TestDscpack
 @HAVE_AMESOS_UMFPACK_FALSE@@HAVE_MPI_TRUE@UMFPACK_TEST = 
 @HAVE_AMESOS_UMFPACK_TRUE@@HAVE_MPI_TRUE@UMFPACK_TEST = TestUmfpack
@@ -310,7 +296,6 @@ target_vendor = @target_vendor@
 @HAVE_AMESOS_SUPERLUDIST_TRUE@@HAVE_MPI_TRUE@SUPERLUDIST_TEST = TestSuperlud
 @HAVE_AMESOS_MUMPS_FALSE@@HAVE_MPI_TRUE@MUMPS_TEST = 
 @HAVE_AMESOS_MUMPS_TRUE@@HAVE_MPI_TRUE@MUMPS_TEST = TestMumps
-@HAVE_AMESOS_SLUD_TRUE@@HAVE_MPI_TRUE@TestOldSuperludist_SOURCES = $(srcdir)/TestOldSuperludist
 @HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@TestDscpack_SOURCES = $(srcdir)/TestDscpack
 @HAVE_AMESOS_UMFPACK_TRUE@@HAVE_MPI_TRUE@TestUmfpack_SOURCES = $(srcdir)/TestUmfpack
 @HAVE_AMESOS_SCALAPACK_TRUE@@HAVE_MPI_TRUE@TestScalapack_SOURCES = $(srcdir)/TestScalapack
@@ -370,12 +355,6 @@ clean-noinstPROGRAMS:
 @HAVE_MPI_FALSE@TestMumps$(EXEEXT): $(TestMumps_OBJECTS) $(TestMumps_DEPENDENCIES) 
 @HAVE_MPI_FALSE@	@rm -f TestMumps$(EXEEXT)
 @HAVE_MPI_FALSE@	$(LINK) $(TestMumps_LDFLAGS) $(TestMumps_OBJECTS) $(TestMumps_LDADD) $(LIBS)
-@HAVE_AMESOS_SLUD_FALSE@TestOldSuperludist$(EXEEXT): $(TestOldSuperludist_OBJECTS) $(TestOldSuperludist_DEPENDENCIES) 
-@HAVE_AMESOS_SLUD_FALSE@	@rm -f TestOldSuperludist$(EXEEXT)
-@HAVE_AMESOS_SLUD_FALSE@	$(LINK) $(TestOldSuperludist_LDFLAGS) $(TestOldSuperludist_OBJECTS) $(TestOldSuperludist_LDADD) $(LIBS)
-@HAVE_MPI_FALSE@TestOldSuperludist$(EXEEXT): $(TestOldSuperludist_OBJECTS) $(TestOldSuperludist_DEPENDENCIES) 
-@HAVE_MPI_FALSE@	@rm -f TestOldSuperludist$(EXEEXT)
-@HAVE_MPI_FALSE@	$(LINK) $(TestOldSuperludist_LDFLAGS) $(TestOldSuperludist_OBJECTS) $(TestOldSuperludist_LDADD) $(LIBS)
 @HAVE_AMESOS_SCALAPACK_FALSE@TestScalapack$(EXEEXT): $(TestScalapack_OBJECTS) $(TestScalapack_DEPENDENCIES) 
 @HAVE_AMESOS_SCALAPACK_FALSE@	@rm -f TestScalapack$(EXEEXT)
 @HAVE_AMESOS_SCALAPACK_FALSE@	$(LINK) $(TestScalapack_LDFLAGS) $(TestScalapack_OBJECTS) $(TestScalapack_LDADD) $(LIBS)
@@ -519,9 +498,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-info-am
 
-
-@HAVE_AMESOS_SLUD_TRUE@@HAVE_MPI_TRUE@TestOldSuperludist$(EXEEXT): $(srcdir)/TestOldSuperludist
-@HAVE_AMESOS_SLUD_TRUE@@HAVE_MPI_TRUE@	cp $(srcdir)/TestOldSuperludist TestOldSuperludist$(EXEEXT) 
 
 @HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@TestDscpack$(EXEEXT): $(srcdir)/TestDscpack
 @HAVE_AMESOS_DSCPACK_TRUE@@HAVE_MPI_TRUE@	cp $(srcdir)/TestDscpack TestDscpack$(EXEEXT) 

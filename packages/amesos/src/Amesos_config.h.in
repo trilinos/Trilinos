@@ -14,6 +14,9 @@
 /* Define if F77 and FC dummy `main' functions are identical. */
 #undef FC_DUMMY_MAIN_EQ_F77
 
+/* Define to 1 if you have the <amd.h> header file. */
+#undef HAVE_AMD_H
+
 /* Define if want to build amesos-dscpack */
 #undef HAVE_AMESOS_DSCPACK
 
@@ -31,15 +34,6 @@
 
 /* Define if want to build amesos-scalapack */
 #undef HAVE_AMESOS_SCALAPACK
-
-/* Define if want to build amesos-slud */
-#undef HAVE_AMESOS_SLUD
-
-/* Define if want to build amesos-slud2 */
-#undef HAVE_AMESOS_SLUD2
-
-/* Define if want to build amesos-slus */
-#undef HAVE_AMESOS_SLUS
 
 /* Define if want to build amesos-superlu */
 #undef HAVE_AMESOS_SUPERLU
@@ -67,6 +61,12 @@
 
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
+
+/* Define to 1 if you have the <dmumps_c.h> header file. */
+#undef HAVE_DMUMPS_C_H
+
+/* Define to 1 if you have the <dscmain.h> header file. */
+#undef HAVE_DSCMAIN_H
 
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
@@ -134,6 +134,9 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the <superlu_ddefs.h> header file. */
+#undef HAVE_SUPERLU_DDEFS_H
+
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
 
@@ -154,6 +157,9 @@
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H
+
+/* Define to 1 if you have the <umfpack.h> header file. */
+#undef HAVE_UMFPACK_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

@@ -54,15 +54,6 @@ SUPERLUDIST_H =
 SUPERLUDIST =
 endif
 
-if HAVE_AMESOS_SLUD
-SLUDIST_H = \
-	$(srcdir)/SuperludistOO.h
-SLUDIST = \
-	$(srcdir)/SuperludistOO.cpp
-else
-SLUDIST_H =
-SLUDIST =
-endif
 
 #
 #  If the parameter list cannot be made portable to all 
@@ -180,25 +171,6 @@ endif
 
 
 
-if HAVE_AMESOS_SLUD2
-SLUDIST2_H = \
-	$(srcdir)/Superludist2_OO.h
-SLUDIST2 = \
-	$(srcdir)/Superludist2_OO.cpp
-else
-SLUDIST2_H =
-SLUDIST2 =
-endif
-
-if HAVE_AMESOS_SLUS
-SLUSERIAL_H = \
-       $(srcdir)/Epetra_SLU.h
-SLUSERIAL = \
-       $(srcdir)/Epetra_SLU.cpp
-else
-SLUSERIAL_H =
-SLUSERIAL =
-endif
 
 if HAVE_AMESOS_KUNDERT
 KUNDERT_H = \
@@ -277,9 +249,6 @@ AMESOS_H = \
 	$(FACTORY_H) \
 	$(SUPERLU_H) \
 	$(SUPERLUDIST_H) \
-	$(SLUDIST_H) \
-	$(SLUDIST2_H) \
-	$(SLUSERIAL_H) \
 	$(KUNDERT_H) \
 	$(COMP_H) \
 	$(srcdir)/Amesos_BaseSolver.h
@@ -295,9 +264,6 @@ libamesos_a_SOURCES = \
 	$(FACTORY) \
 	$(SUPERLU) \
 	$(SUPERLUDIST) \
-	$(SLUDIST) \
-	$(SLUDIST2) \
-	$(SLUSERIAL) \
 	$(KUNDERT) \
 	$(COMP)
 

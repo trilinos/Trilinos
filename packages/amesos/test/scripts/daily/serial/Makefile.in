@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestAmesosSerial_SOURCES) $(TestKluSerial_SOURCES) $(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
+SOURCES = $(TestKluSerial_SOURCES) $(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,8 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_4)
+noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,15 +97,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Amesos_config.h
 CONFIG_CLEAN_FILES =
-@HAVE_AMESOS_SLUS_TRUE@am__EXEEXT_1 = TestAmesosSerial$(EXEEXT)
-@HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_2 = TestUmfpackSerial$(EXEEXT)
-@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_3 = TestKluSerial$(EXEEXT)
-@HAVE_AMESOS_SUPERLU_TRUE@am__EXEEXT_4 = TestSuperluSerial$(EXEEXT)
+@HAVE_AMESOS_UMFPACK_TRUE@am__EXEEXT_1 = TestUmfpackSerial$(EXEEXT)
+@HAVE_AMESOS_KLU_TRUE@am__EXEEXT_2 = TestKluSerial$(EXEEXT)
+@HAVE_AMESOS_SUPERLU_TRUE@am__EXEEXT_3 = TestSuperluSerial$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__TestAmesosSerial_SOURCES_DIST = $(srcdir)/TestAmesosSerial
-am_TestAmesosSerial_OBJECTS =
-TestAmesosSerial_OBJECTS = $(am_TestAmesosSerial_OBJECTS)
-TestAmesosSerial_LDADD = $(LDADD)
 am__TestKluSerial_SOURCES_DIST = $(srcdir)/TestKluSerial
 am_TestKluSerial_OBJECTS =
 TestKluSerial_OBJECTS = $(am_TestKluSerial_OBJECTS)
@@ -124,10 +118,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestAmesosSerial_SOURCES) $(TestKluSerial_SOURCES) \
-	$(TestSuperluSerial_SOURCES) $(TestUmfpackSerial_SOURCES)
-DIST_SOURCES = $(am__TestAmesosSerial_SOURCES_DIST) \
-	$(am__TestKluSerial_SOURCES_DIST) \
+SOURCES = $(TestKluSerial_SOURCES) $(TestSuperluSerial_SOURCES) \
+	$(TestUmfpackSerial_SOURCES)
+DIST_SOURCES = $(am__TestKluSerial_SOURCES_DIST) \
 	$(am__TestSuperluSerial_SOURCES_DIST) \
 	$(am__TestUmfpackSerial_SOURCES_DIST)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -149,6 +142,7 @@ BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
@@ -179,12 +173,6 @@ HAVE_AMESOS_MUMPS_FALSE = @HAVE_AMESOS_MUMPS_FALSE@
 HAVE_AMESOS_MUMPS_TRUE = @HAVE_AMESOS_MUMPS_TRUE@
 HAVE_AMESOS_SCALAPACK_FALSE = @HAVE_AMESOS_SCALAPACK_FALSE@
 HAVE_AMESOS_SCALAPACK_TRUE = @HAVE_AMESOS_SCALAPACK_TRUE@
-HAVE_AMESOS_SLUD2_FALSE = @HAVE_AMESOS_SLUD2_FALSE@
-HAVE_AMESOS_SLUD2_TRUE = @HAVE_AMESOS_SLUD2_TRUE@
-HAVE_AMESOS_SLUD_FALSE = @HAVE_AMESOS_SLUD_FALSE@
-HAVE_AMESOS_SLUD_TRUE = @HAVE_AMESOS_SLUD_TRUE@
-HAVE_AMESOS_SLUS_FALSE = @HAVE_AMESOS_SLUS_FALSE@
-HAVE_AMESOS_SLUS_TRUE = @HAVE_AMESOS_SLUS_TRUE@
 HAVE_AMESOS_SUPERLUDIST_FALSE = @HAVE_AMESOS_SUPERLUDIST_FALSE@
 HAVE_AMESOS_SUPERLUDIST_TRUE = @HAVE_AMESOS_SUPERLUDIST_TRUE@
 HAVE_AMESOS_SUPERLU_FALSE = @HAVE_AMESOS_SUPERLU_FALSE@
@@ -274,15 +262,12 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@HAVE_AMESOS_SLUS_FALSE@SLUS_TEST = 
-@HAVE_AMESOS_SLUS_TRUE@SLUS_TEST = TestAmesosSerial
 @HAVE_AMESOS_UMFPACK_FALSE@UMFPACK_TEST = 
 @HAVE_AMESOS_UMFPACK_TRUE@UMFPACK_TEST = TestUmfpackSerial
 @HAVE_AMESOS_KLU_FALSE@KLU_TEST = 
 @HAVE_AMESOS_KLU_TRUE@KLU_TEST = TestKluSerial
 @HAVE_AMESOS_SUPERLU_FALSE@SUPERLU_TEST = 
 @HAVE_AMESOS_SUPERLU_TRUE@SUPERLU_TEST = TestSuperluSerial
-@HAVE_AMESOS_SLUS_TRUE@TestAmesosSerial_SOURCES = $(srcdir)/TestAmesosSerial
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpackSerial_SOURCES = $(srcdir)/TestUmfpackSerial
 @HAVE_AMESOS_KLU_TRUE@TestKluSerial_SOURCES = $(srcdir)/TestKluSerial
 @HAVE_AMESOS_SUPERLU_TRUE@TestSuperluSerial_SOURCES = $(srcdir)/TestSuperluSerial
@@ -321,9 +306,6 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-@HAVE_AMESOS_SLUS_FALSE@TestAmesosSerial$(EXEEXT): $(TestAmesosSerial_OBJECTS) $(TestAmesosSerial_DEPENDENCIES) 
-@HAVE_AMESOS_SLUS_FALSE@	@rm -f TestAmesosSerial$(EXEEXT)
-@HAVE_AMESOS_SLUS_FALSE@	$(LINK) $(TestAmesosSerial_LDFLAGS) $(TestAmesosSerial_OBJECTS) $(TestAmesosSerial_LDADD) $(LIBS)
 @HAVE_AMESOS_KLU_FALSE@TestKluSerial$(EXEEXT): $(TestKluSerial_OBJECTS) $(TestKluSerial_DEPENDENCIES) 
 @HAVE_AMESOS_KLU_FALSE@	@rm -f TestKluSerial$(EXEEXT)
 @HAVE_AMESOS_KLU_FALSE@	$(LINK) $(TestKluSerial_LDFLAGS) $(TestKluSerial_OBJECTS) $(TestKluSerial_LDADD) $(LIBS)
@@ -458,9 +440,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-info-am
 
-
-@HAVE_AMESOS_SLUS_TRUE@TestAmesosSerial$(EXEEXT): $(srcdir)/TestAmesosSerial
-@HAVE_AMESOS_SLUS_TRUE@	cp $(srcdir)/TestAmesosSerial TestAmesosSerial$(EXEEXT) 
 
 @HAVE_AMESOS_UMFPACK_TRUE@TestUmfpackSerial$(EXEEXT): $(srcdir)/TestUmfpackSerial
 @HAVE_AMESOS_UMFPACK_TRUE@	cp $(srcdir)/TestUmfpackSerial TestUmfpackSerial$(EXEEXT) 
