@@ -42,8 +42,17 @@ ifndef ZOLTAN_ARCH
 ZOLTAN_ARCH	= generic
 endif
 
-include Makefiles/Makefile.$(ZOLTAN_ARCH)
+ifndef ZOLTAN_CONFIG
+ZOLTAN_CONFIG = Makefiles/Makefile.$(ZOLTAN_ARCH)
+endif
+
+include $(ZOLTAN_CONFIG)
+
 ZOLTAN_OBJ_DIR = Obj_$(ZOLTAN_ARCH)
+
+ifndef ZOLTAN_LIB_DIR
+ZOLTAN_LIB_DIR = $(ZOLTAN_OBJ_DIR)
+endif
 
 ##############################################################################
 # Process input flags
@@ -275,6 +284,7 @@ zoltan:
 	"AR=$(AR)" 				\
 	"RANLIB=$(RANLIB)" 			\
 	"ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" 
+	@mv $(ZOLTAN_OBJ_DIR)/$(LIB_NAME) $(ZOLTAN_LIB_DIR)/$(LIB_NAME)
 
 zdrive:
 	@if [ ! -d $(ZOLTAN_OBJ_DIR) ]; 	\
