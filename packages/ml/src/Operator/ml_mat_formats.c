@@ -1047,37 +1047,35 @@ int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_a
     big_p = pp_p;
    }
 
-/* This could be blocked,  ZZZZ
-   Weird blocking scheme already */
-   sum = new double [X.NumVectors()];
+  for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
+  p2 = big_p[KK];
+  double *ap = pp_ap[KK];
+
   j = bindx[0];
   bindx_ptr = &bindx[j];
   for (i = 0; i < Nrows; i++) {
-  for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
-      p2 = big_p[KK];
-    sum[KK] =  val[i]*p2[i];
+    sum =  val[i]*p2[i];
     while (j+10 < bindx[i+1]) {
-      sum[KK] += val[j+9]*p2[bindx_ptr[9]] +
-	val[j+8]*p2[bindx_ptr[8]] +
-	val[j+7]*p2[bindx_ptr[7]] +
-	val[j+6]*p2[bindx_ptr[6]] +
-	val[j+5]*p2[bindx_ptr[5]] +
-	val[j+4]*p2[bindx_ptr[4]] +
-	val[j+3]*p2[bindx_ptr[3]] +
-	val[j+2]*p2[bindx_ptr[2]] +
-	val[j+1]*p2[bindx_ptr[1]] +
-	val[j]*p2[*bindx_ptr];
+      sum += val[j+9]*p2[bindx_ptr[9]] +
+        val[j+8]*p2[bindx_ptr[8]] +
+        val[j+7]*p2[bindx_ptr[7]] +
+        val[j+6]*p2[bindx_ptr[6]] +
+        val[j+5]*p2[bindx_ptr[5]] +
+        val[j+4]*p2[bindx_ptr[4]] +
+        val[j+3]*p2[bindx_ptr[3]] +
+        val[j+2]*p2[bindx_ptr[2]] +
+        val[j+1]*p2[bindx_ptr[1]] +
+        val[j]*p2[*bindx_ptr];
       bindx_ptr += 10;
       j += 10;
     }
     while (j < bindx[i+1]) {
-      sum[KK] += val[j++] * p2[*bindx_ptr++];
+      sum += val[j++] * p2[*bindx_ptr++];
     }
-    Y[KK][i] = sum[KK];
+    ap[i] = sum;
   }
   }
 
-  delete [] sum;
 
   if (getrow_comm != NULL) {
      for (i = 0; i < Nrows; i++) 
