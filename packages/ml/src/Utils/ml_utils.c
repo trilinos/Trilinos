@@ -2454,9 +2454,10 @@ void ML_print_line (char *charstr, int ntimes)
 /*MS*/
 int ML_gsum_int(int val, ML_Comm *comm)
 {
-  int sum;
-  MPI_Allreduce( &val, &sum, 1, MPI_INT, MPI_SUM, comm->USR_comm );
-  return sum;
+
+  int i;
+  ML_gsum_scalar_int(&val, &i,comm);
+  return val;
 }
 
 int ML_gmin_int(int val, ML_Comm *comm)
