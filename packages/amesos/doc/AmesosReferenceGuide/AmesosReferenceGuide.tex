@@ -491,7 +491,7 @@ refer to table~\ref{tab:options}.
 
 \choicebox{\tt MaxProcsMatrix}{The linear system matrix will be
   distributed over the specified number of processes. This number must
-  be less or equal to {\tt MaxProcs}. See {\tt Maxprocs}.}
+  be less or equal to {\tt MaxProcs}. See {\tt Maxprocs}. If {\tt MaxProcsMatrix=-4}, then the value of {\tt MaxProcsMatrix} equals that of {\tt MaxProcs}.}
 
 \choicebox{\tt OutpuLevel}{If {\tt 0}, no output is printed on the
   screen. If {\tt 1}, output is reported as specified by other
@@ -529,7 +529,7 @@ refer to table~\ref{tab:options}.
     $\bullet$ & $\bullet$ \\
     \tt MaxProcs & \tt int & -1 & -- & -- & $\bullet$  & $\bullet$  &
     $\bullet$  \\
-    \tt MaxProcsMatrix & \tt int & -1 & -- & -- & -- & $\bullet$  & --
+    \tt MaxProcsMatrix & \tt int & -4 & -- & -- & -- & $\bullet$  & --
     \\
     \tt ComputeVectorNorms & \tt bool & \tt false & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$
     & $\bullet$ \\
