@@ -24,7 +24,6 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include <memory.h>
-#include <values.h>
 #include <limits.h>
 #include <string.h>
 #include <float.h>
