@@ -49,6 +49,8 @@ class Epetra_SerialDenseMatrix;
 class Epetra_BlockMap;
 class Epetra_IntSerialDenseMatrix;
 
+namespace EpetraExt {
+
 //! MatlabEngine: 
 /*! The EpetraExt_MatlabEngine class allows Epetra data objects to be
 exported to Matlab and then operated on within Matlab using Matlab commands. 
@@ -75,12 +77,7 @@ during construction of the MatlabEngine object exits.
   <li> -3 engEvalString returned a nonzero result
   <li> -4 engOutputBuffer returned a nonzero result
 </ul>
-
-
 */
-
-namespace EpetraExt {
-//=========================================================================
 class MatlabEngine {
 
   public:
@@ -178,7 +175,7 @@ class MatlabEngine {
 
   int PutBlockMap(const Epetra_BlockMap& blockMap, const char* variableName);
   
-  //*! Put a mxArray into Matlab.
+  //! Put a mxArray into Matlab.
   /*! The Matlab provided C library provides mxArray which is used to construct and fill a Matlab
       object before sending it to Matlab to be put into the Matlab workspace.  The mxArray is copied
       into the Matlab memory space and is not needed after it has been passed to Matlab.  mxArrays
