@@ -55,7 +55,6 @@ namespace LineSearch {
    <li> "Backtrack" (NOX::LineSearch::Backtrack)
    <li> "Polynomial" (NOX::LineSearch::Polynomial)
    <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
-   <li> "NonlinearCG" (NOX::LineSearch::NonlinearCG)
    <li> "User Defined" - see below
 
    </ul>
