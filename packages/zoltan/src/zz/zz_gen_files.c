@@ -28,7 +28,7 @@ extern "C" {
 static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex, 
            ZOLTAN_ID_PTR *p_edge_verts, int **p_edge_procs, 
            float **p_edge_wgts, int *glob_hedges, int *glob_pins);
-static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, int nhedges,
+static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
            int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts);
 
 /*****************************************************************************/
@@ -83,8 +83,10 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
-  float_vwgt = ewgts = NULL;
+  float_vwgt = ewgts = hewgts = NULL;
   xyz = NULL;
+  heprocs = hindex = NULL;
+  hevtxs = NULL;
 
   /* Assign default file name if none was given. */
   if (fname==NULL) fname = "noname";
@@ -152,6 +154,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     fclose(fp);
   }
 
+#if 0 /* EBEB - Temporarily take out geometry part */
   /* Write geometry to file, if applicable. */
   if (zz->Get_Num_Geom != NULL && zz->Get_Geom != NULL) {
     num_geom = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &error);
@@ -188,6 +191,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     }
     fclose(fp);
   }
+#endif
 
   /* Write graph to file, if applicable. */
   if (zz->Get_Num_Edges != NULL && zz->Get_Edge_List != NULL) {
@@ -233,6 +237,13 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     fclose(fp);
   }
 
+  Zoltan_Print_Sync_End(zz->Communicator, 0); 
+
+  /* Separate synchronization for hypergraphs, this could be merged
+     into the previous synchronization. */
+
+  Zoltan_Print_Sync_Start(zz->Communicator, 0); 
+
   /* Write hypergraph to file, if applicable. */
   if ( zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
     sprintf(full_fname, "%s.hg", fname);
@@ -258,7 +269,7 @@ int Zoltan_Generate_Files(ZZ *zz, char *fname, int base_index)
     }
 
     /* Each proc prints its part of the hgraph. */
-    Zoltan_HG_Print_Hedges(zz, fp, nhedges, hindex, hevtxs, hewgts);
+    Zoltan_HG_Print_Hedges(zz, fp, hindex, hevtxs, hewgts);
 
     fclose(fp);
   }
@@ -304,6 +315,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
   static char *yo = "Zoltan_HG_Get_Hedges";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+  ierr = ZOLTAN_OK;
 
   /* Get hyperedge information from application through query functions. */
 
@@ -318,10 +330,16 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
   }
   if (nEdge > 0) {
     numwgts = nEdge * zz->Edge_Weight_Dim;
-    edge_verts = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
-    hindex = (int *) ZOLTAN_MALLOC(nEdge * sizeof(int));
-    edge_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
-    if (numwgts) edge_wgts = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
+    (*p_edge_verts) = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
+    edge_verts = *p_edge_verts;
+    (*p_hindex) = (int *) ZOLTAN_MALLOC((nEdge+1) * sizeof(int));
+    hindex = *p_hindex;
+    (*p_edge_procs) = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+    edge_procs = *p_edge_procs;
+    if (numwgts){
+       (*p_edge_wgts) = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
+       edge_wgts = *p_edge_wgts;
+    }
     if (!edge_verts || !hindex || !edge_procs || (numwgts && !edge_wgts)) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory");
       ierr = ZOLTAN_MEMERR;
@@ -364,6 +382,7 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
   if (cnt != npins) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Input error:  Number of pins != sum of edge sizes");
+    ierr = ZOLTAN_FATAL;
     goto End;
   }
 
@@ -374,42 +393,42 @@ static int Zoltan_HG_Get_Hedges(ZZ *zz, int **p_hindex,
       zz->Communicator);
 
 End:
-  /* Return pointers to arrays allocated in this routine. */
-  p_hindex = &hindex;
-  p_edge_procs = &edge_procs;
-  p_edge_verts = &edge_verts;
-  p_edge_wgts = &edge_wgts;
+  /* Memory will be freed in calling function. */
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
-  return ZOLTAN_OK;
+  return ierr;
 }
 
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
 /* Each processor prints its hyperedges to file. */
-static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, int nhedges,
+static int Zoltan_HG_Print_Hedges(ZZ *zz, FILE *fp, 
            int *hindex, ZOLTAN_ID_PTR hevtxs, float *hewgts)
 {
-  int i,j;
+  int i, j, ierr, num_edges;
   char *yo = "Zoltan_HG_Print_Hedges";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  for (i=0; i<nhedges; i++){
+  ierr = ZOLTAN_OK;
+  num_edges = zz->Get_Num_HG_Edges(zz->Get_Num_HG_Edges_Data, &ierr);
+
+  for (i=0; i<num_edges; i++){
     if (hindex[i]>=0){
-      /* Only print hedges owned by me (to avoid duplicate hedges) */
+      /* Only print hyperedges owned by me (to avoid duplicate hedges) */
       for (j=hindex[i]; j<ABS(hindex[i+1]); j++){ 
         /* EBEB - Print global ids as integers. */
         fprintf(fp, "%d ", (int) hevtxs[j]);
       }
     }
+    fprintf(fp, "\n");
   }
 
   /* Print weights. EBEB - Not yet impl. */
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ZOLTAN_OK;
+  return ierr;
 }
 
 
