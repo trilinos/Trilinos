@@ -163,7 +163,7 @@ computeForcingTerm(const NOX::Abstract::Group& soln,
       cout << indent << "Forcing Term: " << eta_k << endl;
     }
     if (setTolerance)
-      paramsPtr->sublist("Newton").sublist("Linear Solver").
+      paramsPtr->sublist(directionMethod).sublist("Linear Solver").
 	setParameter("Tolerance", eta_k);
 
     return eta_k;
