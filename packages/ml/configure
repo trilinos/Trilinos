@@ -5931,7 +5931,7 @@ if test "X$ac_cv_use_ml_flops" != "Xno"; then
 echo "${ECHO_T}yes" >&6
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_TIMING 1
+#define HAVE_ML_FLOPS 1
 _ACEOF
 
 else
