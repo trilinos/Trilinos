@@ -84,8 +84,8 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   Redistor_(0),
   TargetVector_(0),
   verbose_(0),
-  AddZeroToDiag_(false),
   AddToDiag_(0.0),
+  AddDiagElement_(false),
   PrintTiming_(true),
   PrintStatistics_(true),
   Threshold_(0.0),
@@ -116,16 +116,6 @@ int Amesos_Mumps::Destroy()
   if( Redistor_ ) delete Redistor_;
   if( TargetVector_ ) delete TargetVector_;
   
-  return 0;
-}
-
-//=============================================================================
-
-Amesos_Mumps::~Amesos_Mumps(void)
-{
-
-  Destroy();
-  
   if( Row ) { delete Row; Row = 0; }
   if( Col ) { delete Col; Col = 0; }
   if( Val ) { delete Val; Val = 0; }
@@ -136,6 +126,17 @@ Amesos_Mumps::~Amesos_Mumps(void)
 
   if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
   MUMPSComm_ = 0;
+
+  return 0;
+}
+
+//=============================================================================
+
+Amesos_Mumps::~Amesos_Mumps(void)
+{
+
+  Destroy();
+ 
 }
 
 //=============================================================================
@@ -185,7 +186,8 @@ int Amesos_Mumps::ConvertToTriplet()
   for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
 
     bool FoundDiagonal = false;
-  
+    int Diag;
+    
     GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
 
     for( int i=0 ; i<NumIndices ; ++i ) {
@@ -193,21 +195,20 @@ int Amesos_Mumps::ConvertToTriplet()
 	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
 	(*Col)[NumMyMUMPSNonzeros_] = ColIndices[i]+diff;
 	(*Val)[NumMyMUMPSNonzeros_] = MatrixValues[i];
-#ifdef LATER
 	if( RowIndices[i] == ColIndices[i] ) {
+	  Diag = RowIndices[i];
 	  FoundDiagonal = true;
 	  (*Val)[NumMyMUMPSNonzeros_] += AddToDiag_;
 	}
-#endif
 	NumMyMUMPSNonzeros_++;
       }
-#ifdef LATER
-      if( AddDiagElement_ && FoundDiagonal_ == false ) {
-	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
-	(*Col)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
+      // add diagonal element if not found
+      if( AddDiagElement_ && FoundDiagonal == false ) {
+	(*Row)[NumMyMUMPSNonzeros_] = Diag;
+	(*Col)[NumMyMUMPSNonzeros_] = Diag;
 	(*Val)[NumMyMUMPSNonzeros_] = AddToDiag_;
+	NumMyMUMPSNonzeros_++;
       }
-#endif
     }
   }
 
@@ -364,13 +365,33 @@ int Amesos_Mumps::ConvertToTripletValues()
   
   for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
 
-    GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
+    bool FoundDiagonal = false;
+    int Diag;
 
+    GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
+    /*
     for( int i=0 ; i<NumIndices ; ++i ) {
       if( abs(MatrixValues[i]) >= Threshold_ ) {
 	
 	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
 	NumMUMPSNonzerosValues++;
+      }
+    }
+    */
+    
+    for( int i=0 ; i<NumIndices ; ++i ) {
+      if( abs(MatrixValues[i]) >= Threshold_ ) {
+	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
+	if( RowIndices[i] == ColIndices[i] ) {
+	  Diag = RowIndices[i];
+	  FoundDiagonal = true;
+	  (*Val)[NumMUMPSNonzerosValues] += AddToDiag_;
+	}
+	NumMUMPSNonzerosValues++;
+      }
+      // add diagonal element if not found
+      if( AddDiagElement_ && FoundDiagonal == false ) {
+	(*Val)[NumMUMPSNonzerosValues++] = AddToDiag_;
       }
     }
   }
@@ -497,40 +518,69 @@ void Amesos_Mumps::SetICNTLandCNTL()
 int Amesos_Mumps::ReadParameterList()
 {
 
+  // ========================================= //
+  // retrive MUMPS' parameters from list.      //
+  // default values defined in the constructor //
+  // ========================================= //
+  
   if( ParameterList_ == NULL ) return 0;
 
   // retrive general parameters
 
-  if( ParameterList_->get("UseTranspose",false) )
-    SetUseTranspose(true);
+  // solve problem with transpose
+  if( ParameterList_->isParameter("UseTranspose") )
+    SetUseTranspose(ParameterList_->get("UseTranspose",false));
 
-  Threshold_ = ParameterList_->get("Threshold", 0.0);
+  // ignore all elements below given tolerance
+  if( ParameterList_->isParameter("Threshold") )
+    Threshold_ = ParameterList_->get("Threshold", 0.0);
 
-  AddZeroToDiag_ = ParameterList_->get("AddZeroToDiag", false);
-  if( AddZeroToDiag_ && Comm().MyPID() == 0 ) {
-    cerr << "Amesos_Mumps Warning: AddZeroToDiag not yet implemented." << endl;
-  }
-  
-  PrintTiming_ = ParameterList_->get("PrintTiming", false);
+  // add zero to diagonal if diagonal element is not present
+  if( ParameterList_->isParameter("AddZeroToDiag") )
+    AddDiagElement_ = ParameterList_->get("AddZeroToDiag", false);
 
-  PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
+  // add this value to diagonal
+  if( ParameterList_->isParameter("AddToDiag") )
+    AddToDiag_ = ParameterList_->get("AddToDiag", 0.0);
 
-  ComputeVectorNorms_ = ParameterList_->get("ComputeVectorNorms",false);
+  // print some timing information (on process 0)
+  if( ParameterList_->isParameter("PrintTiming") )
+    PrintTiming_ = ParameterList_->get("PrintTiming", false);
 
-  ComputeTrueResidual_ = ParameterList_->get("ComputeTrueResidual",false);
+  // print some statistics (on process 0). Do not include timing
+  if( ParameterList_->isParameter("PrintStatistics") )
+    PrintStatistics_ = ParameterList_->get("PrintStatistics", false);
 
-  KeepMatrixDistributed_ = ParameterList_->get("KeepMatrixDistributed",true);
+  // compute norms of some vectors
+  if( ParameterList_->isParameter("ComputeVectorNorms") )
+    ComputeVectorNorms_ = ParameterList_->get("ComputeVectorNorms",false);
+
+  // compute the true residual Ax-b after solution
+  if( ParameterList_->isParameter("ComputeTrueResidual") )
+    ComputeTrueResidual_ = ParameterList_->get("ComputeTrueResidual",false);
+
+  // keep matrix is distributed form (that is, use ICTNL(18)==3).
+  // Matrix will be distributed among MaxProcsInputMatrix_ processes
+  // (this value must be less than available procs)
+  if( ParameterList_->isParameter("KeepMatrixDistributed") )
+    KeepMatrixDistributed_ = ParameterList_->get("KeepMatrixDistributed",true);
 
   int OptNumProcs = (int)sqrt(1.0*Comm().NumProc());
   if( OptNumProcs < 1 ) OptNumProcs = 1;
-  
-  MaxProcs_ = ParameterList_->get("MaxProcs",OptNumProcs);
+  if( ParameterList_->isParameter("MaxProcsInputMatrix") )
+    MaxProcsInputMatrix_ = ParameterList_->get("MaxProcsInputMatrix",OptNumProcs);
 
-  verbose_ = ParameterList_->get("OutputLevel",0);
+  // define on how many processes matrix should be converted into MUMPS
+  // format. (this value must be less than available procs)
 
-  MaxProcsInputMatrix_ = ParameterList_->get("MaxProcsInputMatrix",OptNumProcs);
+  if( ParameterList_->isParameter("MaxProcs") )
+    MaxProcs_ = ParameterList_->get("MaxProcs",OptNumProcs);
 
-  // retrive MUMPS' parameters
+  // some verbose output (for debugging only)
+  if( ParameterList_->isParameter("OutputLevel") )
+    verbose_ = ParameterList_->get("OutputLevel",0);
+
+  // retrive MUMPS' specific parameters
   
   if (ParameterList_->isSublist("mumps") ) {
     Teuchos::ParameterList MumpsParams = ParameterList_->sublist("mumps") ;
@@ -632,6 +682,7 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 #endif
   } else {
     
+#if defined(EPETRA_MPI) && ! defined(TFLOP)
     if( MaxProcs_ != Comm().NumProc() ) {
 
       if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
@@ -652,8 +703,11 @@ int Amesos_Mumps::PerformSymbolicFactorization()
     } else {
       // use MPI_COMM_WORLD
       // FIXME: should use the comm in Epetra_MpiComm()
-      MDS.comm_fortran = -987654 ;  
+      MDS.comm_fortran = -987654;  
     }
+#else
+    MDS.comm_fortran = -987654;
+#endif
   }
   
   //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;  // Other recommendation from the MUMPS manual - did not compile on Atlantis either

@@ -316,37 +316,33 @@ public:
     return (MDS.infog);
   }
 
-  int SetKeepMatrixDistributed(const bool flag) 
-  {
-    KeepMatrixDistributed_ = flag;
-    return 0;
-  }
-  
-  int SetMaxProcs(const int MaxProcs) 
-  {
-    MaxProcs_ = MaxProcs;
-    return 0;
-  }
-  
-  int SetMaxProcsInputMatrix(const int MaxProcsInputMatrix) 
-  {
-    MaxProcsInputMatrix_ = MaxProcsInputMatrix;
-    return 0;
-  }
-  
+  //! Copy the input array into the internally stored ICNTL array.
   int SetICNTL(int * ictnl);
-  
+
+  //! Set ICNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetICNTL(int pos, int value);
 
+  //! Copy the input array into the internally stored CNTL array.
   int SetCNTL(double * ctnl);
-  
+
+  //! Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetCNTL(int pos, double value);
-  
+
+  //! Print information about the factorization and solution phases.
   int PrintInformation();
 
-private:
+  void SetUseMpiCommSelf() {
+    UseMpiCommSelf_ = true;
+  }
+
+  //! Get a pointer tot he internally stored parameters' list.
+  const Teuchos::ParameterList* getList() const
+  {
+    return (const Teuchos::ParameterList *) &ParameterList_;
+  }
   
-  int ConvertToSerial(); 
+protected:
+  
   /*
     ConvertToTriplet - Convert matrix to form expected by Mumps: Row, Col, Val
     Preconditions:
@@ -389,21 +385,10 @@ private:
   
   void SetICNTLandCNTL();
 
-  void SetUseMpiCommSelf() {
-    UseMpiCommSelf_ = true;
-  }
-
-  const Teuchos::ParameterList* getList() const
-  {
-    return (const Teuchos::ParameterList *) &ParameterList_;
-  }
-
   void RedistributeMatrix(const int NumProcs);
 
   void RedistributeMatrixValues(const int NumProcs);
   
- protected:
-
   bool SymbolicFactorizationOK_;   // True if SymbolicFactorization has been done
   bool NumericFactorizationOK_;    // True if NumericFactorization has been done
   bool IsConvertToTripletOK_;
@@ -441,7 +426,8 @@ private:
   int ErrorMsgLevel_;                     // output level 
   
   bool UseTranspose_;
-  bool AddZeroToDiag_;
+  bool AddDiagElement_;
+  
   double AddToDiag_;
   
   bool PrintTiming_;
