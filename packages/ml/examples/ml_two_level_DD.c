@@ -332,8 +332,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition,
 
   size = sizeof(double)*(Nlocal+Partition->Nghost);
   
-  *x = ML_allocate(size);
-  *y = ML_allocate(size);
+  *x = (double *) ML_allocate(size);
+  *y = (double *) ML_allocate(size);
   
   AZ_ML_Build_NodalCoordinates( Partition->Nglobal,
 			  Partition->Nlocal, Kn_data_org[AZ_N_external],
