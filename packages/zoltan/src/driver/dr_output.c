@@ -129,6 +129,7 @@ ELEM_INFO_PTR current_elem;
 /* Author(s):  Matthew M. St.John (9226)                                    */
 /*--------------------------------------------------------------------------*/
 int output_results(char *cmd_file,
+                   char *tag,
                    int Proc,
                    int Num_Proc,
                    PROB_INFO_PTR prob,
@@ -171,7 +172,8 @@ int output_results(char *cmd_file,
 
   /* generate the parallel filename for this processor */
   strcpy(ctemp, pio_info->pexo_fname);
-  strcat(ctemp, ".out");
+  strcat(ctemp, ".");
+  strcat(ctemp, tag);
   gen_par_filename(ctemp, par_out_fname, pio_info, Proc, Num_Proc);
 
   fp = fopen(par_out_fname, "w");

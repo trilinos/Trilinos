@@ -39,7 +39,8 @@
 #include "dr_elem_util_const.h"
 
 int Debug_Driver = 1;
-int Debug_Input = 0;
+int Debug_Chaco_Input = 0;
+int Chaco_In_Assign_Inv = 0;
 
 static int read_mesh(int, int, PROB_INFO_PTR, PARIO_INFO_PTR, MESH_INFO_PTR);
 static void print_input_info(FILE *fp, int Num_Proc, PROB_INFO_PTR prob);
@@ -167,28 +168,40 @@ int main(int argc, char *argv[])
    * the mesh struct and the elements array should be filled.
    */
   if (!read_mesh(Proc, Num_Proc, &prob, &pio_info, &mesh)) {
-      Gen_Error(0, "fatal: Error returned from read_mesh\n");
+    Gen_Error(0, "fatal: Error returned from read_mesh\n");
+    error_report(Proc);
+    exit(1);
+  }
+
+  /*
+   * Produce files to verify input.
+   */
+  if (Debug_Driver > 2) {
+    if (!output_results(cmd_file,"in",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+      Gen_Error(0, "fatal: Error returned from output_results\n");
       error_report(Proc);
       exit(1);
+    }
   }
+
 
   /*
    * now run Zoltan to get a new load balance and perform
    * the migration
    */
   if (!run_zoltan(Proc, &prob, &mesh)) {
-      Gen_Error(0, "fatal: Error returned from run_zoltan\n");
-      error_report(Proc);
-      exit(1);
+    Gen_Error(0, "fatal: Error returned from run_zoltan\n");
+    error_report(Proc);
+    exit(1);
   }
 
   /*
    * output the results
    */
-  if (!output_results(cmd_file, Proc, Num_Proc, &prob, &pio_info, &mesh)) {
-      Gen_Error(0, "fatal: Error returned from output_results\n");
-      error_report(Proc);
-      exit(1);
+  if (!output_results(cmd_file,"out",Proc,Num_Proc,&prob,&pio_info,&mesh)) {
+    Gen_Error(0, "fatal: Error returned from output_results\n");
+    error_report(Proc);
+    exit(1);
   }
 
   free_mesh_arrays(&mesh);

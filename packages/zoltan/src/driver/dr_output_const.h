@@ -24,6 +24,7 @@ extern void print_distributed_mesh(
 
 extern int output_results(
   char *cmd_file,
+  char *tag,
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,

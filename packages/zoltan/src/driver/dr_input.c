@@ -109,6 +109,9 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
                 else if (strstr(cptr2, "cyclic")) {
                   pio_info->init_dist_type = INITIAL_CYCLIC;
                 }
+                else if (strstr(cptr2, "file")) {
+                  pio_info->init_dist_type = INITIAL_FILE;
+                }
                 else {
                   Gen_Error(0, "Invalid Chaco initial distribution type.");
                   return 0;
@@ -153,6 +156,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         strip_string(cptr, " \t\n");
         if(sscanf(cptr, "%d", &Debug_Driver) != 1) {
           Gen_Error(0, "fatal: zdrive debug level must be an integer.");
+          return 0;
+        }
+      }
+
+      /****** The Chaco Input Assignment Inverse flag ******/
+      else if (token_compare(cptr, "chaco input assignment inverse")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Chaco_In_Assign_Inv) != 1) {
+          Gen_Error(0, "fatal: Chaco Input Assignment Inverse must be an integer.");
           return 0;
         }
       }

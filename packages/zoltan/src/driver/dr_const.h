@@ -131,7 +131,8 @@ typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
 extern int Debug_Driver;
-extern int Debug_Input;
+extern int Debug_Chaco_Input;
+extern int Chaco_In_Assign_Inv;
 
 #define DEBUG_TRACE_START(proc,yo) \
   if ((proc) == 0 && Debug_Driver > 1) \

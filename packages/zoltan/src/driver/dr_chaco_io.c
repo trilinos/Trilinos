@@ -35,7 +35,7 @@
 static int fill_elements(int, int, PROB_INFO_PTR, 
                          MESH_INFO_PTR, int, int, int *, 
                          int *, int, float *, int, float *, int, 
-                         float *, float *, float *);
+                         float *, float *, float *, short *);
 
 /****************************************************************************/
 /****************************************************************************/
@@ -61,10 +61,15 @@ int read_chaco_mesh(int Proc,
   float *ewgts = NULL, *vwgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
 
+  short *assignments = NULL;
+
   FILE  *fp;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
+
+  /* Set Debug_Chaco_Input */
+  if (Debug_Driver > 2) Debug_Chaco_Input = 1;
 
   if (Proc == 0) {
 
@@ -102,12 +107,37 @@ int read_chaco_mesh(int Proc,
         return 0;
       }
     }
+
+    /* Read Chaco assignment file, if requested */
+    if (pio_info->init_dist_type == INITIAL_FILE) {
+      sprintf(chaco_fname, "%s.assign", pio_info->pexo_fname);
+      fp = fopen(chaco_fname, "r");
+      if (fp == NULL) {
+        sprintf(cmesg, "Error:  Could not open Chaco assignment file %s; "
+                "initial distribution cannot be read",
+                chaco_fname);
+        Gen_Error(0, cmesg);
+        return 0;
+      }
+      else {
+        /* read the coordinates in on processor 0 */
+        assignments = (short *) malloc(nvtxs * sizeof(short));
+        if (!assignments) {
+          Gen_Error(0, "fatal: insufficient memory");
+          return 0;
+        }
+        if (chaco_input_assign(fp, chaco_fname, nvtxs, assignments) != 0) {
+          Gen_Error(0, "fatal: Error returned from chaco_input_assign");
+          return 0;
+        }
+      }
+    }
   }
 
   /* Distribute graph */
   if (!chaco_dist_graph(MPI_COMM_WORLD, pio_info, 0, &gnvtxs, &nvtxs, 
              &start, &adj, &vwgt_dim, &vwgts, &ewgt_dim, &ewgts, 
-             &ndim, &x, &y, &z) != 0) {
+             &ndim, &x, &y, &z, &assignments) != 0) {
       Gen_Error(0, "fatal: Error returned from chaco_dist_graph");
       return 0;
   }
@@ -174,7 +204,7 @@ int read_chaco_mesh(int Proc,
    */
   if (!fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
-                     ndim, x, y, z)) {
+                     ndim, x, y, z, assignments)) {
     Gen_Error(0, "fatal: Error returned from fill_elements");
     return 0;
   }
@@ -186,6 +216,7 @@ int read_chaco_mesh(int Proc,
   if (x != NULL) free(x);
   if (y != NULL) free(y);
   if (z != NULL) free(z);
+  if (assignments != NULL) free(assignments);
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
@@ -211,7 +242,8 @@ static int fill_elements(
   int        ndim,               /* dimension of the geometry */
   float     *x,                  /* x-coordinates of the vertices */
   float     *y,                  /* y-coordinates of the vertices */
-  float     *z                   /* z-coordinates of the vertices */
+  float     *z,                  /* z-coordinates of the vertices */
+  short     *assignments         /* assignments from Chaco file; may be NULL */
 )
 {
   /* Local declarations. */
@@ -223,9 +255,9 @@ static int fill_elements(
 
   DEBUG_TRACE_START(Proc, yo);
 
-  num_vtx = ch_dist_max_num_vtx();
+  num_vtx = ch_dist_max_num_vtx(assignments);
   vtx_list = (int *) malloc(num_vtx * sizeof(int));
-  ch_dist_vtx_list(vtx_list, &num_vtx, Proc);
+  ch_dist_vtx_list(vtx_list, &num_vtx, Proc, assignments);
 
   for (i = 0; i < num_vtx; i++) {
     mesh->elements[i].globalID = vtx_list[i]+1;  /* GlobalIDs are 1-based */
@@ -280,7 +312,7 @@ static int fill_elements(
         elem_id = adj[start[i] + j];
 
         /* determine which processor the adjacent vertex is on */
-        k = ch_dist_proc(elem_id);
+        k = ch_dist_proc(elem_id, assignments);
 
         /*
          * if the adjacent element is on this processor
