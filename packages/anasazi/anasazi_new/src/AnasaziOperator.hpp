@@ -65,8 +65,7 @@ namespace Anasazi {
       \c x will be passed directly to \c y.  Thus the operator is the identity if this
       method is defined by the user.
     */
-    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const 
-    { return Undefined; };
+    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const = 0;
     
   };
   

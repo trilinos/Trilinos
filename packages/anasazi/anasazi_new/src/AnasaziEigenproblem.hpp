@@ -144,6 +144,9 @@ namespace Anasazi {
     
     //! Get the symmetry information for this eigenproblem.
     virtual bool IsSymmetric() const = 0;
+
+    //! If the problem has been set, this method will return true.
+    virtual bool IsProblemSet() const = 0;
     
     //@}	
     

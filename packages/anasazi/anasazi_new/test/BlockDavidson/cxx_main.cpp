@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
 
   // Create preconditioner
   int maxIterCG = 100;
-  double tolCG = 1e-05;
+  double tolCG = 1e-10;
   
   Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, K.get(), tolCG, maxIterCG, 3) );
   opStiffness->setPreconditioner( 0 );
@@ -139,6 +139,30 @@ int main(int argc, char *argv[])
 
   // Solve the problem to the specified tolerances or length
   MySolver.solve();
+
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
+  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+
+  // Compute the direct residual
+  std::vector<double> normV( evecs->NumVectors() );
+  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
+  for (int i=0; i<evecs->NumVectors(); i++)
+    T(i,i) = (*evals)[i];
+  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+  K->Apply( *evecs, Kvec );  
+  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+  M->Apply( *evecs, Mvec );  
+  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+  assert( Kvec.Norm2( &normV[0] )== 0 );
+
+  if (MyOM->doPrint()) {
+    cout << endl <<"------------------------------------------------------" << endl;
+    cout << "Eigenvalue\tDirect Residual" << endl;
+    cout << "------------------------------------------------------" << endl;
+    for (int j=0; j< evecs->NumVectors(); j++)
+      cout <<(*evals)[j] << "\t" << normV[j]/(*evals)[j] << endl;
+  }
 
   return 0;
 }	

@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 	*/
 
 	// Create an Epetra_Matrix
-	Epetra_CrsMatrix A(Copy, RowMap, n);
+	Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, RowMap, n) );
 
 	// Compute coefficients for discrete integral operator
 	std::vector<double> Values(n);
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
 	double inv_np1 = one/(n+1);
 	for (i=0; i<n; i++) { Indices[i] = i; }
 	
-	for (i=0; i<NumMyRowElements; i++)	{
+	for (i=0; i<NumMyRowElements; i++) {
 	  //
 	  for (j=0; j<n; j++) {
 	    //
@@ -127,13 +127,13 @@ int main(int argc, char *argv[]) {
 	    else
 	      Values[j] = inv_np1 * ( (j+one)*inv_np1 ) * ( (MyGlobalRowElements[i]+one)*inv_mp1 - one );  // k*(tj)*(si-1)
 	  }
-	  assert(A.InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0])==0);
+	  assert(A->InsertGlobalValues(MyGlobalRowElements[i], n, &Values[0], &Indices[0])==0);
 	}
 
 	// Finish up
-	assert(A.TransformToLocal(&ColMap, &RowMap)==0);
-	assert(A.OptimizeStorage()==0);
-	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+	assert(A->TransformToLocal(&ColMap, &RowMap)==0);
+	assert(A->OptimizeStorage()==0);
+	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 	//************************************
 	// Start the block Arnoldi iteration
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 	Anasazi::EpetraMultiVec Av(RowMap,nev), u(RowMap,nev);
 	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(MyProblem->GetEvecs()->CloneView( index ));
 	Teuchos::SerialDenseMatrix<int,double> S(nev,nev);
-        A.Apply( *evecs, Av );
+        A->Apply( *evecs, Av );
 	Av.MvNorm( &tempnrm );
 	for (i=0; i<nev; i++) { S(i,i) = one/tempnrm[i]; };
 	u.MvTimesMatAddMv( one, Av, S, zero );

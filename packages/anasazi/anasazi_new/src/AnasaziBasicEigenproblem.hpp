@@ -70,44 +70,43 @@ namespace Anasazi {
     /*! \brief Set the operator for which eigenvalues will be computed.  This may be different
       from the matrix \c A if a spectral transformation is employed, for example.  
     */
-    void SetOperator( const Teuchos::RefCountPtr<OP>& Op ) { _Op = Op; };
+    void SetOperator( const Teuchos::RefCountPtr<OP>& Op ) { _Op = Op; _isSet=false; };
     
     /*! \brief Set the operator A of the eigenvalue problem AX = BX\lambda.
     */
-    void SetA( const Teuchos::RefCountPtr<OP>& A ) { _AOp = A; };
+    void SetA( const Teuchos::RefCountPtr<OP>& A ) { _AOp = A; _isSet=false; };
     
     /*! \brief Set the operator B of the eigenvalue problem AX = BX\lambda.
      */
-    void SetB( const Teuchos::RefCountPtr<OP>& B ) { _BOp = B; }
+    void SetB( const Teuchos::RefCountPtr<OP>& B ) { _BOp = B; _isSet=false; };
     
     /*! \brief Set the preconditioner for this eigenvalue problem AX = BX\lambda.
      */
-    void SetPrec( const Teuchos::RefCountPtr<OP>& Prec ) { _Prec = Prec; }
+    void SetPrec( const Teuchos::RefCountPtr<OP>& Prec ) { _Prec = Prec; _isSet=false; };
     
     /*! \brief Set the initial guess.  
 
     This vector is required to create all the space needed 
     by Anasazi to solve the eigenvalue problem.  Even if an initial guess is not known
-    by the user, an initial vector must be passed in.  Sets the pointer to the input
-    %Anasazi::MultiVec, so no copy is made.  
+    by the user, an initial vector must be passed in.  
     */
-    void SetInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; };
+    void SetInitVec( const Teuchos::RefCountPtr<MV>& InitVec ) { _InitVec = InitVec; _isSet=false; };
     
     /*! \brief Set auxilliary vectors.
 
-    NOTE:  This multivector can have any number of columns, an most likely will contain vectors that
+    NOTE:  This multivector can have any number of columns, and most likely will contain vectors that
     will be used by the eigensolver to orthogonalize against.
     */
-    void SetAuxVec( const Teuchos::RefCountPtr<MV>& AuxVec ) { _AuxVec = AuxVec; };
+    void SetAuxVec( const Teuchos::RefCountPtr<MV>& AuxVec ) { _AuxVec = AuxVec; _isSet=false; };
 
     //! Inform the eigenproblem of the number of eigenvalues (NEV) that are required.
-    void SetNEV( const int nev ){ _nev = nev; };
+    void SetNEV( const int nev ){ _nev = nev; _isSet=false; };
 
     //! Inform the eigenproblem that this problem is symmetric.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
     */
-    void SetSymmetric( const bool isSym ){ _isSym = isSym; };
+    void SetSymmetric( const bool isSym ){ _isSym = isSym; _isSet=false; };
     
     //! Inform the eigenproblem that is has all the information it needs to define the eigenproblem.
     /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
@@ -156,6 +155,9 @@ namespace Anasazi {
     //! Get the symmetry information for this eigenproblem.
     bool IsSymmetric() const { return( _isSym ); }
     
+    //! If the problem has been set, this method will return true.
+    bool IsProblemSet() const { return( _isSet ); }
+
     //@}	
     
     //@{ \name Inner Product Methods.
@@ -184,6 +186,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<std::vector<ScalarType> > _Evals;
     int _nev;
     bool _isSym;
+    bool _isSet;
 
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
@@ -196,7 +199,8 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem(void) : 
     _nev(0), 
-    _isSym(false)
+    _isSym(false),
+    _isSet(false)
   {
   }
   
@@ -207,7 +211,8 @@ namespace Anasazi {
     _Op(Op), 
     _InitVec(InitVec), 
     _nev(0), 
-    _isSym(false)
+    _isSym(false),
+    _isSet(false)
   {
   }
   
@@ -220,7 +225,8 @@ namespace Anasazi {
     _Op(Op), 
     _InitVec(InitVec), 
     _nev(0), 
-    _isSym(false)
+    _isSym(false),
+    _isSet(false)
   {
   }
   
@@ -236,7 +242,8 @@ namespace Anasazi {
     _Evecs(Problem._Evecs),
     _Evals(Problem._Evals),
     _nev(Problem._nev), 
-    _isSym(Problem._isSym)
+    _isSym(Problem._isSym),
+    _isSet(Problem._isSet)
   {
   }
   
@@ -272,9 +279,11 @@ namespace Anasazi {
       //
       if ( _isSym ) {
 	if ( _nev <= old_nev )
+          _isSet=true;
 	  return Ok;
       } else {
 	if ( 2*_nev <= old_nev )
+          _isSet=true;
 	  return Ok;
       }
     }	
@@ -290,9 +299,9 @@ namespace Anasazi {
       _Evecs = MVT::Clone( *_InitVec, 2*_nev );
       _Evals = Teuchos::rcp( new std::vector<ScalarType>( 2*_nev ) );
     }
+    _isSet=true;
     return Ok;
-  }      
-  
+  }        
   
   //=============================================================================
   //	Implementations (Inner Product Methods)
@@ -303,22 +312,27 @@ namespace Anasazi {
 							       const MV& Y,
 							       Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const
   {
-    if ( _BOp.get() ) {
-      Teuchos::RefCountPtr<MV> BY = MVT::CloneCopy( Y );
+    if (_isSet) {
+      if ( _BOp.get() ) {
+        Teuchos::RefCountPtr<MV> BY = MVT::CloneCopy( Y );
       
-      // Apply B and check that it returned Ok.
-      ReturnType ret = OPT::Apply( *_BOp, Y, *BY );
-      if ( ret != Ok ) { return ret; }
+        // Apply B and check that it returned Ok.
+        ReturnType ret = OPT::Apply( *_BOp, Y, *BY );
+        if ( ret != Ok ) { return ret; }
       
-      // Now perform inner product.  Result is stored in Z.
-      MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, *BY, Z );
+        // Now perform inner product.  Result is stored in Z.
+        MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, *BY, Z );
       
-      return Ok;				
+      } else {
+        // Perform the inner product, assume B=I.
+        MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, Y, Z );
+      }
+      return Ok;
     } else {
-      // Perform the inner product, assume B=I.
-      MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, Y, Z );
-      return Ok;				
+      return Failed;
     }
+    // Default return value.
+    return Ok;
   }
   
   //=============================================================================
@@ -328,21 +342,26 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, std::vector<ScalarType>* normvec ) const
   {
-    int IntOne = 1;
-    int numvecs = MVT::GetNumberVecs( X );
-    Teuchos::SerialDenseVector<int,ScalarType> DenseOne(IntOne);
-    Teuchos::RefCountPtr<const MV> Xj;
-    std::vector<int> index( IntOne );
-    ReturnType ret;
+    if (_isSet) {
+      int IntOne = 1;
+      int numvecs = MVT::GetNumberVecs( X );
+      Teuchos::SerialDenseVector<int,ScalarType> DenseOne(IntOne);
+      Teuchos::RefCountPtr<const MV> Xj;
+      std::vector<int> index( IntOne );
+      ReturnType ret;
     
-    for (int i=0; i<numvecs; i++) {
-      index[0] = i;
-      Xj = MVT::CloneView( X, index );
-      ret = InnerProd( *Xj, *Xj, DenseOne );
-      if ( ret != Ok ) { return ret; }
-      (*normvec)[i] = sqrt(DenseOne(0));
+      for (int i=0; i<numvecs; i++) {
+        index[0] = i;
+        Xj = MVT::CloneView( X, index );
+        ret = InnerProd( *Xj, *Xj, DenseOne );
+        if ( ret != Ok ) { return ret; }
+        (*normvec)[i] = sqrt(DenseOne(0));
+      }
+      return Ok;
+    } else {
+      return Failed;
     }
-    
+    // Default return value.
     return Ok;
   }
 

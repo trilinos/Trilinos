@@ -771,7 +771,7 @@ namespace Anasazi {
 	
 	for(j=0; j<nFound-leftOver; j++)
 	  index2[j] = _knownEV + j;
-	MVT::SetBlock( *_evecs, index2, *Rconv );
+	MVT::SetBlock( *Rconv, index2, *_evecs );
 	_knownEV += (nFound-leftOver);
 	if (_om->isVerbosityAndPrint( Debug )) {
 	  _os << endl;

@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
 	//
 	// Create a Epetra_Matrix
 	//
-	Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
+	Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
 	//
 	// Add rows one-at-a-time
 	//
@@ -122,14 +122,14 @@ int main(int argc, char *argv[]) {
 		row_vals = val + bindx[i];
 		col_inds = bindx + bindx[i];
 		NumEntries = bindx[i+1] - bindx[i];
-		assert(A.InsertGlobalValues(update[i], NumEntries, row_vals, col_inds)==0);
-		assert(A.InsertGlobalValues(update[i], 1, val+i, update+i)==0);
+		assert(A->InsertGlobalValues(update[i], NumEntries, row_vals, col_inds)==0);
+		assert(A->InsertGlobalValues(update[i], 1, val+i, update+i)==0);
 	}
 	//
 	// Finish up
 	//
-	assert(A.TransformToLocal()==0);
-	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+	assert(A->TransformToLocal()==0);
+	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
         //************************************
         // Start the block Arnoldi iteration
@@ -145,21 +145,17 @@ int main(int argc, char *argv[]) {
         int step = 5;
         int restarts = 10;
 
-	typedef Anasazi::MultiVec<double> MV;
-	typedef Anasazi::Operator<double> OP;
+	typedef Epetra_MultiVector MV;
+	typedef Epetra_Operator OP;
+	typedef Anasazi::MultiVecTraits<double, MV> MVT;
 	//
-        // create a EpetraAnasaziVec. Note that the decision to make a view or
-        // or copy is determined by the petra constructor called by Anasazi::EpetraMultiVec.
-        // This is possible because I pass in arguements needed by petra.
-
-        Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blocksize) );
-        ivec->MvRandom();
-
-        // call the ctor that calls the petra ctor for a matrix
-
-        Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
+        // Create the eigenproblem to be solved.
+        //
+        Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blocksize) );
+        ivec->Random();
+	
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(Amat, ivec) );
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
 	
 	// Inform the eigenproblem that the matrix A is symmetric
 	//MyProblem->SetSymmetric(true);
@@ -192,18 +188,19 @@ int main(int argc, char *argv[]) {
 	
 	// retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
-	std::vector<int> index(nev);
-	for (i=0; i<nev; i++) 
-	  index[i] = i;
-        Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( index ));
-	for (i=0; i<nev; i++)
-	  index[i] = nev + i;
-        Anasazi::EpetraMultiVec* eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( index ));
+        Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+        Teuchos::RefCountPtr<Epetra_MultiVector> evecr, eveci;
+	if (MyProblem->IsSymmetric())
+          evecr = evecs;
+        else {
+          evecr = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, 0, nev ) );
+          eveci = Teuchos::rcp( new Epetra_MultiVector( View, *evecs, nev, nev ) );
+        }                 	
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;
-	Anasazi::EpetraMultiVec tempevecr(Map,nev), tempAevec(Map,nev);
-	Anasazi::EpetraMultiVec tempeveci(Map,nev);
+	Epetra_MultiVector tempevecr(Map,nev), tempAevec(Map,nev);
+	Epetra_MultiVector tempeveci(Map,nev);
 	Teuchos::SerialDenseMatrix<int,double> Breal(nev,nev), Breal2(nev,nev);
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	std::vector<double> normA(nev), tempnrm(nev);
@@ -218,16 +215,16 @@ int main(int argc, char *argv[]) {
 	  if (!MyProblem->IsSymmetric())
 	    Bimag(i,i) = (*evals)[nev + i]; 
 	}
-	Amat->Apply( *evecr, tempAevec );
-	tempAevec.MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0 );
+	A->Apply( *evecr, tempAevec );
+	MVT::MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0, tempAevec );
 	if (!MyProblem->IsSymmetric()) {
-	  tempAevec.MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0 );
-	  tempAevec.MvNorm( &normA );
-	  Amat->Apply( *eveci, tempAevec );
-	  tempAevec.MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0 );
-	  tempAevec.MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0 );
+	  MVT::MvTimesMatAddMv( 1.0, *eveci, Bimag, 1.0, tempAevec );
+	  MVT::MvNorm( tempAevec, &normA );
+	  A->Apply( *eveci, tempAevec );
+	  MVT::MvTimesMatAddMv( -1.0, *evecr, Bimag, 1.0, tempAevec );
+	  MVT::MvTimesMatAddMv( -1.0, *eveci, Breal, 1.0, tempAevec );
 	}
-	tempAevec.MvNorm( &tempnrm );
+	MVT::MvNorm( tempAevec, &tempnrm );
 	i = 0;
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
@@ -260,10 +257,6 @@ int main(int argc, char *argv[]) {
 	  cout<<"------------------------------------------------------"<<endl;
 	}	
 
-	// Clean up
-	if (evecr) delete evecr;
-	if (eveci) delete eveci;
-	
 	if (bindx) delete [] bindx;
 	if (update) delete [] update;
 	if (col_inds) delete [] col_inds;

@@ -294,12 +294,12 @@ namespace Anasazi {
   
   class EpetraOp : public virtual Operator<double> {
   public:
-    EpetraOp(const Epetra_Operator& );
+    EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
     ~EpetraOp();
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
   private:
-    const Epetra_Operator & Epetra_Op;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
   };
   //-------------------------------------------------------------
   //
@@ -310,7 +310,7 @@ namespace Anasazi {
   // AnasaziOperator constructors
   //
   
-  EpetraOp::EpetraOp(const Epetra_Operator& Op) 
+  EpetraOp::EpetraOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op) 
     : Epetra_Op(Op)
   {
   }
@@ -333,7 +333,7 @@ namespace Anasazi {
     
     assert( vec_x!=NULL && vec_y!=NULL );
 
-    int info = Epetra_Op.Apply( *vec_x, *vec_y );
+    int info = Epetra_Op->Apply( *vec_x, *vec_y );
     
     if (info==0) { 
       return Ok; 
@@ -347,13 +347,14 @@ namespace Anasazi {
   
   class EpetraGenOp : public virtual Operator<double> {
   public:
-    EpetraGenOp(const Epetra_Operator&, const Epetra_Operator& );
+    EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp, 
+                const Teuchos::RefCountPtr<Epetra_Operator> &BOp );
     ~EpetraGenOp();
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
   private:
-    const Epetra_Operator & Epetra_AOp;
-    const Epetra_Operator & Epetra_BOp;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_AOp;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_BOp;
   };
   //-------------------------------------------------------------
   //
@@ -364,8 +365,8 @@ namespace Anasazi {
   // AnasaziOperator constructors
   //
   
-  EpetraGenOp::EpetraGenOp(const Epetra_Operator& AOp,
-			   const Epetra_Operator& BOp) 
+  EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
+			   const Teuchos::RefCountPtr<Epetra_Operator> &BOp) 
     : Epetra_AOp(AOp), Epetra_BOp(BOp) 
   {
   }
@@ -395,10 +396,10 @@ namespace Anasazi {
     // Change the transpose setting for the operator if necessary and change it back when done.
     //
     // Apply B
-    info = Epetra_BOp.Apply( *vec_x, temp_y );
+    info = Epetra_BOp->Apply( *vec_x, temp_y );
     assert(info==0);
     // Apply A
-    info = Epetra_AOp.Apply( temp_y, *vec_y );
+    info = Epetra_AOp->Apply( temp_y, *vec_y );
     if (info==0) { 
       return Ok; 
     } else { 
@@ -410,12 +411,12 @@ namespace Anasazi {
   //--------template class AnasaziEpetraSymOp---------------------
   class EpetraSymOp : public virtual Operator<double> {
   public:
-    EpetraSymOp(const Epetra_Operator& Op );
+    EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op );
     ~EpetraSymOp();
     ReturnType Apply ( const MultiVec<double>& x, 
 		       MultiVec<double>& y ) const;
   private:
-    const Epetra_Operator& Epetra_Op;
+    Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
   };
   //-------------------------------------------------------------
   //
@@ -425,7 +426,7 @@ namespace Anasazi {
   //
   // AnasaziOperator constructors
   //
-  EpetraSymOp::EpetraSymOp(const Epetra_Operator& Op) 
+  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op) 
     : Epetra_Op(Op)
   {
   }
@@ -443,7 +444,7 @@ namespace Anasazi {
     MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
     Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
     Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    Epetra_MultiVector temp_vec( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
+    Epetra_MultiVector temp_vec( Epetra_Op->OperatorRangeMap(), vec_x->NumVectors() );
     
     assert( vec_x!=NULL && vec_y!=NULL );
     //
@@ -451,19 +452,19 @@ namespace Anasazi {
     // is not declared const.
     //
     // Compute A*x
-    info = Epetra_Op.Apply( *vec_x, temp_vec );
+    info = Epetra_Op->Apply( *vec_x, temp_vec );
     if (info!=0) { return Failed; }
     
     // Transpose the operator
-    info = const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
+    info = Epetra_Op->SetUseTranspose( true );
     if (info!=0) { return Failed; }
     
     // Compute A^T*(A*x)
-    info = Epetra_Op.Apply( temp_vec, *vec_y );
+    info = Epetra_Op->Apply( temp_vec, *vec_y );
     if (info!=0) { return Failed; }
     
     // Un-transpose the operator
-    info = const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( false );
+    info = Epetra_Op->SetUseTranspose( false );
     
     if (info==0)
       return Ok; 
