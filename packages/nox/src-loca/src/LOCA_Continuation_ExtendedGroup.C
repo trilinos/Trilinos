@@ -118,8 +118,9 @@ LOCA::Continuation::ExtendedGroup::ExtendedGroup(
 
 LOCA::Continuation::ExtendedGroup::~ExtendedGroup() 
 {
-  if (ownsGroup)
+  if (ownsGroup) {
     delete grpPtr;
+  }
 }
 
 NOX::Abstract::Group&
@@ -265,16 +266,6 @@ LOCA::Continuation::ExtendedGroup::setContinuationParameter(double val) {
 double
 LOCA::Continuation::ExtendedGroup::getContinuationParameter() const {
   return grpPtr->getParam(conParamID);
-}
-
-const LOCA::Continuation::AbstractGroup&
-LOCA::Continuation::ExtendedGroup::getGroup() const {
-  return *grpPtr;
-}
-
-LOCA::Continuation::AbstractGroup&
-LOCA::Continuation::ExtendedGroup::getGroup() {
-  return *grpPtr;
 }
 
 void

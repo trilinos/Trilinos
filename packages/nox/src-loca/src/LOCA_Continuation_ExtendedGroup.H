@@ -201,12 +201,6 @@ namespace LOCA {
       //! Returns the continuation parameter value
       virtual double getContinuationParameter() const;
 
-      //! Returns the base group (that defines \f$F\f$)
-      virtual const LOCA::Continuation::AbstractGroup& getGroup() const;
-
-      //! Returns the base group (that defines \f$F\f$)
-      virtual LOCA::Continuation::AbstractGroup& getGroup();
-
       //! Sets the scale factor \f$\theta\f$ 
       virtual void setScaleFactor(double theta);
       
