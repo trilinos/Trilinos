@@ -456,13 +456,15 @@ static int read_elem_info(int pexoid, int Proc, PROB_INFO_PTR prob,
 
   /*
    * let cpu_wgt[1] be the number of sides (surfaces) not
-   * connected to other elements. (test case for multi-weight
+   * connected to other elements. (useful test case for multi-weight
    * load balancing).
    */
   if (MAX_CPU_WGTS>1){
     for (ielem = 0; ielem < mesh->num_elems; ielem++) {
-      /* elements[ielem].cpu_wgt[1] = elements[ielem].adj_len - elements[ielem].nadj */
-      elements[ielem].cpu_wgt[1] = elements[ielem].adj_len - elements[ielem].nadj - 1; /* EBEB Strangely, nadj is one less than expected so subtract one. */
+      elements[ielem].cpu_wgt[1] = elements[ielem].adj_len - elements[ielem].nadj;
+      /* EBEB Strangely, nadj is often one less than expected so subtract one from the wgt to compensate. */
+      if (elements[ielem].cpu_wgt[1] >= 1.0)
+        elements[ielem].cpu_wgt[1] -= 1.0;
     }
   }
 
