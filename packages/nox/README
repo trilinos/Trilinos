@@ -1,10 +1,9 @@
 #@HEADER
 #@HEADER
 
-This README explains some fundamentals of how to unpack, configure,
-make, install, and link to NOX.
-
-** UNPACKING
+#----------------------------------------------------------------------
+UNPACKING
+#----------------------------------------------------------------------
 
 To unpack NOX, type
 
@@ -18,25 +17,51 @@ In either case, rename the directory to simply "nox":
 
 > mv nox-<version> nox
 
-** COMPILING - SINGLE
+#----------------------------------------------------------------------
+COMPILING THE EXAMPLES WITH TRILINOS & MPI
+#----------------------------------------------------------------------
+
+As far as I can tell, the examples we have will only work with
+"regular" MPI (as opposed to LAM MPI).  The problems seems mainly to
+be that TRILINOS_COMM is then set to LAMMPI instead of just MPI, which
+would cause problems in the cc_main.cc code. 
 
 > cd nox
-> ./configure
+> mkdir builds
+> cd builds
+> mkdir LINUX.MPI
+> cd LINUX.MPI
+> ../../configure TRILINOS_COMM=MPI TRILINOS_TARGET=LINUX.MPI CC=mpicc CXX=mpiCC
 > make
 
-Add the following to your CPPFLAGS:
+The 'configure' line assumes that TRILINOS_HOME is defined. If not,
+add that to the configure line as well. Furthermore, TRILINOS_COMM
+does not need to be defined if it is already defined as an
+environmental variable. Likewise, TRILINOS_TARGET does not need to be
+defined if TRILINOS_ARCH, TRILINOS_COMM, and (optionally) TRILINOS_ID
+are already defined on the configure line or as enviromental
+variables.
 
-  -I$(NOX_HOME)/src
+The executables for the examples are now named 'example'.
 
-Add the following to your LDFLAGS:
+#----------------------------------------------------------------------
+COMPILING THE EXAMPLES WITH TRILINOS & SERIAL MODE
+#----------------------------------------------------------------------
 
-  -L$(NOX_HOME)/src
+This is essentially the same as above.
+The DS6.5.1 example does not work in serial mode. Not sure why.
 
-Add the following to you LIBS:
+> cd nox
+> mkdir builds
+> cd builds
+> mkdir LINUX.SERIAL
+> cd LINUX.SERIAL
+> ../../configure TRILINOS_COMM=SERIAL TRILINOS_TARGET=LINUX.SERIAL
+> make
 
-  -lnox -lnoxepetra
-
-** COMPILING - MULTI
+#----------------------------------------------------------------------
+COMPILING - MULTI 
+#----------------------------------------------------------------------
 
 > cd nox
 > mkdir builds
@@ -58,28 +83,9 @@ Add the following to you LIBS:
 
   -lnox -lnoxepetra
 
-** INSTALLING NOX - SINGLE
-
-> cd $(NOX_HOME)
-> ./configure --prefix=<directory>
-> make install
-
-Headers: $(prefix)/include/nox
-Libraries: $(prefix)/lib
-
-Add the following to your CPPFLAGS:
-
-  -I$(prefix)/include/nox
-
-Add the following to your LDFLAGS:
-
-  -L$(prefix)/lib
-
-Add the following to you LIBS:
-
-  -lnox -lnoxepetra
-
-** INSTALLING NOX - MULTI
+#----------------------------------------------------------------------
+INSTALLING NOX - MULTI
+#----------------------------------------------------------------------
 
 > cd $(NOX_HOME)
 > ./configure --prefix=<directory> --exec_prefix=<exec_directory>
@@ -100,9 +106,51 @@ Add the following to you LIBS:
 
   -lnox -lnoxepetra
 
+#----------------------------------------------------------------------
+COMPILING - SINGLE
+#----------------------------------------------------------------------
 
+> cd nox
+> ./configure
+> make
 
+Add the following to your CPPFLAGS:
 
+  -I$(NOX_HOME)/src
 
+Add the following to your LDFLAGS:
 
+  -L$(NOX_HOME)/src
 
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+#----------------------------------------------------------------------
+INSTALLING NOX - SINGLE
+#----------------------------------------------------------------------
+
+> cd $(NOX_HOME)
+> ./configure --prefix=<directory>
+> make install
+
+Headers: $(prefix)/include/nox
+Libraries: $(prefix)/lib
+
+Add the following to your CPPFLAGS:
+
+  -I$(prefix)/include/nox
+
+Add the following to your LDFLAGS:
+
+  -L$(prefix)/lib
+
+Add the following to you LIBS:
+
+  -lnox -lnoxepetra
+
+#----------------------------------------------------------------------
+Developer's Notes...
+#----------------------------------------------------------------------
+
+If you change any .m4 file in config, "rm aclocal.m4" and re-run "bootstrap".
