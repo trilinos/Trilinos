@@ -84,16 +84,8 @@ int main(int argc, char *argv[])
   NOX::Parameter::List nlParams;
   nlParams.setParameter("Output Level", 4);
   nlParams.setParameter("MyPID", MyPID);
-  nlParams.setParameter("Nonlinear Solver", "Newton");
-  //nlParams.setParameter("Nonlinear Solver", "NonlinearCG");  
-  //nlParams.setParameter("Diagonal Precondition", "On");  // default = "Off"
-  //nlParams.setParameter("Direction", "Steepest Descent");  // default
-  //nlParams.setParameter("Direction", "Richardson");
-  //nlParams.setParameter("Max Iterations", 100);
-  //nlParams.setParameter("Orthogonalize", "Fletcher-Reeves");  // default
-  //nlParams.setParameter("Orthogonalize", "Polak-Ribiere");
-  //nlParams.setParameter("Restart Frequency", 5);  // default = 10
-  //nlParams.setParameter("Output Frequency", 10);  // default = 1
+  nlParams.setParameter("Nonlinear Solver", "Line Search");
+  //nlParams.setParameter("Nonlinear Solver", "Trust Region");
 
   // Sublist for line search
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -101,6 +93,8 @@ int main(int argc, char *argv[])
   //searchParams.setParameter("Full Step", 0.01);
   //searchParams.setParameter("Method", "Interval Halving");
   searchParams.setParameter("Method", "Polynomial");
+  //searchParams.setParameter("Method", "Secant");
+    //searchParams.setParameter("Max Iters", 10);
   //searchParams.setParameter("Method", "More'-Thuente");
   searchParams.setParameter("Default Step", 1.0000);
   //searchParams.setParameter("Recovery Step", 0.0001);
@@ -109,6 +103,14 @@ int main(int argc, char *argv[])
   // Sublist for direction
   NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
   dirParams.setParameter("Method", "Newton");
+  //dirParams.setParameter("Method", "Steepest Descent");
+    //dirParams.setParameter("Scaling Type", "None");
+    //dirParams.setParameter("Scaling Type", "2-Norm");
+  //dirParams.setParameter("Method", "NonlinearCG");
+    //dirParams.setParameter("Restart Frequency", 1);
+    //dirParams.setParameter("Precondition", "On");
+    //dirParams.setParameter("Orthogonalize", "Polak-Ribiere");
+    //dirParams.setParameter("Orthogonalize", "Fletcher-Reeves");
   //dirParams.setParameter("Method", "Steepest Descent");
   //dirParams.setParameter("Method", "Dogleg Trust Region");
   //dirParams.setParameter("Method", "Broyden");
