@@ -79,7 +79,7 @@ Status::StatusType Newton::iterate()
   soln.computeNewton(iparams.sublist("Linear Solver"));
 
   // Set search direction.
-  dir = oldsoln.getNewton();
+  dir = soln.getNewton();
 
   // Copy current soln to the old soln.
   oldsoln = soln;
