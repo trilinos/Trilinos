@@ -3,7 +3,7 @@
 
 #include "Tpetra_Object.hpp"
 #include "Tpetra_Directory.hpp"
-#include "Tpetra_ConfigDefs.hpp" // for map
+#include "Tpetra_ConfigDefs.hpp" // for STL map
 #include <Teuchos_RefCountPtr.hpp>
 #include "Tpetra_ElementSpaceData.hpp"
 #include "Tpetra_Platform.hpp"
@@ -16,8 +16,8 @@ template<typename PacketType, typename OrdinalType> class Comm;
 //! Tpetra::ElementSpace: A class for constructing and using template<ordinalType> ElementSpaces.
 /*! ElementSpace objects are defined to have an element size of 1. Variable element sizes are implemented 
 	in Tpetra::BlockElementSpace. Some ElementSpace methods throw exceptions, and should be enclosed 
-	in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Comm object. 
-	Local IDs (LIDs) are always in the range indexBase to numMyElements - indexBase.
+	in a try/catch block. All Tpetra_ElementSpace objects require a Tpetra_Platform object. 
+	Local IDs (LIDs) are always in the range 0 to numMyElements - 1.
 
 	ElementSpace error codes (positive for non-fatal, negative for fatal):
   <ol>
@@ -25,8 +25,8 @@ template<typename PacketType, typename OrdinalType> class Comm;
   <li> +2  Specified Local ID not found on this image.
   <li> +3  Pointer passed to getMyGlobalElements(ordinalType*) does not have child allocated. (Null pointer).
   <li> -1  numGlobalElements < -1.  Should be >= -1 (Should be >= 0 for a Tpetra-defined ElementSpace).
-  <li> -2  numMyElements < indexBase.  Should be >= indexBase.
-  <li> -3  Invalid numGlobalElements.  Should equal sum of myGlobalElements, or set to indexBase-1 to compute automatically.
+  <li> -2  numMyElements < 0.  Should be >= 0.
+  <li> -3  Invalid numGlobalElements.  Should equal sum of myGlobalElements, or set to -1 to compute automatically.
   <li> -4  Minimum global element index is less than index base.
   <li> -99 Internal ElementSpace error.  Contact developer.
   </ol>*/
@@ -158,6 +158,7 @@ Teuchos::RefCountPtr< ElementSpaceData<OrdinalType> > ElementSpaceData_; // Teuc
 
 // private functions
 void directorySetup();
+OrdinalType getZero() const {return(ElementSpaceData_->zero_);};
 
 }; // ElementSpace class
 
@@ -296,10 +297,11 @@ ElementSpace<OrdinalType>::ElementSpace(OrdinalType numGlobalElements, OrdinalTy
 	map<OrdinalType, OrdinalType> glMap;
 	OrdinalType minMyGID = indexBase;
 	OrdinalType maxMyGID = indexBase;
+	const OrdinalType zero = Teuchos::OrdinalTraits<OrdinalType>::zero();
 	if(numMyElements > 0) {
 		for(OrdinalType i = 0; i < numMyElements; i++) {
-			lgMap[i + indexBase] = elementList[i]; // lgmap: LID=key, GID=mapped
-			glMap[elementList[i]] = (i + indexBase); // glmap: GID=key, LID=mapped
+			lgMap[i + zero] = elementList[i]; // lgmap: LID=key, GID=mapped
+			glMap[elementList[i]] = (i + zero); // glmap: GID=key, LID=mapped
 		}
     minMyGID = elementList[0];
     maxMyGID = elementList[numMyElements - 1];
@@ -340,7 +342,7 @@ OrdinalType ElementSpace<OrdinalType>::getLID (OrdinalType GID) const {
   if(!isMyGID(GID)) 
     throw reportError("Global ID " + toString(GID) + " was not found on this processor.", 1);
   else if(isContiguous()) 
-    return(GID - getMinMyGID() + getIndexBase()); //compute with offset
+    return(GID - getMinMyGID() + getZero()); //compute with offset
   else {
     return((ElementSpaceData_->glMap_.find(GID))->second);
 	}
@@ -352,7 +354,7 @@ OrdinalType ElementSpace<OrdinalType>::getGID (OrdinalType LID) const {
   if(!isMyLID(LID))
     throw reportError("Local ID " + toString(LID) + " was not found on this processor.", 2);
   else if(isContiguous()) 
-    return(LID + getMinMyGID() + getIndexBase()); //compute with offset
+    return(LID + getMinMyGID()); //compute with offset
   else {
     return((ElementSpaceData_->lgMap_.find(LID))->second);
 	}

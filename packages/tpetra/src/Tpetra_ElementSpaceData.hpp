@@ -24,16 +24,16 @@ class ElementSpaceData : public Object {
 		: Object("Tpetra::ElementSpaceData")
 		, Platform_(&platform) 
 		, Comm_(comm) 
+		, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 		, numGlobalElements_(numGlobalElements)
 		, numMyElements_(numMyElements)
 		, indexBase_(indexBase)
-		, minLID_(indexBase)
-		, maxLID_(indexBase + numMyElements)
+		, minLID_(zero_)
+		, maxLID_((numMyElements > 0) ? (minLID_ + numMyElements_ - 1) : zero_)
 		, minMyGID_(minMyGID)
 		, maxMyGID_(maxMyGID)
 		, minAllGID_(minAllGID)
 		, maxAllGID_(maxAllGID)
-		, zero_(Teuchos::OrdinalTraits<OrdinalType>::zero())
 		, contiguous_(contiguous)
 		, global_(checkGlobalness())
 		, lgMap_(lgMap)
@@ -60,6 +60,7 @@ class ElementSpaceData : public Object {
  protected:
 	Platform<OrdinalType, OrdinalType> const* Platform_;
 	Comm<OrdinalType, OrdinalType> const* Comm_;
+	OrdinalType const zero_;
 	OrdinalType const numGlobalElements_;
 	OrdinalType const numMyElements_;
 	OrdinalType const indexBase_;
@@ -69,7 +70,6 @@ class ElementSpaceData : public Object {
 	OrdinalType const maxMyGID_;
 	OrdinalType const minAllGID_;
 	OrdinalType const maxAllGID_;
-	OrdinalType const zero_;
 	bool const contiguous_;
 	bool const global_;
   map<OrdinalType, OrdinalType> lgMap_;
