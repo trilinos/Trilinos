@@ -29,18 +29,19 @@ extern "C" {
    LevelMap is the mapping of the old vertices to the new vertices. It
    will be used to pass a partition of the coarse graph back to the
    original graph. Time O(|I|*log(|I|)), due to sorting. */
+
 int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
   HGraph *hg,
   int *pack,
   HGraph *c_hg,
   int *LevelMap)
 {
-  int  i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins,
-   *sum = NULL, *hsize = NULL, *used_vertices = NULL, *sorted = NULL,
-   *c_hindex = NULL, *c_hvertex = NULL;
-  float *c_ewgt = NULL;
-  int err = ZOLTAN_OK;
-  char *yo = "Zoltan_HG_Coarsening";
+int  i, j, k, l, old, vertex, new_vertex, deleted_he, deleted_pins,
+ *sum = NULL, *hsize = NULL, *used_vertices = NULL, *sorted = NULL,
+ *c_hindex = NULL, *c_hvertex = NULL;
+float *c_ewgt = NULL;
+int err = ZOLTAN_OK;
+char *yo = "Zoltan_HG_Coarsening";
 
   Zoltan_HG_HGraph_Init(c_hg);
   c_hg->info = hg->info + 1;
@@ -52,11 +53,12 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
         (c_hg->nVtx)++;
         vertex = i;
         while (pack[vertex] >= 0) {
-           old = vertex;
-           vertex = pack[old];
+           old       =  vertex;
+           vertex    =  pack[old];
            pack[old] = -pack[old] - 1;
            }
         }
+
   if (!(c_hg->vwgt = (float*) ZOLTAN_CALLOC (c_hg->nVtx, sizeof(float)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      err = ZOLTAN_MEMERR;
@@ -72,8 +74,8 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
         while (pack[vertex] < 0) {
            LevelMap[vertex] = new_vertex;
            c_hg->vwgt[new_vertex] += (hg->vwgt ? hg->vwgt[vertex] : 1.0);
-           pack[vertex] = -pack[vertex] -1;
-           vertex = pack[vertex];
+           pack[vertex] = -pack[vertex] - 1;
+           vertex       =  pack[vertex];
            }
         new_vertex++;
         }
@@ -91,7 +93,7 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
      for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
         new_vertex = LevelMap[hg->hvertex[j]];
         if (used_vertices[new_vertex] <= i) {
-            used_vertices[new_vertex] = i+1;
+            used_vertices[new_vertex]  = i + 1;
             c_hvertex[(c_hg->nInput)++] = new_vertex;
             }
         }
@@ -141,9 +143,9 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
          j++;
      if (j > i+1) {
          for (k = i; k < j; k++)
-         /* sort the vertex list of these edges */
-         Zoltan_quicksort_list_inc_int (&(c_hvertex[c_hindex[sorted[k]]]), 0,
-          c_hindex[sorted[k] +1] - c_hindex[sorted[k]] -1);
+            /* sort the vertex list of these edges */
+            Zoltan_quicksort_list_inc_int (&(c_hvertex[c_hindex[sorted[k]]]),
+             0, c_hindex[sorted[k] +1] - c_hindex[sorted[k]] -1);
 
          /* sort edges according to their sorted vertex lists */
          Zoltan_quicksort_pointer_inc_int_mult(sorted,i,j-1,c_hindex,c_hvertex);
@@ -156,7 +158,7 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
                 l++;
             if (l == hsize[sorted[i]]) {
                 c_ewgt[sorted[k+1]] += c_ewgt[sorted[k]];
-                c_ewgt[sorted[k]] = 0.0;
+                c_ewgt[sorted[k]]    = 0.0;
                 }
             }
          i = j;
@@ -184,15 +186,15 @@ int Zoltan_HG_Coarsening (ZZ *zz,       /* Zoltan data structure */
   c_hg->nInput = c_hindex[c_hg->nEdge];
 
   /* Reallocate the arrays to their exact size */
-  if (!(c_hg->ewgt = (float*)  ZOLTAN_MALLOC (c_hg->nEdge * sizeof(float)))
+  if (!(c_hg->ewgt = (float*)  ZOLTAN_MALLOC (c_hg->nEdge      * sizeof(float)))
    || !(c_hg->hindex = (int*)  ZOLTAN_MALLOC((c_hg->nEdge + 1) * sizeof(int)))
-   || !(c_hg->hvertex = (int*) ZOLTAN_MALLOC (c_hg->nInput * sizeof(int)))) {
+   || !(c_hg->hvertex = (int*) ZOLTAN_MALLOC (c_hg->nInput     * sizeof(int)))){
      err = ZOLTAN_MEMERR;
      goto end;
      }
-  memcpy(c_hg->ewgt, c_ewgt, c_hg->nEdge * sizeof(float));
-  memcpy(c_hg->hindex, c_hindex, (c_hg->nEdge + 1) * sizeof(int));
-  memcpy(c_hg->hvertex, c_hvertex, c_hg->nInput * sizeof(int));
+  memcpy(c_hg->ewgt,    c_ewgt,    c_hg->nEdge      * sizeof(float));
+  memcpy(c_hg->hindex,  c_hindex, (c_hg->nEdge + 1) * sizeof(int));
+  memcpy(c_hg->hvertex, c_hvertex, c_hg->nInput     * sizeof(int));
   Zoltan_Multifree (__FILE__, __LINE__, 3, &c_ewgt, &c_hindex, &c_hvertex);
 
   err = Zoltan_HG_Create_Mirror(zz, c_hg);

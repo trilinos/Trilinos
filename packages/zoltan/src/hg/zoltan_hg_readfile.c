@@ -36,14 +36,14 @@ int Zoltan_HG_Readfile (
  int Proc,
  FILE *f,
  int *nVtx, int *nEdge, int *nInput,
- int **hindex,   int **hvertex,
+ int **hindex, int **hvertex,
  int *vwgt_dim, float **vwgt,
  int *ewgt_dim, float **ewgt,
  int *base)
-    {
-    int err = ZOLTAN_OK;
-    char string[81], *s;
-    char *yo = "Zoltan_HG_Readfile";
+{
+int err = ZOLTAN_OK;
+char string[81], *s;
+char *yo = "Zoltan_HG_Readfile";
 
     /* Initialize return values in case of error. */
     *nVtx   = *nEdge   = *nInput = *vwgt_dim = *ewgt_dim = 0;
@@ -58,7 +58,7 @@ int Zoltan_HG_Readfile (
           goto End;
           }
        s = strtok(string, " \t\n");
-       } while (*s == '%');  /* Skip leading comment lines. */
+       } while (*s == '%');         /* Skip leading comment lines. */
 
     if (atoi(s) < 2) /* Note -- Not correct for files with only one vertex. */
        err = patoh_readfile (Proc, f, nVtx, nEdge, nInput, hindex, hvertex,
@@ -83,7 +83,7 @@ static int old_readfile (int Proc,
  int *ewgt_dim, float **ewgt,
  int *base)
     {
-    int count, ierr = ZOLTAN_OK;
+    int count, err = ZOLTAN_OK;
     char errstr[200];
     int Hedge=0, code=0, pin, i;
     char string[BUF_LEN], *s;
@@ -99,7 +99,7 @@ static int old_readfile (int Proc,
     do {
        if (!fgets (string, 80, f)) {
           ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
-          ierr = ZOLTAN_FATAL;
+          err = ZOLTAN_FATAL;
           goto End;
           }
        } while (string[0] == '%');  /* Skip leading comment lines. */
@@ -108,7 +108,7 @@ static int old_readfile (int Proc,
     if (count <  3) {
        ZOLTAN_PRINT_ERROR (Proc, yo,
         "ERROR, first line of file must be: |V| |E| |I| (code)\n");
-       ierr = ZOLTAN_FATAL;
+       err = ZOLTAN_FATAL;
        goto End;
        }
 
@@ -117,7 +117,7 @@ static int old_readfile (int Proc,
     if (!((*index)  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
      || !((*vertex) = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
          ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
-         ierr = ZOLTAN_MEMERR;
+         err = ZOLTAN_MEMERR;
          goto End;
          }
 
@@ -127,7 +127,7 @@ static int old_readfile (int Proc,
        if (!(fgets (string, BUF_LEN, f))) {
           sprintf(errstr, "ERROR... read hvertex %d\n",i);
           ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
-          ierr = ZOLTAN_FATAL;
+          err = ZOLTAN_FATAL;
           goto End;
           }
        s = strtok(string," \n");
@@ -137,7 +137,7 @@ static int old_readfile (int Proc,
               sprintf(errstr,  "ERROR...pin %d of vertex %d is out of range "
                "[%d,%d]!\n", pin,i, 1, *nVtx);
               ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
-              ierr = ZOLTAN_FATAL;
+              err = ZOLTAN_FATAL;
               goto End;
               }
           (*vertex)[Hedge++] = pin;
@@ -150,14 +150,14 @@ static int old_readfile (int Proc,
     if ((code / 10) % 10 == 1) {
        if (!((*vwgt) = (float*) ZOLTAN_MALLOC (*nVtx * sizeof(float)))) {
           ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
-          ierr = ZOLTAN_MEMERR;
+          err = ZOLTAN_MEMERR;
           goto End;
           }
        for (i = 0; i < *nVtx; i++) {
           if (!(fgets (string, BUF_LEN, f))) {
              sprintf(errstr, "ERROR... reading weight %d\n",i);
              ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
-             ierr = ZOLTAN_FATAL;
+             err = ZOLTAN_FATAL;
              goto End;
              }
           s = strtok (string, " \n");
@@ -167,15 +167,15 @@ static int old_readfile (int Proc,
 
     if (fscanf(f, "%d", &i) != EOF) {
        ZOLTAN_PRINT_WARN (Proc, yo, "Input file is longer than expected!\n");
-       ierr = ZOLTAN_WARN;
+       err = ZOLTAN_WARN;
        }
 
 End:
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
        *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
-    return ierr;
+    return err;
     }
 
 /*****************************************************************************/
@@ -190,13 +190,13 @@ static int patoh_readfile (int Proc,
  int *ewgt_dim, float **ewgt,
  int *base)
     {
-    int i, j;
-    int count, ierr = ZOLTAN_OK;
-    char errstr[200];
-    int Hedge=0, code=0, dims=1, pin;
+int i, j;
+int count, err = ZOLTAN_OK;
+char errstr[200];
+int Hedge=0, code=0, dims=1, pin;
     /* KDD -- should dims be initialized to zero (for no vwgts) instead of 1? */
-    char string[BUF_LEN], *s;
-    char *yo = "patoh_readfile";
+char string[BUF_LEN], *s;
+char *yo = "patoh_readfile";
 
 
     /* TODO: edge weights, multiple edge/vertex weights */
@@ -206,7 +206,7 @@ static int patoh_readfile (int Proc,
     do {
        if (!fgets (string, 80, f)) {
           ZOLTAN_PRINT_ERROR(Proc, yo, "ERROR...not able to read input file\n");
-          ierr = ZOLTAN_FATAL;
+          err = ZOLTAN_FATAL;
           goto End;
           }
        } while (string[0] == '%');  /* Skip leading comment lines. */
@@ -215,8 +215,8 @@ static int patoh_readfile (int Proc,
      &code, &dims);
     if (count <  4) {  /* code and dims are optional */
        ZOLTAN_PRINT_ERROR (Proc, yo,
-         "Control line of file must be: base |V| |E| |P| (code) (dims)\n");
-       ierr = ZOLTAN_FATAL;
+         "Control line of file must be: base |V| |E| |I| (code) (dims)\n");
+       err = ZOLTAN_FATAL;
        goto End;
        }
 
@@ -225,7 +225,7 @@ static int patoh_readfile (int Proc,
     if (!((*index)  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
      || !((*vertex) = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
            ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
-           ierr = ZOLTAN_MEMERR;
+           err = ZOLTAN_MEMERR;
            goto End;
            }
     if (code == 2 || code == 3) {
@@ -233,7 +233,7 @@ static int patoh_readfile (int Proc,
        *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
        if (*ewgt == NULL) {
           ZOLTAN_PRINT_ERROR(Proc, yo, "Insufficient memory.");
-          ierr = ZOLTAN_MEMERR;
+          err = ZOLTAN_MEMERR;
           goto End;
           }
        }
@@ -246,7 +246,7 @@ static int patoh_readfile (int Proc,
        if (!(fgets (string, BUF_LEN, f))) {
           sprintf(errstr, "ERROR... read hvertex %d\n",i);
           ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
-          ierr = ZOLTAN_FATAL;
+          err = ZOLTAN_FATAL;
           goto End;
           }
 
@@ -267,7 +267,7 @@ static int patoh_readfile (int Proc,
               sprintf(errstr, "ERROR...pin %d of edge %d is out of range "
                "[%d,%d]!\n", pin,i,0+*base, *nVtx-1+*base);
               ZOLTAN_PRINT_ERROR (Proc, yo, errstr);
-              ierr = ZOLTAN_FATAL;
+              err = ZOLTAN_FATAL;
               goto End;
               }
           (*vertex)[Hedge++] = pin;
@@ -283,7 +283,7 @@ static int patoh_readfile (int Proc,
     /* KDD -- shouldn't this code use dims in some way? */
     if (!((*vwgt) = (float *) ZOLTAN_MALLOC (*nVtx*sizeof(float)))) {
         ZOLTAN_PRINT_ERROR (Proc, yo, "Insufficient memory for vwgt.");
-        ierr = ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
         goto End;
         }
     i = 0;
@@ -298,11 +298,11 @@ static int patoh_readfile (int Proc,
            }
         }
 End:
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
        *nVtx  = *nEdge  = *nInput = *vwgt_dim = *ewgt_dim = 0;
        Zoltan_Multifree(__FILE__, __LINE__, 4, index, vertex, ewgt, vwgt);
        }
-    return ierr;
+    return err;
     }
 
 /*****************************************************************************/

@@ -24,37 +24,42 @@ extern "C" {
 
 
 int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
-   {
-   int ierr;
-   FILE *f;
-   char errstr[200];
-   char *yo = "hg_readfile";
+{
+FILE *f;
+int err;
+char errstr[200];
+char *yo = "hg_readfile";
 
    Zoltan_HG_HGraph_Init(hg);
 
    f = fopen (hgraphfile, "r");
    if (!f) {
-      sprintf(errstr, "ERROR...not able to open file %s!\n",hgraphfile);
+      sprintf(errstr, "ERROR...not able to open file %s!\n", hgraphfile);
       ZOLTAN_PRINT_ERROR (zz->Proc, yo, errstr);
       return ZOLTAN_FATAL;
       }
 
-   ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
+   err = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt,
     &hg->EdgeWeightDim, &hg->ewgt, base);
-   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-      return ierr;
+   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+      fclose(f);
+      return err;
+      }
 
    if (*base > 0) {
       /* Convert to zero-based vertex numbers */
       int i;
-      for (i = 0; i < hg->nInput; i++) 
+      for (i = 0; i < hg->nInput; i++)
          hg->hvertex[i] -= *base;
       }
 
-   ierr = Zoltan_HG_Create_Mirror (zz, hg);
-   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-      return ierr;
+   err = Zoltan_HG_Create_Mirror (zz, hg);
+   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+      fclose(f);
+      return err;
+      }
+
    if (fclose(f))
       return ZOLTAN_WARN;
    return ZOLTAN_OK;

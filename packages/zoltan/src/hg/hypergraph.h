@@ -156,7 +156,7 @@ int Zoltan_HG_Readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 
 /* Hypergraph Partitioning */
 /* Function types for options to hypergraph partitioning */
-typedef int ZOLTAN_HG_MATCHING_FN   (ZZ*, HGraph*, Graph *, Matching, int*);
+typedef int ZOLTAN_HG_MATCHING_FN   (ZZ*, HGraph*, Matching, int*);
 typedef int ZOLTAN_HG_PACKING_FN    (ZZ*, HGraph*, Packing,  int*);
 typedef int ZOLTAN_HG_GROUPING_FN   (ZZ*, HGraph*, Grouping, int*);
 typedef int ZOLTAN_HG_GLOBAL_PART_FN(ZZ*, HGraph*, int, Partition);

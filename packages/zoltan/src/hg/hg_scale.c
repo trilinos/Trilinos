@@ -28,12 +28,13 @@ extern "C" {
 /* Scaling the weight of hypergraph edges. Currently there are 5 methods.
    The default should be number 1. */
 int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz,HGraph *hg,float *new_ewgt,int scale)
-{ int    i, j;
+{
+int    i, j;
 
   if (scale == 1) {
      if (hg->vwgt) {
         double sum, factor, weight;
-        for (i=0; i<hg->nEdge; i++) {
+        for (i = 0; i < hg->nEdge; i++) {
            sum = factor = 0.0;
            for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
               sum += (double)(hg->vwgt[hg->hvertex[j]]);
@@ -125,8 +126,9 @@ int Zoltan_HG_Scale_HGraph_Weight (ZZ *zz,HGraph *hg,float *new_ewgt,int scale)
 /* Scaling the weight of the edges in a graph. There are currently 4
    different methods. Default should be number 1. */
 int Zoltan_HG_Scale_Graph_Weight (ZZ *zz, Graph *g, float *new_ewgt, int scale)
-{ int   i, j;
-  float vwgt_j;
+{
+int   i, j;
+float vwgt_j;
 
   if (!g->vwgt)
      return ZOLTAN_FATAL;

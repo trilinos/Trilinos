@@ -77,15 +77,10 @@ int Zoltan_HG_HGraph_Free(
   HGraph *hg
 )
 {
-  if (hg) {
-     ZOLTAN_FREE ((void**) &hg->coor);
-     ZOLTAN_FREE ((void**) &hg->vwgt);
-     ZOLTAN_FREE ((void**) &hg->ewgt);
-     ZOLTAN_FREE ((void**) &hg->hindex);
-     ZOLTAN_FREE ((void**) &hg->hvertex);
-     ZOLTAN_FREE ((void**) &hg->vindex);
-     ZOLTAN_FREE ((void**) &hg->vedge);
-     }
+  if (hg)
+     Zoltan_Multifree (__FILE__, __LINE__, 7, &hg->coor, &hg->vwgt, &hg->ewgt,
+      &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge);
+
   return ZOLTAN_OK;
 }
 
@@ -98,14 +93,10 @@ int Zoltan_HG_Graph_Free(
   Graph *g
 )
 {
-  if (g) {
-     ZOLTAN_FREE ((void**) &g->coor);
-     ZOLTAN_FREE ((void**) &g->vwgt);
-     ZOLTAN_FREE ((void**) &g->ewgt);
-     ZOLTAN_FREE ((void**) &g->vtxdist);
-     ZOLTAN_FREE ((void**) &g->nindex);
-     ZOLTAN_FREE ((void**) &g->neigh);
-     }
+  if (g)
+     Zoltan_Multifree (__FILE__, __LINE__, 6, &g->coor, &g->vwgt, &g->ewgt,
+      &g->vtxdist, &g->nindex, &g->neigh);
+
   return ZOLTAN_OK;
 }
 
@@ -118,8 +109,8 @@ int Zoltan_HG_Info (
   HGraph *hg
 )
 {
-  int i, size, size_min, size_max;
-  float wgt_min, wgt_max, wgt_tot;
+int i, size, size_min, size_max;
+float wgt_min, wgt_max, wgt_tot;
 
   if (zz->Debug_Level < ZOLTAN_DEBUG_LIST)
      return ZOLTAN_OK;
@@ -164,18 +155,18 @@ int Zoltan_HG_Info (
         size_max = MAX(size_max, size);
         }
      printf("Edge sizes       :    %6d    %9.2f %6d    %9d\n", size_min,
-      (float)(hg->nInput)/hg->nEdge,size_max,hg->nInput);
+      (float)(hg->nInput) / hg->nEdge, size_max, hg->nInput);
      }
   if (hg->vindex) {
      size_min = INT_MAX;
      size_max = INT_MIN;
      for (i = 0; i < hg->nVtx; i++) {
         size     = hg->vindex[i+1] - hg->vindex[i];
-        size_min = MIN(size_min,size);
-        size_max = MAX(size_max,size);
+        size_min = MIN(size_min, size);
+        size_max = MAX(size_max, size);
         }
-     printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n",size_min,
-      (float)(hg->nInput)/hg->nEdge,size_max,hg->nInput);
+     printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n", size_min,
+      (float)(hg->nInput) / hg->nEdge, size_max, hg->nInput);
      }
 
   printf("-----------------------------------------------------------------\n");
@@ -196,11 +187,11 @@ int Zoltan_HG_Create_Mirror (
   HGraph *hg
 )
 {
-   int i, j;                  /* loop counters */
-   int inlength, outlength;   /* input/output array lengths */
-   int *index, *data;         /* pointers to input information */
-   int *outindex, *outdata;
-   char *yo = "Zoltan_HG_Create_Mirror";
+int i, j;                  /* loop counters */
+int inlength, outlength;   /* input/output array lengths */
+int *index, *data;         /* pointers to input information */
+int *outindex, *outdata;
+char *yo = "Zoltan_HG_Create_Mirror";
 
    ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -213,11 +204,11 @@ int Zoltan_HG_Create_Mirror (
       outlength = hg->nVtx;
       index     = hg->hindex;
       data      = hg->hvertex;
-      outindex  = hg->vindex = (int*)ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
-      outdata   = hg->vedge  = (int*)ZOLTAN_MALLOC (hg->nInput  * sizeof(int));
+      outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
+      outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nInput  * sizeof(int));
+
       if (outindex == NULL || (hg->nInput > 0 && outdata == NULL)) {
-         ZOLTAN_FREE ((void **) &(hg->vindex));
-         ZOLTAN_FREE ((void **) &(hg->vedge));
+         Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          ZOLTAN_TRACE_EXIT(zz, yo);
          return ZOLTAN_MEMERR;
@@ -233,9 +224,9 @@ int Zoltan_HG_Create_Mirror (
       data      = hg->vedge;
       outindex  = hg->hindex  = (int*)ZOLTAN_MALLOC((hg->nEdge+1)* sizeof(int));
       outdata   = hg->hvertex = (int*)ZOLTAN_MALLOC(hg->nInput    *sizeof(int));
+
       if (outindex == NULL || (hg->nInput > 0 && outdata == NULL)) {
-         ZOLTAN_FREE ((void **) &(hg->hindex));
-         ZOLTAN_FREE ((void **) &(hg->hvertex));
+         Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          ZOLTAN_TRACE_EXIT(zz, yo);
          return ZOLTAN_MEMERR;
@@ -247,7 +238,7 @@ int Zoltan_HG_Create_Mirror (
       return ZOLTAN_FATAL;  /* unable to proceed */
       }
 
-   /* count number of data objects in out index space */
+   /* count number of data objects in the outindex space */
    for (i = 0; i < outlength+1; i++)
       outindex[i] = 0;
    for (i = 0; i < inlength; i++)
@@ -282,14 +273,14 @@ int Zoltan_HG_Check (
   HGraph *hg
 )
 {
-  int i;
-  int iedge;               /* iedge denotes an hyperedge */
-  int j;                   /* j is the index of a vertex */
-  int k;                   /* k is an index of hyperedge */
-  int *check;
-  int ierr = ZOLTAN_OK;
-  char str[256];
-  char *yo = "Zoltan_HG_Check";
+int i;
+int iedge;               /* iedge denotes an hyperedge */
+int j;                   /* j is the index of a vertex */
+int k;                   /* k is an index of hyperedge */
+int *check;
+char str[256];
+int err = ZOLTAN_OK;
+char *yo = "Zoltan_HG_Check";
 
   if (!(hg->hindex) || !(hg->hvertex) || !(hg->vindex) || !(hg->vedge) )
      return ZOLTAN_WARN;
@@ -310,7 +301,7 @@ int Zoltan_HG_Check (
         else {
            ZOLTAN_PRINT_WARN(zz->Proc, yo,
             "Found multiple hedge for same vertex.");
-           ierr = ZOLTAN_WARN;
+           err = ZOLTAN_WARN;
            }
   for (i = 0; i < hg->nVtx; i++)
      check[i] = -1;
@@ -321,20 +312,20 @@ int Zoltan_HG_Check (
         else {
            ZOLTAN_PRINT_WARN(zz->Proc, yo,
             "Found multiple vertex for same hedge.");
-           ierr =  ZOLTAN_WARN;
+           err =  ZOLTAN_WARN;
            }
   ZOLTAN_FREE ((void**) &check);
 
   for (i = 0; i < hg->VertexWeightDim * hg->nVtx; i += hg->VertexWeightDim)
      if (hg->vwgt[i] < 0.0) {
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found negative vertex weight.");
-        ierr = ZOLTAN_WARN;
+        err = ZOLTAN_WARN;
         }
 
   for (i = 0; i < hg->EdgeWeightDim * hg->nEdge; i += hg->EdgeWeightDim)
      if (hg->ewgt[i] < 0.0) {
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found negative edge weight.");
-        ierr = ZOLTAN_WARN;
+        err = ZOLTAN_WARN;
         }
 
   for (i = 0; i < hg->nEdge; i++)
@@ -342,7 +333,7 @@ int Zoltan_HG_Check (
         sprintf (str, "Found hedge with less than two vertices: "
          "edge %d has %d vtxs\n", i, (hg->hindex[i+1] - hg->hindex[i]));
         ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
-        ierr = ZOLTAN_WARN;
+        err = ZOLTAN_WARN;
         }
 
   for (i = 0; i < hg->nEdge; i++)
@@ -350,22 +341,21 @@ int Zoltan_HG_Check (
         if (hg->hvertex[j] < 0  ||  hg->hvertex[j] >= hg->nVtx) {
            ZOLTAN_PRINT_WARN(zz->Proc, yo,
             "Found vertex out of range in hvertex.");
-           ierr = ZOLTAN_WARN;
+           err = ZOLTAN_WARN;
            }
 
   for (i = 0; i < hg->nVtx; i++)
      for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
         if (hg->vedge[j] < 0  ||  hg->vedge[j] >= hg->nEdge) {
            ZOLTAN_PRINT_WARN(zz->Proc, yo, "Found edge out of range in vedge.");
-           ierr = ZOLTAN_WARN;
+           err = ZOLTAN_WARN;
            }
 
   /* starting from (hindex,hvertex), for each edge determine each associated
    * vertex. Then for each vertex lookup associated edges using (vindex, vedge) */
   for (iedge = 0; iedge < hg->nEdge; iedge++)
-     for (j = hg->hindex[iedge]; j < hg->hindex[iedge+1]; j++)
+     for (j = hg->hindex[iedge]; j < hg->hindex[iedge+1]; j++) {
         /* for each hyperedge get index to vertices */
-        {
         for (k=hg->vindex[hg->hvertex[j]]; k<hg->vindex[hg->hvertex[j]+1]; k++)
            /* for each vertex of current hyperedge get index to hyperedges */
            if (hg->vedge[k] == iedge)     /* does it match with original edge? */
@@ -374,7 +364,7 @@ int Zoltan_HG_Check (
            return ZOLTAN_WARN;                   /* failure, else keep on */
         }
 
-  return ierr;
+  return err;
 }
 
 /****************************************************************************/
@@ -387,10 +377,10 @@ int Zoltan_HG_HGraph_to_Graph(
   Graph *g
 )
 {
-  int 	i, j, k, e, roughly_e, pins, *_neigh, *degrees, current_degree,
-        vertex1, vertex2, start, end, empty;
-  float	*w, *_ewgt, weight;
-  char  *yo = "Zoltan_HG_HGraph_to_Graph";
+int i, j, k, e, roughly_e, pins, *_neigh, *degrees, current_degree,
+ vertex1, vertex2, start, end, empty;
+float *w, *_ewgt, weight;
+char  *yo = "Zoltan_HG_HGraph_to_Graph";
 
   Zoltan_HG_Graph_Init(g);
   g->info = hg->info;
@@ -425,7 +415,7 @@ int Zoltan_HG_HGraph_to_Graph(
   for (i = 0; i < hg->nEdge; i++) {
      /* if (hg->hindex[i+1] - hg->hindex[i] <= 10) */
      pins = hg->hindex[i+1] - hg->hindex[i];
-     roughly_e += pins*(pins-1);
+     roughly_e += (pins * (pins-1));
      pins--;
      for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
         degrees[hg->hvertex[j]] += pins;
@@ -470,7 +460,7 @@ int Zoltan_HG_HGraph_to_Graph(
            }
         }
      }
-  ZOLTAN_FREE ((void **) &degrees);
+  ZOLTAN_FREE ((void**) &degrees);
 
   /* Compact identical incident edges and their weight */
   if (!(w = (float*) ZOLTAN_CALLOC (hg->nVtx, sizeof(float)))) {
@@ -516,7 +506,7 @@ int Zoltan_HG_HGraph_to_Graph(
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
-  memcpy(g->ewgt,_ewgt,g->nEdge*sizeof(float));
+  memcpy(g->ewgt, _ewgt, g->nEdge * sizeof(float));
   ZOLTAN_FREE ((void **) &_ewgt);
 
   return ZOLTAN_OK;
@@ -526,22 +516,22 @@ int Zoltan_HG_HGraph_to_Graph(
 
 
 
+/*
+ *  Converts a graph g into a hypergraph hg.
+ *  One hyperedge is created for each vertex of g.
+ *  Hyperedge i consists of vertex i + all edge neighbors of i in graph g. */
+
 int Zoltan_HG_Graph_to_HGraph(
   ZZ *zz,
   Graph *g,        /* Input graph */
   HGraph *hg       /* Ouput hypergraph */
 )
 {
-/*
- *  Converts a graph g into a hypergraph hg.
- *  One hyperedge is created for each vertex of g.
- *  Hyperedge i consists of vertex i + all edge neighbors of i in graph g.
- */
 char *yo = "Zoltan_HG_Graph_to_HGraph";
 int i, j;
 int *hindex = NULL, *hvertex = NULL;  /* temporary array pointers */
 int cnt;
-int ierr = ZOLTAN_OK;
+int err = ZOLTAN_OK;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -559,7 +549,7 @@ int ierr = ZOLTAN_OK;
      ZOLTAN_TRACE_DETAIL(zz, yo, "Copying coordinates");
      cnt = hg->nVtx * g->nDim;
      if (!(hg->coor = (double *) ZOLTAN_MALLOC(cnt * sizeof(double)))) {
-        ierr = ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
         goto End;
         }
     memcpy(hg->coor, g->coor, cnt * sizeof(double));
@@ -570,7 +560,7 @@ int ierr = ZOLTAN_OK;
      ZOLTAN_TRACE_DETAIL(zz, yo, "Copying vertex weights");
      cnt = hg->nVtx * hg->VertexWeightDim;
      if (!(hg->vwgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float)))) {
-        ierr = ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
         goto End;
         }
      memcpy(hg->vwgt, g->vwgt, cnt * sizeof(float));
@@ -581,7 +571,7 @@ int ierr = ZOLTAN_OK;
   if (hg->nEdge > 0 && hg->nInput > 0)
     if (!(hindex  = hg->hindex =(int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))
      || !(hvertex = hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int))) ) {
-        ierr = ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
         goto End;
         }
 
@@ -590,7 +580,7 @@ int ierr = ZOLTAN_OK;
      ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge weights");
      cnt = hg->nEdge * hg->EdgeWeightDim;
      if (!(hg->ewgt = (float *) ZOLTAN_MALLOC(cnt * sizeof(float)))) {
-        ierr = ZOLTAN_MEMERR;
+        err = ZOLTAN_MEMERR;
         goto End;
         }
      }
@@ -615,28 +605,25 @@ int ierr = ZOLTAN_OK;
   /* Sanity check */
   if (hg->nInput != cnt) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed: nInput != cnt.");
-     ierr = ZOLTAN_FATAL;
+     err = ZOLTAN_FATAL;
      goto End;
      }
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Creating mirror");
-  ierr = Zoltan_HG_Create_Mirror(zz, hg);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+  err = Zoltan_HG_Create_Mirror(zz, hg);
+  if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in building mirror.");
 
 
 End:
-  if (ierr == ZOLTAN_MEMERR)
+  if (err == ZOLTAN_MEMERR)
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient Memory.");
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-     ZOLTAN_FREE ((void**) &(hg->coor));
-     ZOLTAN_FREE ((void**) &(hg->vwgt));
-     ZOLTAN_FREE ((void**) &(hg->ewgt));
-     ZOLTAN_FREE ((void**) &(hg->hindex));
-     ZOLTAN_FREE ((void**) &(hg->hvertex));
+  if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
+     Zoltan_Multifree (__FILE__, __LINE__, 5, &hg->coor, &hg->vwgt, &hg->ewgt,
+      &hg->hindex, &hg->hvertex);
   }
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
+  return err;
 }
 
 /****************************************************************************/
@@ -651,7 +638,6 @@ void Zoltan_HG_Print(
   HGraph *hg
 )
 {
-
 int i, j;
 int num_vwgt;
 int num_ewgt;
@@ -704,23 +690,22 @@ int num_ewgt;
    answers! Hence this is a single portable, fast, algorithm with adequate
    random number generation. */
 
-
 static unsigned long idum = 123456789;
 
 unsigned long Zoltan_HG_Rand (void) {
    return idum = 1664525L * idum + 1013904223L;
    }
 
+
 void Zoltan_HG_Srand (unsigned long seed) {
    idum = seed;
    }
 
 
-
 /* Randomly permute an array of ints. */
 void Zoltan_HG_Rand_Perm_Int (int *data, int n)
 {
-  int i, number, temp;
+int i, number, temp;
 
   for (i = n; i > 0; i--) {
      number       = Zoltan_HG_Rand() % i;

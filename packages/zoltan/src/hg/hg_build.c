@@ -59,8 +59,8 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges != NULL && zz->Get_HG_Edge_List != NULL) {
      /* Hypergraph callback functions exist; call them and build the HG directly. */
-     err = Zoltan_Get_Obj_List(zz, &(hgraph->nVtx), &(zhg->Global_IDs),
-      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(hgraph->vwgt), &(zhg->Parts));
+     err = Zoltan_Get_Obj_List(zz, &hgraph->nVtx, &zhg->Global_IDs,
+      &zhg->Local_IDs, zz->Obj_Weight_Dim, &hgraph->vwgt, &zhg->Parts);
      Zoltan_HG_Fill_Hypergraph(zz, zhg);
      }
   else if (zz->Get_Num_Edges != NULL && zz->Get_Edge_List != NULL) {
@@ -69,8 +69,8 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
      Graph graph;             /* Temporary graph. */
 
      Zoltan_HG_Graph_Init(&graph);
-     err = Zoltan_Get_Obj_List(zz, &(graph.nVtx), &(zhg->Global_IDs),
-      &(zhg->Local_IDs), zz->Obj_Weight_Dim, &(graph.vwgt), &(zhg->Parts));
+     err = Zoltan_Get_Obj_List(zz, &graph.nVtx, &zhg->Global_IDs,
+      &zhg->Local_IDs, zz->Obj_Weight_Dim, &graph.vwgt, &zhg->Parts);
      Zoltan_HG_Fill_Hypergraph(zz, zhg);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         Zoltan_HG_Graph_Free(&graph);
@@ -78,8 +78,8 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
         }
 
      err = Zoltan_Build_Graph(zz, 1, check_graph, graph.nVtx, zhg->Global_IDs,
-      zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim, &(graph.vtxdist),
-      &(graph.nindex), &(graph.neigh), &(graph.ewgt));
+      zhg->Local_IDs, zz->Obj_Weight_Dim, zz->Edge_Weight_Dim, &graph.vtxdist,
+      &graph.nindex, &graph.neigh, &graph.ewgt);
      if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         Zoltan_HG_Graph_Free(&graph);
         goto End;
@@ -98,7 +98,7 @@ char *yo = "Zoltan_HG_Build_Hypergraph";
   if (zz->Get_Num_Geom != NULL && zz->Get_Geom != NULL) {
      /* Geometric callbacks registered; get coordinates for hypergraph objects */
      err = Zoltan_Get_Coordinates(zz, hgraph->nVtx, zhg->Global_IDs,
-      zhg->Local_IDs, &(hgraph->coor));
+      zhg->Local_IDs, &hgraph->coor);
      }
 
 End:

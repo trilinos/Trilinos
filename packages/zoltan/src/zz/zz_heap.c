@@ -34,8 +34,9 @@ static void heapify (HEAP*, int);
 
 /* Inititializes the heap values and allocates space */
 int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
-{ char *yo = "Zoltan_HG_heap_init";
-  int i;
+{
+char *yo = "Zoltan_HG_heap_init";
+int i;
 
   h->space = space;
   h->n = 0;
@@ -46,7 +47,7 @@ int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
-  for (i=0; i<space; i++)
+  for (i = 0; i < space; i++)
      h->pos[i] = -1;
   return ZOLTAN_OK;
 }
@@ -57,9 +58,7 @@ int Zoltan_HG_heap_init (ZZ *zz, HEAP *h, int space)
 void Zoltan_HG_heap_free (HEAP *h)
 {
   if (h->space != 0){
-     ZOLTAN_FREE ((void **) &(h->ele));
-     ZOLTAN_FREE ((void **) &(h->pos));
-     ZOLTAN_FREE ((void **) &(h->value));
+     Zoltan_Multifree(__FILE__, __LINE__, 3, &h->ele, &h->pos, &h->value);
      h->space = 0;
      }
   h->n = 0;
@@ -69,14 +68,15 @@ void Zoltan_HG_heap_free (HEAP *h)
 
 /* Checks wheather the heap has the Max-Heap property */
 int Zoltan_HG_heap_check (HEAP *h)
-{ int i, left, right;
-  static char *yo = "Zoltan_HG_heap_check";
+{
+int i, left, right;
+static char *yo = "Zoltan_HG_heap_check";
 
   for (i = 0; i < h->n; i++) {
-     left  = 2*i+1;
-     right = 2*i+2;
-     if ((left <h->n && h->value[h->ele[left ]]>h->value[h->ele[i]])
-      || (right<h->n && h->value[h->ele[right]]>h->value[h->ele[i]])) {
+     left  = 2*i + 1;
+     right = 2*i + 2;
+     if ((left <h->n && h->value[h->ele[left ]] > h->value[h->ele[i]])
+      || (right<h->n && h->value[h->ele[right]] > h->value[h->ele[i]])) {
          ZOLTAN_PRINT_ERROR(0, yo, "No heap property!\n");
          return ZOLTAN_FATAL;
          }
@@ -89,9 +89,10 @@ int Zoltan_HG_heap_check (HEAP *h)
 /* Zoltan_HG_heap_input adds one item to the heap but does NOT rearrange the
    heap! Constant time. We might want to write a function Zoltan_HG_heap_insert
    that adds an item and preserves the heap property. */
+
 int Zoltan_HG_heap_input (HEAP *h, int element, float value)
 {
-  static char *yo = "Zoltan_HG_heap_input";
+static char *yo = "Zoltan_HG_heap_input";
 
   if (element >= h->space) {
      ZOLTAN_PRINT_ERROR(0, yo, "Inserted heap element out of range!\n");
@@ -113,7 +114,7 @@ int Zoltan_HG_heap_input (HEAP *h, int element, float value)
 int Zoltan_HG_heap_make (HEAP *h)
 { int i;
 
-  for (i = h->n/2; i>=0;  i--)
+  for (i = h->n/2; i >= 0;  i--)
      heapify(h, i);
   return ZOLTAN_OK;
 }
@@ -123,17 +124,18 @@ int Zoltan_HG_heap_make (HEAP *h)
 /* Subroutine which gets the heap property if both subtrees already
    have the heap property. */
 static void heapify (HEAP *h, int root)
-{ int left=root*2+1, right=root*2+2, largest=root;
+{
+int left = root*2 + 1, right = root*2 + 2, largest = root;
 
   if ((left < h->n)  && (h->value[h->ele[left ]] > h->value[h->ele[largest]]))
      largest = left;
   if ((right < h->n) && (h->value[h->ele[right]] > h->value[h->ele[largest]]))
      largest = right;
   if (largest != root) {
-     h->pos[h->ele[root]] = largest;
+     h->pos[h->ele[root]]    = largest;
      h->pos[h->ele[largest]] = root;
-     INT_SWAP(h->ele[root],h->ele[largest]);
-     heapify(h,largest);
+     INT_SWAP(h->ele[root], h->ele[largest]);
+     heapify(h, largest);
      }
 }
 
@@ -142,9 +144,10 @@ static void heapify (HEAP *h, int root)
 /* Changes the value of an element in the heap and restores the
    heap property. This can take O(log(n)) time */
 int Zoltan_HG_heap_change_value (HEAP *h, int element, float value)
-{ int position, father;
+{
+int position, father;
 
-  if ((element < 0) || (element >= h->space))
+  if (element < 0 || element >= h->space)
      return ZOLTAN_FATAL;                           /* Error */
 
   if ((position = h->pos[element]) >= 0) {
@@ -172,7 +175,8 @@ int Zoltan_HG_heap_change_value (HEAP *h, int element, float value)
 
 /* Extracts the maximum element & restores the heap property. Time O(log(n))*/
 int Zoltan_HG_heap_extract_max (HEAP *h)
-{ int max;
+{
+int max;
 
   if (h->n == 0)
      return -1;           /* No elements in heap. */

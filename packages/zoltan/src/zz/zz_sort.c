@@ -24,12 +24,13 @@ extern "C" {
 
 
 
-/* Sorting pointers in decreasing order. Criteria is float. */
+/* Sorting pointers in decreasing order. Criteria (key) is float. */
 static void quickpart_pointer_dec_float (
-int *sorted, float *val, int start, int end, int* equal, int* smaller
+  int *sorted, float *val, int start, int end, int* equal, int* smaller
 )
-{ int   i, next;
-  float key = (val ? val[sorted[(end+start)/2]] : 1.0);
+{
+int   i, next;
+float key = (val ? val[sorted[(end+start)/2]] : 1.0);
 
   (*equal) = (*smaller) = start;
   for (i = start; i <= end; i++) {
@@ -49,9 +50,10 @@ int *sorted, float *val, int start, int end, int* equal, int* smaller
 
 
 void Zoltan_quicksort_pointer_dec_float (
-int *sorted, float* val, int start, int end
+  int *sorted, float* val, int start, int end
 )
-{ int  equal, smaller;
+{
+int  equal, smaller;
 
   if (start < end) {
      quickpart_pointer_dec_float (sorted, val, start, end, &equal, &smaller);
@@ -64,13 +66,14 @@ int *sorted, float* val, int start, int end
 
 
 
-/* Sorting pointers in decreasing order. Sort key is float. Sub key  is int. */
+/* Sorting pointers in decreasing order. Sort key is float. Sub key is int. */
 static void quickpart_pointer_dec_float_int (
-int *sorted, float *val1, int *val2, int start, int end, int *equal,
-int *smaller
+  int *sorted, float *val1, int *val2, int start, int end, int *equal,
+  int *smaller
 )
-{ int	i, next, key2, key2_next;
-  float key1, key1_next;
+{
+int i, next, key2, key2_next;
+float key1, key1_next;
 
   i = (end + start) / 2;
   key1 = val1 ? val1[sorted[i]] : 1.0;
@@ -96,9 +99,10 @@ int *smaller
 
 
 void Zoltan_quicksort_pointer_dec_float_int (
-int *sorted, float* val1, int *val2, int start, int end
+  int *sorted, float* val1, int *val2, int start, int end
 )
-{ int  equal, smaller;
+{
+int  equal, smaller;
 
   if (start < end) {
      quickpart_pointer_dec_float_int(sorted,val1,val2,start,end,&equal,&smaller);
@@ -113,8 +117,9 @@ int *sorted, float* val1, int *val2, int start, int end
 
 /* Sorting pointers in increasing order. Sort key is int. Sub key is int. */
 static void quickpart_pointer_inc_int_int (
-int *sorted, int *val1, int *val2, int start, int end, int *equal, int *larger)
-{ int	i, next, key1, key1_next, key2, key2_next;
+  int *sorted, int *val1, int *val2, int start, int end, int *equal, int *larger)
+{
+int i, next, key1, key1_next, key2, key2_next;
 
   i = (end + start) / 2;
   key1 = val1 ? val1[sorted[i]] : 1;
@@ -138,25 +143,24 @@ int *sorted, int *val1, int *val2, int start, int end, int *equal, int *larger)
 }
 
 
-
+/* Sorts in increasing order with primary key val1 and secondary key val2.
+   The arrays val1 and val2 are not rearranged; rather the index array
+   sorted is rearranged based on values in val1 and val2. */
 void Zoltan_quicksort_pointer_inc_int_int (
-  int *sorted,   /* index array that is rearranged; should be initialized 
+  int *sorted,   /* index array that is rearranged; should be initialized
                     so that sorted[i] == i. */
   int* val1,     /* array of primary key values. */
   int *val2,     /* array of secondary key values. */
   int start,     /* first array position to be considered for sorting. */
   int end        /* last array position to be considered for sorting. */
 )
-{ 
-  /* Sorts in increasing order with primary key val1 and secondary key val2.
-     The arrays val1 and val2 are not rearranged; rather the index array
-     sorted is rearranged based on values in val1 and val2. */
-  int  equal, larger;
+{
+int  equal, larger;
 
   if (start < end) {
      quickpart_pointer_inc_int_int (sorted,val1,val2,start,end,&equal,&larger);
-     Zoltan_quicksort_pointer_inc_int_int (sorted,val1,val2,start,equal-1);
-     Zoltan_quicksort_pointer_inc_int_int (sorted,val1,val2,larger,end);
+     Zoltan_quicksort_pointer_inc_int_int (sorted, val1, val2, start, equal-1);
+     Zoltan_quicksort_pointer_inc_int_int (sorted, val1, val2, larger, end);
      }
 }
 
@@ -166,8 +170,9 @@ void Zoltan_quicksort_pointer_inc_int_int (
 
 /* Sorting values in increasing order. Criteria is int. */
 static void quickpart_list_inc_int (
-int *list, int start, int end, int *equal, int *larger)
-{ int   i, key, change;
+  int *list, int start, int end, int *equal, int *larger)
+{
+int i, key, change;
 
   key = list ? list[(end+start)/2] : 1;
 
@@ -188,7 +193,8 @@ int *list, int start, int end, int *equal, int *larger)
 
 
 void Zoltan_quicksort_list_inc_int (int* list, int start, int end)
-{ int  equal, larger;
+{
+int  equal, larger;
 
   if (start < end) {
      quickpart_list_inc_int (list, start, end, &equal, &larger);
@@ -203,8 +209,9 @@ void Zoltan_quicksort_list_inc_int (int* list, int start, int end)
 
 /* Sorting pointers in increasing order. Criteria are multiple ints. */
 static void quickpart_pointer_inc_int_mult (
-int *sorted, int start, int end, int *equal, int *larger, int *index, int *data)
-{ int i, j_new, j_old, new, old;
+  int *sorted, int start, int end, int *equal, int *larger, int *index, int *data)
+{
+int i, j_new, j_old, new, old;
 
   (*equal) = (*larger) = start;
   for (i = start; i <= end; i++) {
@@ -234,7 +241,8 @@ int *sorted, int start, int end, int *equal, int *larger, int *index, int *data)
 
 void Zoltan_quicksort_pointer_inc_int_mult (int *sorted, int start, int end,
  int *index, int *data)
-{ int  equal, larger;
+{
+int  equal, larger;
 
   if (start < end) {
      quickpart_pointer_inc_int_mult(sorted,start,end,&equal,&larger,index,data);

@@ -65,9 +65,9 @@ int found = 1;
 int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp,
  int *limit)
 {
-  int   ierr = ZOLTAN_OK;
-  float *old_ewgt=NULL, *new_ewgt;
-  char  *yo = "Zoltan_HG_Packing";
+int   err = ZOLTAN_OK;
+float *old_ewgt = NULL, *new_ewgt = NULL;
+char  *yo = "Zoltan_HG_Packing";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -84,22 +84,24 @@ int Zoltan_HG_Packing (ZZ *zz, HGraph *hg, Packing pack, HGPartParams *hgp,
      }
 
   /* Do the packing */
-  ierr = hgp->packing(zz, hg, pack, limit);
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
-     goto End;
+  if (hgp->packing) {
+     err = hgp->packing(zz, hg, pack, limit);
+     if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
+        goto End;
+     }
 
   /* Optimization */
   if (hgp->packing_opt != NULL)
-     ierr = hgp->packing_opt (zz, hg, pack, limit);
+     err = hgp->packing_opt (zz, hg, pack, limit);
 
 End:
   /* Restore the old edge weights */
-  if (hg->vwgt && hgp->ews) {
+  if (hg->vwgt && hgp->ews)
      hg->ewgt = old_ewgt;
-     ZOLTAN_FREE ((void**) &new_ewgt);
-     }
+
+  ZOLTAN_FREE ((void**) &new_ewgt);
   ZOLTAN_TRACE_EXIT(zz, yo);
-  return ierr;
+  return err;
 }
 
 /****************************************************************************/
@@ -134,8 +136,8 @@ static int packing_mxp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
  * is available. Time O(|I|). */
 static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int i, j, *edges=NULL, edge, random;
-  char *yo = "packing_rep";
+int i, j, *edges=NULL, edge, random;
+char *yo = "packing_rep";
 
   if (!(edges = (int*) ZOLTAN_MALLOC (hg->nEdge * sizeof(int)))) {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -173,8 +175,8 @@ static int packing_rep (ZZ *zz, HGraph *hg, Packing pack, int *limit)
  * Time O(|I|). */
 static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int i, j, k, edge, random, *vertices = NULL, vertex, *del_edges = NULL, count;
-  char *yo = "packing_rrp";
+int i, j, k, edge, random, *vertices = NULL, vertex, *del_edges = NULL, count;
+char *yo = "packing_rrp";
 
   if (!(vertices  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(del_edges = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int))) ) {
@@ -235,10 +237,10 @@ static int packing_rrp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    it if it is available. Time O(|I|). */
 static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-   int i, j, k, *vertices = NULL, *del_edges = NULL, vertex, edge, size;
-   int number, best_edge, best_size, best_neighbors, random;
-   float best_ewgt;
-   char  *yo = "packing_rhp";
+int i, j, k, *vertices = NULL, *del_edges = NULL, vertex, edge, size;
+int number, best_edge, best_size, best_neighbors, random;
+float best_ewgt;
+char  *yo = "packing_rhp";
 
    if (!(vertices  = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
     || !(del_edges = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int))) ) {
@@ -315,13 +317,13 @@ static int packing_rhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    it guarantees an approximation of 1/k. */
 static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int   i, j, *size = NULL, *sorted = NULL;
-  char *yo = "packing_grp";
+int i, j, *size = NULL, *sorted = NULL;
+char *yo = "packing_grp";
 
   /* Sort the hyperedges according to their weight and size */
   if (!(size   = (int*) ZOLTAN_MALLOC (hg->nEdge*sizeof(int)))
    || !(sorted = (int*) ZOLTAN_MALLOC (hg->nEdge*sizeof(int))) ) {
-      Zoltan_Multifree (__FILE__, __LINE__, 2, &size, &sorted) ;
+      Zoltan_Multifree (__FILE__, __LINE__, 2, &size, &sorted);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return ZOLTAN_MEMERR;
       }
@@ -361,7 +363,8 @@ static int packing_grp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    time O(k*|I|) and guarantees an approximation of 1/k. */
 static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
  int *Vindex_old, Packing pack, int *limit)
-{ int  i, j, vertex, next_edge, done=0;
+{
+int  i, j, vertex, next_edge, done = 0;
 
   for (i = hg->hindex[edge]; i < hg->hindex[edge+1]; i++)
      Vindex_old[i] = Vindex[hg->hvertex[i]];
@@ -403,8 +406,8 @@ static int lhp_pack (ZZ *zz, HGraph *hg, int edge, int *del_edge, int *Vindex,
 
 static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int  i, *Vindex = NULL, *Vindex_old = NULL, *del_edge = NULL;
-  char *yo="packing_lhp";
+int  i, *Vindex = NULL, *Vindex_old = NULL, *del_edge = NULL;
+char *yo="packing_lhp";
 
   if (!(del_edge   = (int*) ZOLTAN_CALLOC  (hg->nEdge,    sizeof(int)))
    || !(Vindex     = (int*) ZOLTAN_MALLOC ((hg->nVtx+1) * sizeof(int)))
@@ -431,10 +434,10 @@ static int packing_lhp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
    The time is O(|I|) and the approximation is 1/(2(k-1)). */
 static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int i, j, k, side, vertex, edge, *Pack[2], limits[2], cur_edge, best_edge ;
-  int *taken_edge = NULL, *taken_vertex = NULL, *size = NULL;
-  float best_weight, w[2];
-  char *yo = "packing_pgp";
+int i, j, k, side, vertex, edge, *Pack[2], limits[2], cur_edge, best_edge;
+int *taken_edge = NULL, *taken_vertex = NULL, *size = NULL;
+float best_weight, w[2];
+char *yo = "packing_pgp";
 
   w[0] = w[1] = 0.0;
   limits[0] = limits[1] = (*limit);
@@ -502,7 +505,7 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
            cur_edge = best_edge;
            }
         while (cur_edge>=0 && limits[side]>0)
-           ;
+          ;
         }
      }
 
@@ -524,10 +527,10 @@ static int packing_pgp (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 /* optimizer passed on path augmentation of length 2 */
 static int packing_aug2 (ZZ *zz, HGraph *hg, Packing pack, int *limit)
 {
-  int i, j, edge, other_edge, vertex, next_vertex, intersecting_size;
-  int *covered_by = NULL, *intersecting = NULL ;
-  float intersecting_weight;
-  char  *yo = "packing_aug2";
+int i, j, edge, other_edge, vertex, next_vertex, intersecting_size;
+int *covered_by = NULL, *intersecting = NULL;
+float intersecting_weight;
+char  *yo = "packing_aug2";
 
   if (!(covered_by   = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
    || !(intersecting = (int*) ZOLTAN_CALLOC (hg->nEdge, sizeof(int)))  ) {

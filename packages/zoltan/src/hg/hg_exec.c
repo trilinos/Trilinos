@@ -46,18 +46,19 @@ static void times_output () {}
 #endif
 
 
-extern int hg_readfile (ZZ *, HGraph *, char *, int *);
+int hg_readfile (ZZ*, HGraph*, char*, int*);
 
 
 /* The main procedure for the executable hg_test */
 
 int main (int argc, char **argv)
-{ int    i, p = 2, *part, memory_graph;
-  char   hgraphfile[100] = "grid5x5.hg";
-  HGraph hg;
-  HGPartParams hgp;
-  ZZ     zz;
-  int    base;   /* minimum vertex number in input file; usually 0 or 1. */
+{
+int    i, p = 2, *part, memory_graph;
+char   hgraphfile[100] = "grid5x5.hg";
+HGraph hg;
+HGPartParams hgp;
+ZZ     zz;
+int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
 /* Pre-set parameter values */
   hgp.check_graph = 1;
@@ -117,7 +118,7 @@ int main (int argc, char **argv)
      return 1;
   ADD_NEW_TIME(t_rest);
 
-  /* load and info hypergraph */
+  /* load hypergraph and print its info */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
      return 1;
   if (zz.Debug_Level > ZOLTAN_DEBUG_ALL)
