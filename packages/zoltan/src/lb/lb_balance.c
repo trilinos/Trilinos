@@ -50,10 +50,10 @@ int LB_Balance(
                                     Num_Local_ID_Entries.                     */
   int *num_import_objs,          /* The number of non-local objects in the
                                     processor's new decomposition.            */
-  LB_ID_PTR *import_global_ids,  /* Array of global IDs for non-local objects
+  ZOLTAN_ID_PTR *import_global_ids,  /* Array of global IDs for non-local objects
                                     (i.e., objs to be imported) in
                                     the processor's new decomposition.        */
-  LB_ID_PTR *import_local_ids,   /* Array of local IDs for non-local objects
+  ZOLTAN_ID_PTR *import_local_ids,   /* Array of local IDs for non-local objects
                                     (i.e., objs to be imported) in
                                     the processor's new decomposition.        */
   int **import_procs,            /* Array of processor IDs for processors 
@@ -63,11 +63,11 @@ int LB_Balance(
   int *num_export_objs,          /* The number of local objects that need to
                                     be exported from the processor to establish
                                     the new decomposition.                    */
-  LB_ID_PTR *export_global_ids,  /* Array of global IDs for objects that need
+  ZOLTAN_ID_PTR *export_global_ids,  /* Array of global IDs for objects that need
                                     to be exported (assigned and sent to other
                                     processors) to establish the new 
                                     decomposition.                            */
-  LB_ID_PTR *export_local_ids,   /* Array of local IDs for objects that need
+  ZOLTAN_ID_PTR *export_local_ids,   /* Array of local IDs for objects that need
                                     to be exported (assigned and sent to other
                                     processors) to establish the new 
                                     decomposition.                            */
@@ -141,7 +141,7 @@ int comm[3],gcomm[3];
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
     LB_TRACE_EXIT(lb, yo);
-    return (LB_OK);
+    return (ZOLTAN_OK);
   }
 
   if (lb->Method == NONE) {
@@ -150,7 +150,7 @@ int comm[3],gcomm[3];
               yo);
 
     LB_TRACE_EXIT(lb, yo);
-    return (LB_WARN);
+    return (ZOLTAN_WARN);
   }
 
   /*
@@ -159,7 +159,7 @@ int comm[3],gcomm[3];
 
   error = LB_Build_Machine_Desc(lb);
 
-  if (error == LB_FATAL){
+  if (error == ZOLTAN_FATAL){
     LB_TRACE_EXIT(lb, yo);
     return (error);
   }
@@ -174,7 +174,7 @@ int comm[3],gcomm[3];
           import_procs, num_export_objs, export_global_ids, 
           export_local_ids, export_procs);
 
-  if (error == LB_FATAL){
+  if (error == ZOLTAN_FATAL){
     sprintf(msg, "Balancing routine returned error code %d.", error);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
@@ -213,7 +213,7 @@ int comm[3],gcomm[3];
     *num_import_objs = *num_export_objs = 0;
 
     LB_TRACE_EXIT(lb, yo);
-    return (LB_OK);
+    return (ZOLTAN_OK);
   }
 
   /*
@@ -250,7 +250,7 @@ int comm[3],gcomm[3];
                                       *import_local_ids, *import_procs,
                                       num_export_objs, export_global_ids,
                                       export_local_ids, export_procs);
-      if (error != LB_OK && error != LB_WARN) {
+      if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
         sprintf(msg, "Error building return arguments; "
                      "%d returned by LB_Compute_Destinations\n", error);
         LB_PRINT_ERROR(lb->Proc, yo, msg);
@@ -278,7 +278,7 @@ int comm[3],gcomm[3];
                                         num_import_objs, import_global_ids,
                                         import_local_ids, import_procs);
 
-        if (error != LB_OK && error != LB_WARN) {
+        if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
           sprintf(msg, "Error building return arguments; "
                        "%d returned by LB_Compute_Destinations\n", error);
           LB_PRINT_ERROR(lb->Proc, yo, msg);
@@ -300,7 +300,7 @@ int comm[3],gcomm[3];
         LB_PRINT_ERROR(lb->Proc, yo, "Load-balancing function returned "
                "neither import nor export data.");
         LB_TRACE_EXIT(lb, yo);
-        return LB_WARN;
+        return ZOLTAN_WARN;
       }
     }
   }
@@ -342,7 +342,7 @@ int comm[3],gcomm[3];
                             *import_local_ids, *import_procs,
                             *num_export_objs, *export_global_ids,
                             *export_local_ids, *export_procs);
-    if (error != LB_OK && error != LB_WARN) {
+    if (error != ZOLTAN_OK && error != ZOLTAN_WARN) {
       sprintf(msg, "Error in auto-migration; %d returned from "
                     "LB_Help_Migrate\n", error);
       LB_PRINT_ERROR(lb->Proc, yo, msg);
@@ -373,7 +373,7 @@ int comm[3],gcomm[3];
   if (error)
     return (error);
   else
-    return (LB_OK);
+    return (ZOLTAN_OK);
 }
 
 /****************************************************************************/
@@ -381,19 +381,19 @@ int comm[3],gcomm[3];
 /****************************************************************************/
 
 int LB_Free_Data(
-  LB_ID_PTR *import_global_ids, /* Array of global IDs for non-local objects 
+  ZOLTAN_ID_PTR *import_global_ids, /* Array of global IDs for non-local objects 
                                     assigned to this processor in the new
                                     decomposition.                           */
-  LB_ID_PTR *import_local_ids,  /* Array of local IDs for non-local objects
+  ZOLTAN_ID_PTR *import_local_ids,  /* Array of local IDs for non-local objects
                                     assigned to the processor in the new
                                     decomposition.                           */
   int **import_procs,           /* Array of processor IDs of processors owning
                                    the non-local objects that are assigned to
                                    this processor in the new decomposition.  */
-  LB_ID_PTR *export_global_ids, /* Array of global IDs of
+  ZOLTAN_ID_PTR *export_global_ids, /* Array of global IDs of
                                    objects to be exported to other processors
                                    to establish the new decomposition.       */
-  LB_ID_PTR *export_local_ids,  /* Array of local IDs of
+  ZOLTAN_ID_PTR *export_local_ids,  /* Array of local IDs of
                                    objects to be exported to other processors
                                    to establish the new decomposition.       */
   int **export_procs            /* Array of processor IDs
@@ -412,6 +412,6 @@ int LB_Free_Data(
   LB_FREE(export_local_ids);
   LB_FREE(export_procs);
 
-  return (LB_OK);
+  return (ZOLTAN_OK);
 
 }

@@ -48,7 +48,7 @@ int print_proc                  /* processor that should perform printing */
     int       ierr;		/* error code                    */
     PARAM_VARS *param_ptr;      /* pointer to current param      */
 
-    ierr = LB_OK;
+    ierr = ZOLTAN_OK;
 
     while (change_list != NULL) {
         param_ptr = params;
@@ -68,7 +68,7 @@ int print_proc                  /* processor that should perform printing */
 
           /* Check that param_ptr->ptr isn't NULL */
           if (param_ptr->ptr == NULL) {
-             ierr = LB_WARN;
+             ierr = ZOLTAN_WARN;
              if (debug_level > 0 && proc == print_proc) {
                 sprintf(msg, "Parameter %s is not bound "
                        "to any variable.  Parameter ignored.\n", 

@@ -42,7 +42,7 @@ int num_geom;
     rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));
     if (rcb == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
     lb->Data_Structure = (void *) rcb;
     rcb->Tree_Ptr = NULL;
@@ -57,7 +57,7 @@ int num_geom;
     if (rcb->Tree_Ptr == NULL || rcb->Box == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RCB_Free_Structure(lb);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
     for (i = 0; i < lb->Num_Proc; i++) {
@@ -84,7 +84,7 @@ int num_geom;
     return(ierr);
   }
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/

@@ -31,10 +31,10 @@ void *var)			/* pointer to variable to be associated with the parameter name */
 /*
  *  Function to bind a parameter name to a variable.
  *  On output:
- *    LB_OK indicates success.
- *    LB_WARN indicates that parameter name was not found (misspelled?).
+ *    ZOLTAN_OK indicates success.
+ *    ZOLTAN_WARN indicates that parameter name was not found (misspelled?).
  *            No binding took place. A warning message is printed in this case.
- *    LB_FATAL signals something more serious.
+ *    ZOLTAN_FATAL signals something more serious.
  */
 
     char     *yo = "LB_Bind_Param";
@@ -54,7 +54,7 @@ void *var)			/* pointer to variable to be associated with the parameter name */
 	if (!strcmp(name2, ptr->name)) {	/* string match */
 	    ptr->ptr = var;
             LB_FREE(&name2);
-	    return (LB_OK);
+	    return (ZOLTAN_OK);
 	}
     }
 
@@ -63,5 +63,5 @@ void *var)			/* pointer to variable to be associated with the parameter name */
                  "not be bound to any variable.", name2);
     LB_PRINT_WARN(-1, yo, msg);
     LB_FREE(&name2);
-    return (LB_WARN);
+    return (ZOLTAN_WARN);
 }

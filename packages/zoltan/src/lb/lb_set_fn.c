@@ -129,7 +129,7 @@ int ierr;
     sprintf(msg, "LB_FN_TYPE %d is invalid.\n"
                  "Value must be in range 0 to %d.", fn_type, LB_MAX_FN_TYPES);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
-    ierr = LB_WARN;
+    ierr = ZOLTAN_WARN;
   }
 
   return (ierr);
@@ -152,7 +152,7 @@ int LB_Set_Num_Edges_Fn(LB *lb, LB_NUM_EDGES_FN *fn, void *data)
 {
   lb->Get_Num_Edges = fn;
   lb->Get_Num_Edges_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -161,7 +161,7 @@ int LB_Set_Edge_List_Fn(LB *lb, LB_EDGE_LIST_FN *fn, void *data)
 {
   lb->Get_Edge_List = fn;
   lb->Get_Edge_List_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -170,7 +170,7 @@ int LB_Set_Num_Geom_Fn(LB *lb, LB_NUM_GEOM_FN *fn, void *data)
 {
   lb->Get_Num_Geom = fn;
   lb->Get_Num_Geom_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -179,7 +179,7 @@ int LB_Set_Geom_Fn(LB *lb, LB_GEOM_FN *fn, void *data)
 {
   lb->Get_Geom = fn;
   lb->Get_Geom_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -188,7 +188,7 @@ int LB_Set_Num_Obj_Fn(LB *lb, LB_NUM_OBJ_FN *fn, void *data)
 {
   lb->Get_Num_Obj = fn;
   lb->Get_Num_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -197,7 +197,7 @@ int LB_Set_Obj_List_Fn(LB *lb, LB_OBJ_LIST_FN *fn, void *data)
 {
   lb->Get_Obj_List = fn;
   lb->Get_Obj_List_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -206,7 +206,7 @@ int LB_Set_First_Obj_Fn(LB *lb, LB_FIRST_OBJ_FN *fn, void *data)
 {
   lb->Get_First_Obj = fn;
   lb->Get_First_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -215,7 +215,7 @@ int LB_Set_Next_Obj_Fn(LB *lb, LB_NEXT_OBJ_FN *fn, void *data)
 {
   lb->Get_Next_Obj = fn;
   lb->Get_Next_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -224,7 +224,7 @@ int LB_Set_Num_Border_Obj_Fn(LB *lb, LB_NUM_BORDER_OBJ_FN *fn, void *data)
 {
   lb->Get_Num_Border_Obj = fn;
   lb->Get_Num_Border_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -233,7 +233,7 @@ int LB_Set_Border_Obj_List_Fn(LB *lb, LB_BORDER_OBJ_LIST_FN *fn, void *data)
 {
   lb->Get_Border_Obj_List = fn;
   lb->Get_Border_Obj_List_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -242,7 +242,7 @@ int LB_Set_First_Border_Obj_Fn(LB *lb, LB_FIRST_BORDER_OBJ_FN *fn, void *data)
 {
   lb->Get_First_Border_Obj = fn;
   lb->Get_First_Border_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -251,7 +251,7 @@ int LB_Set_Next_Border_Obj_Fn(LB *lb, LB_NEXT_BORDER_OBJ_FN *fn, void *data)
 {
   lb->Get_Next_Border_Obj = fn;
   lb->Get_Next_Border_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -260,7 +260,7 @@ int LB_Set_Pre_Migrate_Fn(LB *lb, LB_PRE_MIGRATE_FN *fn, void *data)
 {
   lb->Migrate.Pre_Migrate = fn;
   lb->Migrate.Pre_Migrate_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -269,7 +269,7 @@ int LB_Set_Mid_Migrate_Fn(LB *lb, LB_MID_MIGRATE_FN *fn, void *data)
 {
   lb->Migrate.Mid_Migrate = fn;
   lb->Migrate.Mid_Migrate_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -278,7 +278,7 @@ int LB_Set_Post_Migrate_Fn(LB *lb, LB_POST_MIGRATE_FN *fn, void *data)
 {
   lb->Migrate.Post_Migrate = fn;
   lb->Migrate.Post_Migrate_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -287,7 +287,7 @@ int LB_Set_Obj_Size_Fn(LB *lb, LB_OBJ_SIZE_FN *fn, void *data)
 {
   lb->Migrate.Get_Obj_Size = fn;
   lb->Migrate.Get_Obj_Size_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -296,7 +296,7 @@ int LB_Set_Pack_Obj_Fn(LB *lb, LB_PACK_OBJ_FN *fn, void *data)
 {
   lb->Migrate.Pack_Obj = fn;
   lb->Migrate.Pack_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -305,7 +305,7 @@ int LB_Set_Unpack_Obj_Fn(LB *lb, LB_UNPACK_OBJ_FN *fn, void *data)
 {
   lb->Migrate.Unpack_Obj = fn;
   lb->Migrate.Unpack_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -314,7 +314,7 @@ int LB_Set_Num_Coarse_Obj_Fn(LB *lb, LB_NUM_COARSE_OBJ_FN *fn, void *data)
 {
   lb->Get_Num_Coarse_Obj = fn;
   lb->Get_Num_Coarse_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -323,7 +323,7 @@ int LB_Set_Coarse_Obj_List_Fn(LB *lb, LB_COARSE_OBJ_LIST_FN *fn, void *data)
 {
   lb->Get_Coarse_Obj_List = fn;
   lb->Get_Coarse_Obj_List_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -332,7 +332,7 @@ int LB_Set_First_Coarse_Obj_Fn(LB *lb, LB_FIRST_COARSE_OBJ_FN *fn, void *data)
 {
   lb->Get_First_Coarse_Obj = fn;
   lb->Get_First_Coarse_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -341,7 +341,7 @@ int LB_Set_Next_Coarse_Obj_Fn(LB *lb, LB_NEXT_COARSE_OBJ_FN *fn, void *data)
 {
   lb->Get_Next_Coarse_Obj = fn;
   lb->Get_Next_Coarse_Obj_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -350,7 +350,7 @@ int LB_Set_Num_Child_Fn(LB *lb, LB_NUM_CHILD_FN *fn, void *data)
 {
   lb->Get_Num_Child = fn;
   lb->Get_Num_Child_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -359,7 +359,7 @@ int LB_Set_Child_List_Fn(LB *lb, LB_CHILD_LIST_FN *fn, void *data)
 {
   lb->Get_Child_List = fn;
   lb->Get_Child_List_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -368,5 +368,5 @@ int LB_Set_Child_Weight_Fn(LB *lb, LB_CHILD_WEIGHT_FN *fn, void *data)
 {
   lb->Get_Child_Weight = fn;
   lb->Get_Child_Weight_Data = data;
-  return LB_OK;
+  return ZOLTAN_OK;
 }

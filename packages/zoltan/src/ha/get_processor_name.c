@@ -25,7 +25,7 @@ int LB_Get_Processor_Name(
    that an MPI process is running on.
  */
 
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   int length;
 
   if (lb->Get_Processor_Name != NULL) {

@@ -58,9 +58,9 @@ int LB_Eval (LB *lb, int print_stats,
   int stats[4*NUM_STATS];
   int *proc, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, nproc;
-  LB_ID_PTR local_ids; 
-  LB_ID_PTR global_ids, nbors_global;
-  LB_ID_PTR lid;   /* Temporary pointer to a local id; used to pass NULL
+  ZOLTAN_ID_PTR local_ids; 
+  ZOLTAN_ID_PTR global_ids, nbors_global;
+  ZOLTAN_ID_PTR lid;   /* Temporary pointer to a local id; used to pass NULL
                       pointers to query functions when NUM_LID_ENTRIES = 0. */
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
@@ -70,7 +70,7 @@ int LB_Eval (LB *lb, int print_stats,
   LB_TRACE_ENTER(lb, yo);
 
   /* Set default error code */
-  ierr = LB_OK;
+  ierr = ZOLTAN_OK;
 
   /* Set all pointers to NULL */
   global_ids = NULL;
@@ -96,7 +96,7 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
 
@@ -110,12 +110,12 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&vwgts);
       LB_FREE(&tmp_vwgt);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   } 
   
   LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, &ierr);
-  if (ierr == LB_FATAL){
+  if (ierr == ZOLTAN_FATAL){
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
     LB_TRACE_EXIT(lb, yo);
@@ -190,7 +190,7 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&tmp_cutwgt);
       LB_FREE(&proc);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
 
     for (i=0; i<lb->Num_Proc; i++)
@@ -207,7 +207,7 @@ int LB_Eval (LB *lb, int print_stats,
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[gid_off]),
                                  lid, &ierr);
-      if (ierr == LB_FATAL){
+      if (ierr == ZOLTAN_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
@@ -225,7 +225,7 @@ int LB_Eval (LB *lb, int print_stats,
                         &(global_ids[gid_off]), lid,
                         nbors_global, nbors_proc, 
                         lb->Comm_Weight_Dim, ewgts, &ierr);
-      if (ierr == LB_FATAL){
+      if (ierr == ZOLTAN_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);

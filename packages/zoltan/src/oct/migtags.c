@@ -12,18 +12,18 @@
 
 static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
                         Region **export_tags, 
-                        LB_ID_PTR *export_gids, LB_ID_PTR *export_lids,
+                        ZOLTAN_ID_PTR *export_gids, ZOLTAN_ID_PTR *export_lids,
                         int *nsentags, int **tag_pids,
                         Region **prev_tags, 
-                        LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids,
+                        ZOLTAN_ID_PTR *prev_gids, ZOLTAN_ID_PTR *prev_lids,
                         int *npimtags, float *c2,
                         int *max_objs);
 
 static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags, 
-                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
+                               ZOLTAN_ID_PTR export_gids, ZOLTAN_ID_PTR export_lids,
 			       int *tag_pids, int *nrectags,
 			       pRegion *import_tags, pRegion prev_tags,
-                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
+                               ZOLTAN_ID_PTR prev_gids, ZOLTAN_ID_PTR prev_lids,
 			       int npimtags, float *c3);
 
 /* 
@@ -44,12 +44,12 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
   int *tag_pids;            /* array of which processors to send information */
   int npimregs;             /* number of regions previously imported */
   Region *pimreg;           /* previously imported regions */
-  LB_ID_PTR pim_gids;       /* global IDs of previously imported regions */
-  LB_ID_PTR pim_lids;       /* local IDs of previously imported regions */
-  LB_ID_PTR export_gids, export_lids;
+  ZOLTAN_ID_PTR pim_gids;       /* global IDs of previously imported regions */
+  ZOLTAN_ID_PTR pim_lids;       /* local IDs of previously imported regions */
+  ZOLTAN_ID_PTR export_gids, export_lids;
   Region *export_regions;
   int max_objs;
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   char *yo = "LB_Migrate_Objects";
   pimreg = *import_regions = export_regions = NULL;
   export_gids = pim_gids = NULL;
@@ -59,7 +59,7 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
   ierr = tag_regions(lb, octs, newpids, nocts, &export_regions, 
                      &export_gids, &export_lids, nsenregs, &tag_pids, 
 	      &pimreg, &pim_gids, &pim_lids, &npimregs, c2, &max_objs);
-  if(ierr != LB_OK && ierr != LB_WARN) {
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
@@ -68,7 +68,7 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
   ierr = malloc_new_objects(lb, *nsenregs, export_regions, 
                      export_gids, export_lids, tag_pids, nrecregs, 
 		     import_regions, pimreg, pim_gids, pim_lids, npimregs, c3);
-  if(ierr != LB_OK && ierr != LB_WARN) {
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
@@ -105,10 +105,10 @@ int LB_Migrate_Objects(LB *lb, pOctant *octs, int *newpids, int nocts,
  */
 static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts, 
 			Region **export_tags, 
-                        LB_ID_PTR *export_gids, LB_ID_PTR *export_lids,
+                        ZOLTAN_ID_PTR *export_gids, ZOLTAN_ID_PTR *export_lids,
                         int *nsentags, int **tag_pids,
 			Region **prev_tags, 
-                        LB_ID_PTR *prev_gids, LB_ID_PTR *prev_lids,
+                        ZOLTAN_ID_PTR *prev_gids, ZOLTAN_ID_PTR *prev_lids,
                         int *npimtags, float *c2,
 			int *max_objs)
 {
@@ -123,7 +123,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   pRegion mtags;        /* object tags of objects to be migrated */
   pRegion ptags;        /* tags of objects that were previously migrated */
   float ex_load;
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
@@ -135,7 +135,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   /* KDDKDD -- DON'T KNOW WHY THIS TEST IS NEEDED  6/2000 */
   if (sizeof(int)<sizeof(pOctant)) {
     LB_TRACE_DETAIL(lb, yo, "Fatal error, sizeof(int)<sizeof(ptr)\n");
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 #endif /* KDDKDD */
 
@@ -179,13 +179,13 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
     if((mtags = (pRegion)LB_MALLOC((unsigned)count * sizeof(Region))) == NULL){
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     if((export_pids = (int *)LB_MALLOC((unsigned)count * sizeof(int))) == NULL){
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
       LB_FREE(&mtags);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     *export_gids = LB_MALLOC_GID_ARRAY(lb, count);
     *export_lids = LB_MALLOC_LID_ARRAY(lb, count);
@@ -194,7 +194,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       LB_TRACE_EXIT(lb, yo);
       LB_FREE(&mtags);
       LB_FREE(&export_pids);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
   else {
@@ -216,7 +216,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       LB_FREE(&export_pids);
       LB_FREE(export_gids);
       LB_FREE(export_lids);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     *prev_gids = LB_MALLOC_GID_ARRAY(lb, count2);
     *prev_lids = LB_MALLOC_LID_ARRAY(lb, count2);
@@ -230,7 +230,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
       LB_FREE(&ptags);
       LB_FREE(prev_gids);
       LB_FREE(prev_lids);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
   else {
@@ -279,7 +279,7 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   
   if (index!=count) {                                         /* error check */
     LB_TRACE_DETAIL(lb, yo, "Fatal error, inconsistent number of regions.\n");
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
   *c2 = ex_load;
   return ierr;
@@ -294,10 +294,10 @@ static int tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
  * import_tags array, and the nrectags array.
  */
 static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags, 
-                               LB_ID_PTR export_gids, LB_ID_PTR export_lids,
+                               ZOLTAN_ID_PTR export_gids, ZOLTAN_ID_PTR export_lids,
 			       int *tag_pids, int *nrectags,
 			       pRegion *import_tags, pRegion prev_tags,
-                               LB_ID_PTR prev_gids, LB_ID_PTR prev_lids,
+                               ZOLTAN_ID_PTR prev_gids, ZOLTAN_ID_PTR prev_lids,
 			       int npimtags, float *c3)
 {
   char *yo = "malloc_new_objects";
@@ -305,11 +305,11 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
   pRegion tmp = NULL;
-  LB_ID_PTR tmp_gids = NULL;
-  LB_ID_PTR tmp_lids = NULL;
+  ZOLTAN_ID_PTR tmp_gids = NULL;
+  ZOLTAN_ID_PTR tmp_lids = NULL;
   int msgtag, msgtag2;
   int j;
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   float im_load;
@@ -323,7 +323,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if(ierr != COMM_OK && ierr != COMM_WARN) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
     LB_TRACE_EXIT(lb, yo);
-    return((ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL));
+    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
 
@@ -337,7 +337,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
       LB_FREE(&tmp_gids);
       LB_FREE(&tmp_lids);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
   
@@ -350,12 +350,12 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     LB_FREE(&tmp);
     LB_FREE(&tmp_gids);
     LB_FREE(&tmp_lids);
-    return((ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL));
+    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
   msgtag2--;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_gids,
-                    sizeof(LB_ID_TYPE)*num_gid_entries, (char *) tmp_gids);
+                    sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *) tmp_gids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
     fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo,
@@ -363,19 +363,19 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     LB_FREE(&tmp);
     LB_FREE(&tmp_gids);
     LB_FREE(&tmp_lids);
-    return((ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL));
+    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
   if (num_lid_entries > 0) {
     msgtag2--;
     ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids,
-                      sizeof(LB_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
+                      sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
       LB_FREE(&tmp);
       LB_FREE(&tmp_gids);
       LB_FREE(&tmp_lids);
-      return((ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL));
+      return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
     }
   }
 
@@ -384,7 +384,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Destroy.");
     LB_TRACE_EXIT(lb, yo);
     LB_FREE(&tmp);
-    return((ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL));
+    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
   }
 
   /* get each message sent, and store region in import array */
@@ -403,7 +403,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
       LB_FREE(&tmp);
       LB_FREE(&tmp_gids);
       LB_FREE(&tmp_lids);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
   else
@@ -424,7 +424,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
         LB_FREE(&tmp);
         LB_FREE(&tmp_gids);
         LB_FREE(&tmp_lids);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
       LB_SET_GID(lb, imp[j].Global_ID, &(tmp_gids[i*num_gid_entries]));
       LB_SET_LID(lb, imp[j].Local_ID,  &(tmp_lids[i*num_lid_entries]));
@@ -443,7 +443,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
         LB_FREE(&tmp);
         LB_FREE(&tmp_gids);
         LB_FREE(&tmp_lids);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
       LB_SET_GID(lb, imp[j].Global_ID, &(prev_gids[i*num_gid_entries]));
       LB_SET_LID(lb, imp[j].Local_ID,  &(prev_lids[i*num_lid_entries]));
@@ -464,7 +464,7 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 
   if((*nrectags == 0) && (*import_tags != NULL)) {
     LB_TRACE_DETAIL(lb, yo, "Fatal error, import tags not empty but no tags received\n");
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   /*  for(i=0; i<(*nrectags); i++) {
@@ -484,12 +484,12 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
  * fixes the import tags so that region tags that were previously
  * exported aren't counted when imported back.
  */
-int LB_fix_tags(LB *lb, LB_ID_PTR *import_global_ids, LB_ID_PTR *import_local_ids,
+int LB_fix_tags(LB *lb, ZOLTAN_ID_PTR *import_global_ids, ZOLTAN_ID_PTR *import_local_ids,
                  int **import_procs, int nrectags, pRegion import_regs)
 {
   char *yo = "LB_fix_tags";
   int i;                                  /* index counter */
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
@@ -499,14 +499,14 @@ int LB_fix_tags(LB *lb, LB_ID_PTR *import_global_ids, LB_ID_PTR *import_local_id
                            LB_SPECIAL_MALLOC_GID)) {
       LB_PRINT_ERROR(lb->Proc,yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     if (!LB_Special_Malloc(lb,(void **)import_local_ids,nrectags,
                            LB_SPECIAL_MALLOC_LID)) {
       LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID); 
       LB_PRINT_ERROR(lb->Proc,yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     if (!LB_Special_Malloc(lb,(void **)import_procs,nrectags,
                            LB_SPECIAL_MALLOC_INT)) {
@@ -514,7 +514,7 @@ int LB_fix_tags(LB *lb, LB_ID_PTR *import_global_ids, LB_ID_PTR *import_local_id
       LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
       LB_PRINT_ERROR(lb->Proc,yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
 
     /* for each region imported, look at its originating processor */

@@ -106,7 +106,7 @@ int RL_clearRootOctants(pRList *rlist) {
     LB_FREE(rlist);
     *rlist = head->next;
   }
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /* KDDKDDFREE changed rlist to *rlist to allow NULL from LB_FREE to propagate 
@@ -123,7 +123,7 @@ int RL_freeList(pRList *rlist) {
     *rlist = head->next;
   }
   LB_FREE(rlist);
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 int RL_numRootOctants(pRList rlist) {

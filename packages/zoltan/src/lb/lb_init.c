@@ -51,5 +51,5 @@ int mpi_flag;
    */
   *ver = LB_VER;
 
-  return (LB_OK);
+  return (ZOLTAN_OK);
 }

@@ -26,9 +26,9 @@
 /***************************  PROTOTYPES *************************************/
 static int LB_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct);
 static int LB_Oct_CompareCoords(int dim, COORD pt1, COORD pt2);
-static void initialize_region(LB *, pRegion *, LB_ID_PTR, LB_ID_PTR, int, float);
-static int lb_oct_init(LB *lb, int *num_import, LB_ID_PTR *import_global_ids,
-  LB_ID_PTR *import_local_ids, int **import_procs, int oct_dim, int oct_method,
+static void initialize_region(LB *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float);
+static int lb_oct_init(LB *lb, int *num_import, ZOLTAN_ID_PTR *import_global_ids,
+  ZOLTAN_ID_PTR *import_local_ids, int **import_procs, int oct_dim, int oct_method,
   int oct_maxoctregions, int oct_minoctregions, int oct_output_level, int oct_wgtflag); 
 static void    LB_oct_gen_tree_from_input_data(LB *lb, int, int *c1, int *c2,
                                                int *c3, float *c0, int createpartree);
@@ -82,18 +82,18 @@ int LB_octpart(
                                    the OCTPART balancer.                     */
   int *num_import,              /* Number of non-local objects assigned to this
                                    processor in the new decomposition.       */
-  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+  ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
                                    non-local objects in this processor's new
                                    decomposition.                            */
-  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+  ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
                                    non-local objects in this processor's new
                                    decomposition.                            */
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
                                    this processor's new decomposition.       */
   int *num_export,              /* Not computed; return -1. */
-  LB_ID_PTR *export_global_ids, /* Not computed. */
-  LB_ID_PTR *export_local_ids,  /* Not computed. */
+  ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
+  ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
   int **export_procs            /* Not computed. */
 ) 
 {
@@ -147,7 +147,7 @@ int error = FALSE;            /* error flag                                  */
   }
 
   if (error)
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   else
     return(lb_oct_init(lb, num_import, import_global_ids, import_local_ids, 
                        import_procs, oct_dim, oct_method, oct_maxoctregions, 
@@ -167,10 +167,10 @@ static int lb_oct_init(
                                    the OCTPART balancer.                     */
   int *num_import,              /* Number of non-local objects assigned to this
                                    processor in the new decomposition.       */
-  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+  ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
                                    non-local objects in this processor's new
                                    decomposition.                            */
-  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+  ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
                                    non-local objects in this processor's new
                                    decomposition.                            */
   int **import_procs,           /* Returned value:  array of processor IDs for
@@ -330,7 +330,7 @@ static int lb_oct_init(
 
   /* Temporary return value until error codes are fully implemented. */
   LB_TRACE_EXIT(lb, yo);
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -595,11 +595,11 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 		   COORD min, COORD max, int wgtflag, float *c0) 
 {
   char *yo = "LB_get_bounds";
-  LB_ID_PTR obj_global_ids = NULL; 
-  LB_ID_PTR obj_local_ids = NULL;
-  LB_ID_PTR lid;       /* Temporary pointer to a local ID; used to pass NULL 
+  ZOLTAN_ID_PTR obj_global_ids = NULL; 
+  ZOLTAN_ID_PTR obj_local_ids = NULL;
+  ZOLTAN_ID_PTR lid;       /* Temporary pointer to a local ID; used to pass NULL 
                           to query functions when NUM_LID_ENTRIES == 0. */
-  LB_ID_PTR next_lid;  /* Temporary pointer to a local ID; used to pass NULL 
+  ZOLTAN_ID_PTR next_lid;  /* Temporary pointer to a local ID; used to pass NULL 
                           to query functions when NUM_LID_ENTRIES == 0. */
   float *obj_wgts = NULL;
   int i, found;
@@ -752,8 +752,8 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
  *  Function that initializes the region data structure.  It uses the 
  *  global ID, coordinates and weight provided by the application.  
  */
-static void initialize_region(LB *lb, pRegion *ret, LB_ID_PTR global_id,
-                              LB_ID_PTR local_id, int wgtflag, float wgt) 
+static void initialize_region(LB *lb, pRegion *ret, ZOLTAN_ID_PTR global_id,
+                              ZOLTAN_ID_PTR local_id, int wgtflag, float wgt) 
 {
   pRegion reg;
   int ierr = 0;

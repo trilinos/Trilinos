@@ -57,10 +57,10 @@ char *val1)			/* value to set this parameter to */
 /*
  *  Function to set a parameter value.
  *  On output:
- *    LB_OK indicates success.
- *    LB_WARN indicates that parameter was not set properly (misspelled?).
+ *    ZOLTAN_OK indicates success.
+ *    ZOLTAN_WARN indicates that parameter was not set properly (misspelled?).
  *             A warning message is printed in this case.
- *    LB_FATAL signals something more serious.
+ *    ZOLTAN_FATAL signals something more serious.
  */
 
     char     *yo = "LB_Set_Param";
@@ -122,9 +122,9 @@ char *val1)			/* value to set this parameter to */
     }
 
     if (status == 0 || status == 3)
-	flag = LB_OK;
+	flag = ZOLTAN_OK;
     else if (status == 1 || status == 2)
-	flag = LB_WARN;
+	flag = ZOLTAN_WARN;
     else
 	flag = status;
     return (flag);
@@ -150,7 +150,7 @@ char *val)			/* value to set this parameter to */
 	if (!strcmp(name, ptr->name)) {	/* string match */
 	    LB_FREE(&(ptr->new_val));
 	    ptr->new_val = val;
-	    return (LB_OK);
+	    return (ZOLTAN_OK);
 	}
 	ptr = ptr->next;
     }
@@ -160,7 +160,7 @@ char *val)			/* value to set this parameter to */
     if (param == NULL) {
 	LB_FREE(&name);
 	LB_FREE(&val);
-	return (LB_MEMERR);
+	return (ZOLTAN_MEMERR);
     }
     ptr = lb->Params;
     lb->Params = param;
@@ -168,7 +168,7 @@ char *val)			/* value to set this parameter to */
     param->name = name;
     param->new_val = val;
 
-    return (LB_OK);
+    return (ZOLTAN_OK);
 }
 
 static int remove_param(
@@ -196,13 +196,13 @@ char *name 			/* parameter name */
             LB_FREE(&(ptr->new_val));
             LB_FREE(&ptr);
             /* Return OK */
-	    return (LB_OK);
+	    return (ZOLTAN_OK);
 	}
         oldptr = ptr;
 	ptr = ptr->next;
     }
 
     /* Parameter was not in list */
-    return (LB_OK);
+    return (ZOLTAN_OK);
 }
 

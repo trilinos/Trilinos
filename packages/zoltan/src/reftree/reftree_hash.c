@@ -28,7 +28,7 @@
 
 LB_REFTREE* LB_Reftree_hash_lookup (LB *lb, 
                                     struct LB_reftree_hash_node **hashtab,
-                                    LB_ID_PTR key, int n)
+                                    ZOLTAN_ID_PTR key, int n)
 {
   int i;
   struct LB_reftree_hash_node *ptr;

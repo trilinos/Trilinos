@@ -53,7 +53,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   if(*amount_of_used_bits >= size_of_unsigned * SFC_KEYLENGTH * 8) {
     LB_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
     *local_balanced_flag = SFC_BALANCED;
-    return(LB_OK);
+    return(ZOLTAN_OK);
   }
   
   /*  assume initially that all the partitions on this processor are balanced.
@@ -79,13 +79,13 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   ll_prev_bins = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_prev_bins == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }    
   
   ll_bins_head_copy = (int*) LB_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_bins_head_copy == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   } 
 
   for(i=0;i<=number_of_cuts;i++)
@@ -95,7 +95,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     (float*) LB_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
   if(work_prev_allocated_copy == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   } 
   
   /* loop over all bins that have a cut in them using linklist 
@@ -119,7 +119,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       binned_weight_array = (float*) LB_MALLOC(number_of_bins*wgt_dim*sizeof(float));
       if(binned_weight_array == NULL) {
 	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-	return(LB_MEMERR);
+	return(ZOLTAN_MEMERR);
       } 
       for(i=0;i<number_of_bins*wgt_dim;i++)
 	binned_weight_array[i] = 0;
@@ -136,7 +136,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       bin_proc_array = (int*) LB_MALLOC(sizeof(int) * (1+number_of_cuts));
       if(bin_proc_array == NULL) {
 	LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-	return(LB_MEMERR);
+	return(ZOLTAN_MEMERR);
       } 
       bin_proc_array[0] = -1;
       for(i=1;i<=number_of_cuts;i++)
@@ -331,7 +331,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   }
   
   LB_TRACE_EXIT(lb, yo);
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 

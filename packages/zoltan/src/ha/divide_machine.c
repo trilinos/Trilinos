@@ -57,5 +57,5 @@ int LB_divide_machine(
       *num_procs = *num_procs - *procmid + *proclower;
    }
 
-   return LB_OK;
+   return ZOLTAN_OK;
 }

@@ -58,10 +58,10 @@ int LB_Create_Proc_List(
         MPI_Comm_size(comm, &nprocs);
 
      if ((send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL)
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
      if ((tmp_send = (int *) LB_MALLOC(3*nprocs*sizeof(int))) == NULL) {
         LB_FREE(&send);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
      }
      rem = &send[nprocs];
      sets = &send[2*nprocs];
@@ -180,7 +180,7 @@ int LB_Create_Proc_List(
      /* free memory and return */
      LB_FREE(&send);
 
-     return LB_OK;
+     return ZOLTAN_OK;
 }
 
 static void LB_Gather(

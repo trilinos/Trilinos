@@ -36,7 +36,7 @@ int            i, ierr = 0;
     rib = (RIB_STRUCT *) LB_MALLOC(sizeof(RIB_STRUCT));
     if (rib == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
     lb->Data_Structure = (void *) rib;
     rib->Tree_Ptr = NULL;
@@ -49,7 +49,7 @@ int            i, ierr = 0;
     if (rib->Tree_Ptr == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_RIB_Free_Structure(lb);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
     /* initialize Tree_Ptr */
     for (i = 0; i < lb->Num_Proc; i++) {
@@ -76,7 +76,7 @@ int            i, ierr = 0;
     return(ierr);
   }
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/

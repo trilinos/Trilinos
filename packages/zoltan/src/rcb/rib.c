@@ -40,7 +40,7 @@
 #define RIB_DEFAULT_OVERALLOC 1.0
 
 
-static int rib_fn(LB *, int *, LB_ID_PTR *, LB_ID_PTR *, int **, double,
+static int rib_fn(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, double,
             int, int, int, int);
 static void print_rib_tree(LB *, struct rib_tree *);
 /* for Tflops_Special */
@@ -78,18 +78,18 @@ int LB_rib(
                                 the RIB balancer.                       */
   int *num_import,              /* Number of non-local objects assigned to
                                 this processor in the new decomposition.*/
-  LB_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
+  ZOLTAN_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
                                 non-local objects in this processor's new
                                 decomposition.                          */
-  LB_ID_PTR *import_local_ids,  /* Returned value: array of local IDs for
+  ZOLTAN_ID_PTR *import_local_ids,  /* Returned value: array of local IDs for
                                 non-local objects in this processor's new
                                 decomposition.                          */
   int **import_procs,           /* Returned value: array of processor IDs for
                                 processors owning the non-local objects in
                                 this processor's new decomposition.     */
   int *num_export,              /* Not computed, set to -1 */
-  LB_ID_PTR *export_global_ids, /* Not computed. */
-  LB_ID_PTR *export_local_ids,  /* Not computed. */
+  ZOLTAN_ID_PTR *export_global_ids, /* Not computed. */
+  ZOLTAN_ID_PTR *export_local_ids,  /* Not computed. */
   int **export_procs            /* Not computed. */
 )
 {
@@ -133,10 +133,10 @@ static int rib_fn(
                                 the RIB balancer. */
   int *num_import,              /* Number of non-local objects assigned to
                                 this processor in the new decomposition.*/
-  LB_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+  ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
                                 non-local objects in this processor's new
                                 decomposition. */
-  LB_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+  ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
                                 non-local objects in this processor's new
                                 decomposition. */
   int **import_procs,           /* Returned value: array of processor IDs for
@@ -154,8 +154,8 @@ static int rib_fn(
 {
   char    yo[] = "rib_fn";
   int     proc,nprocs;        /* my proc id, total # of procs */
-  LB_ID_PTR gidpt = NULL;     /* local global IDs array. */
-  LB_ID_PTR lidpt = NULL;     /* local local IDs array. */
+  ZOLTAN_ID_PTR gidpt = NULL;     /* local global IDs array. */
+  ZOLTAN_ID_PTR lidpt = NULL;     /* local local IDs array. */
   struct Dot_Struct *dotpt;   /* local dot arrays */
   int     pdotnum;            /* # of dots - decomposition changes it */
   int     pdottop;            /* dots >= this index are new */
@@ -245,7 +245,7 @@ static int rib_fn(
 
   start_time = LB_Time(lb->Timer);
   ierr = LB_RIB_Build_Structure(lb, &pdotnum, &dotmax, wgtflag, use_ids);
-  if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+  if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
     LB_PRINT_ERROR(proc, yo, "Error returned from LB_RIB_Build_Structure.");
     LB_TRACE_EXIT(lb, yo);
     return(ierr);
@@ -282,20 +282,20 @@ static int rib_fn(
     dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
     if (dotmark == NULL) {
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     value = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (value == NULL) {
       LB_FREE(&dotmark);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
     if (wgts == NULL) {
       LB_FREE(&dotmark);
       LB_FREE(&value);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
     if (dotlist == NULL) {
@@ -303,7 +303,7 @@ static int rib_fn(
       LB_FREE(&dotmark);
       LB_FREE(&value);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
   else {
@@ -326,7 +326,7 @@ static int rib_fn(
 
   if (check_geom) {
     ierr = LB_RB_check_geom_input(lb, dotpt, dotnum);
-    if (ierr == LB_FATAL) {
+    if (ierr == ZOLTAN_FATAL) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_input");
       LB_TRACE_EXIT(lb, yo);
       return(ierr);
@@ -364,7 +364,7 @@ static int rib_fn(
 
     ierr = LB_divide_machine(lb, proc, local_comm, &set, &proclower,
                              &procmid, &num_procs, &fractionlo);
-    if (ierr != LB_OK && ierr != LB_WARN) {
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       LB_FREE(&dotmark);
       LB_FREE(&value);
       LB_FREE(&wgts);
@@ -383,20 +383,20 @@ static int rib_fn(
       dotmark = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotmark == NULL) {
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
       value = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (value == NULL) {
         LB_FREE(&dotmark);
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
       wgts = (double *) LB_MALLOC(dotmax*sizeof(double));
       if (wgts == NULL) {
         LB_FREE(&dotmark);
         LB_FREE(&value);
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
       dotlist = (int *) LB_MALLOC(dotmax*sizeof(int));
       if (dotlist == NULL) {
@@ -404,7 +404,7 @@ static int rib_fn(
         LB_FREE(&dotmark);
         LB_FREE(&value);
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
     }
 
@@ -460,7 +460,7 @@ static int rib_fn(
       LB_FREE(&value);
       LB_FREE(&wgts);
       LB_TRACE_EXIT(lb, yo);
-      return LB_FATAL;
+      return ZOLTAN_FATAL;
     }
 
     if (set)    /* set weight for current partition */
@@ -558,7 +558,7 @@ static int rib_fn(
 
   if (check_geom) {
     ierr = LB_RB_check_geom_output(lb, dotpt,dotnum,pdotnum,NULL);
-    if (ierr == LB_FATAL) {
+    if (ierr == ZOLTAN_FATAL) {
       LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_check_geom_output");
       LB_TRACE_EXIT(lb, yo);
       return(ierr);
@@ -644,7 +644,7 @@ static int rib_fn(
 
   LB_TRACE_EXIT(lb, yo);
   /* Temporary return value until error codes are fully implemented */
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 static void print_rib_tree(LB *lb, struct rib_tree *treept)

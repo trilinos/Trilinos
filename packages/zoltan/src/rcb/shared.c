@@ -25,7 +25,7 @@
 /*****************************************************************************/
 /* PROTOTYPES */
 
-static int initialize_dot(LB *, LB_ID_PTR, LB_ID_PTR, struct Dot_Struct *,
+static int initialize_dot(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, struct Dot_Struct *,
                           int, int, float *);
 
 /*****************************************************************************/
@@ -34,9 +34,9 @@ static int initialize_dot(LB *, LB_ID_PTR, LB_ID_PTR, struct Dot_Struct *,
 
 int LB_RB_Build_Structure(
   LB *lb,                       /* load-balancing structure */
-  LB_ID_PTR *global_ids,        /* pointer to array of global IDs; allocated
+  ZOLTAN_ID_PTR *global_ids,        /* pointer to array of global IDs; allocated
                                    in this function.  */
-  LB_ID_PTR *local_ids,         /* pointer to array of local IDs; allocated
+  ZOLTAN_ID_PTR *local_ids,         /* pointer to array of local IDs; allocated
                                    in this function.  */
   struct Dot_Struct **dots,     /* pointer to array of Dots; allocated in this
                                    function. */
@@ -75,7 +75,7 @@ int i, ierr = 0;
                   "invalid; valid range is 1-3\n",
                   *num_geom);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
   if (ierr) {
     LB_PRINT_ERROR(lb->Proc, yo, 
@@ -102,7 +102,7 @@ int i, ierr = 0;
 
   if (!(*global_ids) || (lb->Num_LID && !(*local_ids)) || !(*dots)) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   if (*num_obj > 0) {
@@ -116,7 +116,7 @@ int i, ierr = 0;
       objs_wgt    = (float *) LB_MALLOC((*num_obj)*sizeof(float));
       if (!objs_wgt) {
         LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-        return(LB_MEMERR);
+        return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < *num_obj; i++) objs_wgt[i] = 0.;
     }
@@ -135,7 +135,7 @@ int i, ierr = 0;
 
     ierr = initialize_dot(lb, *global_ids, *local_ids, *dots,
                           *num_obj, wgtflag, objs_wgt);
-    if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+    if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
       LB_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user function initialize_dot.");
       LB_FREE(&objs_wgt);
@@ -154,14 +154,14 @@ int i, ierr = 0;
     LB_FREE(local_ids);
   }
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int initialize_dot(LB *lb, LB_ID_PTR gid, LB_ID_PTR lid,
+static int initialize_dot(LB *lb, ZOLTAN_ID_PTR gid, ZOLTAN_ID_PTR lid,
                           struct Dot_Struct *dots, int num_obj,
                           int wgtflag, float *wgt)
 {
@@ -169,7 +169,7 @@ static int initialize_dot(LB *lb, LB_ID_PTR gid, LB_ID_PTR lid,
  *  Function that initializes the dot data structure for RCB and RIB. 
  *  It uses the global ID, coordinates and weight provided by the application.  
  */
-int ierr = LB_OK;
+int ierr = ZOLTAN_OK;
 int i;
 int num_gid_entries = lb->Num_GID;
 int num_lid_entries = lb->Num_LID;
@@ -183,7 +183,7 @@ char *yo = "initialize_dot";
     lb->Get_Geom(lb->Get_Geom_Data, num_gid_entries, num_lid_entries,
                  &(gid[i*num_gid_entries]), &(lid[i*num_lid_entries]),
                  dot->X, &ierr);
-    if (ierr == LB_FATAL || ierr == LB_MEMERR) {
+    if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
       LB_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned from user defined Get_Geom function.");
       return(ierr);
@@ -200,8 +200,8 @@ char *yo = "initialize_dot";
 
 int LB_RB_Send_Outgoing(
   LB *lb,                           /* Load-balancing structure. */
-  LB_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
-  LB_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
+  ZOLTAN_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
+  ZOLTAN_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
   struct Dot_Struct **dotpt,        /* pointer to Dots array. */
   int *dotmark,                     /* which side of median for each dot */
   int *dottop,                      /* dots >= this index are new */
@@ -250,12 +250,12 @@ int LB_RB_Send_Outgoing(
   if (outgoing)
     if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
 
   ierr = LB_Create_Proc_List(lb, set, *dotnum, outgoing, proc_list, local_comm,
                              proclower, numprocs);
-  if (ierr != LB_OK && ierr != LB_WARN) {
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Create_Proc_List.");
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
@@ -277,8 +277,8 @@ int LB_RB_Send_Outgoing(
 
 int LB_RB_Send_Dots(
   LB *lb,                           /* Load-balancing structure. */
-  LB_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
-  LB_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
+  ZOLTAN_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
+  ZOLTAN_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
   struct Dot_Struct **dotpt,        /* pointer to Dots array. */
   int *dotmark,                     /* which side of median for each dot */
   int *proc_list,                   /* list of processors to send dots to */
@@ -310,8 +310,8 @@ int LB_RB_Send_Dots(
   char *yo = "LB_RB_Send_Outgoing";
   int dotnew;                       /* # of new dots after send/recv */
   int keep, incoming;               /* message exchange counters */
-  LB_ID_PTR gidbuf = NULL;          /* communication buffer for global IDs. */
-  LB_ID_PTR lidbuf = NULL;          /* communication buffer for local IDs.  */
+  ZOLTAN_ID_PTR gidbuf = NULL;          /* communication buffer for global IDs. */
+  ZOLTAN_ID_PTR lidbuf = NULL;          /* communication buffer for local IDs.  */
   struct Dot_Struct *dotbuf = NULL; /* communication buffer for dots. */
   struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
   int message_tag = 32760;          /* message tag */
@@ -326,7 +326,7 @@ int LB_RB_Send_Dots(
     LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   /* check if need to malloc more space */
@@ -342,14 +342,14 @@ int LB_RB_Send_Dots(
       *lidpt = LB_REALLOC_LID_ARRAY(lb, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
     }
     *dotpt = (struct Dot_Struct *) 
              LB_REALLOC(*dotpt,(unsigned) *dotmax * sizeof(struct Dot_Struct));
     if (!*dotpt) {
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
     if (stats) counters[6]++;
   }
@@ -372,7 +372,7 @@ int LB_RB_Send_Dots(
         LB_FREE(&gidbuf);
         LB_FREE(&lidbuf);
         LB_TRACE_EXIT(lb, yo);
-        return LB_MEMERR;
+        return ZOLTAN_MEMERR;
       }
     }
     dotbuf = (struct Dot_Struct *)
@@ -383,7 +383,7 @@ int LB_RB_Send_Dots(
       LB_FREE(&lidbuf);
       LB_FREE(&dotbuf);
       LB_TRACE_EXIT(lb, yo);
-      return LB_MEMERR;
+      return ZOLTAN_MEMERR;
     }
   }
 
@@ -419,7 +419,7 @@ int LB_RB_Send_Dots(
   if (use_ids) {
     /* Communicate Global IDs */
     ierr = LB_Comm_Do(cobj, message_tag, (char *) gidbuf, 
-                      sizeof(LB_ID_TYPE)*num_gid_entries,
+                      sizeof(ZOLTAN_ID_TYPE)*num_gid_entries,
                       (char *) &((*gidpt)[keep*num_gid_entries]));
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
@@ -427,14 +427,14 @@ int LB_RB_Send_Dots(
       LB_FREE(&lidbuf);
       LB_FREE(&dotbuf);
       LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
 
     /* Communicate Local IDs, if any */
     if (num_lid_entries) {
       message_tag--;
       ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
-                        sizeof(LB_ID_TYPE)*num_lid_entries,
+                        sizeof(ZOLTAN_ID_TYPE)*num_lid_entries,
                         (char *) &((*lidpt)[keep*num_lid_entries]));
       if (ierr != COMM_OK && ierr != COMM_WARN) {
         LB_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
@@ -442,7 +442,7 @@ int LB_RB_Send_Dots(
         LB_FREE(&lidbuf);
         LB_FREE(&dotbuf);
         LB_TRACE_EXIT(lb, yo);
-        return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+        return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
       }
     }
   }
@@ -457,7 +457,7 @@ int LB_RB_Send_Dots(
     LB_FREE(&lidbuf);
     LB_FREE(&dotbuf);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   ierr = LB_Comm_Destroy(&cobj);
@@ -470,16 +470,16 @@ int LB_RB_Send_Dots(
     
   *dotnum = dotnew;
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_RB_Print_All(LB *lb, LB_ID_PTR global_ids, struct Dot_Struct *dots,
+void LB_RB_Print_All(LB *lb, ZOLTAN_ID_PTR global_ids, struct Dot_Struct *dots,
                      int pdotnum, int pdottop, 
-                     int num_import, LB_ID_PTR import_global_ids, 
+                     int num_import, ZOLTAN_ID_PTR import_global_ids, 
                      int *import_procs)
 {
 /*
@@ -514,12 +514,12 @@ int num_gid_entries = lb->Num_GID;
 
 int LB_RB_Return_Arguments(
   LB *lb,                  /* Load-balancing structure */
-  LB_ID_PTR gidpt,         /* pointer to array of global IDs. */
-  LB_ID_PTR lidpt,         /* pointer to array of local IDs. */
+  ZOLTAN_ID_PTR gidpt,         /* pointer to array of global IDs. */
+  ZOLTAN_ID_PTR lidpt,         /* pointer to array of local IDs. */
   struct Dot_Struct *dotpt,/* pointer to array of Dots. */
   int num_import,          /* number of objects to be imported. */
-  LB_ID_PTR *import_global_ids,   /* global IDs of objects to be imported. */
-  LB_ID_PTR *import_local_ids,    /* local IDs of objects to be imported. */
+  ZOLTAN_ID_PTR *import_global_ids,   /* global IDs of objects to be imported. */
+  ZOLTAN_ID_PTR *import_local_ids,    /* local IDs of objects to be imported. */
   int **import_procs,             /* processors from which objects will be 
                                      imported. */
   int dottop               /* index of first dot to import on this processor. */
@@ -538,20 +538,20 @@ int num_lid_entries = lb->Num_LID;
   if (!LB_Special_Malloc(lb,(void **)import_global_ids,num_import,
                          LB_SPECIAL_MALLOC_GID)) {
     LB_TRACE_EXIT(lb, yo);
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
   if (!LB_Special_Malloc(lb,(void **)import_local_ids,num_import,
                          LB_SPECIAL_MALLOC_LID)) {
     LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
     LB_TRACE_EXIT(lb, yo);
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
   if (!LB_Special_Malloc(lb,(void **)import_procs,num_import,
                          LB_SPECIAL_MALLOC_INT)) {
     LB_Special_Free(lb,(void **)import_global_ids,LB_SPECIAL_MALLOC_GID);
     LB_Special_Free(lb,(void **)import_local_ids,LB_SPECIAL_MALLOC_LID);
     LB_TRACE_EXIT(lb, yo);
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
 
   for (i = 0; i < num_import; i++) {
@@ -563,7 +563,7 @@ int num_lid_entries = lb->Num_LID;
     (*import_procs)[i] = dotpt[ii].Proc;
   }
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -598,7 +598,7 @@ int LB_RB_check_geom_input(
   int i, j, k;
   char msg[256];
   int proc = lb->Proc;
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
 
   /* Error check the weights. */
   for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight == 0.0) j++;
@@ -606,7 +606,7 @@ int LB_RB_check_geom_input(
   if (k > 0 && proc == 0) {
      sprintf(msg, "%d dot weights are equal to 0.", k);
      LB_PRINT_WARN(proc, yo, msg);
-     ierr = LB_WARN;
+     ierr = ZOLTAN_WARN;
   }
 
   for (j = i = 0; i < dotnum; i++) if (dotpt[i].Weight < 0.0) j++;
@@ -616,7 +616,7 @@ int LB_RB_check_geom_input(
       sprintf(msg, "%d dot weights are < 0.",k);
       LB_PRINT_ERROR(proc, yo, msg);
     }
-    ierr = LB_FATAL;
+    ierr = ZOLTAN_FATAL;
   }
   return(ierr);
 }
@@ -639,7 +639,7 @@ int LB_RB_check_geom_output(
   int i,iflag,proc,nprocs,total1,total2;
   double weight,wtmax,wtmin,wtone,tolerance;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
 
   MPI_Comm_rank(lb->Communicator,&proc);
   MPI_Comm_size(lb->Communicator,&nprocs);
@@ -654,7 +654,7 @@ int LB_RB_check_geom_output(
                    "Points after partitioning = %d.",
                     total1,total2);
       LB_PRINT_WARN(proc, yo, msg);
-      ierr = LB_WARN;
+      ierr = ZOLTAN_WARN;
     }
   }
   
@@ -681,18 +681,18 @@ int LB_RB_check_geom_output(
       sprintf(msg, "Load-imbalance > tolerance of %g.",
               tolerance);
       LB_PRINT_WARN(proc, yo, msg);
-      ierr = LB_WARN;
+      ierr = ZOLTAN_WARN;
     }
     MPI_Barrier(lb->Communicator);
     if (weight == wtmin) {
       sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
       LB_PRINT_WARN(proc, yo, msg);
-      ierr = LB_WARN;
+      ierr = ZOLTAN_WARN;
     }
     if (weight == wtmax) {
       sprintf(msg, "  Proc %d has weight = %g.",proc,weight);
       LB_PRINT_WARN(proc, yo, msg);
-      ierr = LB_WARN;
+      ierr = ZOLTAN_WARN;
     }
   }
   
@@ -712,7 +712,7 @@ int LB_RB_check_geom_output(
     if (iflag > 0) {
       sprintf(msg, "%d points are out-of-box on proc %d.", iflag, proc);
       LB_PRINT_ERROR(proc, yo, msg);
-      ierr = LB_FATAL;
+      ierr = ZOLTAN_FATAL;
     }
   
     MPI_Barrier(lb->Communicator);

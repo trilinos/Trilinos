@@ -18,8 +18,8 @@ typedef struct Region_Node {           /* region = area in 3-space           */
   struct Region_Node *next;            /* pointer to next region in list     */
   COORD  Coord;                        /* centroid location of region        */
   double Weight;                       /* weight of Region - default is 1    */
-  LB_ID_PTR Global_ID;                 /* Global ID for the object.          */
-  LB_ID_PTR Local_ID;                  /* Local ID for the object.           */
+  ZOLTAN_ID_PTR Global_ID;                 /* Global ID for the object.          */
+  ZOLTAN_ID_PTR Local_ID;                  /* Local ID for the object.           */
   int Proc;                            /* Processor originally owning the obj*/
   int    attached;                     /* flag to see if region was attached */
 } Region;

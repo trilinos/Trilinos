@@ -36,7 +36,7 @@ int      *proc)                 /* processor that point lands in */
         LB_PRINT_ERROR(-1, yo, 
                        "No LB_Data_Structure available for LB_Point_Assign");
         *proc = -1;
-        return(LB_FATAL);
+        return(ZOLTAN_FATAL);
      }
 
      if (lb->Method == RCB) {
@@ -46,7 +46,7 @@ int      *proc)                 /* processor that point lands in */
            LB_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved for Point_Assign; "
                                         "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
-           return(LB_FATAL);
+           return(ZOLTAN_FATAL);
         }
 
         procmid = treept[0].right_leaf;
@@ -59,7 +59,7 @@ int      *proc)                 /* processor that point lands in */
 
         *proc = -procmid;
 
-        return(LB_OK);
+        return(ZOLTAN_OK);
      }
      else if (lb->Method == RIB) {
         rib = (RIB_STRUCT *) (lb->Data_Structure);
@@ -68,7 +68,7 @@ int      *proc)                 /* processor that point lands in */
            LB_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved for Point_Assign; "
                                      "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
-           return(LB_FATAL);
+           return(ZOLTAN_FATAL);
         }
 
         switch (rib->Num_Geom) {
@@ -102,12 +102,12 @@ int      *proc)                 /* processor that point lands in */
 
         *proc = -procmid;
 
-        return(LB_OK);
+        return(ZOLTAN_OK);
      }
      else {
         LB_PRINT_ERROR(lb->Proc, yo, "LB_Point_Assign valid only when method "
                                      "is RCB or RIB.");
         *proc = -1;
-        return(LB_FATAL);
+        return(ZOLTAN_FATAL);
      }
 }

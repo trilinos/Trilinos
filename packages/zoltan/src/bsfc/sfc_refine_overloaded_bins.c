@@ -46,13 +46,13 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 
   if(size_of_unsigned != sizeof(unsigned)) {
     LB_PRINT_ERROR(lb->Proc, yo, "The size of an unsigned integer is smaller on another processor. Cannot use this routine. Try increasing max_cuts_in_bin.");
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }      
 
   overloaded_bin_flag = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
   if(overloaded_bin_flag == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<lb->Num_Proc;i++)
     overloaded_bin_flag[i] = 0;
@@ -66,7 +66,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   istore = (int*) LB_MALLOC(sizeof(int) * lb->Num_Proc);
   if(istore == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   
   i = MPI_Allreduce(overloaded_bin_flag, istore, lb->Num_Proc, 
@@ -81,7 +81,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   if(number_of_bins_to_refine==0) {
     /* all of the bins are okay! */
     LB_FREE(&istore);
-    return(LB_OK);
+    return(ZOLTAN_OK);
   }
 
   if(istore[lb->Proc])
@@ -109,7 +109,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   istore2 = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(istore2 == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<number_of_bins_to_refine;i++)
     istore2[i] = 0;
@@ -129,7 +129,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   bins_to_refine = (int*) LB_MALLOC(sizeof(int) * number_of_bins_to_refine);
   if(bins_to_refine == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   i = MPI_Allreduce(istore2, bins_to_refine, number_of_bins_to_refine, 
 		    MPI_INT, MPI_SUM, lb->Communicator);
@@ -157,8 +157,8 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
       if((int) sfc_vert_ptr[k].my_bin == refine_bin) {
 	ierr = sfc_create_compare_key(lb, sfc_vert_ptr[k].sfc_key, refine_key, 
 				      (refine_key+SFC_KEYLENGTH), prev_used_bits);
-	if(ierr == LB_FATAL)
-	  return LB_FATAL;
+	if(ierr == ZOLTAN_FATAL)
+	  return ZOLTAN_FATAL;
 	
 	refine_bin = -1; /* we have found an object that is in refine_bin */
       }
@@ -174,7 +174,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
 				 gl_max_cuts, work_percent_array,
 				 total_weight_array, actual_work_allocated, 
 				 max_cuts_in_bin, 0);
-    if(ierr!= LB_OK && ierr != LB_WARN) {
+    if(ierr!= ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin function.");
       return(ierr);
     }
@@ -195,7 +195,7 @@ int sfc_refine_overloaded_bins(LB* lb, int max_cuts_in_bin,
   
   LB_FREE(&fstore);
   
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /* routine does the actual refinement of a coarse bin into subbins.  if
@@ -227,7 +227,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   /* check that we haven't used all of the bits already */
   if(prev_used_bits >= 8*sizeof(unsigned) * SFC_KEYLENGTH) {
     LB_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
-    return(LB_OK);
+    return(ZOLTAN_OK);
   }
   if(prev_used_bits + number_of_bits > 8*sizeof(unsigned) * SFC_KEYLENGTH) 
     number_of_bits = 8*sizeof(unsigned) * SFC_KEYLENGTH - prev_used_bits;
@@ -240,7 +240,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   binned_wgt_array = (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim); 
   if(binned_wgt_array == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
   for(i=0;i<my_bins_per_proc*wgt_dim;i++)
     binned_wgt_array[i] = 0;
@@ -267,7 +267,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
       LB_PRINT_WARN(lb->Proc, yo, 
          "A coarse bin has too many cuts in it and the cuts are all from one object.");
       LB_FREE(&binned_wgt_array);
-      return(LB_OK);
+      return(ZOLTAN_OK);
     }
   }
   check_bin[SFC_KEYLENGTH] = 0;
@@ -300,7 +300,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
       (float*) LB_MALLOC(sizeof(float)*my_bins_per_proc*wgt_dim);
     if(summed_binned_wgt_array == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }  
   }
   
@@ -311,14 +311,14 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   bin_proc_array = (int*) LB_MALLOC(sizeof(int)*(number_of_cuts+1));
   if(bin_proc_array == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<=number_of_cuts;i++)
     bin_proc_array[i] = my_bins_per_proc;
   number_of_cuts_in_bin = (int*) LB_MALLOC(sizeof(int) * my_bins_per_proc);
   if(number_of_cuts_in_bin == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }  
   for(i=0;i<my_bins_per_proc;i++)
     number_of_cuts_in_bin[i] = 0;
@@ -395,8 +395,8 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
       }
       ierr = sfc_create_compare_key(lb, sfc_vert_ptr[l].sfc_key, new_refine_key, 
 				    new_AND_operator_array, prev_used_bits+number_of_bits);
-      if(ierr == LB_FATAL) 
-	return LB_FATAL;
+      if(ierr == ZOLTAN_FATAL) 
+	return ZOLTAN_FATAL;
       /* call this routine again */
       ierr=sfc_refine_coarse_bin(lb, num_local_objects, sfc_vert_ptr, objs_wgt,
 				 wgt_dim, new_refine_key, new_AND_operator_array,
@@ -405,9 +405,9 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
 				 number_of_cuts_in_bin[i], 
 				 work_percent_array, total_weight_array, 
 				 actual_work_allocated, max_cuts_in_bin, level_flag+1);
-      if(ierr != LB_OK && ierr != LB_WARN) {
+      if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
 	LB_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_coarse_bin.");
-	return(LB_FATAL);
+	return(ZOLTAN_FATAL);
       } 
     } 
     j += number_of_cuts_in_bin[i];
@@ -418,7 +418,7 @@ int sfc_refine_coarse_bin(LB* lb, int num_local_objects,
   LB_FREE(&bin_proc_array);
   LB_FREE(&summed_binned_wgt_array);
 
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*
@@ -437,7 +437,7 @@ int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[],
 
   if(prev_used_bits/(size_of_unsigned*8) >= SFC_KEYLENGTH) {
     LB_PRINT_ERROR(lb->Proc, yo, "Too many previously used bits.");
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
     
   for(i=0;i<prev_used_bits/(size_of_unsigned*8);i++) 
@@ -452,7 +452,7 @@ int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[],
   for(i=0;i<SFC_KEYLENGTH;i++)
     compare_key[i] = sfc_key[i] & AND_operator_array[i];
 
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /* 

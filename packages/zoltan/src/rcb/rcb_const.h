@@ -39,14 +39,14 @@ struct rcb_box {       	     /* bounding box */
 };
 
 typedef struct RCB_Struct {
-  LB_ID_PTR Global_IDs;      /* Pointer to array of global IDs; global ID of 
+  ZOLTAN_ID_PTR Global_IDs;      /* Pointer to array of global IDs; global ID of 
                                 Dots[i] starts in Global_IDs[i*lb->Num_GID].
                                 Because lb->Num_GID is determined at runtime,
                                 this info is most easily stored, allocated and
                                 reallocated separately from Dots. 
                                 This array is NOT used if LB_Use_IDs returns
                                 FALSE.   */
-  LB_ID_PTR Local_IDs;       /* Pointer to array of local IDs; local ID of 
+  ZOLTAN_ID_PTR Local_IDs;       /* Pointer to array of local IDs; local ID of 
                                 Dots[i] starts in Local_IDs[i*lb->Num_LID].
                                 Because lb->Num_LID is determined at runtime,
                                 this info is most easily stored, allocated and

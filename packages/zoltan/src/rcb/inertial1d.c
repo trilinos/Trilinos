@@ -40,5 +40,5 @@ int LB_inertial1d(
      cm[0] = cm[1] = cm[2] = 0.0;
      evec[0] = evec[1] = evec[2] = 0.0;
 
-     return(LB_OK);
+     return(ZOLTAN_OK);
 }

@@ -28,9 +28,9 @@ struct rib_tree {               /* tree of rib method cuts */
 };
 
 typedef struct RIB_Struct {
-    LB_ID_PTR Global_IDs;       /* This array is NOT used if LB_Use_IDs returns
+    ZOLTAN_ID_PTR Global_IDs;       /* This array is NOT used if LB_Use_IDs returns
                                    FALSE.   */
-    LB_ID_PTR Local_IDs;        /* This array is NOT used if LB_Use_IDs returns
+    ZOLTAN_ID_PTR Local_IDs;        /* This array is NOT used if LB_Use_IDs returns
                                    FALSE.   */
     struct Dot_Struct *Dots;
     struct rib_tree   *Tree_Ptr;

@@ -48,7 +48,7 @@ int            *numprocs)       /* number of processors in proc list */
         LB_PRINT_ERROR(-1, yo, "No LB_Data_Structure available.");
         *procs = -1;
         *numprocs = 0;
-        return(LB_FATAL);
+        return(ZOLTAN_FATAL);
      }
 
      if (lb->Method == RCB) {
@@ -59,7 +59,7 @@ int            *numprocs)       /* number of processors in proc list */
              " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
            *numprocs = 0;
-           return(LB_FATAL);
+           return(ZOLTAN_FATAL);
         }
 
         *numprocs = 0;
@@ -79,7 +79,7 @@ int            *numprocs)       /* number of processors in proc list */
            LB_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved;"
              " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
-           return(LB_FATAL);
+           return(ZOLTAN_FATAL);
         }
 
         *numprocs = 0;
@@ -119,10 +119,10 @@ int            *numprocs)       /* number of processors in proc list */
                        "Box_Assign valid only when method is RCB or RIB.");
         *procs = -1;
         *numprocs = 0;
-        return(LB_FATAL);
+        return(ZOLTAN_FATAL);
      }
 
-   return(LB_OK);
+   return(ZOLTAN_OK);
 }
 
 static void Box_Assign(

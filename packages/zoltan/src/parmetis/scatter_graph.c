@@ -117,7 +117,7 @@ int LB_Scatter_Graph(
     /* Free data */
     LB_FREE(&proclist);
     LB_TRACE_EXIT(lb, yo);
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   /* Do the communication. To save memory, we do not pack all the data into
@@ -174,7 +174,7 @@ int LB_Scatter_Graph(
       LB_FREE(&proclist);
       LB_FREE(&proclist2);
       LB_TRACE_EXIT(lb, yo);
-      return LB_FATAL;
+      return ZOLTAN_FATAL;
     }
   
     if (lb->Debug_Level >= LB_DEBUG_ALL) 
@@ -205,5 +205,5 @@ int LB_Scatter_Graph(
   LB_FREE(&old_xyz);
 
   LB_TRACE_EXIT(lb, yo);
-  return LB_OK;
+  return ZOLTAN_OK;
 }

@@ -18,9 +18,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-extern void LB_Get_Obj_List(LB *, LB_ID_PTR, LB_ID_PTR, int, float *, int *);
+extern void LB_Get_Obj_List(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
 extern int LB_pad_for_alignment(int);
-extern unsigned int LB_Hash(LB_ID_PTR, int, unsigned int);
+extern unsigned int LB_Hash(ZOLTAN_ID_PTR, int, unsigned int);
 extern int LB_clean_string(char *, char **);
 
 /*****************************************************************************/

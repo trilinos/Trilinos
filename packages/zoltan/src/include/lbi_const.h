@@ -94,18 +94,12 @@ typedef enum LB_Ref_Type LB_REF_TYPE;
 struct LB_Struct;
 
 /*
- * Error codes for Zoltan library
- *   LB_OK     - no errors
- *   LB_WARN   - some warning occurred in Zoltan library; application should be
- *               able to continue running
- *   LB_FATAL  - a fatal error occurred
- *   LB_MEMERR - memory allocation failed; with this error, it could be
- *               possible to try a different, more memory-friendly, algorithm
+ * Error codes for Zoltan library; defined in "zoltan_types.h".
  */
-#define LB_OK     0
-#define LB_WARN   1
-#define LB_FATAL  -1
-#define LB_MEMERR -2
+#define LB_OK     ZOLTAN_OK
+#define LB_WARN   ZOLTAN_WARN
+#define LB_FATAL  ZOLTAN_FATAL
+#define LB_MEMERR ZOLTAN_MEMERR
 
 /*****************************************************************************/
 /*****************************************************************************/

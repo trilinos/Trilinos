@@ -106,7 +106,7 @@ int LB_Set_Method(LB *lb, char *method_name)
     sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&method_upper);
-    return (LB_FATAL);
+    return (ZOLTAN_FATAL);
   }
 
   if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS) {
@@ -115,5 +115,5 @@ int LB_Set_Method(LB *lb, char *method_name)
 
   LB_FREE(&method_upper);
 
-  return (LB_OK);
+  return (ZOLTAN_OK);
 }

@@ -23,8 +23,8 @@
 /* The main refinement tree structure */
 
 struct LB_Reftree_Struct {
-   LB_ID_PTR global_id;  /* global ID of the corresponding element */
-   LB_ID_PTR local_id;   /* local ID of the corresponding element */
+   ZOLTAN_ID_PTR global_id;  /* global ID of the corresponding element */
+   ZOLTAN_ID_PTR local_id;   /* local ID of the corresponding element */
    struct LB_Reftree_Struct *children; /* array of the children in the tree */
    int num_child;        /* number of children */
    float *weight;        /* weight of the node; dimension Obj_Weight_Dim */
@@ -52,7 +52,7 @@ typedef struct LB_Reftree_Struct LB_REFTREE;
 /* Hash table structures */
 
 struct LB_reftree_hash_node {
-  LB_ID_PTR gid;            /* Global id */
+  ZOLTAN_ID_PTR gid;            /* Global id */
   LB_REFTREE *reftree_node; /* pointer to a node of the refinement tree */
   struct LB_reftree_hash_node *next;
 };
@@ -75,7 +75,7 @@ extern void LB_Reftree_Print(LB *lb,LB_REFTREE *subroot, int level);
 
 extern LB_REFTREE* LB_Reftree_hash_lookup(LB *lb, 
                                           struct LB_reftree_hash_node **hashtab,
-                                          LB_ID_PTR key, int n);
+                                          ZOLTAN_ID_PTR key, int n);
 extern void LB_Reftree_Hash_Insert(LB *lb, LB_REFTREE *reftree_node,
                             struct LB_reftree_hash_node **hashtab, int size);
 extern void LB_Reftree_Hash_Remove(LB *lb, LB_REFTREE *reftree_node,

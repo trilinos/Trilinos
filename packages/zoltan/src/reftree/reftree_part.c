@@ -27,9 +27,9 @@ static void LB_Reftree_Sum_My_Weights(LB *lb, LB_REFTREE *subroot,
        int *count, int wdim);
 static void LB_Reftree_Sum_All_Weights(LB *lb, LB_REFTREE *subroot, int wdim);
 static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
-       LB_ID_PTR list, int *count);
+       ZOLTAN_ID_PTR list, int *count);
 static int LB_Reftree_Partition(LB *lb, int *num_export, 
-       LB_ID_PTR *export_global_ids, LB_ID_PTR *export_local_ids, 
+       ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_procs);
 static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
        float *current_size, int *num_exp, float *cutoff,
@@ -37,8 +37,8 @@ static void LB_Reftree_Part_Recursive(LB *lb, LB_REFTREE *subroot, int *part,
 static void LB_Reftree_Mark_and_Count(LB_REFTREE *subroot, int part, 
        int *num_exp);
 static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
-       int *num_export, LB_ID_PTR *export_global_ids,
-       LB_ID_PTR *export_local_ids, int **export_procs);
+       int *num_export, ZOLTAN_ID_PTR *export_global_ids,
+       ZOLTAN_ID_PTR *export_local_ids, int **export_procs);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -48,12 +48,12 @@ int LB_Reftree_Part(
 
   LB *lb,                       /* The load-balancing structure */
   int *num_import,              /* Not computed, set to -1 */
-  LB_ID_PTR *import_global_ids, /* Not computed */
-  LB_ID_PTR *import_local_ids,  /* Not computed */
+  ZOLTAN_ID_PTR *import_global_ids, /* Not computed */
+  ZOLTAN_ID_PTR *import_local_ids,  /* Not computed */
   int **import_procs,           /* Not computed */
   int *num_export,              /* Number of objects to be exported */
-  LB_ID_PTR *export_global_ids, /* global ids of objects to be exported */
-  LB_ID_PTR *export_local_ids,  /* local  ids of objects to be exported */
+  ZOLTAN_ID_PTR *export_global_ids, /* global ids of objects to be exported */
+  ZOLTAN_ID_PTR *export_local_ids,  /* local  ids of objects to be exported */
   int **export_procs            /* list of processors to export to */
 )
 {
@@ -65,7 +65,7 @@ double time0, time1, time2, time3, time4;
   /* Initializations in case of early exit. */
   *num_export = -1;
   *num_import = -1;
-  final_ierr = LB_OK;
+  final_ierr = ZOLTAN_OK;
 
   /*
    * initialize the tree (first call only)
@@ -74,12 +74,12 @@ double time0, time1, time2, time3, time4;
   if (lb->Data_Structure == NULL) {
     if (lb->Debug_Level >= LB_DEBUG_ATIME) time0 = LB_Time(lb->Timer);
     ierr = LB_Reftree_Init(lb);
-    if (ierr==LB_FATAL || ierr==LB_MEMERR) {
+    if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
       LB_PRINT_ERROR(lb->Proc, yo, 
                      "Error returned by LB_Reftree_Init.");
       return(ierr);
     }
-    if (ierr==LB_WARN) final_ierr = LB_WARN;
+    if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
     if (lb->Debug_Level >= LB_DEBUG_ATIME) time1 = LB_Time(lb->Timer);
   } else {
     if (lb->Debug_Level >= LB_DEBUG_ATIME) {
@@ -93,12 +93,12 @@ double time0, time1, time2, time3, time4;
    */
 
   ierr = LB_Reftree_Build(lb);
-  if (ierr==LB_FATAL || ierr==LB_MEMERR) {
+  if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     LB_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Build.");
     return(ierr);
   }
-  if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
   if (lb->Debug_Level >= LB_DEBUG_ATIME) time2 = LB_Time(lb->Timer);
 
   /*
@@ -106,12 +106,12 @@ double time0, time1, time2, time3, time4;
    */
 
   ierr = LB_Reftree_Sum_Weights(lb);
-  if (ierr==LB_FATAL || ierr==LB_MEMERR) {
+  if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     LB_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Sum_Weights.");
     return(ierr);
   }
-  if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
   if (lb->Debug_Level >= LB_DEBUG_ATIME) time3 = LB_Time(lb->Timer);
 
   /*
@@ -120,12 +120,12 @@ double time0, time1, time2, time3, time4;
 
   ierr = LB_Reftree_Partition(lb, num_export, export_global_ids,
                               export_local_ids, export_procs);
-  if (ierr==LB_FATAL || ierr==LB_MEMERR) {
+  if (ierr==ZOLTAN_FATAL || ierr==ZOLTAN_MEMERR) {
     LB_PRINT_ERROR(lb->Proc, yo, 
                    "Error returned by LB_Reftree_Partition.");
     return(ierr);
   }
-  if (ierr==LB_WARN) final_ierr = LB_WARN;
+  if (ierr==ZOLTAN_WARN) final_ierr = ZOLTAN_WARN;
   if (lb->Debug_Level >= LB_DEBUG_ATIME) time4 = LB_Time(lb->Timer);
 
   if (lb->Debug_Level >= LB_DEBUG_ATIME) {
@@ -195,9 +195,9 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j;                  /* loop counters */
 int count;                /* counter */
-LB_ID_PTR leaf_list = NULL;      
+ZOLTAN_ID_PTR leaf_list = NULL;      
                           /* leaves for which some proc requests weight */
-LB_ID_PTR all_leaflist = NULL;   
+ZOLTAN_ID_PTR all_leaflist = NULL;   
                           /* leaf_list from all processors */
 int reqsize;              /* length of leaf_list */
 int *reqsize_all;         /* reqsize from all processors */
@@ -219,7 +219,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
   hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
@@ -255,7 +255,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
     leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   count = 0;
@@ -284,7 +284,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
     LB_FREE(&displs);
     LB_FREE(&reqsize_all);
     LB_FREE(&leaf_list);
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   MPI_Allgather((void *)&reqsize,1,MPI_INT,(void *)reqsize_all,1,MPI_INT,
@@ -316,10 +316,10 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
       LB_FREE(&displs);
       LB_FREE(&reqsize_all);
       LB_FREE(&leaf_list);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
 
-    /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
+    /* KDDKDD Changed MPI_BYTE to ZOLTAN_ID_MPI_TYPE  */
 
     /* Account for number of array entries in an ID. */
     for (i=0; i<nproc; i++) {
@@ -327,8 +327,8 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
       displs[i] = displs[i]*num_gid_entries;
     }
 
-    MPI_Allgatherv((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
-                   (void *)all_leaflist,reqsize_all,displs,LB_ID_MPI_TYPE,
+    MPI_Allgatherv((void *)leaf_list,reqsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
+                   (void *)all_leaflist,reqsize_all,displs,ZOLTAN_ID_MPI_TYPE,
                    lb->Communicator);
 
     LB_FREE(&displs);
@@ -346,7 +346,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
       LB_FREE(&reqsize_all);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
 
     for (i=0; i<sum_reqsize; i++) {
@@ -373,7 +373,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
       LB_FREE(&send_float);
       LB_FREE(&all_leaflist);
       LB_FREE(&reqsize_all);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
 
     MPI_Reduce_scatter((void *)send_float, (void *)req_weights, reqsize_all,
@@ -404,7 +404,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID */
 
   LB_Reftree_Sum_All_Weights(lb,root,wdim);
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -432,10 +432,10 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop;        /* loop counters */
 int count;                /* counter */
-LB_ID_PTR leaf_list = NULL; 
+ZOLTAN_ID_PTR leaf_list = NULL; 
                           /* leaves for which some proc requests weight */
 int reqsize;              /* length of leaf_list */
-LB_ID_PTR newlist = NULL; /* building concatinated leaf_list of all procs */
+ZOLTAN_ID_PTR newlist = NULL; /* building concatinated leaf_list of all procs */
 int newsize;              /* new length of leaf_list */
 int my_start;             /* position in leaf_list of this proc's list */
 int nproc;                /* number of processors */
@@ -458,7 +458,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
   hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
@@ -494,7 +494,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   count = 0;
@@ -547,7 +547,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     if (newlist == NULL) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&leaf_list);
-      return(LB_MEMERR);
+      return(ZOLTAN_MEMERR);
     }
     if (myproc < other_proc) {
       for (i=0; i<reqsize; i++) {
@@ -568,20 +568,20 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   /*
    * Finally, exchange the lists
    */
-    /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
+    /* KDDKDD Changed MPI_BYTE to ZOLTAN_ID_MPI_TYPE  */
 
     if (myproc < other_proc) {
-      MPI_Send((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+      MPI_Send((void *)leaf_list,reqsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                other_proc, 200+comm_loop,lb->Communicator);
       MPI_Recv((void *)&(leaf_list[reqsize*num_gid_entries]),
-               newsize*num_gid_entries,LB_ID_MPI_TYPE,
+               newsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator,&mess_status);
     }
     else {
       MPI_Send((void *)&(leaf_list[newsize*num_gid_entries]),
-                reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+                reqsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator);
-      MPI_Recv((void *)leaf_list,newsize*num_gid_entries,LB_ID_MPI_TYPE,
+      MPI_Recv((void *)leaf_list,newsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                other_proc,200+comm_loop,lb->Communicator,&mess_status);
     }
 
@@ -596,7 +596,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
   if (send_float == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   for (i=0; i<reqsize; i++) {
@@ -617,7 +617,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
     LB_FREE(&leaf_list);
     LB_FREE(&send_float);
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
 /* TEMP perhaps it would be better to use MPI_Reduce_Scatter */
@@ -646,7 +646,7 @@ int num_gid_entries = lb->Num_GID;  /* Number of array entries in a global ID */
 
   LB_Reftree_Sum_All_Weights(lb,root,wdim);
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -673,13 +673,13 @@ LB_REFTREE *root;         /* Root of the refinement tree */
 int wdim;                 /* Dimension of the weight array */
 int i,j,comm_loop,rproc;  /* loop counters */
 int count;                /* counter */
-LB_ID_PTR leaf_list = NULL; 
+ZOLTAN_ID_PTR leaf_list = NULL; 
                           /* list of the leaves not assigned to this proc */
 int nproc;                /* number of processors */
 int myproc;               /* this processor's processor number */
 MPI_Status mess_status;   /* status of an MPI message */
 int reqsize;              /* number of leaves for which weights are requested */
-LB_ID_PTR recv_gid = NULL;/* received message of global ids */
+ZOLTAN_ID_PTR recv_gid = NULL;/* received message of global ids */
 LB_REFTREE *node;         /* a node in the refinement tree */
 struct LB_reftree_hash_node **hashtab; /* hash table */
 int hashsize;             /* dimension of hash table */
@@ -694,7 +694,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
   root = ((struct LB_reftree_data_struct *)lb->Data_Structure)->reftree_root;
   if (root == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Refinement tree not defined.");
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
   hashtab  = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table;
   hashsize = ((struct LB_reftree_data_struct *)lb->Data_Structure)->hash_table_size;
@@ -730,7 +730,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
     leaf_list = LB_MALLOC_GID_ARRAY(lb, count);
   if (leaf_list == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
-    return(LB_MEMERR);
+    return(ZOLTAN_MEMERR);
   }
 
   count = 0;
@@ -771,7 +771,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
         if (recv_gid == NULL) {
           LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
-          return(LB_MEMERR);
+          return(ZOLTAN_MEMERR);
         }
       }
 
@@ -779,13 +779,13 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
    * broadcast the list of leaves processor comm_loop needs to know
    */
 
-      /* KDDKDD Changed MPI_BYTE to LB_ID_MPI_TYPE  */
+      /* KDDKDD Changed MPI_BYTE to ZOLTAN_ID_MPI_TYPE  */
 
       if (myproc == comm_loop)
-        MPI_Bcast((void *)leaf_list,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+        MPI_Bcast((void *)leaf_list,reqsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                    comm_loop, lb->Communicator);
       else
-        MPI_Bcast((void *)recv_gid,reqsize*num_gid_entries,LB_ID_MPI_TYPE,
+        MPI_Bcast((void *)recv_gid,reqsize*num_gid_entries,ZOLTAN_ID_MPI_TYPE,
                    comm_loop, lb->Communicator);
 
   /*
@@ -799,7 +799,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
           LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&recv_gid);
           LB_FREE(&leaf_list);
-          return(LB_MEMERR);
+          return(ZOLTAN_MEMERR);
         }
 
         for (i=0; i<reqsize; i++) {
@@ -827,7 +827,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
         if (recv_float == NULL) {
           LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
           LB_FREE(&leaf_list);
-          return(LB_MEMERR);
+          return(ZOLTAN_MEMERR);
         }
 
         for (rproc=1; rproc<nproc; rproc++) {
@@ -856,7 +856,7 @@ int num_gid_entries = lb->Num_GID; /* Number of array entries in a global ID. */
 
   LB_Reftree_Sum_All_Weights(lb,root,wdim);
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -967,7 +967,7 @@ int i, j;   /* loop counter */
 /*****************************************************************************/
 
 static void LB_Reftree_List_Other_Leaves(LB *lb, LB_REFTREE *subroot, 
-       LB_ID_PTR list, int *count)
+       ZOLTAN_ID_PTR list, int *count)
 
 {
 /*
@@ -1004,7 +1004,7 @@ int j;   /* loop counter */
 /*****************************************************************************/
 
 static int LB_Reftree_Partition(LB *lb, int *num_export, 
-       LB_ID_PTR *export_global_ids, LB_ID_PTR *export_local_ids, 
+       ZOLTAN_ID_PTR *export_global_ids, ZOLTAN_ID_PTR *export_local_ids, 
        int **export_procs)
 
 {
@@ -1058,11 +1058,11 @@ int num_part;         /* number of partitions */
    */
 
   if (lb->Return_Lists == LB_NO_LISTS) {
-    return(LB_OK);
+    return(ZOLTAN_OK);
   }
   else if (num_exp == 0) {
     *num_export = 0;
-    return(LB_OK);
+    return(ZOLTAN_OK);
   }
 
   /*
@@ -1071,17 +1071,17 @@ int num_part;         /* number of partitions */
 
   if (!LB_Special_Malloc(lb,(void **)export_global_ids,num_exp,
                          LB_SPECIAL_MALLOC_GID))
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   if (!LB_Special_Malloc(lb,(void **)export_local_ids,num_exp,
                          LB_SPECIAL_MALLOC_LID)) {
     LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
   if (!LB_Special_Malloc(lb,(void **)export_procs,num_exp,
                          LB_SPECIAL_MALLOC_INT)) {
     LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
     LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
 
   /*
@@ -1096,10 +1096,10 @@ int num_part;         /* number of partitions */
     sprintf(msg, "num_exp = %d not equal to num_export = %d.",
             num_exp,*num_export);
     LB_PRINT_WARN(lb->Proc, yo, msg);
-    return(LB_WARN);
+    return(ZOLTAN_WARN);
   }
 
-  return(LB_OK);
+  return(ZOLTAN_OK);
 }
 
 /*****************************************************************************/
@@ -1215,8 +1215,8 @@ int i;
 /*****************************************************************************/
 
 static void LB_Reftree_Export_Lists(LB *lb, LB_REFTREE *subroot, 
-                            int *num_export, LB_ID_PTR *export_global_ids,
-                            LB_ID_PTR *export_local_ids, int **export_procs)
+                            int *num_export, ZOLTAN_ID_PTR *export_global_ids,
+                            ZOLTAN_ID_PTR *export_local_ids, int **export_procs)
 {
 /*
  * Function to build the export lists

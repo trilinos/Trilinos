@@ -57,7 +57,7 @@ int LB_Build_Machine_Desc(
 )
 {
   char *yo = "LB_Build_Machine_Desc";
-  int ierr = LB_OK;
+  int ierr = ZOLTAN_OK;
   int use_mach_desc;
   char filename[256];
 
@@ -83,7 +83,7 @@ int LB_Build_Machine_Desc(
        */
       LB_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "
                                   "is still under development!");
-      ierr = LB_WARN;
+      ierr = ZOLTAN_WARN;
     }
   }
   else {

@@ -31,10 +31,10 @@ int LB_Compute_Destinations(
   LB *lb,                      /* Load balancing structure.                  */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
-  LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
+  ZOLTAN_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
                                   assigned to this processor in the new
                                   decomposition.                             */
-  LB_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
+  ZOLTAN_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
                                   assigned to the processor in the new
                                   decomposition.                             */
   int *import_procs,           /* Array of processor IDs of processors owning
@@ -43,10 +43,10 @@ int LB_Compute_Destinations(
   int *num_export,             /* Returned value:  Number of objs to be exported
                                   to other processors to establish the new
                                   decomposition.                             */
-  LB_ID_PTR *export_global_ids,/* Returned value:  Array of global IDs of
+  ZOLTAN_ID_PTR *export_global_ids,/* Returned value:  Array of global IDs of
                                   objects to be exported to other processors
                                   to establish the new decomposition.        */
-  LB_ID_PTR *export_local_ids, /* Returned value:  Array of local IDs of
+  ZOLTAN_ID_PTR *export_local_ids, /* Returned value:  Array of local IDs of
                                   objects to be exported to other processors
                                   to establish the new decomposition.        */
   int **export_procs           /* Returned value:  Array of processor IDs
@@ -72,7 +72,7 @@ int *import_proc_list = NULL;
 int msgtag, msgtag2;        /* Message tags for communication routines */
 int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
 int i;
-int ierr = LB_OK;
+int ierr = ZOLTAN_OK;
 
   LB_TRACE_ENTER(lb, yo);
   /*
@@ -82,7 +82,7 @@ int ierr = LB_OK;
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
     LB_TRACE_EXIT(lb, yo);
-    return (LB_OK);
+    return (ZOLTAN_OK);
   }
 
   /*
@@ -96,7 +96,7 @@ int ierr = LB_OK;
       "but global max is %d\n", lb->Num_GID, num_gid_entries);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   MPI_Allreduce(&(lb->Num_LID), &num_lid_entries, 1,
@@ -106,7 +106,7 @@ int ierr = LB_OK;
       "but global max is %d\n", lb->Num_LID, num_lid_entries);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   /*
@@ -118,14 +118,14 @@ int ierr = LB_OK;
     if (!proc_list) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
+      return (ZOLTAN_MEMERR);
     }
     import_proc_list = (int *) LB_MALLOC(num_import * sizeof(int));
     if (!import_proc_list) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
+      return (ZOLTAN_MEMERR);
     }
 
     for (i = 0; i < num_import; i++) {
@@ -148,7 +148,7 @@ int ierr = LB_OK;
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
   
 
@@ -165,7 +165,7 @@ int ierr = LB_OK;
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
+      return (ZOLTAN_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_local_ids,*num_export,
                            LB_SPECIAL_MALLOC_LID)) {
@@ -173,7 +173,7 @@ int ierr = LB_OK;
       LB_FREE(&proc_list);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
+      return (ZOLTAN_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_procs,*num_export,
                            LB_SPECIAL_MALLOC_INT)) {
@@ -182,7 +182,7 @@ int ierr = LB_OK;
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_MEMERR);
+      return (ZOLTAN_MEMERR);
     }
   }
   else {
@@ -200,7 +200,7 @@ int ierr = LB_OK;
 
   msgtag2 = 32766;
   ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
-                    (int) (sizeof(LB_ID_TYPE)*(num_gid_entries)), 
+                    (int) (sizeof(ZOLTAN_ID_TYPE)*(num_gid_entries)), 
                     (char *) *export_global_ids);
   if (ierr != COMM_OK && ierr != COMM_WARN) {
     sprintf(msg, "Error %s returned from LB_Comm_Do.", 
@@ -209,13 +209,13 @@ int ierr = LB_OK;
     LB_FREE(&proc_list);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   if (num_lid_entries) {
     msgtag2--;
     ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
-                      (int) (sizeof(LB_ID_TYPE)*num_lid_entries), 
+                      (int) (sizeof(ZOLTAN_ID_TYPE)*num_lid_entries), 
                       (char *) *export_local_ids);
     if (ierr != COMM_OK && ierr != COMM_WARN) {
       sprintf(msg, "Error %s returned from LB_Comm_Do.", 
@@ -224,7 +224,7 @@ int ierr = LB_OK;
       LB_FREE(&proc_list);
       LB_Comm_Destroy(&comm_plan);
       LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
   }
 
@@ -238,7 +238,7 @@ int ierr = LB_OK;
     LB_FREE(&proc_list);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
   LB_TRACE_DETAIL(lb, yo, "Done comm_do");
 
@@ -261,11 +261,11 @@ int LB_Help_Migrate(
   LB *lb,                      /* Load balancing structure.                  */
   int num_import,              /* Number of non-local objects assigned to the 
                                   processor in the new decomposition.        */
-  LB_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
+  ZOLTAN_ID_PTR import_global_ids, /* Array of global IDs for non-local objects 
                                   assigned to this processor in the new
                                   decomposition; this field can be NULL if 
                                   the application doesn't provide import IDs.*/
-  LB_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
+  ZOLTAN_ID_PTR import_local_ids,  /* Array of local IDs for non-local objects
                                   assigned to the processor in the new
                                   decomposition; this field can be NULL if the 
                                   application does not provide import IDs.   */
@@ -277,10 +277,10 @@ int LB_Help_Migrate(
   int num_export,              /* Number of objs to be exported
                                   to other processors to establish the new
                                   decomposition.                             */
-  LB_ID_PTR export_global_ids, /* Array of global IDs of
+  ZOLTAN_ID_PTR export_global_ids, /* Array of global IDs of
                                   objects to be exported to other processors
                                   to establish the new decomposition.        */
-  LB_ID_PTR export_local_ids,  /* Array of local IDs of
+  ZOLTAN_ID_PTR export_local_ids,  /* Array of local IDs of
                                   objects to be exported to other processors
                                   to establish the new decomposition.        */
   int *export_procs            /* Array of processor IDs
@@ -313,8 +313,8 @@ char *tmp;               /* temporary pointer into buffers.                 */
 int i;                   /* loop counter.                                   */
 int tmp_import;          /* number of objects to be imported.               */
 int *proc_list = NULL;   /* list of processors to which this proc exports.  */
-LB_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
-LB_ID_PTR lid;           /* temporary pointer to a local ID; used to pass
+ZOLTAN_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
+ZOLTAN_ID_PTR lid;           /* temporary pointer to a local ID; used to pass
                             NULL to query functions when NUM_LID_ENTRIES=0. */
 COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
@@ -333,7 +333,7 @@ int ierr = 0;
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
     LB_TRACE_EXIT(lb, yo);
-    return (LB_OK);
+    return (ZOLTAN_OK);
   }
 
   /*
@@ -345,7 +345,7 @@ int ierr = 0;
     LB_PRINT_ERROR(lb->Proc, yo, "Both export and import lists must be "
                                  "provided; change RETURN_LISTS parameter.");
     LB_TRACE_EXIT(lb, yo);
-    return(LB_FATAL);
+    return(ZOLTAN_FATAL);
   }
 
   /*
@@ -359,7 +359,7 @@ int ierr = 0;
       "but global max is %d\n", lb->Num_GID, num_gid_entries);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   MPI_Allreduce(&(lb->Num_LID), &num_lid_entries, 1,
@@ -369,7 +369,7 @@ int ierr = 0;
       "but global max is %d\n", lb->Num_LID, num_lid_entries);
     LB_PRINT_ERROR(lb->Proc, yo, msg);
     LB_TRACE_EXIT(lb, yo);
-    return LB_FATAL;
+    return ZOLTAN_FATAL;
   }
 
   /*
@@ -380,21 +380,21 @@ int ierr = 0;
     LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
-    return (LB_FATAL);
+    return (ZOLTAN_FATAL);
   }
 
   if (lb->Migrate.Pack_Obj == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
-    return (LB_FATAL);
+    return (ZOLTAN_FATAL);
   }
 
   if (lb->Migrate.Unpack_Obj == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.");
     LB_TRACE_EXIT(lb, yo);
-    return (LB_FATAL);
+    return (ZOLTAN_FATAL);
   }
 
   if (lb->Migrate.Pre_Migrate != NULL) {
@@ -408,7 +408,7 @@ int ierr = 0;
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Pre_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
   }
 
@@ -429,13 +429,13 @@ int ierr = 0;
     if (!sizes) {
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
   }
-  id_size = num_gid_entries * sizeof(LB_ID_TYPE) 
-          + LB_pad_for_alignment(num_gid_entries * sizeof(LB_ID_TYPE));
+  id_size = num_gid_entries * sizeof(ZOLTAN_ID_TYPE) 
+          + LB_pad_for_alignment(num_gid_entries * sizeof(ZOLTAN_ID_TYPE));
   /* Note that the padding for alignment is not strictly necessary 
-     when LB_ID_TYPE is int or unsigned int. */
+     when ZOLTAN_ID_TYPE is int or unsigned int. */
   aligned_int = sizeof(int) + LB_pad_for_alignment(sizeof(int));
   tag_size = id_size + aligned_int;
   total_send_size = 0;
@@ -450,7 +450,7 @@ int ierr = 0;
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Get_Obj_Size function.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
     sizes[i] = size + LB_pad_for_alignment(size);
     total_send_size += sizes[i] + tag_size;
@@ -463,7 +463,7 @@ int ierr = 0;
       LB_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
       LB_FREE(&sizes);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
 
     proc_list = (int *) LB_MALLOC(num_export*sizeof(int));
@@ -472,7 +472,7 @@ int ierr = 0;
       LB_FREE(&export_buf);
       LB_FREE(&sizes);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
 
 
@@ -485,7 +485,7 @@ int ierr = 0;
       proc_list[i] = export_procs[i];
 
       /* Pack the object's global ID */
-      tmp_id = (LB_ID_PTR) tmp;
+      tmp_id = (ZOLTAN_ID_PTR) tmp;
       LB_SET_GID(lb, tmp_id, &(export_global_ids[i*num_gid_entries]));
       tmp += id_size;
     
@@ -512,7 +512,7 @@ int ierr = 0;
         LB_FREE(&export_buf);
         LB_FREE(&proc_list);
         LB_TRACE_EXIT(lb, yo);
-        return (LB_FATAL);
+        return (ZOLTAN_FATAL);
       }
       tmp += sizes[i];
     }
@@ -536,7 +536,7 @@ int ierr = 0;
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
   if (tmp_import != num_import) {
     sprintf(msg, "tmp_import %d != num_import %d.", tmp_import, num_import);
@@ -556,7 +556,7 @@ int ierr = 0;
     LB_FREE(&export_buf);
     LB_FREE(&proc_list);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   if (num_import > 0) {
@@ -567,7 +567,7 @@ int ierr = 0;
       LB_FREE(&export_buf);
       LB_FREE(&proc_list);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
 
   }
@@ -588,7 +588,7 @@ int ierr = 0;
     LB_FREE(&import_buf);
     LB_Comm_Destroy(&comm_plan);
     LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
   }
 
   /*
@@ -616,7 +616,7 @@ int ierr = 0;
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Mid_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
 
     LB_TRACE_DETAIL(lb, yo, "Done mid-migration processing");
@@ -630,7 +630,7 @@ int ierr = 0;
   for (i = 0; i < num_import; i++) {
 
     /* Unpack the object's global ID */
-    tmp_id = (LB_ID_PTR) tmp;
+    tmp_id = (ZOLTAN_ID_PTR) tmp;
     tmp += id_size;
 
     /* Unpack the object's size */
@@ -651,7 +651,7 @@ int ierr = 0;
                       "Migrate.Unpack_Obj function.");
       LB_FREE(&import_buf);
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
     tmp += size;
   }
@@ -671,12 +671,12 @@ int ierr = 0;
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Post_Migrate function.");
       LB_TRACE_EXIT(lb, yo);
-      return (LB_FATAL);
+      return (ZOLTAN_FATAL);
     }
 
     LB_TRACE_DETAIL(lb, yo, "Done post-migration processing");
   }
 
   LB_TRACE_EXIT(lb, yo);
-  return (LB_OK);
+  return (ZOLTAN_OK);
 }

@@ -24,18 +24,18 @@
  * i.e., by calling either Get_Obj_List or Get_First_Obj+Get_Next_Obj.
  */
 
-void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids, 
+void LB_Get_Obj_List(LB *lb, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, 
      int wdim, float *objwgts, int *ierr)
 {
   int i, n;
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   int gid_off, lid_off;
-  LB_ID_PTR lid, next_lid;  /* Temporary pointers to local IDs; used to pass 
+  ZOLTAN_ID_PTR lid, next_lid;  /* Temporary pointers to local IDs; used to pass 
                                NULL to query functions when 
                                NUM_LID_ENTRIES == 0. */
 
-  *ierr = LB_OK;
+  *ierr = ZOLTAN_OK;
   if (lb->Get_Obj_List != NULL){
     /* Get object list directly */
     lb->Get_Obj_List(lb->Get_Obj_List_Data, 
@@ -70,7 +70,7 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
     }
   }
   else { /* No way to get objects */
-    *ierr = LB_FATAL;
+    *ierr = ZOLTAN_FATAL;
   }
 }
 
@@ -81,8 +81,8 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
 /* LB_Hash is a hash function for Zoltan ids (local or global). 
  *
  * Input:
- *   key: a key to hash of type LB_ID_PTR
- *   num_id_entries: the number of (LB_ID_TYPE-sized) entries of the key to use
+ *   key: a key to hash of type ZOLTAN_ID_PTR
+ *   num_id_entries: the number of (ZOLTAN_ID_TYPE-sized) entries of the key to use
  *   n: the range of the hash function is 0..n-1
  *
  * Return value:
@@ -102,12 +102,12 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
  */
 
 
-unsigned int LB_Hash(LB_ID_PTR key, int num_id_entries, unsigned int n)
+unsigned int LB_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 {
   unsigned int h, rest, *p;
   char *byteptr;
   int bytes;
-  int num_bytes = num_id_entries * sizeof(LB_ID_TYPE);
+  int num_bytes = num_id_entries * sizeof(ZOLTAN_ID_TYPE);
 
   /* First hash the int-sized portions of the key */
   h = 0;
@@ -172,13 +172,13 @@ char **pstring2) 		/* cleaned string to return */
     *pstring2 = string2;
 
     if (string2 == NULL)
-	return (LB_MEMERR);
+	return (ZOLTAN_MEMERR);
 
     for (i = start; i < end; i++) {
 	*string2++ = toupper(string1[i]);
     }
     *string2 = '\0';
 
-    return (LB_OK);
+    return (ZOLTAN_OK);
 }
 

@@ -350,12 +350,12 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
   pRegion entry;                      /* pointer to new entry in region list */
 
   if(oct == NULL) 
-    return LB_WARN;
+    return ZOLTAN_WARN;
 
   entry = (pRegion) LB_MALLOC(sizeof(Region));   /* malloc space for region */
   if(entry == NULL) {
     LB_PRINT_ERROR(lb->Proc, yo, "Cannot allocated memory for region.");
-    return LB_MEMERR;
+    return ZOLTAN_MEMERR;
   }
 
   entry->Global_ID = LB_MALLOC_GID(lb);
@@ -370,7 +370,7 @@ int LB_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
   /* attach region to region list */
   entry->next = oct->list; 
   oct->list = entry;
-  return LB_OK;
+  return ZOLTAN_OK;
 }
 
 /*****************************************************************************/

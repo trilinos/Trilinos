@@ -142,7 +142,7 @@ int LB_inertial2d(
      /* zero unused third dimension */
      cm[2] = evec[2] = 0.0;
 
-     return(LB_OK);
+     return(ZOLTAN_OK);
 }
 
 

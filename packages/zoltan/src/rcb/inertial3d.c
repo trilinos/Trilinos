@@ -158,7 +158,7 @@ int LB_inertial3d(
                    (dotpt[i].X[1] - cm[1])*evec[1] +
                    (dotpt[i].X[2] - cm[2])*evec[2];
 
-     return(LB_OK);
+     return(ZOLTAN_OK);
 }
 
 /* Find eigenvalues of 3x3 symmetric system by solving cubic. */
