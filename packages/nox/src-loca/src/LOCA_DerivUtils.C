@@ -88,6 +88,10 @@ LOCA::DerivUtils::computeDfDp(LOCA::Continuation::AbstractGroup& grp,
   delete perturbedFPtr;
   delete grpPerturbedPtr;
 
+  // Compute base residual F
+  grp.computeF();
+  grp.computeJacobian();
+
   return ok;
 }
 
@@ -138,6 +142,8 @@ LOCA::DerivUtils::computeDJnDp(LOCA::Continuation::AbstractGroup& grp,
   delete perturbedJnVectorPtr; 
   delete grpPerturbedPtr;
 
+  grp.computeJacobian();
+
   return ok;
 }
 
@@ -187,6 +193,8 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::Continuation::AbstractGroup& grp,
 
   delete perturbedJnVectorPtr; 
   delete grpPerturbedPtr;
+
+  grp.computeJacobian();
 
   return ok;
 }
@@ -279,6 +287,9 @@ LOCA::DerivUtils::computeDCeDp(
 
   delete grpPerturbedPtr;
 
+  grp.computeJacobian();
+  grp.computeMassMatrix();
+
   return ok;
 }
 
@@ -342,6 +353,9 @@ LOCA::DerivUtils::computeDCeDxa(
   doDifference2(result_imag, Ce_imag, eps);
 
   delete grpPerturbedPtr;
+
+  grp.computeJacobian();
+  grp.computeMassMatrix();
 
   return ok;
 }
