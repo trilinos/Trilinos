@@ -24,8 +24,27 @@ typedef struct tagVCycle {
     HGraph            *hg;         /* for finer==NULL, hg and part contains   */
     Partition          part;       /* original hg and part, don't delete them */  
     int               *LevelMap;   /* necessary to uncoarsen                  */
-    int                LevelCnt;   /* count of external vertices to uncoarsen */
+                                   /* LevelMap size = hg->nVtx 
+                                      LevelMap[i] is the vtx number of the
+                                      coarse vertex containing fine vtx i 
+                                      on the next level.
+                                      LevelMap[i] = j >= 0 if local coarse vtx
+                                      j is on the same processor as i;
+                                      LevelMap[i] = -gno -1 < 0 if 
+                                      coarse vtx gno is on a different proc
+                                      from i. */
+    int                LevelCnt;   /* count of external vertices matched to
+                                      vertices owned by this proc. */
+                                   /* # of negative values in LevelMap. */
     int               *LevelData;  /* buffer for external vertex information  */
+                                   /* LevelData size  = LevelCnt * 2
+                                      LevelCnt pairs of (my_lno, external_gno)
+                                      describing matches made across procs.
+                                      Proc owning my_lno will have the 
+                                      coarse vtx resulting from the match
+                                      and, thus, will have to send part
+                                      assignment to external_gno when 
+                                      uncoarsening.  */
     struct tagVCycle  *finer; 
 } VCycle; 
 
