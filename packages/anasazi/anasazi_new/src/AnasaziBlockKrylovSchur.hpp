@@ -106,7 +106,7 @@ namespace Anasazi {
     //! Get the total length of the Krylov-Schur factorization.
     /*! This number will be the product of the length and the blocksize given by the user.
      */
-    int GetKrylovFactorizationLength() const { return(_totallength); };
+    int GetKrylovFactLength() const { return(_totallength); };
 
     /*! \brief Get a constant reference to the current linear problem, 
       which may include a current solution.
