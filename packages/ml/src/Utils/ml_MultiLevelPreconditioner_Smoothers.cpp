@@ -322,6 +322,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // omega = -1.0 means compute it through Anasazi, using
       // 10 iterations and 1e-5 as tolerance
       if (Omega == -1.0) {
+#ifdef HAVE_ML_ANASAZI
         double LambdaMax;
         ML_Anasazi_Get_SpectralNorm_Anasazi(&(ml_->Amat[LevelID_[level]]),
                                             &(ml_->post_smoother[LevelID_[level]]),
@@ -351,6 +352,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
         // set to -1 for the next level
         IfpackList.set("relaxation: damping factor", -1.0);
+#else
+	cerr << ErrorMsg_ << "Please compile with --enable-anasazi" << endl;
+	cerr << ErrorMsg_ << "to use `relaxation: damping factor' == -1.0" << endl;
+	exit(EXIT_FAILURE);
+#endif
       }
 
 #else
