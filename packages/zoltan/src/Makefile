@@ -138,7 +138,8 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 #   Paths to submodules
 #
 SUB_VPATH	= ../include ../Utilities/shared \
-		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc ../phg  ../hg \
+		  ../zz ../all ../lb ../par ../rcb ../oct ../bsfc ../hsfc \
+		  ../phg  ../hg \
 		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree \
 		  ../Utilities/Communication ../Utilities/Memory \
@@ -196,14 +197,13 @@ HSFC_CSRC 	= hsfc_hilbert.c hsfc.c hsfc_box_assign.c hsfc_point_assign.c
 HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 
 ifdef ZOLTAN_HG
-PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_refinement.c \
-		  phg_heap.c phg_serialpartition.c phg_sort.c phg_scale.c \
-		  phg_match.c phg_Vcycle.c phg_plot.c phg_util.c 
-PHG_INC 		= phg.h phypergraph.h phg_util.h
+PHG_CSRC 	= phg.c phg_build.c phg_coarse.c phg_distrib.c phg_heap.c \
+		  phg_match.c phg_plot.c \
+		  phg_refinement.c phg_serialpartition.c phg_sort.c \
+		  phg_scale.c \
+		  phg_Vcycle.c phg_util.c 
+PHG_INC 	= phg.h phypergraph.h phg_util.h
 GDEFINES       += -DZOLTAN_HG
-else
-PHG_CSRC		= phg_util.c
-PHG_INC		= phg_util.h
 endif
 
 ifdef ZOLTAN_HG

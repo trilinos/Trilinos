@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-#include "phypergraph.h"
+#include "phg.h"
 
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_ran;
 static ZOLTAN_PHG_COARSEPARTITION_FN coarse_part_lin;

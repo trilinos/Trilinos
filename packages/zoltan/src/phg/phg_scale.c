@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#include "phypergraph.h"
-
+#include "phg.h"
+#include <float.h>
 
 
 

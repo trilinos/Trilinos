@@ -50,7 +50,7 @@ static PARAM_VARS PHG_params[] = {
 /* prototypes for static functions: */
 static int set_proc_distrib (int, int, int*, int*, int*, int*);
 static int Zoltan_PHG_Initialize_Params (ZZ*, PHGPartParams*);
-static int Zoltan_PHG_Return_Lists (ZZ*, ZHG*, Partition, int*,
+static int Zoltan_PHG_Return_Lists (ZZ*, ZPHG*, Partition, int*,
  ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
 
  
@@ -78,7 +78,7 @@ int Zoltan_PHG(
                                 are assigned. */
 )
 {
-  ZHG *zoltan_hg = NULL;
+  ZPHG *zoltan_hg = NULL;
   int nVtx;                        /* Temporary variable for base graph. */
   PHGPartParams hgp;               /* Hypergraph parameters. */
   Partition output_parts = NULL;   /* Output partition from HG partitioner. */
@@ -106,8 +106,8 @@ int Zoltan_PHG(
   }
    
   zz->LB.Data_Structure = zoltan_hg;
-  nVtx = zoltan_hg->HG.nVtx;
-  zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
+  nVtx = zoltan_hg->PHG.nVtx;
+  zoltan_hg->PHG.redl = hgp.redl;     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
  
   /* allocate output partition memory */
@@ -119,7 +119,7 @@ int Zoltan_PHG(
   }
 
   /* call main V cycle routine */
-  err = Zoltan_PHG_HPart_Lib (zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
+  err = Zoltan_PHG_HPart_Lib (zz, &zoltan_hg->PHG, zz->LB.Num_Global_Parts,
    output_parts, &hgp, 0);
   if (err != ZOLTAN_OK) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
@@ -146,12 +146,12 @@ End:
 void Zoltan_PHG_Free_Structure(ZZ *zz)
 {
   /* frees all data associated with LB.Data_Structure for hypergraphs */
-  ZHG *zoltan_hg = (ZHG*) zz->LB.Data_Structure;
+  ZPHG *zoltan_hg = (ZPHG*) zz->LB.Data_Structure;
 
   if (zoltan_hg != NULL) {
     Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->Global_IDs,
      &zoltan_hg->Local_IDs, &zoltan_hg->Parts);
-    Zoltan_PHG_HGraph_Free(&zoltan_hg->HG);
+    Zoltan_PHG_HGraph_Free(&zoltan_hg->PHG);
     ZOLTAN_FREE ((void**) &zz->LB.Data_Structure);
   }
 }
@@ -228,7 +228,7 @@ int Zoltan_PHG_Set_Param(
 
 static int Zoltan_PHG_Return_Lists(
   ZZ *zz,
-  ZHG *zoltan_hg,
+  ZPHG *zoltan_hg,
   Partition output_parts,
   int *num_exp,
   ZOLTAN_ID_PTR *exp_gids,
@@ -242,7 +242,7 @@ static int Zoltan_PHG_Return_Lists(
   int eproc;
   int num_gid_entries   = zz->Num_GID;
   int num_lid_entries   = zz->Num_LID;
-  int nVtx              = zoltan_hg->HG.nVtx;
+  int nVtx              = zoltan_hg->PHG.nVtx;
   Partition input_parts = zoltan_hg->Parts;
   ZOLTAN_ID_PTR gids    = zoltan_hg->Global_IDs;
   ZOLTAN_ID_PTR lids    = zoltan_hg->Local_IDs;
@@ -301,7 +301,7 @@ static int Zoltan_PHG_Return_Lists(
 
 void Zoltan_PHG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
-  ZHG *zoltan_hg,
+  ZPHG *zoltan_hg,
   PHGraph *hg,
   FILE *fp
 )
@@ -315,7 +315,7 @@ void Zoltan_PHG_HGraph_Print(
   int num_lid = zz->Num_LID;
   char *yo = "Zoltan_PHG_HGraph_Print";
 
-  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
+  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->PHG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
     return;
   }

@@ -16,7 +16,7 @@
 extern "C" {
 #endif
 
-#include "phypergraph.h"
+#include "phg.h"
 
 static ZOLTAN_PHG_REFINEMENT_FN refine_no;
 static ZOLTAN_PHG_REFINEMENT_FN refine_grkway;

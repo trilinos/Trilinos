@@ -22,7 +22,7 @@ extern "C" {
 
 
 #include "zz_const.h"
-#include "phg_hypergraph.h"
+#include "phg.h"
 
 
 

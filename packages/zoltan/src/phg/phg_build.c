@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 #include "phg.h"
-#include "phg_hypergraph.h"
 #include "zz_const.h"
 #include "parmetis_jostle.h"
 #include "zz_util_const.h"
@@ -28,53 +27,22 @@ extern "C" {
   goto End; \
 }
 
-#define TWOD_GNO_TO_LNO(gno, dist, myblock) (gno) - (dist)[(myblock)]
-
-#define ZOLTAN_PHG_EDGE_TO_ROW(gno,dist_y,nProc_y) \
-        Zoltan_PHG_Gno_To_Proc_Block(gno, dist_y, nProc_y);
-#define ZOLTAN_PHG_VTX_TO_COL(gno,dist_x,nProc_x) \
-        Zoltan_PHG_Gno_To_Proc_Block(gno, dist_x, nProc_x);
-
-int Zoltan_PHG_Gno_To_Proc_Block(
-  int gno,
-  int *dist_dim,
-  int nProc_dim
-)
-{
-/* Function that locates a given global number gno within a distribution 
- * vector dist.
- * Works for both vtx and edges.
- * Takes an initial guess based on equal distribution of gno's.
- * Modifies guess based on actual distribution.
- */
-
-int idx;
-int maxgno = dist_dim[nProc_dim];
-
-  idx = gno * nProc_dim / maxgno;
-
-  while (gno < dist_dim[idx]) idx--;
-  while (gno >= dist_dim[idx+1]) idx++;
-
-  return idx;
-}
-
 /*****************************************************************************/
 /* Function prototypes */
 
 static int hash_lookup (ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZHG*, PHGPartParams*);
+static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*);
 
 /*****************************************************************************/
 
 int Zoltan_PHG_Build_Hypergraph(
   ZZ *zz,                            /* Zoltan data structure */
-  ZHG **zoltan_hg,                   /* Hypergraph to be allocated and built.*/
+  ZPHG **zoltan_hg,                   /* Hypergraph to be allocated and built.*/
   PHGPartParams *hgp                 /* Parameters for HG partitioning.*/
 )
 {
 /* allocates and builds hypergraph data structure using callback routines */
-ZHG *zhg;                     /* Temporary pointer to Zoltan_PHGraph. */
+ZPHG *zhg;                     /* Temporary pointer to Zoltan_PHGraph. */
 PHGraph *phgraph;             /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_PHG_Build_Hypergraph";
@@ -82,7 +50,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Allocate a Zoltan hypergraph.  */
-  zhg = *zoltan_hg = (ZHG*) ZOLTAN_MALLOC (sizeof(ZHG));
+  zhg = *zoltan_hg = (ZPHG*) ZOLTAN_MALLOC (sizeof(ZPHG));
   if (zhg == NULL) MEMORY_ERROR;
 
   /* Initialize the Zoltan hypergraph data fields. */
@@ -90,8 +58,13 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   zhg->Local_IDs = NULL;
   zhg->Parts = NULL;
 
-  phgraph = &(zhg->HG);
+  phgraph = &(zhg->PHG);
   Zoltan_PHG_HGraph_Init(phgraph);
+
+  phgraph->nProc_x = hgp->nProc_x;
+  phgraph->nProc_y = hgp->nProc_y;
+  phgraph->myProc_x = hgp->myProc_x;
+  phgraph->myProc_y = hgp->myProc_y;
 
   /* Use callback functions to build the hypergraph. */
   if (zz->Get_Num_HG_Edges && zz->Get_HG_Edge_List && zz->Get_Num_HG_Pins){
@@ -101,8 +74,7 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
      */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Using Hypergraph Callbacks.");
 
-printf("%d KDDKDD NVTXS = %d\n", zz->Proc, phgraph->nVtx);
-    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp);
+    ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
       goto End;
@@ -151,6 +123,8 @@ printf("%d KDDKDD NVTXS = %d\n", zz->Proc, phgraph->nVtx);
     Zoltan_PHG_Graph_Free(&graph);
   }
 
+#ifdef KDDKDD_NO_COORDINATES_FOR_NOW
+  /* KDDKDD DON'T KNOW WHAT TO DO WITH THE COORDINATES WITH 2D DISTRIB ANYWAY */
   if (zz->Get_Num_Geom != NULL && 
       (zz->Get_Geom != NULL || zz->Get_Geom_Multi != NULL)) {
      /* Geometric callbacks are registered;       */
@@ -159,6 +133,7 @@ printf("%d KDDKDD NVTXS = %d\n", zz->Proc, phgraph->nVtx);
      ierr = Zoltan_Get_Coordinates(zz, phgraph->nVtx, zhg->Global_IDs,
       zhg->Local_IDs, &(phgraph->nDim), &(phgraph->coor));
   }
+#endif
 
   if (hgp->check_graph) {
     ierr = Zoltan_PHG_Check(zz, phgraph);
@@ -171,13 +146,15 @@ printf("%d KDDKDD NVTXS = %d\n", zz->Proc, phgraph->nVtx);
     }
   }
 
+  Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
+
   if (hgp->output_level >= PHG_DEBUG_PRINT)
-    Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->HG), stdout);
+    Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->PHG), stdout);
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
-    Zoltan_PHG_HGraph_Free(&(zhg->HG));
+    Zoltan_PHG_HGraph_Free(&(zhg->PHG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->Global_IDs),
      &(zhg->Local_IDs), &(zhg->Parts), zoltan_hg);
   }
@@ -191,8 +168,7 @@ End:
 
 static int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
-  ZHG *zhg,     /* Description of hypergraph provided by the application. */
-  PHGPartParams *hgp
+  ZPHG *zhg      /* Description of hypergraph provided by the application. */
 )
 {
 /* Routine to call HG query function and build HG data structure. 
@@ -256,13 +232,15 @@ int *hindex = NULL, *hvertex = NULL;
 int *dist_x = NULL, *dist_y = NULL;
 int nEdge, nVtx;
 
-ZOLTAN_ID_PTR global_ids = zhg->Global_IDs;  
-PHGraph *phg = &(zhg->HG);
+ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
-int nProc_x = hgp->nProc_x;
-int nProc_y = hgp->nProc_y;
-int myProc_x = hgp->myProc_x;
-int myProc_y = hgp->myProc_y;
+PHGraph *phg = &(zhg->PHG);
+
+int nProc_x = phg->nProc_x;
+int nProc_y = phg->nProc_y;
+int myProc_x = phg->myProc_x;
+int myProc_y = phg->myProc_y;
+
 float frac_x, frac_y;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -325,6 +303,8 @@ float frac_x, frac_y;
     hash_tab = (struct Hash_Node **) ZOLTAN_MALLOC(app.nVtx *
                                                    sizeof(struct Hash_Node *));
     if (!hash_nodes || !hash_tab) MEMORY_ERROR;
+
+    global_ids = zhg->Global_IDs;
 
     /* Assign consecutive numbers based on the order of the ids */
     for (i=0; i< app.nVtx; i++) {
@@ -451,8 +431,8 @@ float frac_x, frac_y;
    * mapping GIDs to processor columns and rows. KDDKDD
    */
 
-  dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
-  dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
+  phg->dist_x = dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
+  phg->dist_y = dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
 
   if (!dist_x || !dist_y) MEMORY_ERROR;
 
@@ -474,16 +454,19 @@ float frac_x, frac_y;
    * 2D data distribution. 
    */
 
+  proclist = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
+  sendbuf = (int *) ZOLTAN_MALLOC(app.nPins * 2 * sizeof(int));
+
   cnt = 0; 
   for (i = 0; i < app.nEdge; i++) {
     /* processor row for the edge */
     edge_gno = app.edgedist[zz->Proc] + i;
-    edge_Proc_y = ZOLTAN_PHG_EDGE_TO_ROW(edge_gno, dist_y, myProc_y);
+    edge_Proc_y = EDGE_TO_PROC_Y(phg, edge_gno);
 
     for (j = 0; j < app.edge_sizes[i]; j++) {
       /* processor column for the vertex */
       vtx_gno = app.pin_gno[cnt];
-      vtx_Proc_x = ZOLTAN_PHG_VTX_TO_COL(vtx_gno, dist_x, myProc_x);
+      vtx_Proc_x = VTX_TO_PROC_X(phg, vtx_gno);
 
       proclist[cnt] = edge_Proc_y * nProc_x + vtx_Proc_x;
       sendbuf[2*cnt] = edge_gno;
@@ -492,14 +475,15 @@ float frac_x, frac_y;
     } 
   }
 
-  Zoltan_Multifree(__FILE__, __LINE__, 8, &app.pins, 
-                                          &app.edge_sizes, 
-                                          &app.pin_procs, 
-                                          &app.pin_gno, 
-                                          &app.vwgt,
-                                          &app.ewgt,
-                                          &hash_nodes,
-                                          &hash_tab);
+  Zoltan_Multifree(__FILE__, __LINE__, 10, &app.pins, 
+                                           &app.edge_sizes, 
+                                           &app.pin_procs, 
+                                           &app.pin_gno, 
+                                           &app.vwgt,
+                                           &app.ewgt,
+                                           &app.vtxdist,
+                                           &hash_nodes,
+                                           &hash_tab);
   /*
    * Send pins to their target processors.
    * They become non-zeros in the 2D data distribution.
@@ -508,6 +492,11 @@ float frac_x, frac_y;
   msg_tag--;
   ierr = Zoltan_Comm_Create(&plan, cnt, proclist, zz->Communicator,
                      msg_tag, &nnz);
+
+  if (nnz) {
+    nonzeros = (int *) ZOLTAN_MALLOC(nnz * 2 * sizeof(int));
+    if (!nonzeros) MEMORY_ERROR;
+  }
 
   msg_tag--;
   Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, 2*sizeof(int),
@@ -522,11 +511,13 @@ float frac_x, frac_y;
 
   tmp = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
   hindex = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
-  if (!tmp || !hindex) MEMORY_ERROR;
+  hvertex = (int *) ZOLTAN_MALLOC(nnz * sizeof(int));
+
+  if (!tmp || !hindex || (nnz && !hvertex)) MEMORY_ERROR;
 
   /* Count the number of nonzeros per hyperedge */
   for (i = 0; i < nnz; i++) {
-    idx = TWOD_GNO_TO_LNO(nonzeros[2*i], dist_y, myProc_y); 
+    idx = EDGE_GNO_TO_LNO(phg, nonzeros[2*i]); 
     tmp[idx]++;
   }
 
@@ -537,21 +528,19 @@ float frac_x, frac_y;
   }
        
   for (i = 0; i < nnz; i++) {
-    idx = TWOD_GNO_TO_LNO(nonzeros[2*i], dist_y, myProc_y); 
-    hvertex[hindex[idx] + tmp[idx]] = 
-            TWOD_GNO_TO_LNO(nonzeros[2*i+1], dist_x, myProc_x);
+    idx = EDGE_GNO_TO_LNO(phg, nonzeros[2*i]);
+    hvertex[hindex[idx] + tmp[idx]] = VTX_GNO_TO_LNO(phg, nonzeros[2*i+1]);
     tmp[idx]++;
   }
 
   ZOLTAN_FREE(&tmp);
+  ZOLTAN_FREE(&nonzeros);
 
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
   phg->nNonZero = nnz;
   phg->hindex = hindex;
   phg->hvertex = hvertex;
-  phg->dist_x = dist_x;
-  phg->dist_y = dist_y;
 
   /*
    * KDDKDD -- Not yet handling vertex and edge weights.

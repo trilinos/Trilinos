@@ -16,7 +16,59 @@
 extern "C" {
 #endif
 
-#include "phypergraph.h"
+#include "phg.h"
+
+/*****************************************************************************/
+void Zoltan_PHG_Plot_2D_Distrib(
+  ZZ *zz,
+  PHGraph *phg
+)
+{
+/* Routine that produces gnuplot output of 2D data distribution in form of 
+ * a matrix.
+ * One column for each vertex.
+ * One row for each hyperedge.
+ * Separate files are produced for each processor.
+ * Vertex and edge global node numbers are used for "coordinates" in plotting.
+ * No partitioning information is displayed; only the 2D data distribution 
+ * is shown.
+ */
+static int cnt = 0;
+char filename[32];
+FILE *fp = NULL;
+int i, j;
+int egno, vgno;
+
+  sprintf(filename, "phg%02d.%02d", cnt, zz->Proc);
+  fp = fopen(filename, "w");
+
+  for (i = 0; i < phg->nEdge; i++) {
+    egno = EDGE_LNO_TO_GNO(phg, i);
+    for (j = phg->hindex[i]; j < phg->hindex[i+1]; j++) {
+      vgno = VTX_LNO_TO_GNO(phg, phg->hvertex[j]);
+      fprintf(fp, "%d  %d\n", vgno, -egno);
+    }
+  }
+  fclose(fp);
+  if (zz->Proc == 0) {
+    sprintf(filename, "phg%02d.gnuload", cnt);
+    fp = fopen(filename, "w");
+    fprintf(fp, "set data style points\n");
+    fprintf(fp, "set nokey\n");
+    fprintf(fp, "set xlabel \"vertices\"\n");
+    fprintf(fp, "set ylabel \"-hyperedges\"\n");
+    fprintf(fp, "plot ");
+    for (i = 0; i < zz->Num_Proc; i++) {
+      fprintf(fp, "\"phg%02d.%02d\"", cnt, i);
+      if (i != zz->Num_Proc-1)
+        fprintf(fp, ", ");
+      else
+        fprintf(fp, "\n");
+    }
+    fclose(fp);
+  }
+  cnt++;
+}
 
 /*****************************************************************************/
 void Zoltan_PHG_Plot(
@@ -31,8 +83,8 @@ void Zoltan_PHG_Plot(
 )
 {
 /* Routine that produces gnuplot output of hypergraph in form of matrix.
- * One row for each vertex.
- * One column for each hyperedge.
+ * One column for each vertex.
+ * One row for each hyperedge.
  * Entries in matrix entry a[i,j] if vertex i is in hyperedge j.
  * If part == NULL, a single file is produced with all information.
  * (Currently, this capability is serial only.)

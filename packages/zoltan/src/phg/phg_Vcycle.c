@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#include "phypergraph.h"
-
+#include "phg.h"
+#include <limits.h>
 
 /****************************************************************************/
 /* Routine to set function pointers corresponding to input-string options. */
