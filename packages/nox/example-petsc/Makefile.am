@@ -31,6 +31,6 @@
 
 if BUILD_PETSC_EXAMPLES
 
-SUBDIRS = DS6.5.1 
+SUBDIRS = DS6.5.1 1Dfd_nonlinear
 
 endif
