@@ -1,0 +1,6 @@
+#!/bin/sh
+# Usage: c++-to-c-comments file_1 file_2
+sed "s?//\(.*\)?/*\1 */?" $1 > $1.tmp
+cp $1.tmp $2
+rm $1.tmp
+string-replace.pl '/\*/' '/*' $2 $2
