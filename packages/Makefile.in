@@ -114,7 +114,9 @@ AUTOMAKE_OPTIONS = foreign
 #	src/common/config-h.in src/common/stamp-h.in \
 #	$(AUX_DIST) 
 
-#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF
+#SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
+@BUILD_EPETRAEXT_TRUE@EPETRAEXT_SUBDIR = epetraext
+
 @BUILD_AMESOS_TRUE@AMESOS_SUBDIR = amesos
 
 @BUILD_NOX_TRUE@NOX_SUBDIR = nox
@@ -134,7 +136,7 @@ AUTOMAKE_OPTIONS = foreign
 #Epetra must be listed first due to aztecoo's dependence on Epetra
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
 	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
-       	  $(AMESOS_SUBDIR)
+       	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR)
 
 subdir = packages
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
@@ -147,7 +149,8 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSF amesos
+DIST_SUBDIRS = epetra triutils ifpack aztecoo komplex nox TSF amesos \
+	epetraext
 all: all-recursive
 
 .SUFFIXES:
