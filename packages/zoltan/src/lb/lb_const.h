@@ -202,40 +202,62 @@ typedef struct LB_Migrate_Struct LB_MIGRATE;
 /*****************************************************************************/
 /*****************************************************************************/
  
-/**************************************************************/
-/* The data structures below for HA are not being used yet!   */
-/* They are merely Erik's suggestions.                        */
-/**************************************************************/
+/**************************************************************************/
+/* The data structure below for hetero. machines is not being used yet!   */
+/* The structure will almost certainly change in the next release.        */
+/**************************************************************************/
 
-/* Data structure for topology */
-struct Topology_Type {
-  int topo_id;
-  int cart_dim[3];
-  int wrap[3];
-  int *xadj, *adjncy;  /* EB: Need a more general graph structure that allows for edge weights */
-};
+typedef struct {
+  int nnodes;           /* the number of subnodes */
+  int ntypes;           /* the number of different types of subnodes */
+  int *type;            /* type[i] is the `node type pointer' of subnode i */
+                        /* if (ntypes == 1)
+                           /* specify only type[0] */
+                        /* else */
+                           /* specify type[0] ... type[nnodes-1] */
 
-typedef struct Topology_Type TopologyType;
+  int top_id;          /* See `topology types' defined below */
 
-/* Data structure for machine */
-struct Machine_Type {
-  int nnodes;
-  int cpu_power;
-  int memory_size;
-  TopologyType *network;
-  struct Machine_Type **node_desc; /* Pointers to an array of nnodes descriptors */
-};
+  /************************************************/
+  /* specify if (nnodes == 1)
+  /************************************************/
+  int power;             /* if (nnodes == 1) specify power of the processor */
+  int memory;            /* if (nnodes == 1) specify memory of the processor */
+  /************************************************/
 
-typedef struct Machine_Type MachineType;
+  /*****************************/
+  /* specify if (top_id 0 and 1) */
+  /*****************************/
+  int bandwidth;         /* specify the bandwidth of the topology */
+  int latency;           /* specify the latency of the topology */
+  /*****************************/
 
-/* Machine type constants */
-#define TOPO_FLAT    0
-#define TOPO_SMP     0
-#define TOPO_1D      1
-#define TOPO_2D      2
-#define TOPO_3D      3
-#define TOPO_HCUBE   4
-#define TOPO_GENERIC 5
+  /*****************************/
+  /*  specify if (top_id == 1) */
+  /*****************************/
+  int ndims;           /* Number of dimensions of the mesh */
+  int cart_dim[3];     /* Number of nodes in each dimension */
+  int wrap_around[3];  /* Wrap around in each dimension? (y/n) */
+  /******************************/
+
+  /*****************************/
+  /*  specify if (top_id == 2) */
+  /*****************************/
+  int *xadj;           /* pointer to link list */
+  int *adjncy;         /* link list */
+  int *adj_band;       /* bandwidth of each link */
+  int *adj_lat;        /* latency of each link */
+  /******************************/
+} MachineType;
+
+  /*******************************/
+  /* `topology types'
+  top_id 0   =>   flat network or SMP
+  top_id 1   =>   mesh
+  top_id 2   =>   hypercube
+  top_id 3   =>   user-specified */
+  /*******************************/
+
 
 /*****************************************************************************/
 /*****************************************************************************/
