@@ -32,6 +32,7 @@ class Epetra_Distributor;
 class Epetra_Directory;
 class Epetra_BlockMap;
 #include <mpi.h>
+#include "Epetra_MpiCommData.h"
 
 //! Epetra_MpiComm:  The Epetra MPI Communication Class.
 /*! The Epetra_MpiComm class is an implementation of Epetra_Comm that encapsulates the general
@@ -54,8 +55,12 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Epetra_MpiComm Copy Constructor.
   /*! Makes an exact copy of an existing Epetra_MpiComm instance.
   */
-  Epetra_MpiComm(const Epetra_MpiComm& Comm);
+  Epetra_MpiComm(const Epetra_MpiComm & Comm);
 
+	//! Clone method.
+	Epetra_Comm * Clone() const {
+		return(dynamic_cast<Epetra_Comm *>(new Epetra_MpiComm(*this)));
+	};
 
   //! Epetra_MpiComm Destructor.
   /*! Completely deletes a Epetra_MpiComm object.  
@@ -249,19 +254,19 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Attribute Accessor Methods
   
   //! Extract MPI Communicator from a Epetra_MpiComm object.
-  MPI_Comm Comm() const {return(Comm_);};
+  MPI_Comm Comm() const {return(MpiCommData_->Comm_);};
 
   //! Return my process ID. 
   /*! In MPI mode returns the rank of the calling process.  In serial mode
     returns 0.
   */
-  int MyPID() const {return(rank_);};
+  int MyPID() const {return(MpiCommData_->rank_);};
   
   //! Returns total number of processes. 
   /*! In MPI mode returns the size of the MPI communicator.  In serial mode
     returns 1.
   */
-  int NumProc() const {return(size_);};
+  int NumProc() const {return(MpiCommData_->size_);};
   //@}
 
   //@{ \name Gather/Scatter and Directory Constructors
@@ -273,10 +278,10 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
 
   //@{ \name MPI-specific Methods
   //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag. 
-  int GetMpiTag() const {int tag = curTag_++; if (tag>maxTag_) tag = minTag_; return(tag);};
+  int GetMpiTag() const {int tag = MpiCommData_->curTag_++; if (tag > MpiCommData_->maxTag_) tag = MpiCommData_->minTag_; return(tag);};
 
   //! Get the MPI Communicator (identical to Comm() method; used when we know we are MPI. 
-  MPI_Comm GetMpiComm() const {return(Comm_);};
+  MPI_Comm GetMpiComm() const {return(MpiCommData_->Comm_);};
   //@}
   //@{ \name Print object to an output stream
   //! Print method that implements Epetra_Object virtual Print method
@@ -286,22 +291,30 @@ class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Print method that implements Epetra_Comm virtual PrintInfo method
   void PrintInfo(ostream & os) const {Epetra_MpiComm::Print(os);return;};
   //@}
+
+  //@{ \name Expert Users and Developers Only
+
+	//! Returns the reference count of MpiCommData.
+	/*! (Intended for testing purposes).*/
+	int ReferenceCount() const {return(MpiCommData_->ReferenceCount());};
+
+	//! Returns a pointer to the MpiCommData instance this MpiComm uses. 
+	/*! Intended for developer use only for testing purposes. This will probably 
+		be removed before being merged into main Epetra branch.*/
+	const Epetra_MpiCommData * DataPtr() const {return(MpiCommData_);};
+
+  //@}
+
+	//! Assignment Operator
+	Epetra_MpiComm & operator=(const Epetra_MpiComm & Comm);
   
  private:
   
   int CheckInput(double * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
   int CheckInput(int * ptr, int count) const {if ((ptr==0) && (count>0)) return(-1); return(0);};
-  MPI_Comm Comm_; //!< \internal MPI_Comm variable.
-  int rank_;
-  int size_;
-  enum {minTag_= 24050};
-  enum {maxTag_= 24099};
 
-  // Some day, when the Microsoft 6.0 C++ compiler disappears, we can use ANSI/ISO standard
-  // declarations for minTag_ and maxTag_
-  //static const int minTag_= 24050;
-  //static const int maxTag_= 24099;
+	void CleanupData();
+	Epetra_MpiCommData * MpiCommData_;
 
-  mutable int curTag_;
 };
 #endif /* _EPETRA_MPICOMM_H_ */

@@ -25,19 +25,20 @@
 #include "Epetra_LocalMap.h"
 #include "Epetra_Comm.h"
 
-
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(int NumMyElements, int IndexBase, 
-			       const Epetra_Comm& Comm)
+																 const Epetra_Comm& Comm)
   // LocalMap is just a special case of Map
-: Epetra_Map(NumMyElements, NumMyElements, IndexBase, Comm) {
+	: Epetra_Map(NumMyElements, NumMyElements, IndexBase, Comm) 
+{
   SetLabel("Epetra::LocalMap");
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap& map)
-: Epetra_Map(map) {
+	: Epetra_Map(map) 
+{
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
@@ -45,16 +46,26 @@ Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap& map)
 //============================================================================
 int Epetra_LocalMap::CheckInput() {
   int * tmp = new int[4];
-  tmp[0] = NumMyElements_;
-  tmp[1] = - NumMyElements_;
+  tmp[0] = NumMyElements();
+  tmp[1] = - NumMyElements();
   Comm().MaxAll(tmp, tmp+2, 2);
 
   int tmp1 = tmp[2]; // Max of all NumMyElements across all processors
   int tmp2 = - tmp[3]; // Min of all ...
   delete [] tmp;
 
-  if (tmp1==tmp2) return(0);
-  else return(-1);
+  if (tmp1==tmp2) 
+		return(0);
+  else 
+		return(-1);
 }
 //=========================================================================
-Epetra_LocalMap::~Epetra_LocalMap(){}
+Epetra_LocalMap::~Epetra_LocalMap()
+{
+}
+//=============================================================================
+Epetra_LocalMap & Epetra_LocalMap::operator= (const Epetra_LocalMap& map) {
+	if(this != &map)
+		Epetra_BlockMap::operator=(map); // call this->Epetra_BlockMap::operator=
+	return(*this);
+}

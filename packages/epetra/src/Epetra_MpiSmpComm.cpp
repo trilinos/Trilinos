@@ -29,94 +29,78 @@
 //=============================================================================
 Epetra_MpiSmpComm::Epetra_MpiSmpComm(MPI_Comm Comm) 
   : Epetra_Object("Epetra::MpiSmpComm"), 
-    Comm_(Comm),
-    curTag_(minTag_),
-    ThreadID_(0),
-    NumThreads_(1)
-{
-    MPI_Comm_size(Comm, &size_);
-    MPI_Comm_rank(Comm, &rank_);
-    minTag_ = 24050;
-    maxTag_ = 24099;
-    NodeID_ = rank_;
-}
+    MpiSmpCommData_(Comm)
+{}
 //=============================================================================
 Epetra_MpiSmpComm::Epetra_MpiSmpComm(const Epetra_MpiSmpComm& Comm) : 
   Epetra_Object(Comm.Label()),
-  Comm_(Comm.Comm_),
-  rank_(Comm.rank_),
-  size_(Comm.size_),
-  curTag_(Comm.curTag_),
-  ThreadID_(Comm.ThreadID_),
-  NodeID_(Comm.NodeID_),
-  NumThreads_(Comm.NumThreads_)
+  MpiSmpCommData_(Comm.MpiSmpCommData_)
 {
-  minTag_ = 24050;
-  maxTag_ = 24099;
+	MpiSmpCommData_->IncrementReferenceCount();
 }
 
 //=============================================================================
 void Epetra_MpiSmpComm::Barrier() const {
-  MPI_Barrier(Comm_);
+  MPI_Barrier(MpiSmpCommData->Comm_);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::Broadcast(double * Values, int Count, int Root) const {
-  EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_DOUBLE, Root, Comm_));
+  EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_DOUBLE, Root, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::Broadcast(int * Values, int Count, int Root) const {
-  EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_INT, Root, Comm_));
+  EPETRA_CHK_ERR(MPI_Bcast(Values, Count, MPI_INT, Root, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::GatherAll(double * MyVals, double * AllVals, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_DOUBLE, AllVals, Count, MPI_DOUBLE, Comm_));
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_DOUBLE, AllVals, Count, MPI_DOUBLE, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, MpiSmpCommData->Comm_)); 
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::SumAll(double * PartialSums, double * GlobalSums, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_DOUBLE, MPI_SUM, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_DOUBLE, MPI_SUM, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::SumAll(int * PartialSums, int * GlobalSums, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_INT, MPI_SUM, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialSums, GlobalSums, Count, MPI_INT, MPI_SUM, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::MaxAll(double * PartialMaxs, double * GlobalMaxs, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_DOUBLE, MPI_MAX, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_DOUBLE, MPI_MAX, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::MaxAll(int * PartialMaxs, int * GlobalMaxs, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_INT, MPI_MAX, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialMaxs, GlobalMaxs, Count, MPI_INT, MPI_MAX, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::MinAll(double * PartialMins, double * GlobalMins, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_DOUBLE, MPI_MIN, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_DOUBLE, MPI_MIN, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::MinAll(int * PartialMins, int * GlobalMins, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_INT, MPI_MIN, Comm_));
+  EPETRA_CHK_ERR(MPI_Allreduce(PartialMins, GlobalMins, Count, MPI_INT, MPI_MIN, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::ScanSum(double * MyVals, double * ScanSums, int Count) const {
-  EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_DOUBLE, MPI_SUM, Comm_));
+  EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_DOUBLE, MPI_SUM, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::ScanSum(int * MyVals, int * ScanSums, int Count) const {
-  EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_INT, MPI_SUM, Comm_));
+  EPETRA_CHK_ERR(MPI_Scan(MyVals, ScanSums, Count, MPI_INT, MPI_SUM, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
@@ -133,4 +117,26 @@ Epetra_Directory * Epetra_SmpMpiComm:: CreateDirectory(const Epetra_BlockMap & m
   return(dir);
 }
 //=============================================================================
-Epetra_MpiSmpComm::~Epetra_MpiSmpComm()  {}
+Epetra_MpiSmpComm::~Epetra_MpiSmpComm() {
+	CleanupData();
+}
+//=============================================================================
+void Epetra_MpiSmpComm::CleanupData() {
+	if(MpiSmpCommData_ != 0) {
+		MpiSmpCommData_->DecrementReferenceCount();
+		if(MpiSmpCommData_->ReferenceCount() == 0) {
+			delete MpiSmpCommData_;
+			MpiSmpCommData_ = 0;
+		}
+	}
+}
+//=============================================================================
+Epetra_MpiSmpComm& Epetra_MpiSmpComm::operator= (const Epetra_MpiSmpComm & Comm) {
+	if((this != &Comm) && (MpiSmpCommData_ != Comm.MpiSmpCommData_)) {
+		CleanupData();
+		MpiSmpCommData_ = Comm.MpiSmpCommData_;
+		MpiSmpCommData_->IncrementReferenceCount();
+	}
+	return(*this);
+}
+

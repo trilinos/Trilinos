@@ -87,19 +87,22 @@ class Epetra_LocalMap : public Epetra_Map {
     \return Pointer to a Epetra_Map object.
 
   */ 
-    Epetra_LocalMap(int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
-
+	Epetra_LocalMap(int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
+	
   //! Epetra_LocalMap copy constructor.
   
-    Epetra_LocalMap(const Epetra_LocalMap& map);
+	Epetra_LocalMap(const Epetra_LocalMap& map);
   
   //! Epetra_LocalMap destructor.
-
-    virtual ~Epetra_LocalMap();
-
-  private:
-
-    int CheckInput();
-
+	
+	virtual ~Epetra_LocalMap();
+	
+	//! Assignment Operator
+	Epetra_LocalMap & operator=(const Epetra_LocalMap & map);
+	
+ private:
+	
+	int CheckInput();
+	
 };
 #endif /* _EPETRA_LOCALMAP_H_ */

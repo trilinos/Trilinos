@@ -29,6 +29,7 @@
 #include "Epetra_MpiDistributor.h"
 #include <mpi.h>
 class Epetra_Distributor;
+#include "Epetra_MpiSmpCommData.h"
 
 //! Epetra_MpiSmpComm:  The Epetra MPI Shared Memory Parallel Communication Class.
 /*! The Epetra_MpiSmpComm class is an implementation of Epetra_Comm that encapsulates the general
@@ -56,6 +57,10 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   Epetra_MpiSmpComm(const Epetra_MpiSmpComm& Comm);
 
+	//! Clone method.
+	Epetra_Comm * Clone() const {
+		return(dynamic_cast<Epetra_Comm *>(new Epetra_MpiSmpComm(*this)));
+	};
 
   //! Epetra_MpiSmpComm Destructor.
   /*! Completely deletes a Epetra_MpiSmpComm object.  
@@ -249,19 +254,19 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Attribute Accessor Methods
   
   //! Extract MPI Communicator from a Epetra_MpiSmpComm object.
-  MPI_Comm Comm() const {return(Comm_);};
+  MPI_Comm Comm() const {return(MpiSmpCommData_->Comm_);};
 
   //! Return my process ID. 
   /*! In MPI mode returns the rank of the calling process.  In serial mode
     returns 0.
   */
-  int MyPID() const {return(rank_);};
+  int MyPID() const {return(MpiSmpCommData_->rank_);};
   
   //! Returns total number of processes. 
   /*! In MPI mode returns the size of the MPI communicator.  In serial mode
     returns 1.
   */
-  int NumProc() const {return(size_);};
+  int NumProc() const {return(MpiSmpCommData_->size_);};
   //@}
 
   //@{ \name Gather/Scatter and Directory Constructors
@@ -273,9 +278,9 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
 
   //@{ \name MPI-specific Methods
   //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag. 
-  int GetMpiTag() const {int tag = curTag_++; if (tag>maxTag_) tag = minTag_; return(tag);};
+  int GetMpiTag() const {int tag = MpiSmpCommData_->curTag_++; if (tag>MpiSmpCommData_->maxTag_) tag = MpiSmpCommData_->minTag_; return(tag);};
   //! Acquire an MPI tag from the Epetra range of 24050-24099, increment tag. 
-  MPI_Comm GetMpiComm() const {return(Comm_);};
+  MPI_Comm GetMpiComm() const {return(MpiSmpCommData_->Comm_);};
   //@}
   //@{ \name Experimental SMP cluster methods (not rigorously implemented)
   //! Epetra_MpiSmpComm Node Barrier function.
@@ -292,37 +297,37 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   /*! If SetMyThreadID was called to set a thread value, this function returns the thread ID of the calling process.  
       Otherwise returns 0.
   */
-  int MyThreadID() const {return(ThreadID_);};
+  int MyThreadID() const {return(MpiSmpCommData_->ThreadID_);};
 
   //! Return my node ID. 
   /*! If SetMyNodeD was called to set a node value, this function returns the thread ID of the calling process.  
       Otherwise returns the same value as MyPID().
   */
-  int MyNodeID() const {return(NodeID_);};
+  int MyNodeID() const {return(MpiSmpCommData_->NodeID_);};
   
   //! Set number of threads on this node. 
   /*! Sets the number of threads on the node that owns the calling process.  By default the number of threads is 1.
   */
-  int SetNumThreads(int NumThreads) {NumThreads_ = NumThreads; return(0);};
+  int SetNumThreads(int NumThreads) {MpiSmpCommData_->NumThreads_ = NumThreads; return(0);};
   
   //! Get number of threads on this node. 
   /*! Sets the number of threads on the node that owns the calling process.  By default the number of threads is 1.
   */
-  int NumThreads() const {return(NumThreads_);};
+  int NumThreads() const {return(MpiSmpCommData_->NumThreads_);};
    
   //! Set my thread ID. 
   /*! Sets the thread ID for the calling process.  Can be used to facilitate threaded programming across an MPI
       application by allowing multiple MPI processes to be considered threads of a virtual shared memory process.
       Threads and nodes should be used together.  By default the thread ID is zero.
   */
-  int SetMyThreadID(int ThreadID) {ThreadID_ = ThreadID; return(0);};
+  int SetMyThreadID(int ThreadID) {MpiSmpCommData_->ThreadID_ = ThreadID; return(0);};
   
   //! Set my node ID. 
   /*! Sets the node ID for the calling process.  Can be used to facilitate threaded programming across an MPI
       application by associating several MPI processes with a single node. By default, each MPI process is
       associated with a single node with the same ID.
   */
-  int SetMyNodeID(int NodeID) {NodeID_ = NodeID; return(0);};
+  int SetMyNodeID(int NodeID) {MpiSmpCommData_->NodeID_ = NodeID; return(0);};
   //@}
 
   //@{ \name Print object to an output stream
@@ -336,17 +341,14 @@ class Epetra_MpiSmpComm: public Epetra_Object, public virtual Epetra_Comm {
   void PrintInfo(ostream & os) const {Epetra_MpiSerialComm::Print(os);return;};
 
   //@}
+
+	//! Assignment Operator
+	Epetra_MpiSmpComm & operator=(const Epetra_MpiSmpComm & Comm);
   
  private:
-  
-  MPI_Comm Comm_; //!< \internal MPI_Comm variable.
-  int rank_;
-  int size_;
-  int minTag_;
-  int maxTag_;
-  mutable int curTag_;
-  int ThreadID_;
-  int NodeID_;
-  int NumThreads_;
+
+	void CleanupData();
+	Epetra_MpiSmpCommData * MpiSmpCommData_;
+
 };
 #endif /* _EPETRA_MPISMPCOMM_H_ */

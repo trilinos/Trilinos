@@ -30,13 +30,15 @@ UTIL_H = \
 	$(srcdir)/Epetra_Util.h \
 	$(srcdir)/Epetra_DataAccess.h \
 	$(srcdir)/Epetra_HashTable.h \
-	$(srcdir)/Epetra_RowMatrixTransposer.h
+	$(srcdir)/Epetra_RowMatrixTransposer.h \
+	$(srcdir)/Epetra_Data.h
 
 UTIL = \
 	$(srcdir)/Epetra_Flops.cpp \
 	$(srcdir)/Epetra_Time.cpp \
 	$(srcdir)/Epetra_Util.cpp \
-	$(srcdir)/Epetra_RowMatrixTransposer.cpp
+	$(srcdir)/Epetra_RowMatrixTransposer.cpp \
+	$(srcdir)/Epetra_Data.cpp
 
 ENUM_H = \
 	$(srcdir)/Epetra_CombineMode.h \
@@ -60,18 +62,22 @@ UNIPROC = \
 
 SERIAL_H = \
 	$(srcdir)/Epetra_SerialComm.h  \
+	$(srcdir)/Epetra_SerialCommData.h  \
 	$(srcdir)/Epetra_SerialDistributor.h
 
 SERIAL = \
 	$(srcdir)/Epetra_SerialComm.cpp  \
+	$(srcdir)/Epetra_SerialCommData.cpp  \
 	$(srcdir)/Epetra_SerialDistributor.cpp
 
 EXTRA_MPI_H = \
 	$(srcdir)/Epetra_MpiComm.h  \
+	$(srcdir)/Epetra_MpiCommData.h  \
 	$(srcdir)/Epetra_MpiDistributor.h 
 
 EXTRA_MPI = \
 	$(srcdir)/Epetra_MpiComm.cpp  \
+	$(srcdir)/Epetra_MpiCommData.cpp  \
 	$(srcdir)/Epetra_MpiDistributor.cpp
 
 if HAVE_MPI
@@ -90,11 +96,15 @@ endif
 
 EXTRA_MPISMP_H = \
 	$(srcdir)/Epetra_MpiComm.h \
-	$(srcdir)/Epetra_MpiSmpComm.h
+	$(srcdir)/Epetra_MpiCommData.h \
+	$(srcdir)/Epetra_MpiSmpComm.h \
+	$(srcdir)/Epetra_MpiSmpCommData.h
 
 EXTRA_MPISMP = \
 	$(srcdir)/Epetra_MpiComm.cpp \
-	$(srcdir)/Epetra_MpiSmpComm.cpp
+	$(srcdir)/Epetra_MpiCommData.cpp \
+	$(srcdir)/Epetra_MpiSmpComm.cpp \
+	$(srcdir)/Epetra_MpiSmpCommData.cpp
 
 if HAVE_THREADS
 
@@ -128,6 +138,7 @@ LANG_WRAPS = \
 DIST_H = \
 	$(srcdir)/Epetra_BasicDirectory.h \
 	$(srcdir)/Epetra_BlockMap.h \
+	$(srcdir)/Epetra_BlockMapData.h \
 	$(srcdir)/Epetra_Directory.h \
 	$(srcdir)/Epetra_SrcDistObject.h \
 	$(srcdir)/Epetra_DistObject.h \
@@ -141,6 +152,7 @@ DIST_H = \
 DIST = \
 	$(srcdir)/Epetra_BasicDirectory.cpp \
 	$(srcdir)/Epetra_BlockMap.cpp \
+	$(srcdir)/Epetra_BlockMapData.cpp \
 	$(srcdir)/Epetra_DistObject.cpp \
 	$(srcdir)/Epetra_Export.cpp \
 	$(srcdir)/Epetra_Import.cpp \

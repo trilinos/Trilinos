@@ -27,6 +27,7 @@
 
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
+#include "Epetra_SerialCommData.h"
 #include "Epetra_SerialDistributor.h"
 class Epetra_Distributor;
 
@@ -54,6 +55,10 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   */
   Epetra_SerialComm(const Epetra_SerialComm& Comm);
 
+	//! Clone method.
+	Epetra_Comm * Clone() const {
+		return(dynamic_cast<Epetra_Comm *>(new Epetra_SerialComm(*this)));
+	};
 
   //! Epetra_SerialComm Destructor.
   /*! Completely deletes a Epetra_SerialComm object.  
@@ -237,11 +242,13 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   /*! In MPI mode returns the rank of the calling process.  In serial mode
     returns 0.
   */
-  int MyPID() const {return(0);};
+  int MyPID() const {return(SerialCommData_->MyPID_);};
   
   //! Returns total number of processes (always returns 1 for SerialComm). 
-  int NumProc() const {return(1);};
+  int NumProc() const {return(SerialCommData_->NumProc_);};
+
   //@}
+
   //@{ \name Gather/Scatter and Directory Constructors
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
@@ -249,15 +256,39 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 
-
   //@{ \name Print object to an output stream
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
-  return; }
+		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."; 
+		return; 
+	}
   //! Print method that implements Epetra_Comm virtual PrintInfo method
-  void PrintInfo(ostream & os) const {Epetra_SerialComm::Print(os);return;};
+  void PrintInfo(ostream & os) const {
+		Epetra_SerialComm::Print(os);
+		return;
+	};
   //@}
+
+  //@{ \name Expert Users and Developers Only
+
+	//! Returns the reference count of SerialCommData.
+	/*! (Intended for testing purposes).*/
+	int ReferenceCount() const;
+
+	//! Returns a pointer to the SerialCommData instance this SerialComm uses. 
+	/*! Intended for developer use only for testing purposes. This will probably 
+		be removed before being merged into main Epetra branch.*/
+	const Epetra_SerialCommData * DataPtr() const {return(SerialCommData_);};
+
+  //@}
+
+	//! Assignment Operator
+	Epetra_SerialComm & operator=(const Epetra_SerialComm & Comm);
+
+ private:
+
+	void CleanupData();
+	Epetra_SerialCommData * SerialCommData_;
   
 };
 #endif /* _EPETRA_SERIALCOMM_H_ */

@@ -1,162 +1,233 @@
 // Epetra_Comm Test routine
+#include "../epetra_test_err.h"
 #include "Epetra_Time.h"
 #include "Epetra_Util.h"
+#include "Epetra_SerialComm.h"
+#include "Epetra_IntSerialDenseVector.h"
 #ifdef EPETRA_MPI
 #include <mpi.h>
 #include "Epetra_MpiComm.h"
+
+void checkMpiDataClass(int& ierr, bool verbose);
 #endif
-#include "Epetra_SerialComm.h"
+void checkSerialDataClass(int& ierr, bool verbose);
+void checkCommMethods(Epetra_Comm& petracomm, int& ierr, bool verbose, bool verbose1, int& NumProc, int& rank);
+void checkRankAndSize(Epetra_Comm& petracomm, bool verbose, int& ierr, int rank, int size);
+void checkBarrier(Epetra_Comm& petracomm, bool verbose, int rank);
 
-#include "../epetra_test_err.h"
-
-int main(int argc, char *argv[]) {
-  int i, j, ierr = 0, forierr = 0;
-
-#ifdef EPETRA_MPI
-
-  // Initialize MPI
-
-  MPI_Init(&argc,&argv);
-  int size, rank; // Number of MPI processes, My process ID
-
-  MPI_Comm_size(MPI_COMM_WORLD, &size);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-#else
-
-  int size = 1; // Serial case (not using MPI)
-  int rank = 0;
-
-#endif
-
-  bool verbose = false;
-  bool verbose1 = false;
+int main(int argc, char* argv[]) {
+  bool verbose = false;  // used to set verbose false on non-root processors
+  bool verbose1 = false; // user's command-line argument
   // Check if we should print results to standard out
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose1 = true;
 
+  int ierr = 0;
+	int size = 1;
+	int rank = 0;
 
+	// Test Epetra_SerialComm
+	if(verbose1) cout << "Testing Epetra_SerialComm..." << endl;
+	Epetra_SerialComm serialcomm;
+  if (verbose1) cout << serialcomm << endl;
+	checkRankAndSize(serialcomm, verbose1, ierr, rank, size);
+	// method testing
+	int numProc = serialcomm.NumProc();
+	checkCommMethods(serialcomm, ierr, verbose, verbose1, numProc, rank);
+	// clone
+	if(verbose1) cout << "SerialComm Clone.." << endl;
+	Epetra_Comm* cloned_serialcomm = serialcomm.Clone();
+	checkCommMethods(*cloned_serialcomm, ierr, verbose, verbose1, numProc, rank);
+	delete cloned_serialcomm;
+	// check inner data class
+	checkSerialDataClass(ierr, verbose1);
+
+	// Test Epetra_MpiComm
 #ifdef EPETRA_MPI
+  // Initialize MPI
+	if(verbose1) cout << "Testing Epetra_MpiComm..." << endl;
+  MPI_Init(&argc,&argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	Epetra_MpiComm petracomm( MPI_COMM_WORLD );
+	checkRankAndSize(petracomm, verbose1, ierr, rank, size);
+	MPI_Comm MPIComm1 = petracomm.Comm();
+	int size1, rank1;
+	MPI_Comm_size(MPIComm1, &size1);
+	MPI_Comm_rank(MPIComm1, &rank1);
+	if (verbose1) cout << petracomm <<  ".  Using MPI_Comm from Petra_Comm: "
+										 << "Processor " << rank1 << " of " << size1
+										 << " (should be the same)." << endl;
+	EPETRA_TEST_ERR(!(rank1==rank),ierr);
+	EPETRA_TEST_ERR(!(size1==size),ierr);
+	checkBarrier(petracomm, verbose1, rank);
 
-  Epetra_MpiComm petracomm( MPI_COMM_WORLD );
-  int MyPID =  petracomm.MyPID();
-  int NumProc =  petracomm.NumProc();
-  EPETRA_TEST_ERR(!(petracomm.MyPID()==rank),ierr);
-  EPETRA_TEST_ERR(!(petracomm.NumProc()==size),ierr);
-  if (verbose1) verbose = (MyPID==0);
+ 	// method testing
+	numProc = petracomm.NumProc();
+	checkCommMethods(petracomm, ierr, verbose, verbose1, numProc, rank);
+
+	// clone
+	if(verbose1) cout << "MpiComm Clone.." << endl;
+	Epetra_Comm * cloned_mpicomm = petracomm.Clone();
+	checkCommMethods(*cloned_mpicomm, ierr, verbose, verbose1, numProc, rank);
+	delete cloned_mpicomm;
+
+	// check inner data class
+	petracomm.Barrier();
+	checkMpiDataClass(ierr, verbose1);
+
   petracomm.Barrier();
+  MPI_Finalize();
+#endif
 
-  MPI_Comm MPIComm1 = petracomm.Comm();
-  int size1, rank1;
-  MPI_Comm_size(MPIComm1, &size1);
-  MPI_Comm_rank(MPIComm1, &rank1);
-  if (verbose1) cout << petracomm <<  ".  Using MPI_Comm from Petra_Comm: "
-                    << "Processor "<< rank1 <<" of " << size1
-		          << " (should be the same)."<<endl;
+  return ierr;
+}
 
-  EPETRA_TEST_ERR(!(rank1==rank),ierr);
-  EPETRA_TEST_ERR(!(size1==size),ierr);
-
+//=============================================================================
+void checkBarrier(Epetra_Comm& petracomm, bool verbose, int rank) {
   // Do some timing to test barrier function
-  
+  int MyPID = petracomm.MyPID();
   Epetra_Time before_barrier(petracomm);
   Epetra_Time after_barrier(petracomm);
   // Give each processor rank+1 amount of work
   // Time before barrier should increase roughly linearly
   // Time after barrier should be same for all processors
   double sum = 0.0;
-  for (j=0; j<rank+1; j++)
-    for (i=0; i<1000000; i++) sum += ((double )rand())/((double) RAND_MAX);
+  for (int j=0; j<rank+1; j++)
+    for (int i=0; i<1000000; i++) 
+			sum += ((double )rand())/((double) RAND_MAX);
   sum /= rank+1;
-  if (verbose1) cout << "Processor "<<MyPID
-		    <<" Time to reach barrier: "
-		    << before_barrier.ElapsedTime() << endl;
+  if (verbose) cout << "Processor " << MyPID
+										<< " Time to reach barrier: "
+										<< before_barrier.ElapsedTime() << endl;
   petracomm.Barrier();
-  if (verbose1) cout << "Processor "<<MyPID << " Sum result  "
-		    << sum <<" Time to get beyond barrier: "
-		    << after_barrier.ElapsedTime() << endl;
+  if (verbose) cout << "Processor " << MyPID << " Sum result  "
+										<< sum << " Time to get beyond barrier: "
+										<< after_barrier.ElapsedTime() << endl;
  
   petracomm.Barrier();
+}
 
-// Some vars needed for the following tests
+//=============================================================================
+void checkRankAndSize(Epetra_Comm& petracomm, bool verbose, int& ierr, int rank, int size) {
+	//if(verbose) cout << "CRS Breakpoint 1" << endl;
+  int MyPID = petracomm.MyPID();
+	//if(verbose) cout << "CRS Breakpoint 2" << endl;
+  int NumProc = petracomm.NumProc();
+  EPETRA_TEST_ERR(!(MyPID==rank),ierr);
+  EPETRA_TEST_ERR(!(NumProc==size),ierr);
+  petracomm.Barrier();
+}
+
+//=============================================================================
+void checkCommMethods(Epetra_Comm& petracomm, int& ierr, bool verbose, bool verbose1, int& NumProc, int& rank) {
+	int i,j;
+	int forierr = 0;
+
+	// Some vars needed for the following tests
   int count = 4;
-  int *iInputs = new int[count]; // General array for int type tests
+  int* iInputs = new int[count]; // General array for int type tests
   for (i=0; i<count; i++)
-    iInputs[i] = 10*(i + rank - 2) + rank; // if these values are changed, the expected maxs, mins, sums, etc must also change.  NOTE: Broadcst() does not use these values.  The lines that need to be changed are located in the "Values for ****** tests" sections directly below.
-  double *dInputs = new double[count]; // General array for double type tests
+    iInputs[i] = 10*(i + rank - 2) + rank; 
+	  // if these values are changed, the expected maxs, mins, sums, etc must also change.  
+	  //NOTE: Broadcst() does not use these values.  The lines that need to be changed are located
+	  //in the "Values for ****** tests" sections directly below.
+
+  double* dInputs = new double[count]; // General array for double type tests
   for (i=0; i<count; i++)
-    dInputs[i] = pow(2.0,i-rank);// if these values are changed, the expected maxs, mins, sums, etc must also change.  NOTE: Broadcst() does not use these values.  The lines that need to be changed are located in the "Values for ****** tests" sections directly below.
+    dInputs[i] = pow(2.0,i-rank); 
+	  // if these values are changed, the expected maxs, mins, sums, etc must also change.  
+	  //NOTE: Broadcst() does not use these values.  The lines that need to be changed are located
+	  //in the "Values for ****** tests" sections directly below.
+
 
   // Values for Broadcast tests
-  int *iVals = new int[count];
+  int* iVals = new int[count];
   if (rank == 0) {
-     for (i=0; i<count; i++)
+		for (i=0; i<count; i++)
        iVals[i] = i; // if these values are changed, the values in iBVals must also be changed
   }
-  int *iBVals = new int[count]; // Values to be checked against the values broadcast to the non root processors
+  
+  int* iBVals = new int[count]; // Values to be checked against the values broadcast to the non root processors
   for (i=0; i<count; i++)
     iBVals[i] = i; // if these values are changed, the values in iVals must also be changed
-  double *dVals = new double[count];
+  double* dVals = new double[count];
   if (rank == 0) {
      for (i=0; i<count; i++)
        dVals[i] = double(i); // if these values are changed, the values in dBVals must also be changed
   }    
-  double *dBVals = new double[count];// Values to be checked against the values broadcast to the non root processors
+  double* dBVals = new double[count]; // Values to be checked against the values broadcast to the non root processors
   for (i=0; i<count; i++)
     dBVals[i] = i; // if these values are changed, the values in dVals must also be changed
 
+
   // Values for MaxAll tests
-  int *iMyGlobalMaxs = new int[count];
+  int* iMyGlobalMaxs = new int[count];
   for (i=0; i<count; i++)
-    iMyGlobalMaxs[i]=10 * (i + NumProc-1 -2) +  NumProc-1; // if these values are changed, iInput must be changed as well as all other values dependent on iInput
-  double *dMyGlobalMaxs = new double[count];
+    iMyGlobalMaxs[i]=10 * (i + NumProc-1 -2) +  NumProc-1; // if these values are changed, iInput must be changed 
+	                                                         //as well as all other values dependent on iInput
+  double* dMyGlobalMaxs = new double[count];
   for (i=0; i<count; i++)
-    dMyGlobalMaxs[i]= pow(2.0,i); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
+    dMyGlobalMaxs[i]= pow(2.0,i); //if these values are changed, dInput must be changed 
+	                                //as well as all other values dependent on dInput
+
 
   // Values for MinAll tests
-  int *iMyGlobalMins = new int[count];
+  int* iMyGlobalMins = new int[count];
   for (i=0; i<count; i++)
-    iMyGlobalMins[i]= 10 * (i - 2); // if these values are changed, iInput must be changed as well as all other values dependent on iInput
-  double *dMyGlobalMins = new double[count];
+    iMyGlobalMins[i]= 10 * (i - 2); //if these values are changed, iInput must be changed 
+	                                  //as well as all other values dependent on iInput
+  double* dMyGlobalMins = new double[count];
   for (i=0; i<count; i++)
-    dMyGlobalMins[i]= pow(2.0,i-(NumProc-1)); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
+    dMyGlobalMins[i]= pow(2.0,i-(NumProc-1)); //if these values are changed, dInput must be changed 
+	                                            //as well as all other values dependent on dInput
+
 
   // Values for SumAll tests
-  int *iMyGlobalSums = new int[count];
+  int* iMyGlobalSums = new int[count];
   for (i=0; i<count; i++){
     iMyGlobalSums[i]=0;
     for (j=0; j<NumProc; j++)
-      iMyGlobalSums[i] += 10*(i+j-2) + j;// if these values are changed, iInput must be changed as well as all other values dependent on iInput
-  }
-  double *dMyGlobalSums = new double[count];
+      iMyGlobalSums[i] += 10*(i+j-2) + j;// if these values are changed, iInput must be changed 		                                     
+  }                                      //as well as all other values dependent on iInput
+
+  double* dMyGlobalSums = new double[count];
   for (i=0; i<count; i++){
     dMyGlobalSums[i]=0;
     for (j=0; j<NumProc; j++)
-      dMyGlobalSums[i] += pow(2.0,i-j);// if these values are changed, dInput must be changed as well as all other values dependent on dInput
-  }
+      dMyGlobalSums[i] += pow(2.0,i-j);// if these values are changed, dInput must be changed 
+	}                                    //as well as all other values dependent on dInput
+
 
   // Values for ScanSum tests
-  int *iMyScanSums = new int[count];
+  int* iMyScanSums = new int[count];
   for (i=0; i<count; i++)
-    iMyScanSums[i] = int((rank+1)*(10*(2*i+rank-4)+rank)*.5);// if these values are changed, iInput must be changed as well as all other values dependent on iInput
-  double *dMyScanSums = new double[count];
+    iMyScanSums[i] = int((rank+1)*(10*(2*i+rank-4)+rank)*.5);// if these values are changed, 
+	                                                           //iInput must be changed as well as 
+	                                                           //all other values dependent on iInput
+  double* dMyScanSums = new double[count];
   for (i=0; i<count; i++) {
     dMyScanSums[i] = 0;
     for (j=0; j<=rank; j++)
-      dMyScanSums[i] += pow(2.0,i-j); //if these values are changed, dInput must be changed as well as all other values dependent on dInput
-  }
+      dMyScanSums[i] += pow(2.0,i-j); //if these values are changed, dInput must be changed 
+	}	                                  //as well as all other values dependent on dInput
+
+
   // Values for Gather tests
   int totalVals = count*NumProc;
-  int *iMyOrderedVals = new int[totalVals];
-  double *dMyOrderedVals = new double[totalVals];
+  int* iMyOrderedVals = new int[totalVals];
+  double* dMyOrderedVals = new double[totalVals];
   int k=0;
   for (j=0; j<NumProc; j++) {
     for (i=0; i<count; i++) {
-      iMyOrderedVals[k] = 10*(i + j - 2) + j;; // if these values are changed, iInput must be changed as well as all other values dependent on iInput
-      dMyOrderedVals[k] = pow(2.0,i-j); // if these values are changed, dInput must be changed as well as all other values dependent on dInput
+      iMyOrderedVals[k] = 10*(i + j - 2) + j;; // if these values are changed, iInput must be changed 
+			                                         //as well as all other values dependent on iInput
+      dMyOrderedVals[k] = pow(2.0,i-j); // if these values are changed, dInput must be changed 
+			                                  //as well as all other values dependent on dInput
       k++;
     }
   }
   petracomm.Barrier();
+
 
   // Method testing section
   // Test the Broadcast functions
@@ -178,7 +249,8 @@ int main(int argc, char *argv[]) {
   delete [] iVals;
   delete [] iBVals;
   petracomm.Barrier();
-  if (verbose) cout << endl << "Broadcast (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "Broadcast (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                 //only output on one node
   petracomm.Barrier();
 
   EPETRA_TEST_ERR(petracomm.Broadcast(dVals,count,0),ierr);
@@ -198,11 +270,13 @@ int main(int argc, char *argv[]) {
   delete [] dVals;
   delete [] dBVals;
   petracomm.Barrier();
-  if (verbose) cout << endl << "Broadcast (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "Broadcast (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                    //only output on one node
   petracomm.Barrier();
 
+
  // Test the MaxAll functions
-  int *iGlobalMaxs = new int[count];
+  int* iGlobalMaxs = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -226,10 +300,11 @@ int main(int argc, char *argv[]) {
   delete [] iGlobalMaxs;
   delete [] iMyGlobalMaxs;
   petracomm.Barrier();
-  if (verbose) cout << endl << "MaxAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "MaxAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                              //only output on one node
   petracomm.Barrier();
 
-  double *dGlobalMaxs = new double[count];
+  double* dGlobalMaxs = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -252,11 +327,13 @@ int main(int argc, char *argv[]) {
   delete [] dGlobalMaxs;
   delete [] dMyGlobalMaxs;
   petracomm.Barrier();
-  if (verbose) cout << endl << "MaxAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "MaxAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                 //only output on one node
   petracomm.Barrier();
 
+
  // Test the MinAll functions
-  int *iGlobalMins = new int[count];
+  int* iGlobalMins = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -279,10 +356,11 @@ int main(int argc, char *argv[]) {
   delete [] iGlobalMins;
   delete [] iMyGlobalMins;
   petracomm.Barrier();
-  if (verbose) cout << endl << "MinAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "MinAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                              //only output on one node
   petracomm.Barrier();
 
-  double *dGlobalMins = new double[count];
+  double* dGlobalMins = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -305,11 +383,13 @@ int main(int argc, char *argv[]) {
   delete [] dGlobalMins;
   delete [] dMyGlobalMins;
   petracomm.Barrier();
-  if (verbose) cout << endl << "MinAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "MinAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                 //only output on one node
   petracomm.Barrier();
 
+
  // Test the SumAll functions
-  int *iGlobalSums = new int[count];
+  int* iGlobalSums = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -332,10 +412,11 @@ int main(int argc, char *argv[]) {
   delete [] iGlobalSums;
   delete [] iMyGlobalSums;
   petracomm.Barrier();
-  if (verbose) cout << endl << "SumAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "SumAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                              //only output on one node
   petracomm.Barrier();
 
-  double *dGlobalSums = new double[count];
+  double* dGlobalSums = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -359,11 +440,13 @@ int main(int argc, char *argv[]) {
   delete [] dGlobalSums;
   delete [] dMyGlobalSums;
   petracomm.Barrier();
-  if (verbose) cout << endl << "SumAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "SumAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                 //only output on one node
   petracomm.Barrier();
 
+
  // Test the ScanSum functions
-  int *iScanSums = new int[count];
+  int* iScanSums = new int[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -388,10 +471,11 @@ int main(int argc, char *argv[]) {
   delete [] iScanSums;
   delete [] iMyScanSums;
   petracomm.Barrier();
-  if (verbose) cout << endl << "ScanSum (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "ScanSum (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                               //only output on one node
   petracomm.Barrier();
 
-  double *dScanSums = new double[count];
+  double* dScanSums = new double[count];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++)
@@ -416,11 +500,13 @@ int main(int argc, char *argv[]) {
   delete [] dScanSums;
   delete [] dMyScanSums;
   petracomm.Barrier();
-  if (verbose) cout << endl << "ScanSum (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "ScanSum (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                  //only output on one node
   petracomm.Barrier();
 
+
  // Test the Gather functions
-  int *iOrderedVals = new int[totalVals];
+  int* iOrderedVals = new int[totalVals];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -445,10 +531,11 @@ int main(int argc, char *argv[]) {
   delete [] iOrderedVals;
   delete [] iMyOrderedVals;
   petracomm.Barrier();
-  if (verbose) cout << endl << "GatherAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "GatherAll (type int) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                 //only output on one node
   petracomm.Barrier();
 
-  double *dOrderedVals = new double[totalVals];
+  double* dOrderedVals = new double[totalVals];
   if (verbose1) {
     cout << "The values on processor " << rank << " are: ";
     for (i=0; i<count; i++) 
@@ -473,36 +560,136 @@ int main(int argc, char *argv[]) {
   delete [] dOrderedVals;
   delete [] dMyOrderedVals;
   petracomm.Barrier();
-  if (verbose) cout << endl << "GatherAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
+  if (verbose) cout << endl << "GatherAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, 
+	                                                                                    //only output on one node
   petracomm.Barrier();
 
   delete [] dInputs;
   delete [] iInputs;
-#endif
-
-  // Test serial interface first
-  Epetra_SerialComm comm;
-  int MyPID1 = comm.MyPID();
-  int NumProc1 = comm.NumProc();
-  if (verbose1) cout << comm << endl;
-
-  EPETRA_TEST_ERR(!(MyPID1==0),ierr);
-  EPETRA_TEST_ERR(!(NumProc1==1),ierr);
-  comm.Barrier();
-  if (verbose1) cout << comm << " is past serial barrier." << endl << flush;
-
-#ifdef EPETRA_MPI
-  petracomm.Barrier();
-#endif
-
-  if (verbose1) cout << endl << " Epetra_Comm Check OK." << endl;
-
-#ifdef EPETRA_MPI
-  MPI_Finalize();
-#endif
-  return ierr;
 }
 
+//=============================================================================
+void checkSerialDataClass(int& ierr, bool verbose) {
+	if(verbose) cout << "Testing Reference Counting... ";								
+	Epetra_SerialComm c1;
+	int c1count = c1.ReferenceCount();
+	int c1addr = (int) c1.DataPtr();
+	EPETRA_TEST_ERR(!(c1count==1),ierr); // count should be 1
+	if(verbose) cout << "Default constructor. \nc1= " << c1count << "  " << c1addr << endl;
+
+	Epetra_SerialComm* c2 = new Epetra_SerialComm(c1);
+	int c2count = c2->ReferenceCount();
+	int c2addr = (int) c2->DataPtr();
+	int c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c2count==c1count && c1count==(c1countold+1)),ierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(c1addr==c2addr),ierr); // addresses should be same
+	if(verbose) cout << "Copy constructor(heap). \nc1= " << c1count << "  " << c1addr 
+										<< "\nc2= " << c2count << "  " << c2addr << endl;
+	delete c2;
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	if(verbose) cout << "c2 Deleted. \nc1= " << c1count << "  " << c1addr << endl;
+	{ // inside own set of brackets so that c2a will be automatically at end of brackets
+		// so that we can test to make sure objects on the stack deallocate correctly
+		Epetra_SerialComm c2a(c1);
+		c2count = c2a.ReferenceCount();
+		c2addr = (int) c2a.DataPtr();
+		c1countold = c1count;
+		c1count = c1.ReferenceCount();
+		EPETRA_TEST_ERR(!(c2count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
+		EPETRA_TEST_ERR(!(c1addr==c2addr),ierr); // addresses should be same
+		if(verbose) cout << "Copy constructor(stack). \nc1= " << c1count << "  " << c1addr 
+											<< "\nc2a= " << c2count << "  " << c2addr << endl;
+	}
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	if(verbose) cout << "c2a Destroyed. \nc1= " << c1count << "  " << c1addr << endl;
+	if(verbose) cout << "Assignment operator, post construction" << endl;
+	Epetra_SerialComm c3;
+	int c3count = c3.ReferenceCount();
+	int c3addr = (int) c3.DataPtr();
+	EPETRA_TEST_ERR(!(c3count==1),ierr); // c3count should be 1 initially
+	EPETRA_TEST_ERR(!(c1addr!=c3addr),ierr); // c1 and c3 should have different ptr addresses
+	if(verbose)cout << "Prior to assignment: \nc1=" << c1count << "  " << c1addr 
+									 << "\nc3=" << c3count << "  " << c3addr << endl;
+	c3 = c1;
+	c3count = c3.ReferenceCount();
+	c3addr = (int) c3.DataPtr();
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c3count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(c1addr==c3addr),ierr); // addresses should be same
+	if(verbose)cout << "After assignment: \nc1=" << c1count << "  " << c1addr 
+									 << "\nc3=" << c3count << "  " << c3addr << endl;
+}
+
+//=============================================================================
+#ifdef EPETRA_MPI
+void checkMpiDataClass(int& ierr, bool verbose) {
+	if(verbose) cout << "Testing Reference Counting... ";								
+	Epetra_MpiComm c1( MPI_COMM_WORLD );
+	int c1count = c1.ReferenceCount();
+	int c1addr = (int) c1.DataPtr();
+	EPETRA_TEST_ERR(!(c1count==1),ierr); // count should be 1
+	if(verbose) cout << "Default constructor. \nc1= " << c1count << "  " << c1addr << endl;
+
+	Epetra_MpiComm* c2 = new Epetra_MpiComm(c1);
+	int c2count = c2->ReferenceCount();
+	int c2addr = (int) c2->DataPtr();
+	int c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c2count==c1count && c1count==(c1countold+1)),ierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(c1addr==c2addr),ierr); // addresses should be same
+	if(verbose) cout << "Copy constructor(heap). \nc1= " << c1count << "  " << c1addr 
+										<< "\nc2= " << c2count << "  " << c2addr << endl;
+	delete c2;
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	if(verbose) cout << "c2 Deleted. \nc1= " << c1count << "  " << c1addr << endl;
+	{ // inside own set of brackets so that c2a will be automatically at end of brackets
+		// so that we can test to make sure objects on the stack deallocate correctly
+		Epetra_MpiComm c2a(c1);
+		c2count = c2a.ReferenceCount();
+		c2addr = (int) c2a.DataPtr();
+		c1countold = c1count;
+		c1count = c1.ReferenceCount();
+		EPETRA_TEST_ERR(!(c2count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
+		EPETRA_TEST_ERR(!(c1addr==c2addr),ierr); // addresses should be same
+		if(verbose) cout << "Copy constructor(stack). \nc1= " << c1count << "  " << c1addr 
+											<< "\nc2a= " << c2count << "  " << c2addr << endl;
+	}
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c1count==c1countold-1),ierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(c1addr==(int)c1.DataPtr()),ierr); // c1addr should be unchanged
+	if(verbose) cout << "c2a Destroyed. \nc1= " << c1count << "  " << c1addr << endl;
+	if(verbose) cout << "Assignment operator, post construction" << endl;
+	Epetra_MpiComm c3( MPI_COMM_WORLD );
+	int c3count = c3.ReferenceCount();
+	int c3addr = (int) c3.DataPtr();
+	EPETRA_TEST_ERR(!(c3count==1),ierr); // c3count should be 1 initially
+	EPETRA_TEST_ERR(!(c1addr!=c3addr),ierr); // c1 and c3 should have different ptr addresses
+	if(verbose)cout << "Prior to assignment: \nc1=" << c1count << "  " << c1addr 
+									 << "\nc3=" << c3count << "  " << c3addr << endl;
+	c3 = c1;
+	c3count = c3.ReferenceCount();
+	c3addr = (int) c3.DataPtr();
+	c1countold = c1count;
+	c1count = c1.ReferenceCount();
+	EPETRA_TEST_ERR(!(c3count==c1count && c1count==c1countold+1),ierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(c1addr==c3addr),ierr); // addresses should be same
+	if(verbose)cout << "After assignment: \nc1=" << c1count << "  " << c1addr 
+									 << "\nc3=" << c3count << "  " << c3addr << endl;
+}
+#endif
+
 /*
-  end of file main.cc
+  end of file cxx_main.cpp
 */

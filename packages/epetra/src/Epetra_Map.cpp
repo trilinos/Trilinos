@@ -29,7 +29,7 @@
 //==============================================================================
 // Epetra_Map constructor for a Epetra-defined uniform linear distribution of elements.
 Epetra_Map::Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm)
-  : Epetra_BlockMap( NumGlobalElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
+  : Epetra_BlockMap(NumGlobalElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
 }
@@ -43,7 +43,7 @@ Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, 
 //==============================================================================
 // Epetra_Map constructor for a user-defined arbitrary distribution of constant block size elements.
 Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int * MyGlobalElements, 
-		     int IndexBase, const Epetra_Comm& Comm)
+											 int IndexBase, const Epetra_Comm& Comm)
   : Epetra_BlockMap(NumGlobalElements, NumMyElements, MyGlobalElements, 1, IndexBase, Comm) // Map is just a special case of BlockMap
 {
   SetLabel("Epetra::Map");
@@ -55,6 +55,11 @@ Epetra_Map::Epetra_Map(const Epetra_Map& map)
 }
 
 //==============================================================================
-Epetra_Map::~Epetra_Map(void) 
-{
+Epetra_Map::~Epetra_Map(void) {}
+
+//=============================================================================
+Epetra_Map & Epetra_Map::operator= (const Epetra_Map& map) {
+	if(this != &map)
+		Epetra_BlockMap::operator=(map); // call this->Epetra_BlockMap::operator=
+	return(*this);
 }

@@ -27,12 +27,16 @@
 
 //=============================================================================
 Epetra_SerialComm::Epetra_SerialComm()
-  : Epetra_Object("Epetra::Comm") {}
+  : Epetra_Object("Epetra::Comm"), 
+		SerialCommData_(new Epetra_SerialCommData()) {}
  
 //=============================================================================
-Epetra_SerialComm::Epetra_SerialComm(const Epetra_SerialComm& Comm) : 
-  Epetra_Object(Comm.Label()){}
-
+Epetra_SerialComm::Epetra_SerialComm(const Epetra_SerialComm& Comm) 
+	: Epetra_Object(Comm.Label()), 
+		SerialCommData_(Comm.SerialCommData_) 
+{
+	SerialCommData_->IncrementReferenceCount();
+}
 //=============================================================================
 void Epetra_SerialComm::Barrier() const {}
 //=============================================================================
@@ -100,10 +104,35 @@ Epetra_Distributor * Epetra_SerialComm::CreateDistributor() const {
   return(dist);
 }
 //=============================================================================
-Epetra_Directory * Epetra_SerialComm:: CreateDirectory(const Epetra_BlockMap & map) const {
+Epetra_Directory * Epetra_SerialComm::CreateDirectory(const Epetra_BlockMap & map) const {
 
   Epetra_Directory * dir = dynamic_cast<Epetra_Directory *>(new Epetra_BasicDirectory(map));
   return(dir);
 }
- //=============================================================================
-Epetra_SerialComm::~Epetra_SerialComm()  {}
+//=============================================================================
+Epetra_SerialComm::~Epetra_SerialComm()  {
+	CleanupData();
+}
+//=============================================================================
+Epetra_SerialComm& Epetra_SerialComm::operator= (const Epetra_SerialComm & Comm) {
+	if((this != &Comm) && (SerialCommData_ != Comm.SerialCommData_)) {
+		CleanupData();
+		SerialCommData_ = Comm.SerialCommData_;
+		SerialCommData_->IncrementReferenceCount();
+	}
+	return(*this);
+}
+//=============================================================================
+void Epetra_SerialComm::CleanupData() {
+	if(SerialCommData_ != 0) {
+		SerialCommData_->DecrementReferenceCount();
+		if(SerialCommData_->ReferenceCount() == 0) {
+			delete SerialCommData_;
+			SerialCommData_ = 0;
+		}
+	}
+}
+//=============================================================================
+int Epetra_SerialComm::ReferenceCount() const {
+  return(SerialCommData_->ReferenceCount());
+}

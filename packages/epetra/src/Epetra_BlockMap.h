@@ -26,11 +26,7 @@
 #define _EPETRA_BLOCKMAP_H_
 
 #include "Epetra_Object.h"
-
-class Epetra_Comm;
-class Epetra_Directory;
-
-class Epetra_HashTable;
+#include "Epetra_BlockMapData.h"
 
 
 //! Epetra_BlockMap: A class for partitioning block element vectors and matrices.
@@ -38,9 +34,11 @@ class Epetra_HashTable;
 /*! It is often the case that multiple matrix and vector objects have an identical distribution 
   of elements on a parallel machine. The Epetra_BlockMap class keeps information that describes 
   this distribution for matrices and vectors that have block elements.  The definition of an 
-  element can vary depending on the situation.  For
-  vectors (and multi-vectors), an element is a span of one or more contiguous entries.
-  For matrices, it is a span of one or more matrix rows.  More generally, an element in the BlockMap class is an ordered list of points.  (NOTE: Points do not have global ID's.)  Two additional definitions useful in understanding the BlockMap class follow:
+  element can vary depending on the situation.  For vectors (and multi-vectors), an element 
+  is a span of one or more contiguous entries. For matrices, it is a span of one or more matrix rows. 
+  More generally, an element in the BlockMap class is an ordered list of points. (NOTE: 
+  Points do not have global ID's.)  Two additional definitions useful in understanding 
+  the BlockMap class follow:
   <ul>
   <li> BlockMap - A distributed ordered list of elements.
   <li> First Point - First ordered point in an element
@@ -174,8 +172,9 @@ class Epetra_HashTable;
 */
 
 class Epetra_BlockMap: public Epetra_Object {
-    
-  public:
+  friend class Epetra_Directory;
+  friend class Epetra_LocalMap;
+ public:
   //@{ \name Constructors/destructors.
   //! Epetra_BlockMap constructor for a Epetra-defined uniform linear distribution of constant size elements.
   /*! Creates a map that distributes NumGlobalElements elements evenly across all processors in the
@@ -229,11 +228,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, 
-	    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
-
-
-
-
+									int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of constant size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
@@ -269,9 +264,7 @@ class Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *MyGlobalElements,  
-	    int ElementSize, int IndexBase, const Epetra_Comm& Comm);
-
-
+		  int ElementSize, int IndexBase, const Epetra_Comm& Comm);
 
   //! Epetra_BlockMap constructor for a user-defined arbitrary distribution of variable size elements.
   /*! Creates a map that puts NumMyElements on the calling processor. NumGlobalElements will be the
@@ -308,14 +301,12 @@ class Epetra_BlockMap: public Epetra_Object {
 
   */ 
   Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *MyGlobalElements, 
-	    int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm);
+									int *ElementSizeList, int IndexBase, const Epetra_Comm& Comm);
   
   //! Epetra_BlockMap copy constructor.
-  
   Epetra_BlockMap(const Epetra_BlockMap& map);
   
   //! Epetra_BlockMap destructor.
-  
   virtual ~Epetra_BlockMap(void);
   //@}
   
@@ -326,7 +317,8 @@ class Epetra_BlockMap: public Epetra_Object {
       local index (in LIDList) of the GID on that processor.
   */
   int RemoteIDList(int NumIDs, const int * GIDList, int * PIDList, int * LIDList) const {
-    return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));};
+    return(RemoteIDList(NumIDs, GIDList, PIDList, LIDList, 0));
+  };
 
   //! Returns the processor IDs, corresponding local index value, and element size for a given list of global indices
   /*! For each element (GID) of a given a list of global element numbers (stored in GIDList) of length NumIDs,
@@ -349,39 +341,39 @@ class Epetra_BlockMap: public Epetra_Object {
   bool  MyGID(int GID) const {return(LID(GID)!=-1);};
    
   //! Returns true if the LID passed in belongs to the calling processor in this map, otherwise returns false.
-  bool  MyLID(int LID) const {return(GID(LID)!=IndexBase_-1);};
+  bool  MyLID(int LID) const {return(GID(LID)!=BlockMapData_->IndexBase_-1);};
   
   //!Returns the minimum global ID across the entire map.
-  int  MinAllGID() const {return(MinAllGID_);};
+  int  MinAllGID() const {return(BlockMapData_->MinAllGID_);};
   
   //! Returns the maximum global ID across the entire map.
-  int  MaxAllGID() const {return(MaxAllGID_);};
+  int  MaxAllGID() const {return(BlockMapData_->MaxAllGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  int  MinMyGID() const {return(MinMyGID_);};
+  int  MinMyGID() const {return(BlockMapData_->MinMyGID_);};
   
   //! Returns the maximum global ID owned by this processor.
-  int  MaxMyGID() const {return(MaxMyGID_);};
+  int  MaxMyGID() const {return(BlockMapData_->MaxMyGID_);};
   
   //!  The minimum local index value on the calling processor.
-  int  MinLID() const {return(MinLID_);};
+  int  MinLID() const {return(BlockMapData_->MinLID_);};
   
   //! The maximum local index value on the calling processor.
-  int  MaxLID() const {return(MaxLID_);};
+  int  MaxLID() const {return(BlockMapData_->MaxLID_);};
   //@}
 
   //@{ \name Size and dimension accessor functions
   //! Number of elements across all processors.
-  int  NumGlobalElements() const {return(NumGlobalElements_);};
+  int  NumGlobalElements() const {return(BlockMapData_->NumGlobalElements_);};
   
   //! Number of elements on the calling processor.
-  int  NumMyElements() const {return(NumMyElements_);};
+  int  NumMyElements() const {return(BlockMapData_->NumMyElements_);};
   
   //! Puts list of global elements on this processor into the user-provided array.
   int MyGlobalElements(int * MyGlobalElementList) const;
   
   //! Returns the size of elements in the map; only valid if map has constant element size.
-  int  ElementSize() const {return(ElementSize_);};
+  int  ElementSize() const {return(BlockMapData_->ElementSize_);};
     
   //! Size of element for specified LID.
   int  ElementSize(int LID) const;
@@ -393,45 +385,45 @@ class Epetra_BlockMap: public Epetra_Object {
   int  FirstPointInElement(int LID) const;
   
   //! Index base for this map.
-  int  IndexBase() const {return(IndexBase_);};
+  int  IndexBase() const {return(BlockMapData_->IndexBase_);};
   
   //! Number of global points for this map; equals the sum of all element sizes across all processors.
-  int  NumGlobalPoints() const {return(NumGlobalPoints_);};
+  int  NumGlobalPoints() const {return(BlockMapData_->NumGlobalPoints_);};
   
   //! Number of global points for this map; equals the sum of all element sizes on the calling processor.
-  int  NumMyPoints() const {return(NumMyPoints_);};
+  int  NumMyPoints() const {return(BlockMapData_->NumMyPoints_);};
   
   //! Minimum element size on the calling processor.
-  int  MinMyElementSize() const {return(MinMyElementSize_);};
+  int  MinMyElementSize() const {return(BlockMapData_->MinMyElementSize_);};
   
   //! Maximum element size on the calling processor.
-  int  MaxMyElementSize() const {return(MaxMyElementSize_);};
+  int  MaxMyElementSize() const {return(BlockMapData_->MaxMyElementSize_);};
   
   //! Minimum element size across all processors.
-  int  MinElementSize() const {return(MinElementSize_);};
+  int  MinElementSize() const {return(BlockMapData_->MinElementSize_);};
   
   //! Maximum element size across all processors.
-  int  MaxElementSize() const {return(MaxElementSize_);};
+  int  MaxElementSize() const {return(BlockMapData_->MaxElementSize_);};
   //@}
 
   //@{ \name Miscellaneous boolean tests
   //! Returns true if map has constant element size.
-  bool  ConstantElementSize() const {return(ConstantElementSize_);};
+  bool  ConstantElementSize() const {return(BlockMapData_->ConstantElementSize_);};
 
   //! Returns true if \e this and Map are identical maps
   bool SameAs(const Epetra_BlockMap & Map) const;
 
   //! Returns true if \e this and Map have identical point-wise structure
-	/*! If both maps have the same number of global points and the same point
-		  distribution across processors then this method returns true.
-	*/
+  /*! If both maps have the same number of global points and the same point
+    distribution across processors then this method returns true.
+  */
   bool PointSameAs(const Epetra_BlockMap & Map) const;
   
   //! Returns true if the global ID space is contiguously divided (but not necessarily uniformly) across all processors.
-  bool  LinearMap() const {return(LinearMap_);};
+  bool  LinearMap() const {return(BlockMapData_->LinearMap_);};
 
   //! Returns true if map is defined across more than one processor.
-  bool  DistributedGlobal() const {return(DistributedGlobal_);};
+  bool  DistributedGlobal() const {return(BlockMapData_->DistributedGlobal_);};
   //@}
 
   //@{ \name Array accessor functions
@@ -468,52 +460,35 @@ class Epetra_BlockMap: public Epetra_Object {
   virtual void Print(ostream & os) const;
 
   //! Access function for Epetra_Comm communicator.
-  const Epetra_Comm& Comm() const {return(*Comm_);};
+  const Epetra_Comm & Comm() const {return(*BlockMapData_->Comm_);};
+
+	//! Assignment Operator
+	Epetra_BlockMap & operator=(const Epetra_BlockMap & map);
+
   //@}
 
   //@{ \name Expert Users and Developers Only
-  Epetra_BlockMap * NewReference() const { NumReferences_++; return((Epetra_BlockMap *) this);};
-  //@}
 
-  friend class Epetra_Directory;
-  friend class Epetra_LocalMap;
+	//! Returns the reference count of BlockMapData.
+	/*! (Intended for testing purposes).*/
+	int ReferenceCount() const {return(BlockMapData_->ReferenceCount());};
+
+	//! Returns a pointer to the BlockMapData instance this BlockMap uses. 
+	/*! Intended for developer use only for testing purposes. This will probably 
+		  be removed before being merged into main Epetra branch.*/
+	const Epetra_BlockMapData * DataPtr() const {return(BlockMapData_);};
+
+  //@}
   
  private: // These need to be accessible to derived map classes.
   
   void GlobalToLocalSetup();
   bool IsDistributedGlobal(int NumGlobalElements, int NumMyElements) const;
-  int *LID_;
-  int NumGlobalElements_;
-  int NumMyElements_;
-  int* MyGlobalElements_;
-  int* FirstPointInElementList_;
-  int ElementSize_;
-  int* ElementSizeList_;
-  int* PointToElementList_;
-  int IndexBase_;
-  const Epetra_Comm * Comm_;
-  Epetra_Directory * Directory_;
+  void CheckValidNGE(int NumGlobalElements) const;
+  void EndOfConstructorOps();
+	void CleanupData();
   
-  int NumGlobalPoints_;
-  int NumMyPoints_;
-  int MinAllGID_;
-  int MaxAllGID_;
-  int MinMyGID_;
-  int MaxMyGID_;
-  int MinLID_;
-  int MaxLID_;
-  int MinMyElementSize_;
-  int MaxMyElementSize_;
-  int MinElementSize_;
-  int MaxElementSize_;
-  
-  bool ConstantElementSize_;
-  bool LinearMap_;
-  bool DistributedGlobal_;
-
-  int LastContiguousGIDLoc_;
-  Epetra_HashTable * LIDHash_;
-  mutable int NumReferences_;
+  Epetra_BlockMapData * BlockMapData_;
 
 };
 

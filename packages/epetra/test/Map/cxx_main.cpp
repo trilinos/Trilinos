@@ -1,4 +1,4 @@
-// Epetra_Map Test routine
+// Epetra_Map (and Epetra_LocalMap) Test routine
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -10,6 +10,9 @@
 #endif
 #include "checkmap.h"
 #include "../epetra_test_err.h"
+
+int checkMapDataClass(Epetra_Comm& Comm, int verbose);
+int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose);
 
 int main(int argc, char *argv[]) {
 
@@ -57,7 +60,7 @@ int main(int argc, char *argv[]) {
   int IndexBase = 0;
   bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
-  Epetra_Map * Map;
+  Epetra_Map* Map;
 
   // Test exceptions
 
@@ -144,21 +147,21 @@ int main(int argc, char *argv[]) {
   for (int i = 0; i<NumMyElements; i++) MyGlobalElements[i] = MaxMyGID-i;
 
   Map = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements, 
-		      IndexBase, Comm);
+											 IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm)" << endl;
   ierr = checkmap(*Map, NumGlobalElements, NumMyElements, MyGlobalElements, 
-		  IndexBase, Comm, DistributedGlobal);
+									IndexBase, Comm, DistributedGlobal);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   // Test Copy constructor
-  Epetra_Map * Map1 = new Epetra_Map(*Map);
+  Epetra_Map* Map1 = new Epetra_Map(*Map);
 
   // Test SameAs() method
   bool same = Map1->SameAs(*Map);
   EPETRA_TEST_ERR(!(same==true),ierr);// should return true since Map1 is a copy of Map
 
-  Epetra_BlockMap * Map2 = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm);
+  Epetra_BlockMap* Map2 = new Epetra_Map(NumGlobalElements, NumMyElements, MyGlobalElements,  IndexBase, Comm);
   same = Map2->SameAs(*Map);
   EPETRA_TEST_ERR(!(same==true),ierr); // Map and Map2 were created with the same sets of parameters
   delete Map2;
@@ -177,10 +180,10 @@ int main(int argc, char *argv[]) {
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
-  Epetra_Map * SmallMap = 0;
+  Epetra_Map* SmallMap = 0;
   if (verbose1) {
     // Build a small map for test cout.  Use 10 elements from current map
-    int * MyEls = Map->MyGlobalElements();
+    int* MyEls = Map->MyGlobalElements();
     int IndBase = Map->IndexBase();
     int MyLen = EPETRA_MIN(10+Comm.MyPID(),Map->NumMyElements());
     SmallMap = new Epetra_Map(-1, MyLen, MyEls, IndBase, Comm);
@@ -190,26 +193,36 @@ int main(int argc, char *argv[]) {
   delete Map;
   delete Map1;
 
+	// Test reference-counting in Epetra_Map
+	if (verbose) cout << "Checking Epetra_Map reference counting" << endl;
+	ierr = checkMapDataClass(Comm, verbose);
+	EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
 
   // Test LocalMap constructor
-  Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase, 
-						Comm);
+  Epetra_LocalMap* LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase, Comm);
   if (verbose) cout << "Checking Epetra_LocalMap(NumMyElements1, IndexBase, Comm)" << endl;
-  ierr = checkmap(*LocalMap, NumMyElements1, NumMyElements1, 0, 
-		  IndexBase, Comm, false);
+  ierr = checkmap(*LocalMap, NumMyElements1, NumMyElements1, 0, IndexBase, Comm, false);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   // Test Copy constructor
-  Epetra_LocalMap * LocalMap1 = new Epetra_LocalMap(*LocalMap);
+  Epetra_LocalMap* LocalMap1 = new Epetra_LocalMap(*LocalMap);
   if (verbose) cout << "Checking Epetra_LocalMap(*LocalMap)" << endl;
-  ierr = checkmap(*LocalMap1, NumMyElements1, NumMyElements1, 
-		  0, IndexBase, Comm, false);
+  ierr = checkmap(*LocalMap1, NumMyElements1, NumMyElements1, 0, IndexBase, Comm, false);
 
   EPETRA_TEST_ERR(ierr,returnierr);
   if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
   delete LocalMap1;
   delete LocalMap;
+
+	// Test reference-counting in Epetra_LocalMap
+	if (verbose) cout << "Checking Epetra_LocalMap reference counting" << endl;
+	ierr = checkLocalMapDataClass(Comm, verbose);
+	EPETRA_TEST_ERR(ierr,returnierr);
+  if (verbose && ierr==0) cout << "Checked OK\n\n" <<endl;
+
+	// Test output
   if (verbose1) {
     if (verbose) cout << "Test ostream << operator" << endl << flush;
     cout << *SmallMap;
@@ -219,6 +232,118 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
+
   return returnierr;
 }
 
+int checkMapDataClass(Epetra_Comm& Comm, int verbose) {
+	int returnierr = 0;
+	int NumGlobalElements = 1000;
+	int IndexBase = 0;
+
+	Epetra_Map m1(NumGlobalElements, IndexBase, Comm);
+	int m1count = m1.ReferenceCount();
+	int m1addr = (int) m1.DataPtr(); // cast int* to int
+	EPETRA_TEST_ERR(!(m1count==1),returnierr); // count should be 1
+	if(verbose) cout << "Default constructor. \nm1= " << m1count << "  " << m1addr << endl;
+	
+	Epetra_Map* m2 = new Epetra_Map(m1);
+	int m2count = m2->ReferenceCount();
+	int m2addr = (int) m2->DataPtr(); // cast int* to int
+	int m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(m1addr==m2addr),returnierr); // addresses should be same
+	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr 
+									 << "\nm2= " << m2count << "  " << m2addr << endl;
+
+	delete m2;
+	m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m1count == m1countold-1), returnierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(m1addr == (int) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	if(verbose) cout << "m2 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
+
+	{ // inside of braces to test stack deallocation.
+		if(verbose) cout << "Assignment operator, post construction" << endl;
+		Epetra_Map m3(NumGlobalElements, IndexBase+1, Comm);
+		int m3count = m3.ReferenceCount();
+		int m3addr = (int) m3.DataPtr(); // cast int* to int
+		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
+		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
+		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
+										 << "\nm3= " << m3count << "  " << m3addr << endl;
+		m3 = m1;
+		m3count = m3.ReferenceCount();
+		m3addr = (int) m3.DataPtr(); // cast int* to int
+		m1countold = m1count;
+		m1count = m1.ReferenceCount();
+		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
+		EPETRA_TEST_ERR(!(m1addr==m3addr),returnierr); // addresses should be same
+		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr 
+										 << "\nm3= " << m3count << "  " << m3addr << endl;
+	}
+	m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m1count==m1countold-1), returnierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(m1addr== (int) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	if(verbose) cout << "m3 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
+
+	return(returnierr);
+}
+
+int checkLocalMapDataClass(Epetra_Comm& Comm, int verbose) {
+	int returnierr = 0;
+	int NumMyElements = 100;
+	int IndexBase = 0;
+
+	Epetra_LocalMap m1(NumMyElements, IndexBase, Comm);
+	int m1count = m1.ReferenceCount();
+	int m1addr = (int) m1.DataPtr(); // cast int* to int
+	EPETRA_TEST_ERR(!(m1count==1),returnierr); // count should be 1
+	if(verbose) cout << "Default constructor. \nm1= " << m1count << "  " << m1addr << endl;
+	
+	Epetra_LocalMap* m2 = new Epetra_LocalMap(m1);
+	int m2count = m2->ReferenceCount();
+	int m2addr = (int) m2->DataPtr(); // cast int* to int
+	int m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m2count==m1count && m1count==(m1countold+1)),returnierr); // both counts should be 2
+	EPETRA_TEST_ERR(!(m1addr==m2addr),returnierr); // addresses should be same
+	if(verbose) cout << "Copy constructor. \nm1= " << m1count << "  " << m1addr 
+									 << "\nm2= " << m2count << "  " << m2addr << endl;
+
+	delete m2;
+	m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m1count == m1countold-1), returnierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(m1addr == (int) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	if(verbose) cout << "m2 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
+
+	{ // inside of braces to test stack deallocation.
+		if(verbose) cout << "Assignment operator, post construction" << endl;
+		Epetra_LocalMap m3(NumMyElements, IndexBase+1, Comm);
+		int m3count = m3.ReferenceCount();
+		int m3addr = (int) m3.DataPtr(); // cast int* to int
+		EPETRA_TEST_ERR(!(m3count==1),returnierr); // m3count should be 1 initially
+		EPETRA_TEST_ERR(!(m1addr!=m3addr),returnierr); // m1 and m3 should have different ptr addresses
+		if(verbose) cout << "Prior to assignment: \nm1= " << m1count << "  " << m1addr 
+										 << "\nm3= " << m3count << "  " << m3addr << endl;
+		m3 = m1;
+		m3count = m3.ReferenceCount();
+		m3addr = (int) m3.DataPtr(); // cast int* to int
+		m1countold = m1count;
+		m1count = m1.ReferenceCount();
+		EPETRA_TEST_ERR(!(m3count==m1count && m1count==m1countold+1),returnierr); // both counts should be 2
+		EPETRA_TEST_ERR(!(m1addr==m3addr),returnierr); // addresses should be same
+		if(verbose) cout << "After assignment: \nm1= " << m1count << "  " << m1addr 
+										 << "\nm3= " << m3count << "  " << m3addr << endl;
+	}
+	m1countold = m1count;
+	m1count = m1.ReferenceCount();
+	EPETRA_TEST_ERR(!(m1count==m1countold-1), returnierr); // count should have decremented (to 1)
+	EPETRA_TEST_ERR(!(m1addr== (int) m1.DataPtr()),returnierr); // m1addr should be unchanged
+	if(verbose) cout << "m3 destroyed. \nm1= " << m1count << "  " << m1addr << endl;
+
+	return(returnierr);
+}

@@ -180,14 +180,16 @@ class Epetra_Map : public Epetra_BlockMap {
 
   */ 
   Epetra_Map(int NumGlobalElements, int NumMyElements, int *MyGlobalElements,  
-	    int IndexBase, const Epetra_Comm& Comm);
-  //! Epetra_Map copy constructor.
+						 int IndexBase, const Epetra_Comm& Comm);
   
+	//! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
   
   //! Epetra_Map destructor.
-  
   virtual ~Epetra_Map(void);
+
+	//! Assignment Operator
+	Epetra_Map & operator=(const Epetra_Map & map);
   
 };
 
