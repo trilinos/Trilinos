@@ -56,6 +56,10 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   double *pos_coarse_dirichlet, *neg_coarse_dirichlet, *edge_type;
 #endif
 
+  int *glob_fine_edge_nums, *glob_fine_node_nums;
+  int *glob_coarse_edge_nums, *glob_coarse_node_nums;
+  ML_Operator *Ke;
+
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
@@ -142,10 +146,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
              fine_level, nz_ptr,i);
   }
 
+  /* this is buggy -- don't use it right now 
   fid2 = fopen("ML_write_matrix_now","r");
   if (fid2 != NULL) {
     i = fscanf(fid2,"%d",&max_matrix_size);
-    /* if empty file, print everything */
+    // if empty file, print everything
     fclose(fid2);
     if (i==EOF || i==0) {
        sprintf(filename,"T_%d",fine_level);
@@ -166,6 +171,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
       }
     }
   }
+  */
 
 
 
@@ -1112,10 +1118,11 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 		       Pe->outvec_leng,vec);
      ML_free(Pn_vec);
 
+     /* this is buggy -- don't use it right now
      fid2 = fopen("ML_write_matrix_now","r");
      if (fid2 != NULL) {
        i = fscanf(fid2,"%d",&max_matrix_size);
-       /* if empty file, print everything */
+       // if empty file, print everything 
        fclose(fid2);
        if (i==EOF || i==0) {
          sprintf(filename,"Kn_%d",grid_level);
@@ -1150,6 +1157,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
          }
        }
      }
+     */
 
      for (i = 0; i < Pe->outvec_leng ; i++) 
        vec[i] = vec[i] - Tfine_Pn_vec[i];
@@ -1169,10 +1177,27 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
            printf("ML_agg_reitzinger: Pe TH != Th Pn %e (level %d)\n",
                   d1,grid_level);
          if (14 < ML_Get_PrintLevel())  {
-            ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn.debug");
-            ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine.debug");
-            ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse.debug");
-            ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe.debug");
+            Ke = ml_edges->Amat+grid_level;
+            ML_build_global_numbering(Pe, Pe->comm,
+                                      &glob_fine_edge_nums);
+            ML_build_global_numbering(Pn_coarse,Pn_coarse->comm,
+                                      &glob_fine_node_nums);
+            ML_build_global_numbering(Kn_coarse,Kn_coarse->comm,
+                                      &glob_coarse_node_nums);
+            ML_build_global_numbering(Ke,Ke->comm,
+                                      &glob_coarse_edge_nums);
+            ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,"Pn_debug",
+                              glob_fine_node_nums,glob_coarse_edge_nums);
+            ML_Operator_Print_UsingGlobalOrdering(Tfine,"Tfine_debug",
+                              glob_fine_edge_nums,glob_fine_node_nums);
+            ML_Operator_Print_UsingGlobalOrdering(Tcoarse,"Tcoarse_debug",
+                              glob_coarse_edge_nums,glob_coarse_node_nums);
+            ML_Operator_Print_UsingGlobalOrdering(Pe,"Pe_debug",
+                              glob_fine_edge_nums,glob_coarse_node_nums);
+            ML_free(glob_fine_edge_nums);
+            ML_free(glob_fine_node_nums);
+            ML_free(glob_coarse_node_nums);
+            ML_free(glob_coarse_edge_nums);
          }
          for (i = 0; i < Pe->outvec_leng; i++) {
            /* change this tolerance if you actually want */

@@ -123,7 +123,8 @@
    double ML_gmin_double(double val, ML_Comm *comm);
    /*ms*/
    extern int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix, 
-                                           const char label[] );
+                                           const char label[],
+                                           int *, int *);
    extern int ML_build_global_numbering( ML_Operator *Amat,
               ML_Comm *comm, int **pglobal_numbering );
 
