@@ -110,7 +110,7 @@ foreach g(*.exe)
       if( $status != 0 ) then
         # A test failed.
         set AnError = True
-        echo "[IFPACK TestExamples] ERROR: Test w/ 2 proc failed!!" >>& $file
+        echo "[IFPACK TestExamples] ERROR: Test w/ 2 proc failed" >>& $file
         echo "[IFPACK TestExamples] ERROR: now re-running with output" >>& $file
         $mpigo 2 ./$g >>& ../$file
         echo "[IFPACK TestExamples] Errors for script " $g " are listed above." >>& $file2
