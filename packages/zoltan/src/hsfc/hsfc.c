@@ -637,6 +637,38 @@ int Zoltan_HSFC_Copy_Structure(ZZ *toZZ, ZZ *fromZZ)
 
   return ZOLTAN_OK;
 }
+void Zoltan_HSFC_Print_Structure(ZZ *zz, int size)
+{
+HSFC_Data *data;
+int nparts, i;
+Partition *p;
+
+  data = (HSFC_Data *)zz->LB.Data_Structure;
+
+  nparts = zz->LB.Num_Global_Parts;
+
+  if ((size > 0) && (size < nparts)) nparts = size;
+
+  if (data->final_partition){
+    p = data->final_partition;
+    for (i=0; i< nparts; i++){
+      printf("interval %d: [%lf, %lf), owner %d\n",
+       i, p->l, p->r, p->index);
+      p++;
+    }
+  }
+  else{
+    printf("Final partition: NULL\n");
+  }
+
+  printf("bbox hi: %lf %lf %lf, bbox low: %lf %lf %lf\n",
+     data->bbox_hi[0], data->bbox_hi[1], data->bbox_hi[2],
+     data->bbox_lo[0], data->bbox_lo[1], data->bbox_lo[2]);
+
+  printf("extent: %lf %lf %lf, dim: %d, func: %p\n",
+      data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
+      data->ndimension, data->fhsfc);
+}
 
 
 
