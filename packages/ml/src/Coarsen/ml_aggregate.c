@@ -93,7 +93,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->nullspace_dim              = 1;
    (*ag)->nullspace_vect             = NULL;
    (*ag)->max_levels                 = 0;
-   (*ag)->max_coarse_size            = 10;
+   (*ag)->max_coarse_size            = 100;
    (*ag)->begin_level                = 0;
    (*ag)->cur_level                  = 0;
    (*ag)->aggr_info                  = NULL;
@@ -5087,6 +5087,7 @@ int ML_Aggregate_Print( ML_Aggregate *ag )
    printf("ML_Aggregate : number of null vec = %d\n", ag->nullspace_dim);
    printf("ML_Aggregate : smoother drop tol  = %e\n", 
           ag->drop_tol_for_smoothing);
+   printf("ML_Aggregate : max coarse size    = %d\n", ag->max_coarse_size);
    printf("ML_Aggregate : max no. of levels  = %d\n", ag->max_levels);
    printf("**************************************************************\n");
    return 1;
