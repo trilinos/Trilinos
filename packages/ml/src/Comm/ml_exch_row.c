@@ -832,7 +832,7 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
      temp->columns[i] = col;
    }
 
-   ML_set_message_info(Nexternal, externals, max_per_proc,imatrix);
+   ML_CommInfoOP_GenUsingGIDExternals(Nexternal, externals, max_per_proc,imatrix);
 
    ML_free(externals);
 
@@ -954,7 +954,7 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    omatrix->N_nonzeros     = next_nz;
    ML_Operator_Set_ApplyFunc (omatrix, CSR_matvec);
 
-   ML_set_message_info(Nexternal, externals, max_per_proc,omatrix);
+   ML_CommInfoOP_GenUsingGIDExternals(Nexternal, externals, max_per_proc,omatrix);
 
    ML_free(externals);
 
@@ -1108,7 +1108,7 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_Operator_Set_ApplyFunc (omatrix, MSR_matvec);
    ML_Operator_Set_Diag (omatrix, imatrix->getrow->Nrows, temp->values);
 
-   ML_set_message_info(Nexternal, externals, max_per_proc,omatrix);
+   ML_CommInfoOP_GenUsingGIDExternals(Nexternal, externals, max_per_proc,omatrix);
 
    ML_free(externals);
 
@@ -1117,8 +1117,8 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
 #undef ML_FUNCTION_NAME
 #endif
 
-/*******************************************************************************
-  Perform initializations so that local communication can occur to update the
+/******************************************************************************
+  Perform initializations so local communication can occur to update the
   external elements. This initialization includes:
 
    1) determine the number of neighbors to which we send information as well as
@@ -1131,38 +1131,40 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    3) Initialize the communication operator for 'matrix' so that it contains 
       the number of messages to be sent/received, the node numbers of the 
       processors to which we must send and receive, the length of the messages 
-      that we must send and that we expect to receive from each of the neighbors, 
+      that we must send and that we expect to receive from each neighbor, 
       and finally, a list of the indices of the elements that will be send to 
       other processors (in the order that they will be sent).
 
-      NOTE: Implicitly the neighbors are numbered using the ordering of the
-      external elements. In particular, the external elements are ordered such
-      that those elements updated by the same processor are contiguous. In this
-      way, the ordering of the external elements defines an ordering for the
-      neighbors.
 
-
-  Author:          Ray S. Tuminaro, SNL, 1422
+  Author:          Ray S. Tuminaro, SNL, 9214
   =======
-
   Return code:     void
   ============
-
   Parameter list:
   ===============
 
-  N_external:      Number of external elements on this processor.
-
-  N_rows:          Number of elements updated on this processor.
+  N_external:      Number of external elements on this processor. 
 
   external:        List (global indices) of external elements on this node.
+                   This list should be ordered so that all externals from
+                   the same processor appear consecutively. It is assumed 
+                   that the global elements are defined as 
+                   gid = lid + max_per_proc*proc_id 
+                   (normally computed by ML_create_unique_col_id).
 
+  max_per_proc     Maximum number of local elements per processor
+                   (normally computed by ML_create_unique_col_id).
 
-*******************************************************************************/
+  matrix           On input, matrix for which we wish to compute communication
+                   information. On output, matrix->getrow->pre_comm is
+                   set so that local communications can be performed on 
+                   the matrix.
+                  
+*****************************************************************************/
 
-#define ML_FUNCTION_NAME ML_set_message_info
-void ML_set_message_info(int N_external, int external[], int max_per_proc, 
-                         ML_Operator *matrix)
+#define ML_FUNCTION_NAME ML_CommInfoOP_GenUsingGIDExternals
+void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[], 
+					int max_per_proc, ML_Operator *matrix)
 
 {
   /* local variables */
@@ -1177,7 +1179,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
   int count, count2;
   ML_Comm *comm;
 
-  char *yo = "ML_set_message_info: ";
+  char *yo = "ML_CommInfoOP_GenUsingGIDExternals: ";
 
   comm   = matrix->comm;
   proc   = comm->ML_mypid;
@@ -1203,7 +1205,7 @@ void ML_set_message_info(int N_external, int external[], int max_per_proc,
   for (i = 0; i < N_external; i++) {
     neigh_proc  = external[i]/max_per_proc;
     if ( neigh_proc >= nprocs ) {
-       printf("%d : ML_set_message_info warning : index out of bound \
+       printf("%d : ML_CommInfoOP_GenUsingGIDExternals warning : index out of bound \
              = %d(%d) %d %d(%d)\n", proc, neigh_proc, nprocs, max_per_proc, 
              external[i], i);
        exit(1);
