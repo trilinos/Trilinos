@@ -338,7 +338,7 @@ double *LB_Realloc(void *ptr, int n, char *filename, int lineno)
 
       if (DEBUG_MEMORY > 1) {
         /* Need to replace item in allocation list */
-        for (dbptr = top; dbptr != NULL && (char *) dbptr->ptr != ptr;
+        for (dbptr = top; dbptr != NULL && (void *) (dbptr->ptr) != ptr;
 	   dbptr = dbptr->next);
 	if (dbptr == NULL) {	/* previous allocation not found in list. */
 	   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
@@ -392,7 +392,7 @@ void LB_Free (void **ptr, char *filename, int lineno)
   if (DEBUG_MEMORY > 1) {
     /* Remove allocation of list of active allocations */
     prev = &top;
-    for (dbptr = top; dbptr != NULL && (char *) dbptr->ptr != *ptr;
+    for (dbptr = top; dbptr != NULL && (void *) (dbptr->ptr) != *ptr;
       dbptr = dbptr->next) {
       prev = &(dbptr->next);
     }
