@@ -1,5 +1,5 @@
 doplot = 1 ;
-dopause = 0 ;
+dopause = 1 ;
 dostrong = 1 ;
 
 index = UFget ;

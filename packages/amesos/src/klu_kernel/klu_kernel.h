@@ -30,8 +30,10 @@ int klu_kernel
     int Pinv [ ],   /* size n */
     int P [ ],	    /* size n */
     int *p_noffdiag,	/* # of off-diagonal pivots chosen */
-    double *p_umin, /* smallest entry on the diagonal of U */
-    double *p_umax, /* largest entry on the diagonal of U */
+    double *p_umin,	/* smallest entry on the diagonal of U */
+    double *p_umax,	/* largest entry on the diagonal of U */
+    int *p_nlrealloc,	/* # of reallocations for L */
+    int *p_nurealloc,	/* # of reallocations for L */
 
     /* workspace, not defined on input */
     double X [ ],   /* size n, zero on output */

@@ -148,6 +148,7 @@ KLU = \
 	$(srcdir)/klu_btf/klu_btf_refactor.c \
 	$(srcdir)/klu_btf/klu_btf_scale.c \
 	$(srcdir)/klu_btf/klu_btf_solve.c \
+	$(srcdir)/klu_btf/klu_btf_tsolve.c \
 	$(srcdir)/klu_btf/klu_dump.c \
 	$(srcdir)/klu_kernel/klu.c \
 	$(srcdir)/klu_kernel/klu_kernel.c

@@ -73,6 +73,7 @@ static int worker	/* returns KLU_OK or < 0 if error */
     lnz = 0 ;
     maxnz = 0 ;
     flops = 0 ;
+    Symbolic->symmetry = EMPTY ;	/* only computed by AMD */
 
     /* ---------------------------------------------------------------------- */
     /* order each block using AMD or COLAMD */
@@ -304,7 +305,7 @@ static int worker	/* returns KLU_OK or < 0 if error */
 
     /* return estimates of # of nonzeros in L including diagonal */
     Symbolic->lnz = lnz ;		/* EMPTY if COLAMD used */
-    Symbolic->unz = lnz ;
+    Symbolic->unz = lnz ;		/* EMPTY if COLAMD used */
     Symbolic->nzoff = nzoff ;
     Symbolic->est_flops = flops ;	/* EMPTY if COLAMD used */
     return (KLU_OK) ;

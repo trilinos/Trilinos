@@ -21,8 +21,17 @@ typedef struct
      * row/col index R [k] to R [k+1]-1.  The estimated number of nonzeros
      * in the L factor of the kth block is Lnz [k]. 
      */
+
+    /* only computed if the AMD ordering is chosen: */
+    double symmetry ;	/* symmetry of largest block */
+    double est_flops ;	/* est. factorization flop count */
+    double lnz, unz ;	/* estimated nz in L and U, including diagonals */
+    double *Lnz ;	/* size n, but only Lnz [0..nblocks-1] is used */
+
+    /* computed for all orderings: */
     int
-	n,
+	n,		/* input matrix A is n-by-n */
+	nz,		/* # entries in input matrix */
 	*P, 		/* size n */
 	*Q,		/* size n */
 	*R,		/* size n+1, but only R [0..nblocks] is used */
@@ -31,15 +40,6 @@ typedef struct
 	maxblock,	/* size of largest block */
 	ordering,	/* ordering used (AMD, COLAMD, or GIVEN) */
 	do_btf ;	/* whether or not BTF preordering was requested */
-
-    /* stored as double, to avoid integer overflow: */
-    double lnz, unz ;	/* estimated nz in L and U, including diagonals */
-    double *Lnz ;	/* size n, but only Lnz [0..nblocks-1] is used */
-
-    /* statistics determined in klu_btf_analyze or klu_btf_analyze_given: */
-    int nz ;		/* # entries in input matrix */
-    double symmetry ;	/* symmetry of largest block */
-    double est_flops ;	/* est. factorization flop count */
 
 } klu_symbolic ;
 
@@ -51,6 +51,9 @@ typedef struct
 {
     /* LU factors of each block, the pivot row permutation, and the
      * entries in the off-diagonal blocks */
+
+    double umin ;	/* min abs diagonal entry in U */
+    double umax ;	/* max abs diagonal entry in U */
 
     int nblocks ;
     int lnz, unz ;	/* actual nz in L and U, including diagonals */
@@ -71,6 +74,7 @@ typedef struct
     double *Singleton ;	/* singleton values */
 
     double *Rs ;	/* row scaling factors */
+    int scale ;		/* 0: none, 1: sum, 2: max */
 
     /* permanent workspace for factorization and solve */
     size_t worksize ;		/* size (in bytes) of Work */
@@ -84,12 +88,9 @@ typedef struct
     double *Offx ;
 
     /* statistics determined in klu_btf_factor: */
-    /* double flops ;	   TODO: actual factorization flop count */
-    /* int nrealloc ;	   TODO: # of reallocations of L and/or U */
-
-    /* determined in klu_btf_factor and klu_btf_refactor: */
-    double umin ;	/* min abs diagonal entry in U */
-    double umax ;	/* max abs diagonal entry in U */
+    /* double flops ;	TODO: actual factorization flop count */
+    int nlrealloc ;	/* # of reallocations of L */
+    int nurealloc ;	/* # of reallocations of U */
 
 } klu_numeric ;
 
@@ -181,6 +182,22 @@ void klu_btf_free_numeric
 /* -------------------------------------------------------------------------- */
 
 void klu_btf_solve
+(
+    /* inputs, not modified */
+    klu_symbolic *Symbolic,
+    klu_numeric *Numeric,
+    int ldim,		    /* leading dimension of B */
+    int nrhs,		    /* number of right-hand-sides */
+
+    /* right-hand-side on input, overwritten with solution to Ax=b on output */
+    double B [ ]
+) ;
+
+/* -------------------------------------------------------------------------- */
+/* klu_btf_tsolve: solves A'x=b using the Symbolic and Numeric */
+/* -------------------------------------------------------------------------- */
+
+void klu_btf_tsolve
 (
     /* inputs, not modified */
     klu_symbolic *Symbolic,

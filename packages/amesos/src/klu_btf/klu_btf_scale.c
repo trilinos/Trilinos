@@ -132,6 +132,9 @@ int klu_btf_scale
 		PRINTF (("Row %d of A is all zero\n", row)) ;
 		Rs [row] = 1.0 ;
 	    }
+#ifndef NRECIPROCAL
+	    Rs [row] = 1.0 / Rs [row] ;
+#endif
 	}
     }
 

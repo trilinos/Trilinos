@@ -2,7 +2,8 @@
 # Makefile for klu kernel
 #-------------------------------------------------------------------------------
 
-all: klu.mexglx klu_u.mexglx klu_l.mexglx klu_p.mexglx
+all: klu.mexglx klu_u.mexglx klu_l.mexglx klu_p.mexglx klu_ut.mexglx \
+    klu_lt.mexglx
 
 CC = mex -inline
 
@@ -25,6 +26,12 @@ klu_u.mexglx: klu_umex.c klu.o tictoc.o klu_kernel.o $(INC)
 
 klu_l.mexglx: klu_lmex.c klu.o tictoc.o klu_kernel.o $(INC)
 	mex -output klu_l klu.o klu_kernel.o klu_lmex.c tictoc.o
+
+klu_ut.mexglx: klu_utmex.c klu.o tictoc.o klu_kernel.o $(INC)
+	mex -output klu_ut klu.o klu_kernel.o klu_utmex.c tictoc.o
+
+klu_lt.mexglx: klu_ltmex.c klu.o tictoc.o klu_kernel.o $(INC)
+	mex -output klu_lt klu.o klu_kernel.o klu_ltmex.c tictoc.o
 
 klu_p.mexglx: klu_pmex.c klu.o tictoc.o klu_kernel.o $(INC)
 	mex -output klu_p klu.o klu_kernel.o klu_pmex.c tictoc.o

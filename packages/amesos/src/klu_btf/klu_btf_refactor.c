@@ -27,7 +27,10 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     klu_numeric *Numeric
 )
 {
-    double ukk, ujk, umin, umax ;
+    double ukk, ujk, umin, umax, s ;
+#ifndef NRECIPROCAL
+    double ukk_inverse ; 
+#endif
     double *Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, *Lx, *Ux, *X ;
     int k1, k2, nk, k, block, oldcol, pend, oldrow, n, p, newrow, scale,
 	nblocks, poff, result, i, j, up, upend, upstart, maxblock ;
@@ -65,6 +68,8 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     Rs = Numeric->Rs ;
     Pinv = Numeric->Pinv ;
     X = Numeric->Xwork ;
+    Numeric->nlrealloc = 0 ;
+    Numeric->nurealloc = 0 ;
 
     /* ---------------------------------------------------------------------- */
     /* get control parameters and make sure they are in the proper range */
@@ -83,6 +88,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     scale = control->scale ;
     scale = MAX (0, scale) ;
     scale = MIN (2, scale) ;
+    Numeric->scale = scale ;
 
     PRINTF (("klu_btf_factor scale %d:  n %d nzoff %d nblocks %d maxblock %d\n",
 	scale, n, Symbolic->nzoff, nblocks, maxblock)) ;
@@ -107,10 +113,10 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		double *Ux, *Lx ;
 		Lp = Lbp [block] ;
 		Lx = Lbx [block] ;
-		for (p = 0 ; p < Lp [nk] ; p++) Lx [p] = 42 + p / 10000. ;
+		for (p = 0 ; p < Lp [nk] ; p++) Lx [p] = 42 + p * 1e-5 ;
 		Up = Ubp [block] ;
 		Ux = Ubx [block] ;
-		for (p = 0 ; p < Up [nk] ; p++) Ux [p] = 99 + p / 1000. ;
+		for (p = 0 ; p < Up [nk] ; p++) Ux [p] = 99 + p * 1e-4 ;
 	    }
 	}
 	for (p = 0 ; p < Symbolic->nzoff ; p++) Offx [p] = p ;
@@ -170,6 +176,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	    }
 	    oldcol = Q [k1] ;
 	    pend = Ap [oldcol+1] ;
+	    s = 0 ;
 
 	    if (scale == 0)
 	    {
@@ -194,7 +201,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			    return (KLU_INVALID) ;
 			}
 			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
-			Singleton [block] = Ax [p] ;
+			s = Ax [p] ;
 		    }
 		}
 	    }
@@ -212,7 +219,11 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			{
 			    return (KLU_INVALID) ;
 			}
+#ifndef NRECIPROCAL
+			Offx [poff++] = Ax [p] * Rs [oldrow] ;
+#else
 			Offx [poff++] = Ax [p] / Rs [oldrow] ;
+#endif
 		    }
 		    else
 		    {
@@ -221,13 +232,23 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			    return (KLU_INVALID) ;
 			}
 			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
-			Singleton [block] = Ax [p] / Rs [oldrow] ;
+#ifndef NRECIPROCAL
+			s = Ax [p] * Rs [oldrow] ;
+#else
+			s = Ax [p] / Rs [oldrow] ;
+#endif
 		    }
 		}
 	    }
 
+#ifndef NRECIPROCAL
+	    Singleton [block] = 1.0 / s ;
+#else
+	    Singleton [block] = s ;
+#endif
+
 	    /* keep track of the smallest and largest diagonal entry */
-	    ukk = fabs (Singleton [block]) ;
+	    ukk = fabs (s) ;
 	    if (block == 0)
 	    {
 		umin = ukk ;
@@ -314,7 +335,11 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			    {
 				return (KLU_INVALID) ;
 			    }
+#ifndef NRECIPROCAL
+			    Offx [poff++] = Ax [p] * Rs [oldrow] ;
+#else
 			    Offx [poff++] = Ax [p] / Rs [oldrow] ;
+#endif
 			}
 			else
 			{
@@ -325,7 +350,11 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 			    {
 				return (KLU_INVALID) ;
 			    }
+#ifndef NRECIPROCAL
+			    X [newrow] = Ax [p] * Rs [oldrow] ;
+#else
 			    X [newrow] = Ax [p] / Rs [oldrow] ;
+#endif
 			}
 		    }
 		}
@@ -351,7 +380,12 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		/* get the diagonal entry of U */
 		ukk = X [k] ;
 		X [k] = 0 ;
+#ifndef NRECIPROCAL
+		ukk_inverse = 1.0 / ukk ;
+		Ux [upend] = ukk_inverse ;
+#else
 		Ux [upend] = ukk ;
+#endif
 
 		/* create the unit diagonal of L */
 		p = Lp [k] ;
@@ -359,12 +393,32 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 
 		/* gather and scale to get the kth column of L */
 		pend = Lp [k+1] ;
-		for ( ; p < pend ; p++)
+		if (ukk == 0.0)
 		{
-		    i = Li [p] ;
-		    Lx [p] = X [i] / ukk ;
-		    X [i] = 0 ;
+		    for ( ; p < pend ; p++)
+		    {
+			i = Li [p] ;
+			if (Lx [p] != 0)
+			{
+			    Lx [p] = X [i] / ukk ;
+			}
+			X [i] = 0 ;
+		    }
 		}
+		else
+		{
+		    for ( ; p < pend ; p++)
+		    {
+			i = Li [p] ;
+#ifndef NRECIPROCAL
+			Lx [p] = X [i] * ukk_inverse ;
+#else
+			Lx [p] = X [i] / ukk ;
+#endif
+			X [i] = 0 ;
+		    }
+		}
+
 #ifndef NDEBUG
 		for (i = 0 ; i < nk ; i++) ASSERT (X [i] == 0) ;
 #endif

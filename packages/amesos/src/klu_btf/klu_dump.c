@@ -2,7 +2,7 @@
 /* === klu_dump ============================================================= */
 /* ========================================================================== */
 
-/* debug routines for klu / klu_btf */
+/* debug routines for klu and klu_btf */
 
 #include "klu_btf_internal.h"
 

@@ -7,7 +7,7 @@
  *
  * TODO: provide a user switch to control scaling (none, row-sum, max row).
  * TODO: error checking of inputs.
- * TODO: test error cases / make sure there are no memory leaks
+ * TODO: test error cases, make sure there are no memory leaks
  * TODO: merge adjacent 1-by-1 blocks into a single upper triangular block,
  *	    for faster forward/backsolves
  * TODO: provide other orderings (natural, nested dissection, ...)
@@ -35,12 +35,14 @@ static int klu_btf_factor2
     klu_numeric *Numeric
 )
 {
-    double klu_kernel_Control [KLU_CONTROL], umin, umax, umin2, umax2,
-	*Lnz, *Singleton, **Lbx, **Ubx, *Offx, *Rs, *X ;
-    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, lnz, unz,
-	result, p, newrow, *P, *Q, *R, nblocks, poff, *Pnum, *Lp, *Up,
-	*Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi, *Pblock, noffdiag2, noffdiag,
-	*Pinv, *Iwork, nzoff ;
+    double klu_kernel_Control [KLU_CONTROL], umin, umax, umin2, umax2, s ;
+    double *Lnz, *Singleton, *Offx, *Rs, *X ;
+    double **Lbx, **Ubx ;
+    int k1, k2, nk, k, block, oldcol, pend, oldrow, n, lnz, unz, result, p,
+	newrow, nblocks, poff, noffdiag2, noffdiag, nzoff, nlrealloc2,
+	nurealloc2 ;
+    int *P, *Q, *R, *Pnum, *Lp, *Up, *Offp, *Offi, *Pblock, *Pinv, *Iwork ;
+    int **Lbp, **Lbi, **Ubp, **Ubi ;
 
     /* ---------------------------------------------------------------------- */
     /* initializations */
@@ -71,6 +73,9 @@ static int klu_btf_factor2
     X = Numeric->Xwork ;			/* X is of size n */
     Iwork = Numeric->Iwork ;			/* 5*maxblock for klu_factor */
     Pblock = Iwork + 5*(Symbolic->maxblock) ;	/* 1*maxblock for Pblock */
+    Numeric->nlrealloc = 0 ;
+    Numeric->nurealloc = 0 ;
+    Numeric->scale = scale ;
 
     /* compute the inverse of P from symbolic analysis.  Will be updated to
      * become the inverse of the numerical factorization when the factorization
@@ -146,6 +151,7 @@ static int klu_btf_factor2
 	    poff = Offp [k1] ;
 	    oldcol = Q [k1] ;
 	    pend = Ap [oldcol+1] ;
+	    s = 0 ;
 
 	    if (scale == 0)
 	    {
@@ -164,7 +170,7 @@ static int klu_btf_factor2
 		    {
 			ASSERT (newrow == k1) ;
 			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
-			Singleton [block] = Ax [p] ;
+			s = Ax [p] ;
 		    }
 		}
 	    }
@@ -178,25 +184,39 @@ static int klu_btf_factor2
 		    if (newrow < k1)
 		    {
 			Offi [poff] = oldrow ;
+#ifndef NRECIPROCAL
+			Offx [poff] = Ax [p] * Rs [oldrow] ;
+#else
 			Offx [poff] = Ax [p] / Rs [oldrow] ;
+#endif
 			poff++ ;
 		    }
 		    else
 		    {
 			ASSERT (newrow == k1) ;
 			PRINTF (("Singleton block %d %g\n", block, Ax [p])) ;
-			Singleton [block] = Ax [p] / Rs [oldrow] ;
+#ifndef NRECIPROCAL
+			s = Ax [p] * Rs [oldrow] ;
+#else
+			s = Ax [p] / Rs [oldrow] ;
+#endif
 		    }
 		}
 	    }
+
+#ifndef NRECIPROCAL
+	    Singleton [block] = 1.0 / s ;
+#else
+	    Singleton [block] = s ;
+#endif
 
 	    Offp [k1+1] = poff ;
 	    Pnum [k1] = P [k1] ;
 	    lnz++ ;
 	    unz++ ;
 
-	    umin2 = Singleton [block] ;
-	    umax2 = Singleton [block] ;
+	    umin2 = s ;
+	    umax2 = s ;
 
 	}
 	else
@@ -225,9 +245,13 @@ static int klu_btf_factor2
 	    result = klu_factor (nk, Ap, Ai, Ax, Q, klu_kernel_Control,
 		    Lbp [block], &Lbi [block], &Lbx [block],
 		    Ubp [block], &Ubi [block], &Ubx [block], Pblock,
-		    &noffdiag2, &umin2, &umax2, X, Iwork,
+		    &noffdiag2, &umin2, &umax2, &nlrealloc2, &nurealloc2,
+		    X, Iwork,
 		    /* BTF and scale-related arguments: */
 		    k1, Pinv, Rs, scale, Offp, Offi, Offx) ;
+
+	    Numeric->nlrealloc += nlrealloc2 ;
+	    Numeric->nurealloc += nurealloc2 ;
 
 	    PRINTF (("klu done\n")) ;
 	    if (result != KLU_OK)
@@ -291,7 +315,6 @@ static int klu_btf_factor2
     Numeric->umin = umin ;
     Numeric->umax = umax ;
     /* Numeric->flops = EMPTY ;		TODO not yet computed */
-    /* Numeric->nrealloc = EMPTY ;	TODO not yet computed */
     Numeric->noffdiag = noffdiag ;
 
     /* compute the inverse of Pnum */

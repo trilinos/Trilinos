@@ -25,6 +25,9 @@
  *
  * If Control is not present, or present but not of the correct size,
  * defaults are used.
+ *
+ * If klu is compiled with the default options (NRECIPROCAL not defined), then
+ * the diagonal of U is returned inverted on output.
  */
 
 /* ========================================================================== */
@@ -41,10 +44,12 @@ void mexFunction
     const mxArray *pargin [ ]
 )
 {
-    int n, *Ap, *Ai, *Lp, *Li, *Up, *Ui, result, *P, *Pp, *Pi, k, anz, s,
-	*Lp2, *Li2, *Up2, *Ui2, lnz, unz, j, p, *Q, col, noffdiag ;
-    double *Lx, *Ux, *Ax, *Px, Control [KLU_CONTROL], *User_Control,
-	*Lx2, *Ux2, tt [2], *T, *Qx, umin, umax ;
+    double Control [KLU_CONTROL], tt [2], umin, umax ;
+    double *Lx, *Ux, *Ax, *Px, *User_Control, *Lx2, *Ux2, *T, *Qx, *X ;
+    int n, result, k, anz, s, lnz, unz, j, p, col, noffdiag, nlrealloc,
+	nurealloc ;
+    int *Ap, *Ai, *Lp, *Li, *Up, *Ui, *P, *Pp, *Pi, *Lp2, *Li2, *Up2, *Ui2,
+	*Q, *Work ;
 
     /* ---------------------------------------------------------------------- */
     /* get inputs */
@@ -75,7 +80,7 @@ void mexFunction
 	    mexErrMsgTxt ("klu: Q must be a dense 1-by-n vector") ; 
 	}
 	Qx = mxGetPr (pargin [1]) ;
-	Q = mxMalloc (n * sizeof (int)) ;
+	Q = (int *) mxMalloc (n * sizeof (int)) ;
 	for (k = 0 ; k < n ; k++)
 	{
 	    col = (int) (Qx [k]) - 1 ;	/* convert from 1-based to 0-based */
@@ -108,9 +113,12 @@ void mexFunction
 	}
     }
 
-    Lp = mxMalloc ((n+1) * sizeof (int)) ;
-    Up = mxMalloc ((n+1) * sizeof (int)) ;
-    P  = mxMalloc (n * sizeof (int)) ;
+    Lp = (int *) mxMalloc ((n+1) * sizeof (int)) ;
+    Up = (int *) mxMalloc ((n+1) * sizeof (int)) ;
+    P  = (int *) mxMalloc (n * sizeof (int)) ;
+
+    X    = (double *) mxMalloc (n * sizeof (double)) ;
+    Work = (int *) mxMalloc (5*n * sizeof (int)) ;
 
     /* ---------------------------------------------------------------------- */
     /* factorize */
@@ -119,12 +127,15 @@ void mexFunction
     my_tic (tt) ;
 
     result = klu_factor (n, Ap, Ai, Ax, Q, Control, Lp, &Li, &Lx, Up, &Ui,
-	    &Ux, P, &noffdiag, &umin, &umax, (double *) NULL, (int *) NULL,
+	    &Ux, P, &noffdiag, &umin, &umax, &nlrealloc, &nurealloc, X, Work,
 	    /* no BTF or scaling here */
 	    0, (int *) NULL, (double *) NULL, 0, (int *) NULL, (int *) NULL,
 	    (double *) NULL) ;
 
     my_toc (tt) ;
+
+    mxFree (X) ;
+    mxFree (Work) ;
 
     if (nargout == 4)
     {

@@ -323,7 +323,11 @@ static void construct_column
 	    {
 		oldrow = Ai [p] ;
 		i = PSinv [oldrow] - k1 ;
+#ifndef NRECIPROCAL
+		aik = Ax [p] * Rs [oldrow] ;
+#else
 		aik = Ax [p] / Rs [oldrow] ;
+#endif
 		if (i < 0)
 		{
 		    /* this is an entry in the off-diagonal part */
@@ -411,10 +415,11 @@ static void lpivot
     double *p_pivot,
     double *p_abs_pivot,
     double tol,
-    double X [ ]
+    double X [ ],
+    double *p_pivot_inverse
 )
 {
-    double x, pivot, abs_pivot ;
+    double x, pivot, abs_pivot, pivot_inverse ;
     int p, i, ppivrow, pdiag, pivrow ;
 
     /* look in Li [lp1 .. lp-1] for a pivot row */
@@ -477,6 +482,10 @@ static void lpivot
     Li [lp1] = pivrow ;
     Lx [lp1] = 1.0 ;
 
+#ifndef NRECIPROCAL
+    pivot_inverse = 1.0 / pivot ;
+#endif
+
     /* divide L by the pivot value */
     if (pivot == 0)
     {
@@ -494,13 +503,18 @@ static void lpivot
     {
 	for (p = lp1 + 1 ; p < lp ; p++)
 	{
+#ifndef NRECIPROCAL
+	    Lx [p] *= pivot_inverse ;
+#else
 	    Lx [p] /= pivot ;
+#endif
 	}
     }
 
     *p_pivrow = pivrow ;
     *p_pivot = pivot ;
     *p_abs_pivot = abs_pivot ;
+    *p_pivot_inverse = pivot_inverse ;
 }
 
 
@@ -638,8 +652,10 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     int P [ ],	    /* size n, row permutation, where P [k] = i if row i is the
 		     * kth pivot row. */
     int *p_noffdiag,	/* # of off-diagonal pivots chosen */
-    double *p_umin, /* smallest entry on the diagonal of U */
-    double *p_umax, /* largest entry on the diagonal of U */
+    double *p_umin,	/* smallest entry on the diagonal of U */
+    double *p_umax,	/* largest entry on the diagonal of U */
+    int *p_nlrealloc,	/* # of reallocations for L */
+    int *p_nurealloc,	/* # of reallocations for L */
 
     /* workspace, not defined on input */
     double X [ ],   /* size n, undefined on input, zero on output */
@@ -669,9 +685,11 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 )
 { 
 
-    double pivot, *Lx, *Ux, abs_pivot, xsize, umin, umax ;
-    int lp, up, k, p, i, pivrow, kbar, *Li, *Ui, ok, oki, okx, diagrow,
-	noffdiag, firstrow, lp1, up1 ;
+    double pivot, abs_pivot, pivot_inverse, xsize, umin, umax ;
+    double *Lx, *Ux ;
+    int lp, up, k, p, i, pivrow, kbar, ok, oki, okx, diagrow, noffdiag,
+	firstrow, lp1, up1, nlrealloc, nurealloc ;
+    int *Li, *Ui ;
 
     /* ---------------------------------------------------------------------- */
     /* get initial Li, Lx, Ui, and Ux */
@@ -699,6 +717,8 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     noffdiag = 0 ;
     lp = 0 ;
     up = 0 ;
+    nlrealloc = 0 ;
+    nurealloc = 0 ;
     for (k = 0 ; k < n ; k++)
     {
 	X [k] = 0 ;
@@ -769,8 +789,6 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	/* determine if LU factors have grown too big */
 	/* ------------------------------------------------------------------ */
 
-	/* TODO: count realloc's here */
-
 	/* L can grow by at most n-k entries if the column is dense */
 	PRINTF (("lp %d lsize %d  lp+(n-k): %d\n", lp, lsize, lp+(n-k))) ;
 	if (lp + (n-k) > lsize)
@@ -782,6 +800,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
 	    lsize = growth * lsize + n + 1 ;
+	    nlrealloc++ ;
 	    REALLOCATE (Li, int,    lsize, oki) ;
 	    REALLOCATE (Lx, double, lsize, okx) ;
 	    *p_Li = Li ;
@@ -805,6 +824,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 		return (KLU_OUT_OF_MEMORY) ;
 	    }
 	    usize = growth * usize + n + 1 ;
+	    nurealloc++ ;
 	    REALLOCATE (Ui, int,    usize, oki) ;
 	    REALLOCATE (Ux, double, usize, okx) ;
 	    *p_Ui = Ui ;
@@ -927,7 +947,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	{
 	    /* find a pivot and scale the pivot column */
 	    lpivot (lp, lp1, diagrow, Li, Lx, &pivrow, &pivot, &abs_pivot,
-		   tol, X) ;
+		   tol, X, &pivot_inverse) ;
 	    ASSERT (pivrow >= 0 && pivrow < n) ;
 	}
 
@@ -972,7 +992,11 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 
 	ASSERT (up < usize) ;
 	Ui [up] = k ;
+#ifndef NRECIPROCAL
+	Ux [up] = pivot_inverse ;
+#else
 	Ux [up] = pivot ;
+#endif
 	up++ ;
 	ASSERT (lp <= lsize) ;
 	ASSERT (up <= usize) ;
@@ -1061,6 +1085,8 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     *p_noffdiag = noffdiag ;
     *p_umin = umin ;
     *p_umax = umax ;
+    *p_nlrealloc = nlrealloc ;
+    *p_nurealloc = nurealloc ;
     PRINTF (("noffdiag %d\n", noffdiag)) ;
 
     REALLOCATE (Li, int,    lsize, ok) ;

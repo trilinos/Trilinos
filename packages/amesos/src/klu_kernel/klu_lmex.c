@@ -67,7 +67,7 @@ void mexFunction
     /* ---------------------------------------------------------------------- */
 
     my_tic (tt) ;
-    klu_lsolve (n, Lp, Li, Lx, n, nrhs, X) ;
+    klu_lsolve (n, Lp, Li, Lx, nrhs, X) ;
     my_toc (tt) ;
     printf ("cputime: %g  per rhs: %g\n", tt [1], tt [1]/nrhs) ;
 }

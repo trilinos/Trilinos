@@ -1,8 +1,8 @@
 /* ========================================================================== */
-/* === klu_btf_solve ======================================================== */
+/* === klu_btf_tsolve ======================================================= */
 /* ========================================================================== */
 
-/* Solve Ax=b using the symbolic and numeric objects from klu_btf_analyze
+/* Solve A'x=b using the symbolic and numeric objects from klu_btf_analyze
  * (or klu_btf_analyze_given) and klu_btf_factor.  Note that no iterative
  * refinement is performed.  Uses Numeric->Xwork as workspace (undefined on
  * input and output), of size 4n double's (note that columns 2 to 4 of Xwork
@@ -15,7 +15,7 @@
 
 #include "klu_btf_internal.h"
 
-void klu_btf_solve
+void klu_btf_tsolve
 (
     /* inputs, not modified */
     klu_symbolic *Symbolic,
@@ -81,138 +81,60 @@ void klu_btf_solve
 	nr = MIN (nrhs - chunk, 4) ;
 
 	/* ------------------------------------------------------------------ */
-	/* scale and permute the right hand side, X = P*(R\B) */
+	/* permute the right hand side, X = Q'*B */
 	/* ------------------------------------------------------------------ */
 
-	if (scale == 0)
+	switch (nr)
 	{
 
-	    /* no scaling */
-	    switch (nr)
+	case 1:
+
+	    for (k = 0 ; k < n ; k++)
 	    {
-
-	    case 1:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    X [k] = B [Pnum [k]] ;
-		}
-		break ;
-
-	    case 2:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    X [2*k    ] = B [i      ] ;
-		    X [2*k + 1] = B [i + d  ] ;
-		}
-		break ;
-
-	    case 3:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    X [3*k    ] = B [i      ] ;
-		    X [3*k + 1] = B [i + d  ] ;
-		    X [3*k + 2] = B [i + d*2] ;
-		}
-		break ;
-
-	    case 4:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    X [4*k    ] = B [i      ] ;
-		    X [4*k + 1] = B [i + d  ] ;
-		    X [4*k + 2] = B [i + d*2] ;
-		    X [4*k + 3] = B [i + d*3] ;
-		}
-		break ;
+		X [k] = B [Q [k]] ;
 	    }
+	    break ;
 
-	}
-	else
-	{
+	case 2:
 
-	    switch (nr)
+	    for (k = 0 ; k < n ; k++)
 	    {
-
-	    case 1:
-
-		for (k = 0 ; k < n ; k++)
-		{
-#ifndef NRECIPROCAL
-		    X [k] = B [Pnum [k]] * Rs [k] ;
-#else
-		    X [k] = B [Pnum [k]] / Rs [k] ;
-#endif
-		}
-		break ;
-
-	    case 2:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    rs = Rs [k] ;
-#ifndef NRECIPROCAL
-		    X [2*k    ] = B [i      ] * rs ;
-		    X [2*k + 1] = B [i + d  ] * rs ;
-#else
-		    X [2*k    ] = B [i      ] / rs ;
-		    X [2*k + 1] = B [i + d  ] / rs ;
-#endif
-		}
-		break ;
-
-	    case 3:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    rs = Rs [k] ;
-#ifndef NRECIPROCAL
-		    X [3*k    ] = B [i      ] * rs ;
-		    X [3*k + 1] = B [i + d  ] * rs ;
-		    X [3*k + 2] = B [i + d*2] * rs ;
-#else
-		    X [3*k    ] = B [i      ] / rs ;
-		    X [3*k + 1] = B [i + d  ] / rs ;
-		    X [3*k + 2] = B [i + d*2] / rs ;
-#endif
-		}
-		break ;
-
-	    case 4:
-
-		for (k = 0 ; k < n ; k++)
-		{
-		    i = Pnum [k] ;
-		    rs = Rs [k] ;
-#ifndef NRECIPROCAL
-		    X [4*k    ] = B [i      ] * rs ;
-		    X [4*k + 1] = B [i + d  ] * rs ;
-		    X [4*k + 2] = B [i + d*2] * rs ;
-		    X [4*k + 3] = B [i + d*3] * rs ;
-#else
-		    X [4*k    ] = B [i      ] / rs ;
-		    X [4*k + 1] = B [i + d  ] / rs ;
-		    X [4*k + 2] = B [i + d*2] / rs ;
-		    X [4*k + 3] = B [i + d*3] / rs ;
-#endif
-		}
-		break ;
+		i = Q [k] ;
+		X [2*k    ] = B [i      ] ;
+		X [2*k + 1] = B [i + d  ] ;
 	    }
+	    break ;
+
+	case 3:
+
+	    for (k = 0 ; k < n ; k++)
+	    {
+		i = Q [k] ;
+		X [3*k    ] = B [i      ] ;
+		X [3*k + 1] = B [i + d  ] ;
+		X [3*k + 2] = B [i + d*2] ;
+	    }
+	    break ;
+
+	case 4:
+
+	    for (k = 0 ; k < n ; k++)
+	    {
+		i = Q [k] ;
+		X [4*k    ] = B [i      ] ;
+		X [4*k + 1] = B [i + d  ] ;
+		X [4*k + 2] = B [i + d*2] ;
+		X [4*k + 3] = B [i + d*3] ;
+	    }
+	    break ;
+
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* solve X = (L*U + Off)\X */
+	/* solve X = (L*U + Off)'\X */
 	/* ------------------------------------------------------------------ */
 
-	for (block = nblocks-1 ; block >= 0 ; block--)
+	for (block = 0 ; block < nblocks ; block++)
 	{
 
 	    /* -------------------------------------------------------------- */
@@ -222,9 +144,101 @@ void klu_btf_solve
 	    k1 = R [block] ;
 	    k2 = R [block+1] ;
 	    nk = k2 - k1 ;
-	    PRINTF (("solve %d, k1 %d k2-1 %d nk %d\n", block, k1,k2-1,nk)) ;
+	    PRINTF (("tsolve %d, k1 %d k2-1 %d nk %d\n", block, k1,k2-1,nk)) ;
 
+	    /* -------------------------------------------------------------- */
+	    /* block back-substitution for the off-diagonal-block entries */
+	    /* -------------------------------------------------------------- */
+
+	    if (block > 0)
+	    {
+		switch (nr)
+		{
+
+		case 1:
+
+		    for (k = k1 ; k < k2 ; k++)
+		    {
+			pend = Offp [k+1] ;
+			for (p = Offp [k] ; p < pend ; p++)
+			{
+			    X [k] -= Offx [p] * X [Offi [p]] ;
+			}
+		    }
+		    break ;
+
+		case 2:
+
+		    for (k = k1 ; k < k2 ; k++)
+		    {
+			pend = Offp [k+1] ;
+			x [0] = X [2*k    ] ;
+			x [1] = X [2*k + 1] ;
+			for (p = Offp [k] ; p < pend ; p++)
+			{
+			    i = Offi [p] ;
+			    offik = Offx [p] ;
+			    x [0] -= offik * X [2*i    ] ;
+			    x [1] -= offik * X [2*i + 1] ;
+			}
+			X [2*k    ] = x [0] ;
+			X [2*k + 1] = x [1] ;
+		    }
+		    break ;
+
+		case 3:
+
+		    for (k = k1 ; k < k2 ; k++)
+		    {
+			pend = Offp [k+1] ;
+			x [0] = X [3*k    ] ;
+			x [1] = X [3*k + 1] ;
+			x [2] = X [3*k + 2] ;
+			for (p = Offp [k] ; p < pend ; p++)
+			{
+			    i = Offi [p] ;
+			    offik = Offx [p] ;
+			    x [0] -= offik * X [3*i    ] ;
+			    x [1] -= offik * X [3*i + 1] ;
+			    x [2] -= offik * X [3*i + 2] ;
+			}
+			X [3*k    ] = x [0] ;
+			X [3*k + 1] = x [1] ;
+			X [3*k + 2] = x [2] ;
+		    }
+		    break ;
+
+		case 4:
+
+		    for (k = k1 ; k < k2 ; k++)
+		    {
+			pend = Offp [k+1] ;
+			x [0] = X [4*k    ] ;
+			x [1] = X [4*k + 1] ;
+			x [2] = X [4*k + 2] ;
+			x [3] = X [4*k + 3] ;
+			for (p = Offp [k] ; p < pend ; p++)
+			{
+			    i = Offi [p] ;
+			    offik = Offx [p] ;
+			    x [0] -= offik * X [4*i    ] ;
+			    x [1] -= offik * X [4*i + 1] ;
+			    x [2] -= offik * X [4*i + 2] ;
+			    x [3] -= offik * X [4*i + 3] ;
+			}
+			X [4*k    ] = x [0] ;
+			X [4*k + 1] = x [1] ;
+			X [4*k + 2] = x [2] ;
+			X [4*k + 3] = x [3] ;
+		    }
+		    break ;
+		}
+	    }
+
+	    /* -------------------------------------------------------------- */
 	    /* solve the block system */
+	    /* -------------------------------------------------------------- */
+
 	    if (nk == 1)
 	    {
 		s = Singleton [block] ;
@@ -279,141 +293,139 @@ void klu_btf_solve
 	    }
 	    else
 	    {
-		klu_lsolve (nk, Lbp [block], Lbi [block], Lbx [block], nr,
-			X + nr*k1) ;
-		klu_usolve (nk, Ubp [block], Ubi [block], Ubx [block], nr,
-			X + nr*k1) ;
-	    }
-
-	    /* -------------------------------------------------------------- */
-	    /* block back-substitution for the off-diagonal-block entries */
-	    /* -------------------------------------------------------------- */
-
-	    if (block > 0)
-	    {
-		switch (nr)
-		{
-
-		case 1:
-
-		    for (k = k1 ; k < k2 ; k++)
-		    {
-			pend = Offp [k+1] ;
-			x [0] = X [k] ;
-			for (p = Offp [k] ; p < pend ; p++)
-			{
-			    X [Offi [p]] -= Offx [p] * x [0] ;
-			}
-		    }
-		    break ;
-
-		case 2:
-
-		    for (k = k1 ; k < k2 ; k++)
-		    {
-			pend = Offp [k+1] ;
-			x [0] = X [2*k    ] ;
-			x [1] = X [2*k + 1] ;
-			for (p = Offp [k] ; p < pend ; p++)
-			{
-			    i = Offi [p] ;
-			    offik = Offx [p] ;
-			    X [2*i    ] -= offik * x [0] ;
-			    X [2*i + 1] -= offik * x [1] ;
-			}
-		    }
-		    break ;
-
-		case 3:
-
-		    for (k = k1 ; k < k2 ; k++)
-		    {
-			pend = Offp [k+1] ;
-			x [0] = X [3*k    ] ;
-			x [1] = X [3*k + 1] ;
-			x [2] = X [3*k + 2] ;
-			for (p = Offp [k] ; p < pend ; p++)
-			{
-			    i = Offi [p] ;
-			    offik = Offx [p] ;
-			    X [3*i    ] -= offik * x [0] ;
-			    X [3*i + 1] -= offik * x [1] ;
-			    X [3*i + 2] -= offik * x [2] ;
-			}
-		    }
-		    break ;
-
-		case 4:
-
-		    for (k = k1 ; k < k2 ; k++)
-		    {
-			pend = Offp [k+1] ;
-			x [0] = X [4*k    ] ;
-			x [1] = X [4*k + 1] ;
-			x [2] = X [4*k + 2] ;
-			x [3] = X [4*k + 3] ;
-			for (p = Offp [k] ; p < pend ; p++)
-			{
-			    i = Offi [p] ;
-			    offik = Offx [p] ;
-			    X [4*i    ] -= offik * x [0] ;
-			    X [4*i + 1] -= offik * x [1] ;
-			    X [4*i + 2] -= offik * x [2] ;
-			    X [4*i + 3] -= offik * x [3] ;
-			}
-		    }
-		    break ;
-		}
+		klu_utsolve (nk, Ubp [block], Ubi [block], Ubx [block], nr,
+		     X + nr*k1) ;
+		klu_ltsolve (nk, Lbp [block], Lbi [block], Lbx [block], nr,
+		     X + nr*k1) ;
 	    }
 	}
 
 	/* ------------------------------------------------------------------ */
-	/* permute the result, B = Q*X */
+	/* scale and permute the result, B = P'(R\X) */
 	/* ------------------------------------------------------------------ */
 
-	switch (nr)
+	if (scale == 0)
 	{
 
-	case 1:
-
-	    for (k = 0 ; k < n ; k++)
+	    /* no scaling */
+	    switch (nr)
 	    {
-		B [Q [k]] = X [k] ;
+
+	    case 1:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    B [Pnum [k]] = X [k] ;
+		}
+		break ;
+
+	    case 2:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    B [i      ] = X [2*k    ] ;
+		    B [i + d  ] = X [2*k + 1] ;
+		}
+		break ;
+
+	    case 3:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    B [i      ] = X [3*k    ] ;
+		    B [i + d  ] = X [3*k + 1] ;
+		    B [i + d*2] = X [3*k + 2] ;
+		}
+		break ;
+
+	    case 4:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    B [i      ] = X [4*k    ] ;
+		    B [i + d  ] = X [4*k + 1] ;
+		    B [i + d*2] = X [4*k + 2] ;
+		    B [i + d*3] = X [4*k + 3] ;
+		}
+		break ;
 	    }
-	    break ;
 
-	case 2:
+	}
+	else
+	{
 
-	    for (k = 0 ; k < n ; k++)
+	    switch (nr)
 	    {
-		i = Q [k] ;
-		B [i      ] = X [2*k    ] ;
-		B [i + d  ] = X [2*k + 1] ;
+
+	    case 1:
+
+		for (k = 0 ; k < n ; k++)
+		{
+#ifndef NRECIPROCAL
+		    B [Pnum [k]] = X [k] * Rs [k] ;
+#else
+		    B [Pnum [k]] = X [k] / Rs [k] ;
+#endif
+		}
+		break ;
+
+	    case 2:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    rs = Rs [k] ;
+#ifndef NRECIPROCAL
+		    B [i      ] = X [2*k    ] * rs ;
+		    B [i + d  ] = X [2*k + 1] * rs ;
+#else
+		    B [i      ] = X [2*k    ] / rs ;
+		    B [i + d  ] = X [2*k + 1] / rs ;
+#endif
+		}
+		break ;
+
+	    case 3:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    rs = Rs [k] ;
+#ifndef NRECIPROCAL
+		    B [i      ] = X [3*k    ] * rs ;
+		    B [i + d  ] = X [3*k + 1] * rs ;
+		    B [i + d*2] = X [3*k + 2] * rs ;
+#else
+		    B [i      ] = X [3*k    ] / rs ;
+		    B [i + d  ] = X [3*k + 1] / rs ;
+		    B [i + d*2] = X [3*k + 2] / rs ;
+#endif
+		}
+		break ;
+
+	    case 4:
+
+		for (k = 0 ; k < n ; k++)
+		{
+		    i = Pnum [k] ;
+		    rs = Rs [k] ;
+#ifndef NRECIPROCAL
+		    B [i      ] = X [4*k    ] * rs ;
+		    B [i + d  ] = X [4*k + 1] * rs ;
+		    B [i + d*2] = X [4*k + 2] * rs ;
+		    B [i + d*3] = X [4*k + 3] * rs ;
+#else
+		    B [i      ] = X [4*k    ] / rs ;
+		    B [i + d  ] = X [4*k + 1] / rs ;
+		    B [i + d*2] = X [4*k + 2] / rs ;
+		    B [i + d*3] = X [4*k + 3] / rs ;
+#endif
+		}
+		break ;
 	    }
-	    break ;
-
-	case 3:
-
-	    for (k = 0 ; k < n ; k++)
-	    {
-		i = Q [k] ;
-		B [i      ] = X [3*k    ] ;
-		B [i + d  ] = X [3*k + 1] ;
-		B [i + d*2] = X [3*k + 2] ;
-	    }
-	    break ;
-
-	case 4:
-
-	    for (k = 0 ; k < n ; k++)
-	    {
-		i = Q [k] ;
-		B [i      ] = X [4*k    ] ;
-		B [i + d  ] = X [4*k + 1] ;
-		B [i + d*2] = X [4*k + 2] ;
-		B [i + d*3] = X [4*k + 3] ;
-	    }
-	    break ;
 	}
 
 	/* ------------------------------------------------------------------ */

@@ -93,6 +93,8 @@
  *
  * To solve Ax=b after calling klu, do the following:
  *
+ * TODO: fix the following usage of klu kernel routines:
+ *
  *	in C notation:			    equivalent MATLAB notation:
  *	klu_permute (n, P, B, n, nrhs, X) ;		x = P*b
  *	klu_lsolve (n, Lp, Li, Lx, n, nrhs, X) ;	x = L\x
@@ -120,6 +122,9 @@
  * TODO: Cite Gilbert, Eisenstat here.  Write README file.
  * TODO: do not allocate Lp, Up, or P.  Require them as input.
  * TODO: require Xwork and Iwork to be allocated on input.
+ *
+ * If NRECIPROCAL is not defined at compile-time, the inverse of the diagonal of U is
+ * stored.  This is the default.
  */
 
 /* ========================================================================== */
@@ -148,6 +153,8 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int *p_noffdiag,	/* # of off-diagonal pivots chosen */
     double *p_umin,
     double *p_umax,
+    int *p_nlrealloc,
+    int *p_nurealloc,
 
     /* workspace, undefined on input */
     double *X,	    /* size n double's, zero on output */
@@ -167,9 +174,10 @@ int klu_factor	/* returns 0 if OK, negative if error */
     double Offx [ ]
 )
 {
-    double tol, sl, su, *Lx, *Ux, umin, umax, growth, maxlnz ;
-    int *Pinv, lsize, usize, result, anz, *Li, *Ui, *Lpend, *Stack, *Flag,
-	noffdiag, *Ap_pos, get_work, get_X, *W, no_btf ;
+    double tol, sl, su, umin, umax, growth, maxlnz ;
+    double *Lx, *Ux ;
+    int lsize, usize, result, anz, noffdiag, no_btf ;
+    int *Pinv, *Li, *Ui, *Lpend, *Stack, *Flag, *Ap_pos, *W ;
 
     /* ---------------------------------------------------------------------- */
     /* get control parameters, or use defaults */
@@ -250,34 +258,12 @@ int klu_factor	/* returns 0 if OK, negative if error */
     *p_Ui = (int *) NULL ;
     *p_Ux = (double *) NULL ;
 
-    get_work = (Work == (int *) NULL) ;
-    if (get_work)
-    {
-	/* allocate workspace of size 5*n*int */
-	Work = (int *) ALLOCATE (5*n * sizeof (int)) ;
-	if (Work == (int *) NULL)
-	{
-	    return (KLU_OUT_OF_MEMORY) ;
-	}
-    }
-
     W = Work ;
     Pinv = (int *) W ;	    W += n ;
     Stack = (int *) W ;	    W += n ;
     Flag = (int *) W ;	    W += n ;
     Lpend = (int *) W ;	    W += n ;
     Ap_pos = (int *) W ;    W += n ;
-
-    get_X = (X == (double *) NULL) ;
-    if (get_X)
-    {
-	/* allocate workspace of size n*double */
-	X = (double *) ALLOCATE (n * sizeof (double)) ;
-	if (X == (double *) NULL)
-	{
-	    return (KLU_OUT_OF_MEMORY) ;
-	}
-    }
 
     /* create sparse matrix for P, L, and U */
     Li = (int *) ALLOCATE (lsize * sizeof (int)) ;
@@ -288,8 +274,6 @@ int klu_factor	/* returns 0 if OK, negative if error */
     if ((Li == (int *) NULL) || (Lx == (double *) NULL) ||
         (Ui == (int *) NULL) || (Ux == (double *) NULL))
     {
-	if (get_work) FREE (Work, int) ;
-	if (get_X)    FREE (X, double) ;
 	klu_free (&Li, &Lx, &Ui, &Ux) ;
 	return (KLU_OUT_OF_MEMORY) ;
     }
@@ -301,16 +285,9 @@ int klu_factor	/* returns 0 if OK, negative if error */
     /* with pruning, and non-recursive depth-first-search */
     result = klu_kernel (n, Ap, Ai, Ax, Q, tol, growth, lsize, usize,
 	    Lp, &Li, &Lx, Up, &Ui, &Ux, Pinv, P, &noffdiag, &umin, &umax,
-	    X, Stack, Flag, Ap_pos, Lpend,
+	    p_nlrealloc, p_nurealloc, X, Stack, Flag, Ap_pos, Lpend,
 	    /* BTF and scaling case: */
 	    no_btf, k1, PSinv, Rs, scale, Offp, Offi, Offx) ;
-
-    /* ---------------------------------------------------------------------- */
-    /* free workspace */
-    /* ---------------------------------------------------------------------- */
-
-    if (get_work) FREE (Work, int) ;
-    if (get_X)    FREE (X, double) ;
 
     /* ---------------------------------------------------------------------- */
     /* return P, L, and U, or return nothing if an error occurred */
@@ -364,8 +341,8 @@ void klu_free
 
 /* Solve Lx=b.  Assumes L is unit lower triangular and where the unit diagonal
  * entry is stored (and appears first in each column of L).  Overwrites B
- * with the solution X.  B is n-by-nrhs and is stored in column form with
- * leading dimension d. */
+ * with the solution X.  B is n-by-nrhs and is stored in ROW form with
+ * row dimension nrhs.  nrhs must in the range 1 to 4. */
 
 void klu_lsolve
 (
@@ -374,125 +351,89 @@ void klu_lsolve
     int Lp [ ],
     int Li [ ],
     double Lx [ ],
-    int d,
     int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
     double X [ ]
 )
 {
-    double y [4], lik ;
-    double *Y ;
-    int k, p, pend, nblocks, block, i, d2, d3, d4 ;
+    double x [4], lik ;
+    int k, p, pend, i ;
 
-    if (nrhs == 1)
+    switch (nrhs)
     {
+
+    case 1:
+
 	for (k = 0 ; k < n ; k++)
 	{
-	    y [0] = X [k] ;
-	    if (y [0] != 0.0)
+	    x [0] = X [k] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
 	    {
-		pend = Lp [k+1] ;
-		for (p = Lp [k] + 1 ; p < pend ; p++)
-		{
-		    X [Li [p]] -= Lx [p] * y [0] ;
-		}
+		X [Li [p]] -= Lx [p] * x [0] ;
 	    }
 	}
-    }
-    else
-    {
+	break ;
 
-	/* determine how many blocks of 4 to do */
-	nblocks = nrhs / 4 ;
+    case 2:
 
-	/* do all the blocks of size 4 */
-	Y = X ;
-	d2 = d*2 ;
-	d3 = d*3 ;
-	d4 = d*4 ;
-	for (block = 0 ; block < nblocks ; block++)
+	for (k = 0 ; k < n ; k++)
 	{
-	    for (k = 0 ; k < n ; k++)
+	    x [0] = X [2*k    ] ;
+	    x [1] = X [2*k + 1] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
 	    {
-		y [0] = Y [k     ] ;
-		y [1] = Y [k + d ] ;
-		y [2] = Y [k + d2] ;
-		y [3] = Y [k + d3] ;
-		pend = Lp [k+1] ;
-		for (p = Lp [k] + 1 ; p < pend ; p++)
-		{
-		    i = Li [p] ;
-		    lik = Lx [p] ;
-		    Y [i     ] -= lik * y [0] ;
-		    Y [i + d ] -= lik * y [1] ;
-		    Y [i + d2] -= lik * y [2] ;
-		    Y [i + d3] -= lik * y [3] ;
-		}
+		i = Li [p] ;
+		lik = Lx [p] ;
+		X [2*i    ] -= lik * x [0] ;
+		X [2*i + 1] -= lik * x [1] ;
 	    }
-	    Y += d4 ;
 	}
+	break ;
 
-	/* clean-up for last block of size 1,2,3 */
-	switch (nrhs % 4)
+    case 3:
+
+	for (k = 0 ; k < n ; k++)
 	{
-	case 0:
-	    break ;
-
-	case 1:
-
-	    for (k = 0 ; k < n ; k++)
+	    x [0] = X [3*k    ] ;
+	    x [1] = X [3*k + 1] ;
+	    x [2] = X [3*k + 2] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
 	    {
-		y [0] = Y [k] ;
-		pend = Lp [k+1] ;
-		for (p = Lp [k] + 1 ; p < pend ; p++)
-		{
-		    Y [Li [p]] -= Lx [p] * y [0] ;
-		}
+		i = Li [p] ;
+		lik = Lx [p] ;
+		X [3*i    ] -= lik * x [0] ;
+		X [3*i + 1] -= lik * x [1] ;
+		X [3*i + 2] -= lik * x [2] ;
 	    }
-
-	    break ;
-
-	case 2:
-
-	    for (k = 0 ; k < n ; k++)
-	    {
-		y [0] = Y [k    ] ;
-		y [1] = Y [k + d] ;
-		pend = Lp [k+1] ;
-		for (p = Lp [k] + 1 ; p < pend ; p++)
-		{
-		    i = Li [p] ;
-		    lik = Lx [p] ;
-		    Y [i    ] -= lik * y [0] ;
-		    Y [i + d] -= lik * y [1] ;
-		}
-	    }
-
-	    break ;
-
-	case 3:
-
-	    for (k = 0 ; k < n ; k++)
-	    {
-		y [0] = Y [k     ] ;
-		y [1] = Y [k + d ] ;
-		y [2] = Y [k + d2] ;
-		pend = Lp [k+1] ;
-		for (p = Lp [k] + 1 ; p < pend ; p++)
-		{
-		    i = Li [p] ;
-		    lik = Lx [p] ;
-		    Y [i     ] -= lik * y [0] ;
-		    Y [i + d ] -= lik * y [1] ;
-		    Y [i + d2] -= lik * y [2] ;
-		}
-	    }
-
-	    break ;
 	}
+	break ;
+
+    case 4:
+
+	for (k = 0 ; k < n ; k++)
+	{
+	    x [0] = X [4*k    ] ;
+	    x [1] = X [4*k + 1] ;
+	    x [2] = X [4*k + 2] ;
+	    x [3] = X [4*k + 3] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
+	    {
+		i = Li [p] ;
+		lik = Lx [p] ;
+		X [4*i    ] -= lik * x [0] ;
+		X [4*i + 1] -= lik * x [1] ;
+		X [4*i + 2] -= lik * x [2] ;
+		X [4*i + 3] -= lik * x [3] ;
+	    }
+	}
+	break ;
+
     }
 }
-
 
 /* ========================================================================== */
 /* === klu_usolve =========================================================== */
@@ -500,7 +441,8 @@ void klu_lsolve
 
 /* Solve Ux=b.  Assumes U is non-unit upper triangular and where the diagonal
  * entry is stored (and appears last in each column of U).  Overwrites B
- * with the solution X.  B is n-by-nrhs and is stored in column form. */
+ * with the solution X.  B is n-by-nrhs and is stored in ROW form with row
+ * dimension nrhs.  nrhs must be in the range 1 to 4. */
 
 void klu_usolve
 (
@@ -509,138 +451,372 @@ void klu_usolve
     int Up [ ],
     int Ui [ ],
     double Ux [ ],
-    int d,
     int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
     double X [ ]
 )
 {
-    double y [4], uik, ukk ;
-    double *Y ;
-    int k, p, pend, nblocks, block, i, d2, d3, d4 ;
+    double x [4], uik, ukk ;
+    int k, p, pend, i ;
 
-    if (nrhs == 1)
+    switch (nrhs)
     {
+
+    case 1:
 
 	for (k = n-1 ; k >= 0 ; k--)
 	{
 	    pend = Up [k+1] - 1 ;
-	    y [0] = X [k] / Ux [pend] ;
-	    X [k] = y [0] ;
-	    if (y [0] != 0.0)
+#ifndef NRECIPROCAL
+	    x [0] = X [k] * Ux [pend] ;
+#else
+	    x [0] = X [k] / Ux [pend] ;
+#endif
+	    X [k] = x [0] ;
+	    for (p = Up [k] ; p < pend ; p++)
 	    {
-		for (p = Up [k] ; p < pend ; p++)
-		{
-		    X [Ui [p]] -= Ux [p] * y [0] ;
-		}
+		X [Ui [p]] -= Ux [p] * x [0] ;
 	    }
 	}
+
+	break ;
+
+    case 2:
+
+	for (k = n-1 ; k >= 0 ; k--)
+	{
+	    pend = Up [k+1] - 1 ;
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    x [0] = X [2*k    ] * ukk ;
+	    x [1] = X [2*k + 1] * ukk ;
+#else
+	    x [0] = X [2*k    ] / ukk ;
+	    x [1] = X [2*k + 1] / ukk ;
+#endif
+	    X [2*k    ] = x [0] ;
+	    X [2*k + 1] = x [1] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		X [2*i    ] -= uik * x [0] ;
+		X [2*i + 1] -= uik * x [1] ;
+	    }
+	}
+
+	break ;
+
+    case 3:
+
+	for (k = n-1 ; k >= 0 ; k--)
+	{
+	    pend = Up [k+1] - 1 ;
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    x [0] = X [3*k    ] * ukk ;
+	    x [1] = X [3*k + 1] * ukk ;
+	    x [2] = X [3*k + 2] * ukk ;
+#else
+	    x [0] = X [3*k    ] / ukk ;
+	    x [1] = X [3*k + 1] / ukk ;
+	    x [2] = X [3*k + 2] / ukk ;
+#endif
+	    X [3*k    ] = x [0] ;
+	    X [3*k + 1] = x [1] ;
+	    X [3*k + 2] = x [2] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		X [3*i    ] -= uik * x [0] ;
+		X [3*i + 1] -= uik * x [1] ;
+		X [3*i + 2] -= uik * x [2] ;
+	    }
+	}
+
+	break ;
+
+    case 4:
+
+	for (k = n-1 ; k >= 0 ; k--)
+	{
+	    pend = Up [k+1] - 1 ;
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    x [0] = X [4*k    ] * ukk ;
+	    x [1] = X [4*k + 1] * ukk ;
+	    x [2] = X [4*k + 2] * ukk ;
+	    x [3] = X [4*k + 3] * ukk ;
+#else
+	    x [0] = X [4*k    ] / ukk ;
+	    x [1] = X [4*k + 1] / ukk ;
+	    x [2] = X [4*k + 2] / ukk ;
+	    x [3] = X [4*k + 3] / ukk ;
+#endif
+	    X [4*k    ] = x [0] ;
+	    X [4*k + 1] = x [1] ;
+	    X [4*k + 2] = x [2] ;
+	    X [4*k + 3] = x [3] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		X [4*i    ] -= uik * x [0] ;
+		X [4*i + 1] -= uik * x [1] ;
+		X [4*i + 2] -= uik * x [2] ;
+		X [4*i + 3] -= uik * x [3] ;
+	    }
+	}
+
+	break ;
 
     }
-    else
+}
+
+
+/* ========================================================================== */
+/* === klu_ltsolve ========================================================== */
+/* ========================================================================== */
+
+/* Solve L'x=b.  Assumes L is unit lower triangular and where the unit diagonal
+ * entry is stored (and appears first in each column of L).  Overwrites B
+ * with the solution X.  B is n-by-nrhs and is stored in ROW form with
+ * row dimension nrhs.  nrhs must in the range 1 to 4. */
+
+void klu_ltsolve
+(
+    /* inputs, not modified: */
+    int n,
+    int Lp [ ],
+    int Li [ ],
+    double Lx [ ],
+    int nrhs,
+    /* right-hand-side on input, solution to Lx=b on output */
+    double X [ ]
+)
+{
+    double x [4], lik ;
+    int k, p, pend, i ;
+
+    switch (nrhs)
     {
 
-	/* determine how many blocks of 4 to do */
-	nblocks = nrhs / 4 ;
+    case 1:
 
-	/* do all the blocks of size 4 */
-	Y = X ;
-	d2 = d*2 ;
-	d3 = d*3 ;
-	d4 = d*4 ;
-	for (block = 0 ; block < nblocks ; block++)
+	for (k = n-1 ; k >= 0 ; k--)
 	{
-	    for (k = n-1 ; k >= 0 ; k--)
+	    pend = Lp [k+1] ;
+	    x [0] = X [k] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
 	    {
-		pend = Up [k+1] - 1 ;
-		ukk = Ux [pend] ;
-		y [0] = Y [k     ] / ukk ;
-		y [1] = Y [k + d ] / ukk ;
-		y [2] = Y [k + d2] / ukk ;
-		y [3] = Y [k + d3] / ukk ;
-		Y [k     ] = y [0] ;
-		Y [k + d ] = y [1] ;
-		Y [k + d2] = y [2] ;
-		Y [k + d3] = y [3] ;
-		for (p = Up [k] ; p < pend ; p++)
-		{
-		    i = Ui [p] ;
-		    uik = Ux [p] ;
-		    Y [i     ] -= uik * y [0] ;
-		    Y [i + d ] -= uik * y [1] ;
-		    Y [i + d2] -= uik * y [2] ;
-		    Y [i + d3] -= uik * y [3] ;
-		}
+		x [0] -= Lx [p] * X [Li [p]] ;
 	    }
-	    Y += d4 ;
+	    X [k] = x [0] ;
 	}
+	break ;
 
-	/* clean-up for last block of size 1,2,3 */
-	switch (nrhs % 4)
+    case 2:
+
+	for (k = n-1 ; k >= 0 ; k--)
 	{
-	case 0:
-	    break ;
-
-	case 1:
-
-	    for (k = n-1 ; k >= 0 ; k--)
+	    x [0] = X [2*k    ] ;
+	    x [1] = X [2*k + 1] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
 	    {
-		pend = Up [k+1] - 1 ;
-		y [0] = Y [k] / Ux [pend] ;
-		Y [k] = y [0] ;
-		for (p = Up [k] ; p < pend ; p++)
-		{
-		    Y [Ui [p]] -= Ux [p] * y [0] ;
-		}
+		i = Li [p] ;
+		lik = Lx [p] ;
+		x [0] -= lik * X [2*i    ] ;
+		x [1] -= lik * X [2*i + 1] ;
 	    }
-
-	    break ;
-
-	case 2:
-
-	    for (k = n-1 ; k >= 0 ; k--)
-	    {
-		pend = Up [k+1] - 1 ;
-		ukk = Ux [pend] ;
-		y [0] = Y [k    ] / ukk ;
-		y [1] = Y [k + d] / ukk ;
-		Y [k    ] = y [0] ;
-		Y [k + d] = y [1] ;
-		for (p = Up [k] ; p < pend ; p++)
-		{
-		    i = Ui [p] ;
-		    uik = Ux [p] ;
-		    Y [i    ] -= uik * y [0] ;
-		    Y [i + d] -= uik * y [1] ;
-		}
-	    }
-
-	    break ;
-
-	case 3:
-
-	    for (k = n-1 ; k >= 0 ; k--)
-	    {
-		pend = Up [k+1] - 1 ;
-		ukk = Ux [pend] ;
-		y [0] = Y [k     ] / ukk ;
-		y [1] = Y [k + d ] / ukk ;
-		y [2] = Y [k + d2] / ukk ;
-		Y [k     ] = y [0] ;
-		Y [k + d ] = y [1] ;
-		Y [k + d2] = y [2] ;
-		for (p = Up [k] ; p < pend ; p++)
-		{
-		    i = Ui [p] ;
-		    uik = Ux [p] ;
-		    Y [i     ] -= uik * y [0] ;
-		    Y [i + d ] -= uik * y [1] ;
-		    Y [i + d2] -= uik * y [2] ;
-		}
-	    }
-
-	    break ;
+	    X [2*k    ] = x [0] ;
+	    X [2*k + 1] = x [1] ;
 	}
+	break ;
+
+    case 3:
+
+	for (k = n-1 ; k >= 0 ; k--)
+	{
+	    x [0] = X [3*k    ] ;
+	    x [1] = X [3*k + 1] ;
+	    x [2] = X [3*k + 2] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
+	    {
+		i = Li [p] ;
+		lik = Lx [p] ;
+		x [0] -= lik * X [3*i    ] ;
+		x [1] -= lik * X [3*i + 1] ;
+		x [2] -= lik * X [3*i + 2] ;
+	    }
+	    X [3*k    ] = x [0] ;
+	    X [3*k + 1] = x [1] ;
+	    X [3*k + 2] = x [2] ;
+	}
+	break ;
+
+    case 4:
+
+	for (k = n-1 ; k >= 0 ; k--)
+	{
+	    x [0] = X [4*k    ] ;
+	    x [1] = X [4*k + 1] ;
+	    x [2] = X [4*k + 2] ;
+	    x [3] = X [4*k + 3] ;
+	    pend = Lp [k+1] ;
+	    for (p = Lp [k] + 1 ; p < pend ; p++)
+	    {
+		i = Li [p] ;
+		lik = Lx [p] ;
+		x [0] -= lik * X [4*i    ] ;
+		x [1] -= lik * X [4*i + 1] ;
+		x [2] -= lik * X [4*i + 2] ;
+		x [3] -= lik * X [4*i + 3] ;
+	    }
+	    X [4*k    ] = x [0] ;
+	    X [4*k + 1] = x [1] ;
+	    X [4*k + 2] = x [2] ;
+	    X [4*k + 3] = x [3] ;
+	}
+	break ;
+    }
+}
+
+
+/* ========================================================================== */
+/* === klu_utsolve ========================================================== */
+/* ========================================================================== */
+
+/* Solve U'x=b.  Assumes U is non-unit upper triangular and where the diagonal
+ * entry is stored (and appears last in each column of U).  Overwrites B
+ * with the solution X.  B is n-by-nrhs and is stored in ROW form with row
+ * dimension nrhs.  nrhs must be in the range 1 to 4.
+ * TODO: row dimension could be d. */
+
+void klu_utsolve
+(
+    /* inputs, not modified: */
+    int n,
+    int Up [ ],
+    int Ui [ ],
+    double Ux [ ],
+    int nrhs,
+    /* right-hand-side on input, solution to Ux=b on output */
+    double X [ ]
+)
+{
+    double x [4], uik, ukk ;
+    int k, p, pend, i ;
+
+    switch (nrhs)
+    {
+
+    case 1:
+
+	for (k = 0 ; k < n ; k++)
+	{
+	    pend = Up [k+1] - 1 ;
+	    x [0] = X [k] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		x [0] -= Ux [p] * X [Ui [p]] ;
+	    }
+#ifndef NRECIPROCAL
+	    X [k] = x [0] * Ux [pend] ;
+#else
+	    X [k] = x [0] / Ux [pend] ;
+#endif
+	}
+	break ;
+
+    case 2:
+
+	for (k = 0 ; k < n ; k++)
+	{
+	    pend = Up [k+1] - 1 ;
+	    x [0] = X [2*k    ] ;
+	    x [1] = X [2*k + 1] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		x [0] -= uik * X [2*i    ] ;
+		x [1] -= uik * X [2*i + 1] ;
+	    }
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    X [2*k    ] = x [0] * ukk ;
+	    X [2*k + 1] = x [1] * ukk ;
+#else
+	    X [2*k    ] = x [0] / ukk ;
+	    X [2*k + 1] = x [1] / ukk ;
+#endif
+	}
+	break ;
+
+    case 3:
+
+	for (k = 0 ; k < n ; k++)
+	{
+	    pend = Up [k+1] - 1 ;
+	    x [0] = X [3*k    ] ;
+	    x [1] = X [3*k + 1] ;
+	    x [2] = X [3*k + 2] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		x [0] -= uik * X [3*i    ] ;
+		x [1] -= uik * X [3*i + 1] ;
+		x [2] -= uik * X [3*i + 2] ;
+	    }
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    X [3*k    ] = x [0] * ukk ;
+	    X [3*k + 1] = x [1] * ukk ;
+	    X [3*k + 2] = x [2] * ukk ;
+#else
+	    X [3*k    ] = x [0] / ukk ;
+	    X [3*k + 1] = x [1] / ukk ;
+	    X [3*k + 2] = x [2] / ukk ;
+#endif
+	}
+	break ;
+
+    case 4:
+
+	for (k = 0 ; k < n ; k++)
+	{
+	    pend = Up [k+1] - 1 ;
+	    x [0] = X [4*k    ] ;
+	    x [1] = X [4*k + 1] ;
+	    x [2] = X [4*k + 2] ;
+	    x [3] = X [4*k + 3] ;
+	    for (p = Up [k] ; p < pend ; p++)
+	    {
+		i = Ui [p] ;
+		uik = Ux [p] ;
+		x [0] -= uik * X [4*i    ] ;
+		x [1] -= uik * X [4*i + 1] ;
+		x [2] -= uik * X [4*i + 2] ;
+		x [3] -= uik * X [4*i + 3] ;
+	    }
+	    ukk = Ux [pend] ;
+#ifndef NRECIPROCAL
+	    X [4*k    ] = x [0] * ukk ;
+	    X [4*k + 1] = x [1] * ukk ;
+	    X [4*k + 2] = x [2] * ukk ;
+	    X [4*k + 3] = x [3] * ukk ;
+#else
+	    X [4*k    ] = x [0] / ukk ;
+	    X [4*k + 1] = x [1] / ukk ;
+	    X [4*k + 2] = x [2] / ukk ;
+	    X [4*k + 3] = x [3] / ukk ;
+#endif
+	}
+	break ;
     }
 }
 
@@ -650,6 +826,8 @@ void klu_usolve
 /* ========================================================================== */
 
 /* Permute a dense matrix with the permutation matrix P, X = P*B. */
+/* TODO: remove or fix this to sync with lsolve, usolve. Move permutation
+ * from klu_btf_solve to here?  And add Q? */
 
 void klu_permute
 (

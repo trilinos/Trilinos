@@ -75,6 +75,7 @@ void mexFunction
 	if (s > 6) control.initmem_amd = Control [6] ;
 	if (s > 7) control.initmem     = Control [7] ;
     }
+    control.scale = 0 ;
     PRINTF (("control: btf %d ord %d tol %g gro %g inita %g init %g\n",
 	 control.btf, control.ordering, control.tol, control.growth,
 	 control.initmem_amd, control.initmem)) ;

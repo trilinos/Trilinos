@@ -40,7 +40,7 @@ void mexFunction
     /* get inputs */
     /* ---------------------------------------------------------------------- */
 
-    if (nargin < 2 || nargin > 4 || nargout != 2)
+    if (nargin > 4 || nargout > 2)
     {
 	mexErrMsgTxt ("Usage: [x, Info] = klus (A, b, Control)") ;
     }

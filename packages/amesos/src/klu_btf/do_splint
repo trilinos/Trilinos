@@ -3,7 +3,7 @@
 foreach file ("klu_btf_analyze.c" "klu_btf_analyze_given.c" \
     "klu_btf_defaults.c" "klu_btf_factor.c" \
     "klu_btf_free_numeric.c" "klu_btf_free_symbolic.c" "klu_btf_refactor.c" \
-    "klu_btf_scale.c" "klu_btf_solve.c" "klu_dump.c")
+    "klu_btf_scale.c" "klu_btf_solve.c" "klu_btf_tsolve.c" "klu_dump.c")
     echo ""
     echo "--------------------------------------------------------------------------------"
     echo splint $file

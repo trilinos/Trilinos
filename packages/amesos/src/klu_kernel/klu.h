@@ -30,6 +30,8 @@ int klu_factor	/* returns 0 if OK, negative if error */
     int *p_noffdiag,	    /* # of off-diagonal pivots chosen */
     double *p_umin,
     double *p_umax,
+    int *p_nlrealloc,
+    int *p_nurealloc,
 
     /* workspace, undefined on input */
     double *X,	    /* size n double's.  Zero on output */
@@ -66,9 +68,20 @@ void klu_lsolve
     int Lp [ ],
     int Li [ ],
     double Lx [ ],
-    int ldim,
     int nrhs,
     /* right-hand-side on input, solution to Lx=b on output */
+    double X [ ]
+) ;
+
+void klu_ltsolve
+(
+    /* inputs, not modified: */
+    int n,
+    int Lp [ ],
+    int Li [ ],
+    double Lx [ ],
+    int nrhs,
+    /* right-hand-side on input, solution to L'x=b on output */
     double X [ ]
 ) ;
 
@@ -80,9 +93,20 @@ void klu_usolve
     int Up [ ],
     int Ui [ ],
     double Ux [ ],
-    int ldim,
     int nrhs,
     /* right-hand-side on input, solution to Ux=b on output */
+    double X [ ]
+) ;
+
+void klu_utsolve
+(
+    /* inputs, not modified: */
+    int n,
+    int Up [ ],
+    int Ui [ ],
+    double Ux [ ],
+    int nrhs,
+    /* right-hand-side on input, solution to U'x=b on output */
     double X [ ]
 ) ;
 

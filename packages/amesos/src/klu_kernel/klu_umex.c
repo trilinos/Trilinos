@@ -65,5 +65,5 @@ void mexFunction
     /* solve Ux = b */
     /* ---------------------------------------------------------------------- */
 
-    klu_usolve (n, Up, Ui, Ux, n, nrhs, X) ;
+    klu_usolve (n, Up, Ui, Ux, nrhs, X) ;
 }
