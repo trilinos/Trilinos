@@ -94,7 +94,8 @@ Poisson2d_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/Poisson2dOperator.cpp \
 #Poisson2d_DEPENDENCIES = $(top_builddir)/src/libaztecoo.a 
 Poisson2d_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../epetra/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../epetra/src \
-	-I$(top_builddir)/../triutils/src -I$(top_builddir)/../ifpack/src
+	-I$(top_builddir)/../triutils/src -I$(top_builddir)/../ifpack/src \
+	-I$(top_srcdir)/../ifpack/src
 
 
 @BUILD_Y12M_TRUE@REFERENCE_Y12M_LIBS = -L$(top_builddir)/../../external/y12m -ly12m
@@ -360,7 +361,6 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic tags uninstall uninstall-am \
 	uninstall-info-am
 
-	-I$(top_srcdir)/../ifpack/src
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
