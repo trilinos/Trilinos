@@ -39,14 +39,12 @@ int NOX::Utils::myPID = 0;
 int NOX::Utils::printProc = 0;
 int NOX::Utils::printTest = 0xf;
 
-NOX::Utils::Fill NOX::Utils::fillobj;
-NOX::Utils::Sci NOX::Utils::sciobj;
+//NOX::Utils::Fill NOX::Utils::fillobj;
+//NOX::Utils::Sci NOX::Utils::sciobj;
 
-NOX::Utils::Fill& NOX::Utils::fill(int filln, char fillc) 
+NOX::Utils::Fill NOX::Utils::fill(int filln, char fillc) 
 {
-  fillobj.n = filln; 
-  fillobj.c = fillc;
-  return fillobj;
+  return NOX::Utils::Fill(filln, fillc);
 }
 
 ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
@@ -56,17 +54,22 @@ ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
   return os;
 }
 
-NOX::Utils::Sci& NOX::Utils::sci(double dval)
+NOX::Utils::Sci NOX::Utils::sci(double dval, int prec = -1)
 {
-  sciobj.d = dval;
-  return sciobj;
+  return NOX::Utils::Sci(dval, prec);
 }
 
 ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
 {
   os.setf(ios::scientific);
-  os.precision(NOX::Utils::precision);
-  os << setw(NOX::Utils::precision + 6) << s.d;
+  if (s.p < 0) {
+    os.precision(NOX::Utils::precision);
+    os << setw(NOX::Utils::precision + 6) << s.d;
+  }
+  else {
+    os.precision(s.p);
+    os << setw(s.p + 6) << s.d;
+  } 
   cout.unsetf(ios::scientific);
   return os;
 }

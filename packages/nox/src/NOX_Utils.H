@@ -151,7 +151,7 @@ public:
 
   class Fill {
   public:
-    Fill() {};
+    Fill(int ntimes, char ch) : n(ntimes), c(ch) {};
     ~Fill() {};
     int n;
     char c;
@@ -159,28 +159,44 @@ public:
 
   class Sci {
   public:
-    Sci() {};
+    Sci(double val, int precision = -1) : d(val), p(precision) {};
     ~Sci() {};
     double d;
+    int p;
   };
 
-  static Fill fillobj;
-  static Sci sciobj;
+  //static Fill fillobj;
+  //  static Sci sciobj;
 
 #endif
 
   /*!  
-    \brief We can use it to put in an arbitrary number of stars or any
-    specified fill character.  cout << Utils::fill(10); cout <<
-    %Utils::fill(10,'-');
+    \brief Creates a Fill object which can be used in an output stream
+    to insert an arbitrary number of a given character. The default
+    character is an asterick.
+
+    For example,
+    \code cout << Utils::fill(10) << "or" << Utils::fill(10,'-'); \endcode
+
+    This is modeled after the Form and Bound_form objects in
+    Stroustrup, C++ Programming Langauge, 3rd ed., Chapter 21.4.
   */
-  static Fill& fill(int filln, char fillc = '*');
+  static Fill fill(int filln, char fillc = '*');
 
   /*! 
-    \brief We can use it to put a formated double onto the output with
-    cout << %Utils::sci(d); 
+
+    \brief Creates a Sci object which can be used in an output stream
+    for printing a double precision number in scientific format with
+    an arbitrary precision. The default precision is that specificed
+    by the Utils static object.
+
+    For example,
+    \code cout << Utils::sci(d) << "or" << Utils::sci(d,2); \endcode
+
+    This is modeled after the Form and Bound_form objects in
+    Stroustrup, C++ Programming Langauge, 3rd ed., Chapter 21.4.
   */
-  static Sci& sci(double dval);
+  static Sci sci(double dval, int prec = -1);
 
 public:
 
