@@ -598,6 +598,7 @@ AC_CONFIG_FILES([
 		Makefile 
 		Makefile.export
 		src/Makefile
+        doc/Makefile
 		examples/Makefile
 		examples/Advanced/Makefile
 		examples/BasicExamples/Makefile
