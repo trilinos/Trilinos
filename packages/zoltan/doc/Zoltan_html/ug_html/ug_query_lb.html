@@ -63,8 +63,9 @@ functions are required by individual algorithms.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_OBJ_FN"></a>typedef int <b>LB_NUM_OBJ_FN</b>(void *<i>
-data</i>,<i> </i>int<i> *ierr</i>);</td>
+<td><a NAME="LB_NUM_OBJ_FN"></a>typedef int <b>LB_NUM_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -129,19 +130,26 @@ of objects to be balanced that are currently assigned to the processor.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_OBJ_LIST_FN"></a>typedef void<b> LB_OBJ_LIST_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> *<i> global_ids</i>, <b>LB_LID</b> *<i> local_ids</i>,
-int <i>wgt_dim</i>, float * <i>obj_wgts,</i> int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_OBJ_LIST_FN"></a>typedef void<b> LB_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_ids</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>obj_wgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, global_ids, local_ids,
+<td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -182,6 +190,22 @@ be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -225,21 +249,27 @@ may be NULL.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_FIRST_OBJ_FN"></a>typedef int <b>LB_FIRST_OBJ_FN</b>(void
-*<i> data, </i><b>LB_GID </b>*<i> first_global_id</i>, <b>LB_LID</b> *<i>
-first_local_id</i>, int <i>wgt_dim,</i> float * <i>first_obj_wgt</i>, int<i>
-*ierr</i>);&nbsp;</td>
+<td><a NAME="LB_FIRST_OBJ_FN"></a>typedef int <b>LB_FIRST_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>first_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_First_Obj</i></b>(<i>data, first_global_id, first_local_id,
+<td>FUNCTION <b><i>Get_First_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, first_global_id, first_local_id,
 wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -284,6 +314,22 @@ be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -345,17 +391,23 @@ of the first object.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NEXT_OBJ_FN"></a>typedef int <b>LB_NEXT_OBJ_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID </b><i>local_id</i>,
-<b>LB_GID
-</b>*<i> next_global_id</i>, <b>LB_LID</b> *<i> next_local_id</i>, int
-<i>wgt_dim,</i> float * <i>next_obj_wgt</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NEXT_OBJ_FN"></a>typedef int <b>LB_NEXT_OBJ_FN</b>
+(void&nbsp;*<i>&nbsp;data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_local_id</i>,
+int&nbsp;<i>wgt_dim,</i>
+float&nbsp;*<i>next_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Next_Obj</i></b>(<i>data, global_id, local_id, next_global_id,
+<td>FUNCTION <b><i>Get_Next_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, next_global_id,
 next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
@@ -363,6 +415,7 @@ next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -406,6 +459,22 @@ be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -479,8 +548,10 @@ of the next object.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_BORDER_OBJ_FN"></a>typedef int <b>LB_NUM_BORDER_OBJ_FN</b>(void
-*<i> data</i>, int <i>nbor_proc</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NUM_BORDER_OBJ_FN"></a>typedef int <b>LB_NUM_BORDER_OBJ_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>nbor_proc</i>, 
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -555,23 +626,28 @@ should be returned.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_BORDER_OBJ_LIST_FN"></a>typedef void <b>LB_BORDER_OBJ_LIST_FN</b>(void
-*<i> data</i>, int <i>nbor_proc</i>, <b>LB_GID </b>*<i> global_ids</i>,
-<b>LB_LID</b>
-*<i> local_ids</i>,<i> </i>int <i>wgt_dim</i>, float * <i>obj_wgts,
-</i>int<i>
-*ierr</i>);&nbsp;</td>
+<td><a NAME="LB_BORDER_OBJ_LIST_FN"></a>typedef void <b>LB_BORDER_OBJ_LIST_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>nbor_proc</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_ids</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>obj_wgts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b><i>Get_Border_Obj_List</i></b>(<i>data, nbor_proc, global_ids,
+<td>SUBROUTINE <b><i>Get_Border_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, global_ids,
 local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -614,6 +690,23 @@ be provided.
 
 <td>Pointer to user-defined data.</td>
 </tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
 
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>nbor_proc</i></td>
@@ -664,23 +757,29 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_FIRST_BORDER_OBJ_FN"></a>typedef int <b>LB_FIRST_BORDER_OBJ_FN</b>(void
-*<i> data</i>, int <i>nbor_proc</i>, <b>LB_GID</b> *<i> first_global_id</i>,
-<b>LB_LID
-</b>*<i> first_local_id</i>,<i> </i>int<i> wgt_dim, </i>float<i> * first_obj_wgt,
-</i>int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_FIRST_BORDER_OBJ_FN"></a>typedef int <b>LB_FIRST_BORDER_OBJ_FN</b>
+(void&nbsp;*<i>data</i>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>nbor_proc</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>first_local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>first_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_First_Border_Obj</i></b>(<i>data, nbor_proc, first_global_id,
+<td>FUNCTION <b><i>Get_First_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, first_global_id,
 first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_First_Border_Obj
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT) :: first_global_id&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT) :: first_local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
 <br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
 <br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
@@ -727,6 +826,22 @@ be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -795,23 +910,30 @@ of the first object along the processor border.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NEXT_BORDER_OBJ_FN"></a>typedef int <b>LB_NEXT_BORDER_OBJ_FN</b>(void
-*<i> data</i>, <b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>,
-int <i>nbor_proc</i>, <b>LB_GID</b> *<i> next_global_id</i>, <b>LB_LID</b>
-*<i> next_local_id</i>,<i> </i>int <i>wgt_dim, </i>float <i>*next_obj_wgt,,
-</i>int<i>
-*ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NEXT_BORDER_OBJ_FN"></a>typedef int <b>LB_NEXT_BORDER_OBJ_FN</b>
+(void&nbsp;*<i>data</i>, 
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>local_id</i>,
+int&nbsp;<i>nbor_proc</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;<i>next_local_id</i>,
+int&nbsp;<i>wgt_dim</i>,
+float&nbsp;*<i>next_obj_wgt</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b><i>Get_Next_Border_Obj</i></b>(<i>data, global_id, local_id,
+<td>FUNCTION <b><i>Get_Next_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
 <br>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(IN) :: global_id&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(IN) :: local_id&nbsp;
+<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
 <br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
 <br>&lt;<i>type-gid</i>>, INTENT(OUT) :: next_global_id&nbsp;
 <br>&lt;<i>type-lid</i>>, INTENT(OUT) :: next_local_id&nbsp;
@@ -860,6 +982,22 @@ be provided.
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 </tr>
 
 <tr>
@@ -942,8 +1080,9 @@ of the next object along the processor border.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_NUM_GEOM_FN"></a>typedef int <b>LB_NUM_GEOM_FN</b>(void
-*<i> data</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_NUM_GEOM_FN"></a>typedef int <b>LB_NUM_GEOM_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -1012,9 +1151,14 @@ application, the return value should be three.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_GEOM_FN"></a>typedef void <b>LB_GEOM_FN</b>(void *<i> data</i>,
-<b>LB_GID</b> <i>global_id</i>, <b>LB_LID</b> <i>local_id</i>, double *<i>
-geom_vec</i>, int<i> *ierr</i>);&nbsp;</td>
+<td><a NAME="LB_GEOM_FN"></a>typedef void <b>LB_GEOM_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+<b>LB_GID</b> <i>global_id</i>, 
+<b>LB_LID</b> <i>local_id</i>,
+double&nbsp;*<i>geom_vec</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>

@@ -40,8 +40,9 @@ Zoltan library; their descriptions are included below.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Set_Method"></a>int <b>LB_Set_Method</b>(struct <b>LB_Struct</b>
-*<i> lb</i>, char * <i>string</i>);&nbsp;</td>
+<td><a NAME="LB_Set_Method"></a>int <b>LB_Set_Method</b>
+(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+char&nbsp;*<i>string</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -118,8 +119,10 @@ is used.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>(struct <b>LB_Struct</b>
-*<i> lb</i>, char * <i>param_name</i>, char * <i>new_val</i>);&nbsp;</td>
+<td><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>
+(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+char&nbsp;*<i>param_name</i>,
+char&nbsp;*<i>new_val</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -194,14 +197,19 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Balance"></a>int <b>LB_Balance</b>(struct <b>LB_Struct</b>
-* <i>lb</i>, int * <i>changes</i>, int&nbsp;*<i>num_gid_entries</i>, int&nbsp;*<i>num_lid_entries</i>,&nbsp;
-int *<i>num_import</i>, 
+<td><a NAME="LB_Balance"></a>int <b>LB_Balance</b>
+(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+int&nbsp;*<i>changes</i>,
+int&nbsp;*<i>num_gid_entries</i>,
+int&nbsp;*<i>num_lid_entries</i>,
+int&nbsp;*<i>num_import</i>, 
 <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>, int ** <i>import_procs</i>,
-int * <i>num_export</i>, <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>, int **
-<i>export_procs</i>);&nbsp;</td>
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
+int&nbsp;**<i>import_procs</i>,
+int&nbsp;*<i>num_export</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
+int&nbsp;**<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -345,9 +353,15 @@ IDs of processors that will own the exported objects in the new decomposition
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Eval"></a>int <b>LB_Eval</b>(struct <b>LB_struct *</b><i>lb</i>,
-int <i>print_stats</i>, int *<i>nobj</i>, float *o<i>bj_wgt</i>, int *<i>ncuts,</i>
-float *<i>cut_wgt</i>, int *<i>nboundary</i>, int *<i>nadj</i>);&nbsp;</td>
+<td><a NAME="LB_Eval"></a>int <b>LB_Eval</b>
+(struct&nbsp;<b>LB_struct</b>&nbsp;*<i>lb</i>,
+int&nbsp;<i>print_stats</i>,
+int&nbsp;*<i>nobj</i>,
+float&nbsp;*o<i>bj_wgt</i>,
+int&nbsp;*<i>ncuts</i>,
+float&nbsp;*<i>cut_wgt</i>,
+int&nbsp;*<i>nboundary</i>,
+int&nbsp;*<i>nadj</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -479,10 +493,13 @@ The same principle holds for <i>cut_wgt.</i>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>(<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>, int&nbsp;**<i>import_procs</i>, 
+<td><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>
+(<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
+int&nbsp;**<i>import_procs</i>, 
 <a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>, int&nbsp;**<i>export_procs</i>);&nbsp;</td>
+<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
+int&nbsp;**<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -567,9 +584,8 @@ objects in the new decomposition (i.e., the destination processors).</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Destroy"></a>void <b>LB_Destroy</b> (struct
-<b>LB_Struct</b>
-** <i>lb</i>);&nbsp;</td>
+<td><a NAME="LB_Destroy"></a>void <b>LB_Destroy</b>
+(struct&nbsp;<b>LB_Struct</b>&nbsp;**<i>lb</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>

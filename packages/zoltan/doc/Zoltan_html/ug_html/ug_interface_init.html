@@ -38,8 +38,10 @@ are described below:
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Initialize"></a>int <b>LB_Initialize</b>(int <i>argc</i>,
-char **<i> argv</i>, float *<i> ver</i>);</td>
+<td><a NAME="LB_Initialize"></a>int <b>LB_Initialize</b>
+(int&nbsp;<i>argc</i>,
+char&nbsp;**<i>argv</i>,
+float&nbsp;*<i>ver</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -114,8 +116,8 @@ is linked to.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Create"></a>struct <b>LB_Struct</b> *<b>LB_Create</b>(MPI_Comm
-<i>communicator</i>);&nbsp;</td>
+<td><a NAME="LB_Create"></a>struct <b>LB_Struct</b> *<b>LB_Create</b>
+(MPI_Comm&nbsp;<i>communicator</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
@@ -173,11 +175,11 @@ be fatal.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b> (struct <b>LB_Struct </b>*
-<i>lb,
-</i><b>LB_FN_TYPE
-</b><i>fn_type</i>,
-void (*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
+<td><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b>
+(struct&nbsp;<b>LB_Struct&nbsp;*</b><i>lb</i>,
+<b>LB_FN_TYPE&nbsp;</b><i>fn_type</i>,
+void&nbsp;(*<i>fn_ptr</i>)(),
+void&nbsp;*<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -257,9 +259,9 @@ it may be omitted.</td>
 <td VALIGN=TOP NOSAVE>C:</td>
 
 <td><a NAME="LB_Set_Specific_Fn"></a>int <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>
-(struct <b>LB_Struct </b>*
-<i>lb,&nbsp;</i> &lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>
-(*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
+(struct&nbsp;<b>LB_Struct&nbsp;</b>*<i>lb</i>,
+&lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
+void&nbsp;*<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
