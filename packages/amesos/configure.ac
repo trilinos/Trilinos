@@ -1,7 +1,10 @@
 # ------------------------------------------------------------------------
 # Process this file with autoconf to produce a configure script.
 # ------------------------------------------------------------------------
-
+#
+# Refer to configuration for more information about adding a new 
+# package to Amesos
+#
 # @HEADER
 # ************************************************************************
 # 

@@ -156,7 +156,39 @@ class Epetra_Comm;
     using the same factorization.  Others will require a new
     factorization anytime that a call to SetTranspose() changes the
     intended solve from A<SUP>T</SUP> x = b to Ax = b or vice-versa.
-   
+
+    <H1>Performance expectations</H1>
+
+    The following is a list of performance guidelines that classes 
+    which implement the Amesos_BaseSolver class are expected to maintain.
+
+    <H2>Memory usage:</H2>
+    For serial codes, no more than one extra copy of the original matrix 
+    should be required.  Except that some codes require matrix transpostion 
+    which requires additional copies of the input matrix.  
+
+    For distributed memory codes, no serial copies of the original matrix 
+    should be required.  
+
+    <H2>Communication:</H2>
+    Communication should be kept to a minimum, storing data on the process 
+    where it will be used where possible.  
+
+    <H2>Computation:</H2> Theta(n) compuational requirements
+     (i.e. those which grow at least linearly with the number of rows in 
+     the matrix) should not be repeated unnecessarily.
+     Constant order, i.e. O(1), computational tasks may be repeated.  
+
+     <H1>Robustness requirements</H1>
+
+     <p>Failures should be caught either by EPETRA_CHK_ERR() or through calls
+     to assert.  
+
+     <p>Because we do not check to see if a matrix has changed
+     between the call to SymbolicFactorization() and the call to
+     NumericFactorization(), it is possible that a change to the 
+     matrix will cause a potentially catastrophic error.  
+    
 */    
 
 class Amesos_BaseSolver {

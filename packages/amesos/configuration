@@ -1,0 +1,25 @@
+I recently added Amesos_Umfpack.  These are the files that I added or 
+changed as a part of that:
+
+Configure.ac
+
+src/Makefile.am
+src/Amesos_config.h.in
+src/Amesos_Umfpack.cpp
+src/Amesos_Umfpack.h
+
+
+test/Makefile.am; 
+test/Amesos_TestDriver.cpp
+test/Amesos_TestSolver.cpp
+test/Amesos_TestSolver.h
+test/Amesos_TestMrhsSolver.cpp
+test/Amesos_TestMultiSolver.cpp
+test/AmesosUmfpack
+test/AmesosUmfpackShort
+test/AmesosUmfpackSerial 
+test/scripts/daily/serial/TestUmfpackSerial
+test/scripts/daily/serial/Makefile.am
+test/scripts/daily/mpi/TestUmfpack
+test/scripts/daily/mpi/Makefile.am
+
