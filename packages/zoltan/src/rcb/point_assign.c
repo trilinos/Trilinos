@@ -43,6 +43,8 @@ int      *part                  /* partition that point lands in;
      RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
      struct rib_tree   *itree;  /* tree of RIB cuts */
      int ierr = ZOLTAN_OK;
+     volatile double t;         /* Temporary variable; volatile to get matching
+                                   results with and without optimization. */
 
      if (zz->LB.Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
@@ -86,23 +88,25 @@ int      *part                  /* partition that point lands in;
 
         switch (rib->Num_Geom) {
            case 3:
-              while (partmid > 0)
-                 if(((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0] +
-                     (coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1] +
-                     (coords[2] - itree[partmid].cm[2])*itree[partmid].ev[2])
-                       <= itree[partmid].cut)
+              while (partmid > 0) {
+                 t = ((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+                     ((coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1]) +
+                     ((coords[2] - itree[partmid].cm[2])*itree[partmid].ev[2]);
+                 if (t <= itree[partmid].cut)
                     partmid = itree[partmid].left_leaf;
                  else
                     partmid = itree[partmid].right_leaf;
+              }
               break;
            case 2:
-              while (partmid > 0)
-                 if(((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0] +
-                     (coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1])
-                       <= itree[partmid].cut)
+              while (partmid > 0) {
+                 t = ((coords[0] - itree[partmid].cm[0])*itree[partmid].ev[0]) +
+                     ((coords[1] - itree[partmid].cm[1])*itree[partmid].ev[1]);
+                 if (t <= itree[partmid].cut)
                     partmid = itree[partmid].left_leaf;
                  else
                     partmid = itree[partmid].right_leaf;
+              }
               break;
            case 1:
               while (partmid > 0)
