@@ -71,18 +71,34 @@ LOCA_SOLVER = \
         $(srcdir)/LOCA_Solver_Generic.C \
         $(srcdir)/LOCA_Solver_NoxSolver.C
 
+LOCA_BIFURCATION_H = \
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.H
+
+LOCA_BIFURCATION = \
+        $(srcdir)/LOCA_Bifurcation_TPBordVector.C
+
+LOCA_DERIVUTILS_H = \
+        $(srcdir)/LOCA_DerivUtils.H
+
+LOCA_DERIVUTILS = \
+        $(srcdir)/LOCA_DerivUtils.C
+
 LOCA_H = \
         $(LOCA_ABSTRACT_H) \
 	$(LOCA_UTILS_H) \
 	$(LOCA_PARAMETER_VECTOR_H) \
 	$(LOCA_STEPPER_H) \
-        $(LOCA_SOLVER_H)
+        $(LOCA_SOLVER_H) \
+	$(LOCA_BIFURCATION_H) \
+	$(LOCA_DERIVUTILS_H)
 
 LOCA = \
 	$(LOCA_UTILS) \
 	$(LOCA_PARAMETER_VECTOR) \
 	$(LOCA_STEPPER) \
-        $(LOCA_SOLVER)
+        $(LOCA_SOLVER) \
+	$(LOCA_BIFURCATION) \
+	$(LOCA_DERIVUTILS)
 
 # ------------------------------------------------------------------------
 # Loca library specifications
@@ -138,8 +154,6 @@ libloca_a_LIBADD = $(CXXREPOS)
 # ------------------------------------------------------------------------
 
 MAINTAINERCLEANFILES = Makefile.in 
-
-
 
 
 
