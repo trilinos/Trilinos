@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) $(Ifpack_ex_Reordering_SOURCES) $(Ifpack_ex_SingletonFilter_SOURCES) $(Ifpack_ex_vIct_SOURCES)
+SOURCES = $(Ifpack_ex_Amesos_SOURCES) $(Ifpack_ex_BlockRelaxation_SOURCES) $(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) $(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) $(Ifpack_ex_Reordering_SOURCES) $(Ifpack_ex_SingletonFilter_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -98,7 +98,7 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Ifpack_config.h
 CONFIG_CLEAN_FILES = Makefile
 am__EXEEXT_1 = Ifpack_ex_Factory$(EXEEXT) Ifpack_ex_Amesos$(EXEEXT) \
-	Ifpack_ex_vIct$(EXEEXT) Ifpack_ex_BlockRelaxation$(EXEEXT) \
+	Ifpack_ex_ICT$(EXEEXT) Ifpack_ex_BlockRelaxation$(EXEEXT) \
 	Ifpack_ex_MatrixMarket$(EXEEXT) Ifpack_ex_Reordering$(EXEEXT) \
 	Ifpack_ex_Filtering$(EXEEXT) \
 	Ifpack_ex_SingletonFilter$(EXEEXT)
@@ -118,6 +118,8 @@ am_Ifpack_ex_Factory_OBJECTS = Ifpack_ex_Factory.$(OBJEXT)
 Ifpack_ex_Factory_OBJECTS = $(am_Ifpack_ex_Factory_OBJECTS)
 am_Ifpack_ex_Filtering_OBJECTS = Ifpack_ex_Filtering.$(OBJEXT)
 Ifpack_ex_Filtering_OBJECTS = $(am_Ifpack_ex_Filtering_OBJECTS)
+am_Ifpack_ex_ICT_OBJECTS = Ifpack_ex_ICT.$(OBJEXT)
+Ifpack_ex_ICT_OBJECTS = $(am_Ifpack_ex_ICT_OBJECTS)
 am_Ifpack_ex_MatrixMarket_OBJECTS = Ifpack_ex_MatrixMarket.$(OBJEXT)
 Ifpack_ex_MatrixMarket_OBJECTS = $(am_Ifpack_ex_MatrixMarket_OBJECTS)
 am_Ifpack_ex_Reordering_OBJECTS = Ifpack_ex_Reordering.$(OBJEXT)
@@ -126,8 +128,6 @@ am_Ifpack_ex_SingletonFilter_OBJECTS =  \
 	Ifpack_ex_SingletonFilter.$(OBJEXT)
 Ifpack_ex_SingletonFilter_OBJECTS =  \
 	$(am_Ifpack_ex_SingletonFilter_OBJECTS)
-am_Ifpack_ex_vIct_OBJECTS = Ifpack_ex_vIct.$(OBJEXT)
-Ifpack_ex_vIct_OBJECTS = $(am_Ifpack_ex_vIct_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -135,10 +135,10 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_BlockRelaxation.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Factory.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Filtering.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_ICT.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_MatrixMarket.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_Reordering.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_SingletonFilter.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_vIct.Po
+@AMDEP_TRUE@	./$(DEPDIR)/Ifpack_ex_SingletonFilter.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -147,15 +147,15 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
-	$(Ifpack_ex_MatrixMarket_SOURCES) \
+	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) \
 	$(Ifpack_ex_Reordering_SOURCES) \
-	$(Ifpack_ex_SingletonFilter_SOURCES) $(Ifpack_ex_vIct_SOURCES)
+	$(Ifpack_ex_SingletonFilter_SOURCES)
 DIST_SOURCES = $(Ifpack_ex_Amesos_SOURCES) \
 	$(Ifpack_ex_BlockRelaxation_SOURCES) \
 	$(Ifpack_ex_Factory_SOURCES) $(Ifpack_ex_Filtering_SOURCES) \
-	$(Ifpack_ex_MatrixMarket_SOURCES) \
+	$(Ifpack_ex_ICT_SOURCES) $(Ifpack_ex_MatrixMarket_SOURCES) \
 	$(Ifpack_ex_Reordering_SOURCES) \
-	$(Ifpack_ex_SingletonFilter_SOURCES) $(Ifpack_ex_vIct_SOURCES)
+	$(Ifpack_ex_SingletonFilter_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -282,7 +282,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 EXAMPLE = Ifpack_ex_Factory Ifpack_ex_Amesos        \
-          Ifpack_ex_vIct Ifpack_ex_BlockRelaxation  \
+          Ifpack_ex_ICT Ifpack_ex_BlockRelaxation  \
 	  Ifpack_ex_MatrixMarket                    \
           Ifpack_ex_Reordering                      \
           Ifpack_ex_Filtering                       \
@@ -344,15 +344,15 @@ Ifpack_ex_Amesos_LDADD = $(top_builddir)/src/libifpack.a \
 	$(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS)  $(FLIBS)
 
-Ifpack_ex_vIct_SOURCES = $(srcdir)/Ifpack_ex_vIct.cpp
-Ifpack_ex_vIct_DEPENDENCIES = \
+Ifpack_ex_ICT_SOURCES = $(srcdir)/Ifpack_ex_ICT.cpp
+Ifpack_ex_ICT_DEPENDENCIES = \
 	$(top_builddir)/../ifpack/src/libifpack.a \
 	${AZTECOO_LIBS} \
 	${TEUCHOS_LIBS} \
 	${TRIUTILS_LIBS} \
 	${AMESOS_LIBS}
 
-Ifpack_ex_vIct_LDADD = $(top_builddir)/src/libifpack.a \
+Ifpack_ex_ICT_LDADD = $(top_builddir)/src/libifpack.a \
 	$(AZTECOO_LIBS) \
 	$(TRIUTILS_LIBS) \
 	$(AMESOS_LIBS) \
@@ -496,6 +496,9 @@ Ifpack_ex_Factory$(EXEEXT): $(Ifpack_ex_Factory_OBJECTS) $(Ifpack_ex_Factory_DEP
 Ifpack_ex_Filtering$(EXEEXT): $(Ifpack_ex_Filtering_OBJECTS) $(Ifpack_ex_Filtering_DEPENDENCIES) 
 	@rm -f Ifpack_ex_Filtering$(EXEEXT)
 	$(CXXLINK) $(Ifpack_ex_Filtering_LDFLAGS) $(Ifpack_ex_Filtering_OBJECTS) $(Ifpack_ex_Filtering_LDADD) $(LIBS)
+Ifpack_ex_ICT$(EXEEXT): $(Ifpack_ex_ICT_OBJECTS) $(Ifpack_ex_ICT_DEPENDENCIES) 
+	@rm -f Ifpack_ex_ICT$(EXEEXT)
+	$(CXXLINK) $(Ifpack_ex_ICT_LDFLAGS) $(Ifpack_ex_ICT_OBJECTS) $(Ifpack_ex_ICT_LDADD) $(LIBS)
 Ifpack_ex_MatrixMarket$(EXEEXT): $(Ifpack_ex_MatrixMarket_OBJECTS) $(Ifpack_ex_MatrixMarket_DEPENDENCIES) 
 	@rm -f Ifpack_ex_MatrixMarket$(EXEEXT)
 	$(CXXLINK) $(Ifpack_ex_MatrixMarket_LDFLAGS) $(Ifpack_ex_MatrixMarket_OBJECTS) $(Ifpack_ex_MatrixMarket_LDADD) $(LIBS)
@@ -505,9 +508,6 @@ Ifpack_ex_Reordering$(EXEEXT): $(Ifpack_ex_Reordering_OBJECTS) $(Ifpack_ex_Reord
 Ifpack_ex_SingletonFilter$(EXEEXT): $(Ifpack_ex_SingletonFilter_OBJECTS) $(Ifpack_ex_SingletonFilter_DEPENDENCIES) 
 	@rm -f Ifpack_ex_SingletonFilter$(EXEEXT)
 	$(CXXLINK) $(Ifpack_ex_SingletonFilter_LDFLAGS) $(Ifpack_ex_SingletonFilter_OBJECTS) $(Ifpack_ex_SingletonFilter_LDADD) $(LIBS)
-Ifpack_ex_vIct$(EXEEXT): $(Ifpack_ex_vIct_OBJECTS) $(Ifpack_ex_vIct_DEPENDENCIES) 
-	@rm -f Ifpack_ex_vIct$(EXEEXT)
-	$(CXXLINK) $(Ifpack_ex_vIct_LDFLAGS) $(Ifpack_ex_vIct_OBJECTS) $(Ifpack_ex_vIct_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -519,10 +519,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_BlockRelaxation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_Factory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_Filtering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_ICT.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_MatrixMarket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_Reordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_SingletonFilter.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ex_vIct.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	if $(CXXCOMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -604,6 +604,22 @@ Ifpack_ex_Filtering.obj: $(srcdir)/Ifpack_ex_Filtering.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_Filtering.obj `if test -f '$(srcdir)/Ifpack_ex_Filtering.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_Filtering.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_Filtering.cpp'; fi`
 
+Ifpack_ex_ICT.o: $(srcdir)/Ifpack_ex_ICT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_ICT.o -MD -MP -MF "$(DEPDIR)/Ifpack_ex_ICT.Tpo" -c -o Ifpack_ex_ICT.o `test -f '$(srcdir)/Ifpack_ex_ICT.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_ICT.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_ICT.Tpo" "$(DEPDIR)/Ifpack_ex_ICT.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_ICT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_ICT.cpp' object='Ifpack_ex_ICT.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_ICT.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_ICT.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_ICT.o `test -f '$(srcdir)/Ifpack_ex_ICT.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_ICT.cpp
+
+Ifpack_ex_ICT.obj: $(srcdir)/Ifpack_ex_ICT.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_ICT.obj -MD -MP -MF "$(DEPDIR)/Ifpack_ex_ICT.Tpo" -c -o Ifpack_ex_ICT.obj `if test -f '$(srcdir)/Ifpack_ex_ICT.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_ICT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_ICT.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_ICT.Tpo" "$(DEPDIR)/Ifpack_ex_ICT.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_ICT.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_ICT.cpp' object='Ifpack_ex_ICT.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_ICT.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_ICT.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_ICT.obj `if test -f '$(srcdir)/Ifpack_ex_ICT.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_ICT.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_ICT.cpp'; fi`
+
 Ifpack_ex_MatrixMarket.o: $(srcdir)/Ifpack_ex_MatrixMarket.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_MatrixMarket.o -MD -MP -MF "$(DEPDIR)/Ifpack_ex_MatrixMarket.Tpo" -c -o Ifpack_ex_MatrixMarket.o `test -f '$(srcdir)/Ifpack_ex_MatrixMarket.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_MatrixMarket.cpp; \
 @am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_MatrixMarket.Tpo" "$(DEPDIR)/Ifpack_ex_MatrixMarket.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_MatrixMarket.Tpo"; exit 1; fi
@@ -651,22 +667,6 @@ Ifpack_ex_SingletonFilter.obj: $(srcdir)/Ifpack_ex_SingletonFilter.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_SingletonFilter.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_SingletonFilter.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_SingletonFilter.obj `if test -f '$(srcdir)/Ifpack_ex_SingletonFilter.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_SingletonFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_SingletonFilter.cpp'; fi`
-
-Ifpack_ex_vIct.o: $(srcdir)/Ifpack_ex_vIct.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_vIct.o -MD -MP -MF "$(DEPDIR)/Ifpack_ex_vIct.Tpo" -c -o Ifpack_ex_vIct.o `test -f '$(srcdir)/Ifpack_ex_vIct.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_vIct.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_vIct.Tpo" "$(DEPDIR)/Ifpack_ex_vIct.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_vIct.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_vIct.cpp' object='Ifpack_ex_vIct.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_vIct.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_vIct.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_vIct.o `test -f '$(srcdir)/Ifpack_ex_vIct.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ex_vIct.cpp
-
-Ifpack_ex_vIct.obj: $(srcdir)/Ifpack_ex_vIct.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ex_vIct.obj -MD -MP -MF "$(DEPDIR)/Ifpack_ex_vIct.Tpo" -c -o Ifpack_ex_vIct.obj `if test -f '$(srcdir)/Ifpack_ex_vIct.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_vIct.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_vIct.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/Ifpack_ex_vIct.Tpo" "$(DEPDIR)/Ifpack_ex_vIct.Po"; else rm -f "$(DEPDIR)/Ifpack_ex_vIct.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_ex_vIct.cpp' object='Ifpack_ex_vIct.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/Ifpack_ex_vIct.Po' tmpdepfile='$(DEPDIR)/Ifpack_ex_vIct.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_ex_vIct.obj `if test -f '$(srcdir)/Ifpack_ex_vIct.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_ex_vIct.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_ex_vIct.cpp'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
