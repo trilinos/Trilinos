@@ -2,23 +2,26 @@
 #define IFPACK_DIAGONALFILTER_H
 
 #include "Ifpack_ConfigDefs.h"
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_RowMatrix.h"
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_MultiVector;
 class Epetra_Import;
 class Epetra_BlockMap;
+#include "Epetra_Time.h"
 
 //! Ifpack_DiagonalFilter: Filter to modify the diagonal entries of a given Epetra_RowMatrix.
 /*!
 
-Ifpack_DiagonalFilter enables the dropping of all elements whose
-absolute value is below a specified threshold.
+Ifpack_DiagonalFilter modifies the elements on the diagonal.
 
 A typical use is as follows:
 \code
 Epetra_RowMatrix* A;
-// drop all elements below this value
+// creates a matrix B such that
+// B(i,i) = AbsoluteThreshold * sgn(B(i,i)) + 
+//          RelativeThreshold * B(i,i)
 double AbsoluteThreshold = 1e-3;
 double RelativeThreshold = 1.01;
 
@@ -40,8 +43,36 @@ public:
     A_(*Matrix),
     AbsoluteThreshold_(AbsoluteThreshold),
     RelativeThreshold_(RelativeThreshold)
-  {}
+  {
+    Epetra_Time Time(Comm());
 
+    pos_.resize(NumMyRows());
+    val_.resize(NumMyRows());
+
+    vector<int> Indices(MaxNumEntries());
+    vector<double> Values(MaxNumEntries());
+    int NumEntries;
+
+    for (int MyRow = 0 ; MyRow < NumMyRows() ; ++MyRow) {
+
+      pos_[MyRow] = -1;
+      val_[MyRow] = 0.0;
+      int ierr = A_.ExtractMyRowCopy(MyRow, MaxNumEntries(), NumEntries, 
+                                     &Values[0], &Indices[0]);
+      assert (ierr == 0);
+
+      for (int i = 0 ; i < NumEntries ; ++i) {
+        if (Indices[i] == MyRow) {
+          pos_[MyRow] = i;
+          val_[MyRow] = Values[i] * (RelativeThreshold_ - 1) +
+            AbsoluteThreshold_ * EPETRA_SGN(Values[i]);
+        }
+        break;
+      }
+    }
+    cout << "TIME = " << Time.ElapsedTime() << endl;
+  }
+  
   //! Destructor.
   virtual ~Ifpack_DiagonalFilter() {};
 
@@ -57,7 +88,7 @@ public:
     return(A_.MaxNumEntries());
   }
 
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int& NumEntries, 
+  inline virtual int ExtractMyRowCopy(int MyRow, int Length, int& NumEntries, 
                                double* Values, int* Indices) const;
 
   virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
@@ -237,6 +268,10 @@ private:
   double AbsoluteThreshold_;
   //! Multiplies A(i,i) by this value.
   double RelativeThreshold_;
+  //! Stores the position of the diagonal element, or -1 if not present.
+  vector<int> pos_;
+  //! Stores as additional diagonal contribution due to the filter.
+  vector<double> val_;
 
 };
 

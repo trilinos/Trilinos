@@ -16,13 +16,8 @@ ExtractMyRowCopy(int MyRow, int Length, int& NumEntries,
   IFPACK_CHK_ERR(A_.ExtractMyRowCopy(MyRow, Length, NumEntries,
 				     Values,Indices));
 
-  // modify the diagonal value
-  for (int i = 0 ; i < NumEntries ; ++i) {
-    if (Indices[i] == MyRow) {
-      Values[i] = Values[i] * RelativeThreshold_ +
-        AbsoluteThreshold_ * EPETRA_SGN(Values[i]);
-    }
-  }
+  if (pos_[MyRow] != -1)
+    Values[pos_[MyRow]] += val_[MyRow];
 
   return(0);
 }
@@ -33,37 +28,15 @@ Multiply(bool TransA, const Epetra_MultiVector& X,
 	 Epetra_MultiVector& Y) const
 {
 
-  int NumVectors = X.NumVectors();
-  if (NumVectors != Y.NumVectors())
+  if (X.NumVectors() != Y.NumVectors())
     IFPACK_CHK_ERR(-2);
 
-  Y.PutScalar(0.0);
+  IFPACK_CHK_ERR(A_.Multiply(TransA, X, Y));
 
-  vector<int> Indices(MaxNumEntries());
-  vector<double> Values(MaxNumEntries());
-
-  for (int i = 0 ; i < NumMyRows() ; ++i) {
-
-    int Nnz;
-    ExtractMyRowCopy(i,MaxNumEntries(),Nnz,
-		     &Values[0], &Indices[0]);
-    if (!TransA) {
-      // no transpose first
-      for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][i] += Values[k] * X[j][Indices[k]];
-	}
-      }
-    }
-    else {
-      // transpose here
-      for (int j = 0 ; j < NumVectors ; ++j) {
-	for (int k = 0 ; k < Nnz ; ++k) {
-	  Y[j][Indices[k]] += Values[k] * X[j][i];
-	}
-      }
-    }
-  }
+  for (int v = 0 ; v < X.NumVectors() ; ++v)
+    for (int i = 0 ; i < NumMyRows() ; ++i)
+      Y[v][i] += val_[i] * X[v][i];
+      
 
   return(0);
 }
