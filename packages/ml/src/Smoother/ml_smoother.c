@@ -3635,8 +3635,10 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    dataptr->sm_nodal->omega = 1.0;
 
 #ifdef GREG
+   /*
 printf("setting the nodal eigenvalues!!!!!!!!!!!!!!!!!!!!! %u %d\n",Amat->to,
 stupid);
+   */
 if (stupid == 0) {
   tmpmat->lambda_max = 2.132849/1.1;
   tmpmat->lambda_max = 2.127063/1.1;
@@ -7036,7 +7038,7 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    int             *cols, allocated_space;
    double          *diagonal, *vals, *tdiag, dtemp1, dtemp2;
 #ifdef GREG
-double tmp;
+   /* double tmp; */
 #endif
 
    n = outlen;
