@@ -391,7 +391,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
         for (i=1; i<NUM_STATS; i++){
           switch(i){
-          case 1:  sprintf(msg, "%s", "No. of cuts      : ");
+          case 1:  sprintf(msg, "%s", "No. of edge cuts : ");
                    break;
           case 2:  sprintf(msg, "%s", "Boundary objects : ");
                    break;
@@ -569,7 +569,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 
       for (i=1; i<NUM_STATS_PART; i++){
         switch(i){
-        case 1:  sprintf(msg, "%s", "No. of cuts      : ");
+        case 1:  sprintf(msg, "%s", "No. of edge cuts : ");
                  break;
         case 2:  sprintf(msg, "%s", "Boundary objects : ");
                  break;
