@@ -44,10 +44,12 @@
     ------ NumPyArray
 
 ****** Change test scripts to use unittest python module
-    ------ testNonContiguous.py
-    ------ testParameter.py
+    [Done] testNonContiguous.py
     ------ testSerialDense.py
+    ------ testParameter.py
     ------ testStatusTest.py
+
+****** Make testEpetra more extensive for Epetra.Vector
 
 [Done] Change -c swig option to -noruntime
 

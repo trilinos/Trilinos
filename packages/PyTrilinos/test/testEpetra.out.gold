@@ -46,10 +46,22 @@ Test the Map NumGlobalPoints method ... ok
 Test the Map NumMyElements method ... ok
 Test the Map NumMyPoints method ... ok
 Test the Map SameAs method ... ok
-Test the Vector BlockMap constructor ... ok
-Test the Vector BlockMap, Numeric array constructor ... ok
-Test the Vector Numeric array constructor ... ok
-Test the Vector PyObject constructor ... ok
+Test the 1D Vector BlockMap constructor ... ok
+Test the 1D Vector BlockMap, Numeric array constructor ... ok
+Test the 1D Vector Numeric array constructor ... ok
+Test the 1D Vector PyObject constructor ... ok
+Test the 2D Vector BlockMap constructor ... ok
+Test the 2D Vector BlockMap, Numeric array constructor ... ok
+Test the 2D Vector noncontiguous Numeric array constructor ... ok
+Test the 2D Vector Numeric array constructor ... ok
+Test the 2D Vector PyObject constructor ... ok
+Test the 3D Vector BlockMap constructor ... ok
+Test the 3D Vector BlockMap, Numeric array constructor ... ok
+Test the 3D Vector noncontig(0,1) Numeric array constructor ... ok
+Test the 3D Vector noncontig(0,2) Numeric array constructor ... ok
+Test the 3D Vector noncontig(1,2) Numeric array constructor ... ok
+Test the 3D Vector Numeric array constructor ... ok
+Test the 3D Vector PyObject constructor ... ok
 
 ----------------------------------------------------------------------
 
