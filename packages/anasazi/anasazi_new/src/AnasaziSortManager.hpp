@@ -48,7 +48,7 @@
 
 namespace Anasazi {
 
-  template<class TYPE, class MV, class OP>
+  template<class STYPE, class MV, class OP>
   class SortManager {
     
   public:
@@ -67,11 +67,11 @@ namespace Anasazi {
 
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
 
-       @param perm [out] Array of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation (optional)
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *evals, int *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm = 0) const { return Undefined; };
     
     //! Sort the vectors of eigenpairs, optionally returning the permutation vector.
     /**
@@ -83,11 +83,11 @@ namespace Anasazi {
 
        @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
 
-       @param perm [out] Array of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation (optional)
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    virtual ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const { return Undefined; };
+    virtual ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm = 0) const { return Undefined; };
     
   };
   

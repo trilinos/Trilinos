@@ -42,7 +42,7 @@
 
 namespace Anasazi {
   
-  template<class TYPE, class MV, class OP>
+  template<class ScalarType, class MV, class OP>
   class Eigenproblem {
     
   public:
@@ -130,10 +130,10 @@ namespace Anasazi {
     NOTE:  If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
     real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
     */
-    virtual TYPE* GetEvals() = 0;
+    virtual Teuchos::RefCountPtr<std::vector<ScalarType> > GetEvals() = 0;
     
     /*! \brief Get a pointer to the eigenvectors of the operator.
-
+      
     NOTE:  If the operator is nonsymmetric, this multivector has 2*NEV columns where the 
     real part of eigenvector \c j is column \c j and the imaginary part is column \c j+NEV .
     */
@@ -151,7 +151,7 @@ namespace Anasazi {
     /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
      */
     virtual ReturnType InnerProd( const MV& X, const MV& Y,
-				  Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const = 0;
+				  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const = 0;
     //@}
 
     //@{ \name Norm Methods.
@@ -160,7 +160,7 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
      */
-    virtual ReturnType MvNorm( const MV& X, TYPE* normvec ) const = 0;
+    virtual ReturnType MvNorm( const MV& X, ScalarType* normvec ) const = 0;
     
     //@}	
   };

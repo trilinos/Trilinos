@@ -42,8 +42,8 @@
 
 namespace Anasazi {
   
-  template<class TYPE, class MV, class OP>
-  class BasicEigenproblem : public virtual Eigenproblem<TYPE, MV, OP> {
+  template<class ScalarType, class MV, class OP>
+  class BasicEigenproblem : public virtual Eigenproblem<ScalarType, MV, OP> {
     
   public:
     
@@ -59,10 +59,10 @@ namespace Anasazi {
     BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B, const Teuchos::RefCountPtr<MV>& InitVec );
     
     //! Copy Constructor.
-    BasicEigenproblem( const BasicEigenproblem<TYPE, MV, OP>& Problem );	
+    BasicEigenproblem( const BasicEigenproblem<ScalarType, MV, OP>& Problem );	
     
     //! Destructor.
-    virtual ~BasicEigenproblem();
+    virtual ~BasicEigenproblem() {};
     //@}
     
     //@{ \name Set Methods.
@@ -141,7 +141,7 @@ namespace Anasazi {
     NOTE:  If the operator is nonsymmetric, the length of this vector is 2*NEV where the 
     real part of eigenvalue \c j is entry \c j and the imaginary part is entry \c j+NEV .
     */
-    TYPE* GetEvals() { return( _Evals ); };
+    Teuchos::RefCountPtr<std::vector<ScalarType> > GetEvals() { return( _Evals ); };
     
     /*! \brief Get a pointer to the eigenvectors of the operator.
 
@@ -162,7 +162,7 @@ namespace Anasazi {
     /*! \brief Computes inner product as needed by the eigensolver, for orthogonalization purposes.
      */
     ReturnType InnerProd( const MV& X, const MV& Y,
-			  Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const;
+			  Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const;
     //@}
 
     //@{ \name Norm Methods.
@@ -171,7 +171,7 @@ namespace Anasazi {
     NOTE:  This can be different than the MvNorm method for the multivector class, which is 
     assumed to be the euclidean norm of each column.
     */
-    ReturnType MvNorm( const MV& X, TYPE* normvec ) const;
+    ReturnType MvNorm( const MV& X, ScalarType* normvec ) const;
     
     //@}	
     
@@ -181,21 +181,20 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> _Op, _Prec;
     Teuchos::RefCountPtr<MV> _InitVec, _AuxVec;
     Teuchos::RefCountPtr<MV> _Evecs;
-    TYPE *_Evals;
+    Teuchos::RefCountPtr<std::vector<ScalarType> > _Evals;
     int _nev;
     bool _isSym;
 
-    typedef MultiVecTraits<TYPE,MV> MVT;
-    typedef OperatorTraits<TYPE,MV,OP> OPT;
+    typedef MultiVecTraits<ScalarType,MV> MVT;
+    typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };		
   
   //=============================================================================
   //	Implementations (Constructors / Destructors)
   //=============================================================================
   
-  template <class TYPE, class MV, class OP>
-  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem(void) : 
-    _Evals(0), 
+  template <class ScalarType, class MV, class OP>
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem(void) : 
     _nev(1), 
     _isSym(false)
   {
@@ -203,11 +202,10 @@ namespace Anasazi {
   
   //=============================================================================
     
-  template <class TYPE, class MV, class OP>
-  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
+  template <class ScalarType, class MV, class OP>
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<MV>& InitVec ) :    
     _Op(Op), 
     _InitVec(InitVec), 
-    _Evals(0),
     _nev(1), 
     _isSym(false)
   {
@@ -215,13 +213,12 @@ namespace Anasazi {
   
   //=============================================================================
   
-  template <class TYPE, class MV, class OP>
-  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B,
+  template <class ScalarType, class MV, class OP>
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const Teuchos::RefCountPtr<OP>& Op, const Teuchos::RefCountPtr<OP>& B,
 						      const Teuchos::RefCountPtr<MV>& InitVec ) :
     _BOp(B), 
     _Op(Op), 
     _InitVec(InitVec), 
-    _Evals(0),
     _nev(1), 
     _isSym(false)
   {
@@ -229,34 +226,26 @@ namespace Anasazi {
 
   //=============================================================================
     
-  template <class TYPE, class MV, class OP>
-  BasicEigenproblem<TYPE, MV, OP>::BasicEigenproblem( const BasicEigenproblem<TYPE,MV,OP>& Problem ) :
+  template <class ScalarType, class MV, class OP>
+  BasicEigenproblem<ScalarType, MV, OP>::BasicEigenproblem( const BasicEigenproblem<ScalarType,MV,OP>& Problem ) :
     _AOp(Problem._AOp), 
     _BOp(Problem._BOp), 
     _Op(Problem._Op), 
     _Prec(Problem._Prec), 
     _InitVec(Problem._InitVec), 
-    _Evals(Problem._Evals),
     _Evecs(Problem._Evecs),
+    _Evals(Problem._Evals),
     _nev(Problem._nev), 
     _isSym(Problem._isSym)
   {
   }
   
   //=============================================================================
-  
-  template <class TYPE, class MV, class OP>
-  BasicEigenproblem<TYPE, MV, OP>::~BasicEigenproblem(void)
-  {
-    if (_Evals) delete [] _Evals;
-  }
-  
-  //=============================================================================
   //	SetProblem (sanity check method)
   //=============================================================================
 
-  template <class TYPE, class MV, class OP>
-  ReturnType BasicEigenproblem<TYPE, MV, OP>::SetProblem() 
+  template <class ScalarType, class MV, class OP>
+  ReturnType BasicEigenproblem<ScalarType, MV, OP>::SetProblem() 
   {
     //----------------------------------------------------------------
     // Sanity Checks
@@ -288,35 +277,31 @@ namespace Anasazi {
 	if ( 2*_nev <= old_nev )
 	  return Ok;
       }
-      //
-      // We need more space:  Delete old storage and reallocate.
-      //
-       if (_Evals) delete [] _Evals;
     }	
-	
+    
     //----------------------------------------------------------------
     // Allocate Memory
     // ( we need twice the storage if the problem is non-symmetric )
     //----------------------------------------------------------------
     if ( _isSym ) {      
       _Evecs = MVT::Clone( *_InitVec, _nev );
-      _Evals = new TYPE[ _nev ];
+      _Evals = Teuchos::rcp( new std::vector<ScalarType>( _nev ) );
     } else {
       _Evecs = MVT::Clone( *_InitVec, 2*_nev );
-      _Evals = new TYPE[ 2*_nev ];
+      _Evals = Teuchos::rcp( new std::vector<ScalarType>( 2*_nev ) );
     }
     return Ok;
   }      
-
+  
   
   //=============================================================================
   //	Implementations (Inner Product Methods)
   //=============================================================================
-
-  template <class TYPE, class MV, class OP>
-  ReturnType BasicEigenproblem<TYPE, MV, OP>::InnerProd( const MV& X, 
-						 const MV& Y,
-						 Teuchos::SerialDenseMatrix<int,TYPE>& Z ) const
+  
+  template <class ScalarType, class MV, class OP>
+  ReturnType BasicEigenproblem<ScalarType, MV, OP>::InnerProd( const MV& X, 
+							       const MV& Y,
+							       Teuchos::SerialDenseMatrix<int,ScalarType>& Z ) const
   {
     if ( _BOp.get() ) {
       Teuchos::RefCountPtr<MV> BY = MVT::CloneCopy( Y );
@@ -326,12 +311,12 @@ namespace Anasazi {
       if ( ret != Ok ) { return ret; }
       
       // Now perform inner product.  Result is stored in Z.
-      MVT::MvTransMv( Teuchos::ScalarTraits<TYPE>::one(), X, *BY, Z );
+      MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, *BY, Z );
       
       return Ok;				
     } else {
       // Perform the inner product, assume B=I.
-      MVT::MvTransMv( Teuchos::ScalarTraits<TYPE>::one(), X, Y, Z );
+      MVT::MvTransMv( Teuchos::ScalarTraits<ScalarType>::one(), X, Y, Z );
       return Ok;				
     }
   }
@@ -340,12 +325,12 @@ namespace Anasazi {
   //	Implementations (Norm Methods)
   //=============================================================================
   
-  template <class TYPE, class MV, class OP>
-  ReturnType BasicEigenproblem<TYPE, MV, OP>::MvNorm( const MV& X, TYPE* normvec ) const
+  template <class ScalarType, class MV, class OP>
+  ReturnType BasicEigenproblem<ScalarType, MV, OP>::MvNorm( const MV& X, ScalarType* normvec ) const
   {
     int IntOne = 1;
     int numvecs = MVT::GetNumberVecs( X );
-    Teuchos::SerialDenseVector<int,TYPE> DenseOne(IntOne);
+    Teuchos::SerialDenseVector<int,ScalarType> DenseOne(IntOne);
     Teuchos::RefCountPtr<const MV> Xj;
     int *index = new int[IntOne];	
     ReturnType ret;

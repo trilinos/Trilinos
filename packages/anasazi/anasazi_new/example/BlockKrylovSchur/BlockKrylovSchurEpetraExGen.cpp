@@ -294,9 +294,6 @@ int main(int argc, char *argv[]) {
 	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, tol, 
 							 blocksize, length, step, restarts);
 	
-	// iterate a few steps (if you wish)
-	//MySolver.iterate(5);
-	
 	// solve the problem to the specified tolerances or length
 	MySolver.solve();
 	
@@ -304,7 +301,7 @@ int main(int argc, char *argv[]) {
 	MySolver.currentStatus();
 
 	// obtain eigenvectors directly
-	double* evals = MyProblem->GetEvals(); 
+	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
 	// The size of the eigenvector storage is nev.
@@ -322,7 +319,7 @@ int main(int argc, char *argv[]) {
 	cout<<"Real Part \t Rayleigh Error"<<endl;
 	for (i=0; i<nev; i++) {
 		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/evals[i])<<endl;
+		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
 	}
 
 	return 0;

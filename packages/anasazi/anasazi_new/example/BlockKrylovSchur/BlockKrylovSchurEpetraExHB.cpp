@@ -184,14 +184,11 @@ int main(int argc, char *argv[]) {
         Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
 							   blocksize, length, step, restarts);
 	
-        // iterate a few steps (if you wish)
-        //MySolver.iterate(5);
-	
         // solve the problem to the specified tolerances or length
         MySolver.solve();
 	
         // obtain results directly
-        double* evals = MyProblem->GetEvals();
+        Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 	
 	// retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
@@ -220,9 +217,9 @@ int main(int argc, char *argv[]) {
 	  Bimag.putScalar(0.0);
 	for (i=0; i<nev; i++) { 
 	  normA[i] = 0.0;
-	  Breal(i,i) = evals[i]; 
+	  Breal(i,i) = (*evals)[i]; 
 	  if (!MyProblem->IsSymmetric())
-	    Bimag(i,i) = evals[nev + i]; 
+	    Bimag(i,i) = (*evals)[nev + i]; 
 	}
 	Amat->Apply( *evecr, tempAevec );
 	tempAevec.MvTimesMatAddMv( -1.0, *evecr , Breal, 1.0 );
@@ -238,11 +235,11 @@ int main(int argc, char *argv[]) {
 	while (i < nev) {
 	  normA[i] = lapack.LAPY2( normA[i], tempnrm[i] );
 	  if (MyProblem->IsSymmetric()) {
-	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude(evals[i]);
+	    normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
 	    i++;
 	  } else {
-	    normA[i] /= lapack.LAPY2( evals[i], evals[nev + i] );
-	    if (evals[nev + i] != zero) {
+	    normA[i] /= lapack.LAPY2( (*evals)[i], (*evals)[nev + i] );
+	    if ((*evals)[nev + i] != zero) {
 	      normA[i+1] = normA[i];
 	      i = i+2;
 	    } else {
@@ -254,14 +251,14 @@ int main(int argc, char *argv[]) {
 	  cout<<"Real Part"<<"\t"<<"Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evals[i] << "\t\t"<< normA[i] << endl;
+	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	} else {
 	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evals[i] << "\t\t" << evals[nev + i] << "\t\t"<< normA[i] << endl;
+	    cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}	

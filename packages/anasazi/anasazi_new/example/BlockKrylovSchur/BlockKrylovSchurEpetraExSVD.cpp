@@ -184,14 +184,11 @@ int main(int argc, char *argv[]) {
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
 							   blocksize, length, step, restarts);	
 	
-	// Iterate a few steps (if you wish)
-	//MySolver.iterate(5);
-
 	// Solve the problem to the specified tolerances or length
 	MySolver.solve();
 
 	// Obtain results directly
-	double* evals = MyProblem->GetEvals();
+	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 
 	// Retrieve eigenvectors
 	// Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(&(MyProblem->GetEvecs()));
@@ -207,7 +204,7 @@ int main(int argc, char *argv[]) {
 	  cout<<"Computed Singular Values: "<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	}
-	for (i=0; i<nev; i++) { evals[i] = Teuchos::ScalarTraits<double>::squareroot( evals[i] ); }
+	for (i=0; i<nev; i++) { (*evals)[i] = Teuchos::ScalarTraits<double>::squareroot( (*evals)[i] ); }
 	//
 	// Compute left singular vectors :  u = Av/sigma
 	//
@@ -224,14 +221,14 @@ int main(int argc, char *argv[]) {
 	//
 	// Compute direct residuals : || Av - sigma*u ||
 	//
-	for (i=0; i<nev; i++) { S(i,i) = evals[i]; }
+	for (i=0; i<nev; i++) { S(i,i) = (*evals)[i]; }
 	Av.MvTimesMatAddMv( -one, u, S, one );
 	Av.MvNorm( &directnrm[0] );
 	if (MyOM->doOutput(-1)) {
 	  cout<<"Singular Value"<<"\t\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
-	    cout<< evals[i] << "\t\t" << directnrm[i] << endl;
+	    cout<< (*evals)[i] << "\t\t" << directnrm[i] << endl;
 	  }  
 	  cout<<"------------------------------------------------------"<<endl;
 	}

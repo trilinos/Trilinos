@@ -142,8 +142,8 @@ namespace Anasazi {
     Teuchos::RefCountPtr<OP> _BOp;
     Teuchos::RefCountPtr<OP> _Prec;
     Teuchos::RefCountPtr<MV> _evecs;
+    Teuchos::RefCountPtr<std::vector<STYPE> > _evals;
     const int _nev;  
-    STYPE* _evals;
     //
     // Internal data.
     //
@@ -187,8 +187,8 @@ namespace Anasazi {
     _BOp(_problem->GetB()),
     _Prec(_problem->GetPrec()),
     _evecs(_problem->GetEvecs()), 
-    _nev(problem->GetNEV()), 
     _evals(problem->GetEvals()), 
+    _nev(problem->GetNEV()), 
     _numBlocks(numBlocks), 
     _maxIter(maxIter),
     _blockSize(blockSize),
@@ -258,7 +258,7 @@ namespace Anasazi {
     int i;
     if (_om->doOutput(-1)) {
       cout.setf(ios::scientific, ios::floatfield);  
-      cout.precision(2);
+      cout.precision(6);
       cout<<" "<<endl;
       cout<<"********************CURRENT STATUS********************"<<endl;
       cout<<"Iterations :\t"<<_iter<<endl;
@@ -272,7 +272,7 @@ namespace Anasazi {
       cout<<"------------------------------------------------------"<<endl;
       if ( _knownEV > 0 ) {
 	for (i=0; i<_knownEV; i++)
-	  cout<<_evals[i]<<endl;
+	  cout<<(*_evals)[i]<<endl;
       } else {
 	cout<<"[none computed]"<<endl;
       }
@@ -546,7 +546,7 @@ namespace Anasazi {
 	      Teuchos::RefCountPtr<MV> tmp_KXvec = MVT::CloneView( *_KXvec, &index[0], 1 );
 	      index[0] = _knownEV;
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );
-	      _evals[_knownEV] = _theta[j];
+	      (*_evals)[_knownEV] = _theta[j];
 	      _knownEV++;
 	    }
 	    if (_knownEV == _nev)
@@ -573,7 +573,7 @@ namespace Anasazi {
 	      index[0] = _knownEV;
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_Xvec );	      
 	      MVT::SetBlock( *tmp_KXvec, &index[0], 1, *_evecs );	      
-	      _evals[_knownEV] = _theta[j];
+	      (*_evals)[_knownEV] = _theta[j];
 	      _knownEV++;
 	      nFound++;	      
 	    }
@@ -645,7 +645,7 @@ namespace Anasazi {
 	//
 	// Copy the converged eigenvalues from "theta" to "evals".
 	//
-	blas.COPY( nFound, &_theta[0], 1, _evals + _knownEV, 1 ); 
+	blas.COPY( nFound, &_theta[0], 1, &(*_evals)[0] + _knownEV, 1 ); 
 
       } // if (nFound > 0)
       //
@@ -706,7 +706,7 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (_knownEV > 0))
-      _MSUtils.sortScalars_Vectors(_knownEV, _evals, _evecs.get());
+      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get());
  
   } // end solve()
 

@@ -41,8 +41,8 @@
 
 namespace Anasazi {
 
-  template<class TYPE, class MV, class OP>
-  class BasicSort : public SortManager<TYPE,MV,OP> {
+  template<class STYPE, class MV, class OP>
+  class BasicSort : public SortManager<STYPE,MV,OP> {
     
   public:
     
@@ -72,11 +72,11 @@ namespace Anasazi {
 
        @param evals [in/out] Array of length n containing the eigenvalues to be sorted
 
-       @param perm [out] Array of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation (optional)
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm = 0) const;
     
     //! Sort the vectors of eigenpairs with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
@@ -88,11 +88,11 @@ namespace Anasazi {
 
        @param i_evals [in/out] Array of length n containing the imaginary part of the eigenvalues to be sorted 
 
-       @param perm [out] Array of length n to store the permutation (optional)
+       @param perm [out] Vector of length n to store the permutation (optional)
 
        @return Returns the status of the sorting routine [ Undefined by default ] 
     */
-    ReturnType sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm = 0) const;
+    ReturnType sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm = 0) const;
     
   protected: 
     
@@ -100,18 +100,18 @@ namespace Anasazi {
 
   };
 
-  template<class TYPE, class MV, class OP>
-  ReturnType BasicSort<TYPE,MV,OP>::sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *evals, int *perm) const 
+  template<class STYPE, class MV, class OP>
+  ReturnType BasicSort<STYPE,MV,OP>::sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *evals, std::vector<int> *perm) const 
   {
     int i, j, tempord;
-    TYPE temp, temp2;
-    Teuchos::LAPACK<int,TYPE> lapack;
+    STYPE temp, temp2;
+    Teuchos::LAPACK<int,STYPE> lapack;
     //
     // Reset the permutation if it is required.
     //		
     if (perm) {
       for (i=0; i < n; i++) {
-	perm[i] = i;
+	(*perm)[i] = i;
       }
     }
     //
@@ -123,16 +123,16 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	temp = evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	temp2 = evals[j]*evals[j];
 	for (i=j-1; i>=0 && (evals[i]*evals[i])>temp2; --i) {
 	  evals[i+1]=evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	evals[i+1] = temp; 
 	if (perm) 
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
@@ -143,15 +143,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	temp = evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && evals[i]>temp; --i) {
 	  evals[i+1]=evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	evals[i+1] = temp; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
@@ -170,16 +170,16 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	temp = evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	temp2 = evals[j]*evals[j];
 	for (i=j-1; i>=0 && (evals[i]*evals[i])<temp2; --i) {
 	  evals[i+1]=evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	evals[i+1] = temp; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
@@ -190,15 +190,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	temp = evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && evals[i]<temp; --i) {
 	  evals[i+1]=evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	evals[i+1] = temp; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
@@ -216,17 +216,17 @@ namespace Anasazi {
   }
   
 
-  template<class TYPE, class MV, class OP>
-  ReturnType BasicSort<TYPE,MV,OP>::sort(Eigensolver<TYPE,MV,OP>* solver, int n, TYPE *r_evals, TYPE *i_evals, int *perm) const {
+  template<class STYPE, class MV, class OP>
+  ReturnType BasicSort<STYPE,MV,OP>::sort(Eigensolver<STYPE,MV,OP>* solver, int n, STYPE *r_evals, STYPE *i_evals, std::vector<int> *perm) const {
     int i, j, tempord;
-    TYPE temp, tempr, tempi;
-    Teuchos::LAPACK<int,TYPE> lapack;
+    STYPE temp, tempr, tempi;
+    Teuchos::LAPACK<int,STYPE> lapack;
     //
     // Reset the index
     //		
     if (perm) {
       for (i=0; i < n; i++) {
-	perm[i] = i;
+	(*perm)[i] = i;
       }
     }
     //
@@ -238,16 +238,16 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
 	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])>temp; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }	
       return Ok;
     }
@@ -258,15 +258,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && r_evals[i]>tempr; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }	
       return Ok;
     }
@@ -277,15 +277,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && i_evals[i]>tempi; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
@@ -296,16 +296,16 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	temp=lapack.LAPY2(r_evals[j],i_evals[j]);
 	for (i=j-1; i>=0 && lapack.LAPY2(r_evals[i],i_evals[i])<temp; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }	
       return Ok;
     }
@@ -316,15 +316,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && r_evals[i]<tempr; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }	
       return Ok;
     }
@@ -335,15 +335,15 @@ namespace Anasazi {
       for (j=1; j < n; ++j) {
 	tempr = r_evals[j]; tempi = i_evals[j]; 
 	if (perm)
-	  tempord = perm[j];
+	  tempord = (*perm)[j];
 	for (i=j-1; i>=0 && i_evals[i]<tempi; --i) {
 	  r_evals[i+1]=r_evals[i]; i_evals[i+1]=i_evals[i];
 	  if (perm)
-	    perm[i+1]=perm[i];
+	    (*perm)[i+1]=(*perm)[i];
 	}
 	r_evals[i+1] = tempr; i_evals[i+1] = tempi; 
 	if (perm)
-	  perm[i+1] = tempord;	
+	  (*perm)[i+1] = tempord;	
       }
       return Ok;
     }
