@@ -402,7 +402,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( const Epetra_RowMatrix & Edg
 
 // ================================================ ====== ==== ==== == =
 
-MultiLevelPreconditioner::MultiLevelPreconditioner( const ML_Operator * Operator,
+MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 						    const ParameterList & List, const bool ComputePrec,
 						    const char Prefix[] )
 {
