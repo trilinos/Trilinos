@@ -35,6 +35,7 @@ static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
   {"PHG_FINAL_OUTPUT",                NULL,  "INT",    0},
+  {"FINAL_OUTPUT",                    NULL,  "INT",    0},
   {"CHECK_GRAPH",                     NULL,  "INT",    0},
   {"PHG_NPROC_X",                     NULL,  "INT",    0},
   {"PHG_NPROC_Y",                     NULL,  "INT",    0},
@@ -308,6 +309,7 @@ static int Zoltan_PHG_Initialize_Params(
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output); 
+  Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
