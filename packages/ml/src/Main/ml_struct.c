@@ -2302,7 +2302,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
 /* generate the sparse approximate inverse smoother */
 /* ------------------------------------------------------------------------- */
 
-#ifdef PARASAILS
+#ifdef HAVE_ML_PARASAILS
 #include "Matrix.h"
 #include "ParaSails.h"
 #endif
@@ -2311,9 +2311,9 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    int sym, double thresh, int num_levels, double filter, int parasails_loadbal,
    int parasails_factorized)
 {
-#ifdef PARASAILS
-   int            (*fun1)(void *, int, double *, int, double *);
-   int            (*fun2)(void *, int, double *, int, double *);
+#ifdef HAVE_ML_PARASAILS
+   int            (*fun1)(ML_Smoother *, int, double *, int, double *);
+   int            (*fun2)(ML_Smoother *, int, double *, int, double *);
    int            start_level, end_level, i, status = 1;
    int            row, start_row, end_row, row_length;
 
@@ -2321,7 +2321,8 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    struct widget { int parasails_factorized; ParaSails *ps;} *widget;
    ParaSails *ps;
    int j;
-
+   char str[80];
+   
 #ifdef ML_TIMING
    double         t0;
    t0 = GetClock();
@@ -2336,13 +2337,14 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
    }
 
    if (sym)
-      fun1 = fun2 = ML_Smoother_ParaSailsSym;
+     fun1 = fun2 = ML_Smoother_ParaSailsSym;
    else {
-      fun1 = ML_Smoother_ParaSails;
-      fun2 = ML_Smoother_ParaSailsTrans;
+     fun1 = ML_Smoother_ParaSails;
+     fun2 = ML_Smoother_ParaSailsTrans;
+
    }
 
-      for (i = start_level; i <= end_level; i++) {
+     for (i = start_level; i <= end_level; i++) {
 
 	 int nrows = ml->Amat[i].outvec_leng;
 	 int local_row, allocated_space, *ml_indices;
@@ -2387,9 +2389,9 @@ for (j = 0; j < row_length; j++)
 	    parasails_factorized);
          ps->loadbal_beta = parasails_loadbal;
 	 ParaSailsSetupPattern(ps, mat, thresh, num_levels);
-	 ParaSailsStatsPattern(ps, mat);
+	 if( ML_Get_PrintLevel() > 8 ) ParaSailsStatsPattern(ps, mat);
 	 ParaSailsSetupValues(ps, mat, filter);
-	 ParaSailsStatsValues(ps, mat);
+	 if( ML_Get_PrintLevel() > 8 ) ParaSailsStatsValues(ps, mat);
 
 	 /* we can destroy the matrix now */
 	 MatrixDestroy(mat);
@@ -2400,11 +2402,13 @@ for (j = 0; j < row_length; j++)
          widget->parasails_factorized = parasails_factorized;
          widget->ps                   = ps;
 
+	 /* by default we want pre- and post-smoother */
+	 sprintf(str,"ParaSails_post%d",i);
 	 status = ML_Smoother_Set(&(ml->post_smoother[i]), 
-			      (void *) widget, fun1, ntimes, 0.0,NULL);
-
+				  (void *) widget, fun1, ntimes, 0.0,str);
+	 sprintf(str,"ParaSails_pre%d",i);
 	 status = ML_Smoother_Set(&(ml->pre_smoother[i]), 
-			      (void *) widget, fun2, ntimes, 0.0,NULL);
+				  (void *) widget, fun2, ntimes, 0.0,str);
 
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
