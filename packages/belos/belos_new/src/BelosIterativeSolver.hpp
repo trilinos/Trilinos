@@ -75,25 +75,6 @@ class IterativeSolver {
   */
   virtual int GetNumRestarts() const = 0;
 
-  //! Get the current number of linear systems being solved for.
-  /*! Since the block size is independent of the number of right-hand sides for
-    some solvers (GMRES, CG, etc.), it is important to know how many linear systems
-    are being solved for when the status is checked.  This is informative for residual
-    checks because the entire block of residuals may not be of interest.  Thus, this 
-    number can be anywhere between 1 and the block size for the solver.
-  */
-  virtual int GetNumToSolve() const = 0;
-
-  //! Get the index of the first vector in the current right-hand side block being solved for.
-  /*! Since the block size is independent of the number of right-hand sides for
-    some solvers (GMRES, CG, etc.), it is important to know which right-hand side
-    block is being solved for.  That may mean you need to update the information
-    about the norms of your initial residual vector for weighting purposes.  This
-    information can keep you from querying the solver for information that rarely
-    changes.
-  */
-  virtual int GetRHSIndex() const = 0;
-
   //! Get the solvers native residuals for the current block of linear systems. 
   /*! This is not be the same as the true residual for most solvers. Somtimes the native
     residuals are not in multivector form, so the norm type is solver dependent.  
@@ -116,19 +97,6 @@ class IterativeSolver {
     	which may include a current solution.
   */
   virtual LinearProblemManager<TYPE>& GetLinearProblem() const = 0;
-
-  /*! \brief Get information whether the solution contained in the linear problem
-    is current.  
-    \note
-    <ol>
-    <li> In the case of GMRES, this solution is only updated during a restart 
-    or when the solver completes.
-    <li> If the blocksize is less than the number of right hand sides, then this method
-    informs you if the solutions for this block of right-hand sides is current.  It does
-    not imply that the solutions for all right-hand sides have been updated.
-    </ol>
-  */
-  virtual bool IsSolutionCurrent() = 0;
 
   //@}
 

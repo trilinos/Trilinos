@@ -143,7 +143,7 @@ private:
     PrintStatus(os, status_);
     os << "Number of Restarts = ";
     os << nRestarts_;
-    os << ((nRestarts_ < maxRestarts_) ? " < " : ((nRestarts_ == maxRestarts_) ? " = " : " > "));
+    os << ((nRestarts_ < maxRestarts_) ? " < " : ((nRestarts_ == maxRestarts_) ? " == " : " > "));
     os << maxRestarts_;
     os << endl;
     return os;

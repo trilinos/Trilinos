@@ -169,6 +169,7 @@ int main(int argc, char *argv[]) {
 	// Construct an unpreconditioned linear problem instance.
 	//
 	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
+	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
 	// *************Start the block Gmres iteration*************************
@@ -179,7 +180,7 @@ int main(int argc, char *argv[]) {
 	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	Belos::StatusTestResNorm<double> test4( tol );
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test3, test4 );
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, block, verbose);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, verbose);
 
 	MyBlockGmres.SetDebugLevel(0);
 	//

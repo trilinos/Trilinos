@@ -1,5 +1,5 @@
 //
-// test_bl_pgmres_hb.cpp
+// test_bl_cg_hb.cpp
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // Multiple right-hand-sides are created randomly.
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 	//
 	int numrhs = 1;  // total number of right-hand sides to solve for
     	int block = 1;  // blocksize used by solver
-	int maxits = NumGlobalElements/block; // maximum number of iterations to run
+	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
     	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	// Construct the right-hand side and solution multivectors.
@@ -142,6 +142,9 @@ int main(int argc, char *argv[]) {
 	//  Construct an unpreconditioned linear problem instance.
 	//
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs );
+	cout << "The blocksize of this linear problem manager is : "<< My_LP.GetBlockSize()<< endl;
+	cout << "The number of linear systems to solve is : "<<My_LP.GetNumToSolve()<< endl;
+ 	cout << "The RHS index of the current linear system is : "<<My_LP.GetRHSIndex() << endl;
 	//
 	//*******************************************************************
 	// *************Start the block CG iteration*************************
@@ -151,7 +154,7 @@ int main(int argc, char *argv[]) {
  	Belos::StatusTestResNorm<double> test2( tol );
 	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 	//
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, block, verbose);
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, verbose);
 	MyBlockCG.SetDebugLevel(0);
 	//
 	// **********Print out information about problem*******************

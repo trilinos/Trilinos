@@ -142,7 +142,7 @@ private:
     PrintStatus(os, status_);
     os << "Number of Iterations = ";
     os << nIters_;
-    os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " = " : " > "));
+    os << ((nIters_ < maxIters_) ? " < " : ((nIters_ == maxIters_) ? " == " : " > "));
     os << maxIters_;
     os << endl;
     return os;

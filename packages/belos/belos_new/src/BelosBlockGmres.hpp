@@ -84,7 +84,6 @@ namespace Belos {
     BlockGmres(LinearProblemManager<TYPE>& lp, 
 	       StatusTest<TYPE>& stest,
 	       const int length=25, 
-	       const int block=1, 
 	       bool vb = false);
     
     //! %Belos::BlockGmres destructor.
@@ -98,25 +97,6 @@ namespace Belos {
     
     //! Get the restart count of the iteration method for the current block of linear systems.
     int GetNumRestarts() const { return( _restartiter ); }
-    
-    //! Get the current number of linear system being solved for.
-    /*! Since the block size is independent of the number of right-hand sides, 
-      it is important to know how many linear systems
-      are being solved for when the status is checked.  This is informative for residual
-      checks because the entire block of residuals may not be of interest.  Thus, this 
-      number can be anywhere between 1 and the block size for the solver.
-    */
-    int GetNumToSolve() const { return( _num_to_solve ); };
-    
-    //! Get the current number of the right-hand side block being solved for.
-    /*! Since the block size is independent of the number of right-hand sides for
-      some solvers (GMRES, CG, etc.), it is important to know which right-hand side
-      block is being solved for.  That may mean you need to update the information
-      about the norms of your initial residual vector for weighting purposes.  This
-      information can keep you from querying the solver for information that rarely
-      changes.
-    */
-    int GetRHSIndex() const { return( _rhs_iter*_blocksize ); };
     
     //! Get the solvers native residuals for the current block of linear systems.
     /*! For GMRES this is not the same as the actual residual of the linear system.
@@ -138,12 +118,6 @@ namespace Belos {
      */
     LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
 
-    /*! \brief Get information whether the solution contained in the linear problem
-      is current.  In the case of GMRES, this solution is only updated during a restart
-      or when the solver completes.
-    */
-    bool IsSolutionCurrent() { return (_iter == 0); };
-    
     //@} 
 
     //@{ \name Solver application method.
@@ -169,16 +143,6 @@ namespace Belos {
     //! Method for setting the basis dependency tolerances for extending the Krylov basis.
     void SetGmresBlkTols();
 
-    /*! Method for augmenting the solution / right-hand side block when the number of linear problems
-      being solved for is less than the blocksize
-    */
-    void SetUpBlocks();
-
-    /*! Method for extracting out the solution from the solver when the number of linear problems
-      being solved for is less than the blocksize.
-    */
-    void ExtractCurSolnBlock();
-
     //! Method for performing the block Krylov decomposition.
     bool BlockReduction(bool&, bool);
 
@@ -201,9 +165,6 @@ namespace Belos {
     //! Reference to the status test, which provides the stopping criteria for the solver. [passed in by user]
     StatusTest<TYPE>& _stest; 
 
-    //! Pointers to the right-hand side and solution multivecs held by the linear problem manager.
-    MultiVec<TYPE> *_rhs, *_solutions; 
-
     //! Pointers to the Krylov basis constructed by the solver.
     MultiVec<TYPE> *_basisvecs;
 
@@ -216,11 +177,11 @@ namespace Belos {
     //! Dense vector for holding the right-hand side of the least squares problem.
     Teuchos::SerialDenseMatrix<int,TYPE> _z;
 
-    const int _length, _blocksize;
-    int _num_to_solve;
-    int _rhs_iter, _restartiter, _totaliter, _iter;
+    const int _length;
+    int _blocksize;
+    int _restartiter, _totaliter, _iter;
     int _debuglevel;
-    TYPE _blkerror, _dep_tol, _blk_tol, _sing_tol;
+    TYPE _dep_tol, _blk_tol, _sing_tol;
   };
   //
   // Implementation
@@ -231,36 +192,18 @@ namespace Belos {
   BlockGmres<TYPE>::BlockGmres(LinearProblemManager<TYPE>& lp, 
 			       StatusTest<TYPE>& stest,
 			       const int length, 
-			       const int block, 
 			       bool vb) : 
     _lp(lp),
     _stest(stest),
-    _rhs(_lp.GetRHS()), 
-    _solutions(_lp.GetLHS()),
     _basisvecs(0),     
     _cur_block_rhs(0),
     _cur_block_sol(0),
     _length(length), 
-    _blocksize(block), 
-    _num_to_solve(block),
-    _rhs_iter(0), 
+    _blocksize(0), 
     _restartiter(0), 
     _totaliter(0),
     _iter(0)
   {
-    //
-    // Initial check that input information is valid.
-    //
-    assert(_length > 0); assert(_blocksize > 0);
-    //
-    // Make room for the Arnoldi vectors and F.
-    //
-    _basisvecs = _rhs->Clone((_length+1)*_blocksize); assert(_basisvecs!=NULL);
-    //
-    // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
-    //
-    _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
-    _z.shape((_length+1)*_blocksize, _blocksize); 
     //
     // Set up the block orthogonality tolerances
     //
@@ -298,7 +241,9 @@ namespace Belos {
  	if (_totaliter == 0) {
 	  MultiVec<TYPE>* temp_res = _cur_block_rhs->Clone(_blocksize); assert(temp_res!=NULL);
 	  _lp.ComputeResVec( temp_res, _cur_block_sol, _cur_block_rhs);
-	  return ( temp_res->MvNorm( normvec, TwoNorm ) );
+	  ReturnType res = temp_res->MvNorm( normvec, TwoNorm );
+	  delete temp_res;
+	  return res;
 	}
 	else {
 	  Teuchos::BLAS<int,TYPE> blas;
@@ -343,142 +288,56 @@ namespace Belos {
 
     return cur_sol_copy;
   }
-  
-
-  template<class TYPE>
-  void BlockGmres<TYPE>::SetUpBlocks ()  
-  {
-    //
-    // We only need to copy the solutions and right-hand sides if the linear systems of
-    // interest are less than the block size.
-    //    
-    if (_num_to_solve < _blocksize ) {
-      int i;
-      int *index = new int[_num_to_solve]; assert(index!=NULL);
-      for ( i=0; i<_num_to_solve; i++) { index[i] = _rhs_iter*_blocksize+i; }
-      const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-      //
-      // Logic to handle the number of righthand sides solved for at this iteration,
-      // when it is less than the blocksize of the solver.  In this case, the right-hand 
-      // side and solution block have to be augmented with some random vectors.
-      //
-      // Fill up the right-hand side block with random vectors, then place
-      // the remaining (unsolved) right hand sides into the initial portion
-      // of the right-hand side block.
-      //	
-      int *index2 = new int[_num_to_solve]; assert(index!=NULL);
-      _cur_block_rhs->MvRandom();
-      //
-      MultiVec<TYPE> *tptr = _rhs->CloneView(index,_num_to_solve); assert(tptr!=NULL);
-      for (i=0; i<_num_to_solve; i++) {
-	index2[i] = i;
-      }
-      _cur_block_rhs->SetBlock( *tptr, index2, _num_to_solve);
-      //
-      // Now deal with solution block, augment with zero vectors.
-      //
-      _cur_block_sol->MvInit( zero );
-      MultiVec<TYPE> *tptr2 = _solutions->CloneView(index,_num_to_solve); assert(tptr2!=NULL);
-      _cur_block_sol->SetBlock( *tptr2, index2, _num_to_solve);
-      //
-      // Delete the temporary views
-      //
-      delete tptr; tptr = 0;
-      delete tptr2; tptr2 = 0;
-      delete [] index2; index2=0;
-      delete [] index; index=0;
-    }
-    //
-  }
-  
-
-  template <class TYPE>
-  void BlockGmres<TYPE>::ExtractCurSolnBlock() 
-  {
-    //
-    // We only need to copy the solutions back in if the linear systems of
-    // interest are less than the block size.
-    //
-    if (_num_to_solve < _blocksize) {
-      int i;
-      //
-      int * index = new int[_num_to_solve]; assert(index!=NULL);
-      MultiVec<TYPE> *tptr=0;
-      //
-      // Get a view of the current solutions and correction vector.
-      //
-      for (i=0; i<_num_to_solve; i++) { 
-	index[i] = i;	
-      }
-      tptr = _cur_block_sol->CloneView(index,_num_to_solve); assert(tptr!=NULL);
-      //
-      // Copy the correction vector to the solution vector.
-      //
-      for (i=0; i< _num_to_solve; i++) { 
-	index[i] = _rhs_iter*_blocksize+i; 
-      }
-      _solutions->SetBlock( *tptr, index, _num_to_solve);
-      //
-      // Clean up.
-      //
-      delete tptr;
-      delete [] index; index=0;
-    }
-  }    
-  
+    
   template <class TYPE>
   void BlockGmres<TYPE>::Solve (bool vb) 
   {
     int i,j, maxidx;
-    int numrhs = _rhs->GetNumberVecs();
+    TYPE *beta=0;
+    int *index=0;
     const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
     TYPE sigma, mu, vscale, maxelem;
-    MultiVec<TYPE> *U_vec=0, *F_vec=0;
-    TYPE *beta = new TYPE[(_length+1)*_blocksize];
-    int *index = new int[ (_length+1)*_blocksize ]; assert(index!=NULL);
+    MultiVec<TYPE> *U_vec=0;
     bool dep_flg = false, exit_flg = false;
     Teuchos::LAPACK<int, TYPE> lapack;
     Teuchos::BLAS<int, TYPE> blas;
-    //	
-    // Each pass through the solver solves for _blocksize right-hand sides.
-    // max_rhs_iters is the number of passes through the
-    // solver required to solve for all right-hand sides	
     //
-    int max_rhs_iters = (numrhs+_blocksize-1) / _blocksize;
-    for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
+    // Obtain the first block linear system form the linear problem manager.
+    //
+    _cur_block_sol = _lp.GetCurrLHSVec();
+    _cur_block_rhs = _lp.GetCurrRHSVec();
+    _blocksize = _lp.GetBlockSize();
     //
     //  Start executable statements. 
     //
-    for ( _rhs_iter=0; _rhs_iter < max_rhs_iters; _rhs_iter++ ) {
+    while (_cur_block_sol && _cur_block_sol) {
       //
-      if (_debuglevel > 3 && vb) {
-	cout << "_rhs_iter: " << _rhs_iter <<  endl
-	     <<  endl;
-      }
-      //
-      // Compute the the remaining number of right-hand sides to be solved.
-      //
-      if ( numrhs - (_rhs_iter * _blocksize) < _blocksize ) {
-	_num_to_solve = numrhs - (_rhs_iter * _blocksize);
+      if (vb && _debuglevel > 2) {
+        cout << endl;
+        cout << "===================================================" << endl;
+        cout << "Solving linear systems:  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
+        cout << endl;
       }
       //
       // Reset the iteration counter for this block of right-hand sides.
       //
       _totaliter = 0;
       //
-      // Put the current initial guesses and right-hand sides into current blocks
+      // Make room for the Arnoldi vectors and F.
       //
-      if ( _num_to_solve < _blocksize ) {
-	_cur_block_sol = _solutions->Clone(_blocksize);
-	_cur_block_rhs = _solutions->Clone(_blocksize);
-	SetUpBlocks();
-      } else {
-	_cur_block_sol = _solutions->CloneView( index+(_rhs_iter*_blocksize), _blocksize);
-	_cur_block_rhs = _rhs->CloneView( index+(_rhs_iter*_blocksize), _blocksize);
-      }
+      _basisvecs = _cur_block_rhs->Clone((_length+1)*_blocksize); assert(_basisvecs!=NULL);
       //
-      for (_restartiter=0; _stest.CheckStatus(this) == Unconverged; _restartiter++) {
+      // Create the rectangular Hessenberg matrix and right-hand side of least squares problem.
+      //
+      _hessmatrix.shape((_length+1)*_blocksize, _length*_blocksize);
+      _z.shape((_length+1)*_blocksize, _blocksize); 
+      //
+      beta = new TYPE[(_length+1)*_blocksize]; assert(beta!=NULL);
+      index = new int[ (_length+1)*_blocksize ]; assert(index!=NULL);
+      for (i=0; i < (_length+1)*_blocksize; i++) { index[i] = i; }
+      //
+      for (_restartiter=0; _stest.CheckStatus(this) == Unconverged && !exit_flg; _restartiter++) {
 	//
 	// Associate the initial block of _basisvecs with U_vec.
 	//
@@ -500,23 +359,15 @@ namespace Belos {
 	if (exit_flg){
 	  if (vb){
 	    cout << "Exiting Block GMRES" << endl;
-	    cout << "  RHS pass# " << _rhs_iter+1
-		 << "  Restart iteration# " << _restartiter
+	    cout << "  Restart iteration# " << _restartiter
 		 << "  Iteration# " << _iter << endl;
 	    cout << "  Reason: Failed to compute initial block of orthonormal basis vectors"
 		 << endl << endl;
 	  }
 	  if (U_vec) {delete U_vec; U_vec = 0;}
-	  break;
 	}
 	//
-	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged; _iter++, ++_totaliter) {
-	  //
-	  // Print out the status test
-	  //
-	  if (_debuglevel>0 && vb) {
-		_stest.Print(cout);
-	  }
+	for (_iter=0; _iter<_length && _stest.CheckStatus(this) == Unconverged && !exit_flg; _iter++, ++_totaliter) {
 	  //
 	  // Compute a length _length block Arnoldi Reduction (one step at a time),
 	  // the exit_flg indicates if we cannot extend the Arnoldi Reduction.
@@ -580,28 +431,27 @@ namespace Belos {
 	//
 	// Update the solutions by solving the triangular system to get the Krylov weights.
 	//
-	blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
+        if (_iter) {
+	  // Make a copy of _z since it may be used in the convergence test to compute native residuals.
+	  Teuchos::SerialDenseMatrix<int,TYPE> _z_copy( Teuchos::Copy,_z, _iter*_blocksize, _blocksize );	
+	  blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		   Teuchos::NON_UNIT_DIAG, _iter*_blocksize, _blocksize, one,
-		   _hessmatrix.values(), _hessmatrix.stride(), _z.values(), _z.stride() ); 
-	// Create view into current basis vectors.
-	MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, _iter*_blocksize);
-	Teuchos::SerialDenseMatrix<int,TYPE> rhs_view(Teuchos::View, _z, _iter*_blocksize, _blocksize);
-	_cur_block_sol->MvTimesMatAddMv( one, *Vjp1, rhs_view, one );
-	delete Vjp1;
-	//
-	// Insert the current block of solutions into _solutions and let the
-	// linear problem know we updated to solution, so we can
-	// continue if we have more right-hand sides to solve for
-	//	  
-	ExtractCurSolnBlock();
-	_lp.SolutionUpdated();
+		   _hessmatrix.values(), _hessmatrix.stride(), _z_copy.values(), _z_copy.stride() ); 
+	  // Create view into current basis vectors.
+	  MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, _iter*_blocksize);
+	  _cur_block_sol->MvTimesMatAddMv( one, *Vjp1, _z_copy, one );
+	  delete Vjp1;
+	  //
+	  // Inform the linear problem that we updated to solution.
+	  //	  
+	  _lp.SolutionUpdated();
+        }
 	//
 	// Print out solver status
 	// 
 	if (_debuglevel>0 && vb) {
 	  _stest.Print(cout);
-	  cout << "  RHS pass# " << _rhs_iter+1 
-	       << "  Restart iteration# " << _restartiter 
+	  cout << "  Restart iteration# " << _restartiter 
 	       << "  Iteration# " << _iter << endl;
 	  if (exit_flg) {
 	    cout << " Exiting Block GMRES --- " << endl;
@@ -610,22 +460,29 @@ namespace Belos {
 	  }
 	} 
 	if (U_vec) {delete U_vec; U_vec = 0;}
-	//	
-	// Exit out of the restart loop if the factorization failed or the solver doesn't need to continue.
 	//
-	if (exit_flg || _stest.GetStatus() != Unconverged ) break;
+	// Break out of this loop before the _restartiter is incremented if we are finished.
 	//
+	if ( _stest.GetStatus() != Unconverged || exit_flg ) { break; }
+        //
       } // end for (_restartiter=0;...
+      //
+      // Inform the linear problem that we are finished with this block linear system.
+      //	  
+      _lp.SetCurrLSVec();
+      //
+      // Obtain the next block linear system from the linear problem manager.
+      //
+      _cur_block_sol = _lp.GetCurrLHSVec();
+      _cur_block_rhs = _lp.GetCurrRHSVec();
       //
       // **************Free heap space**************
       //
-      if (_cur_block_sol) {delete _cur_block_sol; _cur_block_sol=0;}
-      if (_cur_block_rhs) {delete _cur_block_rhs; _cur_block_rhs=0;}
+      if (_basisvecs) {delete _basisvecs; _basisvecs=0;}
+      if (index) {delete [] index; index=0;}
+      if (beta) {delete [] beta; beta=0; }
       //
-    } // end for (_rhs_iter =0;...)
-    //
-    if (index) {delete [] index; index=0;}
-    if (beta) {delete [] beta; beta=0; }
+    } // end while( _cur_block_sol && _cur_block_rhs )
     //
   } // end Solve()
   

@@ -320,17 +320,17 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   StatusType StatusTestResNorm<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
   {
   ReturnType ret;
+  LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
     //
     // Get some current solver information.
     //
     firstcallCheckStatus_ = false;
-    cur_rhs_num_ = iSolver->GetRHSIndex();
-    cur_blksz_ = iSolver->GetNumToSolve();
+    cur_rhs_num_ = lp.GetRHSIndex();
+    cur_blksz_ = lp.GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
       MultiVec<TYPE>* rhs = lp.GetRHS();
       numrhs_ = rhs->GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ ];
@@ -339,7 +339,6 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       rhs->MvNorm( scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
       MultiVec<TYPE>* init_res = lp.GetInitResVec();
       numrhs_ = init_res->GetNumberVecs();
       scalevector_ = new TYPE[ numrhs_ + cur_blksz_ ];
@@ -355,12 +354,12 @@ class StatusTestResNorm: public StatusTest<TYPE> {
   //
   // This section computes the norm of the residual vector
   //
-  if ( cur_rhs_num_ != iSolver->GetRHSIndex() || cur_blksz_ != iSolver->GetNumToSolve() ) {
+  if ( cur_rhs_num_ != lp.GetRHSIndex() || cur_blksz_ != lp.GetNumToSolve() ) {
     //
     // We have moved on to the next rhs block
     //
-    cur_rhs_num_ = iSolver->GetRHSIndex();
-    cur_blksz_ = iSolver->GetNumToSolve();
+    cur_rhs_num_ = lp.GetRHSIndex();
+    cur_blksz_ = lp.GetNumToSolve();
   }
   if (restype_==Implicit) {
     //
@@ -379,28 +378,26 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // asking for the true residual from the solver.
     // (NOTE:  This residual may be preconditioned)
     //
-    MultiVec<TYPE>* cur_res;
-    if ( iSolver->IsSolutionCurrent() ) {
-      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+    MultiVec<TYPE>* cur_res=0;
+    if ( lp.IsSolutionUpdated() ) {
       cur_res = lp.GetCurrResVec();
       ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
-	status_ = Failed;
-	return(status_);
+        status_ = Failed;
+        return(status_);
       }
-    }
-    else {
+    } else {
       MultiVec<TYPE>* cur_soln = iSolver->GetCurrentSoln();
       cur_res = cur_soln->Clone( cur_blksz_ );
-      LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
-      ret = lp.ComputeResVec( cur_res, cur_soln, lp.GetRHS() );
+      ret = lp.ComputeResVec( cur_res, cur_soln, lp.GetCurrRHSVec() );
       ret = cur_res->MvNorm( resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
-	status_ = Failed;
-	return(status_);
+        status_ = Failed;
+        return(status_);
       }
-      delete cur_res;
+      delete cur_soln;
     }
+    delete cur_res;
   }
   //
   // Compute the new linear system residuals for testing.
@@ -471,7 +468,7 @@ ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
       for (int j = 0; j < indent + 13; j ++)
     	os << ' ';
       os << "residual [ " << i << " ] = " << testvector_[ i ];
-      os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " = " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
+      os << ((testvector_[i]<tolerance_) ? " < " : (testvector_[i]==tolerance_) ? " == " : (testvector_[i]>tolerance_) ? " > " : " "  ) << tolerance_ << endl;
     }
   }
   os << endl;

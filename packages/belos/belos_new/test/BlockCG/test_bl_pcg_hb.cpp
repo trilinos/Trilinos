@@ -118,8 +118,8 @@ int main(int argc, char *argv[]) {
 	//
 	int numrhs = 15;  // total number of right-hand sides to solve for
     	int block = 10;  // blocksize used by solver
-    	int maxits = NumGlobalElements - 1; // maximum number of iterations to run
-    	double tol = 5.0e-9;  // relative residual tolerance
+    	int maxits = NumGlobalElements/block - 1; // maximum number of iterations to run
+    	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	//*************************************************************
 	//
@@ -216,6 +216,7 @@ int main(int argc, char *argv[]) {
 	//
 	Belos::LinearProblemManager<double> My_LP(&Amat, &soln, &rhs);
 	My_LP.SetLeftPrec( &EpetraOpPrec );
+	My_LP.SetBlockSize( block );
 	//
 	// **********Print out information about problem*******************
 	//
@@ -238,7 +239,7 @@ int main(int argc, char *argv[]) {
         Belos::StatusTestResNorm<double> test2( tol );
         Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
 
-	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, block, verbose);
+	Belos::BlockCG<double> MyBlockCG(My_LP, My_Test, verbose);
 	MyBlockCG.SetDebugLevel(0);
 
 	if (verbose) {

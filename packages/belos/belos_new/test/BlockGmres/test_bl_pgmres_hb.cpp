@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
     	int block = 10;  // blocksize used by solver
 	int numrestarts = 20; // number of restarts allowed 
     	int maxits = NumGlobalElements/block-1; // maximum number of iterations to run
-	//int maxits = 15;
+	int length = 15;
     	double tol = 1.0e-6;  // relative residual tolerance
 	//
 	//*****Construct solution vector and random right-hand-sides *****
@@ -214,6 +214,7 @@ int main(int argc, char *argv[]) {
 	rhs.MvRandom();
 	Belos::LinearProblemManager<double> My_LP( &Amat, &soln, &rhs);
 	My_LP.SetLeftPrec( &EpetraOpPrec );
+	My_LP.SetBlockSize( block );
 	Belos::StatusTestMaxIters<double> test1( maxits );
 	Belos::StatusTestMaxRestarts<double> test2( numrestarts );
 	Belos::StatusTestCombo<double> test3( Belos::StatusTestCombo<double>::OR, test1, test2 );
@@ -224,7 +225,7 @@ int main(int argc, char *argv[]) {
 	// *************Start the block Gmres iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, maxits, block, verbose);
+	Belos::BlockGmres<double> MyBlockGmres(My_LP, My_Test, length, verbose);
  	MyBlockGmres.SetDebugLevel(0);
 	//
 	// **********Print out information about problem*******************

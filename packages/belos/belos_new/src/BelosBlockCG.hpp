@@ -83,7 +83,6 @@ public:
   //! %Belos::BlockCG constructor.
   BlockCG(LinearProblemManager<TYPE>& lp,
 	  StatusTest<TYPE>& stest,
-	  const int block=1, 
 	  bool=false);
   
   //! %BlockCG destructor.
@@ -97,26 +96,7 @@ public:
   
   //! Get the restart count of the iteration method for the current block of linear systems [not valid for CG].
   int GetNumRestarts() const { return(0); }
-  
-  //! Get the current number of linear system being solved for.
-  /*! Since the block size is independent of the number of right-hand sides, 
-    it is important to know how many linear systems
-    are being solved for when the status is checked.  This is informative for residual
-    checks because the entire block of residuals may not be of interest.  Thus, this 
-    number can be anywhere between 1 and the block size for the solver.
-  */
-  int GetNumToSolve() const { return( _num_to_solve ); };
-  
-  //! Get the index of the first vector in the current right-hand side block being solved for.
-  /*! Since the block size is independent of the number of right-hand sides for
-    some solvers (GMRES, CG, etc.), it is important to know which right-hand side
-    block is being solved for.  That may mean you need to update the information
-    about the norms of your initial residual vector for weighting purposes.  This
-    information can keep you from querying the solver for information that rarely
-    changes.
-  */
-  int GetRHSIndex() const { return( _rhs_iter*_blocksize ); };
-  
+   
   //! Get the solvers native residuals for the current block of linear systems.
   /*! 
    */
@@ -134,15 +114,6 @@ public:
   /*! This may include a current solution, if the solver has recently restarted or completed.
    */
   LinearProblemManager<TYPE>& GetLinearProblem() const { return( _lp ); }
-
-  /*! \brief Get information whether the solution contained in the linear problem
-    is current.
-
-    \note If the blocksize is less than the number of right hand sides, then this method
-    informs you if the solutions for this block of right-hand sides is current.  It does
-    not imply that the solutions for <b> all </b> right-hand sides have been updated.
-  */
-  bool IsSolutionCurrent() { return ( ( _num_to_solve > _blocksize ) || !_iter  ? true : false ); };
 
   //@} 
   
@@ -167,23 +138,36 @@ public:
 private:
 
   void SetCGBlkTols();
-  void SetUpBlocks(MultiVec<TYPE>* sol_block, MultiVec<TYPE>* rhs_block);
-  void ExtractCurSolnBlock(MultiVec<TYPE>* sol_block);
   bool QRFactorDef(MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>&,
 		   int[], int&, bool);
   void CheckCGOrth(MultiVec<TYPE>&, MultiVec<TYPE>&, bool);
   void PrintCGIterInfo(int[], const int);
 
-  LinearProblemManager<TYPE>& _lp; // must be passed in by the user
-  StatusTest<TYPE>& _stest; // must be passed in by the user
-  MultiVec<TYPE> *_rhs, *_solutions; 
-  MultiVec<TYPE> *_basisvecs, *_residvecs;
-  MultiVec<TYPE> *_cur_block_rhs, *_cur_block_sol;
-  const int _blocksize, _numrhs;
+  //! Linear problem manager [ must be passed in by the user ]
+  LinearProblemManager<TYPE>& _lp; 
+
+  //! Status test [ must be passed in by the user ]
+  StatusTest<TYPE>& _stest; 
+
+  //! Pointer to current linear systems block of solution vectors [obtained from linear problem manager]
+  MultiVec<TYPE> *_cur_block_sol;
+
+  //! Pointer to current linear systems block of right-hand sides [obtained from linear problem manager]
+  MultiVec<TYPE> *_cur_block_rhs; 
+
+  //! Vector of the current residual norms.
   TYPE * _cur_resid_norms; 
+
+  //! Vector of the initial residual norms.
   TYPE * _init_resid_norms;
+
+  //! Debuglevel of this solver.
   int _debuglevel;
-  int _rhs_iter, _iter, _num_to_solve;
+
+  //! Current blocksize and iteration number.
+  int _blocksize, _iter;
+
+  //! Numerical breakdown tolerances.
   TYPE _prec, _dep_tol;
 };
 
@@ -194,39 +178,19 @@ private:
 template <class TYPE>
 BlockCG<TYPE>::BlockCG(LinearProblemManager<TYPE>& lp,
 		       StatusTest<TYPE>& stest,
-		       const int block, 
 		       bool vb) : 
   _lp(lp), 
   _stest(stest),
-  _rhs(lp.GetRHS()), 
-  _solutions(lp.GetLHS()),
-  _basisvecs(0),
-  _residvecs(0), 
   _cur_block_rhs(0),
   _cur_block_sol(0),
-  _blocksize(block), 
-  _numrhs(_rhs->GetNumberVecs()),
+  _blocksize(0), 
   _cur_resid_norms(0), 
   _init_resid_norms(0), 
   _debuglevel(0),  
-  _rhs_iter(0), 
   _iter(0),
-  _num_to_solve(block),
   _prec(5.0e-15), 
   _dep_tol(0.75)
 { 
-  //
-  // Initial check that input information is valid
-  //
-  assert(_blocksize > 0); assert(_numrhs > 0);
-  //
-  // Make room for the direction and residual vectors
-  // We save 2 blocks of these vectors
-  //
-  _basisvecs = _rhs->Clone(2*_blocksize); assert(_basisvecs!=NULL);
-  _residvecs = _rhs->Clone(2*_blocksize); assert(_residvecs!=NULL);
-  _cur_resid_norms = new TYPE[_blocksize]; assert(_cur_resid_norms!=NULL);
-  _init_resid_norms= new TYPE[_blocksize]; assert(_init_resid_norms!=NULL);
   //
   // Set the block orthogonality tolerances
   //
@@ -236,31 +200,27 @@ BlockCG<TYPE>::BlockCG(LinearProblemManager<TYPE>& lp,
 template <class TYPE>
 BlockCG<TYPE>::~BlockCG() 
 {
-	if (_basisvecs) delete _basisvecs;
-	if (_residvecs) delete _residvecs;
-	if (_cur_block_rhs) delete _cur_block_rhs;
-	if (_cur_block_sol) delete _cur_block_sol;
-	if (_cur_resid_norms) delete _cur_resid_norms;
-	if (_init_resid_norms) delete _init_resid_norms;
+ if (_cur_resid_norms) delete _cur_resid_norms;
+ if (_init_resid_norms) delete _init_resid_norms;
 }
 
 template <class TYPE>
 void BlockCG<TYPE>::SetCGBlkTols() 
 {
-	const TYPE two = 2.0;
-	TYPE eps;
-	char precision = 'P';
-	Teuchos::LAPACK<int,TYPE> lapack;
-	eps = lapack.LAMCH(precision);
-	_prec = eps;
-	_dep_tol = 1/sqrt(two);
+  const TYPE two = 2.0;
+  TYPE eps;
+  char precision = 'P';
+  Teuchos::LAPACK<int,TYPE> lapack;
+  eps = lapack.LAMCH(precision);
+  _prec = eps;
+  _dep_tol = 1/sqrt(two);
 }
 
 template <class TYPE>
 ReturnType BlockCG<TYPE>::GetNativeResidNorms(TYPE *normvec, NormType norm_type) const 
 {
   if (normvec) {
-    for (int i=0; i<_num_to_solve; i++) {
+    for (int i=0; i<_blocksize; i++) {
       normvec[i] = _cur_resid_norms[i];
     }
     return Ok;
@@ -268,135 +228,57 @@ ReturnType BlockCG<TYPE>::GetNativeResidNorms(TYPE *normvec, NormType norm_type)
   return Error;
 }
 
-
-template<class TYPE>
-void BlockCG<TYPE>::SetUpBlocks (MultiVec<TYPE>* sol_block,  
-				 MultiVec<TYPE>* rhs_block) 
-{
-  //
-  int i;
-  int *index = new int[_num_to_solve]; assert(index!=NULL);
-  for ( i=0; i<_num_to_solve; i++) { index[i] = _rhs_iter*_blocksize+i; }
-  const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-  //
-  // Logic to handle the number of righthand sides solved
-  // for at this iteration.  A shallow copy is used if the blocksize
-  // and num_to_solve are the same, otherwise the right-hand side and
-  // solution block have to be augmented with some random vectors.
-  //
-  if (_num_to_solve < _blocksize ) {
-    //
-    // More involved. This is the case where the number of right-hand
-    // sides left to solve for at this iteration is less than the block size.
-    // Here we will copy over the right-hand sides and solutions.
-    //
-    // Fill up the right-hand side block with random vectors, then place
-    // the remaining (unsolved) right hand sides into the initial portion
-    // of the right-hand side block.
-    //	
-    int *index2 = new int[_num_to_solve]; assert(index!=NULL);
-    rhs_block->MvRandom();
-    //
-    MultiVec<TYPE> *tptr = _rhs->CloneView(index,_num_to_solve); assert(tptr!=NULL);
-    for (i=0; i<_num_to_solve; i++) {
-      index2[i] = i;
-    }
-    rhs_block->SetBlock( *tptr, index2, _num_to_solve);
-    //
-    // Now deal with solution block, augment with zero vectors.
-    //
-    sol_block->MvInit( zero );
-    MultiVec<TYPE> *tptr2 = _solutions->CloneView(index,_num_to_solve); assert(tptr2!=NULL);
-    sol_block->SetBlock( *tptr2, index2, _num_to_solve);
-    //
-    // Delete the temporary views
-    //
-    delete tptr; tptr = 0;
-    delete tptr2; tptr2 = 0;
-    delete [] index2; index2=0;
-  }
-  delete [] index; index=0;
-  //
-}
-//
-
-
-template <class TYPE>
-void BlockCG<TYPE>::ExtractCurSolnBlock(MultiVec<TYPE>* sol_block) 
-{
-  int i;
-  //
-  // We only need to copy the solutions back in if the linear systems of
-  // interest are less than the block size.
-  //
-  if (_num_to_solve < _blocksize) {
-    //
-    int * index = new int[_num_to_solve]; assert(index!=NULL);
-    MultiVec<TYPE> *tptr=0;
-    //
-    // Get a view of the current solutions and correction vector.
-    //
-    for (i=0; i<_num_to_solve; i++) { 
-      index[i] = i;	
-    }
-    tptr = sol_block->CloneView(index,_num_to_solve); assert(tptr!=NULL);
-    //
-    // Copy the correction vector to the solution vector.
-    //
-    for (i=0; i< _num_to_solve; i++) { 
-      index[i] = _rhs_iter*_blocksize+i; 
-    }
-    _solutions->SetBlock( *tptr, index, _num_to_solve);
-    //
-    // Clean up.
-    //
-    delete tptr;
-    delete [] index; index=0;
-  }
-}    
-
-
 template <class TYPE>
 void BlockCG<TYPE>::Solve (bool vb) 
 {
   //
-  int i,j,k,info,num_ind;
+  int i, j, k, info, num_ind;
   int ind_blksz, prev_ind_blksz;
   bool exit_flg = false;
   char UPLO = 'U';
   const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
   const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
   Teuchos::LAPACK<int,TYPE> lapack;
+  MultiVec<TYPE> *_basisvecs=0, *_residvecs=0;
   MultiVec<TYPE> *R_prev=0, *R_new=0, *P_prev=0, *P_new=0;
   MultiVec<TYPE> *AP_prev = 0, *temp_blk=0;
-  int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
-  int *index = new int[_numrhs ];
-  for (i=0; i<_numrhs; i++) { index[i] = i; }
   //
-  // max_rhs_iters is the number of times that we need to iterate in order to
-  // solve for all right-hand sides (_numrhs), _blocksize at a time.
+  // Retrieve the first linear system to be solved.
   //
-  int max_rhs_iters = (_numrhs+_blocksize-1) / _blocksize;
-  //
-  // Make additional space needed during iteration
-  //
-  temp_blk = _rhs->Clone(_blocksize); assert(temp_blk!=NULL);
-  //
-  // Additional initialization
-  //
-  int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
-  int *cols = new int[_blocksize]; assert(cols!=NULL);	//
+  _cur_block_sol = _lp.GetCurrLHSVec();
+  _cur_block_rhs = _lp.GetCurrRHSVec();
   //
   //  Start executable statements. 
   //
-  for ( _rhs_iter=0; _rhs_iter < max_rhs_iters; _rhs_iter++ ) {
+  while (_cur_block_sol && _cur_block_rhs ) {
     //
     if (vb && _debuglevel > 2) {
       cout << endl;
       cout << "===================================================" << endl;
-      cout << "RHS pass: " << _rhs_iter << endl;
+      cout << "Solving linear systems:  " << _lp.GetRHSIndex() << " through " << _lp.GetRHSIndex()+_lp.GetNumToSolve() << endl;
       cout << endl;
     }	
+    //
+    // Get the blocksize for this set of linear systems.
+    //
+    _blocksize = _lp.GetBlockSize();
+    //
+    // Make additional space needed during iteration
+    //
+    int *index2 = new int[ _blocksize ]; assert(index2!=NULL);
+    int *index = new int[ _blocksize ]; assert(index!=NULL);
+    int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
+    int *cols = new int[_blocksize]; assert(cols!=NULL);
+    //
+    // Make room for the direction, residual, and operator applied to direction vectors.
+    // We save 3 blocks of these vectors.  Also create 2 vectors of _blocksize to store
+    // The residual norms used to determine valid direction/residual vectors.
+    //
+    _basisvecs = _cur_block_sol->Clone(2*_blocksize); assert(_basisvecs!=NULL);
+    _residvecs = _cur_block_sol->Clone(2*_blocksize); assert(_residvecs!=NULL);
+    temp_blk = _cur_block_sol->Clone(_blocksize); assert(temp_blk!=NULL);
+    _cur_resid_norms = new TYPE[_blocksize]; assert(_cur_resid_norms!=NULL);
+    _init_resid_norms= new TYPE[_blocksize]; assert(_init_resid_norms!=NULL);
     //
     ind_blksz = _blocksize;
     prev_ind_blksz = _blocksize;
@@ -404,24 +286,8 @@ void BlockCG<TYPE>::Solve (bool vb)
     Teuchos::SerialDenseMatrix<int,TYPE> beta( _blocksize, _blocksize );
     Teuchos::SerialDenseMatrix<int,TYPE> T2( _blocksize, _blocksize );
     //
-    // Compute the number of right-hand sides remaining to be solved 
-    //
-    if ( _numrhs - (_rhs_iter * _blocksize) < _blocksize ) {
-      _num_to_solve = _numrhs - (_rhs_iter * _blocksize);
-    }
-    //
-    // Put the current initial guesses and right-hand sides into current blocks
-    //
-    if ( _num_to_solve < _blocksize ) {
-      _cur_block_sol = _solutions->Clone(_blocksize);
-      _cur_block_rhs = _solutions->Clone(_blocksize);
-      SetUpBlocks(_cur_block_sol, _cur_block_rhs);
-    } else {
-      _cur_block_sol = _solutions->CloneView( index+(_rhs_iter*_blocksize), _blocksize);
-      _cur_block_rhs = _rhs->CloneView( index+(_rhs_iter*_blocksize), _blocksize);
-    }
-    //
     for (i=0;i<_blocksize;i++){
+      index[i] = i;
       ind_idx[i] = i; 
       cols[i] = i;
     }
@@ -496,7 +362,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       if ( exit_flg ) {
 	if (vb) {
-	  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter << endl; 
+	  cout << " Exiting Block CG iteration " << endl; 
 	  cout << " Reason: No independent initial direction vectors" << endl;
 	}
       }		
@@ -516,7 +382,7 @@ void BlockCG<TYPE>::Solve (bool vb)
     //		
     else {  // all initial residuals have converged
       if (vb) {
-	cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	cout << " Exiting Block CG iteration " 
 	     << " -- Iteration# " << _iter << endl;
 	cout << "Reason: All initial residuals have converged" << endl;
       }
@@ -593,7 +459,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       lapack.POTRF(UPLO, ind_blksz, T2.values(), ind_blksz, &info);
       if (info != 0) {
 	if(vb){
-	  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	  cout << " Exiting Block CG iteration "
 	       << " -- Iteration# " << _iter << endl;
 	  cout << " Reason: Cannot compute coefficient matrix alpha" << endl;
 	  cout << " P_prev'* A*P_prev is singular" << endl;
@@ -606,7 +472,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       // Note: solution returned in alpha
       if (info != 0) {
 	if(vb){
-	  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	  cout << " Exiting Block CG iteration "
 	       << " -- Iteration# " << _iter << endl;
 	  cout << " Reason: Cannot compute coefficient matrix alpha" << endl;
 	  cout << " Solution will be updated upon exiting loop" << endl;
@@ -615,10 +481,9 @@ void BlockCG<TYPE>::Solve (bool vb)
       }
       //
       // Update the solution: cur_sol = one*cur_sol + one*P_prev*alpha
-      // (this will update the solution in the LPM class when the num_to_solve == _blocksize)
-      //
+      // 
       _cur_block_sol->MvTimesMatAddMv(one, *P_prev, alpha, one);
-      if (_num_to_solve == _blocksize) { _lp.SolutionUpdated(); }
+      _lp.SolutionUpdated();	// Inform the linear problem that the solution was updated.
       //
       // Update the residual vectors: R_new = R_prev - A*P_prev*alpha
       //
@@ -653,7 +518,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       //
       if (ind_blksz <= 0){
 	if (vb) {
-	  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	  cout << " Exiting Block CG iteration " 
 	       << " -- Iteration# " << _iter << endl;
 	  cout << " Reason: No more independent direction vectors" << endl;
 	  cout << " Solution will be updated upon exiting loop" << endl;
@@ -702,7 +567,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       // Note: Solution returned in beta
       if (info != 0) {
 	if (vb) {
-	  cout << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	  cout << " Exiting Block CG iteration " 
 	       << " -- Iteration# " << _iter << endl;
 	  cout << "Reason: Cannot compute coefficient matrix beta" << endl;
 	  cout << "Solution will be updated upon exiting loop" << endl;
@@ -735,7 +600,7 @@ void BlockCG<TYPE>::Solve (bool vb)
       if ( exit_flg ) {
         ind_blksz = num_ind;
 	if (vb) {
-	  cout  << " Exiting Block CG iteration -- RHS pass# " << _rhs_iter 
+	  cout  << " Exiting Block CG iteration "  
 		<< " -- Iteration# " << _iter << endl;
 	  cout << "Reason: No more linearly independent direction vectors" << endl;
 	  cout << " Solution will be updated upon exiting loop" << endl;
@@ -778,37 +643,38 @@ void BlockCG<TYPE>::Solve (bool vb)
     } // end of the main CG loop -- for(_iter = 0;...)
     // *******************************************************************************
     //
-    // Insert the current block of solutions into _solutions so we can
-    // continue if we have more right-hand sides to solve for
+    // Inform the linear problem manager that we are done with the current block of linear systems.
     //
-    ExtractCurSolnBlock( _cur_block_sol );	 
+    _lp.SetCurrLSVec();
     _lp.SolutionUpdated();
+    //
+    // Get the next block of linear systems, if it returns the null pointer we are done.
+    //
+    _cur_block_sol = _lp.GetCurrLHSVec();
+    _cur_block_rhs = _lp.GetCurrRHSVec();
     //
     // **************Free heap space**************
     //   
+    delete temp_blk; temp_blk = 0;
+    delete _basisvecs; _basisvecs = 0;
+    delete _residvecs; _residvecs = 0;
+    delete [] index; index=0;
+    delete [] index2; index2=0;
+    delete [] ind_idx; ind_idx = 0;
+    delete [] cols; cols = 0;
+    delete [] _cur_resid_norms; _cur_resid_norms = 0;
+    delete [] _init_resid_norms; _init_resid_norms = 0;
     if (AP_prev) { delete AP_prev; AP_prev=0; }
-    if (_cur_block_sol) { delete _cur_block_sol; _cur_block_sol=0;}
-    if (_cur_block_rhs) { delete _cur_block_rhs; _cur_block_rhs=0;}
     if (P_prev) { delete P_prev; P_prev=0;}
     if (P_new) { delete P_new; P_new=0; }
     if (R_prev) { delete R_prev; R_prev=0;}
     if (R_new) { delete R_new; R_new=0;}
     //
-  } // end if ( _rhs_iter = 0;... )
+  } // end while ( _cur_block_sol && _cur_block_rhs )
   // **********************************************************************************
-  //
-  //
-  // ****************Free heap space***********************************************
-  //
-  if (temp_blk) { delete temp_blk; temp_blk=0; }
-  if (ind_idx) { delete [] ind_idx; ind_idx=0;}
-  if (cols) { delete [] cols; cols=0;}
-  if (index2) { delete [] index2; index2=0;}
-  if (index) { delete [] index; index=0; }
   //
 } // end CGSolve()
 //
-
 
 template<class TYPE>
 bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn, 
@@ -973,11 +839,7 @@ void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2, bool vb)
     cout << " " << endl;
   }
   //
-  //PAP.print();
-  
-  if(AP) {
-    delete AP; AP=0;
-  }  
+  if(AP) { delete AP; AP=0; }  
   //  
 } // end check_orthog
 //
