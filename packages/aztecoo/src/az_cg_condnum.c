@@ -415,7 +415,7 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
        Fill the tridiagonal Lanczos matrix, stored in the arrays
        diag_T and offdiag_T */
 
-    if( iter>1 && proc_config[AZ_node] == 0) {
+    if( iter>1 ) {
 
       diag_T[N_lanczos]    = (pow(beta_old,2) * p_ap_dot_old + p_ap_dot) / r_z_dot_old;
       offdiag_T[N_lanczos-1] = -beta_old * p_ap_dot_old / (sqrt( r_z_dot_old * r_z_dot_old2));
@@ -494,14 +494,14 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
   int i;
   double smallest, largest;
 
-  if( N != 1 ) {
+  if( N > 2 ) {
     
     DSTEBZ_F77( CHAR_MACRO(char_A), CHAR_MACRO(char_E),
 		&N, &double_dummy, &double_dummy,
 		&dummy, &dummy,
 		&zero_double, diag, offdiag, &N_eigs, &N_split,
 		eigenvalues, iblock, isplit, work, iwork, &info );
-    
+
     smallest = eigenvalues[0];
     largest = eigenvalues[N_eigs-1];
 
@@ -522,13 +522,10 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 	    prefix,
 	    prefix,
 	    smallest );
-    *ConditionNumber = -1.0;
 
-  } else {
+  } 
     
-    *ConditionNumber = largest/smallest;
-    
-  }
+  *ConditionNumber = largest/smallest;
   
   if( proc_config[AZ_node] != 0 ) return;
   
@@ -545,7 +542,7 @@ static void compute_condnum_tridiag_sym( int N, double *diag, double *offdiag,
 	   "\n%sestimated condition number   = %e\n",
 	   prefix, 
 	   prefix, prefix, smallest, prefix, largest,
-	   prefix, largest/smallest );
+	   prefix,  *ConditionNumber );
 
     printf("\n%s-----------------------------------------------------\n",
 	   prefix);
