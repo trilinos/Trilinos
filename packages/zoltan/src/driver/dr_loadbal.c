@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Dynamic Load-Balancing Library for Parallel Applications           *
  * Copyright (c) 2000, Sandia National Laboratories.                         *
- * For more info, see the README file in the top-level Zoltan directory.     *  
+ * For more info, see the README file in the top-level Zoltan directory.     * 
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -236,6 +236,8 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
   int i;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
  *ierr = LB_OK; 
 
@@ -252,14 +254,14 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
 
   elem = mesh->elements;
   current_elem = &elem[0];
-  local_id[0] = 0;
-  global_id[0] = (LB_ID_TYPE) current_elem->globalID;
+  if (num_lid_entries) local_id[lid] = 0;
+  global_id[gid] = (LB_ID_TYPE) current_elem->globalID;
 
   if (wdim>0){
     for (i=0; i<wdim; i++){
       *wgt++ = current_elem->cpu_wgt[i];
       /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
-             global_id[0], i, current_elem->cpu_wgt[i]); */
+             global_id[gid], i, current_elem->cpu_wgt[i]); */
     }
   }
 
@@ -276,9 +278,11 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
 {
   int found = 0;
   ELEM_INFO *elem;
-  ELEM_INFO *next_elem;
+  ELEM_INFO *current_elem, *next_elem;
   MESH_INFO_PTR mesh;
-  int i;
+  int i, idx;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -288,17 +292,24 @@ int get_next_element(void *data, int num_gid_entries, int num_lid_entries,
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
 
-  if (local_id[0]+1 < mesh->num_elems) { 
+  if (num_lid_entries) {
+    idx = local_id[lid];
+    current_elem = &elem[idx];
+  }
+  else {
+    /* testing zero-length local IDs; search by global ID for current elem */
+    current_elem = search_by_global_id(mesh, global_id[gid], &idx);
+  }
+
+  if (idx+1 < mesh->num_elems) { 
     found = 1;
-    next_local_id[0] = local_id[0] + 1;
-    next_elem = &elem[next_local_id[0]];
-    next_global_id[0] = next_elem->globalID;
+    if (num_lid_entries) next_local_id[lid] = idx + 1;
+    next_elem = &elem[idx+1];
+    next_global_id[gid] = next_elem->globalID;
 
     if (wdim>0){
       for (i=0; i<wdim; i++){
         *next_wgt++ = next_elem->cpu_wgt[i];
-        /* printf("Debug: In query function, object = %d, weight no. %1d = %f\n",
-          next_global_id[0], i, next_elem->cpu_wgt[i]); */
       }
     }
 
@@ -335,9 +346,11 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
 {
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j;
+  int i, j, idx;
   double tmp;
   MESH_INFO_PTR mesh;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -345,7 +358,9 @@ void get_geom(void *data, int num_gid_entries, int num_lid_entries,
   }
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
-  current_elem = &elem[local_id[0]];
+  current_elem = (num_lid_entries 
+                    ? &elem[local_id[lid]] 
+                    : search_by_global_id(mesh, global_id[gid], &idx));
 
   if (mesh->eb_nnodes[current_elem->elem_blk] == 0) {
     /* No geometry info was read. */
@@ -375,7 +390,10 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
                   LB_ID_PTR global_id, LB_ID_PTR local_id, int *ierr)
 {
   MESH_INFO_PTR mesh;
-  ELEM_INFO *elem;
+  ELEM_INFO *elem, *current_elem;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
+  int idx;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -386,7 +404,11 @@ int get_num_edges(void *data, int num_gid_entries, int num_lid_entries,
 
   *ierr = LB_OK;
 
-  return(elem[local_id[0]].nadj);
+  current_elem = (num_lid_entries 
+                    ? &elem[local_id[lid]] 
+                    : search_by_global_id(mesh, global_id[gid], &idx));
+
+  return(current_elem->nadj);
 }
 
 /*****************************************************************************/
@@ -400,7 +422,9 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem;
   ELEM_INFO *current_elem;
-  int i, j, proc, local_elem;
+  int i, j, proc, local_elem, idx;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -409,7 +433,9 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
-  current_elem = &elem[local_id[0]];
+  current_elem = (num_lid_entries
+                   ? &elem[local_id[lid]] 
+                   : search_by_global_id(mesh, global_id[gid], &idx));
 
   /* get the processor number */
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
@@ -422,10 +448,10 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 
     if (current_elem->adj_proc[i] == proc) {
       local_elem = current_elem->adj[i];
-      nbor_global_id[j*num_gid_entries] = elem[local_elem].globalID;
+      nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
-      nbor_global_id[j*num_gid_entries] = current_elem->adj[i];
+      nbor_global_id[gid+j*num_gid_entries] = current_elem->adj[i];
     }
     nbor_procs[j] = current_elem->adj_proc[i];
 
@@ -439,4 +465,33 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
   }
 
   *ierr = LB_OK;
+}
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+ELEM_INFO *search_by_global_id(MESH_INFO *mesh, int global_id, int *idx)
+{
+/*
+ * Function that searchs for an element based upon its global ID.
+ * This function does not provide the most efficient implementation of
+ * the query functions; more efficient implementation uses local IDs
+ * to directly access element info.  However, this function is useful
+ * for testing Zoltan when the number of entries in a local ID 
+ * (NUM_LID_ENTRIES) is zero.
+ */
+
+int i;
+ELEM_INFO *elem, *found_elem = NULL;
+
+
+  elem = mesh->elements;
+
+  for (i = 0; i < mesh->elem_array_len; i++)
+    if (elem[i].globalID == global_id) {
+      found_elem = &elem[i];
+      *idx = i;
+      break;
+    }
+  
+  return(found_elem);
 }

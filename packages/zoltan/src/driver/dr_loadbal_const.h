@@ -20,4 +20,6 @@ extern int migrate_elements(int, MESH_INFO_PTR, struct LB_Struct *,
                             LB_ID_PTR, LB_ID_PTR, int *, int, LB_ID_PTR,
                             LB_ID_PTR, int *);
 
+extern ELEM_INFO *search_by_global_id(MESH_INFO *, int, int *);
+
 #endif /* _DR_LOADBAL_CONST_H_ */
