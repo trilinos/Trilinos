@@ -295,6 +295,8 @@ protected:
 
   void CreateMatrixLaplace2d();
 
+  void CreateMatrixLaplace2d_BC();
+
   void CreateMatrixLaplace2d_9pt();
 
   void CreateMatrixStretched2d();

@@ -563,6 +563,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMap(void)
   }
     
   else if( name_ == "laplace_2d" || name_ == "laplace_2d_n" 
+	   || name_ == "laplace_2d_bc" 
 	   || name_ == "cross_stencil_2d"
 	   || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
 	   || name_ == "uni_flow_2d" || name_ == "recirc_2d_divfree" 
@@ -891,6 +892,8 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrix(void)
     else if( name_ == "laplace_1d_n" ) CreateMatrixLaplace1dNeumann();
       
     else if( name_ == "laplace_2d" ) CreateMatrixLaplace2d();
+
+    else if( name_ == "laplace_2d_bc" ) CreateMatrixLaplace2d_BC();
 
     else if( name_ == "laplace_2d_n" ) CreateMatrixLaplace2dNeumann();
 
@@ -1458,6 +1461,71 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixCrossStencil2dVector(void)
     // Put in the diagonal entry
     diag = (*VectorA_)[i];
 	
+    assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
+				       &diag, MyGlobalElements_+i)==0);
+  }
+  matrix_->FillComplete();
+
+  return;
+      
+}
+
+// ================================================ ====== ==== ==== == =
+void Trilinos_Util::CrsMatrixGallery::CreateMatrixLaplace2d_BC(void)
+{
+
+  if( verbose_ == true ) {
+    cout << OutputMsg << "Creating matrix `laplace_2d_bc'...\n";
+  }
+
+  SetupCartesianGrid2D();  
+
+  int left, right, lower, upper;
+    
+  matrix_ = new Epetra_CrsMatrix(Copy,*map_,5);
+    
+  // Add  rows one-at-a-time
+    
+  double Values[4], diag;
+  int Indices[4];
+  
+  //    e
+  //  b a c
+  //    d
+  for( int i=0 ; i<NumMyElements_; ++i ) {
+
+    bool isBorder = false;
+
+    int NumEntries=0;
+    GetNeighboursCartesian2d(  MyGlobalElements_[i], nx_, ny_, 
+			       left, right, lower, upper);
+
+    // any border node gets only diagonal entry
+    if ((left == -1) || (right == -1) || (lower == -1) || (upper == -1)) {
+      diag = 1.;
+    }
+    else {
+
+      Indices[0] = left;
+      Values[0] = -1.0;
+
+      Indices[1] = right;
+      Values[1] = -1.0;
+
+      Indices[2] = lower;
+      Values[2] = -1.0;
+
+      Indices[3] = upper;
+      Values[3] = -1.0;
+    
+      // put the off-diagonal entries
+      assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 4, 
+					 Values, Indices)==0);
+
+      diag = 4.0;
+    }
+	
+    // new diagonal guy
     assert(matrix_->InsertGlobalValues(MyGlobalElements_[i], 1, 
 				       &diag, MyGlobalElements_+i)==0);
   }
@@ -3063,6 +3131,7 @@ void Trilinos_Util::CrsMatrixGallery::GetCartesianCoordinates(double * & x,
     }
     
   } else  if( name_ == "laplace_2d" || name_ == "cross_stencil_2d"
+	      || name_ == "laplace_2d_bc" 
 	      || name_ == "laplace_2d_9pt" || name_ == "recirc_2d"
 	      || name_ == "laplace_2d_n" || name_ == "uni_flow_2d" 
 	      || name_ == "stretched_2d" ) {
