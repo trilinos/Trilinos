@@ -1,0 +1,19 @@
+MACHINE_CONFIG_FILE             = ../../packages/ml/test/testharness/marzio-laptop/machine
+MACHINE_MPI_CONFIG_FILE         = ../../packages/ml/test/testharness/marzio-laptop/machine-mpi
+TRILINOS_CONFIG_FILE            = ../../packages/ml/test/testharness/marzio-laptop/all-configure
+REPORT_METHOD                   = LOCAL_FILESYSTEM
+# ParMETIS requires MPI
+SERIAL_DIR                      =
+MPI_DIR                         = all-mpi
+HOST_FILE                       = <TRILINOS_DIR>/hostfile
+MPI_STARTUP_CMD                 = lamboot
+MPI_SHUTDOWN_CMD                = lamhalt
+MPIGO_CMD                       = 
+MAKE_FLAGS                      = "-j 2"
+CVS_UPDATE                      = NO
+CVS_CMD                         = cvs
+REPORT_NAMES                    = ORDER
+MAIL_METHOD                     = 
+SUMMARY_EMAIL                   = 
+ALL_EMAILS                      = 
+SEND_TO_DEFAULTS                = NO
