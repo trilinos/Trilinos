@@ -664,7 +664,7 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info,
 /* local declarations */
   int ctrl_id;
   int size;
-  int int_params[12];  /* Make sure this array is large enough */
+  int int_params[13];  /* Make sure this array is large enough */
 /***************************** BEGIN EXECUTION ******************************/
   
   int j = 0;
