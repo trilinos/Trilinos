@@ -1,5 +1,3 @@
-
-
 /*************************************************************************************       
   HAIM: GLOBAL EIGENVALUE CALCULATIONS FOR MULTIGRID           
   THE GENERALIZED GLOBAL BASIS (GGB) METHOD USING ARPACK                      
@@ -31,10 +29,12 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		    int GGB_alp_flag) 
 {
   /* Eigenvalue definitions */
+#if defined(HAVE_ML_ARPACK) || defined(HAVE_ML_PARPACK)
   int      iparam[11];
-  int      nev, ncv, info, mode=0, Fattening=0;
-  double   tol, tm, tmp_tol;
+  int      nev, ncv, mode=0, Fattening=0;
+  double   tol, tm;
   char     bmat[2], which[3];
+#endif
 
   /* --------- Execution begins  ---------------- */
   
@@ -119,12 +119,12 @@ void  ML_ARPACK_driver(char which[],
 		       int Debug_Flag, int GGB_alp_flag)
 {
 
-  int        i, j, kk, ldv, lworkl, Nglobal;
+  int        j, kk, ldv, lworkl;
   int        nloc,  nloc2, ido, flag, counter;
   int        count, nconv, ierr, info;
-  int        ipntr[14], m=0;
-  int        one = 1, dummy1, dummy2, dummy3, dummy4;
-  double     a1 , a2  , lamR, lamI, time;
+  int        ipntr[14];
+  int        dummy1, dummy2, dummy3, dummy4;
+  double     a1 , a2  , lamR, lamI;
   char       string[4];
   double     *v=NULL, *workl=NULL, *workd=NULL, *workev=NULL, *d=NULL, *resid=NULL;         /* Pointers used by ARPACK */  
   int        *select=NULL, rvec, *work=NULL;
@@ -136,7 +136,6 @@ void  ML_ARPACK_driver(char which[],
 
 
   USR_COMM  comm;                                      /* MPI communicator */
-  double tm;
 
   /********************************  Begin ************************************/
 
@@ -233,7 +232,7 @@ void  ML_ARPACK_driver(char which[],
 #ifdef HAVE_ML_PARPACK
 
     
-    pdnaupd_(&comm, &ido, bmat, &nloc, which, &nev, &tol, resid,
+    pdnaupd_((int *) &comm, &ido, bmat, &nloc, which, &nev, &tol, resid,
 	     &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	     &lworkl, &info );
     
@@ -618,7 +617,7 @@ extern int ML_OperatorGGB_Apply (double *densemat, int Nrows, int Ncols, double 
 {
   char     trans[2];
   double   alp=1.0, beta=0.0; 
-  int      one =1, i;
+  int      one =1;
 
 
   if (Transpose == 1)   trans[0] = 'T';
@@ -653,7 +652,7 @@ void ML_GGB2CSR (double *v, int nconv, int MatSize, int proc_id,
   int          i, j , count;
   double       *values;
  
-  FILE          *fp, *fp1, *eig;
+  FILE          *fp = NULL, *fp1 = NULL, *eig = NULL;
   
   /******************************  begin *****************************/
   if (Debug_Flag == 10) {
@@ -768,8 +767,8 @@ void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Stru
   double     *A , *current_vec;
   double     theta, eps= 5.0 ;
 
-  int           m, n, i, j, k;
-  int           nnew, nold, lwork;
+  int           m, i, j, k;
+  int           nnew, nold;
   int           ind =1;
  
 
@@ -835,15 +834,13 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   double     *tau1, *work1, *A1, *B;
   double     theta;
 
-  int         lda, lwork, info, ldv, ldu, ldvt;
-  int         lwork1, info1, ldv1;
+  int         lda, lwork, info, ldu, ldvt;
+  int         lwork1, info1;
 
 
-  int           m, n, i, j, k, one=1;
-  int           nnew;
+  int           m, i, j, k, one=1;
   char          jobu[2], jobvt[2];
 
-  FILE          *fp2, *fp1, *fp;
 
   /*******************  begin  ***********************/
 
@@ -895,7 +892,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   DGEQRF_F77(&m, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);  
   
 
-  if (info !=0 | info1 !=0)  {
+  if ( (info !=0) | (info1 !=0) )  {
     printf("Problem with QR factorization in ML_subspace function dgeqrf_\n");
     exit(-1);
   }
@@ -921,7 +918,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   DORGQR_F77(&m, &ncols1,&ncols1, A, &lda, tau, work, &lwork, &info);
   DORGQR_F77(&m, &ncols2, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);
 
-  if (info !=0 | info1 !=0)  {
+  if ( (info !=0) | (info1 !=0) )  {
     printf("Problem with QR factorization in ML_subspace function dorgqr_\n");
     exit(-1);
   }
@@ -1019,14 +1016,17 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
 int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		     struct ML_CSR_MSRdata *mydata)
 {
-  int            Nrows, Ncols, i, level;  
-  int            kk, ggb_flag = 0, count;
-  double        *rhs, *rhs1;
-  double         epsilon= 30.0;
-  double         tm, theta, pi = 3.1415;
+  int            Nrows, Ncols, level;  
+  int            ggb_flag = 0, count;
+  double         tm;
+  double        *vec, *val;
+
+#ifndef HAVE_ML_PARPACK  
+  int             i, kk;
+  double          *rhs, *rhs1, epsilon = 30.0, theta, *Rq, *dumm;
+#endif
 
 
-  double        *Rq, *vec, *dumm , *val;
 
 
   ML_Operator   *Amat;
@@ -1135,16 +1135,14 @@ int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 
 extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count)
 { 
-  int      i , j, level, flag=1;
-  double   rayl,  theta = 0.0;
+  int      i , level, flag=1;
+  double   rayl;
   double    *u, *v, *rhs, *rhs1;
   double   *compA, *compB, norm, eps ;
   ML_Operator  *Amat;
-  FILE          *fp;
 
   /*******************  begin  ***********************/
 
-  /* fp  = fopen("Comp_Norm.m","w");*/
 
   if (count == 2) {  /* imaginary eigenvector */
 
@@ -1229,7 +1227,7 @@ extern int  ML_Rayleigh (ML *ml, int nrows, double *q, int count)
 
     
     norm      =  sqrt(ML_gdot(nrows, u, u, ml->comm));
-    eps       =  abs(rayl);
+    eps       =  fabs(rayl);
 
   }
     
@@ -1304,7 +1302,7 @@ extern double *ML_complex_gdot(int leng, double *ureal, double *uimag, double *v
 extern double  ML_normc (double *real, double *imag, int leng)
 {
 
-  double    rl, im, dum1, dum2;
+  double    rl, dum1, dum2;
   double    norm;
   int       i;
 

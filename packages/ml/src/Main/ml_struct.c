@@ -120,7 +120,7 @@ if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
    ML_memory_alloc((void**) &max_eigen    ,sizeof(double)*Nlevels,"MQM");
    length = sizeof(ML_DVector) * Nlevels;
    for ( i = 0; i < Nlevels; i++ ) max_eigen[i] = 0.0;
-   ML_memory_alloc((void**)&Amat_Normalization, length, "MAN");
+   ML_memory_alloc((void**)&Amat_Normalization, (unsigned int) length, "MAN");
 
    (*ml_ptr)->ML_num_actual_levels      = -1;
    (*ml_ptr)->ML_num_levels      = Nlevels;
@@ -1099,7 +1099,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
                                              int ntimes, double omega)
 {
    int (*fun)(ML_Smoother *, int, double *, int, double *);
-   int start_level, end_level, i, status;
+   int start_level, end_level, i, status = 0;
    char str[80];
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
@@ -1956,7 +1956,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg, int symmetrize)
 
    if (deg > 1) {
      gridStep = rho/(double)nSample;
-     nGrid    = ML_min((int)rint(rho/gridStep)+1, nSample);
+     nGrid    = ML_min((int)floor(.5 + rho/gridStep)+1, nSample);
 
      rho2  = 0.e0;
      for (j=0; j<nGrid; j++)  {
@@ -5523,7 +5523,7 @@ int ML_Gen_Blocks_Metis(ML *ml, int level, int *nblocks, int **block_list)
 int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 {
    int            i, j, k, offset, N_local;
-   int            reuse, coarsest_level, flag, space, *cols, nz_ptr;
+   int            reuse, coarsest_level, flag, space, *cols = NULL, nz_ptr;
    int            getrow_flag, osize, *row_ptr, length, zero_flag;
    int            local_nlevels, local_clevel;
    double         *vals, dsize, di, *diagonal;
@@ -5711,8 +5711,8 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    ML_Set_Amatrix_Diag( local_ml, local_nlevels-1, N_local, diagonal);
    ML_free( diagonal );
    ML_Aggregate_Create( &newag );
-   if (ml_handle->comm->ML_mypid == 0) ML_Aggregate_Set_OutputLevel(newag,1);
-   else                                ML_Aggregate_Set_OutputLevel(newag,0);
+   if (ml_handle->comm->ML_mypid == 0) ML_Aggregate_Set_OutputLevel(newag,1.);
+   else                                ML_Aggregate_Set_OutputLevel(newag,0.);
    ML_Aggregate_Set_CoarsenScheme_Uncoupled( newag );
    if ( ag != NULL )
       ML_Aggregate_Set_Threshold( newag, ag->curr_threshold );
@@ -6024,10 +6024,9 @@ int ML_build_ggb(ML *ml, void *data)
   ML                    *ml_ggb=NULL;
   int                    Nrows, Ncols, Nlocal, Nnz;
   ML_Operator           *Pmat=NULL, *Qtilde=NULL;
-  struct ML_CSR_MSRdata *csr_data, *mydata, *Qtilde_data;
+  struct ML_CSR_MSRdata *csr_data, *mydata, *Qtilde_data = NULL;
   int                   *NeighborList, *IndList;
   int                    Nneighbors, nprocs, i;
-  char str[80];
   double *zdata, *rap, *values;
   int count, j, one=1;
   double *temp;
@@ -6328,14 +6327,10 @@ void ML_build_ggb_cheap(ML *ml, void *data)
 {
   ML                    *ml_ggb;
   int                    Nrows, Ncols, Nlocal, Nnz;
-  ML_Operator           *Pmat,  *Qtilde, *Amat_trans;
+  ML_Operator           *Pmat,  *Qtilde;
   struct ML_CSR_MSRdata *csr_data, *mydata;
   int                   *NeighborList, *IndList;
   int                    Nneighbors, nprocs, i;
-  char str[80];
-  double *zdata, *rap, *values;
-  int count, j;
-  double *temp;
 #ifdef ML_TIMING
    double t0;
    t0 = GetClock();

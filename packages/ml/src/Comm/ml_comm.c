@@ -313,7 +313,6 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
 {
 #ifndef ML_USE_INTERNAL_COMM_FUNCTIONS
    int     i;
-   USR_REQ Request;
 #ifdef ML_MPI
   MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
                 MPI_COMM_WORLD);
@@ -717,13 +716,13 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = leng * sizeof(int);
-            com_ptr->USR_irecvbytes((void*) itmp, k, &partner, &msgtype,
+            com_ptr->USR_irecvbytes((void*) itmp, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_cheapwaitbytes((void*) itmp, k, &partner, &msgtype,
+	 com_ptr->USR_cheapwaitbytes((void*) itmp, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -734,7 +733,7 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
          else if (partner < nprocs)
          {
             k = leng * sizeof(int);
-            com_ptr->USR_sendbytes((void*) idata, k, partner, msgtype,
+            com_ptr->USR_sendbytes((void*) idata, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -758,18 +757,18 @@ int ML_Comm_GsumVecInt(ML_Comm *com_ptr, int *idata, int *itmp, int leng)
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) idata, k, partner, msgtype,
+	   com_ptr->USR_sendbytes((void*) idata, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) idata, k, &partner, &msgtype,
+	   com_ptr->USR_irecvbytes((void*) idata, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_cheapwaitbytes((void*) idata, k, &partner, &msgtype,
+	    com_ptr->USR_cheapwaitbytes((void*) idata, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -832,14 +831,14 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = (total_length - (*cur_length)) * sizeof(int);
-            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), (unsigned int) k,
                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+  	     nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), (unsigned int)  k,
                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
@@ -851,7 +850,7 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
          else if (partner < nprocs)
          {
             k = (*cur_length) * sizeof(int);
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+            com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -875,18 +874,18 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+	   com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
+	   com_ptr->USR_irecvbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_waitbytes((void*) vals, k, &partner, &msgtype,
+	 com_ptr->USR_waitbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -954,14 +953,14 @@ int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = (total_length - (*cur_length)) * sizeof(vals[0]);
-            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), (unsigned int) k,
                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+  	    nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), (unsigned int) k,
                                    &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
@@ -973,7 +972,7 @@ int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
          else if (partner < nprocs)
          {
             k = (*cur_length) * sizeof(vals[0]);
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+            com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -997,18 +996,18 @@ int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+	   com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
+	   com_ptr->USR_irecvbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
+	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype, 
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
@@ -1075,14 +1074,14 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
             k = (total_length - (*cur_length)) * sizeof(double);
-            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), k,
+            com_ptr->USR_irecvbytes((void*)&(vals[*cur_length]), (unsigned int) k,
                                     &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
 #else
                                      com_ptr->USR_comm, (void *) &Request );
 #endif
-            nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), k,
+	 nbytes = com_ptr->USR_waitbytes((void*)&(vals[*cur_length]), (unsigned int) k,
                                     &partner, &msgtype,
 #ifdef ML_CPP
                                      com_ptr->USR_comm, &Request );
@@ -1094,7 +1093,7 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
          else if (partner < nprocs)
          {
             k = (*cur_length) * sizeof(double);
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+            com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
       }
@@ -1118,19 +1117,19 @@ int ML_Comm_GappendDouble(ML_Comm *com_ptr, double *vals, int *cur_length,
       {
          if (((mypid & (1 << i)) == 0) && (partner < nprocs))
          {
-            com_ptr->USR_sendbytes((void*) vals, k, partner, msgtype,
+	   com_ptr->USR_sendbytes((void*) vals, (unsigned int) k, partner, msgtype,
                                    com_ptr->USR_comm );
          }
          else if (partner < nprocs)
          {
-            com_ptr->USR_irecvbytes((void*) vals, k, &partner, &msgtype,
+	   com_ptr->USR_irecvbytes((void*) vals, (unsigned int) k, &partner, &msgtype,
                                     com_ptr->USR_comm,
 #ifdef ML_CPP
                                     &Request );
 #else
                                     (void *)&Request );
 #endif
-            com_ptr->USR_cheapwaitbytes((void*) vals, k, &partner, &msgtype, 
+	 com_ptr->USR_cheapwaitbytes((void*) vals, (unsigned int) k, &partner, &msgtype, 
                                     com_ptr->USR_comm,
 #ifdef ML_CPP
                                     &Request );
@@ -1159,7 +1158,7 @@ int ML_Comm_Irecv(void* buf, unsigned int count, int *src,
      if (*src == -59)  ML_avoid_unused_param((void *) &comm);
    }
    if (*src == -1) *src = MPI_ANY_SOURCE;
-   err = MPI_Irecv(buf,count,MPI_BYTE,*src,*mid,MPI_COMM_WORLD,request);
+   err = MPI_Irecv(buf,(signed int) count,MPI_BYTE,*src,*mid,MPI_COMM_WORLD,request);
 #else
    /* bogus code to avoid warnings */
    if (*mid == -59) {
@@ -1241,7 +1240,7 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
 {
    int err = 0;
 #ifdef ML_MPI
-   err = MPI_Send(buf, count, MPI_BYTE, dest, mid, MPI_COMM_WORLD);
+   err = MPI_Send(buf, (signed int) count, MPI_BYTE, dest, mid, MPI_COMM_WORLD);
    /* bogus code to avoid warnings */
    if (mid == -59) {
      ML_avoid_unused_param((void *) &comm);
