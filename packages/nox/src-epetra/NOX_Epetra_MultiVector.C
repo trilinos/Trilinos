@@ -42,6 +42,7 @@ NOX::Epetra::MultiVector::MultiVector() {}
 NOX::Epetra::MultiVector::MultiVector(Epetra_MultiVector& source, 
 				      NOX::CopyType type,
 				      bool createView)
+  : noxEpetraVectors(source.NumVectors())
 {
   if (createView) {
     epetraMultiVec = 
@@ -63,10 +64,14 @@ NOX::Epetra::MultiVector::MultiVector(Epetra_MultiVector& source,
       break;  
     }
   }
+
+  for (unsigned int i=0; i<noxEpetraVectors.size(); i++)
+    noxEpetraVectors[i] = NULL;
 }
 
 NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector& source, 
 				      NOX::CopyType type) 
+  : noxEpetraVectors(source.NumVectors())
 {
   switch (type) {
 
@@ -82,10 +87,14 @@ NOX::Epetra::MultiVector::MultiVector(const Epetra_MultiVector& source,
     break;  
 
   }
+
+  for (unsigned int i=0; i<noxEpetraVectors.size(); i++)
+    noxEpetraVectors[i] = NULL;
 }
 
 NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector& source, 
 				      NOX::CopyType type) 
+  : noxEpetraVectors(source.epetraMultiVec->NumVectors())
 {
 
   switch (type) {
@@ -103,10 +112,17 @@ NOX::Epetra::MultiVector::MultiVector(const NOX::Epetra::MultiVector& source,
     break;  
 
   }
+  
+  for (unsigned int i=0; i<noxEpetraVectors.size(); i++)
+    noxEpetraVectors[i] = NULL;
 }
 
 NOX::Epetra::MultiVector::~MultiVector()
 {
+  for (unsigned int i=0; i<noxEpetraVectors.size(); i++)
+    if (noxEpetraVectors[i] != NULL)
+      delete noxEpetraVectors[i];
+
   delete epetraMultiVec;
 }
 
@@ -219,6 +235,38 @@ NOX::Epetra::MultiVector::augment(const NOX::Epetra::MultiVector& source) {
   epetraMultiVec = tmp;
 					     
   return *this;
+}
+
+NOX::Abstract::Vector*
+NOX::Epetra::MultiVector::operator [] (int i)
+{
+  if ( i < 0 || i > noxEpetraVectors.size() ) {
+    cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << endl;
+    throw "NOX::Epetra Error";
+  }
+  if (noxEpetraVectors[i] == NULL) {
+    Epetra_Vector* epetra_vec = epetraMultiVec->operator() (i);
+    noxEpetraVectors[i] = new NOX::Epetra::Vector(*epetra_vec, NOX::DeepCopy,
+						  true);
+  }
+  return noxEpetraVectors[i];
+}
+
+const NOX::Abstract::Vector*
+NOX::Epetra::MultiVector::operator [] (int i) const
+{
+  if ( i < 0 || i > noxEpetraVectors.size() ) {
+    cerr << "NOX::Epetra::MultiVector::operator[]:  Error!  Invalid index " 
+	 << i << endl;
+    throw "NOX::Epetra Error";
+  }
+  if (noxEpetraVectors[i] == NULL) {
+    Epetra_Vector* epetra_vec = epetraMultiVec->operator() (i);
+    noxEpetraVectors[i] = new NOX::Epetra::Vector(*epetra_vec, NOX::DeepCopy,
+						  true);
+  }
+  return noxEpetraVectors[i];
 }
 
 void

@@ -41,6 +41,12 @@
 class Epetra_MultiVector;
 
 namespace NOX {
+  namespace Epetra {
+    class Vector;
+  }
+}
+
+namespace NOX {
 
   namespace Epetra {
 
@@ -123,6 +129,32 @@ namespace NOX {
       //@}
 
       //@{ \name Accessor methods
+
+      /*!
+       * \brief Return a pointer to the i-th column of the multivector as
+       * an abstract vector.  
+       */
+      /*!
+       * It is assumed that any implementation of this method returns a 
+       * vector that has a view of the underlying data in the multivector,
+       * and therefore the returned pointer should not be deleted.  This
+       * requires a careful implementation of this method to avoid a heap
+       * leak.
+       */
+      virtual NOX::Abstract::Vector* operator [] (int i);
+    
+      /*!
+       * \brief Return a pointer to the i-th column of the multivector as
+       * an abstract vector.  
+       */
+      /*!
+       * It is assumed that any implementation of this method returns a 
+       * vector that has a view of the underlying data in the multivector,
+       * and therefore the returned pointer should not be deleted.  This
+       * requires a careful implementation of this method to avoid a heap
+       * leak.
+       */
+      virtual const NOX::Abstract::Vector* operator [] (int i) const;
 
       /*!
        * \brief Copy the column vector given by \c i into vector \c vec.
@@ -244,6 +276,13 @@ namespace NOX {
 
        //! Pointer to petra vector owned by this object
       Epetra_MultiVector* epetraMultiVec;
+
+      //! NOX::Epetra::Vector's for each column of the multivector
+      /*!
+       * Each Epetra_Vector in the NOX::Epetra::Vector has a view into a 
+       * column of the multivector and get filled in as needed by operator[].
+       */
+      mutable vector<NOX::Epetra::Vector*> noxEpetraVectors;
 
       //! Default constructor (Protected)
       MultiVector();
