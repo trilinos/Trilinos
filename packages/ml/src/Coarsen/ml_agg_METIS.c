@@ -51,6 +51,10 @@ static int find_index( int key, int list[], int N );
 static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 					 int Nparts, idxtype part[], int level,
 					 ML_Comm *comm );
+static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
+					  int graph_decomposition[],
+					  int mypid);
+
 /* ======================================================================== */
 /*!
  \brief Set the number of nodes for each aggregate (for graph-based
@@ -121,6 +125,7 @@ int ML_Aggregate_Set_NodesPerAggr( ML *ml, ML_Aggregate *ag,
       pointer[i].Nnodes_per_aggregate = -1;
       pointer[i].local_or_global = ML_LOCAL_INDICES;
       pointer[i].reordering_flag = ML_NO;
+      pointer[i].desired_aggre_per_proc = -1;
     }
     
     ag->aggr_options = (void *)pointer;
@@ -218,6 +223,7 @@ int ML_Aggregate_Set_LocalNumber( ML *ml, ML_Aggregate *ag,
       pointer[i].Nnodes_per_aggregate = -1;
       pointer[i].local_or_global = ML_LOCAL_INDICES;
       pointer[i].reordering_flag = ML_NO;
+      pointer[i].desired_aggre_per_proc = -1;
     }
     
     ag->aggr_options = (void *)pointer;
@@ -297,6 +303,7 @@ int ML_Aggregate_Set_GlobalNumber( ML *ml, ML_Aggregate *ag,
       pointer[i].Nnodes_per_aggregate = -1;
       pointer[i].local_or_global = ML_LOCAL_INDICES;
       pointer[i].reordering_flag = ML_NO;
+      pointer[i].desired_aggre_per_proc = -1;
     }
     
     ag->aggr_options = (void *)pointer;
@@ -381,6 +388,7 @@ int ML_Aggregate_Set_ReorderingFlag( ML *ml, ML_Aggregate *ag,
       pointer[i].Nnodes_per_aggregate = -1;
       pointer[i].local_or_global = ML_LOCAL_INDICES;
       pointer[i].reordering_flag = ML_NO;
+      pointer[i].desired_aggre_per_proc = -1;      
     }
     
     ag->aggr_options = (void *)pointer;
@@ -554,31 +562,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     }
   }
 
-#ifdef METIS_DEBUG
-  sprintf( filename,
-	   "before_reordering_level%d_proc%d.m",
-	   level,
-	   mypid );
-
-  fp = fopen( filename, "w" );
-
-  fprintf( fp,
-	   "A = zeros(%d,%d);\n",
-	   Nparts,Nparts );
-  for( i=0 ; i<Nparts ; i++ ) {
-    fprintf( fp,
-	     "A(%d,%d) = 1;\n",
-	     i+1, i+1 );
-    for( j=xadj2[i] ; j<xadj2[i+1] ; j++ ) {
-      fprintf( fp,
-	       "A(%d,%d) = 1;\n",
-	       i+1, adjncy2[j]+1 );
-    }
-  }
-
-  fclose( fp );
-#endif
-  
   used_mem = sizeof(idxtype) * xadj2[Nparts];
   
   if( count != xadj2[Nparts] ) {
@@ -609,7 +592,7 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
 
   options[0] = 0; /* default values */
   /* those are instead possible non-default values. No idea about how
-     to pick up them...
+     to pick them up...
   options[0] = 1;
   options[1] = 2; 
   options[2] = 2;
@@ -701,31 +684,6 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
     part[i] = iperm[j];
   }
   
-#ifdef METIS_DEBUG
-  sprintf( filename,
-	   "after_reordering_level%d_proc%d.m",
-	   level,
-	   mypid );
-  
-  fp = fopen( filename, "w" );
-
-  fprintf( fp,
-	   "A = zeros(%d,%d);\n",
-	   Nparts,Nparts );
-  for( i=0 ; i<Nparts ; i++ ) {
-    fprintf( fp,
-	     "A(%d,%d) = 1;\n",
-	     iperm[i]+1, iperm[i]+1 );
-    for( j=xadj2[i] ; j<xadj2[i+1] ; j++ ) {
-      fprintf( fp,
-	       "A(%d,%d) = 1;\n",
-	       iperm[i]+1, iperm[adjncy2[j]]+1 );
-    }
-  }
-
-  fclose( fp );
-#endif
-
   /* ------------------- that's all folks --------------------------------- */
 
   free( xadj2 ) ;
@@ -764,7 +722,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 {
 
   int i, j,jj,  count;
-  int Nrows, Nghosts;
+  int Nrows;
   int nnz, *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
   idxtype *part=NULL;
@@ -774,16 +732,21 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int rowi_N;
   double * rowi_val = NULL;
   int nbytes = 0, nbytes_max = 0;
+  int ok = 0;
+  int * nodes_per_aggre = NULL;
+  double t0;
+  int start, end, freeptr, nextptr;
   
   /* ------------------- execution begins --------------------------------- */
 
+  t0 = GetClock();
+  
   comm = Amatrix->comm;
   
   /* dimension of the problem (NOTE: only local matrices) */
 
   Nrows = Amatrix->getrow->Nrows;
-  Nghosts = Amatrix->getrow->pre_comm->total_rcv_length;
-  
+
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
@@ -797,7 +760,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   options[0] = 0;    /* default options */
    
   xadj    = (idxtype *) malloc ((Nrows+1)*sizeof(idxtype));
-  adjncy  = (idxtype *) malloc (N_nonzeros  *sizeof(idxtype));
+  adjncy  = (idxtype *) malloc ((N_nonzeros+1)  *sizeof(idxtype));
    
   if(  xadj==NULL || adjncy==NULL ) {
     fprintf( stderr,
@@ -808,51 +771,94 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 	     __LINE__);
   }
    
-  xadj[0] = 0;
   count = 0;
-   
+
+  xadj[0] = 0;
   for (i = 0; i < Nrows; i++) {
 
-    if( bdry_nodes[i] == 'T' ) {
-      xadj[i+1] = xadj[i];
-      continue;
-    }
+    xadj[i+1] = 0; /* nonzeros in row i-1 */
     
-    /* retrive one row */
-     
     ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
 		      &rowi_N, 0);
-/*
-      printf("row %d: ", i);
-      for( j=0 ; j<rowi_N ; j++ ) {
-      printf("%d ", rowi_col[j]);
-      }
-      puts("");
-*/
 
-    xadj[i+1] = xadj[i];
-    for( j=0 ; j<rowi_N ; j++ ) {
-      jj = rowi_col[j];
-      if( jj<Nrows ) {
-	adjncy[count++] = rowi_col[j];
-	xadj[i+1]++;
+    if( rowi_N == 1 ) bdry_nodes[i] = 'T';
+    else {
+      bdry_nodes[i] = 'F';
+      for( j=0 ; j<rowi_N ; j++ ) {
+	jj = rowi_col[j];
+	if( jj<Nrows ) {
+	  adjncy[count++] = rowi_col[j];
+	  xadj[i+1]++;
+	}
       }
-       
     }      
   }
-  
+
   if( count > N_nonzeros ) {
     fprintf( stderr,
 	     "Warning: on proc %d, count > N_nonzeros (%d>%d)\n"
 	     "a buffer overflow has probably occurred...\n",
 	     comm->ML_mypid, count, N_nonzeros );
   }
-
-#ifdef METIS_DEBUG
-  for( i=0 ; i<Nrows ; i++ )
-    printf("%d %d\n", xadj[i], xadj[i+1] );
-#endif
   
+  /* ********************************************************************** */
+  /* Before calling METIS, need to change xadj and adjncy.                  */
+  /* I need to eliminate the -1 from adjncy. freeptr is the position of the */
+  /* first occurence of a -1 in adjncy, while nextptr is the position of the*/
+  /* next non -1 in adjncy. The length of adjncy is count                   */
+  /* ********************************************************************** */  
+  
+  start = 0;
+  for( i=0 ; i<Nrows ; i++ ) {
+    end = start + xadj[i+1];
+    for( j=start ; j<start+xadj[i+1] ; j++ ) {
+      jj = adjncy[j];
+      if( bdry_nodes[jj] == 'T' ) {
+	adjncy[j] = -1;
+	xadj[i+1]--;
+      }
+    }
+    start = end;
+  }
+
+  xadj[0] = 0;
+  for( i=1 ; i<Nrows+1 ; i++ )  xadj[i] += xadj[i-1];
+
+  freeptr = 0;
+  while( freeptr < count && adjncy[freeptr] != -1 ) freeptr++;
+
+  if( freeptr < count-1 ) {
+    
+    nextptr = freeptr+1; 
+    while( nextptr < count ) {
+      if( adjncy[nextptr] < 0 ) nextptr++;
+      else break;
+    }
+
+    if( nextptr > freeptr ) {
+
+      printf("(for Marzio) THIS PART OF THE CODE (file %s, line %d)\n"
+	     "(for Marzio) HAS NEVER BEEN TESTED... GOOD LUCK!!!\n",
+	     __FILE__,
+	     __LINE__ );
+      
+      do {
+      
+	adjncy[freeptr] = adjncy[nextptr];
+	adjncy[nextptr] = -1;
+	
+	freeptr++;
+	
+	while( adjncy[freeptr] != -1 && freeptr < count-1 ) freeptr++;
+	nextptr = freeptr+1; 
+	while( adjncy[nextptr] < 0 && nextptr < count ) nextptr++;
+	
+      } while( nextptr != count );
+      
+    }
+    
+  }
+
   /* idxtype is by default int, but on some architectures can be
      slightly different (for instance, a short int). */
    
@@ -881,71 +887,128 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   
   } else {
 
-    /* ******************************************************************** */
-    /* Put -1 in part, so that I can verify that METIS has filled each pos  */
-    /* ******************************************************************** */
+    ok = 0;
 
-    for( i=0 ; i<Nrows ; i++ ) part[i] = -1;
+    while( ok == 0 ) {
+      
+      /* ****************************************************************** */
+      /* Put -1 in part, so I can verify that METIS has filled each pos    */
+      /* ****************************************************************** */
+
+      for( i=0 ; i<Nrows ; i++ ) part[i] = -1;
     
-    /* ******************************************************************** */
-    /* Estimate memory required by METIS. This memory will be dynamically   */
-    /* allocated inside; however this is a good estimation of how METIS     */
-    /* will cost in terms of memory.                                        */
-    /* Then, call METIS.                                                    */
-    /* ******************************************************************** */
-
-    if( N_parts < 8 ) {
-     
-      i = 1; /* optype in the METIS manual */
-      numflag = 0;
+      /* ****************************************************************** */
+      /* Estimate memory required by METIS. This memory will be dynamically */
+      /* allocated inside; however this is a good estimation of how METIS   */
+      /* will cost in terms of memory.                                      */
+      /* Then, call METIS.                                                  */
+      /* ****************************************************************** */
+      
+      if( N_parts < 8 ) {
+	
+	i = 1; /* optype in the METIS manual */
+	numflag = 0;
 #ifdef HAVE_ML_METIS
-      METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
-			    &i, &nbytes );
-			   
-      METIS_PartGraphRecursive (&Nrows, xadj, adjncy, vwgt, adjwgt,
-				wgtflag, &numflag, &N_parts, options,
-				&edgecut, part);
+	METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
+			      &i, &nbytes );
+	
+	METIS_PartGraphRecursive (&Nrows, xadj, adjncy, vwgt, adjwgt,
+				  wgtflag, &numflag, &N_parts, options,
+				  &edgecut, part);
 #else
-      fprintf( stderr,
-	       "*ML*ERR* Compile with metis...\n");
-      exit( EXIT_FAILURE );
+	fprintf( stderr,
+		 "*ML*ERR* Compile with metis...\n");
+	exit( EXIT_FAILURE );
 #endif
-    } else {
-     
-      i = 2;
-      numflag = 0;
+      } else {
+	
+	i = 2;
+	numflag = 0;
 #ifdef HAVE_ML_METIS
-      METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
-			    &i, &nbytes );
-
-      METIS_PartGraphKway (&Nrows, xadj, adjncy, vwgt, adjwgt,
-			   wgtflag, &numflag, &N_parts, options,
-			   &edgecut, part);
+	METIS_EstimateMemory( &Nrows, xadj, adjncy, &numflag,
+			      &i, &nbytes );
+	
+	METIS_PartGraphKway (&Nrows, xadj, adjncy, vwgt, adjwgt,
+			     wgtflag, &numflag, &N_parts, options,
+			     &edgecut, part);
 #else
-    if( Amatrix->comm->ML_mypid == 0 ) {
-      fprintf( stderr,
-	       "*ERR*ML* This function has been compiled without -DHAVE_ML_METIS\n"
-	       "*ERR*ML* To use METIS, please add --with-ml_metis to your\n"
-	       "*ERR*ML* configure script (recall to specify include dir and\n"
-	       "*ERR*ML* location of the METIS lib; see configure --help\n"
-	       "*ERR*ML* for more defailts).\n"
-	       "*ERR*ML* (file %s, line %d)\n",
-	       __FILE__,
-	       __LINE__);
-    }
-    exit( EXIT_FAILURE );
+	if( Amatrix->comm->ML_mypid == 0 ) {
+	  fprintf( stderr,
+		   "*ML*WRN* This function has been compiled without the configure\n"
+		   "*ML*WRN* option --with-ml_parmetis2x or --with-ml_parmetis3x\n"
+		   "*ML*WRN* I will put all the nodes in the same aggreagate, this time...\n"
+		   "*ML*WRN* (file %s, line %d)\n",
+		   __FILE__,
+		   __LINE__);
+	}
+	for( i=0 ; i<Nrows ; i++ ) part[i] = 0;
+	N_parts = 1;
 #endif
-    }
-    /* ******************************************************************** */
-    /* I verify that METIS did a good job. Problems may arise when the # of */
-    /* aggregates is too high. In this case, we may end up with some        */
-    /* aggregates which contain no nodes. In this case, I introduce at      */
-    /* least one node, in a random fashion.                                 */
-    /* ******************************************************************** */
+      }
 
-    ML_Aggregates_CheckAggregates( N_parts, Nrows, part,
-				   Amatrix->comm->ML_mypid );
-  }
+      /* **************************************************************** */
+      /* perform some checks. If aggregates with zero assigned nodes      */
+      /* exist, then recall METIS, asking for a smaller number of sub     */
+      /* graphs. This is the role of the `ok' variable.                   */
+      /* Also, if the part vector contains some junk, recall ParMETIS     */
+      /* **************************************************************** */
+
+      ok = 1;
+      
+      nodes_per_aggre  = (int *) malloc( sizeof(int) * N_parts );
+      for( i=0 ; i<N_parts ; i++ ) nodes_per_aggre[i] = 0;
+      for( i=0 ; i<Nrows ; i++ ) {
+	j = part[i];
+	if( j<0 || j>= N_parts ) {
+	  ok = 0;
+	  break;
+	} 
+	else nodes_per_aggre[j]++;
+      }
+      
+      for( i=0 ; i<N_parts ; i++ ) {
+	if( nodes_per_aggre[i] == 0 ) {
+	  ok = 0;
+	  break;
+	}
+      }
+      
+      if( ok == 0 ) {
+	if( comm->ML_mypid == 0 && 5 < ML_Get_PrintLevel() ) {
+	  printf( "*ML*WRN* input # of aggregates (%d) does not assure "
+		  "non-empty aggregates.\n"
+		  "*ML*WRN* Now recalling ParMETIS with # aggregates = %d\n",
+		  N_parts, N_parts/2 );
+	}
+	N_parts = N_parts/2;
+      }
+      
+      if( N_parts == 0 ) {
+	if( comm->ML_mypid == 0 && 9 < ML_Get_PrintLevel()) {
+	  fprintf( stderr,
+		   "*ML*WRN* something went **VERY** wrong in calling ParMETIS\n"
+		   "*ML*WRN* try to ask for a smaller number of subdomains\n"
+		   "*ML*WRN* I will put all the nodes into one aggregate...\n",
+		   "*ML*WRN* (file %x, line %d)\n",
+		   __FILE__,
+		   __LINE__ );
+	}
+	N_parts = 1;
+      }
+      
+      /* ************************************************************** */
+      /* handle the case N_parts = 1 separately. Do not recall parMETIS */
+      /* in this case, simply put everything to zero and continue       */
+      /* ************************************************************** */
+      
+      if( N_parts == 1 ) {
+	for( i=0 ; i<Nrows ; i++ ) part[i] = 0;
+	ok = 1;
+      }
+      
+    } /* while( ok == 0 ) */
+  
+  } /* if( N_parts == 1 ) */
 
   /* ********************************************************************** */
   /* Some fancy output for memory usage.                                    */
@@ -981,7 +1044,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
      the aggr_index corresponding to ghost nodes */
 
   for( i=0 ; i<Nrows ; i++ )  graph_decomposition[i] = (int)part[i];
-  for( i = Nrows; i < Nrows+Nghosts ; i++ )  graph_decomposition[i] = -1;
 
   /* if global indices are required, modify the entries
      of graph_decomposition (only the LOCAL entries) so that
@@ -1007,11 +1069,18 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   if( adjncy != NULL  ) free( (void *)adjncy  );
   if( xadj != NULL    ) free( (void *)xadj    );
   if( part != NULL    ) free( (void *)part    );
-   
-  /* some checks on aggr_index: verify that we have the
-     required number of aggregates */
+  if( nodes_per_aggre != NULL ) free( (void *)nodes_per_aggre );
 
-  return 0;
+  t0 = GetClock() - t0;
+
+  if ( comm->ML_mypid == 0 &&  ML_Get_PrintLevel() > 8 ) {
+   
+    printf("METIS aggregation : time required = %e\n",
+	   t0 );
+    
+  }
+  
+  return N_parts;
   
 } /* ML_DecomposeGraph_with_METIS */
 
@@ -1033,43 +1102,26 @@ int ML_Aggregate_CoarsenMETIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
 {
   unsigned int nbytes, length;
    int     i, j, jj, k, m, Nrows, exp_Nrows;
-   int     N_neighbors, *neighbors = NULL, diff_level;
+   int     diff_level;
    double  printflag;
-   int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
-   int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
    int     aggr_count, index, mypid, num_PDE_eqns;
-   int     *aggr_index = NULL, *itmp_array = NULL, nullspace_dim;
-   int     *sendlist_proc = NULL, Ncoarse, count, *int_buf = NULL;
-   int     *int_buf2, *aggr_stat = NULL, procnum;
-   int     index4, *new_send_leng = NULL, new_N_send;
-   int     *new_send_neighbors = NULL, *new_send_list = NULL;
+   int     *aggr_index = NULL, nullspace_dim;
+   int     Ncoarse, count;
    int     max_count, *new_ia = NULL, *new_ja = NULL, new_Nrows;
-   int     *new_recv_leng=NULL, exp_Ncoarse, new_N_recv;
-   int     *new_recv_neighbors=NULL, *aggr_cnt_array = NULL;
-   int     level, index3, count3, *recv_list = NULL, max_agg_size;
+   int     exp_Ncoarse, new_N_recv;
+   int     *aggr_cnt_array = NULL;
+   int     level, index3, count3, max_agg_size;
    int     **rows_in_aggs = NULL, lwork, info;
    double  dcompare1, *new_val = NULL, epsilon;
-   double  *dble_buf = NULL, *nullspace_vect = NULL, *qr_tmp = NULL;
-   double  *tmp_vect = NULL, *work = NULL, *new_null = NULL, *comm_val = NULL;
-   double  *dble_buf2;
+   double  *nullspace_vect = NULL, *qr_tmp = NULL;
+   double  *tmp_vect = NULL, *work = NULL, *new_null = NULL;
    ML_SuperNode          *aggr_head = NULL, *aggr_curr, *supernode;
    struct ML_CSR_MSRdata *csr_data;
-   ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
    USR_REQ               *request=NULL;
-   ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
-   char                  *vtype, *state, *bdry, *unamalg_bdry;
-   int                   nvertices, *vlist, Asqrd_ntotal, Asqrd_Nneigh;
-   int                   *Asqrd_neigh = NULL, max_element, Nghost;
-   int                   **Asqrd_sndbuf = NULL, **Asqrd_rcvbuf = NULL;
-   int                   **Asqrd_sendlist = NULL, **Asqrd_recvlist = NULL;
-   ML_CommInfoOP         *mat_comm;
    int                   allocated = 0, *rowi_col = NULL, rowi_N, current;
    double                *rowi_val = NULL, *dtemp;
-   int                   *templist, **proclist, *temp_index;
-   int                   *temp_leng, *tem2_index, *tempaggr_index = NULL;
-   int                   *send_leng = NULL, *recv_leng = NULL;
    int                   total_nz = 0;
    int                   count2;
    ML_agg_indx_comm      agg_indx_comm;
@@ -1096,6 +1148,8 @@ int agg_offset, vertex_offset;
  ML_Aggregate_Viz_Stats * aggr_viz_and_stats;
  ML_Aggregate_Options * aggr_options;
  int mod, Nprocs;
+ int optimal_value;
+ char * unamalg_bdry = NULL;
  
    /* ============================================================= */
    /* get the machine information and matrix references             */
@@ -1124,47 +1178,6 @@ int agg_offset, vertex_offset;
    if ( diff_level > 0 ) num_PDE_eqns = nullspace_dim; /* ## 12/20/99 */
 
    /* ============================================================= */
-   /* Figure out where the Dirichlet points are on the fine grid of */ 
-   /* the unamalgmated system.                                      */
-   /* ============================================================= */
-
-   /* GOAL: construct the char vector `unamalg_bdry', whose components
-      are 'T' is the node is a Dirichlet node, or 'F' if not.
-      The size of this vector is Nrows+Nghost, because I need the
-      ghost node also to construct the tentative prolongator */
-   /* also, I use this part to retrive an estimation of the number
-      of nonzeros (I need it to allocate memory for METIS later on */
-
-   Nnonzeros = 0;
-   
-   Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
-   unamalg_bdry = (char *) ML_allocate(sizeof(char)*(Nrows+Nghost+1));
-   dtemp = (double *) ML_allocate(sizeof(double)*(Nrows+Nghost+1));
-   if (dtemp == NULL) pr_error("ml_agg_METIS: out of space.\n");
-
-   for (i = 0; i < Nrows+Nghost; i++) dtemp[i] = 0.;
-
-   for (i = 0; i < Nrows; i++) {
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      count2 = 0;
-      for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
-      if (count2 <= 1) dtemp[i] = 1.;
-      Nnonzeros += rowi_N; /* used by METIS */
-   }
-   ML_free(rowi_col); ML_free(rowi_val);
-   rowi_col = NULL; rowi_val = NULL;
-   allocated = 0; 
-
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
-                    comm, ML_OVERWRITE,NULL);
-   for (i = 0; i < Nrows+Nghost; i++) {
-      if (dtemp[i] == 1.) unamalg_bdry[i] = 'T';
-      else unamalg_bdry[i] = 'F';
-   }
-   ML_free(dtemp);
-
-   /* ============================================================= */
    /* set up the threshold for weight-based coarsening              */
    /* ============================================================= */
 
@@ -1183,66 +1196,10 @@ int agg_offset, vertex_offset;
    epsilon = epsilon * epsilon;
 */
 
-#ifdef CLEAN_DEBUG
-   sprintf(tlabel,"before amalg %d",comm->ML_mypid);
-   ML_CommInfoOP_Print(Amatrix->getrow->pre_comm, tlabel);
-#endif
    ML_Operator_AmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
    Nrows /= num_PDE_eqns;
-#ifdef CLEAN_DEBUG
-   sprintf(tlabel,"after amalg %d",comm->ML_mypid);
-   ML_CommInfoOP_Print(Amatrix->getrow->pre_comm, tlabel);
-#endif
-
-   nvertices = Amatrix->outvec_leng;
-
-   /* Need to set up communication for the matrix A */
-
-   getrow_obj   = Amatrix->getrow;
-   N_neighbors  = getrow_obj->pre_comm->N_neighbors;
-   total_recv_leng = 0;
-   for (i = 0; i < N_neighbors; i++) {
-      total_recv_leng += getrow_obj->pre_comm->neighbors[i].N_rcv;
-   }
-   recv_list   = (int *) ML_allocate(sizeof(int *)*total_recv_leng);
-   max_element = nvertices - 1;
-   count = 0;
-   for (i = 0; i < N_neighbors; i++) {
-      for (j = 0; j < getrow_obj->pre_comm->neighbors[i].N_rcv; j++) {
-         recv_list[count] = getrow_obj->pre_comm->neighbors[i].rcv_list[j];
-         if (recv_list[count] > max_element ) max_element = recv_list[count];
-         count++;
-      }
-   }
-   Nghost = max_element - nvertices + 1;
-   exp_Nrows = nvertices + Nghost;
-
-   /* record the Dirichlet boundary */
-
-   bdry = (char *) ML_allocate(sizeof(char)*(exp_Nrows + 1));
-   for (i = Nrows ; i < exp_Nrows; i++) bdry[i] = 'F';
-   for (i = 0; i < Nrows; i++) {
-      bdry[i] = 'T';
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      if (rowi_N > 1) bdry[i] = 'F';
-   }
-
-   /* communicate the boundary information */
-
-   dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
-   for (i = nvertices; i < exp_Nrows; i++) dtemp[i] = 0;
-   for (i = 0; i < nvertices; i++) {
-      if (bdry[i] == 'T') dtemp[i] = 1.;
-      else  dtemp[i] = 0.;
-   }
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,nvertices,comm,
-                    ML_OVERWRITE,NULL);
-   for (i = nvertices; i < exp_Nrows; i++) {
-      if (dtemp[i] == 1.) bdry[i] = 'T';
-      else bdry[i] = 'F';
-   }
-   ML_free(dtemp);
+   
+   exp_Nrows = Nrows;
 
    /* ********************************************************************** */
    /* retrive the pointer to the ML_Aggregate_Options, which contains the    */
@@ -1251,100 +1208,132 @@ int agg_offset, vertex_offset;
    /* ********************************************************************** */
 
    aggr_options = (ML_Aggregate_Options *)ml_ag->aggr_options;
-   if( aggr_options[ml_ag->cur_level].id != ML_AGGREGATE_OPTIONS_ID ) {
-     fprintf( stderr,
-	      "*ML*ERR* `ML_Aggregate_CoarsenMETIS' : wrong object\n"
-	      "*ML*ERR* (file %s, line %d)\n",
-	      __FILE__,
-	      __LINE__ );
-     exit( EXIT_FAILURE );
+
+   /*FIXME: e` giusto??? */
+   nbytes = (Nrows*num_PDE_eqns) * sizeof(int);
+
+   if ( nbytes > 0 ) {
+     ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
+     if( aggr_index == NULL ) {
+       fprintf( stderr,
+		"*ML*ERR* not enough memory for %d bytes\n",
+		"*ML*ERR* (file %s, line %d)\n",
+		nbytes,
+		__FILE__,
+		__LINE__ );
+       exit( EXIT_FAILURE );
+     }
    }
-
-   /* ********************************************************************** */
-   /* allocate memory for aggr_index and call METIS to decompose the local   */
-   /* graph into the number of parts specified by the user with a call       */
-   /* ML_Aggregate_Set_LocalNumber( ml, ag, level, Nparts)                   */
-   /* ********************************************************************** */
-
-   nbytes = (Nrows+Nghost) * sizeof(int);
-
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
    else              aggr_index = NULL;
 
    if( aggr_options == NULL ) {
-     fprintf( stderr,
-	      "*ERR*ML* on proc %d, aggr_options is NULL\n"
-	      "*ERR*ML* Please set the aggregate properties using\n"
-	      "*ERR*ML* ML_SetNumberLocalAggregates or ML_SetAggregatesDimension\n",
-	      "*ERR*ML* (file %s, line %d)\n",
-	      mypid,
-	      __FILE__,
-	      __LINE__ );
-     exit( EXIT_FAILURE );
-   }
 
-   aggr_count = aggr_options[ml_ag->cur_level].Naggregates;
-
-   /* ********************************************************************** */
-   /* if global number of aggregates has been specified, compute the local   */
-   /* one (evenly dividing this global number)                               */
-   /* ********************************************************************** */
-
-   if( aggr_options[ml_ag->cur_level].local_or_global == ML_GLOBAL_INDICES ) {
-
-     mod = aggr_count % Nprocs;
-     
-     aggr_count /= Nprocs;
-     if( mypid == 0 ) {
-       aggr_count += mod;
+     if( mypid == 0 && 8 < ML_Get_PrintLevel() ) {
+       printf("METIS aggregation: using default values\n");
      }
 
+     /* this value is hardwired in ml_agg_ParMETIS.c, and can be set by   */
+     /* the user with `ML_Aggregate_Set_OptimalNumberOfNodesPerAggregate' */
+     
+     optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
+     
+     aggr_count = Nrows/optimal_value;
      if( aggr_count < 1 ) aggr_count = 1;
-     
-   }
-   
-   /* ********************************************************************** */
-   /* if aggr_count is minus 1,  this means that the user has set the # of   */
-   /* nodes in each aggregate and not the local number. So, I compute this   */
-   /* latter value which is the one needed by METIS. Note that value of      */
-   /* aggr_count too close to the number of vertices may result in bizarre   */
-   /* behavior of METIS                                                      */
-   /* ********************************************************************** */
 
-#ifdef METIS_DEBUG
-   printf("aggr_count = %d\n",aggr_count);
-#endif
-
-   if( aggr_count == -1 ) {
-
-     i = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
-
-     if( aggr_options[ml_ag->cur_level].Nnodes_per_aggregate >= Nrows) {
-       aggr_count = 1;
-     } else {
-       aggr_count = (Nrows/i);
-     }
-
-     if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-       printf("ML_Aggregate_CoarsenMETIS (level %d, proc 0) : "
-	      "%d nodes/aggr (%d aggregates)\n",
-	      ml_ag->cur_level,
-	      i,
-	      aggr_count );
-     }
-
-     aggr_options[ml_ag->cur_level].Naggregates = aggr_count;
+     reorder_flag = ML_NO;
      
    } else {
 
-     if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
-       printf("ML_Aggregate_CoarsenMETIS (level %d, proc 0) : "
-	      "%d aggregates\n",
-	      ml_ag->cur_level,
-	      aggr_count );
+     if( aggr_options[ml_ag->cur_level].id != ML_AGGREGATE_OPTIONS_ID ) {
+       fprintf( stderr,
+		"*ML*ERR* `ML_Aggregate_CoarsenMETIS' : wrong object\n"
+		"*ML*ERR* (file %s, line %d)\n",
+		__FILE__,
+		__LINE__ );
+       exit( EXIT_FAILURE );
      }
      
-   }
+     aggr_count = aggr_options[ml_ag->cur_level].Naggregates;
+
+     if( aggr_count < 0 || aggr_count > Nrows ) {
+
+       j = aggr_count;
+       optimal_value = ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate();
+       aggr_count = Nrows/optimal_value;
+       if( aggr_count < 1 ) aggr_count = 1;
+       
+       fprintf( stderr,
+		"*ML*ERR* (proc %d) incorrect # aggreagates = %d (N_rows = %d)\n"
+		"*ML*ERR* (proc %d) changing # aggregates to default value (%d)\n",
+		mypid, j,
+		Nrows,
+		mypid,
+		aggr_count );
+     }
+     
+     /* ******************************************************************** */
+     /* if global number of aggregates has been specified, compute the local */
+     /* one (evenly dividing this global number)                             */
+     /* ******************************************************************** */
+     
+     switch( aggr_options[ml_ag->cur_level].local_or_global ) {
+       
+     case ML_GLOBAL_INDICES:
+       
+       mod = aggr_count % Nprocs;
+     
+       aggr_count /= Nprocs;
+       if( mypid == 0 ) {
+	 aggr_count += mod;
+       }
+       
+       if( aggr_count < 1 ) aggr_count = 1;
+       break;
+
+       case ML_LOCAL_INDICES:
+	 break;
+
+       default:
+	 fprintf( stderr,
+		  "*ML*WRN* something weird... proceed anyhow\n"
+		  "*ML*WRN* (file %s, line %d)\n",
+		  __FILE__,
+		  __LINE__ );
+     }
+
+     /* ******************************************************************** */
+     /* if aggr_count is minus 1,  this means that the user has set the # of */
+     /* nodes in each aggregate and not the local number. So, I compute this */
+     /* latter value which is the one needed by METIS. Note that value of    */
+     /* aggr_count too close to the number of vertices may result in bizarre */
+     /* behavior of METIS                                                    */
+     /* ******************************************************************** */
+
+     if( aggr_count == -1 ) {
+
+       i = aggr_options[ml_ag->cur_level].Nnodes_per_aggregate;
+
+       if( aggr_options[ml_ag->cur_level].Nnodes_per_aggregate >= Nrows) {
+	 aggr_count = 1;
+       } else {
+	 aggr_count = (Nrows/i);
+       }
+       
+       if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
+	 printf("ML_Aggregate_CoarsenMETIS (level %d, proc 0) : "
+		"%d nodes/aggr (%d aggregates)\n",
+		ml_ag->cur_level,
+		i,
+		aggr_count );
+       }
+       
+       aggr_options[ml_ag->cur_level].Naggregates = aggr_count;
+       
+     }
+     
+     reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag;
+     
+   } /* if( aggr_options == NULL )*/
    
    if( aggr_count<=0 ) {
      fprintf( stderr,
@@ -1359,24 +1348,34 @@ int agg_offset, vertex_offset;
      exit( EXIT_FAILURE );
    }
    
-
-#ifdef METIS_DEBUG
-   printf("aggr_count (after analysis) = %d\n",aggr_count);
-#endif
-   
    /* ********************************************************************** */
    /* to call METIS, we have to create a graph using CSR data format         */
    /* Essentially, this requires a matrix-vector product (on the Amalgamated */
    /* matrix, so with dropped elements)                                      */
    /* ********************************************************************** */
 
-   reorder_flag = aggr_options[ml_ag->cur_level].reordering_flag;
+   Nnonzeros = Amatrix->N_nonzeros;
+   unamalg_bdry = (char *) ML_allocate( sizeof(char) * Nrows );
    
-   ML_DecomposeGraph_with_METIS( Amatrix,Nnonzeros,aggr_count,
-				 aggr_index, bdry,
-				 ML_LOCAL_INDICES, NULL,
-				 reorder_flag, ml_ag->cur_level );
+   aggr_count = ML_DecomposeGraph_with_METIS( Amatrix,Nnonzeros,aggr_count,
+					      aggr_index, unamalg_bdry,
+					      ML_LOCAL_INDICES, NULL,
+					      reorder_flag, ml_ag->cur_level );
 
+   if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
+     printf("ML_Aggregate_CoarsenMETIS (level %d) : "
+	    "%d aggregates (on proc 0)\n",
+	    ml_ag->cur_level,
+	    aggr_count );
+   }
+   j = ML_gsum_int( aggr_count, comm );
+   if ( mypid == 0 && 8 < ML_Get_PrintLevel() )  {
+     printf("ML_Aggregate_CoarsenMETIS (level %d) : "
+	    "%d aggregates (globally)\n",
+	    ml_ag->cur_level,
+	    j );
+   }   
+   
    /* ********************************************************************** */
    /* I allocate room to copy aggr_index and pass this value to the user,    */
    /* who will be able to analyze and visualize this after the construction  */
@@ -1386,10 +1385,6 @@ int agg_offset, vertex_offset;
    /* I set the pointers using the ML_Aggregate_Info structure. This is      */
    /* allocated using ML_Aggregate_Info_Setup(ml,MaxNumLevels)               */
    /* ********************************************************************** */
-
-#ifdef METIS_DEBUG
-   printf("ml_ag->aggr_viz_and_stats = %x\n",ml_ag->aggr_viz_and_stats);
-#endif
 
    if( ml_ag->aggr_viz_and_stats != NULL ) {
 
@@ -1415,66 +1410,14 @@ int agg_offset, vertex_offset;
      aggr_viz_and_stats[ml_ag->cur_level].is_filled = ML_YES;
      
    }
-      
-#ifdef METIS_DEBUG
-   printf("proc %d: aggr_count = %d\n", mypid, aggr_count);
-   printf("proc %d: Nrows = %d, nvertices = %d, Nghost = %d\n",
-	  mypid, Nrows, nvertices, Nghost);
-#endif
-#ifdef NOT_METIS
-   tempaggr_index = (int *) ML_allocate(sizeof(int)* (exp_Nrows+1)*num_PDE_eqns);
-   for (i = 0;         i < nvertices ; i++) tempaggr_index[i] = aggr_index[i];
-   for (i = nvertices; i < exp_Nrows ; i++) tempaggr_index[i] = -1;
-   ML_free(aggr_index);
-   aggr_index = tempaggr_index;
-#endif
-   
-   N_neighbors = getrow_obj->pre_comm->N_neighbors;
-   nbytes = N_neighbors * sizeof( int );
-   if ( nbytes > 0 ) {
-         ML_memory_alloc((void**) &neighbors,  nbytes, "AGL");
-         ML_memory_alloc((void**) &recv_leng,  nbytes, "AGM");
-         ML_memory_alloc((void**) &send_leng,  nbytes, "AGN");
-   } 
-   else {
-         neighbors = recv_leng = send_leng = NULL;
-   }
-   for ( i = 0; i < N_neighbors; i++ ) {
-      neighbors[i] = getrow_obj->pre_comm->neighbors[i].ML_id;
-      recv_leng[i] = getrow_obj->pre_comm->neighbors[i].N_rcv;
-      send_leng[i] = getrow_obj->pre_comm->neighbors[i].N_send;
-   }
-   total_recv_leng = total_send_leng = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-         total_recv_leng += recv_leng[i];
-         total_send_leng += send_leng[i];
-   }
-   nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &send_list,nbytes,"AGO");
-   else              send_list = NULL;
-   if ( total_recv_leng+Nrows != exp_Nrows ) {
-         printf("%d : ML_Aggregate_CoarsenMETIS - internal error.\n",mypid);
-         printf("     lengths = %d %d \n",total_recv_leng+Nrows,exp_Nrows);
-         exit(-1);
-   }
-   count = 0;
-   for ( i = 0; i < N_neighbors; i++ ) {
-         for (j = 0; j < send_leng[i]; j++)
-            send_list[count++] = 
-               getrow_obj->pre_comm->neighbors[i].send_list[j];
-   }
-   if ( count > total_send_leng ) {
-         printf("%d : CoarsenMEIIS ERROR : count < total_send_leng\n",mypid);
-         exit(1);
-   }
 
    /* ********************************************************************** */
    /* take the decomposition as created by METIS and form the aggregates     */
    /* ********************************************************************** */
-
+#ifdef FIXME
    total_nz = 0;
    count    = 0;
-   for (i = 0; i < nvertices; i++) {
+   for (i = 0; i < Nrows; i++) {
       if (aggr_index[i] >= 0) {
          current = -aggr_index[i]-2;
          aggr_index[i] = current;
@@ -1489,7 +1432,7 @@ int agg_offset, vertex_offset;
       total_nz += rowi_N;
    }
    total_nz = ML_Comm_GsumInt( comm, total_nz);
-   i = ML_Comm_GsumInt( comm, nvertices);
+   i = ML_Comm_GsumInt( comm, Nrows);
 
    if( rowi_col != NULL ) ML_free(rowi_col); rowi_col = NULL;
    if( rowi_val != NULL ) ML_free(rowi_val); rowi_val = NULL;
@@ -1503,78 +1446,9 @@ int agg_offset, vertex_offset;
       ml_ag->operator_complexity = total_nz;
    }
    else ml_ag->operator_complexity += total_nz;
-
-   for (i = 0; i < exp_Nrows; i++) 
-      aggr_index[i] = -aggr_index[i]-2;
-
-   /* make sure that boundary nodes are not in any aggregate */
-
-   for (i = 0; i < exp_Nrows; i++)
-      if (bdry[i] == 'T') aggr_index[i] = -1;
-
-   /* communicate the aggregate information.  Use temp_index and tem2_index as */
-   /* communication buffer arrays.                                             */
-   temp_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
-   tem2_index = (int *) ML_allocate(sizeof(int)*(1+total_send_leng+total_recv_leng));
-   temp_leng  = (int *) ML_allocate(sizeof(int)*(N_neighbors+1));
-
-   ML_aggr_index_communicate(N_neighbors, temp_leng, send_leng, recv_leng, send_list, 
-			     recv_list, nvertices, comm, aggr_index, 1563, tem2_index, 
-			     neighbors, temp_index,1);
-
-   agg_indx_comm.N_neighbors = N_neighbors;
-   agg_indx_comm.temp_leng = temp_leng;
-   agg_indx_comm.send_leng = send_leng;
-   agg_indx_comm.recv_leng = recv_leng;
-   agg_indx_comm.send_list = send_list;
-   agg_indx_comm.recv_list = recv_list;
-   agg_indx_comm.tem2_index = tem2_index;
-   agg_indx_comm.neighbors = neighbors;
-   agg_indx_comm.temp_index = temp_index;
-
-   /* I am not sure that this is the good position for this... */
+#endif
    
-   dtemp = (double *) malloc( sizeof(double) * (Nrows+Nghost));
-   for( i=0 ; i<Nrows ; i++ ) dtemp[i] = (double)aggr_index[i];
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
-                    comm, ML_OVERWRITE,NULL);
-
-   for( i=Nrows ; i<Nrows+Nghost ; i++ ) aggr_index[i] = (int)dtemp[i];
-   /*   
-   for( i=0 ; i<Nrows+Nghost ; i++ )
-     printf("aggr_index[%d] = %d\n", i, aggr_index[i] );
-   */
-   free( dtemp );
-   
-   
-#ifdef ML_AGGR_MARKINAGGR
-
-   for (i = 0; i < exp_Nrows; i++) aggr_index[i] = -1;
-   sprintf(fname,"agg_%d",level_count); level_count++;
-   fp = fopen(fname,"r");
-   aggr_count = 0;
-   for (i = 0; i <nvertices; i++) {
-      fscanf(fp,"%d%d",&k,&j);
-      aggr_index[j] = k;
-      if (k >= aggr_count) aggr_count = k+1;
-   }
-   fclose(fp);
-#endif /*ifdef ML_AGGR_MARKINAGGR*/
-
-   /* make sure that boundary nodes are not in any aggregate */
-   
-   for (i = 0; i < exp_Nrows; i++) {
-     if (bdry[i] == 'T') aggr_index[i] = -1;
-     else if (aggr_index[i] == -1)
-	 {
-	   printf("for node %d, bndry[.] = %c\n",i,bdry[i]);
-       printf("ML_agg_METIS: I'm not sure who takes care of this guy\n");
-	   printf("probably need to use the other aggregate file...\n");
-     }
-   }
-   ML_free(bdry);
-
-   for (i = exp_Nrows - 1; i >= 0; i-- ) {
+   for (i = Nrows - 1; i >= 0; i-- ) {
       for (j = num_PDE_eqns-1; j >= 0; j--) {
          aggr_index[i*num_PDE_eqns+j] = aggr_index[i];
       }
@@ -1589,10 +1463,7 @@ int agg_offset, vertex_offset;
    ML_Operator_UnAmalgamateAndDropWeak(Amatrix, num_PDE_eqns, epsilon);
 
    Nrows      *= num_PDE_eqns;
-   nvertices  *= num_PDE_eqns;
    exp_Nrows  *= num_PDE_eqns;
-   getrow_obj  = Amatrix->getrow;
-   N_neighbors = getrow_obj->pre_comm->N_neighbors;
 
 #ifdef ML_AGGR_INAGGR
 
@@ -1612,7 +1483,7 @@ int agg_offset, vertex_offset;
       fflush(stdout);
    }
    aggr_count = 0;
-   for (i = 0; i <nvertices; i++) {
+   for (i = 0; i <Nrows; i++) {
      if ( fscanf(fp,"%d%d",&j,&k) != 2) break;
       aggr_index[j] = k;
       if (k >= aggr_count) aggr_count = k+1;
@@ -1620,204 +1491,7 @@ int agg_offset, vertex_offset;
    fclose(fp);
    printf("Read in %d aggregates\n\n",aggr_count);
 #endif /*ifdef ML_AGGR_INAGGR*/
-
-
-   /* some memory free (I am not completely sure about this...) */
-
-   if( recv_list != NULL ) ML_free(recv_list);
-   if( temp_index != NULL ) ML_free(temp_index);
-   if( tem2_index != NULL ) ML_free(tem2_index);
-   if( temp_leng != NULL ) ML_free(temp_leng);
-
-   /* I'm not sure if I need most of this 'if' code. I just took it from */
-   /* Charles ... but I guess that the majority of it is not needed.     */
-
-   if ( num_PDE_eqns != 1 )
-   {
-      ML_memory_free((void**) &neighbors);
-      ML_memory_free((void**) &recv_leng);
-      ML_memory_free((void**) &send_leng);
-      ML_memory_free((void**) &send_list);
-      /* ---------------------------------------------------------- */
-      /* allocate storage for the communication information         */
-      /* ---------------------------------------------------------- */
-
-      N_neighbors = getrow_obj->pre_comm->N_neighbors;
-      nbytes = N_neighbors * sizeof( int );
-      if ( nbytes > 0 )
-      {
-         ML_memory_alloc((void**) &neighbors,  nbytes, "AGL");
-         ML_memory_alloc((void**) &recv_leng,  nbytes, "AGM");
-         ML_memory_alloc((void**) &send_leng,  nbytes, "AGN");
-      }
-      else
-      {
-	neighbors = recv_leng = send_leng = NULL;
-      }
-      for ( i = 0; i < N_neighbors; i++ )
-      {
-         neighbors[i] = getrow_obj->pre_comm->neighbors[i].ML_id;
-         recv_leng[i] = getrow_obj->pre_comm->neighbors[i].N_rcv;
-         send_leng[i] = getrow_obj->pre_comm->neighbors[i].N_send;
-      }
-      total_recv_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ ) total_recv_leng += recv_leng[i];
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
-      nbytes = total_send_leng * num_PDE_eqns * sizeof( int );
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &send_list,nbytes,"AGO");
-      else              send_list = NULL;
-      nbytes = total_recv_leng * sizeof( int );
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &recv_list,nbytes,"AGP");
-      else              recv_list = NULL;
-
-      /* ---------------------------------------------------------- */
-      /* set up true external indices to be shipped to receive      */
-      /* processors (true in view of that num_PDE_eqns can be > 1)  */
-      /* ---------------------------------------------------------- */
-
-      nbytes = Nrows * sizeof( int );
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &itmp_array,nbytes,"AGQ");
-      count = 0;
-      for ( i = 0; i < N_neighbors; i++ )
-      {
-         for ( j = 0; j < Nrows; j++ ) itmp_array[j] = -1;
-         count3 = 0;
-         for (j = 0; j < send_leng[i]; j++)
-         {
-            index3 = getrow_obj->pre_comm->neighbors[i].send_list[j];
-            index3 = index3 / num_PDE_eqns * num_PDE_eqns;
-            for (k = 0; k < num_PDE_eqns; k++)
-            {
-               if ( itmp_array[index3+k] < 0 )
-                  itmp_array[index3+k] = count3++;
-            }
-         }
-         for (j = 0; j < send_leng[i]; j++)
-         {
-            send_list[count+j] =
-               getrow_obj->pre_comm->neighbors[i].send_list[j];
-         }
-         for ( j = 0; j < send_leng[i]; j++ )
-         {
-            index = send_list[count+j];
-            if (itmp_array[index] >= 0) send_list[count+j] = itmp_array[index];
-         }
-         count += send_leng[i];
-      }
-      ML_memory_free((void**) &itmp_array);
-
-      /* ---------------------------------------------------------- */
-      /* send the adjusted indices to the receive processors        */
-      /* ---------------------------------------------------------- */
-
-      if ( N_neighbors > 0 )
-         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
-
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = recv_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_irecvbytes((void *) &(recv_list[offset]),length,&procnum,
-                              &msgtype, comm->USR_comm, request+i);
-         offset += recv_leng[i];
-      }
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = send_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_sendbytes((void *) &(send_list[offset]),length,procnum,
-                              msgtype, comm->USR_comm);
-         offset += send_leng[i];
-      }
-      offset = 0;
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2000;
-         length = recv_leng[i] * sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_cheapwaitbytes((void *) &(recv_list[offset]),length,&procnum,
-                              &msgtype, comm->USR_comm, request+i);
-         for (j = 0; j < recv_leng[i]; j++) recv_list[offset+j] += offset;
-         offset += recv_leng[i];
-      }
-      if ( N_neighbors > 0 ) ML_free( request );
-
-      ML_memory_free((void**) &recv_list);
-
-      /* ---------------------------------------------------------- */
-      /* update the send_list and send_leng's in line with remap    */
-      /* ---------------------------------------------------------- */
-
-      nbytes = Nrows * sizeof( int );
-      if (nbytes > 0) ML_memory_alloc((void**) &itmp_array,nbytes,"AGR");
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ )
-      {
-         count = 0;
-         for ( j = 0; j < Nrows; j++ ) itmp_array[j] = -1;
-         for (j = 0; j < send_leng[i]; j++)
-         {
-            index3 = getrow_obj->pre_comm->neighbors[i].send_list[j];
-            index3 = index3 / num_PDE_eqns * num_PDE_eqns;
-            for (k = 0; k < num_PDE_eqns; k++)
-               itmp_array[index3+k] = 0;
-         }
-         for ( j = 0; j < Nrows; j++ )
-         {
-            if ( itmp_array[j] == 0 ) send_list[total_send_leng+count++] = j;
-         }
-         send_leng[i] = count;
-         total_send_leng += count;
-      }
-      total_send_leng = 0;
-      for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
-
-      ML_memory_free((void**) &itmp_array);
-
-      /* ---------------------------------------------------------- */
-      /* update other processors with the new communication pattern */
-      /* ---------------------------------------------------------- */
-
-      if ( N_neighbors > 0 )
-         request = (USR_REQ *) ML_allocate(N_neighbors*sizeof(USR_REQ));
-
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_irecvbytes((void *) &(recv_leng[i]), length, &procnum,
-                              &msgtype, comm->USR_comm, request+i);
-      }
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_sendbytes((void *) &(send_leng[i]), length, procnum,
-                              msgtype, comm->USR_comm);
-      }
-      for (i = 0; i < N_neighbors; i++)
-      {
-         msgtype = 2002;
-         length = sizeof( int );
-         procnum = neighbors[i];
-         comm->USR_cheapwaitbytes((void *) &(recv_leng[i]), length, &procnum,
-                              &msgtype, comm->USR_comm, request+i);
-      }
-      if ( N_neighbors > 0 ) ML_free( request );
-
-      total_recv_leng = 0;
-      for (i = 0; i < N_neighbors; i++) total_recv_leng += recv_leng[i];
-      exp_Nrows = Nrows + total_recv_leng;
-   }
-
-
+   
    /* count the size of each aggregate */
 
    aggr_cnt_array = (int *) ML_allocate(sizeof(int)*aggr_count);
@@ -1826,16 +1500,12 @@ int agg_offset, vertex_offset;
       if (aggr_index[i] >= 0) 
          aggr_cnt_array[aggr_index[i]]++;
 
-   /*
-     for (i = 0; i < exp_Nrows; i++) printf("%d: AGG_INDX %d %d\n",comm->ML_mypid, i,aggr_index[i]);
-     for (i = 0; i < aggr_count ; i++) printf("counts %d %d\n",i,aggr_cnt_array[i]);*/
-
 #ifdef ML_AGGR_OUTAGGR
    sprintf(fname,"agg%d_%d",comm->ML_mypid,level_count);
    fp = fopen(fname,"w");
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
-   vertex_offset = ML_gpartialsum_int(nvertices, comm);
-   for (i = 0; i < nvertices ; i++)
+   vertex_offset = ML_gpartialsum_int(Nrows, comm);
+   for (i = 0; i < Nrows ; i++)
    {
 #ifndef MAXWELL
 #ifdef ALEGRA
@@ -1852,14 +1522,14 @@ int agg_offset, vertex_offset;
    }
 
    dtemp = (double *) ML_allocate(sizeof(double)*(exp_Nrows+1));
-   for (i = 0; i < nvertices; i++) dtemp[i] = (double) (i + vertex_offset);
-   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, nvertices, comm,
+   for (i = 0; i < Nrows; i++) dtemp[i] = (double) (i + vertex_offset);
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm, Nrows, comm,
                     ML_OVERWRITE,NULL);
-   for (i = 0; i < exp_Nrows-nvertices; i++)
+   for (i = 0; i < exp_Nrows-Nrows; i++)
    {
 #ifndef MAXWELL
 #ifdef ALEGRA
-      if (level_count == 0) { j = i+nvertices; k =  (int) dtemp[i+nvertices];}
+      if (level_count == 0) { j = i+Nrows; k =  (int) dtemp[i+Nrows];}
 #else
       if (level_count == 0) { j = extern_index[i]; k = external[i];} 
 #endif /*ifdef ALEGRA*/
@@ -1868,7 +1538,7 @@ int agg_offset, vertex_offset;
 	  global_node_externs[i];}
 #endif /* ifndef MAXWELL */
 
-      else                 { j = i+nvertices    ; k = (int) dtemp[i+nvertices];}
+      else                 { j = i+Nrows    ; k = (int) dtemp[i+Nrows];}
       if (aggr_index[j] >= 0)
          fprintf(fp,"%5d %5d\n", k, aggr_index[j]+agg_offset);
    }
@@ -1878,7 +1548,7 @@ int agg_offset, vertex_offset;
 #else
 #ifdef INPUT_AGGREGATES
    agg_offset = ML_gpartialsum_int(aggr_count, comm);
-   vertex_offset = ML_gpartialsum_int(nvertices, comm);
+   vertex_offset = ML_gpartialsum_int(Nrows, comm);
 #endif
 #endif /*ifdef ML_AGGR_OUTAGGR*/
 
@@ -1887,140 +1557,7 @@ int agg_offset, vertex_offset;
    /* ============================================================= */
 
    Ncoarse = aggr_count;
-
-   /* ============================================================= */
-   /* update aggr_index to find out which local fine node is mapped */
-   /* to which coarse aggregate in remote processors                */
-   /* ------------------------------------------------------------- */
-
-   nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &int_buf, nbytes, "AGg");
-   else              int_buf = NULL;
-   nbytes = total_recv_leng * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &int_buf2, nbytes, "AGh");
-   else              int_buf2 = NULL;
-
-   /* ------------------------------------------------------------- */
-   /* send the remote node index back to remote processors, with   */
-   /* added information on which remote nodes have been aggregated */
-   /* by the local aggregates (and also the aggregate numbers).    */
-   /* ------------------------------------------------------------- */
-
-   offset = 0;
-   for ( i = 0; i < N_neighbors; i++ ) 
-   {
-      for ( j = 0; j < recv_leng[i]; j++ ) 
-      {
-         if ( aggr_index[Nrows+offset+j] < 0 ) int_buf2[offset+j] = -1;
-         else int_buf2[offset+j] = aggr_index[Nrows+offset+j];
-      }
-      offset += recv_leng[i];
-   }
-   msgtype = 15963;
-   ML_Aggregate_ExchangeData((char*) int_buf, (char*) int_buf2,
-      N_neighbors, neighbors, send_leng, recv_leng, msgtype, ML_INT, comm);
-
-   if ( int_buf2 != NULL ) ML_memory_free((void**) &int_buf2);
-
-   /* ------------------------------------------------------------- */
-   /* if int_buf[i] > 0, this means that aggr_index[send_list[i]]   */ 
-   /* has been aggregated by a remote processor                     */
-   /* int_buf2 is used to tabulate how many distinct aggregates     */
-   /* in remote processors are used.                                */
-   /* ------------------------------------------------------------- */
-
-   offset = 0;
-   m      = 0; /* store the local index offset for remote processors */ 
-   new_N_recv = 0;
-   nbytes = N_neighbors * sizeof(int);
-   if ( nbytes > 0 ) 
-   {
-      ML_memory_alloc((void**) &new_recv_leng, nbytes, "AGi");
-      ML_memory_alloc((void**) &new_recv_neighbors, nbytes, "AGj");
-   } 
-   else 
-   {
-      new_recv_leng = new_recv_neighbors = NULL;
-   }
-   for ( i = 0; i < N_neighbors; i++ ) 
-   {
-      /* ---------------------------------------------------------- */
-      /* find out how large an array to allocate for int_buf2       */
-      /* ---------------------------------------------------------- */
-
-      max_count = -1;
-      for ( j = 0; j < send_leng[i]; j++ ) 
-      {
-         index = int_buf[offset+j];
-         max_count = (index > max_count ) ? index : max_count;
-      }
-      nbytes = ( max_count + 2 ) * sizeof(int);
-      if (nbytes > 0) ML_memory_alloc((void **) &int_buf2, nbytes, "AGk");
-
-      /* ---------------------------------------------------------- */
-      /* see how many distinct remote aggregates are referenced by  */
-      /* local fine nodes in aggregation in proc i ==> count        */
-      /* ---------------------------------------------------------- */
-
-      for ( j = 0; j <= max_count; j++ ) int_buf2[j] = 0;
-      for ( j = 0; j < send_leng[i]; j++ ) 
-      {
-         index = int_buf[offset+j];
-         if ( index >= 0 ) int_buf2[index]++;
-         if (index >= 0 && index > max_count) 
-            {printf("int_buf2 error : maxcount\n");exit(1);}
-      }
-      count = 0;
-      for ( j = 0; j <= max_count; j++ ) 
-      {
-         if (int_buf2[j] > 0) 
-         {
-            count++; int_buf2[j] = 1;
-         }
-      }
-      for ( j = max_count; j > 0; j-- ) int_buf2[j] = int_buf2[j-1];
-      int_buf2[0] = 0;
-      for ( j = 0; j < max_count; j++ ) int_buf2[j+1] += int_buf2[j];
-
-      if ( count > 0 ) 
-      {
-         new_recv_leng[new_N_recv] = count * nullspace_dim;
-         new_recv_neighbors[new_N_recv] = neighbors[i];
-         new_N_recv++;
-      } 
-
-      /* ---------------------------------------------------------- */
-      /* now assign local aggregate indices to local nodes that are */
-      /* aggregated by remote processors                            */
-      /* ---------------------------------------------------------- */
-
-      for ( j = 0; j < send_leng[i]; j++ ) 
-      {
-         index = send_list[offset+j];
-
-         /* ------------------------------------------------------- */
-         /* The first condition indicates that the local node has   */
-         /* been registered to have been aggregated by remote       */
-         /* aggregates.  The second condition is needed in case     */
-         /* the local node is linked to more than 1 remote          */
-         /* processor (but only to one aggregate though)            */
-         /* int_buf2 contains local indices of remote aggregates    */
-         /* ------------------------------------------------------- */
-
-         if ( aggr_index[index] <= -100 && int_buf[offset+j] >= 0 ) 
-         {
-            k = int_buf[offset+j];
-            aggr_index[index] = int_buf2[k] + Ncoarse + m;
-         } 
-      }
-      if (nbytes > 0) ML_memory_free((void **) &int_buf2);
-      m += count;
-      offset += send_leng[i];
-   }
-   exp_Ncoarse = Ncoarse + m;
- 
-   if ( int_buf  != NULL ) ML_memory_free((void**) &int_buf);
-
+   
    /* ============================================================= */
    /* check and copy aggr_index                                     */
    /* ------------------------------------------------------------- */
@@ -2045,131 +1582,21 @@ int agg_offset, vertex_offset;
        *}*/
    }
    ml_ag->aggr_count[level] = count; /* for relaxing boundary points */
-  
-   /* ============================================================= */
-   /* find out how many local coarse aggregates are needed by       */
-   /* remote processors for interpolation (to construct the         */
-   /* communicator - send info - for P)                             */
-   /* ------------------------------------------------------------- */
-#ifdef METIS_DEBUG
-   printf("N_neighbors = %d\n", N_neighbors);
-#endif
-   new_N_send = 0;
-   if ( N_neighbors > 0 ) 
-   {
-      nbytes = N_neighbors * sizeof(int);
-      ML_memory_alloc((void**) &int_buf, nbytes, "AGm");
-      nbytes = Ncoarse * sizeof(int);
-      ML_memory_alloc((void**) &int_buf2, nbytes, "AGn");
-      for ( i = 0; i < N_neighbors; i++ ) int_buf[i] = 0;
-
-      /* ---------------------------------------------------------- */
-      /* count which remote fine nodes belong to local aggregates   */
-      /* in order to generate the communication pattern for         */
-      /* the interpolation operator.                                */
-      /* ---------------------------------------------------------- */
-
-      offset = Nrows; 
-      for ( i = 0; i < N_neighbors; i++ ) 
-      {
-         for ( j = 0; j < Ncoarse; j++ ) int_buf2[j] = 0;
-         for ( j = 0; j < recv_leng[i]; j++ ) 
-         {
-            index = aggr_index[offset++];
-            if ( index >= 0 ) int_buf2[index]++;
-         }
-         count = 0;
-         for ( j = 0; j < Ncoarse; j++ ) if ( int_buf2[j] > 0 ) count++;
-         int_buf[i] = count * nullspace_dim;
-         if ( int_buf[i] > 0 ) new_N_send++;
-      }
-
-      /* ---------------------------------------------------------- */
-      /* now the number of neighbors for P has been found, the next */
-      /* step is to find the send_list and send_leng for the matvec */
-      /* function for interpolation                                 */
-      /* ---------------------------------------------------------- */
-
-      nbytes = new_N_send * sizeof(int);
-      if ( nbytes > 0 ) 
-      {
-         ML_memory_alloc((void**) &new_send_leng, nbytes, "AGo");
-         ML_memory_alloc((void**) &new_send_neighbors, nbytes, "AGp");
-         new_N_send = 0;
-         for ( i = 0; i < N_neighbors; i++ ) 
-         {
-            if ( int_buf[i] > 0 ) 
-            {
-               new_send_leng[new_N_send] = int_buf[i]; 
-               new_send_neighbors[new_N_send] = neighbors[i];
-               new_N_send++;
-            }
-         }
-         count = 0;
-         for ( i = 0; i < new_N_send; i++ ) count += new_send_leng[i];
-         nbytes = count * sizeof(int);
-         ML_memory_alloc((void**) &new_send_list, nbytes, "AGq");
-         offset = Nrows;
-         m = count;
-         count = 0;
-         for ( i = 0; i < N_neighbors; i++ ) 
-         {
-            for ( j = 0; j < Ncoarse; j++ ) int_buf2[j] = 0;
-            for ( j = 0; j < recv_leng[i]; j++ ) 
-            {
-               index = aggr_index[offset++];
-               if ( index >= 0 ) int_buf2[index]++;
-            }
-            for ( j = 0; j < Ncoarse; j++ ) 
-            {
-               if ( int_buf2[j] > 0 ) 
-               {
-                  for ( jj = 0; jj < nullspace_dim; jj++ ) 
-                     new_send_list[count++] = j * nullspace_dim + jj;
-               } 
-            } 
-         } 
-         if ( m != count ) 
-         {
-            printf("ML_Aggregate_CoarsenMIS : internal error (1).\n");
-            exit(-1);
-         }
-      } 
-      else 
-      {
-         new_send_leng = NULL;
-         new_send_neighbors = NULL;
-         new_send_list = NULL;
-      }  
-      ML_memory_free((void**) &int_buf);
-      ML_memory_free((void**) &int_buf2);
-   } 
-   else 
-   {
-      new_send_leng = NULL;
-      new_send_neighbors = NULL;
-      new_send_list = NULL;
-   }
-
+ 
+   
    /* ============================================================= */
    /* set up the new operator                                       */
    /* ------------------------------------------------------------- */
 
    new_Nrows = Nrows;
+   exp_Ncoarse = Nrows;
+   
    for ( i = 0; i < new_Nrows; i++ ) 
    {
       if ( aggr_index[i] >= exp_Ncoarse ) 
       {
          printf("WARNING : index out of bound %d = %d(%d)\n", i, aggr_index[i], 
                 exp_Ncoarse);
-/*
-         for ( j = 0; j < new_Nrows; j++ ) 
-            if ( aggr_index[j] >= exp_Ncoarse )
-               printf("%d : aggr_index[%5d] = %5d *\n", mypid, j, aggr_index[j]); 
-            else
-               printf("%d : aggr_index[%5d] = %5d \n", mypid, j, aggr_index[j]); 
-         exit(1);
-*/
       }
    }
    nbytes = ( new_Nrows + 1 ) * sizeof(int); 
@@ -2179,7 +1606,7 @@ int agg_offset, vertex_offset;
    nbytes = new_Nrows * nullspace_dim * sizeof(double); 
    ML_memory_alloc((void**)&(new_val), nbytes, "AVA");
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
-
+   
    /* ------------------------------------------------------------- */
    /* set up the space for storing the new null space               */
    /* ------------------------------------------------------------- */
@@ -2240,9 +1667,6 @@ int agg_offset, vertex_offset;
    /* what they do, but may want to do something better here later  */
    /* ------------------------------------------------------------- */
 
-   nbytes = total_recv_leng * nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**)&comm_val, nbytes, "AGt");
-   for (i = 0; i < total_recv_leng*nullspace_dim; i++) comm_val[i] = 0.0; 
    max_agg_size = 0;
    for (i = 0; i < aggr_count; i++) 
    {
@@ -2258,34 +1682,8 @@ int agg_offset, vertex_offset;
    ML_memory_alloc((void**)&work, nbytes, "AGw");
 
    /* ------------------------------------------------------------- */
-   /* ship the null space information to other processors           */
-   /* ------------------------------------------------------------- */
- 
-   if (nullspace_vect != NULL) 
-   {
-      nbytes = total_send_leng * nullspace_dim * sizeof(double);
-      ML_memory_alloc((void**) &dble_buf, nbytes,"AG1");
-      nbytes = total_recv_leng * nullspace_dim * sizeof(double);
-      ML_memory_alloc((void**) &dble_buf2, nbytes,"AG2");
-      length = total_send_leng * nullspace_dim;
-      for ( i = 0; i < total_send_leng; i++ ) 
-      {
-         index = send_list[i];
-         for ( j = 0; j < nullspace_dim; j++ ) 
-            dble_buf[i*nullspace_dim+j] = nullspace_vect[j*Nrows+index];
-      }
-      msgtype = 12093;
-      length = sizeof(double) * nullspace_dim;
-      ML_Aggregate_ExchangeData((char*)dble_buf2,(char*) dble_buf,
-            N_neighbors, neighbors, recv_leng, send_leng,msgtype,
-				(int) length,comm);
-      ML_memory_free((void**) &dble_buf);
-   } 
-
-   /* ------------------------------------------------------------- */
    /* perform block QR decomposition                                */
    /* ------------------------------------------------------------- */
-
 
    for (i = 0; i < aggr_count; i++) 
    {
@@ -2323,8 +1721,9 @@ int agg_offset, vertex_offset;
                      qr_tmp[k*length+j] = nullspace_vect[k*Nrows+index];
                   }
                   else {
-                     qr_tmp[k*length+j] = 
-                        dble_buf2[(index-Nrows)*nullspace_dim+k];
+		    fprintf( stderr,
+			     "*ML*ERR* in QR\n" );
+		    exit( EXIT_FAILURE );
                   }
                }
             }
@@ -2399,6 +1798,7 @@ int agg_offset, vertex_offset;
 	for (j = 0; j < aggr_cnt_array[i]; j++)
 	  {
 	    index = rows_in_aggs[i][j];
+	    
 	    if ( index < Nrows )
 	      {
 		index3 = new_ia[index];
@@ -2410,9 +1810,10 @@ int agg_offset, vertex_offset;
 	      }
 	    else 
 	      {
-		index3 = (index - Nrows) * nullspace_dim;
-		for (k = 0; k < nullspace_dim; k++)
-		  comm_val[index3+k] = qr_tmp[ k*aggr_cnt_array[i]+j];
+		fprintf( stderr,
+			 "*ML*ERR* in QR: index out of bounds (%d - %d)\n",
+			 index,
+			 Nrows );
 	      }
 	  }
       }
@@ -2438,125 +1839,15 @@ int agg_offset, vertex_offset;
 
 
    }
-	 
+
    ML_Aggregate_Set_NullSpace(ml_ag, num_PDE_eqns, nullspace_dim, 
                               new_null, Ncoarse*nullspace_dim);
    ML_memory_free( (void **) &new_null);
-   if (nullspace_vect != NULL) ML_memory_free( (void **) &dble_buf2);
 
-   /* ------------------------------------------------------------- */
-   /* send the P rows back to its parent processor                  */
-   /* ------------------------------------------------------------- */
- 
-   nbytes = total_send_leng * nullspace_dim * sizeof(double);
-   ML_memory_alloc((void**) &dble_buf, nbytes,"AGz");
-   msgtype = 24945;
-   length = sizeof(double) * nullspace_dim;
-   ML_Aggregate_ExchangeData((char*)dble_buf,(char*) comm_val,
-         N_neighbors, neighbors, send_leng, recv_leng,msgtype,(int)length,comm);
-   for ( i = 0; i < total_send_leng; i++ )
-   {
-      index = send_list[i];
-      if ( aggr_index[index] >= aggr_count )
-      {
-         dcompare1 = 0.0;
-         for ( j = 0; j < nullspace_dim; j++ )
-         {
-            index4 = i * nullspace_dim + j;
-            dcompare1 += dble_buf[index4];
-         }
-         if ( dcompare1 != 0.0 )
-         {
-            index4 = i * nullspace_dim;
-            k      = index * nullspace_dim;
-            for ( j = 0; j < nullspace_dim; j++ )
-            {
-               /*new_val[k+j] = dble_buf[index4+j];*/
-               new_val[ new_ia[index]+j] = dble_buf[index4+j];
-               /* new_ja = column index */
-               /*new_ja[k+j]  = aggr_index[index]*nullspace_dim+j;*/
-               new_ja[ new_ia[index]+j ]  = aggr_index[index]*nullspace_dim+j;
-            }
-         }
-      }
-   }
-   ML_memory_free( (void **) &comm_val);
-   ML_memory_free( (void **) &dble_buf);
- 
-   /* ------------------------------------------------------------- */
-   /* check P (row sum = 1)                                         */
-   /* ------------------------------------------------------------- */
-
-#ifdef DDEBUG
-   /* count up the number of connections/edges that leave aggregate */
-   /* versus those that are within the aggregate.                   */
-   good = (int *) ML_allocate(Nrows*sizeof(int));
-   bad  = (int *) ML_allocate(Nrows*sizeof(int));
-   for (i = 0; i < Nrows; i++) { good[i] = 0; bad[i] = 0; }
-   count = 0; 
-   for (i = 0; i < Nrows; i++) {
-      /* figure out my aggregate */
-      myagg = -1;
-      for (kk = new_ia[i]; kk < new_ia[i+1]; kk++) {
-         if (myagg != new_ja[kk]/6) {
-            if (myagg == -1) myagg = new_ja[kk]/6;
-            else {
-               printf("a:something is wrong %d %d in row %d\n",
-                       myagg, new_ja[kk]/6, i);
-               /*exit(1);*/
-            } 
-          }
-      }
-
-      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
-                        &rowi_N, 0);
-      count2 = 0;
-      for (j = 0; j < rowi_N; j++) {
-         if (rowi_col[j]/num_PDE_eqns != -500 - i/num_PDE_eqns) {
-            /* for each column figure out what aggregate it corresponds */
-	    /* to. If it is the same as myagg, add 1 to good, otherwise */
-	    /* add 1 to bad */
-            curagg = -1;
-	    for (kk = new_ia[rowi_col[j]]; kk < new_ia[rowi_col[j]+1]; kk++) {
-	      if (curagg != new_ja[kk]/6) {
-		if (curagg == -1) curagg = new_ja[kk]/6;
-		else {
-		  printf("b:Something is wrong %d %d in row %d\n",
-			 curagg, new_ja[kk]/6, rowi_col[j]);
-		  /*exit(1);*/
-		} 
-	      }
-	    }
-            if ((curagg != -1) && (myagg != -1)) {
-               if (curagg == myagg) good[myagg]++;
-               else bad[myagg]++;
-            }
-            
-         }
-      }
-   }
-   myagg = 0;
-   sprintf(fname,"goodbad%d",level_count);
-   fp = fopen(fname,"w");
-   for (i = 0; i < Nrows; i++) { 
-      if ((good[i] != 0) || (bad[i] != 0)) {
-         myagg += good[i]; 
-         myagg += bad[i]; 
-         fprintf(fp,"%d (%d,%d)\n",i,good[i],bad[i]);
-      }
-   }
-   fclose(fp);
-   printf("total number of connections counted is %d\n",myagg);
-   ML_free(bad);
-   ML_free(good);
-   ML_free(rowi_col); rowi_col = NULL;
-   ML_free(rowi_val); rowi_val = NULL;
-   allocated = 0;
-#endif
    /* ------------------------------------------------------------- */
    /* set up the csr_data data structure                            */
    /* ------------------------------------------------------------- */
-
+   
    ML_memory_alloc((void**) &csr_data, sizeof(struct ML_CSR_MSRdata),"CSR");
    csr_data->rowptr  = new_ia;
    csr_data->columns = new_ja;
@@ -2565,21 +1856,9 @@ int agg_offset, vertex_offset;
    ML_Operator_Set_ApplyFuncData( *Pmatrix, nullspace_dim*Ncoarse, Nrows, 
                                   ML_EMPTY, csr_data, Nrows, NULL, 0);
    (*Pmatrix)->data_destroy = ML_CSR_MSR_ML_memorydata_Destroy;
-   ML_memory_alloc((void**) &aggr_comm, sizeof(ML_Aggregate_Comm),"ACO");
-   aggr_comm->comm = comm;
-   aggr_comm->N_send_neighbors = new_N_send;
-   aggr_comm->N_recv_neighbors = new_N_recv;
-   aggr_comm->send_neighbors = new_send_neighbors;
-   aggr_comm->recv_neighbors = new_recv_neighbors;
-   aggr_comm->send_leng = new_send_leng;
-   aggr_comm->recv_leng = new_recv_leng;
-   aggr_comm->send_list = new_send_list;
-   aggr_comm->local_nrows = Ncoarse * nullspace_dim;
+   (*Pmatrix)->getrow->pre_comm = ML_CommInfoOP_Create();
+   (*Pmatrix)->max_nz_per_row = 1;
    
-   m = exp_Ncoarse - Ncoarse;
-   ML_CommInfoOP_Generate( &((*Pmatrix)->getrow->pre_comm), 
-                           ML_Aggregate_ExchangeBdry, aggr_comm, 
-                           comm, Ncoarse*nullspace_dim, m*nullspace_dim);
 #ifdef LEASTSQ_SERIAL
    ML_Operator_Set_Getrow((*Pmatrix), ML_EXTERNAL, Nrows, CSR_get_ones_rows);
 #else
@@ -2588,44 +1867,18 @@ int agg_offset, vertex_offset;
    ML_Operator_Set_ApplyFunc((*Pmatrix), ML_INTERNAL, CSR_matvec);
    (*Pmatrix)->max_nz_per_row = 1;
 
-#ifdef METIS_DEBUG
-   printf("nullspace_dim = %d\n", nullspace_dim);
-   printf("Ncoarse = %d\n", Ncoarse);
-   printf("exp_Ncoarse = %d\n", exp_Ncoarse);
-   /*   ML_PrintOut_MLOperator( *Pmatrix, comm ); */
-#endif
    /* ------------------------------------------------------------- */
    /* clean up                                                      */
    /* ------------------------------------------------------------- */
 
    ML_free(unamalg_bdry);
-   ML_memory_free((void**) &comm_val);
-   ML_memory_free((void**) &neighbors);
-   ML_memory_free((void**) &recv_leng);
-   ML_memory_free((void**) &send_leng);
-   ML_memory_free((void**) &send_list);
-   ML_free(aggr_index);
-   ML_memory_free((void**) &aggr_stat);
-   ML_memory_free((void**) &sendlist_proc);
+   ML_memory_free((void**)&aggr_index);
    ML_free(aggr_cnt_array);
    for (i = 0; i < aggr_count; i++) ML_free(rows_in_aggs[i]);
    ML_memory_free((void**)&rows_in_aggs);
    ML_memory_free((void**)&qr_tmp);
    ML_memory_free((void**)&tmp_vect);
    ML_memory_free((void**)&work);
-
-   if ( new_N_send > 0 ) 
-   {
-      ML_memory_free((void**) &new_send_leng);
-      ML_memory_free((void**) &new_send_list);
-      ML_memory_free((void**) &new_send_neighbors);
-   }
-   if ( N_neighbors > 0 ) 
-   {
-      ML_memory_free((void**) &new_recv_leng);
-      ML_memory_free((void**) &new_recv_neighbors);
-   }
-   ML_memory_free((void**) &aggr_comm);
 
    aggr_curr = aggr_head;
    while ( aggr_curr != NULL ) 
@@ -2648,7 +1901,7 @@ int agg_offset, vertex_offset;
    fp = fopen(fname,"w");
    ML_Operator_Apply(*Pmatrix, (*Pmatrix)->invec_leng, dtemp, 
                      (*Pmatrix)->outvec_leng, d2temp);
-   for (i = 0; i < nvertices; i++) {
+   for (i = 0; i < Nrows; i++) {
 #ifndef MAXWELL
 #ifdef ALEGRA
       if (level_count == 1) { j = i; k = i;} 
@@ -2667,7 +1920,7 @@ int agg_offset, vertex_offset;
 
    /*
    csr_data = (struct ML_CSR_MSRdata *) (*Pmatrix)->data;
-   if (comm->ML_mypid == 1)
+   if (comm->ML_myp`id == 1)
    {
       printf("%d : row_ptr = %d\nrow_ptr = %d\ncol = %d\nval = %e\n\n\n",
              comm->ML_mypid,
@@ -2776,8 +2029,8 @@ static int find_index( int key, int list[], int N )
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
-				   int graph_decomposition[], int mypid)
+static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
+					  int graph_decomposition[], int mypid)
 {
 
   int i, j, divided_aggre;
