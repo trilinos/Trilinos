@@ -111,7 +111,7 @@ As in %NOX, all parameters are passed to %LOCA through parameter lists defined b
 The parameter list passed to the Stepper has two sublists, "LOCA" and "NOX".  The "LOCA" sublist contains parameters and sublists for the Stepper and various %LOCA support classes, while the "NOX" sublist contains parameters and sublists specific to %NOX solvers.  The %NOX sublist is passed directly to an instance of the NOX::Solver::Manager class in the Stepper and therefore has the same structure as any %NOX solver parameter list hierarchy.  Please see the <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> page for more details on the structure of this list.  
 
 <ul> 
-<li> "%NOX" sublist -- See <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
+<li> "NOX" sublist -- See <a href="../../doc/html/parameters.html">%NOX Parameter Reference</a> for more details
 <li> "LOCA: sublist
      <ul>
      <li> "Stepper" sublist -- used by LOCA::Stepper
@@ -196,7 +196,7 @@ discuss the additional steps required to use %LOCA.
 
 %LOCA is part of %NOX, so by downloading %NOX you have %LOCA.  To enable %LOCA 
 during configuration and compilation, supply the --enable-loca configuration 
-option.  %LOCA %LAPACK and Epetra support and examples are automatically 
+option.  %LOCA %LAPACK and %Epetra support and examples are automatically 
 enabled if they are enabled in %NOX (see \ref nox_configuration_options).  
 Typing "make" and "make install" in the top-level %NOX directory then
 compile and install %LOCA as well as %NOX.
@@ -233,8 +233,8 @@ functionality provided by %LOCA and can be used in any continuation or
 bifurcation calculation.
 
 <li>
-The LOCA::Epetra implementation extenders the NOX::Epetra implementation to
-%LOCA.  Epetra support and examples are automatically enabled if they are
+The LOCA::Epetra implementation extends the NOX::Epetra implementation to
+%LOCA.  %Epetra support and examples are automatically enabled if they are
 enabled in %NOX.  All levels of functionality provided by LOCA are supported
 except Hopf calculations and generalized eigenvalue calculations, which require
 a separate mass matrix and complex-valued computations.
@@ -246,16 +246,17 @@ added as soon as there is demand.
 
 \section loca_user_info_step_3 Step 3: Call LOCA from your code
 
-A tutorial describing how to use %LOCA is coming shortly. The
+See \ref loca_continuation_tutorial for a tutorial describing how to use 
+%LOCA to perform a simple continuation. The
 example problems in the examples-lapack and examples-epetra
-directories can serve as templates.
+directories can serve as templates as well.
 
 \section loca_user_info_step_4 Step 4: Link your code to LOCA
 
 Linking with %LOCA is very similar to linking with %NOX.  You must additionally
-link against -lloca and one of the concrete implementations, either -lloca-lapack 
-(if using the LOCA::LAPACK), -lloca-epetra (if using LOCA::Epetra), or a
-custom implementation.
+link against -lloca and one of the concrete implementations, either 
+-llocalapack (if using the LOCA::LAPACK), -llocaepetra (if using 
+LOCA::Epetra),or a custom implementation.
 
 \section loca_user_info_problems If you have problems...
 
@@ -264,3 +265,253 @@ them using
 <A HREF="http://software.sandia.gov/bugzilla/">Bugzilla</A>; see \ref bugs for more information.
 
 */
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page loca_continuation_tutorial LOCA Continuation Tutorial
+
+\section loca_continuation_tutorial_overview Overview
+
+Here we provide a brief tutorial for using %LOCA to perform a simple
+continuation using the Chan problem (see ChanProblemInterface).  The 
+code fragements discussed below can be found in ChanContinuation.C in
+the Chan subdirectory of the %LOCA %LAPACK examples directory.  
+
+The ChanProblemInterface implements a 1-D finite-difference discretization
+of the Chan problem:
+\f[
+      \frac{d^2 T}{d x^2} + \alpha s \left(1 + \frac{x + 0.5 x^2}{1 + 0.01 x^2}\right) = 0
+  \f]
+subject to the boundary conditions \f$T(0) = T(1) = \beta\f$.  The parameters
+are \f$\alpha\f$, \f$\beta\f$, \f$s\f$, and \f$n\f$, the size of the 
+discretization.  The scaling factor \f$s\f$ is used to test continuation
+at different scales of \f$\alpha\f$.  Below we will track the solution
+\f$T(x,\alpha,\beta)\f$ as \f$\alpha\f$ is varied from \f$0\f$ to \f$5\f$.
+
+\section loca_continuation_tutorial_code ChanContinuation.C Line by Line
+
+\code
+#include "LOCA.H"
+#include "LOCA_LAPACK.H"
+#include "ChanProblemInterface.H"
+\endcode
+
+To use %LOCA in your code, you must always include the header LOCA.H.  Since
+this is a %LAPACK problem, we also include LOCA_LAPACK.H.  Finally, we include
+the header for the Chan problem, ChanProblemInterface.H.
+
+\code
+int main()
+{
+  int n = 100;
+  double alpha = 0.0;
+  double beta = 0.0;
+  double scale = 1.0;
+  int maxNewtonIters = 20;
+
+  alpha = alpha / scale;
+
+  try {
+\endcode
+
+Next we set up the basic problem parameters.  \em maxNewtonIters is the
+maximum number of nonlinear solver iterations we wish to take at each
+continuation step.  %NOX and %LOCA do throw exceptions (but only when
+serious errors occur), so all %NOX and %LOCA calculations should be placed
+in a try block.
+
+\code
+    // Create output file to save solutions
+    ofstream outFile("ChanContinuation.dat");
+    outFile.setf(ios::scientific, ios::floatfield);
+    outFile.precision(14);
+
+    // Save size of discretizations
+    outFile << n << endl;
+\endcode
+
+Here we set up a file for saving the solutions computed at each continuation
+step.  The printSolution method of the ChanProblemInterface is set up in
+such a way that if a file is provided, the current continuation parameter
+and solution vector are appended to the file, in addition to printing a portion
+of the solution vector to the screen.  The format of this file is a series
+of rows, with each row containing \f$n+1\f$ numbers, the first is the 
+continuation parameter with the remaining \f$n\f$ consisting of each 
+component of the solution vector.
+
+\code
+    // Set up the problem interface
+    ChanProblemInterface chan(n, alpha, beta, scale, outFile);
+    LOCA::ParameterVector p;
+    p.addParameter("alpha",alpha);
+    p.addParameter("beta",beta);
+    p.addParameter("scale",scale);
+\endcode
+
+Next we instantiate the ChanProblemInterface and create a parameter vector
+to store the values of the problem parameters.  Note that it is not 
+necessary to put every problem parameter into the parameter vector, only those
+that serve as possible continuation or bifurcation parameters need to be
+supplied.
+
+\code
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    LOCA::LAPACK::Group grp(chan);
+    
+    grp.setParams(p);
+\endcode
+
+Next we instantiate the %LAPACK group with the Chan problem and then set
+the parameter vector in the group.  From this point on, the LOCA::Stepper,
+via the LOCA::LAPACK::Group, will take care of setting parameters in
+the problem interface.
+
+\code
+   // Create parameter list
+    NOX::Parameter::List paramList;
+
+    // Create LOCA sublist
+    NOX::Parameter::List& locaParamsList = paramList.sublist("LOCA");
+
+    // Create the stepper sublist and set the stepper parameters
+    NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
+    //stepperList.setParameter("Continuation Method", "Natural");
+    stepperList.setParameter("Continuation Method", "Arc Length");
+    stepperList.setParameter("Continuation Parameter", "alpha");
+    stepperList.setParameter("Initial Value", alpha);
+    stepperList.setParameter("Max Value", 5.0/scale);
+    stepperList.setParameter("Min Value", 0.0/scale);
+    stepperList.setParameter("Max Steps", 50);
+    stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
+    stepperList.setParameter("Goal g", 0.5);
+    stepperList.setParameter("Max g", 0.7);
+    stepperList.setParameter("Initial Scale Factor", 1.0);
+    stepperList.setParameter("Min Scale Factor", 1.0e-8);
+    stepperList.setParameter("Min Tangent Factor", -1.0);
+    stepperList.setParameter("Tangent Factor Exponent",1.0);
+    stepperList.setParameter("Compute Eigenvalues",false);
+
+    // Create predictor sublist
+    NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
+    //predictorList.setParameter("Method", "Constant");
+    predictorList.setParameter("Method", "Tangent");
+    //predictorList.setParameter("Method", "Secant");
+
+    // Create step size sublist
+    NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
+    //stepSizeList.setParameter("Method", "Constant");
+    stepSizeList.setParameter("Method", "Adaptive");
+    stepSizeList.setParameter("Initial Step Size", 0.1/scale);
+    stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
+    stepSizeList.setParameter("Max Step Size", 10.0/scale);
+    stepSizeList.setParameter("Aggressiveness", 0.5);
+
+    // Set the LOCA Utilities
+    NOX::Parameter::List& locaUtilsList = locaParamsList.sublist("Utilities");
+    locaUtilsList.setParameter("Output Information", 
+			       LOCA::Utils::Warning +
+			       LOCA::Utils::StepperIteration +
+   			       LOCA::Utils::StepperDetails +
+			       LOCA::Utils::Solver +
+			       LOCA::Utils::Parameters +
+			       LOCA::Utils::SolverDetails);
+\endcode
+
+Next we set up the %LOCA parameters.  We are setting up the problem to 
+perform arc-length continuation in the parameter "alpha" from 0 to 5 with 
+a maximum of 50 continuation steps and \em maxNewtonIters nonlinear iterations
+per step.  The "g" and "Scale Factor" parameters deal with arc-length
+parameter scaling while the "Tangent Factor" parameters deal with reducing
+the step size when the solution changes by a large amount from step to 
+step (see \ref loca_parameters for more details).  We use a tangent predictor
+and adaptive step size control with an initial step size of 0.1, maximum of 
+10.0 and minimum of 0.001.  The "Aggressiveness" parameter determines how
+quickly the step size is increased every successful continuation step.
+Finally, we specify how much information %LOCA should print out during
+the continuation run.
+
+\code
+    // Create the "Solver" parameters sublist to be used with NOX Solvers
+    NOX::Parameter::List& nlParams = paramList.sublist("NOX");
+    nlParams.setParameter("Nonlinear Solver", "Line Search Based");
+
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.setParameter("Output Information", 
+			  NOX::Utils::Details +
+			  NOX::Utils::OuterIteration + 
+			  NOX::Utils::InnerIteration + 
+			  NOX::Utils::Warning);
+\endcode
+
+Next we set up the %NOX parameters.  We use a simple full-step Newton method 
+for the nonlinear solve at each continuation step.
+
+\code
+    // Set up the status tests
+    NOX::StatusTest::NormF normF(1.0e-8);
+    NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
+    NOX::StatusTest::Combo comboOR(NOX::StatusTest::Combo::OR, 
+				   normF, 
+				   maxIters);
+\endcode
+
+Next we create appropriate status tests for the problem.  For convergence
+at each continuation step, we require the extended (solution and parameter
+components) residual norm be smaller than 1.0e-8 and the number of nonlinear
+iterations be smaller than \em maxNewtonIters.
+
+\code
+    // Create the stepper  
+    LOCA::Stepper stepper(grp, comboOR, paramList);
+
+    // Perform continuation run
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
+
+    if (status != LOCA::Abstract::Iterator::Finished)
+      cout << "Stepper failed to converge!" << endl;
+\endcode
+
+Finally we instantiate the stepper, run the continuation, and check the
+returned status.
+
+\code
+    // Get the final solution from the stepper
+    const LOCA::LAPACK::Group& finalGroup = 
+      dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
+    const NOX::LAPACK::Vector& finalSolution = 
+      dynamic_cast<const NOX::LAPACK::Vector&>(finalGroup.getX());
+
+    // Output the parameter list
+    if (LOCA::Utils::doPrint(LOCA::Utils::Parameters)) {
+      cout << endl << "Final Parameters" << endl
+	   << "****************" << endl;
+      stepper.getParameterList().print(cout);
+      cout << endl;
+    }
+
+    outFile.close();
+  }
+
+  catch (string& s) {
+    cout << s << endl;
+  }
+  catch (char *s) {
+    cout << s << endl;
+  }
+  catch (...) {
+    cout << "Caught unknown exception!" << endl;
+  }
+
+  return 0;
+}
+\endcode
+
+Lastly we copy the final solution out of the stepper, print out the final
+parameter list, close the output file, and catch any thrown exceptions.
+
+*/
+
