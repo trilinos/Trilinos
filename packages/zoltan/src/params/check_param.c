@@ -22,14 +22,14 @@
 #include "params_const.h"
 
 
-int       LB_Check_Param(
+int       Zoltan_Check_Param(
 char *name,			/* name of parameter being reset */
 char *val,			/* new value for parameter */
 PARAM_VARS * params,		/* structure describing parameters */
 PARAM_UTYPE *result,		/* pointer to return value */
 int *matched_index)		/* where in struct the match occurs */
 {		
-    char     *yo = "LB_Check_Param";
+    char     *yo = "Zoltan_Check_Param";
     char      msg[256];
     int       i;		/* loop counter */
     int       status;		/* return code: */

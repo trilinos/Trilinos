@@ -16,8 +16,8 @@
 
 #include <mpi.h>
 
-extern void LB_Print_Sync_Start(MPI_Comm, int);
-extern void LB_Print_Sync_End(MPI_Comm, int);
-extern void LB_Print_Stats (MPI_Comm, int, double, char *);
+extern void Zoltan_Print_Sync_Start(MPI_Comm, int);
+extern void Zoltan_Print_Sync_End(MPI_Comm, int);
+extern void Zoltan_Print_Stats (MPI_Comm, int, double, char *);
 
 #endif

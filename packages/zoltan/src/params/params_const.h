@@ -54,17 +54,17 @@ typedef struct Param_Utype {
 } PARAM_UTYPE;
 
 /* API for general parameter setting functions */
-typedef int LB_SET_PARAM_FN(char *, char *); 
+typedef int ZOLTAN_SET_PARAM_FN(char *, char *); 
 
 /* function declarations for parameter modification routines */
 
-extern int LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int, int);
-extern int LB_Bind_Param(PARAM_VARS *, char *, void *);
-extern int LB_Set_Key_Param(LB *, char *, char *);
-extern void LB_Print_Key_Params(LB *);
-extern void LB_Print_Params(LB_PARAM *ptr);
-extern int LB_Check_Param(char *, char *, PARAM_VARS *,
+extern int Zoltan_Assign_Param_Vals(ZOLTAN_PARAM *, PARAM_VARS *, int, int, int);
+extern int Zoltan_Bind_Param(PARAM_VARS *, char *, void *);
+extern int Zoltan_Set_Key_Param(LB *, char *, char *);
+extern void Zoltan_Print_Key_Params(LB *);
+extern void Zoltan_Print_Params(ZOLTAN_PARAM *ptr);
+extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);
-extern void LB_Free_Params(LB_PARAM **);
+extern void Zoltan_Free_Params(ZOLTAN_PARAM **);
 
 #endif

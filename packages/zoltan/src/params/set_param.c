@@ -34,16 +34,16 @@ static int add_param(LB *, char *, char *);
 static int remove_param(LB *, char *);
 
 /* List of set_parameter functions to be called */
-static LB_SET_PARAM_FN * Param_func[] = {
-        LB_Set_Malloc_Param,
-        LB_Set_RCB_Param,
-        LB_Set_ParMetis_Param,
-        LB_Set_Jostle_Param,
-        LB_Set_Octpart_Param,
-        LB_Set_Reftree_Param,
-        LB_Set_RIB_Param,
-	LB_Set_SFC_Param,
-     /* LB_Set_Machine_Param, */
+static ZOLTAN_SET_PARAM_FN * Param_func[] = {
+        Zoltan_Set_Malloc_Param,
+        Zoltan_RCB_Set_Param,
+        Zoltan_ParMetis_Set_Param,
+        Zoltan_Jostle_Set_Param,
+        Zoltan_Oct_Set_Param,
+        Zoltan_Reftree_Set_Param,
+        Zoltan_RIB_Set_Param,
+	Zoltan_SFC_Set_Param,
+     /* Zoltan_Set_Machine_Param, */
    /*** Add your new parameter setting function here! ***/
         NULL /* Last entry _must_ be NULL! */
 };
@@ -67,7 +67,7 @@ char *val1)			/* value to set this parameter to */
     char     *name, *val;	/* clean versions of name1, val1 */
     int       flag;		/* return value from function */
     int       status;		/* has character string been matched? */
-    LB_SET_PARAM_FN **func;     /* pointer to parameter setting functions */
+    ZOLTAN_SET_PARAM_FN **func; /* pointer to parameter setting functions */
 
     /* Status flag is used as follows:
      *  0 -> matched and value passed all checks. 
@@ -77,17 +77,17 @@ char *val1)			/* value to set this parameter to */
      *  other -> more serious error (LB return codes) */
 
     /* First convert to upper case & remove leading white space. */
-    flag = LB_clean_string(name1, &name);
+    flag = Zoltan_Clean_String(name1, &name);
     if (flag)
 	return (flag);
-    flag = LB_clean_string(val1, &val);
+    flag = Zoltan_Clean_String(val1, &val);
     if (flag) {
 	ZOLTAN_FREE(&name);
 	return (flag);
     }
 
     /* Call the key parameter routine. This one is Zoltan-specific. */
-    status = LB_Set_Key_Param(lb, name, val);
+    status = Zoltan_Set_Key_Param(lb, name, val);
 
     /* Now call all the other parameter setting routines. */
     for (func = Param_func; (status == 1) && (*func != NULL); func++) {
@@ -140,8 +140,8 @@ char *val)			/* value to set this parameter to */
  * Search through existing list to replace value if its there.
  * Otherwise, add it to the end of the list.
  */
-    LB_PARAM *ptr;             	/* loops through parameter list */
-    LB_PARAM *param;		/* parameter entry in list */
+    ZOLTAN_PARAM *ptr;             	/* loops through parameter list */
+    ZOLTAN_PARAM *param;		/* parameter entry in list */
 
 
     ptr = lb->Params;
@@ -155,7 +155,7 @@ char *val)			/* value to set this parameter to */
     }
 
     /* This is a new parameter, add it to list. */
-    param = (LB_PARAM *) ZOLTAN_MALLOC(sizeof(LB_PARAM));
+    param = (ZOLTAN_PARAM *) ZOLTAN_MALLOC(sizeof(ZOLTAN_PARAM));
     if (param == NULL) {
 	ZOLTAN_FREE(&name);
 	ZOLTAN_FREE(&val);
@@ -179,7 +179,7 @@ char *name 			/* parameter name */
  * Parameter checked out OK.  Remove it from linked list of param values.
  * If it is not in the list, do nothing.
  */
-    LB_PARAM *ptr, *oldptr;	/* loops through parameter list */
+    ZOLTAN_PARAM *ptr, *oldptr;	/* loops through parameter list */
 
     oldptr = NULL;
     ptr = lb->Params;

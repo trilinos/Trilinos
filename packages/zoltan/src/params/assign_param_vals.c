@@ -25,21 +25,21 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Print_Assigned_Param_Vals(PARAM_VARS * );
+static void Zoltan_Print_Assigned_Param_Vals(PARAM_VARS * );
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-int      LB_Assign_Param_Vals(
-LB_PARAM * change_list,		/* list of parameter values being changed */
+int      Zoltan_Assign_Param_Vals(
+ZOLTAN_PARAM * change_list,		/* list of parameter values being changed */
 PARAM_VARS * params,		/* structure describing parameters        */
 int debug_level,                /* level for output of debugging info     */
 int proc,                       /* processor # (controls debug printing)  */
 int print_proc                  /* processor that should perform printing */
 )
 {	
-    char     *yo = "LB_Assign_Param_Vals";
+    char     *yo = "Zoltan_Assign_Param_Vals";
     char      msg[256];
     char     *name;		/* name of parameter being reset */
     char     *val;		/* new value for parameter       */
@@ -119,7 +119,7 @@ int print_proc                  /* processor that should perform printing */
     }
 
     if (debug_level > 0 && proc == print_proc)
-        LB_Print_Assigned_Param_Vals(params);
+        Zoltan_Print_Assigned_Param_Vals(params);
 
     return ierr;
 }
@@ -128,7 +128,7 @@ int print_proc                  /* processor that should perform printing */
 /*****************************************************************************/
 /*****************************************************************************/
 
-static void LB_Print_Assigned_Param_Vals(
+static void Zoltan_Print_Assigned_Param_Vals(
 PARAM_VARS * params 		/* structure describing parameters */
 )
 {

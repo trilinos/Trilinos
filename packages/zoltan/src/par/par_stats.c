@@ -20,7 +20,7 @@
 
        NAME                             TYPE
 ----------------------------------------------------------------------
-	LB_Print_Stats			void
+	Zoltan_Print_Stats			void
 
 ******************************************************************************/
 
@@ -28,7 +28,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Print_Stats (MPI_Comm communicator, int debug_proc, double x, char *msg)
+void Zoltan_Print_Stats (MPI_Comm communicator, int debug_proc, double x, char *msg)
 {
 /****************************************************************/
 /* Print max, sum, and imbalance for a variable over all procs. */

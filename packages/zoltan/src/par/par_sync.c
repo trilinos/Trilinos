@@ -23,8 +23,8 @@
 
        NAME                             TYPE
 ----------------------------------------------------------------------
-	LB_Print_Sync_Start		void
-	LB_Print_Sync_End		void
+	Zoltan_Print_Sync_Start		void
+	Zoltan_Print_Sync_End		void
 
 ******************************************************************************/
 
@@ -32,10 +32,10 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Print_Sync_Start(MPI_Comm communicator, int do_print_line)
+void Zoltan_Print_Sync_Start(MPI_Comm communicator, int do_print_line)
 {
 /* 
- * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
+ * Routine to allow I/O between Zoltan_Print_Sync_Start and Zoltan_Print_Sync_End to be 
  * printed by each processor in the communicator entirely before the next
  * processor begins its I/O.  The printing sequence is from proc = 0 to the
  * last processor, where the last processor is num_proc - 1.
@@ -51,7 +51,7 @@ void LB_Print_Sync_Start(MPI_Comm communicator, int do_print_line)
 int        flag = 1, from, type;
 static int offset = 0;
 MPI_Status st;
-char *yo = "LB_Print_Sync_Start";
+char *yo = "Zoltan_Print_Sync_Start";
 char msg[256];
 int proc;
 
@@ -84,10 +84,10 @@ int proc;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_Print_Sync_End(MPI_Comm communicator, int do_print_line)
+void Zoltan_Print_Sync_End(MPI_Comm communicator, int do_print_line)
 {
 /*
- * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
+ * Routine to allow I/O between Zoltan_Print_Sync_Start and Zoltan_Print_Sync_End to be 
  * printed by each processor in the communicator entirely before the next
  * processor begins its I/O.  The printing sequence is from proc = 0 to the
  * last processor, where the last processor is num_proc - 1.
@@ -104,7 +104,7 @@ int         flag = 1, from, type, to;
 static int  offset = 0;
 MPI_Status  st;
 int proc, num_proc;
-char *yo = "LB_Print_Sync_End";
+char *yo = "Zoltan_Print_Sync_End";
 char msg[256];
 
   MPI_Comm_rank(communicator, &proc);

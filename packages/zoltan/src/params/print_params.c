@@ -15,8 +15,8 @@
 #include "lb_const.h"
 
 
-void LB_Print_Params(
-  LB_PARAM *ptr)			/* pointer to list of parameters */
+void Zoltan_Print_Params(
+  ZOLTAN_PARAM *ptr)			/* pointer to list of parameters */
 {
 /*
  *  Function to print out list of set parameter values.

@@ -14,10 +14,10 @@
 #ifndef __PAR_UTIL_CONST_H
 #define __PAR_UTIL_CONST_H
 
-extern int LB_find_median(LB *lb, double *dots, double *wgts, int *dotmark,
-  int dotnum, int proc, double fractionlo, MPI_Comm local_comm,
-  double *valuehalf, int first_guess, int *counter, int nprocs, int num_procs,
-  int proclower, int wgtflag, double valuemin, double valuemax, double weight,
-  double *weightlo, double *weighthi, int *dotlist);
+extern int Zoltan_RB_find_median(LB *, double *, double *, int *,
+  int, int, double, MPI_Comm,
+  double *, int, int *, int, int,
+  int, int, double, double, double,
+  double *, double *, int *);
 
 #endif

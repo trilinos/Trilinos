@@ -22,7 +22,7 @@
 #include "lb_util_const.h"
 #include "params_const.h"
 
-int       LB_Bind_Param(
+int       Zoltan_Bind_Param(
 PARAM_VARS *params,		/* parameter structure */
 char *name,			/* parameter name */
 void *var)			/* pointer to variable to be associated with the parameter name */
@@ -36,14 +36,14 @@ void *var)			/* pointer to variable to be associated with the parameter name */
  *    ZOLTAN_FATAL signals something more serious.
  */
 
-    char     *yo = "LB_Bind_Param";
+    char     *yo = "Zoltan_Bind_Param";
     char      msg[256];
     char     *name2;		/* clean version of name */
     int       flag;		/* return value from function */
     PARAM_VARS *ptr;		/* pointer to a parameter */
 
     /* First convert to upper case & remove leading white space. */
-    flag = LB_clean_string(name, &name2);
+    flag = Zoltan_Clean_String(name, &name2);
     if (flag)
 	return (flag);
 

@@ -33,18 +33,18 @@ struct median {          /* median cut info */
 
 
 /* prototypes for TFLOPS_SPECIAL */
-static void LB_reduce(int, int, int, struct median*, struct median*, int *,
+static void Zoltan_RB_reduce(int, int, int, struct median*, struct median*, int *,
                MPI_Datatype, MPI_Comm);
-static void LB_scan(double *, double *, MPI_Comm, int, int, int);
-static void LB_sum_double(double *, int, int, int, MPI_Comm);
-static void LB_max_double(double *, int, int, int, MPI_Comm);
+static void Zoltan_RB_scan(double *, double *, MPI_Comm, int, int, int);
+static void Zoltan_RB_sum_double(double *, int, int, int, MPI_Comm);
+static void Zoltan_RB_max_double(double *, int, int, int, MPI_Comm);
 
 /************ R O U T I N E S   I N   T H I S   F I L E  **********************
 
        NAME                             TYPE
 ----------------------------------------------------------------------
-	LB_find_median			void
-	LB_median_merge			void
+	Zoltan_RB_find_median			void
+	Zoltan_RB_median_merge			void
 
 ******************************************************************************/
 
@@ -52,7 +52,7 @@ static void LB_max_double(double *, int, int, int, MPI_Comm);
 /*****************************************************************************/
 /*****************************************************************************/
 
-int LB_find_median(
+int Zoltan_RB_find_median(
   LB *lb,               /* The load-balancing structure                      */
   double *dots,         /* array of coordinates                              */
   double *wgts,         /* array of weights associated with dots             */
@@ -99,7 +99,7 @@ int LB_find_median(
 
   MPI_Op            med_op;
   MPI_Datatype      med_type;
-  MPI_User_function LB_median_merge;
+  MPI_User_function Zoltan_RB_median_merge;
 
 
 /***************************** BEGIN EXECUTION ******************************/
@@ -110,7 +110,7 @@ int LB_find_median(
   MPI_Type_commit(&med_type);
 
   if (!lb->Tflops_Special)
-     MPI_Op_create(&LB_median_merge,1,&med_op);
+     MPI_Op_create(&Zoltan_RB_median_merge,1,&med_op);
 
   /*
    * intialize the dotlist array
@@ -137,7 +137,7 @@ int LB_find_median(
 
       /* find tolerance (max of wtmax) */
       tolerance = wtmax;
-      LB_max_double(&tolerance, proclower, rank, num_procs, local_comm);
+      Zoltan_RB_max_double(&tolerance, proclower, rank, num_procs, local_comm);
 
       tmp_half = 0.0;    /* in case of a set with one processor return a value*/
     }
@@ -249,7 +249,7 @@ int LB_find_median(
       if (counter != NULL) (*counter)++;
       if (lb->Tflops_Special) {
          i = 1;
-         LB_reduce(num_procs, rank, proc, &medme, &med, &i, med_type,
+         Zoltan_RB_reduce(num_procs, rank, proc, &medme, &med, &i, med_type,
                    local_comm);
       }
       else
@@ -282,7 +282,7 @@ int LB_find_median(
           if (medme.valuehi == med.valuehi) wtok = medme.wthi;   
           if (weightlo + med.wthi >= targetlo) {                /* all done */
             if (lb->Tflops_Special)
-              LB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
+              Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
             else
               MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
             wtmax = targetlo - weightlo;
@@ -300,7 +300,7 @@ int LB_find_median(
           if (breakflag) {                        /* done if moved enough */
             if (lb->Tflops_Special) {
               wtok = wtsum;
-              LB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
+              Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -344,7 +344,7 @@ int LB_find_median(
           if (medme.valuelo == med.valuelo) wtok = medme.wtlo;   
           if (weighthi + med.wtlo >= targethi) {                /* all done */
             if (lb->Tflops_Special)
-               LB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
+               Zoltan_RB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
             else
                MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
             wtmax = targethi - weighthi;
@@ -362,7 +362,7 @@ int LB_find_median(
           if (breakflag) {                        /* done if moved enough */
             if (lb->Tflops_Special) {
               wtok = wtsum;
-              LB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
+              Zoltan_RB_sum_double(&wtok, proclower, rank, num_procs, local_comm);
             }
             else
               MPI_Allreduce(&wtsum, &wtok, 1, MPI_DOUBLE, MPI_SUM, local_comm);
@@ -434,7 +434,7 @@ int LB_find_median(
                               all procs must get same proclo,prochi
 
 */
-void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
+void Zoltan_RB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
 {
   struct median *med1,*med2;
 
@@ -468,13 +468,13 @@ void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-static void LB_reduce(
+static void Zoltan_RB_reduce(
    int nproc,             /* number of processors in partition */
    int rank,              /* rank within partition */
    int proc,              /* global processor number */
    struct median *in,     /* input median */
    struct median *inout,  /* output median */
-   int *len,              /* length to pass to LB_median_merge */
+   int *len,              /* length to pass to Zoltan_RB_median_merge */
    MPI_Datatype datatype, /* MPI datatype for median */
    MPI_Comm comm          /* MPI communicator */
 )
@@ -505,7 +505,7 @@ static void LB_reduce(
    else
       if (rank + nprocs_small < nproc) {
          MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
-         LB_median_merge(in, inout, len, &datatype);
+         Zoltan_RB_median_merge(in, inout, len, &datatype);
       }
       else
          *inout = *in;
@@ -516,7 +516,7 @@ static void LB_reduce(
          to = proc - rank + (rank ^ mask);
          MPI_Send(inout, 1, datatype, to, tag, comm);
          MPI_Recv(&tmp, 1, datatype, to, tag, comm, &status);
-         LB_median_merge(&tmp, inout, len, &datatype);
+         Zoltan_RB_median_merge(&tmp, inout, len, &datatype);
       }
    else
       tag += hbit;
@@ -533,7 +533,7 @@ static void LB_reduce(
 }
 
 
-static void LB_scan(
+static void Zoltan_RB_scan(
    double *wtok,          /* local weight */
    double *wtupto,        /* sum of weights for prcessors <= rank */
    MPI_Comm local_comm,   /* MPI Communicator */
@@ -575,7 +575,7 @@ static void LB_scan(
    }
 }
 
-static void LB_sum_double(
+static void Zoltan_RB_sum_double(
    double   *x,               /* double to be summed */
    int      proclower,        /* smallest processor in partition */
    int      rank,             /* rank of processor in partition */
@@ -627,7 +627,7 @@ static void LB_sum_double(
    }
 }
 
-static void LB_max_double(
+static void Zoltan_RB_max_double(
    double   *x,               /* maximum value */
    int      proclower,        /* smallest processor in partition */
    int      rank,             /* rank of processor in partition */

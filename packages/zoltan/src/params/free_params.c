@@ -16,13 +16,13 @@
 #include "lb_const.h"
 
 
-void LB_Free_Params(
-LB_PARAM **params)				/* load balance structure */
+void Zoltan_Free_Params(
+ZOLTAN_PARAM **params)				/* load balance structure */
 {
 /*
  * Free the list of new parameter values.
  */
-    LB_PARAM *ptr, *next;
+    ZOLTAN_PARAM *ptr, *next;
 
     if (params == NULL) return;
 
