@@ -195,7 +195,7 @@ float   **eweights 		/* edge weight list data */
 			fclose(fin);
 			return (1);
 	    	}
-	    	if ((weight <= 0) && Debug_Input) {
+	    	if ((weight <= 0) && Debug_Chaco_Input) {
 			printf("ERROR in graph file `%s':", inname);
 			printf(" zero or negative weight entered for vertex %d.\n", vertex);
 			fclose(fin);
@@ -214,7 +214,7 @@ float   **eweights 		/* edge weight list data */
 	    skip_flag = FALSE;
 	    ignore_me = FALSE;
 
-            if (Debug_Input){ 
+            if (Debug_Chaco_Input){ 
 
     	    if (neighbor > *nvtxs) {
     		printf("ERROR in graph file `%s':", inname);
@@ -232,7 +232,7 @@ float   **eweights 		/* edge weight list data */
     	    }
     
     	    if (neighbor == vertex) {
-    		if (!self_edge && Debug_Input) {
+    		if (!self_edge && Debug_Chaco_Input) {
     		    printf("WARNING: Self edge (%d, %d) being ignored.\n",
     			   vertex, vertex);
     		}
@@ -270,7 +270,7 @@ float   **eweights 		/* edge weight list data */
 		        return (1);
 		    }
 
-		    if (eweight <= 0 && Debug_Input) {
+		    if (eweight <= 0 && Debug_Chaco_Input) {
 		        printf("WARNING: Bad weight entered for edge (%d,%d).  Edge ignored.\n",
 			   vertex, neighbor);
 		        skip_flag = TRUE;
@@ -285,7 +285,7 @@ float   **eweights 		/* edge weight list data */
 		}
 	    }
 
-            if (Debug_Input){
+            if (Debug_Chaco_Input){
 
 	        /* Check for edge only entered once. */
 	        if (neighbor < vertex && !skip_flag) {
@@ -331,14 +331,14 @@ float   **eweights 		/* edge weight list data */
 	if (!end_flag)
 	    flag = TRUE;
     }
-    if (flag && Debug_Input) {
+    if (flag && Debug_Chaco_Input) {
 	printf("WARNING: Possible error in graph file `%s'\n", inname);
 	printf("         Data found after expected end of file\n");
     }
 
     (*start)[*nvtxs] = sum_edges;
 
-    if (self_edge > 1 && Debug_Input) {
+    if (self_edge > 1 && Debug_Chaco_Input) {
 	printf("WARNING: %d self edges were read and ignored.\n", self_edge);
     }
 
@@ -350,7 +350,7 @@ float   **eweights 		/* edge weight list data */
 		nedges + self_edge + ignored != 2 * narcs && 
 		nedges != 2 * narcs &&
 		nedges + ignored != 2 * narcs &&
-		Debug_Input) {
+		Debug_Chaco_Input) {
 	    printf("WARNING: I expected %d edges entered twice, but I only count %d.\n",
 	        narcs, nedges);
 	}

@@ -65,7 +65,8 @@ static void create_Vtxdist();
 /*****************************************************************************/
 /*****************************************************************************/
 
-void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info)
+void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info,
+                  short **assignments, int host_proc, MPI_Comm comm)
 {
 /* Routine to initialize the decomposition.   This routine sets the
  * global variables to be used in the query routines included in this
@@ -84,6 +85,20 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info)
      Num_Proc_Dist = Num_Proc;
 
   switch(Initial_Method) {
+  case INITIAL_FILE: {
+    /* Allocate and broadcast the assignments array. */
+    int proc;
+    MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+    if (proc != host_proc) {
+      *assignments = (short *) malloc(gnvtxs * sizeof(short));
+      if (*assignments == NULL) {
+        Gen_Error(0, "fatal: insufficient memory");
+        return;
+      }
+    }
+    MPI_Bcast( *assignments, gnvtxs, MPI_SHORT, host_proc, comm);
+    break;
+  }
   case INITIAL_LINEAR:
     /* create the vtxdist array. */
     create_Vtxdist();
@@ -106,7 +121,8 @@ void ch_dist_init(int num_proc, int gnvtxs, PARIO_INFO_PTR pio_info)
 /*****************************************************************************/
 
 int ch_dist_num_vtx(
-  int target_proc
+  int target_proc,
+  short *assignments
 )
 {
 /* Function that returns the number of vertices assigned to processor
@@ -115,6 +131,13 @@ int ch_dist_num_vtx(
 int num;
 
   switch(Initial_Method) {
+  case INITIAL_FILE: {
+    int i;
+    num = 0;
+    for (i = 0; i < Gnvtxs; i++)
+      if (assignments[i] == target_proc) num++;
+    break;
+  }
   case INITIAL_LINEAR:
     num = Vtxdist[target_proc+1] - Vtxdist[target_proc];
     break;
@@ -138,7 +161,7 @@ int num;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ch_dist_max_num_vtx()
+int ch_dist_max_num_vtx(short *assignments)
 {
 /* Function that returns the maximum number of vertices assigned to any 
  * processor.
@@ -147,7 +170,7 @@ int i;
 int tmp, max = 0;
 
   for (i = 0; i < Num_Proc; i++)
-    if ((tmp = ch_dist_num_vtx(i)) > max) max = tmp;
+    if ((tmp = ch_dist_num_vtx(i,assignments)) > max) max = tmp;
 
   return max;
 }
@@ -159,7 +182,8 @@ int tmp, max = 0;
 void ch_dist_vtx_list(
   int *vtx_list,
   int *nvtx,
-  int target_proc
+  int target_proc,
+  short *assignments
 )
 {
 /* Function that returns a list of vertices assigned to proc target_proc.
@@ -174,6 +198,11 @@ int i;
   *nvtx = 0;
 
   switch(Initial_Method) {
+  case INITIAL_FILE:
+    for (i = 0; i < Gnvtxs; i++)
+      if (assignments[i] == target_proc)
+        vtx_list[(*nvtx)++] = i;
+    break;
   case INITIAL_LINEAR:
     for (i = Vtxdist[target_proc]; i < Vtxdist[target_proc+1]; i++)
       vtx_list[(*nvtx)++] = i;
@@ -194,7 +223,7 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ch_dist_proc(int v)
+int ch_dist_proc(int v, short *assignments)
 {
 /* Function that returns the processor to which a vertex v is assigned.
  * The function assumes the vertex numbering is one-based (i.e., lowest 
@@ -205,6 +234,10 @@ int ch_dist_proc(int v)
 int p;
 
   switch(Initial_Method) {
+  case INITIAL_FILE:
+    /* return the appropriate entry from the assignments array. */
+    p = assignments[v-1];
+    break;
   case INITIAL_LINEAR:
     for (p = 0; p < Num_Proc_Dist; p++)
       /* Compare with <= since v is 1-based and Vtxdist is 0-based. */

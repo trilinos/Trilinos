@@ -27,7 +27,9 @@ extern int chaco_input_geom(FILE *, char *, int, int *, float **, float **,
 extern int chaco_dist_graph(MPI_Comm, PARIO_INFO_PTR, 
                             int, int *, int *, int **, int **, 
                             int *, float **, int *, float **, 
-                            int *, float **, float **, float **);
+                            int *, float **, float **, float **, short **);
+extern int chaco_input_assign(FILE *, char *, int, short *);
+
 
 extern double read_val(FILE *, int *);
 extern int read_int(FILE *, int *);

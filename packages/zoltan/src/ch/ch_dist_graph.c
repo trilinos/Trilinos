@@ -43,7 +43,8 @@ int chaco_dist_graph(
   int     *ndim,                /* dimension of the geometry */
   float   **x,                  /* x-coordinates of the vertices */
   float   **y,                  /* y-coordinates of the vertices */
-  float   **z                   /* z-coordinates of the vertices */
+  float   **z,                  /* z-coordinates of the vertices */
+  short   **assignments         /* assignments from Chaco file; may be NULL */
 )
 {
   char *yo = "chaco_dist_graph";
@@ -76,7 +77,7 @@ int chaco_dist_graph(
   *gnvtxs = *nvtxs;
 
   /* Initialize the chaco distribution on all processors */
-  ch_dist_init(nprocs, *gnvtxs, pio_info);
+  ch_dist_init(nprocs, *gnvtxs, pio_info, assignments, host_proc, comm);
   
   /* Store pointers to original data */
   if (myproc == host_proc) {
@@ -88,7 +89,7 @@ int chaco_dist_graph(
   }
 
   /* Allocate space for new distributed graph data */
-  n = *nvtxs = ch_dist_num_vtx(myproc);
+  n = *nvtxs = ch_dist_num_vtx(myproc, *assignments);
 
   if (use_graph) {
     *xadj = (int *) malloc((n+1)*sizeof(int));
@@ -125,7 +126,7 @@ int chaco_dist_graph(
   if (myproc == host_proc){
 
     /* Allocate space for send buffers  (size = max num vtx per proc ) */
-    max_nvtxs = ch_dist_max_num_vtx();
+    max_nvtxs = ch_dist_max_num_vtx(*assignments);
     if (use_graph) {
       send_xadj = (int *) malloc((max_nvtxs+1)*sizeof(int));
       if (send_xadj == NULL) {
@@ -183,7 +184,7 @@ int chaco_dist_graph(
       if (use_graph) size[p] = 0;
 
       /* Get list of vertices to be assigned to processor p */
-      ch_dist_vtx_list(vtx_list, &nsend, p);
+      ch_dist_vtx_list(vtx_list, &nsend, p, *assignments);
 
       if (p == myproc){
 
@@ -314,7 +315,7 @@ int chaco_dist_graph(
         if (size[p] == 0) continue;
 
         /* Get list of vertices to be assigned to processor p */
-        ch_dist_vtx_list(vtx_list, &nsend, p);
+        ch_dist_vtx_list(vtx_list, &nsend, p, *assignments);
 
         adj_cnt = 0;
         if (p == myproc) {

@@ -123,7 +123,7 @@ float   **z
 	if (!end_flag)
 	    flag = 1;
     }
-    if (flag && Debug_Input) {
+    if (flag && Debug_Chaco_Input) {
 	printf("Warning: possible error in geometry file `%s'\n", geomname);
 	printf(" Numerical data found after expected end of file\n");
     }

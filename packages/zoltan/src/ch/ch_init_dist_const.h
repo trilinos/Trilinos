@@ -22,10 +22,10 @@
 #define INITIAL_LINEAR 1
 #define INITIAL_CYCLIC 2
 
-extern void ch_dist_init(int, int, PARIO_INFO_PTR);
-extern int ch_dist_num_vtx(int);
-extern int ch_dist_max_num_vtx();
-extern void ch_dist_vtx_list(int*, int*, int);
-extern int ch_dist_proc(int);
+extern void ch_dist_init(int, int, PARIO_INFO_PTR, short **, int, MPI_Comm);
+extern int ch_dist_num_vtx(int, short *);
+extern int ch_dist_max_num_vtx(short *);
+extern void ch_dist_vtx_list(int*, int*, int, short *);
+extern int ch_dist_proc(int, short *);
 
 #endif  /* CH_INIT_DIST_CONST_H */
