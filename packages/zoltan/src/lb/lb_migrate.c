@@ -758,9 +758,10 @@ int ierr;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (zz->LB.Num_Global_Parts != zz->Num_Proc) {
+  if (zz->LB.PartDist != NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-      "Number of partitions != Number of processors; use Zoltan_Migrate.");
+      "Non-uniform distribution of partitions over processors is specified; "
+      "use Zoltan_Migrate\n");
     ierr = ZOLTAN_FATAL;
     goto End;
   }

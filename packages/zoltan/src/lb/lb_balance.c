@@ -103,7 +103,8 @@ int Zoltan_LB_Balance(
 /*
  * Wrapper around Zoltan_LB for backward compatibility with
  * previous Zoltan versions.  
- * Appropriate only when (# requested partitions == # processors).
+ * Appropriate only when (# requested partitions == # processors), uniformly
+ * distributed.
  * Arguments correspond directly with arguments of Zoltan_LB.
  */
 
@@ -121,7 +122,7 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
       (zz->LB.Num_Local_Parts_Param != -1 &&
        zz->LB.Num_Local_Parts_Param != 1)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "Number of partitions specified != Number of processors; "
+      "Non-uniform distribution of partitions over processors is specified; "
       "use Zoltan_LB_Partition.");
     ierr = ZOLTAN_FATAL;
     goto End;
@@ -620,7 +621,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
    * No need to build the PartDist array if not. 
    */
   if ((!global_parts_set || (max_global_parts==num_proc)) && !local_parts_set) {
-    /* Number of parts == number of procs; do not need PartDist */
+    /* Number of parts == number of procs, uniformly distributed; */
+    /* do not need PartDist. */
     /* Free it so that an old PartDist isn't accidentally used. */
     ZOLTAN_FREE(&(zz->LB.PartDist));
     ZOLTAN_FREE(&(zz->LB.ProcDist));

@@ -115,7 +115,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
   /* Compute statistics w.r.t. partitions? */
-  if (zz->LB.Num_Global_Parts != zz->Num_Proc)
+  if (zz->LB.PartDist != NULL)
     compute_part = 1;
   else
     compute_part = 0;

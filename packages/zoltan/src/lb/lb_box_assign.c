@@ -42,10 +42,10 @@ int Zoltan_LB_Box_Assign (
     return ZOLTAN_FATAL;  
   }
 
-  if (zz->LB.Num_Global_Parts != zz->Num_Proc) {
+  if (zz->LB.PartDist != NULL) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-                   "NUM_GLOBAL_PARTITIONS != Num_Processors; "
-                   "use Zoltan_LB_Box_PP_Assign.");
+      "Non-uniform distribution of partitions over processors is specified; "
+      "use Zoltan_LB_Box_PP_Assign.");
     return ZOLTAN_FATAL;
   }
 
