@@ -139,15 +139,16 @@ class Epetra_CrsGraphData : public Epetra_Data {
   int NumMyCols_;
   int NumMyDiagonals_;
 
-	int MaxNumIndices_;
-	int GlobalMaxNumIndices_;
-
-	int** Indices_;
-	Epetra_IntSerialDenseVector NumAllocatedIndicesPerRow_;
-	Epetra_IntSerialDenseVector NumIndicesPerRow_;
-	Epetra_IntSerialDenseVector All_Indices_;
-	Epetra_DataAccess CV_;
-
+  int MaxNumIndices_;
+  int GlobalMaxNumIndices_;
+  
+  int** Indices_;
+  Epetra_IntSerialDenseVector NumAllocatedIndicesPerRow_;
+  Epetra_IntSerialDenseVector NumIndicesPerRow_;
+  Epetra_IntSerialDenseVector IndexOffset_;
+  Epetra_IntSerialDenseVector All_Indices_;
+  Epetra_DataAccess CV_;
+  
 };
 
 #endif /* EPETRA_CRSGRAPHDATA_H */

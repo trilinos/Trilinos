@@ -39,7 +39,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
     If set to Add, components on the receiving processor will be added
     together.    If set to Zero, off-processor components will be ignored.
     If set to Insert, off-processor components will replace existing
-    components on the receiving processor.
+    components on the receiving processor.  If set to InsertAdd, off-processor components
+    will replace existing components, but multiple off-processor contributions will be added.
     If set to Average, off-processor components will be averaged with
     existing components on the receiving processor. (Recursive Binary Average)
     If set to AbsMax, magnitudes of off-processor components will be maxed
@@ -53,6 +54,9 @@ enum Epetra_CombineMode {Add,    /*!< Components on the receiving processor
                         Zero,   /*!< Off-processor components will be
                                      ignored. (V,M) */
                         Insert, /*!< Off-processor components will
+                                     be inserted into locations on
+                                     receiving processor replacing existing values. (V,M) */
+                        InsertAdd, /*!< Off-processor components will
                                      be inserted into locations on
                                      receiving processor replacing existing values. (V,M) */
                         Average,/*!< Off-processor components will be

@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
 
     double orignorm = A1.NormOne();
     EPETRA_TEST_ERR(!(A1.Scale(4.0)==0),ierr);
-    EPETRA_TEST_ERR((A1.NormOne()!=orignorm),ierr);
+    EPETRA_TEST_ERR(!(A1.NormOne()!=orignorm),ierr);
     
     if (verbose) cout << "\n\nMatrix scale OK.\n\n" << endl;
 

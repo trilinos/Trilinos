@@ -743,6 +743,7 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
   if(    CombineMode != Add
       && CombineMode != Zero
       && CombineMode != Insert
+      && CombineMode != InsertAdd
       && CombineMode != Average
       && CombineMode != AbsMax )
     EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
@@ -775,6 +776,10 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++; // Add to existing value
       else if(CombineMode==Insert)
 	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = *ptr++;
+      else if(CombineMode==InsertAdd) {
+	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = 0.0;
+	for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] += *ptr++;
+      }
       else if(CombineMode==AbsMax)
         for (j=0; j<NumImportIDs; j++) To[0][ImportLIDs[j]] = EPETRA_MAX( To[0][ImportLIDs[j]],fabs(*ptr++)); //
       // Note:  The following form of averaging is not a true average if more that one value is combined.
@@ -797,6 +802,18 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	  jj = ImportLIDs[j];
 	  for (i=0; i<NumVectors; i++)
 	    To[i][jj] = *ptr++;
+	}
+      }
+      else if(CombineMode==InsertAdd) {
+	for (j=0; j<NumImportIDs; j++) {
+	  jj = ImportLIDs[j];
+	  for (i=0; i<NumVectors; i++)
+	    To[i][jj] = 0.0;
+	}
+	for (j=0; j<NumImportIDs; j++) {
+	  jj = ImportLIDs[j];
+	  for (i=0; i<NumVectors; i++)
+	    To[i][jj] += *ptr++;
 	}
       }
       else if(CombineMode==AbsMax) {
@@ -836,6 +853,20 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<MaxElementSize; k++)
 	    To[i][jj+k] = *ptr++;
+      }
+    }
+    else if(CombineMode==InsertAdd) {
+      for (j=0; j<NumImportIDs; j++) {
+	jj = MaxElementSize*ImportLIDs[j];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<MaxElementSize; k++)
+	    To[i][jj+k] = 0.0;
+      }
+      for (j=0; j<NumImportIDs; j++) {
+	jj = MaxElementSize*ImportLIDs[j];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<MaxElementSize; k++)
+	    To[i][jj+k] += *ptr++;
       }
     }
     else if(CombineMode==AbsMax) {
@@ -882,6 +913,24 @@ int Epetra_MultiVector::UnpackAndCombine(const Epetra_SrcDistObject & Source,
 	for (i=0; i<NumVectors; i++)
 	  for (k=0; k<ElementSize; k++)
 	    To[i][jj+k] = *ptr++;
+      }
+    }
+    else  if(CombineMode==InsertAdd){
+      for (j=0; j<NumImportIDs; j++) {
+	ptr = (double *) Imports + j*SizeOfPacket;
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
+	int ElementSize = ToElementSizeList[ImportLIDs[j]];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<ElementSize; k++)
+	    To[i][jj+k] = 0.0;
+      }
+      for (j=0; j<NumImportIDs; j++) {
+	ptr = (double *) Imports + j*SizeOfPacket;
+	jj = ToFirstPointInElementList[ImportLIDs[j]];
+	int ElementSize = ToElementSizeList[ImportLIDs[j]];
+	for (i=0; i<NumVectors; i++)
+	  for (k=0; k<ElementSize; k++)
+	    To[i][jj+k] += *ptr++;
       }
     }
     else  if(CombineMode==AbsMax){
@@ -1706,7 +1755,6 @@ void Epetra_MultiVector::Assign(const Epetra_MultiVector& A) {
   int  Epetra_MultiVector::Reduce() {
 
     // Global reduction on each entry of a Replicated Local MultiVector
-
     int i, j;
     double * source = 0;
       if (MyLength_>0) source = new double[MyLength_*NumVectors_];

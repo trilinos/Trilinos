@@ -151,14 +151,12 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
 //=============================================================================
 Epetra_CrsGraphData::~Epetra_CrsGraphData() {
 
-  if(Indices_ != 0) {
-    if (!StorageOptimized_) {
-      for (int i=0; i<NumMyBlockRows_; i++) {
-	if (Indices_[i]!=0 && CV_==Copy) 
-	  delete [] Indices_[i]; 
-	Indices_[i] = 0;
-      }
-    }
+  if(Indices_ != 0 && !StorageOptimized_) {
+    for (int i=0; i<NumMyBlockRows_; i++) {
+      if (Indices_[i]!=0 && CV_==Copy) 
+	delete [] Indices_[i]; 
+      Indices_[i] = 0;
+    } 
     delete[] Indices_;
     Indices_ = 0;
   }
@@ -265,6 +263,7 @@ void Epetra_CrsGraphData::Print(ostream& os, int level) const {
 		
     os << "NIPR_: " << NumIndicesPerRow_ << endl;
     os << "NAIPR_: " << NumAllocatedIndicesPerRow_ << endl;
+    os << "IndexOffset_: " << IndexOffset_ << endl;
     os << "All_Indices_: " << All_Indices_ << endl;
   }
 		

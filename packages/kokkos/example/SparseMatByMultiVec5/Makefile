@@ -1,10 +1,11 @@
 
 FC=g77
-FFLAGS = -O5 -funroll-all-loops -malign-double
+#FFLAGS = -O5 -funroll-all-loops -malign-double
+FFLAGS = -O5 -funroll-all-loops
 
 #CFLAGS = -DWALL
 
-LD = g77 -O5 -funroll-all-loops -malign-double
+LD = g77 -O5 -funroll-all-loops
 
 LIBS = 
 

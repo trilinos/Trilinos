@@ -387,17 +387,32 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     */
   int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap);
     
-  //! Analyzes matrix and attempts to optimize storage for matrix operations.
-  /*! First, this method checks whether the matrix storage is already contiguous. If it isn't, and
-    if this matrix was constructed in View mode, then an error is returned.
+  //! Make consecutive row index sections contiguous, minimize internal storage used for constructing graph.
+  /*! After construction and during initialization (when values are being added), the matrix coefficients 
+    for each row are managed as separate segments of memory. This method moves the values for all rows
+    into one large contiguous array and eliminates internal storage that is not needed after matrix construction. Calling this
+    method can have a significant impact on memory costs and machine performance.
 
-    If the matrix is not a View, then storage is optimized by moving coefficients into a single
-    contiguous array.
-   */
+    If this object was constructed in View mode then this method can't make non-contiguous values contiguous and will
+    return a warning code of 1 if the viewed data isn't already contiguous.
+
+    \note A call to this method will also call the OptimizeStorage method for the associated Epetra_CrsGraph object.  If
+    the storage for this graph has already been optimized this additional call will have no effect.
+
+    \return Integer error code, set to 0 if successful.
+
+    \pre Filled()==true.
+    \pre If CV=View when the graph was constructed, then this method will be effective \only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
+
+    \post StorageOptimized()==true, if successful.
+    \post Graph().StorageOptimized()==true, if successful.
+
+  */
   int OptimizeStorage();
+
 	
   //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
-  int MakeDataContiguous() {EPETRA_CHK_ERR(OptimizeStorage()); return(0);};
+  int MakeDataContiguous() {EPETRA_CHK_ERR(OptimizeStorage()); return(0);}
 	//@}
 	
   //@{ \name Extraction methods.
@@ -523,6 +538,8 @@ or if the number of entries in this row exceed the Length parameter.
     \post Unchanged.
   */
   int Multiply(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const;
+  int Multiply1(bool TransA, const Epetra_Vector& x, Epetra_Vector& y) const;
+
 
   //! Returns the result of a Epetra_CrsMatrix multiplied by a Epetra_MultiVector X in Y.
   /*! 
@@ -535,6 +552,7 @@ or if the number of entries in this row exceed the Length parameter.
     \post Unchanged.
   */
   int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  int Multiply1(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the result of a local solve using the Epetra_CrsMatrix on a Epetra_Vector x in y.
   /*! This method solves a triangular system of equations asynchronously on each processor.
@@ -660,28 +678,28 @@ or if the number of entries in this row exceed the Length parameter.
 	
 	
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-  bool Filled() const {return(Graph_.Filled());};
+  bool Filled() const {return(Graph_.Filled());}
 	
   //! If OptimizeStorage() has been called, this query returns true, otherwise it returns false.
-  bool StorageOptimized() const {return(Graph_.StorageOptimized());};
+  bool StorageOptimized() const {return(StorageOptimized_);}
 	
   //! If matrix indices has not been transformed to local, this query returns true, otherwise it returns false.
-  bool IndicesAreGlobal() const {return(Graph_.IndicesAreGlobal());};
+  bool IndicesAreGlobal() const {return(Graph_.IndicesAreGlobal());}
 	
   //! If matrix indices has been transformed to local, this query returns true, otherwise it returns false.
-  bool IndicesAreLocal() const {return(Graph_.IndicesAreLocal());};
+  bool IndicesAreLocal() const {return(Graph_.IndicesAreLocal());}
 	
   //! If matrix indices are packed into single array (done in OptimizeStorage()) return true, otherwise false.
-  bool IndicesAreContiguous() const {return(Graph_.IndicesAreContiguous());};
+  bool IndicesAreContiguous() const {return(Graph_.IndicesAreContiguous());}
 	
   //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
-  bool LowerTriangular() const {return(Graph_.LowerTriangular());};
+  bool LowerTriangular() const {return(Graph_.LowerTriangular());}
 	
   //! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
-  bool UpperTriangular() const {return(Graph_.UpperTriangular());};
+  bool UpperTriangular() const {return(Graph_.UpperTriangular());}
 	
   //! If matrix has no diagonal entries in global index space, this query returns true, otherwise it returns false.
-  bool NoDiagonal() const {return(Graph_.NoDiagonal());};
+  bool NoDiagonal() const {return(Graph_.NoDiagonal());}
 	
   //@}
   
@@ -703,72 +721,72 @@ or if the number of entries in this row exceed the Length parameter.
   double NormOne() const;
 
 	//! Returns the number of nonzero entries in the global matrix.
-	int NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());};
+	int NumGlobalNonzeros() const {return(Graph_.NumGlobalNonzeros());}
 	
 	//! Returns the number of global matrix rows.
-	int NumGlobalRows() const {return(Graph_.NumGlobalRows());};
+	int NumGlobalRows() const {return(Graph_.NumGlobalRows());}
 	
 	//! Returns the number of global matrix columns.
-	int NumGlobalCols() const {return(Graph_.NumGlobalCols());};
+	int NumGlobalCols() const {return(Graph_.NumGlobalCols());}
 	
 	//! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
-	int NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());};
+	int NumGlobalDiagonals() const {return(Graph_.NumGlobalDiagonals());}
 	
 	//! Returns the number of nonzero entries in the calling processor's portion of the matrix.
-	int NumMyNonzeros() const {return(Graph_.NumMyNonzeros());};
+	int NumMyNonzeros() const {return(Graph_.NumMyNonzeros());}
 	
 	//! Returns the number of matrix rows owned by the calling processor.
-	int NumMyRows() const {return(Graph_.NumMyRows());};
+	int NumMyRows() const {return(Graph_.NumMyRows());}
 	
 	//! Returns the number of entries in the set of column-indices that appear on this processor.
 	/*! The set of column-indices that appear on this processor is the union of column-indices that
 	  appear in all local rows. The size of this set isn't available until FillComplete() has been called.
 	  \pre Filled()==true
 	*/
-	int NumMyCols() const {return(Graph_.NumMyCols());};
+	int NumMyCols() const {return(Graph_.NumMyCols());}
 	
 	//! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
 	/*!
 	  \pre Filled()==true
 	*/
-	int NumMyDiagonals() const {return(Graph_.NumMyDiagonals());};
+	int NumMyDiagonals() const {return(Graph_.NumMyDiagonals());}
 	
 	//! Returns the current number of nonzero entries in specified global row on this processor.
-	int NumGlobalEntries(int Row) const {return(Graph_.NumGlobalIndices(Row));};
+	int NumGlobalEntries(int Row) const {return(Graph_.NumGlobalIndices(Row));}
 	
 	//! Returns the allocated number of nonzero entries in specified global row on this processor.
-	int NumAllocatedGlobalEntries(int Row) const{return(Graph_.NumAllocatedGlobalIndices(Row));};
+	int NumAllocatedGlobalEntries(int Row) const{return(Graph_.NumAllocatedGlobalIndices(Row));}
 	
 	//! Returns the maximum number of nonzero entries across all rows on this processor.
 	/*!
 	  \pre Filled()==true
 	*/
-	int MaxNumEntries() const {return(Graph_.MaxNumIndices());};
+	int MaxNumEntries() const {return(Graph_.MaxNumIndices());}
 
 	//! Returns the maximum number of nonzero entries across all rows on all processors.
 	/*!
 	  \pre Filled()==true
 	*/
-	int GlobalMaxNumEntries() const {return(Graph_.GlobalMaxNumIndices());};
+	int GlobalMaxNumEntries() const {return(Graph_.GlobalMaxNumIndices());}
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.
-	int NumMyEntries(int Row) const {return(Graph_.NumMyIndices(Row));};
+	int NumMyEntries(int Row) const {return(Graph_.NumMyIndices(Row));}
 	
 	//! Returns the allocated number of nonzero entries in specified local row on this processor.
-	int NumAllocatedMyEntries(int Row) const {return(Graph_.NumAllocatedMyIndices(Row));};
+	int NumAllocatedMyEntries(int Row) const {return(Graph_.NumAllocatedMyIndices(Row));}
 	
 	//! Returns the index base for row and column indices for this graph.
-	int IndexBase() const {return(Graph_.IndexBase());};
+	int IndexBase() const {return(Graph_.IndexBase());}
 	
 	
 	//! Returns true if the graph associated with this matrix was pre-constructed and therefore not changeable.
-	bool StaticGraph() {return(StaticGraph_);};
+	bool StaticGraph() {return(StaticGraph_);}
 
 	//! Returns a reference to the Epetra_CrsGraph object associated with this matrix.
-	const Epetra_CrsGraph& Graph() const {return(Graph_);};
+	const Epetra_CrsGraph& Graph() const {return(Graph_);}
 	
 	//! Returns the Epetra_Map object associated with the rows of this matrix.
-	const Epetra_Map& RowMap() const {return((Epetra_Map &)Graph_.RowMap());};
+	const Epetra_Map& RowMap() const {return((Epetra_Map &)Graph_.RowMap());}
 
 	//! Replaces the current RowMap with the user-specified map object.
 	/** Replaces the current RowMap with the user-specified map object, but only
@@ -806,7 +824,7 @@ or if the number of entries in this row exceed the Length parameter.
 
 	  \pre HaveColMap()==true
 	*/
-	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_.ColMap());};
+	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_.ColMap());}
 	
 	//! Returns the Epetra_Map object associated with the domain of this matrix operator.
 	/*!
@@ -821,54 +839,54 @@ or if the number of entries in this row exceed the Length parameter.
 	const Epetra_Map& RangeMap() const  {return((Epetra_Map &)Graph_.RangeMap());}
 	
 	//! Returns the Epetra_Import object that contains the import operations for distributed operations.
-	const Epetra_Import* Importer() const {return(Graph_.Importer());};
+	const Epetra_Import* Importer() const {return(Graph_.Importer());}
 	
 	//! Returns the Epetra_Export object that contains the export operations for distributed operations.
-	const Epetra_Export* Exporter() const {return(Graph_.Exporter());};
+	const Epetra_Export* Exporter() const {return(Graph_.Exporter());}
 	
 	//! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-	const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());};
+	const Epetra_Comm& Comm() const {return(Epetra_DistObject::Comm());}
   //@}
   
   //@{ \name Local/Global ID methods
 	//! Returns the local row index for given global row index, returns -1 if no local row for this global row.
-	int LRID( int GRID) const {return(Graph_.LRID(GRID));};
+	int LRID( int GRID) const {return(Graph_.LRID(GRID));}
 	
 	//! Returns the global row index for give local row index, returns IndexBase-1 if we don't have this local row.
-	int GRID( int LRID) const {return(Graph_.GRID(LRID));};
+	int GRID( int LRID) const {return(Graph_.GRID(LRID));}
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int LCID( int GCID) const {return(Graph_.LCID(GCID));};
+	int LCID( int GCID) const {return(Graph_.LCID(GCID));}
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	int GCID( int LCID) const {return(Graph_.GCID(LCID));};
+	int GCID( int LCID) const {return(Graph_.GCID(LCID));}
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyGRID(int GRID) const {return(Graph_.MyGRID(GRID));};
+	bool MyGRID(int GRID) const {return(Graph_.MyGRID(GRID));}
 	
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
-	bool MyLRID(int LRID) const {return(Graph_.MyLRID(LRID));};
+	bool MyLRID(int LRID) const {return(Graph_.MyLRID(LRID));}
 	
 	//! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyGCID(int GCID) const {return(Graph_.MyGCID(GCID));};
+	bool MyGCID(int GCID) const {return(Graph_.MyGCID(GCID));}
    
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
 	/*!
 	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
 	 */
-	bool MyLCID(int LCID) const {return(Graph_.MyLCID(LCID));};
+	bool MyLCID(int LCID) const {return(Graph_.MyLCID(LCID));}
 
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
-	bool MyGlobalRow(int GID) const {return(Graph_.MyGlobalRow(GID));};
+	bool MyGlobalRow(int GID) const {return(Graph_.MyGlobalRow(GID));}
   //@}
   
   
@@ -881,7 +899,7 @@ or if the number of entries in this row exceed the Length parameter.
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
   //! Returns a character string describing the operator
-  const char* Label() const {return(Epetra_Object::Label());};
+  const char* Label() const {return(Epetra_Object::Label());}
 	
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -892,7 +910,7 @@ or if the number of entries in this row exceed the Length parameter.
 		
     \return Always returns 0.
   */
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);}
 
   //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
   /*! 
@@ -904,7 +922,7 @@ or if the number of entries in this row exceed the Length parameter.
     \post Unchanged.
   */
   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Epetra_CrsMatrix::Multiply(Epetra_CrsMatrix::UseTranspose(), X, Y));};
+    return(Epetra_CrsMatrix::Multiply(Epetra_CrsMatrix::UseTranspose(), X, Y));}
 	
 	//! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
 	/*! In this implementation, we use several existing attributes to determine how virtual
@@ -921,19 +939,19 @@ or if the number of entries in this row exceed the Length parameter.
     \post Unchanged.
   */
   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
-    return(Solve(UpperTriangular(), Epetra_CrsMatrix::UseTranspose(), NoDiagonal(), X, Y));};
+    return(Solve(UpperTriangular(), Epetra_CrsMatrix::UseTranspose(), NoDiagonal(), X, Y));}
 
 	//! Returns true because this class can compute an Inf-norm.
-	bool HasNormInf() const {return(true);};
+	bool HasNormInf() const {return(true);}
 	
 	//! Returns the current UseTranspose setting.
-	bool UseTranspose() const {return(UseTranspose_);};
+	bool UseTranspose() const {return(UseTranspose_);}
 	
 	//! Returns the Epetra_Map object associated with the domain of this matrix operator.
-	const Epetra_Map& OperatorDomainMap() const {return(DomainMap());};
+	const Epetra_Map& OperatorDomainMap() const {return(DomainMap());}
 	
 	//! Returns the Epetra_Map object associated with the range of this matrix operator.
-	const Epetra_Map& OperatorRangeMap() const {return(RangeMap());};
+	const Epetra_Map& OperatorRangeMap() const {return(RangeMap());}
 
   //@}
   //@{ \name Additional methods required to implement Epetra_RowMatrix interface.
@@ -951,13 +969,13 @@ or if the number of entries in this row exceed the Length parameter.
 	int NumMyRowEntries(int MyRow, int& NumEntries) const;
 
 	//! Returns the Epetra_Map object associated with the rows of this matrix.
-	const Epetra_Map& RowMatrixRowMap() const {return(RowMap());};
+	const Epetra_Map& RowMatrixRowMap() const {return(RowMap());}
 	
 	//! Returns the Epetra_Map object associated with columns of this matrix.
-	const Epetra_Map& RowMatrixColMap() const {return(ColMap());};
+	const Epetra_Map& RowMatrixColMap() const {return(ColMap());}
 	
 	//! Returns the Epetra_Import object that contains the import operations for distributed operations.
-	const Epetra_Import* RowMatrixImporter() const {return(Importer());};
+	const Epetra_Import* RowMatrixImporter() const {return(Importer());}
 	
   //@}
 	
@@ -969,14 +987,18 @@ or if the number of entries in this row exceed the Length parameter.
 	  
     \return reference to pointer to locally indexed Loc row in matrix.
   */
-	inline double*& operator[] (int Loc) {return Values_[Loc];}
-	inline double* const & operator[] (int Loc) const {return Values_[Loc];}
+	inline double* operator[] (int Loc) { 
+	  if (StorageOptimized()){ int * ind = Graph().IndexOffset(); return(All_Values_+ind[Loc]);}
+	  else return Values_[Loc];}
+	inline double* const  operator[] (int Loc) const {
+	  if (StorageOptimized()){ int * ind = Graph().IndexOffset(); return(All_Values_+ind[Loc]);}
+	  else return Values_[Loc];}
   //@}
 	
   //@{ \name Deprecated methods:  These methods still work, but will be removed in a future version.
 	
 	//! Use ColMap() instead. 
-	const Epetra_Map& ImportMap() const {return((Epetra_Map&) Graph_.ImportMap());};
+	const Epetra_Map& ImportMap() const {return((Epetra_Map&) Graph_.ImportMap());}
 
 	//! Use FillComplete() instead.
 	int TransformToLocal();
@@ -988,10 +1010,18 @@ or if the number of entries in this row exceed the Length parameter.
 
 
  protected:
-	bool Allocated() const {return(Allocated_);};
-	int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);};
-	double** Values() const {return(Values_);};
-	
+  bool Allocated() const {return(Allocated_);}
+  int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);}
+  double** Values() const {
+    if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+    else return(Values_);}
+  double* All_Values() const {
+    if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+    else return(All_Values_);}
+  double* Values(int LocalRow) const {
+    if (StorageOptimized()) return(All_Values_+Graph().IndexOffset()[LocalRow]);
+    else return(Values_[LocalRow]);}
+  
   void InitializeDefaults();
   int Allocate();
 
@@ -1000,8 +1030,16 @@ or if the number of entries in this row exceed the Length parameter.
   int InsertOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
   int ReplaceOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
   int SumIntoOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+  void UpdateImportVector(int NumVectors) const;
+  void UpdateExportVector(int NumVectors) const;
+  void GeneralMV(double * x, double * y) const;
+  void GeneralMTV(double * x, double * y) const;
+  void GeneralMM(double ** X, double ** Y, int NumVectors) const;
+  void GeneralMTM(double ** X, double ** Y, int NumVectors) const;
+  void GeneralSV(bool Upper, bool Trans, bool UnitDiagonal, double * x, double * y) const;
+  void GeneralSM(bool Upper, bool Trans, bool UnitDiagonal, double ** X, double ** Y, int NumVectors) const;
 
-  void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;};
+  void SetStaticGraph(bool Flag) {StaticGraph_ = Flag;}
 
   int CheckSizes(const Epetra_SrcDistObject& A);
 
@@ -1048,13 +1086,13 @@ or if the number of entries in this row exceed the Length parameter.
   int SortEntries();
 
   //! If SortEntries() has been called, this query returns true, otherwise it returns false.
-  bool Sorted() const {return(Graph_.Sorted());};
+  bool Sorted() const {return(Graph_.Sorted());}
 
   //! Add entries that have the same column index. Remove redundant entries from list.
   int MergeRedundantEntries();
 
   //! If MergeRedundantEntries() has been called, this query returns true, otherwise it returns false.
-  bool NoRedundancies() const {return(Graph_.NoRedundancies());};
+  bool NoRedundancies() const {return(Graph_.NoRedundancies());}
 		
   void DeleteMemory();
 
@@ -1064,6 +1102,7 @@ or if the number of entries in this row exceed the Length parameter.
   bool UseTranspose_;
   bool constructedWithFilledGraph_;
   bool matrixFillCompleteCalled_;
+  bool StorageOptimized_;
 
   double** Values_;
   double* All_Values_;
@@ -1071,9 +1110,6 @@ or if the number of entries in this row exceed the Length parameter.
   mutable double NormOne_;
 
   int NumMyRows_;
-  int* NumEntriesPerRow_;
-  int* NumAllocatedEntriesPerRow_;
-  int** Indices_;
   mutable Epetra_MultiVector* ImportVector_;
   mutable Epetra_MultiVector* ExportVector_;
 

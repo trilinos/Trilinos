@@ -54,17 +54,98 @@ class Epetra_RowMatrix;
 
 Constructing Epetra_CrsGraph objects is a multi-step process.  The basic steps are as follows:
 <ol>
-  <li> Create Epetra_CrsGraph instance, including some initial storage,  via constructor.
+  <li> Create Epetra_CrsGraph instance, including some initial storage,  via constructor. In
+       addition to the copy constructor, Epetra_CrsGraph has four different constructors.  All four of these
+          constructors have 
+	  an argument, StaticProfile, which by default is set to false.  If it is set to true, then the 
+	  profile (the number of indices per row as defined by NumIndicesPerRow) will be rigidly enforced.  
+	  Although this takes away flexibility, it allows a single array to be allocated for all indices.
+	  This decreases memory fragmentation and improves performance across many operations. A more detailed
+	  discussion of the StaticProfile option is found below.
+    <ol>
+     <li> User-provided row map, variable nonzero profile: This constructor is used to define the 
+          row distribution of the graph and specify a varying number of nonzero entries per row.
+	  It is best to use this constructor when the user will be inserting entries using global index 
+	  values and wants every column index to be included in the graph.  Note that in this case, the
+	  column map will be built for the user when FillComplete() is called.  This constructor is also
+	  appropriate for when there is a large variation in the number of indices per row.  If this is not
+	  the case, the next constructor may be more convenient to use.
+     <li> User-provided row map, fixed nonzero profile: This constructor is used to define the 
+          row distribution of the graph and specify a fixed number of nonzero entries per row.
+	  It is best to use this constructor when the user will be inserting entries using global index 
+	  values and wants every column index to be included in the graph.  Note that in this case, the
+	  column map will be built for the user when FillComplete() is called.  This constructor is also
+	  appropriate for when there is little or no variation in the number of indices per row.
+     <li> User-provided row map, user-provided column map and variable nonzero profile: 
+          This constructor is used to define the 
+          row \e and \e column distribution of the graph, and specify a varying number of nonzero entries per row.
+	  It is best to use this constructor when the user will be inserting entries and already knows which columns
+	  of the matrix should be included on each processor.  Note that in this case, the
+	  column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to 
+	  insert a column index whose GID is not part of the column map on that process, the index will be
+	  discarded.  This property can be used to "filter out" column entries that should be ignored.
+	  This constructor is also
+	  appropriate for when there is a large variation in the number of indices per row.  If this is not
+	  the case, the next constructor may be more convenient to use.
+     <li> User-provided row map, user-provided column map and fixed nonzero profile: 
+          This constructor is used to define the 
+          row \e and \e column distribution of the graph, and specify a fixed number of nonzero entries per row.
+	  It is best to use this constructor when the user will be inserting entries and already knows which columns
+	  of the matrix should be included on each processor.  Note that in this case, the
+	  column map will \e not be built for the user when FillComplete() is called.  Also, if the user attempts to 
+	  insert a column index whose GID is not part of the column map on that process, the index will be
+	  discarded.  This constructor is also
+	  appropriate for when there is little or no variation in the number of indices per row.
+    </ol>
   <li> Enter row and column entry information via calls to the InsertGlobalIndices method.
   <li> Complete construction via FillComplete call, which performs the following tasks:
     <ol>
-     <li>Transform indices to local index space (after this, IndicesAreLocal()==true)
-     <li>Sort column-indices within each row
-     <li>Compress out any redundant indices within rows
-     <li>Compute global data such as num-nonzeros, maximum row-lengths, etc.
+     <li>Transforms indices to local index space (after this, IndicesAreLocal()==true)
+     <li>Sorts column-indices within each row
+     <li>Compresses out any redundant indices within rows
+     <li>Computes global data such as num-nonzeros, maximum row-lengths, etc.
     </ol>
   <li> (Optional) Optimize the graph storage via a call to OptimizeStorage.
 </ol>
+
+<b> Performance Enhancement Issues </b>
+
+The Epetra_CrsGraph class attempts to address four basic types of situations, depending on the user's primary concern:
+
+<ol>
+ <li> Simple, flexible construction over minimal memory use or control of column indices:  In this case the user wants to provide only a row distribution
+      of the graph and insert indices without worrying about memory allocation performance.  This type of user is best
+      served by the constructor that requires only a row map, and a fixed number of indices per row.  In fact, setting NumIndicesPerRow=0
+      is probably the best option.
+ <li> Stronger control over memory allocation performance and use over flexibility and simplicity:  In this case the user explicitly set
+      StaticProfile to true and will provide values, either a single global int or an array of int's, for NumIndicesPerRow, such that 
+      the actual number of indices submitted to the graph will not exceed the estimates.  Because we know that NumIndicesPerRow will not 
+      be exceeded, we can pre-allocate all of the storage for the graph as a single array.  This is typically much more efficient.
+ <li> Explicit control over column indices:  In this case the user prescribes the column map.  Given the column map, any index that is
+      submitted for entry into the graph will be included \e only if they are present in the list of GIDs for the column map on the
+      processor that submits the index.  This feature allows the user to define a filter such that only certain columns will be kept.  The 
+      user also prescribes the local ordering via this technique, since the ordering of GIDs in the column map imposes the local
+      ordering.
+ <li> Construction using local indices only:  In some situations, users may want to build a graph using local index values only.  In this
+      case, the user must explicitly assign GIDs.  This is done by prescribing the column map, in the same way as the previous situation.
+</ol>
+
+Notes:
+<ul>
+<li>In all but the most advanced uses, users will typically \e not specify the column map.  In other words, graph entries will be submitted using 
+GIDs not LIDs and all entries that are submitted are intended to be inserted into the graph.
+
+<li>If a user is not particularly worried about performance, or really needs the flexibility associated with the first situation, then there 
+is no need to explicitly manage the NumIndicesPerRow values or set StaticProfile to true.  In this case, it is best to set NumIndicesPerRow to
+zero.
+
+<li> Users who are concerned about performance should carefully manage NumIndicesPerRow and set StaticProfile to true.  This will give the best
+performance and use the least amount of memory.
+
+<li> A compromise approach would be to not set StaticProfile to true, giving the user flexibility, but then calling OptimizeStorage() once FillComplete()
+has been called. This approach requires additional temporary memory because the graph will be copied into an efficient data structure and the old
+memory deleted.  However, once the copy has been made, the resulting data structure is as efficient as when StaticProfile is used.
+ </ul>
 
 <b>Epetra_Map attributes</b>
 
@@ -203,12 +284,9 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   //@{ \name Insertion/Removal methods.
   //! Enter a list of elements in a specified global row of the graph.
   /*!
-    \param In
-           Row - Global row number of indices.
-    \param In
-           NumIndices - Number of Indices.
-    \param In
-           Indices - Global column indices to insert.
+    \param Row - (In) Global row number of indices.
+    \param NumIndices - (In) Number of Indices.
+    \param Indices - (In) Global column indices to insert.
 
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
@@ -218,27 +296,23 @@ class Epetra_CrsGraph: public Epetra_DistObject {
   
   //! Remove a list of elements from a specified global row of the graph.
   /*!
-    \param In
-           Row - Global row number of indices.
-    \param In
-           NumIndices - Number of Indices.
-    \param In
-           Indices - Global column indices to remove.
+    \param Row - (In) Global row number of indices.
+    \param NumIndices - (In) Number of Indices.
+    \param Indices - (In) Global column indices to remove.
 	   
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
-    \pre IndicesAreGlobal()==true
+    \pre IndicesAreGlobal()==true, StorageOptimized()==false
   */
   int RemoveGlobalIndices(int GlobalRow, int NumIndices, int* Indices);
   
   //! Remove all indices from a specified global row of the graph.
   /*!
-    \param In
-           Row - Global row number of indices.
+    \param Row - (In) Global row number of indices.
 
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
-    \pre IndicesAreGlobal()==true
+    \pre IndicesAreGlobal()==true, StorageOptimized()==false
   */
   int RemoveGlobalIndices(int Row);
 
@@ -263,7 +337,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	   
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
-    \pre IndicesAreLocal()==true
+    \pre IndicesAreLocal()==true, StorageOptimized()==false
   */
   int RemoveMyIndices(int LocalRow, int NumIndices, int* Indices);
   
@@ -273,7 +347,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared.
 
-    \pre IndicesAreLocal()==true
+    \pre IndicesAreLocal()==true, StorageOptimized()==false
   */
   int RemoveMyIndices(int Row);
   //@}
@@ -286,7 +360,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
     object has a reference-count greater than 1).
 
-    \post IndicesAreLocal()==true
+    \post IndicesAreLocal()==true, Filled()==true
   */
   int FillComplete();
 
@@ -301,20 +375,22 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
     object has a reference-count greater than 1).
 
-    \post IndicesAreLocal()==true
+    \post IndicesAreLocal()==true, Filled()==true
   */
   int FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 
-  //! Make consecutive row index sections contiguous.
+  //! Make consecutive row index sections contiguous, minimize internal storage used for constructing graph.
   /*! After construction and during initialization (when indices are being added via InsertGlobalIndices() etc.), the column-
     indices for each row are held in a separate piece of allocated memory. This method moves the column-indices for all rows
-    into one large contiguous array.
+    into one large contiguous array and eliminates internal storage that is not needed after graph construction. Calling this
+    method can have a significant impact on memory costs and machine performance.
+
     If this object was constructed in View mode then this method can't make non-contiguous indices contiguous and will
     return a warning code of 1 if the viewed data isn't already contiguous.
-    \return Integer error code, set to 0 if successful. Returns 1 if data is shared (i.e., if the underlying graph-data
-    object has a reference-count greater than 1).
+    \return Integer error code, set to 0 if successful.
 
-    \pre Storage mode can't be 'View'.
+    \pre Filled()==true.
+    \pre If CV=View when the graph was constructed, then this method will be effective \only if the indices of the graph were already contiguous.  In this case, the indices are left untouched and internal storage for the graph is minimized.
 
     \post StorageOptimized()==true, if successful
   */
@@ -565,10 +641,14 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	int GlobalMaxNumNonzeros() const {return(CrsGraphData_->GlobalMaxNumNonzeros_);}
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.
-	int NumMyIndices(int Row) const {return(CrsGraphData_->NumIndicesPerRow_[Row]);}
+	int NumMyIndices(int Row) const {if (Row<0 || Row >= NumMyRows()) return(0);
+	  if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]); 
+	  else return(CrsGraphData_->NumIndicesPerRow_[Row]);}
 	
 	//! Returns the allocated number of nonzero entries in specified local row on this processor.
-	int NumAllocatedMyIndices(int Row) const {return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);}
+	int NumAllocatedMyIndices(int Row) const {if (Row<0 || Row >= NumMyRows()) return(0);
+	  if (StorageOptimized()) return(CrsGraphData_->IndexOffset_[Row+1] - CrsGraphData_->IndexOffset_[Row]); 
+	  else return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);}
 	
 	//! Returns the index base for row and column indices for this graph.
 	int IndexBase() const {return(CrsGraphData_->IndexBase_);}
@@ -674,8 +754,13 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     \return reference to pointer to locally indexed Loc row in matrix.
   */
 
-	inline int* & operator[]( int Loc ) { return(CrsGraphData_->Indices_[Loc]); }
-	inline int* const & operator[]( int Loc ) const { return(CrsGraphData_->Indices_[Loc]); }
+	inline int*  operator[]( int Loc ) { 
+	  if (StorageOptimized()){ return(CrsGraphData_->All_Indices_.Values() + CrsGraphData_->IndexOffset_[Loc]);}
+	  else return(CrsGraphData_->Indices_[Loc]); }
+
+	inline int* const  operator[]( int Loc ) const { 
+	  if (StorageOptimized()) { return(CrsGraphData_->All_Indices_.Values() +CrsGraphData_->IndexOffset_[Loc]);}
+	  else return(CrsGraphData_->Indices_[Loc]); }
 
   //@}
 
@@ -730,10 +815,24 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	friend class Epetra_OffsetIndex;
 
  protected:
-	int* NumIndicesPerRow() const {return(CrsGraphData_->NumIndicesPerRow_.Values());}
-	int* NumAllocatedIndicesPerRow() const {return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
-	int** Indices() const {return(CrsGraphData_->Indices_);}
-	int* Indices(int LocalRow) {return(CrsGraphData_->Indices_[LocalRow]);}
+	int *All_Indices() const {
+	  if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+	  else return(CrsGraphData_->All_Indices_.Values());}
+	int *IndexOffset() const {
+	  if (!StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==false", -1);
+	  else return(CrsGraphData_->IndexOffset_.Values());}
+	int* NumIndicesPerRow() const {
+	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  else return(CrsGraphData_->NumIndicesPerRow_.Values());}
+	int* NumAllocatedIndicesPerRow() const {
+	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  else return(CrsGraphData_->NumAllocatedIndicesPerRow_.Values());}
+	int** Indices() const {
+	  if (StorageOptimized()) throw ReportError("This method cannot be called when StorageOptimized()==true", -1);
+	  else return(CrsGraphData_->Indices_);}
+	int* Indices(int LocalRow) const {
+	  if (StorageOptimized()) return(CrsGraphData_->All_Indices_.Values()+CrsGraphData_->IndexOffset_[LocalRow]);
+	  else return(CrsGraphData_->Indices_[LocalRow]);}
 	// If column indices are stored in one long array (via a call to OptimizeStorage), 
 	// IndicesAreContiguous returns true, otherwise it returns false.
 	bool IndicesAreContiguous() const {return(CrsGraphData_->IndicesAreContiguous_);}
@@ -774,7 +873,7 @@ class Epetra_CrsGraph: public Epetra_DistObject {
 	void ComputeIndexState();
 	int MakeColMap(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 	int Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile);
-	int ReAllocate();
+	//int ReAllocate();
 	int ComputeGlobalConstants();
 	void SetFilled(bool Flag) {CrsGraphData_->Filled_ = Flag;}
 	bool Allocated() const {return(CrsGraphData_->Allocated_);}

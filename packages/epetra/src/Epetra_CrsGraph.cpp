@@ -91,11 +91,17 @@ Epetra_CrsGraph::Epetra_CrsGraph(const Epetra_CrsGraph& Graph)
 int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile) {
   int i;
   const int numMyBlockRows = CrsGraphData_->NumMyBlockRows_;
-
-  //*** portions specific to ISDVs
-  int errorcode = CrsGraphData_->NumIndicesPerRow_.Size(numMyBlockRows);
+  
+  // Portions specific to ISDVs
+  // Note that NumIndicesPerRow_ will be 1 element longer than needed.
+  // This is because, if OptimizeStorage() is called, the storage associated with
+  // NumIndicesPerRow_ will be reused implicitly for the IndexOffset_ array.
+  // Although a bit fragile, for users who care about efficient memory allocation,
+  // the time and memory fragmentation are important: Mike Heroux Feb 2005.
+  int errorcode = CrsGraphData_->NumIndicesPerRow_.Size(numMyBlockRows+1); 
   if(errorcode != 0) 
     throw ReportError("Error with NumIndicesPerRow_ allocation.", -99);
+
   errorcode = CrsGraphData_->NumAllocatedIndicesPerRow_.Size(numMyBlockRows);
   if(errorcode != 0) 
     throw ReportError("Error with NumAllocatedIndicesPerRow_ allocation.", -99);
@@ -157,6 +163,7 @@ int Epetra_CrsGraph::Allocate(int* NumIndicesPerRow, int Inc, bool StaticProfile
 }
 
 // private =====================================================================
+/*
 int Epetra_CrsGraph::ReAllocate() {
   // Reallocate storage that was deleted in OptimizeStorage
 
@@ -167,7 +174,7 @@ int Epetra_CrsGraph::ReAllocate() {
 
   return(0);
 }
-
+*/
 //==============================================================================
 Epetra_CrsGraph::~Epetra_CrsGraph()
 {
@@ -223,6 +230,8 @@ int Epetra_CrsGraph::InsertIndices(int Row,
 				   int NumIndices,
 				   int* UserIndices)
 {
+  if (StorageOptimized()) EPETRA_CHK_ERR(-1); // Cannot insert into an optimized graph
+
   SetSorted(false); // No longer in sorted state.
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
 
@@ -230,7 +239,7 @@ int Epetra_CrsGraph::InsertIndices(int Row,
   int ierr = 0;
 
   if(Row < 0 || Row >= NumMyBlockRows()) 
-    EPETRA_CHK_ERR(-1); // Not in Row range
+    EPETRA_CHK_ERR(-2); // Not in Row range
     
   if(CrsGraphData_->CV_ == View) {
     if(CrsGraphData_->Indices_[Row] != 0) 
@@ -310,6 +319,9 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* Indices) 
   int ierr = 0;
   int Loc;
 
+  if(IndicesAreContiguous() || StorageOptimized()) 
+    EPETRA_CHK_ERR(-1); // Indices cannot be individually deleted and newed
+
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // Cannot remove global indices from a filled graph
 
@@ -344,6 +356,10 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row, int NumIndices, int* Indices) 
 
 //==============================================================================
 int Epetra_CrsGraph::RemoveMyIndices(int Row, int NumIndices, int* Indices) {
+
+  if(IndicesAreContiguous() || StorageOptimized()) 
+    EPETRA_CHK_ERR(-1); // Indices cannot be individually deleted and newed
+
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
 
@@ -384,6 +400,9 @@ int Epetra_CrsGraph::RemoveGlobalIndices(int Row) {
   int j;
   int ierr = 0;
 
+  if(IndicesAreContiguous() || StorageOptimized()) 
+    EPETRA_CHK_ERR(-1); // Indices cannot be individually deleted and newed
+
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // Cannot remove from a filled graph
   if(CrsGraphData_->CV_ == View) 
@@ -415,8 +434,12 @@ int Epetra_CrsGraph::RemoveMyIndices(int Row)
 {
   int ierr = 0;
 
+  if(IndicesAreContiguous() || StorageOptimized()) 
+    EPETRA_CHK_ERR(-1); // Indices cannot be individually deleted and newed
+
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // Cannot remove from a filled graph
+
   if(CrsGraphData_->CV_ == View) 
     EPETRA_CHK_ERR(-3); // This is a view only.  Cannot remove entries.
 
@@ -444,8 +467,8 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
 					 int Start,
 					 int& Loc) const
 {
-  int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
-  int* Indices = CrsGraphData_->Indices_[LocalRow];
+  int NumIndices = NumMyIndices(LocalRow);
+  int* locIndices = Indices(LocalRow);
 
   // If we have transformed the column indices, we must map this global Index to local
   if(CrsGraphData_->IndicesAreLocal_) {
@@ -454,7 +477,7 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
 
   if (CrsGraphData_->Sorted_) {
     int insertPoint;
-    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    Loc = Epetra_Util_binary_search(Index, locIndices, NumIndices, insertPoint);
     return( Loc > -1 );
   }
   else {
@@ -462,7 +485,7 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow,
     for(j = 0; j < NumIndices; j++) {
       if(j0 >= NumIndices) 
 	j0 = 0; // wrap around
-      if(Indices[j0] == Index) {
+      if(locIndices[j0] == Index) {
 	Loc = j0;
 	return(true);
       }
@@ -510,8 +533,8 @@ bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow,
 				     int Start,
 				     int& Loc) const
 {
-  int NumIndices = CrsGraphData_->NumIndicesPerRow_[LocalRow];
-  int* Indices = CrsGraphData_->Indices_[LocalRow];
+  int NumIndices = NumMyIndices(LocalRow);
+  int* locIndices = Indices(LocalRow);
 
   if(!CrsGraphData_->IndicesAreLocal_) {
     throw ReportError("Epetra_CrsGraph::FindMyIndexLoc", -1);// Indices must be local
@@ -519,7 +542,7 @@ bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow,
 
   if (CrsGraphData_->Sorted_) {
     int insertPoint;
-    Loc = Epetra_Util_binary_search(Index, Indices, NumIndices, insertPoint);
+    Loc = Epetra_Util_binary_search(Index, locIndices, NumIndices, insertPoint);
     return( Loc > -1 );
   }
   else {
@@ -527,7 +550,7 @@ bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow,
     for(j = 0; j < NumIndices; j++) {
       if(j0 >= NumIndices) 
 	j0 = 0; // wrap around
-      if(Indices[j0] == Index) {
+      if(locIndices[j0] == Index) {
 	Loc = j0;
 	return(true);
       }
@@ -981,6 +1004,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
 
   if(StorageOptimized()) 
     return(0); // Have we been here before?
+  if (!Filled()) EPETRA_CHK_ERR(-1); // Cannot optimize storage before calling FillComplete()
 
   bool Contiguous = true; // Assume contiguous is true
   for(i = 1; i < numMyBlockRows; i++) {
@@ -1003,53 +1027,58 @@ int Epetra_CrsGraph::OptimizeStorage() {
   if((CrsGraphData_->CV_ == View) && !Contiguous) 
     return(1);  // This is user data, it's not contiguous and we can't make it so.
 
-  if(CrsGraphData_->NumAllocatedIndicesPerRow_ .Values() != CrsGraphData_->NumIndicesPerRow_.Values())
-    CrsGraphData_->NumAllocatedIndicesPerRow_.MakeViewOf(CrsGraphData_->NumIndicesPerRow_); 
-  // This space is not needed after construction
-  // Once things are contiguous, allocated equals used.
+  if(CrsGraphData_->IndexOffset_ .Values() != CrsGraphData_->NumIndicesPerRow_.Values())
+    CrsGraphData_->IndexOffset_.MakeViewOf(CrsGraphData_->NumIndicesPerRow_);
 
-  CrsGraphData_->StorageOptimized_ = true; // We can do it
-
-  if(Contiguous) 
-    return(0); // Everything is done.  Return
-	
-  // Compute Number of Nonzero entries (Done in FillComplete, but we may not have been there yet.)
-  CrsGraphData_->NumMyNonzeros_ = 0;
-  for(i = 0; i < numMyBlockRows; i++) 
-    CrsGraphData_->NumMyNonzeros_ += CrsGraphData_->NumIndicesPerRow_[i];
-
-  // Allocate one big integer array for all index values
-  if (!(CrsGraphData_->StaticProfile_)) { // If static profile, All_Indices_ is already allocated, only need to pack data
-    int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
-    if(errorcode != 0) 
-      throw ReportError("Error with All_Indices_ allocation.", -99);
+  // This next step constructs the scan sum of the number of indices per row.  Note that the
+  // storage associated with NumIndicesPerRow is used by IndexOffset, so we have to be
+  // careful with this sum operation
+  int * indices = CrsGraphData_->NumIndicesPerRow_.Values();
+  int curNumIndices = indices[0];
+  indices[0] = 0;
+  for (int i=0; i<numMyBlockRows; ++i) {
+    int nextNumIndices = indices[i+1];
+    indices[i+1] = indices[i]+curNumIndices;
+    curNumIndices = nextNumIndices;
   }
 
-  // Set Indices_ to point into All_Indices_
+  if(!Contiguous) { // Must pack indices if not already contiguous
 
-  int* tmp = CrsGraphData_->All_Indices_.Values();
-  for(i = 0; i < numMyBlockRows; i++) {
-    int NumIndices = CrsGraphData_->NumIndicesPerRow_[i];
-    int* ColIndices = CrsGraphData_->Indices_[i];
-    if (tmp!=ColIndices) { // No need to copy if pointing to same space
-      for(j = 0; j < NumIndices; j++) 
-	tmp[j] = ColIndices[j];
+    // Allocate one big integer array for all index values
+    if (!(CrsGraphData_->StaticProfile_)) { // If static profile, All_Indices_ is already allocated, only need to pack data
+      int errorcode = CrsGraphData_->All_Indices_.Size(CrsGraphData_->NumMyNonzeros_);
+      if(errorcode != 0) 
+	throw ReportError("Error with All_Indices_ allocation.", -99);
     }
-    if (!(CrsGraphData_->StaticProfile_) && NumIndices>0) delete [] CrsGraphData_->Indices_[i];
-    CrsGraphData_->Indices_[i] = tmp;
-    tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
-  }
+    
+    // Pack indices into All_Indices_
+    
+    int* tmp = CrsGraphData_->All_Indices_.Values();
+    int * IndexOffset = CrsGraphData_->IndexOffset_ .Values();
+    for(i = 0; i < numMyBlockRows; i++) {
+      int NumIndices = IndexOffset[i+1] - IndexOffset[i];
+      int* ColIndices = CrsGraphData_->Indices_[i];
+      if (tmp!=ColIndices) { // No need to copy if pointing to same space
+	for(j = 0; j < NumIndices; j++) 
+	  tmp[j] = ColIndices[j];
+      }
+      if (!(CrsGraphData_->StaticProfile_) && NumIndices>0) delete [] ColIndices;
+      CrsGraphData_->Indices_[i] = 0;
+      tmp += NumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
+    }
+  } // End of !Contiguous section
 
-  SetIndicesAreContiguous(true); // Can no longer dynamically add indices
+  // Delete unneeded storage
+  CrsGraphData_->NumAllocatedIndicesPerRow_.Resize(0);
+  delete [] CrsGraphData_->Indices_; CrsGraphData_->Indices_=0;
+  SetIndicesAreContiguous(true); // Can no longer dynamically add or remove indices
+  CrsGraphData_->StorageOptimized_ = true;
 
-  if(CrsGraphData_->ReferenceCount() > 1)
-    return(1);
-  else
     return(0);
 }
 
 //==============================================================================
-int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int& NumIndices, int* Indices) const 
+int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const 
 {
   int j;
 
@@ -1058,43 +1087,45 @@ int Epetra_CrsGraph::ExtractGlobalRowCopy(int Row, int LenOfIndices, int& NumInd
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
 
-  NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+  NumIndices = NumMyIndices(Row);
   if(LenOfIndices < NumIndices) 
     EPETRA_CHK_ERR(-2); // Not enough space for copy. Needed size is passed back in NumIndices
 
+  int * srcIndices = Indices(Row);
   if(IndicesAreLocal())  
     for(j = 0; j < NumIndices; j++) 
-      Indices[j] = GCID(CrsGraphData_->Indices_[Row][j]);
+      targIndices[j] = GCID(srcIndices[j]);
   else 
     for(j = 0; j < NumIndices; j++)
-      Indices[j] = CrsGraphData_->Indices_[Row][j];
+      targIndices[j] = srcIndices[j];
   
   return(0);
 }
 
 //==============================================================================
-int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int* Indices) const 
+int Epetra_CrsGraph::ExtractMyRowCopy(int Row, int LenOfIndices, int& NumIndices, int* targIndices) const 
 {
   int j;
 
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
 
-  NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+  NumIndices = NumMyIndices(Row);
   if(LenOfIndices < NumIndices) 
     EPETRA_CHK_ERR(-2); // Not enough space for copy. Needed size is passed back in NumIndices
 
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-3); // There are no local indices yet
 
+  int * srcIndices = Indices(Row);
   for(j = 0; j < NumIndices; j++)
-    Indices[j] = CrsGraphData_->Indices_[Row][j];
+    targIndices[j] = srcIndices[j];
   
   return(0);
 }
 
 //==============================================================================
-int Epetra_CrsGraph::ExtractGlobalRowView(int Row, int& NumIndices, int*& Indices) const 
+int Epetra_CrsGraph::ExtractGlobalRowView(int Row, int& NumIndices, int*& targIndices) const 
 {
   Row = LRID(Row); // Normalize row range
 
@@ -1104,15 +1135,15 @@ int Epetra_CrsGraph::ExtractGlobalRowView(int Row, int& NumIndices, int*& Indice
   if(IndicesAreLocal()) 
     EPETRA_CHK_ERR(-2); // There are no global indices
 
-  NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+  NumIndices = NumMyIndices(Row);
 
-  Indices = CrsGraphData_->Indices_[Row];
+  targIndices = Indices(Row);
   
   return(0);
 }
 
 //==============================================================================
-int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& Indices) const 
+int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& targIndices) const 
 {
   if(Row < 0 || Row >= NumMyBlockRows()) 
     EPETRA_CHK_ERR(-1); // Not in Row range
@@ -1120,9 +1151,9 @@ int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& Indices) c
   if(IndicesAreGlobal()) 
     EPETRA_CHK_ERR(-2); // There are no local indices
 
-  NumIndices = CrsGraphData_->NumIndicesPerRow_[Row];
+  NumIndices = NumMyIndices(Row);
 
-  Indices = CrsGraphData_->Indices_[Row];
+  targIndices = Indices(Row);
 	
   return(0);
 }
@@ -1131,7 +1162,7 @@ int Epetra_CrsGraph::ExtractMyRowView(int Row, int& NumIndices, int*& Indices) c
 int Epetra_CrsGraph::NumGlobalIndices(int Row) const {
   Row = LRID(Row);
   if(Row != -1) 
-    return(CrsGraphData_->NumIndicesPerRow_[Row]);
+    return(NumMyIndices(Row));
   else 
     return(0); // No indices for this row on this processor
 }
@@ -1140,7 +1171,7 @@ int Epetra_CrsGraph::NumGlobalIndices(int Row) const {
 int Epetra_CrsGraph::NumAllocatedGlobalIndices(int Row) const {
   Row = LRID(Row);
   if(Row != -1) 
-    return(CrsGraphData_->NumAllocatedIndicesPerRow_[Row]);
+    return(NumAllocatedMyIndices(Row));
   else 
     return(0); // No indices allocated for this row on this processor
 }
