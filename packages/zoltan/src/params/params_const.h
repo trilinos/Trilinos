@@ -58,7 +58,8 @@ typedef struct Param_Utype {
 
 /* function declarations for parameter modification routines */
 
-extern void LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int);
+extern int LB_Assign_Param_Vals(LB_PARAM *, PARAM_VARS *, int, int);
+extern int LB_Bind_Param(PARAM_VARS *, char *, void *);
 extern int LB_Set_Param(LB *, char *, char *);
 extern int LB_Set_Key_Param(LB *, char *, char *);
 extern void LB_Print_Key_Params(LB *);
