@@ -6,8 +6,8 @@
 main (int argc, char *argv[])
     {
     int nRow, nCol, nz, nEdge;
-    int *rowindex, *colstart;
-    double *val;
+    int *rowindex = NULL, *colstart = NULL;
+    double *val = NULL;
     int i, column;
     char filename[100];
     FILE *hg;
@@ -33,4 +33,7 @@ main (int argc, char *argv[])
     rewind (hg);
     fprintf (hg, "%d %d", nEdge, nRow);        /* header line for hmetis */
     fclose (hg);
+    free(colstart);
+    free(rowindex);
+    if (val) free(val);
     }

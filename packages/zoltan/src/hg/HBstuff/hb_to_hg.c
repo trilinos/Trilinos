@@ -6,8 +6,8 @@
 main (int argc, char *argv[])
     {
     int nRow, nCol, nz, nEdge, nPin;
-    int *rowindex, *colstart;
-    double *val;
+    int *rowindex = NULL, *colstart = NULL;
+    double *val = NULL;
     int i;
     int column;
     char filename[100];
@@ -38,4 +38,7 @@ main (int argc, char *argv[])
     rewind (hg);
     fprintf (hg, "%d %d %d 00", nRow, nEdge, nPin); /* header line for hg */
     fclose (hg);
+    free(colstart);
+    free(rowindex);
+    if (val) free(val);
     }

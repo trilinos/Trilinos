@@ -6,17 +6,18 @@
 main (int argc, char *argv[])
     {
     int nRow, nCol, nz, count, nEdge, nPin;
-    int *rowindex, *colstart;
-    double *val;
+    int *rowindex = NULL, *colstart = NULL;
+    double *val = NULL;
     int i, ii;
-    int *storage, *rowstart, *r, row, column, *colindex;
-    int *temp;
+    int *storage = NULL, *rowstart = NULL, *r = NULL, 
+        row, column, *colindex = NULL;
+    int *temp = NULL;
     int previous;
     char filename[100], filename2[100], command[200];
     FILE *hg, *g;
 
-     readHB_newmat_double(argv[1], &nRow, &nCol, &nz, &colstart, &rowindex, &val);
-/*  free (val); */
+    readHB_newmat_double(argv[1], &nRow, &nCol, &nz, &colstart, &rowindex, &val);
+    if (val) free (val);
 
     /* build dual description */
     storage  = calloc (nz,     sizeof (int));
@@ -89,4 +90,7 @@ main (int argc, char *argv[])
     free (storage);
     free (rowstart);
     free (colindex);
+    free (colstart);
+    free (rowindex);
+    free (temp);
     }

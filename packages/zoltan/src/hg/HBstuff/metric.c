@@ -17,10 +17,10 @@
 
 main (int argc, char *argv[]) {
   int nRow, nCol, nz, nEdge, nPin;
-  int *counts, max_count, min_count; 
+  int *counts = NULL, max_count, min_count; 
   float avg_count;
-  int *rowindex, *colstart;
-  double *val;
+  int *rowindex = NULL, *colstart = NULL;
+  double *val = NULL;
   int i, j;
   FILE *fp;
   int nobj;
@@ -86,7 +86,7 @@ main (int argc, char *argv[]) {
 
   printf("Reading HB matrix\n");
   readHB_newmat_double(argv[1], &nRow, &nCol, &nz, &colstart, &rowindex, &val);
-  free (&val);
+  if (val) free (val);
 
 
   printf("Computing communication volume\n");
