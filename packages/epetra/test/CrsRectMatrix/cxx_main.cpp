@@ -8,6 +8,7 @@
 #include "Epetra_Time.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Flops.h"
 #include "../epetra_test_err.h"
  
 int main(int argc, char *argv[])
@@ -41,10 +42,10 @@ int main(int argc, char *argv[])
 
 
 
-  //  char tmp;
-  //  if (rank==0) cout << "Press any key to continue..."<< endl;
-  //  if (rank==0) cin >> tmp;
-  //  Comm.Barrier();
+  // char tmp;
+  // if (rank==0) cout << "Press any key to continue..."<< endl;
+  // if (rank==0) cin >> tmp;
+  // Comm.Barrier();
 
   Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   int MyPID = Comm.MyPID();
@@ -170,10 +171,15 @@ int main(int argc, char *argv[])
   if (NumGlobalEquations<20) cout << "\n\nMatrix B = " << B << endl;
 
 
+  Epetra_Flops counter;
+  A.SetFlopCounter(counter);
+  B.SetFlopCounter(A);
   Epetra_Time timer(Comm);
   EPETRA_TEST_ERR(!(B.Multiply(false, Y, BY)==0),ierr); // Compute BY = B*Y
   double elapsed_time = timer.ElapsedTime();
   double total_flops = B.Flops();
+  counter.ResetFlops();
+  
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for B*Y = " << MFLOPs << endl<< endl;
@@ -184,6 +190,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(A.Multiply(true, Y, X)==0),ierr); // Compute X = A^T*Y
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops();
+  counter.ResetFlops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
   if (verbose) cout << "\n\nTotal MFLOPs for A^T*Y = " << MFLOPs << endl<< endl;
@@ -196,6 +203,7 @@ int main(int argc, char *argv[])
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
+  counter.ResetFlops();
   Epetra_Vector resid(YMap);
   resid.Update(1.0, BY, -1.0, AATY, 0.0);
   double residual;
