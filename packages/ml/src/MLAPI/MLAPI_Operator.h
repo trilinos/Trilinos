@@ -7,6 +7,9 @@
 #include "ml_amesos.h"
 #include "ml_epetra_utils.h"
 #include "ml_amesos_wrap.h"
+#ifdef HAVE_ML_ANASAZI
+#include "ml_anasazi.h"
+#endif
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 #include "MLAPI_Space.h"
@@ -438,7 +441,6 @@ DoubleVector Diagonal(const Operator& A)
   DoubleVector D(A.DomainSpace());
   D = 0.0;
   
-  int size = A.DomainSpace().NumMyElements();
   ML_Operator* matrix = A.GetOperator();
 
   if (matrix->getrow == NULL) 

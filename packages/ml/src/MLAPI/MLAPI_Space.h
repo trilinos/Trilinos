@@ -56,6 +56,7 @@ public:
     Offset_ = RHS.Offset();
     IsLinear_ = RHS.IsLinear();
     MyGlobalElements_ = RHS.MyGlobalElements();
+    return(*this);
   }
 
   void Reshape(int NumMyElements)

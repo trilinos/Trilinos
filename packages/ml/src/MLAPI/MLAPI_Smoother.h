@@ -1,5 +1,6 @@
 #ifndef ML_SMOOTHER_H
 #define ML_SMOOTHER_H
+#include "Epetra_Vector.h"
 #include "ml_include.h"
 #include "ml_RowMatrix.h"
 #include "Teuchos_RefCountPtr.hpp"
@@ -42,6 +43,8 @@ public:
       Prec = new Ifpack_PointRelaxation(RowMatrix_.get());
     else if (Type == "Amesos") 
       Prec = new Ifpack_Amesos(RowMatrix_.get());
+    else
+      throw("preconditioner type not recognized");
 
     Data_ = Teuchos::rcp(Prec);
 
@@ -68,6 +71,7 @@ public:
 
     RowMatrix_ = RHS.RowMatrix();
     Data_ = RHS.Data();
+    return(*this);
   }
 
   int ApplyInverse(const DoubleVector& lhs, DoubleVector& rhs) const
@@ -78,6 +82,7 @@ public:
                        (double*)&(rhs(0)));
 
     Data_->ApplyInverse(elhs,erhs);
+    return(0);
   }
 
   DoubleVector& ApplyInverse(const DoubleVector& lhs) const

@@ -108,7 +108,7 @@ public:
     MaxLevels_ = level + 1;
   }
 
-  ~MultiLevel()
+  virtual ~MultiLevel()
   {
     delete H_;
   }

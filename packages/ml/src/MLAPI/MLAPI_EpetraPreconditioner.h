@@ -61,7 +61,7 @@ public:
     return(-1.0);
   }
 
-  virtual char * Label() const
+  virtual const char* Label() const
   {
     return("MLAPI::EpetraPreconditioner");
   }

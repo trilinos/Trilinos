@@ -54,7 +54,7 @@ public:
   BaseObjectSum(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return(left(i) + right(i));
   }
   const Space& VectorSpace() const
@@ -70,7 +70,7 @@ public:
   BaseObjectSum(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return(left(i) + right);
   }
   const Space& VectorSpace() const
@@ -86,7 +86,7 @@ public:
   BaseObjectDiff(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return(left(i) - right(i));
   }
   const Space& VectorSpace() const
@@ -102,7 +102,7 @@ public:
   BaseObjectDiff(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return(left(i) - right);
   }
   const Space& VectorSpace() const
@@ -118,7 +118,7 @@ public:
   BaseObjectMult(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return left(i) * right(i);
   }
 
@@ -198,7 +198,7 @@ public:
   BaseObjectMult(const double lhs, const DoubleVector& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return left * right(i);
   }
 
@@ -215,7 +215,7 @@ public:
   BaseObjectMult(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return(left(i) * right);
   }
 
@@ -232,7 +232,7 @@ public:
   BaseObjectDiv(const Left& lhs, const Right& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return left(i) / right(i);
   }
 
@@ -249,7 +249,7 @@ public:
   BaseObjectDiv(const DoubleVector& lhs, const double rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return left(i) / right;
   }
 
@@ -267,7 +267,7 @@ public:
   BaseObjectDiv(const double lhs, const DoubleVector& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     return left / right(i);
   }
 
@@ -296,7 +296,7 @@ public:
   BaseObjectMult(const Operator& lhs, const DoubleVector& rhs)
     : left(lhs), right(rhs) {}
 
-  double operator() (size_t i) const {
+  double operator() (int i) const {
     ML_EXIT(0);
     return(0.0);
   }
@@ -391,7 +391,7 @@ operator*(const Left& left, const Right& right) {
 // =====
 std::ostream& operator<< (std::ostream& os, const DoubleVector& v) 
 {
-  for (size_t i = 0 ; i < v.VectorSpace().NumMyElements() ; ++i)
+  for (int i = 0 ; i < v.VectorSpace().NumMyElements() ; ++i)
     os << v(i) << ' ';
   os << std::endl;
   return(os);
@@ -405,7 +405,7 @@ std::ostream& operator<< (std::ostream& os, const Space& v)
   os << "NumGlobalElements() = " << v.NumGlobalElements() << std::endl;
 
   os << "ProcID\t\tLID\t\tGID" << std::endl;
-  for (size_t i = 0 ; i < v.NumMyElements() ; ++i)
+  for (int i = 0 ; i < v.NumMyElements() ; ++i)
     os << 0 << "\t\t" << i << "\t\t" << v(i) << std::endl;
   os << std::endl;
   return(os);
@@ -424,9 +424,6 @@ std::ostream& operator<< (std::ostream& os, const Operator& Op)
   allocated = 100;
   bindx = (int    *)  ML_allocate(allocated*sizeof(int   ));
   val   = (double *)  ML_allocate(allocated*sizeof(double));
-
-  int NumGlobalRows = Op.DomainSpace().NumGlobalElements();
-  int NumGlobalCols = Op.RangeSpace().NumGlobalElements();
 
   for (int iproc = 0 ; iproc < NumProc() ; ++iproc) {
 
