@@ -73,10 +73,11 @@ ELEM_INFO_PTR current_elem;
     printf("\tAttrib Per Element: %d\n", mesh->eb_nattrs[i]);
   }
 
-  printf("\nElement connect table, weights and coordinates:\n");
+  printf("\nElement connect table, partition, weights and coordinates:\n");
   for (i = 0; i < mesh->num_elems; i++) {
     current_elem = &(mesh->elements[i]);
-    printf("%d (%f):\n", current_elem->globalID, current_elem->cpu_wgt[0]);
+    printf("%d in part %d (%f):\n", current_elem->globalID, 
+           current_elem->my_part, current_elem->cpu_wgt[0]);
     for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++) {
       printf("\t%d |", current_elem->connect[j]);
       for (k = 0; k < mesh->num_dims; k++) {
@@ -125,6 +126,19 @@ ELEM_INFO_PTR current_elem;
            mesh->ecmap_neighids[k]);
     }
     offset += mesh->ecmap_cnt[i];
+  }
+
+  printf("\nHyperedges\n");
+  printf("Number of hyperedges:  %d\n", mesh->nhedges);
+  for (i = 0; i < mesh->nhedges; i++) {
+    printf("Local Hyperedge %d:  (", i);
+    for (j = mesh->hindex[i]; j < mesh->hindex[i+1]; j++)
+      printf("%d ", mesh->hvertex[j]);
+    printf(")\n");
+    printf("Edge Weights:  ");
+    for (j = 0; j < mesh->hewgt_dim; j++) 
+      printf("%f ", mesh->hewgts[i*mesh->hewgt_dim + j]);
+    printf("\n");
   }
   print_sync_end(Proc, Num_Proc, 1);
 }

@@ -125,6 +125,9 @@ int read_exoII_mesh(int Proc,
 
 
   /* alocate some memory for the element blocks */
+  mesh->data_type = MESH;
+  mesh->vwgt_dim = 1;  /* One weight for now. */
+  mesh->ewgt_dim = 1;  /* One weight for now. */
   mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
@@ -816,7 +819,6 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
     gids[ielem] = elements[mesh->ecmap_elemids[ielem]].globalID;
     my_procs[ielem] = Proc;
   }
-
   /*
    * Now communicate with other processor to get global IDs
    * for the adjacent elements in this communication map.

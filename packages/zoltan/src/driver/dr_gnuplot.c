@@ -128,7 +128,7 @@ int output_gnu(char *cmd_file,
       }
     }
   }
-  else { /* Nemesis input file */
+  else if (pio_info->file_type == NEMESIS_FILE) { /* Nemesis input file */
     /* 
      *  For each element of Nemesis input file, print the coordinates of its
      *  nodes.  No need to follow neighbors, as decomposition is by elements.
@@ -145,6 +145,9 @@ int output_gnu(char *cmd_file,
         fprintf(fp, "\n");
       }
     }
+  }
+  else {  /* Hypergraph file */
+    fprintf(fp, "Hypergraph gnuplot output not yet supported\n");
   }
     
   fclose(fp);

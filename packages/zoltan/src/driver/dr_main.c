@@ -291,6 +291,12 @@ static int read_mesh(
         return 0;
     }
   }
+  else if (pio_info->file_type == HYPERGRAPH_FILE) {
+    if (!read_hypergraph_file(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from read_hypergraph_file\n");
+        return 0;
+    }
+  }
   return 1;
 }
 
@@ -317,6 +323,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
 {
 /* Initializes mesh variables */
 
+  mesh->data_type = MESH;
   mesh->num_elems = mesh->num_nodes
                   = mesh->num_dims
                   = mesh->num_el_blks
@@ -324,18 +331,25 @@ static void initialize_mesh(MESH_INFO_PTR mesh)
                   = mesh->num_side_sets
                   = mesh->necmap
                   = mesh->elem_array_len
+                  = mesh->nhedges
+                  = mesh->vwgt_dim
+                  = mesh->ewgt_dim
+                  = mesh->hewgt_dim
                   = 0;
-  mesh->eb_names                 = NULL;
-  mesh->eb_ids                   = NULL;
-  mesh->eb_cnts                  = NULL;
-  mesh->eb_nnodes                = NULL;
-  mesh->eb_nattrs                = NULL;
-  mesh->ecmap_id                 = NULL;
-  mesh->ecmap_cnt                = NULL;
-  mesh->ecmap_elemids            = NULL;
-  mesh->ecmap_sideids            = NULL;
-  mesh->ecmap_neighids           = NULL;
-  mesh->elements                 = NULL;
+  mesh->eb_names       = NULL;
+  mesh->eb_ids         = NULL;
+  mesh->eb_cnts        = NULL;
+  mesh->eb_nnodes      = NULL;
+  mesh->eb_nattrs      = NULL;
+  mesh->ecmap_id       = NULL;
+  mesh->ecmap_cnt      = NULL;
+  mesh->ecmap_elemids  = NULL;
+  mesh->ecmap_sideids  = NULL;
+  mesh->ecmap_neighids = NULL;
+  mesh->elements       = NULL;
+  mesh->hindex         = mesh->hvertex
+                       = NULL;
+  mesh->hewgts         = NULL;
 }
 
 #ifdef __cplusplus

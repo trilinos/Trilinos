@@ -139,6 +139,12 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
               }
             }
           }
+          else if (strstr(cptr, "hypergraph")) {
+            pio_info->file_type = HYPERGRAPH_FILE;
+            /* Set default values for options here and change them later */
+            pio_info->init_dist_type = INITIAL_LINEAR;
+            pio_info->init_dist_procs = -1;
+          }
           else {
             sprintf(cmesg, "fatal(%s): unknown file type, %s", yo, cptr);
             Gen_Error(0, cmesg);

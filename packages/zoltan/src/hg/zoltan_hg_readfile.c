@@ -23,9 +23,9 @@ extern "C" {
 
 
 static int old_readfile  (int, FILE*, int*, int*, int*, int**, int**, int*, 
-                          float**, int*, float**) ;
+                          float**, int*, float**, int *) ;
 static int patoh_readfile (int, FILE*, int*, int*, int*, int**, int**, int*, 
-                           float**, int*, float**) ;
+                           float**, int*, float**, int *) ;
 
 
 /*****************************************************************************/
@@ -36,11 +36,18 @@ int Zoltan_HG_Readfile (
  int *nVtx, int *nEdge, int *nPin,
  int **hindex,   int **hvertex,
  int *vwgt_dim, float **vwgt,
- int *ewgt_dim, float **ewgt)
+ int *ewgt_dim, float **ewgt,
+ int *base)
     {
     int err = ZOLTAN_OK ;
     char string[81], *s;
     char *yo = "Zoltan_HG_Readfile" ;
+
+    /* Initialize return values in case of error. */
+    *nVtx   = *nEdge   = *nPin = *vwgt_dim = *ewgt_dim = 0;
+    *hindex = *hvertex = NULL;
+    *vwgt   = *ewgt    = NULL;
+    *base   = 0;
 
     do {
        if (!fgets (string, 80, f))
@@ -55,10 +62,10 @@ int Zoltan_HG_Readfile (
     if (atoi(s) < 2) /* Note -- this logic is not correct for files 
                         with only one vertex. */
        err = patoh_readfile (Proc,f,nVtx,nEdge,nPin,hindex,hvertex,
-                             vwgt_dim,vwgt,ewgt_dim,ewgt) ;
-    else if (atoi(s) > 1)
+                             vwgt_dim,vwgt,ewgt_dim,ewgt,base) ;
+    else if (atoi(s) > 1) 
        err = old_readfile   (Proc,f,nVtx,nEdge,nPin,hindex,hvertex,
-                             vwgt_dim,vwgt,ewgt_dim,ewgt) ;
+                             vwgt_dim,vwgt,ewgt_dim,ewgt,base) ;
 
 End:
     return  err ;
@@ -72,7 +79,8 @@ static int old_readfile (int Proc,
  int *nVtx, int *nEdge, int *nPin,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
- int *ewgt_dim, float **ewgt)
+ int *ewgt_dim, float **ewgt,
+ int *base)
     {
     int count, ierr = ZOLTAN_OK;
     char errstr[200] ;
@@ -82,10 +90,8 @@ static int old_readfile (int Proc,
 
     /* TODO: edge weights, multiple edge/vertex weights */
 
-    /* Initialize return values in case of error. */
-    *nVtx  = *nEdge  = *nPin = *vwgt_dim = *ewgt_dim = 0;
-    *index = *vertex = NULL;
-    *vwgt  = *ewgt   = NULL;
+    /* IBM-format files are assumed to be 1-based. */
+    *base = 1;
 
     rewind(f) ;
     if (!fgets (string, 80, f))
@@ -130,17 +136,17 @@ static int old_readfile (int Proc,
        while (s)
           {
           pin = atoi(s);
-          s = strtok(NULL," \n");
           if (pin <= 0 || pin > *nVtx)
               {
               sprintf(errstr, 
                       "ERROR...pin %d of vertex %d is out of range [%d,%d]!\n",
-                      pin,i+1,1, *nVtx);
+                      pin,i, 1, *nVtx);
               ZOLTAN_PRINT_ERROR (Proc, yo, errstr) ;
               ierr = ZOLTAN_FATAL;
               goto End;
               }
-          (*vertex)[Hedge++] = pin-1;
+          (*vertex)[Hedge++] = pin;
+          s = strtok(NULL," \n");
           }
        }
     (*index)[*nEdge] = Hedge;
@@ -191,12 +197,13 @@ static int patoh_readfile (int Proc,
  int *nVtx, int *nEdge, int *nPin,
  int **index,   int **vertex,
  int *vwgt_dim, float **vwgt,
- int *ewgt_dim, float **ewgt)
+ int *ewgt_dim, float **ewgt,
+ int *base)
     {
     int i, j ;
     int count, ierr = ZOLTAN_OK;
     char errstr[200], tmpstr[200] ;
-    int Hedge=0, code=0, dims=1, pin, offset=0;
+    int Hedge=0, code=0, dims=1, pin;
     /* KDD -- should dims be initialized to zero (for no vwgts) instead of 1? */
     char string[BUF_LEN], *s;
     char *yo = "patoh_readfile" ;
@@ -204,11 +211,6 @@ static int patoh_readfile (int Proc,
 
     /* TODO: edge weights, multiple edge/vertex weights */
 
-    /* Initialize return values in case of error. */
-    *nVtx  = *nEdge  = *nPin = *vwgt_dim = *ewgt_dim = 0;
-    *index = *vertex = NULL;
-    *vwgt  = *ewgt   = NULL;
-   
     /* Read PaToH file. */
     rewind(f) ;
     while (fgets (string, 80, f)!=NULL)
@@ -218,11 +220,11 @@ static int patoh_readfile (int Proc,
           continue ;
 
        count = sscanf (string, "%d %d %d %d %d %d", 
-                       &offset, nVtx, nEdge, nPin, &code, &dims) ;
+                       base, nVtx, nEdge, nPin, &code, &dims) ;
        if (count <  4)  /* code and dims are optional */ 
           {
           ZOLTAN_PRINT_ERROR (Proc, yo, 
-            "Control line of file must be: offset |V| |E| |P| (code) (dims)\n");
+            "Control line of file must be: base |V| |E| |P| (code) (dims)\n");
           ierr = ZOLTAN_FATAL ;
           goto End;
           }
@@ -279,20 +281,18 @@ static int patoh_readfile (int Proc,
           }
        while (s != NULL)
           {
-          pin = atoi(s)-offset ;
-          if (pin < 0 || pin >= *nVtx)
+          pin = atoi(s) ;
+          if (pin < 0+*base || pin >= *nVtx+*base)
               {
               sprintf(errstr, 
                       "ERROR...pin %d of edge %d is out of range [%d,%d]!\n",
-                      pin,i+1,1-offset, *nVtx-offset);
+                      pin,i,0+*base, *nVtx-1+*base);
               ZOLTAN_PRINT_ERROR (Proc, yo, errstr) ;
               ierr = ZOLTAN_FATAL;
               goto End;
               }
           (*vertex)[Hedge++] = pin ;
           s = strtok(NULL," \n\t");
-          if (s == NULL)
-             break ;
           }
        }
     (*index)[*nEdge] = Hedge;

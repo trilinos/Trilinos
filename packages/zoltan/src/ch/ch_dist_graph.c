@@ -75,6 +75,17 @@ int chaco_dist_graph(
   /* Initialize */
   use_graph = (*xadj  != NULL);
  
+  /* Handle serial case and return. */
+  if (nprocs == 1) {
+    /* Set values expected to be returned by this function. */
+    /* All array pointers are unchanged.                    */
+    *gnvtxs = *nvtxs;
+    /* Initialize distribution, so other routines using it work. */
+    ch_dist_init(nprocs, *gnvtxs, pio_info, assignments, host_proc, comm);
+
+    return 1;
+  }
+
   /* Broadcast to all procs */
   MPI_Bcast( vwgt_dim, 1, MPI_INT, host_proc, comm);
   MPI_Bcast( ewgt_dim, 1, MPI_INT, host_proc, comm);

@@ -191,7 +191,7 @@ HSFC_INC 	= hsfc_hilbert_const.h hsfc_const.h hsfc.h
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
-		  hg_part.c hg_sort.c hg_util.c
+		  hg_part.c hg_sort.c hg_util.c zoltan_hg_readfile.c
 HG_INC 		= hg.h hypergraph.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
@@ -220,7 +220,7 @@ REFTREE_INC     = reftree_const.h
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_elem_util.c \
-		  dr_maps.c dr_eval.c dr_gnuplot.c
+		  dr_maps.c dr_eval.c dr_gnuplot.c dr_hypergraph_io.c
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
 		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h

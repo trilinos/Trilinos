@@ -328,8 +328,9 @@ int Zoltan_HG_Check (
   for (i = 0 ; i < hg->nEdge ; i++)
      if ((hg->hindex[i+1] - hg->hindex[i]) < 2)
         {
-        sprintf (str, "Found hedge with less than %d vertices\n",
-                (hg->hindex[i+1] - hg->hindex[i])) ;
+        sprintf (str, "Found hedge with less than two vertices: "
+                      "edge %d has %d vtxs\n",
+                i, (hg->hindex[i+1] - hg->hindex[i])) ;
         ZOLTAN_PRINT_WARN(zz->Proc, yo, str);
         ierr = ZOLTAN_WARN ;
         }
@@ -648,7 +649,7 @@ int num_ewgt;
   if (hg->vwgt != NULL) {
     printf("Vertices: [weights])\n");
     for (i = 0; i < hg->nVtx; i++) {
-      printf("%d:  [", i+1);   /* KDD +1 for Chaco 1-based #ing. */
+      printf("%d:  [", i);  
       for (j = 0; j < num_vwgt; j++)
         printf("%f ", hg->vwgt[i*num_vwgt + j]);
       printf("])\n");
@@ -661,7 +662,7 @@ int num_ewgt;
     printf("%d:  ", i);
     printf("(");
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
-      printf("%d ", hg->hvertex[j]+1);   /* KDD +1 for Chaco 1-based #ing. */
+      printf("%d ", hg->hvertex[j]); 
     printf(")\n");
   }
 

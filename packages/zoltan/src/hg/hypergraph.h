@@ -222,7 +222,7 @@ void quicksort_list_inc_int          (int*, int, int);
 void quicksort_pointer_inc_int_mult  (int *, int, int, int*, int*);
 
 extern int Zoltan_HG_Readfile ( int, FILE *, int *, int *, int *,
- int **, int **, int *, float **, int *, float **);
+ int **, int **, int *, float **, int *, float **, int *);
 extern void Zoltan_HG_Print(ZZ *, HGraph *);
 
 

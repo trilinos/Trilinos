@@ -230,29 +230,33 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-int ch_dist_proc(int v, short *assignments)
+int ch_dist_proc(int v, short *assignments, int base)
 {
 /* Function that returns the processor to which a vertex v is assigned.
- * The function assumes the vertex numbering is one-based (i.e., lowest 
- * numbered vertex is vertex 1); this convention is used since the function
+ * The function assumes the vertex numbering is "base"-based (i.e., lowest 
+ * numbered vertex is vertex base); this convention is used since the function
  * is called primarily to find adjacent vertices' processor assignments and
- * the read-in adjacency information is one-based.
+ * the read-in adjacency information is "base"-based.
+ * E.g., for Chaco input files, base == 1; vertex comparisons are one-based.
+ *       for HG input files, base may be 0 or 1.
  */
 int p;
 
   switch(Initial_Method) {
   case INITIAL_FILE:
     /* return the appropriate entry from the assignments array. */
-    p = assignments[v-1];
+    p = assignments[v-base];
     break;
   case INITIAL_LINEAR:
     for (p = 0; p < Num_Proc_Dist; p++)
-      /* Compare with <= since v is 1-based and Vtxdist is 0-based. */
-      if (v <= Vtxdist[p+1]) break;
+      /* Since v is "base"-based and Vtxdist is 0-based, add base to 
+       * Vtxdist[p+1]. */
+      if (v < Vtxdist[p+1]+base) break;
     break;
   case INITIAL_CYCLIC:
-    /* test for (v-1) as v is 1-based and INITIAL_CYCLIC equations are 0-based */
-    p = (v-1) % Num_Proc_Dist;
+    /* test for (v-base) as v is "base"-based and 
+     * INITIAL_CYCLIC equations are 0-based */
+    p = (v-base) % Num_Proc_Dist;
     break;
   default:
     Gen_Error(0, "Invalid Initial Distribution Type in ch_dist_proc");

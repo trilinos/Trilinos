@@ -42,6 +42,12 @@ extern "C" {
 #define MAX_DIM		 3 /* max number of coordinate dimensions */
 #define MAX_CPU_WGTS	10 /* max number of cpu weights */
 
+enum DATA_TYPE {
+  MESH = 0,
+  GRAPH,
+  HYPERGRAPH
+};
+
 /*
  * Structure used to describe an element. Each processor will
  * allocate an array of these structures.
@@ -89,6 +95,11 @@ typedef struct Element_Description *ELEM_INFO_PTR;
 /* Structure used to store information about the mesh */
 struct Mesh_Description
 {
+  enum DATA_TYPE data_type;     /* Type of data stored in this data structure,
+                                   based on input file type.
+                                   Valid types are MESH, GRAPH, or HYPERGRAPH.*/
+  int     vwgt_dim;             /* number of weights per element.            */
+  int     ewgt_dim;             /* number of weights per graph edge.         */
   int     num_nodes;		/* number of nodes on this processor         */
   int     num_elems;		/* number of elements on this processor      */
   int     num_dims;		/* number of dimensions for the mesh         */
@@ -122,6 +133,16 @@ struct Mesh_Description
 				   allocated for. Need to know this when array
 				   is not completely filled during migration */
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
+  int     nhedges;              /* for hypergraphs, the number of hyperedges.*/
+  int     hewgt_dim;            /* for hypergraphs, the number of weights per
+                                   hyperedge.                                */
+  int    *hindex;               /* for hypergraphs, an entry for each 
+                                   hyperedge, giving the starting index into
+                                   hvertex for that hyperedge.               */ 
+  int    *hvertex;              /* for hypergraphs, an array listing the 
+                                   vertices making up each hyperedge.        */
+  float  *hewgts;               /* for hypergraphs, an array of hyperedge
+                                   weights; size = hewgt_dim * nhedges;      */
 
 };
 typedef struct Mesh_Description  MESH_INFO;

@@ -39,11 +39,6 @@ extern "C" {
 #define MAX_STR_LENGTH 80
 #endif
 
-static int fill_elements(int, int, PROB_INFO_PTR, 
-                         MESH_INFO_PTR, int, int, int *, 
-                         int *, int, float *, int, float *, int, 
-                         float *, float *, float *, short *);
-
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
@@ -150,6 +145,9 @@ int read_chaco_mesh(int Proc,
   }
 
   /* Initialize mesh structure for Chaco mesh. */
+  mesh->data_type = GRAPH;
+  mesh->vwgt_dim = vwgt_dim;
+  mesh->ewgt_dim = ewgt_dim;
   mesh->num_elems = nvtxs;
   mesh->elem_array_len = mesh->num_elems + 5;
   mesh->num_dims = ndim;
@@ -212,10 +210,10 @@ int read_chaco_mesh(int Proc,
    * now fill the element structure array with the
    * information from the Chaco file
    */
-  if (!fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
+  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
                      start, adj, vwgt_dim, vwgts, ewgt_dim, ewgts, 
-                     ndim, x, y, z, assignments)) {
-    Gen_Error(0, "fatal: Error returned from fill_elements");
+                     ndim, x, y, z, assignments, 1)) {
+    Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
     return 0;
   }
 
@@ -236,7 +234,7 @@ int read_chaco_mesh(int Proc,
 /*****************************************************************************/
 /*****************************************************************************/
 
-static int fill_elements(
+int chaco_fill_elements(
   int        Proc,
   int        Num_Proc,
   PROB_INFO_PTR prob,            /* problem description */
@@ -253,14 +251,17 @@ static int fill_elements(
   float     *x,                  /* x-coordinates of the vertices */
   float     *y,                  /* y-coordinates of the vertices */
   float     *z,                  /* z-coordinates of the vertices */
-  short     *assignments         /* assignments from Chaco file; may be NULL */
+  short     *assignments,        /* assignments from Chaco file; may be NULL */
+  int       base                 /* smallest vertex number to use; 
+                                    base == 1 for Chaco; 
+                                    may be 0 or 1 for HG files. */
 )
 {
   /* Local declarations. */
   int i, j, k, elem_id, local_id;
   int num_vtx; 
   int *vtx_list = NULL;
-  char *yo = "fill_elements";
+  char *yo = "chaco_fill_elements";
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -270,7 +271,9 @@ static int fill_elements(
   ch_dist_vtx_list(vtx_list, &num_vtx, Proc, assignments);
 
   for (i = 0; i < num_vtx; i++) {
-    mesh->elements[i].globalID = vtx_list[i]+1;  /* GlobalIDs are 1-based */
+    mesh->elements[i].globalID = vtx_list[i]+base;  /* GlobalIDs are 1-based
+                                                       in Chaco; may be 0-based
+                                                       or 1-based in HG files */
     if (vwgts != NULL){
       for (j=0; j<vwgt_dim; j++) {
         mesh->elements[i].cpu_wgt[j] = vwgts[i*vwgt_dim+j];
@@ -323,7 +326,7 @@ static int fill_elements(
         elem_id = adj[start[i] + j];
 
         /* determine which processor the adjacent vertex is on */
-        k = ch_dist_proc(elem_id, assignments);
+        k = ch_dist_proc(elem_id, assignments, base);
 
         /*
          * if the adjacent element is on this processor

@@ -23,7 +23,7 @@ extern "C" {
 #define BUF_LEN 1000000
 
 
-int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile)
+int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
    {
    int ierr;
    FILE *f;
@@ -42,9 +42,17 @@ int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile)
 
    ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nPin, 
     &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt, 
-    &hg->EdgeWeightDim, &hg->ewgt) ;
+    &hg->EdgeWeightDim, &hg->ewgt, base) ;
    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       return ierr;
+
+   if (*base > 0) 
+      {
+      /* Convert to zero-based vertex numbers */
+      int i;
+      for (i = 0; i < hg->nPin; i++) 
+         hg->hvertex[i] -= *base;
+      }
 
    ierr = Zoltan_HG_Create_Mirror (zz, hg);
    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
