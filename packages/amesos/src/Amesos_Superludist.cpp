@@ -564,10 +564,10 @@ int Amesos_Superludist::Factor( ) {
     //
     //  Set up Superlu's data structures
     //
-#ifdef OLD_SUPERLUDIST
-    set_default_options(&options_);
-#else
+#ifdef AMESOS_SUPERLUDIST_OLD
     set_default_options_dist(&options_);
+#else
+    set_default_options(&options_);
 #endif
 
     //
@@ -623,8 +623,10 @@ int Amesos_Superludist::Factor( ) {
     else if( IterRefine_ == "DOUBLE" ) options_.IterRefine = DOUBLE;
     else if( IterRefine_ == "EXTRA" ) options_.IterRefine = EXTRA;
 
+#ifdef FIXME
     if( PrintNonzeros_ ) options_.PrintStat = (yes_no_t)YES;
     else                 options_.PrintStat = NO;
+#endif
     
     SuperLUStat_t stat;
     PStatInit(&stat);    /* Initialize the statistics variables. */
@@ -740,10 +742,10 @@ int Amesos_Superludist::ReFactor( ) {
     
     if ( iam_ < nprow_ * npcol_ ) {
 	
-#ifdef OLD_SUPERLUDIST
-      set_default_options(&options_);
-#else
+#ifdef AMESOS_SUPERLUDIST_OLD
       set_default_options_dist(&options_);
+#else
+      set_default_options(&options_);
 #endif
       
       options_.Fact = FactOption_;
