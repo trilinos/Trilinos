@@ -17,7 +17,7 @@
 
 
 void Zoltan_Free_Params(
-ZOLTAN_PARAM **params)				/* load balance structure */
+ZOLTAN_PARAM **params)				/* parameters structure */
 {
 /*
  * Free the list of new parameter values.

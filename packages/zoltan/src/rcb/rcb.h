@@ -41,15 +41,15 @@ struct rcb_box {       	     /* bounding box */
 
 typedef struct RCB_Struct {
   ZOLTAN_ID_PTR Global_IDs;      /* Pointer to array of global IDs; global ID of 
-                                Dots[i] starts in Global_IDs[i*lb->Num_GID].
-                                Because lb->Num_GID is determined at runtime,
+                                Dots[i] starts in Global_IDs[i*zz->Num_GID].
+                                Because zz->Num_GID is determined at runtime,
                                 this info is most easily stored, allocated and
                                 reallocated separately from Dots. 
                                 This array is NOT used if Zoltan_RB_Use_IDs returns
                                 FALSE.   */
   ZOLTAN_ID_PTR Local_IDs;       /* Pointer to array of local IDs; local ID of 
-                                Dots[i] starts in Local_IDs[i*lb->Num_LID].
-                                Because lb->Num_LID is determined at runtime,
+                                Dots[i] starts in Local_IDs[i*zz->Num_LID].
+                                Because zz->Num_LID is determined at runtime,
                                 this info is most easily stored, allocated and
                                 reallocated separately from Dots. 
                                 This array is NOT used if Zoltan_RB_Use_IDs returns
@@ -59,6 +59,6 @@ typedef struct RCB_Struct {
   struct rcb_box *Box;
 } RCB_STRUCT;
 
-extern int Zoltan_RCB_Build_Structure(LB *, int *, int *, int, int);
+extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, int);
 
 #endif

@@ -67,9 +67,9 @@ typedef struct Zoltan_Param {
 #define TRUE  (1)
 #endif /* !TRUE */
 
-typedef struct Zoltan_Struct LB;
+typedef struct Zoltan_Struct ZZ;
 
-typedef int ZOLTAN_LB_FN(LB *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
+typedef int ZOLTAN_LB_FN(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
                         int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **);
 
 /*
@@ -275,7 +275,7 @@ typedef struct {
 /*****************************************************************************/
 
 /*
- *  Define a load balancing structure.  It will contain pointers to the
+ *  Define a Zoltan structure.  It will contain pointers to the
  *  appropriate functions for interfacing with applications and 
  *  pointers to the data structure used for load balancing.
  */
@@ -467,31 +467,31 @@ struct Zoltan_Struct {
 /* MACROS  */
 
 /*
- *  Test whether the processor is in the given load-balancing structure's
+ *  Test whether the processor is in the given Zoltan structure's
  *  communicator.  Used to exit from balancing routines for processors
  *  that are not included in the load-balancing communicator.
  */
 
-#define ZOLTAN_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
+#define ZOLTAN_PROC_NOT_IN_COMMUNICATOR(zz) ((zz)->Proc == -1) 
 
 /*  
  *  Print trace information.
  */
-#define ZOLTAN_TRACE_ENTER(lb,yo) \
-  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
-     ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_IN((lb)->Proc, (yo), NULL);
+#define ZOLTAN_TRACE_ENTER(zz,yo) \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
+     ((zz)->Proc == (zz)->Debug_Proc && \
+      (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
+    ZOLTAN_TRACE_IN((zz)->Proc, (yo), NULL);
 
-#define ZOLTAN_TRACE_EXIT(lb,yo) \
-  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
-     ((lb)->Proc == (lb)->Debug_Proc && \
-      (lb)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
-    ZOLTAN_TRACE_OUT((lb)->Proc, (yo), NULL);
+#define ZOLTAN_TRACE_EXIT(zz,yo) \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_ALL || \
+     ((zz)->Proc == (zz)->Debug_Proc && \
+      (zz)->Debug_Level == ZOLTAN_DEBUG_TRACE_SINGLE)) \
+    ZOLTAN_TRACE_OUT((zz)->Proc, (yo), NULL);
 
-#define ZOLTAN_TRACE_DETAIL(lb,yo,string) \
-  if ((lb)->Debug_Level >= ZOLTAN_DEBUG_TRACE_DETAIL) \
-    ZOLTAN_PRINT_INFO((lb)->Proc, (yo), (string));
+#define ZOLTAN_TRACE_DETAIL(zz,yo,string) \
+  if ((zz)->Debug_Level >= ZOLTAN_DEBUG_TRACE_DETAIL) \
+    ZOLTAN_PRINT_INFO((zz)->Proc, (yo), (string));
 
 /*
  *  Debugging macro for Tflop architecture.

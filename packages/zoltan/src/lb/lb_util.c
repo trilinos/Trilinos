@@ -25,7 +25,7 @@
  */
 
 void Zoltan_Get_Obj_List(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_ID_PTR global_ids, 
   ZOLTAN_ID_PTR local_ids, 
   int wdim, 
@@ -34,30 +34,30 @@ void Zoltan_Get_Obj_List(
 )
 {
   int i, n;
-  int num_gid_entries = lb->Num_GID;
-  int num_lid_entries = lb->Num_LID;
+  int num_gid_entries = zz->Num_GID;
+  int num_lid_entries = zz->Num_LID;
   int gid_off, lid_off;
   ZOLTAN_ID_PTR lid, next_lid;  /* Temporary pointers to local IDs; used to pass 
                                NULL to query functions when 
                                NUM_LID_ENTRIES == 0. */
 
   *ierr = ZOLTAN_OK;
-  if (lb->Get_Obj_List != NULL){
+  if (zz->Get_Obj_List != NULL){
     /* Get object list directly */
-    lb->Get_Obj_List(lb->Get_Obj_List_Data, 
+    zz->Get_Obj_List(zz->Get_Obj_List_Data, 
                      num_gid_entries, num_lid_entries,
                      global_ids, local_ids, 
                      wdim, objwgts, ierr);
   }
-  else if ((lb->Get_First_Obj != NULL) && (lb->Get_Next_Obj != NULL)){
+  else if ((zz->Get_First_Obj != NULL) && (zz->Get_Next_Obj != NULL)){
     /* Use iterator functions to loop through object list */
-    if (lb->Get_First_Obj(lb->Get_First_Obj_Data, 
+    if (zz->Get_First_Obj(zz->Get_First_Obj_Data, 
                           num_gid_entries, num_lid_entries, 
                           global_ids, local_ids, 
                           wdim, objwgts, ierr)){
       /* Determine the number of objects since we don't trust the user
          to write the Get_Next_Obj query function in a safe way! */
-      n = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
+      n = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, ierr);
       i = 0;
       while (!(*ierr) && (i<n-1)){ 
         gid_off = i * num_gid_entries;
@@ -65,7 +65,7 @@ void Zoltan_Get_Obj_List(
         lid = (num_lid_entries ? &(local_ids[lid_off]) : NULL);
         next_lid = (num_lid_entries ? &(local_ids[lid_off+num_lid_entries]) 
                                     : NULL);
-        lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
+        zz->Get_Next_Obj(zz->Get_Next_Obj_Data, 
                          num_gid_entries, num_lid_entries, 
                          &(global_ids[gid_off]), lid, 
                          &(global_ids[gid_off+num_gid_entries]),

@@ -58,7 +58,7 @@ struct Zoltan_Reftree_hash_node {
   struct Zoltan_Reftree_hash_node *next;
 };
 
-/* data structure pointed to by lb->Data_Structure */
+/* data structure pointed to by zz->Data_Structure */
 
 struct Zoltan_Reftree_data_struct {
   ZOLTAN_REFTREE *reftree_root;
@@ -68,16 +68,16 @@ struct Zoltan_Reftree_data_struct {
 
 /* Prototypes */
 
-extern int Zoltan_Reftree_Init(LB *lb);
-extern int Zoltan_Reftree_Build(LB *lb);
-extern void Zoltan_Reftree_Print(LB *lb,ZOLTAN_REFTREE *subroot, int level);
+extern int Zoltan_Reftree_Init(ZZ *zz);
+extern int Zoltan_Reftree_Build(ZZ *zz);
+extern void Zoltan_Reftree_Print(ZZ *zz,ZOLTAN_REFTREE *subroot, int level);
 
-extern ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup(LB *lb, 
+extern ZOLTAN_REFTREE* Zoltan_Reftree_hash_lookup(ZZ *zz, 
                                           struct Zoltan_Reftree_hash_node **hashtab,
                                           ZOLTAN_ID_PTR key, int n);
-extern void Zoltan_Reftree_Hash_Insert(LB *lb, ZOLTAN_REFTREE *reftree_node,
+extern void Zoltan_Reftree_Hash_Insert(ZZ *zz, ZOLTAN_REFTREE *reftree_node,
                             struct Zoltan_Reftree_hash_node **hashtab, int size);
-extern void Zoltan_Reftree_Hash_Remove(LB *lb, ZOLTAN_REFTREE *reftree_node,
+extern void Zoltan_Reftree_Hash_Remove(ZZ *zz, ZOLTAN_REFTREE *reftree_node,
                             struct Zoltan_Reftree_hash_node **hashtab, int size);
 extern void Zoltan_Reftree_Clear_Hash_Table(struct Zoltan_Reftree_hash_node **hashtab,
                                  int size);

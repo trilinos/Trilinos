@@ -30,19 +30,19 @@
 /****************************************************************************/
 /****************************************************************************/
 
-int Zoltan_Set_Fn(LB *lb, ZOLTAN_FN_TYPE fn_type, void (*fn)(), void *data)
+int Zoltan_Set_Fn(ZZ *zz, ZOLTAN_FN_TYPE fn_type, void (*fn)(), void *data)
 {
 /*
  *  Function to initialize a given LB interface function.
  *  Input:
- *    lb                --  Pointer to a LB structure.
+ *    zz                --  Pointer to a Zoltan structure.
  *    fn_type           --  Enum type indicating the function to be set.
  *    fn                --  Pointer to the function to be used in the
  *                          assignment.
  *    data              --  Pointer to data that the LB library will
  *                          pass as an argument to fn(). May be NULL.
  *  Output:
- *    lb                --  Appropriate field set to value in void *().
+ *    zz                --  Appropriate field set to value in void *().
  */
 
 char *yo = "Zoltan_Set_Fn";
@@ -51,109 +51,109 @@ int ierr;
 
   switch (fn_type) {
   case ZOLTAN_NUM_EDGES_FN_TYPE:
-    ierr = Zoltan_Set_Num_Edges_Fn(lb, 
+    ierr = Zoltan_Set_Num_Edges_Fn(zz, 
                   (ZOLTAN_NUM_EDGES_FN *) fn, data);
     break;
   case ZOLTAN_EDGE_LIST_FN_TYPE:
-    ierr = Zoltan_Set_Edge_List_Fn(lb, 
+    ierr = Zoltan_Set_Edge_List_Fn(zz, 
                   (ZOLTAN_EDGE_LIST_FN *) fn, data);
     break;
   case ZOLTAN_NUM_GEOM_FN_TYPE:
-    ierr = Zoltan_Set_Num_Geom_Fn(lb, 
+    ierr = Zoltan_Set_Num_Geom_Fn(zz, 
                   (ZOLTAN_NUM_GEOM_FN *) fn, data);
     break;
   case ZOLTAN_GEOM_FN_TYPE:
-    ierr = Zoltan_Set_Geom_Fn(lb, 
+    ierr = Zoltan_Set_Geom_Fn(zz, 
                   (ZOLTAN_GEOM_FN *) fn, data);
     break;
   case ZOLTAN_NUM_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Num_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Num_Obj_Fn(zz, 
                   (ZOLTAN_NUM_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_OBJ_LIST_FN_TYPE:
-    ierr = Zoltan_Set_Obj_List_Fn(lb, 
+    ierr = Zoltan_Set_Obj_List_Fn(zz, 
                   (ZOLTAN_OBJ_LIST_FN *) fn, data);
     break;
   case ZOLTAN_FIRST_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_First_Obj_Fn(lb, 
+    ierr = Zoltan_Set_First_Obj_Fn(zz, 
                   (ZOLTAN_FIRST_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NEXT_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Next_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Next_Obj_Fn(zz, 
                   (ZOLTAN_NEXT_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NUM_BORDER_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Num_Border_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Num_Border_Obj_Fn(zz, 
                   (ZOLTAN_NUM_BORDER_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_BORDER_OBJ_LIST_FN_TYPE:
-    ierr = Zoltan_Set_Border_Obj_List_Fn(lb, 
+    ierr = Zoltan_Set_Border_Obj_List_Fn(zz, 
                   (ZOLTAN_BORDER_OBJ_LIST_FN *) fn, data);
     break;
   case ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_First_Border_Obj_Fn(lb, 
+    ierr = Zoltan_Set_First_Border_Obj_Fn(zz, 
                   (ZOLTAN_FIRST_BORDER_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Next_Border_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Next_Border_Obj_Fn(zz, 
                   (ZOLTAN_NEXT_BORDER_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_PRE_MIGRATE_FN_TYPE:
-    ierr = Zoltan_Set_Pre_Migrate_Fn(lb, 
+    ierr = Zoltan_Set_Pre_Migrate_Fn(zz, 
                   (ZOLTAN_PRE_MIGRATE_FN *) fn, data);
     break;
   case ZOLTAN_MID_MIGRATE_FN_TYPE:
-    ierr = Zoltan_Set_Mid_Migrate_Fn(lb, 
+    ierr = Zoltan_Set_Mid_Migrate_Fn(zz, 
                   (ZOLTAN_MID_MIGRATE_FN *) fn, data);
     break;
   case ZOLTAN_POST_MIGRATE_FN_TYPE:
-    ierr = Zoltan_Set_Post_Migrate_Fn(lb, 
+    ierr = Zoltan_Set_Post_Migrate_Fn(zz, 
                   (ZOLTAN_POST_MIGRATE_FN *) fn, data);
     break;
   case ZOLTAN_OBJ_SIZE_FN_TYPE:
-    ierr = Zoltan_Set_Obj_Size_Fn(lb, 
+    ierr = Zoltan_Set_Obj_Size_Fn(zz, 
                   (ZOLTAN_OBJ_SIZE_FN *) fn, data);
     break;
   case ZOLTAN_PACK_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Pack_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Pack_Obj_Fn(zz, 
                   (ZOLTAN_PACK_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_UNPACK_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Unpack_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Unpack_Obj_Fn(zz, 
                   (ZOLTAN_UNPACK_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NUM_COARSE_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Num_Coarse_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Num_Coarse_Obj_Fn(zz, 
                   (ZOLTAN_NUM_COARSE_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_COARSE_OBJ_LIST_FN_TYPE:
-    ierr = Zoltan_Set_Coarse_Obj_List_Fn(lb, 
+    ierr = Zoltan_Set_Coarse_Obj_List_Fn(zz, 
                   (ZOLTAN_COARSE_OBJ_LIST_FN *) fn, data);
     break;
   case ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_First_Coarse_Obj_Fn(lb, 
+    ierr = Zoltan_Set_First_Coarse_Obj_Fn(zz, 
                   (ZOLTAN_FIRST_COARSE_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE:
-    ierr = Zoltan_Set_Next_Coarse_Obj_Fn(lb, 
+    ierr = Zoltan_Set_Next_Coarse_Obj_Fn(zz, 
                   (ZOLTAN_NEXT_COARSE_OBJ_FN *) fn, data);
     break;
   case ZOLTAN_NUM_CHILD_FN_TYPE:
-    ierr = Zoltan_Set_Num_Child_Fn(lb, 
+    ierr = Zoltan_Set_Num_Child_Fn(zz, 
                   (ZOLTAN_NUM_CHILD_FN *) fn, data);
     break;
   case ZOLTAN_CHILD_LIST_FN_TYPE:
-    ierr = Zoltan_Set_Child_List_Fn(lb, 
+    ierr = Zoltan_Set_Child_List_Fn(zz, 
                   (ZOLTAN_CHILD_LIST_FN *) fn, data);
     break;
   case ZOLTAN_CHILD_WEIGHT_FN_TYPE:
-    ierr = Zoltan_Set_Child_Weight_Fn(lb, 
+    ierr = Zoltan_Set_Child_Weight_Fn(zz, 
                   (ZOLTAN_CHILD_WEIGHT_FN *) fn, data);
     break;
   default:
     sprintf(msg, "ZOLTAN_FN_TYPE %d is invalid.\n"
             "Value must be in range 0 to %d.", fn_type, ZOLTAN_MAX_FN_TYPES);
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     ierr = ZOLTAN_WARN;
   }
 
@@ -174,324 +174,324 @@ int ierr;
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Edges_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_EDGES_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Edges = fn;
-  lb->Get_Num_Edges_Data = data;
+  zz->Get_Num_Edges = fn;
+  zz->Get_Num_Edges_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Edge_List_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_EDGE_LIST_FN *fn, 
   void *data
 )
 {
-  lb->Get_Edge_List = fn;
-  lb->Get_Edge_List_Data = data;
+  zz->Get_Edge_List = fn;
+  zz->Get_Edge_List_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Geom_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_GEOM_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Geom = fn;
-  lb->Get_Num_Geom_Data = data;
+  zz->Get_Num_Geom = fn;
+  zz->Get_Num_Geom_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Geom_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_GEOM_FN *fn, 
   void *data
 )
 {
-  lb->Get_Geom = fn;
-  lb->Get_Geom_Data = data;
+  zz->Get_Geom = fn;
+  zz->Get_Geom_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Obj = fn;
-  lb->Get_Num_Obj_Data = data;
+  zz->Get_Num_Obj = fn;
+  zz->Get_Num_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Obj_List_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_OBJ_LIST_FN *fn, 
   void *data
 )
 {
-  lb->Get_Obj_List = fn;
-  lb->Get_Obj_List_Data = data;
+  zz->Get_Obj_List = fn;
+  zz->Get_Obj_List_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_First_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_FIRST_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_First_Obj = fn;
-  lb->Get_First_Obj_Data = data;
+  zz->Get_First_Obj = fn;
+  zz->Get_First_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Next_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NEXT_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Next_Obj = fn;
-  lb->Get_Next_Obj_Data = data;
+  zz->Get_Next_Obj = fn;
+  zz->Get_Next_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Border_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_BORDER_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Border_Obj = fn;
-  lb->Get_Num_Border_Obj_Data = data;
+  zz->Get_Num_Border_Obj = fn;
+  zz->Get_Num_Border_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Border_Obj_List_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_BORDER_OBJ_LIST_FN *fn, 
   void *data
 )
 {
-  lb->Get_Border_Obj_List = fn;
-  lb->Get_Border_Obj_List_Data = data;
+  zz->Get_Border_Obj_List = fn;
+  zz->Get_Border_Obj_List_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_First_Border_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_FIRST_BORDER_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_First_Border_Obj = fn;
-  lb->Get_First_Border_Obj_Data = data;
+  zz->Get_First_Border_Obj = fn;
+  zz->Get_First_Border_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Next_Border_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NEXT_BORDER_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Next_Border_Obj = fn;
-  lb->Get_Next_Border_Obj_Data = data;
+  zz->Get_Next_Border_Obj = fn;
+  zz->Get_Next_Border_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Pre_Migrate_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_PRE_MIGRATE_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Pre_Migrate = fn;
-  lb->Migrate.Pre_Migrate_Data = data;
+  zz->Migrate.Pre_Migrate = fn;
+  zz->Migrate.Pre_Migrate_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Mid_Migrate_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_MID_MIGRATE_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Mid_Migrate = fn;
-  lb->Migrate.Mid_Migrate_Data = data;
+  zz->Migrate.Mid_Migrate = fn;
+  zz->Migrate.Mid_Migrate_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Post_Migrate_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_POST_MIGRATE_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Post_Migrate = fn;
-  lb->Migrate.Post_Migrate_Data = data;
+  zz->Migrate.Post_Migrate = fn;
+  zz->Migrate.Post_Migrate_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Obj_Size_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_OBJ_SIZE_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Get_Obj_Size = fn;
-  lb->Migrate.Get_Obj_Size_Data = data;
+  zz->Migrate.Get_Obj_Size = fn;
+  zz->Migrate.Get_Obj_Size_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Pack_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_PACK_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Pack_Obj = fn;
-  lb->Migrate.Pack_Obj_Data = data;
+  zz->Migrate.Pack_Obj = fn;
+  zz->Migrate.Pack_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Unpack_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_UNPACK_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Migrate.Unpack_Obj = fn;
-  lb->Migrate.Unpack_Obj_Data = data;
+  zz->Migrate.Unpack_Obj = fn;
+  zz->Migrate.Unpack_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Coarse_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_COARSE_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Coarse_Obj = fn;
-  lb->Get_Num_Coarse_Obj_Data = data;
+  zz->Get_Num_Coarse_Obj = fn;
+  zz->Get_Num_Coarse_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Coarse_Obj_List_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_COARSE_OBJ_LIST_FN *fn, 
   void *data
 )
 {
-  lb->Get_Coarse_Obj_List = fn;
-  lb->Get_Coarse_Obj_List_Data = data;
+  zz->Get_Coarse_Obj_List = fn;
+  zz->Get_Coarse_Obj_List_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_First_Coarse_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_FIRST_COARSE_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_First_Coarse_Obj = fn;
-  lb->Get_First_Coarse_Obj_Data = data;
+  zz->Get_First_Coarse_Obj = fn;
+  zz->Get_First_Coarse_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Next_Coarse_Obj_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NEXT_COARSE_OBJ_FN *fn, 
   void *data
 )
 {
-  lb->Get_Next_Coarse_Obj = fn;
-  lb->Get_Next_Coarse_Obj_Data = data;
+  zz->Get_Next_Coarse_Obj = fn;
+  zz->Get_Next_Coarse_Obj_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Num_Child_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_NUM_CHILD_FN *fn, 
   void *data
 )
 {
-  lb->Get_Num_Child = fn;
-  lb->Get_Num_Child_Data = data;
+  zz->Get_Num_Child = fn;
+  zz->Get_Num_Child_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Child_List_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_CHILD_LIST_FN *fn, 
   void *data
 )
 {
-  lb->Get_Child_List = fn;
-  lb->Get_Child_List_Data = data;
+  zz->Get_Child_List = fn;
+  zz->Get_Child_List_Data = data;
   return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
 
 int Zoltan_Set_Child_Weight_Fn(
-  LB *lb, 
+  ZZ *zz, 
   ZOLTAN_CHILD_WEIGHT_FN *fn, 
   void *data
 )
 {
-  lb->Get_Child_Weight = fn;
-  lb->Get_Child_Weight_Data = data;
+  zz->Get_Child_Weight = fn;
+  zz->Get_Child_Weight_Data = data;
   return ZOLTAN_OK;
 }

@@ -68,7 +68,7 @@ extern void    Zoltan_Oct_cpids(pOctant oct, int cpids[8]);
 extern int     Zoltan_Oct_children(pOctant oct, pOctant children[8]);
 extern int     Zoltan_Oct_isTerminal(pOctant oct);
 extern pRegion Zoltan_Oct_regionlist(pOctant oct);
-extern int     Zoltan_Oct_addRegion(LB *lb, pOctant oct, pRegion region);
+extern int     Zoltan_Oct_addRegion(ZZ *zz, pOctant oct, pRegion region);
 extern void    Zoltan_Oct_clearRegions(pOctant oct);
 extern int     Zoltan_Oct_nRegions(pOctant oct);
 extern void    Zoltan_Oct_modify_cost(pOctant oct, float cost);

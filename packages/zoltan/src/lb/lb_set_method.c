@@ -26,12 +26,12 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-int Zoltan_LB_Set_Method(LB *lb, char *method_name)
+int Zoltan_LB_Set_Method(ZZ *zz, char *method_name)
 {
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    lb                 --  The load balancing structure to which this method
+ *    zz                 --  The Zoltan structure to which this method
  *                           applies.
  *    method_name        --  String specifying the desired method.
  *
@@ -46,11 +46,11 @@ int Zoltan_LB_Set_Method(LB *lb, char *method_name)
 
   /*
    *  Compare method_name string with standard strings for methods.
-   *  If a match is found, set lb->Method and other pointers.
+   *  If a match is found, set zz->Method and other pointers.
    *  But first free any left-over data from the previous method.
    */
 
-  Zoltan_Free_Structure(lb);
+  Zoltan_Free_Structure(zz);
 
   /*
    *  Convert method_name to all upper case.
@@ -59,47 +59,47 @@ int Zoltan_LB_Set_Method(LB *lb, char *method_name)
 
   error = Zoltan_Clean_String(method_name, &method_upper);
   if (error) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
       "Error returned from Zoltan_Clean_String; No method set.");
     ZOLTAN_FREE(&method_upper);
     return error;
   }
 
   if (strcmp(method_upper, "RCB") == 0) {
-    lb->Method = RCB;
-    lb->LB_Fn = Zoltan_RCB;
+    zz->Method = RCB;
+    zz->LB_Fn = Zoltan_RCB;
   }
   else if (strcmp(method_upper, "OCTPART") == 0) {
-    lb->Method = OCTPART;
-    lb->LB_Fn = Zoltan_Octpart;
+    zz->Method = OCTPART;
+    zz->LB_Fn = Zoltan_Octpart;
   }
   else if (strcmp(method_upper, "PARMETIS") == 0) {
-    lb->Method = PARMETIS;
-    lb->LB_Fn = Zoltan_ParMetis;
+    zz->Method = PARMETIS;
+    zz->LB_Fn = Zoltan_ParMetis;
   }
   else if (strcmp(method_upper, "JOSTLE") == 0) {
-    lb->Method = JOSTLE;
-    lb->LB_Fn = Zoltan_Jostle;
+    zz->Method = JOSTLE;
+    zz->LB_Fn = Zoltan_Jostle;
   }
   else if (strcmp(method_upper, "REFTREE") == 0) {
-    lb->Method = REFTREE;
-    lb->LB_Fn = Zoltan_Reftree_Part;
+    zz->Method = REFTREE;
+    zz->LB_Fn = Zoltan_Reftree_Part;
   }
   else if (strcmp(method_upper, "RIB") == 0) {
-    lb->Method = RIB;
-    lb->LB_Fn = Zoltan_RIB;
+    zz->Method = RIB;
+    zz->LB_Fn = Zoltan_RIB;
   }
   else if (strcmp(method_upper, "SFC") == 0) {
-    lb->Method = SFC;
-    lb->LB_Fn = Zoltan_SFC;
+    zz->Method = SFC;
+    zz->LB_Fn = Zoltan_SFC;
   }
   else if (strcmp(method_upper, "HSFC") == 0) {
-    lb->Method = HSFC;
-    lb->LB_Fn = Zoltan_HSFC;
+    zz->Method = HSFC;
+    zz->LB_Fn = Zoltan_HSFC;
   }
   else if (strcmp(method_upper, "NONE") == 0) {
-    lb->Method = NONE;
-    lb->LB_Fn = NULL;
+    zz->Method = NONE;
+    zz->LB_Fn = NULL;
   }
 
   /*
@@ -108,13 +108,13 @@ int Zoltan_LB_Set_Method(LB *lb, char *method_name)
 
   else {  
     sprintf(msg, "Invalid LB method specified:  %s\n", method_name);
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     ZOLTAN_FREE(&method_upper);
     return (ZOLTAN_FATAL);
   }
 
-  if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= ZOLTAN_DEBUG_PARAMS) {
-    printf("ZOLTAN Load balancing method = %d (%s)\n", lb->Method, method_name);
+  if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS) {
+    printf("ZOLTAN Load balancing method = %d (%s)\n", zz->Method, method_name);
   }
 
   ZOLTAN_FREE(&method_upper);

@@ -14,10 +14,10 @@
 
 /* function prototypes */
 
-static int Zoltan_Oct_Update_Connections(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts);
+static int Zoltan_Oct_Update_Connections(ZZ *zz, pOctant *octs, int *newpids, pOctant *newocts, int nocts);
 
-static int Zoltan_Oct_Final_Migration(LB *lb, pOctant *octs, int *newpids, pOctant *newocts, int nocts, int nrecocts);
-static int Zoltan_Oct_Update_Map(LB *lb);
+static int Zoltan_Oct_Final_Migration(ZZ *zz, pOctant *octs, int *newpids, pOctant *newocts, int nocts, int nrecocts);
+static int Zoltan_Oct_Update_Map(ZZ *zz);
 
 /* Use high tag numbers. The MPI standard says all tags should be
    <= 32767. Note that tags 32766-32767 are used elsewhere. */
@@ -90,7 +90,7 @@ typedef struct
                                                Zoltan_Oct_setDir(msg.ptr,msg.dir); \
                                                Zoltan_Oct_setMapIdx(msg.ptr,msg.mapidx); }
       
-int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, int *nrecocts) {
+int Zoltan_Oct_migrate_octants(ZZ *zz, int *newpids, pOctant *octs, int nocts, int *nrecocts) {
   int i,j = 0;
   int nsends = 0;
   int nreceives = 0;
@@ -103,7 +103,7 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
   pOctant *newocts = NULL;                          /* New foreign octant pointers */
 
   if((newocts = (pOctant *) ZOLTAN_MALLOC(sizeof(pOctant)*(nocts+10))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
@@ -115,18 +115,18 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
 
   nsends=0;
   for (i=0; i<nocts; i++)            
-    if (newpids[i]!=lb->Proc) 
+    if (newpids[i]!=zz->Proc) 
       nsends++;
 
   /* build message array */
 
 /*   if(nsends > 0) { */
     if((snd_reply = (OCTNEW_msg *) ZOLTAN_MALLOC((nsends + 1) * sizeof(OCTNEW_msg))) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
     if((despid = (int *) ZOLTAN_MALLOC((nsends+10) * sizeof(int))) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       ZOLTAN_FREE(&snd_reply);
       return ZOLTAN_MEMERR;
     }
@@ -138,23 +138,23 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
 
   j = 0;
   for (i=0; i<nocts; i++)                    
-    if (newpids[i]!=lb->Proc) {  
+    if (newpids[i]!=zz->Proc) {  
       snd_reply[j].num = i;
       despid[j++] = newpids[i];
     }
    
   /* send messages */
 
-  ierr = Zoltan_Comm_Create(&comm_plan, nsends, despid, lb->Communicator, MigOctCommCreate, &nreceives);
+  ierr = Zoltan_Comm_Create(&comm_plan, nsends, despid, zz->Communicator, MigOctCommCreate, &nreceives);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&snd_reply);
     ZOLTAN_FREE(&despid);
     return (ierr);
   }
 
   if((rcv_reply = (OCTNEW_msg *) ZOLTAN_MALLOC((nreceives + 1) * sizeof(OCTNEW_msg))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&snd_reply);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&rcv_reply);
@@ -164,7 +164,7 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
   ierr = Zoltan_Comm_Do(comm_plan, MigOctCommDo, (char *) snd_reply,
 		    sizeof(OCTNEW_msg), (char *) rcv_reply);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&snd_reply);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&rcv_reply);
@@ -173,13 +173,13 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
     /* Reply to malloc requests and Receive malloc replies */
     
   for (i=0; i< nreceives; i++) {  
-    rcv_reply[i].ptr = Zoltan_Oct_POct_new((OCT_Global_Info *) (lb->Data_Structure)); 
+    rcv_reply[i].ptr = Zoltan_Oct_POct_new((OCT_Global_Info *) (zz->Data_Structure)); 
   }
 ;
   ierr = Zoltan_Comm_Do_Reverse(comm_plan, MigOctCommReverse, (char *) rcv_reply,
 			    sizeof(OCTNEW_msg), NULL, (char *) snd_reply);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&snd_reply);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&rcv_reply);
@@ -195,7 +195,7 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
     
   ierr = Zoltan_Comm_Destroy(&comm_plan);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&snd_reply);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&rcv_reply);
@@ -210,20 +210,20 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
   /* set return value */
 
   *nrecocts = nreceives;
-  ierr = Zoltan_Oct_Update_Connections(lb, octs, newpids, newocts, nocts);
+  ierr = Zoltan_Oct_Update_Connections(zz, octs, newpids, newocts, nocts);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     abort();
     return (ierr);
   }
-  ierr = Zoltan_Oct_Final_Migration(lb, octs,newpids,newocts,nocts, *nrecocts);
+  ierr = Zoltan_Oct_Final_Migration(zz, octs,newpids,newocts,nocts, *nrecocts);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     abort();
     return (ierr);
   }
   
-  Zoltan_Oct_Update_Map(lb);
+  Zoltan_Oct_Update_Map(zz);
 
   ZOLTAN_FREE(&newocts);
   return ierr;
@@ -243,8 +243,8 @@ int Zoltan_Oct_migrate_octants(LB *lb, int *newpids, pOctant *octs, int nocts, i
  */
 
 
-static int Zoltan_Oct_Update_Connections(lb, octs,newpids,newocts,nocts)
-LB *lb;
+static int Zoltan_Oct_Update_Connections(zz, octs,newpids,newocts,nocts)
+ZZ *zz;
 pOctant *octs;      /* octs[nocts]    */
 int *newpids;       /* newpids[nocts] */
 pOctant *newocts;   /* newocts[nocts] */
@@ -270,30 +270,30 @@ int nocts;          /* number of octants leaving this processor */
 
   ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   char *yo = "Zoltan_Oct_Update_Connections";
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) lb->Data_Structure;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->Data_Structure;
   localcount=0;
   remotecount=0;
 
   /* count number of sends */
   nsends = 0;
   for (i=0; i<nocts; i++)              
-    if (newpids[i]!=lb->Proc)
+    if (newpids[i]!=zz->Proc)
       nsends++;
 
   if(nocts > 0) {
     if((remoteumsg = (Update_msg *) ZOLTAN_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
     
     if((localumsg  = (Update_msg *) ZOLTAN_MALLOC((nocts+1) * sizeof(Update_msg)*9)) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       ZOLTAN_FREE(&remoteumsg);
       return ZOLTAN_MEMERR;
     }
     
     if((despid = (int *) ZOLTAN_MALLOC((nocts+1) * sizeof(int)*9)) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       ZOLTAN_FREE(&remoteumsg);
       ZOLTAN_FREE(&localumsg);
       return ZOLTAN_MEMERR;
@@ -308,12 +308,12 @@ int nocts;          /* number of octants leaving this processor */
   remotecount = 0;
 
   for (i=0; i<nocts; i++)                       /* Send connection updates */
-    if (newpids[i]!=lb->Proc) {
+    if (newpids[i]!=zz->Proc) {
 	parent = Zoltan_Oct_parent(octs[i]); 
         ppid   = Zoltan_Oct_Ppid(octs[i]); 
         childnum = Zoltan_Oct_childnum(octs[i]);
 	if (parent) {      /* Let parent of oct[i] know that it's moving   */
-	  if (ppid==lb->Proc) {
+	  if (ppid==zz->Proc) {
 	    FILLUPDATEMSG(localumsg[localcount], parent, childnum, newocts[i], newpids[i]);
 	    localcount++;
 	  }
@@ -327,7 +327,7 @@ int nocts;          /* number of octants leaving this processor */
 	  cpid = octs[i]->cpid[j];
 	  /* Tell child of oct[i] that it is moving */
 	  if (child) {
-	    if (cpid==lb->Proc) {
+	    if (cpid==zz->Proc) {
 	      /* NOTE: -1 signals PARENT   */
 	      FILLUPDATEMSG(localumsg[localcount], child, -1, newocts[i], newpids[i]);
 	      localcount++;
@@ -341,10 +341,10 @@ int nocts;          /* number of octants leaving this processor */
 	}
     }
 
-  ierr = Zoltan_Comm_Create(&comm_plan, remotecount, despid, lb->Communicator,
+  ierr = Zoltan_Comm_Create(&comm_plan, remotecount, despid, zz->Communicator,
 			MigUpdCommCreate, &nreceives);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&remoteumsg);
     ZOLTAN_FREE(&localumsg);
     ZOLTAN_FREE(&despid);
@@ -354,7 +354,7 @@ int nocts;          /* number of octants leaving this processor */
 
 /*   if(nreceives > 0) { */
     if((rcv_umsg = (Update_msg *) ZOLTAN_MALLOC((nreceives +1) * sizeof(Update_msg)*9)) == NULL) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       ZOLTAN_FREE(&remoteumsg);
       ZOLTAN_FREE(&localumsg);
       ZOLTAN_FREE(&despid);
@@ -365,7 +365,7 @@ int nocts;          /* number of octants leaving this processor */
     ierr = Zoltan_Comm_Do(comm_plan, MigUpdCommDo, (char *) remoteumsg,
 		      sizeof(Update_msg), (char *) rcv_umsg);
     if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_TRACE_EXIT(lb, yo);
+      ZOLTAN_TRACE_EXIT(zz, yo);
       ZOLTAN_FREE(&remoteumsg);
       ZOLTAN_FREE(&localumsg);
       ZOLTAN_FREE(&despid);
@@ -400,7 +400,7 @@ int nocts;          /* number of octants leaving this processor */
 
   ierr = Zoltan_Comm_Destroy(&comm_plan);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&remoteumsg);
     ZOLTAN_FREE(&localumsg);
     ZOLTAN_FREE(&despid);
@@ -423,8 +423,8 @@ int nocts;          /* number of octants leaving this processor */
  *
  */
 
-static int Zoltan_Oct_Final_Migration(lb, octs,newpids,newocts,nocts,nrecocts)
-LB *lb;
+static int Zoltan_Oct_Final_Migration(zz, octs,newpids,newocts,nocts,nrecocts)
+ZZ *zz;
 pOctant *octs;      /* octs[nocts]    */
 int *newpids;       /* newpids[nocts] */
 pOctant *newocts;   /* newocts[nocts] */
@@ -440,30 +440,30 @@ int nrecocts;       /* number of octants received in this processor */
   int ierr = ZOLTAN_OK;
   ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   char *yo = "Zoltan_Oct_Final_Migration";
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) lb->Data_Structure;
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) zz->Data_Structure;
 
   /* count number of sends */
   nsends=0;
   for (i=0; i<nocts; i++)              
-    if (newpids[i]!=lb->Proc)
+    if (newpids[i]!=zz->Proc)
       nsends++;
 
   if((despid = (int *) ZOLTAN_MALLOC((nocts+10) * sizeof(int))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
   if((msnd   = (Migrate_msg *) ZOLTAN_MALLOC((nocts+10) * sizeof(Migrate_msg))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     return ZOLTAN_MEMERR;
   }
 
   remotecount = 0;
   for (i=0; i<nocts; i++)                          /* Send and free */
-    if (newpids[i]!=lb->Proc)
+    if (newpids[i]!=zz->Proc)
       { 
-	FILLMIGRATEMSG(octs[i], newocts[i], msnd[remotecount], lb->Proc); /* bug */
+	FILLMIGRATEMSG(octs[i], newocts[i], msnd[remotecount], zz->Proc); /* bug */
 	despid[remotecount++] = newpids[i];
 	Zoltan_Oct_clearRegions(octs[i]);
         /* KDDKDDFREE Change oct to &oct to allow NULL from ZOLTAN_FREE 
@@ -471,17 +471,17 @@ int nrecocts;       /* number of octants received in this processor */
 	Zoltan_Oct_POct_free(OCT_info, &(octs[i]));
       }
 
-  ierr = Zoltan_Comm_Create(&comm_plan, remotecount, despid, lb->Communicator,
+  ierr = Zoltan_Comm_Create(&comm_plan, remotecount, despid, zz->Communicator,
 			MigFinCommCreate, &nreceives);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&msnd);
     return (ierr);
   }
 
   if((mrcv = (Migrate_msg *) ZOLTAN_MALLOC((nreceives+10) * sizeof(Migrate_msg))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&msnd);
     return ZOLTAN_MEMERR;
@@ -490,7 +490,7 @@ int nrecocts;       /* number of octants received in this processor */
   ierr = Zoltan_Comm_Do(comm_plan, MigFinCommDo, (char *) msnd,
 		    sizeof(Migrate_msg), (char *) mrcv);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&msnd);
     ZOLTAN_FREE(&mrcv);
@@ -510,7 +510,7 @@ int nrecocts;       /* number of octants received in this processor */
 
   ierr = Zoltan_Comm_Destroy(&comm_plan);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&msnd);
     ZOLTAN_FREE(&mrcv);
@@ -525,7 +525,7 @@ int nrecocts;       /* number of octants received in this processor */
 }
 
 
-static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int *size) {
+static int Zoltan_Oct_build_global_rootlist(ZZ *zz,Migrate_msg  **ret_rmsg, int *size) {
   int j, k;
   int *despid = NULL;
   int nroots, nreceives;
@@ -533,7 +533,7 @@ static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int 
   pOctant RootOct;
   Migrate_msg *snd_rmsg = NULL;
   Migrate_msg *rcv_rmsg = NULL;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
 /*Map *array = OCT_info->map;*/
   ZOLTAN_COMM_OBJ *comm_plan;                /* Object returned by communication routines */
 
@@ -542,41 +542,41 @@ static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int 
  
   nroots = RL_numRootOctants(Zoltan_Oct_POct_localroots(OCT_info));
 
-  if((despid = (int *) ZOLTAN_MALLOC((lb->Num_Proc)*nroots * sizeof(int))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+  if((despid = (int *) ZOLTAN_MALLOC((zz->Num_Proc)*nroots * sizeof(int))) == NULL) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ZOLTAN_MEMERR;
   }
 
-  if((snd_rmsg = (Migrate_msg *) ZOLTAN_MALLOC((lb->Num_Proc)*nroots * sizeof(Migrate_msg))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+  if((snd_rmsg = (Migrate_msg *) ZOLTAN_MALLOC((zz->Num_Proc)*nroots * sizeof(Migrate_msg))) == NULL) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     return ZOLTAN_MEMERR;
   }
   
   k = 0;
-  for (j=0; j<lb->Num_Proc; j++) {
+  for (j=0; j<zz->Num_Proc; j++) {
     RootList = Zoltan_Oct_POct_localroots(OCT_info);
     while((RootOct = RL_nextRootOctant(&RootList))) {	
  /*      if(array[Zoltan_Oct_mapidx(RootOct)].npid > 0) { */
-	FILLMIGRATEMSG(RootOct, RootOct, snd_rmsg[k], lb->Proc);
+	FILLMIGRATEMSG(RootOct, RootOct, snd_rmsg[k], zz->Proc);
 	despid[k] = j;
 	k++;
 /*       } */
     }
   }
   
-  ierr = Zoltan_Comm_Create(&comm_plan, k, despid, lb->Communicator,
+  ierr = Zoltan_Comm_Create(&comm_plan, k, despid, zz->Communicator,
 			RootListCommCreate, &nreceives);
 
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&snd_rmsg);
     return (ierr);
   }
 
   if((rcv_rmsg = (Migrate_msg *) ZOLTAN_MALLOC(nreceives * sizeof(Migrate_msg))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&snd_rmsg);
     return ZOLTAN_MEMERR;
@@ -586,7 +586,7 @@ static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int 
 
   ierr = Zoltan_Comm_Do(comm_plan, RootListCommDo, (char *) snd_rmsg, sizeof(Migrate_msg), (char *) rcv_rmsg);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     ZOLTAN_FREE(&despid);
     ZOLTAN_FREE(&snd_rmsg);
     ZOLTAN_FREE(&rcv_rmsg);
@@ -599,7 +599,7 @@ static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int 
 
   ierr = Zoltan_Comm_Destroy(&comm_plan);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return (ierr);
   }
 
@@ -609,22 +609,22 @@ static int Zoltan_Oct_build_global_rootlist(LB *lb,Migrate_msg  **ret_rmsg, int 
   return ierr;
 }
 
-static int Zoltan_Oct_Update_Map(LB *lb) {
+static int Zoltan_Oct_Update_Map(ZZ *zz) {
   int i;
   double x,y;
   pRList  RootList;                
   pOctant RootOct;
   pOctant remoteoctant;
   Migrate_msg *rootlists = NULL;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
   Map *array = OCT_info->map;
   int mapsize = OCT_info->mapsize;
   int rlsize = 0;
   int ierr = ZOLTAN_OK;
   char *yo = "Zoltan_Oct_Update_Map";
 
-  if((ierr = Zoltan_Oct_build_global_rootlist(lb, &rootlists, &rlsize)) != ZOLTAN_OK) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+  if((ierr = Zoltan_Oct_build_global_rootlist(zz, &rootlists, &rlsize)) != ZOLTAN_OK) {
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return ierr;
   }
 

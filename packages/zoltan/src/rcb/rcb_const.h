@@ -14,7 +14,7 @@
 #ifndef __RCB_CONST_H
 #define __RCB_CONST_H
 
-extern void Zoltan_RCB_Free_Structure(LB *);
+extern void Zoltan_RCB_Free_Structure(ZZ *);
 extern int Zoltan_RCB_Set_Param(char *, char *);
 
 #endif

@@ -27,26 +27,26 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-LB *Zoltan_Create(MPI_Comm communicator)
+ZZ *Zoltan_Create(MPI_Comm communicator)
 {
 /*
- *  Function to create a load balancing structure.  May want more than one
+ *  Function to create a Zoltan structure.  May want more than one
  *  structure if using different decompositions with different techniques.
  *  This function allocates and initializes the structure.
  *  Output:
- *    LB *               --  Pointer to a LB structure.
+ *    ZZ *               --  Pointer to a Zoltan structure.
  *
  */
 
 char *yo = "Zoltan_Create";
-LB *lb;
+ZZ *zz;
 
   /*
-   * Allocate storage for the load-balancing structure.
+   * Allocate storage for the Zoltan structure.
    */
 
-  lb = (LB *) ZOLTAN_MALLOC(sizeof(LB));
-  if (!lb) {
+  zz = (ZZ *) ZOLTAN_MALLOC(sizeof(ZZ));
+  if (!zz) {
     int proc;
     MPI_Comm_rank(communicator, &proc);
     ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory to create structure.");
@@ -54,129 +54,129 @@ LB *lb;
   }
 
   /*
-   *  Set MPI values for lb:
+   *  Set MPI values for zz:
    */
 
   if (communicator == MPI_COMM_NULL) {
     /*
      *  The processor is not in the communicator for the load-balancing
-     *  structure.  Set lb->Communicator to MPI_COMM_NULL and give dummy 
-     *  values to lb->Proc and lb->Num_Proc.
+     *  structure.  Set zz->Communicator to MPI_COMM_NULL and give dummy 
+     *  values to zz->Proc and zz->Num_Proc.
      */
-    lb->Communicator = MPI_COMM_NULL;
-    lb->Proc = -1;
-    lb->Num_Proc = 0;
+    zz->Communicator = MPI_COMM_NULL;
+    zz->Proc = -1;
+    zz->Num_Proc = 0;
   }
   else {
     /*
      *  Set Communicator to the communicator passed in.
      */
-    MPI_Comm_dup(communicator, &(lb->Communicator));
-    MPI_Comm_size(lb->Communicator, &(lb->Num_Proc));
-    MPI_Comm_rank(lb->Communicator, &(lb->Proc));
+    MPI_Comm_dup(communicator, &(zz->Communicator));
+    MPI_Comm_size(zz->Communicator, &(zz->Num_Proc));
+    MPI_Comm_rank(zz->Communicator, &(zz->Proc));
   }
 
   /*
    *  Set defaults for fields of lb:
    */
 
-  lb->Num_GID = ZOLTAN_NUM_ID_ENTRIES_DEF;
-  lb->Num_LID = ZOLTAN_NUM_ID_ENTRIES_DEF;
-  lb->Method = RCB;    
-  lb->LB_Fn = Zoltan_RCB;
-  lb->Debug_Level = ZOLTAN_DEBUG_LEVEL_DEF;
-  lb->Debug_Proc = ZOLTAN_DEBUG_PROC_DEF;
-  lb->Fortran = 0;
-  lb->LB_Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
-  lb->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
-  lb->Timer = ZOLTAN_TIMER_DEF;
-  lb->Machine_Desc = NULL;
-  lb->Params = NULL;
-  lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
-  lb->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
-  lb->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
-  lb->Comm_Weight_Dim = ZOLTAN_COMM_WEIGHT_DEF;
-  lb->Data_Structure = NULL;
+  zz->Num_GID = ZOLTAN_NUM_ID_ENTRIES_DEF;
+  zz->Num_LID = ZOLTAN_NUM_ID_ENTRIES_DEF;
+  zz->Method = RCB;    
+  zz->LB_Fn = Zoltan_RCB;
+  zz->Debug_Level = ZOLTAN_DEBUG_LEVEL_DEF;
+  zz->Debug_Proc = ZOLTAN_DEBUG_PROC_DEF;
+  zz->Fortran = 0;
+  zz->LB_Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
+  zz->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
+  zz->Timer = ZOLTAN_TIMER_DEF;
+  zz->Machine_Desc = NULL;
+  zz->Params = NULL;
+  zz->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
+  zz->Deterministic = ZOLTAN_DETERMINISTIC_DEF;
+  zz->Obj_Weight_Dim = ZOLTAN_OBJ_WEIGHT_DEF;
+  zz->Comm_Weight_Dim = ZOLTAN_COMM_WEIGHT_DEF;
+  zz->Data_Structure = NULL;
 
-  lb->Get_Num_Edges = NULL;
-  lb->Get_Edge_List = NULL;
-  lb->Get_Num_Geom = NULL;
-  lb->Get_Geom = NULL;
-  lb->Get_Num_Obj = NULL;
-  lb->Get_Obj_List = NULL;
-  lb->Get_First_Obj = NULL;
-  lb->Get_Next_Obj = NULL;
-  lb->Get_Num_Border_Obj = NULL;
-  lb->Get_Border_Obj_List = NULL;
-  lb->Get_First_Border_Obj = NULL;
-  lb->Get_Next_Border_Obj = NULL;
-  lb->Get_Num_Coarse_Obj = NULL;
-  lb->Get_Coarse_Obj_List = NULL;
-  lb->Get_First_Coarse_Obj = NULL;
-  lb->Get_Next_Coarse_Obj = NULL;
-  lb->Get_Num_Child = NULL;
-  lb->Get_Child_List = NULL;
-  lb->Get_Child_Weight = NULL;
+  zz->Get_Num_Edges = NULL;
+  zz->Get_Edge_List = NULL;
+  zz->Get_Num_Geom = NULL;
+  zz->Get_Geom = NULL;
+  zz->Get_Num_Obj = NULL;
+  zz->Get_Obj_List = NULL;
+  zz->Get_First_Obj = NULL;
+  zz->Get_Next_Obj = NULL;
+  zz->Get_Num_Border_Obj = NULL;
+  zz->Get_Border_Obj_List = NULL;
+  zz->Get_First_Border_Obj = NULL;
+  zz->Get_Next_Border_Obj = NULL;
+  zz->Get_Num_Coarse_Obj = NULL;
+  zz->Get_Coarse_Obj_List = NULL;
+  zz->Get_First_Coarse_Obj = NULL;
+  zz->Get_Next_Coarse_Obj = NULL;
+  zz->Get_Num_Child = NULL;
+  zz->Get_Child_List = NULL;
+  zz->Get_Child_Weight = NULL;
 
-  lb->Get_Num_Edges_Fort = NULL;
-  lb->Get_Edge_List_Fort = NULL;
-  lb->Get_Num_Geom_Fort = NULL;
-  lb->Get_Geom_Fort = NULL;
-  lb->Get_Num_Obj_Fort = NULL;
-  lb->Get_Obj_List_Fort = NULL;
-  lb->Get_First_Obj_Fort = NULL;
-  lb->Get_Next_Obj_Fort = NULL;
-  lb->Get_Num_Border_Obj_Fort = NULL;
-  lb->Get_Border_Obj_List_Fort = NULL;
-  lb->Get_First_Border_Obj_Fort = NULL;
-  lb->Get_Next_Border_Obj_Fort = NULL;
-  lb->Get_Num_Coarse_Obj_Fort = NULL;
-  lb->Get_Coarse_Obj_List_Fort = NULL;
-  lb->Get_First_Coarse_Obj_Fort = NULL;
-  lb->Get_Next_Coarse_Obj_Fort = NULL;
-  lb->Get_Num_Child_Fort = NULL;
-  lb->Get_Child_List_Fort = NULL;
-  lb->Get_Child_Weight_Fort = NULL;
+  zz->Get_Num_Edges_Fort = NULL;
+  zz->Get_Edge_List_Fort = NULL;
+  zz->Get_Num_Geom_Fort = NULL;
+  zz->Get_Geom_Fort = NULL;
+  zz->Get_Num_Obj_Fort = NULL;
+  zz->Get_Obj_List_Fort = NULL;
+  zz->Get_First_Obj_Fort = NULL;
+  zz->Get_Next_Obj_Fort = NULL;
+  zz->Get_Num_Border_Obj_Fort = NULL;
+  zz->Get_Border_Obj_List_Fort = NULL;
+  zz->Get_First_Border_Obj_Fort = NULL;
+  zz->Get_Next_Border_Obj_Fort = NULL;
+  zz->Get_Num_Coarse_Obj_Fort = NULL;
+  zz->Get_Coarse_Obj_List_Fort = NULL;
+  zz->Get_First_Coarse_Obj_Fort = NULL;
+  zz->Get_Next_Coarse_Obj_Fort = NULL;
+  zz->Get_Num_Child_Fort = NULL;
+  zz->Get_Child_List_Fort = NULL;
+  zz->Get_Child_Weight_Fort = NULL;
 
-  lb->Migrate.Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
-  lb->Migrate.Pre_Migrate = NULL;
-  lb->Migrate.Mid_Migrate = NULL;
-  lb->Migrate.Post_Migrate = NULL;
-  lb->Migrate.Pack_Obj = NULL;
-  lb->Migrate.Unpack_Obj = NULL;
-  lb->Migrate.Get_Obj_Size = NULL;
+  zz->Migrate.Auto_Migrate = ZOLTAN_AUTO_MIGRATE_DEF;
+  zz->Migrate.Pre_Migrate = NULL;
+  zz->Migrate.Mid_Migrate = NULL;
+  zz->Migrate.Post_Migrate = NULL;
+  zz->Migrate.Pack_Obj = NULL;
+  zz->Migrate.Unpack_Obj = NULL;
+  zz->Migrate.Get_Obj_Size = NULL;
   
-  lb->Migrate.Pre_Migrate_Fort = NULL;
-  lb->Migrate.Mid_Migrate_Fort = NULL;
-  lb->Migrate.Post_Migrate_Fort = NULL;
-  lb->Migrate.Pack_Obj_Fort = NULL;
-  lb->Migrate.Unpack_Obj_Fort = NULL;
-  lb->Migrate.Get_Obj_Size_Fort = NULL;
+  zz->Migrate.Pre_Migrate_Fort = NULL;
+  zz->Migrate.Mid_Migrate_Fort = NULL;
+  zz->Migrate.Post_Migrate_Fort = NULL;
+  zz->Migrate.Pack_Obj_Fort = NULL;
+  zz->Migrate.Unpack_Obj_Fort = NULL;
+  zz->Migrate.Get_Obj_Size_Fort = NULL;
 
-  return(lb);
+  return(zz);
 }
 
 /****************************************************************************/
 /****************************************************************************/
 /****************************************************************************/
 
-void Zoltan_Destroy(LB **lb)
+void Zoltan_Destroy(ZZ **zz)
 {
 /*
- *  Function to free a load balancing structure.
+ *  Function to free a Zoltan structure.
  *  Input:
- *    LB ** lb           --  Pointer to a LB structure.
+ *    ZZ **zz           --  Pointer to a Zoltan structure.
  *
  */
 
-  if (*lb != NULL) {
+  if (*zz != NULL) {
 
-    Zoltan_Free_Structure(*lb);
+    Zoltan_Free_Structure(*zz);
 
-    Zoltan_Free_Params(&((*lb)->Params));
+    Zoltan_Free_Params(&((*zz)->Params));
 
-    MPI_Comm_free(&((*lb)->Communicator));
+    MPI_Comm_free(&((*zz)->Communicator));
 
-    ZOLTAN_FREE(lb);
+    ZOLTAN_FREE(zz);
   }
 }

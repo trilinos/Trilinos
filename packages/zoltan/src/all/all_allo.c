@@ -56,10 +56,10 @@ char *val)			/* value of variable */
  * Zfw_Register_Fort_Malloc is called by the wrappers for the Fortran
  * interface to provide pointers to the Fortran allocation/free routines.
  *
- * int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+ * int Zoltan_Special_Malloc(ZZ *zz, void **array, int size,
  *                       ZOLTAN_SPECIAL_MALLOC_TYPE type)
  *
- *   lb    -- the load balancing structure in use
+ *   zz    -- the Zoltan structure in use
  *   array -- int**; returned as a
  *            pointer to the allocated space
  *   size  -- number of elements to be allocated in the array
@@ -68,7 +68,7 @@ char *val)			/* value of variable */
  *
  * The return value is 1 if the allocation succeeded, 0 if it failed.
  *
- * int Zoltan_Special_Free(LB *lb, void **array,
+ * int Zoltan_Special_Free(ZZ *zz, void **array,
                        ZOLTAN_SPECIAL_MALLOC_TYPE type)
  *
  *****************************************************************************/
@@ -80,14 +80,14 @@ void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *fort_malloc_int,
    Zoltan_Fort_Free_int = fort_free_int;
 }
 
-int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+int Zoltan_Special_Malloc(ZZ *zz, void **array, int size,
                       ZOLTAN_SPECIAL_MALLOC_TYPE type)
 {
    int *ret_addr, success;
    char *yo = "Zoltan_Special_Malloc";
 
    success = 1;
-   if (lb->Fortran) {
+   if (zz->Fortran) {
 
 /* allocation from Fortran */
 
@@ -105,7 +105,7 @@ int Zoltan_Special_Malloc(LB *lb, void **array, int size,
          if (ret_addr==0) success=0;
          break;
       case ZOLTAN_SPECIAL_MALLOC_GID:
-         size *= lb->Num_GID;
+         size *= zz->Num_GID;
 #ifdef PGI
          Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
@@ -118,7 +118,7 @@ int Zoltan_Special_Malloc(LB *lb, void **array, int size,
          if (ret_addr==0) success=0;
          break;
       case ZOLTAN_SPECIAL_MALLOC_LID:
-         size *= lb->Num_LID;
+         size *= zz->Num_LID;
 #ifdef PGI
          Zoltan_Fort_Malloc_int((int *)(array[1]),&size,&ret_addr,array[2]);
 #else
@@ -131,7 +131,7 @@ int Zoltan_Special_Malloc(LB *lb, void **array, int size,
          if (ret_addr==0) success=0;
          break;
       default:
-	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Illegal value passed for type");
          success = 0;
       }
       if (success) {
@@ -150,15 +150,15 @@ int Zoltan_Special_Malloc(LB *lb, void **array, int size,
          if (*array==NULL) success=0;
          break;
       case ZOLTAN_SPECIAL_MALLOC_GID:
-         *array = ZOLTAN_MALLOC_GID_ARRAY(lb, size);
+         *array = ZOLTAN_MALLOC_GID_ARRAY(zz, size);
          if (*array==NULL) success=0;
          break;
       case ZOLTAN_SPECIAL_MALLOC_LID:
-         *array = ZOLTAN_MALLOC_LID_ARRAY(lb, size);
-         if (lb->Num_LID > 0 && *array==NULL) success = 0;
+         *array = ZOLTAN_MALLOC_LID_ARRAY(zz, size);
+         if (zz->Num_LID > 0 && *array==NULL) success = 0;
          break;
       default:
-	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Illegal value passed for type");
          *array = NULL;
          success = 0;
       }
@@ -170,14 +170,14 @@ int Zoltan_Special_Malloc(LB *lb, void **array, int size,
 /****************************************************************************/
 /****************************************************************************/
 
-int Zoltan_Special_Free(LB *lb, void **array,
+int Zoltan_Special_Free(ZZ *zz, void **array,
                     ZOLTAN_SPECIAL_MALLOC_TYPE type)
 {
    int success;
    char *yo = "Zoltan_Special_Free";
 
    success = 1;
-   if (lb->Fortran) {
+   if (zz->Fortran) {
 
 /* deallocation from Fortran */
 
@@ -216,7 +216,7 @@ int Zoltan_Special_Free(LB *lb, void **array,
 #endif
          break;
       default:
-	 ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Illegal value passed for type");
+	 ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Illegal value passed for type");
          success = 0;
       }
 

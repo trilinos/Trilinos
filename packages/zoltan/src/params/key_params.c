@@ -36,11 +36,11 @@ static PARAM_VARS Key_params[] = {
 /*****************************************************************************/
 /*****************************************************************************/
 /* 
- * Handle parameter changes for variables stored in LB structure.
+ * Handle parameter changes for variables stored in Zoltan structure.
  */
 
 int Zoltan_Set_Key_Param(
-LB *lb,                         /* load balance structure */
+ZZ *zz,                         /* Zoltan structure */
 char *name,			/* name of variable */
 char *val)			/* value of variable */
 {
@@ -63,18 +63,18 @@ char *val)			/* value of variable */
 	if (result.dval < 1.0) {
 	    sprintf(msg, "Invalid Imbalance_Tol value (%g) "
 		"being set to %g.", result.dval, ZOLTAN_LB_IMBALANCE_TOL_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.dval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 	}
-	lb->Imbalance_Tol = result.dval;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Imbalance_Tol = result.dval;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 1:		/* Help_Migrate */
         if (result.def)
             result.ival = ZOLTAN_AUTO_MIGRATE_DEF;
-	lb->Migrate.Auto_Migrate = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Migrate.Auto_Migrate = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 2:		/* Object weight dim.  */
@@ -83,11 +83,11 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Obj_Weight_Dim value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_OBJ_WEIGHT_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_OBJ_WEIGHT_DEF;
 	}
-	lb->Obj_Weight_Dim = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Obj_Weight_Dim = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 3:		/* Communication weight dim.  */
@@ -96,11 +96,11 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Comm_Weight_Dim value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_COMM_WEIGHT_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_COMM_WEIGHT_DEF;
 	}
-	lb->Comm_Weight_Dim = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Comm_Weight_Dim = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 4: 		/* Debug level  */
@@ -109,24 +109,24 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Debug_Level value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_DEBUG_LEVEL_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_DEBUG_LEVEL_DEF;
 	}
-	lb->Debug_Level = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Debug_Level = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 5: 		/* Debug processor  */
         if (result.def)
             result.ival = ZOLTAN_DEBUG_PROC_DEF;
-	if (result.ival < 0 || result.ival > lb->Num_Proc) {
+	if (result.ival < 0 || result.ival > zz->Num_Proc) {
 	    sprintf(msg, "Invalid Debug_Processor value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_DEBUG_PROC_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_DEBUG_PROC_DEF;
 	}
-	lb->Debug_Proc = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Debug_Proc = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
        
       case 6: 		/* Deterministic flag */
@@ -135,18 +135,18 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Deterministic value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_DETERMINISTIC_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_DETERMINISTIC_DEF;
 	}
-	lb->Deterministic = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Deterministic = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       case 7: 		/* Timer */
 	status = Zoltan_Set_Timer_Param(name, val, &tmp);
-        lb->Timer = tmp;
+        zz->Timer = tmp;
 
-	if (status==0) status = 3;	/* Don't add to Params field of LB */
+	if (status==0) status = 3;	/* Don't add to Params field of ZZ */
         break;
 
       case 8:           /* Num_GID_Entries */
@@ -155,10 +155,10 @@ char *val)			/* value of variable */
         if (result.ival < 1) {
 	    sprintf(msg, "Invalid Num_GID_Entries value (%d); "
 		"being set to %d.", result.ival, ZOLTAN_NUM_ID_ENTRIES_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
             result.ival = ZOLTAN_NUM_ID_ENTRIES_DEF;
         }
-        lb->Num_GID = result.ival;
+        zz->Num_GID = result.ival;
         status = 3;
         break;
 
@@ -168,10 +168,10 @@ char *val)			/* value of variable */
         if (result.ival < 0) {
 	    sprintf(msg, "Invalid Num_LID_Entries value (%d); "
 		"being set to %d.", result.ival, ZOLTAN_NUM_ID_ENTRIES_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
             result.ival = ZOLTAN_NUM_ID_ENTRIES_DEF;
         }
-        lb->Num_LID = result.ival;
+        zz->Num_LID = result.ival;
         status = 3;
         break;
 
@@ -195,10 +195,10 @@ char *val)			/* value of variable */
         else{
           tmp = ZOLTAN_LB_RETURN_LISTS_DEF;
           sprintf(msg, "Unknown return_lists option %s.", result.sval);
-          ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
           status = 2; /* Illegal parameter */
         }
-	lb->LB_Return_Lists = tmp;
+	zz->LB_Return_Lists = tmp;
         break;
 
       case 11: 		/* Tflops Special flag */
@@ -207,11 +207,11 @@ char *val)			/* value of variable */
 	if (result.ival < 0) {
 	    sprintf(msg, "Invalid Tflops Special value (%d) "
 		"being set to %d.", result.ival, ZOLTAN_TFLOPS_SPECIAL_DEF);
-            ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+            ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	    result.ival = ZOLTAN_TFLOPS_SPECIAL_DEF;
 	}
-	lb->Tflops_Special = result.ival;
-	status = 3;		/* Don't add to Params field of LB */
+	zz->Tflops_Special = result.ival;
+	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
       }  /* end switch (index) */
@@ -225,34 +225,34 @@ char *val)			/* value of variable */
 /*
  *  Print key parameters.
  */
-void Zoltan_Print_Key_Params(LB *lb)
+void Zoltan_Print_Key_Params(ZZ *zz)
 {
   printf("ZOLTAN Parameter %s = %f\n", Key_params[0].name, 
-         lb->Imbalance_Tol);
+         zz->Imbalance_Tol);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[1].name, 
-         (lb->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
+         (zz->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
   printf("ZOLTAN Parameter %s = %d\n", Key_params[2].name, 
-         lb->Obj_Weight_Dim);
+         zz->Obj_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[3].name, 
-         lb->Comm_Weight_Dim);
+         zz->Comm_Weight_Dim);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[4].name, 
-         lb->Debug_Level);
+         zz->Debug_Level);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[5].name, 
-         lb->Debug_Proc);
+         zz->Debug_Proc);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[6].name, 
-         (lb->Deterministic ? "TRUE" : "FALSE"));
-  printf("ZOLTAN Parameter %s = %d ", Key_params[7].name, lb->Timer);
-  if (lb->Timer == ZOLTAN_TIME_WALL)
+         (zz->Deterministic ? "TRUE" : "FALSE"));
+  printf("ZOLTAN Parameter %s = %d ", Key_params[7].name, zz->Timer);
+  if (zz->Timer == ZOLTAN_TIME_WALL)
      printf("(wall)");
-  else if (lb->Timer == ZOLTAN_TIME_CPU)
+  else if (zz->Timer == ZOLTAN_TIME_CPU)
      printf("(cpu)");
   printf("\n");
   printf("ZOLTAN Parameter %s = %d\n", Key_params[8].name, 
-         lb->Num_GID);
+         zz->Num_GID);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[9].name, 
-         lb->Num_LID);
+         zz->Num_LID);
   printf("ZOLTAN Parameter %s = ", Key_params[10].name);
-  switch (lb->LB_Return_Lists) {
+  switch (zz->LB_Return_Lists) {
   case ZOLTAN_LB_ALL_LISTS:
     printf("ALL\n");
     break;
@@ -266,6 +266,6 @@ void Zoltan_Print_Key_Params(LB *lb)
     printf("NONE\n");
     break;
   }
-  if (lb->Tflops_Special)   /* print only if set */
+  if (zz->Tflops_Special)   /* print only if set */
      printf("ZOLTAN Parameter %s = %s\n", Key_params[11].name, "TRUE");
 }

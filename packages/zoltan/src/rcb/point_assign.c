@@ -18,7 +18,7 @@
 
 
 int Zoltan_LB_Point_Assign(
-LB       *lb,                   /* The load-balancing structure */
+ZZ       *zz,                   /* The Zoltan structure */
 double   *coords,               /* vector of point coordinates */
 int      *proc)                 /* processor that point lands in */
 {
@@ -32,18 +32,18 @@ int      *proc)                 /* processor that point lands in */
      RIB_STRUCT        *rib;    /* Pointer to data structures for RIB. */
      struct rib_tree   *itree;  /* tree of RIB cuts */
 
-     if (lb->Data_Structure == NULL) {
+     if (zz->Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
                    "No Decomposition Data available; use KEEP_CUTS parameter.");
         *proc = -1;
         return(ZOLTAN_FATAL);
      }
 
-     if (lb->Method == RCB) {
-        rcb = (RCB_STRUCT *) (lb->Data_Structure);
+     if (zz->Method == RCB) {
+        rcb = (RCB_STRUCT *) (zz->Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) { /* RCB tree was never created. */
-           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved; "
+           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RCB tree saved; "
                                         "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(ZOLTAN_FATAL);
@@ -61,11 +61,11 @@ int      *proc)                 /* processor that point lands in */
 
         return(ZOLTAN_OK);
      }
-     else if (lb->Method == RIB) {
-        rib = (RIB_STRUCT *) (lb->Data_Structure);
+     else if (zz->Method == RIB) {
+        rib = (RIB_STRUCT *) (zz->Data_Structure);
         itree = rib->Tree_Ptr;
         if ((procmid = itree[0].right_leaf) < 0) { /* RIB tree never created */
-           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved; "
+           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RIB tree saved; "
                                      "Must set parameter KEEP_CUTS to 1.");
            *proc = -1;
            return(ZOLTAN_FATAL);
@@ -105,7 +105,7 @@ int      *proc)                 /* processor that point lands in */
         return(ZOLTAN_OK);
      }
      else {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Valid only when method "
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Valid only when method "
                                      "is RCB or RIB.");
         *proc = -1;
         return(ZOLTAN_FATAL);

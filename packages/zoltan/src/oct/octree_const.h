@@ -55,7 +55,7 @@ typedef struct {
 
 /* Octree functions */
 
-extern OCT_Global_Info *Zoltan_Oct_POct_init(LB *, int pid, int dim);
+extern OCT_Global_Info *Zoltan_Oct_POct_init(ZZ *, int pid, int dim);
 extern pOctant Zoltan_Oct_POct_new(OCT_Global_Info *);
 extern void    Zoltan_Oct_POct_free(OCT_Global_Info *OCT_info, pOctant *oct);
 extern void    Zoltan_Oct_POct_setparent(OCT_Global_Info *OCT_info,pOctant oct, pOctant parent, int ppid);

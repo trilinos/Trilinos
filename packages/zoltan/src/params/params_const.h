@@ -60,8 +60,8 @@ typedef int ZOLTAN_SET_PARAM_FN(char *, char *);
 
 extern int Zoltan_Assign_Param_Vals(ZOLTAN_PARAM *, PARAM_VARS *, int, int, int);
 extern int Zoltan_Bind_Param(PARAM_VARS *, char *, void *);
-extern int Zoltan_Set_Key_Param(LB *, char *, char *);
-extern void Zoltan_Print_Key_Params(LB *);
+extern int Zoltan_Set_Key_Param(ZZ *, char *, char *);
+extern void Zoltan_Print_Key_Params(ZZ *);
 extern void Zoltan_Print_Params(ZOLTAN_PARAM *ptr);
 extern int Zoltan_Check_Param(char *, char *, PARAM_VARS *,
     PARAM_UTYPE *, int *);

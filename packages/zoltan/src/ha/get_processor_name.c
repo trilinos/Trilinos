@@ -15,7 +15,7 @@
 #include "ha_const.h"
 
 int Zoltan_Get_Processor_Name(
-   LB *lb,             /* The load-balancing structure.                */
+   ZZ *zz,             /* The Zoltan structure.                */
    char *name          /* A string uniquely identifying the processor. 
                           We assume that at least MAX_PROC_NAME_LEN 
                           characters have been allocated.              */
@@ -28,9 +28,9 @@ int Zoltan_Get_Processor_Name(
   int ierr = ZOLTAN_OK;
   int length;
 
-  if (lb->Get_Processor_Name != NULL) {
+  if (zz->Get_Processor_Name != NULL) {
     /* Use application-registered function */
-    lb->Get_Processor_Name(lb->Get_Processor_Name_Data,
+    zz->Get_Processor_Name(zz->Get_Processor_Name_Data,
             name, &length, &ierr);
   }
   else {

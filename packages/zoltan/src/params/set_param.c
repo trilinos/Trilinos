@@ -32,8 +32,8 @@
 #include "all_allo_const.h"
 #include "hsfc_const.h"
 
-static int add_param(LB *, char *, char *);
-static int remove_param(LB *, char *);
+static int add_param(ZZ *, char *, char *);
+static int remove_param(ZZ *, char *);
 
 /* List of set_parameter functions to be called */
 static ZOLTAN_SET_PARAM_FN * Param_func[] = {
@@ -52,7 +52,7 @@ static ZOLTAN_SET_PARAM_FN * Param_func[] = {
 };
 
 int Zoltan_Set_Param(
-LB *lb,				/* load balance structure */
+ZZ *zz,				/* Zoltan structure */
 char *name1,			/* parameter name */
 char *val1)			/* value to set this parameter to */
 {
@@ -90,7 +90,7 @@ char *val1)			/* value to set this parameter to */
     }
 
     /* Call the key parameter routine. This one is Zoltan-specific. */
-    status = Zoltan_Set_Key_Param(lb, name, val);
+    status = Zoltan_Set_Key_Param(zz, name, val);
 
     /* Now call all the other parameter setting routines. */
     for (func = Param_func; (status == 1) && (*func != NULL); func++) {
@@ -102,23 +102,23 @@ char *val1)			/* value to set this parameter to */
     if (status == 1) {		/* Parameter name never found */
 	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
                 name, val);
-        ZOLTAN_PRINT_WARN(lb->Proc, yo, msg);
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
     }
     else {
         if (!strcmp(val, "DEFAULT")){
-	    remove_param(lb, name);	/* Remove parameter from list */
+	    remove_param(zz, name);	/* Remove parameter from list */
             status = 0; 		/* "DEFAULT" is always valid */
     	    ZOLTAN_FREE(&name);
     	    ZOLTAN_FREE(&val);
         }
         else if (status == 0){		/* Parameter OK */
-    	    add_param(lb, name, val); 	/* Add parameter to list */
+    	    add_param(zz, name, val); 	/* Add parameter to list */
         }
         else { 				/* Parameter not OK. Don't add.  */
     	    ZOLTAN_FREE(&name);             /* (It may be used to set values */
-    	    ZOLTAN_FREE(&val);              /* directly in lb rather than in */
+    	    ZOLTAN_FREE(&val);              /* directly in zz rather than in */
                                         /* the parameter list.)          */
         }
     }
@@ -134,7 +134,7 @@ char *val1)			/* value to set this parameter to */
 
 
 static int add_param(
-LB *lb,				/* load balance structure */
+ZZ *zz,				/* Zoltan structure */
 char *name,			/* parameter name */
 char *val)			/* value to set this parameter to */
 {
@@ -147,7 +147,7 @@ char *val)			/* value to set this parameter to */
     ZOLTAN_PARAM *param;		/* parameter entry in list */
 
 
-    ptr = lb->Params;
+    ptr = zz->Params;
     while (ptr != NULL) {
 	if (!strcmp(name, ptr->name)) {	/* string match */
 	    ZOLTAN_FREE(&(ptr->new_val));
@@ -164,8 +164,8 @@ char *val)			/* value to set this parameter to */
 	ZOLTAN_FREE(&val);
 	return (ZOLTAN_MEMERR);
     }
-    ptr = lb->Params;
-    lb->Params = param;
+    ptr = zz->Params;
+    zz->Params = param;
     param->next = ptr;
     param->name = name;
     param->new_val = val;
@@ -174,7 +174,7 @@ char *val)			/* value to set this parameter to */
 }
 
 static int remove_param(
-LB *lb,				/* load balance structure */
+ZZ *zz,				/* Zoltan structure */
 char *name 			/* parameter name */
 )
 {
@@ -185,12 +185,12 @@ char *name 			/* parameter name */
     ZOLTAN_PARAM *ptr, *oldptr;	/* loops through parameter list */
 
     oldptr = NULL;
-    ptr = lb->Params;
+    ptr = zz->Params;
     while (ptr != NULL) {
 	if (!strcmp(name, ptr->name)) {	/* string match */
             /* Remove parameter from list */
             if (oldptr == NULL)
-               lb->Params = ptr->next;
+               zz->Params = ptr->next;
             else
                oldptr->next = ptr->next;
             /* Free parameter */

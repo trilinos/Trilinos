@@ -86,8 +86,8 @@ typedef struct
    {
    int my_proc ;            /* My identity in MPI Comm                */
    int nproc ;              /* Number of processors in MPI Comm       */
-   int gid_length ;         /* = lb->Num_GID -- avoid needing lb*     */
-   int lid_length ;         /* = lb->Num_LID -- avoid needing lb*     */
+   int gid_length ;         /* = zz->Num_GID -- avoid needing Zoltan_Struct     */
+   int lid_length ;         /* = zz->Num_LID -- avoid needing Zoltan_Struct     */
    int max_id_length ;      /* max (gid_length, lid_length)           */
    int user_data_length ;   /* Optional user data stored as ZOLTAN_ID_PTR */
    int table_length ;       /* # of heads of linked lists             */

@@ -18,7 +18,7 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-extern void Zoltan_Get_Obj_List(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
+extern void Zoltan_Get_Obj_List(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float *, int *);
 extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
 extern int Zoltan_Clean_String(char *, char **);
 

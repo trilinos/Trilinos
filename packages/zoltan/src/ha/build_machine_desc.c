@@ -53,7 +53,7 @@ char *val)                      /* value of variable */
 /*******************************************************************/
 
 int Zoltan_Build_Machine_Desc(
-   LB *lb              /* The load-balancing structure.                */
+   ZZ *zz              /* The Zoltan structure.                */
 )
 {
   char *yo = "Zoltan_Build_Machine_Desc";
@@ -67,27 +67,27 @@ int Zoltan_Build_Machine_Desc(
   use_mach_desc = 0;
   strcpy(filename, MACHINE_DESC_FILE_DEFAULT);
 
-  Zoltan_Assign_Param_Vals(lb->Params, Mach_params, lb->Debug_Level, lb->Proc,
-                       lb->Debug_Proc);
+  Zoltan_Assign_Param_Vals(zz->Params, Mach_params, zz->Debug_Level, zz->Proc,
+                       zz->Debug_Proc);
 
   if (use_mach_desc > 0) {
-    /* If lb->Machine_Desc already exists, don't rebuild it
+    /* If zz->Machine_Desc already exists, don't rebuild it
      * unless USE_MACHINE_DESC has been set to 2. 
      */
 
-    if ((lb->Machine_Desc == NULL) || (use_mach_desc==2)){
+    if ((zz->Machine_Desc == NULL) || (use_mach_desc==2)){
       /* Read machine description from file. 
        * Use Zoltan_Get_Processor_Name to extract the sub-machine
        * on which this Zoltan structure is running. 
        * Broadcast the machine structure to all procs.
        */
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Sorry, heterogeneous load-balancing "
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Sorry, heterogeneous load-balancing "
                                   "is still under development!");
       ierr = ZOLTAN_WARN;
     }
   }
   else {
-    lb->Machine_Desc = NULL;
+    zz->Machine_Desc = NULL;
   }
 
   return ierr;

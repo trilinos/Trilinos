@@ -23,7 +23,7 @@ static void Box_Assign2(struct rib_tree *,struct rcb_box *, int *, int *, int);
 static void Box_Assign1(struct rib_tree *,struct rcb_box *, int *, int *, int);
 
 int Zoltan_LB_Box_Assign(
-LB             *lb,             /* The load-balancing structure */
+ZZ             *zz,             /* The Zoltan structure */
 double          xmin,           /* lower x extent of box */
 double          ymin,           /* lower y extent of box */
 double          zmin,           /* lower z extent of box */
@@ -44,7 +44,7 @@ int            *numprocs)       /* number of processors in proc list */
      struct rib_tree   *itree;  /* tree of RIB cuts */
      struct rcb_box    box;     /* box data structure */
 
-     if (lb->Data_Structure == NULL) {
+     if (zz->Data_Structure == NULL) {
         ZOLTAN_PRINT_ERROR(-1, yo, 
           "No Decomposition Data available; use KEEP_CUTS parameter.");
         *procs = -1;
@@ -52,11 +52,11 @@ int            *numprocs)       /* number of processors in proc list */
         return(ZOLTAN_FATAL);
      }
 
-     if (lb->Method == RCB) {
-        rcb = (RCB_STRUCT *) (lb->Data_Structure);
+     if (zz->Method == RCB) {
+        rcb = (RCB_STRUCT *) (zz->Data_Structure);
         treept = rcb->Tree_Ptr;
         if (treept[0].dim < 0) {     /* RCB tree was never created. */
-           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RCB tree saved; "
+           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RCB tree saved; "
              " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
            *numprocs = 0;
@@ -73,11 +73,11 @@ int            *numprocs)       /* number of processors in proc list */
 
         Box_Assign(treept, &box, procs, numprocs, treept[0].right_leaf);
      }
-     else if (lb->Method == RIB) {
-        rib = (RIB_STRUCT *) (lb->Data_Structure);
+     else if (zz->Method == RIB) {
+        rib = (RIB_STRUCT *) (zz->Data_Structure);
         itree = rib->Tree_Ptr;
         if (itree[0].right_leaf < 0) { /* RIB tree was never created. */
-           ZOLTAN_PRINT_ERROR(lb->Proc, yo, "No RIB tree saved;"
+           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "No RIB tree saved;"
              " Must set parameter KEEP_CUTS to 1.");
            *procs = -1;
            return(ZOLTAN_FATAL);
@@ -116,7 +116,7 @@ int            *numprocs)       /* number of processors in proc list */
         }
      }
      else {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Box_Assign valid only when method is RCB or RIB.");
         *procs = -1;
         *numprocs = 0;

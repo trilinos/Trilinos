@@ -9,14 +9,14 @@
  *
  * sets up global variables for the octree partitioner
  */
-OCT_Global_Info *Zoltan_Oct_POct_init(LB *lb, int pid, int dim) {
+OCT_Global_Info *Zoltan_Oct_POct_init(ZZ *zz, int pid, int dim) {
   char *yo = "Zoltan_Oct_POct_init";
   OCT_Global_Info *OCT_info;
   if((OCT_info = (OCT_Global_Info *) ZOLTAN_MALLOC(sizeof(OCT_Global_Info))) == NULL) {
-    ZOLTAN_TRACE_EXIT(lb, yo);
+    ZOLTAN_TRACE_EXIT(zz, yo);
     return NULL;
   }
-  lb->Data_Structure = (void *) OCT_info;
+  zz->Data_Structure = (void *) OCT_info;
   OCT_info->OCT_localpid=pid;
   OCT_info->OCT_rootlist=RL_initRootList();
   Zoltan_Oct_initCounters();

@@ -50,7 +50,7 @@
 					      box slightly so that no objects
 					      are on the boundary of the box */
 
-int sfc_create_refinement_info(LB* lb, int* number_of_cuts, 
+int sfc_create_refinement_info(ZZ *zz, int* number_of_cuts, 
 			       float* global_actual_work_allocated,
 			       int wgt_dim, float* total_weight_array, 
 			       float* work_percent_array, int num_vert_in_cut, 
@@ -58,7 +58,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
 			       float* wgts_in_cut_ptr,
 			       float** work_prev_allocated_ptr);
 
-int sfc_create_bins(LB* lb, int num_local_objects, int wgt_dim,
+int sfc_create_bins(ZZ *zz, int num_local_objects, int wgt_dim,
 		    SFC_VERTEX_PTR sfc_vert_ptr, float objs_wgt[],
 		    int* amount_of_bits_used, int size_of_unsigned, 
 		    float* global_actual_work_allocated, 
@@ -106,7 +106,7 @@ char *val)			/* value of variable */
 /*---------------------------------------------------------------------------*/
 
 int Zoltan_SFC(
-  LB *lb,                       /* The load-balancing structure with info for
+  ZZ *zz,                       /* The Zoltan structure with info for
                                    the RCB balancer.                         */
   int *num_import,              /* Not computed.  Set to -1. */
   ZOLTAN_ID_PTR *import_global_ids, /* Not computed. */
@@ -126,15 +126,15 @@ int Zoltan_SFC(
 )
 {
   char    yo[] = "Zoltan_SFC";
-  int wgt_dim = lb->Obj_Weight_Dim;   /* dimension of weights of each object */
+  int wgt_dim = zz->Obj_Weight_Dim;   /* dimension of weights of each object */
   int num_dims;                       /* geometric dimension */
   int ierr, i, j;                     /* local variables */
   double bounding_box[6], global_bounding_box[6]; /* local and global geometric
 						     bounding boxes for the objects */
   int num_local_objects;              /* the number of objects this processor owns */
   SFC_VERTEX_PTR sfc_vert_ptr;        /* array that stores the sfc objects */
-  int num_gid_entries = lb->Num_GID;  
-  int num_lid_entries = lb->Num_LID;
+  int num_gid_entries = zz->Num_GID;  
+  int num_lid_entries = zz->Num_LID;
   ZOLTAN_ID_PTR global_ids = NULL;
   ZOLTAN_ID_PTR local_ids = NULL;
   float* objs_wgt = NULL;             /* array of objects weights */
@@ -167,7 +167,7 @@ int Zoltan_SFC(
     subbins_per_bin, hashtable_divider, bins_per_proc; /* tuning parameters */
   double* coords; /* array for objects coordinates */
 
-  ZOLTAN_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* set the of parameters */
   Zoltan_Bind_Param(SFC_params,"SFC_BINS_PER_PROC",(void*) &bins_per_proc);
@@ -183,32 +183,32 @@ int Zoltan_SFC(
   max_refinement_level = MAX_REFINEMENT_LEVEL;
   bin_refinement_method = BIN_REFINEMENT_METHOD;
 
-  Zoltan_Assign_Param_Vals(lb->Params, SFC_params, lb->Debug_Level, lb->Proc,
-		       lb->Debug_Proc);
+  Zoltan_Assign_Param_Vals(zz->Params, SFC_params, zz->Debug_Level, zz->Proc,
+		       zz->Debug_Proc);
 
   /* make sure that all parameters have feasible values */
   if(bins_per_proc <= 0) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "SFC_BINS_PER_PROC parameter must be greater than 0.");
     bins_per_proc = BINS_PER_PROC;
   }
   if(hashtable_divider <= 0) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "SFC_HASH_TABLE_DIVIDER parameter must be greater than 0.");
     hashtable_divider = HASHTABLE_DIVIDER;
   }
   if(max_cuts_in_bin <= 0) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "SFC_MAX_CUTS_IN_BIN parameter must be greater than 0.");
     max_cuts_in_bin = MAX_CUTS_IN_BIN;
   }
   if(subbins_per_bin <= 1) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "SFC_SUBBINS_PER_BIN parameter must be greater than 1.");
     subbins_per_bin = BINS_PER_PROC;
   }
   if(bin_refinement_method != 0 && bin_refinement_method != 1) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 		  "SFC_BIN_REFINEMENT_METHOD parameter must be either 0 or 1.");
     bin_refinement_method = BIN_REFINEMENT_METHOD;
   }
@@ -218,15 +218,15 @@ int Zoltan_SFC(
   *num_export = -1;  
 
   /* get the dimension of the problem and make sure that it is either 2 or 3 */
-  num_dims = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &ierr);
+  num_dims = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
   if(ierr != 0) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned from user function Get_Num_Geom.");
     return(ierr);
   }
 
   if(num_dims != 2 && num_dims != 3) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Incompatible space dimension for SFC. Space dimension must be 2 or 3.");
     return(ZOLTAN_FATAL);
   }
@@ -235,23 +235,23 @@ int Zoltan_SFC(
     find the minimum size bytes used to store an unsigned integer*/
   i = sizeof( unsigned );
   ierr = MPI_Allreduce(&i, &size_of_unsigned, 1, MPI_INT, 
-		       MPI_MIN, lb->Communicator);
+		       MPI_MIN, zz->Communicator);
 
   /* get application data (number of objects, ids, weights, and coords */
-  num_local_objects = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
+  num_local_objects = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
   
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                    "Error returned from user function Get_Num_Obj.");
     return(ierr);
   }
 
   if (num_local_objects > 0) {
-    global_ids = ZOLTAN_MALLOC_GID_ARRAY(lb, num_local_objects);
-    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(lb, num_local_objects);
+    global_ids = ZOLTAN_MALLOC_GID_ARRAY(zz, num_local_objects);
+    local_ids  = ZOLTAN_MALLOC_LID_ARRAY(zz, num_local_objects);
 
-    if (!(global_ids) || (lb->Num_LID && !(local_ids))) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    if (!(global_ids) || (zz->Num_LID && !(local_ids))) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
     }
   }
@@ -269,16 +269,16 @@ int Zoltan_SFC(
       objs_wgt    = 
 	(float *) ZOLTAN_MALLOC(wgt_dim*(num_local_objects)*sizeof(float));
       if (!objs_wgt) {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < wgt_dim*num_local_objects; i++) objs_wgt[i] = 0.;
     }  
   }
-  Zoltan_Get_Obj_List(lb, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
+  Zoltan_Get_Obj_List(zz, global_ids, local_ids, wgt_dim, objs_wgt, &ierr);
 
   if (ierr) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
 		   "Error returned from user function Zoltan_Get_Obj_List.");
     return(ierr);
   }
@@ -287,7 +287,7 @@ int Zoltan_SFC(
     if (num_local_objects > 0) {
       objs_wgt    = (float *) ZOLTAN_MALLOC((num_local_objects)*sizeof(float));
       if (!objs_wgt) {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
       for (i = 0; i < num_local_objects; i++) objs_wgt[i] = 1.;
@@ -297,22 +297,22 @@ int Zoltan_SFC(
   
   sfc_vert_ptr = (SFC_VERTEX_PTR) ZOLTAN_MALLOC(num_local_objects * sizeof(SFC_VERTEX));
   if(num_local_objects != 0 && sfc_vert_ptr == NULL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       return(ZOLTAN_MEMERR);
   }
   coords = (double*) ZOLTAN_MALLOC(sizeof(double) * num_local_objects * num_dims);
   if(num_local_objects != 0 && coords == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   /* get the geometric coordinates of the objects */
   for(i=0;i<num_local_objects;i++) {
-    lb->Get_Geom(lb->Get_Geom_Data, num_gid_entries, num_lid_entries,
+    zz->Get_Geom(zz->Get_Geom_Data, num_gid_entries, num_lid_entries,
 		 &(global_ids[i*num_gid_entries]), &(local_ids[i*num_lid_entries]),
 		 (coords+i*num_dims), &ierr);
     
     if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, 
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                      "Error returned from user defined Get_Geom function.");
       return(ierr);
     }  
@@ -331,7 +331,7 @@ int Zoltan_SFC(
     }
   
   ierr = MPI_Allreduce(bounding_box, global_bounding_box, 2*num_dims,
-		       MPI_DOUBLE, MPI_MIN, lb->Communicator);
+		       MPI_DOUBLE, MPI_MIN, zz->Communicator);
   for(i=num_dims;i<num_dims+num_dims;i++)
     global_bounding_box[i] = - global_bounding_box[i];
 
@@ -353,29 +353,29 @@ int Zoltan_SFC(
   /* done creating global bounding box */
 
   /* Normalize space coordinates and fill in sfc_vertex info */
-  sfc_create_info(lb, global_bounding_box, (global_bounding_box+num_dims), 
+  sfc_create_info(zz, global_bounding_box, (global_bounding_box+num_dims), 
 		  num_dims, num_local_objects, wgt_dim, sfc_vert_ptr,
 		  coords);
 
   ZOLTAN_FREE(&coords);
 
-  global_actual_work_allocated=(float*) ZOLTAN_MALLOC(sizeof(float)*wgt_dim* lb->Num_Proc);
+  global_actual_work_allocated=(float*) ZOLTAN_MALLOC(sizeof(float)*wgt_dim* zz->Num_Proc);
   if(!global_actual_work_allocated) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  work_percent_array = (float*) ZOLTAN_MALLOC(sizeof(float) * lb->Num_Proc);
+  work_percent_array = (float*) ZOLTAN_MALLOC(sizeof(float) * zz->Num_Proc);
   if(!work_percent_array) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   total_weight_array = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
   if(!total_weight_array) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   /*create bins, fill global weight vector and perform initial partition of the bins*/
-  ierr = sfc_create_bins(lb, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
+  ierr = sfc_create_bins(zz, num_local_objects, wgt_dim, sfc_vert_ptr, objs_wgt,
 			 &amount_of_bits_used, size_of_unsigned, 
 			 global_actual_work_allocated, work_percent_array, 
 			 total_weight_array, &balanced_flag, &vert_in_cut_ptr,
@@ -383,7 +383,7 @@ int Zoltan_SFC(
 			 bins_per_proc, hashtable_divider, &plan,
 			 &num_vert_sent, max_cuts_in_bin); 
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_create_bins function.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in sfc_create_bins function.");
       return(ierr);
   }
  
@@ -399,21 +399,21 @@ int Zoltan_SFC(
 					       partition is not balanced
 					       that all partitions need 
 					       to be rebalanced */
-    if(num_vert_in_cut == 0 || lb->Proc == 0) 
+    if(num_vert_in_cut == 0 || zz->Proc == 0) 
       local_balanced_flag = SFC_BALANCED;
-    ierr = sfc_create_refinement_info(lb, &number_of_cuts, 
+    ierr = sfc_create_refinement_info(zz, &number_of_cuts, 
 				      global_actual_work_allocated, wgt_dim,
 				      total_weight_array, work_percent_array,
 				      num_vert_in_cut, vert_in_cut_ptr, 
 				      wgts_in_cut_ptr, &work_prev_allocated);
     if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in create_refinement_info function.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in create_refinement_info function.");
       return(ierr);
     }    
 
     ll_bins_head = (int*) ZOLTAN_MALLOC(sizeof(int) * (1+number_of_cuts));
     if(ll_bins_head == NULL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory."); 
       return(ZOLTAN_MEMERR);
     }
     max_cuts_in_bin= number_of_cuts;
@@ -428,7 +428,7 @@ int Zoltan_SFC(
    
     local_balanced_flag_array = (int*) ZOLTAN_MALLOC(sizeof(int) * (1+number_of_cuts));
     if(local_balanced_flag_array == NULL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory."); 
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory."); 
       return(ZOLTAN_MEMERR);
     }
     for(i=0;i<number_of_cuts;i++)
@@ -443,7 +443,7 @@ int Zoltan_SFC(
       if((local_balanced_flag == SFC_NOT_BALANCED ||
 	  bin_refinement_method == 1) &&
 	 vert_in_cut_ptr != NULL) {
-	ierr = sfc_refine_partition(lb, &local_balanced_flag, 
+	ierr = sfc_refine_partition(zz, &local_balanced_flag, 
 				    &amount_of_bits_used, num_vert_in_cut,
 				    vert_in_cut_ptr, size_of_unsigned, 
 				    wgt_dim, wgts_in_cut_ptr, 
@@ -454,14 +454,14 @@ int Zoltan_SFC(
 				    subbins_per_bin, local_balanced_flag_array,
 				    bin_refinement_method);
 	if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-	  ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error in sfc_refine_partition_level function.");
+	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in sfc_refine_partition_level function.");
 	  return(ierr);
 	}
       }
       /* check if any partition does not meet the imbalance tolerance */
       j = local_balanced_flag;
       i = MPI_Allreduce(&j, &balanced_flag, 1, MPI_INT,
-			MPI_MAX, lb->Communicator);
+			MPI_MAX, zz->Communicator);
       
       refinement_level_counter++;
 
@@ -479,21 +479,21 @@ int Zoltan_SFC(
     if (num_vert_sent > 0) {
       recv_buf = (SFC_VERTEX_PTR) ZOLTAN_MALLOC(sizeof(SFC_VERTEX)*num_vert_sent);
       if(recv_buf==NULL) {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return(ZOLTAN_MEMERR);
       }
     }
     ierr = Zoltan_Comm_Do_Reverse(plan, comm_tag, (char*) vert_in_cut_ptr,
 			      sizeof(SFC_VERTEX), NULL, (char*) recv_buf);
     if(ierr == ZOLTAN_WARN) {
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning from Zoltan_Comm_Do_Reverse.");
     }
     else if(ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Fatal error in Zoltan_Comm_Do_Reverse.");
       return(ierr);
     }      
     else if(ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Do_Reverse.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error in Zoltan_Comm_Do_Reverse.");
       return(ierr);
     }
     /* put objects back in sfc_vert_ptr array the way they 
@@ -507,14 +507,14 @@ int Zoltan_SFC(
     ZOLTAN_FREE(&recv_buf);
     ierr = Zoltan_Comm_Destroy(&plan);
     if(ierr == ZOLTAN_WARN) {
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Warning from Zoltan_Comm_Destroy.");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Warning from Zoltan_Comm_Destroy.");
     }
     else if(ierr == ZOLTAN_FATAL) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Fatal error in Zoltan_Comm_Destroy.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Fatal error in Zoltan_Comm_Destroy.");
       return(ierr);
     }      
     else if(ierr == ZOLTAN_MEMERR) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Memory error in Zoltan_Comm_Destroy.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error in Zoltan_Comm_Destroy.");
       return(ierr);
     }
   }
@@ -528,35 +528,35 @@ int Zoltan_SFC(
   /* add up stuff to export */
   *num_export = 0;
   for(i=0;i<num_local_objects;i++) 
-    if(sfc_vert_ptr[i].destination_proc != lb->Proc)
+    if(sfc_vert_ptr[i].destination_proc != zz->Proc)
       (*num_export)++;
 
-  ierr = Zoltan_Special_Malloc(lb, (void**) export_global_ids,
+  ierr = Zoltan_Special_Malloc(zz, (void**) export_global_ids,
 			   *num_export, ZOLTAN_SPECIAL_MALLOC_GID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = Zoltan_Special_Malloc(lb, (void**) export_local_ids,
+  ierr = Zoltan_Special_Malloc(zz, (void**) export_local_ids,
 			   *num_export, ZOLTAN_SPECIAL_MALLOC_LID);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
-  ierr = Zoltan_Special_Malloc(lb, (void**) export_procs,
+  ierr = Zoltan_Special_Malloc(zz, (void**) export_procs,
 			   *num_export, ZOLTAN_SPECIAL_MALLOC_INT);
   if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   
   /* fill in the export data */
   j = 0;
   for(i=0;i<num_local_objects;i++) 
-    if(sfc_vert_ptr[i].destination_proc != lb->Proc) {
+    if(sfc_vert_ptr[i].destination_proc != zz->Proc) {
       *((*export_procs)+j) = sfc_vert_ptr[i].destination_proc;
-      ZOLTAN_SET_GID(lb, (*export_global_ids+j), (global_ids+i));
-      ZOLTAN_SET_LID(lb, (*export_local_ids+j), (local_ids+i));
+      ZOLTAN_SET_GID(zz, (*export_global_ids+j), (global_ids+i));
+      ZOLTAN_SET_LID(zz, (*export_local_ids+j), (local_ids+i));
       j++;
     }
 
@@ -566,7 +566,7 @@ int Zoltan_SFC(
   ZOLTAN_FREE(&local_ids);
   ZOLTAN_FREE(&sfc_vert_ptr);
 
-  ZOLTAN_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
 }
 
@@ -574,7 +574,7 @@ int Zoltan_SFC(
    NOTE:  this routine only works for objects with one weight!
 */
 
-int sfc_create_refinement_info(LB* lb, int* number_of_cuts, 
+int sfc_create_refinement_info(ZZ *zz, int* number_of_cuts, 
 			       float* global_actual_work_allocated,
 			       int wgt_dim, float* total_weight_array, 
 			       float* work_percent_array,
@@ -588,11 +588,11 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
   int i = 0, j;
 
   /* find out how many cuts are in this bin. */
-  my_work = global_actual_work_allocated[(lb->Proc)*wgt_dim];
-  while(my_work > total_weight_array[0] * work_percent_array[lb->Proc-i])
+  my_work = global_actual_work_allocated[(zz->Proc)*wgt_dim];
+  while(my_work > total_weight_array[0] * work_percent_array[zz->Proc-i])
     i++;
   *number_of_cuts = i;
-  if(num_vert_in_cut == 0 || lb->Proc ==0) {
+  if(num_vert_in_cut == 0 || zz->Proc ==0) {
     *number_of_cuts = 0;
     return ZOLTAN_OK;
   }
@@ -608,7 +608,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
      bins with higher keys than this bin */
   work_array = (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim);
   if(work_array == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
   
@@ -621,7 +621,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
   *work_prev_allocated_ptr = 
     (float*) ZOLTAN_MALLOC(sizeof(float) * wgt_dim * (*number_of_cuts+1));
   if(*work_prev_allocated_ptr == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }
       
@@ -629,7 +629,7 @@ int sfc_create_refinement_info(LB* lb, int* number_of_cuts,
      with higher keys than this bin */
   for(i=0;i<wgt_dim;i++)
     *((*work_prev_allocated_ptr)+wgt_dim*(*number_of_cuts)+i) =
-      global_actual_work_allocated[(lb->Proc)*wgt_dim+i] - work_array[i];
+      global_actual_work_allocated[(zz->Proc)*wgt_dim+i] - work_array[i];
 
   ZOLTAN_FREE(&work_array);
   return ZOLTAN_OK;

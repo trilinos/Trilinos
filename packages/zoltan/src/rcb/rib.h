@@ -38,15 +38,15 @@ typedef struct RIB_Struct {
     int                Num_Geom;
 } RIB_STRUCT;
 
-extern int Zoltan_RIB_Build_Structure(LB *, int *, int *, int, int);
+extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, int);
 
 /* function prototypes */
 
 extern int Zoltan_RIB_inertial1d(struct Dot_Struct *, int, int, double *, double *,
                          double *);
-extern int Zoltan_RIB_inertial2d(LB *, struct Dot_Struct *, int, int, double *,
+extern int Zoltan_RIB_inertial2d(ZZ *, struct Dot_Struct *, int, int, double *,
                          double *, double *, MPI_Comm, int, int, int);
-extern int Zoltan_RIB_inertial3d(LB *, struct Dot_Struct *, int, int, double *,
+extern int Zoltan_RIB_inertial3d(ZZ *, struct Dot_Struct *, int, int, double *,
                          double *, double *, MPI_Comm, int, int, int);
 extern void Zoltan_RIB_reduce_double(double *, double *, int, MPI_Comm, int, int, int,
                              int);

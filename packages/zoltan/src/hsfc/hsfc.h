@@ -52,7 +52,7 @@ static const int TWO = 2 ;
 static const int N   = 8 ; /* number of "bins per processor", small positive integer */
 
 #define ZOLTAN_HSFC_ERROR(error,str) {err = error ; \
- ZOLTAN_PRINT_ERROR(lb->Proc, yo, str) ; goto free ;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto free ;}
 
 
 typedef struct Partition

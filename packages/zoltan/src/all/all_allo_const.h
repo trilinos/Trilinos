@@ -18,7 +18,7 @@
 #include "mem_const.h"
 
 extern int Zoltan_Set_Malloc_Param(char *, char *);
-extern void Zoltan_Free_Structure(LB *);
+extern void Zoltan_Free_Structure(ZZ *);
 
 /* function prototypes for Fortran allocation functions */
 
@@ -47,9 +47,9 @@ typedef enum Zoltan_Special_Malloc_Type ZOLTAN_SPECIAL_MALLOC_TYPE;
 
 /* function declarations for special malloc */
 
-extern int Zoltan_Special_Malloc(LB *lb, void **array, int size,
+extern int Zoltan_Special_Malloc(ZZ *zz, void **array, int size,
                       ZOLTAN_SPECIAL_MALLOC_TYPE type);
-extern int Zoltan_Special_Free(LB *lb, void **array,
+extern int Zoltan_Special_Free(ZZ *zz, void **array,
                       ZOLTAN_SPECIAL_MALLOC_TYPE type);
 extern void Zoltan_Register_Fort_Malloc(ZOLTAN_FORT_MALLOC_INT_FN *,
                                         ZOLTAN_FORT_FREE_INT_FN *);

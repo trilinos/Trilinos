@@ -345,7 +345,7 @@ pRegion Zoltan_Oct_regionlist(pOctant oct) {
  * void Zoltan_Oct_addRegion(pOctant octant, pRegion region)
  * add a region to oct's list
  */
-int Zoltan_Oct_addRegion(LB *lb, pOctant oct, pRegion region) { 
+int Zoltan_Oct_addRegion(ZZ *zz, pOctant oct, pRegion region) { 
   char *yo = "Zoltan_Oct_addRegion";
   pRegion entry;                      /* pointer to new entry in region list */
 
@@ -354,17 +354,17 @@ int Zoltan_Oct_addRegion(LB *lb, pOctant oct, pRegion region) {
 
   entry = (pRegion) ZOLTAN_MALLOC(sizeof(Region));   /* malloc space for region */
   if(entry == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Cannot allocated memory for region.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Cannot allocated memory for region.");
     return ZOLTAN_MEMERR;
   }
 
-  entry->Global_ID = ZOLTAN_MALLOC_GID(lb);
-  entry->Local_ID = ZOLTAN_MALLOC_LID(lb);
+  entry->Global_ID = ZOLTAN_MALLOC_GID(zz);
+  entry->Local_ID = ZOLTAN_MALLOC_LID(zz);
   /* copy region information into the entry */
   vector_set(entry->Coord, region->Coord);
   entry->Weight = region->Weight;
-  ZOLTAN_SET_GID(lb, entry->Global_ID, region->Global_ID);
-  ZOLTAN_SET_LID(lb, entry->Local_ID, region->Local_ID);
+  ZOLTAN_SET_GID(zz, entry->Global_ID, region->Global_ID);
+  ZOLTAN_SET_LID(zz, entry->Local_ID, region->Local_ID);
   entry->Proc = region->Proc;
 
   /* attach region to region list */

@@ -80,7 +80,7 @@ extern int Zoltan_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
               int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
 extern int Zoltan_Scatter_Graph(idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
               idxtype **vwgt, idxtype **vsize, idxtype **adjwgt, float **xyz, int ndims,
-              LB *lb, ZOLTAN_COMM_OBJ **plan);
+              ZZ *zz, ZOLTAN_COMM_OBJ **plan);
 
 
 #endif

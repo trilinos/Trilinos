@@ -23,7 +23,7 @@
 #include "sfc.h"
 
 
-int sfc_refine_partition(LB* lb, int* local_balanced_flag, 
+int sfc_refine_partition(ZZ *zz, int* local_balanced_flag, 
 			 int *amount_of_used_bits, int num_vert_in_cut,
 			 SFC_VERTEX_PTR vert_in_cut_ptr, int size_of_unsigned,
 			 int wgt_dim, float* wgts_in_cut_ptr,
@@ -45,12 +45,12 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   /* amount of sub-bins in a bin, probably want this as a passed in parameter */
   int number_of_bins = subbins_per_bin;
 
-  ZOLTAN_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* check to see that all of the bits of the sfc key 
      have not already been used */
   if(*amount_of_used_bits >= size_of_unsigned * SFC_KEYLENGTH * 8) {
-    ZOLTAN_PRINT_WARN(lb->Proc, yo, "No more refinement is possible.");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "No more refinement is possible.");
     *local_balanced_flag = SFC_BALANCED;
     return(ZOLTAN_OK);
   }
@@ -77,13 +77,13 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     
   ll_prev_bins = (int*) ZOLTAN_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_prev_bins == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   }    
   
   ll_bins_head_copy = (int*) ZOLTAN_MALLOC(sizeof(int) * (number_of_cuts+1));
   if(ll_bins_head_copy == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   } 
 
@@ -93,7 +93,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
   work_prev_allocated_copy = 
     (float*) ZOLTAN_MALLOC(sizeof(float) *wgt_dim * (number_of_cuts+1));
   if(work_prev_allocated_copy == NULL) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     return(ZOLTAN_MEMERR);
   } 
   
@@ -117,7 +117,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       
       binned_weight_array = (float*) ZOLTAN_MALLOC(number_of_bins*wgt_dim*sizeof(float));
       if(binned_weight_array == NULL) {
-	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
       } 
       for(i=0;i<number_of_bins*wgt_dim;i++)
@@ -134,7 +134,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       
       bin_proc_array = (int*) ZOLTAN_MALLOC(sizeof(int) * (1+number_of_cuts));
       if(bin_proc_array == NULL) {
-	ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Insufficient memory.");
+	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
 	return(ZOLTAN_MEMERR);
       } 
       bin_proc_array[0] = -1;
@@ -144,10 +144,10 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
       /* find new cut(s) in the sub-bins */
       if(wgt_dim==1) {
 	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter],
-				      total_weight_array, bin_proc_array, lb,
+				      total_weight_array, bin_proc_array, zz,
 				      binned_weight_array, 
-				      (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
-				      (global_actual_work_allocated+(lb->Proc-number_of_cuts*wgt_dim)),
+				      (work_percent_array+zz->Proc+ll_counter-2*number_of_cuts),
+				      (global_actual_work_allocated+(zz->Proc-number_of_cuts*wgt_dim)),
 				      number_of_bins, &temp_max_cuts_in_bin,
 				      number_of_cuts, 0, NULL);
 
@@ -158,10 +158,10 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	/* multi_wgt_dim_calc_partition(); */  
 	/*fill in with erik's multi-weight stuff when it is ready, use first weight for now */      
 	sfc_single_wgt_calc_partition(wgt_dim, work_prev_allocated[ll_counter*wgt_dim],
-				      total_weight_array, bin_proc_array, lb, 
+				      total_weight_array, bin_proc_array, zz, 
 				      binned_weight_array, 
-				      (work_percent_array+lb->Proc+ll_counter-2*number_of_cuts),
-				      (global_actual_work_allocated+(lb->Proc-number_of_cuts*wgt_dim)),
+				      (work_percent_array+zz->Proc+ll_counter-2*number_of_cuts),
+				      (global_actual_work_allocated+(zz->Proc-number_of_cuts*wgt_dim)),
 				      number_of_bins, &temp_max_cuts_in_bin, 
 				      number_of_cuts, 0, NULL);
 
@@ -195,19 +195,19 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 
 	/* if this object is in a bin with a cut... */
 	if((int) vert_in_cut_ptr[ll_location].my_bin == bin_proc_array[j]) {
-	  if(ll_bins_head_copy[number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc] != -1) 
+	  if(ll_bins_head_copy[number_of_cuts-(zz->Proc)+vert_in_cut_ptr[ll_location].destination_proc] != -1) 
 	    vert_in_cut_ptr[ll_prev_bins[j]].next_sfc_vert_index = ll_location;
 	  else {
-	    ll_bins_head_copy[number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc] = ll_location;
+	    ll_bins_head_copy[number_of_cuts-(zz->Proc)+vert_in_cut_ptr[ll_location].destination_proc] = ll_location;
 	    /* calculate work_prev_allocated for this new partition */
 	    for(i=0;i<wgt_dim;i++)
 	      work_prev_allocated_copy /* array continued on next line */
-		[(number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+i] = 
+		[(number_of_cuts-(zz->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+i] = 
 		work_prev_allocated[i+wgt_dim*ll_counter];
 	    for(i=bin_proc_array[j]+1;i<number_of_bins;i++)
 	      for(k=0;k<wgt_dim;k++) 
 		work_prev_allocated_copy /* array continued on next line */
-		  [(number_of_cuts-(lb->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+k] 
+		  [(number_of_cuts-(zz->Proc)+vert_in_cut_ptr[ll_location].destination_proc)*wgt_dim+k] 
 		  += binned_weight_array[i*wgt_dim+k];
 	  }
 	  
@@ -244,15 +244,15 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	if(wgt_dim == 1) {
 	  local_balanced_flag_array[i] =
 	    sfc_single_wgt_find_imbalance(work_percent_array, 
-					  global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
-					  total_weight_array[0], lb->Proc+i-number_of_cuts, lb);
+					  global_actual_work_allocated[(zz->Proc+i-number_of_cuts)*wgt_dim],
+					  total_weight_array[0], zz->Proc+i-number_of_cuts, zz);
 	}
 	else {
 	  /* put in multi-dimensional algorithm to calculate imbalance of the partitions */
 	  local_balanced_flag_array[i] =
 	    sfc_single_wgt_find_imbalance(work_percent_array, 
-					  global_actual_work_allocated[(lb->Proc+i-number_of_cuts)*wgt_dim],
-					  total_weight_array[0], lb->Proc+i-number_of_cuts, lb);
+					  global_actual_work_allocated[(zz->Proc+i-number_of_cuts)*wgt_dim],
+					  total_weight_array[0], zz->Proc+i-number_of_cuts, zz);
 	}
       }
   }
@@ -274,7 +274,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	if(vert_in_cut_ptr[ll_bins_head[i]].next_sfc_vert_index == -1) {
 	  ll_bins_head[i] = -1;
 	  local_balanced_flag_array[i] = SFC_BALANCED;
-	  ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+	  ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 			"Bin refinement cannot improve load balance on this processor.");
 	}
 	/* check if the objects in the bin have all the same sfc_key */
@@ -315,7 +315,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 	      j++;
 	      ll_counter = vert_in_cut_ptr[ll_counter].next_sfc_vert_index; 
 	    }
-	    ZOLTAN_PRINT_WARN(lb->Proc, yo, 
+	    ZOLTAN_PRINT_WARN(zz->Proc, yo, 
 			  "All objects in a bin that needs to be refined have the same sfc key.");
 	  }
 	}
@@ -329,7 +329,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
     }
   }
   
-  ZOLTAN_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return ZOLTAN_OK;
 }
 

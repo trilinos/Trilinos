@@ -27,56 +27,56 @@
 
 /****************************************************************************/
 
-#define ZOLTAN_INIT_GID(lb,gid) ZOLTAN_INIT_ID((lb)->Num_GID,gid);
-#define ZOLTAN_INIT_LID(lb,lid) ZOLTAN_INIT_ID((lb)->Num_LID,lid);
+#define ZOLTAN_INIT_GID(zz,gid) ZOLTAN_INIT_ID((zz)->Num_GID,gid);
+#define ZOLTAN_INIT_LID(zz,lid) ZOLTAN_INIT_ID((zz)->Num_LID,lid);
 
 /*
  * Macros for allocating single IDs; IDs are also initialized.
- * If lb->Num_LID is zero, the macro returns NULL.
+ * If zz->Num_LID is zero, the macro returns NULL.
  */
-#define ZOLTAN_MALLOC_GID(lb) ZOLTAN_Malloc_ID((lb)->Num_GID, __FILE__, __LINE__)
-#define ZOLTAN_MALLOC_LID(lb) \
-    ((lb)->Num_LID \
-      ? ZOLTAN_Malloc_ID((lb)->Num_LID, __FILE__, __LINE__) \
+#define ZOLTAN_MALLOC_GID(zz) ZOLTAN_Malloc_ID((zz)->Num_GID, __FILE__, __LINE__)
+#define ZOLTAN_MALLOC_LID(zz) \
+    ((zz)->Num_LID \
+      ? ZOLTAN_Malloc_ID((zz)->Num_LID, __FILE__, __LINE__) \
       : NULL)
 
 /*
  * Macros for allocating arrays of IDs; arrays are also initialized.
- * If lb->Num_LID is zero, the macro returns NULL.
+ * If zz->Num_LID is zero, the macro returns NULL.
  */
-#define ZOLTAN_MALLOC_GID_ARRAY(lb,num_obj) \
-    ZOLTAN_Malloc_ID((num_obj) * (lb)->Num_GID, __FILE__, __LINE__)
-#define ZOLTAN_MALLOC_LID_ARRAY(lb,num_obj) \
-    ((lb)->Num_LID \
-       ? ZOLTAN_Malloc_ID((num_obj) * (lb)->Num_LID, __FILE__, __LINE__) \
+#define ZOLTAN_MALLOC_GID_ARRAY(zz,num_obj) \
+    ZOLTAN_Malloc_ID((num_obj) * (zz)->Num_GID, __FILE__, __LINE__)
+#define ZOLTAN_MALLOC_LID_ARRAY(zz,num_obj) \
+    ((zz)->Num_LID \
+       ? ZOLTAN_Malloc_ID((num_obj) * (zz)->Num_LID, __FILE__, __LINE__) \
        : NULL)
 
 /*
  * Macros for reallocating arrays of IDs.
  */
-#define ZOLTAN_REALLOC_GID_ARRAY(lb,ptr,num_obj) \
+#define ZOLTAN_REALLOC_GID_ARRAY(zz,ptr,num_obj) \
   (ZOLTAN_ID_PTR) ZOLTAN_REALLOC(ptr,\
-                                (num_obj)*(lb)->Num_GID*sizeof(ZOLTAN_ID_TYPE))
-#define ZOLTAN_REALLOC_LID_ARRAY(lb,ptr,num_obj) \
-  ((lb)->Num_LID \
+                                (num_obj)*(zz)->Num_GID*sizeof(ZOLTAN_ID_TYPE))
+#define ZOLTAN_REALLOC_LID_ARRAY(zz,ptr,num_obj) \
+  ((zz)->Num_LID \
     ? (ZOLTAN_ID_PTR)ZOLTAN_REALLOC(ptr, \
-                               (num_obj)*(lb)->Num_LID*sizeof(ZOLTAN_ID_TYPE)) \
+                               (num_obj)*(zz)->Num_LID*sizeof(ZOLTAN_ID_TYPE)) \
     : NULL)
 
 /****************************************************************************/
 /*
  *  Macros to copy IDs.
  */
-#define ZOLTAN_SET_GID(lb,a,b) ZOLTAN_SET_ID((lb)->Num_GID,a,b)
-#define ZOLTAN_SET_LID(lb,a,b) ZOLTAN_SET_ID((lb)->Num_LID,a,b)
+#define ZOLTAN_SET_GID(zz,a,b) ZOLTAN_SET_ID((zz)->Num_GID,a,b)
+#define ZOLTAN_SET_LID(zz,a,b) ZOLTAN_SET_ID((zz)->Num_LID,a,b)
 
 
 /****************************************************************************/
 /*
  * Macros to print IDs.
  */
-#define ZOLTAN_PRINT_GID(lb,a) ZOLTAN_PRINT_ID((lb)->Num_GID,a)
-#define ZOLTAN_PRINT_LID(lb,a) ZOLTAN_PRINT_ID((lb)->Num_LID,a)
+#define ZOLTAN_PRINT_GID(zz,a) ZOLTAN_PRINT_ID((zz)->Num_GID,a)
+#define ZOLTAN_PRINT_LID(zz,a) ZOLTAN_PRINT_ID((zz)->Num_LID,a)
 
 /****************************************************************************/
 /*
@@ -84,8 +84,8 @@
  * needed as Zoltan only copies these IDs; it does not use them
  * in its computations.)
  */
-#define ZOLTAN_EQ_GID(lb,a,b) ZOLTAN_EQ_ID((lb)->Num_GID,a,b)
-#define ZOLTAN_LT_GID(lb,a,b) ZOLTAN_LT_ID((lb)->Num_GID,a,b)
-#define ZOLTAN_GT_GID(lb,a,b) ZOLTAN_GT_ID((lb)->Num_GID,a,b)
+#define ZOLTAN_EQ_GID(zz,a,b) ZOLTAN_EQ_ID((zz)->Num_GID,a,b)
+#define ZOLTAN_LT_GID(zz,a,b) ZOLTAN_LT_ID((zz)->Num_GID,a,b)
+#define ZOLTAN_GT_GID(zz,a,b) ZOLTAN_GT_ID((zz)->Num_GID,a,b)
 
 #endif

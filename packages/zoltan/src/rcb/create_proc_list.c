@@ -18,7 +18,7 @@
 static void Zoltan_RB_Gather(int *, int *, int, int, int, MPI_Comm);
 
 int Zoltan_RB_Create_Proc_List(
-     LB       *lb,            /* Load-balancing structure. */
+     ZZ       *zz,            /* Load-balancing structure. */
      int       set,           /* set that processor is in */
      int       dotnum,        /* number of dots that my processor has */
      int       outgoing,      /* number of dots that my processor is sending */
@@ -50,7 +50,7 @@ int Zoltan_RB_Create_Proc_List(
 
      /* allocate memory for arrays */
      MPI_Comm_rank(comm, &rank);
-     if (lb->Tflops_Special) {
+     if (zz->Tflops_Special) {
         nprocs = numprocs;
         rank -= proclower;
      }
@@ -68,7 +68,7 @@ int Zoltan_RB_Create_Proc_List(
 
      /* gather number of outgoing and remaining dots across processors */
 
-     if (lb->Tflops_Special) {
+     if (zz->Tflops_Special) {
         for (i = 3*nprocs-1; i >= 0; i--)
            send[i] = 0;
         send[rank] = outgoing;
@@ -151,7 +151,7 @@ int Zoltan_RB_Create_Proc_List(
         that we send dots to.  We continue to send dots to processors beyond
         that one until we run out of dots to send. */
      if (outgoing) {
-        if (lb->Tflops_Special) a = outgoing;    /* keep outgoing around in a */
+        if (zz->Tflops_Special) a = outgoing;    /* keep outgoing around in a */
         for (i = j = 0; i < rank; i++)
            if (sets[i] == set)                   /* only overwrote other half */
               j += send[i];
@@ -172,7 +172,7 @@ int Zoltan_RB_Create_Proc_List(
            for (j = 0; j < num_to; j++, k++)
               proclist[k] = i;
         }
-        if (lb->Tflops_Special)
+        if (zz->Tflops_Special)
            for (i = 0; i < a; i++)
               proclist[i] += proclower;
      }

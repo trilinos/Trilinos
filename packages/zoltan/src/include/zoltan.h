@@ -1301,12 +1301,12 @@ extern int Zoltan_Initialize(
 
 /*****************************************************************************/
 /*
- *  Function to create a load balancing structure.  May want more than one
+ *  Function to create a Zoltan structure.  May want more than one
  *  structure if using different decompositions with different techniques.
  *  This function allocates and initializes the structure.
  *  Input:
  *    communicator        --  MPI Communicator to be used for this
- *                            load-balancing structure.
+ *                            Zoltan structure.
  *  Returned value:       --  Pointer to a Zoltan structure.
  *                            If there is an error, NULL is returned.
  *                            Any error in this function should be
@@ -1319,21 +1319,21 @@ extern struct Zoltan_Struct *Zoltan_Create(
 
 /*****************************************************************************/
 /*
- *  Function to free the space associated with a load balancing structure.
+ *  Function to free the space associated with a Zoltan structure.
  *  The input pointer is set to NULL when the routine returns.
  *  Input/Output:
- *    lb                  --  Pointer to a Zoltan structure.
+ *    zz                  --  Pointer to a Zoltan structure.
  */
 
 extern void Zoltan_Destroy(
-  struct Zoltan_Struct **lb
+  struct Zoltan_Struct **zz
 );
 
 /*****************************************************************************/
 /*
  *  General function to initialize a given Zoltan callback function.
  *  Input:
- *    lb                  --  Pointer to a Zoltan structure.
+ *    zz                  --  Pointer to a Zoltan structure.
  *    fn_type             --  Enum type indicating the function to be
  *                            set.
  *    fn_ptr              --  Pointer to the function to be used in the 
@@ -1341,12 +1341,12 @@ extern void Zoltan_Destroy(
  *    data_ptr            --  Pointer to data that Zoltan will
  *                            pass as an argument to fn(). May be NULL.
  *  Output:
- *    lb                  --  Appropriate field set to value in fn_ptr.
+ *    zz                  --  Appropriate field set to value in fn_ptr.
  *  Returned value:       --  Error code
  */
 
 extern int Zoltan_Set_Fn(
-  struct Zoltan_Struct *lb,
+  struct Zoltan_Struct *zz,
   ZOLTAN_FN_TYPE fn_type,
   void (*fn_ptr)(),
   void *data_ptr
@@ -1358,163 +1358,163 @@ extern int Zoltan_Set_Fn(
  *  Use of these specific functions enables stricter type checking of the
  *  callback function types.
  *  Input:
- *    lb                  --  Pointer to a Zoltan structure.
+ *    zz                  --  Pointer to a Zoltan structure.
  *    fn_ptr              --  Pointer to the function to be used in the 
  *                            assignment, where FN is one of the
  *                            callback function typedef'ed above.
  *    data_ptr            --  Pointer to data that Zoltan will
  *                            pass as an argument to fn(). May be NULL.
  *  Output:
- *    lb                  --  Appropriate field set to value in fn_ptr.
+ *    zz                  --  Appropriate field set to value in fn_ptr.
  *  Returned value:       --  Error code
  */
 
 extern int Zoltan_Set_Num_Edges_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_EDGES_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Edge_List_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_EDGE_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Num_Geom_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_GEOM_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Geom_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_GEOM_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Num_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Obj_List_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_First_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_FIRST_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Next_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NEXT_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Num_Border_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_BORDER_OBJ_FN *fn_ptr,
   void *data_ptr
 );
 
 extern int Zoltan_Set_Border_Obj_List_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_BORDER_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_First_Border_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_FIRST_BORDER_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Next_Border_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NEXT_BORDER_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Pre_Migrate_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_PRE_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Mid_Migrate_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_MID_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Post_Migrate_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_POST_MIGRATE_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Obj_Size_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_OBJ_SIZE_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Pack_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_PACK_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Unpack_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_UNPACK_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Num_Coarse_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Coarse_Obj_List_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_COARSE_OBJ_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_First_Coarse_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_FIRST_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Next_Coarse_Obj_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NEXT_COARSE_OBJ_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Num_Child_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_NUM_CHILD_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Child_List_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_CHILD_LIST_FN *fn_ptr, 
   void *data_ptr
 );
 
 extern int Zoltan_Set_Child_Weight_Fn(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   ZOLTAN_CHILD_WEIGHT_FN *fn_ptr, 
   void *data_ptr
 );
@@ -1524,16 +1524,16 @@ extern int Zoltan_Set_Child_Weight_Fn(
 /*
  *  Function to set the load balancing method to be used.
  *  Input:
- *    lb                  --  The load balancing structure to which this
+ *    zz                  --  The Zoltan structure to which this
  *                            method applies.
  *    string              --  String specifying the desired method.
  *  Output:
- *    lb                  --  Appropriate fields set to designated values.
+ *    zz                  --  Appropriate fields set to designated values.
  *  Returned value:       --  Error code
  */
 
 extern int Zoltan_LB_Set_Method(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   char *string
 );
 
@@ -1544,7 +1544,7 @@ extern int Zoltan_LB_Set_Method(
  *  by a call to this routine.
  *
  *  Input
- *    lb                  --  The load balancing structure to which this
+ *    zz                  --  The Zoltan structure to which this
  *                            parameter alteration applies.
  *    name                --  The name of the parameter to have its
  *                            value changed.
@@ -1554,7 +1554,7 @@ extern int Zoltan_LB_Set_Method(
  */
 
 extern int Zoltan_Set_Param(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   char *name, 
   char *val
 );
@@ -1564,7 +1564,7 @@ extern int Zoltan_Set_Param(
  *  Function to invoke the load-balancer.
  *
  *  Input:
- *    lb                  --  The load balancing structure containing 
+ *    zz                  --  The Zoltan structure containing 
  *                            info for this load-balancing invocation.
  *  Output:
  *    changes             --  This value tells whether the new 
@@ -1609,7 +1609,7 @@ extern int Zoltan_Set_Param(
  */
 
 extern int Zoltan_LB_Balance(
-  struct Zoltan_Struct *lb,
+  struct Zoltan_Struct *zz,
   int *changes,
   int *num_gid_entries,
   int *num_lid_entries,
@@ -1631,7 +1631,7 @@ extern int Zoltan_LB_Balance(
  *  decomposition.
  *
  *  Input:
- *    lb                  --  Load balancing structure for current 
+ *    zz                  --  Zoltan structure for current 
  *                            balance.
  *    num_import          --  Number of non-local objects assigned to 
  *                            the processor in the new decomposition.
@@ -1662,7 +1662,7 @@ extern int Zoltan_LB_Balance(
 
 
 extern int Zoltan_Compute_Destinations(
-  struct Zoltan_Struct *lb,
+  struct Zoltan_Struct *zz,
   int num_import, 
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids, 
@@ -1690,7 +1690,7 @@ extern int Zoltan_Compute_Destinations(
  *  post-processing function (ZOLTAN_POST_MIGRATE_FN) is invoked if specified.
  *
  *  Input:
- *    lb                  --  Load balancing structure for current 
+ *    zz                  --  Zoltan structure for current 
  *                            balance.
  *    num_import          --  Number of non-local objects assigned to the
  *                            processor in the new decomposition.
@@ -1721,7 +1721,7 @@ extern int Zoltan_Compute_Destinations(
  */
 
 extern int Zoltan_Help_Migrate(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   int num_import,
   ZOLTAN_ID_PTR import_global_ids,
   ZOLTAN_ID_PTR import_local_ids,
@@ -1767,7 +1767,7 @@ extern int Zoltan_LB_Free_Data(
  * geometric algorithm - currently RCB and RIB.
  * 
  * Input:
- *   lb                   -- pointer to lb structure
+ *   zz                   -- pointer to Zoltan structure
  *   coords               -- vector of coordinates of new point
  *
  * Output:
@@ -1777,7 +1777,7 @@ extern int Zoltan_LB_Free_Data(
  */
 
 extern int Zoltan_LB_Point_Assign(
-  struct Zoltan_Struct *lb,
+  struct Zoltan_Struct *zz,
   double *coords,
   int *proc
 );
@@ -1789,7 +1789,7 @@ extern int Zoltan_LB_Point_Assign(
  * geometric algorithm - currently RCB and RIB.
  * 
  * Input:
- *   lb                   -- pointer to lb structure
+ *   zz                   -- pointer to Zoltan structure
  *   xmin, ymin, zmin     -- lower left corner of bounding box
  *   xmax, ymax, zmax     -- upper right corner of bounding box
  *
@@ -1803,7 +1803,7 @@ extern int Zoltan_LB_Point_Assign(
  */
 
 extern int Zoltan_LB_Box_Assign(
-  struct Zoltan_Struct *lb,
+  struct Zoltan_Struct *zz,
   double xmin,
   double ymin,
   double zmin,
@@ -1819,7 +1819,7 @@ extern int Zoltan_LB_Box_Assign(
  * Routine to compute statistics about the current balance/partitioning.
  *
  * Input:
- *   lb                   -- pointer to lb structure
+ *   zz                   -- pointer to Zoltan structure
  *   print_stats          -- if >0, compute and print max and sum of the metrics
  *
  * Output:
@@ -1834,7 +1834,7 @@ extern int Zoltan_LB_Box_Assign(
  */
 
 extern int Zoltan_LB_Eval(
-  struct Zoltan_Struct *lb, 
+  struct Zoltan_Struct *zz, 
   int print_stats, 
   int *nobj,
   float *obj_wgt,

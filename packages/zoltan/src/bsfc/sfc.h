@@ -54,21 +54,21 @@ typedef struct sfc_bin_weight * SFC_BIN_WEIGHT_PTR;
 /* declare functions in the sfc routines */
 int sfc_single_wgt_find_imbalance(float* work_percent_array, 
 				  float cumulative_work, float total_work,
-				  int which_proc, LB* lb);
+				  int which_proc, ZZ *zz);
 
 void sfc_clear_hashtable(SFC_HASH_OBJ_PTR * sfc_hash_ptr,
 			 int hashtable_length);
 
 void sfc_single_wgt_calc_partition(int wgt_dim, float work_allocated,
 				   float* total_weight_array, 
-				   int* bin_proc_array, LB* lb, 
+				   int* bin_proc_array, ZZ *zz, 
 				   float* binned_weight_array, 
 				   float* work_percent_array, 
 				   float* actual_work_allocated,
 				   int number_of_bins, int* number_of_cuts,
 				   int current_proc, int level_flag, int*);
 
-int sfc_put_in_hashtable(LB* lb, SFC_HASH_OBJ_PTR * sfc_hash_ptr, 
+int sfc_put_in_hashtable(ZZ *zz, SFC_HASH_OBJ_PTR * sfc_hash_ptr, 
 			 int array_location, SFC_VERTEX_PTR sfc_vert_ptr, 
 			 int wgt_dim, float* obj_wgt);
 
@@ -80,13 +80,13 @@ void sfc_get_normed_coords(double min_bounding_box[],
 			   double normed_coords[],
 			   int num_dims, double my_coords[]);
 
-void sfc_create_info(LB *lb, double min_bounding_box[], 
+void sfc_create_info(ZZ *zz, double min_bounding_box[], 
 		     double max_bounding_box[], int num_dims,
 		     int num_local_objects, int wgt_dim, 
 		     SFC_VERTEX_PTR sfc_vert_ptr, 
 		     double* coords);
 
-int sfc_refine_partition(LB* lb, int* local_balanced_flag,
+int sfc_refine_partition(ZZ *zz, int* local_balanced_flag,
 			 int *amount_of_used_bits, int num_vert_in_cut,
 			 SFC_VERTEX_PTR vert_in_cut_ptr,
 			 int size_of_unsigned,  
@@ -99,7 +99,7 @@ int sfc_refine_partition(LB* lb, int* local_balanced_flag,
 			 int subbins_per_bin, int* local_balanced_flag_array,
 			 int bin_refinement_method);
 
-int sfc_create_compare_key(LB* lb, unsigned sfc_key[], unsigned compare_key[], 
+int sfc_create_compare_key(ZZ *zz, unsigned sfc_key[], unsigned compare_key[], 
 			   unsigned AND_operator_array[], int prev_used_bits);
 
 int sfc_check_refine(unsigned* sfc_key, unsigned* compare_key,

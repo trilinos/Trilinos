@@ -22,28 +22,28 @@
 
 
 void Zoltan_Free_Structure(
-  LB *lb)				/* load balance structure */
+  ZZ *zz)				/* Zoltan structure */
 {
 /*
  * Free any persistent memory associated with a method.
  */
 
-  switch (lb->Method) {
+  switch (zz->Method) {
 
     case RCB:
-      Zoltan_RCB_Free_Structure(lb);
+      Zoltan_RCB_Free_Structure(zz);
       break;
 
     case RIB:
-      Zoltan_RIB_Free_Structure(lb);
+      Zoltan_RIB_Free_Structure(zz);
       break;
 
     case OCTPART:
-      Zoltan_Oct_Free_Structure(lb);
+      Zoltan_Oct_Free_Structure(zz);
       break;
 
     case REFTREE:
-      Zoltan_Reftree_Free_Structure(lb);
+      Zoltan_Reftree_Free_Structure(zz);
       break;
 /*
  * Add calls to additional method-specific free routines here.

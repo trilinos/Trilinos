@@ -29,31 +29,31 @@ struct Dot_Struct {	        /* dot = point in 3-space */
                                    stored separately.                       */
 };
 
-extern int Zoltan_RB_Build_Structure(LB *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
+extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
   struct Dot_Struct **, int *, int *, int *, int, int);
 
-extern void Zoltan_RB_Print_All(LB *, ZOLTAN_ID_PTR , struct Dot_Struct *,
+extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
   int , int , int , ZOLTAN_ID_PTR , int *);
 
-extern int Zoltan_RB_Send_Outgoing(LB *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int *, int *, int *, int *, int, int *, double, int,
   int *, int, MPI_Comm, int, int);
 
-extern int Zoltan_RB_Send_Dots(LB *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int *, int *, int, int *, int *, int, int *, double,
   int, int *, int, MPI_Comm);
 
-extern int Zoltan_RB_Return_Arguments(LB *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
+extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
   struct Dot_Struct *, int, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int);
 
-extern int Zoltan_RB_check_geom_input(LB *, struct Dot_Struct *, int);
+extern int Zoltan_RB_check_geom_input(ZZ *, struct Dot_Struct *, int);
 
-extern int Zoltan_RB_check_geom_output(LB *, struct Dot_Struct *, 
+extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, 
   int, int, void *);
 
-extern void Zoltan_RB_stats(LB *, double, struct Dot_Struct *, int , double *, 
+extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , double *, 
   int *, int, int *, void *, int);
 
-extern int Zoltan_RB_Use_IDs(LB *);
+extern int Zoltan_RB_Use_IDs(ZZ *);
 
 #endif

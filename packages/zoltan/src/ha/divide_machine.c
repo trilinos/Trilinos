@@ -15,7 +15,7 @@
 
 
 int Zoltan_Divide_Machine(
-   LB *lb,             /* The load-balancing structure (not used now, will be
+   ZZ *zz,             /* The Zoltan structure (not used now, will be
                           used for pointer to machine details */
    int proc,           /* my processor number in global sense */
    MPI_Comm comm,      /* communicator for part of machine to be divided */
@@ -42,7 +42,7 @@ int Zoltan_Divide_Machine(
 
    /* The following statement assumes that proclower is being set correctly in
       the calling routine if Tflops_Special flag is set */
-   if (!lb->Tflops_Special)
+   if (!zz->Tflops_Special)
       MPI_Allreduce(&proc, proclower, 1, MPI_INT, MPI_MIN, comm);
 
    *procmid = *proclower + (*num_procs - 1)/2 + 1;

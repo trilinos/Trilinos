@@ -33,7 +33,7 @@ static double determinant(double[3][3]);
 static void eigenvec3(double[3][3], double, double *, double *);
 
 int Zoltan_RIB_inertial3d(
-     LB               *lb,      /* load balancing structure Tflops_Special */
+     ZZ               *Zz,      /* Zoltan structure Tflops_Special */
      struct Dot_Struct *dotpt,  /* graph data structure */
      int              dotnum,   /* number of vtxs in graph */
      int              wgtflag,  /* are vertex weights being used? */
@@ -80,7 +80,7 @@ int Zoltan_RIB_inertial3d(
 
      /* Sum weights across processors */
 
-     if (lb->Tflops_Special) {
+     if (Zz->Tflops_Special) {
         rank = proc - proclower;
         Zoltan_RIB_reduce_double(cm, cmt, 3, comm, nproc, rank, proc, 1);
         Zoltan_RIB_reduce_double(&wgt_sum, &wgtt, 1, comm, nproc, rank, proc, 1);
@@ -123,7 +123,7 @@ int Zoltan_RIB_inertial3d(
 
      /* Sum tensor across processors */
 
-     if (lb->Tflops_Special) {
+     if (Zz->Tflops_Special) {
         Zoltan_RIB_reduce_double(&xx, &xxt, 1, comm, nproc, rank, proc, 1);
         Zoltan_RIB_reduce_double(&yy, &yyt, 1, comm, nproc, rank, proc, 1);
         Zoltan_RIB_reduce_double(&zz, &zzt, 1, comm, nproc, rank, proc, 1);

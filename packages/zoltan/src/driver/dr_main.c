@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
   LB_Set_Param(NULL, "DEBUG_MEMORY", "1");
 
   /*
-   *  Create a load-balancing structure.
+   *  Create a Zoltan structure.
    */
   if ((lb = LB_Create(MPI_COMM_WORLD)) == NULL) {
     Gen_Error(0, "fatal:  NULL returned from LB_Create()\n");

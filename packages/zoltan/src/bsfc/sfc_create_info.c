@@ -33,7 +33,7 @@ void sfc_get_normed_coords(double min_bounding_box[],
    an object */
 
 void sfc_create_info(
-  LB *lb,                       /* The load-balancing structure with info for
+  ZZ *zz,                       /* The Zoltan structure with info for
                                    the SFC balancer.                         */
   double min_bounding_box[],
   double max_bounding_box[],
@@ -49,7 +49,7 @@ void sfc_create_info(
   unsigned unsigned_sfc_keylength = SFC_KEYLENGTH;
   double normed_coords[3];
 
-  ZOLTAN_TRACE_ENTER(lb, yo);
+  ZOLTAN_TRACE_ENTER(zz, yo);
   if(num_dims == 2) {
     for(i=0;i<num_local_objects;i++) {
       for(j=0;j<SFC_KEYLENGTH;j++)
@@ -67,6 +67,6 @@ void sfc_create_info(
     }
   }
 
-  ZOLTAN_TRACE_EXIT(lb, yo);
+  ZOLTAN_TRACE_EXIT(zz, yo);
   return;
 }

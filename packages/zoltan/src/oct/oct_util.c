@@ -275,12 +275,12 @@ int Zoltan_Oct_child_which(OCT_Global_Info *OCT_info,COORD porigin, COORD point)
 }
 
 /*****************************************************************************/
-void Zoltan_Oct_Free_Structure(LB *lb)
+void Zoltan_Oct_Free_Structure(ZZ *zz)
 {
 /*
- * Deallocate the persistent OCT data structures in lb->Structure.
+ * Deallocate the persistent OCT data structures in zz->Structure.
  */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->Data_Structure);
   pRList  RootList;                           /* list of all local roots */
   pOctant RootOct;
   int i;
@@ -319,6 +319,6 @@ void Zoltan_Oct_Free_Structure(LB *lb)
     RL_freeList(&(OCT_info->OCT_rootlist));
     /* KDDKDD End of previously commented-out section. 12/2000 */
 
-    ZOLTAN_FREE(&(lb->Data_Structure));
+    ZOLTAN_FREE(&(zz->Data_Structure));
   }
 }

@@ -14,7 +14,7 @@
 #ifndef __PAR_UTIL_CONST_H
 #define __PAR_UTIL_CONST_H
 
-extern int Zoltan_RB_find_median(LB *, double *, double *, int *,
+extern int Zoltan_RB_find_median(ZZ *, double *, double *, int *,
   int, int, double, MPI_Comm,
   double *, int, int *, int, int,
   int, int, double, double, double,

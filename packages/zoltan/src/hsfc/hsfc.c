@@ -17,7 +17,7 @@
 #include "hsfc.h"
 
 int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
- LB            *lb,
+ ZZ            *zz,
  int           *num_import,        /* set to -1 to indicate imports not used */
  ZOLTAN_ID_PTR *import_gids,       /* ignored */
  ZOLTAN_ID_PTR *import_lids,       /* ignored */
@@ -62,27 +62,27 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    char         *yo = "Zoltan_HSFC" ;
 
    /* begin program with trace, timing, and debug startup prints */
-   ZOLTAN_TRACE_ENTER (lb, yo) ;
-   start_time = Zoltan_Time(lb->Timer) ;
-   if (lb->Debug_Level > 5)
-      ZOLTAN_PRINT_INFO (lb->Proc, yo, "HSFC starting") ;
+   ZOLTAN_TRACE_ENTER (zz, yo) ;
+   start_time = Zoltan_Time(zz->Timer) ;
+   if (zz->Debug_Level > 5)
+      ZOLTAN_PRINT_INFO (zz->Proc, yo, "HSFC starting") ;
    *num_export = *num_import = -1 ;     /* in case of early error exit */
 
    /* allocate persistant storage required by box drop and point drop */
-   Zoltan_HSFC_Free_Structure (lb) ;
-   lb->Data_Structure = (void *) ZOLTAN_MALLOC (sizeof (HSFC_Data)) ;
-   if (lb->Data_Structure == NULL)
+   Zoltan_HSFC_Free_Structure (zz) ;
+   zz->Data_Structure = (void *) ZOLTAN_MALLOC (sizeof (HSFC_Data)) ;
+   if (zz->Data_Structure == NULL)
       ZOLTAN_HSFC_ERROR(LB_MEMERR,"Error returned by malloc") ;
-   d = (HSFC_Data *) lb->Data_Structure ;
+   d = (HSFC_Data *) zz->Data_Structure ;
 
    /* Determine if dots have 2 or 3 dimensions */
-   d->ndimension = lb->Get_Num_Geom(lb->Get_Num_Geom_Data, &err) ;
+   d->ndimension = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &err) ;
    if ((d->ndimension != 2 && d->ndimension != 3) || err)
       ZOLTAN_HSFC_ERROR(ZOLTAN_HSFC_ILLEGAL_DIMENSION,
        "Illegal dimension or error returned by Get_Num_Geom.") ;
 
    /* Determine how many local objects (dots) are on this processor */
-   ndots = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &err) ;
+   ndots = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &err) ;
    if (err || ndots < 0)
       ZOLTAN_HSFC_ERROR(ZOLTAN_HSFC_FATAL_ERROR, "Get_Num_Obj returned error.");
 
@@ -90,45 +90,45 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    if (ndots > 0)
       {
       dots    = (Dots *) ZOLTAN_MALLOC (sizeof(Dots)  * ndots) ;
-      gids    =          ZOLTAN_MALLOC_GID_ARRAY   (lb, ndots) ;
-      lids    =          ZOLTAN_MALLOC_LID_ARRAY   (lb, ndots) ;
+      gids    =          ZOLTAN_MALLOC_GID_ARRAY   (zz, ndots) ;
+      lids    =          ZOLTAN_MALLOC_LID_ARRAY   (zz, ndots) ;
       weights = (float*) ZOLTAN_MALLOC (sizeof(float) * ndots
-              * ((lb->Obj_Weight_Dim > 0) ? lb->Obj_Weight_Dim : 1)) ;
+              * ((zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1)) ;
 
-      if (weights == NULL || dots == NULL || (gids == NULL && lb->Num_GID)
-       || (lids == NULL && lb->Num_LID))
+      if (weights == NULL || dots == NULL || (gids == NULL && zz->Num_GID)
+       || (lids == NULL && zz->Num_LID))
           ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to ZOLTAN_MALLOC IDs.");
 
       /* obtain dot information: gids, lids, weights  */
-      Zoltan_Get_Obj_List (lb, gids, lids, lb->Obj_Weight_Dim, weights, &err) ;
+      Zoltan_Get_Obj_List (zz, gids, lids, zz->Obj_Weight_Dim, weights, &err) ;
       if (err)
          ZOLTAN_HSFC_ERROR (ZOLTAN_HSFC_FATAL_ERROR,
           "Error returned by Zoltan_Get_Obj_List.") ;
       }
 
    /* set dot weights from object weights, if none set to one */
-   if (lb->Obj_Weight_Dim > 1)
-      ZOLTAN_PRINT_WARN(lb->Proc, yo, "Only one weight per Dot can be processed") ;
+   if (zz->Obj_Weight_Dim > 1)
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Only one weight per Dot can be processed") ;
    for (i = 0 ; i < ndots ; i++)
-      dots[i].weight = (lb->Obj_Weight_Dim < 1) ? 1.0
-       : weights[i * lb->Obj_Weight_Dim] ;       /* use first dimension only */
+      dots[i].weight = (zz->Obj_Weight_Dim < 1) ? 1.0
+       : weights[i * zz->Obj_Weight_Dim] ;       /* use first dimension only */
    ZOLTAN_FREE (&weights) ;
 
    /* get dots' coordinates */
    for (i = 0 ; i < ndots ; i++)
       {
-      lb->Get_Geom (lb->Get_Geom_Data, lb->Num_GID, lb->Num_LID,
-       gids + i*lb->Num_GID, lids + i*lb->Num_LID, dots[i].x, &err) ;
+      zz->Get_Geom (zz->Get_Geom_Data, zz->Num_GID, zz->Num_LID,
+       gids + i*zz->Num_GID, lids + i*zz->Num_LID, dots[i].x, &err) ;
       if (err != 0)
          ZOLTAN_HSFC_ERROR(ZOLTAN_HSFC_FATAL_ERROR, "Error in Get_Geom.") ;
       }
 
    /* allocate storage for partitions and "binned" weights */
-   pcount = N * (lb->Num_Proc - 1) + 1 ;
-   work_fraction   = (float *)   ZOLTAN_MALLOC (sizeof (float)     * lb->Num_Proc);
-   target          = (float *)   ZOLTAN_MALLOC (sizeof (float)     * lb->Num_Proc);
-   partition       = (double *)  ZOLTAN_MALLOC (sizeof (double)    * lb->Num_Proc);
-   delta           = (double *)  ZOLTAN_MALLOC (sizeof (double)    * lb->Num_Proc);
+   pcount = N * (zz->Num_Proc - 1) + 1 ;
+   work_fraction   = (float *)   ZOLTAN_MALLOC (sizeof (float)     * zz->Num_Proc);
+   target          = (float *)   ZOLTAN_MALLOC (sizeof (float)     * zz->Num_Proc);
+   partition       = (double *)  ZOLTAN_MALLOC (sizeof (double)    * zz->Num_Proc);
+   delta           = (double *)  ZOLTAN_MALLOC (sizeof (double)    * zz->Num_Proc);
    grand_partition = (Partition*)ZOLTAN_MALLOC (sizeof (Partition) * pcount) ;
    grand_weight    = (float *)   ZOLTAN_MALLOC (sizeof (float)     * (pcount+1)) ;
    temp_weight     = (float *)   ZOLTAN_MALLOC (sizeof (float)     * (pcount+1)) ;
@@ -154,7 +154,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    for (i = 0 ; i < d->ndimension ; i++)  /* Andy's trick to save MPI call */
       in[i+d->ndimension] = -in[i+d->ndimension] ;
-   MPI_Allreduce (in,out, 2*d->ndimension,MPI_DOUBLE,MPI_MAX,lb->Communicator);
+   MPI_Allreduce (in,out, 2*d->ndimension,MPI_DOUBLE,MPI_MAX,zz->Communicator);
 
    /* Enlarge bounding box to make points on faces become interior (Andy) */
    for (i = 0 ; i < d->ndimension ; i++)
@@ -178,8 +178,8 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       }
 
    /* Initalize work fraction (should be user specified vector in future) */
-   for (i = 0 ; i < lb->Num_Proc ; i++)
-      work_fraction[i] = 1.0L / (double) lb->Num_Proc ;
+   for (i = 0 ; i < zz->Num_Proc ; i++)
+      work_fraction[i] = 1.0L / (double) zz->Num_Proc ;
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
    for (i = 0 ; i < pcount ; i++)
@@ -206,10 +206,10 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          if (p)
             temp_weight [p->index] += dots[i].weight ;
          else    /* programming error! */
-            ZOLTAN_PRINT_INFO(lb->Proc,yo,"BSEARCH in LOOP ERROR") ;
+            ZOLTAN_PRINT_INFO(zz->Proc,yo,"BSEARCH in LOOP ERROR") ;
          }
       MPI_Allreduce(temp_weight, grand_weight, pcount+1, MPI_FLOAT, MPI_SUM,
-       lb->Communicator) ;
+       zz->Communicator) ;
 
       /* Allocate ideal weights per partition, calculate max_loop -- once only */
       if (loop == 0)
@@ -218,12 +218,12 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          total_weight = 0.0L ;
          for (i = 0 ; i < pcount ; i++)
             total_weight += grand_weight[i] ;
-         for (i = 0 ; i < lb->Num_Proc ; i++)
+         for (i = 0 ; i < zz->Num_Proc ; i++)
             target[i] = work_fraction[i] * total_weight ;
          }
 
       /* debug: print target and grand partition values */
-      if (lb->Debug_Level > 6 && lb->Proc == 0)
+      if (zz->Debug_Level > 6 && zz->Proc == 0)
          {
          printf ("\n\nTarget %.2f, loop %d\n", target[0], loop) ;
          for (i = 0 ; i < pcount ; i++)
@@ -238,7 +238,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          for (i = 0 ; i < pcount ; i++)
             if (grand_weight[i] > 0)
                j++ ;
-         if (j > 2.1 * lb->Num_Proc)
+         if (j > 2.1 * zz->Num_Proc)
             max_loop++ ;
          }
 
@@ -252,7 +252,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       {
       int adjust = 0 ;
       sum = 0.0L ;
-      for (k = i = 0 ; i < pcount  &&  k < lb->Num_Proc ; )
+      for (k = i = 0 ; i < pcount  &&  k < zz->Num_Proc ; )
          if (sum +  grand_weight[i] <= target[k])
              sum += grand_weight[i++] ;
          else
@@ -278,7 +278,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       }
 
       /* determine new grand partition by refining new partition boundary */
-      for (k = i = 0 ; i < lb->Num_Proc - 1 ; i++)
+      for (k = i = 0 ; i < zz->Num_Proc - 1 ; i++)
          for (j = 0 ; j < N ; j++)
             {
             grand_partition[k].r = partition[i] + j * delta[i] ;
@@ -297,7 +297,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
 
    /* set new partition on [0,1] by summing grand_weights until targets met */
    /* k counts partitions and i counts grand partitions */
-   d->final_partition= (Partition *)ZOLTAN_MALLOC(sizeof(Partition) * lb->Num_Proc);
+   d->final_partition= (Partition *)ZOLTAN_MALLOC(sizeof(Partition) * zz->Num_Proc);
    if (d->final_partition == NULL)
       ZOLTAN_HSFC_ERROR (LB_MEMERR, "Unable to malloc final_partition") ;
 
@@ -305,7 +305,7 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    imbalance = 0.0L ;
    corrected = target[0] ;
    actual = desired = total_weight ;
-   for (k = i = 0 ; i < pcount /* &&  k < lb->Num_Proc */ ; i++)
+   for (k = i = 0 ; i < pcount /* &&  k < zz->Num_Proc */ ; i++)
       if (sum +  grand_weight[i] <= corrected)
           sum += grand_weight[i] ;
       else
@@ -328,9 +328,9 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
          corrected = target[++k] * (actual/desired) ;
          sum       = 0.0L ;                         /* preparing for next loop */
          }
-   d->final_partition[lb->Num_Proc-1].r = 1.0 ;
-   d->final_partition[lb->Num_Proc-1].l = d->final_partition[lb->Num_Proc-2].r ;
-   d->final_partition[lb->Num_Proc-1].index = lb->Num_Proc-1 ;
+   d->final_partition[zz->Num_Proc-1].r = 1.0 ;
+   d->final_partition[zz->Num_Proc-1].l = d->final_partition[zz->Num_Proc-2].r ;
+   d->final_partition[zz->Num_Proc-1].index = zz->Num_Proc-1 ;
    if (sum > (imbalance * target[k])  &&  target[k] > ZOLTAN_HSFC_EPSILON)
       imbalance = sum/target[k] ;
 
@@ -339,16 +339,16 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    for (i = 0 ; i < ndots ; i++)
       {
       dots[i].proc = -1 ;  /* in case of (programming) error returned by bsearch */
-      p = bsearch (&dots[i].fsfc, d->final_partition, lb->Num_Proc,
+      p = bsearch (&dots[i].fsfc, d->final_partition, zz->Num_Proc,
        sizeof(Partition), compare) ;
       if (p)
          {
          dots[i].proc = p->index ;
-         if (p->index != lb->Proc)
+         if (p->index != zz->Proc)
             ++(*num_export) ;
          }
       else
-         ZOLTAN_PRINT_INFO(lb->Proc, yo, "BSEARCH ERROR"); /* programming error */
+         ZOLTAN_PRINT_INFO(zz->Proc, yo, "BSEARCH ERROR"); /* programming error */
       }
 
    /* free stuff before next required allocations */
@@ -357,48 +357,48 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    ZOLTAN_FREE (&target) ;
 
    /* allocate storage for export information and fill in data */
-   err = Zoltan_Special_Malloc (lb, (void**) export_gids, *num_export,
+   err = Zoltan_Special_Malloc (zz, (void**) export_gids, *num_export,
     ZOLTAN_SPECIAL_MALLOC_GID) ;
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc global ids") ;
 
-   if (lb->Num_LID > 0)
+   if (zz->Num_LID > 0)
       {
-      err = Zoltan_Special_Malloc (lb, (void**) export_lids, *num_export,
+      err = Zoltan_Special_Malloc (zz, (void**) export_lids, *num_export,
        ZOLTAN_SPECIAL_MALLOC_LID) ;
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc local ids") ;
       }
 
-   err = Zoltan_Special_Malloc (lb, (void**) export_procs, *num_export,
+   err = Zoltan_Special_Malloc (zz, (void**) export_procs, *num_export,
     ZOLTAN_SPECIAL_MALLOC_INT) ;
    if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
       ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Failed to malloc proc list") ;
 
    /* Fill in export arrays */
    for (j = i = 0 ; i < ndots ; i++)
-      if (dots[i].proc != lb->Proc  &&  dots[i].proc != -1)
+      if (dots[i].proc != zz->Proc  &&  dots[i].proc != -1)
          {
          *((*export_procs)+j) = dots[i].proc ;
-         ZOLTAN_SET_GID(lb, *export_gids + j*lb->Num_GID, gids + i*lb->Num_GID);
-         if (lb->Num_LID > 0)
-            ZOLTAN_SET_LID(lb, *export_lids+j*lb->Num_LID, lids+i*lb->Num_LID);
+         ZOLTAN_SET_GID(zz, *export_gids + j*zz->Num_GID, gids + i*zz->Num_GID);
+         if (zz->Num_LID > 0)
+            ZOLTAN_SET_LID(zz, *export_lids+j*zz->Num_LID, lids+i*zz->Num_LID);
          j++ ;
          }
 
    /* DEBUG: print useful information */
-   end_time = Zoltan_Time(lb->Timer) ;
-   if (lb->Debug_Level > 2  && lb->Proc == 0)
+   end_time = Zoltan_Time(zz->Timer) ;
+   if (zz->Debug_Level > 2  && zz->Proc == 0)
       printf ("TOTAL Processing Time is %.4f seconds\n", end_time-start_time) ;
-   if (lb->Debug_Level > 5)
-      printf ("<%d> Number of loops = %d\n", lb->Proc, loop+1) ;
-   if (lb->Debug_Level > 5)
-      printf ("<%d> export count %d, ndots %d\n", lb->Proc, *num_export, ndots) ;
-   if (lb->Debug_Level > 7)
+   if (zz->Debug_Level > 5)
+      printf ("<%d> Number of loops = %d\n", zz->Proc, loop+1) ;
+   if (zz->Debug_Level > 5)
+      printf ("<%d> export count %d, ndots %d\n", zz->Proc, *num_export, ndots) ;
+   if (zz->Debug_Level > 7)
       for (i = 0 ; i < ndots ; i++)
          {
-         printf ("<%d> GID: %u  LID: %u  Proc: %d  Weight %.1f  HSFC  %.4f\n", lb->Proc,
-          gids[i*lb->Num_GID], lids[i*lb->Num_LID], dots[i].proc, dots[i].weight, dots[i].fsfc) ;
+         printf ("<%d> GID: %u  LID: %u  Proc: %d  Weight %.1f  HSFC  %.4f\n", zz->Proc,
+          gids[i*zz->Num_GID], lids[i*zz->Num_LID], dots[i].proc, dots[i].weight, dots[i].fsfc) ;
          printf ("PROC %d DOT %03u\n", p->index, gids[i]) ;
          }
 
@@ -406,12 +406,12 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    /* (optional) test point drop functionality */
    j = 0 ;
    for (i = 0 ; i < ndots ; i++)
-      if (dots[i].proc != Zoltan_HSFC_Point_Drop (lb, dots[i].x))
+      if (dots[i].proc != Zoltan_HSFC_Point_Drop (zz, dots[i].x))
          j++ ;
-   printf ("<%d> Point Drop Test %s\n", lb->Proc, j ? "FAILED" : "PASSED");
+   printf ("<%d> Point Drop Test %s\n", zz->Proc, j ? "FAILED" : "PASSED");
 
    /* (optional) test box drop functionality */
-   if (lb->Proc == 0)
+   if (zz->Proc == 0)
       {
       int *proclist ;
       double hi[3], lo[3] ;
@@ -423,9 +423,9 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
       lo[1] = d->bbox_lo[1] + ZOLTAN_HSFC_EPSILON ;
       lo[2] = d->bbox_lo[2] + ZOLTAN_HSFC_EPSILON ;
 
-      proclist = (int *) ZOLTAN_MALLOC (sizeof(int) * lb->Num_Proc);
-      Zoltan_HSFC_Box_Drop (lb, proclist, hi, lo, &i) ;
-      printf ("Box Drop Test %s\n", (i==lb->Num_Proc) ? "PASSED" : "FAILED") ;
+      proclist = (int *) ZOLTAN_MALLOC (sizeof(int) * zz->Num_Proc);
+      Zoltan_HSFC_Box_Drop (zz, proclist, hi, lo, &i) ;
+      printf ("Box Drop Test %s\n", (i==zz->Num_Proc) ? "PASSED" : "FAILED") ;
       ZOLTAN_FREE (&proclist) ;
       }
 #endif
@@ -433,15 +433,15 @@ int Zoltan_HSFC( /* Zoltan_HSFC - Load Balance: Hilbert Space Filling Curve */
    /* done, do we keep data structure for box drop and point drop? */
    Zoltan_Bind_Param (HSFC_params, "KEEP_CUTS", (void *) &i) ;
    i = 0 ;
-   Zoltan_Assign_Param_Vals (lb->Params, HSFC_params, lb->Debug_Level, lb->Proc,
-    lb->Debug_Proc) ;
+   Zoltan_Assign_Param_Vals (zz->Params, HSFC_params, zz->Debug_Level, zz->Proc,
+    zz->Debug_Proc) ;
    if (i == 0)
-      Zoltan_HSFC_Free_Structure (lb) ;
+      Zoltan_HSFC_Free_Structure (zz) ;
 
    /* really done now, now free dynamic storage and exit with return status */
-   err = (imbalance > lb->Imbalance_Tol) ? ZOLTAN_WARN : ZOLTAN_HSFC_OK ;
-   if (lb->Proc == 0 && err == ZOLTAN_WARN && lb->Debug_Level > 0)
-      ZOLTAN_PRINT_WARN (lb->Proc, yo, "HSFC: Imbalance exceeds user specificatation");
+   err = (imbalance > zz->Imbalance_Tol) ? ZOLTAN_WARN : ZOLTAN_HSFC_OK ;
+   if (zz->Proc == 0 && err == ZOLTAN_WARN && zz->Debug_Level > 0)
+      ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user specificatation");
 
 free:
    ZOLTAN_FREE (&dots) ;
@@ -456,16 +456,16 @@ free:
    ZOLTAN_FREE (&work_fraction) ;
    ZOLTAN_FREE (&delta) ;
 
-   if (lb->Debug_Level > 5)
-      ZOLTAN_PRINT_INFO (lb->Proc, yo, "Exiting HSFC");
-   ZOLTAN_TRACE_EXIT (lb, yo) ;
+   if (zz->Debug_Level > 5)
+      ZOLTAN_PRINT_INFO (zz->Proc, yo, "Exiting HSFC");
+   ZOLTAN_TRACE_EXIT (zz, yo) ;
    return err ;
    }
 
 
 
 /* Point drop for refinement after above partitioning */
-int Zoltan_HSFC_Point_Drop (LB *lb, double *x)
+int Zoltan_HSFC_Point_Drop (ZZ *zz, double *x)
    {
    double     scaled[3] ;
    double     fsfc ;
@@ -475,7 +475,7 @@ int Zoltan_HSFC_Point_Drop (LB *lb, double *x)
    unsigned int key[3] ;
    char *yo = "Zoltan_HSFC_Point_Drop" ;
 
-   d = (HSFC_Data *) lb->Data_Structure ;
+   d = (HSFC_Data *) zz->Data_Structure ;
    if (d == NULL)
       return ZOLTAN_HSFC_FATAL_ERROR ;
 
@@ -491,7 +491,7 @@ int Zoltan_HSFC_Point_Drop (LB *lb, double *x)
    fsfc = convert_key (key) ;
 
    /* Find partition containing point and return its number */
-   p = (Partition *) bsearch (&fsfc, d->final_partition, lb->Num_Proc,
+   p = (Partition *) bsearch (&fsfc, d->final_partition, zz->Num_Proc,
     sizeof (Partition), compare) ;
    if (p)
       return p->index ;
@@ -501,7 +501,7 @@ int Zoltan_HSFC_Point_Drop (LB *lb, double *x)
 
 
 /* temporary version of Box Drop, provides approximate answer */
-void Zoltan_HSFC_Box_Drop (LB *lb, int *procs,double *hi,double *lo,int *count)
+void Zoltan_HSFC_Box_Drop (ZZ *zz, int *procs,double *hi,double *lo,int *count)
    {
    double     x[3] ;
    int       *array ;
@@ -513,17 +513,17 @@ void Zoltan_HSFC_Box_Drop (LB *lb, int *procs,double *hi,double *lo,int *count)
    const int  MAXLOOP  = 5 ;
    char *yo = "Zoltan_HSFC_Box_Drop" ;
 
-   d = (HSFC_Data *) lb->Data_Structure ;
+   d = (HSFC_Data *) zz->Data_Structure ;
    if (d == NULL)
       return ;
 
-   array = (int *) ZOLTAN_MALLOC (lb->Num_Proc * sizeof (int)) ;
+   array = (int *) ZOLTAN_MALLOC (zz->Num_Proc * sizeof (int)) ;
    if (array == NULL)
-      ZOLTAN_PRINT_ERROR (lb->Proc, yo, "Failed to malloc proc list") ;
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Failed to malloc proc list") ;
 
    for (loop = 0, n = NN ; loop < MAXLOOP ; loop++, n = 2*n)
       {
-      memset(array, 0, lb->Num_Proc * sizeof(int)) ; /* Clear processor array */
+      memset(array, 0, zz->Num_Proc * sizeof(int)) ; /* Clear processor array */
 
       /* create regular lattice in given box, then look up associated processors */
       if (d->ndimension == 3)
@@ -531,7 +531,7 @@ void Zoltan_HSFC_Box_Drop (LB *lb, int *procs,double *hi,double *lo,int *count)
             for    (x[1] = lo[1] ; x[1] <= hi[1] ; x[1] += (hi[1]-lo[1])/n)
                for (x[2] = lo[2] ; x[2] <= hi[2] ; x[2] += (hi[2]-lo[2])/n)
                   {
-                  proc = Zoltan_HSFC_Point_Drop (lb, x) ;
+                  proc = Zoltan_HSFC_Point_Drop (zz, x) ;
                   if (proc >= 0)
                      ++array[proc] ;
                   }
@@ -540,18 +540,18 @@ void Zoltan_HSFC_Box_Drop (LB *lb, int *procs,double *hi,double *lo,int *count)
          for    (x[0] = lo[0] ; x[0] <= hi[0] ; x[0] += (hi[0]-lo[0])/n)
             for (x[1] = lo[1] ; x[1] <= hi[1] ; x[1] += (hi[1]-lo[1])/n)
                {
-               proc = Zoltan_HSFC_Point_Drop (lb, x) ;
+               proc = Zoltan_HSFC_Point_Drop (zz, x) ;
                if (proc >= 0)
                   ++array[proc] ;
                }
 
       /* move results to user supplied array & hope it is big enough */
       *count = 0 ;
-      for (i = 0 ; i < lb->Num_Proc ; i++)
+      for (i = 0 ; i < zz->Num_Proc ; i++)
          if (array[i] > 0)
             procs[(*count)++] = i ;
 
-      if (*count == oldcount || *count == lb->Num_Proc)
+      if (*count == oldcount || *count == zz->Num_Proc)
          break ;
       oldcount = *count ;
       }
@@ -581,12 +581,12 @@ static double convert_key (unsigned int *key)
 
 
 /* free state memory needed by point & box drop routines */
-void Zoltan_HSFC_Free_Structure (LB *lb)
+void Zoltan_HSFC_Free_Structure (ZZ *zz)
    {
-   HSFC_Data *data = (HSFC_Data *)lb->Data_Structure ;
+   HSFC_Data *data = (HSFC_Data *)zz->Data_Structure ;
    if (data != NULL)
       ZOLTAN_FREE (&(data->final_partition)) ;
-   ZOLTAN_FREE (&(lb->Data_Structure)) ;
+   ZOLTAN_FREE (&(zz->Data_Structure)) ;
    }
 
 

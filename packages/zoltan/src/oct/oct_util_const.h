@@ -27,6 +27,6 @@ extern void   Zoltan_Oct_child_bounds(COORD pmin, COORD pmax, COORD porigin,
 extern int    Zoltan_Oct_child_which_wrapper(OCT_Global_Info *OCT_info,pOctant oct, COORD point);
 extern int    Zoltan_Oct_child_which(OCT_Global_Info *OCT_info,COORD origin, COORD point);
 
-extern void   Zoltan_Oct_Free_Structure(LB *lb);
+extern void   Zoltan_Oct_Free_Structure(ZZ *zz);
 
 #endif

@@ -25,10 +25,10 @@ static float optcost;              /* Optimal partition cost */
 static float pmass;                /* octant volume for partition */
 static double pcoord[3];           /* Sum of octant position-volume products */
 
-static void Zoltan_Oct_visit(LB *lb,pOctant octant);
-static void Zoltan_Oct_visit_all_subtrees(LB *lb);
+static void Zoltan_Oct_visit(ZZ *zz,pOctant octant);
+static void Zoltan_Oct_visit_all_subtrees(ZZ *zz);
 static void Zoltan_Oct_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int part);
-static void Zoltan_Oct_visit_by_dist(LB *lb,pOctant octant, pOctant children[8]);
+static void Zoltan_Oct_visit_by_dist(ZZ *zz,pOctant octant, pOctant children[8]);
 static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int nprevoct);
 
 
@@ -39,7 +39,7 @@ static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int npr
  * 
  * This function calls the different subfunctions to partition the octree 
  */
-void Zoltan_Oct_dfs_partition(LB *lb, int *counter, float *c1) {
+void Zoltan_Oct_dfs_partition(ZZ *zz, int *counter, float *c1) {
   float mycost;                     /* cost of the octant */
   float globalcost;                 /* costs of all the octants */
   float prefcost;                   /* sum of costs from previous processors */
@@ -48,14 +48,14 @@ void Zoltan_Oct_dfs_partition(LB *lb, int *counter, float *c1) {
   pRList RootList;                  /* list of the local roots */
   pOctant RootOct;
 /* #endif */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
 
   DFS_Part_Count = 0;
   *c1 = mycost = Zoltan_Oct_costs_global_compute(OCT_info);
  
 /* #ifdef LGG_MIGOCT */
   /* gets the number of octants from the previous processors */
-  nprevoct=Zoltan_Oct_msg_int_scan(lb->Communicator, lb->Proc, Zoltan_Oct_nOctants());
+  nprevoct=Zoltan_Oct_msg_int_scan(zz->Communicator, zz->Proc, Zoltan_Oct_nOctants());
 
   /* iterate through, and advance each id by nprevocts */
   /* this is trying to make all the octant id's to be unquie globally */
@@ -66,17 +66,17 @@ void Zoltan_Oct_dfs_partition(LB *lb, int *counter, float *c1) {
 /* #endif */ /* LGG_MIGOCT */
 
   /* Sum a value from each processor, and return sum to all processors */
-  MPI_Allreduce(&mycost,&globalcost,1,MPI_FLOAT,MPI_SUM,lb->Communicator);
-  prefcost=Zoltan_Oct_msg_float_scan(lb->Communicator, lb->Proc, mycost);
+  MPI_Allreduce(&mycost,&globalcost,1,MPI_FLOAT,MPI_SUM,zz->Communicator);
+  prefcost=Zoltan_Oct_msg_float_scan(zz->Communicator, zz->Proc, mycost);
   
   /* Initialize static vars */
-  optcost=globalcost/lb->Num_Proc;               /* Optimal partition size */
+  optcost=globalcost/zz->Num_Proc;               /* Optimal partition size */
   if(optcost > 0)
     partition=(int)(prefcost/optcost);        /* Start work on this partition */
   else
     partition=0;
-  if (partition==lb->Num_Proc)
-    partition=lb->Num_Proc-1;
+  if (partition==zz->Num_Proc)
+    partition=zz->Num_Proc-1;
 
   total=partition*optcost;               /* Total cost of all previous parts */
   pcost=prefcost-partition*optcost;                /* Current partition cost */
@@ -84,7 +84,7 @@ void Zoltan_Oct_dfs_partition(LB *lb, int *counter, float *c1) {
   pmass=0.0;                            /* initialize octant volume variable */
   vector_set_comp(pcoord,0,0,0);
 
-  Zoltan_Oct_visit_all_subtrees(lb);
+  Zoltan_Oct_visit_all_subtrees(zz);
 
   (*counter) = DFS_Part_Count;
 }
@@ -126,10 +126,10 @@ static int Zoltan_Oct_dfs_SetIds(OCT_Global_Info *OCT_info, pOctant oct, int npr
  *
  * visits each of the subtrees that are on the local processor
  */
-static void Zoltan_Oct_visit_all_subtrees(LB *lb) {
+static void Zoltan_Oct_visit_all_subtrees(ZZ *zz) {
   pRList  RootList;                           /* list of all local roots */
   pOctant RootOct;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
 
   /* get the list of all the local roots */
   /* iterate through each root in localroot list */ 
@@ -137,7 +137,7 @@ static void Zoltan_Oct_visit_all_subtrees(LB *lb) {
   /* and free the costs */
   RootList = Zoltan_Oct_POct_localroots(OCT_info);
   while ((RootOct = RL_nextRootOctant(&RootList))) {
-    Zoltan_Oct_visit(lb, RootOct);  
+    Zoltan_Oct_visit(zz, RootOct);  
     Zoltan_Oct_costs_free(OCT_info, RootOct);
   }
 }
@@ -153,7 +153,7 @@ static void Zoltan_Oct_visit_all_subtrees(LB *lb) {
  *   pcost     - (RW) partition cost for current partition
  *   optcost   - (RO) optimal partition cost
  */
-static void Zoltan_Oct_visit(LB *lb, pOctant octant) {
+static void Zoltan_Oct_visit(ZZ *zz, pOctant octant) {
   float cost;                 /* Cost of this octant */
   float togo;                 /* Remaining room in current partition */
   float behind;               /* How many to make up for from all prev parts */
@@ -162,7 +162,7 @@ static void Zoltan_Oct_visit(LB *lb, pOctant octant) {
   COORD origin;               /* center of the octant */
   double volume;              /* volume of the octant */
   double prod[3];             /* product of octant origin and its volume */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
 
   DFS_Part_Count++;
   cost = Zoltan_Oct_costs_value(octant);               /* get the cost of the octant */
@@ -194,12 +194,12 @@ static void Zoltan_Oct_visit(LB *lb, pOctant octant) {
     /* currently CLOSE is defined to be 0, a functionality not used */
     if (CLOSE) {
       i=0;
-      Zoltan_Oct_visit_by_dist(lb, octant, children);
+      Zoltan_Oct_visit_by_dist(zz, octant, children);
     }
     else
       for (i=0; i<8; i++)                    /* Simple - just visit in order */
 	if(children[i] && Zoltan_Oct_POct_local(OCT_info, octant,i))
-	  Zoltan_Oct_visit(lb,children[i]);
+	  Zoltan_Oct_visit(zz,children[i]);
     return;
   }
   
@@ -264,7 +264,7 @@ static void Zoltan_Oct_tag_subtree(OCT_Global_Info *OCT_info,pOctant octant, int
  * sets up information so the migrate octant routines can create the
  * proper export_tags and import_tags arrays
  */
-void Zoltan_Oct_dfs_migrate(LB *lb, int *nsentags,
+void Zoltan_Oct_dfs_migrate(ZZ *zz, int *nsentags,
 		    pRegion *import_regs, int *nrectags, 
 		    float *c2, float *c3, int *counter3, int *counter4) 
 {
@@ -275,18 +275,18 @@ void Zoltan_Oct_dfs_migrate(LB *lb, int *nsentags,
   int dcount;                                 /* count of octants being sent */
   int pid;                                    /* processor id */
   int nrecocts;
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
   char *yo = "Zoltan_Oct_dfs_migrate";
 
   if(Zoltan_Oct_nOctants()) {        /* allocate space for octants being migrated */
     docts = (pOctant *) ZOLTAN_MALLOC(Zoltan_Oct_nOctants() * sizeof(pOctant));
     if(!docts) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "cannot allocate arrays.");
       abort();
     }
     dpids = (int *) ZOLTAN_MALLOC(Zoltan_Oct_nOctants() * sizeof(int));
     if(!dpids) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "cannot allocate arrays.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "cannot allocate arrays.");
       ZOLTAN_FREE(&docts);
       abort();
     }
@@ -300,8 +300,8 @@ void Zoltan_Oct_dfs_migrate(LB *lb, int *nsentags,
   while((oct = RL_nextRootOctant(&RootList))) 
     while(oct) {
       pid = Zoltan_Oct_data_newpid(oct);
-      if (pid<0 || pid>=lb->Num_Proc) {
-	fprintf(stderr,"%d Zoltan_Oct_dfs_migrate: bad dest pid %d\n", lb->Proc, pid);
+      if (pid<0 || pid>=zz->Num_Proc) {
+	fprintf(stderr,"%d Zoltan_Oct_dfs_migrate: bad dest pid %d\n", zz->Proc, pid);
 	abort();
       }
       if (dcount<Zoltan_Oct_nOctants()) {   
@@ -319,9 +319,9 @@ void Zoltan_Oct_dfs_migrate(LB *lb, int *nsentags,
   }
 
   /* setup the import_regs */
-  Zoltan_Oct_migrate_objects(lb, docts, dpids, dcount, nsentags,
+  Zoltan_Oct_migrate_objects(zz, docts, dpids, dcount, nsentags,
                      import_regs, nrectags, c2, c3, counter3, counter4);
-  Zoltan_Oct_migrate_octants(lb, dpids, docts, dcount, &nrecocts);
+  Zoltan_Oct_migrate_octants(zz, dpids, docts, dcount, &nrecocts);
 
   ZOLTAN_FREE(&docts);
   ZOLTAN_FREE(&dpids);
@@ -333,7 +333,7 @@ void Zoltan_Oct_dfs_migrate(LB *lb, int *nsentags,
  *
  * tries to find the closest child to add to the partition 
  */
-static void Zoltan_Oct_visit_by_dist(LB *lb,pOctant octant, pOctant children[8])
+static void Zoltan_Oct_visit_by_dist(ZZ *zz,pOctant octant, pOctant children[8])
 {
   COORD min,                    /* min bounds of the octant */
         max;                    /* max bounds of the octant */
@@ -347,7 +347,7 @@ static void Zoltan_Oct_visit_by_dist(LB *lb,pOctant octant, pOctant children[8])
   double dist;                  /* distance */
   double mindist;               /* lowest distance */
   int visited[8];               /* flag showing which child has been visited */
-  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(lb->Data_Structure);
+  OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->Data_Structure);
 
   /* initializing data */
   mindist=0;
@@ -386,7 +386,7 @@ static void Zoltan_Oct_visit_by_dist(LB *lb,pOctant octant, pOctant children[8])
 
     if (minchild>=0) {
       /* visit that child, so that it can be pu into the partition */
-      Zoltan_Oct_visit(lb, children[minchild]);
+      Zoltan_Oct_visit(zz, children[minchild]);
       /* mark the child as having been visited */
       visited[minchild]=1;        
     }
