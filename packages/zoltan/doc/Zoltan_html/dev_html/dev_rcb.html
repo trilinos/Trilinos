@@ -27,56 +27,78 @@
 
 <P>The implementation of Recursive Coordinate Bisection (RCB) in Zoltan
 is due to Steve Plimpton of Sandia National Laboratories and was modified
-by Matt St. John and Courtenay Vaughan. In this implementation of RCB,
-the parallel computer is first divided into two pieces and then the computational
+by Matt St. John and Courtenay Vaughan.  In this implementation of RCB, the
+parallel computer is first divided into two pieces and then the computational
 domain is divided into two pieces such that the proportion of work in each
-half is the same as the proportion of computational power. The division
+half is the same as the proportion of computational power.  The division
 of the parallel machine is done by a subroutine which is part of the support
 for heterogenous architectures that is being built into the Zoltan library.
 This process is repeated recursively on each subdomain and its associated
-part of the computer. Each of these divisions are done with a cutting plane
+part of the computer.  Each of these divisions are done with a cutting plane
 that is orthogonal to one of the coordinate axes.
 
 <P>At each of these stages, each subdomain of processors and the objects
 that are contained on those processors are divided into two sets based
-on which side of the cutting plane each object is on. Either or both of
-these sets may be empty. On each processor, the set of objects which are
+on which side of the cutting plane each object is on.  Either or both of
+these sets may be empty.  On each processor, the set of objects which are
 on the same side of the cut as the processor are retained by the processor,
 while the other objects are sent to processors on the other side of the
-cut. In order to minimize the maximun memory usage in each set of processors,
+cut.  In order to minimize the maximum memory usage in each set of processors,
 the objects that are being sent to each set of processors are distributed
 such that each each processor in a set has about the same number of objects
-after the objects from the other set of processors are sent. In the case
+after the objects from the other set of processors are sent.  In the case
 when a processor has more objects that it will retain than the average
 number of objects that the rest of the processors have in its set, then
-that processor will not receive no objects. Thus each processor may send
-and receive objects from several (or no) processors in the other set. The
+that processor will not receive any objects.  Thus each processor may send
+and receive objects from several (or no) processors in the other set.  The
 process of determining which outgoing objects are sent to which processors
-is determined in the subroutine <B>create_proc_list</B>. Once this new
-distribution of objects is determined, the <B><A HREF="dev_util_comm.html">irregular
-communication package</A></B> in Zoltan is used to determine which processors
-are going to receive which objects and actually move the objects.
+is determined in the subroutine <B>create_proc_list</B>.  Once this new
+distribution of objects is determined, the
+<B><A HREF="dev_util_comm.html">irregular communication package</A></B> in
+Zoltan is used to determine which processors are going to receive which
+objects and actually move the objects.
 
 <P>For applications which wish to add more objects to the decomposition
-at a later time, information can be retained during the decomposition phase.
-This information is kept in the form of a tree if the parameter KEEP_CUTS
-is set during the decomposition (see the RCB section in the <B><A HREF="../ug_html/ug_alg_rcb.html#RCB">Zoltan
-User's Guide</A></B>). At each step in the decomposition, each set is divided
-into two sets. The cut designates a node in the tree and the two sets are
-the leaves of that node. The set with the lowest numbered processor is
-designated to be the left leaf and the cut is stored in the lowest numbered
-processor in the other set of processors which is the right leaf. This
-processor also stores the root node as its parent. After the end of the
-division process, all of the information is collected onto all of the processors.
-The parent information is used to establish the leaf information for the
-parent. Since there is one fewer cut than the total number of processors,
-processor 0 has no cut information and stores the processor that contains
-the first cut as its right leaf. When this information is used to process
-an object, the object is recursively tested against the cuts. At each step,
-the cut information is used to determine which side of the cut the object
-is on and which leaf processor needs to be consulted for the next step.
-This process is repeated until the processor set is a single processor,
-which is the desired processor.
+at a later time, information to do this can be retained during the
+decomposition phase.  This information is kept if the parameter KEEP_CUTS
+is set during the decomposition (see the RCB section in the
+<B><A HREF="../ug_html/ug_alg_rcb.html#RCB">Zoltan User's Guide</A></B>).
+This information about the decomposition can be thought of as a tree with
+the nodes which have children representing the cut information and the nodes
+with no children representing processors.  An object is dropped through the
+tree starting with the root node and uses the cut information at each node it
+encounters to determine which subtree it traverses.  When it reaches a terminal
+node, the node contains the processor number that the object belongs to.
+The information to construct the tree is saved during the decomposition.
+At each step in the decomposition, when each set is divided into two sets,
+the set with the lowest numbered processor is designated to be the left set
+and the information about the cut is stored in the lowest numbered processor
+in the other set of processors which is the right set.  As a result of this
+process, each processor will store information for, at most, one cut, since
+once a processor stores information about a cut, by being the lowest numbered
+processor in the right set, it will always be in a left set after each
+subsequent cut since it will be the lowest numbered processor in the set
+being cut and the set it is put into will be the left set.  The processor
+which stores the cut information also stores the root node as its parent.
+After the end of the division process, all of the information is collected
+onto all of the processors.  The parent information is then used to establish
+the leaf information for the parent.  When this information is gathered, the
+tree structure is stored in arrays with the array position determined by the
+processor number that was storing the information.  There is an array which
+stores the position of the cut information for the left set and one for the
+right set as well as arrays for the cut information.  Given that the lowest
+numbered processor after a cut is in the left set, the cut information is
+stored in the right set, and there is one fewer cut than the total number of
+processors, processor 0 has no cut information, so the 0 position of the right
+set array is empty and is used to store the position in the array that the
+first cut is stored.  When this information is used to process an object,
+array position 0 in the right set array is used to determine the array
+position of the first cut.  From there, which side of the cut the object is
+on is determined and that information is used to determine which cut to test
+the object against next.  This process is repeated recursively until a
+terminal node is encountered which contains the processor number that the
+object belongs to.
+
 <BR>&nbsp;
 <BR>&nbsp;
 <BR>&nbsp;
