@@ -19,6 +19,7 @@
 #include "all_allo_const.h"
 #include "params_const.h"
 #include "timer_const.h"
+#include "ha_const.h"
 #include <ctype.h>
 
 /*****************************************************************************/
@@ -124,6 +125,7 @@ LB *lb;
   lb->LB_Fn = LB_rcb;
   lb->Debug = 0;
   lb->Fortran = 0;
+  lb->Machine_Desc = NULL;
   lb->Params = NULL;
   lb->Imbalance_Tol = 1.1;
   lb->Obj_Weight_Dim = 0;
@@ -518,6 +520,21 @@ double lb_time[2] = {0.0,0.0};
    */
 
   LB_perform_error_checking(lb);
+
+
+  /*
+   *  Construct the heterogenous machine description.
+   */
+
+  error = LB_Build_Machine_Desc(lb);
+
+  if (error == LB_FATAL){
+    return (error);
+  }
+
+  /*
+   * Call the actual load-balancing function.
+   */
 
   error = lb->LB_Fn(lb, num_import_objs, import_global_ids, import_local_ids,
           import_procs, num_export_objs, export_global_ids, 
