@@ -56,7 +56,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach g  ( AmesosShortScript.exe )
+foreach g  ( AmesosDscpack.exe )
 		echo "############" $g "##############" >>& $file
 		if( "$2" == "True" ) then
 		    source $g 
