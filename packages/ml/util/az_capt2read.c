@@ -40,7 +40,9 @@ int main(int argc, char *argv[]) {
       exit(1);
    }
 #ifdef adams
+#ifdef old
 flag = scanf("%d%d",&Nrows, &Nnzs);
+#endif
 #endif
 #endif
     printf("%d\n",Nrows);
