@@ -158,17 +158,28 @@ AC_ARG_ENABLE(mpi,
 [HAVE_PKG_MPI=no]
 )
 
-AC_ARG_WITH(mpi-cxx,
-[AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
+AC_ARG_WITH(mpi-compilers,
+[AC_HELP_STRING([--with-mpi-compilers=PATH],
+[use MPI compilers mpicc, mpif77, and mpicxx (or mpiCC) in the specified path or in the default path if no path is specified. Enables MPI])],
 [
-  HAVE_PKG_MPI=yes 
-  if test X${withval} = Xyes; then
-    MPI_CXX=mpiCC
-  else
-    MPI_CXX=${withval}
+  if test X${withval} != Xno; then
+    HAVE_PKG_MPI=yes
+    if test X${withval} = Xyes; then
+      # Check for mpicxx, if it does not exist, use mpiCC instead.
+      AC_CHECK_PROG(MPI_CXX, mpicxx, mpicxx, mpiCC)
+      MPI_CC=mpicc
+      MPI_F77=mpif77
+    else
+      MPI_TEMP_CXX=${withval}/mpicxx
+      if test -f ${MPI_TEMP_CXX}; then
+        MPI_CXX=${MPI_TEMP_CXX}
+      else
+        MPI_CXX=${withval}/mpiCC
+      fi
+      MPI_CC=${withval}/mpicc
+      MPI_F77=${withval}/mpif77
+    fi
   fi
-  AC_MSG_CHECKING(user-defined MPI C++ compiler)
-  AC_MSG_RESULT([${MPI_CXX}])
 ]
 )
 
@@ -238,6 +249,47 @@ if test -n "${MPI_CXX}"; then
   fi
 
 fi
+
+if test -n "${MPI_CC}"; then
+  if test -f ${MPI_CC}; then
+    MPI_CC_EXISTS=yes
+  else
+    AC_CHECK_PROG(MPI_CC_EXISTS, ${MPI_CC}, yes, no)
+  fi
+
+  if test "X${MPI_CC_EXISTS}" = "Xyes"; then
+    CC=${MPI_CC}
+  else
+    echo "-----"
+    echo "Cannot find MPI C compiler ${MPI_CC}."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a C compiler using CC=<compiler>"
+    echo "Do not use --with-mpi-compilers if using CC=<compiler>"
+    echo "-----"
+    AC_MSG_ERROR([MPI C compiler (${MPI_CC}) not found.])
+  fi
+fi
+
+if test -n "${MPI_F77}"; then
+  if test -f ${MPI_F77}; then
+    MPI_F77_EXISTS=yes
+  else
+    AC_CHECK_PROG(MPI_F77_EXISTS, ${MPI_F77}, yes, no)
+  fi
+
+  if test "X${MPI_F77_EXISTS}" = "Xyes"; then
+    F77=${MPI_F77}
+  else
+    echo "-----"
+    echo "Cannot find MPI Fortran compiler ${MPI_F77}."
+    echo "Specify a path to all mpi compilers with --with-mpi-compilers=PATH"
+    echo "or specify a Fortran 77 compiler using F77=<compiler>"
+    echo "Do not use --with-mpi-compilers if using F77=<compiler>"
+    echo "-----"
+    AC_MSG_ERROR([MPI Fortran 77 compiler (${MPI_F77}) not found.])
+  fi
+fi
+])
 
 # ------------------------------------------------------------------------
 # Checks for programs
@@ -373,7 +425,7 @@ else
 
 fi
 
-# Add on any user-defined CXXFLAGS
+# Add on any extra CXXFLAGS
 AC_MSG_CHECKING([for extra C++ compiler flags])
 if test -z "${EXTRA_CXXFLAGS}"; then
   AC_MSG_RESULT(none)
@@ -382,7 +434,7 @@ else
   CXXFLAGS="${CXXFLAGS} ${EXTRA_CXXFLAGS}"
 fi
 
-# Add on any user-defined CPPFLAGS
+# Add on any extra CPPFLAGS
 AC_MSG_CHECKING([for extra preprocessor flags])
 if test -z "${EXTRA_CPPFLAGS}"; then
   AC_MSG_RESULT(none)
@@ -391,7 +443,7 @@ else
   CPPFLAGS="${CPPFLAGS} ${EXTRA_CPPFLAGS}"
 fi
 
-# Add on any user-defined LDFLAGS
+# Add on any extra LDFLAGS
 AC_MSG_CHECKING([for extra linker flags])
 if test -z "${EXTRA_LDFLAGS}"; then
   AC_MSG_RESULT(none)
