@@ -330,7 +330,7 @@ int Amesos_Superludist::RedistributeA( ) {
   // if user wants to use all processes
   if( MaxProcesses_ == -3 ) MaxProcesses_ = NumberOfProcesses;
   if ( MaxProcesses_ == -2 ) MaxProcesses_ = (int) sqrt(1.0 * NumberOfProcesses );
-  if ( MaxProcesses_ <= 0 ) MaxProcesses_ = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
+  if ( MaxProcesses_ == -1 ) MaxProcesses_ = 1+EPETRA_MAX( NumRows_/10000, NumGlobalNonzeros_/1000000 );
 
   assert( MaxProcesses_ > 0 ) ;
 
