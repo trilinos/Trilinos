@@ -44,6 +44,7 @@ Description:
    necessary to be able to set this parameter at run-time.
 Reported: Reported to metis@cs.umn.edu on 19 Aug 1999.
 Status: George Karypis said it will be fixed in the next release.
+        No specific time frame was given.
 
 
 Name: no edges
@@ -54,20 +55,22 @@ Description:
    ParMETIS_PartKway is called. We suspect all the graph based
    methods crash. From the documentation it is unclear if
    a NULL pointer is a valid input for the adjncy array.
-   However, the bug occurs both with NULL as input or
+   Apparently, the bug occurs both with NULL as input or
    a valid pointer to an array.
 Reported: Reported to metis@cs.umn.edu on 5 Oct 1999.
-Status: George Karypis said it will be fixed in the next release.
+Status: George Karypis says it will be fixed in the next release.
+        No specific time frame was given.
 
 
 Name: no vertices
 Version: ParMETIS 2.0
 Symptom: segmentation fault at run time
 Description:
-   ParMETIS may crash if some procs own no vertices.
-   The extent of this bug is not known (which methods, etc.).
+   ParMETIS may crash if a processor owns no vertices.
+   The extent of this bug is not known (which methods are affected).
    Again, it is unclear if NULL pointers are valid input.
 Reported: Reported to metis@cs.umn.edu on 6 Oct 1999.
-Status: No response.
+Status: George Karypis says it will be fixed in the next release.
+        No specific time frame was given.
 
 -------------------------------------------------------------------------------
