@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  ParMETIS Interface</title>
@@ -22,8 +22,8 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_alg_jostle.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_irb.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_alg_jostle.html">Next</a>&nbsp; |&nbsp; <a href="ug_alg_irb.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="ParMETIS"></a>ParMETIS</h2>
@@ -36,8 +36,8 @@ Zoltan context, ParMETIS is a method with many sub-methods. Zoltan provides
 an interface to all the ParMETIS (sub-)methods.&nbsp; The user selects
 which ParMETIS method to use through the parameter PARMETIS_METHOD. Most
 of the ParMETIS methods are based on either multilevel Kernighan-Lin partitioning
-or some diffusion algorithm. The names of the ParMETIS methods used by
-Zoltan are identical to those in the ParMETIS library. For further information
+or a diffusion algorithm. The names of the ParMETIS methods used by Zoltan
+are identical to those in the ParMETIS library. For further information
 about the various ParMETIS methods and parameters, please consult the ParMETIS
 User's Guide.
 <p>Graph partitioning is a useful abstraction for load balancing. The main
@@ -46,12 +46,15 @@ The nodes or vertices in the graph correspond to objects in Zoltan.&nbsp;
 Each object may have a weight that normally represents the amount of computation.
 The edges or arcs in the graph usually correspond to communication costs.
 In graph partitioning, the problem is to find a partitioning of the graph
-that minimizes the cut size (weight) subject to the partitions having approximately
-equal size (weight). In repartitioning, it is assumed that a partitioning
-already exists. The problem is to find a good partitioning that is also
-"similar" in some sense to the existing partitioning. This keeps the migration
-cost low. All the problems described above are NP-hard so no efficient
-exact algorithm is known.
+(that is,&nbsp; each vertex is assigned to one out of <i>k</i> possible
+sets called partitions) that minimizes the cut size (weight) subject to
+the partitions having approximately equal size (weight). In repartitioning,
+it is assumed that a partitioning already exists. The problem is to find
+a good partitioning that is also "similar" in some sense to the existing
+partitioning. This keeps the migration cost low. All the problems described
+above are NP-hard so no efficient exact algorithm is known. We remark that
+in Zoltan, the number of partitions is always the same as the number of
+processes (which is normally equal to the number of processors).
 <p>We only give a brief summary of the various ParMETIS methods here; for
 more details see the ParMETIS documentation. The methods fall into three
 categories:
@@ -72,7 +75,9 @@ balance and you are willing to spend some time doing migration. One such
 case is static load balancing, that is, you only need to balance once.
 Use the Repart* methods when you have a reasonably good load balance that
 you wish to update incrementally. These methods are well suited&nbsp; for
-dynamic load balancing (for example,&nbsp; adaptive mesh refinement).
+dynamic load balancing (for example,&nbsp; adaptive mesh refinement). A
+reasonable strategy is to call PartKway once to obtain a good initial balance
+and&nbsp; later update this balance using one of the Repart* methods.
 <p>This interface is currently compatible with ParMETIS version 2.0.&nbsp;
 There is no guarantee that Zoltan will work correctly if you have a different
 version of ParMETIS on your computer. Source and documentation for ParMETIS
@@ -121,6 +126,12 @@ refinement&nbsp;
 </tr>
 
 <tr>
+<td></td>
+
+<td>The method names are case insensitive.</td>
+</tr>
+
+<tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>PARMETIS_OUTPUT_LEVEL</i></td>
 
 <td>Amount of output the load-balancing algorithm should produce.&nbsp;
@@ -157,7 +168,7 @@ only be used during debugging).</td>
 <tr>
 <td></td>
 
-<td><i>PARMETIS_METHOD</i> = PartKway</td>
+<td><i>PARMETIS_METHOD</i> = RepartLDiffusion</td>
 </tr>
 
 <tr>
