@@ -219,7 +219,6 @@ void PetraVec<TYPE>::MvAddMv ( TYPE alpha , MultiVec<TYPE>& A,
 						   TYPE beta, MultiVec<TYPE>& B) 
 {
 	int info=0;
-	const TYPE one =1.0;
 	const TYPE zero = 0.0;
 
 	PetraVec *A_vec = dynamic_cast<PetraVec *>(&A); assert(A_vec!=NULL);

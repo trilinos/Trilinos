@@ -417,7 +417,7 @@ void BlockArnoldi<TYPE>::currentStatus() {
 
 template <class TYPE>
 void BlockArnoldi<TYPE>::SetInitBlock() {
-	int i,j;
+	int i;
 	int *index = new int[ _block ]; assert(index!=NULL);
 
 	// This method will set the first block of _basisvecs to the initial guess,
@@ -474,11 +474,8 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 
 template <class TYPE>
 void BlockArnoldi<TYPE>::iterate(const int steps) {
-	int i,j,temp;
+	int i,temp;
 	int tempsteps = steps;
-	const int izero=0;
-	const TYPE one=1.0;
-	const TYPE zero=0.0;
 	//
 	// If this is the first steps of Block Arnoldi, initialize the first block of _basisvecs
 	//
@@ -555,7 +552,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 
 template <class TYPE>
 void BlockArnoldi<TYPE>::solve () {
-	int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
+	//int rem_iters = _length+_restarts*(_length-_nevblock)-_iter;
 	//
 	// Right now the solver will just go the remaining iterations, but this design will allow
 	// for checking of the residuals every so many iterations, independent of restarts.
@@ -633,7 +630,6 @@ void BlockArnoldi<TYPE>::BlkOrth( const int j ) {
         // vectors and all previous blocks, then the vectors within the
         // new block are orthogonalized.
         //
-        const int IntOne = 1;
         const TYPE one = 1.0;
         const TYPE zero = 0.0;
         const int max_num_orth = 2;
@@ -759,7 +755,7 @@ void BlockArnoldi<TYPE>::BlkOrthSing( const int j ) {
         const int IntOne = 1;
         const TYPE one = 1.0;
         const TYPE zero = 0.0;
-        int i, k, iter, num_prev;
+        int i, k, num_prev;
         int * index = new int[ (_length+1)*_block ]; assert(index!=NULL);
         Teuchos::SerialDenseVector<int,TYPE> dense_vec;
         TYPE norm1[IntOne];
@@ -946,7 +942,6 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 	int nb = VecIn.GetNumberVecs(); assert (nb == _block);
 	int *index = new int[nb]; assert(index!=NULL);
 	const int IntOne=1;
-	const int IntZero=0;
 	const TYPE zero=0.0;
 	const TYPE one=1.0;
 	bool addvec = false, flg = false;
@@ -1118,7 +1113,7 @@ void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn,
 template<class TYPE>
 void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	int i=0,j=0;
-	int m = _jstart*_block, n=_jstart*_block, info=0;
+	int m = _jstart*_block, n=_jstart*_block;
 	int mm1 = (_jstart-1)*_block;
 	int _nevtemp, _nevtemp2;
 	const TYPE one = 1.0;
@@ -1384,7 +1379,6 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
-        const TYPE one = 1.0;
         const TYPE zero = 0.0;
         Teuchos::LAPACK<int,TYPE> lapack; 
 	int i, j, info=0;
@@ -1468,8 +1462,6 @@ void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H,
 	}
 	
 	char * compq = "V";
-	TYPE tempimagprt = zero;
-	int tempimagindx = 0;
 	int *offset = new int[ _nevtemp4 ]; assert(offset!=NULL);
 	int *_order2 = new int[ _nevtemp4 ]; assert(_order2!=NULL);
 	i = 0; _nevtemp3 = 0;
@@ -1522,7 +1514,7 @@ void BlockArnoldi<TYPE>::Restart() {
 	//  to compute the Schur vectors and residuals.  This information is used to 
 	//  restart the factorization.
 	//
-	int i,j, defcnt;
+	int i,j;
 	int _nevtemp = _nevblock*_block;
 	int *index = new int[ _nevtemp ];
 	//
@@ -1539,6 +1531,7 @@ void BlockArnoldi<TYPE>::Restart() {
 	//
 	//  Check for blocks to deflate
 	//  DEFLATION IS NOT READY RIGHT NOW!!!!!!!!
+//	int defcnt;
 //	i = _defblock;
 //	while ( i<_nevblock ) {
 //		defcnt = 0;
