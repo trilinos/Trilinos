@@ -320,6 +320,9 @@ TAC_ARG_WITH_PACKAGE(ml_external_mpi_functions, [Use mpi-provided global communi
 #
  TAC_ARG_ENABLE_OPTION(ml_timing, [Enable timing routines], ML_TIMING, no)
 #
+ TAC_ARG_ENABLE_OPTION(ml_memory_checking, [Enable ml memory checking.],
+ML_MEMORY_CHECK, no)
+#
  TAC_ARG_ENABLE_OPTION(ml_flops, [Enable flop counting.], ML_FLOPS, no)
 #
  TAC_ARG_ENABLE_OPTION(ml_benchmarking, [For benchmarking suite.], ML_BENCHMARKING, no)

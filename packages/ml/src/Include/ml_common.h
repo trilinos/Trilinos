@@ -106,6 +106,10 @@
 #define ML_ENRICH
 #endif
 
+#ifdef HAVE_ML_MEMORY_CHECK
+#define ML_MEMORY_CHK
+#endif
+
 #ifdef HAVE_ML_NEW_T_PE
 #define ML_NEW_T_PE
 #endif

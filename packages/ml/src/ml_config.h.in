@@ -108,6 +108,9 @@
 /* Define if want to build with ifpack enabled */
 #undef HAVE_ML_IFPACK
 
+/* Define if want to build with ml_memory_checking enabled */
+#undef HAVE_ML_MEMORY_CHECK
+
 /* Define if want to build with ml_metis enabled */
 #undef HAVE_ML_METIS
 

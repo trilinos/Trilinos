@@ -883,6 +883,8 @@ Optional Features:
                           Enable complex maxwell solver capability (default is
                           no)
   --enable-ml_timing      Enable timing routines (default is no)
+  --enable-ml_memory_checking
+                          Enable ml memory checking. (default is no)
   --enable-ml_flops       Enable flop counting. (default is no)
   --enable-ml_benchmarking
                           For benchmarking suite. (default is no)
@@ -3913,7 +3915,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3916:" \
+echo "$as_me:3918:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7360,6 +7362,32 @@ fi
 
 #
 
+# Check whether --enable-ml_memory_checking or --disable-ml_memory_checking was given.
+if test "${enable_ml_memory_checking+set}" = set; then
+  enableval="$enable_ml_memory_checking"
+  ac_cv_use_ml_memory_checking=$enableval
+else
+  ac_cv_use_ml_memory_checking=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use ml_memory_checking" >&5
+echo $ECHO_N "checking whether to use ml_memory_checking... $ECHO_C" >&6
+
+if test "X$ac_cv_use_ml_memory_checking" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ML_MEMORY_CHECK 1
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+#
+
 # Check whether --enable-ml_flops or --disable-ml_flops was given.
 if test "${enable_ml_flops+set}" = set; then
   enableval="$enable_ml_flops"
@@ -8206,7 +8234,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8209: \"$ac_link\") >&5
+(eval echo $as_me:8237: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8284,7 +8312,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8287: \"$ac_link\") >&5
+(eval echo $as_me:8315: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11237,7 +11265,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:11240: \"$ac_link\") >&5
+(eval echo $as_me:11268: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -11315,7 +11343,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:11318: \"$ac_link\") >&5
+(eval echo $as_me:11346: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
