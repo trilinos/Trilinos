@@ -138,7 +138,7 @@ Zoltan_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
 
 Zoltan_test_LDADD = \
   $(top_builddir)/src/transform/libepetraext_trans.a \
-  $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/src/libepetra.a \
   $(BLAS_LIBS) \
   $(LIBS) \
   $(FLIBS)
