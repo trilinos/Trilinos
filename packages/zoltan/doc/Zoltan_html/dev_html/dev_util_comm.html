@@ -1,10 +1,9 @@
 <HTML>
 <HEAD>
    <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
    <META NAME="sandia.approved" CONTENT="SAND99-1376">
    <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-
    <TITLE> Zoltan Developer's Guide:  Communication Utilities</TITLE>
 <!
   ------------------------
@@ -15,14 +14,12 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="irreg_comm"></A>Irregular Communication Library</H2>
@@ -37,9 +34,7 @@ a communication plan for sending objects to destination processors.
 plan to send objects to destination processors.
 <BR><B><A HREF="#LB_Comm_Destroy">LB_Comm_Destroy</A>:</B>&nbsp; free memory
 associated with a communication plan.</BLOCKQUOTE>
-
-
-<P>The Zoltan library uses the irregular communication package in its migration-help
+The Zoltan library uses the irregular communication package in its migration-help
 tools and in some of the load-balancing algorithms. For example, in <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
 <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B> is used to develop
 a communication map for sending objects to be exported to their new destination
@@ -62,24 +57,27 @@ however, it is sometimes useful to impose a deterministic order upon the
 message processing. In such cases, the function call to <B>debug_sort2_int_int</B>
 in <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B> should be used.
 It sorts the received messages in order of their processor numbers. Thus,
-imported objects are processed in order of their sending processors.
+imported objects are processed in order of their sending processors.&nbsp;
+Ensuring deterministic results this way will be possible through a parameter
+in future versions.
 <BR>&nbsp;
 <BR>&nbsp;
 
 <P>
-<HR><A NAME="LB_Comm_Create"></A>struct <B>Comm_Obj</B> *<B>LB_Comm_Create</B>(int
-<I>n</I> , int *<I> proclist</I>, MPI_Comm <I>comm</I> , int *<I> nreturn</I>);&nbsp;
+<HR><A NAME="LB_Comm_Create"></A>int<B> LB_Comm_Create</B>(struct Comm_Obj&nbsp;
+**<I>plan</I>,<B> </B>int <I>nsend</I>, int *<I>proclist</I>, MPI_Comm
+<I>comm</I> , int <I>tag</I>, int *<I>nreturn</I>);&nbsp;
 <HR>
 
 <P>The <B>LB_Comm_Create</B> function sets up the communication plan in
 the irregular communication package. Its input is a count of objects to
 be sent to other processors, a list of the processors to which the objects
-should be sent, and an MPI communicator. It allocates and builds a communication
-plan that describes to which processors data will be sent and from which
-processors data will be received. It also computes the amount of data to
-be sent to and received from each processor. It returns the number of objects
-to be received by the processor and a pointer to the communication plan
-it created. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
+should be sent (repetitions are allowed), and an MPI communicator. It allocates
+and builds a communication plan that describes to which processors data
+will be sent and from which processors data will be received. It also computes
+the amount of data to be sent to and received from each processor. It returns
+the number of objects to be received by the processor and a pointer to
+the communication plan it created. In <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>,
 for example, the number of objects to be exported by a processor and a
 list of the destination processors for the objects are passed to <B>LB_Comm_Create</B>;
 the resulting plan describes the communication patterns needed to export
@@ -95,7 +93,13 @@ to perform the actual communication.
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; n</I></TD>
+<TD>&nbsp;&nbsp;&nbsp; <I>plan</I></TD>
+
+<TD>A pointer to the communication plan created by <B>LB_Comm_Create</B>.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; nsend</I></TD>
 
 <TD>The number of objects to be sent to other processors.</TD>
 </TR>
@@ -114,6 +118,12 @@ of the objects to be sent.</TD>
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>tag</I></TD>
+
+<TD>A tag for MPI communication.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>nreturn</I></TD>
 
 <TD>Upon return, the number of objects to be received by the processor.</TD>
@@ -126,18 +136,16 @@ of the objects to be sent.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp; struct <B>Comm_Obj</B> *</TD>
+<TD VALIGN=TOP>&nbsp;&nbsp; int</TD>
 
-<TD>A pointer to the communication plan created by <B>LB_Comm_Create</B>.</TD>
+<TD>Error code.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
-<HR><A NAME="LB_Comm_Do"></A>void <B>LB_Comm_Do</B>(struct <B>Comm_Obj</B>
-*<I>plan</I>, char *<I>sendbuf</I>, int <I>nsize</I>, char *<I>recvbuf</I>);&nbsp;
+<HR><A NAME="LB_Comm_Do"></A>int<B> LB_Comm_Do</B>(struct Comm_Obj *<I>plan</I>,
+int <I>tag</I>, char *<I>sendbuf</I>, int <I>nsize</I>, char *<I>recvbuf</I>);&nbsp;
 <HR>
 
 <P>The <B>LB_Comm_Do</B> function performs the communication described
@@ -170,6 +178,12 @@ by <B><A HREF="#LB_Comm_Create">LB_Comm_Create.</A></B><I> </I>All objects
 </TR>
 
 <TR>
+<TD>&nbsp;&nbsp;&nbsp; <I>tag</I></TD>
+
+<TD>An MPI message tag.</TD>
+</TR>
+
+<TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; sendbuf</I></TD>
 
 <TD>A buffer filled with object data to be sent to other processors.</TD>
@@ -186,13 +200,23 @@ by <B><A HREF="#LB_Comm_Create">LB_Comm_Create.</A></B><I> </I>All objects
 
 <TD>Upon return, a buffer filled with object data received from other processors.</TD>
 </TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>Error code.</TD>
+</TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
-<HR><A NAME="LB_Comm_Destroy"></A>void <B>LB_Comm_Destroy</B>(struct <B>Comm_Obj</B>
+<HR><A NAME="LB_Comm_Destroy"></A>int <B>LB_Comm_Destroy</B>(struct Comm_Obj
 **<I>plan</I>);&nbsp;
 <HR>
 
@@ -211,6 +235,18 @@ a communication plan created by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A><
 
 <TD>A pointer to a communication plan built by <B><A HREF="#LB_Comm_Create">LB_Comm_Create</A></B>.&nbsp;
 Upon return, <I>plan</I> is set to NULL.&nbsp;</TD>
+</TR>
+
+<TR>
+<TD><B>Returned Value:</B></TD>
+
+<TD></TD>
+</TR>
+
+<TR>
+<TD>&nbsp;&nbsp;&nbsp; int</TD>
+
+<TD>Error code.</TD>
 </TR>
 </TABLE>
 
