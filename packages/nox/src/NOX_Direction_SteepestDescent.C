@@ -34,23 +34,38 @@
 #include "NOX_Direction_SteepestDescent.H" // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Parameter_List.H"
 
 using namespace NOX;
 using namespace NOX::Direction;
 
-SteepestDescent::SteepestDescent(Parameter::List& params) 
+SteepestDescent::SteepestDescent(Parameter::List& params) :
+  tmpVecPtr(NULL)
 {
   reset(params);
 }
 
 SteepestDescent::~SteepestDescent()
 {
-  
+  delete tmpVecPtr;
 }
 
 bool SteepestDescent::reset(Parameter::List& params)
 {
-  return true;
+  const string tmp = params.getParameter("Scaling Type", "2-Norm");
+  if (tmp == "2-Norm")
+    scaleType = SteepestDescent::TwoNorm;
+  else if (tmp == "Quadratic Model Min")
+    scaleType = SteepestDescent::QuadMin;
+  else if (tmp == "None")
+    scaleType = SteepestDescent::None;
+  else {
+    cout << "NOX::Direction::SteepestDescent::reset - Invalid choice \""
+	  << tmp << "\" for \"Scaling Type\"" << endl;
+    throw "NOX Error";
+  }
+
+ return true;
 }
 
 bool SteepestDescent::operator()(Abstract::Vector& dir, 
@@ -70,7 +85,7 @@ bool SteepestDescent::operator()(Abstract::Vector& dir,
 
   if (!ok) {
     cerr << "NOX::Direction::SteepestDescent::operator() - Unable to compute Jacobian." << endl;
-    throw "NOX Error";
+    return false;
   }
   
   // Compute the gradient
@@ -78,15 +93,51 @@ bool SteepestDescent::operator()(Abstract::Vector& dir,
 
   if (!ok) {
     cerr << "NOX::Direction::SteepestDescent::operator() - Unable to compute gradient." << endl;
-    throw "NOX Error";
+    return false;
   }
   
   // Get the gradient direction.
   dir = soln.getGrad();
 
-  // Compute the steepest descent direction
-  double norm = dir.norm();
-  dir.scale(-1.0/norm);
+  // Scale
+  switch (scaleType) {
+
+  case SteepestDescent::TwoNorm:
+
+    dir.scale(-1.0/dir.norm());
+    break;
+
+  case SteepestDescent::QuadMin:
+  {
+    // If necessary, allocate space for tmpVecPtr
+    if (tmpVecPtr == NULL) 
+      tmpVecPtr = soln.getX().clone(NOX::CopyShape);
+
+    // Create a local reference
+    Abstract::Vector& tmpVec(*tmpVecPtr);
+    
+    // Compute denominator
+    ok = soln.applyJacobian(dir, tmpVec);
+    if (!ok) {
+      cerr << "NOX::Direction::SteepestDescent::operator() - Unable to apply Jacobian" << endl;
+      return false;
+    }
+
+    // Scale
+    dir.scale( -1.0 * dir.dot(dir) / tmpVec.dot(tmpVec) );
+
+    break;
+  }
+  case SteepestDescent::None:
+
+    break;
+
+  default:
+
+    cout << "NOX::Direction::operator() - Invalid scaleType" << endl;
+    throw "NOX Error";
+
+  }
 
   return true;
 }

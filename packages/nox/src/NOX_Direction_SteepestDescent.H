@@ -39,12 +39,34 @@ namespace NOX {
 namespace Direction {
 
 //! %Calculates the steepest descent direction.
-/*! The steepest descent direction requires a linesearch algorithm
- * for convergence.  Do not use a "Full Step" linesearch.
+/*! 
+
+Calculates the direction
+\f[
+d = - \gamma \nabla f(x) = -\gamma J(x)^T F(x)
+\f]
+where we are solving 
+\f$ F(x) = 0 \f$ 
+and 
+\f$ f(x) = \frac{1}{2} \|F(x)\|_2 \f$ and \f$ J(x) = \nabla F(x) \f$.
+The following parameters are valid for this solver:
+
+<ul>
+<li>"Scaling Type" can be either of:
+    <ul>
+    <li>"2-Norm" - \f$ \gamma = \displaystyle\frac{1}{\|d\|_2} \f$
+    <li>"Quadratic Model Min" - \f$ \gamma = \displaystyle\frac{\|d\|_2}{d^T J^T J d} \f$
+    <li>"None" - No scaling
+    </ul>
+</ul>
+
  */
 class SteepestDescent : public Generic {
 
 public:
+
+  //! Scaling types
+  enum ScalingType {TwoNorm, QuadMin, None};
 
   //! Constructor
   SteepestDescent(Parameter::List& params);
@@ -60,6 +82,12 @@ public:
 		  const Solver::Generic& solver);
 
 private:
+
+  // Temporary vector used in Cauchy scaling factor calculation
+  NOX::Abstract::Vector* tmpVecPtr;
+
+  // Type of scaling of the Cauchy direction
+  ScalingType scaleType;
 
 };
 } // namespace Direction
