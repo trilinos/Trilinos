@@ -38,7 +38,9 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-NOX::Direction::ModifiedNewton::ModifiedNewton(NOX::Parameter::List& p) :
+NOX::Direction::ModifiedNewton::ModifiedNewton(const NOX::Utils& u,
+                                               NOX::Parameter::List& p) :
+  utils(u),
   predRhs(NULL),
   stepDir(NULL),
   oldJacobianGrpPtr(NULL)
@@ -106,18 +108,21 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
     status = oldJacobianGrp.applyJacobianInverse(paramsPtr->sublist("Modified-Newton").sublist("Linear Solver"), soln.getF(), dir);
     dir.scale(-1.0);
 
-    // It didn't work, but maybe it's ok anyway...
-    if (status == NOX::Abstract::Group::NotConverged) {
-      if (rescueBadNewtonSolve(soln))
-        status = NOX::Abstract::Group::Ok;
-      else if (ageOfJacobian == 1) {
-        throwError("compute", "Unable to compute Newton step with fresh Jacobian");
-      }
-      else
-        ageOfJacobian = maxAgeOfJacobian;
-    } 
-    else if (status != NOX::Abstract::Group::Ok) 
-      throwError("compute", "Unable to compute Newton step");
+    // It didn't converge, but maybe we can recover.
+    if ((status != NOX::Abstract::Group::Ok) &&
+        (doRescue == false)) {
+      throwError("compute", "Unable to solve Newton system");
+    }
+    else if ((status != NOX::Abstract::Group::Ok) &&
+             (doRescue == true)) {
+      if (utils.isPrintProcessAndType(NOX::Utils::Warning))
+        cout << "WARNING: NOX::Direction::ModifiedNewton::compute() - "
+             << "Linear solve failed to achieve convergence - "
+             << "using the step anyway since \"Rescue Bad Newton Solve\" "
+             << "is true. Also, flagging recompute of Jacobian." << endl;
+      ageOfJacobian = maxAgeOfJacobian;
+      status = NOX::Abstract::Group::Ok;
+    }
   }
 
   return true;
@@ -148,7 +153,7 @@ bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::
     return false;
 
   // Otherwise, we just print a warning and keep going
-  if (Utils::doPrint(Utils::Warning)) 
+  if (utils.isPrintProcessAndType(NOX::Utils::Warning))
     cout << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << endl;
   return true;
 
@@ -156,9 +161,9 @@ bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::
 
 void NOX::Direction::ModifiedNewton::throwError(const string& functionName, const string& errorMsg)
 {
-    if (Utils::doPrint(Utils::Error))
-      cerr << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
-    throw "NOX Error";
+  if (utils.isPrintProcessAndType(NOX::Utils::Error))
+    cerr << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
+  throw "NOX Error";
 }
 
 #endif // WITH_PRERELEASE

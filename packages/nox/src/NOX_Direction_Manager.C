@@ -91,7 +91,7 @@ bool NOX::Direction::Manager::reset(NOX::Parameter::List& params)
   else if (method == "Tensor")
     ptr = new Tensor(utils, params);
   else if (method == "Modified-Newton")
-    ptr = new ModifiedNewton(params);
+    ptr = new ModifiedNewton(utils, params);
   else if (method == "Quasi-Newton")
     ptr = new QuasiNewton(utils, params);
   else if (method == "Broyden")

@@ -119,7 +119,8 @@ bool List::getParameter(const string& name, bool nominal)
   if ((i != params.end()) && (entry(i).isBool()))
     return entry(i).getBoolValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for bool" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for bool :" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 }
 
@@ -135,7 +136,8 @@ int List::getParameter(const string& name, int nominal)
   if ((i != params.end()) && (entry(i).isInt()))
     return entry(i).getIntValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for int" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for int" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 }
 
@@ -151,7 +153,8 @@ double List::getParameter(const string& name, double nominal)
   if ((i != params.end()) && (entry(i).isDouble()))
     return entry(i).getDoubleValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for double" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for double" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 
 }
@@ -168,7 +171,8 @@ const string& List::getParameter(const string& name, const char* nominal)
   if ((i != params.end()) && (entry(i).isString()))
     return entry(i).getStringValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 }
 
@@ -184,7 +188,8 @@ const string& List::getParameter(const string& name, const string& nominal)
   if ((i != params.end()) && (entry(i).isString()))
     return entry(i).getStringValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for string" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 }
   
@@ -200,7 +205,8 @@ const Arbitrary& List::getParameter(const string& name, const Arbitrary& nominal
   if ((i != params.end()) && (entry(i).isArbitrary()))
     return entry(i).getArbitraryValue();
 
-  cerr << "NOX::Parameter::List::getParameter - get error for arbitrary parameter" << endl;
+  cerr << "NOX::Parameter::List::getParameter - get error for arbitrary parameter" << endl
+       << "\t\"" << name << "\"" << endl;
   throw "NOX Error";
 }
   

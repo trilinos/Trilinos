@@ -38,7 +38,10 @@
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Parameter_List.H"	   // class data element 
 
+
 namespace NOX {
+  class Utils;                     // Forward declaration
+
 namespace Direction {
 
 //! %Modified Newton direction computation
@@ -70,7 +73,7 @@ class ModifiedNewton : public Generic {
 public:
 
   //! Constructor
-  ModifiedNewton(NOX::Parameter::List& params);
+  ModifiedNewton(const NOX::Utils& u, NOX::Parameter::List& params);
 
   //! Destructor
   virtual ~ModifiedNewton();
@@ -103,6 +106,9 @@ private:
   void throwError(const string& functionName, const string& errorMsg);
 
 private:
+
+  //! Printing Utilities
+  const NOX::Utils& utils;
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
