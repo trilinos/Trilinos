@@ -63,7 +63,7 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
 
   if( ProblemType == "SA" )
     return( ML_Epetra::SetDefaultsSA(List, Prefix, options, params) );
-  else if( ProblemType == "maxwell" )
+  else if( ProblemType == "maxwell" || ProblemType == "Maxwell" )
     return( ML_Epetra::SetDefaultsMaxwell(List, Prefix, options, params ) );
   else if( ProblemType == "DD-ML" )
     return( ML_Epetra::SetDefaultsDD_3Levels(List, Prefix, options, params ) );

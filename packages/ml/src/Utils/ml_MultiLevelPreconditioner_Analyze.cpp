@@ -785,7 +785,7 @@ int ML_Epetra::MultiLevelPreconditioner::AnalyzeCycle(int NumCycles)
     return(-2); // Does not work with Maxwell (yet)
   }
 
-  // execuction begins
+  // execution begins
 
   double* before_Linf = new double[NumPDEEqns_];
   double* before_L2   = new double[NumPDEEqns_];

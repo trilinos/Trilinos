@@ -239,7 +239,7 @@ void ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
       AnasaziList.set("eigen-analysis: length", List_.get("eigen-analysis: length", 20));
       AnasaziList.set("eigen-analysis: tolerance", List_.get("eigen-analysis: tolerance", 1.0e-1));
-      AnasaziList.set("eigen-analysis: restart", List_.get("eigen-analysis: restart", 100));
+      AnasaziList.set("eigen-analysis: restart", List_.get("eigen-analysis: restart", 2));
     }
     
     // this is the starting value -- random
