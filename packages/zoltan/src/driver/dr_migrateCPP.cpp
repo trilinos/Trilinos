@@ -231,7 +231,7 @@ char msg[256];
 
   /* Make sure all procs have the same value */
 
-  MPI::COMM_WORLD.Allreduce(&k, &Use_Edge_Wgts, 1, MPI::INT, MPI::MAX);
+  MPI_Allreduce(&k, &Use_Edge_Wgts, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   /*
    *  For all elements, update adjacent elements' processor information.
@@ -239,7 +239,8 @@ char msg[256];
    *  information.  
    */
   
-  int proc = MPI::COMM_WORLD.Get_rank();
+  int proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   /*
    *  Build New_Elem_Index array and list of processor assignments.
@@ -494,8 +495,9 @@ void migrate_post_process(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh = (MESH_INFO_PTR) data;
   ELEM_INFO *elements = mesh->elements;
 
-  int proc = MPI::COMM_WORLD.Get_rank();
-  int num_proc = MPI::COMM_WORLD.Get_size();
+  int proc = 0, num_proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
+  MPI_Comm_size(MPI_COMM_WORLD, &num_proc);
 
   /* compact elements array, as the application expects the array to be dense */
   for (int i = 0; i < New_Elem_Index_Size; i++) {
@@ -661,7 +663,8 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   MESH_INFO_PTR mesh = (MESH_INFO_PTR) data;
   ELEM_INFO *elem = mesh->elements;
 
-  int proc = MPI::COMM_WORLD.Get_rank();
+  int proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   int idx;
 
@@ -785,7 +788,8 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
   ELEM_INFO *elem = mesh->elements;
   ELEM_INFO *elem_mig = (ELEM_INFO *) buf;
 
-  int proc = MPI::COMM_WORLD.Get_rank();
+  int proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   int idx = 0;
 

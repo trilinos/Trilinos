@@ -28,7 +28,7 @@ int build_elem_dd(MESH_INFO_PTR mesh)
  * processor assignment after migrations.
  */
 
-  if (Zoltan_Object::DD_Create(&(mesh->dd), MPI::COMM_WORLD, 1, 0, 0, 0, 0) != 0) {
+  if (Zoltan_Object::DD_Create(&(mesh->dd), MPI_COMM_WORLD, 1, 0, 0, 0, 0) != 0) {
     Gen_Error(0, "fatal:  NULL returned from Zoltan_Object::DD_Create()\n");
     return 0;
   }

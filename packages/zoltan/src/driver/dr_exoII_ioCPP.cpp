@@ -35,7 +35,6 @@
 
 #include "zoltanCPP.h"
 using namespace Zoltan;
-using namespace MPI;
 
 #define LIST_ALLOC 10
 
@@ -46,10 +45,6 @@ static int find_adjacency(int, MESH_INFO_PTR, int **, int *, int);
 static int read_comm_map_info(int, int, PROB_INFO_PTR, MESH_INFO_PTR);
 static void fcopy(char *, char *);
 #endif /* ZOLTAN_NEMESIS */
-
-// Note - this is a half-baked port to C++ of the test driver's
-// Exodus reader.  We use the C++ bindings to Zoltan and MPI, but
-// the rest of the C code is untouched for now.
 
 /****************************************************************************/
 /****************************************************************************/
@@ -199,10 +194,10 @@ int read_exoII_file(int Proc,
   }
 
   /* Perform reduction on necessary fields of element blocks.  kdd 2/2001 */
-  MPI::COMM_WORLD.Allreduce(nnodes, mesh->eb_nnodes, mesh->num_el_blks, 
-                            MPI::INT, MPI::MAX) ;
-  MPI::COMM_WORLD.Allreduce(etypes, mesh->eb_etypes, mesh->num_el_blks, 
-                            MPI::INT, MPI::MIN);
+  MPI_Allreduce(nnodes, mesh->eb_nnodes, mesh->num_el_blks, 
+                            MPI_INT, MPI_MAX, MPI_COMM_WORLD) ;
+  MPI_Allreduce(etypes, mesh->eb_etypes, mesh->num_el_blks, 
+                            MPI_INT, MPI_MIN, MPI_COMM_WORLD);
   for (i = 0; i < mesh->num_el_blks; i++) {
     strcpy(mesh->eb_names[i], get_elem_name(mesh->eb_etypes[i]));
   }
@@ -862,7 +857,7 @@ static int read_comm_map_info(int pexoid, int Proc, PROB_INFO_PTR prob,
    * for the adjacent elements in this communication map.
    */
 
-  ierr = Zoltan_Object::Comm_Create(&comm_obj, max_len, proc_ids, MPI::COMM_WORLD, 
+  ierr = Zoltan_Object::Comm_Create(&comm_obj, max_len, proc_ids, MPI_COMM_WORLD, 
                             msg, &nrecv);
   if (ierr != ZOLTAN_OK) {
     Gen_Error(0, "fatal: Error returned from Zoltan_Object::Comm_Create");
@@ -969,7 +964,8 @@ char cmesg[256];
 char *str = "Proc";
 
   /* generate the parallel filename for this processor */
-  int Num_Proc = MPI::COMM_WORLD.Get_size();
+  int Num_Proc = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
 
   gen_par_filename(pio_info->pexo_fname, tmp_nem_fname, pio_info, Proc,
                    Num_Proc);

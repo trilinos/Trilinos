@@ -17,8 +17,8 @@
  * By default, this code is OFF.
  */
 double Timer_Callback_Time, Timer_Global_Callback_Time;
-#define START_CALLBACK_TIMER  double stime = MPI::Wtime()
-#define STOP_CALLBACK_TIMER   Timer_Callback_Time += MPI::Wtime() - stime
+#define START_CALLBACK_TIMER  double stime = MPI_Wtime()
+#define STOP_CALLBACK_TIMER   Timer_Callback_Time += MPI_Wtime() - stime
 #else
 #define START_CALLBACK_TIMER
 #define STOP_CALLBACK_TIMER 
@@ -95,7 +95,8 @@ int setup_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
   DEBUG_TRACE_START(Proc, yo);
 
   /* Allocate space for arrays. */
-  int nprocs = MPI::COMM_WORLD.Get_size();
+  int nprocs = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   
   float *psize = new float [nprocs];
   int *partid = new int [2*nprocs];
@@ -461,9 +462,9 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     Timer_Callback_Time = 0.0;
 #endif /* TIMER_CALLBACKS */
 
-    MPI::COMM_WORLD.Barrier();   /* For timings only */
+    MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
 
-    double stime = MPI::Wtime();
+    double stime = MPI_Wtime();
 
     if (zz.LB_Partition(&new_decomp, &num_gid_entries, &num_lid_entries,
                  &num_imported, &import_gids,
@@ -473,17 +474,17 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
       Gen_Error(0, "fatal:  error returned from Zoltan_LB_Partition()\n");
       return 0;
     }
-    double mytime = MPI::Wtime() - stime;
+    double mytime = MPI_Wtime() - stime;
     double maxtime = 0.0;
-    MPI::COMM_WORLD.Allreduce(&mytime, &maxtime, 1, MPI::DOUBLE, MPI::MAX);
+    MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
     if (Proc == 0)
       cout << "DRIVER:  Zoltan_LB_Partition time = " << maxtime << endl;
     Total_Partition_Time += maxtime;
 
 #ifdef TIMER_CALLBACKS
-    MPI::COMM_WORLD.Allreduce(&Timer_Callback_Time, &Timer_Global_Callback_Time, 
-                   1, MPI::DOUBLE, MPI::MAX);
+    MPI_Allreduce(&Timer_Callback_Time, &Timer_Global_Callback_Time, 
+                   1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       cout << "DRIVER:  Callback time = " << Timer_Global_Callback_Time << endl;
 #endif /* TIMER_CALLBACKS */
@@ -492,8 +493,8 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     {int mine[2], gmax[2], gmin[2];
     mine[0] = num_imported;
     mine[1] = num_exported;
-    MPI::COMM_WORLD.Allreduce(mine, gmax, 2, MPI::INT, MPI::MAX);
-    MPI::COMM_WORLD.Allreduce(mine, gmin, 2, MPI::INT, MPI::MIN);
+    MPI_Allreduce(mine, gmax, 2, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+    MPI_Allreduce(mine, gmin, 2, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
 
     if (Proc == 0) {
       cout << "DRIVER:  Min/Max Import: " << gmin[0] << " " <<  gmax[0] << endl;
@@ -517,8 +518,8 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
     /*
      * Call another routine to perform the migration
      */
-    MPI::COMM_WORLD.Barrier();   /* For timings only */
-    stime = MPI::Wtime();
+    MPI_Barrier(MPI_COMM_WORLD);   /* For timings only */
+    stime = MPI_Wtime();
     if (new_decomp && num_exported != -1 && num_imported != -1) {
       /* Migrate if new decomposition and RETURN_LISTS != NONE */
       if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
@@ -529,8 +530,8 @@ int run_zoltan(Zoltan::Zoltan_Object &zz, int Proc, PROB_INFO_PTR prob,
         return 0;
       }
     }
-    mytime = MPI::Wtime() - stime;
-    MPI::COMM_WORLD.Allreduce(&mytime, &maxtime, 1, MPI::DOUBLE, MPI::MAX);
+    mytime = MPI_Wtime() - stime;
+    MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     if (Proc == 0)
       cout << "DRIVER:  Total migration time = " << maxtime << endl;
   
@@ -996,7 +997,8 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
 
   /* get the processor number */
 
-  int proc = MPI::COMM_WORLD.Get_rank();
+  int proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   j = 0;
   for (cnt = 0; cnt < num_obj; cnt++) {
@@ -1061,7 +1063,8 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
                    : search_by_global_id(mesh, global_id[gid], &idx));
 
   /* get the processor number */
-  int proc = MPI::COMM_WORLD.Get_rank();
+  int proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
   j = 0;
   for (i = 0; i < current_elem->adj_len; i++) {
@@ -1469,13 +1472,14 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
                 /* True if # partitions == # processors.                      */
 
   /* Find maximum partition number across all processors. */
-  int Num_Proc = MPI::COMM_WORLD.Get_size();
+  int Num_Proc = 0;
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
   max_part = gmax_part = -1;
   for (i = 0; i < mesh->num_elems; i++)
     if (mesh->elements[i].my_part > max_part)
       max_part = mesh->elements[i].my_part;
 
-  MPI::COMM_WORLD.Allreduce(&max_part, &gmax_part, 1, MPI::INT, MPI::MAX);
+  MPI_Allreduce(&max_part, &gmax_part, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   test_both = ((gmax_part == (Num_Proc-1)) && (Test.Local_Partitions == 0));
 

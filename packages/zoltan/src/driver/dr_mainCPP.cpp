@@ -57,11 +57,12 @@ int main(int argc, char *argv[])
 /***************************** BEGIN EXECUTION ******************************/
 
   /* initialize MPI */
-  MPI::Init(argc, argv);
+  MPI_Init(&argc, &argv);
 
   /* get some machine information */
-  int Proc = MPI::COMM_WORLD.Get_rank();
-  int Num_Proc = MPI::COMM_WORLD.Get_size();
+  int Proc = 0, Num_Proc = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+  MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
 
   /* Initialize flags */
   Test.DDirectory = 0;
@@ -111,7 +112,7 @@ int main(int argc, char *argv[])
     sprintf(cmesg, "fatal: Zoltan_Initialize returned error code, %d", error);
     Gen_Error(0, cmesg);
     error_report(Proc);
-    MPI::Finalize();
+    MPI_Finalize();
     return 1;
   }
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
    *  No exception handling at this time. (C++ wishlist)
    */
 
-  Zoltan::Zoltan_Object zz(MPI::COMM_WORLD);
+  Zoltan::Zoltan_Object zz(MPI_COMM_WORLD);
 
   /* initialize some variables */
   MESH_INFO  mesh;
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
     print_input_info(Num_Proc, &prob);
   }
 
-  MPI::COMM_WORLD.Allreduce(&error, &gerror, 1, MPI::INT, MPI::MAX);
+  MPI_Allreduce(&error, &gerror, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
 
   if (gerror) goto End;
 
@@ -299,7 +300,7 @@ End:
   free_mesh_arrays(&mesh);
   if (prob.params != NULL) free(prob.params);
 
-  MPI::Finalize();
+  MPI_Finalize();
 
   return 0;
 }
