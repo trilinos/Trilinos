@@ -215,10 +215,12 @@ double max_diag, min_diag, max_sum, sum;
 #else
   ML_Aggregate_Set_DampingFactor(ag,1.5);
 #endif
-#ifdef HAVE_METIS
   ML_Aggregate_Set_CoarsenScheme_METIS(ag);
   ML_Aggregate_Set_NodesPerAggr( ml, ag, -1, 35);
-#endif
+  /*
+  ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(ag, 10.001);
+  */
+
 
   ML_Aggregate_Set_Threshold(ag, 0.0);
   ML_Aggregate_Set_MaxCoarseSize( ag, 300);
