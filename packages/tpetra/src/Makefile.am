@@ -101,8 +101,8 @@ DIST =
 COMP_H = \
 	$(srcdir)/Tpetra_Vector.hpp \
 	$(srcdir)/Tpetra_VectorData.hpp \
-	$(srcdir)/Tpetra_SparseMatrix.hpp \
-	$(srcdir)/Tpetra_SparseMatrixData.hpp
+	$(srcdir)/Tpetra_CisMatrix.hpp \
+	$(srcdir)/Tpetra_CisMatrixData.hpp
 
 COMP = 
 

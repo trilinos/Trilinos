@@ -210,7 +210,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector SparseMatrix BasicPerfTest
+SUBDIRS = Comm Platform Distributor ElementSpace BlockElementSpace VectorSpace Vector CisMatrix BasicPerfTest
 all: all-recursive
 
 .SUFFIXES:

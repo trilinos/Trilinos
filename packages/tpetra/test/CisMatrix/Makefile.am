@@ -28,17 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = SparseMatrix_test
+noinst_PROGRAMS = CisMatrix_test
 
-SparseMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
+CisMatrix_test_SOURCES = $(srcdir)/cxx_main.cpp
 
-SparseMatrix_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
+CisMatrix_test_DEPENDENCIES = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-SparseMatrix_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
+CisMatrix_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/../teuchos/src \
 	-I$(top_builddir)/../teuchos/src
 
-SparseMatrix_test_LDADD = $(top_builddir)/src/libtpetra.a \
+CisMatrix_test_LDADD = $(top_builddir)/src/libtpetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(BLAS_LIBS) $(LIBS) $(FLIBS)
 

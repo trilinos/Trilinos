@@ -566,6 +566,6 @@ private:
 
 } // Tpetra namespace
 
-#include "Tpetra_SparseMatrixData.hpp"
+#include "Tpetra_CisMatrixData.hpp"
 
 #endif // _TPETRA_CISMATRIX_HPP_

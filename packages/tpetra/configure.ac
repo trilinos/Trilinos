@@ -279,7 +279,7 @@ AC_CONFIG_FILES([
 		test/BlockElementSpace/Makefile
 		test/VectorSpace/Makefile
 		test/Vector/Makefile
-		test/SparseMatrix/Makefile
+		test/CisMatrix/Makefile
 		test/BasicPerfTest/Makefile
 		])
 

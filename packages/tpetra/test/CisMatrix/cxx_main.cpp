@@ -29,7 +29,7 @@
 // Tpetra CisMatrix tester
 
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
-#include "Tpetra_SparseMatrix.hpp"
+#include "Tpetra_CisMatrix.hpp"
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
