@@ -161,13 +161,17 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	  $comm="serial";
 	}
 #Note that the 'invoke-configure' script must be executable
+	print "Now configuring Trilinos in the $subdirs[$i] build tree...\n";
 	$compileFail+=system "./invoke-configure >> $homedir/trilinosCompileLog.txt 2>&1";
+	print "Now building Trilinos in the $subdirs[$i] build tree...\n";
 	$compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";
 	if ($compileFail) {
 	  # The build process failed, skip associated tests, report the failure
 	  ++$errorcount;
 	  ++$trilinosCompileError;
-	  print ERRORS "Trilinos compilation process failed for the $subdirs[$i] test.\nWill skip associated tests.\n";
+          print "Trilinos compilation process failed in the $subdirs[$i] build tree.\nWill skip associated tests.\n";
+
+	  print ERRORS "Trilinos compilation process failed in the $subdirs[$i] build tree.\nWill skip associated tests.\n";
 	  &reportresults;
 	  $compileFail=0; # reset so the positive value doesn't trigger an error again
 	}
@@ -175,6 +179,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	  #
 	  # Run tests
 	  #
+	 print "Trilinos compilation process completed in the $subdirs[$i] build tree.\nWill now run associated tests...\n";
 
 	  chdir"$homedir";
 	  open TESTDIRECTORIES, "list_of_test_dirs";
@@ -209,6 +214,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 		  #
 		  system "rm -f list_of_files";
 		  &reportresults;
+		  print "Testing...\n";
 		  $compileFail=0; # reset so the positive value doesn't trigger an error again
 		}
 	      }
