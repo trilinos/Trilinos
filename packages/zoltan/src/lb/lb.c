@@ -1249,21 +1249,21 @@ void LB_Eval (LB *lb, int mode,
     if (lb->Proc == 0){
       printf("\nStatistics for current partitioning/balance:\n");
       for (i=0; i<vwgt_dim; i++)
-        printf("  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, Balance = %5.3f\n",
-          i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]);
-      printf("  No. of objects   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
+        printf("  Object weight %1d  :  Max = %6.1f, Sum = %7.1f, Imbal. = %5.3f\n",
+          i+1, obj_wgt[i], obj_wgt[vwgt_dim+i], obj_wgt[i]*nproc/obj_wgt[vwgt_dim+i]-1.);
+      printf("  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
         graph_stats[0], graph_stats[NUM_GSTATS], 
-        graph_stats[0]*nproc/graph_stats[NUM_GSTATS]);
+        graph_stats[0]*nproc/graph_stats[NUM_GSTATS]-1.);
       if (lb->Get_Num_Edges != NULL){
-        printf("  Cut weight       :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
+        printf("  Cut weight       :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           graph_stats[1], graph_stats[NUM_GSTATS+1], 
-          graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]);
-        printf("  Boundary objects :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
+          graph_stats[1]*nproc/graph_stats[NUM_GSTATS+1]-1.);
+        printf("  Boundary objects :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           graph_stats[2], graph_stats[NUM_GSTATS+2], 
-          graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]);
-        printf("  Adjacent procs   :  Max = %6d, Sum = %7d, Balance = %5.3f\n",
+          graph_stats[2]*nproc/graph_stats[NUM_GSTATS+2]-1.);
+        printf("  Adjacent procs   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
           graph_stats[3], graph_stats[NUM_GSTATS+3], 
-          graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]);
+          graph_stats[3]*nproc/graph_stats[NUM_GSTATS+3]-1.);
       }
       printf("\n");
     }
