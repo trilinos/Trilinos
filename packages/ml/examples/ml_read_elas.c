@@ -43,7 +43,7 @@ double parasails_loadbal    = 0.;
 
 int main(int argc, char *argv[])
 {
-	int num_PDE_eqns=3, N_levels=3, nsmooth=2;
+	int num_PDE_eqns=3, N_levels=3, nsmooth=1;
 
 	int    leng, level, N_grid_pts, coarsest_level;
 
@@ -60,18 +60,18 @@ int main(int argc, char *argv[])
   AZ_PRECOND *Pmat = NULL;
   ML *ml;
   FILE *fp;
-  int ch,i, j, Nrigid, *garbage, nblocks, *blocks;
+  int ch,i, j, Nrigid, *garbage;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
 double *mode, *rigid;
 char filename[80];
 double alpha;
 int    one = 1;
-int allocated, *newbindx, offset, current, *block_list = NULL,  k, block;
-double *newval;
+int *blocks = NULL;
 #ifdef ML_partition
    FILE *fp2;
-   int count;
+   int count, k;
+   int nblocks, *block_list = NULL;
 
    if (argc != 2) {
      printf("Usage: ml_read_elas num_processors\n");
@@ -183,6 +183,7 @@ double *newval;
 	
   ML_Aggregate_Create( &ag );
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
+/*  ML_Aggregate_Set_DampingFactor(ag,1.5); */
   ML_Aggregate_Set_Threshold(ag, 0.0);
    ML_Aggregate_Set_MaxCoarseSize( ag, 300);
 
@@ -268,22 +269,28 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 	
    for (level = N_levels-1; level > coarsest_level; level--) {
 		
+     ML_Gen_Smoother_BlockGaussSeidel(ml , level, ML_BOTH, 1, 1., num_PDE_eqns);
+
     /*  Sparse approximate inverse smoother that acutally does both */
     /*  pre and post smoothing.                                     */
 
+/*
       ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
                                 parasails_sym, parasails_thresh, 
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
+*/
 
      /* This is the symmetric Gauss-Seidel smoothing that we usually use. */
      /* In parallel, it is not a true Gauss-Seidel in that each processor */
      /* does a Gauss-Seidel on its local submatrix independent of the     */
      /* other processors.                                                 */
-      /*
+      
+/*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_POSTSMOOTHER, nsmooth,1.);
-      */
+*/
+     
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
@@ -305,11 +312,13 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
       /*  where each processor has 'nblocks' blocks.                      */
-      /*
-      nblocks = 250;
-      ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
-      ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
+      /*                                                                  */
+      if (i == -1) {
+        nblocks = 250;
+        ML_Gen_Blocks_Metis(ml, level, &nblocks, &blocks);
+        ML_Gen_Smoother_VBlockSymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.,
                                         nblocks, blocks);
+      }
       */
       num_PDE_eqns = 6;
    }
@@ -324,6 +333,7 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
    options[AZ_scaling]  = AZ_none;
    options[AZ_precond]  = AZ_user_precond;
    options[AZ_conv]     = AZ_r0;
+options[AZ_conv] = AZ_noscaled;
    options[AZ_output]   = 1;
    options[AZ_max_iter] = 300;
    options[AZ_poly_ord] = 5;
@@ -353,6 +363,7 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
       for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) 
          fscanf(fp,"%lf",&(rhs[i]));
       fclose(fp);
+
    }
 
    /* Set x */
@@ -402,6 +413,7 @@ for (i = 0; i < N_update; i++) rhs[i] = (double) update[i];
    }
    else {
       options[AZ_keep_info] = 1;
+options[AZ_conv] = AZ_noscaled;
       AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
