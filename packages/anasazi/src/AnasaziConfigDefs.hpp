@@ -148,4 +148,11 @@ using namespace std;
 
 #endif /*HAVE_CONFIG_H*/
 
+/*
+ * Anasazi_Version() method 
+ */
+namespace Anasazi {
+  string Anasazi_Version();
+}
+
 #endif /*ANASAZI_CONFIGDEFS_HPP*/

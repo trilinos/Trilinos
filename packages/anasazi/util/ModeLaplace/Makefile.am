@@ -18,23 +18,28 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/AnasaziBasicEigenproblem.hpp \
-	$(srcdir)/AnasaziBasicSort.hpp \
-	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
-	$(srcdir)/AnasaziConfigDefs.hpp \
-	$(srcdir)/AnasaziEigenproblem.hpp \
-	$(srcdir)/AnasaziEigensolver.hpp \
-	$(srcdir)/AnasaziEpetraAdapter.hpp \
-	$(srcdir)/AnasaziMultiVec.hpp \
-	$(srcdir)/AnasaziMultiVecTraits.hpp \
-	$(srcdir)/AnasaziOperator.hpp \
-	$(srcdir)/AnasaziOperatorTraits.hpp \
-	$(srcdir)/AnasaziOutputManager.hpp \
-	$(srcdir)/AnasaziReturnType.hpp
-	$(srcdir)/AnasaziSortManager.hpp
+	$(srcdir)/BlockPCGSolver.h \
+	$(srcdir)/CheckingTools.h \
+	$(srcdir)/ModeLaplace1DQ1.h \
+	$(srcdir)/ModeLaplace1DQ2.h \
+	$(srcdir)/ModeLaplace2DQ1.h \
+	$(srcdir)/ModeLaplace2DQ2.h \
+	$(srcdir)/ModeLaplace3DQ1.h \
+	$(srcdir)/ModeLaplace3DQ2.h \
+	$(srcdir)/ModalProblem.h \
+	$(srcdir)/ModeLaplace.h \
+	$(srcdir)/SortingTools.h
 
 CORE = \
-	$(srcdir)/AnasaziVersion.cpp
+	$(srcdir)/BlockPCGSolver.cpp \
+	$(srcdir)/CheckingTools.cpp \
+	$(srcdir)/ModeLaplace1DQ1.cpp \
+	$(srcdir)/ModeLaplace1DQ2.cpp \
+	$(srcdir)/ModeLaplace2DQ1.cpp \
+	$(srcdir)/ModeLaplace2DQ2.cpp \
+	$(srcdir)/ModeLaplace3DQ1.cpp \
+	$(srcdir)/ModeLaplace3DQ2.cpp \
+	$(srcdir)/SortingTools.cpp
 
 UTIL_H = 
 
@@ -86,8 +91,8 @@ DIST_H =
 
 DIST = 
 
-COMP_H = \
-	$(srcdir)/AnasaziBlockKrylovSchur.hpp
+COMP_H =
+
 
 COMP = 
 
@@ -97,7 +102,10 @@ COMP =
 #np# - Add packages that this package is dependent on
 #np#   Remove epetra if this package does not need it
 #  
-#AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
+	-I$(top_srcdir)/src/ModalAnalysisSolvers
 
 #np# The following section can be duplicated for building multiple libraries -
 #np# make sure to list the correct categories with each library.
@@ -106,10 +114,10 @@ COMP =
 # New_Package library specifications
 # ------------------------------------------------------------------------
 #np# replace new_package with the name of the package being autotool'ed here
-ANASAZI_LIB = libanasazi.a
+MODELAPLACE_LIB = libModeLaplace.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-ANASAZI_H = \
+MODELAPLACE_H = \
 	$(CORE_H) \
 	$(UTIL_H) \
 	$(ENUM_H) \
@@ -121,7 +129,7 @@ ANASAZI_H = \
 	$(MPI_H) 
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_SOURCES = \
+libModeLaplace_a_SOURCES = \
 	$(CORE) \
 	$(UTIL) \
 	$(UNIPROC) \
@@ -131,7 +139,7 @@ libanasazi_a_SOURCES = \
 	$(MPI) 
 
 #np# replace new_package with the name of the package being autotool'ed here
-EXTRA_libanasazi_a_SOURCES = \
+EXTRA_libModeLaplace_a_SOURCES = \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H) 
 
@@ -148,11 +156,11 @@ EXTRA_libanasazi_a_SOURCES = \
 if USE_ALTERNATE_AR
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_AR = $(ALTERNATE_AR)
+libModeLaplace_a_AR = $(ALTERNATE_AR)
 else
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_AR = $(AR) cru
+libModeLaplace_a_AR = $(AR) cru
 
 endif
 
@@ -162,21 +170,21 @@ endif
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-libanasazi_a_LIBADD = $(XTRALDADD)
+libModeLaplace_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-lib_LIBRARIES = $(ANASAZI_LIB)
+noinst_LIBRARIES = $(MODELAPLACE_LIB)
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(includedir)
 # ------------------------------------------------------------------------
 
 #np# replace new_package with the name of the package being autotool'ed here
-include_HEADERS = $(ANASAZI_H) 
+noinst_HEADERS = $(MODELAPLACE_H) 
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -188,7 +196,7 @@ include_HEADERS = $(ANASAZI_H)
 # special.
 
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = Anasazi_config.h
+nodist_execinclude_HEADERS =
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

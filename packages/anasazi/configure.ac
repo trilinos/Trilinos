@@ -57,7 +57,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 
 # #np# - file name below
-AC_CONFIG_SRCDIR(/src/AnasaziBlockArnoldi.hpp)
+AC_CONFIG_SRCDIR(/src/AnasaziMultiVec.hpp)
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
@@ -276,20 +276,23 @@ TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not 
 TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, examples, [Build Anasazi examples], ANASAZI_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE(test, [Build test for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( anasazi, tests, [Build Anasazi tests], ANASAZI_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_anasazi_tests" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
-#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(triutils, [Build examples which use Triutils], ANASAZI_TRIUTILS, no)
+AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use belos], BELOS)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(belos, [Build examples which use Belos], ANASAZI_BELOS)
 AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build examples which use Ifpack], IFPACK)
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(aztecoo, [Build examples which use AztecOO], ANASAZI_AZTECOO)
+AM_CONDITIONAL(BUILD_AZTECOO, test "X$ac_cv_use_aztecoo" != "Xno")
+
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, [Build examples which use Ifpack], ANASAZI_IFPACK)
 AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
-
-#TAC_ARG_CHECK_DEFAULT_FEATURE(triutils, TRIUTILS)
-#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
-
 
 # ------------------------------------------------------------------------
 # Specify other directories 
@@ -311,8 +314,7 @@ AC_F77_WRAPPERS
 
 # If tests, examples and libcheck are disabled, we don't have to check
 # for these libraries.
-#if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_anasazi_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_tests" != "Xno" || test "X$ac_cv_use_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
@@ -398,7 +400,16 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		util/Makefile
+		util/ModeLaplace/Makefile
 		example/Makefile
+		example/BlockDavidson/Makefile
+		example/BlockKrylovSchur/Makefile
+		test/Makefile
+		test/ModalSolverUtils/Makefile
+		test/BlockDavidson/Makefile
+		test/BlockKrylovSchur/Makefile
+		test/LOBPCG/Makefile
 		])
 
 AC_OUTPUT()
@@ -408,3 +419,4 @@ AC_OUTPUT()
 echo "----------------------------------------"
 echo "Finished Running Anasazi Configure Script"
 echo "----------------------------------------"
+

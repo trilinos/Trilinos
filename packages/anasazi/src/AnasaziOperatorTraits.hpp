@@ -26,48 +26,41 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef ANASAZI_MATRIX_HPP
-#define ANASAZI_MATRIX_HPP
+#ifndef ANASAZI_OPERATOR_TRAITS_HPP
+#define ANASAZI_OPERATOR_TRAITS_HPP
 
-#include "AnasaziMultiVec.hpp"
+/*!     \file AnasaziOperatorTraits.hpp
+        \brief Virtual base class which defines the operator interface 
+	required by the iterative linear solver.
+*/
+
 #include "AnasaziReturnType.hpp"
 #include "AnasaziConfigDefs.hpp"
 
-/*!	\class Anasazi::Matrix
-
-	\brief Anasazi's templated pure virtual class for constructing the matrix/operator that is
-	used by the eigensolver.
-	
-	A concrete implementation of this class is necessary.  The user can create their own implementation
-	if those supplied are not suitable for their needs.
-
-	\author Rich Lehoucq, Heidi Thornquist
-*/
-
 namespace Anasazi {
 
-template <class TYPE>
-class Matrix {
-public:
-
-	//@{ \name Constructor/Destructor.
-	//! %Anasazi::Matrix constructor.
-	Matrix() { }
-
-	//! %Anasazi::Matrix destructor.
-	virtual ~Matrix() { };
-	//@}
-	
-	//@{ \name Matrix/Operator application method.
-
-	/*! \brief This routine takes the %Anasazi::MultiVec \c x and applies the matrix/operator
-	to it resulting in the %Anasazi::MultiVec \c y, which is returned.
-	*/
-	virtual ReturnType ApplyMatrix (const MultiVec<TYPE>& x, 
-						      MultiVec<TYPE>& y ) const = 0;
-	//@}
-};
-
+  template< class ScalarType, class MV, class OP >
+  struct UndefinedOperatorTraits
+  {
+    //! This function should not compile if there is an attempt to instantiate!
+    static inline ReturnType notDefined() { return OP::this_type_is_missing_a_specialization(); };
+  };
+  
+  template <class ScalarType, class MV, class OP>
+  class OperatorTraits 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const OP& Op, 
+			      const MV& x, 
+			      MV& y )
+    { return UndefinedOperatorTraits<ScalarType, MV, OP>::notDefined(); };
+    
+  };
+  
 } // end Anasazi namespace
-#endif
-// end of file AnasaziMatrix.hpp
+
+#endif // ANASAZI_OPERATOR_TRAITS_HPP
+
+// end of file AnasaziOperatorTraits.hpp

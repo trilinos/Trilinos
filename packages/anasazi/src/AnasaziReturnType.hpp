@@ -44,7 +44,7 @@ namespace Anasazi {
 	enum ReturnType		 {	Ok, 		//! Computation completed sucessfully
 					Undefined, 	//! This operation is not defined
 					Unconverged,    //! This operation returned unconverged
-					Failed		//! Any other numerical failure in thie computation 
+					Failed		//! Any other numerical failure in the computation 
 	};
 
 }

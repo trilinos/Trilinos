@@ -117,12 +117,18 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BLAS_LIBS = @BLAS_LIBS@
+BUILD_AZTECOO_FALSE = @BUILD_AZTECOO_FALSE@
+BUILD_AZTECOO_TRUE = @BUILD_AZTECOO_TRUE@
 BUILD_BELOS_FALSE = @BUILD_BELOS_FALSE@
 BUILD_BELOS_TRUE = @BUILD_BELOS_TRUE@
 BUILD_EXAMPLES_FALSE = @BUILD_EXAMPLES_FALSE@
 BUILD_EXAMPLES_TRUE = @BUILD_EXAMPLES_TRUE@
 BUILD_IFPACK_FALSE = @BUILD_IFPACK_FALSE@
 BUILD_IFPACK_TRUE = @BUILD_IFPACK_TRUE@
+BUILD_TESTS_FALSE = @BUILD_TESTS_FALSE@
+BUILD_TESTS_TRUE = @BUILD_TESTS_TRUE@
+BUILD_TRIUTILS_FALSE = @BUILD_TRIUTILS_FALSE@
+BUILD_TRIUTILS_TRUE = @BUILD_TRIUTILS_TRUE@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -232,14 +238,18 @@ target_vendor = @target_vendor@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/AnasaziBlockArnoldi.hpp \
+	$(srcdir)/AnasaziBasicEigenproblem.hpp \
+	$(srcdir)/AnasaziBasicSort.hpp \
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp \
 	$(srcdir)/AnasaziConfigDefs.hpp \
 	$(srcdir)/AnasaziEigenproblem.hpp \
-	$(srcdir)/AnasaziMatrix.hpp \
+	$(srcdir)/AnasaziEigensolver.hpp \
+	$(srcdir)/AnasaziEpetraAdapter.hpp \
 	$(srcdir)/AnasaziMultiVec.hpp \
+	$(srcdir)/AnasaziMultiVecTraits.hpp \
 	$(srcdir)/AnasaziOperator.hpp \
-	$(srcdir)/AnasaziPetraInterface.hpp \
-	$(srcdir)/AnasaziLOCAInterface.hpp \
+	$(srcdir)/AnasaziOperatorTraits.hpp \
+	$(srcdir)/AnasaziOutputManager.hpp \
 	$(srcdir)/AnasaziReturnType.hpp
 
 CORE = \
@@ -276,7 +286,7 @@ LANG_WRAPS =
 DIST_H = 
 DIST = 
 COMP_H = \
-	$(srcdir)/AnasaziBlockArnoldi.hpp
+	$(srcdir)/AnasaziBlockKrylovSchur.hpp
 
 COMP = 
 
@@ -707,6 +717,7 @@ uninstall-am: uninstall-includeHEADERS uninstall-info-am \
 	uninstall-am uninstall-includeHEADERS uninstall-info-am \
 	uninstall-libLIBRARIES uninstall-nodist_execincludeHEADERS
 
+	$(srcdir)/AnasaziSortManager.hpp
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

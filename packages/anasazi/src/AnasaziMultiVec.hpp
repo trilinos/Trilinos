@@ -29,7 +29,7 @@
 #ifndef ANASAZI_MULTI_VEC_HPP
 #define ANASAZI_MULTI_VEC_HPP
 
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziConfigDefs.hpp"
 
 /*! 	\class Anasazi::MultiVec
@@ -45,7 +45,7 @@
 
 namespace Anasazi {
 
-template <class TYPE>
+template <class ScalarType>
 class MultiVec {
 public:
 	//@{ \name Constructor/Destructor.
@@ -63,7 +63,7 @@ public:
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<TYPE> * Clone ( const int numvecs ) = 0;
+	virtual MultiVec<ScalarType> * Clone ( const int numvecs ) const = 0;
 
 	/*! \brief Creates a new %Anasazi::MultiVec and copies contents of \c *this into
 	    the new vector (deep copy).
@@ -71,16 +71,16 @@ public:
 	    \return Pointer to the new multivector	
 	*/
 	
-	virtual MultiVec<TYPE> * CloneCopy () = 0;
+	virtual MultiVec<ScalarType> * CloneCopy () const = 0;
 	
 	/*! \brief Creates a new %Anasazi::MultiVec and copies the selected contents of \c *this 
-	    into the new vector (deep copy).  The number (\c numvecs) of copied 
-	    vectors from \c *this are indicated by the indices in \c index.
+	    into the new vector (deep copy).  The copied 
+	    vectors from \c *this are indicated by the \c index.size() indices in \c index.
 
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<TYPE> * CloneCopy ( int index[], int numvecs ) = 0;
+	virtual MultiVec<ScalarType> * CloneCopy ( const std::vector<int>& index ) const = 0;
 	
 	/*! \brief Creates a new %Anasazi::MultiVec that shares the selected contents of \c *this.
 	    The index of the \c numvecs vectors copied from \c *this are indicated by the
@@ -89,7 +89,7 @@ public:
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<TYPE> * CloneView ( int index[], int numvecs ) = 0;
+	virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
 	//@}
 
 	//@{ \name Dimension information methods.	
@@ -106,19 +106,24 @@ public:
 	/*! \brief Update \c *this with \c alpha * \c A * \c B + \c beta * (\c *this).
 	*/
 
-	virtual void MvTimesMatAddMv ( TYPE alpha, MultiVec<TYPE>& A, 
-		Teuchos::SerialDenseMatrix<int,TYPE>& B, TYPE beta ) = 0;
+	virtual void MvTimesMatAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, 
+		const Teuchos::SerialDenseMatrix<int,ScalarType>& B, const ScalarType beta ) = 0;
 
 	/*! \brief Replace \c *this with \c alpha * \c A + \c beta * \c B.
 	*/
 
-	virtual void MvAddMv ( TYPE alpha, MultiVec<TYPE>& A, TYPE beta, MultiVec<TYPE>& B ) = 0;
+	virtual void MvAddMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, const ScalarType beta, const MultiVec<ScalarType>& B ) = 0;
 
 	/*! \brief Compute a dense matrix \c B through the matrix-matrix multiply 
 	   \c alpha * \c A^T * (\c *this).
 	*/
 
-	virtual void MvTransMv ( TYPE alpha, MultiVec<TYPE>& A, Teuchos::SerialDenseMatrix<int,TYPE>& B) = 0;
+	virtual void MvTransMv ( const ScalarType alpha, const MultiVec<ScalarType>& A, Teuchos::SerialDenseMatrix<int,ScalarType>& B) const = 0;
+
+	/*! \brief Compute a vector \c b where the components are the individual dot-products, i.e.\c b[i] = \c A[i]^T*\c this[i] where \c A[i] is the i-th column of A.
+	*/
+
+	virtual void MvDot ( const MultiVec<ScalarType>& A, std::vector<ScalarType>* b ) const = 0;
 
 	//@}
 	//@{ \name Norm method.
@@ -127,7 +132,7 @@ public:
 	   Upon return, \c normvec[i] holds the 2-norm of the \c i-th vector of \c *this
 	*/
 
-	virtual void MvNorm ( TYPE* normvec ) = 0;
+	virtual void MvNorm ( std::vector<ScalarType>* normvec ) const = 0;
 
 	//@}
 	//@{ \name Initialization methods.
@@ -136,7 +141,7 @@ public:
 	    indicated by the indices given in \c index.
 	*/
 
-	virtual void SetBlock ( MultiVec<TYPE>& A, int index[], int numvecs ) = 0;
+	virtual void SetBlock ( const MultiVec<ScalarType>& A, const std::vector<int>& index ) = 0;
 	
 	/*! \brief Replace the vectors in \c *this with random vectors.
 	*/
@@ -146,16 +151,84 @@ public:
 	/*! \brief Replace each element of the vectors in \c *this with \c alpha.
 	*/
 
-	virtual void MvInit ( TYPE alpha ) = 0;
+	virtual void MvInit ( const ScalarType alpha ) = 0;
 
 	//@}
 	//@{ \name Print method.
 	/*! \brief Print the \c *this multivector.
 	*/
-	virtual void MvPrint () = 0;
+	virtual void MvPrint () const = 0;
 	//@}
 };
 
-}
+
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Anasazi::MultiVecTraits for Anasazi::MultiVec.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+
+  template<class ScalarType>
+  class MultiVecTraits<ScalarType,MultiVec<ScalarType> >
+  {
+  public:
+    ///
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > Clone( const MultiVec<ScalarType>& mv, const int numvecs )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).Clone(numvecs) ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy() ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
+    ///
+    static Teuchos::RefCountPtr<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( mv.CloneView(index) ); }
+    ///
+    static Teuchos::RefCountPtr<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }
+    ///
+    static int GetVecLength( const MultiVec<ScalarType>& mv )
+    { return mv.GetVecLength(); }
+    ///
+    static int GetNumberVecs( const MultiVec<ScalarType>& mv )
+    { return mv.GetNumberVecs(); }
+    ///
+    static void MvTimesMatAddMv( ScalarType alpha, const MultiVec<ScalarType>& A, 
+				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+				 ScalarType beta, MultiVec<ScalarType>& mv )
+    { mv.MvTimesMatAddMv(alpha, A, B, beta); }
+    ///
+    static void MvAddMv( ScalarType alpha, const MultiVec<ScalarType>& A, ScalarType beta, const MultiVec<ScalarType>& B, MultiVec<ScalarType>& mv )
+    { mv.MvAddMv(alpha, A, beta, B); }
+    ///
+    static void MvTransMv( ScalarType alpha, const MultiVec<ScalarType>& A, const MultiVec<ScalarType>& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B )
+    { mv.MvTransMv(alpha, A, B); }
+    ///
+    static void MvDot( const MultiVec<ScalarType>& mv, const MultiVec<ScalarType>& A, std::vector<ScalarType>* b )
+    { mv.MvDot( A, b ); }
+    ///
+    static void MvNorm( const MultiVec<ScalarType>& mv, std::vector<ScalarType>* normvec )
+    { mv.MvNorm(normvec); }
+    ///
+    static void SetBlock( const MultiVec<ScalarType>& A, const std::vector<int>& index, MultiVec<ScalarType>& mv )
+    { mv.SetBlock(A, index); }
+    ///
+    static void MvRandom( MultiVec<ScalarType>& mv )
+    { mv.MvRandom(); }
+    ///
+    static void MvInit( MultiVec<ScalarType>& mv, ScalarType alpha = Teuchos::ScalarTraits<ScalarType>::zero() )
+    { mv.MvInit(alpha); }
+    ///
+    static void MvPrint( const MultiVec<ScalarType>& mv, ostream& os )
+    { mv.MvPrint(os); }
+    
+  };
+
+
+} // namespace Anasazi
+
 #endif
+
 // end of file AnasaziMultiVec.hpp

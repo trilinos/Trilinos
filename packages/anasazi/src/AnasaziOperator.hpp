@@ -29,9 +29,8 @@
 #ifndef ANASAZI_OPERATOR_HPP
 #define ANASAZI_OPERATOR_HPP
 
+#include "AnasaziOperatorTraits.hpp"
 #include "AnasaziMultiVec.hpp"
-#include "AnasaziReturnType.hpp"
-#include "AnasaziConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 
 /*!	\class Anasazi::Operator
@@ -46,46 +45,52 @@
 */
 
 namespace Anasazi {
-
-template <class TYPE>
-class Operator {
-public:
-	//@{ \name Constructor/Destructor.
-	//! Default constructor.
-	Operator() {};
-
-	//! Destructor.
-	virtual ~Operator(void) {};
-	//@}
-
-	//@{ \name Matrix/Operator application method.
-
-	/*! \brief This routine takes the %Anasazi::MultiVec \c x and
-	applies the operator to it resulting in the %Anasazi::MultiVec \c y,
-	which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
-	\c x will be passed directly to \c y.  Thus the operator is the identity if this
-	method is defined by the user.
-	*/
-	virtual ReturnType Apply (const MultiVec<TYPE>& x, MultiVec<TYPE>& y ) const 
-	{
-            if (x.GetNumberVecs() == y.GetNumberVecs()) {	
-                //
-                // First cast away the const on x.
-                //
-                MultiVec<TYPE>& temp_x = const_cast<MultiVec<TYPE>& >(x);
-                //
-                // Now create the indexing for copying x into y.
-                //
-		TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-		TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-		y.MvAddMv( one, temp_x, zero, temp_x );
-		return Ok;
-	    }
-	    else { return Failed; }
-        };
-	//@}
-};
-
+  
+  template <class ScalarType>
+  class Operator {
+  public:
+    //@{ \name Constructor/Destructor.
+    //! Default constructor.
+    Operator() {};
+    
+    //! Destructor.
+    virtual ~Operator(void) {};
+    //@}
+    
+    //@{ \name Matrix/Operator application method.
+    
+    /*! \brief This routine takes the %Anasazi::MultiVec \c x and
+      applies the operator to it resulting in the %Anasazi::MultiVec \c y,
+      which is returned.  If this routine is not overridden, then the %Anasazi::MultiVec
+      \c x will be passed directly to \c y.  Thus the operator is the identity if this
+      method is defined by the user.
+    */
+    virtual ReturnType Apply ( const MultiVec<ScalarType>& x, MultiVec<ScalarType>& y ) const = 0;
+    
+  };
+  
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of the Anasazi::OperatorTraits for Anasazi::Operator 
+  //                                               and Anasazi::MultiVec.
+  //
+  ////////////////////////////////////////////////////////////////////  
+  
+  template <class ScalarType> 
+  class OperatorTraits < ScalarType, MultiVec<ScalarType>, Operator<ScalarType> > 
+  {
+  public:
+    
+    ///
+    static ReturnType Apply ( const Operator<ScalarType>& Op, 
+			      const MultiVec<ScalarType>& x, 
+			      MultiVec<ScalarType>& y )
+    { return Op.Apply( x, y ); }
+    
+  };
+  
 } // end of Anasazi namespace
+
 #endif
+
 // end of file AnasaziOperator.hpp
