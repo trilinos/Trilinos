@@ -18,6 +18,9 @@
 #ifndef MB_MODIF
 #define MB_MODIF
 #endif
+#ifndef MB_MODIF_QR
+#define MB_MODIF_QR
+#endif
 #ifndef RST_MODIF
 #define RST_MODIF
 #endif
