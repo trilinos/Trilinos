@@ -84,7 +84,8 @@ BlockCrsMatrix::BlockCrsMatrix( const BlockCrsMatrix & Matrix )
   : Epetra_CrsMatrix( dynamic_cast<const Epetra_CrsMatrix &>( Matrix ) ),
     RowIndices_( Matrix.RowIndices_ ),
     RowStencil_( Matrix.RowStencil_ ),
-    BaseGraph_( Matrix.BaseGraph_ )
+    BaseGraph_( Matrix.BaseGraph_ ),
+    Offset_( Matrix.Offset_ )
 {
   AllocateBlocks_();
 }
@@ -94,7 +95,6 @@ BlockCrsMatrix::~BlockCrsMatrix()
 {
   DeleteBlocks_();
 
-  delete Graph_;
 }
 
 //==============================================================================
