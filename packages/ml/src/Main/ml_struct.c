@@ -598,7 +598,7 @@ int ML_Init_Amatrix(ML *ml, int level, int ilen, int olen, void *data)
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Amatrix_Matvec(ML *ml, int level,
+int ML_Set_Amatrix_Matvec(ML *ml, int level,
                       int (*matvec)(ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
@@ -622,7 +622,7 @@ int ML_Set_Amatrix_Diag(ML *ml, int nl, int size, double diagonal[])
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Amatrix_Getrow(ML *ml, int nl,
+int ML_Set_Amatrix_Getrow(ML *ml, int nl,
         int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
 	int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -701,7 +701,7 @@ int ML_Init_Restrictor(ML *ml, int level, int level2, int ilen, int olen,
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
+int ML_Set_Restrictor_Matvec( ML *ml , int from_level,
 	int (*func) (ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
@@ -712,7 +712,7 @@ int MLnew_Set_Restrictor_Matvec( ML *ml , int from_level,
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Restrictor_Getrow(ML *ml, int nl,
+int ML_Set_Restrictor_Getrow(ML *ml, int nl,
         int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -778,7 +778,7 @@ int ML_Init_Prolongator(ML *ml, int level, int level2, int ilen, int olen,
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
+int ML_Set_Prolongator_Matvec( ML *ml , int to_level,
 	int (*func) (ML_Operator *, int, double *, int, double *))
 {
    ML_Operator *matrix;
@@ -789,7 +789,7 @@ int MLnew_Set_Prolongator_Matvec( ML *ml , int to_level,
 
 /* ------------------------------------------------------------------------- */
 
-int MLnew_Set_Prolongator_Getrow(ML *ml, int nl,
+int ML_Set_Prolongator_Getrow(ML *ml, int nl,
         int (*getrow)(ML_Operator *, int , int* , int , int*, double* , int*),
         int (*comm  )(double *vec, void *data), int comm_vec_leng )
 {
@@ -4873,7 +4873,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       temp_ptr->values = mat_val;
       ML_Create(&subml, 1);
       ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
-      MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
+      ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_CommInfoOP_Set_neighbors(&(subml->Amat[0].getrow->pre_comm), 0,
                                NULL, ML_OVERWRITE, NULL, 0);
       ML_Operator_Set_Getrow(&(subml->Amat[0]), 
@@ -5125,7 +5125,7 @@ int nblocks = 1, *block_list, old_upper = 0, count, newptr, me, nnzs;
       ML_Operator_Set_Getrow(&(subml->Amat[0]), 
                              subml->Amat[0].outvec_leng, CSR_getrow);
 
-      MLnew_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
+      ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
       ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
       ML_Destroy(&subml);
       ML_free(temp_ptr);

@@ -265,10 +265,10 @@ int EpetraMatrix2MLMatrix(ML *ml_handle, int level,
   if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
 
   ML_Init_Amatrix(ml_handle, level,isize, osize, (void *) A);
-  MLnew_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
+  ML_Set_Amatrix_Getrow(ml_handle, level, Epetra_ML_getrow,
             Epetra_ML_comm_wrapper, isize+N_ghost);
 
-  MLnew_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
+  ML_Set_Amatrix_Matvec(ml_handle,  level, Epetra_ML_matvec);
 
   return 1;
 }

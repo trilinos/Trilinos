@@ -1216,10 +1216,10 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    context->Amat = Amat;
    context->near_bdry = NULL;
    ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
-   MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
+   ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
    newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
    newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
-   MLnew_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
+   ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
    diagonal = (double *) ML_allocate(Nfine * sizeof(double));
    ML_AGG_Extract_Diag(Amat, diagonal);
    ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
@@ -1837,10 +1837,10 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
       context->Amat = Amat;
       context->near_bdry = NULL;
       ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
-      MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
+      ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
       newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
       newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
-      MLnew_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
+      ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
       diagonal = (double *) ML_allocate(Nfine * sizeof(double));
       ML_AGG_Extract_Diag(Amat, diagonal);
       ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);

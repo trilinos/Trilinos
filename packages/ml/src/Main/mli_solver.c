@@ -396,10 +396,10 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     /* -------------------------------------------------------- */ 
 
     ML_Init_Amatrix(ml,nlevels-1,localEqns,localEqns,(void *)context);
-    MLnew_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
+    ML_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
     length = localEqns;
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
-    MLnew_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
+    ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
     /* -------------------------------------------------------- */ 
     /* set up the mg method                                     */
@@ -1548,10 +1548,10 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     /* -------------------------------------------------------- */ 
 
     ML_Init_Amatrix(ml,nlevels-1,localEqns,localEqns,(void *)context);
-    MLnew_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
+    ML_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
     length = localEqns;
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
-    MLnew_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
+    ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
     /* -------------------------------------------------------- */ 
     /* create an aggregate context                              */

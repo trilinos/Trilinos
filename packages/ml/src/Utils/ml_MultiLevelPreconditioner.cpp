@@ -1014,10 +1014,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
     
     ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
-    MLnew_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+    ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
-    MLnew_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+    ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
 
   } else {
 
@@ -1043,10 +1043,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     
     ML_Init_Amatrix(ml_edges_,LevelID_[0],NumMyRows,
 		    NumMyRows, (void *) EdgeMatrix_);
-    MLnew_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
+    ML_Set_Amatrix_Getrow(ml_edges_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
 
-    MLnew_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
+    ML_Set_Amatrix_Matvec(ml_edges_, LevelID_[0], Epetra_ML_matvec);
 
     // create hierarchy for nodes
     
@@ -1059,10 +1059,10 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     
     ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
 		    (void *) NodeMatrix_);
-    MLnew_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
+    ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], Epetra_ML_getrow,
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
-    MLnew_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
+    ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
     
   }
   
@@ -1652,12 +1652,12 @@ int MultiLevelPreconditioner::CreateLabel()
  
   int i = ml_ptr->ML_finest_level;
      
-  if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) {
+  if (ml_ptr->pre_smoother[i].smoother->func_ptr != NULL) {
     label = ml_ptr->pre_smoother[i].label;
     if( strncmp(label,"PreS_",4) == 0 ) sprintf(finest, "%s", "~");
     else                                sprintf(finest, "%s", label);
   }
-  if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) {
+  if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
     label = ml_ptr->pre_smoother[i].label;
     if( strncmp(label,"PostS_", 5) == 0 ) sprintf(finest, "%s/~", finest);
     else                                  sprintf(finest, "%s/%s", finest, label);
@@ -1669,12 +1669,12 @@ int MultiLevelPreconditioner::CreateLabel()
     }
     
     else {
-      if (ml_ptr->pre_smoother[i].ML_id != ML_EMPTY) {
+      if (ml_ptr->pre_smoother[i].smoother->func_ptr != NULL) {
 	label = ml_ptr->pre_smoother[i].label;
 	if( strncmp(label,"PreS_",4) == 0 ) sprintf(coarsest, "~");
 	else                                sprintf(coarsest, "%s", label);
       }
-      if (ml_ptr->post_smoother[i].ML_id != ML_EMPTY) {
+      if (ml_ptr->post_smoother[i].smoother->func_ptr != NULL) {
 	label = ml_ptr->post_smoother[i].label;
 	if( strncmp(label,"PostS_", 5) == 0 ) sprintf(coarsest, "%s/~", coarsest); 
 	else                                  sprintf(coarsest, "%s/%s",coarsest, label);
@@ -2915,10 +2915,10 @@ else if( PrecType == "in ML I trust" ) {
       if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
       
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) RowMatrix_);
-      MLnew_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], Epetra_ML_getrow,
 			    Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
       
-      MLnew_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], Epetra_ML_matvec);
       
       NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
       SetSmoothers();

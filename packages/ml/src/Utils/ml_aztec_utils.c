@@ -106,7 +106,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
      vbr_mat->cpntr       = Amat->cpntr;
      vbr_mat->rpntr       = Amat->rpntr;
      context->getrowstuff = (void *) vbr_mat;
-     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_vbrgetrow_wrapper,az_comm_wrapper,
+     ML_Set_Amatrix_Getrow(ml_handle,level,az_vbrgetrow_wrapper,az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
 
      AZ_ML_set_vbrdiagonal(ml_handle,  level, Amat);
@@ -118,7 +118,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
      msr_mat->values      = Amat->val;
      msr_mat->rowptr      = NULL;
      context->getrowstuff = (void *) msr_mat;
-     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,
+     ML_Set_Amatrix_Getrow(ml_handle,level,az_msrgetrow_wrapper,
 			   az_comm_wrapper,
                            isize+(Amat->data_org)[AZ_N_external]);
      ML_Set_Amatrix_Diag(  ml_handle, level, osize,   Amat->val);
@@ -127,7 +127,7 @@ int AZ_ML_Set_Amat(ML *ml_handle, int level, int isize, int osize,
    }
 	 else if (Amat->matrix_type ==AZ_USER_MATRIX) {
 		 context->getrowstuff = (void *)Amat->matvec_data;
-     MLnew_Set_Amatrix_Getrow(ml_handle,level,az_usergetrow_wrapper,az_comm_wrapper,
+     ML_Set_Amatrix_Getrow(ml_handle,level,az_usergetrow_wrapper,az_comm_wrapper,
 													 isize+(Amat->data_org)[AZ_N_external]);
      AZ_ML_set_userdiagonal(ml_handle,  level, Amat);
 	 }
