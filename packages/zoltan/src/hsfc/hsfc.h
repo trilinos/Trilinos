@@ -12,10 +12,14 @@
  *    $Revision$
  ****************************************************************************/
 
-
-
 #ifndef ZOLTAN_HSFC_H
 #define ZOLTAN_HSFC_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
 
 #include <stdio.h>
 #include <math.h>
@@ -35,8 +39,8 @@
 
 
 
-static const double  HSFC_EPSILON     = 1.0e-7L ;    /* Andy's value */
-static const double  REFINEMENT_LIMIT = 10.0L * DBL_EPSILON ;   /* bin can't be divided */
+static const double  HSFC_EPSILON     = 1.6e-7 ;    /* Andy's value * 1.6 */
+static const double  REFINEMENT_LIMIT = 10.0 * DBL_EPSILON ;   /* bin can't be divided */
 static const double  DEFAULT_WEIGHT   = 1.0 ;        /* when dots have no weight */
 static const int N = 8 ; /* number of "bins per processor", small positive integer */
 static const int MAX_LOOPS = 16 ; /* refinement now hitting limit of double precision */
@@ -77,10 +81,14 @@ typedef struct Dots
    double fsfc ;         /* computed normalized SFC coordinate     */
    double x[3] ;         /* dots coordinates in problem domain     */
    float weight ;        /* scalar computed from weight vector     */
-   int   part ;          /* partition owning dot                   */
+   int   proc ;          /* processor owning dots                  */
    } Dots ;              /* represents objects being load-balanced */
 
 
 extern int  Zoltan_HSFC_compare (const void *key, const void *arg) ;
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif
 
 #endif
