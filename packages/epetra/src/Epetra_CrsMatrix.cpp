@@ -1506,13 +1506,22 @@ int Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector& x) const {
   //
 
   if (!Filled()) EPETRA_CHK_ERR(-1); // Matrix must be filled.
-  if (!Graph().RowMap().SameAs(x.Map())) EPETRA_CHK_ERR(-2); // x must have the same distribution as the range of A
   int ierr = 0;
   int i, j;
+  bool needExport = false;
   int * NumEntriesPerRow = NumEntriesPerRow_;
   double ** Values = Values_;
   double * xp = (double*)x.Values();
-
+  Epetra_Vector x_tmp(RowMap());
+  if (Graph().RangeMap().SameAs(x.Map())) {
+    if (Exporter() != 0) {
+      needExport = true; //Having this information later avoids a .SameAs
+      xp = (double*)x_tmp.Values();
+    }
+  }
+  else if (!Graph().RowMap().SameAs(x.Map())) {
+    //EPETRA_CHK_ERR(-2); // The map of x must be the RowMap or RangeMap of A.
+  }
   for (i=0; i < NumMyRows_; i++) {
     int      NumEntries = *NumEntriesPerRow++;
     double * RowValues  = *Values++;
@@ -1525,6 +1534,10 @@ int Epetra_CrsMatrix::InvRowMaxs(Epetra_Vector& x) const {
     }
     else
       xp[i] = 1.0/scale;
+  }
+  if(needExport) {
+    x.PutScalar(0.0);
+    EPETRA_CHK_ERR(x.Export(x_tmp, *Exporter(), Insert)); // Fill x with values from temp vector
   }
   UpdateFlops(NumGlobalNonzeros());
   EPETRA_CHK_ERR(ierr);
@@ -1575,7 +1588,7 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
 
   if(needExport) {
     x.PutScalar(0.0);
-    x.Export(*x_tmp, *Importer(), Add); // Fill x with Values from import vector
+    EPETRA_CHK_ERR(x.Export(*x_tmp, *Importer(), Add)); // Fill x with Values from import vector
     delete x_tmp;
     xp = (double*) x.Values();
   }
