@@ -23,27 +23,27 @@ echo `uname -a` >>& $file
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix FECrsMatrix FEVector ImportExport Map MapColoring MultiVector Object VbrMatrix Vector)
 	cd $f
 	if( "$5" == "True" ) then
-	    gmake -f classicMakefile $1 $2 $3 $4 clobber; gmake -f classicMakefile $1 $2 $3 $4
+	    make -f classicMakefile $1 $2 $3 $4 clobber; make -f classicMakefile $1 $2 $3 $4
 	else
-	    gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=MPI clobber; gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=MPI
+	    make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI clobber; make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI
 	endif
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		if( "$5" == "True" ) then
-		    mpigo_nv $g 8 >>& ../$file
+		    mpirun -np 8 $g >>& ../$file
 		    if( "$status" != "0" ) then
 			set AnError = True
 			echo "############" $g "##############" >>& ../$file2
-			mpigo $g 8 -v >>& ../$file2
+			mpirun -np 8 $g -v >>& ../$file2
 		    endif
 		else
-		    mpigo $g 8 -v >>& ../$file
+		    mpirun -np 8 $g -v >>& ../$file
 		endif
 	end
 	if( "$5" == "True" ) then
-	    gmake -f classicMakefile $1 $2 $3 $4 clobber
+	    make -f classicMakefile $1 $2 $3 $4 clobber
 	else
-	    gmake -f classicMakefile TRILINOS_ID=_DEBUG TRILINOS_COMM=MPI clobber
+	    make -f classicMakefile TRILINOS_ID= TRILINOS_COMM=MPI clobber
 	endif
 	cd ..
 end

@@ -462,9 +462,9 @@ int AztecOO::ConstructPreconditioner(double & condest) {
     for (int i = 0 ; i < N_local_ ; i++ ) condvec[i] = 1.0;
     Prec_->prec_function(condvec,options_,proc_config_,params_,Pmat_,Prec_);
     condest_ = 0.0;
-    for (int i=0; i<N_local_; i++)
+    {for (int i=0; i<N_local_; i++)
       if (fabs(condvec[i]) > condest_)
-	condest_ = fabs(condvec[i]);
+	condest_ = fabs(condvec[i]);}
     delete [] condvec;
     options_[AZ_pre_calc] = AZ_reuse;
     double tmp_condest = condest_;

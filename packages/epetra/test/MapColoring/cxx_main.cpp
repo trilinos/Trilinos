@@ -72,11 +72,11 @@ int main(int argc, char *argv[]) {
   int maxcolor = 24;
   int * colorCount = new int[maxcolor];
   int ** colorLIDs = new int*[maxcolor];
-  for (int i=0; i<maxcolor; i++) colorCount[i] = 0;
-  for (int i=0; i<maxcolor; i++) colorLIDs[i] = 0;
+  for (i=0; i<maxcolor; i++) colorCount[i] = 0;
+  for (i=0; i<maxcolor; i++) colorLIDs[i] = 0;
 
   int defaultColor = C0.DefaultColor();
-  for (int i=0; i<Map.NumMyElements(); i++) {
+  for (i=0; i<Map.NumMyElements(); i++) {
     assert(C0[i]==defaultColor);
     assert(C0(Map.GID(i))==defaultColor);
     if (i%2==0) C0[i] = i%6+5+i%14; // cycle through 5...23 on even elements
@@ -91,13 +91,13 @@ int main(int argc, char *argv[]) {
     cout <<  C0 << endl;
 
   int numColors = 0;
-  for (int i=0; i<maxcolor; i++) 
+  for (i=0; i<maxcolor; i++) 
     if (colorCount[i]>0) {
       numColors++;
       colorLIDs[i] = new int[colorCount[i]];
     }
-  for (int i=0; i<maxcolor; i++) colorCount[i] = 0;
-  for (int i=0; i<Map.NumMyElements(); i++) colorLIDs[C0[i]][colorCount[C0[i]]++] = i;
+  for (i=0; i<maxcolor; i++) colorCount[i] = 0;
+  for (i=0; i<Map.NumMyElements(); i++) colorLIDs[C0[i]][colorCount[C0[i]]++] = i;
 
   
 
@@ -108,19 +108,19 @@ int main(int argc, char *argv[]) {
   if (veryVerbose1)
     cout <<  C1 << endl;
   assert(C1.DefaultColor()==newDefaultColor);
-  for (int i=0; i<Map.NumMyElements(); i++) assert(C1[i]==C0[i]);
+  for (i=0; i<Map.NumMyElements(); i++) assert(C1[i]==C0[i]);
 
   Epetra_MapColoring C2(C1);
   if (veryVerbose)
     cout << "Same Map Coloring using copy constructor" << endl;
   if (veryVerbose1)
     cout <<  C1 << endl;
-  for (int i=0; i<Map.NumMyElements(); i++) assert(C2[i]==C0[i]);
+  for (i=0; i<Map.NumMyElements(); i++) assert(C2[i]==C0[i]);
   assert(C2.DefaultColor()==newDefaultColor);
 
   assert(numColors==C2.NumColors());
 
-  for (int i=0; i<maxcolor; i++) {
+  for (i=0; i<maxcolor; i++) {
     int curNumElementsWithColor = C2.NumElementsWithColor(i);
     assert(colorCount[i]==curNumElementsWithColor);
     int * curColorLIDList = C2.ColorLIDList(i);
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
   assert(Map1->NumMyElements()==colorCount[curColor]);
   assert(Map2->NumMyElements()==colorCount[curColor]);
 
-  for (int i=0; i<Map1->NumMyElements(); i++) {
+  for (i=0; i<Map1->NumMyElements(); i++) {
     assert(Map1->GID(i)==Map.GID(colorLIDs[curColor][i]));
     assert(Map2->GID(i)==Map.GID(colorLIDs[curColor][i]));
     assert(Map2->ElementSize(i)==Map.ElementSize(colorLIDs[curColor][i]));
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
   Epetra_MapColoring ColoringOnPE0(MapOnPE0);
   ColoringOnPE0.Import(C2, importer1, Insert);
 
-  for (int i=0; i<MapOnPE0.NumMyElements(); i++)
+  for (i=0; i<MapOnPE0.NumMyElements(); i++)
     assert(ColoringOnPE0[i]==elementColorValues0[i]);
 
   if (veryVerbose)
@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
     cout <<  ColoringOnPE0 << endl;
   Epetra_MapColoring C3(Map);
   C3.Export(ColoringOnPE0, importer1, Insert);
-  for (int i=0; i<Map.NumMyElements(); i++) assert(C3[i]==C2[i]);
+  for (i=0; i<Map.NumMyElements(); i++) assert(C3[i]==C2[i]);
   if (veryVerbose)
     cout << "Same Map Coloring after Import/Export exercise" << endl;
   if (veryVerbose1)
@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 	
 
   delete [] elementColors;
-  for (int i=0; i<maxcolor; i++) if (colorLIDs[i]!=0) delete [] colorLIDs[i];
+  for (i=0; i<maxcolor; i++) if (colorLIDs[i]!=0) delete [] colorLIDs[i];
   delete [] colorLIDs;
   delete [] colorCount;
 

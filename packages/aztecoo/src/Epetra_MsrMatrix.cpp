@@ -72,7 +72,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
   int * ColGIDs = new int[NumMyCols_];
   for (int i=0; i<NumMyRows_; i++) dbleColGIDs[i] = (double) MyGlobalElements[i];
   AZ_exchange_bdry(dbleColGIDs, Amat->data_org, proc_config);
-  for (int i=0; i<NumMyCols_; i++) ColGIDs[i] = (int) dbleColGIDs[i];
+  {for (int i=0; i<NumMyCols_; i++) ColGIDs[i] = (int) dbleColGIDs[i];}
 
   ImportMap_ = (Epetra_BlockMap *) new Epetra_Map(-1, NumMyCols_, ColGIDs, 0, *Comm_);
 
@@ -410,7 +410,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
     Comm().Barrier();
   }
 
-  for (int iproc=0; iproc < NumProc; iproc++) {
+  {for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       int i, j;
 
@@ -450,7 +450,7 @@ void Epetra_MsrMatrix::Print(ostream& os) const {
     BlockRowMap().Comm().Barrier();
     BlockRowMap().Comm().Barrier();
     BlockRowMap().Comm().Barrier();
-  }
+  }}
 
   return;
 }

@@ -88,7 +88,7 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
 
       /* Translate integer arrays to zero base */
       for (int i = 0; i <= numGlobalEquations; i++) pntr[i]--;
-      for (int i = 0; i <= n_entries; i++) bindx[i]--;
+      {for (int i = 0; i <= n_entries; i++) bindx[i]--;}
 
       /* If a rhs is specified in the file, read one, 
 	 generating the associate storage */
@@ -141,7 +141,7 @@ void Trilinos_Util_ReadHb2Epetra(char *data_file,
       
       
       /* Set RHS to a random vector, initial guess to zero */
-      for (int i=0;i<numGlobalEquations;i++) hbx[i] = 0.0;
+      {for (int i=0;i<numGlobalEquations;i++) hbx[i] = 0.0;}
       
       
       /* Allocate temporary space */

@@ -51,10 +51,10 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   int* ptIndices = new int[numGlobalIDs];
   double* ptCoefs = new double[numGlobalIDs];
 
-  for(int i=0; i<numGlobalIDs; ++i) {
+  {for(int i=0; i<numGlobalIDs; ++i) {
     ptIndices[i] = minGID+i;
     ptCoefs[i] = 1.0;
-  }
+  }}
 
   if (verbose) {
     cout << "calling A.SumIntoGlobalValues with " << numGlobalIDs << " values"<<endl;

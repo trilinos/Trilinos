@@ -94,7 +94,7 @@ int Aztec2Petra(int * proc_config,
     if (AA==0) EPETRA_CHK_ERR(-3); // Ran out of memory
 
     /* Add block rows one-at-a-time */
-    for (int i=0; i<NumMyElements; i++) {
+    {for (int i=0; i<NumMyElements; i++) {
       int BlockRow = MyGlobalElements[i];
       int NumBlockEntries = bpntr[i+1] - bpntr[i];
       int *BlockIndices = global_bindx + bpntr[i];
@@ -122,7 +122,7 @@ int Aztec2Petra(int * proc_config,
 	     << ") = " << ierr << endl; 
 	EPETRA_CHK_ERR(ierr);
       }
-    }  
+    }}  
     int ierr=AA->TransformToLocal();    
     if (ierr!=0) {
       cerr <<"Error in Epetra_VbrMatrix TransformToLocal" << ierr << endl;

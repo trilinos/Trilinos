@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
   X2.Size(BigMatrix.N());
   B2.Size(BigMatrix.M());
   int length = BigMatrix.N();
-  for (int kk=0; kk<length; kk++) X2[kk] = ((double ) kk)/ ((double) length); // Define entries of X2
+  {for (int kk=0; kk<length; kk++) X2[kk] = ((double ) kk)/ ((double) length);} // Define entries of X2
 
   RHS_counter.ResetFlops();
   B2.SetFlopCounter(RHS_counter);

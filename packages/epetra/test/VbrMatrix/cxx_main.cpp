@@ -203,7 +203,7 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(A.LowerTriangular(),ierr);
 
 
-  for (int kr=0; kr<SizeRange; kr++) delete [] BlockEntries[kr];
+  {for (int kr=0; kr<SizeRange; kr++) delete [] BlockEntries[kr];}
   delete [] BlockEntries;
   delete [] ColDims;
   delete [] Indices;
@@ -545,7 +545,7 @@ int check(Epetra_VbrMatrix& A,
   A.ExtractMyBlockRowView(NumMyBlockRows-1, RowDim, NumBlockEntries, BlockIndices, ColDims,
 			  LDAs, Values);
   int NumMyEntries1 = 0;
-  for (int i=0; i < NumBlockEntries; i++) NumMyEntries1 += ColDims[i];
+  {for (int i=0; i < NumBlockEntries; i++) NumMyEntries1 += ColDims[i];}
   int NumMyEntries;
   A.NumMyRowEntries(NumMyRows-1, NumMyEntries);
   if (verbose) cout << "\n\nNumber of nonzero values in last row = " << NumMyEntries << endl<< endl;

@@ -57,12 +57,12 @@ int main(int argc, char *argv[])
   */
 
 
- /* 
+ 
   char tmp;
   if (rank==0) cout << "Press any key to continue..."<< endl;
   if (rank==0) cin >> tmp;
   Comm.Barrier();
- */ 
+
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
   if (verbose) cout << Comm << endl;

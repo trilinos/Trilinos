@@ -73,7 +73,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 
   double* ptCoefs = new double[3];
 
-  for(int i=0; i<numGlobalRows; ++i) {
+  {for(int i=0; i<numGlobalRows; ++i) {
     if (i>0 && i<numGlobalRows-1) {
       ptIndices[0] = minGID+i-1;
       ptIndices[1] = minGID+i;
@@ -118,7 +118,7 @@ int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
                                              &ptCoefs,
                                              Epetra_FECrsMatrix::ROW_MAJOR), ierr );
     }
-  }
+  }}
 
   if (verbose) {
     cout << "calling A.GlobalAssemble()" << endl;

@@ -59,7 +59,7 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
   
   /* Add block rows one-at-a-time */
   
-  for (int i=0; i<NumMyElements; i++) {
+  {for (int i=0; i<NumMyElements; i++) {
     int BlockRow = MyGlobalElements[i];
     int NumBlockEntries = bpntr[i+1] - bpntr[i];
     int *BlockIndices = bindx + bpntr[i];
@@ -87,7 +87,7 @@ void Trilinos_Util_ReadHb2EpetraVbr(char *data_file, char * partitioning,
 	   << ") = " << ierr << endl; 
       abort();
     }
-  }  
+  }}
   int ierr=A->TransformToLocal();    
   if (ierr!=0) cerr << "Error in Epetra_VbrMatrix TransformToLocal ierr = " << ierr << endl;
   

@@ -66,7 +66,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
   double * list_of_vals = new double[max_nnz];
   int *list_of_inds = new int   [max_nnz];
 
-  for (int i=0; i<numGlobalEquations; i++)
+  {for (int i=0; i<numGlobalEquations; i++)
     {
       int cur_nnz;
       fscanf(in_file, "%d",&cur_nnz);
@@ -88,10 +88,10 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 	}
       else
 	for (int j=0; j<cur_nnz; j++) fscanf(in_file, "%lf %d",vp,lp); // otherwise read and discard
-    }
+    }}
 
   double xt, bt, xxt;
-  for (int i=0; i<numGlobalEquations; i++) 
+  {for (int i=0; i<numGlobalEquations; i++) 
     {
       if (map->MyGID(i)) // See if entry should be added
 	{
@@ -105,7 +105,7 @@ void Trilinos_Util_ReadHpc2Epetra(char *data_file,
 	}
       else
 	fscanf(in_file, "%lf %lf %lf",vp, vp, vp); // or thrown away
-    }
+    }}
 
   fclose(in_file);
 

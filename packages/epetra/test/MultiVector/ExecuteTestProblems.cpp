@@ -533,7 +533,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   VecValues[0] = 2.0; VecValues[1] = 4.0;
   locerr = x->ReplaceGlobalValues(NumEntries, VecValues, VecGIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testGID = VecGIDs[i];
     if (Map.MyGID(testGID)) {
       LIDOfGID = Map.LID(testGID);
@@ -556,7 +556,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   VecValues[0] = 4.0; VecValues[1] = 8.0;
   locerr = x->ReplaceGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testGID = VecGIDs[i];
     if (Map.MyGID(testGID)) {
       LIDOfGID = Map.LID(testGID);
@@ -578,7 +578,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   locerr = x->ReplaceGlobalValues(NumEntries, VecValues, VecGIDs);
   locerr = x->SumIntoGlobalValues(NumEntries, VecValues, VecGIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testGID = VecGIDs[i];
     if (Map.MyGID(testGID)) {
       LIDOfGID = Map.LID(testGID);
@@ -599,7 +599,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   locerr = x->ReplaceGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
   locerr = x->SumIntoGlobalValues(NumEntries, GIDSize-1, VecValues, VecGIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testGID = VecGIDs[i];
     if (Map.MyGID(testGID)) {
       LIDOfGID = Map.LID(testGID);
@@ -623,7 +623,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   VecValues[0] = 2.0; VecValues[1] = 4.0;
   locerr = x->ReplaceMyValues(NumEntries, VecValues, VecLIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testLID = VecLIDs[i];
     LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
@@ -636,7 +636,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   VecValues[0] = 4.0; VecValues[1] = 8.0;
   locerr = x->ReplaceMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testLID = VecLIDs[i];
     LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
@@ -650,7 +650,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   locerr = x->ReplaceMyValues(NumEntries, VecValues, VecLIDs);
   locerr = x->SumIntoMyValues(NumEntries, VecValues, VecLIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testLID = VecLIDs[i];
     LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
@@ -664,7 +664,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   locerr = x->ReplaceMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
   locerr = x->SumIntoMyValues(NumEntries, LIDSize-1, VecValues, VecLIDs);
 
-  for (int i=0; i<NumEntries; i++) {
+  for (i=0; i<NumEntries; i++) {
     testLID = VecLIDs[i];
     LIDSize = EPETRA_MIN(LIDSize,Map.ElementSize(testLID)); // Need this value below
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
