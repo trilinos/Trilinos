@@ -135,8 +135,8 @@ public:
 //#define SHOW_RUN_TIME_ERROR_2
 //#define SHOW_RUN_TIME_ERROR_3
 //#define SHOW_RUN_TIME_ERROR_4
-//#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
-//#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
+#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS
+#define SHOW_RUN_TIME_ERROR_VIRTUAL_BASE_CLASS_PRINT
 //#define SHOW_MEMORY_LEAK_1
 
 //
@@ -169,14 +169,10 @@ int main( int argc, char* argv[] ) {
 
 		// Create some smart pointers
 
-		RefCountPtr<A>       a_ptr1  = rcp_implicit_cast<A>(Teuchos::rcp(new C));
+		RefCountPtr<A>       a_ptr1  = rcp(new C);
 		assert( a_ptr1.get() != NULL );
 		assert( a_ptr1.count()  == 1 );
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-		RefCountPtr<D>       d_ptr1  = Teuchos::rcp(new E);
-#else
-		RefCountPtr<D>       d_ptr1  = rcp_implicit_cast<D>(Teuchos::rcp(new E));
-#endif
+		RefCountPtr<D>       d_ptr1  = rcp(new E);
 		assert( d_ptr1.get() != NULL);
 		assert( d_ptr1.count()  == 1 );
 
@@ -184,11 +180,11 @@ int main( int argc, char* argv[] ) {
 
 			// Create some more smart points (no new memory!)
 
-			const RefCountPtr<const A> ca_ptr1 = Teuchos::rcp_const_cast<const A>(a_ptr1); 
+			const RefCountPtr<const A> ca_ptr1 = rcp_const_cast<const A>(a_ptr1); 
 			assert( a_ptr1.count()  == 2 );
 			assert( ca_ptr1.get() != NULL );
 			assert( ca_ptr1.count() == 2 );
-			const RefCountPtr<const D> cd_ptr1 = Teuchos::rcp_const_cast<const D>(d_ptr1);
+			const RefCountPtr<const D> cd_ptr1 = rcp_const_cast<const D>(d_ptr1);
 			assert( d_ptr1.count()  == 2 );
 			assert( cd_ptr1.get() != NULL );
 			assert( cd_ptr1.count() == 2 );
@@ -201,7 +197,7 @@ int main( int argc, char* argv[] ) {
 
 			// Test assignment functions
 
-			a_ptr1 = Teuchos::rcp_const_cast<A>(ca_ptr1); // Should be okay, assignment to self
+			a_ptr1 = rcp_const_cast<A>(ca_ptr1); // Should be okay, assignment to self
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
 			ca_ptr1 = ca_ptr1; // Should not compile since ca_ptr1 is declared constant
@@ -229,32 +225,28 @@ int main( int argc, char* argv[] ) {
 			// Test dynamic and static conversions
 
 			// Cast down the inheritance hiearchy (const A -> const B1)
-			const RefCountPtr<const B1> cb1_ptr1 = Teuchos::rcp_dynamic_cast<const B1>(ca_ptr1);
+			const RefCountPtr<const B1> cb1_ptr1 = rcp_dynamic_cast<const B1>(ca_ptr1);
 			assert( cb1_ptr1.get() != NULL );
 			assert( cb1_ptr1.count() == 3 );
 			assert( ca_ptr1.count()  == 3 );
 			assert( a_ptr1.count()   == 3 );
 
 			// Cast up the inheritance hiearchy (const B1 -> const A)
-			assert( Teuchos::rcp_implicit_cast<const A>(cb1_ptr1)->A_f()  == A_f_return );
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-			assert( RefCountPtr<const A>(cb1_ptr1)->A_f()           == A_f_return );
-#endif
+			assert( rcp_implicit_cast<const A>(cb1_ptr1)->A_f()  == A_f_return );
+			assert( RefCountPtr<const A>(cb1_ptr1)->A_f()        == A_f_return );
 			// Implicit cast from const to non-const (A -> const A)
-			assert( Teuchos::rcp_implicit_cast<const A>(a_ptr1)->A_f()    == A_f_return );
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-			assert( RefCountPtr<const A>(a_ptr1)->A_f()             == A_f_return );
-#endif
+			assert( rcp_implicit_cast<const A>(a_ptr1)->A_f()    == A_f_return );
+			assert( RefCountPtr<const A>(a_ptr1)->A_f()          == A_f_return );
 			// Cast away constantness (const B1 -> B1)
-			assert( Teuchos::rcp_const_cast<B1>(cb1_ptr1)->B1_g()         == B1_g_return );
+			assert( rcp_const_cast<B1>(cb1_ptr1)->B1_g()         == B1_g_return );
 			// Cast across the inheritance hiearchy (const B1 -> const B2)
-			assert( Teuchos::rcp_dynamic_cast<const B2>(cb1_ptr1)->B2_f() == B2_f_return );
+			assert( rcp_dynamic_cast<const B2>(cb1_ptr1)->B2_f() == B2_f_return );
 			// Cast down the inheritance hiearchy (const B1 -> const C)
-			assert( Teuchos::rcp_dynamic_cast<const C>(cb1_ptr1)->C_f()   == C_f_return );
+			assert( rcp_dynamic_cast<const C>(cb1_ptr1)->C_f()   == C_f_return );
 
 			// Cast away constantness (const C -> C)
 			const RefCountPtr<C>
-				c_ptr1 = Teuchos::rcp_const_cast<C>(Teuchos::rcp_dynamic_cast<const C>(ca_ptr1));
+				c_ptr1 = rcp_const_cast<C>(rcp_dynamic_cast<const C>(ca_ptr1));
 			assert( c_ptr1.get() != NULL );
 			assert( c_ptr1.count()   == 4 );
 			assert( ca_ptr1.count()  == 4 );
@@ -262,21 +254,21 @@ int main( int argc, char* argv[] ) {
 
 			// Cast down the inheritance hiearchy using static_cast<...> (const D -> const E)
 			const RefCountPtr<const E>
-				ce_ptr1 = Teuchos::rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
+				ce_ptr1 = rcp_static_cast<const E>(cd_ptr1); // This is not checked at runtime!
 			assert( ce_ptr1.get() != NULL);
 			assert( ce_ptr1.count()  == 3 );
 			assert( cd_ptr1.count()  == 3 );
 			assert( d_ptr1.count()   == 3 );
 
 			// Cast up the inheritance hiearchy (const E -> const D)
-			assert( Teuchos::rcp_implicit_cast<const D>(ce_ptr1)->D_f()   == D_f_return ); 
+			assert( rcp_implicit_cast<const D>(ce_ptr1)->D_f()   == D_f_return ); 
 			// Cast away constantness (const E -> E)
-			assert( Teuchos::rcp_const_cast<E>(ce_ptr1)->E_g()            == E_g_return );
+			assert( rcp_const_cast<E>(ce_ptr1)->E_g()            == E_g_return );
 			assert( ce_ptr1->D_f()                                    == D_f_return );
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
 			// Try to cast down inheritance hiearchy using dynamic_cast<...> (const D -> const E)
-			Teuchos::rcp_dynamic_cast<const E>( cd_ptr1 )->E_f();  // This should not compile since D and E are not polymophic
+			rcp_dynamic_cast<const E>( cd_ptr1 )->E_f();  // This should not compile since D and E are not polymophic
 #endif
 
 			try {
@@ -285,7 +277,7 @@ int main( int argc, char* argv[] ) {
 				// Note that RefCountPtr<...>::optertor->() should throw an exception but even
 				// so no memory leak occurs.  If you don't believe me then step through with a
 				// debugger and see for yourself.
-				assert( Teuchos::rcp_dynamic_cast<B1>( Teuchos::rcp(new B2) )->B1_g() == B1_g_return );
+				assert( rcp_dynamic_cast<B1>( rcp(new B2) )->B1_g() == B1_g_return );
 				return -1; // Should not be executed!
 			}
 			catch( const std::logic_error )
@@ -311,16 +303,12 @@ int main( int argc, char* argv[] ) {
 
 		// Assign some other dynamically created objects.
 	
-		a_ptr1 = Teuchos::rcp(new A);  // In each case the current dynamically allocated object is deleted ...
-		a_ptr1 = rcp_implicit_cast<A>(Teuchos::rcp(new B1)); // before the new reference is set.
-		a_ptr1 = rcp_implicit_cast<A>(Teuchos::rcp(new B2)); // ""
-		a_ptr1 = rcp_implicit_cast<A>(Teuchos::rcp(new C));  // ""
-		d_ptr1 = Teuchos::rcp(new D);                        // ""
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-		d_ptr1 = Teuchos::rcp(new E);                        // ""
-#else
-		d_ptr1 = rcp_implicit_cast<D>(Teuchos::rcp(new E));
-#endif
+		a_ptr1 = rcp(new A);  // In each case the current dynamically allocated object is deleted ...
+		a_ptr1 = rcp(new B1); // before the new reference is set.
+		a_ptr1 = rcp(new B2); // ""
+		a_ptr1 = rcp(new C);  // ""
+		d_ptr1 = rcp(new D);                        // ""
+		d_ptr1 = rcp(new E);                        // ""
 
 		// Assign pointers to some automatic objects that do not need deleted.
 		// We can do this but we need to remove ownership of the pointer
@@ -329,22 +317,14 @@ int main( int argc, char* argv[] ) {
 		// pointers and will cause a runtime error.
 
 		C c; // Automatic object what will be deleted by compiler at end of block
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-		a_ptr1 = Teuchos::rcp(&c);
-#else
-		a_ptr1 = rcp_implicit_cast<A>(Teuchos::rcp(&c));
-#endif
+		a_ptr1 = rcp(&c);
 #ifndef SHOW_RUN_TIME_ERROR_3
 		// Release ownership so that a_ptr1 will not try to delete &c when a_ptr1 goes out of scope
 		a_ptr1.release();
 #endif	
 
 		E e; // Automatic object what will be deleted by compiler at end of block
-#ifdef REF_COUNT_PTR_TEMPLATE_CLASS_TEMPLATE_FUNCTIONS
-		d_ptr1 = Teuchos::rcp(&e);
-#else
-		d_ptr1 = rcp_implicit_cast<D>(Teuchos::rcp(&e));
-#endif
+		d_ptr1 = rcp(&e);
 #ifndef SHOW_RUN_TIME_ERROR_4
 		// Release ownership so that d_ptr1 will not try to delete &e when a_ptr1 goes out of scope
 		d_ptr1.release();
