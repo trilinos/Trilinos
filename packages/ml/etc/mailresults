@@ -10,7 +10,7 @@
   echo "Benchmarking results for `date`"
   echo "-----------------------------------------------------"
   echo
-  cat /home/jhu/BENCHRESULTS
+  cat /tmp/mlbench_results/summary
   echo "."
   sleep 2
   echo "quit" ) | telnet iterative.ca.sandia.gov 25
