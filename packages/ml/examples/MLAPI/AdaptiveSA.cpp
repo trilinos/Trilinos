@@ -35,18 +35,55 @@
 using namespace Teuchos;
 using namespace MLAPI;
 
-MultiVector GetTentativeNullSpace(Operator FineMatrix, 
-                                  Teuchos::ParameterList& List,
-                                  int NullSpaceDimension)
+void GetSmoothedP(Operator A, ParameterList& List, MultiVector& NS,
+                  Operator& P, MultiVector& NewNS)
 {
-  MultiVector NS(FineMatrix.GetDomainSpace(), NullSpaceDimension);
+  double LambdaMax;
+  Operator IminusA;
+  string EigenAnalysis = List.get("eigen-analysis: type", "Anorm");
+  double Damping       = List.get("aggregation: damping", 1.333);
+
+  Operator Ptent;
+
+  GetPtent(A, List, NS, Ptent, NewNS);
+
+  if (EigenAnalysis == "Anorm")
+    LambdaMax = MaxEigAnorm(A,true);
+  else if (EigenAnalysis == "cg")
+    LambdaMax = MaxEigCG(A,true);
+  else if (EigenAnalysis == "power-method")
+    LambdaMax = MaxEigPowerMethod(A,true);
+  else
+    ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
+
+  if (GetPrintLevel()) {
+    cout << "omega                   = " << Damping << endl;
+    cout << "lambda max              = " << LambdaMax << endl;
+    cout << "damping factor          = " << Damping / LambdaMax << endl;
+  }
+
+  if (Damping != 0.0) {
+    IminusA = GetJacobiIterationOperator(A, Damping / LambdaMax);
+    P = IminusA * Ptent;
+  }
+  else
+    P = Ptent;
+
+  return;
+}
+
+MultiVector GetTentativeNullSpace(Operator FineMatrix, 
+                                  Teuchos::ParameterList& List)
+                                  
+{
+  MultiVector NS(FineMatrix.GetDomainSpace());
   MultiVector NewNS;
   NS.Random();
+
+  NS = (NS + 1.0) / 2.0;
  
   int    MaxLevels     = List.get("max levels", 10);
-  double Damping       = List.get("aggregation: damping", 1.333);
-  string EigenAnalysis = List.get("eigen-analysis: type", "Anorm");
-  int    MaxCoarseSize = List.get("coarse: max size", 32);
+  int    MaxCoarseSize = List.get("coarse: max size", 1);
   string SmootherType  = List.get("smoother: type", "symmetric Gauss-Seidel");
   string CoarseType    = List.get("coarse: type", "Amesos-KLU");
   int    NumPDEs       = List.get("PDE equations", 1);
@@ -63,11 +100,20 @@ MultiVector GetTentativeNullSpace(Operator FineMatrix,
   S[0].Reshape(FineMatrix, SmootherType, List);
   S[0].Apply(F, NS);
 
-  A[0] = FineMatrix;
+  double MyEnergyBefore = sqrt((FineMatrix * NS) * NS);
+  if (MyEnergyBefore == 0.0)
+    return NewNS;
+  //compare last two iterates on fine level
+  int SweepsBefore = List.get("smoother: sweeps",1);
+  List.set("smoother: sweeps",1);
+  S[0].Reshape(FineMatrix, SmootherType, List);
+  S[0].Apply(F, NS);
+  double MyEnergyAfter = sqrt((FineMatrix * NS) * NS);
+  if (MyEnergyAfter/MyEnergyBefore < 0.1)
+    return NewNS;
+  List.set("smoother: sweeps",SweepsBefore);
 
-  double LambdaMax;
-  Operator Ptent;
-  Operator IminusA;
+  A[0] = FineMatrix;
 
   int level;
   for (level = 0 ; level < MaxLevels - 2 ; ++level) {
@@ -84,61 +130,49 @@ MultiVector GetTentativeNullSpace(Operator FineMatrix,
       cout << "null space dimension    = " << NS.GetNumVectors() << endl;
     }
 
-    // FIXME: risky, NS is in input & output...
-    GetPtent(A[level], List, NS, Ptent, NewNS);
+    GetSmoothedP(A[level], List, NS, P[level], NewNS);
     NS = NewNS;
-
-    if (EigenAnalysis == "Anorm")
-      LambdaMax = MaxEigAnorm(A[level],true);
-    else if (EigenAnalysis == "cg")
-      LambdaMax = MaxEigCG(A[level],true);
-    else if (EigenAnalysis == "power-method")
-      LambdaMax = MaxEigPowerMethod(A[level],true);
-    else
-      ML_THROW("incorrect parameter (" + EigenAnalysis + ")", -1);
-
-    if (GetPrintLevel()) {
-      cout << "omega                   = " << Damping << endl;
-      cout << "lambda max              = " << LambdaMax << endl;
-      cout << "damping factor          = " << Damping / LambdaMax << endl;
-      cout << "smoother type           = " << SmootherType << endl;
-    }
-
-    if (Damping != 0.0) {
-      IminusA = GetJacobiIterationOperator(A[level],Damping / LambdaMax);
-      P[level] = IminusA * Ptent;
-    }
-    else
-      P[level] = Ptent;
 
     R[level] = GetTranspose(P[level]);
     A[level + 1] = GetRAP(R[level],A[level],P[level]);
     Operator C = A[level + 1];
     S[level + 1].Reshape(C,SmootherType,List);
 
-    MultiVector F(C.GetDomainSpace());
-    F = 0.0;
-    double MyEnergyBefore = (C * NS) * NS;
-    S[level + 1].Apply(F, NS);
-    double MyEnergyAfter = (C * NS) * NS;
-    cout << "Energy before smoothing = " << MyEnergyBefore << endl;
-    cout << "Energy after smoothing  = " << MyEnergyAfter << endl;
-
-    // break if coarse matrix is below specified tolerance
+    // break if coarse matrix is below specified size
     if (A[level + 1].GetDomainSpace().GetNumGlobalElements() <= MaxCoarseSize) {
       ++level;
+      cout << "test " << level << " Max levels = " << MaxLevels << endl;
       break;
     }
-  }
 
-  MaxLevels = level;
+    MultiVector F(C.GetDomainSpace());
+    F = 0.0;
+    MyEnergyBefore = sqrt((C * NS) * NS);
+    S[level + 1].Apply(F, NS);
+    MyEnergyAfter = sqrt((C * NS) * NS);
+    cout << "Energy before smoothing = " << MyEnergyBefore << endl;
+    cout << "Energy after smoothing  = " << MyEnergyAfter << endl;
+    if (pow(MyEnergyAfter/MyEnergyBefore,1.0/SweepsBefore) < 0.1) {
+      ++level;
+      break; 
+    }
+  }
 
   if (GetPrintLevel())
     ML_print_line("-", 80);
 
-  // now run smoother on all levels but last
-  for (int level = MaxLevels - 1 ; level > 0 ; --level)
-    NS = P[level] * NS;
+  // interpolate candidate back to fine level
+  MaxLevels = level;
+  for (int level = MaxLevels ; level > 0 ; --level) {
+    NS = P[level - 1] * NS;
+  }
+
+  F.Reshape(FineMatrix.GetDomainSpace());
+  F = 0.0;
+  S[0].Apply(F, NS);
+
+  //MATLABStream matlab("output.m");
+  //matlab << NS;
 
   return(NS);
 }
@@ -159,48 +193,46 @@ int main(int argc, char *argv[])
 
   try {
 
-    SetPrintLevel(10);
+    int NX = 200;
 
-    int MaxLevels = 3;
-    int NumGlobalElements = (int)pow(2.0, (double)MaxLevels);
+    // Operator NonScaledA = GetShiftedLaplacian1D(NX, 0.99999);
+    // Operator NonScaledA = GetShiftedLaplacian2D(NX, NX, 0.99999);
+    Operator NonScaledA = ReadMatrix(argv[1]);
 
-    double Pi = atan(1.0) * 4;
-    double LambdaMin = 2.0 * (sin(1.0 / (NumGlobalElements + 1) * Pi / 2)) * 2 * .95;
+    // need to get the fine space, it will be used later
+    Space FineSpace = NonScaledA.GetDomainSpace();
 
-    // define the space for fine level vectors and operators.
-    Space FineSpace(NumGlobalElements);
+#if 1
+    MultiVector Scale(FineSpace);
+    Scale.Random();
+    Scale = Scale + 1.0001;
 
-    DistributedMatrix MatA(FineSpace, FineSpace);
+    Operator S = GetDiagonal(Scale);
+    Operator A = GetRAP(S, NonScaledA, S);
+#else
+    Operator A = NonScaledA;
+#endif
 
-    // assembel the matrix on processor 0 only
-    if (GetMyPID() == 0) {
-      for (int i = 0 ; i < NumGlobalElements ; ++i) {
-        MatA.SetElement(i, i, 2.0); //  - LambdaMin;
-        if (i)
-          MatA.SetElement(i, i - 1, - 1.0);
-        if (i != NumGlobalElements - 1)
-          MatA.SetElement(i, i + 1, - 1.0);
-      }
-    }
-    MatA.FillComplete();
+#if 0
+    MultiVector EI, ER, EV;
+    Eig(A, ER, EI, EV);
 
-    // wrap MatA as an Operator
-    Operator A(FineSpace, FineSpace, &MatA, false);
+    cout << ER << endl;
+#endif
 
     // information about the current null space
-    int NumPDEEquations = 1;
-    int NullSpaceDimension = 1;
-    MultiVector NS(FineSpace, NullSpaceDimension);
+    MultiVector NS(FineSpace);
     NS = 1.0; // constant null space
     
     Teuchos::ParameterList List;
-    List.set("PDE equations", NumPDEEquations);
+    List.set("PDE equations", 1);
     List.set("aggregation: null space", NS);
-    List.set("max levels", MaxLevels);
+    List.set("max levels", 10); 
     List.set("smoother: type", "symmetric Gauss-Seidel");
-    List.set("smoother: sweeps", 1);
-    List.set("smoother: damping factor", 0.67);
+    List.set("smoother: sweeps", 10);
+    List.set("smoother: damping factor", 1.0);
     List.set("coarse: type", "Amesos-KLU");
+    List.get("coarse: max size", 32);
  
     // ================================================== //
     // this is `phase1' ==> computation of a tentative    //
@@ -209,26 +241,23 @@ int main(int argc, char *argv[])
     // constant).                                         //
     // ================================================== //
     
+#if 1
     MultiVector TNS;
-    TNS = GetTentativeNullSpace(A, List, 1);
+    TNS = GetTentativeNullSpace(A, List);
+    List.set("aggregation: null space", TNS);
+#endif
   
-  
-    // FIXME: to add `phase2'
-
-    // FIXME: store the computed null space in ADB
-
     // create the multilevel preconditioner
     MultiLevelSA Prec(A, List);
-
-
 
     // test the solver
     MultiVector LHS(FineSpace);
     MultiVector RHS(FineSpace);
 
-    LHS = 0.0;
-    RHS.Random();
+    LHS.Random();
+    RHS = 0.0;
 
+    List.set("krylov: type", "fixed point");
     Krylov(A, LHS, RHS, Prec, List);
     
     Finalize(); 
