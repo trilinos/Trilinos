@@ -219,7 +219,7 @@ int main(int argc, char *argv[])
   // Create each part of the Brusselator problem class.  
   Equation_A ProblemA(Comm, NumGlobalNodes);
 //  Equation_B ProblemB(Comm, NumGlobalNodes);
-  Equation_B ProblemB(Comm, 1.5*(NumGlobalNodes-1)+1);
+  Equation_B ProblemB(Comm, 5*(NumGlobalNodes-1)+1);
 #ifdef DEBUG
 //  ProblemA.getMesh().Print(cout);
 //  ProblemB.getMesh().Print(cout);
@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     // Write solution, for special case of differing nodes in ProblemB
     (void) sprintf(file_name, "Boutput.%03d_%05d",MyPID,timeStep);
     ifp = fopen(file_name, "w");
-    for (int i=0; i<(1.5*(NumGlobalNodes-1)+1); i++)
+    for (int i=0; i<(5*(NumGlobalNodes-1)+1); i++)
       fprintf(ifp, "%d  %E  %E \n", 
                       ProblemB.getSolution().Map().MinMyGID()+i,
                       ProblemB.getMesh()[i], ProblemB.getSolution()[i]);

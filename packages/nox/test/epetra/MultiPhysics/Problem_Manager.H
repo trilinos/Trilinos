@@ -50,8 +50,7 @@ class Problem_Manager : GenericEpetraProblem {
 
 public:
 
-
-  // Constructor
+  enum VectorType { SOLUTION, GROUP_F };
 
   // Constructor
   Problem_Manager(Epetra_Comm& Comm, int NumGlobalElements = 0);
@@ -79,9 +78,31 @@ public:
   // regitrations and trigger the problem setup
   void registerComplete();
 
-  // Have each problem receive auxillary data from each problem on which it
-  // depends
+  // Have each problem receive auxillary data from every other  problem 
+  // on which it depends
   bool syncProblems();
+
+  // Set all groups with the current solution contained in each problem
+  bool setAllGroupX();
+
+  // Compute residual (F) in solution groups for all registered problems
+  bool computeAllF();
+
+  // Compute Jacobian in solution groups for all registered problems
+  bool computeAllJacobian();
+
+  // Copy final solution from NOX solvers into each problem's solution vector
+  void updateAllWithFinalSolution();
+
+  // Copy a composite problem vector to each problem's vector
+  void copyCompositeToProblems(const Epetra_Vector& compositeVec, VectorType);
+
+  // Copy vectors from each problem into a composite problem vector
+  void copyProblemsToComposite(Epetra_Vector& compositeVec, VectorType);
+
+  // Copy problem Jacobians as block diagonal contributions to 
+  // composite Jacobian
+  void copyProblemJacobiansToComposite();
 
   // Solve problem using fixed-point iteration
   bool solve();
@@ -98,6 +119,14 @@ public:
 
 private:
 
+  // Copy part of a composite problem vector to a problem's vector
+  void copyCompositeToVector(const Epetra_Vector& compositeVec, int id,
+                             Epetra_Vector& problemVec);
+
+  // Copy a vector from a problem into part of a composite problem vector
+  void copyVectorToComposite(Epetra_Vector& compositeVec, int id,
+                             const Epetra_Vector& problemVec);
+
   // Creates a composite graph from existing graphs of registered problems
   void generateGraph();
 
@@ -105,23 +134,28 @@ private:
 
   int problemCount;                         // Number of registered Problems
 
+  Epetra_Map* compositeMap;	// Composite map for all registered problems
+  Epetra_Vector* compositeSoln;	// Composite map for all registered problems
+
   map<int, GenericEpetraProblem*> Problems; // Problem container
-  vector<NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
+  map<int, NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
   					    // Linear Systems container
-  vector<NOX::EpetraNew::Group*> Groups;    // Groups container
-  vector<Problem_Interface*> Interfaces;    // Interfaces container
-  vector<NOX::Solver::Manager*> Solvers;    // Solvers container
+  map<int, NOX::EpetraNew::Group*> Groups;    // Groups container
+  map<int, Problem_Interface*> Interfaces;    // Interfaces container
+  map<int, NOX::Solver::Manager*> Solvers;    // Solvers container
+  map<int, Epetra_IntVector*> ProblemToCompositeIndices;
+    // Essentially a mapping from a problems indices to the composite indices
 
   NOX::Parameter::List* nlParams;           // NLSolver parameter list
   NOX::StatusTest::Combo* statusTest;       // Convergence criterion (ia)
 
 #ifdef HAVE_NOX_EPETRAEXT
   // Additional containers to allow each problem to use FD Coloring
-  vector<EpetraExt::CrsGraph_MapColoring*> TmpMapColorings;
-  vector<Epetra_MapColoring*> ColorMaps;
-  vector<EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
-  vector<vector<Epetra_IntVector>*> ColumnsSets;
-  vector<Epetra_Operator*> MatrixOperators;
+  map<int, EpetraExt::CrsGraph_MapColoring*> TmpMapColorings;
+  map<int, Epetra_MapColoring*> ColorMaps;
+  map<int, EpetraExt::CrsGraph_MapColoringIndex*> ColorMapIndexSets;
+  map<int, vector<Epetra_IntVector>*> ColumnsSets;
+  map<int, Epetra_Operator*> MatrixOperators;
 #endif
 
 

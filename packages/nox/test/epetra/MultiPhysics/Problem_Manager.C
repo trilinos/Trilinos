@@ -37,6 +37,7 @@
 #endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
@@ -64,9 +65,16 @@ Problem_Manager::Problem_Manager(Epetra_Comm& comm,
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
   problemCount(0),
+  compositeMap(0),
+  compositeSoln(0),
   nlParams(0),
   statusTest(0)
 {
+  // Reset composite number of dofs (overwrites base constructor assignment)
+  NumMyNodes = 0;
+
+  // Do all setup in registerComplete after all registrations have been
+  // performed
 }
 
 Problem_Manager::~Problem_Manager()
@@ -79,30 +87,35 @@ Problem_Manager::~Problem_Manager()
   map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
   map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
-  vector<NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
-  vector<Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
-  vector<NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
+  map<int, NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
+  map<int, Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
+  map<int, NOX::Solver::Manager*>::iterator SolversIter = Solvers.begin();
 
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
-  vector<EpetraExt::CrsGraph_MapColoring*>::iterator TmpMapColoringsIter = TmpMapColorings.begin();
-  vector<Epetra_MapColoring*>::iterator ColorMapsIter = ColorMaps.begin();
-  vector<EpetraExt::CrsGraph_MapColoringIndex*>::iterator ColorMapIndexSetsIter = ColorMapIndexSets.begin();
-  vector<vector<Epetra_IntVector>*>::iterator ColumnsSetsIter = ColumnsSets.begin();
-  vector<Epetra_Operator*>::iterator MatrixOperatorsIter = MatrixOperators.begin();
+  map<int, EpetraExt::CrsGraph_MapColoring*>::iterator 
+	  TmpMapColoringsIter = TmpMapColorings.begin();
+  map<int, Epetra_MapColoring*>::iterator 
+	  ColorMapsIter = ColorMaps.begin();
+  map<int, EpetraExt::CrsGraph_MapColoringIndex*>::iterator 
+	  ColorMapIndexSetsIter = ColorMapIndexSets.begin();
+  map<int, vector<Epetra_IntVector>*>::iterator 
+	  ColumnsSetsIter = ColumnsSets.begin();
+  map<int, Epetra_Operator*>::iterator 
+	  MatrixOperatorsIter = MatrixOperators.begin();
 #endif
 #endif
 
   while( iter != last)
   {
-    delete *SolversIter++;
-    delete *GroupsIter++;
+    delete (SolversIter++)->second;
+    delete (GroupsIter++)->second;
 #ifdef HAVE_NOX_EPETRAEXT
 #ifdef USE_FD
-    delete *MatrixOperatorsIter++;
-    delete *TmpMapColoringsIter++;
-    delete *ColorMapsIter++;
-    delete *ColorMapIndexSetsIter++;
+    delete (MatrixOperatorsIter++)->second;
+    delete (TmpMapColoringsIter++)->second;
+    delete (ColorMapsIter++)->second;
+    delete (ColorMapIndexSetsIter++)->second;
     //delete *ColumnsSetsIter++;
 #endif
 #endif
@@ -115,6 +128,10 @@ void Problem_Manager::addProblem(GenericEpetraProblem& problem)
   Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
   problem.setId(problemCount);
   problem.setManager(this);
+
+  // Keep a running total of dofs for use in constructing composite objects
+  NumMyNodes += problem.NumMyNodes;
+
 }
 
 GenericEpetraProblem& Problem_Manager::getProblem(int id_)
@@ -135,7 +152,8 @@ void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
 {
   // Ensure that both problems already exist
   if( !problemA.getId() || !problemB.getId() ) {
-    cout << "ERROR: No problems registered with Problem_Manager !!"
+    cout << "ERROR: Invalid dependency since at least one problem is "
+         << "not registered with Problem_Manager !!"
          << endl;
     throw "Problem_Manager ERROR";
   }
@@ -177,52 +195,82 @@ void Problem_Manager::registerComplete()
   map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
   // Make sure everything is starting clean
-  assert(Groups.empty() && Interfaces.empty() && Solvers.empty());
+  assert(Groups.empty() && Interfaces.empty() && Solvers.empty()
+         && ProblemToCompositeIndices.empty());
 
   int icount = 0; // Problem counter
+  int runningProblemNodeCount = 0;
+  int runningMaxGlobalId = 0; // Accruing max index used for establishing
+                  // each problem's mapping into the composite problem
+  //
+  // Create an index array for use in constructing a composite Epetra_Map
+  int* compositeGlobalNodes = new int[NumMyNodes];
 
-  // Do first pass over problems to allocate needed data
+  // Do first pass over problems to allocate needed data.
+  // This is needed prior to calling computeF below.
   while( iter != last)
   {
-    // Get a convenient reference to the problem at hand
+    // Get a convenient reference to the current problem
     GenericEpetraProblem& problem = *(*iter).second;
+    int probId = problem.getId();
+
     // Create auxillary vectors for this problem
     problem.createAuxillaryVectors();
+
+    // Create index mapping for this problem into the composite problem
+    ProblemToCompositeIndices.insert( pair<int, Epetra_IntVector*>
+      (probId, new Epetra_IntVector(*problem.StandardMap)));
+    Epetra_IntVector &indices = *ProblemToCompositeIndices.find(probId)->second;
+
+    for (int i=0; i<problem.NumMyNodes; i++) {
+      int compositeId = runningMaxGlobalId + problem.StandardMap->GID(i);
+      compositeGlobalNodes[i + runningProblemNodeCount] = compositeId;
+      indices[i] = compositeId;
+    }
+
+    runningProblemNodeCount += problem.NumMyNodes;
+    runningMaxGlobalId += problem.StandardMap->MaxAllGID() + 1;
 
     iter++;
   }
 
+  // Do second pass to setup each problem
   iter = Problems.begin();
 
-  // Do second pass to setup each problem
   while( iter != last)
   {
-    // Get a convenient reference to the problem at hand
+    // Get a convenient reference to the current problem
     GenericEpetraProblem& problem = *(*iter).second;
+    int probId = problem.getId();
 
-    Interfaces.push_back(new Problem_Interface(problem));
+    Interfaces.insert( pair<int, Problem_Interface*>
+		       (probId, new Problem_Interface(problem)));
     NOX::EpetraNew::Interface::Required& reqInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Required&>(*Interfaces.back());
+      dynamic_cast<NOX::EpetraNew::Interface::Required&>
+         (*Interfaces.find(probId)->second);
 
     NOX::Epetra::Vector nox_soln( problem.getSolution() );
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*Interfaces.back());
-    LinearSystems.push_back( new NOX::EpetraNew::LinearSystemAztecOO(
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>
+         (*Interfaces.find(probId)->second);
+    LinearSystems.insert( pair<int, NOX::EpetraNew::LinearSystemAztecOO*>
+     ( probId, new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
       problem.getJacobian(),
-      problem.getSolution()));
+      problem.getSolution())) );
 
-    Groups.push_back( new NOX::EpetraNew::Group(
+    Groups.insert( pair<int, NOX::EpetraNew::Group*>
+     ( probId, new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.back()) );
+      *LinearSystems.find(probId)->second)) );
 
     // OR use this to fill matrices using Finite-Differences with Coloring
 #else
@@ -231,34 +279,39 @@ void Problem_Manager::registerComplete()
     Epetra_Time fillTime(*Comm);
 
     bool verbose = false;
-    TmpMapColorings.push_back(new EpetraExt::CrsGraph_MapColoring(verbose));
-    ColorMaps.push_back(&((*TmpMapColorings.back())(problem.getGraph())));
-    ColorMapIndexSets.push_back(new 
-      EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.back()));
-    ColumnsSets.push_back(&(*ColorMapIndexSets.back())(problem.getGraph()));
+    TmpMapColorings.insert( pair<int, EpetraExt::CrsGraph_MapColoring*>
+      (probId, new EpetraExt::CrsGraph_MapColoring(verbose)));
+    ColorMaps.insert( pair<int, Epetra_MapColoring*>
+      (probId, &((*TmpMapColorings.find(probId)->second)(problem.getGraph()))) );
+    ColorMapIndexSets.insert( pair<int, EpetraExt::CrsGraph_MapColoringIndex*>
+      (probId, new EpetraExt::CrsGraph_MapColoringIndex(*ColorMaps.find(probId)->second)) );
+    ColumnsSets.insert( pair<int, vector<Epetra_IntVector>* >
+      (probId, &(*ColorMapIndexSets.find(probId)->second)(problem.getGraph())) );
 
     if (MyPID == 0)
       printf("\n\tTime to color Jacobian # %d --> %e sec. \n\n",
                   icount++,fillTime.ElapsedTime());
-    MatrixOperators.push_back(new
-      NOX::EpetraNew::FiniteDifferenceColoring(*Interfaces.back(), 
-        problem.getSolution(), problem.getGraph(), *ColorMaps.back(), 
-        *ColumnsSets.back()));
+    MatrixOperators.insert( pair<int, NOX::EpetraNew::FiniteDifferenceColoring*>
+      (probId, new NOX::EpetraNew::FiniteDifferenceColoring(*Interfaces.find(probId)->second, 
+        problem.getSolution(), problem.getGraph(), *ColorMaps.find(probId)->second, 
+        *ColumnsSets.find(probId)->second)) );
     NOX::EpetraNew::Interface::Jacobian& jacInt = 
-      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.back());
-    LinearSystems.push_back( new NOX::EpetraNew::LinearSystemAztecOO(
+      dynamic_cast<NOX::EpetraNew::Interface::Jacobian&>(*MatrixOperators.find(probId)->second);
+    LinearSystems.insert( pair<int, NOX::EpetraNew::LinearSystemAztecOO*>
+      (probId, new NOX::EpetraNew::LinearSystemAztecOO(
       nlParams->sublist("Printing"),
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
-      *MatrixOperators.back(),
-      problem.getSolution()));
+      *MatrixOperators.find(probId)->second,
+      problem.getSolution())) );
 
-    Groups.push_back( new NOX::EpetraNew::Group(
+    Groups.insert( pair<int, NOX::EpetraNew::Group*>
+      (probId, new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
       reqInt,
       nox_soln,
-      *LinearSystems.back()) );
+      *LinearSystems.find(probId)->second)) );
 #else
     if(MyPID==0)
       cout << "ERROR: Cannot use EpetraExt with this build !!" << endl;
@@ -266,12 +319,20 @@ void Problem_Manager::registerComplete()
 #endif
 #endif
 
-    Groups.back()->computeF(); // Needed to establish convergence state
+    // Needed to establish initial convergence state
+    Groups.find(probId)->second->computeF(); 
    
-    Solvers.push_back(new NOX::Solver::Manager(*Groups.back(), *statusTest,
-                                               *nlParams));
+    Solvers.insert( pair<int, NOX::Solver::Manager*>
+      (probId, new NOX::Solver::Manager(*Groups.find(probId)->second, 
+					*statusTest, *nlParams)) );
     iter++;
   }
+
+
+  compositeMap = new Epetra_Map(-1, NumMyNodes, compositeGlobalNodes, 0, *Comm);
+  delete [] compositeGlobalNodes; compositeGlobalNodes = 0;
+
+  compositeSoln = new Epetra_Vector(*compositeMap);
 
   return;
 
@@ -293,6 +354,311 @@ bool Problem_Manager::syncProblems()
     (*problemIter).second->doTransfer();
 }
 
+bool Problem_Manager::setAllGroupX()
+{
+  if(Problems.empty()) {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and set the corresponding group
+  // solution vector (used by NOX) with the problem's (used by application)
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    if( !grp ) {
+      cout << "ERROR: No problems registered with Problem_Manager !!"
+           << endl;
+      throw "Problem_Manager ERROR";
+    }
+    grp->setX((*problemIter).second->getSolution());
+  }
+}
+
+bool Problem_Manager::computeAllF()
+{
+  if(Problems.empty()) {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and set the corresponding group
+  // solution vector (used by NOX) with the problem's (used by application)
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    if( !grp ) {
+      cout << "ERROR: No problems registered with Problem_Manager !!"
+           << endl;
+      throw "Problem_Manager ERROR";
+    }
+    grp->computeF();
+  }
+}
+
+bool Problem_Manager::computeAllJacobian()
+{
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Create a timer for performance
+  Epetra_Time fillTime(*Comm);
+
+  // Loop over each problem being managed and invoke its computeJacobian
+  // method
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+    NOX::EpetraNew::Group *grp = Groups.find(probId)->second;
+    if( !grp ) {
+      cout << "ERROR: Could not find valid group for compouteJacobian !!"
+           << endl;
+      throw "Problem_Manager ERROR";
+    }
+
+    fillTime.ResetStartTime();
+
+    grp->computeJacobian();
+
+    if (MyPID == 0)
+      printf("\n\tTime to fill Jacobian %d --> %e sec. \n\n",
+                  probId, fillTime.ElapsedTime());
+  }
+}
+
+void Problem_Manager::updateAllWithFinalSolution()
+{
+  // Copy final solution from NOX solvers into each problem's solution vector
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+
+    NOX::Solver::Manager* solver = Solvers.find(probId)->second;
+    if( !solver ) {
+      cout << "ERROR: Could not get appropriate Solver for use in update !!"
+           << endl;
+      throw "Problem_Manager ERROR";
+    }
+
+    const NOX::EpetraNew::Group& finalGroup =
+      dynamic_cast<const NOX::EpetraNew::Group&>(solver->getSolutionGroup());
+    const Epetra_Vector& finalSolution =
+      (dynamic_cast<const NOX::Epetra::Vector&>
+        (finalGroup.getX())).getEpetraVector();
+  
+    problemIter->second->getSolution() = finalSolution;
+  }
+}
+
+void Problem_Manager::copyCompositeToProblems(
+                         const Epetra_Vector& compositeVec, 
+                         Problem_Manager::VectorType vecType)
+{
+  // Copy a composite problem vector to each problem's vector
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  Epetra_Vector* problemVec(0);
+
+  // Loop over each problem being managed and copy into the correct 
+  // problem vector
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+    switch (vecType) {
+
+      case SOLUTION :
+        problemVec = &(problemIter->second->getSolution());
+	break;
+
+      case GROUP_F :
+      default :
+        cout << "ERROR: vecType not supported for copy FROM composite!!" 
+             << endl;
+        throw "Problem_Manager ERROR";
+    }
+
+    copyCompositeToVector(compositeVec, probId, *problemVec); 
+  }
+}
+
+void Problem_Manager::copyProblemsToComposite(
+                         Epetra_Vector& compositeVec,
+                         Problem_Manager::VectorType vecType)
+{
+  // Copy vectors from each problem into a composite problem vector
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  const Epetra_Vector* problemVec(0);
+
+  // Loop over each problem being managed and copy from the correct 
+  // problem vector
+  for( ; problemIter != problemLast; problemIter++) {
+    int probId = problemIter->first;
+    switch (vecType) {
+
+      case SOLUTION :
+        problemVec = &(problemIter->second->getSolution());
+	break;
+
+      case GROUP_F :
+        problemVec = &(dynamic_cast<const NOX::Epetra::Vector&>
+                     (Groups.find(probId)->second->getF()).getEpetraVector());
+	break;
+
+      default :
+        cout << "ERROR: vecType not supported for copy TO composite!!" 
+             << endl;
+        throw "Problem_Manager ERROR";
+    }
+
+    copyVectorToComposite(compositeVec, probId, *problemVec); 
+  }
+}
+
+
+void Problem_Manager::copyCompositeToVector(
+                      const Epetra_Vector& compositeVec, int id,
+                      Epetra_Vector& problemVec)
+{
+  // Copy part of a composite problem vector to a problem's vector
+  Epetra_IntVector& indices = *ProblemToCompositeIndices.find(id)->second;
+  for (int i=0; i<problemVec.MyLength(); i++)
+    problemVec[i] = compositeVec[indices[i]];
+}
+
+void Problem_Manager::copyVectorToComposite(
+                      Epetra_Vector& compositeVec, int id,
+                      const Epetra_Vector& problemVec)
+{
+  // Copy a vector from a problem into part of a composite problem vector
+  Epetra_IntVector& indices = *ProblemToCompositeIndices.find(id)->second;
+  for (int i=0; i<problemVec.MyLength(); i++)
+    compositeVec[indices[i]] = problemVec[i];
+}
+
+void Problem_Manager::copyProblemJacobiansToComposite()
+{
+  // Copy problem Jacobians as block diagonal contributions to 
+  // composite Jacobian
+
+  Epetra_CrsMatrix &compositeMatrix = dynamic_cast<Epetra_CrsMatrix&>(*A);
+
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
+
+  // Loop over each problem being managed and copy its Jacobian into 
+  // the composite diagonal blocks
+  for( ; problemIter != problemLast; problemIter++) {
+
+    int probId = problemIter->first;
+
+    // Get the problem, its Jacobian graph and its linear system
+    GenericEpetraProblem &problem = *(problemIter->second);
+    Epetra_CrsGraph &problemGraph = problem.getGraph();
+    NOX::EpetraNew::LinearSystemAztecOO &problemLinearSystem = 
+            *LinearSystems.find(probId)->second;
+
+    // Get the indices map for copying data from this problem into 
+    // the composite problem
+    Epetra_IntVector& indices = 
+            *ProblemToCompositeIndices.find(probId)->second;
+
+
+    // Each problem's Jacobian will be ascertained 
+    Epetra_CrsMatrix *problemMatrixPtr(0);
+
+    // Use each group's operator test to determine the type of Jacobian
+    // operator being used.
+    const Epetra_Operator& jacOp = problemLinearSystem.getJacobianOperator();
+
+    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOp) )
+      problemMatrixPtr = const_cast<Epetra_CrsMatrix*>(
+        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
+          (jacOp).getUnderlyingMatrix());
+    else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOp) )
+      // NOTE: We are getting the matrix from the problem.  This SHOULD be
+      // the same matrix wrapped in the group.  A safer alternative would be
+      // to get this matrix from the group as above for a more general 
+      // operator.
+      problemMatrixPtr = &(problem.getJacobian());
+    else
+    {
+      if (MyPID==0)
+        cout << "Jacobian operator for Problem not supported for "
+             << "preconditioning Matrix-Free coupling solver." << endl;
+      throw "Problem_Manager ERROR";
+    }
+
+    // Create convenient reference for each Jacobian matrix
+    Epetra_CrsMatrix &problemMatrix = *problemMatrixPtr;
+    int problemNumNodes = problem.NumMyNodes;
+
+    // Temporary storage arrays for extracting/inserting matrix row data
+    int* columnIndices = new int[problemNumNodes];
+    double* values = new double[problemNumNodes];
+
+    int problemRow, compositeRow, numCols, numValues;
+    for (int i = 0; i<problemMatrix.NumMyRows(); i++)
+    { 
+      problemRow = problemMatrix.Map().GID(i);
+      problemGraph.ExtractGlobalRowCopy(problemRow, problemNumNodes, 
+                           numCols, columnIndices);
+      problemMatrix.ExtractGlobalRowCopy(problemRow, problemNumNodes,
+                           numValues, values);
+      if( numCols != numValues ) {
+        if (MyPID==0)
+          cout << "ERROR: Num Columns != Num Values from problem Matrix !!"
+               << endl;
+        throw "Problem_Manager ERROR";
+      }
+      // Convert row/column indices to composite problem
+      compositeRow = indices[problemRow];
+      for (int j = 0; j<numCols; j++)
+        columnIndices[j] = indices[columnIndices[j]];
+      //printf("MatrixA, row --> %d\tnumValues --> %d\n",row,numValues);
+      //for (int j=0; j<numValues; j++)
+      //  cout << "\t[" << indices[j] << "]  " << values[j];
+      //cout << endl;
+      int ierr = compositeMatrix.ReplaceGlobalValues(compositeRow, 
+                       numValues, values, columnIndices);
+      //printf("\nAfter insertion, ierr --> %d\n\n",ierr);
+    }
+    delete [] values; values = 0;
+    delete [] columnIndices; columnIndices = 0;
+
+//    for (i=0; i<matrixB.NumMyRows(); i++)
+//    { 
+//      row = matrixB.Map().GID(i);
+//      graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
+//      matrixB.ExtractGlobalRowCopy(row, maxAllBGID, numValues, values);
+//      for (int j=0; j<numCols; j++)
+//        indices[j] += maxAllAGID + 1;
+//      row += maxAllAGID + 1;
+//      Matrix->ReplaceGlobalValues(row, numValues, values, indices);
+//    }
+  
+    // Sync up processors to be safe
+    Comm->Barrier();
+
+#ifdef DEBUG
+    problemMatrix.Print(cout);
+#endif
+  }
+}
+
 bool Problem_Manager::solve()
 {
   if(Problems.empty())
@@ -311,9 +677,9 @@ bool Problem_Manager::solve()
 
   // These iterators would be needed in general, but we later specialize
   // for the case of a 2-problem system.
-  vector<NOX::EpetraNew::Group*>::iterator     groupIter = Groups.begin();
-  vector<Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
-  vector<NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
+  map<int, NOX::EpetraNew::Group*>::iterator     groupIter = Groups.begin();
+  map<int, Problem_Interface*>::iterator  interfaceIter = Interfaces.begin();
+  map<int, NOX::Solver::Manager*>::iterator  solverIter = Solvers.begin();
 
   // This is set up for more than 2 problems, but for now, we deal explicitly
   // with just 2.
@@ -321,11 +687,11 @@ bool Problem_Manager::solve()
   GenericEpetraProblem &problemA = *Problems.find(1)->second,
                        &problemB = *Problems.find(2)->second;
 
-  NOX::EpetraNew::Group &grpA = *Groups[0],
-                        &grpB = *Groups[1];
+  NOX::EpetraNew::Group &grpA = *Groups.find(1)->second,
+                        &grpB = *Groups.find(2)->second;
 
-  NOX::Solver::Manager &solverA = *Solvers[0],
-                       &solverB = *Solvers[1];
+  NOX::Solver::Manager &solverA = *Solvers.find(1)->second,
+                       &solverB = *Solvers.find(2)->second;
 
   // Sync the two problems and get initial convergence state
   syncProblems();
@@ -364,6 +730,7 @@ bool Problem_Manager::solve()
     const Epetra_Vector& finalSolutionA =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupA.getX())).getEpetraVector();
 
+    problemA.setSolution(finalSolutionA);
     problemB.doTransfer();
 //    problemB.setAuxillarySolution(finalSolutionA);
     solverB.reset(grpB, *statusTest, *nlParams);
@@ -381,6 +748,7 @@ bool Problem_Manager::solve()
     const Epetra_Vector& finalSolutionB =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroupB.getX())).getEpetraVector();
   
+    problemB.setSolution(finalSolutionB);
     problemA.doTransfer();
 //    problemA.setAuxillarySolution(finalSolutionB);
     grpA.setX(finalSolutionA);
@@ -429,52 +797,27 @@ bool Problem_Manager::solveMF()
   // This is set up for more than 2 problems, but for now, we deal explicitly
   // with just 2.
 
-  GenericEpetraProblem &problemA = *Problems.find(1)->second,
-                       &problemB = *Problems.find(2)->second;
-
-  NOX::EpetraNew::Group   &grpA = *Groups[0],
-                          &grpB = *Groups[1];
-
-  NOX::Solver::Manager &solverA = *Solvers[0],
-                       &solverB = *Solvers[1];
-
   // Sync the two problems and get initial convergence state
   syncProblems();
-//  problemA.setAuxillarySolution(problemB.getSolution());
-//  problemB.setAuxillarySolution(problemA.getSolution());
-  grpA.setX(problemA.getSolution());
-  grpB.setX(problemB.getSolution());
-  grpA.computeF();
-  grpB.computeF();
+
+  setAllGroupX();
+
+  computeAllF();
+
+  // Need to generalize --> RHooper
+  NOX::EpetraNew::Group   &grpA = *Groups.find(1)->second,
+                          &grpB = *Groups.find(2)->second;
   cout << "Initial 2-Norms of F (A, B) --> " << grpA.getNormF() << " ,  "
        << grpB.getNormF() << endl;
 
-  // Construct a composite Epetra_Map
-  NumMyNodes = problemA.NumMyNodes + problemB.NumMyNodes;
-  int* myGlobalNodes = new int[NumMyNodes];
-  for (int i=0; i<problemA.NumMyNodes; i++)
-    myGlobalNodes[i] = problemA.StandardMap->GID(i);
-  int maxAllAGID = problemA.StandardMap->MaxAllGID();
-  for (int i=0; i<problemB.NumMyNodes; i++)
-    myGlobalNodes[i+problemA.NumMyNodes] = maxAllAGID + 1 +
-                                           problemB.StandardMap->GID(i);
-  Epetra_Map compositeMap(-1, NumMyNodes, myGlobalNodes, 0, *Comm);
-  delete [] myGlobalNodes; myGlobalNodes = 0;
-
-  Epetra_Vector compositeSoln(compositeMap);
-
   // Fill initial composite solution with values from each problem
-  int solnAlength = problemA.getSolution().MyLength();
-  for (int i=0; i<solnAlength; i++)
-    compositeSoln[i] = problemA.getSolution()[i];
-  for (int i=0; i<problemB.getSolution().MyLength(); i++)
-    compositeSoln[i+solnAlength] = problemB.getSolution()[i];
+  copyProblemsToComposite(*compositeSoln, SOLUTION);
 
   // Set up a problem interface for the Problem Manager
   Problem_Interface interface(*this);
 
   // Now create a composite matrix graph needed for preconditioning
-  AA = new Epetra_CrsGraph(Copy, compositeMap, 0);
+  AA = new Epetra_CrsGraph(Copy, *compositeMap, 0);
   generateGraph();
 
 /* --------------  Block for Coloring Preconditioner Operator ------
@@ -517,10 +860,10 @@ bool Problem_Manager::solveMF()
 
   NOX::EpetraNew::Interface::Required& reqInt = 
     dynamic_cast<NOX::EpetraNew::Interface::Required&>(interface);
-  NOX::Epetra::Vector nox_soln(compositeSoln);
+  NOX::Epetra::Vector nox_soln(*compositeSoln);
 
   // Create the Matrix-Free Jacobian Operator
-  NOX::EpetraNew::MatrixFree Jac(interface, compositeSoln);
+  NOX::EpetraNew::MatrixFree Jac(interface, *compositeSoln);
   NOX::EpetraNew::Interface::Jacobian& jacInt = Jac;
 
   NOX::EpetraNew::Interface::Preconditioner& precInt = 
@@ -534,7 +877,7 @@ bool Problem_Manager::solveMF()
     lsParams,
     jacInt, Jac,
     precInt, *A,
-    compositeSoln);
+    *compositeSoln);
 
   //lsParams.setParameter("Preconditioning", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
@@ -551,16 +894,8 @@ bool Problem_Manager::solveMF()
     exit(0);
   }
 
-  // Extract and use final solutions
-  const NOX::EpetraNew::Group& finalGroup =
-    dynamic_cast<const NOX::EpetraNew::Group&>(solver.getSolutionGroup());
-  const Epetra_Vector& finalSolution =
-    (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-  
-  for (int i=0; i<solnAlength; i++)
-    problemA.getSolution()[i] = finalSolution[i];
-  for (int i=0; i<problemB.getSolution().MyLength(); i++)
-    problemB.getSolution()[i] = finalSolution[i+solnAlength];
+  // Update all problem's solutions with final solutions from solvers
+  updateAllWithFinalSolution();
 
   // Cleanup locally allocated memory
   delete A; A = 0;
@@ -590,44 +925,15 @@ bool Problem_Manager::evaluate(
   // Note that incoming matrix is no longer used.  Instead, the problem
   // should own the matrix to be filled into.
 
-  GenericEpetraProblem &problemA = *Problems.find(1)->second,
-                       &problemB = *Problems.find(2)->second;
+  copyCompositeToProblems(*solnVector, SOLUTION);
 
-  NOX::EpetraNew::LinearSystemAztecOO &linearSystemA = *LinearSystems[0],
-                                      &linearSystemB = *LinearSystems[1];
-
-  NOX::EpetraNew::Group   &grpA = *Groups[0],
-                          &grpB = *Groups[1];
-
-  Epetra_Vector solnA(*problemA.StandardMap);
-  Epetra_Vector solnB(*problemB.StandardMap);
-
-  for (int i=0; i<solnA.MyLength(); i++)
-    solnA[i] = (*solnVector)[i];
-  for (int i=0; i<solnB.MyLength(); i++)
-    solnB[i] = (*solnVector)[i+solnA.MyLength()];
-
-  // Pass solutions and compute residuals
-//  cout << "\n\t\tInside evaluate(),  here is solnA :" << endl << solnA << endl;
-  problemA.setSolution(solnA);
-  problemB.setSolution(solnB);
   syncProblems();
-//  problemA.setAuxillarySolution(solnB);
-//  problemB.setAuxillarySolution(solnA);
-  grpA.setX(solnA);
-  grpB.setX(solnB);
+
+  setAllGroupX();
 
   if (fillF) {
-    grpA.computeF();
-    grpB.computeF();
-
-    for (int i=0; i<solnA.MyLength(); i++)
-      (*rhsVector)[i] = dynamic_cast<const NOX::Epetra::Vector&>(grpA.getF()).
-                        getEpetraVector()[i];
-    for (int i=0; i<solnB.MyLength(); i++)
-      (*rhsVector)[i+solnA.MyLength()] = 
-                        dynamic_cast<const NOX::Epetra::Vector&>(grpB.getF()).
-                        getEpetraVector()[i];
+    computeAllF();
+    copyProblemsToComposite(*rhsVector, GROUP_F);
   }
 
   if (fillMatrix) {
@@ -635,115 +941,15 @@ bool Problem_Manager::evaluate(
     Epetra_CrsMatrix* Matrix = dynamic_cast<Epetra_CrsMatrix*>(A);
     Matrix->PutScalar(0.0);
     
-    // Create a timer for performance
-    Epetra_Time fillTime(*Comm);
+    computeAllJacobian();
 
-    grpA.computeJacobian();
-    if (MyPID == 0)
-      printf("\n\tTime to fill Jacobian A --> %e sec. \n\n",
-                  fillTime.ElapsedTime());
+    copyProblemJacobiansToComposite();
 
-    fillTime.ResetStartTime();
-    grpB.computeJacobian();
-    if (MyPID == 0)
-      printf("\n\tTime to fill Jacobian B --> %e sec. \n\n",
-                  fillTime.ElapsedTime());
-
-    Epetra_CrsGraph &graphA = (*Problems.find(1)->second).getGraph(),
-                    &graphB = (*Problems.find(2)->second).getGraph();
-
-    Epetra_CrsMatrix *matrixAPtr,
-                     *matrixBPtr;
-
-    // Use each group's operator test to determine the type of Jacobian
-    // operator being used by each.
-    const Epetra_Operator& jacOpA = linearSystemA.getJacobianOperator();
-    const Epetra_Operator& jacOpB = linearSystemB.getJacobianOperator();
-
-    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOpA) )
-      matrixAPtr = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
-          (jacOpA).getUnderlyingMatrix());
-    else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOpA) )
-      // NOTE: We are getting the matrix from the problem.  This SHOULD be
-      // the same matrix wrapped in the group.  A safer alternative would be
-      // to get this matrix from the group as above for a more general 
-      // operator.
-      matrixAPtr = &(*Problems.find(1)->second).getJacobian();
-    else
-    {
-      if (MyPID==0)
-        cout << "Jacobian operator for Problem A not supported for "
-             << "preconditioning Matrix-Free coupling solver." << endl;
-      exit(0);
-    }
-
-    if ( dynamic_cast<const NOX::EpetraNew::FiniteDifference*>(&jacOpB) )
-      matrixBPtr = const_cast<Epetra_CrsMatrix*>(
-        &dynamic_cast<const NOX::EpetraNew::FiniteDifference&>
-          (jacOpB).getUnderlyingMatrix());
-    else if ( dynamic_cast<const Epetra_CrsMatrix*>(&jacOpB) )
-      // NOTE: We are getting the matrix from the problem.  This SHOULD be
-      // the same matrix wrapped in the group.  A safer alternative would be
-      // to get this matrix from the group as above for a more general 
-      // operator.
-      matrixBPtr = &(*Problems.find(2)->second).getJacobian();
-    else
-    {
-      if (MyPID==0)
-        cout << "Jacobian operator for Problem A not supported for "
-             << "preconditioning Matrix-Free coupling solver." << endl;
-      exit(0);
-    }
-
-
-    // Create convenient references for each Jacobian operator
-    Epetra_CrsMatrix &matrixA = *matrixAPtr,
-                     &matrixB = *matrixBPtr;
-
-    int maxAllAGID = matrixA.Map().MaxAllGID();
-    int* indices = new int[maxAllAGID];
-    double* values = new double[maxAllAGID];
-    int i, row, numCols, numValues;
-    for (i=0; i<matrixA.NumMyRows(); i++)
-    { 
-      row = matrixA.Map().GID(i);
-      graphA.ExtractGlobalRowCopy(row, maxAllAGID, numCols, indices);
-      matrixA.ExtractGlobalRowCopy(row, maxAllAGID, numValues, values);
-      //printf("MatrixA, row --> %d\tnumValues --> %d\n",row,numValues);
-      //for (int j=0; j<numValues; j++)
-      //  cout << "\t[" << indices[j] << "]  " << values[j];
-      //cout << endl;
-      int ierr = Matrix->ReplaceGlobalValues(row, numValues, values, indices);
-      //printf("\nAfter insertion, ierr --> %d\n\n",ierr);
-    }
-    delete [] values; values = 0;
-    delete [] indices; indices = 0;
-
-    int maxAllBGID = graphB.Map().MaxAllGID();
-    indices = new int[maxAllBGID];
-    values = new double[maxAllBGID];
-    for (i=0; i<matrixB.NumMyRows(); i++)
-    { 
-      row = matrixB.Map().GID(i);
-      graphB.ExtractGlobalRowCopy(row, maxAllBGID, numCols, indices);
-      matrixB.ExtractGlobalRowCopy(row, maxAllBGID, numValues, values);
-      for (int j=0; j<numCols; j++)
-        indices[j] += maxAllAGID + 1;
-      row += maxAllAGID + 1;
-      Matrix->ReplaceGlobalValues(row, numValues, values, indices);
-    }
-    delete [] values; values = 0;
-    delete [] indices; indices = 0;
-  
-    // Sync up processors to be safe
-    Comm->Barrier();
-  
     Matrix->TransformToLocal();
 
-    //matrixA.Print(cout);
-    //matrixB.Print(cout);
-    //Matrix->Print(cout);
+#ifdef DEBUG
+    Matrix->Print(cout);
+#endif
   }
 
   return true;
