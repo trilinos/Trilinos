@@ -6,3 +6,8 @@
 @ "Line Search"
 "Method"  string "More'-Thuente" 
 @@
+
+@ "Printing"
+"Output Precision" int 13
+"Output Information" int 85
+@@

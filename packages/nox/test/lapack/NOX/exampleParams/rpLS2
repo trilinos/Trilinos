@@ -7,3 +7,7 @@
 "Method"  string "Backtrack" 
 @@
 
+@ "Printing"
+"Output Precision" int 13
+"Output Information" int 85
+@@

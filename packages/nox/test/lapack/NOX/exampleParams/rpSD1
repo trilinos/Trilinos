@@ -3,7 +3,15 @@
 
 "Nonlinear Solver" string "Line Search Based"
 
+@ "Direction"
+"Method" string "Steepest Descent"
+@@
+
 @ "Line Search"
 "Method"  string "Backtrack" 
 @@
 
+@ "Printing"
+"Output Precision" int 13
+"Output Information" int 85
+@@

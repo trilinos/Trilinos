@@ -6,3 +6,12 @@
 @ "Line Search"
 "Method"  string "Polynomial" 
 @@
+
+@ "Piolynomial"
+"Force Interpolation" bool "true"
+@@
+
+@ "Printing"
+"Output Precision" int 13
+#"Output Information" int 85
+@@
