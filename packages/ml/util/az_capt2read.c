@@ -25,7 +25,8 @@
  *  element value.
  *
  */
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
 
    int Nrows, Nnzs, current_row, row, col, i;
    int flag, first_time = 1, j, ch, empty;
@@ -38,7 +39,8 @@ int main(int argc, char *argv[]) {
 
    
    ch = getchar();
-   while ( ((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z'))) {
+   while ( ((ch >= 'a') && (ch <= 'z')) || ((ch >= 'A') && (ch <= 'Z')))
+   {
       while (ch != '\n') ch = getchar();
       ch = getchar();
    }
@@ -46,14 +48,23 @@ int main(int argc, char *argv[]) {
    /* Now strip off any values indicating the size and number of nonzeros. */
    i = 0;
    string[i++] = ch;
-   while (ch != '\n') {
+   while (ch != '\n')
+   {
       ch = getchar();
       string[i++] = (char ) ch;
    }
    string[i] = '\0';
 
+#define PRINTINGNONZEROENTRIES
+#ifdef PRINTINGNONZEROENTRIES
+   fprintf(stderr,"Printing out zero entries.\n");
+#else
+   printf(stderr,"Not printing out zero entries.\n");
+#endif 
+
    flag = 0;
-   if ( (i = sscanf(string,"%d%d%lf",&Nrows,&j,&val)) != 2) {
+   if ( (i = sscanf(string,"%d%d%lf",&Nrows,&j,&val)) != 2)
+   {
              /* No header found (line with just 2 numbers) */
       flag = 1;
       if (argc == 2) {
@@ -73,7 +84,8 @@ int main(int argc, char *argv[]) {
    }
    printf("%d\n",Nrows);
 
-   if (i == 1) {
+   if (i == 1)
+   {
       if (sscanf(string,"%lf",&val) != 1) {
          printf("can not parse first number?\n");
          exit(1);
@@ -91,7 +103,8 @@ int main(int argc, char *argv[]) {
 
    current_row = 1;
    empty = 1;
-   while ( flag != 0) {
+   while ( flag != 0)
+   {
        sscanf(string,"%d%d%lf",&row,&col,&val);
        if (row > Nrows) {
           fprintf(stderr,"Error: row (%d) exceeds total number of rows (%d).\n",
@@ -116,14 +129,18 @@ int main(int argc, char *argv[]) {
           fprintf(stderr,"Error: rows are not in order\n");
           exit(1);
        }
+#ifdef PRINTINGNONZEROENTRIES
        /* always print out the nonzero entry ... even if it is zero */
        if (/* (val != 0.0)*/ (1 == 1) ||  (col == row)) {
+#else
+       if ((val != 0.0) ||  (col == row)) {
+#endif
           printf("%d  %20.13e\n",col-1,val);
           empty = 0;
        }
        current_row = row;
        flag = mygetline(string);
-   }
+   } /*while ( flag != 0) */
    printf("-1\n");
    for (i = current_row; i < Nrows; i++) 
       printf("0 0.0\n-1\n");
@@ -141,4 +158,3 @@ int mygetline(char string[])
    if (i < 2) return(0);
    else return(1);
 }
- 
