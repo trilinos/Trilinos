@@ -1,9 +1,8 @@
-// 16-May-2002 - Switched names from TPetra to Tpetra
-
+// 27-May-2002 General cleanup. Checked for newNamingConvention (nothing changed).
 #ifndef _TPETRA_BLAS_H_
 #define _TPETRA_BLAS_H_
 
-//! Tpetra_BLAS:  The Petra Templated BLAS Class.
+//! Tpetra_BLAS: The Templated Petra BLAS Class.
 /*! The Tpetra_BLAS class provides functionality similar to the BLAS
     (Basic Linear Algebra Subprograms).  The BLAS provide portable, high-
     performance implementations of kernels such as dense vectoer multiplication,
@@ -21,37 +20,37 @@
     defines the +, - * and / operators.
 
     Tpetra_BLAS is a single memory image interface only.  This is appropriate 
-    since the standard 
-    BLAS are only specified for serial execution (or shared memory parallel).
+    since the standard BLAS are only specified for serial execution 
+    (or shared memory parallel).
 */
 
-
-namespace Tpetra {
-
-template<class scalarType>
-class BLAS {
+namespace Tpetra
+{
+  template<class scalarType>
+  class BLAS
+  {
+    public:
     
-  public:
-  //! Tpetra::BLAS Constructor.
-  /*! Builds an instance of a serial BLAS object.
-   */
-  BLAS(void);
+    //! Tpetra::BLAS Constructor.
+    /*! Builds an instance of a serial BLAS object.
+    */
+    BLAS(void);
+    
+    //! Tpetra::BLAS Copy Constructor.
+    /*! Makes an exact copy of an existing Tpetra::BLAS instance.
+    */
+    BLAS(const BLAS<scalarType>& BLAS);
+    
+    //! Tpetra::BLAS Destructor.
+    virtual ~BLAS(void);
+    
+    //! Tpetra::BLAS matrix-matrix multiply function (GEMM)
+    void GEMM(char TRANSA, char TRANSB, int M, int N, int K, scalarType ALPHA, 
+        scalarType * A, int LDA, scalarType * B, int LDB, scalarType BETA, 
+        scalarType * C, int LDC) const;
+  };
+} // end of namespace Tpetra
 
-
-  //! Tpetra::BLAS Copy Constructor.
-  /*! Makes an exact copy of an existing Tpetra::BLAS instance.
-  */
-  BLAS(const Tpetra::BLAS<scalarType>& BLAS);
-
-  //! Tpetra::BLAS Destructor.
-  virtual ~BLAS(void);
-  
-  //! Tpetra::BLAS matrix-matrix multiply function (GEMM)
-  void GEMM(char TRANSA, char TRANSB, int M, int N, int K,
-	    scalarType ALPHA, scalarType * A, int LDA, scalarType * B,
-	    int LDB, scalarType BETA, scalarType * C, int LDC) const;
-};
-
-} // namespace Tpetra
 #include "Tpetra_BLAS.cpp"
-#endif /* _TPETRA_BLAS_H_ */
+
+#endif // end of _TPETRA_BLAS_H_

@@ -1,13 +1,14 @@
 // tpetra/src/Tpetra_ScalarTraits.h
 // 16-May-2002 - Changed to use Epetra_LAPACK instead of Petra_LAPACK
 // 16-May-2002 - Switched names from TPetra to Tpetra
+// 28-May-2002 - Heroux fixes things.
 
 #ifndef _TPETRA_SCALARTRAITS_H_
 #define _TPETRA_SCALARTRAITS_H_
 
 #include <cmath> //for the fabs function...
 #include <complex>
-#include "Epetra_LAPACK.h"
+#include "Tpetra_LAPACK.h"
 
 // Modified from the original ESI "ESI_scalarTraits.h" file. 
 namespace Tpetra {
@@ -123,16 +124,16 @@ namespace Tpetra {
 
       static inline float zero()  {return(0.0);};
       static inline float one()   {return(1.0);};
-      static inline float eps()   {Epetra_LAPACK lp; return(lp.SLAMCH('E'));};
-      static inline float sfmin() {Epetra_LAPACK lp; return(lp.SLAMCH('S'));};
-      static inline float base()  {Epetra_LAPACK lp; return(lp.SLAMCH('B'));};
-      static inline float prec()  {Epetra_LAPACK lp; return(lp.SLAMCH('P'));};
-      static inline float t()     {Epetra_LAPACK lp; return(lp.SLAMCH('N'));};
-      static inline float rnd()   {Epetra_LAPACK lp; return(lp.SLAMCH('R'));};
-      static inline float emin()  {Epetra_LAPACK lp; return(lp.SLAMCH('M'));};
-      static inline float rmin()  {Epetra_LAPACK lp; return(lp.SLAMCH('U'));};
-      static inline float emax()  {Epetra_LAPACK lp; return(lp.SLAMCH('L'));};
-      static inline float rmax()  {Epetra_LAPACK lp; return(lp.SLAMCH('O'));};
+      static inline float eps()   {LAPACK lp; return(lp.SLAMCH('E'));};
+      static inline float sfmin() {LAPACK lp; return(lp.SLAMCH('S'));};
+      static inline float base()  {LAPACK lp; return(lp.SLAMCH('B'));};
+      static inline float prec()  {LAPACK lp; return(lp.SLAMCH('P'));};
+      static inline float t()     {LAPACK lp; return(lp.SLAMCH('N'));};
+      static inline float rnd()   {LAPACK lp; return(lp.SLAMCH('R'));};
+      static inline float emin()  {LAPACK lp; return(lp.SLAMCH('M'));};
+      static inline float rmin()  {LAPACK lp; return(lp.SLAMCH('U'));};
+      static inline float emax()  {LAPACK lp; return(lp.SLAMCH('L'));};
+      static inline float rmax()  {LAPACK lp; return(lp.SLAMCH('O'));};
       
 
       static inline float random() {
@@ -156,16 +157,16 @@ namespace Tpetra {
 
       static inline double zero()  {return(0.0);};
       static inline double one()   {return(1.0);};
-      static inline double eps()   {Epetra_LAPACK lp; return(lp.DLAMCH('E'));};
-      static inline double sfmin() {Epetra_LAPACK lp; return(lp.DLAMCH('S'));};
-      static inline double base()  {Epetra_LAPACK lp; return(lp.DLAMCH('B'));};
-      static inline double prec()  {Epetra_LAPACK lp; return(lp.DLAMCH('P'));};
-      static inline double t()     {Epetra_LAPACK lp; return(lp.DLAMCH('N'));};
-      static inline double rnd()   {Epetra_LAPACK lp; return(lp.DLAMCH('R'));};
-      static inline double emin()  {Epetra_LAPACK lp; return(lp.DLAMCH('M'));};
-      static inline double rmin()  {Epetra_LAPACK lp; return(lp.DLAMCH('U'));};
-      static inline double emax()  {Epetra_LAPACK lp; return(lp.DLAMCH('L'));};
-      static inline double rmax()  {Epetra_LAPACK lp; return(lp.DLAMCH('O'));};
+      static inline double eps()   {LAPACK lp; return(lp.DLAMCH('E'));};
+      static inline double sfmin() {LAPACK lp; return(lp.DLAMCH('S'));};
+      static inline double base()  {LAPACK lp; return(lp.DLAMCH('B'));};
+      static inline double prec()  {LAPACK lp; return(lp.DLAMCH('P'));};
+      static inline double t()     {LAPACK lp; return(lp.DLAMCH('N'));};
+      static inline double rnd()   {LAPACK lp; return(lp.DLAMCH('R'));};
+      static inline double emin()  {LAPACK lp; return(lp.DLAMCH('M'));};
+      static inline double rmin()  {LAPACK lp; return(lp.DLAMCH('U'));};
+      static inline double emax()  {LAPACK lp; return(lp.DLAMCH('L'));};
+      static inline double rmax()  {LAPACK lp; return(lp.DLAMCH('O'));};
       
 
       static inline double random() {
@@ -202,7 +203,6 @@ namespace Tpetra {
 
       static inline bool haveMachineParameters() {return(true);}; // Allows testing to see if scalar traits machine parameters defined 
       typedef float magnitudeType;
-      typedef std::complex<float> scalarType;
 
       static magnitudeType magnitude(std::complex<float> a) {
 	return(std::abs(a));
@@ -210,16 +210,16 @@ namespace Tpetra {
 
       static inline std::complex<float> zero()  {return(std::complex<float>(0.0,0.0));};
       static inline std::complex<float> one()   {return(std::complex<float>(1.0,0.0));};
-      static inline float eps()   {Epetra_LAPACK lp; return(lp.SLAMCH('E'));};
-      static inline float sfmin() {Epetra_LAPACK lp; return(lp.SLAMCH('S'));};
-      static inline float base()  {Epetra_LAPACK lp; return(lp.SLAMCH('B'));};
-      static inline float prec()  {Epetra_LAPACK lp; return(lp.SLAMCH('P'));};
-      static inline float t()     {Epetra_LAPACK lp; return(lp.SLAMCH('N'));};
-      static inline float rnd()   {Epetra_LAPACK lp; return(lp.SLAMCH('R'));};
-      static inline float emin()  {Epetra_LAPACK lp; return(lp.SLAMCH('M'));};
-      static inline float rmin()  {Epetra_LAPACK lp; return(lp.SLAMCH('U'));};
-      static inline float emax()  {Epetra_LAPACK lp; return(lp.SLAMCH('L'));};
-      static inline float rmax()  {Epetra_LAPACK lp; return(lp.SLAMCH('O'));};
+      static inline float eps()   {LAPACK lp; return(lp.SLAMCH('E'));};
+      static inline float sfmin() {LAPACK lp; return(lp.SLAMCH('S'));};
+      static inline float base()  {LAPACK lp; return(lp.SLAMCH('B'));};
+      static inline float prec()  {LAPACK lp; return(lp.SLAMCH('P'));};
+      static inline float t()     {LAPACK lp; return(lp.SLAMCH('N'));};
+      static inline float rnd()   {LAPACK lp; return(lp.SLAMCH('R'));};
+      static inline float emin()  {LAPACK lp; return(lp.SLAMCH('M'));};
+      static inline float rmin()  {LAPACK lp; return(lp.SLAMCH('U'));};
+      static inline float emax()  {LAPACK lp; return(lp.SLAMCH('L'));};
+      static inline float rmax()  {LAPACK lp; return(lp.SLAMCH('O'));};
 
      static inline std::complex<float> random() {
 	//float rnd1 = (float)std::rand()/RAND_MAX;
@@ -246,16 +246,16 @@ namespace Tpetra {
 
       static inline std::complex<double> zero()  {return(std::complex<double>(0.0,0.0));};
       static inline std::complex<double> one()   {return(std::complex<double>(1.0,0.0));};
-      static inline double eps()   {Epetra_LAPACK lp; return(lp.DLAMCH('E'));};
-      static inline double sfmin() {Epetra_LAPACK lp; return(lp.DLAMCH('S'));};
-      static inline double base()  {Epetra_LAPACK lp; return(lp.DLAMCH('B'));};
-      static inline double prec()  {Epetra_LAPACK lp; return(lp.DLAMCH('P'));};
-      static inline double t()     {Epetra_LAPACK lp; return(lp.DLAMCH('N'));};
-      static inline double rnd()   {Epetra_LAPACK lp; return(lp.DLAMCH('R'));};
-      static inline double emin()  {Epetra_LAPACK lp; return(lp.DLAMCH('M'));};
-      static inline double rmin()  {Epetra_LAPACK lp; return(lp.DLAMCH('U'));};
-      static inline double emax()  {Epetra_LAPACK lp; return(lp.DLAMCH('L'));};
-      static inline double rmax()  {Epetra_LAPACK lp; return(lp.DLAMCH('O'));};
+      static inline double eps()   {LAPACK lp; return(lp.DLAMCH('E'));};
+      static inline double sfmin() {LAPACK lp; return(lp.DLAMCH('S'));};
+      static inline double base()  {LAPACK lp; return(lp.DLAMCH('B'));};
+      static inline double prec()  {LAPACK lp; return(lp.DLAMCH('P'));};
+      static inline double t()     {LAPACK lp; return(lp.DLAMCH('N'));};
+      static inline double rnd()   {LAPACK lp; return(lp.DLAMCH('R'));};
+      static inline double emin()  {LAPACK lp; return(lp.DLAMCH('M'));};
+      static inline double rmin()  {LAPACK lp; return(lp.DLAMCH('U'));};
+      static inline double emax()  {LAPACK lp; return(lp.DLAMCH('L'));};
+      static inline double rmax()  {LAPACK lp; return(lp.DLAMCH('O'));};
 
       static inline std::complex<double> random() {
 	//double rnd1 = (double)std::rand()/RAND_MAX;

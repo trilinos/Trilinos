@@ -1,5 +1,4 @@
-// 16-May-2002 - Switched names from TPetra to Tpetra
-// 17-May-2002 - Converted from Petra_Flops and Petra_Object to Epetra_CompObject
+// 27-May-2002 General cleanup. Changed method names to fit namingConvention (already done).
 
 #ifndef _TPETRA_DENSEMATRIX_H_
 #define _TPETRA_DENSEMATRIX_H_
@@ -7,7 +6,8 @@
 //! Tpetra::DenseMatrix: A class for constructing and using template<scalarType> general dense matrices.
 
 /*! The Tpetra::DenseMatrix class enables the construction and use of general template<scalarType>
-    dense matrices.  It is built on the BLAS, and derives from the Petra_BLAS. 
+    dense matrices.  It is built on the BLAS, and derives from the TPetra_BLAS.  Of course, it's also built
+    on ScalarTraits, which derives from LAPACK. In any case, 
 
 The Tpetra::DenseMatrix class is intended to provide very basic support for dense rectangular matrices.
 
@@ -46,22 +46,24 @@ the object.  Specifically:
   <li> Norms.
 </ul>
 
-The final useful function is Flops().  Each Tpetra::DenseMatrix object keep track of the number
+The final useful function is flops().  Each Tpetra::DenseMatrix object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
-information, in conjunction with the Petra_Time class, one can get accurate parallel performance
+to the function.  The flops() function returns this number as a double precision number.  Using this 
+information, in conjunction with the Tpetra_Time class, one can get accurate parallel performance
 numbers.
 
 
 */
-#include "Epetra_CompObject.h"
+#include "Tpetra_CompObject.h"
 #include "Tpetra_BLAS.h"
 
-namespace Tpetra {
+namespace Tpetra
+{
 
 //=========================================================================
 template<class scalarType>
-class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetra::BLAS<scalarType> {
+class DenseMatrix : public CompObject, public Object, public BLAS<scalarType>
+{
 
   public:
   
@@ -90,11 +92,11 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 
 	   See Detailed Description section for further discussion.
   */
-  DenseMatrix(Epetra_DataAccess CV, scalarType *A, int stride, int numRows, int numCols);
+  DenseMatrix(Tpetra_DataAccess CV, scalarType *A, int stride, int numRows, int numCols);
   
   //! Tpetra::DenseMatrix copy constructor.
   
-  DenseMatrix(const Tpetra::DenseMatrix<scalarType>& Source);
+  DenseMatrix(const DenseMatrix<scalarType>& Source);
 
   //! DenseMatrix destructor.  
   virtual ~DenseMatrix ();
@@ -160,8 +162,8 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 	 
   */
   int  multiply (char TransA, char TransB, scalarType ScalarAB, 
-                 const Tpetra::DenseMatrix<scalarType>& A, 
-                 const Tpetra::DenseMatrix<scalarType>& B,
+                 const DenseMatrix<scalarType>& A, 
+                 const DenseMatrix<scalarType>& B,
                  scalarType Scalar );
 
   //! Element access function.
@@ -172,7 +174,7 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 
     \return Element from the specified row and column.
   */
-    scalarType& operator () (int RowIndex, int ColIndex);
+    scalarType &operator () (int RowIndex, int ColIndex);
 
   //! Element access function.
   /*!
@@ -182,7 +184,7 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 
     \return Element from the specified row and column.
   */
-    const scalarType& operator () (int RowIndex, int ColIndex) const;
+    const scalarType &operator () (int RowIndex, int ColIndex) const;
 
   //! Column access function.
   /*!
@@ -194,7 +196,7 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
   */
-    scalarType * operator [] (int ColIndex);
+    scalarType *operator [] (int ColIndex);
 
   //! Column access function.
   /*!
@@ -206,21 +208,34 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
 
     \warning No bounds checking can be done for the index i in the expression A[j][i].
   */
-    const scalarType * operator [] (int ColIndex) const;
+    const scalarType *operator [] (int ColIndex) const;
     
   //! Returns row dimension of system.
-  int numRows()  const {return(numRows_);};
+  int numRows() const
+  {
+    return(numRows_);
+  };
 
   //! Returns column dimension of system.
-  int numCols()  const {return(numCols_);};
+  int numCols() const 
+  {
+    return(numCols_);
+  };
 
   //! Returns pointer to the \e this matrix.
-  scalarType * values()  const {return(values_);};
+  scalarType * values() const 
+  {
+    return(values_);
+  };
 
   //! Returns the leading dimension of the \e this matrix.
-  int stride()  const {return(stride_);};
+  int stride() const 
+  {
+    return(stride_);
+  };
 
   virtual void print(ostream& os) const;
+
  protected:
 
   void copyMat(scalarType * inputMatrix, int strideInput, int numRows, int numCols, scalarType * outputMatrix, int strideOutput);
@@ -233,7 +248,7 @@ class DenseMatrix : public Epetra_CompObject, public Epetra_Object, public Tpetr
   scalarType * values_;
 
 
-};
+}; // class Tpetra_DenseMatrix
 
 } // namespace Tpetra
 
@@ -244,7 +259,7 @@ inline ostream& operator<<(ostream& os, const Tpetra::DenseMatrix<scalarType>& o
   obj.print(os);
   return os;
 }
-#include "Tpetra_DenseMatrix.cpp"
 
+#include "Tpetra_DenseMatrix.cpp"
 
 #endif /* _TPETRA_DENSEMATRIX_H_ */
