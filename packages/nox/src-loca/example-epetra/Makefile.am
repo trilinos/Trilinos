@@ -29,4 +29,8 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = src src-epetra example-epetra
+if BUILD_LOCA_EPETRA_EXAMPLES
+
+SUBDIRS = 1Dfem
+
+endif
