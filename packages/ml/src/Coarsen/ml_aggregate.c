@@ -927,7 +927,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
    int i=1, ndofs, Ncoarse, coarsen_scheme;
-#ifdef ML_repartition
+#ifdef oldML_repartition
    int j, offset1, offset2, status;
    double *new_null;
    ML_Operator *newA = NULL, *permt = NULL, *perm = NULL, *oldA = NULL;
@@ -1040,7 +1040,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* prolongator, and permute everything back so that it works with the     */
    /* original A.                                                            */
 
-#ifdef ML_repartition
+#ifdef oldML_repartition
    status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
    
    if (status == 0) {
@@ -1101,7 +1101,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
            exit(1);
            break;
    } 
-#ifdef ML_repartition
+#ifdef oldML_repartition
 
    /* restore Amatrix and delete repartitioned one */
 
@@ -2164,3 +2164,70 @@ int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag )
 
 
 
+
+int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
+			   int R_is_Ptranspose)
+{
+  ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
+  int status, offset1, offset2, j;
+  double *new_null;
+
+  Amatrix = &(ml->Amat[coarse]);
+  Rmat = &(ml->Rmat[fine]);
+  Pmat = &(ml->Pmat[coarse]);
+
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
+   if (status == 0) {
+     if (ag->nullspace_vect != NULL) {
+       new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
+			      perm->outvec_leng);
+       offset1 = 0;
+       offset2 = 0;
+       for (j = 0; j < ag->nullspace_dim; j++) {
+	 ML_Operator_Apply(perm, perm->invec_leng, 
+			   &((ag->nullspace_vect)[offset1]), 
+			   perm->outvec_leng, &(new_null[offset2]));
+
+	 offset1 += perm->invec_leng;
+	 offset2 += perm->outvec_leng;
+       }
+       ML_Aggregate_Set_NullSpace(ag, ag->num_PDE_eqns, ag->nullspace_dim,
+				  new_null,perm->outvec_leng);
+       ML_free(new_null);
+
+     }
+     ML_Operator_Move2HierarchyAndDestroy_fragile(newA, Amatrix);
+
+     /* do a mat-mat mult to get the appropriate P for the */
+     /* unpartitioned matrix.                              */
+
+     newP = ML_Operator_Create(Pmat->comm);
+     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
+     ML_Operator_Move2HierarchyAndDestroy_fragile(newP, Pmat);
+     
+     if (R_is_Ptranspose == ML_TRUE) {
+       newR = ML_Operator_Create(Rmat->comm);
+       ML_Operator_Transpose(Pmat, newR);
+       ML_Operator_Move2HierarchyAndDestroy_fragile(newR, Rmat);
+     }
+     else if (Rmat->getrow->post_comm == NULL) {
+       newR = ML_Operator_Create(Rmat->comm);
+       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
+       ML_Operator_Move2HierarchyAndDestroy_fragile(newR, Rmat);
+     }
+     else {
+       printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");
+       printf("   rightmost matrix in multiply is created with an implicit\n");
+       printf("   transpose (e.g. ML_Gen_Restrictor_TransP). If R is P^T,\n");
+       printf("   then invoke as ML_repartition_Acoarse(..., ML_TRUE). If\n");
+       printf("   R is not P^T but an implicit transpose is used, then try\n");
+       printf("   to remove implicit transpose with: \n\n");
+       printf("   ML_Operator_Transpose_byrow( &(ml->Pmat[next]),&(ml->Rmat[level]));\n");
+       printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
+       exit(1);
+     }
+     ML_Operator_Destroy(&perm);
+     ML_Operator_Destroy(&permt);
+     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
+   }
+}

@@ -333,6 +333,9 @@ extern int ML_random_global_subset(ML_Operator *Amat, double reduction,
 extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
                                  ML_Operator **permutation, 
 				 ML_Operator **permt, int num_PDE_eqns);
+extern int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
+				  int R_is_Ptranspose);
+
 
 
 int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx, 
