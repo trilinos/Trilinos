@@ -211,7 +211,7 @@ bool Group::computeGradient()
   for (int i = 0; i < n; i ++) { 
     gradientVector(i) = 0;
     for (int j = 0; j < n; j ++) {
-      gradientVector(i) += jacobianMatrix(j,i) * xVector(j);
+      gradientVector(i) += jacobianMatrix(j,i) * fVector(j);
     }
   }
 
