@@ -1,14 +1,30 @@
+##############################################################################
+# Zoltan Dynamic Load-Balancing Library for Parallel Applications            #
+# Copyright (c) 2000, Sandia National Laboratories.                          #
+# Zoltan is distributed under the GNU Lesser General Public License 2.1.     #
+# For more info, see the README file in the top-level Zoltan directory.      # 
+##############################################################################
+##############################################################################
+# CVS File Information
+#    $RCSfile$
+#    $Author$
+#    $Date$
+#    $Revision$
+##############################################################################
+
 
 Top-Level Zoltan Library Directory
 
 
 DOCUMENTATION
 -------------
-docs            -- Documentation for the Zoltan library.
-docs/octree     -- Documentation for RPI's octree/SFC partitioner.  (Luis'
-                   final report).
-docs/user_guide -- Framemaker files containing the user's guide and 
-                   developer's guide.
+docs                               -- Documentation for the Zoltan library.
+docs/Zoltan_html/Zoltan.html       -- Zoltan Home Page.
+docs/Zoltan_html/ug_html/ug.html   -- Zoltan User's Guide.
+docs/Zoltan_html/dev_html/dev.html -- Zoltan User's Guide.
+docs/octree                        -- Documentation for RPI's 
+                                      octree/SFC partitioner.  (Luis' final 
+                                      report).
 
 ZOLTAN LIBRARY FILES
 --------------------
@@ -24,56 +40,55 @@ lb              -- Interface definitions, user data type definitions,
                    functions, and functions related to the load-balancing
                    interface and migration-help tools.
 
-comm            -- Routines from Hendrickson and Plimpton's unstructured
-                   communication package.
-
 all             -- Memory allocation functions.
 
-par             -- Parallel computing utilities.
+comm            -- Hendrickson and Plimpton's unstructured
+                   communication package.
 
-rcb             -- Steve Plimpton's implementation of Recursive Coordinate
-                   Bisection.
+fort            -- William Mitchell's Fortran interface for Zoltan.
+
+ha 		-- Support for heterogeneous architectures (under development).
 
 oct             -- RPI's octree partitioning and space-filling curves 
                    algorithms.
 
+par             -- Parallel computing utilities.
+
+params		-- Parameter setting routines.
+
+parmetis	-- Routines to interface to ParMETIS and Jostle libraries.
+
+rcb             -- Recursive Coordinate Bisection and Recursive Inertial 
+                   Bisection algorithms.
+
 reftree         -- Refinement Tree grid partitioning algorithm.
 
-fort            -- William Mitchell's Fortran interface for Zoltan.
+timer		-- Timer routines.
+
+
 
 OTHER CODE (not compiled into the Zoltan library)
 -------------------------------------------------
 
-driver          -- Driver program that reads exodus/nemesis files, runs
+driver          -- Driver program zdrive that reads exodus/nemesis files, runs
                    Zoltan and then writes out the new assignment vectors.
                    This program is compiled by making the <platform>-dr
-                   target. Where <platform> is, currently, sun, tflop
+                   target, where <platform> is, currently, sun, tflop
                    or smos.
 
-gr              -- Some graph manipulation routines using tree-based and
-                   hash-table based implementations of graphs.  These 
-                   routines were written before the load-balancing interface,
-                   and, thus, have some outdated features (e.g., IDs should
-                   be replaced by LB_GIDs).  These tools are only partially
-                   developed.
-
-vx              -- Some vertex manipulation routines that work with the 
-                   graph routines in the gr directory.  These tools are only
-                   partially developed.
-
-id              -- Some object ID manipulation routines that work with the
-                   graph routines in the gr directory.  These routines are
-                   probably all outdated and should be replaced by the
-                   LB_GID and LB_LID manipulation macros.  I'll keep them
-                   around only because the graph routines may currently use
-                   them.  Otherwise, they could be cvs removed.
-
 ch              -- Routines developed by Hendrickson and Leland to read Chaco
-                   input files and build graphs using the graph routines in
-                   the gr directory.  They were developed in a (later 
-                   discarded) attempt to read Chaco input files and balance
-                   them with Zoltan.  The routines are only partially 
-                   developed.
+                   input files and build graphs in the zdrive program.
 
 fdriver         -- Fortran version of driver, primarily used for testing
                    the Fortran interface.
+
+
+OTHER DIRECTORIES
+-----------------
+
+test		-- test problems in both Nemesis/Exodus and Chaco formats.
+
+util		-- utility scripts.
+
+docs/Zoltan_ps	-- script to convert HTML to PS.
+
