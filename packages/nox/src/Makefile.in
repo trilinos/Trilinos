@@ -91,6 +91,7 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+ALTERNATE_AR = @ALTERNATE_AR@
 AMTAR = @AMTAR@
 AWK = @AWK@
 CC = @CC@
@@ -232,26 +233,44 @@ libnox_a_SOURCES = \
 
 @BUILD_NOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
 
-libnoxepetra_a_SOURCES = $(EPETRA)
+@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_SOURCES = $(EPETRA)
 
-libnoxepetra_a_CXXFLAGS = @TRILINOS_CXXFLAGS@
+@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_CXXFLAGS = $(TRILINOS_CXXFLAGS)
 
 
 # ------------------------------------------------------------------------
-# List of all libraries to install in package directory
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+@USE_ALTERNATE_AR_TRUE@libnox_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libnox_a_AR = $(AR) cru
+@USE_ALTERNATE_AR_TRUE@libnoxepetra_a_AR = $(ALTERNATE_AR)
+@USE_ALTERNATE_AR_FALSE@libnoxepetra_a_AR = $(AR) cru
+
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
 
 
 # ------------------------------------------------------------------------
-# List of all headers to install in package directory
+# List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
 pkginclude_HEADERS = $(NOX_H) $(NOXEPETRA_H)
 
 
 # ------------------------------------------------------------------------
-# Special stuff to install machine-dependent config file
+# Special stuff to install in our special $(pkgexecincludedir)
 # ------------------------------------------------------------------------
+
+# SPECIAL NOTE: NOX_Config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
 pkgexecincludedir = $(exec_prefix)/include
 pkgexecinclude_HEADERS = NOX_Config.h
 
@@ -266,7 +285,6 @@ CONFIG_HEADER = NOX_Config.h
 CONFIG_CLEAN_FILES =
 LIBRARIES = $(lib_LIBRARIES)
 
-libnox_a_AR = $(AR) cru
 libnox_a_LIBADD =
 am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Linesearch_Halving.$(OBJEXT) \
@@ -280,14 +298,15 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Status_RelResid.$(OBJEXT) NOX_Status_MaxIters.$(OBJEXT) \
 	NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
-libnoxepetra_a_AR = $(AR) cru
 libnoxepetra_a_LIBADD =
-am_libnoxepetra_a_OBJECTS = libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_LinearOperator.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
-	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
+@BUILD_NOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_LinearOperator.$(OBJEXT) \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
+@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
+@BUILD_NOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
 libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@

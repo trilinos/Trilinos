@@ -106,11 +106,25 @@ AC_MSG_CHECKING(whether debugging is on)
 AC_MSG_RESULT([${DEBUG}])
 
 # ------------------------------------------------------------------------
+# AR override command line option
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(ar,
+[  --with-ar         Specify archiver to use to build NOX libraries],
+[
+AC_MSG_CHECKING(user-defined archiver)
+AC_MSG_RESULT([${withval}])
+USE_ALTERNATE_AR=yes
+ALTERNATE_AR="${withval}"
+]
+)
+
+# ------------------------------------------------------------------------
 # MPI configure command line option
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(mpi,
-[  --enable-mpi            Enable MPI.],
+[  --enable-mpi            Enable MPI],
 [
 case $enableval in
   yes)
@@ -185,7 +199,7 @@ esac
 )
 
 # ------------------------------------------------------------------------
-# Checks for MPI compiler
+# Checks for MPI compilers (mpicc/mpiCC)
 # ------------------------------------------------------------------------
 
 if test X${USE_MPI} = Xyes; then
@@ -247,7 +261,7 @@ if test X${USE_MPI} = Xyes; then
 fi
 
 # ------------------------------------------------------------------------
-# Trilinos variables
+# Trilinos
 # ------------------------------------------------------------------------
 
 if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
@@ -278,6 +292,9 @@ if test ${USE_TRILINOS} = yes && test X${USE_TRILINOS_ARCH} != Xyes; then
       case $target in
 	rs6000-ibm-aix3.2.* | rs6000-ibm-aix4.* | powerpc-ibm-aix4.*)
 	TRILINOS_ARCH="IBMSP"
+	;;
+	alpha-unknown-linux-gnu)
+	TRILINOS_ARCH="LINUXALPHA"
 	;;	
 	*)
 	TRILINOS_ARCH="LINUX"
@@ -421,6 +438,20 @@ if test X${USE_TRILINOS} = Xyes; then
 else
    AM_CONDITIONAL(BUILD_NOXEPETRA, false)
 fi
+
+# ------------------------------------------------------------------------
+# Alternate archiver
+# ------------------------------------------------------------------------
+
+AC_MSG_CHECKING(for special archiver)
+if test X${USE_ALTERNATE_AR} = Xyes; then
+   AC_MSG_RESULT([yes (${ALTERNATE_AR})])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, true)
+else
+   AC_MSG_RESULT([no])
+   AM_CONDITIONAL(USE_ALTERNATE_AR, false)
+fi
+AC_SUBST(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files

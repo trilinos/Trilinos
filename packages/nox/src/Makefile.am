@@ -147,28 +147,52 @@ NOXEPETRA_LIB = libnoxepetra.a
 
 NOXEPETRA_H = $(EPETRA_H)
 
-endif
-
 libnoxepetra_a_SOURCES = $(EPETRA)
 
-libnoxepetra_a_CXXFLAGS = @TRILINOS_CXXFLAGS@
+libnoxepetra_a_CXXFLAGS = $(TRILINOS_CXXFLAGS)
 
+endif
 
 # ------------------------------------------------------------------------
-# List of all libraries to install in package directory
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+libnox_a_AR = $(ALTERNATE_AR)
+libnoxepetra_a_AR = $(ALTERNATE_AR)
+
+else
+
+libnox_a_AR = $(AR) cru
+libnoxepetra_a_AR = $(AR) cru
+
+endif
+
+# ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
 
 lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
 
 # ------------------------------------------------------------------------
-# List of all headers to install in package directory
+# List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
 
 pkginclude_HEADERS = $(NOX_H) $(NOXEPETRA_H)
 
 # ------------------------------------------------------------------------
-# Special stuff to install machine-dependent config file
+# Special stuff to install in our special $(pkgexecincludedir)
 # ------------------------------------------------------------------------
+
+# SPECIAL NOTE: NOX_Config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
 
 pkgexecincludedir = $(exec_prefix)/include
 pkgexecinclude_HEADERS = NOX_Config.h
