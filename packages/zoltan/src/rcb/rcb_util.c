@@ -26,13 +26,14 @@ static char *cvs_rcbutilc_id = "$Id$";
 /*****************************************************************************/
 /* PROTOTYPES */
 
-static void initialize_dot(LB *, struct rcb_dot *, LB_GID, LB_LID);
+static void initialize_dot(LB *, struct rcb_dot *, LB_GID, LB_LID, int, float);
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_rcb_build_data_structure(LB *lb, int *num_obj, int *max_obj)
+void LB_rcb_build_data_structure(LB *lb, int *num_obj, int *max_obj, 
+                                 int wgtflag)
 {
 /*
  *  Function to build the geometry-based data structures for 
@@ -44,10 +45,13 @@ LB_GID *objs_global;                  /* Array of global IDs returned by the
                                          application.                        */
 LB_LID *objs_local;                   /* Array of local IDs returned by the
                                          application.                        */
+float  *objs_wgt;                     /* Array of object weights returned by 
+                                         the application.                    */
 LB_GID obj_global_id;                 /* Global ID returned by application.  */
 LB_LID obj_local_id;                  /* Local ID returned by application.   */
 int num_geom;                         /* # values per object used to describe
                                          the geometry.                       */
+float wgt;
 int found;
 int i, ierr = 0;
 
@@ -136,13 +140,16 @@ int i, ierr = 0;
                                            sizeof(LB_GID));
     objs_local  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
                                            sizeof(LB_LID));
-    if (!objs_global || !objs_local) {
+    objs_wgt    = (float  *) LB_array_alloc(__FILE__, __LINE__, 1, *num_obj,
+                                           sizeof(float));
+    if (!objs_global || !objs_local || !objs_wgt) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       exit(-1);
     }
 
-    lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, &ierr);
+    lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global, objs_local, 
+                     wgtflag, objs_wgt, &ierr);
     if (ierr) {
       fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
                       "Get_Obj_List.\n", lb->Proc, yo);
@@ -150,10 +157,12 @@ int i, ierr = 0;
     }
 
     for (i = 0; i < *num_obj; i++) {
-      initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i]);
+      initialize_dot(lb, &(rcb->Dots[i]), objs_global[i], objs_local[i],
+                     wgtflag, objs_wgt[i]);
     }
     LB_safe_free((void **) &objs_global);
     LB_safe_free((void **) &objs_local);
+    LB_safe_free((void **) &objs_wgt);
   }
   else if (lb->Get_First_Obj != NULL && lb->Get_Next_Obj != NULL) {
 
@@ -164,7 +173,7 @@ int i, ierr = 0;
 
     i = 0;
     found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &obj_global_id,
-                              &obj_local_id, &ierr);
+                              &obj_local_id, wgtflag, &wgt, &ierr);
     if (ierr) {
       fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
                       "Get_First_Obj.\n", lb->Proc, yo);
@@ -172,11 +181,12 @@ int i, ierr = 0;
     }
 
     while (found) {
-      initialize_dot(lb, &(rcb->Dots[i]), obj_global_id, obj_local_id);
+      initialize_dot(lb, &(rcb->Dots[i]), obj_global_id, obj_local_id,
+                     wgtflag, wgt);
       i++;
       found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_id,
                                obj_local_id, &obj_global_id, &obj_local_id,
-                               &ierr);
+                               wgtflag, &wgt, &ierr);
       if (ierr) {
         fprintf(stderr, "[%d] Error in %s:  Error returned from user function"
                         "Get_Next_Obj.\n", lb->Proc, yo);
@@ -205,7 +215,7 @@ int i, ierr = 0;
 /*****************************************************************************/
 
 static void initialize_dot(LB *lb, struct rcb_dot *dot, LB_GID global_id, 
-                           LB_LID local_id)
+                           LB_LID local_id, int wgtflag, float wgt)
 {
 /*
  *  Function that initializes the dot data structure for RCB.  It uses the 
@@ -224,13 +234,6 @@ char *yo = "initialize_dot";
                     "Get_Geom function.\n", lb->Proc, yo);
     exit (-1);
   }
-  if (lb->Get_Obj_Weight != NULL) {
-    dot->Weight = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, global_id,
-                                     local_id, &ierr);
-    if (ierr) {
-      fprintf(stderr, "[%d] %s: Error: Error returned from user defined "
-                      "Get_Obj_Weight function.\n", lb->Proc, yo);
-      exit (-1);
-    }
-  }
+  if (wgtflag)
+     dot->Weight = wgt;
 }
