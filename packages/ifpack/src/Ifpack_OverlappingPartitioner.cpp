@@ -205,19 +205,19 @@ int Ifpack_OverlappingPartitioner::ComputeOverlappingPartitions()
 }
 
 //============================================================================
-const int Ifpack_OverlappingPartitioner::NumMyRows() const
+int Ifpack_OverlappingPartitioner::NumMyRows() const
 {
   return(Graph_->NumMyRows());
 }
 
 //============================================================================
-const int Ifpack_OverlappingPartitioner::NumMyNonzeros() const
+int Ifpack_OverlappingPartitioner::NumMyNonzeros() const
 {
   return(Graph_->NumMyNonzeros());
 }
 
 //============================================================================
-const int Ifpack_OverlappingPartitioner::NumGlobalRows() const
+int Ifpack_OverlappingPartitioner::NumGlobalRows() const
 {
   return(Graph_->NumGlobalRows());
 }

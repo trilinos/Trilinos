@@ -494,8 +494,8 @@ int Ifpack_BlockRelaxation<T>::ExtractSubmatrices()
     int rows = Partitioner_->NumRowsInPart(i);
     Containers_[i] = new T(rows);
     
-    Ifpack_DenseContainer* DC = 0;
-    DC = dynamic_cast<Ifpack_DenseContainer*>(Containers_[i]);
+    //Ifpack_DenseContainer* DC = 0;
+    //DC = dynamic_cast<Ifpack_DenseContainer*>(Containers_[i]);
 
     if (Containers_[i] == 0)
       IFPACK_CHK_ERR(-5);

@@ -142,11 +142,11 @@ public:
 protected:
    
   //! Returns the number of local rows.
-  const int NumMyRows() const;
+  int NumMyRows() const;
   //! Returns the number of local nonzero elements.
-  const int NumMyNonzeros() const;
+  int NumMyNonzeros() const;
   //! Returns the number of local rows.
-  const int NumGlobalRows() const;
+  int NumGlobalRows() const;
   //! Returns the max number of local entries in a row.
   int MaxNumEntries() const;
   //! Returns the communicator object of Graph.
