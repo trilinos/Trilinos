@@ -481,22 +481,22 @@ void  ML_ARPACK_driver(char which[],
   }
  
 
-  ML_free((void *) select);
-  ML_free((void *) work);
-  ML_free((void *) vecx);
-  ML_free((void *) vecy);
-  ML_free((void *) rhs1);
-  ML_free((void *) rhs);
-  ML_free((void *) d);
-  ML_free((void *) resid);
-  ML_free((void *) workd);
-  ML_free((void *) workev);
-  ML_free((void *) workl);
-  ML_free((void *) v);
+  ML_free(select);
+  ML_free(work);
+  ML_free(vecx);
+  ML_free(vecy);
+  ML_free(rhs1);
+  ML_free(rhs);
+  ML_free(d);
+  ML_free(resid);
+  ML_free(workd);
+  ML_free(workev);
+  ML_free(workl);
+  ML_free(v);
   for (kk = 0; kk < nconv+1 ; kk++ ) {
     ML_free(eigvec[kk]);
   }           
-  ML_free((void *) eigvec);
+  ML_free(eigvec);
 
  
 
