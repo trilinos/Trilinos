@@ -33,7 +33,7 @@
 #ifndef NOX_PARAMETER_ENTRY_H
 #define NOX_PARAMETER_ENTRY_H
 
-#include<string>	    // one parameter type
+#include "NOX_Common.H"		// includes <string> include
 
 namespace NOX {
 
