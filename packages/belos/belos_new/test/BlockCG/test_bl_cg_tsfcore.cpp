@@ -51,10 +51,6 @@
 //
 int main(int argc, char *argv[]) {
   //
-  using Teuchos::RefCountPtr;
-  using Teuchos::rcp;
-  Teuchos::Time timer("Belos CG");
-	
 #ifdef EPETRA_MPI	
   // Initialize MPI	
   MPI_Init(&argc,&argv); 	
@@ -63,6 +59,7 @@ int main(int argc, char *argv[]) {
   //
   using Teuchos::RefCountPtr;
   using Teuchos::rcp;
+  Teuchos::Time timer("Belos CG");
   bool success = true;
   bool verbose = true;
   try {
