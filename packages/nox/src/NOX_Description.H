@@ -85,13 +85,13 @@
   Trilinos (includes %NOX as well as other packages such as Epetra, Ifpack, and more):
 
   <ul>
-  <li> Download site ot be announced soon!
+  <li> Download site to be announced soon!
   </ul>
 
 
   \section bugs Reporting Bugs and Making Enhancement Requests
 
-  To reports bugs or make enhancement reuqests, visit 
+  To reports bugs or make enhancement requests, visit 
   <A HREF="http://software.sandia.gov/bugzilla/">NOX's Bugzilla (Bug Tracking) Database</A>,
   and use the following instructions.
       <UL>
@@ -262,7 +262,7 @@ Go on to \ref step2.
 /* ************************************************************************ */
 
 /*!
-\page step2 Step 2: Create contrete implementations of the NOX::Abstract classes
+\page step2 Step 2: Create concrete implementations of the NOX::Abstract classes
 
 \section step2_abstract NOX abstract classes
 
@@ -278,7 +278,7 @@ Go on to \ref step2.
   and so on. The \b Group supports the linear algebra functionality as
   well as the interface to evaluate the function and,
   optionally, the Jacobian. Complete details are provided in
-  the class decriptions.
+  the class descriptions.
 
   In order to link your code to NOX, you have to write your own
   instantiation of the NOX::Abstract::Vector and NOX::Abstract::Group
@@ -364,16 +364,16 @@ with %NOX; see Rosenbrock.C.
 
 There are four steps to calling the solver.
 
-\section step3_stepa Step A: Set up a Group object containing the intial guess.
+\section step3_stepa Step A: Set up a Group object containing the initial guess.
 
 The first step is to somehow construct an object deriving from the
-Abstract::Group which contains the intial guess as its x-vector. See
+Abstract::Group which contains the initial guess as its x-vector. See
 \ref step2 for more details.
 
 \code
 
 // Construct an object that derives from the abstract Group object. Here
-// we call it the ExampleGroup. It should contain the intial guess.
+// we call it the ExampleGroup. It should contain the initial guess.
 ExampleGroup grp;
 
 \endcode
@@ -392,7 +392,7 @@ failure. For example...
   details.
 
 These and other status tests can be combined using the
-NOX::StatusTest::Combo object. It takes an arbitary number of status
+NOX::StatusTest::Combo object. It takes an arbitrary number of status
 tests and either AND's or OR's them together. 
 
 Finally, the user can create their own status tests, so long as they
@@ -437,7 +437,7 @@ initial guess, the status tests, and the solver parameters.
 // Create the solver
 NOX::Solver::Manager solver(grp, statusTestsCombo, solverParameters);
 
-// Solve the nonlinesar system
+// Solve the nonlinear system
 NOX::StatusTest::StatusType status = solver.solve();
 
 // Print the answer
@@ -683,14 +683,14 @@ library and related examples do depend on MPI.
   <li> \c --enable-nox-petsc      
     <ul>
       <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
-      <li> Requires exising PETSc source specified by environemnt variables, 
+      <li> Requires existing PETSc source specified by environment variables, 
            \c PETSC_DIR and \c PETSC_ARCH
     </ul>
   <li> \c --enable-nox-petsc-examples
     <ul>
       <li> Compile petsc examples. 
            Requires \c --enable-nox-petsc.
-      <li> Requires exising PETSc libraries specified by environment variables,
+      <li> Requires existing PETSc libraries specified by environment variables,
            \c PETSC_DIR,  \c PETSC_ARCH and \c PETSC_BOPT
     </ul>
 
@@ -759,7 +759,7 @@ ifdef as follows.
 <li> Modify Makefile.am.
 
 For example, the following modifications were made to \c
-nox/src/Makefile.am to add NOX_Direction_QuasiNewton as prereease code
+nox/src/Makefile.am to add NOX_Direction_QuasiNewton as prerelease code
 in the libnox.a library.
 
 \verbatim
@@ -963,7 +963,7 @@ types</EM> in function/member function prototypes.
 <li>Everything must be declared within the <code>NOX</code>
 namespace. No exceptions! 
 <br>&nbsp;
-<li>Furthermore, each class should be within the approiate
+<li>Furthermore, each class should be within the appropriate
 sub-namespace. The choices are:
 <br>&nbsp;
 <ul>
@@ -1003,7 +1003,7 @@ with one or two underscores (`<CODE>_</CODE>' or `<CODE>__</CODE>').
 <br>&nbsp;
 <li>No inline functions, except the empty <code>{}</code>
 function. The reason for this is that if the function does not inline
-correctly, it can actaully lead to slower code rather than faster
+correctly, it can actually lead to slower code rather than faster
 code. 
 </ul>
 <h5>Functions</h5>
@@ -1030,7 +1030,7 @@ directly after a function name.
 </PRE>
 </ul>
 
-<h5>Variable declations</h5>
+<h5>Variable declarations</h5>
 
 <ul>
 <li>Only one variable per line.
@@ -1252,7 +1252,7 @@ each parameter is listed.
   - "Line Search" - Sublist of the line search parameters, passed to
     the NOX::Linesearch::Manager constructor. Defaults to an empty list.
 
-  - "Linear %Solver" - Sublist of the linear solver paramaters, passed
+  - "Linear %Solver" - Sublist of the linear solver parameters, passed
     to Abstract::Group::computeNewton(). Furthermore, the "Tolerance"
     within this list may be modified by the
     resetForcingTerm(). Defaults to an empty list.
@@ -1268,10 +1268,10 @@ each parameter is listed.
     solver tolerance. Default to 0.01.
 
   - "Forcing Term Alpha" - Used for the "Type 2" forcing term
-    calcuation. Defaults to 1.5.
+    calculation. Defaults to 1.5.
 
   - "Forcing Term Gamma" - Used for the "Type 2" forcing term
-    calcuation. Defaults to 0.9.
+    calculation. Defaults to 0.9.
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -1311,7 +1311,7 @@ ways, as follows.
 </pre>
 
 <li>Doxygen does automatically cross-linking, which is very
-convienent. However, sometimes it cross-links when you don't intend
+convenient. However, sometimes it cross-links when you don't intend
 for it to. For example, the following line would automatically
 generate a link from the word <code>Newton</code> to the
 NOX::Solver::Newton class. 
@@ -1349,7 +1349,7 @@ immediately before the word that is causing the link. For example,
   and so on. The \b Group supports the linear algebra functionality as
   well as the interface to evaluate the function and,
   optionally, the Jacobian. Complete details are provided in
-  the class decription.
+  the class description.
 
   Included with %NOX are three such interfaces:
 
@@ -1677,7 +1677,7 @@ for \c Epetra_Vector.h:
 <li>\c /home/jdoe/Trilinos/packages/epetra/src
 </ul>
 
-Similarily, it will look in the following locations
+Similarly, it will look in the following locations
 for \c AztecOO.h:
 <ul>
 <li>directory optionally specified by \c --with-aztecoo-include
@@ -1741,7 +1741,7 @@ generally incompatible with \c --with-mpi-cxx
 then assume that the headers are located in
 \c /home/jdoe/lam/include, that the libraries are
 located in \c /home/jdoe/lam/lib, and that the
-library is specifed by \c -lmpi.
+library is specified by \c -lmpi.
 \verbatim
 configure --with-mpi=/home/jdoe/lam
 \endverbatim
@@ -1755,7 +1755,7 @@ configure --with-mpi=/home/jdoe/mpich --with-mpi-libs="-lmpich"
 <li>
 Specify the exact locations of the MPI include files and the MPI
 libraries. Assumes that the
-library is specifed by \c -lmpi.
+library is specified by \c -lmpi.
 \verbatim
 configure --with-mpi-include="/home/jdoe/lam/include" \
           --with-mpi-libdir="/home/jdoe/lam/lib"
