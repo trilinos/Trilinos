@@ -151,6 +151,7 @@ AC_CHECK_HEADERS([string string.h complex complex.h algorithm algorithm.h],,,)
 AC_CHECK_HEADERS([map map.h vector vector.h],,,)
 AC_CHECK_HEADERS([sstream strstream sstream.h strstream.h],,,)
 AC_CHECK_HEADERS([stdexcept stdexcept.h cstdarg stdarg.h],,,)
+AC_CHECK_HEADERS([typeinfo],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Teuchos requires at least one or the other.]])
@@ -204,7 +205,11 @@ else
 fi  
 
 if test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes" && test "X$ac_cv_header_sstream" != "Xyes" && test "X$ac_cv_header_strstream" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  TSF requires at least one of these.]])
+  AC_MSG_ERROR([[Cannot find sstream, strstream, sstream.h, or strstream.h.  Teuchos requires at least one of these.]])
+fi
+
+if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find typeinfo.  Teuchos requires this header.]])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.

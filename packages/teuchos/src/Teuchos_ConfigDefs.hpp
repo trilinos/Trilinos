@@ -154,6 +154,10 @@
 #include <strings.h>
 #endif
 
+#ifdef HAVE_TYPEINFO
+#include <typeinfo>
+#endif
+
 
 
 
