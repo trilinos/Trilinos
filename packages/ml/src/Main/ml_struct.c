@@ -1744,6 +1744,7 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
    int          i, j, nGrid;
    int          j_max;
    double       x_max;
+   ML_Krylov   *kdata;
 
    ML_Smoother *smooth_ptr = (ML_Smoother *) sm;
    ML_Operator *Amat = smooth_ptr->my_level->Amat;
@@ -1753,6 +1754,21 @@ int ML_MLS_Setup_Coef(void *sm, int deg)
        return (pr_error("*** value of deg larger than MLS_MAX_DEG !\n"));
    }
    rho = Amat->lambda_max;
+   if ((rho < -666.) && (rho > -667)) {
+     kdata = ML_Krylov_Create( Amat->comm );
+     ML_Krylov_Set_PrintFreq( kdata, 0 );
+     ML_Krylov_Set_ComputeEigenvalues( kdata );
+#ifdef SYMMETRIZE
+     ML_Krylov_Set_Amatrix(kdata, t3);
+#else
+     ML_Krylov_Set_Amatrix(kdata, Amat);
+#endif
+     ML_Krylov_Solve(kdata, Amat->outvec_leng, NULL, NULL);
+     Amat->lambda_max = ML_Krylov_Get_MaxEigenvalue(kdata);
+     Amat->lambda_min = kdata->ML_eigen_min; 
+     ML_Krylov_Destroy( &kdata );
+     rho = Amat->lambda_max;
+   }
    rho *= widget->mlsOver; // @@@ 
 
    for (i=0; i<MLS_MAX_DEG; i++) { widget->mlsOm[i] = 0.e0; om_loc[i] = 0.e0; }
