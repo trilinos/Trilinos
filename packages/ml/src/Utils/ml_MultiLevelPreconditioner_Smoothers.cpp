@@ -58,10 +58,10 @@ void ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
   sprintf(parameter,"%ssmoother: pre or post", Prefix_);
   int pre_or_post = 0;
-  string PreOrPostSmoother = List_.get(parameter,"post");
+  string PreOrPostSmoother = List_.get(parameter,"both");
 
   sprintf(parameter,"%ssmoother: type", Prefix_);
-  string Smoother = List_.get(parameter,"MLS");
+  string Smoother = List_.get(parameter,"Aztec");
 
   sprintf(parameter,"%ssmoother: Aztec options", Prefix_);
   int * SmootherOptionsPtr = NULL;
