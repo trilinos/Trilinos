@@ -556,7 +556,7 @@ Regenerate the multigrid hierarchy with the existing restriction and
 prolongation operators.
 *******************************************************************************/
 
-int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml, AZ_MATRIX *Amat,
+int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml,/* AZ_MATRIX *Amat, */
                                                int Nlocal_edges,
                                                int fine_level, int N_levels,
                                                int incr_or_decrease,
@@ -565,11 +565,13 @@ int  ML_Gen_MGHierarchy_ReuseExistingOperators(ML *ml, AZ_MATRIX *Amat,
    int grid_level, coarsest_level;
    ML_Operator *mat;
 
+/* These need to be done before calling this function !!!!
   mat = &(ml->Amat[fine_level]);
   ML_Operator_Clean(mat);
   ML_Operator_Init(mat,ml->comm);
   AZ_ML_Set_Amat(ml, fine_level, Nlocal_edges, Nlocal_edges, Amat, 
 		 proc_config);
+*/
 
    if (incr_or_decrease == ML_DECREASING)
    {

@@ -16,9 +16,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "ml_defs.h"
-#ifdef AZTEC
-#include "az_aztec.h"
-#endif
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -78,22 +75,26 @@ typedef struct ML_AMG_Struct
    int    coarse_solver_type;
    int    coarse_solver_ntimes;
    double coarse_solver_jacobiwt;
-#ifdef AZTEC
    int    *pre_aztec_options;
    double *pre_aztec_params;
    int    *pre_aztec_proc_config;
    double *pre_aztec_status;
+   void   (*pre_function)(int);
+  /* Trying to avoid including az_aztec.h
    void   (*pre_function)(double *, int *, int *, double *,
                           struct AZ_MATRIX_STRUCT  *,
                           struct AZ_PREC_STRUCT *);
+  */
    int    *post_aztec_options;
    double *post_aztec_params;
    int    *post_aztec_proc_config;
    double *post_aztec_status;
+   void   (*post_function)(int);
+  /* Trying to avoid including az_aztec.h
    void   (*post_function)(double *, int *, int *, double *,
                            struct AZ_MATRIX_STRUCT  *,
                            struct AZ_PREC_STRUCT *);
-#endif
+  */
 } ML_AMG;
 
 /* ************************************************************************* */
@@ -161,13 +162,12 @@ extern int  ML_AMG_CoarsenMIS(ML_AMG *ml_amg,ML_Operator *Amatrix,
 extern int  ML_AMG_Set_Smoother(ML_AMG *ml_amg,int smoother_type,int pre_or_post,
                         ML_Operator *Amatrix,int ntimes, double weight);
 
-#ifdef AZTEC
 extern int  ML_AMG_Set_SmootherAztec(ML_AMG *ml_amg, int pre_or_post,
                        int *options, double *params, int *proc_config,
-                       double *status, 
+				     double *status, void (*post_function)(int)
+				     /* Trying to avoid including az_aztec.h 
                        void (*post_function)(double *,int *,int *,double *,
-                        struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*));
-#endif
+		       struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*)*/);
 
 extern int  ML_AMG_Set_CoarseSolve(ML_AMG *ml_amg, int solve_type, int ntimes, 
                                    double weight);

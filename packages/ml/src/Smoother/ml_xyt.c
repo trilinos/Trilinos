@@ -536,6 +536,7 @@ extern void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
                       int start_location, int total_send, ML_Comm *comm,
                       int mask);
 
+#ifdef out
 /*int CSR_submv(ML_Operator *Amat, double p[], double ap[], int mask)*/
 int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
 {
@@ -577,6 +578,7 @@ int oldCSR_submv(ML_Operator *Amat, double p[], double ap[])
   }
   return(1);
 }
+#endif
 double total_submv = 0.;
 int CSR_submv(ML_Operator *Amat, double p[], double ap[])
 {

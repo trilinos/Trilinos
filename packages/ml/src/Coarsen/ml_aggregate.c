@@ -20,10 +20,6 @@
 #include "ml_lapack.h"
 #include "ml_utils.h"
 
-#if defined(AZTEC) && defined(ML_AGGR_READINFO)
-#include "az_aztec.h"
-#endif
-
 
 /* ************************************************************************* */
 /* variables used for parallel debugging  (Ray)                              */
@@ -54,14 +50,12 @@ extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 /* ************************************************************************* */
 /* Constructor                                                               */
 /* ------------------------------------------------------------------------- */
+#ifdef AZTEC
+extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
+#endif
 
 int ML_Aggregate_Create( ML_Aggregate **ag )
 {
-#ifdef ML_AGGR_READINFO
-   FILE *fp;
-   int  proc_config[AZ_PROC_SIZE];
-#endif
-	 
    ML_memory_alloc( (void **) ag, sizeof(ML_Aggregate), "AG1" );
    (*ag)->ML_id                      = ML_ID_AGGRE;
    (*ag)->print_flag                 = 1;
@@ -90,43 +84,7 @@ int ML_Aggregate_Create( ML_Aggregate **ag )
    (*ag)->operator_complexity        = 0.0;
 
 #if defined(AZTEC) && defined(ML_AGGR_READINFO)
-#ifdef ML_MPI
-   AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
-#else
-   AZ_set_proc_config(proc_config, AZ_NOT_MPI );
-#endif
-
-   if (proc_config[AZ_node] == 0) 
-   {
-      fp = fopen("PaRams","r");
-      if (fp == NULL) { printf("woops no PaRams file\n"); exit(1);}
-      fscanf(fp,"%d", &((*ag)->ordering) );
-      fscanf(fp,"%d", &((*ag)->min_nodes_per_aggregate) );
-      fscanf(fp,"%d", &((*ag)->max_neigh_already_selected) );
-      fscanf(fp,"%d", &((*ag)->attach_scheme) );
-      fscanf(fp,"%d", &((*ag)->max_levels) );
-      fscanf(fp,"%d", &((*ag)->coarsen_scheme) );
-      fscanf(fp,"%lf", &((*ag)->threshold) );
-      fscanf(fp,"%lf", &((*ag)->smoothP_damping_factor) );
-      fscanf(fp,"%lf", &((*ag)->drop_tol_for_smoothing) );
-      fclose(fp);
-    }
-    AZ_broadcast((char*)&((*ag)->ordering),sizeof(int),proc_config,AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->min_nodes_per_aggregate),sizeof(int), 
-                  proc_config, AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->max_neigh_already_selected),sizeof(int), 
-                  proc_config, AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->attach_scheme),sizeof(int),proc_config,
-                  AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->max_levels),sizeof(int),proc_config,AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->coarsen_scheme),sizeof(int),proc_config,
-                  AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->threshold),sizeof(double),proc_config,AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->smoothP_damping_factor), sizeof(double), 
-                  proc_config, AZ_PACK);
-    AZ_broadcast((char*)&((*ag)->drop_tol_for_smoothing), sizeof(double), 
-                  proc_config, AZ_PACK);
-    AZ_broadcast((char*)NULL         , 0          , proc_config, AZ_SEND);
+   ML_Aggregate_AztecRead(*ag);
 #endif
 
    return 0;

@@ -1,18 +1,8 @@
-/* f2c.h  --  Standard Fortran to C header file */
-
-/**  barf  [ba:rf]  2.  "He suggested using FORTRAN, and everybody barfed."
-
-	- From The Shogakukan DICTIONARY OF NEW ENGLISH (Second edition) */
-
 #ifndef F2C_INCLUDE
 #define F2C_INCLUDE
+#define FORTRAN_STRLEN
 
-#include "ml_aztec_lapack.h"
-#include "ml_vendor_lapack.h"
-#include "ml_superlu_lapack.h"
-#include "ml_defs.h"
-#include "ml_utils.h"
-#include <stdio.h>
+#include "ml_lapack.h"
 /* typedef long int integer; */
 typedef int integer;
 typedef char *address;
@@ -40,11 +30,9 @@ typedef char integer1;
 #ifdef f2c_i2
 /* for -i2 */
 typedef short flag;
-typedef short ftnlen;
 typedef short ftnint;
 #else
 typedef long flag;
-typedef long ftnlen;
 typedef long ftnint;
 #endif
 
@@ -215,11 +203,16 @@ typedef doublereal E_f;	/* real function with -R not specified */
 #undef vax
 #endif
 #endif
+extern  double ml_d_sign(doublereal *a, doublereal *b);
+extern  int ml_s_cat(char *lp, char *rpp[], int rnp[], int *np, ftnlen ll);
+extern  int ml_s_copy(register char *a, register char *b, ftnlen la, ftnlen lb);
+extern  double ml_pow_di(doublereal *ap, integer *bp);
+extern  integer ml_s_cmp(char *a0, char *b0, ftnlen la, ftnlen lb);
 
 #ifndef ML_DTRSV_FUNC
 
 
-/* Subroutine */ int dtrsv_(char *uplo, char *trans, char *diag, integer *n, 
+/* Subroutine */ int MLFORTRAN(dtrsv)(char *uplo, char *trans, char *diag, integer *n, 
 	doublereal *a, integer *lda, doublereal *x, integer *incx)
 {
 
@@ -228,9 +221,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
     static integer info;
     static doublereal temp;
     static integer i, j;
-    extern logical lsame_(char *, char *);
     static integer ix, jx, kx;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
     static logical nounit;
 
 
@@ -346,12 +337,12 @@ typedef doublereal E_f;	/* real function with -R not specified */
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
 
     info = 0;
-    if (! lsame_(uplo, "U") && ! lsame_(uplo, "L")) {
+    if (! MLFORTRAN(lsame)(uplo, "U") && ! MLFORTRAN(lsame)(uplo, "L")) {
 	info = 1;
-    } else if (! lsame_(trans, "N") && ! lsame_(trans, "T") &&
-	     ! lsame_(trans, "C")) {
+    } else if (! MLFORTRAN(lsame)(trans, "N") && ! MLFORTRAN(lsame)(trans, "T") &&
+	     ! MLFORTRAN(lsame)(trans, "C")) {
 	info = 2;
-    } else if (! lsame_(diag, "U") && ! lsame_(diag, "N")) {
+    } else if (! MLFORTRAN(lsame)(diag, "U") && ! MLFORTRAN(lsame)(diag, "N")) {
 	info = 3;
     } else if (*n < 0) {
 	info = 4;
@@ -361,7 +352,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	info = 8;
     }
     if (info != 0) {
-	xerbla_("DTRSV ", &info);
+	MLFORTRAN(xerbla)("DTRSV ", &info);
 	return 0;
     }
 
@@ -371,7 +362,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 	return 0;
     }
 
-    nounit = lsame_(diag, "N");
+    nounit = MLFORTRAN(lsame)(diag, "N");
 
 /*     Set up the start point in X if the increment is not unity. This   
        will be  ( N - 1 )*INCX  too small for descending loops. */
@@ -385,11 +376,11 @@ typedef doublereal E_f;	/* real function with -R not specified */
 /*     Start the operations. In this version the elements of A are   
        accessed sequentially with one pass through A. */
 
-    if (lsame_(trans, "N")) {
+    if (MLFORTRAN(lsame)(trans, "N")) {
 
 /*        Form  x := inv( A )*x. */
 
-	if (lsame_(uplo, "U")) {
+	if (MLFORTRAN(lsame)(uplo, "U")) {
 	    if (*incx == 1) {
 		for (j = *n; j >= 1; --j) {
 		    if (X(j) != 0.) {
@@ -462,7 +453,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 
 /*        Form  x := inv( A' )*x. */
 
-	if (lsame_(uplo, "U")) {
+	if (MLFORTRAN(lsame)(uplo, "U")) {
 	    if (*incx == 1) {
 		for (j = 1; j <= *n; ++j) {
 		    temp = X(j);
@@ -539,6 +530,7 @@ typedef doublereal E_f;	/* real function with -R not specified */
 #endif
 
 #ifndef ML_DGETRF_FUNC
+
 /* Subroutine */ int MLFORTRAN(dgetrf)(integer *m, integer *n, doublereal *a, integer *
 	lda, integer *ipiv, integer *info)
 {
@@ -612,22 +604,8 @@ typedef doublereal E_f;	/* real function with -R not specified */
     integer   i__1, i__3, i__4, i__5;
     /* Local variables */
     static integer i, j;
-    extern /* Subroutine */ int MLFORTRAN(dgemm)(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, doublereal *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *);
     static integer iinfo;
-    extern /* Subroutine */ int MLFORTRAN(dtrsm)(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *), MLFORTRAN(dgetf2)(
-	    integer *, integer *, doublereal *, integer *, integer *, integer 
-	    *);
     static integer jb, nb;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
-    extern /* Subroutine */ int MLFORTRAN(dlaswp)(integer *, doublereal *, integer *, 
-	    integer *, integer *, integer *, integer *);
-
 
 
 #define IPIV(I) ipiv[(I)-1]
@@ -711,7 +689,11 @@ xact
 
 		i__3 = *n - j - jb + 1;
 		MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
-			c_b16, &A(j,j), lda, &A(j,j+jb), lda);
+			c_b16, &A(j,j), lda, &A(j,j+jb), lda,
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 		if (j + jb <= *m) {
 
 /*                 Update trailing submatrix. */
@@ -719,7 +701,11 @@ xact
 		    i__3 = *m - j - jb + 1;
 		    i__4 = *n - j - jb + 1;
 		    MLFORTRAN(dgemm)("No transpose", "No transpose", &i__3, &i__4, &jb, 
-			    &c_b19, &A(j+jb,j), lda, &A(j,j+jb), lda, &c_b16, &A(j+jb,j+jb), lda);
+			    &c_b19, &A(j+jb,j), lda, &A(j,j+jb), lda, &c_b16, &A(j+jb,j+jb), lda
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("No transpose")
+#endif
+);
 		}
 	    }
 /* L20: */
@@ -807,12 +793,6 @@ xact
     /* System generated locals */
     integer     i__1;
     /* Local variables */
-    extern logical MLFORTRAN(lsame)(char *, char *);
-    extern /* Subroutine */ int MLFORTRAN(dtrsm)(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *), MLFORTRAN(xerbla)(
-	    char *, integer *), MLFORTRAN(dlaswp)(integer *, doublereal *, 
-	    integer *, integer *, integer *, integer *, integer *);
     static logical notran;
 
 
@@ -857,23 +837,39 @@ xact
 
 /*        Solve L*X = B, overwriting B with X. */
 
-	MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 
 /*        Solve U*X = B, overwriting B with X. */
 
 	MLFORTRAN(dtrsm)("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b12, &
-		A(1,1), lda, &B(1,1), ldb);
+		A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("No transpose"),strlen("Non-unit")
+#endif
+);
     } else {
 
 /*        Solve A' * X = B.   
 
           Solve U'*X = B, overwriting B with X. */
 
-	MLFORTRAN(dtrsm)("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("Transpose"),strlen("Non-unit")
+#endif
+);
 
 /*        Solve L'*X = B, overwriting B with X. */
 
-	MLFORTRAN(dtrsm)("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Lower", "Transpose", "Unit", n, nrhs, &c_b12, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 
 /*        Apply row interchanges to the solution vectors. */
 
@@ -1053,10 +1049,8 @@ e
     static doublereal temp;
     static integer i, j, k;
     static logical lside;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static integer nrowa;
     static logical upper;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
     static logical nounit;
 
 
@@ -1579,8 +1573,6 @@ e
        Function Body */
     /* Local variables */
     static integer i;
-    extern /* Subroutine */ int MLFORTRAN(dswap)(integer *, doublereal *, integer *, 
-	    doublereal *, integer *);
     static integer ip, ix;
 
 
@@ -1703,16 +1695,8 @@ e
     integer   i__1, i__2, i__3;
     doublereal d__1;
     /* Local variables */
-    extern /* Subroutine */ int MLFORTRAN(dger)(integer *, integer *, doublereal *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer j;
-    extern /* Subroutine */ int MLFORTRAN(dscal)(integer *, doublereal *, doublereal *, 
-	    integer *), MLFORTRAN(dswap)(integer *, doublereal *, integer *, doublereal 
-	    *, integer *);
     static integer jp;
-    extern integer MLFORTRAN(idamax)(integer *, doublereal *, integer *);
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
 
 
 
@@ -1889,7 +1873,7 @@ L40:
 } /* dswap_ */
 #endif
 #ifndef ML_DASUM_FUNC
-doublereal dasum_(integer *n, doublereal *dx, integer *incx)
+doublereal MLFORTRAN(dasum)(integer *n, doublereal *dx, integer *incx)
 {
 
 
@@ -1971,7 +1955,7 @@ L60:
 #endif
 
 #ifndef ML_DAXPY_FUNC
-/* Subroutine */ int daxpy_(integer *n, doublereal *da, doublereal *dx,
+/* Subroutine */ int MLFORTRAN(daxpy)(integer *n, doublereal *da, doublereal *dx,
         integer *incx, doublereal *dy, integer *incy)
 {
 
@@ -2060,7 +2044,7 @@ L40:
 #endif
 
 #ifndef ML_DDOT_FUNC
-doublereal ddot_(integer *n, doublereal *dx, integer *incx, doublereal *dy,
+doublereal MLFORTRAN(ddot)(integer *n, doublereal *dx, integer *incx, doublereal *dy,
         integer *incy)
 {
 
@@ -2258,9 +2242,7 @@ L40:
     static logical nota, notb;
     static doublereal temp;
     static integer i, j, l, ncola;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static integer nrowa, nrowb;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
 
 
 /*  Purpose   
@@ -2729,7 +2711,6 @@ L30:
     static integer info;
     static doublereal temp;
     static integer i, j, ix, jy, kx;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
 
 
 /*  Purpose   
@@ -3001,9 +2982,6 @@ integer MLFORTRAN(ilaenv)(integer *ispec, char *name, char *opts, integer *n1, i
 /* >>Start of File<<   
        System generated locals */
     integer ret_val;
-    /* Builtin functions   
-       Subroutine */ int s_copy(char *, char *, ftnlen, ftnlen);
-    integer s_cmp(char *, char *, ftnlen, ftnlen);
     /* Local variables */
     static integer i;
     static logical cname, sname;
@@ -3035,7 +3013,7 @@ L100:
 /*     Convert NAME to upper case if the first character is lower case. */
 
     ret_val = 1;
-    s_copy(subnam, name, 6L, name_len);
+    ml_s_copy(subnam, name, 6L, name_len);
     ic = *(unsigned char *)subnam;
     iz = 'Z';
     if (iz == 90 || iz == 122) {
@@ -3092,9 +3070,9 @@ L100:
     if (! (cname || sname)) {
 	return ret_val;
     }
-    s_copy(c2, subnam + 1, 2L, 2L);
-    s_copy(c3, subnam + 3, 3L, 3L);
-    s_copy(c4, c3 + 1, 2L, 2L);
+    ml_s_copy(c2, subnam + 1, 2L, 2L);
+    ml_s_copy(c3, subnam + 3, 3L, 3L);
+    ml_s_copy(c4, c3 + 1, 2L, 2L);
 
     switch (*ispec) {
 	case 1:  goto L110;
@@ -3112,102 +3090,102 @@ L110:
 
     nb = 1;
 
-    if (s_cmp(c2, "GE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    if (ml_s_cmp(c2, "GE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
-	} else if (s_cmp(c3, "QRF", 3L, 3L) == 0 || s_cmp(c3, "RQF", 3L, 3L) 
-		== 0 || s_cmp(c3, "LQF", 3L, 3L) == 0 || s_cmp(c3, "QLF", 3L, 
+	} else if (ml_s_cmp(c3, "QRF", 3L, 3L) == 0 || ml_s_cmp(c3, "RQF", 3L, 3L) 
+		== 0 || ml_s_cmp(c3, "LQF", 3L, 3L) == 0 || ml_s_cmp(c3, "QLF", 3L, 
 		3L) == 0) {
 	    if (sname) {
 		nb = 32;
 	    } else {
 		nb = 32;
 	    }
-	} else if (s_cmp(c3, "HRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "HRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 32;
 	    } else {
 		nb = 32;
 	    }
-	} else if (s_cmp(c3, "BRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "BRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 32;
 	    } else {
 		nb = 32;
 	    }
-	} else if (s_cmp(c3, "TRI", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "TRI", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
 	}
-    } else if (s_cmp(c2, "PO", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "PO", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
 	}
-    } else if (s_cmp(c2, "SY", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "SY", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
-	} else if (sname && s_cmp(c3, "TRD", 3L, 3L) == 0) {
+	} else if (sname && ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nb = 1;
-	} else if (sname && s_cmp(c3, "GST", 3L, 3L) == 0) {
+	} else if (sname && ml_s_cmp(c3, "GST", 3L, 3L) == 0) {
 	    nb = 64;
 	}
-    } else if (cname && s_cmp(c2, "HE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "HE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    nb = 64;
-	} else if (s_cmp(c3, "TRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nb = 1;
-	} else if (s_cmp(c3, "GST", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "GST", 3L, 3L) == 0) {
 	    nb = 64;
 	}
-    } else if (sname && s_cmp(c2, "OR", 2L, 2L) == 0) {
+    } else if (sname && ml_s_cmp(c2, "OR", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nb = 32;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nb = 32;
 	    }
 	}
-    } else if (cname && s_cmp(c2, "UN", 2L, 2L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "UN", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nb = 32;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nb = 32;
 	    }
 	}
-    } else if (s_cmp(c2, "GB", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "GB", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		if (*n4 <= 64) {
 		    nb = 1;
@@ -3222,8 +3200,8 @@ L110:
 		}
 	    }
 	}
-    } else if (s_cmp(c2, "PB", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "PB", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		if (*n2 <= 64) {
 		    nb = 1;
@@ -3238,24 +3216,24 @@ L110:
 		}
 	    }
 	}
-    } else if (s_cmp(c2, "TR", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRI", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "TR", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRI", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
 	}
-    } else if (s_cmp(c2, "LA", 2L, 2L) == 0) {
-	if (s_cmp(c3, "UUM", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "LA", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "UUM", 3L, 3L) == 0) {
 	    if (sname) {
 		nb = 64;
 	    } else {
 		nb = 64;
 	    }
 	}
-    } else if (sname && s_cmp(c2, "ST", 2L, 2L) == 0) {
-	if (s_cmp(c3, "EBZ", 3L, 3L) == 0) {
+    } else if (sname && ml_s_cmp(c2, "ST", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "EBZ", 3L, 3L) == 0) {
 	    nb = 1;
 	}
     }
@@ -3267,77 +3245,77 @@ L200:
 /*     ISPEC = 2:  minimum block size */
 
     nbmin = 2;
-    if (s_cmp(c2, "GE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "QRF", 3L, 3L) == 0 || s_cmp(c3, "RQF", 3L, 3L) == 0 || 
-		s_cmp(c3, "LQF", 3L, 3L) == 0 || s_cmp(c3, "QLF", 3L, 3L) == 
+    if (ml_s_cmp(c2, "GE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "QRF", 3L, 3L) == 0 || ml_s_cmp(c3, "RQF", 3L, 3L) == 0 || 
+		ml_s_cmp(c3, "LQF", 3L, 3L) == 0 || ml_s_cmp(c3, "QLF", 3L, 3L) == 
 		0) {
 	    if (sname) {
 		nbmin = 2;
 	    } else {
 		nbmin = 2;
 	    }
-	} else if (s_cmp(c3, "HRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "HRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nbmin = 2;
 	    } else {
 		nbmin = 2;
 	    }
-	} else if (s_cmp(c3, "BRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "BRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nbmin = 2;
 	    } else {
 		nbmin = 2;
 	    }
-	} else if (s_cmp(c3, "TRI", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "TRI", 3L, 3L) == 0) {
 	    if (sname) {
 		nbmin = 2;
 	    } else {
 		nbmin = 2;
 	    }
 	}
-    } else if (s_cmp(c2, "SY", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRF", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "SY", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRF", 3L, 3L) == 0) {
 	    if (sname) {
 		nbmin = 8;
 	    } else {
 		nbmin = 8;
 	    }
-	} else if (sname && s_cmp(c3, "TRD", 3L, 3L) == 0) {
+	} else if (sname && ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nbmin = 2;
 	}
-    } else if (cname && s_cmp(c2, "HE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRD", 3L, 3L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "HE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nbmin = 2;
 	}
-    } else if (sname && s_cmp(c2, "OR", 2L, 2L) == 0) {
+    } else if (sname && ml_s_cmp(c2, "OR", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nbmin = 2;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nbmin = 2;
 	    }
 	}
-    } else if (cname && s_cmp(c2, "UN", 2L, 2L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "UN", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nbmin = 2;
 	    }
 	} else if (*(unsigned char *)c3 == 'M') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nbmin = 2;
 	    }
 	}
@@ -3350,51 +3328,51 @@ L300:
 /*     ISPEC = 3:  crossover point */
 
     nx = 0;
-    if (s_cmp(c2, "GE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "QRF", 3L, 3L) == 0 || s_cmp(c3, "RQF", 3L, 3L) == 0 || 
-		s_cmp(c3, "LQF", 3L, 3L) == 0 || s_cmp(c3, "QLF", 3L, 3L) == 
+    if (ml_s_cmp(c2, "GE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "QRF", 3L, 3L) == 0 || ml_s_cmp(c3, "RQF", 3L, 3L) == 0 || 
+		ml_s_cmp(c3, "LQF", 3L, 3L) == 0 || ml_s_cmp(c3, "QLF", 3L, 3L) == 
 		0) {
 	    if (sname) {
 		nx = 128;
 	    } else {
 		nx = 128;
 	    }
-	} else if (s_cmp(c3, "HRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "HRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nx = 128;
 	    } else {
 		nx = 128;
 	    }
-	} else if (s_cmp(c3, "BRD", 3L, 3L) == 0) {
+	} else if (ml_s_cmp(c3, "BRD", 3L, 3L) == 0) {
 	    if (sname) {
 		nx = 128;
 	    } else {
 		nx = 128;
 	    }
 	}
-    } else if (s_cmp(c2, "SY", 2L, 2L) == 0) {
-	if (sname && s_cmp(c3, "TRD", 3L, 3L) == 0) {
+    } else if (ml_s_cmp(c2, "SY", 2L, 2L) == 0) {
+	if (sname && ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nx = 1;
 	}
-    } else if (cname && s_cmp(c2, "HE", 2L, 2L) == 0) {
-	if (s_cmp(c3, "TRD", 3L, 3L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "HE", 2L, 2L) == 0) {
+	if (ml_s_cmp(c3, "TRD", 3L, 3L) == 0) {
 	    nx = 1;
 	}
-    } else if (sname && s_cmp(c2, "OR", 2L, 2L) == 0) {
+    } else if (sname && ml_s_cmp(c2, "OR", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nx = 128;
 	    }
 	}
-    } else if (cname && s_cmp(c2, "UN", 2L, 2L) == 0) {
+    } else if (cname && ml_s_cmp(c2, "UN", 2L, 2L) == 0) {
 	if (*(unsigned char *)c3 == 'G') {
-	    if (s_cmp(c4, "QR", 2L, 2L) == 0 || s_cmp(c4, "RQ", 2L, 2L) == 0 
-		    || s_cmp(c4, "LQ", 2L, 2L) == 0 || s_cmp(c4, "QL", 2L, 2L)
-		     == 0 || s_cmp(c4, "HR", 2L, 2L) == 0 || s_cmp(c4, "TR", 
-		    2L, 2L) == 0 || s_cmp(c4, "BR", 2L, 2L) == 0) {
+	    if (ml_s_cmp(c4, "QR", 2L, 2L) == 0 || ml_s_cmp(c4, "RQ", 2L, 2L) == 0 
+		    || ml_s_cmp(c4, "LQ", 2L, 2L) == 0 || ml_s_cmp(c4, "QL", 2L, 2L)
+		     == 0 || ml_s_cmp(c4, "HR", 2L, 2L) == 0 || ml_s_cmp(c4, "TR", 
+		    2L, 2L) == 0 || ml_s_cmp(c4, "BR", 2L, 2L) == 0) {
 		nx = 128;
 	    }
 	}
@@ -3535,18 +3513,8 @@ L800:
     integer   i__1, i__2, i__3, i__4;
     /* Local variables */
     static integer i, k, nbmin, iinfo;
-    extern /* Subroutine */ int MLFORTRAN(dgeqr2)(integer *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *);
     static integer ib, nb;
-    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
-	    integer *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer nx;
-    extern /* Subroutine */ int MLFORTRAN(dlarft)(char *, char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *), MLFORTRAN(xerbla)(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static integer ldwork, iws;
 
 
@@ -3757,10 +3725,6 @@ tor
     integer   i__1, i__2, i__3;
     /* Local variables */
     static integer i, k;
-    extern /* Subroutine */ int MLFORTRAN(dlarf)(char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *), MLFORTRAN(dlarfg)(integer *, doublereal *, 
-	    doublereal *, integer *, doublereal *), MLFORTRAN(xerbla)(char *, integer *);
     static doublereal aii;
 
 
@@ -3951,12 +3915,6 @@ tor
     doublereal d__1;
     /* Local variables */
     static integer i, j;
-    extern logical MLFORTRAN(lsame)(char *, char *);
-    extern /* Subroutine */ int MLFORTRAN(dgemv)(char *, integer *, integer *, 
-	    doublereal *, doublereal *, integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, integer *), MLFORTRAN(dtrmv)(char *, 
-	    char *, char *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static doublereal vii;
 
 
@@ -3997,7 +3955,11 @@ tor
 		    i__3 = i - 1;
 		    d__1 = -TAU(i);
 		    MLFORTRAN(dgemv)("Transpose", &i__2, &i__3, &d__1, &V(i,1), 
-			    ldv, &V(i,i), &c__1, &c_b8, &T(1,i), &c__1);
+			    ldv, &V(i,i), &c__1, &c_b8, &T(1,i), &c__1
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose")
+#endif
+				     );
 		} else {
 
 /*                 T(1:i-1,i) := - tau(i) * V(1:i-1,i:n) *
@@ -4006,7 +3968,11 @@ tor
 		    i__2 = i - 1;
 		    i__3 = *n - i + 1;
 		    d__1 = -TAU(i);
-		    MLFORTRAN(dgemv)("No transpose", &i__2, &i__3, &d__1, &V(1,i), ldv, &V(i,i), ldv, &c_b8, &T(1,i), &c__1);
+		    MLFORTRAN(dgemv)("No transpose", &i__2, &i__3, &d__1, &V(1,i), ldv, &V(i,i), ldv, &c_b8, &T(1,i), &c__1
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose")
+#endif
+);
 		}
 		V(i,i) = vii;
 
@@ -4046,7 +4012,11 @@ tor
 			i__2 = *k - i;
 			d__1 = -TAU(i);
 			MLFORTRAN(dgemv)("Transpose", &i__1, &i__2, &d__1, &V(1,i+1), ldv, &V(1,i), &c__1, &
-				c_b8, &T(i+1,i), &c__1);
+				c_b8, &T(i+1,i), &c__1
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose")
+#endif
+);
 			V(*n-*k+i,i) = vii;
 		    } else {
 			vii = V(i,*n-*k+i);
@@ -4060,7 +4030,11 @@ tor
 			i__2 = *n - *k + i;
 			d__1 = -TAU(i);
 			MLFORTRAN(dgemv)("No transpose", &i__1, &i__2, &d__1, &V(i+1,1), ldv, &V(i,1), ldv, &c_b8, &
-				T(i+1,i), &c__1);
+				T(i+1,i), &c__1
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose")
+#endif
+);
 			V(i,*n-*k+i) = vii;
 		    }
 
@@ -4188,14 +4162,6 @@ i) */
     integer i__1;
     /* Local variables */
     static integer i, j;
-    extern /* Subroutine */ int MLFORTRAN(dgemm)(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, doublereal *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *);
-    extern logical MLFORTRAN(lsame)(char *, char *);
-    extern /* Subroutine */ int MLFORTRAN(dcopy)(integer *, doublereal *, integer *, 
-	    doublereal *, integer *), MLFORTRAN(dtrmm)(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *);
     static char transt[1];
 
 
@@ -4245,7 +4211,11 @@ WORK)
 /*              W := W * V1 */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "No transpose", "Unit", n, k, &c_b14,
-			 &V(1,1), ldv, &WORK(1,1), ldwork);
+			 &V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+				 );
 		if (*m > *k) {
 
 /*                 W := W + C2'*V2 */
@@ -4253,12 +4223,20 @@ WORK)
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("Transpose", "No transpose", n, k, &i__1, &c_b14, &
 			    C(*k+1,1), ldc, &V(*k+1,1), ldv,
-			     &c_b14, &WORK(1,1), ldwork);
+			     &c_b14, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * T'  or  W * T */
 
-		MLFORTRAN(dtrmm)("Right", "Upper", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Upper", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen(transt),strlen("Non-unit")
+#endif
+				 );
 
 /*              C := C - V * W' */
 
@@ -4269,14 +4247,22 @@ WORK)
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", &i__1, n, k, &c_b25, &
 			    V(*k+1,1), ldv, &WORK(1,1), 
-			    ldwork, &c_b14, &C(*k+1,1), ldc)
+			    ldwork, &c_b14, &C(*k+1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+)
 			    ;
 		}
 
 /*              W := W * V1' */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "Transpose", "Unit", n, k, &c_b14, &
-			V(1,1), ldv, &WORK(1,1), ldwork);
+			V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("Transpose"),strlen("Unit")
+#endif
+				 );
 
 /*              C1 := C1 - W' */
 
@@ -4308,7 +4294,11 @@ K)
 /*              W := W * V1 */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "No transpose", "Unit", m, k, &c_b14,
-			 &V(1,1), ldv, &WORK(1,1), ldwork);
+			 &V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+				 );
 		if (*n > *k) {
 
 /*                 W := W + C2 * V2 */
@@ -4316,12 +4306,20 @@ K)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "No transpose", m, k, &i__1, &
 			    c_b14, &C(1,*k+1), ldc, &V(*k+1,1), ldv, &c_b14, &WORK(1,1), 
-			    ldwork);
+			    ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * T  or  W * T' */
 
-		MLFORTRAN(dtrmm)("Right", "Upper", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Upper", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen(trans),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - W * V' */
 
@@ -4332,13 +4330,21 @@ K)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", m, &i__1, k, &c_b25, &
 			    WORK(1,1), ldwork, &V(*k+1,1), 
-			    ldv, &c_b14, &C(1,*k+1), ldc);
+			    ldv, &c_b14, &C(1,*k+1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * V1' */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "Transpose", "Unit", m, k, &c_b14, &
-			V(1,1), ldv, &WORK(1,1), ldwork);
+			V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 
 /*              C1 := C1 - W */
 
@@ -4378,7 +4384,11 @@ WORK)
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "No transpose", "Unit", n, k, &c_b14,
 			 &V(*m-*k+1,1), ldv, &WORK(1,1), 
-			ldwork);
+			ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 		if (*m > *k) {
 
 /*                 W := W + C1'*V1 */
@@ -4386,12 +4396,20 @@ WORK)
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("Transpose", "No transpose", n, k, &i__1, &c_b14, &
 			    C(1,1), ldc, &V(1,1), ldv, &c_b14, &
-			    WORK(1,1), ldwork);
+			    WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * T'  or  W * T */
 
-		MLFORTRAN(dtrmm)("Right", "Lower", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Lower", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen(transt),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - V * W' */
 
@@ -4402,14 +4420,22 @@ WORK)
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", &i__1, n, k, &c_b25, &
 			    V(1,1), ldv, &WORK(1,1), ldwork, &
-			    c_b14, &C(1,1), ldc);
+			    c_b14, &C(1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * V2' */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "Transpose", "Unit", n, k, &c_b14, &
 			V(*m-*k+1,1), ldv, &WORK(1,1), 
-			ldwork);
+			ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("Transpose"),strlen("Unit")
+#endif
+				 );
 
 /*              C2 := C2 - W' */
 
@@ -4443,7 +4469,11 @@ K)
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "No transpose", "Unit", m, k, &c_b14,
 			 &V(*n-*k+1,1), ldv, &WORK(1,1), 
-			ldwork);
+			ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("No transpose"),strlen("Unit")
+#endif
+				 );
 		if (*n > *k) {
 
 /*                 W := W + C1 * V1 */
@@ -4451,12 +4481,20 @@ K)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "No transpose", m, k, &i__1, &
 			    c_b14, &C(1,1), ldc, &V(1,1), ldv, &
-			    c_b14, &WORK(1,1), ldwork);
+			    c_b14, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * T  or  W * T' */
 
-		MLFORTRAN(dtrmm)("Right", "Lower", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Lower", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen(trans),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - W * V' */
 
@@ -4467,14 +4505,22 @@ K)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", m, &i__1, k, &c_b25, &
 			    WORK(1,1), ldwork, &V(1,1), ldv, &
-			    c_b14, &C(1,1), ldc);
+			    c_b14, &C(1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+				     );
 		}
 
 /*              W := W * V2' */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "Transpose", "Unit", m, k, &c_b14, &
 			V(*n-*k+1,1), ldv, &WORK(1,1), 
-			ldwork);
+			ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("Transpose"),strlen("Unit")
+#endif
+				 );
 
 /*              C2 := C2 - W */
 
@@ -4516,19 +4562,31 @@ n WORK)
 /*              W := W * V1' */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "Transpose", "Unit", n, k, &c_b14, &
-			V(1,1), ldv, &WORK(1,1), ldwork);
+			V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 		if (*m > *k) {
 
 /*                 W := W + C2'*V2' */
 
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("Transpose", "Transpose", n, k, &i__1, &c_b14, &C(*k+1,1), ldc, &V(1,*k+1), 
-			    ldv, &c_b14, &WORK(1,1), ldwork);
+			    ldv, &c_b14, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * T'  or  W * T */
 
-		MLFORTRAN(dtrmm)("Right", "Upper", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Upper", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen(transt),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - V' * W' */
 
@@ -4538,13 +4596,21 @@ n WORK)
 
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("Transpose", "Transpose", &i__1, n, k, &c_b25, &V(1,*k+1), ldv, &WORK(1,1), 
-			    ldwork, &c_b14, &C(*k+1,1), ldc);
+			    ldwork, &c_b14, &C(*k+1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * V1 */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "No transpose", "Unit", n, k, &c_b14,
-			 &V(1,1), ldv, &WORK(1,1), ldwork);
+			 &V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 
 /*              C1 := C1 - W' */
 
@@ -4576,7 +4642,11 @@ WORK)
 /*              W := W * V1' */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "Transpose", "Unit", m, k, &c_b14, &
-			V(1,1), ldv, &WORK(1,1), ldwork);
+			V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 		if (*n > *k) {
 
 /*                 W := W + C2 * V2' */
@@ -4584,12 +4654,20 @@ WORK)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", m, k, &i__1, &c_b14, &
 			    C(1,*k+1), ldc, &V(1,*k+1), ldv, &c_b14, &WORK(1,1), 
-			    ldwork);
+			    ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * T  or  W * T' */
 
-		MLFORTRAN(dtrmm)("Right", "Upper", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Upper", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen(trans),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - W * V */
 
@@ -4599,13 +4677,21 @@ WORK)
 
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "No transpose", m, &i__1, k, &
-			    c_b25, &WORK(1,1), ldwork, &V(1,*k+1), ldv, &c_b14, &C(1,*k+1), ldc);
+			    c_b25, &WORK(1,1), ldwork, &V(1,*k+1), ldv, &c_b14, &C(1,*k+1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * V1 */
 
 		MLFORTRAN(dtrmm)("Right", "Upper", "No transpose", "Unit", m, k, &c_b14,
-			 &V(1,1), ldv, &WORK(1,1), ldwork);
+			 &V(1,1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Upper"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 
 /*              C1 := C1 - W */
 
@@ -4645,18 +4731,30 @@ n WORK)
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "Transpose", "Unit", n, k, &c_b14, &
 			V(1,*m-*k+1), ldv, &WORK(1,1)
-			, ldwork);
+			, ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 		if (*m > *k) {
 
 /*                 W := W + C1'*V1' */
 
 		    i__1 = *m - *k;
-		    MLFORTRAN(dgemm)("Transpose", "Transpose", n, k, &i__1, &c_b14, &C(1,1), ldc, &V(1,1), ldv, &c_b14, &WORK(1,1), ldwork);
+		    MLFORTRAN(dgemm)("Transpose", "Transpose", n, k, &i__1, &c_b14, &C(1,1), ldc, &V(1,1), ldv, &c_b14, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * T'  or  W * T */
 
-		MLFORTRAN(dtrmm)("Right", "Lower", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Lower", transt, "Non-unit", n, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen(transt),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - V' * W' */
 
@@ -4666,13 +4764,21 @@ n WORK)
 
 		    i__1 = *m - *k;
 		    MLFORTRAN(dgemm)("Transpose", "Transpose", &i__1, n, k, &c_b25, &V(1,1), ldv, &WORK(1,1), ldwork, &
-			    c_b14, &C(1,1), ldc);
+			    c_b14, &C(1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("Transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * V2 */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "No transpose", "Unit", n, k, &c_b14,
-			 &V(1,*m-*k+1), ldv, &WORK(1,1), ldwork);
+			 &V(1,*m-*k+1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 
 /*              C2 := C2 - W' */
 
@@ -4706,7 +4812,11 @@ WORK)
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "Transpose", "Unit", m, k, &c_b14, &
 			V(1,*n-*k+1), ldv, &WORK(1,1)
-			, ldwork);
+			, ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("Transpose"),strlen("Unit")
+#endif
+);
 		if (*n > *k) {
 
 /*                 W := W + C1 * V1' */
@@ -4714,12 +4824,20 @@ WORK)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "Transpose", m, k, &i__1, &c_b14, &
 			    C(1,1), ldc, &V(1,1), ldv, &c_b14, &
-			    WORK(1,1), ldwork);
+			    WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("Transpose")
+#endif
+);
 		}
 
 /*              W := W * T  or  W * T' */
 
-		MLFORTRAN(dtrmm)("Right", "Lower", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork);
+		MLFORTRAN(dtrmm)("Right", "Lower", trans, "Non-unit", m, k, &c_b14, &T(1,1), ldt, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen(trans),strlen("Non-unit")
+#endif
+);
 
 /*              C := C - W * V */
 
@@ -4730,13 +4848,21 @@ WORK)
 		    i__1 = *n - *k;
 		    MLFORTRAN(dgemm)("No transpose", "No transpose", m, &i__1, k, &
 			    c_b25, &WORK(1,1), ldwork, &V(1,1), 
-			    ldv, &c_b14, &C(1,1), ldc);
+			    ldv, &c_b14, &C(1,1), ldc
+#ifdef FORTRAN_STRLEN
+				     , strlen("No transpose"),strlen("No transpose")
+#endif
+);
 		}
 
 /*              W := W * V2 */
 
 		MLFORTRAN(dtrmm)("Right", "Lower", "No transpose", "Unit", m, k, &c_b14,
-			 &V(1,*n-*k+1), ldv, &WORK(1,1), ldwork);
+			 &V(1,*n-*k+1), ldv, &WORK(1,1), ldwork
+#ifdef FORTRAN_STRLEN
+				 , strlen("Right"),strlen("Lower"),strlen("No transpose"),strlen("Unit")
+#endif
+);
 
 /*              C1 := C1 - W */
 
@@ -4876,10 +5002,8 @@ L40:
     static doublereal temp;
     static integer i, j, k;
     static logical lside;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static integer nrowa;
     static logical upper;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
     static logical nounit;
 
 
@@ -5326,9 +5450,7 @@ L40:
     static integer info;
     static doublereal temp;
     static integer lenx, leny, i, j;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static integer ix, iy, jx, jy, kx, ky;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
 
 
 /*  Purpose   
@@ -5611,9 +5733,7 @@ L40:
     static integer info;
     static doublereal temp;
     static integer i, j;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static integer ix, jx, kx;
-    extern /* Subroutine */ int MLFORTRAN(xerbla)(char *, integer *);
     static logical nounit;
 
 
@@ -5994,13 +6114,6 @@ L40:
     /* System generated locals */
     doublereal d__1;
     /* Local variables */
-    extern /* Subroutine */ int MLFORTRAN(dger)(integer *, integer *, doublereal *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
-    extern logical MLFORTRAN(lsame)(char *, char *);
-    extern /* Subroutine */ int MLFORTRAN(dgemv)(char *, integer *, integer *, 
-	    doublereal *, doublereal *, integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, integer *);
 
 
 #undef V
@@ -6019,7 +6132,11 @@ L40:
 /*           w := C' * v */
 
 	    MLFORTRAN(dgemv)("Transpose", m, n, &c_b4, &C(1,1), ldc, &V(1), incv, &
-		    c_b5, &WORK(1), &c__1);
+		    c_b5, &WORK(1), &c__1
+#ifdef FORTRAN_STRLEN
+			     , strlen("Transpose")
+#endif
+			     );
 
 /*           C := C - v * w' */
 
@@ -6036,7 +6153,11 @@ L40:
 /*           w := C * v */
 
 	    MLFORTRAN(dgemv)("No transpose", m, n, &c_b4, &C(1,1), ldc, &V(1), 
-		    incv, &c_b5, &WORK(1), &c__1);
+		    incv, &c_b5, &WORK(1), &c__1
+#ifdef FORTRAN_STRLEN
+			     , strlen("No transpose")
+#endif
+			     );
 
 /*           C := C - w * v' */
 
@@ -6119,15 +6240,10 @@ L40:
     integer i__1;
     doublereal d__1;
     /* Builtin functions */
-    double d_sign(doublereal *, doublereal *);
     /* Local variables */
     static doublereal beta;
-    extern doublereal MLFORTRAN(dnrm2)(integer *, doublereal *, integer *);
     static integer j;
-    extern /* Subroutine */ int MLFORTRAN(dscal)(integer *, doublereal *, doublereal *, 
-	    integer *);
     static doublereal xnorm;
-    extern doublereal MLFORTRAN(dlapy2)(doublereal *, doublereal *), MLFORTRAN(dlamch)(char *);
     static doublereal safmin, rsafmn;
     static integer knt;
 
@@ -6153,7 +6269,7 @@ L40:
 /*        general case */
 
 	d__1 = MLFORTRAN(dlapy2)(alpha, &xnorm);
-	beta = -d_sign(&d__1, alpha);
+	beta = -ml_d_sign(&d__1, alpha);
 	safmin = MLFORTRAN(dlamch)("S") / MLFORTRAN(dlamch)("E");
 	if (ML_abs(beta) < safmin) {
 
@@ -6177,7 +6293,7 @@ L10:
 	    i__1 = *n - 1;
 	    xnorm = MLFORTRAN(dnrm2)(&i__1, &X(1), incx);
 	    d__1 = MLFORTRAN(dlapy2)(alpha, &xnorm);
-	    beta = -d_sign(&d__1, alpha);
+	    beta = -ml_d_sign(&d__1, alpha);
 	    *tau = (beta - *alpha) / beta;
 	    i__1 = *n - 1;
 	    d__1 = 1. / (*alpha - beta);
@@ -6224,8 +6340,6 @@ doublereal MLFORTRAN(dnrm2)(integer *n, doublereal *x, integer *incx)
     integer i__1, i__2;
     doublereal ret_val, d__1;
 
-    /* Builtin functions */
-    double sqrt(doublereal);
 
     /* Local variables */
     static doublereal norm, scale, absxi;
@@ -6344,8 +6458,6 @@ doublereal MLFORTRAN(dlamch)(char *cmach)
     /* System generated locals */
     integer i__1;
     doublereal ret_val;
-    /* Builtin functions */
-    double pow_di(doublereal *, integer *);
     /* Local variables */
     static doublereal base;
     static integer beta;
@@ -6353,10 +6465,7 @@ doublereal MLFORTRAN(dlamch)(char *cmach)
     static integer imin, imax;
     static logical lrnd;
     static doublereal rmin, rmax, t, rmach;
-    extern logical MLFORTRAN(lsame)(char *, char *);
     static doublereal small, sfmin;
-    extern /* Subroutine */ int MLFORTRAN(dlamc2)(integer *, integer *, logical *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *);
     static integer it;
     static doublereal rnd, eps;
 
@@ -6370,11 +6479,11 @@ doublereal MLFORTRAN(dlamch)(char *cmach)
 	if (lrnd) {
 	    rnd = 1.;
 	    i__1 = 1 - it;
-	    eps = pow_di(&base, &i__1) / 2;
+	    eps = ml_pow_di(&base, &i__1) / 2;
 	} else {
 	    rnd = 0.;
 	    i__1 = 1 - it;
-	    eps = pow_di(&base, &i__1);
+	    eps = ml_pow_di(&base, &i__1);
 	}
 	prec = eps * base;
 	emin = (doublereal) imin;
@@ -6483,7 +6592,6 @@ nding
     static doublereal a, b, c, f;
     static integer lbeta;
     static doublereal savec;
-    extern doublereal MLFORTRAN(dlamc3)(doublereal *, doublereal *);
     static logical lieee1;
     static doublereal t1, t2;
     static integer lt;
@@ -6711,8 +6819,6 @@ L30:
     /* System generated locals */
     integer i__1;
     doublereal d__1, d__2, d__3, d__4, d__5;
-    /* Builtin functions */
-    double pow_di(doublereal *, integer *);
     /* Local variables */
     static logical ieee;
     static doublereal half;
@@ -6724,13 +6830,7 @@ L30:
     static doublereal small;
     static integer gpmin;
     static doublereal third, lrmin, lrmax, sixth;
-    extern /* Subroutine */ int MLFORTRAN(dlamc1)(integer *, integer *, logical *, 
-	    logical *);
-    extern doublereal MLFORTRAN(dlamc3)(doublereal *, doublereal *);
     static logical lieee1;
-    extern /* Subroutine */ int MLFORTRAN(dlamc4)(integer *, doublereal *, integer *), 
-	    MLFORTRAN(dlamc5)(integer *, integer *, integer *, logical *, integer *, 
-	    doublereal *);
     static integer lt, ngnmin, ngpmin;
     static doublereal one, two;
 
@@ -6761,7 +6861,7 @@ ure
 
 	b = (doublereal) lbeta;
 	i__1 = -lt;
-	a = pow_di(&b, &i__1);
+	a = ml_pow_di(&b, &i__1);
 	leps = a;
 
 /*        Try some tricks to see whether or not this is the correct  E
@@ -7020,7 +7120,6 @@ doublereal MLFORTRAN(dlamc3)(doublereal *a, doublereal *b)
     static doublereal zero, a;
     static integer i;
     static doublereal rbase, b1, b2, c1, c2, d1, d2;
-    extern doublereal MLFORTRAN(dlamc3)(doublereal *, doublereal *);
     static doublereal one;
 
 
@@ -7135,7 +7234,6 @@ L10:
     static integer uexp, i;
     static doublereal y, z;
     static integer nbits;
-    extern doublereal MLFORTRAN(dlamc3)(doublereal *, doublereal *);
     static doublereal recbas;
     static integer exbits, expsum, try__;
 
@@ -7272,8 +7370,6 @@ doublereal MLFORTRAN(dlapy2)(doublereal *x, doublereal *y)
 /* >>Start of File<<   
        System generated locals */
     doublereal ret_val, d__1;
-    /* Builtin functions */
-    double sqrt(doublereal);
     /* Local variables */
     static doublereal xabs, yabs, w, z;
 
@@ -7297,15 +7393,9 @@ doublereal MLFORTRAN(dlapy2)(doublereal *x, doublereal *y)
 } /* dlapy2_ */
 #endif
 
-#ifndef ML_S_CMP_FUNC
-
 /* compare two strings */
 
-#ifdef KR_headers
-integer s_cmp(a0, b0, la, lb) char *a0, *b0; ftnlen la, lb;
-#else
-integer s_cmp(char *a0, char *b0, ftnlen la, ftnlen lb)
-#endif
+integer ml_s_cmp(char *a0, char *b0, ftnlen la, ftnlen lb)
 {
 register unsigned char *a, *aend, *b, *bend;
 a = (unsigned char *)a0;
@@ -7341,16 +7431,10 @@ else
 	}
 return(0);
 }
-#endif
 
-#ifndef ML_S_COPY_FUNC
 /* assign strings:  a = b */
 
-#ifdef KR_headers
-VOID s_copy(a, b, la, lb) register char *a, *b; ftnlen la, lb;
-#else
-int s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
-#endif
+int ml_s_copy(register char *a, register char *b, ftnlen la, ftnlen lb)
 {
 register char *aend, *bend;
 
@@ -7368,31 +7452,17 @@ else
 	while(a < aend)
 		*a++ = ' ';
 	}
-#ifndef KR_headers
 return 0;
-#endif
 }
-#endif
 
-#ifndef ML_D_SIGN_FUNC
-#ifdef KR_headers
-double d_sign(a,b) doublereal *a, *b;
-#else
-double d_sign(doublereal *a, doublereal *b)
-#endif
+double ml_d_sign(doublereal *a, doublereal *b)
 {
 double x;
 x = (*a >= 0 ? *a : - *a);
 return( *b >= 0 ? x : -x);
 }
-#endif
 
-#ifndef ML_S_CAT_FUNC
-#ifdef KR_headers
-int s_cat(lp, rpp, rnp, np, ll) char *lp, *rpp[]; ftnlen rnp[], *np, ll;
-#else
-int s_cat(char *lp, char *rpp[], int rnp[], int *np, ftnlen ll)
-#endif
+int ml_s_cat(char *lp, char *rpp[], int rnp[], int *np, ftnlen ll)
 {
 ftnlen i, n, nc;
 char *f__rp;
@@ -7412,14 +7482,9 @@ while(--ll >= 0)
         *lp++ = ' ';
         return 0;
 }
-#endif
 
-#ifndef ML_POW_DI_FUNC
-#ifdef KR_headers
-double pow_di(ap, bp) doublereal *ap; integer *bp;
-#else
-double pow_di(doublereal *ap, integer *bp)
-#endif
+
+double ml_pow_di(doublereal *ap, integer *bp)
 {
 double pow, x;
 integer n;
@@ -7447,7 +7512,7 @@ if(n != 0)
 	}
 return(pow);
 }
-#endif
+
 
 #ifndef ML_DORGQR_FUNC
 
@@ -7534,18 +7599,8 @@ return(pow);
     integer   i__1, i__2, i__3;
     /* Local variables */
     static integer i, j, l, nbmin, iinfo;
-    extern /* Subroutine */ int MLFORTRAN(dorg2r)(integer *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *);
     static integer ib, nb, ki, kk;
-    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
-	    integer *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer nx;
-    extern /* Subroutine */ int MLFORTRAN(dlarft)(char *, char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *), MLFORTRAN(xerbla)(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static integer ldwork, iws;
 
 
@@ -7784,10 +7839,6 @@ tor
     doublereal d__1;
     /* Local variables */
     static integer i, j, l;
-    extern /* Subroutine */ int MLFORTRAN(dscal)(integer *, doublereal *, doublereal *, 
-	    integer *), MLFORTRAN(dlarf)(char *, integer *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *, doublereal *), MLFORTRAN(xerbla)(char *, integer *);
-
 
 
 #define TAU(I) tau[(I)-1]
@@ -7867,7 +7918,7 @@ tor
 
 #ifndef ML_DPOTRS_FUNC
 
-/* Subroutine */ int dpotrs_(char *uplo, integer *n, integer *nrhs, 
+/* Subroutine */ int MLFORTRAN(dpotrs)(char *uplo, integer *n, integer *nrhs, 
 	doublereal *a, integer *lda, doublereal *b, integer *ldb, integer *
 	info)
 {
@@ -7932,12 +7983,7 @@ tor
     /* System generated locals */
     integer i__1;
     /* Local variables */
-    extern logical lsame_(char *, char *);
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *);
     static logical upper;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
 
 
 
@@ -7946,8 +7992,8 @@ tor
 #define B(I,J) b[(I)-1 + ((J)-1)* ( *ldb)]
 
     *info = 0;
-    upper = lsame_(uplo, "U");
-    if (! upper && ! lsame_(uplo, "L")) {
+    upper = MLFORTRAN(lsame)(uplo, "U");
+    if (! upper && ! MLFORTRAN(lsame)(uplo, "L")) {
 	*info = -1;
     } else if (*n < 0) {
 	*info = -2;
@@ -7960,7 +8006,7 @@ tor
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DPOTRS", &i__1);
+	MLFORTRAN(xerbla)("DPOTRS", &i__1);
 	return 0;
     }
 
@@ -7976,24 +8022,40 @@ tor
 
           Solve U'*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("Transpose"),strlen("Non-unit")
+#endif
+);
 
 /*        Solve U*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b9, &
-		A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &c_b9, &
+		A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("No transpose"),strlen("Non-unit")
+#endif
+);
     } else {
 
 /*        Solve A*X = B where A = L*L'.   
 
           Solve L*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Lower", "No transpose", "Non-unit", n, nrhs, &c_b9, &
-		A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Non-unit", n, nrhs, &c_b9, &
+		A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen("Non-unit")
+#endif
+);
 
 /*        Solve L'*X = B, overwriting B with X. */
 
-	dtrsm_("Left", "Lower", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb);
+	MLFORTRAN(dtrsm)("Left", "Lower", "Transpose", "Non-unit", n, nrhs, &c_b9, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("Transpose"),strlen("Non-unit")
+#endif
+);
     }
 
     return 0;
@@ -8005,7 +8067,7 @@ tor
 
 
 #ifndef ML_DGELQ2_FUNC
-/* Subroutine */ int dgelq2_(integer *m, integer *n, doublereal *a, integer *
+/* Subroutine */ int MLFORTRAN(dgelq2)(integer *m, integer *n, doublereal *a, integer *
 	lda, doublereal *tau, doublereal *work, integer *info)
 {
 /*  -- LAPACK routine (version 2.0) --   
@@ -8082,10 +8144,6 @@ tor
     integer i__1, i__2, i__3;
     /* Local variables */
     static integer i, k;
-    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *), MLFORTRAN(dlarfg)(integer *, doublereal *, 
-	    doublereal *, integer *, doublereal *), xerbla_(char *, integer *);
     static doublereal aii;
 
 
@@ -8104,7 +8162,7 @@ tor
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DGELQ2", &i__1);
+	MLFORTRAN(xerbla)("DGELQ2", &i__1);
 	return 0;
     }
 
@@ -8144,7 +8202,7 @@ tor
 
 
 #ifndef ML_DGELQF_FUNC
-/* Subroutine */ int dgelqf_(integer *m, integer *n, doublereal *a, integer *
+/* Subroutine */ int MLFORTRAN(dgelqf)(integer *m, integer *n, doublereal *a, integer *
 	lda, doublereal *tau, doublereal *work, integer *lwork, integer *info)
 {
 /*  -- LAPACK routine (version 2.0) --   
@@ -8234,18 +8292,8 @@ tor
     integer i__1, i__2, i__3, i__4;
     /* Local variables */
     static integer i, k, nbmin, iinfo;
-    extern /* Subroutine */ int dgelq2_(integer *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *);
     static integer ib, nb;
-    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
-	    integer *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer nx;
-    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static integer ldwork, iws;
 
 
@@ -8267,7 +8315,7 @@ tor
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DGELQF", &i__1);
+	MLFORTRAN(xerbla)("DGELQF", &i__1);
 	return 0;
     }
 
@@ -8331,7 +8379,7 @@ e NB and
              A(i:i+ib-1,i:n) */
 
 	    i__3 = *n - i + 1;
-	    dgelq2_(&ib, &i__3, &A(i,i), lda, &TAU(i), &WORK(1), &
+	    MLFORTRAN(dgelq2)(&ib, &i__3, &A(i,i), lda, &TAU(i), &WORK(1), &
 		    iinfo);
 	    if (i + ib <= *m) {
 
@@ -8363,7 +8411,7 @@ tor
     if (i <= k) {
 	i__2 = *m - i + 1;
 	i__1 = *n - i + 1;
-	dgelq2_(&i__2, &i__1, &A(i,i), lda, &TAU(i), &WORK(1), &
+	MLFORTRAN(dgelq2)(&i__2, &i__1, &A(i,i), lda, &TAU(i), &WORK(1), &
 		iinfo);
     }
 
@@ -8377,7 +8425,7 @@ tor
 
 #ifndef ML_DGELS_FUNC
 
-/* Subroutine */ int dgels_(char *trans, integer *m, integer *n, integer *
+/* Subroutine */ int MLFORTRAN(dgels)(char *trans, integer *m, integer *n, integer *
 	nrhs, doublereal *a, integer *lda, doublereal *b, integer *ldb, 
 	doublereal *work, integer *lwork, integer *info)
 {
@@ -8505,35 +8553,12 @@ tor
     static integer brow;
     static logical tpsd;
     static integer i, j, iascl, ibscl;
-    extern logical lsame_(char *, char *);
-    extern /* Subroutine */ int dtrsm_(char *, char *, char *, char *, 
-	    integer *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *);
     static integer wsize;
     static doublereal rwork[1];
-    extern /* Subroutine */ int dlabad_(doublereal *, doublereal *);
     static integer nb;
-    extern doublereal dlamch_(char *), dlange_(char *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *);
     static integer mn;
-    extern /* Subroutine */ int dgelqf_(integer *, integer *, doublereal *, 
-	    integer *, doublereal *, doublereal *, integer *, integer *), 
-	    dlascl_(char *, integer *, integer *, doublereal *, doublereal *, 
-	    integer *, integer *, doublereal *, integer *, integer *),
-	     MLFORTRAN(dgeqrf)(integer *, integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *, integer *, integer *), dlaset_(char *,
-	     integer *, integer *, doublereal *, doublereal *, doublereal *, 
-	    integer *), xerbla_(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static integer scllen;
     static doublereal bignum;
-    extern /* Subroutine */ int dormlq_(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *, integer *), 
-	    dormqr_(char *, char *, integer *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *, integer *, integer *);
     static doublereal smlnum;
 
 
@@ -8546,7 +8571,7 @@ tor
 
     *info = 0;
     mn = ML_min(*m,*n);
-    if (! (lsame_(trans, "N") || lsame_(trans, "T"))) {
+    if (! (MLFORTRAN(lsame)(trans, "N") || MLFORTRAN(lsame)(trans, "T"))) {
 	*info = -1;
     } else if (*m < 0) {
 	*info = -2;
@@ -8577,7 +8602,7 @@ tor
     if (*info == 0 || *info == -10) {
 
 	tpsd = TRUE_;
-	if (lsame_(trans, "N")) {
+	if (MLFORTRAN(lsame)(trans, "N")) {
 	    tpsd = FALSE_;
 	}
 
@@ -8618,7 +8643,7 @@ tor
 
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DGELS ", &i__1);
+	MLFORTRAN(xerbla)("DGELS ", &i__1);
 	return 0;
     }
 
@@ -8628,32 +8653,32 @@ tor
     i__1 = ML_min(*m,*n);
     if (ML_min(i__1,*nrhs) == 0) {
 	i__1 = ML_max(*m,*n);
-	dlaset_("Full", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
+	MLFORTRAN(dlaset)("Full", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
 	return 0;
     }
 
 /*     Get machine parameters */
 
-    smlnum = dlamch_("S") / dlamch_("P");
+    smlnum = MLFORTRAN(dlamch)("S") / MLFORTRAN(dlamch)("P");
     bignum = 1. / smlnum;
-    dlabad_(&smlnum, &bignum);
+    MLFORTRAN(dlabad)(&smlnum, &bignum);
 
 /*     Scale A, B if max element outside range [SMLNUM,BIGNUM] */
 
-    anrm = dlange_("M", m, n, &A(1,1), lda, rwork);
+    anrm = MLFORTRAN(dlange)("M", m, n, &A(1,1), lda, rwork);
     iascl = 0;
     if (anrm > 0. && anrm < smlnum) {
 
 /*        Scale matrix norm up to SMLNUM */
 
-	dlascl_("G", &c__0, &c__0, &anrm, &smlnum, m, n, &A(1,1), lda, 
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &anrm, &smlnum, m, n, &A(1,1), lda, 
 		info);
 	iascl = 1;
     } else if (anrm > bignum) {
 
 /*        Scale matrix norm down to BIGNUM */
 
-	dlascl_("G", &c__0, &c__0, &anrm, &bignum, m, n, &A(1,1), lda, 
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &anrm, &bignum, m, n, &A(1,1), lda, 
 		info);
 	iascl = 2;
     } else if (anrm == 0.) {
@@ -8661,7 +8686,7 @@ tor
 /*        Matrix all zero. Return zero solution. */
 
 	i__1 = ML_max(*m,*n);
-	dlaset_("F", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
+	MLFORTRAN(dlaset)("F", &i__1, nrhs, &c_b33, &c_b33, &B(1,1), ldb);
 	goto L50;
     }
 
@@ -8669,20 +8694,20 @@ tor
     if (tpsd) {
 	brow = *n;
     }
-    bnrm = dlange_("M", &brow, nrhs, &B(1,1), ldb, rwork);
+    bnrm = MLFORTRAN(dlange)("M", &brow, nrhs, &B(1,1), ldb, rwork);
     ibscl = 0;
     if (bnrm > 0. && bnrm < smlnum) {
 
 /*        Scale matrix norm up to SMLNUM */
 
-	dlascl_("G", &c__0, &c__0, &bnrm, &smlnum, &brow, nrhs, &B(1,1), 
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &bnrm, &smlnum, &brow, nrhs, &B(1,1), 
 		ldb, info);
 	ibscl = 1;
     } else if (bnrm > bignum) {
 
 /*        Scale matrix norm down to BIGNUM */
 
-	dlascl_("G", &c__0, &c__0, &bnrm, &bignum, &brow, nrhs, &B(1,1), 
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &bnrm, &bignum, &brow, nrhs, &B(1,1), 
 		ldb, info);
 	ibscl = 2;
     }
@@ -8704,7 +8729,7 @@ tor
              B(1:M,1:NRHS) := Q' * B(1:M,1:NRHS) */
 
 	    i__1 = *lwork - mn;
-	    dormqr_("Left", "Transpose", m, nrhs, n, &A(1,1), lda, &WORK(
+	    MLFORTRAN(dormqr)("Left", "Transpose", m, nrhs, n, &A(1,1), lda, &WORK(
 		    1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info)
 		    ;
 
@@ -8712,8 +8737,12 @@ tor
 
              B(1:N,1:NRHS) := inv(R) * B(1:N,1:NRHS) */
 
-	    dtrsm_("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &
-		    c_b61, &A(1,1), lda, &B(1,1), ldb);
+	    MLFORTRAN(dtrsm)("Left", "Upper", "No transpose", "Non-unit", n, nrhs, &
+		    c_b61, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("No transpose"),strlen("Non-unit")
+#endif
+);
 
 	    scllen = *n;
 
@@ -8723,8 +8752,12 @@ tor
 
              B(1:N,1:NRHS) := inv(R') * B(1:N,1:NRHS) */
 
-	    dtrsm_("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b61, 
-		    &A(1,1), lda, &B(1,1), ldb);
+	    MLFORTRAN(dtrsm)("Left", "Upper", "Transpose", "Non-unit", n, nrhs, &c_b61, 
+		    &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Upper"),strlen("Transpose"),strlen("Non-unit")
+#endif
+);
 
 /*           B(N+1:M,1:NRHS) = ZERO */
 
@@ -8741,7 +8774,7 @@ tor
 /*           B(1:M,1:NRHS) := Q(1:N,:) * B(1:N,1:NRHS) */
 
 	    i__1 = *lwork - mn;
-	    dormqr_("Left", "No transpose", m, nrhs, n, &A(1,1), lda, &
+	    MLFORTRAN(dormqr)("Left", "No transpose", m, nrhs, n, &A(1,1), lda, &
 		    WORK(1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info);
 
 /*           workspace at least NRHS, optimally NRHS*NB */
@@ -8755,7 +8788,7 @@ tor
 /*        Compute LQ factorization of A */
 
 	i__1 = *lwork - mn;
-	dgelqf_(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
+	MLFORTRAN(dgelqf)(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
 		;
 
 /*        workspace at least M, optimally M*NB. */
@@ -8766,8 +8799,12 @@ tor
 
              B(1:M,1:NRHS) := inv(L) * B(1:M,1:NRHS) */
 
-	    dtrsm_("Left", "Lower", "No transpose", "Non-unit", m, nrhs, &
-		    c_b61, &A(1,1), lda, &B(1,1), ldb);
+	    MLFORTRAN(dtrsm)("Left", "Lower", "No transpose", "Non-unit", m, nrhs, &
+		    c_b61, &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("No transpose"),strlen("Non-unit")
+#endif
+);
 
 /*           B(M+1:N,1:NRHS) = 0 */
 
@@ -8784,7 +8821,7 @@ tor
 /*           B(1:N,1:NRHS) := Q(1:N,:)' * B(1:M,1:NRHS) */
 
 	    i__1 = *lwork - mn;
-	    dormlq_("Left", "Transpose", n, nrhs, m, &A(1,1), lda, &WORK(
+	    MLFORTRAN(dormlq)("Left", "Transpose", n, nrhs, m, &A(1,1), lda, &WORK(
 		    1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info)
 		    ;
 
@@ -8799,15 +8836,19 @@ tor
              B(1:N,1:NRHS) := Q * B(1:N,1:NRHS) */
 
 	    i__1 = *lwork - mn;
-	    dormlq_("Left", "No transpose", n, nrhs, m, &A(1,1), lda, &
+	    MLFORTRAN(dormlq)("Left", "No transpose", n, nrhs, m, &A(1,1), lda, &
 		    WORK(1), &B(1,1), ldb, &WORK(mn + 1), &i__1, info);
 
 /*           workspace at least NRHS, optimally NRHS*NB   
 
              B(1:M,1:NRHS) := inv(L') * B(1:M,1:NRHS) */
 
-	    dtrsm_("Left", "Lower", "Transpose", "Non-unit", m, nrhs, &c_b61, 
-		    &A(1,1), lda, &B(1,1), ldb);
+	    MLFORTRAN(dtrsm)("Left", "Lower", "Transpose", "Non-unit", m, nrhs, &c_b61, 
+		    &A(1,1), lda, &B(1,1), ldb
+#ifdef FORTRAN_STRLEN
+				 , strlen("Left"),strlen("Lower"),strlen("Transpose"),strlen("Non-unit")
+#endif
+);
 
 	    scllen = *m;
 
@@ -8818,17 +8859,17 @@ tor
 /*     Undo scaling */
 
     if (iascl == 1) {
-	dlascl_("G", &c__0, &c__0, &anrm, &smlnum, &scllen, nrhs, &B(1,1)
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &anrm, &smlnum, &scllen, nrhs, &B(1,1)
 		, ldb, info);
     } else if (iascl == 2) {
-	dlascl_("G", &c__0, &c__0, &anrm, &bignum, &scllen, nrhs, &B(1,1)
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &anrm, &bignum, &scllen, nrhs, &B(1,1)
 		, ldb, info);
     }
     if (ibscl == 1) {
-	dlascl_("G", &c__0, &c__0, &smlnum, &bnrm, &scllen, nrhs, &B(1,1)
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &smlnum, &bnrm, &scllen, nrhs, &B(1,1)
 		, ldb, info);
     } else if (ibscl == 2) {
-	dlascl_("G", &c__0, &c__0, &bignum, &bnrm, &scllen, nrhs, &B(1,1)
+	MLFORTRAN(dlascl)("G", &c__0, &c__0, &bignum, &bnrm, &scllen, nrhs, &B(1,1)
 		, ldb, info);
     }
 
@@ -8845,7 +8886,7 @@ L50:
 
 #ifndef ML_DLASCL_FUNC
 
-/* Subroutine */ int dlascl_(char *type, integer *kl, integer *ku, doublereal 
+/* Subroutine */ int MLFORTRAN(dlascl)(char *type, integer *kl, integer *ku, doublereal 
 	*cfrom, doublereal *cto, integer *m, integer *n, doublereal *a, 
 	integer *lda, integer *info)
 {
@@ -8935,13 +8976,10 @@ L50:
     static logical done;
     static doublereal ctoc;
     static integer i, j;
-    extern logical lsame_(char *, char *);
     static integer itype, k1, k2, k3, k4;
     static doublereal cfrom1;
-    extern doublereal dlamch_(char *);
-    static doublereal cfromc;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
     static doublereal bignum, smlnum, mul, cto1;
+    static doublereal cfromc;
 
 
 
@@ -8949,19 +8987,19 @@ L50:
 
     *info = 0;
 
-    if (lsame_(type, "G")) {
+    if (MLFORTRAN(lsame)(type, "G")) {
 	itype = 0;
-    } else if (lsame_(type, "L")) {
+    } else if (MLFORTRAN(lsame)(type, "L")) {
 	itype = 1;
-    } else if (lsame_(type, "U")) {
+    } else if (MLFORTRAN(lsame)(type, "U")) {
 	itype = 2;
-    } else if (lsame_(type, "H")) {
+    } else if (MLFORTRAN(lsame)(type, "H")) {
 	itype = 3;
-    } else if (lsame_(type, "B")) {
+    } else if (MLFORTRAN(lsame)(type, "B")) {
 	itype = 4;
-    } else if (lsame_(type, "Q")) {
+    } else if (MLFORTRAN(lsame)(type, "Q")) {
 	itype = 5;
-    } else if (lsame_(type, "Z")) {
+    } else if (MLFORTRAN(lsame)(type, "Z")) {
 	itype = 6;
     } else {
 	itype = -1;
@@ -8997,7 +9035,7 @@ L50:
 
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DLASCL", &i__1);
+	MLFORTRAN(xerbla)("DLASCL", &i__1);
 	return 0;
     }
 
@@ -9009,7 +9047,7 @@ L50:
 
 /*     Get machine parameters */
 
-    smlnum = dlamch_("S");
+    smlnum = MLFORTRAN(dlamch)("S");
     bignum = 1. / smlnum;
 
     cfromc = *cfrom;
@@ -9149,7 +9187,7 @@ L10:
 #endif
 
 #ifndef ML_DLASET_FUNC
-/* Subroutine */ int dlaset_(char *uplo, integer *m, integer *n, doublereal *
+/* Subroutine */ int MLFORTRAN(dlaset)(char *uplo, integer *m, integer *n, doublereal *
 	alpha, doublereal *beta, doublereal *a, integer *lda)
 {
 /*  -- LAPACK auxiliary routine (version 2.0) --   
@@ -9213,13 +9251,12 @@ L10:
     /* System generated locals */
     /* Local variables */
     static integer i, j;
-    extern logical lsame_(char *, char *);
 
 
 
 #define A(I,J) a[(I)-1 + ((J)-1)* ( *lda)]
 
-    if (lsame_(uplo, "U")) {
+    if (MLFORTRAN(lsame)(uplo, "U")) {
 
 /*        Set the strictly upper triangular or trapezoidal part of the
    
@@ -9234,7 +9271,7 @@ L10:
 /* L20: */
 	}
 
-    } else if (lsame_(uplo, "L")) {
+    } else if (MLFORTRAN(lsame)(uplo, "L")) {
 
 /*        Set the strictly lower triangular or trapezoidal part of the
    
@@ -9277,7 +9314,7 @@ L10:
 
 
 #ifndef ML_DLASSQ_FUNC
-/* Subroutine */ int dlassq_(integer *n, doublereal *x, integer *incx, 
+/* Subroutine */ int MLFORTRAN(dlassq)(integer *n, doublereal *x, integer *incx, 
 	doublereal *scale, doublereal *sumsq)
 {
 /*  -- LAPACK auxiliary routine (version 2.0) --   
@@ -9373,7 +9410,7 @@ L10:
 
 #ifndef ML_DLANGE_FUNC
 
-doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer 
+doublereal MLFORTRAN(dlange)(char *norm, integer *m, integer *n, doublereal *a, integer 
 	*lda, doublereal *work)
 {
 /*  -- LAPACK auxiliary routine (version 2.0) --   
@@ -9450,15 +9487,10 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     
     /* System generated locals */
     doublereal ret_val, d__1, d__2, d__3;
-    /* Builtin functions */
-    double sqrt(doublereal);
     /* Local variables */
     static integer i, j;
     static doublereal scale;
-    extern logical lsame_(char *, char *);
     static doublereal value;
-    extern /* Subroutine */ int dlassq_(integer *, doublereal *, integer *, 
-	    doublereal *, doublereal *);
     static doublereal sum;
 
 
@@ -9469,7 +9501,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
     if (ML_min(*m,*n) == 0) {
 	value = 0.;
-    } else if (lsame_(norm, "M")) {
+    } else if (MLFORTRAN(lsame)(norm, "M")) {
 
 /*        Find ML_max(ML_abs(A(i,j))). */
 
@@ -9483,7 +9515,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    }
 /* L20: */
 	}
-    } else if (lsame_(norm, "O") || *(unsigned char *)norm == '1') {
+    } else if (MLFORTRAN(lsame)(norm, "O") || *(unsigned char *)norm == '1') {
 
 /*        Find norm1(A). */
 
@@ -9497,7 +9529,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    value = ML_max(value,sum);
 /* L40: */
 	}
-    } else if (lsame_(norm, "I")) {
+    } else if (MLFORTRAN(lsame)(norm, "I")) {
 
 /*        Find normI(A). */
 
@@ -9519,14 +9551,14 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    value = ML_max(d__1,d__2);
 /* L80: */
 	}
-    } else if (lsame_(norm, "F") || lsame_(norm, "E")) {
+    } else if (MLFORTRAN(lsame)(norm, "F") || MLFORTRAN(lsame)(norm, "E")) {
 
 /*        Find normF(A). */
 
 	scale = 0.;
 	sum = 1.;
 	for (j = 1; j <= *n; ++j) {
-	    dlassq_(m, &A(1,j), &c__1, &scale, &sum);
+	    MLFORTRAN(dlassq)(m, &A(1,j), &c__1, &scale, &sum);
 /* L90: */
 	}
 	value = scale * sqrt(sum);
@@ -9542,7 +9574,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 #ifndef ML_DLABAD_FUNC
 
-/* Subroutine */ int dlabad_(doublereal *small, doublereal *large)
+/* Subroutine */ int MLFORTRAN(dlabad)(doublereal *small, doublereal *large)
 {
 /*  -- LAPACK auxiliary routine (version 2.0) --   
        Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd.,   
@@ -9587,7 +9619,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
        SMALL and LARGE to avoid overflow and underflow problems. */
 #ifdef CRAY
     /* Builtin functions */
-    double d_lg10(doublereal *), sqrt(doublereal);
+  double d_lg10(doublereal *);
 
 
     if (d_lg10(large) > 2e3) {
@@ -9605,7 +9637,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 #ifndef ML_DORMQR_FUNC
 
-/* Subroutine */ int dormqr_(char *side, char *trans, integer *m, integer *n, 
+/* Subroutine */ int MLFORTRAN(dormqr)(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
 	c, integer *ldc, doublereal *work, integer *lwork, integer *info)
 {
@@ -9714,27 +9746,13 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     address a__1[2];
     integer i__1, i__2, i__3[2], i__4, i__5;
     char ch__1[2];
-    /* Builtin functions   
-       Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
     /* Local variables */
     static logical left;
     static integer i;
     static doublereal t[4160]	/* was [65][64] */;
-    extern logical lsame_(char *, char *);
     static integer nbmin, iinfo, i1, i2, i3;
-    extern /* Subroutine */ int dorm2r_(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *);
     static integer ib, ic, jc, nb, mi, ni;
-    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
-	    integer *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer nq, nw;
-    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static logical notran;
     static integer ldwork, iws;
 
@@ -9750,8 +9768,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 #define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
 
     *info = 0;
-    left = lsame_(side, "L");
-    notran = lsame_(trans, "N");
+    left = MLFORTRAN(lsame)(side, "L");
+    notran = MLFORTRAN(lsame)(trans, "N");
 
 /*     NQ is the order of Q and NW is the minimum dimension of WORK */
 
@@ -9762,9 +9780,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	nq = *n;
 	nw = *m;
     }
-    if (! left && ! lsame_(side, "R")) {
+    if (! left && ! MLFORTRAN(lsame)(side, "R")) {
 	*info = -1;
-    } else if (! notran && ! lsame_(trans, "T")) {
+    } else if (! notran && ! MLFORTRAN(lsame)(trans, "T")) {
 	*info = -2;
     } else if (*m < 0) {
 	*info = -3;
@@ -9781,7 +9799,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DORMQR", &i__1);
+	MLFORTRAN(xerbla)("DORMQR", &i__1);
 	return 0;
     }
 
@@ -9799,7 +9817,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
    Writing concatenation */
     i__3[0] = 1, a__1[0] = side;
     i__3[1] = 1, a__1[1] = trans;
-    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+    ml_s_cat(ch__1, a__1, i__3, &c__2, 2L);
     i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", ch__1, m, n, k, &c_n1, 6L, 2L);
     nb = ML_min(i__1,i__2);
     nbmin = 2;
@@ -9812,7 +9830,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
    Writing concatenation */
 	    i__3[0] = 1, a__1[0] = side;
 	    i__3[1] = 1, a__1[1] = trans;
-	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+	    ml_s_cat(ch__1, a__1, i__3, &c__2, 2L);
 	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMQR", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
 	    nbmin = ML_max(i__1,i__2);
@@ -9825,7 +9843,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 /*        Use unblocked code */
 
-	dorm2r_(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
+	MLFORTRAN(dorm2r)(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
 		, ldc, &WORK(1), &iinfo);
     } else {
 
@@ -9894,7 +9912,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 #ifndef ML_DORMLQ_FUNC
 
-/* Subroutine */ int dormlq_(char *side, char *trans, integer *m, integer *n, 
+/* Subroutine */ int MLFORTRAN(dormlq)(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
 	c, integer *ldc, doublereal *work, integer *lwork, integer *info)
 {
@@ -10003,27 +10021,13 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     address a__1[2];
     integer i__1, i__2, i__3[2], i__4, i__5;
     char ch__1[2];
-    /* Builtin functions   
-       Subroutine */ int s_cat(char *, char **, integer *, integer *, ftnlen);
     /* Local variables */
     static logical left;
     static integer i;
     static doublereal t[4160]	/* was [65][64] */;
-    extern logical lsame_(char *, char *);
     static integer nbmin, iinfo, i1, i2, i3;
-    extern /* Subroutine */ int dorml2_(char *, char *, integer *, integer *, 
-	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
-	    integer *, doublereal *, integer *);
     static integer ib, ic, jc, nb, mi, ni;
-    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
-	    integer *, integer *, integer *, doublereal *, integer *, 
-	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
-	    integer *);
     static integer nq, nw;
-    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
-	    integer *, integer *, ftnlen, ftnlen);
     static logical notran;
     static integer ldwork;
     static char transt[1];
@@ -10041,8 +10045,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 #define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
 
     *info = 0;
-    left = lsame_(side, "L");
-    notran = lsame_(trans, "N");
+    left = MLFORTRAN(lsame)(side, "L");
+    notran = MLFORTRAN(lsame)(trans, "N");
 
 /*     NQ is the order of Q and NW is the minimum dimension of WORK */
 
@@ -10053,9 +10057,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	nq = *n;
 	nw = *m;
     }
-    if (! left && ! lsame_(side, "R")) {
+    if (! left && ! MLFORTRAN(lsame)(side, "R")) {
 	*info = -1;
-    } else if (! notran && ! lsame_(trans, "T")) {
+    } else if (! notran && ! MLFORTRAN(lsame)(trans, "T")) {
 	*info = -2;
     } else if (*m < 0) {
 	*info = -3;
@@ -10072,7 +10076,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DORMLQ", &i__1);
+	MLFORTRAN(xerbla)("DORMLQ", &i__1);
 	return 0;
     }
 
@@ -10090,7 +10094,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
    Writing concatenation */
     i__3[0] = 1, a__1[0] = side;
     i__3[1] = 1, a__1[1] = trans;
-    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+    ml_s_cat(ch__1, a__1, i__3, &c__2, 2L);
     i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", ch__1, m, n, k, &c_n1, 6L, 2L);
     nb = ML_min(i__1,i__2);
     nbmin = 2;
@@ -10103,7 +10107,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
    Writing concatenation */
 	    i__3[0] = 1, a__1[0] = side;
 	    i__3[1] = 1, a__1[1] = trans;
-	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
+	    ml_s_cat(ch__1, a__1, i__3, &c__2, 2L);
 	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMLQ", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
 	    nbmin = ML_max(i__1,i__2);
@@ -10116,7 +10120,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 /*        Use unblocked code */
 
-	dorml2_(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
+	MLFORTRAN(dorml2)(side, trans, m, n, k, &A(1,1), lda, &TAU(1), &C(1,1)
 		, ldc, &WORK(1), &iinfo);
     } else {
 
@@ -10192,7 +10196,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 #ifndef ML_DORM2R_FUNC
 
 
-/* Subroutine */ int dorm2r_(char *side, char *trans, integer *m, integer *n, 
+/* Subroutine */ int MLFORTRAN(dorm2r)(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
 	c, integer *ldc, doublereal *work, integer *info)
 {
@@ -10294,12 +10298,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     /* Local variables */
     static logical left;
     static integer i;
-    extern /* Subroutine */ int MLFORTRAN(dlarf)(char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *);
-    extern logical lsame_(char *, char *);
     static integer i1, i2, i3, ic, jc, mi, ni, nq;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
     static logical notran;
     static doublereal aii;
 
@@ -10313,8 +10312,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 #define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
 
     *info = 0;
-    left = lsame_(side, "L");
-    notran = lsame_(trans, "N");
+    left = MLFORTRAN(lsame)(side, "L");
+    notran = MLFORTRAN(lsame)(trans, "N");
 
 /*     NQ is the order of Q */
 
@@ -10323,9 +10322,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     } else {
 	nq = *n;
     }
-    if (! left && ! lsame_(side, "R")) {
+    if (! left && ! MLFORTRAN(lsame)(side, "R")) {
 	*info = -1;
-    } else if (! notran && ! lsame_(trans, "T")) {
+    } else if (! notran && ! MLFORTRAN(lsame)(trans, "T")) {
 	*info = -2;
     } else if (*m < 0) {
 	*info = -3;
@@ -10340,7 +10339,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DORM2R", &i__1);
+	MLFORTRAN(xerbla)("DORM2R", &i__1);
 	return 0;
     }
 
@@ -10401,7 +10400,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 #ifndef ML_DORML2_FUNC
 
-/* Subroutine */ int dorml2_(char *side, char *trans, integer *m, integer *n, 
+/* Subroutine */ int MLFORTRAN(dorml2)(char *side, char *trans, integer *m, integer *n, 
 	integer *k, doublereal *a, integer *lda, doublereal *tau, doublereal *
 	c, integer *ldc, doublereal *work, integer *info)
 {
@@ -10500,12 +10499,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     /* Local variables */
     static logical left;
     static integer i;
-    extern /* Subroutine */ int MLFORTRAN(dlarf)(char *, integer *, integer *, 
-	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *);
-    extern logical lsame_(char *, char *);
+
     static integer i1, i2, i3, ic, jc, mi, ni, nq;
-    extern /* Subroutine */ int xerbla_(char *, integer *);
     static logical notran;
     static doublereal aii;
 
@@ -10517,8 +10512,8 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 #define C(I,J) c[(I)-1 + ((J)-1)* ( *ldc)]
 
     *info = 0;
-    left = lsame_(side, "L");
-    notran = lsame_(trans, "N");
+    left = MLFORTRAN(lsame)(side, "L");
+    notran = MLFORTRAN(lsame)(trans, "N");
 
 /*     NQ is the order of Q */
 
@@ -10527,9 +10522,9 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     } else {
 	nq = *n;
     }
-    if (! left && ! lsame_(side, "R")) {
+    if (! left && ! MLFORTRAN(lsame)(side, "R")) {
 	*info = -1;
-    } else if (! notran && ! lsame_(trans, "T")) {
+    } else if (! notran && ! MLFORTRAN(lsame)(trans, "T")) {
 	*info = -2;
     } else if (*m < 0) {
 	*info = -3;
@@ -10544,7 +10539,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     }
     if (*info != 0) {
 	i__1 = -(*info);
-	xerbla_("DORML2", &i__1);
+	MLFORTRAN(xerbla)("DORML2", &i__1);
 	return 0;
     }
 

@@ -865,7 +865,7 @@ int az_wrap_solvers(void *data, int in, double x[], int out,
       context->Prec->prec_function(p2,context->options,
                                     context->proc_config,context->params,
                                     context->Amat, context->Prec);
-      daxpy_(&n,&alpha, p2, &one, x, &one);
+      MLFORTRAN(daxpy)(&n,&alpha, p2, &one, x, &one);
    }
    else {
       AZ_oldsolve(p2,rhs,context->options,context->params, 
@@ -2230,6 +2230,53 @@ int ML_MSR_scalesol(double *x, double *scale_vect,int length)
   if (scale_vect == NULL) return 0;
   for (i = 0; i < length; i++) x[i] /= scale_vect[i];
   return 0;
+}
+extern int ML_Aggregate_AztecRead(ML_Aggregate *ag);
+
+int ML_Aggregate_AztecRead(ML_Aggregate *ag) {
+
+  int proc_config[AZ_PROC_SIZE];
+  FILE *fp;
+
+
+#ifdef ML_MPI
+   AZ_set_proc_config(proc_config, MPI_COMM_WORLD);
+#else
+   AZ_set_proc_config(proc_config, AZ_NOT_MPI );
+#endif
+
+   if (proc_config[AZ_node] == 0) 
+   {
+      fp = fopen("PaRams","r");
+      if (fp == NULL) { printf("woops no PaRams file\n"); exit(1);}
+      fscanf(fp,"%d", &((ag)->ordering) );
+      fscanf(fp,"%d", &((ag)->min_nodes_per_aggregate) );
+      fscanf(fp,"%d", &((ag)->max_neigh_already_selected) );
+      fscanf(fp,"%d", &((ag)->attach_scheme) );
+      fscanf(fp,"%d", &((ag)->max_levels) );
+      fscanf(fp,"%d", &((ag)->coarsen_scheme) );
+      fscanf(fp,"%lf", &((ag)->threshold) );
+      fscanf(fp,"%lf", &((ag)->smoothP_damping_factor) );
+      fscanf(fp,"%lf", &((ag)->drop_tol_for_smoothing) );
+      fclose(fp);
+    }
+    AZ_broadcast((char*)&((ag)->ordering),sizeof(int),proc_config,AZ_PACK);
+    AZ_broadcast((char*)&((ag)->min_nodes_per_aggregate),sizeof(int), 
+                  proc_config, AZ_PACK);
+    AZ_broadcast((char*)&((ag)->max_neigh_already_selected),sizeof(int), 
+                  proc_config, AZ_PACK);
+    AZ_broadcast((char*)&((ag)->attach_scheme),sizeof(int),proc_config,
+                  AZ_PACK);
+    AZ_broadcast((char*)&((ag)->max_levels),sizeof(int),proc_config,AZ_PACK);
+    AZ_broadcast((char*)&((ag)->coarsen_scheme),sizeof(int),proc_config,
+                  AZ_PACK);
+    AZ_broadcast((char*)&((ag)->threshold),sizeof(double),proc_config,AZ_PACK);
+    AZ_broadcast((char*)&((ag)->smoothP_damping_factor), sizeof(double), 
+                  proc_config, AZ_PACK);
+    AZ_broadcast((char*)&((ag)->drop_tol_for_smoothing), sizeof(double), 
+                  proc_config, AZ_PACK);
+    AZ_broadcast((char*)NULL         , 0          , proc_config, AZ_SEND);
+    return 0;
 }
 
 #else

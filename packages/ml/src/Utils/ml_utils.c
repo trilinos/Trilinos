@@ -1553,7 +1553,7 @@ double ML_gdot(int N, double r[], double z[], ML_Comm *comm)
 
   add_N = N;
 
-  return ML_gsum_double(ddot_(&add_N, r, &one, z, &one), comm);
+  return ML_gsum_double(MLFORTRAN(ddot)(&add_N, r, &one, z, &one), comm);
 
 } /* dot */
 

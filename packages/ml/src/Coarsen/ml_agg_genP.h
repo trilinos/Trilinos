@@ -64,13 +64,18 @@ extern int  ML_AGG_Decrement_Two_Level(ML *, int current_level,
 extern int  ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
                int requested_rows[], int allocated_space, int columns[],
                double values[], int row_lengths[]);
+extern int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry);
 extern int  ML_AGG_Gen_DDProlongator(ML*,int ,int,void *data,ML_Aggregate*);
+extern int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
+				     ML_Aggregate *ag);
 extern int  ML_AGG_DD_Matvec(void *, int , double *, int, double *);
 extern int  ML_AGG_DD_Getrow(void *,int, int *, int, int *, double *, int *);
 extern int  ML_AGG_Extract_Diag( ML_Operator *, double *diag);
 extern void ML_AGG_Matrix_Context_Clean(void *data);
 extern int  ML_AGG_DD_Solve(void *data, int, double *, int, double *);
 extern int  ML_AGG_Extract_Matrix(ML_Operator *mat, int *, int **, double ***);
+extern int ML_AGG_Smoother_Wrapper(void *obj, int leng1, double *outvec, 
+				   int leng2, double *invec);
 
 #ifdef __cplusplus
 }

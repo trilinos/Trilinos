@@ -66,7 +66,6 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->coarse_solver_ntimes       = 1;
    (*amg)->coarse_solver_jacobiwt     = 0.0;
    (*amg)->fine_Amat                  = NULL;
-#ifdef AZTEC
    (*amg)->pre_aztec_options          = NULL;
    (*amg)->pre_aztec_params           = NULL;
    (*amg)->pre_aztec_proc_config      = NULL;
@@ -77,7 +76,6 @@ int ML_AMG_Create( ML_AMG **amg )
    (*amg)->post_aztec_proc_config     = NULL;
    (*amg)->post_aztec_status          = NULL;
    (*amg)->post_function              = NULL;
-#endif
    return 0;
 }
 
@@ -319,15 +317,17 @@ int ML_AMG_Set_Smoother(ML_AMG *amg,int smoother_type, int pre_or_post,
    return 0;
 }
   
-#ifdef AZTEC
 /* ************************************************************************* */
 /* set Aztec-related smoother parameters                                     */
 /* ------------------------------------------------------------------------- */
 
 int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options, 
-                       double *params, int *proc_config, double *status, 
-                       void (*aztec_function)(double *,int *,int *,double *,
-                       struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*))
+			     double *params, int *proc_config, double *status, 
+			     void (*aztec_function)(int)
+		     /* Trying to avoid including az_aztec.h. 
+			void (*aztec_function)(double *,int *,int *,double *,
+                        struct AZ_MATRIX_STRUCT*,struct AZ_PREC_STRUCT*)
+		     */)
 {
    if ( pre_or_post == ML_PRESMOOTHER )
    {
@@ -347,7 +347,6 @@ int ML_AMG_Set_SmootherAztec(ML_AMG *amg, int pre_or_post, int *options,
    }
    return 0;
 }
-#endif
 
 /* ************************************************************************* */
 /* set coarse grid solver                                                    */

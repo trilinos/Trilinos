@@ -52,9 +52,11 @@
 /* ************************************************************************* */
 
 #include "ml_smoother.h"
-#include "ml_aztec_utils.h"
 #include "ml_lapack.h"
 #include "ml_utils.h"
+#ifdef AZTEC
+extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
+#endif
 
 /* ************************************************************************* */
 /* include files for SuperLU and MPI                                         */

@@ -10,11 +10,10 @@
 /* ************************************************************************* */
 
 #include <math.h>
+#include "ml_lapack.h"
 #include "ml_struct.h"
-#include "ml_aztec_utils.h"
 #include "ml_agg_genP.h"
 #include "ml_amg_genP.h"
-#include "ml_lapack.h"
 #include "ml_smoother.h"
 #ifdef ML_MPI
 #include "mpi.h"
@@ -861,6 +860,9 @@ int ML_Gen_Smoother_GaussSeidel( ML *ml , int nl, int pre_or_post, int ntimes,
 /* ------------------------------------------------------------------------- */
 /* generate the symmetric Gauss Seidel smoother                              */
 /* ------------------------------------------------------------------------- */
+#ifdef AZTEC
+extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
+#endif
 
 int ML_Gen_Smoother_SymGaussSeidel( ML *ml , int nl, int pre_or_post, 
                                    int ntimes, double omega)
@@ -2855,7 +2857,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
          work = (double *) malloc( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
          jobz = 'V'; jobz2 = 'U';
-         dsyev_(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
+         MLFORTRAN(dsyev)(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
                 dummy,dummy);
          printf("returning from dsyev ...\n");
          if ( info > 0 )
@@ -3404,7 +3406,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
          work = (double *) malloc( 4 * Nrows * sizeof(double) );
          lwork = 4 * Nrows;
          jobz = 'V'; jobz2 = 'U';
-         dsyev_(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
+         MLFORTRAN(dsyev)(&jobz,&jobz2,&Nrows,squareA,&Nrows,eig,work,&lwork,&info,
                 dummy,dummy);
          printf("returning from dsyev ...\n");
          if ( info > 0 ) 

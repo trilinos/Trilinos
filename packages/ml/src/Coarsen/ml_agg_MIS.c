@@ -20,10 +20,6 @@
 #include "ml_lapack.h"
 #include "ml_agg_genP.h"
 
-#ifdef ML_AGGR_READINFO
-#include "az_aztec.h"
-#endif
-
 /* ******************************************************************** */
 /* variables used for parallel debugging  (Ray)                         */
 /* -------------------------------------------------------------------- */

@@ -17,10 +17,7 @@
 /* references to external functions                                        */
 /* ----------------------------------------------------------------------- */
 
-extern int ML_Clean_CSolveSuperLU( void *, ML_CSolveFunc *); 
 extern int ML_SuperLU_Solve(void *,int ,double *,int ,double *);
-extern int ML_Destroy( ML ** );
-extern int ML_CSolve_Clean_Aggr( void *, ML_CSolveFunc *);
 
 /* *********************************************************************** */
 /* Constructor                                                             */
