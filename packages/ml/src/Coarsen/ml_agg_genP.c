@@ -102,12 +102,12 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Increment_Two_Level,
-				    ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_DDProlongator, NULL, ml_ag);
       }
       else
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Increment_Level,
-				    ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_Prolongator, NULL, ml_ag);
       }
    }
    else if (increment_or_decrement == ML_DECREASING)
@@ -115,12 +115,12 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
       if ( ml_ag->coarsen_scheme == 4 )
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Decrement_Two_Level,
-				    ML_AGG_Gen_DDProlongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_DDProlongator, NULL, ml_ag);
       }
       else
       {
          level = ML_Gen_MGHierarchy(ml, start, ML_AGG_Decrement_Level,
-				    ML_AGG_Gen_Prolongator, NULL, ML_INTERNAL, ml_ag);
+				    ML_AGG_Gen_Prolongator, NULL, ml_ag);
       }
    }
    else 
@@ -165,10 +165,10 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
 /* prolongation operators (version 2 : with ML_Aggregate given)              */
 /* ------------------------------------------------------------------------- */
 
-int ML_Gen_MGHierarchy(ML *ml, int fine_level,
-        int (*next_level)(ML *, int,  void *),
-        int (*user_gen_prolongator)(ML *, int, int, void *),
-        void *data, int internal_or_external, ML_Aggregate *ag)
+int ML_Gen_MGHierarchy(ML *ml, int fine_level, 
+		       int (*next_level)(ML *, int,  void *),
+		       int (*user_gen_prolongator)(ML *, int, int, void *),
+		       void *data, ML_Aggregate *ag)
 {
    int level, next, flag, count=1;
    int i, j, bail_flag, N_input_vector;

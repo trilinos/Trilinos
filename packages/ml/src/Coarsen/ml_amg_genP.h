@@ -41,7 +41,7 @@ extern int ML_Gen_MGHierarchy_UsingAMG(ML *, int start,
 extern int ML_AMG_Gen_MGHierarchy(ML *, int fine_level,
                int (*next_level)(ML *, int, ML_Operator *, ML_AMG *),
                int (*user_gen_prolongator)(ML *,int,int,void *,ML_AMG*),
-               void *data, int internal_or_external, ML_AMG *);
+               void *data, ML_AMG *);
 extern int ML_AMG_Gen_Prolongator(ML*,int ,int,void *data,ML_AMG*);
 extern int ML_AMG_Increment_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);
 extern int ML_AMG_Decrement_Level(ML *,int level,ML_Operator *Amat,ML_AMG*);

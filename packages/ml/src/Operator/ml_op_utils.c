@@ -985,7 +985,7 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
   double *vals, *tdiag;
    if (Amat->diagonal == NULL) 
    {
-      if (Amat->getrow->ML_id == ML_EMPTY) 
+      if (Amat->getrow->internal == NULL) 
          pr_error("Error(ML_Jacobi): Need diagonal\n");
       else 
       {

@@ -2167,7 +2167,7 @@ int ML_Gen_Smoother_MLS(ML *ml, int nl, int pre_or_post,
      }
 
 
-     if (Amat->matvec->ML_id != ML_EMPTY) {
+     if (Amat->matvec->internal != NULL) {
          widget = ML_Smoother_Create_MLS();
 	 widget->mlsDeg   = degree;
 	 widget->eig_ratio = eig_ratio;
@@ -2268,7 +2268,7 @@ int ML_Gen_Smoother_ERF_1StepKrylov(ML *ml, int nl, int pre_or_post)
      t0 = GetClock();
 #endif
      Amat = &(ml->Amat[i]);
-     if (Amat->matvec->ML_id != ML_EMPTY) {
+     if (Amat->matvec->internal != NULL) {
 	 if (pre_or_post == ML_PRESMOOTHER) {
            sprintf(str,"ERF_1STEP_pre%d",i);
            errCode=ML_Smoother_Set(&(ml->pre_smoother[i]), 
@@ -2465,7 +2465,7 @@ printf("    (%d): Amat(%d,%d)  Rmat(%d,%d)  Pmat(%d,%d)\n",
 fflush(stdout);
 */
 
-   if (Amat->matvec->ML_id == ML_EMPTY) {
+   if (Amat->matvec->internal == NULL) {
       if (output_level > 3)
       printf("Warning: No Amat matvec on grid %d (where finest = 0).\n\
 		can not check Amat's getrow\n",i);
@@ -2474,7 +2474,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow( Amat,ml->comm,i,"Amat");
 */
 
-   if (Amat->getrow->ML_id == ML_EMPTY)
+   if (Amat->getrow->internal == NULL)
       pr_error("Error: No A matrix getrow on grid %d : \
                        can not do ML_Gen_Amatrix_RAP.\n",i);
 
@@ -2486,7 +2486,7 @@ fflush(stdout);
        }
    }
 
-   if (Rmat->matvec->ML_id == ML_EMPTY) {
+   if (Rmat->matvec->internal == NULL) {
       if (output_level > 3)
       printf("Warning: No Rmat matvec on grid %d (where finest = 0).\n\
 		can not check Rmat's getrow\n",i);
@@ -2495,7 +2495,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow( Rmat,ml->comm,i,"Rmat");
 */
 
-   if (Rmat->getrow->ML_id == ML_EMPTY)
+   if (Rmat->getrow->internal == NULL)
       pr_error("Error: No R matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
@@ -2507,7 +2507,7 @@ fflush(stdout);
        }
    }
 
-   if (Pmat->matvec->ML_id == ML_EMPTY) {
+   if (Pmat->matvec->internal == NULL) {
       if (output_level > 3)
       printf("Warning: No Pmat matvec on grid %d (where finest = 0).\n\
 		can not check Pmat's getrow\n",i);
@@ -2516,7 +2516,7 @@ fflush(stdout);
    else ML_Operator_Check_Getrow(Pmat,ml->comm,i,"Pmat");
 */
 
-   if (Pmat->getrow->ML_id == ML_EMPTY)
+   if (Pmat->getrow->internal == NULL)
       pr_error("Error: No P matrix getrow on grid %d : \n\
                        can not do ML_Gen_AmatrixRAP.\n",i);
 
@@ -2678,14 +2678,14 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
    level = finest_level;
    i = 0;
    while (current_level != NULL) {
-      if (current_level->Amat->matvec->ML_id == ML_EMPTY &&
+      if (current_level->Amat->matvec->internal == NULL &&
           level != coarsest_level) {
          pr_error("Error: No A matrix on grid %d.\n",level);
       }
 
       if ((current_level->Amat->getrow->pre_comm  == NULL) &&
           (current_level->Amat->getrow->post_comm == NULL) &&
-          (current_level->Amat->getrow->ML_id != ML_EMPTY) &&
+          (current_level->Amat->getrow->internal != NULL) &&
           (ml->comm->ML_nprocs > 1) ) {
          if (ml->comm->ML_mypid == 0) {
          printf("Warning:No communication information given with Amat's \n");
@@ -2701,13 +2701,13 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
       temp = current_level->Rmat->to;
 
       if (temp != NULL) {
-         if (current_level->Rmat->matvec->ML_id == ML_EMPTY)
+         if (current_level->Rmat->matvec->internal == NULL)
             pr_error("Error: No R matvec on grid %d.\n",level);
 /*
          ML_Operator_Check_Getrow(current_level->Rmat,ml->comm,level,"Rmat");
 */
          if (level != finest_level &&
-             current_level->Pmat->matvec->ML_id == ML_EMPTY)
+             current_level->Pmat->matvec->internal == NULL)
             pr_error("Error: No P matvec on grid %d.\n",level);
 /*
          ML_Operator_Check_Getrow(current_level->Pmat,ml->comm,level, "Pmat");
@@ -2716,7 +2716,7 @@ int ML_Gen_Solver(ML *ml, int scheme, int finest_level, int coarsest_level)
 
       if (current_level->pre_smoother->smoother->internal==ML_Smoother_Jacobi)
       {
-         if ((temp == NULL) && (current_level->csolve->func->ML_id == ML_EMPTY))
+         if ((temp == NULL) && (current_level->csolve->func->internal == NULL))
          {
             if (current_level->pre_smoother->ntimes == ML_NOTSET) {
                current_level->pre_smoother->ntimes = ML_CONVERGE;
@@ -3533,7 +3533,7 @@ double ML_Cycle_MG(ML_1Level *curr, double *sol, double *rhs,
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhss, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->ML_id != ML_EMPTY ) )
+           ( pre->smoother->internal != NULL) )
       {
    	ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhss[i] - res[i];
@@ -4316,7 +4316,7 @@ double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
       ML_Smoother_Apply(pre, lengf, sol, lengf, rhs, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->ML_id != ML_EMPTY ) )
+           ( pre->smoother->internal != NULL) )
       {
          ML_Operator_Apply(Amat, lengf, sol, lengf, res);
          for ( i = 0; i < lengf; i++ ) res[i] = rhs[i] - res[i];
@@ -6539,7 +6539,7 @@ double ML_Cycle_MG(ML_1Level *curr, Epetra_MultiVector &ep_sol,
       ML_Smoother_Apply(pre, lengf, ep_sol, lengf, ep_rhss, approx_all_zeros);
 
       if ( ( approx_all_zeros != ML_ZERO ) ||
-           ( pre->smoother->ML_id != ML_EMPTY ) )
+           ( pre->smoother->internal != NULL) )
       {
          ML_Operator_Apply(Amat, lengf, ep_sol, lengf, ep_res);
          for ( i = 0; i < lengf; i++ )

@@ -33,7 +33,7 @@ void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
    int *cols, i;
    int allocated, row_length;
 
-   if (matrix->getrow->ML_id == ML_EMPTY) {
+   if (matrix->getrow->internal == NULL) {
       printf("ML_getrow_matvec: empty object? \n");
       exit(1);
    }

@@ -139,7 +139,7 @@ int ML_CSolve_Check(ML_CSolve *ml_cs)
       printf("ML_CSolve_Check : wrong object.\n");
       exit(1);
    }
-   if ( ml_cs->func->ML_id == ML_EMPTY ) return 0;
+   if ( ml_cs->func->internal == NULL ) return 0;
    else                                  return 1;
 }
 
@@ -169,7 +169,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->ML_id == ML_EMPTY) 
+   if (csolve->func->internal == NULL) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
    csolve->func->internal(csolve->data, inlen, din, outlen, dout);
@@ -315,7 +315,7 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->ML_id == ML_EMPTY) 
+   if (csolve->func->internal == NULL) 
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
    if ( (void *) csolve->func->internal == (void *)ML_SuperLU_Solve )

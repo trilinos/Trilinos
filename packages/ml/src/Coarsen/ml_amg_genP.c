@@ -81,12 +81,12 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
    if (increment_or_decrement == ML_INCREASING)
    {
       level = ML_AMG_Gen_MGHierarchy(ml, start, ML_AMG_Increment_Level,
-                     ML_AMG_Gen_Prolongator, NULL, ML_INTERNAL, ml_amg);
+                     ML_AMG_Gen_Prolongator, NULL, ml_amg);
    }
    else if (increment_or_decrement == ML_DECREASING)
    {
       level = ML_AMG_Gen_MGHierarchy(ml, start, ML_AMG_Decrement_Level,
-                     ML_AMG_Gen_Prolongator, NULL, ML_INTERNAL, ml_amg);
+                     ML_AMG_Gen_Prolongator, NULL, ml_amg);
    }
    else 
    {
@@ -128,7 +128,7 @@ int ML_Gen_MGHierarchy_UsingAMG(ML *ml, int start,
 int ML_AMG_Gen_MGHierarchy(ML *ml, int fine_level,
         int (*next_level)(ML *, int, ML_Operator *, ML_AMG *amg2),
         int (*user_gen_prolongator)(ML *, int, int, void *, ML_AMG *),
-        void *data, int internal_or_external, ML_AMG *amg)
+        void *data, ML_AMG *amg)
 {
    int  level, next, flag, count=1;
 #ifdef ML_DEBUG_AMG

@@ -412,7 +412,7 @@ int ML_Operator_Getrow(ML_Operator *Amat, int N_requested_rows,
                 int requested_rows[], int allocated_space, int columns[], 
                 double values[], int row_lengths[])
 {
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->internal == NULL) 
       pr_error("ML_Operator_Getrow : Amat getrow not defined\n");
 
    return(Amat->getrow->internal(Amat,N_requested_rows, requested_rows, 
@@ -431,7 +431,7 @@ int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag)
 
    if (Amat->diagonal == NULL)
    {
-      if (Amat->getrow->ML_id == ML_EMPTY)
+      if (Amat->getrow->internal == NULL)
          pr_error("Error(ML_Operator_Get_Diag): diagonal not available\n");
       else
       {
@@ -482,7 +482,7 @@ int ML_Operator_Apply(ML_Operator *Op, int inlen, double din[], int olen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->ML_id == ML_EMPTY)
+   if (Op->matvec->internal == NULL)
       pr_error("ML_Operator_Apply error : matvec not defined\n");
 
    Op->matvec->internal(Op,       inlen, din, olen, dout);
@@ -510,7 +510,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->ML_id == ML_EMPTY) 
+   if (Op->matvec->internal == NULL) 
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
@@ -541,7 +541,7 @@ int ML_Operator_Check_Getrow(ML_Operator *Amat, int level, char *str)
    double  *t1,*t2,*t3, norm1, norm2;
    ML_Comm *comm;
 
-   if (Amat->getrow->ML_id == ML_EMPTY) return(1);
+   if (Amat->getrow->internal == NULL) return(1);
 
    comm  = Amat->comm;
    Nrows = Amat->outvec_leng;
@@ -1578,7 +1578,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
 
    t0 = GetClock();
 #endif
-   if (Op->matvec->ML_id == ML_EMPTY) 
+   if (Op->matvec->internal == NULL) 
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */

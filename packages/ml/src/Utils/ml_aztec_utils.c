@@ -737,9 +737,9 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
    finest[0]   = '\0';
    coarsest[0] = '\0';
    if (i != -1) {
-      if (ml_handle->pre_smoother[i].ML_id != ML_EMPTY) 
+      if (ml_handle->pre_smoother[i].smoother->internal != NULL) 
          sprintf(finest, "%s", ml_handle->pre_smoother[i].label);
-      if (ml_handle->post_smoother[i].ML_id != ML_EMPTY) 
+      if (ml_handle->post_smoother[i].smoother->internal != NULL) 
          sprintf(finest, "%s/%s", finest,ml_handle->post_smoother[i].label);
 
       if (i != ml_handle->ML_coarsest_level) {
@@ -747,9 +747,9 @@ void AZ_set_ML_preconditioner(AZ_PRECOND **Precond, AZ_MATRIX *Amat,
 	 if ( ML_CSolve_Check( &(ml_handle->csolve[i]) ) == 1 ) 
             sprintf(coarsest, "%s", ml_handle->csolve[i].label);
          else {
-            if (ml_handle->pre_smoother[i].ML_id != ML_EMPTY) 
+            if (ml_handle->pre_smoother[i].smoother->internal != NULL) 
             sprintf(coarsest, "%s", ml_handle->pre_smoother[i].label);
-            if (ml_handle->post_smoother[i].ML_id != ML_EMPTY) 
+            if (ml_handle->post_smoother[i].smoother->internal != NULL) 
             sprintf(coarsest, "%s/%s", coarsest,ml_handle->post_smoother[i].label);
          }
       }

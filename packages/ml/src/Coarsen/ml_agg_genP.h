@@ -72,7 +72,7 @@ extern int ML_Gen_MGHierarchy_UsingAggregation(ML *, int start,
 extern int ML_Gen_MGHierarchy(ML *, int fine_level,
                int (*next_level)(ML *, int, void *),
                int (*user_gen_prolongator)(ML *,int,int,void *),
-               void *data, int internal_or_external, ML_Aggregate *);
+               void *data, ML_Aggregate *);
 extern int  ML_AGG_Gen_Prolongator(ML*,int ,int,void *data);
 extern int  ML_AGG_Increment_Level(ML *, int current_level, void *);
 extern int  ML_AGG_Decrement_Level(ML *, int current_level, void *);

@@ -1323,7 +1323,7 @@ int ML_Smoother_VBlockAdditiveSchwarz(ML_Smoother *sm, int inlen, double x[],
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->internal == NULL) 
       pr_error("Error(ML_Smoother_AdditiveSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for AdditiveSchwarz\n");
@@ -1499,7 +1499,7 @@ int ML_Smoother_VBlockMultiplicativeSchwarz(ML_Smoother *sm, int inlen, double x
    dataptr    = (ML_Sm_Schwarz_Data *) smooth_ptr->smoother->data;
    ntimes     = smooth_ptr->ntimes;
 
-   if (Amat->getrow->ML_id == ML_EMPTY) 
+   if (Amat->getrow->internal == NULL) 
       pr_error("Error(ML_Smoother_MultiplicativeSchwarz): Need getrow()\n");
    if (Amat->getrow->post_comm != NULL)
       pr_error("Post communication not implemented for MultiplicativeSchwarz\n");

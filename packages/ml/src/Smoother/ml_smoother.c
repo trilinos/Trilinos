@@ -6462,7 +6462,7 @@ int DinvA(ML_Operator *data,  int in, double p[], int out, double ap[])
   ML_DVector_GetDataPtr( Amat->diagonal, &diagonal);
   for (i = 0; i < Amat->outvec_leng; i++) ap[i] = ap[i]/diagonal[i];
 
-  Amat->matvec->ML_id    = ML_INTERNAL;
+  Amat->matvec->ML_id    = ML_NONEMPTY;
   Amat->matvec->internal = DinvA;
   Amat->data             = olddata;
   return 0;
@@ -6554,7 +6554,7 @@ int ML_Smoother_MLS_Apply(ML_Smoother *sm,int inlen,double x[],int outlen,
    DinvA_widget.internal = Amat->matvec->internal;
    DinvA_widget.data     = Amat->data;
    DinvA_widget.Amat     = Amat;
-   Amat->matvec->ML_id    = ML_INTERNAL;
+   Amat->matvec->ML_id    = ML_NONEMPTY;
    Amat->matvec->internal = DinvA;
    Amat->data             = &DinvA_widget;
 #endif
