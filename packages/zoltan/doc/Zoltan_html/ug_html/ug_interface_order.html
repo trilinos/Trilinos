@@ -1,0 +1,211 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Ordering Interface</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_query.html">Next</a>&nbsp; |&nbsp; <a href="ug_interface_mig.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="Ordering Functions"></a>Ordering Functions</h2>
+The following functions are the ordering interface functions in the Zoltan
+library; their descriptions are included below.
+<blockquote><b><a href="#Zoltan_Order">Zoltan_Order</a></b>
+<br><b><a href="#Zoltan_Order_Eval">Zoltan_Order_Eval</a></b></blockquote>
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order</b> (struct <b>Zoltan_Struct</b> *<i>zz,
+</i>int
+*<i>num_gid_entries</i>, int *<i>num_lid_entries</i>, int <i>num_obj,
+</i><b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR
+</a></b><i>global_ids</i>,
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR
+</a></b><i>local_ids</i>,
+int *<i>rank</i>, int *<i>iperm</i>, struct <b>Zoltan_Order_Struct
+</b>*<i>order_info</i>);</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Order</b>(<i>zz, num_gid_entries, num_lid_entries</i>,
+<i>num_obj,
+global_ids</i>, <i>local_ids</i>, <i>rank, iperm</i>,
+<i>order_info</i>)
+<br>INTEGER(Zoltan_INT) :: Zoltan_Order
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: global_ids, local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), DIMENSION(:) :: rank, iperm
+<br>TYPE(Zoltan_Order_Struct), INTENT(INOUT) :: order_info</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order </b>invokes the ordering routine specified
+by the&nbsp; <i><a href="ug_alg.html#LB_METHOD">ORDER_METHOD</a></i> parameter.
+Results of the ordering are returned in&nbsp; the arrays <i>rank </i>and
+<i>iperm</i>.
+<i>rank[i]
+</i>gives the rank of <i>global_ids[i] </i>in the computed ordering, while
+<i>iperm </i>is the inverse permutation of
+<i>rank, </i>that is,
+<i>iperm[rank[i]]
+= i.</i>&nbsp; The arrays
+<i>global_ids, local_ids, rank,
+</i>and
+<i>iperm</i>
+should all be allocated by the application before
+<b>Zoltan_Order</b> is
+called. Each array must have space for (at least)
+<i>num_obj </i>elements,
+where <i>num_obj </i>is the number of objects residing on a processor.
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
+
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
+to be used in this invocation of the load-balancing routine.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>Upon return, the number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr VALIGN=TOP NOSAVE>
+<td>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td NOSAVE>Number of objects to order on this processor. At present, <i>num_obj</i>
+should be the total number of objects residing on a processor. In future
+releases, ordering only a subset of the objects may be permitted.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; global_ids</i></td>
+
+<td>An array of&nbsp; global IDs of objects to be ordered on this processor.
+(size = <i>num_obj</i> * <i>num_gid_entries</i>)&nbsp;
+<br>The array may be uninitialized on input (if <i>REORDER</i> is false),
+but space must have been allocated before <b>Zoltan_Order </b>is called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; local_ids</i></td>
+
+<td>An&nbsp; array of&nbsp; local IDs of objects to be ordered on this
+processor. (size = <i>num_obj</i> * <i>num_lid_entries</i>)&nbsp;
+<br>The array may be uninitialized on input (if <i>REORDER</i> is false),
+but space must have been allocated before <b>Zoltan_Order </b>is called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; rank</i></td>
+
+<td>Upon return, an array of length <i>num_obj </i>containing the rank
+of each object in the computed ordering. When rank[i] = j, that means that
+the object corresponding to
+<i>global_ids[i]
+</i>is the<i> j</i>th object
+in the ordering. (This array corresponds directly to the <i>perm </i>array
+in METIS and the <i>order</i> array in ParMETIS.) Note that the rank may
+refer to either a local or a global ordering, depending on ORDER_TYPE.&nbsp;
+Space for this array must have been allocated before <b>Zoltan_Order </b>is
+called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; iperm</i></td>
+
+<td>Upon return, an&nbsp; array of length <i>num_obj </i>containing the
+inverse permutation of <i>rank.</i> That is, <i>iperm[rank[i]] = i. </i>Space
+for this array must have been allocated before <b>Zoltan_Order </b>is called.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; order_info</i></td>
+
+<td>Upon return,&nbsp; this struct contains additional information about
+the ordering produced. This parameter is currently not used and should
+always be set to NULL.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</td>
+
+<td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
+</tr>
+</table>
+
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Order_Eval"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">int <b>Zoltan_Order_Eval</b> (?)&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>FUNCTION <b>Zoltan_Order_Eval</b>(?)&nbsp;</td>
+</tr>
+</table>
+
+<hr WIDTH="100%"><b>Zoltan_Order_Eval </b>evaluates the quality of an ordering.
+Not yet implemented.&nbsp;<!------------------------------------------------------------------------->
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_query.html">Next:&nbsp;
+Application-Registered Query Functions</a>&nbsp; |&nbsp; <a href="ug_interface_mig.html">Previous:&nbsp;
+Migration Functions</a>]
+</body>
+</html>

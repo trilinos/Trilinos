@@ -1,0 +1,98 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Nested Dissection by ParMETIS</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_util.html">Next</a>&nbsp; |&nbsp; <a href="ug_order.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="RCB"></a>Nested Dissection by METIS/ParMETIS</h2>
+Nested Dissection (ND) is a popular method to compute fill-reducing orderings
+for sparse matrices. It can also be used for other ordering purposes.&nbsp;
+The algorithm recursively finds a separator (bisector) in a graph,
+orders the nodes in the two subsets first, and nodes in the separator last.
+In METIS/ParMETIS, the recursion is stopped when the graph is smaller than
+a certain size, and some version of minimum degree ordering is applied
+to the remaining graph.
+<p>METIS computes a local ordering of the objects on each processor, while
+ParMETIS performs a global ordering of all the objects. ParMETIS currently
+(versions 2.0 and 3.0) requires that the number of processors is a power
+of two.
+<p>The generic name for this method is NODEND<i>.</i> If GRAPH_TYPE=GLOBAL
+ParMETIS is called, but if it is LOCAL, METIS is called. Alternatively,
+the user can simply set ORDER_METHOD to METIS or PARMETIS.
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP><b>Order_Method String:</b></td>
+
+<td><b>NODEND or METIS or PARMETIS</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; See <a href="ug_alg_parmetis.html">ParMETIS</a>.</td>
+
+<td>Note that the PARMETIS options are ignored when METIS is called.&nbsp;</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+pair</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<td></td>
+<td><b><a href="ug_query_lb.html#Graph-based Functions">ZOLTAN_NUM_EDGES_FN</a></b>
+<br><b><a href="ug_query_lb.html#Graph-based Functions">ZOLTAN_EDGE_LIST_FN</a></b></td>
+</tr>
+
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_util.html">Next:&nbsp;
+Data Services and Utilities</a> |&nbsp; <a href="ug_order.html">Previous:&nbsp; Ordering Algorithms</a>]
+</body>
+</html>
