@@ -32,6 +32,7 @@
 /*   - negative vertex or edge weight                                */
 /*                                                                   */
 /* Warning :                                                         */
+/*   - no vertices or no edges in graph                              */
 /*   - zero sum of vertex or edge weights                            */
 /*   - self-edge                                                     */
 /*   - multiple edges between a pair of vertices                     */
@@ -43,7 +44,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        int vwgt_dim, int ewgt_dim, int check_graph, int debug_level)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
-  int flag, cross_edges, mesg_size, sum;
+  int flag, cross_edges, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
@@ -60,9 +61,15 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   MPI_Comm_size(comm, &nprocs);
   MPI_Comm_rank(comm, &proc);
 
+  /* Check number of vertices (objects) */
   num_obj = vtxdist[proc+1] - vtxdist[proc];
+  MPI_Reduce(&num_obj, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  if ((proc==0) && (global_sum==0)){
+    LB_PRINT_WARN(proc, yo, "No vertices in graph.");
+    ierr = LB_WARN;
+  }
 
-  /* Verify that vertex weights are positive */
+  /* Verify that vertex weights are non-negative */
   if (vwgt_dim){
     for (i=0; i<num_obj; i++){
        sum = 0;
@@ -86,8 +93,15 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
     }
   }
 
-  /* Verify that edge weights are positive */
+  /* Check number of edges */
   nedges = xadj[num_obj];
+  MPI_Reduce(&nedges, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  if ((proc==0) && (global_sum==0)){
+    LB_PRINT_WARN(proc, yo, "No edges in graph.");
+    ierr = LB_WARN;
+  }
+
+  /* Verify that edge weights are non-negative */
   if (ewgt_dim){
     for (j=0; j<nedges; j++){
       sum = 0;
@@ -195,14 +209,14 @@ barrier1:
     return LB_FATAL;
   }
 
-  if ((check_graph >= 2) && cross_edges) {
+  if (check_graph >= 2) {
     /* Allocate space for off-proc data */
     mesg_size = (2+ewgt_dim)*sizeof(idxtype);
     sendbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
     recvbuf = (char *) LB_MALLOC(cross_edges*mesg_size);
     proclist = (int *) LB_MALLOC(cross_edges*sizeof(int));
 
-    if (!(sendbuf && recvbuf && proclist)){
+    if (cross_edges && !(sendbuf && recvbuf && proclist)){
        LB_PRINT_ERROR(proc, yo, "Out of memory.");
        ierr = LB_MEMERR;
     }
