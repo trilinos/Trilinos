@@ -41,7 +41,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
-subdir = test/TestOptions
+subdir = test/TestWithTriutils
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -81,16 +81,12 @@ DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES =  \
-@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(TestOptions_SOURCES)
 DIST_SOURCES = $(TestOptions_SOURCES)
 ETAGS = etags
@@ -242,7 +238,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
 TestOptions_SOURCES = $(srcdir)/TestAllAmesosClasses.cpp
-
 TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
@@ -253,9 +248,9 @@ TestOptions_DEPENDENCIES = \
 
 TestOptions_CXXFLAGS = -I$(top_srcdir)/src
 TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(AMESOS_LIBS) \
         $(LAPACK_LIBS) \
 	$(BLAS_LIBS) $(FLIBS) 
@@ -273,9 +268,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/TestOptions/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/TestWithTriutils/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/TestOptions/Makefile
+	  $(AUTOMAKE) --foreign  test/TestWithTriutils/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -325,33 +320,21 @@ distclean-compile:
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 TestOptions-TestAllAmesosClasses.o: $(srcdir)/TestAllAmesosClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS)
-$(CXXFLAGS) -MT TestOptions-TestAllAmesosClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" -c -o
-TestOptions-TestAllAmesosClasses.o `test -f '$(srcdir)/TestAllAmesosClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllAmesosClasses.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"
-"$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"; exit 1; fi
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllAmesosClasses.o -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" -c -o TestOptions-TestAllAmesosClasses.o `test -f '$(srcdir)/TestAllAmesosClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllAmesosClasses.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllAmesosClasses.cpp' object='TestOptions-TestAllAmesosClasses.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po'
-tmpdepfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS)
-$(CXXFLAGS) -c -o TestOptions-TestAllAmeosClasses.o `test -f '$(srcdir)/TestAllAmesosClasses.cpp' || echo
-'$(srcdir)/'`$(srcdir)/TestAllAmesosClasses.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllAmesosClasses.o `test -f '$(srcdir)/TestAllAmesosClasses.cpp' || echo '$(srcdir)/'`$(srcdir)/TestAllAmesosClasses.cpp
 
 TestOptions-TestAllAmesosClasses.obj: $(srcdir)/TestAllAmesosClasses.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS)
-$(CXXFLAGS) -MT TestOptions-TestAllAmesosClasses.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" -c -o
-TestOptions-TestAllAmesosClasses.obj `if test -f '$(srcdir)/TestAllAmesosClasses.cpp'; then $(CYGPATH_W)
-'$(srcdir)/TestAllAmesosClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllAmesosClasses.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"
-"$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"; exit 1; fi
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -MT TestOptions-TestAllAmesosClasses.obj -MD -MP -MF "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" -c -o TestOptions-TestAllAmesosClasses.obj `if test -f '$(srcdir)/TestAllAmesosClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllAmesosClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllAmesosClasses.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo" "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po"; else rm -f "$(DEPDIR)/TestOptions-TestAllAmesosClasses.Tpo"; exit 1; fi
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/TestAllAmesosClasses.cpp' object='TestOptions-TestAllAmesosClasses.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po'
-tmpdepfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.Po' tmpdepfile='$(DEPDIR)/TestOptions-TestAllAmesosClasses.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS)
-$(CXXFLAGS) -c -o TestOptions-TestAllAmesosClasses.obj `if test -f '$(srcdir)/TestAllAmesosClasses.cpp'; then $(CYGPATH_W)
-'$(srcdir)/TestAllAmesosClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllAmesosClasses.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestOptions_CXXFLAGS) $(CXXFLAGS) -c -o TestOptions-TestAllAmesosClasses.obj `if test -f '$(srcdir)/TestAllAmesosClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestAllAmesosClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestAllAmesosClasses.cpp'; fi`
+uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

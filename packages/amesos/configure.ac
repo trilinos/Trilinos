@@ -977,6 +977,7 @@ AC_CONFIG_FILES([
 		example/AmesosFactory/Makefile
 		example/AmesosSuperludist/Makefile
 		test/TestOptions/Makefile
+		test/TestWithTriutils/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
