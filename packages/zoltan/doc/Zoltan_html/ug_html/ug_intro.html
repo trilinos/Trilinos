@@ -27,9 +27,12 @@
 <h2>
 <a NAME="Introduction"></a>Introduction</h2>
 
-<blockquote><a href="#Motivation">Project Motivation</a>
+<blockquote>
+<a href="#Motivation">Project Motivation</a>
 <br><a href="#Load-Balancing Tools">Load-Balancing Tools</a>
-<br><a href="#Migration Tools">Migration Tools</a></blockquote>
+<br><a href="#Migration Tools">Migration Tools</a>
+<br><a href="#Component Libraries">Component Libraries</a>
+</blockquote>
 <a NAME="Motivation"></a>Over the past decade, the use of parallel computing
 to solve large-scale scientific problems has grown immensely. Many traditional
 numerical methods, such as finite difference and finite element methods,
@@ -117,6 +120,7 @@ For information
 on how to build and use <i>zdrive</i>, see the <a href="../dev_html/dev_driver.html">Test
 Driver</a> section of the <a href="../dev_html/dev.html">Zoltan Developer's
 Guide</a>.
+
 <h2>
 <a NAME="Load-Balancing Tools"></a>Load-Balancing Tools</h2>
 Within the Zoltan library, many algorithms for dynamically determining
@@ -341,6 +345,32 @@ even though it uses the dynamic load-balancing tools to compute a new decomposit
 If the application has its own migration routines, it can use them in conjunction
 with the load-balancing routines in the load-balancing library.
 <br>&nbsp;
+
+<br><a href="#Component Libraries">Component Libraries</a>
+<h2>
+<a NAME="Component Libraries"></a>Component Libraries</h2>
+
+Zoltan is built upon several lower level libraries.  First among these
+is MPI.  Although our development efforts have primarily used MPICH,
+we have tested the code with other MPI implementations on a variety
+of platforms.  We have every expectation that Zoltan will work fine
+with any MPI library.
+<p>
+Zoltan also uses two other low level 
+<a href="../dev_html/dev_util.html">utility libraries</a>.
+Although these were developed in conjunction with Zoltan, we
+chose to separate them since they provide functionality which may be
+of value outside of Zoltan.  The first of these is a
+<a href="../dev_html/dev_util_mem.html">memory management library</a>.
+Basically, this is a wrapper around the standard C malloc and free
+calls which facilitates the debugging of memory problems.
+The second library provides support for 
+<a href="../dev_html/dev_util_comm.html">unstructured communication</a>.
+Specifically, it helps with the determination of communication patterns
+for complex sets of messages, and performs the data transfers
+efficiently.  Most of the non-trivial communication operations within
+Zoltan are performed by this library.
+
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_usage.html">Next:&nbsp;
 Using the Library</a>&nbsp; | <a href="ug.html">Previous:&nbsp; Table of

@@ -156,8 +156,15 @@ Zoltan library routines. Similarly, Fortran applications must USE
 <a href="ug_fortran_api.html#fortran ug api zoltan module">module
 zoltan</a>. The application should then be linked with the Zoltan library
 and its <a href="../dev_html/dev_util.html">utility libraries</a> by including
+
 <blockquote><i>-lzoltan -lzoltan_comm -lzoltan_mem</i></blockquote>
-in the linking command for the application. Communication within the library
+
+in the linking command for the application.  The <i>zoltan_comm</i> and
+<i>zoltan_mem</i> libraries are
+<a href="../dev_html/dev_util.html">low level utilities</a> that Zoltan
+uses for unstructured communication and memory management.
+They are automatically compiled along with Zoltan.
+Communication within Zoltan
 is performed through MPI, so appropriate MPI libraries must be linked with
 the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>
 and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>, must be also be
