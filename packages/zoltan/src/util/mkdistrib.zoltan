@@ -14,11 +14,13 @@ ACT_TAG="`echo "$TAGVAL"|sed s/' '//g`"
 rm -rf Zoltan
 rm -f zoltan_distrib.tar.Z
 cvs checkout -P Zoltan
+cvs checkout -P ParMETIS
 find . -name 'CVS' -exec rm -rf {} \;
 find . -name '*.sh' -exec rm -f {} \;
 find . -name '.cvsignore' -exec rm -f {} \;
 chmod -R ogu+r *
-tar cvf zoltan_distrib.tar Zoltan
-compress zoltan_distrib.tar
-cvs rtag ${ACT_TAG} Zoltan
+tar cvf zoltan_distrib.tar Zoltan ParMETIS
+gzip zoltan_distrib.tar
+cvs rtag ${ACT_TAG} Zoltan 
+cvs rtag ${ACT_TAG} ParMETIS 
 exit 0
