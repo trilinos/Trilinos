@@ -7,7 +7,7 @@
 #
 #    4) Make and run the epetra esi unit tests by typing 'make'.
 #
-include $(TRILINOS_HOME)/build/TARGET
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
@@ -74,6 +74,10 @@ tests:
 	done
 	(run_epetra_esi_tests)
 
+clean:
+	@rm -f PI* *.o  *~ *.MPI.x *.SERIAL.x core *.out
+	@rm -rf SunWS_cache *.ti
+
 .SUFFIXES:
 .SUFFIXES: .cpp .o .MPI.x .SERIAL.x
 
@@ -95,8 +99,4 @@ tests:
 	   -o $@ $< \
 	   $(LIB_PATHS) $(ARCH_LIBS) $(LIBMPI)
 	@rm -f *.o */*.o */*/*.o
-
-clean:
-	@rm -f PI* *.o  *~ *.MPI.x *.SERIAL.x core *.out
-	@rm -rf SunWS_cache *.ti
 

@@ -35,7 +35,7 @@ PETRA_CC = Aztec_OO.cc \
             GSComm_Plan.cc \
             GSComm_Comm.cc \
             Petra_RDP_VBR_Matrix.cc \
-            Petra_RDP_LinearProblem.cc \
+            Petra_RDP_LinearProblem.cc
 #           Petra_RDP_SPD_DenseMatrix.cc \
 #           Petra_c_wrappers.cc Petra_fortran_wrappers.cc
 

@@ -21,9 +21,6 @@ CCFLAGS=$(CXXFLAGS)
 
 
 EPETRA_ESI_SRC = \
-	Epetra_ESI_Argv.cpp \
-	Epetra_ESI_Object.cpp \
-	Trilinos_ESI_Broker.cpp \
 	Epetra_ESI_inst.cpp
 
 EPETRA_ESI_OBJ          = $(EPETRA_ESI_SRC:.cpp=.o)

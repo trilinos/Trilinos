@@ -10,7 +10,7 @@
 #    4) Make the archive $(LIBY12M) by typing 'make'.
 #
 
-include $(TRILINOS_HOME)/build/TARGET
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)

@@ -2,6 +2,12 @@
 #include "Epetra_Array.h"
 #include "Epetra_Array.cpp"
 
+#include "Epetra_ESI_Argv.h"
+#include "Epetra_ESI_Argv.cpp"
+
+#include "Epetra_ESI_Object.h"
+#include "Epetra_ESI_Object.cpp"
+
 #include "Epetra_ESI_IndexSpace.h"
 #include "Epetra_ESI_IndexSpace.cpp"
 
@@ -19,6 +25,9 @@
 
 #include "Epetra_ESI_utils.h"
 #include "Epetra_ESI_utils.cpp"
+
+#include "Trilinos_ESI_Broker.h"
+#include "Trilinos_ESI_Broker.cpp"
 
 template class Epetra_Array<double>;
 template class Epetra_Array<int>;
