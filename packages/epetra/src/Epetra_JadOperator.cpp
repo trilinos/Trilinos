@@ -38,11 +38,20 @@
 #include "Epetra_IntSerialDenseVector.h"
 #include "Epetra_RowMatrix.h"
 #include "Epetra_CrsMatrix.h"
+
+// At this point, we are not support reduced storage capabilities
+#undef REDUCED_STORAGE_SUPPORT
+
+// When we do, we will need to add a check for climits vs limits.h because some machine, esp. IRIX 
+// platforms do not have climits.
+#ifdef REDUCED_STORAGE_SUPPORT
 #include <climits>
+#endif
 
 //==============================================================================
 Epetra_JadOperator::Epetra_JadOperator(const Epetra_RowMatrix & Matrix, bool UseFloats, bool UseShorts) 
-  : Comm_(Matrix.RowMatrixRowMap().Comm().Clone()),
+  : NormInf_(-1.0),
+    Comm_(Matrix.RowMatrixRowMap().Comm().Clone()),
     OperatorDomainMap_(Matrix.OperatorDomainMap()),
     OperatorRangeMap_(Matrix.OperatorRangeMap()),
     NumMyRows_(Matrix.NumMyRows()),
@@ -135,6 +144,8 @@ int Epetra_JadOperator::UpdateValues(const Epetra_RowMatrix & Matrix, bool Check
       }
     }
   }
+  EPETRA_CHK_ERR(ierr);
+  return(ierr);
 }
 
 //==============================================================================
@@ -193,8 +204,9 @@ int Epetra_JadOperator::Allocate(const Epetra_RowMatrix & Matrix, bool UseFloats
   // 2) Local column range is outside range of unsigned shorts and we copy to array of ints.
   // In both cases we embed the nonzero count per row into the index array.
 
+#ifdef REDUCED_STORAGE_SUPPORT
   if (Matrix.NumMyCols()<=USHRT_MAX && UsingShorts_) UsingShorts_ = true;
-
+#endif
   if (!UsingShorts_)
     Indices_.Resize(NumMyNonzeros_);
   else // Matrix.NumMyCols()<=USHRT_MAX
