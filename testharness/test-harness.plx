@@ -189,6 +189,7 @@ report($SUMMARY);
         # delete files
         my $tempDir = "$options{'TRILINOS_DIR'}[0]/testharness/temp";
         
+        system "rm -f $tempDir/*.log";
         system "rm -f $tempDir/update_log.txt";
         system "rm -f $tempDir/trilinos_configure_log_$hostOS.txt";
         system "rm -f $tempDir/trilinos_configure_log_$hostOS.txt.gz";
@@ -458,9 +459,20 @@ report($SUMMARY);
                         # quit if error fixing invoke-configure
                         if ($brokenPackage eq "error") {
                             $quitTrying = 1; 
-                            report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
+                            report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm); 
                             last; # equivalent to break                          
-                        }       
+                        }    
+                        
+                        if (-f "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log") {                
+                            # rename config.log (and move to testharness/temp) so 
+                            # developers don't have to rename each file they get 
+                            # from each OS and comm.
+                            my $command = "";
+                            $command .= "mv $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}/config.log ";
+                            $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                            $command .= $hostOS."_".$comm."_".$brokenPackage."_config.log  2>&1";
+                            system $command;   
+                        }
                         
                         # remove broken package
                         system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
@@ -507,6 +519,24 @@ report($SUMMARY);
                                 report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                                 last; # equivalent to break                               
                             }
+                            
+                            # descend into $brokenPackage and capture output from "make clean"
+                            chdir "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
+                            
+                            my $command = "";
+                            if (defined $options{'MAKE_FLAGS'} && defined $options{'MAKE_FLAGS'}[0]) {
+                                $command .= "make $options{'MAKE_FLAGS'}[0] clean >> ";
+                                $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                                $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                            } else {
+                                $command .= "make clean >> ";
+                                $command .= "$options{'TRILINOS_DIR'}[0]/testharness/temp/";
+                                $command .= $hostOS."_".$comm."_".$brokenPackage."_build.log 2>&1";
+                            }
+                            system $command;                            
+                
+                            # return to build dir
+                            chdir"$options{'TRILINOS_DIR'}[0]/$buildDir[$j]";                           
                             
                             # remove broken package                            
                             system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$dirNames{$brokenPackage}";
@@ -856,7 +886,7 @@ report($SUMMARY);
     #   - returns: 
 
     sub build { 
-        my $buildDir = $_[0];   
+        my $buildDir = $_[0];  
                     
         chdir"$options{'TRILINOS_DIR'}[0]/$buildDir";     
     
@@ -868,7 +898,7 @@ report($SUMMARY);
             $command .= "make >> $options{'TRILINOS_DIR'}[0]";
             $command .= "/testharness/temp/trilinos_build_log_$hostOS.txt 2>&1";
         }
-        return system $command;
+        return system $command; 
         
     } # build()
     
@@ -1246,35 +1276,29 @@ report($SUMMARY);
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
                 $attachmentText .= appendFile($log, $logPath);                
             }
-        }
+        } 
         
         # trilinos configure failed
-        if ($code == $TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log_$hostOS.txt") {
+        if ($code == $TRILINOS_CONFIGURE_ERROR && $message ne "error" && -f $hostOS."_".$comm."_".$message."_config.log") {    
             $attachmentsExist = 1;
-            my $log = "trilinos_configure_log_$hostOS.txt";
+            my $log = $hostOS."_".$comm."_".$message."_config.log";
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                my $gzLog = "trilinos_configure_log_$hostOS.txt.gz";
-                my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
-                system "gzip $logPath"; 
-                $attachmentText .= "    $gzLog\n";
-                $email->attach(Type=>'APPLICATION', Path=>"$gzLogPath", Disposition=>'attachment');
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
                 $attachmentText .= appendFile($log, $logPath);                
             }
-        }       
+        }
         
         # trilinos build failed
-        if ($code == $TRILINOS_BUILD_ERROR && -f "trilinos_build_log_$hostOS.txt") {
+        if ($code == $TRILINOS_BUILD_ERROR && $message ne "error" && -f $hostOS."_".$comm."_".$message."_build.log") {             
             $attachmentsExist = 1;
-            my $log = "trilinos_build_log_$hostOS.txt";  
+            my $log = $hostOS."_".$comm."_".$message."_build.log";  
             my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
             if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
-                my $gzLog = "trilinos_build_log_$hostOS.txt.gz";
-                my $gzLogPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$gzLog";
-                system "gzip $logPath";
-                $attachmentText .= "    $gzLog\n";
-                $email->attach(Type=>'APPLICATION', Path=>"$gzLogPath", Disposition=>'attachment');
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'APPLICATION', Path=>"$logPath", Disposition=>'attachment');
             } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
                 $attachmentText .= appendFile($log, $logPath);                
             }
@@ -1528,6 +1552,7 @@ report($SUMMARY);
             close REPORT;            
         }
         
+        system "rm -f *.log";
         system "rm -f update_log.txt";
         system "rm -f trilinos_configure_log_$hostOS.txt";
         system "rm -f trilinos_configure_log_$hostOS.txt.gz";
