@@ -61,12 +61,12 @@ using namespace NOX::Direction;
 
 NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
   utils(u),
-  oldSolnPtr(NULL),			// pointer to old Soln Grp
-  tmpVecPtr(NULL),			// reference to xgrp
-  oldDirPtr(NULL),			// reference to xgrp
-  oldDescentDirPtr(NULL),		// reference to xgrp
-  diffVecPtr(NULL),			// reference to xgrp
-  paramsPtr(NULL)
+  oldSolnPtr(0),			// pointer to old Soln Grp
+  tmpVecPtr(0),				// reference to xgrp
+  oldDirPtr(0),				// reference to xgrp
+  oldDescentDirPtr(0),			// reference to xgrp
+  diffVecPtr(0),			// reference to xgrp
+  paramsPtr(0)
 {
   reset(params);
 }
@@ -75,16 +75,19 @@ NonlinearCG::NonlinearCG(const NOX::Utils& u, Parameter::List& params) :
 bool NonlinearCG::reset(Parameter::List& params) 
 {
   paramsPtr = &params;
-  restartFrequency = paramsPtr->sublist("Nonlinear CG").getParameter("Restart Frequency", 10);
+  NOX::Parameter::List& nlcgParams = paramsPtr->sublist("Nonlinear CG");
+  restartFrequency = nlcgParams.getParameter("Restart Frequency", 10);
+  doPrecondition = nlcgParams.isParameterEqual("Precondition", "On");
+  usePRbeta = nlcgParams.isParameterEqual("Orthogonalize", "Polak-Ribiere");
   return true;
 }
 
 NonlinearCG::~NonlinearCG() 
 {
-  delete tmpVecPtr;
-  delete diffVecPtr;
-  delete oldDescentDirPtr;
-  delete oldDirPtr;
+  delete tmpVecPtr; tmpVecPtr = 0;
+  delete diffVecPtr; diffVecPtr = 0;
+  delete oldDescentDirPtr; oldDescentDirPtr = 0;
+  delete oldDirPtr; oldDirPtr = 0;
 }
 
 
@@ -94,13 +97,14 @@ bool NonlinearCG::compute(Abstract::Vector& dir, Abstract::Group& soln,
   Abstract::Group::ReturnType ok;
 
   // Initialize vector memory if haven't already
-  if(oldDirPtr==NULL)
+  if(oldDirPtr==0)
     oldDirPtr = soln.getX().clone(NOX::ShapeCopy);
-  if(oldDescentDirPtr==NULL)
+  if(oldDescentDirPtr==0)
     oldDescentDirPtr = soln.getX().clone(NOX::ShapeCopy);
-  if(diffVecPtr==NULL)
+  // These are conditionally created
+  if(diffVecPtr==0 && usePRbeta)
     diffVecPtr = soln.getX().clone(NOX::ShapeCopy);
-  if(tmpVecPtr==NULL)
+  if(tmpVecPtr==0 && doPrecondition)
     tmpVecPtr = soln.getX().clone(NOX::ShapeCopy);
 
   // Create references to vectors for convenience

@@ -50,11 +50,23 @@ namespace Direction {
 
 Calculates the direction
 \f[
-s = - M^{-1}(x) F(x) + \beta s_{prev}
+d = - M^{-1}(x) F(x) + \beta d_{prev}
 \f]
 
-  where \f$ M \f$ is a preconditioner and \f$ \beta \f$ is an orthogonalization
-  parameter which can be computed in various ways (see below).
+  where \f$ M \f$ is a preconditioner and \f$ \beta \f$ is an
+  orthogonalization parameter which can be computed in various ways
+  (see below), and \f$ d_{prev} \f$ is the search direction from the
+  previous nonlinear iteration.
+
+  This method provides a generalization of %Linear CG to nonlinear
+  problems.  It does this by computing a search direction using
+  an expression analogous to that of %Linear CG.  The negative of
+  the current residual vector, \f$ F(x) \f$ is taken, allowed to be
+  preconditioned, and then orthogonalized against the previous search
+  direction.  This direction can sometimes be used successfully with the
+  various choices provided in NOX::Linesearch but is intended to be used
+  with NOX::Linesearch::NonlinearCG.  In fact, the expected convergence
+  behavior of linear problems can only be achieved in this way.
 
   To use this direction, specify that the "Method" is "NonlinearCG" in the
   "Direction" sublist of the parameters that are passed to the solver
@@ -71,35 +83,63 @@ s = - M^{-1}(x) F(x) + \beta s_{prev}
     <li>"Fletcher-Reeves" [default] - \f$ \beta =  \frac{F(x)^T M^{-1}(x)
     F(x)}{F(x_{prev})^T M^{-1}(x_{prev}) F(x_{prev})}\f$ 
 
-    <li>"Polak-Ribiere" - \f$ \beta =  \frac{F(x)^T \left[M^{-1}(x) F(x)
+    <li>"Polak-Ribiere" - \f$ \beta =  max \left\{ \beta^{PR}, 0 \right\} \f$ ,
+    
+    where 
+    \f$ \beta^{PR} = \frac{F(x)^T \left[M^{-1}(x) F(x)
     - M^{-1}(x_{prev}) F(x_{prev})\right]}{F(x_{prev})^T M^{-1}(x_{prev})
     F(x_{prev})}\f$
 
     </ul>
 
-  For more details, see chapter 5 of Nocedal & Wright, "Numerical
-  Optimization", Springer-Verlag, New York, 1999.
+  These comprise the two most popular choices for orthogonalization.
+  Both reduce to the linear result for linear problems.  "Polak-Ribiere"
+  provides an implied restart capability by setting \f$ \beta = 0 \f$
+  anytime the computed value is less than zero.
 
 <li> "Precondition" can be either "On" or "Off" [default]:
   determines whether or not to compute and apply preconditioner \f$ M \f$.
   If "Off" is selected, no preconditioner is computed and the behavior is
   equivalent to \f$ M = I \f$ where \f$ I \f$ is the identity matrix.
   If "On", \f$ M \f$ is computed and applied as determined by the
-  underlying implementation.  Currently, NOX::Epetra supports the inverse
-  of the current Jacobian, ie \f$ M = {\bf J}^{-1} \f$.  NOX::Petsc
-  supports the full suite provided in the user's Petsc installation and
-  can be set by proper specification in the .petscrc file.
+  underlying implementation of the "applyRightPreconditioning" method
+  in the Group.
 
 
 <li> "Restart Frequency" - An integer specification of the number of nonlinear 
   iterations between restarts [default = 10].  Restart corresponds to
   setting \f$\beta = 0\f$.  A good heuristic is to limit this value to
   the number of problem degrees of freedom.  Setting this value to 1
-  forces \f$ \beta = 0 \f$ for every nonlinear iteration and corresponds
-  to a variant of NOX::Direction::SteepestDescent in which \f$ \nabla f(x)
-  \f$ is equivalent to \f$ F(x) \f$.
+  forces \f$ \beta = 0 \f$ for every nonlinear iteration which corresponds
+  to suppressing orthogonalization against the previous search direction.
 
 </ul>
+
+<b>References</b>
+
+  <ul>
+
+  Additional information about both linear and nonlinear conjugate gradient
+  methods can be found in Chapter 5 of:
+
+  <li>Nocedal & Wright, "Numerical Optimization", Springer-Verlag, 
+  New York, 1999.</li>
+  Though presented within the context of nonlinear optimization, the connection
+  to nonlinear systems of equations is made by the correspondence 
+  \f$ \nabla f(x) \leftrightarrow F(x) \f$ (cf Algorithm 5.4).
+
+  Another useful useful reference is:
+
+  <li>Jonathan Richard Shewchuk, 
+  <A HREF="http://www-2.cs.cmu.edu/~jrs/jrspapers.html"/>
+  "An Introduction to the Conjugate Gradient Method Without the Agonizing 
+  Pain</A>," 1994.</li> Chapter 14 provides a summary of issues in generalizing
+  linear CG to the nonlinear case.  Correspondence to NOX notation
+  is made by the equivalence \f$ r \leftrightarrow f' \leftrightarrow F(x) \f$
+  (cd Section 14.1).
+
+  </ul>
+
 
 */
 
@@ -157,6 +197,12 @@ private:
 
   //! Restart frequency.
   int restartFrequency;                    
+
+  //! Boolean flag indicating whether or not to use preconditioning
+  bool doPrecondition;                    
+
+  //! Boolean flag indicating if beta is computed using Polak-Ribiere
+  bool usePRbeta;                    
 
 };
 } // namespace Direction
