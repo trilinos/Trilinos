@@ -46,9 +46,11 @@ struct ML_Krylov_Struct
    void          *ML_precon;
    ML_Comm       *ML_com;
    int           ML_eigen;
+   int           ML_nonsym_eigen;
    double        ML_eigen_max;
    double        ML_eigen_min;
    int           (*ML_precfcn)(void*, int, double*, int, double*);
+   int           ML_dont_scale_by_diag;
 };
 
 /* ******************************************************************** */
@@ -85,6 +87,9 @@ extern int ML_Krylov_Set_PreconFunc(ML_Krylov*,
                                     int (*func)(void*,int,double*,int,double*));
 extern void *ML_Krylov_Get_Precon(ML_Krylov *);
 extern int ML_Krylov_Set_ComputeEigenvalues(ML_Krylov *);
+extern int ML_Krylov_Set_ComputeNonSymEigenvalues(ML_Krylov *);
+extern int ML_Krylov_Set_DiagScaling_Eig(ML_Krylov *data, int scale);
+
 extern double ML_Krylov_Get_MaxEigenvalue(ML_Krylov *);
 
 extern int ML_Krylov_Solve(ML_Krylov *, int, double *, double*);
