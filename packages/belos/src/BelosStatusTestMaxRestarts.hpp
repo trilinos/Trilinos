@@ -154,7 +154,7 @@ private:
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';
-    PrintStatus(os, status_);
+    this->PrintStatus(os, status_);
     os << "Number of Restarts = ";
     os << nRestarts_;
     os << ((nRestarts_ < maxRestarts_) ? " < " : ((nRestarts_ == maxRestarts_) ? " == " : " > "));

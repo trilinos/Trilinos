@@ -385,7 +385,7 @@ template <class TYPE>
 ostream& StatusTestCombo<TYPE>::Print(ostream& os, int indent) const {
   for (int j = 0; j < indent; j ++)
     os << ' ';
-  PrintStatus(os, status_);
+  this->PrintStatus(os, status_);
   os << ((type_ == OR) ? "OR" : (type_ == AND) ? "AND" :"SEQ");
   os << " Combination";
   os << " -> " << endl;
