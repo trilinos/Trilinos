@@ -2892,6 +2892,9 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
   int    i, leng, dir_leng, *dir_list, k, level;
   double *diag, *scales, *din_temp, *dout_tmp;
    ML     *ml_ggb;
+#ifdef GGBcycFirst
+       double *sol;
+#endif
 
    /* ------------------------------------------------------------ */
    /* initially set the solution to be all 0           	           */
@@ -2954,11 +2957,7 @@ int ML_Solve_MGV( ML *ml , double *din, double *dout)
        
        ml_ggb = (ML *) ml->void_options;
        
-
-       
 #ifdef GGBcycFirst
-       double *sol;
-       
        sol  = (double *) ML_allocate(leng*sizeof(double));
     
        
