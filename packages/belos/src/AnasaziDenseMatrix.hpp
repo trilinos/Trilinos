@@ -123,7 +123,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int cols):
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
 	}
-	assert(_array);
+	assert(_array!=NULL);
 	assert(_ld*_rows>0);
 	init();  // Initialize array values to zero
 }
@@ -137,7 +137,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(int rows, int ld, int cols):
 		_array = new TYPE[_ld*_cols];
 		_endp1 = _array + _ld*_cols;
 	}
-	assert(_array);
+	assert(_array!=NULL);
 	assert(_ld*_rows>0);
 	assert(_rows <= _ld);
 	init();  // Initialize array values to zero
@@ -152,7 +152,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A):
 							_created(true), _array(0), _endp1(0) {
 //	cout << "copy_ctor:AnasaziDenseMatrix " << this << endl;
 	if (_ld*_cols > 0 ) {
-		_array = new TYPE[_ld*_cols]; assert(_array);
+		_array = new TYPE[_ld*_cols]; assert(_array!=NULL);
 		_endp1 = _array + _ld*_cols;
 		if (_array) {
 			int i,j;
@@ -180,7 +180,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int ro
 		_array = A.getarray(); 
 		_endp1 = _array+(_cols-1)*_ld + _rows; // check
 	}
-	assert(_array);
+	assert(_array!=NULL);
 	assert(_rows <= A.getrows());
 	assert(_cols <= A.getcols());
 	assert(_cols*_rows>0);
@@ -203,7 +203,7 @@ AnasaziDenseMatrix<TYPE>::AnasaziDenseMatrix(const AnasaziDenseMatrix& A, int st
 		_array = A.getarray() + start_col*_ld + start_row; 
 		_endp1 = _array+(_cols-1)*_ld + _rows; // check
 	}
-	assert(_array);
+	assert(_array!=NULL);
 	assert(start_row*start_col >= 0);
 	assert(_rows <= A.getrows()-start_row);
 	assert(_cols <= A.getcols()-start_col);

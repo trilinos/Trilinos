@@ -112,7 +112,7 @@ int BelosEpetraOperator<TYPE>::Apply( const Epetra_MultiVector &X, Epetra_MultiV
 		MyBlockCG.PrintResids(Vb);
 	}
 	// Copy solution into output vector Y.
-     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y);
+     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y!=NULL);
 
 	// Y = vec_y
 	int info = Y.Update( one, *vec_y, zero );		
@@ -147,7 +147,7 @@ int BelosEpetraOperator<TYPE>::ApplyInverse( const Epetra_MultiVector &X, Epetra
 		MyBlockCG.PrintResids(Vb);
 	}
 	// Copy solution into output vector Y.
-     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y);
+     	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&vec_Y); assert(vec_y!=NULL);
 
 	// Y = vec_y
 	int info = Y.Update( one, *vec_y, zero );		

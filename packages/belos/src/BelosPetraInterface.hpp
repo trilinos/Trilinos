@@ -171,7 +171,7 @@ template<class TYPE>
 void BelosPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
 	int i,j,ind;
-	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec!=NULL);
 	int MyNumVecs = (*this).GetNumberVecs();
 	int VecLength = A.GetVecLength();
 
@@ -208,7 +208,7 @@ void BelosPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A
 	Epetra_LocalMap LocalMap(B.getrows(), izero, Map().Comm());
 	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.getarray(), B.getld(), B.getcols());
 
-	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec!=NULL);
 
 	info = Multiply( *trans, *trans, alpha, *A_vec, B_Pvec, beta );
 
@@ -224,8 +224,8 @@ void BelosPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A,
 	const TYPE one =1.0;
 	const TYPE zero = 0.0;
 
-	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
-	BelosPetraVec *B_vec = dynamic_cast<BelosPetraVec *>(&B); assert(B_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec!=NULL);
+	BelosPetraVec *B_vec = dynamic_cast<BelosPetraVec *>(&B); assert(B_vec!=NULL);
 
 	info = Update( alpha, *A_vec, beta, *B_vec, zero ); assert(info==0);
 }
@@ -341,7 +341,7 @@ Anasazi_ReturnType BelosPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-	assert( vec_x && vec_y );
+	assert( vec_x!=NULL && vec_y!=NULL );
 	//
 	// Need to cast away constness because the member function Multiply
 	// is not declared const.
@@ -392,7 +392,7 @@ void BelosPetraPrec<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
      	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
      	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
 
-     	assert( vec_x && vec_y );
+     	assert( vec_x!=NULL && vec_y!=NULL );
 	//
 	// Need to cast away constness because the member function Multiply
 	// is not declared const.

@@ -128,12 +128,12 @@ BlockCG<TYPE>::BlockCG(AnasaziMatrix<TYPE> & mat,
 	// Make room for the direction and residual vectors
 	// We save 2 blocks of these vectors
 	//
-    _basisvecs = _rhs.Clone(2*_blocksize); assert(_basisvecs);
-	_residvecs = _rhs.Clone(2*_blocksize); assert(_residvecs);
+    _basisvecs = _rhs.Clone(2*_blocksize); assert(_basisvecs!=NULL);
+	_residvecs = _rhs.Clone(2*_blocksize); assert(_residvecs!=NULL);
     //
     if (2*_blocksize && _basisvecs) {
 		//
-		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors);
+		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
 		//if (vb) cout << "BlockCG:ctor " << _maxits << _blocksize <<  _basisvecs << endl;
 	}
 	else {
@@ -185,7 +185,7 @@ void BlockCG<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
 	if (!_startblock) {
 		int i, numvecs = iguess.GetNumberVecs();
 		int* index = new int[ _numrhs ];
-		_solutions = _rhs.Clone(_numrhs); assert(_solutions);
+		_solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
 		if (numvecs < _numrhs) {
 			for (i=0; i<numvecs; i++) {
 				index[i] = i;
@@ -195,7 +195,7 @@ void BlockCG<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
 				index[i-numvecs] = i;
 			}
 			AnasaziMultiVec<TYPE>* U_vec = _solutions->CloneView( index, _numrhs-numvecs );
-			assert(U_vec);
+			assert(U_vec!=NULL);
 			U_vec->MvRandom();
 			delete U_vec;
 		} 
@@ -216,7 +216,7 @@ void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 				     int num_to_solve) {
 	//
 	int i,j;
-	int *index = new int[_blocksize + _numrhs]; assert(index);
+	int *index = new int[_blocksize + _numrhs]; assert(index!=NULL);
 	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
@@ -236,13 +236,13 @@ void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0;i<_blocksize; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,_blocksize); assert(tptr);
+		tptr = _rhs.CloneView(index,_blocksize); assert(tptr!=NULL);
 		rhs_block.MvAddMv(one, *tptr, zero, *tptr);
 		//
 		// Put the next _blocksize of the initial guesses
 		// into the sol_block
 		//
-		tptr = _solutions->CloneView(index,_blocksize); assert(tptr);
+		tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
 		sol_block.MvAddMv(one, *tptr, zero, *tptr);
 		if (tptr) {
 			delete tptr; tptr = 0;
@@ -261,12 +261,12 @@ void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr);
+		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr!=NULL);
 		//
 		for (i=0; i<num_to_solve; i++) {
 			index[i] = i;
 		}
-		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2);
+		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
 		tptr2->MvAddMv(one, *tptr, zero, *tptr);
 		//
         	// Fill up the sol_block and the with random vectors, then
@@ -282,12 +282,12 @@ void BlockCG<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-        	tptr = _solutions->CloneView(index, num_to_solve); assert(tptr);
+        	tptr = _solutions->CloneView(index, num_to_solve); assert(tptr!=NULL);
 		//
 		for (i=0; i<num_to_solve; i++) {
 			index[i] = i;
 		}
-		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2);
+		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
 		tptr2->MvAddMv(one, *tptr, zero, *tptr);
 		//
 		// Delete the temporary views
@@ -312,26 +312,26 @@ void BlockCG<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
 	int i;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	int * index = new int[_blocksize + _numrhs]; assert(index);
+	int * index = new int[_blocksize + _numrhs]; assert(index!=NULL);
 	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
 	//
 	if (num_to_solve >= _blocksize) {
 		 for (i=0; i<_blocksize; i++) {
 			 index[i] = _rhs_iter * _blocksize + i;
 		 }
-		 tptr = _solutions->CloneView(index,_blocksize); assert(tptr);
+		 tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
 		 tptr->MvAddMv(one, sol_block, zero, sol_block);
 	 }
 	 else {
 		 for (i=0; i<num_to_solve; i++) {
 			 index[i] = _rhs_iter * _blocksize + i;
 		 }
-		 tptr = _solutions->CloneView(index,num_to_solve); assert(tptr);
+		 tptr = _solutions->CloneView(index,num_to_solve); assert(tptr!=NULL);
 		 //
 		 for (i=0; i<num_to_solve; i++) {
 			 index[i] = i;
 		 }
-		 tptr2 = sol_block.CloneView(index,num_to_solve); assert(tptr2);
+		 tptr2 = sol_block.CloneView(index,num_to_solve); assert(tptr2!=NULL);
 		 //
 		 tptr->MvAddMv(one, *tptr2, zero, *tptr2);
 	 }
@@ -350,19 +350,19 @@ void BlockCG<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
 
  template <class TYPE>
 void BlockCG<TYPE>::TrueResiduals (bool vb) {
-	AnasaziMultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX);
+	AnasaziMultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX!=NULL);
 	//
 	_amat.ApplyMatrix(*_solutions, *AX);
 	assert(AX->GetNumberVecs()==_rhs.GetNumberVecs());
 	
-	TYPE* norms_AX=new TYPE[AX->GetNumberVecs()]; assert(norms_AX);
+	TYPE* norms_AX=new TYPE[AX->GetNumberVecs()]; assert(norms_AX!=NULL);
 	AX->MvNorm(norms_AX);
 	int i;
 	//
-	TYPE* norms_rhs=new TYPE[_rhs.GetNumberVecs()]; assert(norms_rhs);
+	TYPE* norms_rhs=new TYPE[_rhs.GetNumberVecs()]; assert(norms_rhs!=NULL);
 	_rhs.MvNorm(norms_rhs);
 	
-	_trueresids = new TYPE[AX->GetNumberVecs()]; assert(_trueresids);
+	_trueresids = new TYPE[AX->GetNumberVecs()]; assert(_trueresids!=NULL);
 	const TYPE one=1.0;
 	AX->MvAddMv(one, _rhs, -one, *AX);	
 	AX->MvNorm(_trueresids);
@@ -447,8 +447,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
 	TYPE * ptr_T2 = 0;
 	TYPE * cur_resid_norms=0;
 	TYPE * init_resid_norms=0; 
-	int *index1 = new int[_numrhs + _blocksize]; assert(index1);
-    int *index2 = new int[_numrhs + _blocksize]; assert(index2);
+	int *index1 = new int[_numrhs + _blocksize]; assert(index1!=NULL);
+    int *index2 = new int[_numrhs + _blocksize]; assert(index2!=NULL);
     //
 	//********************************************************************************
 	//
@@ -477,15 +477,15 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		// set initial guesses to AX = B to random vectors
 		//
 		if (!_startblock) {
-			_solutions = _rhs.Clone(_numrhs); assert(_solutions);
+			_solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
 			_solutions->MvRandom();
 			_startblock = true;
 		}
 		
 		// Make room for current blocks of solutions and right-hand sides
 		//
-		 cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol);
-		 cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs);
+		 cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol!=NULL);
+		 cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs!=NULL);
 		 //
 		 // Compute the number of right-hand sides remaining to be solved 
 	     //
@@ -503,15 +503,15 @@ void BlockCG<TYPE>::Solve (bool vb) {
          //
 		 // Make additional space needed during iteration
 		 //
-         temp_block = _solutions->Clone(_blocksize); assert(temp_block);
-		 PC_resid = _solutions->Clone(_blocksize); assert(PC_resid);
+         temp_block = _solutions->Clone(_blocksize); assert(temp_block!=NULL);
+		 PC_resid = _solutions->Clone(_blocksize); assert(PC_resid!=NULL);
          //
 		 // Additional initialization
 		 //
-		 int *ind_idx = new int[_blocksize]; assert(ind_idx);
-		 int *cur_idx = new int[_blocksize]; assert(cur_idx);
-		 int *conv_idx = new int[_blocksize]; assert(conv_idx);
-		 int *cols = new int[_blocksize]; assert(cols);
+		 int *ind_idx = new int[_blocksize]; assert(ind_idx!=NULL);
+		 int *cur_idx = new int[_blocksize]; assert(cur_idx!=NULL);
+		 int *conv_idx = new int[_blocksize]; assert(conv_idx!=NULL);
+		 int *cols = new int[_blocksize]; assert(cols!=NULL);
 		 //
 		 for (i=0;i<_blocksize;i++){
 			 ind_idx[i] = i; cur_idx[i] = i; conv_idx[i] = 0;
@@ -526,10 +526,10 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		for ( i=0; i<_blocksize; i++ ) {
 			index1[i] = i;
 		}
-		P_prev = _basisvecs->CloneView(index1, _blocksize); assert(P_prev);
-        R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev);
-		AP_prev = temp_block->CloneView(index1, _blocksize); assert(AP_prev);
-		cur_sol = cur_block_sol->CloneView(index1, _blocksize); assert(cur_sol);
+		P_prev = _basisvecs->CloneView(index1, _blocksize); assert(P_prev!=NULL);
+        R_prev = _residvecs->CloneView(index1, _blocksize); assert(R_prev!=NULL);
+		AP_prev = temp_block->CloneView(index1, _blocksize); assert(AP_prev!=NULL);
+		cur_sol = cur_block_sol->CloneView(index1, _blocksize); assert(cur_sol!=NULL);
         //
         // Store initial guesses to AX = B in 1st block of _basisvecs
         //         P_prev = one*cur_block_sol + zero*P_prev
@@ -548,7 +548,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		//
 		//*******Compute and save the initial residual norms*******
 		//
-		init_resid_norms = new TYPE[_blocksize]; assert(init_resid_norms);
+		init_resid_norms = new TYPE[_blocksize]; assert(init_resid_norms!=NULL);
         R_prev->MvNorm(init_resid_norms);
 		//
         // Update indices of current (independent) blocks.
@@ -709,8 +709,8 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   R_prev->MvTransMv(one, *P_prev, T1);
            AP_prev->MvTransMv(one, *P_prev, T2);
 		   // 2)
-		   ptr_T1 = T1.getarray(); assert(ptr_T1);
-           ptr_T2 = T2.getarray(); assert(ptr_T2);
+		   ptr_T1 = T1.getarray(); assert(ptr_T1!=NULL);
+           ptr_T2 = T2.getarray(); assert(ptr_T2!=NULL);
            lapack.POTRF(UPLO, ind_blksz, ptr_T2, ind_blksz, info);
 		   if (*info != 0) {
 			   if(vb){
@@ -748,7 +748,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   //
 		   // ****Compute the Current Relative Residual Norms and the Block Error****
            //
-		   cur_resid_norms = new TYPE[cur_blksz]; assert(cur_resid_norms);
+		   cur_resid_norms = new TYPE[cur_blksz]; assert(cur_resid_norms!=NULL);
            R_new->MvNorm(cur_resid_norms);
 		   for (i=0; i<cur_blksz; i++){
 			   cur_resid_norms[i] = cur_resid_norms[i]/init_resid_norms[cur_idx[i]];
@@ -870,7 +870,7 @@ void BlockCG<TYPE>::Solve (bool vb) {
 		   //         factorization during computation of alpha
 		   precond_resid->MvTransMv(-one, *AP_prev, T3);
 		   // 3)
-           ptr_T1 = T3.getarray(); assert(ptr_T1);  
+           ptr_T1 = T3.getarray(); assert(ptr_T1!=NULL);  
            lapack.POTRS(UPLO, prev_ind_blksz, ind_blksz, ptr_T2, prev_ind_blksz, ptr_T1, prev_ind_blksz, info);
 		   // Note: Solution returned in ptr_T1
 		   if (*info != 0) {
@@ -1011,8 +1011,8 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == blksz);
 	int ldR = FouierR.getld();
-	int *index = new int[nb]; assert(index);
-	int *dep_idx = new int[nb]; assert(dep_idx);
+	int *index = new int[nb]; assert(index!=NULL);
+	int *dep_idx = new int[nb]; assert(dep_idx!=NULL);
 	int num_dep = 0;
 	TYPE * R = FouierR.getarray();
 	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0;
@@ -1020,7 +1020,7 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
 	const int IntZero=0;
 	const TYPE zero=0.0;
 	const TYPE one=1.0;
-	TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn);
+	TYPE * NormVecIn = new TYPE[nb]; assert(NormVecIn!=NULL);
 	//
 	//
     // Zero out the array that will contain the Fourier coefficients.
@@ -1050,7 +1050,7 @@ void BlockCG<TYPE>::QRFactorDef (AnasaziMultiVec<TYPE>& VecIn,
         // be the zero-th one).
 		//
 		index[0] = j;
-		qj = VecIn.CloneView(index, IntOne); assert(qj);
+		qj = VecIn.CloneView(index, IntOne); assert(qj!=NULL);
 		if ( j ) {
 			int num_orth;
 			for ( i=0; i<j; i++ ) {
@@ -1149,7 +1149,7 @@ void BlockCG<TYPE>::CheckCGOrth(AnasaziMultiVec<TYPE>& P1, AnasaziMultiVec<TYPE>
   int numvecs2 = P2.GetNumberVecs();
   //
   AnasaziMultiVec<TYPE>* AP = P1.CloneCopy();
-  assert(AP);
+  assert(AP!=NULL);
   _amat.ApplyMatrix(P1, *AP);
   //
   AnasaziDenseMatrix<TYPE> PAP(numvecs2, numvecs1);
@@ -1232,13 +1232,13 @@ void BlockCG<TYPE>::CheckCGResids(AnasaziMultiVec<TYPE>& X, AnasaziMultiVec<TYPE
 	int i;
 	const TYPE one = 1.0;
 	//
-	AnasaziMultiVec<TYPE> *AX = X.CloneCopy(); assert(AX);
-	AnasaziMultiVec<TYPE> *TR = X.CloneCopy(); assert(TR);
+	AnasaziMultiVec<TYPE> *AX = X.CloneCopy(); assert(AX!=NULL);
+	AnasaziMultiVec<TYPE> *TR = X.CloneCopy(); assert(TR!=NULL);
 	//
 	_amat.ApplyMatrix(X, *AX);
 	TR->MvAddMv(one, B, -one, *AX);
 	//
-	TYPE *resids = new TYPE[_blocksize]; assert(resids);
+	TYPE *resids = new TYPE[_blocksize]; assert(resids!=NULL);
 	TR->MvNorm(resids);
 	//
 	if (vb){

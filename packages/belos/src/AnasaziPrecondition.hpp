@@ -53,7 +53,7 @@ public:
 		// Now create the indexing for copying x into y.
 		//
 		int i, numvecs = x.GetNumberVecs();
-		int *index = new int[numvecs]; assert(index);
+		int *index = new int[numvecs]; assert(index!=NULL);
 		for (i=0; i<numvecs; i++) { index[i] = i; }
 		y.SetBlock(temp_x, index, numvecs);
 		delete [] index;

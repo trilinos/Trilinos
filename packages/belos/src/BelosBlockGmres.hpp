@@ -139,16 +139,16 @@ BlockGmres<TYPE>::BlockGmres(AnasaziMatrix<TYPE> & mat, AnasaziPrecondition<TYPE
 	//
 	// Make room for the Arnoldi vectors and F.
 	//
-	_basisvecs = _rhs.Clone((_maxits+1)*_blocksize); assert(_basisvecs);
+	_basisvecs = _rhs.Clone((_maxits+1)*_blocksize); assert(_basisvecs!=NULL);
 	if (_maxits*_blocksize && _basisvecs) {
 		//
 		// Create the rectangular Hessenberg matrix
 		//
 		_hessmatrix = new AnasaziDenseMatrix<TYPE>((_maxits+1)*_blocksize, _maxits*_blocksize); 
-		assert(_hessmatrix);
-		//_residerrors = new TYPE[ _blocksize > _numrhs ? _blocksize : _numrhs ]; assert(_residerrors);
-		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors);
-		_update_ary = new TYPE[(_maxits+1)*_blocksize*_blocksize]; assert(_update_ary);
+		assert(_hessmatrix!=NULL);
+		//_residerrors = new TYPE[ _blocksize > _numrhs ? _blocksize : _numrhs ]; assert(_residerrors!=NULL);
+		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
+		_update_ary = new TYPE[(_maxits+1)*_blocksize*_blocksize]; assert(_update_ary!=NULL);
 	}
 	else {
 		 cout << "BlockGmres:ctor " << _maxits << _blocksize << _basisvecs <<  endl;
@@ -177,7 +177,7 @@ void BlockGmres<TYPE>::SetRestart(const int in) {
 		//
 		// Set the number of restarts
 		//
-		_restart = in; assert(_restart);
+		_restart = in;
 	}
 }
 
@@ -205,7 +205,7 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 				     int num_to_solve) {
 	//
 	int i,j;
-	int *index = new int[_blocksize + _numrhs]; assert(index);
+	int *index = new int[_blocksize + _numrhs]; assert(index!=NULL);
 	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
@@ -225,13 +225,13 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0;i<_blocksize; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,_blocksize); assert(tptr);
+		tptr = _rhs.CloneView(index,_blocksize); assert(tptr!=NULL);
 		rhs_block.MvAddMv(one, *tptr, zero, *tptr);
 		//
 		// Put the next _blocksize of the initial guesses
 		// into the sol_block
 		//
-		tptr = _solutions->CloneView(index,_blocksize); assert(tptr);
+		tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
 		sol_block.MvAddMv(one, *tptr, zero, *tptr);
 		if (tptr) {
 			delete tptr; tptr = 0;
@@ -250,11 +250,11 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr);
+		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr!=NULL);
 		for (i=0; i<num_to_solve; i++) {
 			index[i] = i;
 		}
-		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2);
+		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
 		tptr2->MvAddMv(one, *tptr, zero, *tptr);
 		//
         	// Fill up the sol_block with zero vectors, then
@@ -266,11 +266,11 @@ void BlockGmres<TYPE>::SetUpBlocks (AnasaziMultiVec<TYPE>& sol_block,
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-        	tptr = _solutions->CloneView(index,num_to_solve); assert(tptr);
+        	tptr = _solutions->CloneView(index,num_to_solve); assert(tptr!=NULL);
 		for (i=0; i<num_to_solve; i++) {
 			index[i] = i;
 		}
-		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2);
+		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
 		tptr2->MvAddMv(one, *tptr, zero, *tptr);
 		//
 		// Delete the temporary views
@@ -293,26 +293,26 @@ void BlockGmres<TYPE>::ExtractCurSolnBlock(AnasaziMultiVec<TYPE>& sol_block,
 	int i;
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
-	int * index = new int[_blocksize + _numrhs]; assert(index);
+	int * index = new int[_blocksize + _numrhs]; assert(index!=NULL);
 	AnasaziMultiVec<TYPE> *tptr=0, *tptr2=0;
 	//
 	if (num_to_solve >= _blocksize) {
 		 for (i=0; i<_blocksize; i++) {
 			 index[i] = _rhs_iter * _blocksize + i;
 		 }
-		 tptr = _solutions->CloneView(index,_blocksize); assert(tptr);
+		 tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
 		 tptr->MvAddMv(one, sol_block, zero, sol_block);
 	 }
 	 else {
 		 for (i=0; i<num_to_solve; i++) {
 			 index[i] = _rhs_iter * _blocksize + i;
 		 }
-		 tptr = _solutions->CloneView(index,num_to_solve); assert(tptr);
+		 tptr = _solutions->CloneView(index,num_to_solve); assert(tptr!=NULL);
 		 //
 		 for (i=0; i<num_to_solve; i++) {
 			 index[i] = i;
 		 }
-		 tptr2 = sol_block.CloneView(index,num_to_solve); assert(tptr2);
+		 tptr2 = sol_block.CloneView(index,num_to_solve); assert(tptr2!=NULL);
 		 //
 		 tptr->MvAddMv(one, *tptr2, zero, *tptr2);
 	 }
@@ -337,7 +337,7 @@ void BlockGmres<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
         if (!_startblock) {
                 int i, numvecs = iguess.GetNumberVecs();
                 int* index = new int[ _numrhs ];
-                _solutions = _rhs.Clone(_numrhs); assert(_solutions);
+                _solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
                 if (numvecs < _numrhs) {
                         for (i=0; i<numvecs; i++) {
                                 index[i] = i;
@@ -347,7 +347,7 @@ void BlockGmres<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
                                 index[i-numvecs] = i;
                         }       
                         AnasaziMultiVec<TYPE>* U_vec = _solutions->CloneView( index, _numrhs-numvecs );
-                        assert(U_vec);
+                        assert(U_vec!=NULL);
                         U_vec->MvRandom();
                         delete U_vec;
                 }
@@ -364,17 +364,17 @@ void BlockGmres<TYPE>::SetInitGuess(AnasaziMultiVec<TYPE>& iguess) {
 
 template <class TYPE>
 void BlockGmres<TYPE>::TrueResiduals (bool vb) {
-	AnasaziMultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX);
+	AnasaziMultiVec<TYPE> * AX = _solutions->Clone(_numrhs); assert(AX!=NULL);
 	_amat.ApplyMatrix(*_solutions, *AX);
 	assert(AX->GetNumberVecs()==_rhs.GetNumberVecs());
 	
-	TYPE* norms_AX=new TYPE[AX->GetNumberVecs()]; assert(norms_AX);
+	TYPE* norms_AX=new TYPE[AX->GetNumberVecs()]; assert(norms_AX!=NULL);
 	AX->MvNorm(norms_AX);
 	int i;
-	TYPE* norms_rhs=new TYPE[_rhs.GetNumberVecs()]; assert(norms_rhs);
+	TYPE* norms_rhs=new TYPE[_rhs.GetNumberVecs()]; assert(norms_rhs!=NULL);
 	_rhs.MvNorm(norms_rhs);
 	
-	_trueresids = new TYPE[AX->GetNumberVecs()]; assert(_trueresids);
+	_trueresids = new TYPE[AX->GetNumberVecs()]; assert(_trueresids!=NULL);
 	const TYPE one=1.0;
 	AX->MvAddMv(one, _rhs, -one, *AX);	
 	AX->MvNorm(_trueresids);
@@ -451,7 +451,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 	const TYPE zero=0.0;
 	AnasaziMultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
 	AnasaziMultiVec<TYPE> *U_vec=0, *F_vec=0;
-	int *index = new int[ (_maxits+1)*_blocksize ]; assert(index);
+	int *index = new int[ (_maxits+1)*_blocksize ]; assert(index!=NULL);
 	bool dep_flg = false, exit_flg = false, brkflg = false;
 	
 	//
@@ -475,13 +475,13 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 		// If not provided, set initial guesses to AX = B to random vectors
 		//
 		if (!_startblock) {
-			_solutions = _rhs.Clone(_numrhs); assert(_solutions);
+			_solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
 			_solutions->MvRandom();
 			_startblock = true;
 		}
 		//
-		cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol);
-		cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs);
+		cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol!=NULL);
+		cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs!=NULL);
         //
 		// Compute the number of right-hand sides remaining to be solved 
 		//
@@ -513,7 +513,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			    index[i] = i;
 			}
 			U_vec = _basisvecs->CloneView(index, _blocksize);
-			assert(U_vec);
+			assert(U_vec!=NULL);
 			//
 			// Copy current solution (initial guess) into 1st block
 			//
@@ -526,7 +526,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			    index[i] = _blocksize+i;
 			}
 		    F_vec = _basisvecs->CloneView(index, _blocksize);
-		    assert(F_vec);
+		    assert(F_vec!=NULL);
 		    //
 		    // F_vec <- A*U_vec
 		    //
@@ -538,7 +538,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 		    //
 		    // Apply the preconditioner
 		    //
-		    AnasaziMultiVec<TYPE>* AU_vec = U_vec->CloneCopy(); assert(AU_vec);
+		    AnasaziMultiVec<TYPE>* AU_vec = U_vec->CloneCopy(); assert(AU_vec!=NULL);
 		    _precond.ApplyPrecondition( *AU_vec, *U_vec );
 		    //
 		    if (AU_vec) { 
@@ -612,7 +612,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 					//
 					if (_iter > 0) {
 					   TYPE * coeffs = new TYPE[_rowsupdate*_colsupdate]; 
-					   assert(coeffs);
+					   assert(coeffs!=NULL);
 					   for (j=0; j<_colsupdate; j++){
 						   for (i=0; i<_rowsupdate; i++){
 							   coeffs[i+j*_rowsupdate] = _update_ary[i+j*_rowsupdate];
@@ -667,7 +667,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				int ldhj = Hj.getld();
 				TYPE *ptr_hj = Hj.getarray();
 				int lwork = (2+_blocksize)*m;
-				TYPE *work = new TYPE[lwork]; assert(work);
+				TYPE *work = new TYPE[lwork]; assert(work!=NULL);
 				int block = _blocksize;
 				Epetra_LAPACK lapack;
 				lapack.GELS( *trans, m, n, block, ptr_hj, ldhj, ptr_rhs, 
@@ -780,7 +780,7 @@ template<class TYPE>
 bool BlockGmres<TYPE>::BlockReduction ( bool& dep_flg, bool vb ) {
 	int i,j;
 	
-	int *index = new int[_blocksize]; assert(index);
+	int *index = new int[_blocksize]; assert(index!=NULL);
 	//
 	j = _iter;
 	//
@@ -790,9 +790,9 @@ bool BlockGmres<TYPE>::BlockReduction ( bool& dep_flg, bool vb ) {
 			index[i] = j*_blocksize+i;
 	}
 	AnasaziMultiVec<TYPE>* U_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(U_vec);
+	assert(U_vec!=NULL);
 	//
-	AnasaziMultiVec<TYPE>* Temp_vec = U_vec->CloneCopy(); assert(Temp_vec);
+	AnasaziMultiVec<TYPE>* Temp_vec = U_vec->CloneCopy(); assert(Temp_vec!=NULL);
 	//
 	//  Compute Temp_vec = A * U_vec
 	//
@@ -800,7 +800,7 @@ bool BlockGmres<TYPE>::BlockReduction ( bool& dep_flg, bool vb ) {
 	//
 	// Apply the preconditioner and store result in AU_vec
 	//
-	AnasaziMultiVec<TYPE>* AU_vec = Temp_vec->CloneCopy(); assert(AU_vec);
+	AnasaziMultiVec<TYPE>* AU_vec = Temp_vec->CloneCopy(); assert(AU_vec!=NULL);
 	_precond.ApplyPrecondition( *Temp_vec, *AU_vec );
 	//
 	delete Temp_vec; delete U_vec; delete [] index;
@@ -840,9 +840,9 @@ bool BlockGmres<TYPE>::BlkOrth( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 	const TYPE zero = 0.0;
 	const int max_num_orth = 2;
 	int i, j, k, row_offset, col_offset;
-	int * index = new int[_blocksize * _maxits]; assert(index);
-	TYPE * norm1 = new TYPE[_blocksize]; assert(norm1);
-	TYPE * norm2 = new TYPE[_blocksize]; assert(norm2);
+	int * index = new int[_blocksize * _maxits]; assert(index!=NULL);
+	TYPE * norm1 = new TYPE[_blocksize]; assert(norm1!=NULL);
+	TYPE * norm2 = new TYPE[_blocksize]; assert(norm2!=NULL);
 	//
 	j = _iter;
 	//
@@ -852,7 +852,7 @@ bool BlockGmres<TYPE>::BlkOrth( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 			index[i] = (j+1)*_blocksize+i;
 	}
 	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(F_vec);
+	assert(F_vec!=NULL);
 	//
 	// Copy preconditioned AU_vec into (j+1)st block of _basisvecs
 	//
@@ -880,7 +880,7 @@ bool BlockGmres<TYPE>::BlkOrth( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 		index[i] = i;
 	}
 	AnasaziMultiVec<TYPE>* V_prev = _basisvecs->CloneView(index,num_prev);
-	assert(V_prev);
+	assert(V_prev!=NULL);
 	//
 	// Create a matrix to store the product trans(V_prev)*F_vec
 	//
@@ -985,7 +985,7 @@ bool BlockGmres<TYPE>::BlkOrthSing( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 	const TYPE one = 1.0;
 	const TYPE zero = 0.0;
 	int i, j, k;
-	int * index = new int[_blocksize * _maxits +_blocksize]; assert(index);
+	int * index = new int[_blocksize * _maxits +_blocksize]; assert(index!=NULL);
 	TYPE nm1[IntOne];
 	TYPE nm2[IntOne];
 	//
@@ -997,7 +997,7 @@ bool BlockGmres<TYPE>::BlkOrthSing( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 			index[i] = (j+1)*_blocksize+i;
 	}
 	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(F_vec);
+	assert(F_vec!=NULL);
 	//
 	// Copy preconditioned AU_vec into (j+1)st block of _basisvecs
 	//
@@ -1017,7 +1017,7 @@ bool BlockGmres<TYPE>::BlkOrthSing( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 	}
 	//
 	AnasaziMultiVec<TYPE> *q_vec=0, *Q_vec=0, *tptr=0;
-	tptr = F_vec->Clone(IntOne); assert(tptr);
+	tptr = F_vec->Clone(IntOne); assert(tptr!=NULL);
 	//
 	// Start a loop to orthogonalize each of the _blocksize
 	// columns of F_vec against all previous _basisvecs
@@ -1031,14 +1031,14 @@ bool BlockGmres<TYPE>::BlkOrthSing( AnasaziMultiVec<TYPE>& VecIn, bool vb) {
 		// Grab the next column of _basisvecs
 		//
 		index[0] = num_prev;
-		q_vec = _basisvecs->CloneView(index, IntOne); assert(q_vec);
+		q_vec = _basisvecs->CloneView(index, IntOne); assert(q_vec!=NULL);
 		//
 		// Grab all previous columns of _basisvecs
 		//
 		for (i=0; i<num_prev; i++){
 			index[i] = i;
 		}
-		Q_vec = _basisvecs->CloneView(index, num_prev); assert(Q_vec);
+		Q_vec = _basisvecs->CloneView(index, num_prev); assert(Q_vec!=NULL);
 		//
 		// Create matrix to store product trans(Q_vec)*q_vec
 		//
@@ -1195,7 +1195,7 @@ bool BlockGmres<TYPE>::QRFactorAug(AnasaziMultiVec<TYPE>& VecIn,
 	int i,j,k;
 	int nb = VecIn.GetNumberVecs(); assert (nb == _blocksize);
 	int ldR = FouierR.getld();
-	int *index = new int[nb]; assert(index);
+	int *index = new int[nb]; assert(index!=NULL);
 	const int IntOne=1;
 	const int IntZero=0;
 	const TYPE zero=0.0;
@@ -1207,7 +1207,7 @@ bool BlockGmres<TYPE>::QRFactorAug(AnasaziMultiVec<TYPE>& VecIn,
 	TYPE norm1[IntOne];
 	TYPE norm2[IntOne];
 	AnasaziMultiVec<TYPE> *qj = 0, *Qj = 0, *tptr = 0;
-	tptr = _basisvecs->Clone(IntOne); assert(tptr);
+	tptr = _basisvecs->Clone(IntOne); assert(tptr!=NULL);
 	//
     // Zero out the array that will contain the Fourier coefficients.
 	//
@@ -1227,7 +1227,7 @@ bool BlockGmres<TYPE>::QRFactorAug(AnasaziMultiVec<TYPE>& VecIn,
         // be the zero-th one).
 		//
 		index[0] = j;
-		qj = VecIn.CloneView(index, IntOne); assert(qj);
+		qj = VecIn.CloneView(index, IntOne); assert(qj!=NULL);
 		//
 		// If we are beyond the 1st column, orthogonalize against the previous
 		// vectors in the current block
@@ -1382,7 +1382,7 @@ void BlockGmres<TYPE>::CheckGmresOrth( const int j, bool vb ) {
 		index[i] = m+i;
 	}
 	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(F_vec);
+	assert(F_vec!=NULL);
 	
 	TYPE *ptr_norms = new double[m];
 	TYPE sum=0.0;
@@ -1396,7 +1396,7 @@ void BlockGmres<TYPE>::CheckGmresOrth( const int j, bool vb ) {
 		index[i] = i;
 	}
 	AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
-	assert(Vj);
+	assert(Vj!=NULL);
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
 	AnasaziDenseMatrix<TYPE> VTV(m,m);
@@ -1463,20 +1463,20 @@ void BlockGmres<TYPE>::CheckBlkArnRed( const int j, bool vb ) {
 		index[i] = i;
 	}
 	AnasaziMultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
-	assert(Vj);
+	assert(Vj!=NULL);
 	//
 	for ( i=0; i<_blocksize; i++ ) {
 		index[i] = m+i;
 	}
 	AnasaziMultiVec<TYPE>* F_vec = _basisvecs->CloneView(index, _blocksize);
-	assert(F_vec);
+	assert(F_vec!=NULL);
 	//
-	AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj);
+	AnasaziMultiVec<TYPE>* AVj = _basisvecs->Clone(m); assert(AVj!=NULL);
 	_amat.ApplyMatrix(*Vj,*AVj);
 	//
 	// Apply the preconditioner
 	//
-	AnasaziMultiVec<TYPE>* AVj_vec = AVj->CloneCopy(); assert(AVj_vec);
+	AnasaziMultiVec<TYPE>* AVj_vec = AVj->CloneCopy(); assert(AVj_vec!=NULL);
 	_precond.ApplyPrecondition( *AVj_vec, *AVj );
 	if (AVj_vec) { 
 		delete AVj_vec; AVj_vec=0;
@@ -1520,20 +1520,20 @@ void BlockGmres<TYPE>::CheckGmresResids(AnasaziMultiVec<TYPE> & x, AnasaziMultiV
 	//
 	const TYPE one=1.0, zero=0.0;
 	int m = y.getrows()-_blocksize,i;
-	int *index = new int[m]; assert(index);
+	int *index = new int[m]; assert(index!=NULL);
 	for ( i=0; i<m; i++ ) {
 		index[i] = i;
 	}
-	AnasaziMultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1);
-	AnasaziMultiVec<TYPE> * x_copy = x.CloneCopy(); assert(x_copy);
-	AnasaziMultiVec<TYPE> * Ax_copy = x.CloneCopy(); assert(Ax_copy);
+	AnasaziMultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, m); assert(Vjp1!=NULL);
+	AnasaziMultiVec<TYPE> * x_copy = x.CloneCopy(); assert(x_copy!=NULL);
+	AnasaziMultiVec<TYPE> * Ax_copy = x.CloneCopy(); assert(Ax_copy!=NULL);
 	AnasaziDenseMatrix<TYPE> y_view(y,0,0,m,_blocksize);
 	x_copy->MvTimesMatAddMv( one, *Vjp1, y_view, one );
 	_amat.ApplyMatrix( *x_copy, *Ax_copy );
 	//
 	x_copy->MvAddMv( one, b, -one, *Ax_copy );
 	
-	TYPE *residuals = new TYPE[_blocksize]; assert(residuals);
+	TYPE *residuals = new TYPE[_blocksize]; assert(residuals!=NULL);
 	x_copy->MvNorm(residuals);
 	
 	if (vb){
