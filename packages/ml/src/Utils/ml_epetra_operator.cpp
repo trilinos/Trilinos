@@ -21,6 +21,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
+#ifdef ML_WITH_EPETRA
+
 #ifdef ML_MPI
 #ifndef EPETRA_MPI
 #define EPETRA_MPI
@@ -88,3 +90,5 @@ int Epetra_ML_Operator::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVe
   }
 
 }
+
+#endif //ifdef ML_WITH_EPETRA
