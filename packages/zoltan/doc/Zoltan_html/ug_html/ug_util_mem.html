@@ -1,0 +1,551 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan User's Guide:  Memory Management Utilities</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_util_comm.html">Next</a>&nbsp; |&nbsp; <a href="ug_util.html">Previous</a></i></b></div>
+<!------------------------------------------------------------------------->
+
+<h2>
+<a NAME="Memory"></a>Memory Management Utilities</h2>
+This package consists of wrappers around the standard C memory
+allocation and deallocation routines which add error-checking and
+<a href="#Debug_Memory">debugging capabilities</a>.  These routines
+are packaged separately from Zoltan to allow their independent
+use in other applications.  A Fortran90 interface is not yet available.
+<p>
+<hr>
+<table>
+<tr VALIGN=TOP>
+<td WIDTH="50%">
+<b>Source code location:</b>
+</td>
+<td WIDTH="50%">
+<i>Utilities/Memory</i>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Function prototypes file:</b>
+</td>
+<td>
+<i>Utilities/Memory/zoltan_mem.h</i> or <i>include/zoltan_mem.h</i>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Library name:</b>
+</td>
+<td>
+libzoltan_mem.a
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td>
+<b>Other libraries used by this library:</b>
+</td>
+<td>
+libmpi.a.
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Routines:</b>
+<blockquote><b><a href="#Zoltan_Array_Alloc">Zoltan_Array_Alloc</a></b>:&nbsp;
+Allocates arrays of dimension <i>n</i>, <i>n</i>=0,1,...,4
+<br><b><a href="#Zoltan_Malloc">Zoltan_Malloc</a></b>:&nbsp; Wrapper for system
+malloc.
+<br><b><a href="#Zoltan_Realloc">Zoltan_Realloc</a></b>:&nbsp; Wrapper for system
+realloc.
+<br><b><a href="#Zoltan_Free">Zoltan_Free</a></b>:&nbsp; Frees memory and sets
+the pointer to NULL.
+<br><b><a href="#Zoltan_Set_Memory_Debug">Zoltan_Set_Memory_Debug</a></b>:&nbsp; Sets
+the debug level used by the memory utilities; see 
+the <a href="#Debug_Memory">description</a> below.
+<br><b><a href="#Zoltan_Memory_Stats">Zoltan_Memory_Stats</a></b>:&nbsp; Prints 
+<a href="#Debug_Memory">memory debugging</a> statistics, such as memory
+leak information.
+</blockquote>
+</td>
+</tr>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Use in Zoltan:</b>
+<blockquote>
+The memory management utility routines are used extensively in Zoltan and
+in some individual algorithms.  Zoltan developers use these routines
+directly for most memory management, taking advantage of the error checking
+and <a href="#Debug_Memory">debugging capabilities</a> of the library.  
+<p>
+Rather than call <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>
+directly, applications using Zoltan can set the 
+<a href="#Debug_Memory"><b>DEBUG_MEMORY</b></a> parameter 
+used by this utility through calls to 
+<a href="../ug_html/ug_interface_init.html#Zoltan_Set_Param"><b>Zoltan_Set_Param</b></a>.
+</blockquote>
+</td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Array_Alloc"></a>
+<hr>
+double *<b>Zoltan_Array_Alloc</b>(char *<i>
+file</i>, int <i>line</i>, int <i>n</i>, int <i>d1</i>, int <i>d2</i>,
+..., int <i>dn</i>, int <i>size</i>);&nbsp;
+<hr>
+The <b>Zoltan_Array_Alloc</b> routine dynamically allocates an array of
+dimension <i>n</i>, <i>n </i>= 0, 1, ..., 4 with size (<i>d1</i> x <i>d2</i>
+x ... x <i>dn</i>). It is intended to be used for 2, 3 and 4 dimensional
+arrays; <b><a href="#Zoltan_Malloc">Zoltan_Malloc</a></b> should be used for the simpler cases. The memory
+allocated by <b>Zoltan_Array_Alloc</b> is contiguous, and can be freed by a
+single call to <b><a href="#Zoltan_Free">Zoltan_Free</a></b>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; file</i></td>
+
+<td>A string containing the name of the file calling the function. The
+<i>__FILE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; line</i></td>
+
+<td>The line number within <i>file</i> of the call to the function. The
+<i>__LINE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; n</i></td>
+
+<td>The number of dimensions in the array to be allocated. Valid values
+are 0, 1, 2, 3, or 4.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>d1</i>, <i>d2</i>, ..., <i>dn</i></td>
+
+<td>The size of each dimension to be allocated. One argument is included
+for each dimension.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>size</i></td>
+
+<td>The size (in bytes) of the data objects to be stored in the array.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; double *</td>
+
+<td>A pointer to the starting address of the <i>n</i>-dimensional array,
+or NULL if the allocation fails.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>int **<i> x</i> = (int **) <b>Zoltan_Array_Alloc</b> (<i> __FILE__</i>
+, <i>__LINE__</i> , 2, 5, 6, <i>sizeof</i> (int));</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Allocates a two-dimensional, 5x6-element array of integers.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Malloc"></a>
+<hr>
+double *<b>Zoltan_Malloc</b>(int <i>n</i>, char
+*<i> file</i> , int <i>line</i>);&nbsp;
+<hr>
+The <b>Zoltan_Malloc</b> function is a wrapper around the standard C malloc
+routine. It allocates a block of memory of size <i>n</i> bytes. The principle
+advantage of using the wrapper is that it allows memory leaks to be tracked
+via the DEBUG_MEMORY variable (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>).
+<p>A macro <b>ZOLTAN_MALLOC</b> is defined in <i>zoltan_mem.h</i>.
+It takes the argument <i>n</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
+macros to the argument list of the <b>Zoltan_Malloc</b> call:
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>ZOLTAN_MALLOC</b>(<i>n</i>)&nbsp;&nbsp;
+
+<b>Zoltan_Malloc</b>((<i>n</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
+Using this macro, the developer gains the file and line debugging information
+without having to type file and line information in each memory allocation
+call.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> n</i></td>
+
+<td>The size (in bytes) of the memory-allocation request.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; file</i></td>
+
+<td>A string containing the name of the file calling the function. The
+<i>__FILE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; line</i></td>
+
+<td>The line number within <i>file</i> of the call to the function. The
+<i>__LINE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; double *</td>
+
+<td>A pointer to the starting address of memory allocated.&nbsp; NULL is
+returned if <i>n</i> = 0 or the routine is unsuccessful.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>struct <b>Zoltan_Struct</b> *<i>b</i> = (struct <b>Zoltan_Struct</b> *) <b>ZOLTAN_MALLOC</b>(<i>sizeof</i>(struct
+<b>Zoltan_Struct</b>));</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Allocates memory for one <b>Zoltan_Struct</b> data structure.&nbsp;</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Realloc"></a>
+<hr>
+double *<b>Zoltan_Realloc</b>(void *<i>ptr</i>,
+int <i>n</i>, char *<i>file</i>, int <i>line</i>);&nbsp;
+<hr>
+The <b>Zoltan_Realloc</b> function is a "safe" version of realloc. It changes
+the size of the object pointed to by <i>ptr</i> to <i>n</i> bytes. The
+contents of <i>ptr</i> are unchanged up to a minimum of the old and new
+sizes. Error tests ensuring that <i>n</i> is a positive number and that
+space is available to be allocated are performed.
+<p>A macro <b>ZOLTAN_REALLOC</b> is defined in <i>zoltan_mem.h</i>.
+It takes the arguments <i>ptr</i> and <i>n</i>, and adds the <i>__FILE__</i>
+and <i>__LINE__</i> macros to the argument list of the <b>Zoltan_Realloc</b>
+call:
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>ZOLTAN_REALLOC</b>(<i>ptr</i>, <i>n</i>)&nbsp;
+
+<b>Zoltan_Realloc</b>((<i>ptr</i>), (<i>n</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
+Using this macro, the developer gains the file and line debugging information
+without having to type file and line information in each memory allocation
+call.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ptr</i></td>
+
+<td>Pointer to allocated memory to be re-sized.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp;<i> n</i></td>
+
+<td>The size (in bytes) of the memory-allocation request.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; file</i></td>
+
+<td>A string containing the name of the file calling the function. The
+<i>__FILE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; line</i></td>
+
+<td>The line number within <i>file</i> of the call to the function. The
+<i>__LINE__</i>
+macro can be passed as this argument. This argument is useful for debugging
+memory allocation problems.</td>
+</tr>
+
+<tr>
+<td><b>Returned Value:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp; double *</td>
+
+<td>A pointer to the starting address of memory allocated.&nbsp; If the
+routine is unsuccessful, NULL is returned and *<i>ptr</i> is unchanged.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td><i>int</i> <i>n</i> = <i>sizeof</i>(struct <b>Zoltan_Struct</b>);
+<br><i>int</i> *<i>b</i> = (<i>int </i>*) <b><a href="#Zoltan_Malloc">ZOLTAN_MALLOC</a></b>
+(<i>n</i>));&nbsp;
+<br><i>b</i> = (<i>int </i>*) <b>ZOLTAN_REALLOC</b> (<i>b</i>, 2*<i>n</i>);</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Reallocates memory for <i>b</i> from length <i>n</i> to length 2*<i>n</i>.&nbsp;</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Free"></a>
+<hr>
+void <b>Zoltan_Free</b>(void **<i>ptr</i>, char *<i>
+file</i> , int <i>line</i>);&nbsp;
+<hr>
+The <b>Zoltan_Free</b> function calls the system's "free" function for the
+memory pointed to by <i>*ptr</i>. Note that the argument to this routine
+has an extra level of indirection when compared to the standard C "free"
+call. This allows the pointer being freed to be set to NULL, which can
+help find errors in which a pointer is used after it is deallocated. Error
+checking is performed to prevent attempts to free NULL pointers. When <b>Zoltan_Free</b>
+is used with the DEBUG_MEMORY options (set in <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>), it can help identify memory leaks.
+<p>A macro <b>ZOLTAN_FREE</b> is defined in <i>zoltan_mem.h</i>. It
+takes the argument <i>ptr</i>, and adds the <i>__FILE__</i> and <i>__LINE__</i>
+macros to the argument list of the <b>Zoltan_Free</b> call:
+<blockquote>#define&nbsp;&nbsp;&nbsp; <b>ZOLTAN_FREE</b>(<i>ptr</i>)&nbsp;&nbsp;
+
+<b>Zoltan_Free</b>((void **)(<i>ptr</i>), <i>__FILE__</i>, <i>__LINE__</i>)</blockquote>
+Using this macro, the developer gains the file and line debugging information
+without having to type file and line information in each memory allocation
+call.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ptr</i></td>
+
+<td>Address of a pointer to the memory to be freed. Upon return, <i>ptr</i>
+is set to NULL.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Example:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td><b>ZOLTAN_FREE</b>(&amp;<i> x</i>);</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Frees memory associated with the variable <i>x</i>; upon return, <i>x</i>
+is NULL.</td>
+</tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<hr><a NAME="Debug_Memory"></a>
+<h3>
+<b>Debugging Memory Errors</b></h3>
+One important reason to use the memory-management utilities' wrappers around the system memory
+routines is to facilitate debugging of memory problems.&nbsp  Various amounts of information can
+about memory allocation and deallocation are stored, depending on the debug level set 
+through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.&nbsp This information is printed either when an error or
+warning occurs, or when <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> is called.&nbsp
+We have found values of one and two to
+be very helpful in our development efforts.&nbsp;
+<p>
+
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Set_Memory_Debug"></a>
+<hr>
+void <b>Zoltan_Set_Memory_Debug</b>(int <i>new_level</i>);
+<hr>
+The <b>Zoltan_Set_Memory_Debug</b> function sets the level of memory debugging to
+be used.  
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>new_level</i></td>
+
+<td>Integer indicating the amount of debugging to use.&nbsp Valid options include:
+<blockquote>
+0 -- No debugging.
+<br>
+1 -- The number of calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> and 
+<a href="#Zoltan_Free"><b>Zoltan_Free</b></a>
+are tallied, and can be printed by a call to <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a>.
+<br>
+2 -- A list of
+all calls to <a href="#Zoltan_Malloc"><b>Zoltan_Malloc</b></a> which have 
+not yet been freed is kept. This list
+is printed by <a href="#Zoltan_Memory_Stats"><b>Zoltan_Memory_Stats</b></a> 
+(useful for detecting memory leaks).
+Any calls to <a href="#Zoltan_Free"><b>Zoltan_Free</b></a> with addresses
+not in this list trigger warning messages. (Note that allocations that
+occurred prior to setting the debug level to 2 will not be in this
+list and thus can generate spurious warnings.)
+<br>
+3 -- Information about each allocation is printed as it happens.
+</blockquote>
+</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Default:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Memory debug level is 1.</td>
+</tr>
+</table>
+<p>
+
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="Zoltan_Memory_Stats"></a>
+<hr>
+void <b>Zoltan_Memory_Stats</b>();
+<hr>
+The <b>Zoltan_Memory_Stats</b> function prints information about memory allocation
+and deallocation.&nbsp; The amount of information printed is determined by the
+debug level set through a call to <a href="#Zoltan_Set_Memory_Debug"><b>Zoltan_Set_Memory_Debug</b></a>.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
+<td WIDTH="80%"></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>None.</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">
+<br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_util_comm.html">Next:&nbsp;
+Unstructured Communication Utilities</a>&nbsp; |&nbsp; <a href="ug_util.html">Previous:&nbsp;
+Utilities</a>]
+</body>
+</html>

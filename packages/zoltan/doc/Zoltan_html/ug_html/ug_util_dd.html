@@ -1,0 +1,615 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan User's Guide:  Memory Management Utilities</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan Users's Guide</a>
+&nbsp;|&nbsp;
+<a href="ug_examples.html">Next</a>
+&nbsp;|&nbsp;
+<a href="ug_util_comm.html">Previous</a></i></b>
+</div>
+
+<!------------------------------------------------------------------------->
+
+<h2>
+<a NAME="Distributed Directory Utility"></a>Distributed Directory Utility
+</h2>
+The owner (i.e. the processor number) of any computational object is
+subject to change during load balancing.  An application may use this
+directory utility to manage its objects' locations.  A distributed
+directory balances the load (in terms of memory and processing time)
+and avoids the bottle neck of a centralized directory design.
+<p>
+This distributed directory module may be used alone or in conjunction
+with Zoltan's load balancing capability and memory and communication
+services.  The user should note that external names (subroutines, etc.)
+which prefaced by Zoltan_DD_ are reserved when using this module.
+<p>
+The user initially creates an empty distributed directory using
+<a href="#DD_Create">Zoltan_DD_Create</a>. Then global ID (GID) information is added
+to the directory using <a href="#DD_Update">Zoltan_DD_Update</a>.
+The directory maintains the GID's basic information: local ID
+(optional), partition (optional), arbitrary user
+data (optional), and the current data owner. <a href="#DD_Update">
+Zoltan_DD_Update</a> is also called after data migration
+or refinements. <a href="#DD_Find">Zoltan_DD_Find</a> returns the directory
+information for a list of GIDs.  
+A selected list of GIDs may be removed from the
+directory by <a href="#DD_Remove">Zoltan_DD_Remove</a>.
+When the user has finished using
+the directory, its memory is returned to the system by <a href="#DD_Destroy">
+Zoltan_DD_Destroy</a>.  
+<p>
+An object is known by its GID.  Hashing provides very fast
+lookup for the information associated with a GID in a two step
+process.  The first hash of the GID yields the processor number
+owning the directory entry for that GID.  The directory entry
+owner remains constant even if the object (GID) migrates in time.
+Second, a different hash algorithm of the GID looks up the
+associated information in directory processor's hash table.  The user
+may optionally register their own (first) hash function to take
+advantage of their knowledge of their GID naming scheme and the
+GID's neighboring processors. See the documentation for
+<a href="#DD_Set_Hash_Fn">Zoltan_DD_Set_Hash_Fn</a> for more information.
+If no user hash function is registered, Zoltan's <b><a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b> will be used. This
+module's design was strongly influenced by the paper  "Communication
+Support for Adaptive Computation" by Pinar and Hendrickson.
+<p>
+Some users number their GIDs by giving the first "n" GIDs to processor 0,
+the next "n" GIDs to processor 1, and so forth. The function
+<a href="#DD_Set_Neighbor_Hash_Fn1">Zoltan_DD_Set_Neighbor_Hash_Fn1</a>
+will provide efficient directory communication when these GIDs stay close to
+their origin.  The function <a href="#DD_Set_Neighbor_Hash_Fn2"></a>
+Zoltan_DD_Set_Neighbor_Hash_Fn2 allows the specification of ranges of GIDs to
+each processor for more flexibility.  The source code for
+<a href="#DD_Set_Neighbor_Hash_Fn1">DD_Set_Neighbor_Hash_Fn1</a> and
+<a href="#DD_Set_Neighbor_Hash_Fn2">DD_Set_Neighbor_Hash_Fn2</a> provide
+examples of how a user can create their own "hash" functions taking advantage
+of their own GID naming convention.
+<p>
+The routine <a href="#DD_Print">Zoltan_DD_Print</a> will print the contents
+of the directory.  The companion routine <a href="#DD_Stats">Zoltan_DD_Stats</a>
+prints out a summary of the hash table size, number of linked lists, and the
+length of the longest linked list.  This may be useful when the user
+creates their own hash functions.
+<p>
+A Fortran90 interface is not yet available.
+<p>
+<hr>
+<table>
+<tr VALIGN=TOP>
+<td WIDTH="50%"><b>Source code location:</b></td>
+<td WIDTH="50%"><i>Utilities/DDirectory</i></td></tr>
+
+<tr VALIGN=TOP>
+<td><b>Function prototypes file:</b></td>
+<td><i>Utilities/DDirectory/zoltan_dd.h</i> or <i>include/zoltan_dd.h</i>
+</td></tr>
+
+<tr VALIGN=TOP>
+<td><b>Library name:</b></td>
+<td>libzoltan_dd.a</td></tr>
+
+<tr VALIGN=TOP>
+<td><b>Other libraries used by this library:</b></td>
+<td>libmpi.a, libzoltan_mem.a, libzoltan_comm.a</td></tr>
+</table>
+
+<table>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Routines:</b><blockquote>
+<b><a href="#DD_Create">Zoltan_DD_Create</a></b>:&nbsp;
+Allocates memory and initializes the directory.
+<br><b><a href="#DD_Destroy">Zoltan_DD_Destroy</a></b>:&nbsp;
+Terminate the directory and frees its memory.
+<br><b><a href="#DD_Update">Zoltan_DD_Update</a></b>:&nbsp;
+Adds or updates GIDs' directory information.
+<br><b><a href="#DD_Find">Zoltan_DD_Find</a></b>:&nbsp;
+Returns GIDs' information (owner, local ID, etc.)
+<br><b><a href="#DD_Remove">Zoltan_DD_Remove</a></b>:&nbsp;
+Eliminates selected GIDs from the directory.
+<br><b><a href="#DD_Stats">Zoltan_DD_Stats</a></b>:&nbsp;
+Provides statistics about hash table & linked lists.
+<br><b><a href="#DD_Print">Zoltan_DD_Print</a></b>:&nbsp;
+Displays the contents (GIDs, etc) of each directory.
+<br><b><a href="#DD_Set_Hash_Fn">Zoltan_DD_Set_Hash_Fn</a></b>:&nbsp;
+Registers a user's optional hash function.
+<br><b><a href="#DD_Set_Neighbor_Hash_Fn1">Zoltan_DD_Set_Neighbor_Hash_Fn1</a></b>:&nbsp;
+Hash function with constant number of GIDs per processor.
+<br><b><a href="#DD_Set_Neighbor_Hash_Fn2">Zoltan_DD_Set_Neighbor_Hash_Fn2</a></b>:&nbsp;
+Hash function with variable number of GID's per processor.
+</blockquote>
+</td>
+</tr>
+<tr VALIGN=TOP><td COLSPAN="2"><b>Data Stuctures</b>:
+<b></b>&nbsp;
+<blockquote><b>struct Zoltan_DD_Struct</b>:&nbsp;State & storage used by all DD routines.
+  Users should not modify any
+internal values in this structure. Users should only pass the
+address of this structure to the other routines in this package.
+</blockquote>
+</td>
+</tr>
+</table>
+
+
+<table>
+<tr VALIGN=TOP>
+<td COLSPAN="2">
+<b>Use in Zoltan:</b></td>
+</tr>
+</table>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Create"></a>
+<hr>
+int <b>Zoltan_DD_Create </b>
+(struct Zoltan_DD_Struct **<i>dd</i>,
+MPI_Comm <i>comm</i>,
+int <i>num_gid</i>,
+int <i>num_lid</i>,
+int <i>user_length</i>,
+int <i>table_length</i>,
+int <i>debug_level</i>);
+<hr>
+<b>Zoltan_DD_Create</b> allocates and initializes memory for the Zoltan_DD_Struct
+structure.  It must be called before any other distributed directory
+routines. MPI must be initialized prior to calling this routine.
+<p>
+The Zoltan_DD_Struct must be passed to all other distributed directory
+routines.  The MPI Comm argument designates the processors used for the
+distributed directory.  The MPI Comm argument is duplicated and stored for
+later use.
+<p>
+The user can set the debug level argument in the <b>Zoltan_DD_Create</b>
+to determine the module's response to multiple updates for any GID
+within one update cycle.  If the argument is set to 0, all multiple updates
+are ignored (but the last determines the directory information.)  If the
+argument is set to 1, an error is returned if the multiple updates
+represent different owners for the same GID.  If the debug level is 2,
+an error return and an error message are generated if multiple updates
+represent different owners for the same GID.  If the level is 3, an
+error return and an error message are generated for a multiple update even
+if the updates represent the same owner for a GID.
+<br>&nbsp;
+<table WIDTH="100%">
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td> Structure maintains directory state and hash table.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;comm</i></td>
+<td>MPI comm duplicated and stored specifying directory processors.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_gid</i></td>
+<td>Length of GID.</td>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;num_lid</i></td>
+<td>Length of local ID or zero to ignore local IDs.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;user_length</i></td>
+<td>Length of user defined data field (optional, may be zero).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;table_length</i></td>
+<td>Length of hash table (zero forces default value).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;debug_level</i></td>
+<td>Legal values range in [0,3]. Sets response to various error
+conditions where 3 is the most verbose.</td></tr>
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
+<tr><td></td><td>ZOLTAN_DD_MPI_ERROR</td></tr>
+<tr><td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Destroy"></a>
+<hr>
+void <b>Zoltan_DD_Destroy</b>
+(struct Zoltan_DD_Struct **<i>dd</i>);
+<hr>
+This routine frees all memory allocated for the distributed directory.
+No calls to any distributed directory functions using this 
+Zoltan_DD_Struct are permitted after
+calling this routine.  MPI is necessary for this routine only
+to free the previously saved MPI comm.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Directory structure to be deallocated.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;void</td>
+<td>NONE</td></tr>
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Update"></a>
+<hr>
+int <b>Zoltan_DD_Update</b>
+(struct Zoltan_DD_Struct *<i>dd</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
+ZOLTAN_ID_PTR <i>lid</i>,
+ZOLTAN_ID_PTR <i>user</i>,
+int *<i>partition</i>,
+int <i>count</i>);
+<hr>
+<b>Zoltan_DD_Update</b> takes a list of GIDs and corresponding lists of
+optional local IDs, optional user data, and optional partitions. This
+routine updates the information for existing directory entries or creates
+a new entry (filled with given data) if a GID is not found.  NULL
+lists should be passed for optional arguments not desired.  If all
+entries were found (and updated), the return is ZOLTAN_DD_NORMAL_RETURN.
+If at least one GID was not found, the return value is
+ZOLTAN_DD_GID_ADDED.  This function should be called initially and
+whenever objects are migrated to keep the distributed directory current.
+<p>
+The user can set the debug level argument in <b>Zoltan_DD_Create</b>
+to determine the module's response to multiple updates for any GID
+within one update cycle.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=Top><i>&nbsp;&nbsp;&nbsp;gid</i></td>
+<td>List of GIDs to update (in).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>lid</i></td>
+<td>List of corresponding local IDs (optional) (in).
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>user</i></td>
+<td>List of corresponding user data (optional) (in).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>partition</i></td>
+<td>List of corresponding partitions (optional) (in).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>count</i></td>
+<td>Number of GIDs in update list.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
+<tr><td></td><td>ZOLTAN_DD_GID_ADDED</td></tr>
+<tr><td></td><td>ZOLTAN_DD_GID_REDEFINED_ERROR</td></tr><tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Find"></a>
+<hr>
+int <b>Zoltan_DD_Find</b>
+(Zoltan_DD_DDirectory *<i>dd</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
+ZOLTAN_ID_PTR <i>lid</i>,
+ZOLTAN_ID_PTR <i>data</i>,
+int *<i>partition</i>,
+int <i>count</i>,
+int *<i>owner</i>);
+<hr>
+Given a list of GIDs, <b>Zoltan_DD_Find</b> returns corresponding
+lists of the GIDs' owners, local IDs, partitions, and optional
+user data.  NULL lists must be provided for optional information not
+being used.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>gid</i></td>
+<td>List of GIDs whose information is requested.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>lid</i></td>
+<td>Corresponding list of local IDs (optional) (out).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>data</i></td>
+<td>Corresponding list of user data (optional) (out).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>partition</i></td>
+<td>Corresponding list of partitions (optional) (out).</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>count</i></td>
+<td>Count of GIDs in above list.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>owner</i></td>
+<td>Corresponding list of data owners (out).</td></tr>
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
+<tr><td></td><td>ZOLTAN_DD_GID_NOT_FOUND_ERROR</td></tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Remove"></a>
+<hr>
+int <b>Zoltan_DD_Remove</b>
+(struct Zoltan_DD_Struct *<i>dd</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
+int <i>count</i>);
+<hr>
+<b>Zoltan_DD_Remove</b> takes a list of GIDs and removes all of
+their information from the distributed directory.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>gid</i></td>
+<td>List of GIDs to eliminate from the directory.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>count</i></td>
+<td>Number of GIDs to be removed.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<tr><td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
+<tr><td></td><td>ZOLTAN_DD_GID_NOT_FOUND_ERROR</td></tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Set_Hash_Fn"></a>
+<hr>
+void <b>Zoltan_DD_Set_Hash_Fn</b>
+(struct Zoltan_DD_Struct *<i>dd</i>,
+unsigned int (*<i>hash</i>) (ZOLTAN_ID_PTR, int, unsigned int));
+<hr>
+Enables the user to register a new hash function for the distributed
+directory. (If this routine is not called, the default hash function
+<b><a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b> will be used automatically.)  This hash function determines
+which processor maintains the distributed directory entry for a given
+GID.  Inexperienced users do not need this routine.
+<p>
+Experienced users may elect to create their own hash function based on
+their knowledge of their GID naming scheme.  The user's hash
+function must have calling arguments compatible with <b><a href="../dev_html/dev_services_hash.html">Zoltan_Hash</a></b>.
+Consider that a user has defined a hash function, myhash, as<br>
+<p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ unsigned int myhash(ZOLTAN_ID_PTR gid, int length, unsigned int naverage)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+return *gid / naverage ;  /* GID length assumed to be 1 ; naverage = total_GIDS/nproc */<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}<br>
+<p>
+Then the call to register this hash function is:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Zoltan_DD_Set_Hash (myhash) ;<br>
+<p>
+NOTE:  This hash function might group the gid's directory information
+       near the gid's owning processor's neighborhood, for an
+       appropriate naming scheme.
+<p>
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>hash</i></td>
+<td>Name of user's hash function.</td></tr>
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;void</td>
+<td>NONE</td></tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Stats"></a>
+<hr>
+void <b>Zoltan_DD_Stats</b>
+(struct Zoltan_DD_Struct *<i>dd</i>);
+<hr>
+This routine prints out summary information about the local distributed
+directory. It includes the hash table length, number of GIDs stored in
+the local directory, the number of linked lists, and the length of the
+longest linked list.  The debug level (set by an argument to
+<b>Zoltan_DD_Create</b> controls this routine's verbosity.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Distributed directory structure for state information</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;void</td>
+<td>NONE</td></tr>
+</table>
+
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Set_Neighbor_Hash_Fn1"></a>
+<hr>
+int <b>Zoltan_DD_Set_Neighbor_Hash_Fn1</b>
+(struct Zoltan_DD_Struct *<i>dd</i>,
+int <i>size</i>);
+<hr>
+This routine associates the first size GIDs to proc 0, the next size to
+proc 1, etc.  It assumes the GIDs are consecutive numbers.  It assumes
+that GIDs primarily stay near their original owner. The GID length is
+assumed to be 1. GIDs outside of the range are evenly distributed among
+the processors via modulo(number of processors). This is a model for the user to develop
+their own similar routine.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=Top><i>&nbsp;&nbsp;&nbsp;<i>size</i></td>
+<td>Number of consecutive GIDs associated with a processor.</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Set_Neighbor_Hash_Fn2"></a>
+<hr>
+int <b>Zoltan_DD_Set_Neighbor_Hash_Fn2</b>
+(struct Zoltan_DD_Struct *dd,
+int *<i>proc</i>,
+int *<i>low</i>,
+int *<i>high</i>,
+int <i>n</i>);
+<hr>
+This routine allows the user to specify a beginning and ending GID
+"numbers" per directory processor. It assumes that GIDs primarily stay
+near their original owner. It requires that the numbers of high, low, &
+proc entries are all n. It assumes the GID length is 1. It is a model for
+the user to develop their own similar routine. Users should note the
+registration of a cleanup routine to free local static memory when the
+distributed directory is destroyed. GIDs outside the range specified by
+high and low lists are evenly distributed among the processors via modulo
+(number of processors).
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>proc</i></td>
+<td>List of processor ids labeling for corresponding high, low value.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>low</i></td>
+<td>List of low GID limits corresponding to proc list.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>high</i></td>
+<td>List of high GID limits corresponding to proc list.</td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;<i>n</i></td>
+<td>Number of elements in the above lists. Should be number of processors!</td></tr>
+
+<tr>
+<td><b>Returned Value:</b></td><td></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+<td></td><td>ZOLTAN_DD_MEMORY_ERROR</td></tr>
+
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<a NAME="DD_Print"></a>
+<hr>
+int <b>Zoltan_DD_Print</b>
+(struct Zoltan_DD_Struct *<i>dd</i>);
+<hr>
+This utility displays (to stdout) the entire contents of the distributed
+directory at one line per GID.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+<td WIDTH="80%"></td></tr>
+<tr><td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp;dd</i></td>
+<td>Distributed directory structure state information.</td></tr>
+<tr>
+<td><b>Returned Value:</b></td></tr>
+<tr><td>&nbsp;&nbsp;&nbsp;int</td>
+<td>ZOLTAN_DD_NORMAL_RETURN</td></tr>
+<td></td><td>ZOLTAN_DD_INPUT_ERROR</td></tr>
+
+</table>
+<p>
+
+<!------------------------------------------------------------------------->
+<hr>
+<hr>
+
+<p ALIGN=CENTER><b>User's Notes</b>
+<p>
+Because Zoltan places no restrictions on the content or length of GIDs,
+hashing does not guarantee a balanced distribution of objects in
+the distributed directory.  Note also, the worst case behavior of a hash
+table lookup is very bad (essentially becoming a linear search).
+Fortunately, the average behavior is very good!  The user may specify
+their own hash function via <a href="#DD_Set_Hash_Fn">
+Zoltan_DD_Set_Hash_Fn</a> to improve
+performance.
+<p>
+This software module is built on top of the Zoltan Communications
+functions for efficiency. Improvements to the communications library
+will automatically benefit the distributed directory.
+<p>
+<p>
+FUTURE:
+<blockquote> Returned error codes will be made consistent with Zoltan
+             error codes.</blockquote>
+
+<blockquote> The C99 capability for variable length arrays would
+             significantly simplify many of these following
+             routines.  (It eliminates the malloc/free calls for
+             temporary storage.  This helps prevent memory leaks.)
+             Other C99 features may also improve code readability.
+             The "inline" capability can potentially improve
+             performance. </blockquote>
+
+<blockquote> The distributed directory should be implemented via
+             threads.  However, MPI is not fully thread aware, yet.</blockquote>
+
+
+<hr WIDTH="100%">
+<br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_examples.html">Next:&nbsp;
+Examples of Zoltan Usage</a>&nbsp; |&nbsp; <a href="ug_util_comm.html">Previous:&nbsp;
+Unstructured Communication Utilities</a>]
+</body>
+</body>
+</html>
