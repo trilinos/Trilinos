@@ -78,11 +78,11 @@ AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
 TAC_ARG_ENABLE_FEATURE(epetraext, [Build epetraext], EPETRAEXT, no)
 AM_CONDITIONAL(BUILD_EPETRAEXT, test "X$ac_cv_use_epetraext" != "Xno")
 
-## #np# - Copy the next four lines,change the name and uncomment them
+## #np# - Copy the next four lines, and change the name
 ## # After building New_Package from the Trilinos level is stabilized, the 
 ## #default could be changed to yes.
-## TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
-## AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
+TAC_ARG_ENABLE_FEATURE(new_package, [Build new_package], NEW_PACKAGE, no)
+AM_CONDITIONAL(BUILD_NEW_PACKAGE, test "X$ac_cv_use_new_package" != "Xno")
 
 
 
@@ -98,6 +98,7 @@ AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
 	test "X$ac_cv_use_komplex" != "Xno" ||
+	test "X$ac_cv_use_new_package" != "Xyes" || 
         test "X$ac_cv_use_epetraext" != "Xyes")
 
 if test "X$ac_cv_use_y12m" != "Xno"; then
