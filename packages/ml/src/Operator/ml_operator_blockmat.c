@@ -332,6 +332,11 @@ int  ML_Operator_Gen_blockmat(ML_Operator *blockmat, ML_Operator *Ke,
 
   }
   blockmat->data_destroy = ML_Operator_blockmatdata_Destroy;
+
+  if (M != NULL) {
+    ML_Operator_blockmat_data->M_mat =  M;
+  }
+
   return 1;
 }
 void  ML_Operator_blockmatdata_Destroy(void *data)
@@ -344,6 +349,7 @@ void  ML_Operator_blockmatdata_Destroy(void *data)
     if (temp->vals != NULL) ML_free(temp->vals);
     if (temp->Ke_diag != NULL) ML_free(temp->Ke_diag);
     if (temp->M_diag != NULL ) ML_free(temp->M_diag);
+    if (temp->M_mat != NULL) ML_Destroy(temp->M_mat);
     ML_free(temp);
   }
 }

@@ -99,7 +99,6 @@ struct ML_Operator_Struct {
    int           max_nz_per_row;
    int           from_an_ml_operator;
    ML_Operator   *sub_matrix;
-   ML_Operator   *sub_matrix1;
    ML_BdryPts    *bc;
    double        build_time, apply_time;
    char          *label; 

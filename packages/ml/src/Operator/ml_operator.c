@@ -79,7 +79,6 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->N_nonzeros          = -1;
    mat->max_nz_per_row      = 0;
    mat->sub_matrix          = NULL;
-   mat->sub_matrix1          = NULL;
    mat->from_an_ml_operator = 0;
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
@@ -141,7 +140,6 @@ int ML_Operator_Clean( ML_Operator *mat)
 #endif
 
    if (mat->sub_matrix != NULL) ML_Operator_Destroy(&(mat->sub_matrix));
-   if (mat->sub_matrix1 != NULL) ML_Operator_Destroy(&(mat->sub_matrix1));
    if ((mat->subspace != NULL) && (mat->subspace->data_destroy != NULL))
       mat->subspace->data_destroy(&(mat->subspace->basis_vectors));
    if (mat->subspace != NULL) {
@@ -233,7 +231,6 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->N_nonzeros          = original->N_nonzeros;
    mat->max_nz_per_row      = original->max_nz_per_row;
    mat->sub_matrix          = original->sub_matrix;
-   mat->sub_matrix1         = original->sub_matrix1;
    mat->from_an_ml_operator = original->from_an_ml_operator;
    mat->data_destroy        = NULL;
    mat->build_time          = original->build_time;
@@ -263,7 +260,6 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
       ML_DVector_Destroy( &(mat->diagonal) );
    }
    mat->sub_matrix = NULL;
-   mat->sub_matrix1 = NULL;
    mat->subspace = NULL;
    mat->diagonal   = NULL;
    mat->getrow->row_map = NULL;

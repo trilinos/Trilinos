@@ -26,6 +26,7 @@ struct ML_Operator_blockmat_data {
   int (*M_getrow)(void *,int,int*,int,int*,double*,int*);
   void *M_matvec_data, *M_getrow_data;
   double *M_diag;
+  ML_Operator *M_mat;
 
   int N_Ke, Nghost;
   int *cols;         /* work vectors for block matrix getrow */
