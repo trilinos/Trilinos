@@ -133,23 +133,38 @@ ostream& NormF::print(ostream& stream, int indent) const
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
+  stream << "F-Norm = " << Utils::sci(normF);
+  stream << " < " << Utils::sci(trueTolerance);
+  stream << "\n";
 
-  if (toleranceType == Absolute) 
-    stream << "Absolute";
-  else 
-    stream << "Relative";
+  for (int j = 0; j < indent; j ++)
+    stream << ' ';
+  stream << setw(13) << " ";
+  stream << "(";
 
-  stream << " F-";
+  if (scaleType == Scaled)
+    stream << "Length-Scaled";
+  else
+    stream << "Unscaled";
+
+  stream << " ";
 
   if (normType == Abstract::Vector::TwoNorm)
-    stream << "TwoNorm";
+    stream << "Two-Norm";
   else if (normType == Abstract::Vector::OneNorm)
-    stream << "OneNorm";
+    stream << "One-Norm";
   else if (normType == Abstract::Vector::MaxNorm)
-    stream << "MaxNorm";
+    stream << "Max-Norm";
+  
+  stream << ", ";
 
-  stream << " = " << Utils::sci(normF);
-  stream << " < " << Utils::sci(trueTolerance);
+  if (toleranceType == Absolute) 
+    stream << "Absolute Tolerance";
+  else 
+    stream << "Relative Tolerance";
+
+  stream << ")";
+
   stream << endl;
 
   return stream;
