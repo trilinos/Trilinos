@@ -210,8 +210,8 @@ int main(int argc, char *argv[])
     AZ_free(Kn_mat->data_org);
     AZ_matrix_destroy(&Kn_mat);
   }
-  free(xxx);
-  free(rhs);
+  ML_free(xxx);
+  ML_free(rhs);
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
