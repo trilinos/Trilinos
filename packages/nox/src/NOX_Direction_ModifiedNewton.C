@@ -69,74 +69,82 @@ bool ModifiedNewton::compute(Abstract::Vector& dir,
 {
   // Compute F at current solution
   bool ok = soln.computeF();
-  double normF = soln.getNormF();
-  int maxAgeOfJacobian = paramsPtr->getParameter("MaxAgeOfJacobian", 10);
-
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::ModifiedNewton::compute - Unable to compute F." << endl;
+      cout << "NOX::Direction::ModifiedNewton::compute - Unable to compute F." 
+           << endl;
     return false;
   }
+
+  double normF = soln.getNormF();
+
+  int maxAgeOfJacobian = paramsPtr->getParameter("MaxAgeOfJacobian", 10);
 
   ok = false;
   while (!ok) {
     // Conditionally compute Jacobian at current solution.
     if (ageOfJacobian == -1 | ageOfJacobian == maxAgeOfJacobian) {
-      ok = soln.computeJacobian();
 
+      ok = soln.computeJacobian();
       if (!ok) {
         if (Utils::doPrint(Utils::Warning))
-          cout << "NOX::Direction::ModifiedNewton::compute - Unable to compute Jacobian." << endl;
+          cout << "NOX::Direction::ModifiedNewton::compute - "
+               << "Unable to compute Jacobian." << endl;
         return false;
       }
 
-      if (ageOfJacobian == -1) {
+      if (ageOfJacobian == -1) 
         oldJacobian = soln.clone(DeepCopy);
-      } else {
+      else
         *oldJacobian = soln;
-      }
-      ageOfJacobian = 0;
-    } else {
+
+      ageOfJacobian = 1;
+    } 
+    else 
       ageOfJacobian++;
-    }
 
     // Reset the linear solver tolerance
-    ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations(), solver.getParameterList());
+    ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
+                          solver.getNumIterations(), solver.getParameterList());
     if (!ok) {
       if (Utils::doPrint(Utils::Warning))
-        cout << "NOX::Direction::ModifiedNewton::compute - Unable to set Forcing term." << endl;
+        cout << "NOX::Direction::ModifiedNewton::compute - "
+             << "Unable to set Forcing term." << endl;
       return false;
     }
 
     // Compute the Modified Newton direction
     if (ageOfJacobian == 0) {
-      ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
-      dir = soln.getNewton();
+      ok = oldJacobian->computeNewton(paramsPtr->sublist("Linear Solver"));
+      dir = oldJacobian->getNewton();
 
       // It didn't work, but maybe it's ok anyway...
       if (!ok) {
 
         double accuracy = soln.getNormNewtonSolveResidual();
 
-        if (accuracy < 0) {
+        if (accuracy < 0) 
           cerr << "NOX::Direction::ModifiedNewton::compute " 
-               << "- getNormNewtonSolveResidual returned a negative value" << endl;
-        }
+               << "- getNormNewtonSolveResidual returned a negative value" 
+               << endl;
       
         // Check if there is any improvement in the relative residual
         if (accuracy < normF) {
           ok = true;
           double tolerance = paramsPtr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
           if (Utils::doPrint(Utils::Warning)) 
-            cout << "WARNING: NOX::Direction::ModifiedNewton::compute - Newton solve failure.\n" 
+            cout << "WARNING: NOX::Direction::ModifiedNewton::compute - "
+                 << "Newton solve failure.\n" 
                  << "Desired accuracy is " << Utils::sci(tolerance) << ".\n"
-                 << "Using solution with accuracy of " << Utils::sci(accuracy) << "." << endl;
+                 << "Using solution with accuracy of " << Utils::sci(accuracy) 
+                 << "." << endl;
         }
       }
 
       if (!ok) {
         if (Utils::doPrint(Utils::Warning))
-          cout << "NOX::Direction::ModifiedNewton::compute - Unable to compute Newton direction." << endl;
+          cout << "NOX::Direction::ModifiedNewton::compute - "
+               << "Unable to compute Newton direction." << endl;
         return false;
       }
     }
