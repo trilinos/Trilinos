@@ -1001,7 +1001,7 @@ void Amesos_Superludist::PrintTiming()
   if( Comm().MyPID() ) return;
   
   cout << "----------------------------------------------------------------------------" << endl;
-  cout << "Amesos_Superludist : Time to convert matrix to MUMPS format = "
+  cout << "Amesos_Superludist : Time to convert matrix to SuperLU_dist format = "
        << ConTime_ << " (s)" << endl;
   if( Redistribute_ ) 
     cout << "Amesos_Superludist : Time to redistribute matrix = "
