@@ -51,8 +51,8 @@ struct median {          /* median cut info */
 ----------------------------------------------------------------------
 	LB_find_median			void
 	LB_median_merge			void
-	LB_print_sync_start		void
-	LB_print_sync_end		void
+	LB_Print_Sync_Start		void
+	LB_Print_Sync_End		void
 	LB_Print_Stats			void
 
 ******************************************************************************/
@@ -425,16 +425,16 @@ void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
   }
 }
 
-void LB_print_sync_start(LB *lb, int do_print_line)
+void LB_Print_Sync_Start(LB *lb, int do_print_line)
 {
 /* 
- * Routine to allow I/O between print_sync_start and print_sync_end to be 
+ * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
  * printed by each processor in the lb->Communicator entirely before the next
  * processor begins its I/O.  The printing sequence is from proc = 0 to the
  * last processor, where the last processor is lb->Num_Proc - 1.
  *
  * The do_print_line argument is a boolean variable.  If true, a line of # 
- * is printed to indicate the start of a print_sync I/O block.
+ * is printed to indicate the start of a Print_Sync I/O block.
  *
  * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
  *
@@ -444,7 +444,7 @@ void LB_print_sync_start(LB *lb, int do_print_line)
 int        flag = 1, from, type;
 static int offset = 0;
 MPI_Status st;
-char *yo = "LB_print_sync_start";
+char *yo = "LB_Print_Sync_Start";
 
   offset = (offset + 1)%100;
   type   = PRINT_SYNC + offset;
@@ -473,16 +473,16 @@ char *yo = "LB_print_sync_start";
 /*****************************************************************************/
 /*****************************************************************************/
 
-void LB_print_sync_end(LB *lb, int do_print_line)
+void LB_Print_Sync_End(LB *lb, int do_print_line)
 {
 /*
- * Routine to allow I/O between print_sync_start and print_sync_end to be 
+ * Routine to allow I/O between LB_Print_Sync_Start and LB_Print_Sync_End to be 
  * printed by each processor in the lb->Communicator entirely before the next
  * processor begins its I/O.  The printing sequence is from proc = 0 to the
  * last processor, where the last processor is lb->Num_Proc - 1.
  *
  * The do_print_line argument is a boolean variable.  If true, a line of # 
- * is printed to indicate the start of a print_sync I/O block.
+ * is printed to indicate the start of a Print_Sync I/O block.
  *
  * NOTE: THERE CAN BE NO COMMUNICATON BETWEEN THESE CALLS.
  *
@@ -492,7 +492,7 @@ void LB_print_sync_end(LB *lb, int do_print_line)
 int         flag = 1, from, type, to;
 static int  offset = 0;
 MPI_Status  st;
-char *yo = "LB_print_sync_end";
+char *yo = "LB_Print_Sync_End";
 
   fflush(stdout);
 

@@ -548,13 +548,13 @@ double lb_time[2] = {0.0,0.0};
 
   if (lb->Debug > 6) {
     int i;
-    LB_print_sync_start(lb, TRUE);
+    LB_Print_Sync_Start(lb, TRUE);
     printf("LBLB: Objects to be exported from Proc %d\n", lb->Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
              (*export_global_ids)[i], (*export_procs)[i]);
     }
-    LB_print_sync_end(lb, TRUE);
+    LB_Print_Sync_End(lb, TRUE);
   }
 
   /*
