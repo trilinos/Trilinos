@@ -103,7 +103,7 @@ void BlockCrsMatrix::AllocateBlocks_()
 
   for( int i = 0; i < NumBlockRows; ++i )
   {
-    for( int j = 0; j < NumMyRows; ++i )
+    for( int j = 0; j < NumMyRows; ++j )
       ExtractMyRowView( i*NumMyRows+j, NumValues[i], Values[i] );
 
     int NumBlockCols = RowStencil_[i].size();
