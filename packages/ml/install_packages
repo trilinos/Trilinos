@@ -437,7 +437,11 @@ ${echo} "This file will be sourced when trying to compile ml"
 
 rm -f make_${ARCH}.variables
 ${echo} ARCH=$ARCH                    >  make_${ARCH}.variables
-${echo} PACKAGES=$PACKAGES            >> make_${ARCH}.variables
+${echo} PACKAGES=$PACKAGES  \\          >> make_${ARCH}.variables
+cd etc
+find_undefs ${CC} ${LINKER} "$LIBRARIES"
+cd ..
+cat /tmp/thedefs >>  make_${ARCH}.variables
 ${echo} INC_PATH=$INC_PATH            >> make_${ARCH}.variables
 ${echo} LIBRARIES=$LIBRARIES          >> make_${ARCH}.variables
 
@@ -450,7 +454,7 @@ make ARCH=${ARCH}
 ${echo} "=================================================================="
 ${echo}
 ${echo} "In the future you can set the ARCH environment variable and do a make in"
-${echo} "the Obj subdirectory (if you don't need to rebuild other libararies)"
+${echo} "the Obj subdirectory (if you don't need to rebuild other libraries)"
 ${echo}
 ${echo} "That is"
 ${echo}
