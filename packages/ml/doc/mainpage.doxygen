@@ -432,7 +432,7 @@ int main(int argc, char *argv[])
 
 The following methods of CrsMatrixGallery are used to get
  pointers to internally stored Epetra_RowMatrix and Epetra_LinearProblem. Then, as
- we wish to use AztecOO, we need to construc a solver object for this problem.
+ we wish to use AztecOO, we need to construct a solver object for this problem.
 
 \code
   Epetra_RowMatrix * A = Gallery.GetMatrix();
@@ -469,7 +469,7 @@ Now, we create the preconditioning object.  We suggest to use `new' and
 `delete' because the destructor contains some calls to MPI (as required by
 ML and possibly Amesos).  This is an issue only if the destructor is
 called **after** MPI_Finalize().
-Then, we instruct AztecOO to use this preconditioer and solve
+Then, we instruct AztecOO to use this preconditioner and solve
 with 500 iterations and 1e-12 tolerance.
 
 \code
