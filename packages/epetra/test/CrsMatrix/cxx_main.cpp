@@ -7,6 +7,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
 #include "Epetra_Flops.h"
 
 // prototypes
@@ -77,7 +78,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map& Map = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   int * MyGlobalElements = new int[Map.NumMyElements()];
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
 
   // Create a Epetra_Matrix
 
-  Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
+  Epetra_CrsMatrix A(Copy, Map, NumNz);
   assert(!A.IndicesAreGlobal());
   assert(!A.IndicesAreLocal());
   
@@ -161,9 +162,9 @@ int main(int argc, char *argv[])
 
   // Create vectors for Power method
 
-  Epetra_Vector& q = *new Epetra_Vector(Map);
-  Epetra_Vector& z = *new Epetra_Vector(Map);
-  Epetra_Vector& resid = *new Epetra_Vector(Map);
+  Epetra_Vector q(Map);
+  Epetra_Vector z(Map);
+  Epetra_Vector resid(Map);
 
   // variable needed for iteration
   double lambda = 0.0;
@@ -175,7 +176,14 @@ int main(int argc, char *argv[])
 
   // Iterate
 
-  Epetra_Time & timer = *new Epetra_Time(Comm);
+  Epetra_Flops flopcounter;
+  A.SetFlopCounter(flopcounter);
+  q.SetFlopCounter(A);
+  z.SetFlopCounter(A);
+  resid.SetFlopCounter(A);
+
+
+  Epetra_Time timer(Comm);
   ierr += power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
   double elapsed_time = timer.ElapsedTime();
   double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
@@ -191,7 +199,7 @@ int main(int argc, char *argv[])
 		    << endl;
   // Iterate
   lambda = 0.0;
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr += power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
@@ -222,7 +230,7 @@ int main(int argc, char *argv[])
   }
   // Iterate (again)
   lambda = 0.0;
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr += power_method(false, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
@@ -240,20 +248,19 @@ int main(int argc, char *argv[])
 
   // Iterate (again)
   lambda = 0.0;
-  A.ResetFlops(); q.ResetFlops(); z.ResetFlops(); resid.ResetFlops();
+  flopcounter.ResetFlops();
   timer.ResetStartTime();
   ierr += power_method(true, A, q, z, resid, &lambda, niters, tolerance, verbose);
   elapsed_time = timer.ElapsedTime();
   total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  delete &timer;
 
   if (verbose) cout << "\n\nTotal MFLOPs for tranpose of second solve = " << MFLOPs << endl<< endl;
 
   if (verbose) cout << "\n\n*****Testing constant entry constructor" << endl<< endl;
 
-  Epetra_CrsMatrix & AA = *new Epetra_CrsMatrix(Copy, Map, 5);
+  Epetra_CrsMatrix AA(Copy, Map, 5);
   
   if (debug) Comm.Barrier();
 
@@ -285,8 +292,7 @@ int main(int argc, char *argv[])
 
   if (verbose) cout << "\n\n*****Testing copy constructor" << endl<< endl;
 
-  Epetra_CrsMatrix & B = *new Epetra_CrsMatrix(AA);
-  delete &AA;
+  Epetra_CrsMatrix B(AA);
 
   assert(check(B, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
 	       MyGlobalElements, verbose)==0);
@@ -300,7 +306,6 @@ int main(int argc, char *argv[])
   if (verbose) cout << "\n\n*****Testing post construction modifications" << endl<< endl;
 
   assert(B.InsertGlobalValues(0, 1, &dble_one, &One)==-2);
-  delete &B;
 
 
   // Release all objects
@@ -308,12 +313,6 @@ int main(int argc, char *argv[])
   delete [] Values;
   delete [] Indices;
   delete [] MyGlobalElements;
-
-  delete &resid;
-  delete &z;
-  delete &q;
-  delete &A;
-  delete &Map;
 			
 
   if (verbose1) {
@@ -324,7 +323,7 @@ int main(int argc, char *argv[])
     int NumMyEquations1 = NumMyElements1;
     int NumGlobalEquations1 = NumMyEquations1*NumProc;
 
-    Epetra_Map& Map1 = *new Epetra_Map(-1, NumMyElements1, 0, Comm);
+    Epetra_Map Map1(-1, NumMyElements1, 0, Comm);
     
     // Get update list and number of local equations from newly created Map
     int * MyGlobalElements1 = new int[Map1.NumMyElements()];
@@ -346,7 +345,7 @@ int main(int argc, char *argv[])
     
     // Create a Epetra_Matrix
     
-    Epetra_CrsMatrix& A1 = *new Epetra_CrsMatrix(Copy, Map1, NumNz1);
+    Epetra_CrsMatrix A1(Copy, Map1, NumNz1);
     
     // Add  rows one-at-a-time
     // Need some vectors to help
@@ -384,6 +383,13 @@ int main(int argc, char *argv[])
     // Finish up
     assert(A1.TransformToLocal()==0);
     
+    // Test diagonal extraction function
+
+    Epetra_Vector checkDiag(Map1);
+    assert(A1.ExtractDiagonalCopy(checkDiag)==0);
+
+    for (i=0; i<NumMyEquations1; i++) assert(checkDiag[i]==two1);
+
     if (verbose) cout << "\n\nPrint out tridiagonal matrix, each part on each processor.\n\n" << endl;
     cout << A1 << endl;
     
@@ -393,8 +399,6 @@ int main(int argc, char *argv[])
   delete [] Indices1;
   delete [] MyGlobalElements1;
 
-  delete &A1;
-  delete &Map1;
   }
 			
 #ifdef EPETRA_MPI

@@ -85,6 +85,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
     Graph_(Source.Graph_),
     Allocated_(Source.Allocated_),
     StaticGraph_(Source.StaticGraph_),
+    UseTranspose_(Source.UseTranspose_),
     NumMyBlockRows_(Source.NumMyBlockRows_),
     CV_(Copy) {
   InitializeDefaults();
@@ -111,6 +112,7 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix & Source)
 //==============================================================================
 void Epetra_VbrMatrix::InitializeDefaults() { // Initialize all attributes that have trivial default values
 
+  UseTranspose_ = false;
   Values_ = 0;
   ColDims_ = 0;
   LDAs_ = 0;

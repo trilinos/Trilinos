@@ -29,6 +29,7 @@
 #include "Epetra_CompObject.h" 
 #include "Epetra_BLAS.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
 class Epetra_Map;
 class Epetra_BlockMap;
@@ -530,7 +531,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     //! If matrix is upper triangular, this query returns true, otherwise it returns false.
     bool UpperTriangular() const {return(Graph_->UpperTriangular());};
 
-    //! If matrix is lower triangular, this query returns true, otherwise it returns false.
+    //! If matrix has no diagonal entries, this query returns true, otherwise it returns false.
     bool NoDiagonal() const {return(Graph_->NoDiagonal());};
 
   //@}
@@ -657,10 +658,62 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     bool MyGlobalRow(int GID) const {return(Graph_->MyGlobalRow(GID));};
   //@}
   
+  
   //@{ \name I/O Methods.
 
   //! Print method
   virtual void Print(ostream & os) const;
+  //@}
+
+  //@{ \name Additional methods required to support the Epetra_Operator interface.
+
+    //! If set true, transpose of this operator will be applied.
+    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+	does not support transpose use, this method should return a value of -1.
+      
+    \param In
+	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+
+    \return Always returns 0.
+  */
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+
+    //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+    /*! 
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Epetra_CrsMatrix::Multiply(Epetra_CrsMatrix::UseTranspose(), X, Y));};
+
+    //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+    /*! In this implementation, we use several existing attributes to determine how virtual
+        method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+	the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+	if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
+	be accounted for when doing a triangular solve.
+
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Solve(UpperTriangular(), Epetra_CrsMatrix::UseTranspose(), NoDiagonal(), X, Y));};
+
+    //! Returns true because this class can compute an Inf-norm.
+    virtual bool HasNormInf() const {return(true);};
+
+    //! Returns the current UseTranspose setting.
+    virtual bool UseTranspose() const {return(UseTranspose_);};
+
   //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
 
@@ -708,6 +761,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
   bool StaticGraph_;
+  bool UseTranspose_;
   
   double **Values_;
   double *All_Values_;

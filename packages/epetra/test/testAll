@@ -6,7 +6,7 @@ echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map MultiVector Object VbrMatrix Vector)
 	cd $f
-	make
+	make clobber; make
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		./$g -v >>& ../$file

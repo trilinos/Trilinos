@@ -10,6 +10,9 @@
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_Vector.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
  
 int main(int argc, char *argv[])
 {

@@ -22,8 +22,18 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
+
 #ifndef _EPETRA_ROWMATRIX_H_
 #define _EPETRA_ROWMATRIX_H_
+
+class Epetra_Comm;
+class Epetra_Import;
+class Epetra_Export;
+class Epetra_Vector;
+class Epetra_MultiVector;
+#include "Epetra_Operator.h"
+
+
 //! Epetra_RowMatrix: A pure virtual class for using real-valued double-precision row matrices.
 
 /*! The Epetra_RowMatrix class is a pure virtual class (specifies interface only) that 
@@ -34,23 +44,17 @@
    
 */    
 
-#include "Epetra_Import.h"
-#include "Epetra_Export.h"
-#include "Epetra_Vector.h"
-#include "Epetra_MultiVector.h"
 
-
-class Epetra_RowMatrix {
+class Epetra_RowMatrix: public virtual Epetra_Operator {
       
  public:
-
-    //! Pure virtual destructor
+  //@{ \name Destructor.
+    //! Destructor
     virtual ~Epetra_RowMatrix() {};
 
-    //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-    virtual bool Filled() const = 0;
-
-    // Matrix data extraction routines
+  //@}
+  
+  //@{ \name Matrix data extraction routines
 
     //! Returns the number of nonzero entries in MyRow.
     /*! 
@@ -88,8 +92,9 @@ class Epetra_RowMatrix {
     \return Integer error code, set to 0 if successful.
   */
     virtual int ExtractDiagonalCopy(Epetra_Vector & Diagonal) const = 0;
-
-    // Mathematical functions.
+  //@}
+  
+  //@{ \name Mathematical functions.
 
     //! Returns the result of a Epetra_RowMatrix multiplied by a Epetra_MultiVector X in Y.
     /*! 
@@ -167,8 +172,12 @@ class Epetra_RowMatrix {
     \return Integer error code, set to 0 if successful.
   */
     virtual int RightScale(const Epetra_Vector& x) = 0;
+  //@}
+  
+  //@{ \name Atribute access functions
 
-    // Atribute access functions
+    //! If FillComplete() has been called, this query returns true, otherwise it returns false.
+    virtual bool Filled() const = 0;
 
     //! Returns the infinity norm of the global matrix.
     /* Returns the quantity \f$ \| A \|_\infty\f$ such that
@@ -215,12 +224,6 @@ class Epetra_RowMatrix {
     //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
     virtual const Epetra_Comm & Comm() const = 0;
 
-    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-    virtual const Epetra_BlockMap & DomainMap() const = 0;
-
-    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-    virtual const Epetra_BlockMap & RangeMap() const = 0;
-
     //! Returns the Epetra_BlockMap object associated with the rows of this matrix.
     virtual const Epetra_BlockMap & BlockRowMap() const = 0;
 
@@ -229,7 +232,7 @@ class Epetra_RowMatrix {
 
     //! Returns the Epetra_Import object that contains the import operations for distributed operations.
     virtual const Epetra_Import * Importer() const = 0;
-
+  //@}
 };
 
 #endif /* _EPETRA_ROWMATRIX_H_ */

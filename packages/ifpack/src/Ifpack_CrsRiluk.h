@@ -4,9 +4,10 @@
 #include "Ifpack_ScalingType.h"
 #include "Ifpack_IlukGraph.h"
 #include "Epetra_CompObject.h"
+#include "Epetra_Operator.h"
+#include "Epetra_CrsMatrix.h"
 class Epetra_Comm;
 class Epetra_Map;
-class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
 class Epetra_Vector;
 class Epetra_MultiVector;
@@ -154,7 +155,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 */    
 
 
-class Ifpack_CrsRiluk: public Epetra_CompObject {
+class Ifpack_CrsRiluk: public Epetra_CompObject, public virtual Epetra_Operator {
       
   // Give ostream << function some access to private and protected data/functions.
 
@@ -233,8 +234,6 @@ class Ifpack_CrsRiluk: public Epetra_CompObject {
     \param In
     Trans -If true, solve transpose problem.
     \param In
-    NumVectors -Number of vectors in X and Y.
-    \param In
     X - A Epetra_MultiVector of dimension NumVectors to solve for.
     \param Out
     Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
@@ -242,6 +241,19 @@ class Ifpack_CrsRiluk: public Epetra_CompObject {
     \return Integer error code, set to 0 if successful.
   */
   int Solve(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+  //! Returns the result of multiplying U, D and L in that order on an Epetra_MultiVector X in Y.
+  /*! 
+    \param In
+    Trans -If true, multiply by L^T, D and U^T in that order.
+    \param In
+    X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+    Y -A Epetra_MultiVector of dimension NumVectorscontaining result.
+    
+    \return Integer error code, set to 0 if successful.
+  */
+  int Multiply(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
   /*! This functions computes a local condition number estimate on each processor and return the
@@ -295,6 +307,68 @@ class Ifpack_CrsRiluk: public Epetra_CompObject {
   //! Returns the address of the L factor associated with this factored matrix.
   const Epetra_CrsMatrix & U() const {return(*U_);};
 
+  //@{ \name Additional methods required to support the Epetra_Operator interface.
+
+    //! If set true, transpose of this operator will be applied.
+    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+	does not support transpose use, this method should return a value of -1.
+      
+    \param In
+	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+
+    \return Always returns 0.
+  */
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+
+    //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+    /*! Note that this implementation of Apply does NOT perform a forward back solve with
+        the LDU factorization.  Instead it applies these operators via multiplication with 
+	U, D and L respectively.  The ApplyInverse() method performs a solve.
+
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Multiply(Ifpack_CrsRiluk::UseTranspose(), X, Y));};
+
+    //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+    /*! In this implementation, we use several existing attributes to determine how virtual
+        method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+	the Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+	if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
+	be accounted for when doing a triangular solve.
+
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Solve(Ifpack_CrsRiluk::UseTranspose(), X, Y));};
+
+    //! Returns 0.0 because this class cannot compute Inf-norm.
+    double NormInf() const {return(0.0);};
+
+    //! Returns false because this class cannot compute an Inf-norm.
+    virtual bool HasNormInf() const {return(false);};
+
+    //! Returns the current UseTranspose setting.
+    virtual bool UseTranspose() const {return(UseTranspose_);};
+
+    //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
+    virtual const Epetra_BlockMap & DomainMap() const {return(U().DomainMap());};
+
+    //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
+    virtual const Epetra_BlockMap & RangeMap() const{return(L().RangeMap());};
+  //@}
+
  protected:
   void SetFactored(bool Flag) {Factored_ = Flag;};
   void SetValuesInitialized(bool Flag) {ValuesInitialized_ = Flag;};
@@ -311,6 +385,7 @@ class Ifpack_CrsRiluk: public Epetra_CompObject {
   Epetra_CrsMatrix * L_;
   Epetra_CrsMatrix * U_;
   Epetra_Vector * D_;
+  bool UseTranspose_;
 
   
   bool Allocated_;

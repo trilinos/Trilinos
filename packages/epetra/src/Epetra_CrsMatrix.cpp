@@ -85,6 +85,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & Matrix)
     Graph_(0),
     Allocated_(Matrix.Allocated_),
     StaticGraph_(false),
+    UseTranspose_(Matrix.UseTranspose_),
     Values_(0),
     All_Values_(0),
     NormInf_(-1.0),
@@ -104,6 +105,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & Matrix)
 //==============================================================================
 void Epetra_CrsMatrix::InitializeDefaults() { // Initialize all attributes that have trivial default values
 
+  UseTranspose_ = false;
   Values_ = 0;
   All_Values_ = 0;
   NormInf_ = -1.0;

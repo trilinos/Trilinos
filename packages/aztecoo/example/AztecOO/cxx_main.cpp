@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 
   int Niters = 1200;
   solver.SetAztecOption(AZ_kspace, Niters);
-  
+   
   double norminf = A.NormInf();
   double normone = A.NormOne();
   if (comm.MyPID()==0) 
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 	 << "\n One-norm of A before scaling = " << normone<< endl << endl;
   solver.Iterate(Niters, 5.0e-16);
   norminf = A.NormInf();
-  normone = A.NormOne();
+  normone = A.NormOne(); 
   if (comm.MyPID()==0) 
     cout << "\n Inf-norm of A after  scaling = " << norminf  
 	 << "\n One-norm of A after  scaling = " << normone << endl << endl;

@@ -29,6 +29,7 @@
 #include "Epetra_Flops.h"
 #include "Epetra_BLAS.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_Operator.h"
 #include "Epetra_CrsGraph.h"
 class Epetra_BlockMap;
 class Epetra_Import;
@@ -68,7 +69,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 
 */    
 
-class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Epetra_BLAS, public virtual Epetra_RowMatrix{
+class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Epetra_BLAS, public virtual Epetra_RowMatrix {
       
  public:
 
@@ -877,6 +878,57 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
   //! Print method
   virtual void Print(ostream & os) const;
   //@}
+
+  //@{ \name Additional methods required to support the Epetra_Operator interface.
+
+    //! If set true, transpose of this operator will be applied.
+    /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
+        affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
+	does not support transpose use, this method should return a value of -1.
+      
+    \param In
+	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+
+    \return Always returns 0.
+  */
+  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+
+    //! Returns the result of a Epetra_Operator applied to a Epetra_MultiVector X in Y.
+    /*! 
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to multiply with matrix.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Epetra_VbrMatrix::Multiply(Epetra_VbrMatrix::UseTranspose(), X, Y));};
+
+    //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
+    /*! In this implementation, we use several existing attributes to determine how virtual
+        method ApplyInverse() should call the concrete method Solve().  We pass in the UpperTriangular(), 
+	the Epetra_VbrMatrix::UseTranspose(), and NoDiagonal() methods. The most notable warning is that
+	if a matrix has no diagonal values we assume that there is an implicit unit diagonal that should
+	be accounted for when doing a triangular solve.
+
+    \param In
+	   X - A Epetra_MultiVector of dimension NumVectors to solve for.
+    \param Out
+	   Y -A Epetra_MultiVector of dimension NumVectors containing result.
+
+    \return Integer error code, set to 0 if successful.
+  */
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(Solve(UpperTriangular(), Epetra_VbrMatrix::UseTranspose(), NoDiagonal(), X, Y));};
+
+    //! Returns true because this class can compute an Inf-norm.
+    virtual bool HasNormInf() const {return(true);};
+
+    //! Returns the current UseTranspose setting.
+    virtual bool UseTranspose() const {return(UseTranspose_);};
+
+  //@}
   //@{ \name Additional methods required to implement RowMatrix interface.
 
     //! Returns a copy of the specified global row in user-provided arrays.
@@ -1003,6 +1055,7 @@ int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
   Epetra_CrsGraph * Graph_;
   bool Allocated_;
   bool StaticGraph_;
+  bool UseTranspose_;
   
   int NumMyBlockRows_;
 
