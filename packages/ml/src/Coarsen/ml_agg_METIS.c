@@ -1346,8 +1346,8 @@ int agg_offset, vertex_offset;
 	     epsilon);
       if( epsilon != 0.0 ) {
 	fprintf( stderr,
-		 "WARNING: ParMETIS may not work with dropping!\n"
-		 "WARNING: Now proceeding -- with fingers crossed\n" );
+		 "%s (note that METIS may not work with dropping)\n",
+		 str );
       }
       
    }
