@@ -103,8 +103,8 @@ COMM_INC	= comm.h
 PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
 
-PARMETIS_CSRC	= parmetis_part.c parmetis_util.c 
-PARMETIS_INC	= parmetis_const.h
+PARMETIS_CSRC	= parmetis_jostle.c parmetis_util.c 
+PARMETIS_INC	= parmetis_jostle_const.h
 
 TIMER_CSRC	= timer.c
 TIMER_INC	= timer_const.h
@@ -228,7 +228,7 @@ TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) \
 #SUN_CC          = acc -vc -Xa -DUSE_STDARG -DHAVE_STDLIB_H=1 \
 #                -DHAVE_STRING_H=1 -DHAVE_UNISTD_H=1 -DHAVE_STDARG_H=1 \
 #                -DUSE_STDARG=1 -DMALLOC_RET_VOID=1
-#SUN_CC		= purify -follow-child-processes=yes gcc
+#SUN_CC		= purify -follow-child-processes=yes -cache-dir=/tmp/purify gcc
 SUN_CC		= gcc
 SUN_DBG_FLAGS	= -g 
 SUN_OPT_FLAGS	= -O
