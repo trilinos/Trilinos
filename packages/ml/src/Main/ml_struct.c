@@ -3136,6 +3136,9 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    ML_Operator    *op;
    SuperMatrix    *A;
    ML_Matrix_DCSR *csr_mat, *csr2_mat;
+struct ML_CSR_MSRdata *temp_ptr;
+ML *subml;
+int nblocks = 1, *block_list, old_lower, old_upper, count, newptr, me, nnzs;
 #ifdef ML_TIMING
    double t0;
 
@@ -3154,6 +3157,10 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    op      = (ML_Operator *) &ml_handle->Amat[level];
    data    = op->data;
    osize   = op->outvec_leng;
+   if (op->invec_leng < 0) {
+      nblocks = -op->invec_leng;
+      op->invec_leng = osize;
+   }
    row_ptr = (int *) malloc(sizeof(int)*(osize+1));
    space   = osize * 5 + 30;
    getrow_flag = 0;
@@ -3216,15 +3223,63 @@ int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level)
    csr_mat->comminfo = op->getrow->pre_comm;
 
    /* ----------------------------------------------------------------- */
-   /* form an global matrix                                             */
+   /* form a global matrix                                              */
    /* ----------------------------------------------------------------- */
 
    csr2_mat = (ML_Matrix_DCSR *) malloc(sizeof(ML_Matrix_DCSR));
    ML_Gen_Amatrix_Global( csr_mat, csr2_mat, ml_handle->comm, &offset);
+   free(row_ptr);
    free(cols);
    free(vals);
-   free(row_ptr);
    free(csr_mat);
+
+   /* Throw away some information to make it cheaper for LU. We do this   */ 
+   /* by using metis to generate some blocks and factor the block matrix. */
+   if (nblocks > 1) { 
+      mat_ia  = csr2_mat->mat_ia;
+      mat_ja  = csr2_mat->mat_ja;
+      mat_val = csr2_mat->mat_a;
+      nrows   = csr2_mat->mat_n;
+      temp_ptr =(struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+      temp_ptr->rowptr = mat_ia;
+      temp_ptr->columns= mat_ja;
+      temp_ptr->values = mat_val;
+      ML_Create(&subml, 1);
+      ML_Init_Amatrix(subml, 0, nrows, nrows, (void *) temp_ptr);
+      ML_Set_Amatrix_Getrow(subml,0,CSR_getrows,NULL, nrows);
+      ML_Set_Amatrix_Matvec(subml, 0, CSR_matvec);
+      ML_Gen_Blocks_Metis(subml, 0, &nblocks, &block_list);
+      ML_Destroy(&subml);
+      free(temp_ptr);
+      for (i = 0; i < nrows; i++) {
+         me = block_list[i];
+         for (j = mat_ia[i]; j < mat_ia[i+1]; j++) {
+            if ( block_list[mat_ja[j]] != me) {mat_ja[j] = -1; }
+         }
+      }
+
+      if (nrows > 0) old_lower = mat_ia[0];
+      if (nrows > 0) old_upper = mat_ia[0];
+      nnzs = mat_ia[nrows];
+      for (i = 0; i < nrows; i++) {
+	count = 0;
+        for (j = old_upper; j < mat_ia[i+1]; j++) {
+           if ( mat_ja[j] != -1) count++;
+        }
+        old_lower = old_upper;
+        old_upper = mat_ia[i+1];
+        mat_ia[i+1] = mat_ia[i] + count;
+      }
+
+      newptr = 0;
+      for (i = 0; i < nnzs; i++) {
+         if ( mat_ja[i] != -1) {
+            mat_ja[newptr] = mat_ja[i];
+            mat_val[newptr++] = mat_val[i];
+         }
+      }
+   }
+
 
    /* ----------------------------------------------------------------- */
    /* set SuperLU as solver                                             */
