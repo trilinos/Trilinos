@@ -40,17 +40,22 @@
 
 /* Data structures used in ParMetis interface routines */
 
+/* An array of this data structure works with a parallel array of 
+ * LB_ID_PTR called proc_list_nbor containing the global IDs of the
+ * neighboring object. 
+ * This separate array is needed to prevent individual mallocs of
+ * neighboring global IDs.
+ */
 struct LB_edge_info {
-  LB_GID my_gid;     /* Global id of local vtx */
+  LB_ID_PTR my_gid;  /* Pointer to the Global id of local vtx */
   int my_gno;        /* Global number of local vtx */
-  LB_GID nbor_gid;   /* Global id of off-proc vtx */
   int nbor_proc;     /* Proc id for the neighboring proc */
   int *adj;          /* Pointer to adjcny array */
 };
 
 struct LB_hash_node {
-  LB_GID gid;  /* Global id */
-  int gno;  /* Global number */
+  LB_ID_PTR gid;     /* Pointer to a Global id */
+  int gno;           /* Global number */
   struct LB_hash_node * next;
 };
 
