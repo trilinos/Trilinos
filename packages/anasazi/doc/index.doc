@@ -15,8 +15,8 @@ as AztecOO) may also be used in conjunction with Anasazi.
 
 One of the goals of Anasazi is to allow the user the flexibility to specify the
 data representation for the matrix and vectors and so leverage any existing software
-investment. The algorithm that is currently available through Anasazi is block Krylov-Schur 
-method (which is similar to implicitly-restarted Arnoldi). 
+investment. The algorithms that are currently available through Anasazi are block Krylov-Schur,
+block Davidson, and locally-optimal block preconditioned conjugate gradient (LOBPCG) method. 
 
    \section contributors Anasazi Contributors
 
