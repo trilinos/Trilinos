@@ -4662,11 +4662,13 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
 
 int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
 			      double omega, ML_Operator **Tmat_array, ML_Operator
-				  **Tmat_trans_array)
+				  **Tmat_trans_array, ML_Operator *Tmat_bc)
 {
    ML_Sm_Hiptmair_Data *data;
    int (*fun)(void *, int, double *, int, double *);
    int start_level, end_level, i, status = 1;
+   int *BClist=NULL, BClength=0;
+   ML_BdryPts *ml_bc;
    char str[80];
 #ifdef ML_TIMING
    double         t0;
@@ -4691,14 +4693,19 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    {
       for (i = start_level; i <= end_level; i++)
 	  {
-             ML_Smoother_Create_Hiptmair_Data(&data);
-	         ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
-			          Tmat_array[i], Tmat_trans_array[i]);
-	         ml->pre_smoother[i].data_destroy =
-			                            ML_Smoother_Destroy_Hiptmair_Data;
-             sprintf(str,"Hiptmair_pre%d",i);
-             status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         /* Get list of Dirichlet bc, if any. */
+         ml_bc = ml->SingleLevel[i].BCs;
+         if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
+            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         ML_Smoother_Create_Hiptmair_Data(&data);
+	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
+                      BClength, BClist);
+	     ml->pre_smoother[i].data_destroy = ML_Smoother_Destroy_Hiptmair_Data;
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, omega, str);
+         BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->pre_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->pre_smoother[i].build_time;
@@ -4725,17 +4732,23 @@ int ML_Gen_Smoother_Hiptmair( ML *ml , int nl, int pre_or_post, int ntimes,
    {
       for (i = start_level; i <= end_level; i++)
 	  {
-             ML_Smoother_Create_Hiptmair_Data(&data);
-	         ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
-			          Tmat_array[i], Tmat_trans_array[i]);
-	         ml->post_smoother[i].data_destroy =
+         /* Get list of Dirichlet bc, if any. */
+         ml_bc = ml->SingleLevel[i].BCs;
+         if (ML_BdryPts_Check_Dirichlet_Grid(ml_bc))
+            ML_BdryPts_Get_Dirichlet_Grid_Info(ml_bc,&BClength,&BClist);
+         ML_Smoother_Create_Hiptmair_Data(&data);
+	     ML_Smoother_Gen_Hiptmair_Data(&data, &(ml->Amat[i]),
+			          Tmat_array[i], Tmat_trans_array[i], Tmat_bc,
+                      BClength, BClist);
+	     ml->post_smoother[i].data_destroy =
 			                            ML_Smoother_Destroy_Hiptmair_Data;
-             sprintf(str,"Hiptmair_pre%d",i);
-             status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
+         sprintf(str,"Hiptmair_pre%d",i);
+         status = ML_Smoother_Set(&(ml->pre_smoother[i]), ML_INTERNAL, 
 				      (void *) data, fun, NULL, ntimes, omega, str);
-             sprintf(str,"Hiptmair_post%d",i);
-             status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
+         sprintf(str,"Hiptmair_post%d",i);
+         status = ML_Smoother_Set(&(ml->post_smoother[i]), ML_INTERNAL,
 				      (void *) data, fun, NULL, ntimes, omega, str);
+         BClist = NULL; BClength = 0;
 #ifdef ML_TIMING
          ml->post_smoother[i].build_time = GetClock() - t0;
          ml->timing->total_build_time   += ml->post_smoother[i].build_time;
