@@ -31,13 +31,6 @@
 // -----------------
 // Using IFPACK factorizations as Aztec's preconditioners
 //
-// NOTE: this example implemenets minor modifications to one of the
-// examples included in the AztecOO package. Please give a look
-// to file ${TRILINOS_HOME}/packages/aztecoo/examples/IfpackAztecOO/cxx_main.cpp
-// for more details.
-//
-// (output reported at the end of the file)
-//
 // Marzio Sala, SNL, 9214, 19-Nov-2003
 
 #include "Epetra_config.h"
@@ -47,18 +40,18 @@
 #else
 #include "Epetra_SerialComm.h"
 #endif
+#include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Time.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Export.h"
 #include "AztecOO.h"
-#include "Trilinos_Util.h"
-#include "Epetra_VbrMatrix.h"
+#include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
-#include "Ifpack_CrsIct.h"
+#include "Ifpack_IlukGraph.h"
+#include "Ifpack_CrsRiluk.h"
 
 // function for fancy output
 
@@ -89,6 +82,8 @@ int main(int argc, char *argv[]) {
   bool verbose = false; 
   if (MyPID==0) verbose = true;
 
+  // B E G I N   O F   M A T R I X   C O N S T R U C T I O N
+  
   // matrix downloaded from MatrixMarket
   char FileName[] = "../HBMatrices/bcsstk14.rsa";
 
@@ -128,54 +123,54 @@ int main(int argc, char *argv[]) {
   delete readb;
   delete readxexact;
   delete readMap;
-  
-  // ============================ //
-  // Construct ILU preconditioner //
-  // ---------------------------- //
+
+  // E N D   O F   M A T R I X   C O N S T R U C T I O N  
+
+  // ============================= //
+  // Construct RILU preconditioner //
+  // ---------------=------------- //
 
   //  modify those parameters 
-  int    LevelFill = 1;
-  double DropTol = 0.0;
-  double Condest;
-  
-  Ifpack_CrsIct * ICT = NULL;
-  ICT = new Ifpack_CrsIct(A,DropTol,LevelFill);
-  // Init values from A
-  ICT->InitValues(A);
-  // compute the factors
-  ICT->Factor();
-  // and now estimate the condition number
-  ICT->Condest(false,Condest);
-  
-  cout << Condest << endl;
-    
-  if( Comm.MyPID() == 0 ) {
-    cout << "Condition number estimate (level-of-fill = "
-	 << LevelFill <<  ") = " << Condest << endl;
-  }
+  int    LevelFill = 0;
+  int    Overlap = 2;
+  double Athresh = 0.0;
+  double Rthresh = 1.0;
 
-  // Define label for printing out during the solve phase
-  string label = "Ifpack_CrsIct Preconditioner: LevelFill = " + toString(LevelFill) + 
-                                                 " Overlap = 0"; 
-  ICT->SetLabel(label.c_str());
+  Ifpack_IlukGraph * Graph = 0;
+  Ifpack_CrsRiluk * RILU = 0;
+
+  Graph = new Ifpack_IlukGraph(A.Graph(), LevelFill, Overlap);
+  assert(Graph->ConstructFilledGraph()==0);
+
+  RILU = new Ifpack_CrsRiluk(*Graph);
+  int initerr = RILU->InitValues(A);
+  if (initerr!=0) cout << Comm << "*ERR* InitValues = " << initerr;
+
+  assert(RILU->Factor()==0);
   
+  // Define label for printing out during the solve phase
+  string label = "Ifpack_CrsRiluk Preconditioner: LevelFill = " + toString(LevelFill) + 
+                                                 " Overlap = " + toString(Overlap) + 
+                                                 " Athresh = " + toString(Athresh) + 
+                                                 " Rthresh = " + toString(Rthresh); 
+  RILU->SetLabel(label.c_str());
+
   // Here we create an AztecOO object
   AztecOO solver;
   solver.SetUserMatrix(&A);
   solver.SetLHS(&x);
   solver.SetRHS(&b);
-  solver.SetAztecOption(AZ_solver,AZ_cg);
-  
+
   // Here we set the IFPACK preconditioner and specify few parameters
   
-  solver.SetPrecOperator(ICT);
+  solver.SetPrecOperator(RILU);
 
   int Niters = 1200;
-  solver.SetAztecOption(AZ_kspace, Niters);
-  solver.SetAztecOption(AZ_output, 20); 
-  solver.Iterate(Niters, 5.0e-5);
+  solver.SetAztecOption(AZ_kspace, Niters); 
+  solver.Iterate(Niters, 5.0e-10);
 
-  if (ICT!=0) delete ICT;
+  if (RILU!=0) delete RILU;
+  if (Graph!=0) delete Graph;
 				       
 #ifdef HAVE_MPI
   MPI_Finalize() ;
@@ -183,12 +178,3 @@ int main(int argc, char *argv[]) {
 
 return 0 ;
 }
-
-/*
-
-Output of this program (NOTE: the output produced by our code can be
-slightly different)
-
-[msala:ifpack]> mpirun -np 2 ./ex1.exe
-
-*/
