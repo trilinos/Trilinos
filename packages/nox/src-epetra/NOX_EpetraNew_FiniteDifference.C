@@ -617,6 +617,9 @@ createGraphAndJacobian(Interface::Required& i,
 
     // Insert column entries into the graph
     for (int j = myMin; j < myMax+1; j++) {
+      // Allow for the possibility that rows j from myMin to myMax are not necessarily contigous
+      if (!map.MyGID(j))
+        continue;
       if (Jc[map.LID(j)] != 0.0) {
 	graph->InsertGlobalIndices(j,1,&k);
       }

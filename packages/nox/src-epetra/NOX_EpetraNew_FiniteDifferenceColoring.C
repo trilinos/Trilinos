@@ -327,6 +327,9 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
     // Insert nonzero column entries into the jacobian
     if( !skipIt ) {
       for (int j = myMin; j < myMax+1; j++) {
+        // Allow for the possibility that rows j from myMin to myMax are not necessarily contigous
+        if (!map.MyGID(j))
+          continue;
         int globalColumnID = (*columns)[k][map.LID(j)];
         if( globalColumnID >= 0) {
 
