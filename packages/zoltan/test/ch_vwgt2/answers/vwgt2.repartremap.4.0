@@ -1,0 +1,12 @@
+Decomposition Method 	= parmetis
+Zoltan Parameters	= obj_weight_dim=2, parmetis_method=repartremap
+File Type		= Chaco
+File Name		= vwgt2
+Parallel Disk Info	= number=0
+Global element ids assigned to processor 0
+1
+2
+3
+7
+8
+13
