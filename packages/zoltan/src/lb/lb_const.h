@@ -215,7 +215,7 @@ struct LB_Struct {
                                       Communicator.                          */
   int Num_Proc;                   /*  The number of processors in the MPI
                                       Communicator.                          */
-  int Debug;                      /*  Debug level for this instance of
+  int Debug_Level;                /*  Debug level for this instance of
                                       load balancing.                        */
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch. */

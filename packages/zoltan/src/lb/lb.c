@@ -123,7 +123,7 @@ LB *lb;
 
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
-  lb->Debug = 0;
+  lb->Debug_Level = 0;
   lb->Fortran = 0;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
@@ -617,7 +617,7 @@ double lb_time[2] = {0.0,0.0};
   end_time = LB_Time();
   lb_time[0] = end_time - start_time;
 
-  if (lb->Debug > 6) {
+  if (lb->Debug_Level > 6) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
     printf("LBLB: Objects to be exported from Proc %d\n", lb->Proc);
@@ -898,7 +898,7 @@ int ierr = 0;
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
     return (LB_OK);
 
-  if (lb->Debug > 4)
+  if (lb->Debug_Level > 4)
     printf("LBLIB %d %s Entering HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 
@@ -935,7 +935,7 @@ int ierr = 0;
       return (LB_FATAL);
     }
 
-    if (lb->Debug > 5)
+    if (lb->Debug_Level > 5)
       printf("LBLIB %d %s Done Pre-Process\n", lb->Proc, yo);
   }
 
@@ -1074,11 +1074,11 @@ int ierr = 0;
       return (LB_FATAL);
     }
 
-    if (lb->Debug > 5)
+    if (lb->Debug_Level > 5)
       printf("LBLIB %d %s Done Post-Process\n", lb->Proc, yo);
   }
 
-  if (lb->Debug > 4)
+  if (lb->Debug_Level > 4)
     printf("LBLIB %d %s Leaving HELP_MIGRATE %d %d\n",
             lb->Proc, yo, num_import, num_export);
 

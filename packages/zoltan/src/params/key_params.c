@@ -34,6 +34,7 @@ char *val)			/* value of variable */
 	{ "AUTO_MIGRATE", NULL, "INT" },
 	{ "OBJ_WEIGHT_DIM", NULL, "INT" },
 	{ "COMM_WEIGHT_DIM", NULL, "INT" },
+	{ "DEBUG_LEVEL", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, key_params, &result, &index);
@@ -68,6 +69,15 @@ char *val)			/* value of variable */
 	    result.ival = 0;
 	}
 	lb->Comm_Weight_Dim = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+      }
+      else if (index == 4) {		/* Debug level  */
+	if (result.ival < 0) {
+	    fprintf(stderr, "WARNING: Invalid Debug_Level value (%d) "
+		"being set to 0\n", result.ival);
+	    result.ival = 0;
+	}
+	lb->Debug_Level = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
       }
     }
