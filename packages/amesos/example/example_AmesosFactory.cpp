@@ -209,10 +209,9 @@ int main(int argc, char *argv[])
   // List.set("ComputeTrueResidual",true) before
   // calling SetParameters(List).
   //
-  double* residual;
-  residual = new double[NumVectors];
+  vector<double> residual(NumVectors);
 
-  Gallery.ComputeResidual(residual);
+  Gallery.ComputeResidual(&residual[0]);
 
   if( Comm.MyPID() == 0 ) {
     for (int i = 0 ; i < NumVectors ; ++i)
@@ -221,7 +220,6 @@ int main(int argc, char *argv[])
 
   // delete Solver. MPI calls can occur.
   delete Solver;
-  delete [] residual;
     
   if (residual[0] > 1e-5)
     return(EXIT_FAILURE);
