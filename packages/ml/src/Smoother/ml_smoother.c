@@ -1015,11 +1015,13 @@ int ML_Smoother_VBlockSGS(void *sm, int inlen, double x[],
             }
          }
       }
+/*
    }
    for (iter = smooth_ptr->ntimes; iter > 0; iter--) 
    {
       if (getrow_comm != NULL)
          ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE);
+*/
 
       for (i = Nblocks-1; i >= 0; i--) 
       {
