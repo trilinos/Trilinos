@@ -260,12 +260,13 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   float *psums=NULL, *tsums=NULL, *m_bestsum=NULL, *b_bestsum=NULL;
   char *buffer=NULL, *rbuffer=NULL;    /* send and rec buffers */
   int *displs=NULL, *each_size=NULL, *each_count=NULL, total_count;
+  int local_quality[3] = {0,0,0}, global_quality[3] = {0,0,0},  gno;  
   PHGComm *hgc = hg->comm;  
   char  *yo = "matching_ipm";
-       
-   
+
+
   /* determine number of basic matching rounds scaled by number of procs */
-  nrounds = MAX (2, hgc->nProc_x * LOOP_FACTOR);  /* force at least 2 rounds */
+  nrounds = hgc->nProc_x * LOOP_FACTOR;
   ncandidates = hg->nVtx/(2 * nrounds) + 1;  /* 2: each match pairs 2 vertices */
         
   /* allocate storage proportional to number of local vertices */  
@@ -453,10 +454,13 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
            for (j = hg->hindex [m_vedge[i]]; j < hg->hindex [m_vedge[i]+1]; j++)
              psums [hg->hvertex[j]] += hg->ewgt [hg->hvertex[j]];
                            
-       /* if also a local vtx, remove self inner product (false maximum) */
+       /* if local vtx, remove self inner product (false maximum) and matched */
        if (VTX_TO_PROC_X (hg, m_gno[vertex]) == hgc->myProc_x)
          psums [VTX_GNO_TO_LNO (hg, m_gno[vertex])] = 0;
-                  
+       for (i = 0; i < hg->nVtx; i++)
+         if (match[i] != i)
+           psums[i] = 0;                  
+     
        /* Want to use sparse communication with explicit summing later but
           for now, all procs in my column have same complete inner products */      
        MPI_Allreduce(psums, tsums, hg->nVtx, MPI_FLOAT, MPI_SUM, hgc->col_comm);
@@ -524,7 +528,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      
      /************************ PHASE 4: ***************************************/
      
-     /* need to tell everyone, which matches I accepted/rejected */
+     /* need to tell everyone, which matches I accepted (rejected implied) */
      /* first prepare to send matches back using MPI_ALLGATHERV */
      displs[0] = 0;
      for (i = 0; i < hgc->nProc_x; i++)
@@ -543,9 +547,14 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      /* Note: match to self if inner product is below threshold */                     
      ip = (int*) buffer; 
      for (i = 0; i < ncandidates; i++)   {
-       *ip++ = VTX_LNO_TO_GNO (hg, select[i]);
+       *ip++ = gno = VTX_LNO_TO_GNO (hg, select[i]);
        *ip++ = (b_bestsum [select[i]] > THRESHOLD) 
          ? b_gno[select[i]] : VTX_LNO_TO_GNO (hg, select[i]); 
+         
+if (b_bestsum[select[i]] > THRESHOLD)  {
+  local_quality[0] += b_bestsum[select[i]];  
+  local_quality[1]++;
+}       
      }
            
      MPI_Allgatherv(buffer, PHASE4 * ncandidates, MPI_INT, rbuffer, each_size,
@@ -573,9 +582,17 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
            match [v2] = v1;
        }                   
      }       
-     Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                       
+     Zoltan_Multifree (__FILE__, __LINE__, 2, &buffer, &rbuffer);                          
   } /* DONE: end of large loop over rounds */
-        
+  
+  local_quality[2] = hg->nVtx;    /* to compute the global number of vertices */
+  
+  MPI_Allreduce(local_quality,global_quality,3, MPI_INT, MPI_SUM, hgc->row_comm); 
+       
+  uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %d (%d), matched pairs %d (%d), "
+   "total vertices %d\n", local_quality[0], global_quality[0], local_quality[1],
+   global_quality[1], global_quality[2]);  
+  
   Zoltan_Multifree (__FILE__, __LINE__, 7, &psums, &tsums, &select, &cmatch,
    &each_size, &each_count, &displs); 
   Zoltan_Multifree (__FILE__, __LINE__, 9, &m_vindex, &m_vedge, &m_gno, &b_gno,
