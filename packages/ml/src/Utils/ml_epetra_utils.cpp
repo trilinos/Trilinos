@@ -541,6 +541,8 @@ int ML_ApplyQ(int StartingNumElements,
 
   }
 
+  return 0;
+
 }
 
 void ML_DestroyQ(void) 
