@@ -1,0 +1,37 @@
+Basic Usage of Zoltan C++ Interface
+-----------------------------------
+
+Version 1.0:
+
+1. class Zoltan_LoadBalance is the main wrapper interface.
+	- The Zoltan routines are wrapped by methods.
+	- Main difference, lb_struct is missing from the parameters
+	  since the class object contains this structure.
+
+2. Basic Load Balance setup follows the Zoltan manual.
+	- construct Zoltan_LoadBalance object (this runs LB_Init)
+	- LBObject.Create( MPI_Comm )
+
+3. Query and Migration callback function registration.
+	- Can use Set_Callback_Fn(...) as the original Zoltan interface.
+	- Use user-derived objects from 
+	    Zoltan_MigrationObject
+	    Zoltan_QueryObject
+   Note: For version 1.1, add -DZOLTAN_OLD_CALLBACK to use this previous
+         method.
+
+4. Setup for Query and Migration Objects.
+	- Create derived classes, implementing only the needed methods.
+	- Instantiate derived object.
+	- Register objects with Zoltan_LoadBalance object using
+	    Set_QueryObject( Derived_QueryObject * )
+	    Set_MigrationObject( Derived_MigrationObject * )
+
+Version 1.1:
+
+1. Query and Migration callback function registration.
+        - Support for new function specific callback registration.
+
+2. Zoltan interface changes.
+	- Updated to support new zoltan interface including
+	  (int *) ID's.
