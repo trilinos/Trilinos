@@ -647,6 +647,30 @@ int ML_Operator_Print(ML_Operator *matrix, const char label[])
    return 0;
 }
 
+int ML_Operator_ComputeNumNzs(ML_Operator *matrix)
+{
+
+   int    i, j;
+   int    *bindx;
+   double *val;
+   int    allocated, row_length, Nnz = 0;
+
+   if ( matrix->getrow == NULL) return(Nnz);
+
+   allocated = 100;
+   bindx = (int    *)  ML_allocate( allocated*sizeof(int   ));
+   val   = (double *)  ML_allocate( allocated*sizeof(double));
+
+   for (i = 0 ; i < matrix->getrow->Nrows; i++) {
+      ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
+                        &row_length, 0);
+      Nnz += row_length;
+   }
+   ML_free(val);
+   ML_free(bindx);
+   return Nnz;
+}
+
 /* ******************************************************************** */
 /* compute max norm of the matrix                                       */
 /* ******************************************************************** */
