@@ -62,6 +62,10 @@ public:
   // Add a problem to the Manager
   void addProblem(GenericEpetraProblem& problem);
 
+  // Create a dependence of Problem A equations on Problem B variables
+  void createDependency(GenericEpetraProblem& problemA,
+                        GenericEpetraProblem& problemB);
+
   // Register NLSolver parameter list
   void registerParameters(NOX::Parameter::List& List);
 
@@ -92,7 +96,9 @@ private:
 
 private:
 
-  vector<GenericEpetraProblem*> Problems;   // Problem container
+  int problemCount;                         // Number of registered Problems
+
+  map<int, GenericEpetraProblem*> Problems; // Problem container
   vector<NOX::EpetraNew::LinearSystemAztecOO*> LinearSystems;
   					    // Groups container
   vector<NOX::EpetraNew::Group*> Groups;    // Groups container

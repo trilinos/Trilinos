@@ -133,7 +133,8 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
-	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H
+	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
 
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
@@ -160,7 +161,8 @@ am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-Equation_A.$(OBJEXT) example-Equation_B.$(OBJEXT) \
 	example-Basis.$(OBJEXT) example-GenericEpetraProblem.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT) \
-	example-Problem_Manager.$(OBJEXT)
+	example-Problem_Manager.$(OBJEXT) \
+	example-Xfer_Operator.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
 
@@ -177,7 +179,8 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-GenericEpetraProblem.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Manager.Po
+@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Manager.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/example-Xfer_Operator.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -212,6 +215,7 @@ example-Basis.$(OBJEXT): $(srcdir)/Basis.C
 example-GenericEpetraProblem.$(OBJEXT): $(srcdir)/GenericEpetraProblem.C
 example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 example-Problem_Manager.$(OBJEXT): $(srcdir)/Problem_Manager.C
+example-Xfer_Operator.$(OBJEXT): $(srcdir)/Xfer_Operator.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
@@ -229,6 +233,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-GenericEpetraProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Manager.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Xfer_Operator.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -328,6 +333,18 @@ example-Problem_Manager.obj: $(srcdir)/Problem_Manager.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Manager.Po' tmpdepfile='$(DEPDIR)/example-Problem_Manager.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Manager.obj `cygpath -w $(srcdir)/Problem_Manager.C`
+
+example-Xfer_Operator.o: $(srcdir)/Xfer_Operator.C
+@AMDEP_TRUE@	source='$(srcdir)/Xfer_Operator.C' object='example-Xfer_Operator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Xfer_Operator.Po' tmpdepfile='$(DEPDIR)/example-Xfer_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Xfer_Operator.o `test -f '$(srcdir)/Xfer_Operator.C' || echo '$(srcdir)/'`$(srcdir)/Xfer_Operator.C
+
+example-Xfer_Operator.obj: $(srcdir)/Xfer_Operator.C
+@AMDEP_TRUE@	source='$(srcdir)/Xfer_Operator.C' object='example-Xfer_Operator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Xfer_Operator.Po' tmpdepfile='$(DEPDIR)/example-Xfer_Operator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Xfer_Operator.obj `cygpath -w $(srcdir)/Xfer_Operator.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 

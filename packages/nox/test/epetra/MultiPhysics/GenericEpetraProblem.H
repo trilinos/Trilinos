@@ -34,6 +34,7 @@
 #define _NOX_GENERIC_PROBLEM_H
 
 #include "NOX.H"
+#include "NOX_Epetra.H"
 
 // This is needed to get the FillType enum values from NOX_Epetra_Interface
 #include "NOX_EpetraNew_Interface_Required.H"
@@ -47,6 +48,8 @@ class Epetra_Vector;
 class Epetra_Import;
 class Epetra_CrsGraph;
 class Epetra_CrsMatrix;
+
+class XferOp;
 
 // Flag to tell the evaluate routine what objects to fill
 enum FillType {F_ONLY, MATRIX_ONLY, ALL}; 
@@ -81,6 +84,15 @@ public:
   virtual void reset() {}; 
 
   virtual void reset(const Epetra_Vector& x) {};
+
+  // Set the unique int id for this problem
+  virtual void setId(const int id_) { myId = id_; }; 
+
+  // Query the unique int id for this problem
+  virtual int getId() const { return myId; }; 
+
+  // Add a transfer operator to get fields from another problem
+  virtual void addTransferOp(const GenericEpetraProblem& problemB); 
 
   // Set the solution vector (initialSolution)
   virtual void setSolution(const Epetra_Vector&); 
@@ -123,16 +135,18 @@ protected:
 
 protected:
 
+  int myId;                     // Unique integer id for this Problem
   //Epetra_Map *StandardMap;
   Epetra_Map *OverlapMap;
   Epetra_Import *Importer;
-  Epetra_Vector *xptr;
+  Epetra_Vector *xptr;		// Spatial locations of mesh points
   Epetra_Vector *initialSolution;
   Epetra_CrsGraph *AA;
   Epetra_CrsMatrix *A;
   Epetra_Comm *Comm;
-  Epetra_Vector *auxSolution; // Auxillary data; solution from other Equation
-                              // used to debug this Equation
+  map<int, Epetra_Vector*> auxSolutions; // Auxillary data; solutions from 
+                                  // other Problems needed by this Problem
+  map<int, XferOp*> xferOperators;   // Container of transfer operators
 
 public: // for now
 
@@ -140,7 +154,8 @@ public: // for now
   int MyPID;              // Process number
   int NumProc;            // Total number of processes
 
-  int NumMyNodes;         // Number of nodes owned by this process
-  int NumGlobalNodes;     // Total Number of nodes
+  int NumMyNodes;         // Number of nodes (dofs) owned by this process
+                          // for this problem
+  int NumGlobalNodes;     // Total Number of nodes (dofs) for this problem
 };
 #endif

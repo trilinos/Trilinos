@@ -38,7 +38,8 @@ example_SOURCES = $(srcdir)/Example.C \
 	$(srcdir)/Basis.C $(srcdir)/Basis.H \
 	$(srcdir)/GenericEpetraProblem.C $(srcdir)/GenericEpetraProblem.H \
 	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H \
-	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H
+	$(srcdir)/Problem_Manager.C $(srcdir)/Problem_Manager.H \
+	$(srcdir)/Xfer_Operator.C $(srcdir)/Xfer_Operator.H
 
 example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
         $(top_builddir)/src-epetra/libnoxepetra.a

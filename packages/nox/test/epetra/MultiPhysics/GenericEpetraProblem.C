@@ -44,17 +44,19 @@
 #include "AztecOO.h"
 
 #include "GenericEpetraProblem.H"
+#include "Xfer_Operator.H"
 
 GenericEpetraProblem::GenericEpetraProblem(Epetra_Comm& comm, 
                                            int numGlobalNodes) :
   Comm(&comm),
   NumGlobalNodes(numGlobalNodes),
+  myId(0),
   StandardMap(0),
   OverlapMap(0),
   Importer(0),
   xptr(0),
   initialSolution(0),
-  auxSolution(0),
+//  auxSolution(0),
   AA(0),  
   A(0) 
 {
@@ -119,8 +121,8 @@ void GenericEpetraProblem::createMaps()
 
 #ifdef DEBUG
     // Output to check progress so far
-    printf("NumMyNodes, NumGlobalNodes --> %d\t%d\n",NumMyNodes, NumGlobalNodes);
-  
+    printf("NumMyNodes, NumGlobalNodes --> %d\t%d\n",NumMyNodes, 
+		                                     NumGlobalNodes);
     cout << *StandardMap << endl;
     cout << *OverlapMap << endl;
     Importer->Print(cout);
@@ -137,7 +139,8 @@ GenericEpetraProblem::~GenericEpetraProblem()
   delete A; A = 0;
   delete AA; AA = 0;
   delete initialSolution; initialSolution = 0;
-  delete auxSolution; auxSolution = 0;
+  //  Need to fix this !!!  RHooper
+//  delete auxSolution; auxSolution = 0;
   delete Importer; Importer = 0;
   delete OverlapMap; OverlapMap = 0;
   delete StandardMap; StandardMap = 0;
@@ -176,14 +179,12 @@ void GenericEpetraProblem::outputResults(NOX::Solver::Manager& solver,
 Epetra_Vector& GenericEpetraProblem::getMesh()
 {
   assert( xptr != 0 ); // Solution vector had better exist
-
   return *xptr;
 }
 
 Epetra_Vector& GenericEpetraProblem::getSolution()
 {
   assert( initialSolution != 0 ); // Solution vector had better exist
-
   return *initialSolution;
 }
 
@@ -224,10 +225,19 @@ void GenericEpetraProblem::setSolution(const Epetra_Vector& data)
 void GenericEpetraProblem::setAuxillarySolution(const Epetra_Vector& data)
 {
   // Create the auxillary vector if needed
-  if(!auxSolution)
-    auxSolution = new Epetra_Vector(data);
+  if(!auxSolutions.find(1)->second)
+  {
+    cout << "ERROR: No auxillary vector created for this Problem !!" << endl;
+    throw "GenericEpetraProblem ERROR";
+  } 
   else
-    *auxSolution = data;
+    *(auxSolutions.find(1)->second) = data;
+}
+
+void GenericEpetraProblem::addTransferOp(const GenericEpetraProblem& problemB)
+{
+  // Add a transfer operator to get fields from another problem
+  xferOperators.insert(pair<int, XferOp*>(problemB.getId(), new XferOp(*this, problemB)));
 }
 
 bool GenericEpetraProblem::computePrecMatrix(const Epetra_Vector& solnVector,

@@ -219,6 +219,9 @@ int main(int argc, char *argv[])
   // Create each part of the Brusselator problem class.  
   Equation_A ProblemA(Comm, NumGlobalNodes);
   Equation_B ProblemB(Comm, NumGlobalNodes);
+//  Equation_B ProblemB(Comm, 1.5*(NumGlobalNodes-1)+1);
+  ProblemA.getMesh().Print(cout);
+  ProblemB.getMesh().Print(cout);
 
   // Now start create the Problem Manager
   Problem_Manager problemManager(Comm);
@@ -231,6 +234,9 @@ int main(int argc, char *argv[])
   // dramatically reduces the number of total iterations.
   problemManager.addProblem(ProblemB);
   problemManager.addProblem(ProblemA);
+
+  problemManager.createDependency(ProblemA, ProblemB);
+  problemManager.createDependency(ProblemB, ProblemA);
 
   // Create the convergence tests
   // Note: as for the parameter list, both (all) problems use the same 

@@ -63,6 +63,7 @@
 Problem_Manager::Problem_Manager(Epetra_Comm& comm, 
                                  int numGlobalElements) :
   GenericEpetraProblem(comm, numGlobalElements),
+  problemCount(0),
   nlParams(0),
   statusTest(0)
 {
@@ -75,8 +76,8 @@ Problem_Manager::~Problem_Manager()
 
   // Iterate over each problem and destroy/free the necessary objects
 
-  vector<GenericEpetraProblem*>::iterator iter = Problems.begin();
-  vector<GenericEpetraProblem*>::iterator last = Problems.end();
+  map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
   vector<NOX::EpetraNew::Group*>::iterator GroupsIter = Groups.begin();   
   vector<Problem_Interface*>::iterator InterfacesIter = Interfaces.begin();
@@ -111,7 +112,22 @@ Problem_Manager::~Problem_Manager()
 
 void Problem_Manager::addProblem(GenericEpetraProblem& problem)
 {
-  Problems.push_back(&problem);
+  Problems.insert(pair<int, GenericEpetraProblem*>(++problemCount, &problem));
+  problem.setId(problemCount);
+}
+
+void Problem_Manager::createDependency(GenericEpetraProblem& problemA,
+                                       GenericEpetraProblem& problemB)
+{
+  // Ensure that both problems already exist
+  if( !problemA.getId() || !problemB.getId() ) {
+    cout << "ERROR: No problems registered with Problem_Manager !!"
+         << endl;
+    throw "Problem_Manager ERROR";
+  }
+
+  problemA.addTransferOp(problemB);
+
 }
 
 void Problem_Manager::registerParameters(NOX::Parameter::List& List)
@@ -142,8 +158,8 @@ void Problem_Manager::registerComplete()
 
   // Iterate over each problem and construct the necessary objects
 
-  vector<GenericEpetraProblem*>::iterator iter = Problems.begin();
-  vector<GenericEpetraProblem*>::iterator last = Problems.end();
+  map<int, GenericEpetraProblem*>::iterator iter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator last = Problems.end();
 
   // Make sure everything is starting clean
   assert(Groups.empty() && Interfaces.empty() && Solvers.empty());
@@ -152,11 +168,11 @@ void Problem_Manager::registerComplete()
 
   while( iter != last)
   {
-    Interfaces.push_back(new Problem_Interface(**iter));
+    Interfaces.push_back(new Problem_Interface(*iter->second));
     NOX::EpetraNew::Interface::Required& reqInt = 
       dynamic_cast<NOX::EpetraNew::Interface::Required&>(*Interfaces.back());
 
-    NOX::Epetra::Vector nox_soln( (*iter)->getSolution() );
+    NOX::Epetra::Vector nox_soln( (iter->second)->getSolution() );
 
     // Use this for analytic Matrix Fills
 #ifndef USE_FD
@@ -167,8 +183,8 @@ void Problem_Manager::registerComplete()
       nlParams->sublist("Direction").sublist("Newton").sublist("Linear Solver"),
       reqInt,
       jacInt,
-      (*iter)->getJacobian(),
-      (*iter)->getSolution()));
+      (iter->second)->getJacobian(),
+      (iter->second)->getSolution()));
 
     Groups.push_back( new NOX::EpetraNew::Group(
       nlParams->sublist("Printing"),
@@ -242,8 +258,8 @@ bool Problem_Manager::solve()
   assert( !Interfaces.empty() );
   assert( !Solvers.empty() );
 
-  vector<GenericEpetraProblem*>::iterator problemIter = Problems.begin();
-  vector<GenericEpetraProblem*>::iterator problemLast = Problems.end();
+  map<int, GenericEpetraProblem*>::iterator problemIter = Problems.begin();
+  map<int, GenericEpetraProblem*>::iterator problemLast = Problems.end();
 
   // These iterators would be needed in general, but we later specialize
   // for the case of a 2-problem system.
@@ -254,8 +270,8 @@ bool Problem_Manager::solve()
   // This is set up for more than 2 problems, but for now, we deal explicitly
   // with just 2.
 
-  GenericEpetraProblem &problemA = *Problems[0],
-                       &problemB = *Problems[1];
+  GenericEpetraProblem &problemA = *Problems.find(1)->second,
+                       &problemB = *Problems.find(2)->second;
 
   NOX::EpetraNew::Group &grpA = *Groups[0],
                         &grpB = *Groups[1];
@@ -361,8 +377,8 @@ bool Problem_Manager::solveMF()
   // This is set up for more than 2 problems, but for now, we deal explicitly
   // with just 2.
 
-  GenericEpetraProblem &problemA = *Problems[0],
-                       &problemB = *Problems[1];
+  GenericEpetraProblem &problemA = *Problems.find(1)->second,
+                       &problemB = *Problems.find(2)->second;
 
   NOX::EpetraNew::Group   &grpA = *Groups[0],
                           &grpB = *Groups[1];
@@ -521,8 +537,8 @@ bool Problem_Manager::evaluate(
   // Note that incoming matrix is no longer used.  Instead, the problem
   // should own the matrix to be filled into.
 
-  GenericEpetraProblem &problemA = *Problems[0],
-                       &problemB = *Problems[1];
+  GenericEpetraProblem &problemA = *Problems.find(1)->second,
+                       &problemB = *Problems.find(2)->second;
 
   NOX::EpetraNew::LinearSystemAztecOO &linearSystemA = *LinearSystems[0],
                                       &linearSystemB = *LinearSystems[1];
@@ -576,8 +592,8 @@ bool Problem_Manager::evaluate(
       printf("\n\tTime to fill Jacobian B --> %e sec. \n\n",
                   fillTime.ElapsedTime());
 
-    Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
-                    &graphB = (*Problems[1]).getGraph();
+    Epetra_CrsGraph &graphA = (*Problems.find(1)->second).getGraph(),
+                    &graphB = (*Problems.find(2)->second).getGraph();
 
     Epetra_CrsMatrix *matrixAPtr,
                      *matrixBPtr;
@@ -596,7 +612,7 @@ bool Problem_Manager::evaluate(
       // the same matrix wrapped in the group.  A safer alternative would be
       // to get this matrix from the group as above for a more general 
       // operator.
-      matrixAPtr = &(*Problems[0]).getJacobian();
+      matrixAPtr = &(*Problems.find(1)->second).getJacobian();
     else
     {
       if (MyPID==0)
@@ -614,7 +630,7 @@ bool Problem_Manager::evaluate(
       // the same matrix wrapped in the group.  A safer alternative would be
       // to get this matrix from the group as above for a more general 
       // operator.
-      matrixBPtr = &(*Problems[1]).getJacobian();
+      matrixBPtr = &(*Problems.find(2)->second).getJacobian();
     else
     {
       if (MyPID==0)
@@ -681,8 +697,8 @@ void Problem_Manager::generateGraph()
 
   // Here again, a general capability has been specialized to 2 problems
   
-  Epetra_CrsGraph &graphA = (*Problems[0]).getGraph(),
-                  &graphB = (*Problems[1]).getGraph();
+  Epetra_CrsGraph &graphA = (*Problems.find(1)->second).getGraph(),
+                  &graphB = (*Problems.find(2)->second).getGraph();
 
   int maxAllAGID = graphA.Map().MaxAllGID();
   int* indices = new int[maxAllAGID];
