@@ -40,7 +40,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = BlockDavidsonEpetraEx$(EXEEXT) $(am__EXEEXT_1)
+noinst_PROGRAMS = BlockDavidsonEpetraEx$(EXEEXT) \
+	BlockDavidsonEpetraExGen$(EXEEXT)
 subdir = example/BlockDavidson
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -68,7 +69,6 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_1 = BlockDavidsonEpetraExGen$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockDavidsonEpetraEx_OBJECTS =  \
 	BlockDavidsonEpetraEx-BlockDavidsonEpetraEx.$(OBJEXT)
@@ -224,7 +224,6 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = BlockDavidsonEpetraExGen
 BlockDavidsonEpetraEx_SOURCES = $(srcdir)/BlockDavidsonEpetraEx.cpp
 BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 
@@ -232,8 +231,6 @@ BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 AM_CPPFLAGS = \
 		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../belos/src -I$(top_builddir)/../belos/src \
-		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
 		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 
@@ -268,7 +265,6 @@ BlockDavidsonEpetraExGen_LDADD = \
         $(top_builddir)/src/libanasazi.a \
         $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

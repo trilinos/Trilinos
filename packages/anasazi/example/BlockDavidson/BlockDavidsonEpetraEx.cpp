@@ -35,7 +35,6 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_LAPACK.hpp"
-#include "BlockPCGSolver.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -62,8 +61,8 @@ int main(int argc, char *argv[]) {
 #endif
 
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
+
+	Anasazi::ReturnType returnCode = Anasazi::Ok;	
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.
@@ -114,7 +113,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]) );
 
 	// Compute coefficients for discrete convection-diffution operator
-	const double one = 1.0;
+	double one = 1.0;
 	std::vector<double> Values(4);
 	std::vector<int> Indices(4);
 	double rho = 0.0;  
@@ -221,7 +220,7 @@ int main(int argc, char *argv[]) {
 	info = A->TransformToLocal();
 	assert( info==0 );
 	A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-
+	//
 	//************************************
 	// Start the block Davidson iteration
 	//***********************************
@@ -251,17 +250,9 @@ int main(int argc, char *argv[]) {
 	Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(Map, blockSize) );
 	ivec->Random();
 
-	// Create preconditioner
-	int maxIterCG = 100;
-	double tolCG = 1e-6;
-	
-	Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = 
-	  Teuchos::rcp( new BlockPCGSolver(Comm, A.get(), tolCG, maxIterCG, 3) );
-	opStiffness->setPreconditioner( 0 );
-									 
 	// Create the eigenproblem.
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(opStiffness, ivec) );
+	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(A, ivec) );
 	
 	// Inform the eigenproblem that the operator A is symmetric
 	MyProblem->SetSymmetric(true); 
@@ -273,7 +264,6 @@ int main(int argc, char *argv[]) {
 	info = MyProblem->SetProblem();
 	if (info)
           cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-
 	
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
@@ -284,7 +274,11 @@ int main(int argc, char *argv[]) {
 	Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
-	MySolver.solve();
+	returnCode = MySolver.solve();
+
+	// If the solver returns a code other than OK, exit the example.
+	if (returnCode != Anasazi::Ok)
+	  return -1;
 
 	// Retrieve eigenvalues
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
@@ -296,7 +290,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::SerialDenseMatrix<int,double> T(nev, nev);
 	Epetra_MultiVector tempAevec( Map, nev );
 	std::vector<double> normA(nev);
-	cout<<endl<< "Actual Residuals"<<endl;
+	cout<<"Actual Residuals"<<endl;
 	cout<<"------------------------------------------------------"<<endl;
 	T.putScalar(0.0); 
 	for (i=0; i<nev; i++)
@@ -308,7 +302,7 @@ int main(int argc, char *argv[]) {
 	  normA[i] /= Teuchos::ScalarTraits<double>::magnitude((*evals)[i]);
 	
 	if (MyOM->doPrint()) {
-	  cout<<"Eigenvalue"<<"\t"<<"Direct Residual"<<endl;
+	  cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {
 	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;

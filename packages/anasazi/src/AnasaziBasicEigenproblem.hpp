@@ -107,16 +107,16 @@ namespace Anasazi {
     */
     void SetAuxVec( const Teuchos::RefCountPtr<MV>& AuxVec ) { _AuxVec = AuxVec; _isSet=false; };
 
-    //! Inform the eigenproblem of the number of eigenvalues (NEV) that are required.
+    //! Specify the number of eigenvalues (NEV) that are requested.
     void SetNEV( const int nev ){ _nev = nev; _isSet=false; };
 
-    //! Inform the eigenproblem that this problem is symmetric.
+    //! Specify the symmetry of this eigenproblem.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
     */
     void SetSymmetric( const bool isSym ){ _isSym = isSym; _isSet=false; };
     
-    //! Inform the eigenproblem that is has all the information it needs to define the eigenproblem.
+    //! Specify that this eigenproblem is fully defined.
     /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
      */
     ReturnType SetProblem();

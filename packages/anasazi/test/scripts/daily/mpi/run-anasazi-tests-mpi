@@ -63,5 +63,42 @@ if ($result != 0) {
     "\n ****** ModalSolverUtils MPI test PASSED ****** \n";
 }
 
+#************************************
+# Block Krylov-Schur test
+#************************************
+
+$result = system ($mpirun . "./BlockKrylovSchur/BlockKrylovSchur_test.exe");
+if ($result != 0) {
+  # If we failed run it again in verbose mode.
+  $success = 0;
+  printf
+    "\n\n*****************************************".
+    "\n*** Running BlockKrylovSchur test ****".
+    "\n*****************************************\n\n";
+  system ($mpirun . "./BlockKrylovSchur/BlockKrylovSchur_test.exe -v");
+} else {
+  printf 
+    "\n ****** BlockKrylovSchur MPI test PASSED ****** \n";
+}
+
+#************************************
+# Block Davidson test
+#************************************
+
+$result = system ($mpirun . "./BlockDavidson/BlockDavidson_test.exe");
+if ($result != 0) {
+  # If we failed run it again in verbose mode.
+  $success = 0;
+  printf
+    "\n\n*****************************************".
+    "\n*** Running BlockDavidson test ****".
+    "\n*****************************************\n\n";
+  system ($mpirun . "./BlockDavidson/BlockDavidson_test.exe -v");
+} else {
+  printf 
+    "\n ****** BlockDavidson MPI test PASSED ****** \n";
+}
+
+
 # Return 0 if all the tests were successful, else return -1.
 exit ($success ? 0 : -1 );

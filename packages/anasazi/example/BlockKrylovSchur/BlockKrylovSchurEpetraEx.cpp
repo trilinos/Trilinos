@@ -50,6 +50,7 @@
 int main(int argc, char *argv[]) {
 	int i, info;
 	double zero = 0.0;
+	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
 
@@ -65,8 +66,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.
@@ -236,11 +235,11 @@ int main(int argc, char *argv[]) {
 	//  Variables used for the Block Krylov Schur Method
 	//	  
 	int nev = 4;
-	int blockSize = 2;
-	int maxBlocks = 15;
+	int blockSize = 5;
+	int maxBlocks = 8;
 	int maxRestarts = 300;
 	int step = 1;
-	double tol = 1e-8;
+	double tol = 1e-6;
 	string which="SM";	
 	//
 	// Create parameter list to pass into solver
@@ -289,7 +288,11 @@ int main(int argc, char *argv[]) {
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
-	MySolver.solve();
+	returnCode = MySolver.solve();
+	
+	// Check that the solver returned OK, if not exit example
+	if (returnCode != Anasazi::Ok)
+    	  return -1;
 
 	// Retrieve eigenvalues
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();

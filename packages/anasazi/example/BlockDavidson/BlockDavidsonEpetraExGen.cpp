@@ -26,308 +26,157 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This example computes the eigenvalues of smallest magnitude of the discretized 1D Laplacian
-//  equation using the block Davidson method.  This problem shows the construction of an 
-//  inner-outer iteration using Belos as the linear solver within Anasazi.  
-//  An Ifpack preconditioner is constructed to precondition the linear solver.  
+// This example computes the smallest eigenvalues of the discretized 2D Laplacian
+// operator using the block Davidson method.  This problem is discretized using 
+// finite elements, resulting in a generalized eigenvalue problem of the form Ax = Mx\lambda.
 //
-
-#include "AnasaziBlockDavidson.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
+//
 #include "AnasaziConfigDefs.hpp"
+#include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziEpetraAdapter.hpp"
-#include "Ifpack_CrsIct.h"
+#include "AnasaziBlockDavidson.hpp"
 #include "Epetra_CrsMatrix.h"
-
-#include "BelosPetraInterface.hpp"
-#include "BelosEpetraOperator.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestCombo.hpp"
-
-#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Epetra_Vector.h"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#include <mpi.h>
 #else
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
 
-int main(int argc, char *argv[]) {
-	int i, info;
+#include "ModeLaplace2DQ2.h"
 
+int main(int argc, char *argv[]) 
+{
+  int i;
+  int info = 0;
+  
 #ifdef EPETRA_MPI
-
-	// Initialize MPI
-	MPI_Init(&argc,&argv);
-
+  
+  // Initialize MPI
+  MPI_Init(&argc,&argv);
+  
 #endif
-
+  
 #ifdef EPETRA_MPI
-	Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
-	Epetra_SerialComm Comm;
+  Epetra_SerialComm Comm;
 #endif
+  
+  int MyPID = Comm.MyPID();
+  
+  Anasazi::ReturnType returnCode = Anasazi::Ok;  
 
-	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
+  typedef Epetra_MultiVector MV;
+  typedef Epetra_Operator OP;
 
-	bool verbose = (MyPID==0);
+  // Number of dimension of the domain
+  int space_dim = 2;
 
-        //  Dimension of the matrix
-        int NumGlobalElements = 1000;
+  // Size of each of the dimensions of the domain
+  std::vector<double> brick_dim( space_dim );
+  brick_dim[0] = 1.0;
+  brick_dim[1] = 1.0;
 
-        // Construct a Map that puts approximately the same number of
-        // equations on each processor.
+  // Number of elements in each of the dimensions of the domain
+  std::vector<int> elements( space_dim );
+  elements[0] = 10;
+  elements[1] = 10;
+  
+  // Create default output manager 
+  Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
 
-        Epetra_Map Map(NumGlobalElements, 0, Comm);
+  // Set verbosity level
+  MyOM->SetVerbosity( Anasazi::FinalSummary );
 
-        // Get update list and number of local equations from newly created Map.
-        
-        int NumMyElements = Map.NumMyElements();
+  // Create problem
+  Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace2DQ2(Comm, brick_dim[0], elements[0], brick_dim[1], elements[1]) );
+  
+  // Get the stiffness and mass matrices
+  Teuchos::RefCountPtr<Epetra_Operator> K = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getStiffness()), false );
+  Teuchos::RefCountPtr<Epetra_Operator> M = Teuchos::rcp( const_cast<Epetra_Operator *>(testCase->getMass()), false );
+  
+  // Eigensolver parameters
+  int nev = 10;
+  int blockSize = 5;
+  int maxBlocks = 8;
+  int maxIters = 500;
+  double tol = 1.0e-6;
+  //
+  // Create parameter list to pass into solver
+  //
+  Teuchos::ParameterList MyPL;
+  MyPL.set( "Block Size", blockSize );
+  MyPL.set( "Max Blocks", maxBlocks );
+  MyPL.set( "Max Iters", maxIters );
+  MyPL.set( "Tol", tol );
+  
+  // Create eigenproblem
 
-	std::vector<int> MyGlobalElements(NumMyElements);
-        Map.MyGlobalElements(&MyGlobalElements[0]);
+  Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
+  ivec->Random();
+  
+  Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+  
+  // Inform the eigenproblem that the operator A is symmetric
+  MyProblem->SetSymmetric(true);
+  
+  // Set the number of eigenvalues requested and the blocksize the solver should use
+  MyProblem->SetNEV( nev );
+  
+  // Inform the eigenproblem that you are finishing passing it information
+  info = MyProblem->SetProblem();
+  if (info)
+    cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
+  
+  // Create the eigensolver
+  
+  Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
+  
+  // Solve the problem to the specified tolerances or length
 
-        // Create an integer vector NumNz that is used to build the Petra Matrix.
-        // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
-        // on this processor
-	std::vector<int> NumNz(NumMyElements);
+  returnCode = MySolver.solve();
 
-        // We are building two tridiagonal matrices
-        // So we need 2 off-diagonal terms (except for the first and last equation)
+  // Check that the solver returned Ok, if not exit example
+  if (returnCode != Anasazi::Ok)
+    return -1;
+  
+  // Get the eigenvalues and eigenvectors from the eigenproblem
+  Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
+  Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
+  
+  //  if (verbose)
+  //info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+  
+  // Compute the direct residual
+  std::vector<double> normV( evecs->NumVectors() );
+  Teuchos::SerialDenseMatrix<int,double> T(evecs->NumVectors(), evecs->NumVectors());
+  for (int i=0; i<evecs->NumVectors(); i++)
+    T(i,i) = (*evals)[i];
+  Epetra_MultiVector Kvec( K->OperatorDomainMap(), evecs->NumVectors() );
+  K->Apply( *evecs, Kvec );  
+  Epetra_MultiVector Mvec( M->OperatorDomainMap(), evecs->NumVectors() );
+  M->Apply( *evecs, Mvec );  
+  Anasazi::MultiVecTraits<double,Epetra_MultiVector>::MvTimesMatAddMv( -1.0, Mvec, T, 1.0, Kvec );
+  info = Kvec.Norm2( &normV[0] );
+  assert( info==0 );
 
-        for (i=0; i<NumMyElements; i++) {
-                if (MyGlobalElements[i]==0 || MyGlobalElements[i] == NumGlobalElements-1)
-                        NumNz[i] = 2;
-                else
-                        NumNz[i] = 3;  
-        }
-
-        // Create both the stiffness and mass Epetra_Matrix        
-        Teuchos::RefCountPtr<Epetra_CrsMatrix> A = 
-	  Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-        Teuchos::RefCountPtr<Epetra_CrsMatrix> B = 
-	  Teuchos::rcp( new Epetra_CrsMatrix(Copy, Map, &NumNz[0]));
-
-        const double one = 1.0;
-        std::vector<double> ValuesA(2);
-        std::vector<double> ValuesB(2);
-	std::vector<int> Indices(2);
-
-	// Set values of stiffness matrix.
-        double h = one /(NumGlobalElements + one);
-        ValuesA[0] = -one/h; ValuesA[1] = -one/h;
-        double diagA = 2.0/h;
-
-	// Set values of mass matrix.
-        h = one /(6.0*(NumGlobalElements + one));
-        ValuesB[0] = one/h; ValuesB[1] = one/h;
-        double diagB = 4.0/h;
-	int NumEntries;
-
-        for (i=0; i<NumMyElements; i++)
-        {
-                if (MyGlobalElements[i]==0)
-                {
-                        Indices[0] = 1;
-                        NumEntries = 1;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[1], &Indices[0]);
-			assert( info==0 );
-                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[1], &Indices[0]);
-			assert( info==0 );
-                }
-                else if (MyGlobalElements[i] == NumGlobalElements-1)
-                {
-                        Indices[0] = NumGlobalElements-2;
-                        NumEntries = 1;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
-			assert( info==0 );
-                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
-			assert( info==0 );
-                }
-                else
-                {
-                        Indices[0] = MyGlobalElements[i]-1;
-                        Indices[1] = MyGlobalElements[i]+1;
-                        NumEntries = 2;
-                        info = A->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesA[0], &Indices[0]);
-			assert( info==0 );
-                        info = B->InsertGlobalValues(MyGlobalElements[i], NumEntries, &ValuesB[0], &Indices[0]);
-			assert( info==0 );
-                }
-                // Put in the diagonal entry
-                info = A->InsertGlobalValues(MyGlobalElements[i], 1, &diagA, &MyGlobalElements[i]);
-		assert( info==0 );
-                info = B->InsertGlobalValues(MyGlobalElements[i], 1, &diagB, &MyGlobalElements[i]);
-		assert( info==0 );
-
-        }
-         
-        // Finish up
-        info = A->TransformToLocal();
-	assert( info==0 );
-	info = A->OptimizeStorage();
-	assert( info==0 );
-        A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-        info = B->TransformToLocal();
-	assert( info==0 );
-	info = B->OptimizeStorage();
-	assert( info==0 );
-        B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-
-	//
-        //*****Select the Preconditioner*****
-        //
-        if (verbose) cout << endl << endl;
-        if (verbose) cout << "Constructing ICT preconditioner" << endl;
-        int Lfill = 0;
-        if (argc > 2) Lfill = atoi(argv[2]);
-        if (verbose) cout << "Using Lfill = " << Lfill << endl;
-        int Overlap = 0;
-        if (argc > 3) Overlap = atoi(argv[3]);
-        if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
-        double Athresh = 0.0;
-        if (argc > 4) Athresh = atof(argv[4]);
-        if (verbose) cout << "Using Absolute Threshold Value of " << Athresh << endl;
-        double Rthresh = 1.0;
-        if (argc >5) Rthresh = atof(argv[5]);
-        if (verbose) cout << "Using Relative Threshold Value of " << Rthresh << endl;
-        double dropTol = 1.0e-6;
-        //
-        Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
-        //
-        if (Lfill > -1) {
-                ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
-                ICT->SetAbsoluteThreshold(Athresh);
-                ICT->SetRelativeThreshold(Rthresh);
-                int initerr = ICT->InitValues(*A);
-                if (initerr != 0) cout << "InitValues error = " << initerr;
-                assert(ICT->Factor() == 0);
-        } 
-        //
-        bool transA = false;
-        double Cond_Est;
-        ICT->Condest(transA, Cond_Est);
-        if (verbose) {
-                cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-                cout << endl;
-        } 
-	//
-	//*******************************************************
-	// Set up Belos Block GMRES operator for inner iteration
-	//*******************************************************
-	//
-	int blockSize = 3;  // blocksize used by linear solver and eigensolver [ not required to be the same ]
-        int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
-        double btol = 1.0e-7;  // relative residual tolerance
-        //
-        // Create the Belos::LinearProblemManager
-        //
-	Belos::PetraMat<double> BelosMat(A.get());
-        Belos::PetraPrec<double> BelosPrec(ICT.get());
-	Belos::LinearProblemManager<double> My_LP;
-	My_LP.SetOperator( &BelosMat );
-	My_LP.SetLeftPrec( &BelosPrec );
-	My_LP.SetBlockSize( blockSize );
-	//
-	// Create the Belos::StatusTest
-	//
-	Belos::StatusTestMaxIters<double> test1( maxits );
-	Belos::StatusTestResNorm<double> test2( btol );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-	//
-	// Create the Belos::OutputManager
-	//
-	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 2 );
-	//
-	// Create the ParameterList for the Belos Operator
-	// 
-	Teuchos::ParameterList My_List;
-	My_List.set( "Solver", "BlockCG" );
-	My_List.set( "MaxIters", maxits );
-	//
-	// Create the Belos::EpetraOperator
-	//
-	Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp =
-	  Teuchos::rcp( new Belos::EpetraOperator<double>( My_LP, My_Test, My_OM, My_List ) );
-	//
-	//************************************
-	// Start the block Arnoldi iteration
-	//************************************
-	//
-	//  Variables used for the Block Arnoldi Method
-	//
-	int nev = 10;
-	int maxBlocks = 20;
-	int maxIters = 300;
-	double tol = 1.0e-6;
-	//
-	// Create parameter list to pass into solver
-	//
-	Teuchos::ParameterList MyPL;
-	MyPL.set( "Block Size", blockSize );
-	MyPL.set( "Max Blocks", maxBlocks );
-	MyPL.set( "Max Iters", maxIters );
-	MyPL.set( "Tol", tol );
-
-	typedef Anasazi::MultiVec<double> MV;
-	typedef Anasazi::Operator<double> OP;
-
-	// Create a AnasaziEpetraMultiVec for an initial vector to start the solver.
-	// Note:  This needs to have the same number of columns as the blocksize.
-	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> iVec = Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
-	iVec->MvRandom();
-    
-	// Create Anasazi::EpetraOps to define the problem
-	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
-	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
-	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B) );	
-
-	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
-	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, iVec) );
-	
-	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
-	MyProblem->SetSymmetric(true);
-	
-	// Set the number of eigenvalues requested 
-	MyProblem->SetNEV( nev );
-	
-        // Inform the eigenproblem that you are finishing passing it information
-        info = MyProblem->SetProblem();
-	if (info)
-	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;	
-
-        // Create an output manager to handle the I/O from the solver
-        Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
-	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-        MyOM->SetVerbosity( Anasazi::FinalSummary );
-	
-	// Initialize the Block Davidson solver
-	Anasazi::BlockDavidson<double,MV,OP> MySolver(MyProblem, MyOM, MyPL);
-	
-	// solve the problem to the specified tolerances or length
-	MySolver.solve();
-	
-	// obtain eigenvectors directly
-	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
-	Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec *>(MyProblem->GetEvecs().get());
-
-	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
-	Anasazi::EpetraMultiVec tempvec(Map, evecs->GetNumberVecs());	
-	A->Apply( *evecs, tempvec );
-	tempvec.MvTransMv( 1.0, *evecs, dmatr );
-
-	double compeval = 0.0;
-	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-	cout<<"Real Part \t Rayleigh Error"<<endl;
-	for (i=0; i<nev; i++) {
-		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
-	}
-
-	return 0;
+  if (MyPID == 0) {
+    cout<<"Actual Residuals"<<endl;
+    cout<<"------------------------------------------------------"<<endl;
+    cout<<"Eigenvalue"<<"\t\t"<<"Direct Residual"<<endl;
+    cout<<"------------------------------------------------------"<<endl;
+    for (i=0; i<nev; i++) {
+      cout<< (*evals)[i] << "\t\t"<< normV[i]/(*evals)[i] << endl;
+    }
+    cout<<"------------------------------------------------------"<<endl;
+  }
+  //
+  // Default return value
+  //
+  return 0;
 }

@@ -58,6 +58,7 @@ int main(int argc, char *argv[]) {
 	int *bindx=0, *update=0, *col_inds=0;
 	double *val=0, *row_vals=0;
 	double zero = 0.0;
+	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI	
 	// Initialize MPI	
@@ -194,13 +195,17 @@ int main(int argc, char *argv[]) {
 	//
         Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
-        // solve the problem to the specified tolerances or length
-        MySolver.solve();
+        // Solve the problem to the specified tolerances or length
+        returnCode = MySolver.solve();
 	
-        // obtain results directly
+	// Check that the solver returned OK, if not exit example
+	if (returnCode != Anasazi::Ok)
+	  return -1;
+
+        // Obtain results directly
         Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
 	
-	// retrieve eigenvectors
+	// Retrieve eigenvectors
 	// The size of the eigenvector storage is nev + block, but the eigenvectors are stored in the first nev vectors.
         Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
         Teuchos::RefCountPtr<Epetra_MultiVector> evecr, eveci;

@@ -99,13 +99,13 @@ namespace Anasazi {
     //! The number of eigenvalues (NEV) that are requested.
     virtual void SetNEV( const int nev ) = 0;
 
-    //! Inform the eigenproblem that this problem is symmetric.
+    //! Specify the symmetry of the eigenproblem.
     /*! This knowledge may allow the solver to take advantage of the eigenproblems' symmetry.
       Some computational work can be avoided by setting this properly.
     */
     virtual void SetSymmetric( const bool isSym ) = 0;
     
-    //! Inform the eigenproblem that it is has all the information it needs to define the eigenproblem.
+    //! Specify that this eigenproblem is fully defined.
     /*! \note The user MUST call this routine before they send the eigenproblem to any solver!
      */
     virtual ReturnType SetProblem() = 0;

@@ -308,7 +308,7 @@ namespace Anasazi {
 	_os <<"------------------------------------------------------"<<endl;
 	_os <<" "<<endl;
       }
-      _os <<"******************************************************"<<endl;
+      _os <<"******************************************************"<<endl << endl;;
     }	
   }
   
@@ -318,6 +318,14 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType BlockKrylovSchur<ScalarType,MV,OP>::solve () 
   {
+    //
+    // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
+    //
+    if ( !_problem->IsProblemSet() ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"<< endl;
+      return Failed;
+    }
     //
     // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
     //
@@ -330,7 +338,9 @@ namespace Anasazi {
     }
 
     int dim = MVT::GetVecLength( *ivec );
-    
+    //
+    // Check that the maximum number of blocks for the eigensolver is a positive number
+    //    
     if ( _maxBlocks<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : maxBlocks = "<< _maxBlocks <<" [ should be positive number ] " << endl;
@@ -343,7 +353,29 @@ namespace Anasazi {
 	    << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     } 
-
+    //
+    // Check that the Krylov subspace is larger than the number of eigenvalues requested
+    //
+    if ( _maxBlocks*_blockSize < _nev ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    } 
+    //
+    // If the Krylov subspace dimension is the same size as the number of requested eigenvalues,
+    // then we must be computing all of them.
+    //
+    if ( (_maxBlocks*_blockSize == _nev) && (_nev != dim) ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    }
+    //
+    // If the Krylov subspace dimension is larger than the dimension of the operator, reset
+    // the maximum number of blocks accordingly.
+    //    
     if (_maxBlocks*_blockSize > dim ) {
       if (_om->isVerbosityAndPrint( Anasazi::Warning ))
 	_os << "WARNING : Krylov subspace dimension (maxBlocks*blockSize) = "<< _maxBlocks*_blockSize 
@@ -362,7 +394,9 @@ namespace Anasazi {
 	    << " [ should be greater than "<< _nev << " ] " << endl;
       return Failed;
     }
-    
+    //
+    // Check that the step size for the eigensolver is a positive number.
+    //
     if ( _stepSize<=0 ) {
       if (_om->isVerbosityAndPrint( Anasazi::Error )) 
 	_os << "ERROR : stepSize = "<< _stepSize <<" [ should be positive number ] " << endl;
@@ -386,7 +420,29 @@ namespace Anasazi {
     _maxoffset = (_maxBlocks-_nevblock)/2;
     _totallength = _blockSize*_maxBlocks;
     //
-    // Make room for theArnoldi vectors and F.
+    // Reinitialize internal data and pointers, prepare for solve
+    // 
+    _numRestarts=0; _iter=0; _jstart=0; _jend=0; 
+    _isdecompcurrent=false; _isevecscurrent=false; _exit_flg=false; _dep_flg=false;
+    _schurerror=1.0; 
+    //
+    // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
+    // NOTE: An additional block is kept if _nev is a perfect multiple of _blockSize because of the
+    // potential presence of complex eigenvalue pairs.  Additional blocks can be retained, up to
+    // _maxoffset if the block ends with one eigenvalue of a complex conjugate pair.
+    //
+    _nevblock = _nev/_blockSize + 1;
+    //
+    // Use alternate settings if the number of eigenvalues requested is equal to the dimension
+    if ( _nev == dim ) {
+      _nevblock = _nev/_blockSize;  
+      if (_nev%_blockSize) 
+	_nevblock++;    
+    }
+    _maxoffset = (_maxBlocks-_nevblock)/2;
+    _totallength = _blockSize*_maxBlocks;
+    //
+    // Make room for the Arnoldi vectors and F.
     //
     _basisvecs = MVT::Clone( *ivec, (_maxBlocks+1)*_blockSize );
     //
@@ -406,10 +462,9 @@ namespace Anasazi {
       (*_ritzresiduals)[i] = one;
     }			
     //
-    //  Set the tolerances for block orthogonality
+    // Set the tolerances for block orthogonality
     //
     SetBlkTols();  
-    //int rem_iters = _maxBlocks+_restarts*(_maxBlocks-_nevblock)-_iter;
     //
     // Right now the solver will just go the remaining iterations, but this design will allow
     // for checking of the residuals every so many iterations, independent of restarts.
@@ -426,6 +481,19 @@ namespace Anasazi {
     //
     if (_om->isVerbosity( FinalSummary ))
       currentStatus();
+
+    // Return Failed if we did not meet the specified tolerance
+    if (_schurerror > _residual_tolerance) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Specified residual tolerance ( "<< _residual_tolerance<<" ) was not reached"<< endl;
+      return Failed;
+    }
+
+    // Output warning if numerical breakdown was detected in orthogonalization
+    if (_exit_flg) {
+      if (_om->isVerbosityAndPrint( Anasazi::Warning )) 
+	_os << "WARNING : Numerical breakdown detected in Anasazi::BlockKrylovSchur"<< endl;
+    }
 
     return Ok;
   }

@@ -228,6 +228,61 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   ReturnType LOBPCG<ScalarType,MV,OP>::solve () 
   {
+    //
+    // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
+    //
+    if ( !_problem->IsProblemSet() ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"<< endl;
+      return Failed;
+    }
+    //
+    // Check the Anasazi::Eigenproblem is symmetric, if not, return failed.
+    //
+    if ( !_problem->IsSymmetric() ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Anasazi::Eigenproblem is not symmetric" << endl;
+      return Failed;
+    }
+    //
+    // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
+    //
+    Teuchos::RefCountPtr<MV> iVec = _problem->GetInitVec();
+    //
+    if ( iVec.get() == 0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
+      return Failed;
+    }
+
+    int dim = MVT::GetVecLength( *iVec );
+    //
+    // Check that the maximum number of iterations is a positive number
+    //    
+    if ( _maxIter<=0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : maxIter = "<< _maxIter <<" [ should be positive number ] " << endl;
+      return Failed;
+    } 
+    //
+    // If the search subspace dimension is larger than the dimension of the operator, reset
+    // the maximum number of blocks accordingly.
+    //    
+    if ( _blockSize > dim ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Search space dimension (blockSize) = "<< _blockSize 
+	    <<" [ should not be greater than " << dim << " ] " << endl;
+      return Failed;
+    }
+    //
+    // Reinitialize internal data and pointers, preparse for solve
+    //
+    _numRestarts = 0; 
+    _iter = 0; 
+    _knownEV = 0;
+    //
+    // Necessary variables
+    //
     int i, j;
     int info, nb;
     int bStart = 0, offSet = 0;
@@ -238,10 +293,6 @@ namespace Anasazi {
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
     Teuchos::LAPACK<int,ScalarType> lapack;
-    //
-    // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
-    //
-    Teuchos::RefCountPtr<MV> iVec = _problem->GetInitVec();
     //
     // Internal storage for eigensolver
     //

@@ -62,6 +62,7 @@ int main(int argc, char *argv[]) {
 	const double one = 1.0;
 	const double zero = 0.0;
 	Teuchos::LAPACK<int,double> lapack;
+	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
 
@@ -78,8 +79,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
 	//  Dimension of the matrix
 	int m = 500;
@@ -179,8 +178,7 @@ int main(int argc, char *argv[]) {
 	// Inform the eigenproblem that you are finishing passing it information
 	info = MyProblem->SetProblem();
 	if (info)
-	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
-       
+	  cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;       
 
 	// Create a sorting manager to handle the sorting of eigenvalues in the solver
 	Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
@@ -195,7 +193,11 @@ int main(int argc, char *argv[]) {
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
 	// Solve the problem to the specified tolerances or length
-	MySolver.solve();
+	returnCode = MySolver.solve();
+
+	// Check that the solver returned OK, if not exit example
+	if (returnCode != Anasazi::Ok)
+	  return -1;
 
 	// Obtain results directly
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();

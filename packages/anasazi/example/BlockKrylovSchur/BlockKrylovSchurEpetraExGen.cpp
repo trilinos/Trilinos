@@ -27,7 +27,7 @@
 // @HEADER
 //
 //  This example computes the eigenvalues of smallest magnitude of the discretized 1D Laplacian
-//  equation using the block Implicitly-Restarted Arnoldi method.  This problem shows the 
+//  operator using the block Implicitly-Restarted Arnoldi method.  This problem shows the 
 //  construction of an inner-outer iteration using Belos as the linear solver within Anasazi.  
 //  An Ifpack preconditioner is constructed to precondition the linear solver.  This operator 
 //  is discretized using finite elements and constructed as an Epetra matrix, then passed into 
@@ -59,6 +59,7 @@
 
 int main(int argc, char *argv[]) {
 	int i, info;
+	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
 
@@ -74,8 +75,6 @@ int main(int argc, char *argv[]) {
 #endif
 
 	int MyPID = Comm.MyPID();
-	int NumProc = Comm.NumProc();
-	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
 	bool verbose = (MyPID==0);
 
@@ -289,7 +288,7 @@ int main(int argc, char *argv[]) {
 	// Call the ctor that calls the petra ctor for a matrix
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
-	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B) );	
+	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B, false) );	
 
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
 	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
@@ -317,13 +316,17 @@ int main(int argc, char *argv[]) {
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, MyPL);
 	
-	// solve the problem to the specified tolerances or length
-	MySolver.solve();
+	// Solve the problem to the specified tolerances or length
+	returnCode = MySolver.solve();
+
+	// Check that the solver returned OK, if not exit example
+	if (returnCode != Anasazi::Ok)
+	  return -1;
 	
-	// obtain eigenvectors directly
+	// Obtain eigenvectors directly
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
 
-	// retrieve real and imaginary parts of the eigenvectors
+	// Retrieve real and imaginary parts of the eigenvectors
 	// The size of the eigenvector storage is nev.
 	// The real part of the eigenvectors is stored in the first nev vectors.
 	// The imaginary part of the eigenvectors is stored in the second nev vectors.

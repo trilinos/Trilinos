@@ -67,7 +67,20 @@ namespace Anasazi {
     //! Destructor
     virtual ~BasicSort() {};
 
-
+    //! Set sort type
+    /**
+       @param which [in] The eigenvalues of interest for this eigenproblem.
+       <ul>
+       <li> "LM" - Largest Magnitude [ default ]
+       <li> "SM" - Smallest Magnitude
+       <li> "LR" - Largest Real 
+       <li> "SR" - Smallest Real 
+       <li> "LI" - Largest Imaginary 
+       <li> "SI" - Smallest Imaginary 
+       </ul>
+    */
+    void SetSortType( const string which ) { _which = which; };
+    
     //! Sort the vector of eigenvalues with respect to the chosen sorting type, optionally returning the permutation vector.
     /**
        @param solver [in] Eigensolver that is calling the sorting routine

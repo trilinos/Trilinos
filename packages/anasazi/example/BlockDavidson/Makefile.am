@@ -3,13 +3,7 @@
 
 EXEEXT = .exe
 
-if BUILD_BELOS
-if BUILD_IFPACK
-ANASAZI_BIRAM_EX_SI_IFPACK = BlockDavidsonEpetraExGen
-endif
-endif
-
-noinst_PROGRAMS = BlockDavidsonEpetraEx $(ANASAZI_BIRAM_EX_HB) $(ANASAZI_BIRAM_EX_SI_IFPACK) 
+noinst_PROGRAMS = BlockDavidsonEpetraEx BlockDavidsonEpetraExGen
 
 BlockDavidsonEpetraEx_SOURCES = $(srcdir)/BlockDavidsonEpetraEx.cpp
 
@@ -20,8 +14,6 @@ BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 
 AM_CPPFLAGS = \
 		-I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../belos/src -I$(top_builddir)/../belos/src \
-		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
 		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
@@ -55,7 +47,6 @@ BlockDavidsonEpetraExGen_LDADD = \
         $(top_builddir)/src/libanasazi.a \
         $(top_builddir)/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

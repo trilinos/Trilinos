@@ -385,11 +385,11 @@ namespace Anasazi {
     
     //@{ \name Operator application method.
     
-    /*! \brief This method takes the Anasazi::MultiVec \c x and
-      applies the operator to it resulting in the Anasazi::MultiVec \c y.
+    /*! \brief This method takes the Anasazi::MultiVec \c X and
+      applies the operator to it resulting in the Anasazi::MultiVec \c Y.
     */
-    ReturnType Apply ( const MultiVec<double>& x, 
-		       MultiVec<double>& y ) const;
+    ReturnType Apply ( const MultiVec<double>& X, 
+		       MultiVec<double>& Y ) const;
     //@} 
     
   private:
@@ -415,19 +415,19 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraOp::Apply ( const MultiVec<double>& x, 
-			       MultiVec<double>& y ) const 
+  ReturnType EpetraOp::Apply ( const MultiVec<double>& X, 
+			       MultiVec<double>& Y ) const 
   {
     //
-    // This standard operator computes y = A*x
+    // This standard operator computes Y = A*X
     //
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
+    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     
-    assert( vec_x!=NULL && vec_y!=NULL );
+    assert( vec_X!=NULL && vec_Y!=NULL );
 
-    int info = Epetra_Op->Apply( *vec_x, *vec_y );
+    int info = Epetra_Op->Apply( *vec_X, *vec_Y );
     
     if (info==0) { 
       return Ok; 
@@ -439,14 +439,73 @@ namespace Anasazi {
   ///////////////////////////////////////////////////////////////
   //--------template class AnasaziEpetraGenOp---------------------
   
-  class EpetraGenOp : public virtual Operator<double> {
+  /*! \class EpetraGenOp
+    \brief Adapter class for creating an operators often used in solving generalized eigenproblems.
+
+    This class will apply the operation \f$A^{-1}M\f$ [default] or \f$AM\f$, for the \c Apply method of the
+    Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraGenOp operator is useful when spectral 
+    transformations are used within eigensolvers.  For instance, \f$A^{-1}M\f$ is a shift and invert 
+    spectral transformation commonly used with Anasazi::BlockKrylovSchur to compute the smallest-magnitude
+    eigenvalues for the eigenproblem \f$Ax = \lambda Mx\f$.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
+  class EpetraGenOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
+    //! Basic constructor for applying operator \f$A^{-1}M\f$ [default] or \f$AM\f$.
+    /*! If \c isAInverse is true this operator will apply \f$A^{-1}M\f$, else
+      it will apply \f$AM\f$.
+    */
     EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp, 
-                const Teuchos::RefCountPtr<Epetra_Operator> &MOp );
+                const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
+		bool isAInverse = true );
+
+    //! Destructor
     ~EpetraGenOp();
-    ReturnType Apply ( const MultiVec<double>& x, 
-		       MultiVec<double>& y ) const;
+    
+    //! Apply method [inherited from Anasazi::Operator class]
+    /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
+     */
+    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+
+    //! Apply method [inherited from Epetra_Operator class]
+    /*! This method will apply \f$A^{-1}M\f$ or \f$AM\f$ to \c X, returning \c Y.
+     */
+    int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
+
+    //! Apply inverse method [inherited from Epetra_Operator class]
+    /*! This method will apply \f$(A^{-1}M)^{-1}\f$ or \f$(AM)^{-1}\f$ to \c X, returning \c Y.
+     */
+    int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
+
+    //! Returns a character string describing the operator.
+    const char* Label() const { return "Epetra_Operator applying A^{-1}M"; };
+    
+    //! Returns the current UseTranspose setting [always false for this operator].
+    bool UseTranspose() const { return (false); };
+
+    //! If set true, the transpose of this operator will be applied [not functional for this operator].
+    int SetUseTranspose(bool UseTranspose) { return 0; };
+    
+    //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
+    bool HasNormInf() const { return (false); };
+    
+    //! Returns the infinity norm of the global matrix [not functional for this operator].
+    double NormInf() const  { return (-1.0); };
+    
+    //! Returns the Epetra_Comm communicator associated with this operator.
+    const Epetra_Comm& Comm() const { return Epetra_AOp->Comm(); };
+
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map& OperatorDomainMap() const { return Epetra_AOp->OperatorDomainMap(); };
+
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map& OperatorRangeMap() const { return Epetra_AOp->OperatorRangeMap(); };
+
   private:
+    bool isAInverse;
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_AOp;
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_MOp;
   };
@@ -460,40 +519,42 @@ namespace Anasazi {
   //
   
   EpetraGenOp::EpetraGenOp(const Teuchos::RefCountPtr<Epetra_Operator> &AOp,
-			   const Teuchos::RefCountPtr<Epetra_Operator> &MOp) 
-    : Epetra_AOp(AOp), Epetra_MOp(MOp) 
+			   const Teuchos::RefCountPtr<Epetra_Operator> &MOp,
+			   bool isAInverse_) 
+    : Epetra_AOp(AOp), Epetra_MOp(MOp), isAInverse( isAInverse_ ) 
   {
   }
-  
-  
+    
   EpetraGenOp::~EpetraGenOp() 
   {
   }
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraGenOp::Apply ( const MultiVec<double>& x, 
-				  MultiVec<double>& y ) const 
+  ReturnType EpetraGenOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
   {
     //
-    // This generalized operator computes y = A*M*x of y = (A*M)^T*x
+    // This generalized operator computes Y = A^{-1}*M*X
     //
     int info=0;
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-    Epetra_MultiVector temp_y(*vec_y); 
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
+    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
+    Epetra_MultiVector temp_Y(*vec_Y); 
     
-    assert( vec_x!=NULL && vec_y!=NULL );
+    assert( vec_X!=NULL && vec_Y!=NULL );
     //
     // Need to cast away constness because the member function Apply is not declared const.  
     // Change the transpose setting for the operator if necessary and change it back when done.
     //
     // Apply M
-    info = Epetra_MOp->Apply( *vec_x, temp_y );
+    info = Epetra_MOp->Apply( *vec_X, temp_Y );
     assert(info==0);
-    // Apply A
-    info = Epetra_AOp->Apply( temp_y, *vec_y );
+    // Apply A or A^{-1}
+    if (isAInverse) 
+      info = Epetra_AOp->ApplyInverse( temp_Y, *vec_Y );
+    else 
+      info = Epetra_AOp->Apply( temp_Y, *vec_Y );
     if (info==0) { 
       return Ok; 
     } else { 
@@ -501,14 +562,114 @@ namespace Anasazi {
     }	
   }
   
+  int EpetraGenOp::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+  {
+    //
+    // This generalized operator computes Y = A^{-1}*M*X 
+    //
+    int info=0;
+    Epetra_MultiVector temp_Y(OperatorDomainMap(), Y.NumVectors()); 
+    
+    // Apply M
+    info = Epetra_MOp->Apply( X, temp_Y );
+    if (info!=0) return info;
+    
+    // Apply A or A^{-1}
+    if (isAInverse)
+      info = Epetra_AOp->ApplyInverse( temp_Y, Y );
+    else
+      info = Epetra_AOp->Apply( temp_Y, Y );
+
+    return info;
+  }
+  
+  int EpetraGenOp::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+  {
+    //
+    // This generalized operator computes Y = M^{-1}*A*X 
+    //
+    int info=0;
+    Epetra_MultiVector temp_Y(OperatorDomainMap(), Y.NumVectors()); 
+    
+    // Apply A or A^{-1}
+    if (isAInverse)
+      info = Epetra_AOp->Apply( X, temp_Y );
+    else 
+      info = Epetra_AOp->ApplyInverse( X, temp_Y );
+
+    if (info!=0) return info;
+    
+    // Apply M^{-1}
+    info = Epetra_MOp->ApplyInverse( temp_Y, Y );
+    
+    return info;
+  }
+  
   ///////////////////////////////////////////////////////////////
   //--------template class AnasaziEpetraSymOp---------------------
-  class EpetraSymOp : public virtual Operator<double> {
+
+  /*! \class EpetraSymOp
+    \brief Adapter class for creating a symmetric operator from an Epetra_Operator.
+
+    This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the
+    Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraSymOp operator is useful when trying to compute
+    a few singular values of the operator \f$A\f$.  The singular values are the square-root of the eigenvalues
+    of \f$A^TA\f$ and \f$AA^T\f$.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
+  class EpetraSymOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
+    //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
+    */
     EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, const bool isTrans = false );
+
+    //! Destructor
     ~EpetraSymOp();
-    ReturnType Apply ( const MultiVec<double>& x, 
-		       MultiVec<double>& y ) const;
+    
+    //! Apply method [inherited from Anasazi::Operator class]
+    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+     */
+    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+
+    //! Apply method [inherited from Epetra_Operator class]
+    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+     */
+    int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
+
+    //! Apply inverse method [inherited from Epetra_Operator class]
+    /*! This method will apply \f$(A^TA)^{-1}\f$ or \f$(AA^T)^{-1}\f$ to \c X, returning \c Y.
+      \note This method is only defined if \f$A^{-1}\f$ is defined for the given Epetra_Operator.
+     */
+    int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
+
+    //! Returns a character string describing the operator.
+    const char* Label() const { return "Epetra_Operator applying A^TA or AA^T"; };
+    
+    //! Returns the current UseTranspose setting [always false for this operator].
+    bool UseTranspose() const { return (false); };
+
+    //! If set true, the transpose of this operator will be applied [not functional for this operator].
+    int SetUseTranspose(bool UseTranspose) { return 0; };
+    
+    //! Returns true if this object can provide an approximate inf-norm [always false for this operator].
+    bool HasNormInf() const { return (false); };
+    
+    //! Returns the infinity norm of the global matrix [not functional for this operator].
+    double NormInf() const  { return (-1.0); };
+    
+    //! Returns the Epetra_Comm communicator associated with this operator.
+    const Epetra_Comm& Comm() const { return Epetra_Op->Comm(); };
+
+    //! Returns the Epetra_Map object associated with the domain of this operator.
+    const Epetra_Map& OperatorDomainMap() const { return Epetra_Op->OperatorDomainMap(); };
+
+    //! Returns the Epetra_Map object associated with the range of this operator.
+    const Epetra_Map& OperatorRangeMap() const { return Epetra_Op->OperatorRangeMap(); };
+
   private:
     Teuchos::RefCountPtr<Epetra_Operator> Epetra_Op;
     bool isTrans_;
@@ -521,7 +682,8 @@ namespace Anasazi {
   //
   // AnasaziOperator constructors
   //
-  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, const bool isTrans) 
+  EpetraSymOp::EpetraSymOp(const Teuchos::RefCountPtr<Epetra_Operator> &Op, 
+			   const bool isTrans) 
     : Epetra_Op(Op), isTrans_(isTrans)
   {
   }
@@ -532,19 +694,19 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraSymOp::Apply ( const MultiVec<double>& x, 
-				  MultiVec<double>& y ) const 
+  ReturnType EpetraSymOp::Apply ( const MultiVec<double>& X, 
+				  MultiVec<double>& Y ) const 
   {
     int info=0;
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
+    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     Epetra_MultiVector* temp_vec = new Epetra_MultiVector( 
 							  (isTrans_) ? Epetra_Op->OperatorDomainMap() 
 							  : Epetra_Op->OperatorRangeMap(), 
-							  vec_x->NumVectors() );
+							  vec_X->NumVectors() );
     
-    assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
+    assert( vec_X!=NULL && vec_Y!=NULL && temp_vec!=NULL );
     //
     // Need to cast away constness because the member function Apply
     // is not declared const.
@@ -555,17 +717,17 @@ namespace Anasazi {
       if (info!=0) { delete temp_vec; return Failed; }
     }
     //
-    // Compute A*x or A'*x 
+    // Compute A*X or A'*X 
     //
-    info=Epetra_Op->Apply( *vec_x, *temp_vec );
+    info=Epetra_Op->Apply( *vec_X, *temp_vec );
     if (info!=0) { delete temp_vec; return Failed; }
     //
     // Transpose/Un-transpose the operator based on value of isTrans_
     info=Epetra_Op->SetUseTranspose( !isTrans_ );
     if (info!=0) { delete temp_vec; return Failed; }
     
-    // Compute A^T*(A*x) or A*A^T
-    info=Epetra_Op->Apply( *temp_vec, *vec_y );
+    // Compute A^T*(A*X) or A*A^T
+    info=Epetra_Op->Apply( *temp_vec, *vec_Y );
     if (info!=0) { delete temp_vec; return Failed; }
     
     // Un-transpose the operator
@@ -578,17 +740,103 @@ namespace Anasazi {
       return Failed; 
   }
   
+  int EpetraSymOp::Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+  {
+    int info=0;
+    Epetra_MultiVector temp_vec(OperatorDomainMap(), Y.NumVectors()); 
+    //
+    // This generalized operator computes Y = A^T*A*X or Y = A*A^T*X
+    //
+    // Transpose the operator (if isTrans_ = true)
+    if (isTrans_) {
+      info=Epetra_Op->SetUseTranspose( isTrans_ );
+      if (info!=0) { return info; }
+    }
+    //
+    // Compute A*X or A^T*X 
+    //
+    info=Epetra_Op->Apply( X, temp_vec );
+    if (info!=0) { return info; }
+    //
+    // Transpose/Un-transpose the operator based on value of isTrans_
+    info=Epetra_Op->SetUseTranspose( !isTrans_ );
+    if (info!=0) { return info; }
+    
+    // Compute A^T*(A*X) or A*A^T
+    info=Epetra_Op->Apply( temp_vec, Y );
+    if (info!=0) { return info; }
+    
+    // Un-transpose the operator
+    info=Epetra_Op->SetUseTranspose( false );
+    return info;
+  }
+  
+  int EpetraSymOp::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
+  {
+    int info=0;
+    Epetra_MultiVector temp_vec(OperatorDomainMap(), Y.NumVectors()); 
+    //
+    // This generalized operator computes Y = (A^T*A)^{-1}*X or Y = (A*A^T)^{-1}*X
+    //
+    // Transpose the operator (if isTrans_ = true)
+    if (!isTrans_) {
+      info=Epetra_Op->SetUseTranspose( !isTrans_ );
+      if (info!=0) { return info; }
+    }
+    //
+    // Compute A^{-1}*X or A^{-T}*X 
+    //
+    info=Epetra_Op->ApplyInverse( X, temp_vec );
+    if (info!=0) { return info; }
+    //
+    // Transpose/Un-transpose the operator based on value of isTrans_
+    info=Epetra_Op->SetUseTranspose( isTrans_ );
+    if (info!=0) { return info; }
+    
+    // Compute A^{-T}*(A^{-1}*X) or A^{-1}*A^{-T}
+    info=Epetra_Op->Apply( temp_vec, Y );
+    if (info!=0) { return info; }
+    
+    // Un-transpose the operator
+    info=Epetra_Op->SetUseTranspose( false );
+    return info;
+  }
 
   ///////////////////////////////////////////////////////////////
   //--------template class AnasaziEpetraSymMVOp---------------------
+
+  /*! \class EpetraSymMVOp
+    \brief Adapter class for creating a symmetric operator from an Epetra_MultiVector.
+
+    This class will apply the operation \f$A^TA\f$ [default] or \f$AA^T\f$, for the \c Apply method of the
+    Epetra_Operator / Anasazi::Operator.  The Anasazi::EpetraSymMvOp operator is useful when trying to compute
+    a few singular values of the Epetra_MultiVector \f$A\f$.  The singular values are the square-root of the 
+    eigenvalues of \f$A^TA\f$ and \f$AA^T\f$.
+
+    \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
+    only provide a double-precision eigensolver.
+  */
+
   class EpetraSymMVOp : public virtual Operator<double> {
   public:
-    EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, const bool isTrans = false );
+    //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
+    /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
+    */
+    EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, 
+		  const bool isTrans = false );
+    
+    //! Destructor
     ~EpetraSymMVOp();
-    ReturnType Apply ( const MultiVec<double>& x, 
-		       MultiVec<double>& y ) const;
+    
+    //! Apply method 
+    /*! This method will apply \f$A^TA\f$ or \f$AA^T\f$ to \c X, returning \c Y.
+     */
+    ReturnType Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
+
   private:
     Teuchos::RefCountPtr<Epetra_MultiVector> Epetra_MV;
+    Teuchos::RefCountPtr<const Epetra_Map> MV_localmap;
+    Teuchos::RefCountPtr<const Epetra_BlockMap> MV_blockmap;
     bool isTrans_;
   };
   //-------------------------------------------------------------
@@ -602,6 +850,10 @@ namespace Anasazi {
   EpetraSymMVOp::EpetraSymMVOp(const Teuchos::RefCountPtr<Epetra_MultiVector> &MV, const bool isTrans) 
     : Epetra_MV(MV), isTrans_(isTrans)
   {
+    if (isTrans)
+      MV_localmap = Teuchos::rcp( new Epetra_LocalMap( Epetra_MV->NumVectors(), 0, Epetra_MV->Map().Comm() ) );
+    else
+      MV_blockmap = Teuchos::rcp( &Epetra_MV->Map(), false );
   }
   
   EpetraSymMVOp::~EpetraSymMVOp() 
@@ -610,33 +862,32 @@ namespace Anasazi {
   //
   // AnasaziOperator applications
   //
-  ReturnType EpetraSymMVOp::Apply ( const MultiVec<double>& x, 
-				    MultiVec<double>& y ) const 
+  ReturnType EpetraSymMVOp::Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const 
   {
     int info=0;
-    MultiVec<double> & temp_x = const_cast<MultiVec<double> &>(x);
-    Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-    Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
+    MultiVec<double> & temp_X = const_cast<MultiVec<double> &>(X);
+    Epetra_MultiVector* vec_X = dynamic_cast<Epetra_MultiVector* >(&temp_X);
+    Epetra_MultiVector* vec_Y = dynamic_cast<Epetra_MultiVector* >(&Y);
     
     if (isTrans_) {
-      Epetra_LocalMap localMap( Epetra_MV->NumVectors(), 0, Epetra_MV->Map().Comm() );
-      Epetra_MultiVector Pvec( localMap, temp_x.GetNumberVecs() );
+
+      Epetra_MultiVector temp_vec( *MV_localmap, temp_X.GetNumberVecs() );
       
-      /* A'*x */
-      info = Pvec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_x, 0.0 );
+      /* A'*X */
+      info = temp_vec.Multiply( 'T', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
       
-      /* A*(A'*x) */
-      info = vec_y->Multiply( 'N', 'N', 1.0, *Epetra_MV, Pvec, 0.0 );
-      
+      /* A*(A'*X) */
+      info = vec_Y->Multiply( 'N', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );      
     } 
     else {
-      Epetra_MultiVector temp( Epetra_MV->Map(), temp_x.GetNumberVecs() );
       
-      /* A*x */
-      info = temp.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_x, 0.0 );
+      Epetra_MultiVector temp_vec( *MV_blockmap, temp_X.GetNumberVecs() );
       
-      /* A'*(A*x) */
-      info = vec_y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp, 0.0 );
+      /* A*X */
+      info = temp_vec.Multiply( 'N', 'N', 1.0, *Epetra_MV, *vec_X, 0.0 );
+      
+      /* A'*(A*X) */
+      info = vec_Y->Multiply( 'T', 'N', 1.0, *Epetra_MV, temp_vec, 0.0 );
     }
     
     if (info==0)
@@ -644,7 +895,6 @@ namespace Anasazi {
     else
       return Failed; 
   }
-  
   
   ////////////////////////////////////////////////////////////////////
   //
@@ -685,7 +935,7 @@ namespace Anasazi {
 
     /*! \brief Creates a new Epetra_MultiVector and copies the selected contents of \c mv into the new vector (deep copy).  
 
-      The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.      
+      The copied vectors from \c mv are indicated by the \c indeX.size() indices in \c index.      
       \return Reference-counted pointer to the new Epetra_MultiVector.
     */
     static Teuchos::RefCountPtr<Epetra_MultiVector> CloneCopy( const Epetra_MultiVector& mv, const std::vector<int>& index )

@@ -36,6 +36,9 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 
+#include "ModeLaplace1DQ1.h"
+#include "BlockPCGSolver.h"
+
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
@@ -44,11 +47,9 @@
 #endif
 #include "Epetra_Map.h"
 
-#include "ModeLaplace1DQ1.h"
-#include "BlockPCGSolver.h"
-
 int main(int argc, char *argv[]) 
 {
+  int i, ierr;
   int info = 0;
   double zero = 0.0;
   double one = 1.0;
@@ -69,6 +70,7 @@ int main(int argc, char *argv[])
   int MyPID = Comm.MyPID();
   
   Anasazi::ReturnType returnCode = Anasazi::Ok;
+
   bool testFailed = false;
   bool verbose = 0;
   if (argc>1) if (argv[1][0]=='-' && argv[1][1]=='v') verbose = true;
@@ -84,7 +86,7 @@ int main(int argc, char *argv[])
   std::vector<double> brick_dim( space_dim );
   brick_dim[0] = 1.0;
   std::vector<int> elements( space_dim );
-  elements[0] = 50;
+  elements[0] = 100;
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -95,19 +97,24 @@ int main(int argc, char *argv[])
 
   // Create preconditioner
   int maxIterCG = 100;
-  double tolCG = 1e-05;
+  double tolCG = 1e-7;
   
-  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, K.get(), tolCG, maxIterCG, 3) );
+  Teuchos::RefCountPtr<BlockPCGSolver> opStiffness = Teuchos::rcp( new BlockPCGSolver(Comm, M.get(), tolCG, maxIterCG, 0) );
   opStiffness->setPreconditioner( 0 );
 
+  Teuchos::RefCountPtr<Anasazi::EpetraGenOp> InverseOp = Teuchos::rcp( new Anasazi::EpetraGenOp( opStiffness, K ) );
+
+  // Variables needed for eigensolver
+
   int nev = 4;
-  int blockSize = 5;
-  int maxBlocks = 8;
-  int maxRestarts = 20;
+  int blockSize = 2;
+  int maxBlocks = 10;
+  int maxRestarts = 500;
   double tol = tolCG * 10.0;
   std::string which = "SM";  
   
   // Create parameter list to pass into solver
+
   Teuchos::ParameterList MyPL;
   MyPL.set( "Block Size", blockSize );
   MyPL.set( "Max Blocks", maxBlocks );
@@ -115,12 +122,12 @@ int main(int argc, char *argv[])
   MyPL.set( "Tol", tol );
   
   // Create eigenproblem
-
+  
   Teuchos::RefCountPtr<Epetra_MultiVector> ivec = Teuchos::rcp( new Epetra_MultiVector(K->OperatorDomainMap(), blockSize) );
   ivec->Random();
   
   Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double, MV, OP> > MyProblem =
-    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(K, M, ivec) );
+    Teuchos::rcp( new Anasazi::BasicEigenproblem<double, MV, OP>(InverseOp, M, ivec) );
   
   // Inform the eigenproblem that the operator A is symmetric
   MyProblem->SetSymmetric(true);
@@ -139,7 +146,7 @@ int main(int argc, char *argv[])
   // Set verbosity level
   if (verbose && MyPID == 0)
     MyOM->SetVerbosity( Anasazi::FinalSummary );
-  
+
   // Create a sorting manager to handle the sorting of eigenvalues in the solver
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
@@ -156,29 +163,31 @@ int main(int argc, char *argv[])
   // Obtain results directly
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-  cout << *evecs << endl;
-  
-  // Check the results
-  //testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
+
+  // Check eigenvalues with ModeLaplace
+  if (verbose)
+    info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
 
   Epetra_MultiVector tempvec(K->OperatorDomainMap(), evecs->NumVectors());	
   K->Apply( *evecs, tempvec );
+  Epetra_MultiVector Mtempvec(M->OperatorDomainMap(), evecs->NumVectors());	
+  M->Apply( *evecs, Mtempvec );
 
   Epetra_LocalMap LocalMap(nev, 0, Comm);
   Epetra_MultiVector dmatr( LocalMap, nev );
-  dmatr.Multiply( 'T', 'N', one, *evecs, tempvec, zero ); 
-  cout << dmatr << endl;
-  
-  if ( MyOM->doPrint() ) {
-    double compeval = 0.0;
-    cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-    cout<<"Real Part \t Rayleigh Error"<<endl;
-    for (int i=0; i<nev; i++) {
-      compeval = dmatr[i][i];
-      cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
-    }
+
+  for ( i=0; i<nev; i++ ) {
+    dmatr[i][i] = (*evals)[i];
   }
+  tempvec.Multiply( 'N', 'N', -1.0, Mtempvec, dmatr, 1.0 );
+  std::vector< double > normvec( nev );
+  tempvec.Norm2( &normvec[0] );
   
+  for ( i=0; i<nev; i++ ) {
+    if ( Teuchos::ScalarTraits<double>::magnitude(normvec[i]/(*evals)[i]) > 5.0e-5 )
+      testFailed = true;
+  }
+
   if (testFailed)
     return 1;
   //

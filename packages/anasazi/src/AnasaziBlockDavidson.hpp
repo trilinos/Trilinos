@@ -137,9 +137,9 @@ namespace Anasazi {
     //
     // Internal data.
     //
-    const int _numBlocks, _maxIter, _blockSize;
+    const int _maxIter, _blockSize;
     const ScalarType _residual_tolerance;
-    int _numRestarts, _iter, _dimSearch, _knownEV;
+    int _numBlocks, _numRestarts, _iter, _dimSearch, _knownEV;
     //
     // Internal utilities class required by eigensolver.
     //
@@ -169,10 +169,10 @@ namespace Anasazi {
     _evecs(_problem->GetEvecs()), 
     _evals(problem->GetEvals()), 
     _nev(problem->GetNEV()), 
-    _numBlocks(_pl.get("Max Blocks", 25)), 
     _maxIter(_pl.get("Max Iters", 300)),
     _blockSize(_pl.get("Block Size", 1)),
     _residual_tolerance(_pl.get("Tol", 1.0e-6)),
+    _numBlocks(_pl.get("Max Blocks", 25)), 
     _numRestarts(0), 
     _iter(0), 
     _dimSearch(_blockSize*_numBlocks),    
@@ -219,12 +219,102 @@ namespace Anasazi {
       } else {
 	_os <<"[none computed]"<<endl;
       }
+      _os <<endl<<"------------------------------------------------------"<<endl;
+      _os <<"******************************************************"<<endl;  
+      _os <<" "<<endl; 
     }
   }
   
   template <class ScalarType, class MV, class OP>
   ReturnType BlockDavidson<ScalarType,MV,OP>::solve () 
   {
+    //
+    // Check the Anasazi::Eigenproblem was set by user, if not, return failed.
+    //
+    if ( !_problem->IsProblemSet() ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Anasazi::Eigenproblem was not set, call Anasazi::Eigenproblem::SetProblem() before calling solve"<< endl;
+      return Failed;
+    }
+    //
+    // Check the Anasazi::Eigenproblem is symmetric, if not, return failed.
+    //
+    if ( !_problem->IsSymmetric() ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Anasazi::Eigenproblem is not symmetric" << endl;
+      return Failed;
+    }
+    //
+    // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
+    //
+    Teuchos::RefCountPtr<MV> iVec = _problem->GetInitVec();
+    //
+    if ( iVec.get() == 0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Initial vector is not specified, set initial vector in eigenproblem "<<endl;
+      return Failed;
+    }
+
+    int dim = MVT::GetVecLength( *iVec );
+    //
+    // Check that the maximum number of blocks for the eigensolver is a positive number
+    //    
+    if ( _numBlocks<=0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : numBlocks = "<< _numBlocks <<" [ should be positive number ] " << endl;
+      return Failed;
+    } 
+    //
+    // Check that the maximum number of iterations is a positive number
+    //    
+    if ( _maxIter<=0 ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : maxIter = "<< _maxIter <<" [ should be positive number ] " << endl;
+      return Failed;
+    } 
+    //
+    // Check that the search subspace is larger than the number of eigenvalues requested
+    //
+    if ( _numBlocks*_blockSize < _nev ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error )) 
+	_os << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    } 
+    //
+    // If the search subspace dimension is the same size as the number of requested eigenvalues,
+    // then we must be computing all of them.
+    //
+    if ( (_numBlocks*_blockSize == _nev) && (_nev != dim) ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Error ))
+	_os << "ERROR : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+	    << " [ should be greater than "<< _nev << " ] " << endl;
+      return Failed;
+    }
+    //
+    // If the search subspace dimension is larger than the dimension of the operator, reset
+    // the maximum number of blocks accordingly.
+    //    
+    if (_numBlocks*_blockSize > dim ) {
+      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
+	_os << "WARNING : Search space dimension (numBlocks*blockSize) = "<< _numBlocks*_blockSize 
+	    <<" [ should not be greater than " << dim << " ] " << endl;
+      
+      // Set the maximum number of blocks in the factorization below the dimension of the space.
+      _numBlocks = dim / _blockSize;
+      
+      if (_om->isVerbosityAndPrint( Anasazi::Warning ))
+	_os << "WARNING : numBlocks reset to "<< _numBlocks << endl;
+    }
+    //
+    // Reinitialize internal data and pointers, preparse for solve
+    //
+    _numRestarts = 0; 
+    _iter = 0; 
+    _knownEV = 0;
+    //
+    // Necessary variables
+    //
     int i, j;
     int info, nb, lwork;
     int bStart = 0, offSet = 0;
@@ -236,10 +326,6 @@ namespace Anasazi {
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     Teuchos::BLAS<int,ScalarType> blas;
     Teuchos::LAPACK<int,ScalarType> lapack;
-    //
-    // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
-    //
-    Teuchos::RefCountPtr<MV> iVec = _problem->GetInitVec();
     //
     // Define local block vectors
     //
@@ -423,7 +509,7 @@ namespace Anasazi {
 	else {
 	  MVT::MvTimesMatAddMv( one, *KX, D, one, *R );
 	}
-	_problem->MvNorm( *R, &_normR );
+	MVT::MvNorm( *R, &_normR );
 	//
 	// Scale the norms of residuals with the eigenvalues and check for converged eigenvectors.
 	//

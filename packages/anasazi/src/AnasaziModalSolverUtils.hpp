@@ -412,7 +412,7 @@ namespace Anasazi {
       // Define the product Q^T * (M*X)
       // Multiply Q' with MX
       Teuchos::SerialDenseMatrix<int,ScalarType> qTmx( qc, xc );
-      MVT::MvTransMv( one, Q, MX, qTmx );
+      MVT::MvTransMv( one, Q, *MXX, qTmx );
       
       // Multiply by Q and substract the result in X
       MVT::MvTimesMatAddMv( -one, Q, qTmx, one, *XX );
@@ -931,7 +931,6 @@ namespace Anasazi {
     }
     
     return maxDot;
-    
   }
   
   template<class ScalarType, class MV, class OP>
