@@ -383,7 +383,7 @@ fi
 #  --enable-teuchos-arprec 
 # 
  
-TAC_ARG_ENABLE_FEATURE_SUB( teuchos, gnu_mp, [Enable Teuchos interface support for the GNU MP Library], 
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, gmp, [Enable Teuchos interface support for the GNU MP Library], 
 		TEUCHOS_GNU_MP, no)  
 
 if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then

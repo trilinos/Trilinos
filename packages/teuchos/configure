@@ -891,7 +891,7 @@ Optional Features:
                           Enable Teuchos extended code (default is no)
   --enable-teuchos-arprec Enable Teuchos interface support for the ARbitrary
                           PRECision Library (default is no)
-  --enable-teuchos-gnu_mp Enable Teuchos interface support for the GNU MP
+  --enable-teuchos-gmp    Enable Teuchos interface support for the GNU MP
                           Library (default is no)
   --enable-expat          Enable expat XML parser
 
@@ -7370,18 +7370,18 @@ fi
 #
 
 
-# Check whether --enable-teuchos-gnu_mp or --disable-teuchos-gnu_mp was given.
-if test "${enable_teuchos_gnu_mp+set}" = set; then
-  enableval="$enable_teuchos_gnu_mp"
-  ac_cv_use_teuchos_gnu_mp=$enableval
+# Check whether --enable-teuchos-gmp or --disable-teuchos-gmp was given.
+if test "${enable_teuchos_gmp+set}" = set; then
+  enableval="$enable_teuchos_gmp"
+  ac_cv_use_teuchos_gmp=$enableval
 else
-  ac_cv_use_teuchos_gnu_mp=no
+  ac_cv_use_teuchos_gmp=no
 fi;
 
-echo "$as_me:$LINENO: checking whether to use teuchos-gnu_mp" >&5
-echo $ECHO_N "checking whether to use teuchos-gnu_mp... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether to use teuchos-gmp" >&5
+echo $ECHO_N "checking whether to use teuchos-gmp... $ECHO_C" >&6
 
-if test "X$ac_cv_use_teuchos_gnu_mp" != "Xno"; then
+if test "X$ac_cv_use_teuchos_gmp" != "Xno"; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 

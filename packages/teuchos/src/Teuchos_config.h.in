@@ -188,7 +188,7 @@
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 
-/* Define if want to build teuchos-gnu_mp */
+/* Define if want to build teuchos-gmp */
 #undef HAVE_TEUCHOS_GNU_MP
 
 /* Define if want to build teuchos-tests */
