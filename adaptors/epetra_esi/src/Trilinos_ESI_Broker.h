@@ -9,7 +9,13 @@ class Epetra_CrsGraph;
 #define MPI_SUCCESS 0
 #endif
 #include "ESI_Broker.h"
-#include "esi/ESI.h"
+
+//forward declarations for esi interfaces.
+
+class esi::Object;
+template<class T> class esi::IndexSpace;
+template<class Scalar,class Ordinal> class esi::Vector;
+
 #include "Epetra_Array.h"
 
 /** Petra_ESI implementation of ESI_Broker, a broker and manager for

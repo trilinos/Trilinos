@@ -44,7 +44,7 @@ template<class Ordinal>
 esi::ErrorCode epetra_esi::IndexSpace<Ordinal>::
 getGlobalSize(Ordinal& globalSize)
 {
-  globalSize = NumGlobalEquations();
+  globalSize = NumGlobalPoints();
   return(0);
 }
 

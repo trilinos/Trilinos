@@ -18,12 +18,13 @@
 //iostream, etc., from the same places that Epetra gets them.
 #include "Epetra_Object.h"
 
+#include "esi/ESI.h"
+
 //We need to include the epetra-esi stuff that Trilinos_ESI_Broker is managing..
 
 #ifndef EPETRA_ESI_INCLUDE_IMPLEMENTATION
 //we're going to turn on the flag to include implementations, but if it isn't
-#include "Epetra_Object.h"
-//already on, we'll need to turn it back off afterwards... is that clear?
+//already on, we'll need to turn it back off afterwards...
 #define Tril_ESI_Brok_UNDEF
 #endif
 

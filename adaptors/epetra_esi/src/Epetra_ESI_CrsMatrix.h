@@ -31,8 +31,7 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class CrsMatrix : public virtual esi::Object,
-                      public virtual epetra_esi::Object,
+class CrsMatrix : public virtual epetra_esi::Object,
                       public virtual esi::Operator<Scalar, Ordinal>,
                       public virtual esi::OperatorTranspose<Scalar, Ordinal>,
                       public virtual esi::MatrixData<Ordinal>,

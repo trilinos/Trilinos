@@ -25,8 +25,7 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class Vector : public virtual esi::Object,
-                         public virtual epetra_esi::Object,
+class Vector : public virtual epetra_esi::Object,
                          public virtual esi::Vector<Scalar, Ordinal>,
                          public virtual Epetra_Vector
 {

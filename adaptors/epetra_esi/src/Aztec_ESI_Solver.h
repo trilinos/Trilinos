@@ -26,8 +26,7 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class Solver : public virtual esi::Object,
-                      public virtual epetra_esi::Object,
+class Solver : public virtual epetra_esi::Object,
                       public virtual esi::Operator<Scalar, Ordinal>,
                       public virtual esi::Solver<Scalar, Ordinal>,
                       public virtual esi::SolverIterative<Scalar, Ordinal>,

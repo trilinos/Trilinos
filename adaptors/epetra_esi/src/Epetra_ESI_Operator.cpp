@@ -2,6 +2,7 @@
 #define _Epetra_ESI_Operator_cpp_
 
 #include "Epetra_ESI_Operator.h"
+#include "Epetra_Import.h"
 
 //------------------------------------------------------------------------------
 template<class Scalar, class Ordinal>

@@ -26,8 +26,7 @@ the type-pair double,int.
 */
 
 template<class Scalar, class Ordinal>
-class Operator : public virtual esi::Object,
-                      public virtual epetra_esi::Object,
+class Operator : public virtual epetra_esi::Object,
                       public virtual esi::Operator<Scalar, Ordinal>,
                       public virtual esi::OperatorTranspose<Scalar, Ordinal>,
                       public virtual Epetra_RowMatrix
@@ -142,6 +141,29 @@ class Operator : public virtual esi::Object,
        return(err);
     }
 
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+    {
+       cout << "epetra_esi::Operator::Apply not implemented." << endl;
+       return(-1);
+    }
+
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+    {
+       cout << "epetra_esi::Operator::ApplyInverse not implemented." << endl;
+       return(-1);
+    }
+
+  char * Label() const
+    {
+      static char label[] = "epetra_esi::Operator";
+      return(label);
+    }
+
+  bool UseTranspose() const {return(useTranspose_);}
+
+  int SetUseTranspose(bool UseTranspose)
+    { useTranspose_ = UseTranspose; return(0); }
+
   int Solve(bool Upper, bool Trans, bool UnitDiagonal,
             const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     { //cout << "Solve" << endl;
@@ -162,6 +184,8 @@ class Operator : public virtual esi::Object,
   int RightScale(const Epetra_Vector& x)
     { //cout << "RightScale" << endl; 
       return(-1); }
+
+  bool HasNormInf() const { return(false); }
 
   double NormInf() const
     { //cout << "NormInf" << endl; 
@@ -261,6 +285,7 @@ class Operator : public virtual esi::Object,
   bool haveTranspose_;
   bool haveMatrixData_;
   bool haveRowReadAccess_;
+  bool useTranspose_;
   Epetra_Comm* petra_comm_;
   Epetra_Map* petra_domain_map_, *petra_range_map_;
   Epetra_Map* petra_row_map_, *petra_import_map_;

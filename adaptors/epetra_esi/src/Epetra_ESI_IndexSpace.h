@@ -24,8 +24,7 @@ the type int.
 */
 
 template<class Ordinal>
-class IndexSpace : public virtual esi::Object,
-                      public virtual esi::IndexSpace<Ordinal>,
+class IndexSpace : public virtual esi::IndexSpace<Ordinal>,
                       public virtual epetra_esi::Object,
                       public virtual Epetra_Map
 {
@@ -54,7 +53,7 @@ class IndexSpace : public virtual esi::Object,
     @return error-code 0 if successful.
   */
   virtual esi::ErrorCode getLocalSize(Ordinal& localSize)
-    { localSize = NumMyEquations(); return(0); }
+    { localSize = NumMyPoints(); return(0); }
 
 
   /** Get the number of 'colors' represented in this map. epetra_esi::IndexSpace doesn't
@@ -118,7 +117,7 @@ class IndexSpace : public virtual esi::Object,
    @param error-code 0 if successful.
   */
   virtual esi::ErrorCode getGlobalPartitionSizes(Ordinal* partitionSizes)
-    { Ordinal mySize = NumMyEquations();
+    { Ordinal mySize = NumMyPoints();
       return( Comm().GatherAll(&mySize, partitionSizes, 1) ); }
 
 
