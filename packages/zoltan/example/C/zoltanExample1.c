@@ -5,12 +5,11 @@
 **   and also using a Zoltan_Timer.
 */
 
+#include "zoltan.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
 
-#include "zoltan.h"
-#include "mpi.h"
 #include "exzoltan.h"
 
 /*

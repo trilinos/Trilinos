@@ -9,9 +9,9 @@
 //              copy operator and copy constructor.
 //
 
+#include <mpi.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <mpi.h>
 #include <zoltan_cpp.h>
 #include <iostream>
 #include "exzoltan.h"

@@ -5,7 +5,6 @@
 */
 
 #include "zoltan.h"
-#include "mpi.h"
 #include "exzoltan.h"
 
 #include <stdlib.h>
