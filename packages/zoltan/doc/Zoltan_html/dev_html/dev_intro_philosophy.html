@@ -79,9 +79,9 @@ library can perform the desired load balancing.
 <BR>/<TT>* <I>Register method and application query functions</I> */</TT>
 <BR><TT>lb = LB_Create(MPI_COMM_WORLD);</TT>
 <BR><TT>LB_Set_Method(lb, "RCB");</TT>
-<BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn, NULL);</TT>
-<BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>
-<BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,user_return_elem_list_fn,NULL);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,(void (*)())user_return_coords_fn, NULL);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,(void (*)())user_return_num_elems_fn,NULL);</TT>
+<BR><TT>LB_Set_Fn(lb,LB_OBJ_LIST_FN_TYPE,(void (*)())user_return_elem_list_fn,NULL);</TT>
 <BR><TT>...</TT>
 <BR><TT>/* <I>Call the load balancer</I> */</TT>
 <BR><TT>LB_Balance(lb,&amp;new,&amp;num_imp,&amp;imp_glob_ids,&amp;imp_loc_ids,&amp;imp_procs,</TT>

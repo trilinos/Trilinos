@@ -171,11 +171,11 @@ used.</I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_coords, NULL);&nbsp;&nbsp;</TT>&nbsp;
+(void (*)()) user_return_coords, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_owned_nodes, NULL);&nbsp;&nbsp;</TT>&nbsp;
+(void (*)()) user_return_owned_nodes, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>...&nbsp;</TT>&nbsp;
 <BR><TT>}&nbsp;</TT>&nbsp;
 
@@ -344,11 +344,11 @@ used.</I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_coords, NULL);&nbsp;</TT>&nbsp;
+(void (*)()) user_return_coords, NULL);&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_owned_nodes, NULL);&nbsp;</TT>&nbsp;
+(void (*)()) user_return_owned_nodes, NULL);&nbsp;</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
@@ -530,11 +530,11 @@ of mesh as the data pointer.</FONT></I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_coords, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
+(void (*)()) user_return_coords, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-user_return_owned_nodes, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
+(void (*)()) user_return_owned_nodes, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
 <BR><TT>}</TT>&nbsp;
 
@@ -726,14 +726,14 @@ functions;</I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
 used.</I> */</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>, user_size_node,
+<A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>, (void (*)()) user_size_node,
 NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>, user_pack_node,
+<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>, (void (*)()) user_pack_node,
 NULL);&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
 <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
-user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
+(void (*)()) user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
 <BR><TT>...&nbsp;</TT>&nbsp;
 <BR><TT>}&nbsp;</TT>&nbsp;
 

@@ -70,13 +70,13 @@ lb_method, &amp;(lb_params[0]));</TT>&nbsp;
 
 <P><TT>/* <I>Register load-balancing query functions.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN_TYPE</A>,
-user_return_dimension, NULL);</TT>&nbsp;
+(void (*)()) user_return_dimension, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,
-user_return_coords, NULL);</TT>&nbsp;
+(void (*)()) user_return_coords, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A>,
-user_return_num_node, NULL);</TT>&nbsp;
+(void (*)()) user_return_num_node, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
-user_return_owned_nodes, NULL);</TT>&nbsp;
+(void (*)()) user_return_owned_nodes, NULL);</TT>&nbsp;
 
 <P><TT>/* <I>Reset some load-balancing parameters.</I> */</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 

@@ -177,7 +177,7 @@ be fatal.</td>
 
 <td><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b> (struct <b>LB_Struct </b>*
 <i>lb,
-</i><b>LB_FN_TYPE</b> <i>fn_type</i>, void *<i>fn_ptr</i>, void *<i>data</i>);</td>
+</i><b>LB_FN_TYPE</b> <i>fn_type</i>, void (*<i>fn_ptr</i>)(), void *<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -232,7 +232,7 @@ Query Functions</a> for possible function types.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>A pointer to user defined data that will be passed, as an argument,
-to the function pointed to by fn_ptr . In C it may be NULL. In Fortran
+to the function pointed to by fn_ptr. In C it may be NULL. In Fortran
 it may be omitted.</td>
 </tr>
 

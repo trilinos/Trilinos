@@ -130,7 +130,8 @@ ALL_INC		= all_const.h all_allo_const.h
 MEM_CSRC	= mem.c
 MEM_INC		= mem_const.h
 
-LB_CSRC		= lb.c lb_util.c 
+LB_CSRC		= lb_balance.c lb_eval.c lb_init.c lb_migrate.c lb_set_fn.c \
+		  lb_set_method.c lb_struct.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
 
 RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
