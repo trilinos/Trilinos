@@ -53,6 +53,9 @@ static struct malloc_debug_data {
 static LB_FORT_MALLOC_INT_FN *LB_Fort_Malloc_int;
 static LB_FORT_MALLOC_GID_FN *LB_Fort_Malloc_GID;
 static LB_FORT_MALLOC_LID_FN *LB_Fort_Malloc_LID;
+static LB_FORT_FREE_INT_FN *LB_Fort_Free_int;
+static LB_FORT_FREE_GID_FN *LB_Fort_Free_GID;
+static LB_FORT_FREE_LID_FN *LB_Fort_Free_LID;
 
 
 int LB_Set_Malloc_Param(
@@ -525,8 +528,10 @@ int       LB_Malloc_Num()
  *
  * LB_Special_Malloc allows the allocation to be done from either C or Fortran.
  *
+ * LB_Special_Free frees memory allocated by LB_Special_Malloc
+ *
  * LB_Register_Fort_Malloc is called by the wrappers for the Fortran
- * interface to provide pointers to the Fortran allocation routines.
+ * interface to provide pointers to the Fortran allocation/free routines.
  *
  * int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
  *                       LB_SPECIAL_MALLOC_TYPE type)
@@ -540,15 +545,24 @@ int       LB_Malloc_Num()
  *
  * The return value is 1 if the allocation succeeded, 0 if it failed.
  *
+ * int LB_Special_Free(struct LB_Struct *lb, void **array,
+                       LB_SPECIAL_MALLOC_TYPE type)
+ *
  *****************************************************************************/
 
 void LB_Register_Fort_Malloc(LB_FORT_MALLOC_INT_FN *fort_malloc_int,
                              LB_FORT_MALLOC_GID_FN *fort_malloc_GID,
-                             LB_FORT_MALLOC_LID_FN *fort_malloc_LID)
+                             LB_FORT_MALLOC_LID_FN *fort_malloc_LID,
+                             LB_FORT_FREE_INT_FN *fort_free_int,
+                             LB_FORT_FREE_GID_FN *fort_free_GID,
+                             LB_FORT_FREE_LID_FN *fort_free_LID)
 {
    LB_Fort_Malloc_int = fort_malloc_int;
    LB_Fort_Malloc_GID = fort_malloc_GID;
    LB_Fort_Malloc_LID = fort_malloc_LID;
+   LB_Fort_Free_int = fort_free_int;
+   LB_Fort_Free_GID = fort_free_GID;
+   LB_Fort_Free_LID = fort_free_LID;
 }
 
 int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
@@ -631,6 +645,68 @@ int LB_Special_Malloc(struct LB_Struct *lb, void **array, int size,
          *array = NULL;
       }
       if (*array==NULL) success=0;
+   }
+   return success;
+}
+
+int LB_Special_Free(struct LB_Struct *lb, void **array,
+                    LB_SPECIAL_MALLOC_TYPE type)
+{
+   int success;
+
+   success = 1;
+   if (lb->Fortran) {
+
+/* deallocation from Fortran */
+
+      switch(type) {
+      case LB_SPECIAL_MALLOC_INT:
+#ifdef PGI /* special case for PGI Fortran compiler */
+         LB_Fort_Free_int(array[1],array[2]);
+#else
+         LB_Fort_Free_int(array[1]);
+#endif
+         break;
+      case LB_SPECIAL_MALLOC_GID:
+         if (LB_GID_IS_INT) {
+#ifdef PGI
+            LB_Fort_Free_int(array[1],array[2]);
+#else
+            LB_Fort_Free_int(array[1]);
+#endif
+         }else{
+#ifdef PGI
+            LB_Fort_Free_GID(array[1],array[2]);
+#else
+            LB_Fort_Free_GID(array[1]);
+#endif
+         }
+         break;
+      case LB_SPECIAL_MALLOC_LID:
+         if (LB_LID_IS_INT) {
+#ifdef PGI
+            LB_Fort_Free_int(array[1],array[2]);
+#else
+            LB_Fort_Free_int(array[1]);
+#endif
+         }else{
+#ifdef PGI
+            LB_Fort_Free_LID(array[1],array[2]);
+#else
+            LB_Fort_Free_LID(array[1]);
+#endif
+         }
+         break;
+      default:
+         fprintf(stderr, "Error: illegal value passed for type in LB_Special_Free\n");
+         success = 0;
+      }
+
+   }else{
+
+/* deallocation from C */
+
+      LB_FREE(array);
    }
    return success;
 }
