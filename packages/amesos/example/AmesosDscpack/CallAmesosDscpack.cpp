@@ -14,7 +14,9 @@
 #include "Amesos_Dscpack.h"
 #endif
 #include "Amesos_Parameter_List.h"
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
@@ -23,6 +25,7 @@
 int main(int argc, char *argv[])
 {
 
+#ifdef EPETRA_MPI
   // Initialize MPI
 
   MPI_Init(&argc,&argv);
@@ -121,6 +124,9 @@ int main(int argc, char *argv[])
 #endif
 
   MPI_Finalize() ; 
+#else
+  cout << "This example requires DSCPACK which requires MPI" << endl ; 
+#endif
   return 0;
 }
 
