@@ -414,8 +414,12 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
    if (isinit() == false)
    {
       if (comm_.MyPID()==0 && ml_printlevel_ > 0 )
-      cout << "ML_Nox_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+      cout << "ML: ML_Nox_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+      double t0 = GetClock();
       flag = compPrec(x);
+      double t1 = GetClock();
+      if (comm_.MyPID()==0 && ml_printlevel_ > 0 )
+      cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
       if (flag==true)
          setinit(true);
       else

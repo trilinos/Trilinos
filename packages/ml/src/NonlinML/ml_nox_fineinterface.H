@@ -60,7 +60,7 @@ class  Ml_Nox_Fineinterface : public NOX::EpetraNew::Interface::Required,
 public:
 
   Ml_Nox_Fineinterface() 
-  { isnewJacobian_=false; numJacobian_=0; printlevel_=10; return;}
+  { isnewJacobian_=false; numJacobian_=0; printlevel_=10; t_ = 0.; return;}
 
   virtual ~Ml_Nox_Fineinterface() {};
 
@@ -109,6 +109,12 @@ public:
   // get block information
   virtual bool getBlockInfo(int *nblocks, int** blocks, int **block_pde) = 0;
 
+  // get the summed time spent in the interface
+  double getsumtime() {return t_;}
+  
+  // reset the summed time spent in the interface
+  void resetsumtime() { t_ = 0.; return; }
+
 private:  
   // don't want copy-ctor and = operator
   Ml_Nox_Fineinterface(ML_NOX::Ml_Nox_Fineinterface& old);
@@ -138,10 +144,12 @@ public:
   // count the number of Jacobian evaluations for statistical and debug-purpose
   int numJacobian_;
   
-  // printlevel
   // The user's ML_NOX::Ml_Nox_Fineinterface derived class should set a
   // printlevel value between 0 and 10
   int printlevel_;
+
+  // t_ should be used for time measurement 
+  double t_;
   
 };
 } // namespace ML_NOX

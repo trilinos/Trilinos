@@ -458,7 +458,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
       delete fxbar; fxbar = 0;
       return true;
    }
-   
+
    //======set up FAS on this level=================
    // copy input residual f for use in FAS-postsmoothing
    fbar  = new Epetra_Vector(Copy,*f,0);
@@ -469,16 +469,20 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle(Epetra_Vector* f, Epetra_Ve
 
    //======presmoothing on the original system===========================
    if (level > 0 && FAS_presmooth_>0)
-   {
       *converged = nlnLevel_[level]->iterate(f,x,FAS_presmooth_);
-   }
    else if (level==0 && FAS_prefinesmooth_>0)
-   {
       *converged = nlnLevel_[level]->iterate(f,x,FAS_prefinesmooth_);
-      // a converged fine level is enough to be happy....
-      if (*converged) return true;
+   // a converged level is enough to be happy, don't go any coarser
+   if (*converged) 
+   {
+      nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
+      x->Update(-1.0,*xbar,1.0);
+      if (fbar)  delete fbar;  fbar  = 0;
+      if (xbar)  delete xbar;  xbar  = 0;
+      if (fxbar) delete fxbar; fxbar = 0;
+      return true;
    }
-   
+
    //======restrict to next coarse level=================================
    Epetra_Vector* xcoarse = nlnLevel_[level]->restrict_to_next_coarser_level(x,level,level+1);
    Epetra_Vector* fcoarse = nlnLevel_[level]->restrict_to_next_coarser_level(f,level,level+1);
