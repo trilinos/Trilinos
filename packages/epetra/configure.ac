@@ -216,8 +216,6 @@ TAC_ARG_ENABLE_OPTION(format_io, [Use package-defined IO formatting for output],
                    FORMAT_IO, yes)
 TAC_ARG_WITH_PACKAGE(zoltan, [Enable Zoltan interface support], ZOLTAN, no)
 TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
-TAC_ARG_WITH_PACKAGE(esi, [Enable ESI interface support], ESI, yes)
-TAC_ARG_WITH_PACKAGE(superlu, [Enable SuperLU interface support], SUPERLU, no)
 
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built

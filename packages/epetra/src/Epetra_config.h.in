@@ -32,9 +32,6 @@
 /* Define to 1 if you have the <cstdlib> header file. */
 #undef HAVE_CSTDLIB
 
-/* Define if want to build with esi enabled */
-#undef HAVE_ESI
-
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
@@ -106,9 +103,6 @@
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
-
-/* Define if want to build with superlu enabled */
-#undef HAVE_SUPERLU
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
