@@ -42,6 +42,7 @@
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H"
+#include "LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H"
 #include "LOCA_Bifurcation_PitchforkBord_ExtendedVector.H"
 #include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
 #include "LOCA_TimeDependent_AbstractGroup.H"

@@ -124,6 +124,7 @@ am__objects_6 =  \
 	libloca_a-LOCA_Bifurcation_TPBord_SingularSolveGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.$(OBJEXT) \
+	libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_HopfBord_ExtendedVector.$(OBJEXT) \
@@ -184,6 +185,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_SingularSolveGroup.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po \
@@ -255,6 +257,7 @@ am__include_HEADERS_DIST = $(srcdir)/LOCA.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
@@ -504,6 +507,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
@@ -520,6 +524,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \
@@ -775,6 +780,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ExtendedVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_SingularSolveGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_NullVectorNormWRMS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.Po@am__quote@
@@ -1164,6 +1170,22 @@ libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.obj: $(srcdir)/LOCA_Bif
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.obj `if test -f '$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C'; fi`
+
+libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.o: $(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo" -c -o libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.o `test -f '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C' object='libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.o `test -f '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C
+
+libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.obj: $(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.obj -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo" -c -o libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.obj `if test -f '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo" "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po"; else rm -f "$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C' object='libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.obj `if test -f '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; then $(CYGPATH_W) '$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C'; fi`
 
 libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.o: $(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -MT libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.o -MD -MP -MF "$(DEPDIR)/libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.Tpo" -c -o libloca_a-LOCA_Bifurcation_PitchforkBord_ExtendedVector.o `test -f '$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C' || echo '$(srcdir)/'`$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C; \

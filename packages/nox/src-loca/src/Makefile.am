@@ -95,6 +95,7 @@ LOCA_BIFURCATION_H = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.H \
         $(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.H \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H \
 	$(srcdir)/LOCA_TimeDependent_AbstractGroup.H \
@@ -111,6 +112,7 @@ LOCA_BIFURCATION = \
 	$(srcdir)/LOCA_Bifurcation_TPBord_SingularSolveGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.C \
+	$(srcdir)/LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedVector.C \
 	$(srcdir)/LOCA_Bifurcation_PitchforkBord_ExtendedGroup.C \
 	$(srcdir)/LOCA_Bifurcation_HopfBord_ExtendedVector.C \

@@ -35,6 +35,7 @@
 #include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 #include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_TPBord_ModifiedBorderingGroup.H"
+#include "LOCA_Bifurcation_TPBord_NicDayModifiedBorderingGroup.H"
 #include "LOCA_Bifurcation_PitchforkBord_ExtendedGroup.H"
 #include "LOCA_Bifurcation_HopfBord_AbstractGroup.H"
 #include "LOCA_Bifurcation_HopfBord_ExtendedGroup.H"
@@ -81,6 +82,12 @@ LOCA::Bifurcation::Manager::createBifurcationGroup(
      LOCA::Bifurcation::TPBord::AbstractGroup& tpGrp =
       dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup&>(grp);
     return new LOCA::Bifurcation::TPBord::ModifiedBorderingGroup(tpGrp, 
+								 *paramsPtr);
+  }
+  else if (method == "Nic-Day Modified Turning Point") {
+     LOCA::Bifurcation::TPBord::AbstractGroup& tpGrp =
+      dynamic_cast<LOCA::Bifurcation::TPBord::AbstractGroup&>(grp);
+    return new LOCA::Bifurcation::TPBord::NicDayModifiedBorderingGroup(tpGrp, 
 								 *paramsPtr);
   }
   else if (method == "Pitchfork") {
