@@ -19,5 +19,5 @@ print: $(TARGET).dvi
 	dvips $(TARGET)
 
 clean:
-	rm -f *.ps *.pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
+	rm -f *.ps $(TARGET).pdf *.dvi *.aux *.toc *.idx *.ind *.ilg *.log *.out \
            *.bbl *.blg *.lof *.lot *.tex~

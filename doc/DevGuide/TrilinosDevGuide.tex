@@ -4,6 +4,7 @@
 % Set the title, author, and date
 %
     \title{Trilinos Developer's Guide}
+\SANDsubtitle{}
 
     \author{James Willenbring\\
        Computational Mathematics \& Algorithms \\
@@ -132,7 +133,7 @@ Tuminaro, Jim Willenbring, and Alan Williams.
     % ---------------------------------------------------------------------- %
     % This is where the body of the report begins; usually with an Introduction
     %
-    \SANDmain		% Start the main part of the report
+    %\SANDmain		% Start the main part of the report
 
 % ------------------------------------------- %
 % Introduction to Developer's Guide
@@ -191,14 +192,86 @@ of the Trilinos Project by Mike Heroux).
 
 % start reading Mike's stuff at 243
 
-	\section{Requirements \& Guildlines}
+\section{Package Requirements}
 	**(Req's and how to satisfy them - break into subsections)**
 
+Stages of integration:
+\begin{enumerate}
+\item Put the package in the Trilinos repository.
+\item Package should respond to all relevant configure options.
+\item Package should have a process in place to port to all supported platforms and respond to bug
+reports in timely manner.
+\end{enumerate}
 
-	\section{Suggested Practices}
+
+\section{Suggested Practices}
 	**(suggested coding guidelines, and other non-manditory practices that are encouraged - break up.  See Overview Doc pg 11,14-15.)**
-	
 
+There are many ways to define an effective software process.  As a result, the Trilinos project
+specifies very few {\it requirements}.  At the same time, many software packages do not have
+well-defined practices to support good software engineering.  In this section, we discuss
+suggested practices based on our experience with some common tools and process for software
+engineering.  We want to strongly emphasize that these are {\it suggested} practices only and we
+discuss them here in order to facilitate adoption of practices for packages that have few existing
+practices in place.
+
+\subsection{Preliminary Steps}
+
+\begin{enumerate}
+\item Set up necessary accounts on software.sandia.gov.
+\item Establish Bugzilla Product and Component Definitions.
+Discussion of how to define bugzilla pieces.  Should discuss common component definitions.  List
+Heroux or Kolda or Sery as contacts.
+\item Establish Email Lists
+\item Others?
+\end{enumerate}
+
+\subsection{Practices to Support Software Lifecycle}
+
+One common view of software engineering processes breaks the process down into seven phases:
+\begin{enumerate}
+\item Requirements.
+\item Specification.
+\item Design.
+\item Implementation.
+\item Integration.
+\item Maintenance.
+\item Retirement/Replacement.
+\end{enumerate}
+In this section we discuss suggested practices to address most of these phases.  The value of 
+adopting these practices is that they are commonly used or planned for use in a number of existing
+Trilinos packages.  It is worth noting that testing is not a phase, but should be done at each of
+the above phases in the process as appropriate for that phase.
+
+\subsection{Requirements}
+The majority of requirements for Trilinos packages come either directly or indirectly from funded
+research proposals and plans.  Although these requirements are sometimes difficult to elicit from
+the proposals and plans, we assume that a package is satisfying requirements by virtue of being
+funded.  Therefore we only suggest that package developers track their requirements as part of the
+communication with funding sponsors.
+
+\subsection{Specification/Design}
+Package specifications can be done in many ways.  An effective way for object-oriented, e.g., C++
+packages is to use documented header files and a documentation tool such as Doxygen~\cite{doxyen},
+and then communicate the generated HTML output to the package development team via the {\it
+package-developers@software.sandia.gov} email list.  This both
+
+\subsection{Implementation}
+Nothing suggested.
+
+\subsection{Integration}
+Mention Epetra/TSF. Autotools.
+
+\subsection{Maintenance}
+Say something about bugzilla, bonzai, mailman (checkins list), CVS (release branches) the test harness.
+
+\subsection{Retirement/Replacement}
+To the extent possible checkins to a release branch should not force interface changes for users.
+Even on the development branch, users should be notified (via the package-users mail list) that
+checkins are about to happen that would require an interface change to user code.
+
+In general, we will be very slow to omit a package, or version of a package, that is in use unless
+there is equivalent interface and functionality support from a new package.
 
 	\section{Services Available to Trilinos Packages}
 	A number of services exist for Trilinos packages.
