@@ -63,8 +63,20 @@ private:
   
 private:
 
+  //! Types of preconditioning 
+  enum preconditioningType {None, Left, Right};
+
+  //! Types of preconditioning 
+  enum reorthogonalizeType {Never, AsNeeded, Always};
+
+  //! Flag for type of preconditioning
+  preconditioningType precondition;
+
+  //! Flag for reorthogonalizing basis after first pass of Gram-Schmidt
+  reorthogonalizeType reorth;
+
   //! "Direction" sublist with parameters for the direction vector
-  Parameter::List* paramsptr;
+  Parameter::List* paramsPtr;
 
   //! Vector containing the predicted RHS
   Abstract::Vector* predf;
@@ -74,9 +86,6 @@ private:
 
   //! Flag for "continuing" with reset() inside compute() where n is known
   bool isFreshlyReset;
-
-  //! Flag for reorthogonalizing basis after first pass of Gram-Schmidt
-  int reorth;
 
   //! Problem size
   int n;

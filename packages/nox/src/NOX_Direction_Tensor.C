@@ -3,8 +3,8 @@
 
 #define DEBUG_LEVEL 1
 #undef STORE_HESSENBERG
+#undef CHECK_ORTHOGONALITY
 #define CHECK_RESIDUALS
-
 
 #include "NOX_Direction_Tensor.H" // class definition
 #include "NOX_Common.H"
@@ -55,6 +55,7 @@ Tensor::~Tensor()
 
 bool Tensor::reset(Parameter::List& params)
 {
+
   // Clean up if this is not a fresh reset....
   if (basisVptr  &&  maxDim > 0) {
     cout << "Non null pointer, must free previously allocated space. \n";
@@ -62,24 +63,57 @@ bool Tensor::reset(Parameter::List& params)
       delete basisVptr[i];
     delete basisVptr;
   }
-
-  if (hess)       delete_matrix(hess);
-  if (givensC)    delete_matrix(givensC);
-  if (givensS)    delete_matrix(givensS);
-  if (newHessCol) delete newHessCol;
-  if (terrvec)    delete terrvec;
-  if (vecg)       delete vecg;
-  if (vecq)       delete vecq;
-
-
-  paramsptr = &params;
-  // if (!paramsptr->sublist("Linear Solver").isParameter("Tolerance"))
-  //   paramsptr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
-
-  Parameter::List& localParams = paramsptr->sublist("Linear Solver");
+    
+  /*
+    if (hess)       delete_matrix(hess);
+    if (givensC)    delete_matrix(givensC);
+    if (givensS)    delete_matrix(givensS);
+    if (newHessCol) delete newHessCol;
+    if (terrvec)    delete terrvec;
+    if (vecg)       delete vecg;
+    if (vecq)       delete vecq;
+  */
+  
+  paramsPtr = &params;
+  //if (!paramsPtr->sublist("Linear Solver").isParameter("Tolerance"))
+  // paramsPtr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
+    
+  Parameter::List& localParams = paramsPtr->sublist("Linear Solver");
   tol = localParams.getParameter("Tolerance", 1.0e-4);
-  reorth = localParams.getParameter("Reorthogonalize", 1);
   kmax = localParams.getParameter("kmax", 100);
+
+  string choice = localParams.getParameter("Reorthogonalize", "As Needed");
+  if (choice == "Never") {
+    reorth = Never;
+  }
+  else if (choice == "As Needed") {
+    reorth = AsNeeded;
+  }
+  else if (choice == "Always") {
+    reorth = Always;
+  }
+  else {
+    cout << "ERROR: NOX::Direction::Tensor::reset() - the choice of "
+	 << "\"Reorthogonalization\" parameter is invalid." << endl;
+    throw "NOX Error";
+  }
+  
+  
+  choice = localParams.getParameter("PreconditionSide", "Left");
+  if (choice == "None") {
+    precondition = None;
+  }
+  else if (choice == "Left") {
+    precondition = Left;
+  }
+  else if (choice == "Right") {
+    precondition = Right;
+  }
+  else {
+    cout << "ERROR: NOX::Direction::Tensor::reset() - the choice of "
+	 << "\"Preconditioning\" parameter is invalid." << endl;
+    throw "NOX Error";
+  }
 
   p = 3;
   allocate_vector(p, terrvec);
@@ -87,7 +121,7 @@ bool Tensor::reset(Parameter::List& params)
   maxDim = 0;   //  updated in compute() once n is known
 
   isFreshlyReset = true;
-  
+
   return true;
 }
 
@@ -98,13 +132,25 @@ bool Tensor::compute(Abstract::Vector& dir,
 {
   if (isFreshlyReset) {
 
+    Parameter::List& localParams = paramsPtr->sublist("Linear Solver");
+
     // Set more parameters that need info from the Group....
     n = soln.getX().length(); // bwb - Okay or better way? Always correct?
 
     // Manipulate some parameters further....
-    if (kmax > n) 
+    if (kmax > n) {
       kmax = n;
+
+      // Update parameter list with the actual value used
+      localParams.setParameter("kmax", kmax);
+    }
     maxDim = kmax + p;
+
+
+    cout << "n = " << n
+	 << " kmax = " << kmax
+	 << " maxdim = " << maxDim
+	 << endl;
 
     /* may need to delete these pointers if reset more than once - bwb */
     basisVptr = new Abstract::Vector* [maxDim];
@@ -125,22 +171,18 @@ bool Tensor::compute(Abstract::Vector& dir,
     isFreshlyReset = false;
   }
 
-#ifdef STORE_HESSENBERG
-  double** hess2 = NULL;
-  allocate_matrix(maxDim, kmax, hess2);
-  for (int i=0; i<maxDim; i++)
-    for (int j=0; j<kmax; j++)
-      hess2[i][j] = 0;
-#endif
-
   // Set iteration-specific local parameters....
-  bool breakdown = false;
-  double errTol = soln.getNormF() * tol;
-  double w1 = 0;
-  double w2 = 0;
-  double y1 = 0;
-  double qval = 0;
   Abstract::Vector* vecw = soln.getX().clone(ShapeCopy);
+  bool breakdown = false;
+  bool ok = true;
+  double w1 = 0;           // temporary variable for Givens rotations
+  double w2 = 0;           // temporary variable for Givens rotations
+  double qa = 0;           // quadratic equation coefficient
+  double qb = 0;           // quadratic equation coefficient
+  double qc = 0;           // quadratic equation coefficient
+  double y1 = 0;           // smallest magnitude root/minimizer of quadratic
+  double qval = 0;         // value of quadratic equation at minimizer
+  double errTol = 0;       // stopping tolerance for error 
 
   // Initialize storage (this may not be needed, but it is good practice)...
   for (int i=0; i<maxDim; i++) {
@@ -153,7 +195,7 @@ bool Tensor::compute(Abstract::Vector& dir,
   }
 
   // Compute F at current solution....
-  bool ok = soln.computeF();
+  ok = soln.computeF();
   if (!ok) {
     if (Utils::doPrint(Utils::Warning))
       cout << "NOX::Direction::Tensor::compute - " 
@@ -177,12 +219,16 @@ bool Tensor::compute(Abstract::Vector& dir,
   *basisVptr[0] = soln.getX();
   basisVptr[0]->update(1.0, solver.getPreviousSolutionGroup().getX(), -1.0);
   double normS = basisVptr[0]->norm();
+
+  // Calculate the Newton step if this is the first iteration...
   if (normS == 0) {
-    ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
+    ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
     dir = soln.getNewton();
+    delete vecw;
     return true;
   }
-  
+
+
 #ifdef CHECK_RESIDUALS
   // Compute the tensor term ac....
   Abstract::Vector* acPtr = soln.getF().clone(ShapeCopy);
@@ -193,6 +239,24 @@ bool Tensor::compute(Abstract::Vector& dir,
 		-1.0, soln.getF(), -1.0);    
   acPtr->scale(1/(normS*normS*normS*normS));
 #endif
+
+
+  // Compute the tensor term ac, if needed....
+  if (precondition == Right) {
+    soln.applyJacobian(*basisVptr[0], *basisVptr[1]);
+    basisVptr[1]->update(1.0, solver.getPreviousSolutionGroup().getF(),
+		  -1.0, soln.getF(), -1.0);    
+    basisVptr[1]->scale(1/(normS*normS*normS*normS));
+  }
+
+  // Continue processing the vector sc for right preoconditioning....
+  if (precondition == Right) {
+    *vecw = *basisVptr[0];
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+					*vecw, *basisVptr[0]);
+    normS = basisVptr[0]->norm();
+  }
+
 
 
 #if DEBUG_LEVEL > 1
@@ -216,17 +280,40 @@ bool Tensor::compute(Abstract::Vector& dir,
 #endif
 #endif
 
+  // Construct initial n x 3 matrix...
+  if (precondition == Left) {
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+				solver.getPreviousSolutionGroup().getF(), 
+				*basisVptr[1]);
+
+    cout << "Input \n";
+    soln.getF().print();
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"), 
+					soln.getF(), *basisVptr[2]);
+    cout << "Output \n";
+    basisVptr[2]->print();
+    cout << "End Output \n";
+  }
+  else if (precondition == Right) {
+    // *basisVptr[1] is calculated above
+    *basisVptr[2] = soln.getF();
+  }
+  else {
+    *basisVptr[1] = solver.getPreviousSolutionGroup().getF();
+    *basisVptr[2] = soln.getF();
+  }
+
+  // Compute the error tolerance, tol*||Fc||  or  tol*||Minv*Fc||
+  errTol = tol * basisVptr[2]->norm();
   
-  // Perform partial QR factorization of n x 3 matrix...
+  // Perform partial QR factorization of initial n x 3 matrix...
   basisVptr[0]->scale(1.0/normS);
 
-  *basisVptr[1] = solver.getPreviousSolutionGroup().getF();
   vecq[0] = basisVptr[1]->dot(*basisVptr[0]);
   basisVptr[1]->update(-vecq[0], *basisVptr[0], 1.0);
   vecq[1] = basisVptr[1]->norm();
   basisVptr[1]->scale(1.0/vecq[1]);
 
-  *basisVptr[2] = soln.getF();
   vecg[0] = basisVptr[2]->dot(*basisVptr[0]);
   basisVptr[2]->update(-vecg[0], *basisVptr[0], 1.0);
   vecg[1] = basisVptr[2]->dot(*basisVptr[1]);
@@ -234,9 +321,23 @@ bool Tensor::compute(Abstract::Vector& dir,
   vecg[2] = basisVptr[2]->norm();
   basisVptr[2]->scale(1.0/vecg[2]);
 
+#ifdef CHECK_ORTHOGONALITY
+  //basisVptr[0]->print();
+  for (int i=0; i<3; i++) {
+    //printf("norm(%d) = %e\n", i, basisVptr[i]->norm(NOX::Abstract::Vector::TwoNorm));
+    for (int j=i; j<3; j++) {
+      double temp = basisVptr[i]->dot(*basisVptr[j]);
+      printf("<v%d,v%d> = %e\n", i, j, temp);
+    }
+  }
+#endif
+
 #if DEBUG_LEVEL > 1
+  cout << "normS = " << Utils::sci(normS) << endl;
   cout << "vecg ";
   print_vector(maxDim, vecg);
+  cout << "vecq ";
+  print_vector(maxDim, vecq);
 #endif
   
 #if DEBUG_LEVEL > 1
@@ -251,6 +352,14 @@ bool Tensor::compute(Abstract::Vector& dir,
   cout << "old norm: " << normS << " new: " << basisVptr[0]->norm() << "\n"; 
 #endif
   
+#ifdef STORE_HESSENBERG
+  double** hess2 = NULL;
+  allocate_matrix(maxDim, kmax, hess2);
+  for (int i=0; i<maxDim; i++)
+    for (int j=0; j<kmax; j++)
+      hess2[i][j] = 0;
+#endif
+
   
   // Begin iterating...
   int k = -1;
@@ -262,7 +371,25 @@ bool Tensor::compute(Abstract::Vector& dir,
   while((terr > errTol)  &&  (k+1 < kmax)) {
     k++;
     *vecw = *basisVptr[k];
-    ok = soln.applyJacobian(*vecw, *basisVptr[k+p]);  // bwb - use error check
+    if (precondition == Left) {
+      ok = soln.applyJacobian(*basisVptr[k], *vecw);
+      ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+					  *vecw, *basisVptr[k+p]);
+    }
+    else if (precondition == Right) {
+      ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+					  *basisVptr[k], *vecw);
+      ok = soln.applyJacobian(*vecw, *basisVptr[k+p]);
+    }
+    else {
+      ok = soln.applyJacobian(*basisVptr[k], *basisVptr[k+p]);
+    }
+    if (!ok) {
+      if (Utils::doPrint(Utils::Warning))
+	cout << "NOX::Direction::Tensor::compute - "
+	     << "Unable to apply Jacobian." << endl;
+      return false;
+    }
     double normav = basisVptr[k+p]->norm();
   
     // Perform modified Gram-Schmidt....
@@ -274,8 +401,8 @@ bool Tensor::compute(Abstract::Vector& dir,
     double normav2 = newHessCol[k+p];
 
     // Reorthogonalize, if necessary....
-    if ((reorth == 3) ||
-	((reorth ==1) &&
+    if ((reorth == Always) ||
+	((reorth ==AsNeeded) &&
 	 (normav2 == 0 || log10(normav/normav2) > 10))) {
       cout << "Reorthogonalize...\n";
       for (int j=0; j<k+p; j++) {
@@ -305,7 +432,7 @@ bool Tensor::compute(Abstract::Vector& dir,
 
 
     // Calculate projected tensor term using a shortcut method...
-    if (k==0) {
+    if (k==0  &&  precondition != Right) {
       double tmp = normS*normS*normS*normS;
       for (int i=0; i<p+1; i++) {
 	vecq[i] = (vecq[i] - vecg[i] - newHessCol[i]*normS) / tmp;
@@ -376,13 +503,13 @@ bool Tensor::compute(Abstract::Vector& dir,
     }
 	
     // Put the working vector into the Hessenberg matrix...
-    for (int i=0; i<maxDim ; i++)
+    for (int i=0; i<maxDim; i++)
       hess[i][k] = newHessCol[i];
     
     // Find smallest magnitude root of the quadratic equation (first row)...
-    double qa = vecq[0] * normS * normS;
-    double qb = hess[0][0];
-    double qc = vecg[0];
+    qa = vecq[0] * normS * normS;
+    qb = hess[0][0];
+    qc = vecg[0];
     double discriminant = qb*qb - 4*qa*qc;
     if (discriminant < 0) {
       y1 = -qb/qa/2;
@@ -405,6 +532,8 @@ bool Tensor::compute(Abstract::Vector& dir,
 	y1 = (abs(tmp1) < abs(tmp2)) ? tmp1 : tmp2;
       }
     }	
+
+    // printf("s'*dn = %e, s'*a = %e\n", qc/qb*normS, 2*qa/qb/normS);
 
 #if DEBUG_LEVEL > 1
     cout << "normS and y1: " << normS << "  " << y1 << endl;
@@ -450,7 +579,6 @@ bool Tensor::compute(Abstract::Vector& dir,
   // Solve linear system for Newton direction...
   /* ...but we can't update Newton vector in group... */
   allocate_vector(iterations, pindex);
-  //pindex = allocate_vector_int(iterations);
   pindex[iterations-1] = 0;
   for (int i=0; i<iterations-1; i++)
     pindex[i] = i+1;
@@ -462,6 +590,12 @@ bool Tensor::compute(Abstract::Vector& dir,
   dir.init(0);
   for (int i=0; i<iterations; i++)
     dir.update(-yn[i], *basisVptr[i], 1);
+  if (precondition == Right) {
+    *vecw = dir;
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+					*vecw, dir);
+  }
+
 #if DEBUG_LEVEL > 1
   cout << "Newton Direction 1: ";
   dir.print();
@@ -480,7 +614,7 @@ bool Tensor::compute(Abstract::Vector& dir,
 
   
   // Compute the Newton direction directly (temporary code)
-  ok = soln.computeNewton(paramsptr->sublist("Linear Solver"));
+  ok = soln.computeNewton(paramsPtr->sublist("Linear Solver"));
 
 #if DEBUG_LEVEL > 1
   cout << "Newton Direction 2: ";
@@ -489,6 +623,8 @@ bool Tensor::compute(Abstract::Vector& dir,
   predf->update(1.0, soln.getF(), 1.0);
   double residual2 = predf->norm();
   printf("Actual Newton2 residual = %8e\n", residual2);
+  double stdn = basisVptr[0]->dot(soln.getNewton()) * normS;
+  printf("sTdn =  %e\n", stdn);
 #endif
 
   // Computing the Newton step failed, but maybe the step is okay to use...
@@ -507,7 +643,7 @@ bool Tensor::compute(Abstract::Vector& dir,
 	cout << "WARNING: NOX::Direction::Tensor::compute - "
 	     << "Tensor solve failure.\n" 
 	     << "Desired accuracy is " 
-	     << Utils::sci(paramsptr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10)) << ".\n"
+	     << Utils::sci(paramsPtr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10)) << ".\n"
 	     << "Using solution with accuracy of " << Utils::sci(accuracy) 
 	     << "." << endl;
     }
@@ -533,6 +669,11 @@ bool Tensor::compute(Abstract::Vector& dir,
   dir.init(0);
   for (int i=0; i<iterations; i++)
     dir.update(yt[i], *basisVptr[i], 1);
+  if (precondition == Right) {
+    *vecw = dir;
+    ok = soln.applyRightPreconditioning(paramsPtr->sublist("Linear Solver"),
+					*vecw, dir);
+  }
 
 #if DEBUG_LEVEL > 1
   cout << "Tensor Direction: "; 
@@ -562,9 +703,35 @@ bool Tensor::compute(Abstract::Vector& dir,
   print_vector(iterations, yt);
 #endif
   
-  
-  // Clean up
-  delete vecw;   // maybe get rid of this one?
+  // Set search direction...  (for testing linesearch)
+  //dir = soln.getNewton();
+  //dir.scale(-1.0);
+
+  // Compute parameters needed for curvilinear linesearch
+  double stJinvF = normS*qc/qb;
+  double stJinvA = 2*qa/qb/normS;
+
+  // Compute curvlinear parameters in a different way
+  double lambdaStar = 1.0;
+  vecw->update(1.0, dir, -lambdaStar, soln.getNewton(), 0);
+  double c = basisVptr[0]->dot(*vecw) * normS;
+  double stJinvF1 = -basisVptr[0]->dot(soln.getNewton()) * normS;
+  beta = -lambdaStar * stJinvF1 - c;
+  double stJinvA1 = -2*c / (beta*beta);
+
+  printf("beta =    %e  %e\n", normS*y1, beta);
+  printf("stJinvF = %e  %e\n", stJinvF, stJinvF1);
+  printf("stJinvA = %e  %e\n", stJinvA, stJinvA1);
+
+
+  // Set output parameters to pass back to calling function
+  NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
+  outputList.setParameter("sTransposeJinvF", stJinvF);
+  outputList.setParameter("sTransposeJinvA", stJinvA);
+
+
+  // Cleanup memory
+  delete vecw;
   delete pindex;
   delete yn;
   delete yt;
@@ -576,10 +743,6 @@ bool Tensor::compute(Abstract::Vector& dir,
 #ifdef STORE_HESSENBERG
   delete_matrix(hess2);
 #endif
-
-  // Set search direction...
-  // dir = soln.getNewton();
-  // dir.scale(-1.0);   //bwb - to test linesearch
 
   return ok;
 }
