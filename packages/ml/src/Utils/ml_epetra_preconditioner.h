@@ -27,7 +27,7 @@ namespace ML_Epetra
   //! Sets default parameters for aggregation-based 2-level domain decomposition preconditioners.
   int SetDefaultsDD(Teuchos::ParameterList & List, char * Prefix = "");
   
-  int ML_Epetra::SetDefaultsDD_LU(Teuchos::ParameterList & List, char * Prefix = "");
+  int SetDefaultsDD_LU(Teuchos::ParameterList & List, char * Prefix = "");
   
   //! Sets default parameters for aggregation-based 3-level domain decomposition preconditioners.  
   int SetDefaultsDD_3Levels(Teuchos::ParameterList & List, char * Prefix = "");
@@ -303,6 +303,14 @@ public:
     
 private:
 
+  MultiLevelPreconditioner(const MultiLevelPreconditioner & rhs) 
+  {};
+
+  MultiLevelPreconditioner & operator = (const MultiLevelPreconditioner & rhs)
+  {
+    return *this;
+  };
+  
   //! Initializes object with defauls values.
   void Initialize();
 

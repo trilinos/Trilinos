@@ -285,7 +285,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   
   if( LevelID_ != 0 ) delete [] LevelID_;
   
-  if( ML_Get_PrintLevel() > 5 && Comm().MyPID() == 0 && NumApplications_ ) {
+  if( verbose_ && NumApplications_ ) {
 
     // stick data in OutputList
 
@@ -447,7 +447,7 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   if( CLP.Has("-num_nodes_per_aggr") )
     List_.set("aggregation: nodes per aggregate", CLP.Get("-num_nodes_per_aggr",512));
   if( CLP.Has("-num_local_aggr") )
-    List_.set("aggregation: local aggregate", CLP.Get("-num_local_aggr",512));
+    List_.set("aggregation: local aggregates", CLP.Get("-num_local_aggr",512));
   if( CLP.Has("-smoother_pre_or_post") )
     List_.set("smoother: pre or post", CLP.Get("-smoother_pre_or_post","both"));
   if( CLP.Has("-smoother_damping_factor") )
@@ -459,8 +459,8 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   if( CLP.Has("-aggr_damping_factor") )
     List_.set("aggregation: damping factor", CLP.Get("-aggr_damping_factor",1.333));
   
-  if( CLP.Has("-symmetric") )
-    List_.set("eigen-analysis: use symmetric algorithms", CLP.Get("-symmetric",false));
+  if( CLP.Has("-eigen_analysis_type") )
+    List_.set("eigen-analysis: type", CLP.Get("-eigen_analysis_type","Anorm"));
   if( CLP.Has("-eigen_analysis_tol") )
     List_.set("eigen-analysis: tolerance", CLP.Get("-eigen_analysis_tol",1e-2));
   if( CLP.Has("-compute_null_space") )
@@ -1464,7 +1464,7 @@ void MultiLevelPreconditioner::SetEigenList()
   char parameter[80];
   
   // eigen-analysis:
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
+  sprintf(parameter,"%seigen-analysis: use symmetric algorithm", Prefix_);
   bool IsSymmetric = List_.get(parameter,false);
     
   if( IsSymmetric ) EigenList_.set("eigen-analysis: symmetric problem",true);
@@ -1474,7 +1474,7 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
-  EigenList_.set("eigen-analysis: use diagonal scaling", List_.get(parameter,false));
+  EigenList_.set("eigen-analysis: use diagonal scaling", List_.get(parameter,true));
     
   sprintf(parameter,"%seigen-analysis: restart", Prefix_);
   int itemp = List_.get(parameter, 100);
@@ -1494,7 +1494,7 @@ void MultiLevelPreconditioner::SetEigenList()
   EigenList_.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_);    
-  EigenList_.set("field-of-values: use diagonal scaling", List_.get(parameter,false));
+  EigenList_.set("field-of-values: use diagonal scaling", List_.get(parameter,true));
     
   sprintf(parameter,"%sfield-of-values: restart", Prefix_);
   itemp = List_.get(parameter, 100);
@@ -1521,22 +1521,48 @@ void MultiLevelPreconditioner::SetEigenList()
 void MultiLevelPreconditioner::SetSmoothingDamping() 
 {
 
-#ifdef MARZIO
-
   char parameter[80];
-  Epetra_Time Time(Comm());
   
-  // almost everything here is experimental ;)
+  /* ********************************************************************** */
+  /* For "classical" (with Anasazi) approach to determine lambda_max only.  */
+  /* ********************************************************************** */
+
+  sprintf(parameter,"%seigen-analysis: type", Prefix_);
+  string str = List_.get(parameter,"Anorm");
+  
+  if( str == "cg" )           ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+  else if( str == "Anorm" )   ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+  else if( str == "anasazi" ) ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
+  else {
+    if( Comm().MyPID() == 0 ) {
+      cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
+	   << "(" << str << ")" << endl;
+      cerr << ErrorMsg_ << "Using default value..." << endl;
+    }
+  }
+
+#ifndef MARZIO
+  
+  double DampingFactor = 1.333;
+  if( SolvingMaxwell_ ) DampingFactor = 0.0;
+
+  sprintf(parameter,"%saggregation: damping factor", Prefix_);
+  DampingFactor = List_.get(parameter, DampingFactor);
+  ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
+
+#else
+
+  /* ********************************************************************** */
+  /* Strategies to determine the field-of-values.                           */
+  /* almost everything here is experimental ;)                              */
+  /* ********************************************************************** */
+
+  Epetra_Time Time(Comm());
+  double DampingFactor;
   
   sprintf(parameter,"%sR and P smoothing: type", Prefix_);
   string RandPSmoothing = List_.get(parameter, "classic");
 
-  double DampingFactor = 1.333;
-  if( SolvingMaxwell_ ) DampingFactor = 0.0;
-
-  /* ********************************************************************** */
-  /* For "classical" (non-Anasazi) approach to determine lambda_max only.   */
-  /* ********************************************************************** */
 
   sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
   bool IsSymmetric = List_.get(parameter,false);
@@ -1550,6 +1576,7 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
 
     /* ********************************************************************** */
     /* This is the standard approach followed by ML (R = P^T)                 */
+    /* I re-set damping factor.                                               */
     /* ********************************************************************** */
 
     sprintf(parameter,"%saggregation: damping factor", Prefix_);
@@ -1749,16 +1776,6 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     }
     
   }
-
-#else
-
-  char parameter[80];
-  
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithms", Prefix_);
-  bool IsSymmetric = List_.get(parameter,false);
-  
-  if( IsSymmetric ) ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-  else              ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
 
 #endif       
 
