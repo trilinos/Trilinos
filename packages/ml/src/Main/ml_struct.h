@@ -1,0 +1,227 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
+
+/* ******************************************************************** */
+/* Declaration of the ML structure                                      */
+/* ******************************************************************** */
+/* Author        : Charles Tong (LLNL) and Raymond Tuminaro (SNL)       */
+/* Date          : March, 1999                                          */
+/* ******************************************************************** */
+
+#ifndef __MLSTRUCT__
+#define __MLSTRUCT__
+
+/* ******************************************************************** */
+/* data structure type definition                                       */
+/* ******************************************************************** */
+
+typedef struct ML_Struct ML;
+
+/* ******************************************************************** */
+/* local include files                                                  */
+/* ******************************************************************** */
+
+#include "ml_defs.h"
+#include "ml_bdrypts.h"
+#include "ml_mapper.h"
+#include "ml_grid.h"
+#include "ml_smoother.h"
+#include "ml_comminfoop.h"
+#include "ml_1level.h"
+#include "ml_operator.h"
+#include "ml_csolve.h"
+#include "ml_operatoragx.h"
+#include "ml_comm.h"
+#include "ml_gridfunc.h"
+#include "ml_vec.h"
+#include "ml_rap.h"
+#include "ml_utils.h"
+#include "ml_mat_formats.h"
+#include "ml_solver.h"
+#include "ml_krylov.h"
+#include <string.h>
+
+/* ******************************************************************** */
+/* ******************************************************************** */
+/* data definition for the ML Class                                     */
+/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
+/* This is the primary data structure which users interact directly     */
+/* with via the provided functions.                                     */
+/* -------------------------------------------------------------------- */
+
+struct ML_Struct {
+   int            id;
+   int            ML_init_flag;    /* indicate initialization done */
+   int            ML_scheme;       /* which ML scheme to pick      */
+   int            ML_num_levels;   /* number of levels             */
+   int            ML_num_transfers;/* number of transfers  */
+   int            ML_finest_level, ML_coarsest_level;
+   int            output_level;
+   int            res_output_freq;
+   double         tolerance;
+   int            max_iterations;
+   double         *spectral_radius;
+   ML_Smoother    *pre_smoother;
+   ML_Smoother    *post_smoother;
+   ML_CSolve      *csolve;
+   ML_Operator    *Amat, *Rmat, *Pmat;
+   ML_Grid        *Grid;
+   ML_BdryPts     *BCs;
+   ML_Mapper      *eqn2grid;
+   ML_Mapper      *grid2eqn;
+   ML_1Level      *SingleLevel;
+   ML_DVector     *Amat_Normalization;
+   struct ML_Timing 
+                  *timing;       /* Used for timing information.    */
+   ML_Comm        *comm;         /* communicator for ML             */
+   int            *int_options;  /* optional integer parameters     */
+   double         *dble_options; /* optional double parameters      */
+   void           *void_options; /* optional other parameters       */
+   int            (*func)();     /* optional function               */
+
+};
+struct ML_Timing {
+   double precond_apply_time;
+   double         total_build_time;
+};
+
+/* ******************************************************************** */
+/* ******************************************************************** */
+/*      User Interface Proto-types                                      */
+/* ******************************************************************** */
+/* ******************************************************************** */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern int ML_Create(ML **ml, int Nlevels);
+extern int ML_Set_OutputLevel(ML *ml, int output_level);
+extern int ML_Set_ResidualOutputFrequency(ML *ml, int output_freq);
+extern int ML_Set_Tolerance(ML *ml, double tolerance);
+extern int ML_Set_MaxIterations(ML *ml, int iterations);
+extern int ML_Print_Timing(ML *ml);
+
+extern int ML_Destroy(ML **ml);
+
+extern int ML_Init_Comm(ML *ml);
+extern int ML_Set_Comm_MyRank(ML *ml, int myrank);
+extern int ML_Set_Comm_Nprocs(ML *ml, int nprocs);
+extern int ML_Set_Comm_Communicator(ML *ml, USR_COMM com);
+extern int ML_Set_Comm_Send(ML *ml, int (*send)());
+extern int ML_Set_Comm_Recv(ML *ml, int (*recv)());
+extern int ML_Set_Comm_Wait(ML *ml, int (*wait)());
+
+extern int ML_Set_Comm(ML *ml, ML_Comm *comm);
+
+extern int ML_Init_Grid(ML *, int nl, void *grid);
+extern int ML_Set_Grid_GridFunc(ML *, int nl, ML_GridFunc *);
+extern int ML_Set_Grid_MaxVertPerElmnt(ML *, int, int nvert);
+extern int ML_Set_Grid_GetDimension(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetNVert(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetNElmnt(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntNVert(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntVertList(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetVertGlobalNum(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntGlobalNum(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetVertCoordinate(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_ComputeBasisCoef(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntVolume(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntMatrix(ML *, int nl, int (*func)());
+extern int ML_Set_Grid_GetElmntNullSpace(ML *, int, int (*func)());
+
+
+extern int ML_Gen_GridXsferUsingFEBasis(ML *, int L1, int L2, int stride);
+extern int ML_Gen_MGHierarchyVanek(ML *, int start, int increment_or_decrement);
+
+extern int ML_Set_Grid(ML *, int nl, void *grid, ML_GridFunc *);
+
+extern int ML_Init_Amatrix(ML *,int level,int ilen,int olen,void *data);
+extern int ML_Set_Amatrix_Matvec(ML*,int,
+                          int (*func)(void*,int,double*,int,double*));
+extern int ML_Set_Amatrix_Diag(ML*,int,int, double *);
+extern int ML_Set_Amatrix_Getrow(ML *ml, int level, 
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
+
+extern int ML_Set_Amatrix_GetrowNeighbors(ML*,int,int N_neigh,int *nlist);
+extern int ML_Set_Amatrix_GetrowCommInfo(ML *, int level, int neighbor,
+                     int N_rcv, int *rcv_list, int N_send, int *send_list);
+extern int ML_Set_Amatrix_NormalizationFactors(ML*,int,int n,double *fact);
+extern int ML_Set_Amatrix_NullSpace(ML *, int, int, int, double *);
+
+extern void ML_setup_grid_xsfer_op(void *, ML_GridFunc *, void *,
+                     ML_GridFunc *, void **xsfer, ML_Comm *);
+
+extern int ML_Init_Restrictor(ML*,int L1,int L2,int,int,void *data);
+extern int ML_Set_Restrictor_Matvec(ML*,int,
+                    int (*func)(void*,int,double*,int,double*));
+extern int ML_Set_Restrictor_Getrow(ML *ml, int level, 
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
+extern int ML_Set_Restrictor_GetrowNeighbors(ML *ml,int level,int N_neigh, 
+	             int *neigh_list);
+extern int ML_Set_Restrictor_GetrowCommInfo(ML *ml,int level,int neighbor, 
+                     int N_rcv, int *rcv_list, int N_send, int *send_list);
+
+extern int ML_Init_Prolongator(ML*,int L1,int L2,int,int,void *data);
+extern int ML_Set_Prolongator_Matvec(ML *ml, int level, 
+                     int (*func) (void *, int, double *, int, double *));
+extern int ML_Set_Prolongator_Getrow(ML *ml, int level, 
+                     int (*getrow)(void*,int,int*,int,int*,double*,int*),
+		     int (*comm  )(double *vec, void *data), int comm_vec_leng);
+extern int ML_Set_Prolongator_GetrowNeighbors(ML *ml,int level,int N_neigh, 
+	             int *neigh_list);
+extern int ML_Set_Prolongator_GetrowCommInfo(ML *ml,int level,int neighbor, 
+                     int N_rcv, int *rcv_list, int N_send, int *send_list);
+
+extern int ML_Gen_Smoother_Jacobi( ML *, int nl, int pre_or_post, 
+                     int ntimes, double omega );
+extern int ML_Gen_Smoother_GaussSeidel(ML*,int nl,int pre_post,int ntimes,double);
+extern int ML_Gen_Smoother_SymGaussSeidel(ML*,int nl,int pre_post,int ntimes, 
+		     double omega);
+extern int ML_Gen_Smoother_OrderedSymGaussSeidel(ML *ml , int nl, int pre_or_post,
+                     int ntimes, double omega);
+extern int ML_Gen_Smoother_BlockGaussSeidel(ML*,int nl,int pre_post,int ntimes,
+		     double omega, int blocksize);
+extern void BGS_Clean(void *data);
+extern int ML_Gen_Smoother_VBlockJacobi(ML*,int nl,int pre_post, int ntimes,
+                     double omeg, int Nblocks, int *blockList);
+extern int ML_Gen_Smoother_VBlockSymGaussSeidel(ML*,int nl,int pre_post, 
+                     int ntimes, double omega, int Nblocks, int *blockList);
+extern int ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ML*,int nl, int,
+                     int ntimes,double omega,int Nblocks,int *blockList);
+extern int ML_Gen_Smoother_VBlockKrylovJacobi(ML*,int nl,int pre_post, int ntimes,
+                     double omeg, int Nblocks, int *blockList);
+extern int ML_Gen_Smoother_OverlappedDomainDecomp(ML*,int nl,int pre_post);
+extern int ML_Gen_Smoother_GSextra( ML *ml , int nl, int pre_or_post,
+		int ntimes, double omega, int Nextra, int extra[]);
+extern int ML_Set_Smoother(ML *, int nl , int pre_post, void *obj, 
+                     int (*func)(void *, int, double *, int, double *));
+
+extern int ML_Gen_CoarseSolverSuperLU(ML *ml_handle, int level);
+extern int ML_Set_CoarseSolver(ML *ml, int level, int leng,
+                               void *sol_obj, void (*solve)());
+
+extern int ML_Gen_AmatrixRAP(ML *ml, int to_level, int from_level);
+
+extern int ML_Set_EqnToridMapFunc(ML *, int,int fleng,int tleng,void (*func)());
+extern int ML_Set_GridToqnMapFunc(ML *, int,int fleng,int tleng,void (*func)());
+extern int ML_Set_BoundaryTypes(ML*,int level,int type,int n,int *data);
+
+extern int ML_Gen_Solver(ML *ml, int method, int finest_level, int);
+extern int ML_Iterate(ML *ml, double *sol, double *rhs);
+extern int ML_Solve_MGV( ML *ml , double *din, double *dout);
+extern double ML_Cycle_MGV(ML_1Level *curr, double *sol, double *rhs,
+                     int approx_all_zeros, ML_Comm *comm, int);
+extern int ML_Solve_AMGV( ML *ml , double *din, double *dout);
+extern double ML_Cycle_AMGV(ML_1Level *curr, double *sol, double *rhs,
+                     int approx_all_zeros, ML_Comm *comm);
+
+#ifdef __cplusplus
+}
+#endif
+#endif
+

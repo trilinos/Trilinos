@@ -1,0 +1,406 @@
+/* ******************************************************************** */
+/* See the file COPYRIGHT for a complete copyright notice, contact      */
+/* person and disclaimer.                                               */        
+/* ******************************************************************** */
+
+#include "ml_include.h"
+
+/* ******************************************************************** */
+/* Blow away any inter-mixing between boundary and interior points in   */
+/* the matrix ml_handle->Pmat[level2].                                  */
+/* -------------------------------------------------------------------- */
+
+int oldML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, 
+                                   double *boundary, double *cboundary)
+{
+   int *cols, *row_ptr, i, j;
+   double *vals;
+   struct ML_CSR_MSRdata *temp;
+
+   int size;
+
+   if (ml_handle->Pmat[level2].getrow->external != CSR_getrows)
+     perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
+
+   temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
+   cols    = temp->columns;
+   vals    = temp->values;
+   row_ptr = temp->rowptr;
+   size    = ml_handle->Pmat[level2].outvec_leng;
+
+   /* zero out any inter-mixing between boundary  */
+   /* and interior in the interpolation operator. */
+
+   for (i = 0; i < size; i++) {
+      if (boundary[i] == 1.) {
+         for (j = row_ptr[i] ; j < row_ptr[i+1]; j++)
+            if ( cboundary[cols[j]] == 0.) vals[j] = 0.0;
+      }
+      else {
+         for (j = row_ptr[i] ; j < row_ptr[i+1]; j++)
+            if ( cboundary[cols[j]] == 1.) vals[j] = 0.0;
+      }
+   }
+   return(1);
+}
+
+/* ******************************************************************** */
+/* Blow away any inter-mixing between boundary and interior points in   */
+/* the matrix ml_handle->Pmat[level2].                                  */
+/* -------------------------------------------------------------------- */
+
+int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
+     int fine_size )
+{
+   int fboundary_length,cboundary_length, *fboundary_list, *cboundary_list;
+   char *f_bdry;
+   int *cols, *row_ptr, i, j, jk;
+   double *vals;
+   struct ML_CSR_MSRdata *temp;
+   double *dtemp;
+   ML_CommInfoOP *comm_info;
+
+   comm_info        = ml_handle->Pmat[level2].getrow->pre_comm;
+   fboundary_length = ml_handle->Pmat[level2].to->BCs->Dirichlet_grid_length;
+   fboundary_list   = ml_handle->Pmat[level2].to->BCs->Dirichlet_grid_list;
+   cboundary_length = ml_handle->Pmat[level2].from->BCs->Dirichlet_grid_length;
+   cboundary_list   = ml_handle->Pmat[level2].from->BCs->Dirichlet_grid_list;
+   dtemp       = (double *) malloc((size+1)*sizeof(double));
+   f_bdry      = (char *) malloc((fine_size+1)*sizeof(char));
+   if (f_bdry == NULL) {
+        printf("No space to compute coarse boundary\n");
+        exit(1);
+   }
+   for (jk = 0; jk < fine_size; jk++)       f_bdry[jk] = 'i';
+   for (jk = 0; jk < fboundary_length; jk++) f_bdry[fboundary_list[jk]] = 'b';
+   for (jk = 0; jk < size; jk++)       dtemp[jk] = 0.0;
+   for (jk = 0; jk < cboundary_length; jk++) dtemp[cboundary_list[jk]] = 1.;
+   if ( comm_info != NULL)
+      ML_exchange_bdry(dtemp, comm_info, size, ml_handle->comm, ML_OVERWRITE);
+
+
+
+   if (ml_handle->Pmat[level2].getrow->external != CSR_getrows)
+     perror("ML_Mdfy_Prolongator_DirBdry can only be used with CSR matrices\n");
+
+   temp    = (struct ML_CSR_MSRdata *) ml_handle->Pmat[level2].data;
+   cols    = temp->columns;
+   vals    = temp->values;
+   row_ptr = temp->rowptr;
+
+   /* zero out any inter-mixing between boundary  */
+   /* and interior in the interpolation operator. */
+
+   for (i = 0; i < fine_size; i++) {
+      if (f_bdry[i] == 'b') {
+         for (j = row_ptr[i] ; j < row_ptr[i+1]; j++)
+            if ( dtemp[cols[j]] == 0.0) vals[j] = 0.0;
+      }
+      else {
+         for (j = row_ptr[i] ; j < row_ptr[i+1]; j++)
+            if ( dtemp[cols[j]] == 1.0) vals[j] = 0.0;
+      }
+   }
+   return(1);
+}
+
+/* ******************************************************************** */
+/* -------------------------------------------------------------------- */
+
+int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, int fine_size)
+{
+   int     *cols, *row_ptr, jk, Ncoarse;
+   struct  ML_CSR_MSRdata *temp;
+   int     *boundary_list, boundary_length, *cboundary_list, cboundary_length = 0;
+   char    *f_bdry, *c_bdry;
+
+   Ncoarse     = ml_handle->Pmat[level].invec_leng;
+   c_bdry      = (char *) malloc((size+1)*sizeof(char));
+   f_bdry      = (char *) malloc((fine_size+1)*sizeof(char));
+   if (f_bdry == NULL) {
+      printf("No space to compute coarse boundary\n");
+      exit(1);
+   }
+   boundary_length = ml_handle->Pmat[level].to->BCs->Dirichlet_grid_length;
+   boundary_list   = ml_handle->Pmat[level].to->BCs->Dirichlet_grid_list;
+   for (jk = 0; jk < fine_size; jk++) f_bdry[jk] = 'i';
+   for (jk = 0; jk < boundary_length; jk++) f_bdry[boundary_list[jk]] = 'b';
+
+   /* Mark the coarse grid boundary */
+
+   temp        = (struct ML_CSR_MSRdata*) ml_handle->Pmat[level].data;
+   cols        = temp->columns;
+   row_ptr     = temp->rowptr;
+
+   for (jk = 0; jk < size; jk++) c_bdry[jk] = 'i';
+   for (jk = 0; jk < fine_size; jk++) {
+      if ((row_ptr[jk+1] - row_ptr[jk] == 1) && ( f_bdry[jk] == 'b')) {
+         c_bdry[ cols[row_ptr[jk]]] = 'b';
+      }
+   }
+
+   /* stuff the coarse boundary information into ML */
+
+   for (jk = 0; jk < Ncoarse; jk++) {
+      if (c_bdry[jk] == 'b') cboundary_length++;
+   }
+   cboundary_list = (int *) malloc((cboundary_length+1)*sizeof(int));
+   if (cboundary_list == NULL) {
+      printf("No space to compute coarse boundary\n");
+      exit(1);
+   }
+   cboundary_length = 0;
+   for (jk = 0; jk < Ncoarse; jk++) {
+      if (c_bdry[jk] == 'b') cboundary_list[cboundary_length++] = jk;
+   }
+   ML_Set_BoundaryTypes(ml_handle, ml_handle->Pmat[level].from->levelnum,
+                        ML_BDRY_DIRICHLET,cboundary_length,cboundary_list);
+
+   free(c_bdry);
+   free(f_bdry);
+   free(cboundary_list);
+   return(1);
+}
+
+/* ******************************************************************** */
+/*
+ * Take the 'matrix' defined by getrow() and vec_comm() and make a CSR
+ * copy of it which will be stored in the matrix ml_handle->Pmat[level2].
+ *
+ *
+ * Parameters
+ * ==========
+ *
+ *    isize      On input, number of local columns in matrix to be copied.
+ *
+ *    osize      On input, number of local rows in matrix to be copied.
+ *
+ *    getrow()   On input, user's function to get rows of the matrix.
+ *
+ *    vec_comm() On input, user's function to update a vector via communication
+ *               so that a local matrix-vector product can occur.
+ *
+ * -------------------------------------------------------------------- */
+
+int ML_Gen_Prolongator_Getrow(ML *ml_handle, int level2, int level, int isize,
+   int osize, int (*getrow)(void* , int , int *, int , int *, double *, int *),
+   int (*vec_comm)(double *, void*), void *data, int Nghost)
+{
+   int *cols, *row_ptr, space, flag, nz_ptr, i, length;
+   double *vals;
+   double dsize, di;
+   struct ML_CSR_MSRdata *temp;
+
+   row_ptr = (int *) malloc(sizeof(int)*(osize+1));
+
+   space = osize*5+30;
+
+   flag = 0;
+
+   while (flag == 0) {
+      cols    = (int    *) malloc(sizeof(int)*space);
+      vals    = (double *) malloc(sizeof(double)*space);
+
+      nz_ptr = 0;
+      row_ptr[0] = nz_ptr;
+      for (i = 0; i < osize; i++) {
+         flag = getrow(data, 1, &i, space-nz_ptr, &(cols[nz_ptr]),
+                       &(vals[nz_ptr]), &length);
+         if (flag == 0) break;
+         nz_ptr += length;
+         row_ptr[i+1] = nz_ptr;
+      }
+      if (flag == 0) {
+         dsize = (double) osize;
+         di    = (double) (i+1);
+         dsize = 1.2*dsize/di;
+         space = (int) ( ((double) space)*dsize);
+         space++;
+         ML_free(vals);
+         ML_free(cols);
+      }
+   }
+
+   /* store the matrix into ML */
+
+   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp->columns = cols;
+   temp->values  = vals;
+   temp->rowptr = row_ptr;
+
+   ml_handle->Pmat[level2].data_destroy = ML_CSR_MSRdata_Destroy;
+   ML_Init_Prolongator(ml_handle, level2, level, isize, osize, (void *) temp);
+   ML_Operator_Set_ApplyFunc(&(ml_handle->Pmat[level2]),ML_INTERNAL,CSR_matvec);
+/*
+printf("we've changed the data pointer ? ....\n");
+*/
+   if (vec_comm != NULL) {
+      ML_CommInfoOP_Generate(&(ml_handle->Pmat[level2].getrow->pre_comm), 
+			  vec_comm, data, ml_handle->comm, 
+			  ml_handle->Pmat[level2].invec_leng, Nghost);
+   }
+   else ml_handle->Pmat[level2].getrow->pre_comm = NULL;
+
+   ML_Operator_Set_Getrow(&(ml_handle->Pmat[level2]), ML_EXTERNAL, 
+			  ml_handle->Pmat[level2].outvec_leng, CSR_getrows);
+
+/*
+   ML_CommInfoOP_Generate(&(ml_handle->Pmat[level2].getrow->pre_comm),
+                   vec_comm, data, ml_handle->comm, 
+		   ml_handle->Pmat[level2].invec_leng, Nghost);
+*/
+
+   return(1);
+}
+
+/* ******************************************************************** */
+/* Take the Prolongator given by ml_handle->Pmat[level2], transpose
+ * it and store it into the matrix given by ml_handle->Rmat[level].
+ *
+ * -------------------------------------------------------------------- */
+
+int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
+{
+
+   ML_Operator *Pmat, *Rmat;
+   int  *row_ptr, *colbuf, *cols;
+   int isize, osize, i, j, N_nzs, flag, length, sum, new_sum;
+   int Nneighbors, *neigh_list, *send_list, *rcv_list, Nsend, Nrcv;
+   void *data;
+   double *valbuf, *vals;
+   int (*getrow)(void* , int , int *, int , int *, double *, int *);
+   struct ML_CSR_MSRdata *temp;
+   int Nghost = 0, Nghost2 = 0;
+   int *remap, remap_leng;
+   ML_CommInfoOP *c_info, **c2_info;
+
+   /* pull out things from ml_handle */
+
+   Pmat  = &(ml_handle->Pmat[level2]);
+   Rmat  = &(ml_handle->Rmat[level]);
+   isize = Pmat->outvec_leng;
+   osize = Pmat->invec_leng;
+   if (Pmat->getrow->ML_id == ML_EXTERNAL) {
+       data   = Pmat->data;
+       getrow = Pmat->getrow->external;
+   }
+   else if (Pmat->getrow->ML_id == ML_INTERNAL) {
+       data   = (void *) Pmat;
+       getrow = Pmat->getrow->internal;
+   }
+   else perror("ML_Gen_Restrictor_TransP: Getrow not defined for P!\n");
+
+   /* transpose Pmat's communication list. This means that PRE communication */
+   /* is replaced by POST, ML_OVERWRITE is replaced by ML_ADD, and the send  */
+   /* send and receive lists are swapped.                                    */
+
+   c_info     = Pmat->getrow->pre_comm;
+   Nneighbors = ML_CommInfoOP_Get_Nneighbors(c_info);
+   neigh_list = ML_CommInfoOP_Get_neighbors(c_info);
+   remap_leng = osize;
+   Nrcv = 0;
+   Nsend = 0;
+   for (i = 0; i < Nneighbors; i++) {
+      Nrcv  += ML_CommInfoOP_Get_Nrcvlist (c_info, neigh_list[i]);
+      Nsend += ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
+   }
+   remap_leng = osize + Nrcv + Nsend;
+   remap = (int *) malloc( remap_leng*sizeof(int));
+   for (i = 0; i < osize; i++) remap[i] = i;
+   for (i = osize; i < osize+Nrcv+Nsend; i++) 
+      remap[i] = -1;
+ 
+   c2_info     = &(Rmat->getrow->post_comm);
+   ML_CommInfoOP_Set_neighbors(c2_info, Nneighbors,
+ 			      neigh_list,ML_ADD,remap,remap_leng);
+   ML_free(remap);
+   for (i = 0; i < Nneighbors; i++) {
+      Nsend      = ML_CommInfoOP_Get_Nsendlist(c_info, neigh_list[i]);
+      send_list  = ML_CommInfoOP_Get_sendlist (c_info, neigh_list[i]);
+      Nrcv       = ML_CommInfoOP_Get_Nrcvlist (c_info, neigh_list[i]);
+      Nghost    += Nrcv;
+      rcv_list   = ML_CommInfoOP_Get_rcvlist(c_info, neigh_list[i]);
+      /* handle empty rows ... i.e. ghost variables not used */
+      if (rcv_list != NULL) {
+         for (j = 0; j < Nrcv; j++) {
+            if (rcv_list[j] > Nghost2 + osize - 1)
+               Nghost2 = rcv_list[j] - osize + 1;
+         }
+      }
+ 
+      ML_CommInfoOP_Set_exch_info(*c2_info, neigh_list[i], Nsend, send_list,
+ 				 Nrcv,rcv_list);
+      if (send_list != NULL) ML_free(send_list);
+      if ( rcv_list != NULL) ML_free( rcv_list);
+   }
+   if (Nghost2 > Nghost) Nghost = Nghost2;
+   if (neigh_list != NULL) ML_free(neigh_list);
+
+   row_ptr = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
+   colbuf  = (int    *) malloc(sizeof(int)*(Nghost+osize+1));
+   valbuf  = (double *) malloc(sizeof(double)*(Nghost+osize+1));
+
+   /* count the total number of nonzeros and compute */
+   /* the length of each row in the transpose.       */
+ 
+   for (i = 0; i < Nghost+osize; i++) row_ptr[i] = 0;
+
+   N_nzs = 0;
+   for (i = 0; i < isize; i++) {
+      flag = getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      if (flag == 0) perror("ML_Transpose_Prolongator: sizes don't work\n");
+      N_nzs += length;
+      for (j = 0; j < length; j++)
+         row_ptr[  colbuf[j] ]++;
+   }
+
+   cols    = (int    *) malloc(sizeof(int   )*(N_nzs+1));
+   vals    = (double *) malloc(sizeof(double)*(N_nzs+1));
+   if (vals == NULL) 
+      pr_error("ML_Gen_Restrictor_TransP: Out of space\n");
+
+   /* set 'row_ptr' so it points to the beginning of each row */
+
+   sum = 0;
+   for (i = 0; i < Nghost+osize; i++) {
+      new_sum = sum + row_ptr[i];
+      row_ptr[i] = sum;
+      sum = new_sum;
+   }
+   row_ptr[osize+Nghost] = sum;
+
+   /* read in the prolongator matrix and store transpose in Rmat */
+
+   for (i = 0; i < isize; i++) {
+      getrow(data, 1, &i, Nghost+osize+1, colbuf, valbuf, &length);
+      for (j = 0; j < length; j++) {
+         cols[ row_ptr[ colbuf[j] ]   ] = i;
+         vals[ row_ptr[ colbuf[j] ]++ ] = valbuf[j];
+      }
+   }
+
+   /* row_ptr[i] now points to the i+1th row.    */
+   /* Reset it so that it points to the ith row. */
+
+   for (i = Nghost+osize; i > 0; i--)
+      row_ptr[i] = row_ptr[i-1];
+   row_ptr[0] = 0;
+
+   ML_free(valbuf);
+   ML_free(colbuf);
+
+   /* store the matrix into ML */
+
+   temp = (struct ML_CSR_MSRdata *) malloc(sizeof(struct ML_CSR_MSRdata));
+   temp->columns = cols;
+   temp->values  = vals;
+   temp->rowptr  = row_ptr;
+ 
+   ml_handle->Rmat[level].data_destroy = ML_CSR_MSRdata_Destroy;
+   ML_Init_Restrictor(ml_handle, level, level2, isize, osize, (void *) temp);
+   ML_Operator_Set_ApplyFunc(Rmat,ML_INTERNAL, CSR_matvec);
+   ML_Operator_Set_Getrow(&(ml_handle->Rmat[level]), ML_EXTERNAL,
+                                 Nghost+osize, CSR_getrows);
+  return(1);
+}
+
