@@ -1431,7 +1431,12 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
          for ( j = mat_indx[i]; j < mat_indx[i+1]; j++ )
             printf("%d : neighbors = %d %d %d\n", mypid, mat_indx[j], 
                    aggr_stat[mat_indx[j]], aggr_index[mat_indx[j]]);
+/*
          exit(1);
+*/
+         aggr_stat[i] = ML_AGGR_SELECTED;
+         aggr_stat[i] = aggr_count++;
+         aggr_cnt_array[aggr_count-1] = 1;
       }
    }
 
