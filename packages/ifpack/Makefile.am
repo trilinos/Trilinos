@@ -45,13 +45,14 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 EXTRA_DIST = bootstrap \
 	config/ac_cxx_have_std.m4 config/ac_cxx_have_stl.m4 \
-	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 
+	config/ac_cxx_namespaces.m4 config/ac_cxx_mutable.m4 \
+	config/depcomp
+
 
 ## #######################################################################
 ## Tools in the auxillary directory 
 ## #######################################################################
-AUX_DIST = config/install-sh config/missing config/mkinstalldirs \
-	config/depcomp
+AUX_DIST = config/install-sh config/missing config/mkinstalldirs 
 
 ## #######################################################################
 ## Files to be deleted by 'make maintainer-clean'
