@@ -166,8 +166,8 @@ int main(int argc, char *argv[])
   // compute the real residual
 
   double residual, diff;
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(&residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
   
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;

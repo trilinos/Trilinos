@@ -150,8 +150,8 @@ int main(int argc, char *argv[])
   // compute the real residual
 
   double residual, diff, res2;
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(&residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
   
   (Gallery.GetExactSolution())->Norm2(&res2);
   if( Comm.MyPID()==0 ) {
