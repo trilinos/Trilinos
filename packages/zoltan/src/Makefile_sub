@@ -24,7 +24,7 @@ endif
 
 DEPS=-M
 
-include $(OBJ_FILES:.o=.d)
+#include $(OBJ_FILES:.o=.d)
 
 %.o:	%.c
 	@echo "Compiling $<..."
@@ -33,7 +33,12 @@ include $(OBJ_FILES:.o=.d)
 	@echo "(Re)Building dependency for $<..."
 	@$(SHELL) -ec '$(DCC) $(DEPS) $(DEFS) $< | sed '\''s/$*.o/& $@/g'\'' > $@'
 
-$(LIB_NAME):	$(OBJ_FILES) $(OBJ_FILES:.o=.d)
+$(LIB_NAME):	$(OBJ_FILES:.o=.d) $(OBJ_FILES)
 		@echo "creating library..."
 		@$(AR) $(LIB_NAME) $(OBJ_FILES)
 		@$(RANLIB) $(LIB_NAME)
+
+$(TARGET):	$(LIB_NAME) $(MAIN_OBJ:.o=.d) $(MAIN_OBJ)
+		@echo "linking driver"
+		@$(CC) $(MAIN_OBJ) -o $(TARGET) $(LNK_LIBS)
+

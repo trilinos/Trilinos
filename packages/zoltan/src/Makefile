@@ -17,7 +17,8 @@
 
 GDEFINES	= -DDEBUG
 
-TARGET		= dlb
+TARGET		= zdrive
+LIB_TARGET	= dlb
 LIB_NAME	= libdlb.a
 
 SUPP_TARGS	= "sgi10k smos sun tflop"
@@ -30,8 +31,9 @@ SUPP_TARGS	= "sgi10k smos sun tflop"
 #
 #   Paths to submodules
 #
-SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct
-SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct
+SUB_VPATH	= ../all ../lb ../par ../rcb ../comm ../oct ../driver
+SUBINCPATH	= -I../all -I../lb -I../par -I../rcb -I../comm -I../oct \
+		  -I../driver
 
 #source code from SCCS projects
 
@@ -46,8 +48,8 @@ ID_INC		= id_const.h id_util.h id_util_const.h
 VX_CSRC		= vx.c
 VX_INC		= vx_const.h
 
-ALL_CSRC	= all_allo.c all_util.c
-ALL_INC		= all_const.h all_allo_const.h all_util_const.h
+ALL_CSRC	= all_allo.c
+ALL_INC		= all_const.h all_allo_const.h
 
 LB_CSRC		= lb.c lb_util.c 
 LB_INC		= lb_const.h lb.h lbi_const.h lb_util_const.h
@@ -67,6 +69,16 @@ COMM_INC	= comm.h
 PAR_CSRC	= par_util.c
 PAR_INC		= par_const.h par.h
 
+# source code and defines for driver
+DR_SRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
+		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
+		  dr_migrate.c dr_output.c
+DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
+		  dr_err_const.h dr_par_util_const.h dr_elem_const.h
+
+ROOT_ARCHD	= /Net/pecos/rf_crew/arch
+NEM_LIBS	= -lnemIc -lexoIIc -lnetcdf
+
 # machine independent routines
 INC		= $(GR_INC) $(ID_INC) $(VX_INC) $(ALL_INC) $(PAR_INC) \
 		  $(RCB_INC) $(COMM_INC) $(OCT_INC)
@@ -79,14 +91,14 @@ LIB_SRC_OBJ	= $(LIB_SRC_C:.c=.o)
 # lint defines
 #
 LINT		= alint
-LINT_INC_PATH	= -Iall -Ilb -Ipar -Ircb -Icomm -Ioct \
+LINT_INC_PATH	= -Idriver -Iall -Ilb -Ipar -Ircb -Icomm -Ioct \
 		  -I/Net/local/lang/SC2.0.1/include \
 		  -I/Net/local/lang/SC2.0.1/ansi_include \
-		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include
+		  -I/Net/pecos/puma/pumatmp1/tools/mpi/include \
+		  -I/Net/pecos/rf_crew/arch/sun/include
 LINT_FLAGS	= $(LINT_INC_PATH) $(GDEFINES) -DSUNOS
-LINT_TARGET	= llib-ldlb.ln
-SRC_MAIN	= all_main.c
-SUBDIRS		= all lb par rcb comm oct
+LINT_TARGET	= llib-l$(LIB_TARGET).ln
+SUBDIRS		= driver all lb par rcb comm oct
 VPATH		= $(SUBDIRS)
 
 #
@@ -94,7 +106,7 @@ VPATH		= $(SUBDIRS)
 #
 SMOS_CC		= sicc
 SMOS_DBG_FLAGS	= -g
-SMOS_OPT_FLAGS	= -O4
+SMOS_OPT_FLAGS	= -O
 SMOS_RANLIB	= touch
 SMOS_AR		= ar860 r
 
@@ -107,6 +119,15 @@ SMOS_INC_PATH	= $(SUBINCPATH)
 SMOS_CCOMP	= $(SMOS_CC) $(SMOS_DBG_FLAGS) $(SMOS_INC_PATH)
 
 SMOS_DEFS	= $(GDEFINES)
+
+# driver stuff
+SMOS_ARCHD	= $(ROOT_ARCHD)/smos
+SMOS_DR_CSRC	= $(DR_SRC)
+SMOS_DR_OBJ	= $(SMOS_DR_CSRC:.c=.o)
+SMOS_DR_IPATH	= -I$(SMOS_ARCHD)/include
+SMOS_MPI_LIB	= -L/Net/local/mpi/lib/paragon/sunmos -lmpi
+SMOS_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SMOS_ARCHD)/lib $(NEM_LIBS) \
+		   $(SMOS_MPI_LIB)
 
 #
 # Intel P6 defines
@@ -124,9 +145,16 @@ TFLOP_OBJ	= $(TFLOP_CSRC:.c=.o)
 
 TFLOP_INC_PATH	= $(SUBINCPATH)
 
-TFLOP_CCOMP	= $(TFLOP_CC) $(TFLOP_INC_PATH) $(TFLOP_OPT_FLAGS)
+TFLOP_CCOMP	= $(TFLOP_CC) $(TFLOP_INC_PATH) $(TFLOP_DBG_FLAGS)
 
 TFLOP_DEFS	= $(GDEFINES) -DMPI
+
+# driver stuff
+TFLOP_ARCHD	= $(ROOT_ARCHD)/tflop
+TFLOP_DR_CSRC	= $(DR_SRC)
+TFLOP_DR_OBJ	= $(TFLOP_DR_CSRC:.c=.o)
+TFLOP_DR_IPATH	= -I$(TFLOP_ARCHD)/include
+TFLOP_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(TFLOP_ARCHD)/lib $(NEM_LIBS) -lmpi
 
 #
 # SUN defines
@@ -150,25 +178,12 @@ SUN_CCOMP	= $(SUN_CC) $(SUN_INC_PATH) $(SUN_OPT_FLAGS)
 
 SUN_DEFS	= $(GDEFINES) -DSUNOS
 
-#
-# sgi10k defines
-#
-SGI10K_CC	= cc
-SGI10K_DBG_FLAGS= -g -64 -r10000 -DMAX_MEM_SIZE=64000000
-SGI10K_OPT_FLAGS= -O -64 -r10000 -DMAX_MEM_SIZE=64000000
-SGI10K_RANLIB	= touch
-SGI10K_AR	= ar r
-
-SGI10K_CSRC	= $(LIB_SRC_C)
-SGI10K_INC	= $(INC)
-SGI10K_OBJ	= $(SGI10K_CSRC:.c=.o)
-
-SGI10K_INC_PATH	= $(SUBINCPATH)
-
-SGI10K_CCOMP	= $(SGI10K_CC) $(SGI10K_INC_PATH) $(SGI10K_OPT_FLAGS)
-
-SGI10K_DEFS	= $(GDEFINES) -DSGI10KOS
-
+# driver stuff
+SUN_ARCHD	= $(ROOT_ARCHD)/sun
+SUN_DR_CSRC	= $(DR_SRC)
+SUN_DR_OBJ	= $(SUN_DR_CSRC:.c=.o)
+SUN_DR_IPATH	= -I$(SUN_ARCHD)/include
+SUN_DR_LIBS	= -L. -l$(LIB_TARGET) -L$(SUN_ARCHD)/lib $(NEM_LIBS) -lmpi
 
 ###########################################################################
 #      TARGETS FOR DIFFERENT MACHINES
@@ -182,10 +197,24 @@ smos:
 	@cp Makefile_sub Obj_smos/Makefile
 	@cd Obj_smos; \
 	$(MAKE) $(LIB_NAME) "CC=$(SMOS_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(SMOS_INC)"\
+	"LIB_NAME=$(LIB_NAME)" "INC_PATH=$(SMOS_INC_PATH)"\
 	"AR=$(SMOS_AR)" "OBJ_FILES=$(SMOS_OBJ)" \
 	"DEFS=$(SMOS_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SMOS_RANLIB)"
+
+smos-dr:
+	@if [ ! -d Obj_smos ]; \
+	then mkdir Obj_smos; \
+	fi
+	@rm -f Obj_smos/Makefile
+	@cp Makefile_sub Obj_smos/Makefile
+	@cd Obj_smos; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(SMOS_CCOMP) $(SMOS_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(SMOS_AR)" "OBJ_FILES=$(SMOS_OBJ)" \
+	"DEFS=$(SMOS_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(SMOS_RANLIB)" "MAIN_OBJ=$(SMOS_DR_OBJ)" \
+	"LNK_LIBS=$(SMOS_DR_LIBS)"
 
 tflop:
 	@if [ ! -d Obj_tflop ]; \
@@ -200,6 +229,20 @@ tflop:
 	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(TFLOP_RANLIB)"
 
+tflop-dr:
+	@if [ ! -d Obj_tflop ]; \
+	then mkdir Obj_tflop; \
+	fi
+	@rm -f Obj_smos/Makefile
+	@cp Makefile_sub Obj_tflop/Makefile
+	@cd Obj_tflop; \
+	$(MAKE) $(TARGET) "TARGET=$(TARGET)" \
+	"CC=$(TFLOP_CCOMP) $(TFLOP_DR_IPATH)" "LIB_NAME=$(LIB_NAME)" \
+	"AR=$(TFLOP_AR)" "OBJ_FILES=$(TFLOP_OBJ)" \
+	"DEFS=$(TFLOP_DEFS)" "VPATH=$(SUB_VPATH)" \
+	"RANLIB=$(TFLOP_RANLIB)" "MAIN_OBJ=$(TFLOP_DR_OBJ)" \
+	"LNK_LIBS=$(TFLOP_DR_LIBS)"
+
 sun:
 	@if [ ! -d Obj_sun ]; \
 	then mkdir Obj_sun; \
@@ -213,19 +256,6 @@ sun:
 	"DEFS=$(SUN_DEFS)" "VPATH=$(SUB_VPATH)" \
 	"RANLIB=$(SUN_RANLIB)"
 #	@cscope -b $(MAIN) $(SUN_CSRC) $(SUN_INC)
-
-sgi10k:
-	@if [ ! -d Obj_sgi10k ]; \
-	then mkdir Obj_sgi10k; \
-	fi
-	@rm -f Obj_sgi10k/Makefile
-	@cp Makefile_sub Obj_sgi10k/Makefile
-	@cd Obj_sgi10k; \
-	$(MAKE) $(LIB_NAME) "CC=$(SGI10K_CCOMP)"\
-	"LIB_NAME=$(LIB_NAME)" "INC=$(SGI10K_INC)"\
-	"AR=$(SGI10K_AR)" "OBJ_FILES=$(SGI10K_OBJ)" \
-	"DEFS=$(SGI10K_DEFS)" "VPATH=$(SUB_VPATH)" \
-	"RANLIB=$(SGI10K_RANLIB)"
 
 #
 ############################################################################
@@ -244,11 +274,11 @@ default:
 
 $(LINT_TARGET): $(LIB_SRC_C)
 	@echo "Generating lint file for library..."
-	$(LINT) $(LINT_FLAGS) $? -y -o $(TARGET)
+	$(LINT) $(LINT_FLAGS) $? -y -o $(LIB_TARGET)
 
-lint: $(SRC_MAIN) $(LINT_TARGET)
+lint: $(DR_SRC) $(LINT_TARGET)
 	@echo "running lint..."
-	$(LINT) $(LINT_FLAGS) $< $(LINT_TARGET)
+	$(LINT) $(LINT_FLAGS) $?
 
 
 printout:
@@ -259,5 +289,5 @@ printout:
 
 clean:
 	-for a in $(SUBDIRS); do cd $$a; \
-	 $(RM) *.o *.d *.d@ dlb dlb.pure; \
+	 $(RM) -f *.o *.d *.d@ zdrive zdrive.pure; \
 	 cd ..; done; exit 0
