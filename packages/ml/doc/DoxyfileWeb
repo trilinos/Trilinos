@@ -70,3 +70,6 @@ FILE_PATTERNS         += ml_struct.h
 FILE_PATTERNS         += ml_aggregate.h
 
 EXAMPLE_PATH           = ../../../../Trilinos/packages/ml/examples
+
+IMAGE_PATH             = ../../../../Trilinos/packages/ml/doc
+
