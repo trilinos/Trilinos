@@ -138,7 +138,7 @@ inline std::ostream& operator<<(std::ostream& os, TimeOfDay const& time)
 namespace Teuchos {
   template<>
   struct OrdinalTraits<TimeOfDay> {
-    static inline bool haveMachineParameters() {return(false);};
+		static const bool hasMachineParameters = false;
     static inline TimeOfDay zero()             {return(TimeOfDay(0,0));}; // zero is defined as midnight (0:00)
     static inline TimeOfDay one()              {return(TimeOfDay(0,1));}; // one is defined as one minute past midnight (0:01)
     static inline std::string name()           {return("TimeOfDay");};
