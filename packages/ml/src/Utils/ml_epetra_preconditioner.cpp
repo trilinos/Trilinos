@@ -655,35 +655,53 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   } else if( RandPSmoothing == "advanced" ) {
 
 #ifdef HAVE_ML_ANASAZI
+
+    int MaxNumNonzeros;
+    double CPUTime;
+    
     if( verbose_ )
       cout << PrintMsg_ << "Use A to smooth restriction operator" << endl;
     agg_->Restriction_smoothagg_transpose = ML_TRUE;
-    // get estimation of a box containing the field of values
-    double MaxReal, MaxImag;
-    // create List for Anasazi (kept separate from List_, I don't want to pollute it)
-    ParameterList AnasaziList;
-    SetAnasaziList(AnasaziList);
-    ML_Anasazi_Get_FiledOfValuesBox(RowMatrix_,MaxReal,MaxImag,AnasaziList);
-    double eta = MaxImag/MaxReal;
-    if( verbose_ )
-      cout << PrintMsg_ << "Field of Values Box = " << MaxReal << " + "
-	   << MaxImag << "(eta = " << eta << ")" << endl;
-    // allocate as is C, memory will be freed by ML's C functions
+    
+    SetEigenList();
+    
     struct ML_Field_Of_Values * field_of_values;
     
     field_of_values = (struct ML_Field_Of_Values *) malloc( sizeof(struct ML_Field_Of_Values) );
-    field_of_values->eta     = eta;
-    field_of_values->real_max= MaxReal;
-    field_of_values->imag_max= MaxImag;
-    field_of_values->poly_order = 2;
-    field_of_values->R_coeff[0] =  1.107;
-    field_of_values->R_coeff[1] =  0.285;
-    field_of_values->R_coeff[2] =  0.718;
-    field_of_values->P_coeff[0] =  1.878;
-    field_of_values->P_coeff[1] = -2.515;
-    field_of_values->P_coeff[2] =  0.942;
-    //    field_of_values->ParameterList = &List_;
-    
+    field_of_values->eta     = 0.0;
+    field_of_values->real_max= -1.0;
+    field_of_values->imag_max= -1.0;
+    field_of_values->poly_order = 2;          
+    field_of_values->EigenList = (void *) &EigenList_;
+
+    // still to set up polynomial coeffiecients
+    string DampingType =  List_.get("R and P smoothing: damping type", "default");
+  
+    if( DampingType == "default" ) {
+      
+      field_of_values->R_coeff[0] =  1.107;
+      field_of_values->R_coeff[1] =  0.285;
+      field_of_values->R_coeff[2] =  0.718;
+      
+      field_of_values->P_coeff[0] =  1.878;
+      field_of_values->P_coeff[1] = -2.515;
+      field_of_values->P_coeff[2] =  0.942;
+      
+      // stick other options here ?????
+      
+    } else {
+
+      // get them from parameters' list.
+      field_of_values->R_coeff[0] =  List_.get("R and P smoothing: c_0",  1.107);
+      field_of_values->R_coeff[1] =  List_.get("R and P smoothing: c_1",  0.285);
+      field_of_values->R_coeff[2] =  List_.get("R and P smoothing: c_2",  0.718);
+
+      field_of_values->P_coeff[0] =  List_.get("R and P smoothing: g_0",  1.878);
+      field_of_values->P_coeff[1] =  List_.get("R and P smoothing: g_1", -2.515);
+      field_of_values->P_coeff[2] =  List_.get("R and P smoothing: g_2",  0.942);
+      
+    }
+
     agg_->field_of_values = (void*) field_of_values;
     
 #else
@@ -711,6 +729,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   else                               Direction = ML_DECREASING;
 
   if( SolvingMaxwell_ == false ) 
+#define MARZIO
 #ifdef MARZIO
     NumLevels_ = ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
 #else
@@ -1757,8 +1776,8 @@ void MultiLevelPreconditioner::SetNullSpace()
     double ImagEigenvalues[NullSpaceDim];
     
     // create List for Anasazi (kept separate from List_, I don't want to pollute it)
-    ParameterList AnasaziList;
-    SetAnasaziList(AnasaziList);
+    // Also, I keep it local (not use EigenList_
+    ParameterList AnasaziList(EigenList_);
     
     // new parameters specific for this function only (not set by the user)
     AnasaziList.set("matrix operation", "A");    
@@ -1787,7 +1806,7 @@ void MultiLevelPreconditioner::SetNullSpace()
 
 // ================================================ ====== ==== ==== == =
 
-void MultiLevelPreconditioner::SetAnasaziList(Teuchos::ParameterList & AnasaziList) 
+void MultiLevelPreconditioner::SetEigenList() 
 {
 
   char parameter[80];
@@ -1796,56 +1815,52 @@ void MultiLevelPreconditioner::SetAnasaziList(Teuchos::ParameterList & AnasaziLi
   sprintf(parameter,"%seigen-analysis: use symmetric algotithms", Prefix_);
   bool IsSymmetric = List_.get(parameter,false);
     
-  if( IsSymmetric ) AnasaziList.set("eigen-analysis: symmetric problem",true);
-  else              AnasaziList.set("eigen-analysis: symmetric problem",false);
+  if( IsSymmetric ) EigenList_.set("eigen-analysis: symmetric problem",true);
+  else              EigenList_.set("eigen-analysis: symmetric problem",false);
 
   sprintf(parameter,"%seigen-analysis: tolerance", Prefix_);
-  AnasaziList.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
+  EigenList_.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
-  AnasaziList.set("eigen-analysis: use scaling", List_.get(parameter,false));
+  EigenList_.set("eigen-analysis: use scaling", List_.get(parameter,false));
     
   sprintf(parameter,"%seigen-analysis: restart", Prefix_);
   int itemp = List_.get(parameter, 100);
-  AnasaziList.set("eigen-analysis: restart", itemp);
+  EigenList_.set("eigen-analysis: restart", itemp);
 
   sprintf(parameter,"%seigen-analysis: length", Prefix_);
   itemp =  List_.get(parameter, 20);
-  AnasaziList.set("eigen-analysis: length", itemp);
+  EigenList_.set("eigen-analysis: length", itemp);
 
   sprintf(parameter,"%seigen-analysis: normalize eigenvectors", Prefix_);
   bool btemp =  List_.get(parameter, false);
-  AnasaziList.set("eigen-analysis: normalize eigenvectors",btemp);
+  EigenList_.set("eigen-analysis: normalize eigenvectors",btemp);
 
-  sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
-  btemp =  List_.get(parameter, true);
-  AnasaziList.set("eigen-analysis: print current status", btemp);
-  
   // field of values:
 
   sprintf(parameter,"%sfield-of-values: tolerance", Prefix_);
-  AnasaziList.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
+  EigenList_.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
 
   sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_);    
-  AnasaziList.set("field-of-values: use scaling", List_.get(parameter,false));
+  EigenList_.set("field-of-values: use scaling", List_.get(parameter,false));
     
   sprintf(parameter,"%sfield-of-values: restart", Prefix_);
   itemp = List_.get(parameter, 100);
-  AnasaziList.set("field-of-values: restart", itemp);
+  EigenList_.set("field-of-values: restart", itemp);
 
   sprintf(parameter,"%sfield-of-values: length", Prefix_);
   itemp =  List_.get(parameter, 20);
-  AnasaziList.set("field-of-values: ", itemp);
+  EigenList_.set("field-of-values: ", itemp);
 
   sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
-  btemp =  List_.get(parameter, true);
-  AnasaziList.set("field-of-values: print current status", btemp);
+  btemp =  List_.get(parameter, false);
+  EigenList_.set("field-of-values: print current status", btemp);
 
   // general output
   
   sprintf(parameter,"%soutput", Prefix_);
   itemp =  List_.get(parameter, 10);
-  AnasaziList.set("output",itemp);
+  EigenList_.set("output",itemp);
     
 }
 

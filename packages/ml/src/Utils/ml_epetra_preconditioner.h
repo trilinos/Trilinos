@@ -316,7 +316,7 @@ private:
 
   void SetNullSpace();
 
-  void SetAnasaziList(Teuchos::ParameterList & List);
+  void SetEigenList();
   
   void PrintLine();
   
@@ -341,6 +341,8 @@ private:
   double SmootherStatus_[AZ_STATUS_SIZE];
   Teuchos::ParameterList List_;             // all input parameters are here
   Teuchos::ParameterList OutputList_;       // various informations
+
+  Teuchos::ParameterList EigenList_;        // for advanced R constructions
   
   int MaxLevels_;
   int * LevelID_;                           // used to easily handle ML_INCREASING and ML_DECREASING.

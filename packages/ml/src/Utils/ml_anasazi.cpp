@@ -25,6 +25,8 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziOperator.hpp"
 
+#include "ml_epetra_utils.h"
+#include "Epetra_CrsMatrix.h"
 #include "ml_anasazi.h"
 
 using namespace Anasazi;
@@ -273,6 +275,8 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 				    Teuchos::ParameterList & List ) 
 {
 
+  Epetra_Time Time(RowMatrix->Comm());
+  
   int MyPID = RowMatrix->Comm().MyPID();
 
   bool UseScaling = true;
@@ -326,6 +330,11 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
   MaxReal = evalr[0] / 2;
 
+  double * residuals  = MyBlockArnoldi1.getResiduals();
+  if( output > 5 && MyPID == 0 ) {
+    cout << "ML_Anasazi : Ritz Residual for A^T + A = " << residuals[0] << endl;
+  }
+  
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi1.currentStatus();
 
   /* ********************************************************************** */
@@ -362,10 +371,54 @@ int ML_Anasazi_Get_FiledOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 
   MaxImag = evali[0] / 2;
 
+  residuals  = MyBlockArnoldi2.getResiduals();
+  if( output > 5 && MyPID == 0 ) {
+    cout << "ML_Anasazi : Ritz Residual for A^T - A = " << residuals[0] << endl;
+  }
+
   if( PrintCurrentStatus && MyPID == 0 ) MyBlockArnoldi2.currentStatus();
-  
+
+  if( output > 5 && MyPID == 0 ) {
+    cout << "ML_Anasazi : Time = " << Time.ElapsedTime() << " (s)" << endl;
+  }
+    
   return 0;
   
+}
+
+// ================================================ ====== ==== ==== == =
+
+extern "C" {
+  
+int ML_Anasazi_Get_FiledOfValuesBox_Interface(ML_Operator * Amat,
+					      struct ML_Field_Of_Values * fov )
+{
+
+  char parameter[80];
+  Epetra_CrsMatrix * CrsTemp;
+  int MaxNumNonzeros;
+  double CPUTime;
+  
+  ML_Operator2EpetraCrsMatrix(Amat,CrsTemp,MaxNumNonzeros,
+			      true,CPUTime);
+  
+  double MaxReal,MaxImag;
+  Teuchos::ParameterList * EigenList = (Teuchos::ParameterList *) fov->EigenList;
+  
+  ML_Anasazi_Get_FiledOfValuesBox(CrsTemp,MaxReal,MaxImag,*EigenList);
+
+  double eta = MaxImag/MaxReal;
+
+  fov->eta = eta;
+  fov->real_max = MaxReal;
+  fov->imag_max = MaxImag;
+
+  delete CrsTemp;
+  
+  return 0;
+ 
+}
+
 }
 
 #endif
