@@ -1,0 +1,60 @@
+#=======================================================================
+# class name
+#=======================================================================
+
+CLASS = DSS
+
+#=======================================================================
+# Ken's debug 
+#=======================================================================
+
+SUPERLU_C = pdgssvx_ABglobal.c  
+SUPERLU_C = 
+
+TEST_C = $(SUPERLU_C) 
+TEST_C =
+
+SRC_CXX = Comm_assert_equal.cpp 
+SRC_CXX = SuperludistOO.cpp Comm_assert_equal.cpp 
+SRC_CXX = 
+
+#=======================================================================
+# test source files
+#=======================================================================
+
+
+TEST_CXX = SSTest.cpp TestSolver.cpp TestMultiSolver.cpp TestMrhsSolver.cpp \
+	SparseDirectTimingVars.cpp \
+	SparseSolverResult.cpp Time_Memory.cpp TimeMemory.cpp $(SRC_CXX) 
+
+TEST_F =
+#=======================================================================
+# TEST include files
+#=======================================================================
+TEST_INCLUDE = TestSolver.h \
+	SparseDirectTimingVars.h \
+	SparseSolverResult.h Time_Memory.h TimeMemory.h 
+
+TEST_INC = $(TRILINOS3PL_HOME)/SuperLU_DIST_1.0/SRC
+SDT =  -DSPARSE_DIRECT_TIMINGS
+include ./Makefile.template
+
+
+#=======================================================================
+# TEST script and matrix files
+#=======================================================================
+TEST_CSH = TestAmesos.csh
+TEST_MATRICES = SuperLU.rua ImpcolA.rua ImpcolB.rua ImpcolC.rua ImpcolD.rua \
+	ImpcolE.rua fidapm05.rua bcsstk18.rsa bcsstk24.rsa
+
+#=======================================================================
+# Ken's debug rules for compiling C code 
+#=======================================================================
+.SUFFIXES : .o .c  .cc .cpp
+
+.c.o:
+	$(CC) $(CCFLAGS) -I$(TEST_INC) -c $<
+
+
+tar:
+	tar cf DSSLVtest.tar $(TEST_CXX) $(TEST_INCLUDE) $(TEST_CSH) $(TEST_MATRICES) classicMakefile Makefile.template 
