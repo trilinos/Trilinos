@@ -8,6 +8,8 @@
 #include "Ifpack_LinearPartitioner.h"
 #include "Ifpack_GreedyPartitioner.h"
 #include "Ifpack_METISPartitioner.h"
+#include "Ifpack_EquationPartitioner.h"
+#include "Ifpack_UserPartitioner.h"
 #include "Ifpack_Graph_Epetra_RowMatrix.h"
 #include "Ifpack_DenseContainer.h" 
 #include "Ifpack_Utils.h" 
@@ -594,6 +596,11 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (OverlapLevel_ == 0) {
 
     for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+     
+      // may happen that a partition is empty
+      if (Containers_[i]->NumRows() == 0) 
+        continue;
+
       int LID;
 
       // extract RHS from X
@@ -619,6 +626,10 @@ DoJacobi(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   else {
 
     for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+
+      // may happen that a partition is empty
+      if (Containers_[i]->NumRows() == 0) 
+        continue;
 
       int LID;
 
@@ -700,6 +711,10 @@ DoGaussSeidel(Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     IFPACK_CHK_ERR(Y2->Import(Y,*Importer_,Insert));
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
+
+    // may happen that a partition is empty
+    if (Containers_[i]->NumRows() == 0) 
+      continue;
 
     int LID;
 
@@ -808,6 +823,10 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
 
   for (int i = 0 ; i < NumLocalBlocks() ; ++i) {
 
+    // may happen that a partition is empty
+    if (Containers_[i]->NumRows() == 0) 
+      continue;
+
     int LID;
 
     // update from previous block
@@ -851,6 +870,9 @@ DoSGS(const Epetra_MultiVector& X, Epetra_MultiVector& Xcopy,
   Xcopy = X;
 
   for (int i = NumLocalBlocks() - 1; i >=0 ; --i) {
+
+    if (Containers_[i]->NumRows() == 0) 
+      continue;
 
     int LID;
 
@@ -977,7 +999,8 @@ int Ifpack_BlockRelaxation<T>::SetParameters(Teuchos::ParameterList& List)
     PrecType_ = IFPACK_SGS;
   } else {
     cerr << "Option `relaxation: type' has an incorrect value ("
-      << PT << "'" << endl;
+      << PT << ")'" << endl;
+    cerr << "(file " << __FILE__ << ", line " << __LINE__ << ")" << endl;
     exit(EXIT_FAILURE);
   }
 
@@ -1037,6 +1060,10 @@ int Ifpack_BlockRelaxation<T>::Initialize()
     Partitioner_ = new Ifpack_GreedyPartitioner(Graph_);
   else if (PartitionerType_ == "metis")
     Partitioner_ = new Ifpack_METISPartitioner(Graph_);
+  else if (PartitionerType_ == "equation")
+    Partitioner_ = new Ifpack_EquationPartitioner(Graph_);
+  else if (PartitionerType_ == "user")
+    Partitioner_ = new Ifpack_UserPartitioner(Graph_);
   else
     IFPACK_CHK_ERR(-1);
 
