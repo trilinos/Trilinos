@@ -20,19 +20,22 @@
  *
  * Input:
  *   key: a key to hash of type LB_GID (any data type)
- *   n: the desired range of the hash function is 0..n-1
+ *   n: the range of the hash function is 0..n-1
  *
  * Return value:
  *   the hash value, an unsigned integer between 0 and n-1
  *
  * Algorithm: 
- *   This hash function uses bitwise xor to hash into an unsigned int,
- *   and then finally employs Don Knuth's golden ratio multiplicative
- *   method. This hash function is good for int-sized keys
- *   (integers and pointers) but may be poor for longer keys.
- *   Feel free to replace it with a more sophisticated method.
+ *   This hash function is based on Don Knuth's golden ratio
+ *   multiplicative method. Bitwise xor is used for keys
+ *   longer than an int. The method works well for keys
+ *   of size one or two ints, which is typically the case.
  *
- * Author: Erik Boman, eboman@cs.sandia.gov (9226)
+ *   This hash function should be replaced with a stronger method
+ *   if good hashing of a large number of keys is important.
+ *
+ * Author: 
+ *   Erik Boman, eboman@cs.sandia.gov (SNL 9226)
  */
 
 
@@ -42,24 +45,24 @@ unsigned int LB_hashf(LB_GID key, int n)
   char *byteptr;
   int bytes;
 
-  /* First xor the int-sized portions of the key */
+  /* First hash the int-sized portions of the key */
   h = 0;
   for (p = (unsigned int *)&key, bytes=sizeof(LB_GID); bytes >= sizeof(int); 
        bytes-=sizeof(int), p++){
-    h ^= *p;
+    h = (h*2654435761U) ^ (*p);
   }
+
   /* Then take care of the remaining bytes, if any */
   rest = 0;
   for (byteptr = (char *)p; bytes > 0; bytes--, byteptr++){
     rest = (rest<<8) | (*byteptr);
   }
 
-  /* Compute hash value based on Knuth's golden ratio mult. method */
-  h = (h ^ rest) * 2654435761U;
+  /* Merge the two parts */
+  h = (h*2654435761U) ^ rest;
 
-  /* Take the hash value mod n */
+  /* Return h mod n */
   h = h%n;
-
   return h;
 }
 
