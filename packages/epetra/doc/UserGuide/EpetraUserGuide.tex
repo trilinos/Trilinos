@@ -1,10 +1,9 @@
  \documentclass[12pt,relax]{EpetraUserGuide}
-\usepackage{array}
-\usepackage{fancyvrb}
-    \title{\EpetraTM{} User Guide}
+ \usepackage{fancyvrb}
 \SANDsubtitle{}
+\title{\EpetraTM{} User Guide}
 
-    \author{Michael A. Heroux, Robert J. Hoekstra and Alan Williams \\
+\author{Michael A. Heroux, Robert J. Hoekstra and Alan Williams \\
 	\\
 	    Sandia National Laboratories\\
 	    P.O. Box 5800\\
@@ -45,12 +44,15 @@
 \newcommand{\lbcomm}{Epetra\_LbComm}
 \newcommand{\map}{Epetra\_Map}
 \newcommand{\blockmap}{Epetra\_BlockMap}
+\newcommand{\serialdensevector}{Epetra\_SerialDenseVector}
+\newcommand{\intserialdensevector}{Epetra\_IntSerialDenseVector}
 \renewcommand{\vector}{Epetra\_Vector}
 \newcommand{\multivector}{Epetra\_MultiVector}
 \newcommand{\crsgraph}{Epetra\_CrsGraph}
 \newcommand{\crsmatrix}{Epetra\_CrsMatrix}
 \newcommand{\vbrmatrix}{Epetra\_VbrMatrix}
 \newcommand{\rowmatrix}{Epetra\_RowMatrix}
+\newcommand{\distobject}{Epetra\_DistObject}
 
 
 \begin{document}
@@ -256,7 +258,7 @@ starts to tap the capabilities of Epetra, we hope the reader finds it
 useful.
 
 The example code, listed in Figures~\ref{Figure:FirstExample}
-and~\{Figure:FirstExamplePowerMethod}, is the main program driver and
+and~\ref{Figure:PowerMethod}, is the main program driver and
 a simple implementation of the Power Method~\cite{GoluVanL96} for computing the dominant
 eigenvalue and associated eigenvector of a given matrix,
 respectively.  In the remainder of this section we proceed with a
@@ -265,40 +267,38 @@ description of the code in these figures.
 \begin{center}
 \input{Ex1}
 \end{center}
-\label{Figure:FirstExample}
-\caption{Simple Driver for Power Method Example}
-\end{figure}
-
-\begin{figure}
-\begin{center}
-\input{Ex1a}
-\end{center}
-\label{Figure:FirstExamplePowerMethod}
-\caption{Simple Power Method Routine}
+\caption{\label{Figure:FirstExample} Simple Driver for Power Method Example}
 \end{figure}
 
 \subsection{Explanation of Figure~\ref{Figure:FirstExample}}
 
-\subsubsection{Lines 1--2}
+\paragraph{Lines 1--2}
 Include system header files needed for screen output and system
 functions.
-\subsubsection{Lines 3--8}
+\paragraph{Line 3}
+Include the Epetra\_config.h file.  This file contains macros
+definitions that were defined during the configuration process.  In
+particular, the macro HAVE\_MPI will be defined or undefined in this
+file, depending on whether Epetra was built in MPI mode or not.  We
+will use HAVE\_MPI below to determine if our example code should be
+compiled with MPI support or not.
+\paragraph{Lines 4--9}
 Include the appropriate implementation of the \comm{} class.  If
 Epetra was built in MPI mode, the macro ``HAVE\_MPI'' will be defined
 and this example will be built with MPI support.  If not, then the
 example will be built in serial mode.  Note that these lines of code
- and lines 15--20 are the only difference between a serial and distributed memory
+ and lines 18--23 are the only difference between a serial and distributed memory
 version of the example. 
-\subsubsection{Lines 9--11}
+\paragraph{Lines 10--14}
 Include the other Epetra header files needed to use Epetra classes.
 It is a good practice to explicitly include header files for all
 Epetra classes you explicitly use and only those header files.
-\subsubsection{Lines 12--13}
-Declare prototype for power_method function.
-\subsubsection{Line 14}
+\paragraph{Line 16}
+Declare prototype for power\_method function.
+\paragraph{Line 17}
 Start of main program.  Note that argv[1] will be used to pass in the
 problem size.
-\subsubsection{Lines 15--21}
+\paragraph{Lines 18--24}
 Depending on whether or not Epetra was built in MPI
 mode\footnote{Whether or not Trilinos, and Epetra as a Trilinos package, is built
 in MPI mode is determined by how the Trilinos (or Epetra) {\tt
@@ -311,29 +311,37 @@ object will be constructed.  Please note that, in principle, the serial
 version of this example would work, even if Epetra were built in MPI
 mode.  Serial mode is always available.
 
-Line 21 prints the Comm object to cout.  Most Epetra classes have
+Line 24 prints the Comm object to cout.  Most Epetra classes have
 implemented the ostream << operator so that an instance of an Epetra
 object can be viewed.  Sometime the volume of output can be very
 large, so some care is needed when using this feature.
-\subsubsection{Lines 22--27}
+\paragraph{Lines 25--30}
 This example accepts a single integer argument
 specifying the number of equations that should be used.  These lines
 of code capture that number and put it into NumGlobalElements.
-\subsubsection{Lines 28--31}
+\paragraph{Lines 31--33}
 Constructs an \map{} object that has NumGlobalElements elements spread
 across the parallel (or serial) machine.  The second argument (a
 ``0'') indicates that our global indices are zero-based.  Fortran
 users would typically pass in a ``1'' here.  The third argument is the
 Comm object we just built.
-\subsubsection{Line 32}
+\paragraph{Line 35}
 Once an \map{} object is constructed, we can query it for how many
 elements of the map are on the calling process\footnote{For readers
 who are not familiar with a single-program, multiple data (SPMD)
 programming model, it may be useful to read a bit about it.  Typing
 ``SPMD tutorial'' into a web search engine should be a sufficient
 starting point.}.  In this way, the remainder of our code can operate
-independent of how data was distributed.
-\subsubsection{Lines 33--34}
+independent of how data is distributed.
+\subsubsection{Lines 37--57}
+The majority of executable code in this sample driver is devoted to
+constructing our sparse matrix.  At the end of this code segment we
+will have constructed a diagonal with each processor owning roughly
+the same number of rows and columns.  All diagonal values will be set
+to 2.0, except for the very first diagonal value, which will be set to
+4.0.  Since our matrix is diagonal, its eigenvalues are the diagonal
+values and the dominant eigenvalue is 4.0.  
+\paragraph{Line 37}
 Instantiates (creates) an \crsmatrix{}.  The first argument tells the
 constructor whether or not data passed in to this object should be
 copied (user values and indices will be copied to internal storage) or
@@ -356,22 +364,121 @@ is appropriate.
 At this point the matrix is an empty ``bucket'' ready to receive
 matrix values and indices.  Also, at this point, most of the methods
 in the \crsmatrix{} cannot be called successfully for this object.
-\subsubsection{Lines 35--41}
+\paragraph{Lines 39--41}
+Here we create two helper objects that not really necessary for such a
+simple example, but which illustrate how examples that are more
+complex might
+use the \serialdensevector{} and \intserialdensevector{} classes
+effectively.
+Line 39 allocates a vector of length one to hold the diagonal value
+we will insert into each row.  Line 40 sets the value to 2.0, which is
+the value we will assign to all the diagonals of our matrix.  We will
+later replace the first diagonal value with a value of 4.0.
+\paragraph{Lines 42--48}
 These lines insert values and indices into the matrix we just
 instantiated.  Our matrix is very simple--a single diagonal entry per
-row--so these lines may be a bit confusing.  The \crsmatrix{} class is
+row--so these lines may seem too complicated, but we are illustrating
+a process that is effective for more realistic settings.  
+The \crsmatrix{} class is
 designed to accept matrix entries in a variety of ways.  However,
 there is a strong bias in the interface to accept multiple entries in
-a specified row.  Any matrix entry can be submitted one or more times,
+a specified row.  Values for any matrix entry can be submitted one or more times,
 with subsequent values being added to any existing value.
 Section~\ref{Section:ConstructingCrsMatrices} discusses these issues
 in detail.
 
-Line 35 defines a simple double variable that will be passed in on
-line 40 as an array of length 1.  Line 37 loops over all elements
-owned by the calling processor.  Line 38 get the global ID associated
-with the current loop index.  This value will be used 
+Line 42 loops over all elements
+owned by the calling processor.  Line 43 get the global ID associated
+with the current loop index.  This value will be passed in as the
+first argument to the 
+InsertGlobalValues() method to indicate the global row into which the calling
+processor is inserting values.  Line 44 sets the column index to the
+same as the row index because we have only a diagonal value.  
 
+Lines 46--47 is a call the the InsertGlobalValues() method on our matrix
+object A.  The first argument is the ID of the global row that the
+calling processor will add values to.  The second argument indicates
+how many values we are passing in on this call.  We are using the
+Length() method of the \serialdensevector{} class to provide this
+information.  The third argument is a pointer to an array of doubles
+that are the values we are passing in,
+provided by the Values() method from \serialdensevector{}.  Finally
+the last argument is a pointer to an array of ints that are the column
+indices we are passing in.  Because we are only passing in a single
+value per row, both of the last arguments to InsertGlobalValues() are trivial
+uses of arrays, but illustrate a general process.
+\paragraph{Lines 49--55}
+The last modification we want to make to our matrix is to put a value
+of 4.0 in the first diagonal entry.  We accomplish this by having each
+processor query the map to see the processor owns GID 0.  Only the
+processor that does own that GID will execute the remaining lines of
+code in this segment.  Lines 50--52 set up the value and index
+information.  Lines 53--54 are a call to ReplaceGlobalValues(), which
+will replace existing values in our matrix with the new values we submit.
+\paragraph{Line 57}
+After all values are submitted to our matrix, we finally call the
+method TransformToLocal().  This method performs all of the analysis
+on our matrix required for efficient execution on a parallel
+computer.  Part of the procces involves changing the index values of
+the matrix to a local index system on each processor.  This will be
+described in greater detail in
+Section~\ref{Section:ConstructingCrsMatrices}.
+\paragraph{Lines 59--60}
+After constructing our matrix, we call the power method function,
+passing in our matrix.  Then we print out the eigenvalue estimate that
+was returned.
+\paragraph{Lines 61--63}
+If our code was compile in MPI mode, we need to call MPI\_Finalize()
+for proper clean up.
+\paragraph{Line 64} Program exit.
+
+\subsection{Explanation of Figure~\ref{Figure:PowerMethod}}
+
+\begin{figure}
+\begin{center}
+\input{Ex1a}
+\end{center}
+\caption{\label{Figure:PowerMethod} Simple Power Method Routine}
+\end{figure}
+
+\paragraph{Lines 1--2}
+Include system header files needed for screen output and system
+functions.
+\paragraph{Lines 3--5}
+Include Epetra header files needed to use Epetra classes.
+It is a good practice to explicitly include header files for all
+Epetra classes you explicitly use and only those header files.
+\paragraph{Line 7} Function declaration.  All information required for
+efficient parallel execution is associated with the matrix A that we
+pass in.
+\paragraph{Lines 9--11}
+Define parameter values needed for the power method iterations.  On
+exit, lambda will be returned as the approximate eigenvalue.  We
+arbitrarily define the maximum number of iterations to be ten times
+the dimension of our problem.  We arbitrarily define the tolerance to
+be 1.0E-10.
+\paragraph{Lines 13--15}
+Here we define vectors needed to execute the power method.  The
+\vector{} constructor requires an \map{}.  We use the same map that
+was used to construct the matrix.  Note that it is not necessary that
+the distribution of vectors matches the distribution of matrices.  In
+other words, we could use a different map to construct these vectors
+as long as all of the GIDs required for matrix operations were present
+in the vector map.  This topic is discussed in greater detail in
+Section~\ref{Section:MapsAndMatrices}.  By constructing the vectors using
+the row map of our matrix, we are forcing these vectors to be
+distributed on the parallel machine conformally with the rows of the
+matrix.  In many common situations, this is often the best 
+distribution.
+\paragraph{Line 17}
+The Random() method fills the associated object with pseudo-random
+numbers.  This method is actually part of the \multivector{} class,
+but since \vector{} is a specialization of \multivector{}, this method
+is also available for \vector{} objects.
+
+
+\section{All About Epetra Maps and Matrices}
+\label{Section:MapsAndMatrices}
 
 \section{Constructing \crsmatrix{} Objects}
 \label{Section:ConstructingCrsMatrices}
@@ -392,3 +499,4 @@ with the current loop index.  This value will be used
 
 
 \end{document}
+

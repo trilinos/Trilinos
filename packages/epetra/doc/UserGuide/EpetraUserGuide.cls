@@ -46,6 +46,7 @@
 \NeedsTeXFormat{LaTeX2e}
 
 % We need ifthenelse. \newboolean are false by default
+\RequirePackage{color}
 \RequirePackage{ifthen}
 \RequirePackage{graphicx}
 \RequirePackage{multicol}
@@ -64,17 +65,12 @@
 \RequirePackage{calc}
 
 % Needed for Epetra
-\RequirePackage{color}
 \RequirePackage{eepic}
 \RequirePackage{amssymb}
 \RequirePackage{scalefnt}
 \RequirePackage{fancyhdr}
 \RequirePackage{epsfig}
-%\RequirePackage{tabularx}
-%\RequirePackage{supertabular}
 \RequirePackage{alltt}
-%\RequirePackage{colortbl}
-%\RequirePackage{framed}
 \RequirePackage{verbatim}
 \RequirePackage{fancybox}
 \RequirePackage{float}
@@ -120,14 +116,10 @@
 % Page header and foooter
 \pagestyle{fancyplain}
 \addtolength{\headwidth}{\marginparsep}
-%\addtolength{\headwidth}{0.5in}
-%\addtolength{\headwidth}{\marginparsep}
-%\addtolength{\headwidth}{\marginparwidth}
 \renewcommand{\headrulewidth}{1.6pt}
 \setlength{\headheight}{48pt}
 \setlength{\headsep}{24pt}
 
-%\setlength{\textheight}{9in - \footskip - \headheight - \headsep}
 \setlength{\textheight}{10in - \footskip - \headheight - \headsep}
 \setlength{\topmargin}{-0.5in}
 
@@ -339,22 +331,7 @@
 
 
 \AtEndDocument{
-  % Do some more usage checking
-%   \ifthenelse{\boolean{SANDmainProvided}}   {
-%   }{
-%     \ClassError{EpetraUserGuide.cls}{\@backslashchar SANDmain
-%       not provided}{Add \@backslashchar SANDmain before your
-%       introduction (first) section of your document}
-%   }
-%  \ifthenelse{\boolean{SANDdistributionProvided}}   {
-%  }{
-%    \ClassError{EpetraUserGuide.cls}{\@backslashchar SANDdistribution
-%      not provided}{Add \@backslashchar SANDdistribution at the
-%      end of your document}
-%  }
 } % End of AtEndDocument{}
-
-
 % ---------------------------------------------------------------------------- %
 % We need to (re)define some commands from the standard report class.
 %
@@ -511,12 +488,8 @@
     % and tables. Only list Sections and Subsections.
     %
 \renewcommand{\contentsname}{\bf Contents}
-%\renewcommand{\contentsname}{\raggedright \normalfont\Large\bfseries
-%  Contents}
 \renewcommand{\listfigurename}{\bf Figures}
 \renewcommand{\listtablename}{\bf Tables}
-%\renewcommand\refname{\raggedright \bf References}
-%\setcounter{tocdepth}{2}
 
     %
     % Don't enter figures, tables, and subsections of an appendix in
@@ -727,35 +700,30 @@
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus0.5ex minus0.2ex}
 
-% Tabularx environment changes
-%\renewcommand{\tabularxcolumn}[1]{>{\vspace{0.5em}}m{#1}}
-%\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
-%\newcolumntype{Z}{>{\raggedright\arraybackslash}X}
-%\newcolumntype{W}{>{\centering\arraybackslash}X}
 
 % Epetra Colors remapped to BW
-% \definecolor{EpetraBlue}{rgb}{0,0,0}
-% \definecolor{EpetraDeepBlue}{rgb}{0,0,0}
-% \definecolor{EpetraDarkBlue}{rgb}{0,0,0}
-% \definecolor{EpetraTextBlue}{rgb}{0,0,0}
-% \definecolor{EpetraRed}{rgb}{0,0,0}
-% \definecolor{EpetraDeepRed}{rgb}{0,0,0}
-% \definecolor{turquoise}{rgb}{0,0,0}
-% \definecolor{grey}{rgb}{0.5,0.5,0.5}
-% \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
-% \definecolor{pink}{rgb}{0.5,0.5,0.5}
+\definecolor{EpetraBlue}{rgb}{0,0,0}
+\definecolor{EpetraDeepBlue}{rgb}{0,0,0}
+\definecolor{EpetraDarkBlue}{rgb}{0,0,0}
+\definecolor{EpetraTextBlue}{rgb}{0,0,0}
+\definecolor{EpetraRed}{rgb}{0,0,0}
+\definecolor{EpetraDeepRed}{rgb}{0,0,0}
+\definecolor{turquoise}{rgb}{0,0,0}
+\definecolor{grey}{rgb}{0,0,0}
+\definecolor{shadecolor}{rgb}{0,0,0}
+\definecolor{pink}{rgb}{0,0,0}
 
 % Epetra Colors
- \definecolor{EpetraBlue}{rgb}{0.498,0.749,1}
- \definecolor{EpetraDeepBlue}{rgb}{0.4,0.4,0.6}
- \definecolor{EpetraDarkBlue}{rgb}{0,0,0.5}
- \definecolor{EpetraTextBlue}{rgb}{0.2,0,0.6}
- \definecolor{EpetraRed}{rgb}{1,0,0}
- \definecolor{EpetraDeepRed}{rgb}{0.502,0,0}
- \definecolor{turquoise}{rgb}{0.5,1,1}
- \definecolor{grey}{rgb}{0.5,0.5,0.5}
- \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
- \definecolor{pink}{rgb}{1,.6,.8}
+%  \definecolor{EpetraBlue}{rgb}{0.498,0.749,1}
+%  \definecolor{EpetraDeepBlue}{rgb}{0.4,0.4,0.6}
+%  \definecolor{EpetraDarkBlue}{rgb}{0,0,0.5}
+%  \definecolor{EpetraTextBlue}{rgb}{0.2,0,0.6}
+%  \definecolor{EpetraRed}{rgb}{1,0,0}
+%  \definecolor{EpetraDeepRed}{rgb}{0.502,0,0}
+%  \definecolor{turquoise}{rgb}{0.5,1,1}
+%  \definecolor{grey}{rgb}{0.5,0.5,0.5}
+%  \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
+%  \definecolor{pink}{rgb}{1,.6,.8}
 
 % Define strings
 %\def\Epetra{{\color{EpetraBlue}{\bf \textsf{Epetra}}}
@@ -837,12 +805,6 @@
 
 \def\@chapapp{\chaptername}
 
-%\newcommand{\chapterrulecolor}{EpetraDeepRed}
-%\newcommand{\chapterrulewidth}{1.6pt}
-%\newcommand{\plainchapterrulewidth}{\z@skip}
-%\def\chapterrule{{\if@fancyplain\let\chapterrulewidth\plainchapterrulewidth\fi
-%    \color{\chapterrulecolor}\hrule\@height\chapterrulewidth}}
-
 \def\@makechapterhead#1{{\parindent0pt\raggedright
     \hyphenpenalty \@M
     \Huge\scalefont{1.45}\color{EpetraTextBlue}
@@ -909,14 +871,6 @@
 % Epetra Abstract style
 \renewcommand{\abstractname}%
 {\raggedright\Large Abstract}
-%{\raggedright\Large\color{EpetraTextBlue} Abstract}
-
-% Epetra Contents heading style
-%\renewcommand{\contentsname}{\raggedright\Huge\color{EpetraTextBlue} Contents}
-
-% Epetra List of Figures heading style
-%\renewcommand{\listfigurename}{\raggedright\normalfont\Large\bfseries\color{EpetraTextBlue}
-%List of Figures}
 
 % Epetra section style
 \renewcommand{\section}{\@startsection
@@ -926,7 +880,6 @@
   {1ex plus 0.5ex minus 0.5ex}
   {1ex plus 1ex minus 0ex}
   {\raggedright\Huge\color{EpetraTextBlue}}
-%  {\clearpage\raggedright\Huge\color{EpetraTextBlue}}
 }
 
 % Epetra subsection style
