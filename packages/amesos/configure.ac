@@ -249,6 +249,32 @@ TAC_ARG_WITH_INCDIRS
 AC_F77_WRAPPERS
 
 # ------------------------------------------------------------------------
+# Checks for libraries
+# ------------------------------------------------------------------------
+
+  # Find valid SuperLU Dist and Kundert libraries
+### In the future we need to be able to disable dependence on Kundert lib
+
+## if test "X$ADDON_SLUD" != "Xno"; then
+##   AC_SEARCH_LIBS(pdgssvx,[superludist],,
+##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
+## fi
+
+dnl Replace `main' with a function in -lm:
+#AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+dnl Check for user-specified names for LAPACK and BLAS
+TAC_ARG_WITH_BLASLIB
+# ------------------------------  ABC
+TAC_ARG_WITH_LAPACKLIB
+# ------------------------------  ABCD
+
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
+# ------------------------------  ABCDE
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
+
+# ------------------------------------------------------------------------
 # Checks for addons
 # ------------------------------------------------------------------------
 
@@ -374,7 +400,7 @@ if test "X$ac_cv_use_amesos_superludist" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_superludistincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_superludistlib} ${MPI_LIBS} ${LIBS}"
+    LIBS="${tac_with_amesos_superludistlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-superludistlib, (ex. --with-amesos-superludistlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
@@ -427,7 +453,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_sludincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sludlib} ${MPI_LIBS} ${LIBS}"
+    LIBS="${tac_with_amesos_sludlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(pdgssvx,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
@@ -499,7 +525,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_dscpackincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_dscpacklib} ${MPI_LIBS} ${LIBS}"
+    LIBS="${tac_with_amesos_dscpacklib} ${MPI_LIBS} ${BLAS_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(DSC_CloseSolver,,
       AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
@@ -574,10 +600,11 @@ if test "X$ac_cv_use_amesos_umfpack" != "Xno"; then
   CPPFLAGS="-I${tac_with_amesos_umfpackincdir} -I${tac_with_amesos_umfpackamdincdir}   ${CPPFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_umfpacklib} ${MPI_LIBS} ${LIBS}"
-     AC_TRY_LINK_FUNC(umfpack_di_defaults,,
+    LIBS="${tac_with_amesos_umfpacklib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(umfdi_local_search,,
       AC_MSG_ERROR([[Cannot find the UMFPACK library, specify a location using --with-amesos-umfpacklib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/libumfpack.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-    LIBS="${tac_with_amesos_umfpackamdlib} ${MPI_LIBS} ${LIBS}"
+
+    LIBS="${tac_with_amesos_umfpackamdlib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(amd_defaults,,
       AC_MSG_ERROR([[Cannot find the AMD library needed by Umfpack, specify a location using --with-amesos-umfpackamdlib, (ex. --with-amesos-umfpacklib=/home/kstanley/Trilinos3PL/UMFPACKv4.1/AMD/Lib/libamd.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
@@ -733,7 +760,7 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
   CXXFLAGS="-I${tac_with_amesos_slusincdir} ${CXXFLAGS}"
 
     SAVE_LIBS="${LIBS}"
-    LIBS="${tac_with_amesos_sluslib} ${MPI_LIBS} ${LIBS}"
+    LIBS="${tac_with_amesos_sluslib} ${BLAS_LIBS} ${MPI_LIBS} ${FLIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
       AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
     LIBS="${SAVE_LIBS}"
@@ -816,32 +843,6 @@ AC_SUBST(AMESOS_LIBS,${amesos_libs})
 ## [ADDON_KS=no]
 ## )
 ## AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, test X${ADDON_KS} = "Xyes")
-
-# ------------------------------------------------------------------------
-# Checks for libraries
-# ------------------------------------------------------------------------
-
-  # Find valid SuperLU Dist and Kundert libraries
-### In the future we need to be able to disable dependence on Kundert lib
-
-## if test "X$ADDON_SLUD" != "Xno"; then
-##   AC_SEARCH_LIBS(pdgssvx,[superludist],,
-##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]]))  
-## fi
-
-dnl Replace `main' with a function in -lm:
-#AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-dnl Check for user-specified names for LAPACK and BLAS
-TAC_ARG_WITH_BLASLIB
-# ------------------------------  ABC
-TAC_ARG_WITH_LAPACKLIB
-# ------------------------------  ABCD
-
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
-# ------------------------------  ABCDE
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/trilinos/packages/amesos/ for details.]])])
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
