@@ -58,7 +58,7 @@ extern int ML_gpartialsum_int(int val, ML_Comm *comm);
 #define idxtype int
 #endif
 
-#define ML_AGGR_VBMETIS  9  /* complete list of aggregation defines is in ml_aggregate.c */
+#define ML_AGGR_VBMETIS  10  /* complete list of aggregation defines is in ml_aggregate.c */
 
 static int ML_DecomposeGraph_with_VBMETIS( ML_Operator *Amatrix,
 					   int N_parts,
