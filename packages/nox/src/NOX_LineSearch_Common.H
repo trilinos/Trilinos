@@ -63,21 +63,6 @@ Line searches have a common set of data that should be tracked in saved in the p
 
   - "Total Number of Line Search Inner Iterations" - total number of inner iterations \f$ k \f$ performed by this object.
 
-  <B> Flexible step acceptance capability </B> <br>
-
-Line searches typically allow steps to be accepted only if they meet sufficient decrease and curvature criteria, eg Armijo-Goldstein conditions.  It can sometimes happen that such a requirement leads to very many nonlinear iterations being taken before the solution falls into a much steeper basin of attraction.  The following two parameters allow the user to relax the curvature and decrease conditions.  !! WARNING !! Convergence proofs and other guarantees associated with the various Line Searches no longer pertain when using these options.  
-
-  Given the following information at %solver step \f$ n \f$:
-  -# Old solution group: \f$ x_{\rm old} \f$
-  -# Direction vector: \f$ s \f$
-  -# step length \f$ \lambda \f$ 
-
-  - "Allowed Relative Increase" - (default 100) - the allowed value \f$ k > 0 \f$ for which 
-  \f$
-  \frac{||F (x_{\rm old} + \lambda s)||_2^2}{||F (x_{\rm old})||_2^2} \le k
-  \f$
-
-  - "Maximum Increase Steps" - (defaults to "Max Iters" of inheriting Linesearch method) - maximum number of outer iterations for which the preceding acceptability criterion is allowed.  After this number of outer iterations, the original curvature and decrease conditions must be met for a step to be accepted.
 */
 
 class Common : public Generic {
@@ -148,9 +133,6 @@ where \f$\eta\f$ is a scalar perturbation calculated by:
   //! Sets the common line search data in an "Output" sublist of the "Line Search" sublist. 
   bool setCommonDataValues();
 
-  //! Provides a check to see if a step leading to an increase in the residual is allowed
-  bool isIncreaseAllowed(double, double, int) const;
-
 protected:
 
   //! Printing utilities
@@ -164,15 +146,6 @@ protected:
 
   //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
   NOX::Parameter::List* paramsPtr;
-
-  //! True is we should allow residual increases constrained by relIncrease
-  bool allowIncrease;
-
-  //! Allowable relative increase for residual norm
-  double relIncrease;
-
-  //! Maximum number relative increase steps allowed
-  int numAllowed;
 
   //! Counter for the total number of times the compute() method was called for this object. 
   int totalNumLineSearchCalls;
