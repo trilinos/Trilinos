@@ -1,0 +1,25 @@
+#!/bin/sh
+
+##################################################################
+# Configuration of Trilinos for use with the development version 
+# of Sundance.
+#
+# This will NOT work with the old version of Sundance
+##################################################################
+
+
+BUILD_DIR=`pwd`
+
+../configure --enable-mpi --with-mpi-libs="-lmpich -lpmpich" \
+CXXFLAGS="-g" \
+--enable-tsfextended \
+--enable-tsfcore \
+--enable-tsfcore-epetra \
+--enable-teuchos \
+--enable-teuchos-extended \
+--disable-new-package \
+--disable-nox \
+--disable-loca \
+--prefix=$BUILD_DIR
+
+
