@@ -665,7 +665,9 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 	const Epetra_Map& RowMap() const {return((Epetra_Map &)Graph_->RowMap());};
 
 	//! Replaces the current RowMap with the user-specified map object.
-	void ReplaceRowMap(const Epetra_BlockMap& newmap) {Graph_->ReplaceRowMap(newmap); }
+	int ReplaceRowMap(const Epetra_BlockMap& newmap)
+	  {return( Graph_->ReplaceRowMap(newmap) ); }
+
 	//! Returns the Epetra_Map object that describes the column distribution across processors.
 	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 	
