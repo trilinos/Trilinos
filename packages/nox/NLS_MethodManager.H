@@ -11,17 +11,13 @@
 #ifndef NLS_METHOD_MANAGER_H
 #define NLS_METHOD_MANAGER_H
 
-#include "NLS_Method.H"		// Base class
+#include "NLS_Method.H"		// base class
 
 //! Concrete class to control the instatiation of the derived 
 //! NLS_Method class.  
-/*! 
-  This is the class that takes control from the user code and hands it over
-  to the nonlinear solver component. 
-*/
+/*! This is the class that takes control from the user code and hands
+ *  it over to the nonlinear solver component. */
 
-#include "NLS_Utilities.H"
-//-----------------------------------------------------------------------------
 class NLS_MethodManager : public NLS_Method {
 
 public:
@@ -37,7 +33,6 @@ public:
   //! Destructor
   ~NLS_MethodManager();
 
-
   void resetParameters(NLS_ParameterList& p);
   STATUS getStatus();
   STATUS iterate();
@@ -47,6 +42,7 @@ public:
 
 private:
 
+  //! Used by the two different constructors
   void setup(NLS_Group& initialguess, NLS_Group& workspace, 
 	     NLS_ParameterList& p);
 
@@ -55,7 +51,7 @@ private:
   //! Pointer to the solver object
   NLS_Method *ptr;
 
-  //! Pointer to extra group
+  //! Pointer to extra group, if necessary
   NLS_Group* workgroup;
 };
 

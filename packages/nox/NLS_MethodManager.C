@@ -8,8 +8,12 @@
 // LICENSE & WARRANTY INFORMATION in README.txt and LICENSE.txt.
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
-#include "NLS_Newton.H"
-#include "NLS_MethodManager.H"
+#include "NLS_MethodManager.H"	// class definition
+#include "NLS_Utilities.H"	// for static function doPrint
+
+// Header files for different solvers
+#include "NLS_Newton.H"		// Newton's method
+
 
 NLS_MethodManager::NLS_MethodManager(NLS_Group& initialguess, 
 				     NLS_Group& workspace, 
@@ -33,7 +37,6 @@ void NLS_MethodManager::setup(NLS_Group& initialguess,
 			       NLS_Group& workspace, 
 			       NLS_ParameterList& p) 
 {
-
   NLS_Utilities::setUtilities(p);
 
   string method = p.getParameter("Nonlinear Solver", "Newton");
@@ -57,9 +60,10 @@ NLS_MethodManager::~NLS_MethodManager()
   delete workgroup;
 }
 
-
 void NLS_MethodManager::resetParameters(NLS_ParameterList& p)
 {
+  /* NOTE FROM TAMMY: May want to add a hook at some point to be able
+     to switch nonlinear solver methods mid-stream. */
   ptr->resetParameters(p);
 }
 
