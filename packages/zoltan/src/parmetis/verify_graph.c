@@ -28,7 +28,7 @@
 /*   - incorrect vertex number                                       */
 /*   - negative vertex or edge weight                                */
 /* Warning :                                                         */
-/*   - zero vertex or edge weight                                    */
+/*   - zero sum of vertex or edge weights                            */
 /*   - self-edge                                                     */
 /*   - multiple edges between a pair of vertices                     */
 /*                                                                   */
@@ -43,7 +43,7 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
        int vwgt_dim, int ewgt_dim, int check_graph)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
-  int flag, cross_edges, mesg_size;
+  int flag, cross_edges, mesg_size, sum;
   int nprocs, proc, *proclist;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
@@ -63,16 +63,20 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 
   /* Verify that vertex weights are positive */
   if (vwgt_dim){
-    for (i=0; i< vwgt_dim*num_obj; i++){
-       if (vwgt[i] < 0) {
-          fprintf(stderr, "Zoltan error: Negative object weight of %g in %s\n", 
-                  vwgt[i], yo);
-          ierr = LB_FATAL;
-          return ierr;
+    for (i=0; i<num_obj; i++){
+       sum = 0;
+       for (k=0; k<vwgt_dim; k++){
+         if (vwgt[i*vwgt_dim+k] < 0) {
+            fprintf(stderr, "Zoltan error: Negative object weight of %g in %s\n", 
+                    vwgt[i*vwgt_dim+k], yo);
+            ierr = LB_FATAL;
+            return ierr;
+         }
+         sum += vwgt[i*vwgt_dim+k];
        }
-       else if (vwgt[i] == 0){
-          fprintf(stderr, "Zoltan warning: Zero object weight in %s (after scaling)\n", 
-                  yo);
+       if (sum == 0){
+          fprintf(stderr, "Zoltan warning: In %s, zero weight sum for object %d (after scaling)\n", 
+                  yo, i);
           ierr = LB_WARN;
        }
     }
@@ -81,17 +85,21 @@ int LB_verify_graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   /* Verify that edge weights are positive */
   nedges = xadj[num_obj];
   if (ewgt_dim){
-    for (j=0; j<ewgt_dim*nedges; j++){
-       if (adjwgt[j] < 0) {
+    for (j=0; j<nedges; j++){
+      sum = 0;
+      for (k=0; k<ewgt_dim; k++){
+        if (adjwgt[j*ewgt_dim+k] < 0) {
           fprintf(stderr, "Zoltan error: Negative communication weight of %g in %s\n", 
           vwgt[j], yo);
           ierr = LB_FATAL;
           return ierr;
-       }
-       else if (adjwgt[j] == 0){
-          fprintf(stderr, "Zoltan warning: Zero communication weight in %s\n", yo);
-          ierr = LB_WARN;
-       }
+        }
+        sum += adjwgt[j*ewgt_dim+k];
+      }
+      if (sum == 0){
+         fprintf(stderr, "Zoltan warning: Zero communication weight in %s\n", yo);
+         ierr = LB_WARN;
+      }
     }
   }
 
