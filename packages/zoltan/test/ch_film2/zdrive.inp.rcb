@@ -1,0 +1,6 @@
+Decomposition Method 	= rcb
+Zoltan Parameters       = debug_level=8
+Zoltan Parameters       = obj_weight_dim=2
+File Type		= Chaco
+File Name		= film2
+Parallel Disk Info	= number=0
