@@ -5,15 +5,15 @@ class Epetra_Comm;
 class Epetra_BlockMap;
 class Epetra_MultiVector;
 class Epetra_RowMatrix;
+class Epetra_Map;
+class Epetra_Vector;
+class Epetra_Import;
+class Epetra_Object;
+class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
+class Epetra_LinearProblem;
+
 #include "ml_common.h"
-#include "Epetra_LinearProblem.h"
-#include "Epetra_Object.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_Vector.h"
-#include "Epetra_Comm.h"
-#include "Epetra_Import.h"
 
 #ifdef ML_MPI
 #ifndef EPETRA_MPI
@@ -48,6 +48,9 @@ Epetra_CrsMatrix *Epetra_MatrixMult(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt);
 Epetra_CrsMatrix *Epetra_MatrixAdd(Epetra_RowMatrix *B, Epetra_RowMatrix *Bt, double scalar);
 int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 
+int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
+				CrsMatrix, int & MaxNumNonzeros,
+				bool CheckNonzeroRow, double &);
 
 /* This Proto-type is in ml_rap.h. This prevents ml_rap.c and ml_matmat_mult.c     */
 /* from including ml_epetra_utils.h which would require the C++ compiler for these */

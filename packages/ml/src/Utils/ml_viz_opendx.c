@@ -31,7 +31,7 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   int max_N_parts;
   int mypid = comm->ML_mypid;
   
-  ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs);
+  ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm);
 
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] += offsets[comm->ML_mypid];
@@ -51,7 +51,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
   int N_procs = comm->ML_nprocs;
   int *offsets = (int*)malloc(sizeof(int)*(N_procs+1));
   
-  ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs);
+  ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm);
 
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] -= offsets[comm->ML_mypid];

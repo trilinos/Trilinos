@@ -21,6 +21,9 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 #include "Epetra_SerialDenseMatrix.h"
+#include "Epetra_Import.h"
+#include "Epetra_Time.h"
+
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -149,19 +152,22 @@ int Epetra_ML_getrow(void *data, int N_requested_rows, int requested_rows[],
 	  values[nz_ptr++] = (*Entries[j])(PDEEqn,k);
 	}
       }
-      return(1);
+      row_lengths[i] = NumBlockEntries*NumPDEEqns;      
     }
     else 
       ierr = Abase->ExtractMyRowCopy(LocalRow, MaxPerRow, NumEntries,
                                       Values, Indices);
     if (ierr) return(0); //JJH I think this is the correct thing to return if
                          //    A->ExtractMyRowCopy returns something nonzero ..
-    row_lengths[i] = NumEntries;
-    if (nz_ptr + NumEntries > allocated_space) return(0);
 
-    for (int j=0; j<NumEntries; j++) {
-      columns[nz_ptr] = Indices[j];
-      values[nz_ptr++] = Values[j];
+    if( !MatrixIsVbrMatrix ) {
+      row_lengths[i] = NumEntries;
+      if (nz_ptr + NumEntries > allocated_space) return(0);
+      
+      for (int j=0; j<NumEntries; j++) {
+	columns[nz_ptr] = Indices[j];
+	values[nz_ptr++] = Values[j];
+      }
     }
   }
   
@@ -377,12 +383,12 @@ Epetra_FECrsMatrix *  Qt = NULL;
 
 ML_Operator * ML_BuildQ( int StartingNumElements,
 			 int ReorderedNumElements,
-			 int NumPDEEqns,
-			 int reordered_decomposition[],
-			 double StartingNullSpace[],
-			 double ReorderedNullSpace[],
+			 int NumPDEEqns, int NullSpaceDim,
+			 int * reordered_decomposition,
+			 double * StartingNullSpace,
+			 double * ReorderedNullSpace,
 			 int ComputeNewNullSpace,
-			 double StartingBdry[], double ReorderedBdry[],
+			 double * StartingBdry, double * ReorderedBdry,
 			 USR_COMM mpi_communicator,
 			 ML_Comm *ml_communicator ) 
 {
@@ -411,57 +417,90 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   int * MyGlobalElements = StartingMap.MyGlobalElements();
 
   // fill Q
-  for( int i=0 ; i<StartingNumElements ; i+=NumPDEEqns ) {
+  for( int i=0 ; i<StartingNumElements ; i++ ) {
+    // i and PointCol are for the amalagamated configuration
     double one = 1.0;
-    int PointCol = reordered_decomposition[i/NumPDEEqns];
+    int PointCol = reordered_decomposition[i];
     for( int j=0 ; j<NumPDEEqns ; ++j ) {
-      int GlobalRow = MyGlobalElements[i] + j;
+      // GlobalRow and GlobalCol are for the amalgamated conf
+      int GlobalRow = MyGlobalElements[i*NumPDEEqns] + j;
       int GlobalCol = PointCol*NumPDEEqns + j;
       Q->InsertGlobalValues(GlobalRow, 1, &one, &GlobalCol );
     }
   }
-
+  
   assert(Q->FillComplete(ReorderedMap,StartingMap)==0);
+
+  {int itemp;
+  Comm.MaxAll(&ComputeNewNullSpace,&itemp,1);
+  if( itemp == 1 ) ComputeNewNullSpace = 1;
+  }
   
-  ML_Q2 = ML_Operator_Create( ml_communicator );
+  if( ComputeNewNullSpace == 1 ) {
+
+    if( NumPDEEqns == NullSpaceDim ) {
+
+      double * StartArrayOfPointers[NullSpaceDim];
+      double * ReordArrayOfPointers[NullSpaceDim];
+      
+      for( int k=0 ; k<NullSpaceDim ; ++k ) {
+	StartArrayOfPointers[k] = StartingNullSpace+k*StartingNumElements*NumPDEEqns;
+	ReordArrayOfPointers[k] = ReorderedNullSpace+k*ReorderedNumElements*NumPDEEqns;
+      }
+      
+      Epetra_MultiVector startNS(View,StartingMap,StartArrayOfPointers,NullSpaceDim);
+      Epetra_MultiVector reordNS(View,ReorderedMap,ReordArrayOfPointers,NullSpaceDim);
+      
+      Q->Multiply(true,startNS,reordNS);
+      
+    } else {
+      
+      Epetra_Vector startNS2(StartingMap);
+      Epetra_Vector reordNS2(ReorderedMap);
+
+      for( int i=0 ; i<NullSpaceDim ; ++i ) {
+	startNS2.PutScalar(0.0);
+	for( int j=0 ; j<StartingNumElements ; ++j ) {
+	  startNS2[j] = StartingNullSpace[j*NullSpaceDim+i];
+	}
+	Q->Multiply(true,startNS2,reordNS2);
+	for( int j=0 ; j<ReorderedNumElements ; ++j ) {
+	  ReorderedNullSpace[j*NullSpaceDim+i] = reordNS2[j];
+	}
+      }
+    }
+  }
+
+  double * Start = NULL;
+  double * Reord = NULL;
   
-  double * Start = new double[StartingNumElements*NumPDEEqns];
-  double * Reord = new double[ReorderedNumElements*NumPDEEqns];
+  if( StartingNumElements != 0 ) Start = new double[StartingNumElements*NumPDEEqns];
+  if( ReorderedNumElements != 0 ) Reord = new double[ReorderedNumElements*NumPDEEqns];
 
   Epetra_Vector xxx(View,StartingMap,Start);
   Epetra_Vector yyy(View,ReorderedMap,Reord);
 
-  if( ComputeNewNullSpace == 1 ) {
-
-    // This is not exactly true.... add null space with more than one vector??
-    xxx.PutScalar(0.0);
-    for( int i=0 ; i<StartingNumElements ; ++i )
-      xxx[i*NumPDEEqns] = StartingNullSpace[i];
-    
-    Q->Multiply(true,xxx,yyy);
-    
-    for( int i=0 ; i<ReorderedNumElements ; ++i )
-      ReorderedNullSpace[i] = yyy[i*NumPDEEqns];
-    
-  }
-
   xxx.PutScalar(0.0);
   yyy.PutScalar(0.0);
 
-  for( int i=0 ; i<StartingNumElements ; ++i )
+  for( int i=0 ; i<StartingNumElements ; ++i ) {
     xxx[i*NumPDEEqns] = StartingBdry[i];
+  }
 
   Q->Multiply(true,xxx,yyy);
 
-  for( int i=0 ; i<ReorderedNumElements ; ++i )
+  for( int i=0 ; i<ReorderedNumElements ; ++i ) {
     ReorderedBdry[i] = yyy[i*NumPDEEqns];
-
+  }
+  
+  ML_Q2 = ML_Operator_Create( ml_communicator );  
+  
   Epetra2MLMatrix( Q, ML_Q2);
 
   return ML_Q2;
 
-  delete [] Start;
-  delete [] Reord;
+  if( Start != NULL ) delete [] Start;
+  if( Reord != NULL ) delete [] Reord;
 
 #endif
 }
@@ -488,6 +527,9 @@ ML_Operator * ML_BuildQt( int StartingNumElements,
 {
   
   ML_Operator * ML_Qt2;
+
+  cout << "CHECK MEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
+  exit( EXIT_FAILURE );
   
 #ifndef ML_MPI
   /* ********************************************************************** */
@@ -546,6 +588,162 @@ void ML_DestroyQt( void )
 } /* ML_DestroyQt */
 
 } /* extern "C" */
+
+int ML_Operator2EpetraCrsMatrix(ML_Operator *Ke, Epetra_CrsMatrix * &
+				CrsMatrix, int & MaxNumNonzeros,
+				bool CheckNonzeroRow, double & CPUTime)
+{
+
+  double *global_nodes, *global_rows;
+  int *global_rows_as_int, *global_nodes_as_int;
+  int    Nnodes, node_offset, row_offset;
+  int Nnodes_global, Nrows_global;
+  int Nghost_nodes;
+  int Nrows;
+  ML_Comm *comm;
+
+  comm = Ke->comm;
+#ifdef ML_MPI
+  MPI_Comm mpi_comm ;
+  mpi_comm = comm->USR_comm; 
+  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
+#else
+  Epetra_SerialComm EpetraComm ; 
+#endif  
+
+  Epetra_Time Time(EpetraComm);
+
+  if (Ke->getrow->pre_comm == NULL) 
+    Nghost_nodes = 0;
+  else {
+    if (Ke->getrow->pre_comm->total_rcv_length <= 0)
+      ML_CommInfoOP_Compute_TotalRcvLength(Ke->getrow->pre_comm);
+    Nghost_nodes = Ke->getrow->pre_comm->total_rcv_length;
+  }
+
+  int dummy;
+  
+  Nnodes = Ke->invec_leng;
+  Nrows = Ke->outvec_leng;
+
+  assert( Nnodes == Nrows );
+
+  // MS // moved to Epetra node_offset = ML_gpartialsum_int(Nnodes, comm);
+  // Nnodes_global = Nnodes;
+  // ML_gsum_scalar_int(&Nnodes_global, &dummy, comm);
+
+  // MS moved to Epetra row_offset = ML_gpartialsum_int(Nrows, comm);
+  //  Nrows_global = Nrows;
+  // ML_gsum_scalar_int(&Nrows_global, &dummy, comm);
+
+  EpetraComm.ScanSum(&Nnodes,&node_offset,1); node_offset-=Nnodes;
+  EpetraComm.ScanSum(&Nrows,&row_offset,1); row_offset-=Nrows;
+
+  EpetraComm.SumAll(&Nnodes,&Nnodes_global,1);
+  EpetraComm.SumAll(&Nrows,&Nrows_global,1);  
+
+  assert( Nnodes_global == Nrows_global ) ; 
+
+  global_nodes = new double[Nnodes+Nghost_nodes+1];
+  global_nodes_as_int = new int[Nnodes+Nghost_nodes+1];
+
+  global_rows = new double[Nrows+1];
+  global_rows_as_int = new int[Nrows+1];
+  
+  for (int i = 0 ; i < Nnodes; i++) global_nodes[i] = (double) (node_offset + i);
+  for (int i = 0 ; i < Nrows; i++) {
+    global_rows[i] = (double) (row_offset + i);
+    global_rows_as_int[i] = row_offset + i;
+  }
+  for (int i = 0 ; i < Nghost_nodes; i++) global_nodes[i+Nnodes] = -1;
+  
+  Epetra_Map  EpetraMap( Nrows_global, Nrows, global_rows_as_int, 0, EpetraComm ) ; 
+  
+  CrsMatrix = new Epetra_CrsMatrix( Copy, EpetraMap, 0 ); 
+  
+  ML_exchange_bdry(global_nodes,Ke->getrow->pre_comm, 
+ 		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
+
+  for ( int j = 0; j < Nnodes+Nghost_nodes; j++ ) { 
+    global_nodes_as_int[j] = (int) global_nodes[j];
+  }
+
+  // MS // introduced variable allocation for colInd and colVal
+  // MS // improved efficiency in InsertGlobalValues
+
+  {
+  int allocated = 1;
+  int * colInd = new int[allocated];
+  double * colVal = new double[allocated];
+  int NumNonzeros;
+  int ierr;
+  int    ncnt;
+
+  MaxNumNonzeros=0;
+  
+  for (int i = 0; i < Nrows; i++) {
+    ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
+
+    if( ierr == 0 ) {
+      while( ierr == 0 ) {
+	delete [] colInd;
+	delete [] colVal;
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+	ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
+      }
+    }
+
+    // MS // check out how many nonzeros we have
+    // MS // NOTE: this may result in a non-symmetric patter for CrsMatrix
+
+    NumNonzeros = 0;
+    for (int j = 0; j < ncnt; j++) {
+      int itemp; // check this out
+      double dtemp;
+      if (colVal[j] != 0.0) {
+	colInd[NumNonzeros] = global_nodes_as_int[colInd[j]];
+	colVal[NumNonzeros] = colVal[j];
+	NumNonzeros++;
+      }
+    }
+    if( NumNonzeros == 0 && CheckNonzeroRow ) {
+      cout << "*ML*WRN* in ML_Operator2EpetraCrsMatrix : \n*ML*WRN* Global row "
+	   << global_rows_as_int[i]
+	   << " has no nonzero elements (and " << ncnt
+	   << " zero entries)" << endl
+	   << "*ML*WRN* Now put 1 on the diagonal...\n";
+      // insert a 1 on the diagonal
+      colInd[NumNonzeros] = global_nodes_as_int[i];
+      colVal[NumNonzeros] = 1.0;
+      NumNonzeros++;
+    }
+    MaxNumNonzeros = EPETRA_MAX(NumNonzeros,MaxNumNonzeros);
+    
+    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
+				   colVal, colInd);
+    
+    CrsMatrix->InsertGlobalValues( global_rows_as_int[i], ncnt, 
+				   colVal, colInd);
+  }
+
+  delete [] colInd;
+  delete [] colVal;
+  }
+  
+  delete [] global_nodes_as_int;
+  delete [] global_rows_as_int;
+  delete [] global_rows;
+  delete [] global_nodes;
+
+  assert(CrsMatrix->FillComplete()==0);
+
+  CPUTime = Time.ElapsedTime();
+
+  return 0;
+  
+} /* ML_Operator2EpetraCrsMatrix */
 
 #ifdef WKC
 int Epetra_ML_matvec_WKC (void *data, int in, double *p, int out, double *ap)

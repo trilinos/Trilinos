@@ -3,180 +3,97 @@
 /* person and disclaimer.                                               */        
 /* ******************************************************************** */
 #include "ml_utils.h"
+#include "ml_epetra_utils.h"
 #include "ml_xyt.h"
 
 #include "Epetra_Map.h" 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h" 
-#include "Epetra_LinearProblem.h" 
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Time.h"
 #ifdef HAVE_ML_AMESOS
 #include "ml_amesos.h"
 #include "ml_amesos_wrap.h"
 #include "Amesos_BaseSolver.h"
 #include "Amesos_Factory.h" 
 #include "AmesosClassType.h"
+#include "Epetra_Operator.h"
+
+#include "Ifpack_CrsIct.h"
+#include "Ifpack_CrsRiluk.h"
+//#include "Ifpack_CrsRick.h"
+#include "Ifpack_IlukGraph.h"
 
 //  Jonathan - I need to convert an ml to an ML_Operator 
 //  Did I pick off the right ML_Operator?
 
 #ifdef EPETRA_MPI
 #ifndef ML_MPI
-   Garbage - ML_MPI and EPETRA_MPI must be the same 
+Garbage - ML_MPI and EPETRA_MPI must be the same 
 #endif
 #include "Epetra_MpiComm.h"
 #else
 #ifdef ML_MPI
-   Garbage - ML_MPI and EPETRA_MPI must be the same 
+Garbage - ML_MPI and EPETRA_MPI must be the same 
 #endif
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Comm.h"
 #include "Amesos_Parameter_List.h"
 
-   extern "C" { 
-   double *SendThisToEMV ; 
-   }
+  extern "C" { 
+  double *SendThisToEMV ; 
+  }
 
 int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 		  int MaxProcs, void **Amesos_Handle)
 {
-  double *global_nodes, *global_rows;
-  int  allocated = 15, * colInd = NULL;
-  double * colVal = NULL;
-  int *global_rows_as_int, *global_nodes_as_int;
-  int    N_nodes, node_offset, row_offset;
-  int    ncnt;
-  char str[80];
-  ML_Comm *comm;
-  int Nnodes_global, Nrows_global;
-  int Nghost_nodes;
-  int Nrows;
-  ML_Operator *Ke = &(ml->Amat[curr_level]);
-#ifdef ML_MPI
-  MPI_Comm mpi_comm ;
-#endif
 
-  comm = Ke->comm;
-#ifdef ML_MPI
-  mpi_comm = comm->USR_comm; 
-  Epetra_MpiComm EpetraComm( mpi_comm ) ; 
-#else
-  Epetra_SerialComm EpetraComm ; 
-#endif  
-
-  if (Ke->getrow->pre_comm == NULL) 
-    Nghost_nodes = 0;
-  else {
-    if (Ke->getrow->pre_comm->total_rcv_length <= 0)
-      ML_CommInfoOP_Compute_TotalRcvLength(Ke->getrow->pre_comm);
-    Nghost_nodes = Ke->getrow->pre_comm->total_rcv_length;
-  }
-
-  int dummy;
-
-  N_nodes = Ke->invec_leng;
-  node_offset = ML_gpartialsum_int(N_nodes, comm);
-  Nnodes_global = N_nodes;
-  ML_gsum_scalar_int(&Nnodes_global, &dummy, comm);
-
-  Nrows = Ke->outvec_leng;
-  row_offset = ML_gpartialsum_int(Nrows, comm);
-  Nrows_global = Nrows;
-  ML_gsum_scalar_int(&Nrows_global, &dummy, comm);
-
-  assert( N_nodes==Nrows );
-  assert( Nnodes_global == Nrows_global ) ; 
-
-  if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel() > 2 )
-    cout << "ML_Gen_Smoother_Amesos : Coarse matrix dimension = "
-	 << Nnodes_global << endl;
-
-  int num_global_rows;
-  EpetraComm.SumAll( &N_nodes, &num_global_rows, 1 ) ;
-
-  global_nodes  =(double *) ML_allocate(sizeof(double)*(N_nodes+Nghost_nodes));
-  global_nodes_as_int  =(int *) ML_allocate(sizeof(int)*(N_nodes+Nghost_nodes));
-  global_rows   =(double *) ML_allocate(sizeof(double)*(Nrows));
-  global_rows_as_int   =(int *) ML_allocate(sizeof(int)*(Nrows));
-
-  for (int i = 0 ; i < N_nodes; i++) global_nodes[i] = (double) (node_offset + i);
-  for (int i = 0 ; i < Nrows; i++) {
-    global_rows[i] = (double) (row_offset + i);
-    global_rows_as_int[i] = row_offset + i;
-  }
-  for (int i = 0 ; i < Nghost_nodes; i++) global_nodes[i+N_nodes] = -1;
-
-  Epetra_Map  EpetraMap( num_global_rows, Nrows, global_rows_as_int, 0, EpetraComm ) ; 
-
-  Epetra_CrsMatrix *Amesos_CrsMatrix = new Epetra_CrsMatrix( Copy, EpetraMap, 0 ); 
-
-  ML_exchange_bdry(global_nodes,Ke->getrow->pre_comm, 
- 		 Ke->invec_leng,comm,ML_OVERWRITE,NULL);
-
-
-  for ( int j = 0; j < N_nodes+Nghost_nodes; j++ ) { 
-    global_nodes_as_int[j] = (int) global_nodes[j];
-  }
-
-  // MS // introduced variable allocation for colInd and colVal
-  // MS // improved efficiency in InsertGlobalValues
+  int MaxNumNonzeros;
+  double Time1, Time2;
   
-  allocated = 1;
-  colInd = new int[allocated];
-  colVal = new double[allocated];
-  int NumNonzeros;
-  int ierr;
-  for (int i = 0; i < Nrows; i++) {
-    ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
-    if( ierr == 0 ) {
-      while( ierr == 0 ) {
-	delete [] colInd;
-	delete [] colVal;
-	allocated *= 2;
-	colInd = new int[allocated];
-	colVal = new double[allocated];
-	ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
-      }
-    }
-    // MS // check out how many nonzeros we have
-    // MS // NOTE: this may result in a non-symmetric patter for Amesos_CrsMatrix
-    
-    NumNonzeros = 0;
-    for (int j = 0; j < ncnt; j++) {
-      int itemp; // check this out
-      double dtemp;
-      if (colVal[j] != 0.0) {
-	itemp = global_nodes_as_int[colInd[j]];
-	colInd[NumNonzeros] = itemp;
-	dtemp = colVal[j];
-	colVal[NumNonzeros] = dtemp;
-	NumNonzeros++;
-      }
-    }
-    if( NumNonzeros == 0 ) {
-      cout << "*ML*WRN* in ML_Amesos_Gen : \nML*WRN* Global row "
-	   << global_rows_as_int[i]
-	   << " has no nonzero elements (and " << ncnt
-	   << " zero entries)" << endl
-	   << "*ML*WRN* Now put 1 on the diagonal...\n";
-      // insert a 1 on the diagonal
-      colInd[NumNonzeros] = global_nodes_as_int[i];
-      colVal[NumNonzeros] = 1.0;
-      NumNonzeros++;
-    }
-    Amesos_CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
-					  colVal, colInd);
-  }
+  ML_Operator *Ke = &(ml->Amat[curr_level]);
+  Epetra_CrsMatrix * Amesos_CrsMatrix;
 
-  delete [] colInd;
-  delete [] colVal;
+
+  ML_Operator2EpetraCrsMatrix( Ke, Amesos_CrsMatrix, MaxNumNonzeros,
+			       true, Time1);
+  
+  if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+    cout << "Amesos (level " << curr_level
+	 << "): Time to convert to Epetra_CrsMatrix  = "
+	 << Time1 << " (s)" << endl;
+  }
+  
+  double NormInf = Amesos_CrsMatrix->NormInf();
+  double NormOne = Amesos_CrsMatrix->NormOne();
+  int NumGlobalRows = Amesos_CrsMatrix->NumGlobalRows();
+  int NumGlobalNonzeros = Amesos_CrsMatrix->NumGlobalNonzeros();
+
+  if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
+    cout << "Amesos (level " << curr_level
+	 << ") : NumGlobalRows = "
+	 << NumGlobalRows << endl;
+    cout << "Amesos (level " << curr_level
+	 << ") : NumGlobalNonzeros = "
+	 << NumGlobalNonzeros << endl;
+    cout << "Amesos (level " << curr_level
+	 << ") : MaxNonzerosPerRow = "
+	 << MaxNumNonzeros << endl;
+    cout << "Amesos (level " << curr_level
+	 << ") : fill-in = "
+	 << 100.0*NumGlobalNonzeros/(NumGlobalRows*NumGlobalRows)
+	 << " %" << endl;
+    cout << "Amesos (level " << curr_level
+	 << ") : ||A||_\\infty = "
+	 << NormInf << " ||A||_1 = "
+	 << NormOne << endl;
+  }
+    
+  //cout << *Amesos_CrsMatrix;
 
   // MS // introduce support for Amesos_BaseFactory to
   // MS // allow different Amesos_Solvers
-  
-  assert(Amesos_CrsMatrix->FillComplete()==0);
-
-  cout << *Amesos_CrsMatrix;
   
   Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
   Amesos_LinearProblem->SetOperator( Amesos_CrsMatrix ) ; 
@@ -192,7 +109,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       if( Amesos_CrsMatrix->RowMatrixRowMap().LinearMap() == true ) {
 	ParamList.setParameter("Redistribute",false);
       } else {
-	if( EpetraComm.MyPID() == 0 ) {
+	if( Amesos_CrsMatrix->Comm().MyPID() == 0 ) {
 	  cout << "*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n"
 	       << "*ML*WRN* (that is, matrix will not be redistributed)\n"
 	       << "*ML*WRN* ONLY if the matrix map is linear. Now proceeding\n"
@@ -206,7 +123,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
       SluParamList.setParameter("MaxProcesses",MaxProcs);
     }
   }
-  
+
   Amesos_BaseSolver* A_Base;
   Amesos_Factory A_Factory;
 
@@ -214,20 +131,22 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
   // in other hands than superludist ones.
   // Certo che 'stp superludist e` proprio 'na schifezza ;)
   // ????? brrrrr, what the hell is this ???????
-  if( Nrows_global < 4*MaxProcs || Nrows_global < 16 ) choice = ML_AMESOS_KLU;
+  if( NumGlobalRows < 4*MaxProcs || NumGlobalRows < 16 ) choice = ML_AMESOS_KLU;
   
   switch( choice ) {
 
   case ML_AMESOS_UMFPACK:
-    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "ML_Gen_Smoother_Amesos : building UMFPACK\n";
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : building UMFPACK\n";
     A_Base = A_Factory.Create(AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
 
   case ML_AMESOS_SUPERLUDIST:
-    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "ML_Gen_Smoother_Amesos : building SUPERLUDIST\n";
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : building SUPERLUDIST\n";
     A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
     
     assert(A_Base!=0);
@@ -235,35 +154,46 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
 
   case ML_AMESOS_KLU:
   default:
-    if( EpetraComm.MyPID() == 0 && ML_Get_PrintLevel()>2 )
-      cout << "ML_Gen_Smoother_Amesos : building KLU\n";
+    if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 )
+      cout << "Amesos (level " << curr_level
+	   << ") : building KLU\n";
     A_Base = A_Factory.Create(AMESOS_KLU, *Amesos_LinearProblem, ParamList );
     assert(A_Base!=0);
     break;
   }
 
+
+  Epetra_Time Time(Amesos_CrsMatrix->Comm());
+
   A_Base->SymbolicFactorization();
+  Time1 = Time.ElapsedTime();
+  Time.ResetStartTime();
   A_Base->NumericFactorization();
-    
-  ML_free(global_nodes_as_int);
-  ML_free(global_rows_as_int);
-  ML_free(global_rows);
-  ML_free(global_nodes);
+  Time2 = Time.ElapsedTime();
+  
+  if( Amesos_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+    cout << "Amesos (level " << curr_level
+	 << ") : Time for symbolic fact  = "
+	 << Time1 << " (s)" << endl;
+    cout << "Amesos (level " << curr_level
+	 << ") : Time for numerical fact = "
+	 << Time2 << " (s)" << endl;
+  }
 
   *Amesos_Handle = (void *) A_Base ;
 
   return 0;
 }
 
-int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) {
+int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] )
+{
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *) A_Base->GetProblem() ; 
 
   Epetra_BlockMap map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
 
-
-  Epetra_Vector EV_rhs( Copy, map, rhs ) ;
+  Epetra_Vector EV_rhs( View, map, rhs ) ;
   Epetra_Vector EV_lhs( View, map, x ) ;
 
   Amesos_LinearProblem->SetRHS( &EV_rhs ) ; 
@@ -271,9 +201,11 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) {
 
   A_Base->Solve() ; 
 
+  return 0;
 }
 
-void ML_Amesos_Destroy(void *Amesos_Handle){
+void ML_Amesos_Destroy(void *Amesos_Handle)
+{
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle ;
   const Epetra_LinearProblem *Amesos_LinearProblem;
@@ -285,6 +217,176 @@ void ML_Amesos_Destroy(void *Amesos_Handle){
   delete Amesos_LinearProblem ;
   delete A_Base ;
 }
+
+int ML_Ifpack_Gen(ML *ml, int curr_level, int choice, int * options,
+		  double * params, void ** Ifpack_Handle)
+{
+
+  char msg[80];
+  sprintf( msg, "Ifpack (level %d) : ", curr_level);
+  string Msg(msg);
+  
+  int MaxNumNonzeros;
+  double Time1, Time2;
+  
+  ML_Operator *Ke = &(ml->Amat[curr_level]);
+  Epetra_CrsMatrix * Ifpack_CrsMatrix;
+
+  ML_Operator2EpetraCrsMatrix( Ke, Ifpack_CrsMatrix, MaxNumNonzeros,
+			       true, Time1);
+  
+  if( Ifpack_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>2 ) {
+    cout << Msg << "Time to convert to Epetra_CrsMatrix  = "
+	 << Time1 << " (s)" << endl;
+  }
+  
+  double NormInf = Ifpack_CrsMatrix->NormInf();
+  double NormOne = Ifpack_CrsMatrix->NormOne();
+  int NumGlobalRows = Ifpack_CrsMatrix->NumGlobalRows();
+  int NumGlobalNonzeros = Ifpack_CrsMatrix->NumGlobalNonzeros();
+
+  if( Ifpack_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel() > 2 ) {
+    cout << Msg << "NumGlobalRows = " << NumGlobalRows << endl;
+    cout << Msg << "NumGlobalNonzeros = " << NumGlobalNonzeros << endl;
+    cout << Msg << "MaxNonzerosPerRow = " << MaxNumNonzeros << endl;
+    cout << Msg << "fill-in = " << 100.0*NumGlobalNonzeros/(NumGlobalRows*NumGlobalRows)
+	 << " %" << endl;
+    cout << Msg << "||A||_\\infty = " << NormInf << " ||A||_1 = " << NormOne << endl;
+  }
+   
+  // ============================ //
+  // Construct ILU preconditioner //
+  // ---------------------------- //
+
+  double RelaxValue;
+  int Overlap;
+  int LevelOfFill;
+  
+  if( params != NULL ) {
+    RelaxValue  = params[ML_IFPACK_RELAX_VALUE];
+  } else {
+    RelaxValue = 1.0;
+  }
+
+  if( options != NULL ) {
+    Overlap     = options[ML_IFPACK_OVERLAP];
+    LevelOfFill = options[ML_IFPACK_LEVEL_OF_FILL];
+  } else {
+    Overlap = 1;
+    LevelOfFill = 1;
+  }
+
+  double Condest;
+  int    ierr;
+  
+  switch( choice ) {
+
+  case ML_IFPACK_RILUK:
+    {
+      
+    Ifpack_IlukGraph * IlukGraph = new Ifpack_IlukGraph(Ifpack_CrsMatrix->Graph(),
+							LevelOfFill,Overlap);
+    
+    assert(IlukGraph->ConstructFilledGraph()==0);
+    
+    Ifpack_CrsRiluk * RILU = NULL;
+    RILU = new Ifpack_CrsRiluk(*IlukGraph);
+    
+    RILU->SetRelaxValue(RelaxValue);
+    
+    ierr = RILU->InitValues(*Ifpack_CrsMatrix);
+    if (ierr!=0) cout << "*ERR* InitValues = " << ierr;
+
+    assert(RILU->Factor()==0);
+
+    // and now estimate the condition number
+    RILU->Condest(false,Condest);
+
+    *Ifpack_Handle = (void *) RILU ;
+    }
+    
+    break;
+
+  case ML_IFPACK_ICT:
+
+
+    break;
+    
+  case ML_IFPACK_RICK:
+
+    break;
+
+  default:
+    cerr << "*ML*ERR* choice in input to Ifpack not valid" << endl;
+    exit( EXIT_FAILURE );
+  }
+  
+  // qui metti la media dei condnum
+  if( Ifpack_CrsMatrix->Comm().MyPID() == 0 && ML_Get_PrintLevel()>5 ) {
+    cout << Msg << "overlap = "  << Overlap <<  endl;
+    cout << Msg << "LevelOfFill = "  << LevelOfFill <<  endl;
+    cout << Msg << "Condnum estimate " << Condest << endl;
+  }
+
+  delete Ifpack_CrsMatrix; Ifpack_CrsMatrix = NULL;
+
+  return 0;
+  
+} /* ML_Ifpack_Gen */
+
+
+int ML_Ifpack_Solve( void * Ifpack_Handle, double * x, double * rhs )
+{
+
+  Epetra_Operator * Handle = (Epetra_Operator *)Ifpack_Handle;
+  Ifpack_CrsIct   * ICT   = dynamic_cast<Ifpack_CrsIct *>(Handle);
+  Ifpack_CrsRiluk * RILUK = dynamic_cast<Ifpack_CrsRiluk *>(Handle);
+  //  Ifpack_CrsRick  * RICK  = (Ifpack_CrsRick *)  Ifpack_Handle ;
+  
+  if( ICT != NULL ) {
+    Epetra_Vector Erhs( View, (ICT->OperatorRangeMap()), rhs ) ;
+    Epetra_Vector Ex( View, (ICT->OperatorDomainMap()), x ) ;
+    ICT->Solve(false,Erhs,Ex); 
+  } else if( RILUK != NULL ) {
+    Epetra_Vector Erhs( View, (RILUK->OperatorRangeMap()), rhs ) ;
+    Epetra_Vector Ex( View, (RILUK->OperatorDomainMap()), x ) ;
+    RILUK->Solve(false,Erhs,Ex); 
+    //  } else if( RICK != NULL ) {
+    //    Epetra_Vector Erhs( View, (RICK->OperatorRangeMap()), rhs ) ;
+    //    Epetra_Vector Ex( View, (RICK->OperatorDomainMap()), x ) ;
+    //    RICK->Solve(false,Erhs,Ex); 
+  } else {
+    cerr << "*ML*ERR* Something wrong in `ML_Ifpack_Solve'" << endl;
+    exit( EXIT_FAILURE );
+  }
+    
+  return 0;
+
+} /* ML_Ifpack_Solve */
+
+void ML_Ifpack_Destroy(void * Ifpack_Handle)
+{
+
+  cout << "to deallocate  Ifpack_OverlapGraph * = */ ???? " << endl;
+
+  Epetra_Operator * Handle = (Epetra_Operator *)Ifpack_Handle;
+  
+  Ifpack_CrsIct * ICT   = dynamic_cast<Ifpack_CrsIct *>(Handle);
+  Ifpack_CrsRiluk * RILUK = dynamic_cast<Ifpack_CrsRiluk *>(Handle);
+  //  Ifpack_CrsRick  * RICK  = (Ifpack_CrsRick *)  Ifpack_Handle ;
+
+  if( ICT != NULL ) {
+    delete ICT; ICT = NULL;
+  } else if( RILUK != NULL ) {
+    delete RILUK; RILUK = NULL;
+    //  } else if( RICK != NULL ) {
+    //    delete RICK; RICK = NULL;
+  } else {
+    cerr << "*ML*ERR* Something wrong in `ML_Ifpack_Destroy'" << endl;
+    exit( EXIT_FAILURE );
+  }
+  
+} /* ML_Ifpack_Destroy */
 
 #else
 
