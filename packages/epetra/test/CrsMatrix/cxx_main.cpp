@@ -592,7 +592,6 @@ int main(int argc, char *argv[])
     ScalingBroke = true;
   }
   if (verbose1) cout << A2;
-  if (verbose1) cout << "error code 3 expected" << endl; 
   EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
   double A2infNorm4 = A2.NormInf();
   double A2oneNorm4 = A2.NormOne();
@@ -651,7 +650,6 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(A2.InvRowSums(xRange),ierr);
 
   if (verbose1) cout << xRange;
-  if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl;
   EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
   float A2infNormFloat2 = A2.NormInf(); // We use a float so that rounding error
 	// will not prevent the sum from being 1.0.

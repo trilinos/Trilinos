@@ -1595,7 +1595,8 @@ int Epetra_CrsMatrix::InvColSums(Epetra_Vector& x) const {
     xp = (double*) x.Values();
   }
   // Invert values, don't allow them to get too large
-  for(i = 0; i < x.Map().NumMyElements(); i++) {
+  int MapNumMyElements = x.Map().NumMyElements();
+  for(i = 0; i < MapNumMyElements; i++) {
     double scale = xp[i];
     if(scale < Epetra_MinDouble) {
       if(scale == 0.0) 
@@ -1682,8 +1683,6 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
   if(!Filled()) 
     EPETRA_CHK_ERR(-1); // Matrix must be filled.
   double* xp = 0;
-  int ierr = 0; //If we have to perform an import, we will return a positive
-		// error code to indicate the performance hit.
   if(Graph().RangeMap().SameAs(x.Map()))  
     // If we have a non-trivial exporter, we must import elements that are 
     // permuted or are on other processors.  (We will use the exporter to
@@ -1698,7 +1697,6 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
       if(ExportVector_ == 0)
         ExportVector_ = new Epetra_Vector(RowMap()); // Create Export vector if needed
       EPETRA_CHK_ERR(ExportVector_->Import(x,*Exporter(), Insert));
-      ierr = 3; // The export causes a performance hit.
       xp = (double*) ExportVector_->Values();
     }
     else
@@ -1723,8 +1721,6 @@ int Epetra_CrsMatrix::LeftScale(const Epetra_Vector& x) {
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   UpdateFlops(NumGlobalNonzeros());
 
-  EPETRA_CHK_ERR(ierr);
-  
   return(0);
 }
 
