@@ -97,7 +97,7 @@ double lb_time[2] = {0.0,0.0};
   if (lb->Proc == lb->Debug_Proc && lb->Debug_Level >= LB_DEBUG_PARAMS)
     LB_Print_Key_Params(lb);
 
-  start_time = LB_Time();
+  start_time = LB_Time(lb->Timer);
 
   /* assume no changes */
   *changes = 0;
@@ -249,7 +249,7 @@ double lb_time[2] = {0.0,0.0};
 
   LB_TRACE_DETAIL(lb, yo, "Done building return arguments");
 
-  end_time = LB_Time();
+  end_time = LB_Time(lb->Timer);
   lb_time[0] = end_time - start_time;
 
   if (lb->Debug_Level >= LB_DEBUG_LIST) {
@@ -276,7 +276,7 @@ double lb_time[2] = {0.0,0.0};
   if (lb->Migrate.Auto_Migrate) {
     LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
 
-    start_time = LB_Time();
+    start_time = LB_Time(lb->Timer);
     error = LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
                             *import_local_ids, *import_procs,
                             *num_export_objs, *export_global_ids,
@@ -287,7 +287,7 @@ double lb_time[2] = {0.0,0.0};
       LB_TRACE_EXIT(lb, yo);
       return error;
     }
-    end_time = LB_Time();
+    end_time = LB_Time(lb->Timer);
     lb_time[1] = end_time - start_time;
 
     LB_TRACE_DETAIL(lb, yo, "Done auto-migration");
