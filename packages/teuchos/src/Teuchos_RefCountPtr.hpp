@@ -17,7 +17,7 @@
 #define TEUCHOS_REFCOUNTPTR_H
 
 #include "Teuchos_RefCountPtrDecl.hpp"
-#include "Teuchos_ThrowException.hpp"
+#include "Teuchos_TestForException.hpp"
 
 // /////////////////////////////////////////////////////////////////////////
 // Inline implementations below, not for the client to look at.
@@ -373,7 +373,7 @@ Teuchos::get_dealloc( Teuchos::RefCountPtr<T>& p )
 	*p; // Assert not NULL
 	PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>
 		*dnode = dynamic_cast<PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>*>(p.access_node());
-	THROW_EXCEPTION(
+	TEST_FOR_EXCEPTION(
 		dnode==NULL, std::logic_error
 		,"get_dealloc<" << typeid(Dealloc_T).name() << "," << typeid(T).name() << ">(p): "
 		<< "Error, requested type \'" << typeid(PrivateUtilityPack::RefCountPtr_node_tmpl<typename Dealloc_T::ptr_t,Dealloc_T>).name()

@@ -46,6 +46,7 @@ CORE = \
 	$(srcdir)/Teuchos_Time.cpp
 
 EXTRA_EXPERIMENTAL_H = \
+	$(srcdir)/Teuchos_any.hpp \
 	$(srcdir)/Teuchos_Array.hpp \
 	$(srcdir)/Teuchos_CommandLine.hpp \
 	$(srcdir)/Teuchos_CommandLineProcessor.hpp \
