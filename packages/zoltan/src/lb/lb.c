@@ -84,7 +84,6 @@ LB *LB_Create_Object(MPI_Comm communicator)
 
 char *yo = "LB_Create_Object";
 LB *lb;
-int flag;
 
   /*
    * Allocate storage for the load-balancing object.
@@ -184,7 +183,6 @@ void LB_Destroy_Object(LB **lb)
  *    LB *               --  Pointer to a LB object.
  *
  */
-
 char *yo = "LB_Destroy_Object";
 
   LB_Free_Structure(*lb);
@@ -200,7 +198,7 @@ char *yo = "LB_Destroy_Object";
 /****************************************************************************/
 /****************************************************************************/
 
-int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn(), void *data)
+int LB_Set_Fn(LB *lb, LB_FN_TYPE fn_type, void *fn, void *data)
 {
 /*
  *  Function to initialize a given LB interface function.
@@ -314,7 +312,6 @@ int LB_Set_Method(LB *lb, char *method_name)
  */
 
 char *yo = "LB_Set_Method";
-int i;
 
   /*
    *  Compare method_name string with standard strings for methods.
@@ -327,10 +324,6 @@ int i;
   if (strcasecmp(method_name, "RCB") == 0) {
     lb->Method = RCB;
     lb->LB_Fn = LB_rcb;
-/*
-    lb->LB_Comm->Build_Request_Proclist = rcb_build_request_proclist;
-    lb->LB_Comm->Build_Send_Request_List = rcb_build_send_request_list;
-*/
   }
   else if (strcasecmp(method_name, "OCTPART") == 0) {
     lb->Method = OCTPART;
@@ -1225,7 +1218,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
           else if (ewgt_dim == 1)
             cut_weight += ewgts[j];
           else{
-            printf("Error in %s: ewgt_dim = %d not supported\n", yo);
+            printf("Error in %s: ewgt_dim = %d not supported\n", yo, ewgt_dim);
             *ierr = LB_WARN;
           }
           if (flag==0){

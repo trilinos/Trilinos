@@ -588,7 +588,7 @@ extern void LB_Destroy_Object(struct LB_Struct **lb);
  *    struct LB_Struct *lb       --  Pointer to a LB object.
  *    LB_FN_TYPE fn_type         --  Enum type indicating the function to be
  *                                   set.
- *    void *()fn_ptr             --  Pointer to the function to be used in the 
+ *    void *fn_ptr               --  Pointer to the function to be used in the 
  *                                   assignment.
  *    void *data_ptr             --  Pointer to data that the LB library will
  *                                   pass as an argument to fn(). May be NULL.
@@ -598,7 +598,7 @@ extern void LB_Destroy_Object(struct LB_Struct **lb);
  *    int                        --  Error code
  */
 extern int LB_Set_Fn(struct LB_Struct *lb, LB_FN_TYPE fn_type,
-                     void *fn_ptr(), void *data_ptr);
+                     void *fn_ptr, void *data_ptr);
 
 /*****************************************************************************/
 /*
