@@ -121,7 +121,7 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@SUBDIRS = 1Dfem
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@SUBDIRS = 1Dfem Tcubed
 subdir = src-loca/example-epetra
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
@@ -133,7 +133,7 @@ RECURSIVE_TARGETS = info-recursive dvi-recursive install-info-recursive \
 	install-exec-recursive installdirs-recursive install-recursive \
 	uninstall-recursive check-recursive installcheck-recursive
 DIST_COMMON = Makefile.am Makefile.in
-DIST_SUBDIRS = 1Dfem
+DIST_SUBDIRS = 1Dfem Tcubed
 all: all-recursive
 
 .SUFFIXES:

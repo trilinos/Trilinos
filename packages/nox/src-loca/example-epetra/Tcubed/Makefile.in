@@ -65,7 +65,7 @@ oldincludedir = /usr/include
 pkgdatadir = $(datadir)/@PACKAGE@
 pkglibdir = $(libdir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
-top_builddir = ../..
+top_builddir = ../../..
 
 ACLOCAL = @ACLOCAL@
 AUTOCONF = @AUTOCONF@
@@ -121,41 +121,47 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-EXAMPLE = example
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@EXAMPLE = example
 
 noinst_PROGRAMS = $(EXAMPLE)
 
 example_SOURCES = $(srcdir)/Example.C \
-	$(srcdir)/DennisSchnabel.C $(srcdir)/DennisSchnabel.H \
 	$(srcdir)/FiniteElementProblem.C $(srcdir)/FiniteElementProblem.H \
-	$(srcdir)/Problem_Interface.H \
-	$(srcdir)/GenericProblem.C $(srcdir)/GenericProblem.H
+	$(srcdir)/Basis.C $(srcdir)/Basis.H \
+	$(srcdir)/Problem_Interface.C $(srcdir)/Problem_Interface.H
 
 
-example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
-        $(top_builddir)/src-epetra/libnoxepetra.a
+example_DEPENDENCIES = \
+        $(top_builddir)/src/libnox.a \
+        $(top_builddir)/src-epetra/libnoxepetra.a \
+	$(top_builddir)/src-loca/src/libloca.a \
+        $(top_builddir)/src-loca/src-epetra/liblocaepetra.a
 
 
 example_CXXFLAGS = $(TRILINOS_CXXFLAGS) \
-	-I$(top_srcdir)/src -I$(top_srcdir)/src-epetra
+		   -I$(top_srcdir)/src \
+                   -I$(top_srcdir)/src-epetra \
+		   -I$(top_srcdir)/src-loca/src \
+                   -I$(top_srcdir)/src-loca/src-epetra
 
 
-example_LDADD = \
-        $(top_builddir)/src-epetra/libnoxepetra.a \
-        $(top_builddir)/src/libnox.a \
-        $(LIBS)
+example_LDADD = -L$(top_builddir)/src \
+                -L$(top_builddir)/src-epetra \
+                -L$(top_builddir)/src-loca/src \
+                -L$(top_builddir)/src-loca/src-epetra \
+		-llocaepetra -lnoxepetra -lloca -lnox $(LIBS)
 
-subdir = example-epetra/Suite
+subdir = src-loca/example-epetra/Tcubed
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = example$(EXEEXT)
+@BUILD_LOCA_EPETRA_EXAMPLES_TRUE@noinst_PROGRAMS = example$(EXEEXT)
+@BUILD_LOCA_EPETRA_EXAMPLES_FALSE@noinst_PROGRAMS =
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_example_OBJECTS = example-Example.$(OBJEXT) \
-	example-DennisSchnabel.$(OBJEXT) \
-	example-FiniteElementProblem.$(OBJEXT) \
-	example-GenericProblem.$(OBJEXT)
+	example-FiniteElementProblem.$(OBJEXT) example-Basis.$(OBJEXT) \
+	example-Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
 example_LDFLAGS =
 
@@ -166,10 +172,10 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-DennisSchnabel.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/example-Basis.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-Example.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/example-FiniteElementProblem.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/example-GenericProblem.Po
+@AMDEP_TRUE@	./$(DEPDIR)/example-Problem_Interface.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -191,16 +197,16 @@ all: all-am
 .SUFFIXES: .C .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example-epetra/Suite/Makefile
+	  $(AUTOMAKE) --foreign  src-loca/example-epetra/Tcubed/Makefile
 Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 example-Example.$(OBJEXT): $(srcdir)/Example.C
-example-DennisSchnabel.$(OBJEXT): $(srcdir)/DennisSchnabel.C
 example-FiniteElementProblem.$(OBJEXT): $(srcdir)/FiniteElementProblem.C
-example-GenericProblem.$(OBJEXT): $(srcdir)/GenericProblem.C
+example-Basis.$(OBJEXT): $(srcdir)/Basis.C
+example-Problem_Interface.$(OBJEXT): $(srcdir)/Problem_Interface.C
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(CXXLINK) $(example_LDFLAGS) $(example_OBJECTS) $(example_LDADD) $(LIBS)
@@ -211,10 +217,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-DennisSchnabel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Basis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-FiniteElementProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-GenericProblem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example-Problem_Interface.Po@am__quote@
 
 distclean-depend:
 	-rm -rf ./$(DEPDIR)
@@ -243,18 +249,6 @@ example-Example.obj: $(srcdir)/Example.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Example.obj `cygpath -w $(srcdir)/Example.C`
 
-example-DennisSchnabel.o: $(srcdir)/DennisSchnabel.C
-@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.o `test -f '$(srcdir)/DennisSchnabel.C' || echo '$(srcdir)/'`$(srcdir)/DennisSchnabel.C
-
-example-DennisSchnabel.obj: $(srcdir)/DennisSchnabel.C
-@AMDEP_TRUE@	source='$(srcdir)/DennisSchnabel.C' object='example-DennisSchnabel.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-DennisSchnabel.Po' tmpdepfile='$(DEPDIR)/example-DennisSchnabel.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-DennisSchnabel.obj `cygpath -w $(srcdir)/DennisSchnabel.C`
-
 example-FiniteElementProblem.o: $(srcdir)/FiniteElementProblem.C
 @AMDEP_TRUE@	source='$(srcdir)/FiniteElementProblem.C' object='example-FiniteElementProblem.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/example-FiniteElementProblem.Po' tmpdepfile='$(DEPDIR)/example-FiniteElementProblem.TPo' @AMDEPBACKSLASH@
@@ -267,17 +261,29 @@ example-FiniteElementProblem.obj: $(srcdir)/FiniteElementProblem.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-FiniteElementProblem.obj `cygpath -w $(srcdir)/FiniteElementProblem.C`
 
-example-GenericProblem.o: $(srcdir)/GenericProblem.C
-@AMDEP_TRUE@	source='$(srcdir)/GenericProblem.C' object='example-GenericProblem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-GenericProblem.Po' tmpdepfile='$(DEPDIR)/example-GenericProblem.TPo' @AMDEPBACKSLASH@
+example-Basis.o: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-GenericProblem.o `test -f '$(srcdir)/GenericProblem.C' || echo '$(srcdir)/'`$(srcdir)/GenericProblem.C
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.o `test -f '$(srcdir)/Basis.C' || echo '$(srcdir)/'`$(srcdir)/Basis.C
 
-example-GenericProblem.obj: $(srcdir)/GenericProblem.C
-@AMDEP_TRUE@	source='$(srcdir)/GenericProblem.C' object='example-GenericProblem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/example-GenericProblem.Po' tmpdepfile='$(DEPDIR)/example-GenericProblem.TPo' @AMDEPBACKSLASH@
+example-Basis.obj: $(srcdir)/Basis.C
+@AMDEP_TRUE@	source='$(srcdir)/Basis.C' object='example-Basis.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Basis.Po' tmpdepfile='$(DEPDIR)/example-Basis.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-GenericProblem.obj `cygpath -w $(srcdir)/GenericProblem.C`
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Basis.obj `cygpath -w $(srcdir)/Basis.C`
+
+example-Problem_Interface.o: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.o `test -f '$(srcdir)/Problem_Interface.C' || echo '$(srcdir)/'`$(srcdir)/Problem_Interface.C
+
+example-Problem_Interface.obj: $(srcdir)/Problem_Interface.C
+@AMDEP_TRUE@	source='$(srcdir)/Problem_Interface.C' object='example-Problem_Interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/example-Problem_Interface.Po' tmpdepfile='$(DEPDIR)/example-Problem_Interface.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_CXXFLAGS) $(CXXFLAGS) -c -o example-Problem_Interface.obj `cygpath -w $(srcdir)/Problem_Interface.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
@@ -318,7 +324,7 @@ distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 
-top_distdir = ../..
+top_distdir = ../../..
 distdir = $(top_distdir)/$(PACKAGE)-$(VERSION)
 
 distdir: $(DISTFILES)
