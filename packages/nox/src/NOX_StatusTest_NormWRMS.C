@@ -187,7 +187,7 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
 	  outputListExists = true;
 	  printCriteria3Info = true;
 	
-	  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Scaled Residual", -1.0);
+	  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Achieved Tolerance", -1.0);
 	
 	  if (achievedTol <= beta)
 	    status3 = Converged;
@@ -224,13 +224,13 @@ ostream& NormWRMS::print(ostream& stream, int indent) const
     stream << "\n";
     for (int j = 0; j < indent + 13; j ++)
       stream << ' ';
-    stream << "(Step Size:  " << Utils::sci(computedStepSize) << " >= " << alpha << ")";
+    stream << "(Min Step Size:  " << Utils::sci(computedStepSize) << " >= " << alpha << ")";
   }
   if (printCriteria3Info) {
     stream << "\n";
     for (int j = 0; j < indent+ 13; j ++)
       stream << ' ';
-    stream << "(Lin Solv Tol:  " << Utils::sci(achievedTol) << " < " << beta << ")";
+    stream << "(Max Lin Solv Tol:  " << Utils::sci(achievedTol) << " < " << beta << ")";
   }
   stream << endl;
   return stream;
