@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
   double A2infNorm = A2.NormInf();
   double A2oneNorm = A2.NormOne();
 
-cout << A2;
+  if (verbose) cout << A2;
   EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
   double A2infNorm1 = A2.NormInf();
   double A2oneNorm1 = A2.NormOne();
@@ -566,7 +566,7 @@ cout << A2;
     EPETRA_TEST_ERR(-32,ierr);
     ScalingBroke = true;
   }
-cout << A2;
+  if (verbose) cout << A2;
   EPETRA_TEST_ERR(A2.RightScale(xCol),ierr);
   double A2infNorm2 = A2.NormInf();
   double A2oneNorm2 = A2.NormOne();
@@ -578,7 +578,7 @@ cout << A2;
     EPETRA_TEST_ERR(-34,ierr);
     ScalingBroke = true;
   }
-cout << A2;
+  if (verbose) cout << A2;
   EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
   double A2infNorm3 = A2.NormInf();
   double A2oneNorm3 = A2.NormOne();
@@ -591,7 +591,7 @@ cout << A2;
     EPETRA_TEST_ERR(-36,ierr)
     ScalingBroke = true;
   }
-cout << A2;
+  if (verbose) cout << A2;
   if (verbose1) cout << "error code 3 expected" << endl; 
   EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
   double A2infNorm4 = A2.NormInf();
@@ -605,7 +605,7 @@ cout << A2;
     EPETRA_TEST_ERR(-38,ierr)
     ScalingBroke = true;
   }
-cout << A2;
+  if (verbose) cout << A2;
 
   if (ScalingBroke) {
     if (verbose) cout << endl << "LeftScale and RightScale tests FAILED" << endl << endl;
@@ -618,19 +618,19 @@ cout << A2;
 
   if (verbose) cout << "\n\n*****Testing InvRowMaxs and InvColMaxs" << endl << endl;
 
-  cout << A2 << endl;
+  if (verbose) cout << A2 << endl;
   EPETRA_TEST_ERR(A2.InvRowMaxs(xRow),ierr);
   EPETRA_TEST_ERR(A2.InvRowMaxs(xRange),ierr);
-  cout << xRow <<endl << xRange << endl;
+  if (verbose) cout << xRow << endl << xRange << endl;
 
   if (verbose) cout << "\n\n*****Testing InvRowSums and InvColSums" << endl << endl;
   bool InvSumsBroke = false;
 // Works!
   EPETRA_TEST_ERR(A2.InvRowSums(xRow),ierr);
-  cout << xRow;
+  if (verbose) cout << xRow;
   EPETRA_TEST_ERR(A2.LeftScale(xRow),ierr);
   float A2infNormFloat = A2.NormInf();
-cout << A2<< endl << "Inf Norm = " << A2infNormFloat << endl;
+  if (verbose) cout << A2<< endl;
   if (1.0!=A2infNormFloat) {
     EPETRA_TEST_ERR(-41,ierr);
     InvSumsBroke = true;
@@ -638,10 +638,10 @@ cout << A2<< endl << "Inf Norm = " << A2infNormFloat << endl;
 
   // Works
   EPETRA_TEST_ERR(A2.InvColSums(xDomain),ierr);
-  cout << xDomain << endl;
+  if (verbose) cout << xDomain << endl;
   EPETRA_TEST_ERR(A2.RightScale(xDomain),ierr);
   float A2oneNormFloat2 = A2.NormOne();
-cout << A2;
+  if (verbose) cout << A2;
   if (1.0!=A2oneNormFloat2) {
     EPETRA_TEST_ERR(-42,ierr)
     InvSumsBroke = true;
@@ -649,13 +649,13 @@ cout << A2;
 
 // Works!
   EPETRA_TEST_ERR(A2.InvRowSums(xRange),ierr);
-  cout << "ierr = " << ierr << endl;
-cout << xRange;
+
+  if (verbose) cout << xRange;
   if (verbose1 && NumProc != 1) cout << "error code 3 expected" << endl;
   EPETRA_TEST_ERR(A2.LeftScale(xRange),ierr);
   float A2infNormFloat2 = A2.NormInf(); // We use a float so that rounding error
 	// will not prevent the sum from being 1.0.
-cout << A2;
+  if (verbose) cout << A2;
   if (1.0!=A2infNormFloat2) {
     cout << "InfNorm should be = 1, but InfNorm = " << A2infNormFloat2 << endl;
     EPETRA_TEST_ERR(-43,ierr)
