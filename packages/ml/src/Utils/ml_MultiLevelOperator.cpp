@@ -118,7 +118,9 @@ int MultiLevelOperator::ApplyInverse(const Epetra_MultiVector& X,
   if (Y.NumVectors()!=X.NumVectors()) 
     ML_CHK_ERR(-3);
 
+#ifdef ML_MPI
   MPI_Pcontrol ( 8 , "entry" , 2 , 0 , 0 );
+#endif
 
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
