@@ -719,19 +719,17 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   }
 
   if( IsLocal() || UseMpiCommSelf_ ) {
-#ifdef EPETRA_MPI
-#ifndef TFLOP
+    // use --with-amesos-mpi-c2f to create sub-communicators
+    // C to FORTRAN communicator is not standard
+#if defined(EPETRA_MPI) && defined(HAVE_AMESOS_MPI_C2F)
     MPI_Comm MPIC = MPI_COMM_SELF ;
     MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
 #else
     MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
 #endif
-#else
-    MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
-#endif
   } else {
     
-#if defined(EPETRA_MPI) && ! defined(TFLOP)
+#if defined(EPETRA_MPI) && defined(HAVE_AMESOS_MPI_C2F)
     if( MaxProcs_ != Comm().NumProc() ) {
 
       if( debug_ == 1 ) cout << "Creating MPI Communicator with "

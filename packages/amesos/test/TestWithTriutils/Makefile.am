@@ -1,7 +1,7 @@
 #@HEADER
 #@HEADER
 
-TEST = TestOptions
+TEST = TestAmesos
 
 noinst_PROGRAMS = $(TEST)
 
@@ -10,9 +10,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/../triutils/src -I$(top_srcdir)/../epetra/src \
   -I$(top_builddir)/../epetra/src -I$(top_builddir)/../triutils/src \
    -I$(top_builddir)/../teuchos/src -I$(top_srcdir)/../teuchos/src
 
-TestOptions_SOURCES = $(srcdir)/TestAllAmesosClasses.cpp
+TestAmesos_SOURCES = $(srcdir)/TestAllAmesosClasses.cpp
 
-TestOptions_DEPENDENCIES = \
+TestAmesos_DEPENDENCIES = \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
@@ -20,9 +20,9 @@ TestOptions_DEPENDENCIES = \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a 
 
-TestOptions_CXXFLAGS = -I$(top_srcdir)/src
+TestAmesos_CXXFLAGS = -I$(top_srcdir)/src
 
-TestOptions_LDADD = $(top_builddir)/src/libamesos.a \
+TestAmesos_LDADD = $(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
