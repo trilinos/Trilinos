@@ -32,17 +32,20 @@ extern "C" {
 /*****************************************************************************/
 
 int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int local_global,
-    int len, int *wgt_idx, int *part_ids, float *part_sizes)
+    int len, int *part_ids, int *wgt_idx, float *part_sizes)
 {
 /*
- *  Function to set the desired partition sizes:
+ *  Function to set the desired partition sizes. This function
+ *  only sets values locally. Later, Zoltan_LB_Get_Part_Sizes
+ *  collects all the information across processors.
+ *
  *  Input:
  *    zz            --  The Zoltan structure to which this method
  *                      applies.
  *    local_global  --  Local or global partition numbers? (only global for now)
  *    len           --  Length of arrays wgt_idx, part_idx, part_sizes
- *    wgt_idx       --  Array of indices between 0 and Obj_Wgt_Dim-1
  *    part_ids      --  Array of partition ids (local or global)
+ *    wgt_idx       --  Array of indices between 0 and Obj_Wgt_Dim-1
  *    part_sizes    --  Array of floats that gives the desired partition 
  *                      size for each weight and each partition, i.e., 
  *                      part_sizes[i] corresponds to wgt_idx[i] and part_id[i]
@@ -52,76 +55,35 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int local_global,
  */
 
   char *yo = "Zoltan_LB_Set_Part_Sizes";
-  int i, j;
+  int i, j, maxlen;
   float *temp;
   char msg[128];
   int error = ZOLTAN_OK;
-  int part_dim = zz->Obj_Weight_Dim;        /* Current value of obj_wgt_dim. */
 
-  if (part_dim==0) part_dim = 1;
+  /* Do we need more space? */
+  if (zz->LB.Part_Info_Len==0)
+    maxlen = 10;              /* Start with space for 10 elements */
+  else if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len)
+    maxlen = 3*(zz->LB.Part_Info_Len + len)/2;  /* Overallocate by 50% */
+  else
+    maxlen = 0;
 
-  /* Check if we can use existing part_sizes array */
-  if (zz->LB.Part_Sizes == NULL){
+  if (maxlen==10)
+    zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_MALLOC(maxlen *
+      sizeof(struct Zoltan_part_info));
+  else if (maxlen>0)
+    zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_REALLOC(
+      zz->LB.Part_Info, maxlen * sizeof(struct Zoltan_part_info));
 
-    /* Store max values, which give the dimensions of Part_Sizes. */
-    zz->LB.Max_Part_Dim = part_dim;
-    zz->LB.Max_Global_Parts = zz->LB.Num_Global_Parts;
-
-    /* Allocate fresh Part_Sizes array . */
-    zz->LB.Part_Sizes = (float *) ZOLTAN_MALLOC(
-         part_dim * (zz->LB.Num_Global_Parts) * sizeof(float));
-    if (zz->LB.Part_Sizes == NULL){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      error = ZOLTAN_MEMERR;
-      goto End;
-    }
-    for (i=0; i< part_dim * (zz->LB.Num_Global_Parts); i++){
-      zz->LB.Part_Sizes[i] = -1.0;
-    }
-  }
-  else if ((part_dim > zz->LB.Max_Part_Dim) ||
-           (zz->LB.Num_Global_Parts > zz->LB.Max_Global_Parts)){
-
-    /* Allocate larger LB.part_sizes array. */
-    temp = zz->LB.Part_Sizes;
-    zz->LB.Part_Sizes = (float *) ZOLTAN_MALLOC(
-        part_dim * (zz->LB.Num_Global_Parts) * sizeof(float));
-    if (zz->LB.Part_Sizes == NULL){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-      error = ZOLTAN_MEMERR;
-      goto End;
-    }
-    /* Move data into new place. */
-    for (i = 0; i < zz->LB.Num_Global_Parts; i++){
-      for (j = 0; j < part_dim; j++){
-        zz->LB.Part_Sizes[i*part_dim+j] = 
-          temp[i*(zz->LB.Max_Part_Dim)+j];
-      }
-    }
-    /* Free old part_sizes array */
-    ZOLTAN_FREE(&temp);
-
-    /* Update max values, which give the dimensions of Part_Sizes. */
-    zz->LB.Max_Part_Dim = part_dim;
-    zz->LB.Max_Global_Parts = zz->LB.Num_Global_Parts;
+  /* Add new data to partition info array. */
+  for (i=0,j=zz->LB.Part_Info_Len; i<len; i++,j++){
+    zz->LB.Part_Info[j].Size = part_sizes[i];
+    zz->LB.Part_Info[j].Part_id = part_ids[i]; 
+    zz->LB.Part_Info[j].Idx = wgt_idx[i]; 
   }
 
-  /* Insert new values into part_sizes array. */
-  for (i=0; i<len; i++){
-    /* Error check. */
-    if (part_ids[i] >= zz->LB.Num_Global_Parts){
-      sprintf(msg, "partition number %d is too high", part_ids[i]);
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-      error = ZOLTAN_WARN;
-    }
-    else if (wgt_idx[i] >= part_dim){
-      sprintf(msg, "partition weight index %d is too high", wgt_idx[i]);
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-      error = ZOLTAN_WARN;
-    }
-    else /* indices OK */
-      zz->LB.Part_Sizes[part_ids[i]*part_dim+wgt_idx[i]] = part_sizes[i];
-  }
+  zz->LB.Part_Info_Len += len;
+  zz->LB.Part_Info_Max_Len = maxlen;
 
 End:
   return error;
@@ -130,7 +92,7 @@ End:
 
 
 int Zoltan_LB_Get_Part_Sizes(ZZ *zz, 
-    int part_dim, int num_global_parts, float *part_sizes)
+    int num_global_parts, int part_dim, float *part_sizes)
 {
 /*
  *  Function to get the scaled partition sizes.
@@ -138,10 +100,10 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
  *  Input:
  *    zz            --  The Zoltan structure to which this method
  *                      applies.
- *    part_dim      --  The number of object weights per partition.
- *                      (This usually equals lb->Obj_Wgt_Dim.)
  *    num_global_parts -- Number of global partitions.
  *                      (This usually equals lb->Num_Global_Parts)
+ *    part_dim      --  The number of object weights per partition.
+ *                      (This usually equals lb->Obj_Wgt_Dim.)
  *
  *  Output:
  *    part_sizes    --  Array of floats that gives the set partition 
@@ -156,61 +118,53 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
   /* For convenience, if no weights are used, set part_dim to 1 */
   if (part_dim==0) part_dim = 1;
 
-  if (part_dim > zz->LB.Max_Part_Dim){
-    sprintf(msg, "Input part_dim=%d is too large", part_dim); 
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    error = ZOLTAN_FATAL;
-    goto End;
-  }
-  if (num_global_parts > zz->LB.Max_Global_Parts){
-    sprintf(msg, "Input num_global_parts=%d is too large", num_global_parts); 
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
-    error = ZOLTAN_FATAL;
-    goto End;
-  }
   if (part_sizes == NULL){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input argument part_sizes is NULL.");
     error = ZOLTAN_FATAL;
     goto End;
   }
 
-  if (zz->LB.Part_Sizes == NULL){
-    /* Uniform partition sizes is the default. */
-    /* EBEB What if LB.Part_Sizes is NULL on some procs but not all? */
+  /* Find max Part_Info_Len over all procs to see if they are all zero. */
+  MPI_Allreduce((void*) &(zz->LB.Part_Info_Len), (void*) &j, 
+      1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  if (j == 0){
+    /* Uniform partition sizes. */
     zz->LB.Uniform_Parts = 1;
     for (i = 0; i < num_global_parts*part_dim; i++)
       part_sizes[i] = 1.0 / (float)num_global_parts;
   }
   else {
    /* Get the partition sizes set by the user (application).
-    * LB.Part_Sizes is stored distributed, so first we need to
-    * gather all the partition sizes using collective communication.
-    * Only get the data we need (part_dim * num_global_parts).
+    * Each processor puts its data in a part_dim * num_global_parts
+    * array. Then we gather all the data across processors.
+    * Out-of-range partition size data is ignored.
     */
     zz->LB.Uniform_Parts = 0;
     sum = (float *)ZOLTAN_MALLOC(part_dim*sizeof(float));
 
-    /* Pack LB.Part_Sizes into temp array if leading dimensions differ */
-    if (part_dim != zz->LB.Max_Part_Dim){
-      temp_part_sizes = (float *)ZOLTAN_MALLOC(num_global_parts*part_dim
-        *sizeof(float));
-      if (temp_part_sizes == NULL){
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
-        error = ZOLTAN_MEMERR;
-        goto End;
-      }
-      for (i = 0; i < num_global_parts; i++){
-        for (j = 0; j < part_dim; j++){
-          temp_part_sizes[i*part_dim+j] = 
-            zz->LB.Part_Sizes[i*(zz->LB.Max_Part_Dim)+j];
-        }
-      }
+    /* Pack LB.Part_Info into temp array */
+    temp_part_sizes = (float *)ZOLTAN_MALLOC(num_global_parts*part_dim
+      *sizeof(float));
+    if (temp_part_sizes == NULL){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      error = ZOLTAN_MEMERR;
+      goto End;
+    }
+    for (i = 0; i < num_global_parts*part_dim; i++){
+      temp_part_sizes[i] = -1.0;
+    }
+    for (i = 0; i < zz->LB.Part_Info_Len; i++){
+      /* Only assemble partition sizes for partitions in the requested range. */
+      if ((zz->LB.Part_Info[i].Part_id < num_global_parts) && 
+          (zz->LB.Part_Info[i].Idx < part_dim))
+        temp_part_sizes[(zz->LB.Part_Info[i].Part_id)*part_dim+
+          zz->LB.Part_Info[i].Idx] = zz->LB.Part_Info[i].Size;
     }
 
     /* Reduce over all procs */
-    MPI_Allreduce((void*) (temp_part_sizes ? temp_part_sizes : 
-      zz->LB.Part_Sizes), (void*) part_sizes, num_global_parts*part_dim, 
-      MPI_FLOAT, MPI_MAX, zz->Communicator);
+    MPI_Allreduce((void*) temp_part_sizes, (void*) part_sizes, 
+      num_global_parts*part_dim, MPI_FLOAT, MPI_MAX, zz->Communicator);
   
     /* Check for errors. Scale the sizes so they sum to one for each weight. */
     for (j = 0; j < part_dim; j++) 
@@ -219,7 +173,7 @@ int Zoltan_LB_Get_Part_Sizes(ZZ *zz,
     for (i = 0; i < num_global_parts; i++){
       for (j = 0; j < part_dim; j++){
         if (part_sizes[i*part_dim+j]<0){
-          sprintf(msg, "Partition weight (%1d,%1d) is invalid or has not been set.", i, j); 
+          sprintf(msg, "Partition weight (%1d,%1d) has not been set.", i, j); 
 	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
           error = ZOLTAN_FATAL;
           goto End;

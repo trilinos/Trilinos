@@ -82,12 +82,21 @@ typedef enum Zoltan_LB_Method {
 #define ZOLTAN_MIGRATE_ONLY_PROC_CHANGES_DEF  1
 #define ZOLTAN_LB_RETURN_LISTS_DEF   ZOLTAN_LB_ALL_LISTS
 
+/* Struct for partition size info. */
+struct Zoltan_part_info {
+  float Size;          /*  Desired partition size. */
+  int Part_id;         /*  Partition id.           */
+  int Idx;             /*  Partition weight index. */
+};
+
+/* LB_struct. Contains all information about an LB "object" */
 
 struct Zoltan_LB_Struct {
-  float * Part_Sizes;             /*  Array of (desired) partition sizes.    */
-  int Max_Global_Parts;           /*  Max value of #partitions used.         */
-  int Max_Part_Dim;               /*  Max value of #weights used 
-                                      for each partition.                    */
+  int Part_Info_Len;              /*  Actual length of Part_Info arrays. */
+  int Part_Info_Max_Len;          /*  Allocated length of Part_Info arrays. */
+  struct Zoltan_part_info *Part_Info; /*  Array of partition size info.  */
+  int *Part_Info_Pids;            /*  Array of partition ids. */
+  int *Part_Info_Idx;             /*  Array of partition weight indices. */
   int Num_Global_Parts;           /*  The total number of partitions.
                                       Set in Zoltan_LB_Build_PartDist.       */
   int Num_Global_Parts_Param;     /*  The number of global partitions specified.

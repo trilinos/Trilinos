@@ -332,7 +332,7 @@ int part_dim;
   }
 
   /* Get partition sizes. */
-  Zoltan_LB_Get_Part_Sizes(zz, zz->Obj_Weight_Dim, zz->LB.Num_Global_Parts,
+  Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim,
     part_sizes);
 
   /*

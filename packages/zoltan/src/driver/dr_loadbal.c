@@ -75,8 +75,12 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 /* Local declarations. */
   char *yo = "run_zoltan";
 
-  int i;                         /* Loop index                               */
-  int ierr;                      /* Error code                               */
+#define MAXPROC 20
+  int i;                         /* Loop index */
+  float psize[MAXPROC];          /* Partition size */
+  int part[MAXPROC];             /* Partition numbers */
+  int idx[MAXPROC];              /* Index numbers */
+  int ierr;                      /* Error code */
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
@@ -123,6 +127,30 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
     }
   }
+  else if (Test_Local_Partitions == 3) {
+    /* Variable partition sizes, but one partition per proc */
+    i = 0;
+    psize[0] = (float) Proc;              /* Partition size = proc number */
+    Zoltan_LB_Set_Part_Sizes(zz, 0, 1, &Proc, &i, psize);
+  }
+  else if (Test_Local_Partitions == 4) {
+    /* Variable number of partitions per proc and partition sizes. */
+    /* Compute Proc partitions for each processor */
+    char s[8];
+    sprintf(s, "%d", Proc);
+    if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
+      return 0;
+    }
+    /* Each partition size is inverse to the no. of partitions on a proc. */ 
+    for (i=0; i<Proc; i++){
+      part[i] = Proc*(Proc-1)/2 + i;  /* Global part number */
+      idx[i] = 0;
+      psize[i] = 1.0/Proc; 
+    }
+    if (Proc) Zoltan_LB_Set_Part_Sizes(zz, 0, Proc, part, idx, psize);
+  }
+
 
   /*
    * Set the callback functions

@@ -97,7 +97,7 @@ void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *lb)
 {
   ZOLTAN_FREE(&(lb->PartDist));
   ZOLTAN_FREE(&(lb->ProcDist));
-  if (lb->Part_Sizes)  ZOLTAN_FREE(&(lb->Part_Sizes));
+  if (lb->Part_Info)  ZOLTAN_FREE(&(lb->Part_Info));
 }
 
 
