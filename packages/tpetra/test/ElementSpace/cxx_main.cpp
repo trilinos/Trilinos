@@ -126,7 +126,7 @@ void esTester(bool verbose, bool debug) {
 	}
 	if(verbose) cout << "Successful." << endl;
 	
-	cout << "ElementSpace test successful." << endl;
+	if(verbose) cout << "ElementSpace test successful." << endl;
 }
 
 void isLgetG(ORDINALTYPE low, ORDINALTYPE high, Tpetra::ElementSpace<ORDINALTYPE>& es) {

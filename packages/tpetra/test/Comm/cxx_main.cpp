@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
 	Tpetra::SerialComm<int, int> comm;
   if(verbose) cout << "Successful" << endl;
 	commTest(comm, verbose);
-	cout << "SerialComm testing successfull." << endl;
+	if(verbose) cout << "SerialComm testing successfull." << endl;
 
   return(0);
 }

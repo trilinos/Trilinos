@@ -59,15 +59,16 @@ int main(int argc, char* argv[]) {
 	int ierr = 0;
 	if(verbose) cout << "Starting VectorTest..." << endl;
 	ierr += unitTests<int, float>(verbose, debug);
-    ierr += unitTests<int, double>(verbose, debug);
+	ierr += unitTests<int, double>(verbose, debug);
     
-    if(verbose) checkOutputs();
+	if(verbose) checkOutputs();
 
 	// finish up
-	if(ierr == 0)
-		cout << "Vector test successful." << endl;
-	else
-		cout << "Vector test failed." << endl;
+	if(verbose) 
+		if(ierr == 0)
+			cout << "Vector test successful." << endl;
+		else
+			cout << "Vector test failed." << endl;
 	return(ierr);
 }
 

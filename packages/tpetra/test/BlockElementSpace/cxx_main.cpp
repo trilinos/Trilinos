@@ -95,6 +95,6 @@ int main(int argc, char* argv[]) {
 	if(debug) cout << (*bes2es);
 	delete bes2es;
 
-	cout << "BlockElementSpace testing successful." << endl;
+	if(verbose) cout << "BlockElementSpace testing successful." << endl;
   return(0); 
 }

@@ -54,13 +54,14 @@ int main(int argc, char* argv[]) {
 	int ierr = 0;
 	if(verbose) cout << "Starting SparseMatrixTest..." << endl;
 	ierr += unitTests<int, float>(verbose, debug);
-    ierr += unitTests<int, double>(verbose, debug);
+	ierr += unitTests<int, double>(verbose, debug);
 
 	// finish up
-	if(ierr == 0)
-		cout << "SparseMatrix test successful." << endl;
-	else
-		cout << "SparseMatrix test failed." << endl;
+	if(verbose)
+		if(ierr == 0)
+			cout << "SparseMatrix test successful." << endl;
+		else
+			cout << "SparseMatrix test failed." << endl;
 	return(ierr);
 }
 

@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 	delete distributor2;
 	if(verbose) cout << "Successful." << endl;
   
-	cout << "Platform test successful." << endl;
+	if(verbose) cout << "Platform test successful." << endl;
 
-    return(0);
+	return(0);
 }

@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
 
 
-	cout << "ScalarTraits test successful." << endl;
+	if(verbose) cout << "ScalarTraits test successful." << endl;
   
   return 0; // All done
 }

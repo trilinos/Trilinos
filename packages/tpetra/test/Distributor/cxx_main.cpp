@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 	ORDINALTYPE nRIDs = 2;
 	//distributor.createFromSends(nEIDs, eIIDs, false, nRIDs);
   
-	cout << "Distributor test successful." << endl;
+	if(verbose) cout << "Distributor test successful." << endl;
   
   return(0);
 }

@@ -61,10 +61,11 @@ int main(int argc, char* argv[]) {
 	ierr += unitTests<int, double>(verbose, debug);
 
 	// finish up
-	if(ierr == 0)
-		cout << "VectorSpace test successfull." << endl;
-	else
-		cout << "VectorSpace test failed." << endl;
+	if(verbose) 
+		if(ierr == 0)
+			cout << "VectorSpace test successfull." << endl;
+		else
+			cout << "VectorSpace test failed." << endl;
 	return(ierr);
 }
 
