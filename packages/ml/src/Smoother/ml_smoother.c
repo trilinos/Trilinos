@@ -5228,6 +5228,237 @@ void ML_Smoother_Clean_OrderedSGS(void *data)
    free(data);
 }
 
+/*****************************************************************************
+ *
+ * The MLS smoother. Implementation by Marian Brezina
+ *
+ *****************************************************************************/ 
+
+#include "ml_mls.h"
+
+int ML_MLS_SandwPres(void *sm, int inlen, double x[], int outlen, double y[])
+{
+   /***************************************************************************	
+    *
+    * Apply the Chebyshev sandwich to x, return result in y.
+    * Vectors x and y may not be aliased !
+    * Vector  x is destroyed in the process, its output value is undefined.
+    *
+    ***************************************************************************/
+
+    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+    struct MLSthing *widget;
+    int              i, deg, lv, dg, n = outlen;
+    double           cf, *omV, om;      
+
+    widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+    deg    = widget->mlsDeg;
+    omV    = widget->mlsOm;
+
+    if (inlen != outlen) { 
+	    pr_error("ML_MLS_Sandw: mtx. must be square\n");
+    }
+
+    for (i=0; i<n; i++) y[i] = x[i]; 
+
+    for (dg=deg-1; dg>-1; dg--) { 
+
+        ML_Operator_Apply(Amat, n, y, n, x);
+        om = omV[dg]; 
+        for (i=0; i<n; i++) y[i] -= om * x[i]; 
+
+    }
+
+    return 0; 
+}
+
+int ML_MLS_SandwPost(void *sm, int inlen, double x[], int outlen, double y[])
+{
+   /***************************************************************************	
+    *
+    * Apply the Chebyshev sandwich to x, return result in y.
+    * Vectors x and y may not be aliased !
+    * The contents of vector x are destroyed in the process, its output 
+    * value is undefined.
+    *
+    ***************************************************************************/
+
+    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+    struct MLSthing *widget;
+    int              i, deg, lv, dg, n = outlen;
+    double           cf, *omV, om;      
+
+    widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+    deg    = widget->mlsDeg;
+    omV    = widget->mlsOm;
+
+    if (inlen != outlen) { 
+	pr_error("ML_MLS_SandwPost: mtx. must be square\n");
+    }
+
+    for (i =0; i<n; i++) y[i] = x[i]; 
+
+    for (dg=0; dg<deg; dg++) { 
+
+        ML_Operator_Apply(Amat, n, y, n, x);
+        om = omV[dg]; 
+        for (i=0; i<n; i++) y[i] -= om * x[i]; 
+
+    }
+
+    return 0; 
+}
+
+int ML_MLS_SPrime_Apply(void *sm,int inlen,double x[],int outlen, double rhs[])
+{
+   /***************************************************************************	
+    *
+    * Approximate the solution of Ax=b using one itaration of the 
+    * S_prime-based relaxation:   x <- S_prime(x, b)
+    *
+    ***************************************************************************/
+
+    ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+    ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+    struct MLSthing *widget;
+    int              i, deg, lv, dg, n = outlen;
+    double           cf, om2, over;
+    double          *pAux, *y;      
+
+    widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+    deg    = widget->mlsDeg;
+    om2    = widget->mlsOm2;
+    over   = widget->mlsOver;
+    cf     = over * om2; 
+
+    if (inlen != outlen) { 
+	pr_error("ML_MLS_SPrime_Apply: mtx. must be square\n");
+    }
+
+    pAux   = (double *) ML_allocate(n*sizeof(double));
+    y      = (double *) ML_allocate(n*sizeof(double));
+
+    if (pAux == NULL) pr_error("ML_MLS_SPrime_Apply: allocation failed\n");
+    if (y    == NULL) pr_error("ML_MLS_SPrime_Apply: allocation failed\n");
+
+    ML_Operator_Apply(Amat, n, x, n, pAux);
+    for (i=0; i<n; i++) pAux[i] -= rhs[i];
+    ML_MLS_SandwPost(sm, n, pAux, n, y);
+    ML_MLS_SandwPres(sm, n, y, n, pAux);
+    for (i=0; i<n; i++) x[i] = x[i] - cf * pAux[i]; 
+
+    ML_free(y);
+    ML_free(pAux);
+
+    return 0; 
+}
+
+int ML_Smoother_MLS_Apply(void *sm,int inlen,double x[],int outlen,
+                          double rhs[])
+{
+  /****************************************************************************	
+   *
+   *   Apply MLS smoother with the preselected degree:   x <- MLS(x, rhs)
+   *
+   ****************************************************************************/
+
+   ML_Smoother     *smooth_ptr = (ML_Smoother *) sm;
+   ML_Operator     *Amat = smooth_ptr->my_level->Amat;
+   ML_1Level       *from = Amat->from; 
+   struct MLSthing *widget;
+   int              deg, lv, dg, n = outlen, i;
+   double          *res0, *res, *y, cf, over, *mlsCf;
+
+   widget = (struct MLSthing *) smooth_ptr->smoother->data;
+
+   deg    = widget->mlsDeg;
+   mlsCf  = widget->mlsCf;
+   over   = widget->mlsOver;
+
+   printf("@@@ deg=%1d mlsCf=%e over=%e om2=%e\n", deg, mlsCf[0], over, widget->mlsOm2);
+   
+#define MB_FORNOW
+#ifdef 	MB_FORNOW
+   // @@@ printf("@@@ ML_Smoother_MLS: allocating ....\n");
+   res0  = (double *) ML_allocate(n*sizeof(double));
+   res   = (double *) ML_allocate(n*sizeof(double));
+   y     = (double *) ML_allocate(n*sizeof(double));
+
+   if (res0 == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (res  == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+   if (y    == NULL) pr_error("ML_Smoother_MLS_Apply: allocation failed\n");
+#endif
+
+   ML_Operator_Apply(Amat, n, x, n, res0);
+
+   for (i = 0; i < n; i++) res0[i] = rhs[i] - res0[i]; // @@@ sign ?
+
+   if (deg == 1) { 
+
+       cf = over * mlsCf[0]; 
+
+       for (i=0; i<n; i++) x[i] += cf * res0[i]; 
+#ifdef 	MB_FORNOW
+       // @@@ clean up later in destructor, right now clean in here ....
+       // @@@ printf("@@@ ML_Smoother_MLS: deallocating ....\n");
+       if (y)    ML_free(   y);
+       if (res)  ML_free( res);
+       if (res0) ML_free(res0);
+#endif
+      /*
+       * Apply the S_prime operator 
+       */
+       ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
+       // @@@ must deallocate here if we decide to stick with local allocations
+       return 0;
+
+   } else { 
+
+       for (i=0; i<n; i++) y[i]  = mlsCf[0] * res0[i];
+       for (dg=1; dg<deg; dg++) { 
+            ML_Operator_Apply(Amat, n, res0, n, res);
+	    for (i=0; i<n; i++) res0[i] = res[i];  
+	    for (i=0; i<n; i++) y[i] += mlsCf[dg-1] * res[i];
+       }
+
+   }
+
+   for (i=0; i<n; i++) x[i] += over * y[i];
+
+#ifdef 	MB_FORNOW
+   // @@@ clean up later in destructor, right now clean in here ....
+   printf("@@@ ML_Smoother_MLS: deallocating ....\n");
+   if (y)    ML_free(   y);
+   if (res)  ML_free( res);
+   if (res0) ML_free(res0);
+#endif
+  /*
+   * Apply the S_prime operator 
+   */
+   ML_MLS_SPrime_Apply(sm, n, x, n, rhs);
+   
+   return 0;
+}
+
+void ML_Smoother_Destroy_MLS(void *data)
+{
+  struct MLSthing *widget;
+
+   printf("@@@ destroying the MLS smoother structure ...\n"); 
+
+   widget = (struct  MLSthing *) data;
+   if (widget->y)    ML_free(widget->y   );
+   if (widget->res)  ML_free(widget->res );
+   if (widget->res0) ML_free(widget->res0);
+
+   ML_free(widget);
+}
+
 /* ************************************************************************* */
 /* Sparse approximate inverse smoother                                       */
 /* ------------------------------------------------------------------------- */
