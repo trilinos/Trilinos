@@ -497,7 +497,7 @@ static int coarse_part_rip (
 
     /* Generate positive random numbers for edges */
     for (j=0; j<hg->nEdge; j++){
-      ran[j] = ((float) Zoltan_Rand())/RAND_MAX; 
+      ran[j] = ((float) Zoltan_Rand())/ZOLTAN_RAND_MAX; 
     }
 
     /* Compute scaled inner products with random vector. */

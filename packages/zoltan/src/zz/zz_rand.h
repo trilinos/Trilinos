@@ -18,6 +18,7 @@
 extern "C" {
 #endif
 
+#define ZOLTAN_RAND_MAX 0xffffffff
 
 extern unsigned int Zoltan_Rand (void);
 extern void         Zoltan_Srand (unsigned int);

@@ -16,17 +16,19 @@
 extern "C" {
 #endif
 
+#include "zz_rand.h"
 
 
 /****************************************************************************/
-/*  Random Number generator due to Knuth found in Numerical Recipes in C
-   (2nd edition) by Press, Vetterling, Teukolsky, Flannery (Page 284.)
-   Currently, for use in the hypergraph library only. Needed because different
-   random number implimentations on different machines produced different
-   answers! Hence this is a single portable, fast, algorithm with adequate
-   random number generation. NOTE: this assumes 32 bit ints, previously
-   these variables were unsigned long (as was the return value) which
-   gave problems on stratus (which assumed 64 bit longs.) */
+/* Random Number generator due to Knuth found in Numerical Recipes in C
+ * (2nd edition) by Press, Vetterling, Teukolsky, Flannery (Page 284.)
+ * Needed because different random number implementations on different 
+ * machines produced different answers!  This generator provides a portable, 
+ * fast, algorithm with adequate random number generation. 
+ * NOTE: this generator assumes 32 bit ints; previously
+ * these variables were unsigned long (as was the return value) which
+ * gave problems on stratus (which assumed 64 bit longs.) 
+ */
 
 static unsigned int idum = 123456789U;
 
@@ -45,9 +47,13 @@ void Zoltan_Srand (unsigned int seed) {
 void Zoltan_Rand_Perm_Int (int *data, int n)
 {
 int i, number, temp;
+double denom = ZOLTAN_RAND_MAX + 1.0;
+/* Scaling of random number to appropriate range is done as recommended
+ * in Numerical Recipes in C.
+ */
 
   for (i = n; i > 0; i--) {
-    number       = Zoltan_Rand() % i;
+    number       = (int) ((double) i * (double) Zoltan_Rand() / denom);
     temp         = data[number];
     data[number] = data[i-1];
     data[i-1]    = temp;
