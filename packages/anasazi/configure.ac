@@ -251,11 +251,19 @@ AC_CXX_STD_SPRINTF
 # TAC_ARG_WITH_PACKAGE(rtop, [Enable RTOp interface support], RTOP, no)
 
 # ------------------------------------------------------------------------
-# Checks if examples should be built
+# Checks if examples should be built or which ones should be built
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB( anasazi, examples, [Build anasazi examples], ANASAZI_EXAMPLES, yes)
+AM_CONDITIONAL(BUILD_ANASAZI_EXAMPLES, [test "X$ac_cv_use_anasazi_examples" != "Xno"])
+TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
+#TAC_ARG_ENABLE_FEATURE(triutils, [Build examples which use triutils], TRIUTILS, no)
+#AM_CONDITIONAL(BUILD_TRIUTILS, test "X$ac_cv_use_triutils" != "Xno")
+TAC_ARG_ENABLE_FEATURE(belos, [Build examples which use belos], BELOS, no)
+AM_CONDITIONAL(BUILD_BELOS, test "X$ac_cv_use_belos" != "Xno")
+TAC_ARG_ENABLE_FEATURE(ifpack, [Build examples which use ifpack], IFPACK, no)
+AM_CONDITIONAL(BUILD_IFPACK, test "X$ac_cv_use_ifpack" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories 

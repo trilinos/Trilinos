@@ -3,7 +3,13 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BlockArnoldiPetraEx BlockArnoldiPetraExHb BlockArnoldiPetraExGen
+if BUILD_BELOS
+if BUILD_IFPACK
+ANASAZI_BIRAM_EX_SI_IFPACK = BlockArnoldiPetraExGen
+endif
+endif
+
+noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) BlockArnoldiPetraExHb BlockArnoldiPetraEx 
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
 

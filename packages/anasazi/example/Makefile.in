@@ -91,7 +91,9 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-noinst_PROGRAMS = BlockArnoldiPetraEx BlockArnoldiPetraExHb BlockArnoldiPetraExGen
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = BlockArnoldiPetraExGen
+
+noinst_PROGRAMS = $(ANASAZI_BIRAM_EX_SI_IFPACK) BlockArnoldiPetraExHb BlockArnoldiPetraEx 
 
 BlockArnoldiPetraEx_SOURCES = $(srcdir)/BlockArnoldiPetraEx.cpp
 
@@ -166,8 +168,19 @@ subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-noinst_PROGRAMS = BlockArnoldiPetraEx$(EXEEXT) \
-	BlockArnoldiPetraExHb$(EXEEXT) BlockArnoldiPetraExGen$(EXEEXT)
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_TRUE@noinst_PROGRAMS = \
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_TRUE@	BlockArnoldiPetraExHb$(EXEEXT) \
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_TRUE@	BlockArnoldiPetraEx$(EXEEXT)
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_FALSE@noinst_PROGRAMS = \
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_FALSE@	BlockArnoldiPetraExHb$(EXEEXT) \
+@BUILD_BELOS_FALSE@@BUILD_IFPACK_FALSE@	BlockArnoldiPetraEx$(EXEEXT)
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@noinst_PROGRAMS = \
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@	BlockArnoldiPetraExGen$(EXEEXT) \
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@	BlockArnoldiPetraExHb$(EXEEXT) \
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@	BlockArnoldiPetraEx$(EXEEXT)
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_FALSE@noinst_PROGRAMS = \
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_FALSE@	BlockArnoldiPetraExHb$(EXEEXT) \
+@BUILD_BELOS_TRUE@@BUILD_IFPACK_FALSE@	BlockArnoldiPetraEx$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 am_BlockArnoldiPetraEx_OBJECTS = \
