@@ -60,7 +60,7 @@ is provided.
 
 \clearpage
 
-\section*{Acknowledgement}
+\section*{Acknowledgments}
 The authors would like to acknowledge the support of the ASCI and LDRD 
 programs that funded development of Trilinos and recognize all Trilinos 
 contributors: Teri Barth, Ross Bartlett, David Day, Robert Hoekstra, 
@@ -380,7 +380,7 @@ changes to the repository.  Start by typing
 
 \DisplayCommand{cvs commit}
 
-Next verify the list of files that appears and enter an appropritate log 
+Next verify the list of files that appears and enter an appropriate log 
 message.  Developers who are unfamiliar with the process of committing changes 
 should see Section~\ref{Section:CVS} for a more detailed description of this 
 process.
@@ -402,7 +402,7 @@ Provided that the new files are not added to the make structure, the addition
 of the new files should not negatively affect the repository.  Distribution 
 tarballs will even skip over the new source.  A common log message for this 
 type of commit is simply ``Checking in for safe keeping; code is not yet 
-funcitoning''.  Developers are encouraged to include a short description of 
+functioning''.  Developers are encouraged to include a short description of 
 what the code will do when it is complete.
 \end{enumerate}
 
@@ -439,7 +439,7 @@ package when its Autoconf and Automake configure and build system is being
 setup.  These macros perform common configuration tasks such as
 locating a valid LAPACK~\cite{lapack} library, or checking for a user-
 defined MPI C compiler.  The macros can be found in the Trilinos CVS 
-repository in Trilinos/config.  These macros minimize the amount of redudant
+repository in Trilinos/config.  These macros minimize the amount of redundant
  effort in using Autotools, and make it easier to apply a general change to 
 the configure process for all packages.
 \subsection{Regression Testing}
@@ -555,7 +555,7 @@ existing code, but also to a desired enhancement.  For example, a bug report
 should be submitted to Bugzilla to report a segmentation fault that occurs 
 when using an existing Ifpack preconditioner, and a bug report should also be
 submitted to request a new Ifpack preconditioner.  ``Issue'' and ``bug'' are 
-used interchangably in the discussion of Bugzilla in this guide.
+used interchangeably in the discussion of Bugzilla in this guide.
 
 \subsection{Mailman}
 \label{subsect:MailMan}
@@ -593,13 +593,13 @@ All Trilinos release announcements and other major news.
 \item Trilinos-Checkins 
 \InlineCommand{trilinos-checkins@software.sandia.gov}
 
-CVS commit log messages that are releated to Trilinos in general or packages 
+CVS commit log messages that are related to Trilinos in general or packages 
 that have not had separate lists established.
 
 \item Trilinos-Developers 
 \InlineCommand{trilinos-developers@software.sandia.gov}
 
-All discussions releated to Trilinos-specific development (not specific to a 
+All discussions related to Trilinos-specific development (not specific to a 
 Trilinos package) are conducted via this list.  Important development 
 decisions that originate in other places (regular email, discussions, etc) 
 should also be posted to this list (or to the appropriate package list).  
@@ -683,9 +683,9 @@ Table~\ref{Table:RequirementsAndPractices}.
 {\bf Requirement} Package must: & {\bf Suggested Practice} Package can: \\ \hline
 Keep source files as a self-contained collection in a 
 single directory under the \InlineDirectory{Trilinos/packages} directory in 
-the Trilinos CVS repository.  Change logs must be archieved and communicated 
+the Trilinos CVS repository.  Change logs must be archived and communicated 
 to interested Trilinos developers.  & Utilize Trilinos
-Mailman lists to archieve and communicate software change logs.\\\hline
+Mailman lists to archive and communicate software change logs.\\\hline
 Have process in place to port to all supported platforms &
 Use the Trilinos Autotools environment and leverage the existing portability
 facilities already used by numerous packages. \\\hline
@@ -695,7 +695,7 @@ effort. \\\hline
 Respond to software faults in a timely manner &  Use
 Trilinos Bugzilla site to record and track software issues, responding
 to issues in order of priority. \\\hline
-Provide unit and reqression testing &
+Provide unit and regression testing &
 Register test scripts with the Trilinos test harness,
 which runs nightly on a variety of supported platforms and can be used by 
 developers before checking in changes.\\\hline
@@ -808,7 +808,7 @@ place $\ldots$
 Prior to anything else, a new Trilinos package should have the
 following infrastructure established.  Visit the Trilinos home
 page~\cite{Trilinos-home-page} for information on who to contact for
-these prelimary steps.
+these preliminary steps.
 
 The preliminary steps are:
 \begin{enumerate}
@@ -895,7 +895,7 @@ the interface structure and prepare for incremental implementation testing.
 Assuming that the above approach is used to define a documented header
 file, implementation involves implementing the methods as specified
 and developing test code to verify the correctness of the implementation.
-Implementing new capabilites should never take place in a release branch.  
+Implementing new capabilities should never take place in a release branch.  
 Changes to release branches should be limited to fixing broken code and 
 related activities.  For example, clarifying vague or incorrect documentation 
 and making changes necessary to port to a new platform.
@@ -938,7 +938,7 @@ topics, we recommend the book by Fogel and Bar~\cite{FogelBarCVS}.
 
 \item {\bf Bugzilla:} The Trilinos Bugzilla site
 allows users and developers to submit issues against a package.
-Issues may be submitted against the follwing components of a package:
+Issues may be submitted against the following components of a package:
 \begin{enumerate}
 \item Configuration and Building.
 \item Documentation and Web Pages.
@@ -961,7 +961,7 @@ Section~\ref{subsect:MailMan} also facilitate ongoing
 communication between developers, users and clients.
 
 \item {\bf Test Harness:} 
-The Trilinos test harness simplifies code maintenace in two ways.  First, code 
+The Trilinos test harness simplifies code maintenance in two ways.  First, code 
 is tested on a nightly basis on various platforms to help maintain portability.
 Second, developers can execute a check-in version of the test harness before 
 committing changes.  Developers can easily contribute to the coverage of the 
@@ -1066,7 +1066,7 @@ detail in~\cite{TSFCore}.
 includes overloaded, block and composite operators, all of
 which support powerful abstraction capabilities.  The Meros package
 relies on TSFExtended to implicitly construct sophisticated
-Schur compliment preconditioners in terms of exising component
+Schur compliment preconditioners in terms of existing component
 operators with little overhead in time or memory.
 \end{enumerate}
 
@@ -1213,7 +1213,7 @@ not needed at the configure stage.  (To do this, make sure to point at the np
 configure script from the build directory.)
 
 \item The \InlineCommand{echo} command can be used in configure.ac to 
-print out the value of variables for degugging purposes.
+print out the value of variables for debugging purposes.
 
 \item The \InlineCommand{AC\_CHECK\_FILE} macro can be used in configure.ac to 
 check for the existence of a particular file or directory.
@@ -1228,7 +1228,7 @@ separate build tree.
 The \InlineCommand{bootstrap} command will generate files necessary for the 
 configure and build processes.  These files must be added to the repository 
 because users are not required to have Autoconf or Automake.  See 
-Section~\ref{Subsection:AddSource} for infomation regarding how to add files 
+Section~\ref{Subsection:AddSource} for information regarding how to add files 
 to the repository.
 
 When the new files have been committed, a good sanity check is to checkout 
@@ -1240,7 +1240,7 @@ any files that have not been added.
 For more information about this step, see Section~\ref{subsect:TestHarness}.
 It is not uncommon for packages to contribute tests to the test harness some 
 time after the package has been added to Trilinos.  However, it is important 
-that all packages can be tested throughly via the test harness.
+that all packages can be tested thoroughly via the test harness.
 
 \item Perform tests.
 
@@ -1425,7 +1425,7 @@ directory1, type
 
 At this point, an editor window will appear with a list of files that are to 
 be added, removed, or modified.  Make sure that the list makes sense for the 
-changes that are to be made.  It is easy to inadvertantly commit files or to 
+changes that are to be made.  It is easy to inadvertently commit files or to 
 forget to remove files.  Use \InlineCommand{cvs add} to add a file and
 \InlineCommand{cvs remove} to remove a file from the repository.  
 
@@ -1439,8 +1439,8 @@ Makefile.in will change also.  When modifying configure.ac, configure will
 also change, but some Makefile.in files will also change when using macros 
 such as AC\_SUBST.  
 \item If unsure about whether or not a 
-file should be in the commit list, abort the commit by closing the edior 
-without saving, and chosing \InlineCommand{abort}.  Then, if abc.cpp is in 
+file should be in the commit list, abort the commit by closing the editor 
+without saving, and choosing \InlineCommand{abort}.  Then, if abc.cpp is in 
 question, type 
 
 \DisplayCommand{cvs diff abc.cpp}
@@ -1557,7 +1557,7 @@ To checkout a different branch or a tagged version of Trilinos, type
 
 Package developers have the opportunity to include a special tagged version of 
 their package in a release instead of the current version in the 
-development or release branch that is being brached off of for the release.  
+development or release branch that is being branched off of for the release.  
 For any packages that have such a tag to use, cd to 
 Trilinos/packages/(package\_name) and type
 
@@ -1588,7 +1588,7 @@ should be \InlineDirectory{trilinos-release-XYZ-branch}.
 \item Update to convert the working copy to the new branch
 
 The act of creating a new branch does not convert the existing working copy to 
-a copy of that branch.  To make this coversion, remain in the top Trilinos 
+a copy of that branch.  To make this conversion, remain in the top Trilinos 
 directory and type
 
 \DisplayCommand{cvs update -r <branch\_name>}
