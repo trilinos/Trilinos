@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 
 //@HEADER
@@ -42,6 +45,7 @@ namespace Direction {
 /*! 
   Computes the Newton direction by solving
   \f[ Js = -f. \f]
+  where \f[ J \f] may be an old Jacobian. 
   
   To use this direction, specify that the "Method" is "Modified Newton" in the
   "Direction" sublist of the parameters that are passed to the solver
@@ -144,6 +148,24 @@ protected:
 
 
 private:
+ 
+  //! Return true if we can recover from a bad Newton solve
+  /*!
+    In other words, sometimes we'll use the calculated Newton
+    direction even if it doesn't satisfy the convergence tolerance.
+
+    If doRescue is true,
+    \f[
+    \|J s - (-F) \| / \|F\| < 1,
+    \f]
+    and we don't encounter any other errors, return true.
+  */
+  bool rescueBadNewtonSolve(const NOX::Abstract::Group& soln) const;
+  
+  //! Print an error message
+  void throwError(const string& functionName, const string& errorMsg);
+
+private:
 
   //! "Direction" sublist with parameters for the direction vector
   /*! 
@@ -152,17 +174,23 @@ private:
    */
   NOX::Parameter::List* paramsPtr;
 
+  //! Determined based on "Rescue Bad Newton Solve". Used in rescueBadNewtonSolve
+  bool doRescue;
+  
   //! Vector containing the predicted RHS
-  NOX::Abstract::Vector* predrhs;
+  NOX::Abstract::Vector* predRhs;
 
   //! Vector containing the computed direction
-  NOX::Abstract::Vector* stepdir;
+  NOX::Abstract::Vector* stepDir;
 
   //! Group containing the old Jacobian
-  NOX::Abstract::Group* oldJacobian;
+  Abstract::Group* oldJacobianGrpPtr;
 
   //! Integer counting how old the Jacobian is
   int ageOfJacobian;
+
+  //! Integer containing the maximum age of the Jacobian
+  int maxAgeOfJacobian;
 
 };
 } // namespace Direction

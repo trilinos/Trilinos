@@ -1,3 +1,6 @@
+// $Id$ 
+// $Source$ 
+
 #ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
@@ -35,149 +38,110 @@
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
 
-using namespace NOX;
-using namespace NOX::Direction;
-
-ModifiedNewton::ModifiedNewton(Parameter::List& p) :
-  predrhs(0),
-  stepdir(0),
-  oldJacobian(0)
-  
+NOX::Direction::ModifiedNewton::ModifiedNewton(NOX::Parameter::List& p) :
+  predRhs(NULL),
+  stepDir(NULL),
+  oldJacobianGrpPtr(NULL)
 {
   reset(p);
   ageOfJacobian = -1;
 }
 
-ModifiedNewton::~ModifiedNewton()
+NOX::Direction::ModifiedNewton::~ModifiedNewton()
 {
-  delete predrhs;
-  delete stepdir;
-  delete oldJacobian;
+  delete predRhs;
+  delete stepDir;
+  delete oldJacobianGrpPtr;
 }
 
-bool ModifiedNewton::reset(Parameter::List& p)
+bool NOX::Direction::ModifiedNewton::reset(Parameter::List& params)
 {
-  paramsPtr = &p;
-  if (!paramsPtr->sublist("Linear Solver").isParameter("Tolerance"))
-    paramsPtr->sublist("Linear Solver").setParameter("Tolerance", 1.0e-10);
+  paramsPtr = &params;
+
+  NOX::Parameter::List& p = params.sublist("Modified-Newton");
+
+  doRescue = p.getParameter("Rescue Bad Newton Solve", true);
+  if (!p.sublist("Linear Solver").isParameter("Tolerance"))
+    p.sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
+  ageOfJacobian = -1;
   return true;
 }
 
-bool ModifiedNewton::compute(Abstract::Vector& dir, 
-		     Abstract::Group& soln, 
-		     const Solver::Generic& solver)
+bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir, 
+                                             NOX::Abstract::Group& soln, 
+                                             const NOX::Solver::Generic& solver)
 {
+  NOX::Abstract::Group::ReturnType status;
+
   // Compute F at current solution
-  bool ok = soln.computeF();
-  if (!ok) {
-    if (Utils::doPrint(Utils::Warning))
-      cout << "NOX::Direction::ModifiedNewton::compute - Unable to compute F." 
-           << endl;
-    return false;
+  status = soln.computeF();
+  if (status != NOX::Abstract::Group::Ok)
+    throwError("compute", "Unable to compute F");
+
+  maxAgeOfJacobian = paramsPtr->getParameter("Max Age of Jacobian", 10);
+
+  if (oldJacobianGrpPtr == NULL) {
+    oldJacobianGrpPtr = soln.clone(DeepCopy);
   }
+  NOX::Abstract::Group& oldJacobianGrp = *oldJacobianGrpPtr;
 
-  double normF = soln.getNormF();
-
-  int maxAgeOfJacobian = paramsPtr->getParameter("MaxAgeOfJacobian", 10);
-
-  ok = false;
-  while (!ok) {
+  status = NOX::Abstract::Group::Failed;
+  while (status != NOX::Abstract::Group::Ok) {
     // Conditionally compute Jacobian at current solution.
-    if (ageOfJacobian == -1 | ageOfJacobian == maxAgeOfJacobian) {
+    if ( (ageOfJacobian == -1) || (ageOfJacobian == maxAgeOfJacobian) ) {
 
-      ok = soln.computeJacobian();
-      if (!ok) {
-        if (Utils::doPrint(Utils::Warning))
-          cout << "NOX::Direction::ModifiedNewton::compute - "
-               << "Unable to compute Jacobian." << endl;
-        return false;
-      }
-
-      if (ageOfJacobian == -1) 
-        oldJacobian = soln.clone(DeepCopy);
-      else
-        *oldJacobian = soln;
-
+      if (ageOfJacobian > 0) 
+        oldJacobianGrp = soln;
+      status = oldJacobianGrp.computeJacobian();
+      if (status != NOX::Abstract::Group::Ok) 
+        throwError("compute", "Unable to compute Jacobian");
       ageOfJacobian = 1;
     } 
     else 
       ageOfJacobian++;
 
     // Reset the linear solver tolerance
-    ok = resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
+    resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
                           solver.getNumIterations(), solver.getParameterList());
-    if (!ok) {
-      if (Utils::doPrint(Utils::Warning))
-        cout << "NOX::Direction::ModifiedNewton::compute - "
-             << "Unable to set Forcing term." << endl;
-      return false;
-    }
 
     // Compute the Modified Newton direction
-    if (ageOfJacobian == 0) {
-      ok = oldJacobian->computeNewton(paramsPtr->sublist("Linear Solver"));
-      dir = oldJacobian->getNewton();
+    status = oldJacobianGrp.applyJacobianInverse(*paramsPtr, soln.getF(), dir);
+    dir.scale(-1.0);
 
-      // It didn't work, but maybe it's ok anyway...
-      if (!ok) {
-
-        double accuracy;
-	soln.getNormLastLinearSolveResidual(accuracy);
-
-        if (accuracy < 0) 
-          cerr << "NOX::Direction::ModifiedNewton::compute " 
-               << "- getNormNewtonSolveResidual returned a negative value" 
-               << endl;
-      
-        // Check if there is any improvement in the relative residual
-        if (accuracy < normF) {
-          ok = true;
-          double tolerance = paramsPtr->sublist("Linear Solver").getParameter("Tolerance", 1.0e-10);
-          if (Utils::doPrint(Utils::Warning)) 
-            cout << "WARNING: NOX::Direction::ModifiedNewton::compute - "
-                 << "Newton solve failure.\n" 
-                 << "Desired accuracy is " << Utils::sci(tolerance) << ".\n"
-                 << "Using solution with accuracy of " << Utils::sci(accuracy) 
-                 << "." << endl;
-        }
+    // It didn't work, but maybe it's ok anyway...
+    if (status == NOX::Abstract::Group::NotConverged) {
+      if (rescueBadNewtonSolve(soln))
+        status = NOX::Abstract::Group::Ok;
+      else if (ageOfJacobian == 1) {
+        throwError("compute", "Unable to compute Newton step with fresh Jacobian");
       }
-
-      if (!ok) {
-        if (Utils::doPrint(Utils::Warning))
-          cout << "NOX::Direction::ModifiedNewton::compute - "
-               << "Unable to compute Newton direction." << endl;
-        return false;
-      }
-    }
-    else { 
-      ok = oldJacobian->applyJacobianInverse(*paramsPtr, soln.getF(), dir);
-      dir.scale(-1.0);
-      if (!ok) 
+      else
         ageOfJacobian = maxAgeOfJacobian;
-    }
+    } 
+    else if (status != NOX::Abstract::Group::Ok) 
+      throwError("compute", "Unable to compute Newton step");
   }
 
-  return ok;
+  return true;
 }
 
 
 // protected
-bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln, 
-			      const Abstract::Group& oldsoln, 
+bool NOX::Direction::ModifiedNewton::resetForcingTerm(const NOX::Abstract::Group& soln, 
+			      const NOX::Abstract::Group& oldsoln, 
 			      int niter,
-			      const Parameter::List& solverParams)
+			      const NOX::Parameter::List& solverParams)
 {
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
 
-  if ((!paramsPtr->isParameter("Forcing Term Method")) ||
-      (paramsPtr->isParameterEqual("Forcing Term Method", "None")))
+  if ((!paramsPtr->sublist("Modified-Newton").isParameter("Forcing Term Method")) ||
+      (paramsPtr->sublist("Modified-Newton").isParameterEqual("Forcing Term Method", "None")))
     return true;
 
   // Get forcing term parameters.
-  const string method = paramsPtr->getParameter("Forcing Term Method", "Constant");
-  const double eta_min = paramsPtr->getParameter("Forcing Term Minimum Tolerance", 1.0e-4);
-  const double eta_max = paramsPtr->getParameter("Forcing Term Maximum Tolerance", 0.9);
+  const string method = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Method", "Constant");
+  const double eta_min = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Minimum Tolerance", 1.0e-4);  const double eta_max = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Maximum Tolerance", 0.9);
 
   // Get linear solver current tolerance.
 
@@ -186,14 +150,12 @@ bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln,
 	&& (solverParams.sublist("Line Search").isParameterDouble("Adjusted Tolerance"))) {
     
     // Tolerance may have been adjusted in a line search algorithm   
-    eta_km1 = solverParams.sublist("Line Search")
-      .getParameter("Adjusted Tolerance", 0.0);
+    eta_km1 = solverParams.sublist("Line Search").getParameter("Adjusted Tolerance", 0.0);
     
   }
   else {
     // Default to the old tolerance
-    eta_km1 = paramsPtr->sublist("Linear Solver")
-      .getParameter("Tolerance", 0.0);
+    eta_km1 = paramsPtr->sublist("Modified-Newton").sublist("Linear Solver").getParameter("Tolerance", 0.0);
     
   }
 
@@ -220,7 +182,7 @@ bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln,
     
     if (niter == 0) {
 
-      eta_k = paramsPtr->getParameter("Forcing Term Initial Tolerance", 0.01);
+      eta_k = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
 
     }
     else {
@@ -232,25 +194,25 @@ bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln,
       //const double normpredf = oldsoln.getNormNewtonSolveResidual();
       
       // Create a new vector to be the predicted RHS
-      if (predrhs == NULL) {
-	predrhs = oldsoln.getF().clone(ShapeCopy);
+      if (predRhs == NULL) {
+	predRhs = oldsoln.getF().clone(ShapeCopy);
       }
-      if (stepdir == NULL) {
-	stepdir = oldsoln.getF().clone(ShapeCopy);
+      if (stepDir == NULL) {
+	stepDir = oldsoln.getF().clone(ShapeCopy);
       }
       
-      // stepdir = X - oldX (i.e., the step times the direction)
-      stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
+      // stepDir = X - oldX (i.e., the step times the direction)
+      stepDir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
       
-      // Compute predrhs = Jacobian * step * dir
-//    oldsoln.applyJacobian(*stepdir, *predrhs);
-      oldJacobian->applyJacobian(*stepdir, *predrhs);
+      // Compute predRhs = Jacobian * step * dir
+//      oldsoln.applyJacobian(*stepDir, *predRhs);
+      oldJacobianGrpPtr->applyJacobian(*stepDir, *predRhs);
       
-      // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
-      predrhs->update(1.0, oldsoln.getF(), 1.0);
+      // Compute predRhs = RHSVector + predRhs (this is the predicted RHS)
+      predRhs->update(1.0, oldsoln.getF(), 1.0);
       
       // Return norm of predicted RHS
-      const double normpredf = predrhs->norm();
+      const double normpredf = predRhs->norm();
       
       if (normpredf < 0) {
 	cerr << "NOX::Direction::ModifiedNewton::resetForcingTerm " 
@@ -285,15 +247,15 @@ bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln,
     
     if (niter == 0) {
 
-      eta_k = paramsPtr->getParameter("Forcing Term Initial Tolerance", 0.01);
+      eta_k = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Initial Tolerance", 0.01);
 
     }
     else {
 
       const double normf = soln.getNormF();
       const double normoldf = oldsoln.getNormF();
-      const double alpha = paramsPtr->getParameter("Forcing Term Alpha", 1.5);
-      const double gamma = paramsPtr->getParameter("Forcing Term Gamma", 0.9);
+      const double alpha = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Alpha", 1.5);
+      const double gamma = paramsPtr->sublist("Modified-Newton").getParameter("Forcing Term Gamma", 0.9);
       const double residual_ratio = normf / normoldf;
       
       eta_k = gamma * pow(residual_ratio, alpha);
@@ -324,14 +286,51 @@ bool ModifiedNewton::resetForcingTerm(const Abstract::Group& soln,
   }
 
   // Reset linear solver tolerance
-  paramsPtr->sublist("Linear Solver").setParameter("Tolerance", eta_k);
+  paramsPtr->sublist("Modified-Newton").sublist("Linear Solver").setParameter("Tolerance", eta_k);
 
   if (Utils::doPrint(Utils::Details)) 
     cout << indent << "Forcing Term: " << eta_k << endl;
-
+  
   return true;
 }
 
+bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::Group& grp) const
+{
+  //! Check if the "rescue" option has been selected
+  if (!doRescue)
+    return false;
+
+  //! See if the group has compute the accuracy
+  double accuracy;
+  NOX::Abstract::Group::ReturnType status = oldJacobianGrpPtr->getNormLastLinearSolveResidual(accuracy);
+    
+  // If this functionality is not supported in the group, return false
+  /* NOTE FROM TAMMY: We could later modify this to acutally caluclate
+     the error itself if it's just a matter of the status being
+     NotDefined. */
+  if (status != NOX::Abstract::Group::Ok) 
+    return false;
+
+  // Check if there is any improvement in the relative residual
+  double normF = grp.getNormF();
+
+  // If we can't reduce the relative norm at all, we're not happy
+  if (accuracy >= normF) 
+    return false;
+
+  // Otherwise, we just print a warning and keep going
+  if (Utils::doPrint(Utils::Warning)) 
+    cout << "WARNING: NOX::Direction::ModifiedNewton::compute - Unable to achieve desired linear solve accuracy." << endl;
+  return true;
+
+}
+
+void NOX::Direction::ModifiedNewton::throwError(const string& functionName, const string& errorMsg)
+{
+    if (Utils::doPrint(Utils::Error))
+      cerr << "NOX::Direction::ModifiedNewton::" << functionName << " - " << errorMsg << endl;
+    throw "NOX Error";
+}
 
 #endif // WITH_PRERELEASE
 
