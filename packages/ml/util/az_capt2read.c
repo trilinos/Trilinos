@@ -28,7 +28,7 @@
 int main(int argc, char *argv[]) {
 
    int Nrows, Nnzs, current_row, row, col, i;
-   int flag, first_time = 1, j, ch;
+   int flag, first_time = 1, j, ch, empty;
    char string[80];
    double val;
    extern int mygetline(char string[]);
@@ -90,6 +90,7 @@ int main(int argc, char *argv[]) {
    if (flag == 0) flag = mygetline(string);
 
    current_row = 1;
+   empty = 1;
    while ( flag != 0) {
        sscanf(string,"%d%d%lf",&row,&col,&val);
        if (row > Nrows) {
@@ -106,6 +107,7 @@ int main(int argc, char *argv[]) {
        else if (row > current_row+1) {
           if (first_time) 
              fprintf(stderr,"Warning: Empty rows (e.g. %d)?\n",current_row+1);
+	  if (empty) printf("0 0.0\n");
           printf("-1\n"); 
           for (i = current_row+1; i < row; i++) printf("%d 0.0\n-1\n",i-1);
           first_time = 0;
@@ -114,7 +116,10 @@ int main(int argc, char *argv[]) {
           fprintf(stderr,"Error: rows are not in order\n");
           exit(1);
        }
-       if ((val != 0.0) || (col == row)) printf("%d  %20.13e\n",col-1,val);
+       if ((val != 0.0) || (col == row)) {
+          printf("%d  %20.13e\n",col-1,val);
+          empty = 0;
+       }
        current_row = row;
        flag = mygetline(string);
    }
