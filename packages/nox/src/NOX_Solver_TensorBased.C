@@ -650,8 +650,9 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     if (useModifiedMethod)
     {
       double alpha2 = lambdaBar;
-      cout << " Beta = " << utils.sciformat(beta, 6)
-	   << "  Alpha2 = " << utils.sciformat(alpha2, 6) << endl;
+      if (utils.isPrintProcessAndType(NOX::Utils::Details))
+	cout << " Beta = " << utils.sciformat(beta, 6)
+	     << "  Alpha2 = " << utils.sciformat(alpha2, 6) << endl;
       //printf(" Beta = %e   Alpha2 = %e\n", beta, alpha2);
       if (alpha2 != 1.0)
       {
