@@ -89,6 +89,10 @@ int LB_Set_Method(LB *lb, char *method_name)
     lb->Method = RIB;
     lb->LB_Fn = LB_rib;
   }
+  else if (strcmp(method_upper, "SFC") == 0) {
+    lb->Method = SFC;
+    lb->LB_Fn = LB_sfc;
+  }
   else if (strcmp(method_upper, "NONE") == 0) {
     lb->Method = NONE;
     lb->LB_Fn = NULL;

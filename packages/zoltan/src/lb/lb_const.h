@@ -83,6 +83,7 @@ typedef enum LB_Method {
   JOSTLE,
   REFTREE,
   RIB,
+  SFC,
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
@@ -509,6 +510,7 @@ extern LB_FN LB_ParMetis;
 extern LB_FN LB_Jostle;
 extern LB_FN LB_Reftree_Part;
 extern LB_FN LB_rib;
+extern LB_FN LB_sfc;
 
 
 #endif
