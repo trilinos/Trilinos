@@ -347,11 +347,15 @@ int ML_Krylov_Solve(ML_Krylov *data,int leng,double *invec,double* outvec)
    }
    if ( data->ML_eigen == 1 )
    {
+#ifdef RST_MODIF
+      ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
+#else
 #ifndef MB_MODIF
       ML_CG_ComputeEigenvalues(data, leng, ML_TRUE); 
 #else
       /* no diag. in smoother */
       ML_CG_ComputeEigenvalues(data, leng, ML_FALSE);
+#endif
 #endif
       data->ML_eigen = 0;
       return 0;
