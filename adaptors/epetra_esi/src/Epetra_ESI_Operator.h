@@ -232,6 +232,14 @@ class Operator : public virtual esi::Object,
     { //cout << "Comm" << endl; 
       return(*petra_comm_); }
 
+  const Epetra_BlockMap & DomainMap() const
+    { //cout << "DomainMap" << endl;
+      return(*petra_domain_map_); }
+
+  const Epetra_BlockMap & RangeMap() const
+    { //cout << "RangeMap" << endl;
+      return(*petra_range_map_); }
+
   const Epetra_BlockMap & BlockRowMap() const
     { //cout << "RowMap" << endl; 
       return(*petra_row_map_); }
@@ -254,6 +262,7 @@ class Operator : public virtual esi::Object,
   bool haveMatrixData_;
   bool haveRowReadAccess_;
   Epetra_Comm* petra_comm_;
+  Epetra_Map* petra_domain_map_, *petra_range_map_;
   Epetra_Map* petra_row_map_, *petra_import_map_;
   Epetra_Import* petra_import_;
   Ordinal numGlobalRows_, numGlobalCols_, numLocalRows_, numLocalCols_;
