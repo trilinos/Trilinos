@@ -96,7 +96,7 @@ XferOp::XferOp(GenericEpetraProblem& probA, const GenericEpetraProblem& probB)
     int j;
     for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
 		   iterN != rangeN.second; j++, iterN++, iterW++)
-      cout << "(" << iterN->second << ", " << iterW->second << ")   ";
+      cout << "(" << (*iterN).second << ", " << (*iterW).second << ")   ";
     cout << endl;
   }
 #endif
@@ -122,6 +122,6 @@ void XferOp::transferField(Epetra_Vector& vecTo, Epetra_Vector& vecFrom)
     int j;
     for( j = 0, iterN = rangeN.first, iterW = rangeW.first;
 		   iterN != rangeN.second; j++, iterN++, iterW++)
-      vecTo[i] += iterW->second * vecFrom[iterN->second];
+      vecTo[i] += (*iterW).second * vecFrom[(*iterN).second];
   }
 }
