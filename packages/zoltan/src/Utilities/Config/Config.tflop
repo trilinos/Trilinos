@@ -26,7 +26,7 @@ CC			= pgcc -cougar
 INCLUDE_PATH		=
 DBG_FLAGS		= -g
 OPT_FLAGS		= -O3 -Minfo=all
-CFLAGS = $(DBG_FLAGS)
+CFLAGS = $(OPT_FLAGS)
 
 F90			= pgf90 -cougar
 LOCAL_F90		= f90
