@@ -32,9 +32,9 @@ Appendix: ParMETIS and Jostle</h2>
 <h3>
 Overview of structure (algorithm)</h3>
 This part of Zoltan provides an interface to various graph-based load-balancing
-algorithms. Currently two libraries are supported: <a href="dev_alg_parmetis.html">ParMETIS
+algorithms. Currently two libraries are supported: <a href="../ug_html/ug_alg_parmetis.html">ParMETIS
 </a>and
-<a href="dev_alg_jostle.html">Jostle.</a>
+<a href="../ug_html/ug_alg_jostle.html">Jostle.</a>
 Each of these libraries contain several algorithms.
 <h4>
 Interface algorithm</h4>
@@ -60,8 +60,10 @@ We use Zoltan's unstructured communication library for this. A hash function
 (<b>LB_hashf</b>) is used to efficiently map global IDs to integers. The
 graph construction algorithm has parallel complexity
 <i>O(n+m+p)</i>, where
-<i>n</i> is the number of objects, <i>m</i> is the number of edges, and
-<i>p </i>is the number of processors.
+<i>n</i>
+is the number of objects, <i>m</i> is the number of edges, and
+<i>p </i>is
+the number of processors.
 <p>One other feature of the interface code deserves mention.&nbsp; While
 Zoltan allows objects to have real (float) weights, both ParMETIS and Jostle
 require integer weights. Therefore, Zoltan first checks if the object weights

@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Directory Layout</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,173 +19,173 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-   <TITLE> Zoltan Developer's Guide:  Directory Layout</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="directories"></A>Layout of Directories</H2>
+<h2>
+<a NAME="directories"></a>Layout of Directories</h2>
 The source code is organized into several subdirectories within the Zoltan
 main directory. Load-balancing interface and utility routines are stored
 in a single directory. Communication and memory allocation utilities available
 to all algorithms are in separate directories. Each load-balancing method
 (or family of methods) should be stored in its own directory. In the following
-<A HREF="#directory table">table</A>, the source-code directories currently
-in the Zoltan directory are listed and described.
-<BR>&nbsp;
-<TABLE BORDER NOSAVE >
-<TR>
-<TH><A NAME="directory table"></A>Directory</TH>
+<a href="#directory table">table</a>,
+the source-code directories currently in the Zoltan directory are listed
+and described.
+<br>&nbsp;
+<table BORDER NOSAVE >
+<tr>
+<th><a NAME="directory table"></a>Directory</th>
 
-<TH>Description</TH>
-</TR>
+<th>Description</th>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>lb</I></TD>
+<tr>
+<td VALIGN=TOP><i>lb</i></td>
 
-<TD>Interface definitions (lbi_const.h), user data type definitions (lb_user_const.h),
+<td>Interface definitions (lbi_const.h), user data type definitions (lb_user_const.h),
 load-balancing data structure definitions (lb_const.h, lb.h), interface
 functions (lb.c), and functions related to the load-balancing interface
-(lb_util.c, lb_util_const.h). See <A HREF="dev_lb_interface.html">Interface
-Functions</A>, <A HREF="dev_lb_types.html">Interface Data Types</A>, and
-<A HREF="dev_lb_structs.html">Data Structures</A>.</TD>
-</TR>
+(lb_util.c, lb_util_const.h). See <a href="dev_lb_interface.html">Interface
+Functions</a>, <a href="dev_lb_types.html">Interface Data Types</a>, and
+<a href="dev_lb_structs.html">Data
+Structures</a>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>all</I></TD>
+<tr>
+<td VALIGN=TOP><i>all</i></td>
 
-<TD><A HREF="dev_util_mem.html">Memory allocation functions</A> (all_allo.c,
+<td><a href="dev_util_mem.html">Memory allocation functions</a> (all_allo.c,
 all_allo_const.h). Utility functions common (or possibly common) to several
-algorithms (all_util.c, all_util_const.h).</TD>
-</TR>
+algorithms (all_util.c, all_util_const.h).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>comm</I></TD>
+<tr>
+<td VALIGN=TOP><i>comm</i></td>
 
-<TD>Bruce Hendrickson and Steve Plimpton's <A HREF="dev_util_comm.html">unstructured
-communication package</A> (comm.c, comm_const.h).&nbsp;</TD>
-</TR>
+<td>Bruce Hendrickson and Steve Plimpton's <a href="dev_util_comm.html">unstructured
+communication package</a> (comm.c, comm_const.h).&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>par</I></TD>
+<tr>
+<td VALIGN=TOP><i>par</i></td>
 
-<TD><A HREF="dev_util_parallel.html">Parallel computing utilities</A> (par_const.h,
-par_util.c).</TD>
-</TR>
+<td><a href="dev_util_parallel.html">Parallel computing utilities</a> (par_const.h,
+par_util.c).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>param</I></TD>
+<tr>
+<td VALIGN=TOP><i>param</i></td>
 
-<TD>Routines for changing parameter values at runtime.</TD>
-</TR>
+<td>Routines for changing parameter values at runtime.</td>
+</tr>
 
-<TR>
-<TD><I>parmetis</I></TD>
+<tr>
+<td><i>parmetis</i></td>
 
-<TD>Routines to access the <A HREF="../ug_html/ug_alg_parmetis.html">ParMetis</A>
-partitioning library from UMN.</TD>
-</TR>
+<td>Routines to access the <a href="../ug_html/ug_alg_parmetis.html">ParMetis</a>
+partitioning library from UMN.</td>
+</tr>
 
-<TR>
-<TD><I>parmetis/ParMetis</I></TD>
+<tr>
+<td><i>parmetis/ParMetis</i></td>
 
-<TD>Source code for the version of ParMetis that is supported by Zoltan.</TD>
-</TR>
+<td>Source code for the version of ParMetis that is supported by Zoltan.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>rcb</I></TD>
+<tr>
+<td VALIGN=TOP><i>rcb</i></td>
 
-<TD>Steve Plimpton's implementation of <A HREF="dev_rcb.html">Recursive
-Coordinate Bisection (RCB)</A>.</TD>
-</TR>
+<td>Steve Plimpton's implementation of <a href="dev_rcb.html">Recursive
+Coordinate Bisection (RCB)</a>.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>oct</I></TD>
+<tr>
+<td VALIGN=TOP><i>oct</i></td>
 
-<TD>RPI's octree partitioning and space-filling curve algorithms. See Octree
-Partitioning and Space Filling Curves.</TD>
-</TR>
+<td>RPI's octree partitioning and space-filling curve algorithms. See Octree
+Partitioning and Space Filling Curves.</td>
+</tr>
 
-<TR>
-<TD><I>reftree</I></TD>
+<tr>
+<td><i>reftree</i></td>
 
-<TD>The <A HREF="../ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</A>
-algorithm and refinement tree data structure.</TD>
-</TR>
+<td>The <a href="../ug_html/ug_alg_reftree.html">Refinement Tree Partitioning</a>
+algorithm and refinement tree data structure.</td>
+</tr>
 
-<TR>
-<TD><I>timer</I></TD>
+<tr>
+<td><i>timer</i></td>
 
-<TD><A HREF="dev_util_time.html">Timing</A> routines.</TD>
-</TR>
+<td><a href="dev_util_time.html">Timing</a> routines.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>ch</I></TD>
+<tr>
+<td VALIGN=TOP><i>ch</i></td>
 
-<TD>Routines to read Chaco input files and build graphs for the driver
-program <I><A HREF="dev_driver.html">zdrive.</A></I></TD>
-</TR>
+<td>Routines to read Chaco input files and build graphs for the driver
+program <i><a href="dev_driver.html">zdrive.</a></i></td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>ha</I></TD>
- 
-<TD>Routines to support heterogeneous architectures.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>ha</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>fort</I></TD>
+<td>Routines to support heterogeneous architectures.</td>
+</tr>
 
-<TD>William Mitchell's Fortran interface for Zoltan.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>fort</i></td>
 
-<TR>
-<TD><I>driver</I></TD>
+<td>William Mitchell's Fortran interface for Zoltan.</td>
+</tr>
 
-<TD>Test driver program, <I><A HREF="dev_driver.html">zdrive</A></I>.</TD>
-</TR>
+<tr>
+<td><i>driver</i></td>
 
-<TR>
-<TD VALIGN=TOP><I>fdriver</I></TD>
+<td>Test driver program, <i><a href="dev_driver.html">zdrive</a></i>.</td>
+</tr>
 
-<TD>Fortran version of the test driver program.</TD>
-</TR>
+<tr>
+<td VALIGN=TOP><i>fdriver</i></td>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE><I>docs/Zoltan_html</I></TD>
+<td>Fortran version of the test driver program.</td>
+</tr>
 
-<TD>Zoltan documentation and <A HREF="../Zoltan.html">home page</A>.</TD>
-</TR>
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE><i>docs/Zoltan_html</i></td>
 
-<TR>
-<TD><I>docs/Zoltan_html/ug_html</I></TD>
+<td>Zoltan documentation and <a href="../Zoltan.html">home page</a>.</td>
+</tr>
 
-<TD><A HREF="../ug_html/ug.html">User's guide</A> in HTML format.</TD>
-</TR>
+<tr>
+<td><i>docs/Zoltan_html/ug_html</i></td>
 
-<TR>
-<TD><I>docs/Zoltan_html/dev_html</I></TD>
+<td><a href="../ug_html/ug.html">User's guide</a> in HTML format.</td>
+</tr>
 
-<TD><A HREF="dev.html">Developer's guide</A> in HTML format.</TD>
-</TR>
+<tr>
+<td><i>docs/Zoltan_html/dev_html</i></td>
 
-<CAPTION ALIGN=BOTTOM><I>The directory structure of the Zoltan distribution.</I></CAPTION>
-</TABLE>
+<td><a href="dev.html">Developer's guide</a> in HTML format.</td>
+</tr>
 
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_dist_compile.html">Next:&nbsp;
-Compilation</A>&nbsp; |&nbsp; <A HREF="dev_dist_cvs.html">Previous:&nbsp;
-CVS</A>]
-</BODY>
-</HTML>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE><i>Makefiles</i></td>
+
+<td><a href="dev_dist_compile.html">Platform-specific makefiles</a> defining
+compiler, library and include-file paths.</td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>The directory structure of the Zoltan distribution.</i></caption>
+</table>
+
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_dist_compile.html">Next:&nbsp;
+Compilation</a>&nbsp; |&nbsp; <a href="dev_dist_cvs.html">Previous:&nbsp;
+CVS</a>]
+</body>
+</html>

@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Future Work</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,53 +19,48 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></h3></div>
 
-   <TITLE>Zoltan User's Guide:  Future Work</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Future Work"></A>Future Work</H2>
+<h2>
+<a NAME="Future Work"></a>Future Work</h2>
 Future efforts will focus on testing the interface in a variety of applications
 and developing new algorithms for the load- balancing library. Preliminary
 tests of the interface in an unstructured finite element method have been
 successful. The load-balancing query functions can be implemented with
 a small amount of C code (less than 200 lines), and data migration can
 be accomplished without additional communication code in the application
-using a calling sequence similar to that in the <A HREF="ug_examples_mig.html#User-guided Migration Example">user-guided
-migration example</A>.
-
-<P>Algorithmic development will focus first on the development of a model
+using a calling sequence similar to that in the <a href="ug_examples_mig.html#User-guided Migration Example">user-guided
+migration example</a>.
+<p>Algorithmic development will focus first on the development of a model
 for heterogeneous computing systems. Processor speeds, processor memory
 sizes, and interconnection network speeds will be included in the model.
-The model will be tested first in the simple <A HREF="ug_alg.html">algorithms</A>
+The model will be tested first in the <a href="ug_alg.html">algorithms</a>
 already implemented. New algorithmic development will be required to use
 the heterogeneous system model.
-
-<P>After heterogeneous computing model is developed, new algorithms will
-be implemented. These algorithms will include local diffusion algorithms
-that test the graph-based interface to the load-balancing library and tree-based
-algorithms that can take advantage of information available in tree-based
-applications such as finite element methods with adaptive mesh refinement.
-The tree-based algorithms will require additions to the load-balancing
-interface, but the existing interface routines should remain unchanged.
-<BR>&nbsp;
-<BR>&nbsp;
-
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_refs.html">Next:&nbsp; References</A>&nbsp; |&nbsp; <A HREF="ug_fortran_sys.html">Previous:&nbsp;
-FORTRAN--System-Specific Remarks</A>]
-</BODY>
-</HTML>
+<p>In static partitioning, comparisons of algorithms are performed based
+on their execution times and quality of partition.&nbsp; Comparisons of
+dynamic load-balancing algorithms, however, must also account for the data
+migration costs of a new partition.&nbsp; Using Zoltan, we will investigate
+the relative importance of partition quality, time to compute new partitions
+and data migration costs in a number of applications.&nbsp; For some applications,
+lower-quality partitions may be acceptable is data migration costs can
+be minimized.&nbsp; Other applications may perform better with high-quality
+partitions, regardless of the cost of obtaining them.&nbsp; Zoltan's design
+enables such comparisons.&nbsp; Since it includes a suite of methods, many
+different methods can be tried in a single application.&nbsp; And because
+it is easy to incorporate Zoltan in new applications, load-balancing algorithms'
+performance can be analyzed in different types of simulations.
+<br>&nbsp;
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_refs.html">Next:&nbsp;
+References</a>&nbsp; |&nbsp; <a href="ug_fortran_sys.html">Previous:&nbsp;
+FORTRAN--System-Specific Remarks</a>]
+</body>
+</html>

@@ -65,7 +65,7 @@ Decomposition Method	= rcb
 # When many parameters must be specified, multiple
 # "Zoltan Parameters" lines may be included in the input file.
 #-----------------------------------------------------------------------------
-Zoltan Parameters	= RCB_WGTFLAG=0,RCB_OVERALLOC=1.0
+Zoltan Parameters	= DEBUG_LEVEL=3
 Zoltan Parameters	= RCB_REUSE=0
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Compilation</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,129 +19,119 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-   <TITLE> Zoltan Developer's Guide:  Compilation</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<h2>
+<a NAME="compilation"></a>Compilation</h2>
+The Zoltan distribution includes a main (top-level) Makefile with targets
+for the Zoltan library and the test driver programs. When the library is
+compiled for a specific target platform, <i>A</i>, the top-level Makefile
+obtains platform-specific values for platform <i>A</i> from the lower-level
+makefile <i>Makefiles/Makefile.A</i>.&nbsp; This lower-level file should
+be edited to reflect the environment of the target platform <i>A</i>.&nbsp;
+Examples of platform-specific makefiles included with the Zoltan distribution
+are listed in the <a href="#Architectures table">table</a> below.&nbsp;
+A subdirectory, <i>Obj_A</i>, is created, and Makefile_sub is copied into
+that directory for use by make.
+<br>&nbsp;
+<center><table BORDER WIDTH="90%" NOSAVE >
+<tr>
+<th><a NAME="Architectures table"></a>Target-specific Makefile</th>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<th>Architecture</th>
+</tr>
 
-<H2>
-<A NAME="compilation"></A>Compilation</H2>
-The Zoltan distribution includes a main (top-level) Makefile with compilation
-instructions for several target architectures. When the library is compiled
-for a specific target architecture, <I>A</I>, a subdirectory, <I>Obj_A</I>,
-is created, and Makefile_sub is copied into that directory. This Makefile
-is then called with architecture-specific values passed in from the main
-Makefile. Currently supported architectures and their targets are listed
-in the <A HREF="#Architectures table">table</A> below.
-<BR>&nbsp;
-<CENTER><TABLE BORDER WIDTH="90%" NOSAVE >
-<TR>
-<TH><A NAME="Architectures table"></A>Target</TH>
+<tr VALIGN=TOP NOSAVE>
+<td NOSAVE>Makefile.generic</td>
 
-<TH>Architecture</TH>
-</TR>
+<td>A well-commented template for new lower-level makefiles.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>smos</TD>
+<tr>
+<td VALIGN=TOP>Makefile.smos</td>
 
-<TD>Intel Paragon running SUNMOS (sipapu).</TD>
-</TR>
+<td>Intel Paragon running SUNMOS (sipapu).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>tflop</TD>
+<tr>
+<td VALIGN=TOP>Makefile.tflop</td>
 
-<TD>Sandia/Intel Teraflops computer (janus).</TD>
-</TR>
+<td>Sandia/Intel Teraflops (ASCI Red) computer (janus).</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>sun</TD>
+<tr>
+<td VALIGN=TOP>Makefile.solaris</td>
 
-<TD>Sun workstations running Solaris.</TD>
-</TR>
+<td>Sun workstations running Solaris.</td>
+</tr>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE>sunos</TD>
+<tr>
+<td>Makefile.cplant</td>
 
-<TD>Sun workstations running SunOS4.</TD>
-</TR>
+<td>CPlant parallel computing system (alaska).</td>
+</tr>
 
-<TR>
-<TD>cplant</TD>
+<tr>
+<td VALIGN=TOP>Makefile.nistsun</td>
 
-<TD>CPlant parallel computing system (alaska).</TD>
-</TR>
+<td>Sun workstations at NIST running Solaris.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>nistsun</TD>
+<tr>
+<td VALIGN=TOP>Makefile.nistlinux</td>
 
-<TD>Sun workstations at NIST running Solaris.</TD>
-</TR>
+<td>Intel PC workstations at NIST running Linux.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP>nistlinux</TD>
+<caption ALIGN=BOTTOM><i>Platform-specific makefiles provided in the Makefiles
+subdirectory of the Zoltan distribution.</i></caption>
+</table></center>
 
-<TD>Intel PC workstations at NIST running Linux.</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Targets and architectures currently supported
-in the Makefiles of the Zoltan distribution.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<P>The top-level Makefile includes compiler, include-file, and library
-paths that are specific to Sandia's MPCRL LAN (building 980); these paths
-must be adjusted to compile the library in different environments.
-
-<P>The GNU <I>gmake</I> utility is used to build dependency files and compile
-the library for a given target:
-<BLOCKQUOTE>gmake [options] &lt;target></BLOCKQUOTE>
+<p>The GNU <i>gmake</i> utility (standard "make" works as well) is used
+to build dependency files and compile the library for a given target:
+<blockquote>gmake [options] zoltan</blockquote>
 where the options that can be specified are listed below.
-<TABLE WIDTH="100%" >
-<TR>
-<TD WIDTH="20%"><B>Options to gmake:</B></TD>
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Options to gmake:</b></td>
 
-<TD>&nbsp;</TD>
-</TR>
+<td>&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
 
-<TD>Do not compile and link with <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A>
-in the Zoltan library.&nbsp; If this option is specified, no <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A>
-libraries are needed when the application is linking.&nbsp; Otherwise,
-a <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A> library path must
-be specified to <A HREF="../ug_html/ug_usage.html#Building Applications">build
-the application</A>.</TD>
-</TR>
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</I></TD>
+<td>Specify the target architecture for the Zoltan library.&nbsp; A corresponding
+file, <i>Makefiles/Makefile.&lt;platform></i>, containing environment definitions
+for <i>&lt;platform</i>>, must be created in the
+<i>Makefiles</i> directory.</td>
+</tr>
 
-<TD>Include Fortran support in the Zoltan library.&nbsp;  By default, the
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</i></td>
+
+<td>Include Fortran support in the Zoltan library.&nbsp; By default, the
 Zoltan library is built without the interface that allows use from Fortran
 applications.&nbsp; If this option is specified, then the
-<A HREF="../ug_html/ug_fortran.html">Fortran interface</A>
-is compiled and included in the library.&nbsp;  Use of this option requires that
-a Fortran 90 (or 95, or later) compiler is available.</TD>
-</TR>
-</TABLE>
-After compilation, the library <I>libzoltan.a</I> is stored in the appropriate
-<I>Obj_*</I> directory for the specified architecture.
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_lb.html">Next:&nbsp;
-Load-Balancing Interface and Data Structures</A>&nbsp; |&nbsp; <A HREF="dev_dist_dir.html">Previous:&nbsp;
-Layout of Directories</A>]
-</BODY>
-</HTML>
+<a href="../ug_html/ug_fortran.html">Fortran
+interface</a> is compiled and included in the library.&nbsp; Use of this
+option requires that a Fortran 90 (or 95, or later) compiler is available.</td>
+</tr>
+</table>
+As an alternative to typing the options on the gmake command line, they
+may be set as environment variables; e.g.,
+<blockquote>&nbsp;setenv ZOLTAN_ARCH <i>&lt;platform></i></blockquote>
+After compilation, the library <i>libzoltan.a</i>, the object files, and
+dependency files for platform <i>A</i> are stored in <i>Obj_A</i>.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_lb.html">Next:&nbsp;
+Load-Balancing Interface and Data Structures</a>&nbsp; |&nbsp; <a href="dev_dist_dir.html">Previous:&nbsp;
+Layout of Directories</a>]
+</body>
+</html>

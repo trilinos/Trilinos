@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide: Using Test Driver - zdrive</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,117 +19,95 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 5.6 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
-   <TITLE> Zoltan Developer's Guide: Using Test Driver - zdrive</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
+<h2>
+<a NAME="Zdrive"></a>Appendix: Using the Test Driver - <i>zdrive</i></h2>
 
-<H2>
-<A NAME="Zdrive"></A>Appendix: Using the Test Driver - <I>zdrive</I></H2>
-
-<H3>
-<A NAME="Introduction"></A>Introduction</H3>
+<h3>
+<a NAME="Introduction"></a>Introduction</h3>
 In order to facilitate development and testing of the Zoltan library, a
-simple driver program, <I>zdrive</I>,&nbsp; is included with the library
+simple driver program, <i>zdrive</i>,&nbsp; is included with the library
 distribution. The concept behind this driver is to read in mesh or graph
 information from files, run Zoltan, and then output the new assignments
 for each processor to another file. The test driver reads ExodusII/NemesisI
-parallel FEM files and Chaco input files. Parallel NemesisI files can be
-created from ExodusII or Genesis file using the NemesisI utilities <I>nem_slice</I>
-and <I>nem_spread</I>.
-
-<P>All source code for the driver is in the <I>driver/</I> directory of
+parallel FEM files and <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
+input files. Parallel NemesisI files can be created from ExodusII or Genesis
+file using the NemesisI utilities <i>nem_slice</i> and <i>nem_spread</i>.
+<p>All source code for the driver is in the <i>driver/</i> directory of
 the Zoltan distribution. In order to compile the test driver for a specific
 platform, use the following command:
-<UL>gmake [options] &lt;platform>-dr</UL>
-where &lt;platform> is the target OS platform and the options are described
-below. Currently, the supported platforms are <I>sun</I> (for Solaris)<I>,
-sunos</I> (for SunOS<I>), tflop, cplant, </I>and <I>smos</I>. The driver
-<I>zdrive</I> will be placed in the Obj_&lt;platform>/ directory.
-<TABLE WIDTH="100%" >
-<TR>
-<TD WIDTH="20%"><B>Options to gmake:</B></TD>
+<ul>gmake [options] zdrive</ul>
+where the options are described below.
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Options to gmake:</b></td>
 
-<TD>&nbsp;</TD>
-</TR>
+<td>&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
 
-<TD>Do not compile and link with <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A>
-in the Zoltan library.&nbsp; If this option is specified, no <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A>
-librares are needed for linking.&nbsp; Otherwise, a <A HREF="../ug_html/ug_alg_parmetis.html">ParMETIS</A>
-library path must be specified in the Makefile.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_NEMESIS=1</I></TD>
-
-<TD>Do not compile and link with ExodusII and NemesisI in zdrive.&nbsp;
-If this option is specified, only Chaco input will be accepted by the driver.&nbsp;
-Otherwise, paths to the ExodusII and NemesisI libraries must be specified
-in the Makefile.</TD>
-</TR>
-</TABLE>
-&nbsp;
-<H3>
-<A NAME="running zdrive"></A>Running <I>zdrive</I></H3>
+<td>Specify the target architecture for <i>zdrive</i>.&nbsp; A corresponding
+file, <i>Makefiles/Makefile.&lt;platform></i>, containing environment definitions
+for <i>&lt;platform</i>>, must be created in the
+<i>Makefiles</i> directory.</td>
+</tr>
+</table>
+The driver
+<i>zdrive</i> is placed in the Obj_<i>&lt;platform></i> directory.
+<h3>
+<a NAME="running zdrive"></a>Running <i>zdrive</i></h3>
 Zdrive is run using an input command file. A fully commented example of
-this file and the possible options can be found in <I><A HREF="zdrive.inp">zdrive.inp</A></I>.
+this file and the possible options can be found in <i><a href="zdrive.inp">zdrive.inp</a></i>.
 The default name for the command file is zdrive.inp, and the driver will
 look for this file in the execution directory if an alternate name is not
 given on the command line. If another filename is being used for the command
 file, it should be specified as the first argument on the command line.
-For an example of a simple input file for a problem on the Intel Paragon
-sipapu, see the <A HREF="#zdrive input">figure</A> below. In this problem,
-there are four parallel mesh files named <I>testa.par.4.0</I>... <I>testa.par.4.3</I>,
-and they reside in the directories <I>pfs/io_01... io_04/mmstjohn/</I>
-respectively. The method being used for dynamic load balancing is <A HREF="dev_rcb.html#RCB">RCB</A>.
-All of the parameters are set to defaults by Zoltan since none are set
-in the input file.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="zdrive input"></A>File Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-= NemesisI&nbsp;
-<BR>File Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-= testa.par&nbsp;
-<BR>Parallel Disk Info&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-= number=4,zeros&nbsp;
-<BR>Parallel File Location&nbsp;&nbsp;&nbsp; = root=/pfs/io_, subdir=mmstjohn&nbsp;
-<BR>Decomposition Info&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = method=RCB</TD>
-</TR>
+For an example of a simple input file, see the <a href="#zdrive input">figure</a>
+below. In this problem, the method being used for dynamic load balancing
+is <a href="dev_rcb.html#RCB">RCB</a>.&nbsp; Input data is read from <a href="http://www.cs.sandia.gov/CRF/chac.html">Chaco</a>
+input files<i> simple.graph</i> and <i>simple.coord</i>.&nbsp; Zoltan's
+<a href="../ug_html/ug_alg.html#General_Parameters">Debug_Level</a> parameter
+is set to 3; default values of all other parameters are used.
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="zdrive input"></a>Decomposition method&nbsp; = rcb
+<br>Zoltan Parameters&nbsp;&nbsp; = Debug_Level=3
+<br>File Type&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= Chaco
+<br>File Name&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+= simple
+<br>Parallel Disk Info&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = number=0</td>
+</tr>
 
-<CAPTION ALIGN=BOTTOM><I><FONT SIZE=-1>example zdrive.inp file</FONT></I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-<BR>After running zdrive, an ascii file named <I>testa.par.out.4.0... testa.par.out.4.3
-</I>will be created for each processor in the same directory where the
-input FEM file was located for that processor. Each file will contain a
-list of global ids for the elements that are on that processor after running
-Zoltan.
-<H3>
-<A NAME="adding algorithms"></A>Adding New Algorithms</H3>
+<caption ALIGN=BOTTOM><i><font size=-1>example zdrive.inp file</font></i></caption>
+</table></center>
+
+<p>After running zdrive, an ascii file named <i>testa.par.out.4.0... testa.par.out.4.3
+</i>will
+be created for each processor in the same directory where the input FEM
+file was located for that processor. Each file will contain a list of global
+ids for the elements that are on that processor after running Zoltan.
+<h3>
+<a NAME="adding algorithms"></a>Adding New Algorithms</h3>
 The driver has been set up in such a way that testing new algorithms that
 have been added to Zoltan is relatively simple. The method that is in the
 input file is passed directly to Zoltan. Thus, this string must be the
-same string that the library function <A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method
-</A>is expecting.
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_test_script.html">Next:&nbsp;
-Using the Test Script</A>&nbsp; |&nbsp; <A HREF="dev_refs.html">Previous:&nbsp;
-References</A>]
-</BODY>
-</HTML>
+same string that the library function <a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method
+</a>is
+expecting.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_test_script.html">Next:&nbsp;
+Using the Test Script</a>&nbsp; |&nbsp; <a href="dev_refs.html">Previous:&nbsp;
+References</a>]
+</body>
+</html>

@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1376">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title> Zoltan Developer's Guide:  Plan for Future Development</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,174 +19,95 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1376">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></h3></div>
 
-   <TITLE> Zoltan Developer's Guide:  Plan for Future Development</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/dev_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="future"></A>Plan for Future Development</H2>
-Get integrated into SIERRA and ALEGRA projects.
-<UL>
-<LI>
-Consult with SIERRA and ALEGRA on needs, functionality and usage.</LI>
-
-<LI>
-Allow variable-sized objects in irregular communication package.</LI>
-</UL>
-Documentation: an ongoing process.
-<UL>
-<LI>
-User's guide: philosophy and interface.</LI>
-
-<LI>
-Developer's guide: software structure and components.</LI>
-</UL>
-Implement performance monitors.
-<BLOCKQUOTE>
-<LI>
-Run time of partitioner.</LI>
-
-<LI>
-Amount of data moved (and time to pack/move/unpack it).</LI>
-
-<LI>
-Load balance and communication requirements of new decomposition. (Communication
-is hard due to complicated dependence upon application.)</LI>
-</BLOCKQUOTE>
+<h2>
+<a NAME="future"></a>Plan for Future Development</h2>
 Support heterogeneous computing systems.
-<UL>
-<LI>
-Three levels of support:</LI>
+<ul>
+<li>
+Three levels of support:</li>
 
-<UL>
-<LI>
+<ul>
+<li>
 Heterogeneous processors: Vector of processor speeds; partition to match
-it.</LI>
+it.</li>
 
-<LI>
+<li>
 Heterogeneous memory sizes: Vector of memory sizes; partition to not exceed
-it.</LI>
+it.</li>
 
-<LI>
-Heterogeneous networks: Graph of network; map well to it.</LI>
-</UL>
+<li>
+Heterogeneous networks: Graph of network; map well to it.</li>
+</ul>
 
-<LI>
-Augment existing algorithms to handle heterogeneity.</LI>
+<li>
+Augment existing algorithms to handle heterogeneity.</li>
 
-<LI>
-Insist that new algorithms handle it, too.</LI>
+<li>
+Insist that new algorithms handle it, too.</li>
 
-<UL>
-<LI>
-Develop a good model of heterogeneity before implementing too many algorithms.</LI>
-</UL>
-</UL>
+<ul>
+<li>
+Develop a good model of heterogeneity before implementing too many algorithms.</li>
+</ul>
+</ul>
 Add Partitioning Algorithms to the Library.
-<UL>
-<LI>
-Decide on a graph data structure</LI>
+<ul>
+<li>
+Inertial algorithms.</li>
 
-<UL>
-<LI>
-Get input from MPSalsa, ALEGRA, SIERRA.</LI>
+<ul>
+<li>
+Add heterogeneity and prefix-sum to limit memory problems.</li>
+</ul>
 
-<LI>
-Understand what ParMetis and Jostle use.</LI>
-</UL>
+<li>
+Unbalanced Recursive Bisection (URB).</li>
 
-<LI>
-Diffusion algorithms.</LI>
+<ul>
+<li>
+Hard to fit into current thinking about heterogeneity.</li>
 
-<LI>
-Inertial algorithms.</LI>
+<li>
+Requires application to be partitioned before machine.</li>
+</ul>
 
-<UL>
-<LI>
-Add heterogeneity and prefix-sum to limit memory problems.</LI>
-</UL>
+<li>
+Terminal propagation.</li>
 
-<LI>
-Unbalanced Recursive Bisection (URB).</LI>
-
-<UL>
-<LI>
-Hard to fit into current thinking about heterogeneity.</LI>
-
-<LI>
-Requires application to be partitioned before machine.</LI>
-</UL>
-
-<LI>
-Implement tree-based partitioning algorithms</LI>
-
-<UL>
-<LI>
-Define tree data structure.</LI>
-
-<LI>
-Define tree interface.</LI>
-
-<LI>
-Devise hybrid refinement-tree/space-filling-curve algorithm.</LI>
-</UL>
-
-<LI>
-Improve performance of space-filling-curves.</LI>
-
-<LI>
-Add hooks to ParMetis and Jostle.</LI>
-
-<UL>
-<LI>
-Adding heterogeneity is much more work.</LI>
-
-<LI>
-Can we ask Karypis and Kumar to do this as part of their ASCI grant?</LI>
-</UL>
-
-<LI>
-Terminal propagation.</LI>
-
-<LI>
-Empirical comparisons.</LI>
-</UL>
+<li>
+Empirical comparisons.</li>
+</ul>
 Tool for Determining New Communication Pattern.
-<UL>
-<LI>
-Closely related to metric of partition quality.</LI>
+<ul>
+<li>
+Closely related to metric of partition quality.</li>
 
-<LI>
-Dependent upon the application.</LI>
-</UL>
+<li>
+Dependent upon the application.</li>
+</ul>
 Miscellaneous Performance Improvement Tools.
-<UL>
-<LI>
+<ul>
+<li>
 Mechanisms for incrementally modifying graph passed to balancer. (Consider
-impact on data structures before doing too many algorithms.)</LI>
+impact on data structures before doing too many algorithms.)</li>
 
-<LI>
-Modify interface for FORTRAN compatibility.</LI>
+<li>
+Automated algorithm selection and go/no-go decisions.</li>
 
-<LI>
-Automated algorithm selection and go/no-go decisions.</LI>
-</UL>
+<li>
+Allow variable-sized objects in irregular communication package.</li>
+</ul>
 
-<HR WIDTH="100%">
-<BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_refs.html">Next:&nbsp;
-References</A>&nbsp; |&nbsp; <A HREF="dev_fortran.html">Previous:&nbsp;
-FORTRAN&nbsp;Interface</A>]
-</BODY>
-</HTML>
+<hr WIDTH="100%">
+<br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_refs.html">Next:&nbsp;
+References</a>&nbsp; |&nbsp; <a href="dev_fortran.html">Previous:&nbsp;
+FORTRAN Interface</a>]
+</body>
+</html>

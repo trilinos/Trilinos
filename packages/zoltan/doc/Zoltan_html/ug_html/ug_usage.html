@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Library Usage</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -11,196 +19,206 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div ALIGN=right>
+<h3>
+<img SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></h3></div>
 
-   <TITLE>Zoltan User's Guide:  Library Usage</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+<h2>
+<a NAME="Using the Library"></a>Using the Zoltan library</h2>
+This section contains information needed to use the Zoltan library with
+applications:
+<blockquote><a href="#Application Data Types">Application data type</a>s
+for global and local IDs
+<br>Instructions for <a href="#Building the Library">building the Zoltan
+library</a>
+<br>Instructions for <a href="#Building Applications">building applications</a>
+that use Zoltan.</blockquote>
 
-<DIV ALIGN=right>
-<H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
-
-<H2>
-<A NAME="Using the Library"></A>Using the Library</H2>
-
-<H3>
-<A NAME="Application Data Types"></A>Application Data Types</H3>
+<h3>
+<a NAME="Application Data Types"></a>Application Data Types</h3>
 Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. All objects to be used
 in load balancing must have unique global IDs. Different applications may
 use different data types to represent these IDs. One finite element application,
-for example, may use integers as global identifiers (e.g., see [<A HREF="ug_refs.html#mpsalsa">MPSalsa</A>]);
+for example, may use integers as global identifiers (e.g., see [<a href="ug_refs.html#mpsalsa">MPSalsa</a>]);
 another may use a structure of information including local element counts
-and processor numbers (e.g., see [<A HREF="ug_refs.html#alegra">ALEGRA</A>]).
+and processor numbers (e.g., see [<a href="ug_refs.html#alegra">ALEGRA</a>]).
 Since the Zoltan library is designed to work with a number of applications,
 it must allow applications to specify data types for global and local IDs.The
 local IDs passed to the load-balancing library are not used by the library;
 they are provided for the convenience of the application and can contain
 any information desired by the application. For instance, pointers to objects
 may be passed as local IDs, enabling direct access to object data in the
-query function routines. See the <A HREF="ug_query.html">application-registered
-query functions</A> for more details.To provide data type information to
+query function routines. See the <a href="ug_query.html">application-registered
+query functions</a> for more details.To provide data type information to
 the load- balancing library, application developers must define their global
 and local ID data types in the file "lb/lb_user_const.h" in the Zoltan
 library source code distribution. In addition, they must define macros
-to copy global and local IDs and to compare global IDs.
-When used from Fortran, the IDs and operators are also defined in a module
-in fort/lb_user_const.f90, as explained in the section on
-<A HREF="ug_fortran_api.html#fortran ug api IDs">Fortran global and local
-IDs</A>.  The data and macro
-definitions that must be included are described in the <A HREF="#Macro defs">table</A>
-below.&nbsp; The source code distribution contains an example in which
-global IDs are integers and local IDs are pointers to objects.
-<BR>&nbsp;
-<TABLE BORDER >
-<TR>
-<TH><A NAME="Macro defs"></A>Definition</TH>
+to copy global and local IDs and to compare global IDs. When used from
+Fortran, the IDs and operators are also defined in a module in fort/lb_user_const.f90,
+as explained in the section on
+<a href="ug_fortran_api.html#fortran ug api IDs">Fortran
+global and local IDs</a>. The data and macro definitions that must be included
+are described in the <a href="#Macro defs">table</a> below.&nbsp; The source
+code distribution contains an example in which global IDs are integers
+and local IDs are pointers to objects.
+<br>&nbsp;
+<table BORDER >
+<tr>
+<th><a NAME="Macro defs"></a>Definition</th>
 
-<TH>Description</TH>
-</TR>
+<th>Description</th>
+</tr>
 
-<TR>
-<TD>LB_GID</TD>
+<tr>
+<td>LB_GID</td>
 
-<TD>The data type of the unique global IDs used by the application.</TD>
-</TR>
+<td>The data type of the unique global IDs used by the application.</td>
+</tr>
 
-<TR>
-<TD>LB_LID</TD>
+<tr>
+<td>LB_LID</td>
 
-<TD>The data type of the local IDs used by the application query functions.</TD>
-</TR>
+<td>The data type of the local IDs used by the application query functions.</td>
+</tr>
 
-<TR>
-<TD>LB_SET_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_SET_GID(<i> a, b</i> )</td>
 
-<TD>Assigns the global ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>
-).</TD>
-</TR>
+<td>Assigns the global ID value in <i>b</i> to <i>a</i> (i.e., <i>a = b</i>
+).</td>
+</tr>
 
-<TR>
-<TD>LB_SET_LID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_SET_LID(<i> a, b</i> )</td>
 
-<TD>Assigns the local ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>
-).</TD>
-</TR>
+<td>Assigns the local ID value in <i>b</i> to <i>a</i> (i.e., <i>a = b</i>
+).</td>
+</tr>
 
-<TR>
-<TD>LB_EQ_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_EQ_GID(<i> a, b</i> )</td>
 
-<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are equal; returns
-FALSE otherwise.</TD>
-</TR>
+<td>Returns TRUE if global IDs <i>a</i> and <i>b</i> are equal; returns
+FALSE otherwise.</td>
+</tr>
 
-<TR>
-<TD>LB_NE_GID(<I> a, b)</I></TD>
+<tr>
+<td>LB_NE_GID(<i> a, b)</i></td>
 
-<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are not equal; returns
-FALSE otherwise.</TD>
-</TR>
+<td>Returns TRUE if global IDs <i>a</i> and <i>b</i> are not equal; returns
+FALSE otherwise.</td>
+</tr>
 
-<TR>
-<TD>LB_LT_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_LT_GID(<i> a, b</i> )</td>
 
-<TD>Returns TRUE if global ID <I>a</I> is less than global ID <I>b</I>
-; returns FALSE otherwise.</TD>
-</TR>
+<td>Returns TRUE if global ID <i>a</i> is less than global ID <i>b</i>
+; returns FALSE otherwise.</td>
+</tr>
 
-<TR>
-<TD>LB_LE_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_LE_GID(<i> a, b</i> )</td>
 
-<TD>Returns TRUE if global ID <I>a</I> is less than or equal to global
-ID <I>b</I> ; returns FALSE otherise.</TD>
-</TR>
+<td>Returns TRUE if global ID <i>a</i> is less than or equal to global
+ID <i>b</i> ; returns FALSE otherise.</td>
+</tr>
 
-<TR>
-<TD>LB_GT_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_GT_GID(<i> a, b</i> )</td>
 
-<TD>Returns TRUE if global ID <I>a</I> is greater than global ID <I>b</I>
-; returns FALSE otherwise.</TD>
-</TR>
+<td>Returns TRUE if global ID <i>a</i> is greater than global ID <i>b</i>
+; returns FALSE otherwise.</td>
+</tr>
 
-<TR>
-<TD>LB_GE_GID(<I> a, b</I> )</TD>
+<tr>
+<td>LB_GE_GID(<i> a, b</i> )</td>
 
-<TD>Returns TRUE if global ID <I>a</I> is greater than or equal to global
-ID <I>b</I> ; returns FALSE otherwise.</TD>
-</TR>
+<td>Returns TRUE if global ID <i>a</i> is greater than or equal to global
+ID <i>b</i> ; returns FALSE otherwise.</td>
+</tr>
 
-<CAPTION ALIGN=BOTTOM><I>Data type and macro definitions that must be provided
-to the load-balancing library by the application in lb/lb_user_const.h.</I></CAPTION>
-</TABLE>
+<caption ALIGN=BOTTOM><i>Data type and macro definitions that must be provided
+to the load-balancing library by the application in lb/lb_user_const.h.</i></caption>
+</table>
 
-<H3>
-<A NAME="Building the Library"></A>Building the Library</H3>
+<h3>
+<a NAME="Building the Library"></a>Building the Zoltan Library</h3>
 The Zoltan library is implemented in ANSI C and can be compiled with any
-ANSI C compiler.&nbsp; Example Makefiles are included with the source code.
-The top-level Makefile includes targets for several architectures, including
-Sandia's ASCI Red computer and Intel Paragon. Dependency and object files
-and the resulting load-balancing library file are placed in subdirectories
-for each architecture. Thus, to build the library for Sandia's ASCI Red
-computer, a user types
-<BLOCKQUOTE>gmake [options] tflop</BLOCKQUOTE>
+ANSI C compiler.&nbsp; Makefiles are included with the source code. The
+top-level Makefile defines targets for the Zoltan library and <a href="../dev_html/dev_driver.html">test
+driver</a> programs in C and Fortran90.&nbsp; This Makefile need not be
+edited to build Zoltan.&nbsp; Instead, environment-specific definitions
+are specified in the lower-level makefile, <i>Makefiles/Makefile.&lt;platform></i>,
+where <i>&lt;platform></i> specifies the particular platform for which
+Zoltan is being built.&nbsp; Paths to compilers, include files, and libraries
+are defined in this lower-level makefile and are then read by the top-level
+Makefile.&nbsp; Examples of lower-level makefiles for Solaris, Sandia's
+ASCI Red (tflop) computer, an Intel Paragon, and Linux boxes are included
+in the <i>Makefiles</i> subdirectory.&nbsp;&nbsp; A well-commented version
+of the lower-level makefile, <i>Makefiles/Makefile.generic</i>, is also
+included; this file can be used as a template for new environment-specific
+makefiles.&nbsp; The variables in these files should be edited to reflect
+the new system's environment.
+<p>The command for building Zoltan is shown below:
+<blockquote>gmake [options] zoltan</blockquote>
 where the options that may be specified are listed below.
-<TABLE WIDTH="100%" >
-<TR>
-<TD WIDTH="20%"><B>Options to gmake:</B></TD>
+<table WIDTH="100%" >
+<tr>
+<td WIDTH="20%"><b>Options to gmake:</b></td>
 
-<TD>&nbsp;</TD>
-</TR>
+<td>&nbsp;</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; NO_PARMETIS=1</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ZOLTAN_ARCH=&lt;platform></i></td>
 
-<TD>Do not compile and link with <A HREF="ug_alg_parmetis.html">ParMETIS</A>
-in the Zoltan library.&nbsp; If this option is specified, no <A HREF="ug_alg_parmetis.html">ParMETIS</A> libraries
-are needed when the application is linking.&nbsp; Otherwise, a <A HREF="ug_alg_parmetis.html">ParMETIS</A>
-library path must be specified to <A HREF="#Building Applications">build
-the application</A>.</TD>
-</TR>
+<td>Specify the target architecture for the Zoltan library.&nbsp; A corresponding
+file, <i>Makefiles/Makefile.&lt;platform></i>, containing environment definitions
+for <i>&lt;platform</i>>, must be created in the
+<i>Makefiles</i> directory.</td>
+</tr>
 
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</I></TD>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; YES_FORTRAN=1</i></td>
 
-<TD>Include Fortran support in the Zoltan library.&nbsp;  By default, the
+<td>Include Fortran support in the Zoltan library.&nbsp; By default, the
 Zoltan library is built without the interface that allows use from Fortran
-applications.&nbsp; If this option is specified, then the
-<A HREF="ug_fortran.html">Fortran interface</A>
-is compiled and included in the library.&nbsp;  Use of this option requires that
-a Fortran 90 (or 95, or later) compiler is available.</TD>
-</TR>
-</TABLE>
-The resulting library is stored in Obj_tflop/libzoltan.a. Paths within
-the top-level Makefile and the Makefiles in the Obj_* subdirectories may
-have to be changed for the user's computing environment.
-<H3>
-<A NAME="Building Applications"></A>Building Applications</H3>
+applications.&nbsp; If this option is specified, the
+<a href="ug_fortran.html">Fortran
+interface</a> is compiled and included in the library.&nbsp; Use of this
+option requires that a Fortran 90 (or 95, or later) compiler is available.</td>
+</tr>
+</table>
+As an alternative to typing the options on the gmake command line, they
+may be set as environment variables; e.g.,
+<blockquote>setenv ZOLTAN_ARCH <i>&lt;platform></i></blockquote>
+The resulting library <i>libzoltan.a</i>, object files, and dependency
+files are stored in the directory Obj_&lt;<i>platform</i>>.
+<h3>
+<a NAME="Building Applications"></a>Building Applications that use Zoltan</h3>
 The library interface is described in the C include file "lbi_const.h";
 this file should be included in all application source files that call
-Zoltan library routines.  Similarly, Fortran applications must USE
-<A HREF="ug_fortran_api.html#fortran ug api zoltan module"> module
-zoltan</A>.  The application should then be linked with the
-Zoltan library by including -lzoltan in the linking command for the application.
-Communication within the library is performed through MPI, so appropriate
-MPI libraries must be linked with the application. If the <I>NO_PARMETIS=1
-</I>parameter was not specified when Zoltan was compiled, <A HREF="ug_alg_parmetis.html">ParMETIS</A>
-libraries -lparmetis and -lmetis must also be included in the application's
-linking command.
-<A HREF="ug_fortran_apps.html">Compiling Fortran applications</A> also
-requires specifying fort/ as a directory to be searched for module information
-files.
-<BR>&nbsp;
-
-<P>
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_interface.html">Next:&nbsp; Zoltan Interface Functions</A>&nbsp;
-|&nbsp; <A HREF="ug_intro.html">Previous: Introduction</A>]
-</BODY>
-</HTML>
+Zoltan library routines. Similarly, Fortran applications must USE
+<a href="ug_fortran_api.html#fortran ug api zoltan module">module
+zoltan</a>. The application should then be linked with the Zoltan library
+by including -lzoltan in the linking command for the application. Communication
+within the library is performed through MPI, so appropriate MPI libraries
+must be linked with the application. Third-party libraries, such as <a href="ug_alg_parmetis.html">ParMETIS</a>
+and <a href="http://www.gre.ac.uk/~jjg01/">Jostle</a>, must be also be
+linked with the application if they were included in compilation of the
+Zoltan library.&nbsp; In Zoltan's top-level <a href="#Building the Library">Makefile</a>,
+the variable $THIRD_PARTY_LIBS&nbsp; specifies the library names that can
+be used with Zoltan.&nbsp; <a href="ug_fortran_apps.html">Compiling Fortran
+applications</a> also requires specifying<i> Zoltan/Obj_&lt;platform></i>
+as a directory to be searched for module information files.
+<br>&nbsp;
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface.html">Next:&nbsp;
+Zoltan Interface Functions</a>&nbsp; |&nbsp; <a href="ug_intro.html">Previous:
+Introduction</a>]
+</body>
+</html>
