@@ -374,13 +374,13 @@ protected:
   NOX::Parameter::List* paramsPtr;	
 
   //! Line Search parameters.
-  NOX::Parameter::List& lsParams;	
+  //NOX::Parameter::List& lsParams;	
 
   //! Direction parameters.
-  NOX::Parameter::List& dirParams;	
+  //NOX::Parameter::List& dirParams;	
 
   //! Parameters for the Linear Solver of the local model.
-  NOX::Parameter::List& linearParams;	
+  NOX::Parameter::List* linearParamsPtr;	
 
   //! Printing Utils
   NOX::Utils utils;
@@ -392,8 +392,8 @@ protected:
   double beta;
 
   //! Number of nonlinear iterations.
-  int nIter;                    
-
+  int nIter;
+  
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
 

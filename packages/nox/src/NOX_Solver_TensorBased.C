@@ -47,6 +47,7 @@
 #define CHECK_RESIDUALS
 #define DEBUG_LEVEL 0
 #define DEVELOPER_CODE
+#define USE_INITIAL_GUESS_LOGIC
 
 NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
 				      NOX::StatusTest::Generic& t,
@@ -68,10 +69,6 @@ NOX::Solver::TensorBased::TensorBased(NOX::Abstract::Group& xGrp,
   residualVec(*residualVecPtr),	// reference to just-created pointer
   testPtr(&t),			// pointer to t
   paramsPtr(&p),		// copy p
-  lsParams(paramsPtr->sublist("Line Search")),  // reference to list
-  dirParams(paramsPtr->sublist("Direction")),   // reference to list
-  linearParams(paramsPtr->sublist("Direction").sublist("Tensor").
-	      sublist("Linear Solver")),   // reference to list
   utils(paramsPtr->sublist("Printing")),               // initialize utils
   print(utils),
   prePostOperatorPtr(0),
@@ -172,7 +169,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
   utils.reset(paramsPtr->sublist("Printing"));
 
   // *** Reset direction parameters ***
-  dirParams = paramsPtr->sublist("Direction");
+  NOX::Parameter::List& dirParams = paramsPtr->sublist("Direction");
 
   // Determine the specific type of direction to compute
   string choice = dirParams.getParameter("Method", "Tensor");
@@ -216,7 +213,7 @@ bool NOX::Solver::TensorBased::reset(NOX::Abstract::Group& xGrp,
 
   
   // *** Reset parameters for Line Search ***
-  lsParams = paramsPtr->sublist("Line Search");
+  NOX::Parameter::List& lsParams = paramsPtr->sublist("Line Search");
 
   // Determine the specific type of tensor linesearch to perform
   choice = lsParams.getParameter("Method", "Curvilinear");
@@ -501,6 +498,11 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
 {
   NOX::Abstract::Group::ReturnType status;
   
+  NOX::Parameter::List& linearParams = paramsPtr->sublist("Direction").
+    sublist(paramsPtr->sublist("Direction").
+	    getParameter("Method","Tensor")).
+    sublist("Linear Solver");
+
   // Compute F at current solution.
   status = soln.computeF();
   if (status != NOX::Abstract::Group::Ok) 
