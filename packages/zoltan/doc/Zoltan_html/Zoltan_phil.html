@@ -285,14 +285,14 @@ and <a href="ug_html/ug_interface_mig.html">data migration tools</a>
 dynamically redistribute data to reflect, say, changing processor workloads.
 </li>
 <li>
-<a href="dev_html/dev_util_dd.html">Distributed data directories</a> and 
-<a href="dev_html/dev_util_comm.html">unstructured communication</a> 
+<a href="ug_html/ug_util_dd.html">Distributed data directories</a> and 
+<a href="ug_html/ug_util_comm.html">unstructured communication</a> 
 services let
 applications perform complication communication using only a few simple
 primitives.
 </li>
 <li>
-<a href="dev_html/dev_util_mem.html">Dynamic memory management tools</a>
+<a href="ug_html/ug_util_mem.html">Dynamic memory management tools</a>
 enhance common memory allocation functions to
 simplify debugging of dynamic memory usage.
 </li>
@@ -569,7 +569,7 @@ phases.
 </li>
 </ul>
 Zoltan provides an 
-<a href="dev_html/dev_util_comm.html">unstructured communication package</a>
+<a href="ug_html/ug_util_comm.html">unstructured communication package</a>
 to simplify
 communication.  The package builds a communication plan, including information
 about both message sends and receives for a given processor.  The plan can be
@@ -586,7 +586,7 @@ lists of data to be communicated.  It might know which data it needs, but not
 where the data are located.
 <p>
 To help locate off-processor data, Zoltan includes a 
-<a href="dev_html/dev_util_dd.html">distributed data
+<a href="ug_html/ug_util_dd.html">distributed data
 directory</a> tool that is scalable with respect to both memory usage and
 computation time.  Processors register their owned objects with the directory.
 Then, through a rendezvous algorithm, other processors can look up the
@@ -601,7 +601,7 @@ software.  Although many software development tools let users track memory
 bugs, these tools are often not available on state-of-the-art parallel
 computers.  
 <p>
-Zoltan's <a href="dev_html/dev_util_mem.html">memory management package</a> 
+Zoltan's <a href="ug_html/ug_util_mem.html">memory management package</a> 
 provides simple in-application debugging
 tools that are beneficial on state-of-the-art computing platforms.  The
 package includes wrappers around malloc and free that record the location of
