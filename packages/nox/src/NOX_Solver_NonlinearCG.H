@@ -34,7 +34,7 @@
 #define SOLVER_NONLINEARCG_H
 
 #include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_Linesearch_Manager.H" // class data element
+#include "NOX_LineSearch_Manager.H" // class data element
 #include "NOX_Parameter_List.H"	    // class data element 
 
 namespace NOX {
@@ -177,7 +177,7 @@ protected:
   double beta;			
 
   //! Linesearch. 
-  Linesearch::Manager linesearch; 
+  LineSearch::Manager linesearch; 
 
   //! Current step.
   double step;			
