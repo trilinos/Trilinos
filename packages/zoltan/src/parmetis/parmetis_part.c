@@ -121,7 +121,7 @@ int LB_ParMetis(
   status = NULL;
 
   /* Set parameters */
-  strcpy(alg, "PartKway");
+  strcpy(alg, "PARTKWAY");
   vwgt_dim = 0;
   ewgt_dim = 0;
   for (i=0; i<MAX_OPTIONS; i++)
@@ -173,11 +173,11 @@ int LB_ParMetis(
   get_geom_data = 0;
 
   /* Some algorithms use geometry data */
-  if (strcasecmp(alg, "PartGeomKway") == 0){
+  if (strcmp(alg, "PARTGEOMKWAY") == 0){
     get_graph_data = 1;
     get_geom_data = 1;
   }
-  else if (strcasecmp(alg, "PartGeom") == 0){
+  else if (strcmp(alg, "PARTGEOM") == 0){
     get_graph_data = 0;
     get_geom_data = 1;
   }
@@ -626,39 +626,40 @@ int LB_ParMetis(
 #ifdef LB_DEBUG
     printf("[%1d] Debug: Calling ParMETIS partitioner ...\n", lb->Proc);
 #endif
-  if (strcasecmp(alg, "PartKway") == 0){
+  if (strcmp(alg, "PARTKWAY") == 0){
     ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, &(lb->Num_Proc), options, &edgecut, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "PartGeomKway") == 0){
+  else if (strcmp(alg, "PARTGEOMKWAY") == 0){
     ParMETIS_PartGeomKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
       &numflag, &ndims, xyz, &(lb->Num_Proc), options, &edgecut, 
       part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "PartGeom") == 0){
+  else if (strcmp(alg, "PARTGEOM") == 0){
     ParMETIS_PartGeom (vtxdist, &ndims, xyz, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "RepartLDiffusion") == 0){
+  else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
     ParMETIS_RepartLDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "RepartGDiffusion") == 0){
+  else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
     ParMETIS_RepartGDiffusion (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "RepartRemap") == 0){
+  else if (strcmp(alg, "REPARTREMAP") == 0){
     ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "RepartMLRemap") == 0){
+  else if (strcmp(alg, "REPARTMLREMAP") == 0){
     ParMETIS_RepartMLRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &(lb->Communicator));
   }
-  else if (strcasecmp(alg, "RefineKway") == 0){
+  else if (strcmp(alg, "REFINEKWAY") == 0){
     ParMETIS_RefineKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
       &numflag, options, &edgecut, part, &(lb->Communicator));
   }
   else {
+    /* This should never happen! */
     printf("Error: Unknown ParMetis algorithm %s\n", alg);
     printf("[%1d] Error on line %d in %s\n", lb->Proc, __LINE__, __FILE__);
     FREE_MY_MEMORY;
@@ -751,10 +752,10 @@ char *val)                      /* value of variable */
         { "PARMETIS_OUTPUT_LEVEL", NULL, "INT" },
         { NULL, NULL, NULL } };
     char *valid_methods[] = {
-        "PartKway", "PartGeomKway", "PartGeom", 
-        "RepartLDiffusion", "RepartGDiffusion",
-        "RepartRemap", "RepartMLRemap",
-        "RefineKway",
+        "PARTKWAY", "PARTGEOMKWAY", "PARTGEOM", 
+        "REPARTLDIFFUSION", "REPARTGDIFFUSION",
+        "REPARTREMAP", "REPARTMLREMAP",
+        "REFINEKWAY",
          NULL };
 
     status = LB_Check_Param(name, val, parmetis_params, &result, &index);
@@ -765,7 +766,7 @@ char *val)                      /* value of variable */
       if (index == 0){
         status = 2;
         for (i=0; valid_methods[i] != NULL; i++){
-          if (strcasecmp(val, valid_methods[i]) == 0){
+          if (strcmp(val, valid_methods[i]) == 0){
             status = 0; 
             break;
           }
