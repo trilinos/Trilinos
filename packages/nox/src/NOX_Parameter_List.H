@@ -33,7 +33,7 @@
 #ifndef NOX_PARAMETER_LIST_H
 #define NOX_PARAMETER_LIST_H
 
-#include "NOX_Common.H"		 // class data element (string)
+#include "NOX_Common.H"		 // class data element (std::string)
 #include "NOX_Parameter_Entry.H" // class data element 
 
 namespace NOX {
@@ -43,7 +43,7 @@ namespace Parameter {
 class List {
 
   //! Parameter container typedef
-  typedef map<string, Entry> Map;
+  typedef map<std::string, Entry> Map;
 
   //! Parameter container const iterator typedef
   typedef Map::const_iterator ConstIterator;
@@ -71,14 +71,14 @@ public:
   //! Creates and empty sublist and returns a reference to the
   //! sublist. If the list already exists, returns reference to that
   //! sublist. If the name exists but is not a sublist, throws an error.
-  List& sublist(const string& name);
+  List& sublist(const std::string& name);
 
   //! Returns a const reference to the sublist
   /*! 
     If the list does not already exist, throws an error. If the name
     exists but is not a sublist, throws an error.
   */
-  const List& sublist(const string& name) const;
+  const List& sublist(const std::string& name) const;
 
   /** @name Setting Parameters 
    
@@ -88,12 +88,12 @@ public:
     internally. Sets the parameter as "unused".
   */
   //@{
-  void setParameter(const string& name, bool value);
-  void setParameter(const string& name, int value);
-  void setParameter(const string& name, double value);
-  void setParameter(const string& name, const char* value);
-  void setParameter(const string& name, const string& value);
-  void setParameter(const string& name, const Arbitrary& value);
+  void setParameter(const std::string& name, bool value);
+  void setParameter(const std::string& name, int value);
+  void setParameter(const std::string& name, double value);
+  void setParameter(const std::string& name, const char* value);
+  void setParameter(const std::string& name, const std::string& value);
+  void setParameter(const std::string& name, const Arbitrary& value);
   //@}
 
   /** @name Getting Parameters 
@@ -106,19 +106,19 @@ public:
     string map return string values. Sets the parameters as "used".
   */
   //@{
-  bool getParameter(const string& name, bool nominal);
-  int getParameter(const string& name, int nominal);
-  double getParameter(const string& name, double nominal);
-  const string& getParameter(const string& name, const char* nominal);
-  const string& getParameter(const string& name, const string& nominal);
-  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal);
+  bool getParameter(const std::string& name, bool nominal);
+  int getParameter(const std::string& name, int nominal);
+  double getParameter(const std::string& name, double nominal);
+  const std::string& getParameter(const std::string& name, const char* nominal);
+  const std::string& getParameter(const std::string& name, const std::string& nominal);
+  const Arbitrary& getParameter(const std::string& name, const Arbitrary& nominal);
 
-  bool getParameter(const string& name, bool nominal) const;
-  int getParameter(const string& name, int nominal) const;
-  double getParameter(const string& name, double nominal) const;
-  const string& getParameter(const string& name, const char* nominal) const;
-  const string& getParameter(const string& name, const string& nominal) const;
-  const Arbitrary& getParameter(const string& name, const Arbitrary& nominal) const;
+  bool getParameter(const std::string& name, bool nominal) const;
+  int getParameter(const std::string& name, int nominal) const;
+  double getParameter(const std::string& name, double nominal) const;
+  const std::string& getParameter(const std::string& name, const char* nominal) const;
+  const std::string& getParameter(const std::string& name, const std::string& nominal) const;
+  const Arbitrary& getParameter(const std::string& name, const Arbitrary& nominal) const;
 
   //@}
 
@@ -130,11 +130,11 @@ public:
   first.
   */
   //@{
-  const Arbitrary& getArbitraryParameter(const string& name) const;
+  const Arbitrary& getArbitraryParameter(const std::string& name) const;
   //@}
 
   //! Return true if a parameter with this name exists.
-  bool isParameter(const string& name) const;
+  bool isParameter(const std::string& name) const;
 
   /** @name Is Parameter of the Specified Type?
    
@@ -142,12 +142,12 @@ public:
     specified type.
   */
   //@{
-  bool isParameterBool(const string& name) const;
-  bool isParameterInt(const string& name) const;
-  bool isParameterDouble(const string& name) const;
-  bool isParameterString(const string& name) const;
-  bool isParameterSublist(const string& name) const;
-  bool isParameterArbitrary(const string& name) const;
+  bool isParameterBool(const std::string& name) const;
+  bool isParameterInt(const std::string& name) const;
+  bool isParameterDouble(const std::string& name) const;
+  bool isParameterString(const std::string& name) const;
+  bool isParameterSublist(const std::string& name) const;
+  bool isParameterArbitrary(const std::string& name) const;
   //@}
 
   /** @name Is Parameter Equal Value?
@@ -156,11 +156,11 @@ public:
     specified value.  (Not valid for Arbitrary or List parameters.)
   */
   //@{
-  bool isParameterEqual(const string& name, bool value) const;
-  bool isParameterEqual(const string& name, int value) const;
-  bool isParameterEqual(const string& name, double value) const;
-  bool isParameterEqual(const string& name, const char* value) const;
-  bool isParameterEqual(const string& name, const string& value) const;
+  bool isParameterEqual(const std::string& name, bool value) const;
+  bool isParameterEqual(const std::string& name, int value) const;
+  bool isParameterEqual(const std::string& name, double value) const;
+  bool isParameterEqual(const std::string& name, const char* value) const;
+  bool isParameterEqual(const std::string& name, const std::string& value) const;
   //@}
 
   //! Printing 
@@ -172,7 +172,7 @@ private:
   bool isRecursive(const List& l) const;
 
   //! Access to name (i.e., returns i->first)
-  const string& name(ConstIterator i) const;
+  const std::string& name(ConstIterator i) const;
 
   //! Access to Entry (i.e., returns i->second)
   Entry& entry(Iterator i);
@@ -190,7 +190,7 @@ private:
   //! argument. The whole group of strings is destroyed when this object
   //! is destroyed. This is really annoying, but I don't know a better 
   //! way.
-  mutable vector<string> tmpstrings;
+  mutable vector<std::string> tmpstrings;
 };
 }
 }
