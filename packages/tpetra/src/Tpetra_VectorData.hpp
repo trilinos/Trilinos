@@ -35,14 +35,21 @@ template<typename OrdinalType, typename ScalarType>
 class VectorData : public Object {
 	friend class Vector<OrdinalType, ScalarType>;
  public:
-	VectorData() 
+	VectorData(VectorSpace<OrdinalType, ScalarType> const& VectorSpace, OrdinalType length, ScalarType seed) 
 		: Object("Tpetra::VectorData")
-		{};
+		, BLAS_()
+		, VectorSpace_(VectorSpace)
+		, scalarArray_(length)
+		, seed_(seed)
+	{};
 
 	~VectorData() {};
 
  protected:
-
+	Teuchos::BLAS<OrdinalType, ScalarType> BLAS_;
+	VectorSpace<OrdinalType, ScalarType> VectorSpace_;
+	std::vector<ScalarType> scalarArray_;
+	ScalarType seed_;
 	
  private:
 	//! Copy constructor (declared but not defined, do not use)

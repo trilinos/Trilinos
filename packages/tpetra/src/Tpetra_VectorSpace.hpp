@@ -30,6 +30,8 @@
 #define _TPETRA_VECTORSPACE_HPP_
 
 #include <Teuchos_RefCountPtr.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Object.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_BlockElementSpace.hpp"
