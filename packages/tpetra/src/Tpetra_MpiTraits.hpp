@@ -48,7 +48,7 @@ namespace Tpetra {
       
       The built-in types currently supported intrinsicly are:
       int, unsigned int, long int, unsigned long int, float,
-      double, long double, and complex<T>.
+      double, and complex<T>.
   */
   
 
@@ -61,11 +61,11 @@ namespace Tpetra {
 	template<class T>
 	struct MpiTraits {
     //! Returns the MPI_Datatype that should be used for this type
-    static inline MPI_Datatype datatype() {return(UndefinedMpiTraits<T>::notDefined());};
+    static inline MPI_Datatype datatype()  {return(MPI_BYTE);};
+    static inline int count(int userCount) {return(sizeof(T) * userCount);};
     static inline MPI_Op sumOp()           {return(UndefinedMpiTraits<T>::notDefined());};
     static inline MPI_Op maxOp()           {return(UndefinedMpiTraits<T>::notDefined());};
     static inline MPI_Op minOp()           {return(UndefinedMpiTraits<T>::notDefined());};
-
 	};
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -77,6 +77,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<int> {
     static inline MPI_Datatype datatype() {return(MPI_INT);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -85,6 +86,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<unsigned int> {
     static inline MPI_Datatype datatype() {return(MPI_UNSIGNED);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -93,6 +95,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<long int> {
     static inline MPI_Datatype datatype() {return(MPI_LONG);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -101,6 +104,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<unsigned long int> {
     static inline MPI_Datatype datatype() {return(MPI_UNSIGNED_LONG);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -109,6 +113,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<float> {
     static inline MPI_Datatype datatype() {return(MPI_FLOAT);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -117,14 +122,7 @@ namespace Tpetra {
 	template<>
 	struct MpiTraits<double> {
     static inline MPI_Datatype datatype() {return(MPI_DOUBLE);};
-    static inline MPI_Op sumOp() {return(MPI_SUM);};
-    static inline MPI_Op maxOp() {return(MPI_MAX);};
-    static inline MPI_Op minOp() {return(MPI_MIN);};
-	};
-
-	template<>
-	struct MpiTraits<long double> {
-    static inline MPI_Datatype datatype() {return(MPI_LONG_DOUBLE);};
+    static inline int count(int userCount) {return(userCount);};
     static inline MPI_Op sumOp() {return(MPI_SUM);};
     static inline MPI_Op maxOp() {return(MPI_MAX);};
     static inline MPI_Op minOp() {return(MPI_MIN);};
@@ -165,32 +163,25 @@ namespace Tpetra {
   // data stored with it. i.e. sizeof(complex<T> == (sizeof(T) * 2)
 	template<>
 	struct MpiTraits< complex<double> > {
-
     static MPI_Datatype datatype() {
-      MPI_Datatype complex_type;
-      MPI_Type_contiguous(2, MPI_DOUBLE, &complex_type);
-      MPI_Type_commit(&complex_type);
-      return(complex_type);
-      };
-
+      return(MPI_DOUBLE);
+    };
+    static inline int count(int userCount) {return(userCount * 2);};
     static MPI_Op sumOp() {
       MPI_Op myOp;
       MPI_Op_create((MPI_User_function*)complexSum, true, &myOp);
       return(myOp);
     };
-
     static MPI_Op maxOp() {
       MPI_Op myOp;
       MPI_Op_create((MPI_User_function*)complexMax, true, &myOp);
       return(myOp);
     };
-
     static MPI_Op minOp() {
       MPI_Op myOp;
       MPI_Op_create((MPI_User_function*)complexMin, true, &myOp);
       return(myOp);
     };
-
 	};
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

@@ -55,10 +55,6 @@ class MpiData;
 		MpiComm(MPI_Comm Comm) 
       : Object("Tpetra::MpiComm") 
       , MpiData_()
-      , datatype_(MpiTraits<PacketType>::datatype())
-      , sumOp_(MpiTraits<PacketType>::sumOp())
-      , maxOp_(MpiTraits<PacketType>::maxOp())
-      , minOp_(MpiTraits<PacketType>::minOp())
     {
       MpiData_ = Teuchos::rcp(new MpiData(Comm));
     };
@@ -72,20 +68,12 @@ class MpiData;
     MpiComm(Teuchos::RefCountPtr<MpiData> const& data)
       : Object("Tpetra::MpiComm")
       , MpiData_(data)
-      , datatype_(MpiTraits<PacketType>::datatype())
-      , sumOp_(MpiTraits<PacketType>::sumOp())
-      , maxOp_(MpiTraits<PacketType>::maxOp())
-      , minOp_(MpiTraits<PacketType>::minOp())
     {};
 
     //! copy constructor
     MpiComm(MpiComm<PacketType, OrdinalType> const& comm) 
       : Object(comm.label())
       , MpiData_(comm.MpiData_)
-      , datatype_(comm.datatype())
-      , sumOp_(comm.sumOp())
-      , maxOp_(comm.maxOp())
-      , minOp_(comm.minOp())
     {};
 
 		~MpiComm() {};
@@ -113,7 +101,7 @@ class MpiData;
       On entry, contains the image from which all images will receive a copy of myVals.
     */
     void broadcast(PacketType* myVals, OrdinalType const count, int const root) const {
-      MPI_Bcast(myVals, count, datatype(), root, getMpiComm());
+      MPI_Bcast(myVals, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), root, getMpiComm());
     };
     //@}
     
@@ -129,7 +117,9 @@ class MpiData;
       On entry, contains the length of myVals.
     */
     void gatherAll(PacketType* myVals, PacketType* allVals, OrdinalType const count) const {
-      MPI_Allgather(myVals, count, datatype(), allVals, count, datatype(), getMpiComm());
+      int myCount = MpiTraits<PacketType>::count(count);
+      int allCount = myCount * data().size_;
+      MPI_Allgather(myVals, myCount, MpiTraits<PacketType>::datatype(), allVals, allCount, MpiTraits<PacketType>::datatype(), getMpiComm());
     };
     //@}
     
@@ -146,7 +136,7 @@ class MpiData;
       On entry, contains the length of partialSums.
     */
     void sumAll(PacketType* partialSums, PacketType* globalSums, OrdinalType const count) const {
-      MPI_Allreduce(partialSums, globalSums, count, datatype(), sumOp(), getMpiComm());
+      MPI_Allreduce(partialSums, globalSums, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
     };
     //@}
     
@@ -162,7 +152,7 @@ class MpiData;
       On entry, contains the length of partialMaxs.
     */
     void maxAll(PacketType* partialMaxs, PacketType* globalMaxs, OrdinalType const count) const {
-      MPI_Allreduce(partialMaxs, globalMaxs, count, datatype(), maxOp(), getMpiComm());
+      MPI_Allreduce(partialMaxs, globalMaxs, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::maxOp(), getMpiComm());
     };
     //! MpiComm Global Min function.
     /*! Takes list of input values from all images in the communicator, computes the min and returns the 
@@ -175,7 +165,7 @@ class MpiData;
       On entry, contains the length of partialMins.
     */
     void minAll(PacketType* partialMins, PacketType* globalMins, OrdinalType const count) const {
-      MPI_Allreduce(partialMins, globalMins, count, datatype(), minOp(), getMpiComm());
+      MPI_Allreduce(partialMins, globalMins, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::minOp(), getMpiComm());
     };
     //@}
     
@@ -191,7 +181,7 @@ class MpiData;
       On entry, contains the length of myVals.
     */
     void scanSum(PacketType* myVals, PacketType* scanSums, OrdinalType const count) const {
-      MPI_Scan(myVals, scanSums, count, datatype(), sumOp(), getMpiComm());
+      MPI_Scan(myVals, scanSums, MpiTraits<PacketType>::count(count), MpiTraits<PacketType>::datatype(), MpiTraits<PacketType>::sumOp(), getMpiComm());
     };
     //@}
     
@@ -215,19 +205,8 @@ class MpiData;
     MpiData& data() {return(*MpiData_);};
     MpiData const& data() const {return(*MpiData_);};
 
-    // returns datatype object
-    MPI_Datatype datatype() const {return(datatype_);};
-    // return MPI operations for sum, max, min
-    MPI_Op sumOp() const {return(sumOp_);};
-    MPI_Op maxOp() const {return(maxOp_);};
-    MPI_Op minOp() const {return(minOp_);};
-
     // private data members
     Teuchos::RefCountPtr<MpiData> MpiData_;
-    MPI_Datatype datatype_;
-    MPI_Op sumOp_;
-    MPI_Op maxOp_;
-    MPI_Op minOp_;
     
 	}; // MpiComm class
   

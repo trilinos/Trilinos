@@ -75,6 +75,7 @@ int main(int argc, char* argv[]) {
   int ierr = 0;
   
   // call the actual test routines
+  ierr += unitTests<int, int>(verbose, debug, rank, size);
 	ierr += unitTests<double, int>(verbose, debug, rank, size);
   ierr += unitTests<complex<double>, int>(verbose, debug, rank, size);
   
@@ -132,7 +133,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
   comm.broadcast(&myVals.front(), length, root);
   if(debug) {
     cout << "[Image " << rank << "] Values after broadcast:    " << myVals << endl;
-    cout << "[Image " << rank << "] Expected values:           " << rootVals << endl;
+    if(verbose) cout << "[  All  ] Expected values:           " << rootVals << endl;
     comm.barrier();
     if(verbose) cout << "Broadcast test ";
   }
@@ -157,7 +158,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
     comm.barrier();
     cout << "[Image " << rank << "] myVals:   " << myVals << endl;
     cout << "[Image " << rank << "] allVals:  " << allVals << endl;
-    cout << "[Image " << rank << "] Expected: " << expectedAllVals << endl;
+    if(verbose) cout << "[  All  ] Expected: " << expectedAllVals << endl;
     comm.barrier();
     if(verbose) cout << "GatherAll test ";
   }
@@ -184,7 +185,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
     comm.barrier();
     cout << "[Image " << rank << "] localSum:  " << localSum << endl;
     cout << "[Image " << rank << "] globalSum: " << globalSum << endl;
-    cout << "[Image " << rank << "] Expected:  " << expectedGlobalSum << endl;
+    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalSum << endl;
     comm.barrier();
     if(verbose) cout << "SumAll test ";
   }
@@ -208,7 +209,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
     comm.barrier();
     cout << "[Image " << rank << "] localMax:  " << localMax << endl;
     cout << "[Image " << rank << "] globalMax: " << globalMax << endl;
-    cout << "[Image " << rank << "] Expected:  " << expectedGlobalMax << endl;
+    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalMax << endl;
     comm.barrier();
     if(verbose) cout << "MaxAll test ";
   }
@@ -233,7 +234,7 @@ int unitTests(bool verbose, bool debug, int rank, int size) {
     comm.barrier();
     cout << "[Image " << rank << "] localMin:  " << localMin << endl;
     cout << "[Image " << rank << "] globalMin: " << globalMin << endl;
-    cout << "[Image " << rank << "] Expected:  " << expectedGlobalMin << endl;
+    if(verbose) cout << "[  All  ] Expected:  " << expectedGlobalMin << endl;
     comm.barrier();
     if(verbose) cout << "MinAll test ";
   }
