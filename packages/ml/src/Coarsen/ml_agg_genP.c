@@ -694,6 +694,11 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       widget.omega  = ag->smoothP_damping_factor / max_eigen;
       ml->spectral_radius[level] = max_eigen;
     }
+
+     if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel()) {
+       printf("Gen_Prolongator : Max eigenvalue = %e\n", max_eigen);
+     }
+     
    }
    else  /* damping fact = 0 ==> no need to compute spectral radius */
    {
@@ -701,9 +706,6 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
       widget.omega  = 0.0;
    }
    
-   if ( ml->comm->ML_mypid == 0 && 7 < ML_Get_PrintLevel()) {
-     printf("Gen_Prolongator : Max eigenvalue = %e\n", max_eigen);
-   }
    
 #endif
 
@@ -2248,8 +2250,6 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
    t0 =  GetClock();
 #endif
 
-   puts("ML_MultiLevel_Gen_Prolongator");
-   
    widget.near_bdry = NULL;
    Amat     = &(ml->Amat[level]);
    Amat->num_PDEs = ag->num_PDE_eqns;

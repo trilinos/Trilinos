@@ -46,14 +46,16 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
 					 int offsets[],
 					 int reorder_flag,
 					 int current_level, int *total_nz, int * );
+/*
 static int find_max(int length, int vector[] );
 static int find_index( int key, int list[], int N );
-static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
-					 int Nparts, idxtype part[], int level,
-					 ML_Comm *comm );
 static int ML_Aggregates_CheckAggregates( int Naggregates, int N_rows,
 					  int graph_decomposition[],
 					  int mypid);
+*/
+static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
+					 int Nparts, idxtype part[], int level,
+					 ML_Comm *comm );
 
 #define OPTIMAL_VALUE (27*27)
 
