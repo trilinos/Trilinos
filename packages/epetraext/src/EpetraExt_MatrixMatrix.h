@@ -67,6 +67,24 @@ class MatrixMatrix {
 			bool transposeB,
 			Epetra_CrsMatrix& C);
 
+    /** Given Epetra_CrsMatrix objects A and B, form the sum B = a*A + b*B
+
+    @param A Input, must already have had 'FillComplete()' called.
+    @param B Result. On entry to this method, it doesn't matter whether
+             FillComplete() has already been called on B or not. If it has,
+	     then B's graph must already contain all nonzero locations that
+	     will be produced when forming the sum.
+
+    @return error-code, 0 if successful. non-zero returns may result if A is
+             not already Filled, or if errors occur in putting values
+             into B, etc.
+     */
+    static int Add(const Epetra_CrsMatrix& A,
+                   bool transposeA,
+                   double scalarA,
+                   Epetra_CrsMatrix& B,
+                   double scalarB);
+
 };//class MatrixMatrix
 
 

@@ -51,6 +51,8 @@ int check_transpose_matrixmatrix_product(const Epetra_Comm& Comm, bool verbose);
 
 int check_sparsedot();
 
+int check_matrixmatrix_sum(const Epetra_Comm& Comm, bool verbose);
+
 int main(int argc, char *argv[]) {
 
   int ierr=0, returnierr=0;
@@ -110,6 +112,18 @@ int main(int argc, char *argv[]) {
   else {
     if (verbose && Comm.MyPID()==0) {
       cout << " transpose matrix-matrix product test passed"<<endl;
+    }
+  }
+
+  ierr = check_matrixmatrix_sum(Comm, verbose);
+  if (ierr != 0) {
+    if (verbose && Comm.MyPID()==0) {
+      cout << " matrix-matrix sum returned code "<<ierr<<endl;
+    }
+  }
+  else {
+    if (verbose && Comm.MyPID()==0) {
+      cout << " matrix-matrix sum test passed"<<endl;
     }
   }
 
@@ -293,3 +307,64 @@ int check_sparsedot()
 
   return(0);
 }
+
+int check_matrixmatrix_sum(const Epetra_Comm& Comm, bool verbose)
+{
+  int numProcs = Comm.NumProc();
+  int myPID = Comm.MyPID();
+
+  int numLocalRows = 4;
+  int numGlobalRows = numLocalRows*numProcs;
+  int indexBase = 0;
+
+  Epetra_Map map(-1, numLocalRows, indexBase, Comm);
+
+  Epetra_CrsMatrix A(Copy, map, 1);
+  Epetra_CrsMatrix B(Copy, map, 1);
+  Epetra_CrsMatrix C(Copy, map, 1);
+
+  int firstGlobalRow = numLocalRows*myPID;
+  int i;
+
+  //For this simple test, A and B are banded matrices filled with 1's, but they
+  //are not symmetric. The bands are shifted to one side (up) of the diagonal.
+  //The bands are of width 3 and include the diagonal and two positions above the
+  //diagonal.
+
+  for(i=0; i<numLocalRows; ++i) {
+    int row = firstGlobalRow+i;
+
+    int col = row;
+    double value = 1.0;
+    A.InsertGlobalValues(row, 1, &value, &col);
+    B.InsertGlobalValues(row, 1, &value, &col);
+
+    if (row < numGlobalRows-1) {
+      int colp1 = col + 1;
+      A.InsertGlobalValues(row, 1, &value, &colp1);
+      B.InsertGlobalValues(row, 1, &value, &colp1);
+    }
+
+    if (row < numGlobalRows-2) {
+      int colp2 = col + 2;
+      A.InsertGlobalValues(row, 1, &value, &colp2);
+      B.InsertGlobalValues(row, 1, &value, &colp2);
+    }
+  }
+
+  EPETRA_CHK_ERR( A.FillComplete() );
+  EPETRA_CHK_ERR( B.FillComplete() );
+
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Add(A, true, 1.0, C, 0.0) );
+  EPETRA_CHK_ERR( EpetraExt::MatrixMatrix::Add(B, false, 1.0, C, 1.0) );
+
+  C.FillComplete();
+
+  if (verbose) {
+//     cout << "********** A **********"<<endl<<A<<endl;
+    cout << "********** C = (B + (A^T + C)) **********"<<endl<<B<<endl;
+  }
+
+  return(0);
+}
+

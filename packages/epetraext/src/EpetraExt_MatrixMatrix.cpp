@@ -28,6 +28,8 @@
 
 #include <EpetraExt_MatrixMatrix.h>
 
+#include <EpetraExt_Transpose_RowMatrix.h>
+
 #include <Epetra_Export.h>
 #include <Epetra_Import.h>
 #include <Epetra_Util.h>
@@ -1333,6 +1335,60 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
   delete mapunion1;
   delete mapunion2;
   delete import_rows;
+
+  return(0);
+}
+
+int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
+                      bool transposeA,
+                      double scalarA,
+                      Epetra_CrsMatrix& B,
+                      double scalarB )
+{
+  //
+  //This method forms the matrix-matrix sum B = scalarA * op(A) + scalarB * B, where
+
+  //A should already be Filled. It doesn't matter whether B is
+  //already Filled, but if it is, then its graph must already contain
+  //all nonzero locations that will be referenced in forming the
+  //product.
+
+  if (!A.Filled() ) EPETRA_CHK_ERR(-1);
+
+  //explicit tranpose A formed as necessary
+  Epetra_CrsMatrix * Aprime = 0;
+  EpetraExt::RowMatrix_Transpose Atrans = 0;
+  if( transposeA )
+  {
+    Atrans = new EpetraExt::RowMatrix_Transpose();
+    Aprime = &dynamic_cast<Epetra_CrsMatrix&>((Atrans(const_cast<Epetra_CrsMatrix&>(A))));
+  }
+  else
+    Aprime = const_cast<Epetra_CrsMatrix*>(&A);
+
+  //Initialize if B already filled
+  if( B.Filled() ) B.Scale( scalarB );
+
+  //Loop over B's rows and sum into
+  int MaxNumEntries = max( A.MaxNumEntries(), B.MaxNumEntries() );
+  int NumEntries;
+  int * Indices = new int[MaxNumEntries];
+  double * Values = new double[MaxNumEntries];
+
+  int NumMyRows = B.NumMyRows();
+  int Row;
+
+  if( scalarA )
+  {
+    for( int i = 0; i < NumMyRows; ++i )
+    {
+      Row = B.GRID(i);
+      A.ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices );
+      if( scalarA != 1.0 )
+        for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalarA;
+      B.SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+    }
+  }
 
   return(0);
 }
