@@ -30,16 +30,13 @@
 #define TPETRA_MPIDATA_HPP
 
 #include <mpi.h>
+#include "Tpetra_Object.hpp"
 
 namespace Tpetra {
 	
   //! MpiData: Inner data class for MpiPlatform and MpiComm.
 
   class MpiData : public Object {
-    template<typename OrdinalType, typename ScalarType>
-    friend class MpiPlatform;
-    template<typename PacketType, typename OrdinalType>
-    friend class MpiComm;
   public:
     // default constructor
     MpiData(MPI_Comm Comm)
@@ -53,13 +50,16 @@ namespace Tpetra {
     
     // destructor
     ~MpiData() {};
+
+    int getMyImageID() const {return(rank_);};
+    int getNumImages() const {return(size_);};
+    MPI_Comm getMpiComm() const {return(MpiComm_);};
     
-  protected:
+  private:
     MPI_Comm MpiComm_;
     int rank_;
     int size_;
-    
-  private:
+
     //! Copy constructor (declared but not defined, do not use)
     MpiData(MpiData const& rhs);
     //! Assignment operator (declared but not defined, do not use)
