@@ -30,6 +30,7 @@
 #ifdef ML_AGGR_PARTEST
 extern int **global_mapping = NULL, global_nrows, global_ncoarse;
 #endif
+int ML_dont_call_implicit_transpose= 0;
 
 /* ************************************************************************* */
 /* local defines                                                             */
@@ -495,6 +496,16 @@ int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  )
    ag->coarsen_scheme = ML_AGGR_ZOLTAN;
    return 0;
 }
+
+/* ------------------------------------------------------------------------- */
+
+int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  )
+{
+   if ( ag->ML_id != ML_ID_AGGRE ) 
+      pr_error("ML_Aggregate_Get_CoarsenScheme: wrong object. \n");
+   return ag->coarsen_scheme;
+}
+
 /* ------------------------------------------------------------------------- */
 
 int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int MaxLevels,
@@ -2022,7 +2033,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   permuted_Amat = ML_Operator_Create(comm);
 
   ML_rap(perm_mat,mat,*permt,permuted_Amat, ML_CSR_MATRIX);
-  ML_Operator_ImplicitTranspose(perm_mat,*permt, ML_FALSE);
+  if (!ML_dont_call_implicit_transpose)
+    ML_Operator_ImplicitTranspose(perm_mat,*permt, ML_FALSE);
 
   *new_mat = permuted_Amat;
   *permutation = perm_mat;
@@ -2091,11 +2103,26 @@ int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions)
 }
 
 
+/*******************************************************************************
+ Function ML_repartition_Acoarse
 
-int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
-			   int R_is_Ptranspose)
+    Summary: Redistributes a matrix across a (sub)set of processors.
+
+    Input:
+      ReturnPerm  int     if ML_TRUE (1), destroy permutation matrices
+                          if ML_FALSE (0), return permutation matrices
+                            (it is caller's responsibility to destroy them)
+
+    Output:
+      NULL                , if ReturnPerm == ML_FALSE
+      array of *ML_Operator & length 2, if ReturnPerm == ML_TRUE
+*******************************************************************************/
+
+ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
+               ML_Aggregate *ag, int R_is_Ptranspose, int ReturnPerm)
 {
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
+  ML_Operator **permvec;
   int status, offset1, offset2, j, flag = 0;
   double *new_null;
   int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
@@ -2147,9 +2174,18 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
     if (ag->N_dimensions > 2) 
       zcoord = &((ag->nodal_coord)[j][2*Pmat->invec_leng/ag->nullspace_dim]);
   }
+
+#ifdef ML_LOWMEMORY
+  /* Turn off implicit transpose because the getrow is needed to apply
+     the permutation matrices. */
+  if (ReturnPerm == ML_TRUE) ML_dont_call_implicit_transpose = 1;
+#endif
    status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, 
 				  Amatrix->num_PDEs, Nprocs_ToUse, 
 				  xcoord, ycoord, zcoord);
+#ifdef ML_LOWMEMORY
+   ML_dont_call_implicit_transpose = 0;
+#endif
 
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
@@ -2170,112 +2206,6 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
        ML_free(new_null);
 
      }
-     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
-
-     /* do a mat-mat mult to get the appropriate P for the */
-     /* unpartitioned matrix.                              */
-
-     newP = ML_Operator_Create(Pmat->comm);
-     ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
-     
-     if (R_is_Ptranspose == ML_TRUE) {
-       newR = ML_Operator_Create(Rmat->comm);
-       ML_Operator_Transpose(Pmat, newR);
-       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
-     }
-     else if (Rmat->getrow->post_comm == NULL) {
-       newR = ML_Operator_Create(Rmat->comm);
-       ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
-       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
-     }
-     else {
-       printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");
-       printf("   rightmost matrix in multiply is created with an implicit\n");
-       printf("   transpose (e.g. ML_Gen_Restrictor_TransP). If R is P^T,\n");
-       printf("   then invoke as ML_repartition_Acoarse(..., ML_TRUE). If\n");
-       printf("   R is not P^T but an implicit transpose is used, then try\n");
-       printf("   to remove implicit transpose with: \n\n");
-       printf("   ML_Operator_Transpose_byrow( &(ml->Pmat[next]),&(ml->Rmat[level]));\n");
-       printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
-       exit(1);
-     }
-     ML_Operator_Destroy(&perm);
-     ML_Operator_Destroy(&permt);
-     ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
-   }
-
-  return 0;
-}
-
-/* Repartition Edge matrix */
-int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
-                                ML_Operator *Toldt,
-                                int fine, int coarse,
-                                int R_is_Ptranspose)
-{
-  ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
-  int status, offset1, offset2, j, flag = 0;
-  double *new_null;
-  int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
-
-  /* data structures for handling T */
-  ML_1Level *currlevel;
-  ML_Sm_Hiptmair_Data *dataptr;
-  ML_Operator *Tnew;
-
-#ifndef ML_repartition
-  return 0;
-#endif
-
-  Amatrix = &(ml->Amat[coarse]);
-  Rmat = &(ml->Rmat[fine]);
-  Pmat = &(ml->Pmat[coarse]);
-
-  if ((ml->MinPerProc_repartition == -1) && 
-      (ml->LargestMinMaxRatio_repartition == -1.)) 
-    return 0;
-
-  ml_gmax = ML_gmax_int(Amatrix->invec_leng,ml->comm);
-  ml_gmin = Amatrix->invec_leng;
-  if (ml_gmin == 0) ml_gmin = ml_gmax; /* don't count */
-                                      /* empty processors */
-  ml_gmin = ML_gmin_int(ml_gmin,ml->comm);
- 
-  if ( (ml->MinPerProc_repartition != -1) &&
-       (ml_gmin < ml->MinPerProc_repartition))
-    flag = 1;
-  else if ((ml->LargestMinMaxRatio_repartition != -1.) &&
-         ((((double) ml_gmax)/((double) ml_gmin)) > 
-          ml->LargestMinMaxRatio_repartition))
-    flag = 1;
-
-  Nprocs_ToUse = ml->comm->ML_nprocs;
-  if ( (flag == 1) && (ml->MinPerProc_repartition != -1)) {
-    /* compute how many processors to use in the repartitioning */
-    ml_gsum = ML_gsum_int(Amatrix->invec_leng,ml->comm);
-    Nprocs_ToUse = ml_gsum/ml->MinPerProc_repartition;
-    if (Nprocs_ToUse > ml->comm->ML_nprocs)
-      Nprocs_ToUse = ml->comm->ML_nprocs;
-    if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
-  }
-
-  if (flag == 0) return 0;
-
-  currlevel = (ML_1Level *) Rmat->to;
-
-  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse, NULL, NULL, NULL);
-   if (status == 0) {
-
-     /* permute T */
-     Tnew = ML_Operator_Create(Told->comm);
-     ML_2matmult(perm, Told, Tnew, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Told);
-     /* permute T trans */
-     Tnew = ML_Operator_Create(Toldt->comm);
-     ML_2matmult(Toldt, permt, Tnew, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy(&Tnew, Toldt);
-
 
      ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 
@@ -2307,13 +2237,23 @@ int ML_repartition_Acoarse_edge(ML *ml, ML_Operator *Told,
        printf("   ML_Operator_Set_1Levels(&(ml->Rmat[level]),&(ml->SingleLevel[level]), &(ml->SingleLevel[next]));\n");
        exit(1);
      }
-
-     ML_Operator_Destroy(&perm);
-     ML_Operator_Destroy(&permt);
+     if (ReturnPerm == ML_FALSE) {
+       ML_Operator_Destroy(&perm);
+       ML_Operator_Destroy(&permt);
+     }
+     else {
+       permvec = (ML_Operator **) ML_allocate(2 * sizeof(ML_Operator*));
+       ML_allocate_check(permvec);
+       permvec[0] = perm;
+       permvec[1] = permt;
+     }
      ML_Operator_ChangeToSinglePrecision(&(ml->Pmat[coarse]));
    }
 
-  return 0;
+  if (ReturnPerm == ML_FALSE)
+    return NULL;
+  else
+    return permvec;
 }
 
 /* ************************************************************************* */
