@@ -90,7 +90,8 @@ extern int VBR_cnst_blk_getrows(void *data, int N_requested_rows,
 extern int VECTOR_getrows(void *data,int N_requested_rows,int requested_rows[],
                           int allocated_space, int columns[], double values[],
                           int row_lengths[]);
-
+extern int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows,
+                          int *Ncolumns);  
 
 extern int  ML_Matrix_DCSR_Create( ML_Matrix_DCSR ** );
 extern void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR ** );
