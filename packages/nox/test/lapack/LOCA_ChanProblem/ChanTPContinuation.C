@@ -52,6 +52,8 @@ int main(int argc, char *argv[])
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
 
+    cout << "Starting lapack/LOCA_ChanProblem/ChanTPContinuation_exe" << endl;
+
     // Create output file to save solutions
     ofstream outFile("ChanTPContinuation.dat");
     outFile.setf(ios::scientific, ios::floatfield);
@@ -247,12 +249,10 @@ int main(int argc, char *argv[])
     ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
 		      "norm of final solution", verbose);
 
-    if (verbose) {
-      if (ierr == 0)
-	cout << "All tests passed!" << endl;
-      else
-	cout << ierr << " test(s) failed!" << endl;
-    }
+    if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
   }
 
   catch (char *s) {

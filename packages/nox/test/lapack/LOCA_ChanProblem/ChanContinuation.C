@@ -49,9 +49,11 @@ int main(int argc, char *argv[])
 
     bool verbose = false;
     // Check for verbose output
-    if (argc>1) 
+    if (argc>1)
       if (argv[1][0]=='-' && argv[1][1]=='v') 
 	verbose = true;
+
+    cout << "Starting lapack/LOCA_ChanProblem/ChanContinuation_exe" << endl;
 
     // Create output file to save solutions
     ofstream outFile("ChanContinuation.dat");
@@ -218,12 +220,10 @@ int main(int argc, char *argv[])
     ierr += testValue(norm_x, norm_x_expected, 1.0e-7,
 		      "norm of final solution", verbose);
 
-    if (verbose) {
-      if (ierr == 0)
-	cout << "All tests passed!" << endl;
-      else
-	cout << ierr << " test(s) failed!" << endl;
-    }
+    if (ierr == 0)
+      cout << "All tests passed!" << endl;
+    else
+      cout << ierr << " test(s) failed!" << endl;
   }
 
   catch (string& s) {

@@ -92,8 +92,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	uninstall-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem MultiPhysics \
-	LOCA_NewTest LOCA_Group
+DIST_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem MultiPhysics
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADDON_epetra_TESTS = @ADDON_epetra_TESTS@
@@ -313,7 +312,7 @@ target_vendor = @target_vendor@
 @BUILD_EPETRA_TESTS_FALSE@NOX_SUBDIRS = 
 @BUILD_EPETRA_TESTS_TRUE@NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem MultiPhysics
 @BUILD_LOCA_EPETRA_TESTS_FALSE@LOCA_SUBDIRS = 
-@BUILD_LOCA_EPETRA_TESTS_TRUE@LOCA_SUBDIRS = LOCA_NewTest LOCA_Group
+@BUILD_LOCA_EPETRA_TESTS_TRUE@LOCA_SUBDIRS = 
 SUBDIRS = $(NOX_SUBDIRS) $(LOCA_SUBDIRS)
 all: all-recursive
 

@@ -107,7 +107,7 @@ if ($run_epetra == yes) then
     set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem)
 endif
 if ($run_loca_epetra == yes) then
-    set tests_epetra = ($tests_epetra LOCA_NewTest LOCA_Group)
+    set tests_epetra = ($tests_epetra)
 endif
  
 ## testscript returns an error since petsc and lapack are empty so I commented
@@ -146,7 +146,7 @@ foreach h (epetra)
 			endif
 		    else
 		    # This is not an automated test.
-			mpirun -np 5 $g -v >>& ../../$file
+			mpirun -np 5 $g >>& ../../$file
 		    endif
 	    end
 	    cd ..
