@@ -550,6 +550,9 @@ int ierr = ZOLTAN_OK;
   } else if (nProc_y == -1) {
     comm->nProc_x = MIN(nProc_x, nProc);
     comm->nProc_y = nProc / comm->nProc_x;
+  } else {
+    comm->nProc_x = nProc_x;
+    comm->nProc_y = nProc_y;    
   }
     
   /* Error check */
