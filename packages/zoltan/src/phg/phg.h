@@ -19,36 +19,15 @@
 #include "phg_util.h"
 #include "params_const.h"
 #include "zoltan_comm.h"
-#include "hg.h"
+#include "hg.h"  /* Needed only for definition of ZOLTAN_HG_MATCHING_FN */
 #include "hg_hypergraph.h"
+
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
 #endif
 
-
-/********************************************************************
- * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 
- * corresponding to local objects (vertices) and a HGraph as used 
- * by the partitioning algorithms. 
- ********************************************************************/
-
-struct Zoltan_PHGraph {
-  int nObj;                 /* Number of on-processor objects. */
-  ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
-  ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
-  int *Input_Parts;         /* Initial partition #s for on-processor objects */
-  ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
-                               within row communicators. */
-  int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
-                               received from other processors in row.
-                               Used to fill buffer for Comm_Do_Reverse
-                               with VtxPlan in building return lists. */
-  int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
-  HGraph PHG;               /* Hypergraph for initial objects.       */
-};
-typedef struct Zoltan_PHGraph ZPHG;
 
 /************************************************/
 /* Mappings supporting the 2D data distribution */
@@ -136,6 +115,8 @@ struct PHGPartParamsStruct {
                          * be checked for errors. */
   int output_level;     /* Flag indicating amount of output from HG algorithms.
                          * See levels PHG_DEBUG_* below.  */
+  int final_output;     /* Prints final timing and quality info at end of PHG
+                           (regardless of value of output_level) */
 
     /* NOTE THAT this comm refers to "GLOBAL" comm structure
        (hence the name change: just to make sure it has not been used
@@ -230,11 +211,13 @@ extern int Zoltan_PHG_Set_Part_Options(ZZ*, PHGPartParams*);
 extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition, 
                                 PHGPartParams*, int);
 extern double Zoltan_PHG_Compute_NetCut(PHGComm*, HGraph*, Partition, int);
-extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int);    
+extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int, 
+                                        int*);    
+extern int Zoltan_PHG_Removed_Cuts(ZZ *, ZHG *, double *, double *);
+
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, int, Partition);
 
-extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZPHG**, Partition*, PHGPartParams*);
-extern void Zoltan_PHG_HGraph_Print(ZZ*, ZPHG*, HGraph*, Partition, FILE*);
+extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
 extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 

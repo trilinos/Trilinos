@@ -50,7 +50,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
-static void pick_best(ZZ*, PHGPartParams*, PHGComm*, HGraph*, int, int, int*, float*);
+static int pick_best(ZZ*, PHGPartParams*, PHGComm*, HGraph*, int, int, int*, float*);
 
 /****************************************************************************/
 
@@ -272,7 +272,12 @@ static int timer_cpart=-1, timer_gather=-1;
       /* For now, we ignore balance as all our methods produce reasonable balances. */
       
       bestvals[new_cand] = Zoltan_PHG_Compute_ConCut(shg->comm, 
-             shg, new_part, numPart);
+             shg, new_part, numPart, &ierr);
+      if (ierr < 0) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from Zoltan_PHG_Compute_ConCut.");
+        goto End;
+      }
       if (i<NUM_PART_KEEP)
         new_cand = i+1;
       else {
@@ -301,9 +306,14 @@ static int timer_cpart=-1, timer_gather=-1;
     /* Evaluate and select the best. */
     /* For now, only pick the best one, in the future we pick the k best. */
 
-    pick_best(zz, hgp, phg->comm, shg, numPart, 
+    ierr = pick_best(zz, hgp, phg->comm, shg, numPart, 
               MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart,
               bestvals);
+    if (ierr < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                        "Error returned from pick_best.");
+      goto End;
+    }
   
     if (phg->comm->nProc > 1) {
       /* Map gathered partition back to 2D distribution */
@@ -1043,7 +1053,7 @@ static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, float *part_sizes,
 }
 
 /*****************************************************************************/
-static void pick_best(
+static int pick_best(
   ZZ *zz, 
   PHGPartParams *hgp,  
   PHGComm *phg_comm,
@@ -1063,8 +1073,10 @@ struct {
   int rank;
 } local[2], global[2];
 
+static char *yo = "pick_best";
 int i, mybest;
 float cut, bal;
+int err = ZOLTAN_OK;
 
   /* find best local partition */
   /* for now, only look at cuts not balance. */
@@ -1075,18 +1087,29 @@ float cut, bal;
   if (cutvals)
     local[1].val = cutvals[0];
   else
-    local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart);
+    local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart,
+                                             &err);
+    if (err < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from Zoltan_PHG_Compute_ConCut");
+      goto End;
+    }
   local[0].rank = local[1].rank = phg_comm->myProc;
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   for (i=1; i<numLocalCandidates; i++){
-    /* bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); */
+    /*bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx));*/
 
     if (cutvals)
       cut = cutvals[i];
     else
       cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, 
-             spart+i*(shg->nVtx), numPart);
+             spart+i*(shg->nVtx), numPart, &err);
+    if (err < 0) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                         "Error returned from Zoltan_PHG_Compute_ConCut");
+      goto End;
+    }
 
     if (cut < local[1].val){
       mybest = i;
@@ -1111,6 +1134,8 @@ float cut, bal;
   MPI_Bcast(spart, shg->nVtx, MPI_INT, global[1].rank, 
             phg_comm->Communicator);
 
+End:
+  return err;
 }
 
 #ifdef __cplusplus

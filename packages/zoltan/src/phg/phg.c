@@ -34,7 +34,8 @@ extern "C" {
 static PARAM_VARS PHG_params[] = {
   /* Add parameters here. */
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
-  {"PCHECK_GRAPH",                    NULL,  "INT",    0},
+  {"PHG_FINAL_OUTPUT",                NULL,  "INT",    0},
+  {"CHECK_GRAPH",                     NULL,  "INT",    0},
   {"PHG_NPROC_X",                     NULL,  "INT",    0},
   {"PHG_NPROC_Y",                     NULL,  "INT",    0},
   {"PHG_PROC_SPLIT",                  NULL,  "INT",    0},  
@@ -57,9 +58,10 @@ static PARAM_VARS PHG_params[] = {
 
 /* prototypes for static functions: */
 
-static int Zoltan_PHG_Initialize_Params (ZZ*, float *, PHGPartParams*);
-static int Zoltan_PHG_Return_Lists (ZZ*, ZPHG*, Partition, int*,
- ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*, int**, int**);
+static int Zoltan_PHG_Initialize_Params(ZZ*, float *, PHGPartParams*);
+static int Zoltan_PHG_Output_Parts(ZZ*, ZHG*, Partition);
+static int Zoltan_PHG_Return_Lists(ZZ*, ZHG*, int*, ZOLTAN_ID_PTR*, 
+  ZOLTAN_ID_PTR*, int**, int**);
 
  
  
@@ -85,13 +87,13 @@ int **exp_procs,           /* list of processors to export to */
 int **exp_to_part )         /* list of partitions to which exported objs
                                 are assigned. */
 {
-  ZPHG *zoltan_hg = NULL;
+  char *yo = "Zoltan_PHG";
+  ZHG *zoltan_hg = NULL;
   int nVtx;                        /* Temporary variable for base graph. */
   PHGPartParams hgp;               /* Hypergraph parameters. */
   Partition parts = NULL;          /* Partition assignments in 
                                       2D distribution. */
   int err = ZOLTAN_OK;
-  char *yo = "Zoltan_PHG";
   static int timer_all = -1;       /* Note:  this timer includes other
                                       timers and their synchronization time,
                                       so it will be a little high. */
@@ -136,19 +138,19 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_build, zz->Communicator);
    
   zz->LB.Data_Structure = zoltan_hg;
-  nVtx = zoltan_hg->PHG.nVtx;
-  zoltan_hg->PHG.redl = hgp.redl;     /* redl needs to be dynamic */
+  nVtx = zoltan_hg->HG.nVtx;
+  zoltan_hg->HG.redl = hgp.redl;     /* redl needs to be dynamic */
   /* RTHRTH -- redl may need to be scaled by number of procs */
   /* EBEB -- at least make sure redl > #procs */
  
 /*
-  uprintf(zoltan_hg->PHG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
+  uprintf(zoltan_hg->HG.comm, "Zoltan_PHG kway=%d #parts=%d\n", hgp.kway, zz->LB.Num_Global_Parts);
 */
 
   /* UVC: if it is bisection anyways; no need to create vmap etc; 
      rdivide is going to call Zoltan_PHG_Partition anyways... */
   if (hgp.kway || zz->LB.Num_Global_Parts == 2) {/* call main V cycle routine */
-    err = Zoltan_PHG_Partition(zz, &zoltan_hg->PHG, zz->LB.Num_Global_Parts,
+    err = Zoltan_PHG_Partition(zz, &zoltan_hg->HG, zz->LB.Num_Global_Parts,
      hgp.part_sizes, parts, &hgp, 0);
     if (err != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
@@ -157,7 +159,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   }
   else {
     int i, p=zz->LB.Num_Global_Parts;
-    HGraph *hg = &zoltan_hg->PHG;
+    HGraph *hg = &zoltan_hg->HG;
 
     /* vmap associates original vertices to sub hypergraphs */
     if (!(hg->vmap = (int*) ZOLTAN_MALLOC(hg->nVtx*sizeof (int))))  {
@@ -182,13 +184,13 @@ int **exp_to_part )         /* list of partitions to which exported objs
        "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
        hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, p,
        Zoltan_PHG_Compute_Balance(zz, hg, p, parts),
-       Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p));
+       Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
         
     if (err != ZOLTAN_OK)  {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error partitioning hypergraph.");
       goto End;
     }
-    ZOLTAN_FREE (&zoltan_hg->PHG.vmap);
+    ZOLTAN_FREE (&zoltan_hg->HG.vmap);
   }  
   
         
@@ -198,8 +200,13 @@ int **exp_to_part )         /* list of partitions to which exported objs
     ZOLTAN_TIMER_START(zz->ZTime, timer_retlist, zz->Communicator);
   }
     
+  /* Build Zoltan's Output_Parts, mapped from 2D distribution 
+     to input distribution. */
+
+  Zoltan_PHG_Output_Parts(zz, zoltan_hg, parts);
+
   /* Build Zoltan's return arguments. */
-  Zoltan_PHG_Return_Lists(zz, zoltan_hg, parts, num_exp, exp_gids,
+  Zoltan_PHG_Return_Lists(zz, zoltan_hg, num_exp, exp_gids,
    exp_lids, exp_procs, exp_to_part);
     
   if (hgp.use_timers > 1) 
@@ -218,37 +225,60 @@ End:
    * KDDKDD phg_output_level is zero.  It is useful for our tests and
    * KDDKDD data collection, but it should NOT be included in the released
    * KDDKDD code.  */
-  if (err == ZOLTAN_OK) 
-  {HGraph *hg = &zoltan_hg->PHG;
-   static int KDDcnt=0;
-   static double cutlsum = 0.0;
-   static double balsum = 0.0;
-   static double cutlmax = 0.0;
-   static double cutlmin = 1e100;
-   double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
-                                           parts);
-   double cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
-                                           zz->LB.Num_Global_Parts);
-   cutlsum += cutl;
-   if (cutl > cutlmax) cutlmax = cutl;
-   if (cutl < cutlmin) cutlmin = cutl;
-   balsum += bal;
-   KDDcnt++;
+  if ((err == ZOLTAN_OK) && hgp.final_output) {
+    HGraph *hg = &zoltan_hg->HG;
+    static int KDDcnt=0;
+    static double balsum = 0.0, cutlsum = 0.0, cutnsum = 0.0;
+    static double balmax = 0.0, cutlmax = 0.0, cutnmax = 0.0;
+    static double balmin = 1e100, cutlmin = 1e100, cutnmin = 1e100;
+    double bal = Zoltan_PHG_Compute_Balance(zz, hg, zz->LB.Num_Global_Parts,
+                                            parts);
+    double cutl;   /* Connnectivity cuts:  sum_over_edges((npart-1)*ewgt) */
+    double cutn;   /* Net cuts:  sum_over_edges((nparts>1)*ewgt) */
+    double remcutl;   /* Connnectivity cuts of removed edges */
+    double remcutn;   /* Net cuts of removed edges */
 
-   if (zz->Proc == 0) {
-     uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d |Z|=%6d %s/%s/%s p=%d "
-      "bal=%.2f cutl=%.2f\n", hg->info, hg->nVtx, hg->nEdge, hg->nPins,
-      hgp.redm_str, hgp.coarsepartition_str, hgp.refinement_str, 
-      zz->LB.Num_Global_Parts, bal, cutl);
-     uprintf(hg->comm, 
-             "STATS RUNS %d  cutl MAX %f  MIN %f  AVG %f  AVGBal %f\n", 
-             KDDcnt, cutlmax, cutlmin, cutlsum/KDDcnt, balsum/KDDcnt);
-   }
+    cutl= Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts,
+                                    zz->LB.Num_Global_Parts, &err);
+    cutn = Zoltan_PHG_Compute_NetCut(hg->comm, hg, parts,
+                                     zz->LB.Num_Global_Parts);
+
+    if (!err) {
+     
+      /* Add in cut contributions from removed edges */
+      err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, &remcutl, &remcutn);
+printf("KDDKDD TESTING nRemove = %d cutl = %f + %f   cutn = %f + %f\n", zoltan_hg->nRemove, cutl, remcutl, cutn, remcutn);
+      cutl += remcutl;
+      cutn += remcutn;
+  
+      cutlsum += cutl;
+      if (cutl > cutlmax) cutlmax = cutl;
+      if (cutl < cutlmin) cutlmin = cutl;
+      cutnsum += cutn;
+      if (cutn > cutnmax) cutnmax = cutn;
+      if (cutn < cutnmin) cutnmin = cutn;
+      balsum += bal;
+      if (bal > balmax) balmax = bal;
+      if (bal < balmin) balmin = bal;
+      KDDcnt++;
+   
+      if (zz->Proc == 0) {
+        uprintf(hg->comm, 
+                "STATS Runs %d  bal  CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
+                KDDcnt, bal, balmax, balmin, balsum/KDDcnt);
+        uprintf(hg->comm, 
+                "STATS Runs %d  cutl CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
+                KDDcnt, cutl, cutlmax, cutlmin, cutlsum/KDDcnt);
+        uprintf(hg->comm, 
+                "STATS Runs %d  cutn CURRENT %f  MAX %f  MIN %f  AVG %f\n", 
+                KDDcnt, cutn, cutnmax, cutnmin, cutnsum/KDDcnt);
+      }
+    }
   }
   /* KDDKDD  End of printing section. */
-
+  
   ZOLTAN_FREE(&parts);
-  Zoltan_PHG_Free_Structure(zz);
+  Zoltan_HG_Free_Structure(zz);
 
   if (hgp.use_timers && zz->Proc == 0)
     Zoltan_Timer_PrintAll(zz->ZTime, zz->Proc, stdout);
@@ -258,25 +288,6 @@ End:
 }
 
 /*****************************************************************************/
-
-
-
-void Zoltan_PHG_Free_Structure(ZZ *zz)
-{
-  /* frees all data associated with LB.Data_Structure for hypergraphs */
-  ZPHG *zoltan_hg = (ZPHG*) zz->LB.Data_Structure;
-
-  if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &zoltan_hg->GIDs, &zoltan_hg->LIDs,
-     &zoltan_hg->Input_Parts);
-    Zoltan_HG_HGraph_Free (&zoltan_hg->PHG);
-    ZOLTAN_FREE (&zz->LB.Data_Structure);
-  }
-}
-
-/*****************************************************************************/
-
-
 
 static int Zoltan_PHG_Initialize_Params(
   ZZ *zz,   /* the Zoltan data structure */
@@ -288,7 +299,8 @@ static int Zoltan_PHG_Initialize_Params(
   
   
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
-  Zoltan_Bind_Param(PHG_params, "PCHECK_GRAPH", &hgp->check_graph);   
+  Zoltan_Bind_Param(PHG_params, "PHG_FINAL_OUTPUT", &hgp->final_output);
+  Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_X", &hgp->nProc_x_req);
   Zoltan_Bind_Param(PHG_params, "PHG_NPROC_Y", &hgp->nProc_y_req);
   Zoltan_Bind_Param(PHG_params, "PHG_PROC_SPLIT", &hgp->proc_split);  
@@ -375,44 +387,36 @@ int Zoltan_PHG_Set_Param(
 
 /****************************************************************************/
 
-static int Zoltan_PHG_Return_Lists (
+static int Zoltan_PHG_Output_Parts (
   ZZ *zz,
-  ZPHG *zhg,
-  Partition output_parts,
-  int *num_exp,
-  ZOLTAN_ID_PTR *exp_gids,
-  ZOLTAN_ID_PTR *exp_lids,
-  int **exp_procs,
-  int **exp_to_part)
+  ZHG *zhg,
+  Partition hg_parts   /* Output partitions relative to the 2D distribution
+                          of zhg->HG */
+)
 {
-  /* Routine to build export lists of ZOLTAN_LB_FN. */
-  int i, j;
-  int msg_tag = 31000;
-  int ierr = ZOLTAN_OK;
-  int eproc;
-  int num_gid_entries   = zz->Num_GID;
-  int num_lid_entries   = zz->Num_LID;
-  int nObj              = zhg->nObj;
-  Partition input_parts = zhg->Input_Parts;
-  ZOLTAN_ID_PTR gids    = zhg->GIDs;
-  ZOLTAN_ID_PTR lids    = zhg->LIDs;
-  HGraph *phg           = &(zhg->PHG);
-  int *outparts = NULL;     /* Pointers to output partitions. */
-  int *sendbuf = NULL;  
-  char *yo = "Zoltan_PHG_Return_Lists";
+/* Function to map the computed partition from the distribution in HGraph
+ * to the input distribution 
+ */
 
-  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
-    goto End;
+static char *yo = "Zoltan_PHG_Output_Parts";
+int i;
+int msg_tag = 31000;
+int ierr = ZOLTAN_OK;
+int nObj = zhg->nObj;
+int *outparts = NULL;
+int *sendbuf = NULL;  
+HGraph *phg = &(zhg->HG);
 
-  outparts = (int*) ZOLTAN_MALLOC (nObj * sizeof(int));
+  zhg->Output_Parts = outparts 
+                     = (int*) ZOLTAN_MALLOC (nObj * sizeof(int));
   if (zhg->VtxPlan != NULL) {
     /* Get the partition information from the 2D decomposition back to the
      * original owning processor for each GID.  */
     sendbuf = (int*) ZOLTAN_MALLOC(zhg->nRecv_GNOs * sizeof(int));
     for (i = 0; i < zhg->nRecv_GNOs; i++)
-      sendbuf[i] = output_parts[VTX_GNO_TO_LNO(phg, zhg->Recv_GNOs[i])];
-    ierr = Zoltan_Comm_Do_Reverse(zhg->VtxPlan, msg_tag, (char*) sendbuf, 
-     sizeof(int), NULL, (char *) outparts);
+      sendbuf[i] = hg_parts[VTX_GNO_TO_LNO(phg, zhg->Recv_GNOs[i])];
+    ierr = Zoltan_Comm_Do_Reverse(zhg->VtxPlan, msg_tag, (char*) sendbuf,
+                                  sizeof(int), NULL, (char *) outparts);
     if (ierr) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error from Zoltan_Comm_Do_Reverse");
       goto End;
@@ -423,8 +427,41 @@ static int Zoltan_PHG_Return_Lists (
   }
   else {
     for (i = 0; i < zhg->nRecv_GNOs; i++)
-      outparts[i] = output_parts[zhg->Recv_GNOs[i]];
+      outparts[i] = hg_parts[zhg->Recv_GNOs[i]];
   }
+
+End:
+  if (zhg->Recv_GNOs) ZOLTAN_FREE(&(zhg->Recv_GNOs));
+  zhg->nRecv_GNOs = 0;
+  return ierr;
+}
+
+/****************************************************************************/
+
+static int Zoltan_PHG_Return_Lists (
+  ZZ *zz,
+  ZHG *zhg,
+  int *num_exp,
+  ZOLTAN_ID_PTR *exp_gids,
+  ZOLTAN_ID_PTR *exp_lids,
+  int **exp_procs,
+  int **exp_to_part)
+{
+/* Routine to build export lists of ZOLTAN_LB_FN. */
+char *yo = "Zoltan_PHG_Return_Lists";
+int i, j;
+int ierr = ZOLTAN_OK;
+int eproc;
+int num_gid_entries   = zz->Num_GID;
+int num_lid_entries   = zz->Num_LID;
+int nObj              = zhg->nObj;
+Partition input_parts = zhg->Input_Parts;
+ZOLTAN_ID_PTR gids    = zhg->GIDs;
+ZOLTAN_ID_PTR lids    = zhg->LIDs;
+int *outparts         = zhg->Output_Parts; 
+
+  if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
+    goto End;
 
   /* Count number of objects with new partitions or new processors. */
   *num_exp = 0;
@@ -456,9 +493,11 @@ static int Zoltan_PHG_Return_Lists (
     for (j = 0, i = 0; i < nObj; i++) {
       eproc = Zoltan_LB_Part_To_Proc(zz, outparts[i], &gids[i*num_gid_entries]);
       if (outparts[i] != input_parts[i] || eproc != zz->Proc) {
-        ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]), &(gids[i*num_gid_entries]));
+        ZOLTAN_SET_GID(zz, &((*exp_gids)[j*num_gid_entries]),
+                           &(gids[i*num_gid_entries]));
         if (num_lid_entries > 0)
-          ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]), &(lids[i*num_lid_entries]));
+          ZOLTAN_SET_LID(zz, &((*exp_lids)[j*num_lid_entries]),
+                             &(lids[i*num_lid_entries]));
         (*exp_procs)  [j] = eproc;
         (*exp_to_part)[j] = outparts[i];
         j++;
@@ -468,10 +507,6 @@ static int Zoltan_PHG_Return_Lists (
 
 End:
 
-  ZOLTAN_FREE(&outparts);
-  if (zhg->Recv_GNOs) ZOLTAN_FREE(&(zhg->Recv_GNOs));
-  zhg->nRecv_GNOs = 0;
-
   return ierr;
 }
 
@@ -479,7 +514,7 @@ End:
 
 void Zoltan_PHG_HGraph_Print(
   ZZ *zz,          /* the Zoltan data structure */
-  ZPHG *zoltan_hg,
+  ZHG *zoltan_hg,
   HGraph *hg,
   Partition parts, 
   FILE *fp
@@ -494,7 +529,7 @@ void Zoltan_PHG_HGraph_Print(
   int num_lid = zz->Num_LID;
   char *yo = "Zoltan_PHG_HGraph_Print";
 
-  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->PHG) {
+  if (zoltan_hg != NULL  &&  hg != &zoltan_hg->HG) {
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Input hg != Zoltan HG");
     return;
   }
@@ -597,6 +632,7 @@ End:
 
   return ierr;
 }
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -31,9 +31,17 @@ static int rdivide_and_prepsend(int lo, int hi, Partition final, ZZ *zz, HGraph 
 
 
 /* Recursively divides both the problem and the processes (if enabled)
-   into 2 parts untill all parts are found */
-int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
-                       PHGPartParams *hgp, int level)
+   into 2 parts until all parts are found */
+int Zoltan_PHG_rdivide(
+  int lo,                 /* Lowest partition number to be found */
+  int hi,                 /* Highest partition number to be found */
+  Partition final,        /* Input:  initial partition assignments for vtxs;
+                             Output:  computed partition assignments. */
+  ZZ *zz, 
+  HGraph *hg,
+  PHGPartParams *hgp, 
+  int level
+)
 {
   char *yo = "Zoltan_PHG_rdivide";
   int i, j, mid, ierr=ZOLTAN_OK, *pins[2] = {NULL,NULL}, *lpins[2] = {NULL,NULL};
@@ -64,6 +72,8 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 
   if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
       MEMORY_ERROR;
+  for (i = 0; i < hg->nVtx; i++)
+    part[i] = final[i];
 
   /* bipartition current hypergraph with appropriate split ratio */
   mid = (lo+hi)/2;
@@ -83,7 +93,7 @@ int Zoltan_PHG_rdivide(int lo, int hi, Partition final, ZZ *zz, HGraph *hg,
 
   if (hgp->output_level)
     uprintf(hgc, "Rdivide(%d, %d): %.1lf\n", lo, hi, 
-                 Zoltan_PHG_Compute_ConCut(hgc, hg, part, 2));
+                 Zoltan_PHG_Compute_ConCut(hgc, hg, part, 2, &ierr));
 
   if (hgp->use_timers > 1)  /* Restart rdivide timer */
     ZOLTAN_TIMER_START(zz->ZTime, timer_rdivide, hg->comm->Communicator);
@@ -340,6 +350,8 @@ int Zoltan_PHG_rdivide_NoProcSplit(int lo, int hi, Partition final, ZZ *zz, HGra
       final [hg->vmap[i]] = lo;
     return ZOLTAN_OK;
   }
+  for (i = 0; i < hg->nVtx; i++)
+    part[i] = final[i];
 
   if (hg->nVtx && !(part = (Partition) ZOLTAN_MALLOC (hg->nVtx * sizeof (int))))
       MEMORY_ERROR;

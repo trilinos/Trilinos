@@ -31,22 +31,22 @@ extern "C" {
 /*****************************************************************************/
 /* Function prototypes */
 
-static int hash_lookup (ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
-static int Zoltan_PHG_Fill_Hypergraph (ZZ*, ZPHG*, PHGPartParams *, Partition*);
+static int hash_lookup(ZZ*, ZOLTAN_ID_PTR, int, struct Hash_Node**);
+static int Zoltan_PHG_Fill_Hypergraph(ZZ*, ZHG*, PHGPartParams *, Partition*);
 
 /*****************************************************************************/
 
 int Zoltan_PHG_Build_Hypergraph(
   ZZ *zz,                            /* Zoltan data structure */
-  ZPHG **zoltan_hg,                  /* Hypergraph to be allocated and built.*/
+  ZHG **zoltan_hg,                  /* Hypergraph to be allocated and built.*/
   Partition *input_parts,            /* Initial partition assignments for
                                         vtxs in 2D distribution; length = 
-                                        zoltan_hg->PHG->nVtx.  */
+                                        zoltan_hg->HG->nVtx.  */
   PHGPartParams *hgp                 /* Parameters for PHG partitioning.*/
 )
 {
 /* allocates and builds hypergraph data structure using callback routines */ 
-ZPHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
+ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *phgraph;             /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_PHG_Build_Hypergraph";
@@ -54,18 +54,24 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* Allocate a Zoltan hypergraph.  */
-  zhg = *zoltan_hg = (ZPHG*) ZOLTAN_MALLOC (sizeof(ZPHG));
+  zhg = *zoltan_hg = (ZHG*) ZOLTAN_MALLOC (sizeof(ZHG));
   if (zhg == NULL) MEMORY_ERROR;
 
   /* Initialize the Zoltan hypergraph data fields. */
   zhg->GIDs = NULL;
   zhg->LIDs = NULL;
   zhg->Input_Parts = NULL;
+  zhg->Output_Parts = NULL;
+  zhg->nRemove = 0;
+  zhg->Remove_EGIDs = NULL;
+  zhg->Remove_ELIDs = NULL;
+  zhg->Remove_Esize = NULL;
+  zhg->Remove_Ewgt = NULL;
   zhg->VtxPlan = NULL;
   zhg->Recv_GNOs = NULL;
   zhg->nRecv_GNOs = 0;
 
-  phgraph = &(zhg->PHG);
+  phgraph = &(zhg->HG);
   Zoltan_HG_HGraph_Init(phgraph);
 
   /* just set the pointer of phgraph's comm to hgp's comm */
@@ -153,15 +159,15 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
 
   if (hgp->output_level >= PHG_DEBUG_PLOT)
-    Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->PHG));
+    Zoltan_PHG_Plot_2D_Distrib(zz, &(zhg->HG));
 
   if (hgp->output_level >= PHG_DEBUG_PRINT)
-    Zoltan_PHG_HGraph_Print(zz, zhg, &(zhg->PHG), *input_parts, stdout);
+    Zoltan_HG_HGraph_Print(zz, zhg, &(zhg->HG), *input_parts, stdout);
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     /* Return NULL zhg */
-    Zoltan_HG_HGraph_Free(&(zhg->PHG));
+    Zoltan_HG_HGraph_Free(&(zhg->HG));
     Zoltan_Multifree(__FILE__, __LINE__, 4, &(zhg->GIDs),
      &(zhg->LIDs), &(zhg->Input_Parts), zoltan_hg);
   }
@@ -175,10 +181,10 @@ End:
 
 static int Zoltan_PHG_Fill_Hypergraph(
   ZZ *zz,
-  ZPHG *zhg,      /* Description of hypergraph provided by the application. */
+  ZHG *zhg,      /* Description of hypergraph provided by the application. */
   PHGPartParams *hgp,                /* Parameters for PHG partitioning.*/
   Partition *input_parts   /* Initial partition assignment of vtxs in 
-                              2D data distribution; length = zhg->PHG->nVtx. */
+                              2D data distribution; length = zhg->HG->nVtx. */
 )
 {
 /* Routine to call HG query function and build HG data structure. 
@@ -194,15 +200,15 @@ static int Zoltan_PHG_Fill_Hypergraph(
  */
 
 char *yo = "Zoltan_PHG_Fill_Hypergraph";
-struct application_input {     /* Data provided by application callbacks. */
+struct application_input {     /* Data provided by hypergraph callbacks. */
   int nVtx;                         /* # objects (vertices) on proc. */
   int nEdge;                        /* # hyperedges on proc. */
   int nPins;                        /* # pins (nonzeros) on proc. */
   int GnVtx;                        /* Total nVtx across all procs. */
   int GnEdge;                       /* Total nEdge across all procs. */
-  ZOLTAN_ID_PTR edge_gids;          /* GIDs of edges. */
-  ZOLTAN_ID_PTR edge_lids;          /* LIDs of edges. */
-  int *edge_sizes;                  /* # of GIDs in each hyperedge. */
+  ZOLTAN_ID_PTR egids;              /* GIDs of edges. */
+  ZOLTAN_ID_PTR elids;              /* LIDs of edges. */
+  int *esizes;                      /* # of GIDs in each hyperedge. */
   ZOLTAN_ID_PTR pins;               /* Object GIDs (vertices) belonging to 
                                        hyperedges.  */
   int *pin_procs;                   /* Processor owning each pin vertex of 
@@ -244,7 +250,6 @@ int nProc = zz->Num_Proc;
 int nRequests;
 ZOLTAN_ID_PTR pin_requests = NULL;
 int *request_gno = NULL;
-int nremove = 0;      /* Number of dense hyperedges removed. */
 int edge_gno, edge_Proc_y;
 int vtx_gno, vtx_Proc_x;
 int *proclist = NULL;
@@ -260,7 +265,7 @@ int *tmpparts = NULL;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
-HGraph *phg = &(zhg->PHG);
+HGraph *phg = &(zhg->HG);
 
 int nProc_x = phg->comm->nProc_x;
 int nProc_y = phg->comm->nProc_y;
@@ -276,9 +281,9 @@ float *tmpwgts = NULL;
   /* Obtain vertex information from the application */
   /**************************************************/
 
-  app.edge_gids = NULL;
-  app.edge_lids = NULL;
-  app.edge_sizes = NULL;
+  app.egids = NULL;
+  app.elids = NULL;
+  app.esizes = NULL;
   app.pins = NULL;
   app.pin_procs = NULL;
   app.pin_gno = NULL;
@@ -323,8 +328,6 @@ float *tmpwgts = NULL;
    * input HG.
    * Use hash table to map global IDs to local position in zhg->GIDs.
    * Based on hashing code in Zoltan_Build_Graph.
-   * KDD -- This approach is serial for now; look more closely at 
-   * KDD -- Zoltan_Build_Graph when move to parallel.
    */
 
   /* Construct local hash table mapping GIDs to global number (gno) */
@@ -361,16 +364,14 @@ float *tmpwgts = NULL;
   /* Get hyperedge information from application through query functions. */
   /***********************************************************************/
 
-  /* KDDKDD For now, do not return info about removed hyperedge.
-   * KDDKDD Will need it later, though, for correct cut size computation.
-   */
-  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, app.GnVtx, hgp->EdgeSizeThreshold,
-                                        0, &app.nEdge, 
-                                        &app.edge_gids, &app.edge_lids,
-                                        &app.edge_sizes, &app.ewgt,
+  ierr = Zoltan_HG_Hypergraph_Callbacks(zz, zhg,
+                                        app.GnVtx, hgp->EdgeSizeThreshold,
+                                        hgp->final_output, &app.nEdge, 
+                                        &app.egids, &app.elids,
+                                        &app.esizes, &app.ewgt,
                                         &app.nPins, &app.pins, 
-                                        &app.pin_procs, &nremove, 
-                                        NULL, NULL, NULL, NULL);
+                                        &app.pin_procs);
+
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_PHG_Hypergraph_Callbacks");
@@ -478,7 +479,7 @@ float *tmpwgts = NULL;
     edge_gno = app.edge_gno[i];
     edge_Proc_y = EDGE_TO_PROC_Y(phg, edge_gno);
 
-    for (j = 0; j < app.edge_sizes[i]; j++) {
+    for (j = 0; j < app.esizes[i]; j++) {
       /* processor column for the vertex */
       vtx_gno = app.pin_gno[cnt];
       vtx_Proc_x = VTX_TO_PROC_X(phg, vtx_gno);
@@ -748,10 +749,10 @@ End:
     Zoltan_HG_HGraph_Free(phg);
   }
   
-  Zoltan_Multifree(__FILE__, __LINE__, 12,  &app.edge_gids,
-                                            &app.edge_lids,
+  Zoltan_Multifree(__FILE__, __LINE__, 12,  &app.egids,
+                                            &app.elids,
                                             &app.pins, 
-                                            &app.edge_sizes, 
+                                            &app.esizes, 
                                             &app.pin_procs, 
                                             &app.pin_gno, 
                                             &app.vwgt,
@@ -774,6 +775,159 @@ End:
   return ierr;
 }
 
+/*****************************************************************************/
+
+int Zoltan_PHG_Removed_Cuts(
+  ZZ *zz,
+  ZHG *zhg,
+  double *concut,   /* ConCut result: Sum_over_edges( (nparts-1)*ewgt ) */
+  double *netcut    /* NetCut result: Sum_over_edges( (nparts>1)*ewgt ) */
+)
+{
+/* Function to compute the cuts of removed hyperedges.
+ * This routine is needed ONLY for accurately computing cut statistics.
+ * Pins for removed hyperedges were not retrieved before.
+ * They must be retrieved now.
+ */
+static char *yo = "Zoltan_PHG_Removed_Cuts";
+int ierr = ZOLTAN_OK;
+int i, j, cnt, nparts;
+struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
+struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
+int npins = 0;                   /* # of pins in removed hyperedges */
+ZOLTAN_ID_PTR pins = NULL;       /* pins for removed edges */
+int *pin_procs = NULL;           /* procs owning pins for removed edges */
+int *pin_parts = NULL;           /* parts computed for pins in removed edges */
+ZOLTAN_COMM_OBJ *plan = NULL;
+int nrecv;                       /* # of requests for pin info */
+ZOLTAN_ID_PTR recvpins = NULL;   /* Requested pins from other procs */
+int *outparts = NULL;            /* received partition info for pins */
+int *parts = NULL;               /* Array of size Num_Global_Parts indicating
+                                    whether the current edge has a pin in
+                                    parts[i] */
+double loccuts[2], globcuts[2];  /* Local and global cut values */
+int nObj = zhg->nObj;
+ZOLTAN_ID_PTR gids = zhg->GIDs;
+int num_gid_entries = zz->Num_GID;
+int num_lid_entries = zz->Num_LID;
+int msg_tag = 23132;
+double ewgt;
+
+  /* Initialize results */
+
+  *concut = 0.;
+  *netcut = 0.;
+
+  /* Get pin information for removed hyperedges. */
+
+  for (i = 0; i < zhg->nRemove; i++) npins += zhg->Remove_Esize[i];
+
+  if (npins) {
+    pins = ZOLTAN_MALLOC_GID_ARRAY(zz, npins);
+    pin_procs = (int *) ZOLTAN_MALLOC(npins * sizeof(int));
+    if (!pins || !pin_procs) MEMORY_ERROR;
+
+    ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data,
+                                num_gid_entries, num_lid_entries, zhg->nRemove,
+                                zhg->Remove_EGIDs, zhg->Remove_ELIDs,
+                                zhg->Remove_Esize, pins, pin_procs);
+
+  }
+
+  /* Communicate Output_Part info for off-processor pins */
+
+  Zoltan_Comm_Create(&plan, npins, pin_procs, zz->Communicator,
+                     msg_tag, &nrecv);
+
+  if (nrecv) {
+    recvpins = ZOLTAN_MALLOC_GID_ARRAY(zz, nrecv);
+    outparts = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    if (!recvpins || !outparts) MEMORY_ERROR;
+  }
+
+  Zoltan_Comm_Do(plan, msg_tag, (char *) pins, 
+                 num_gid_entries * sizeof(ZOLTAN_ID_TYPE), (char *) recvpins);
+
+  ZOLTAN_FREE(&pins);
+
+  if (nrecv) {
+    hash_nodes = (struct Hash_Node *) ZOLTAN_MALLOC(nObj * 
+                                                    sizeof(struct Hash_Node));
+    hash_tab = (struct Hash_Node **) ZOLTAN_MALLOC(nObj *
+                                                   sizeof(struct Hash_Node *));
+    if (!hash_nodes || !hash_tab) MEMORY_ERROR;
+
+    /* Create hash table of local indices to speed searches for received
+     * pin requests.
+     */
+
+    for (i = 0; i < nObj; i++) {
+      hash_tab[i] = NULL;
+      hash_nodes[i].gid = &(gids[i*num_gid_entries]);
+      hash_nodes[i].gno = i;    /* LOCAL index here; change name for gno?  */
+    }
+
+    for (i=0; i< nObj; i++) {
+      /* insert hashed elements into hash table */
+      j = Zoltan_Hash(&(gids[i*num_gid_entries]), num_gid_entries,
+                      (unsigned int) nObj);
+      hash_nodes[i].next = hash_tab[j];
+      hash_tab[j] = &hash_nodes[i];
+    }
+
+    /* Gather partition information for pin requests */
+    for (i = 0; i < nrecv; i++) {
+      j = hash_lookup(zz, &(recvpins[i*num_gid_entries]), nObj, hash_tab);
+      outparts[i] = zhg->Output_Parts[j];
+    }
+    
+    ZOLTAN_FREE(&hash_nodes);
+    ZOLTAN_FREE(&hash_tab);
+    ZOLTAN_FREE(&recvpins);
+  }
+
+  /* Send partition info back to requesting processor */
+  pin_parts = pin_procs;    /* Reuse the memory allocated for pin_procs. */
+  Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *) outparts, 
+                         sizeof(int), NULL, (char *) pin_parts);
+
+  ZOLTAN_FREE(&outparts);
+
+  Zoltan_Comm_Destroy(&plan);
+
+  /* Compute the cut metrics using received partition info. */
+
+  parts = (int *) ZOLTAN_CALLOC(zz->LB.Num_Global_Parts, sizeof(int));
+  if (!parts) MEMORY_ERROR;
+
+  cnt = 0;
+  loccuts[0] = loccuts[1] = 0;
+  for (i = 0; i < zhg->nRemove; i++) {
+    nparts = 0;
+    for (j = 0; j < zhg->Remove_Esize[i]; j++) {
+      if (parts[pin_parts[cnt]] < i+1) {
+        nparts++;
+      }
+      parts[pin_parts[cnt]] = i+1;
+      cnt++;
+    }
+    ewgt = (zhg->Remove_Ewgt ? zhg->Remove_Ewgt[i*zz->Edge_Weight_Dim] : 1.);
+    loccuts[0] += (nparts-1) * ewgt;
+    if (nparts > 1) loccuts[1] += ewgt;
+  }
+  
+  MPI_Allreduce(loccuts, globcuts, 2, MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  
+  *concut = globcuts[0];
+  *netcut = globcuts[1];
+
+End:
+
+  ZOLTAN_FREE(&pin_procs);
+  ZOLTAN_FREE(&parts);
+
+  return ierr;
+}
 /*****************************************************************************/
 
 static int hash_lookup(

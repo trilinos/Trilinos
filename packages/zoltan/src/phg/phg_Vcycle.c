@@ -357,7 +357,7 @@ int Zoltan_PHG_Partition (
               hg->info, hg->nVtx, hg->nEdge, hg->nPins, hg->redl, hgp->redm_str,
               hgp->coarsepartition_str, hgp->refinement_str, p,
               Zoltan_PHG_Compute_Balance(zz, hg, p, vcycle->Part),
-              Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p));
+              Zoltan_PHG_Compute_ConCut(hgc, hg, vcycle->Part, p, &err));
 
     if (hgp->output_level >= PHG_DEBUG_PLOT)
       Zoltan_PHG_Plot(zz->Proc, hg->nVtx, p, hg->vindex, hg->vedge, vcycle->Part,
@@ -454,12 +454,17 @@ End:
     
 /****************************************************************************/
 
-
-
-/* Calculates the cutsize of a partition by summing the weight of all edges
-   which span more than one part. Time O(|I|). */
-double Zoltan_PHG_Compute_NetCut (PHGComm *hgc, HGraph *hg, Partition part, int p)
+double Zoltan_PHG_Compute_NetCut(
+  PHGComm *hgc,
+  HGraph *hg,
+  Partition part,
+  int p
+)
 {
+/* Calculates the cutsize of a partition by summing the weight of all edges
+ * which span more than one part. Time O(|I|). 
+ * Results are returned on all processors of hgc->Communicator. 
+ */
   int i, j, *netpart, *allparts;    
   double cut = 0.0, totalcut=0.0;
   char *yo = "Zoltan_PHG_Compute_NetCut";
@@ -563,12 +568,20 @@ double Zoltan_PHG_hcut_size_links (PHGComm *hgc, HGraph *hg, Partition part, int
 }
 #endif
 
-
-/* Calculates the cutsize of a partition. For each edge it calculates the number
-   of parts it spans across. This value minus one is the cutsize of this edge
-   and the total cutsize is the sum of the single cutsizes. Time O(|I|). */
-double Zoltan_PHG_Compute_ConCut (PHGComm *hgc, HGraph *hg, Partition part, int p)
+/******************************************************************************/
+double Zoltan_PHG_Compute_ConCut(
+  PHGComm *hgc,
+  HGraph *hg,
+  Partition part, 
+  int p,
+  int *ierr)
 {
+/* Calculates the cutsize of a partition. For each edge it calculates the number
+ * of parts it spans across. This value minus one is the cutsize of this edge
+ * and the total cutsize is the sum of the single cutsizes. Time O(|I|). 
+ * NOTE:  non-zero result is returned ONLY on processor (0,0) of the 2D
+ * decomposition (i.e., processor zero overall).
+ */
     double cut = 0.0, totalcut=0.0;
     char *yo = "Zoltan_PHG_Compute_ConCut";
 #ifdef _DEBUG
@@ -582,17 +595,20 @@ double Zoltan_PHG_Compute_ConCut (PHGComm *hgc, HGraph *hg, Partition part, int 
 
 #ifdef _DEBUG
         if (nEdge<hg->nEdge)
-            printf("H(%d, %d, %d) due to memory nEdge=%d\n", hg->nVtx, hg->nEdge, hg->nPins, nEdge);
+            printf("H(%d, %d, %d) due to memory nEdge=%d\n", 
+                   hg->nVtx, hg->nEdge, hg->nPins, nEdge);
 #endif
 
         if (!(cuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
             ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
-            return ZOLTAN_MEMERR;
+            *ierr = ZOLTAN_MEMERR;
+            goto End;
         }   
         if (!hgc->myProc_x)
             if (!(rescuts = (int*) ZOLTAN_MALLOC (p * nEdge * sizeof(int)))) {
                 ZOLTAN_PRINT_ERROR(hgc->myProc, yo, "Insufficient memory.");
-                return ZOLTAN_MEMERR;
+                *ierr = ZOLTAN_MEMERR;
+                goto End;
             }
 
         start = 0;
@@ -606,7 +622,8 @@ double Zoltan_PHG_Compute_ConCut (PHGComm *hgc, HGraph *hg, Partition part, int 
                     ++parts[part[hg->hvertex[j]]];
             }
 
-            MPI_Reduce (cuts, rescuts, p*(end-start), MPI_INT, MPI_SUM, 0, hgc->row_comm);
+            MPI_Reduce(cuts, rescuts, p*(end-start), MPI_INT, MPI_SUM, 0, 
+                       hgc->row_comm);
             
             if (!hgc->myProc_x) {
                 for (i = start; i < end; ++i) {
@@ -616,13 +633,19 @@ double Zoltan_PHG_Compute_ConCut (PHGComm *hgc, HGraph *hg, Partition part, int 
                             ++nparts;
                     if (nparts>1)
                         cut +=  ((nparts-1) * (hg->ewgt ? hg->ewgt[i] : 1.0));
-                    else if (nparts==0)
-                        printf("%s Error: hyperedge %i has no vertices!\n", yo, i);
+                    else if (nparts==0) {
+                        char msg[80];
+                        sprintf(msg, "Hyperedge %d has no vertices!\n", i);
+                        ZOLTAN_PRINT_ERROR(hgc->myProc, yo, msg);
+                        *ierr = ZOLTAN_FATAL;
+                        goto End;
+                    }
                 }        
             }
             start += nEdge;            
         } while (start<hg->nEdge);
         
+End:
 
         ZOLTAN_FREE (&cuts);
         ZOLTAN_FREE (&rescuts);
@@ -641,7 +664,6 @@ double Zoltan_PHG_Compute_ConCut (PHGComm *hgc, HGraph *hg, Partition part, int 
 }
 
 /****************************************************************************/
-
 
 
 double Zoltan_PHG_Compute_Balance (
