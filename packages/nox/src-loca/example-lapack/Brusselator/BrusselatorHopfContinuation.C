@@ -109,7 +109,7 @@ int main()
     stepperList.setParameter("Initial Value", alpha);
     stepperList.setParameter("Max Value", 1.0);
     stepperList.setParameter("Min Value", 0.24);
-    stepperList.setParameter("Max Steps", 20);
+    stepperList.setParameter("Max Steps", 2);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
     stepperList.setParameter("Goal g", 0.5);
     stepperList.setParameter("Max g", 0.7);
@@ -117,6 +117,7 @@ int main()
     stepperList.setParameter("Min Scale Factor", 1.0e-8);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
+    stepperList.setParameter("Compute Eigenvalues",true);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");

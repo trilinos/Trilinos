@@ -57,6 +57,7 @@ int main()
     // be initialized to contain the default initial guess for the
     // specified problem.
     LOCA::LAPACK::Group grp(chan);
+    //LOCA::LAPACK::Group grp(chan, n, n, 2*n, 2*n);
     grp.setParams(p);
 
     // Create parameter list
