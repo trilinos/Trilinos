@@ -25,6 +25,9 @@ MultiVector Duplicate(const MultiVector& y, const int v);
 //! Extracts a component from a vector.
 MultiVector Extract(const MultiVector& y, const int v);
 
+//! Redistributes the entry of a vector as a multivector.
+MultiVector Redistribute(const MultiVector& y, const int NumEquations);
+
 } // namespace MLAPI
 
 #endif

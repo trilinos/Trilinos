@@ -41,6 +41,30 @@ MultiVector Extract(const MultiVector& y, const int v)
   return(x);
 }
 
+// ======================================================================
+MultiVector Redistribute(const MultiVector& y, const int NumEquations)
+{
+  StackPush();
+
+  if (y.GetMyLength() % NumEquations)
+    ML_THROW("NumEquations does not divide MyLength()", -1);
+
+  if (y.GetNumVectors() != 1)
+    ML_THROW("Redistribute() works with single vectors only", -1);
+
+  Space NewSpace(y.GetMyLength() / NumEquations);
+
+  MultiVector y2(NewSpace, NumEquations);
+
+  for (int i = 0 ; i < y2.GetMyLength() ; ++i)
+    for (int j = 0 ; j < NumEquations ; ++j)
+      y2(i, j) = y(j + NumEquations * i);
+
+  StackPop();
+
+  return(y2);
+}
+
 } // namespace MLAPI
 
 #endif
