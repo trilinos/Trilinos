@@ -53,30 +53,49 @@ namespace LOCA {
     namespace TPBord {
 
       /*! 
-	\brief %LOCA's generic turning point group.  Implements the bordering
-	algorithm to solve turning point equations.  
-      */
+       * \brief %LOCA's generic turning point group.  Implements the bordering
+       * algorithm to solve turning point equations.  
+       */
       /*!
-	The %TPBord::Group is a concrete implementation of the 
-	LOCA::Continuatoin::AbstractGroup that defines the following extended set of 
-	equations:
-	\f[
-	G(z) = \left[
-	\begin{array}{c}
-	F(x,p) \\
-	Jn \\
-	l^Tn-1
-	\end{array}
-	\right] = 0
-	\f]
-	where \f$z = [x, n, p]\in\Re^{2n+1}\f$, \f$x\f$ is the solution vector,
-	\f$n\f$ is the null vector, \f$l\f$ is the length normalization vector
-	and \f$J\f$ is the Jacobian of F.
+       The LOCA::Bifurcation::TPBord::Group is a concrete implementation of 
+       the NOX::Abstract::Group, LOCA::Continuation::AbstractGroup and 
+       LOCA::Extended::AbstractGroup that defines the following extended 
+       set of equations that are regular at a generic turning point:
+	  \f[
+	      G(z) = \left[
+	      \begin{array}{c}
+	         F(x,p) \\
+	         Jn \\
+	         l^Tn-1
+	      \end{array}
+	      \right] = 0
+	   \f]
+       where \f$z = [x, n, p]\in\Re^{2n+1}\f$, \f$x\f$ is the solution vector,
+       \f$n\f$ is the null vector, \f$l\f$ is the length normalization vector
+       and \f$J\f$ is the Jacobian of F.
 
-	This class implements all of the NOX::Abstract::Group and 
-	LOCA::Continuation::AbstractGroup methods for this extended set of equations.
-	%Newton solves are computed by the bordering algorithm.
-      */
+       The group stores an underlying group of type 
+       LOCA::Bifurcation::TPBord::AbstractGroup to represent the equations
+       \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
+       Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
+       memory, rather a block-elimination algorithm (bordering algorithm) is
+       used to compute linear solves of the extended Jacobian (see 
+       LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverse(),
+       LOCA::Bifurcation::TPBord::ExtendedGroup::applyJacobianInverseMulti()
+       for more details).
+
+       This class implements all of the NOX::Abstract::Group, 
+       LOCA::Continuation::AbstractGroup, and  LOCA::Extended::AbstractGroup 
+       methods for this extended set of equations and therefore is a complete
+       group which can be passed to most %NOX solvers to locate a single 
+       turning point or to the LOCA::Stepper to compute a family of turning 
+       points in a second parameter.
+
+       However, Jacobian-tranpose operations and gradient calculations cannot 
+       be implemented efficiently and therefore gradient-base nonlinear solvers
+       such as steepest descent and Trust region methods cannot be used to 
+       solve the extended turning point equations.
+       */
 
       class ExtendedGroup 
 	: public LOCA::Continuation::AbstractGroup,
@@ -84,62 +103,60 @@ namespace LOCA {
 
       public:
   
-	//! Constructor to set the base group, bifurcation paramter and length vector.
+	/*! 
+	 * \brief Constructor to set the base group, bifurcation paramter id
+	 * and length vector.
+	 */
+	/*!
+	 * The initial guess to the null vector is set to \em lenVec and if
+	 * necessary is  re-scaled so that the normalization condition 
+	 * \f$l^Tn = 1\f$ is satisfied.
+	 *
+	 * In this version of the constructor, a non-const reference to the
+	 * underlying group \em g is passed and therefore the group will
+	 * not be copied.  
+	 */
 	ExtendedGroup(LOCA::Bifurcation::TPBord::AbstractGroup& g, 
 	      const NOX::Abstract::Vector& lenVec, int paramId = 0);
 
-	//! Constructor to set the base group, bifurcation paramter and length vector.
+	/*! 
+	 * \brief Constructor to set the base group, bifurcation paramter id
+	 * and length vector.
+	 */
+	/*!
+	 * The initial guess to the null vector is set to \em lenVec and if
+	 * necessary is  re-scaled so that the normalization condition 
+	 * \f$l^Tn = 1\f$ is satisfied.
+	 *
+	 * In this version of the constructor, a const reference to the
+	 * underlying group \em g is passed and therefore the group will
+	 * be copied.  
+	 */
 	ExtendedGroup(const LOCA::Bifurcation::TPBord::AbstractGroup& g, 
 	      const NOX::Abstract::Vector& lenVec, int paramId = 0);
 
 	//! Copy constructor.
-	ExtendedGroup(const ExtendedGroup& source, NOX::CopyType type = NOX::DeepCopy);
+	ExtendedGroup(const ExtendedGroup& source, 
+		      NOX::CopyType type = NOX::DeepCopy);
 
 	//! Destructor.
 	virtual ~ExtendedGroup();
 
 	//! Assignment operator
+	virtual ExtendedGroup& operator=(const ExtendedGroup& source);
+
+	/*! 
+	 * @name Implementation of NOX::Abstract::Group virtual methods 
+	 */
+	//@{
+
+	//! Assignment operator
 	virtual NOX::Abstract::Group& 
 	operator=(const NOX::Abstract::Group& source);
-  
-	//! Assignment operator
-	virtual LOCA::Continuation::AbstractGroup& 
-	operator=(const LOCA::Continuation::AbstractGroup& source);
-
-	//! Assignment operator
-	virtual LOCA::Extended::AbstractGroup& 
-	operator=(const LOCA::Extended::AbstractGroup& source);
-
-	//! Assignment operator
-	virtual ExtendedGroup& operator=(const ExtendedGroup& source);
      
 	//! Cloning function
 	virtual NOX::Abstract::Group* 
 	clone(NOX::CopyType type = NOX::DeepCopy) const;
-
-	//! Set the parameter list in the group to p (pVector = p).  
-	virtual void setParams(const ParameterVector& p);
-
-	//! Return a const reference to the ParameterVector owned by the group. 
-	virtual const ParameterVector& getParams() const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(int paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(int paramID) const;
-
-	//! Set parameter indexed by paramID
-	virtual void setParam(string paramID, double val);
-
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(string paramID) const;
-
-	//! Compute \f$dF/dp\f$ for the extended system
-	virtual NOX::Abstract::Group::ReturnType
-	computeDfDp(int paramID, NOX::Abstract::Vector& result);
-	
-	//@{ \name "Compute" functions.
 
 	//! Set the solution vector, x, to y.
 	virtual void setX(const NOX::Abstract::Vector& y);
@@ -147,39 +164,90 @@ namespace LOCA {
 	//! Set the solution vector, x, to y.
 	virtual void setX(const LOCA::Bifurcation::TPBord::ExtendedVector& y);
 
-	//! Compute and return solution vector, x, where this.x = grp.x + step * d.
+	//! Compute this.x = grp.x + step * d.
 	virtual void computeX(const NOX::Abstract::Group& g, 
 			      const NOX::Abstract::Vector& d,
 			      double step);
 
-	//! Compute and return solution vector, x, where this.x = grp.x + step * d.
-	virtual void computeX(const ExtendedGroup& g, const LOCA::Bifurcation::TPBord::ExtendedVector& d,
-			      double step);
+	//! Compute this.x = grp.x + step * d.
+	virtual void computeX(
+		        const ExtendedGroup& g, 
+			const LOCA::Bifurcation::TPBord::ExtendedVector& d,
+			double step);
 
-	//! Compute the turning point equation residual $G$ 
+	//! Compute the turning point equation residual \f$G\f$.
+	/*!
+	  This method fills the extended residual
+	  \f[
+	      G(z) = \left[
+	      \begin{array}{c}
+	         F(x,p) \\
+	         Jn \\
+	         l^Tn-1
+	      \end{array}
+	      \right].
+	  \f]
+	  The solution component residual \f$F(x,p)\f$ and the null-vector 
+	  residual \f$Jn\f$ are calculated via the computeF and applyJacobian 
+	  methods of the underlying group.
+	*/
 	virtual NOX::Abstract::Group::ReturnType computeF();
 
-	//! Compute the blocks of the Jacobian derivative of $G$
+	//! Compute the blocks of the Jacobian derivative of \f$G\f$
 	/*!
-	  Certain second derivatives such as (Jn)_x are not calculated since
-	  only their action on vectors are needed for later solves.
+	  This method computes the \f$J\f$, \f$\partial F/\partial p\f$, and
+	  \f$\partial Jn/\partial p\f$ blocks of the extended Jacobian:
+	  \f[
+	      D_z G(z) = 
+	      \begin{bmatrix}
+	         J & 0 & \frac{\partial F}{\partial p} \\
+		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
+		 0 & l^T & 0
+	      \end{bmatrix}
+	  \f]
+	  by calling the computeJacobian, computeDfDp, and computeDJnDp
+	  methods of the underlying group.  The second derivative matrix
+	  \f$\partial Jn/\partial x\f$ is not calculated since only its
+	  action on vectors is needed for linear solves using the bordering
+	  algorithm.
 	*/
 	virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
 	//! Gradient computation is not defined for this group
 	virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-	//! Compute %Newton direction using bordering algorithm
+	//! Compute %Newton direction using applyJacobianInverse().
 	virtual NOX::Abstract::Group::ReturnType 
 	computeNewton(NOX::Parameter::List& params);
-
-	//@}
-
-	/** @name Jacobian operations. */
-
-	//@{
   
 	//! Computes the extended Jacobian vector product
+	/*! 
+	  This method computes the extended Jacobian vector product
+	  \f[
+	      \begin{bmatrix}
+	         J & 0 & \frac{\partial F}{\partial p} \\
+		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
+		 0 & l^T & 0
+	      \end{bmatrix}
+	      \begin{bmatrix}
+	         a \\
+		 b \\
+		 c
+	      \end{bmatrix}
+	      = 
+	      \begin{bmatrix}
+	         Ja + \frac{\partial F}{\partial p}c \\
+		 \frac{\partial Jn}{\partial x}a + Jb + \frac{\partial Jn}{\partial p}c \\
+		 l^T b
+	      \end{bmatrix}
+	  \f]
+	  using the applyJacobian and computeDJnDxa methods of the underlying
+	  group where \f$a\f$, \f$b\f$, and \f$c\f$ are the solution, 
+	  null-vector, and paramter components of the given vector \em input.
+	  Vectors \em input and \em result must be of type 
+	  LOCA::Bifurcation::TPBord::ExtendedVector, otherwise an error is 
+	  thrown.
+	*/
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobian(const NOX::Abstract::Vector& input, 
 		      NOX::Abstract::Vector& result) const;
@@ -189,35 +257,31 @@ namespace LOCA {
 	applyJacobianTranspose(const NOX::Abstract::Vector& input, 
 			       NOX::Abstract::Vector& result) const;
 
-	//! Applies the inverse of the extended Jacobian matrix using the bordering algorithm
+	/*! 
+	 * \brief Applies the inverse of the extended Jacobian matrix using 
+	 * the bordering algorithm.
+	 */
+	/*!
+	 * This method is a special case of applyJacobianInverseMulti() for
+	 * a single right-hand-side.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	applyJacobianInverse(NOX::Parameter::List& params, 
 			     const NOX::Abstract::Vector& input, 
 			     NOX::Abstract::Vector& result) const;
 
-	//! Applies the extended right preconditioner using the bordering algorithm
+	//! Applies the extended right preconditioner.
+	/*!
+	 * This method is implemented using a similar bordering algorithm
+	 * to applyJacobianInverse(), except calls to the underlying group's
+	 * applyJacobianInvese method are replaced by 
+	 * applyRightPreconditioning.
+	 */
 	virtual NOX::Abstract::Group::ReturnType 
 	applyRightPreconditioning(bool useTranspose,
 				  NOX::Parameter::List& params,
 				  const NOX::Abstract::Vector& input, 
 				  NOX::Abstract::Vector& result) const;
-
-	//! Applies the inverse of the extended Jacobian matrix using the bordering algorithm for multiple right-hand sides
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverseMulti(NOX::Parameter::List& params, 
-				  const NOX::Abstract::Vector* const* inputs, 
-				  NOX::Abstract::Vector** results, int nVecs) const;
-	//@}
-
-	/** @name "Is" functions.
-   
-	Checks to see if various objects have been computed. Returns \c true
-	if the corresponding "compute" function has been called since the
-	last update to the solution vector (via instantiation or
-	computeX).
-	*/
-
-	//@{
   
 	//! Return \c true if the extended residual \f$G\f$ is valid.
 	virtual bool isF() const;
@@ -230,14 +294,6 @@ namespace LOCA {
 
 	//! Return \c true if the extended Newton direction is valid.
 	virtual bool isNewton() const;
-	//@}
-
-	/** @name "Get" functions.
-   
-	Note that these function do not check whether or not the vectors
-	are valid. Must use the "Is" functions for that purpose.
-	*/
-	//@{ 
 
 	//! Return extended solution vector \f$z\f$.  
 	virtual const NOX::Abstract::Vector& getX() const;
@@ -254,13 +310,147 @@ namespace LOCA {
 	//! Return extended Newton direction.
 	virtual const NOX::Abstract::Vector& getNewton() const;
 
-	//! Return the norm of the Newton solve residual.
+	//! Return the norm of the %Newton solve residual.
 	virtual double getNormNewtonSolveResidual() const;
 
 	//@}
 
-	//! Calls groups print function for solution vector null vec, and params 
+	/*! 
+	 * @name Implementation of LOCA::Continuation::AbstractGroup virtual methods 
+	 */
+	//@{
+
+	//! Assignment operator
+	virtual LOCA::Continuation::AbstractGroup& 
+	operator=(const LOCA::Continuation::AbstractGroup& source);
+
+	//! Set the parameter vector in the group to p.
+	virtual void setParams(const ParameterVector& p);
+
+	//! Return a const reference to the paramter vector owned by the group.
+	virtual const ParameterVector& getParams() const;
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(int paramID, double val);
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(int paramID) const;
+
+	//! Set parameter indexed by paramID
+	virtual void setParam(string paramID, double val);
+
+	//! Return copy of parameter indexed by paramID
+	virtual double getParam(string paramID) const;
+
+	/*!
+	 * \brief Compute parameter derivative \f$dG/d\lambda\f$ for the 
+	 * extended system.
+	 */
+	/*!
+	   For a given parameter \f$\lambda\f$, this method computes the 
+	   derivative
+	   \f[
+	      \frac{\partial G(z,\lambda)}{\partial\lambda} = \left[
+	      \begin{array}{c}
+	         \frac{\partial F(x,p,\lambda)}{\partial\lambda} \\
+	         \frac{\partial Jn}{\partial\lambda} \\
+	         0
+	      \end{array}
+	      \right].
+	  \f]
+	*/
+	virtual NOX::Abstract::Group::ReturnType
+	computeDfDp(int paramID, NOX::Abstract::Vector& result);
+
+	/*! 
+	 * \brief Applies the inverse of the extended Jacobian matrix using 
+	 * the bordering algorithm for multiple right-hand sides.
+	 */
+	/*!
+	   This method performs the following multiple right-hand-side linear 
+	   solve of the extended Jacobian matrix:
+	   \f[
+	      \begin{bmatrix}
+	         J & 0 & \frac{\partial F}{\partial p} \\
+		 \frac{\partial Jn}{\partial x} & J & \frac{\partial Jn}{\partial p} \\
+		 0 & l^T & 0
+	      \end{bmatrix}
+	      \begin{bmatrix}
+	         U \\
+		 V \\
+		 w^T
+	      \end{bmatrix}
+	      = 
+	      \begin{bmatrix}
+	         X \\
+		 Y \\
+		 z^T
+	      \end{bmatrix}
+	  \f]
+	  where \f$U\f$, \f$V\f$, \f$X\f$, and \f$Y\f$ each have \em nVecs 
+	  columns and \f$w\f$, and \f$z\f$ each have \em nVecs components
+	  (i.e., each column of \f$X\f$, \f$Y\f$, and \f$z^T\f$ have the 
+	  solution, null-vector, and parameter components of one 
+	  right-hand-side).  The solution components \f$U\f$, \f$V\f$, and 
+	  \f$w\f$ are computed using a multiple right-hand-side block
+	  elimination (bordering) algorithm:
+	  \f[
+	       \begin{split}
+	          J\begin{bmatrix}
+		      A & b
+		   \end{bmatrix} &= 
+		   \begin{bmatrix} 
+		      X & \frac{\partial F}{\partial p}
+		   \end{bmatrix} \\
+		  J\begin{bmatrix}
+		      C & d
+		   \end{bmatrix} &= 
+		   \begin{bmatrix} 
+		      Y & \frac{\partial Jn}{\partial p}
+		   \end{bmatrix} - 
+		  \frac{\partial Jn}{\partial x} 
+		   \begin{bmatrix} 
+		      A & b
+		   \end{bmatrix} \\
+		  w &= \frac{z + C^Tl}{l^Td} \\
+		  U &= A - b w^T \\
+		  V &= C - d w^T
+	       \end{split}
+	  \f]
+	  which requires \f$ 2(\text{nVecs} + 1) \f$ solves of the underlying 
+	  Jacobian \f$J\f$ calculated by 2 calls to the 
+	  applyJacobianInverseMulti method of the underlying group.
+
+	  Each vector in the arrays \em inputs and \em outputs must be of
+	  type LOCA::Bifurcation::TPBord::ExtendedVector, otherwise an 
+	  error is thrown.
+	*/
+	virtual NOX::Abstract::Group::ReturnType 
+	applyJacobianInverseMulti(NOX::Parameter::List& params, 
+				  const NOX::Abstract::Vector* const* inputs, 
+				  NOX::Abstract::Vector** results, int nVecs) const;
+
+	/*! 
+	 * \brief Function to print out extended solution and continuation 
+	 * parameter after successful continuation step.
+	 */
+	/*!
+	 * This method prints the solution, null-vector, and parameter 
+	 * components of the extended solution vector using the printSolution
+	 * method of the underlying group.
+	 */
 	virtual void printSolution(const double conParam) const;
+
+	//@}
+
+	/*! 
+	 * @name Implementation of LOCA::Extended::AbstractGroup virtual methods 
+	 */
+	//@{
+
+	//! Assignment operator
+	virtual LOCA::Extended::AbstractGroup& 
+	operator=(const LOCA::Extended::AbstractGroup& source);
 
 	//! Return underlying group
 	virtual const LOCA::Continuation::AbstractGroup& 
@@ -269,6 +459,8 @@ namespace LOCA {
 	//! Return underlying group
 	virtual LOCA::Continuation::AbstractGroup& 
 	getUnderlyingGroup();
+	
+	//@}
 
       protected:
 
@@ -283,8 +475,10 @@ namespace LOCA {
 
       protected:
 
-	//! Stores the underlying group, which stores the solution vector,
-	//! jacobian, and solution residual
+	/*! 
+	 * \brief Stores the underlying group, which stores the solution 
+	 * vector, jacobian, and solution residual
+	 */
 	LOCA::Bifurcation::TPBord::AbstractGroup* grpPtr;   
   
 	//! Stores the turning point solution vector
@@ -308,7 +502,7 @@ namespace LOCA {
 	//! Stores the derivative of the null vector residual w.r.t. bifparam
 	NOX::Abstract::Vector* derivNullResidualParamPtr;
 
-	//! Flag indicating whether we have our own copy of the underlying group
+	//! Flag indicating whether we have our own copy of the underlying grp
 	bool ownsGroup;
 
 	//! Is residual vector valid

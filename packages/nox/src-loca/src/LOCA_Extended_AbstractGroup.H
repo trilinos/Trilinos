@@ -46,6 +46,16 @@ namespace LOCA {
   //! Extended Groups and vectors
   namespace Extended { 
 
+    /*! 
+     * \brief %LOCA abstract interface for extended groups, derived from the 
+     * NOX::Abstract::Group, i.e., an abstract interface for "super" groups
+     * that have an underlying group component.
+    */
+    /*! 
+     * Concrete implemenations of this interface must provide implementations 
+     * of all of the methods in the NOX::Abstract::Group interface as well as 
+     * the additional interface defined here.
+    */
     class AbstractGroup : public virtual NOX::Abstract::Group {
 
     public:
@@ -67,20 +77,14 @@ namespace LOCA {
 
       //! Return underlying group
       /*!
-       * This method is intended
-       * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method should
-       * return those underlying group data members.
+       * This method should the underlying group data member.
        */
       virtual const LOCA::Continuation::AbstractGroup& 
       getUnderlyingGroup() const = 0;
       
       //! Return underlying group
-       /*!
-       * This method is intended
-       * for composite groups (such as extended  %bifurcation groups) which
-       * have an underlying group as a data member.  This method should
-       * return those underlying group data members.
+      /*!
+       * This method should the underlying group data member.
        */
       virtual LOCA::Continuation::AbstractGroup& 
       getUnderlyingGroup() = 0;
