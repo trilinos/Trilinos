@@ -12,6 +12,16 @@
 
 namespace MLAPI {
 
+/*!
+\file MLAPI_Krylov
+
+\brief Simple wrapper to use MLAPI::Preconditioner with AztecOO
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Feb-05.
+*/
+
 void Krylov(const Operator& A, const DoubleVector& LHS,
             const DoubleVector& RHS,
             const Preconditioner& Prec,
@@ -19,7 +29,7 @@ void Krylov(const Operator& A, const DoubleVector& LHS,
 {
 
   Epetra_LinearProblem Problem;
-  ML_Operator* A_ML = A.GetOperator();
+  ML_Operator* A_ML = A.GetData();
   ML_Epetra::RowMatrix A_Epetra(A_ML,&GetEpetraComm());
 
   Epetra_Vector LHS_Epetra(View,A_Epetra.OperatorDomainMap(),
@@ -28,7 +38,7 @@ void Krylov(const Operator& A, const DoubleVector& LHS,
                            (double*)&(RHS(0)));
 
   // FIXME: this works only for Epetra-based operators
-  Problem.SetOperator((Epetra_RowMatrix*)A.GetOperator()->data);
+  Problem.SetOperator((Epetra_RowMatrix*)A.GetData()->data);
   //Problem.SetOperator(&A_Epetra);
   Problem.SetLHS(&LHS_Epetra);
   Problem.SetRHS(&RHS_Epetra);

@@ -1,5 +1,6 @@
 #ifndef MLAPI_PRECONDITIONER_H
 #define MLAPI_PRECONDITIONER_H
+#include "MLAPI_BaseObject.h"
 
 namespace MLAPI {
 
@@ -21,7 +22,8 @@ MLAPI::EpetraPreconditioner class.
 \date Last modified on 07-Jan-05.
 
 */
-class Preconditioner {
+
+class Preconditioner : public BaseObject{
 
 public:
 
@@ -36,6 +38,7 @@ public:
 
   //! Returns a copy of the range space of \c this object.
   virtual const Space RangeSpace() const = 0;
+
 };
 } // namespace MLAPI
 

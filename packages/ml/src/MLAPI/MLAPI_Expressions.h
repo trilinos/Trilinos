@@ -11,167 +11,122 @@
 
 namespace MLAPI {
 
-// x + y
+/*!
+\file MLAPI_Expressions.h
+
+\brief Overloaded operators for DoubleVector's, Operator's, and InverseOpereator's.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Feb-05.
+*/
+
+//! Creates a new DoubleVector, defined as x + y
 DoubleVector operator+(const DoubleVector& x, const DoubleVector& y)
 {
-  assert (x.VectorSpace() == y.VectorSpace());
+  if (x.VectorSpace() != y.VectorSpace())
+    ML_THROW("VectorSpace's are not compatible",-1);
+
   DoubleVector res(x.VectorSpace());
-  for (int i = 0 ; i < x.MyLength() ; ++i)
-    res(i) = x(i) + y(i);
+  res.Update(1.0, x, 1.0, y);
   return(res);
 }
 
-// x - y
+//! Creates a new DoubleVector, defined as x - y
 DoubleVector operator-(const DoubleVector& x, const DoubleVector& y)
 {
-  assert (x.VectorSpace() == y.VectorSpace());
+  if (x.VectorSpace() != y.VectorSpace())
+    ML_THROW("VectorSpace's are not compatible",-1);
+
   DoubleVector res(x.VectorSpace());
-  for (int i = 0 ; i < x.MyLength() ; ++i)
-    res(i) = x(i) - y(i);
+  res.Update(1.0, x, -1.0, y);
   return(res);
 }
 
-// A + B
+//! Creates a new Operator, defined as A + B
 Operator operator+(const Operator& A, const Operator& B)
 {
-  assert (A.DomainSpace() == B.DomainSpace());
-  assert (A.RangeSpace() == B.RangeSpace());
+  if (A.DomainSpace() != B.DomainSpace() ||
+      A.RangeSpace() != B.RangeSpace())
+    ML_THROW("DomainSpace's or RangeSpace's are not compatible",-1);
 
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add(A.GetOperator(),B.GetOperator(),ML_AplusB,MatrixType,1.);
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetML_Comm());
+  ML_Operator_Add(A.GetData(),B.GetData(),ML_AplusB,MatrixType,1.);
   Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
   return(AplusB);
 }
 
-// A - B
+//! Creates a new Operator, defined as A - B
 Operator operator-(const Operator& A, const Operator& B)
 {
-  assert (A.DomainSpace() == B.DomainSpace());
-  assert (A.RangeSpace() == B.RangeSpace());
+  if (A.DomainSpace() != B.DomainSpace() ||
+      A.RangeSpace() != B.RangeSpace())
+    ML_THROW("DomainSpace's or RangeSpace's are not compatible",-1);
 
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add(A.GetOperator(),B.GetOperator(),ML_AplusB,MatrixType,-1.);
+  ML_Operator* ML_AplusB = ML_Operator_Create(GetML_Comm());
+  ML_Operator_Add(A.GetData(),B.GetData(),ML_AplusB,MatrixType,-1.);
   Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
   return(AplusB);
 }
 
-// A * B
+//! Creates a new Operator, defined as A * B
 Operator operator*(const Operator& A, const Operator& B)
 {
-  // FIXME check on spaces
-  ML_Operator* ML_AtimesB = ML_Operator_Create(GetMLComm());
-  ML_2matmult(A.GetOperator(), B.GetOperator(), ML_AtimesB, MatrixType);
+  if (A.DomainSpace() != B.RangeSpace())
+    ML_THROW("DomainSpace's or RangeSpace's are not compatible",-1);
+
+  ML_Operator* ML_AtimesB = ML_Operator_Create(GetML_Comm());
+  ML_2matmult(A.GetData(), B.GetData(), ML_AtimesB, MatrixType);
   Operator AtimesB(B.DomainSpace(),A.RangeSpace(), ML_AtimesB,true);
   return(AtimesB);
 }
 
-#if 0
-// A + beta B
-Operator operator+(const Operator& A, const BaseObjectMult<double,Operator>& B)
-{
-  assert (A.DomainSpace() == B.GetRight().DomainSpace());
-  assert (A.RangeSpace() == B.GetRight().RangeSpace());
-
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add(A.GetOperator(),B.GetRight().GetOperator(),
-                  ML_AplusB,MatrixType, B.GetLeft());
-  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
-  return(AplusB);
-}
-
-// A - beta B
-Operator operator-(const Operator& A, const BaseObjectMult<double,Operator>& B)
-{
-  assert (A.DomainSpace() == B.GetRight().DomainSpace());
-  assert (A.RangeSpace() == B.GetRight().RangeSpace());
-
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add(A.GetOperator(),B.GetRight().GetOperator(),
-                  ML_AplusB,MatrixType, - B.GetLeft());
-  Operator AplusB(A.DomainSpace(),A.RangeSpace(), ML_AplusB,true);
-  return(AplusB);
-}
-
-// alpha A + beta B
-Operator operator+(const BaseObjectMult<double,Operator>& A, 
-                    const BaseObjectMult<double,Operator>& B)
-{
-  assert (A.GetRight().DomainSpace() == B.GetRight().DomainSpace());
-  assert (A.GetRight().RangeSpace() == B.GetRight().RangeSpace());
-
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add2(A.GetRight().GetOperator(),B.GetRight().GetOperator(),
-                   ML_AplusB,MatrixType, A.GetLeft(),B.GetLeft());
-  Operator AplusB(A.GetRight().DomainSpace(), A.GetRight().RangeSpace(),
-                  ML_AplusB,true);
-  return(AplusB);
-}
-
-// alpha A - beta B
-Operator operator-(const BaseObjectMult<double,Operator>& A, 
-                    const BaseObjectMult<double,Operator>& B)
-{
-  assert (A.GetRight().DomainSpace() == B.GetRight().DomainSpace());
-  assert (A.GetRight().RangeSpace() == B.GetRight().RangeSpace());
-
-  ML_Operator* ML_AplusB = ML_Operator_Create(GetMLComm());
-  ML_Operator_Add2(A.GetRight().GetOperator(),B.GetRight().GetOperator(),
-                   ML_AplusB,MatrixType, A.GetLeft(),-B.GetLeft());
-  Operator AplusB(A.GetRight().DomainSpace(), A.GetRight().RangeSpace(),
-                  ML_AplusB,true);
-  return(AplusB);
-}
-#endif
-
-// y = x * alpha
+//! Creates a new DoubleVector, defined as x * alpha
 DoubleVector
 operator*(const DoubleVector& x, const double alpha) 
 {
-  if (alpha == 0.0)
-    throw("dividing by zero!");
-
-  DoubleVector y(x);
+  DoubleVector y = Duplicate(x);
   y.Scale(alpha);
   return(y);
 }
 
-// y = x / alpha
+//! Creates a new DoubleVector y, such that y = x / alpha
 DoubleVector
 operator/(const DoubleVector& x, const double alpha) 
 {
   if (alpha == 0.0)
-    throw("dividing by zero!");
+    ML_THROW("Division by 0.0", -1);
 
-  DoubleVector y(x);
+  DoubleVector y = Duplicate(x);
   y.Scale(1.0 / alpha);
   return(y);
 }
 
-// LHS = S / rhs
+//! Creates a new DoubleVector y, such that y = A * x.
 DoubleVector
-operator/(const InverseOperator& A, const DoubleVector& RHS) {
-  // FIXME: check on spaces
-  DoubleVector LHS(RHS.VectorSpace());
-  LHS = 0.0;
-  A.ApplyInverse(RHS,LHS);
-  return(LHS);
-}
-
-// LHS = A * RHS
-DoubleVector
-operator* (const Operator& A, const DoubleVector& RHS)
+operator*(const InverseOperator& A, const DoubleVector& x) 
 {
-  DoubleVector LHS(RHS.VectorSpace());
-  A.Apply(RHS,LHS);
-  return(LHS);
+  DoubleVector y(A.RangeSpace(), true);
+  A.ApplyInverse(x,y);
+  return(y);
 }
 
-// x * y
+//! Creates a new DoubleVector y, such that y = A * x.
+DoubleVector
+operator* (const Operator& A, const DoubleVector& x)
+{
+  DoubleVector y(A.RangeSpace(), true);
+  A.Apply(x,y);
+  return(y);
+}
+
+//! computes the dot product between x and y
 double
-operator* (const DoubleVector& Left, const DoubleVector& Right)
+operator* (const DoubleVector& x, const DoubleVector& y)
 {
-  return(Left.DotProduct(Right));
+  return(x.DotProduct(y));
 }
 
 } // namespace MLAPI
+
 #endif // if ML_EXPRESSIONS_H

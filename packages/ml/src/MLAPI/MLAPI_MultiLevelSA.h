@@ -2,13 +2,16 @@
 #define MLAPI_MULTILEVEL_H
 
 #include "ml_include.h"
-#include "Teuchos_ParameterList.hpp"
 #include "MLAPI_Operator.h"
+#include "MLAPI_Operator_Utils.h"
 #include "MLAPI_DoubleVector.h"
 #include "MLAPI_InverseOperator.h"
 #include "MLAPI_Expressions.h"
 #include "MLAPI_Preconditioner.h"
 #include "MLAPI_Workspace.h"
+#include "MLAPI_NullSpace.h"
+#include "MLAPI_Aggregation.h"
+#include "MLAPI_DataBase.h"
 #include <vector>
 
 #include "ml_agg_genP.h"
@@ -26,7 +29,7 @@ namespace MLAPI {
 
 */
 
-class MultiLevel : public Preconditioner {
+class MultiLevelSA : public Preconditioner {
 
 public:
 
@@ -34,31 +37,23 @@ public:
   /*! Constructs the multilevel hierarchy.
    *  \param FineMatrix (In) - Fine-level matrix
    *
-   *  \param MLList (In) - Teuchos list containing all the parameters
-   *                that can affect the construction of the hierarchy,
-   *                the definition of smoothers and coarse solver.
-   *
-   *  \warning: Only a limited subset of parameters supported by
-   *  ML_Epetra::MultiLevelPreconditioner is recognized by this class.
-   *  In particular:
-   *  - only IFPACK smoothers can be defined;
-   *  - only Amesos coarse solver are supported.
-   *  - only increasing hierarchies.
    */
-  MultiLevel(const Operator FineMatrix,
-             Teuchos::ParameterList& MLList)
+  MultiLevelSA(const Operator FineMatrix, AggregationDataBase& ADB,
+               SmootherDataBase& SDB, CoarseSolverDataBase& CDB)
   {
 
     FineMatrix_ = FineMatrix;
 
-    double Damping = MLList.get("aggregation: damping factor", 1.333);
-    string EigenAnalysis = MLList.get("eigen-analysis: type", "Anorm");
+    double Damping       = ADB.GetDamping();
+    string EigenAnalysis = ADB.GetEigenAnalysisType();
+    MaxLevels_           = ADB.GetMaxLevels();
 
-    MaxLevels_ = MLList.get("max levels",2);
-    if (MaxLevels_ <= 0) {
-      cerr << "Value of `max levels' not valid (" << MaxLevels_ << ")" << endl;
-      throw("invalid parameter");
-    }
+    // setup the null space for the finest level
+    // FIXME: now only default null space!
+    // to get nullspace-stuff from GetOption
+    int NullSpaceDimension = 1;
+    NullSpace ThisNS(FineMatrix.DomainSpace(), NullSpaceDimension);
+    NullSpace NextNS;     // contains the next-level null space
 
     A_.resize(MaxLevels_);
     R_.resize(MaxLevels_);
@@ -80,18 +75,23 @@ public:
     int level;
     for (level = 0 ; level < MaxLevels_ - 1 ; ++level) 
     {
-      if (PrintLevel()) {
+      if (GetPrintLevel()) {
         cout << endl;
         cout << "Building level " << level << "..." << endl;
         cout << endl;
       }
 
-      // only to simplify the notation
+      // load current level into database
+      ADB.SetCurrentLevel(level);
+
+      // alias, to simplify the notation
       A = A_[level];
-      Ptent = BuildP(A,MLList);
+      BuildPtent(A, ADB, ThisNS, Ptent, NextNS);
+      ThisNS = NextNS;
+      
       LambdaMax = MaxEigenvalue(A,EigenAnalysis,true);
 
-      if (PrintLevel()) {
+      if (GetPrintLevel()) {
         cout << endl;
         cout << "Prolongator/Restriction smoother (level " << level 
           << ") : damping factor = " << Damping / LambdaMax << endl;
@@ -111,7 +111,7 @@ public:
       Operator IminusA = I - DinvA;
 #else
       struct ML_AGG_Matrix_Context widget = {0};
-      IminusA = JacobiIterationOperator(A,Damping,LambdaMax,&widget);
+      IminusA = JacobiIterationOperator(A,Damping / LambdaMax,&widget);
 #endif
 
       P = IminusA * Ptent;
@@ -119,7 +119,7 @@ public:
       R = Transpose(P);
       C = RAP(R,A,P);
       // build smoothers
-      S.Reshape(A,"SGS",MLList);
+      S.Reshape(A,SDB);
       // put operators and inverse in hierarchy
       R_[level] = R;
       P_[level] = P;
@@ -134,27 +134,36 @@ public:
     }
 
     // set coarse solver
-    S.Reshape(A_[level],"Amesos",MLList);
+    S.Reshape(A_[level],CDB);
     S_[level] = S;
     MaxLevels_ = level + 1;
+
   }
 
   //! Destructor.
-  virtual ~MultiLevel()
+  virtual ~MultiLevelSA()
   { }
 
   //! Applies the preconditioner to b_f with starting solution x_f.
   int Solve(const DoubleVector& b_f, DoubleVector& x_f) const
   {
-    SolveMultiLevel(b_f,x_f,0);
+    SolveMultiLevelSA(b_f,x_f,0);
     return(0);
   }
 
-  //! Recursively called method, core of the multi level preconditioner.
-  int SolveMultiLevel(const DoubleVector& b_f,DoubleVector& x_f, int level) const 
+  //! Applies the preconditioner to b_f with starting solution x_f.
+  int Solve(const DoubleVector& b_f, DoubleVector& x_f,
+            const int FinestLevel = 0) const
+  {
+    SolveMultiLevelSA(b_f,x_f,FinestLevel);
+    return(0);
+  }
+
+  //! Recursively called core of the multi level preconditioner.
+  int SolveMultiLevelSA(const DoubleVector& b_f,DoubleVector& x_f, int level) const 
   {
     if (level == MaxLevels_ - 1) {
-      x_f = S(level) / b_f;
+      x_f = S(level) * b_f;
       return(0);
     }
 
@@ -163,13 +172,13 @@ public:
     DoubleVector z_c(P(level).DomainSpace());
 
     // apply pre-smoother
-    x_f = S(level) / b_f;
+    x_f = S(level) * b_f;
     // new residual
     r_f = b_f - A(level) * x_f;
     // restrict to coarse
     r_c = R(level) * r_f;
     // solve coarse problem
-    SolveMultiLevel(r_c,z_c,level + 1);
+    SolveMultiLevelSA(r_c,z_c,level + 1);
     // prolongate back and add to solution
     x_f = x_f + P(level) * z_c;
     // apply post-smoother
@@ -212,9 +221,47 @@ public:
     return(S_[i]);
   }
 
+  //! Prints basic information about \c this preconditioner.
+  std::ostream& Print(std::ostream& os, 
+                      const bool verbose = true) const
+  {
+    if (MyPID() == 0) {
+      os << "MLAPI::MultiLevelSA, label = `" << GetLabel() << "'" << endl;
+      os << endl;
+      os << "Number of levels = " << MaxLevels() << endl;
+      os << "Smoother type    = " << SmootherType() << endl;
+      os << "Coarse solver    = " << CoarseType() << endl;
+      os << endl;
+    }
+    return(os);
+  }
+
+  //! Returns the actual number of levels
+  int MaxLevels() const
+  {
+    return(MaxLevels_);
+  }
+
+  //! Returns the smoother type
+  string SmootherType() const
+  {
+    return(SmootherType_);
+  }
+
+  //! Returns the coarse solver type
+  string CoarseType() const
+  {
+    return(CoarseType_);
+  }
+
 private:
+
   //! Maximum number of levels.
   int MaxLevels_;
+  //! Contains the smoother type (the same on all levels)
+  string SmootherType_;
+  //! Contains the coarse solver type.
+  string CoarseType_;
   //! Fine-level matrix.
   Operator FineMatrix_;
   //! Contains the hierarchy of operators.
@@ -225,6 +272,7 @@ private:
   vector<Operator> P_;
   //! Contains the hierarchy of inverse operators.
   vector<InverseOperator> S_;
+  //! Contains the hierarchy of inverse operators.
 
 };
 

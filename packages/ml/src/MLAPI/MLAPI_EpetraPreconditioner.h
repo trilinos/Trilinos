@@ -27,7 +27,7 @@ class EpetraPreconditioner : public Epetra_Operator {
 
 public:
 
-  //! 
+  //! Constructor.
   EpetraPreconditioner(const Epetra_Map& Map,
                        const Preconditioner& Prec) :
     Map_(Map),
@@ -54,10 +54,9 @@ public:
 
     ML_CHK_ERR(Prec_.Solve(LHS2,RHS2));
     
-    // copy back the result
-    for (int i = 0 ; i < RHS.MyLength() ; ++i) {
-      RHS[0][i] = RHS2(i);
-    }
+    int n = RHS.MyLength();
+    int incr = 1;
+    DCOPY_F77(&n, RHS2.Values(), &incr, RHS[0], &incr);
 
     return(0);
   }
@@ -101,7 +100,7 @@ public:
   //! Returns a reference to the communicator object.
   virtual const Epetra_Comm& Comm() const
   {
-    return(GetEpetraComm());
+    return(GetEpetra_Comm());
   }
 
   //! Returns a reference to the OperatorDomainMap.

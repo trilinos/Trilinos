@@ -10,42 +10,63 @@
 #include "Epetra_SerialComm.h"
 #endif
 
-#define ML_THROW(a) \
-  { cerr << "*ML*ERR* (" << __FILE__ << "+:" << __LINE__ \
-         << ") " << endl; \
-    cerr << "*ML*ERR* " << a << endl; \
-    throw(a); \
-  }
-
 namespace MLAPI {
 
-static ML_Comm* MLAPIComm_ = 0;
-static Epetra_Comm* EpetraComm_ = 0;
+static ML_Comm* ML_Comm_ = 0;
+static Epetra_Comm* Epetra_Comm_ = 0;
+static Teuchos::ParameterList WorkSpaceList;
+void Init();
+
+/*!
+\file MLAPI_Workspace
+
+\brief Basic functions to initialize, use and finalize the MLAPI workspace.
+
+\author Marzio Sala, SNL 9214.
+
+\date Last updated on Feb-05.
+*/
 
 //! Returns a pointer to the ML_Comm object defined on MPI_COMM_WORLD.
-ML_Comm* GetMLComm() {
-  return(MLAPIComm_);
+ML_Comm* GetML_Comm() 
+{
+  return(ML_Comm_);
 }
 
 //! Returns a reference to the Epetra_Comm object defined on MPI_COMM_WORLD.
-Epetra_Comm& GetEpetraComm() {
-  return(*EpetraComm_);
+Epetra_Comm& GetEpetra_Comm() 
+{
+  if (Epetra_Comm_ == 0) Init();
+
+  return(*Epetra_Comm_);
+}
+
+//! Calls Mpi_Barrier() if MPI is enabled.
+void Barrier()
+{
+  if (Epetra_Comm_ == 0) Init();
+
+  Epetra_Comm_->Barrier();
 }
 
 //! Returns the ID of the calling process.
 int MyPID()
 {
-  return(EpetraComm_->MyPID());
+  if (Epetra_Comm_ == 0) Init();
+
+  return(Epetra_Comm_->MyPID());
 }
 
 //! Returns the total number of processes in the computation.
 int NumProc()
 {
-  return(EpetraComm_->NumProc());
+  if (Epetra_Comm_ == 0) Init();
+
+  return(Epetra_Comm_->NumProc());
 }
 
 //! Retutns the level of output (always 0 if MyPID() != 0).
-int PrintLevel() 
+int GetPrintLevel() 
 {
   if (MyPID())
     return(0);
@@ -60,15 +81,18 @@ void SetPrintLevel(int Level)
 }
 
 //! Initialize the MLAPI workspace.
-void Init() {
-  ML_Comm_Create(&MLAPIComm_);
+void Init() 
+{
+  if (ML_Comm_ == 0) ML_Comm_Create(&ML_Comm_);
+  if (Epetra_Comm_ == 0) {
 #ifdef HAVE_MPI
-  EpetraComm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
+    Epetra_Comm_ = new Epetra_MpiComm(MPI_COMM_WORLD);
 #else
-  EpetraComm_ = new Epetra_SerialComm;
+    Epetra_Comm_ = new Epetra_SerialComm;
 #endif
+  }
 
-    char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
+  char * str = (char *) getenv("ML_BREAK_FOR_DEBUGGER");
   int i = 0, j = 0;
   char buf[80];
   char go = ' ';
@@ -82,7 +106,7 @@ void Init() {
     fclose(ML_capture_flag);
   }
 
-  GetEpetraComm().SumAll(&i, &j, 1);
+  GetEpetra_Comm().SumAll(&i, &j, 1);
 
   if (j != 0)
   {
@@ -116,8 +140,17 @@ void Init() {
 }
 
 //! Destroys the MLAPI workspace.
-void Finalize() {
-  ML_Comm_Destroy(&MLAPIComm_);
+void Finalize() 
+{
+  if (ML_Comm_) {
+    ML_Comm_Destroy(&ML_Comm_);
+    ML_Comm_ = 0;
+  }
+
+  if (Epetra_Comm_) {
+    delete Epetra_Comm_;
+    Epetra_Comm_ = 0;
+  }
 }
 
 } // namespace MLAPI
