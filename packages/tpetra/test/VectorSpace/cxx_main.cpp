@@ -36,6 +36,7 @@
 #include "Tpetra_SerialPlatform.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_Vector.hpp"
+#include "Tpetra_Version.cpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -53,6 +54,9 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
+
+	if(verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 
 	// call test routine
 	int ierr = 0;

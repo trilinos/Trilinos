@@ -33,6 +33,7 @@
 #define ORDINALTYPE int
 
 #include "Tpetra_SerialPlatform.hpp"
+#include "Tpetra_Version.cpp"
 
 int main(int argc, char* argv[]) {
     bool verbose = false;
@@ -41,6 +42,10 @@ int main(int argc, char* argv[]) {
 
     int size = 1; // Serial case (not using MPI)
     int rank = 0;
+
+    if(verbose)
+	cout << Tpetra::Tpetra_Version() << endl << endl;
+
     if(verbose) cout << "Creating SerialPlatform object...";
     Tpetra::SerialPlatform<ORDINALTYPE, SCALARTYPE> platform;
     //if(debug) cout << platform.label() << endl;

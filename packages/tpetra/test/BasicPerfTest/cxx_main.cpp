@@ -29,6 +29,7 @@
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include "Tpetra_Version.cpp"
 
 //function prototypes
 void doSumRuns(int size, int numRuns, bool verbose);
@@ -45,6 +46,9 @@ int main(int argc, char* argv[]) {
 			if(argv[1][1] == 'o' || argv[1][2] == 'o')
 				override = true;
 		}
+
+ 	if (verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 
 	int base = 2;
 	int iterations = 20;

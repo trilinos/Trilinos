@@ -31,6 +31,8 @@
 */
 
 #include "Tpetra_ScalarTraits.hpp"
+#include "Tpetra_Version.cpp"
+
 #define PACKETTYPE int
 #define ORDINALTYPE int
 
@@ -49,6 +51,9 @@ int main(int argc, char *argv[]) {
 			debug = true;
 		}
 	}
+
+  if (verbose)
+	cout << Tpetra::Tpetra_Version() << endl << endl;
 
   int ierr = 0;
   float fvar = 2.0;

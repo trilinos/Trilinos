@@ -45,6 +45,7 @@
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_VectorSpace.hpp"
 #include "Tpetra_CisMatrix.hpp"
+#include "Tpetra_Version.cpp"
 
 void test(Epetra_Comm& comm, Epetra_Map*& map, Epetra_CrsMatrix*& A, Epetra_Vector*& xexact,
 					Epetra_Vector*& b, int dim, int nnz, bool verbose, bool smallProblem);
@@ -60,8 +61,6 @@ int main(int argc, char *argv[]) {
 
 	cout << "\n===========================================================================================\n";
 	cout << "===========================================================================================\n\n";
-
-  cout << comm << endl;
 
   int MyPID = comm.MyPID();
 
@@ -80,6 +79,11 @@ int main(int argc, char *argv[]) {
 	 << endl;
     return(1);
   }
+
+  if (verbose)
+    cout << Tpetra::Tpetra_Version() << endl;
+
+  cout << comm << endl;
 
   // Uncomment the next three lines to debug in mpi mode
   //int tmp;

@@ -40,6 +40,7 @@
 #include "Tpetra_SerialPlatform.hpp" 
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_BlockElementSpace.hpp"
+#include "Tpetra_Version.cpp"
 
 int main(int argc, char* argv[]) {
 
@@ -57,7 +58,9 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
-  
+
+  if(verbose)
+    cout << Tpetra::Tpetra_Version() << endl << endl;  
   // Platform
   if(verbose) cout << "Creating platform" << endl;
   Tpetra::SerialPlatform<ORDINALTYPE, ORDINALTYPE> platform;

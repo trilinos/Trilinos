@@ -35,6 +35,7 @@
 
 #include <iostream>
 #include "Tpetra_SerialComm.hpp"
+#include "Tpetra_Version.cpp"
 
 // function prototypes
 template<typename PacketType, typename OrdinalType> void setRandom(PacketType& vals, OrdinalType count);
@@ -45,6 +46,9 @@ int main(int argc, char* argv[]) {
 	bool verbose = false;
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v') 
 		verbose = true;
+
+	if(verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 
 	if(verbose) cout << "Creating SerialComm object...";
 	Tpetra::SerialComm<int, int> comm;

@@ -35,6 +35,7 @@
 #include <iomanip>
 #include "Tpetra_SerialPlatform.hpp" 
 #include "Tpetra_ElementSpace.hpp"
+#include "Tpetra_Version.cpp"
 
 void platformTester(bool verbose, bool debug);
 void esTester(bool verbose, bool debug);
@@ -52,6 +53,9 @@ int main(int argc, char* argv[]) {
 			verbose = true;
 		}
 	}
+
+	if(verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 
 	platformTester(verbose, debug);
 	esTester(verbose, debug);

@@ -36,6 +36,7 @@
 #include "Tpetra_CombineMode.hpp"
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_ScalarTraits.hpp>
+#include "Tpetra_Version.cpp"
 
 // function prototype
 template <typename OrdinalType, typename ScalarType>
@@ -56,6 +57,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	if (verbose)
+		cout << Tpetra::Tpetra_Version() << endl << endl;
 	// call test routine
 	int ierr = 0;
 	if(verbose) cout << "Starting CisMatrixTest..." << endl;

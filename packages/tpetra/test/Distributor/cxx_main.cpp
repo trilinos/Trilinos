@@ -34,11 +34,15 @@
 
 
 #include "Tpetra_SerialDistributor.hpp"
+#include "Tpetra_Version.cpp"
 
 int main(int argc, char* argv[]) {
 	bool verbose = false;
 	if (argc>1 && argv[1][0]=='-' && argv[1][1]=='v') 
 		verbose = true;
+
+  if(verbose)
+	cout << Tpetra::Tpetra_Version() << endl << endl;
 
   if(verbose) cout << "Creating SerialDistributor object...";
   Tpetra::SerialDistributor<PACKETTYPE, ORDINALTYPE> distributor;
