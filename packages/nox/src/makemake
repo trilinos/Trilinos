@@ -10,13 +10,16 @@
 sub build_depends{
 
     # Copy inputs (@_) into local variables
-    local(*DIR, $projname) = @_;
+    local(*DIRS, $projname) = @_;
 
-    # Generate a list of all include files (which end in .H) 
-    # from each directory in INCDIR
+    # Generate a list of all include and source files
+    # from each directory in DIRS
     @incfiles = ();
     @srcfiles = ();
     foreach $dir (@DIRS) {
+
+	@objfiles = ();
+
 	opendir(DIR, $dir) || die "Can't open include directory $dir. $!\n";
 	@filenames = readdir(DIR);
 	foreach (@filenames) {
@@ -25,9 +28,19 @@ sub build_depends{
 		 push(@incfiles, "$dir/$_"));
 	    (/.C$/) && 
 		((($dir =~ /^.$/) && push(@srcfiles, "$_")) ||
-		push(@srcfiles, "$dir/$_"))
+		 push(@srcfiles, "$dir/$_"));
+	    (s/\.C$/\.o/) &&
+		push(@objfiles, "$_");
 	}
 	closedir(DIR);
+
+	# Output object files for this particular directory
+	$shortdir = $dir;
+	($shortdir =~ s/$SRCDIRHOME\/(.*)/$1/) || ($shortdir = "");
+	print "Directory: $dir -> $shortdir\n";
+	print @objfiles;
+	print "\n";
+
     }
 
     # For each include file in @incfiles, assemble a list of its 
@@ -45,8 +58,6 @@ sub build_depends{
 	close(INCFILE);
     }
     
-    # For each include file in @incfiles, assemble a list of its 
-    # dependencies, including the dependencies in files it includes.
     foreach $srcfile (@srcfiles) {
 	
 	# Copy source file name, delete the path, and change .C to .o
