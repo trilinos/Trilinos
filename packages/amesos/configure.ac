@@ -239,7 +239,7 @@ AC_F77_WRAPPERS
 # Checks for addons
 # ------------------------------------------------------------------------
 
-TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], ../../../../Trilinos3PL )
+TAC_ARG_WITH( trilinos3pldir, [Set Trilinos3PL directory], must_specify_trilinos3pldir )
 
 ## echo "  tac_with_trilinos3pldir =  ${tac_with_trilinos3pldir} " 
 AC_CHECK_FILE(${tac_with_trilinos3pldir})

@@ -898,7 +898,7 @@ Optional Packages:
                           will prepend to search here for includes, use -Idir
                           format
   --with-trilinos3pldir   Set Trilinos3PL directory (default is
-                          ../../../../Trilinos3PL, )
+                          must_specify_trilinos3pldir, )
   --with-amesos-sluddir   Set SuperLU dist directory (default is
                           ${tac_with_trilinos3pldir}/SuperLU_DIST, )
   --with-amesos-sludlib   Set SuperLU dist library (default is
@@ -6215,7 +6215,7 @@ if test "${with_trilinos3pldir+set}" = set; then
   withval="$with_trilinos3pldir"
   tac_with_trilinos3pldir=$withval
 else
-  tac_with_trilinos3pldir=../../../../Trilinos3PL
+  tac_with_trilinos3pldir=must_specify_trilinos3pldir
 fi;
 
 

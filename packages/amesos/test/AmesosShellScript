@@ -129,7 +129,7 @@ mpirun -np 1 amesos_test.exe SuperLUdist   bcsstk18.rsa 0 1 -5 0 1e-9 1e-4  >>SS
 mpirun -np 4 amesos_test.exe SuperLUdist   bcsstk18.rsa 0 1 -3 0 1e-9 1e-4  >>SST.stdout
 
 #
-#  Test some solves on Aztec
+#  Test some solves on Aztecc
 #
 #  COMMENT - I can't build this on atlantis today    mpirun -np 1 amesos_test.exe AZTEC   SuperLU.rua  0 1 1 0 1e-14 1e-13 >>SST.stdout
 #  COMMENT - I can't build this on atlantis today    mpirun -np 1 amesos_test.exe AZTEC   ImpcolA.rua  0 1 1 0 1e30 1e30 >>&SST.stdout

@@ -753,6 +753,7 @@ SpoolesScript$(EXEEXT): $(srcdir)/SpoolesScript
 	cp  $(srcdir)/In_bcsstk13.mtx bcsstk13.mtx 
 	cp  $(srcdir)/In_nos1.mtx nos1.mtx 
 	cp  $(srcdir)/In_nos5.mtx nos5.mtx 
+	cp  $(srcdir)/In_FourByFour.mtx FourByFour.mtx 
 	cp  $(srcdir)/In_Diagonal.mtx Diagonal.mtx 
 	cp  $(srcdir)/In_KheadK.mtx KheadK.mtx 
 	cp  $(srcdir)/In_KheadSorted.mtx KheadSorted.mtx 
