@@ -180,6 +180,9 @@ int ML_Aggregate_Set_SpectralNormScheme_Anorm( ML_Aggregate * );
 
 int ML_Aggregate_Get_AggrCount( ML_Aggregate *, int level );
 int ML_Aggregate_Get_AggrMap( ML_Aggregate *, int level, int**);
+extern int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level, 
+                                    int *nblocks, int **block_list);
+
 
 /* -------------------------------------------------------------------- */
 /* set null space for the finest grid                                   */

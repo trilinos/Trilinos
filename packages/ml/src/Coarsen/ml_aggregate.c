@@ -5258,4 +5258,9 @@ void ML_CSR_MSR_ML_memorydata_Destroy(void *data)
    }
 }
 
+int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level, int *nblocks, int **block_list)
+{
+   *nblocks = ML_Aggregate_Get_AggrCount( ag, level );
+   ML_Aggregate_Get_AggrMap( ag, level, block_list);
+}
 
