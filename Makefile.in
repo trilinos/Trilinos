@@ -219,7 +219,21 @@ EXTRA_DIST = \
 	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
-	sampleScripts/README config/AutotoolsVersionInfo
+	sampleScripts/README config/AutotoolsVersionInfo \
+	doc/Tutorial/amesos \
+	doc/Tutorial/anasazi \
+	doc/Tutorial/aztecoo \
+	doc/Tutorial/epetra \
+	doc/Tutorial/HBMatrices \
+	doc/Tutorial/ifpack \
+	doc/Tutorial/latex \
+	doc/Tutorial/Makefile \
+	doc/Tutorial/ml \
+	doc/Tutorial/nox \
+	doc/Tutorial/README \
+	doc/Tutorial/teuchos \
+	doc/Tutorial/triutils \
+	doc/Tutorial/tutorial.pdf
 
 AUX_DIST = config/install-sh config/missing config/mkinstalldirs
 MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
@@ -403,7 +417,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/config $(distdir)/sampleScripts $(distdir)/testharness
+	$(mkdir_p) $(distdir)/config $(distdir)/doc/Tutorial $(distdir)/sampleScripts $(distdir)/testharness
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

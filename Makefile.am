@@ -61,7 +61,21 @@ EXTRA_DIST = \
 	sampleScripts/scyld_mpi_beowulf sampleScripts/sgi64_mpi_atlantis \
 	sampleScripts/sgi64_serial_atlantis \
 	sampleScripts/solaris_mpi_conejo sampleScripts/solaris_serial_paul \
-	sampleScripts/README config/AutotoolsVersionInfo
+	sampleScripts/README config/AutotoolsVersionInfo \
+	doc/Tutorial/amesos \
+	doc/Tutorial/anasazi \
+	doc/Tutorial/aztecoo \
+	doc/Tutorial/epetra \
+	doc/Tutorial/HBMatrices \
+	doc/Tutorial/ifpack \
+	doc/Tutorial/latex \
+	doc/Tutorial/Makefile \
+	doc/Tutorial/ml \
+	doc/Tutorial/nox \
+	doc/Tutorial/README \
+	doc/Tutorial/teuchos \
+	doc/Tutorial/triutils \
+	doc/Tutorial/tutorial.pdf
 
 ## #######################################################################
 ## Tools in the auxillary directory 
