@@ -49,9 +49,9 @@ int heap_check (HEAP *h)
 
 void heap_input (HEAP *h, int element, float value)
 {
-  h->ele[h->n] = element;
-  h->pos[element] = (h->n)++;
   h->value[element] = value;
+  h->pos[element] = h->n;
+  h->ele[(h->n)++] = element;
 }
 
 void heap_make (HEAP *h)
@@ -79,11 +79,11 @@ void heapify (HEAP *h, int root)
 void heap_change_value (HEAP *h, int element, float value)
 { int position=h->pos[element], father;
 
-  if (h->value[element] > value)
+  if (value < h->value[element])
   { h->value[element] = value;
     heapify(h,position);
   }
-  else if (h->value[element] < value)
+  else if (value > h->value[element])
   { h->value[element] = value;
     father = (position-1)/2;
     while (position>0 && h->value[element]>h->value[h->ele[father]])

@@ -206,6 +206,9 @@ static int matching_rrm (ZZ *zz, HGraph *hg, Graph *g, Matching match, int *limi
     return ZOLTAN_MEMERR;
   }
 
+  for (i=0; i<hg->nVtx; i++)
+    vertices[i] = i;
+
   for (i=g->nVtx; i>0 && (*limit)>0; i--)
   { vertex = vertices[number=Zoltan_HG_Rand()%i];
     vertices[number] = vertices[i-1];
