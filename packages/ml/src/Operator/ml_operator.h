@@ -239,6 +239,8 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 int ML_Operator_GetFlops(ML_Operator *mat);
 void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols);
 
+int ML_Operator_Analyze(ML_Operator *Op, char *name);
+
 #ifdef ML_WITH_EPETRA
 extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 #endif
