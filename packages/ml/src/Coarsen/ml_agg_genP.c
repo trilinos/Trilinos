@@ -219,6 +219,9 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator **prev_P_tentatives;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
+   void        (*Pmatrix_data_destroy)(void *) = NULL;
+   void        *Pmatrix_data = NULL;
+
 #ifdef SYMMETRIZE
    ML_Operator *t2, *t3;
 #endif
@@ -242,28 +245,63 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Aggregate_Set_CurrentLevel( ag, level );
 
    if (ag->smoothP_damping_factor != 0.0) {
-     if ((ag->keep_P_tentative == ML_NO) || (prev_P_tentatives == NULL) ||
-	 (prev_P_tentatives[clevel] == NULL)) {
-       Pmatrix = ML_Operator_Create(ml->comm);
-       Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
-     }
-     else {
+
+     if ((ag->keep_P_tentative == ML_YES) && (prev_P_tentatives != NULL) &&
+	     (prev_P_tentatives[clevel] != NULL))
+     {
        Pmatrix = prev_P_tentatives[clevel];
        Ncoarse = Pmatrix->invec_leng;
      }
+	 else if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
+     {
+       Pmatrix = ML_Operator_halfClone( &(ml->Pmat[clevel]) );
+
+       Pmatrix->data_destroy = ml->Pmat[clevel].data_destroy;
+       ml->Pmat[clevel].data_destroy = NULL;
+       ml->Pmat[clevel].data = NULL;
+
+       ML_memory_free( (void**)&(Pmatrix->matvec) );
+       Pmatrix->matvec = ml->Pmat[clevel].matvec;
+       ml->Pmat[clevel].matvec = NULL;
+       ML_memory_free( (void**)&(Pmatrix->getrow) );
+       Pmatrix->getrow = ml->Pmat[clevel].getrow;
+       ml->Pmat[clevel].getrow = NULL;
+       ml->Pmat[clevel].label = NULL;
+
+       ML_Operator_Clean(&(ml->Pmat[clevel]));
+       ML_memory_alloc((void**)&(ml->Pmat[clevel].getrow),
+                       sizeof(ML_GetrowFunc),"OF2");
+
+       ml->Pmat[clevel].matvec = Pmatrix->matvec;
+       Pmatrix->matvec = NULL;
+       Ncoarse = Pmatrix->invec_leng;
+     }
+     else {
+       Pmatrix = ML_Operator_Create(ml->comm);
+       Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
+     }
    }
-   else {
+   else
+   {
      Pmatrix = &(ml->Pmat[clevel]);
      if (Pmatrix->invec_leng == 0)
        Ncoarse  = ML_Aggregate_Coarsen(ag,Amat,&Pmatrix,ml->comm);
      else Ncoarse = Pmatrix->invec_leng;
    }
+
    gNcoarse = ML_Comm_GsumInt( ml->comm, Ncoarse);
    if ( gNcoarse == 0 || ((1.0*gNfine)/(1.0*gNcoarse+0.1) < 1.05) )
    {
-      if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0)) 
-         ML_Operator_Destroy(Pmatrix);
-      return -1;
+     if (( Pmatrix != NULL ) && (ag->smoothP_damping_factor != 0.0))
+     {
+		if (ML_Aggregate_Get_Flag_SmoothExistingTentativeP(ag) == ML_YES)
+        {
+           ml->Pmat[clevel].data_destroy = Pmatrix->data_destroy;
+           Pmatrix->data_destroy = NULL;
+        }
+        ML_Operator_Destroy(Pmatrix);
+     }
+     return -1;
    }
 
 #ifdef ML_NONSYMMETRIC
@@ -344,7 +382,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      if (t3 != NULL) ML_Operator_Destroy(t3);
      if (t2 != NULL) ML_Operator_Destroy(t2);
 #endif
-     if (ag->keep_P_tentative == ML_NO) ML_Operator_Destroy(Pmatrix);
+     if (ag->keep_P_tentative == ML_NO)  ML_Operator_Destroy(Pmatrix);
      else {
        if (prev_P_tentatives == NULL) {
 	 ag->P_tentative = ML_Operator_ArrayCreate(ag->max_levels);
