@@ -492,24 +492,23 @@ int AztecOO::SetPreconditioner(void  (*prec_function)
 }
 //
 //=============================================================================
-int AztecOO::ConstructPreconditioner(double & condest) {
-
+int AztecOO::ConstructPreconditioner(double & condest)
+{
   if (PrecMatrixData_==0) EPETRA_CHK_ERR(-1); // No matrix yet
 
-	Epetra_RowMatrix * PrecMatrix = PrecMatrixData_->A; // Extract Preconditioner matrix
+  Epetra_RowMatrix * PrecMatrix = PrecMatrixData_->A; // Extract Preconditioner matrix
 
   int precond_flag = options_[AZ_precond];
 
   if (precond_flag) {
 
-  // Create default Aztec preconditioner if one not defined
-  if (Prec_==0) {
-    if (Pmat_==0)  EPETRA_CHK_ERR(-2); // No Pmat to use for building preconditioner
-    Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
-  }
+    // Create default Aztec preconditioner if one not defined
+    if (Prec_==0) {
+      if (Pmat_==0)  EPETRA_CHK_ERR(-2); // No Pmat to use for building preconditioner
+      Prec_ = AZ_precond_create(Pmat_, AZ_precondition, NULL);
+    }
   
-  AZ_mk_context(options_, params_, Pmat_->data_org, Prec_, proc_config_);
-
+    AZ_mk_context(options_, params_, Pmat_->data_org, Prec_, proc_config_);
 
     int NN = PrecMatrix->NumMyCols();
     double * condvec = new double[NN];
@@ -529,6 +528,7 @@ int AztecOO::ConstructPreconditioner(double & condest) {
 
     condest = condest_;
   }
+
   return(0);
 }
 //
@@ -539,10 +539,6 @@ int AztecOO::DestroyPreconditioner() {
     AZ_precond_destroy(&Prec_);
     Prec_ = 0;
     options_[AZ_pre_calc] = AZ_calc;
-  }
-  if (Pmat_ != 0) {
-    AZ_matrix_destroy(&Pmat_);
-    Pmat_ = 0;
   }
   return(0);
 }
