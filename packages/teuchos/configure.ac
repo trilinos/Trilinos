@@ -306,6 +306,13 @@ TAC_ARG_ENABLE_FEATURE_SUB( teuchos, abc, [Enable array bounds checking],
 # ------------------------------------------------------------------------
 
 #
+#  --enable-teuchos-complex
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, complex, [enable Teuchos complex code], TEUCHOS_COMPLEX, no)
+AM_CONDITIONAL(HAVE_TEUCHOS_COMPLEX, [test "X$ac_cv_use_teuchos_complex" != "Xno"])
+
+#
 #  --enable-teuchos-experimental
 #
 

@@ -158,6 +158,9 @@
 /* Define if want to build teuchos-abc */
 #undef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
+/* Define if want to build teuchos-complex */
+#undef HAVE_TEUCHOS_COMPLEX
+
 /* Define if want to build teuchos-experimental */
 #undef HAVE_TEUCHOS_EXPERIMENTAL
 

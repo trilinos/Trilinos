@@ -39,7 +39,7 @@ private:
   std::map<std::string, Entry<float> >                    FloatMap;
   std::map<std::string, Entry<int> >                        IntMap;
   std::map<std::string, Entry<std::string> >             StringMap;
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
   std::map<std::string, Entry<complex<double> > > ComplexDoubleMap;
   std::map<std::string, Entry<complex<float> > >   ComplexFloatMap;
 #endif
@@ -67,7 +67,7 @@ ParameterList::ParameterList(std::string name, char newData)
   CharMap[name] = newEntry;
 }
 
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
 template<>
 ParameterList::ParameterList(std::string name, complex<double> newData)
 {
@@ -132,7 +132,7 @@ ParameterList::ParameterList(const ParameterList &Source)
   FloatMap = Source.FloatMap;
   IntMap = Source.IntMap;
   StringMap = Source.StringMap;
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
   ComplexDoubleMap = Source.ComplexDoubleMap;
   ComplexFloatMap = Source.ComplexFloatMap;
 #endif
@@ -149,7 +149,7 @@ ParameterList & ParameterList::operator= (const ParameterList &Source)
       FloatMap = Source.FloatMap;
       IntMap = Source.IntMap;
       StringMap = Source.StringMap;
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
       ComplexDoubleMap = Source.ComplexDoubleMap;
       ComplexFloatMap = Source.ComplexFloatMap;
 #endif
@@ -173,7 +173,7 @@ void ParameterList::SetParameter<char>(std::string name, char newData)
   CharMap[name] = newEntry;
 }
 
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
 template<>
 void ParameterList::SetParameter<complex<double> >(std::string name, complex<double> newData)
 {
@@ -256,7 +256,7 @@ char ParameterList::GetParameter(std::string name, char nominal)
   return result;
 }
 
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
 template<>
 complex<double> ParameterList::GetParameter(std::string name, complex<double> nominal)
 {
@@ -402,7 +402,7 @@ void ParameterList::Print(int indent)
 	  charIter++;
 	}
     }
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
   if(!ComplexDoubleMap.empty())
     {
       std::map<std::string, Entry<complex<double> > >::iterator complexdoubleIter = ComplexDoubleMap.begin();

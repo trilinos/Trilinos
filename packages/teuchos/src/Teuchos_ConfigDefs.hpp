@@ -45,30 +45,6 @@
 
 #include "Teuchos_config.h"
 
-// configs from ScalarTraits
-
-//  If we're using a Sun compiler, version earlier than 5.0,
-//  then complex isn't available.
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define NO_COMPLEX
-#endif
-
-//  If we're using the tflops Portland Group compiler, then complex isn't
-//  available. (As of July 21, 2000. abw)
-#if defined(__PGI) && defined(__i386)
-#define NO_COMPLEX
-#endif
-
-#if defined(__SUNPRO_CC) && __SUNPRO_CC < 0x500
-#define TYPENAME
-#else
-#define TYPENAME typename
-#endif
-
-// end of ScalarTraits configs
-
-
-
 /******************************************************************************
  *   Choose header file flavor: either ANSI-style (no .h, e.g. <iostream>) or
  * old-style (with .h, e.g., <iostream.h>). 

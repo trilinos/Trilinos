@@ -4,14 +4,16 @@
 // Kris
 // 07.08.03 -- Move into Teuchos package/namespace
 
+#include "Teuchos_ConfigDefs.hpp"
+
 namespace Teuchos {
   /** The Teuchos PacketTraits file.
 			
 	For the most general type 'class T', we define aborting functions, 
 	which should restrict implementations from using traits other than the
 	specializations defined below.
-  */
-	
+  */	
+
 	template<class T>
 	struct PacketTraits {
 		static inline int unsupportedType() {
@@ -46,8 +48,7 @@ namespace Teuchos {
 		static inline const char* name()           {return("double");};
 	};
 
-#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_EXPERIMENTAL)
-#include <complex>
+#if (defined(HAVE_COMPLEX) || defined(HAVE_COMPLEX_H)) && defined(HAVE_TEUCHOS_COMPLEX)
 
 	template<>
 	struct OrdinalTraits<complex<float> > {
