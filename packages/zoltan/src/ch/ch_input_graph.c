@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "all_const.h"
+#include "all_allo_const.h"
 #include "ch_input_const.h"
 
 int LB_chaco_input_graph(fin, inname, start, adjacency, nvtxs, vweights, eweights)

@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "all_const.h"
+#include "all_allo_const.h"
 #include "ch_input_const.h"
 
 int LB_chaco_input_geom(fingeom, geomname, nvtxs, igeom, x, y, z)
@@ -104,12 +104,12 @@ float   **x, **y, **z;		/* coordiates of vertices */
     }
 
     /* Check for spurious extra stuff in file. */
-    flag = FALSE;
+    flag = 0;
     end_flag = 0;
     while (!flag && end_flag != -1) {
 	read_val(fingeom, &end_flag);
 	if (!end_flag)
-	    flag = TRUE;
+	    flag = 1;
     }
     if (flag && CHECK_INPUT) {
 	printf("Warning: possible error in geometry file `%s'\n", geomname);

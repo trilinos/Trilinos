@@ -2,10 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include "all_const.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "all_allo_const.h"
 #include "ch_input_const.h"
-#include <ctype.h>
-#include <string.h>
 
 #define LINE_LENGTH 200
 
@@ -16,9 +16,10 @@ static int save_pnt;		/* place in sequence to save */
 
 static void flush_line();
 
-double    read_val(infile, end_flag)
-FILE     *infile;		/* file to read value from */
-int      *end_flag;		/* 0 => OK, 1 => EOL, -1 => EOF */
+double    read_val(
+  FILE     *infile,		/* file to read value from */
+  int      *end_flag 		/* 0 => OK, 1 => EOL, -1 => EOF */
+)
 {
     double    val;		/* return value */
     char     *ptr;		/* ptr to next string to read */
