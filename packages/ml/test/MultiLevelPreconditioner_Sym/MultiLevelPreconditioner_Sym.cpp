@@ -157,8 +157,8 @@ int main(int argc, char *argv[]) {
 
   // initialize the random number generator
 
-  srandom((unsigned int)1);
-
+  int ml_one = 1;
+  ML_srandom1(&ml_one);
   // ===================== //
   // create linear problem //
   // ===================== //
