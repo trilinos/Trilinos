@@ -126,6 +126,8 @@ LB *lb;
   lb->Fortran = 0;
   lb->Params = NULL;
   lb->Imbalance_Tol = 1.1;
+  lb->Obj_Weight_Dim = 0;
+  lb->Comm_Weight_Dim = 0;
   lb->Data_Structure = NULL;
 
   lb->Get_Num_Edges = NULL;
@@ -1060,19 +1062,19 @@ int LB_Free_Data(
 /* LB_Eval evaluates the quality of the current partitioning/balance.   */
 /************************************************************************/
 
-void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
+#define NUM_GSTATS 4 /* Number of graph statistics */
+
+void LB_Eval (LB *lb, int print_stats, 
      int *nobj, float *obj_wgt, int *cut_wgt, int *nboundary,
      int *nadj, int *ierr)
 /* 
  * Input:
  *   lb          - pointer to lb object
- *   print_stats - if >0, compute and print max and sum of the metrics
- *   vwgt_dim    - dimension of vertex weights (0 if none)
- *   ewgt_dim    - dimension of edge weights (0 or 1)
+ *   print_stats - if > 0, compute and print max and sum of the metrics
  *
  * Output:
  *   nobj      - number of objects (for each proc)
- *   obj_wgt   - obj_wgt[0:vwgt_dim-1] are the object weights (on each proc)
+ *   obj_wgt   - obj_wgt[0:lb->Obj_Weight_Dim-1] are the object weights (on each proc)
  *   cut_wgt   - cut size/weight (for each proc)
  *   nboundary - number of boundary objects (for each proc)
  *   nadj      - the number of adjacent procs (for each proc)
@@ -1082,7 +1084,6 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
  * not NULL on entry (except for the error code ierr).
  */
 
-#define NUM_GSTATS 4 /* Number of graph statistics */
 {
   char *yo = "LB_EVAL:";
   int i, j, num_obj, max_edges, flag, nedges;
@@ -1125,9 +1126,9 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
   
 
   /* Allocate space for weights if needed */
-  if (vwgt_dim>0){
-    vwgts   = (float  *) LB_MALLOC(vwgt_dim*num_obj * sizeof(float));
-    tmp_wgt = (float *) LB_MALLOC(3*vwgt_dim * sizeof(float));
+  if (lb->Obj_Weight_Dim>0){
+    vwgts   = (float  *) LB_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
+    tmp_wgt = (float *) LB_MALLOC(3*lb->Obj_Weight_Dim * sizeof(float));
     if ((num_obj && !vwgts) || (!tmp_wgt)){
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
@@ -1138,7 +1139,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     }
   } 
   
-  LB_Get_Obj_List(lb, global_ids, local_ids, vwgt_dim, vwgts, ierr);
+  LB_Get_Obj_List(lb, global_ids, local_ids, lb->Obj_Weight_Dim, vwgts, ierr);
   if (*ierr == LB_FATAL){
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
@@ -1147,12 +1148,12 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
   
 
   /* Compute object weight sums */
-  if (vwgt_dim>0){
-    for (j=0; j<vwgt_dim; j++)
+  if (lb->Obj_Weight_Dim>0){
+    for (j=0; j<lb->Obj_Weight_Dim; j++)
       tmp_wgt[j] = 0;
     for (i=0; i<num_obj; i++){
-      for (j=0; j<vwgt_dim; j++){
-        tmp_wgt[j] += vwgts[i*vwgt_dim+j];
+      for (j=0; j<lb->Obj_Weight_Dim; j++){
+        tmp_wgt[j] += vwgts[i*lb->Obj_Weight_Dim+j];
       }
     }
   }
@@ -1189,12 +1190,12 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     /* Allocate edge list space */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
-    ewgts = (int *)LB_MALLOC(ewgt_dim*max_edges * sizeof(int));
+    ewgts = (int *)LB_MALLOC(lb->Comm_Weight_Dim*max_edges * sizeof(int));
     /* Allocate a proc list for computing nadjacent */
     proc = (int *)LB_MALLOC((lb->Num_Proc)* sizeof(int));
 
     if (max_edges && ((!nbors_global) || (!nbors_proc) || 
-        (ewgt_dim && (!ewgts)) || (!proc))){
+        (lb->Comm_Weight_Dim && (!ewgts)) || (!proc))){
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
@@ -1226,7 +1227,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
         return;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
-          nbors_global, nbors_proc, ewgt_dim, ewgts, ierr);
+          nbors_global, nbors_proc, lb->Comm_Weight_Dim, ewgts, ierr);
       if (*ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
@@ -1241,12 +1242,13 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
       /* Check for cut edges */
       for (j=0; j<nedges; j++){
         if (nbors_proc[j] != lb->Proc){
-          if (ewgt_dim == 0)
+          if (lb->Comm_Weight_Dim == 0)
             cut_weight++;
-          else if (ewgt_dim == 1)
+          else if (lb->Comm_Weight_Dim == 1)
             cut_weight += ewgts[j];
           else{
-            printf("Error in %s: ewgt_dim = %d not supported\n", yo, ewgt_dim);
+            fprintf(stderr, "Error in %s: Comm_Weight_Dim=%d not supported\n", 
+                    yo, lb->Comm_Weight_Dim);
             *ierr = LB_WARN;
           }
           if (flag==0){
@@ -1267,10 +1269,10 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
   
   if (print_stats){
     /* Global reduction for object weights. */
-    if (vwgt_dim>0){
-      MPI_Allreduce(tmp_wgt, &tmp_wgt[vwgt_dim], vwgt_dim, MPI_FLOAT, MPI_MAX, 
+    if (lb->Obj_Weight_Dim>0){
+      MPI_Allreduce(tmp_wgt, &tmp_wgt[lb->Obj_Weight_Dim], lb->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, 
                     lb->Communicator);
-      MPI_Allreduce(tmp_wgt, &tmp_wgt[2*vwgt_dim], vwgt_dim, MPI_FLOAT, 
+      MPI_Allreduce(tmp_wgt, &tmp_wgt[2*lb->Obj_Weight_Dim], lb->Obj_Weight_Dim, MPI_FLOAT, 
                     MPI_SUM, lb->Communicator);
     }
     stats[0] = num_obj;
@@ -1288,12 +1290,12 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
     nproc = lb->Num_Proc; /* convert to float */
     if (lb->Proc == 0){
       printf("\n%s  Statistics for current partitioning/balance:\n", yo);
-      for (i=0; i<vwgt_dim; i++)
+      for (i=0; i<lb->Obj_Weight_Dim; i++)
         printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "
           "Imbal. = %5.3f\n",
-          yo, i+1, tmp_wgt[vwgt_dim+i], tmp_wgt[2*vwgt_dim+i], 
-          (tmp_wgt[2*vwgt_dim+i] > 0
-            ? tmp_wgt[vwgt_dim+i]*nproc/tmp_wgt[2*vwgt_dim+i]
+          yo, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], tmp_wgt[2*lb->Obj_Weight_Dim+i], 
+          (tmp_wgt[2*lb->Obj_Weight_Dim+i] > 0
+            ? tmp_wgt[lb->Obj_Weight_Dim+i]*nproc/tmp_wgt[2*lb->Obj_Weight_Dim+i]
             : 1.));
       printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
         yo, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
@@ -1327,7 +1329,7 @@ void LB_Eval (LB *lb, int print_stats, int vwgt_dim, int ewgt_dim,
   if (nboundary) *nboundary = num_boundary;
   if (cut_wgt) *cut_wgt = cut_weight;
   if (obj_wgt){
-    for (i=0; i<vwgt_dim; i++) 
+    for (i=0; i<lb->Obj_Weight_Dim; i++) 
       obj_wgt[i] = tmp_wgt[i];
   }
 

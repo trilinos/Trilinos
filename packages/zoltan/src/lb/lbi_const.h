@@ -852,8 +852,6 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
  * Input:
  *   lb          - pointer to lb object
  *   print_stats - if >0, compute and print max and sum of the metrics
- *   vwgt_dim    - dimension of vertex weights (0 if none)
- *   ewgt_dim    - dimension of edge weights (0 or 1)
  *
  * Output:
  *   nobj      - number of objects (for each proc)
@@ -865,7 +863,6 @@ extern int LB_Box_Assign(struct LB_Struct *lb, double xmin, double ymin,
  */
 
 extern void LB_Eval (struct LB_Struct *lb, int print_stats, 
-     int vwgt_dim, int ewgt_dim, 
      int *nobj, float *obj_wgt, 
      int *cut_wgt, int *nboundary,
      int *nadj, int *ierr);

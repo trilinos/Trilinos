@@ -182,6 +182,10 @@ struct LB_Struct {
   double Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
                                       is acceptable, i.e. max/avg = 1.1.     */
+  int Obj_Weight_Dim;             /*  Dimension of the object weights, 
+                                      usually 0 (no weights) or 1 */
+  int Comm_Weight_Dim;            /*  Dimension of the communication weights, 
+                                      usually 0 (no weights) or 1 */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
