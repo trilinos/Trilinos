@@ -7,6 +7,7 @@
 #
 include ../make_$(ARCH).variables
 include ../etc/makefile.$(ARCH)
+
 DEFINES= -D$(ARCH) $(PACKAGES)
 
 INCLUDES=-I. $(INC_PATH) 
@@ -38,7 +39,6 @@ ML_C = ml_aztec_utils.c  ml_ggraph.c       ml_memory.c \
        ml_amg.c 		 ml_amg_MIS.c	   ml_amg_genP.c \
 	   ml_agg_reitzinger.c ml_twogrid_analysis.c
 
-ML_CPP = ml_epetra_utils.cpp ml_epetra_operator.cpp
 #=======================================================================
 # ML include files
 #=======================================================================

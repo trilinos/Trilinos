@@ -49,6 +49,10 @@ if test `expr $yes_or_no` = 'yess'
 then
    GOT_EPETRA=yes
    PACKAGES=`${echo} $PACKAGES -DML_WITH_EPETRA` 
+   ${echo} "ALL:" > Obj/make_epetra 
+   ${echo} "	make \"LINKER=/home/tuminaro/codes/mpich-1.2.1/bin/mpiCC\" \"ML_CPP=ml_epetra_utils.cpp ml_epetra_operator.cpp\"" >> Obj/make_epetra
+else
+   GOT_EPETRA=no
 fi
 #
 ${echo} -n "Do you want to use MPI? [yes] " | sed "s/-n//"
@@ -84,9 +88,12 @@ then
       echo ${temp} >> etc/makefile.${ARCH}_MPI
       temp=`${echo} "FC="${ins_mpicc} | sed "s/mpicc$/mpif77/"`
       echo ${temp} >> etc/makefile.${ARCH}_MPI
+      temp=`${echo} "CXX="${ins_mpicc} | sed "s/mpicc$/mpiCC/"`
+      echo ${temp} >> etc/makefile.${ARCH}_MPI
       ARCH=${ARCH}_MPI
       CC=${ins_mpicc}
       FC=`${echo} ${ins_mpicc} | sed "s/mpicc$/mpif77/"`
+      CXX=`${echo} ${ins_mpicc} | sed "s/mpicc$/mpiCC/"`
    fi
 fi
 
@@ -407,7 +414,13 @@ ${echo}
 ${echo} "Now trying to make the ml library with a sample program ..."
 
 cd Obj
+if test `expr $GOT_EPETRA` = 'yes'
+then
+make ARCH=${ARCH} -f make_epetra
+else
 make ARCH=${ARCH}
+fi
+
 temp=`${echo} ${1}s`
 if test `expr $temp` = 's'
 then
@@ -429,10 +442,21 @@ ${echo} "That is"
 ${echo}
 ${echo} "setenv ARCH " $ARCH
 ${echo} ${chdir_command}
-${echo} "make"
+if test `expr $GOT_EPETRA` = 'yes'
+then
+   ${echo} "make -f make_epetra"
+else
+   ${echo} "make"
+fi
 ${echo}
 ${echo} "or just"
 ${echo} ${chdir_command}
-${echo} "make ARCH=${ARCH}"
+if test `expr $GOT_EPETRA` = 'yes'
+then
+   ${echo} "make ARCH=${ARCH} -f make_epetra"
+else
+   ${echo} "make ARCH=${ARCH}"
+fi
 cd ..
 \rm -f .arch_env etc/a.out
+

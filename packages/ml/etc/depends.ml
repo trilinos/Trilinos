@@ -301,9 +301,9 @@ seg_readex.o : ../examples/seg_readex.c ../Obj/ml_agg_genP.h \
 
 ml_epetra_operator.o : ../Obj/ml_epetra_operator.cpp ../Obj/ml_agg_genP.h \
         ../Obj/ml_agg_reitzinger.h ../Obj/ml_aggregate.h ../Obj/ml_amg.h ../Obj/ml_amg_genP.h ../Obj/ml_aztec_utils.h ../Obj/ml_bicgstabl.h ../Obj/ml_cg.h ../Obj/ml_comm.h ../Obj/ml_defs.h ../Obj/ml_elementagx.h ../Obj/ml_epetra_operator.h ../Obj/ml_gmres.h ../Obj/ml_grid.h ../Obj/ml_gridagx.h ../Obj/ml_gridfunc.h ../Obj/ml_include.h ../Obj/ml_intlist.h ../Obj/ml_krylov.h ../Obj/ml_op_utils.h ../Obj/ml_operator.h ../Obj/ml_operatoragx.h ../Obj/ml_pde.h ../Obj/ml_solver.h ../Obj/ml_struct.h ../Obj/ml_vec.h ../Obj/ml_xyt.h ../Obj/mli_solver.h
-	$(CC) -c $(CFLAGS) ../Obj/ml_epetra_operator.cpp -o $@
+	$(CXX) -c $(CFLAGS) ../Obj/ml_epetra_operator.cpp -o $@
 
 ml_epetra_utils.o : ../Obj/ml_epetra_utils.cpp ../Obj/ml_epetra_utils.h \
         ../Obj/ml_include.h
-	$(CC) -c $(CFLAGS) ../Obj/ml_epetra_utils.cpp -o $@
+	$(CXX) -c $(CFLAGS) ../Obj/ml_epetra_utils.cpp -o $@
 
