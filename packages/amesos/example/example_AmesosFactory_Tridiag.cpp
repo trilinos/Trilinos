@@ -36,6 +36,7 @@
 #endif
 #include "Amesos_ConfigDefs.h"
 #include "Amesos.h"
+#include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
