@@ -519,11 +519,13 @@ static int rcb_fn(
   MPI_Allreduce(weightlo, weight, wgtflag, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   /* Set weight scaling factors. */
-  for (j=0; j<wgtdim; j++){
-    if (obj_wgt_comp || (weight[j]==0.0))
-      wgtscale[j] = 1.0;
-    else
-      wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
+  if (wgtdim>1){
+    for (j=0; j<wgtdim; j++){
+      if (obj_wgt_comp || (weight[j]==0.0))
+        wgtscale[j] = 1.0;
+      else
+        wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
+    }
   }
 
   if (check_geom) {
