@@ -55,11 +55,16 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
    char             str[100] ;       /* build error message string      */
    char            *yo = "Zoltan_DD_Update" ;
 
+   if (dd != NULL && dd->debug_level > 1)
+      ZOLTAN_TRACE_ENTER(dd->my_proc, yo, NULL);
 
    /* input sanity checking */
    if (dd == NULL || count < 0 || (gid == NULL && count > 0))
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "Invalid input argument") ;
+      ZOLTAN_PRINT_ERROR ((dd == NULL ? -1 : dd->my_proc), yo, 
+                          "Invalid input argument") ;
+      if (dd != NULL && dd->debug_level > 1)
+        ZOLTAN_TRACE_EXIT((dd == NULL ? -1 : dd->my_proc), yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
@@ -69,22 +74,30 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       for (ddptr = dd->table[i] ; ddptr != NULL ; ddptr = ddptr->next)
          ddptr->errcheck = ZOLTAN_DD_NO_PROC ;
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After reset errcheck.");
+
    /* allocate memory for list of processors to contact */
-   procs = (int *) LB_MALLOC (sizeof (int) * (count == 0) ? 1 : count ) ;
+   procs = (int *) LB_MALLOC (sizeof (int) * ((count == 0) ? 1 : count) ) ;
    if (procs == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list") ;
+      if (dd->debug_level > 1)
+        ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
    /* allocate memory for DD_Update_Msg send buffer */
-   sbuff = (char *) LB_MALLOC (dd->update_msg_size * (count == 0) ? 1 : count) ;
+   sbuff = (char *) LB_MALLOC (dd->update_msg_size * ((count==0) ? 1 : count)) ;
    if (sbuff == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer") ;
       err = ZOLTAN_DD_MEMORY_ERROR ;
       goto fini ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs.");
 
    /* for each GID given, fill in contact list and then message structure */
    for (i = 0 ; i < count ; i++)
@@ -102,6 +115,10 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       LB_SET_ID (dd->user_data_length, ptr->gid +( dd->gid_length
        + dd->lid_length), user + i * dd->user_data_length) ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill contact list.");
+
    /* create dummy message to force myproc to participate if needed */
    if (count == 0)
       {
@@ -111,6 +128,9 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       count = 1 ;
       }
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After dummy message.");
+
    /* now create efficient communication plan */
    err = LB_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_UPDATE_MSG_TAG, &nrec) ;
@@ -119,6 +139,9 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Create error") ;
       goto fini ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Create.");
 
    /* allocate receive buffer for nrec DD_Update_Msg structures */
    rbuff = (char *) LB_MALLOC (nrec * dd->update_msg_size) ;
@@ -137,6 +160,9 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "COMM Do error") ;
       goto fini ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Do.");
 
    /* for each message rec'd, update local directory information */
    errcount = 0 ;
@@ -159,6 +185,9 @@ int Zoltan_DD_Update (Zoltan_DD_Directory *dd,
    err = (errcount == 0) ? ZOLTAN_DD_NORMAL_RETURN
                          : ZOLTAN_DD_GID_REDEFINED_ERROR ;
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After update.");
+
 fini:
    LB_FREE (&procs) ;
    LB_FREE (&sbuff) ;
@@ -173,6 +202,8 @@ fini:
        dd->my_proc, count, nrec, errcount) ;
       }
 
+   if (dd->debug_level > 1)
+      ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
    return err ;
    }
 

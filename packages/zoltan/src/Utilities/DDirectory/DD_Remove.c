@@ -56,7 +56,7 @@ int Zoltan_DD_Remove (Zoltan_DD_Directory *dd,
       }
 
    /* allocate memory for processor contact list */
-   procs = (int *) LB_MALLOC (sizeof (int) * (count == 0) ? 1 : count) ;
+   procs = (int *) LB_MALLOC (sizeof (int) * ((count == 0) ? 1 : count));
    if (procs == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc proc list") ;
@@ -64,7 +64,7 @@ int Zoltan_DD_Remove (Zoltan_DD_Directory *dd,
       }
 
    /* allocate memory for DD_Remove_Msg send buffer */
-   sbuff = (char *) LB_MALLOC (dd->remove_msg_size * (count == 0) ? 1 : count) ;
+   sbuff = (char *) LB_MALLOC (dd->remove_msg_size * ((count == 0) ? 1 : count)) ;
    if (sbuff == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "Unable to malloc send buffer") ;

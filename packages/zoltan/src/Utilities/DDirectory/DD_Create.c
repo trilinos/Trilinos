@@ -26,7 +26,8 @@
 
 /*******************  Zoltan_DD_Create()  ***************************/
 
-int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
+int Zoltan_DD_Create (
+ Zoltan_DD_Directory **dd,
  MPI_Comm comm,               /* Dup'ed and saved for future use       */
  int num_gid,                 /* Eliminate dependance on LB struct     */
  int num_lid,                 /* Ditto. If zero, ignore LIDs           */
@@ -35,13 +36,25 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
  int debug_level)             /* control actions to errors, normally 0 */
    {
    int size ;
+   int my_proc;
    unsigned int align ;
    char *yo = "Zoltan_DD_Create" ;
+
+   if (MPI_Comm_rank(comm, &my_proc) != MPI_SUCCESS) 
+      {
+      ZOLTAN_PRINT_ERROR(-1, yo, "MPI_Comm_rank failed.");
+      return ZOLTAN_DD_MPI_ERROR;
+      }
+
+   if (debug_level > 1)
+      ZOLTAN_TRACE_ENTER(my_proc, yo, NULL);
 
    /* input sanity check */
    if (dd == NULL || num_gid < 1 || table_length < 0 || num_lid < 0)
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "invalid input argument") ; /* nproc unknown */
+      ZOLTAN_PRINT_ERROR (my_proc, yo, "invalid input argument") ; 
+      if (debug_level > 1)
+        ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
@@ -51,7 +64,9 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
        + size * sizeof (DD_Node*)) ;
    if (*dd == NULL)
       {
-      ZOLTAN_PRINT_ERROR (0, yo, "can not malloc hash table") ; /* nproc ??? */
+      ZOLTAN_PRINT_ERROR (my_proc, yo, "can not malloc hash table") ;
+      if (debug_level > 1)
+        ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
@@ -91,12 +106,17 @@ int Zoltan_DD_Create (Zoltan_DD_Directory **dd,
     || MPI_Comm_size (comm,  &((*dd)->nproc))   != MPI_SUCCESS
     || MPI_Comm_rank (comm,  &((*dd)->my_proc)) != MPI_SUCCESS)
          {
-         ZOLTAN_PRINT_ERROR (0, yo, "MPI Problem, Unable to continue") ;
+         ZOLTAN_PRINT_ERROR (my_proc, yo, "MPI Problem, Unable to continue") ;
+         if (debug_level > 1)
+           ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
          return ZOLTAN_DD_MPI_ERROR ;
          }
 
+   if (debug_level > 1)
+      ZOLTAN_TRACE_EXIT(my_proc, yo, NULL);
+
    if (debug_level > 0)
-      ZOLTAN_PRINT_INFO ((*dd)->my_proc, "Zoltan_DD_Create", "Successful") ;
+      ZOLTAN_PRINT_INFO ((*dd)->my_proc, yo, "Successful") ;
 
    return ZOLTAN_DD_NORMAL_RETURN ;
    }

@@ -50,29 +50,42 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
    char             str[100] ;      /* diagnostic message string */
    char            *yo = "Zoltan_DD_Find" ;
 
+   if (dd != NULL && dd->debug_level > 1)
+      ZOLTAN_TRACE_ENTER(dd->my_proc, yo, NULL);
+
    /* input sanity check */
    if (dd == NULL || count < 0 || ((owner == NULL || gid == NULL) && count > 0))
       {
-      ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "invalid input argument") ;
+      ZOLTAN_PRINT_ERROR ((dd == NULL ? -1 : dd->my_proc), yo, 
+                          "invalid input argument") ;
+      if (dd != NULL && dd->debug_level > 1)
+         ZOLTAN_TRACE_EXIT((dd == NULL ? -1 : dd->my_proc), yo, NULL);
       return ZOLTAN_DD_INPUT_ERROR ;
       }
 
    /* allocate memory for processors to contact for directory info */
-   procs = (int *) LB_MALLOC (sizeof (int) * (count == 0) ? 1 : count) ;
+   procs = (int *) LB_MALLOC (sizeof (int) * ((count == 0) ? 1 : count)) ;
    if (procs == NULL)
       {
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "unable to malloc proc list") ;
+      if (dd->debug_level > 1)
+         ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
 
    /* allocate total memory for DD_Find_Msg send buffer */
-   sbuff = (char *) LB_MALLOC (dd->find_msg_size * (count == 0) ? 1 : count) ;
+   sbuff = (char *) LB_MALLOC (dd->find_msg_size * ((count == 0) ? 1 : count)) ;
    if (sbuff == NULL)
       {
       LB_FREE (&procs) ;
       ZOLTAN_PRINT_ERROR (dd->my_proc, yo, "unable to malloc send buffer") ;
+      if (dd->debug_level > 1)
+         ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
       return ZOLTAN_DD_MEMORY_ERROR ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After mallocs.");
 
    /* for each GID, fill DD_Find_Msg buffer and contact list */
    for (i = 0 ; i < count ; i++)
@@ -84,6 +97,10 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
       ptr->proc  = procs[i] ;
       LB_SET_ID (dd->gid_length, ptr->id, gid + i*dd->gid_length) ;
       }
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill.");
+
    /* if count is zero, create a dummy message to force participation */
    if (count == 0)
       {
@@ -93,9 +110,15 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
       count = 1 ;
       }
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After dummy.");
+
    /* create efficient communication plan */
    err = LB_Comm_Create (&plan, count, procs, dd->comm,
     ZOLTAN_DD_FIND_MSG_TAG, &nrec) ;
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Create.");
+
    if (err != COMM_OK) goto fini ;
 
    /* allocate total receive buffer */
@@ -112,6 +135,9 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
    if (err != COMM_OK)
       goto fini ;
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Do.");
+
    /* get find messages directed to me, fill in return information */
    errcount = 0 ;
    for (i = 0 ; i < nrec ; i++)
@@ -127,11 +153,17 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
          errcount++ ;
       }
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill in return.");
+
    /* send return information back to requestor */
    err = LB_Comm_Do_Reverse(plan, ZOLTAN_DD_FIND_MSG_TAG+2, rbuff,
     dd->find_msg_size, NULL, sbuff) ;
    if (err != COMM_OK)
       goto fini ;
+
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After Comm_Reverse.");
 
    /* fill in user supplied lists with returned information */
    for (i = 0 ; i < count ; i++)
@@ -159,6 +191,9 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd,
    err = (errcount == 0) ? ZOLTAN_DD_NORMAL_RETURN
                          : ZOLTAN_DD_GID_NOT_FOUND_ERROR ;
 
+   if (dd->debug_level > 2)
+      ZOLTAN_PRINT_INFO(dd->my_proc, yo, "After fill return lists.");
+
 fini:
    LB_FREE (&sbuff) ;
    LB_FREE (&rbuff) ;
@@ -174,6 +209,8 @@ fini:
       ZOLTAN_PRINT_INFO (dd->my_proc, yo, str) ;
       }
 
+   if (dd->debug_level > 1)
+      ZOLTAN_TRACE_EXIT(dd->my_proc, yo, NULL);
    return err ;
    }
 
