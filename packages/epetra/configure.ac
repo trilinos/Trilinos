@@ -262,6 +262,65 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_epetra_examples" != "Xno")
 TAC_ARG_ENABLE_FEATURE(libcheck, [Check for some third-party libraries including BLAS and LAPACK.  (Cannot be disabled unless tests and examples are also disabled.)], LIBCHECK, yes)
 
 # ------------------------------------------------------------------------
+# Check if python interface should be created
+# ------------------------------------------------------------------------
+AC_ARG_ENABLE(python,
+ [AC_HELP_STRING([--enable-python],[enable Python support])],
+ [ADDON_python=$enableval],
+ [ADDON_python=no]
+)
+
+AC_MSG_CHECKING(whether we should build the python support)
+if test X${ADDON_python} = Xyes; then
+  BUILD_PYTHON=yes
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_PYTHON, true)
+
+  # Get python include/lib paths
+  AC_PYTHON_DEVEL
+
+  # Check that Python.h is available
+  save_CPPFLAGS=$CPPFLAGS
+  CPPFLAGS="$save_CPPFLAGS $PYTHON_CPPFLAGS"
+  AC_LANG([C++])
+  AC_CHECK_HEADER(
+  [Python.h],
+  break,
+  AC_MSG_ERROR([You must have Python.h in order to build the Python support!!]))
+  CPPFLAGS="$save_CPPFLAGS"
+
+  # Check for Numeric
+  AC_PYTHON_MODULE(Numeric,yes)
+else
+  AC_MSG_RESULT(no)
+  BUILD_PYTHON=no
+  AM_CONDITIONAL(BUILD_PYTHON, false)
+fi
+
+# ------------------------------------------------------------------------
+# Configure swig
+# ------------------------------------------------------------------------
+
+AC_ARG_WITH(swig,
+	    [AC_HELP_STRING([--with-swig],[enable swig and set swig binary])],
+	    [WITH_SWIG=yes
+	     if test X${withval} != Xyes ; then
+	     	SWIG=$withval
+	     fi],
+            [WITH_SWIG=no])
+AC_MSG_CHECKING(whether we should enable swig support)
+AC_MSG_RESULT([${WITH_SWIG}])
+AM_CONDITIONAL(HAVE_SWIG,test X${WITH_SWIG} = Xyes)
+AC_SUBST(GNU_HAVE_SWIG, ${WITH_SWIG})
+
+if test X${BUILD_PYTHON} = Xyes && test X${WITH_SWIG} = Xyes; then
+  AC_PROG_SWIG(1.3.23)
+  SWIG_ENABLE_CXX
+  SWIG_MULTI_MODULE_SUPPORT
+  SWIG_PYTHON
+fi
+
+# ------------------------------------------------------------------------
 # Specify other directories 
 # ------------------------------------------------------------------------
 
@@ -402,7 +461,7 @@ AC_CONFIG_FILES([
 		example/petra_power_method/Makefile
 		example/verySimple/Makefile
 		example/UG_Ex1/Makefile
-          example/UG_ExMaps/Makefile
+          	example/UG_ExMaps/Makefile
 		example/my_example/Makefile
 		test/scripts/Makefile
 		test/scripts/daily/Makefile
@@ -411,6 +470,10 @@ AC_CONFIG_FILES([
 		test/scripts/weekly/Makefile
 		test/scripts/weekly/mpi/Makefile
 		test/scripts/weekly/serial/Makefile
+		python/Makefile
+		python/src/Makefile
+		python/test/Makefile
+		python/example/Makefile
 		])
 
 AC_OUTPUT()
