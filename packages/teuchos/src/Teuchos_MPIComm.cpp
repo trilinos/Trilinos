@@ -14,40 +14,7 @@ namespace Teuchos
 	const int MPIComm::MIN = 6;
 	const int MPIComm::MAX = 7;
 	const int MPIComm::PROD = 8;
-
-	string MPIComm::machineName_ = "serial";
 }
-
-void MPIComm::init(int* argc, void*** argv)
-{
-#ifdef HAVE_MPI
-	int mpiHasBeenStarted = 0;
-	MPI_Initialized(& mpiHasBeenStarted);
-	if (!mpiHasBeenStarted)
-		{
-			errCheck(::MPI_Init (argc, (char ***) argv), "Init");
-		}
-	errCheck(::MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN),
-					 "Errhandler_set");
-	
-	int nameLen;
-	char procName[MPI_MAX_PROCESSOR_NAME];
-	errCheck(::MPI_Get_processor_name(procName,&nameLen),
-					 "Get_processor_name");
-	machineName_ = procName;
-	cerr << "started processor " << machineName_ << endl;
-#else
-  cerr << "started serial job" << endl;
-#endif
-}
-
-void MPIComm::finalize()
-{
-#ifdef HAVE_MPI
-	errCheck(::MPI_Finalize(), "Finalize");
-#endif
-}
-
 
 
 MPIComm::MPIComm()

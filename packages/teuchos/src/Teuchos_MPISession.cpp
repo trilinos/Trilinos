@@ -33,6 +33,20 @@ void MPISession::init(int* argc, void*** argv)
 	TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
                      "Error code=" << mpierr 
                      << " detected in MPI_Comm_size()");
+
+  /* get machine name */
+  int nameLen;
+	char procName[MPI_MAX_PROCESSOR_NAME];
+  mpierr = ::MPI_Get_processor_name(procName,&nameLen);
+
+  TEST_FOR_EXCEPTION(mpierr != 0, runtime_error,
+                     "Error code=" << mpierr 
+                     << " detected in MPI_Get_processor_name()");
+
+  cerr << "Teuchos::MPISession::init() started processor " << procName << endl;
+  
+#else
+  cerr << "Teuchos::MPISession::init() started serial run" << endl;
 #endif
 }
 

@@ -30,23 +30,12 @@ namespace Teuchos
       /** get an object representing MPI_COMM_WORLD */
       static MPIComm& world();
 
-      /** common initialization function, called by all ctors */
-      void init();
-
-      /** call MPI_Init */
-      static void init(int* argc, void*** argv);
-
-      /** call MPI_Finalize */
-      static void finalize();
 
       /** return process rank */
       int getRank() const {return myRank_;}
 
       /** return number of processors in the communicator */
       int getNProc() const {return nProc_;}
-
-      /** get the name of the machine on which this process is running */
-      string getMachineName() const ;
 
       /** synchronize all the processors in the communicator */
       void synchronize() const ;
@@ -134,9 +123,9 @@ namespace Teuchos
 
       int nProc_;
       int myRank_;
-      static string machineName_;
 
-
+      /** common initialization function, called by all ctors */
+      void init();
     };
 }
 #endif
