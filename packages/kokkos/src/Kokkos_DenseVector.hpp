@@ -64,6 +64,8 @@ namespace Kokkos {
     virtual ~DenseVector(){};
     //@}
 
+    //@{ \name Initialization methods
+	
     //! Initialize using a pointer
     /*!
       This is the only way to initialize a Kokkos::DenseVector object.
