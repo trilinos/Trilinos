@@ -73,4 +73,16 @@ Reported: Reported to metis@cs.umn.edu on 6 Oct 1999.
 Status: George Karypis says it will be fixed in the next release.
         No specific time frame was given.
 
+
+Name: partgeom bug
+Version: ParMETIS 2.0
+Symptom: floating point exception
+Description:
+   For domains where the global delta_x, delta_y, or delta_z (in 3D)
+   is zero (e.g., all nodes lie along the y-axis), a floating point
+   exception can occur when the partgeom algorithm is used.
+Reported: kirk@cs.umn.edu in Jan 2001.
+Status: Kirk Schloegel says it will be fixed in the next release.
+        No specific time frame was given.
+
 -------------------------------------------------------------------------------
