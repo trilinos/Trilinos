@@ -99,6 +99,8 @@ char *val1)			/* value to set this parameter to */
 	sprintf(msg, "Parameter `%s' not found; not reset to `%s'.\n", 
                 name, val);
         LB_PRINT_WARN(lb->Proc, yo, msg);
+	LB_FREE(&name);
+    	LB_FREE(&val);
     }
     else {
         if (!strcmp(val, "DEFAULT")){
@@ -110,9 +112,10 @@ char *val1)			/* value to set this parameter to */
         else if (status == 0){		/* Parameter OK */
     	    add_param(lb, name, val); 	/* Add parameter to list */
         }
-        else { 				/* Parameter not OK. Don't add. */
-    	    LB_FREE(&name);
-    	    LB_FREE(&val);
+        else { 				/* Parameter not OK. Don't add.  */
+    	    LB_FREE(&name);             /* (It may be used to set values */
+    	    LB_FREE(&val);              /* directly in lb rather than in */
+                                        /* the parameter list.)          */
         }
     }
 
