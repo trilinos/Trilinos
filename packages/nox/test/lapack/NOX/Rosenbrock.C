@@ -79,8 +79,6 @@
                                                                                 
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
-//#include "NOX_LAPACK_Group.H"
-#include "NOX_TestError.H" // common file for testing 
 #include "Utils.H"
 #include "Common.H"
 
