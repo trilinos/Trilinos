@@ -129,13 +129,26 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
           }
           cptr2++;
           icnt = sscanf(cptr2, "%d", &(pio_info->num_dsk_ctrlrs));
-          if ((icnt <= 0) || (pio_info->num_dsk_ctrlrs <= 0)) {
+          if ((icnt <= 0) || (pio_info->num_dsk_ctrlrs < 0)) {
             Gen_Error(0, "fatal: Invalid value for # of raid controllers.");
             return 0;
           }
         }
 
         cptr = strtok(NULL, ",");
+
+        /*
+         * if number = 0, then the input FEM file(s) is in the
+         * root directory given by the parallel disk info, or it
+         * is in the same directory as the executable if nothing
+         * is given for the root infomation. So, no other options
+         * can be given when number = 0
+         */
+        if (pio_info->num_dsk_ctrlrs == 0 && cptr != NULL) {
+          Gen_Error(0, "fatal: Other options not allowed if number = 0.");
+          return 0;
+        }
+
         while (cptr != NULL) {
           strip_string(cptr, " \t\n");
           string_to_lower(cptr, '=');
@@ -146,7 +159,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
              * work with the old code.
              */
             pio_info->dsk_list_cnt = pio_info->num_dsk_ctrlrs;
-            pio_info->num_dsk_ctrlrs = 0;
+            pio_info->num_dsk_ctrlrs = -1;
 
             /* "{" defines the beginning of the list */
             cptr = strchr(cptr, '{');
@@ -344,6 +357,7 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
 /*****************************************************************************/
 int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 {
+  char   cmesg[256]; /* for error messages */
 /***************************** BEGIN EXECUTION ******************************/
 
   /* check for the parallel Nemesis file for proc 0 */
@@ -356,10 +370,8 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 /*                 Check the parallel IO specifications                      */
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
   /* check that there is a list of disks, or a number of raids */
-  if ((pio_info->dsk_list_cnt <= 0) && (pio_info->num_dsk_ctrlrs <= 0)) {
-    Gen_Error(0, "fatal: must specify a number of raids, or a disk list");
-    return 0;
-  }
+  if ((pio_info->dsk_list_cnt <= 0) && (pio_info->num_dsk_ctrlrs < 0))
+    pio_info->num_dsk_ctrlrs = 0; /* default to single directory */
 
   /* default is not to have preceeding 0's in the disk names */
   if (pio_info->zeros < 0) pio_info->zeros = 0;
@@ -367,15 +379,23 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   /* most systems that we deal with start their files systems with 1 not 0 */
   if (pio_info->pdsk_add_fact < 0) pio_info->pdsk_add_fact = 1;
 
-  if (strlen(pio_info->pdsk_root) <= 0) {
-    Gen_Error(0, "fatal: root directory for parallel files must be specified");
-    return 0;
+  /*
+   * if there are parallel disks, then the root and subdir locations must
+   * be specified
+   */
+  if (pio_info->num_dsk_ctrlrs > 0 || pio_info->dsk_list_cnt > 0) {
+    if (strlen(pio_info->pdsk_root) == 0) {
+      Gen_Error(0, "fatal: must specify parallel disk root name");
+      return 0;
+    }
+    if (strlen(pio_info->pdsk_subdir) == 0) {
+      Gen_Error(0, "fatal: must specify parallel disk subdirectory");
+      return 0;
+    }
   }
-
-  if (strlen(pio_info->pdsk_subdir) <= 0) {
-    Gen_Error(0, "fatal: subdirectory for parallel files must be specified");
-    return 0;
-  }
+  else
+    if (strlen(pio_info->pdsk_root) == 0)
+      strcpy(pio_info->pdsk_root, "."); /* default is execution directory */
 
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 /*                 Check the Zoltan specifications                           */
@@ -403,6 +423,11 @@ int check_inp(PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   /*
    * Add information about new methods here
    */
+  else {
+    sprintf(cmesg, "fatal: unknown loadbalance method, %s", prob->method);
+    Gen_Error(0, cmesg);
+    return 0;
+  }
 
   /* check if the tolerance was set */
   if (prob->tol < 0.0) {
@@ -436,8 +461,10 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
 
   /* now calculate where the file for this processor is */
   if(pio_info->dsk_list_cnt <= 0) {
-    ctrl_id = (Proc % pio_info->num_dsk_ctrlrs);
-    pio_info->rdisk = ctrl_id + pio_info->pdsk_add_fact;
+    if (pio_info->num_dsk_ctrlrs > 0) {
+      ctrl_id = (Proc % pio_info->num_dsk_ctrlrs);
+      pio_info->rdisk = ctrl_id + pio_info->pdsk_add_fact;
+    }
   }
   else {
     ctrl_id = Proc % pio_info->dsk_list_cnt;
@@ -544,20 +571,24 @@ void gen_par_filename(char *scalar_fname, char *par_fname,
    * Finally, generate the complete file specification for the parallel
    * file used by this processor.
    */
-  if(pio_info->zeros) {
-    if(pio_info->rdisk <= 9) {
-      sprintf(par_fname, "%s%d%d/%s%s", pio_info->pdsk_root,0,
-              pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
+  if (pio_info->num_dsk_ctrlrs > 0) {
+    if(pio_info->zeros) {
+      if(pio_info->rdisk <= 9) {
+        sprintf(par_fname, "%s%d%d/%s%s", pio_info->pdsk_root,0,
+                pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
+      }
+      else {
+        sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root,
+                pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
+      }
     }
     else {
-      sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root,
-              pio_info->rdisk, pio_info->pdsk_subdir, cTemp);
+      sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root, pio_info->rdisk,
+              pio_info->pdsk_subdir, cTemp);
     }
   }
-  else {
-    sprintf(par_fname, "%s%d/%s%s", pio_info->pdsk_root, pio_info->rdisk,
-            pio_info->pdsk_subdir, cTemp);
-  }
+  else
+    sprintf(par_fname, "%s/%s", pio_info->pdsk_root, cTemp);
 
   return;
 }
