@@ -69,6 +69,8 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
      printf("Entering ML_Gen_MGHierarchy_UsingAggregation\n");
      fflush(stdout);
    }
+   ML_memory_check("L%d:gen_hier start",start);
+
    /* ----------------------------------------------------------------- */
    /* if user does not provide a ML_Aggregate object, create a default  */
    /* ----------------------------------------------------------------- */
@@ -152,6 +154,8 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
    idata = ML_gmax_int(idata, ml->comm);
 
    if ( ag == NULL ) ML_Aggregate_Destroy( &ml_ag );
+   ML_memory_check("gen hierarchy end");
+
    return(level);
 }
 
@@ -239,6 +243,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
          flag = (*user_gen_prolongator)(ml, level, next, (void *)ag);
       }
       if (flag < 0) break;
+      ML_memory_check("L%d: prolongator end",level);
 
       /* Now check to make sure prolongator has zero columns. */
       Pmat = ml->Pmat+next;
@@ -277,6 +282,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
+      ML_memory_check("L%d: TransP end",level);
 
 #ifdef USE_AT
       if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
@@ -302,6 +308,7 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       t0 = GetClock();
 #endif
       ML_Gen_AmatrixRAP(ml, level, next);
+      ML_memory_check("L%d: RAP end",level);
 
 #ifdef GEOMETRIC_2D
    csr_data = ml->Amat[next].data;
