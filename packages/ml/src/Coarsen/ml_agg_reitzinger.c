@@ -1399,6 +1399,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
 #endif
   } /* Main FOR loop: for grid_level = fine_level-1 ... */
 
+  ml_edges->ML_coarsest_level = coarsest_level;
 
 #ifdef ML_VAMPIR
   VT_begin(ml_vt_reitzinger_cleanup_state);
