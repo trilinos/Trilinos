@@ -9,7 +9,7 @@ AC_DEFUN([AC_CXX_TEMPLATE_QUALIFIER],
 ac_cv_cxx_template_qualifier,
 [AC_LANG_SAVE
  AC_LANG_CPLUSPLUS
- AC_TRY_COMPILE(,[
+ AC_TRY_COMPILE([
 class DummyClass {
   public:
     DummyClass() : dummyint( 1 ) {};
@@ -18,8 +18,10 @@ class DummyClass {
     T get() { return( (T) dummyint ); };
   private:
     int dummyint;
-};],
-[  DummyClass my_dummy;
+};
+],
+[  
+   DummyClass my_dummy;
    double temp = my_dummy.template get<double>(); 
 ],
  ac_cv_cxx_template_qualifier=yes, ac_cv_cxx_template_qualifier=no)

@@ -6766,10 +6766,6 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-int
-main ()
-{
-
 class DummyClass {
   public:
     DummyClass() : dummyint( 1 ) {};
@@ -6779,6 +6775,14 @@ class DummyClass {
   private:
     int dummyint;
 };
+
+int
+main ()
+{
+
+   DummyClass my_dummy;
+   double temp = my_dummy.template get<double>();
+
   ;
   return 0;
 }
@@ -6805,14 +6809,12 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-    DummyClass my_dummy;
-   double temp = my_dummy.template get<double>();
-
+  ac_cv_cxx_template_qualifier=yes
 else
   echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-ac_cv_cxx_template_qualifier=yes
+ac_cv_cxx_template_qualifier=no
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
  ac_ext=cc
@@ -7508,7 +7510,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:7511: \"$ac_link\") >&5
+(eval echo $as_me:7513: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7586,7 +7588,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:7589: \"$ac_link\") >&5
+(eval echo $as_me:7591: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10116,7 +10118,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:10119: \"$ac_link\") >&5
+(eval echo $as_me:10121: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -10194,7 +10196,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:10197: \"$ac_link\") >&5
+(eval echo $as_me:10199: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
