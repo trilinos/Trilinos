@@ -14,8 +14,18 @@
 #define _MLSOLVER_
 
 #include <stdlib.h>
-
 #include "ml_defs.h"
+
+#ifdef DSUPERLU
+#include "superlu_ddefs.h"
+#endif
+
+typedef struct ML_Lugrid_Struct {
+#ifdef DSUPERLU
+  gridinfo_t grid;
+#endif
+  int count;
+} ML_Lugrid;
 
 typedef struct ML_Solver_Struct 
 {
@@ -36,10 +46,11 @@ typedef struct ML_Solver_Struct
    void         *void_params2;       /* other data for the solver       */
    void         *LUspl;              /* for direct solver               */
    void         *PERMspl;            /* for direct solver               */
-   void         *grid;
-   void         *ML_subcomm;
-
+   int          ML_subgroup;
+   ML_Lugrid    *gridtiles;
 } ML_Solver;
+
+/* Changed void ML_subcomm to int ML_subgroup */
 
 #ifdef __cpluscplus
 extern "C" {

@@ -39,7 +39,7 @@ int ML_Solver_Create( ML_Solver **sol )
    solver->void_params2 = NULL;
    solver->LUspl = NULL;
    solver->PERMspl = NULL;
-   solver->grid = NULL;
+   solver->gridtiles = NULL;
 
    return 0;
 }

@@ -19,6 +19,7 @@
 #include "util.h"
 #elif DSUPERLU
 #include "mpi.h"
+#include <malloc.h>
 #include "superlu_ddefs.h"
 #endif
 
@@ -209,7 +210,6 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    int                flag, N_local, offset;
    double            *local_rhs;
    ML_Comm           *mlcomm;
-   MPI_Comm          *newcomm;
    ML_Solver         *solver;
    superlu_options_t  options;
    superlu_options_t *optionsptr;
@@ -217,10 +217,17 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    ScalePermstruct_t *ScalePermstruct;
    SuperLUStat_t      stat;
    LUstruct_t        *LUstruct;
-   gridinfo_t        *grid;
+   gridinfo_t        *mygrid;
+   ML_Lugrid         *lugrid_tiles;
    double             berr;
    int_t              i, n, nprow, npcol, nprocs; /* short integers */
    int                iam, info, nrhs, color, key;
+   int                mtile, ntile, q, g, l, k, mygroup;
+   int_t             *usermap;
+   /* dmd In-lining superlu_gridmap */
+   MPI_Group mpi_base_group, superlu_grp;
+   int                mycol, myrow, j;
+
    /* ------------------------------------------------------------- */
    /* fetch the sparse matrix and other parameters                  */
    /* ------------------------------------------------------------- */
@@ -242,15 +249,13 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
 
    LUstruct        = (LUstruct_t *) solver->LUspl;
    ScalePermstruct = (ScalePermstruct_t *) solver->PERMspl;
-   grid            = (gridinfo_t *) solver->grid;
-
    /* ------------------------------------------------------------- */
    /* if factorization has not been done, allocate space for it     */
    /* Fetching the factorization (flag=1) is unneccessary           */
    /* ------------------------------------------------------------- */
    if ( flag == -999 ) {
 
-     if( iam == 0 )printf("ml_superlu flag = %d\n",flag); /* dmd */
+     if( iam == 0 )printf("ml_superlu: clean up\n"); /* dmd */
 
      /* deallocate storage and clean up */
      info = flag;
@@ -262,31 +267,82 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
         ML_memory_free((void**) &A);
      }
      solver->Mat1 = NULL;
-     Destroy_LU(n, grid, LUstruct);
+     mygroup = (int ) solver->ML_subgroup;
+     lugrid_tiles    = solver->gridtiles;
+     mygrid = &((lugrid_tiles[mygroup]).grid);
+     Destroy_LU(n, mygrid, LUstruct);
      ScalePermstructFree(ScalePermstruct);
      LUstructFree(LUstruct);
      free(LUstruct);
      free(ScalePermstruct);
      solver->PERMspl = NULL;
      solver->LUspl = NULL;
-     MPI_Comm_free(solver->ML_subcomm);
-     superlu_gridexit(grid);
-     free(grid);
-     solver->grid = NULL;
-     ML_memory_free( ( void**) &(solver->ML_subcomm) );
-     solver->ML_subcomm = NULL;
+     superlu_gridexit(mygrid);
+     free (lugrid_tiles);
+     solver->gridtiles = NULL;
      return 0;
    } else if ( flag == 0 ) {
-     nprocs = sqrt(nprocs);
-     color = iam/nprocs;
-     key = 0;
-     ML_memory_alloc((void**) &newcomm, sizeof(MPI_Comm), "com" );
-     MPI_Comm_split( MPI_COMM_WORLD, color, key, newcomm);
-     solver->ML_subcomm = newcomm;
-     nprow = sqrt( nprocs );
-     npcol = nprocs/nprow;
-     grid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
-     superlu_gridinit( *newcomm, nprow, npcol, grid);
+     /*
+      * Group p processes into m=sqrt(p) groups
+      * of n or n+1 processes: p=m * (n or n+1)
+      * Presently only specific numbers
+      * of processors fit:
+      * p = n*n and n={m*m,m*(m+1)}
+      * k=1,2,3,2*2,2*3,3*3,3*4,4*4,...
+      * p=1,4,9, 16, 36, 81,144,256,...
+      * m = mtile, n = ntile
+      */
+     mtile = (int ) sqrt(nprocs);
+     ntile = (int ) nprocs/mtile;
+     q = nprocs - ntile*mtile;
+     if( q != 0 ) {
+       printf("Error:ml_superlu:reduce nprocs to %d\n",ntile*mtile);
+       exit(-1);
+     }
+     /* Each group has nprow * npcol processes */
+     nprow = sqrt(ntile);
+     npcol = ntile/nprow;
+     /* printf("p %d tile %d %d q %d np %d %d\n",nprocs,mtile,ntile,q,nprow,npcol); */
+     if( nprow*npcol != ntile ) {
+       printf("Error:ml_superlu: nprow,npcol %d %d  ntile %d  nprocs %d\n",
+       nprow,npcol,ntile,nprocs);
+       exit(-1);
+     }
+     usermap = (int *) malloc( ntile*sizeof(int_t) );
+     lugrid_tiles = (ML_Lugrid *) malloc( mtile*sizeof(ML_Lugrid) );
+     for( g=q ; g < mtile; g++){
+       k = g*ntile+q;
+       for( l=0; l<ntile; l++){
+         usermap[l] = l+k;
+         if( iam == l+k ) mygroup = g;
+       }
+       /* in-lining
+        * superlu_gridmap( MPI_COMM_WORLD, nprow, npcol, usermap, nprow, &((lugrid_tiles[g]).grid));
+        */
+       (lugrid_tiles[g]).grid.nprow = nprow;
+       (lugrid_tiles[g]).grid.npcol = npcol;
+       MPI_Comm_group( MPI_COMM_WORLD, &mpi_base_group );
+       MPI_Group_incl( mpi_base_group, ntile, usermap, &superlu_grp );
+       MPI_Comm_create( MPI_COMM_WORLD, superlu_grp, &(lugrid_tiles[g].grid.comm) );
+       if ( lugrid_tiles[g].grid.comm == MPI_COMM_NULL ) {
+         lugrid_tiles[g].grid.comm = MPI_COMM_WORLD;
+         lugrid_tiles[g].grid.iam  = iam;
+       } else {   /* mygroup=g and iam%mtile=npcol*myrow + mycol */
+         MPI_Comm_rank( lugrid_tiles[g].grid.comm, &(lugrid_tiles[g].grid.iam) );
+         myrow = lugrid_tiles[g].grid.iam / npcol;
+         mycol = lugrid_tiles[g].grid.iam % npcol;
+         MPI_Comm_split(lugrid_tiles[g].grid.comm, 
+                        myrow, mycol, &(lugrid_tiles[g].grid.rscp.comm));
+         MPI_Comm_split(lugrid_tiles[g].grid.comm, 
+                        mycol, myrow, &(lugrid_tiles[g].grid.cscp.comm));
+         lugrid_tiles[g].grid.rscp.Np  = npcol;
+         lugrid_tiles[g].grid.rscp.Iam = mycol;
+         lugrid_tiles[g].grid.cscp.Np  = nprow;
+         lugrid_tiles[g].grid.cscp.Iam = myrow;
+       }
+     } /* end for group g */
+     free (usermap);
+     solver->ML_subgroup = mygroup;
      /*
       * Fact = DOFACT Trans = NOTRANS Equil = EQUI RowPerm = LargeDiag
       * ColPerm = COLAMD ReplaceTinyPivot = REPLACE IterRefine = DOUBLE
@@ -308,7 +364,8 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      LUstructInit(n, n, LUstruct);
      solver->PERMspl = (void *) ScalePermstruct;
      solver->LUspl = (void *) LUstruct;
-     solver->grid = (void *) grid;
+     solver->gridtiles = lugrid_tiles;
+     mygrid = ( gridinfo_t *) malloc( sizeof( gridinfo_t) );
    } else {
 
      /* Indicate that the factored form of A is supplied. */
@@ -320,7 +377,10 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      optionsptr->ColPerm = MY_PERMC;
      optionsptr->ReplaceTinyPivot = REPLACE;
      optionsptr->IterRefine = NOREFINE;
+     lugrid_tiles    = solver->gridtiles;
+     mygroup = (int ) solver->ML_subgroup;
    }
+   mygrid = &((lugrid_tiles[mygroup]).grid);
 
    /* ------------------------------------------------------------- */
    /* gather from all processors the complete right hand side       */
@@ -336,8 +396,8 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* ------------------------------------------------------------- */
    info = flag;
    PStatInit(&stat);
-   pdgssvx_ABglobal(optionsptr, A, ScalePermstruct, local_rhs, n, nrhs, grid,
-                    LUstruct, &berr, &stat, &info);
+   pdgssvx_ABglobal(optionsptr, A, ScalePermstruct, local_rhs, n, 
+                    nrhs, mygrid, LUstruct, &berr, &stat, &info);
    solver->reuse_flag = 1;
 
    PStatFree(&stat);
