@@ -31,9 +31,10 @@ need to do the following:
 <li>
 In the source code for the desired method, search for&nbsp; the place where
 the static array of parameters is defined. It will look something like:
-<i>static PARAM_VARS Method_params[] = { ... }</i>.&nbsp; Add a line with
-the name of the new parameter, a pointer to the variable you want to associate
-(usually NULL), and its type.</li>
+<i>static
+PARAM_VARS Method_params[] = { ... }</i>.&nbsp; Add a line with the name
+of the new parameter, a pointer to the variable you want to associate (usually
+NULL), and its type.</li>
 
 <li>
 In the method source code, bind the parameter to a local variable through
@@ -58,8 +59,7 @@ in <i>rcb/rcb.c</i> for an example.</li>
 <li>
 Let you method access the parameters via <b><a href="dev_util_params.html#LB_Bind_Param">LB_Bind_Param
 </a></b>and
-<a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
-.</a></li>
+<b><a href="dev_util_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.</li>
 
 <li>
 Change the parameter function array in <i>params/set_params.c</i> to include
@@ -67,8 +67,8 @@ your parameter function. Simply add a new entry to the static array that
 looks like: <i>static LB_SET_PARAM_FN * Param_func[] = {...}</i>.</li>
 
 <li>
-Make sure your method uses the <a href="key_params">key parameters</a>
-in Zoltan correctly.</li>
+Make sure your method uses the <a href="../ug_html/ug_alg.html#General_Parameters">key
+parameters</a> in Zoltan correctly.</li>
 </ul>
 One useful convention is to put your method routine and your corresponding
 parameter function in the same source file. This way you can define the
