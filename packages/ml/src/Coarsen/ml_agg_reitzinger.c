@@ -17,6 +17,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   struct ML_CSR_MSRdata *csr_data;
   int Nlevels_nodal, grid_level;
   int created_ag_obj = 0;
+  double *vec, *Tcoarse_vec, *Pn_vec, *Tfine_Pn_vec;
+  int i1, old_nzptr, i3, *index;
+
   /*
   double *fido,*yyy, *vvv, dtemp;
   struct aztec_context *temp;
@@ -44,6 +47,12 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   Nlevels_nodal = ML_Gen_MGHierarchy_UsingAggregation(ml_nodes, fine_level, 
                                             ML_DECREASING, ag);
   coarsest_level = fine_level - Nlevels_nodal + 1; 
+  i = ml_nodes->Amat[coarsest_level].invec_leng;
+  ML_gsum_vec_int(&i,&j,1,ml_nodes->comm);
+  if (i <= 1) {  /* no edges so cut out last level */
+    Nlevels_nodal--;
+    coarsest_level = fine_level - Nlevels_nodal + 1; 
+  }
 
   *Tmat_array = (ML_Operator **) ML_allocate(sizeof(ML_Operator *)*
                          ml_nodes->ML_num_levels);
@@ -199,6 +208,129 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
      Pn_coarse = &(ml_nodes->Pmat[grid_level]);
      Rn_coarse = &(ml_nodes->Rmat[grid_level+1]);
+
+     /* Test every coarse grid edge to make sure that it is really */
+     /* necessary. This test is needed because Kn has connections  */
+     /* that do not correspond to edges in Ke. For example,        */
+     /* consider the 2D Ke stencil:                                */
+     /*                    1 ------ 2                              */
+     /*                    |        |                              */
+     /*                    |        |                              */
+     /*                    3 ------ 4                              */
+     /*                    |        |                              */
+     /*                    |        |                              */
+     /*                    5 ------ 6                              */
+     /* To properly perform the aggregation, the graph of Kn       */
+     /* will include the edges (2,3), (1,4), (3,6), (4,5)          */
+     /* even though these edges do not exist. Since Kn is used     */
+     /* to construct Tcoarse, this can lead to extraneous edges    */
+     /* in Tcoarse. These extra edges can lead to Ke(i,i) = 0      */
+     /* on the next coarser matrix. To avoid this, we attempt to   */
+     /* eliminate these edges here.                                */
+
+     /* Extraneous edges are detected by comparing                 */
+     /*     T_H vec      vs.   T_h P_n vec                         */
+     /* If an entry in T_H vec is not found in T_h P_n vec, it     */
+     /* means that this edge can be removed from T_H. Note: right  */
+     /* now we are doing an == with floating point numbers. This   */
+     /* should work ... but it might break on some hardwares.      */
+
+     vec = (double *) ML_allocate(sizeof(double)*(Tcoarse->invec_leng+1));
+     Tcoarse_vec = (double *) ML_allocate(sizeof(double)*(Tcoarse->outvec_leng
+							  + 1));
+     if ((vec == NULL) || (Tcoarse_vec == NULL)) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
+               " allocated to check T.\n\n");
+        exit(1);
+     }
+
+     ML_random_vec(vec, Tcoarse->invec_leng, ml_edges->comm);
+     ML_Operator_Apply(Tcoarse, Tcoarse->invec_leng, vec,
+		       Tcoarse->outvec_leng,Tcoarse_vec);
+
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) 
+       if (Tcoarse_vec[i1] < 0) Tcoarse_vec[i1] = -Tcoarse_vec[i1];
+
+     Pn_coarse->matvec->internal = CSR_ones_matvec; /* turn of the scaling */
+                                                    /* in Pn for the test. */
+     Pn_vec = (double *) ML_allocate(sizeof(double)*(Pn_coarse->outvec_leng
+						     +1));
+     if (Pn_vec == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
+               " allocated to check T.\n\n");
+        exit(1);
+     }
+
+
+     ML_Operator_Apply(Pn_coarse, Pn_coarse->invec_leng, vec,
+		       Pn_coarse->outvec_leng,Pn_vec);
+     ML_free(vec);
+     Tfine_Pn_vec = (double *) ML_allocate(sizeof(double)*(Tfine->outvec_leng
+							   +1));
+     if (Tfine_Pn_vec == NULL) {
+        printf("\n\nML_Gen_MGHierarchy_UsingReitzinger: Not enough space"
+               " allocated to check T.\n\n");
+        exit(1);
+     }
+     ML_Operator_Apply(Tfine, Tfine->invec_leng, Pn_vec,
+		       Tfine->outvec_leng,Tfine_Pn_vec);
+     ML_free(Pn_vec);
+     Pn_coarse->matvec->internal = CSR_matvec;
+     for (i1 = 0; i1 < Tfine->outvec_leng; i1++) 
+       if (Tfine_Pn_vec[i1] < 0) Tfine_Pn_vec[i1] = -Tfine_Pn_vec[i1];
+
+     /* First sort the two vectors and then compare them.    */
+     /* Mark Tcoarse_vec[i] with a '1.' if its corresponding */
+     /* edge can be removed.                                 */
+
+     index = (int *) ML_allocate((Tcoarse->outvec_leng+1)*sizeof(int));
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) index[i1] = i1;
+                            /* use index to keep track of which edge */
+                            /* is which in the sorted Tcoarse_vec    */
+     ML_az_dsort2(Tcoarse_vec,Tcoarse->outvec_leng, index);
+     ML_az_dsort(Tfine_Pn_vec,Tfine->outvec_leng);
+
+     i3 = 0;
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) {
+       while ( (i3 != Tfine->outvec_leng) && 
+	       (Tcoarse_vec[i1] > Tfine_Pn_vec[i3])) {
+	 i3++;
+       }
+       if ((i3 < Tfine->outvec_leng)&&(Tcoarse_vec[i1] == Tfine_Pn_vec[i3])) {
+	 Tcoarse_vec[i1] = 0.;
+       }
+       else Tcoarse_vec[i1] = 1.;
+     }
+     ML_free(Tfine_Pn_vec);
+     ML_az_sort(index, Tcoarse->outvec_leng, NULL, Tcoarse_vec);
+     ML_free(index);
+
+     csr_data = (struct ML_CSR_MSRdata *) Tcoarse->data;
+     nz_ptr = 0;
+     old_nzptr = 0;
+     counter = 0;
+
+     for (i1 = 0; i1 < Tcoarse->outvec_leng; i1++) {
+       if (Tcoarse_vec[i1] == 1.) {
+	 old_nzptr = csr_data->rowptr[i1+1];
+       }
+       else {
+	 row_length = csr_data->rowptr[i1+1] - old_nzptr;
+	 csr_data->rowptr[counter+1] = row_length + csr_data->rowptr[counter];
+	 counter++;
+	 for (i3 = 0; i3 < row_length; i3++) { 
+	   csr_data->columns[nz_ptr] =  csr_data->columns[old_nzptr];
+	   csr_data->values[nz_ptr++] =  csr_data->values[old_nzptr++];
+	 }
+       }
+     }
+     ML_free(Tcoarse_vec);
+     Tcoarse->outvec_leng = counter;
+     Tcoarse->getrow->Nrows = counter;
+     csr_data->values = (double *) realloc(csr_data->values,
+					   sizeof(double)*nz_ptr); 
+     csr_data->columns = (int *) realloc(csr_data->columns,
+					   sizeof(int)*nz_ptr); 
    
      /********************************************************************/
      /* Fix P and R so that they are not normalized. This is so that we  */
@@ -406,6 +538,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
         /* default: smooth_factor = 4.0/3.0 */
         if (smooth_factor != ML_DDEFAULT)
            ML_Aggregate_Set_DampingFactor(ag, smooth_factor);
+
         ML_AGG_Gen_Prolongator(ml_edges,grid_level+1,grid_level,
                                (void *) &(ml_edges->Amat[grid_level+1]), ag);
      }
