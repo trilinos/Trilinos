@@ -314,7 +314,12 @@ AC_CONFIG_FILES([
                 src/Makefile
 		example/Makefile
                 example/simple_epetra_aztecoo/Makefile
-                example/AztecOO_UserOpUserMat/Makefile])
+                example/AztecOO_UserOpUserMat/Makefile
+		test/Makefile
+		test/AztecOO_UserOpUserMat/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/serial/Makefile])
 AC_OUTPUT
 
 # Bye World!

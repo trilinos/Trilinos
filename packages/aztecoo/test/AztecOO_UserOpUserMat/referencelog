@@ -1,0 +1,105 @@
+Solving an 21 by 21 grid point Poisson problem. 
+Building Tridiagonal Approximation to Poisson
+Building Epetra_LinearProblem
+Building AztecOO solver
+Setting Preconditioner Matrix
+
+		*******************************************************
+		***** Preconditioned GMRES solution
+		***** ILUT( fill-in = 3.000e+00, drop = 1.000e-02)
+ 		***** with overlap = 1 
+		***** No scaling
+		***** NOTE: convergence VARIES when the total number of
+		*****       processors is changed.
+		*******************************************************
+
+                iter:    0           residual = 1.000000e+00
+
+*********************************************************************
+*****  Condition number estimate for subdomain preconditioner on PE 0 = 5.0000e-01
+*********************************************************************
+
+		*******************************************************
+		*****       Subdomain overlapping requires 1.000e+00 times
+		*****       the memory used for the nonoverlapped
+		*****       subdomain matrix.
+		***** ilut: The ilut factors require 1.001e+00 times 
+		*****       the memory of the overlapped subdomain matrix.
+		*******************************************************
+
+                iter:    1           residual = 2.449061e-01
+                iter:    2           residual = 9.480058e-02
+                iter:    3           residual = 3.897107e-02
+                iter:    4           residual = 1.884029e-02
+                iter:    5           residual = 9.834879e-03
+                iter:    6           residual = 5.148332e-03
+                iter:    7           residual = 3.019012e-03
+                iter:    8           residual = 2.146555e-03
+                iter:    9           residual = 1.598112e-03
+                iter:   10           residual = 1.139192e-03
+                iter:   11           residual = 8.352724e-04
+                iter:   12           residual = 6.491736e-04
+                iter:   13           residual = 5.266901e-04
+                iter:   14           residual = 4.200670e-04
+                iter:   15           residual = 3.294499e-04
+                iter:   16           residual = 2.666732e-04
+                iter:   17           residual = 2.248720e-04
+                iter:   18           residual = 1.898729e-04
+                iter:   19           residual = 1.621726e-04
+                iter:   20           residual = 1.424290e-04
+                iter:   21           residual = 1.231535e-04
+                iter:   22           residual = 1.042364e-04
+                iter:   23           residual = 8.721732e-05
+                iter:   24           residual = 7.486410e-05
+                iter:   25           residual = 6.592082e-05
+                iter:   26           residual = 5.710751e-05
+                iter:   27           residual = 4.761064e-05
+                iter:   28           residual = 3.612162e-05
+                iter:   29           residual = 2.826955e-05
+                iter:   30           residual = 2.219711e-05
+                iter:   31           residual = 1.640875e-05
+                iter:   32           residual = 1.170191e-05
+                iter:   33           residual = 8.115750e-06
+                iter:   34           residual = 5.396582e-06
+                iter:   35           residual = 3.684334e-06
+                iter:   36           residual = 2.601221e-06
+                iter:   37           residual = 1.811293e-06
+                iter:   38           residual = 1.156673e-06
+                iter:   39           residual = 7.141417e-07
+                iter:   40           residual = 4.240449e-07
+                iter:   41           residual = 2.623203e-07
+                iter:   42           residual = 1.703824e-07
+                iter:   43           residual = 1.206591e-07
+                iter:   44           residual = 8.312268e-08
+                iter:   45           residual = 5.679803e-08
+                iter:   46           residual = 3.980020e-08
+                iter:   47           residual = 3.045125e-08
+                iter:   48           residual = 2.350954e-08
+                iter:   49           residual = 1.835863e-08
+                iter:   50           residual = 1.455498e-08
+                iter:   51           residual = 1.140724e-08
+                iter:   52           residual = 8.136220e-09
+                iter:   53           residual = 5.410202e-09
+                iter:   54           residual = 3.440641e-09
+                iter:   55           residual = 2.401531e-09
+                iter:   56           residual = 1.707803e-09
+                iter:   57           residual = 1.244744e-09
+                iter:   58           residual = 8.048817e-10
+                iter:   59           residual = 4.754406e-10
+                iter:   60           residual = 2.497898e-10
+                iter:   61           residual = 1.511518e-10
+                iter:   62           residual = 8.615906e-11
+                iter:   63           residual = 4.902360e-11
+                iter:   64           residual = 2.363510e-11
+                iter:   65           residual = 1.370051e-11
+                iter:   66           residual = 6.422859e-12
+                iter:   67           residual = 3.361317e-12
+                iter:   68           residual = 1.759139e-12
+                iter:   69           residual = 1.006011e-12
+                iter:   70           residual = 5.260159e-13
+
+
+		Solution time: 0.040000 (sec.)
+		total iterations: 70
+Residual    = 2.77679e-11
+2-norm of difference between computed and exact solution  = 4.98715e-11

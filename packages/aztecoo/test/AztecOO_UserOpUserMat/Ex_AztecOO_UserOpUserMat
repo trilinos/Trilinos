@@ -1,0 +1,14 @@
+#!/bin/csh
+../../example/AztecOO_UserOpUserMat/Poisson2d.exe 21 21 >& log.txt
+if ("$1" == "-v") then
+  cat log.txt
+endif
+grep "2-norm of difference between" referencelog.txt > temp1.txt
+grep "2-norm of difference between" log.txt > temp2.txt
+diff -b -B temp1.txt temp2.txt
+if( "$status" != "0" ) then
+  echo " ******** Test failed ******** "
+else 
+  echo " ******** Test passed ******** "
+endif
+rm -f log.txt
