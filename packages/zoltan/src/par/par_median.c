@@ -46,6 +46,7 @@ struct median {          /* median cut info */
 /*****************************************************************************/
 
 int LB_find_median(
+  LB *lb,               /* The load-balancing structure                      */
   double *dots,         /* array of coordinates                              */
   double *wgts,         /* array of weights associated with dots             */
   int *dotmark,         /* returned list of which side of the median
@@ -58,7 +59,10 @@ int LB_find_median(
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
   double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
-  int *counter          /* returned for stats, # of median interations       */
+  int *counter,         /* returned for stats, # of median interations       */
+  int nprocs,           /* Total number of processors (Tflops_Special)       */
+  int num_procs,        /* Number of procs in partition (Tflops_Special)     */
+  int proclower         /* Lowest numbered proc in partition (Tflops_Special)*/
 )
 {
 /* Local declarations. */
@@ -74,6 +78,7 @@ int LB_find_median(
   double  targetlo, targethi;        /* desired wt in lower half */
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  tmp_half;
+  double *tmp;                       /* temporary array for Tflops_Special */
 
   int     i, j, k, wtflag = 0, numlist;
   int     first_iteration;
@@ -81,12 +86,14 @@ int LB_find_median(
   int     indexlo, indexhi;          /* indices of dot closest to median */
   int     breakflag;                 /* for breaking out of median iteration */
   int     markactive;                /* which side of cut is active = 0/1 */
+  int     rank;                      /* rank in partition (Tflops_Special) */
 
   /* MPI data types and user functions */
 
   MPI_Op            med_op;
   MPI_Datatype      med_type;
   MPI_User_function LB_median_merge;
+  void    LB_reduce(), LB_scan();    /* for Tflops_Special */
 
 
 /***************************** BEGIN EXECUTION ******************************/
@@ -150,10 +157,49 @@ int LB_find_median(
     if (wgts[i] > wtmax) wtmax = wgts[i];
   }
 
-  MPI_Allreduce(&localmax,&valuemax,1,MPI_DOUBLE,MPI_MAX,local_comm);
-  MPI_Allreduce(&localmin,&valuemin,1,MPI_DOUBLE,MPI_MIN,local_comm);
-  MPI_Allreduce(&wtsum,&weight,1,MPI_DOUBLE,MPI_SUM,local_comm);
-  MPI_Allreduce(&wtmax,&tolerance,1,MPI_DOUBLE,MPI_MAX,local_comm);
+  if (lb->Tflops_Special) {
+     rank = proc - proclower;
+     tmp = (double *) LB_MALLOC(nprocs*sizeof(double));
+     if (!tmp) {
+        LB_PRINT_ERROR(proc, yo, "Insufficient memory.");
+        LB_FREE(&dotlist);
+        LB_FREE(&wgts);
+        return 0;
+     }
+
+     /* find valuemax */
+     tmp[proc] = valuemax = localmax;
+     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     for (i = proclower; i < proclower + num_procs; i++)
+        if (tmp[i] > valuemax) valuemax = tmp[i];
+
+     /* find valuemin */
+     tmp[proc] = valuemin = localmin;
+     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     for (i = proclower; i < proclower + num_procs; i++)
+        if (tmp[i] < valuemin) valuemin = tmp[i];
+
+     /* find sum of weights */
+     tmp[proc] = wtsum;
+     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     for (weight = 0.0, i = proclower; i < proclower + num_procs; i++)
+        weight += tmp[i];
+
+     /* find tolerance (max of wtmax) */
+     tmp[proc] = tolerance = wtmax;
+     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     for (i = proclower; i < proclower + num_procs; i++)
+        if (tmp[i] > tolerance) tolerance = tmp[i];
+
+     LB_FREE(&tmp);
+     tmp_half = 0.0;    /* in case of a set with one processor return a value*/
+  }
+  else {
+     MPI_Allreduce(&localmax,&valuemax,1,MPI_DOUBLE,MPI_MAX,local_comm);
+     MPI_Allreduce(&localmin,&valuemin,1,MPI_DOUBLE,MPI_MIN,local_comm);
+     MPI_Allreduce(&wtsum,&weight,1,MPI_DOUBLE,MPI_SUM,local_comm);
+     MPI_Allreduce(&wtmax,&tolerance,1,MPI_DOUBLE,MPI_MAX,local_comm);
+  }
 
   tolerance *= 0.5 + TINY;  /* ctv - changed from        1.0 + TINY
                The larger tolerance allowed one side of the cut to be larger
@@ -183,6 +229,8 @@ int LB_find_median(
           all dots <= valuehalf are marked with 0 in dotmark
           all dots >= valuehalf are marked with 1 in dotmark */
 
+  if (num_procs > 1) { /* don't need to go through if only one proc.  This
+                          added for Tflops_Special */
   while (1) {
 
     /* choose bisector value */
@@ -249,7 +297,11 @@ int LB_find_median(
 
       /* combine median data struct across current subset of procs */
       if (counter != NULL) (*counter)++;
-      MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
+      if (lb->Tflops_Special)
+         LB_reduce(num_procs, rank, proc, 1, &medme, &med, 1, med_type,
+                   local_comm);
+      else
+         MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
 
       /* test median guess for convergence */
       /* move additional dots that are next to cut across it */
@@ -274,7 +326,10 @@ int LB_find_median(
           wtok = 0.0;
           if (medme.valuehi == med.valuehi) wtok = medme.wthi;   
           if (weightlo + med.wthi >= targetlo) {                /* all done */
-            MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
+            if (lb->Tflops_Special)
+              LB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
+            else
+              MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
             wtmax = targetlo - weightlo;
             if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
             breakflag = 1;
@@ -318,7 +373,10 @@ int LB_find_median(
         wtok = 0.0;
         if (medme.valuelo == med.valuelo) wtok = medme.wtlo;   
         if (weighthi + med.wtlo >= targethi) {                /* all done */
-          MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
+          if (lb->Tflops_Special)
+             LB_scan(&wtok, &wtupto, local_comm, proc, rank, num_procs);
+          else
+             MPI_Scan(&wtok,&wtupto,1,MPI_DOUBLE,MPI_SUM,local_comm);
           wtmax = targethi - weighthi;
           if (wtupto > wtmax) wtok = wtok - (wtupto - wtmax);
           breakflag = 1;
@@ -354,6 +412,10 @@ int LB_find_median(
     numlist = k;
 
   }
+  }
+  else /* if one processor set all dots to 0 (Tflops_Special) */
+    for (i = 0; i < numlist; i++)
+       dotmark[i] = 0;
 
   /* found median */
   *valuehalf = tmp_half;
@@ -417,4 +479,60 @@ void LB_median_merge(void *in, void *inout, int *len, MPI_Datatype *dptr)
     med2->counthi += med1->counthi;
     if (med1->prochi < med2->prochi) med2->prochi = med1->prochi;
   }
+}
+
+void LB_reduce(int nproc, int rank, int proc, int n, struct median *in,
+               struct median *inout, int *len, MPI_Datatype datatype,
+               MPI_Comm comm)
+{
+   struct median tmp;
+   int m, to, tag = 32109;
+   MPI_Status status;
+
+   /* this is a recursive function for Tflops_Special that takes a structure
+      in in and returns the merged structure inout for a subset of processors
+      of the entire number of processors.  rank is a processors rank within
+      its partition of size nproc while proc is the rank of the processor with
+      the entire number of processors being used. */
+
+   m = 2*n;
+   if (rank%m) {
+      to = proc - n;
+      MPI_Send(in, 1, datatype, to, tag, comm);
+      MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
+   }
+   else
+      if (rank + n < nproc) {
+         to = proc + n;
+         MPI_Recv(inout, 1, datatype, to, tag, comm, &status);
+         LB_median_merge(in, inout, len, &datatype);
+         tmp = *inout;
+         if (m < nproc)
+            LB_reduce(nproc, rank, proc, m, &tmp, inout, len, datatype, comm);
+         MPI_Send(inout, 1, datatype, to, tag, comm);
+      }
+      else
+         LB_reduce(nproc, rank, proc, m, in, inout, len, datatype, comm);
+}
+
+void LB_scan(double *wtok, double *wtupto, MPI_Comm local_comm, int proc,
+             int rank, int num_procs)
+{
+   int to, tag = 32108;
+   double tmp;
+   MPI_Status status;
+
+   /* this subroutine performs a scan operation summing doubles on a subset
+      of a set of processors for Tflops_Special */
+
+   *wtupto = *wtok;
+   if (rank != 0) {
+      to = proc - 1;
+      MPI_Recv(&tmp, 1, MPI_DOUBLE, to, tag, local_comm, &status);
+      *wtupto += tmp;
+   }
+   if (rank != num_procs-1) {
+      to = proc + 1;
+      MPI_Send(wtupto, 1, MPI_DOUBLE, to, tag, local_comm);
+   }
 }
