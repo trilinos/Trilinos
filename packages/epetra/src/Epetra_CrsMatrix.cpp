@@ -629,11 +629,11 @@ int Epetra_CrsMatrix::FillComplete() {
 int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap,
 				   const Epetra_Map& RangeMap)
 {
+  int returnValue = 0;
+
   if (Graph_->Filled()) {
     if (!constructedWithFilledGraph_ && !matrixFillCompleteCalled_) {
-      cerr << "Epetra_CrsMatrix::FillComplete WARNING, graph.FillComplete has been "
-	   << "called since matrix construction, matrix data may now be out of sync "
-	   << "with graph" <<endl;
+      returnValue = 2;
     }
   }
 
@@ -652,7 +652,7 @@ int Epetra_CrsMatrix::FillComplete(const Epetra_Map& DomainMap,
 
   matrixFillCompleteCalled_ = true;
 
-  return(0);
+  return(returnValue);
 }
 
 //==========================================================================

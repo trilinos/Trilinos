@@ -387,6 +387,10 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \param In
 		RangeMap - Map that describes the distribution of vector and multi-vectors in the
 		matrix range.
+
+    \return error code, 0 if successful. positive warning code of 2 if it is detected that the
+    matrix-graph got out of sync since this matrix was constructed (for instance if
+    graph.FillComplete() was called by another matrix that shares the graph)
     */
   int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap);
     

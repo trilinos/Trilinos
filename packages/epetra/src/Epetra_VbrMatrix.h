@@ -352,6 +352,10 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
     \param In
            RangeMap - Map that describes the distribution of vector and multi-vectors in the
 	               matrix range.
+
+    \return error code, 0 if successful. positive warning code of 2 if it is detected that the
+    matrix-graph got out of sync since this matrix was constructed (for instance if
+    graph.FillComplete() was called by another matrix that shares the graph)
     */
     int FillComplete(const Epetra_BlockMap& DomainMap, const Epetra_BlockMap& RangeMap);
 
@@ -1190,7 +1194,9 @@ class Epetra_VbrMatrix : public Epetra_DistObject,
   bool Allocated_;
   bool StaticGraph_;
   bool UseTranspose_;
-  
+  bool constructedWithFilledGraph_;
+  bool matrixFillCompleteCalled_;
+
   int NumMyBlockRows_;
 
   Epetra_DataAccess CV_;
