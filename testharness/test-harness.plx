@@ -1752,7 +1752,7 @@ report($SUMMARY);
             }                
         } else {
             printEvent("generating report: $filename\n"); 
-            open (REPORT, ">$options{'TRILINOS_DIR'}[0]/testharness/results/$filename")
+            open (REPORT, ">$options{'TRILINOS_DIR'}[0]/testharness/$options{'RESULTS_DIR'}[0]/$filename")
                 or die "can't open $filename";
             print REPORT $body;
             close REPORT;            
@@ -1858,7 +1858,8 @@ report($SUMMARY);
         print "             will return an exit code of 0. No special reporting will be\n";
         print "             done--most likely, you will want to set REPORT_METHOD to\n";
         print "             LOCAL_FILESYSTEM, in which case you will see reports in\n";
-        print "             Trilinos/testharness/results.\n";
+        print "             Trilinos/testharness/results (by default--see RESULTS_DIR\n";
+        print "             option to change this).\n";
         print "\n";
         print "  -nf FILE : Run test harness with given test harness config file, but\n";
         print "             don't run tests (for cross-compiling machines)\n";
@@ -2051,10 +2052,16 @@ report($SUMMARY);
             }         
         }
         
+        # set RESULTS_DIR value to "results" if not supplied 
+        if (!(defined $options{'RESULTS_DIR'} && defined $options{'RESULTS_DIR'}[0] &&
+              $options{'RESULTS_DIR'}[0] ne "")) { 
+           $options{'RESULTS_DIR'}[0] = "results";
+        }
+
         # create results directory if REPORT_METHOD is LOCAL_FILESYSTEM
         if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
-            system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/results";
-            system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
+            system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/$options{'RESULTS_DIR'}[0]";
+            system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/$options{'RESULTS_DIR'}[0]";
         }
 
         # delete temp directory and create new one
@@ -2575,9 +2582,9 @@ report($SUMMARY);
             print outFile "# then emails will be sent to either the script owner, the package regression\n";
             print outFile "# list, or the Trilinos regression list (see other email options below). If the\n";
             print outFile "# value is LOCAL_FILESYSTEM, then no emails will be sent at all and the results\n";
-            print outFile "# will be written to testharness/results/. This directory will be blown away at\n";
-            print outFile "# the beginning of each run of the testharness that has REPORT_METHOD set to\n";
-            print outFile "# LOCAL_FILESYSTEM.\n";      
+            print outFile "# will be written to testharness/results/ (by default--see RESULTS_DIR option to\n";
+            print outFile "# change this). This directory will be blown away at the beginning of each run\n";
+            print outFile "# of the testharness that has REPORT_METHOD set to LOCAL_FILESYSTEM.\n";      
             print outFile "#\n";    
             print outFile "# - recognized values: EMAIL LOCAL_FILESYSTEM\n";  
             print outFile "# - multiple values recognized: NO\n"; 
@@ -2724,7 +2731,7 @@ report($SUMMARY);
         }
         
         push (@optionsOrder, "CVS_UPDATE");
-        if (!$silent) { print outFile "CVS_UPDATE                      = YES \n"; }
+        if (!$silent) { print outFile "CVS_UPDATE                      = YES\n"; }
         
         if (!$short) {      
             print outFile "\n";  
@@ -2738,6 +2745,25 @@ report($SUMMARY);
         
         push (@optionsOrder, "CVS_CMD");
         if (!$silent) { print outFile "CVS_CMD                         = cvs\n"; }
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# Indicate the name of the results directory. This can be particularly helpful\n";
+            print outFile "# for machines with cross-mounted drives. The directory will be created under\n";
+            print outFile "# the testharness/ directory by default, but can be placed somewhere else with a\n";
+            print outFile "# relative path. If no value is given, \"results\" will be used. NOTE: the\n"; 
+            print outFile "# directory will be blown away and recreated for each run of the test harness\n"; 
+            print outFile "# so if you want to save results of previous runs, rename the results directory\n"; 
+            print outFile "# before running the test harness again.\n"; 
+            print outFile "#\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: NO\n";      
+            print outFile "\n";
+        }
+        
+        push (@optionsOrder, "RESULTS_DIR");
+        if (!$silent) { print outFile "RESULTS_DIR                     = \n"; }
         
         if (!$short) {    
             print outFile "\n";  
