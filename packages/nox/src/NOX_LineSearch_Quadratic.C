@@ -44,7 +44,7 @@ using namespace NOX;
 using namespace NOX::LineSearch;
 
 Quadratic::Quadratic(const NOX::Utils& u, Parameter::List& params) :
-  Common(u),
+  Common(u, params),
   paramsPtr(NULL)
 {
   reset(params);

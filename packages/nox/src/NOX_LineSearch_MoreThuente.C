@@ -40,7 +40,7 @@
 #include "NOX_Utils.H"
 
 NOX::LineSearch::MoreThuente::MoreThuente(const NOX::Utils& u, Parameter::List& params) :
-  Common(u)
+  Common(u, params)
 {
   reset(params);
 }

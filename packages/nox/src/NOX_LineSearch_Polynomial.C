@@ -40,7 +40,7 @@
 #include "NOX_Utils.H"
 
 NOX::LineSearch::Polynomial::Polynomial(const NOX::Utils& u, Parameter::List& params) :
-  Common(u),
+  Common(u, params),
   paramsPtr(NULL)
 {
   reset(params);

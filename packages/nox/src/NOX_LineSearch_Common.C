@@ -34,19 +34,32 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Utils.H"
+#include "NOX_Parameter_List.H"
 
 using namespace NOX;
 using namespace NOX::LineSearch;
 
-Common::Common(const NOX::Utils& u) :
+Common::Common(const NOX::Utils& u, NOX::Parameter::List& lineSearchParams) :
   utils(u),
+  paramsPtr(&lineSearchParams),
   vecPtr(NULL)
 {
+  reset(lineSearchParams);
 }
 
 Common::~Common()
 {
   delete vecPtr;
+}
+
+bool Common::reset(NOX::Parameter::List& lineSearchParams)
+{
+  paramsPtr = &lineSearchParams;
+  totalNumLineSearchCalls = 0;
+  totalNumNonTrivialLineSearches = 0;
+  totalNumFailedLineSearches = 0;
+  totalNumIterations = 0;
+  return true;
 }
 
 void Common::printStep(int n, double step, double oldf, double newf, const string s) const
@@ -93,4 +106,49 @@ double Common::computeSlope(const Abstract::Vector& dir, const Abstract::Group& 
 
   // Return <v, F> = F' * J * dir = <J'F, dir> = <g, dir>
   return(vecPtr->dot(grp.getF()));
+}
+
+double Common::computeSlopeWithOutJac(const Abstract::Vector& dir, const Abstract::Group& grp) 
+{
+  // Allocate space for vecPtr and grpPtr if necessary
+  if (vecPtr == 0) 
+    vecPtr = dir.clone(ShapeCopy);
+  if (grpPtr == 0)
+    grpPtr = grp.clone(ShapeCopy);
+
+  // Check that F exists
+  if (!grp.isF()) 
+  {
+    cout << "NOX::LineSearch::Common::computeSlope - Invalid F" << endl;
+    throw "NOX Error";
+  }
+
+  // Compute the perturbation parameter
+  double lambda = 1.0e-6;
+  double eta = lambda * (lambda + grp.getX().norm() / dir.norm());
+
+  // Perturb the solution vector
+  *vecPtr = grp.getX();
+  vecPtr->update(eta, dir, 1.0);
+
+  // Compute the new F --> F(x + eta * dir)
+  grpPtr->setX(*vecPtr);  
+  grpPtr->computeF();
+
+  // Compute Js = (F(x + eta * dir) - F(x))/eta
+  *vecPtr = grpPtr->getF();
+  vecPtr->update(-1.0, grp.getF(), 1.0);
+  vecPtr->scale(1.0/eta);
+  
+  return(vecPtr->dot(grp.getF()));
+}
+
+bool Common::setCommonDataValues() 
+{
+  NOX::Parameter::List& outputList = paramsPtr->sublist("Output");
+  outputList.setParameter("Total Number of Line Search Calls", totalNumLineSearchCalls);
+  outputList.setParameter("Total Number of Non-trivial Line Searches", totalNumNonTrivialLineSearches);
+  outputList.setParameter("Total Number of Failed Line Searches", totalNumFailedLineSearches);
+  outputList.setParameter("Total Number of Line Search Inner Iterations", totalNumIterations);
+  return true;
 }

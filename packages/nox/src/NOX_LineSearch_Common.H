@@ -49,16 +49,33 @@ namespace LineSearch {
 /*!  
   This is an abstract class that other line searches can derive
   from to get access to some common functionality.
+
+
+  <B> Common Line Search Data </B> <br>
+
+Line searches have a common set of data that should be tracked in saved in the parameter list for the users.  This class provides a set of common data declarations and a routine to print them.  A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output keys for the parameter list are:
+
+  - "Total Number of Line Search Calls" - Total number of calls to the compute() method of this line search.
+
+  - "Total Number of Non-trivial Line Searches" - The total number of steps that could not directly take a full step and meet the required "Convergence Criteria" (i.e. The line search had to reduce the step length using inner iteration calculations over iterate \f$ k \f$). 
+
+  - "Total Number of Failed Line Searches" - total number of line searches that failed and used a recovery step.
+
+  - "Total Number of Line Search Inner Iterations" - total number of inner iterations \f$ k \f$ performed by this object.
+
 */
 class Common : public Generic {
 
 public:
 
   //! Default constructor
-  Common(const NOX::Utils& u);
+  Common(const NOX::Utils& u, NOX::Parameter::List& lineSearchParams);
 
   //! Destructor
   virtual ~Common();
+
+  //! Reset the Common data components.
+  virtual bool reset(NOX::Parameter::List& lineSearchParams);
 
 protected:
 
@@ -80,15 +97,76 @@ protected:
   */
   double computeSlope(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
 
+  //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.  
+  /*!
+    Calculates and returns 
+    \f[
+    \zeta = d^T \nabla f(x) = d^TJ^TF
+    \f]
+
+    Here \f$d\f$ represents the input parameter \c dir \f$\nabla
+    f(x)\f$ is the gradient associated with the given group (for nonlinear solves this equates to \f$ J^TF \f$ where \f$ J \f$ is the Jacobian and \f$ F \f$ is the original nonlinear function).
+
+    We can rewrite this equation as:
+
+    \f[ d^TJ^TF = F^TJd \f]
+    
+    which allows us to use directional derivatives to estimate \f$ J^TF \f$:
+
+    \f[ F^TJd = F^T \frac{F(x + \eta d) - F(x)}{\eta} \f]
+
+    This may allow for faster computations of the slope if the Jacobian is expensive to evaluate.
+
+where \f$\eta\f$ is a scalar perturbation calculated by:
+
+\f[ \eta = \lambda * (\lambda + \frac{\| x\|}{\| d\|} ) \f]
+
+\f$ \lambda \f$ is a constant fixed at 1.0e-6.
+
+  */
+  double computeSlopeWithOutJac(const NOX::Abstract::Vector& dir, const NOX::Abstract::Group& grp);
+
+  //! Reset the common line search information 
+  void resetInfo();
+
+  //! Sets the common line search data in an "Output" sublist of the "Line Search" sublist. 
+  bool setCommonDataValues();
+
 protected:
 
   //! Printing utilities
   const NOX::Utils& utils;
 
+  /** @name Common Line Search Data 
+  
+  All line searches in general should report the following information.  We save a pointer to the parameter list associated with the line search and set an output sublist with each of the following parameters.
+  */ 
+  //@{
+
+  //! Pointer to the input parameter list.  We need this to create an "Output" sublist to store output parameters.  
+  NOX::Parameter::List* paramsPtr;
+
+  //! Counter for the total number of times the compute() method was called for this object. 
+  int totalNumLineSearchCalls;
+
+  //! Counter for number of times the line search was actually needed.  This is the number of times the compute() method was called for this object where a step length of 1.0 could not be used.
+  int totalNumNonTrivialLineSearches;
+
+  //! Counter for the number of times the compute() method was called where the line search algorithm failed.
+  int totalNumFailedLineSearches;
+
+  //! Counter for the total number of line search inner iterations performed.
+  int totalNumIterations;
+
+  //@}
+
 private:
 
   //! A vector that *may* be used in computeSlope()
   NOX::Abstract::Vector* vecPtr;
+
+  //! An extra group that will only be allocated if computeSlopeWithOutJac() is called.
+  NOX::Abstract::Group* grpPtr;
 
 };
 } // namespace LineSearch
