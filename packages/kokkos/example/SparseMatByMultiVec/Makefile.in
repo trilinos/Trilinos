@@ -92,12 +92,10 @@ CONFIG_HEADER = $(top_builddir)/src/Kokkos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_SparseMatByMultiVec_example_OBJECTS = csrcsc.$(OBJEXT) \
-	scscmm1a.$(OBJEXT) scscmm1.$(OBJEXT) scscmm2a.$(OBJEXT) \
-	scscmm2.$(OBJEXT) scscrd.$(OBJEXT) scscsm1.$(OBJEXT) \
-	scscsm2.$(OBJEXT) scsrmm1a.$(OBJEXT) scsrmm1.$(OBJEXT) \
-	scsrmm2a.$(OBJEXT) scsrmm2.$(OBJEXT) scsrsm1.$(OBJEXT) \
-	scsrsm2.$(OBJEXT) snrm2.$(OBJEXT) srelerr.$(OBJEXT) \
-	swaxpy.$(OBJEXT) timer.$(OBJEXT) tsploops.$(OBJEXT)
+	scscmm1.$(OBJEXT) scscmm2.$(OBJEXT) scscrd.$(OBJEXT) \
+	scsrmm1.$(OBJEXT) scsrmm2a.$(OBJEXT) snrm2.$(OBJEXT) \
+	srelerr.$(OBJEXT) swaxpy.$(OBJEXT) timer.$(OBJEXT) \
+	tsploops.$(OBJEXT)
 SparseMatByMultiVec_example_OBJECTS =  \
 	$(am_SparseMatByMultiVec_example_OBJECTS)
 SparseMatByMultiVec_example_LDADD = $(LDADD)
@@ -230,11 +228,10 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-SparseMatByMultiVec_example_SOURCES = $(srcdir)/csrcsc.f $(srcdir)/scscmm1a.f \
-     $(srcdir)/scscmm1.f $(srcdir)/scscmm2a.f $(srcdir)/scscmm2.f \
-     $(srcdir)/scscrd.f $(srcdir)/scscsm1.f $(srcdir)/scscsm2.f \
-     $(srcdir)/scsrmm1a.f $(srcdir)/scsrmm1.f $(srcdir)/scsrmm2a.f \
-     $(srcdir)/scsrmm2.f $(srcdir)/scsrsm1.f $(srcdir)/scsrsm2.f \
+SparseMatByMultiVec_example_SOURCES = $(srcdir)/csrcsc.f \
+     $(srcdir)/scscmm1.f $(srcdir)/scscmm2.f \
+     $(srcdir)/scscrd.f \
+     $(srcdir)/scsrmm1.f $(srcdir)/scsrmm2a.f \
      $(srcdir)/snrm2.f $(srcdir)/srelerr.f $(srcdir)/swaxpy.f \
      $(srcdir)/timer.c $(srcdir)/tsploops.f
 
@@ -330,23 +327,11 @@ csrcsc.o: $(srcdir)/csrcsc.f
 csrcsc.obj: $(srcdir)/csrcsc.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o csrcsc.obj `if test -f '$(srcdir)/csrcsc.f'; then $(CYGPATH_W) '$(srcdir)/csrcsc.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/csrcsc.f'; fi`
 
-scscmm1a.o: $(srcdir)/scscmm1a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm1a.o `test -f '$(srcdir)/scscmm1a.f' || echo '$(srcdir)/'`$(srcdir)/scscmm1a.f
-
-scscmm1a.obj: $(srcdir)/scscmm1a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm1a.obj `if test -f '$(srcdir)/scscmm1a.f'; then $(CYGPATH_W) '$(srcdir)/scscmm1a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscmm1a.f'; fi`
-
 scscmm1.o: $(srcdir)/scscmm1.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm1.o `test -f '$(srcdir)/scscmm1.f' || echo '$(srcdir)/'`$(srcdir)/scscmm1.f
 
 scscmm1.obj: $(srcdir)/scscmm1.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm1.obj `if test -f '$(srcdir)/scscmm1.f'; then $(CYGPATH_W) '$(srcdir)/scscmm1.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscmm1.f'; fi`
-
-scscmm2a.o: $(srcdir)/scscmm2a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm2a.o `test -f '$(srcdir)/scscmm2a.f' || echo '$(srcdir)/'`$(srcdir)/scscmm2a.f
-
-scscmm2a.obj: $(srcdir)/scscmm2a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm2a.obj `if test -f '$(srcdir)/scscmm2a.f'; then $(CYGPATH_W) '$(srcdir)/scscmm2a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscmm2a.f'; fi`
 
 scscmm2.o: $(srcdir)/scscmm2.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscmm2.o `test -f '$(srcdir)/scscmm2.f' || echo '$(srcdir)/'`$(srcdir)/scscmm2.f
@@ -360,24 +345,6 @@ scscrd.o: $(srcdir)/scscrd.f
 scscrd.obj: $(srcdir)/scscrd.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscrd.obj `if test -f '$(srcdir)/scscrd.f'; then $(CYGPATH_W) '$(srcdir)/scscrd.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscrd.f'; fi`
 
-scscsm1.o: $(srcdir)/scscsm1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscsm1.o `test -f '$(srcdir)/scscsm1.f' || echo '$(srcdir)/'`$(srcdir)/scscsm1.f
-
-scscsm1.obj: $(srcdir)/scscsm1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscsm1.obj `if test -f '$(srcdir)/scscsm1.f'; then $(CYGPATH_W) '$(srcdir)/scscsm1.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscsm1.f'; fi`
-
-scscsm2.o: $(srcdir)/scscsm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscsm2.o `test -f '$(srcdir)/scscsm2.f' || echo '$(srcdir)/'`$(srcdir)/scscsm2.f
-
-scscsm2.obj: $(srcdir)/scscsm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scscsm2.obj `if test -f '$(srcdir)/scscsm2.f'; then $(CYGPATH_W) '$(srcdir)/scscsm2.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scscsm2.f'; fi`
-
-scsrmm1a.o: $(srcdir)/scsrmm1a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm1a.o `test -f '$(srcdir)/scsrmm1a.f' || echo '$(srcdir)/'`$(srcdir)/scsrmm1a.f
-
-scsrmm1a.obj: $(srcdir)/scsrmm1a.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm1a.obj `if test -f '$(srcdir)/scsrmm1a.f'; then $(CYGPATH_W) '$(srcdir)/scsrmm1a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrmm1a.f'; fi`
-
 scsrmm1.o: $(srcdir)/scsrmm1.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm1.o `test -f '$(srcdir)/scsrmm1.f' || echo '$(srcdir)/'`$(srcdir)/scsrmm1.f
 
@@ -389,24 +356,6 @@ scsrmm2a.o: $(srcdir)/scsrmm2a.f
 
 scsrmm2a.obj: $(srcdir)/scsrmm2a.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm2a.obj `if test -f '$(srcdir)/scsrmm2a.f'; then $(CYGPATH_W) '$(srcdir)/scsrmm2a.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrmm2a.f'; fi`
-
-scsrmm2.o: $(srcdir)/scsrmm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm2.o `test -f '$(srcdir)/scsrmm2.f' || echo '$(srcdir)/'`$(srcdir)/scsrmm2.f
-
-scsrmm2.obj: $(srcdir)/scsrmm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm2.obj `if test -f '$(srcdir)/scsrmm2.f'; then $(CYGPATH_W) '$(srcdir)/scsrmm2.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrmm2.f'; fi`
-
-scsrsm1.o: $(srcdir)/scsrsm1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrsm1.o `test -f '$(srcdir)/scsrsm1.f' || echo '$(srcdir)/'`$(srcdir)/scsrsm1.f
-
-scsrsm1.obj: $(srcdir)/scsrsm1.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrsm1.obj `if test -f '$(srcdir)/scsrsm1.f'; then $(CYGPATH_W) '$(srcdir)/scsrsm1.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrsm1.f'; fi`
-
-scsrsm2.o: $(srcdir)/scsrsm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrsm2.o `test -f '$(srcdir)/scsrsm2.f' || echo '$(srcdir)/'`$(srcdir)/scsrsm2.f
-
-scsrsm2.obj: $(srcdir)/scsrsm2.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrsm2.obj `if test -f '$(srcdir)/scsrsm2.f'; then $(CYGPATH_W) '$(srcdir)/scsrsm2.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrsm2.f'; fi`
 
 snrm2.o: $(srcdir)/snrm2.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o snrm2.o `test -f '$(srcdir)/snrm2.f' || echo '$(srcdir)/'`$(srcdir)/snrm2.f

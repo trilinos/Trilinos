@@ -31,7 +31,8 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = BaseSparseMultiply_test
 
-BaseSparseMultiply_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/GenerateHbProblem.hpp
+BaseSparseMultiply_test_SOURCES = $(srcdir)/cxx_main.cpp \
+$(srcdir)/scsrmm2.f $(srcdir)/GenerateHbProblem.hpp
 
 BaseSparseMultiply_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 

@@ -42,7 +42,7 @@
 #  ************************************************************************
 #@HEADER
 
-SOURCES = $(MultiVec_example_SOURCES)
+SOURCES = $(MultiVec_tgemmV1_SOURCES) $(MultiVec_tgemmV2_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = MultiVec_example$(EXEEXT)
+noinst_PROGRAMS = MultiVec_tgemmV1$(EXEEXT) MultiVec_tgemmV2$(EXEEXT)
 subdir = example/MultiVec
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -91,10 +91,13 @@ mkinstalldirs = $(mkdir_p)
 CONFIG_HEADER = $(top_builddir)/src/Kokkos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_MultiVec_example_OBJECTS = second_linux.$(OBJEXT) dgemmf.$(OBJEXT) \
-	tgemm.$(OBJEXT) tgemmV1.$(OBJEXT) tgemmV2.$(OBJEXT)
-MultiVec_example_OBJECTS = $(am_MultiVec_example_OBJECTS)
+am_MultiVec_tgemmV1_OBJECTS = second_linux.$(OBJEXT) dgemmf.$(OBJEXT) \
+	tgemmV1.$(OBJEXT)
+MultiVec_tgemmV1_OBJECTS = $(am_MultiVec_tgemmV1_OBJECTS)
 am__DEPENDENCIES_1 =
+am_MultiVec_tgemmV2_OBJECTS = second_linux.$(OBJEXT) dgemmf.$(OBJEXT) \
+	tgemmV2.$(OBJEXT)
+MultiVec_tgemmV2_OBJECTS = $(am_MultiVec_tgemmV2_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -107,8 +110,8 @@ F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
 F77LD = $(F77)
 F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
-SOURCES = $(MultiVec_example_SOURCES)
-DIST_SOURCES = $(MultiVec_example_SOURCES)
+SOURCES = $(MultiVec_tgemmV1_SOURCES) $(MultiVec_tgemmV2_SOURCES)
+DIST_SOURCES = $(MultiVec_tgemmV1_SOURCES) $(MultiVec_tgemmV2_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -224,12 +227,20 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-MultiVec_example_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
-     $(srcdir)/tgemm.f $(srcdir)/tgemmV1.f $(srcdir)/tgemmV2.f
+MultiVec_tgemmV1_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
+     $(srcdir)/tgemmV1.f
 
-MultiVec_example_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
-MultiVec_example_CXXFLAGS = -I$(top_srcdir)/src
-MultiVec_example_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
+MultiVec_tgemmV2_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
+     $(srcdir)/tgemmV2.f
+
+MultiVec_tgemmV1_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
+MultiVec_tgemmV2_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
+MultiVec_tgemmV1_CXXFLAGS = -I$(top_srcdir)/src
+MultiVec_tgemmV2_CXXFLAGS = -I$(top_srcdir)/src
+MultiVec_tgemmV1_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
+        $(LIBS) $(FLIBS)
+
+MultiVec_tgemmV2_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
 	$(LIBS) $(FLIBS)
 
 all: all-am
@@ -268,9 +279,12 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-MultiVec_example$(EXEEXT): $(MultiVec_example_OBJECTS) $(MultiVec_example_DEPENDENCIES) 
-	@rm -f MultiVec_example$(EXEEXT)
-	$(F77LINK) $(MultiVec_example_LDFLAGS) $(MultiVec_example_OBJECTS) $(MultiVec_example_LDADD) $(LIBS)
+MultiVec_tgemmV1$(EXEEXT): $(MultiVec_tgemmV1_OBJECTS) $(MultiVec_tgemmV1_DEPENDENCIES) 
+	@rm -f MultiVec_tgemmV1$(EXEEXT)
+	$(F77LINK) $(MultiVec_tgemmV1_LDFLAGS) $(MultiVec_tgemmV1_OBJECTS) $(MultiVec_tgemmV1_LDADD) $(LIBS)
+MultiVec_tgemmV2$(EXEEXT): $(MultiVec_tgemmV2_OBJECTS) $(MultiVec_tgemmV2_DEPENDENCIES) 
+	@rm -f MultiVec_tgemmV2$(EXEEXT)
+	$(F77LINK) $(MultiVec_tgemmV2_LDFLAGS) $(MultiVec_tgemmV2_OBJECTS) $(MultiVec_tgemmV2_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -323,12 +337,6 @@ dgemmf.o: $(srcdir)/dgemmf.f
 
 dgemmf.obj: $(srcdir)/dgemmf.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o dgemmf.obj `if test -f '$(srcdir)/dgemmf.f'; then $(CYGPATH_W) '$(srcdir)/dgemmf.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dgemmf.f'; fi`
-
-tgemm.o: $(srcdir)/tgemm.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o tgemm.o `test -f '$(srcdir)/tgemm.f' || echo '$(srcdir)/'`$(srcdir)/tgemm.f
-
-tgemm.obj: $(srcdir)/tgemm.f
-	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o tgemm.obj `if test -f '$(srcdir)/tgemm.f'; then $(CYGPATH_W) '$(srcdir)/tgemm.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tgemm.f'; fi`
 
 tgemmV1.o: $(srcdir)/tgemmV1.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o tgemmV1.o `test -f '$(srcdir)/tgemmV1.f' || echo '$(srcdir)/'`$(srcdir)/tgemmV1.f

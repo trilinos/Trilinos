@@ -31,11 +31,10 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = SparseMatByMultiVec_example 
 
-SparseMatByMultiVec_example_SOURCES = $(srcdir)/csrcsc.f $(srcdir)/scscmm1a.f \
-     $(srcdir)/scscmm1.f $(srcdir)/scscmm2a.f $(srcdir)/scscmm2.f \
-     $(srcdir)/scscrd.f $(srcdir)/scscsm1.f $(srcdir)/scscsm2.f \
-     $(srcdir)/scsrmm1a.f $(srcdir)/scsrmm1.f $(srcdir)/scsrmm2a.f \
-     $(srcdir)/scsrmm2.f $(srcdir)/scsrsm1.f $(srcdir)/scsrsm2.f \
+SparseMatByMultiVec_example_SOURCES = $(srcdir)/csrcsc.f \
+     $(srcdir)/scscmm1.f $(srcdir)/scscmm2.f \
+     $(srcdir)/scscrd.f \
+     $(srcdir)/scsrmm1.f $(srcdir)/scsrmm2a.f \
      $(srcdir)/snrm2.f $(srcdir)/srelerr.f $(srcdir)/swaxpy.f \
      $(srcdir)/timer.c $(srcdir)/tsploops.f
 

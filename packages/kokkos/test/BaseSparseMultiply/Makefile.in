@@ -92,7 +92,7 @@ CONFIG_HEADER = $(top_builddir)/src/Kokkos_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_BaseSparseMultiply_test_OBJECTS =  \
-	BaseSparseMultiply_test-cxx_main.$(OBJEXT)
+	BaseSparseMultiply_test-cxx_main.$(OBJEXT) scsrmm2.$(OBJEXT)
 BaseSparseMultiply_test_OBJECTS =  \
 	$(am_BaseSparseMultiply_test_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -106,6 +106,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
+F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
+F77LD = $(F77)
+F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
+	$@
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
@@ -227,7 +231,9 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-BaseSparseMultiply_test_SOURCES = $(srcdir)/cxx_main.cpp $(srcdir)/GenerateHbProblem.hpp
+BaseSparseMultiply_test_SOURCES = $(srcdir)/cxx_main.cpp \
+$(srcdir)/scsrmm2.f $(srcdir)/GenerateHbProblem.hpp
+
 BaseSparseMultiply_test_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 BaseSparseMultiply_test_CXXFLAGS = -I$(top_srcdir)/src
 BaseSparseMultiply_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
@@ -236,7 +242,7 @@ BaseSparseMultiply_test_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .cpp .f .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -312,6 +318,18 @@ BaseSparseMultiply_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/BaseSparseMultiply_test-cxx_main.Po' tmpdepfile='$(DEPDIR)/BaseSparseMultiply_test-cxx_main.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BaseSparseMultiply_test_CXXFLAGS) $(CXXFLAGS) -c -o BaseSparseMultiply_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+
+.f.o:
+	$(F77COMPILE) -c -o $@ $<
+
+.f.obj:
+	$(F77COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+scsrmm2.o: $(srcdir)/scsrmm2.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm2.o `test -f '$(srcdir)/scsrmm2.f' || echo '$(srcdir)/'`$(srcdir)/scsrmm2.f
+
+scsrmm2.obj: $(srcdir)/scsrmm2.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o scsrmm2.obj `if test -f '$(srcdir)/scsrmm2.f'; then $(CYGPATH_W) '$(srcdir)/scsrmm2.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/scsrmm2.f'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

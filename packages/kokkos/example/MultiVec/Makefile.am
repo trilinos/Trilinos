@@ -29,15 +29,25 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = MultiVec_example 
+noinst_PROGRAMS = MultiVec_tgemmV1 MultiVec_tgemmV2
 
-MultiVec_example_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
-     $(srcdir)/tgemm.f $(srcdir)/tgemmV1.f $(srcdir)/tgemmV2.f
+MultiVec_tgemmV1_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
+     $(srcdir)/tgemmV1.f
 
-MultiVec_example_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
+MultiVec_tgemmV2_SOURCES = $(srcdir)/second_linux.c $(srcdir)/dgemmf.f \
+     $(srcdir)/tgemmV2.f
+                                                                                
+MultiVec_tgemmV1_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
+                                                                                
+MultiVec_tgemmV2_DEPENDENCIES = $(top_builddir)/src/libkokkos.a
 
-MultiVec_example_CXXFLAGS = -I$(top_srcdir)/src
+MultiVec_tgemmV1_CXXFLAGS = -I$(top_srcdir)/src
+                                                                                
+MultiVec_tgemmV2_CXXFLAGS = -I$(top_srcdir)/src
 
-MultiVec_example_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
+MultiVec_tgemmV1_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
+        $(LIBS) $(FLIBS)
+                                                                                
+MultiVec_tgemmV2_LDADD = $(top_builddir)/src/libkokkos.a $(BLAS_LIBS) \
 	$(LIBS) $(FLIBS)
 
