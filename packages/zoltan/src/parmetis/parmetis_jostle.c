@@ -84,7 +84,7 @@ int LB_ParMetis(
   char alg[MAX_PARAM_STRING_LEN+1];
 
   /* Set parameters */
-  strcpy(alg, "REPARTLDIFFUSION");
+  strcpy(alg, "REPARTGDIFFUSION");
   for (i=0; i<MAX_OPTIONS; i++)
     options[i] = -1;
 
@@ -307,7 +307,7 @@ static int LB_ParMetis_Jostle(
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *ewgt, *part, *part2;
   int nonint_wgt, tmp_num_obj;
-  float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local; 
+  float *float_vwgt, *xyz, scale, sum_wgt, sum_wgt_local, *imb_tols; 
   double geom_vec[6];
   struct LB_edge_info  *proc_list, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
@@ -338,7 +338,7 @@ static int LB_ParMetis_Jostle(
   nbors_proc = NULL;
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
   local_ids = global_ids = NULL;
-  float_vwgt = xyz = NULL;
+  float_vwgt = xyz = imb_tols = NULL;
   ptr = proc_list = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
@@ -974,6 +974,12 @@ static int LB_ParMetis_Jostle(
     LB_TRACE_EXIT(lb, yo);
     return LB_MEMERR;
   }
+  if (obj_wgt_dim>0){
+    /* Set Imbalance Tolerance for each component. For now, they are all the same. */
+    imb_tols = (float *) LB_MALLOC(obj_wgt_dim * sizeof(float));
+    for (i=0; i<obj_wgt_dim; i++)
+      imb_tols[i] = lb->Imbalance_Tol;
+  }
 
   /* Verify that graph is correct */
   if (get_graph_data){
@@ -984,13 +990,7 @@ static int LB_ParMetis_Jostle(
   /* Get a time here */
   if (get_times) times[1] = LB_Time();
 
-  /* Select the desired ParMetis function */
-    if (lb->Debug_Level >= LB_DEBUG_ALL) {
-      printf("[%1d] Debug: vtxdist, xadj, adjncy, part = 0x%x, 0x%x, 0x%x, "
-             "0x%x\n", 
-             lb->Proc, (unsigned int) vtxdist, (unsigned int) xadj, 
-             (unsigned int) adjncy, (unsigned int) part);
-    }
+  /* Select the desired ParMetis or Jostle function */
 
   if (strcmp(alg, "JOSTLE") == 0){
 #ifdef LB_JOSTLE
@@ -1026,8 +1026,13 @@ static int LB_ParMetis_Jostle(
   }
   else if (strcmp(alg, "PARTKWAY") == 0){
     LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
-    ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, &num_proc, options, &edgecut, part, &comm);
+    if (obj_wgt_dim <= 1)
+      ParMETIS_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
+        &numflag, &num_proc, options, &edgecut, part, &comm);
+    else /* obj_wgt_dim >= 2 */
+      /* Beta version of multiconstraint ParMetis. Interface may change! */
+      Moc_ParMETIS_PartKway (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
+        &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc +1));
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
@@ -1056,8 +1061,14 @@ static int LB_ParMetis_Jostle(
   }
   else if (strcmp(alg, "REPARTREMAP") == 0){
     LB_TRACE_DETAIL(lb, yo, "Calling the ParMETIS library");
-    ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
-      &numflag, options, &edgecut, part, &comm);
+    if (obj_wgt_dim <= 1)
+      ParMETIS_RepartRemap (vtxdist, xadj, adjncy, vwgt, adjwgt, &wgtflag, 
+        &numflag, options, &edgecut, part, &comm);
+    else { /* obj_wgt_dim >= 2 */
+      /* Beta version of multiconstraint ParMetis. Interface may change! */
+      Moc_ParMETIS_SR (&obj_wgt_dim, vtxdist, xadj, adjncy, vwgt, adjwgt, NULL,
+        &wgtflag, &numflag, &num_proc, imb_tols, options, &edgecut, part, &comm, (lb->Proc+1));
+    }
     LB_TRACE_DETAIL(lb, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REPARTMLREMAP") == 0){
@@ -1088,7 +1099,10 @@ static int LB_ParMetis_Jostle(
       lb->Proc, edgecut);
 
   /* Free weights; they are no longer needed */
-  if (obj_wgt_dim) LB_FREE(&vwgt);
+  if (obj_wgt_dim) {
+    LB_FREE(&vwgt);
+    LB_FREE(&imb_tols);
+  }
   if (comm_wgt_dim) LB_FREE(&adjwgt);
 
   /* If we have been using a scattered graph, convert partition result back to original distribution */

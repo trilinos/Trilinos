@@ -91,6 +91,12 @@ extern void ParMETIS_RepartGDiffusion(idxtype *, idxtype *, idxtype *, idxtype *
 extern void ParMETIS_RepartRemap(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
 extern void ParMETIS_RepartMLRemap(idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, int *, idxtype *, MPI_Comm *);
 
+/* ParMetis multiconstraint beta prototypes */
+extern void Moc_ParMETIS_PartKway(int *, idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, int *, float *,
+       int *, int *, idxtype *, MPI_Comm *, int);
+extern void Moc_ParMETIS_SR(int *, idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, idxtype *, int *, int *, 
+       int *, float *, int *, int *, idxtype *, MPI_Comm *, int);
+
 
 /* Parallel Jostle 1.2 function prototypes */
 extern void jostle_env(char *);
