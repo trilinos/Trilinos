@@ -22,7 +22,7 @@ extern void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 extern void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, 
         int N_requested_rows, int requested_rows[], int *allocated_space, 
         int **columns, double **values, int row_lengths[], int index);
-extern int ML_hash_it( int new_val, int hash_list[], int hash_length);
+extern int ML_hash_it( int new_val, int hash_list[], int hash_length, int *hash_used);
 extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 		       int *rows[], int *rows_length, int *NBrows,
 		       int *rows_that_fit, 
@@ -58,6 +58,7 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    int rows_that_fit, rows_length, *rows, NBrows, end, start = 0;
    int subB_Nnz, Next_est, total_cols = 0;
    double t1,t6;
+   int tcols, hash_used, j, *tptr;
 
    t1 = GetClock();
    N  = Amatrix->getrow->Nrows;
@@ -114,11 +115,20 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    while(current != NULL) {
       if (current->getrow->pre_comm != NULL) {
 	if (current->getrow->pre_comm->total_rcv_length <= 0) {
+#ifdef charles
+	  printf("recomputing rcv length\n"); fflush(stdout);
+#endif
 	  ML_CommInfoOP_Compute_TotalRcvLength(current->getrow->pre_comm);
 	}
 
          Next_est += current->getrow->pre_comm->total_rcv_length;
+#ifdef charles
+	  printf("Nghost = %d  %d\n",Next_est,current->getrow->pre_comm->total_rcv_length); fflush(stdout);
+#endif
       }
+#ifdef charles
+      else {printf("pre_comm is null?\n"); fflush(stdout);}
+#endif
       current = current->sub_matrix;
    }
 
@@ -333,11 +343,51 @@ if ((lots_of_space < 4) && (B_allocated > 500)) Bvals = NULL; else
    for (i = 0; i < index_length; i++) accum_index[i] = -1;
    for (i = 0; i < index_length; i++) col_inds[i] = -1;
 
+   i = 0;
+   if (Bmatrix->getrow->pre_comm != NULL) 
+	  i = Bmatrix->getrow->pre_comm->total_rcv_length;
+#ifdef charles
+   printf("%d: before hashing, hash table size = %d invec and Nghost = (%d %d)\n",
+
+	  Bmatrix->comm->ML_mypid, index_length, Bmatrix->invec_leng, Next_est);
+   fflush(stdout);
+#endif
+
+   tcols = 0;
+   hash_used = 0;
    for (i = 0; i < subB_Nnz; i++) {
-     hash_val = ML_hash_it(Bcols[i], col_inds, index_length);
+     if (hash_used >= index_length) {
+#ifdef charles
+       printf("%d: running out of hashing space %d %d\n",
+	      Bmatrix->comm->ML_mypid,tcols,index_length);
+       fflush(stdout);
+#endif
+       tptr = ML_allocate(sizeof(int)*2*index_length);
+       if (tptr == NULL) pr_error("ML_matmat_mult: out of tptr space\n");
+       for (j = 0; j < 2*index_length; j++) tptr[j] = -1;
+       for (j = 0; j < i; j++)
+	 Bcols[j] = col_inds[Bcols[j]];
+       ML_free(col_inds);  col_inds = tptr;
+       tcols = 0;
+       hash_used = 0;
+       index_length *= 2;
+       for (j = 0; j < i; j++) {
+	 hash_val = ML_hash_it(Bcols[j], col_inds, index_length, &hash_used);
+	 if (col_inds[hash_val] == -1) tcols++;
+	 col_inds[hash_val] = Bcols[j];
+	 Bcols[j] = hash_val;
+       }
+     }
+       
+     hash_val = ML_hash_it(Bcols[i], col_inds, index_length, &hash_used);
+     if (col_inds[hash_val] == -1) tcols++;
      col_inds[hash_val] = Bcols[i];
      Bcols[i] = hash_val;
    }
+#ifdef charles
+   printf("%d: after hashing %d %d\n",Bmatrix->comm->ML_mypid,tcols,hash_used);
+   fflush(stdout);
+#endif
 
    /* Count how many columns there are, record the number of   */
    /* columns and change the size of the accumulator if needed */
@@ -866,17 +916,23 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
    ML_Operator_Destroy(Mat1Mat2comm);
 }
 
-int ML_hash_it( int new_val, int hash_list[], int hash_length) {
+int ML_hash_it( int new_val, int hash_list[], int hash_length,int *hash_used) {
 
   int index;
 
   index = new_val<<1;
   if (index < 0) index = new_val;
   index = index%hash_length;
-
+  /*
   while (( hash_list[index] != new_val) && (hash_list[index] != -1)) {
      index = (++index)%hash_length;
   }
+  */
+  while ( hash_list[index] != new_val) {
+    if (hash_list[index] == -1) { (*hash_used)++; break;}
+    index = (++index)%hash_length;
+  }
+
   return(index);
 }
 
@@ -901,7 +957,7 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
                        double **,int *,int))
 {
   int i, j, rowi_N, hash_val = 0, N, *rows, rows_length,kk;
-  int A_i_allocated = 0, *A_i_cols = NULL;
+  int A_i_allocated = 0, *A_i_cols = NULL, hash_used;
   double *A_i_vals = NULL;
 
   rows = *irows;
@@ -911,10 +967,15 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
    i = start;
    j = 0;
    rowi_N = 0;
+   hash_used = 0;
 
+#ifdef charles
+   printf("%d: in ML_determine\n",Amatrix->comm->ML_mypid);
+   fflush(stdout);
+#endif
    while ( *NBrows < *rows_that_fit ) {
       if (j < rowi_N) {
-         hash_val = ML_hash_it(A_i_cols[j], rows, rows_length);
+         hash_val = ML_hash_it(A_i_cols[j], rows, rows_length, &hash_used);
          if (rows[hash_val] == -1) {
             (*NBrows)++;
 	    if ( *NBrows == *rows_that_fit) {
@@ -952,6 +1013,10 @@ int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
    for (i = 0; i < rows_length; i++) {
       if ( rows[i] != -1) rows[j++] = rows[i];
    }
+#ifdef charles
+   printf("%d: leaving ML_determine\n",Amatrix->comm->ML_mypid);
+   fflush(stdout);
+#endif
    return 0;
 } 
 /*    
