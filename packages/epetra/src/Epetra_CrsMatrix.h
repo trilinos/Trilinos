@@ -79,14 +79,26 @@ Constructing Epetra_CrsMatrix objects is a multi-step process.  The basic steps 
 Note that, even after a matrix is constructed (FillComplete has been called), it is possible to update existing
 matrix entries.  It is \e not possible to create new entries.
 
-Epetra_CrsMatrix objects have four Epetra_Map attributes, which can be obtained via these accessor methods:
+<b>Epetra_Map attributes</b>
+
+Epetra_CrsMatrix objects have four Epetra_Map attributes, which are held by the Epetra_CrsGraph attribute.
+
+The Epetra_Map attributes can be obtained via these accessor methods:
 <ul>
- <li>RowMap() Describes the numbering and distribution of the rows of the matrix.
+ <li>RowMap() Describes the numbering and distribution of the rows of the matrix. The row-map exists and is valid
+ for the entire life of the matrix. The set of matrix rows is defined by the row-map and may not be changed. Rows
+ may not be inserted or deleted by the user. The only change that may be made is that the user can replace the
+ row-map with a compatible row-map (which is the same except for re-numbering) by calling the ReplaceRowMap() method.
  <li>ColMap() Describes the set of column-indices that appear in the rows in each processor's portion of the matrix.
+ Unless provided by the user at construction time, a valid column-map doesn't exist until FillComplete() is called.
  <li>RangeMap() Describes the range of the matrix operator. e.g., for a matrix-vector product operation, the result
-   vector's map must be compatible with the range-map of this matrix.
- <li>DomainMap() Describes the domain of the matrix operator.
+   vector's map must be compatible with the range-map of this matrix. The range-map is usually the same as the row-map.
+   The range-map is set equal to the row-map at matrix creation time, but may be specified by the user when
+   FillComplete() is called.
+ <li>DomainMap() Describes the domain of the matrix operator. The domain-map can be specified by the user when
+ FillComplete() is called. Until then, it is set equal to the row-map.
 </ul>
+
 It is important to note that while the row-map and the range-map are often the same, the column-map and the domain-map
 are almost never the same. The set of entries in a distributed column-map almost always form overlapping sets, with
 entries being associated with more than one processor. A domain-map, on the other hand, must be a 1-to-1 map, with
@@ -114,6 +126,8 @@ Note the following method characteristics:
  <li>SumIntoMyValues() and ReplaceMyValues() may only be used if indices are local.
  <li>Multiply() may only be used after FillComplete() has been called.
 </ul>
+
+Most methods have preconditions documented, check documentation for specific methods not mentioned here.
 
 <b> Counting Floating Point Operations </b>
 
@@ -250,8 +264,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if the
     allocated length of the row has to be expanded, a positive warning code
     will be returned.
+
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
-    \post The given global row of the matrix has been updated as described above.
   */
   int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 
@@ -269,6 +283,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
     input value will be ignored and a positive warning code will be returned.
+
+    \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   int ReplaceGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 	
@@ -286,6 +302,8 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return Integer error code, set to 0 if successful. Note that if a value
     is not already present for the specified location in the matrix, the
     input value will be ignored and a positive warning code will be returned.
+
+    \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
   int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
 
@@ -348,7 +366,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   */
   int SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
-  //! Replaces diagonal values of the with those in the user-provided vector.
+  //! Replaces diagonal values of the matrix with those in the user-provided vector.
   /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
     If a diagonal value does not exist for a given row, the corresponding value in
     the input Epetra_Vector will be ignored and the return code will be set to 1.
@@ -391,10 +409,18 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     \return error code, 0 if successful. positive warning code of 2 if it is detected that the
     matrix-graph got out of sync since this matrix was constructed (for instance if
     graph.FillComplete() was called by another matrix that shares the graph)
+
+    \post IndicesAreLocal()==true
     */
   int FillComplete(const Epetra_Map& DomainMap, const Epetra_Map& RangeMap);
     
   //! Analyzes matrix and attempts to optimize storage for matrix operations.
+  /*! First, this method checks whether the matrix storage is already contiguous. If it isn't, and
+    if this matrix was constructed in View mode, then an error is returned.
+
+    If the matrix is not a View, then storage is optimized by moving coefficients into a single
+    contiguous array.
+   */
   int OptimizeStorage();
 	
   //! Eliminates memory that is used for construction.  Make consecutive row index sections contiguous.
@@ -435,6 +461,8 @@ or if the number of entries in this row exceed the Length parameter.
 	   	Indices - Extracted local column indices for the corresponding values.
 	  
     \return Integer error code, set to 0 if successful.
+
+    \pre IndicesAreLocal()==true
   */
   int ExtractMyRowCopy(int MyRow, int Length, int& NumEntries, double* Values, int* Indices) const;
 
@@ -492,6 +520,8 @@ or if the number of entries in this row exceed the Length parameter.
 	  
     \return Integer error code, set to 0 if successful. Returns -1 of row not on this processor.  
 		Returns -2 if matrix is not in global form (if FillComplete() has already been called).
+
+    \pre IndicesAreGlobal()==true
   */
   int ExtractGlobalRowView(int GlobalRow, int& NumEntries, double*& Values, int*& Indices) const;
 	
@@ -508,6 +538,8 @@ or if the number of entries in this row exceed the Length parameter.
 	  
     \return Integer error code, set to 0 if successful. Returns -1 of row not on this processor.  
 		Returns -2 if matrix is not in local form (if FillComplete() has \e not been called).
+
+    \pre IndicesAreLocal()==true
   */
   int ExtractMyRowView(int MyRow, int& NumEntries, double*& Values, int*& Indices) const;
 	
@@ -770,10 +802,17 @@ or if the number of entries in this row exceed the Length parameter.
 	//! Returns the number of matrix rows owned by the calling processor.
 	int NumMyRows() const {return(Graph_->NumMyRows());};
 	
-	//! Returns the number of matrix columns owned by the calling processor.
+	//! Returns the number of entries in the set of column-indices that appear on this processor.
+	/*! The set of column-indices that appear on this processor is the union of column-indices that
+	  appear in all local rows. The size of this set isn't available until FillComplete() has been called.
+	  \pre Filled()==true
+	*/
 	int NumMyCols() const {return(Graph_->NumMyCols());};
 	
 	//! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
+	/*!
+	  \pre Filled()==true
+	*/
 	int NumMyDiagonals() const {return(Graph_->NumMyDiagonals());};
 	
 	//! Returns the current number of nonzero entries in specified global row on this processor.
@@ -783,9 +822,15 @@ or if the number of entries in this row exceed the Length parameter.
 	int NumAllocatedGlobalEntries(int Row) const{return(Graph_->NumAllocatedGlobalIndices(Row));};
 	
 	//! Returns the maximum number of nonzero entries across all rows on this processor.
+	/*!
+	  \pre Filled()==true
+	*/
 	int MaxNumEntries() const {return(Graph_->MaxNumIndices());};
 
 	//! Returns the maximum number of nonzero entries across all rows on all processors.
+	/*!
+	  \pre Filled()==true
+	*/
 	int GlobalMaxNumEntries() const {return(Graph_->GlobalMaxNumIndices());};
 	
 	//! Returns the current number of nonzero entries in specified local row on this processor.
@@ -800,32 +845,61 @@ or if the number of entries in this row exceed the Length parameter.
 	
 	//! Returns true if the graph associated with this matrix was pre-constructed and therefore not changeable.
 	bool StaticGraph() {return(StaticGraph_);};
-	//! Returns a pointer to the Epetra_CrsGraph object associated with this matrix.
+
+	//! Returns a reference to the Epetra_CrsGraph object associated with this matrix.
 	const Epetra_CrsGraph& Graph() const {return(*Graph_);};
 	
 	//! Returns the Epetra_Map object associated with the rows of this matrix.
 	const Epetra_Map& RowMap() const {return((Epetra_Map &)Graph_->RowMap());};
 
 	//! Replaces the current RowMap with the user-specified map object.
+	/** Replaces the current RowMap with the user-specified map object, but only
+	    if currentmap->PointSameAs(newmap) is true. This is a collective function.
+	    Returns 0 if map is replaced, -1 if not.
+
+	    \pre RowMap().PointSameAs(newmap)==true
+	*/
 	int ReplaceRowMap(const Epetra_BlockMap& newmap)
 	  {return( Graph_->ReplaceRowMap(newmap) ); }
 
+	//! Returns true if we have a well-defined ColMap, and returns false otherwise.
+	/*! \pre We have a well-defined ColMap if a) a ColMap was passed in at construction, 
+		or b) the MakeColMap function has been called. (Calling either of the FillComplete functions
+		will result in MakeColMap being called.) 
+	*/
+	bool HaveColMap() const {return(Graph_->HaveColMap());}
+
 	//! Replaces the current ColMap with the user-specified map object.
+	/** Replaces the current ColMap with the user-specified map object, but only
+	    if currentmap->PointSameAs(newmap) is true. This is a collective function.
+	    Returns 0 if map is replaced, -1 if not.
+
+	    \pre ColMap().PointSameAs(newmap)==true
+	*/
 	int ReplaceColMap(const Epetra_BlockMap& newmap)
 	  {return( Graph_->ReplaceColMap(newmap) ); }
+
 
 	//! Returns the Epetra_Map object that describes the set of column-indices that appear in each processor's locally owned matrix rows.
 	/*!Note that if the matrix was constructed with only a row-map, then until FillComplete() is called, this method returns
 	  a column-map that is a copy of the row-map. That 'initial' column-map is replaced with a computed column-map (that
 	  contains the set of column-indices appearing in each processor's local portion of the matrix) when FillComplete() is
 	  called.
+
+	  \pre HaveColMap()==true
 	*/
 	const Epetra_Map& ColMap() const {return((Epetra_Map &) Graph_->ColMap());};
 	
 	//! Returns the Epetra_Map object associated with the domain of this matrix operator.
+	/*!
+	  \pre Filled()==true
+	 */
 	const Epetra_Map& DomainMap() const {return((Epetra_Map &)Graph_->DomainMap());}
 	
 	//! Returns the Epetra_Map object associated with the range of this matrix operator.
+	/*!
+	  \pre Filled()==true
+	 */
 	const Epetra_Map& RangeMap() const  {return((Epetra_Map &)Graph_->RangeMap());}
 	
 	//! Returns the Epetra_Import object that contains the import operations for distributed operations.
@@ -846,9 +920,15 @@ or if the number of entries in this row exceed the Length parameter.
 	int GRID( int LRID) const {return(Graph_->GRID(LRID));};
 	
 	//! Returns the local column index for given global column index, returns -1 if no local column for this global column.
+	/*!
+	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
+	 */
 	int LCID( int GCID) const {return(Graph_->LCID(GCID));};
 	
 	//! Returns the global column index for give local column index, returns IndexBase-1 if we don't have this local column.
+	/*!
+	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
+	 */
 	int GCID( int LCID) const {return(Graph_->GCID(LCID));};
 	
 	//! Returns true if the GRID passed in belongs to the calling processor in this map, otherwise returns false.
@@ -858,9 +938,15 @@ or if the number of entries in this row exceed the Length parameter.
 	bool MyLRID(int LRID) const {return(Graph_->MyLRID(LRID));};
 	
 	//! Returns true if the GCID passed in belongs to the calling processor in this map, otherwise returns false.
+	/*!
+	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
+	 */
 	bool MyGCID(int GCID) const {return(Graph_->MyGCID(GCID));};
    
 	//! Returns true if the LRID passed in belongs to the calling processor in this map, otherwise returns false.
+	/*!
+	  \pre HaveColMap()==true (If HaveColMap()==false, returns -1)
+	 */
 	bool MyLCID(int LCID) const {return(Graph_->MyLCID(LCID));};
 
 	//! Returns true of GID is owned by the calling processor, otherwise it returns false.
