@@ -692,8 +692,8 @@ int i;
       LB_FREE(&import_objs);
       return (LB_MEMERR);
     }
-    *export_global_ids  = (LB_GID *) LB_MALLOC((*num_export)*sizeof(LB_GID));
-    if (!(*export_global_ids)) { 
+    if (!LB_Special_Malloc(lb,(void **)export_global_ids,*num_export,
+                           LB_SPECIAL_MALLOC_GID)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_FREE(&proc_list);
@@ -701,25 +701,25 @@ int i;
       LB_FREE(&export_objs);
       return (LB_MEMERR);
     }
-    *export_local_ids   = (LB_LID *) LB_MALLOC((*num_export)*sizeof(LB_LID));
-    if (!(*export_local_ids)) {
+    if (!LB_Special_Malloc(lb,(void **)export_local_ids,*num_export,
+                           LB_SPECIAL_MALLOC_LID)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
-      LB_FREE(export_local_ids);
+      LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       return (LB_MEMERR);
     }
-    *export_procs = (int *) LB_MALLOC((*num_export)*sizeof(int));
-    if (!(*export_procs)) {
+    if (!LB_Special_Malloc(lb,(void **)export_procs,*num_export,
+                           LB_SPECIAL_MALLOC_INT)) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
-      LB_FREE(export_local_ids);
-      LB_FREE(export_procs);
+      LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
       return (LB_MEMERR);
     }
 
