@@ -675,6 +675,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // number of applications of the cycle
   CycleApplications_ = List_.get("cycle applications", 1);  
 
+  // toggles the use of low memory
+  if (List_.get("low memory usage", false))
+    ML_Enable_LowMemory();
+  else
+    ML_Disable_LowMemory();
+
   // number of applications of the cycle
   ZeroStartingSolution_ = List_.get("zero starting solution", true);  
 
