@@ -37,7 +37,8 @@ functions are required by individual algorithms.
 <br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 <br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 <br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
-<br><b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
+<br><b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b> or
+<b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b>
 </blockquote>
 <a href="#Geometry-based Functions">Geometry-Based Functions</a>
 <blockquote><b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
@@ -572,6 +573,130 @@ of the next object.</td>
 <p>
 <!------------------------------------------------------------------------->
 <hr WIDTH="100%">
+<a NAME="ZOLTAN_PARTITION_MULTI_FN"></a>
+<hr WIDTH="100%">
+<table WIDTH="100%" NOSAVE >
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>C:</td>
+
+<td WIDTH="85%">
+typedef void <b>ZOLTAN_PARTITION_MULTI_FN</b>
+(void&nbsp;*<i>data</i>,
+int&nbsp;<i>num_gid_entries</i>,
+int&nbsp;<i>num_lid_entries</i>,
+int&nbsp;<i>num_obj</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+int&nbsp;*<i>parts</i>,
+int&nbsp;*<i>ierr</i>);&nbsp;</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
+
+<td>SUBROUTINE <b><i>Get_Partition_Multi</i></b>(<i>data, num_gid_entries, num_lid_entries, num_obj, global_ids, local_ids,
+ierr</i>)
+<br>&lt;<i>type-data</i>>, INTENT(IN) :: data
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries, num_obj
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_ids
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_ids
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: parts
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
+where <i>x</i> is 1, 2, 3 or 4. See the section on
+<a href="ug_fortran_api.html#fortran ug api query">Fortran
+query functions</a> for an explanation.</td>
+</tr>
+</table>
+
+<hr WIDTH="100%">A <b>ZOLTAN_PARTITION_MULTI_FN</b> query function returns a 
+list of 
+partitions to which 
+given objects are currently assigned.  
+If a <b>ZOLTAN_PARTITION_MULTI_FN</b> 
+or <b><a href="#ZOLTAN_PARTITION_FN">ZOLTAN_PARTITION_FN</a></b> is not
+registered, Zoltan assumes the partition numbers are the processor
+number of the owning processor.  
+Valid partition numbers are non-negative
+integers.
+<br>&nbsp;
+<table WIDTH="100%" >
+<tr>
+<td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
+
+<td WIDTH="80%"><b>ZOLTAN_PARTITION_MULTI_FN_TYPE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Arguments:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
+
+<td>Pointer to user-defined data.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_gid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+global ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_lid_entries</i></td>
+
+<td>The number of array entries used to describe a single
+local ID.&nbsp; This value is the maximum value over all processors of
+the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
+</tr>
+
+<tr NOSAVE>
+<td VALIGN=TOP NOSAVE>&nbsp;&nbsp;&nbsp; <i>num_obj</i></td>
+
+<td>The number of object IDs in arrays <i>global_ids</i> and <i>local_ids</i>.
+</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>global_ids</i></td>
+
+<td>The global IDs of the objects for which the partition numbers should be
+returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>local_ids</i></td>
+
+<td>The local IDs of the objects for which the partition numbers should be
+returned.</td>
+</tr>
+
+<tr>
+<td>&nbsp;&nbsp;&nbsp; <i>parts</i></td>
+
+<td>Upon return, an array of partition numbers corresponding to the global 
+and local IDs.
+</td>
+</tr>
+<tr>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; ierr</i></td>
+
+<td>Error code to be set by function.</td>
+</tr>
+
+</table>
+
+<p>
+<hr><hr>
+
+<!------------------------------------------------------------------------->
+<hr WIDTH="100%">
 <a NAME="ZOLTAN_PARTITION_FN"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
@@ -609,9 +734,13 @@ query functions</a> for an explanation.&nbsp;</td>
 
 <hr WIDTH="100%">A <b>ZOLTAN_PARTITION_FN</b> query function returns the 
 partition to which 
-a given object is currently assigned.  If a <b>ZOLTAN_PARTITION_FN</b> is not
-registered, Zoltan assumes the partition number is the processor
-number of the owning processor.  Valid partition numbers are non-negative
+a given object is currently assigned.
+If a <b>ZOLTAN_PARTITION_FN</b> 
+or <b><a href="#ZOLTAN_PARTITION_MULTI_FN">ZOLTAN_PARTITION_MULTI_FN</a></b>
+is not
+registered, Zoltan assumes the partition numbers are the processor
+number of the owning processor.  
+Valid partition numbers are non-negative
 integers.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -652,14 +781,14 @@ the parameter <a href="ug_param.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>global_id</i></td>
 
-<td>The global ID of the object for which the number of edges should be
+<td>The global ID of the object for which the partition number should be
 returned.</td>
 </tr>
 
 <tr>
 <td>&nbsp;&nbsp;&nbsp; <i>local_id</i></td>
 
-<td>The local ID of the object for which the number of edges should be
+<td>The local ID of the object for which the partition number should be
 returned.</td>
 </tr>
 
