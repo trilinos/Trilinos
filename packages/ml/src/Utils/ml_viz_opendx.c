@@ -371,7 +371,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 /* ======================================================================== */
 /*!
  \brief write graph decomposition of the current level in a graphical
- format readable by OpenDX
+ format readable by XD3D
 
 */
 /* ------------------------------------------------------------------------ */
@@ -422,7 +422,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
   if( str != NULL ) AggrToVisualize = atoi(str);
 
   /* may need to reshuffle the aggregate ordering */
-  if( vector == NULL && str == NULL ) {
+  if( vector == NULL && str == NULL) {
 
     reorder = (int *) malloc( sizeof(int) * Naggregates );
 
@@ -435,6 +435,8 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	       __LINE__ );
       exit( EXIT_FAILURE );
     }
+#define ML_SHUFFLE
+#ifdef ML_SHUFFLE
     for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
 
     srand(0); /* Initialize random seed */
@@ -447,9 +449,11 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	
 	j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
 
-	if( reorder[j] == -1 && j<Naggregates ) {
-	  reorder[j] = i;
-	  ok = 1;
+	if( j >=0 && j<Naggregates ) {
+	  if (reorder[j] == -1) {
+	    reorder[j] = i;
+	    ok = 1;
+	  }
 	}
       } while( ok == 0 );
 
@@ -465,6 +469,10 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	exit( EXIT_FAILURE );
       }
     }
+#else
+    for (i = 0 ; i < Naggregates ; ++i)
+      reorder[i] = i;
+#endif
   }
 
   /* cycle over all local rows, plot corresponding value on file */
@@ -484,7 +492,7 @@ int ML_Aggregate_VisualizeXYZ( ML_Aggregate_Viz_Stats info,
 	  if( graph_decomposition[irow] == AggrToVisualize ) val = 1.0;
 	  else                                               val = 0.0;
 	} else 
-	  val = 1.0*reorder[graph_decomposition[irow]];
+	  val = 1.0*graph_decomposition[irow];
 	/* XD3D does not work in 3D, but maybe other codes will */
 	if( z == NULL ) 
 	  fprintf( fp,
