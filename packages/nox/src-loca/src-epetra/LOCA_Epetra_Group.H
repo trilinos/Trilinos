@@ -182,12 +182,15 @@ namespace LOCA {
       //! Return copy of parameter indexed by paramID
       virtual double getParam(string paramID) const;
 
-      //! Call the user interface print() routine, solution vector
-      virtual void printSolution(const double conParam) const;
-
-      //! Call the user interface print() routine, any vector
-      virtual void printSolution(const NOX::Abstract::Vector& x,
-                                 const double conParam) const;
+      //! applyJacobianInverse for multiple right-hand sides
+      /*!
+       * This calls aztec serially for each right-hand-side, but only
+       * computes the preconditioner once.
+       */
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseMulti(NOX::Parameter::List& params,
+			   const NOX::Abstract::Vector* const* inputs,
+			   NOX::Abstract::Vector** outputs, int nVecs) const;
 
       //! Computes leading eigenvalues/eigenvectors using Anasazi package
       /*!
@@ -196,6 +199,13 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
+
+      //! Call the user interface print() routine, solution vector
+      virtual void printSolution(const double conParam) const;
+
+      //! Call the user interface print() routine, any vector
+      virtual void printSolution(const NOX::Abstract::Vector& x,
+                                 const double conParam) const;
 
       //@}
 

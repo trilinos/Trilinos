@@ -36,6 +36,7 @@
 #include "NOX_Parameter_List.H"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "NOX_Epetra_Scaling.H"
 #include "NOX_Epetra_SharedOperator.H"
 #include "Epetra_Vector.h"
 #include "LOCA_Utils.H"
@@ -266,6 +267,110 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   errorCheck.throwError("LOCA::Epetra::Group::augmentJacobianForHomotopy()","the Jacobian must be either an Epetra_CrsMatrix or an Epetra_VbrMatrix!");
 
   return LOCA::Abstract::Group::Ok;
+}
+
+NOX::Abstract::Group::ReturnType 
+LOCA::Epetra::Group::applyJacobianInverseMulti(NOX::Parameter::List& p,
+			   const NOX::Abstract::Vector* const* inputs,
+			   NOX::Abstract::Vector** outputs, int nVecs) const
+{
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+  
+  const NOX::Epetra::Vector* noxEpetraInput;
+  NOX::Epetra::Vector* nonConstInput;
+  Epetra_Vector* epetraInput;
+
+  NOX::Epetra::Vector* noxEpetraResult;
+  Epetra_Vector* epetraResult;
+
+  // Get the non-const versions of the Jacobian and input vector
+  // Epetra_LinearProblem requires non-const versions so we can perform
+  // scaling of the linear problem.
+  Epetra_Operator& Jacobian = sharedJacobian.getOperator(this);
+
+  // Create Epetra linear problem object for the linear solve
+  Epetra_LinearProblem Problem;
+
+  // To be safe, first remove the old solver/preconditionr 
+  // that was created by applyRightPreconditioner().
+  destroyAztecSolver();
+
+  // Get linear solver convergence parameters
+  int maxit = p.getParameter("Max Iterations", 400);
+  double tol = p.getParameter("Tolerance", 1.0e-6);
+
+  // Loop over each right-hand-side
+  for (int i=0; i<nVecs; i++) {
+    noxEpetraInput = dynamic_cast<const NOX::Epetra::Vector*>(inputs[i]);
+    nonConstInput = const_cast<NOX::Epetra::Vector*>(noxEpetraInput);
+    epetraInput = &(nonConstInput->getEpetraVector());
+
+    noxEpetraResult = dynamic_cast<NOX::Epetra::Vector*>(outputs[i]);
+    epetraResult = &(noxEpetraResult->getEpetraVector());
+
+    // Set up linear problem
+    Problem.SetOperator(&Jacobian);
+    Problem.SetLHS(epetraResult);
+    Problem.SetRHS(epetraInput);
+
+    // ************* Begin linear system scaling *******************
+
+    if (scaling != 0) {
+      scaling->computeScaling(Problem);
+      scaling->scaleLinearSystem(Problem);
+
+//       if (utils.isPrintProcessAndType(Utils::Details)) {
+// 	cout << *scaling << endl;
+//       }
+    }
+
+    // ************* End linear system scaling *******************
+  
+    // Set the default Problem parameters to "hard" (this sets Aztec defaults
+    // during the AztecOO instantiation)
+    Problem.SetPDL(hard);
+
+    // Create the solver.  
+    if (i == 0)
+      aztecSolver = new AztecOO(Problem);
+    else
+      aztecSolver->SetProblem(Problem);
+  
+    // Set specific Aztec parameters requested by NOX
+    setAztecOptions(p, *aztecSolver);
+  
+    // Compute and set the Preconditioner in AztecOO if needed
+    if (i == 0)
+      createPreconditioner(ImplicitConstruction, p);
+  
+    int aztecStatus = -1;
+
+    aztecStatus = aztecSolver->Iterate(maxit, tol);
+  
+    // Unscale the linear system
+    if (scaling != 0)
+      scaling->unscaleLinearSystem(Problem);
+
+    // Set the output parameters in the "Output" sublist
+    NOX::Parameter::List& outputList = p.sublist("Output");
+    int prevLinIters = outputList.getParameter("Total Number of Linear Iterations", 0);
+    int curLinIters = 0;
+    double achievedTol = -1.0;
+    curLinIters = aztecSolver->NumIters();
+    achievedTol = aztecSolver->ScaledResidual();
+
+    outputList.setParameter("Number of Linear Iterations", curLinIters);
+    outputList.setParameter("Total Number of Linear Iterations", (prevLinIters + curLinIters));
+    outputList.setParameter("Achieved Tolerance", achievedTol);
+
+    if (aztecStatus != 0) 
+      finalStatus = Abstract::Group::NotConverged;
+  }
+
+  // Delete the solver and reset to NULL.
+  destroyAztecSolver();
+  
+  return finalStatus;
 }
 
 #ifdef HAVE_LOCA_ANASAZI
