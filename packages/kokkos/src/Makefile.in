@@ -105,7 +105,8 @@ libLIBRARIES_INSTALL = $(INSTALL_DATA)
 LIBRARIES = $(lib_LIBRARIES)
 libkokkos_a_DEPENDENCIES =
 am__objects_1 =
-am__objects_2 = Kokkos_Version.$(OBJEXT) Kokkos_dcrsmv.$(OBJEXT)
+am__objects_2 = Kokkos_Version.$(OBJEXT) Kokkos_dcrsmv.$(OBJEXT) \
+	Kokkos_dcrsmm.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_1)
 am_libkokkos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
@@ -267,7 +268,8 @@ UTIL_H = \
 
 UTIL = \
 	$(srcdir)/Kokkos_Version.cpp \
-	$(srcdir)/Kokkos_dcrsmv.f 
+	$(srcdir)/Kokkos_dcrsmv.f \
+	$(srcdir)/Kokkos_dcrsmm.f 
 
 ENUM_H = 
 SERIAL_H = 
@@ -518,6 +520,12 @@ Kokkos_dcrsmv.o: $(srcdir)/Kokkos_dcrsmv.f
 
 Kokkos_dcrsmv.obj: $(srcdir)/Kokkos_dcrsmv.f
 	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Kokkos_dcrsmv.obj `if test -f '$(srcdir)/Kokkos_dcrsmv.f'; then $(CYGPATH_W) '$(srcdir)/Kokkos_dcrsmv.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Kokkos_dcrsmv.f'; fi`
+
+Kokkos_dcrsmm.o: $(srcdir)/Kokkos_dcrsmm.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Kokkos_dcrsmm.o `test -f '$(srcdir)/Kokkos_dcrsmm.f' || echo '$(srcdir)/'`$(srcdir)/Kokkos_dcrsmm.f
+
+Kokkos_dcrsmm.obj: $(srcdir)/Kokkos_dcrsmm.f
+	$(F77) $(AM_FFLAGS) $(FFLAGS) -c -o Kokkos_dcrsmm.obj `if test -f '$(srcdir)/Kokkos_dcrsmm.f'; then $(CYGPATH_W) '$(srcdir)/Kokkos_dcrsmm.f'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Kokkos_dcrsmm.f'; fi`
 uninstall-info-am:
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
