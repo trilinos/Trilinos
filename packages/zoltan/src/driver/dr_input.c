@@ -190,6 +190,16 @@ int read_cmd_file(char *filename, PROB_INFO_PTR prob,
         }
       }
 
+      /****** zdrive mode: Do load-balancing or ordering? *****/
+      else if (token_compare(cptr, "zdrive mode")) {
+        cptr = strtok(NULL, "\t=");
+        strip_string(cptr, " \t\n");
+        if(sscanf(cptr, "%d", &Driver_Mode) != 1) {
+          Gen_Error(0, "fatal: zdrive mode must be an integer.");
+          return 0;
+        }
+      }
+
       /****** The Chaco Input Assignment Inverse flag ******/
       else if (token_compare(cptr, "chaco input assignment inverse")) {
         cptr = strtok(NULL, "\t=");
@@ -511,8 +521,8 @@ void brdcst_cmd_info(int Proc, PROB_INFO_PTR prob, PARIO_INFO_PTR pio_info)
   MPI_Bcast(&Debug_Driver, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&DDirectory_Test, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&Gnuplot_Output, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
   MPI_Bcast(&Number_Iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&Driver_Mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   MPI_Bcast(pio_info, sizeof(PARIO_INFO), MPI_BYTE, 0, MPI_COMM_WORLD);
 

@@ -163,81 +163,119 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
   int i;                         /* Loop index                               */
+  int *order;			/* Ordering vector */
+  ZOLTAN_ID_PTR order_gids = NULL;  /* List of all gids for ordering */
+  ZOLTAN_ID_PTR order_lids = NULL;  /* List of all lids for ordering */
   double stime = 0.0, mytime = 0.0, maxtime = 0.0;
 
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
 
-  /* Evaluate the old balance */
-  if (Debug_Driver > 0) {
-    if (Proc == 0) printf("\nBEFORE load balancing\n");
-    driver_eval(mesh);
-    i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
-  }
+  if (Driver_Mode & 1){
 
-  /*
-   * Call Zoltan
-   */
-  stime = MPI_Wtime();
-  if (Zoltan_LB_Balance(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
-                 &num_imported, &import_gids,
-                 &import_lids, &import_procs, &num_exported, &export_gids,
-                 &export_lids, &export_procs) == ZOLTAN_FATAL) {
-    Gen_Error(0, "fatal:  error returned from Zoltan_LB_Balance()\n");
-    return 0;
-  }
-  mytime = MPI_Wtime() - stime;
-  MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  if (Proc == 0)
-    printf("DRIVER:  Zoltan_Balance time = %g\n", maxtime);
-
-  if (Proc == 0) {
-    double x[] = {0.0L, 0.0L, 0.0L} ;
-    int proc ;
-    int status ;
-    status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
-    if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
-  }
-
-  if (Proc == 0) {
-    double xlo, ylo, zlo ;
-    double xhi, yhi, zhi ;
-    int procs[1000] ;
-    int count ;
-    int status ;
-
-    xlo = ylo = zlo = 0.0L ;
-    xhi = yhi = zhi = 1.0L ;
-    status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
-    if (status != ZOLTAN_OK) printf ("Box_Assign returned an error\n") ;
-  }
-
-  /*
-   * Call another routine to perform the migration
-   */
-  if (new_decomp) {
-    if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
-                        num_imported, import_gids, import_lids, import_procs,
-                        num_exported, export_gids, export_lids, export_procs)) {
-      Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
+    /* Load balancing part */
+  
+    /* Evaluate the old balance */
+    if (Debug_Driver > 0) {
+      if (Proc == 0) printf("\nBEFORE load balancing\n");
+      driver_eval(mesh);
+      i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+      if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
+    }
+  
+    /*
+     * Call Zoltan
+     */
+    stime = MPI_Wtime();
+    if (Zoltan_LB_Balance(zz, &new_decomp, &num_gid_entries, &num_lid_entries,
+                   &num_imported, &import_gids,
+                   &import_lids, &import_procs, &num_exported, &export_gids,
+                   &export_lids, &export_procs) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_LB_Balance()\n");
       return 0;
     }
+    mytime = MPI_Wtime() - stime;
+    MPI_Allreduce(&mytime, &maxtime, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (Proc == 0)
+      printf("DRIVER:  Zoltan_Balance time = %g\n", maxtime);
+  
+    if (Proc == 0) {
+      double x[] = {0.0L, 0.0L, 0.0L} ;
+      int proc ;
+      int status ;
+      status = Zoltan_LB_Point_Assign (zz, x, &proc) ;
+      if (status != ZOLTAN_OK) printf ("Point_Assign returned an error\n") ;
+    }
+  
+    if (Proc == 0) {
+      double xlo, ylo, zlo ;
+      double xhi, yhi, zhi ;
+      int procs[1000] ;
+      int count ;
+      int status ;
+  
+      xlo = ylo = zlo = 0.0L ;
+      xhi = yhi = zhi = 1.0L ;
+      status = Zoltan_LB_Box_Assign (zz, xlo, ylo, zlo, xhi, yhi, zhi, procs, &count) ;
+      if (status != ZOLTAN_OK) printf ("Box_Assign returned an error\n") ;
+    }
+  
+    /*
+     * Call another routine to perform the migration
+     */
+    if (new_decomp) {
+      if (!migrate_elements(Proc, mesh, zz, num_gid_entries, num_lid_entries,
+                          num_imported, import_gids, import_lids, import_procs,
+                          num_exported, export_gids, export_lids, export_procs)) {
+        Gen_Error(0, "fatal:  error returned from migrate_elements()\n");
+        return 0;
+      }
+    }
+  
+    /* Evaluate the new balance */
+    if (Debug_Driver > 0) {
+      if (Proc == 0) printf("\nAFTER load balancing\n");
+      driver_eval(mesh);
+      i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+      if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
+    }
+  
+    /* Clean up */
+    (void) Zoltan_LB_Free_Data(&import_gids, &import_lids, &import_procs,
+                        &export_gids, &export_lids, &export_procs);
   }
 
-  /* Evaluate the new balance */
-  if (Debug_Driver > 0) {
-    if (Proc == 0) printf("\nAFTER load balancing\n");
-    driver_eval(mesh);
-    i = Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
-    if (i) printf("Warning: Zoltan_LB_Eval returned error code %d\n", i);
+  if (Driver_Mode & 2){
+    /* Only do ordering if this was specified in the driver input file */
+    order = (int *) malloc (2*(mesh->num_elems) * sizeof(int));
+    order_gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+    order_lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+
+    /* Evaluate the old ordering */
+    if (Debug_Driver > 0) {
+      if (Proc == 0) printf("\nBEFORE ordering\n");
+      /* Not yet impl. */
+    }
+
+    if (Zoltan_Order(zz, &num_gid_entries, &num_lid_entries,
+        order_gids, order_lids,
+        order, &order[mesh->num_elems], NULL) == ZOLTAN_FATAL) {
+      Gen_Error(0, "fatal:  error returned from Zoltan_Order()\n");
+      return 0;
+    }
+
+    /* Evaluate the new ordering */
+    if (Debug_Driver > 0) {
+      if (Proc == 0) printf("\nAFTER ordering\n");
+      /* Not yet impl. */
+    }
+
+    /* Free order data */
+    free(order);
+    free(order_gids);
+    free(order_lids);
   }
-
-
-  /* Clean up */
-  (void) Zoltan_LB_Free_Data(&import_gids, &import_lids, &import_procs,
-                      &export_gids, &export_lids, &export_procs);
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;

@@ -131,10 +131,12 @@ struct Problem_Description
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
 
+/* Global variables for driver */
 extern int Debug_Driver;
 extern int DDirectory_Test;
 extern int Gnuplot_Output;
 extern int Number_Iterations;
+extern int Driver_Mode;
 extern int Debug_Chaco_Input;
 extern int Chaco_In_Assign_Inv;
 
