@@ -43,16 +43,18 @@ int LB_Build_Machine_Desc(
 
   LB_Assign_Param_Vals(lb->Params, Mach_params);
 
-  if (use_mach_desc) {
-    /* If lb->Machine_Desc already exists, don't rebuild it. */
-    /* NB: Can the processors change after LB_Create_Obj ?? */
+  if (use_mach_desc > 0) {
+    /* If lb->Machine_Desc already exists, don't rebuild it
+     * unless USE_MACHINE_DESC has been set to 2. 
+     */
 
-    if (lb->Machine_Desc == NULL){
+    if ((lb->Machine_Desc == NULL) || (use_mach_desc==2)){
       /* Read machine description from file. 
        * Use LB_Get_Processor_Name to extract the sub-machine
-       * that this LB structure is running on. 
+       * on which this LB structure/object is running. 
+       * Broadcast the machine structure to all procs.
        */
-      printf("Sorry, heterogenous load-balancing is still under development!\n");
+      printf("Sorry, heterogeneous load-balancing is still under development!\n");
       ierr = LB_WARN;
     }
   }
