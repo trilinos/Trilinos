@@ -382,8 +382,11 @@ ML_Operator * ML_BuildQ( int StartingNumElements,
   double * Start = new double[StartingNumElements*NumPDEEqns];
   double * Reord = new double[ReorderedNumElements*NumPDEEqns];
 
-  Epetra_Vector xxx(View,ReorderedMap,Reord);
-  Epetra_Vector yyy(View,StartingMap,Start);
+  // xxx will hold the starting decomposition, while
+  // yyy the reordered one. 
+
+  Epetra_Vector xxx(View,StartingMap,Start);
+  Epetra_Vector yyy(View,ReorderedMap,Reord);
 
   if( ComputeNewNullSpace == 1 ) {
 
