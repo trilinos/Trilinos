@@ -49,7 +49,7 @@ static int MM_readfile (int, FILE*, int*, int*, int*, int**, int**, int*,
 static int nextstr (FILE *f, char *string);
 
 
-
+/* These routines work with multiple (vector) vertex and hyperedge weights */
 
 /*****************************************************************************/
 
@@ -103,7 +103,7 @@ int Zoltan_HG_Readfile (
 
 
 /*****************************************************************************/
-/* Read IBM, Patoh, & Chaco like hypergraph formats */
+/* Read IBM & Patoh formats */
 
 static int readfile (
  int Proc,
