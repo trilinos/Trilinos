@@ -26,16 +26,20 @@
 
 <h2>
 Memory Management in Zoltan Load-Balancing Algorithms</h2>
-Zoltan contains a set of <a href="dev_util_mem.html">memory management
-routines</a>. It is strongly recommended that load-balancing algorithm
-developers use <a href="dev_util_mem.html#LB_Malloc"><b>LB_Malloc</b> </a>and
-<b><a href="dev_util_mem.html#LB_Free">LB_Free</a></b> instead
+Zoltan uses a <a href="dev_util_mem.html">memory management
+package</a> to simplify debugging of memory problems. 
+It is strongly recommended that load-balancing algorithm
+developers use the routines in this package, such as 
+<a href="dev_util_mem.html#LB_Malloc"><b>LB_MALLOC</b> </a>and
+<b><a href="dev_util_mem.html#LB_Free">LB_FREE</a></b>, instead
 of the standard C routines for most memory management.
-Macros that simplify the allocation of global and local identifiers (IDs) 
+<p>
+Macros that simplify the <a href="dev_lb_types.html#ID alloc">allocation of global and local identifiers (IDs)</a>
 are defined in <i>lb/lb_id_const.h</i>.  These macros are described in the 
-<a href="dev_lb_types.html">ID Data Types</a> section.
+<a href="dev_lb_types.html">ID Data Types</a> section.  The macros include
+error checking for the allocations and, thus, their use is highly recommended.
 
-<p>When a dynamic structure needs to be returned to the application, however,
+<p>When a dynamic structure needs to be returned to the application,
 special memory allocation routines are needed.&nbsp; For example, the import
 and export lists of data to migrate are returned to an application from
 <b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.

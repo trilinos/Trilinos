@@ -21,8 +21,8 @@
 </head>
 <body bgcolor="#FFFFFF">
 
-<div ALIGN=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp; |&nbsp; <a href="dev_add_memory.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_lb.html">Previous</a></i></b></div>
-
+<div align=right><b><i><a href="dev.html">Zoltan Developer's Guide</a>&nbsp;
+|&nbsp; <a href="dev_add_memory.html">Next</a>&nbsp; |&nbsp; <a href="dev_add_lb.html">Previous</a></i></b></div>
 
 <h2>
 <a NAME="new_data_structs"></a>Data Structures</h2>
@@ -33,24 +33,10 @@ This requirement allows reuse of data structures from one invocation of
 the new load-balancing algorithm to the next. It also prevents the use
 of global data structures for the algorithm so that multiple instances
 of the algorithm may be used (i.e., the same algorithm can be used for
-multiple <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> structures).
-<p>The data needed for the algorithm is collected through calls to the
-query functions registered by the application. Algorithms should test the
-query function pointers for NULL and report errors when needed functions
-are not registered. The appropriate query functions can be called to build
-the algorithm's data structures up front, or they can be called during
-the algorithm's execution to gather data only as it is needed. An example
-showing the construction of data structures for the Recursive Coordinate
-Bisection (RCB) algorithm is included in the <a href="#RCB_example">figure</a>
-below.&nbsp; The <i>Dots</i> data structure needed by RCB can be built
-either through a single call to <i>lb->Get_Obj_List</i> or through repeated
-calls to <i>lb->Get_First_Obj</i> and <i>lb->Get_Next_Obj</i>, depending
-on which functions are registered by the application. The data for each
-<i>Dot</i>
-is set in the function <i>initialize_dot</i>, which includes calls to <i>lb->Get_Geom</i>
-and <i>lb->Get_Obj_Weight</i>.
-<br>&nbsp;
-<br>&nbsp;
+multiple <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> structures).&nbsp;
+An example showing the construction of data structures for the Recursive
+Coordinate Bisection (RCB) algorithm is included in the <a href="#RCB_example">figure</a>
+below.
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
 <td><a NAME="RCB_example"></a>
@@ -60,69 +46,117 @@ first;</tt>
 <br><tt>&nbsp;* the other fields can be reused.</tt>
 <br><tt>&nbsp;*/</tt>
 <br><tt>if (lb->Data_Structure == NULL) {</tt>
-<br><tt>&nbsp;&nbsp; rcb = (RCB_STRUCT *) LB_MALLOC(sizeof(RCB_STRUCT));</tt>
+<br><tt>&nbsp;&nbsp; rcb = (RCB_STRUCT *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(RCB_STRUCT));</tt>
 <br><tt>&nbsp;&nbsp; lb->Data_Structure = (void *) rcb;</tt>
-<br><tt>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *) LB_MALLOC(lb->Num_Proc*sizeof(struct
+<br><tt>&nbsp;&nbsp; rcb->Tree_Ptr = (struct rcb_tree *)&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(lb->Num_Proc*sizeof(struct
 rcb_tree));</tt>
-<br><tt>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) LB_MALLOC(sizeof(struct
+<br><tt>&nbsp;&nbsp; rcb->Box = (struct rcb_box *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>(sizeof(struct
 rcb_box));</tt>
 <br><tt>}</tt>
 <br><tt>else {</tt>
 <br><tt>&nbsp;&nbsp; rcb = (RCB_STRUCT *) lb->Data_Structure;</tt>
-<br><tt>&nbsp;&nbsp; LB_Free((void **) &amp;(rcb->Dots));</tt>
-<br><tt>}</tt>
-<p><tt>/* Allocate space for objects in RCB data structure.&nbsp; Allow
-space</tt>
-<br><tt>&nbsp;* for objects that are imported to the processor.&nbsp;</tt>
-<br><tt>&nbsp;*/</tt>
-<br><tt>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data);</tt>
-<br><tt>*max_obj = 1.5 * *num_obj;</tt>
-<br><tt>rcb->Dots = (struct rcb_dot *) LB_MALLOC((*max_obj)*sizeof(struct
-rcb_dot));</tt>
-<p><tt>/*&nbsp; Access objects based on the method provided by the application.*/</tt>
-<br><tt>if (lb->Get_Obj_List != NULL) {</tt>
-<br><tt>&nbsp;&nbsp; /* Call the application for the IDs of all objects
-and initialize&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; * the dot for each object. */</tt>
-<br><tt>&nbsp;&nbsp; objs_global = (LB_GID *) LB_MALLOC((*num_obj)*sizeof(LB_GID));</tt>
-<br><tt>&nbsp;&nbsp; objs_local&nbsp; = (LB_LID *) LB_MALLOC((*num_obj)*sizeof(LB_LID));</tt>
-<br><tt>&nbsp;&nbsp; lb->Get_Obj_List(lb->Get_Obj_List_Data, objs_global,
-objs_local);</tt>
-<br><tt>&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++)&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; initialize_dot(lb, &amp;(rcb->Dots[i]),
-objs_global[i],&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-objs_local[i]);</tt>
-<br><tt>&nbsp;&nbsp; LB_Free((void **) &amp;objs_global);</tt>
-<br><tt>&nbsp;&nbsp; LB_Free((void **) &amp;objs_local);</tt>
-<br><tt>}</tt>
-<br><tt>else if (lb->Get_First_Obj != NULL &amp;&amp; lb->Get_Next_Obj
-!= NULL) {</tt>
-<br><tt>&nbsp;&nbsp; /* Call the application for each object and initialize
-the dot for</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; * that object. */</tt>
-<br><tt>&nbsp;&nbsp; i = 0;</tt>
-<br><tt>&nbsp;&nbsp; found = lb->Get_First_Obj(lb->Get_First_Obj_Data,
-&amp;obj_global_id,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&amp;obj_local_id);</tt>
-<br><tt>&nbsp;&nbsp; while (found) {</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; initialize_dot(lb, &amp;(rcb->Dots[i]),
-obj_global_id,&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-obj_local_id);</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; i++;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data,
-obj_global_id,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-obj_local_id, &amp;obj_global_id, &amp;obj_local_id);</tt>
-<br><tt>&nbsp;&nbsp; }</tt>
+<br><tt>&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;(rcb->Dots));</tt>
+<br><tt>}</tt></td>
+</tr>
+
+<caption ALIGN=BOTTOM><i>Example demonstrating aloocation of data structures
+for the RCB algorithm.&nbsp; (Taken from rcb/rcb_util.c.)</i></caption>
+</table></center>
+
+<p>The data needed for the algorithm is collected through calls to the
+query functions registered by the application. Algorithms should test the
+query function pointers for NULL and report errors when needed functions
+are not registered. The appropriate query functions can be called to build
+the algorithm's data structures up front, or they can be called during
+the algorithm's execution to gather data only as it is needed. The <a href="#query_example">figure</a>
+below shows how the <i>Dots</i> data structure needed by RCB is built.&nbsp;
+The call to <i>lb->Get_Num_Obj</i> invokes an <b><a href="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b>
+query function to determine the number of objects on the processor.&nbsp;
+Space for the <i>Dots</i> data structure is allocated through calls to
+<b><a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a></b>, <a href="dev_lb_types.html#ID alloc"><b>LB_MALLOC_GID_ARRAY</b></a>,
+and <a href="dev_lb_types.html#ID alloc"><b>LB_MALLOC_LID_ARRAY</b></a>.&nbsp; The <i>Dots</i> information is obtained
+through a call to the Zoltan service function <b>LB_Get_Obj_List</b>; this
+function calls either an <b><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+or an <b><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+pair to get the object IDs and weights. The data for each
+<i>Dot</i> is
+set in the function <i>initialize_dot</i>, which includes calls to<i> lb->Get_Geom</i>,
+an <b><a href="../ug_html/ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
+query function.
+<br>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query_example"></a>&nbsp;<tt>&nbsp;</tt>
+<br><tt>/*</tt>
+<br><tt>&nbsp;* Allocate space for objects.&nbsp; Allow extra space</tt>
+<br><tt>&nbsp;* for objects that are imported to the processor.</tt>
+<br><tt>&nbsp;*/</tt><tt></tt>
+<p><tt>*num_obj = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &amp;ierr);</tt>
+<br><tt>if (ierr) {</tt>
+<br><tt>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from user function Get_Num_Obj.");</tt>
+<br><tt>&nbsp; return(ierr);</tt>
+<br><tt>}</tt><tt></tt>
+<p><tt>*max_obj = (int)(1.5 * *num_obj) + 1;</tt>
+<br><tt>*global_ids = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_GID_ARRAY</a>(lb, (*max_obj));</tt>
+<br><tt>*local_ids&nbsp; = <a href="dev_lb_types.html#ID alloc">LB_MALLOC_LID_ARRAY</a>(lb, (*max_obj));</tt>
+<br><tt>*dots = (struct Dot_Struct *)<a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*max_obj)*sizeof(struct
+Dot_Struct));</tt><tt></tt>
+<p><tt>if (!(*global_ids) || (lb->Num_LID &amp;&amp; !(*local_ids)) ||
+!(*dots)) {</tt>
+<br><tt>&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo, "Insufficient memory.");</tt>
+<br><tt>&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);</tt>
+<br><tt>}</tt><tt></tt>
+<p><tt>if (*num_obj > 0) {</tt><tt></tt>
+<p><tt>&nbsp; if (wgtflag) {</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; /*</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Allocate space for object weights.</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; */</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; objs_wgt = (float *) <a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a>((*num_obj)*sizeof(float));</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; if (!objs_wgt) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo, "Insufficient memory.");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; return(<a href="../ug_html/ug_interface.html#Error Codes">LB_MEMERR</a>);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; }</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_obj; i++) objs_wgt[i]
+= 0.;</tt>
+<br><tt>&nbsp; }</tt><tt></tt>
+<p><tt>&nbsp; /*</tt>
+<br><tt>&nbsp;&nbsp; *&nbsp; Get list of objects' IDs and weights.</tt>
+<br><tt>&nbsp;&nbsp; */</tt><tt></tt>
+<p><tt>&nbsp; LB_Get_Obj_List(lb, *global_ids, *local_ids, wgtflag, objs_wgt,
+&amp;ierr);</tt>
+<br><tt>&nbsp; if (ierr) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from user function LB_Get_Obj_List.");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; return(ierr);</tt>
+<br><tt>&nbsp; }</tt><tt></tt>
+<p><tt>&nbsp; ierr = initialize_dot(lb, *global_ids, *local_ids, *dots,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*num_obj, wgtflag, objs_wgt);</tt>
+<br><tt>&nbsp; if (ierr == LB_FATAL || ierr == LB_MEMERR) {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
+yo,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Error returned from user function initialize_dot.");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; return(ierr);</tt>
+<br><tt>&nbsp; }</tt><tt></tt>
+<p><tt>&nbsp; <a href="dev_util_mem.html#LB_Free">LB_FREE</a>(&amp;objs_wgt);</tt>
 <br><tt>}</tt></td>
 </tr>
 
 <caption ALIGN=BOTTOM><i>Example demonstrating how data structures are
-built for the RCB algorithm.&nbsp; (Taken from rcb_build_data_structure
-in rcb/rcb_util.c.)</i></caption>
+built for the RCB algorithm.&nbsp; (Taken from rcb/shared.c.)</i></caption>
 </table></center>
 
 <p>
