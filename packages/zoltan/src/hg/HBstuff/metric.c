@@ -13,7 +13,8 @@
 
 /* to compile:  gcc metric.c iohb.c */
 
-/* usage:  a.out matrix.hb partition_file */
+/* usage:  a.out matrix.hb zdrive_partition_file 
+      or   a.out matrix.hb hmetis_partition_file 1 */
 
 main (int argc, char *argv[]) {
   int nRow, nCol, nz, nEdge, nPin;
@@ -36,25 +37,33 @@ main (int argc, char *argv[]) {
   int minnbor, maxnbor, totalnbor;  /* min, max, and total partition nbors*/
   int numnbor;
   int column;
-    
+  int hmetis_partition_file = 0;   /* Assume zdrive-formatted partition file. */
 
   /* Read in partition information */
-  /* Assume partition information is post-processed as follows:
+  /* Assume zdrive partition information is pre-processed as follows:
      -  Cat all partition output files together.
      -  remove text (parameters, etc.), leaving only object and part info
         (order info values -1 may be kept in file; they will be read and 
         ignored here).
      -  "sort -n" the files by object IDs.
      -  put number of objects on first line.
+     Assume hmetis partition information is pre-processed as follows:
+     -  put number of objects on first line.
    */
 
+  if (argc == 4) 
+    hmetis_partition_file = atoi(argv[3]);
+  
   printf("Reading %s\n", argv[2]);
   fp = fopen(argv[2], "r");
   fscanf(fp, "%d", &nobj);
   parts = (int *) malloc(sizeof(int) * nobj);
   maxpart = -1;
   for (i = 0; i < nobj; i++) {
-    fscanf(fp, "%d %d %d %d", &id, &(parts[i]), &junk1, &junk2);
+    if (hmetis_partition_file)
+      fscanf(fp, "%d", &(parts[i]));
+    else
+      fscanf(fp, "%d %d %d %d", &id, &(parts[i]), &junk1, &junk2);
     if (parts[i] > maxpart) maxpart = parts[i];
   }
   maxpart++;  /* includes partition 0 */
