@@ -145,7 +145,7 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
 static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
     int   i, j, k, v1, v2, edge, best_vertex;
-    int   matchcount=0, nadj, dense_comm;
+    int   nadj, dense_comm;
     float maxip;
     int   *adj=NULL;
     int   *order=NULL;
@@ -154,6 +154,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     char  *sendbuf, *recvbuf; /* comm buffers */
     char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
+    float lquality[3] = {0,0,0}; /* local  matchcount, matchweight */
+    float gquality[3] = {0,0,0}; /* global matchcount, matchweight */
 
     lips = gips = NULL;
     sendbuf = recvbuf = NULL;
@@ -256,6 +258,9 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
           else {
             /* pick highest values if too many nonzeros */
             /* naive algorithm to find top MAX_NNZ values */ 
+            if (0) /* (hgp->output_level >= PHG_DEBUG_ALL) */
+              printf("Debug: nadj= %d > MAX_NNZ= %d, inexact inner product!\n",
+                nadj, MAX_NNZ);
             for (i=0; i<MAX_NNZ; i++){
               maxip = 0.0;
               for (j=0; j<nadj; j++){
@@ -323,22 +328,25 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
         if (best_vertex > -1) {
             match[v1] = best_vertex;
             match[best_vertex] = v1;
-            matchcount++;
+            lquality[0] += maxip;
+            lquality[1] += 1.0;
         } 
         
     }
 
+    lquality[2] = hg->nVtx; /* to find global number of vertices */
+    MPI_Allreduce(lquality, gquality, 3, MPI_FLOAT, MPI_SUM, hgc->row_comm); 
+       
+    uprintf (hgc, "LOCAL (GLOBAL) i.p. sum %.2f (%.2f), matched pairs %d (%d), "
+     "total vertices %d\n", lquality[0], gquality[0], (int)lquality[1],
+     (int)gquality[1], (int)gquality[2]);  
+
     /*
-    printf("Matched %d vertices\n", matchcount);
-    printf("Final Matching:\n");
+    printf("DEBUG: Final Matching:\n");
     for(i = 0; i < hg->nVtx; i++)
-        printf("%2d ",i);
-    printf("\n");
-    for(i = 0; i < hg->nVtx; i++)
-        printf("%2d ",match[i]);
+        printf("%d, %d\n", i, match[i]);
     printf("\n");
     */
-
 
     if (!dense_comm){
       ZOLTAN_FREE(&sendbuf);
