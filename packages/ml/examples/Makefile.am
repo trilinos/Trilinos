@@ -6,7 +6,7 @@ EXEEXT = .exe
 #EXAMPLE = ml_read_maxwell
 
 # List the names of all exe's in this directory here
-noinst_PROGRAMS = ml_read_maxwell
+noinst_PROGRAMS = ml_read_maxwell ml_simple_max
 
 # One SOURCES primary is needed for EACH exe listed above.  (Notice for all 
 # of the  following primaries that the pattern is 
@@ -20,9 +20,7 @@ ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 ml_read_maxwell_DEPENDENCIES = $(top_builddir)/../aztecoo/src/libaztecoo.a \
                        $(top_builddir)/../epetra/src/libepetra.a
 
-# One CXXFLAGS primary can be defined for each exe listed above.  Include 
-# any -I's necessary for building the exe.
-ml_read_maxwell_CFLAGS = -I$(top_srcdir)/src/Include          \
+ml_common_include_locations = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Coarsen                  \
                    -I$(top_srcdir)/src/Comm                  \
                    -I$(top_srcdir)/src/FEGrid                  \
@@ -34,6 +32,10 @@ ml_read_maxwell_CFLAGS = -I$(top_srcdir)/src/Include          \
                    -I$(top_srcdir)/src/Utils                  \
                    -I$(top_srcdir)/../aztecoo/src            \
                    -I$(top_builddir)/../aztecoo/src       
+
+# One CXXFLAGS primary can be defined for each exe listed above.  Include 
+# any -I's necessary for building the exe.
+ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
 
 # One LDADD primary can be defined for each exe listed above.  Include any
 # LDFLAGS  necessary for building the exe.
