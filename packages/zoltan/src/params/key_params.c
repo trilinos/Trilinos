@@ -75,14 +75,29 @@ int  idx 			/* index of vector param, -1 if scalar */
 
       case 0:  		/* Imbalance_Tol */
         if (result.def) 
-            result.dval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
-	if (result.dval < 1.0) {
+            result.fval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
+	if (result.fval < 1.0) {
 	    sprintf(msg, "Invalid Imbalance_Tol value (%g) "
 		"being set to %g.", result.dval, ZOLTAN_LB_IMBALANCE_TOL_DEF);
             ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
-	    result.dval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
+	    result.fval = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 	}
-	zz->LB.Imbalance_Tol = result.dval;
+        if (idx > zz->Obj_Weight_Dim){
+          sprintf(msg, "Imbalance_Tol index %d > Obj_Weight_Dim = %d\n",
+            idx, zz->Obj_Weight_Dim);
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+        }
+        else if (idx < -1){
+          sprintf(msg, "Invalid Imbalance_Tol index %d\n", idx);
+          ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+        }
+        else if (idx == -1){
+          /* Set all entries to the same value. */
+          for (idx=0; idx<zz->LB.Imb_Tol_Len; idx++);
+	    zz->LB.Imbalance_Tol[idx] = result.fval;
+        }
+        else
+	  zz->LB.Imbalance_Tol[idx] = result.fval;
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
@@ -103,6 +118,12 @@ int  idx 			/* index of vector param, -1 if scalar */
 	    result.ival = ZOLTAN_OBJ_WEIGHT_DEF;
 	}
 	zz->Obj_Weight_Dim = result.ival;
+        if (zz->Obj_Weight_Dim > zz->LB.Imb_Tol_Len){
+          /* Resize and reallocate Imb_Tol. */
+          zz->LB.Imb_Tol_Len += 10;
+          zz->LB.Imbalance_Tol = (float *) ZOLTAN_REALLOC(zz->LB.Imbalance_Tol,
+            zz->LB.Imb_Tol_Len * sizeof(float));
+        }
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
 
@@ -284,8 +305,10 @@ int  idx 			/* index of vector param, -1 if scalar */
  */
 void Zoltan_Print_Key_Params(ZZ *zz)
 {
-  printf("ZOLTAN Parameter %s = %f\n", Key_params[0].name, 
-         zz->LB.Imbalance_Tol);
+  int i;
+  for (i=0; i<(zz->Obj_Weight_Dim?zz->Obj_Weight_Dim:1); i++)
+    printf("ZOLTAN Parameter %s[%1d] = %f\n", Key_params[0].name, 
+         i, zz->LB.Imbalance_Tol[i]);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[1].name, 
          (zz->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
   printf("ZOLTAN Parameter %s = %d\n", Key_params[16].name, 

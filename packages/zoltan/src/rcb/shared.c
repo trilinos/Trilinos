@@ -671,7 +671,7 @@ int Zoltan_RB_check_geom_output(
   MPI_Allreduce(&weight,&wtsum,1,MPI_DOUBLE,MPI_SUM,zz->Communicator);
 
   /* KDDKDD assumes k == p */
-  tolerance = part_sizes[proc] * wtsum * zz->LB.Imbalance_Tol;
+  tolerance = part_sizes[proc] * wtsum * zz->LB.Imbalance_Tol[0];
   if (weight > tolerance) {
     sprintf(msg, " Weight %f > tolerance %f.", weight, tolerance);
     ZOLTAN_PRINT_WARN(proc, yo, msg);

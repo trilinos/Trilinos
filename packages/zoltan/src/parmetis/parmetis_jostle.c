@@ -430,7 +430,7 @@ int Zoltan_Jostle(
   }
 
   /* Set imbalance tolerance */
-  sprintf(str, "imbalance = %3d ", (int)(100*(zz->LB.Imbalance_Tol - 1)));
+  sprintf(str, "imbalance = %3d ", (int)(100*(zz->LB.Imbalance_Tol[0] - 1)));
   jostle_env(str);
 
   /* Multidimensional vertex weights */
@@ -826,14 +826,14 @@ static int Zoltan_ParMetis_Jostle(
   numflag = 0;
   ncon = (obj_wgt_dim > 0 ? obj_wgt_dim : 1);
 
-  /* Set Imbalance Tolerance for each weight component. For now, they are all the same. */
+  /* Set Imbalance Tolerance for each weight component. */
   imb_tols = (float *) ZOLTAN_MALLOC(ncon * sizeof(float));
   if (!imb_tols){
     /* Not enough memory */
     ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   for (i=0; i<ncon; i++)
-    imb_tols[i] = zz->LB.Imbalance_Tol;
+    imb_tols[i] = zz->LB.Imbalance_Tol[i];
 
   /* Verify that graph is correct */
   if (get_graph_data){

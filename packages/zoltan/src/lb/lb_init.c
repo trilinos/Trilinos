@@ -51,6 +51,8 @@ void Zoltan_Migrate_Init(struct Zoltan_Migrate_Struct *mig)
 
 void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
 {
+  int i;
+
   lb->Num_Global_Parts = num_proc;
   lb->Num_Global_Parts_Param = -1;
   lb->Num_Local_Parts_Param = -1;
@@ -66,11 +68,14 @@ void Zoltan_LB_Init(struct Zoltan_LB_Struct *lb, int num_proc)
   lb->LB_Fn = Zoltan_RCB;
   lb->Return_Lists = ZOLTAN_LB_RETURN_LISTS_DEF;
   lb->Uniform_Parts = 1;
-  lb->Imbalance_Tol = ZOLTAN_LB_IMBALANCE_TOL_DEF;
   lb->Data_Structure = NULL;
   lb->Free_Structure = Zoltan_RCB_Free_Structure;
   lb->Point_Assign = Zoltan_RB_Point_Assign;
   lb->Box_Assign = Zoltan_RB_Box_Assign;
+  lb->Imb_Tol_Len = 10;
+  lb->Imbalance_Tol = (float *)ZOLTAN_MALLOC((lb->Imb_Tol_Len)*sizeof(float));
+  for (i=0; i<lb->Imb_Tol_Len; i++)
+    lb->Imbalance_Tol[i] = ZOLTAN_LB_IMBALANCE_TOL_DEF;
 }
 
 #ifdef __cplusplus

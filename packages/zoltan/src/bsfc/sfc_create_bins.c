@@ -893,7 +893,7 @@ int Zoltan_BSFC_single_wgt_find_imbalance(float* work_percent_array,
       balanced_flag = BSFC_BALANCED;
   }
   else {
-    if(1 + my_extra_work/my_ideal_work > zz->LB.Imbalance_Tol)
+    if(1 + my_extra_work/my_ideal_work > zz->LB.Imbalance_Tol[0])
       balanced_flag = BSFC_NOT_BALANCED;
     else
       balanced_flag = BSFC_BALANCED;

@@ -384,7 +384,7 @@ int Zoltan_HSFC(
 
    out_of_tolerance = 0;
    for (k = 0; k < zz->LB.Num_Global_Parts; k++)
-      if (tsum[k] > target[k] * zz->LB.Imbalance_Tol)
+      if (tsum[k] > target[k] * zz->LB.Imbalance_Tol[0])
          out_of_tolerance = 1;
 
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined final partition");

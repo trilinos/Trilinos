@@ -141,9 +141,12 @@ struct Zoltan_LB_Struct {
   ZOLTAN_LB_FN *LB_Fn;            /*  Pointer to the function that performs
                                       the load balancing; this ptr is set
                                       based on the method used.              */
-  double Imbalance_Tol;           /*  Tolerance to which to load balance;
+  float *Imbalance_Tol;           /*  Tolerance to which to load balance;
                                       Imbalance_Tol = 1.1 implies 10% imbalance
-                                      is acceptable, i.e. max/avg = 1.1.     */
+                                      is acceptable, i.e. max/avg = 1.1.     
+                                      Imbalance_Tol may be an array of
+                                      dimension Obj_Weight_Dim.              */
+  int  Imb_Tol_Len;               /*  Length of Imbalance_Tol array.         */
   void *Data_Structure;           /*  Data structure used by the load
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */

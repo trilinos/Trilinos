@@ -95,6 +95,7 @@ int Zoltan_LB_Free_Data(
 
 void Zoltan_LB_Free_Struct(struct Zoltan_LB_Struct *lb)
 {
+  ZOLTAN_FREE(&(lb->Imbalance_Tol));
   ZOLTAN_FREE(&(lb->PartDist));
   ZOLTAN_FREE(&(lb->ProcDist));
   if (lb->Part_Info)  ZOLTAN_FREE(&(lb->Part_Info));
