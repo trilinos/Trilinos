@@ -13,6 +13,12 @@
 
 *************************   CHACO TEST PROBLEMS   *****************************
 -------------------------------------------------------------------------------
+ch_ewgt
+  Simple graph.
+  2D mesh, 5x5 vertices equally spaced in [0,4]x[0,4].
+  Graph and coordinates included.
+  Edge weights specified.
+-------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 ch_film
   Film graph included with Chaco distribution.
@@ -21,9 +27,9 @@ ch_film
   No vertex weights.
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-ch_grid20
-  Simple graph.
-  20x20 grid.
+ch_grid20x19
+  Simple grid graph.
+  20x19 uniform grid.
   Graph and coordinates included.
   No vertex weights.
 -------------------------------------------------------------------------------
