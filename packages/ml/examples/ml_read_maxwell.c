@@ -1674,10 +1674,10 @@ nx = nx--; /* rst dirichlet */
 	  nodal_smoother = (void *) ML_Gen_Smoother_MLS;
 	  nodal_omega    = 1.0;
 	  edge_omega     = 1.0;
-	  nodal_args = ML_Smoother_Arglist_Create(5);
+	  nodal_args = ML_Smoother_Arglist_Create(4);
 	  ML_Smoother_Arglist_Set(nodal_args, 0, &nodal_its);
 	  ML_Smoother_Arglist_Set(nodal_args, 2, &nodal_omega);
-	  edge_args = ML_Smoother_Arglist_Create(5);
+	  edge_args = ML_Smoother_Arglist_Create(4);
 	  ML_Smoother_Arglist_Set(edge_args, 0, &edge_its);
 	  ML_Smoother_Arglist_Set(edge_args, 2, &edge_omega);
 	}
@@ -1733,10 +1733,8 @@ nx = nx--; /* rst dirichlet */
         mls_poly_degree = 1;
         printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
                 mls_poly_degree);
-        ML_Smoother_Arglist_Set(edge_args, 3, &eig_ratio_tol);
-        ML_Smoother_Arglist_Set(nodal_args, 3, &eig_ratio_tol);
-	    ML_Smoother_Arglist_Set(nodal_args, 4, &mls_poly_degree);
-	    ML_Smoother_Arglist_Set(edge_args, 4, &mls_poly_degree);
+	    ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
+	    ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
 	  }
       if (level == N_levels-1)
          ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
@@ -1845,10 +1843,8 @@ nx = nx--; /* rst dirichlet */
        mls_poly_degree = 1;
        printf("\n\nChebychev polynomial degree hardwired to %d\a\a\n\n",
               mls_poly_degree);
-       ML_Smoother_Arglist_Set(edge_args, 3, &eig_ratio_tol);
-       ML_Smoother_Arglist_Set(nodal_args, 3, &eig_ratio_tol);
-       ML_Smoother_Arglist_Set(edge_args, 4, &mls_poly_degree);
-       ML_Smoother_Arglist_Set(nodal_args, 4, &mls_poly_degree);
+       ML_Smoother_Arglist_Set(edge_args, 3, &mls_poly_degree);
+       ML_Smoother_Arglist_Set(nodal_args, 3, &mls_poly_degree);
     }
     if (coarsest_level == N_levels-1)
        ML_Gen_Smoother_Hiptmair(ml_edges, level, ML_BOTH, nsmooth,
@@ -1999,7 +1995,7 @@ edge_smoother,edge_args, nodal_smoother,nodal_args);
   options[AZ_conv]     = AZ_rhs;
 #endif
   options[AZ_output]   = 1;
-  options[AZ_max_iter] = 300;
+  options[AZ_max_iter] = 10;
   options[AZ_poly_ord] = 5;
   options[AZ_kspace]   = 130;
   params[AZ_tol]       = context->tol;
