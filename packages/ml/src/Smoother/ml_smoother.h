@@ -243,9 +243,6 @@ extern  int ML_Smoother_MSR_SGS(void *, int, double *, int, double *);
 extern int ML_Smoother_MSR_SGSnodamping(void *,int ,double *,int , double *);
 extern int ML_Smoother_MSR_SGSdamping(void *,int ,double *,int , double *);
 extern void ML_Smoother_Clean_MSR_GS(void *data);
-extern int ML_Smoother_Reinit(ML_Smoother *pre_smoother,
-                       ML_Smoother *post_smoother, ML_CSolve *csolve, 
-                       ML_1Level *SingleLevel, int N_levels);
 
 #ifdef __cplusplus
 }
