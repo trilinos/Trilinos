@@ -1,6 +1,11 @@
 #!/bin/sh
 export echo
-echo=/usr/ucb/echo
+if test -x /usr/ucb/echo
+then
+   echo=/usr/ucb/echo
+else
+   echo=echo
+fi
 export echo
 ${echo} 
 ${echo} "                ML installer ..."
