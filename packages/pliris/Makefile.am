@@ -59,6 +59,7 @@ config/ac_cxx_std_sprintf.m4 \
 config/tac_arg_with_ar.m4 \
 config/tac_arg_with_blaslib.m4 \
 config/tac_arg_enable_can_use_package.m4 \
+config/tac_arg_enable_feature_sub_check.m4 \
 config/acx_blas.m4 \
 config/tac_arg_with_flags.m4 \
 config/tac_arg_with_incdirs.m4 \
@@ -92,14 +93,14 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #  of tests.  At present, new_package only offers src and example.
 #  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
-#if BUILD_TESTS
-#TEST_SUBDIR=test
-#endif
+if BUILD_TESTS
+TEST_SUBDIR=test
+endif
 
 #if BUILD_EXAMPLES
 #EXAMPLE_SUBDIR=example
 #endif
 
-SUBDIRS = src
+SUBDIRS = src $(TEST_SUBDIR)
 #SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 

@@ -54,6 +54,9 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
+/* Define if want to build pliris-tests */
+#undef HAVE_PLIRIS_TESTS
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
@@ -83,6 +86,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define if want to build tests */
+#undef HAVE_TESTS
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H

@@ -59,7 +59,6 @@ EXTRA_CORE_H = \
         $(srcdir)/x_factor.h \
         $(srcdir)/x_solve.h \
         $(srcdir)/xlu_solve.h
-#        $(srcdir)/dim.h \
 #        $(srcdir)/init.h
 
 EXTRA_CORE = \
@@ -76,12 +75,7 @@ EXTRA_CORE = \
         $(srcdir)/x_factor.c \
         $(srcdir)/xlu_solve_new.c \
         $(srcdir)/x_solve.c
-#       $(srcdir)/factor.c \
-#        $(srcdir)/mat.c \
-#        $(srcdir)/init.c \
-#        $(srcdir)/mat_hard.c \
-#        $(srcdir)/steve.c \
-#        $(srcdir)/xlu_solve.c
+#        $(srcdir)/init.c
 
 EXTRA_UTIL_H = \
         $(srcdir)/BLAS_prototypes.h \

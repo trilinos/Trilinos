@@ -206,11 +206,11 @@ AM_CONDITIONAL(HAVE_EPETRA, test "X$ac_cv_use_epetra" = "Xyes")
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
 
-#  Pliris does not yet have tests or examples.
+#  Pliris does not yet have examples.
 
-#TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
-#TAC_ARG_ENABLE_FEATURE_SUB_CHECK( pliris, tests, [Build Pliris tests], PLIRIS_TESTS)
-#AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_pliris_tests" != "Xno")
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( pliris, tests, [Build Pliris tests], PLIRIS_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_pliris_tests" != "Xno")
 
 #TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages], EXAMPLES, yes)
 #TAC_ARG_ENABLE_FEATURE_SUB_CHECK( pliris, examples, [Build Pliris examples], PLIRIS_EXAMPLES)
@@ -243,7 +243,7 @@ AC_F77_WRAPPERS
 # If a package does not have tests or examples, the corresponding check(s)
 # should be pulled out of the "if" statement below.
 #if test "X$ac_cv_use_pliris_tests" != "Xno" || test "X$ac_cv_use_pliris_examples" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
-if test "X$ac_cv_use_libcheck" != "Xno"; then
+if test "X$ac_cv_use_pliris_tests" != "Xno" || test "X$ac_cv_use_libcheck" != "Xno"; then
 
 # #np# - 
 # To add any libraries that you want to check for, replace pow below 
@@ -338,6 +338,8 @@ AC_SUBST(ac_aux_dir)
 AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
+		test/Makefile
+		test/vector_random/Makefile
 		])
 
 AC_OUTPUT()
