@@ -28,6 +28,7 @@
 #include "Epetra_Object.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_SerialDenseVector.h"
 class Epetra_LinearProblem;
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -220,7 +221,7 @@ class Epetra_CrsSingletonFilter {
   int GetRow(int Row, int & NumIndices, int * & Indices);
   int GetRowGCIDs(int Row, int & NumIndices, double * & Values, int * & GlobalIndices);
   int GetRow(int Row, int & NumIndices, double * & Values, int * & Indices);
-  int CreatePostSolveArrays(int * RowIDs,
+  int CreatePostSolveArrays(const Epetra_IntVector & RowIDs,
 			    const Epetra_MapColoring & RowMapColors,
 			    const Epetra_IntVector & ColProfiles,
 			    const Epetra_IntVector & NewColProfiles,
@@ -273,7 +274,7 @@ class Epetra_CrsSingletonFilter {
   Epetra_MultiVector * tempB_;
   Epetra_MultiVector * RedistributeReducedLHS_;
   int * Indices_;
-  double * Values_;
+  Epetra_SerialDenseVector Values_;
   
   Epetra_MapColoring * RowMapColors_;
   Epetra_MapColoring * ColMapColors_;

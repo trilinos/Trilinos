@@ -61,6 +61,7 @@ Epetra_CrsSingletonFilter::~Epetra_CrsSingletonFilter(){
   if (ColSingletonPivotLIDs_ != 0) delete ColSingletonPivotLIDs_;
   if (ColSingletonPivots_ != 0) delete ColSingletonPivots_;
   if (tempExportX_ != 0) delete tempExportX_;
+  if (Indices_ != 0) delete Indices_;
   if (tempX_ != 0) delete tempX_;
   if (tempB_ != 0) delete tempB_;
 
@@ -109,7 +110,6 @@ void Epetra_CrsSingletonFilter::InitializeDefaults() {
   tempX_ = 0;
   tempB_ = 0;
 
-  Values_ = 0;
   Indices_ = 0;
 
   RowMapColors_ = 0;
@@ -136,6 +136,10 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
   Epetra_IntVector ColProfiles(FullMatrixColMap()); ColProfiles.PutValue(0);
   Epetra_IntVector ColHasRowWithSingleton(FullMatrixColMap()); ColHasRowWithSingleton.PutValue(0);
 
+  // RowIDs[j] will contain the local row ID associated with the jth column, 
+  // if the jth col has a single entry
+  Epetra_IntVector RowIDs(FullMatrixColMap()); RowIDs.PutValue(-1);
+
   // Define MapColoring objects
   RowMapColors_ = new Epetra_MapColoring(FullMatrixRowMap());  // Initial colors are all 0
   ColMapColors_ = new Epetra_MapColoring(FullMatrixColMap());
@@ -145,12 +149,6 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 
   int NumMyRows = FullMatrix->NumMyRows();
   int NumMyCols = FullMatrix->NumMyCols();
-
-  // RowIDs[j] will contain the local row ID associated with the jth column, 
-  // if the jth col has a single entry
-  int * RowIDs = 0;
-  if (NumMyCols>0) RowIDs = new int[NumMyCols];
-  for (i=0; i<NumMyCols; i++) RowIDs[i] = -1;
 
   // Set up for accessing full matrix.  Will do so row-by-row.
   EPETRA_CHK_ERR(InitFullMatrixAccess()); 
@@ -249,8 +247,6 @@ int Epetra_CrsSingletonFilter::Analyze(Epetra_RowMatrix * FullMatrix) {
 				       ColHasRowWithSingleton));
 
   for (i=0; i<NumMyRows; i++) if (RowMapColors[i]==2) RowMapColors[i] = 1; // Convert all eliminated rows to same color
-
-  if (RowIDs!=0) delete [] RowIDs;
 
   FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyRowSingletons_, &NumGlobalRowSingletons_, 1);
   FullMatrix->RowMatrixRowMap().Comm().SumAll(&NumMyColSingletons_, &NumGlobalColSingletons_, 1);
@@ -614,7 +610,7 @@ int Epetra_CrsSingletonFilter::InitFullMatrixAccess() {
   FullCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix *>(FullMatrix());
   FullMatrixIsCrsMatrix_ = (FullCrsMatrix_!=0); // Pointer is non-zero if cast worked
   Indices_ = new int[MaxNumMyEntries_];
-  Values_ = new double[MaxNumMyEntries_];
+  Values_.Size(MaxNumMyEntries_);
 
   return(0);
 }
@@ -626,7 +622,7 @@ int Epetra_CrsSingletonFilter::GetRow(int Row, int & NumIndices, int * & Indices
   }
   else { // Copy of current row (we must get the values, but we ignore them)
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_, Indices_));
+						  Values_.Values(), Indices_));
     Indices = Indices_;
   } 
   return(0);
@@ -640,8 +636,8 @@ int Epetra_CrsSingletonFilter::GetRow(int Row, int & NumIndices,
   }
   else { // Copy of current row (we must get the values, but we ignore them)
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_, Indices_));
-    Values = Values_;
+						  Values_.Values(), Indices_));
+    Values = Values_.Values();
     Indices = Indices_;
   } 
   return(0);
@@ -651,14 +647,14 @@ int Epetra_CrsSingletonFilter::GetRowGCIDs(int Row, int & NumIndices,
 					   double * & Values, int * & GlobalIndices) {
 
     EPETRA_CHK_ERR(FullMatrix()->ExtractMyRowCopy(Row, MaxNumMyEntries_, NumIndices, 
-						  Values_, Indices_));
+						  Values_.Values(), Indices_));
     for (int j=0; j<NumIndices; j++) Indices_[j] = FullMatrixColMap().GID(Indices_[j]);
-    Values = Values_;
+    Values = Values_.Values();
     GlobalIndices = Indices_;
   return(0);
 }
 //==============================================================================
-int Epetra_CrsSingletonFilter::CreatePostSolveArrays(int * RowIDs,
+int Epetra_CrsSingletonFilter::CreatePostSolveArrays(const Epetra_IntVector & RowIDs,
 						     const Epetra_MapColoring & RowMapColors,
 						     const Epetra_IntVector & ColProfiles,
 						     const Epetra_IntVector & NewColProfiles,
