@@ -43,6 +43,8 @@
 
   See \ref configuration.
 
+  Developers, also see \ref devinfo
+
   \section classes Class Overview
 
   See \ref overview.
@@ -330,6 +332,37 @@ From the example above, setting the path would likely require:
 setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
 \endverbatim
 
+
+*/
+
+/*! \page devinfo NOX Developer's Information
+
+\section cvsrepos CVS Repository for NOX
+
+The CVS repository is located on <a
+href="http://software.sandia.gov/>software.sandia.gov</a>. See Paul
+Sery (pgsery@sandia.gov) or Tammy Kolda (tgkolda@sandia.gov) for an
+account.
+
+You should not do any development of software.sandia.gov. Instead,
+check out a copy to your local machine as follows.
+
+First, be sure to correctly set your \c CVS_SSH environment
+variable. For example, in (t)csh, you would type:
+
+\verbatim
+setenv CVS_RSH ssh
+\endverbatim
+
+Next, to check out nox, type
+\verbatim
+cvs -d :ext:username@hopper.ca.sandia.gov:/space/CVS checkout -P nox
+\endverbatim
+
+To update your copy of nox to the latest version, type
+\verbatim
+cvs update -d -P
+\endverbatim
 
 */
 
