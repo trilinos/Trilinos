@@ -551,11 +551,11 @@ What's new in this release:
 <li> The %LOCA library can now be built as a shared library using libtool.  See \ref nox_configuration_options for how to do this.  Known issues with this are:
    <ul>
    <li> Extra link libraries passed using the --with-libs configure flag should use the "-Lpath -lname" format instead of "path/libname.a"
-   <li> Building %LOCA as a static library on DEC architectures using template repositories does not work.  On these architctures, only build %LOCA as a shared library using the --enable-shared and --disable-static configure flags, or turn off template repositories using the "-tweak" C++ compiler flag.  Note that if the later method is chosen, a large number of warnings will be issued each time an executable is linked against %LOCA.
+   <li> Building %LOCA as a static library on DEC architectures using template repositories does not work.  On these architectures, only build %LOCA as a shared library using the --enable-shared and --disable-static configure flags, or turn off template repositories using the "-tweak" C++ compiler flag.  Note that if the later method is chosen, a large number of warnings will be issued each time an executable is linked against %LOCA.
    <li> When building shared libraries on SGI systems in 64 bit, one must supply the "-64" C++ compiler flag to not only the compiler and linker through CXXFLAGS and LDFLAGS, but also to libtool using LIBTOOL_CCLINKER_FLAGS or --with-libtool-cclinker-flags.  Also one must turn off template repositories and the template prelinker using the flags "-ptused -no_prelink -no_auto_include".
    <li> When building shared libraries on Solaris systems, one should add "-xlic_lib=sunperf" to CFLAGS, "-library=sunperf" to CXXFLAGS and LIBTOOL_CCLINKER_FLAGS, and make sure neither of these flags appear in LDFLAGS.
   </ul>
-<li> A basic, but functional python interface to %NOX and %LOCA now exists.  See \ref nox_configuration_options for how to enable this.  A test exhibiting this functionality can be found in the src/test/lapack/LOCA_python directory.
+<li> A basic, but functional python interface to %NOX and %LOCA now exists.  See \ref nox_configuration_options for how to enable this.  A test exhibiting this functionality can be found in the nox/test/lapack/LOCA_python directory.
 </ul>
 
 
