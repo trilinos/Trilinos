@@ -154,7 +154,8 @@ public:
 
   int AddToSymFactTime(double);
   int AddToNumFactTime(double);
-  int AddToSolFactTime(double);
+  int AddToSolTime(double);
+  int AddToConvTime(double);
   
   inline double GetSymFactTime() const
   {
@@ -166,9 +167,14 @@ public:
     return NumFactTime_;
   }
 
-  inline double GetSolFactTime() const 
+  inline double GetSolTime() const 
   {
     return SolFactTime_;
+  }
+
+  inline double GetConvTime() const
+  {
+    return ConvTime_;
   }
 
   //! Set the matrix property (unsymmetric, SPD, general symmetric).
@@ -226,7 +232,8 @@ private:
 
   double SymFactTime_;                    // MS // keep trace of timing
   double NumFactTime_;
-  double SolFactTime_;
+  double SolTime_;
+  double ConvTime_;
   
   int MatrixProperty_;
 

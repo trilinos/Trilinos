@@ -56,11 +56,13 @@ Amesos_EpetraInterface::Amesos_EpetraInterface(const Epetra_LinearProblem * Prob
   Problem_(Problem),
   SymFactTime_(0.0),
   NumFactTime_(0.0),
-  SolFactTime_(0.0),
+  SolTime_(0.0),
+  ConvTime_(0.0),
   MatrixProperty_(AMESOS_UNSYM)
 {
+  // requires a non-null pointer
   assert(Problem_!=NULL);
-  SetOperator(Problem->GetMatrix());
+
 }
  
 Amesos_EpetraInterface::~Amesos_EpetraInterface()
@@ -73,6 +75,8 @@ Amesos_EpetraInterface::~Amesos_EpetraInterface()
 int Amesos_EpetraInterface::SetOperator(Epetra_RowMatrix * RowA)
 {
 
+  if( IsSetOperatorOK_ ) return 0;
+  
   RowA_ = RowA;       MatrixType_ = AMESOS_ROW_MATRIX;
   assert( RowA_ != NULL );
   
@@ -220,10 +224,16 @@ int Amesos_EpetraInterface::AddToSymFactTime(double t)
   return 0;
 }
 
-int Amesos_EpetraInterface::AddToSolFactTime(double t)
+int Amesos_EpetraInterface::AddToSolTime(double t)
 {
-  SolFactTime_ += t;
+  SolTime_ += t;
   return 0;
   
 }
 
+int Amesos_EpetraInterface::AddToConvTime(double t)
+{
+  ConvTime_ += t;
+  return 0;
+  
+}

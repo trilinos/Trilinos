@@ -185,8 +185,6 @@ public:
 
   int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
 
-  //! Update the values of the linear system matrix.
-  int UpdateMatrixValues();
 
   //! Returns the Schur complement matrix as an Epetra_CrsMatrix.
   /*! Returns the (dense) SSchur complement matrix as an Epetra_CrsMatrix. This
@@ -200,9 +198,9 @@ public:
   int ComputeSchurComplement(bool flag,
 			     int NumSchurComplementRows, int * SchurComplementRows);
 
-  Epetra_CrsMatrix * GetSchurComplement() {
-    return SchurComplement_;
-  };
+  Epetra_CrsMatrix * GetCrsSchurComplement();
+
+  Epetra_SerialDenseMatrix * GetDenseSchurComplement();
   
   //! Returns the current UseTranspose setting.
   bool UseTranspose() const {return(UseTranspose_);};
@@ -284,7 +282,7 @@ public:
   int SetCNTL(int pos, double value);
   
   int PrintInformation();
-  
+
 private:  
   int ConvertToSerial(); 
   /*
@@ -373,8 +371,11 @@ private:
   int NumSchurComplementRows_;            // MS // Schur complement section
   int * SchurComplementRows_;
 
-  Epetra_CrsMatrix * SchurComplement_;
+  Epetra_CrsMatrix * CrsSchurComplement_;
+  Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
+  int verbose_;
+  
 };  // End of  class Amesos_Mumps
 
 #endif /* _EPETRA_MUMPS_H_ */

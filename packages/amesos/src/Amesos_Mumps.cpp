@@ -104,20 +104,21 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   KeepMatrixDistributed_(true) ,
   Map_(0),
   NumMUMPSNonzeros_(0),
-  IsConvertToTripletOK_(false),
   Col(0),
   Row(0),
   Val(0),
   ErrorMsgLevel_(-1),
   NumSchurComplementRows_(-1),
   SchurComplementRows_(0),
-  SchurComplement_(0),
+  CrsSchurComplement_(0),
+  DenseSchurComplement_(0),
   IsComputeSchurComplementOK_(false),
   RowSca_(0),
   ColSca_(0),
   PermIn_(0),
   Maxis_(DEF_VALUE_INT),
-  Maxs_(DEF_VALUE_INT)
+  Maxs_(DEF_VALUE_INT),
+  verbose_(0)
 {
   ParameterList_ = &ParameterList ; 
   MyPID = Comm().MyPID() ;
@@ -154,6 +155,7 @@ Amesos_Mumps::~Amesos_Mumps(void)
 int Amesos_Mumps::SetICNTL(int pos, int value)
 {
   // NOTE: suppose first position is 1 (as in FORTRAN)
+  
   if( pos>0 && pos<41 ) {
     icntl_[pos-1] = value;
     return 0;
@@ -177,16 +179,14 @@ int Amesos_Mumps::SetCNTL(int pos, double value)
 int Amesos_Mumps::ConvertToTriplet()
 {
 
-  if( IsConvertToTripletOK_ ) return 0;
-  
-  NumMUMPSNonzeros_ = 0;
-  
+  Epetra_Time Time(Comm());
+
   // MS // convert to MUMPS format, keeping in distributed form.
   // MS // This doesn't require the matrix to be shipped to proc 0,
   // MS // then decomposed and reshipped by MUMPS
 
-  // be sure that those vectors are empty. Otherwise when the user
-  // call UpdateValues we will reallocate all of them
+  // MS // be sure that those vectors are empty. Allocate them
+  
   if( Row ) delete Row;
   if( Col ) delete Col;
   if( Val ) delete Val;
@@ -195,6 +195,8 @@ int Amesos_Mumps::ConvertToTriplet()
   Col = new Epetra_IntSerialDenseVector( NumMyNonzeros() ) ;  
   Val = new Epetra_SerialDenseVector( NumMyNonzeros() ) ;  
 
+  NumMUMPSNonzeros_ = 0;
+  
   // MS // retrive already allocated pointers for rows, cols, and vals
   // MS // Those arrays are allocated and freed by the Amesos_EpetraInterface
   // MS // class. Note that, if a View method is implemented, those pointers
@@ -214,6 +216,7 @@ int Amesos_Mumps::ConvertToTriplet()
     GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
 
     for( int i=0 ; i<NumIndices ; ++i ) {
+      // following if : please test me................................
       //      if( MatrixValues[i] != 0.0 ) {
 	(*Row)[NumMUMPSNonzeros_] = RowIndices[i]+1;
 	(*Col)[NumMUMPSNonzeros_] = ColIndices[i]+1;
@@ -272,26 +275,22 @@ int Amesos_Mumps::ConvertToTriplet()
     }
   }
 
-  IsConvertToTripletOK_ = true;
+  AddToConvTime(Time.ElapsedTime());  
   
   return 0;
 
-}   
-
-
-int Amesos_Mumps::UpdateMatrixValues()
-{
-
-  CreateSerialMap();
-  CreateImportAndExport();
-
-  return( ConvertToTriplet() );
-
-  NumericFactorizationOK_ = false;
-  
 }
 
-int Amesos_Mumps::ReadParameterList() {
+int Amesos_Mumps::ReadParameterList()
+{
+
+  if( ParameterList_ == NULL ) return;
+  
+  bool value = 0;
+  value = ParameterList_->getParameter("print information",value);
+  if( value ) verbose_ = 1;
+  else        verbose_ = 0;
+  
   if (ParameterList_->isParameterSublist("Mumps") ) {
     AMESOS::Parameter::List MumpsParams = ParameterList_->sublist("Mumps") ;
   }  
@@ -300,6 +299,8 @@ int Amesos_Mumps::ReadParameterList() {
 
 int Amesos_Mumps::PerformSymbolicFactorization()
 {
+
+  Epetra_Time Time(Comm());
 
   if( IsLocal() ) {
 #ifdef EPETRA_MPI
@@ -320,8 +321,8 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   dmumps_c( &MDS ) ;   //  Initialize MUMPS 
 
   // check the error flag. MUMPS is siccessful only if
-  // infog(1) is zereo
-  //  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+  //  infog(1) is zereo
+  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
   
   MDS.n = NumGlobalRows() ;
   if( KeepMatrixDistributed_ ) {
@@ -356,14 +357,17 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 
   SetICNTLandCNTL(); // initialize icntl and cntl. NOTE: I initialize those vectors
                      // here, and I don't change them anymore. This is not that much
-                     // limitation, though
-
+                     // a limitation, though
+  
   dmumps_c( &MDS ) ;  // Perform symbolic factorization
   // check the error flag. MUMPS is siccessful only if
   // infog(1) is zereo
-  //  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
   
-  SymbolicFactorizationOK_ = true ; 
+  AddToSymFactTime(Time.ElapsedTime());  
+
+  SymbolicFactorizationOK_ = true ;
+  
   return 0;
 
 }
@@ -425,13 +429,17 @@ void Amesos_Mumps::SetICNTLandCNTL()
 int Amesos_Mumps::PerformNumericFactorization( )
 {
   
+  Epetra_Time Time(Comm());
+  
   MDS.job = 2  ;     // Request numeric factorization
   dmumps_c( &MDS ) ;  // Perform numeric factorization
   // check the error flag. MUMPS is siccessful only if
   // infog(1) is zereo
-  //  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+  if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
   
-  NumericFactorizationOK_ = true ;
+  AddToNumFactTime(Time.ElapsedTime());
+  
+  NumericFactorizationOK_ = true;
 
   return 0;
 }
@@ -449,32 +457,52 @@ bool Amesos_Mumps::MatrixShapeOK() const {
 int Amesos_Mumps::SymbolicFactorization()
 {
 
+  ReadParameterList();  
+  
+  // MS // first, gather matrix property using base class
+  // MS // Amesos_EpetraInterface
+
+  assert( GetProblem()->GetMatrix() != NULL );
+  SetOperator(GetProblem()->GetMatrix());
+
+  // MS // now, create a map, in which all nodes are stored on processor 0.
+  // MS // Also creates import objects. This is done using the base class
+  // MS // Amesos_EpetraRedistributor. NOTE: the following classes return
+  // MS // if they have already been called.
+  
   CreateSerialMap();
   CreateImportAndExport();
   ConvertToTriplet();
 
-  Epetra_Time Time(Comm());
-  
-  PerformSymbolicFactorization();
+  EPETRA_CHK_ERR( PerformSymbolicFactorization() );
 
-  NumericFactorizationOK_ = false;
-
-  AddToSymFactTime(Time.ElapsedTime());
-  
   return 0;
 }
 
-int Amesos_Mumps::NumericFactorization() {
+int Amesos_Mumps::NumericFactorization()
+{
+
+  ReadParameterList();
+
+  // MS // As in SymbolicFactorization. All those functions
+  // MS // returns if they have already been called.
+  
+  assert( GetProblem()->GetMatrix() != NULL );
+  SetOperator(GetProblem()->GetMatrix());
 
   CreateSerialMap();
   CreateImportAndExport();
+
+  // MS // reship the matrix. User can update numerical values
+  // MS // Should the values remain the same, it is better to use
+  // MS // Solve() and NOT SymbolicFactorization() + NumericFactorization()
+  // MS // + Solve()
+  
   ConvertToTriplet();
 
-  if( SymbolicFactorizationOK_ == false )  PerformSymbolicFactorization();
+  if( SymbolicFactorizationOK_ == false ) EPETRA_CHK_ERR( PerformSymbolicFactorization() );
 
-  Epetra_Time Time(Comm());
-  PerformNumericFactorization( );
-  AddToNumFactTime(Time.ElapsedTime());
+  EPETRA_CHK_ERR( PerformNumericFactorization() );
   
   return 0;
 }
@@ -482,12 +510,37 @@ int Amesos_Mumps::NumericFactorization() {
 int Amesos_Mumps::Solve()
 { 
 
+  ReadParameterList();
+  
+  assert( GetProblem()->GetMatrix() != NULL );
+  SetOperator(GetProblem()->GetMatrix());
+
   CreateSerialMap();
   CreateImportAndExport();
-  ConvertToTriplet();
 
-  if( SymbolicFactorizationOK_ == false )  PerformSymbolicFactorization();
-  if( NumericFactorizationOK_  == false )  PerformSymbolicFactorization();
+  if( SymbolicFactorizationOK_ == false && NumericFactorizationOK_ == false ) {
+
+    // MS // it is the first time the user call something. The
+    // MS // matrix is neither sym fact not num fact
+    // MS // We convert it to COO format, then sym+fact
+    ConvertToTriplet();
+    EPETRA_CHK_ERR( PerformSymbolicFactorization() );
+    EPETRA_CHK_ERR( PerformNumericFactorization() );
+
+  }  else if( NumericFactorizationOK_  == false )  {
+
+    // MS // User has already called SymFact, but maybe he changed
+    // MS // the matrix entries. Ww reship the matrix
+    ConvertToTriplet();
+    EPETRA_CHK_ERR( PerformNumericFactorization() );
+
+  } else {
+
+    // MS // just for comment it out: This case, the user has already
+    // MS // numerically factorized the matrix. We can solve without
+    // MS // shipping the matrix
+    
+  }
   
   Epetra_Time Time(Comm());
   
@@ -526,7 +579,7 @@ int Amesos_Mumps::Solve()
 	dmumps_c( &MDS ) ;  // Perform solve
 	// check the error flag. MUMPS is siccessful only if
 	// infog(1) is zereo
-	//	if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+	if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
 
       }
     }
@@ -542,38 +595,88 @@ int Amesos_Mumps::Solve()
       dmumps_c( &MDS ) ;  // Perform solve
       // check the error flag. MUMPS is siccessful only if
       // infog(1) is zereo
-      //      if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
+      if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
     }
 
     vecX->Import( *(SerialRHS()), *(ImportFromProcZero()), Insert ) ;
     
   }
+
+  AddToSolTime(Time.ElapsedTime());
   
-  // Retrive the SC and put it in an Epetra_CrsMatrix on host only
+  //  ParameterList_->setParameter("solution time",GetSolTime());
+			      
+  if( verbose_ ) PrintInformation();
+  
+  return(0) ; 
+}
+
+Epetra_CrsMatrix * Amesos_Mumps::GetCrsSchurComplement() 
+{
+
+  // MS // Retrive the SC and put it in an Epetra_CrsMatrix on host only
+  // MS // NOTE: no checks are performed to see whether this action
+  // MS // is legal or not (that is, if the call comes after
+  // MS // the solver has been invocated
+  // MS // NOTE2: This memory must be freed by the user!
+  
   if( IsComputeSchurComplementOK_ ) {
     
     if( MyPID != 0 ) NumSchurComplementRows_ = 0;
     
     Epetra_Map SCMap(-1,NumSchurComplementRows_, 0, Comm());
 
-    SchurComplement_ = new Epetra_CrsMatrix(Copy,SCMap,NumSchurComplementRows_);
+    CrsSchurComplement_ = new Epetra_CrsMatrix(Copy,SCMap,NumSchurComplementRows_);
 
     if( MyPID == 0 )
       for( int i=0 ; i<NumSchurComplementRows_ ; ++i ) {
 	for( int j=0 ; j<NumSchurComplementRows_ ; ++j ) {
 	  int pos = i+ j *NumSchurComplementRows_;
-	  SchurComplement_->InsertGlobalValues(i,1,&(MDS.schur[pos]),&j);
+	  CrsSchurComplement_->InsertGlobalValues(i,1,&(MDS.schur[pos]),&j);
 	}
       }
     
-    SchurComplement_->FillComplete();
+    CrsSchurComplement_->FillComplete();
+
+    return CrsSchurComplement_;
   }
+
+  return 0;
   
-  AddToSolFactTime(Time.ElapsedTime());
-  
-  return(0) ; 
 }
 
+Epetra_SerialDenseMatrix * Amesos_Mumps::GetDenseSchurComplement() 
+{
+
+  // MS // Retrive the SC and put it in an Epetra_CrsMatrix on host only
+  // MS // NOTE: no checks are performed to see whether this action
+  // MS // is legal or not  (that is, if the call comes after
+  // MS // the solver has been invocated
+  // MS // NOTE2: This memory must be freed by the user!
+  
+  // MS // works only on processor 0, return 0 on the others
+  
+  if( IsComputeSchurComplementOK_ ) {
+    
+    if( MyPID != 0 ) return 0;
+    
+    DenseSchurComplement_ = new Epetra_SerialDenseMatrix(NumSchurComplementRows_,
+							NumSchurComplementRows_);
+    
+    for( int i=0 ; i<NumSchurComplementRows_ ; ++i ) {
+      for( int j=0 ; j<NumSchurComplementRows_ ; ++j ) {
+	int pos = i+ j *NumSchurComplementRows_;
+	(*DenseSchurComplement_)(i,j) = MDS.schur[pos];
+      }
+    }
+    
+    return DenseSchurComplement_;
+    
+  }
+  
+  return 0;
+  
+}
 
 int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 					 int * SchurComplementRows)
@@ -595,36 +698,43 @@ int Amesos_Mumps::PrintInformation()
 {
   if( Comm().MyPID() ) return 0;
 
-  cout << "------------ : ---------------------------------" << endl;
+  cout << "------------ : ---------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : global information for all phases" << endl;
-  cout << "------------ : ---------------------------------" << endl;
+  cout << "------------ : ---------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Matrix has " << NumGlobalRows() << " rows"
        << " and " << NumGlobalNonzeros() << " nonzeros" << endl;
-
-  cout << "Amesos_Mumps : estimated FLOPS for elimination = "
+  cout << "Amesos_Mumps : Time to convert matrix into MUMPS format = "
+       << GetConvTime() << " (s) " << endl;
+  cout << "Amesos_Mumps : Symbolic factorization time = "
+       << GetSymFactTime() << " (s) " << endl;
+  cout << "Amesos_Mumps : Numerical factorization time = "
+       << GetSymFactTime() << " (s) " << endl;
+  cout << "Amesos_Mumps : Solution time = "
+       << GetSymFactTime() << " (s) " << endl;
+  cout << "Amesos_Mumps : Estimated FLOPS for elimination = "
        << MDS.RINFOG(1) << endl;
-  cout << "Amesos_Mumps : total FLOPS for assembly = "
+  cout << "Amesos_Mumps : Total FLOPS for assembly = "
        << MDS.RINFOG(2) << endl;
-  cout << "Amesos_Mumps : total FLOPS for elimination = "
+  cout << "Amesos_Mumps : Total FLOPS for elimination = "
        << MDS.RINFOG(3) << endl;
   
-  cout << "Amesos_Mumps : total real space to store the LU factors = "
+  cout << "Amesos_Mumps : Total real space to store the LU factors = "
        << MDS.INFOG(9) << endl;
-  cout << "Amesos_Mumps : total integer space to store the LU factors = "
+  cout << "Amesos_Mumps : Total integer space to store the LU factors = "
        << MDS.INFOG(10) << endl;
-  cout << "Amesos_Mumps : total number of iterative steps refinement = "
+  cout << "Amesos_Mumps : Total number of iterative steps refinement = "
        << MDS.INFOG(15) << endl;
-  cout << "Amesos_Mumps : estimated size of MUMPS internal data\n"
+  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
        << "Amesos_Mumps : for running factorization = "
        << MDS.INFOG(16) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : estimated size of MUMPS internal data\n"
+  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
        << "Amesos_Mumps : for running factorization = "
        << MDS.INFOG(17) << " Mbytes" << endl;
-  cout << "Amesos_Mumps : estimated size of MUMPS internal data\n"
-       << "Amesos_Mumps : allocated during factorization = "
+  cout << "Amesos_Mumps : Estimated size of MUMPS internal data\n"
+       << "Amesos_Mumps : Allocated during factorization = "
        << MDS.INFOG(19) << " Mbytes" << endl;
-  cout << "------------ : ---------------------------------" << endl;
-
+ cout << "------------ : ---------------------------------------------------------" << endl;
+ 
   return 0;
   
 }
