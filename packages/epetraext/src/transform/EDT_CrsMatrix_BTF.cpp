@@ -36,9 +36,12 @@
 
 using std::vector;
 
+#define MATTRANS_F77 F77_FUNC(mattrans,MATTRANS)
+#define GENBTF_F77   F77_FUNC(genbtf,GENBTF)
+
 extern "C" {
-extern void mattrans_( int*, int*, int*, int*, int*, int* );
-extern void genbtf_( int*, int*, int*, int*, int*, int*, int*, int*, int*,
+extern void MATTRANS_F77( int*, int*, int*, int*, int*, int* );
+extern void GENBTF_F77( int*, int*, int*, int*, int*, int*, int*, int*, int*,
                      int*, int*, int*, int*, int*, int*, int*, int*, int*,
                      int*, int*, int* );
 }
@@ -103,7 +106,7 @@ operator()( OriginalTypeRef orig )
   int * iaf = &ia[0];
   int * jatf = &jat[0];
   int * iatf = &iat[0];
-  mattrans_( &n, &n, jaf, iaf, jatf, iatf );
+  MATTRANS_F77( &n, &n, jaf, iaf, jatf, iatf );
     
 #ifdef BTF_VERBOSE
   cout << "-----------------------------------------\n";
@@ -137,7 +140,7 @@ operator()( OriginalTypeRef orig )
   int msglvl = 0;
   int output = 6;
 
-  genbtf_( &n, &n, &iat[0], &jat[0], &ia[0], &ja[0], &w[0],
+  GENBTF_F77( &n, &n, &iat[0], &jat[0], &ia[0], &ja[0], &w[0],
           &rowperm[0], &colperm[0], &nhrows, &nhcols,
           &hrzcmp, &nsrows, &sqcmpn, &nvrows, &nvcols, &vrtcmp,
           &rcmstr[0], &ccmstr[0], &msglvl, &output );
