@@ -25,8 +25,8 @@ int Epetra_ML_matvec(void *data, int in, double *p, int out, double *ap)
   /* ML matvec wrapper for Epetra matrices. */
 
   Epetra_RowMatrix *A = (Epetra_RowMatrix *) data;
-  Epetra_Vector X(View, A->RowMatrixRowMap(), p);
-  Epetra_Vector Y(View, A->RowMatrixColMap(), ap);
+  Epetra_Vector X(View, A->RowMatrixColMap(), p);
+  Epetra_Vector Y(View, A->RowMatrixRowMap(), ap);
   
   A->Multiply(false, X, Y);
   
