@@ -30,18 +30,27 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef NOX_MORETHUENTE_H
-#define NOX_MORETHUENTE_H
+#ifndef NOX_LINESEARCH_MORETHUENTE_H
+#define NOX_LINESEARCH_MORETHUENTE_H
 
 #include "NOX_LineSearch_Generic.H" // base class
 
-#include "NOX_LineSearch_Utils_Printing.H"
-#include "NOX_LineSearch_Utils_Slope.H"
+#include "NOX_LineSearch_Utils_Printing.H"  // data class member
+#include "NOX_LineSearch_Utils_Counters.H"  // data class member
+#include "NOX_LineSearch_Utils_Slope.H"  // data class member
+
+// Forward Declarations
+namespace NOX{
+  namespace Parameter {
+    class UserNorm;
+    class MeritFunction;
+  }
+}
 
 namespace NOX {
 namespace LineSearch {
 
-//! More'-Thuente Line Search.
+//! More'-Thuente Line Search. Original code by Dianne O'Leary, modfified by Tammy Kolda and Roger Pawlowski for the NOX project.  This version has been slightly optimized and also supports Homer Walker's work on adaptive forcing terms and Ared/Pred conditions.  It also allows for arbitrary merit functions and norms to be supplied by the user.
 /*!
 
   This code is based on the More'-Thuente line search from the 1983
@@ -50,11 +59,13 @@ namespace LineSearch {
   search. The original comments are preserved in the descriptions of
   the individual subroutines. What follows is an updated summary.
 
-  The function we are minimizing is given by
+  The merit function we are minimizing is given by
 
   \f[
   f(x) = 0.5 \|F(x)\|^2
   \f]
+
+  (alternatively the user can define this)
 
   The purpose of the More'-Thuente line search is to find a step which
   satisfies a sufficient decrease condition and a curvature condition.
@@ -71,16 +82,26 @@ namespace LineSearch {
   interval of uncertainty is chosen so that it contains a minimizer of
   \f$f(x+{\rm stp}\;s)\f$.
 
-  The algorithm is designed to find a step which satisfies the
-  sufficient decrease condition
-
+  The algorithm is designed to find a step which satisfies one of two
+  sufficient decrease conditions:
+  
+  (1) Armijo-Goldstein Condition
   \f[
-  f(x + {\rm stp} \; s) <= f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
+  f(x + {\rm stp} \; s) \le f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
   \f]
+
+  or 
+
+  (2) Ared/Pred Condtition
+  \f[
+  F(x_{n-1}+ \lambda s) \le  F(x_{n-1})(1-\alpha(1-\eta))
+  \f]
+
+
   and the curvature condition
 
   \f[
-  \vert \nabla f(x + {\rm stp} \; s)^T s) \vert <= {\rm gtol} \;  |\nabla f(x)^T s|
+  \vert \nabla f(x + {\rm stp} \; s)^T s) \vert \le {\rm gtol} \;  |\nabla f(x)^T s|
   \f]
 
   If ftol is less than gtol and if, for example, the function is
@@ -90,20 +111,42 @@ namespace LineSearch {
   further progress. In this case stp only satisfies the sufficient
   decrease condition.
 
+  <B> Modifications from NOX::LineSearch::MoreThuente </B> <br>
+  1. Added the option to use Ared/Pred conditions as describe in Homer Walker's papers.
+  2. Added support to use an adjustable forcing term as describe in Homer Walker's papers.
+  3. Added the option to use directional derivatives in computing the slope instead of explicitly computing the Jacobian.  This eliminates the need to recompute the Jacobian at each inner iteration of the More'-Thuente algorithm.
+  4. Added the ability to use the NOX::Parameter::UserNorm and NOX::Parameter::MeritFunction objects to supply user defined norms and merit functions to the line search.
+
+  <B> Implementation </B> <br>
   This line search can be called via NOX::LineSearch::Manager.
 
-  This line search is used if "More'-Thuente" is the "Method" in the
+  This line search is used if "More'-Thuente2" is the "Method" in the
   "Line Search" sublist. (See NOX::LineSearch::Manager for details.)
  
   The following parameters can be specified for this line search in
-  the "More'-Thuente" sublist of the "Line Search" sublist:
+  the "More'-Thuente2" sublist of the "Line Search" sublist:
  
+  - "Sufficient Decrease Condition" - Choice to use for the sufficient decrease condition. Options are "Ared/Pred" or "Armijo-Goldstein" (defaults to "Armijo-Goldstein").<br>
+  1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
+  2. "Ared/Pred" conditions: \f$ \| F(x_{n-1}+ \lambda s) \| \le \| F(x_{n-1}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
+
   - "Sufficient Decrease" - The ftol in the sufficient decrease
     condition (defaults to 1.0e-4)
 
   - "Curvature Condition" - The gtol in the curvature condition
     (defaults to 0.9999)
 
+  - "Optimize Slope Calculation" - Boolean value.  If set to true the value of \f$ s^TJ^TF \f$ is estimated using a directional derivative in a call to NOX::LineSearch::Common::computeSlopeWithOutJac.  If false the slope computation is computed with the NOX::LineSearch::Common::computeSlope method.  Setting this to true eliminates having to compute the Jacobian at each inner iteration of the More'-Thuente line search (defaults to false).  
+
+  - "User Defined Norm" - The user can redefine the norm that is used in the 
+    Ared/Pred sufficient decrease condition by supplying a 
+    NOX::Parameter::UserNorm derived object in the parameter list with 
+    this key.
+
+  - "Merit Function" - The user can supply their own merit function to the
+    line search by supplying a NOX::Parameter::MeritFunction derived object
+    with this key.
+    
   - "Interval Width" - The maximum width of the interval containing
     the minimum of the modified function (defaults to 1.0e-15)
 
@@ -116,8 +159,31 @@ namespace LineSearch {
 
   - "Default Step" - starting step length (defaults to 1.0)
 
-  - "Recovery Step" - step to take when the line search fails
-    (defaults to value for "Default Step")
+  - "Recovery Step Type" - Determines the step size to take when the 
+    line search fails.  Choices are:
+
+     <ul>
+     <li> "Constant" [default] - Uses a constant value set in "Recovery Step".
+     <li> "Last Computed Step" - Uses the last value computed by the 
+                                 line search algorithm. 
+     </ul>
+
+  - "Recovery Step" - The value of the step to take when the line 
+    search fails. Only used if the "Recovery Step Type" is set to 
+    "Constant". Defaults to value for "Default Step".
+
+  <B> Output Parameters </B> <br>
+A sublist for output parameters will be created called "Output" in the parameter list used to instantiate or reset the class.  Valid output parameters are:
+
+  - "Total Number of Line Search Calls" - Total number of calls to the compute() method of this line search.
+
+  - "Total Number of Non-trivial Line Searches" - The total number of steps that could not directly take a full step and meet the required "Convergence Criteria" (i.e. The line search had to reduce the step length using inner iteration calculations over iterate \f$ k \f$). 
+
+  - "Total Number of Failed Line Searches" - total number of line searches that failed and used a recovery step.
+
+  - "Total Number of Line Search Inner Iterations" - total number of inner iterations \f$ k \f$ performed by this object.
+
+
 
 */
 
@@ -290,7 +356,7 @@ private:
 
    */
   int cvsrch(NOX::Abstract::Group& newgrp, double& step, 
-	     const NOX::Abstract::Group& oldgrp, const NOX::Abstract::Vector& dir);
+	     const NOX::Abstract::Group& oldgrp, const NOX::Abstract::Vector& dir, const Solver::Generic& s);
 
 
   //! More'-Thuente's cstep subroutine.
@@ -376,9 +442,14 @@ private:
 private:
 
   //! Common line search printing utilities.
-  NOX::LineSearch::Utils::Printing utils;
+  NOX::LineSearch::Utils::Printing print;
+  //! Common common counters for line searches.
+  NOX::LineSearch::Utils::Counters counter;
   //! Common slope calculations for line searches.
   NOX::LineSearch::Utils::Slope slope;
+
+  //! Pointer to the input parameter list.  This is saved so data stored in the counter object can be written to the "Output" parameter list.
+  NOX::Parameter::List* paramsPtr;
 
   //! Sufficient decrease parameter
   double ftol;
@@ -393,10 +464,42 @@ private:
   //! Maximum number of function evaluations
   int maxfev;
 
+  //! Type of recovery step to use
+  enum RecoveryStepType {
+    //! Use a constant value
+    Constant,
+    //! Use the last value computed in the line search algorithm
+    LastComputedStep
+  };
+
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  RecoveryStepType recoveryStepType;
+
   //! Default step length
   double defaultstep;
   //! Recovery step if linesearch fails
   double recoverystep;
+ 
+  //! Options for sufficient decrease criteria
+  enum SufficientDecreaseCondition {ArmijoGoldstein, AredPred};
+
+  //! Chioce for the sufficient decrease criteria
+  SufficientDecreaseCondition suffDecrCond;
+
+  //! If set to true the value of \f$ s^TJ^Tf \f$ is estimated using a directional derivative.  This eliminates having to compute the Jacobian at each inner iteration of the line search.  
+  bool useOptimizedSlopeCalc;
+
+  //! Set to true if the user supplied their own definition of the norm through the parameter list using a NOX::Parameter::UserNorm derived class.
+  bool userDefinedNorm;
+
+  //! Set to true if the user supplied their own definition of the merit function through the parameter list using a NOX::Parameter::MeritFunction derived class.
+  bool userDefinedMeritFunction;
+
+  //! Stores a user defined norm.
+  NOX::Parameter::UserNorm* userNormPtr;
+
+  //! Stores a user defined merit function.
+  NOX::Parameter::MeritFunction* meritFuncPtr;
 
 };
 } // namespace LineSearch

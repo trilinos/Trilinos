@@ -141,7 +141,6 @@ LINESEARCH_H = \
 	$(srcdir)/NOX_LineSearch_Backtrack.H \
 	$(srcdir)/NOX_LineSearch_Manager.H \
 	$(srcdir)/NOX_LineSearch_MoreThuente.H \
-	$(srcdir)/NOX_LineSearch_MoreThuente2.H \
 	$(srcdir)/NOX_LineSearch_Polynomial.H 
 
 LINESEARCH = \
@@ -152,7 +151,6 @@ LINESEARCH = \
 	$(srcdir)/NOX_LineSearch_Backtrack.C \
 	$(srcdir)/NOX_LineSearch_Manager.C \
 	$(srcdir)/NOX_LineSearch_MoreThuente.C \
-	$(srcdir)/NOX_LineSearch_MoreThuente2.C \
 	$(srcdir)/NOX_LineSearch_Polynomial.C 
 
 DIRECTION_H = \
@@ -200,7 +198,7 @@ STATUSTEST_H = \
 	$(srcdir)/NOX_StatusTest_Combo.H \
 	$(srcdir)/NOX_StatusTest_MaxIters.H \
         $(srcdir)/NOX_StatusTest_NormWRMS.H \
-        $(srcdir)/NOX_StatusTest_Stagnation.H
+        $(srcdir)/NOX_StatusTest_Stagnation.H 
 
 STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Generic.C \
@@ -209,7 +207,7 @@ STATUSTEST = \
 	$(srcdir)/NOX_StatusTest_Combo.C \
 	$(srcdir)/NOX_StatusTest_MaxIters.C \
         $(srcdir)/NOX_StatusTest_NormWRMS.C \
-        $(srcdir)/NOX_StatusTest_Stagnation.C
+        $(srcdir)/NOX_StatusTest_Stagnation.C 
 
 UTILS_H = \
 	$(srcdir)/NOX_Utils.H \

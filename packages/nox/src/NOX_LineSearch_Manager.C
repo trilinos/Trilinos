@@ -43,7 +43,6 @@
 #include "NOX_LineSearch_Backtrack.H"
 #include "NOX_LineSearch_Polynomial.H"
 #include "NOX_LineSearch_MoreThuente.H"
-#include "NOX_LineSearch_MoreThuente2.H"
 #ifdef WITH_PRERELEASE
 #include "NOX_LineSearch_NonlinearCG.H"
 #endif
@@ -83,8 +82,6 @@ bool NOX::LineSearch::Manager::reset(Parameter::List& params)
     ptr = new Polynomial(utils, params);
   else if (method == "More'-Thuente")
     ptr = new MoreThuente(utils, params);
-  else if (method == "More'-Thuente2")
-    ptr = new MoreThuente2(utils, params);
 #ifdef WITH_PRERELEASE
   else if (method == "NonlinearCG")
     ptr = new NonlinearCG(utils, params);

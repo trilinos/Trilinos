@@ -32,15 +32,17 @@
 
 #include "NOX_LineSearch_MoreThuente.H"	// class definition
 
-#include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_MeritFunction.H"
+#include "NOX_Parameter_UserNorm.H"
 #include "NOX_Utils.H"
 
 NOX::LineSearch::MoreThuente::MoreThuente(const NOX::Utils& u, Parameter::List& params) :
-  utils(u)
+  print(u),
+  paramsPtr(0)
 {
   reset(params);
 }
@@ -51,7 +53,8 @@ NOX::LineSearch::MoreThuente::~MoreThuente()
 
 bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
 { 
-  NOX::Parameter::List& p = params.sublist("More'-Thuente");
+  paramsPtr = &params;
+  NOX::Parameter::List& p = params.sublist("More'-Thuente2");
   ftol = p.getParameter("Sufficient Decrease", 1.0e-4);
   gtol = p.getParameter("Curvature Condition", 0.9999);
   xtol = p.getParameter("Interval Width", 1.0e-15);
@@ -74,6 +77,51 @@ bool NOX::LineSearch::MoreThuente::reset(Parameter::List& params)
     throw "NOX Error";
   }
 
+  counter.reset();
+
+  string choice = p.getParameter("Sufficient Decrease Condition", "Armijo-Goldstein");
+  if (choice == "Ared/Pred") 
+    suffDecrCond = AredPred;
+  else if (choice == "Armijo-Goldstein") 
+    suffDecrCond = ArmijoGoldstein;
+  else {
+    cout << "ERROR: NOX::LineSearch::MoreThuente::reset() - the choice of "
+	 << "\"Sufficient Decrease Condition\" is invalid." << endl;
+    throw "NOX Error";
+  }
+
+  choice = p.getParameter("Recovery Step Type", "Constant");
+  if (choice == "Constant")
+    recoveryStepType = Constant;
+  else if (choice == "Last Computed Step") {
+    recoveryStepType = LastComputedStep;
+  }
+  else {
+    cout << "NOX::LineSearch::MoreThuente::reset - Invalid "
+	 << "\"Recovery Step Type\"" << endl;
+    throw "NOX Error";
+  }
+
+  useOptimizedSlopeCalc = p.getParameter("Optimize Slope Calculation", false);
+
+  // Check for a user supplied norm
+  userDefinedNorm = false;
+  userNormPtr = 0;
+  if (p.isParameterArbitrary("User Defined Norm")) {
+    userNormPtr = const_cast<NOX::Parameter::UserNorm*>(dynamic_cast<const NOX::Parameter::UserNorm*>(&(p.getArbitraryParameter("User Defined Norm"))));
+    if (userNormPtr != 0)
+      userDefinedNorm = true;
+  }
+
+  // Check for a user supplied merit function
+  userDefinedMeritFunction = false;
+  meritFuncPtr = 0;
+  if (p.isParameterArbitrary("Merit Function")) {
+    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(dynamic_cast<const NOX::Parameter::MeritFunction*>(&(p.getArbitraryParameter("Merit Function"))));  
+    if (meritFuncPtr != 0)
+      userDefinedMeritFunction = true;
+  }
+
   return true;
 }
 
@@ -82,15 +130,22 @@ bool NOX::LineSearch::MoreThuente::compute(Abstract::Group& grp, double& step,
 			  const Abstract::Vector& dir,
 			  const Solver::Generic& s) 
 {
+  counter.incrementNumLineSearches();
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
-  int info = cvsrch(grp, step, oldGrp, dir);
+  int info = cvsrch(grp, step, oldGrp, dir, s);
+
+  if (step != 1.0)
+    counter.incrementNumNonTrivialLineSearches();    
+
+  counter.setValues(*paramsPtr);
+
   return (info == 1);
 }
 
 int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp, 
-			const Abstract::Group& oldgrp, const Abstract::Vector& dir)
+			const Abstract::Group& oldgrp, const Abstract::Vector& dir, const Solver::Generic& s)
 {
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  if (print.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
   {
    cout << "\n" << NOX::Utils::fill(72) << "\n" << "-- More'-Thuente Line Search -- \n";
   }
@@ -103,16 +158,19 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
-
-  double dginit(0.0);
-  if ( oldgrp.isJacobian() )
-    dginit = slope.computeSlope(dir, oldgrp);
-  else
-    dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
+  double dginit = 0.0;
+  if (userDefinedMeritFunction)
+    dginit = meritFuncPtr->computeSlope(dir, oldgrp);
+  else {
+    if (useOptimizedSlopeCalc)
+      dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
+    else
+      dginit = slope.computeSlope(dir, oldgrp);
+  }
 
   if (dginit >= 0.0) 
   {
-    if (utils.isPrintProcessAndType(NOX::Utils::Warning)) 
+    if (print.isPrintProcessAndType(NOX::Utils::Warning)) 
     {
       cout << "NOX::LineSearch::MoreThuente::cvsrch - Non-descent direction (dginit = " << dginit << ")" << endl;
     }
@@ -126,10 +184,16 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   bool brackt = false;		// has the soln been bracketed?
   bool stage1 = true;		// are we in stage 1?
   int nfev = 0;			// number of function evaluations
-  double finit = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); // initial function value
   double dgtest = ftol * dginit; // f for curvature condition
   double width = stpmax - stpmin; // interval width
   double width1 = 2 * width;	// ???
+
+  // initial function value
+  double finit = 0.0;
+  if (userDefinedMeritFunction)
+    finit = meritFuncPtr->computef(oldgrp);
+  else
+    finit = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); 
 
   // The variables stx, fx, dgx contain the values of the step,
   // function, and directional derivative at the best step.  The
@@ -144,6 +208,14 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
   double sty = 0.0;
   double fy = finit;
   double dgy = dginit;
+
+  // Get the linear solve tolerance for adjustable forcing term
+  const NOX::Parameter::List& p = s.getParameterList();
+  double eta_original = 0.0;
+  double eta = 0.0;
+  eta_original = p.sublist("Direction").sublist("Newton").sublist("Linear Solver").getParameter("Tolerance", -1.0);
+  eta = eta_original;
+  
 
   // Start of iteration.
 
@@ -194,32 +266,52 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
       throw "NOX Error";
     }
 
-    double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
+    double f = 0.0;
+    if (userDefinedMeritFunction)
+      f = meritFuncPtr->computef(newgrp);
+    else
+      f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
 
-    rtype = newgrp.computeJacobian();
-    if (rtype != NOX::Abstract::Group::Ok) 
-    {
-      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
-      throw "NOX Error";
-    }
+    if (!useOptimizedSlopeCalc) {
 
-    rtype = newgrp.computeGradient();
-    if (rtype != NOX::Abstract::Group::Ok) 
-    {
-      cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
-      throw "NOX Error";
+      rtype = newgrp.computeJacobian();
+      if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Jacobian" << endl;
+	  throw "NOX Error";
+	}
+
+      rtype = newgrp.computeGradient();
+      if (rtype != NOX::Abstract::Group::Ok) 
+	{
+	  cerr << "NOX::LineSearch::MoreThuente::cvrch - Unable to compute Gradient" << endl;
+	  throw "NOX Error";
+	}
     }
 
     nfev ++;
     string message = "";
 
-    double dg(0.0);
-    if ( oldgrp.isJacobian() )
-      dg = slope.computeSlope(dir, newgrp);
-    else
-      dg = slope.computeSlopeWithOutJac(dir, newgrp);
+    double dg = 0.0;
+    if (userDefinedMeritFunction) {
+      dg = meritFuncPtr->computeSlope(dir, newgrp);
+    }
+    else {
+      if (useOptimizedSlopeCalc)
+	dg = slope.computeSlopeWithOutJac(dir, newgrp);
+      else 
+	dg = slope.computeSlope(dir, newgrp);
+    }
 
+    // Armijo-Goldstein sufficient decrease
     double ftest1 = finit + stp * dgtest;
+
+    // Ared/Pred suffiecient decrease (could use a user defined norm)
+    double ftest2 = 0.0;
+    if (userDefinedNorm)
+      ftest2 = userNormPtr->norm(oldgrp.getF()) * (1.0 - ftol * (1.0 - eta));
+    else 
+      ftest2 = oldgrp.getNormF() * (1.0 - ftol * (1.0 - eta));
 
     // Test for convergence.
 
@@ -242,20 +334,39 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     //cout << "f=" << f << " ftest1=" << ftest1 << " fabs(dg)=" << fabs(dg) 
     //	 << " gtol*(-dginit)=" << gtol*(-dginit) << endl;
 
-    if ((f <= ftest1) && (fabs(dg) <= gtol*(-dginit))) 
+    // RPP sufficient decrease test can be different
+    bool sufficientDecreaseTest = false;
+    if (suffDecrCond == ArmijoGoldstein)
+      sufficientDecreaseTest = (f <= ftest1);  // Armijo-Golstein
+    else {
+      double ap_normF = 0.0;
+      if (userDefinedNorm)
+	ap_normF = userNormPtr->norm(newgrp.getF());
+      else
+	ap_normF = newgrp.getNormF();
+
+      sufficientDecreaseTest = (ap_normF <= ftest2); // Ared/Pred
+    }
+
+    if ((sufficientDecreaseTest) && (fabs(dg) <= gtol*(-dginit))) 
       info = 1;			// Success!!!!
 
     if (info != 0) 		// Line search is done
     {
       if (info != 1) 		// Line search failed 
       {
-	stp = recoverystep;
+	// RPP add
+	counter.incrementNumFailedLineSearches();
+	
+	if (recoveryStepType == Constant)
+	  stp = recoverystep;
+
 	newgrp.computeX(oldgrp, dir, stp);
 	
 	message = "(USING RECOVERY STEP!)";
 	
 	/*
-	if (utils.isPrintProcessAndType(Utils::Details))
+	if (print.isPrintProcessAndType(Utils::Details))
 	  message += "[Failure info flag = " + info + "]";
 	*/
 	    
@@ -265,15 +376,17 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
 	message = "(STEP ACCEPTED!)";
       }
       
-      utils.printStep(nfev, stp, finit, f, message);
+      print.printStep(nfev, stp, finit, f, message);
 
       // Returning the line search flag
       return info;
 
     } // info != 0
     
-    utils.printStep(nfev, stp, finit, f, message);
+    print.printStep(nfev, stp, finit, f, message);
 
+    // RPP add
+    counter.incrementNumIterations();
 
     // In the first stage we seek a step for which the modified
     // function has a nonpositive value and nonnegative derivative.
@@ -337,6 +450,7 @@ int NOX::LineSearch::MoreThuente::cvsrch(Abstract::Group& newgrp, double& stp,
     }
 
   } // while-loop
+
 }
 
 
@@ -556,7 +670,5 @@ double NOX::LineSearch::MoreThuente::absmax(double a, double b, double c)
   else
     return (b > c) ? b : c;
 }
-
-
 
 
