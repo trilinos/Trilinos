@@ -739,6 +739,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 #endif
     break;
 
+#ifdef HAVE_ML_JOSTLE
   case ML_USEJOSTLE:
     if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
       printf("Repartitioning using jostle\n");
@@ -822,6 +823,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     if (request != NULL) ML_free(request);
 
     break;
+#endif
 /* -------------------------------------- */
   default:
     printf("ML_partitionBlocksNodes: Unknown partitioner requested %d\n",
