@@ -29,6 +29,7 @@
 #ifndef KOKKOS_CISMATRIX_H
 #define KOKKOS_CISMATRIX_H
 
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace Kokkos {
 

@@ -28,6 +28,8 @@
 
 #ifndef KOKKOS_HBMATRIX_H
 #define KOKKOS_HBMATRIX_H
+
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CisMatrix.hpp"
 
 namespace Kokkos {

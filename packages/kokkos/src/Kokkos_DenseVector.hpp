@@ -28,6 +28,8 @@
 
 #ifndef KOKKOS_DENSEVECTOR_H
 #define KOKKOS_DENSEVECTOR_H
+
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_Vector.hpp"
 
 

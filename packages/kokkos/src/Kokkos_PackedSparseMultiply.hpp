@@ -29,6 +29,7 @@
 #ifndef KOKKOS_PACKEDSPARSEMULTIPLY_H
 #define KOKKOS_PACKEDSPARSEMULTIPLY_H
 
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CisMatrix.hpp" 
 #include "Kokkos_SparseOperation.hpp" 
 

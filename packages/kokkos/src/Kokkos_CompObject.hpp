@@ -28,6 +28,8 @@
 
 #ifndef KOKKOS_COMPOBJECT_H
 #define KOKKOS_COMPOBJECT_H
+
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_Flops.hpp"
 
 namespace Kokkos {

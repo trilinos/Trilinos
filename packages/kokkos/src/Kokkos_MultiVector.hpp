@@ -29,6 +29,7 @@
 #ifndef KOKKOS_MULTIVECTOR_H
 #define KOKKOS_MULTIVECTOR_H
 
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace Kokkos {
 

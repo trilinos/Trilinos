@@ -34,6 +34,7 @@
 # ------------------------------------------------------------------------
 
 CORE_H = \
+	$(srcdir)/Kokkos_ConfigDefs.hpp \
 	$(srcdir)/Kokkos_BaseSparseMultiply.hpp \
      $(srcdir)/Kokkos_BaseSparseSolve.hpp \
 	$(srcdir)/Kokkos_CisMatrix.hpp \

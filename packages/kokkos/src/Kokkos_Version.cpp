@@ -1,5 +1,5 @@
 //Eventually we will want to add Kokkos_ConfigDefs.hpp
-//#include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace Kokkos {
 

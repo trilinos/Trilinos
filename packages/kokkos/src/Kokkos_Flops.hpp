@@ -30,6 +30,8 @@
 #ifndef KOKKOS_FLOPS_H
 #define KOKKOS_FLOPS_H
 
+#include "Kokkos_ConfigDefs.hpp"
+
 namespace Kokkos {
 
 //! Kokkos::Flops:  The Kokkos Floating Point Operations Class.

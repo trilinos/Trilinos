@@ -29,6 +29,7 @@
 #ifndef KOKKOS_SPARSEOPERATION_H
 #define KOKKOS_SPARSEOPERATION_H
 
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_CompObject.hpp"
 
 namespace Kokkos {

@@ -28,6 +28,8 @@
 
 #ifndef KOKKOS_DENSEMULTIVECTOR_H
 #define KOKKOS_DENSEMULTIVECTOR_H
+
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_MultiVector.hpp"
 
 namespace Kokkos {

@@ -29,6 +29,7 @@
 #ifndef KOKKOS_BASESPARSESOLVE_H
 #define KOKKOS_BASESPARSESOLVE_H
 
+#include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_SparseOperation.hpp" 
 
 

@@ -29,6 +29,7 @@
 #ifndef KOKKOS_VECTOR_H
 #define KOKKOS_VECTOR_H
 
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace Kokkos {
 

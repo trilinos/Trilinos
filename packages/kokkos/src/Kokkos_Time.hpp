@@ -29,14 +29,7 @@
 #ifndef KOKKOS_TIME_H
 #define KOKKOS_TIME_H
 
-#ifdef ICL
-#include <time.h>
-#else
-#include <sys/time.h>
-#ifndef MINGW
-#include <sys/resource.h>
-#endif
-#endif
+#include "Kokkos_ConfigDefs.hpp"
 
 namespace Kokkos {
 

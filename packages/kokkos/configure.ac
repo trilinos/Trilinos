@@ -82,11 +82,11 @@ AC_CANONICAL_TARGET
 # Use automake
 
 #  Required version of automake.
-AM_INIT_AUTOMAKE(1.6.3)
+AM_INIT_AUTOMAKE(1.8.2)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.57)
+AC_PREREQ(2.59)
 
 # ------------------------------------------------------------------------
 # Checks for programs
@@ -130,9 +130,14 @@ TAC_ARG_CHECK_MPI
 # ------------------------------------------------------------------------
 
 AC_CHECK_HEADERS([ctime sys/time.h time.h sys/resource.h],,,)
+AC_CHECK_HEADERS([string string.h],,,)
 
-if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes" && test "X$ac_cv_header_sys_resource_h != "Xyes""; then
-  AC_MSG_ERROR([[Cannot find ctime, sys/time.h, time.h, or sys/resource.h.  Kokkos requires at least one of these files.]])
+if test "X$ac_cv_header_ctime" != "Xyes" && test "X$ac_cv_header_sys_time_h" != "Xyes" && test "X$ac_cv_header_time_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find ctime, sys/time.h, or time.h.  Kokkos requires at least one of these files.]])
+fi
+
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  Kokkos requires at least one or the other.]])
 fi
 
 # Checks for typedefs, structures, and compiler characteristics.
