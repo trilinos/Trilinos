@@ -302,7 +302,7 @@ int ML_Smoother_Set_Label( ML_Smoother *smoo, char *label)
    smoo->label = (char *) ML_allocate(size*sizeof(char));
    if (smoo->label == NULL) 
       pr_error("Not enough space in ML_Smoother_Set_Label\n");
-   strncpy(smoo->label,label,size);
+   strncpy(smoo->label,label,(size_t) size);
    return(1);
 }
 
@@ -1972,7 +1972,7 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
   /*unsigned int   itmp=0;*/
   int info, one = 1;
   int nblocks, **perms, blocksize, i, *blocklengths, index;
-  double **blockdata, *dtemp;
+  double **blockdata, *dtemp = NULL;
   char N[2];
   int k;
   int maxBlocksize, *aggr_offset, *aggr_group, Nrows;
@@ -4477,7 +4477,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
       msgtype = mtype;   
       length  = ML_CommInfoOP_Get_Nrcvlist(comm_info, proc_id);
       nbytes  = sizeof(int) * length;
-      comm->USR_irecvbytes((void *) &((*recv_leng)[offset]), nbytes, 
+      comm->USR_irecvbytes((void *) &((*recv_leng)[offset]), (unsigned int) nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
    }
@@ -4504,7 +4504,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
       }
       msgtype = mtype;   
       nbytes  = sizeof(int) * length;
-      comm->USR_sendbytes((void*) temp_list, nbytes, proc_id, msgtype, 
+      comm->USR_sendbytes((void*) temp_list, (unsigned int) nbytes, proc_id, msgtype, 
                           comm->USR_comm);
       ML_free( temp_list );
    }
@@ -4522,7 +4522,7 @@ int ML_Smoother_GetRowLengths(ML_CommInfoOP *comm_info, ML_Comm *comm,
       msgtype = mtype;   
       length  = ML_CommInfoOP_Get_Nrcvlist(comm_info, proc_id);
       nbytes  = sizeof(int) * length;
-      comm->USR_cheapwaitbytes((void *) &((*recv_leng)[offset]), nbytes, &proc_id, 
+      comm->USR_cheapwaitbytes((void *) &((*recv_leng)[offset]), (unsigned int) nbytes, &proc_id, 
                           &msgtype, comm->USR_comm, request+i);
       offset += length;
    }
@@ -4584,7 +4584,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
 
       nbytes  = sizeof(double) * nnz;
-      comm->USR_irecvbytes((void *) &((*dble_buf)[nnz_offset]), nbytes, 
+      comm->USR_irecvbytes((void *) &((*dble_buf)[nnz_offset]), (unsigned int) nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
@@ -4620,7 +4620,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       }
       msgtype = mtype;   
       nbytes  = sizeof(double) * nnz;
-      comm->USR_sendbytes((void*) send_buf, nbytes, proc_id, msgtype, 
+      comm->USR_sendbytes((void*) send_buf, (unsigned int) nbytes, proc_id, msgtype, 
                           comm->USR_comm);
       ML_free( temp_list );
       ML_free( send_buf );
@@ -4642,7 +4642,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz = 0;
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
       nbytes  = sizeof(double) * nnz;
-      comm->USR_cheapwaitbytes((void *) &((*dble_buf)[nnz_offset]), nbytes, 
+      comm->USR_cheapwaitbytes((void *) &((*dble_buf)[nnz_offset]), (unsigned int) nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
@@ -4664,7 +4664,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz = 0;
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
       nbytes  = sizeof(int) * nnz;
-      comm->USR_irecvbytes((void *) &((*int_buf)[nnz_offset]), nbytes, 
+      comm->USR_irecvbytes((void *) &((*int_buf)[nnz_offset]), (unsigned int) nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
@@ -4704,7 +4704,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       }
       msgtype = mtype;   
       nbytes  = sizeof(int) * nnz;
-      comm->USR_sendbytes((void*) isend_buf, nbytes, proc_id, msgtype, 
+      comm->USR_sendbytes((void*) isend_buf, (unsigned int) nbytes, proc_id, msgtype, 
                           comm->USR_comm);
       ML_free( temp_list );
       ML_free( isend_buf );
@@ -4726,7 +4726,7 @@ int ML_Smoother_GetOffProcRows(ML_CommInfoOP *comm_info, ML_Comm *comm,
       nnz = 0;
       for (j = 0; j < length; j++)  nnz += recv_leng[offset+j];
       nbytes  = sizeof(int) * nnz;
-      comm->USR_cheapwaitbytes((void *) &((*int_buf)[nnz_offset]), nbytes, 
+      comm->USR_cheapwaitbytes((void *) &((*int_buf)[nnz_offset]), (unsigned int) nbytes, 
  		   &proc_id, &msgtype, comm->USR_comm, request+i);
       offset += length;
       nnz_offset += nnz;
@@ -7973,8 +7973,7 @@ int ML_Smoother_ApplySubdomainOverlap(ML_Smoother *sm, int inlen,double x[],
   ML *sub_ml;
   ML_Operator *Afine;
 
-  ML_Operator *newA;
-  int i, j, nn;
+  int i, nn;
   double *res, *res_over, *x_over;
   ML_CommInfoOP *nonOverlapped_2_Overlapped;
 

@@ -669,7 +669,7 @@ int ML_Operator_Set_Label( ML_Operator *mat, char *label)
    size = strlen(label) + 1;
    mat->label = (char *) ML_allocate(size*sizeof(char));
    if (mat->label == NULL) pr_error("Not enough space in ML_Operator_Set_Label\n");
-   strncpy(mat->label,label,size);
+   strncpy(mat->label,label,(size_t) size);
    return(1);
 }
 
@@ -722,7 +722,7 @@ int ML_Operator_Print(ML_Operator *matrix, const char label[])
 int ML_Operator_ComputeNumNzs(ML_Operator *matrix)
 {
 
-   int    i, j;
+   int    i;
    int    *bindx;
    double *val;
    int    allocated, row_length, Nnz = 0;

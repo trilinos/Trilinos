@@ -88,11 +88,11 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
    com->send_cur = 0;
    com->send_cnt = count;
    nbytes        = ( count + 1 ) * sizeof(int);
-   ML_memory_alloc( (void**) &(com->send_ia), nbytes, "CB1" );
+   ML_memory_alloc( (void**) &(com->send_ia), (unsigned int) nbytes, "CB1" );
    if ( count > 0 )
    {
       nbytes = count * sizeof(int);
-      ML_memory_alloc( (void**) &(com->send_proc), nbytes, "CB2" );
+      ML_memory_alloc( (void**) &(com->send_proc), (unsigned int) nbytes, "CB2" );
    }
    else
    {
@@ -101,7 +101,7 @@ int ML_CommInfoAGX_Setup_Send(ML_CommInfoAGX *com, int count, int count2)
    if ( count2 > 0 )
    {
       nbytes = count2 * sizeof(ml_big_int);
-      ML_memory_alloc( (void**) &(com->send_list), nbytes, "CB3" );
+      ML_memory_alloc( (void**) &(com->send_list), (unsigned int) nbytes, "CB3" );
    }
    else
    {
@@ -168,11 +168,11 @@ int ML_CommInfoAGX_Setup_Recv(ML_CommInfoAGX *com, int count, int count2)
    com->recv_cur = 0;
    com->recv_cnt = count;
    nbytes        = ( count + 1 ) * sizeof(int);
-   ML_memory_alloc( (void **) &(com->recv_ia), nbytes, "CB4" );
+   ML_memory_alloc( (void **) &(com->recv_ia), (unsigned int) nbytes, "CB4" );
    if ( count > 0 )
    {
       nbytes = count * sizeof(int);
-      ML_memory_alloc( (void **) &(com->recv_proc), nbytes, "CB5" );
+      ML_memory_alloc( (void **) &(com->recv_proc), (unsigned int) nbytes, "CB5" );
    }
    else
    {
@@ -181,9 +181,9 @@ int ML_CommInfoAGX_Setup_Recv(ML_CommInfoAGX *com, int count, int count2)
    if ( count2 > 0 )
    {
       nbytes = count2 * sizeof(ml_big_int);
-      ML_memory_alloc( (void **) &(com->recv_list), nbytes, "CB6" );
+      ML_memory_alloc( (void **) &(com->recv_list), (unsigned int) nbytes, "CB6" );
       nbytes = 3 * count2 * sizeof(double);
-      ML_memory_alloc( (void **) &(com->recv_xyz), nbytes, "CB7" );
+      ML_memory_alloc( (void **) &(com->recv_xyz), (unsigned int) nbytes, "CB7" );
    }
    else
    {

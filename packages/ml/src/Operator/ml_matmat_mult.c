@@ -46,7 +46,9 @@ void ML_matmat_mult(ML_Operator *Amatrix, ML_Operator *Bmatrix,
    */
    int tcols, hash_used, j, *tptr;
    int *acc_col_ptr, *Bcol_ptr; double *acc_val_ptr, *Bval_ptr;
+#ifdef ML_LOWMEMORY
    int allzeros;
+#endif
    /*
    t1 = GetClock();
    */

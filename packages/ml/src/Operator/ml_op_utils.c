@@ -1463,8 +1463,7 @@ int ML_build_overlapped_pre_comm(ML_Operator *tempA, ML_CommInfoOP
 				 int *Nexternal, int *external[],
 				 int *Nexternal_allocated)
 {
-  int    i, j, k, NGhost, Nneighbors, *neighbors, Nrcv, *rlist, index;
-  double *global_ids;
+  int    i, j, k, NGhost, index;
   int allocated = 0, *column = NULL, row_length, current, proc_id;
   double *val = NULL;
   int    oldNexternal, *temp;
@@ -2297,7 +2296,7 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
   int i;
   int NumMyRows;
   int m,nc,nr,maxdim,ltit;
-  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz;
+  double lrmrgn,botmrgn,xtit,ytit,ytitof,fnstit,siz = 1;
   double xl,xr, yb,yt, scfct,u2dot,frlw,delt,paperx,xx,yy;
   int square = ML_FALSE;
   /*change square to .true. if you prefer a square frame around
@@ -2325,7 +2324,7 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
   int NumProc;
   int grow;
   int gcol;
-  int nlines;
+  int nlines = -1;
   int* row_lines = NULL;
   int* col_lines = NULL;
   int* itmp = NULL;

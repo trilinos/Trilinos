@@ -248,7 +248,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_irecvbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -266,7 +266,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
    {
       leng = send_leng[i] * sizeof(double) * step;
       pid  = send_proc[i];
-      comm->USR_sendbytes((void*)&(send_buf[icnt]), leng, pid, mtype, 
+      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype, 
                           comm->USR_comm );
       icnt += (send_leng[i] * step);
    }
@@ -307,7 +307,7 @@ int ML_OperatorAGX_Restrict(ML_Operator *vop, int inlen, double *din, int outlen
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -450,7 +450,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_irecvbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_irecvbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -468,7 +468,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
    {
       leng = send_leng[i] * sizeof(double) * step;
       pid  = send_proc[i];
-      comm->USR_sendbytes((void*)&(send_buf[icnt]), leng, pid, mtype, 
+      comm->USR_sendbytes((void*)&(send_buf[icnt]), (unsigned int) leng, pid, mtype, 
                           comm->USR_comm );
       icnt += (send_leng[i] * step);
    }
@@ -506,7 +506,7 @@ int ML_OperatorAGX_Prolongate(ML_Operator *vop, int inlen, double *din,
       leng  = (recv_leng[i+1] - recv_leng[i]) * sizeof(double) * step;
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
-      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
+      comm->USR_cheapwaitbytes((void*) &(recv_buf[index]), (unsigned int) leng, &pid, &mtype, 
 #ifdef ML_CPP
                            comm->USR_comm, &Request[i]);
 #else
@@ -794,13 +794,13 @@ int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows,
       /* allocate memory for column matrix                         */
       /* --------------------------------------------------------- */
       nbytes = ( fnodes + 1 ) * sizeof(int);
-      ML_memory_alloc( (void**) &(local_op->ext_ja), nbytes, "ot2" );
+      ML_memory_alloc( (void**) &(local_op->ext_ja), (unsigned int) nbytes, "ot2" );
       if ( Nremote > 0 ) ncount = local_ia[Nlocal] + remote_ia[Nremote];
       else               ncount = local_ia[Nlocal];
       nbytes = ncount * sizeof(int);
-      ML_memory_alloc( (void**) &(local_op->ext_ia), nbytes, "ot3" );
+      ML_memory_alloc( (void**) &(local_op->ext_ia), (unsigned int) nbytes, "ot3" );
       nbytes = ncount * sizeof(double);
-      ML_memory_alloc( (void**) &(local_op->ext_a), nbytes, "ot4" );
+      ML_memory_alloc( (void**) &(local_op->ext_a), (unsigned int) nbytes, "ot4" );
 
       /* --------------------------------------------------------- */
       /* fill in the matrix                                        */

@@ -1279,7 +1279,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   length = 0;
   for (i = 0; i < num_send_neighbors; i++) {
     partner = -1;
-    comm->USR_cheapwaitbytes((void *) external, length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) external, (unsigned int) length, &partner, &type, 
                         comm->USR_comm, request+i);
     if (partner != -1) neighbors[num_recv_neighbors++] = partner;
   }
@@ -1335,7 +1335,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = sizeof(int);
     partner    = neighbors[i];
-    comm->USR_cheapwaitbytes((void *) &(send_lengths[i]), length, 
+    comm->USR_cheapwaitbytes((void *) &(send_lengths[i]), (unsigned int) length, 
                  &partner, &type, comm->USR_comm, request+i);
   }
 
@@ -1366,7 +1366,7 @@ void ML_CommInfoOP_GenUsingGIDExternals(int N_external, int external[],
   for (i = 0; i < num_recv_neighbors; i++) {
     length     = send_lengths[i] * sizeof(int);
     partner    = neighbors[i];
-    comm->USR_cheapwaitbytes((void *) &(send2_ptr[start]), length, &partner, &type, 
+    comm->USR_cheapwaitbytes((void *) &(send2_ptr[start]), (unsigned int) length, &partner, &type, 
                         comm->USR_comm, request+i);
     start += send_lengths[i];
   }
