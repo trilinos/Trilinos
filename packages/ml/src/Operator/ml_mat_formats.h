@@ -13,7 +13,6 @@
 #ifndef _MLMATFORMATS_
 #define _MLMATFORMATS_
 
-#include "ml_operator.h"
 
 /* ******************************************************************** */
 /* Structure used for ML_MSR_getrows and ML_CSR_getrows                 */
@@ -39,6 +38,7 @@ struct ML_vbrdata
    int    *bindx, *bpntr, *cpntr, *rpntr, *indx;
    double *val;
 };
+#include "ml_comminfoop.h"
 
 typedef struct ML_Matrix_DCSR_Struct
 {
@@ -51,6 +51,7 @@ typedef struct ML_Matrix_DCSR_Struct
 
 } ML_Matrix_DCSR;
 
+#include "ml_operator.h"
 
 #ifdef __cplusplus
 extern "C" {
