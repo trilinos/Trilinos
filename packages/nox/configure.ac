@@ -54,6 +54,10 @@ AC_CONFIG_AUX_DIR(config)
 
 AM_CONFIG_HEADER(src/NOX_Config.h:src/NOX_Config.h.in)
 
+# Define $build, $host, $target, etc
+
+AC_CANONICAL_TARGET
+
 # Use automake, getting name and version from variables defined by
 # AC_INIT command.
 
@@ -67,10 +71,6 @@ AC_PREREQ(2.52)
 # configure.
 
 AC_REVISION($Revision$)
-
-# define $target, etc
-
-AC_CANONICAL_SYSTEM
 
 # ------------------------------------------------------------------------
 # Configure command line options
