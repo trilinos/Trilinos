@@ -936,7 +936,7 @@ it
 
 } /* dlamc5_ */
 
-double pow_di(double *ap, int *bp)
+double pxw_di(double *ap, int *bp)
 {
     double pow, x;
     int n;
