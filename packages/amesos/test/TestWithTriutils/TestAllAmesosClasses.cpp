@@ -2,7 +2,7 @@
 #define HAVE_CONFIG_H
 #endif
 
-#include "Epetra_config.h"
+#include "Epetra_ConfigDefs.h"
 
 bool TestKLU         = true;
 bool TestUMFPACK     = true;
@@ -25,36 +25,7 @@ const int OutputLevel      = 2;
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
 
-
-#ifdef PACKAGE
-#undef PACKAGE
-#endif
-
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif
-
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif
-
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif
-
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif
-
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif
-
-#ifdef VERSION
-#undef VERSION
-#endif
-
-#include "Amesos_config.h"
+#include "Amesos_ConfigDefs.h"
 #include "Amesos.h"
 #include "Teuchos_ParameterList.hpp"
 
