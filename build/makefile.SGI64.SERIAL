@@ -5,7 +5,7 @@ include $(TRILINOS_HOME)/build/makefile.defaults
 # Define architecture specific flags for C++, C and Fortran
 
 ARCH_CXXFLAGS= -O -r10000 -64 -I/usr/include/CC -Dlint \
-              -LANG:std -DPETRA_ADDRESS64BIT -LANG:ansi-for-init-scope=ON -ptused
+              -LANG:std -DPETRA_ADDRESS64BIT -LANG:ansi-for-init-scope=ON # -ptused # correct template instant' may need this in future
 ARCH_CFLAGS= -O -r10000 -64 -I/usr/include -Dlint
 ARCH_FFLAGS= -O -r10000 -64 -Dlint
 ARCH_LDFLAGS= -O -r10000 -64 -LANG:std
