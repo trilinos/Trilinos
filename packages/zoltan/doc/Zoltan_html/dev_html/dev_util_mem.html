@@ -461,19 +461,19 @@ be used.
 <br>
 1 -- The number of calls to <a href="#LB_Malloc"><b>LB_Malloc</b></a> and 
 <a href="#LB_Free"><b>LB_Free</b></a>
-are tallied, and can be printed by a call to <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a>.&nbsp
+are tallied, and can be printed by a call to <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a>.
 <br>
 2 -- A list of
 all calls to <a href="#LB_Malloc"><b>LB_Malloc</b></a> which have 
-not yet been freed is kept.&nbspThis list
+not yet been freed is kept. This list
 is printed by <a href="#LB_Memory_Stats"><b>LB_Memory_Stats</b></a> 
-(useful for detecting memory leaks).&nbsp
+(useful for detecting memory leaks).
 Any calls to <a href="#LB_Free"><b>LB_Free</b></a> with addresses
-not in this list trigger warning messages.&nbsp(Note that allocations which
+not in this list trigger warning messages. (Note that allocations that
 occurred prior to setting the debug level to 2 will not be in this
 list and thus can generate spurious warnings.)
 <br>
-3 -- Information about each allocation is printed as it happens.&nbsp
+3 -- Information about each allocation is printed as it happens.
 </blockquote>
 </td>
 </tr>

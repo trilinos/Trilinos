@@ -34,19 +34,26 @@ wall clock.
 <blockquote><b><a href="#LB_Time">LB_Time</a></b>: Returns the time (in
 seconds) after some fixed reference point in time.
 <br><b><a href="#LB_Time_Resolution">LB_Time_Resolution</a></b>:&nbsp;
-The resolution of the specified timer.
-<p>Currently, the following timers are supported:</blockquote>
+The resolution of the specified timer.</blockquote>
+Currently, the following timers are supported:
+<ul>
+<li>
+<i>LB_TIME_WALL </i>: wall-clock time. <br>
+On most systems, this timer calls MPI_Wtime.</li>
 
-<blockquote><i>LB_TIME_WALL </i>: wall-clock time. On most systems, this
-timer calls MPI_Wtime.
-<br><i>LB_TIME_CPU&nbsp;</i> : cpu time.&nbsp; On most systems, this timer
+<li>
+<i>LB_TIME_CPU&nbsp;</i> : cpu time.<br>
+On most systems, this timer
 calls the ANSI C function clock(). Note that this timer may roll over at
 just 36 minutes. LB_Time attempts to keep track of the number of roll-overs
 but this feature will work only if LB_Time is called at least once during
-every period between roll-overs.</blockquote>
+every period between roll-overs.</li>
+</ul>
+
 Within Zoltan, it is recommended to select which timer to use by setting
 <a href="../ug_html/ug_alg.html#General_Parameters">the
-<i>TIMER</i> general parameter</a> via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
+<i>TIMER</i>
+general parameter</a> via <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>.
 The default value of <i>TIMER</i> is <i>wall</i>.&nbsp; Zoltan stores an
 integer representation of the selected timing method&nbsp; in <i>lb->Timer
 . </i>This value should be passed on to <b>LB_Time</b>, as in<i> </i><b>LB_Time</b>(<i>lb->Timer</i>).
@@ -69,8 +76,8 @@ time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>The timer type (e.g. wall or cpu) represented as an integer. See top
-of page for a list of valid values.</td>
+<td>The timer type (e.g. wall or cpu) represented as an integer. See <a href="#Timing">top
+of page</a> for a list of valid values.</td>
 </tr>
 
 <tr>
@@ -104,8 +111,8 @@ indicates an error.</td>
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp; <i>timer</i></td>
 
-<td>The timer type (e.g. wall or cpu) represented as an integer. See top
-of page for a list of valid values.</td>
+<td>The timer type (e.g. wall or cpu) represented as an integer. See <a href="#Timing">top
+of page</a> for a list of valid values.</td>
 </tr>
 
 <tr>

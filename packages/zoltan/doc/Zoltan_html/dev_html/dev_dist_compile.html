@@ -123,8 +123,15 @@ option requires that a Fortran 90 (or 95, or later) compiler is available.</td>
 </tr>
 </table>
 As an alternative to typing the options on the gmake command line, they
-may be set as environment variables; e.g.,
-<blockquote>&nbsp;setenv ZOLTAN_ARCH <i>&lt;platform></i></blockquote>
+may be set as environment variables; e.g., if you are using a C-shell (csh or tcsh),
+type
+<blockquote>
+setenv ZOLTAN_ARCH <i>&lt;platform></i>
+</blockquote>
+or if you are using a Bourne-type shell (e.g., sh or bash), type
+<blockquote>
+ZOLTAN_ARCH = <i>&lt;platform>; </i>export ZOLTAN_ARCH
+</blockquote>
 After compilation, the library <i>libzoltan.a</i>, the object files, and
 dependency files for platform <i>A</i> are stored in <i>Obj_A</i>.
 <p>
