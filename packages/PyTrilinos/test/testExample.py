@@ -67,7 +67,6 @@ def main():
     comm    = Epetra.SerialComm()
     myPID   = comm.MyPID()
     numProc = comm.NumProc()
-    #print "comm =", comm
 
     # Get the problem size from the command line
     if (len(sys.argv) > 2):
@@ -84,7 +83,6 @@ def main():
     problem = Problem(1.0, probSize, comm)
     soln = problem.getSolution()
     soln.PutScalar(1.0)
-    #print "soln =", soln
 
     # Create the top level parameter list
     nlParams     = NOX.Parameter.List()
@@ -98,13 +96,6 @@ def main():
     printParams.setParameter("Output Precision",   3    )
     printParams.setParameter("Output Processor",   0    )
     printParams.setParameter("Output Information", 0    )
-##     printParams.setParameter("Output Information", 
-##                              NOX.Parameter.Utils.Warning        +
-##                              NOX.Parameter.Utils.OuterIteration +
-##                              NOX.Parameter.Utils.InnerIteration +
-##                              NOX.Parameter.Utils.Parameters     +
-##                              NOX.Parameter.Utils.Details        +
-##                              NOX.Parameter.Utils.OuterIterationStatusTest);
 
     # Sublist for line search
     searchParams = nlParams.sublist("Line Search")
@@ -123,11 +114,8 @@ def main():
     lsParams.setParameter("Aztec Solver",     "GMRES"                   )
     lsParams.setParameter("Max Iterations",   800                       )
     lsParams.setParameter("Tolerance",        1e-4                      )
-    #lsParams.setParameter("Output Frequency", 50                        )
     lsParams.setParameter("Scaling",          "None"                    )
     lsParams.setParameter("Preconditioning",  "AztecOO: Jacobian Matrix")
-
-    #print "nlParams =\n", nlParams
 
     # Create the interface between the Problem and the NOX nonlinear solver
     interface = NOX_Epetra.PyInterface(problem)
@@ -139,10 +127,8 @@ def main():
     print "colorMap = {", colorMap, "\n}"
     colorMapIndex = EpetraExt.CrsGraph_MapColoringIndex(colorMap)
     columns       = colorMapIndex(problem.getGraph())
-    #print "columns = {\n", columns, "}"
 
     # Create the finite difference coloring object
-##    fdc = NOX_Epetra.FiniteDifference(interface,soln,problem.getGraph())
     fdc = NOX_Epetra.FiniteDifferenceColoring(interface, soln,    \
                                               problem.getGraph(), \
                                               colorMap, columns)
@@ -164,15 +150,11 @@ def main():
     combo     = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR)
     combo.addStatusTest(converged)
     combo.addStatusTest(maxiters)
-    #print "Convergence test =\n", combo
-    #sys.exit(0)
 
     # Create the method
-    #print >>sys.stderr, "About to instantiate solver"
     solver = NOX.Solver.Manager(group, combo, nlParams)
 
     # Solve the problem
-    #print >>sys.stderr, "About to solve problem"
     status = solver.solve()
 
     # Print the status test result

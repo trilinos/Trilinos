@@ -222,13 +222,6 @@ class EpetraMapTestCase(unittest.TestCase):
             self.assertEqual(self.map.MyGID(i), True           )
             self.assertEqual(self.map.MyLID(i), True           )
 
-## class EpetraCompObjectTestCase(unittest.TestCase):
-##     "TestCase class for ComObjects"
-
-##     def setUp(self):
-##         self.compObject = Epetra.CompObject()
-
-##     def test(self):
 
 class EpetraVectorTestCase(unittest.TestCase):
     "TestCase class for Vector objects"

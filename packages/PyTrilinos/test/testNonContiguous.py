@@ -93,25 +93,25 @@ pyArray3DNonCon     = swapaxes(pyArray3DCon,0,1)
 epetraVector3DNonCon  = Epetra.Vector(pbm, pyArray3DNonCon)
 print "epetraVector3DNonCon= \n", epetraVector3DNonCon
 
-length              = 24
-pbm = Epetra.BlockMap(length,1,0,comm)
+length = 24
+pbm    = Epetra.BlockMap(length,1,0,comm)
 
 # 4-D Contiguous:
 print "\n-- 4-D Contiguous ----------------------"
-pyArray4DCon        = arange(length, typecode=Float64)
-pyArray4DCon.shape  = (2,2,2,3)
-epetraVector4DCon    = Epetra.Vector(pbm, pyArray4DCon)
+pyArray4DCon       = arange(length, typecode=Float64)
+pyArray4DCon.shape = (2,2,2,3)
+epetraVector4DCon  = Epetra.Vector(pbm, pyArray4DCon)
 print "epetraVector4DCon   = \n", epetraVector4DCon
 
 # 4-D Non-Contiguous:
 print "\n-- 4-D Non-Contiguous ------------------"
-pyArray4DNonCon     = swapaxes(pyArray4DCon,0,3)
+pyArray4DNonCon      = swapaxes(pyArray4DCon,0,3)
 epetraVector4DNonCon = Epetra.Vector(pbm, pyArray4DNonCon)
 print "epetraVector4DNonCon= \n", epetraVector4DNonCon
 
 # 4-D Non-Contiguous Stride 1:
 print "\n-- 4-D Non-Contiguous Stride 1 ---------"
-pyArray4DNonCon     = swapaxes(pyArray4DCon,0,1)
+pyArray4DNonCon      = swapaxes(pyArray4DCon,0,1)
 epetraVector4DNonCon = Epetra.Vector(pbm, pyArray4DNonCon)
 print "epetraVector4DNonCon= \n", epetraVector4DNonCon
 
@@ -119,23 +119,23 @@ print "\n----------------------------------------"
 print   "-- Unload Tests ------------------------"
 print   "----------------------------------------"
 
-length  = 12
-pbm = Epetra.BlockMap(length,1,0,comm)
+length = 12
+pbm    = Epetra.BlockMap(length,1,0,comm)
 
 # 1-D Contiguous:
 print "\n-- 1-D Contiguous ----------------------"
-pyArray1DCon         = arange(length, typecode=Float64)
-pyArray1DCon.shape   = (length,)
-epetraVector1DCon    = Epetra.Vector(pbm, pyArray1DCon)
+pyArray1DCon       = arange(length, typecode=Float64)
+pyArray1DCon.shape = (length,)
+epetraVector1DCon  = Epetra.Vector(pbm, pyArray1DCon)
 epetraVector1DCon.Scale(3.0)
 print "epetraVector1DCon   = \n", epetraVector1DCon
 pyArray1DCon[:] = epetraVector1DCon
 
 # 2-D Contiguous:
 print "\n-- 2-D Contiguous ----------------------"
-pyArray2DCon         = arange(length, typecode=Float64)
-pyArray2DCon.shape   = (2,6)
-epetraVector2DCon    = Epetra.Vector(pbm, pyArray2DCon)
+pyArray2DCon       = arange(length, typecode=Float64)
+pyArray2DCon.shape = (2,6)
+epetraVector2DCon  = Epetra.Vector(pbm, pyArray2DCon)
 epetraVector2DCon.Scale(5.0)
 print "epetraVector2DCon   = \n", epetraVector2DCon
 pyArray2DCon[:] = epetraVector2DCon
@@ -152,9 +152,9 @@ pyArray2DNonCon[:] = epetraVector2DNonCon
 
 # 3-D Contiguous:
 print "\n-- 3-D Contiguous ----------------------"
-pyArray3DCon         = arange(length, typecode=Float64)
-pyArray3DCon.shape   = (2,2,3)
-epetraVector3DCon    = Epetra.Vector(pbm, pyArray3DCon)
+pyArray3DCon       = arange(length, typecode=Float64)
+pyArray3DCon.shape = (2,2,3)
+epetraVector3DCon  = Epetra.Vector(pbm, pyArray3DCon)
 epetraVector3DCon.Scale(11.0)
 print "epetraVector3DCon   = \n", epetraVector3DCon
 pyArray3DCon[:] = epetraVector3DCon
@@ -173,29 +173,29 @@ pyArray3DNonCon[:] = epetraVector3DNonCon
 print "\n-- 3-D Non-Contiguous Stride 1 ---------"
 pyArray3DCon         = arange(length, typecode=Float64)
 pyArray3DCon.shape   = (2,2,3)
-pyArray3DNonCon     = swapaxes(pyArray3DCon,0,1)
-epetraVector3DNonCon  = Epetra.Vector(pbm, pyArray3DNonCon)
+pyArray3DNonCon      = swapaxes(pyArray3DCon,0,1)
+epetraVector3DNonCon = Epetra.Vector(pbm, pyArray3DNonCon)
 epetraVector3DNonCon.Scale(17.0)
 print "epetraVector3DNonCon= \n", epetraVector3DNonCon
 pyArray3DNonCon[:] = epetraVector3DNonCon
 
-length              = 24
-pbm = Epetra.BlockMap(length,1,0,comm)
+length = 24
+pbm    = Epetra.BlockMap(length,1,0,comm)
 
 # 4-D Contiguous:
 print "\n-- 4-D Contiguous ----------------------"
-pyArray4DCon        = arange(length, typecode=Float64)
-pyArray4DCon.shape  = (2,2,2,3)
-epetraVector4DCon    = Epetra.Vector(pbm, pyArray4DCon)
+pyArray4DCon       = arange(length, typecode=Float64)
+pyArray4DCon.shape = (2,2,2,3)
+epetraVector4DCon  = Epetra.Vector(pbm, pyArray4DCon)
 epetraVector4DCon.Scale(19.0)
 print "epetraVector4DCon   = \n", epetraVector4DCon
 pyArray4DCon[:] = epetraVector4DCon
 
 # 4-D Non-Contiguous:
 print "\n-- 4-D Non-Contiguous ------------------"
-pyArray4DCon        = arange(length, typecode=Float64)
-pyArray4DCon.shape  = (2,2,2,3)
-pyArray4DNonCon     = swapaxes(pyArray4DCon,0,3)
+pyArray4DCon         = arange(length, typecode=Float64)
+pyArray4DCon.shape   = (2,2,2,3)
+pyArray4DNonCon      = swapaxes(pyArray4DCon,0,3)
 epetraVector4DNonCon = Epetra.Vector(pbm, pyArray4DNonCon)
 epetraVector4DNonCon.Scale(23.0)
 print "epetraVector4DNonCon= \n", epetraVector4DNonCon
@@ -203,9 +203,9 @@ pyArray4DNonCon[:] = epetraVector4DNonCon
 
 # 4-D Non-Contiguous Stride 1:
 print "\n-- 4-D Non-Contiguous Stride 1 ---------"
-pyArray4DCon        = arange(length, typecode=Float64)
-pyArray4DCon.shape  = (2,2,2,3)
-pyArray4DNonCon     = swapaxes(pyArray4DCon,0,1)
+pyArray4DCon         = arange(length, typecode=Float64)
+pyArray4DCon.shape   = (2,2,2,3)
+pyArray4DNonCon      = swapaxes(pyArray4DCon,0,1)
 epetraVector4DNonCon = Epetra.Vector(pbm, pyArray4DNonCon)
 epetraVector4DNonCon.Scale(27.0)
 print "epetraVector4DNonCon= \n", epetraVector4DNonCon
