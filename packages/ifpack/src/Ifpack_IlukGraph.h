@@ -105,13 +105,13 @@ class Ifpack_IlukGraph {
   //! Returns the graph of lower triangle of the ILU(k) graph as a Epetra_CrsGraph.
   virtual Epetra_CrsGraph & L_Graph() {return(*L_Graph_);};
   
-  //! Returns the graph of upprt triangle of the ILU(k) graph as a Epetra_CrsGraph.
+  //! Returns the graph of upper triangle of the ILU(k) graph as a Epetra_CrsGraph.
   virtual Epetra_CrsGraph & U_Graph() {return(*U_Graph_);};
   
   //! Returns the graph of lower triangle of the ILU(k) graph as a Epetra_CrsGraph.
   virtual Epetra_CrsGraph & L_Graph() const {return(*L_Graph_);};
   
-  //! Returns the graph of upprt triangle of the ILU(k) graph as a Epetra_CrsGraph.
+  //! Returns the graph of upper triangle of the ILU(k) graph as a Epetra_CrsGraph.
   virtual Epetra_CrsGraph & U_Graph() const {return(*U_Graph_);};
   
   //! Returns the importer used to create the overlapped graph.
@@ -154,19 +154,6 @@ class Ifpack_IlukGraph {
   int NumMyNonzeros_;
   
 
-#ifdef PETRA_LEVELSCHEDULING
- public:
-  //! Build level scheduling information for triangular matrix, upper and lower.
-  /*! Computes level scheduling information for the triangular graphs.
-
-    \param In
-           NumThreads - The number of threads intended for parallel execution.  Each level will be
-                     partitioned so that each thread will get roughly the same number of nonzero
-		     terms at each level and thus perform approximately the same amount of work.
-  */
-  int ComputeLevels(int NumThreads);
-
-#endif
  };
 
 //! << operator will work for Ifpack_IlukGraph.

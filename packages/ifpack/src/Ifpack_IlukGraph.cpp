@@ -343,16 +343,6 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   NumMyNonzeros_ = L_Graph_->NumMyNonzeros()+U_Graph_->NumMyNonzeros();
   return(ierr);
 }
-#ifdef PETRA_LEVELSCHEDULING
-//==============================================================================
-int Ifpack_IlukGraph::ComputeLevels(int NumThreads)
-{
-  L_Graph_->ComputeLevels(NumThreads);
-  U_Graph_->ComputeLevels(NumThreads);
-  
-  return(0);
-}
-#endif
 //==========================================================================
 
 // Non-member functions

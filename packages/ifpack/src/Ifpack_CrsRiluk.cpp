@@ -3,14 +3,19 @@
 #include "Epetra_Map.h"
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_Vector.h"
 #include "Epetra_MultiVector.h"
 
 //==============================================================================
 Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph) 
-  : Graph_(Graph),
+  : UserMatrixIsVbr_(false),
+    UserMatrixIsCrs_(false),
+    Graph_(Graph),
     DomainMap_(Graph.DomainMap()),
     RangeMap_(Graph.RangeMap()),
+    IlukRowMap_(0),
     Comm_(Graph.Comm()),
     UseTranspose_(false),
     Allocated_(false),
@@ -24,14 +29,19 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph)
     OverlapY_(0),
     OverlapMode_(Zero)
 {
-  int ierr = Allocate();
+  // Test for non-trivial overlap here so we can use it later.
+  IsOverlapped_ = (Graph_.LevelOverlap()>0 && DomainMap_.DistributedGlobal());
 }
 
 //==============================================================================
 Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix) 
-  : Graph_(FactoredMatrix.Graph_),
+  : UserMatrixIsVbr_(FactoredMatrix.UserMatrixIsVbr_),
+    UserMatrixIsCrs_(FactoredMatrix.UserMatrixIsCrs_),
+    IsOverlapped_(FactoredMatrix.IsOverlapped_),
+    Graph_(FactoredMatrix.Graph_),
     DomainMap_(FactoredMatrix.DomainMap_),
     RangeMap_(FactoredMatrix.RangeMap_),
+    IlukRowMap_(FactoredMatrix.IlukRowMap_),
     Comm_(FactoredMatrix.Comm_),
     UseTranspose_(FactoredMatrix.UseTranspose_),
     Allocated_(FactoredMatrix.Allocated_),
@@ -47,21 +57,39 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
 {
   L_ = new Epetra_CrsMatrix(FactoredMatrix.L());
   U_ = new Epetra_CrsMatrix(FactoredMatrix.U());
-  D_ = new Epetra_Vector(Graph_.L_Graph().RowMap());
+  D_ = new Epetra_Vector(FactoredMatrix.D());
   
 }
 
 //==============================================================================
-int Ifpack_CrsRiluk::Allocate() {
+int Ifpack_CrsRiluk::AllocateCrs() {
 
   // Allocate Epetra_CrsMatrix using ILUK graphs
   L_ = new Epetra_CrsMatrix(Copy, Graph_.L_Graph());
   U_ = new Epetra_CrsMatrix(Copy, Graph_.U_Graph());
   D_ = new Epetra_Vector(Graph_.L_Graph().RowMap());
+  SetAllocated(true);
+  return(0);
+}
+//==============================================================================
+int Ifpack_CrsRiluk::AllocateVbr() {
+
+  // First we need to create an Epetra_Map that has the same number of points  as the
+  // Epetra_BlockMap associated with the Overlap Graph.  Since all ILU computations are local
+  // we need not worry about off-processor communication and can choose a simple linear 
+  // set of global IDs.
+
+  int NumMyPoints = Graph_.L_Graph().RowMap().NumMyPoints(); // Number of points (equations) on this processor
   
-  
-    SetAllocated(true);
-    return(0);
+  IlukRowMap_ = new Epetra_Map(-1, NumMyPoints, 0, Comm());
+
+  // Allocate Epetra_CrsMatrix using ILUK graphs
+  L_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
+  U_ = new Epetra_CrsMatrix(Copy, *IlukRowMap_, 0);
+  D_ = new Epetra_Vector(*IlukRowMap_);
+  SetAllocated(true);
+
+  return(0);
 }
 //==============================================================================
 Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
@@ -73,7 +101,12 @@ Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
 
   if (OverlapX_!=0) delete OverlapX_;
   if (OverlapY_!=0) delete OverlapY_;
+  if (IlukRowMap_!=0) delete IlukRowMap_;
 
+  OverlapX_ = 0;
+  OverlapY_ = 0;
+  IlukRowMap_ = 0;
+  
   ValuesInitialized_ = false;
   Factored_ = false;
   Allocated_ = false;
@@ -82,7 +115,61 @@ Ifpack_CrsRiluk::~Ifpack_CrsRiluk(){
 //==========================================================================
 int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
 
-  // if (!Allocated()) return(-1); // This test is not needed at this time.  All constructors allocate.
+  UserMatrixIsCrs_ = true;
+
+  if (!Allocated()) AllocateCrs();
+
+  Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A;
+
+  if (IsOverlapped_) {
+  
+    OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
+    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
+    EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+  }
+  
+  // Get Maximun Row length
+  int MaxNumEntries = OverlapA->MaxNumEntries();
+
+  // Do the rest using generic Epetra_RowMatrix interface
+
+  EPETRA_CHK_ERR(InitAllValues(*OverlapA, MaxNumEntries));
+
+  if (IsOverlapped_) delete OverlapA;
+
+  return(0);
+}
+
+//==========================================================================
+int Ifpack_CrsRiluk::InitValues(const Epetra_VbrMatrix & A) {
+
+  UserMatrixIsVbr_ = true;
+
+  if (!Allocated()) AllocateVbr();
+
+  Epetra_VbrMatrix * OverlapA = (Epetra_VbrMatrix *) &A;
+
+  if (IsOverlapped_) {
+  
+    OverlapA = new Epetra_VbrMatrix(Copy, *Graph_.OverlapGraph());
+    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
+    EPETRA_CHK_ERR(OverlapA->TransformToLocal());
+  }
+  
+  // Get Maximun Row length
+  int MaxNumEntries = OverlapA->MaxNumNonzeros();
+
+  // Do the rest using generic Epetra_RowMatrix interface
+
+  EPETRA_CHK_ERR(InitAllValues(*OverlapA, MaxNumEntries));
+
+  if (IsOverlapped_) delete OverlapA;
+
+  return(0);
+}
+//==========================================================================
+
+int Ifpack_CrsRiluk::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNumEntries) {
 
   int ierr = 0;
   int i, j;
@@ -92,17 +179,6 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   bool DiagFound;
   int NumNonzeroDiags = 0;
 
-  Epetra_CrsMatrix * OverlapA = (Epetra_CrsMatrix *) &A;
-
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
-  
-  OverlapA = new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph());
-  OverlapA->Import(A, *Graph_.OverlapImporter(), Insert);
-  OverlapA->TransformToLocal();
-  }
-
-  // Get Maximun Row length
-  int MaxNumEntries = OverlapA->MaxNumEntries();
 
   InI = new int[MaxNumEntries]; // Allocate temp space
   LI = new int[MaxNumEntries];
@@ -111,15 +187,23 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   LV = new double[MaxNumEntries];
   UV = new double[MaxNumEntries];
 
+  bool ReplaceValues = (L_->StaticGraph() || L_->IndicesAreLocal()); // Check if values should be inserted or replaced
+
+  if (ReplaceValues) {
+    L_->PutScalar(0.0); // Zero out L and U matrices
+    U_->PutScalar(0.0);
+  }
+
+
   double *DV;
-  ierr = D_->ExtractView(&DV); // Get view of diagonal
+  EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
     
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
   for (i=0; i< NumMyRows(); i++) {
 
-    OverlapA->ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI); // Get Values and Indices
+    EPETRA_CHK_ERR(OverlapA.ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI)); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -152,8 +236,25 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
     // Check in things for this row of L and U
 
     if (DiagFound) NumNonzeroDiags++;
-    if (NumL) L_->ReplaceMyValues(i, NumL, LV, LI);
-    if (NumU) U_->ReplaceMyValues(i, NumU, UV, UI);
+    else DV[i] = Athresh_;
+
+    if (NumL) {
+      if (ReplaceValues) {
+	EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, LV, LI));
+      }
+      else {
+	EPETRA_CHK_ERR(L_->InsertMyValues(i, NumL, LV, LI));
+      }
+    }
+
+    if (NumU) {
+      if (ReplaceValues) {
+	EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, UV, UI));
+      }
+      else {
+	EPETRA_CHK_ERR(U_->InsertMyValues(i, NumU, UV, UI));
+      }
+    }
     
   }
 
@@ -164,11 +265,12 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   delete [] InI;
   delete [] InV;
 
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) delete OverlapA;
 
 
-  L_->TransformToLocal();
-  U_->TransformToLocal();
+  if (!ReplaceValues) {
+    EPETRA_CHK_ERR(L_->TransformToLocal());
+    EPETRA_CHK_ERR(U_->TransformToLocal());
+  }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 
@@ -176,7 +278,7 @@ int Ifpack_CrsRiluk::InitValues(const Epetra_CrsMatrix & A) {
   SetFactored(false);
 
   int TotalNonzeroDiags = 0;
-  Graph_.L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1);
+  EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1));
   if (Graph_.LevelOverlap()==0 &&
       ((TotalNonzeroDiags!=NumGlobalRows()) || 
        (TotalNonzeroDiags!=NumGlobalDiagonals()))) ierr = 1;
@@ -231,14 +333,14 @@ int Ifpack_CrsRiluk::Factor() {
  // Fill InV, InI with current row of L, D and U combined
 
     NumIn = MaxNumEntries;
-    assert(L_->ExtractMyRowCopy(i, NumIn, NumL, InV, InI)==0);
+    EPETRA_CHK_ERR(L_->ExtractMyRowCopy(i, NumIn, NumL, InV, InI));
     LV = InV;
     LI = InI;
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = i;
     
-    assert(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1)==0);
+    EPETRA_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, InV+NumL+1, InI+NumL+1));
     NumIn = NumL+NumU+1;
     UV = InV+NumL+1;
     UI = InI+NumL+1;
@@ -254,7 +356,7 @@ int Ifpack_CrsRiluk::Factor() {
 
       InV[jj] *= DV[j];
       
-      assert(U_->ExtractMyRowView(j, NumUU, UUV, UUI)==0); // View of row above
+      EPETRA_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
 
       if (RelaxValue_==0.0) {
 	for (k=0; k<NumUU; k++) {
@@ -274,7 +376,9 @@ int Ifpack_CrsRiluk::Factor() {
 	}
       }
      }
-    if (NumL) assert(L_->ReplaceMyValues(i, NumL, LV, LI)==0);  // Replace current row of L
+    if (NumL) {
+      EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, LV, LI));  // Replace current row of L
+    }
 
     DV[i] = InV[NumL]; // Extract Diagonal value
 
@@ -292,8 +396,9 @@ int Ifpack_CrsRiluk::Factor() {
 
     for (j=0; j<NumU; j++) UV[j] *= DV[i]; // Scale U by inverse of diagonal
 
-    if (NumU) assert(U_->ReplaceMyValues(i, NumU, UV, UI)==0);  // Replace current row of L and U
-
+    if (NumU) {
+      EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, UV, UI));  // Replace current row of L and U
+    }
 
     // Reset column flags
     for (j=0; j<NumIn; j++) colflag[InI[j]] = -1;
@@ -305,7 +410,7 @@ int Ifpack_CrsRiluk::Factor() {
   double current_flops = 2 * current_madds;
   double total_flops = 0;
     
-  Graph_.L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1); // Get total madds across all PEs
+  EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1)); // Get total madds across all PEs
 
   // Now count the rest
   total_flops += (double) L_->NumGlobalNonzeros(); // Accounts for multiplier above
@@ -338,40 +443,65 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_Vector& X,
   Epetra_Vector * X1 = (Epetra_Vector *) &X;
   Epetra_Vector * Y1 = (Epetra_Vector *) &Y;
 
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
+  if (IsOverlapped_) {
     if (OverlapX_==0) { // Need to allocate space for overlap X and Y
       OverlapX_ = new Epetra_Vector(Graph_.OverlapGraph()->RowMap());
       OverlapY_ = new Epetra_Vector(Graph_.OverlapGraph()->RowMap());
     }
-    OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert); // Import X values for solve
+    EPETRA_CHK_ERR(OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert)); // Import X values for solve
     X1 = (Epetra_Vector *) OverlapX_;
     Y1 = (Epetra_Vector *) OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
+  }
+
+  // This code block checks to see if the user matrix, and therefore the user vectors, overlap graph, etc. 
+  // are using a block map.  If so, we want make a view of these vectors using a map that is compatible with
+  // L and U (which have simple maps).
+
+  Epetra_Vector * X2 = 0;
+  Epetra_Vector * Y2 = 0;
+
+  if (UserMatrixIsVbr_) {
+    double * xtmp, * ytmp;
+    X1->ExtractView(&xtmp);
+    Y1->ExtractView(&ytmp);
+    X2 = new Epetra_Vector(View, L_->RowMap(), xtmp);
+    Y2 = new Epetra_Vector(View, L_->RowMap(), ytmp);
+  }
+  else {
+    X2 = X1;
+    Y2 = Y1;
   }
 
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
-    Y1->SetFlopCounter(*counter);
+    Y2->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
 
   if (!Trans) {
 
-    L_->Solve(Lower, Trans, UnitDiagonal, *X1, *Y1);
-    Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    U_->Solve(Upper, Trans, UnitDiagonal, *Y1, *Y1); // Solve Uy = y
+    EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *X2, *Y2));
+    EPETRA_CHK_ERR(Y2->Multiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+    EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *Y2, *Y2)); // Solve Uy = y
   }
   else
     {
-      U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1); // Solve Uy = y
-      Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-      L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1);
+      EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *X2, *Y2)); // Solve Uy = y
+      EPETRA_CHK_ERR(Y2->Multiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+      EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *Y2, *Y2));
       
     } 
 
+  if (UserMatrixIsVbr_) {
+    delete X2;
+    delete Y2;
+  }
+
   // Export computed Y values as directed
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
-    Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_);
+  if (IsOverlapped_) {
+    EPETRA_CHK_ERR(Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_));
+  }
   return(0);
 }
 
@@ -392,7 +522,7 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
 
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
+  if (IsOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=0) {
       if (OverlapX_->NumVectors()!=X.NumVectors()) {
@@ -404,35 +534,60 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
       OverlapX_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), X.NumVectors());
       OverlapY_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), Y.NumVectors());
     }
-    OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert); // Import X values for solve
+    EPETRA_CHK_ERR(OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert)); // Import X values for solve
     X1 = OverlapX_;
     Y1 = OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
+  }
+
+  // This code block checks to see if the user matrix, and therefore the user vectors, overlap graph, etc. 
+  // are using a block map.  If so, we want make a view of these vectors using a map that is compatible with
+  // L and U (which have simple maps).
+
+  Epetra_MultiVector * X2 = 0;
+  Epetra_MultiVector * Y2 = 0;
+
+  if (UserMatrixIsVbr_) {
+    double ** xtmp, ** ytmp;
+    X1->ExtractView(&xtmp);
+    Y1->ExtractView(&ytmp);
+    X2 = new Epetra_MultiVector(View, L_->RowMap(), xtmp, X.NumVectors());
+    Y2 = new Epetra_MultiVector(View, L_->RowMap(), ytmp, X.NumVectors());
+  }
+  else {
+    X2 = X1;
+    Y2 = Y1;
   }
 
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
-    Y1->SetFlopCounter(*counter);
+    Y2->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
 
   if (!Trans) {
 
-    L_->Solve(Lower, Trans, UnitDiagonal, *X1, *Y1);
-    Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    U_->Solve(Upper, Trans, UnitDiagonal, *Y1, *Y1); // Solve Uy = y
+    EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *X2, *Y2));
+    EPETRA_CHK_ERR(Y2->Multiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+    EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *Y2, *Y2)); // Solve Uy = y
   }
   else
     {
-      U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1); // Solve Uy = y
-      Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-      L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1);
+      EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *X2, *Y2)); // Solve Uy = y
+      EPETRA_CHK_ERR(Y2->Multiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+      EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *Y2, *Y2));
       
     } 
 
+  if (UserMatrixIsVbr_) {
+    delete X2;
+    delete Y2;
+  }
+
   // Export computed Y values as directed
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
-    Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_);
+  if (IsOverlapped_) {
+    EPETRA_CHK_ERR(Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_));
+  }
   return(0);
 }
 //=============================================================================
@@ -451,7 +606,7 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
   Epetra_MultiVector * X1 = (Epetra_MultiVector *) &X;
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
 
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
+  if (IsOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=0) {
       if (OverlapX_->NumVectors()!=X.NumVectors()) {
@@ -463,39 +618,60 @@ int Ifpack_CrsRiluk::Multiply(bool Trans, const Epetra_MultiVector& X,
       OverlapX_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), X.NumVectors());
       OverlapY_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), Y.NumVectors());
     }
-    OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert); // Import X values for solve
+    EPETRA_CHK_ERR(OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert)); // Import X values for solve
     X1 = OverlapX_;
     Y1 = OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
+  }
+
+  Epetra_MultiVector * X2 = 0;
+  Epetra_MultiVector * Y2 = 0;
+
+  if (UserMatrixIsVbr_) {
+    double ** xtmp, ** ytmp;
+    X1->ExtractView(&xtmp);
+    Y1->ExtractView(&ytmp);
+    X2 = new Epetra_MultiVector(View, L_->RowMap(), xtmp, X.NumVectors());
+    Y2 = new Epetra_MultiVector(View, L_->RowMap(), ytmp, X.NumVectors());
+  }
+  else {
+    X2 = X1;
+    Y2 = Y1;
   }
 
   Epetra_Flops * counter = this->GetFlopCounter();
   if (counter!=0) {
     L_->SetFlopCounter(*counter);
-    Y1->SetFlopCounter(*counter);
+    Y2->SetFlopCounter(*counter);
     U_->SetFlopCounter(*counter);
   }
 
   if (Trans) {
 
-    L_->Multiply(Trans, *X1, *Y1);
-    Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-    U_->Multiply(Trans, Y1temp, *Y1);
-    Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
+    EPETRA_CHK_ERR(L_->Multiply(Trans, *X2, *Y2));
+    EPETRA_CHK_ERR(Y2->Update(1.0, *X2, 1.0)); // Y2 = Y2 + X2 (account for implicit unit diagonal)
+    EPETRA_CHK_ERR(Y2->ReciprocalMultiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+    Epetra_MultiVector Y2temp(*Y2); // Need a temp copy of Y2
+    EPETRA_CHK_ERR(U_->Multiply(Trans, Y2temp, *Y2));
+    EPETRA_CHK_ERR(Y2->Update(1.0, Y2temp, 1.0)); // (account for implicit unit diagonal)
   }
   else {
-    U_->Multiply(Trans, *X1, *Y1); // 
-    Y1->Update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
-    Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-    L_->Multiply(Trans, Y1temp, *Y1);
-    Y1->Update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
+    EPETRA_CHK_ERR(U_->Multiply(Trans, *X2, *Y2)); // 
+    EPETRA_CHK_ERR(Y2->Update(1.0, *X2, 1.0)); // Y2 = Y2 + X2 (account for implicit unit diagonal)
+    EPETRA_CHK_ERR(Y2->ReciprocalMultiply(1.0, *D_, *Y2, 0.0)); // y = D*y (D_ has inverse of diagonal)
+    Epetra_MultiVector Y2temp(*Y2); // Need a temp copy of Y2
+    EPETRA_CHK_ERR(L_->Multiply(Trans, Y2temp, *Y2));
+    EPETRA_CHK_ERR(Y2->Update(1.0, Y2temp, 1.0)); // (account for implicit unit diagonal)
     } 
 
+  if (UserMatrixIsVbr_) {
+    delete X2;
+    delete Y2;
+  }
+
   // Export computed Y values as directed
-  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
-    Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_);
+  if (IsOverlapped_) {
+    EPETRA_CHK_ERR(Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_));
+  }
   return(0);
 }
 //=============================================================================
@@ -506,8 +682,8 @@ int Ifpack_CrsRiluk::Condest(bool Trans, double & ConditionNumberEstimate) const
     return(0);
   }
   // Create a vector with all values equal to one
-  Epetra_Vector Ones(DomainMap());
-  Epetra_Vector OnesResult(RangeMap());
+  Epetra_Vector Ones(Graph_.DomainMap());
+  Epetra_Vector OnesResult(Graph_.RangeMap());
   Ones.PutScalar(1.0);
 
   EPETRA_CHK_ERR(Solve(Trans, Ones, OnesResult)); // Compute the effect of the solve on the vector of ones

@@ -10,6 +10,8 @@
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_CrsMatrix;
+class Epetra_VbrMatrix;
+class Epetra_RowMatrix;
 class Epetra_Vector;
 class Epetra_MultiVector;
 
@@ -185,6 +187,15 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
              
    */
   int InitValues(const Epetra_CrsMatrix &A);
+
+  //! Initialize L and U with values from user matrix A.
+  /*! Copies values from the user's matrix into the nonzero pattern of L and U.
+    \param In 
+           A - User matrix to be factored.
+    \warning The graph of A must be identical to the graph passed in to Ifpack_IlukGraph constructor.
+             
+   */
+  int InitValues(const Epetra_VbrMatrix &A);
 
   //! If values have been initialized, this query returns true, otherwise it returns false.
   bool ValuesInitialized() const {return(ValuesInitialized_);};
@@ -387,11 +398,16 @@ class Ifpack_CrsRiluk: public Epetra_Object, public Epetra_CompObject, public vi
  private:
   
   
-  int Allocate();
-    
+  int AllocateCrs();
+  int AllocateVbr();
+  int InitAllValues(const Epetra_RowMatrix & A, int MaxNumEntries);
+  bool UserMatrixIsVbr_;
+  bool UserMatrixIsCrs_;
+  bool IsOverlapped_;
   const Ifpack_IlukGraph & Graph_;
   const Epetra_BlockMap & DomainMap_;
   const Epetra_BlockMap & RangeMap_;
+  Epetra_Map * IlukRowMap_;
   const Epetra_Comm & Comm_;
   Epetra_CrsMatrix * L_;
   Epetra_CrsMatrix * U_;
