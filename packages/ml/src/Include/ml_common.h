@@ -57,6 +57,7 @@
 
 #ifdef HAVE_ML_AZTEC
 #define AZTEC
+#define ML_WITH_EPETRA
 #endif
 
 #ifdef HAVE_ML_SUPERLU

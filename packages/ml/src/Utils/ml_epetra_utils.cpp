@@ -11,9 +11,12 @@
 /*           Ray Tuminaro (SNL)                                         */
 /************************************************************************/
 
-#ifdef ML_WITH_EPETRA
 
+#include "ml_common.h"
+
+#ifdef ML_WITH_EPETRA
 #include "ml_epetra_utils.h"
+
 
 /******************************************************************************/
 
