@@ -40,7 +40,7 @@ void LB_perform_error_checking(LB *lb)
 void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids, 
      int wdim, float *objwgts, int *ierr)
 {
-  int i;
+  int i, n;
 
   *ierr = DLB_OK;
   if (lb->Get_Obj_List != NULL){
@@ -52,11 +52,15 @@ void LB_Get_Obj_List(LB *lb, LB_GID *global_ids, LB_LID *local_ids,
     /* Use iterator functions to loop through object list */
     if (lb->Get_First_Obj(lb->Get_First_Obj_Data, global_ids, local_ids, 
         wdim, objwgts, ierr)){
+      /* Determine the number of objects since we don't trust the user
+         to write the Get_Next_Obj query function in a safe way! */
+      n = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, ierr);
       i = 0;
-      while (!(*ierr) && lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
-        global_ids[i], local_ids[i], &global_ids[i+1], &local_ids[i+1], 
-        wdim, &objwgts[(i+1)*wdim], ierr)){
-          i++;
+      while (!(*ierr) && (i<n-1)){ 
+        lb->Get_Next_Obj(lb->Get_Next_Obj_Data, global_ids[i], 
+          local_ids[i], &global_ids[i+1], &local_ids[i+1], 
+          wdim, &objwgts[(i+1)*wdim], ierr);
+        i++;
       }
     }
   }
