@@ -207,11 +207,16 @@ int MLI_CSRGetRow(void *obj, int N_requested_rows, int requested_rows[],
     int allocated_space, int columns[], double values[], int row_lengths[])
 {
     int           i, j, ncnt, colindex, rowLeng, rowindex;
-    MLI_Context   *context = (MLI_Context *) obj;
-    MLI_CSRMatrix *Amat    = (MLI_CSRMatrix*) context->Amat;
+    MLI_Context   *context;
+    MLI_CSRMatrix *Amat;
     int           *rowptr  = Amat->rowptr;
     int           *colInd  = Amat->colnum;
     double        *colVal  = Amat->values;
+    ML_Operator   *mat_in;
+
+    mat_in = (ML_Operator *) obj;
+    context = (MLI_Context *) ML_Get_MyGetrowData(mat_in);
+    Amat    = (MLI_CSRMatrix*) context->Amat;
 
     ncnt = 0;
     for ( i = 0; i < N_requested_rows; i++ )
@@ -394,7 +399,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     MLnew_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
     length = localEqns;
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
-    ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
+    MLnew_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
     /* -------------------------------------------------------- */ 
     /* set up the mg method                                     */
@@ -1546,7 +1551,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     MLnew_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
     length = localEqns;
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
-    ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
+    MLnew_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
     /* -------------------------------------------------------- */ 
     /* create an aggregate context                              */

@@ -1257,7 +1257,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data)
    MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
    newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
    newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
-   ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
+   MLnew_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
    diagonal = (double *) ML_allocate(Nfine * sizeof(double));
    ML_AGG_Extract_Diag(Amat, diagonal);
    ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
@@ -1613,13 +1613,15 @@ int ML_AGG_DD_Getrow(void *obj,int inNrows, int *rowlist,int alloc_space,
    void        *getrowdata;
    struct ML_AGG_Matrix_Context *context;
    ML_GetrowFunc                *getrow_obj;
+   ML_Operator *mat_in;
 
+   mat_in = (ML_Operator *) obj;
    if ( inNrows != 1 )
    {
       printf("ML_AGG_DD_Getrow ERROR : inNrows > 1 not supported.\n");
       exit(-1);
    }
-   context = (struct ML_AGG_Matrix_Context *) obj;
+   context = (struct ML_AGG_Matrix_Context *) ML_Get_MyGetrowData(mat_in);
    Amat    = (ML_Operator *) context->Amat;
    nRows   = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
@@ -1900,7 +1902,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data)
       MLnew_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
       newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
       newml->Amat[newNlevels-1].N_nonzeros = 5 * Nfine;
-      ML_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
+      MLnew_Set_Amatrix_Getrow(newml, newNlevels-1, ML_AGG_DD_Getrow, NULL, Nfine);
       diagonal = (double *) ML_allocate(Nfine * sizeof(double));
       ML_AGG_Extract_Diag(Amat, diagonal);
       ML_Set_Amatrix_Diag( newml, newNlevels-1, Nfine, diagonal);
