@@ -627,6 +627,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   sprintf(parameter,"%saggregation: use A in restriction", Prefix_);
   UseAInRestriction = List_.get(parameter, UseAInRestriction);
   if( UseAInRestriction == true ) {
+#ifdef HAVE_ML_ANASAZI
     if( verbose_ )
       cout << PrintMsg_ << "Use A to smooth restriction" << endl;
     agg_->Restriction_smoothagg_transpose = ML_TRUE;
@@ -636,6 +637,11 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     if( verbose_ )
       cout << PrintMsg_ << "Field of Values Box = " << MaxReal << " + "
 	   << MaxImag << endl;
+#else
+    cout << ErrorMsg_ << "You must compile with --with-ml_anasazi "  << endl
+         << ErrorMsg_ << "for eigen-analysis." << endl;
+    exit( EXIT_FAILURE );	
+#endif       
   }
   else                            agg_->Restriction_smoothagg_transpose = ML_FALSE;  
 
@@ -1004,7 +1010,7 @@ int Epetra_ML::SetDefaultsMaxwell(ParameterList & List, char * Prefix_,
   List.set(parameter,"MLS");
 
   sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
-  List_.set(parameter,3);
+  List.set(parameter,3);
   
   sprintf(parameter,"%ssmoother: pre or post (level %d)",Prefix_,MaxLevels-1);
   List.set(parameter,"both");
@@ -1654,6 +1660,8 @@ void MultiLevelPreconditioner::SetNullSpace()
 			       RowMatrix_->NumMyRows());
     
   } else {
+
+#ifdef HAVE_ML_ANASAZI
     
     if( NullSpacePtr != NULL && Comm_.MyPID() == 0 ) {
       cerr << ErrorMsg_ << "Null space vectors is not NULL!" << endl
@@ -1738,6 +1746,14 @@ void MultiLevelPreconditioner::SetNullSpace()
     ML_Aggregate_Set_NullSpace(agg_,NumPDEEqns_,TotalNullSpaceDim,
 			       NullSpacePtr,
 			       NumMyRows());
+
+#else
+
+     cout << "ML_Anasazi ERROR: you must compile with --with-ml_anasazi "  << endl
+       << "ML_Anasazi ERROR: for eigen-analysis." << endl;
+     exit( EXIT_FAILURE );
+#endif
+  
   }
 
   if( verbose_ ) cout << PrintMsg_ << "Total time for eigen-analysis = " << Time.ElapsedTime() << " (s)\n";
