@@ -136,11 +136,11 @@ int LB_rcb(
                                  later for point and box drop. */
 
 
-    RCB_params[0].ptr = (void *) &overalloc;
-    RCB_params[1].ptr = (void *) &reuse;
-    RCB_params[2].ptr = (void *) &check;
-    RCB_params[3].ptr = (void *) &stats;
-    RCB_params[4].ptr = (void *) &gen_tree;
+    LB_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);
+    LB_Bind_Param(RCB_params, "RCB_REUSE", (void *) &reuse);
+    LB_Bind_Param(RCB_params, "RCB_CHECK", (void *) &check);
+    LB_Bind_Param(RCB_params, "RCB_STATS", (void *) &stats);
+    LB_Bind_Param(RCB_params, "KEEP_CUTS", (void *) &gen_tree);
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
