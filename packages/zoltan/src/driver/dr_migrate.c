@@ -172,6 +172,9 @@ int bor_elem;           /* index of an element along the processor border */
 int *send_vec = NULL, *recv_vec = NULL;  /* Communication vecs. */
 MESH_INFO_PTR mesh;
 ELEM_INFO_PTR elements;
+int lid = num_lid_entries-1;
+int gid = num_gid_entries-1;
+char msg[256];
 
   *ierr = LB_OK;
 
@@ -234,7 +237,12 @@ ELEM_INFO_PTR elements;
   }
 
   for (i = 0; i < num_export; i++) {
-    exp_elem = export_local_ids[i*num_lid_entries];
+    if (num_lid_entries)
+      exp_elem = export_local_ids[lid+i*num_lid_entries];
+    else  /* testing num_lid_entries == 0 */
+      search_by_global_id(mesh, export_global_ids[gid+i*num_gid_entries], 
+                          &exp_elem);
+
     New_Elem_Index[exp_elem] = -1;
     proc_ids[exp_elem] = export_procs[i];
   }
@@ -244,7 +252,7 @@ ELEM_INFO_PTR elements;
     for (j = 0; j < New_Elem_Index_Size; j++) 
       if (New_Elem_Index[j] == -1) break;
 
-    New_Elem_Index[j] = import_global_ids[i*num_gid_entries];
+    New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
   }
 
   /* 
@@ -254,7 +262,12 @@ ELEM_INFO_PTR elements;
   /* Set change flag for elements whose adjacent elements are being exported */
 
   for (i = 0; i < num_export; i++) {
-    exp_elem = export_local_ids[i*num_lid_entries];
+    if (num_lid_entries)
+      exp_elem = export_local_ids[lid+i*num_lid_entries];
+    else  /* testing num_lid_entries == 0 */
+      search_by_global_id(mesh, export_global_ids[gid+i*num_gid_entries], 
+                          &exp_elem);
+
     for (j = 0; j < elements[exp_elem].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
@@ -345,7 +358,9 @@ ELEM_INFO_PTR elements;
             /* convert adj from global to local ID. */
             if ((idx = in_list(mesh->ecmap_neighids[offset],New_Elem_Index_Size,
                               New_Elem_Index)) == -1) {
-              Gen_Error(0, "fatal: unable to locate element in New_Elem_Index");
+              sprintf(msg, "fatal: unable to locate element %d in "
+                           "New_Elem_Index", mesh->ecmap_neighids[offset]);
+              Gen_Error(0, msg);
               *ierr = LB_FATAL;
               return;
             }
@@ -493,6 +508,9 @@ int size;
 int num_nodes;
 MESH_INFO_PTR mesh;
 ELEM_INFO *current_elem;
+int gid = num_gid_entries-1;
+int lid = num_lid_entries-1;
+int idx;
 
   *ierr = LB_OK;
 
@@ -500,9 +518,10 @@ ELEM_INFO *current_elem;
     *ierr = LB_FATAL;
     return 0;
   }
-
   mesh = (MESH_INFO_PTR) data;
-  current_elem = &(mesh->elements[elem_lid[0]]);
+  current_elem = (num_lid_entries 
+                   ? &(mesh->elements[elem_lid[lid]])
+                   : search_by_global_id(mesh, elem_gid[gid], &idx));
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   /*
@@ -548,9 +567,11 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   int *buf_int;
   float *buf_float;
   int size;
-  int i, j;
+  int i, j, idx;
   int proc;
   int num_nodes;
+  int gid = num_gid_entries-1;
+  int lid = num_lid_entries-1;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -561,7 +582,9 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  current_elem = &(elem[elem_lid[0]]);
+  current_elem = (num_lid_entries 
+                   ? &(elem[elem_lid[lid]])
+                   : search_by_global_id(mesh, elem_gid[gid], &idx));
   num_nodes = mesh->eb_nnodes[current_elem->elem_blk];
 
   elem_mig = (ELEM_INFO *) buf; /* this is the element struct to be migrated */
@@ -674,6 +697,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
   int size, num_nodes;
   int i, j, idx;
   int proc;
+  int gid = num_gid_entries-1;
 
   if (data == NULL) {
     *ierr = LB_FATAL;
@@ -685,7 +709,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, LB_ID_PTR elem_gid,
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  if ((idx = in_list(elem_gid[0], New_Elem_Index_Size, New_Elem_Index)) == -1) {
+  if ((idx = in_list(elem_gid[gid], New_Elem_Index_Size, New_Elem_Index)) == -1) {
     Gen_Error(0, "fatal: Unable to locate position for element");
     *ierr = LB_FATAL;
     return;
