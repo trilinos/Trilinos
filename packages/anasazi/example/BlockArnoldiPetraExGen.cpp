@@ -16,6 +16,7 @@
 #include "Ifpack_CrsIct.h"
 #include "Epetra_CrsMatrix.h"
 #include "BelosEpetraOperator.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
 
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
@@ -264,15 +265,14 @@ int main(int argc, char *argv[]) {
 	Anasazi::PetraVec<double> evecr(Map, nev);
 	MyBlockArnoldi.getEvecs( evecr );
 
-	Anasazi::DenseMatrix<double> dmatr(nev,nev);
+	Teuchos::SerialDenseMatrix<int,double> dmatr(nev,nev);
 	MyProblem.AInProd( one, evecr, evecr, dmatr );
-	double* ptr_dmatr = dmatr.getarray();
 	double compeval;
 
 	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
 	cout<<"Real Part \t Rayleigh Error"<<endl;
 	for (i=0; i<nev; i++) {
-		compeval = ptr_dmatr[i*nev+i];
+		compeval = dmatr(i,i);
 		cout<<compeval<<"\t"<<abs(compeval-one/evalr[i])<<endl;
 	}
 
