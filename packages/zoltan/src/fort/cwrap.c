@@ -362,7 +362,7 @@ int LB_Obj_Size_Fort_Wrapper(void *data, int num_gid_entries,
             LB_ID_PTR local_id, int *ierr)
 {
    return LB_Current_lb->Migrate.Get_Obj_Size_Fort(data,
-             num_gid_entries, num_lid_entries,
+             &num_gid_entries, &num_lid_entries,
              global_id, local_id, ierr);
 }
 

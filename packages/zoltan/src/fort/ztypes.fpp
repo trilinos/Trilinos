@@ -32,15 +32,6 @@ end type LB_PTR
 type(LB_PTR), parameter :: &
    LB_NULL_PTR = LB_PTR(char(0)//char(0)//char(0)//char(0))
 
-!  LB_ID_TYPE data type definition.
-!  Data type for global and local IDs.
-!  The F90 interface uses arrays of integers as IDs,
-!  so this is just a dummy definition to satisfy the linker.
-
-type LB_ID_TYPE
-   integer(LB_INT) :: id
-end type LB_ID_TYPE
-
 interface operator(==)
    module procedure ptrcompare
 end interface
