@@ -232,6 +232,8 @@ int ML_Operator_Clean( ML_Operator *mat)
        }
       if (mat->ntimes == 0) ML_mylabel = NULL;
 #endif
+      if (mat->getrow->pre_comm != NULL) mat->getrow->pre_comm->comm = mat->comm;
+
       ML_CommInfoOP_Destroy(&(mat->getrow->pre_comm));
 #ifdef ML_TIMING_DETAILED
        if (mat->getrow->post_comm != NULL) {
@@ -241,6 +243,7 @@ int ML_Operator_Clean( ML_Operator *mat)
        }
       if (mat->ntimes == 0) ML_mylabel = NULL;
 #endif
+      if (mat->getrow->post_comm != NULL) mat->getrow->post_comm->comm = mat->comm;
       ML_CommInfoOP_Destroy(&(mat->getrow->post_comm));
       ML_mylabel = NULL;
 
@@ -349,8 +352,10 @@ int ML_Operator_halfClone_Clean( ML_Operator *mat)
    mat->getrow->loc_glob_map = NULL;
    mat->getrow->post_comm = NULL;
    if (mat->matvec != NULL) ML_memory_free((void**)&(mat->matvec));
-   if (mat->getrow->pre_comm != NULL)
+   if (mat->getrow->pre_comm != NULL) {
+     mat->getrow->pre_comm->comm = mat->comm;
      ML_CommInfoOP_Destroy(&(mat->getrow->pre_comm));
+   }
    if (mat->getrow != NULL) ML_memory_free((void**)&(mat->getrow));
    /* changed this so that we allocate a new label if the original */
    /* matrix had a label */

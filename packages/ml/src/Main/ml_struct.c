@@ -2379,7 +2379,7 @@ int ML_Gen_Smoother_ParaSails(ML *ml, int nl, int pre_or_post, int ntimes,
 
 	 ML_create_unique_id(ml->Amat[i].invec_leng,
 	                     &(ml->Amat[i].getrow->loc_glob_map),
-	                     ml->Amat[i].getrow->pre_comm, ml->comm);
+	                     ml->Amat[i].getrow->pre_comm, ml->comm,-1);
 	 ml->Amat[i].getrow->use_loc_glob_map = ML_YES;
 	 allocated_space = 10;
 	 ml_indices = (int    *) ML_allocate(sizeof(int)*allocated_space);

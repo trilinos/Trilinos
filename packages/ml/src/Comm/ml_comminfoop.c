@@ -295,7 +295,7 @@ void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info)
    if (c_info != NULL) 
    {
 #ifdef ML_TIMING_DETAILED
-      if (ML_mylabel != NULL) {
+      if ( (ML_mylabel != NULL) && (c_info->comm != NULL)) {
       comm = c_info->comm;
       NumActiveProc = c_info->NumActiveProc;
       proc_active = c_info->proc_active;
@@ -702,7 +702,7 @@ int ML_CommInfoOP_Set_exch_info(ML_CommInfoOP *comm_info, int k,
 /******************************************************************************/
 
 void ML_create_unique_id(int N_local, int **map, 
-                ML_CommInfoOP *comm_info, ML_Comm *comm)
+                ML_CommInfoOP *comm_info, ML_Comm *comm,int offset)
 {
 /* Create a map between local variables on this processor and a unique
  * global number where local variables on different processors which
@@ -723,9 +723,13 @@ void ML_create_unique_id(int N_local, int **map,
  *
  *   max_per_proc  On output, the maximum number of local variables on any one
  *                 processor.
+ *   offset        On input, if offset == -1, the global numbers in proc k
+ *                 come immediately after the global numbers in proc k-1.
+ *                 If offset is not -1, then offset gives the lowest numbered
+ *                 global id for this processor.
  */
 
-   int i, j, count, N_rcvd, N_send, offset, flag = 0;
+   int i, j, count, N_rcvd, N_send, flag = 0;
    double *dtemp;
 
    /* compute the number of variables to receive and send */
@@ -754,7 +758,7 @@ void ML_create_unique_id(int N_local, int **map,
    /* to unique numbers on each processor.            */
 
 
-   offset = ML_gpartialsum_int(N_local, comm);
+   if (offset == -1) offset = ML_gpartialsum_int(N_local, comm);
 
    *map = (int    *) ML_allocate((N_local + N_rcvd + 1) * sizeof(int));
    if (map == NULL) 
@@ -931,6 +935,7 @@ void ML_cheap_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
 
   /**************************** execution begins ******************************/
 
+  if (comm_info == NULL) return;
   N_neighbors = comm_info->N_neighbors;
   if (N_neighbors == 0) return;
 
