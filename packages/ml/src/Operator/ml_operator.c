@@ -104,9 +104,8 @@ int ML_Operator_Clean( ML_Operator *mat)
    double t1;
 #endif
 #ifdef ML_FLOPS
-   int i, nglobflop;
-   double mflops;
-   double maxfl,minfl,avgfl;
+   int i;
+   double mflops, maxfl,minfl,avgfl;
 #endif
 
    if (mat == NULL) return 0;
@@ -135,20 +134,13 @@ int ML_Operator_Clean( ML_Operator *mat)
       operator, but others do something. */
    if  (mat->label != NULL && mat->apply_time != 0.0)
    {
-     t1 = ML_gsum_double(mat->apply_time, mat->comm);
-     nglobflop = mat->nflop;
-     ML_gsum_scalar_int(&nglobflop, &i, mat->comm);
-     mflops = ((double) nglobflop) / t1;
-     mflops = mflops / (1024 * 1024);
-     avgfl = mflops / ((double) mat->comm->ML_nprocs);
      mflops = (double) mat->nflop / mat->apply_time;
-     mflops = mflops / (1024 * 1024);
+     mflops = mflops / (1024. * 1024.);
+     avgfl = ML_gsum_double(mflops, mat->comm) / ((double)mat->comm->ML_nprocs);
      maxfl = ML_gmax_double(mflops, mat->comm);
-     mflops = - mflops;
-     mflops = ML_gmax_double(mflops, mat->comm);
-     minfl = -mflops;
+     minfl = -ML_gmax_double(-mflops, mat->comm);
      if (mat->comm->ML_mypid == 0) 
-       printf(" Mflop rating for %s (min, average, max) \t= %e   %e   %e\n",
+       printf(" Mflop rating for %s (min, avg, max) \t= %e  %e  %e\n",
               mat->label,minfl,avgfl,maxfl);
    }
 #endif
