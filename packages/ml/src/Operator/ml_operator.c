@@ -147,7 +147,7 @@ int ML_Operator_Clean( ML_Operator *mat)
      mflops = ML_gmax_double(mflops, mat->comm);
      minfl = -mflops;
      if (mat->comm->ML_mypid == 0) 
-       printf(" Mflop rating for %s (min, average, max) \t= %e\n",
+       printf(" Mflop rating for %s (min, average, max) \t= %e   %e   %e\n",
               mat->label,minfl,avgfl,maxfl);
    }
 #endif
