@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 	// Create the Belos::OutputManager
 	//
 	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 2 );
+	My_OM.SetVerbosity( Anasazi::FinalSummary );
 	//
 	// Create the ParameterList for the Belos Operator
 	// 
@@ -297,9 +297,6 @@ int main(int argc, char *argv[]) {
 	// solve the problem to the specified tolerances or length
 	MySolver.solve();
 	
-	// output results to screen
-	MySolver.currentStatus();
-
 	// obtain eigenvectors directly
 	Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals(); 
 

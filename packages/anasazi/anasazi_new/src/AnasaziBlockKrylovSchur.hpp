@@ -137,7 +137,9 @@ namespace Anasazi {
     
     //! This method requests that the solver print out its current status to screen.
     void currentStatus();
+
     //@}
+
   private:
     /*! \brief This method performs a given number of steps of the block Krylov-Schur method
      */
@@ -184,6 +186,9 @@ namespace Anasazi {
     Teuchos::RefCountPtr<std::vector<ScalarType> > _evals;
     const int _nev;  
     
+    // Output stream from the output manager
+    std::ostream& _os;
+
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -230,8 +235,9 @@ namespace Anasazi {
     _Op(_problem->GetOperator()),
     _BOp(_problem->GetB()),
     _evecs(_problem->GetEvecs()), 
-    _evals(problem->GetEvals()), 
-    _nev(problem->GetNEV()) 
+    _evals(_problem->GetEvals()), 
+    _nev(_problem->GetNEV()), 
+    _os(_om->GetOStream())
     {     
     //
     // Determine _nevblock : how many blocks it will take to contain the _nev eigenvalues/vectors
@@ -300,32 +306,32 @@ namespace Anasazi {
   template <class ScalarType, class MV, class OP>
   void BlockKrylovSchur<ScalarType,MV,OP>::currentStatus() {
     int i;
-    if (_om->doOutput(-1)) {
-      cout<<" "<<endl;
-      cout<<"********************CURRENT STATUS********************"<<endl;
-      cout<<"Iterations :\t"<<_iter<<endl;
+    if (_om->doPrint()) {
+      _os <<" "<<endl;
+      _os <<"********************CURRENT STATUS********************"<<endl;
+      _os <<"Iterations :\t"<<_iter<<endl;
       
       if (_restartiter > _restarts) 
-	cout<<"Restarts :\t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
+	_os <<"Restarts :\t"<<_restartiter-1<<" of\t"<< _restarts<<endl;
       else
-	cout<<"Restarts :\t"<<_restartiter<<" of\t"<< _restarts<<endl;
+	_os <<"Restarts :\t"<<_restartiter<<" of\t"<< _restarts<<endl;
       
-      cout<<"Block Size :\t"<<_blocksize<<endl;
-      cout<<"Requested Eigenvalues : "<<_nev<<endl;
-      cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;	
-      cout<<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
+      _os <<"Block Size :\t"<<_blocksize<<endl;
+      _os <<"Requested Eigenvalues : "<<_nev<<endl;
+      _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;	
+      _os <<"Error for the partial Schur decomposition is : "<< _schurerror <<endl;
       //
       //  Determine status of solver and output information correctly.
       //
       if ( _schurerror < _residual_tolerance ) {
-	cout<<"------------------------------------------------------"<<endl;
-	cout<<"Computed Eigenvalues: "<<endl;
+	_os <<"------------------------------------------------------"<<endl;
+	_os <<"Computed Eigenvalues: "<<endl;
       } else {
 	if (_exit_flg && _iter != _length+_restarts*(_length-_nevblock)) {
-	  cout<<"ERROR: Complete orthogonal basis could not be computed"<<endl;
+	  _os <<"ERROR: Complete orthogonal basis could not be computed"<<endl;
 	}
-	cout<<"------------------------------------------------------"<<endl;
-	cout<<"Current Eigenvalue Estimates: "<<endl;
+	_os <<"------------------------------------------------------"<<endl;
+	_os <<"Current Eigenvalue Estimates: "<<endl;
       }
       //
       //  Print out current computed eigenvalues.  If we don't have all the requested
@@ -335,32 +341,32 @@ namespace Anasazi {
       if (_jstart < _nevblock) { _nevtemp = _jstart*_blocksize; }
       //
       if (_problem->IsSymmetric()) {
-	cout<<"Eigenvalue\tRitz Residual"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
+	_os <<"Eigenvalue\tRitz Residual"<<endl;
+	_os <<"------------------------------------------------------"<<endl;
 	if ( _nevtemp == 0 ) {
-	  cout<<"[none computed]"<<endl;
+	  _os <<"[none computed]"<<endl;
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
-	    cout.width(10);
-	    cout<<(*_evals)[i]<<"\t"<<(*_ritzresiduals)[i]<<endl;
+	    _os.width(10);
+	    _os <<(*_evals)[i]<<"\t"<<(*_ritzresiduals)[i]<<endl;
 	  }
 	}
-	cout<<"------------------------------------------------------"<<endl;
+	_os <<"------------------------------------------------------"<<endl;
       } else {
-	cout<<"Real Part\tImag Part\tRitz Residual"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
+	_os <<"Real Part\tImag Part\tRitz Residual"<<endl;
+	_os <<"------------------------------------------------------"<<endl;
 	if ( _nevtemp == 0 ) {
-	  cout<<"[none computed]"<<endl;
+	  _os <<"[none computed]"<<endl;
 	} else {
 	  for (i=0; i<_nevtemp; i++) {
-	    cout.width(10);
-	    cout<<(*_evals)[i]<<"\t"<<(*_evals)[_nev+i]<<"\t\t"<<(*_ritzresiduals)[i]<<endl;
+	    _os.width(10);
+	    _os <<(*_evals)[i]<<"\t"<<(*_evals)[_nev+i]<<"\t\t"<<(*_ritzresiduals)[i]<<endl;
 	  }
 	}
-	cout<<"------------------------------------------------------"<<endl;
-	cout<<" "<<endl;
+	_os <<"------------------------------------------------------"<<endl;
+	_os <<" "<<endl;
       }
-      cout<<"******************************************************"<<endl;
+      _os <<"******************************************************"<<endl;
     }	
   }
   
@@ -382,6 +388,10 @@ namespace Anasazi {
     //
     ComputeEvecs();    
     //
+    // Print out a final summary before returning.
+    //
+    if (_om->isVerbosity( FinalSummary ))
+      currentStatus();
   }
   
   //----------------------------------------------------------------------------------------
@@ -437,7 +447,7 @@ namespace Anasazi {
 	ComputeSchurForm( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
-	if (_om->doOutput(0)) {
+	if (_om->isVerbosity( Debug )) {
 	  currentStatus();
 	}
       }
@@ -470,7 +480,7 @@ namespace Anasazi {
 	  _isdecompcurrent = false;
 	}
 	// Output current information if necessary
-	if (_om->doOutput(0)) {
+	if (_om->isVerbosity( Debug )) {
 	  currentStatus();
 	}
       }
@@ -597,9 +607,9 @@ namespace Anasazi {
     for (i=0; i<_blocksize; i++) {
       if (norm1[i] == zero) {
 	_dep_flg = true;
-	if (_om->doOutput(2)){
-	  cout << "Col " << num_prev+i << " is the zero vector" << endl;
-	  cout << endl;
+	if (_om->isVerbosityAndPrint( Debug )){
+	  _os << "Col " << num_prev+i << " is the zero vector" << endl;
+	  _os << endl;
 	}
       }	  
     }
@@ -637,15 +647,15 @@ namespace Anasazi {
     for (i=0; i<_blocksize; i++){
       if (norm2[i] < norm1[i] * _blk_tol) {
 	_dep_flg = true;
-	if (_om->doOutput(2)){
-	  cout << "Col " << num_prev+i << " is dependent on previous "
+	if (_om->isVerbosityAndPrint( Debug )) {
+	  _os << "Col " << num_prev+i << " is dependent on previous "
 	       << "Arnoldi vectors in V_prev" << endl;
-	  cout << endl;
+	  _os << endl;
 	}
       }
     } // end for (i=0;...)
     //
-    if (_om->doOutput(2)) {
+    if (_om->isVerbosity( Debug )) {
       CheckBlkArnRed(j);
     }
     //
@@ -743,8 +753,8 @@ namespace Anasazi {
       // Leave if this is the zero vector, there is no more we can do here.
       //
       if (norm1[0] == zero) { 
-	if (_om->doOutput(2)) {
-	  cout << "Column " << num_prev << " of _basisvecs is the zero vector" 
+	if (_om->isVerbosityAndPrint( Debug )) {
+	  _os << "Column " << num_prev << " of _basisvecs is the zero vector" 
 	       << endl<<endl;
 	}
 	_exit_flg = true; 
@@ -793,8 +803,8 @@ namespace Anasazi {
       // Check for linear dependence
       //
       if (norm2[0] < norm1[0] * _sing_tol) {
-	if (_om->doOutput(2)) {
-	  cout << "Column " << num_prev << " of _basisvecs is dependent" 
+	if (_om->isVerbosityAndPrint( Debug )) {
+	  _os << "Column " << num_prev << " of _basisvecs is dependent" 
 	       << endl<<endl;
 	}
 	//
@@ -856,8 +866,8 @@ namespace Anasazi {
       } // end else ...
     } // end for (i=0;...)
     //
-    if (_om->doOutput(2)){
-      cout << "Checking Orthogonality after BlkOrthSing()"
+    if (_om->isVerbosityAndPrint( Debug )) {
+      _os << "Checking Orthogonality after BlkOrthSing()"
 	   << " Iteration: " << j << endl<<endl;
       CheckBlkArnRed(j);
     }
@@ -973,8 +983,8 @@ namespace Anasazi {
 	  // and orthogonalized against all previous basis vectors.
 	  //
 	  if (norm2[0] < norm1[0] * _blk_tol) {
-	    if (_om->doOutput(2)) {
-	      cout << "Column " << j << " of current block is dependent"<<endl;
+	    if (_om->isVerbosityAndPrint( Debug )) {
+	      _os << "Column " << j << " of current block is dependent"<<endl;
 	    }
 	    _dep_flg = true;
 	    return;
@@ -1094,7 +1104,7 @@ namespace Anasazi {
     //
     // Check the Schur form.
     //
-    if (_om->doOutput(2))
+    if (_om->isVerbosity( Debug ))
       CheckSchurVecs( _jstart );
     //
     //  If the operator is symmetric, then the Ritz vectors are the eigenvectors.
@@ -1137,13 +1147,13 @@ namespace Anasazi {
       Teuchos::RefCountPtr<MV> evecstempr, evecr1;
       ScalarType t_evecnrm;
       i = 0;
-      cout << "Columns of eigenvectors : "<< MVT::GetNumberVecs( *_evecs )<<endl;
+      _os << "Columns of eigenvectors : "<< MVT::GetNumberVecs( *_evecs )<<endl;
       while ( i < curr_nev ) {	
 	if ((*_ritzvalues)[_totallength+i] != zero) {
 	  t_evecnrm = one/lapack.LAPY2(evecnrm[i],evecnrm[i+1]);
 	  index2[0] = i;
 
-	  cout <<" eigenvalue : "<< i << endl;
+	  _os <<" eigenvalue : "<< i << endl;
 	  // Copy the real part of the eigenvector.  Scale by square-root of 2 to normalize the vector.
 	  evecstempr = MVT::CloneView( *evecstemp, &index2[0], 1 );
 	  evecr1 = MVT::CloneView( *_evecs, &index2[0], 1 );
@@ -1184,7 +1194,7 @@ namespace Anasazi {
 	// There is storage for an extra eigenvector.  
 	// So, when the last eigenvalues is the first of a conjugate pair, that eigenvector will be computed.
 	//
-	cout << "Conjugate pairs : "<<conjprs<<endl;
+	_os << "Conjugate pairs : "<<conjprs<<endl;
 	for (i=0; i<conjprs; i++) {
 	  indexi_pnev[0] = indexi[i] + _nev;
 	  index2[0] = indexi[i];	  
@@ -1493,8 +1503,11 @@ namespace Anasazi {
     // up the reordering, since the pair is moved if one of the pair is moved.
     //---------------------------------------------------
     //
-    //cout<<"Before sorting the Schur form (H):"<<endl;
-    //H.print(cout);	  
+    if (_om->isVerbosityAndPrint( Debug )) {
+      _os <<endl<<"Iteration ( "<< _iter <<" ) : [ Before sorting the Schur form ( H ) ]"<<endl;
+      H.print(_os);	  
+      _os <<endl;
+    }
     //
     int _nevtemp = 0;
     char compq = 'V';
@@ -1524,8 +1537,12 @@ namespace Anasazi {
 		    1, &work[0], &info );
       assert(info==0);
     }
-    //cout<<"After sorting and reordering the Schur form (H):"<<endl;
-    //H.print(cout); 
+    //
+    if (_om->isVerbosityAndPrint( Debug )) {
+      _os <<endl<<"Iteration ( "<< _iter <<" ) : [ After sorting and reordering the Schur form ( H ) ]"<<endl;
+      H.print(_os);	  
+      _os <<endl;
+    }
     //
     // Determine largest off diagonal element of Schur matrix for symmetric case.
     //
@@ -1588,7 +1605,11 @@ namespace Anasazi {
     MVT::MvTransMv( one, *Z, *basistemp, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
-    cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter << " is "<< SchurProj.normFrobenius()<<" (should be small)"<<endl;
+    if (_om->doPrint()) {
+      _os << endl 
+          << "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " 
+          << _restartiter << " is "<< SchurProj.normFrobenius() << endl;
+    }
   }
   
   //----------------------------------------------------------------------------------------
@@ -1598,6 +1619,8 @@ namespace Anasazi {
   void BlockKrylovSchur<ScalarType,MV,OP>::CheckBlkArnRed( const int j ) {
     int i,k,m=(j+1)*_blocksize;
     std::vector<int> index( _blocksize );
+    const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+    const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     ReturnType ret;       
     
     for ( i=0; i<_blocksize; i++ ) {
@@ -1606,7 +1629,7 @@ namespace Anasazi {
     Teuchos::RefCountPtr<MV> F_vec = MVT::CloneView( *_basisvecs, &index[0], _blocksize );
     
     std::vector<ScalarType> ptr_norms( m );
-    ScalarType sum=0.0;
+    ScalarType sum = zero;
     
     MVT::MvNorm( *F_vec, &ptr_norms[0] );
     for ( i=0; i<_blocksize; i++ ) {
@@ -1618,12 +1641,13 @@ namespace Anasazi {
       index[i] = i;  
     }
     Teuchos::RefCountPtr<MV> Vj = MVT::CloneView( *_basisvecs, &index[0], m );
-    cout << " " << endl;
-    cout << "********Block Arnoldi iteration******** " << j+1 << endl;
-    cout << " " << endl;
-    
-    const ScalarType one=1.0;
-    const ScalarType zero=0.0;
+
+    if (_om->doPrint()) {
+      _os << endl;
+      _os << "********Block Arnoldi Iteration "<<j+1<<"******** " << endl;
+      _os << endl;
+    }    
+
     Teuchos::SerialDenseMatrix<int,ScalarType> VTV(m,m);
     ret = _problem->InnerProd( *Vj, *Vj, VTV );
     if (ret != Ok) { }
@@ -1638,10 +1662,15 @@ namespace Anasazi {
 	}
 	column_sum += ptr[i];
       }
-      cout <<  " V^T*B*V-I " << "for column " << k << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) << endl;
+
+      if (_om->doPrint()) {
+        _os << endl 
+            <<" V^T*B*V-I " << "for column " << k << " is " 
+            << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) 
+            << endl;
+      }
       ptr += m;
     }
-    cout << " " << endl;
     
     Teuchos::SerialDenseMatrix<int,ScalarType> E(m,_blocksize);
     
@@ -1656,9 +1685,14 @@ namespace Anasazi {
       }
       ptr_Ej += m;
       if (ptr_norms[k]) column_sum = column_sum/ptr_norms[k];
-      cout << " B-Orthogonality with F " << "for column " << k << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) << endl;
+
+      if (_om->doPrint()) {
+        _os << endl 
+            << " B-Orthogonality with F " << "for column " << k 
+            << " is " << Teuchos::ScalarTraits<ScalarType>::magnitude(column_sum) 
+            << endl;
+      }
     }
-    cout << " " << endl;
                  
     Teuchos::RefCountPtr<MV> AVj = MVT::Clone( *_basisvecs, m ); 
     ret = OPT::Apply( *_Op, *Vj, *AVj );
@@ -1675,10 +1709,12 @@ namespace Anasazi {
     MVT::MvNorm( *AVj, &ptr_norms[0] );
     
     for ( i=0; i<m; i++ ) { 
-      cout << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i] << endl;  
+      if (_om->doPrint()) {
+        _os << endl
+            << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i] 
+            << endl;  
+      }
     }
-    cout << " " << endl;
-    
   }
 
   //----------------------------------------------------------------------------------------

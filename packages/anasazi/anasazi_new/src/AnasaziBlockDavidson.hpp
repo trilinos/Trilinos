@@ -124,6 +124,7 @@ namespace Anasazi {
     
     //! This method requests that the solver print out its current status to screen.
     void currentStatus();
+
     //@}
   private:
     //
@@ -165,6 +166,9 @@ namespace Anasazi {
     Teuchos::SerialDenseMatrix<int,ScalarType> _KKsdm, _Ssdm;
     std::vector<ScalarType> _theta, _normR, _work, _resids;
 
+    // Output stream from the output manager
+    std::ostream& _os;
+
     typedef MultiVecTraits<ScalarType,MV> MVT;
     typedef OperatorTraits<ScalarType,MV,OP> OPT;
   };
@@ -198,7 +202,8 @@ namespace Anasazi {
     _dimSearch(0),    
     _knownEV(0),
     _lwork(0),
-    _MSUtils(om)
+    _MSUtils(om),
+    _os(_om->GetOStream())
   {     
     //
     // Retrieve the initial vector and operator information from the Anasazi::Eigenproblem.
@@ -257,27 +262,27 @@ namespace Anasazi {
   void BlockDavidson<ScalarType,MV,OP>::currentStatus() 
   {
     int i;
-    if (_om->doOutput(-1)) {
+    if (_om->doPrint()) {
       cout.setf(ios::scientific, ios::floatfield);  
       cout.precision(6);
-      cout<<" "<<endl;
-      cout<<"********************CURRENT STATUS********************"<<endl;
-      cout<<"Iterations :\t"<<_iter<<endl;
-      cout<<"Restarts :\t"<<_restartIter<<endl;
-      cout<<"Block Size :\t"<<_blockSize<<endl;
-      cout<<"Requested Eigenvalues : "<<_nev<<endl;
-      cout<<"Computed Eigenvalues : "<<_knownEV<<endl;
-      cout<<"Residual Tolerance : "<<_residual_tolerance<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<"Computed Eigenvalues: "<<endl;
-      cout<<"------------------------------------------------------"<<endl;
-      cout<<"Eigenvalue\tResidual"<<endl;
-      cout<<"------------------------------------------------------"<<endl;
+      _os <<endl;
+      _os <<"********************CURRENT STATUS********************"<<endl;
+      _os <<"Iterations :\t"<<_iter<<endl;
+      _os <<"Restarts :\t"<<_restartIter<<endl;
+      _os <<"Block Size :\t"<<_blockSize<<endl;
+      _os <<"Requested Eigenvalues : "<<_nev<<endl;
+      _os <<"Computed Eigenvalues : "<<_knownEV<<endl;
+      _os <<"Residual Tolerance : "<<_residual_tolerance<<endl;
+      _os <<"------------------------------------------------------"<<endl;
+      _os <<"Computed Eigenvalues: "<<endl;
+      _os <<"------------------------------------------------------"<<endl;
+      _os <<"Eigenvalue\tResidual"<<endl;
+      _os <<"------------------------------------------------------"<<endl;
       if ( _knownEV > 0 ) {
 	for (i=0; i<_knownEV; i++)
-	  cout<<(*_evals)[i]<<"\t"<<_resids[i]<<endl;
+	  _os <<(*_evals)[i]<<"\t"<<_resids[i]<<endl;
       } else {
-	cout<<"[none computed]"<<endl;
+	_os <<"[none computed]"<<endl;
       }
     }
   }
@@ -366,7 +371,7 @@ namespace Anasazi {
 	//
 	// Check orthogonality of X ( if required )
 	//
-	if (_om->doOutput(0) ) {
+	if (_om->isVerbosity( Debug ) ) {
 	  if (localSize > 0)
 	    accuracyCheck( Xcurrent.get(), _MXvec.get(), Xprev.get() );
 	  else
@@ -459,27 +464,27 @@ namespace Anasazi {
 	    nFound ++;	  
 	}
 	// Print information on current iteration
-	if (_om->doOutput(0)) {
-	  cout << " Iteration " << _iter << " - Number of converged eigenvectors ";
-	  cout << _knownEV + nFound << endl;
+	if (_om->isVerbosityAndPrint( Debug )) {
+	  _os << " Iteration " << _iter << " - Number of converged eigenvectors ";
+	  _os << _knownEV + nFound << endl;
 	} 
 	
-	if (_om->doOutput(0)) {
-	  cout << endl;
+	if (_om->isVerbosityAndPrint( Debug )) {
+	  _os << endl;
 	  cout.precision(2);
 	  cout.setf(ios::scientific, ios::floatfield);
 	  for (i=0; i<_blockSize; ++i) {
-	    cout << " Iteration " << _iter << " - Scaled Norm of Residual " << i;
-	    cout << " = " << _normR[i] << endl;
+	    _os << " Iteration " << _iter << " - Scaled Norm of Residual " << i;
+	    _os << " = " << _normR[i] << endl;
 	  }
-	  cout << endl;
+	  _os << endl;
 	  cout.precision(2);
 	  for (i=0; i<localSize + _blockSize; ++i) {
-	    cout << " Iteration "<< _iter << " - Ritz eigenvalue " << i;
+	    _os << " Iteration "<< _iter << " - Ritz eigenvalue " << i;
 	    cout.setf((fabs(_theta[i]) < 0.01) ? ios::scientific : ios::fixed, ios::floatfield);  
-	    cout << " = " << _theta[i] << endl;
+	    _os << " = " << _theta[i] << endl;
 	  }
-	  cout << endl;
+	  _os << endl;
 	}
 	//
 	// Exit the loop to treat the converged eigenvectors
@@ -711,35 +716,37 @@ namespace Anasazi {
     // Sort the eigenvectors
     //
     if ((info==0) && (_knownEV > 0))
-      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids);
- 
-  } // end solve()
+      _MSUtils.sortScalars_Vectors(_knownEV, &(*_evals)[0], _evecs.get(), &_resids); 
+    //
+    // Print out a final summary if necessary
+    //
+    if (_om->isVerbosity( FinalSummary ))
+      currentStatus();
 
+  } // end solve()
 
   template <class ScalarType, class MV, class OP>
   void BlockDavidson<ScalarType,MV,OP>::accuracyCheck(const MV *X, const MV *MX, const MV *Q) const 
     {
       cout.precision(2);
       cout.setf(ios::scientific, ios::floatfield);
-      double tmp;
-      
-      ostream& os = _om->GetOStream();
+      ScalarType tmp;
       
       if (X) {
 	if (_BOp.get()) {
 	  if (MX) {
 	    tmp = _MSUtils.errorEquality(X, MX, _BOp.get());
-	    if (_om->doOutput(0))
-	      cout << " >> Difference between MX and M*X = " << tmp << endl;
+	    if (_om->doPrint())
+	      _os << " >> Difference between MX and M*X = " << tmp << endl;
 	  }
 	  tmp = _MSUtils.errorOrthonormality(X, _BOp.get());
-	  if (_om->doOutput(0))
-	    cout << " >> Error in X^T M X - I = " << tmp << endl;
+	  if (_om->doPrint())
+	    _os << " >> Error in X^T M X - I = " << tmp << endl;
 	}
 	else {
 	  tmp = _MSUtils.errorOrthonormality(X, 0);
-	  if (_om->doOutput(0))
-	    cout << " >> Error in X^T X - I = " << tmp << endl;
+	  if (_om->doPrint())
+	    _os << " >> Error in X^T X - I = " << tmp << endl;
 	}
       }
       
@@ -748,28 +755,27 @@ namespace Anasazi {
       
       if (_BOp.get()) {
 	tmp = _MSUtils.errorOrthonormality(Q, _BOp.get());
-	if (_om->doOutput(0))
-	  cout << " >> Error in Q^T M Q - I = " << tmp << endl;
+	if (_om->doPrint())
+	  _os << " >> Error in Q^T M Q - I = " << tmp << endl;
 	if (X) {
 	  tmp = _MSUtils.errorOrthogonality(Q, X, _BOp.get());
-	  if (_om->doOutput(0))
-	    cout << " >> Orthogonality Q^T M X up to " << tmp << endl;
+	  if (_om->doPrint())
+	    _os << " >> Orthogonality Q^T M X up to " << tmp << endl;
 	}
       }
       else {
 	tmp = _MSUtils.errorOrthonormality(Q, 0);
-	if (_om->doOutput(0))
-	  cout << " >> Error in Q^T Q - I = " << tmp << endl;
+	if (_om->doPrint())
+	  _os << " >> Error in Q^T Q - I = " << tmp << endl;
 	if (X) {
 	  tmp = _MSUtils.errorOrthogonality(Q, X, 0);
-	  if (_om->doOutput(0))
-	    cout << " >> Orthogonality Q^T X up to " << tmp << endl;
+	  if (_om->doPrint())
+	    _os << " >> Orthogonality Q^T X up to " << tmp << endl;
 	}
-      }
-      
+      }      
     }
   
-    } // End of namespace Anasazi
+  } // End of namespace Anasazi
 
 #endif
 

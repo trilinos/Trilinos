@@ -41,13 +41,19 @@
 	to the appropriate output stream.
 
 	This output manager will remove the need for the solver or linear problem to know any information
-	about the required output.  Calling <tt>doOutput( int vbLevel )</tt> will inform the solver if
-	it is supposed to output the information corresponding to the verbosity level (\c vbLevel ).
+	about the required output.  Calling <tt>isVerbosity( MsgType type )</tt> will inform the solver if
+	it is supposed to output the information corresponding to the message type (\c type ).
 
 	\author Michael Heroux and Heidi Thornquist
 */
 
 namespace Anasazi {
+
+	enum MsgType {	Error = 0,  		//! Errors are always printed
+			Warning = 0x1, 		//! Internal warnings
+			FinalSummary = 0x2, 	//! Final computational summary
+			Debug = 0x4		//! Debugging information
+		};
 
 template <class ScalarType>
 class OutputManager {
@@ -59,11 +65,8 @@ class OutputManager {
 	//! Default constructor
 	OutputManager();
 
-	//! Copy constructor.
-	OutputManager( const OutputManager<ScalarType>& OM );
-
 	//! Basic constructor.
-	OutputManager( int myID, int vbLevel = 0, int printID = 0, ostream& os = cout );
+	OutputManager( int myID, MsgType type = Anasazi::Error, int printID = 0, ostream& os = std::cout );
 
 	//! Destructor.
 	virtual ~OutputManager() {};
@@ -74,8 +77,8 @@ class OutputManager {
 	//! Set the output stream for this manager.
 	void SetOStream( ostream& os ) { myOS_ = os; };
 
-	//! Set the verbosity level for this manager.
-	void SetVerbosity( int vbLevel ) { vbLevel_ = vbLevel; }; 
+	//! Set the message output types for this manager.
+	void SetVerbosity( MsgType type ) { msgType_ = type; }; 
 
 	//@}
 
@@ -88,16 +91,38 @@ class OutputManager {
 
 	//@{ \name Query methods.
 
-	//! Find out whether we need to print out information for this verbosity level.
-	bool doOutput( int vbLevel ) { return (( IPrint_ && vbLevel_ > vbLevel ) ? true : false ); }; 
+	//! Find out whether we need to print out information for this message type.
+	/*! This method is used by the solver to determine whether computations are
+		necessary for this message type.
+	*/
+	bool isVerbosity( MsgType type ) { return (( type == Anasazi::Error ) || ( msgType_ & type )); }; 
+
+	//! Find out whether this processor needs to print out information for this message type.
+	/*! This method is used by the solver to determine whether this output stream has been
+		selected to output the information for this message type.
+	*/		
+	bool isVerbosityAndPrint( MsgType type ) { return ( iPrint_ && isVerbosity( type )); }; 
+
+	//! Find out whether information can be outputted through this output stream.
+	bool doPrint( void ) { return (iPrint_); };	
 
 	//@}
 
 	private:
 
+	//@{ \name Undefined methods.
+
+	//! Copy constructor.
+	OutputManager( const OutputManager<ScalarType>& OM );
+
+	//! Assignment operator.
+	OutputManager<ScalarType>& operator=( const OutputManager<ScalarType>& OM );
+
+	//@}
+
 	int myID_, printID_;
-	int vbLevel_;
-	bool IPrint_;
+	int msgType_;
+	bool iPrint_;
 	ostream& myOS_;	
 };
 
@@ -105,28 +130,18 @@ template<class ScalarType>
 OutputManager<ScalarType>::OutputManager() :
 	myID_(0),
 	printID_(0),
-	vbLevel_(0),
-	IPrint_(true),
+	msgType_(0),
+	iPrint_(true),
 	myOS_(cout)
 {
 }
 
 template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( const OutputManager<ScalarType>& OM ) :
-	myID_(OM.myID_),
-	printID_(OM.printID_),
-	vbLevel_(OM.vbLevel_),
-	IPrint_(OM.IPrint_),
-	myOS_(OM.myOS_)
-{
-}	 
-
-template<class ScalarType>
-OutputManager<ScalarType>::OutputManager( int myID, int vbLevel, int printID, ostream& os ) :
+OutputManager<ScalarType>::OutputManager( int myID, MsgType type, int printID, ostream& os ) :
 	myID_(myID),
 	printID_(printID),
-	vbLevel_(vbLevel),
-	IPrint_(myID == printID),
+	msgType_(type),
+	iPrint_(myID == printID),
 	myOS_(os)
 {
 }

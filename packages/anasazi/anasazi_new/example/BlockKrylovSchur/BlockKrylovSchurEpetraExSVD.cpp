@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
 	// Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-	//MyOM->SetVerbosity( 2 );	
+	MyOM->SetVerbosity( Anasazi::FinalSummary );	
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, tol, 
@@ -193,13 +193,10 @@ int main(int argc, char *argv[]) {
 	// Retrieve eigenvectors
 	// Anasazi::EpetraMultiVec* evecr = dynamic_cast<Anasazi::EpetraMultiVec*>(&(MyProblem->GetEvecs()));
 
-	// Output results to screen
-	MySolver.currentStatus();
-	
 	// Compute singular values/vectors and direct residuals.
 	//
 	// Compute singular values which are the square root of the eigenvalues
-	if (MyOM->doOutput(-1)) {
+	if (MyOM->doPrint()) {
 	  cout<<"------------------------------------------------------"<<endl;
 	  cout<<"Computed Singular Values: "<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
@@ -224,7 +221,7 @@ int main(int argc, char *argv[]) {
 	for (i=0; i<nev; i++) { S(i,i) = (*evals)[i]; }
 	Av.MvTimesMatAddMv( -one, u, S, one );
 	Av.MvNorm( &directnrm[0] );
-	if (MyOM->doOutput(-1)) {
+	if (MyOM->doPrint()) {
 	  cout<<"Singular Value"<<"\t\t"<<"Direct Residual"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
 	  for (i=0; i<nev; i++) {

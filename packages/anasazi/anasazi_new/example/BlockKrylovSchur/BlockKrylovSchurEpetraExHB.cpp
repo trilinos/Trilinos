@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
         // Create an output manager to handle the I/O from the solver
 	Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM =
 	  Teuchos::rcp( new Anasazi::OutputManager<double>( MyPID ) );
-        //MyOM->SetVerbosity( 2 );
+        MyOM->SetVerbosity( Anasazi::FinalSummary );
 	//
 	//  Initialize the Block Arnoldi solver
 	//
@@ -199,9 +199,6 @@ int main(int argc, char *argv[]) {
 	for (i=0; i<nev; i++)
 	  index[i] = nev + i;
         Anasazi::EpetraMultiVec* eveci = dynamic_cast<Anasazi::EpetraMultiVec*>(MyProblem->GetEvecs()->CloneView( &index[0], nev ));
-
-        // output results to screen
-        MySolver.currentStatus();
 
 	// Compute residuals.
 	Teuchos::LAPACK<int,double> lapack;

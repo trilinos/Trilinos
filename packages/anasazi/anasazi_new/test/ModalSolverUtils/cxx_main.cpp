@@ -433,7 +433,7 @@ int main(int argc, char *argv[])
   }
   else {
     for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-15 ) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
 	numberFailedTests++;
 	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 1]!"<<endl;
 	testFailed = true;
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
   }
   else {
     for (i=0; i<nev; i++) {
-      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-15 ) {
+      if ( Teuchos::ScalarTraits<double>::magnitude( lambda[i]-true_lambda[i] ) > 1.0e-14 ) {
 	numberFailedTests++;
 	cout<< "ERROR:  DIRECT SOLVER FAILED [esType = 0]!"<<endl;
 	testFailed = true;

@@ -91,7 +91,8 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::OutputManager<double>() );
 
   // Set verbosity level
-  MyOM->SetVerbosity( 2 );
+  if (verbose && MyPID == 0)
+    MyOM->SetVerbosity( Anasazi::FinalSummary );
 
   // Create problem
   Teuchos::RefCountPtr<ModalProblem> testCase = Teuchos::rcp( new ModeLaplace1DQ1(Comm, brick_dim[0], elements[0]) );
@@ -138,9 +139,6 @@ int main(int argc, char *argv[])
 
   // Solve the problem to the specified tolerances or length
   MySolver.solve();
-
-  MySolver.currentStatus();
-
 
   return 0;
 }	
