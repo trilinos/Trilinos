@@ -30,79 +30,79 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_STEPSIZE_MANAGER_H
-#define LOCA_STEPSIZE_MANAGER_H
+#ifndef LOCA_MULTICONTINUATION_MANAGER_H
+#define LOCA_MULTICONTINUATION_MANAGER_H
 
-#include "LOCA_StepSize_Generic.H"  // base class
+#include "NOX_Abstract_Group.H" // For ReturnType
+
+namespace LOCA {
+  namespace MultiContinuation {
+    class AbstractGroup;
+    class ExtendedGroup;
+  }
+}
 
 namespace LOCA {
 
-  namespace StepSize {
+  namespace MultiContinuation {
 
-    //! %Manager for step size control strategies
     /*! 
+      \brief A manager class for creating different continuation groups.
+    */
+    /*!
       The parameters passed to the constructor or reset should specify
       the "Method", as described below, as well as any additional
       parameters for that particular method.
  
       <ul>
-      <li> "Method" - Name of the step size control method. Valid choices are
+      <li> "Method" - Name of the continuation method. Valid choices are
       <ul> 
-      <li> "Constant" (LOCA::StepSize::Constant) [Default]
-      <li> "Adaptive" (LOCA::StepSize::Adaptive) 
+      <li> "%Natural" (LOCA::Continuation::NaturalGroup) [Default]
+      <li> "%Arc Length" (LOCA::Continuation::ArcLengthGroup) 
+      <li> "%Householder Arc Length" (LOCA::Continuation::HouseholderGroup) 
       </ul>
       </ul>
+
+      Call the createContinuationGroup to instantiate a continuation group
+      of the appropriate type.
     */  
-    class Manager : public LOCA::StepSize::Generic {
+
+    class Manager {
 
     public:
 
       //! Constructor. 
-      Manager(NOX::Parameter::List& params);
+      Manager(NOX::Parameter::List& p);
 
       //! Destructor
       virtual ~Manager();
 
       //! Reset parameters
       virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params);
+      reset(NOX::Parameter::List& p);
   
-      //! Computes step size based on step size control method
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::ExtendedGroup& curGroup,
-	      const LOCA::Continuation::ExtendedVector& predictor,
-	      const NOX::Solver::Generic& solver,
-	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-	      const LOCA::Stepper& stepper,
-	      double& stepSize);
+      //! Creates continuation group for given method
+      virtual LOCA::MultiContinuation::ExtendedGroup* 
+      createContinuationGroup(LOCA::MultiContinuation::AbstractGroup& grp);
 
-      //! Computes step size based on step size control method
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::MultiContinuation::ExtendedGroup& curGroup,
-	      const LOCA::MultiContinuation::ExtendedVector& predictor,
-	      const NOX::Solver::Generic& solver,
-	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
-	      const LOCA::NewStepper& stepper,
-	      double& stepSize);
-
-      //! Returns step size control method
+      //! Returns method name
       const string& getMethod() const;
 
-      //! Returns previous step size
-      virtual double getPrevStepSize() const;
-
-      //! Returns initial step size
-      virtual double getStartStepSize() const;
+      //! Returns continuation parameter id (string)
+      const string& getConParamID() const;
 
     protected:
-      //! Stores step size control method name
+
+      //! Stores continuation method name
       string method;
+      
+      //! Stores continuation parameter id (string)
+      string conParamID;
 
-      //! Stores pointer to current step size control object
-      LOCA::StepSize::Generic *stepSizePtr;
-
+      //! Stores parameter list
+      NOX::Parameter::List* paramsPtr;
     };
-  } // namespace StepSize
+  } // namespace Predictor
 } // namespace LOCA
 
 #endif

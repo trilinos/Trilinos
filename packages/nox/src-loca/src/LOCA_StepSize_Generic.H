@@ -48,6 +48,11 @@ namespace LOCA {
     class ExtendedVector;
   }
   class Stepper;
+  namespace MultiContinuation {
+    class ExtendedGroup;
+    class ExtendedVector;
+  }
+  class NewStepper;
 }
 
 namespace LOCA {
@@ -91,6 +96,21 @@ namespace LOCA {
 	      const NOX::Solver::Generic& solver,
 	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,
+	      double& stepSize) = 0;
+
+      /*! 
+	\brief Compute the step size.
+      */
+      /*!
+       * Returns NOX::Abstract::Group::Failed if the computed step size
+       * fails certain criteria (e.g., if it is too small)
+       */
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(LOCA::MultiContinuation::ExtendedGroup& curGroup,
+	      const LOCA::MultiContinuation::ExtendedVector& predictor,
+	      const NOX::Solver::Generic& solver,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
+	      const LOCA::NewStepper& stepper,
 	      double& stepSize) = 0;
 
       //! Return the previous step size

@@ -166,7 +166,7 @@ namespace LOCA {
       /*!
        * Returns a vector of type LOCA::MultiContinuation::ExtendedVector
        */
-      LOCA::Extended::Vector* 
+      virtual LOCA::Extended::Vector* 
       generateVector(int nVecs, int nScalarRows) const;
 
     }; // class ExtendedVector

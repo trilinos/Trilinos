@@ -98,7 +98,7 @@ namespace LOCA {
 
     public:
   
-      //! Constructor with integer continuation parameter id
+      //! Constructor with integer continuation parameter ids
       /*!
        * The argument \em grp is the underlying group which implements \f$F\f$,
        * \em paramID is the index of the continuation parameter, 
@@ -109,6 +109,19 @@ namespace LOCA {
        */
       ExtendedGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
 		    const vector<int>& paramIDs,
+		    NOX::Parameter::List& params);
+
+      //! Constructor for single parameter continuation
+      /*!
+       * The argument \em grp is the underlying group which implements \f$F\f$,
+       * \em paramID is the name of the continuation parameter, 
+       * \em params
+       * is the parameter list for the continuation groups described above.
+       *
+       * The \em grp argument is a non-const reference and may be modified.
+       */
+      ExtendedGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
+		    const string& paramID,
 		    NOX::Parameter::List& params);
 
       //! Copy constructor
@@ -296,6 +309,12 @@ namespace LOCA {
        */
       //@{
 
+      //! Returns number of parameters
+      virtual int getNumParams() const;
+
+      //! Notifies group that continuation step is completed
+      virtual void notifyCompletedStep();
+
       //! Compute predictor directions
       virtual NOX::Abstract::Group::ReturnType 
       computePredictor();
@@ -308,35 +327,52 @@ namespace LOCA {
       virtual const LOCA::MultiContinuation::ExtendedMultiVector& 
       getPredictorDirections() const;
 
+      //! Is Predictor valid
+      virtual bool isPredictor() const;
+
+      //! Reset predictor manager
+      virtual void resetPredictor(NOX::Parameter::List& predictorParams);
+
+      //! Scales predictor
+      virtual void scalePredictor();
+
       //! Set the previous solution vector y
-      virtual void setPrevX(const LOCA::MultiContinuation::ExtendedVector& y);
+      virtual void setPrevX(const NOX::Abstract::Vector& y);
 
       //! Gets the previous solution vector
       virtual const LOCA::MultiContinuation::ExtendedVector& getPrevX() const ;
 
       //! Set step size for continuation constraint equation \em i
-      virtual void setStepSize(int i, double deltaS);
+      virtual void setStepSize(double deltaS, int i = 0);
 
       //! Get step size for continuation constraint equation \em i
-      virtual double getStepSize(int i) const;
+      virtual double getStepSize(int i = 0) const;
 
       //! Sets the value for continuation parameter \em i
-      virtual void setContinuationParameter(int i, double val);
+      virtual void setContinuationParameter(double val, int i = 0);
 
       //! Returns the value for continuation parameter \em i
-      virtual double getContinuationParameter(int i) const;
+      virtual double getContinuationParameter(int i = 0) const;
 
       //! Get the continuation parameter id for parameter \em i
-      virtual int getContinuationParameterID(int i) const;
+      virtual int getContinuationParameterID(int i = 0) const;
 
       //! Get the continuation parameter ids
       virtual const vector<int>& getContinuationParameterIDs() const;
 
+      //! Get the continuation parameter id for parameter \em i
+      virtual string getContinuationParameterName(int i = 0) const;
+
       //! Returns step size scale factor for constraint equation \em i
-      virtual double getStepSizeScaleFactor(int i) const;
+      virtual double getStepSizeScaleFactor(int i = 0) const;
 
       //! Prints the group
       virtual void printSolution() const;
+
+      //! Computes a scaled dot product between two continuation vectors
+      virtual double computeScaledDotProduct(
+			       const NOX::Abstract::Vector& x, 
+			       const NOX::Abstract::Vector& y) const;
 
       //@}
 
@@ -375,6 +411,9 @@ namespace LOCA {
       //! Vector to hold predictor direction
       LOCA::MultiContinuation::ExtendedMultiVector predictorMultiVec;
 
+      //! Vector to hold scaled predictor direction
+      LOCA::MultiContinuation::ExtendedMultiVector scaledPredictorMultiVec;
+
       //! Stores the previous extended solution vector
       LOCA::MultiContinuation::ExtendedMultiVector prevXMultiVec;
 
@@ -398,6 +437,9 @@ namespace LOCA {
 
       //! Stores view of first column of predictorMultiVec
       LOCA::MultiContinuation::ExtendedVector *predictorVec;
+
+      //! Stores view of first column of scaledPredictorMultiVec
+      LOCA::MultiContinuation::ExtendedVector *scaledPredictorVec;
 
       //! Stores view of first column of prevXMultiVec
       LOCA::MultiContinuation::ExtendedVector *prevXVec;
@@ -437,6 +479,12 @@ namespace LOCA {
 
       //! Is Gradient vector valid
       bool isValidGradient;
+
+      //! Is Predictor vector valid
+      bool isValidPredictor;
+
+      //! Flag indicating whether to base predictor direction on secant
+      bool baseOnSecant;
 
     };
 

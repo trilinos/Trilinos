@@ -316,8 +316,9 @@ LOCA::BorderedSystem::Bordering::applyInverse(
   if (!isZeroY) {
 
     // compute t1 = -B^T*X1, for efficiency t1 is stored in Y
-    if (!isZeroT1) 
+    if (!isZeroT1) {
       X1->multiply(-1.0, *B, Y);
+    }
 
     // compute t2 = -B^T*X2
     if (!isZeroT2) {
@@ -355,6 +356,7 @@ LOCA::BorderedSystem::Bordering::applyInverse(
 	LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
 						     callingFunction);
     }
+
   }
 
   if (!isZeroX) {

@@ -34,6 +34,7 @@
 #include "LOCA_MultiContinuation_ExtendedGroup.H"
 #include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
+#include "LOCA_Parameter_Vector.H"
 
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
 				 LOCA::MultiContinuation::AbstractGroup& g, 
@@ -43,9 +44,10 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     numParams(paramIDs.size()),
     xMultiVec(g.getX(), numParams+1, numParams, NOX::DeepCopy),
     fMultiVec(g.getX(), numParams+1, numParams, NOX::ShapeCopy),
-    newtonMultiVec(g.getX(), 1, numParams, NOX::ShapeCopy),
+    newtonMultiVec(g.getX(), numParams+1, numParams, NOX::ShapeCopy),
     gradientMultiVec(g.getX(), 1, numParams, NOX::ShapeCopy),
-    predictorMultiVec(g.getX(), numParams+1, numParams, NOX::ShapeCopy),
+    predictorMultiVec(g.getX(), numParams, numParams, NOX::ShapeCopy),
+    scaledPredictorMultiVec(g.getX(), numParams, numParams, NOX::ShapeCopy),
     prevXMultiVec(g.getX(), 1, numParams, NOX::ShapeCopy),
     xVec(NULL),
     fVec(NULL),
@@ -54,6 +56,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     newtonVec(NULL),
     gradientVec(NULL),
     predictorVec(NULL),
+    scaledPredictorVec(NULL),
     prevXVec(NULL),
     borderedSolver(LOCA::Utils::getSublist("Stepper")),
     predictorManager(LOCA::Utils::getSublist("Predictor")),
@@ -66,9 +69,57 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     isValidF(false),
     isValidJacobian(false),
     isValidNewton(false),
-    isValidGradient(false)
+    isValidGradient(false),
+    isValidPredictor(false),
+    baseOnSecant(false)
 {
   setupViews();
+  for (int i=0; i<numParams; i++)
+    setContinuationParameter(g.getParam(conParamIDs[i]),i);
+}
+
+LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
+				 LOCA::MultiContinuation::AbstractGroup& g, 
+				 const string& paramID,
+				 NOX::Parameter::List& params)
+  : grpPtr(&g),
+    numParams(1),
+    xMultiVec(g.getX(), numParams+1, numParams, NOX::DeepCopy),
+    fMultiVec(g.getX(), numParams+1, numParams, NOX::ShapeCopy),
+    newtonMultiVec(g.getX(), numParams+1, numParams, NOX::ShapeCopy),
+    gradientMultiVec(g.getX(), 1, numParams, NOX::ShapeCopy),
+    predictorMultiVec(g.getX(), numParams, numParams, NOX::ShapeCopy),
+    scaledPredictorMultiVec(g.getX(), numParams, numParams, NOX::ShapeCopy),
+    prevXMultiVec(g.getX(), 1, numParams, NOX::ShapeCopy),
+    xVec(NULL),
+    fVec(NULL),
+    ffMultiVec(NULL),
+    dfdpMultiVec(NULL),
+    newtonVec(NULL),
+    gradientVec(NULL),
+    predictorVec(NULL),
+    scaledPredictorVec(NULL),
+    prevXVec(NULL),
+    borderedSolver(LOCA::Utils::getSublist("Stepper")),
+    predictorManager(LOCA::Utils::getSublist("Predictor")),
+    index_f(1),
+    index_dfdp(numParams),
+    conParamIDs(numParams),
+    stepSize(numParams, 0.0),
+    stepSizeScaleFactor(numParams, 1.0),
+    ownsGroup(false),
+    isValidF(false),
+    isValidJacobian(false),
+    isValidNewton(false),
+    isValidGradient(false),
+    isValidPredictor(false),
+    baseOnSecant(false)
+{
+  const LOCA::ParameterVector& p = g.getParams();
+  conParamIDs[0] = p.getIndex(paramID);
+  setupViews();
+  for (int i=0; i<numParams; i++)
+    setContinuationParameter(g.getParam(conParamIDs[i]),i);
 }
 
 LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
@@ -81,6 +132,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     newtonMultiVec(source.newtonMultiVec, type),
     gradientMultiVec(source.gradientMultiVec, type),
     predictorMultiVec(source.predictorMultiVec, type),
+    scaledPredictorMultiVec(source.scaledPredictorMultiVec, type),
     prevXMultiVec(source.prevXMultiVec, type),
     xVec(NULL),
     fVec(NULL),
@@ -89,6 +141,7 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     newtonVec(NULL),
     gradientVec(NULL),
     predictorVec(NULL),
+    scaledPredictorVec(NULL),
     prevXVec(NULL),
     borderedSolver(source.borderedSolver),
     predictorManager(LOCA::Utils::getSublist("Predictor")),
@@ -101,7 +154,9 @@ LOCA::MultiContinuation::ExtendedGroup::ExtendedGroup(
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
-    isValidGradient(source.isValidGradient)
+    isValidGradient(source.isValidGradient),
+    isValidPredictor(source.isValidPredictor),
+    baseOnSecant(source.baseOnSecant)
 {
   setupViews();
 }
@@ -112,14 +167,8 @@ LOCA::MultiContinuation::ExtendedGroup::~ExtendedGroup()
   if (ownsGroup) {
     delete grpPtr;
   }
-  delete xVec;
-  delete fVec;
   delete ffMultiVec;
   delete dfdpMultiVec;
-  delete newtonVec;
-  delete gradientVec;
-  delete predictorVec;
-  delete prevXVec;
 }
 
 LOCA::MultiContinuation::ExtendedGroup&
@@ -136,6 +185,7 @@ LOCA::MultiContinuation::ExtendedGroup::operator=(
     newtonMultiVec = source.newtonMultiVec;
     gradientMultiVec = source.gradientMultiVec;
     predictorMultiVec = source.predictorMultiVec;
+    scaledPredictorMultiVec = source.scaledPredictorMultiVec;
     prevXMultiVec = source.prevXMultiVec;
     borderedSolver = source.borderedSolver;
     conParamIDs = source.conParamIDs;
@@ -144,6 +194,9 @@ LOCA::MultiContinuation::ExtendedGroup::operator=(
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
+    isValidGradient = source.isValidGradient;
+    isValidPredictor = source.isValidPredictor;
+    baseOnSecant = source.baseOnSecant;
 
     // set up views again just to be safe
     setupViews();
@@ -264,7 +317,7 @@ LOCA::MultiContinuation::ExtendedGroup::computeJacobian()
   // Set blocks in bordered solver
   borderedSolver.setIsZero(false, isConstraintDerivativesXZero(),
 			   isConstraintDerivativesPZero());
-  borderedSolver.setBlocks(grpPtr, &fMultiVec.getXMultiVec(), 
+  borderedSolver.setBlocks(grpPtr, &(dfdpMultiVec->getXMultiVec()), 
 			   getConstraintDerivativesX(),
 			   getConstraintDerivativesP());
 
@@ -651,11 +704,33 @@ LOCA::MultiContinuation::ExtendedGroup::getUnderlyingGroup()
   return *grpPtr;
 }
 
+int
+LOCA::MultiContinuation::ExtendedGroup::getNumParams() const
+{
+  return numParams;
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::notifyCompletedStep()
+{
+  isValidPredictor = false;
+  baseOnSecant = true;
+}
+
 NOX::Abstract::Group::ReturnType 
 LOCA::MultiContinuation::ExtendedGroup::computePredictor()
 {
-  return predictorManager.compute(true, stepSize, *this, prevXMultiVec, 
-				  xMultiVec, predictorMultiVec);
+  if (isValidPredictor)
+    return NOX::Abstract::Group::Ok;
+
+  NOX::Abstract::Group::ReturnType status = 
+    predictorManager.compute(baseOnSecant, stepSize, *this, prevXMultiVec, 
+			     xMultiVec, predictorMultiVec);
+
+  scalePredictor();
+
+  isValidPredictor = true;
+  return status;
 }
 
 const LOCA::MultiContinuation::ExtendedVector&
@@ -670,9 +745,37 @@ LOCA::MultiContinuation::ExtendedGroup::getPredictorDirections() const
   return predictorMultiVec;
 }
 
+bool
+LOCA::MultiContinuation::ExtendedGroup::isPredictor() const
+{
+  return isValidPredictor;
+}
+
+void 
+LOCA::MultiContinuation::ExtendedGroup::resetPredictor(
+				       NOX::Parameter::List& predictorParams)
+{
+  baseOnSecant = false;
+  predictorManager.reset(predictorParams);
+}
+
+void
+LOCA::MultiContinuation::ExtendedGroup::scalePredictor()
+{
+  LOCA::MultiContinuation::ExtendedVector *v;
+
+  scaledPredictorMultiVec = predictorMultiVec;
+  for (int i=0; i<numParams; i++) {
+    v = 
+      dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledPredictorMultiVec[i]);
+    grpPtr->scaleVector(v->getXVec());
+    grpPtr->scaleVector(v->getXVec());
+  }
+}
+
 void
 LOCA::MultiContinuation::ExtendedGroup::setPrevX(
-			    const LOCA::MultiContinuation::ExtendedVector& y) 
+					     const NOX::Abstract::Vector& y) 
 {
   *prevXVec = y;
 }
@@ -684,7 +787,7 @@ LOCA::MultiContinuation::ExtendedGroup::getPrevX() const
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setStepSize(int i, double deltaS) 
+LOCA::MultiContinuation::ExtendedGroup::setStepSize(double deltaS, int i) 
 {
   stepSize[i] = deltaS;
 }
@@ -696,8 +799,8 @@ LOCA::MultiContinuation::ExtendedGroup::getStepSize(int i) const
 }
 
 void
-LOCA::MultiContinuation::ExtendedGroup::setContinuationParameter(int i,
-								 double val) 
+LOCA::MultiContinuation::ExtendedGroup::setContinuationParameter(double val,
+								 int i) 
 {
   grpPtr->setParam(conParamIDs[i], val);
   xVec->getScalar(i) = val;
@@ -721,6 +824,14 @@ LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterIDs() const
   return conParamIDs;
 }
 
+string
+LOCA::MultiContinuation::ExtendedGroup::getContinuationParameterName(
+								  int i) const
+{
+  const LOCA::ParameterVector& p = grpPtr->getParams();
+  return p.getLabel(conParamIDs[i]);
+}
+
 double
 LOCA::MultiContinuation::ExtendedGroup::getStepSizeScaleFactor(int i) const 
 {
@@ -732,6 +843,23 @@ LOCA::MultiContinuation::ExtendedGroup::printSolution() const
 {
   for (int i=0; i<numParams; i++)
     grpPtr->printSolution(getContinuationParameter(i));
+}
+
+double
+LOCA::MultiContinuation::ExtendedGroup::computeScaledDotProduct(
+			 const NOX::Abstract::Vector& x,
+			 const NOX::Abstract::Vector& y) const
+{
+  const LOCA::MultiContinuation::ExtendedVector& mx = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(x);
+  const LOCA::MultiContinuation::ExtendedVector& my = 
+    dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(y);
+
+  double val = grpPtr->computeScaledDotProduct(mx.getXVec(), my.getXVec());
+  for (int i=0; i<numParams; i++)
+    val += mx.getScalar(i) * my.getScalar(i);
+
+  return val;
 }
 
 NOX::Abstract::Group::ReturnType
@@ -759,7 +887,7 @@ LOCA::MultiContinuation::ExtendedGroup::applyJacobianInverseNewton(
   // Get references to x, param components of newton vector
   NOX::Abstract::MultiVector& newton_x = newtonMultiVec.getXMultiVec();
   NOX::Abstract::MultiVector::DenseMatrix& newton_p = 
-    newtonMultiVec.getScalars();
+    newtonVec->getScalars();
 
   // Call bordered solver applyInverse method
   NOX::Abstract::Group::ReturnType status = 
@@ -784,13 +912,19 @@ LOCA::MultiContinuation::ExtendedGroup::setupViews()
   for (int i=0; i<numParams; i++)
     index_dfdp[i] = i;
 
-  if (xVec != NULL)
-    delete xVec;
+  
   xVec = dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&xMultiVec[0]);
-
-  if (fVec != NULL)
-    delete fVec;
   fVec = dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&fMultiVec[0]);
+  newtonVec = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&newtonMultiVec[0]);
+  gradientVec = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&gradientMultiVec[0]);
+  predictorVec = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&predictorMultiVec[0]);
+  scaledPredictorVec = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&scaledPredictorMultiVec[0]);
+  prevXVec = 
+    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&prevXMultiVec[0]);
 
   if (ffMultiVec != NULL)
     delete ffMultiVec;
@@ -802,24 +936,6 @@ LOCA::MultiContinuation::ExtendedGroup::setupViews()
   dfdpMultiVec = 
     dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector*>(fMultiVec.subView(index_dfdp));
 
-  if (newtonVec != NULL)
-    delete newtonVec;
-  newtonVec = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&newtonMultiVec[0]);
-
-  if (gradientVec != NULL)
-    delete gradientVec;
-  gradientVec = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&gradientMultiVec[0]);
-
-  if (predictorVec != NULL)
-    delete predictorVec;
-  predictorVec = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&predictorMultiVec[0]);
-
-  if (prevXVec != NULL)
-    delete prevXVec;
-  prevXVec = 
-    dynamic_cast<LOCA::MultiContinuation::ExtendedVector*>(&prevXMultiVec[0]);
+  
 
 }

@@ -30,8 +30,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_MULTICONTINUATION_ARCLENGTHGROUP_H
-#define LOCA_MULTICONTINUATION_ARCLENGTHGROUP_H
+#ifndef LOCA_MULTICONTINUATION_NATURALGROUP_H
+#define LOCA_MULTICONTINUATION_NATURALGROUP_H
 
 #include "LOCA_MultiContinuation_ExtendedGroup.H"       // base class
 
@@ -40,7 +40,7 @@ namespace LOCA {
   namespace MultiContinuation { 
 
     
-    class ArcLengthGroup : 
+    class NaturalGroup : 
       public virtual LOCA::MultiContinuation::ExtendedGroup {
 
     public:
@@ -54,9 +54,9 @@ namespace LOCA {
        *
        * The \em grp argument is a non-const reference and may be modified.
        */
-      ArcLengthGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		     const vector<int>& paramIDs,
-		     NOX::Parameter::List& params);
+      NaturalGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
+		   const vector<int>& paramIDs,
+		   NOX::Parameter::List& params);
 
       //! Constructor for single parameter continuation
       /*!
@@ -67,20 +67,20 @@ namespace LOCA {
        *
        * The \em grp argument is a non-const reference and may be modified.
        */
-      ArcLengthGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
-		     const string& paramID,
-		     NOX::Parameter::List& params);
+      NaturalGroup(LOCA::MultiContinuation::AbstractGroup& grp, 
+		   const string& paramID,
+		   NOX::Parameter::List& params);
 
       //! Copy constructor
-      ArcLengthGroup(const ArcLengthGroup& source, 
-		     NOX::CopyType type = NOX::DeepCopy);
+      NaturalGroup(const NaturalGroup& source, 
+		   NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
-      virtual ~ArcLengthGroup();
+      virtual ~NaturalGroup();
 
       //! Assignment operator
-      virtual ArcLengthGroup& 
-      operator=(const ArcLengthGroup& source);
+      virtual NaturalGroup& 
+      operator=(const NaturalGroup& source);
 
       /*! 
        * @name Implementation of LOCA::MultiContinuation::ExtendedGroup virtual methods
@@ -162,56 +162,33 @@ namespace LOCA {
        */
       //@{
 
-      //! Notifies group that continuation step is completed
-      virtual void notifyCompletedStep();
+      //! Set the previous solution vector y
+      virtual void setPrevX(const NOX::Abstract::Vector& y);
 
-      //! Scales predictor
-      virtual void scalePredictor();
-
-      //! Computes a scaled dot product between two continuation vectors
-      virtual double computeScaledDotProduct(
-			       const NOX::Abstract::Vector& x, 
-			       const NOX::Abstract::Vector& y) const;
-
-      //! Calculates scale factors
-      virtual void recalculateScaleFactor(double dpds, double thetaOld,
-					  double& thetaNew);
+      //! Set step size for continuation constraint equation \em i
+      virtual void setStepSize(double deltaS, int i = 0);
 
       //@}
 
     protected:
+
+      //! applyJacobianInverseMultiVector specialized to Newton solves
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverseNewton(NOX::Parameter::List& params);
 
       //! Resets all isValid flags to false
       virtual void resetIsValid();
 
     protected:
 
-      //! Stores arclength constraint residuals
+      //! Stores constraint residuals
       NOX::Abstract::MultiVector::DenseMatrix constraints;
+
+      //! Stores derivative of constraints w.r.t. parameters
+      NOX::Abstract::MultiVector::DenseMatrix dgdp;
 
       //! Flag indicating whether constraints are valid
       bool isValidConstraints;
-
-      //! Flag indicating whether constraint derivatives are valid
-      bool isValidConstraintDerivatives;
-
-      //! Stores scaling factor for each arclength equation
-      vector<double> theta;
-
-      //! Flag indicating whether to do arc-length scaling
-      bool doArcLengthScaling;
-
-      //! Goal value of dp/ds squared
-      double gGoal;
-
-      //! Minimum value for dp/ds for which rescaling is applied
-      double gMax;
-
-      //! Maximum value of scale factor
-      double thetaMin;
-
-      //! Flag indicating whether this is the first rescaling of predictor
-      bool isFirstRescale;
     };
 
   } // namespace MultiContinuation

@@ -278,7 +278,7 @@ namespace LOCA {
        * This allows the operator[] methods to work correctly for 
        * derived classes.
        */
-      LOCA::Extended::Vector* 
+      virtual LOCA::Extended::Vector* 
       generateVector(int nVecs, int nScalarRows) const;
 
       //@}

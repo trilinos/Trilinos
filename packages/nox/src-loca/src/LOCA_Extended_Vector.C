@@ -33,6 +33,7 @@
 #include "NOX_Random.H" //for NOX::Random
 #include "LOCA_Extended_Vector.H"  // Class definition
 #include "LOCA_Extended_MultiVector.H" // for createMultiVector
+#include "LOCA_ErrorCheck.H"
 #include "LOCA_Utils.H"
 
 LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
@@ -83,11 +84,22 @@ LOCA::Extended::Vector::operator=(const LOCA::Extended::Vector& y)
 { 
   if (this != &y) {
 
+    if (numScalars != y.numScalars) 
+      LOCA::ErrorCheck::throwError("LOCA::Extended::Vector::operator=()",
+			       "Number of scalars must match in assignment");
+    if (vectorPtrs.size() != y.vectorPtrs.size())
+      LOCA::ErrorCheck::throwError("LOCA::Extended::Vector::operator=()",
+			       "Number of vectors must match in assignment");
+
     for (unsigned int i=0; i<vectorPtrs.size(); i++)
       *(vectorPtrs[i]) = *(y.vectorPtrs[i]);
 
     numScalars = y.numScalars;
-    *scalarsPtr = *y.scalarsPtr;
+    //*scalarsPtr = *y.scalarsPtr;
+    // copy scalars.  We don't use operator= because it does the wrong thing
+    // when either of the scalar arrays are views
+    for (int i=0; i<numScalars; i++)
+      (*scalarsPtr)(i,0) = (*y.scalarsPtr)(i,0);
 
   }
   return *this;

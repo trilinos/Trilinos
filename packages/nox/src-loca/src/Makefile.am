@@ -92,14 +92,18 @@ LOCA_MULTICONTINUATION_H = \
 	$(srcdir)/LOCA_MultiContinuation_AbstractGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.H \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.H \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.H \
+	$(srcdir)/LOCA_MultiContinuation_Manager.H
 
 LOCA_MULTICONTINUATION = \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedVector.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedMultiVector.C \
 	$(srcdir)/LOCA_MultiContinuation_FiniteDifferenceGroup.C \
 	$(srcdir)/LOCA_MultiContinuation_ExtendedGroup.C \
-	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C
+	$(srcdir)/LOCA_MultiContinuation_ArcLengthGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_NaturalGroup.C \
+	$(srcdir)/LOCA_MultiContinuation_Manager.C
 
 LOCA_SINGULARSOLVE_H = \
 	$(srcdir)/LOCA_SingularJacobianSolve_Generic.H \
@@ -208,10 +212,12 @@ LOCA_STEPSIZE = \
 	$(srcdir)/LOCA_StepSize_Adaptive.C 
 
 LOCA_STEPPER_H = \
-	$(srcdir)/LOCA_Stepper.H 
+	$(srcdir)/LOCA_Stepper.H \
+	$(srcdir)/LOCA_NewStepper.H
 
 LOCA_STEPPER = \
-	$(srcdir)/LOCA_Stepper.C 
+	$(srcdir)/LOCA_Stepper.C \
+	$(srcdir)/LOCA_NewStepper.C
 
 LOCA_STATUSTEST_H = \
 	$(srcdir)/LOCA_Solver_Wrapper.H \

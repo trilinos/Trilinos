@@ -88,6 +88,19 @@ namespace LOCA {
 	      const LOCA::Stepper& stepper,
 	      double& stepSize);
 
+      //! Compute the step size as described above
+      /*! 
+	Returns NOX::Abstract::Group::Failed if the computed step size is
+	smaller than the minimum step size
+      */
+      virtual NOX::Abstract::Group::ReturnType 
+      compute(LOCA::MultiContinuation::ExtendedGroup& curGroup,
+	      const LOCA::MultiContinuation::ExtendedVector& predictor,
+	      const NOX::Solver::Generic& solver,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
+	      const LOCA::NewStepper& stepper,
+	      double& stepSize);
+
     protected:
       //! Stores the aggressiveness factor \f$a\f$
       double agrValue;

@@ -95,6 +95,7 @@ LOCA::Predictor::Tangent::compute(bool baseOnSecant, double stepSize,
   // Solve J*tanX = -df/dp
   NOX::Parameter::List& linearSolverParams = 
     LOCA::Utils::getSublist("Linear Solver");
+  tanX.init(0.0);
   status = underlyingGroup.applyJacobianInverse(linearSolverParams, 
 						*dfdpVecPtr, 
 						tanX);
@@ -147,7 +148,7 @@ LOCA::Predictor::Tangent::compute(
 
   vector<int> index_dfdp(conParamIDs.size());
   for (unsigned int i=0; i<conParamIDs.size(); i++)
-    index_dfdp[i] = i;
+    index_dfdp[i] = i+1;
   NOX::Abstract::MultiVector *dfdp = fdfdp->subView(index_dfdp);
 
   // Scale dfdp by -1.0
