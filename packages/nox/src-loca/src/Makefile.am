@@ -146,11 +146,15 @@ LOCA_UTILS = \
         $(srcdir)/LOCA_Utils.C \
         $(srcdir)/LOCA_ErrorCheck.C
 
-LOCA_PARAMETER_VECTOR_H = \
-        $(srcdir)/LOCA_Parameter_Vector.H
+LOCA_PARAMETER_H = \
+        $(srcdir)/LOCA_Parameter_Vector.H \
+	$(srcdir)/LOCA_Parameter_Library.H \
+	$(srcdir)/LOCA_Parameter_LibraryT.H \
+	$(srcdir)/LOCA_Parameter_Entry.H
 
-LOCA_PARAMETER_VECTOR = \
-        $(srcdir)/LOCA_Parameter_Vector.C
+LOCA_PARAMETER = \
+        $(srcdir)/LOCA_Parameter_Vector.C \
+	$(srcdir)/LOCA_Parameter_Library.C 
 
 LOCA_PREDICTOR_H = \
 	$(srcdir)/LOCA_Predictor_Generic.H \
@@ -216,7 +220,7 @@ LOCA_H = \
 	$(LOCA_HOMOTOPY_H) \
 	$(LOCA_DERIVUTILS_H) \
 	$(LOCA_UTILS_H) \
-	$(LOCA_PARAMETER_VECTOR_H) \
+	$(LOCA_PARAMETER_H) \
 	$(LOCA_PREDICTOR_H) \
 	$(LOCA_STEPSIZE_H) \
 	$(LOCA_STEPPER_H) \
@@ -231,7 +235,7 @@ LOCA = \
 	$(LOCA_HOMOTOPY) \
 	$(LOCA_DERIVUTILS) \
 	$(LOCA_UTILS) \
-	$(LOCA_PARAMETER_VECTOR) \
+	$(LOCA_PARAMETER) \
 	$(LOCA_PREDICTOR) \
 	$(LOCA_STEPSIZE) \
 	$(LOCA_STEPPER) \

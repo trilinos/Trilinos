@@ -35,6 +35,7 @@
 #include "LOCA_Continuation_AbstractGroup.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
+#include "LOCA_Parameter_Library.H"
 #include "LOCA_Utils.H"
 
 // Bifurcation groups
