@@ -43,6 +43,11 @@
 
 AC_INIT(komplex, 2.0, mheroux@cs.sandia.gov)
 
+# Hello World!
+echo "----------------------------------------"
+echo "Running Komplex Configure Script"
+echo "----------------------------------------"
+
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
@@ -252,3 +257,8 @@ AC_CONFIG_FILES([
 		example/Makefile])
 #                example/komplex_hb/Makefile
 AC_OUTPUT
+
+# Bye World!
+echo "----------------------------------------"
+echo "Finished Running Komplex Configure Script"
+echo "----------------------------------------"
