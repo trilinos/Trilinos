@@ -71,6 +71,12 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #include <New_Package_config.h>
 
+#ifdef HAVE_MPI
+#ifndef EPETRA_MPI
+#define EPETRA_MPI
+#endif
+#endif
+
 #ifdef HAVE_CSTDLIB
 #include <cstdlib>
 #else
