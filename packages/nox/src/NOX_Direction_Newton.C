@@ -71,8 +71,7 @@ bool Newton::operator()(Abstract::Vector& dir,
   }
 
   // Reset the linear solver tolerance
-  if (solver.getNumIterations() >  0)
-    resetForcingTerm(soln, solver.getPreviousSolutionGroup());
+  resetForcingTerm(soln, solver.getPreviousSolutionGroup(), solver.getNumIterations());
 
   // Compute Jacobian at current solution.
   ok = soln.computeJacobian();
@@ -93,7 +92,7 @@ bool Newton::operator()(Abstract::Vector& dir,
 
 
 // protected
-void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln)
+void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter)
 {
   // Reset the forcing term at the beginning on a nonlinear iteration,
   // based on the last iteration.
@@ -128,70 +127,87 @@ void Newton::resetForcingTerm(const Abstract::Group& soln, const Abstract::Group
 
   else if (method == "Type 1") {
     
-    // Create a new vector to be the predicted RHS
-    if (predrhs == NULL) {
-      predrhs = oldsoln.getRHS().clone(CopyShape);
-      stepdir = oldsoln.getRHS().clone(CopyShape);
+    if (niter == 0) {
+
+      eta_k = paramsptr->getParameter("Forcing Term Initial Tolerance", 0.01);
+
     }
+    else {
 
-    // stepdir = X - oldX (i.e., the step times the direction)
-    stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
 
-    // Compute predrhs = Jacobian * step * dir
-    oldsoln.applyJacobian(*stepdir, *predrhs);
-    
-    // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
-    predrhs->update(1.0, oldsoln.getRHS(), 1.0);
-
-    // Return norm of predicted RHS
-    const double normpredrhs = predrhs->norm();
-
-    // Get other norms
-    const double normrhs = soln.getNormRHS();
-    const double normoldrhs = oldsoln.getNormRHS();
-
-    // Compute forcing term
-    eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
-     
-    // Some output
-    if (Utils::doPrint(Utils::Details)) {
-      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-      cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
-      cout << indent << "Residual Norm k =               " << normrhs << "\n";
-      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+      // Create a new vector to be the predicted RHS
+      if (predrhs == NULL) {
+	predrhs = oldsoln.getRHS().clone(CopyShape);
+	stepdir = oldsoln.getRHS().clone(CopyShape);
+      }
+      
+      // stepdir = X - oldX (i.e., the step times the direction)
+      stepdir->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0);
+      
+      // Compute predrhs = Jacobian * step * dir
+      oldsoln.applyJacobian(*stepdir, *predrhs);
+      
+      // Compute predrhs = RHSVector + predrhs (this is the predicted RHS)
+      predrhs->update(1.0, oldsoln.getRHS(), 1.0);
+      
+      // Return norm of predicted RHS
+      const double normpredrhs = predrhs->norm();
+      
+      // Get other norms
+      const double normrhs = soln.getNormRHS();
+      const double normoldrhs = oldsoln.getNormRHS();
+      
+      // Compute forcing term
+      eta_k = fabs(normrhs - normpredrhs) / normoldrhs;
+      
+      // Some output
+      if (Utils::doPrint(Utils::Details)) {
+	cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
+	cout << indent << "Residual Norm Linear Model k =  " << normpredrhs << "\n";
+	cout << indent << "Residual Norm k =               " << normrhs << "\n";
+	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+      }
+      
+      // Impose safeguard and constraints ...
+      const double alpha = (1.0 + sqrt(5.0)) / 2.0;
+      const double eta_k_alpha = pow(eta_km1, alpha);
+      eta_k = max(eta_k, eta_k_alpha);
+      eta_k = max(eta_k, eta_min);
+      eta_k = min(eta_max, eta_k);
     }
-  
-    // Impose safeguard and constraints ...
-    const double alpha = (1.0 + sqrt(5.0)) / 2.0;
-    const double eta_k_alpha = pow(eta_km1, alpha);
-    eta_k = max(eta_k, eta_k_alpha);
-    eta_k = max(eta_k, eta_min);
-    eta_k = min(eta_max, eta_k);
   }
     
   else if (method == "Type 2") {  
     
-    const double normrhs = soln.getNormRHS();
-    const double normoldrhs = oldsoln.getNormRHS();
-    const double alpha = paramsptr->getParameter("Forcing Term Alpha", 1.5);
-    const double gamma = paramsptr->getParameter("Forcing Term Gamma", 0.9);
-    const double residual_ratio = normrhs / normoldrhs;
-    
-    eta_k = gamma * pow(residual_ratio, alpha);
-     
-    // Some output
-    if (Utils::doPrint(Utils::Details)) {
-      cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
-      cout << indent << "Residual Norm k =               " << normrhs << "\n";
-      cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+    if (niter == 0) {
+
+      eta_k = paramsptr->getParameter("Forcing Term Initial Tolerance", 0.01);
+
+    }
+    else {
+
+      const double normrhs = soln.getNormRHS();
+      const double normoldrhs = oldsoln.getNormRHS();
+      const double alpha = paramsptr->getParameter("Forcing Term Alpha", 1.5);
+      const double gamma = paramsptr->getParameter("Forcing Term Gamma", 0.9);
+      const double residual_ratio = normrhs / normoldrhs;
+      
+      eta_k = gamma * pow(residual_ratio, alpha);
+      
+      // Some output
+      if (Utils::doPrint(Utils::Details)) {
+	cout << indent << "Residual Norm k-1 =             " << normoldrhs << "\n";
+	cout << indent << "Residual Norm k =               " << normrhs << "\n";
+	cout << indent << "Calculated eta_k (pre-bounds) = " << eta_k << endl;
+      }
+      
+      // Impose safeguard and constraints ... 
+      const double eta_k_alpha = gamma * pow(eta_km1, alpha);
+      eta_k = max(eta_k, eta_k_alpha);
+      eta_k = max(eta_k, eta_min);
+      eta_k = min(eta_max, eta_k);
     }
 
-    // Impose safeguard and constraints ... 
-    const double eta_k_alpha = gamma * pow(eta_km1, alpha);
-    eta_k = max(eta_k, eta_k_alpha);
-    eta_k = max(eta_k, eta_min);
-    eta_k = min(eta_max, eta_k);
-    
   }
 
   else {

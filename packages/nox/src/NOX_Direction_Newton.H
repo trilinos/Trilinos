@@ -45,6 +45,9 @@ namespace Direction {
     the tolerance for the linear solver. Defaults to ""
     (nothing). Choices are "Type 1" and "Type 2".
 
+  - "Forcing Term Initial Tolerance" - Initial linear
+    solver tolerance. Defaults to 1.0e-1.
+
   - "Forcing Term Minimum Tolerance" - Minimum acceptable linear
     solver tolerance. Defaults to 1.0e-6.
 
@@ -78,7 +81,7 @@ protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual void resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln);
+  virtual void resetForcingTerm(const Abstract::Group& soln, const Abstract::Group& oldsoln, int niter);
 
 
 private:
