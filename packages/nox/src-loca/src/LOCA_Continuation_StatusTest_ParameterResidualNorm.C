@@ -59,16 +59,22 @@ LOCA::Continuation::StatusTest::ParameterResidualNorm::checkStatus(
   // Get solution groups from solver
   const NOX::Abstract::Group& soln = problem.getSolutionGroup();
 
+  // Cast soln group to continuation group (for parameter step)
+  const LOCA::Continuation::ExtendedGroup* conGroupPtr = 
+    dynamic_cast<const LOCA::Continuation::ExtendedGroup*>(&soln);
+
+  // Check that group is a continuation group, return converged if not
+  if (conGroupPtr == NULL) {
+    paramResidualNorm = 0.0;
+    return NOX::StatusTest::Converged;
+  }
+
   // Get residual vector
   const LOCA::Continuation::ExtendedVector& f = 
     dynamic_cast<const LOCA::Continuation::ExtendedVector&>(soln.getF());
-
-  // Cast soln group to continuation group (for parameter step)
-  const LOCA::Continuation::ExtendedGroup& conGroup = 
-    dynamic_cast<const LOCA::Continuation::ExtendedGroup&>(soln);
   
   paramResidualNorm = 
-    fabs(f.getParam()) / (rtol*fabs(conGroup.getStepSize()) + atol);
+    fabs(f.getParam()) / (rtol*fabs(conGroupPtr->getStepSize()) + atol);
 
   if (paramResidualNorm < tol) 
     status = NOX::StatusTest::Converged;
@@ -92,7 +98,7 @@ LOCA::Continuation::StatusTest::ParameterResidualNorm::print(ostream& stream,
   for (int j = 0; j < indent; j++)
     stream << ' ';
   stream << status;
-  stream << " Scaled Parameter Residual = " << NOX::Utils::sciformat(paramResidualNorm, 3) << " < " << tol;
+  stream << "Continuation Scaled Parameter Residual = " << NOX::Utils::sciformat(paramResidualNorm, 3) << " < " << tol;
   stream << endl;
 
   return stream;

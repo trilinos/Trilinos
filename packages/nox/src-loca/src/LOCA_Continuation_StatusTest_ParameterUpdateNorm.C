@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H" 
-#include "LOCA_Continuation_ExtendedVector.H"
+#include "LOCA_Continuation_ExtendedGroup.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
@@ -60,6 +60,16 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::checkStatus(
   // Get solution groups from solver
   const NOX::Abstract::Group& soln = problem.getSolutionGroup();
   const NOX::Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
+
+  // Cast soln group to continuation group
+  const LOCA::Continuation::ExtendedGroup* conGroupPtr = 
+    dynamic_cast<const LOCA::Continuation::ExtendedGroup*>(&soln);
+
+  // Check that group is a continuation group, return converged if not
+  if (conGroupPtr == NULL) {
+    paramUpdateNorm = 0.0;
+    return NOX::StatusTest::Converged;
+  }
 
   // Get solution vectors
   const LOCA::Continuation::ExtendedVector& x = 
@@ -103,7 +113,7 @@ LOCA::Continuation::StatusTest::ParameterUpdateNorm::print(ostream& stream,
   for (int j = 0; j < indent; j++)
     stream << ' ';
   stream << status;
-  stream << "Scaled Parameter Update = " << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
+  stream << "Continuation Scaled Parameter Update = " << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
   stream << endl;
 
   return stream;

@@ -31,7 +31,7 @@
 //@HEADER
 
 #include "LOCA_Bifurcation_TPBord_StatusTest_ParameterUpdateNorm.H" 
-#include "LOCA_Bifurcation_TPBord_ExtendedVector.H"
+#include "LOCA_Bifurcation_TPBord_ExtendedGroup.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Utils.H"
@@ -57,6 +57,16 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::checkStatus(
   // Get solution groups from solver
   const NOX::Abstract::Group& soln = problem.getSolutionGroup();
   const NOX::Abstract::Group& oldsoln = problem.getPreviousSolutionGroup();
+
+  // Cast soln group to turning point group
+  const LOCA::Bifurcation::TPBord::ExtendedGroup* tpGroupPtr = 
+    dynamic_cast<const LOCA::Bifurcation::TPBord::ExtendedGroup*>(&soln);
+
+  // Check that group is a turning point group, return converged if not
+  if (tpGroupPtr == NULL) {
+    paramUpdateNorm = 0.0;
+    return NOX::StatusTest::Converged;
+  }
 
   // Get solution vectors
   const LOCA::Bifurcation::TPBord::ExtendedVector& x = 
@@ -101,7 +111,7 @@ LOCA::Bifurcation::TPBord::StatusTest::ParameterUpdateNorm::print(
   for (int j = 0; j < indent; j++)
     stream << ' ';
   stream << status;
-  stream << "Scaled Parameter Update = " << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
+  stream << "Turning Point Scaled Parameter Update = " << NOX::Utils::sciformat(paramUpdateNorm, 3) << " < " << tol;
   stream << endl;
 
   return stream;

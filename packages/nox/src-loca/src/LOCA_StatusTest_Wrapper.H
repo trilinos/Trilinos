@@ -36,9 +36,24 @@
 #include "NOX_StatusTest_Generic.H" // base class
 
 namespace LOCA {
+
+  //! %LOCA %StatusTest classes
   namespace StatusTest {
 
-    //! Adaptor between NOX and LOCA status tests.
+    /*!
+     * \brief A %wrapper class for wrapping a %NOX status test.
+     */
+    /*!
+     * The %LOCA::StatusTest::Wrapper class provides a wrapper for %NOX
+     * status tests to change the solver passed to the wrapped status test.
+     * The solver passed through the checkStatus() method is wrapped via 
+     * the LOCA::Solver::Wrapper class and then forwarded to the checkStatus()
+     * method of the wrapped status test.  The purpose of this is to allow
+     * status tests that use concrete group data to function correctly when
+     * the group is stored in an extended continuation or bifurcation group.
+     * (See LOCA::Solver::Wrapper for more details or the %LOCA status tests
+     * page for examples on how to effectively use this class.)
+     */
     class Wrapper : public NOX::StatusTest::Generic {
 
     public:
@@ -73,6 +88,8 @@ namespace LOCA {
       getUnderlyingStatusTest() const;
   
     protected:
+
+      //! Stores pointer to underlying status test
       NOX::StatusTest::Generic *statusTestPtr;
       
     }; // class Wrapper

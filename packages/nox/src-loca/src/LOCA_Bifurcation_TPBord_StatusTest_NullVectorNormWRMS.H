@@ -43,25 +43,63 @@ namespace LOCA {
 
       namespace StatusTest {
 
+	/*!
+	 * \brief A convergence test based on the weighted root-mean-square
+	 * norm of the update to the null vector component for turning point 
+	 * location.
+	 */
+	/*!
+	 * Let \f$n\f$ be the approximation to the null vector for turning 
+	 * point tracking (see LOCA::Bifurcation::TPBord::ExtendedGroup).  
+	 * This convergence test defines convergence for the null vector when 
+	 * the following is true
+	 * \f[ 
+	 \sqrt{\frac{1}{N}\sum_{i=1}^N\left(\frac{|n_i-(n_0)_i|}{\epsilon_r|(n_0)_i| + \epsilon_a}\right)} < \tau
+	 * \f]
+	 * where \f$n_0\f$ is the previous approximation to the null vector, 
+	 * \f$N\f$ is the length of \f$n\f$, \f$\epsilon_r\f$
+	 * is the relative tolerance, \f$\epsilon_a\f$ is the absolute
+	 * tolerance, and \f$\tau\f$ is an overall scale factor (typically
+	 * \f$\tau = 1\f$).
+	 *
+	 * Note that this status test deals only with the null vector component
+	 * of the turning point equations.  This status test should be combined
+	 * with other status tests for the solution and parameter components
+	 * (using NOX::StatusTest::Combo and LOCA::StatusTest::Wrapper) to 
+	 * build a composite status test for the entire system.
+	 *
+	 * Also note that if the group returned by the getSolutionGroup()
+	 * method of the solver supplied in checkStatus() is not a 
+	 * turning point group (i.e., not derived from 
+	 * LOCA::Bifurcation::TPBord::ExtendedGroup), checkStatus() returns 
+	 * NOX::StatusTest::Converged.  This allows the status test to 
+	 * be used in situations other than turning point tracking, e.g., 
+	 * steady-state solves, without raising error conditions.
+	 */
 	class NullVectorNormWRMS : public NOX::StatusTest::Generic {
 
 	public:
 
 	  //! Constructor
+	  /*!
+	   * \em rtol is the relative tolerance \f$\epsilon_r\f$, \em atol
+	   * is the absolute tolerance \f$\epsilon_a\f$, and \em tol is the
+	   * overall scale factor \f$\tau\f$ defined above.
+	   */
 	  NullVectorNormWRMS(double rtol, double atol, double tol);
 
 	  //! Destructor.
 	  virtual ~NullVectorNormWRMS();
 
-	  //! check status
+	  //! Evaluates convergence criteria specified above
 	  virtual NOX::StatusTest::StatusType 
 	  checkStatus(const NOX::Solver::Generic& problem);
 	
-	  //! get status
+	  //! Returns status as defined above
 	  virtual NOX::StatusTest::StatusType 
 	  getStatus() const;
 
-	  //! print
+	  //! Prints current status
 	  virtual ostream& print(ostream& stream, int indent = 0) const;
 
 
