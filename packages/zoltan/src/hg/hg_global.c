@@ -76,7 +76,7 @@ int Zoltan_HG_Global (ZZ *zz, HGraph *hg, int p, Partition part, HGPartParams *h
 static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
 { 
   int i, j, number;
-  float weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
+  double weight_sum = 0.0, part_sum = 0.0, old_sum, cutoff;
 
   /* First sum up all the weights. */
   if (hg->vwgt){
@@ -84,7 +84,7 @@ static int seq_part (ZZ *zz, HGraph *hg, int *order, int p, Partition part)
       weight_sum += hg->vwgt[i];
   }
   else
-    weight_sum = (float)hg->nVtx;
+    weight_sum = (double) hg->nVtx;
 
   number = 0; /* Assign next vertex to partition no. number */
   cutoff = weight_sum/p;  /* Cutoff for current partition */
@@ -183,7 +183,7 @@ static int bfs_order (
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, next_vtx, *rank; 
   int first, last, num_edges, *edges;
   int ierr=ZOLTAN_OK;
-  float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
+  double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
   char msg[128], *mark_edge;
   static char *yo = "bfs_order";
 
@@ -235,7 +235,7 @@ static int bfs_order (
         weight_sum += hg->vwgt[i];
     }
     else
-      weight_sum = (float)hg->nVtx;
+      weight_sum = (double) hg->nVtx;
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -553,8 +553,8 @@ static int greedy_order (
   int i, j, vtx, edge, bfsnumber, pnumber, nbor, *rank; 
   int esize, *vtx_count=NULL, *visited=NULL, *cut[2];
   int ierr=ZOLTAN_OK;
-  float weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff, delta;
-  float *gain = NULL, *edge_sum = NULL;
+  double weight_sum= 0.0, part_sum= 0.0, old_sum, cutoff;
+  float *gain = NULL, *edge_sum = NULL, delta;
   double damp_factor;
   char msg[128];
   HEAP h[2];
@@ -624,7 +624,7 @@ static int greedy_order (
         weight_sum += hg->vwgt[i];
     }
     else
-      weight_sum = (float)hg->nVtx;
+      weight_sum = (double) hg->nVtx;
 
     cutoff = weight_sum/p;  /* Cutoff for current partition */
     if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
@@ -638,7 +638,7 @@ cutoff);
   /* Initialize heap. */
   gain[start_vtx] = 1.0; /* highest priority */
   heap_init(zz, &(h[0]), hg->nVtx);
-  heap_init(zz, &(h[1]), 1);       /* Dummy heap, not used. */
+  heap_init(zz, &(h[1]), 0);       /* Dummy heap, not used. */
   for(i=0; i<hg->nVtx; i++)
     heap_input(h, i, gain[i]);
   heap_make(h);
@@ -724,6 +724,8 @@ rank[vtx]);
              case 3:
              case 4:
                damp_factor = 0.5; /* Choose a value between 0 and 1. */
+               /* gain contribution from current edge will be
+                  hg->ewgt[edge]*pow(damp_factor, esize-vtx_count[edge]-1) */
                if (vtx_count[edge]==1)
                  delta = (hg->ewgt?hg->ewgt[edge]:1.0)*
                    pow(damp_factor, (double) (esize-2));

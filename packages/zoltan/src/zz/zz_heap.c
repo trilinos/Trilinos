@@ -43,10 +43,13 @@ int heap_init (ZZ *zz, HEAP *h, int space)
 }
 
 void heap_free (HEAP *h)
-{ ZOLTAN_FREE ((void **) &(h->ele));
-  ZOLTAN_FREE ((void **) &(h->pos));
-  ZOLTAN_FREE ((void **) &(h->value));
-  h->space = 0;
+{ 
+  if (h->space){
+    ZOLTAN_FREE ((void **) &(h->ele));
+    ZOLTAN_FREE ((void **) &(h->pos));
+    ZOLTAN_FREE ((void **) &(h->value));
+    h->space = 0;
+  }
   h->n = 0;
 }
 
