@@ -28,7 +28,7 @@
 # 4) The case of words IS NOT significant, e.g., "file" IS equivalent
 # to "FILE" or "File", etc.
 #
-# 5) The amount of blank space in between words is also significant. Each
+# 5) The amount of blank space in between words IS significant. Each
 # word should only be separated by a single space.
 #
 # 6) Blank lines are ignored.
@@ -463,3 +463,17 @@ Test Multi Callbacks = 0
 # Default value is 0.
 #-----------------------------------------------------------------------------
 Test Local Partitions = 0
+
+#-----------------------------------------------------------------------------
+# Test Generate Files = <integer>
+#
+# This line signals that zdrive should test Zoltan using Zoltan_Generate_Files
+# to produce output files that describe the geometry, graph, or hypergraph
+# used in the load-balancing. Such files may be useful for debugging.
+#
+#   0: Do not generate files.
+#   1: Generate files.
+#
+# Default value is 0.
+#-----------------------------------------------------------------------------
+Test Generate Files = 0
