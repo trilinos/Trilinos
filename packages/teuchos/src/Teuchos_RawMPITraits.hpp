@@ -36,7 +36,8 @@
 
 /** \file Teuchos_RawMPITraits.hpp
  *
- * Note, this file should only be included if MPI is available is defined.
+ * Note, this file should only be included if MPI is available and the
+ * MPI header must be included before this header file.
  */
 
 namespace Teuchos {
