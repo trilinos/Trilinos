@@ -347,7 +347,7 @@ static int Zoltan_PHG_Initialize_Params(
                             Should perhaps go in hg structure, not the
                             param struct? */
   hgp->visit_order = 1;  /* Random */
-  hgp->check_graph = 1;
+  hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = MAX(2*zz->LB.Num_Global_Parts, 100);
   hgp->output_level = PHG_DEBUG_LIST;
