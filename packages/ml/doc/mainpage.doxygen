@@ -155,143 +155,9 @@ following classes (both in the ML_Epetra namespace):
 - ML_Epetra::MultiLevelOperator  (defined in file ml_epetra_operator.h)
 - Function ML_Epetra::SetDefaults() can be used to set the default values.
 
-We now report and comment and example of usage of
-ML_Epetra::MultiLevelPreconditioner. The source code can be found in
-ml_example_epetra_preconditioner.cpp. 
-
-First, we need to include several header files. Note that the example works for
-MPI and non-MPI configurations. However, some coarse solver requires MPI (like for
-instance \c AMESOS-Superludist and \c AMESOS-Mumps). \c
-Trilinos_Util_CrsMatrixGallery.h is required by this example, and not by ML.
-
-\code
-#ifdef HAVE_MPI
-#include "mpi.h"
-#include "Epetra_MpiComm.h"
-#else
-#include "Epetra_SerialComm.h"
-#endif
-#include "Epetra_Map.h"
-#include "Epetra_SerialDenseVector.h"
-#include "Epetra_Vector.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
-#include "Trilinos_Util_CrsMatrixGallery.h"
-#include "ml_include.h"
-#include "ml_epetra_preconditioner.h"
-\endcode
-
-The following namespace will be used quite often:
-\code
-using namespace Teuchos;
-using namespace Trilinos_Util;
-\endcode
-
-We can now start with the \c main() function.  We create the linear problem using the class
-\c Trilinos_Util::CrsMatrixGallery.  Several matrix examples are supported; please refer to the
-Trilinos tutorial for more details.  Most of the examples using the \c ML_Epetra::MultiLevelPreconditioner
-class are based on Epetra_CrsMatrix. Example
-\c ml_example_epetra_preconditioner_vbr.cpp shows how to define a Epetra_VbrMatrix.
-
-\c laplace_2d is a symmetric matrix; an example of non-symmetric
-matrices is \c recirc_2d' (advection-diffusion in a box, with
-recirculating flow). The number of nodes must be a square number
-
-\code
-int main(int argc, char *argv[])
-{
-
-#ifdef EPETRA_MPI
-  MPI_Init(&argc,&argv);
-  Epetra_MpiComm Comm(MPI_COMM_WORLD);
-#else
-  Epetra_SerialComm Comm;
-#endif
-
-  CrsMatrixGallery Gallery("laplace_2d", Comm);
-  int nx = 128;;
-  Gallery.Set("problem_size", nx*nx);
-\endcode
-
-The following methods of CrsMatrixGallery are used to get
- pointers to internally stored Epetra_RowMatrix and Epetra_LinearProblem. Then, as
- we wish to use AztecOO, we need to construc a solver object for this problem.
-
-\code
-  Epetra_RowMatrix * A = Gallery.GetMatrix();
-  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
-  AztecOO solver(*Problem);
-\endcode
-
-This is the beginning of the ML part. We proceed as follows:
-- we create a parameter list for ML options;
-- set default values for classical smoothed aggregation;
-- overwrite some parameters.  Please refer to the user's guide for more
-  information some of the parameters do not differ from their default value,
-  Here the smoother is symmetric Gauss-Seidel.  Example file ml_example_epetra_preconditioner_2level.cpp
-  shows how to use AZTEC's preconditioners as smoothers
-  and they are here reported for the sake of clarity maximum number of levels. 
-  We solve the coarse problem with serial direct solver KLU.
-
-\code
-  ParameterList MLList;
-  ML_Epetra::SetDefaults("SA",MLList);
-  MLList.set("max levels",6);
-  MLList.set("increasing or decreasing","decreasing");
-  MLList.set("aggregation: type", "Uncoupled");
-  MLList.set("aggregation: threshold", 0.0);
-
-  MLList.set("smoother: type","Gauss-Seidel");
-  MLList.set("smoother: pre or post", "both");
-
-  MLList.set("coarse: type","Amesos_KLU");
-  MLList.set("coarse: maximum size",30);
-\endcode
-
-Now, we create the preconditioning object.  We suggest to use `new' and
-`delete' because the destructor contains some calls to MPI (as required by
-ML and possibly Amesos).  This is an issue only if the destructor is
-called **after** MPI_Finalize().
-Then, we instruct AztecOO to use this preconditioer and solve
-with 500 iterations and 1e-12 tolerance.
-
-\code
-  ML_Epetra::MultiLevelPreconditioner * MLPrec = new
-     ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
-
-  solver.SetPrecOperator(MLPrec);
-
-  Problem->GetLHS()->PutScalar(0.0);
-  Problem->GetRHS()->PutScalar(1.0);
-
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_conv, AZ_noscaled);
-  solver.SetAztecOption(AZ_output, 1);
-
-  solver.Iterate(500, 1e-8);
-
-  delete MLPrec;
-\endcode
-
-At this point, we can compute the true residual, and quit.
-\code
-  double residual, diff;
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
-
-  if( Comm.MyPID()==0) {
-    cout << "||b-Ax||_2 = " << residual << endl;
-    cout << "||x_exact - x||_2 = " << diff << endl;
-  }
-
-#ifdef
-  EPETRA_MPI MPI_Finalize() ;
-#endif
-
-  return 0 ;
-}
-\endcode
+Detailed examples are reported in:
+- \ref ex_mlp
+- \ref ex_mlo
 
 
 \section MLP The ML_Epetra::MultiLevelPreconditioner class
@@ -474,5 +340,325 @@ License along with this library; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 USA
 \endverbatim
+
+*/
+
+/*!
+
+\page ex_mlp Example of use ML_Epetra::MultiLevelPreconditioner
+
+We now report and comment and example of usage of
+ML_Epetra::MultiLevelPreconditioner. The source code can be found in
+ml_example_epetra_preconditioner.cpp. 
+
+First, we need to include several header files. Note that the example works for
+MPI and non-MPI configurations. However, some coarse solver requires MPI (like for
+instance \c AMESOS-Superludist and \c AMESOS-Mumps). \c
+Trilinos_Util_CrsMatrixGallery.h is required by this example, and not by ML.
+
+\code
+#ifdef HAVE_MPI
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
+#include "AztecOO.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "ml_include.h"
+#include "ml_epetra_preconditioner.h"
+\endcode
+
+The following namespace will be used quite often:
+\code
+using namespace Teuchos;
+using namespace Trilinos_Util;
+\endcode
+
+We can now start with the \c main() function.  We create the linear problem using the class
+\c Trilinos_Util::CrsMatrixGallery.  Several matrix examples are supported; please refer to the
+Trilinos tutorial for more details.  Most of the examples using the \c ML_Epetra::MultiLevelPreconditioner
+class are based on Epetra_CrsMatrix. Example
+\c ml_example_epetra_preconditioner_vbr.cpp shows how to define a Epetra_VbrMatrix.
+
+\c laplace_2d is a symmetric matrix; an example of non-symmetric
+matrices is \c recirc_2d' (advection-diffusion in a box, with
+recirculating flow). The number of nodes must be a square number
+
+\code
+int main(int argc, char *argv[])
+{
+
+#ifdef EPETRA_MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
+  int nx = 128;;
+  Gallery.Set("problem_size", nx*nx);
+\endcode
+
+The following methods of CrsMatrixGallery are used to get
+ pointers to internally stored Epetra_RowMatrix and Epetra_LinearProblem. Then, as
+ we wish to use AztecOO, we need to construc a solver object for this problem.
+
+\code
+  Epetra_RowMatrix * A = Gallery.GetMatrix();
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  AztecOO solver(*Problem);
+\endcode
+
+This is the beginning of the ML part. We proceed as follows:
+- we create a parameter list for ML options;
+- set default values for classical smoothed aggregation;
+- overwrite some parameters.  Please refer to the user's guide for more
+  information some of the parameters do not differ from their default value,
+  Here the smoother is symmetric Gauss-Seidel.  Example file ml_example_epetra_preconditioner_2level.cpp
+  shows how to use AZTEC's preconditioners as smoothers
+  and they are here reported for the sake of clarity maximum number of levels. 
+  We solve the coarse problem with serial direct solver KLU.
+
+\code
+  ParameterList MLList;
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("max levels",6);
+  MLList.set("increasing or decreasing","decreasing");
+  MLList.set("aggregation: type", "Uncoupled");
+  MLList.set("aggregation: threshold", 0.0);
+
+  MLList.set("smoother: type","Gauss-Seidel");
+  MLList.set("smoother: pre or post", "both");
+
+  MLList.set("coarse: type","Amesos_KLU");
+  MLList.set("coarse: maximum size",30);
+\endcode
+
+Now, we create the preconditioning object.  We suggest to use `new' and
+`delete' because the destructor contains some calls to MPI (as required by
+ML and possibly Amesos).  This is an issue only if the destructor is
+called **after** MPI_Finalize().
+Then, we instruct AztecOO to use this preconditioer and solve
+with 500 iterations and 1e-12 tolerance.
+
+\code
+  ML_Epetra::MultiLevelPreconditioner * MLPrec = new
+     ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+
+  solver.SetPrecOperator(MLPrec);
+
+  Problem->GetLHS()->PutScalar(0.0);
+  Problem->GetRHS()->PutScalar(1.0);
+
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_conv, AZ_noscaled);
+  solver.SetAztecOption(AZ_output, 1);
+
+  solver.Iterate(500, 1e-8);
+
+  delete MLPrec;
+\endcode
+
+At this point, we can compute the true residual, and quit.
+\code
+  double residual, diff;
+  Gallery.ComputeResidual(residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+
+  if( Comm.MyPID()==0) {
+    cout << "||b-Ax||_2 = " << residual << endl;
+    cout << "||x_exact - x||_2 = " << diff << endl;
+  }
+
+#ifdef
+  EPETRA_MPI MPI_Finalize() ;
+#endif
+
+  return 0 ;
+}
+\endcode
+
+*/
+
+/*! \page ex_mlo Example of use of ML_Epetra::MultiLevelOperator
+
+We now report and comment and example of usage of
+ML_Epetra::MultiLevelPreconditioner. The source code can be found in
+ml_example_epetra_preconditioner.cpp. 
+
+Trilinos (and hence ML) requires the variable \c HAVE_CONFIG_H to be defined,
+either in the Makefile, or in the file itself. We suggest the following:
+\code
+#ifndef HAVE_CONFIG_H
+#define HAVE_CONFIG_H
+#endif
+\endcode
+
+Then, we need to include several header files. Note that the example works for
+MPI and non-MPI configurations. However, some coarse solver requires MPI (like for
+instance \c AMESOS-Superludist and \c AMESOS-Mumps). \c
+Trilinos_Util_CrsMatrixGallery.h is required by this example, and not by ML.
+
+\code
+#include "ml_include.h"
+#ifdef HAVE_MPI
+#include "mpi.h"
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+#include "Epetra_Map.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_SerialDenseVector.h"
+#include "Epetra_Vector.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_VbrMatrix.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Time.h"
+#include "AztecOO.h"
+#include "ml_epetra_preconditioner.h"
+#include "Trilinos_Util_CommandLineParser.h"
+#include "Trilinos_Util_CrsMatrixGallery.h"
+#include "ml_epetra_utils.h"
+#include "ml_epetra_operator.h"
+\endcode
+
+\c HAVE_ML_TRIUTILS, and the header files are required by the example, and not
+by the ML source. Class Trilinos_Util::CrsMatrixGallery is used to create an
+example matrix. This Epetra_CrsMatrix is then converted to an ML_Operator
+(heavy-weight convertion).
+
+\note ML accepts Epetra_RowMatrix's; please refer to \ref ex_mlp.
+
+\code
+using namespace ML_Epetra;
+using namespace Teuchos;
+using namespace Trilinos_Util;
+
+int main(int argc, char *argv[])
+{
+  
+#ifdef EPETRA_MPI
+  MPI_Init(&argc,&argv);
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm Comm;
+#endif
+  
+  Epetra_Time Time(Comm);
+\endcode
+We parse the command line, to create the example matrix, get a pointer to this
+matrix.
+\code
+  CommandLineParser CLP(argc,argv);
+  CrsMatrixGallery Gallery("", Comm);
+
+  // default values for problem type and size
+  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
+  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "100" ); 
+
+  // initialize MatrixGallery object with options specified in the shell
+  Gallery.Set(CLP);
+  
+  // get pointer to the linear system matrix
+  Epetra_CrsMatrix * A = Gallery.GetMatrix();
+
+  // get a pointer to the map
+  const Epetra_Map * Map = Gallery.GetMap();
+
+  // get a pointer to the linear system problem
+  Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
+  
+  // Construct a solver object for this problem
+  AztecOO solver(*Problem);
+\endcode
+
+This is the beginning of the ML part. We need to create an ML_handle, convert
+the input matrix into ML_Operator format, create an ML_Aggregate structure
+(that will hold the data about the aggregates).
+
+\code
+  int nLevels = 10;
+  int maxMgLevels = 6;
+  ML_Set_PrintLevel(10);
+  ML *ml_handle;
+  
+  ML_Create(&ml_handle, maxMgLevels);
+
+  // convert to epetra matrix, put finest matrix into
+  // position maxMgLevels - 1 of the hierarchy
+  EpetraMatrix2MLMatrix(ml_handle, maxMgLevels-1, A);
+  
+  // create an Aggregate object; this will contain information
+  // about the aggregation process for each level
+  ML_Aggregate *agg_object;
+  ML_Aggregate_Create(&agg_object);
+\endcode
+At this point we select out aggregation scheme (Uncoupled in this case), and
+we build the hierarchy.
+\code
+  ML_Aggregate_Set_CoarsenScheme_Uncoupled(agg_object);
+  nLevels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, maxMgLevels-1,
+						ML_DECREASING, agg_object);
+\encode
+
+Now, we define the ID of the coarsest level and set up the smoothers. We
+suppose to deal with a symmetric problem. We also set a simple coarse solver
+-- symmetric Gauss-Seidel.
+
+\code
+  int coarsestLevel = maxMgLevels - nLevels;
+  
+  int nits = 1;
+  for(int level = maxMgLevels-1; level > coarsestLevel; level--)
+    ML_Gen_Smoother_MLS(ml_handle, level, ML_BOTH, 30., 3);
+
+  ML_Gen_Smoother_SymGaussSeidel(ml_handle, coarsestLevel, ML_BOTH, 
+				 nits, ML_DEFAULT);
+ 
+  // generate the solver
+  ML_Gen_Solver(ml_handle, ML_MGV, maxMgLevels-1, coarsestLevel);
+ 
+  // create an Epetra_Operrator based on the previously created
+  // hierarchy
+  MultiLevelOperator MLPrec(ml_handle, Comm, *Map, *Map);
+\endcode
+
+This is the end of the ML settings. We just need to instruct AztecOO about the
+existence of \c MLPrec.
+
+\code
+  solver.SetPrecOperator(&MLPrec);
+
+  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_output, 16);
+
+  // solve with AztecOO
+  solver.Iterate(500, 1e-5);
+\endcode
+
+#ifdef EPETRA_MPI
+  MPI_Finalize() ;
+#endif
+
+  return 0 ;
+  
+}
+\endcode
+
+To execute this example,/from the command line, you may try something like that:
+\code
+$ mpirun -np 4 ./ml_example_epetra_operator.exe -problem_type=laplace_3d 
+          -problem_size=1000
+\endcode
+For more options for Trilinos_Util::CrsMatrixGallery, consult the
+Trilinos 4.0 tutorial.
 
 */
