@@ -439,7 +439,7 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 #ifdef HAVE_ML_AZTECOO
   AZ_defaults(SmootherOptions_,SmootherParams_);
   SmootherOptions_[AZ_precond] = AZ_dom_decomp;
-  SmootherOptions_[AZ_subdomain_solve] = AZ_ilut;
+  SmootherOptions_[AZ_subdomain_solve] = AZ_ilu;
   SmootherOptions_[AZ_overlap] = 0;
 #endif
 
@@ -690,10 +690,19 @@ ComputePreconditioner(const bool CheckPreconditioner)
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
   
   ML_Aggregate_Create(&agg_);
-  // FIXME!
-  agg_->keep_agg_information = 1;
 
   if( SolvingMaxwell_ == false ) {
+
+    // this is for the auxiliary matrix stuff, but is ok 
+    // for the other cases are well
+
+    // tell ML to keep the tentative prolongator
+    ML_Aggregate_Set_Reuse(agg_);
+
+    if (agg_->aggr_info != NULL) {
+      for (int i = 0 ; i < MaxLevels_ ; ++i)
+        agg_->aggr_info[i] = NULL;
+    }
 
     /* ********************************************************************** */
     /* create hierarchy for classical equations (all but Maxwell)             */
@@ -909,14 +918,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
   else 
     ML_Aggregate_Set_DampingFactor( agg_, 0.0);
 
-  // FIXME: this requires the previous FIXME that sets
-  // aggr_keep_info = 1 (above)
-  if ((agg_)->aggr_info != NULL) {
-    for (int i = 0 ; i < NumLevels_ ; ++i) {
-      if ((agg_)->aggr_info[i] != NULL) 
-        ML_memory_free((void **)&((agg_)->aggr_info[i]));
-    } 
-  }
 
   /* ********************************************************************** */
   /* set scaling                                                            */
@@ -960,9 +961,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     double ElapsedAuxTime = 0.0;
 
     bool MyCodeIsCrap = true;
-    Epetra_VbrMatrix* dummy;
+    Epetra_VbrMatrix* MeDummy;
     int NumMyRowElements = 0;
-    vector<vector<Epetra_SerialDenseMatrix> > oldValues;
+    Epetra_SerialDenseMatrix** oldValues;
 
     Time.ResetStartTime();
 
@@ -970,13 +971,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
     // ha le sue foxxuxe ragioni
     if (CreateFakeProblem == true) {
 
-      dummy = const_cast<Epetra_VbrMatrix*>
+      // it appears that west doesn't really like vector<vector<XXX> >
+      MeDummy = const_cast<Epetra_VbrMatrix*>
         (dynamic_cast<const Epetra_VbrMatrix*>(RowMatrix_));
 
-      if (dummy && MyCodeIsCrap) {
+      if (MeDummy && MyCodeIsCrap) {
 
-        NumMyRowElements = dummy->RowMap().NumMyElements();
-        oldValues.resize(NumMyRowElements);
+        NumMyRowElements = MeDummy->RowMap().NumMyElements();
+        oldValues = new Epetra_SerialDenseMatrix*[NumMyRowElements];
 
         for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
 
@@ -984,9 +986,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
           int* BlockIndices;
           Epetra_SerialDenseMatrix** MatrixValues;
 
-          dummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
+          MeDummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
                                        BlockIndices,MatrixValues);
-          oldValues[LocalRow].resize(NumBlockEntries);
+          oldValues[LocalRow] = new Epetra_SerialDenseMatrix[NumBlockEntries];
 
           for (int i = 0 ; i < NumBlockEntries ; ++i) {
             Epetra_SerialDenseMatrix& Mat = *(MatrixValues[i]);
@@ -1000,7 +1002,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
         }
 
         // change the original matrix, RowMatrix_
-        ML_CHK_ERR(CreateAuxiliaryMatrixVbr(dummy));
+        ML_CHK_ERR(CreateAuxiliaryMatrixVbr(MeDummy));
       }
       else
         ML_CHK_ERR(CreateAuxiliaryMatrixCrs(FakeCrsMatrix));
@@ -1015,7 +1017,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       AuxTime.ResetStartTime();
     
-      if (dummy && MyCodeIsCrap) {
+      if (MeDummy && MyCodeIsCrap) {
 
         for (int LocalRow = 0; LocalRow < NumMyRowElements ; ++LocalRow) {
 
@@ -1023,7 +1025,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
           int* BlockIndices;
           Epetra_SerialDenseMatrix** MatrixValues;
 
-          dummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
+          MeDummy->ExtractMyBlockRowView(LocalRow,RowDim, NumBlockEntries,
                                        BlockIndices,MatrixValues);
 
           for (int i = 0 ; i < NumBlockEntries ; ++i) {
@@ -1034,7 +1036,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
               for (int k = 0 ; k < cols ; ++k)
                 Mat(j,k) = oldValues[LocalRow][i](j,k);
           }
+          delete[] oldValues[LocalRow];
         }
+        delete[] oldValues;
+
       }
       else if (FakeCrsMatrix) {
         ml_->Amat[LevelID_[0]].data = (void *)RowMatrix_;
@@ -1056,6 +1061,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
       ML_Gen_MultiLevelHierarchy_UsingSmoothedAggr_ReuseExistingAgg(ml_, agg_);
 
+      if ((agg_)->aggr_info != NULL) {
+        for (int i = 0 ; i < NumLevels_ ; ++i) {
+          if ((agg_)->aggr_info[i] != NULL) 
+            ML_memory_free((void **)&((agg_)->aggr_info[i]));
+        } 
+      }
     } // nothing special to be done if CreateFakeProblem is false
       
   } else {
@@ -1389,23 +1400,27 @@ ApplyInverse(const Epetra_MultiVector& X,
   }
 
   int before = 0, after = 0, before_used = 0, after_used = 0;
-  if( AnalyzeMemory_ ) {
+  if (AnalyzeMemory_) {
     before = ML_MaxAllocatableSize();
     before_used = ML_MaxMemorySize();
   }
     
   Epetra_Time Time(Comm());
   
+#if FIXME
+  // these checks can be expensive
   if (!X.Map().SameAs(OperatorDomainMap())) 
     ML_CHK_ERR(-1);
   if (!Y.Map().SameAs(OperatorRangeMap())) 
     ML_CHK_ERR(-2);
+#endif
   if (Y.NumVectors()!=X.NumVectors()) 
     ML_CHK_ERR(-3);
   if( !IsPreconditionerComputed() ) 
     ML_CHK_ERR(-10);
 
-  // FIXME: allocate me before, just once???
+  // Cannot allocate this before because the user may give in 
+  // input multi-vectors with different number of vectors
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
 
@@ -1421,12 +1436,12 @@ ApplyInverse(const Epetra_MultiVector& X,
   ML_CHK_ERR(xtmp.ExtractView(&xvectors));
   ML_CHK_ERR(Y.ExtractView(&yvectors));
 
-  ML * ml_ptr;
+  ML* ml_ptr;
   
-  if( SolvingMaxwell_ == false ) ml_ptr = ml_;
-  else                           ml_ptr = ml_edges_;
+  if (SolvingMaxwell_ == false) ml_ptr = ml_;
+  else                          ml_ptr = ml_edges_;
 
-  for (int i=0; i < X.NumVectors(); i++) {
+  for (int i = 0; i < X.NumVectors(); ++i) {
     switch(ml_ptr->ML_scheme) {
     case(ML_MGFULLV):
       ML_Solve_MGFull(ml_ptr, xvectors[i], yvectors[i]); 
@@ -1434,7 +1449,10 @@ ApplyInverse(const Epetra_MultiVector& X,
     case(ML_SAAMG): //Marian Brezina's solver
       ML_Solve_AMGV(ml_ptr, xvectors[i], yvectors[i]); 
       break;
-    case(ML_ONE_LEVEL_DD):
+    case(ML_ONE_LEVEL_DD): 
+      // MS // note that all the DD stuff is "delicate"
+      // MS // in the sense that the coarse solver must
+      // MS // Amesos
       ML_DD_OneLevel(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		     yvectors[i], xvectors[i],
 		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
@@ -1444,7 +1462,7 @@ ApplyInverse(const Epetra_MultiVector& X,
 		     yvectors[i], xvectors[i],
 		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);
       break;
-    case(ML_TWO_LEVEL_DD_HYBRID):
+    case(ML_TWO_LEVEL_DD_HYBRID): 
       ML_DD_Hybrid(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]),
 		   yvectors[i], xvectors[i],
 		   ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
@@ -1454,7 +1472,7 @@ ApplyInverse(const Epetra_MultiVector& X,
 		     yvectors[i], xvectors[i],
 		     ML_ZERO, ml_ptr->comm, ML_NO_RES_NORM, ml_ptr);    
       break;
-    default:
+    default: // standard way of doing things in ML
       ML_Solve_MGV(ml_ptr, xvectors[i], yvectors[i]); 
     }
     
