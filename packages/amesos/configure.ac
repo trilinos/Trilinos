@@ -310,8 +310,9 @@ esac
 #    Make sure that SuperLU_timer is in the SuperLU distributed library
 #
 amesos_libs=" " 
-#  AC_LANG_PUSH
-#  AC_LANG([C])
+# AC_LANG_PUSH
+#  Atlantis fails unless we do the test links with the C compiler (instead of c++)
+AC_LANG([C])
 
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
 
@@ -596,17 +597,9 @@ else
 fi
 
 
-
-
-
-
-
-#  AC_LANG_POP
+# AC_LANG_POP
 
 AC_SUBST(AMESOS_LIBS,${amesos_libs}) 
-
-
-
 
 
 ## AC_ARG_ENABLE(amesos-slud,
