@@ -93,7 +93,7 @@ extern int VECTOR_getrows(void *data,int N_requested_rows,int requested_rows[],
 
 
 extern int  ML_Matrix_DCSR_Create( ML_Matrix_DCSR ** );
-extern int  ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR ** );
+extern void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR ** );
 extern int  ML_Matrix_DCSR_Set( ML_Matrix_DCSR *,int,int*,int*,double*);
 extern int  ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR*,ML_CommInfoOP*,ML_Comm*);
 extern int  ML_Matrix_DCSR_Getrow(void*,int,int*,int,int*,double*,int*);

@@ -585,14 +585,14 @@ int ML_Matrix_DCSR_Create( ML_Matrix_DCSR **mat)
 /* destructor for DCSR matrix                                           */
 /* -------------------------------------------------------------------- */
 
-int ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
+void ML_Matrix_DCSR_Destroy( ML_Matrix_DCSR **mat )
 {
    if ( (*mat)->mat_ia != NULL ) free((*mat)->mat_ia);
    if ( (*mat)->mat_ja != NULL ) free((*mat)->mat_ja);
    if ( (*mat)->mat_a  != NULL ) free((*mat)->mat_a);
    if ( (*mat)->comminfo != NULL )
       ML_CommInfoOP_Destroy( (*mat)->comminfo );
-   return 0;
+   return;
 }
 
 /* ******************************************************************** */
