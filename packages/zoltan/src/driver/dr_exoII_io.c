@@ -53,7 +53,7 @@ static void fcopy(char *, char *);
 /****************************************************************************/
 /****************************************************************************/
 
-int read_exoII_mesh(int Proc,
+int read_exoII_file(int Proc,
                     int Num_Proc,
                     PROB_INFO_PTR prob,
                     PARIO_INFO_PTR pio_info,

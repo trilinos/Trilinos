@@ -93,7 +93,7 @@ extern void gen_par_filename(
   int nprocs
 );
 
-extern int read_exoII_mesh(
+extern int read_exoII_file(
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,
@@ -111,7 +111,7 @@ extern int write_elem_vars(
   int *exp_to_part
 );
 
-extern int read_chaco_mesh(
+extern int read_chaco_file(
   int Proc,
   int Num_Proc,
   PROB_INFO_PTR prob,

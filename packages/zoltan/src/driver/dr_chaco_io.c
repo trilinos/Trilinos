@@ -43,7 +43,7 @@ extern "C" {
 /****************************************************************************/
 /****************************************************************************/
 
-int read_chaco_mesh(int Proc,
+int read_chaco_file(int Proc,
                     int Num_Proc,
                     PROB_INFO_PTR prob,
                     PARIO_INFO_PTR pio_info,
@@ -323,7 +323,8 @@ int chaco_fill_elements(
         mesh->elements[i].edge_wgt = NULL;
 
       for (j = 0; j < mesh->elements[i].nadj; j++) {
-        elem_id = adj[start[i] + j];
+        elem_id = adj[start[i] + j] - (1-base);  /* Chaco is 1-based;
+                                                    HG may be 0 or 1 based. */
 
         /* determine which processor the adjacent vertex is on */
         k = ch_dist_proc(elem_id, assignments, base);
@@ -333,7 +334,7 @@ int chaco_fill_elements(
          * then find the local id for that element
          */
         if (k == Proc) {
-          local_id = in_list((elem_id-1), num_vtx, vtx_list);
+          local_id = in_list((elem_id-base), num_vtx, vtx_list);
           mesh->elements[i].adj[j] = local_id;
         }
         else /* use the global id */

@@ -284,13 +284,13 @@ static int read_mesh(
 /* local declarations */
 /*-----------------------------Execution Begins------------------------------*/
   if (pio_info->file_type == CHACO_FILE) {
-    if (!read_chaco_mesh(Proc, Num_Proc, prob, pio_info, mesh)) {
+    if (!read_chaco_file(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_chaco_mesh\n");
         return 0;
     }
   }
   else if (pio_info->file_type == NEMESIS_FILE) {
-    if (!read_exoII_mesh(Proc, Num_Proc, prob, pio_info, mesh)) {
+    if (!read_exoII_file(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_exoII_mesh\n");
         return 0;
     }

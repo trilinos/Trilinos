@@ -130,7 +130,8 @@ int output_gnu(char *cmd_file,
   strcat(ctemp, ".gnu");
 
 
-  if (pio_info->file_type == CHACO_FILE) {
+  if (pio_info->file_type == CHACO_FILE ||
+      pio_info->file_type == HYPERGRAPH_FILE) {
     /* 
      * For each node of Chaco graph, print the coordinates of the node.
      * Then, for each neighboring node on the processor, print the neighbor's
@@ -205,9 +206,6 @@ int output_gnu(char *cmd_file,
       fprintf(fp, "%e %e\n",   sum[0], sum[1] - 0.001);
       fprintf(fp, "%e %e\n\n", sum[0], sum[1] + 0.001);
     }
-  }
-  else {  /* Hypergraph file */
-    fprintf(fp, "Hypergraph gnuplot output not yet supported\n");
   }
     
   fclose(fp);
