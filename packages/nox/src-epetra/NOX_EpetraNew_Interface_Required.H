@@ -76,6 +76,10 @@ public:
     Jac, 
     //! The preconditioner matrix is being estimated.
     Prec, 
+    //! The fill context is from a FD approximation (includes FDC)
+    FD_Res,
+    //! The fill context is from a MF approximation
+    MF_Res, 
     //! A user defined estimation is being performed.
     User
   };
