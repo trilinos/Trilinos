@@ -147,11 +147,12 @@ RCB_CSRC	= rcb.c rcb_util.c box_assign.c point_assign.c \
 RCB_INC		= rcb_const.h create_proc_list.h rib_const.h shared_const.h
 
 OCT_CSRC	= msg.c octant.c oct_util.c octupdate.c dfs.c costs.c migoct.c \
-		  output.c migreg.c hilbert.c
+		  output.c migreg.c hilbert.c migtags.c octree.c rootlist.c
 OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 		  octupdate_const.h \
 		  octupdate.h dfs_const.h dfs.h migoct_const.h \
-		  migreg.h hilbert_const.h
+		  migreg.h hilbert_const.h migtags_const.h octree_const.h \
+		  rootlist_const.h SFC.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
 		  key_params.c free_params.c bind_param.c 
