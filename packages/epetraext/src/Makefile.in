@@ -163,7 +163,7 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/zoltan/Zoltan_QueryObject.cpp \
 	$(srcdir)/coloring/EpetraExt_MapColoring.cpp \
 	$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp \
-	$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+	$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
 am__objects_1 = EpetraExt_MatrixMatrix.$(OBJEXT)
 am__objects_2 = EpetraExt_Permutation.$(OBJEXT) \
 	EpetraExt_LPTrans_From_GraphTrans.$(OBJEXT) \
@@ -220,7 +220,7 @@ am__objects_10 =
 am__objects_12 = EpetraExt_MapColoring.$(OBJEXT) \
 	EpetraExt_MapColoringIndex.$(OBJEXT)
 @BUILD_COLORING_TRUE@am__objects_13 = $(am__objects_12)
-am__objects_14 = ExpetraExt_MatlabEngine.$(OBJEXT)
+am__objects_14 = EpetraExt_MatlabEngine.$(OBJEXT)
 @BUILD_MATLAB_TRUE@am__objects_15 = $(am__objects_14)
 am_libepetraext_a_OBJECTS = $(am__objects_1) $(am__objects_4) \
 	$(am__objects_6) $(am__objects_8) $(am__objects_11) \
@@ -242,6 +242,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_LPTrans_From_MatrixTrans.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MapColoring.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MapColoringIndex.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MatlabEngine.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MatrixMatrix.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MultiVectorIn.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MultiVectorOut.Po \
@@ -267,7 +268,6 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_ZoltanQuery.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_mmio.Po \
-@AMDEP_TRUE@	./$(DEPDIR)/ExpetraExt_MatlabEngine.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_LoadBalance.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_MigrationContainer.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Zoltan_MigrationFunctions.Po \
@@ -333,7 +333,7 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/zoltan/Zoltan_QueryObject.h \
 	$(srcdir)/coloring/EpetraExt_MapColoring.h \
 	$(srcdir)/coloring/EpetraExt_MapColoringIndex.h \
-	$(srcdir)/matlab/ExpetraExt_MatlabEngine.h
+	$(srcdir)/matlab/EpetraExt_MatlabEngine.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -668,10 +668,10 @@ EXTRA_COLORING = \
 @BUILD_COLORING_TRUE@     $(EXTRA_COLORING)
 
 EXTRA_MATLAB_H = \
-    $(srcdir)/matlab/ExpetraExt_MatlabEngine.h
+    $(srcdir)/matlab/EpetraExt_MatlabEngine.h
 
 EXTRA_MATLAB = \
-    $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+    $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
 
 @BUILD_MATLAB_FALSE@MATLAB_H = 
 @BUILD_MATLAB_TRUE@MATLAB_H = \
@@ -881,6 +881,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_LPTrans_From_MatrixTrans.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MapColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MapColoringIndex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MatlabEngine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MatrixMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorOut.Po@am__quote@
@@ -906,7 +907,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ZoltanQuery.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Zoltan_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_mmio.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ExpetraExt_MatlabEngine.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_LoadBalance.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_MigrationContainer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Zoltan_MigrationFunctions.Po@am__quote@
@@ -1651,21 +1651,21 @@ EpetraExt_MapColoringIndex.obj: $(srcdir)/coloring/EpetraExt_MapColoringIndex.cp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MapColoringIndex.obj `if test -f '$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; then $(CYGPATH_W) '$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/coloring/EpetraExt_MapColoringIndex.cpp'; fi`
 
-ExpetraExt_MatlabEngine.o: $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExpetraExt_MatlabEngine.o -MD -MP -MF "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" -c -o ExpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/ExpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' object='ExpetraExt_MatlabEngine.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/ExpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
+EpetraExt_MatlabEngine.o: $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MatlabEngine.o -MD -MP -MF "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo" -c -o EpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/EpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp' object='EpetraExt_MatlabEngine.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MatlabEngine.o `test -f '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp' || echo '$(srcdir)/'`$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
 
-ExpetraExt_MatlabEngine.obj: $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
-@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ExpetraExt_MatlabEngine.obj -MD -MP -MF "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" -c -o ExpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; fi`; \
-@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/ExpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/ExpetraExt_MatlabEngine.Tpo"; exit 1; fi
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp' object='ExpetraExt_MatlabEngine.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/ExpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/ExpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
+EpetraExt_MatlabEngine.obj: $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MatlabEngine.obj -MD -MP -MF "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo" -c -o EpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo" "$(DEPDIR)/EpetraExt_MatlabEngine.Po"; else rm -f "$(DEPDIR)/EpetraExt_MatlabEngine.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp' object='EpetraExt_MatlabEngine.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/EpetraExt_MatlabEngine.Po' tmpdepfile='$(DEPDIR)/EpetraExt_MatlabEngine.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ExpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MatlabEngine.obj `if test -f '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; then $(CYGPATH_W) '$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/matlab/EpetraExt_MatlabEngine.cpp'; fi`
 
 .f.o:
 	$(F77COMPILE) -c -o $@ $<

@@ -283,10 +283,10 @@ COLORING =
 endif
 
 EXTRA_MATLAB_H = \
-    $(srcdir)/matlab/ExpetraExt_MatlabEngine.h
+    $(srcdir)/matlab/EpetraExt_MatlabEngine.h
 
 EXTRA_MATLAB = \
-    $(srcdir)/matlab/ExpetraExt_MatlabEngine.cpp
+    $(srcdir)/matlab/EpetraExt_MatlabEngine.cpp
 
 if BUILD_MATLAB
 
