@@ -33,10 +33,7 @@
 #include "NOX_Epetra_Vector.H"
 #include "Epetra_Vector.h"
 
-using namespace NOX;
-using namespace NOX::Epetra;
-
-Vector::Vector(const Epetra_Vector& source, CopyType type)
+NOX::Epetra::Vector::Vector(const Epetra_Vector& source, NOX::CopyType type)
 {
   switch (type) {
 
@@ -53,7 +50,7 @@ Vector::Vector(const Epetra_Vector& source, CopyType type)
   }
 }
 
-Vector::Vector(const Vector& source, CopyType type)
+NOX::Epetra::Vector::Vector(const NOX::Epetra::Vector& source, NOX::CopyType type)
 {
 
   switch (type) {
@@ -71,45 +68,45 @@ Vector::Vector(const Vector& source, CopyType type)
   }
 }
 
-Vector::~Vector()
+NOX::Epetra::Vector::~Vector()
 {
   delete epetraVec;
 }
 
-Abstract::Vector& Vector::operator=(const Epetra_Vector& source)
+NOX::Abstract::Vector& NOX::Epetra::Vector::operator=(const Epetra_Vector& source)
 {
   epetraVec->Scale(1.0, source);
   return *this;
 }
 
-Abstract::Vector& Vector::operator=(const Abstract::Vector& source)
+NOX::Abstract::Vector& NOX::Epetra::Vector::operator=(const NOX::Abstract::Vector& source)
 {
-  return operator=(dynamic_cast<const Vector&>(source));
+  return operator=(dynamic_cast<const NOX::Epetra::Vector&>(source));
 }
 
-Abstract::Vector& Vector::operator=(const Vector& source)
+NOX::Abstract::Vector& NOX::Epetra::Vector::operator=(const NOX::Epetra::Vector& source)
 {
   epetraVec->Scale(1.0, source.getEpetraVector());
   return *this;
 }
 
-Epetra_Vector& Vector::getEpetraVector()
+Epetra_Vector& NOX::Epetra::Vector::getEpetraVector()
 {
   return *epetraVec;
 }
 
-const Epetra_Vector& Vector::getEpetraVector() const
+const Epetra_Vector& NOX::Epetra::Vector::getEpetraVector() const
 {
   return *epetraVec;
 }
 
-Abstract::Vector& Vector::init(double value)
+NOX::Abstract::Vector& NOX::Epetra::Vector::init(double value)
 {
   epetraVec->PutScalar(value);
   return *this;
 }
 
-Abstract::Vector& Vector::random(bool useSeed, double seed)
+NOX::Abstract::Vector& NOX::Epetra::Vector::random(bool useSeed, double seed)
 {
   if (useSeed)
     epetraVec->SetSeed(seed);
@@ -117,81 +114,81 @@ Abstract::Vector& Vector::random(bool useSeed, double seed)
   return *this;
 }
 
-Abstract::Vector& Vector::abs(const Abstract::Vector& base)
+NOX::Abstract::Vector& NOX::Epetra::Vector::abs(const NOX::Abstract::Vector& base)
 {
-  return abs(dynamic_cast<const Vector&>(base));
+  return abs(dynamic_cast<const NOX::Epetra::Vector&>(base));
 }
 
-Abstract::Vector& Vector::abs(const Vector& base)
+NOX::Abstract::Vector& NOX::Epetra::Vector::abs(const NOX::Epetra::Vector& base)
 {
   epetraVec->Abs(base.getEpetraVector());
   return *this;
 }
 
-Abstract::Vector& Vector::reciprocal(const Abstract::Vector& base)
+NOX::Abstract::Vector& NOX::Epetra::Vector::reciprocal(const NOX::Abstract::Vector& base)
 {
-  return reciprocal(dynamic_cast<const Vector&>(base));
+  return reciprocal(dynamic_cast<const NOX::Epetra::Vector&>(base));
 }
 
-Abstract::Vector& Vector::reciprocal(const Vector& base)
+NOX::Abstract::Vector& NOX::Epetra::Vector::reciprocal(const NOX::Epetra::Vector& base)
 {
   epetraVec->Reciprocal(base.getEpetraVector());
   return *this;
 }
 
-Abstract::Vector& Vector::scale(double alpha)
+NOX::Abstract::Vector& NOX::Epetra::Vector::scale(double alpha)
 {
   epetraVec->Scale(alpha);
   return *this;
 }
 
-Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a, 
+NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
 				 double gamma)
 {
-  return update(alpha, dynamic_cast<const Vector&>(a), gamma);
+  return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a), gamma);
 }
 
-Abstract::Vector& Vector::update(double alpha, const Vector& a, 
+NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Epetra::Vector& a, 
 				 double gamma)
 {
   epetraVec->Update(alpha, a.getEpetraVector(), gamma);
   return *this;
 }
 
-Abstract::Vector& Vector::update(double alpha, const Abstract::Vector& a, 
-				 double beta, const Abstract::Vector& b,
+NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
+				 double beta, const NOX::Abstract::Vector& b,
 				 double gamma)
 {
-  return update(alpha, dynamic_cast<const Vector&>(a), 
-		beta, dynamic_cast<const Vector&>(b), gamma);
+  return update(alpha, dynamic_cast<const NOX::Epetra::Vector&>(a), 
+		beta, dynamic_cast<const NOX::Epetra::Vector&>(b), gamma);
 }
 
-Abstract::Vector& Vector::update(double alpha, const Vector& a, 
-				 double beta, const Vector& b,
+NOX::Abstract::Vector& NOX::Epetra::Vector::update(double alpha, const NOX::Epetra::Vector& a, 
+				 double beta, const NOX::Epetra::Vector& b,
 				 double gamma)
 {
   epetraVec->Update(alpha, a.getEpetraVector(), beta, b.getEpetraVector(), gamma);
   return *this;
 }
 
-Abstract::Vector& Vector::scale(const Abstract::Vector& a)
+NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Abstract::Vector& a)
 {  
   return scale(dynamic_cast<const Epetra::Vector&>(a));
 }
 
-Abstract::Vector& Vector::scale(const Vector& a)
+NOX::Abstract::Vector& NOX::Epetra::Vector::scale(const NOX::Epetra::Vector& a)
 {  
   epetraVec->Multiply(1.0, *epetraVec, a.getEpetraVector(), 0.0);
   return *this;
 }
 
-Abstract::Vector* Vector::clone(CopyType type) const
+NOX::Abstract::Vector* NOX::Epetra::Vector::clone(CopyType type) const
 {
-  Vector* newVec = new Vector(*epetraVec, type);
+  NOX::Abstract::Vector* newVec = new NOX::Epetra::Vector(*epetraVec, type);
   return newVec;
 }
 
-double Vector::norm(Abstract::Vector::NormType type) const
+double NOX::Epetra::Vector::norm(NOX::Abstract::Vector::NormType type) const
 {
   double n;
   switch (type) {
@@ -209,35 +206,35 @@ double Vector::norm(Abstract::Vector::NormType type) const
   return n;
 }
 
-double Vector::norm(const Abstract::Vector& weights) const
+double NOX::Epetra::Vector::norm(const NOX::Abstract::Vector& weights) const
 {
-  return norm(dynamic_cast<const Vector&>(weights));
+  return norm(dynamic_cast<const NOX::Epetra::Vector&>(weights));
 }
 
-double Vector::norm(const Vector& weights) const
+double NOX::Epetra::Vector::norm(const NOX::Epetra::Vector& weights) const
 {
     cerr << "NOX::Epetra::Vector - Weighted norm not supported" << endl;
     throw "NOX-Epetra Error";
 }
 
-double Vector::dot(const Abstract::Vector& y) const
+double NOX::Epetra::Vector::dot(const NOX::Abstract::Vector& y) const
 {
-  return dot(dynamic_cast<const Vector&>(y));
+  return dot(dynamic_cast<const NOX::Epetra::Vector&>(y));
 }
 
-double Vector::dot(const Vector& y) const
+double NOX::Epetra::Vector::dot(const NOX::Epetra::Vector& y) const
 {
   double dot;
   epetraVec->Dot(y.getEpetraVector(), &dot);
   return dot;
 }
 
-int Vector::length() const
+int NOX::Epetra::Vector::length() const
 {
   return epetraVec->GlobalLength();
 }
 
-void Vector::print() const
+void NOX::Epetra::Vector::print() const
 {
   epetraVec->Print(cout);
   return;
