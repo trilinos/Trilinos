@@ -8,31 +8,13 @@
 #    4) Make the archive $(LIBAZTEC) by typing 'make'.
 #
 
-include $(TRILINOS_HOME)/build/TARGET
-
+include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
-
-LIBEPETRA= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libepetra.a
-LIBIFPACK= $(TRILINOS_HOME)/lib/$(TRILINOS_TARGET)/libifpack.a
-
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
-# Epetra communication defines
-EPETRA_COMM_SERIAL          = SERIAL
-EPETRA_COMM_MPI             = EPETRA_MPI
-EPETRA_COMM                 = $(EPETRA_COMM_$(TRILINOS_COMM))
+DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM)
 
-# Ifpack communication defines
-IFPACK_COMM_SERIAL          = SERIAL
-IFPACK_COMM_MPI             = IFPACK_MPI
-IFPACK_COMM                 = $(IFPACK_COMM_$(TRILINOS_COMM))
-
-DEFINES= -D$(TRILINOS_ARCH) $(EPETRA_ARCH_DEFINES) -D$(EPETRA_COMM) \
-         -D$(IFPACK_COMM) -DIFPACK -DWITHSPBLAS
-
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src \
-                            -I$(TRILINOS_HOME)/packages/ifpack/src \
-	   $(BLAS_INCLUDES) $(SPBLAS_INCLUDES)
+INCLUDES = $(ARCH_INCLUDES) $(EPETRA_INCLUDES) $(IFPACK_INCLUDES)
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -69,13 +51,13 @@ UTIL_C_OBJ          = $(UTIL_C:.c=.o)
 UTIL_CXX_OBJ          = $(UTIL_CXX:.cpp=.o)
 UTIL_F_OBJ          = $(UTIL_F:.f=.o)
 
-TARGET_C_SERIAL = c_IlukGraphSerial.exe
-TARGET_CXX_SERIAL = cxx_IlukGraphSerial.exe
-TARGET_F_SERIAL = f_IlukGraphSerial.exe
+TARGET_C_SERIAL = c_CrsRilukSerial.exe
+TARGET_CXX_SERIAL = cxx_CrsRilukSerial.exe
+TARGET_F_SERIAL = f_CrsRilukSerial.exe
 
-TARGET_C_MPI = c_IlukGraphMpi.exe
-TARGET_CXX_MPI = cxx_IlukGraphMpi.exe
-TARGET_F_MPI = f_IlukGraphMpi.exe
+TARGET_C_MPI = c_CrsRilukMpi.exe
+TARGET_CXX_MPI = cxx_CrsRilukMpi.exe
+TARGET_F_MPI = f_CrsRilukMpi.exe
 
 TARGET_C = $(TARGET_C_$(TRILINOS_COMM))
 TARGET_CXX = $(TARGET_CXX_$(TRILINOS_COMM))

@@ -15,16 +15,9 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Epetra_CrsMatrix &A, const Ifpack_IlukGra
     ValuesInitialized_(false),
     Factored_(false),
     RelaxValue_(0.0),
-    ShiftValue_(0.0),
-    IndexBase_(Graph.IndexBase()),
-    NumGlobalRows_(Graph.NumGlobalRows()),
-    NumGlobalCols_(Graph.NumGlobalCols()),
-    NumGlobalDiagonals_(Graph.NumGlobalDiagonals()),
-    NumGlobalNonzeros_(Graph.NumGlobalNonzeros()),
-    NumMyRows_(Graph.NumMyRows()),
-    NumMyCols_(Graph.NumMyCols()),
-    NumMyDiagonals_(Graph.NumMyDiagonals()),
-    NumMyNonzeros_(Graph.NumMyNonzeros()),
+    Condest_(-1.0),
+    Athresh_(0.0),
+    Rthresh_(0.0),
     OverlapX_(0),
     OverlapY_(0),
     OverlapMode_(Zero)
@@ -40,16 +33,9 @@ Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix)
     ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
     Factored_(FactoredMatrix.Factored_),
     RelaxValue_(FactoredMatrix.RelaxValue_),
-    ShiftValue_(FactoredMatrix.ShiftValue_),
-    IndexBase_(FactoredMatrix.IndexBase_),
-    NumGlobalRows_(FactoredMatrix.NumGlobalRows_),
-    NumGlobalCols_(FactoredMatrix.NumGlobalCols_),
-    NumGlobalDiagonals_(FactoredMatrix.NumGlobalDiagonals_),
-    NumGlobalNonzeros_(FactoredMatrix.NumGlobalNonzeros_),
-    NumMyRows_(FactoredMatrix.NumMyRows_),
-    NumMyCols_(FactoredMatrix.NumMyCols_),
-    NumMyDiagonals_(FactoredMatrix.NumMyDiagonals_),
-    NumMyNonzeros_(FactoredMatrix.NumMyNonzeros_),
+    Condest_(FactoredMatrix.Condest_),
+    Athresh_(FactoredMatrix.Athresh_),
+    Rthresh_(FactoredMatrix.Rthresh_),
     OverlapX_(0),
     OverlapY_(0),
     OverlapMode_(FactoredMatrix.OverlapMode_)
@@ -125,7 +111,7 @@ int Ifpack_CrsRiluk::InitValues() {
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  for (i=0; i< NumMyRows_; i++) {
+  for (i=0; i< NumMyRows(); i++) {
 
     OverlapA->ExtractMyRowCopy(i, MaxNumEntries, NumIn, InV, InI); // Get Values and Indices
     
@@ -140,7 +126,7 @@ int Ifpack_CrsRiluk::InitValues() {
 
       if (k==i) {
 	DiagFound = true;
-	DV[i] += (1.0+ShiftValue_) * InV[j]; // Store shifted diagonal in Epetra_Vector D_
+	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
       }
 
       else if (k < 0) return(-1); // Out of range
@@ -150,7 +136,7 @@ int Ifpack_CrsRiluk::InitValues() {
 	LV[NumL] = InV[j];
 	NumL++;
       }
-      else if (k<NumMyRows_) {
+      else if (k<NumMyRows()) {
 	UI[NumU] = k;
 	UV[NumU] = InV[j];
 	NumU++;
@@ -186,9 +172,9 @@ int Ifpack_CrsRiluk::InitValues() {
   int TotalNonzeroDiags = 0;
   Graph_.L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1);
   if (Graph_.LevelOverlap()==0 &&
-      ((TotalNonzeroDiags!=NumGlobalRows_) || 
-       (TotalNonzeroDiags!=NumGlobalDiagonals_))) ierr = 1;
-  if (NumNonzeroDiags != NumMyDiagonals_) ierr = 1; // Diagonals are not right, warn user
+      ((TotalNonzeroDiags!=NumGlobalRows()) || 
+       (TotalNonzeroDiags!=NumGlobalDiagonals()))) ierr = 1;
+  if (NumNonzeroDiags != NumMyDiagonals()) ierr = 1; // Diagonals are not right, warn user
 
   return(ierr);
 }
@@ -219,7 +205,7 @@ int Ifpack_CrsRiluk::Factor() {
 
   int * InI = new int[MaxNumEntries]; // Allocate temp space
   double * InV = new double[MaxNumEntries];
-  int * colflag = new int[NumMyCols_];
+  int * colflag = new int[NumMyCols()];
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal
@@ -232,9 +218,9 @@ int Ifpack_CrsRiluk::Factor() {
   int NumUU; 
   int * UUI;
   double * UUV;
-  for (j=0; j<NumMyCols_; j++) colflag[j] = - 1;
+  for (j=0; j<NumMyCols(); j++) colflag[j] = - 1;
 
-  for(i=0; i<NumMyRows_; i++) {
+  for(i=0; i<NumMyRows(); i++) {
 
  // Fill InV, InI with current row of L, D and U combined
 
@@ -333,17 +319,65 @@ int Ifpack_CrsRiluk::Factor() {
 }
 
 //=============================================================================
-int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_Vector& x, 
-				Epetra_Vector& y) {
-  return(Solve(Trans,(Epetra_MultiVector &) x, (Epetra_MultiVector &) y));
+int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_Vector& X, 
+				Epetra_Vector& Y) const {
+//
+// This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for a single RHS
+//
+
+  bool Upper = true;
+  bool Lower = false;
+  bool UnitDiagonal = true;
+
+  Epetra_Vector * X1 = (Epetra_Vector *) &X;
+  Epetra_Vector * Y1 = (Epetra_Vector *) &Y;
+
+  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
+    if (OverlapX_==0) { // Need to allocate space for overlap X and Y
+      OverlapX_ = new Epetra_Vector(Graph_.OverlapGraph()->RowMap());
+      OverlapY_ = new Epetra_Vector(Graph_.OverlapGraph()->RowMap());
+    }
+    OverlapX_->Import(X,*Graph_.OverlapImporter(), Insert); // Import X values for solve
+    X1 = (Epetra_Vector *) OverlapX_;
+    Y1 = (Epetra_Vector *) OverlapY_; // Set pointers for X1 and Y1 to point to overlap space
+  }
+
+  Epetra_Flops * counter = this->GetFlopCounter();
+  if (counter!=0) {
+    L_->SetFlopCounter(*counter);
+    Y1->SetFlopCounter(*counter);
+    U_->SetFlopCounter(*counter);
+  }
+
+  if (!Trans) {
+
+    L_->Solve(Lower, Trans, UnitDiagonal, *X1, *Y1);
+    Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
+    U_->Solve(Upper, Trans, UnitDiagonal, *Y1, *Y1); // Solve Uy = y
+  }
+  else
+    {
+      U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1); // Solve Uy = y
+      Y1->Multiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
+      L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1);
+      
+    } 
+
+  // Export computed Y values as directed
+  if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal())
+    Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_);
+  return(0);
 }
+
 
 //=============================================================================
 int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) {
+				Epetra_MultiVector& Y) const {
 //
-// This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X
+// This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
+
+  if (X.NumVectors()!=Y.NumVectors()) EPETRA_CHK_ERR(-1); // Return error: X and Y not the same size
 
   bool Upper = true;
   bool Lower = false;
@@ -353,6 +387,13 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
   Epetra_MultiVector * Y1 = (Epetra_MultiVector *) &Y;
 
   if (Graph_.LevelOverlap()>0 && Graph_.L_Graph().DomainMap().DistributedGlobal()) {
+    // Make sure the number of vectors in the multivector is the same as before.
+    if (OverlapX_!=0) {
+      if (OverlapX_->NumVectors()!=X.NumVectors()) {
+	delete OverlapX_; OverlapX_ = 0;
+	delete OverlapY_; OverlapY_ = 0;
+      }
+    }
     if (OverlapX_==0) { // Need to allocate space for overlap X and Y
       OverlapX_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), X.NumVectors());
       OverlapY_ = new Epetra_MultiVector(Graph_.OverlapGraph()->RowMap(), Y.NumVectors());
@@ -388,6 +429,25 @@ int Ifpack_CrsRiluk::Solve(bool Trans, const Epetra_MultiVector& X,
     Y.Export(*OverlapY_,*Graph_.OverlapImporter(), OverlapMode_);
   return(0);
 }
+//=============================================================================
+int Ifpack_CrsRiluk::Condest(bool Trans, double & ConditionNumberEstimate) const {
+
+  if (Condest_>=0.0) {
+    ConditionNumberEstimate = Condest_;
+    return(0);
+  }
+  // Create a vector with all values equal to one
+  Epetra_Vector Ones(A_.RowMap());
+  Epetra_Vector OnesResult(Ones);
+  Ones.PutScalar(1.0);
+
+  EPETRA_CHK_ERR(Solve(Trans, Ones, OnesResult)); // Compute the effect of the solve on the vector of ones
+  EPETRA_CHK_ERR(OnesResult.Abs(OnesResult)); // Make all values non-negative
+  EPETRA_CHK_ERR(OnesResult.MaxValue(&ConditionNumberEstimate)); // Get the maximum value across all processors
+  Condest_ = ConditionNumberEstimate; // Save value for possible later calls
+  return(0);
+}
+//=============================================================================
 // Non-member functions
 
 ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)

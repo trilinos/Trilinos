@@ -8,7 +8,7 @@
 
 #include "Epetra_CrsGraph.h"
 #include "Ifpack_IlukGraph.h"
-#ifdef IFPACK_MPI
+#ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
 #include "Epetra_SerialComm.h"
@@ -26,7 +26,7 @@ int check(Epetra_CrsGraph& L, Epetra_CrsGraph& U, Ifpack_IlukGraph& LU,
   int * Indices;
   int nx, ny;
 
-#ifdef IFPACK_MPI
+#ifdef EPETRA_MPI
 
   // Initialize MPI
 

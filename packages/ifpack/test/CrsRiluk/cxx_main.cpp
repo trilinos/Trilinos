@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   if (verbose && rank!=0) verbose = false;
 
   int NumMyEquations = 10000;
-  int NumGlobalEquations = NumMyEquations*NumProc+min(NumProc,3);
+  int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if (MyPID < 3) NumMyEquations++;
   int IndexBase = 0;
   int ElementSize = 7;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
-  Epetra_Map& Map = *new Epetra_Map(NumGlobalEquations, NumMyEquations, 0, Comm);
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 0, Comm);
   
   // Get update list and number of local equations from newly created Map
   int * MyGlobalElements = new int[Map.NumMyElements()];
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
   // Create a Epetra_Matrix
 
-  Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
+  Epetra_CrsMatrix A(Copy, Map, NumNz);
   
   // Add  rows one-at-a-time
   // Need some vectors to help
@@ -140,9 +140,9 @@ int main(int argc, char *argv[])
 
   // Create vectors for Power method
 
-  Epetra_Vector& q = *new Epetra_Vector(Map);
-  Epetra_Vector& z = *new Epetra_Vector(Map);
-  Epetra_Vector& resid = *new Epetra_Vector(Map);
+  Epetra_Vector q(Map);
+  Epetra_Vector z(Map);
+  Epetra_Vector resid(Map);
 
   // variable needed for iteration
   double lambda = 0.0;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
   double tolerance = 1.0e-3;
 
   // Iterate
-  Epetra_Time & timer = *new Epetra_Time(Comm);
+  Epetra_Time timer(Comm);
   ierr += power_method(A, q, z, resid, &lambda, niters, tolerance, verbose);
   double elapsed_time = timer.ElapsedTime();
   double total_flops = A.Flops() + q.Flops() + z.Flops() + resid.Flops();
@@ -191,11 +191,6 @@ int main(int argc, char *argv[])
   delete [] Indices;
   delete [] MyGlobalElements;
 
-  delete &resid;
-  delete &z;
-  delete &q;
-  delete &A;
-  delete &Map;
 			
 
   if (verbose1) {
@@ -206,7 +201,7 @@ int main(int argc, char *argv[])
     int NumMyEquations1 = NumMyElements1;
     int NumGlobalEquations1 = NumMyEquations1*NumProc;
 
-    Epetra_Map& Map1 = *new Epetra_Map(-1, NumMyElements1, 0, Comm);
+    Epetra_Map Map1(-1, NumMyElements1, 0, Comm);
     
     // Get update list and number of local equations from newly created Map
     int * MyGlobalElements1 = new int[Map1.NumMyElements()];
@@ -228,7 +223,7 @@ int main(int argc, char *argv[])
     
     // Create a Epetra_Matrix
     
-    Epetra_CrsMatrix& A1 = *new Epetra_CrsMatrix(Copy, Map1, NumNz1);
+    Epetra_CrsMatrix A1(Copy, Map1, NumNz1);
     
     // Add  rows one-at-a-time
     // Need some vectors to help
@@ -275,10 +270,7 @@ int main(int argc, char *argv[])
   delete [] Indices1;
   delete [] MyGlobalElements1;
 
-  delete &A1;
-  delete &Map1;
   }
-  delete &Comm;
 			
 #ifdef EPETRA_MPI
   MPI_Finalize() ;

@@ -129,7 +129,7 @@ const bool Epetra_FormatStdout = true; // Set true if the ostream << operator sh
 
 // Great little macro obtained from Alan Williams (modified for dynamic switching on/off)
 
-const int ConstDefaultTracebackMode =2; // Default value for traceback behavior
+const int ConstDefaultTracebackMode = 1; // Default value for traceback behavior
 
 #define EPETRA_CHK_ERR(a) { { int epetra_err = a; \
                               if ((epetra_err < 0 && Epetra_Object::GetTracebackMode() > 0) || \
@@ -208,8 +208,11 @@ class Epetra_Object {
   /*! Sets the integer error traceback behavior.  
       TracebackMode controls whether or not traceback information is printed when run time 
       integer errors are detected:
+
       <= 0 - No information report
+
        = 1 - Fatal (negative) values are reported
+
       >= 2 - All values (except zero) reported.
 
       Default is set to 1.

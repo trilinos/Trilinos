@@ -48,7 +48,7 @@ Epetra_Object::Epetra_Object(const Epetra_Object& Object)
   SetLabel(Object.Label_);
 }
 // Set TracebackMode value to default of 2 (report traceback for all non-zero int return codes)
-int Epetra_Object::TracebackMode(2);
+int Epetra_Object::TracebackMode(ConstDefaultTracebackMode);
 
 void Epetra_Object::SetTracebackMode(int TracebackModeValue) {
   

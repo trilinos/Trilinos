@@ -43,13 +43,27 @@ int main(int argc, char *argv[]) {
   bool verbose = false; 
   if (MyPID==0) verbose = true;
 
-  if(argc != 5 && verbose) 
-    cerr << "Error: Enter name of data file on command line, "
-	 << "followed by levelfill, leveloverlap and shift value" << endl;
+  if(argc < 2 && verbose) {
+    cerr << "Usage: " << argv[0] 
+	 << " HB_filename [level_fill [level_overlap [absolute_threshold [ relative_threshold]]]]" << endl
+	 << "where:" << endl
+	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
+	 << "level_fill         - The amount of fill to use for ILU(k) preconditioner (default 0)" << endl
+	 << "level_overlap      - The amount of overlap used for overlapping Schwarz subdomains (default 0)" << endl
+	 << "absolute_threshold - The minimum value to place on the diagonal prior to factorization (default 0.0)" << endl
+	 << "relative_threshold - The relative amount to perturb the diagonal prior to factorization (default 1.0)" << endl << endl
+	 << "To specify a non-default value for one of these parameters, you must specify all" << endl
+	 << " preceding values but not any subsequent parameters. Example:" << endl
+	 << "ifpackHbSerialMsr.exe mymatrix.hb 1  - loads mymatrix.hb, uses level fill of one, all other values are defaults" << endl
+	 << endl;
+    return(1);
 
-  int tmp;
-  if (MyPID==0) cin >> tmp;
-  Comm.Barrier();
+  }
+
+  // Uncomment the next three lines to debug in mpi mode
+  //int tmp;
+  //if (MyPID==0) cin >> tmp;
+  //Comm.Barrier();
 
   Epetra_Map * readMap;
   Epetra_CrsMatrix * readA; 
@@ -78,8 +92,10 @@ int main(int argc, char *argv[]) {
   Comm.Barrier();
   double vectorRedistributeTime = FillTimer.ElapsedTime();
   A.Export(*readA, exporter, Add);
+  Comm.Barrier();
   double matrixRedistributeTime = FillTimer.ElapsedTime() - vectorRedistributeTime;
   assert(A.TransformToLocal()==0);    
+  Comm.Barrier();
   double fillCompleteTime = FillTimer.ElapsedTime() - matrixRedistributeTime;
   if (Comm.MyPID()==0)	{
     cout << "\n\n****************************************************" << endl;
@@ -115,12 +131,19 @@ int main(int argc, char *argv[]) {
   double elapsed_time, total_flops, MFLOPs;
   Epetra_Time timer(Comm);
 
-  int LevelFill = atoi(argv[argc-3]);
+  int LevelFill = 0;
+  if (argc > 2)  LevelFill = atoi(argv[2]);
   if (verbose) cout << "Using Level Fill = " << LevelFill << endl;
-  int Overlap = atoi(argv[argc-2]);
+  int Overlap = 0;
+  if (argc > 3) Overlap = atoi(argv[3]);
   if (verbose) cout << "Using Level Overlap = " << Overlap << endl;
-  double ShiftValue = atof(argv[argc-1]);
-  if (verbose) cout << "Using Diagonal Shift Value of = " << ShiftValue << endl;
+  double Athresh = 0.0;
+  if (argc > 4) Athresh = atof(argv[4]);
+  if (verbose) cout << "Using Absolute Threshold Value of = " << Athresh << endl;
+
+  double Rthresh = 1.0;
+  if (argc > 5) Rthresh = atof(argv[5]);
+  if (verbose) cout << "Using Relative Threshold Value of = " << Rthresh << endl;
 
   Ifpack_IlukGraph * IlukGraph = 0;
   Ifpack_CrsRiluk * ILUK = 0;
@@ -138,7 +161,8 @@ int main(int argc, char *argv[]) {
     elapsed_time = timer.ElapsedTime();
     ILUK = new Ifpack_CrsRiluk(A, *IlukGraph);
     ILUK->SetFlopCounter(fact_counter);
-    ILUK->SetShiftValue(ShiftValue);
+    ILUK->SetAbsoluteThreshold(Athresh);
+    ILUK->SetRelativeThreshold(Rthresh);
     //assert(ILUK->InitValues()==0);
     int initerr = ILUK->InitValues();
     if (initerr!=0) cout << Comm << "InitValues error = " << initerr;
@@ -151,6 +175,10 @@ int main(int argc, char *argv[]) {
 		    << "MFLOPS for Factorization = " << MFLOPs << endl;
     //cout << *ILUK << endl;
   }
+  double Condest;
+  ILUK->Condest(false, Condest);
+
+  if (verbose) cout << "Condition number estimate for this preconditioner = " << Condest << endl;
   int Maxiter = 500;
   double Tolerance = 1.0E-14;
 
