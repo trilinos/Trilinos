@@ -123,33 +123,31 @@ Epetra_Export::Epetra_Export( const Epetra_BlockMap &  SourceMap, const Epetra_B
 
   if (SourceMap.DistributedGlobal()) {
 
-    if (NumExportIDs_>0) {
-      ExportPIDs_ = new int[NumExportIDs_];
-      ierr = TargetMap.RemoteIDList(NumExportIDs_, ExportGIDs, ExportPIDs_, 0); // Get remote PIDs
-      if( ierr ) throw ReportError("Error in Epetra_BlockMap::RemoteIDList", ierr);
+    if (NumExportIDs_>0) ExportPIDs_ = new int[NumExportIDs_];
+    ierr = TargetMap.RemoteIDList(NumExportIDs_, ExportGIDs, ExportPIDs_, 0); // Get remote PIDs
+    if( ierr ) throw ReportError("Error in Epetra_BlockMap::RemoteIDList", ierr);
 
-      //Get rid of IDs not in Target Map
-      if(NumExportIDs_>0) {
-        int cnt = 0;
-        for( i = 0; i < NumExportIDs_; ++i )
-          if( ExportPIDs_[i] == -1 ) ++cnt;
-        if( cnt ) {
-          int * NewExportGIDs = new int[NumExportIDs_-cnt];
-          int * NewExportPIDs = new int[NumExportIDs_-cnt];
-          cnt = 0;
-          for( i = 0; i < NumExportIDs_; ++i )
-            if( ExportPIDs_[i] != -1 ) {
-              NewExportGIDs[cnt] = ExportGIDs[i];
-              NewExportPIDs[cnt] = ExportPIDs_[i];
-              ++cnt;
+    //Get rid of IDs not in Target Map
+    if(NumExportIDs_>0) {
+      int cnt = 0;
+      for( i = 0; i < NumExportIDs_; ++i )
+	if( ExportPIDs_[i] == -1 ) ++cnt;
+      if( cnt ) {
+	int * NewExportGIDs = new int[NumExportIDs_-cnt];
+	int * NewExportPIDs = new int[NumExportIDs_-cnt];
+	cnt = 0;
+	for( i = 0; i < NumExportIDs_; ++i )
+	  if( ExportPIDs_[i] != -1 ) {
+	    NewExportGIDs[cnt] = ExportGIDs[i];
+	    NewExportPIDs[cnt] = ExportPIDs_[i];
+	    ++cnt;
           }
-          NumExportIDs_ = cnt;
-          delete [] ExportGIDs;
-          delete [] ExportPIDs_;
-          ExportGIDs = NewExportGIDs;
-          ExportPIDs_ = NewExportPIDs;
-          ReportError("Warning in Epetra_Export: Source IDs not found in Target Map (Do you want to export from subset of Source Map?)", 1 );
-        }
+	NumExportIDs_ = cnt;
+	delete [] ExportGIDs;
+	delete [] ExportPIDs_;
+	ExportGIDs = NewExportGIDs;
+	ExportPIDs_ = NewExportPIDs;
+	ReportError("Warning in Epetra_Export: Source IDs not found in Target Map (Do you want to export from subset of Source Map?)", 1 );
       }
     }
     

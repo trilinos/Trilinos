@@ -328,7 +328,7 @@ int Epetra_VbrMatrix::BeginReplaceValues(int BlockRow, int NumBlockEntries,
   if (CV_==View) return(-3); // This is a view only.  Cannot remove entries.
   if (BlockRow < 0 || BlockRow >= NumMyBlockRows_) return(-1); // Not in BlockRow range
 
-  Epetra_CombineMode SubmitMode = Insert;
+  Epetra_CombineMode SubmitMode = Zero; // This is a misuse of Zero mode, fix it later
   return(SetupForSubmits(BlockRow, NumBlockEntries, BlockIndices, IndicesAreLocal, SubmitMode));
 }
 
@@ -424,18 +424,36 @@ int Epetra_VbrMatrix::EndReplaceSumIntoValues() {
   if (CurIndicesAreLocal_) {
     for (j=0; j<CurNumBlockEntries_; j++) {
       int BlockIndex = CurBlockIndices_[j];
-      if (Graph_->FindMyIndexLoc(CurBlockRow_,BlockIndex,j,Loc)) 
+      if (Graph_->FindMyIndexLoc(CurBlockRow_,BlockIndex,j,Loc)) {
+	if (Values_[CurBlockRow_][Loc]==0) {
+	  LDAs_[CurBlockRow_][Loc] = TempLDAs_[j];
+	  ColDims_[CurBlockRow_][Loc] = TempColDims_[j];
+	  int LDA = LDAs_[CurBlockRow_][Loc];
+	  int NumCols = TempColDims_[j];
+	  Values_[CurBlockRow_][Loc] = new double[LDA*NumCols];
+	  for (int i=0; i<LDA*NumCols; i++) Values_[CurBlockRow_][Loc][i] = 0.0;
+	}
 	CopyMat(TempValues_[j], TempLDAs_[j], RowDim, TempColDims_[j], 
 		Values_[CurBlockRow_][Loc], LDAs_[CurBlockRow_][Loc], SumInto);
+      }
       else return(-2); // Value not found
     }
   }
   else {
     for (j=0; j<CurNumBlockEntries_; j++) {
       int BlockIndex = CurBlockIndices_[j];
-      if (Graph_->FindGlobalIndexLoc(CurBlockRow_,BlockIndex,j,Loc)) 
+      if (Graph_->FindGlobalIndexLoc(CurBlockRow_,BlockIndex,j,Loc)) {
+	if (Values_[CurBlockRow_][Loc]==0) {
+	  LDAs_[CurBlockRow_][Loc] = TempLDAs_[j];
+	  ColDims_[CurBlockRow_][Loc] = TempColDims_[j];
+	  int LDA = LDAs_[CurBlockRow_][Loc];
+	  int NumCols = TempColDims_[j];
+	  Values_[CurBlockRow_][Loc] = new double[LDA*NumCols];
+	  for (int i=0; i<LDA*NumCols; i++) Values_[CurBlockRow_][Loc][i] = 0.0;
+	}
 	CopyMat(TempValues_[j], TempLDAs_[j], RowDim, TempColDims_[j], 
 		Values_[CurBlockRow_][Loc], LDAs_[CurBlockRow_][Loc], SumInto);
+      }
       else return(-2); // Value not found
     }
   }
@@ -801,7 +819,7 @@ int Epetra_VbrMatrix::SetupForExtracts(int BlockRow, int & RowDim, int NumBlockE
   CurExtractNumBlockEntries_ = NumBlockEntries;
   CurExtractIndicesAreLocal_ = IndicesAreLocal;
   CurExtractView_ = ExtractView;
-  CurRowDim_ = ElementSizeList_[CurBlockRow_];
+  CurRowDim_ = ElementSizeList_[CurExtractBlockRow_];
   RowDim = CurRowDim_;
     
   return(0);
@@ -1809,7 +1827,6 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_DistObject & Source,int NumExp
   SizeOfPacket = DoublePacketSize * sizeof(double); 
 
 
-  if (NumExportIDs<=0) return(0);
 
 
   if (DoublePacketSize*Nsend>LenExports) {
@@ -1825,6 +1842,9 @@ int Epetra_VbrMatrix::PackAndPrepare(const Epetra_DistObject & Source,int NumExp
     DoubleImports = new double[LenImports];
     Imports = (char *) DoubleImports;
   }
+
+  if (NumExportIDs<=0) return(0); // All done if nothing to pack
+
   int i, j;
   
   int BlockRow, NumBlockEntries;
@@ -1950,6 +1970,7 @@ int Epetra_VbrMatrix::UnpackAndCombine(const Epetra_DistObject & Source,
       SubmitBlockEntry(Values, LDA, RowDim, ColDim);
       Values += (LDA*ColDim);
     }
+    EndSubmitEntries(); // Done with this block row
     valptr += DoublePacketSize; // Point to next segment
     dintptr = valptr + GlobalMaxNumNonzeros;
     intptr = (int *) dintptr;

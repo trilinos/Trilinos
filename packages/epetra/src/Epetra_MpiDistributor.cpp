@@ -548,6 +548,7 @@ int Epetra_MpiDistributor::DoPosts(char * export_objs,
   {
     if( procs_from_[i] != my_proc )
     {
+      //cout << "Processor " << my_proc << "lengths_from_["<<i<<"] = " << lengths_from_[i] << " obj_size = " <<obj_size<<endl;
       MPI_Irecv( &(recv_array_[j]), lengths_from_[i] * obj_size,
 	MPI_CHAR, procs_from_[i], tag_, comm_,
 	&(request_[k]) );
@@ -581,6 +582,7 @@ int Epetra_MpiDistributor::DoPosts(char * export_objs,
       }
       //   cout << "my_proc = " << my_proc << " length = " << lengths_to_[i] * obj_size 
       //   << " send to = " << procs_to_[i] << " tag = " << tag << endl;
+      //cout << "Processor " << my_proc << "lengths_to_["<<i<<"] = " << lengths_to_[i] << " obj_size = " <<obj_size<<endl;
       MPI_Rsend( send_array_, lengths_to_[i] * obj_size,
 	MPI_CHAR, procs_to_[i], tag_, comm_ );
     }
@@ -616,9 +618,9 @@ int Epetra_MpiDistributor::DoWaits(char * export_objs,
 			       const int & obj_size,
 			       char * import_objs )
 {
-   if( nrecvs_ > 0 )
+  if( nrecvs_ - self_msg_ > 0 )
     MPI_Waitall( nrecvs_ - self_msg_, 
-		request_, status_ );
+		 request_, status_ );
 
   return(0);
 }

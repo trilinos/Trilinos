@@ -330,7 +330,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     throw ReportError("NumMyElements = " + toString(NumMyElements_) + ".  Should be >= 0.", -2);
   for (i=0; i<NumMyElements_; i++)
     if (ElementSizeList[i] <= 0) 
-      throw ReportError("An entry in ElementSizeList = " + toString(ElementSizeList[i]) + ". Should be > 0.", -3);
+      throw ReportError("ElementSizeList["+toString(i)+"] = " + toString(ElementSizeList[i]) + ". Should be > 0.", -3);
   
   // Allocate storage for global index list and element size information
 
@@ -368,6 +368,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
     MaxMyElementSize_ = 1;
     NumMyPoints_ = 0;
     MyGlobalElements_ = 0;
+    ElementSizeList_ = 0;
   }
 
   DistributedGlobal_ = IsDistributedGlobal(NumGlobalElements, NumMyElements);  
@@ -416,6 +417,7 @@ Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int NumMyElements, int *
       tmp_send[0] = - MinMyGID_; // Negative signs lets us do one reduction
       tmp_send[1] =   MaxMyGID_;
       tmp_send[2] = - MinMyElementSize_;
+      if (NumMyElements_==0) tmp_send[2] = - NumGlobalPoints_; // This processor has no elements, so should not sizes.
       tmp_send[3] =   MaxMyElementSize_;
 
       Comm_->MaxAll(tmp_send, tmp_recv, 4);
@@ -804,21 +806,10 @@ int Epetra_BlockMap::FindLocalElementID(int PointID, int & ElementID, int & Elem
     return(0);
   }
   else {
-    if (PointToElementList_==0) {
-      int * tmp;
-      if (PointToElementList_==0) tmp = new int[NumMyPoints_];
-      EPETRA_CHK_ERR(PointToElementList(tmp));
-      (int * &) PointToElementList_ = tmp;  // Allows assignment in a const method
-    }
-    if (FirstPointInElementList_==0) {
-      int * tmp;
-      if (FirstPointInElementList_==0) tmp = new int[NumMyElements_];
-      EPETRA_CHK_ERR(FirstPointInElementList(tmp));
-      (int * &) FirstPointInElementList_ = tmp;  // Allows assignment in a const method
-    }
-
-    ElementID = PointToElementList_[PointID];
-    ElementOffset = PointID - FirstPointInElementList_[ElementID];
+    int * tmpPointToElementList = PointToElementList();
+    int * tmpFirstPointInElementList = FirstPointInElementList();
+    ElementID = tmpPointToElementList[PointID];
+    ElementOffset = PointID - tmpFirstPointInElementList[ElementID];
     return(0);
   }
 }

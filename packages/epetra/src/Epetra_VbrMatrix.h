@@ -770,7 +770,7 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     int NumGlobalBlockCols() const {return(Graph_->NumGlobalBlockCols());};
     
     //! Returns the number of nonzero block entries in the global matrix.
-    int NumGlobalBlockEntries() const {return(Graph_->NumGlobalNonzeros());};
+    int NumGlobalBlockEntries() const {return(Graph_->NumGlobalEntries());};
     
     //! Returns the number of global nonzero block diagonal entries.
     int NumGlobalBlockDiagonals() const {return(Graph_->NumGlobalBlockDiagonals());};
@@ -782,13 +782,13 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
     int NumGlobalBlockEntries(int Row) const {return(Graph_->NumGlobalIndices(Row));};
 
     //! Returns the allocated number of nonzero Block entries in specified global row on this processor.
-int NumAllocatedGlobalBlockEntries(int Row) const{return(Graph_->NumAllocatedGlobalIndices(Row));};
+    int NumAllocatedGlobalBlockEntries(int Row) const{return(Graph_->NumAllocatedGlobalIndices(Row));};
 
     //! Returns the maximum number of nonzero entries across all rows on this processor.
     int MaxNumBlockEntries() const {return(Graph_->MaxNumIndices());};
 
     //! Returns the maximum number of nonzero entries across all rows on this processor.
-int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
+    int GlobalMaxNumBlockEntries() const {return(Graph_->GlobalMaxNumIndices());};
 
     //! Returns the current number of nonzero Block entries in specified local row on this processor.
     int NumMyBlockEntries(int Row) const {return(Graph_->NumMyIndices(Row));};

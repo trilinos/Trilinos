@@ -186,12 +186,10 @@ int Epetra_BasicDirectory::Generate()
   int * import_elements = 0;
   int * ElementSizeList = 0;
   int packetSize = 3; // Assume we will send GIDs, PIDs and LIDs (will increase to 4 if also sending sizes)
-
+  if (!SizeIsConst) packetSize++; // Must send element size info also
+ 
   if (Map_NumMyElements>0) {
-    if (!SizeIsConst) {
-      packetSize++; // Must send element size info also
-      ElementSizeList = Map_->ElementSizeList();
-    }
+    if (!SizeIsConst) ElementSizeList = Map_->ElementSizeList();
     export_elements = new int[ packetSize * Map_NumMyElements ];
     int * ptr = export_elements;
     for( i = 0; i < Map_NumMyElements; i++ )
