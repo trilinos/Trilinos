@@ -42,7 +42,7 @@ int ML_Gen_MGHierarchy_UsingAggregation(ML *ml, int start,
                        int increment_or_decrement, ML_Aggregate *ag)
 {
    int    level, idata;
-   double dnnz;
+   double dnnz = 0;
    ML_Aggregate *ml_ag;
 #ifdef ML_TIMING
    double t0;
@@ -202,7 +202,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
                              ML_Aggregate *ag)
 {
    int         Ncoarse, Nfine, gNfine, gNcoarse;
-   double      max_eigen;
+   double      max_eigen = -1.;
    ML_Operator *Amat, *Pmatrix, *AGGsmoother = NULL;
    struct      ML_AGG_Matrix_Context widget;
    ML_Krylov   *kdata;
@@ -212,7 +212,14 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    t0 =  GetClock();
 #endif
 
+   widget.near_bdry = NULL;
    Amat     = (ML_Operator *) data;
+   Amat->num_PDEs = ag->num_PDE_eqns;
+   /*
+   widget.near_bdry = (char *) ML_allocate(sizeof(char)*Amat->outvec_leng);
+   ML_AGG_Compute_Near_Bdry(Amat, widget.near_bdry);
+   */
+
    Nfine    = Amat->outvec_leng;
    gNfine   = ML_Comm_GsumInt( ml->comm, Nfine);
    ML_Aggregate_Set_CurrentLevel( ag, level );
@@ -286,6 +293,7 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
    ML_Operator_Set_1Levels(&(ml->Pmat[clevel]),
               &(ml->SingleLevel[clevel]), &(ml->SingleLevel[level]));
 
+   if (widget.near_bdry != NULL) ML_free(widget.near_bdry);
 #ifdef ML_TIMING
    ml->Pmat[clevel].build_time =  GetClock() - t0;
    ml->timing->total_build_time += ml->Pmat[clevel].build_time;
@@ -371,11 +379,21 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    int            info, diag = -1, i, j /*, *aggr_info */;
    double         diag_val = 1.0, dropped, threshold = 0.0;
 
+   widget = (struct ML_AGG_Matrix_Context *) data;
+   if (widget->near_bdry != NULL) {
+     if (widget->near_bdry[requested_rows[0]] == 'T') {
+       if (allocated_space < 1) return(0);
+       columns[0] = requested_rows[0];
+       values[0]  = 1.0;
+       row_lengths[0] = 1;
+       return(1);
+     }
+   }
+
    /* ----------------------------------------------------------------- */
    /* error checking                                                    */
    /* ----------------------------------------------------------------- */
 
-   widget = (struct ML_AGG_Matrix_Context *) data;
    getrow_obj = widget->Amat->getrow;
    if (N_requested_rows > 1) 
    {
@@ -578,7 +596,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
 
    if ( ml->comm->ML_mypid == 0 && ag->print_flag ) 
       printf("Aggregation : building multilevel hierarchy at level %d\n",level);
- 
+   widget.near_bdry = NULL; 
    Amat     = (ML_Operator *) data;
    Nfine    = Amat->outvec_leng;
    getrow_obj = Amat->getrow;
@@ -626,6 +644,7 @@ int ML_AGG_Gen_DDProlongator(ML *ml,int level, int clevel, void *data,
    nbytes = sizeof(struct ML_AGG_Matrix_Context);
    context = (struct ML_AGG_Matrix_Context *) malloc( nbytes );
    context->Amat = Amat;
+   context->near_bdry = NULL;
    ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
    ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
    newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
@@ -894,7 +913,7 @@ for (i = 0; i < Nfine; i++) darray[i] = 1.0/sqrt((double) Nfine);
       printf("Aggregation : building P complete at level %d\n",level);
 
 /*
-   ML_Set_Smoother(ml, level, ML_PRESMOOTHER, newml, ML_AGG_Smoother_Wrapper);
+   ML_Set_Smoother(ml, level, ML_PRESMOOTHER, newml, ML_AGG_Smoother_Wrapper,NULL);
 */
 #ifdef ML_TIMING
    ml->Pmat[clevel].build_time =  GetClock() - t0;
@@ -1212,7 +1231,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
    /* ----------------------------------------------------------------- */
    /* coarsen local smoothed aggregation method                         */
    /* ----------------------------------------------------------------- */
-
+   widget.near_bdry = NULL;
    Amat  = (ML_Operator *) data;
    Nfine = Amat->outvec_leng;
    omega = ag->smoothP_damping_factor;
@@ -1232,6 +1251,7 @@ int ML_AGG_Gen_DDProlongator2(ML *ml,int level, int clevel, void *data,
       nbytes = sizeof(struct ML_AGG_Matrix_Context);
       context = (struct ML_AGG_Matrix_Context *) malloc( nbytes );
       context->Amat = Amat;
+      context->near_bdry = NULL;
       ML_Init_Amatrix(newml, newNlevels-1, Nfine,  Nfine, (void *) context);
       ML_Set_Amatrix_Matvec(newml,  newNlevels-1, ML_AGG_DD_Matvec);
       newml->Amat[newNlevels-1].data_destroy = ML_AGG_Matrix_Context_Clean;
@@ -1332,3 +1352,91 @@ ML_Operator_Print(&(ml->Pmat[clevel]), "Pmat2");
    return 0;
 }
 
+/* ************************************************************************* */
+/* Compute the DOFs that are on the boundary and those that are right next   */
+/* to the boundary.                                                          */
+/* ------------------------------------------------------------------------- */
+int ML_AGG_Compute_Near_Bdry(ML_Operator *Amatrix, char *near_bdry)
+{
+  int Nrows, Nghost = 0, allocated = 0, *rowi_col = NULL, rowi_N, count2;
+  int i, j, bsize, flag;
+  double *dtemp, *rowi_val = NULL, sum;
+
+
+  Nrows = Amatrix->outvec_leng;
+
+   /* ============================================================= */
+   /* Figure out where the Dirichlet points are on the fine grid.   */
+   /* ============================================================= */
+
+  if (Amatrix->getrow->pre_comm != NULL)
+    Nghost = Amatrix->getrow->pre_comm->total_rcv_length;
+
+  /* near_bdry = (char *) ML_allocate(sizeof(char)*(Nrows+Nghost+1)); */
+   dtemp = (double *) ML_allocate(sizeof(double)*(Nrows+Nghost+1));
+   if (dtemp == NULL) pr_error("ml_agg_MIS: out of space.\n");
+
+   for (i = 0; i < Nrows+Nghost; i++) dtemp[i] = 0.;
+
+   for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      count2 = 0;
+      for (j = 0; j < rowi_N; j++) if (rowi_val[j] != 0.) count2++;
+      if (count2 <= 1) dtemp[i] = 1.;
+   }
+  
+   /* if one DOF within a node is fixed, mark all the DOFs within node */
+
+   bsize = Amatrix->num_PDEs;
+   for (i = 0; i < Nrows/bsize; i++) {
+     sum = 0.;
+     for (j = 0; j < bsize; j++) {
+       sum += dtemp[i*bsize+j];
+     }
+     if (sum != 0.) {
+       for (j = 0; j < bsize; j++) dtemp[i*bsize+j] = 1.;
+     }
+   }
+      
+
+   
+   ML_exchange_bdry(dtemp,Amatrix->getrow->pre_comm,Amatrix->outvec_leng,
+                    Amatrix->comm, ML_OVERWRITE);
+   for (i = 0; i < Nrows+Nghost; i++) {
+      if (dtemp[i] == 1.) near_bdry[i] = 'T';
+      else near_bdry[i] = 'F';
+   }
+
+   /* Figure out who touches a Dirichlet point */
+
+   for (i = 0; i < Nrows; i++) {
+      ML_get_matrix_row(Amatrix, 1, &i, &allocated, &rowi_col, &rowi_val,
+                        &rowi_N, 0);
+      count2 = 0;
+      for (j = 0; j < rowi_N; j++) if (dtemp[rowi_col[j]] != 0.) count2++;
+      if (count2 != 0) near_bdry[i] = 'T';
+   }
+
+   for (i = 0; i < Nrows/bsize; i++) {
+     flag = 0;
+     for (j = 0; j < bsize; j++) {
+       if (near_bdry[i*bsize+j] == 'T') flag = 1;
+     }
+     if (flag == 1) {
+        for (j = 0; j < bsize; j++) {
+	  near_bdry[i*bsize+j] = 'T';
+        }
+     }
+   }
+
+   
+   
+   free(rowi_col); free(rowi_val);
+   rowi_col = NULL; rowi_val = NULL;
+   allocated = 0; 
+
+   ML_free(dtemp);
+
+   return 0;
+}
