@@ -53,7 +53,7 @@ static char *cvs_rcbc_id = "$Id$";
 #define RCB_DEFAULT_REUSE FALSE
 
 static int rcb(LB *, int *, LB_GID **, LB_LID **, int **, double,
-    int, int, int, int);
+    int, int, int, int, int);
 
 /*  RCB_CHECK = 0  No consistency check on input or results */
 /*  RCB_CHECK = 1  Check input weights and final results for consistency */
@@ -79,6 +79,7 @@ char *val)			/* value of variable */
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
+        { "RCB_TREE", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, RCB_params, &result, &index);
@@ -118,6 +119,8 @@ int LB_rcb(
                                  Multidimensional weights not supported */
     int check;                /* Check input & output for consistency? */
     int stats;                /* Print timing & count summary? */
+    int gen_tree;             /* (0) don't (1) generate whole treept to use
+                                 later for point and box drop. */
 
     PARAM_VARS RCB_params[] = {
 	{ "RCB_OVERALLOC", NULL, "DOUBLE" },
@@ -125,6 +128,7 @@ int LB_rcb(
 	{ "RCB_WGTFLAG", NULL, "INT" },
 	{ "RCB_CHECK", NULL, "INT" },
 	{ "RCB_STATS", NULL, "INT" },
+        { "RCB_TREE", NULL, "INT" },
 	{ NULL, NULL, NULL } };
     
     RCB_params[0].ptr = (void *) &overalloc;
@@ -132,12 +136,14 @@ int LB_rcb(
     RCB_params[2].ptr = (void *) &wgtflag;
     RCB_params[3].ptr = (void *) &check;
     RCB_params[4].ptr = (void *) &stats;
+    RCB_params[5].ptr = (void *) &gen_tree;
 
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
     wgtflag = 0;
     check = RCB_CHECK;
     stats = RCB_STATS;
+    gen_tree = 0;
 
     LB_Assign_Param_Vals(lb->Params, RCB_params);
 
@@ -145,7 +151,7 @@ int LB_rcb(
 
     return(rcb(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag, check,
-		 stats));
+		 stats, gen_tree));
 }
 
 /*---------------------------------------------------------------------------*/
@@ -172,7 +178,8 @@ static int rcb(
   int wgtflag,                 /* (0) do not (1) do use weights.
                                       Multidimensional weights not supported */
   int check,                  /* Check input & output for consistency? */
-  int stats                   /* Print timing & count summary? */
+  int stats,                  /* Print timing & count summary? */
+  int gen_tree                /* (0) do not (1) do generate full treept */
 )
 {
   char    yo[] = "rcb";
@@ -673,6 +680,9 @@ static int rcb(
       (*import_procs)[i]      = dotpt[ii].Tag.Proc;
     }
   }
+  if (gen_tree) MPI_Allgather(&treept[proc], sizeof(struct rcb_tree), MPI_BYTE,
+     treept, sizeof(struct rcb_tree), MPI_BYTE, lb->Communicator);
+
   end_time = LB_Time();
   lb_time[0] += (end_time - start_time);
 
