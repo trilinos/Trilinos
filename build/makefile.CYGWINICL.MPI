@@ -122,13 +122,15 @@ CXX=icl
 
 LINKER=$(CXX)
 
-MPI_INCLUDES = -I "C:\cygwin\usr\local\MPICH\SDK\include"
+MPI_INCLUDES = -I "C:\Program Files\Argonne National Lab\MPICH.NT.1.2.4\SDK\Include"
 ARCH_INCLUDES = $(MPI_INCLUDES)
 
-LIBMPI = -L "C:\cygwin\usr\local\MPICH\SDK\lib\mpich.lib"
+LIBMPI0 = ws2_32.lib
+LIBMPI1 = "C:\Program Files\Argonne National Lab\MPICH.NT.1.2.4\SDK\Lib\mpich.lib"
+LIBMPI = $(LIBMPI0) $(LIBMPI1)
 
-ARCH_LIBS0 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libm.lib"
-ARCH_LIBS1 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libirc.lib"
+ARCH_LIBS0 = "C:\Program Files\Intel\Compiler70\IA32\Lib\libm.lib"
+ARCH_LIBS1 = "C:\Program Files\Intel\Compiler70\IA32\Lib\libirc.lib"
 ARCH_LIBS2 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfor.lib"
 ARCH_LIBS3 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfconsol.lib" 
 ARCH_LIBS4 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dformd.lib"

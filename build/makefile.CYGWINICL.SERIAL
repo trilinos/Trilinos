@@ -110,9 +110,9 @@ RANLIB=
 # flags. Note that icl and f77 accept flags pre-appended with
 # a "-" or a "/".
 #
-ARCH_CXXFLAGS= -O3 -GR -Zc:forScope -nologo
-ARCH_CFLAGS= -O3 -Za -nologo
-ARCH_FFLAGS= -Ox -nologo
+ARCH_CXXFLAGS= -ML -O3 -GR -Zc:forScope -nologo
+ARCH_CFLAGS= -ML -O3 -Za -nologo
+ARCH_FFLAGS= -ML -Ox -nologo
 
 # Define compiler commands
 
@@ -126,8 +126,8 @@ MPI_INCLUDES =
 ARCH_INCLUDES = $(MPI_INCLUDES)
 
 LIBMPI =
-ARCH_LIBS0 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libm.lib"
-ARCH_LIBS1 = "C:\Program Files\Intel\Compiler60\IA32\Lib\libirc.lib"
+ARCH_LIBS0 = "C:\Program Files\Intel\Compiler70\IA32\Lib\libm.lib"
+ARCH_LIBS1 = "C:\Program Files\Intel\Compiler70\IA32\Lib\libirc.lib"
 ARCH_LIBS2 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfor.lib"
 ARCH_LIBS3 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dfconsol.lib"
 ARCH_LIBS4 = "C:\Program Files\Microsoft Visual Studio\DF98\LIB\dformd.lib"
