@@ -8,8 +8,9 @@
 <li> Linux (primary development platform)
 <li> SGI (ASCI Blue-mountain)
 <li> Solaris
-<li> ASCI Red 
+<li> Intel Tflops (ASCI Red) 
 <li> IBM w/KCC compiler (ASCI White)
+<li> CPlant 
 </ul>
 
 <H3>General Comments</H3>
@@ -86,6 +87,19 @@ Cross-compiling for janus.sandia.gov on solaris:
             TRILINOS_ARCH=IBMSP TRILINOS_COMM=MPI --host=powerpc
 
 % make SUBDIRS=src NOX_AR="KCC -o"
+</pre> 
+<br>&nbsp;
+</ul>
+
+<H3>CPlant (ross-compile.sandia.gov)</H3>
+<ul>
+<pre>
+% configure CXX=/usr/local/cplant/ross/current/bin/c++ \ 
+            CXXFLAGS="-D__USE_STD_IOSTREAM" \
+            LDFLAGS="-L/home/rppawlo/Trilinos/external/y12m/lib/CPLANT.SERIAL"\
+            --host="alpha-unknown-linux-gnu"
+
+% gmake
 </pre> 
 <br>&nbsp;
 </ul>

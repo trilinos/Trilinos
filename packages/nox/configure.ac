@@ -656,7 +656,8 @@ dnl fi
 # ------------------------------------------------------------------------
 
 # -- DEC CXX --
-if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
+dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
+if test X${target_cpu} = Xalpha; then
    XTRALDADD="cxx_repository/*.o"
 fi
 

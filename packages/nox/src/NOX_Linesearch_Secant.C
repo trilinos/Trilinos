@@ -151,6 +151,6 @@ bool Secant::operator()(Abstract::Group& newgrp, double& step,
     // isfailed = true; // Relaxed severity of failure for now
     return(!isfailed);
   }
-  
+  return true;
 }
 
