@@ -121,7 +121,7 @@
     \setlength{\marginparwidth}{1.0in - \marginparsep}
 
     \setlength{\textheight}{9in - \footskip - \headheight - \headsep} 
-    \setlength{\topmargin}{0.0in}
+    \setlength{\topmargin}{0.2in}
  
 
 
