@@ -10,8 +10,7 @@
 
 #include "NLS_FullStep.H"
 
-NLS_FullStep::NLS_FullStep(const NLS_ParameterList& params) :
-  step(1.0)
+NLS_FullStep::NLS_FullStep(const NLS_ParameterList& params) 
 {
   reset(params);
 }
@@ -23,13 +22,12 @@ NLS_FullStep::~NLS_FullStep()
 
 void NLS_FullStep::reset(const NLS_ParameterList& params)
 {
-  step = params.getParameter("Step", step);
 }
 
-bool NLS_FullStep::search(const NLS_Group& oldgrp, const NLS_Vector& dir, NLS_Group& newgrp) const
+bool NLS_FullStep::operator()(NLS_Group& newgrp, double& step, 
+			      const NLS_Group& oldgrp, const NLS_Vector& dir) const
 {
   newgrp.computeX(oldgrp, dir, step);
-  newgrp.computeRHS();
   return true;
 }
 

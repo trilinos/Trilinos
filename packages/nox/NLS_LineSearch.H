@@ -21,10 +21,7 @@ class NLS_LineSearch {
 public:
 
   //! Default constructor
-  NLS_LineSearch();
-
-  //! Recommended constructor
-  NLS_LineSearch(const NLS_ParameterList& params);
+  NLS_LineSearch() {};
 
   //! Destructor
   virtual ~NLS_LineSearch() {};
@@ -32,8 +29,9 @@ public:
   //! Reset parameters
   virtual void reset(const NLS_ParameterList& params) = 0;
   
-  //! Perform a line search from oldgrp along dirction dir. The solution should be stored in newgrp.
-  virtual bool search(const NLS_Group& oldgrp, const NLS_Vector& dir, NLS_Group& newgrp) const = 0;
+  //! Perform a line search from oldgrp along dirction dir. newgrp = oldgrp + step * dir.
+  virtual bool operator()(NLS_Group& newgrp, double& step,
+			  const NLS_Group& oldgrp, const NLS_Vector& dir) const = 0;
 
 };
 

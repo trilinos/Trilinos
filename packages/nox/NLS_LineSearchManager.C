@@ -9,7 +9,9 @@
 // CONTACT T. Kolda (tgkolda@sandia.gov) or R. Pawlowski (rppawlo@sandia.gov)
 
 #include <string>
-#include "NLS_LineSearchManager.H"
+#include "NLS_LineSearchManager.H" // base class
+
+// Different line searches
 #include "NLS_FullStep.H"
 #include "NLS_IntervalHalving.H"
 
@@ -18,7 +20,7 @@ NLS_LineSearchManager::NLS_LineSearchManager(const NLS_ParameterList& params) :
   method("")
 {
   if (!isNewMethod(params))
-    method = "FullStep";		// default line search
+    method = "Full Step";		// default line search
 
   newPtr(params);
 }
@@ -36,10 +38,10 @@ void NLS_LineSearchManager::reset(const NLS_ParameterList& params)
   ptr->reset(params);
 }
 
-bool NLS_LineSearchManager::search(const NLS_Group& oldgrp, const NLS_Vector& dir, 
-				   NLS_Group& newgrp) const
+bool NLS_LineSearchManager::operator()(NLS_Group& newgrp, double& step, 
+				   const NLS_Group& oldgrp, const NLS_Vector& dir) const
 {
-  return ptr->search(oldgrp, dir, newgrp);
+  return ptr->operator()(newgrp, step, oldgrp, dir);
 }
 
 // private
@@ -70,7 +72,7 @@ void NLS_LineSearchManager::newPtr(const NLS_ParameterList& params)
     ptr = new NLS_IntervalHalving(params);
   else {
     ptr = NULL;
-    cout << "ERROR: invalid choice for line search method "
+    cout << "ERROR: invalid choice \"" << method << "\" for line search method "
 	 << "in NLS_LineSearchManager constructor" << endl;
     throw 1;
   }

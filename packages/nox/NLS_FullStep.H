@@ -28,8 +28,8 @@ public:
   void reset(const NLS_ParameterList& params);
 
   // derived
-  bool search(const NLS_Group& oldgrp, const NLS_Vector& dir, NLS_Group& newgrp) const;
-
+  bool operator()(NLS_Group& newgrp, double& step, 
+		  const NLS_Group& oldgrp, const NLS_Vector& dir) const;
 private:
 
   //! Full step length
