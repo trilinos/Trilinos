@@ -55,7 +55,6 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
   nev              = eigen_struct->Num_Eigenvalues;
   ncv              = eigen_struct->Arnoldi;
   tol              = eigen_struct->Residual_Tol;
-  printf("nev is %d and ncv is %d\n",nev,ncv);
     
      
   /* Set parameters for ARPACK: (2)then those that are fixed for MPSalsa */
@@ -200,14 +199,11 @@ void  ML_ARPACK_driver(char which[],
      * by parameter IDO until either convergence is indicated
      * or the maximum iterations have been exceeded.
      *****************************************************/
-    printf("nev is %d and ncv is %d\n",nev,ncv);
     dnaupd_(&ido, bmat, &nloc, which, &nev, &tol, resid,
 	    &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	    &lworkl, &info );
-    printf("after dnaupd\n");
 
     if ( (ido == -1) || (ido == 1) ) {
-      printf("in if\n");
       count++;
       if (ml->comm->ML_mypid==0) printf("\t    Eigensolver iteration: %d\n",count);
 
@@ -221,6 +217,7 @@ void  ML_ARPACK_driver(char which[],
       /************************************/
       
       /* First perform K*v = rhs */
+	     
       ML_Operator_Apply(Amat, Amat->invec_leng, &workd[ipntr[0]-1], 
 			Amat->outvec_leng, rhs);
 
@@ -239,7 +236,6 @@ void  ML_ARPACK_driver(char which[],
       
       
     else flag = 0;
-    printf("at the bottom\n");
   }
 
 
@@ -361,6 +357,7 @@ void  ML_ARPACK_driver(char which[],
 	    }
 
 	    /*   fprintf(ifp,"\t\t Q(%d,%d)= %20.13f; \n",kk+1,j+1,GLB->eigvecR[j][kk]); */
+
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 			Amat->outvec_leng, rhs);
 
@@ -373,7 +370,6 @@ void  ML_ARPACK_driver(char which[],
 	    
 	    a1 = sqrt(ddot_(&nloc2, rhs1, &one, rhs1, &one));
 	    d[j+2*ncv] = a1; /*sqrt(lamR*lamR);*/
-	    printf("a1 = %f \n",a1);
 	    
 	  }
 	  
@@ -400,12 +396,13 @@ void  ML_ARPACK_driver(char which[],
 	    fprintf(ifp,"\t\t Q(%d,%d)= %20.13f; \n",kk+1,j+2,GLB->eigvecR[j+1][kk]);
 	    */
 	  }
+
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[j*ldv],
 			      Amat->outvec_leng, vecx);
+
 	    ML_Operator_Apply(Amat, Amat->invec_leng, &v[(j+1)*ldv],
 			      Amat->outvec_leng, vecy);
 
-	    
 	    a1 = 1 - lamR;
 	    a2 = 0.0;
 	    
