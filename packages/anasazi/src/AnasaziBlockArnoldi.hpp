@@ -7,28 +7,80 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziCommon.hpp"
 
+/*!	\class Anasazi::BlockArnoldi
+
+	\brief This class implements the Implicitly Restarted Block Arnoldi Method,
+	an iterative method for solving eigenvalue problems.
+
+	\author Rich Lehoucq, Heidi Thornquist
+*/
+
 namespace Anasazi {
-// 
-// BlockArnoldi base class
-//
+
 template <class TYPE>
 class BlockArnoldi { 
 public:
+	//@{ \name Constructor/Destructor.
+	//! %Anasazi::BlockArnoldi constructor.
 	BlockArnoldi( AnasaziMatrix<TYPE> & mat, AnasaziMultiVec<TYPE>& vec,
 		const TYPE tol=1.0e-6, const int nev=5, const int length=25, 
 		const int block=1, const string which="LM", const int step=25, 
 		const int restarts=0 );
+	//! %Anasazi::BlockArnoldi destructor.
 	virtual ~BlockArnoldi();
+	//@}
+
+	//@{ \name Solver application methods.
+
+	/*! \brief This method performs a given number of steps of the Block Arnoldi
+		Method, returning upon completion or convergence.
+	*/
 	void iterate( const int steps=1 );
+
+	/*! \brief This method uses iterate to compute approximate solutions to the
+		original problem.  It may return without converging if it has taken the
+		maximum number of iterations or numerical breakdown is observed.
+	*/
 	void solve();
+	//@}
+
+	//@{ \name Solution return methods.
+
+	//! This method puts the real part of the computed eigenvectors in %evecs.
 	void getEvecs(AnasaziMultiVec<TYPE>& evecs); 
+
+	//! This method puts the imaginary part of the computed eigenvectors in %ievecs.
 	void getiEvecs(AnasaziMultiVec<TYPE>& ievecs);
+
+	//! This method returns the real part of the computed eigenvalues.
 	TYPE * getEvals();
+
+	//! This method returns the imaginary part of the computed eigenvalues.
 	TYPE * getiEvals();
+
+	//! This method returns the residuals for the computed eigenpairs.
 	TYPE * getResiduals();
-	void setDebugLevel( const int );
+	//@}
+	
+	//@{ \name Problem attribute method.
+
+	/*! \brief This method allows the user to inform the solver of a problem's symmetry.
+		Some computational work can be avoided by setting this properly in the
+		symmetric case.
+	*/
 	void setSymmetric( const bool );
+	//@}
+
+	//@{ \name Output methods.
+
+	/*! \brief This method allows the user to set the solver's level of visual output
+		during computations.
+	*/
+	void setDebugLevel( const int );
+
+	//! This method requests that the solver print out its current status to screen.
 	void currentStatus();
+	//@}
 private:
 	void QRFactorization( AnasaziMultiVec<TYPE>&, AnasaziDenseMatrix<TYPE>& );
 	void BlockReduction();
@@ -276,7 +328,7 @@ void BlockArnoldi<TYPE>::SetInitBlock() {
 	int i,j;
 	int *index = new int[ _block ]; assert(index);
 
-	// This routine will set the first block of _basisvecs to the initial guess,
+	// This method will set the first block of _basisvecs to the initial guess,
 	// if one is given, else it will fill the block with random vectors.
 
 	if (_initialguess) {
@@ -350,7 +402,7 @@ void BlockArnoldi<TYPE>::iterate(const int steps) {
 		delete [] index;
 	}				
 	//
-	// Leave the iteration routine now if the orthogonal subspace can't be extended.
+	// Leave the iteration method now if the orthogonal subspace can't be extended.
 	//
 	if (exit_flg) { return; }	
 	//			
@@ -440,7 +492,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		_amat.ApplyMatrix( *U_vec, *F_vec ); 
 		//
 		// Use previous dependency information to decide which orthogonalization
-		// routine to use for the new block.  The global variable dep_flg tells us
+		// method to use for the new block.  The global variable dep_flg tells us
 		// if we've had problems with orthogonality before.  If no problems have
 		// been detected before we will use standard block orthogonalization.
 		// However, if there are problems with this, we will use a more stringent
@@ -451,7 +503,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		}
 		//
 		// If any block dependency was detected previously, then the more stringent
-		// orthogonalization will be used.  If this routine can't resolve the
+		// orthogonalization will be used.  If this method can't resolve the
 		// dependency, then the exit_flg will be set indicating that we can't proceed
 		// any further.
 		//			
@@ -462,7 +514,7 @@ void BlockArnoldi<TYPE>::BlockReduction () {
 		delete U_vec, F_vec;
 		//
 		// If we cannot go any further with the factorization, then we need to exit
-		// this routine.
+		// this method.
 		//
 		if (exit_flg) { return; }
 	}
@@ -889,10 +941,10 @@ void BlockArnoldi<TYPE>::QRFactorization (AnasaziMultiVec<TYPE>& VecIn,
 			if (_iter) {
         			// This is not the 1st block. A looser tolerance is used to
         			// determine dependencies. If a dependency is detected, a flag
-        			// is set so we can back out this routine and out of BlkOrth.
-        			// The routine BlkOrthSing is used to construct the new block
+        			// is set so we can back out this method and out of BlkOrth.
+        			// The method BlkOrthSing is used to construct the new block
         			// of orthonormal basis vectors one at a time. If a dependency
-        			// is detected within this routine, a random vector is added
+        			// is detected within this method, a random vector is added
         			// and orthogonalized against all previous basis vectors.
         			//
         			if (norm2[0] < norm1[0] * _blk_tol) {
@@ -1023,7 +1075,7 @@ void BlockArnoldi<TYPE>::ComputeResiduals( bool apply ) {
 	//
 	// Reorder real Schur factorization, remember to add one to the indices for the
 	// fortran call and determine offset.  The offset is necessary since the TREXC
-	// routine reorders in a nonsymmetric fashion, thus we use the reordering in
+	// method reorders in a nonsymmetric fashion, thus we use the reordering in
 	// a stack-like fashion.
 	//
 	AnasaziBLAS blas;
@@ -1270,7 +1322,7 @@ void BlockArnoldi<TYPE>::ComputeEvecs() {
 
 template<class TYPE>
 void BlockArnoldi<TYPE>::Restart() {
-	//  This routine assumes the ComputeResiduals has been called before it
+	//  This method assumes the ComputeResiduals has been called before it
 	//  to compute the Schur vectors and residuals.  This information is used to 
 	//  restart the factorization.
 	//
@@ -1430,7 +1482,7 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 		_order[i] = i;
 	}
 	//
-	// These routines use an insertion sort routine to circument recursive calls.
+	// These methods use an insertion sort method to circument recursive calls.
 	//---------------------------------------------------------------
 	// Sort eigenvalues in increasing order of magnitude
 	//---------------------------------------------------------------
@@ -1573,7 +1625,7 @@ void BlockArnoldi<TYPE>::Sort( const bool apply ) {
 	}
 }
 
-}
+} // End of namespace Anasazi
 #endif
 // End of file BlockArnoldi.hpp
 
