@@ -23,67 +23,82 @@
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
 
-#include "Epetra_HashTable.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
+#include "Epetra_RowMatrixTransposer.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
 #include "Epetra_LinearProblemRedistor.h"
 #include "Epetra_Util.h"
+#include "Epetra_MultiVector.h"
+#include "Epetra_IntVector.h"
+#include "Epetra_Export.h"
+#include "Epetra_Import.h"
 //=============================================================================
-Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(const Epetra_LinearProblem& Problem, 
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, 
 																													 const Epetra_Map & RedistMap)
-  : Epetra_Object(Map, "Epetra::LinearProblemRedistor"),
-    OrigProblem_(Problem),
+  : OrigProblem_(OrigProblem),
+		NumProc_(0),
     RedistProblem_(0),
     RedistMap_((Epetra_Map *) &RedistMap),
-    Replicated_(false),
+		Transposer_(0),
+    Replicate_(false),
     ConstructTranspose_(false),
     MakeDataContiguous_(false),
     MapGenerated_(false),
+    RedistProblemCreated_(false),
 		ptr_(0)
 {
 }
 //=============================================================================
-Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(const Epetra_LinearProblem& Problem, 
-																													 const bool Replicate)
-  : Epetra_Object(Map, "Epetra::LinearProblemRedistor"),
-    OrigProblem_(Problem),
+Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, 
+																													 int NumProc,
+																													 bool Replicate)
+  : OrigProblem_(OrigProblem),
+		NumProc_(NumProc),
     RedistProblem_(0),
-    RedistMap_((Epetra_Map *) &RedistMap),
-    Replicated_(Replicate),
+    RedistMap_(0),
+		Transposer_(0),
+    Replicate_(Replicate),
     ConstructTranspose_(false),
     MakeDataContiguous_(false),
     MapGenerated_(false),
+    RedistProblemCreated_(false),
 		ptr_(0)
 {
-
-	if (Problem.GetMatrix()!=0)
-		throw ReportError("Matrix must be defined for the input problem in order to generate RedistMap", -1);
-
-	int ierr = GenerateRedistMap();
-
-	if (ierr!=0) 
-		throw ReportError("Error generating redistribution map.  Input problem map is not one to one.", ierr);
 }
 //=============================================================================
 Epetra_LinearProblemRedistor::Epetra_LinearProblemRedistor(const Epetra_LinearProblemRedistor& Source)
-  : Epetra_Object(Source)
-    OrigProblem_(Source.OrigProblem_),
-    RedistProblem_(0),
+  : OrigProblem_(Source.OrigProblem_),
+		NumProc_(Source.NumProc_),
+    RedistProblem_(Source.RedistProblem_),
     RedistMap_(Source.RedistMap_),
-    Replicated_(Source.Replicated_),
+		Transposer_(Source.Transposer_),
+    Replicate_(Source.Replicate_),
     ConstructTranspose_(Source.ConstructTranspose_),
     MakeDataContiguous_(Source.MakeDataContiguous_),
+    RedistProblemCreated_(Source.RedistProblemCreated_),
 		ptr_(0)
 {
 
-	RedistProblem_ = Epetra_LinearProblem(*Source.RedistProblem_);
+	if (RedistProblem_!=0) RedistProblem_ = new Epetra_LinearProblem(*Source.RedistProblem_);
+	if (Transposer_!=0) Transposer_ = new Epetra_RowMatrixTransposer(*Source.Transposer_);
 }
 //=========================================================================
 Epetra_LinearProblemRedistor::~Epetra_LinearProblemRedistor(){
 
 	if (ptr_!=0) {delete [] ptr_; ptr_=0;}
 	if (MapGenerated_ && RedistMap_!=0) {delete RedistMap_; RedistMap_=0;}
-	if (RedistProblem_!=0) {delete RedistProblem_; RedistProblem_=0;}
+	if (RedistProblem_!=0) {
+		 // If no tranpose, then we must delete matrix (otherwise the transposer must).
+		if (!ConstructTranspose_ && RedistProblem_->GetMatrix()!=0)
+			delete RedistProblem_->GetMatrix();
+		if (RedistProblem_->GetLHS()!=0) delete RedistProblem_->GetLHS();
+		if (RedistProblem_->GetRHS()!=0) delete RedistProblem_->GetRHS();
+		delete RedistProblem_; RedistProblem_=0;
+	}
+	if (RedistExporter_!=0) {delete RedistExporter_; RedistExporter_=0;}
+	if (Transposer_!=0) {delete Transposer_; Transposer_ = 0;}
 
 }
 
@@ -93,13 +108,17 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 
   if (MapGenerated_) return(0);
 
-	const Epetra_Map & SourceMap = OrigProblem_->GetMatrix().RowMatrixRowMap();
-	const Epetra_Comm & SourceMap.Comm();
+	const Epetra_Map & SourceMap = OrigProblem_->GetMatrix()->RowMatrixRowMap();
+	const Epetra_Comm & Comm = SourceMap.Comm();
 	int IndexBase = SourceMap.IndexBase();
+
+	int NumProc = Comm.NumProc();
+
+	if (NumProc_!=NumProc) return(-1); // Right now we are only supporting redistribution to all processors.
 
 	// Build a list of contiguous GIDs that will be used in either case below.
 	int NumMyRedistElements = 0;
-	if ((Comm.MyPID()==0) || Replicated_) NumMyRedistElements = SourceMap.NumGlobalElements();
+	if ((Comm.MyPID()==0) || Replicate_) NumMyRedistElements = SourceMap.NumGlobalElements();
 	
 	// Now build the GID list to broadcast SourceMapGIDs to all processors that need it (or just to PE 0).
 	int * ContigIDs = 0;
@@ -121,11 +140,11 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 		Epetra_Import GIDsImporter(GIDsTargetMap, SourceMap);
 		Epetra_IntVector TargetMapGIDs(GIDsTargetMap);
 
-		// Now Send SourceMap GIDs to PE 0, and all processors if Replicated is true
+		// Now Send SourceMap GIDs to PE 0, and all processors if Replicate is true
 		EPETRA_CHK_ERR(TargetMapGIDs.Import(SourceMapGIDs, GIDsImporter, Insert));
 
 		// Finally, create RedistMap containing all GIDs of SourceMap on PE 0, or all PEs of Replicate is true
-		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, TargetMapGIDs.Values, IndexBase, Comm);
+		RedistMap_ = new Epetra_Map(-1, NumMyRedistElements, TargetMapGIDs.Values(), IndexBase, Comm);
 
 	}
 	// Case 2: If the map has contiguous IDs then we can simply build the map right away using the list
@@ -139,321 +158,179 @@ int Epetra_LinearProblemRedistor::GenerateRedistMap() {
 }
 
 //=========================================================================
-int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTranspose, const bool MakeDataContiguous, 
-																											Epetra_LinearProblem *& RedistProblem)
-{
-  
-	if (Allocated_) return(0);
-  
-  int NumMyElements = Map().NumMyElements();
-  ElementColors_ = new int[NumMyElements];
-  for (int i=0; i< NumMyElements; i++) ElementColors_[i] = ElementColors[i*Increment];
-  Allocated_ = true;
-  return(0);
-}
+int Epetra_LinearProblemRedistor::CreateRedistProblem(const bool ConstructTranspose, 
+																											const bool MakeDataContiguous, 
+																											Epetra_LinearProblem *& RedistProblem) {
 
-//=========================================================================
-int Epetra_LinearProblemRedistor::GenerateLists() const {
-  int NumMyElements = Map().NumMyElements();
-  if (NumMyElements==0) return(0); // Nothing to do
+	if (RedistProblemCreated_) EPETRA_CHK_ERR(-1);  // This method can only be called once
 
-  if (ListsAreValid_) return(0); // Already been here
-
-  if (ListsAreGenerated_) DeleteLists();  // Delete any existing lists
+	Epetra_RowMatrix * OrigMatrix = OrigProblem_->GetMatrix();
+	Epetra_MultiVector * OrigLHS = OrigProblem_->GetLHS();
+	Epetra_MultiVector * OrigRHS = OrigProblem_->GetRHS();
+		
+	if (OrigMatrix==0) EPETRA_CHK_ERR(-2); // There is no matrix associated with this Problem
 
 
-  // Scan the ElementColors to determine how many colors we have
-  NumColors_ = 1;
-  FirstColor_ = new ListItem(ElementColors_[0]); // Initialize First color in list
-  for (int i=1; i<NumMyElements; i++) if (!InItemList(ElementColors_[i])) NumColors_++;
-
-  // Create hash table that maps color IDs to the integers 0,...NumColors_
-  ColorIDs_ = new Epetra_HashTable(NumColors_);
-  ListOfColors_ = new int[NumColors_];
-  ListItem * CurItem = FirstColor_;
-  {for (int i=0; i<NumColors_; i++) {
-    ColorIDs_->Add(CurItem->ItemValue, i); // Create hash table entry
-    ListOfColors_[i] = CurItem->ItemValue; // Put color value in a list of colors
-    CurItem = CurItem->NextItem;
-  }}
-  Epetra_Util util;
-  util.Sort(true, NumColors_, ListOfColors_, 0, 0, 0, 0); // Sort List of colors in ascending order
-  // Count the number of IDs of each color
-  ColorCount_ = new int[NumColors_];
-  {for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;}
-  {for (int i=0; i<NumMyElements; i++) ColorCount_[ColorIDs_->Get(ElementColors_[i])]++;}
-
-  // Finally build list of IDs grouped by color
-  ColorLists_ = new int *[NumColors_];
-  {for (int i=0; i<NumColors_; i++) ColorLists_[i] = new int[ColorCount_[i]];}
-  {for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;} // Reset so we can use for counting
-  {for (int i=0; i<NumMyElements; i++) {
-    int j = ColorIDs_->Get(ElementColors_[i]);
-    ColorLists_[j][ColorCount_[j]++] = i;
-  }}
-  ListsAreValid_ = true;
-  ListsAreGenerated_ = true;
-
-  return(0);
-}
-//=========================================================================
-bool Epetra_LinearProblemRedistor::InItemList(int ColorValue) const {
-  bool ColorFound = false;
-  ListItem * CurColor = 0;
-  ListItem * NextColor = FirstColor_;
-  while (!ColorFound && NextColor!=0) {
-    CurColor = NextColor;
-    NextColor = CurColor->NextItem;
-    if (ColorValue==CurColor->ItemValue) ColorFound = true;
-  }
-
-  if (!ColorFound) CurColor->NextItem = new ListItem(ColorValue);
-
-  return(ColorFound);
-}
-//=========================================================================
-int Epetra_LinearProblemRedistor::NumElementsWithColor(int Color) const  {
-  if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
-  if (arrayIndex>-1) return(ColorCount_[arrayIndex]);
-  else return(0);
-}
-//=========================================================================
-int * Epetra_LinearProblemRedistor::ColorLIDList(int Color) const  {
-  if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
-  if (arrayIndex>-1) return(ColorLists_[arrayIndex]);
-  else return(0);
-}
-//=========================================================================
-Epetra_Map * Epetra_LinearProblemRedistor::GenerateMap(int Color) const {
-
-  if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
-  int NumElements = ColorCount_[arrayIndex];
-  int * ColorElementLIDs = ColorLIDList(Color);
-  int * ColorElementGIDs = new int[NumElements];
-  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
-  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, 
-				    Map().IndexBase(), Map().Comm());
-  delete [] ColorElementGIDs;
-  return(map);
-}
-//=========================================================================
-Epetra_BlockMap * Epetra_LinearProblemRedistor::GenerateBlockMap(int Color) const {
-
-  if (!ListsAreValid_) GenerateLists(); 
-  int arrayIndex = ColorIDs_->Get(Color);
-  int NumElements = ColorCount_[arrayIndex];
-  int * ColorElementLIDs = ColorLIDList(Color);
-  int * ColorElementSizes = new int[NumElements];
-  int * ColorElementGIDs = new int[NumElements];
-  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
-  int * MapElementSizes = Map().ElementSizeList();
-
-  {for (int i=0; i<NumElements; i++) 
-    ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];}
-
-  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, 
-					      ColorElementSizes,
-					      Map().IndexBase(), Map().Comm());
-
-  delete [] ColorElementGIDs;
-  delete [] ColorElementSizes;
-
-  return(map);
-}
-//=========================================================================
-void Epetra_LinearProblemRedistor::Print(ostream& os) const {
-  int MyPID = Map().Comm().MyPID();
-  int NumProc = Map().Comm().NumProc();
-  
-  if (MyPID==0) os 
-    << endl 
-    << " *****************************************" << endl
-    << " Coloring information arranged map element" << endl 
-    << " *****************************************" << endl
-    << endl;
-  for (int iproc=0; iproc < NumProc; iproc++) {
-    if (MyPID==iproc) {
-      int NumMyElements1 =Map(). NumMyElements();
-      int * MyGlobalElements1 = Map().MyGlobalElements();
-
-      if (MyPID==0) {
-	os.width(8);
-	os <<  "     MyPID"; os << "    ";
-	os.width(12);
-	os <<  "GID  ";
-	os.width(20);
-	os <<  "Color  ";
-	os << endl;
-      }
-      for (int i=0; i < NumMyElements1; i++) {
-	os.width(10);
-	os <<  MyPID; os << "    ";
-	os.width(10);
-	os << MyGlobalElements1[i] << "    ";
-	os.width(20);
-	os <<  ElementColors_[i];
-	os << endl;
-      }
-      os << flush; 
-    }
-
-    // Do a few global ops to give I/O a chance to complete
-    Map().Comm().Barrier();
-    Map().Comm().Barrier();
-    Map().Comm().Barrier();
-  }
-
-  if (MyPID==0) os 
-    << endl 
-    << " **************************************" << endl
-    << " Coloring information arranged by color" << endl 
-    << " **************************************" << endl
-    << endl;
-  {for (int iproc=0; iproc < NumProc; iproc++) {
-    if (MyPID==iproc) {
-      if (NumColors()==0) os << " No colored elements on processor " << MyPID << endl;
-      else {
-        os << "Number of colors in map = " << NumColors() << endl
-	         << "Default color           = " << DefaultColor() << endl << endl;
-        if (MyPID==0) {
-	        os.width(8);
-	        os <<  "     MyPID"; os << "    ";
-	        os.width(12);
-	        os <<  "LID  ";
-	        os.width(20);
-	        os <<  "Color  ";
-	        os << endl;
-        }
-	      int * ColorValues = ListOfColors();
-	      for (int ii=0; ii<NumColors(); ii++) {
-	        int CV = ColorValues[ii];
-	  int ColorCount = NumElementsWithColor(CV);
-	  int * LIDList = ColorLIDList(CV);
-	  
-	  
-	  for (int i=0; i < ColorCount; i++) {
-	    os.width(10);
-	    os <<  MyPID; os << "    ";
-	    os.width(10);
-	    os << LIDList[i] << "    ";
-	    os.width(20);
-	    os << CV;
-	    os << endl;
-	  }
-	  os << flush; 
+	if (RedistMap_==0) {
+		EPETRA_CHK_ERR(GenerateRedistMap());
 	}
-      }
-    }
-    // Do a few global ops to give I/O a chance to complete
-    Map().Comm().Barrier();
-    Map().Comm().Barrier();
-    Map().Comm().Barrier();
-  }}
-  return;
+
+	RedistExporter_ = new Epetra_Export(OrigProblem_->GetMatrix()->RowMatrixRowMap(), *RedistMap_);
+
+	RedistProblem_ = new Epetra_LinearProblem();
+	Epetra_CrsMatrix * RedistMatrix;
+
+	// Check if the tranpose should be create or not
+	if (ConstructTranspose) {
+		Transposer_ = new Epetra_RowMatrixTransposer(OrigMatrix);
+		EPETRA_CHK_ERR(Transposer_->CreateTranspose(MakeDataContiguous, RedistMatrix, RedistMap_));
+	}
+	else {
+		// If not, then just do the redistribution based on the the RedistMap
+		RedistMatrix = new Epetra_CrsMatrix(Copy, *RedistMap_, 0);
+		// need to do this next step until we generalize the Import/Export ops for CrsMatrix
+		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix); 
+		EPETRA_CHK_ERR(RedistMatrix->Export(*OrigCrsMatrix, *RedistExporter_, Add));
+		EPETRA_CHK_ERR(RedistMatrix->TransformToLocal());
+	}
+
+	RedistProblem_->SetOperator(RedistMatrix);
+
+	// Now redistribute the RHS and LHS if non-zero
+
+	Epetra_MultiVector * RedistLHS = 0;
+	Epetra_MultiVector * RedistRHS = 0;
+
+	int ierr = 0;
+
+	if (OrigLHS!=0) {
+		RedistLHS = new Epetra_MultiVector(*RedistMap_, OrigLHS->NumVectors());
+		EPETRA_CHK_ERR(RedistLHS->Export(*OrigLHS, *RedistExporter_, Add));
+	}
+	else ierr = 1;
+
+	if (OrigRHS!=0) {
+		RedistRHS = new Epetra_MultiVector(*RedistMap_, OrigLHS->NumVectors());
+		EPETRA_CHK_ERR(RedistRHS->Export(*OrigRHS, *RedistExporter_, Add));
+	}
+	else ierr ++;
+
+	RedistProblem_->SetLHS(RedistLHS);
+	RedistProblem_->SetRHS(RedistRHS);
+
+	RedistProblemCreated_ = true;
+
+  return(ierr);
 }
+
 //=========================================================================
-int Epetra_LinearProblemRedistor::CheckSizes(const Epetra_DistObject& Source) {
+int Epetra_LinearProblemRedistor::UpdateRedistProblemValues(Epetra_LinearProblem * ProblemWithNewValues) {
+	
+	if (!RedistProblemCreated_) EPETRA_CHK_ERR(-1);  // This method can only be called after CreateRedistProblem()
+
+	Epetra_RowMatrix * OrigMatrix = ProblemWithNewValues->GetMatrix();
+	Epetra_MultiVector * OrigLHS = ProblemWithNewValues->GetLHS();
+	Epetra_MultiVector * OrigRHS = ProblemWithNewValues->GetRHS();
+		
+	if (OrigMatrix==0) EPETRA_CHK_ERR(-2); // There is no matrix associated with this Problem
+
+
+	Epetra_CrsMatrix * RedistMatrix = dynamic_cast<Epetra_CrsMatrix *>(RedistProblem_->GetMatrix());
+
+	// Check if the tranpose should be create or not
+	if (ConstructTranspose_) {
+		EPETRA_CHK_ERR(Transposer_->UpdateTransposeValues(OrigMatrix));
+	}
+	else {
+		// If not, then just do the redistribution based on the the RedistMap
+		
+		EPETRA_CHK_ERR(RedistMatrix->PutScalar(0.0));
+		// need to do this next step until we generalize the Import/Export ops for CrsMatrix
+		Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix); 
+
+		if (OrigCrsMatrix==0) EPETRA_CHK_ERR(-3); // Broken for a RowMatrix at this point
+		EPETRA_CHK_ERR(RedistMatrix->Export(*OrigCrsMatrix, *RedistExporter_, Add));
+	}
+
+	// Now redistribute the RHS and LHS if non-zero
+
+
+	if (OrigLHS!=0) {
+		EPETRA_CHK_ERR(RedistProblem_->GetLHS()->Export(*OrigLHS, *RedistExporter_, Add));
+	}
+
+	if (OrigRHS!=0) {
+		EPETRA_CHK_ERR(RedistProblem_->GetRHS()->Export(*OrigRHS, *RedistExporter_, Add));
+	}
+
   return(0);
 }
 
 //=========================================================================
-int Epetra_LinearProblemRedistor::CopyAndPermute(const Epetra_DistObject& Source, int NumSameIDs, 
-				       int NumPermuteIDs, int * PermuteToLIDs, 
-				       int *PermuteFromLIDs) {
+int Epetra_LinearProblemRedistor::ExtractHbData(int & M, int & N, int & nz, int * & ptr, 
+																								int * & ind, double * & val, int & Nrhs, 
+																								double * & rhs, int & ldrhs, 
+																								double * & lhs, int & ldlhs) const {
 
-  const Epetra_LinearProblemRedistor & A = dynamic_cast<const Epetra_LinearProblemRedistor &>(Source);
+	Epetra_CrsMatrix * RedistMatrix = dynamic_cast<Epetra_CrsMatrix *>(RedistProblem_->GetMatrix());
+	
+	if (RedistMatrix==0) EPETRA_CHK_ERR(-1); // This matrix is zero or not an Epetra_CrsMatrix
+	if (!RedistMatrix->IndicesAreContiguous()) { // Data must be contiguous for this to work
+		EPETRA_CHK_ERR(-2);
+	}
 
-  int * From = A.ElementColors();
-  int *To = ElementColors_;
+	M = RedistMatrix->NumMyRows();
+	N = RedistMatrix->NumMyCols();
+	nz = RedistMatrix->NumMyNonzeros();
+	val = (*RedistMatrix)[0];        // Dangerous, but cheap and effective way to access first element in 
 
-  // Do copy first
-  if (NumSameIDs>0)
-    if (To!=From) {
-      for (int j=0; j<NumSameIDs; j++)
-	To[j] = From[j];
-    }
-  // Do local permutation next
-  if (NumPermuteIDs>0)
-    for (int j=0; j<NumPermuteIDs; j++) 
-      To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
-  
+	const Epetra_CrsGraph & RedistGraph = RedistMatrix->Graph();
+	ind = RedistGraph[0];  // list of values and indices
+
+	Epetra_MultiVector * LHS = RedistProblem_->GetLHS();
+	Epetra_MultiVector * RHS = RedistProblem_->GetRHS();
+	Nrhs = RHS->NumVectors();
+	if (Nrhs>1) {
+		if (!RHS->ConstantStride()) {EPETRA_CHK_ERR(-3)}; // Must have strided vectors
+		if (!LHS->ConstantStride()) {EPETRA_CHK_ERR(-4)}; // Must have strided vectors
+	}
+	ldrhs = RHS->Stride();
+	rhs = (*RHS)[0]; // Dangerous but effective (again)
+	ldlhs = LHS->Stride();
+	lhs = (*LHS)[0];
+
+	// Finally build ptr vector
+
+	if (ptr_==0) {
+		ptr_ = new int[M+1];
+		ptr_[0] = 0;
+		for (int i=0; i<M; i++) ptr_[i+1] = ptr_[i] + RedistGraph.NumMyIndices(i);
+	}
+	
   return(0);
 }
 
 //=========================================================================
-int Epetra_LinearProblemRedistor::PackAndPrepare(const Epetra_DistObject & Source, int NumExportIDs, int * ExportLIDs,
-				      int Nsend, int Nrecv,
-				      int & LenExports, char * & Exports, int & LenImports, 
-				      char * & Imports, 
-				      int & SizeOfPacket, Epetra_Distributor & Distor) {
+int Epetra_LinearProblemRedistor::UpdateOriginalLHS(Epetra_MultiVector * LHS) {
 
+	if (LHS==0) {EPETRA_CHK_ERR(-1);}
+	if (!RedistProblemCreated_) EPETRA_CHK_ERR(-2);
 
+	EPETRA_CHK_ERR(LHS->Import(*RedistProblem_->GetLHS(), *RedistExporter_, Average));
 
-  const Epetra_LinearProblemRedistor & A = dynamic_cast<const Epetra_LinearProblemRedistor &>(Source);
-
-  int  * From = A.ElementColors();
-  int * IntExports = 0;
-  int * IntImports = 0;
-
-  if (Nsend>LenExports) {
-    if (LenExports>0) delete [] Exports;
-    LenExports = Nsend;
-    IntExports = new int[LenExports];
-    Exports = (char *) IntExports;
-  }
-
-  if (Nrecv>LenImports) {
-    if (LenImports>0) delete [] Imports;
-    LenImports = Nrecv;
-    IntImports = new int[LenImports];
-    Imports = (char *) IntImports;
-  }
-
-  SizeOfPacket = sizeof(int); 
-
-  int * ptr;
-
-  if (NumExportIDs>0) {
-    ptr = (int *) Exports;    
-    for (int j=0; j<NumExportIDs; j++) *ptr++ = From[ExportLIDs[j]];
-  }
-  
   return(0);
 }
 
 //=========================================================================
-int Epetra_LinearProblemRedistor::UnpackAndCombine(const Epetra_DistObject & Source,
-					 int NumImportIDs, int * ImportLIDs, 
-					char * Imports, int & SizeOfPacket, 
-					 Epetra_Distributor & Distor, 
-					 Epetra_CombineMode CombineMode ) {
-  int j;
-  
-  if(    CombineMode != Add
-      && CombineMode != Zero
-      && CombineMode != Insert
-      && CombineMode != AbsMax )
-    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
+int Epetra_LinearProblemRedistor::UpdateRedistRHS(Epetra_MultiVector * RHS) {
 
-  if (NumImportIDs<=0) return(0);
+	if (RHS==0) {EPETRA_CHK_ERR(-1);}
+	if (!RedistProblemCreated_) EPETRA_CHK_ERR(-2);
 
-  int * To = ElementColors_;
+	EPETRA_CHK_ERR(RedistProblem_->GetRHS()->Export(*RHS, *RedistExporter_, Insert));
 
-  int * ptr;
-  // Unpack it...
-
-  ptr = (int *) Imports;
-    
-  if (CombineMode==Add)
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] += *ptr++; // Add to existing value
-  else if(CombineMode==Insert)
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = *ptr++;
-  else if(CombineMode==AbsMax)
-    for (j=0; j<NumImportIDs; j++) To[ImportLIDs[j]] = EPETRA_MAX( To[ImportLIDs[j]],abs(*ptr++));
-  
   return(0);
 }
+
+
 

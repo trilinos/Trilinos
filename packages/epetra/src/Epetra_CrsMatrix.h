@@ -780,7 +780,6 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
 
     //! Inlined bracket operator for fast access to data. (Const and Non-const versions)
     /*! No error checking and dangerous for optimization purposes.
-        and error checking is done on the input value MyRow.
     \param In
            Loc - Local row.
 	  

@@ -24,9 +24,11 @@
 
 #ifndef EPETRA_LINEARPROBLEMREDISTOR_H
 #define EPETRA_LINEARPROBLEMREDISTOR_H
-#include "Epetra_Object.h"
-class Epetra_Map;
+
+class Epetra_Map; 
+class Epetra_Export;
 class Epetra_LinearProblem;
+class Epetra_RowMatrixTransposer;
 
 //! Epetra_LinearProblemRedistor: A class for redistributing an Epetra_LinearProblem object.
 
@@ -42,7 +44,7 @@ class Epetra_LinearProblem;
 
 */
 
-class Epetra_LinearProblemRedistor: public Epetra_Object {
+class Epetra_LinearProblemRedistor {
     
   public:
 
@@ -56,18 +58,21 @@ class Epetra_LinearProblemRedistor: public Epetra_Object {
     \return Pointer to a Epetra_LinearProblemRedistor object.
 
   */ 
-  Epetra_LinearProblemRedistor(Epetra_LinearProblem * Problem, const Epetra_Map & RedistMap);
+  Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, const Epetra_Map & RedistMap);
 
   //! Epetra_LinearProblemRedistor constructor specifying number of processor and replication bool.
   /*!
     \param Problem (In) An existing Epetra_LinearProblem object.  The Epetra_RowMatrix, the LHS and RHS pointers
 		       do not need to be defined before this constructor is called.
+		\param NumProc (In) Number of processors to use when redistributing the problem.  Must be between 1 and the
+		       number of processor on the parallel machine.
 		\param Replicate (In) A bool that indicates if the linear problem should be fully replicated on all processors.
-		       If true, then a complete copy of the linear problem will be made on each processor.
+		       If true, then a complete copy of the linear problem will be made on each processor.  If false, then
+					 the problem will be roughly evenly spread across the total number of processors.
 
     \return Pointer to a Epetra_LinearProblemRedistor object.
   */ 
-  Epetra_LinearProblemRedistor(const Epetra_LinearProblem& Problem, const bool Replicate);
+  Epetra_LinearProblemRedistor(Epetra_LinearProblem * OrigProblem, int NumProc, bool Replicate);
 
   //! Epetra_LinearProblemRedistor copy constructor.
   
@@ -107,7 +112,7 @@ class Epetra_LinearProblemRedistor: public Epetra_Object {
 		\param RedistProblem (Out) The redistributed Epetra_LinearProblem.  The RowMatrix, LHS and RHS that are generated
 		       as part of this problem will be destroyed when the Epetra_LinearProblemRedistor object is destroyed.
 
-		\return Integer error code, 0 if no errors, positive value if one or more of the input Rowmatrix, 
+		\return Integer error code, 0 if no errors, positive value if one or more of the
 		        LHS or RHS pointers were 0.  Negative if some other fatal error occured.
 					 
   */
@@ -117,42 +122,63 @@ class Epetra_LinearProblemRedistor: public Epetra_Object {
 	
   //! Update the values of an already-redistributed problem.
   /*! Updates the values of an already-redistributed problem.  This method allows updating 
-		  the redistributed problem without
-		  allocating new storage.
+		  the redistributed problem without allocating new storage.  All three objects in the RedistProblem will be
+			updated, namely the Matrix, LHS and RHS.  If the LHS or RHS are 0 pointers, they will be ignored.
 
     \param ProblemWithNewValues (In) The values from ProblemWithNewValues will be copied into the RedistProblem.  The
 		       ProblemWithNewValues object must be identical in structure to the Epetra_LinearProblem object used to create
 					 this instance of Epetra_LinearProblemRedistor.
 
-		\return Integer error code, 0 if no errors, positive value if one or more of the input Rowmatrix, 
+		\return Integer error code, 0 if no errors, positive value if one or more of the input 
 		        LHS or RHS pointers were 0.  Negative if some other fatal error occured.
 					 
   */
-  int UpdateValues(Epetra_LinearProblem * ProblemWithNewValues);
+  int UpdateRedistProblemValues(Epetra_LinearProblem * ProblemWithNewValues);
+
+  //! Update the values of an already-redistributed RHS.
+  /*! Updates the values of an already-redistributed RHS.  This method allows updating 
+		  the redistributed RHS without allocating new storage.  This method updates only the RHS, and no
+			other part of the RedistLinearProblem.
+
+    \param RHSWithNewValues (In) The values from RHSWithNewValues will be copied into the RHS of the RedistProblem.  The
+		       RHSWithNewValues object must be identical in structure to the Epetra_MultiVector object used to create
+					 this instance of Epetra_LinearProblemRedistor.
+
+		\return Integer error code, 0 if no errors.
+					 
+  */
+  int UpdateRedistRHS(Epetra_MultiVector * RHSWithNewValues);
   //@}
   
   //@{ \name Reverse transformation methods.
   //! Update LHS of original Linear Problem object.
-  /*! Copies the values from the LHS of the RedistProblem Object into the LHS of the original linear problem.  If the
-		  RedistProblem is replicated, the LHS will be taken from processor 0 only.  If the RedistMap was passed in by the
-			calling routine, it is the responsibility of the caller to make sure that the RedistMap is a bijective (1-to-1 and
-			onto) map onto the RowMatrixRowMap of the original Epetra_RowMatrix object.  If this map is not bijective, the
-			UpdateOriginalLHS() method may have indeterminant behavior.
+  /*! Copies the values from the LHS of the RedistProblem Object into the LHS passed in to the method.  If the
+		  RedistProblem is replicated, the LHS will be computed as an average from all processor.  
+    \param LHS (Out) On exit, the values in LHS will contain the values from the current RedistLinearProblem LHS.
+		       If the GIDs of the RedistMap are not one-to-one, e.g., if the map is replicated, the output values for
+					 each GID will be an average of all values at that GID.  If the RedistProblem is being solved redundantly
+					 in any fashion, this approach to computing the values of LHS should produce a valid answer no matter
+					 how the RedistProblem LHS is distributed.
 			
     \return Error code, returns 0 if no error.
   */
-   int UpdateOriginalLHS();
+	int UpdateOriginalLHS(Epetra_MultiVector * LHS);
   //@}
   
   //@{ \name Attribute accessor methods.
   //! Returns const reference to the Epetra_Map that describes the layout of the RedistLinearProblem.
-  const Epetra_Map & RedistMap() const;
+  /*! The RedistMap object can be used to construct other Epetra_DistObject objects whose maps are compatible with
+		  the redistributed linear problem map.
+			\warning This method must not be called until \e after CreateRedistProblem() is called.
+	*/
+	const Epetra_Map & RedistMap() const {return(*RedistMap_);};
   
   //! Returns const reference to the Epetra_Export object used to redistribute the original linear problem.
   /*! The RedistExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
-		  the original linear problem map, or with the RedistMap().
+		  the original linear problem map, or a reverse distribution for objects compatible with the RedistMap().
+			\warning This method must not be called until \e after CreateRedistProblem() is called.
   */
-  const Epetra_Export & RedistExporter() const;
+  const Epetra_Export & RedistExporter()  const {return(*RedistExporter_);};
   //@}
   
   //@{ \name Utility methods
@@ -162,7 +188,9 @@ class Epetra_LinearProblemRedistor: public Epetra_Object {
 		  the matrix, rhs and lhs in Harwell-Boeing format.  Note that the arrays returned by this method are owned by the
 			Epetra_LinearProblemRedistor class, and they will be deleted when the owning class is destroyed.
 	*/
-	int ExtractHbData(int & M, int & N, int & nz, int * & ptr, int * & ind, double * & val, int & Nrhs, double * & rhs);
+	int ExtractHbData(int & M, int & N, int & nz, int * & ptr, int * & ind, 
+										double * & val, int & Nrhs, double * & rhs, int & ldrhs, 
+																								double * & lhs, int & ldlhs) const;
   //@}
   
   //@{ \name I/O methods
@@ -175,15 +203,19 @@ class Epetra_LinearProblemRedistor: public Epetra_Object {
 	int GenerateRedistMap();
 
 	Epetra_LinearProblem * OrigProblem_;
+	int NumProc_;
 	Epetra_LinearProblem * RedistProblem_;
 	Epetra_Map * RedistMap_;
+	Epetra_RowMatrixTransposer * Transposer_;
+	Epetra_Export * RedistExporter_;
 
 	bool Replicate_;
 	bool ConstructTranspose_;
 	bool MakeDataContiguous_;
 	bool MapGenerated_;
+	bool RedistProblemCreated_;
 
-	int ptr_;
+	mutable int * ptr_;
 		
 
 };

@@ -455,6 +455,18 @@ class Epetra_CrsGraph: public Epetra_DistObject {
     bool  MyLCID(int LCID) const {return(GCID(LCID)!=IndexBase_-1);};
   //@}
   
+  //@{ \name Inlined Operator Methods.
+
+    //! Inlined bracket operator for fast access to data. (Const and Non-const versions)
+    /*! No error checking and dangerous for optimization purposes.
+    \param Loc (In) - Local row.
+	  
+    \return reference to pointer to locally indexed Loc row in matrix.
+  */
+    inline int *& operator[]( int Loc ) { return Indices_[Loc]; }
+    inline int * const & operator[]( int Loc ) const { return Indices_[Loc]; }
+  //@}
+
   //@{ \name I/O Methods.
 
   //! Print method
