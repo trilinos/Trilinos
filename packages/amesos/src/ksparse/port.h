@@ -31,7 +31,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #  define CONFIGURED
 #endif
 
-#ifdef dec
+#ifdef DEC
 #  include "os_dec.h"
 #  define CONFIGURED
 #endif
@@ -101,7 +101,7 @@ Copyright 1990 Regents of the University of California.  All rights reserved.
 #  define CONFIGURED
 #endif
 
-#ifdef mingw32
+#ifdef mingw
 #  include "os_mingw32.h"
 #  define CONFIGURED
 #endif

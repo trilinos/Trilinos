@@ -1453,7 +1453,7 @@ struct strip_out *strip, *old_strip, *my_strip, *prev_strip;
                     if (j >= row_lo) {
                       Matrix->Intermediate3[j] = my_context->MyD[my_context->ColDiag[j]] *
                                                  my_rhs[j];
-#if defined (dec) || defined (solaris)
+#if defined (DEC) || defined (solaris)
                       __mb();
 #endif
                       my_rhs[j] = Matrix->Intermediate3[j];
@@ -1679,7 +1679,7 @@ struct strip_out *strip, *old_strip, *my_strip, *prev_strip;
               Matrix->Diag[Step]->Real = 1.0 / my_context->Dest[Step];
             }
           }
-#if defined (dec) || defined (solaris)
+#if defined (DEC) || defined (solaris)
         __mb();
 #endif
           my_strip->done = Step;
@@ -1701,7 +1701,7 @@ struct strip_out *strip, *old_strip, *my_strip, *prev_strip;
               if (j >= row_lo) {
                 Matrix->Intermediate3[j] = my_context->MyD[my_context->ColDiag[j]] *
                                            my_rhs[j];
-#if defined (dec) || defined (solaris)
+#if defined (DEC) || defined (solaris)
                 __mb();
 #endif
                 my_rhs[j] = Matrix->Intermediate3[j];
@@ -4961,7 +4961,7 @@ int i, n_done, del, num_created, eb;
                 ebuf[eb].p_row = Row;
                 ebuf[eb].p_col = pUpper->Col;
                 ebuf[eb].val = -(pUpper->Real * pLower->Real);
-#if defined (dec) || defined (solaris)
+#if defined (DEC) || defined (solaris)
                 __mb();
 #endif
                 (void) __fetch_and_add (curr_pos, 1);
@@ -4993,7 +4993,7 @@ int i, n_done, del, num_created, eb;
 #endif
     }
 #ifdef SHARED_MEM
-#if defined (dec) || defined (solaris)
+#if defined (DEC) || defined (solaris)
     __mb();
 #endif
     p_done[pe_in_smp] = 1;

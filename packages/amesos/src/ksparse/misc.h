@@ -128,11 +128,11 @@ extern void clearerr();
 #    endif /* clearerr */
 #  endif /* HAS_CLEARERR */
 
-#if defined(linux) || defined(freebsd) || defined(NMcplant) || defined(dec) || defined(ppc)
+#if defined(linux) || defined(freebsd) || defined(NMcplant) || defined(DEC) || defined(ppc)
 extern void bzero();
 #else
 #ifndef bzero
-#ifndef dec
+#ifndef DEC 
 extern int bzero();
 #  endif
 # endif

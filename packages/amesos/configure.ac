@@ -343,7 +343,7 @@ if test "X$ADDON_KS" = "Xyes"; then
       ;;
   i386*mingw32msvc) PLATFORM=mingw
        ;;
-  alpha*-dec-osf*) PLATFORM=dec
+  alpha*-dec-osf*) PLATFORM=DEC
        ;;
   *)   if test "x$PLATFORM" = "x"; then
          AC_MSG_NOTICE([Unrecognized target, using generic unix for PLATFORM])
