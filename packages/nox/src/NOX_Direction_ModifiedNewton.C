@@ -54,7 +54,7 @@ NOX::Direction::ModifiedNewton::~ModifiedNewton()
   delete oldJacobianGrpPtr;
 }
 
-bool NOX::Direction::ModifiedNewton::reset(Parameter::List& params)
+bool NOX::Direction::ModifiedNewton::reset(NOX::Parameter::List& params)
 {
   paramsPtr = &params;
 
@@ -78,12 +78,16 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
   if (status != NOX::Abstract::Group::Ok)
     throwError("compute", "Unable to compute F");
 
-  maxAgeOfJacobian = paramsPtr->getParameter("Max Age of Jacobian", 10);
+  maxAgeOfJacobian = paramsPtr->sublist("Modified-Newton").getParameter("Max Age of Jacobian", 10);
 
   if (oldJacobianGrpPtr == NULL) {
     oldJacobianGrpPtr = soln.clone(DeepCopy);
   }
   NOX::Abstract::Group& oldJacobianGrp = *oldJacobianGrpPtr;
+  
+  // Reset the linear solver tolerance
+  resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
+                   solver.getNumIterations(), solver.getParameterList());
 
   status = NOX::Abstract::Group::Failed;
   while (status != NOX::Abstract::Group::Ok) {
@@ -100,12 +104,8 @@ bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
     else 
       ageOfJacobian++;
 
-    // Reset the linear solver tolerance
-    resetForcingTerm(soln, solver.getPreviousSolutionGroup(), 
-                          solver.getNumIterations(), solver.getParameterList());
-
     // Compute the Modified Newton direction
-    status = oldJacobianGrp.applyJacobianInverse(*paramsPtr, soln.getF(), dir);
+    status = oldJacobianGrp.applyJacobianInverse(paramsPtr->sublist("Modified-Newton").sublist("Linear Solver"), soln.getF(), dir);
     dir.scale(-1.0);
 
     // It didn't work, but maybe it's ok anyway...
