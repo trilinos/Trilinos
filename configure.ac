@@ -1,4 +1,4 @@
-#
+--#
 #  Refer to packages/new_package/README for suggestions on 
 #  adding a new package.  
 #
@@ -51,6 +51,9 @@ TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
 AM_CONDITIONAL(BUILD_TSF, test "X$ac_cv_use_tsf" != "Xno" ||
 	test "X$ac_cv_use_meros" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(tsfextended, [Build TSFExtended], TSFEXTENDED, no)
+AM_CONDITIONAL(BUILD_TSFEXTENDED, test "X$ac_cv_use_tsfextended" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(tsfcore, [Build TSFCore], TSFCORE, no)
 AM_CONDITIONAL(BUILD_TSFCORE, test "X$ac_cv_use_tsfcore" != "Xno" || 
   test "X$ac_cv_use_tsfextended" != "Xno")
@@ -59,9 +62,6 @@ TAC_ARG_ENABLE_FEATURE(tsfcoreutils, [Build TSFCoreUtils], TSFCOREUTILS, no)
 AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
 	test "X$ac_cv_use_tsfcore" != "Xno" || 
   test "X$ac_cv_use_tsfextended" != "Xno")
-
-TAC_ARG_ENABLE_FEATURE(tsfextended, [Build TSFExtended], TSFEXTENDED, no)
-AM_CONDITIONAL(BUILD_TSFEXTENDED, test "X$ac_cv_use_tsfextended" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, no)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")

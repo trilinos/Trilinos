@@ -5,5 +5,5 @@ set -x
 aclocal -I config 
 # autoheader is smart and doesn't change anything unless it's necessary
 autoheader 
-automake --foreign --add-missing --copy --verbose
+automake --foreign --add-missing --copy
 autoconf
