@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  FORTRAN API</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,215 +18,144 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_fortran_77.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran_apps.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  FORTRAN API</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_fortran_77.html">Next</a>&nbsp; |&nbsp; <a href="ug_fortran_apps.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="fortran ug api"></A>FORTRAN API</H2>
-The Fortran interface for each <A HREF="ug_interface.html">Zoltan Interface
-Function</A> and <A HREF="ug_query.html">Application-Registered Query Function</A>
+<h2>
+<a NAME="fortran ug api"></a>FORTRAN API</h2>
+The Fortran interface for each <a href="ug_interface.html">Zoltan Interface
+Function</a> and <a href="ug_query.html">Application-Registered Query Function</a>
 is given along with the C interface. This section contains some general
 information about the design and use of the Fortran interface.
-<UL><A HREF="#fortran ug api names">Names</A>
-<BR><A HREF="#fortran ug api zoltan module">Zoltan module</A>
-<BR><A HREF="#fortran ug api numeric types">Numeric types</A>
-<BR><A HREF="#fortran ug api structures">Structures</A>
-<BR><A HREF="#fortran ug api IDs"><I>lb_user_const.h</I> and global and
-local&nbsp;IDs</A>
-<BR><A HREF="#fortran ug api query">Query function data</A></UL>
+<ul><a href="#fortran ug api names">Names</a>
+<br><a href="#fortran ug api zoltan module">Zoltan module</a>
+<br><a href="#fortran ug api numeric types">Numeric types</a>
+<br><a href="#fortran ug api structures">Structures</a>
+<br><a href="#fortran ug api IDs">Global and local IDs</a>
+<br><a href="#fortran ug api query">Query function data</a></ul>
 
-<H3>
-<A NAME="fortran ug api names"></A>Names</H3>
+<h3>
+<a NAME="fortran ug api names"></a>Names</h3>
 All procedure, variable, defined constant and structure names are identical
 to those in the C interface, except that in Fortran they are case insensitive
 (either upper or lower case letters can be used).
-<BR>&nbsp;
-<H3>
-<A NAME="fortran ug api zoltan module"></A>Zoltan module</H3>
+<br>&nbsp;
+<h3>
+<a NAME="fortran ug api zoltan module"></a>Zoltan module</h3>
 MODULE zoltan provides access to all entities in Zoltan that are of use
 to the application, including kind type parameters, named constants, procedures,
 and derived types. Any program unit (e.g., main program, module, external
 subroutine) that needs access to an entity from Zoltan must contain the
 statement
-<UL>USE zoltan</UL>
+<ul>USE zoltan</ul>
 near the beginning.
-<H3>
-<A NAME="fortran ug api numeric types"></A>Numeric types</H3>
+<h3>
+<a NAME="fortran ug api numeric types"></a>Numeric types</h3>
 The correspondence between Fortran and C numeric types is achieved through
 the use of kind type parameters. In most cases, the default kind for a
 Fortran type will match the corresponding C type, but this is not guaranteed.
 To insure portability of the application code, it is highly recommended
 that the following kind type parameters be used in the declaration of all
 variables and constants that will be passed to a Zoltan procedure:
-<BR>&nbsp;
-<CENTER><TABLE BORDER WIDTH="80%" NOSAVE >
-<TR NOSAVE>
-<TD NOSAVE><B>C</B></TD>
+<br>&nbsp;
+<center><table BORDER WIDTH="80%" NOSAVE >
+<tr NOSAVE>
+<td NOSAVE><b>C</b></td>
 
-<TD><B>Fortran</B></TD>
-</TR>
+<td><b>Fortran</b></td>
+</tr>
 
-<TR>
-<TD>int</TD>
+<tr>
+<td>int</td>
 
-<TD>INTEGER(KIND=LB_INT)</TD>
-</TR>
+<td>INTEGER(KIND=LB_INT)</td>
+</tr>
 
-<TR>
-<TD>float</TD>
+<tr>
+<td>float</td>
 
-<TD>REAL(KIND=LB_FLOAT)</TD>
-</TR>
+<td>REAL(KIND=LB_FLOAT)</td>
+</tr>
 
-<TR>
-<TD>double</TD>
+<tr>
+<td>double</td>
 
-<TD>REAL(KIND=LB_DOUBLE)&nbsp;</TD>
-</TR>
-</TABLE></CENTER>
+<td>REAL(KIND=LB_DOUBLE)&nbsp;</td>
+</tr>
+</table></center>
 
-
-<P>Note that "KIND=" is optional in declaration statements. The kind number
+<p>Note that "KIND=" is optional in declaration statements. The kind number
 for constants can be attached to the constant, e.g., 1.0_LB_DOUBLE.
-<BR>&nbsp;
-<H3>
-<A NAME="fortran ug api structures"></A>Structures</H3>
-For any struct in the C interface to Zoltan, e.g. <B><A HREF="../dev_html/dev_lb_structs.html#LB_Struct">LB_Struct</A></B>,
+<br>&nbsp;
+<h3>
+<a NAME="fortran ug api structures"></a>Structures</h3>
+For any struct in the C interface to Zoltan, e.g. <b><a href="../dev_html/dev_lb_structs.html#LB_Struct">LB_Struct</a></b>,
 there is a corresponding derived type in the Fortran interface. Variables
 of this type are declared as demonstrated below:
-<UL>TYPE(LB_Struct) :: lb</UL>
+<ul>TYPE(LB_Struct) :: lb</ul>
 In the Fortran interface, the internal components of the derived type are
 PRIVATE and not accessible to the application. However, the application
 simply passes these variables around, and never needs to access the internal
 components.
-<H3>
-<A NAME="fortran ug api IDs"></A><I>lb_user_const.h</I> and global and
-local IDs</H3>
-The file<I> lb/lb_user_const.h</I> contains the definition of the C types
-for the global IDs <A HREF="ug_usage.html#Macro defs">LB_GID</A>, local
-IDs <A HREF="ug_usage.html#Macro defs">LB_LID</A>, and assignment and comparative
-operators on global IDs. In Fortran, this information may also be needed
-in the Fortran code (for example, if <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-is a user-defined type), or may need to be written in Fortran (for example,
-the comparative operators if <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-is a user-defined type). The file <I>fort/lb_user_const.f90</I> contains
-this information in Fortran. Three examples of these files are presented
-in <I>fort/</I> to illustrate three different situations, as described
-below.  The example that best
-matches the application should be modified, if necessary, for the application
-and renamed with the above file names, with the <I>.h</I> file moved to
-the <I>lb/</I> directory.
-
-<P>C applications use <A HREF="ug_usage.html#Macro defs">LB_GID</A> and
-<A HREF="ug_usage.html#Macro defs">LB_LID</A> in <I>lb/lb_user_const.h</I>
-to define the type for the global and local IDs. A Fortran application
-must define these in the C header file; however, it is not always possible
-to exactly match the Fortran type with a C type, in particular when the
-Fortran type is a user-defined type. When an ID is a user-defined type,
-it must be defined in<I> lb_user_const.f90</I>. Three cases are considered.
-For simplicity, the symbol <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-is used, but the same statements apply to <A HREF="ug_usage.html#Macro defs">LB_LID</A>.
-
-<P>If <A HREF="ug_usage.html#Macro defs">LB_GID</A> is an intrinsic type,
-e.g. INTEGER(LB_INT), or an array of an intrinsic type, then the C header
-file definition can easily be equated to the Fortran type. (Exceptions
-may exist for some intrinsic types like LOGICAL and CHARACTER, which are
-unlikely to be used for IDs.) In this case, <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-is defined appropriately in <I>lb_user_const.h</I> and TYPE(LB_GID) is
-given a dummy definition in <I>lb_user_const.f90</I>. An example of this
-type is given in <I>fort/lb_user_const_int.*</I>.
-
-<P>If <A HREF="ug_usage.html#Macro defs">LB_GID</A> is a user defined type,
-then the exact layout of data in memory is compiler dependent, and <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-cannot be portably defined in <I>lb_user_const.h</I>. However, Zoltan must
-know the amount of memory consumed by an <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-to properly index into arrays of this type. The program <I>fort/structsize</I>
-is provided to determine the size of a user defined type. 
-In directory <I>fort</I> edit the file <I>mfstruct</I> to specify your
-Fortran and C compilers, create your structure as TYPE(LB_GID) in
-<I>lb_user_const.f90</I>, and "make -f mfstruct".  The program <I>structsize</I>
-will then give the number of bytes in the structure, which can
-be used in the definition of <A HREF="ug_usage.html#Macro defs">LB_GID</A>
-in <I>lb_user_const.h</I>. TYPE(LB_GID) is defined with the user defined
-type in <I>lb_user_const.f90</I>. In this case, the comparative operators
-must be written in Fortran in <I>lb_user_const.f90</I>, with the C macros
-being a call to the Fortran functions.   These calls are compiler dependent
-because they must use the compiler-specific name mangling for module
-procedures.  An example of this type is given in
-<I>fort/lb_user_const_struct.*.</I>
-
-<P>There is performance loss by defining
-the comparative operators in the Fortran module instead of C macros.
-If you can determine how a Fortran structure is laid out in memory, and
-have enough knowledge of C programming, then you can define them in <I>lb_user_const.h</I>.
-However, this is highly compiler dependent and will not be portable. An
-example for a structure with two components and the NAGWare f95 compiler
-is provided in <I>lb_user_const_nag.*</I>.
-<BR>&nbsp;
-<H3>
-<A NAME="fortran ug api query"></A>Query function data</H3>
-<B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B> allows
+<h3>
+<a NAME="fortran ug api IDs"></a>Global and local IDs</h3>
+While the C implementation uses arrays of unsigned integers to represent
+<a href="ug_usage.html#Data Types for Object IDs">global and local IDs</a>,&nbsp;
+the Fortran interface uses arrays of integers, as unsigned integers are
+not available in Fortran.&nbsp; Thus, each ID is represented as an array
+(possibly of size 1) of integers.&nbsp; Applications that use other data
+types for their IDs can convert between their data types and Zoltan's in
+the <a href="ug_query.html">application-registered query functions</a>.
+<h3>
+<a NAME="fortran ug api query"></a>Query function data</h3>
+<b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b> allows
 the application to pass a pointer to data that will subsequently be passed
 to the query function being registered. From Fortran this is an optional
 argument, or can be one of several types. In the simplest cases, an intrinsic
 array containing the data will be sufficient. For these cases, data can
 be an assumed size array of type INTEGER(LB_INT), REAL(LB_FLOAT) or REAL(LB_DOUBLE).
-
-<P>For more complicated situations, the application may need to pass data
+<p>For more complicated situations, the application may need to pass data
 in a user-defined type. The strong type checking of Fortran does not allow
 passing an arbitrary type without modifying the Fortran interface for each
 desired type. So the Fortran interface provides a type to be used for this
-purpose, <B>LB_User_Data_1</B>. Since different types of data may need
+purpose, <b>LB_User_Data_1</b>. Since different types of data may need
 to be passed to different query functions, four such types are provided,
 using the numerals 1, 2, 3 and 4 as the last character in the name of the
-type. These types are defined by the application in <I>lb_user_const.f90</I>.
+type. These types are defined by the application in <i>lb_user_const.f90</i>.
 If not needed, they must be defined, but can be almost empty as in
-<I>fort/lb_user_const_int.f90</I>.
-
-<P>The application may use these types in any appropriate way. If desired,
+<i>fort/lb_user_const.f90</i>.
+<p>The application may use these types in any appropriate way. If desired,
 it can define these types to contain the application's data and use the
 type throughout the application. But it is anticipated that in most cases,
-the desired type already exists in the application, and the <B>LB_User_Data_x</B>
+the desired type already exists in the application, and the <b>LB_User_Data_x</b>
 types will be used as "wrapper types," containing one or more pointers
 to the existing types. For example,
-<UL>TYPE mesh
-<UL>! an existing data type with whatever defines a mesh</UL>
+<ul>TYPE mesh
+<ul>! an existing data type with whatever defines a mesh</ul>
 END TYPE mesh
-
-<P>TYPE LB_User_Data_2
-<UL>TYPE(mesh), POINTER :: ptr</UL>
-END TYPE LB_User_Data_2</UL>
+<p>TYPE LB_User_Data_2
+<ul>TYPE(mesh), POINTER :: ptr</ul>
+END TYPE LB_User_Data_2</ul>
 The application would then set the pointer to the data before calling LB_Set_Fn:
-<UL>TYPE(mesh) :: meshdata
-<BR>TYPE(LB_User_Data_2) :: query_data
-<BR>TYPE(LB_Struct) :: lb
-<BR>INTEGER(LB_INT), EXTERNAL :: num_obj_func ! not required for module
+<ul>TYPE(mesh) :: meshdata
+<br>TYPE(LB_User_Data_2) :: query_data
+<br>TYPE(LB_Struct) :: lb
+<br>INTEGER(LB_INT), EXTERNAL :: num_obj_func ! not required for module
 procedures
-
-<P>query_data%ptr => meshdata
-<BR>ierr = LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,num_obj_func,query_data)</UL>
-Note that the existing data type must be available when <B>LB_User_Data_x</B>
-is defined. Therefore it must be defined either in<I> lb_user_const.f90</I>
-or in a module that is compiled before <I>lb_user_const.f90</I> and <B>USE</B>d
-by MODULE<I> lb_user_const</I>. For an example that uses a wrapper type,
-see <I>fdriver/lb_user_const.f90</I>.
-
-<P>
-<HR WIDTH="100%">
-<BR>[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="ug_fortran_77.html">Next:&nbsp;
-FORTRAN 77</A>&nbsp; |&nbsp; <A HREF="ug_fortran_apps.html">Previous:&nbsp;
-FORTRAN--Compiling Applications</A>
-</BODY>
-</HTML>
+<p>query_data%ptr => meshdata
+<br>ierr = LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,num_obj_func,query_data)</ul>
+Note that the existing data type must be available when <b>LB_User_Data_x</b>
+is defined. Therefore it must be defined either in<i> lb_user_const.f90</i>
+or in a module that is compiled before <i>lb_user_const.f90</i> and <b>USE</b>d
+by MODULE<i> lb_user_const</i>. For an example that uses a wrapper type,
+see <i>fdriver/lb_user_const.f90</i>.
+<p>
+<hr WIDTH="100%">
+<br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_fortran_77.html">Next:&nbsp;
+FORTRAN 77</a>&nbsp; |&nbsp; <a href="ug_fortran_apps.html">Previous:&nbsp;
+FORTRAN--Compiling Applications</a>
+</body>
+</html>

@@ -63,110 +63,32 @@ from Fortran applications.</li>
 <a NAME="Data Types for Object IDs"></a>Data Types for Object IDs</h3>
 Application query functions and application callable library functions
 use global and local identifiers (IDs) for objects. <i>All objects to be
-used in load balancing must have unique global IDs.</i> Different applications
-may use different data types to represent these IDs. One finite element
-application, for example, may use integers as global identifiers (e.g.,
-see [<a href="ug_refs.html#mpsalsa">MPSalsa</a>]); another may use a structure
-of information including local element counts and processor numbers (e.g.,
-see [<a href="ug_refs.html#alegra">ALEGRA</a>]). Since the Zoltan library
-is designed to work with a number of applications, it must allow applications
-to specify data types for global and local IDs.The local IDs passed to
-the load-balancing library are not used by the library; they are provided
+used in load balancing must have unique global IDs.</i>  Zoltan stores an
+ID as an array of unsigned integers.  Applications may use whatever format is
+most convenient to store their IDs;
+the IDs can then be converted to
+and from Zoltan's ID format in the 
+<a href="ug_query.html">application-registered query functions</a>.
+The number of entries in these
+arrays can be set using the 
+<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a> and 
+<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> 
+parameters; by default, one unsigned integer represents an ID.
+
+<p>
+The local IDs passed to
+Zoltan are not used by the library; they are provided
 for the convenience of the application and can contain any information
-desired by the application. For instance, pointers to objects may be passed
+desired by the application. For instance, local array indices for 
+objects may be passed
 as local IDs, enabling direct access to object data in the query function
 routines. See the <a href="ug_query.html">application-registered query
-functions</a> for more details.To provide data type information to the
-load-balancing library, application developers must define their global
-and local ID data types in the file "lb/lb_user_const.h" in the Zoltan
-library source code distribution. In addition, they must define macros
-to copy global and local IDs and to compare global IDs. When used from
-Fortran, the IDs and operators are also defined in a module in fort/lb_user_const.f90,
-as explained in the section on
-<a href="ug_fortran_api.html#fortran ug api IDs">Fortran
-global and local IDs</a>. The data and macro definitions that must be included
-are described in the <a href="#Macro defs">table</a> below.&nbsp; The source
-code distribution contains an example in which global IDs are integers
-and local IDs are pointers to objects.
-<br>&nbsp;
-<table BORDER >
-<tr>
-<th><a NAME="Macro defs"></a>Definition</th>
-
-<th>Description</th>
-</tr>
-
-<tr>
-<td>LB_GID</td>
-
-<td>The data type of the unique global IDs used by the application.</td>
-</tr>
-
-<tr>
-<td>LB_LID</td>
-
-<td>The data type of the local IDs used by the application query functions.</td>
-</tr>
-
-<tr>
-<td>LB_SET_GID(<i> a, b</i> )</td>
-
-<td>Assigns the global ID value in <i>b</i> to <i>a</i> (i.e., <i>a = b</i>
-).</td>
-</tr>
-
-<tr>
-<td>LB_SET_LID(<i> a, b</i> )</td>
-
-<td>Assigns the local ID value in <i>b</i> to <i>a</i> (i.e., <i>a = b</i>
-).</td>
-</tr>
-
-<tr>
-<td>LB_EQ_GID(<i> a, b</i> )</td>
-
-<td>Returns TRUE if global IDs <i>a</i> and <i>b</i> are equal; returns
-FALSE otherwise.</td>
-</tr>
-
-<tr>
-<td>LB_NE_GID(<i> a, b)</i></td>
-
-<td>Returns TRUE if global IDs <i>a</i> and <i>b</i> are not equal; returns
-FALSE otherwise.</td>
-</tr>
-
-<tr>
-<td>LB_LT_GID(<i> a, b</i> )</td>
-
-<td>Returns TRUE if global ID <i>a</i> is less than global ID <i>b</i>
-; returns FALSE otherwise.</td>
-</tr>
-
-<tr>
-<td>LB_LE_GID(<i> a, b</i> )</td>
-
-<td>Returns TRUE if global ID <i>a</i> is less than or equal to global
-ID <i>b</i> ; returns FALSE otherise.</td>
-</tr>
-
-<tr>
-<td>LB_GT_GID(<i> a, b</i> )</td>
-
-<td>Returns TRUE if global ID <i>a</i> is greater than global ID <i>b</i>
-; returns FALSE otherwise.</td>
-</tr>
-
-<tr>
-<td>LB_GE_GID(<i> a, b</i> )</td>
-
-<td>Returns TRUE if global ID <i>a</i> is greater than or equal to global
-ID <i>b</i> ; returns FALSE otherwise.</td>
-</tr>
-
-<caption ALIGN=BOTTOM><i>Data type and macro definitions that must be provided
-to the load-balancing library by the application in lb/lb_user_const.h.</i></caption>
-</table>
+functions</a> for more details. The source
+code distribution contains an example application 
+<a href="../dev_html/dev_driver.html" ><i>zdrive</i></a> 
+in which global IDs are integers
+and local IDs are local array indices.
+<p>
 
 <h3>
 <a NAME="Building the Library"></a>Building the Zoltan Library</h3>

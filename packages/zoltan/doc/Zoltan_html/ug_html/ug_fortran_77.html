@@ -34,9 +34,9 @@ by the Fortran 90 compiler), and the application can use Zoltan's Fortran
 90 interface with a minimal amount of Fortran 90 additions. This section
 provides details of the Fortran 90 code that must be added.
 
-<P>When building the Zoltan library, use the files <I>fort/lb_user_const_int.h</I>
-for <I>lb_user_const.h</I> and <I>fort/lb_user_const_int.f90</I> for <I>lb_user_const.f90</I>.
-This assumes that your local and global IDs are integers, and DATA in a
+<P>When building the Zoltan library, use the file 
+<I>fort/lb_user_const.f90</I> for <I>lb_user_const.f90</I>.
+This assumes that DATA in a
 call to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_SET_FN</A></B>
 is either omitted (you can omit arguments that are labeled OPTIONAL in
 the Fortran API) or an array of type INTEGER, REAL or DOUBLE PRECISION

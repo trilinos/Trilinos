@@ -30,8 +30,7 @@
 With any change to the user API of Zoltan, the Fortran interface should
 be modified to reflect the change. This section contains information about
 the implementation of the Fortran interface which should cover most situations.
-<UL><A HREF="#fortran dev lb_user_const">Changes to lb_user_const.h</A>
-<BR><A HREF="#fortran dev structures">Structures</A>
+<UL><A HREF="#fortran dev structures">Structures</A>
 <BR><A HREF="#fortran dev modifications">Modifications to an existing Zoltan
 interface function</A>
 <BR><A HREF="#fortran dev remove">Removing a Zoltan interface function</A>
@@ -51,14 +50,6 @@ examples.
 
 <P>Any changes in the interface should also be reflected in the Fortran
 API definitions in the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.
-<H3>
-<A NAME="fortran dev lb_user_const"></A>Changes to lb_user_const.h</H3>
-Any changes made to <I>lb/lb_user_const.h</I> should also be reflected
-in <I>fort/lb_user_const_int.h, lb_user_const_struct.h,</I> and
-<I>lb_user_const_nag.h</I>.
-The corresponding changes should also be made to <I>fort/lb_user_const_*.f90</I>.
-If the changes in the<I> *.f90</I> files are
-not obvious, <A HREF="mailto:william.mitchell@nist.gov">ask for assistance</A>.
 <H3>
 <A NAME="fortran dev structures"></A>Structures</H3>
 All structures in the API have a corresponding user-defined type in the

@@ -1,3 +1,11 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="sandia.approved" content="SAND99-1377">
+   <meta name="author" content="karen devine, kddevin@sandia.gov">
+   <title>Zoltan User's Guide:  Query-Functon Examples</title>
 <!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
  ! Copyright (c) 2000, Sandia National Laboratories.                          !
@@ -10,778 +18,542 @@
      $Date$
      $Revision$
 >
+</head>
+<body bgcolor="#FFFFFF">
 
-<HTML>
-<HEAD>
-   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
-   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
-   <META NAME="sandia.approved" CONTENT="SAND99-1377">
-   <META NAME="author" CONTENT="karen devine, kddevin@sandia.gov">
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_fortran.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_mig.html">Previous</a></i></b></div>
 
-   <TITLE>Zoltan User's Guide:  Query-Functon Examples</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
-
-<div ALIGN=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp; |&nbsp; <a href="ug_fortran.html">Next</a>&nbsp; |&nbsp; <a href="ug_examples_mig.html">Previous</a></i></b></div>
-
-
-<H2>
-<A NAME="Query-Function Example"></A>Query-Function Examples</H2>
+<h2>
+<a NAME="Query-Function Example"></a>Query-Function Examples</h2>
 Examples of query functions provided by a simple application are included
 below.&nbsp; The load-balancing examples include a simple implementation
-of <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A> </B>and <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+of <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a> </b>and <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
 query functions and variants of the simple implementation that exploit
-local identifiers and data pointers.&nbsp; Migration examples for
-packing and unpacking objects are also included.&nbsp;&nbsp; Robust error
-checking is not included in the routines; application developers should
-include more explicit error checking in their query functions.
-<UL><A HREF="#lb_query_example">Load-Balancing Examples</A>
-<UL><A HREF="#basic_query_example">Basic example</A>
-<BR><A HREF="#lb_lid_query_example">User-defined local identifiers (LB_LID)</A>
-<BR><A HREF="#data_ptr_query_example">User-defined data pointer</A></UL>
-<A HREF="#mig_query_example">Migration Examples</A>
-<UL><A HREF="#mig_pack_example">Packing and unpacking functions</A></UL>
-</UL>
+local identifiers and data pointers.&nbsp; Migration examples for packing
+and unpacking objects are also included.&nbsp;&nbsp; Robust error checking
+is not included in the routines; application developers should include
+more explicit error checking in their query functions.
+<ul><a href="#lb_query_example">Load-Balancing Examples</a>
+<ul><a href="#basic_query_example">Basic example</a>
+<br><a href="#data_ptr_query_example">User-defined data pointer</a></ul>
+<a href="#mig_query_example">Migration Examples</a>
+<ul><a href="#mig_pack_example">Packing and unpacking functions</a></ul>
+</ul>
 All the examples use a mesh data structure consisting of nodes in the mesh.&nbsp;
 Load balancing is performed on the nodes.&nbsp; A node is described by
 its 3D coordinates and a global ID number that is unique across all processors.&nbsp;&nbsp;
 The type definitions for the mesh and node data structures used in the
-examples are included <A HREF="#query example data types">below</A>.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example data types"></A><TT>/*<I> Node data structure.</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>A node consists of its 3D coordinates and</I> */</TT>&nbsp;
-<BR><TT>/* <I>an ID number that is unique across all processors.</I> */</TT>&nbsp;
-<BR><TT>struct Node_Type {&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; double Coordinates[3];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; int Global_ID_Num;&nbsp;</TT>&nbsp;
-<BR><TT>};&nbsp;</TT>&nbsp;
+examples are included <a href="#query example data types">below</a>.
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query example data types"></a><tt>/*<i> Node data structure.</i>
+*/</tt>
+<br><tt>/* <i>A node consists of its 3D coordinates and</i> */</tt>
+<br><tt>/* <i>an ID number that is unique across all processors.</i> */</tt>
+<br><tt>struct Node_Type {&nbsp;</tt>
+<br><tt>&nbsp; double Coordinates[3];&nbsp;</tt>
+<br><tt>&nbsp; int Global_ID_Num;&nbsp;</tt>
+<br><tt>};&nbsp;</tt>
+<p><tt>/*<i> Mesh data structure.</i> */&nbsp;</tt>
+<br><tt>/* <i>Mesh consists of an array of nodes and</i> */</tt>
+<br><tt>/* <i>the number of nodes owned by the processor.</i> */</tt>
+<br><tt>struct Mesh_Type {</tt>
+<br><tt>&nbsp; struct Node_Type Nodes[MAX_NODES];&nbsp;</tt>
+<br><tt>&nbsp; int Number_Owned;&nbsp;</tt>
+<br><tt>};</tt></td>
+</tr>
 
-<P><TT>/*<I> Mesh data structure.</I> */&nbsp;</TT>&nbsp;
-<BR><TT>/* <I>Mesh consists of an array of nodes and</I> */</TT>&nbsp;
-<BR><TT>/* <I>the number of nodes owned by the processor.</I> */</TT>&nbsp;
-<BR><TT>struct Mesh_Type {</TT>&nbsp;
-<BR><TT>&nbsp; struct Node_Type Nodes[MAX_NODES];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; int Number_Owned;&nbsp;</TT>&nbsp;
-<BR><TT>};</TT>&nbsp;</TD>
-</TR>
+<caption ALIGN=BOTTOM><i>Data types for the query-function examples.</i></caption>
+</table></center>
 
-<CAPTION ALIGN=BOTTOM><I>Data types for the query-function examples.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query example Fortran data types"></a><tt>!<i> Node data structure.</i></tt>
+<br><tt>! <i>A node consists of its 3D coordinates and</i></tt>
+<br><tt>! <i>an ID number that is unique across all processors.</i></tt>
+<br><tt>type Node_Type&nbsp;&nbsp;</tt>
+<br><tt>&nbsp; real(lb_double) :: Coordinates(3)&nbsp;</tt>
+<br><tt>&nbsp; integer(lb_int) :: Global_ID_Num&nbsp;</tt>
+<br><tt>end type Node_Type</tt>
+<br><tt>&nbsp;</tt>
+<p><tt>!<i> Mesh data structure.</i>&nbsp;</tt>
+<br><tt>! <i>Mesh consists of an array of nodes and</i></tt>
+<br><tt>! <i>the number of nodes owned by the processor.</i></tt>
+<br><tt>type Mesh_Type&nbsp;</tt>
+<br><tt>&nbsp; type(Node_Type) :: Nodes(MAX_NODES)&nbsp;</tt>
+<br><tt>&nbsp; integer(lb_int) :: Number_Owned&nbsp;</tt>
+<br><tt>end type Mesh_Type</tt>
+<br>&nbsp;</td>
+</tr>
 
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example Fortran data types"></A><TT>!<I> Node data structure.</I>
-</TT>&nbsp;
-<BR><TT>! <I>A node consists of its 3D coordinates and</I></TT>&nbsp;
-<BR><TT>! <I>an ID number that is unique across all processors.</I></TT>&nbsp;
-<BR><TT>type Node_Type &nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; real(lb_double) :: Coordinates(3)&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; integer(lb_int) :: Global_ID_Num&nbsp;</TT>&nbsp;
-<BR><TT>end type Node_Type</TT>&nbsp;
-<BR><TT>&nbsp;</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Data types for the Fortran query-function examples.</i></caption>
+</table></center>
 
-<P><TT>!<I> Mesh data structure.</I>&nbsp;</TT>&nbsp;
-<BR><TT>! <I>Mesh consists of an array of nodes and</I></TT>&nbsp;
-<BR><TT>! <I>the number of nodes owned by the processor.</I></TT>&nbsp;
-<BR><TT>type Mesh_Type </TT>&nbsp;
-<BR><TT>&nbsp; type(Node_Type) :: Nodes(MAX_NODES)&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp; integer(lb_int) :: Number_Owned&nbsp;</TT>&nbsp;
-<BR><TT>end type Mesh_Type</TT>&nbsp;
-<BR><TT></TT>&nbsp;</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Data types for the Fortran query-function examples.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-<H3>
-<A NAME="lb_query_example"></A>Load-Balancing Query Function Examples</H3>
-In the following examples, <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
-and <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN </A></B>query functions
+<h3>
+<a NAME="lb_query_example"></a>Load-Balancing Query Function Examples</h3>
+In the following examples, <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+and <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN </a></b>query functions
 are implemented for an application using the mesh and node data structures
-described <A HREF="#query example data types">above</A>.&nbsp; Dynamic
+described <a href="#query example data types">above</a>.&nbsp; Dynamic
 load-balancing is performed on the nodes of the mesh.
-
-<P>Through a call to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>,
-the function <I>user_return_owned_nodes</I> is registered as the <B><A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>
+<p>Through a call to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,
+the function <i>user_return_owned_nodes</i> is registered as the <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
 query function.&nbsp; It returns&nbsp; global and local identifiers for
 each node owned by a processor.
-
-<P>The function <I>user_return_coords</I> is registered as an&nbsp; <B><A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</A></B>
+<p>The function <i>user_return_coords</i> is registered as an&nbsp; <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
 query function.&nbsp; Given the global and local identifiers for a node,
 this function returns the node's coordinates.&nbsp; All the examples exploit
 the local identifier to quickly locate nodal data.&nbsp; If such an identifier
 is not available in an application, a search using the global identifier
 can be performed.
-
-<P>The <A HREF="#basic_query_example">Basic Example</A> includes the simplest
+<p>The <a href="#basic_query_example">Basic Example</a> includes the simplest
 implementation of the query routines.&nbsp; In the query routines, it uses
 global application data structures and a local numbering scheme for the
-local identifiers.&nbsp; The <A HREF="#lb_lid_query_example">User-Defined
-Local Identifier Example</A> defines local identifiers as pointers to nodes;
-this model is useful for applications that use dynamic data structures
-or don't have a local ordering.&nbsp; The <A HREF="#data_ptr_query_example">User-Defined
-Data Pointer Example</A> uses only local application data structures; this
+local identifiers.&nbsp; The <a href="#data_ptr_query_example">User-Defined
+Data Pointer Example</a> uses only local application data structures; this
 model is useful if the application does not have global data structures
 or if load-balancing is to be performed on more than one data structure.&nbsp;
-Differences between the latter two examples and the Basic Example are shown
-in <FONT COLOR="#FF0000">red</FONT>.
-<H4>
-<A NAME="basic_query_example"></A>Basic Example</H4>
+Differences between the latter&nbsp; examples and the Basic Example are
+shown in <font color="#FF0000">red</font>.
+<h4>
+<a NAME="basic_query_example"></a>Basic Example</h4>
 In the simplest example, the query functions access the application data
-through a global data structure (<I>Mesh</I>) representing the mesh.&nbsp;
-In the calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>,
+through a global data structure (<i>Mesh</i>) representing the mesh.&nbsp;
+In the calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,
 no pointers to application data are registered with the query function
-(i.e., the <I>data</I> pointer is not used).&nbsp;&nbsp; A node's local
-identifier is an integer representing the index in the <I>Mesh.Nodes</I>
-array of the node.&nbsp; In <I>lb/lb_user_const.h</I>, <A HREF="ug_usage.html#Macro defs">LB_LID</A>
-is defined as an integer.&nbsp; The local identifier is set to the index's
-value in<I> user_return_owned_nodes</I>.&nbsp; It is used to access the
-global <I>Mesh.Nodes</I> array in <I>user_return_coords</I>.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example one"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+(i.e., the <i>data</i> pointer is not used).&nbsp;&nbsp; A node's local
+identifier is an integer representing the index in the <i>Mesh.Nodes</i>
+array of the node.&nbsp; The local identifier is set to the index's value
+in<i> user_return_owned_nodes</i>.&nbsp; It is used to access the global
+<i>Mesh.Nodes</i> array in <i>user_return_coords</i>.
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query example one"></a><tt>/* <i>in application's program
+file</i> */&nbsp;</tt>
+<br><tt>#include "lb/lbi_const.h"</tt>
+<p><tt>/* <i>Declare a global Mesh data structure.</i> */</tt>
+<br><tt>struct Mesh_Type Mesh;</tt>
+<p><tt>main()&nbsp;</tt>
+<br><tt>{&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
+one integer each. */</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
+*/</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>Do not register a data pointer with the
+functions;</i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>the global Mesh data structure will be
+used.</i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(void (*)()) user_return_coords, NULL);&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(void (*)()) user_return_owned_nodes, NULL);&nbsp;&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>}&nbsp;</tt>
+<p><tt>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR&nbsp;global_ids, LB_ID_PTR&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
+<br><tt>{&nbsp;</tt>
+<br><tt>int i;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>return global node numbers as global_ids.</i>
+*/&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>return index into Nodes array for local_ids.</i>
+*/&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Mesh.Number_Owned; i++){&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i*num_gid_entries]
+= Mesh.Nodes[i].Global_ID_Num;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i*num_lid_entries]
+= i;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; }&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</tt>
+<br><tt>}&nbsp;</tt>
+<p><tt>void user_return_coords(void *data,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR&nbsp;global_id, LB_ID_PTR local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</tt>
+<br><tt>{&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>use local_id to index into the Nodes array.</i>
+*/&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id[0]].Coordinates[0];&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id[0]].Coordinates[1];&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id[0]].Coordinates[2];&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</tt>
+<br><tt>}</tt></td>
+</tr>
 
-<P>
-<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */&nbsp;</TT>&nbsp;
-<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
-<BR><TT>#include "lb/lb_user_const.h"&nbsp;</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Example of load-balancing query functions (simplest
+implementation).</i></caption>
+</table></center>
 
-<P><TT>/* <I>Declare a global Mesh data structure.</I> */</TT>&nbsp;
-<BR><TT>struct Mesh_Type Mesh;</TT>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query Fortran example one"></a><tt>! <i>in application's program
+file</i>&nbsp;</tt>
+<p><tt>module Global_Mesh_Data</tt>
+<br><tt>! <i>Declare a global Mesh data structure.</i></tt>
+<br><tt>&nbsp;&nbsp; type(Mesh_Type) :: Mesh</tt>
+<br><tt>end module</tt>
+<p><tt>program query_example_1&nbsp;</tt>
+<br><tt>use zoltan</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
+one integer each.&nbsp;</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>Do not register a data pointer with the
+functions;</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>the global Mesh data structure will be
+used.</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
 
-<P><TT>main()&nbsp;</TT>&nbsp;
-<BR><TT>{&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
-functions;</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
-used.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_coords, NULL);&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_owned_nodes, NULL);&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>}&nbsp;</TT>&nbsp;
+<tt>user_return_coords)&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
 
-<P><TT>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
-<BR><TT>{&nbsp;</TT>&nbsp;
-<BR><TT>int i;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
-*/&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return index into Nodes array for local_ids.</I>
-*/&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Mesh.Number_Owned; i++){&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = Mesh.Nodes[i].Global_ID_Num;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; }&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</TT>&nbsp;
-<BR><TT>}&nbsp;</TT>&nbsp;
+<tt>user_return_owned_nodes)&nbsp;&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>end program&nbsp;</tt>
+<p><tt>subroutine user_return_owned_nodes(data, num_gid_entries, num_lid_entries,
+&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
+<br><tt>use zoltan&nbsp;</tt>
+<br><tt>use Global_Mesh_Data&nbsp;</tt>
+<br><tt>integer(lb_int) :: data(1) ! dummy declaration, do not use</tt>
+<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</tt>
+<br><tt>integer(lb_int), intent(in) :: wgt_dim</tt>
+<br><tt>real(lb_float), intent(out) :: obj_wgts(*)</tt>
+<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt>integer i&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>return global node numbers as global_ids.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>return index into Nodes array for local_ids.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries)
+= Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
+= i&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>end subroutine&nbsp;</tt>
+<p><tt>subroutine user_return_coords(data, num_gid_entries, num_lid_entries,
+&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; global_id, local_id, geom_vec, ierr)&nbsp;</tt>
+<br><tt>use zoltan&nbsp;</tt>
+<br><tt>use Global_Mesh_Data&nbsp;</tt>
+<br><tt>integer(lb_int) :: data(1) ! dummy declaration, do not use</tt>
+<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(lb_int), intent(in) :: global_id(*), local_id(*)</tt>
+<br><tt>real(lb_double), intent(out) :: geom_vec(*)</tt>
+<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>use local_id to index into the Nodes array.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id(1))%Coordinates&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>end subroutine</tt></td>
+</tr>
 
-<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</TT>&nbsp;
-<BR><TT>{&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to index into the Nodes array.</I>
-*/&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id].Coordinates[0];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id].Coordinates[1];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id].Coordinates[2];&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</TT>&nbsp;
-<BR><TT>}</TT></TD>
-</TR>
+<caption ALIGN=BOTTOM><i>Fortran example of load-balancing query functions
+(simplest implementation).</i></caption>
+</table></center>
 
-<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions (simplest
-implementation).</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query Fortran example one"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
-<P>
-<HR WIDTH="100%"><TT>! included in file fort/lb_user_const.f90</TT>&nbsp;
-<BR><TT>! ID types are not used in Fortran in this example; dummy definitions</TT>&nbsp;
-<BR><TT>type LB_GID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
-<BR><TT>end type LB_GID</TT>&nbsp;
-<BR>&nbsp;
-<BR><TT>type LB_LID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
-<BR><TT>end type LB_LID</TT>&nbsp;
-
-<P>
-<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
-
-<P>
-<TT>module Global_Mesh_Data</TT>&nbsp;
-<BR><TT>! <I>Declare a global Mesh data structure.</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_Type) :: Mesh</TT>&nbsp;
-<BR><TT>end module</TT>&nbsp;
-
-<P><TT>program query_example_1&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
-</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Do not register a data pointer with the
-functions;</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>the global Mesh data structure will be
-used.</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_coords)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_owned_nodes)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>end program&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_owned_nodes(data,
-global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
-<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
-<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<BR><TT>integer i&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return index into Nodes array for local_ids.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(i) = i&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
-<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
-<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to index into the Nodes array.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id)%Coordinates&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine</TT></TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions (simplest
-implementation).</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<H4>
-<A NAME="lb_lid_query_example"></A>User-Defined Local Identifiers Example</H4>
-In this example, a node's local identifier is defined as a pointer to the
-node's data in the global <I>Mesh.Nodes</I> array.&nbsp; Thus, an index
-into the array is not needed.&nbsp; In <I>lb/lb_user_const.h</I>, <A HREF="ug_usage.html#Macro defs">LB_LID</A>
-is defined as a pointer.&nbsp; In <I>user_return_owned_nodes</I>, the address
-of a node's data is returned as the local identifier.&nbsp; This address
-is then used in <I>user_return_coords</I> to access the nodal coordinates.
-<BR>&nbsp;
-<BR>This model is useful when a local numbering scheme (such as the array
-index) is not available because the application uses dynamic data structures.&nbsp;
-Differences between this example and the <A HREF="#basic_query_example">Basic
-Example</A> are shown in <FONT COLOR="#FF0000">red</FONT>.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example two"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Global identifiers are integers. </I>*/</TT>&nbsp;
-<BR><TT>/* <I>Local identifiers are pointers.</I> */</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> <FONT COLOR="#FF0000">void
-*</FONT></TT>&nbsp;
-
-<P>
-<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */&nbsp;</TT>&nbsp;
-<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
-<BR><TT>#include "lb/lb_user_const.h"</TT>&nbsp;
-
-<P><TT>/* <I>Declare a global Mesh data structure.</I> */</TT>&nbsp;
-<BR><TT>struct Mesh_Type Mesh;</TT>&nbsp;
-
-<P><TT>main()</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
-*/&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
-functions;</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
-used.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_coords, NULL);&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_owned_nodes, NULL);&nbsp;</TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
-
-<P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>int i;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I><FONT COLOR="#FF0000">return address of
-Nodes array entries for local_ids.</FONT></I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; Mesh.Number_Owned; i++){</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = Mesh.Nodes[i].Global_ID_Num;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = <FONT COLOR="#FF0000">(void
-*) &amp;(Mesh.Nodes[i])</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
-
-<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to <FONT COLOR="#FF0000">address</FONT>
-the requested node.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[0];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[1];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = </tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;((struct Node_Type *) local_id)->Coordinates[2];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>}</TT></TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
-addresses as local identifiers.</I></CAPTION>
-</TABLE></CENTER>
-
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query Fortran example two"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">
-/* compiler dependent size of Fortran type(LB_INT) */&nbsp;
-<BR>struct LB_fortran_structure_holder {char a[4];};&nbsp;
-<BR>typedef struct LB_fortran_structure_holder LB_LID;</FONT></TT>&nbsp;
-<P>
-<HR WIDTH="100%"><TT>! included in file fort/lb_user_const.f90</TT>&nbsp;
-<BR><TT>! LB_GID is a dummy definition</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">! LB_LID is a pointer to a node</FONT></TT>&nbsp;
-<BR><TT>type LB_GID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
-<BR><TT>end type LB_GID</TT>&nbsp;
-<BR>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>type LB_LID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;type(Node_Type), pointer :: ptr</TT>&nbsp;
-<BR><TT>end type LB_LID</TT>&nbsp;
-</FONT>
-
-<P>
-<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
-
-<P>
-<TT>module Global_Mesh_Data</TT>&nbsp;
-<BR><TT>! <I>Declare a global Mesh data structure.</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_Type)<FONT COLOR="#FF0000">, target</FONT> :: Mesh</TT>&nbsp;
-<BR><TT>end module</TT>&nbsp;
-
-<P><TT>program query_example_2&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
-</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Do not register a data pointer with the
-functions;</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>the global Mesh data structure will be
-used.</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_coords)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_owned_nodes)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>end program&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_owned_nodes(data,
-global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
-<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
-<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<BR><TT>integer i&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;<FONT COLOR="#FF0000"> ! <I>return pointer to an element of Mesh for local_ids.</FONT></I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<FONT COLOR="#FF0000"> local_ids(i)%ptr => Mesh%Nodes(i)&nbsp;</FONT></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT>use Global_Mesh_Data&nbsp;</TT>&nbsp;
-<BR><TT>integer(lb_int) :: data(1) ! dummy declaration, do not use</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
-<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to <FONT COLOR="#FF0000">access</FONT> the Nodes array.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = <FONT COLOR="#FF0000">local_id%ptr%Coordinates</FONT>&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine</TT></TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions using
-pointers as local identifiers.</I></CAPTION>
-</TABLE></CENTER>
-
-<H4>
-<A NAME="data_ptr_query_example"></A>User-Defined Data Pointer Example</H4>
+<h4>
+<a NAME="data_ptr_query_example"></a>User-Defined Data Pointer Example</h4>
 In this example, the address of a local mesh data structure is registered
 with the query functions for use by those functions.&nbsp; This change
 eliminates the need for a global mesh data structure in the application.&nbsp;
 The address of the local data structure is included as an argument in calls
-to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;
-This address is then used in <I>user_return_owned_nodes</I> and <I>user_return_coords</I>
-to provide data for these routines.&nbsp; It is cast to the <I><A HREF="#query example data types">Mesh_Type</A></I>
-data type and accessed with local identifiers as in the <A HREF="#basic_query_example">Basic
-Example</A>.&nbsp; Differences between this example and the <A HREF="#basic_query_example">Basic
-Example</A> are shown in <FONT COLOR="#FF0000">red</FONT>.
-
-<P>This model is useful when the application does not have a global data
+to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;
+This address is then used in <i>user_return_owned_nodes</i> and <i>user_return_coords</i>
+to provide data for these routines.&nbsp; It is cast to the <i><a href="#query example data types">Mesh_Type</a></i>
+data type and accessed with local identifiers as in the <a href="#basic_query_example">Basic
+Example</a>.&nbsp; Differences between this example and the <a href="#basic_query_example">Basic
+Example</a> are shown in <font color="#FF0000">red</font>.
+<p>This model is useful when the application does not have a global data
 structure that can be accessed by the query functions.&nbsp; It can also
 be used for load balancing on different data objects.&nbsp; For example,
 if an application had more than one mesh, load balancing could be performed
 separately on each mesh without having different query routines for each
-mesh.&nbsp; Calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>
+mesh.&nbsp; Calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
 would define which mesh should be balanced, and the query routines would
-access the mesh currently designated by the <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>
+access the mesh currently designated by the <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
 calls.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example three"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query example three"></a><tt>/* <i>in application's program
+file</i> */</tt>
+<br><tt>#include "lb/lbi_const.h"</tt>
+<p><tt>main()</tt>
+<br><tt>{</tt>
+<br><tt><font color="#FF0000">/* <i>declare a local mesh data structure.</i>
+*/</font></tt>
+<br><tt><font color="#FF0000">struct Mesh_Type mesh;</font></tt>
+<br><tt>...</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
+one integer each. */</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
+*/</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i><font color="#FF0000">Register the address
+of mesh as the data pointer.</font></i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(void (*)()) user_return_coords, <font color="#FF0000">&amp;mesh</font>);&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+(void (*)()) user_return_owned_nodes, <font color="#FF0000">&amp;mesh</font>);&nbsp;</tt>
+<br><tt>...</tt>
+<br><tt>}</tt>
+<p><tt>void user_return_owned_nodes(void *data,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_ID_PTR global_ids, LB_ID_PTR&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
+<br><tt>{</tt>
+<br><tt>int i;&nbsp;</tt>
+<br><tt><font color="#FF0000">/* <i>cast data pointer to type Mesh_Type.</i>
+*/</font></tt>
+<br><tt><font color="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+*) data;</font></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>return global node numbers as global_ids.</i>
+*/</tt>&nbsp;<tt>&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>return index into Nodes array for local_ids.</i>
+*/</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; mesh_ptr->Number_Owned; i++)
+{</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i*num_gid_entries]
+= <font color="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i*num_lid_entries]
+= i;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; }</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>}</tt>
+<p><tt>void user_return_coords(void *data,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</tt>
+<br><tt>{</tt>
+<p><tt><font color="#FF0000">/* <i>cast data pointer to type Mesh_Type.</i>
+*/</font></tt>
+<br><tt><font color="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
+*) data;</font></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; /* <i>use local_id to address the requested node.</i>
+*/</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[0]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[1]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = <font color="#FF0000">mesh_ptr->Nodes[local_id[0]].Coordinates[2]</font>;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>}</tt></td>
+</tr>
 
-<P>
-<HR WIDTH="100%"><TT>/* <I>in application's program file</I> */</TT>&nbsp;
-<BR><TT>#include "lb/lbi_const.h"</TT>&nbsp;
-<BR><TT>#include "lb/lb_user_const.h"</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Example of load-balancing query functions using
+the application-defined data pointer.</i></caption>
+</table></center>
 
-<P><TT>main()</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">/* <I>declare a local mesh data structure.</I>
-*/</FONT></TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type mesh;</FONT></TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register load-balancing query functions.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I><FONT COLOR="#FF0000">Register the address
-of mesh as the data pointer.</FONT></I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_coords, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-(void (*)()) user_return_owned_nodes, <FONT COLOR="#FF0000">&amp;mesh</FONT>);&nbsp;</TT>&nbsp;
-<BR><TT>...</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query Fortran example three"></a><tt>/* <i>included in file
+lb_user_const.f90</i> */</tt>
+<br><tt><font color="#FF0000">! <i>User defined data type as wrapper for
+Mesh</i></font></tt>
+<br><tt><font color="#FF0000">type LB_User_Data_1</font></tt>
+<br><tt><font color="#FF0000">&nbsp;&nbsp; type(Mesh_type), pointer ::
+ptr</font></tt>
+<br><tt><font color="#FF0000">end type LB_User_Data_1</font></tt>
+<p>
+<hr WIDTH="100%"><tt>! <i>in application's program file</i>&nbsp;</tt>
+<p><tt>program query_example_3&nbsp;</tt>
+<br><tt>use zoltan</tt>
+<br><tt><font color="#FF0000">!<i> declare a local mesh data structure
+and a User_Data to point to it.</i></font></tt>
+<br><tt><font color="#FF0000">type(Mesh_Type), target :: mesh</font></tt>
+<br><tt><font color="#FF0000">type(LB_User_Data_1) data</font></tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
+one integer each.&nbsp;</i></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+"<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
+<br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; ! <i>Use the User_Data
+variable to pass the mesh data
+</i></font></tt>
+<br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; data%ptr => mesh</font></tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
 
-<P><TT>void user_return_owned_nodes(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID *global_ids, LB_LID *local_ids,</TT>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>int i;&nbsp;</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">/* <I>cast data pointer to type Mesh_Type.</I>
-*/</FONT></TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
-*) data;</FONT></TT>&nbsp;
+<tt>user_return_coords<font color="#FF0000">, data</font>)&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
 
-<P><TT>&nbsp;&nbsp;&nbsp; /* <I>return global node numbers as global_ids.</I>
-*/</TT>&nbsp;<TT>&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>return index into Nodes array for local_ids.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; mesh_ptr->Number_Owned; i++)
-{</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids[i] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[i].Global_ID_Num</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i] = i;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
+<tt>user_return_owned_nodes<font color="#FF0000">, data</font>)&nbsp;&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>end program&nbsp;</tt>
+<p><tt>subroutine user_return_owned_nodes(data, num_gid_entries, num_lid_entries,
+&amp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
+<br><tt>use zoltan&nbsp;</tt>
+<br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
+<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</tt>
+<br><tt>integer(lb_int), intent(in) :: wgt_dim</tt>
+<br><tt>real(lb_float), intent(out) :: obj_wgts(*)</tt>
+<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt>integer i&nbsp;</tt>
+<br><tt><font color="#FF0000">type(Mesh_Type), pointer :: Mesh</font></tt>
+<p><tt><font color="#FF0000">&nbsp;&nbsp; ! <i>extract the mesh from the
+User_Data argument</i></font></tt>
+<br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; Mesh => data%ptr</font></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>return global node numbers as global_ids.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ! <i>return index into Nodes array for local_ids.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(1+(i-1)*num_gid_entries)
+= Mesh%Nodes(i)%Global_ID_Num&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
+= i&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>end subroutine&nbsp;</tt>
+<p><tt>subroutine user_return_coords(data, global_id, local_id, geom_vec,
+ierr)&nbsp;</tt>
+<br><tt>use zoltan&nbsp;</tt>
+<br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
+<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(lb_int), intent(in) :: global_id(*), local_id(*)</tt>
+<br><tt>real(lb_double), intent(out) :: geom_vec(*)</tt>
+<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt><font color="#FF0000">type(Mesh_Type), pointer :: Mesh</font></tt>
+<p><tt><font color="#FF0000">&nbsp;&nbsp; ! <i>extract the mesh from the
+User_Data argument</i></font></tt>
+<br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; Mesh => data%ptr</font></tt>
+<p><tt>&nbsp;&nbsp;&nbsp; ! <i>use local_id to index into the Nodes array.</i>&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id(1))%Coordinates&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>end subroutine</tt></td>
+</tr>
 
-<P><TT>void user_return_coords(void *data,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Fortran example of load-balancing query functions
+using the application-defined data pointer.</i></caption>
+</table></center>
 
-<P><TT><FONT COLOR="#FF0000">/* <I>cast data pointer to type Mesh_Type.</I>
-*/</FONT></TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">struct Mesh_Type *mesh_ptr = (struct Mesh_Type
-*) data;</FONT></TT>&nbsp;
+<h3>
+<a NAME="mig_query_example"></a>Migration Examples</h3>
 
-<P><TT>&nbsp;&nbsp;&nbsp; /* <I>use local_id to address the requested node.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[0] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[0]</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[1] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[1]</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec[2] = <FONT COLOR="#FF0000">mesh_ptr->Nodes[local_id].Coordinates[2]</FONT>;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>}</TT></TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Example of load-balancing query functions using
-the application-defined data pointer.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query Fortran example three"></A><TT>/* <I>included in file lb/lb_user_const.h</I>
-*/</TT>&nbsp;
-<BR><TT>/* <I>Both global and local identifiers are integers */</I></TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_GID</A> int</TT>&nbsp;
-<BR><TT>#define <A HREF="ug_usage.html#Macro defs">LB_LID</A> int</TT>&nbsp;
-<P>
-<HR WIDTH="100%"><TT>! <I>included in file fort/lb_user_const.f90</I></TT>&nbsp;
-<BR><TT>! <I>ID types are not used in Fortran in this example; dummy definitions</I></TT>&nbsp;
-<BR><TT>type LB_GID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
-<BR><TT>end type LB_GID</TT>&nbsp;
-<BR>&nbsp;
-<BR><TT>type LB_LID</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;integer(LB_INT) :: id</TT>&nbsp;
-<BR><TT>end type LB_LID</TT>&nbsp;
-<BR>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>! <I>User defined data type as wrapper for Mesh</I></TT>&nbsp;
-<BR><TT> type LB_User_Data_1</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;type(Mesh_type), pointer :: ptr</TT>&nbsp;
-<BR><TT>end type LB_User_Data_1</TT>&nbsp;
-</FONT>
-
-<P>
-<HR WIDTH="100%"><TT>! <I>in application's program file</I>&nbsp;</TT>&nbsp;
-
-<P><TT>program query_example_3&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan</TT>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>!<I> declare a local mesh data structure and a User_Data to point to it.</I></TT>&nbsp;
-<BR><TT>type(Mesh_Type), target :: mesh</TT>&nbsp;
-<BR><TT>type(LB_User_Data_1) data</TT>&nbsp;
-</FONT>
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Register load-balancing query functions.</I>
-</TT>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>Use the User_Data variable to pass the mesh data
-</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; data%ptr => mesh</TT>&nbsp;
-</FONT>
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_coords<FONT COLOR="#FF0000">, data</FONT>)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,</TT>&nbsp;
-<TT>user_return_owned_nodes<FONT COLOR="#FF0000">, data</FONT>)&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>end program&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_owned_nodes(data,
-global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">type(LB_User_Data_1) :: data</FONT></TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: wgt_dim</TT>&nbsp;
-<BR><TT>real(lb_float), intent(out) :: obj_wgts(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<BR><TT>integer i&nbsp;</TT>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>type(Mesh_Type), pointer :: Mesh</TT>&nbsp;
-<BR>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;! <I>extract the mesh from the User_Data argument</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh => data%ptr</TT>&nbsp;
-<BR>&nbsp;
-</FONT>
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return global node numbers as global_ids.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>return index into Nodes array for local_ids.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; do i = 1, Mesh%Number_Owned&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; global_ids(i) = Mesh%Nodes(i)%Global_ID_Num&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(i) = i&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; end do&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine&nbsp;</TT>&nbsp;
-
-<P><TT>subroutine user_return_coords(data, global_id, local_id, geom_vec, ierr)&nbsp;</TT>&nbsp;
-<BR><TT>use zoltan&nbsp;</TT>&nbsp;
-<BR><TT><FONT COLOR="#FF0000">type(LB_User_Data_1) :: data</FONT></TT>&nbsp;
-<BR><TT>integer(lb_int), intent(in) :: global_id, local_id</TT>&nbsp;
-<BR><TT>real(lb_double), intent(out) :: geom_vec(*)</TT>&nbsp;
-<BR><TT>integer(lb_int), intent(out) :: ierr</TT>&nbsp;
-<FONT COLOR="#FF0000">
-<BR><TT>type(Mesh_Type), pointer :: Mesh</TT>&nbsp;
-<BR>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;! <I>extract the mesh from the User_Data argument</I></TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh => data%ptr</TT>&nbsp;
-<BR>&nbsp;
-</FONT>
-<BR><TT>&nbsp;&nbsp;&nbsp; ! <I>use local_id to index into the Nodes array.</I>
-&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id)%Coordinates&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</TT>&nbsp;
-<BR><TT>end subroutine</TT></TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Fortran example of load-balancing query functions using
-the application-defined data pointer.</I></CAPTION>
-</TABLE></CENTER>
-&nbsp;
-<H3>
-<A NAME="mig_query_example"></A>Migration Examples</H3>
-
-<H4>
-<A NAME="mig_pack_example"></A>Packing and Unpacking Data</H4>
-Simple migration query functions for the <A HREF="#basic_query_example">Basic
-Example</A> are included<A HREF="#query example four"> below</A>.&nbsp;
-These functions are used by the migration tools to move nodes among
-the processors.&nbsp; The functions <I>user_size_node</I>, <I>user_pack_node</I>,
-and <I>user_unpack_node</I> are registered through calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.&nbsp;
-Query function <I>user_size_node</I> returns the size (in bytes) of data
-representing a single node.&nbsp; Query function <I>user_pack_node</I>
-copies a given node's data into the communication buffer<I> buf</I>.&nbsp;
-Query function <I>user_unpack_node</I> copies a data for one node from
-the communication buffer <I>buf</I> into the <I>Mesh.Nodes</I> array on
+<h4>
+<a NAME="mig_pack_example"></a>Packing and Unpacking Data</h4>
+Simple migration query functions for the <a href="#basic_query_example">Basic
+Example</a> are included<a href="#query example four"> below</a>.&nbsp;
+These functions are used by the migration tools to move nodes among the
+processors.&nbsp; The functions <i>user_size_node</i>, <i>user_pack_node</i>,
+and <i>user_unpack_node</i> are registered through calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;
+Query function <i>user_size_node</i> returns the size (in bytes) of data
+representing a single node.&nbsp; Query function <i>user_pack_node</i>
+copies a given node's data into the communication buffer<i> buf</i>.&nbsp;
+Query function <i>user_unpack_node</i> copies a data for one node from
+the communication buffer <i>buf</i> into the <i>Mesh.Nodes</i> array on
 its new processor.
-
-<P>These query routines are simple because the application does not dynamically
+<p>These query routines are simple because the application does not dynamically
 allocate memory for each node.&nbsp; Such dynamic allocation would have
-to be accounted for in the <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A>,
-<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</A>, and <A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</A>
-routines.&nbsp; The <A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</A>
-should return the size of the largest object to be migrated among all processors,
+to be accounted for in the <a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a>,
+<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a>,
+and <a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a> routines.&nbsp;
+The <a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a> should
+return the size of the largest object to be migrated among all processors,
 as all migrating objects must have the same size.
-<BR>&nbsp;
-<CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
-<TR>
-<TD><A NAME="query example four"></A><TT>main()&nbsp;</TT>&nbsp;
-<BR><TT>{&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Register migration query functions.</I>
-*/</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>Do not register a data pointer with the
-functions;</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; /* <I>the global Mesh data structure will be
-used.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</A>, (void (*)()) user_size_node,
-NULL);&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</A>, (void (*)()) user_pack_node,
-NULL);&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; <A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb,
-<A HREF="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</A>,
-(void (*)()) user_unpack_node, NULL);&nbsp;&nbsp;</TT>&nbsp;
-<BR><TT>...&nbsp;</TT>&nbsp;
-<BR><TT>}&nbsp;</TT>&nbsp;
+<br>&nbsp;
+<center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
+<tr>
+<td><a NAME="query example four"></a><tt>main()&nbsp;</tt>
+<br><tt>{&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>Register migration query functions.</i>
+*/</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>Do not register a data pointer with the
+functions;</i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; /* <i>the global Mesh data structure will be
+used.</i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</a>,
+(void (*)()) user_size_node, NULL);&nbsp;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</a>,
+(void (*)()) user_pack_node, NULL);&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
+<a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</a>,
+(void (*)()) user_unpack_node, NULL);&nbsp;&nbsp;</tt>
+<br><tt>...&nbsp;</tt>
+<br><tt>}&nbsp;</tt>
+<p><tt>int user_size_node(void *data, int *ierr)</tt>
+<br><tt>{</tt>
+<br><tt>/* <i>Return the size of data associated with one node.</i> */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</tt>
+<br><tt>}</tt>
+<p><tt>void user_pack_node(void *data, int num_gid_entries, int num_lid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+LB_ID_PTR global_id, LB_ID_PTR local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+int dest_proc, int size, char *buf, int *ierr)&nbsp;</tt>
+<br><tt>{</tt>
+<br><tt>/* Copy<i> the specified node's data into buffer buf.</i> */</tt>
+<br><tt>struct Node_Type *node_buf = (struct Node_Type *) buf;</tt>
+<p><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id[0]].Coordinates[0];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id[0]].Coordinates[1];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id[0]].Coordinates[2];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id[0]].Global_ID_Num;</tt>
+<br><tt>}</tt>
+<p><tt>void user_unpack_node(void *data, int num_gid_entries,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+LB_ID_PTR global_id, int size,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+char *buf, int *ierr)</tt>
+<br><tt>{</tt>
+<br><tt>/* <i>Copy the node data in buf into the Mesh data structure. </i>*/</tt>
+<br><tt>int i;</tt>
+<br><tt>struct Node_Type *node_buf = (struct Node_Type *) buf;</tt>
+<p><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[1] = node_buf->Coordinates[1];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[2] = node_buf->Coordinates[2];</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Global_ID_Num = node_buf->Global_ID_Num;</tt>
+<br><tt>}</tt></td>
+</tr>
 
-<P><TT>int user_size_node(void *data, int *ierr)</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>/* <I>Return the size of data associated with one node.</I> */</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
+<caption ALIGN=BOTTOM><i>Example of migration query functions for the <a href="#basic_query_example">Basic
+Example</a>.</i></caption>
+</table></center>
 
-<P><TT>void user_pack_node(void *data, LB_GID global_id, LB_LID local_id,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-int dest_proc, int size, char *buf, int *ierr)&nbsp;</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>/* Copy<I> the specified node's data into buffer buf.</I> */</TT>&nbsp;
-<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
-
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id].Coordinates[0];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id].Coordinates[1];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id].Coordinates[2];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; node_buf->Global_ID_Num = Mesh.Nodes[local_id].Global_ID_Num;</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;
-
-<P><TT>void user_unpack_node(void *data, LB_GID global_id, int size,&nbsp;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-char *buf, int *ierr)</TT>&nbsp;
-<BR><TT>{</TT>&nbsp;
-<BR><TT>/* <I>Copy the node data in buf into the Mesh data structure. </I>*/</TT>&nbsp;
-<BR><TT>int i;</TT>&nbsp;
-<BR><TT>struct Node_Type *node_buf = (struct Node_Type *) buf;</TT>&nbsp;
-
-<P><TT>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[1] = node_buf->Coordinates[1];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[2] = node_buf->Coordinates[2];</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Global_ID_Num = node_buf->Global_ID_Num;</TT>&nbsp;
-<BR><TT>}</TT>&nbsp;</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Example of migration query functions for
-the <A HREF="#basic_query_example">Basic Example</A>.</I></CAPTION>
-</TABLE></CENTER>
-
-<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
-<A HREF="ug_fortran.html">Next:&nbsp; FORTRAN&nbsp;Interface</A>&nbsp;
-|&nbsp; <A HREF="ug_examples_mig.html">Previous:&nbsp; Migration Examples</A>]
-</BODY>
-</HTML>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | 
+<a href="ug_fortran.html">Next:&nbsp;
+FORTRAN Interface</a>&nbsp; |&nbsp; <a href="ug_examples_mig.html">Previous:&nbsp;
+Migration Examples</a>]
+</body>
+</html>

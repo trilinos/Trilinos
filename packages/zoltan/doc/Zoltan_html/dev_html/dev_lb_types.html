@@ -31,104 +31,21 @@ Within the load-balancing algorithms, objects are identified by a global
 identification (ID) value provided by the application. This global ID must
 be unique across all processors. The application may also provide a local
 ID value that it can use for faster location of objects within its own
-data structure. For example, pointers to objects' data may be provided
-as the local IDs; the pointers can then be used to directly access data
+data structure. For example, local array indices to objects' data may be provided
+as the local IDs; these indices can then be used to directly access data
 in the query functions. The load balancing library does not use these local
 IDs, but since it must pass them to the application in the interface query
-functions, it must store them with the objects' data. The data types of
-the global and local IDs (<B>LB_GID</B> and <B>LB_LID</B>, respectively)
-are application-defined through an include file, <I>lb/lb_user_const.h</I>.
-In the source code distribution, the default data types are <I>int</I>
-for <B>LB_GID</B> and <I>void*</I> for <B>LB_LID</B>; the application developer
-can change these types before compiling the library.
-
-<P>Since <B>LB_GID</B> and <B>LB_LID</B> may be defined as arrays or structures,
-macros that allow assignment and comparison of global and local IDs must
-also be defined in <I>lb/lb_user_const.h</I>. These macros should be used
-in all load-balancing algorithm development; no assumption about data types
-for IDs should be made. The macros provided in <I>lb/lb_user_const.h</I>
-are listed in the table below. The <B>LB_SET_GID</B> and <B>LB_SET_LID</B>
-macros perform assignment of global and local IDs, respectively. The remaining
-macros perform comparisons of global IDs; since local IDs are not used
-in the load-balancing algorithms, comparison macros are not needed for
-them.
+functions, it must store them with the objects' data.  Zoltan store each global
+and local ID as an array of unsigned integers.  Arrays of IDs are passed to
+the application as a one-dimensional array of unsigned integers with size
+<i>number_of_IDs</i> * <i>number_of_entries_per_ID</i>.
+A type definition <b>LB_ID_PTR</b> (in <i>lb/lbi_const.h</i>)
+points to an ID or array of IDs.
+The number of array entries per ID can be set by the application using the 
+<a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a> and
+<a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a> 
+parameters.
 <BR>&nbsp;
-<CENTER><TABLE BORDER >
-<TR>
-<TH><A NAME="Macros"></A>Definition</TH>
-
-<TH>Description</TH>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_GID</TD>
-
-<TD>The data type of the unique global IDs used by the application.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_LID</TD>
-
-<TD>The data type of the local IDs used by the application query functions.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_SET_GID(<I> a, b</I>)</TD>
-
-<TD>Assigns the global ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>).</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_SET_LID(<I> a, b</I>)</TD>
-
-<TD>Assigns the local ID value in <I>b</I> to <I>a</I> (i.e., <I>a = b</I>).</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_EQ_GID(<I> a, b</I>)</TD>
-
-<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are equal; returns
-FALSE otherwise.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_NE_GID(<I> a, b)</I></TD>
-
-<TD>Returns TRUE if global IDs <I>a</I> and <I>b</I> are not equal; returns
-FALSE otherwise.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_LT_GID(<I> a, b</I>)</TD>
-
-<TD>Returns TRUE if global ID <I>a</I> is less than global ID <I>b</I>;
-returns FALSE otherwise.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_LE_GID(<I> a, b</I>)</TD>
-
-<TD>Returns TRUE if global ID <I>a</I> is less than or equal to global
-ID <I>b</I>; returns FALSE otherwise.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_GT_GID(<I> a, b</I>)</TD>
-
-<TD>Returns TRUE if global ID <I>a</I> is greater than global ID <I>b</I>;
-returns FALSE otherwise.</TD>
-</TR>
-
-<TR>
-<TD VALIGN=TOP>LB_GE_GID(<I> a, b</I>)</TD>
-
-<TD>Returns TRUE if global ID <I>a</I> is greater than or equal to global
-ID <I>b</I>; returns FALSE otherwise.</TD>
-</TR>
-
-<CAPTION ALIGN=BOTTOM><I>Data type and macro definitions that must be provided
-to Zoltan by the application in lb/lb_user_const.h.</I></CAPTION>
-</TABLE></CENTER>
 
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_lb_structs.html">Next:&nbsp;
