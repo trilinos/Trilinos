@@ -110,14 +110,17 @@ int main(int argc, char *argv[])
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
   nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-  nlParams.setParameter("MyPID", MyPID); 
-  nlParams.setParameter("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning);
+
+  // Create the NOX printing parameter list
+  NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+  nlPrintParams.setParameter("MyPID", MyPID); 
+  nlPrintParams.setParameter("Output Information", 
+			     NOX::Utils::OuterIteration + 
+			     NOX::Utils::OuterIterationStatusTest + 
+			     NOX::Utils::InnerIteration +
+			     NOX::Utils::Parameters + 
+			     NOX::Utils::Details + 
+			     NOX::Utils::Warning);
 
   // Create the "Line Search" sublist for the "Line Search Based" solver
   NOX::Parameter::List& searchParams = nlParams.sublist("Line Search");
@@ -183,9 +186,9 @@ int main(int argc, char *argv[])
   NOX::Epetra::Vector locaSoln(soln);
 
   // Create the Group
-  LOCA::Epetra::Group grp(lsParams, interface, pVector, locaSoln, A);
-  //NOX::Epetra::Group grp(lsParams, interface, soln, A); 
-  //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
+  LOCA::Epetra::Group grp(nlPrintParams, lsParams, interface, pVector, locaSoln, A);
+  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A); 
+  //NOX::Epetra::Group grp(nlPrintParams, lsParams, interface, soln, A, Prec); 
   grp.computeF();
 
   // Create the Solver convergence test

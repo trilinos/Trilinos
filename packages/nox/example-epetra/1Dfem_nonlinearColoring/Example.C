@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 					  *colorMap, *columns);
 
   // Create the Group
-  NOX::Epetra::Group grp(lsParams, interface, soln, A); 
+  NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
   grp.computeF();
 

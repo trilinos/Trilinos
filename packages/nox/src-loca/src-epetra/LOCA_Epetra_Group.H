@@ -69,20 +69,24 @@ public:
    * the Jacobian even in Matrix-Free mode. linearSolverParams is 
    * the "Linear Solver" sublist of parameter list.
    */
-  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+  Group(NOX::Parameter::List& printParams, 
+	NOX::Parameter::List& linearSolverParams, Interface& i, 
  	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J);
 
   //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+  Group(NOX::Parameter::List& printParams, 
+	NOX::Parameter::List& linearSolverParams, Interface& i, 
  	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
 	Epetra_Operator& M);
 
-  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+  Group(NOX::Parameter::List& printParams, 
+	NOX::Parameter::List& linearSolverParams, Interface& i, 
  	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J,
 	const NOX::Epetra::Vector& s);
 
-  Group(const NOX::Parameter::List& linearSolverParams, Interface& i, 
+  Group(NOX::Parameter::List& printParams, 
+	NOX::Parameter::List& linearSolverParams, Interface& i, 
  	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
 	Epetra_Operator& M, const NOX::Epetra::Vector& s);
 

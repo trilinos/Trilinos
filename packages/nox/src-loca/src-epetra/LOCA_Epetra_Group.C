@@ -35,12 +35,13 @@
 #include "LOCA_Epetra_Interface.H"        // class data members
 #include "NOX_Parameter_List.H"
 
-LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
+			   NOX::Parameter::List& par, 
 			   LOCA::Epetra::Interface& i, 
 			   const LOCA::ParameterVector& p, 
 			   NOX::Epetra::Vector& x, 
 			   Epetra_Operator& J) :
-  NOX::Epetra::Group(par, i, x, J),
+  NOX::Epetra::Group(printParams, par, i, x, J),
   params(p),
   userInterface(i),
   scaleVec(x)
@@ -48,13 +49,14 @@ LOCA::Epetra::Group::Group(const NOX::Parameter::List& par,
   computeScaleVec();  // use default method for computing scale vector
 }
 
-LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
+			   NOX::Parameter::List& par, 
 			   LOCA::Epetra::Interface& i, 
 			   const LOCA::ParameterVector& p, 
 			   NOX::Epetra::Vector& x, 
 			   Epetra_Operator& J, 
 			   Epetra_Operator& M) :
-  NOX::Epetra::Group(par, i, x, J, M),
+  NOX::Epetra::Group(printParams, par, i, x, J, M),
   params(p),
   userInterface(i),
   scaleVec(x)
@@ -62,27 +64,29 @@ LOCA::Epetra::Group::Group(const NOX::Parameter::List& par,
   computeScaleVec();  // use default method for computing scale vector
 }
 
-LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
+			   NOX::Parameter::List& par, 
 			   LOCA::Epetra::Interface& i, 
 			   const LOCA::ParameterVector& p, 
 			   NOX::Epetra::Vector& x, 
 			   Epetra_Operator& J,
 			   const NOX::Epetra::Vector& s) :
-  NOX::Epetra::Group(par, i, x, J),
+  NOX::Epetra::Group(printParams, par, i, x, J),
   params(p),
   userInterface(i),
   scaleVec(s)
 {
 }
 
-LOCA::Epetra::Group::Group(const NOX::Parameter::List& par, 
+LOCA::Epetra::Group::Group(NOX::Parameter::List& printParams,
+			   NOX::Parameter::List& par, 
 			   LOCA::Epetra::Interface& i, 
 			   const LOCA::ParameterVector& p, 
 			   NOX::Epetra::Vector& x, 
 			   Epetra_Operator& J, 
 			   Epetra_Operator& M,
 			   const NOX::Epetra::Vector& s) :
-  NOX::Epetra::Group(par, i, x, J, M),
+  NOX::Epetra::Group(printParams, par, i, x, J, M),
   params(p),
   userInterface(i),
   scaleVec(s)

@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
   //NOX::Epetra::FiniteDifference A(interface, soln);
 
   // Create the Group
-  NOX::Epetra::Group grp(lsParams, interface, soln, A); 
+  NOX::Epetra::Group grp(printParams, lsParams, interface, soln, A); 
   //NOX::Epetra::Group grp(lsParams, interface, soln, A, Prec); 
   grp.computeF();
 

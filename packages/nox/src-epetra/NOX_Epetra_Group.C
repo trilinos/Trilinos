@@ -61,8 +61,10 @@
 using namespace NOX;
 using namespace NOX::Epetra;
 
-Group::Group(const Parameter::List& params, Interface& i, 
+Group::Group(Parameter::List& printParams, 
+	     Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J):
+  utils(printParams),
   xVectorPtr(new Vector(x, DeepCopy)), // deep copy x     
   xVector(*xVectorPtr),    
   RHSVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
@@ -97,8 +99,10 @@ Group::Group(const Parameter::List& params, Interface& i,
   checkOperatorConsistency();
 }
 
-Group::Group(const Parameter::List& params, Interface& i, 
+Group::Group(Parameter::List& printParams, 
+	     Parameter::List& params, Interface& i, 
 	     Vector& x, Epetra_Operator& J):
+  utils(printParams),
   xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
   xVector(*xVectorPtr),    
   RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
@@ -133,8 +137,10 @@ Group::Group(const Parameter::List& params, Interface& i,
   checkOperatorConsistency();
 }
 
-Group::Group(const Parameter::List& params, Interface& i, 
+Group::Group(Parameter::List& printParams, 
+	     Parameter::List& params, Interface& i, 
 	     Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M):
+  utils(printParams),
   xVectorPtr(new Vector(x, DeepCopy)), // deep copy x     
   xVector(*xVectorPtr),    
   RHSVectorPtr(new Vector(x, ShapeCopy)), // new vector of same size
@@ -169,8 +175,10 @@ Group::Group(const Parameter::List& params, Interface& i,
   checkOperatorConsistency();
 }
 
-Group::Group(const Parameter::List& params, Interface& i, 
+Group::Group(Parameter::List& printParams, 
+	     Parameter::List& params, Interface& i, 
 	     Vector& x, Epetra_Operator& J, Epetra_Operator& M):
+  utils(printParams),
   xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(DeepCopy))),
   xVector(*xVectorPtr),    
   RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(x.clone(ShapeCopy))),
@@ -206,6 +214,7 @@ Group::Group(const Parameter::List& params, Interface& i,
 }
 
 Group::Group(const Group& source, CopyType type) :
+  utils(source.utils),
   xVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.xVector.clone(type))),
   xVector(*xVectorPtr),    
   RHSVectorPtr(dynamic_cast<NOX::Epetra::Vector*>(source.RHSVector.clone(type))),
@@ -421,7 +430,7 @@ void Group::setAztecOptions(const Parameter::List& p, AztecOO& aztec) const
 		       p.getParameter("Output Frequency", AZ_last));
 
   // Print a summary of the aztec options if "Details" is enabled
-  if (Utils::doAllPrint(Utils::LinearSolverDetails)) {
+  if (utils.isPrintType(Utils::LinearSolverDetails)) {
     aztec.CheckInput();
   }
   return;
@@ -729,12 +738,12 @@ Abstract::Group::ReturnType Group::applyJacobianInverse (Parameter::List &p, con
     // combination.
     tmpVectorPtr->Reciprocal(*tmpVectorPtr);
 
-    if (Utils::doPrint(Utils::Details))
+    if (utils.isPrintProcessAndType(Utils::Details))
       cout << endl << "       Linear Problem Scaling: Row Sum" << endl;
 
   }
   else if (scalingOption == "None") {
-    if (Utils::doPrint(Utils::Details))
+    if (utils.isPrintProcessAndType(Utils::Details))
       cout << endl << "       Linear Problem Scaling: None" << endl;
   }
   else {

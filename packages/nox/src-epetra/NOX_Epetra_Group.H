@@ -35,17 +35,18 @@
 
 #include "NOX_Abstract_Group.H"	// base class
 #include "NOX_Epetra_Vector.H"	// class data element
-#include "NOX_Common.H" // class data element (string)
+#include "NOX_Utils.H"          // class data element
+#include "NOX_Common.H"         // class data element (string)
 
 // Forward declares
 namespace NOX {
-namespace Epetra {
-class Interface;
-class SharedOperator;
-}
-namespace Parameter {
-class List;
-}
+  namespace Epetra {
+    class Interface;
+    class SharedOperator;
+  }
+  namespace Parameter {
+    class List;
+  }
 }
 class Epetra_Vector;
 class Epetra_Operator;
@@ -220,7 +221,8 @@ public:
    * the Jacobian even in Matrix-Free mode. linearSolverParams is 
    * the "Linear Solver" sublist of parameter list.
    */
-  Group(const Parameter::List& linearSolverParams, Interface& i, 
+  Group(Parameter::List& printingParams, 
+	Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J);
 
   //! Constructor with Jacobian Operator only.  
@@ -229,17 +231,20 @@ public:
    * the Jacobian even in Matrix-Free mode. linearSolverParams is 
    * the "Linear Solver" sublist of parameter list.
    */
-  Group(const Parameter::List& linearSolverParams, Interface& i, 
+  Group(Parameter::List& printingParams, 
+	Parameter::List& linearSolverParams, Interface& i, 
  	Vector& x, Epetra_Operator& J);
 
   //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-  Group(const Parameter::List& linearSolverParams, Interface& i, 
+  Group(Parameter::List& printingParams, 
+	Parameter::List& linearSolverParams, Interface& i, 
  	Epetra_Vector& x, Epetra_Operator& J, Epetra_Operator& M);
 
   //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
   //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-  Group(const Parameter::List& linearSolverParams, Interface& i, 
+  Group(Parameter::List& printingParams, 
+	Parameter::List& linearSolverParams, Interface& i, 
  	Vector& x, Epetra_Operator& J, Epetra_Operator& M);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -404,6 +409,9 @@ protected:
   virtual OperatorType getOperatorType(const Epetra_Operator& o);
 
 protected:
+
+  //! Printing Utilities object
+  const NOX::Utils utils;
 
   /** @name Vectors */
   //@{
