@@ -119,7 +119,7 @@ MPI_LIBPATH	= -L$(MPIR_HOME)/build/LINUX/ch_p4/lib \
 		  -L/usr/lib/gcc-lib/i386-redhat-linux/egcs-2.91.66
 endif
 
-#PARMETIS_LIBPATH 	= -L.
+PARMETIS_LIBPATH 	= -L$(HOME)/lib/LINUX
 
 #JOSTLE_LIBPATH 	= -L/Net/proj/zoltan/arch/solaris/lib
 #JOSTLE_INCPATH 	= -I/Net/proj/zoltan/arch/all/src
