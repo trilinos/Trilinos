@@ -21,8 +21,6 @@ The main page of the Doxygen documentation is organized as follows:
 - \ref am_future
 - \ref am_final
 
-Click <A HREF="../AmesosReferenceGuide/AmesosReferenceGuide.pdf>here</A> to download the Amesos reference guide (Sandia report number SAND2004-4820).
-
 \section am_intro Introduction 
 
 Amesos supports the following classes:
