@@ -4356,7 +4356,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  LIBS="${LIBS} ${FLIBS}"
+  LIBS=" ${FLIBS} ${LIBS}"
 
   # Define F77_FUNC
   ac_ext=c
@@ -6489,7 +6489,7 @@ LIBS="$acx_blas_save_LIBS"
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_blas_ok" = xyes; then
-        LIBS="${LIBS} ${BLAS_LIBS}"
+        LIBS="${BLAS_LIBS} ${LIBS}"
         :
 else
         acx_blas_ok=no
@@ -6731,7 +6731,7 @@ done
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
 if test x"$acx_lapack_ok" = xyes; then
-        LIBS="${LIBS} ${LAPACK_LIBS}"
+        LIBS=" ${LAPACK_LIBS} ${LIBS}"
         :
 else
         acx_lapack_ok=no
@@ -7272,6 +7272,12 @@ fi
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
+
+# ------------------------------------------------------------------------
+# Pointer to correct version of NOX_Config.h
+# ------------------------------------------------------------------------
+
+DEFS="$DEFS -DTOP_BUILD_DIR=\$(top_build_dir)"
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files

@@ -688,17 +688,17 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
 
   dnl Checks for libraries.
   AC_F77_LIBRARY_LDFLAGS
-  LIBS="${LIBS} ${FLIBS}"
+  LIBS=" ${FLIBS} ${LIBS}"
 
   # Define F77_FUNC
   AC_F77_WRAPPERS
 
   # Find valid BLAS
-  ACX_BLAS([LIBS="${LIBS} ${BLAS_LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
+  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
 
 
   # Find valid LAPACK
-  ACX_LAPACK([LIBS="${LIBS} ${LAPACK_LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
+  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
 fi
 
@@ -978,7 +978,6 @@ AC_SUBST(CXXREPOS)
 # ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
-
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
