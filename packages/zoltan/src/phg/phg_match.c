@@ -257,10 +257,10 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   
 Zoltan_HG_Srand (123456);
   
-  nloop = hg->dist_x[hgc->nProc_x] > 100 ? 15 : 2;
+  nloop = hg->dist_x[hgc->nProc_x] > 100 ? 15 : 2; /* temporary; will change! */
   ncandidates = MAX (1, hg->nVtx / (2 * nloop)) ; /* match impacts 2 vertices */
        
-  psums = tsums = select = cmatch = each_size = displs = NULL;
+  order = psums = tsums = select = cmatch = each_size = displs = NULL;
   if (hg->nVtx > 0 && (
       !(order     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))  
    || !(psums     = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
@@ -334,7 +334,12 @@ Zoltan_HG_Srand (123456);
    * Phase 1: send ncandidates vertices for global matching - horizontal communication
    * Phase 2: sum  inner products, find best        - vertical communication
    * Phase 3: return best sums to owning column     - horizontal communication
-   * Phase 4: return actual match selections        - horizontal communication */
+   * Phase 4: return actual match selections        - horizontal communication 
+   *
+   * No conflict resolution phase required because we make sure we never
+   * generate a possible match conflict. 
+   */
+
   pselect = 0;                    /* marks position in vertices to be selected */
   for (loop = 0; loop < nloop; loop++)  {
      
