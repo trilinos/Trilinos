@@ -510,6 +510,13 @@ macro source on the left hand side of a logical check.
     \item[ ] Good: ML\_free(i);
     \item[ ] Bad: ML\_free( (void *) i); (does not compile on SGI, for instance)
   \end{enumerate}
+%
+%
+\item {\bf Question: Are C++ style comments, i.e, \verb!//!, ok to use in
+ML?}\\
+{\bf Answer:} C++ style comments are fine to use in C++ files.
+You must use C style comments, i.e., \verb!/* */!, in \verb!*.c! files.
+Otherwise, the code will not compile on either Solaris machines or on Janus.
 \end{enumerate}
 
 %%% ================================ %%%
