@@ -33,6 +33,7 @@
 #include "NOX_Random.H" //for NOX::Random
 #include "LOCA_Extended_Vector.H"  // Class definition
 #include "LOCA_Extended_MultiVector.H" // for createMultiVector
+#include "LOCA_Utils.H"
 
 LOCA::Extended::Vector::Vector(int nvecs, int nscalars) :
   vectorPtrs(nvecs), isView(nvecs), scalars(nscalars)
@@ -339,7 +340,7 @@ LOCA::Extended::Vector::print() const
   for (unsigned int i=0; i<vectorPtrs.size(); i++)
     vectorPtrs[i]->print();
   for (unsigned int i=0; i<scalars.size(); i++)
-    cout << scalars[i] << " ";
+    cout <<  LOCA::Utils::sci(scalars[i]) << " ";
   cout << endl;
 
 }
