@@ -46,7 +46,7 @@
 namespace LOCA {
   namespace Continuation {
     class ExtendedGroup;
-    class AbstractGroup;;
+    class AbstractGroup;
   }
 }
 
