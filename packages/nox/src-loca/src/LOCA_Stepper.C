@@ -223,6 +223,10 @@ StatusType Stepper::nonlinearSolve()
     stepNumber += 1;
   }
   
+  // See if we went past final value for parameter
+  if (curGroupPtr->getContinuationParameter() >= finalValue)
+    isLastStep = true;
+  
   numTotalSteps += 1;
 
   stepperStatus = checkStepperStatus();
