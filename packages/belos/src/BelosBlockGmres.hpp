@@ -21,7 +21,8 @@
 #ifndef BLOCK_GMRES_HPP
 #define BLOCK_GMRES_HPP
 
-#include "Epetra_LAPACK.h"
+#include "Teuchos_BLAS.hpp"
+#include "Teuchos_LAPACK.hpp"
 #include "BelosConfigDefs.hpp"
 
 
@@ -108,7 +109,6 @@ private:
 	const int _maxits, _blocksize, _numrhs;
 	const TYPE _residual_tolerance;
 	TYPE *_residerrors, *_trueresids;
-	TYPE *_update_ary;
 	int _rhs_iter, _restartiter, _iter;
 	bool _startblock;
 	int _debuglevel, _restart;
@@ -129,7 +129,6 @@ BlockGmres<TYPE>::BlockGmres(Anasazi::Matrix<TYPE> & mat, Anasazi::Precondition<
 							_hessmatrix(0),
 							_maxits(maxits), _blocksize(blksz), _numrhs(numrhs), _restart(1),
 							_residual_tolerance(tol), _residerrors(0), _trueresids(0),
-							_update_ary(0),
 							_rhs_iter(0), _restartiter(0), _iter(0),
 							_startblock(false), _debuglevel(0), _dep_tol(0.75),
 							_blk_tol(5.0e-7), _sing_tol(5.0e-14), _blkerror(1.0){
@@ -147,7 +146,6 @@ BlockGmres<TYPE>::BlockGmres(Anasazi::Matrix<TYPE> & mat, Anasazi::Precondition<
 		assert(_hessmatrix!=NULL);
 		//_residerrors = new TYPE[ _blocksize > _numrhs ? _blocksize : _numrhs ]; assert(_residerrors!=NULL);
 		_residerrors = new TYPE[_numrhs + _blocksize]; assert(_residerrors!=NULL);
-		_update_ary = new TYPE[(_maxits+1)*_blocksize*_blocksize]; assert(_update_ary!=NULL);
 	}
 	else {
 		 cout << "BlockGmres:ctor " << _maxits << _blocksize << _basisvecs <<  endl;
@@ -167,7 +165,6 @@ BlockGmres<TYPE>::~BlockGmres() {
 	if (_solutions) delete _solutions;
 	if (_residerrors) delete [] _residerrors;
 	if (_trueresids) delete [] _trueresids;
-	if (_update_ary) delete [] _update_ary;
 }
 
 template <class TYPE>
@@ -191,8 +188,8 @@ void BlockGmres<TYPE>::SetGmresBlkTols() {
 	const TYPE two = 2.0;
 	TYPE eps;
 	char precision = 'P';
-	Epetra_LAPACK lapack;
-	lapack.LAMCH(precision, eps);
+	Teuchos::LAPACK<int,TYPE> lapack;
+	eps = lapack.LAMCH(precision);
 	_blk_tol = 10*sqrt(eps);
 	_sing_tol = 10 * eps;
 	_dep_tol = 1/sqrt(two);
@@ -216,7 +213,7 @@ void BlockGmres<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		// Easy case: The number of right-hand sides left to solve for is >= the 
 		// size of a block. Solve for the next _blocksize of these right-hand sides
 		// at this iteration.
-	    //
+	        //
 		// Put the next _blocksize of the right-hand sides  
 		// the rhs_block 
 		//
@@ -437,15 +434,18 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 	const int izero=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
-	int _ldupdate, _rowsupdate, _colsupdate;
-	int numrhs_to_solve;
+	TYPE sigma, mu, vscale, maxelem;
+	int numrhs_to_solve, maxidx;
 	Anasazi::MultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
 	Anasazi::MultiVec<TYPE> *U_vec=0, *F_vec=0;
 	int *index = new int[ (_maxits+1)*_blocksize ]; assert(index!=NULL);
 	bool dep_flg = false, exit_flg = false, brkflg = false;
+	Teuchos::LAPACK<int, TYPE> lapack;
+	Teuchos::BLAS<int, TYPE> blas;
 	//	
 	Anasazi::DenseMatrix<TYPE> rhs((_maxits+1)*_blocksize,_blocksize);
 	TYPE *ptr_rhs = rhs.getarray();
+	TYPE *beta = new TYPE[(_maxits+1)*_blocksize];
 	int ldrhs = rhs.getld();
 	//
 	// Each pass through the solver solves for _blocksize
@@ -493,26 +493,26 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 		//
 		for (_restartiter=0; _restartiter < _restart && _blkerror > _residual_tolerance ; 
 		_restartiter++) {
-			//
-			if (brkflg){
-				break;
-			}
-            //
-			// Associate the initial block of _basisvecs with U_vec.
-		    //
-		    for ( i=0; i<_blocksize; i++ ) {
-			    index[i] = i;
-			}
-			U_vec = _basisvecs->CloneView(index, _blocksize);
-			assert(U_vec!=NULL);
-			//
-			// Copy current solution (initial guess) into 1st block
-			//
-		    U_vec->MvAddMv(one, *cur_block_sol, zero, *U_vec);
-		    //
-		    // Compute the initial residuals then store them in 1st
-			// block of _basisvecs
-		    //
+		  //
+		  if (brkflg){
+		    break;
+		  }
+		  //		
+		  // Associate the initial block of _basisvecs with U_vec.
+		  //
+		  for ( i=0; i<_blocksize; i++ ) {
+		    index[i] = i;
+		  }
+		  U_vec = _basisvecs->CloneView(index, _blocksize);
+		  assert(U_vec!=NULL);
+		  //
+		  // Copy current solution (initial guess) into 1st block
+		  //
+		  U_vec->MvAddMv(one, *cur_block_sol, zero, *U_vec);
+		  //
+		  // Compute the initial residuals then store them in 1st
+		  // block of _basisvecs
+		  //
 		    for ( i=0; i<_blocksize; i++ ) {
 			    index[i] = _blocksize+i;
 			}
@@ -537,10 +537,13 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			}
 			dep_flg = false; exit_flg = false;
 		    //
-		    Anasazi::DenseMatrix<TYPE> G10(_blocksize,_blocksize);
+		    // Re-initialize RHS of the least squares system and create a view.
+		    //
+		    rhs.init();
+		    Anasazi::DenseMatrix<TYPE> G10( rhs, izero, izero, _blocksize, _blocksize);
 		    exit_flg = QRFactorAug( *U_vec, G10, true, vb );
-			//
-			if (exit_flg){
+		    //
+		    if (exit_flg){
 				if (vb){
 					cout << "Exiting Block GMRES" << endl;
 					cout << "     RHS pass# " << _rhs_iter
@@ -556,25 +559,16 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			}
 			//
 		    	TYPE norm_G10 = G10.getfronorm();
-			TYPE *ptr_G10 = G10.getarray();
-			int ldG10 = _blocksize;			
-
 			if (_restartiter == 0) {
 				init_norm = norm_G10;
 			}
 			//
-			_rowsupdate = 0; _colsupdate = 0; _ldupdate = 0;
-			int tsz = (_maxits+1)*_blocksize*_blocksize;
-			for (i=0; i<tsz; i++){
-				_update_ary[i] = zero;
-			}
-			//
 			//
 			// The block error used here is an average residual error over
-		    // the current block. This is set to one to start with since all 
-		    // initial residuals have norm one
+			// the current block. This is set to one to start with since all 
+			// initial residuals have norm one
 			//
-		    _blkerror = one; 	
+			_blkerror = one; 	
 			//
 			for (_iter=0; _iter<_maxits && _blkerror > _residual_tolerance; _iter++) {
 				//
@@ -604,73 +598,68 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 					// is already computed
 					//
 					if (_iter > 0) {
-					   TYPE * coeffs = new TYPE[_rowsupdate*_colsupdate]; 
-					   assert(coeffs!=NULL);
-					   for (j=0; j<_colsupdate; j++){
-						   for (i=0; i<_rowsupdate; i++){
-							   coeffs[i+j*_rowsupdate] = _update_ary[i+j*_rowsupdate];
-						   }
-					   }
-					   Anasazi::DenseMatrix<TYPE> update_mat(_rowsupdate, _colsupdate);
-					   update_mat.setvalues(coeffs, _ldupdate);
-                       Anasazi::DenseMatrix<TYPE> update_view(update_mat,izero,izero,_iter*_blocksize,_blocksize);
+					   Anasazi::DenseMatrix<TYPE> rhs_view(rhs, izero, izero,_iter*_blocksize,_blocksize);
 					   for (i=0; i<_iter*_blocksize; i++) {
 						   index[i] = i;
 					   }
 					   Anasazi::MultiVec<TYPE> *Vjpl = _basisvecs->CloneView(index,_iter*_blocksize);
-					   cur_block_sol->MvTimesMatAddMv(one, *Vjpl, update_view, one);
+					   cur_block_sol->MvTimesMatAddMv(one, *Vjpl, rhs_view, one);
 					   delete Vjpl;
-					   delete [] coeffs;
 					}
 					break;
 				} // end if (exit_flg)
 				//
-				// Set up least squares problems
-				//
-				_ldupdate = ldrhs;
-				_rowsupdate = (_iter+2)*_blocksize;
-				_colsupdate = _blocksize;
-				for (j=0; j<_blocksize; j++) {
-					for (i=0; i<j+1; i++) {
-						ptr_rhs[i+j*ldrhs] = ptr_G10[i+j*ldG10];
-					}
-					for (i=j+1; i<(_maxits+1)*_blocksize; i++) {
-						ptr_rhs[i+j*ldrhs] = zero;
-					}
-				}
-				//
 				// Create a view into the rectangular matrix
 				//
-				i=0;j=0;
-				Anasazi::DenseMatrix<TYPE> Hj_temp(*_hessmatrix, i,j, 
+				Anasazi::DenseMatrix<TYPE> Hj(*_hessmatrix, 0, 0, 
 					(_iter+2)*_blocksize, (_iter+1)*_blocksize);
-				//
-				// Create a copy of the view.
-				//
-				Anasazi::DenseMatrix<TYPE> Hj(Hj_temp);
-				//
-				// Solve the least squares problem.
-				//
-				char * trans = "N";
-				int m = (_iter+2)*_blocksize, n=(_iter+1)*_blocksize, info=0;
 				int ldhj = Hj.getld();
 				TYPE *ptr_hj = Hj.getarray();
-				int lwork = (2+_blocksize)*m;
-				TYPE *work = new TYPE[lwork]; assert(work!=NULL);
-				int block = _blocksize;
-				Epetra_LAPACK lapack;
-				lapack.GELS( *trans, m, n, block, ptr_hj, ldhj, ptr_rhs, 
-					 ldrhs, work, lwork, info );
-				assert(info==0);
-				delete [] work;
 				//
-				// Update coefficients for solution update in case of a 
-				// breakdown in the block Arnoldi process, the solution
-				// from the previous step can be returned.
+				// QR factorization of Least-Squares system with Householder reflectors
 				//
-				for (j=0; j<_colsupdate; j++){
-					for (i=0; i<_rowsupdate; i++){
-						_update_ary[i+j*_rowsupdate] = ptr_rhs[i+j*ldrhs];
+				for (j=0; j<_blocksize; j++) {
+					//
+					// Apply previous Householder reflectors to new block of Hessenberg matrix
+					//
+					for (i=0; i<_iter*_blocksize+j; i++) {
+				  		sigma = blas.DOT( _blocksize, ptr_hj+i*(ldhj+1)+1, 1, ptr_hj+(_iter*_blocksize+j)*ldhj+i+1, 1);
+				  		sigma += ptr_hj[(_iter*_blocksize+j)*ldhj+i];
+				  		sigma *= beta[i];
+						blas.AXPY(_blocksize, -sigma, ptr_hj+i*(ldhj+1)+1, 1, ptr_hj+(_iter*_blocksize+j)*ldhj+i+1, 1);
+				  		ptr_hj[(_iter*_blocksize+j)*ldhj+i] -= sigma;
+					}
+					//
+					// Compute new Householder reflector
+					//
+					maxidx = blas.IAMAX( _blocksize+1, ptr_hj+(_iter*_blocksize+j)*(ldhj+1), 1 );
+					maxelem = ptr_hj[(_iter*_blocksize+j)*(ldhj+1)+maxidx-1];
+					for (i=0; i<_blocksize+1; i++) 
+						ptr_hj[(_iter*_blocksize+j)*(ldhj+1)+i] /= maxelem;
+					sigma = blas.DOT( _blocksize, ptr_hj+(_iter*_blocksize+j)*(ldhj+1)+1, 1, ptr_hj+(_iter*_blocksize+j)*(ldhj+1)+1, 1 );
+					if (sigma == zero) {
+						beta[_iter*_blocksize + j] = zero;
+					} else {
+						mu = sqrt(ptr_hj[(_iter*_blocksize+j)*(ldhj+1)]*ptr_hj[(_iter*_blocksize+j)*(ldhj+1)]+sigma);
+						if ( ptr_hj[(_iter*_blocksize+j)*(ldhj+1)] < zero ) {
+							vscale = ptr_hj[(_iter*_blocksize+j)*(ldhj+1)] - mu;
+						} else {
+							vscale = -sigma / (ptr_hj[(_iter*_blocksize+j)*(ldhj+1)] + mu);
+						}
+						beta[_iter*_blocksize+j] = 2.0*vscale*vscale/(sigma + vscale*vscale);
+						ptr_hj[(_iter*_blocksize+j)*(ldhj+1)] = maxelem*mu;
+						for (i=0; i<_blocksize; i++)
+							ptr_hj[(_iter*_blocksize+j)*(ldhj+1)+1+i] /= vscale;
+					}
+					//
+					// Apply new Householder reflector to rhs
+					//
+					for (i=0; i<_blocksize; i++) {
+					  sigma = blas.DOT( _blocksize, ptr_hj+(_iter*_blocksize+j)*(ldhj+1)+1, 1, ptr_rhs+(i*ldrhs)+(_iter*_blocksize)+j+1, 1);
+					  sigma += ptr_rhs[(i*ldrhs)+(_iter*_blocksize)+j];
+					  sigma *= beta[_iter*_blocksize+j];
+					  blas.AXPY(_blocksize, -sigma, ptr_hj+(_iter*_blocksize+j)*(ldhj+1)+1, 1, ptr_rhs+(i*ldrhs)+(_iter*_blocksize)+j+1, 1 );
+					  ptr_rhs[(i*ldrhs)+(_iter*_blocksize)+j] -= sigma;
 					}
 				}
 				//
@@ -678,11 +667,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				//
 				_blkerror = zero;
 				for (j=0; j<_blocksize; j++ ) {
-					_residerrors[_rhs_iter*_blocksize+j] = zero;
-					for (i=(_iter+1)*_blocksize; i<(_iter+2)*_blocksize; i++ ) {
-						_residerrors[_rhs_iter*_blocksize+j] += pow(ptr_rhs[i+j*ldrhs],2);
-					}
-					_residerrors[_rhs_iter*_blocksize+j] = sqrt(_residerrors[_rhs_iter*_blocksize+j]);
+					_residerrors[_rhs_iter*_blocksize+j] = blas.NRM2( _blocksize, ptr_rhs+j*ldrhs+(_iter+1)*_blocksize, 1);
 					//
 					if (norm_G10) _residerrors[_rhs_iter*_blocksize+j] /= init_norm; 
 					//
@@ -714,11 +699,13 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 					//
 					// Update the solutions
 					//
+					blas.TRSM( Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
+						Teuchos::NON_UNIT_DIAG, (_iter+1)*_blocksize, _blocksize, one,
+						ptr_hj, ldhj, ptr_rhs, ldrhs ); 
 					for ( i=0; i<(_iter+1)*_blocksize; i++ ) {
 						index[i] = i;
 					}
-					Anasazi::MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index,
-						(_iter+1)*_blocksize);
+					Anasazi::MultiVec<TYPE> * Vjp1 = _basisvecs->CloneView(index, (_iter+1)*_blocksize);
 					Anasazi::DenseMatrix<TYPE> rhs_view(rhs, izero, izero, (_iter+1)*_blocksize, _blocksize);
 					cur_block_sol->MvTimesMatAddMv( one, *Vjp1, rhs_view, one );
 					delete Vjp1;
@@ -748,9 +735,9 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 		} // end for (_restartiter=0;...
 		//
 		//
-	    // Insert the current block of solutions into _solutions so we can
+		// Insert the current block of solutions into _solutions so we can
 		// continue if we have more right-hand sides to solve for
-	    //
+		//
         	ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);
 		//
 		//**************Free heap space**************
