@@ -91,7 +91,7 @@ LOCA::Epetra::ShiftInvertOperator::NormInf() const
     return -1;
 }
 
-char*
+const char*
 LOCA::Epetra::ShiftInvertOperator::Label() const
 {
   return(Label_);

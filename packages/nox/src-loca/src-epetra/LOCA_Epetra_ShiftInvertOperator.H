@@ -89,7 +89,7 @@ namespace LOCA {
   
   virtual double NormInf() const;
 
-  virtual char * Label() const;
+  virtual const char * Label() const;
 
   virtual bool UseTranspose() const;
 
@@ -110,7 +110,7 @@ namespace LOCA {
   const Epetra_Operator& jacOper;
   const double& shift_;
   bool massMatrix;
-  char * Label_;
+  const char * Label_;
       };
   } // namespace Epetra
 } // namespace LOCA

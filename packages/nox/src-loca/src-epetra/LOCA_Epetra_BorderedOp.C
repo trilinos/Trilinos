@@ -238,7 +238,7 @@ LOCA::Epetra::BorderedOp::NormInf() const
 }
 
 
-char* 
+const char* 
 LOCA::Epetra::BorderedOp::Label () const
 {
   return const_cast<char*>(label.c_str());

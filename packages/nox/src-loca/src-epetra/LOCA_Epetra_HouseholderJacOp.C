@@ -112,7 +112,7 @@ LOCA::Epetra::HouseholderJacOp::NormInf() const
 }
 
 
-char* 
+const char* 
 LOCA::Epetra::HouseholderJacOp::Label () const
 {
   return const_cast<char*>(label.c_str());

@@ -184,7 +184,7 @@ namespace LOCA {
       virtual double NormInf() const;
     
       //! Returns a character string describing the operator
-      virtual char* Label () const;
+      virtual const char* Label () const;
   
       //! Returns the current UseTranspose setting.
       virtual bool UseTranspose() const;
