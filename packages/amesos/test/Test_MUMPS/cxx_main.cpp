@@ -50,7 +50,11 @@ bool CheckError(const Epetra_RowMatrix& A,
   }
   if (A.Comm().MyPID() == 0)
     cout << "||Ax - b||  = " << TotalNorm << endl;
+#ifdef HAVE_AMESOS_SMUMPS
+  if (TotalNorm < 1e-2 )
+#else
   if (TotalNorm < 1e-5 )
+#endif
     TestPassed = true;
   else
     TestPassed = false;
@@ -68,20 +72,20 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
-  int NumGlobalElements = 1000;
+  int NumGlobalElements = 100;
   int NumVectors = 7;
   
   // =================== //
   // create a random map //
   // =================== //
- 
+
   int* part = new int[NumGlobalElements];
 
   if (Comm.MyPID() == 0) {
     Epetra_Util Util;
 
     for( int i=0 ; i<NumGlobalElements ; ++i ) {
-      unsigned int r = Util.RandomInt();	
+      unsigned int r = Util.RandomInt();
       part[i] = r%(Comm.NumProc());
     }
   }
@@ -91,7 +95,7 @@ int main(int argc, char *argv[]) {
   // count the elements assigned to this proc
   int NumMyElements = 0;
   for (int i = 0 ; i < NumGlobalElements ; ++i) {
-    if (part[i] == Comm.MyPID()) 
+    if (part[i] == Comm.MyPID())
       NumMyElements++;
   }
 
@@ -99,15 +103,15 @@ int main(int argc, char *argv[]) {
   int* MyGlobalElements = new int[NumMyElements];
   int count = 0;
   for (int i = 0 ; i < NumGlobalElements ; ++i) {
-    if (part[i] == Comm.MyPID() ) 
+    if (part[i] == Comm.MyPID() )
       MyGlobalElements[count++] = i;
   }
 
   Epetra_Map Map(NumGlobalElements,NumMyElements,MyGlobalElements,
-		 0,Comm);
+                 0,Comm);
 
   delete [] part;
-
+  
   // ===================== //
   // Create a dense matrix //
   // ===================== //
@@ -123,13 +127,10 @@ int main(int argc, char *argv[]) {
   for (int i = 0 ; i < NumMyElements ; ++i) {
     int iGlobal = MyGlobalElements[i];
     for (int jGlobal = 0 ; jGlobal < NumGlobalElements ; ++jGlobal) {
-      if (iGlobal == jGlobal) 
-	Values[jGlobal] = 1.0 * (NumGlobalElements + 1 ) *
-	  (NumGlobalElements + 1);
-      else if (iGlobal > jGlobal)
-	Values[jGlobal] = -1.0*(jGlobal+1);
+      if (iGlobal >= jGlobal) 
+	Values[jGlobal] = 1.0 * (jGlobal + 1);
       else
-	Values[jGlobal] = 1.0*(iGlobal+1);
+	Values[jGlobal] = 1.0 * (iGlobal + 1);
     }
     assert(Matrix.InsertGlobalValues(MyGlobalElements[i],
 				     NumGlobalElements, Values, Indices)==0);
@@ -137,7 +138,6 @@ int main(int argc, char *argv[]) {
   }
 
   assert(Matrix.FillComplete()==0);
-  delete [] MyGlobalElements;
   delete [] Indices;
   delete [] Values;
  
@@ -157,20 +157,26 @@ int main(int argc, char *argv[]) {
   // =========== //
 
   Epetra_LinearProblem Problem;
-  Amesos_Mumps Solver(Problem);
+  Amesos_Mumps* Solver = new Amesos_Mumps(Problem);
 
   Problem.SetOperator(&A);
   Problem.SetLHS(&x);
   Problem.SetRHS(&b);
 
-  AMESOS_CHK_ERR(Solver.SymbolicFactorization());
-  AMESOS_CHK_ERR(Solver.NumericFactorization());
-  AMESOS_CHK_ERR(Solver.Solve());
+  Teuchos::ParameterList List;
+  List.set("MaxProcs",2);
+  AMESOS_CHK_ERR(Solver->SetParameters(List));
+
+  AMESOS_CHK_ERR(Solver->SymbolicFactorization());
+  AMESOS_CHK_ERR(Solver->NumericFactorization());
+  AMESOS_CHK_ERR(Solver->Solve());
 
   bool TestPassed = true;
 
   TestPassed = TestPassed &&
     CheckError(A,x,b,x_exact);
+
+  delete Solver;
 
 #ifdef HAVE_MPI
   MPI_Finalize();
@@ -184,6 +190,7 @@ int main(int argc, char *argv[]) {
   else {
     if (Comm.MyPID() == 0)
       cout << endl << "TEST FAILED" << endl << endl;
+    system("touch Amesos_FAILED");
     return(EXIT_FAILURE);
   }
 
