@@ -43,21 +43,41 @@ namespace NOX {
 namespace Solver {
 
 /*!
-  \brief Basic line search based solver
+  \brief Nonlinear solver based on a line search (i.e., damping)
+
+  Solves \f$F(x)=0\f$ using an iterative line-search-based method.
+
+  Each iteration, the solver does the following.
+
+  <ul> 
+  <li>Compute a search direction \f$d\f$ via a NOX::Direction method
+
+  <li>Compute a step length \f$\alpha\f$ and update \f$x\f$ as \f$x_{\rm new}
+      = x_{\rm old} + \alpha d\f$ via a NOX::LineSearch method.
+
+  </ul>
   
-  The following parameters are valid for this solver:
+  The iterations progress until the status tests determine either
+  failure or convergence.
+
+  <B>Input Parameters</B>
+
+  The following parameter list entries are valid for this solver:
 
   - "Line Search" - Sublist of the line search parameters, passed to
     the NOX::LineSearch::Manager constructor. Defaults to an empty list.
 
-  - "%Direction" - Sublist of the direction parameters, passed to
+  - "Direction" - Sublist of the direction parameters, passed to
     the NOX::Direction::Manager constructor. Defaults to an empty list.
 
-A sublist for output parameters called "Output" will be created and contain the following parameters:
+  <B>Output Parameters</B>
 
-- "Nonlinear Iterations" - Number of nonlinear iterations
+  A sublist for output parameters called "Output" will be created and
+  contain the following parameters:
 
-- "2-Norm or Residual" - Two-norm of final residual
+  - "Nonlinear Iterations" - Number of nonlinear iterations
+  
+  - "2-Norm or Residual" - Two-norm of final residual
 
   \author Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
 */
@@ -66,13 +86,16 @@ class LineSearchBased : public Generic {
 
 public:
 
-  //! %LineSearchBased-method constructor. 
-  LineSearchBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  //! Constructor
+  /*!
+    See reset() for description
+   */
+  LineSearchBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~LineSearchBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -81,7 +104,7 @@ public:
   virtual int getNumIterations() const;
   virtual const NOX::Parameter::List& getParameterList() const;
 
-  //! Return the line search step size from the current iteration.
+  //! Return the line search step size from the current iteration
   virtual double getStepSize() const;
 
 protected:
@@ -115,7 +138,7 @@ protected:
   NOX::StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  NOX::Parameter::List params;	
+  NOX::Parameter::List* paramsPtr;	
 
   //! Utils
   NOX::Utils utils;

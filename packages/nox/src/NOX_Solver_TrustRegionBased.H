@@ -45,72 +45,153 @@ namespace Solver {
 /*!
   \brief %Newton-like solver using a trust region.
 
-Our goal is to solve:
-\f[
-F(x) = 0,
-\f]
-where \f$ F:\Re^n \rightarrow \Re^n \f$. 
-Alternatively, we might say that we wish to solve
-\f[
-\min f(x) \equiv \frac{1}{2} \|F(x)\|^2_2.
-\f]
-The trust region subproblem at iteration \f$k\f$ is given by
-\f[
-\min m_k(s) \equiv f_k + g_k^T s + \frac{1}{2} s^T B_k s,
-\mbox{ s.t. } \|s\| \leq \Delta_k
-\f]
-where 
-\f$ f_k = f(x_k) = \frac{1}{2} \|F(x_k)\|^2_2 \f$,
-\f$ g_k = \nabla f(x_k) = J(x_k)^T F(x_k) \f$,
-\f$ B_k =  J(x_k)^T J(x_k) \approx \nabla^2 f(x_k) \f$,
-\f$ J(x_k)\f$ is the Jacobian of \f$F\f$ at \f$x_k\f$, and
-\f$ \Delta_k \f$ is the trust region radius.
+Our goal is to solve: \f$ F(x) = 0, \f$ where \f$ F:\Re^n \rightarrow
+\Re^n \f$.  Alternatively, we might say that we wish to solve
 
+&nbsp;&nbsp;
+\f$
+\min f(x) \equiv \frac{1}{2} \|F(x)\|^2_2.
+\f$
+
+The trust region subproblem (TRSP) at iteration \f$k\f$ is given by
+
+&nbsp;&nbsp;
+\f$
+\min \; m_k(s) \equiv f_k + g_k^T s + \frac{1}{2} s^T B_k s,
+\mbox{ s.t. } \|s\| \leq \Delta_k
+\quad \mbox{(TRSP)}
+\f$
+
+where 
+
+<ul>
+<li>\f$ f_k = f(x_k) = \frac{1}{2} \|F(x_k)\|^2_2 \f$,
+<li>\f$ g_k = \nabla f(x_k) = J(x_k)^T F(x_k) \f$,
+<li>\f$ B_k =  J(x_k)^T J(x_k) \approx \nabla^2 f(x_k) \f$,
+<li>\f$ J(x_k)\f$ is the Jacobian of \f$F\f$ at \f$x_k\f$, and
+<li>\f$ \Delta_k \f$ is the trust region radius.
+</ul>
   
 The "improvement ratio" for a given step \f$ s \f$ is defined as
-\f[
 
-\frac{ f(x) - f(x + s) } { m(0) - m(s) }
+&nbsp;&nbsp;
+\f$
+\rho = \displaystyle\frac{ f(x_k) - f(x_k + s) } { m_k(0) - m_k(s) }
+\f$
 
-\f]
+An iteration consists of the following steps.
 
+<ul>
+<li> Compute Newton-like direction: \f$n\f$
+
+<li> Compute Cauchy-like direction: \f$c\f$
+
+<li> If this is the first iteration, initialize \f$\Delta\f$ as
+     follows: If \f$\|n\|_2 < \Delta_{\min}\f$, then \f$\Delta = 2
+     \Delta_{\min}\f$; else, \f$\Delta = \|n\|_2\f$.
+
+<li> Initialize \f$\rho = -1\f$
+
+<li> While \f$\rho < \rho_{\min}\f$ and \f$\Delta > \Delta_{\min}\f$, do the following.
+
+     <ul> 
+     <li> Compute the direction \f$d\f$ as follows:
+
+          <ul>
+
+          <li> If \f$\|n\|_2 < \Delta\f$, then take a Newton step by
+               setting \f$d = n\f$
+
+	  <li> Otherwise if \f$\|c\|_2 > \Delta\f$, then take a Cauchy
+               step by setting \f$d =
+               \displaystyle\frac{\Delta}{\|c\|_2} c\f$
+
+	  <li> Otherwise, take a Dog Leg step by setting 
+               \f$ d = (1-\gamma) c + \gamma n \f$ where 
+	       \f$
+	       \gamma = \displaystyle\frac
+	       {-c^T a + \sqrt{ (c^Ta)^2 - (c^Tc - \Delta^2) a^Ta}}{a^Ta}
+	       \f$
+	       with \f$a = n-c\f$.
+     
+          </ul>
+
+     <li> Set \f$x_{\rm new} = x + d\f$ and calculate \f$f_{\rm new}\f$
+
+     <li> If \f$f_{\rm new} \geq f\f$, then \f$\rho = -1\f$ Otherwise
+	  \f$ \rho = \displaystyle \frac {f - f_{\rm new}} {| d^T J F
+	  + \frac{1}{2} (J d)^T (J d)|} \f$
+
+     </ul>
+
+<li> Update the solution: \f$x = x_{\rm new}\f$
+
+<li> Update trust region:
+
+     <ul>
+
+     <li> If \f$\rho < \rho_{\rm s}\f$ and \f$\|n\|_2 < \Delta\f$,
+          then shrink the trust region to the size of the Newton step:
+          \f$\Delta = \|n\|_2\f$.
+
+     <li> Otherwise if \f$\rho < \rho_{\rm s}\f$, then shrink the
+          trust region: \f$\Delta = \max \{ \beta_{\rm s} \Delta,
+          \Delta_{\min} \} \f$.
+
+     <li> Otherwise if \f$\rho > \rho_{\rm e}\f$ and \f$\|d\|_2 =
+          \Delta\f$, then expand the trust region: \f$\Delta = \min \{
+          \beta_{\rm e} \Delta, \Delta_{\rm max} \} \f$.
+
+     </ul>
+
+</ul>
+
+<B>Input Paramters</B>
 
 The following parameters should be specified in the "Trust Region"
 sublist based to the solver.
 
-  - "%Direction" - Sublist of the direction parameters for the
-    %Newton point, passed to the NOX::Direction::Manager
-    constructor. If "Method" is not specified, it defaults to
-    "%Newton".
+  - "Direction" - Sublist of the direction parameters for the %Newton
+    point, passed to the NOX::Direction::Manager constructor. If this
+    sublist does not exist, it is created by default. Furthermore, if
+    "Method" is not specified in this sublist, it is added with a value of
+    "Newton".
 
-  - "%Cauchy %Direction" - Sublist of the direction parameters for the
+  - "Cauchy %Direction" - Sublist of the direction parameters for the
     Cauchy point, passed to the NOX::Direction::Manager
-    constructor. If "Method" is not specified, it defaults to
-    "Steepest Descent".
+    constructor. If this sublist does not exist, it is created by
+    default. Furthremore, if "Method" is not specified in this
+    sublist, it is added with a value of "Steepest Descent" Finally,
+    if the sub-sublist "Steepest Descent" does not exist, it is
+    created and the parameter "Scaling Type" is added and set to
+    "Quadratic".
 
-- "Minimum Trust Region Radius" - Minimum allowable trust region
+- "Minimum Trust Region Radius" (\f$\Delta_{\min}\f$) - Minimum allowable trust region
   radius. Defaults to 1.0e-6.
 
-- "Maximum Trust Region Radius" - Minimum allowable trust region
+- "Maximum Trust Region Radius" (\f$\Delta_{\max}\f$) - Minimum allowable trust region
   radius. Defaults to 1.0e+10.
 
-- "Minimum Improvement Ratio" - Minimum improvement ratio to accept
+- "Minimum Improvement Ratio" (\f$\rho_{\min}\f$) - Minimum improvement ratio to accept
   the step. Defaults to 1.0e-4.
 
-- "Contraction Trigger Ratio" - If the improvement ratio is less than
+- "Contraction Trigger Ratio" (\f$\rho_{\rm s}\f$) - If the improvement ratio is less than
   this value, then the trust region is contracted by the amount
   specified by the "Contraction Factor". Must be larger than "Minimum
   Improvement Ratio". Defaults to 0.1.
 
-- "Contraction Factor" - See above. Defaults to 0.25.
+- "Contraction Factor" (\f$\beta_{\rm s}\f$) - See above. Defaults to 0.25.
 
-- "Expansion Trigger Ratio" - If the improvement ratio is greater than this
-  value, then the trust region is contracted by the amount specified
-  by the "Expansion Factor". Defaults to 0.75.
+- "Expansion Trigger Ratio" (\f$\rho_{\rm e}\f$) - If the
+  improvement ratio is greater than this value, then the trust region
+  is contracted by the amount specified by the "Expansion
+  Factor". Defaults to 0.75.
 
-- "Expansion Factor" - See above. Defaults to 4.0.
+- "Expansion Factor"  (\f$\beta_{\rm e}\f$) - See above. Defaults to 4.0.
 
 - "Recovery Step" - Defaults to 1.0.
+
+<B>Output Paramters</B>
 
 A sublist for output parameters called "Output" will be created and contain the following parameters:
 
@@ -125,13 +206,17 @@ class TrustRegionBased : public Generic {
 
 public:
 
-  //! %TrustRegionBased-method constructor. 
-  TrustRegionBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  /*! 
+    \brief Constructor
+
+    See reset() for description. 
+  */
+  TrustRegionBased(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
 
   //! Destructor
   virtual ~TrustRegionBased();
 
-  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, const NOX::Parameter::List& p);
+  virtual bool reset(NOX::Abstract::Group& xgrp, NOX::StatusTest::Generic& t, NOX::Parameter::List& p);
   virtual NOX::StatusTest::StatusType getStatus();
   virtual NOX::StatusTest::StatusType iterate();
   virtual NOX::StatusTest::StatusType solve();
@@ -144,6 +229,9 @@ protected:
   
   //! Print out initialization information and calcuation the RHS.
   virtual void init();
+
+  //! Print and error message and throw and error
+  virtual void invalid(const string& param, double value) const;
 
   //! Prints the current iteration information.
   virtual void printUpdate();
@@ -192,7 +280,7 @@ protected:
   NOX::StatusTest::Generic* testPtr;		
 
   //! Input parameters.
-  NOX::Parameter::List params;	
+  NOX::Parameter::List* paramsPtr;	
 
   //! Printing Utils
   NOX::Utils utils;
@@ -246,7 +334,8 @@ protected:
   NOX::StatusTest::StatusType status;
 
   //! Enumerated list for each direction that may be required in the Trust region computation.
-  enum StepType {
+  enum StepType 
+  {
     //! Use the Newton direction
     Newton, 
     //! Use the Cauchy direction

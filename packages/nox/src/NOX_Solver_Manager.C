@@ -15,33 +15,36 @@
 #include "NOX_Solver_LineSearchBased.H"	 // LineSearch method
 #include "NOX_Solver_TrustRegionBased.H" // Trust region method
 
-using namespace NOX;
-using namespace NOX::Solver;
-
-Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, const Parameter::List& p) :
+NOX::Solver::Manager::Manager(Abstract::Group& grp, StatusTest::Generic &t, Parameter::List& p) :
   method(""),
   ptr(NULL)
 {
   reset(grp, t, p);
 }
 
-Manager::Manager() :
+NOX::Solver::Manager::Manager() :
   method(""),
   ptr(NULL)
 {
 }
 
-Manager::~Manager()
+NOX::Solver::Manager::~Manager()
 {
   delete ptr;
 }
 
-bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Parameter::List& params)
+bool NOX::Solver::Manager::reset(Abstract::Group& grp, 
+				 StatusTest::Generic& tests, 
+				 Parameter::List& params)
 {
   string newmethod = params.getParameter("Nonlinear Solver", "Line Search Based");
 
-  if (method != newmethod) {
-    
+  if ((method == newmethod) && (ptr != NULL))
+  {
+    return ptr->reset(grp, tests, params);
+  }
+  else 
+  {
     method = newmethod;
 
     delete ptr;
@@ -49,8 +52,7 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
     
     if ((method == "Newton") || (method == "Line Search")) // deprecated
     {	
-      cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
-	   << "                                Use \"Line Search Based\" instead." << endl;
+      deprecated(method, "Line Search Based");
       ptr = new LineSearchBased(grp, tests, params);
     } 
     else if (method == "Line Search Based") 
@@ -59,8 +61,7 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
     } 
     else if (method == "Trust Region")  // deprecated
     {
-      cout << "Warning: NOX::Solver::Manager - Nonlinear Solver choice \"" << method << "\" is deprecated.\n"
-	   << "                                Use \"Trust Region Based\" instead." << endl;
+      deprecated(method, "Trust Region Based");
       ptr = new TrustRegionBased(grp, tests, params);
     } 
     else if (method == "Trust Region Based") 
@@ -69,7 +70,7 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
     } 
     else 
     {
-      cout << "ERROR: NOX::Solver::Manager - Invalid solver choice" << endl;
+      cout << "ERROR: NOX::Solver::Manager::reset - Invalid solver choice" << endl;
       throw "NOX Error";
     }
 
@@ -81,75 +82,49 @@ bool Manager::reset(Abstract::Group& grp, StatusTest::Generic& tests, const Para
 
     return true;
   }
-  else 
-  {
-
-    if (ptr == NULL) 
-    {
-      cerr << "NOX::Solver::Manager::reset - Null pointer error" << endl;
-      return false;
-    }
-
-    return ptr->reset(grp, tests, params);
-  }
 }
 
-NOX::StatusTest::StatusType Manager::getStatus()
+// PRIVATE
+void NOX::Solver::Manager::deprecated(const string& oldName, const string& newName) const
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::getStatus - Null pointer error" << endl;
-    throw "NOX Error";
-  }
+  cout << "Warning: NOX::Solver::Manager::reset - " 
+       << "Nonlinear Solver choice \"" << oldName << "\" is deprecated.\n"
+       << "                                       " 
+       << "Use \"" << newName << "\" instead." 
+       << endl;
+}
 
+NOX::StatusTest::StatusType NOX::Solver::Manager::getStatus()
+{
+  checkNullPtr("getStatus");
   return ptr->getStatus();
 }
 
-NOX::StatusTest::StatusType Manager::iterate()
+NOX::StatusTest::StatusType NOX::Solver::Manager::iterate()
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::iterate - Null pointer error" << endl;
-    throw "NOX Error";
-  }
-
+  checkNullPtr("iterate");
   return ptr->iterate();
 }
 
-NOX::StatusTest::StatusType Manager::solve()
+NOX::StatusTest::StatusType NOX::Solver::Manager::solve()
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::solve - Null pointer error" << endl;
-    throw "NOX Error";
-  }
-
+  checkNullPtr("solve");
   return ptr->solve();
 }
 
-const Abstract::Group& Manager::getSolutionGroup() const
+const NOX::Abstract::Group& NOX::Solver::Manager::getSolutionGroup() const
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::getSolutionGroup - Null pointer error" << endl;
-    throw "NOX Error";
-  }
-
+  checkNullPtr("getSolutionGroup");
   return ptr->getSolutionGroup();
 }
 
-const Abstract::Group& Manager::getPreviousSolutionGroup() const
+const NOX::Abstract::Group& NOX::Solver::Manager::getPreviousSolutionGroup() const
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::getPreviousSolutionGroup - Null pointer error" << endl;
-    throw "NOX Error";
-  }
-
+  checkNullPtr("getPreviousSolutionGroup");
   return ptr->getPreviousSolutionGroup();
 }
 
-int Manager::getNumIterations() const
+int NOX::Solver::Manager::getNumIterations() const
 {
   if (ptr == NULL)
     return 0;
@@ -157,16 +132,19 @@ int Manager::getNumIterations() const
   return ptr->getNumIterations();
 }
 
-const Parameter::List& Manager::getParameterList() const
+const NOX::Parameter::List& NOX::Solver::Manager::getParameterList() const
 {
-  if (ptr == NULL) 
-  {
-    cout << "NOX::Solver::Manager::getParameterList - Null pointer error" << endl;
-    throw "NOX Error";
-  }
-    
+  checkNullPtr("getParameterList");
   return ptr->getParameterList();
 }
 
-
+// PRIVATE
+void NOX::Solver::Manager::checkNullPtr(const string& fname) const
+{
+  if (ptr == NULL) 
+  {
+    cout << "NOX::Solver::Manager::" << fname << " - Null pointer error" << endl;
+    throw "NOX Error";
+  }
+}
 

@@ -47,40 +47,74 @@ class Group;
 
 namespace NOX {
 
-//! %NOX Nonlinear Solvers Namespace.
+/*! 
+  \brief %NOX nonlinear solvers namespace.
+*/
 namespace Solver {
 
-//! Abstract nonlinear solver method interface.
+/*! 
+  \brief %Abstract nonlinear solver method interface.
+
+  Defines the type of access methods into the iterative nonlinear solvers. 
+
+  <ul> 
+  <li>Instantiate or reset() the solver.
+  <li>Find the solution via solve() or perform a single iterations via iterate().
+  <li>Get information about the current solver state via
+      getSolutionGroup(), getPreviousSolutionGroup(),
+      getNumIterations(), and getParameterList() --- particularily
+      useful for NOX::StatusTest methods.
+  <li>Get the current status of the solver via getStatus().
+ */
 class Generic {
 
 public:
 
-  //! Constructor. 
+  //! Constructor (does nothing) 
   Generic() {};
 
-  //! Destructor.
+  //! Destructor (does nothing)
   virtual ~Generic() {};
 
   /*! 
-    \brief Entirely reset the nonlinear solver for a new solve.  This
-    is an alternative to constructing a new solver which may result in
-    some internal data being reconstructed.
-    
-    On input, grp contains the initial guess. On output it contains
-    the solution.
+    \brief Reset the nonlinear solver for a new solve
 
+    \param grp On input, contains the intial guess. On output,
+    contains the solution. 
+
+    \param tests Status tests to check for convergence or
+    failure. These tests will be modified by the solver.
+
+    \param params List of parameters. These parameters will be
+    modified by the solver.
+
+    \note All the objects passed to reset() will be modified. 
+
+    \note The group object will be cloned via
+    NOX::Abstract::Group::clone(), and the vectors within will also be
+    individually cloned via NOX::Abstract::Vector::clone().
+
+    \warning If the contents of grp, tests, or params are modified by
+    the calling program after calling reset(), then the behavior of
+    iterate() and solve() are completely undefined. To remedy this,
+    call reset() again with the modified objects.
   */
   virtual bool reset(NOX::Abstract::Group& grp, 
 		     NOX::StatusTest::Generic& tests, 
-		     const NOX::Parameter::List& params) = 0;
+		     NOX::Parameter::List& params) = 0;
 
-  //! Check current convergence/failure status. 
+  //! Check current convergence and failure status. 
   virtual NOX::StatusTest::StatusType getStatus() = 0;
 
   //! Do one nonlinear method iteration and return status.
   virtual NOX::StatusTest::StatusType iterate() = 0;
 
-  //! Solve the nonlinear problem and return final status.
+  /*! 
+    \brief Solve the nonlinear problem and return final status.
+
+    By "solve", we call iterate() until the NOX::StatusTest value is
+    either NOX::StatusTest::Converged or NOX::StatusTest::Failed. 
+  */
   virtual NOX::StatusTest::StatusType solve() = 0;
 
   //! Return a reference to the current solution group.
@@ -92,7 +126,7 @@ public:
   //! Get number of iterations.
   virtual int getNumIterations() const = 0;
 
-  //! Return list containing various all parameters.
+  //! Return a refernece to the solver parameters.
   virtual const NOX::Parameter::List& getParameterList() const = 0;
 
 };

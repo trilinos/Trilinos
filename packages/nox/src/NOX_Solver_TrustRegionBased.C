@@ -56,7 +56,7 @@ using namespace NOX::Solver;
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
-TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, const Parameter::List& p) :
+TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) :
   solnPtr(&grp),		// pointer to grp
   oldSolnPtr(grp.clone(DeepCopy)), // create via clone
   oldSoln(*oldSolnPtr),		// reference to just-created pointer
@@ -69,8 +69,8 @@ TrustRegionBased::TrustRegionBased(Abstract::Group& grp, StatusTest::Generic& t,
   bVecPtr(grp.getX().clone(ShapeCopy)), // create via clone 
   bVec(*bVecPtr),		// reference to just-created pointer
   testPtr(&t),			// pointer to t
-  params(p),			// copy p
-  utils(params.sublist("Printing")), // inititalize utils
+  paramsPtr(&p),			// copy p
+  utils(paramsPtr->sublist("Printing")), // inititalize utils
   newton(utils),		// initialize direction
   cauchy(utils)			// initialize direction
 {
@@ -89,7 +89,7 @@ void TrustRegionBased::init()
   if (utils.isPrintProcessAndType(NOX::Utils::Parameters)) {
     cout << "\n" << NOX::Utils::fill(72) << "\n";
     cout << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
-    params.print(cout,5);
+    paramsPtr->print(cout,5);
   }
 
   // Compute F of initital guess
@@ -97,77 +97,44 @@ void TrustRegionBased::init()
   newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
 
   // Set default parameter settings using getParameter() if they are not set
-  params.sublist("Direction").getParameter("Method", "Newton");
-  params.sublist("Cauchy Direction").getParameter("Method", "Steepest Descent");
-  params.sublist("Cauchy Direction").sublist("Steepest Descent").getParameter("Scaling Type", "Quadratic Model Min");
+  paramsPtr->sublist("Direction").getParameter("Method", "Newton");
+  paramsPtr->sublist("Cauchy Direction").getParameter("Method", "Steepest Descent");
+  paramsPtr->sublist("Cauchy Direction").sublist("Steepest Descent").getParameter("Scaling Type", "Quadratic Model Min");
 
-  newton.reset(params.sublist("Direction"));
-  cauchy.reset(params.sublist("Cauchy Direction"));
+  newton.reset(paramsPtr->sublist("Direction"));
+  cauchy.reset(paramsPtr->sublist("Cauchy Direction"));
 
-  minRadius = params.sublist("Trust Region").getParameter("Minimum Trust Region Radius", 1.0e-6);
+  minRadius = paramsPtr->sublist("Trust Region").getParameter("Minimum Trust Region Radius", 1.0e-6);
+  if (minRadius <= 0) 
+    invalid("Minimum Trust Region Radius", minRadius);
 
-  if (minRadius <= 0) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Minimum Trust Region Radius\" (" 
-	 << minRadius << ")" << endl;
-    throw "NOX Error";
-  }
+  maxRadius = paramsPtr->sublist("Trust Region").getParameter("Maximum Trust Region Radius", 1.0e+10);
+  if (maxRadius <= minRadius) 
+    invalid("Maximum Trust Region Radius", maxRadius);
 
-  maxRadius = params.sublist("Trust Region").getParameter("Maximum Trust Region Radius", 1.0e+10);
+  minRatio = paramsPtr->sublist("Trust Region").getParameter("Minimum Improvement Ratio", 1.0e-4);
+  if (minRatio <= 0) 
+    invalid("Minimum Improvement Ratio", minRatio);
 
-  if (maxRadius <= minRadius) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Maximum Trust Region Radius\" (" 
-	 << maxRadius << ")" << endl;
-    throw "NOX Error";
-  }
+  contractTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Contraction Trigger Ratio", 0.1);
+  if (contractTriggerRatio < minRatio) 
+    invalid("Contraction Trigger Ratio", contractTriggerRatio);
 
-  minRatio = params.sublist("Trust Region").getParameter("Minimum Improvement Ratio", 1.0e-4);
+  expandTriggerRatio = paramsPtr->sublist("Trust Region").getParameter("Expansion Trigger Ratio", 0.75);
+  if (expandTriggerRatio <= contractTriggerRatio) 
+    invalid("Expansion Trigger Ratio", expandTriggerRatio);
 
-  if (minRatio <= 0) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Minimum Improvement Ratio\" (" 
-	 << minRatio << ")" << endl;
-    throw "NOX Error";
-  }
+  contractFactor = paramsPtr->sublist("Trust Region").getParameter("Contraction Factor", 0.25);
+  if ((contractFactor <= 0) || (contractFactor >= 1)) 
+    invalid("Contraction Factor", contractFactor);
 
-  contractTriggerRatio = params.sublist("Trust Region").getParameter("Contraction Trigger Ratio", 0.1);
+  expandFactor = paramsPtr->sublist("Trust Region").getParameter("Expansion Factor", 4.0);
+  if (expandFactor <= 1) 
+    invalid("Expansion Factor", expandFactor);
 
-  if (contractTriggerRatio < minRatio) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Contraction Trigger Ratio\" (" 
-	 << contractTriggerRatio << ")" << endl;
-    throw "NOX Error";
-  }
-
-
-  expandTriggerRatio = params.sublist("Trust Region").getParameter("Expansion Trigger Ratio", 0.75);
-
-  if (expandTriggerRatio <= contractTriggerRatio) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Expansion Trigger Ratio\" (" 
-	 << expandTriggerRatio << ")" << endl;
-    throw "NOX Error";
-  }
-
-  contractFactor = params.sublist("Trust Region").getParameter("Contraction Factor", 0.25);
-
-  if ((contractFactor <= 0) || (contractFactor >= 1)) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Contraction Factor\" (" 
-	 << contractFactor << ")" << endl;
-    throw "NOX Error";
-  }
-
-  expandFactor = params.sublist("Trust Region").getParameter("Expansion Factor", 4.0);
-
-  if (expandFactor <= 1) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Expansion Factor\" (" 
-	 << expandFactor << ")" << endl;
-    throw "NOX Error";
-  }
-
-  recoveryStep = params.sublist("Trust Region").getParameter("Recovery Step", 1.0);
-
-  if (recoveryStep < 0) {
-    cerr << "NOX::Solver::TrustRegionBased::init - Invalid \"Recovery Step\" (" 
-	 << recoveryStep << ")" << endl;
-    throw "NOX Error";
-  }
+  recoveryStep = paramsPtr->sublist("Trust Region").getParameter("Recovery Step", 1.0);
+  if (recoveryStep < 0) 
+    invalid("Recovery Step", recoveryStep);
 
 
   // Test the initial guess
@@ -181,12 +148,21 @@ void TrustRegionBased::init()
 
 }
 
-bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, const Parameter::List& p) 
+//PRIVATE
+void NOX::Solver::TrustRegionBased::invalid(const string& name, double value) const
+{
+  cerr << "NOX::Solver::TrustRegionBased::init - " 
+       << "Invalid \"" << name << "\" (" << value << ")" 
+       << endl;
+  throw "NOX Error";
+}
+
+bool TrustRegionBased::reset(Abstract::Group& grp, StatusTest::Generic& t, Parameter::List& p) 
 {
   solnPtr = &grp;
   testPtr = &t;
-  params = p;			
-  utils.reset(params.sublist("Printing"));
+  paramsPtr = &p;			
+  utils.reset(paramsPtr->sublist("Printing"));
   init();
   return true;
 }
@@ -215,20 +191,23 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   // Compute Cauchy and Newton points
   bool ok;
   ok = newton.compute(newtonVec, soln, *this);
-  if (!ok) {
+  if (!ok) 
+  {
     cout << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Newton direction" << endl;
     status = StatusTest::Failed;
     return status;
   }
 
   ok = cauchy.compute(cauchyVec, soln, *this);
-  if (!ok) {
+  if (!ok) 
+  {
     cerr << "NOX::Solver::TrustRegionBased::iterate - unable to calculate Cauchy direction" << endl;
     status = StatusTest::Failed;
     return status;
   }
 
-  if (nIter == 0) {
+  if (nIter == 0) 
+  {
     radius = newtonVec.norm();
     if (radius < minRadius)
       radius = 2 * minRadius;
@@ -241,34 +220,38 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
   oldSoln = soln;
   oldF = newF;
 
-  //! Improvement ratio = (oldF - newF) / (mold - mnew)
+  // Improvement ratio = (oldF - newF) / (mold - mnew)
   double ratio = -1;
 
-  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) {
+  if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration)) 
+  {
     cout << NOX::Utils::fill(72) << endl;
     cout << "-- Trust Region Inner Iteration --" << endl;
   }
 
 
   // Trust region subproblem loop
-  while ((ratio < minRatio) && (radius > minRadius)) {
+  while ((ratio < minRatio) && (radius > minRadius)) 
+  {
 
     Abstract::Vector* dirPtr;
     double step;
 
     // Trust region step
-    if (newtonVec.norm() <= radius) {
+    if (newtonVec.norm() <= radius) 
+    {
       stepType = TrustRegionBased::Newton;
       step = 1.0;
       dirPtr = &newtonVec;
     }
-    else if (cauchyVec.norm() >= radius) {
+    else if (cauchyVec.norm() >= radius) 
+    {
       stepType = TrustRegionBased::Cauchy;
       step = radius / cauchyVec.norm();
       dirPtr = &cauchyVec;
     }
-    else {			// Dogleg computation
-      
+    else 
+    {			// Dogleg computation
 
       // aVec = newtonVec - cauchyVec
       aVec.update(1.0, newtonVec, -1.0, cauchyVec, 0.0);
@@ -314,20 +297,24 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
     // Compute F for new current solution.
     NOX::Abstract::Group::ReturnType rtype = soln.computeF();
-    if (rtype != NOX::Abstract::Group::Ok) {
+    if (rtype != NOX::Abstract::Group::Ok) 
+    {
       cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
       throw "NOX Error";
     }
 
     // Compute ratio of actual to predicted reduction
     newF = 0.5 * solnPtr->getNormF() * solnPtr->getNormF();
-    if (newF >= oldF) {
+    if (newF >= oldF) 
+    {
       ratio = -1;
     }
-    else {
+    else 
+    {
 
       rtype = oldSoln.applyJacobian(*dirPtr, bVec);
-      if (rtype != NOX::Abstract::Group::Ok) {
+      if (rtype != NOX::Abstract::Group::Ok) 
+      {
 	cerr << "NOX::Solver::TrustRegionBased::iterate - unable to compute F" << endl;
 	throw "NOX Error";
       }
@@ -337,6 +324,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
       if (utils.isPrintProcessAndType(NOX::Utils::InnerIteration))
 	cout << "Ratio computation: " << utils.sciformat(numerator) << "/" 
 	     << utils.sciformat(denominator) << "=" << ratio << endl;
+
+      // WHY IS THIS CHECK HERE?
       if ((denominator < 1.0e-12) && ((newF / oldF) >= 0.5))
 	ratio = -1;
     }
@@ -365,12 +354,14 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
     }
 
     // Update trust region
-    if (ratio < contractTriggerRatio) {
+    if (ratio < contractTriggerRatio) 
+    {
       if (stepType == TrustRegionBased::Newton)
 	radius = newtonVec.norm();
       radius = max(contractFactor * radius, minRadius);
     }
-    else if ((ratio > expandTriggerRatio) && (dx == radius)) {
+    else if ((ratio > expandTriggerRatio) && (dx == radius)) 
+    {
       radius = min(expandFactor * radius, maxRadius);
     }
 
@@ -378,7 +369,8 @@ NOX::StatusTest::StatusType TrustRegionBased::iterate()
 
 
   // Evaluate the current status
-  if ((radius <= minRadius) && (ratio < minRatio)) {
+  if ((radius <= minRadius) && (ratio < minRatio)) 
+  {
     if (utils.isPrintProcessAndType(Utils::InnerIteration))
       cout << "Using recovery step and resetting trust region." << endl;
     soln.computeX(oldSoln, newtonVec, recoveryStep);
@@ -407,7 +399,7 @@ NOX::StatusTest::StatusType TrustRegionBased::solve()
     printUpdate();
   }
 
-  Parameter::List& outputParams = params.sublist("Output");
+  Parameter::List& outputParams = paramsPtr->sublist("Output");
   outputParams.setParameter("Nonlinear Iterations", nIter);
   outputParams.setParameter("2-Norm of Residual", solnPtr->getNormF());
 
@@ -431,7 +423,7 @@ int TrustRegionBased::getNumIterations() const
 
 const Parameter::List& TrustRegionBased::getParameterList() const
 {
-  return params;
+  return *paramsPtr;
 }
 
 // protected

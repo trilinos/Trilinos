@@ -40,17 +40,18 @@ namespace Solver{
 
 /*! 
 
-  \brief %Manager class to control the instatiation of the derived 
-  NOX::Solver class.  
+  \brief %Manager class to control the instatiation of the objects
+  derived from the NOX::Solver::Generic object.
 
-  The following parameter may be used in the main parameter list that
-  is used in the constructor.
+  <B>Parameters</B>
+  
+  The following entries may be specified in the parameter list.
 
    <ul>
    <li> "Nonlinear %Solver" - Name of the solver method. Valid choices are
    <ul> 
-   <li> "Line Search Based" (NOX::Solver::LineSearch) [Default]
-   <li> "Trust Region Based" (NOX::Solver::TrustRegion)
+   <li> "Line Search Based" (NOX::Solver::LineSearchBased) [Default]
+   <li> "Trust Region Based" (NOX::Solver::TrustRegionBased)
    </ul>
    </ul>
    
@@ -70,15 +71,16 @@ public:
   Manager();
 
   /*!
-    \brief %Generic interface. On input, the grp should contain the
-    initial guess. On output it will contain the solution. 
+    \brief Constructor
+
+    See reset() for a full description.
   */
-  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, const NOX::Parameter::List& p);
+  Manager(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, NOX::Parameter::List& p);
 
   //! Destructor.
   ~Manager();
 
-  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, const NOX::Parameter::List& p);
+  bool reset(NOX::Abstract::Group& grp, NOX::StatusTest::Generic &t, NOX::Parameter::List& p);
 
   NOX::StatusTest::StatusType getStatus();
 
@@ -93,6 +95,17 @@ public:
   int getNumIterations() const;
 
   const NOX::Parameter::List& getParameterList() const;
+
+private:
+
+  //! Print a warning message that oldName is deprecated and newName should be used instead
+  void deprecated(const string& oldName, const string& newName) const;
+
+  /*! 
+    \brief Check that ptr is non-null. If it is null, print a
+    message that prints fname and throw an error. 
+  */
+  void checkNullPtr(const string& fname) const;
 
 private:
 
