@@ -243,7 +243,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
   return LOCA::Abstract::Group::Ok;
 }
 
-#ifdef HAVE_ANASAZI
+#ifdef HAVE_LOCA_ANASAZI
 #include "AnasaziLOCAInterface.hpp"
 #include "AnasaziBlockArnoldi.hpp"
 #endif
@@ -251,7 +251,7 @@ LOCA::Epetra::Group::augmentJacobianForHomotopy(double conParamValue)
 NOX::Abstract::Group::ReturnType
 LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
 {
-#ifdef HAVE_ANASAZI
+#ifdef HAVE_LOCA_ANASAZI
 
     NOX::Parameter::List& aList = params.sublist("LOCA").sublist("Stepper").sublist("Anasazi");
     int blksz =   aList.getParameter("blksz", 1);       //  The block size
@@ -299,7 +299,8 @@ LOCA::Epetra::Group::computeEigenvalues(NOX::Parameter::List& params)
                                                                                                                                 
   return LOCA::Abstract::Group::Ok;
 #else
-    cout << "\nWarning: LOCA::Epetra::Group::computeEigenvalues:\n\t"
-	 <<  "Anasazi Eigensolver requested but not compiled in!" << endl;
+  cout << "\nWarning: LOCA::Epetra::Group::computeEigenvalues:\n\t"
+       <<  "Anasazi Eigensolver requested but not compiled in!" << endl;
+  return LOCA::Abstract::Group::Ok;
 #endif
 }

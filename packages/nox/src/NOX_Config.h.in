@@ -38,6 +38,9 @@
 /* Define if you have LAPACK library. */
 #undef HAVE_LAPACK
 
+/* define that anasazi is activated in loca */
+#undef HAVE_LOCA_ANASAZI
+
 /* Define to 1 if you have the <math.h> header file. */
 #undef HAVE_MATH_H
 

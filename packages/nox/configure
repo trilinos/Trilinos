@@ -886,6 +886,7 @@ Optional Features:
   --enable-nox-petsc-examples
                           compile petsc interface examples
   --enable-loca           compile the loca library
+  --enable-loca-anaszi    compile anasazi support into liblocaepetra
   --enable-nox-epetra-azlu
                           includes az_lu preconditioner in the epetra
                           interface - requires y12m library
@@ -914,9 +915,14 @@ Optional Packages:
   --with-epetra-incdir    specify location of all epetra header files
   --with-aztecoo-incdir   specify location of all aztecoo header files
   --with-ifpack-incdir    specify location of all ifpack header files
+  --with-anasazi-incdir   specify location of all anasazi header files
+  --with-anasaziutils-incdir
+                          specify location of all anasazi header files
   --with-epetra-libdir    specify location of epetra library
   --with-aztecoo-libdir   specify location of aztecoo library
   --with-ifpack-libdir    specify location of ifpack library
+  --with-anasazi-libdir   specify location of anasazi library
+  --with-anasazi-libdir   specify location of anasaziutils library
   --with-y12m-libdir      specify location of y12m library
   --with-petsc-incdir     specify location of PETSc header files
   --with-petsc-libdir     specify location of petsc library
@@ -2709,8 +2715,7 @@ else
   fi
 fi
 for ac_declaration in \
-   ''\
-   '#include <stdlib.h>' \
+   '' \
    'extern "C" void std::exit (int) throw (); using std::exit;' \
    'extern "C" void std::exit (int); using std::exit;' \
    'extern "C" void exit (int) throw ();' \
@@ -2724,8 +2729,8 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <stdlib.h>
 $ac_declaration
+#include <stdlib.h>
 int
 main ()
 {
@@ -4897,6 +4902,23 @@ fi
 fi
 
 # ------------------------------------------------------------------------
+# LOCA-Epetra-Anasazi support
+# ------------------------------------------------------------------------
+
+# Check whether --enable-loca-anasazi or --disable-loca-anasazi was given.
+if test "${enable_loca_anasazi+set}" = set; then
+  enableval="$enable_loca_anasazi"
+  BUILD_LOCA_ANASAZI_SUPPORT=${enableval}
+else
+  BUILD_LOCA_ANASAZI_SUPPORT=no
+
+fi;
+echo "$as_me:$LINENO: checking whether we should build anasazi support into locaepetra library" >&5
+echo $ECHO_N "checking whether we should build anasazi support into locaepetra library... $ECHO_C" >&6
+echo "$as_me:$LINENO: result: ${BUILD_LOCA_ANASAZI_SUPPORT}" >&5
+echo "${ECHO_T}${BUILD_LOCA_ANASAZI_SUPPORT}" >&6
+
+# ------------------------------------------------------------------------
 # Check for MPI library
 # ------------------------------------------------------------------------
 
@@ -5296,7 +5318,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5299:" \
+echo "$as_me:5321:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5465,7 +5487,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5468: \"$ac_link\") >&5
+(eval echo $as_me:5490: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5545,7 +5567,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5548: \"$ac_link\") >&5
+(eval echo $as_me:5570: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6299,8 +6321,7 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
   for ac_declaration in \
-   ''\
-   '#include <stdlib.h>' \
+   '' \
    'extern "C" void std::exit (int) throw (); using std::exit;' \
    'extern "C" void std::exit (int); using std::exit;' \
    'extern "C" void exit (int) throw ();' \
@@ -6314,8 +6335,8 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include <stdlib.h>
 $ac_declaration
+#include <stdlib.h>
 #ifdef F77_DUMMY_MAIN
 #  ifdef __cplusplus
      extern "C"
@@ -8422,6 +8443,20 @@ if test "${with_ifpack_incdir+set}" = set; then
 fi;
 
 
+# Check whether --with-anasazi-incdir or --without-anasazi-incdir was given.
+if test "${with_anasazi_incdir+set}" = set; then
+  withval="$with_anasazi_incdir"
+  ifpack_INCDIR=$withval
+fi;
+
+
+# Check whether --with-anasaziutils-incdir or --without-anasaziutils-incdir was given.
+if test "${with_anasaziutils_incdir+set}" = set; then
+  withval="$with_anasaziutils_incdir"
+  ifpack_INCDIR=$withval
+fi;
+
+
 # Check whether --with-epetra-libdir or --without-epetra-libdir was given.
 if test "${with_epetra_libdir+set}" = set; then
   withval="$with_epetra_libdir"
@@ -8443,6 +8478,20 @@ if test "${with_ifpack_libdir+set}" = set; then
 fi;
 
 
+# Check whether --with-anasazi-libdir or --without-anasazi-libdir was given.
+if test "${with_anasazi_libdir+set}" = set; then
+  withval="$with_anasazi_libdir"
+  ifpack_LIBDIR=$withval
+fi;
+
+
+# Check whether --with-anasaziutils-libdir or --without-anasaziutils-libdir was given.
+if test "${with_anasaziutils_libdir+set}" = set; then
+  withval="$with_anasaziutils_libdir"
+  ifpack_LIBDIR=$withval
+fi;
+
+
 # Check whether --with-y12m-libdir or --without-y12m-libdir was given.
 if test "${with_y12m_libdir+set}" = set; then
   withval="$with_y12m_libdir"
@@ -8459,6 +8508,10 @@ ABS_TRILINOS_CPPFLAGS=
 
 # Determine if anything needs to be added to REL/ABS_TRILINOS_FLAGS.
 # Does not modify CPPFLAGS.
+# TRILINOS_HEADER now takes three arguments:
+# TRILINOS_HEADER(<library name>,<file name>,<subdirectory>)
+# This is needed for multiple libraries being supplied by the
+# same trilinos package (anasazi).
 
 
 if test X${ADDON_epetra} = Xyes; then
@@ -9774,6 +9827,663 @@ echo "$as_me: error: Cannot find ifpack include directory containing Ifpack_Scal
   fi
 
 
+  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${anasazi_INCDIR}"; then
+    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Anasazi_config.h"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Anasazi_config.h, part of the anasazi package."
+    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing Anasazi_config.h" >&5
+echo "$as_me: error: Cannot find anasazi include directory containing Anasazi_config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziCommon.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${anasazi_INCDIR}"; then
+    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziCommon.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziCommon.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../anasazi/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziCommon.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file AnasaziCommon.hpp, part of the anasazi package."
+    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing AnasaziCommon.hpp" >&5
+echo "$as_me: error: Cannot find anasazi include directory containing AnasaziCommon.hpp" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziBLAS.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next  try the specified incdir (if any)
+  if test $done = no && test -n "${anasazi_INCDIR}"; then
+    CPPFLAGS="-I${anasazi_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziBLAS.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I${anasazi_INCDIR} ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../anasazi/utils $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziBLAS.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../anasazi/utils ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../anasazi/utils ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../anasazi/utils $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "AnasaziBLAS.hpp"
+
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_cxx_preproc_warn_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../anasazi/utils ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../anasazi/utils ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file AnasaziBLAS.hpp, part of the anasazi package."
+    echo "Try --with-anasazi-incdir=<dir> to specify a single directory or"
+    echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi include directory containing AnasaziBLAS.hpp" >&5
+echo "$as_me: error: Cannot find anasazi include directory containing AnasaziBLAS.hpp" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+  fi
+
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
 fi
@@ -9784,6 +10494,10 @@ fi
 # Checks for Trilinos libraries
 # ------------------------------------------------------------------------
 
+# TRILINOS_LIB_CHECK now takes three arguments:
+# TRILINOS_LIB_CHECK(<library name>,<package name>,<subdirectory>)
+# This is needed for multiple libraries being supplied by the
+# same trilinos package (anasazi).
 
 
 if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
@@ -10561,6 +11275,380 @@ echo "$as_me: error: Cannot find aztecoo library." >&2;}
   fi
 
 
+
+  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+
+  LIBS="-lanasazi ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
+
+  # First, see if we're inside Trilinos.
+  # If so, just assume the libraries will be built later.
+  if test X$INSIDE_TRILINOS = Xyes; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
+    done=auto
+  fi
+
+  # Next, see if we can link without doing anything
+  if test $done = no; then
+    ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+    LDFLAGS=$save_LDFLAGS
+  fi
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n "${anasazi_LIBDIR}"; then
+     LDFLAGS="-L${anasazi_LIBDIR} $save_LDFLAGS"
+     cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  # Next try the Trilinos build dir
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/src $save_LDFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  echo "$as_me:$LINENO: checking for anasazi library" >&5
+echo $ECHO_N "checking for anasazi library... $ECHO_C" >&6
+
+  if test $done = auto; then
+    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
+echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
+  elif test $done = yes; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    echo "------"
+    echo "Cannot find the library anasazi."
+    echo "Try --with-anasazi-libdir=<dir> to specify a single directory or"
+    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasazi library." >&5
+echo "$as_me: error: Cannot find anasazi library." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+  LIBS="-lanasaziutils ${LIBS}"
+  save_LDFLAGS=$LDFLAGS
+  done=no
+
+  # First, see if we're inside Trilinos.
+  # If so, just assume the libraries will be built later.
+  if test X$INSIDE_TRILINOS = Xyes; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/utils $save_LDFLAGS"
+    done=auto
+  fi
+
+  # Next, see if we can link without doing anything
+  if test $done = no; then
+    ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+    LDFLAGS=$save_LDFLAGS
+  fi
+
+  # Next try the specified libdir (if any)
+   if test $done = no && test -n "${anasaziutils_LIBDIR}"; then
+     LDFLAGS="-L${anasaziutils_LIBDIR} $save_LDFLAGS"
+     cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  # Next try the Trilinos build dir
+   if test $done = no; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../anasazi/utils $save_LDFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+#line $LINENO "configure"
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#ifdef F77_DUMMY_MAIN
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+#endif
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+         { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+LDFLAGS=$save_LDFLAGS
+fi
+rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
+   fi
+
+  echo "$as_me:$LINENO: checking for anasaziutils library" >&5
+echo $ECHO_N "checking for anasaziutils library... $ECHO_C" >&6
+
+  if test $done = auto; then
+    echo "$as_me:$LINENO: result: no check - assuming library will be built by Trilinos" >&5
+echo "${ECHO_T}no check - assuming library will be built by Trilinos" >&6
+  elif test $done = yes; then
+    echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+  else
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+    echo "------"
+    echo "Cannot find the library anasaziutils."
+    echo "Try --with-anasaziutils-libdir=<dir> to specify a single directory or"
+    echo "--with-ldflags=\"-L<dir1> -L<dir2>\" for multiple directories."
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find anasaziutils library." >&5
+echo "$as_me: error: Cannot find anasaziutils library." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LOCA_ANASAZI 1
+_ACEOF
+
+  fi
 
 fi
 

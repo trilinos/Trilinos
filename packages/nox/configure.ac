@@ -692,6 +692,18 @@ else
 fi
 
 # ------------------------------------------------------------------------
+# LOCA-Epetra-Anasazi support
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-anasazi,
+[AC_HELP_STRING([--enable-loca-anaszi],[compile anasazi support into liblocaepetra])],
+[BUILD_LOCA_ANASAZI_SUPPORT=${enableval}],
+[BUILD_LOCA_ANASAZI_SUPPORT=no]
+)
+AC_MSG_CHECKING(whether we should build anasazi support into locaepetra library)
+AC_MSG_RESULT([${BUILD_LOCA_ANASAZI_SUPPORT}])
+
+# ------------------------------------------------------------------------
 # Check for MPI library
 # ------------------------------------------------------------------------
 
@@ -774,6 +786,14 @@ AC_ARG_WITH(ifpack-incdir,
 [AC_HELP_STRING([--with-ifpack-incdir],[specify location of all ifpack header files])],
 [ifpack_INCDIR=$withval])
 
+AC_ARG_WITH(anasazi-incdir,
+[AC_HELP_STRING([--with-anasazi-incdir],[specify location of all anasazi header files])],
+[ifpack_INCDIR=$withval])
+
+AC_ARG_WITH(anasaziutils-incdir,
+[AC_HELP_STRING([--with-anasaziutils-incdir],[specify location of all anasazi header files])],
+[ifpack_INCDIR=$withval])
+
 AC_ARG_WITH(epetra-libdir,
 [AC_HELP_STRING([--with-epetra-libdir],[specify location of epetra library])],
 [epetra_LIBDIR=$withval])
@@ -784,6 +804,14 @@ AC_ARG_WITH(aztecoo-libdir,
 
 AC_ARG_WITH(ifpack-libdir,
 [AC_HELP_STRING([--with-ifpack-libdir],[specify location of ifpack library])],
+[ifpack_LIBDIR=$withval])
+
+AC_ARG_WITH(anasazi-libdir,
+[AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasazi library])],
+[ifpack_LIBDIR=$withval])
+
+AC_ARG_WITH(anasaziutils-libdir,
+[AC_HELP_STRING([--with-anasazi-libdir],[specify location of anasaziutils library])],
 [ifpack_LIBDIR=$withval])
 
 AC_ARG_WITH(y12m-libdir,
@@ -800,6 +828,10 @@ ABS_TRILINOS_CPPFLAGS=
 
 # Determine if anything needs to be added to REL/ABS_TRILINOS_FLAGS.
 # Does not modify CPPFLAGS.
+# TRILINOS_HEADER now takes three arguments: 
+# TRILINOS_HEADER(<library name>,<file name>,<subdirectory>)
+# This is needed for multiple libraries being supplied by the 
+# same trilinos package (anasazi).
 AC_DEFUN(TRILINOS_HEADER,
 [
   save_CPPFLAGS=$CPPFLAGS
@@ -842,7 +874,7 @@ AC_DEFUN(TRILINOS_HEADER,
 
   # Next try the Trilinos build dir
   if test $done = no; then
-    CPPFLAGS="-I../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I../$1/$3 $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     AC_PREPROC_IFELSE([AC_LANG_SOURCE(
   [[
 #undef PACKAGE
@@ -854,15 +886,15 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef VERSION
 #include "$2"
   ]])],[ done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I../$1/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
     ],[])
     CPPFLAGS=$save_CPPFLAGS
   fi   
 
   # Next try the Trilinos source dir
   if test $done = no && test -n "$srcdir"; then
-    CPPFLAGS="-I$srcdir/../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    CPPFLAGS="-I$srcdir/../$1/$3 $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     AC_PREPROC_IFELSE([AC_LANG_SOURCE(
   [[
 #undef PACKAGE
@@ -874,8 +906,8 @@ AC_DEFUN(TRILINOS_HEADER,
 #undef VERSION
 #include "$2"
   ]])],[ done=yes
-      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/src ${REL_TRILINOS_CPPFLAGS}"
-      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../$1/src ${ABS_TRILINOS_CPPFLAGS}"
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../$1/$3 ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../$1/$3 ${ABS_TRILINOS_CPPFLAGS}"
     ],[])					       
     CPPFLAGS=$save_CPPFLAGS
   fi   
@@ -894,12 +926,18 @@ if test X${ADDON_epetra} = Xyes; then
 
   # We have to check for the standard Trilinos headers as well as
   # those created by configure.
-  TRILINOS_HEADER(epetra,Epetra_config.h)
-  TRILINOS_HEADER(epetra,Epetra_DataAccess.h)
-  TRILINOS_HEADER(aztecoo,AztecOO_config.h)
-  TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h)
-  TRILINOS_HEADER(ifpack,Ifpack_config.h)
-  TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h)
+  TRILINOS_HEADER(epetra,Epetra_config.h,src)
+  TRILINOS_HEADER(epetra,Epetra_DataAccess.h,src)
+  TRILINOS_HEADER(aztecoo,AztecOO_config.h,src)
+  TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h,src)
+  TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
+  TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
+
+  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(anasazi,Anasazi_config.h,src)
+    TRILINOS_HEADER(anasazi,AnasaziCommon.hpp,src)
+    TRILINOS_HEADER(anasazi,AnasaziBLAS.hpp,utils)
+  fi
 
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
@@ -911,6 +949,10 @@ AC_SUBST(TRILINOS_CXXFLAGS)
 # Checks for Trilinos libraries
 # ------------------------------------------------------------------------
 
+# TRILINOS_LIB_CHECK now takes three arguments: 
+# TRILINOS_LIB_CHECK(<library name>,<package name>,<subdirectory>)
+# This is needed for multiple libraries being supplied by the 
+# same trilinos package (anasazi).
 AC_DEFUN(TRILINOS_LIB_CHECK,
 [
   LIBS="-l$1 ${LIBS}"
@@ -921,7 +963,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
   # If so, just assume the libraries will be built later. 
   if test X$INSIDE_TRILINOS = Xyes; then
     PWD=`pwd`
-    LDFLAGS="-L$PWD/../$1/src $save_LDFLAGS"
+    LDFLAGS="-L$PWD/../$2/$3 $save_LDFLAGS"
     done=auto
   fi
 
@@ -941,7 +983,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
   # Next try the Trilinos build dir
    if test $done = no; then
     PWD=`pwd`
-    LDFLAGS="-L$PWD/../$1/src $save_LDFLAGS"
+    LDFLAGS="-L$PWD/../$2/$3 $save_LDFLAGS"
     AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[done=yes],[LDFLAGS=$save_LDFLAGS])
    fi   
 
@@ -1047,9 +1089,15 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
     fi  
   fi
 
-  TRILINOS_LIB_CHECK(epetra)
-  TRILINOS_LIB_CHECK(ifpack)
-  TRILINOS_LIB_CHECK(aztecoo)
+  TRILINOS_LIB_CHECK(epetra,epetra,src)
+  TRILINOS_LIB_CHECK(ifpack,ifpack,src)
+  TRILINOS_LIB_CHECK(aztecoo,aztecoo,src)
+
+  if test X${BUILD_LOCA_ANASAZI_SUPPORT} = Xyes; then
+    TRILINOS_LIB_CHECK(anasazi,anasazi,src)
+    TRILINOS_LIB_CHECK(anasaziutils,anasazi,utils)
+    AC_DEFINE(HAVE_LOCA_ANASAZI,1,[define that anasazi is activated in loca])
+  fi
 
 fi
 
