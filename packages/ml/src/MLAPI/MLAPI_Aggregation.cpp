@@ -52,9 +52,6 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     DCOPY_F77(&size, (double*)ThisNS.GetValues(v), &incr,
               null_vect + v * ThisNS.GetMyLength(), &incr);
 
-  /* needed for MIS, otherwise it sets the number of equations to
-   * the null space dimension */
-  agg_object->max_levels  = -7;
 
   ML_Aggregate_Set_NullSpace(agg_object, NumPDEEquations,
                              ThisNS.GetNumVectors(), null_vect, 
@@ -64,8 +61,12 @@ void GetPtent(const Operator& A, Teuchos::ParameterList& List,
     agg_object->coarsen_scheme = ML_AGGR_UNCOUPLED;
   else if (CoarsenType == "Uncoupled-MIS")
     agg_object->coarsen_scheme = ML_AGGR_HYBRIDUM;
-  else if (CoarsenType == "MIS") 
+  else if (CoarsenType == "MIS") {
+   /* needed for MIS, otherwise it sets the number of equations to
+    * the null space dimension */
+    agg_object->max_levels  = -7;
     agg_object->coarsen_scheme = ML_AGGR_MIS;
+  }
   else if (CoarsenType == "METIS")
     agg_object->coarsen_scheme = ML_AGGR_METIS;
   else {
