@@ -121,17 +121,17 @@ ostream& ParameterList::print(ostream& os, int indent) const
 
 #if defined(TFLOP)
 
-const string& List::name(ConstIterator i) const
+const string& ParameterList::name(ConstIterator i) const
 {
   return ((*i).first);
 }
 
-Entry& ParameterList::entry(Iterator i)
+ParameterEntry& ParameterList::entry(Iterator i)
 {
   return ((*i).second);
 }
 
-const Entry& ParameterList::entry(ConstIterator i) const
+const ParameterEntry& ParameterList::entry(ConstIterator i) const
 {
   return ((*i).second);
 }
