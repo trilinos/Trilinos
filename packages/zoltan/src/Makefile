@@ -86,6 +86,7 @@ ifdef PARMETIS_LIBPATH
   GDEFINES     += -DLB_PARMETIS
   THIRD_PARTY_LIBS += -lparmetis -lmetis
   THIRD_PARTY_LIBPATH += $(PARMETIS_LIBPATH)
+  THIRD_PARTY_INCPATH += $(PARMETIS_INCPATH)
 endif
 
 # If JOSTLE_LIBPATH is defined, compile the JOSTLE interface and 
