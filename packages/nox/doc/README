@@ -1,0 +1,31 @@
+NOX Documentation
+-----------------
+
+You may access/create the NOX documentation in three ways...
+
+1. ONLINE DOCUMENTATION
+
+   The documentation is online at http://software.sandia.gov/nox/.
+
+2. MANUALLY GENERATE THE DOCUMENTATION
+
+   Within the doc subdirectory, type
+
+   > doxygen Doxyfile.default
+
+   Then browse to doc/html/index.html to get started.
+
+3. AUTOMATICALLY GENERATE THE DOCUMENTATION
+
+   Let $NOX_SRC denote the top level NOX directory, and let $NOX_BUILD
+   denote the top level build directory (often these are the same). 
+
+   Within the $NOX_BUILD directory, type
+
+   > configure [options]
+   > make dox
+
+   This will create the documentation inside the $NOX_SRC
+   directory. Browse to $NOX_SRC/doc/html/index.html.
+   
+

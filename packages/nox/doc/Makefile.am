@@ -40,7 +40,7 @@ EXTRA_DIST = Doxyfile
 
 MAINTAINERCLEANFILES = Makefile.in 
 
-dox:
-	cd $(top_srcdir)/doc; doxygen
+dox: Doxyfile
+	cp Doxyfile $(top_srcdir)/doc; cd $(top_srcdir)/doc; doxygen
 
 

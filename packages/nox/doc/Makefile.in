@@ -236,8 +236,8 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic uninstall uninstall-am uninstall-info-am
 
 
-dox:
-	cd $(top_srcdir)/doc; doxygen
+dox: Doxyfile
+	cp Doxyfile $(top_srcdir)/doc; cd $(top_srcdir)/doc; doxygen
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
