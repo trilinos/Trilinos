@@ -1,4 +1,0 @@
-The ESI headers are now in the esi sub-dirctory.  You will need to 
-setup up the ESI MPI headers before using them on a particular 
-system.  To do that, go the esi directory below and follow the 
-README instructions.
