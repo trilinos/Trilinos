@@ -1,7 +1,15 @@
-<!doctype html public "-//Netscape Comm. Corp.//DTD HTML//EN">
-<html>
-<head>
-
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="filename" CONTENT="ug.html">
+   <META NAME="review" CONTENT="28 May, 1999">
+   <META NAME="subject" CONTENT="Zoltan User's Guide">
+   <META NAME="sandia.approval_type" CONTENT="formal">
+   <META NAME="sandia.approved" CONTENT="1997-0405">
+   <META NAME="sandia.create_date" CONTENT="05/28/99">
+   <META NAME="keywords" CONTENT="Zoltan, dynamic load balancing, parallel computing">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Sandia National Laboratories - Zoltan User's Guide</TITLE>
 <!
   ------------------------
   | CVS File Information |
@@ -11,154 +19,123 @@
   $Date$
   $Revision$
 >
-
 <!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
 <!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
-
-<title>Sandia National Laboratories - Zoltan User's Guide</title>
 <!--------CHANGE THE NAME AFTER THE DASH-------->
-
-<meta name="filename" content="ug.html">
 <!--------CHANGE THE FILENAME-------->
-
-<meta name="review" content="28 May, 1999">
 <!--------CHANGE THE REVIEW DATE-------->
-
-<meta name="subject" content="Zoltan User's Guide">
 <!--------CHANGE THE SUBJECT-------->
-
-<link rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm"> 
-<meta name="sandia.approval_type" content="formal">
-
-<meta name="sandia.approved" content="1997-0405">
+<LINK rel="schema.sandia" href="http://www.sandia.gov/html_schema.htm">
 <!--------CHANGE THE SAND NUMBER INFO-------->
-
-<meta name="sandia.create_date" content="05/28/99">
 <!--------INSERT THE DATE DOCUMENT CREATED-------->
-
-<link rev="owns" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<LINK rev="owns" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
 <!--------CHANGE THE PAGE OWNER AND EMAIL ADDRESS-------->
-
-<link rev="made" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
+<LINK rev="made" title="name of contact" href="mailto:kddevin@cs.sandia.gov">
 <!--------CHANGE THE PAGE MAKER AND EMAIL ADDRESS-------->
-
-<meta name = "keywords" content = "Zoltan, dynamic load balancing, parallel computing">
 <!--------PLACE FIVE KEY WORDS WITHIN THE QUOTES-------->
 <!---------------END OF THIS CHANGE AREA--------------->
+</HEAD>
+<BODY TEXT="#000000" BACKGROUND="http://www.sandia.gov/images/bkgrnd.gif">
+<! KDD Turned off alternative link colors in template; the ><! following line was part of the above body command. ><! link="#003366" vlink="#cc0033" alink="#000000"><A NAME="TOP"></A><!---TOP BANNER AREA STARTS HERE--->
+<TABLE BORDER=0 valign="top" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="140" >
+<TABLE BORDER=0 WIDTH="130" valign="top" >
+<TR VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="128"><!--SANDIA LOGO AT TOP LEFT--><A HREF="http://www.sandia.gov/Main.html"><IMG SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" HEIGHT=49 WIDTH=126></A>&nbsp;
+<BR><!---TOP LEFT NAVIGATION BUTTONS---><A HREF="http://www.sandia.gov/About.htm"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[About Sandia]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/Solution.htm"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Unique Solutions]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/Working.htm"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Working With Us]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/Contacting.htm"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Contacting Us]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/News.htm"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[News Center]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/search.html"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Search]" BORDER=0 ></A>
+<BR><A HREF="http://www.sandia.gov/Main.html"><IMG SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Home]" BORDER=0 ></A>
+<BR><IMG ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" HEIGHT=119 WIDTH=111>&nbsp;</TD>
 
-</head>
+<TD><IMG SRC="http://www.sandia.gov/images/1pixel.gif" BORDER=0 HEIGHT=1 WIDTH=10></TD>
+</TR>
+</TABLE>
+&nbsp;
+<TABLE BORDER=0 WIDTH="140" valign="top" >
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="114"><!----------- 1st little turquoise bevel button ------------>
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<TR VALIGN=TOP BGCOLOR="#99FFFF">
+<TD ALIGN=LEFT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
 
-<body background="http://www.sandia.gov/images/bkgrnd.gif" text="#000000" >
-<! KDD Turned off alternative link colors in template; the >
-<! following line was part of the above body command. >
-<! link="#003366" vlink="#cc0033" alink="#000000">
+<TD ALIGN=RIGHT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
+</TR>
 
-<a name="TOP"></a>
+<TR ALIGN=CENTER VALIGN=CENTER>
+<TD COLSPAN="2"><B><FONT FACE="Verdana, Arial, Helvetica"><FONT SIZE=+1><A HREF="../Zoltan.html">Zoltan
+Home Page</A></FONT></FONT></B></TD>
+</TR>
 
-<!---TOP BANNER AREA STARTS HERE--->
-<table valign=top border="0">
-<tr valign=top><td valign=top width="140">
+<TR VALIGN=BOTTOM BGCOLOR="#006699">
+<TD ALIGN=LEFT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
 
-<table valign=top border="0" width="130">
-<tr valign=top><td width="128" valign=top>
-<!--SANDIA LOGO AT TOP LEFT-->
+<TD ALIGN=RIGHT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
 
-<a href="http://www.sandia.gov/Main.html"><img valign="top" src="http://www.sandia.gov/images/snlstkdc.gif" border="0" width="126" height="49" alt="[Sandia National Laboratories]"></a>
-<br>
-<!---TOP LEFT NAVIGATION BUTTONS--->
-<a href="http://www.sandia.gov/About.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[About Sandia]"></a><br>
-<a href="http://www.sandia.gov/Solution.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Unique Solutions]"></a><br>
-<a href="http://www.sandia.gov/Working.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Working With Us]"></a><br>
-<a href="http://www.sandia.gov/Contacting.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Contacting Us]"></a><br>
-<a href="http://www.sandia.gov/News.htm"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[News Center]"></a><br>
-<a href="http://www.sandia.gov/search.html"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Search]"></a><br>
-<a href="http://www.sandia.gov/Main.html"><img src="http://www.sandia.gov/images/1pixel.gif" border="0" alt="[Home]"></a><br>
+<TD VALIGN=TOP WIDTH="20"></TD>
+</TR>
 
-<img ismap usemap="#shortMap" src="http://www.sandia.gov/images/labelNEW.gif" width="111" height="119"  hspace="2" border="0" alt="[navigation panel]">
-</td>
+<TR VALIGN=TOP>
+<TD COLSPAN="2"></TD>
+</TR>
 
-<td><img src="http://www.sandia.gov/images/1pixel.gif" border="0" width="10" height="1"></td>
+<TR ALIGN=LEFT VALIGN=TOP>
+<TD VALIGN=TOP WIDTH="114"><!----------- 2nd little turquoise bevel button ------------>
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<TR VALIGN=TOP BGCOLOR="#99FFFF">
+<TD ALIGN=LEFT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
 
-</tr>
-</table>
+<TD ALIGN=RIGHT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
+</TR>
 
-<br>
+<TR ALIGN=CENTER VALIGN=CENTER>
+<TD COLSPAN="2"><B><FONT FACE="Verdana, Arial, Helvetica"><FONT SIZE=+1><A HREF="../dev_html/dev.html">Zoltan
+Developer's Guide</A></FONT></FONT></B></TD>
+</TR>
 
+<TR VALIGN=BOTTOM BGCOLOR="#006699">
+<TD ALIGN=LEFT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
 
-<table border="0" width="140" valign="top">
-<tr valign="top" align="left"><td width="114" valign="top">
-<!----------- 1st little turquoise bevel button ------------>
-<table border="0" width="114" bgcolor="#00ccff" cellspacing="0" cellpadding="0"><tr valign="top" bgcolor="#99ffff"><td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" height="1" width="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
-<tr align="center" valign="center"><td colspan="2"><b><font face="Verdana, Arial, Helvetica" size="+1" style="family: Verdana, Arial, Helvetica"><a href="../Zoltan.html">Zoltan Home Page</a></font></b></td>
-</tr>
-<tr valign="bottom" bgcolor="#006699">
-<td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
-</table>
+<TD ALIGN=RIGHT><IMG SRC="http://www.sandia.gov/images/1pixel.gif" HEIGHT=1 WIDTH=1></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
 
+<TD VALIGN=TOP WIDTH="20"></TD>
+</TR>
 
-</td>
-<td width="20" valign="top">
-<br>
-</td></tr>
+<TR VALIGN=TOP>
+<TD COLSPAN="2"></TD>
+</TR>
+</TABLE>
+&nbsp;</TD>
 
+<TD VALIGN=TOP><!--MAIN CONTENT AREA STARTS HERE--><!----------------THIS IS A CHANGE AREA----------------><!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------><B><FONT FACE="Verdana, Arial, Helvetica"><FONT SIZE=+2>Zoltan:&nbsp;</FONT></FONT></B>
+<BR><B><FONT FACE="Verdana, Arial, Helvetica"><FONT SIZE=+2>A Dynamic Load-Balancing
+Library for Parallel Applications</FONT></FONT></B>
 
-<tr valign="top">
-<td colspan="2">
-</td></tr>
+<P><B><FONT FACE="Verdana, Arial, Helvetica"><FONT SIZE=+2>User's Guide&nbsp;</FONT></FONT></B>
 
-<tr valign="top" align="left"><td width="114" valign="top">
-<!----------- 2nd little turquoise bevel button ------------>
-<table border="0" width="114" bgcolor="#00ccff" cellspacing="0" cellpadding="0"><tr valign="top" bgcolor="#99ffff"><td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" height="1" width="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
-<tr align="center" valign="center"><td colspan="2"><b><font face="Verdana, Arial, Helvetica" size="+1" style="family: Verdana, Arial, Helvetica"><a href="../dev_html/dev.html">Zoltan Developer's Guide</a></font></b></td>
-</tr>
-<tr valign="bottom" bgcolor="#006699">
-<td align="left"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td><td align="right"><img src="http://www.sandia.gov/images/1pixel.gif" width="1" height="1"></td></tr>
-</table>
-</td>
-<td width="20" valign="top">
-<br>
-</td></tr>
-
-<tr valign="top">
-<td colspan="2">
-</td></tr>
-
-</table>
-
-
-</td>
-<td valign="top">
-
-<!--MAIN CONTENT AREA STARTS HERE-->
-<!----------------THIS IS A CHANGE AREA----------------> 
-<!------HEADER TEXT SHOULD BE REPLACE THIS TEXT------>
-<b><font face="Verdana, Arial, Helvetica" size=5 style="font-family: Verdana, Arial, Helvetica">
-Zoltan: <br>
-A Dynamic Load-Balancing Library for Parallel Applications<br><br>
-User's Guide
-</font></center></b><p>
-<!---------------END OF THIS CHANGE AREA--------------->
-
-
-
-<!----------------THIS IS A CHANGE AREA----------------> 
-<!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
-
-
+<P><!---------------END OF THIS CHANGE AREA---------------><!----------------THIS IS A CHANGE AREA----------------><!--MAIN CONTENT SHOULD BE PLACED IN THE AREA BELOW-->
 <HR WIDTH="100%">
 <H4>
-<B>
-<A HREF="http://www.cs.sandia.gov/~kddevin">Karen Devine<BR> </A>
-<A HREF="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson<BR> </A>
-Erik Boman<BR>
+<B><A HREF="http://www.cs.sandia.gov/~kddevin">Karen Devine<BR>
+</A><A HREF="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson<BR>
+</A>Erik Boman<BR>
 Matthew St. John<BR>
 Courtenay Vaughan</B></H4>
-<B>Sandia National Laboratories</B>
-<BR><B>P.O. Box 5800</B>
-<BR><B>Albuquerque, NM&nbsp; 87185-1111</B>
+<B>Sandia National Laboratories</B>&nbsp;
+<BR><B>P.O. Box 5800</B>&nbsp;
+<BR><B>Albuquerque, NM&nbsp; 87185-1111</B>&nbsp;
 <BR>
 <HR WIDTH="100%">
-
 <DIV ALIGN=right>
 <H4>
 <IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H4></DIV>
@@ -167,24 +144,25 @@ Courtenay Vaughan</B></H4>
 <A HREF="ug_intro.html">Introduction</A></H4>
 
 <BLOCKQUOTE><A HREF="ug_intro.html#Load-Balancing Tools">Load-Balancing
-Tools</A>
+Tools</A>&nbsp;
 <BR><A HREF="ug_intro.html#Migration-Help Tools">Migration-Help Tools</A></BLOCKQUOTE>
 
 <H4>
 <A HREF="ug_usage.html">Using the Library</A></H4>
 
 <BLOCKQUOTE><A HREF="ug_usage.html#Application Data Types">Application
-Data Types</A>
-<BR><A HREF="ug_usage.html#Building the Library">Building the Library</A>
+Data Types</A>&nbsp;
+<BR><A HREF="ug_usage.html#Building the Library">Building the Library</A>&nbsp;
 <BR><A HREF="ug_usage.html#Building Applications">Building Applications</A></BLOCKQUOTE>
 
 <H4>
 <A HREF="ug_interface.html">Zoltan Interface Functions</A></H4>
 
-<BLOCKQUOTE><A HREF="ug_interface.html#Error Codes">Error Codes</A>
-<BR><A HREF="ug_interface_init.html">Initialization Functions</A>
-<BR><A HREF="ug_interface_lb.html">Load-Balancing Functions</A>
-<BR><A HREF="ug_interface_augment.html">Functions for Adding Items to a Decomposition</A>
+<BLOCKQUOTE><A HREF="ug_interface.html#Error Codes">Error Codes</A>&nbsp;
+<BR><A HREF="ug_interface_init.html">Initialization Functions</A>&nbsp;
+<BR><A HREF="ug_interface_lb.html">Load-Balancing Functions</A>&nbsp;
+<BR><A HREF="ug_interface_augment.html">Functions for Adding Items to a
+Decomposition</A>&nbsp;
 <BR><A HREF="ug_interface_mig.html">Migration-Help Functions</A></BLOCKQUOTE>
 
 <H4>
@@ -193,9 +171,9 @@ Data Types</A>
 <BLOCKQUOTE><A HREF="ug_query_lb.html">Load-Balancing Query Functions</A></BLOCKQUOTE>
 
 <OL>
-<OL><A HREF="ug_query_lb.html#General Functions">General Functions</A>
+<OL><A HREF="ug_query_lb.html#General Functions">General Functions</A>&nbsp;
 <BR><A HREF="ug_query_lb.html#Geometry-based Functions">Geometry-based
-Functions</A>
+Functions</A>&nbsp;
 <BR><A HREF="ug_query_lb.html#Graph-based Functions">Graph-based Functions</A></OL>
 </OL>
 
@@ -205,17 +183,26 @@ Functions</A>
 <A HREF="ug_alg.html">Algorithms</A></H4>
 
 <BLOCKQUOTE><A HREF="ug_alg_rcb.html#RCB">Recursive Coordinate Bisection
-(RCB)</A>
-<BR><A HREF="ug_alg_parmetis.html#ParMETIS">ParMETIS</A>
+(RCB)</A>&nbsp;
+<BR><A HREF="ug_alg_parmetis.html#ParMETIS">ParMETIS</A>&nbsp;
 <BR><A HREF="ug_alg_oct.html#Octree">Octree/Space-Filling Curve (SFC) Partitioning</A></BLOCKQUOTE>
 
 <H4>
 <A HREF="ug_examples.html">Examples of Library Usage</A></H4>
 
-<BLOCKQUOTE><A HREF="ug_examples_init.html">Initialization</A>
-<BR><A HREF="ug_examples_lb.html">Load-Balancing</A>
-<BR><A HREF="ug_examples_mig.html">Migration</A>
+<BLOCKQUOTE><A HREF="ug_examples_init.html">Initialization</A>&nbsp;
+<BR><A HREF="ug_examples_lb.html">Load-Balancing</A>&nbsp;
+<BR><A HREF="ug_examples_mig.html">Migration</A>&nbsp;
 <BR><A HREF="ug_examples_query.html">Query Functions</A></BLOCKQUOTE>
+
+<H4>
+<A HREF="ug_fortran.html">FORTRAN&nbsp;Interface</A></H4>
+
+<UL><A HREF="ug_fortran_zoltan.html">Compiling Zoltan</A>
+<BR><A HREF="ug_fortran_apps.html">Compiling Applications</A>
+<BR><A HREF="ug_fortran_api.html">FORTRAN&nbsp;API</A>
+<BR><A HREF="ug_fortran_77.html">FORTRAN&nbsp;77</A>
+<BR><A HREF="ug_fortran_sys.html">System-Specific Remarks</A></UL>
 
 <H4>
 <A HREF="ug_future.html">Future Work</A></H4>
@@ -224,35 +211,10 @@ Functions</A>
 <A HREF="ug_refs.html">References</A></H4>
 
 <HR WIDTH="100%">[<A HREF="../Zoltan.html">Zoltan Home Page</A>&nbsp; |&nbsp;
-<A HREF="ug_intro.html">Next:&nbsp; Introduction</A>]
-<!---------MAIN CONTENT AREA ENDS HERE--------->
+<A HREF="ug_intro.html">Next:&nbsp; Introduction</A>]&nbsp;<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></TD>
+</TR>
+</TABLE>
 
-<!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE -->
-<p>
-</td></tr></table>
-
-<hr width="100%">
-
-</td>
-
-
-</tr></table>
-
-<!--Image maps below--><map name="shortMap">
-<area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></area>
-<area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></area>
-<area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></area>
-<area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></area>
-<area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></area>
-<area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></area>
-<area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area>
-</map>
-
-
-<!----------------THIS IS A CHANGE AREA---------------->
-<!----NAME AND DATE OF LAST REVISION SHOULD BE HERE---->
-<!---------------END OF THIS CHANGE AREA--------------->
-
-
-</body>
-</html>
+<HR width="100%"><!--Image maps below--><MAP name="shortMap"><AREA shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></AREA><AREA shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></AREA><AREA shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></AREA><AREA shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></AREA><AREA shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></AREA><AREA shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></AREA><AREA shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></AREA></MAP><!----------------THIS IS A CHANGE AREA----------------><!----NAME AND DATE OF LAST REVISION SHOULD BE HERE----><!---------------END OF THIS CHANGE AREA--------------->
+</BODY>
+</HTML>

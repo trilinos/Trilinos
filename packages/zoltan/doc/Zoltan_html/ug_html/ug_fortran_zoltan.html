@@ -1,0 +1,46 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  FORTRAN -- Compiling Zoltan</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="fortran ug compiling zoltan"></A>FORTRAN: Compiling Zoltan</H2>
+
+<H3>
+Existing implementations</H3>
+The main Makefile has not yet been updated to include the Fortran option
+in the process of building the Zoltan library. So far, the Fortran interface
+has been built and tested only through <I>fdriver</I>, and only on NIST
+machines. This section will be written after the Makefile has been updated.
+The main issues to be discussed will be using <B>YES_FORTRAN=1</B> in the
+make command, and mention of<I> lb_user_const*.h</I> with a pointer to
+the section below. There will be some other parameters (selection of which
+Fortran compiler on Linux, and selection between LAM and MPICH), but these
+will probably affect only the NIST builds so I'm not sure they're worth
+mentioning.
+<H3>
+Porting to a new system</H3>
+There are some issues here that I probably should explain.
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_fortran_apps.html">Next:&nbsp; FORTRAN--Compiling Applications</A>&nbsp;
+|&nbsp; <A HREF="ug_fortran.html">Previous:&nbsp; FORTRAN Interface </A>]
+</BODY>
+</HTML>

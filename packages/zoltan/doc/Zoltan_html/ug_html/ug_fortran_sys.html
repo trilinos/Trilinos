@@ -1,0 +1,72 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE>Zoltan User's Guide:  FORTRAN--System-Specific Remarks </TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<DIV ALIGN=right>
+<H3>
+<IMG SRC="figures/ug_header.gif" ALT="Zoltan User's Guide" ></H3></DIV>
+
+<H2>
+<A NAME="fortran ug sys"></A>FORTRAN: System-Specific Remarks</H2>
+System-specific details of the FORTRAN&nbsp;interface are included below.
+<UL><A HREF="#fortran ug sys mpich">MPICH</A>
+<BR><A HREF="#fortran ug sys pacific">Pacific Sierra</A>
+<BR><A HREF="#fortran ug sys NAS">NASoftware</A></UL>
+
+<H3>
+<A NAME="fortran ug sys mpich"></A>MPICH</H3>
+As of version 1.1.2, the MPICH implementation of MPI is not completely
+"Fortran 90 friendly." Only one problem was encountered during our tests:&nbsp;
+the reliance on command line arguments. MPICH uses command line arguments
+during the start-up process, even if the application does not. Command
+line arguments are not standard in Fortran, so although most compilers
+offer it as an extension, each compiler has its own method of handling
+them. The problem arises when one Fortran compiler is specified during
+the build of MPICH and another Fortran compiler is used for the application.
+This should not be a problem on systems where there is only one Fortran
+compiler, or where multiple Fortran compilers are compatible (for example,
+FORTRAN 77 and Fortran 90 compilers from the same vendor). If your program
+can get past the call to MPI_Init, then you do not have this problem.
+
+<P>To solve this problem, build MPICH in such a way that it does not include
+the routines for <I>iargc</I> and <I>getarg</I> (I have been able to do
+this by using the -f95nag flag when configuring MPICH), and then provide
+your own versions of them when you link the application. Some versions
+of these routines are provided in <I>fdriver/farg_*</I>.
+<H3>
+<A NAME="fortran ug sys pacific"></A>Pacific Sierra</H3>
+Pacific Sierra Research (PSR) Vastf90 is not currently supported due to
+bugs in the compiler with no known workarounds. It is not known when or
+if this compiler will be supported.
+
+<P>If it does become supported, <B><A HREF="ug_usage.html#Macro defs">LB_GID</A></B>
+and <B><A HREF="ug_usage.html#Macro defs">LB_LID</A></B> cannot be user
+defined types, and thus are essentially restricted to being integers. This
+is due to the approach PSR uses for translating structures to the intermediate
+code, which would require major changes in the Zoltan Fortran interface
+to match the specific definition of the structure.
+<H3>
+<A NAME="fortran ug sys NAS"></A>NASoftware</H3>
+N.A.Software FortranPlus is not currently supported due to problems with
+the query functions. We anticipate that this problem can be overcome, and
+support will be added soon.
+
+<P>
+<HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;
+<A HREF="ug_future.html">Next:&nbsp; Future Work</A>&nbsp; |&nbsp; <A HREF="ug_fortran_77.html">Previous:&nbsp;
+FORTRAN 77</A>
+</BODY>
+</HTML>
