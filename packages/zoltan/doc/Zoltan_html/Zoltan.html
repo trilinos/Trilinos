@@ -1,0 +1,94 @@
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.04 [en] (X11; U; SunOS 4.1.3_U1 sun4m) [Netscape]">
+   <TITLE> Zoltan</TITLE>
+<!
+  ------------------------
+  | CVS File Information |
+  ------------------------
+  $RCSfile$
+  $Author$
+  $Date$
+  $Revision$
+>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<CENTER>
+<H1>
+Zoltan 1.0:<BR>
+A Dynamic Load-Balancing Library for Parallel Applications</H1></CENTER>
+Parallel Computing Sciences Department
+<BR>Sandia National Laboratories
+<BR>P.O. Box 5800
+<BR>Albuquerque, NM&nbsp; 87185-1111
+<BR>&nbsp;
+
+<P>Developers:
+<UL>Erik Boman
+<BR><A HREF="http://www.cs.sandia.gov/~kddevin">Karen Devine</A> (<A HREF="mailto:  kddevin@cs.sandia.gov">kddevin@cs.sandia.gov</A>)
+<BR><A HREF="http://www.cs.sandia.gov/~bahendr">Bruce Hendrickson</A> (<A HREF="mailto:  bahendr@cs.sandia.gov">bahendr@cs.sandia.gov</A>)
+<BR>Matthew St. John
+<BR>Courtenay Vaughan
+<BR>&nbsp;</UL>
+Project Goals:
+<UL>
+<LI>
+&nbsp;Goal:&nbsp; Develop a general-purpose tool providing dynamic load-balancing
+to a variety of applications.</LI>
+
+<UL>
+<LI>
+Zoltan's <A HREF="/tmp_mnt/Net/pecos/rf_crew/people/kddevin/code/DLB/docs/Zoltan_html/ug_html/ug_interface.html">function-call
+interface</A> supports calls to the load-balancing library from the application,
+allowing the partitioning algorithms to be used dynamically or statically.</LI>
+
+<LI>
+An <A HREF="/tmp_mnt/Net/pecos/rf_crew/people/kddevin/code/DLB/docs/Zoltan_html/ug_html/ug_query.html">object-oriented
+interface</A> separates Zoltan's data structures from those of the application,
+allowing many different applications to use the library.</LI>
+</UL>
+
+<LI>
+Goal:&nbsp; Enable research into dynamic load-balancing algorithms.</LI>
+
+<UL>
+<LI>
+The library is a tool-kit containing several different load-balancing <A HREF="/tmp_mnt/Net/pecos/rf_crew/people/kddevin/code/DLB/docs/Zoltan_html/ug_html/ug_alg.html">algorithms</A>.</LI>
+
+<LI>
+Applications can experiment with different algorithms, enabling comparisons
+of partition quality and load-balancing costs.</LI>
+
+<LI>
+Zoltan's interface allows easy development of new algorithms.</LI>
+</UL>
+
+<LI>
+Goal: Provide support for data migration.</LI>
+
+<UL>
+<LI>
+Zoltan's <A HREF="/tmp_mnt/Net/pecos/rf_crew/people/kddevin/code/DLB/docs/Zoltan_html/ug_html/ug_interface_mig.html">migration-help
+tools</A> can handle all communication related to data migration, greatly
+simplifying migration for the application developer.</LI>
+
+<LI>
+Applications provide only a few <A HREF="/tmp_mnt/Net/pecos/rf_crew/people/kddevin/code/DLB/docs/Zoltan_html/ug_html/ug_query_mig.html">routines
+to pack and unpack dat</A>a from their data structures.</LI>
+</UL>
+</UL>
+Documentation:
+<UL><A HREF="/usr/local/kddevin/rf_crew/code/DLB/docs/Zoltan_html/ug_html/ug.html">User's
+Guide</A>
+<BR><A HREF="/usr/local/kddevin/rf_crew/code/DLB/docs/Zoltan_html/dev_html/dev.html">Developer's
+Guide</A>
+<BR>&nbsp;</UL>
+For more information, contact:
+<UL><A HREF="mailto: kddevin@cs.sandia.gov">Karen Devine</A> or
+<BR><A HREF="mailto: bahendr@cs.sandia.gov">Bruce Hendrickson</A></UL>
+&nbsp;
+<BR>&nbsp;
+</BODY>
+</HTML>
