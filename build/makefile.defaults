@@ -137,6 +137,18 @@ LIBSUPERLU   = $(TRILINOS_HOME)/external/DSuperLU/lib/$(TRILINOS_TARGET)/superlu
 
 ################### Package-specific defaults ##########################
 
+# This is needed to distinguish this make system from the new Autotools
+# system.  It allows for the proper definition of F77_FUNC, which is
+# defined automatically by Autotools.  F77_FUNC provides proper
+# Fortran name mangling.  When NO_AUTOTOOLS is defined, F77_FUNC is
+# manually defined in Epetra_BLAS_wrappers.h and Epetra_LAPACK_wrappers.h.
+#  We use "NO_AUTOTOOLS" rather than not defining
+# "AUTOTOOLS" since this old make system will not be supported forever.
+# When it is no longer needed, we will not have an obsolete define 
+# left in the new make system.
+
+EPETRA_DEFAULT_DEFINES += -DNO_AUTOTOOLS
+
 # These values seldom change and are not really target-related
 
 ## AztecOO

@@ -22,65 +22,58 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
+#ifndef NO_AUTOTOOLS
+#include "Epetra_config.h"
+#endif /*This file doesn't exist in old make and configure system*/
 #include <stdio.h>
 #include <string.h>
 
 
-#if defined(CRAY_T3X)
-#include "fortran.h"
+/* Define fcd (Fortran Epetra_fcd descriptor) for non-standard situations */
 
+#if defined(CRAY_T3X) || defined(INTEL_CXML) || defined(INTEL_MKL)
+
+
+#if defined(CRAY_T3X)
+
+#include <fortran.h>
 #define PREFIX
 #define Epetra_fcd fcd
 
-#define dasum_ SASUM
-#define daxpy_ SAXPY
-#define dcopy_ SCOPY
-#define ddot_ SDOT
-#define dnrm2_ SNRM2
-#define dscal_ SSCAL
-#define idamax_ ISAMAX
-#define dgemv_ SGEMV
-#define dger_ SGER
-#define dtrmv_ STRMV
-#define dgemm_ SGEMM
-#define dsymm_ SSYMM
-#define dtrmm_ STRMM
-#define dtrsm_ STRSM
+#define DASUM_F77   F77_FUNC(sasum,SASUM)
+#define DAXPY_F77   F77_FUNC(saxpy,SAXPY)
+#define DCOPY_F77   F77_FUNC(scopy,SCOPY)
+#define DDOT_F77    F77_FUNC(sdot,SDOT)
+#define DNRM2_F77   F77_FUNC(snrm2,SNRM2)
+#define DSCAL_F77   F77_FUNC(sscal,SSCAL)
+#define IDAMAX_F77  F77_FUNC(isamax,ISAMAX)
+#define DGEMV_F77   F77_FUNC(sgemv,SGEMV)
+#define DGER_F77    F77_FUNC(sger,SGER)
+#define DTRMV_F77   F77_FUNC(strmv,STRMV)
+#define DGEMM_F77   F77_FUNC(sgemm,SGEMM)
+#define DSYMM_F77   F77_FUNC(ssymm,SSYMM)
+#define DTRMM_F77   F77_FUNC(strmm,STRMM)
+#define DTRSM_F77   F77_FUNC(strsm,STRSM)
 
 #elif defined(INTEL_CXML)
 
 #define PREFIX __stdcall
 #define Epetra_fcd char *, unsigned int
 
-#define sasum_ SASUM
-#define saxpy_ SAXPY
-#define scopy_ SCOPY
-#define sdot_  SDOT
-#define snrm2_ SNRM2
-#define sscal_ SSCAL
-#define isamax_ ISAMAX
-#define sgemv_ SGEMV
-#define sger_ SGER
-#define strmv_ STRMV
-#define sgemm_ SGEMM
-#define ssymm_ SSYMM
-#define strmm_ STRMM
-#define strsm_ STRSM
-
-#define dasum_ DASUM
-#define daxpy_ DAXPY
-#define dcopy_ DCOPY
-#define ddot_ DDOT
-#define dnrm2_ DNRM2
-#define dscal_ DSCAL
-#define idamax_ IDAMAX
-#define dgemv_ DGEMV
-#define dger_ DGER
-#define dtrmv_ DTRMV
-#define dgemm_ DGEMM
-#define dsymm_ DSYMM
-#define dtrmm_ DTRMM
-#define dtrsm_ DTRSM
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
 
 #elif defined(INTEL_MKL)
@@ -88,136 +81,160 @@
 #define PREFIX
 #define Epetra_fcd char *
 
-#define sasum_  SASUM
-#define saxpy_  SAXPY
-#define scopy_  SCOPY
-#define sdot_  SDOT
-#define snrm2_  SNRM2
-#define sscal_  SSCAL
-#define isamax_  ISAMAX
-#define sgemv_  SGEMV
-#define sger_  SGER
-#define strmv_  STRMV
-#define sgemm_  SGEMM
-#define ssymm_  SSYMM
-#define strmm_  STRMM
-#define strsm_  STRSM
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
 
-#define dasum_  DASUM
-#define daxpy_  DAXPY
-#define dcopy_  DCOPY
-#define ddot_  DDOT
-#define dnrm2_  DNRM2
-#define dscal_  DSCAL
-#define idamax_  IDAMAX
-#define dgemv_  DGEMV
-#define dger_  DGER
-#define dtrmv_  DTRMV
-#define dgemm_  DGEMM
-#define dsymm_  DSYMM
-#define dtrmm_  DTRMM
-#define dtrsm_  DTRSM
 
-#else
+#endif 
 
-/* Define fcd (Fortran Epetra_fcd descriptor) */
+/* All three of these machines use a simple uppercase mangling of Fortran names */
+
+/* if F77_FUNC is defined undefine it because we want to redefine */
+
+#ifdef F77_FUNC
+#undef F77_FUNC
+#endif
+
+
+#define F77_FUNC(lcase,UCASE) PREFIX UCASE
+
+#else /* Define Epetra_fcd for all other machines */
+
 #define PREFIX
 #define Epetra_fcd char * 
 
-#if defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
+/* Use autoconf's definition of F77_FUNC 
+   unless using old make system */
 
-#define sasum_ sasum
-#define saxpy_ saxpy
-#define scopy_ scopy
-#define sdot_ sdot
-#define snrm2_ snrm2
-#define sscal_ sscal
-#define isamax_ isamax
-#define sgemv_ sgemv
-#define sger_ sger
-#define strmv_ strmv
-#define sgemm_ sgemm
-#define ssymm_ ssymm
-#define strmm_ strmm
-#define strsm_ strsm
+#ifdef NO_AUTOTOOLS
 
-#define dasum_ dasum
-#define daxpy_ daxpy
-#define dcopy_ dcopy
-#define ddot_ ddot
-#define dnrm2_ dnrm2
-#define dscal_ dscal
-#define idamax_ idamax
-#define dgemv_ dgemv
-#define dger_ dger
-#define dtrmv_ dtrmv
-#define dgemm_ dgemm
-#define dsymm_ dsymm
-#define dtrmm_ dtrmm
-#define dtrsm_ dtrsm
+#ifdef F77_FUNC
+#undef F77_FUNC
 #endif
 
+#ifdef TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE
+#define F77_FUNC(lcase,UCASE) PREFIX lcase
+#else /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE not defined*/
+#define F77_FUNC(lcase,UCASE) PREFIX lcase ## _
+#endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
+#endif /* NO_AUTOTOOLS */
+
+#define DASUM_F77   F77_FUNC(dasum,DASUM)
+#define DAXPY_F77   F77_FUNC(daxpy,DAXPY)
+#define DCOPY_F77   F77_FUNC(dcopy,DCOPY)
+#define DDOT_F77    F77_FUNC(ddot,DDOT)
+#define DNRM2_F77   F77_FUNC(dnrm2,DNRM2)
+#define DSCAL_F77   F77_FUNC(dscal,DSCAL)
+#define IDAMAX_F77  F77_FUNC(idamax,IDAMAX)
+#define DGEMV_F77   F77_FUNC(dgemv,DGEMV)
+#define DGER_F77    F77_FUNC(dger,DGER)
+#define DTRMV_F77   F77_FUNC(dtrmv,DTRMV)
+#define DGEMM_F77   F77_FUNC(dgemm,DGEMM)
+#define DSYMM_F77   F77_FUNC(dsymm,DSYMM)
+#define DTRMM_F77   F77_FUNC(dtrmm,DTRMM)
+#define DTRSM_F77   F77_FUNC(dtrsm,DTRSM)
+
+
 #endif
 
-// Double precision BLAS 1
-extern "C" double PREFIX dasum_(int* n, double x[], int* incx);
-extern "C" void PREFIX daxpy_(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
-extern "C" void PREFIX dcopy_(int* n, double *x, int* incx, double *y, int* incy);
-extern "C" double PREFIX ddot_(int* n, double x[], int* incx, double y[], int* incy);
-extern "C" double PREFIX dnrm2_(int* n, double x[], int* incx);
-extern "C" void PREFIX dscal_(int* n, double* alpha, double *x, int* incx);
-extern "C" int PREFIX idamax_(int* n, double *x, int* incx);
 
-// Single precision BLAS 1
-extern "C" float PREFIX sasum_(int* n, float x[], int* incx);
-extern "C" void PREFIX saxpy_(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
-extern "C" void PREFIX scopy_(int* n, float *x, int* incx, float *y, int* incy);
-extern "C" float PREFIX sdot_(int* n, float x[], int* incx, float y[], int* incy);
-extern "C" float PREFIX snrm2_(int* n, float x[], int* incx);
-extern "C" void PREFIX sscal_(int* n, float* alpha, float *x, int* incx);
-extern "C" int PREFIX isamax_(int* n, float *x, int* incx);
+#define SSCAL_F77   F77_FUNC(sscal,SSCAL)
+#define SCOPY_F77   F77_FUNC(scopy,SCOPY)
+#define SAXPY_F77   F77_FUNC(saxpy,SAXPY)
+#define SDOT_F77    F77_FUNC(sdot,SDOT)
+#define SNRM2_F77   F77_FUNC(snrm2,SNRM2)
+#define SASUM_F77   F77_FUNC(sasum,SASUM)
+#define ISAMAX_F77  F77_FUNC(isamax,ISAMAX)
 
-// Double precision BLAS 2
-extern "C" void PREFIX dgemv_(Epetra_fcd, int* m, int* n, double* alpha, double A[], int* lda,
+#define SGEMV_F77   F77_FUNC(sgemv,SGEMV)
+#define SGER_F77    F77_FUNC(sger,SGER)
+#define STRMV_F77   F77_FUNC(strmv,STRMV)
+#define SGEMM_F77   F77_FUNC(sgemm,SGEMM)
+#define SSYMM_F77   F77_FUNC(ssymm,SSYMM)
+#define STRMM_F77   F77_FUNC(strmm,STRMM)
+#define STRSM_F77   F77_FUNC(strsm,STRSM)
+    
+/* Explicitly define each F77 name for all BLAS kernels */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Double precision BLAS 1 */
+double DASUM_F77(int* n, double x[], int* incx);
+void DAXPY_F77(int* n, double* alpha, double x[], int* incx, double y[], int* incy);
+void DCOPY_F77(int* n, double *x, int* incx, double *y, int* incy);
+double DDOT_F77(int* n, double x[], int* incx, double y[], int* incy);
+double DNRM2_F77(int* n, double x[], int* incx);
+void DSCAL_F77(int* n, double* alpha, double *x, int* incx);
+int IDAMAX_F77(int* n, double *x, int* incx);
+
+/* Single precision BLAS 1 */
+float SASUM_F77(int* n, float x[], int* incx);
+void SAXPY_F77(int* n, float* alpha, float x[], int* incx, float y[], int* incy);
+void SCOPY_F77(int* n, float *x, int* incx, float *y, int* incy);
+float SDOT_F77(int* n, float x[], int* incx, float y[], int* incy);
+float SNRM2_F77(int* n, float x[], int* incx);
+void SSCAL_F77(int* n, float* alpha, float *x, int* incx);
+int ISAMAX_F77(int* n, float *x, int* incx);
+
+/* Double precision BLAS 2 */
+void DGEMV_F77(Epetra_fcd, int* m, int* n, double* alpha, double A[], int* lda,
 		       double x[], int* incx, double* beta, double y[], int* incy);
-extern "C" void PREFIX dtrmv_(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
+void DTRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
 		      double *a, int *lda, double *x, int *incx);
-extern "C" void PREFIX dger_(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
+void DGER_F77(int *m, int *n, double *alpha, double *x, int *incx, double *y, 
 		     int *incy, double *a, int *lda);
 
 
-// Single precision BLAS 2
-extern "C" void PREFIX sgemv_(Epetra_fcd, int* m, int* n, float* alpha, float A[], int* lda,
+/* Single precision BLAS 2 */
+void SGEMV_F77(Epetra_fcd, int* m, int* n, float* alpha, float A[], int* lda,
 		       float x[], int* incx, float* beta, float y[], int* incy);
-extern "C" void PREFIX strmv_(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
+void STRMV_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, int *n, 
 		      float *a, int *lda, float *x, int *incx);
-extern "C" void PREFIX sger_(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
+void SGER_F77(int *m, int *n, float *alpha, float *x, int *incx, float *y, 
 		     int *incy, float *a, int *lda);
 
-// Double precision BLAS 3
-extern "C" void PREFIX dgemm_(Epetra_fcd, Epetra_fcd, int *m, int *
+/* Double precision BLAS 3 */
+void DGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, double *alpha, double *a, int *lda, 
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
-extern "C" void PREFIX dsymm_(Epetra_fcd, Epetra_fcd, int *m, int * n,
+void DSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
 		      double *alpha, double *a, int *lda, 
 		      double *b, int *ldb, double *beta, double *c, int *ldc);
-extern "C" void PREFIX dtrmm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void DTRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int * lda, double *b, int *ldb);
-extern "C" void PREFIX dtrsm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void DTRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, double *alpha, double *a, int *
 		      lda, double *b, int *ldb);
 
-// Single precision BLAS 3
-extern "C" void PREFIX sgemm_(Epetra_fcd, Epetra_fcd, int *m, int *
+/* Single precision BLAS 3 */
+void SGEMM_F77(Epetra_fcd, Epetra_fcd, int *m, int *
 		      n, int *k, float *alpha, float *a, int *lda, 
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
-extern "C" void PREFIX ssymm_(Epetra_fcd, Epetra_fcd, int *m, int * n,
+void SSYMM_F77(Epetra_fcd, Epetra_fcd, int *m, int * n,
 		      float *alpha, float *a, int *lda, 
 		      float *b, int *ldb, float *beta, float *c, int *ldc);
-extern "C" void PREFIX strmm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void STRMM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, float *alpha, float *a, int * lda, float *b, int *ldb);
-extern "C" void PREFIX strsm_(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
+void STRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd, 
 		      int *m, int *n, float *alpha, float *a, int *
 		      lda, float *b, int *ldb);
 
-extern "C" void PREFIX xerbla_(Epetra_fcd, int *info);
+void XERBLA_F77(Epetra_fcd, int *info);
+
+#ifdef __cplusplus
+}
+#endif

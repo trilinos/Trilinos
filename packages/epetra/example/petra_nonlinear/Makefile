@@ -14,7 +14,7 @@ CXXFLAGS=$(ARCH_CXXFLAGS) $(DEFINES) $(INCLUDES)
 CCFLAGS=$(CXXFLAGS)
 
 
-LIB_PATHS= $(LIBPETRA) $(LIBAZTEC) $(LIBIFPACK)
+LIB_PATHS= $(LIBPETRA) $(LIBAZTEC) $(LIBIFPACK) \
            $(LIBLAPACK) $(LIBSPBLAS) $(LIBBLAS) $(LIBY12M)
 
 #=======================================================================
