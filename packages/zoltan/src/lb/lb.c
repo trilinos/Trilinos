@@ -515,6 +515,13 @@ double lb_time[2] = {0.0,0.0};
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
+    /*
+     *  Reset num_import_objs and num_export_objs; don't want to return
+     *  -1 for the arrays that weren't returned by LB_FN.
+     */
+
+    *num_import_objs = *num_export_objs = 0;
+
     return (LB_OK);
   }
 
