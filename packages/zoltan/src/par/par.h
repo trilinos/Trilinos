@@ -20,7 +20,7 @@
 static char *cvs_par_h = "$Id$";
 #endif
 
-int Proc = 0;        /* Processor ID Number.                                */
-int Num_Proc = 1;    /* Number of processors used.                          */
+int LB_Proc = 0;        /* Processor ID Number.                             */
+int LB_Num_Proc = 1;    /* Number of processors used.                       */
 
 #endif
