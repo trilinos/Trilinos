@@ -290,7 +290,7 @@ class Ifpack_CrsIct: public Epetra_Object, public Epetra_CompObject, public virt
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
     //! Returns a character string describing the operator
-    char * Label() const {return(Epetra_Object::Label());};
+    const char * Label() const {return(Epetra_Object::Label());};
     
     //! If set true, transpose of this operator will be applied.
     /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
