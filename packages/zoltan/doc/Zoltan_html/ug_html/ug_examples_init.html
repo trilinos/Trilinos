@@ -27,11 +27,12 @@
 Before computing new decompositions using Zoltan, an application must initialize
 the load-balancing library. This initialization is accomplished through
 calls to <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
-and <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+and <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.
 In the <A HREF="#Init Example Fig">figure</A> below, an example of the
 initialization calling sequence is shown. In this example, <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
 is called using the <I>argc</I> and <I>argv</I> arguments to the main program.
-Then a load-balancing object is returned by the call to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+Then a pointer to a load-balancing structure is returned by the call to 
+<B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.
 In this example, all processors will be involved in load balancing, as
 <B>MPI_COMM_WORLD</B> is passed as the communicator to be used by the load-balancing
 routines.
@@ -45,7 +46,7 @@ routines.
 <BR><TT>...</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(argc,
 argv, &amp;version);</TT>&nbsp;&nbsp;
-<BR><TT>lb = <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A>(MPI_COMM_WORLD);</TT></TD>
+<BR><TT>lb = <A HREF="ug_interface_init.html#LB_Create">LB_Create</A>(MPI_COMM_WORLD);</TT></TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Typical calling sequence for initialization of
@@ -62,7 +63,7 @@ the Zoltan library.</I></CAPTION>
 <BR><TT>...</TT>&nbsp;
 <BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(version)
 ! without argc and argv</TT>&nbsp;&nbsp;
-<BR><TT>lb => <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A>(MPI_COMM_WORLD)</TT></TD>
+<BR><TT>lb => <A HREF="ug_interface_init.html#LB_Create">LB_Create</A>(MPI_COMM_WORLD)</TT></TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Fortran version of initialization

@@ -91,7 +91,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   /*
    *  Create a load-balancing object.
    */
-  if ((lb_obj = LB_Create_Object(MPI_COMM_WORLD)) == NULL) {
+  if ((lb_obj = LB_Create(MPI_COMM_WORLD)) == NULL) {
     Gen_Error(0, "fatal:  NULL object returned from LB_Create_Object()\n");
     return 0;
   }
@@ -204,7 +204,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, MESH_INFO_PTR mesh)
   (void) LB_Free_Data(&import_gids, &import_lids, &import_procs,
                       &export_gids, &export_lids, &export_procs);
 
-  LB_Destroy_Object(&lb_obj);
+  LB_Destroy(&lb_obj);
 
   LB_Memory_Stats();
 

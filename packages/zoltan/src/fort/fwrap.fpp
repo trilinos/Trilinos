@@ -81,8 +81,8 @@ public :: &
 
 public :: &
    LB_Initialize, &
-   LB_Create_Object, &
-   LB_Destroy_Object, &
+   LB_Create, &
+   LB_Destroy, &
    LB_Set_Fn, &
    LB_Set_Method, &
    LB_Set_Param, &
@@ -248,26 +248,26 @@ end function LB_fw_Initialize1
 end interface
 
 interface
-!NAS$ ALIEN "F77 lb_fw_create_object"
-subroutine LB_fw_Create_Object(communicator,lb,nbytes)
+!NAS$ ALIEN "F77 lb_fw_create"
+subroutine LB_fw_Create(communicator,lb,nbytes)
 use zoltan_types
 use lb_user_const
 implicit none
 integer INTENT_IN communicator
 integer(LB_INT), dimension(*), intent(out) :: lb
 integer(LB_INT) INTENT_IN nbytes
-end subroutine LB_fw_Create_Object
+end subroutine LB_fw_Create
 end interface
 
 interface
-!NAS$ ALIEN "F77 lb_fw_destroy_object"
-subroutine LB_fw_Destroy_Object(lb,nbytes)
+!NAS$ ALIEN "F77 lb_fw_destroy"
+subroutine LB_fw_Destroy(lb,nbytes)
 use zoltan_types
 use lb_user_const
 implicit none
 integer(LB_INT), dimension(*) INTENT_IN lb
 integer(LB_INT) INTENT_IN nbytes
-end subroutine LB_fw_Destroy_Object
+end subroutine LB_fw_Destroy
 end interface
 
 interface
@@ -948,12 +948,12 @@ interface LB_Initialize
    module procedure f90LB_Initialize1
 end interface
 
-interface LB_Create_Object
-   module procedure f90LB_Create_Object
+interface LB_Create
+   module procedure f90LB_Create
 end interface
 
-interface LB_Destroy_Object
-   module procedure f90LB_Destroy_Object
+interface LB_Destroy
+   module procedure f90LB_Destroy
 end interface
 
 interface LB_Set_Fn
@@ -1154,27 +1154,27 @@ f90LB_Initialize1 = LB_fw_Initialize1(argc,int_argv,starts,ver)
 deallocate(starts,int_argv)
 end function f90LB_Initialize1
 
-function f90LB_Create_Object(communicator)
-type(LB_Struct), pointer :: f90LB_Create_Object
+function f90LB_Create(communicator)
+type(LB_Struct), pointer :: f90LB_Create
 integer INTENT_IN communicator
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb
 integer(LB_INT) :: nbytes
 integer :: i
 logical :: isnull
-allocate(f90LB_Create_Object)
+allocate(f90LB_Create)
 nbytes = LB_PTR_LENGTH
-call LB_fw_Create_Object(communicator,lb,nbytes)
+call LB_fw_Create(communicator,lb,nbytes)
 do i=1,LB_PTR_LENGTH
-   f90LB_Create_Object%addr%addr(i:i) = char(lb(i))
+   f90LB_Create%addr%addr(i:i) = char(lb(i))
 end do
-isnull = (f90LB_Create_Object%addr == LB_NULL_PTR)
+isnull = (f90LB_Create%addr == LB_NULL_PTR)
 if (isnull) then
-   deallocate(f90LB_Create_Object)
-   nullify(f90LB_Create_Object)
+   deallocate(f90LB_Create)
+   nullify(f90LB_Create)
 endif
-end function f90LB_Create_Object
+end function f90LB_Create
 
-subroutine f90LB_Destroy_Object(lb)
+subroutine f90LB_Destroy(lb)
 type(LB_Struct), pointer :: lb
 integer(LB_INT), dimension(LB_PTR_LENGTH) :: lb_addr
 integer(LB_INT) :: nbytes, i
@@ -1182,10 +1182,10 @@ nbytes = LB_PTR_LENGTH
 do i=1,nbytes
    lb_addr(i) = ichar(lb%addr%addr(i:i))
 end do
-call LB_fw_Destroy_Object(lb_addr,nbytes)
+call LB_fw_Destroy(lb_addr,nbytes)
 deallocate(lb)
 nullify(lb)
-end subroutine f90LB_Destroy_Object
+end subroutine f90LB_Destroy
 
 function f90LB_Set_Fn0f(lb,fn_type,fn_ptr)
 integer(LB_INT) :: f90LB_Set_Fn0f

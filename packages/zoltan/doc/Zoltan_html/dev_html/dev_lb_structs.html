@@ -26,7 +26,7 @@
 <A NAME="interface_structs"></A>Data Structures</H2>
 The <B>LB_Struct</B> data structure is the main data structure for interfacing
 between the load-balancing library and the application. The application
-creates an <B>LB_Struct</B> data structure through a call to <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+creates an <B>LB_Struct</B> data structure through a call to <B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>.
 Fields of the data structure are then set through calls from the application
 to load-balancing interface routines such as <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>
 and <B><A HREF="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
@@ -53,20 +53,20 @@ different <B>LB_Struct</B> structures) can be used by the application.
 <TR>
 <TD VALIGN=TOP>MPI_Comm <I>Communicator</I></TD>
 
-<TD>The MPI communicator to be used by the load-balancing object; set by
-<B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>The MPI communicator to be used by the load-balancing structure; set by
+<B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP>int <I>Proc</I></TD>
 
-<TD>The rank of the processor within <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>The rank of the processor within <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>
 <TD VALIGN=TOP>int <I>Num_Proc</I></TD>
 
-<TD>The number of processors in <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>The number of processors in <I>Communicator</I>; set in <B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>
@@ -79,7 +79,7 @@ printed by the load-balancing library.</TD>
 <TR>
 <TD VALIGN=TOP>int <I>Fortran</I></TD>
 
-<TD>A flag indicating whether or not the object was created by a
+<TD>A flag indicating whether or not the structure was created by a
 call from Fortran.</TD>
 </TR>
 
@@ -87,7 +87,7 @@ call from Fortran.</TD>
 <TD VALIGN=TOP>LB_METHOD <I>Method</I></TD>
 
 <TD>An enumerated type designating which load-balancing algorithm should
-be used with this load-balancing object; set by <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
+be used with this load-balancing structure; set by <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.</TD>
 </TR>
 
 <TR>
@@ -104,7 +104,7 @@ set in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method<
 of a modifiable parameter. The second string is the new value the parameter
 should adopt. These string pairs are read upon invocation of a load balancing
 algorithm and the appropriate parameter changes are made. This design allows
-for different LB objects to have different parameter settings.</TD>
+for different LB structures to have different parameter settings.</TD>
 </TR>
 
 <TR>
@@ -558,7 +558,7 @@ to a Fortran application registered function, of the form
 LB_FUNCNAME_FORT_FN *<I>Get_Funcname_Fort</I>.  These are for use within
 the Fortran interface.  The load-balancing routines should invoke the
 usual application registered function regardless of whether the load
-balancing object was created from C or Fortran.
+balancing structure was created from C or Fortran.
 
 <P>The <B>LB_Tag_Struct</B> is provided to simplify the mechanics of storing
 both the global and local IDs (see <A HREF="#Tag_Struct">table</A> below).

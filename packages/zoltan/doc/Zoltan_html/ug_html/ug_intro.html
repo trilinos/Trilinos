@@ -118,10 +118,10 @@ an adaptive mesh-refinement application).
 
 <P>A typical interaction between an application and the dynamic load-balancing
 tools is shown in the <A HREF="#lb_interaction.gif">figure</A> below. Through
-a call to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
-the application creates a load-balancing object, which is storage space
+a call to <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
+the application creates a load-balancing data structure, which is storage space
 to hold pointers to registered functions and load-balancing data. This
-object is passed to a number of load-balancing functions. The application
+structure is passed to a number of load-balancing functions. The application
 then selects a load-balancing method to be used (Recursive Coordination
 Bisection, "RCB," in the example) through a call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
 Several query functions needed by the RCB algorithm are registered through
@@ -154,7 +154,7 @@ describing the new decomposition to the application.
 <TR>
 <TD>.<TT>..</TT>&nbsp;
 <BR><TT>/* <I>Register method and application query functions</I> */</TT>&nbsp;
-<BR><TT>lb = LB_Create_Object();</TT>&nbsp;
+<BR><TT>lb = LB_Create(MPI_COMM_WORLD);</TT>&nbsp;
 <BR><TT>LB_Set_Method(lb, "RCB");</TT>&nbsp;
 <BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn,NULL);</TT>&nbsp;
 <BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>&nbsp;

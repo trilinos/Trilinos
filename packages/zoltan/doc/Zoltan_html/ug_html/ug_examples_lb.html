@@ -49,7 +49,7 @@ is completed, the arrays of information about imported and exported nodes
 returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
 Finally, when the application is all finished with the load balancing operations,
-it calls <B><A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A></B>.
+it calls <B><A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A></B>.
 <BR>&nbsp;
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
@@ -96,7 +96,7 @@ user_return_owned_nodes, NULL);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
 &amp;exp_procs);&nbsp;</TT>&nbsp;
 <BR><TT>...</TT>
-<BR><TT><A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A>
 (&amp;lb);
 
 <BR><TT>...</TT>
@@ -160,7 +160,7 @@ imp_local_ids, imp_procs, &amp;&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exp_global_ids, exp_local_ids,
 exp_procs)&nbsp;</TT>&nbsp;
 <BR><TT>...</TT>
-<BR><TT>call <A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A>(lb)
+<BR><TT>call <A HREF="ug_interface_lb.html#LB_Destroy">LB_Destroy</A>(lb)
 
 <BR><TT>...</TT>
 

@@ -66,13 +66,13 @@ and "do like it does."
 type for the structure simply contains the address of the structure, i.e.,
 the C pointer returned by a call to create the structure. Note that the
 user does not have access to the components of the structure, and can only
-pass the structure object to functions. Within the Fortran structure, the
+pass the structure to functions. Within the Fortran structure, the
 address is stored in a variable of type(<B>LB_PTR</B>), which is a character
 string containing one character for each byte of the address. This gives
 the best guarantee of portability under the Fortran and C standards. Also,
 to insure portability of passing character strings, the character string
 is converted to an array of integers before passing it between Fortran
-and C. The process of doing this is most easily seen by looking at <B><A HREF="../ug_html/ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A></B>,
+and C. The process of doing this is most easily seen by looking at <B><A HREF="../ug_html/ug_interface_lb.html#LB_Destroy">LB_Destroy</A></B>,
 which has little else to clutter the code.
 <H3>
 <A NAME="fortran dev modifications"></A>Modifications to an existing Zoltan

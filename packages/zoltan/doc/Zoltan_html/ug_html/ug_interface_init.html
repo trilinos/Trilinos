@@ -24,10 +24,10 @@
 
 <H2>
 <A NAME="Initialization Functions"></A>Initialization Functions</H2>
-Functions used to initialize the library and load-balancing objects are
+Functions used to initialize the library and load-balancing data structures are
 described below:
 <UL><A HREF="#LB_Initialize">LB_Initialize</A>
-<BR><A HREF="#LB_Create_Object">LB_Create_Object</A>
+<BR><A HREF="#LB_Create">LB_Create</A>
 <BR><A HREF="#LB_Set_Fn">LB_Set_Fn</A></UL>
 
 <HR WIDTH="100%">
@@ -109,7 +109,7 @@ be passed as a keyword argument.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Create_Object"></A>struct <B>LB_Struct</B> *<B>LB_Create_Object</B>(MPI_Comm
+<TD><A NAME="LB_Create"></A>struct <B>LB_Struct</B> *<B>LB_Create</B>(MPI_Comm
 <I>communicator</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
@@ -117,19 +117,19 @@ be passed as a keyword argument.
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>FUNCTION <B>LB_Create_Object</B>(<I>communicator</I>)&nbsp;
-<BR>TYPE(LB_Struct), pointer :: LB_Create_Object&nbsp;
+<TD>FUNCTION <B>LB_Create</B>(<I>communicator</I>)&nbsp;
+<BR>TYPE(LB_Struct), pointer :: LB_Create&nbsp;
 <BR>INTEGER, INTENT(IN) :: communicator&nbsp;</TD>
 </TR>
 </TABLE>
 
-<HR WIDTH="100%">The <B>LB_Create_Object</B> function allocates memory
+<HR WIDTH="100%">The <B>LB_Create</B> function allocates memory
 for storage of load-balancing information to be used by the load-balancing
 library and sets the default values for the load- balancing information.
 The pointer returned by this function is passed to many subsequent load-balancing
-functions. An application may allocate more than one <B>LB_Struct</B> object
-if, say, it uses different decompositions with different load-balancing
-techniques.
+functions. An application may allocate more than one <B>LB_Struct</B> data
+structure if, say, it uses different decompositions with different 
+load-balancing techniques.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -141,7 +141,7 @@ techniques.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; communicator</I></TD>
 
-<TD>The MPI communicator to be used for this load-balancing object. Only
+<TD>The MPI communicator to be used for this load-balancing structure. Only
 those processors included in the communicator participate in load balancing.
 If all processors currently used by the application are to participate
 in load balancing, communicator should be <B>MPI_COMM_WORLD</B> .</TD>
@@ -207,7 +207,8 @@ functions are registered through calls to <B>LB_Set_Fn</B> .
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>The load-balancing object created by<B><A HREF="#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>Pointer to the load-balancing structure created by
+<B><A HREF="#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>

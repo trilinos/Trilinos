@@ -31,7 +31,7 @@ Zoltan library; their descriptions are included below.
 <BR><B><A HREF="#LB_Balance">LB_Balance</A></B>
 <BR><B><A HREF="#LB_Eval">LB_Eval</A></B>
 <BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>
-<BR><B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B></BLOCKQUOTE>
+<BR><B><A HREF="#LB_Destroy">LB_Destroy</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%">
 <TABLE WIDTH="100%" NOSAVE >
@@ -64,7 +64,7 @@ technique should be used by the application.
 <TR>
 <TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>The load-balancing object created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>
@@ -142,7 +142,7 @@ if desired.
 <TR>
 <TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>The load-balancing object created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
+<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
 </TR>
 
 <TR>
@@ -150,7 +150,7 @@ if desired.
 
 <TD>A string containing the name of the parameter to be altered.&nbsp;
 Note that the string is case-insensitive.&nbsp; Also, different load-balancing
-objects can have different parameter values.&nbsp;
+structures can have different parameter values.&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
@@ -234,7 +234,7 @@ by <B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>The load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+<TD>Pointer to the load-balancing structure, created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
 to be used in this invocation of the load-balancing routine.</TD>
 </TR>
 
@@ -345,7 +345,7 @@ cut_wgt, nboundary, nadj, ierr</I>)&nbsp;
 </TABLE>
 
 <HR WIDTH="100%"><B>LB_Eval </B>evaluates the quality of the load balance
-in the load-balance object pointed to by <I>lb</I>. Some quality metrics
+in the load-balance structure pointed to by <I>lb</I>. Some quality metrics
 are only available if the graph query functions have been registered. <B>LB_Eval
 </B>may either print a summary of the results to <I>stdout</I> or return
 the results in the output parameters.
@@ -360,7 +360,7 @@ the results in the output parameters.
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>The load-balancing object.</TD>
+<TD>Pointer to the load-balancing structure.</TD>
 </TR>
 
 <TR>
@@ -482,7 +482,8 @@ import_procs, export_global_ids, export_local_ids, export_procs</I>)&nbsp;
 load-balancing routines to return the results of <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. Note that this does not destroy the
-load balancing object itself. That requires a call to <B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B>.
+load balancing data structure itself. That requires a call to 
+<B><A HREF="#LB_Destroy">LB_Destroy</A></B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
@@ -548,7 +549,7 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD><A NAME="LB_Destroy_Object"></A>void <B>LB_Destroy_Object</B> (struct
+<TD><A NAME="LB_Destroy"></A>void <B>LB_Destroy</B> (struct
 <B>LB_Struct</B> ** <I>lb</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
@@ -556,14 +557,14 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD>SUBROUTINE <B>LB_Destroy_Object</B>(<I>lb</I>)&nbsp;
+<TD>SUBROUTINE <B>LB_Destroy</B>(<I>lb</I>)&nbsp;
 <BR>TYPE(LB_Struct), POINTER :: lb&nbsp;</TD>
 </TR>
 </TABLE>
 
-<HR WIDTH="100%"><B>LB_Destroy_Object</B> frees the memory associated with
-a load balancing object and sets the object to NULL in C or nullifies the
-object in Fortran. Note that <B>LB_Destroy_Object</B> does not deallocate
+<HR WIDTH="100%"><B>LB_Destroy</B> frees the memory associated with
+a load-balancing structure and sets the structure to NULL in C or nullifies 
+the structure in Fortran. Note that <B>LB_Destroy</B> does not deallocate
 the import and export arrays returned from <B><A HREF="#LB_Balance">LB_Balance</A></B>.
 This requires a separate call to <B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>.
 <BR>&nbsp;
@@ -577,7 +578,8 @@ This requires a separate call to <B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>
 <TR>
 <TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
-<TD>A pointer to the address of the load-balancing object, created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+<TD>A pointer to the address of the load-balancing structure, created by 
+<B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>,
 to be destroyed.&nbsp;</TD>
 </TR>
 </TABLE>

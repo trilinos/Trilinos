@@ -31,8 +31,8 @@ over the type and quantity of output. It also allows users to modify some
 of the parameters that characterize the partitioning algorithms. The design
 of the parameter setting routines was driven by several considerations.
 First, we wanted to keep the user interface as simple as possible. Second,
-we wanted to allow different load balancing objects to have different parameter
-settings associated with them. This second consideration precluded the
+we wanted to allow different load-balancing structures to have different 
+parameter settings associated with them. This second consideration precluded the
 use of C's static global variables (except in a few special places). The
 parameter routines described below allow developers to provide runtime
 access to any appropriate variables. In some cases (e.g. <A HREF="dev_util_mem.html#Debug_Memory">MEMORY_DEBUG</A>)
@@ -44,8 +44,8 @@ never be documented for users.
 set of more domain-specific parameter setting routines, each of which is
 responsible for a domain-specific set of parameters. Assuming there are
 no errors, the parameter name and new value are placed in a linked list
-of new parameters which is maintained by the load balance object. When
-a partitioning method is invoked on a load balance object, it scans through
+of new parameters which is maintained by the load-balancing structure. When
+a partitioning method is invoked on a load-balancing structure, it scans through
 this linked list using the <B><A HREF="#LB_Assign_Param_Vals">LB_Assign_Param_Vals</A></B>
 function, resetting parameter values which are appropriate to the method.
 
@@ -83,7 +83,7 @@ code</A>.</BLOCKQUOTE>
 If one of the domain-specific parameter routines returns with a 0, then
 <B>LB_Set_Param</B> adds the parameter and the value (both strings) to
 a linked list of such pairs that is pointed to by the <I>Params</I> field
-of the <I>lb</I> object.
+of the <I>lb</I> structure.
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
 <TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
@@ -94,7 +94,7 @@ of the <I>lb</I> object.
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp; <I>lb</I></TD>
 
-<TD>The load balancing object whose parameter value is being modified.</TD>
+<TD>The load-balancing structure whose parameter value is being modified.</TD>
 </TR>
 
 <TR>
@@ -208,7 +208,7 @@ struct <B>LB_PARAM</B> * <I>change_list</I>, struct <B>PARAM_VARS</B> *
 <I>params</I>);
 <BR>
 <HR>This routine changes parameter values as specified by the list of names
-and new values which is associated with a load balance object. To use this
+and new values which is associated with a load-balancing structure. To use this
 routine, parameter values should first be set to their defaults, and then
 <B>LB_Assign_Param_Vals</B> should be called to alter the values as appropriate.
 See <B>LB_rcb</B> for a template.
@@ -224,7 +224,7 @@ See <B>LB_rcb</B> for a template.
 
 <TD>The linked list of parameter names names and new values which is constructed
 by <B><A HREF="#LB_Set_Param">LB_Set_Param</A></B> and is a field of the
-structure defining a load balance object.&nbsp;</TD>
+structure defining a load-balancing structure.&nbsp;</TD>
 </TR>
 
 <TR>

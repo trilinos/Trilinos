@@ -13,8 +13,8 @@
 
 #define LB_fw_Initialize                 lb_fw_initialize
 #define LB_fw_Initialize1                lb_fw_initialize1
-#define LB_fw_Create_Object              lb_fw_create_object
-#define LB_fw_Destroy_Object             lb_fw_destroy_object
+#define LB_fw_Create                     lb_fw_create       
+#define LB_fw_Destroy                    lb_fw_destroy       
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f
@@ -58,8 +58,8 @@
 
 #define LB_fw_Initialize                 LB_FW_INITIALIZE
 #define LB_fw_Initialize1                LB_FW_INITIALIZE1
-#define LB_fw_Create_Object              LB_FW_CREATE_OBJECT
-#define LB_fw_Destroy_Object             LB_FW_DESTROY_OBJECT
+#define LB_fw_Create                     LB_FW_CREATE       
+#define LB_fw_Destroy                    LB_FW_DESTROY       
 #define LB_fw_Set_Fn0f                   LB_FW_SET_FN0F
 #define LB_fw_Set_Fn1f                   LB_FW_SET_FN1F
 #define LB_fw_Set_Fn2f                   LB_FW_SET_FN2F
@@ -103,8 +103,8 @@
 
 #define LB_fw_Initialize                 lb_fw_initialize_
 #define LB_fw_Initialize1                lb_fw_initialize1_
-#define LB_fw_Create_Object              lb_fw_create_object_
-#define LB_fw_Destroy_Object             lb_fw_destroy_object_
+#define LB_fw_Create                     lb_fw_create_
+#define LB_fw_Destroy                    lb_fw_destroy_
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f_
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f_
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f_
@@ -148,8 +148,8 @@
 
 #define LB_fw_Initialize                 lb_fw_initialize__
 #define LB_fw_Initialize1                lb_fw_initialize1__
-#define LB_fw_Create_Object              lb_fw_create_object__
-#define LB_fw_Destroy_Object             lb_fw_destroy_object__
+#define LB_fw_Create                     lb_fw_create__
+#define LB_fw_Destroy                    lb_fw_destroy__
 #define LB_fw_Set_Fn0f                   lb_fw_set_fn0f__
 #define LB_fw_Set_Fn1f                   lb_fw_set_fn1f__
 #define LB_fw_Set_Fn2f                   lb_fw_set_fn2f__
@@ -489,27 +489,27 @@ int LB_fw_Initialize1(int *argc, int *argv, int *starts, float *ver)
    return result;
 }
 
-void LB_fw_Create_Object(int *f_communicator, int *addr_lb, int *nbytes)
+void LB_fw_Create(int *f_communicator, int *addr_lb, int *nbytes)
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
    MPI_Comm c_communicator;
    c_communicator = LB_comm_f2c(f_communicator);
-   lb = LB_Create_Object(c_communicator);
+   lb = LB_Create(c_communicator);
    lb->Fortran = 1;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {addr_lb[i] = (int)*p; p++;}
 }
 
-void LB_fw_Destroy_Object(int *addr_lb, int *nbytes)
+void LB_fw_Destroy(int *addr_lb, int *nbytes)
 {
    struct LB_Struct *lb;
    unsigned char *p;
    int i;
    p = (unsigned char *) &lb;
    for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
-   LB_Destroy_Object(&lb);
+   LB_Destroy(&lb);
 }
 
 int LB_fw_Set_Fn(int *addr_lb, int *nbytes, LB_FN_TYPE *type, void *fn(),

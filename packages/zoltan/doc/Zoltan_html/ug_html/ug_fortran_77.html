@@ -47,14 +47,14 @@ or function) that calls a Zoltan routine must begin with the statement
 and this should be the first statement after the program, subroutine or
 function statement (before the declarations).
 
-<P>The load balancing object returned by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_CREATE_OBJECT</A></B>
+<P>The pointer to the load-balancing structure returned by <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>
 should be declared as
 <UL>TYPE(LB_STRUCT), POINTER :: LB</UL>
 (you can use a name other than LB if you wish).
 
-<P>To create the object, use a pointer assignment statement with the call
-to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_CREATE_OBJECT</A></B>:
-<UL>LB => <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_CREATE_OBJECT</A></B>(COMMUNICATOR)</UL>
+<P>To create the structure, use a pointer assignment statement with the call
+to <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>:
+<UL>LB => <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>(COMMUNICATOR)</UL>
 Note that the assignment operator is "=>".
 If LB is used in more than one procedure, then put it in a COMMON block.
 It cannot be passed as an argument unless the procedure interfaces are

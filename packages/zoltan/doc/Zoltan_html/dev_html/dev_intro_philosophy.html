@@ -43,15 +43,20 @@ functions.
 
 <P>An example of the interaction between an application and the load-balancing
 library is shown in the <A HREF="#interact figure">figure</A> below. An
-application creates a load-balancing object <I>lb</I> through a call to
-<B>LB_Create_Object</B>. This load-balancing object stores pointers to
+application creates a load-balancing data structure <I>lb</I> through a call to
+<B><A HREF="../ug_html/ug_interface_init.html#LB_Create">LB_Create</A></B>. 
+This load-balancing structure stores pointers to
 registered functions and data structures for a particular instance of load
 balancing. The application selects the load-balancing method for <I>lb</I>
-through a call to <B>LB_Set_Method</B>. Then the application registers
+through a call to 
+<B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+Then the application registers
 the application query functions <I>user_return_coords_fn</I>, <I>user_return_num_elems_fn</I>,
 and <I>user_return_elem_list_fn</I> to return the coordinates of an object,
 the number of objects, and a list of objects, respectively. The application
-then calls <B>LB_Balance</B> to compute a new decomposition. The load-balancing
+then calls 
+<B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B> 
+to compute a new decomposition. The load-balancing
 library follows pointers to the registered functions to build the data
 structures it needs to perform load balancing. It follows the <I>lb->Get_Num_Obj</I>
 pointer to <I>user_return_num_elems_fn</I> to obtain the number of objects
@@ -69,7 +74,7 @@ library can perform the desired load balancing.
 <TR>
 <TD><FONT SIZE=-1>.</FONT>..
 <BR>/<TT>* <I>Register method and application query functions</I> */</TT>
-<BR><TT>lb = LB_Create_Object();</TT>
+<BR><TT>lb = LB_Create(MPI_COMM_WORLD);</TT>
 <BR><TT>LB_Set_Method(lb, "RCB");</TT>
 <BR><TT>LB_Set_Fn(lb,LB_GEOM_FN_TYPE,user_return_coords_fn, NULL);</TT>
 <BR><TT>LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,user_return_num_elems_fn,NULL);</TT>
@@ -111,7 +116,7 @@ library can perform the desired load balancing.
 local_ids);&nbsp;</TT><TT></TT>
 
 <P><TT>/* <I>allocate memory for the load-balancing data structures.</I>*/</TT>
-<BR><TT>/* <I>store pointer to that data in the lb object. </I>*/</TT>
+<BR><TT>/* <I>store pointer to that data in the lb structure. </I>*/</TT>
 <BR><TT>data = <I>Allocate array of size num_objs for object data</I>;</TT>
 <BR><TT>lb->Data_Structure = (void *) data;</TT><TT></TT>
 

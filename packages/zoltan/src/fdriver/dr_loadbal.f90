@@ -71,9 +71,9 @@ type(ELEM_INFO), pointer :: elements(:)
 !  /*
 !   *  Create a load-balancing object.
 !   */
-  lb_obj => LB_Create_Object(MPI_COMM_WORLD)
+  lb_obj => LB_Create(MPI_COMM_WORLD)
   if (.not.associated(lb_obj)) then
-    print *, "fatal:  NULL object returned from LB_Create_Object()"
+    print *, "fatal:  NULL object returned from LB_Create()"
     run_zoltan = .false.
     return
   endif
@@ -192,7 +192,7 @@ type(ELEM_INFO), pointer :: elements(:)
   ierr = LB_Free_Data(import_gids, import_lids, import_procs, &
                       export_gids, export_lids, export_procs)
 
-  call LB_Destroy_Object(lb_obj)
+  call LB_Destroy(lb_obj)
 
   run_zoltan = .true.
 

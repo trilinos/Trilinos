@@ -48,8 +48,8 @@ should be included in most source files of the load-balancing library.
 The use of global variables is highly discouraged in the load-balancing
 library. In limited cases, static global variables can be tolerated within
 a source file of an algorithm. However, developers should keep in mind
-that several load-balancing objects may be used by an application, with
-each object using the same algorithm. Thus, global variables set by one
+that several load-balancing structures may be used by an application, with
+each structure using the same algorithm. Thus, global variables set by one
 instance of load balancing may be reset by other instances, causing errors
 in the algorithms. Global variable names may also conflict with variables
 used elsewhere in the library or application, causing unintended side-effects
