@@ -312,20 +312,20 @@ int LB_RB_Send_Dots(
   ZOLTAN_ID_PTR gidbuf = NULL;          /* communication buffer for global IDs. */
   ZOLTAN_ID_PTR lidbuf = NULL;          /* communication buffer for local IDs.  */
   struct Dot_Struct *dotbuf = NULL; /* communication buffer for dots. */
-  struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
+  ZOLTAN_COMM_OBJ *cobj = NULL;     /* pointer for communication object */
   int message_tag = 32760;          /* message tag */
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   int i, ierr;
 
   incoming = 0;
-  ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
+  ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                         &incoming);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Create.");
     ZOLTAN_FREE(&proc_list);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
 
   /* check if need to malloc more space */
@@ -417,49 +417,49 @@ int LB_RB_Send_Dots(
 
   if (use_ids) {
     /* Communicate Global IDs */
-    ierr = LB_Comm_Do(cobj, message_tag, (char *) gidbuf, 
+    ierr = Zoltan_Comm_Do(cobj, message_tag, (char *) gidbuf, 
                       sizeof(ZOLTAN_ID_TYPE)*num_gid_entries,
                       (char *) &((*gidpt)[keep*num_gid_entries]));
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
       ZOLTAN_FREE(&gidbuf);
       ZOLTAN_FREE(&lidbuf);
       ZOLTAN_FREE(&dotbuf);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+      return (ierr);
     }
 
     /* Communicate Local IDs, if any */
     if (num_lid_entries) {
       message_tag--;
-      ierr = LB_Comm_Do(cobj, message_tag, (char *) lidbuf, 
+      ierr = Zoltan_Comm_Do(cobj, message_tag, (char *) lidbuf, 
                         sizeof(ZOLTAN_ID_TYPE)*num_lid_entries,
                         (char *) &((*lidpt)[keep*num_lid_entries]));
-      if (ierr != COMM_OK && ierr != COMM_WARN) {
-        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
         ZOLTAN_FREE(&gidbuf);
         ZOLTAN_FREE(&lidbuf);
         ZOLTAN_FREE(&dotbuf);
         ZOLTAN_LB_TRACE_EXIT(lb, yo);
-        return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+        return (ierr);
       }
     }
   }
 
   /* Communicate Dots */
   message_tag--;
-  ierr = LB_Comm_Do(cobj, message_tag, (char *) dotbuf, 
+  ierr = Zoltan_Comm_Do(cobj, message_tag, (char *) dotbuf, 
                     sizeof(struct Dot_Struct), (char *) &((*dotpt)[keep]));
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
     ZOLTAN_FREE(&gidbuf);
     ZOLTAN_FREE(&lidbuf);
     ZOLTAN_FREE(&dotbuf);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
 
-  ierr = LB_Comm_Destroy(&cobj);
+  ierr = Zoltan_Comm_Destroy(&cobj);
 
   if (use_ids) {
     ZOLTAN_FREE(&gidbuf);

@@ -56,7 +56,7 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
-  struct Comm_Obj *comm_plan;
+  ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "LB_Verify_Graph";
   char msg[256];
 
@@ -313,13 +313,12 @@ barrier1:
     }
 
     /* Do the irregular communication */
-    ierr = LB_Comm_Create(&comm_plan, cross_edges, proclist, comm, 
+    ierr = Zoltan_Comm_Create(&comm_plan, cross_edges, proclist, comm, 
                           TAG1, &k);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      sprintf(msg, "Error %s returned from LB_Comm_Create.", 
-              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
+              (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
-      ierr = (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
     }
     else {
       if (k != cross_edges){
@@ -328,13 +327,12 @@ barrier1:
         ierr = ZOLTAN_FATAL;
       }
 
-      ierr = LB_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
-      LB_Comm_Destroy(&comm_plan);
-      if (ierr != COMM_OK && ierr != COMM_WARN) {
-        sprintf(msg, "Error %s returned from LB_Comm_Do.",
-                (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+      ierr = Zoltan_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
+      Zoltan_Comm_Destroy(&comm_plan);
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+        sprintf(msg, "Error %s returned from Zoltan_Comm_Do.",
+                (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
         ZOLTAN_PRINT_ERROR(proc, yo, msg);
-        ierr = (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
       }
       else {
 

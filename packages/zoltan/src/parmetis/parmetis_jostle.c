@@ -336,7 +336,7 @@ static int LB_ParMetis_Jostle(
   char *recvbuf;            /* Do not deallocate while still using the hash
                                table with nrecv; the hash_nodes point to 
                                global IDs in this array. */
-  struct Comm_Obj *comm_plan;
+  ZOLTAN_COMM_OBJ *comm_plan;
   double times[5];
   char msg[256];
   int num_gid_entries = lb->Num_GID;
@@ -833,15 +833,15 @@ static int LB_ParMetis_Jostle(
 
     /* Create the communication plan */
     if (lb->Debug_Level >= LB_DEBUG_ALL)
-      printf("[%1d] Debug: Calling LB_Comm_Create with %d packets to send.\n",
+      printf("[%1d] Debug: Calling Zoltan_Comm_Create with %d packets to send.\n",
              lb->Proc, nsend);
 
-    ierr = LB_Comm_Create(&comm_plan, nsend, plist, comm, TAG1, &nrecv);
-    if (ierr != COMM_OK && ierr != COMM_WARN){
+    ierr = Zoltan_Comm_Create(&comm_plan, nsend, plist, comm, TAG1, &nrecv);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+      return (ierr);
     }
 
     /* Allocate recv buffer */
@@ -857,16 +857,16 @@ static int LB_ParMetis_Jostle(
         lb->Proc, nrecv);
 
     /* Do the communication */
-    ierr = LB_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
-    if (ierr != COMM_OK && ierr != COMM_WARN){
+    ierr = Zoltan_Comm_Do( comm_plan, TAG2, sendbuf, packet_size, recvbuf);
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       /* Return error code */
       FREE_MY_MEMORY;
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+      return (ierr);
     }
 
     /* Destroy the comm. plan */
-    LB_Comm_Destroy( &comm_plan);
+    Zoltan_Comm_Destroy( &comm_plan);
   
     /* Unpack data into the ParMETIS/Jostle struct.
      * Resolve off-proc global numbers by:
@@ -1266,14 +1266,14 @@ static int LB_ParMetis_Jostle(
     /* Use reverse communication to compute the partition array under the 
      * original distribution 
      */
-    ierr = LB_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
+    ierr = Zoltan_Comm_Do_Reverse(comm_plan, TAG3, (char *) part, sizeof(idxtype), 
                               NULL, (char *) part2);
-    if ((ierr == COMM_FATAL) || (ierr == COMM_MEMERR)){
+    if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
       FREE_MY_MEMORY;
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+      return (ierr);
     }
-    LB_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
+    Zoltan_Comm_Destroy(&comm_plan); /* Destroy the comm. plan */
     /* We don't need the partition array with the scattered distribution 
      * any more */
     ZOLTAN_FREE(&part); 

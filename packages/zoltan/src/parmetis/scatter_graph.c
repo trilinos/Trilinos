@@ -42,7 +42,7 @@ int LB_Scatter_Graph(
   float   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
   LB      *lb,
-  struct Comm_Obj **plan
+  ZOLTAN_COMM_OBJ **plan
 )
 {
   static char *yo = "LB_Scatter_Graph";
@@ -52,7 +52,7 @@ int LB_Scatter_Graph(
   int *ptr, *proclist = NULL, *proclist2;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
   int vwgt_dim= lb->Obj_Weight_Dim, ewgt_dim= lb->Comm_Weight_Dim;
-  struct Comm_Obj *plan2;
+  ZOLTAN_COMM_OBJ *plan2;
 
   ZOLTAN_LB_TRACE_ENTER(lb, yo);
 
@@ -108,7 +108,7 @@ int LB_Scatter_Graph(
     }
   }
 
-  LB_Comm_Create(plan, old_num_obj, proclist, lb->Communicator, TAG1, &nrecv);
+  Zoltan_Comm_Create(plan, old_num_obj, proclist, lb->Communicator, TAG1, &nrecv);
 
   if (nrecv != num_obj){
     sprintf(msg,"Proc %d received %d object but expected %d.",
@@ -130,13 +130,13 @@ int LB_Scatter_Graph(
     printf("[%1d] Debug: Starting vertex-based communication.\n", lb->Proc);
 
   if (have_graph){
-    LB_Comm_Do( *plan, TAG2, (char *) old_xadj, sizeof(idxtype), (char *) *xadj);
+    Zoltan_Comm_Do( *plan, TAG2, (char *) old_xadj, sizeof(idxtype), (char *) *xadj);
   }
   if (vwgt_dim){
-    LB_Comm_Do( *plan, TAG3, (char *) old_vwgt, vwgt_dim*sizeof(idxtype), (char *) *vwgt);
+    Zoltan_Comm_Do( *plan, TAG3, (char *) old_vwgt, vwgt_dim*sizeof(idxtype), (char *) *vwgt);
   }
   if (ndims){
-    LB_Comm_Do( *plan, TAG4, (char *) old_xyz, ndims*sizeof(idxtype), (char *) *xyz);
+    Zoltan_Comm_Do( *plan, TAG4, (char *) old_xyz, ndims*sizeof(idxtype), (char *) *xyz);
   }
   if (lb->Debug_Level >= LB_DEBUG_ALL) 
     printf("[%1d] Debug: Finished vertex-based communication.\n", lb->Proc);
@@ -163,7 +163,7 @@ int LB_Scatter_Graph(
       for (j=0; j<old_xadj[i]; j++)
         *ptr++ = proclist[i];
   
-    LB_Comm_Create(&plan2, old_xadj[old_num_obj], proclist2, lb->Communicator, 
+    Zoltan_Comm_Create(&plan2, old_xadj[old_num_obj], proclist2, lb->Communicator, 
                    TAG1, &nrecv);
   
     if (nrecv != num_edges){
@@ -181,16 +181,16 @@ int LB_Scatter_Graph(
       printf("[%1d] Debug: Starting edge-based communication.\n", lb->Proc);
   
     /* Do the communication. */
-    LB_Comm_Do( plan2, TAG2, (char *) old_adjncy, sizeof(idxtype), (char *) *adjncy);
+    Zoltan_Comm_Do( plan2, TAG2, (char *) old_adjncy, sizeof(idxtype), (char *) *adjncy);
     if (ewgt_dim){
-      LB_Comm_Do( plan2, TAG3, (char *) old_adjwgt, ewgt_dim*sizeof(idxtype), (char *) *adjwgt);
+      Zoltan_Comm_Do( plan2, TAG3, (char *) old_adjwgt, ewgt_dim*sizeof(idxtype), (char *) *adjwgt);
     }
   
     if (lb->Debug_Level >= LB_DEBUG_ALL) 
       printf("[%1d] Debug: Finished edge-based communication.\n", lb->Proc);
   
     /* Free the comm. plan for edge data */
-    LB_Comm_Destroy(&plan2);
+    Zoltan_Comm_Destroy(&plan2);
 
   } /* end of have_graph */
 

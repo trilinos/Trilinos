@@ -65,7 +65,7 @@ char *yo = "Zoltan_Compute_Destinations";
 char msg[256];
 int *proc_list = NULL;      /* List of processors from which objs are to be 
                                imported.                                    */
-COMM_OBJ *comm_plan;        /* Object returned communication routines  */
+ZOLTAN_COMM_OBJ *comm_plan;        /* Object returned communication routines  */
 int *import_proc_list = NULL;
                             /* Array containing owning processor IDs of import
                                objects; used to request objs from other procs.*/
@@ -140,15 +140,15 @@ int ierr = ZOLTAN_OK;
    */
 
   msgtag = 32767;
-  ierr = LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, 
+  ierr = Zoltan_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, 
                         msgtag, num_export);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Create.",
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Create.",
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&proc_list);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
   
 
@@ -199,53 +199,53 @@ int ierr = ZOLTAN_OK;
    */
 
   msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
+  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_global_ids, 
                     (int) (sizeof(ZOLTAN_ID_TYPE)*(num_gid_entries)), 
                     (char *) *export_global_ids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&proc_list);
-    LB_Comm_Destroy(&comm_plan);
+    Zoltan_Comm_Destroy(&comm_plan);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
 
   if (num_lid_entries) {
     msgtag2--;
-    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
+    ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
                       (int) (sizeof(ZOLTAN_ID_TYPE)*num_lid_entries), 
                       (char *) *export_local_ids);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      sprintf(msg, "Error %s returned from LB_Comm_Do.", 
-              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
+              (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
       ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
       ZOLTAN_FREE(&proc_list);
-      LB_Comm_Destroy(&comm_plan);
+      Zoltan_Comm_Destroy(&comm_plan);
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
-      return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+      return (ierr);
     }
   }
 
   msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_proc_list, 
+  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) import_proc_list, 
                     (int) sizeof(int), (char *) *export_procs);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&proc_list);
-    LB_Comm_Destroy(&comm_plan);
+    Zoltan_Comm_Destroy(&comm_plan);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
   ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done comm_do");
 
   ZOLTAN_FREE(&proc_list);
   ZOLTAN_FREE(&import_proc_list);
   
-  LB_Comm_Destroy(&comm_plan);
+  Zoltan_Comm_Destroy(&comm_plan);
 
   ZOLTAN_LB_TRACE_DETAIL(lb, yo, "Done comm destroy");
 
@@ -316,7 +316,7 @@ int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 ZOLTAN_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
 ZOLTAN_ID_PTR lid;           /* temporary pointer to a local ID; used to pass
                             NULL to query functions when NUM_LID_ENTRIES=0. */
-COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
+ZOLTAN_COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
 int total_send_size;     /* Total size of outcoming message (in #items)     */
 int total_recv_size;     /* Total size of incoming message (in #items)      */
@@ -526,17 +526,17 @@ int ierr = 0;
    */
 
   msgtag = 32767;
-  ierr = LB_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, 
+  ierr = Zoltan_Comm_Create(&comm_plan, num_export, proc_list, lb->Communicator, 
                         msgtag, &tmp_import);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Create.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&sizes);
     ZOLTAN_FREE(&export_buf);
     ZOLTAN_FREE(&proc_list);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
   if (tmp_import != num_import) {
     sprintf(msg, "tmp_import %d != num_import %d.", tmp_import, num_import);
@@ -547,16 +547,16 @@ int ierr = 0;
   for (i=0; i<num_export; i++)
     sizes[i] += tag_size;
   msgtag--;
-  ierr = LB_Comm_Resize(comm_plan, sizes, msgtag, &total_recv_size);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Create.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  ierr = Zoltan_Comm_Resize(comm_plan, sizes, msgtag, &total_recv_size);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&sizes);
     ZOLTAN_FREE(&export_buf);
     ZOLTAN_FREE(&proc_list);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
 
   if (num_import > 0) {
@@ -577,25 +577,25 @@ int ierr = 0;
    */
 
   msgtag2 = 32765;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, export_buf, 1, import_buf);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, export_buf, 1, import_buf);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    sprintf(msg, "Error %s returned from Zoltan_Comm_Do.", 
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_PRINT_ERROR(lb->Proc, yo, msg);
     ZOLTAN_FREE(&sizes);
     ZOLTAN_FREE(&proc_list);
     ZOLTAN_FREE(&export_buf);
     ZOLTAN_FREE(&import_buf);
-    LB_Comm_Destroy(&comm_plan);
+    Zoltan_Comm_Destroy(&comm_plan);
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL);
+    return (ierr);
   }
 
   /*
    *  Free whatever memory we can.
    */
 
-  LB_Comm_Destroy(&comm_plan);
+  Zoltan_Comm_Destroy(&comm_plan);
   ZOLTAN_FREE(&proc_list);
   ZOLTAN_FREE(&export_buf);
   ZOLTAN_FREE(&sizes);

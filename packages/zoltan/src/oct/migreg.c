@@ -33,7 +33,7 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   int i;                         /* index counter */
   int ierr = ZOLTAN_OK;
   int n_import;
-  COMM_OBJ *comm_plan;           /* Object returned by communication routines */
+  ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
   Region *import_objs = NULL;    /* Array of import objects used to request 
 				    the objs from other processors. */
   ZOLTAN_ID_PTR import_gids = NULL;  /* Array of global IDs of import_objs. */
@@ -41,10 +41,10 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
 
-  ierr = LB_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
+  ierr = Zoltan_Comm_Create(&comm_plan, nregions, npids, lb->Communicator, 
                         MIGMIGREGCommCreate, &n_import);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create");
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Create");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }
@@ -60,10 +60,10 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
       return ZOLTAN_MEMERR;
     }
   }
-  ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo, (char *) regions, sizeof(Region), 
+  ierr = Zoltan_Comm_Do(comm_plan, MIGMIGREGCommDo, (char *) regions, sizeof(Region), 
                    (char *) import_objs);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&import_objs);
     ZOLTAN_FREE(&import_gids);
@@ -71,10 +71,10 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
     return (ierr);
   }
 
-  ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-1, (char *) gids, 
+  ierr = Zoltan_Comm_Do(comm_plan, MIGMIGREGCommDo-1, (char *) gids, 
                     sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *) import_gids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&import_objs);
     ZOLTAN_FREE(&import_gids);
@@ -83,10 +83,10 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   }
 
   if (num_lid_entries > 0) {
-    ierr = LB_Comm_Do(comm_plan, MIGMIGREGCommDo-2, (char *) lids, 
+    ierr = Zoltan_Comm_Do(comm_plan, MIGMIGREGCommDo-2, (char *) lids, 
                       sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) import_lids);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
       ZOLTAN_LB_TRACE_EXIT(lb, yo);
       ZOLTAN_FREE(&import_objs);
       ZOLTAN_FREE(&import_gids);
@@ -106,8 +106,8 @@ static int LB_migreg_migrate_regions(LB *lb, Region *regions,
   ZOLTAN_FREE(&import_gids);
   ZOLTAN_FREE(&import_lids);
 
-  ierr = LB_Comm_Destroy(&comm_plan);
-  if(ierr != COMM_OK && ierr != COMM_WARN) {
+  ierr = Zoltan_Comm_Destroy(&comm_plan);
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     return (ierr);
   }

@@ -313,17 +313,17 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   float im_load;
-  COMM_OBJ *comm_plan;           /* Object returned by communication routines */
+  ZOLTAN_COMM_OBJ *comm_plan;           /* Object returned by communication routines */
 
   im_load = 0;
   msgtag = 32767;
 
-  ierr = LB_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator,
+  ierr = Zoltan_Comm_Create(&comm_plan, nsentags, tag_pids, lb->Communicator,
 				msgtag, &nreceives);
-  if(ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Create.");
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Create.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
-    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
+    return(ierr);
   }
 
 
@@ -342,49 +342,49 @@ static int malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   }
   
   msgtag2 = 32766;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
+  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) export_tags, sizeof(Region),
          (char *) tmp);
-  if(ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&tmp);
     ZOLTAN_FREE(&tmp_gids);
     ZOLTAN_FREE(&tmp_lids);
-    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
+    return(ierr);
   }
 
   msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_gids,
+  ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) export_gids,
                     sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *) tmp_gids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
-    fprintf(stderr, "OCT %s Error %s returned from LB_Comm_Do\n", yo,
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
+    fprintf(stderr, "OCT %s Error %s returned from Zoltan_Comm_Do\n", yo,
+            (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
     ZOLTAN_FREE(&tmp);
     ZOLTAN_FREE(&tmp_gids);
     ZOLTAN_FREE(&tmp_lids);
-    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
+    return(ierr);
   }
 
   if (num_lid_entries > 0) {
     msgtag2--;
-    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) export_lids,
+    ierr = Zoltan_Comm_Do(comm_plan, msgtag2, (char *) export_lids,
                       sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *) tmp_lids);
-    if (ierr != COMM_OK && ierr != COMM_WARN) {
-      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Do.");
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Do.");
       ZOLTAN_FREE(&tmp);
       ZOLTAN_FREE(&tmp_gids);
       ZOLTAN_FREE(&tmp_lids);
-      return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
+      return(ierr);
     }
   }
 
-  ierr = LB_Comm_Destroy(&comm_plan);
-  if(ierr != COMM_OK && ierr != COMM_WARN) {
-    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from LB_Comm_Destroy.");
+  ierr = Zoltan_Comm_Destroy(&comm_plan);
+  if(ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+    ZOLTAN_PRINT_ERROR(lb->Proc, yo, "Error returned from Zoltan_Comm_Destroy.");
     ZOLTAN_LB_TRACE_EXIT(lb, yo);
     ZOLTAN_FREE(&tmp);
-    return((ierr == COMM_MEMERR ? ZOLTAN_MEMERR : ZOLTAN_FATAL));
+    return(ierr);
   }
 
   /* get each message sent, and store region in import array */

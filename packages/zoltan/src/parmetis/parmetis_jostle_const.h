@@ -100,7 +100,7 @@ extern int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
               int vwgt_dim, int ewgt_dim, int check_graph, int debug_level);
 extern int LB_Scatter_Graph(int have_graph, idxtype **vtxdist, idxtype **xadj, idxtype **adjncy,
               idxtype **vwgt, idxtype **adjwgt, float   **xyz, int     ndims,
-              LB      *lb, struct Comm_Obj **plan);
+              LB      *lb, ZOLTAN_COMM_OBJ **plan);
 
 
 #endif
