@@ -585,7 +585,7 @@ int MSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
     ap[i] = sum;
   }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
 
@@ -667,7 +667,7 @@ int CSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[]
      ap2[i] = sum;
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
@@ -751,7 +751,7 @@ int sCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
      }
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
@@ -845,7 +845,7 @@ int cCSR_trans_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, doub
      }
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
@@ -928,7 +928,7 @@ int sCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
      ap2[i] = sum;
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
@@ -1026,7 +1026,7 @@ int cCSR_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double ap[
      }
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
@@ -1122,7 +1122,7 @@ int CSR_densematvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
              *ap2++ = sum; 
            }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-           Op->apply_without_comm_time += (GetClock() - t0);
+           Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
            
            if (Amat->getrow->pre_comm != NULL) ML_free(oldp2);
@@ -1208,7 +1208,7 @@ int CSR_ones_matvec(ML_Operator *Amat_in, int ilen, double p[], int olen, double
      ap2[i] = sum;
    }
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
-   Op->apply_without_comm_time += (GetClock() - t0);
+   Amat->apply_without_comm_time += (GetClock() - t0);
 #endif
 
    if (Amat->getrow->pre_comm != NULL) ML_free(p2);
