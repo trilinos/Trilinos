@@ -24,6 +24,7 @@ extern "C" {
 #include "hypergraph.h"
 
 
+
 /*****************************************************************************/
 /*
  * Data structure for Zoltan's base hypergraph.
@@ -31,22 +32,22 @@ extern "C" {
  * a HGraph as used by the algorithms.
  */
 
-struct Zoltan_HGraph {
-  ZOLTAN_ID_PTR Global_IDs;      /* Global IDs for on-processor objects.  */
-  ZOLTAN_ID_PTR Local_IDs;       /* Local IDs for on-processor objects.   */
-  Partition Parts;               /* Initial partition #s for on-processor 
-                                    objects                               */
-                                 /* KDD In parallel version Part may
-                                    be part of HG.                        */
-  HGraph HG;                     /* Hypergraph for initial objects.       */
-};
-
+typedef struct {
+  ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
+  ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
+  Partition Parts;          /* Initial partition #s for on-processor objects */
+                            /* KDD In parallel version Part may be part of HG */
+  HGraph HG;                /* Hypergraph for initial objects.       */
+} Zoltan_HGgraph;
 
 /*****************************************************************************/
-/* Prototypes */
 
+
+
+/* Prototypes */
 extern int Zoltan_HG_Build_Hypergraph(ZZ *, struct Zoltan_HGraph **, int);
 extern void Zoltan_HG_HGraph_Print(ZZ *, struct Zoltan_HGraph *, HGraph *);
+
 
 
 #ifdef __cplusplus

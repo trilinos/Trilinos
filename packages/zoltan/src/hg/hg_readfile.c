@@ -27,27 +27,25 @@ int hg_readfile (ZZ *zz, HGraph *hg, char *hgraphfile, int *base)
    {
    int ierr;
    FILE *f;
-   char errstr[200] ;
-   char *yo = "hg_readfile" ;
+   char errstr[200];
+   char *yo = "hg_readfile";
 
    Zoltan_HG_HGraph_Init(hg);
 
-   f = fopen (hgraphfile, "r") ;
-   if (!f)
-      {
+   f = fopen (hgraphfile, "r");
+   if (!f) {
       sprintf(errstr, "ERROR...not able to open file %s!\n",hgraphfile);
-      ZOLTAN_PRINT_ERROR (zz->Proc, yo, errstr) ;
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, errstr);
       return ZOLTAN_FATAL;
       }
 
-   ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput, 
-    &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt, 
-    &hg->EdgeWeightDim, &hg->ewgt, base) ;
+   ierr = Zoltan_HG_Readfile (0, f, &hg->nVtx, &hg->nEdge, &hg->nInput,
+    &hg->hindex, &hg->hvertex, &hg->VertexWeightDim, &hg->vwgt,
+    &hg->EdgeWeightDim, &hg->ewgt, base);
    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
       return ierr;
 
-   if (*base > 0) 
-      {
+   if (*base > 0) {
       /* Convert to zero-based vertex numbers */
       int i;
       for (i = 0; i < hg->nInput; i++) 

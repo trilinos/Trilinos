@@ -6,8 +6,10 @@
 
 #include "hypergraph.h"
 
+
+
 /* =========== TIME */
-/* This is used to measure the time of the stand-alone programe hg_test. */
+/* This is used to measure the time of the stand-alone program hg_test. */
 #ifdef WITHTIME
 static long     t=0, t_init=0, t_load=0, t_part=0, t_rest=0;
 static void times_output ()
@@ -50,53 +52,53 @@ extern int hg_readfile (ZZ *, HGraph *, char *, int *);
 /* The main procedure for the executable hg_test */
 
 int main (int argc, char **argv)
-{ int    i, p=2, *part, memory_graph;
-  char   hgraphfile[100]="grid5x5.hg";
+{ int    i, p = 2, *part, memory_graph;
+  char   hgraphfile[100] = "grid5x5.hg";
   HGraph hg;
   HGPartParams hgp;
   ZZ     zz;
   int    base;   /* minimum vertex number in input file; usually 0 or 1. */
 
 /* Pre-set parameter values */
+  hgp.check_graph = 1;
   hgp.bal_tol = 1.1;
   hgp.redl = 0;
-  strcpy(hgp.redm_str, "grg");
-  strcpy(hgp.redmo_str, "aug2");
-  hgp.ews = 1;
+  hgp.ews  = 1;
+
+  strcpy(hgp.redm_str,   "grg");
+  strcpy(hgp.redmo_str,  "aug2");
   strcpy(hgp.global_str, "gr0");
-  strcpy(hgp.local_str, "fm");
-  hgp.check_graph = 1;
+  strcpy(hgp.local_str,  "fm");
 
   zz.Debug_Level = 1;
-
   Zoltan_Memory_Debug(2);
 
 /* Start of the time*/
   INIT_TIME();
 
 /* Read parameters */
-  if (argc == 1)
-  { puts("hg_test [-flag value] [] [] ...");
-    puts("-f      graphfile:        (grid5x5.hg)");
-    puts("-p      # of parts:       (2)");
-    puts("-bal    balance tolerance:(1.1)");
-    puts("-redl   reduction limit:  (0)");
-    puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
-    puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
-    puts("                           mxg,reg,rrg,rhg,(grg),");
-    puts("                           no}");
-    puts("-redmo  reduction augment:{no,aug1,(aug2)}");
-    puts("-reds   reduction scaling:(1)");
-    puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");
-    puts("                           (gr0),gr1,gr2,gr3,gr4}");
-    puts("-l      local method:     no,(fm)");
-    puts("-d      debug level:      (1)");
-    puts("default values are in brackets ():");
-    return 0;
-  }
+  if (argc == 1) {
+     puts("hg_test [-flag value] [] [] ...");
+     puts("-f      graphfile:        (grid5x5.hg)");
+     puts("-p      # of parts:       (2)");
+     puts("-bal    balance tolerance:(1.1)");
+     puts("-redl   reduction limit:  (0)");
+     puts("-redm   reduction method: {mxm,rem,rrm,rhm,grm,lhm,pgm,");
+     puts("                           mxp,rep,rrp,rhp,grp,lhp,pgp,");
+     puts("                           mxg,reg,rrg,rhg,(grg),");
+     puts("                           no}");
+     puts("-redmo  reduction augment:{no,aug1,(aug2)}");
+     puts("-reds   reduction scaling:(1)");
+     puts("-g      global method:    {ran,lin,bfs,rbfs,bfsh,rbfsh,");
+     puts("                           (gr0),gr1,gr2,gr3,gr4}");
+     puts("-l      local method:     no,(fm)");
+     puts("-d      debug level:      (1)");
+     puts("default values are in brackets ():");
+     return 0;
+     }
   i = 0;
-  while (++i<argc)
-  { if     (!strcmp(argv[i],"-f")   &&i+1<argc)strcpy(hgraphfile,argv[++i]);
+  while (++i<argc) {
+    if     (!strcmp(argv[i],"-f")   &&i+1<argc)strcpy(hgraphfile,argv[++i]);
     else if(!strcmp(argv[i],"-p")   &&i+1<argc)p=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-bal") &&i+1<argc)hgp.bal_tol=atof(argv[++i]);
     else if(!strcmp(argv[i],"-redl")&&i+1<argc)hgp.redl=atoi(argv[++i]);
@@ -105,62 +107,63 @@ int main (int argc, char **argv)
     else if(!strcmp(argv[i],"-reds")&&i+1<argc)hgp.ews=atoi(argv[++i]);
     else if(!strcmp(argv[i],"-g")   &&i+1<argc)strcpy(hgp.global_str,argv[++i]);
     else if(!strcmp(argv[i],"-l")   &&i+1<argc)strcpy(hgp.local_str,argv[++i]);
-    else if(!strcmp(argv[i],"-d")   &&i+1<argc)zz.Debug_Level=atoi(argv[++i]); 
-    else 
-    { fprintf(stderr,"ERR...option '%s' not legal or without value\n",argv[i]);
-      return 1;
+    else if(!strcmp(argv[i],"-d")   &&i+1<argc)zz.Debug_Level=atoi(argv[++i]);
+    else {
+       fprintf(stderr,"ERR...option '%s' not legal or without value\n",argv[i]);
+       return 1;
+       }
     }
-  }
   if (Zoltan_HG_Set_Part_Options(&zz, &hgp))
-    return 1;
+     return 1;
   ADD_NEW_TIME(t_rest);
 
-/* load and info hypergraph */
+  /* load and info hypergraph */
   if (hg_readfile(&zz,&hg,hgraphfile,&base))
-    return 1;
+     return 1;
   if (zz.Debug_Level > ZOLTAN_DEBUG_ALL)
-    Zoltan_HG_Print(&zz, &hg);
+     Zoltan_HG_Print(&zz, &hg);
   memory_graph = Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL);
   printf("Initial Memory: %d %d\n", memory_graph,
-         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
-  printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str, hgp.redl) ;
+   Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM) );
+  printf ("local %s, global %s, redl %d\n", hgp.local_str, hgp.global_str,
+   hgp.redl);
 
   if (Zoltan_HG_Info (&zz,&hg))
-    return 1;
+     return 1;
   if (Zoltan_HG_Check (&zz,&hg))
-    return 1;
+     return 1;
   ADD_NEW_TIME(t_load);
 
-/* partition hypergraph */
+  /* partition hypergraph */
   if (!((part) = (int*)calloc((unsigned)(hg.nVtx),sizeof(int))))
-    return 1;
+     return 1;
   if (Zoltan_HG_HPart_Lib(&zz,&hg,p,part,&hgp))
-    return 1;
+     return 1;
   ADD_NEW_TIME(t_part);
 
-/* partition info */
+  /* partition info */
   if (Zoltan_HG_HPart_Info (&zz,&hg,p,part))
-    return 1;
+     return 1;
   free(part);
 
-/* free hypergraph */
+  /* free hypergraph */
   if (Zoltan_HG_HGraph_Free (&hg))
-    return 1;
-  if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0)
-  { printf("ERROR: remaining memory: %d\n",Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL));
-    return 1;
-
-  }
+     return 1;
+  if (Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL) > 0) {
+     printf("ERROR: remaining memory: %d\n",
+      Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL));
+     return 1;
+     }
 
   ADD_NEW_TIME(t_rest);
   END_TIME();
   times_output();
 
   printf("Final Memory: %d %d  ratio:%f\n",
-         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
-         Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM),
-         (float)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/memory_graph );
-  Zoltan_Memory_Stats();
+   Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_TOTAL),
+   Zoltan_Memory_Usage (ZOLTAN_MEM_STAT_MAXIMUM),
+   (float)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM) / memory_graph );
 
+  Zoltan_Memory_Stats();
   return 0;
 }
