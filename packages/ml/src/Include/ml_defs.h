@@ -13,6 +13,7 @@
 #define ML_MGFULLV        13
 #define ML_RSAMG          14
 #define ML_SAAMG          15
+#define ML_MGW            16
 
 #define ML_GRID_DIMENSION   21
 #define ML_GRID_NVERTICES   22
