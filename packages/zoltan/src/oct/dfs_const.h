@@ -15,7 +15,8 @@ extern "C" {
 #endif
 
 
-extern void Zoltan_Oct_dfs_partition(ZZ *zz, int *counter, float *c1);
+extern void Zoltan_Oct_dfs_partition(ZZ *zz, int *counter, float *c1,
+				     float *part_sizes);
 extern void Zoltan_Oct_dfs_migrate(ZZ *zz, int *nsentags,
 			   pRegion *import_tags, int *nrectags, 
 			   float *c2, float *c3, int *counter3, int *counter4);

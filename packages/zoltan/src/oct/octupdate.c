@@ -28,34 +28,36 @@ extern "C" {
 /*test*/
 /*extern void getMaxBounds(void *, double *, double *); */
 
-/***************************  PROTOTYPES *************************************/
+/**************************** PROTOTYPES ************************************/
 static int Zoltan_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct);
 static int Zoltan_Oct_CompareCoords(int dim, COORD pt1, COORD pt2);
-static void initialize_region(ZZ *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int, float, int, double *);
-static int lb_oct_init(ZZ *, int *, ZOLTAN_ID_PTR *,
-  ZOLTAN_ID_PTR *, int **, int **, int, int, int, int, int, int); 
+static void initialize_region(ZZ *, pRegion *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+			      int, float, int, double *);
+static int lb_oct_init(ZZ *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **,
+		       int **, int, int, int, int, int, int, float *); 
 static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int, int *c1, int *c2,
-                                        int *c3, float *c0, int createpartree);
+						int *c3, float *c0, 
+						int createpartree);
 static pOctant Zoltan_Oct_global_insert(ZZ *, pRegion region);
 static void Zoltan_Oct_terminal_refine(ZZ *, pOctant oct,int count);
 
 
 
-/*****************************************************************************/
+/****************************************************************************/
 /* NOTE: be careful later about region lists for nonterminal octants */
 
 static int oct_nref=0;                             /* number of refinements */
 static int oct_ncoarse=0;                          /* number of coarsenings */
 #ifdef LGG_MIGOCT
-static int IDcount = 0;                            /* renumbering of octants */
+static int IDcount = 0;                            /* renumbering of octs */
 #endif
 #define MAXOCTREGIONS_DEF 40
 #define MINOCTREGIONS_DEF 10
 static int MAXOCTREGIONS = MAXOCTREGIONS_DEF;
-static int MINOCTREGIONS = MINOCTREGIONS_DEF;  /* min # of regions per octant */
+static int MINOCTREGIONS = MINOCTREGIONS_DEF;  /* min # of regions per oct */
 
 
-/*****************************************************************************/
+/****************************************************************************/
 /* parameters for the octpart method.  Used in  */
 /* Zoltan_Oct_Set_Param and Zoltan_Octpart          */
 static PARAM_VARS OCT_params[] = {
@@ -66,9 +68,9 @@ static PARAM_VARS OCT_params[] = {
   { "OCT_OUTPUT_LEVEL", NULL, "INT", 0 },
   {  NULL,              NULL,  NULL, 0 }};
 
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
 
 int Zoltan_Oct_Set_Param(
   char *name,                 /* name of variable */
@@ -83,25 +85,25 @@ int index;                    /* index returned from Zoltan_Check_Param */
   return(status);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 int Zoltan_Octpart(
   ZZ *zz,                       /* The Zoltan structure with info for
-                                   the OCTPART balancer.                     */
+                                   the OCTPART balancer.                    */
   float *part_sizes,            /* Input:  Array of size zz->Num_Global_Parts
                                    containing the percentage of work to be
-                                   assigned to each partition.               */
+                                   assigned to each partition.              */
   int *num_import,              /* Returned value: Number of non-local 
                                    objects assigned to this
-                                   processor in the new decomposition.       */
-  ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   processor in the new decomposition.      */
+  ZOLTAN_ID_PTR *import_global_ids, /* Returned value: array of global IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
+                                   decomposition.                           */
   ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
+                                   decomposition.                           */
   int **import_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
-                                   this processor's new decomposition.       */
+                                   this processor's new decomposition.      */
   int **import_to_part,         /* Returned value:  array of partitions to
                                    which imported objects should be assigned.
                                    KDDKDD  Currently unused.  */
@@ -113,30 +115,30 @@ int Zoltan_Octpart(
 ) 
 {
 char *yo = "Zoltan_Octpart";
-int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)   */
-int oct_method = 2;           /* Flag specifying curve to be used.           */
-int oct_maxoctregions=MAXOCTREGIONS_DEF; /* max # of objs in leaves of octree.*/
-int oct_minoctregions=MINOCTREGIONS_DEF; /* min # of objs in leaves of octree.*/
-int oct_output_level = 0;     /* Flag specifying amount of output.           */
-int oct_wgtflag = 0;          /* Flag specifying use of object weights.      */
-int error = FALSE;            /* error flag                                  */
+int oct_dim = 3;              /* Dimension of method to be used (2D or 3D)  */
+int oct_method = 2;           /* Flag specifying curve to be used.          */
+int oct_maxoctregions=MAXOCTREGIONS_DEF; /* max # of objs in leaves         */
+int oct_minoctregions=MINOCTREGIONS_DEF; /* min # of objs in leaves         */
+int oct_output_level = 0;     /* Flag specifying amount of output.          */
+int oct_wgtflag = 0;          /* Flag specifying use of object weights.     */
+int error = FALSE;            /* error flag                                 */
 
 
-  Zoltan_Bind_Param(OCT_params, "OCT_DIM", (void *) &oct_dim);
-  Zoltan_Bind_Param(OCT_params, "OCT_METHOD", (void *) &oct_method);
-  Zoltan_Bind_Param(OCT_params, "OCT_MAXOBJECTS", (void *) &oct_maxoctregions);
-  Zoltan_Bind_Param(OCT_params, "OCT_MINOBJECTS", (void *) &oct_minoctregions);
-  Zoltan_Bind_Param(OCT_params, "OCT_OUTPUT_LEVEL", (void *) &oct_output_level);
+  Zoltan_Bind_Param(OCT_params, "OCT_DIM", (void *)&oct_dim);
+  Zoltan_Bind_Param(OCT_params, "OCT_METHOD", (void *)&oct_method);
+  Zoltan_Bind_Param(OCT_params, "OCT_MAXOBJECTS", (void *)&oct_maxoctregions);
+  Zoltan_Bind_Param(OCT_params, "OCT_MINOBJECTS", (void *)&oct_minoctregions);
+  Zoltan_Bind_Param(OCT_params, "OCT_OUTPUT_LEVEL",(void *)&oct_output_level);
 
   Zoltan_Assign_Param_Vals(zz->Params, OCT_params, zz->Debug_Level, zz->Proc, 
-                       zz->Debug_Proc);
+			   zz->Debug_Proc);
 
   /* Set oct_wgtflag based on the "key" parameter Obj_Weight_Dim */
   oct_wgtflag = (zz->Obj_Weight_Dim > 0);
 
   /* Initialization in case of early exit */
-  *num_import = -1;
-  *num_export = -1;  /* We don't compute any export data */
+  *num_import = -1;  /* We don't compute any import data */
+  *num_export = -1;
 
   /* Error checking for unimplemented features */
   if (zz->LB.PartDist) {
@@ -145,12 +147,12 @@ int error = FALSE;            /* error flag                                  */
             "Try a different LB_METHOD.");
     error = TRUE;
   }
-  if (!zz->LB.Uniform_Parts) {
+  /*if (!zz->LB.Uniform_Parts) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
             "Non-uniform partition sizes not yet implemented in OCTPART.  "
             "Try a different LB_METHOD.");
     error = TRUE;
-  }
+  }*/
 
   /* Error checking for parameters */
   if (oct_dim < 2 || oct_dim > 3) {
@@ -169,56 +171,67 @@ int error = FALSE;            /* error flag                                  */
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_MINOBJECTS must be greater than 0");
     error = TRUE;
   }
+  if (oct_minoctregions > oct_maxoctregions) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_MINOBJECTS must be less than "
+		       "OCT_MAXOBJECTS");
+    error = TRUE;
+  }
   if (oct_output_level < 0 || oct_output_level > 3) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "OCT_OUTPUT_LEVEL must be 0, 1, 2, or 3");
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,"OCT_OUTPUT_LEVEL must be 0, 1, 2, or 3");
     error = TRUE;
   }
 
   if (error)
     return(ZOLTAN_FATAL);
-  else
-    return(lb_oct_init(zz, num_import, import_global_ids, import_local_ids, 
-                       import_procs, import_to_part, 
-                       oct_dim, oct_method, oct_maxoctregions, 
-                       oct_minoctregions, oct_output_level, oct_wgtflag));
+  else {
+    error = lb_oct_init(zz, num_export, export_global_ids, export_local_ids, 
+			export_procs, export_to_part, 
+			oct_dim, oct_method, oct_maxoctregions, 
+			oct_minoctregions, oct_output_level, oct_wgtflag,
+			part_sizes);
+    return(error);
+  }
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
- * void oct_init();
+ * void lb_oct_init();
  *
  * initialize the calls needed to start the octree load balancing rounties
  */
 static int lb_oct_init(
   ZZ *zz,                       /* The Zoltan structure with info for
-                                   the OCTPART balancer.                     */
-  int *num_import,              /* Number of non-local objects assigned to this
-                                   processor in the new decomposition.       */
-  ZOLTAN_ID_PTR *import_global_ids, /* Returned value:  array of global IDs for
+                                   the OCTPART balancer.                    */
+  int *num_export,              /* Number of non-local objs assigned to this
+                                   processor in the new decomposition.      */
+  ZOLTAN_ID_PTR *export_global_ids, /* Returned value: array of global IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
-  ZOLTAN_ID_PTR *import_local_ids,  /* Returned value:  array of local IDs for
+                                   decomposition.                           */
+  ZOLTAN_ID_PTR *export_local_ids,  /* Returned value:  array of local IDs for
                                    non-local objects in this processor's new
-                                   decomposition.                            */
-  int **import_procs,           /* Returned value:  array of processor IDs for
+                                   decomposition.                           */
+  int **export_procs,           /* Returned value:  array of processor IDs for
                                    processors owning the non-local objects in
-                                   this processor's new decomposition.       */
-  int **import_to_part,         /* Returned value:  array of partitions to 
+                                   this processor's new decomposition.      */
+  int **export_to_part,         /* Returned value:  array of partitions to 
                                    which objects are imported.
-                                   KDDKDD Assume #parts==#procs.             */
-  int oct_dim,                  /* Dimension of method to be used (2D or 3D) */
-  int oct_method,               /* Flag specifying curve to be used.         */
-  int oct_maxoctregions,        /* max # of objects in leaves of octree.     */
-  int oct_minoctregions,        /* min # of objects in leaves of octree.     */
-  int oct_output_level,         /* Flag specifying amount of output.         */
-  int oct_wgtflag               /* Flag specifying use of object weights.    */
+                                   KDDKDD Assume #parts==#procs.            */
+  int oct_dim,                  /* Dimension of method (2D or 3D)           */
+  int oct_method,               /* Flag specifying curve to be used.        */
+  int oct_maxoctregions,        /* max # of objects in leaves of octree.    */
+  int oct_minoctregions,        /* min # of objects in leaves of octree.    */
+  int oct_output_level,         /* Flag specifying amount of output.        */
+  int oct_wgtflag,              /* Flag specifying use of object weights.   */
+  float *part_sizes             /* Array of size zz->Num_Global_Parts
+                                   containing the percentage of work to be
+                                   assigned to each partition.              */
 ) 
 {
   char *yo = "lb_oct_init";
   OCT_Global_Info *OCT_info;
   int nsentags;                    /* number of tags being sent */
-  pRegion import_regs;             /* */
-  int nrectags;                    /* number of tags received */               
+  pRegion export_regs;             /* */
+  int nrectags;                    /* number of tags received */
   int kk;
   double time1,time2;              /* timers */
   double timestart,timestop;       /* timers */
@@ -234,9 +247,11 @@ static int lb_oct_init(
 				      3 = most objects this proc ever owns
 				      */
   float  c[4];
-
+  int excount=0;
   int createpartree = 0;
-
+  /*int num_gid_entries = zz->Num_GID;*/
+  /*int num_lid_entries = zz->Num_LID;*/
+  
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   MPI_Barrier(zz->Communicator);
@@ -274,16 +289,30 @@ static int lb_oct_init(
   time1 = MPI_Wtime();
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_gen_tree_from_input_data");
-  Zoltan_Oct_gen_tree_from_input_data(zz, oct_wgtflag, &counters[1], &counters[2], 
-			          &counters[3], &c[0], createpartree);
+  Zoltan_Oct_gen_tree_from_input_data(zz, oct_wgtflag, &counters[1],
+				      &counters[2], &counters[3], &c[0], 
+				      createpartree);
 
   time2 = MPI_Wtime();
   timers[0] = time2 - time1;                 /* time took to create octree */
-/*   Zoltan_Oct_POct_printResults(OCT_info); */
+  /* Zoltan_Oct_POct_printResults(OCT_info); */
   /* partition the octree structure */
   time1 = MPI_Wtime();
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_dfs_partition");
+  /* old call to dfs_paritition: */ 
+#if 0
   Zoltan_Oct_dfs_partition(zz, &counters[0], &c[1]);
+#else
+  /***************************
+  if(zz->Proc == 0) {
+    int debug_i;
+    for(debug_i=0; debug_i<zz->Num_Proc; debug_i++) {
+      fprintf(stdout,"Part_size[%d] = %f\n", debug_i, part_sizes[debug_i]);
+    }
+  }
+  ****************************/
+  Zoltan_Oct_dfs_partition(zz, &counters[0], &c[1], part_sizes);
+#endif
   time2 = MPI_Wtime();
   timers[1] = time2 - time1;              /* time took to partition octree */
 
@@ -312,16 +341,16 @@ static int lb_oct_init(
 #endif
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_dfs_migrate");
-  Zoltan_Oct_dfs_migrate(zz, &nsentags, &import_regs, &nrectags, 
+  Zoltan_Oct_dfs_migrate(zz, &nsentags, &export_regs, &nrectags, 
 	         &c[2], &c[3], &counters[3], &counters[5]);
-
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_fix_tags");
   if (zz->LB.Return_Lists) {
-    *num_import = nrectags;
+    *num_export = nrectags;
     if (nrectags > 0)
-      Zoltan_Oct_fix_tags(zz, import_global_ids, import_local_ids, import_procs,
-                  import_to_part, nrectags, import_regs);
+      Zoltan_Oct_fix_tags(zz, export_global_ids, export_local_ids, 
+			  export_procs, export_to_part, nrectags,
+			  export_regs);
   }
 
   time2 = MPI_Wtime();
@@ -357,11 +386,10 @@ static int lb_oct_init(
   }
 
   for (kk = 0; kk < nrectags; kk++) {
-    ZOLTAN_FREE(&(import_regs[kk].Global_ID));
-    ZOLTAN_FREE(&(import_regs[kk].Local_ID));
+    ZOLTAN_FREE(&(export_regs[kk].Global_ID));
+    ZOLTAN_FREE(&(export_regs[kk].Local_ID));
   }
-  ZOLTAN_FREE(&import_regs);
-
+  ZOLTAN_FREE(&export_regs);
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_global_clear");
   Zoltan_Oct_global_clear(OCT_info);
   /* KDDKDD Don't understand how re-used octree will work, especially without
@@ -376,7 +404,7 @@ static int lb_oct_init(
   return(ZOLTAN_OK);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * void Zoltan_Oct_gen_tree_from_input_data()
  *
@@ -385,8 +413,9 @@ static int lb_oct_init(
  * tree will then be balanced and the output used to balance "mesh regions"
  * on several processors.
  */
-static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1, 
-                                     int *c2, int *c3, float *c0, int createpartree) 
+static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag,
+						int *c1, int *c2, int *c3, 
+						float *c0, int createpartree) 
 {
   char *yo = "Zoltan_Oct_gen_tree_from_input_data";
   pRList  RootList;       /* list of all local roots */
@@ -400,7 +429,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
   pOctant root;           /* root of the partition tree */
   int     i;              /* index counter */
   int     count,          /* count for leaf nodes in partition tree */
-          proc,           /* processor leaf node of parition tree belongs to */
+          proc,           /* proc leaf node of parition tree belongs to */
           extra,          /* extra leaf node flag, if not evenly divisible */
           remainder;      /* remainder of node, or processors to fill */
   pOctant cursor,         /* cursor to iterate through octant list */
@@ -478,7 +507,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
    * partitioning.
    */
 
-    level = 0;                                     /* initialize level count */
+    level = 0;                                    /* initialize level count */
 
   /* 
    * if more than 1 processor, need to find what level of refinement needed
@@ -533,7 +562,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
   ZOLTAN_TRACE_DETAIL(zz, yo, "Before create map array");
     /* this part creates the map array */
     if(OCT_info->OCT_dimension == 2) {
-      hold = (int)POW(4, level);                  /* ignoring the z+ octants */
+      hold = (int)POW(4, level);                 /* ignoring the z+ octants */
       if(hold == 0)
 	hold = 1;
     }
@@ -543,7 +572,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
     part = hold / zz->Num_Proc;          /* how many octants per partition */
     remainder = hold % zz->Num_Proc; /* extra octants, not evenly divisible */
     extra = zz->Num_Proc - remainder;/* where to start adding extra octants */
-    array = (Map *) ZOLTAN_MALLOC(hold * sizeof(Map));       /* allocate map array */
+    array = (Map *) ZOLTAN_MALLOC(hold * sizeof(Map));   /* alloc map array */
     if(array == NULL) {
       fprintf(stderr, "OCT ERROR on proc %d, could not allocate array map\n",
 	      zz->Proc);
@@ -586,16 +615,23 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
            * KDDKDD exclusive.  Freeing the list produces the result we got
            * KDDKDD before, without the memory leak.
            */
-          RL_freeList(&(array[i].list));
+	  /* LGG --  it seems to me that this array[i].list assignment is
+	   * not really necessary. It looks as though it has already been
+	   * assigned with the same information from the prev if-else
+	   * commented out RL_freeList(), and RL_initRootList()
+	   */
+          /*RL_freeList(&(array[i].list));*/
           /* KDDKDD End addition */
-	  array[i].list = RL_initRootList();
+	  /*array[i].list = RL_initRootList();*/
 	  parent = Zoltan_Oct_parent(cursor);
 	  if(parent != NULL)
 	    Zoltan_Oct_setchild(parent, cursor->which, NULL);
- 	  Zoltan_Oct_POct_setparent(OCT_info, cursor, NULL, -1);    /* octant into local root list */
+	  /* octant into local root list */
+ 	  Zoltan_Oct_POct_setparent(OCT_info, cursor, NULL, -1);
 	  Zoltan_Oct_setMapIdx(cursor, i);
 	  nroots++;
-	  /*	  Zoltan_Oct_POct_setparent(OCT_info, cursor, NULL, zz->Proc);     octant into local root list */
+	  /* Zoltan_Oct_POct_setparent(OCT_info, cursor, NULL, zz->Proc);     
+             octant into local root list */
 	}
 	i++;
       }
@@ -604,7 +640,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
     RootList = Zoltan_Oct_POct_localroots(OCT_info); 
     RootOct = RL_nextRootOctant(&RootList);
     if(RootOct != root) {
-      /* KDDKDDFREE changed root to &root to allow root to be reset to NULL. */
+      /* KDDKDDFREE changed root to &root to allow root to be reset to NULL */
       Zoltan_Oct_POct_delTree(OCT_info,&root);
     }
     
@@ -619,9 +655,10 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
   num_extra = Zoltan_Oct_fix(zz, ptr1, num_objs);
  
   ZOLTAN_TRACE_DETAIL(zz, yo, "Calling Zoltan_Oct_migreg_migrate_orphans");
-  Zoltan_Oct_migreg_migrate_orphans(zz, ptr1, num_extra, level, OCT_info->map, c1, c2);
+  Zoltan_Oct_migreg_migrate_orphans(zz, ptr1, num_extra, level, OCT_info->map,
+				    c1, c2);
 
-/*   ZOLTAN_FREE(&array); */
+  /* ZOLTAN_FREE(&array); */
   while(ptr1 != NULL) {
     ptr = ptr1->next;
     ZOLTAN_FREE(&(ptr1->Global_ID));
@@ -632,7 +669,7 @@ static void Zoltan_Oct_gen_tree_from_input_data(ZZ *zz, int oct_wgtflag, int *c1
   ZOLTAN_TRACE_EXIT(zz, yo);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 
 static void Zoltan_Oct_get_bounds(ZZ *zz, pRegion *ptr1, int *num_objs, 
 		   COORD min, COORD max, int wgtflag, float *c0) 
@@ -776,7 +813,7 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
   reg->next = NULL;
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * int Zoltan_Oct_fix(pMesh mesh)
  *
@@ -790,7 +827,7 @@ static void initialize_region(ZZ *zz, pRegion *ret, ZOLTAN_ID_PTR global_id,
  */
 static int Zoltan_Oct_fix(ZZ *zz, pRegion Region_list, int num_objs) 
 {
-  int nreg;                                /* number of regions not inserted */
+  int nreg;                               /* number of regions not inserted */
   OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
 
   /* initalize variables */
@@ -804,7 +841,7 @@ static int Zoltan_Oct_fix(ZZ *zz, pRegion Region_list, int num_objs)
   return(nreg);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * int Zoltan_Oct_global_insert_object()
  *
@@ -812,7 +849,8 @@ static int Zoltan_Oct_fix(ZZ *zz, pRegion Region_list, int num_objs)
  * local octree.  Return the number of insertion failures.
  *
  */
-static int Zoltan_Oct_global_insert_object(ZZ *zz, pRegion Region_list, int num_objs) 
+static int Zoltan_Oct_global_insert_object(ZZ *zz, pRegion Region_list, 
+					   int num_objs) 
 {
   pRegion region;                             /* region to be attached */
   int count;                                  /* count of failed insertions */
@@ -843,7 +881,7 @@ static int Zoltan_Oct_global_insert_object(ZZ *zz, pRegion Region_list, int num_
   return(count);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_global_insert(region)
  *
@@ -869,16 +907,15 @@ static pOctant Zoltan_Oct_global_insert(ZZ *zz, pRegion region)
   oct=Zoltan_Oct_global_find(OCT_info,region->Coord);
   /* if octant is found, try to insert the region */
   if (oct)
-    if (!Zoltan_Oct_subtree_insert(zz, oct, region))         /* inserting region */
-      {
-	fprintf(stderr,"OCT Zoltan_Oct_global_insert: insertion failed\n");
-	abort();
-      }
+    if (!Zoltan_Oct_subtree_insert(zz, oct, region)) {  /* inserting region */
+      fprintf(stderr,"OCT Zoltan_Oct_global_insert: insertion failed\n");
+      abort();
+    }
 
   return(oct);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_subtree_insert(oct,region)
  *
@@ -904,12 +941,12 @@ OCT_Global_Info *OCT_info = (OCT_Global_Info *)(zz->LB.Data_Structure);
   if(Zoltan_Oct_nRegions(oct) > MAXOCTREGIONS)
    */
   if(Zoltan_Oct_nUniqueRegions(OCT_info, oct) > MAXOCTREGIONS)
-    Zoltan_Oct_terminal_refine(zz, oct,0);    /* After this, dest may be nonterm */
+    Zoltan_Oct_terminal_refine(zz, oct,0);   /* After, dest may be nonterm */
 
   return(1);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * pOctant Zoltan_Oct_global_find(COORD centroid)
  *
@@ -925,7 +962,8 @@ static pOctant Zoltan_Oct_global_find(OCT_Global_Info *OCT_info,COORD point)
   COORD min,                      /* minimum bounds coordinates */
         max;                      /* maximum bounds coordinates */
 
-  RootList = Zoltan_Oct_POct_localroots(OCT_info);                   /* get a list of all local roots */
+  /* get a list of all local roots */
+  RootList = Zoltan_Oct_POct_localroots(OCT_info); 
   oct = NULL;
 
   /* iterate through root list to find if point lies inside root's bounds */
@@ -942,7 +980,7 @@ static pOctant Zoltan_Oct_global_find(OCT_Global_Info *OCT_info,COORD point)
   return(oct);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_findOctant(oct, coord)
  *   (replaces : PO_findOctant(oct,coord))
@@ -953,7 +991,8 @@ static pOctant Zoltan_Oct_global_find(OCT_Global_Info *OCT_info,COORD point)
  * NOTE: return NULL if we hit an off-processor link
  *
  */
-static pOctant Zoltan_Oct_findOctant(OCT_Global_Info *OCT_info,pOctant oct, COORD coord) 
+static pOctant Zoltan_Oct_findOctant(OCT_Global_Info *OCT_info,pOctant oct, 
+				     COORD coord) 
 {
   pOctant child;                                  /* child of an octant */
   int cnum;                                       /* child number */
@@ -962,17 +1001,19 @@ static pOctant Zoltan_Oct_findOctant(OCT_Global_Info *OCT_info,pOctant oct, COOR
   if (Zoltan_Oct_isTerminal(oct))
     return(oct);
 
-  cnum = Zoltan_Oct_child_which_wrapper(OCT_info,oct,coord);   /* find closest child to coord */
-  child = Zoltan_Oct_child(oct, cnum);                            /* get that child */
+  /* find closest child to coord */
+  cnum = Zoltan_Oct_child_which_wrapper(OCT_info,oct,coord);
+  child = Zoltan_Oct_child(oct, cnum);                    /* get that child */
   /* ATTN: are these local checks necessary? */
   /* if ( !Zoltan_Oct_POct_local(child) ) */
-  if(!Zoltan_Oct_POct_local(OCT_info,oct, cnum))                     /* make sure octant is local */
+  if(!Zoltan_Oct_POct_local(OCT_info,oct, cnum))  /* make sure oct is local */
     return(NULL);
 
-  return(Zoltan_Oct_findOctant(OCT_info,child,coord)); /* recursivly search down the tree */
+  /* recursivly search down the tree */
+  return(Zoltan_Oct_findOctant(OCT_info,child,coord));
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_terminal_refine(oct)
  *
@@ -983,13 +1024,13 @@ static pOctant Zoltan_Oct_findOctant(OCT_Global_Info *OCT_info,pOctant oct, COOR
  */
 static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count) 
 {
-  COORD min,                      /* coordinates of minimum bounds of region */
-        max,                      /* coordinates of maximum bounds of region */
-        origin;                   /* origin of region */
-  pOctant child[8];               /* array of child octants */
-  int cnum;                       /* child number */
-  int i;                       /* index counter */
-  pRegion region;                 /* a region to be associated to an octant */
+  COORD min,                     /* coordinates of minimum bounds of region */
+        max,                     /* coordinates of maximum bounds of region */
+        origin;                  /* origin of region */
+  pOctant child[8];              /* array of child octants */
+  int cnum;                      /* child number */
+  int i;                         /* index counter */
+  pRegion region;                /* a region to be associated to an octant */
   pRegion entry;
   COORD cmin[8], cmax[8];
   OCT_Global_Info *OCT_info = (OCT_Global_Info *) (zz->LB.Data_Structure);
@@ -1004,7 +1045,7 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
                     "10 levels\n");
     abort();
   }
-  oct_nref++;                                /* increment refinement counter */
+  oct_nref++;                               /* increment refinement counter */
 
   /* octant should be terminal in order to be refined (subdivided) */
   if (!Zoltan_Oct_isTerminal(oct)) {
@@ -1017,7 +1058,7 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
   /* calculate the origin from the bounds */
   Zoltan_Oct_bounds_to_origin(min,max,origin);
 
-  region = Zoltan_Oct_regionlist(oct);             /* Get list while still terminal */
+  region = Zoltan_Oct_regionlist(oct);     /* Get list while still terminal */
   oct->list = NULL;  /* remove regions from octant, it won't be terminal */
 
   /* create the children and set their id's */
@@ -1028,26 +1069,26 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
       /* KDDKDD 3/01 see changes to Zoltan_Oct_child_bounds_wrapper that allow this
        * KDDKDD 3/01 test to work for GRAY and HILBERT mappings.
        */
-      if(cmin[i][2] > OCT_info->OCT_gmin[2]) {                /* ignore the z+ octants */
+      if(cmin[i][2] > OCT_info->OCT_gmin[2]) {     /* ignore the z+ octants */
 	child[i] = NULL;
 	continue;
       }
     }
     
-    child[i]=Zoltan_Oct_POct_new(OCT_info);                       /* create a new octant */
+    child[i]=Zoltan_Oct_POct_new(OCT_info);          /* create a new octant */
     child[i]->dir = Zoltan_Oct_get_child_dir(OCT_info, oct->dir, i);
                   /* create a new octant */
-    Zoltan_Oct_POct_setparent(OCT_info, child[i], oct, zz->Proc);   /* set the child->parent link */
-    Zoltan_Oct_setchildnum(child[i], i);              /* which child of the parent */
-    Zoltan_Oct_setchild(oct, i, child[i]);            /* set the parent->child link */
+    /* set the child->parent link */
+    Zoltan_Oct_POct_setparent(OCT_info, child[i], oct, zz->Proc);
+    Zoltan_Oct_setchildnum(child[i], i);       /* which child of the parent */
+    Zoltan_Oct_setchild(oct, i, child[i]);    /* set the parent->child link */
 #ifdef LGG_MIGOCT
-    Zoltan_Oct_setID(child[i], Zoltan_Oct_nextId());             /* set child id number */
+    Zoltan_Oct_setID(child[i], Zoltan_Oct_nextId());    /* set child id num */
 #endif /* LGG_MIGOCT */
-    Zoltan_Oct_setbounds(child[i], cmin[i], cmax[i]);           /* set child bounds */
-    Zoltan_Oct_setCpid(oct, i, zz->Proc);      /* set child to be a local octant */
-    /*    Zoltan_Oct_setOrientation(child[i], 
-		       Zoltan_Oct_child_orientation(oct->orientation, oct->which));
-		       */
+    Zoltan_Oct_setbounds(child[i], cmin[i], cmax[i]);   /* set child bounds */
+    Zoltan_Oct_setCpid(oct, i, zz->Proc);    /* set child to be a local oct */
+    /* Zoltan_Oct_setOrientation(child[i], 
+	      Zoltan_Oct_child_orientation(oct->orientation, oct->which));  */
   }
 
   /* assign newly created children to child array*/
@@ -1068,7 +1109,8 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
        * if subdivision of oct was successful, oct should have 4 children; 
        * thus a return value of 0 here is a fatal error
        */
-      fprintf(stderr, "OCT ref_octant:subdivide failed, %d children, expected 4\n",
+      fprintf(stderr, 
+	      "OCT ref_octant:subdivide failed, %d children, expected 4\n",
 	      Zoltan_Oct_children(oct, child));
       abort();
     }
@@ -1085,7 +1127,7 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
     region = entry;
   }
 
-  for (i=0; i<8; i++)                                           /* Recursion */
+  for (i=0; i<8; i++)                                          /* Recursion */
     if(child[i] != NULL)
       /* KDDKDD  Replaced the following to allow multiple regions with the
        * KDDKDD same coordinates to be placed in the same octant.
@@ -1096,7 +1138,7 @@ static void Zoltan_Oct_terminal_refine(ZZ *zz, pOctant oct,int count)
       }
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_global_dref()
  * 
@@ -1114,7 +1156,7 @@ static void Zoltan_Oct_global_dref(ZZ *zz, OCT_Global_Info *OCT_info)
     Zoltan_Oct_subtree_dref(zz, OCT_info, RootOct);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_subtree_dref(oct)
  *
@@ -1122,20 +1164,22 @@ static void Zoltan_Oct_global_dref(ZZ *zz, OCT_Global_Info *OCT_info)
  * regions. Refinement takes precedence, so coarsening will not take place 
  * unless all subtrees agree on it.
  */
-static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct) 
+static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,
+				   pOctant oct) 
 {
-  pOctant child;                         /* child of an octant */
-  int coarsen;                           /* flag to indicate need to coarsen */
-  int i;                                 /* index counter */
-  int nregions;                          /* number of regions */
-  int total;                             /* total number of regions */
+  pOctant child;                        /* child of an octant */
+  int coarsen;                          /* flag to indicate need to coarsen */
+  int i;                                /* index counter */
+  int nregions;                         /* number of regions */
+  int total;                            /* total number of regions */
 
   /* if terminal octant, cannot coarsen on own */
   if (Zoltan_Oct_isTerminal(oct)) {
     nregions=Zoltan_Oct_nRegions(oct);
 
     if (nregions > (MAXOCTREGIONS*2) ) {
-      fprintf(stderr, "OCT Zoltan_Oct_subtree_dref: warning: too many (%d) regions "
+      fprintf(stderr, 
+	      "OCT Zoltan_Oct_subtree_dref: warning: too many (%d) regions "
 	     "in oct (id=%d)\n",Zoltan_Oct_nRegions(oct),Zoltan_Oct_id(oct));
       return(-1);
     }
@@ -1146,7 +1190,7 @@ static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct
 	return(-1);
   }
 
-  coarsen=1;                                         /* assume to be coarsen */
+  coarsen=1;                                        /* assume to be coarsen */
   total=0;
 
   /* look at each child, see if they need to be coarsened */
@@ -1162,7 +1206,7 @@ static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct
       if (nregions<0)
 	coarsen=0;
       else
-	total+=nregions;                           /* total the region count */
+	total+=nregions;                          /* total the region count */
     }
   }
 
@@ -1179,7 +1223,7 @@ static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct
   return(-1);
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Zoltan_Oct_terminal_coarsen(oct)
  *
@@ -1187,14 +1231,15 @@ static int Zoltan_Oct_subtree_dref(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct
  * to octant
  *
  */
-static void Zoltan_Oct_terminal_coarsen(ZZ *zz, OCT_Global_Info *OCT_info,pOctant oct) 
+static void Zoltan_Oct_terminal_coarsen(ZZ *zz, OCT_Global_Info *OCT_info,
+					pOctant oct) 
 {
-  pOctant child;                         /* child of an octant */
-  pRegion region;                        /* region associated with an octant */
-  int i;                                 /* index counter */
-  pRegion regionlist[8];                 /* an array of region lists */
+  pOctant child;                        /* child of an octant */
+  pRegion region;                       /* region associated with an octant */
+  int i;                                /* index counter */
+  pRegion regionlist[8];                /* an array of region lists */
 
-  oct_ncoarse++;                             /* increment coarsening counter */
+  oct_ncoarse++;                        /* increment coarsening counter */
 
   for(i=0; i<8; i++) {
     /* get the ith child of an octant */
@@ -1202,7 +1247,8 @@ static void Zoltan_Oct_terminal_coarsen(ZZ *zz, OCT_Global_Info *OCT_info,pOctan
     
     /* cannot coarsen if child is off-processor */
     /* if(!Zoltan_Oct_POct_local(child)) X */
-    if(!Zoltan_Oct_POct_local(OCT_info, oct, i)) {          /* cannot be off-processor */
+    /* cannot be off-processor */
+    if(!Zoltan_Oct_POct_local(OCT_info, oct, i)) {
       fprintf(stderr,"OCT Zoltan_Oct_terminal_coarsen: child not local\n");
       abort();
     }
@@ -1235,7 +1281,7 @@ static void Zoltan_Oct_terminal_coarsen(ZZ *zz, OCT_Global_Info *OCT_info,pOctan
   }
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 static void Zoltan_Oct_set_maxregions(int max)
 { 
   if (max < 1) {
@@ -1247,7 +1293,7 @@ static void Zoltan_Oct_set_maxregions(int max)
     MAXOCTREGIONS = max; 
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 static void Zoltan_Oct_set_minregions(int min)
 { 
   if (min < 1) {
@@ -1259,37 +1305,37 @@ static void Zoltan_Oct_set_minregions(int min)
     MINOCTREGIONS = min; 
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 #ifdef LGG_MIGOCT
 void Zoltan_Oct_resetIdCount(int start_count)
 {
   IDcount = start_count;
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 
 int Zoltan_Oct_nextId(void)
 {
   return ++IDcount;
 }
 
-/*****************************************************************************/
+/****************************************************************************/
 typedef struct
 {
   pOctant ptr;
   int id;
 } Rootid;
 
-/*****************************************************************************/
+/****************************************************************************/
 
 static int idcompare(Rootid *i, Rootid *j)
 {
   return( (i->id) - (j->id) );
 }
-/*****************************************************************************/
+/****************************************************************************/
 #endif /* LGG_MIGOCT */
 
-/*****************************************************************************/
+/****************************************************************************/
 
 
 /*
@@ -1319,7 +1365,7 @@ static void Zoltan_Oct_global_clear(OCT_Global_Info * OCT_info)
 }
 
 #if 0
-/*****************************************************************************/
+/****************************************************************************/
 
 /* global variable from POC library */
 /*
@@ -1347,7 +1393,7 @@ pOctant oct_localTree_nextDfs(pOctant oct, void **temp)
 }
 #endif  /* 0 */
 
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * int Zoltan_Oct_nUniqueRegions(pOctant octant)
  * return the number of regions in the octant's list
@@ -1362,9 +1408,9 @@ pOctant oct_localTree_nextDfs(pOctant oct, void **temp)
  * KDDKDD  Perhaps a better solution can be found later.
  */
 int Zoltan_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct) {
-  pRegion ptr;                     /* pointer to iterate through region list */
-  int count;                       /* count of number of regions in list */
-  pRegion ptr2;                    /* pointer to iterate through prev regions*/
+  pRegion ptr;                    /* pointer to iterate through region list */
+  int count;                      /* count of number of regions in list */
+  pRegion ptr2;                   /* pointer to iterate through prev regions*/
   int same_coords;
 
   if (oct == NULL) 
@@ -1393,7 +1439,7 @@ int Zoltan_Oct_nUniqueRegions(OCT_Global_Info *OCT_info, pOctant oct) {
   }
   return(count);
 }
-/*****************************************************************************/
+/****************************************************************************/
 /*
  * Routine to compare coordinates
  */
