@@ -753,16 +753,332 @@ int ML_Smoother_SGS(void *sm,int inlen,double x[],int outlen, double rhs[])
    return 0;
 }
 
+
 /* ************************************************************************* */
-/* Hiptmair smoother                                                     */
+/* Hiptmair smoother                                                         */
 /* ------------------------------------------------------------------------- */
 
+int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
+                         double rhs[])
+{
+   int i, j, kk, length, allocated_space = 0, *cols = NULL, Nrows;
+   double *vals = NULL, numer, denom, alpha, *g, *res;
+   double *local_x;
+   ML_Operator *Amat, *Tmat_trans, *ATmat_trans;
+   double *TtAT_diag;
+   ML_Comm *comm;
+   ML_Smoother  *smooth_ptr;
+   ML_Sm_Hiptmair_Data *dataptr;
+   ML_CommInfoOP *getrow_comm;
+   int totalsize;
+#ifdef ML_SMOOTHER_DEBUG
+   double *res2, res_norm, dtemp;
+#endif
+
+   smooth_ptr = (ML_Smoother *) sm;
+
+   Amat = smooth_ptr->my_level->Amat;
+   comm = smooth_ptr->my_level->comm;
+   Nrows = Amat->getrow->Nrows;
+
+   /* Retrieve smoother specific data. */
+   dataptr = (ML_Sm_Hiptmair_Data *) smooth_ptr->smoother->data;
+   Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
+   ATmat_trans = (ML_Operator *) dataptr->ATmat_trans;
+   TtAT_diag = (double *) dataptr->TtAT_diag;
+
+   if (Amat->getrow->ML_id == ML_EMPTY) 
+      pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
+
+#ifdef ML_SMOOTHER_DEBUG
+   printf("\n\n\t%d: (before SGS on edges) norm of global x = %e\n",
+          ATmat_trans->comm->ML_mypid, sqrt(ML_gdot(Nrows, x, x, comm)));
+   printf("\t%d: (before SGS on edges) norm of rhs = %15.10e\n",
+          ATmat_trans->comm->ML_mypid, sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
+   fflush(stdout);
+#endif
+
+   /* Symmetric GS on edges */
+   /*
+   ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+   */
+   ML_Smoother_Jacobi(sm, inlen, x, outlen, rhs);
+
+#ifdef ML_SMOOTHER_DEBUG
+   printf("\t%d:After SGS on edges, norm of x = %15.10e\n",
+          ATmat_trans->comm->ML_mypid,
+          sqrt(ML_gdot(Nrows, x, x, comm)));
+   res2 = (double *) ML_allocate( Nrows * sizeof(double) );
+   ML_Operator_Apply(Amat, Nrows, x, Nrows, res2);
+   for (kk = 0; kk < outlen; kk++) res2[kk] = rhs[kk] - res2[kk];
+   printf("\t%d:After SGS on edges, norm of res = %15.10e\n",
+          ATmat_trans->comm->ML_mypid,
+          sqrt(ML_gdot(outlen, res2, res2, comm)));
+   fflush(stdout);
+   ML_free(res2);
+#endif
+   getrow_comm= Tmat_trans->getrow->pre_comm;
+   if (getrow_comm != NULL) 
+      totalsize = inlen+getrow_comm->total_rcv_length;
+   else
+      totalsize = inlen;
+
+/*
+   if (getrow_comm != NULL) 
+   printf("%d: inlen = %d, totalsize = %d, total_rcv_length = %d\n",
+	         ATmat_trans->comm->ML_mypid,inlen,
+			 totalsize,getrow_comm->total_rcv_length);
+*/
+
+   /* Local portion (local+ghost columns) of residual vector. */
+   res = (double *) ML_allocate( (totalsize)*sizeof(double));
+   for (kk = 0; kk < totalsize; kk++) res[kk] = 0.;
+
+   /* Local portion (local+ghost columns) of solution vector. */
+   local_x = (double *) ML_allocate( totalsize * sizeof(double));
+
+   /* Copy global x to local_x. */
+   for (kk = 0; kk < inlen; kk++) local_x[kk] = x[kk];
+   for (kk = inlen; kk < totalsize; kk++) local_x[kk] = 0.;
+
+   /* Calculate initial global residual. */
+   ML_Operator_Apply(Amat, Nrows, x, Nrows , res);
+   for (kk = 0; kk < outlen; kk++)
+      res[kk] = rhs[kk] - res[kk];
+
+   /* TMP CODE 
+   for (kk = 0; kk < inlen; kk++) local_x[kk] = kk;
+      TMP CODE */
+
+   if (getrow_comm != NULL)
+      ML_exchange_bdry(res,getrow_comm, inlen, comm, ML_OVERWRITE);
+
+   /* TMP CODE
+   for (kk = 0; kk < inlen; kk++) local_x[kk] = 0;
+   ML_transposed_exchange_bdry(local_x,getrow_comm, inlen, comm, ML_ADD);
+      TMP CODE */
+
+#ifdef ML_SMOOTHER_DEBUG
+   printf("\tnorm of Initial residual going into nodal smoothing = %15.10e\n",
+          sqrt(ML_gdot(Nrows, res, res, comm)));
+   printf("\tnorm of local solution going into nodal smoothing = %15.10e\n",
+	  sqrt(ML_gdot(totalsize,local_x,local_x,comm)));
+   fflush(stdout);
+
+#ifdef vecdump
+   if (ATmat_trans->comm->ML_mypid == 1)
+   for (kk = 0; kk < ATmat_trans->outvec_leng; kk++)
+   {
+      printf("%d: TtAT_diag[%d] = %e\n",
+	         ATmat_trans->comm->ML_mypid,
+			 kk,
+			 TtAT_diag[kk]);
+      fflush(stdout);
+   }
+#endif
+#undef vecdump
+
+#ifdef vecdump
+   if (ATmat_trans->comm->ML_mypid == 1)
+   for (kk=0; kk < totalsize; kk++)
+   {
+      printf("%d: local_x[%d] = %d\n",
+	         ATmat_trans->comm->ML_mypid,
+			 kk,
+			 (int) local_x[kk]);
+      fflush(stdout);
+   }
+#endif
+#endif
+
+   /*******************************
+   * Forward GS sweep over nodes. *
+   *******************************/
+   for (i = 0; i < ATmat_trans->outvec_leng; i++)
+   {
+	  /* Grab row i of Tmat_trans. */
+      ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                        &length, 0);
+
+	  /* Explicit dot product Tmat_trans(i,:)*res  */
+	  numer = 0.;
+	  for (kk = 0; kk < length; kk++) numer += vals[kk] * res[cols[kk]];
+	  denom = TtAT_diag[i];
+	  alpha = numer / denom;
+
+#ifdef ML_SMOOTHER_DEBUG
+#define PIDNUM 0
+#ifdef dump
+      if (ATmat_trans->comm->ML_mypid == PIDNUM)
+	  printf("%d (%d):  numer = %e   denom = %e    alpha = %e\n",i,
+	         ATmat_trans->comm->ML_mypid,numer,denom,alpha);
+      fflush(stdout);
+#endif
+#endif
+
+	  /* Update edge-based local solution. */
+
+      for (j=0; j < length; j++)
+	  {
+#ifdef ML_SMOOTHER_DEBUG
+#define dump
+#ifdef dump
+         if ((ATmat_trans->comm->ML_mypid == 1 && cols[j] == 45)
+		     || (ATmat_trans->comm->ML_mypid == 0 && cols[j] == 270 ))
+         /*
+         if (cols[j] == 45)
+		 */
+		     printf("%d (%d): (before update) x[%d] = %e\n",
+	                i,ATmat_trans->comm->ML_mypid,cols[j],local_x[cols[j]]);
+#endif
+#endif
+	     local_x[cols[j]] += alpha * vals[j];
+#ifdef ML_SMOOTHER_DEBUG
+#ifdef dump
+         if ((ATmat_trans->comm->ML_mypid == 1 && cols[j] == 45)
+		     || (ATmat_trans->comm->ML_mypid == 0 && cols[j] == 270 ))
+		 /*
+         if (cols[j] == 45)
+		 */
+		 {
+	         printf("%d (%d):  numer = %e   denom = %e    alpha = %e\n",i,
+	                ATmat_trans->comm->ML_mypid,numer,denom,alpha);
+		     printf("%d (%d): (after update) x[%d] = %e, vals[%d] = %e\n",
+	                i,ATmat_trans->comm->ML_mypid,cols[j],local_x[cols[j]],
+					cols[j], vals[j]);
+             fflush(stdout);
+		 }
+#endif
+#endif
+      }
+	     
+      /* Get a row of transpose of matrix product AT (column of AT). */
+      ML_get_matrix_row(ATmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                        &length, 0);
+
+	  /* Update edge-based local residual. */
+      /*for (j=0; j < length; j++) res[cols[j]] -= alpha * vals[j];*/
+	  /*
+      if (ATmat_trans->comm->ML_mypid == 0)
+      for (j=0; j < length; j++)
+	     printf("%d: res column= %d\n", ATmat_trans->comm->ML_mypid, cols[j]);
+      fflush(stdout);
+	  */
+   }
+
+#ifdef ML_SMOOTHER_DEBUG
+#ifdef vecdump
+   if (ATmat_trans->comm->ML_mypid == PIDNUM)
+   for (kk=0; kk < totalsize; kk++)
+   {
+      printf("%d before exchange: x[%d] = %e\n",
+	         ATmat_trans->comm->ML_mypid,
+			 kk,
+			 local_x[kk]);
+      fflush(stdout);
+   }
+#endif
+#endif
+
+#ifdef ML_SMOOTHER_DEBUG
+#ifdef vecdump
+   if (ATmat_trans->comm->ML_mypid == PIDNUM)
+   for (kk=0; kk < totalsize; kk++)
+   {
+      printf("%d after exchange: x[%d] = %e\n",
+	         ATmat_trans->comm->ML_mypid,
+			 kk,
+			 local_x[kk]);
+      fflush(stdout);
+   }
+#endif
+#endif
+
+#ifdef ML_SMOOTHER_DEBUG
+   printf("\tnorm of residual after forward sweep on nodes %15.10e\n",
+	  sqrt(ML_gdot(Nrows,res,res,comm)));
+   printf("\tnorm of local solution after forward sweep on nodes %15.10e\n",
+	  sqrt(ML_gdot(totalsize,local_x,local_x,comm)));
+   printf("\tnorm of global solution after forward sweep on nodes %15.10e\n",
+	  sqrt(ML_gdot(totalsize,x,x,comm)));
+   fflush(stdout);
+#endif
+
+   /***********************************
+   *  Backwards GS sweep over nodes.  *
+   ***********************************/
+   for (i = Tmat_trans->outvec_leng-1; i >= 0; i--)
+   {
+
+	  /* Grab row i of Tmat_trans. */
+      ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                        &length, 0);
+
+	  numer = 0.;
+	  for (kk = 0; kk < length; kk++)
+	  {
+	     numer += vals[kk] * res[cols[kk]];
+      }
+	  denom = TtAT_diag[i];
+	  alpha = numer / denom;
+
+	  /*
+	  printf("      numer = %e   denom = %e    alpha = %e\n",numer,denom,alpha);
+	  */
+
+	  /* Update edge-based solution. */
+      for (j=0; j < length; j++)
+	     local_x[cols[j]] += alpha * vals[j];
+
+      /* Get a row of transpose of matrix product AT. */
+      ML_get_matrix_row(ATmat_trans, 1, &i , &allocated_space , &cols, &vals,
+                        &length, 0);
+
+	  /* Update edge-based residual. */
+      for (kk=0; kk < length; kk++)
+	  {
+	     if (cols[kk] < 0 || cols[kk] > totalsize - 1)
+		 {
+		    printf("%d: bounds exceeded (c)\ncols[%d] = %d\n",
+	               ATmat_trans->comm->ML_mypid, kk,cols[kk]);
+			fflush(stdout);
+		 }
+	     /*res[cols[kk]] -= alpha * vals[kk];*/
+      }
+   }
+
+   /* Exchange local_x information here. */
+   ML_transposed_exchange_bdry(local_x,getrow_comm, inlen, comm, ML_ADD);
+
+   /* copy global local_x to x here */
+   for (kk = 0; kk < inlen; kk++) x[kk] = local_x[kk];
+
+#ifdef ML_SMOOTHER_DEBUG
+   dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+   printf("\tnorm of residual  after backward sweep on nodes %15.10e\n",dtemp);
+   printf("\tnorm of local solution after backward sweep on nodes %15.10e\n",
+            sqrt(ML_gdot(totalsize, local_x,local_x, comm)));
+   printf("\tnorm of global solution after forward sweep on nodes %15.10e\n\n",
+	  sqrt(ML_gdot(totalsize,x,x,comm)));
+   fflush(stdout);
+#endif
+
+   ML_free(res); ML_free(local_x);
+
+   return 0;
+}
+
+/* ************************************************************************* */
+/* Hiptmair smoother with matrix products                                    */
+/* ------------------------------------------------------------------------- */
+
+#ifdef oldHiptmair
 int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen, 
                             double rhs[])
 {
    int iter, i, j, length, allocated_space = 0, *cols = NULL, col;
-   double dtemp, diag_term, *vals = NULL;
-   ML_Operator *Tmat_trans;
+   double dtemp, diag_term, *vals = NULL, numer, denom;
+   ML_Operator *Tmat, *Tmat_trans, *ATmat, *TtAT_diag;
 #ifdef ML_SMOOTHER_DEBUG
    double *res2, res_norm;
 #endif
@@ -774,67 +1090,146 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
    double *g, *res, gTres, gTAg;
    int kk;
    ML_Smoother  *smooth_ptr;
+   ML_Sm_Hiptmair_Data *dataptr;
+
+   printf("Using old Hiptmair\n");
+
    smooth_ptr = (ML_Smoother *) sm;
 
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
    omega = smooth_ptr->omega;
-   Tmat_trans  = (ML_Operator *)smooth_ptr->smoother->data;
+
+   /* pointer to private smoother data */
+   dataptr = (ML_Sm_Hiptmair_Data *) smooth_ptr->smoother->data;
+
+   Tmat = (ML_Operator *) dataptr->Tmat;
+   Tmat_trans  = (ML_Operator *) dataptr->Tmat_trans;
+   ATmat = (ML_Operator *) dataptr->ATmat;
+   TtAT_diag = (ML_Operator *) dataptr->ATmat;
+
+   printf("\n------- beginning of hiptmair ------------\n");
+   printf("Using old Hiptmair\n");
 
    if (Amat->getrow->ML_id == ML_EMPTY) 
       pr_error("Error(ML_Hiptmair): Need getrow() for Hiptmair smoother\n");
 
+   printf("\t%d: norm of x = %e\n",sqrt((ML_gdot(Nrows, x, x, comm))),
+          Tmat_trans->comm->ML_mypid);
+   fflush(stdout);
 
+   printf("\tcalling symmetric GS on edges\n");
    ML_Smoother_SGS(sm, inlen, x, outlen, rhs);
+   printf("\tafter symmetric GS on edges\n");
 
+   printf("\tnorm of x = %20.15e\n",sqrt((ML_gdot(Nrows, x, x, comm))));
+   printf("\tnorm of rhs = %20.15e\n",sqrt((ML_gdot(Nrows, rhs, rhs, comm))));
+   printf("\n");
 
    g = (double *) ML_allocate( inlen*sizeof(double));
    res = (double *) ML_allocate( inlen*sizeof(double));
 
-   for (i = 0; i < Tmat_trans->outvec_leng; i++) {
+   /* initial residual = rhs */
+   for (kk = 0; kk < Nrows; kk++) res[kk] = rhs[kk];
+
+   for (i = 0; i < Tmat_trans->outvec_leng; i++)
+   {
       ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
                            &length, 0);
+      /*
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e\n",i,dtemp);
+      dtemp = sqrt(ML_gdot(Nrows, x, x, comm));
+      printf("%d:  ||x|| = %e\n",i,dtemp);
+	  */
       ML_Operator_Apply(Amat, Nrows, x, Nrows , res);
-gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
- printf("res norm = %e   %d\n",gTAg,length);
+      gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
+	  /*
+      printf("res norm (gTAg) = %e   %d\n",gTAg,length);
+	  printf("inlen = %d\n",inlen);
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e\n",i,dtemp);
+	  */
       for (kk = 0; kk < Nrows; kk++) res[kk] = rhs[kk] - res[kk];
+	  /*
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e\n",i,dtemp);
+	  */
       for (kk = 0; kk < inlen; kk++) g[kk] = 0.;
-      for (kk = 0; kk < length; kk++) {g[cols[kk]] = vals[kk];
-      printf("g(%d) = %e, %e | rhs = %e %e\n",cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[cols[kk]]);}
+      for (kk = 0; kk < length; kk++)
+	  {
+	     g[cols[kk]] = vals[kk];
+#ifdef out
+         printf("g(%d) = %20.15e, %20.15e | rhs = %20.15e * %20.15e\n",
+	             cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[cols[kk]]);
+#endif
+	  }
+	  /*
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e  ",i,dtemp);
+      dtemp = sqrt(ML_gdot(Nrows, g, g, comm));
+      printf(" ||g|| = %e\n",dtemp);
+	  */
       gTres = ML_gdot(Nrows, res, g, comm);
+      /*printf("%d:  g' * res = %e\n",i,dtemp);*/
       ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
+	  /*
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e\n",i,dtemp);
+	  */
       gTAg = ML_gdot(Nrows, res, g, comm);
-      if (gTAg != 0.) {
-      printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
-      for (kk = 0; kk < length; kk++) {
-	x[cols[kk]] += (gTres/gTAg)*vals[kk];
+	  /*
+      printf("%d:  numer = %e    denom = %e   numer/denom = %e\n",
+	         i,gTres,gTAg,gTres/gTAg);
+	  */
+      for (kk = 0; kk < length; kk++)
+	  {
+	     if (gTAg != 0.0) x[cols[kk]] += (gTres/gTAg)*vals[kk];
+		 /*
+		 printf("updating x:  gTAg = %e,   x[%d] = %e\n",
+		        gTAg,cols[kk],x[cols[kk]]);
+	     */
       }
-      }
+	  /*
+      dtemp = sqrt(ML_gdot(Nrows, res, res, comm));
+      printf("%d:  ||res|| = %e\n",i,dtemp);
+	  */
    }
-   printf("norm of solution after forward on T %e\n",
+   printf("\tnorm of solution after forward on nodes %20.15e\n",
 	  sqrt(ML_gdot(Nrows,x,x,comm)));
-   for (i = Tmat_trans->outvec_leng-1; i >= 0; i--) {
+
+   for (i = Tmat_trans->outvec_leng-1; i >= 0; i--)
+   {
       ML_get_matrix_row(Tmat_trans, 1, &i , &allocated_space , &cols, &vals,
                            &length, 0);
       ML_Operator_Apply(Amat, Nrows, x, Nrows , res);
-gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
- printf("res norm = %e\n",gTAg);
+      gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
+	  /*
+      printf("res norm (gTAg) = %e\n",gTAg);
+	  */
       for (kk = 0; kk < Nrows; kk++) res[kk] = rhs[kk] - res[kk];
       for (kk = 0; kk < inlen; kk++) g[kk] = 0.;
-      for (kk = 0; kk < length; kk++) {g[cols[kk]] = vals[kk];
-      printf("g(%d) = %e, %e | rhs = %e %e\n",cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[kk]);}
+      for (kk = 0; kk < length; kk++)
+	  {
+	     g[cols[kk]] = vals[kk];
+		 /*
+         printf("g(%d) = %e, %e | rhs = %e * %e\n",
+		         cols[kk],vals[kk],res[cols[kk]],rhs[cols[kk]],x[kk]);
+	     */
+	  }
       gTres = ML_gdot(Nrows, res, g, comm);
       ML_Operator_Apply(Amat, Nrows, g, Nrows, res);
       gTAg = ML_gdot(Nrows, res, g, comm);
-      if (gTAg != 0.) {
-      printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
-      for (kk = 0; kk < length; kk++) {
-	x[cols[kk]] += (gTres/gTAg)*vals[kk];
-      }
+	  /*
+	  printf("coef is %e  %e   %e\n",gTres,gTAg,gTres/gTAg);
+	  */
+      for (kk = 0; kk < length; kk++)
+	  {
+	     if (gTAg != 0.0) x[cols[kk]] += (gTres/gTAg)*vals[kk];
       }
    }
-   printf("norm of solution after backward on T %e\n",
+   printf("\tnorm of solution after backward on nodes %20.15e\n",
 	  sqrt(ML_gdot(Nrows,x,x,comm)));
    return 0;
 
@@ -886,7 +1281,7 @@ gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
       ML_Operator_Apply(Amat, Nrows, x2, Nrows, res2);
       for ( i = 0; i < Nrows; i++ ) res2[i] = rhs[i] - res2[i];
       res_norm = sqrt(ML_gdot(Nrows, res2, res2, comm));
-      printf("      GS : iter = %2d, rnorm = %e\n", iter, res_norm);
+      printf("      GS : iter = %2d, rnorm = %20.15e\n", iter, res_norm);
 #endif
    }
    if (getrow_comm != NULL) 
@@ -902,8 +1297,10 @@ gTAg = sqrt(ML_gdot(Nrows, rhs, rhs, comm));
 #endif
    free(vals); free(cols);
 
+   printf("\n------- end of Hiptmair ------------\n");
    return 0;
 }
+#endif /* ifdef oldHiptmair */
 
 /* ************************************************************************* */
 /* sequential Symmetric Gauss-Seidel smoother                                */
@@ -2237,6 +2634,46 @@ if ( indptr[j] < inlen ) x[indptr[j]] = solbuf[j];
 /* setup routines for various smoothers                                 */
 /* ******************************************************************** */
 /* ******************************************************************** */
+/* Constructor for Sm_Hiptmair_Data                                     */
+/* ******************************************************************** */
+ 
+int ML_Smoother_Create_Hiptmair_Data(ML_Sm_Hiptmair_Data **data)
+{
+   ML_Sm_Hiptmair_Data *ml_data;
+ 
+   ML_memory_alloc((void**) data, sizeof(ML_Sm_Hiptmair_Data), "Hiptmair" );
+   ml_data = (*data);
+   ml_data->Tmat = NULL;
+   ml_data->Tmat_trans = NULL;
+   ml_data->ATmat_trans = NULL;
+   ml_data->TtAT_diag = NULL;
+   return(0);
+}
+ 
+/* ******************************************************************** */
+/* Destructor for Sm_Hiptmair_Data                                          */
+/* ******************************************************************** */
+ 
+void ML_Smoother_Destroy_Hiptmair_Data(void *data)
+{
+   ML_Sm_Hiptmair_Data *ml_data;
+ 
+   ml_data = (ML_Sm_Hiptmair_Data *) data;
+   if ( ml_data->Tmat != NULL )
+      ML_Operator_Destroy(ml_data->Tmat);
+ 
+   if ( ml_data->Tmat_trans != NULL )
+      ML_Operator_Destroy(ml_data->Tmat_trans);
+ 
+   if ( ml_data->ATmat_trans != NULL )
+      ML_Operator_Destroy(ml_data->ATmat_trans);
+ 
+   if ( ml_data->TtAT_diag != NULL )
+      ML_free(ml_data->TtAT_diag);
+ 
+   ML_memory_free((void**) &ml_data);
+}                                                                               
+/* ******************************************************************** */
 /* Constructor for Sm_BGS_Data                                          */
 /* ******************************************************************** */
 
@@ -2482,6 +2919,141 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
    }
 #endif
    ML_memory_free( (void **) &ml_data);
+}
+
+/* ************************************************************************* */
+/* Function to generate the matrix products needed in the Hiptmair smoother  */
+/* on one level.                                                             */
+/* ************************************************************************* */
+
+#ifdef debugSmoother
+extern double *xxx;
+#endif
+
+int ML_Smoother_Gen_Hiptmair_Data(ML_Sm_Hiptmair_Data **data, ML_Operator *Amat,
+                                 ML_Operator *Tmat, ML_Operator *Tmat_trans)
+{
+   ML_Sm_Hiptmair_Data *dataptr;
+   ML_Operator *tmpmat, *eyemat;
+   int *cols = NULL, length, allocated_space;
+   double *vals = NULL;
+   double *tmpdiag;
+#ifdef debugSmoother
+   double yyy[5000];
+#endif
+   int i,j;
+   ML_CommInfoOP *getrow_comm;
+   int totalsize;
+   struct ML_CSR_MSRdata *Amat_data, *eye_csr_data;
+
+   dataptr = *data;
+   dataptr->Tmat_trans = Tmat_trans;
+   dataptr->ATmat_trans = ML_Operator_Create(Tmat_trans->comm);
+
+#ifdef dupAmat
+   /* Create an identity matrix.  Use the sparsity pattern of Amat
+      to fill the identity matrix with zeros whereever Amat has
+	  nonzero off-diagonals. */
+   
+   eyemat = ML_Operator_Create(Amat->comm);
+   eye_csr_data = (struct ML_CSR_MSRdata *)
+                  ML_allocate(sizeof(struct ML_CSR_MSRdata));  
+   Amat_data = (struct ML_CSR_MSRdata *) Amat->data;
+
+   /* Copy the row and column indices from Amat to eyemat.
+      Set the main diagonal entries to 1 and all others to 0. */
+
+   eye_csr_data->rowptr = (int *)
+                          ML_allocate((Amat->outvec_leng+1)*sizeof(int));
+   eye_csr_data->columns = (int *)
+                          ML_allocate((Amat->N_nonzeros+1)*sizeof(int));
+   eye_csr_data->values = (double *)
+                          ML_allocate((Amat->N_nonzeros+1)*sizeof(int));
+
+   for (i = 0; i < Amat->outvec_leng; i++)
+      eye_csr_data->rowptr[i] = Amat_data->rowptr[i];
+   for (i = 0; i < Amat_data->rowptr[Amat->outvec_leng]; i++)
+   {
+	  eye_csr_data->columns[i] = Amat_data->columns[i];
+	  if (Amat_data->columns[i] == i)
+	     eye_csr_data->values[i] = 1.;
+      else
+	     eye_csr_data->values[i] = 0.;
+   }
+  ML_Operator_Set_ApplyFuncData( eyemat, Amat->outvec_leng,
+           Amat->N_nonzeros+1, ML_EMPTY, eye_csr_data,
+           Amat->N_nonzeros+1, NULL, 0);
+  ML_Operator_Set_Getrow(eyemat, ML_EXTERNAL, Amat->N_nonzeros+1,
+           CSR_getrows);
+  ML_Operator_Set_ApplyFunc(eyemat, ML_INTERNAL, CSR_matvec);
+ 
+  ML_CommInfoOP_Clone(&(eyemat->getrow->pre_comm),
+                      Amat->getrow->pre_comm); 
+
+   /* Multiply so that dataptr->Tmat_trans and dataptr->ATmat_trans
+      have the same communicator. */
+   ML_2matmult(Tmat_trans,eyemat,dataptr->Tmat_trans);
+   ML_Operator_Destroy(eyemat);
+#endif /* ifdef dupAmat */
+
+   /* We access AT by column.  So calculate the transpose of AT
+      and access it by row. This assumes that A is symmetric. */
+   ML_2matmult(Tmat_trans,Amat,dataptr->ATmat_trans);
+
+
+#ifdef debugSmoother
+   ML_Operator_Apply(dataptr->ATmat_trans,
+                     dataptr->ATmat_trans->invec_leng, xxx,
+					 dataptr->ATmat_trans->outvec_leng,
+					 yyy);
+   printf("norm of yyy = %15.10e\n",
+              sqrt(ML_gdot(dataptr->ATmat_trans->outvec_leng,
+              yyy,yyy,dataptr->ATmat_trans->comm)));
+#endif
+   /*
+   tmpmat = ML_Operator_Create(Amat->comm);
+   ML_2matmult(Amat,Tmat,tmpmat);
+
+   ML_Operator_Transpose_byrow(tmpmat, dataptr->ATmat_trans);
+
+   printf("%d: (Tmat_trans) outvec_leng = %d, invec_leng = %d\n",
+          Tmat_trans->comm->ML_mypid,
+		  dataptr->ATmat_trans->outvec_leng,
+		  dataptr->ATmat_trans->invec_leng);
+
+   getrow_comm= dataptr->ATmat_trans->getrow->pre_comm;
+   if (getrow_comm != NULL) 
+   {
+      printf("%d: (ATmat_trans) num ghost rows = %d\n",
+	         Tmat_trans->comm->ML_mypid,
+	         getrow_comm->total_rcv_length);
+      getrow_comm= dataptr->Tmat_trans->getrow->pre_comm;
+      printf("%d: (Tmat_trans) num ghost rows = %d\n",
+	         Tmat_trans->comm->ML_mypid,
+	         getrow_comm->total_rcv_length);
+      getrow_comm= Amat->getrow->pre_comm;
+      printf("%d: (Amat) num ghost rows = %d\n",
+	         Amat->comm->ML_mypid,
+	         getrow_comm->total_rcv_length);
+      fflush(stdout);
+   }
+   */
+
+   /* Generate matrix triple product */
+   tmpmat = ML_Operator_Create(Tmat_trans->comm);
+   ML_rap(Tmat_trans, Amat, Tmat, tmpmat, ML_CSR_MATRIX);
+
+   /* and pick off the diagonal entries. */
+   dataptr->TtAT_diag = (double *) malloc( tmpmat->outvec_leng * sizeof(double) );
+   tmpdiag = (double *) malloc( tmpmat->outvec_leng * sizeof(double) );
+   ML_Operator_Get_Diag(tmpmat, tmpmat->outvec_leng, &tmpdiag );
+   for (i=0; i< tmpmat->outvec_leng; i++)
+      if (tmpdiag[i] == 0) dataptr->TtAT_diag[i] = 1.;
+	  else dataptr->TtAT_diag[i] = tmpdiag[i];
+
+   ML_Operator_Destroy(tmpmat);
+
+   return 0;
 }
 
 /* ************************************************************************* */
