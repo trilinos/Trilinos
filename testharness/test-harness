@@ -68,7 +68,7 @@ print "$frequency\n";
 # Set proper location of cvscmd if necessary, otherwise leave it at "cvs"
 my $cvscmd="cvs";
 
-# name of the file containing the names of the machines to be used for parallel jobs
+# (LAM only) name of the file containing the names of the machines to be used for parallel jobs
 # If this file doesn't exist, parallel jobs will be run on the local machine only
 my $basehostfile='hostfile'; # change filename here if necessary
 # Location of $basehostfile
@@ -261,15 +261,11 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	    # with autotools
 	    unless ($testdirectory=~/^\s+$/ || $testdirectory=~/^$/ || $testdirectory=~/tpetra/ || $testdirectory=~/jpetra/ ) {
 	      chdir "$homedir/$subdirs[$i]";
-		unless (-e $testdirectory) { # This could happen if no tests
-		  # in the 'test' subdir for a package have been autotool'ed
-		  system "mkdir $testdirectory";
-		}
 	      print "$testdirectory\n";
 	      chdir "$homedir/$subdirs[$i]/$testdirectory";
 
 	      $compileFail=0;
-	      system "find $homedir/$testdirectory/scripts/$frequency/$comm -maxdepth 1 -type f > list_of_files";
+	      system "find $homedir/$subdirs[$i]/$testdirectory/scripts/$frequency/$comm -type f > list_of_files";
 	      open FILELIST, "list_of_files";
 	      chomp(@potentialscripts=<FILELIST>);
 	      close FILELIST;
@@ -285,6 +281,7 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 		  #
 		  # Create and send an email
 		  #
+		  system "rm -f list_of_files";
 		  &sendemail;
 		  $compileFail=0; # reset so the positive value doesn't trigger an error again
 		}
