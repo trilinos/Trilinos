@@ -87,6 +87,7 @@ struct ML_Operator_Struct {
    char          *label; 
    int           num_PDEs, num_rigid;
    double        lambda_max, lambda_min;
+   int           N_total_cols_est;
 };
 
 /* -------------------------------------------------------------------- */

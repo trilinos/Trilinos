@@ -82,6 +82,7 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->comm                = comm;
    mat->num_PDEs            = 1;
    mat->num_rigid           = 1;
+   mat->N_total_cols_est    = -1;
    return 0;
 }
 
@@ -199,6 +200,7 @@ ML_Operator *ML_Operator_halfClone( ML_Operator *original)
    mat->comm                = original->comm;
    mat->num_PDEs            = original->num_PDEs;
    mat->num_rigid           = original->num_rigid;
+   mat->N_total_cols_est    = -1;
    return mat;
 }
 
