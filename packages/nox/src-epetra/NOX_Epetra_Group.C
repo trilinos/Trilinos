@@ -1355,6 +1355,7 @@ bool Group::destroyPreconditioner() const
   if (isPreconditioner()) {
     if ((preconditioner == "AztecOO: Jacobian Matrix") ||
 	(preconditioner == "AztecOO: User RowMatrix")) {
+      if (aztecSolver != 0)
       aztecSolver->DestroyPreconditioner();
     }
   }
