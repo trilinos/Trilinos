@@ -29,6 +29,10 @@ dnl the default action will define HAVE_LAPACK.
 dnl
 dnl @version $Id$
 dnl @author Steven G. Johnson <stevenj@alum.mit.edu>
+dnl edited by Jim Willenbring <jmwille@sandia.gov> to check for sgecon
+dnl rather than cheev because by default (as of 8-13-2002) Trilinos
+dnl does not build the complex portions of the lapack library.  Edited
+dnl again on 5-13-2004 to check for dgecon instead of sgecon.
 
 AC_DEFUN([ACX_LAPACK], [
 AC_REQUIRE([ACX_BLAS])
@@ -44,7 +48,7 @@ case $with_lapack in
 esac
 
 # Get fortran linker name of LAPACK function to check for.
-AC_F77_FUNC(cheev)
+AC_F77_FUNC(dgecon)
 
 # We cannot use LAPACK if BLAS is not found
 if test "x$acx_blas_ok" != xyes; then
@@ -54,8 +58,8 @@ fi
 # First, check LAPACK_LIBS environment variable
 if test "x$LAPACK_LIBS" != x; then
         save_LIBS="$LIBS"; LIBS="$LAPACK_LIBS $BLAS_LIBS $LIBS $FLIBS"
-        AC_MSG_CHECKING([for $cheev in $LAPACK_LIBS])
-        AC_TRY_LINK_FUNC($cheev, [acx_lapack_ok=yes], [LAPACK_LIBS=""])
+        AC_MSG_CHECKING([for $dgecon in $LAPACK_LIBS])
+        AC_TRY_LINK_FUNC($dgecon, [acx_lapack_ok=yes], [LAPACK_LIBS=""])
         AC_MSG_RESULT($acx_lapack_ok)
         LIBS="$save_LIBS"
         if test acx_lapack_ok = no; then
@@ -66,7 +70,7 @@ fi
 # LAPACK linked to by default?  (is sometimes included in BLAS lib)
 if test $acx_lapack_ok = no; then
         save_LIBS="$LIBS"; LIBS="$LIBS $BLAS_LIBS $FLIBS"
-        AC_CHECK_FUNC($cheev, [acx_lapack_ok=yes])
+        AC_CHECK_FUNC($dgecon, [acx_lapack_ok=yes])
         LIBS="$save_LIBS"
 fi
 
@@ -74,7 +78,7 @@ fi
 for lapack in lapack lapack_rs6k; do
         if test $acx_lapack_ok = no; then
                 save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
-                AC_CHECK_LIB($lapack, $cheev,
+                AC_CHECK_LIB($lapack, $dgecon,
                     [acx_lapack_ok=yes; LAPACK_LIBS="-l$lapack"], [], [$FLIBS])
                 LIBS="$save_LIBS"
         fi
