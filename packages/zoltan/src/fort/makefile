@@ -34,7 +34,6 @@ $(ZOD)/cwrap.o: cwrap.c
 
 $(ZOD)/sppr: sppr.f90
 	$(LOCAL_F90) -o $(ZOD)/sppr sppr.f90
-	/bin/mv *.vo $(ZOD)
 
 clean:
 	rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
@@ -42,5 +41,5 @@ clean:
 	      $(ZOD)/fwrap.o \
 	      $(ZOD)/ztypes.o \
 	      $(ZOD)/lb_user_const.o \
-              *.dbg $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
+              *.vo *.mod *.dbg $(ZOD)/zfdrive $(ZOD)/sppr $(ZOD)/sppr_header
 	rm -Rf album
