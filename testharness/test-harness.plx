@@ -457,7 +457,7 @@ report($SUMMARY);
                         (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
                         # quit if error fixing invoke-configure
-                        if ($fixFailed == true) {
+                        if ($fixFailed != 0) {
                             $quitTrying = 1; 
                             report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm); 
                             last; # equivalent to break                          
@@ -515,7 +515,7 @@ report($SUMMARY);
                             (my $fixFailed, my $brokenPackage) = fixInvokeConfigure($log, $invokeConfigure, $comm);
                             
                             # quit if error fixing invoke-configure
-                            if ($fixFailed == true) {
+                            if ($fixFailed != 0) {
                                 $quitTrying = 1; 
                                 report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                                 last; # equivalent to break                               
