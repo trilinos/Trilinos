@@ -208,6 +208,57 @@ Set the aggregate coarsening scheme to be used as `ParMETIS'.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_CoarsenScheme\_VBMETIS}
+\protobox{int ML\_Aggregate\_Set\_CoarsenScheme\_VBMETIS(ML\_Aggregate *agg\_object)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Set the aggregate coarsening scheme to be used as `VBMETIS (see Section \ref{aggregation options}).
+This is similar to ML\_Aggregate\_Set\_CoarsenScheme\_METIS, but allows to give additional block
+information to allow for variable block matrices. The aggregation scheme 'VBMETIS' assures that all degrees
+of freedom of one variable block result on the same aggregate. 
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the `VBMETIS' aggregation will be used for automatic coarsening.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_Vblocks\_CoarsenScheme\_VBMETIS}
+\protobox{int ML\_Aggregate\_Set\_Vblocks\_CoarsenScheme\_VBMETIS(ML\_Aggregate *agg\_object, const int level, 
+const int N\_levels, const int nblocks, const int *blocks, const int *block\_pde, const int block\_dim)}
+
+\vspace{2em}
+{\flushleft{\bf Description} \hrulefill}
+\vspace{1em}
+
+Pass variable block information for coarsening scheme "VBMETIS"
+
+\vspace{2em}
+{\flushleft{\bf Parameters} \hrulefill}
+\vspace{1em}
+
+\optionbox{agg\_object}{On input, aggregate object pointer (see ML\_Aggregate\_Create). On output,
+               the block information is stored in agg\_object}
+
+\optionbox{level}{On input, the level the variable block data belongs to}
+
+\optionbox{N\_level}{On input, maximum number of levels}
+
+\optionbox{nblocks}{On input, number of variable blocks}
+
+\optionbox{blocks}{On input, blocks[i] is the block number row i belongs to}
+
+\optionbox{block\_pde}{On input, block\_pde[i] is the number of the pde row i belongs to}
+
+\optionbox{block\_dim}{On input, dimension of blocks and block\_pde}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \addcontentsline{toc}{subsection}{ML\_Aggregate\_Set\_DampingFactor}
 \protobox{int ML\_Aggregate\_Set\_DampingFactor( ML\_Aggregate *ag, double factor)}
 
