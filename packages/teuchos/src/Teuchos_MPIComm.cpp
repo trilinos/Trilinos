@@ -278,8 +278,8 @@ void MPIComm::allReduce(void* input, void* result, int inputCount,
 
 MPI_Datatype MPIComm::getDataType(int type)
 {
-  TEST_FOR_EXCEPTION( !(type == MPI_INT || type==MPI_FLOAT 
-                        || type==MPI_DOUBLE || type==MPI_CHAR),
+  TEST_FOR_EXCEPTION( !(type == INT || type==FLOAT 
+                        || type==DOUBLE || type==CHAR),
                       range_error,
                       "invalid type " << type << " in MPIComm::getDataType");
 
@@ -301,8 +301,8 @@ void MPIComm::errCheck(int errCode, const string& methodName)
 MPI_Op MPIComm::getOp(int op)
 {
 
-  TEST_FOR_EXCEPTION( !(op == MPI_SUM || op==MPI_MAX 
-                        || op==MPI_MIN || op==MPI_PROD),
+  TEST_FOR_EXCEPTION( !(op == SUM || op==MAX 
+                        || op==MIN || op==PROD),
                       range_error,
                       "invalid operator " 
                       << op << " in MPIComm::getOp");
@@ -310,7 +310,6 @@ MPI_Op MPIComm::getOp(int op)
   if( op == SUM) return MPI_SUM;
   else if( op == MAX) return MPI_MAX;
   else if( op == MIN) return MPI_MIN;
-  
   return MPI_PROD;
 }
 
