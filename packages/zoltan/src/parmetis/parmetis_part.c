@@ -35,6 +35,8 @@ static char *cvs_parmetis_part_id = "$Id$";
 #define OPTION_DBGLVL           3
 #define MAX_OPTIONS             4
 
+/* Misc. local constants */
+#define CHUNKSIZE 10  /* Number of list nodes to allocate in one chunk. */
 
 /******** Interface routine between Zoltan and ParMetis. ************/
 
@@ -43,7 +45,11 @@ int LB_ParMetis(
   int *num_imp,       /* number of objects to be imported */
   LB_GID **imp_gids,  /* global ids of objects to be imported */
   LB_LID **imp_lids,  /* local  ids of objects to be imported */
-  int **imp_procs     /* list of processors to import from */
+  int **imp_procs,    /* list of processors to import from */
+  int *num_exp,       /* number of objects to be exported */
+  LB_GID **exp_gids,  /* global ids of objects to be exported */
+  LB_LID **exp_lids,  /* local  ids of objects to be exported */
+  int **exp_procs     /* list of processors to export to */
 )
 {
 #ifdef LB_NO_PARMETIS
@@ -51,15 +57,15 @@ int LB_ParMetis(
   return LB_FATAL;
 
 #else /* !LB_NO_PARMETIS */
-  int i, j, ierr, size, flag, offset, hi, ndims;
+  int i, j, ierr, size, flag, offset, hi, row, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
   int options[MAX_OPTIONS], *destproc, *nbors_proc;
   int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag;
-  int get_graph_data, get_geom_data, get_times;
+  int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
   double geom_vec[6];
-  struct LB_vtx_list  **proc_list, *ptr, *new;
+  struct LB_vtx_list  **proc_list, **proc_nodes, *ptr;
   struct LB_hash_node **hashtab, *hash_nodes;
   LB_LID *local_ids;
   LB_GID *global_ids, *nbors_global;
@@ -84,12 +90,8 @@ int LB_ParMetis(
 #endif
 
   /* Set default return values (in case of early exit) */
-  /* Unnecessary because this was done in LB_Balance.
-  *num_imp = 0;
-  *imp_gids = NULL;
-  *imp_lids = NULL;
-  *imp_procs = NULL;
-  */
+  *num_exp = 0;
+  *num_imp = -1; /* No import data */
 
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
@@ -97,8 +99,8 @@ int LB_ParMetis(
   destproc = nbors_proc = NULL;
   vtxdist = xadj = adjncy = adjptr = vwgt = adjwgt = part = NULL;
   float_vwgt = xyz = NULL;
-  proc_list = NULL;
-  ptr = new = NULL;
+  proc_list = proc_nodes = NULL;
+  ptr = NULL;
   hashtab = NULL;
   hash_nodes = NULL;
   sendbuf = recvbuf = NULL;
@@ -277,24 +279,37 @@ int LB_ParMetis(
     }
   
     
-    /* Construct edge list */
+    /* Allocate edge list data */
     nbors_global = (LB_GID *)LB_MALLOC(max_edges * sizeof(LB_GID));
     nbors_proc = (int *)LB_MALLOC(max_edges * sizeof(int));
     proc_list = (struct LB_vtx_list **) LB_MALLOC(lb->Num_Proc *
       sizeof(struct LB_vtx_list *) );
-    if ((!nbors_global) || (!nbors_proc) || (!proc_list)){
+    proc_nodes = (struct LB_vtx_list **) LB_MALLOC((sum_edges/CHUNKSIZE+1) *
+      sizeof(struct LB_vtx_list *) );
+    if ((!nbors_global) || (!nbors_proc) || (!proc_list) || (!proc_nodes)){
       /* Not enough memory */
       return LB_MEMERR;
     }
   
-    /* Initialize pointers */
+    /* proc_list[i] will contain a pointer to a linked list of data 
+     * to send to processor i. proc_nodes is a list of pointers
+     * to chunks of list elements we have MALLOC'ed. The motivation
+     * for this design is to reduce the number of calls to
+     * MALLOC.  We could have reduced it into a single MALLOC 
+     * if we were willing to call the query function get_edge_list 
+     * twice for every object, but that is probably
+     * even more expensive.
+     */
     for (i=0; i< lb->Num_Proc; i++){
       proc_list[i] = NULL;
     }
+    for (i=0; i< sum_edges/CHUNKSIZE+1; i++){
+      proc_nodes[i] = NULL;
+    }
   
-    sum_edges = 0;
-    max_edges = 0;
-    nsend = 0;
+    row = 0;        /* Index to current row in proc_nodes */
+    offset = 0;     /* Index of next available node in proc_nodes[row] */
+    nsend = 0;      /* # procs to send to */
     adjptr = adjncy;
     xadj[0] = 0;
   
@@ -312,48 +327,58 @@ int LB_ParMetis(
     printf("[%1d] Debug: i=%d, gid=%d, lid=%d, nedges=%d\n", lb->Proc, i, 
       global_ids[i], local_ids[i], nedges);
 #endif
-  
       /* Separate inter-processor edges from the local ones */
       for (j=0; j<nedges; j++){
-  
         if (nbors_proc[j] == lb->Proc){
           /* local edge */
           *adjptr++ = LB_hash_lookup(hashtab, nbors_global[j], num_obj);
         } else {
           /* Inter-processor edge; add it to beginning of the list. */
-
-          /* Note: Here we allocate elements in the list one-by-one,
-           * which may be inefficient. Alternatively we could use
-           * the num_border_obj query function to obtain
-           * the number of cross-edges in advance, but this
-           * query function might not be available.
-           */
-          new = (struct LB_vtx_list *) LB_MALLOC (sizeof(struct LB_vtx_list));
-          new->next = proc_list[nbors_proc[j]];
-          if (new->next == NULL){
-            new->length = 1;
+          /* Check whether we need to allocate more space */
+          if (offset == 0){
+            proc_nodes[row] = (struct LB_vtx_list *) LB_MALLOC(CHUNKSIZE*sizeof(struct LB_vtx_list));
+#ifdef LB_DEBUG
+          printf("[%1d] Debug: Allocating more list space, row = %d\n", 
+          lb->Proc, row);
+#endif
+            if (!proc_nodes[row]){
+              /* Not enough memory */
+              return LB_MEMERR;
+            }
+          } 
+          /* Set ptr to point to next available node */
+          ptr = &(proc_nodes[row][offset]);
+          ptr->next = proc_list[nbors_proc[j]];
+          if (ptr->next == NULL){
+            ptr->length = 1;
             nsend++;
 #ifdef LB_DEBUG
           printf("[%1d] Debug: creating new list, nsend =%d\n", lb->Proc, nsend);
 #endif
           } else {
-            new->length = new->next->length + 1;
+            ptr->length = ptr->next->length + 1;
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: appending to old list, new length =%d\n", 
-          lb->Proc, new->length);
+          printf("[%1d] Debug: appending to proc_list[%1d], new length =%d\n", 
+          lb->Proc, nbors_proc[j], ptr->length);
 #endif
           }
-          new->my_gid = global_ids[i];
-          new->my_gno = LB_hash_lookup(hashtab, global_ids[i], num_obj);
-          new->nbor_gid = nbors_global[j];
-          new->adj = adjptr++;
-          proc_list[nbors_proc[j]] = new;
+          ptr->my_gid = global_ids[i];
+          ptr->my_gno = LB_hash_lookup(hashtab, global_ids[i], num_obj);
+          ptr->nbor_gid = nbors_global[j];
+          ptr->adj = adjptr++;
+          proc_list[nbors_proc[j]] = ptr;
+
+          offset++;
+          if (offset == CHUNKSIZE){
+            offset = 0;
+            row++;
+          }
         }
       }
     }
     /* Sanity check */
     if (((int)adjptr - (int)adjncy)/sizeof(int) != xadj[num_obj]){
-      printf("Warning: Internal error in LB_Parmetis_Part, incorrect pointer\n");
+      printf("Warning: Internal error in LB_ParMetis, incorrect pointer\n");
       printf("adjptr-adjncy =%d, #edges =%d\n", ((int)adjptr - (int)adjncy)/sizeof(int), xadj[num_obj]);
     }
   
@@ -372,6 +397,10 @@ int LB_ParMetis(
            sum_edges += proc_list[i]->length;
            if (proc_list[i]->length > max_edges) 
              max_edges = proc_list[i]->length;
+#ifdef LB_DEBUG
+   printf("[%1d] Debug: Proc_list[%1d] has length %d, first elem = (%d,%d)\n", 
+   lb->Proc, i, proc_list[i]->length, proc_list[i]->my_gid, proc_list[i]->my_gno);
+#endif
         }
       }
   
@@ -387,7 +416,7 @@ int LB_ParMetis(
       for (i=0; i<lb->Num_Proc; i++){
         if (proc_list[i] != NULL){
 #ifdef LB_DEBUG
-          printf("[%1d] Debug: Receive from proc %d\n", lb->Proc, i);
+          printf("[%1d] Debug: Ready to receive from proc %d\n", lb->Proc, i);
 #endif
           MPI_Irecv(&recvbuf[offset], proc_list[i]->length * size,
             MPI_BYTE, i, 1, lb->Communicator, &request[j]);
@@ -456,14 +485,12 @@ int LB_ParMetis(
 #ifdef LB_DEBUG
                 printf("[%1d] Debug: Matched %d\n", lb->Proc, ptr->nbor_gid);
 #endif
-                /* Found match. Amend adjncy array. */
+                /* Found match. */
                 flag = 1;
                 /* Insert the global number into adjncy vector */
                 *(ptr->adj) = *((int *)&recvbuf[j+sizeof(LB_GID)]); 
-                /* Free the node in the list we don't need anymore */
-                new = ptr;
+                /* Advance pointer to next unidentified GID */
                 ptr = ptr->next;
-                LB_FREE(&new);
                 break;
               }
             }
@@ -482,11 +509,16 @@ int LB_ParMetis(
     } /* end if (nsend>0) */
   
     /* Free space for temp data structures */
-    LB_FREE(&hash_nodes);
-    LB_FREE(&hashtab);
+    i=0;
+    for (i=0; proc_nodes[i] != NULL; i++){
+      LB_FREE(&(proc_nodes[i]));
+    }
+    LB_FREE(&proc_nodes);
     LB_FREE(&proc_list);
     LB_FREE(&nbors_global);
     LB_FREE(&nbors_proc);
+    LB_FREE(&hash_nodes);
+    LB_FREE(&hashtab);
   
     /* Get vertex weights if needed */
     if (vwgt_dim){
@@ -592,103 +624,32 @@ int LB_ParMetis(
   if (vwgt_dim) LB_FREE(&vwgt);
   if (ewgt_dim) LB_FREE(&adjwgt);
 
-  /* Construct send/recv data from ParMETIS output */
-  destproc = (int *)LB_MALLOC(num_obj * sizeof(int));
+  /* Determine number of objects to export */
   nsend = 0;
+  for (i=0; i<num_obj; i++)
+    if (part[i] != lb->Proc) nsend++;
+  (*num_exp) = nsend;
+
+  /* Create export lists */
+  *exp_gids = (LB_GID *)LB_MALLOC(nsend * sizeof(LB_GID));
+  *exp_lids = (LB_LID *)LB_MALLOC(nsend * sizeof(LB_LID));
+  *exp_procs = (int *)LB_MALLOC(nsend * sizeof(int));
+  if (!(*exp_gids) || !(*exp_lids) || !(*exp_procs)){
+    /* Not enough memory */
+    return LB_MEMERR;
+  }
+  j = 0;
   for (i=0; i<num_obj; i++){
     if (part[i] != lb->Proc){
-      /* Need to send this data to another proc */
-      destproc[nsend++] = part[i];
+      (*exp_gids)[j] = global_ids[i];
+      (*exp_lids)[j] = local_ids[i];
+      (*exp_procs)[j] = part[i];
+      j++;
     }
   }
 
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: nsend =%d\n", lb->Proc, nsend);
-  if (nsend>0){
-    printf("[%1d] Debug: destproc = ", lb->Proc);
-    for (i99=0; i99<nsend; i99++)
-      printf("%d ", destproc[i99]);
-    printf("\n");
-  }
-#endif
-
-  /* Check if any proc needs to communicate */
-  MPI_Allreduce(&nsend, &flag, 1, MPI_INT, MPI_SUM, lb->Communicator);
-
-  if (flag>0){
-
-    size = sizeof(LB_GID) + sizeof(LB_LID) + sizeof(int);
-    sendbuf = (char *)LB_MALLOC(nsend*size);
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: copying data to sendbuf.\n", lb->Proc);
-#endif
-    j = 0;
-    for (i=0; i<num_obj; i++){
-      if (part[i] != lb->Proc){
-        /* Need to send this data to another proc */
-        memcpy(&sendbuf[j], (char *) &global_ids[i], sizeof(LB_GID));
-        j += sizeof(LB_GID);
-        memcpy(&sendbuf[j], (char *) &local_ids[i], sizeof(LB_LID));
-        j += sizeof(LB_LID);
-        memcpy(&sendbuf[j], (char *) &lb->Proc, sizeof(int));
-        j += sizeof(int);
-      }
-    }
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: copied data to sendbuf, j=%d\n", lb->Proc, j);
-#endif
-  
-    /* Create a communication plan */
-    plan = LB_comm_create(nsend, destproc, lb->Communicator, &nrecv);
-  
-    /* Allocate enough space for receive buffer */
-    recvbuf = (char *)LB_MALLOC(nrecv*size);
-  
-    /* Do the communication */
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: calling LB_comm_do.\n", lb->Proc);
-#endif
-    LB_comm_do(plan, sendbuf, size, recvbuf);
-  
-    /* Unpack received data into proper places */
-    *num_imp = nrecv;
-    *imp_gids = (LB_GID *)LB_MALLOC(nrecv * sizeof(LB_GID));
-    *imp_lids = (LB_LID *)LB_MALLOC(nrecv * sizeof(LB_LID));
-    *imp_procs = (int *)LB_MALLOC(nrecv * sizeof(int));
-    if (!(*imp_gids) || !(*imp_lids) || !(*imp_procs)){
-      /* Not enough memory */
-      return LB_MEMERR;
-    }
-
-#ifdef LB_DEBUG
-  printf("[%1d] Debug: copying data into output parameters. nrecv =%d\n", 
-    lb->Proc, nrecv);
-#endif
-    j = 0;
-    for (i=0; i<nrecv; i++){
-        memcpy(&((*imp_gids)[i]), (char *) &recvbuf[j], sizeof(LB_GID));
-        j += sizeof(LB_GID);
-        memcpy(&((*imp_lids)[i]), (char *) &recvbuf[j], sizeof(LB_LID));
-        j += sizeof(LB_LID);
-        memcpy(&((*imp_procs)[i]), (char *) &recvbuf[j], sizeof(int));
-        j += sizeof(int);
-    }
-#ifdef LB_DEBUG
-    printf("[%1d] Debug: import data (gid,proc) is\n", lb->Proc);
-    for (i99=0; i99<nrecv; i99++){
-      printf(" (%2d,%2d) ", (*imp_gids)[i99], (*imp_procs)[i99]);
-    }
-    printf("\n");
-#endif
-
-    /* Free comm buffers */
-    LB_FREE(&sendbuf);
-    LB_FREE(&recvbuf);
-
-    /* Destroy communication plan */
-    LB_comm_destroy(&plan);
-
-  } /* end if (flag>0) */
+  /* No import data computed */
+  *num_imp = -1;
 
   /* Free space */
   LB_FREE(&part);
@@ -708,7 +669,7 @@ int LB_ParMetis(
     if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics (wall clock):\n");
     LB_Print_Time(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
     LB_Print_Time(lb, times[2]-times[1], "ParMETIS  Library time         ");
-    LB_Print_Time(lb, times[3]-times[2], "ParMETIS  Post-processing time ");
+/*  LB_Print_Time(lb, times[3]-times[2], "ParMETIS  Post-processing time "); */
     LB_Print_Time(lb, times[3]-times[0], "ParMETIS  Total time           ");
     if (lb->Proc==0) printf("\n");
   }
