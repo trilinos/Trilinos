@@ -18,18 +18,10 @@ static char *cvs_lbc_id = "$Id$";
 
 #include "lb_const.h"
 #include "lb.h"
+#include "lb_util_const.h"
 #include "comm.h"
 #include "all_allo_const.h"
 #include "par.h"
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-static void perform_error_checking(LB *);
-static void help_migrate(LB *);
-static void clean_up(LB *);
-static void compute_destinations(LB *, int, int, LB_TAG *, int *, LB_TAG **);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -44,8 +36,6 @@ void LB_Initialize(int argc, char **argv)
  */
 
 int mpi_flag;
-
-#ifdef LB_MPI
 
   /* 
    *  Test whether MPI is already initialized.  If not, call MPI_Init.
@@ -64,7 +54,6 @@ int mpi_flag;
   MPI_Comm_rank(MPI_COMM_WORLD, &LB_Proc);
   MPI_Comm_size(MPI_COMM_WORLD, &LB_Num_Proc);
 
-#endif  /* LB_MPI */
 }
 
 
@@ -102,7 +91,6 @@ LB *lb;
   lb->Tolerance = 0.9;
   lb->Data_Structure = NULL;
   lb->Object_Type = 0;
-  lb->Help_Migrate = FALSE;
 
   lb->Get_Obj_Weight = NULL;
   lb->Get_Num_Edges = NULL;
@@ -115,6 +103,11 @@ LB *lb;
   lb->Get_Num_Border_Obj = NULL;
   lb->Get_All_Border_Objs = NULL;
   lb->Get_Next_Border_Obj = NULL;
+
+  lb->Migrate.Help_Migrate = FALSE;
+  lb->Migrate.Pack_Obj_Data = NULL;
+  lb->Migrate.Unpack_Obj_Data = NULL;
+  lb->Migrate.Get_Obj_Data_Size = NULL;
   
   return(lb);
 }
@@ -172,6 +165,18 @@ char *yo = "LB_Set_LB_Fn";
   case LB_NEXT_BORDER_OBJ_FN_TYPE:
     lb->Get_Next_Border_Obj = (LB_NEXT_BORDER_OBJ_FN *) fn;
     break;
+  case LB_PRE_MIGRATE_FN_TYPE:
+    lb->Migrate.Pre_Process = (LB_PRE_MIGRATE_FN *) fn;
+    break;
+  case LB_OBJECT_SIZE_FN_TYPE:
+    lb->Migrate.Get_Obj_Data_Size = (LB_OBJECT_SIZE_FN *) fn;
+    break;
+  case LB_PACK_OBJECT_FN_TYPE:
+    lb->Migrate.Pack_Obj_Data = (LB_PACK_OBJECT_FN *) fn;
+    break;
+  case LB_UNPACK_OBJECT_FN_TYPE:
+    lb->Migrate.Unpack_Obj_Data = (LB_UNPACK_OBJECT_FN *) fn;
+    break;
   default:
     fprintf(stderr, "Error from %s:  LB_FN_TYPE %d is invalid.\n", yo, fn_type);
     fprintf(stderr, "Value must be in range 0 to %d\n", LB_MAX_FN_TYPES);
@@ -225,7 +230,7 @@ int i;
   }
 
   if (LB_Proc == 0) {
-    printf("LB:  Load balancing method = %d (%s)\n", i, method_name);
+    printf("LB:  Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
   /*
@@ -293,8 +298,7 @@ void LB_Set_LB_Object_Type(LB *lb, int object_type)
  *  This value is used only by the application; it is optional as far
  *  as the load-balancer is concerned.
  *  Input:
- *    LB *               --  The load balancing object to which this tolerance
- *                           applies.
+ *    LB *               --  The load balancing object for this object type.
  *    int                --  An integer representing the object type.
  *  Output:
  *    LB *               --  Appropriate fields set to designated type.
@@ -304,6 +308,41 @@ void LB_Set_LB_Object_Type(LB *lb, int object_type)
   lb->Object_Type = object_type;
   if (LB_Proc == 0) {
     printf("LB:  Load balancing object type = %d\n", object_type);
+  }
+}
+
+/****************************************************************************/
+/****************************************************************************/
+/****************************************************************************/
+
+void LB_Set_Help_Migrate(struct LB_Struct *lb, int help)
+{
+/*
+ *  Function to set a flag indicating whether the application wants the
+ *  load-balancer to help with data migration.   If migration help is
+ *  wanted, routines to pack and unpack object data must be provided by
+ *  the application (see LB_PACK_OBJECT_FN, LB_UNPACK_OBJECT_FN).
+ *
+ *  Input:
+ *    struct LB_Struct * --  The load balancing object to which this tolerance
+ *                           applies.
+ *    int                --  TRUE or FALSE to indicate whether the application
+ *                           wants migration help.  Default is FALSE.
+ *  Output:
+ *    struct LB_Struct * --  Appropriate fields set to designated type.
+ */
+char *yo = "LB_Set_Help_Migrate";
+
+  if (help != TRUE && help != FALSE) {
+    fprintf(stderr, "Error from %s:  Invalid value for Help_Migration:  %d\n", 
+            yo, help);
+    fprintf(stderr, "Value must be between %d or %d.\n", TRUE, FALSE);
+    exit(-1);
+  }
+
+  lb->Migrate.Help_Migrate = help;
+  if (LB_Proc == 0) {
+    printf("LB:  Load balancing Help_Migrate flag = %d\n", help);
   }
 }
 
@@ -323,9 +362,9 @@ int num_objs;                  /* Set to the new number of objects on
                                   the processor.                            */
 int num_keep;                  /* Set to the number of objects the processor
                                   keeps from the old decomposition.         */
-int num_non_local;             /* The number of non-local objects in the
+int num_import_objs;           /* The number of non-local objects in the
                                   processor's new decomposition.            */
-LB_TAG *non_local_objs;        /* Array of tags for non-local objects in
+LB_TAG *import_objs;           /* Array of tags for non-local objects in
                                   the processor's new decomposition.        */
 int num_export_objs;           /* The number of local objects that need to
                                   be exported from the processor to establish
@@ -336,9 +375,9 @@ LB_TAG *export_objs;           /* Array of tags for objects that need to be
 
   perform_error_checking(lb);
 
-  lb->LB_Fn(lb, &num_objs, &num_keep, &num_non_local, &non_local_objs);
+  lb->LB_Fn(lb, &num_objs, &num_keep, &num_import_objs, &import_objs);
 
-  compute_destinations(lb, num_objs, num_non_local, non_local_objs, 
+  compute_destinations(lb, num_objs, num_import_objs, import_objs, 
                        &num_export_objs, &export_objs);
 
   LB_print_sync_start(TRUE);
@@ -352,8 +391,9 @@ LB_TAG *export_objs;           /* Array of tags for objects that need to be
   }
   LB_print_sync_end(TRUE);
 
-  if (lb->Help_Migrate) {
-    help_migrate(lb);
+  if (lb->Migrate.Help_Migrate) {
+    help_migrate(lb, num_import_objs, import_objs, 
+                 num_export_objs, export_objs);
   }
   clean_up(lb);
 }
@@ -362,106 +402,3 @@ LB_TAG *export_objs;           /* Array of tags for objects that need to be
 /****************************************************************************/
 /****************************************************************************/
 
-static void perform_error_checking(LB *lb)
-{
-/* 
- *  Routine to make sure required functions are defined for the given method.
- *  Num_Objs, comm rtns should be defined for all methods.  
- */
-
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-static void compute_destinations(
-  LB *lb,                 /* Load balancing object for the current balance. */
-  int num_objs,           /* Number of objects originally assigned to the
-                             processor.                                     */
-  int num_non_local,      /* Number of non-local objects assigned to the 
-                             processor in the new decomposition.            */
-  LB_TAG *non_local_objs, /* Array of tags for non-local objects assigned
-                             to the processor in the new decomposition.     */
-  int *num_export,        /* Returned value:  Number of objs to be exported
-                             to other processors to establish the new
-                             decomposition.                                 */
-  LB_TAG **export_objs    /* Returned value:  Array of tags of objects to 
-                             be exported to other processors to establish the
-                             new decomposition.                             */
-)
-{
-/*
- *  Routine to compute the inverse map:  Given, for each processor, a list 
- *  of non-local objects assigned to the processor, compute the list of objects
- *  that processor needs to export to other processors to establish the new
- *  decomposition.
- */
-
-int *proc_list;          /* List of processors from which objs are to be 
-                            imported.                                       */
-COMM_OBJ *comm_plan;     /* Communication object returned
-                            by Bruce and Steve's communication routines     */
-LB_TAG *import_objs;     /* Array of import objects used to request the objs
-                            from other processors.                          */
-int i;
-
-  /*
-   *  Build processor's list of requests for non-local objs.
-   */
-
-  proc_list = (int *) array_alloc(1, num_non_local, sizeof(int));
-  import_objs = (LB_TAG *) array_alloc(1, num_non_local, sizeof(LB_TAG));
-
-  for (i = 0; i < num_non_local; i++) {
-    proc_list[i] = non_local_objs[i].Proc;
-
-    import_objs[i].Global_ID = non_local_objs[i].Global_ID;
-    import_objs[i].Local_ID  = non_local_objs[i].Local_ID;
-    import_objs[i].Proc      = LB_Proc;
-  }
-
-  /*
-   *  Compute communication map and num_export, the number of objs this
-   *  processor has to export to establish the new decomposition.
-   */
-
-  comm_plan = comm_create(num_non_local, proc_list, MPI_COMM_WORLD, num_export);
-
-  /*
-   *  Allocate space for the object tags that need to be exported.  Communicate
-   *  to get the list of objects to be exported.
-   */
-
-  *export_objs = (LB_TAG *) array_alloc(1, *num_export, sizeof(LB_TAG));
-  comm_do(comm_plan, (char *) import_objs, sizeof(LB_TAG), 
-          (char *) *export_objs);
-
-  LB_safe_free((void **) &proc_list);
-  LB_safe_free((void **) &import_objs);
-  
-  comm_destroy(comm_plan);
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-static void help_migrate(LB *lb)
-{
-
-}
-
-/****************************************************************************/
-/****************************************************************************/
-/****************************************************************************/
-
-static void clean_up(LB *lb)
-{
-/*
- *  Routine to free the load-balancing object's data structures and 
- *  communication data structures.
- */
-
-
-}

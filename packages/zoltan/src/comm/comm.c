@@ -22,7 +22,10 @@ static char *cvs_commc_id = "$Id$";
    sjplimp@cs.sandia.gov
 */
 
-#include "mpi.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <mpi.h>
+#include <memory.h>
 #include "comm.h"
 #include "all_allo_const.h"
 

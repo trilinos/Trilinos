@@ -43,6 +43,7 @@ static char *cvs_rcbc_id = "$Id$";
 #include "mpi.h"
 #include "lb_const.h"
 #include "rcb_const.h"
+#include "all_allo_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -76,7 +77,7 @@ void lb_rcb(
   int   *dotmark;                  /* which side of median for each dot */
   int   *dotlist;                  /* list of active dots */
   int    dotnum;                   /* number of dots */
-  int    dotmax;                   /* max # of dots arrays can hold */
+  int    dotmax = 0;               /* max # of dots arrays can hold */
   int    dottop;                   /* dots >= this index are new */
   int    dotnew;                   /* # of new dots after send/recv */
   int    numlist;                  /* number of active dots I own */
@@ -156,7 +157,6 @@ void lb_rcb(
    *  set pointers to information in it.
    */
 
-  dotmax = *pdotnum * 1.5;
   rcb_build_data_structure(lb, pdotnum, &dotmax);
 
   rcb = (RCB_STRUCT *) (lb->Data_Structure);
@@ -614,9 +614,11 @@ void lb_rcb(
     keep = outgoing = 0;
     for (i = 0; i < dotnum; i++) {
       if (dotmark[i] == markactive)
-	memcpy(&dotbuf[outgoing++], &dotpt[i], sizeof(struct rcb_dot));
+	memcpy((char *) &dotbuf[outgoing++], (char *) &dotpt[i], 
+               sizeof(struct rcb_dot));
       else
-	memcpy(&dotpt[keep++], &dotpt[i], sizeof(struct rcb_dot));
+	memcpy((char *) &dotpt[keep++], (char *) &dotpt[i], 
+               sizeof(struct rcb_dot));
     }
 
     /* post receives for dot data */
@@ -717,7 +719,8 @@ void lb_rcb(
                                               sizeof(LB_TAG));
 
   for (i = 0; i < *num_non_local; i++) {
-    memcpy(&((*non_local_objs)[i]), &(dotpt[i+dottop].Tag), sizeof(LB_TAG));
+    memcpy((char *) &((*non_local_objs)[i]), (char *) &(dotpt[i+dottop].Tag),
+            sizeof(LB_TAG));
   }
 
 

@@ -65,11 +65,6 @@ typedef void   ID_VOID_FN(ID *, ID *);
 typedef void   ID_PRINT_FN(ID *);
 typedef void  *LOOP_CONTROL;
 
-typedef enum Boolean_Type {
-  FALSE,
-  TRUE 
-} BOOLEAN;
-
 
 /****************************************************************************
  *  Prototypes

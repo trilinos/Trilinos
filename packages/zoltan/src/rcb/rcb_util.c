@@ -19,14 +19,14 @@ static char *cvs_rcbutilc_id = "$Id$";
 
 #include "lb_const.h"
 #include "rcb_const.h"
+#include "all_allo_const.h"
 
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 /* PROTOTYPES */
 
-void initialize_dot(LB *, struct rcb_dot *, int, LB_ID);
-void rcb_build_data_structure(LB *, int *, int *);
+static void initialize_dot(LB *, struct rcb_dot *, int, LB_ID);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -62,7 +62,7 @@ int i;
   }
   else {
     rcb = (RCB_STRUCT *) lb->Data_Structure;
-    safe_free((void **) &(rcb->Dots));
+    LB_safe_free((void **) &(rcb->Dots));
   }
 
   /*
@@ -131,7 +131,8 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void initialize_dot(LB *lb, struct rcb_dot *dot, int local_id, LB_ID global_id)
+static void initialize_dot(LB *lb, struct rcb_dot *dot, int local_id, 
+                           LB_ID global_id)
 {
 /*
  *  Function that initializes the dot data structure for RCB.  It uses the 

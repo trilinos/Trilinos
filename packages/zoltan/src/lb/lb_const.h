@@ -31,9 +31,13 @@ static char *cvs_lbconsth_id = "$Id$";
  *  Type definitions.
  */
 
+#ifndef TRUE
+#define FALSE (0)
+#define TRUE  (1)
+#endif /* !TRUE */
+
 typedef struct LB_Struct LB;
 typedef struct LB_Comm_Struct LB_COMM;
-typedef struct LB_Tag_Struct LB_TAG;
 
 typedef void LB_FN(LB *, int*, int*, int *, LB_TAG **);
 typedef void LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE(LB *, int n_cells_orig, int *n_requests);
@@ -63,72 +67,32 @@ typedef enum LB_Method {
  *  communication library.
  */
 
-struct LB_Comm_Struct {
-  /*  
-   *  Pointers to routines that depend on the LB Data_Structure field, and,
-   *  thus, on the balancing method used.
-   */
-  LB_COMM_BUILD_REQUEST_PROCLIST_FN_TYPE *Build_Request_Proclist;
-                                       /* Routine that build a list of procs
-                                          from which object data are needed.
-                                          There is one entry in the list for
-                                          each remote object.  The value of
-                                          the entry is the processor number
-                                          of the processor owning the object
-                                          when the load balancer was invoked.*/
-  LB_COMM_BUILD_SEND_REQUEST_LIST_FN_TYPE *Build_Send_Request_List;
-                                       /* Routine that build a list of objects
-                                          needed from other processors. 
-                                          Each entry contains the tracking 
-                                          data built before the load balancing
-                                          was invoked.                       */
-
+struct LB_Migrate_Struct {
+  int Help_Migrate;                   /*  Flag indicating whether the load
+                                          balancer should help the application
+                                          migrate data.  Some applications may
+                                          prefer to do it themselves.        */
   /*
    *  Pointers to routines that depend on the application.
    */
 
-  LB_COMM_OBJ_DATA_SIZE_FN_TYPE *Get_Obj_Data_Size;
-                                       /* Function that returns the size of
+  LB_PRE_MIGRATE_FN *Pre_Process;      /* Function that performs application
+                                          specific pre-processing.  Optional
+                                          for help-migration.                */
+  LB_OBJECT_SIZE_FN *Get_Obj_Data_Size;/* Function that returns the size of
                                           contiguous memory needed to store
                                           the data for a single object for
                                           migration.                         */
-  LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE *Pack_Obj_Data;
-                                       /* Routine that packs object data for
+  LB_PACK_OBJECT_FN *Pack_Obj_Data;    /* Routine that packs object data for
                                           a given object into contiguous 
                                           memory for migration.              */
-  LB_COMM_MIGRATE_OBJ_DATA_FN_TYPE *Unpack_Obj_Data;
+  LB_UNPACK_OBJECT_FN *Unpack_Obj_Data;
                                        /* Routine that unpacks object data for
                                           a given object from contiguous 
                                           memory after migration.            */
-                                        
-  /*
-   *  Pointers to temporary storage for communication.
-   */
-
-  int *Proc_List;                      /* Array of processor numbers for
-                                          requesting and sending objects.
-                                          There is one entry per requested
-                                          or sent object; its value is the
-                                          processor number to which the 
-                                          request or object is sent.         */
-  struct Request_Struct *Send_Request; /* Array of requests for objects on
-                                          other processors.
-                                          There is one entry per requested 
-                                          object; each entry contains the
-                                          tracking data giving the object's
-                                          original location.                 */
-  struct Request_Struct *Recv_Request; /* Array of requests for objects
-                                          needed by other processors.  
-                                          There is one entry per requested 
-                                          object; each entry contains the
-                                          tracking data giving the object's
-                                          original location.                 */
-  char *Send_Data;                     /* Buffer containing object data to 
-                                          be sent to other processors.       */
-  char *Recv_Data;                     /* Buffer containing object data to 
-                                          be received from other processors. */
-
 };
+
+typedef struct LB_Migrate_Struct LB_MIGRATE;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -159,10 +123,6 @@ struct LB_Struct {
                                       in this load-balancing object.  This
                                       value is not used specifically by the
                                       load balancer.                         */
-  int Help_Migrate;               /*  Flag indicating whether the load
-                                      balancer should help the application
-                                      migrate data.  Some applications may
-                                      prefer to do it themselves.            */
   void *Data_Structure;           /*  Data structure used by the load 
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
@@ -191,28 +151,8 @@ struct LB_Struct {
   LB_NEXT_BORDER_OBJ_FN *Get_Next_Border_Obj;  /* Fn ptr to get the next 
                                                   object sharing a border 
                                                   with a given processor.    */
-  LB_COMM LB_Comm;                             /* Communication struct for
-                                                  load balancing results.    */
-};
-
-/*****************************************************************************/
-/*****************************************************************************/
-/*****************************************************************************/
-
-/*
- *  Structure used to describe the results of the new decomposition.  The
- *  load-balancing routines (lb_rcb, etc.) return an array of LB_Tag_Structs
- *  with one entry for each non-local (i.e., imported) object in the new
- *  new decomposition for a given processor.
- *  This structure is the minimum structure required in the load-balancing
- *  data structures.
- */
-
-struct LB_Tag_Struct {
-  LB_ID Global_ID;         /* The global ID of the related object.           */
-  LB_ID Local_ID;          /* The local ID of the related object.            */
-  int Proc;                /* The original processor of the object.  Also 
-                              used for target processor in inverse comm. map */
+  LB_MIGRATE Migrate;                          /* Struct with info for helping
+                                                  with migration.            */
 };
 
 /*****************************************************************************/

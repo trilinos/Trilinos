@@ -24,6 +24,7 @@ static char *cvs_parutil_id =
 
 #include <stdio.h>
 #include <mpi.h>
+#include <stdlib.h>
 #include "par_const.h"
 #define PRINT_SYNC 5000
 

@@ -20,9 +20,7 @@
 static char *cvs_par_const_h = "$Id$";
 #endif
 
-#ifdef LB_MPI
-#include "mpi.h"
-#endif
+#include <mpi.h>
 
 extern int LB_Proc;
 extern int LB_Num_Proc;

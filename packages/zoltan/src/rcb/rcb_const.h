@@ -72,3 +72,5 @@ extern void rcb_rtn(
   int *pdottop
 );
 
+extern void rcb_build_data_structure(LB *, int *, int *);
+

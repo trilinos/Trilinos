@@ -39,6 +39,10 @@ enum LB_Fn_Type {
   LB_NUM_BORDER_OBJ_FN_TYPE,
   LB_BORDER_OBJ_FN_TYPE,
   LB_NEXT_BORDER_OBJ_FN_TYPE,
+  LB_PRE_MIGRATE_FN_TYPE,
+  LB_OBJECT_SIZE_FN_TYPE,
+  LB_PACK_OBJECT_FN_TYPE,
+  LB_UNPACK_OBJECT_FN_TYPE,
   LB_MAX_FN_TYPES               /*  This entry should always be last.        */
 };
 
@@ -52,6 +56,28 @@ typedef int LB_OBJECT_TYPE;
 typedef int LB_ID;
 
 struct LB_Struct;
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/*
+ *  Structure used to describe the results of the new decomposition.  The
+ *  load-balancing routines (lb_rcb, etc.) return an array of LB_Tag_Structs
+ *  with one entry for each non-local (i.e., imported) object in the new
+ *  new decomposition for a given processor.
+ *  This structure is the minimum structure required in the load-balancing
+ *  data structures.
+ */
+
+struct LB_Tag_Struct {
+  LB_ID Global_ID;         /* The global ID of the related object.           */
+  LB_ID Local_ID;          /* The local ID of the related object.            */
+  int Proc;                /* The original processor of the object.  Also
+                              used for target processor in inverse comm. map */
+};
+
+typedef struct LB_Tag_Struct LB_TAG;
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -204,6 +230,71 @@ typedef void LB_BORDER_OBJ_FN(LB_OBJECT_TYPE, int, LB_ID *);
 
 typedef LB_ID LB_NEXT_BORDER_OBJ_FN(LB_ID, LB_OBJECT_TYPE, int);
 
+/*****************************************************************************/
+/*
+ *  Function to return the size (in bytes) of data to be migrated for the
+ *  given object type.  This function is needed only when the application
+ *  wants the load-balancer to help migrate the data.  It is used by the
+ *  comm.c routines to allocate message buffers.
+ *  Input:  
+ *    LB_OBJECT_TYPE    --  the object type to be counted.
+ *  Returned value:
+ *    int               --  the number of local objects of type LB_OBJECT_TYPE.
+ */
+
+typedef int LB_OBJECT_SIZE_FN(LB_OBJECT_TYPE);
+
+/*****************************************************************************/
+/*
+ *  Function called as a pre-processor to the migration.  This function is 
+ *  optional, and is used only when the application wants the load-balancer 
+ *  to help migrate the data.  The application can perform any type of 
+ *  pre-processing in this function.
+ *  Input:  
+ *    int               --  Number of objects to be imported.
+ *    LB_TAG *          --  Array of tags of objects to be imported.
+ *    int               --  Number of objects to be exported.
+ *    LB_TAG *          --  Array of tags of objects to be exported.
+ *  Output:
+ *    none              --  the application performs pre-processing.
+ */
+
+typedef void LB_PRE_MIGRATE_FN(int, LB_TAG *, int, LB_TAG*);
+
+/*****************************************************************************/
+/*
+ *  Function to pack data to be migrated for the given object and object type.
+ *  This function is needed only when the application wants the load-balancer 
+ *  to help migrate the data.  It packs all data related to the given object
+ *  into a communication buffer, the starting address of which is provided
+ *  by the load-balancer.
+ *  Input:  
+ *    LB_TAG *          --  Tag for the object to be packed.
+ *    LB_OBJECT_TYPE    --  the object type to be packed.
+ *    int               --  number of bytes allowed for the object to be packed.
+ *    char *            --  starting address of buffer into which to pack the
+ *                          object.
+ *  Output:
+ *    char *            --  the buffer is rewritten with the packed data.
+ */
+
+typedef void LB_PACK_OBJECT_FN(LB_TAG *, LB_OBJECT_TYPE, int, char *);
+
+/*****************************************************************************/
+/*
+ *  Function to unpack data for an object migrated to a new processor.
+ *  This function is needed only when the application wants the load-balancer 
+ *  to help migrate the data.  The data is stored in a buffer (char *); the
+ *  size of the data for the object is included.
+ *  Input:  
+ *    int               --  number of bytes in the buffer for the object.
+ *    char *            --  starting address of buffer into which to pack the
+ *                          object.
+ *  Output:
+ *    none              --  the routine processors the data in the buffer.
+ */
+
+typedef void LB_UNPACK_OBJECT_FN(int, char *);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -280,10 +371,27 @@ extern void LB_Set_LB_Tolerance(struct LB_Struct *, double);
  *  This value is used only by the application; it is optional as far
  *  as the load-balancer is concerned.
  *  Input:
- *    struct LB_Struct * --  The load balancing object to which this tolerance
- *                           applies.
+ *    struct LB_Struct * --  The load balancing object using this object type.
  *    int                --  An integer representing the object type.
  *  Output:
  *    struct LB_Struct * --  Appropriate fields set to designated type.
  */
 extern void LB_Set_LB_Object_Type(struct LB_Struct *, int);
+
+/*****************************************************************************/
+/*
+ *  Function to set a flag indicating whether the application wants the
+ *  load-balancer to help with data migration.   If migration help is
+ *  wanted, routines to pack and unpack object data must be provided by
+ *  the application (see LB_OBJECT_SIZE_FN, LB_PACK_OBJECT_FN, 
+ *  LB_UNPACK_OBJECT_FN).
+ *
+ *  Input:
+ *    struct LB_Struct * --  The load balancing object to which this tolerance
+ *                           applies.
+ *    int                --  TRUE or FALSE to indicate whether the application
+ *                           wants migration help.  Default is FALSE.
+ *  Output:
+ *    struct LB_Struct * --  Appropriate fields set to designated type.
+ */
+extern void LB_Set_Help_Migrate(struct LB_Struct *, int);
