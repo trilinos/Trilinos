@@ -674,6 +674,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // number of applications of the cycle
   CycleApplications_ = List_.get("cycle applications", 1);  
 
+  // number of applications of the cycle
+  ZeroStartingSolution_ = List_.get("zero starting solution", true);  
+
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
@@ -1483,7 +1486,7 @@ ApplyInverse(const Epetra_MultiVector& X,
   Epetra_MultiVector xtmp(X); // Make copy of X (needed in case X is scaled
                               // in solver or if X = Y
 
-  Y.PutScalar(0.0); // Always start with Y = 0
+  if (ZeroStartingSolution_) Y.PutScalar(0.0); 
 
   // ML_iterate doesn't handle multivectors, so extract and iterate one at
   // a time on them.
@@ -1534,7 +1537,7 @@ ApplyInverse(const Epetra_MultiVector& X,
 
       for (int ia = 0 ; ia < CycleApplications_ ; ++ia) {
         int StartingSolution = ML_ZERO;
-        if (ia)
+        if (ia || !ZeroStartingSolution_)
           StartingSolution = ML_NONZERO;
 
         ML_Cycle_MG(&(ml_ptr->SingleLevel[ml_ptr->ML_finest_level]), 

@@ -17,7 +17,7 @@
 #@HEADER
 #@HEADER
 
-SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) $(Blackboard_SOURCES) $(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) $(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) $(AdaptiveSA_SAMIS_SOURCES) $(Blackboard_SOURCES) $(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) $(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -45,7 +45,8 @@ DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 noinst_PROGRAMS = Blackboard$(EXEEXT) PowerMethod$(EXEEXT) \
 	TwoLevelDDAdditive$(EXEEXT) MultiLevel$(EXEEXT) \
 	Richardson$(EXEEXT) AdaptiveSA$(EXEEXT) \
-	AdaptiveSA_Elasticity$(EXEEXT) NonSymmetricSA$(EXEEXT)
+	AdaptiveSA_Elasticity$(EXEEXT) AdaptiveSA_SAMIS$(EXEEXT) \
+	NonSymmetricSA$(EXEEXT)
 subdir = examples/MLAPI
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -87,6 +88,10 @@ am_AdaptiveSA_Elasticity_OBJECTS =  \
 	AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.$(OBJEXT)
 AdaptiveSA_Elasticity_OBJECTS = $(am_AdaptiveSA_Elasticity_OBJECTS)
 AdaptiveSA_Elasticity_DEPENDENCIES = $(am__DEPENDENCIES_2)
+am_AdaptiveSA_SAMIS_OBJECTS =  \
+	AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.$(OBJEXT)
+AdaptiveSA_SAMIS_OBJECTS = $(am_AdaptiveSA_SAMIS_OBJECTS)
+AdaptiveSA_SAMIS_DEPENDENCIES = $(am__DEPENDENCIES_2)
 am_Blackboard_OBJECTS = Blackboard-Blackboard.$(OBJEXT)
 Blackboard_OBJECTS = $(am_Blackboard_OBJECTS)
 Blackboard_DEPENDENCIES = $(am__DEPENDENCIES_2)
@@ -111,6 +116,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/Blackboard-Blackboard.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/MultiLevel-MultiLevel.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/NonSymmetricSA-NonSymmetricSA.Po \
@@ -123,13 +129,15 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
-	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
-	$(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) \
-	$(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+	$(AdaptiveSA_SAMIS_SOURCES) $(Blackboard_SOURCES) \
+	$(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) \
+	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
+	$(TwoLevelDDAdditive_SOURCES)
 DIST_SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
-	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
-	$(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) \
-	$(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+	$(AdaptiveSA_SAMIS_SOURCES) $(Blackboard_SOURCES) \
+	$(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) \
+	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
+	$(TwoLevelDDAdditive_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -332,6 +340,11 @@ NonSymmetricSA_CPPFLAGS = ${ml_common_include_locations}
 NonSymmetricSA_CXXFLAGS = ${ml_common_include_locations}
 NonSymmetricSA_LDADD = ${ml_libs} 
 NonSymmetricSA_LINK = ${mllink}
+AdaptiveSA_SAMIS_SOURCES = $(srcdir)/AdaptiveSA_SAMIS.cpp
+AdaptiveSA_SAMIS_CPPFLAGS = ${ml_common_include_locations}
+AdaptiveSA_SAMIS_CXXFLAGS = ${ml_common_include_locations}
+AdaptiveSA_SAMIS_LDADD = ${ml_libs} 
+AdaptiveSA_SAMIS_LINK = ${mllink}
 all: all-am
 
 .SUFFIXES:
@@ -374,6 +387,9 @@ AdaptiveSA$(EXEEXT): $(AdaptiveSA_OBJECTS) $(AdaptiveSA_DEPENDENCIES)
 AdaptiveSA_Elasticity$(EXEEXT): $(AdaptiveSA_Elasticity_OBJECTS) $(AdaptiveSA_Elasticity_DEPENDENCIES) 
 	@rm -f AdaptiveSA_Elasticity$(EXEEXT)
 	$(AdaptiveSA_Elasticity_LINK) $(AdaptiveSA_Elasticity_LDFLAGS) $(AdaptiveSA_Elasticity_OBJECTS) $(AdaptiveSA_Elasticity_LDADD) $(LIBS)
+AdaptiveSA_SAMIS$(EXEEXT): $(AdaptiveSA_SAMIS_OBJECTS) $(AdaptiveSA_SAMIS_DEPENDENCIES) 
+	@rm -f AdaptiveSA_SAMIS$(EXEEXT)
+	$(AdaptiveSA_SAMIS_LINK) $(AdaptiveSA_SAMIS_LDFLAGS) $(AdaptiveSA_SAMIS_OBJECTS) $(AdaptiveSA_SAMIS_LDADD) $(LIBS)
 Blackboard$(EXEEXT): $(Blackboard_OBJECTS) $(Blackboard_DEPENDENCIES) 
 	@rm -f Blackboard$(EXEEXT)
 	$(Blackboard_LINK) $(Blackboard_LDFLAGS) $(Blackboard_OBJECTS) $(Blackboard_LDADD) $(LIBS)
@@ -401,6 +417,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA-AdaptiveSA.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Blackboard-Blackboard.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MultiLevel-MultiLevel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NonSymmetricSA-NonSymmetricSA.Po@am__quote@
@@ -455,6 +472,22 @@ AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj: $(srcdir)/AdaptiveSA_Elasticity
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_Elasticity_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_Elasticity_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA_Elasticity-AdaptiveSA_Elasticity.obj `if test -f '$(srcdir)/AdaptiveSA_Elasticity.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA_Elasticity.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA_Elasticity.cpp'; fi`
+
+AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.o: $(srcdir)/AdaptiveSA_SAMIS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_SAMIS_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_SAMIS_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.o -MD -MP -MF "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo" -c -o AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.o `test -f '$(srcdir)/AdaptiveSA_SAMIS.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA_SAMIS.cpp; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo" "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po"; else rm -f "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA_SAMIS.cpp' object='AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_SAMIS_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_SAMIS_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.o `test -f '$(srcdir)/AdaptiveSA_SAMIS.cpp' || echo '$(srcdir)/'`$(srcdir)/AdaptiveSA_SAMIS.cpp
+
+AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.obj: $(srcdir)/AdaptiveSA_SAMIS.cpp
+@am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_SAMIS_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_SAMIS_CXXFLAGS) $(CXXFLAGS) -MT AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.obj -MD -MP -MF "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo" -c -o AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.obj `if test -f '$(srcdir)/AdaptiveSA_SAMIS.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA_SAMIS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA_SAMIS.cpp'; fi`; \
+@am__fastdepCXX_TRUE@	then mv -f "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo" "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po"; else rm -f "$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/AdaptiveSA_SAMIS.cpp' object='AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	depfile='$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.Po' tmpdepfile='$(DEPDIR)/AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AdaptiveSA_SAMIS_CPPFLAGS) $(CPPFLAGS) $(AdaptiveSA_SAMIS_CXXFLAGS) $(CXXFLAGS) -c -o AdaptiveSA_SAMIS-AdaptiveSA_SAMIS.obj `if test -f '$(srcdir)/AdaptiveSA_SAMIS.cpp'; then $(CYGPATH_W) '$(srcdir)/AdaptiveSA_SAMIS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/AdaptiveSA_SAMIS.cpp'; fi`
 
 Blackboard-Blackboard.o: $(srcdir)/Blackboard.cpp
 @am__fastdepCXX_TRUE@	if $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(Blackboard_CPPFLAGS) $(CPPFLAGS) $(Blackboard_CXXFLAGS) $(CXXFLAGS) -MT Blackboard-Blackboard.o -MD -MP -MF "$(DEPDIR)/Blackboard-Blackboard.Tpo" -c -o Blackboard-Blackboard.o `test -f '$(srcdir)/Blackboard.cpp' || echo '$(srcdir)/'`$(srcdir)/Blackboard.cpp; \

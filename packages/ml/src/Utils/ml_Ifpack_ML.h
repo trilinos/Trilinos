@@ -86,6 +86,7 @@ public:
     if (MLPrec_)
       delete MLPrec_;
 
+    MLList_.set("zero starting solution", false);
     MLPrec_ = new ML_Epetra::MultiLevelPreconditioner(*A_, MLList_);
     if (MLPrec_->IsPreconditionerComputed() == false) {
       ML_CHK_ERR(-1);

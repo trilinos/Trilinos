@@ -622,6 +622,9 @@ private:
   //! Number of applications of the ML cycle
   int CycleApplications_;
 
+  //! If \c true, zero starting solution is used in the application of the cycle.
+  bool ZeroStartingSolution_;
+
   //! Integer array used to easily handle ML_INCREASING and ML_DECREASING
   /*! Integer array, of size MaxLevels_, that contain the ML level ID
     for the first logical level, and so on for all levels. The ML level ID
