@@ -25,6 +25,13 @@
 #include "dr_err_const.h"
 #include "dr_output_const.h"
 
+/* Prototypes */
+static void echo_cmd_file(FILE *fp, char *cmd_file);
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
 void print_distributed_mesh(
      int Proc, 
      int Num_Proc, 
@@ -124,7 +131,8 @@ ELEM_INFO_PTR current_elem;
 /*--------------------------------------------------------------------------*/
 /* Author(s):  Matthew M. St.John (9226)                                    */
 /*--------------------------------------------------------------------------*/
-int output_results(int Proc,
+int output_results(char *cmd_file,
+                   int Proc,
                    int Num_Proc,
                    PROB_INFO_PTR prob,
                    PARIO_INFO_PTR pio_info,
@@ -169,7 +177,7 @@ int output_results(int Proc,
 
   fp = fopen(par_out_fname, "w");
   if (Proc == 0) 
-    print_input_info(fp, Num_Proc, prob);
+    echo_cmd_file(fp, cmd_file);
 
   fprintf(fp, "Global element ids assigned to processor %d\n", Proc);
   for (i = 0; i < mesh->num_elems; i++)
@@ -180,4 +188,34 @@ int output_results(int Proc,
 
   DEBUG_TRACE_END(Proc, yo);
   return 1;
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+static void echo_cmd_file(FILE *fp, char *cmd_file)
+{
+/* Routine to echo the input file into the output results (so that
+ * we know what conditions were used to produce a given result).
+ */
+char *yo = "echo_cmd_file";
+char cmsg[256];
+char inp_line[MAX_INPUT_STR_LN + 1];
+FILE *cmd_fp;
+
+  /* Open the file */
+  if((cmd_fp=fopen(cmd_file, "r")) == NULL) {
+    sprintf(cmsg, "Error in %s; input file %s does not exist.", yo, cmd_file);
+    Gen_Error(0, cmsg);
+    return;
+  }
+
+  while(fgets(inp_line, MAX_INPUT_STR_LN, cmd_fp)) {
+    /* skip any line that is a comment */
+    if((inp_line[0] != '#') && (inp_line[0] != '\n')) 
+      fprintf(fp, "%s", inp_line);
+  }
+
+  fclose(cmd_fp);
 }

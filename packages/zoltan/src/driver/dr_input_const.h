@@ -20,6 +20,8 @@
 /* define the input file types */
 #define NEMESIS_FILE 0
 #define CHACO_FILE   1
+#define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
+
 
 /* Structure used to store the information necessary for parallel I/O. */
 struct Parallel_IO

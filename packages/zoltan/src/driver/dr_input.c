@@ -41,7 +41,6 @@
 #include "ch_init_dist_const.h"
 
 #define TLIST_CNT 5
-#define MAX_INPUT_STR_LN 4096   /* maximum string length for read_string()  */
 
 /*****************************************************************************/
 /*****************************************************************************/
