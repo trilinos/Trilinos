@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 #ifdef PRINTINGNONZEROENTRIES
    fprintf(stderr,"Printing out zero entries.\n");
 #else
-   printf(stderr,"Not printing out zero entries.\n");
+   fprintf(stderr,"Not printing out zero entries.\n");
 #endif 
 
    flag = 0;
