@@ -8,18 +8,46 @@ class Epetra_CrsGraph;
 
 class SLUData;
 
+//! Epetra_SLU:  An object-oriented wrapper for Xiaoye Li's serial sparse solver package:  Superlu.
+/*!  Epetra_SLU will solve a linear systems of equations: \f$ AX=B
+  \f$, using Epetra objects and the Superludist solver library, where
+  \f$A\f$ is an Epetra_RowMatrix and \f$X\f$ and \f$B\f$ are 
+  Epetra_MultiVector objects.
+
+  SuperLU execution can be tuned through a variety of parameters.
+  Three parameters can be controlled within the call to the constructor:  fill_fac, panel_size and relax. 
+  Seven parameters can be controlled within the call to Solve():   
+  Verbose, Equil, Factor, perm_type, pivot_thresh, Refact, Trans
+
+*/
 class Epetra_SLU
 {
 
  public:
 
+
+  //@{ \name Constructor methods
+  //! Epetra_SLU Constructor.
+  /*! Creates an Epetra_SLU instance, using an Epetra_LinearProblem,
+      passing in an already-defined Epetra_LinearProblem object.
+  */
   Epetra_SLU( Epetra_LinearProblem * Problem,
               int fill_fac = -1,
               int panel_size = -1,
               int relax = -1 );
 
+  //! Epetra_SLU Destructor.
+  /*! Completely deletes a Epetra_SLU object.  
+  */
   ~Epetra_SLU();
+  //@}
 
+
+  //@{ \name Solve method
+  //!  All computation is performed during the call to Solve() 
+  /*!  Factor controls whether or not the matrix should be factored prior to the solve.
+       Default is true.
+   */
   int Solve( bool Verbose = false,
              bool Equil = true,
              bool Factor = true,
@@ -27,6 +55,7 @@ class Epetra_SLU
              double pivot_thresh = -1,
              bool Refact = true,
              bool Trans = false );
+  //@}
 
  private:
 

@@ -865,7 +865,8 @@ Optional Features:
                           is no)
   --enable-amesos-slus    Enable Amesos interface support for SuperLU Dist
                           (default is no)
-  --enable-amesos-kundert compile Kundert Sparse
+  --enable-amesos-kundert Enable Amesos interface support for Kundert (default
+                          is no)
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -3266,7 +3267,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3269:" \
+echo "$as_me:3270:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4677,8 +4678,8 @@ done
 
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other." >&5
-echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other." >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
+echo "$as_me: error: Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -5563,7 +5564,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5566: \"$ac_link\") >&5
+(eval echo $as_me:5567: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5642,7 +5643,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5645: \"$ac_link\") >&5
+(eval echo $as_me:5646: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6296,6 +6297,100 @@ fi
 
 
 
+# Check whether --enable-amesos-dscpack or --disable-amesos-dscpack was given.
+if test "${enable_amesos_dscpack+set}" = set; then
+  enableval="$enable_amesos_dscpack"
+  ac_cv_use_amesos_dscpack=$enableval
+else
+  ac_cv_use_amesos_dscpack=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-dscpack" >&5
+echo $ECHO_N "checking whether to use amesos-dscpack... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_DSCPACK
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-amesos-slus or --disable-amesos-slus was given.
+if test "${enable_amesos_slus+set}" = set; then
+  enableval="$enable_amesos_slus"
+  ac_cv_use_amesos_slus=$enableval
+else
+  ac_cv_use_amesos_slus=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-slus" >&5
+echo $ECHO_N "checking whether to use amesos-slus... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_slus" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_SLUS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+# Check whether --enable-amesos-kundert or --disable-amesos-kundert was given.
+if test "${enable_amesos_kundert+set}" = set; then
+  enableval="$enable_amesos_kundert"
+  ac_cv_use_amesos_kundert=$enableval
+else
+  ac_cv_use_amesos_kundert=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use amesos-kundert" >&5
+echo $ECHO_N "checking whether to use amesos-kundert... $ECHO_C" >&6
+
+if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_KUNDERT
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+# ------------------------------------------------------------------------
+# Make sure that at least one package is included
+# ------------------------------------------------------------------------
+if test "X$ac_cv_use_amesos_slud" = "Xno"; then
+   if test "X$ac_cv_use_amesos_slus" = "Xno"; then
+      if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
+         if test "X$ac_cv_use_amesos_kundert  " = "Xno"; then
+            { { echo "$as_me:$LINENO: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
+echo "$as_me: error: Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
+   { (exit 1); exit 1; }; }
+         fi
+      fi
+   fi
+fi
+
+
+
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that supermatrix.h is in the SuperLU distributed include directory
@@ -6314,8 +6409,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos/SuperludistOO requires MPI." >&5
-echo "$as_me: error: Amesos/SuperludistOO requires MPI." >&2;}
+    { { echo "$as_me:$LINENO: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&5
+echo "$as_me: error: Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -6456,8 +6551,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir " >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -6539,9 +6634,16 @@ else
 fi
 fi
 
+echo "$as_me:$LINENO: checking  Here we are above the slud2 stuff  " >&5
+echo $ECHO_N "checking  Here we are above the slud2 stuff  ... $ECHO_C" >&6
+
 if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
+  echo "$as_me:$LINENO: checking  Here we are inside the slud2 conditional " >&5
+echo $ECHO_N "checking  Here we are inside the slud2 conditional ... $ECHO_C" >&6
 
   if test "X$ac_cv_use_amesos_slud" != "Xno"; then
+     echo "$as_me:$LINENO: checking  Here we are inside both the slud2/slud conditional " >&5
+echo $ECHO_N "checking  Here we are inside both the slud2/slud conditional ... $ECHO_C" >&6
 
 
 if true ; then
@@ -6552,12 +6654,16 @@ else
   HAVE_AMESOS_SLUD2_FALSE=
 fi
   else
+     echo "$as_me:$LINENO: checking  Here we are inside the slud else clause " >&5
+echo $ECHO_N "checking  Here we are inside the slud else clause ... $ECHO_C" >&6
      { { echo "$as_me:$LINENO: error: Cannot enable slud2 without enabling slud." >&5
 echo "$as_me: error: Cannot enable slud2 without enabling slud." >&2;}
    { (exit 1); exit 1; }; }
   fi
 
 else
+    echo "$as_me:$LINENO: checking  Here we are in the slud2 esle clause  " >&5
+echo $ECHO_N "checking  Here we are in the slud2 esle clause  ... $ECHO_C" >&6
 
 
 if false ; then
@@ -6568,38 +6674,14 @@ else
   HAVE_AMESOS_SLUD2_FALSE=
 fi
 fi
+  echo "$as_me:$LINENO: checking  Here we are after the slud2 stuff " >&5
+echo $ECHO_N "checking  Here we are after the slud2 stuff ... $ECHO_C" >&6
 
 
 #
 #  --enable-amesos-dscpack, --with-amesos-dscpackdir, --with-amesos-dscpacklib,
 #    --with-amesos-dscpackincdir
 #
-
-# Check whether --enable-amesos-dscpack or --disable-amesos-dscpack was given.
-if test "${enable_amesos_dscpack+set}" = set; then
-  enableval="$enable_amesos_dscpack"
-  ac_cv_use_amesos_dscpack=$enableval
-else
-  ac_cv_use_amesos_dscpack=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use amesos-dscpack" >&5
-echo $ECHO_N "checking whether to use amesos-dscpack... $ECHO_C" >&6
-
-if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_DSCPACK
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that dscmain.h is in the directory pointed to by amesos-dscpackincdic
@@ -6616,8 +6698,8 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    { { echo "$as_me:$LINENO: error: Amesos/DscpackOO requires MPI." >&5
-echo "$as_me: error: Amesos/DscpackOO requires MPI." >&2;}
+    { { echo "$as_me:$LINENO: error: Amesos/DscpackOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Amesos/DscpackOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -6712,7 +6794,7 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 
 
 #
-# This is a bad way to check for dscmain.h, it won't pick supermatrix.h up if
+# This is a bad way to check for dscmain.h, it won't pick dscmain.h up if
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
 #
 
@@ -6758,8 +6840,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir " >&5
-echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -6812,8 +6894,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a)" >&5
-echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a)" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -6845,32 +6927,6 @@ fi
 #  --enable-amesos-slus, --with-amesos-slusdir, --with-amesos-sluslib,
 #    --with-amesos-slusincdir
 #
-
-# Check whether --enable-amesos-slus or --disable-amesos-slus was given.
-if test "${enable_amesos_slus+set}" = set; then
-  enableval="$enable_amesos_slus"
-  ac_cv_use_amesos_slus=$enableval
-else
-  ac_cv_use_amesos_slus=no
-fi;
-
-echo "$as_me:$LINENO: checking whether to use amesos-slus" >&5
-echo $ECHO_N "checking whether to use amesos-slus... $ECHO_C" >&6
-
-if test "X$ac_cv_use_amesos_slus" != "Xno"; then
-  echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS_SLUS
-_ACEOF
-
-else
-  echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-fi
-
-
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that supermatrix.h is in the SuperLU serial include directory
@@ -7024,8 +7080,8 @@ echo "${ECHO_T}`eval echo '${'$as_ac_File'}'`" >&6
 if test `eval echo '${'$as_ac_File'}'` = yes; then
   :
 else
-  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir " >&5
-echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir " >&2;}
+  { { echo "$as_me:$LINENO: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&5
+echo "$as_me: error: Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details. " >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -7078,8 +7134,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
 else
   echo "$as_me: failed program was:" >&5
 cat conftest.$ac_ext >&5
-{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)" >&5
-echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)" >&2;}
+{ { echo "$as_me:$LINENO: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
@@ -7108,6 +7164,72 @@ fi
 fi
 
 
+#
+#  --enable-amesos-kundert
+#
+#  NOTE:  Kundert is supported, but not tested as of May 13, 2003
+#  HAVE_AMESOS_KUNDERT is undef'd in Amesos_ConfigDefs.h
+#
+
+if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
+
+
+if true ; then
+  HAVE_AMESOS_KUNDERT_TRUE=
+  HAVE_AMESOS_KUNDERT_FALSE='#'
+else
+  HAVE_AMESOS_KUNDERT_TRUE='#'
+  HAVE_AMESOS_KUNDERT_FALSE=
+fi
+
+  # ------------------------------------------------------------------------
+  # Setup Platform for Kundert
+  # ------------------------------------------------------------------------
+
+ case "$target" in
+  *freebsd*) PLATFORM=freebsd
+           ;;
+  *linux*) PLATFORM=linux
+         ;;
+  *sgi*) PLATFORM=sgi
+       ;;
+  *powerpc-apple*) PLATFORM=ppc
+      ;;
+  *powerpc-ibm-aix*) PLATFORM=aix
+      ;;
+  *solaris*) PLATFORM=solaris
+      ;;
+  i386*mingw32msvc) PLATFORM=mingw
+       ;;
+  alpha*-dec-osf*) PLATFORM=DEC
+       ;;
+  *)   if test "x$PLATFORM" = "x"; then
+         { echo "$as_me:$LINENO: Unrecognized target, using generic linux for PLATFORM" >&5
+echo "$as_me: Unrecognized target, using generic linux for PLATFORM" >&6;}
+         Xyce_ARCH=linux
+         PLATFORM=linux
+       fi
+       ;;
+ esac
+
+ { echo "$as_me:$LINENO: Adding Platform Define $PLATFORM to CCFLAGS" >&5
+echo "$as_me: Adding Platform Define $PLATFORM to CCFLAGS" >&6;}
+ CPPFLAGS="$CPPFLAGS -D$PLATFORM"
+else
+
+
+if false ; then
+  HAVE_AMESOS_KUNDERT_TRUE=
+  HAVE_AMESOS_KUNDERT_FALSE='#'
+else
+  HAVE_AMESOS_KUNDERT_TRUE='#'
+  HAVE_AMESOS_KUNDERT_FALSE=
+fi
+fi
+
+
+
+
 
 
 
@@ -7134,23 +7256,12 @@ AMESOS_LIBS=${amesos_libs}
 ## )
 ## AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
 
-# Check whether --enable-amesos-kundert or --disable-amesos-kundert was given.
-if test "${enable_amesos_kundert+set}" = set; then
-  enableval="$enable_amesos_kundert"
-  ADDON_KS=$enableval
-else
-  ADDON_KS=no
-
-fi;
-
-
-if test X${ADDON_KS} = "Xyes"; then
-  BUILD_KUNDERT_TRUE=
-  BUILD_KUNDERT_FALSE='#'
-else
-  BUILD_KUNDERT_TRUE='#'
-  BUILD_KUNDERT_FALSE=
-fi
+## AC_ARG_ENABLE(amesos-kundert,
+## [AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],
+## [ADDON_KS=$enableval],
+## [ADDON_KS=no]
+## )
+## AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, test X${ADDON_KS} = "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -7163,7 +7274,7 @@ fi
 ##   AC_LANG_SAVE
 ##   AC_LANG_C
 ##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
-##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib)]]))
+##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))
 ## fi
 
 #AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
@@ -8335,8 +8446,8 @@ _ACEOF
         :
 else
         acx_blas_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&5
-echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)" >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -8587,8 +8698,8 @@ _ACEOF
         :
 else
         acx_lapack_ok=no
-        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)" >&5
-echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)" >&2;}
+        { { echo "$as_me:$LINENO: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&5
+echo "$as_me: error: Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details." >&2;}
    { (exit 1); exit 1; }; }
 fi
 
@@ -8649,7 +8760,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8652: \"$ac_link\") >&5
+(eval echo $as_me:8763: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8728,7 +8839,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8731: \"$ac_link\") >&5
+(eval echo $as_me:8842: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8907,42 +9018,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Setup Platform for Kundert
-# ------------------------------------------------------------------------
-
-if test "X$ADDON_KS" = "Xyes"; then
-
- case "$target" in
-  *freebsd*) PLATFORM=freebsd
-           ;;
-  *linux*) PLATFORM=linux
-         ;;
-  *sgi*) PLATFORM=sgi
-       ;;
-  *powerpc-apple*) PLATFORM=ppc
-      ;;
-  *powerpc-ibm-aix*) PLATFORM=aix
-      ;;
-  *solaris*) PLATFORM=solaris
-      ;;
-  i386*mingw32msvc) PLATFORM=mingw
-       ;;
-  alpha*-dec-osf*) PLATFORM=DEC
-       ;;
-  *)   if test "x$PLATFORM" = "x"; then
-         { echo "$as_me:$LINENO: Unrecognized target, using generic linux for PLATFORM" >&5
-echo "$as_me: Unrecognized target, using generic linux for PLATFORM" >&6;}
-         Xyce_ARCH=linux
-       fi
-       ;;
- esac
-
- { echo "$as_me:$LINENO: Adding Platform Define $PLATFORM to CCFLAGS" >&5
-echo "$as_me: Adding Platform Define $PLATFORM to CCFLAGS" >&6;}
- CPPFLAGS="$CPPFLAGS -D$PLATFORM"
-fi
-
-# ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
 
@@ -8958,7 +9033,7 @@ fi
 # ------------------------------------------------------------------------
 ##
 #		test/Makefile
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9446,6 +9521,9 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
+  "test/scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/Makefile" ;;
+  "test/scripts/daily/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/Makefile" ;;
+  "test/scripts/daily/mpi/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/scripts/daily/mpi/Makefile" ;;
   "default-1" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default-1" ;;
   "src/Amesos_config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS src/Amesos_config.h:src/Amesos_config.h.in" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9602,9 +9680,9 @@ s,@HAVE_AMESOS_DSCPACK_TRUE@,$HAVE_AMESOS_DSCPACK_TRUE,;t t
 s,@HAVE_AMESOS_DSCPACK_FALSE@,$HAVE_AMESOS_DSCPACK_FALSE,;t t
 s,@HAVE_AMESOS_SLUS_TRUE@,$HAVE_AMESOS_SLUS_TRUE,;t t
 s,@HAVE_AMESOS_SLUS_FALSE@,$HAVE_AMESOS_SLUS_FALSE,;t t
+s,@HAVE_AMESOS_KUNDERT_TRUE@,$HAVE_AMESOS_KUNDERT_TRUE,;t t
+s,@HAVE_AMESOS_KUNDERT_FALSE@,$HAVE_AMESOS_KUNDERT_FALSE,;t t
 s,@AMESOS_LIBS@,$AMESOS_LIBS,;t t
-s,@BUILD_KUNDERT_TRUE@,$BUILD_KUNDERT_TRUE,;t t
-s,@BUILD_KUNDERT_FALSE@,$BUILD_KUNDERT_FALSE,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
 s,@XTRALDADD@,$XTRALDADD,;t t

@@ -39,7 +39,7 @@ class Epetra_RowMatrix;
 #include "Epetra_LinearProblem.h"
 #include "Epetra_LinearProblemRedistor.h"
 #include "Epetra_Object.h"
-//! SuperludistOO:  An object-oriented wrapper for Superludist.
+//! SuperludistOO:  An object-oriented wrapper for Xiaoye Li's Superludist.
 /*!  SuperludistOO will solve a linear systems of equations: \f$ AX=B
   \f$, using Epetra objects and the Superludist solver library, where
   \f$A\f$ is an Epetra_RowMatrix and \f$X\f$ and \f$B\f$ are 

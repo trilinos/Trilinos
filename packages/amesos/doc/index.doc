@@ -1,27 +1,133 @@
-/*! \mainpage Trilinos/DSSLV:  Direct Sparse Solver Package.
+/*! \mainpage Amesos:  Direct Sparse Solver Package.
 \htmlonly
 \endhtmlonly
 
 \section intro Introduction 
-DSSLV provides an object-oriented interface
+Amesos provides an object-oriented interface
 to several direct sparse solvers.  The first direct sparse solver to
-be added to DSSLV is SuperLUdist, the distributed memory version of
-SuperLU.  DSSLV allows flexible construction of matrix and vector
+be added to Amesos is SuperLUdist, the distributed memory version of
+SuperLU.  Amesos allows flexible construction of matrix and vector
 arguments via Epetra matrix and vector classes.  
 
-\section startup Overview of DSSLV.
+\section startup Overview of Amesos.
 
-DSSLV contains one class:
+Amesos contains two supported classes:
 
 <ul> 
 
-<li> SuperludistOO - Interface to SuperLU MPI. 
+<li> SuperludistOO - Interface to Xiaoye Li's SuperLU Distributed memory code with serial input interface.
+<li> Epetra_SLU - Interface to Xiaoye Li's SuperLU Serial. 
+</ul>
+
+Amesos will soon support the following classes:
+<ul> 
+<li> Superludist2_OO - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
+<li> DscpackOO - Interface to DSCPACK
 
 
 </ul>
 
-\htmlonly
-For details of Epetra, see the <a href="../../../epetra/doc/html/index.html">Epetra home page</a>.
-\endhtmlonly
+\section install  Installing Amesos 
+
+Each of the Amesos classes provides an interface to a different third
+party direct sparse solver code.  In order to install a particular
+class, you must first install the underlying direct sparse solver
+code.  Amesos installation requires four steps:
+<ul>
+<li>Finding MPI for your machine.
+<li>Finding optimized BLAS for your machine.
+<li>Installing the third party code needed by the Amesos class that you intend to use
+<li>Configuring Trilinos with Amesos.
+</ul>
+
+\subsection mpi Finding MPI for your architecture
+<ul><li>
+Most parallel sparse direct solvers on built on MPI.  
+If Trilinos/config has a configure invocation script for your
+architecture, you can look for --with-mpi there.  
+Mpich, a portable implementation of MPI, is available from 
+the <a href="http://www-unix.mcs.anl.gov/mpi/mpich">MPICH website</a>. 
+LAM/MPI  is available from the <a href="http://www.lam-mpi.org/"> LAM/MPI webstie</a>.
+</ul>
+
+\subsection blas Finding Optimized BLAS for your architecture
+
+<ul> <li>Most sparse direct
+solvers require BLAS, or at least take advantage of them.  
+If Trilinos/config has a configure invocation script for your
+architecture, you can look for --with-blas there.
+If your architecture does not offer optimized BLAS,
+<a href="http://math-atlas.sourceforge.net">ATLAS</a> will create an 
+optimized BLAS library for you.  </ul>
+
+\subsection thirdparty Installing third party software
+
+<ul>
+<li> SuperludistOO
+<ul>
+<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu_dist">Xiaoye Li's SuperLU web site</a> by clicking on the download link under in the "SuperLU_DIST Version 2.0" section.
+<li>Untar the SuperLU dist code in your Trilinos3PL directory.
+<li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
+<li>Run an example, following the instructions in EXAMPLE/README (make pddrive; mpirun -np 4 pddrive -r 1 -c 4 pddrive )
+<li>Expected output:
+<pre>
+(0) .. ||X-Xtrue||/||X|| = 1.110223e-15
+        EQUIL time             0.01
+        COLPERM time           0.00
+        ROWPERM time           0.02
+        SYMBFACT time          0.00
+        DISTRIBUTE time        0.01
+        FACTOR time            0.05
+        Factor flops    9.957800e+04    Mflops      2.11
+        SOLVE time             0.03
+        Solve flops     3.325800e+04    Mflops      1.18
+        REFINEMENT time        0.03     Steps       1
+</pre>
+</ul>
+<li> Epetra_SLU
+<ul>
+<li>Obtain the distribution from <a href="http://www.nersc.gov/~xiaoye/SuperLU/index.html#superlu">Xiaoye Li's SuperLU web site</a> by clicking on the download link.
+<li>Untar the SuperLU serial code in your Trilinos3PL directory.
+<li>Follow the intructions in README (edit make.inc, 'make lib'), ignoring the section on MATLAB
+<li>Run an example, following the instructions in EXAMPLE/README (make dlinsol; dlinsol <g10 )
+<li>Expected output:
+<pre>
+10x10 grid, with COLMMD order                                                   
+Dimension 100x100; # nonzeros 460
+Use minimum degree ordering on A'*A.
+Factor time  =    -0.00
+Factor flops = 2.038800e+04     Mflops = -48922564965826384.00
+Solve time   =    -0.00
+Solve flops = 3.854000e+03      Mflops = -9247967695619722.00
+||X - Xtrue||/||X|| = 3.796963e-14
+No of nonzeros in factor L = 914
+No of nonzeros in factor U = 1113
+No of nonzeros in L+U = 1927
+L\U MB 0.022    total MB needed 0.042   expansions 0
+</pre>
+</ul>
+</ul>
+
+\subsection config Configuring and building Trilinos with Amesos
+
+
+You will need to add three switches to your configure invocation script.
+<ul>
+<li>Include the Amesos code in the configuration.  <b>--enable-amesos </b>
+<li>Enable one of the Amesos classes:
+<ul>
+<li><b>--enable-amesos-slus</b> - SuperLU serial
+<li><b>--enable-amesos-slud </b> - SuperLU distributes
+</ul>
+<li>Specify where to find the third party code in one of the following ways:
+<ul>
+<li><b>--with-trilinos3pldir=/home/somedir/Trilinos3PL</b>
+<li><b>--with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>
+<li><b>--with-amesos-sludlib=/home/somedir/SuperLU_DIST_2.0/libsuperludist.a</b> and <b>--with-amesos-sludincdir=/home/somedir/SuperLU_DIST_2.0/SRC</b>
+</ul>
+</ul>
+Amesos is not build with either of the two supported classes by default.  You must choose one.
+At present, you cna only chose one because of name conflicts between SuperLU serial and SuperLU dist.
+
 
 */

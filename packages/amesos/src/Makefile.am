@@ -49,7 +49,7 @@ SLUSERIAL_H =
 SLUSERIAL =
 endif
 
-if BUILD_KUNDERT
+if HAVE_AMESOS_KUNDERT
 KUNDERT_H = \
        $(srcdir)/Epetra_CrsKundertSparse.h
 KUNDERT = \
@@ -88,7 +88,7 @@ COMP = \
 # SLUSERIAL_CPPFLAGS = 
 # endif
 
-if BUILD_KUNDERT
+if HAVE_AMESOS_KUNDERT
 KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
 else
 KUNDERT_CPPFLAGS = 

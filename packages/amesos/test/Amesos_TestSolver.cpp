@@ -10,7 +10,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
-#ifdef TEST_KUNDERT
+#ifdef HAVE_AMESOS_KUNDERT
 #include "KundertOO.h"
 #endif
 #ifdef TEST_SPOOLES
@@ -238,7 +238,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     spooles.SetTrans( transpose ) ; 
     spooles.Solve() ; 
 #endif
-#ifdef TEST_KUNDERT
+#ifdef HAVE_AMESOS_KUNDERT
   } else if ( SparseSolver == KUNDERT ) { 
     KundertOO kundert( (Epetra_RowMatrix *) passA, 
 		       (Epetra_MultiVector *) passx, 

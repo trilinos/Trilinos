@@ -168,7 +168,7 @@ AC_CHECK_HEADERS([vector map time.h fstream sys/utsname.h unistd.h],,,)
 AC_CHECK_HEADERS([sys/time.h sys/resource.h],,,)
 
 if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.]])
+  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Amesos requires at least one or the other.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details]])
 fi
 
 if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
@@ -254,6 +254,29 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud, [Enable Amesos interface support for S
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for SuperLU Dist 2.0 (requires amesos-slud)], 
 		AMESOS_SLUD2, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
+		AMESOS_DSCPACK, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
+		AMESOS_SLUS, no)
+
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, kundert, [Enable Amesos interface support for Kundert], 
+		AMESOS_KUNDERT, no)
+
+# ------------------------------------------------------------------------
+# Make sure that at least one package is included
+# ------------------------------------------------------------------------
+if test "X$ac_cv_use_amesos_slud" = "Xno"; then
+   if test "X$ac_cv_use_amesos_slus" = "Xno"; then
+      if test "X$ac_cv_use_amesos_dscpack" = "Xno"; then
+         if test "X$ac_cv_use_amesos_kundert  " = "Xno"; then
+            AC_MSG_ERROR([Must specify at least one third party library, e.g. --with-amesos-slud.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details])
+         fi
+      fi				 
+   fi
+fi
+
+
 
 #
 #  Test to see if everything is where it ought to be:
@@ -267,7 +290,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_LANG_C
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.]])
+    AC_MSG_ERROR([[Amesos/SuperludistOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details]])
   fi
 
   TAC_ARG_WITH_SUB( amesos, sluddir, [Set SuperLU dist directory],  ${tac_with_trilinos3pldir}/SuperLU_DIST )
@@ -288,7 +311,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir]] ))
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))
 
 
 ##  LDFLAGS="${tac_with_amesos_sludlib} ${LDFLAGS}"
@@ -307,26 +330,30 @@ else
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, false ) 
 fi
 
+AC_MSG_CHECKING([ Here we are above the slud2 stuff  ])
+
 if test "X$ac_cv_use_amesos_slud2" != "Xno"; then
+  AC_MSG_CHECKING([ Here we are inside the slud2 conditional ])
 
   if test "X$ac_cv_use_amesos_slud" != "Xno"; then
+     AC_MSG_CHECKING([ Here we are inside both the slud2/slud conditional ])
      AM_CONDITIONAL(HAVE_AMESOS_SLUD2, true )
   else 
+     AC_MSG_CHECKING([ Here we are inside the slud else clause ])
      AC_MSG_ERROR([Cannot enable slud2 without enabling slud.])
   fi 
 
 else 
+    AC_MSG_CHECKING([ Here we are in the slud2 esle clause  ])
    AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
 fi
+  AC_MSG_CHECKING([ Here we are after the slud2 stuff ])
 
 
 #
 #  --enable-amesos-dscpack, --with-amesos-dscpackdir, --with-amesos-dscpacklib, 
 #    --with-amesos-dscpackincdir
 #
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
-		AMESOS_DSCPACK, no)
-
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that dscmain.h is in the directory pointed to by amesos-dscpackincdic
@@ -337,7 +364,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   AC_LANG_C
 
   if test "X${HAVE_PKG_MPI}" != "Xyes"; then
-    AC_MSG_ERROR([[Amesos/DscpackOO requires MPI.]])
+    AC_MSG_ERROR([[Amesos/DscpackOO requires MPI.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])
   fi
 
   TAC_ARG_WITH_SUB( amesos, dscpackdir, [Set DSCPACK directory],  ${tac_with_trilinos3pldir}/DSCPACK1.0 )
@@ -350,7 +377,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir})
 
 #
-# This is a bad way to check for dscmain.h, it won't pick supermatrix.h up if
+# This is a bad way to check for dscmain.h, it won't pick dscmain.h up if
 # it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
 #
 
@@ -358,7 +385,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h)
 
   AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
-    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir]] ))
+    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_dscpacklib} ${LDFLAGS}"
@@ -368,7 +395,7 @@ if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_dscpacklib} ${MPI_LIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(DSC_CloseSolver,,
-      AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a)]]))  
+      AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
     LIBS="${SAVE_LIBS}"
   AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, true ) 
   amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
@@ -381,9 +408,6 @@ fi
 #  --enable-amesos-slus, --with-amesos-slusdir, --with-amesos-sluslib, 
 #    --with-amesos-slusincdir
 #
-TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
-		AMESOS_SLUS, no)
-
 #
 #  Test to see if everything is where it ought to be:
 #    Make sure that supermatrix.h is in the SuperLU serial include directory
@@ -412,7 +436,7 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h)
 
   AC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir]] ))
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir.  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_sluslib} ${LDFLAGS}"
@@ -422,7 +446,7 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
     SAVE_LIBS="${LIBS}"
     LIBS="${tac_with_amesos_sluslib} ${MPI_LIBS} ${LIBS}"
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
-      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a)]]))  
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/superlu.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
     LIBS="${SAVE_LIBS}"
   amesos_libs=" ${tac_with_amesos_sluslib} ${amesos_libs}"
 
@@ -430,6 +454,54 @@ if test "X$ac_cv_use_amesos_slus" != "Xno"; then
 else
   AM_CONDITIONAL(HAVE_AMESOS_SLUS, false ) 
 fi
+
+
+#
+#  --enable-amesos-kundert
+#
+#  NOTE:  Kundert is supported, but not tested as of May 13, 2003 
+#  HAVE_AMESOS_KUNDERT is undef'd in Amesos_ConfigDefs.h 
+#
+
+if test "X$ac_cv_use_amesos_kundert" != "Xno"; then
+  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, true ) 
+
+  # ------------------------------------------------------------------------
+  # Setup Platform for Kundert
+  # ------------------------------------------------------------------------
+
+ case "$target" in
+  *freebsd*) PLATFORM=freebsd
+           ;;
+  *linux*) PLATFORM=linux
+         ;;
+  *sgi*) PLATFORM=sgi
+       ;;
+  *powerpc-apple*) PLATFORM=ppc
+      ;;
+  *powerpc-ibm-aix*) PLATFORM=aix
+      ;;
+  *solaris*) PLATFORM=solaris
+      ;;
+  i386*mingw32msvc) PLATFORM=mingw
+       ;;
+  alpha*-dec-osf*) PLATFORM=DEC
+       ;;
+  *)   if test "x$PLATFORM" = "x"; then
+         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
+         Xyce_ARCH=linux
+         PLATFORM=linux
+       fi
+       ;;
+ esac
+
+ AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
+ CPPFLAGS="$CPPFLAGS -D$PLATFORM"
+else
+  AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, false ) 
+fi
+
+
 
 
 
@@ -457,12 +529,12 @@ AC_SUBST(AMESOS_LIBS,${amesos_libs})
 ## )
 ## AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
 
-AC_ARG_ENABLE(amesos-kundert,
-[AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],
-[ADDON_KS=$enableval],
-[ADDON_KS=no]
-)
-AM_CONDITIONAL(BUILD_KUNDERT, test X${ADDON_KS} = "Xyes")
+## AC_ARG_ENABLE(amesos-kundert,
+## [AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],
+## [ADDON_KS=$enableval],
+## [ADDON_KS=no]
+## )
+## AM_CONDITIONAL(HAVE_AMESOS_KUNDERT, test X${ADDON_KS} = "Xyes")
 
 # ------------------------------------------------------------------------
 # Checks for libraries
@@ -475,7 +547,7 @@ AM_CONDITIONAL(BUILD_KUNDERT, test X${ADDON_KS} = "Xyes")
 ##   AC_LANG_SAVE
 ##   AC_LANG_C
 ##   AC_SEARCH_LIBS(SuperLU_timer_,[superludist],,
-##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib)]]))  
+##   AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-ldflags (ex. --with-ldflags=-L/usr/path/lib).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]]))  
 ## fi
 
 dnl Replace `main' with a function in -lm:
@@ -488,9 +560,9 @@ TAC_ARG_WITH_BLASLIB
 TAC_ARG_WITH_LAPACKLIB
 # ------------------------------  ABCD
 
-  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
+  ACX_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])])
 # ------------------------------  ABCDE
-  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
+  ACX_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a).  See http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html for details.]])])
 
 # ------------------------------------------------------------------------
 # Checks for compiler characteristics
@@ -522,40 +594,6 @@ AC_SUBST(XTRALDADD)
 # ------------------------------------------------------------------------
 
 # ------------------------------------------------------------------------
-# Setup Platform for Kundert
-# ------------------------------------------------------------------------
-
-if test "X$ADDON_KS" = "Xyes"; then
-
- case "$target" in
-  *freebsd*) PLATFORM=freebsd
-           ;;
-  *linux*) PLATFORM=linux
-         ;;
-  *sgi*) PLATFORM=sgi
-       ;;
-  *powerpc-apple*) PLATFORM=ppc
-      ;;
-  *powerpc-ibm-aix*) PLATFORM=aix
-      ;;
-  *solaris*) PLATFORM=solaris
-      ;;
-  i386*mingw32msvc) PLATFORM=mingw
-       ;;
-  alpha*-dec-osf*) PLATFORM=DEC
-       ;;
-  *)   if test "x$PLATFORM" = "x"; then
-         AC_MSG_NOTICE([Unrecognized target, using generic linux for PLATFORM])
-         Xyce_ARCH=linux
-       fi
-       ;;
- esac
-
- AC_MSG_NOTICE([Adding Platform Define $PLATFORM to CCFLAGS])
- CPPFLAGS="$CPPFLAGS -D$PLATFORM"
-fi
-
-# ------------------------------------------------------------------------
 # Checks for system services
 # ------------------------------------------------------------------------
 
@@ -575,6 +613,9 @@ AC_CONFIG_FILES([
 		Makefile 
 		src/Makefile
 		test/Makefile
+		test/scripts/Makefile
+		test/scripts/daily/Makefile
+		test/scripts/daily/mpi/Makefile
 		])
 
 AC_OUTPUT()

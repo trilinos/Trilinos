@@ -296,7 +296,6 @@ int DscpackOO::Solve(bool factor) {
   vector<double> MyANonZ;
   int numprocs  = Comm.NumProc() ;            
   
-  assert(factor) ;
   if ( factor ) { 
                                     DscNumProcs = -13 ; 
 				    MyDscRank = -13 ; 

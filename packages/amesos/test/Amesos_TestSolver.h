@@ -17,9 +17,6 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 		      bool tranpose, int special );
 
 #if 0
-#if ( ! defined( CYGWINGCC ) && ! defined( TFLOP ) ) 
-#define TEST_KUNDERT
-#endif
 #if ( ! defined( TFLOP ) ) 
 #define TEST_AZTEC
 #endif

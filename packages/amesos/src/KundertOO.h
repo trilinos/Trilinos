@@ -20,12 +20,33 @@ class Epetra_RowMatrix;
 class KundertOO {
     
   public:
+  //@{ \name Constructor methods
+  //! Kundert Constructor.
+  /*! Creates an Kundert instance, using an Epetra_LinearProblem,
+      passing in an already-defined Epetra_LinearProblem object.
+  */
   KundertOO(Epetra_RowMatrix * A, Epetra_MultiVector * X, Epetra_MultiVector * B);
 
+  //! Kundert Destructor.
+  /*! Completely deletes a Kundert object.  
+  */
   KundertOO();
+  //@}
 
   virtual ~KundertOO(void);
   
+  bool GetTrans( ) const { return Transpose_ ;} ;
+
+  void SetTrans( bool trans ) { Transpose_ = trans ;} ; 
+
+  //@{ \name Solve method
+  //!  All computation is performed during the call to Solve() 
+  /*!  Factor controls whether or not the matrix should be factored prior to the solve.
+       Default is true.
+   */
+  int Solve() ;
+
+ protected:
   int SetUserMatrix(Epetra_RowMatrix * UserMatrix);
 
   int SetLHS(Epetra_MultiVector * X);
@@ -38,15 +59,8 @@ class KundertOO {
 
   Epetra_MultiVector * GetRHS() const {return(B_);};
 
-  bool GetTrans( ) const { return Transpose_ ;} ;
-
-  void SetTrans( bool trans ) { Transpose_ = trans ;} ; 
-
   int SetKundertDefaults();
 
-  int Solve() ;
-
- protected:
 
   Epetra_Operator * UserOperator_;
   Epetra_RowMatrix * UserMatrix_;
