@@ -304,6 +304,19 @@ int TestOneMatrix( vector<bool> AmesosClassesInstalled,
   return NumErrors;
 } 
 
+#if 0
+#define TEST_P(variable) { { \
+                      if ( true ) { cerr << "AMESOS_PRINT " << # variable << "= " << variable << endl; };  }\
+                   }
+
+
+#define TEST_PRINT(variable) { { \
+                      if ( true ) { cerr << "AMESOS_PRINT " << # variable  << "= " << variable <<  ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; };  }\
+                   }
+
+#endif
+
 //
 //  Usage:  
 //
@@ -345,6 +358,8 @@ int main( int argc, char *argv[] ) {
   }
 
   vector<bool> AmesosClassesInstalled( NumAmesosClasses );
+
+
 
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);

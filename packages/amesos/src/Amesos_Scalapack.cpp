@@ -469,14 +469,26 @@ int Amesos_Scalapack::RedistributeA( ) {
     if ( TwoD_distribution_ ) {
       assert( myrow == myprow_ ) ; 
       assert( mycol == mypcol_ ) ; 
-      lda_ = NumOurRows_ ;
+      lda_ = EPETRA_MAX(1,NumOurRows_) ;
     } else { 
       assert( myrow == 0 ) ; 
       assert( mycol == iam_ ) ; 
       nb_ = m_per_p_;
-      lda_ = NumGlobalElements_;
+      lda_ = EPETRA_MAX(1,NumGlobalElements_);
     }
-    if ( false || debug_ == 1) cout  << "iam_ = " << iam_  << "Amesos_Scalaapack.cpp:430" << endl;
+    if ( false || debug_ == 1) cout  << "iam_ = " << iam_  
+				     << "Amesos_Scalapack.cpp: " << __LINE__ 
+				     << " TwoD_distribution_ = "  << TwoD_distribution_ 
+				     << " NumGlobalElements_ = "  << NumGlobalElements_ 
+				     << " debug_ = "  << debug_ 
+				     << " nb_ = "  << nb_ 
+				     << " lda_ = "  << lda_ 
+				     << " nprow_ = "  << nprow_ 
+				     << " npcol_ = "  << npcol_ 
+				     << " myprow_ = "  << myprow_ 
+				     << " mypcol_ = "  << mypcol_ 
+				     << " iam_ = "  << iam_ << endl ;
+    AMESOS_PRINT( myprow_ );
     DESCINIT_F77(DescA_, 
 		 &NumGlobalElements_, 
 		 &NumGlobalElements_, 
@@ -543,8 +555,8 @@ int Amesos_Scalapack::ConvertToScalapack(){
 
       DenseA_.resize( NumOurRows_ * NumOurColumns_ ); 
       for ( int i = 0 ; i < (int)DenseA_.size() ; i++ ) DenseA_[i] = 0 ; 
-      int lda = NumOurRows_ ;
-      assert( DescA_[8] == lda ) ;
+      assert( lda_ == EPETRA_MAX(1,NumOurRows_) ) ;
+      assert( DescA_[8] == lda_ ) ;
       
       int NzThisRow ;
       int MyRow;
@@ -553,7 +565,6 @@ int Amesos_Scalapack::ConvertToScalapack(){
       int *ColIndices;
       int MaxNumEntries = FatOut_->MaxNumEntries();
      
-      assert( DescA_[8] == NumGlobalElements_ ) ; //  Double check Lda
       vector<int>ColIndicesV(MaxNumEntries);
       vector<double>RowValuesV(MaxNumEntries);
     
@@ -597,7 +608,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
 	  assert( OurExcessCols >= 0 &&  OurExcessCols < nb_ );
 	  int MyCol = UniformCols + OurExcessCols ; 
 
-	  DenseA_[ MyCol * lda + MyRow ] = RowValues[j] ; 
+	  DenseA_[ MyCol * lda_ + MyRow ] = RowValues[j] ; 
 	}
       }
       
@@ -619,7 +630,7 @@ int Amesos_Scalapack::ConvertToScalapack(){
       int *ColIndices;
       int MaxNumEntries = ScaLAPACK1DMatrix_->MaxNumEntries();
      
-      assert( DescA_[8] == NumGlobalElements_ ) ; //  Double check Lda
+      assert( DescA_[8] == lda_ ) ; //  Double check Lda
       vector<int>ColIndicesV(MaxNumEntries);
       vector<double>RowValuesV(MaxNumEntries);
     
@@ -919,7 +930,14 @@ int Amesos_Scalapack::Solve() {
   if ( iam_ < nprow_ * npcol_ ) {
     assert( ScalapackX->ExtractView( &ScalapackXvalues, &ScalapackXlda ) == 0 ) ; 
 
-    assert( iam_ >0 || ScalapackXlda == NumGlobalElements_ ) ; 
+    if ( false ) cout << "Amesos_Scalapack.cpp: " << __LINE__ << " ScalapackXlda = "  <<  ScalapackXlda 
+	 << " lda_ = "  << lda_ 
+	 << " nprow_ = "  << nprow_ 
+	 << " npcol_ = "  << npcol_ 
+	 << " myprow_ = "  << myprow_ 
+	 << " mypcol_ = "  << mypcol_ 
+	 << " iam_ = "  << iam_ << endl ;
+    if (  TwoD_distribution_ )    assert( mypcol_ >0 || EPETRA_MAX(ScalapackXlda,1) == lda_ ) ; 
     
     DESCINIT_F77(DescX, 
 		 &NumGlobalElements_, 

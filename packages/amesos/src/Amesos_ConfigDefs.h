@@ -68,5 +68,12 @@
   //  Disable Kundert for now (we test the KundertOO interface, 
   //  but support the Epetra_CrsKundertSparse interface
 #undef HAVE_AMESOS_KUNDERT
-#endif 
 
+#define AMESOS_PRINT(variable) { { \
+                      if ( debug_ != 0) { cerr << "AMESOS_PRINT " << # variable << "= " << variable << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; }  }\
+                   }
+
+
+
+#endif 
