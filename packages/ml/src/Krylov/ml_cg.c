@@ -66,8 +66,8 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
        printf("ML_CG initial residual norm = %e \n", init_norm);
    if ( init_norm == 0.0 ) 
    {
-      free(r); free(p); free(ap);
-      if ( precon != NULL ) free(z);
+      ML_free(r); ML_free(p); ML_free(ap);
+      if ( precon != NULL ) ML_free(z);
       return 1;
    }
 
@@ -130,8 +130,8 @@ int ML_CG_Solve(ML_Krylov *data, int length, double *rhs, double *sol)
    /* de-allocate storage for temporary vectors */
    /* ----------------------------------------------------------------*/
 
-   free(r); free(p); free(ap);
-   if ( precon != NULL) free(z);
+   ML_free(r); ML_free(p); ML_free(ap);
+   if ( precon != NULL) ML_free(z);
    return 1;
 }
 
@@ -191,12 +191,12 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    for ( i = 0; i < nprocs; i++ ) offset_array[i] = 0;
    offset_array[mypid] = length;
    ML_gsum_vec_int(offset_array, itmp_array, nprocs, comm);
-   free(itmp_array);
+   ML_free(itmp_array);
    myoffset = 0;
    for ( i = 0; i < mypid; i++ ) myoffset += offset_array[i];
    total_length = 0;
    for ( i = 0; i < nprocs; i++ ) total_length += offset_array[i];
-   free(offset_array);
+   ML_free(offset_array);
 
    getrow_comm = matrix->getrow->pre_comm;
    if (getrow_comm != NULL) {
@@ -210,7 +210,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
    }
    index_array = (int *) ML_allocate((ext_leng+1)*sizeof(int));
    for (i = 0; i <= ext_leng; i++) index_array[i] = (int) u[i];
-   free(u);
+   ML_free(u);
 
    /* ----------------------------------------------------------------*/
    /* allocate temporary memory  */
@@ -259,7 +259,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       while(ML_Operator_Getrow(matrix,1,&i,allocated,colInd,colVal,&ncnt)==0)
       {
          allocated *= 2;
-         free(colInd); free(colVal);
+         ML_free(colInd); ML_free(colVal);
          colInd = (int    *) ML_allocate( allocated * sizeof(int) );
          colVal = (double *) ML_allocate( allocated * sizeof(double) );
       }
@@ -321,7 +321,7 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
       printf("Min Row Sum = %e\n", min_row_sum);
       if (Nbc != 0) printf("no. of BC's = %d\n", Nbc);
    }
-   free(colInd); free(colVal);
+   ML_free(colInd); ML_free(colVal);
 
    /* ----------------------------------------------------------------*/
    /* compute initial residual vector and norm */
@@ -342,9 +342,9 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
        data->ML_eigen_max = max_row_sum;
        data->ML_eigen_min = min_row_sum;
      }
-     if (r  != NULL) free(r);
-     if (p  != NULL) free(p);
-     if (ap != NULL) free(ap);
+     if (r  != NULL) ML_free(r);
+     if (p  != NULL) ML_free(p);
+     if (ap != NULL) ML_free(ap);
 
      return 1;
    }
@@ -486,15 +486,15 @@ if (maxiter == 0) {
 
    if ( length > 0 )
    {
-      free(u); free(r); free(p); free(ap);
-      free(rhs);
-      free(diag);
+      ML_free(u); ML_free(r); ML_free(p); ML_free(ap);
+      ML_free(rhs);
+      ML_free(diag);
    }
-   free(alpha_array);
-   free(rnorm_array);
-   free(index_array);
-   for ( i = 0; i <= original_maxiter; i++ ) free(Tmat[i]);
-   free(Tmat);
+   ML_free(alpha_array);
+   ML_free(rnorm_array);
+   ML_free(index_array);
+   for ( i = 0; i <= original_maxiter; i++ ) ML_free(Tmat[i]);
+   ML_free(Tmat);
    return 1;
 }
 
