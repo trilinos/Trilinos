@@ -46,24 +46,13 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int ierr = 0, i, j;
+	int i;
 	double zero = 0.0;
 
 #ifdef EPETRA_MPI
 
 	// Initialize MPI
-
 	MPI_Init(&argc,&argv);
-
-	int size, rank; // Number of MPI processes, My process ID
-
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-#else
-
-	int size = 1; // Serial case (not using MPI)
-	int rank = 0;
 
 #endif
 
@@ -78,14 +67,11 @@ int main(int argc, char *argv[]) {
 	int NumProc = Comm.NumProc();
 	cout << "Processor "<<MyPID<<" of "<< NumProc << " is alive."<<endl;
 
-	bool verbose = (MyPID==0);
+	//bool verbose = (MyPID==0);
 
 	//  Dimension of the matrix
         int nx = 10;  			// Discretization points in any one direction.
 	int NumGlobalElements = nx*nx;	// Size of matrix nx*nx
-
-	// We will use zero based indices
-	int IndexBase = 0;
 
 	// Construct a Map that puts approximately the same number of
 	// equations on each processor.
@@ -239,11 +225,11 @@ int main(int argc, char *argv[]) {
 	int block = 1;
 	int length = 20;
 	int nev = 4;
-	double tol = 1.0e-14;
+	double tol = 1.0e-8;
 	string which="SM";
 	int restarts = 300;
-	//int step = 1;
-	int step = restarts*length*block;
+	int step = 1;
+	//int step = restarts*length*block;
 
 	// Create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by Anasazi::PetraVec.
@@ -260,7 +246,7 @@ int main(int argc, char *argv[]) {
 						which, step, restarts);
 	
 	// Inform the solver that the problem is symmetric
-	//MyBlockArnoldi.setSymmetric(true);
+	MyBlockArnoldi.setSymmetric(rho==0.0); 
 	MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
@@ -338,7 +324,9 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-	delete [] resids, evalr, evali;
+	delete [] resids;
+	delete [] evalr;
+	delete [] evali;
 	delete [] NumNz;
 	delete [] Values;
 	delete [] Indices;

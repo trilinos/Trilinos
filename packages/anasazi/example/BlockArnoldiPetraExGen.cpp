@@ -51,26 +51,14 @@
 #include "Epetra_Map.h"
 
 int main(int argc, char *argv[]) {
-	int ierr = 0, i, j;
+	int i;
 
 #ifdef EPETRA_MPI
 
 	// Initialize MPI
-
 	MPI_Init(&argc,&argv);
 
-	int size, rank; // Number of MPI processes, My process ID
-
-	MPI_Comm_size(MPI_COMM_WORLD, &size);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
-#else
-
-	int size = 1; // Serial case (not using MPI)
-	int rank = 0;
-
 #endif
-
 
 #ifdef EPETRA_MPI
 	Epetra_MpiComm & Comm = *new Epetra_MpiComm(MPI_COMM_WORLD);
@@ -86,9 +74,6 @@ int main(int argc, char *argv[]) {
 
         //  Dimension of the matrix
         int NumGlobalElements = 1000;
-
-        // We will use zero based indices
-        int IndexBase = 0;
 
         // Construct a Map that puts approximately the same number of
         // equations on each processor.
