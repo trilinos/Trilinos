@@ -38,7 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 // #include "CrsMatrixTranspose.h"
-#include "Epetra_Time_.h"
+#include "Epetra_Time.h"
 
 int Superludist_NumProcRows( int NumProcs ) {
 #ifdef TFLOP
@@ -253,11 +253,6 @@ int Amesos_Superludist::SetParameters( Teuchos::ParameterList &ParameterList ) {
     else if( FactOption == "SamePattern" ) FactOption_ = SamePattern;
     else if( FactOption == "FACTORED" ) FactOption_ = FACTORED;
 
-    /* I moved this on the non-superlu level 
-    MaxProcesses_ = SuperludistParams.get("MaxProcesses",MaxProcesses_);
-    if( MaxProcesses_ > Comm().NumProc() ) MaxProcesses_ = Comm().NumProc();
-    */
-
     /* Ken, should we support these too ?? 
     if( SuperludistParams.isParameter("nprow") )
       nprow_ = SuperludistParams.get("nprow",MaxProcesses_);
@@ -359,6 +354,7 @@ int Amesos_Superludist::RedistributeA( ) {
       nprow_ = (int) pow(1.0 * NumberOfProcesses, 0.25001 );
       npcol_ = (int) sqrt(1.0 * NumberOfProcesses);
       if( nprow_ < 1 ) nprow_ = 1;
+      if( npcol_ < 1 ) npcol_ = 1;
       npcol_ /= nprow_;
       NumberOfProcesses = npcol_ * nprow_;
     } else {
@@ -368,6 +364,13 @@ int Amesos_Superludist::RedistributeA( ) {
     }
   }
   
+  if( nprow_ <=0 || npcol_ <= 0 || NumberOfProcesses <=0 ) {
+    cerr << "Amesos_Superludist:Error: wrong value for MaxProcs ("
+	 << MaxProcesses_ << "), or nprow (" << nprow_ 
+	 << ") or npcol (" << npcol_ << ")" << endl;
+    exit( EXIT_FAILURE );
+  }
+
   //
   //  Compute a cannonical uniform distribution: MyFirstElement - The
   //  first element which this processor would have
