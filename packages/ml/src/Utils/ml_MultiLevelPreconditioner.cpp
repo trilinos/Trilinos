@@ -1508,7 +1508,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
     // Tmat (one for each level, except first)
     if (SolvingMaxwell_)
-      for( int i=0 ; i<NumLevels_-1 ; ++i ) {
+      for( int i=0 ; i<NumLevels_ ; ++i ) {
         char name[80];
         sprintf(name,"Tmat_%d", LevelID_[i]);
         ML_Operator_Print(Tmat_array[LevelID_[i]], name);
