@@ -340,11 +340,11 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   //! Initialize all values in a multi-vector with constant value.
   /*!
     \param In
-           Scalar - Value to use.
+           ScalarConstant - Value to use.
 
     \return Integer error code, set to 0 if successful.
   */
-  int PutScalar (double Scalar);
+  int PutScalar (double ScalarConstant);
   // Mathematical functions.
 
   //! Computes dot product of each corresponding pair of vectors.
@@ -389,18 +389,18 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   */
   int Reciprocal(const Epetra_MultiVector& A);
 
-  //! Scale the current values of a multi-vector, \e this = Scalar*\e this.
+  //! Scale the current values of a multi-vector, \e this = ScalarValue*\e this.
   /*!
     \param In
-           Scalar - Scale value.
+           ScalarValue - Scale value.
     \param Out
            \e This - Multi-vector with scaled values.
 
     \return Integer error code, set to 0 if successful.
   */
-  int Scale(double Scalar);
+  int Scale(double ScalarValue);
 
-  //! Replace multi-vector values with scaled values of A, \e this = Scalar*A.
+  //! Replace multi-vector values with scaled values of A, \e this = ScalarA*A.
   /*!
     \param In
            ScalarA - Scale value.
@@ -413,22 +413,22 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   */
   int Scale(double ScalarA, const Epetra_MultiVector& A);
 
-  //! Update multi-vector values with scaled values of A, \e this = Scalar*\e this + ScalarA*A.
+  //! Update multi-vector values with scaled values of A, \e this = ScalarThis*\e this + ScalarA*A.
   /*!
     \param In
            ScalarA - Scale value for A.
     \param In
            A - Multi-vector to add.
     \param In
-           Scalar - Scale value for \e this.
+           ScalarThis - Scale value for \e this.
     \param Out
            \e This - Multi-vector with updatede values.
 
     \return Integer error code, set to 0 if successful.
   */
-  int Update(double ScalarA, const Epetra_MultiVector& A, double Scalar);
+  int Update(double ScalarA, const Epetra_MultiVector& A, double ScalarThis);
 
-  //! Update multi-vector with scaled values of A and B, \e this = Scalar*\e this + ScalarA*A + ScalarB*B.
+  //! Update multi-vector with scaled values of A and B, \e this = ScalarThis*\e this + ScalarA*A + ScalarB*B.
   /*!
     \param In
            ScalarA - Scale value for A.
@@ -439,14 +439,14 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
     \param In
            B - Multi-vector to add.
     \param In
-           Scalar - Scale value for \e this.
+           ScalarThis - Scale value for \e this.
     \param Out
            \e This - Multi-vector with updatede values.
 
     \return Integer error code, set to 0 if successful.
   */
   int Update(double ScalarA, const Epetra_MultiVector& A, 
-		     double ScalarB, const Epetra_MultiVector& B, double Scalar);
+		     double ScalarB, const Epetra_MultiVector& B, double ScalarThis);
 
   //! Compute 1-norm of each vector in multi-vector.
   /*!
@@ -521,7 +521,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   int MeanValue (double * Result) const;
   
   
-  //! Matrix-Matrix multiplication, \e this = Scalar*\e this + ScalarAB*A*B.
+  //! Matrix-Matrix multiplication, \e this = ScalarThis*\e this + ScalarAB*A*B.
   /*! This function performs a variety of matrix-matrix multiply operations, interpreting
       the Epetra_MultiVectors (\e this-aka C , A and B) as 2D matrices.  Variations are due to
       the fact that A, B and C can be local replicated or global distributed
@@ -562,7 +562,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   \param In
          B - Multi-vector.
   \param In
-         Scalar - Scalar to multiply with \e this.
+         ScalarThis - Scalar to multiply with \e this.
 
     \return Integer error code, set to 0 if successful.
 
@@ -575,7 +575,7 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   */
   int Multiply(char TransA, char TransB, double ScalarAB, 
 		       const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double Scalar );
+		       double ScalarThis );
   
 
 
@@ -583,22 +583,22 @@ class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, pu
   /*! This function supports diagonal matrix multiply.  A is usually a single vector
       while B and \e this may have one or more columns.  Note that B and \e this must
       have the same shape.  A can be one vector or have the same shape as B.  The actual
-      computation is \e this = Scalar * \e this + ScalarAB * B @ A where @ denotes element-wise
+      computation is \e this = ScalarThis * \e this + ScalarAB * B @ A where @ denotes element-wise
       multiplication.
   */
   int Multiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double Scalar );
+		       double ScalarThis );
 
 
   //! Multiply a Epetra_MultiVector by the reciprocal of another, element-by-element.
   /*! This function supports diagonal matrix scaling.  A is usually a single vector
       while B and \e this may have one or more columns.  Note that B and \e this must
       have the same shape.  A can be one vector or have the same shape as B. The actual
-      computation is \e this = Scalar * \e this + ScalarAB * B @ A where @ denotes element-wise
+      computation is \e this = ScalarThis * \e this + ScalarAB * B @ A where @ denotes element-wise
       division.
   */
   int ReciprocalMultiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double Scalar );
+		       double ScalarThis );
 
 
   // Random number utilities

@@ -119,11 +119,11 @@ class Epetra_VbrMatrix: public Epetra_DistObject, public Epetra_Flops, public Ep
   //! Initialize all values in graph of the matrix with constant value.
   /*!
     \param In
-           Scalar - Value to use.
+           ScalarConstant - Value to use.
 
     \return Integer error code, set to 0 if successful.
   */
-    int PutScalar(double Scalar);
+    int PutScalar(double ScalarConstant);
 
   //! Initiate insertion of a list of elements in a given global row of the matrix, values are inserted via SubmitEntry().
   /*!

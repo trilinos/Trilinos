@@ -214,7 +214,7 @@ double* Epetra_SerialDenseMatrix::operator [] (int ColIndex)  {
 int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double ScalarAB, 
 				      const Epetra_SerialDenseMatrix& A, 
 				      const Epetra_SerialDenseMatrix& B,
-				      double Scalar ) {
+				      double ScalarThis ) {
   // Check for compatible dimensions
   
   int A_nrows = (TransA=='T') ? A.N() : A.M();
@@ -229,7 +229,7 @@ int  Epetra_SerialDenseMatrix::Multiply (char TransA, char TransB, double Scalar
     
   // Call GEMM function
   GEMM(TransA, TransB, M_, N_, A_ncols, ScalarAB, A.A(), A.LDA(), 
-       B.A(), B.LDA(), Scalar, A_, LDA_);
+       B.A(), B.LDA(), ScalarThis, A_, LDA_);
   long int nflops = 2*M_;
   nflops *= N_;
   nflops *= A_ncols;

@@ -156,7 +156,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   
   //@{ \name Mathematical methods
 
-  //! Matrix-Matrix multiplication, \e this = Scalar*\e this + ScalarAB*A*B.
+  //! Matrix-Matrix multiplication, \e this = ScalarThis*\e this + ScalarAB*A*B.
   /*! This function performs a variety of matrix-matrix multiply operations.
 
   \param In
@@ -171,7 +171,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   \param In
          B - Dense Matrix.
   \param In
-         Scalar - Scalar to multiply with \e this.
+         ScalarThis - Scalar to multiply with \e this.
 
     \return Integer error code, set to 0 if successful.
 	 
@@ -179,7 +179,7 @@ class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object,
   int  Multiply (char TransA, char TransB, double ScalarAB, 
                  const Epetra_SerialDenseMatrix& A, 
                  const Epetra_SerialDenseMatrix& B,
-                 double Scalar );
+                 double ScalarThis );
   //@}
 
   //@{ \name Data Accessor methods

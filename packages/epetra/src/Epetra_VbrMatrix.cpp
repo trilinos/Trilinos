@@ -245,7 +245,7 @@ Epetra_VbrMatrix::~Epetra_VbrMatrix(){
 }
 
 //==============================================================================
-int Epetra_VbrMatrix::PutScalar(double Scalar) 
+int Epetra_VbrMatrix::PutScalar(double ScalarConstant) 
 {
   for (int i=0; i<NumMyBlockRows_; i++) {
     int NumBlockEntries = NumBlockEntriesPerRow_[i];
@@ -256,7 +256,7 @@ int Epetra_VbrMatrix::PutScalar(double Scalar)
       for (int col=0; col < ColDim; col++) {
 	double * Values = Values_[i][j]+col*LDA;
 	for (int row=0; row < RowDim; row++)
-	  *Values++ = Scalar;
+	  *Values++ = ScalarConstant;
       }
     }
   }

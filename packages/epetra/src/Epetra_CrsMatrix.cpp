@@ -172,11 +172,11 @@ Epetra_CrsMatrix::~Epetra_CrsMatrix(){
 }
 
 //==============================================================================
-int Epetra_CrsMatrix::PutScalar(double Scalar) 
+int Epetra_CrsMatrix::PutScalar(double ScalarConstant) 
 {
   for (int i=0; i<NumMyRows_; i++) {
     int NumEntries = NumEntriesPerRow_[i];
-    for (int j=0; j< NumEntries; j++) Values_[i][j] = Scalar;
+    for (int j=0; j< NumEntries; j++) Values_[i][j] = ScalarConstant;
   }
   return(0);
 }

@@ -126,11 +126,11 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   //! Initialize all values in the graph of the matrix with constant value.
   /*!
     \param In
-           Scalar - Value to use.
+           ScalarConstant - Value to use.
 
     \return Integer error code, set to 0 if successful.
   */
-    int PutScalar(double Scalar);
+    int PutScalar(double ScalarConstant);
 
   //! Insert a list of elements in a given global row of the matrix.
   /*!

@@ -401,12 +401,12 @@ int Epetra_MultiVector::ExtractView(double ***ArrayOfPointers) const {
       
       
 //=========================================================================
-int Epetra_MultiVector::PutScalar(double Scalar) {
+int Epetra_MultiVector::PutScalar(double ScalarConstant) {
 
-  // Fills MultiVector with the value Scalar **/
+  // Fills MultiVector with the value ScalarConstant **/
 
   for (int i = 0; i < NumVectors_; i++)
-    for (int j=0; j<MyLength_; j++) Pointers_[i][j] = Scalar;
+    for (int j=0; j<MyLength_; j++) Pointers_[i][j] = ScalarConstant;
   return(0);
 }
 //=========================================================================
@@ -819,12 +819,12 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   return(0);
 }
   //=========================================================================
-  int Epetra_MultiVector::Scale (double Scalar) {
+  int Epetra_MultiVector::Scale (double ScalarValue) {
 
     // scales a MultiVector in place by a scalar
   
     for (int i = 0; i < NumVectors_; i++)
-      SCAL(MyLength_, Scalar, Pointers_[i]);
+      SCAL(MyLength_, ScalarValue, Pointers_[i]);
 
     UpdateFlops(GlobalLength_*NumVectors_);
 
@@ -851,24 +851,24 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   }
 
   //=========================================================================
-  int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A, double Scalar) {
+  int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A, double ScalarThis) {
 
     int i, j;
 
-    // linear combination of two MultiVectors: this = Scalar * this + ScalarA * A
+    // linear combination of two MultiVectors: this = ScalarThis * this + ScalarA * A
 
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   if (MyLength_ != A.MyLength()) EPETRA_CHK_ERR(-2);
 
     double **A_Pointers = (double**)A.Pointers();
 
-    if (Scalar==0.0)
+    if (ScalarThis==0.0)
       {
 	for (i = 0; i < NumVectors_; i++)
 	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = ScalarA * A_Pointers[i][j];
 	UpdateFlops(GlobalLength_*NumVectors_);
       }
-    else if (Scalar==1.0)
+    else if (ScalarThis==1.0)
       {
 	for (i = 0; i < NumVectors_; i++)
 	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = Pointers_[i][j] + ScalarA * A_Pointers[i][j];
@@ -877,13 +877,13 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
     else if (ScalarA==1.0)
       {
 	for (i = 0; i < NumVectors_; i++)
-	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = Scalar * Pointers_[i][j] + A_Pointers[i][j];
+	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = ScalarThis * Pointers_[i][j] + A_Pointers[i][j];
 	UpdateFlops(2*GlobalLength_*NumVectors_);
       }
     else
       {
 	for (i = 0; i < NumVectors_; i++)
-	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = Scalar * Pointers_[i][j] +
+	  for (j = 0; j < MyLength_; j++) Pointers_[i][j] = ScalarThis * Pointers_[i][j] +
 					                    ScalarA *  A_Pointers[i][j];
 	UpdateFlops(3*GlobalLength_*NumVectors_);
       }
@@ -893,19 +893,19 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
 
 //=========================================================================
 int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A, 
-				  double ScalarB, const Epetra_MultiVector& B, double Scalar) {
+				  double ScalarB, const Epetra_MultiVector& B, double ScalarThis) {
   
   int i, j;
   
   // linear combination of three MultiVectors: 
-  // this = Scalar * this + ScalarA * A + ScalarB * B
+  // this = ScalarThis * this + ScalarA * A + ScalarB * B
   
   if (ScalarA==0.0) {
-    EPETRA_CHK_ERR(Update(ScalarB, B, Scalar));
+    EPETRA_CHK_ERR(Update(ScalarB, B, ScalarThis));
     return(0);
   }
   if (ScalarB==0.0) {
-    EPETRA_CHK_ERR(Update(ScalarA, A, Scalar));
+    EPETRA_CHK_ERR(Update(ScalarA, A, ScalarThis));
     return(0);
   }
 			   
@@ -915,7 +915,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
     double **A_Pointers = (double**)A.Pointers();
     double **B_Pointers = (double**)B.Pointers();
 
-    if (Scalar==0.0)
+    if (ScalarThis==0.0)
       {
 	if (ScalarA==1.0)
 	  {
@@ -939,7 +939,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
 	    UpdateFlops(3*GlobalLength_*NumVectors_);
 	  }
       }
-    else if (Scalar==1.0)
+    else if (ScalarThis==1.0)
       {
 	if (ScalarA==1.0)
 	  {
@@ -968,7 +968,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
 	if (ScalarA==1.0)
 	  {
 	    for (i = 0; i < NumVectors_; i++)
-	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  Scalar *    Pointers_[i][j] +
+	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  ScalarThis *    Pointers_[i][j] +
 						                           A_Pointers[i][j] + 
 						                 ScalarB * B_Pointers[i][j];
 	    UpdateFlops(4*GlobalLength_*NumVectors_);
@@ -976,7 +976,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
 	else if (ScalarB==1.0)
 	  {
 	    for (i = 0; i < NumVectors_; i++)
-	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  Scalar *    Pointers_[i][j] +
+	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  ScalarThis *    Pointers_[i][j] +
 						                 ScalarA * A_Pointers[i][j] +
 						                           B_Pointers[i][j];
 	    UpdateFlops(4*GlobalLength_*NumVectors_);
@@ -984,7 +984,7 @@ int Epetra_MultiVector::Update(double ScalarA, const Epetra_MultiVector& A,
 	else
 	  {
 	    for (i = 0; i < NumVectors_; i++)
-	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  Scalar *    Pointers_[i][j] +
+	      for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  ScalarThis *    Pointers_[i][j] +
 						                 ScalarA * A_Pointers[i][j] + 
 						                 ScalarB * B_Pointers[i][j];
 	    UpdateFlops(5*GlobalLength_*NumVectors_);
@@ -1148,7 +1148,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
   int  Epetra_MultiVector::Multiply (char TransA, char TransB, double ScalarAB, 
 					const Epetra_MultiVector& A, 
 					const Epetra_MultiVector& B,
-					double Scalar ) {
+					double ScalarThis ) {
 
     // This routine performs a variety of matrix-matrix multiply operations, interpreting
     // the Epetra_MultiVector (this-aka C , A and B) as 2D matrices.  Variations are due to
@@ -1188,7 +1188,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     int B_nrows = (TransB=='T') ? B.NumVectors() : B.MyLength();
     int B_ncols = (TransB=='T') ? B.MyLength() : B.NumVectors();
 
-    double Scalar_local = Scalar; // local copy of Scalar
+    double Scalar_local = ScalarThis; // local copy of Scalar
 
     if (MyLength_        != A_nrows     ||
 	A_ncols        != B_nrows     ||
@@ -1205,7 +1205,7 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
     if (Case1 || Case2 || Case3)
       {
-	if (Scalar!=0.0 && Case2)
+	if (ScalarThis!=0.0 && Case2)
 	  {
 	    const int MyPID = Comm_->MyPID();
 	    if (MyPID!=0) Scalar_local = 0.0;
@@ -1250,20 +1250,20 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 	  {	    
 	    UpdateFlops(2*m*n*k);
 	    if (ScalarAB!=1.0) UpdateFlops(m*n);
-	    if (Scalar==1.0) UpdateFlops(m*n); else if (Scalar!=0.0) UpdateFlops(2*m*n);
+	    if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
 	  }
 	else if (Case2)
 	  {	    
 	    UpdateFlops(2*m*n*A.GlobalLength());
 	    if (ScalarAB!=1.0) UpdateFlops(m*n);
-	    if (Scalar==1.0) UpdateFlops(m*n); else if (Scalar!=0.0) UpdateFlops(2*m*n);
+	    if (ScalarThis==1.0) UpdateFlops(m*n); else if (ScalarThis!=0.0) UpdateFlops(2*m*n);
 	  }
 	else
 	  {
 	    UpdateFlops(2*GlobalLength_*n*k);
 	    if (ScalarAB!=1.0) UpdateFlops(GlobalLength_*n);
-	    if (Scalar==1.0) UpdateFlops(GlobalLength_*n);
-	    else if (Scalar!=0.0) UpdateFlops(2*GlobalLength_*n);
+	    if (ScalarThis==1.0) UpdateFlops(GlobalLength_*n);
+	    else if (ScalarThis!=0.0) UpdateFlops(2*GlobalLength_*n);
 	  }
 
 	// If A or B were not strided, dispose of extra copies.
@@ -1292,15 +1292,15 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
 
 //=========================================================================
 int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double Scalar) {
+		       double ScalarThis) {
   
   int i, j;
   
   // Hadamard product of two MultiVectors: 
-  // this = Scalar * this + ScalarAB * A * B (element-wise)
+  // this = ScalarThis * this + ScalarAB * A * B (element-wise)
   
   if (ScalarAB==0.0) {
-    EPETRA_CHK_ERR(Scale(Scalar));
+    EPETRA_CHK_ERR(Scale(ScalarThis));
     return(0);
   }
 			   
@@ -1314,7 +1314,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
   int IncA = 1;
   if (A.NumVectors() == 1 ) IncA = 0;
 
-    if (Scalar==0.0) {
+    if (ScalarThis==0.0) {
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
@@ -1333,7 +1333,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	  UpdateFlops(2*GlobalLength_*NumVectors_);
 	}
     }
-    else if (Scalar==1.0) {
+    else if (ScalarThis==1.0) {
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
@@ -1352,12 +1352,12 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	    UpdateFlops(3*GlobalLength_*NumVectors_);
 	  }
     }
-    else { // if (Scalar!=1.0 && Scalar !=0 ) 
+    else { // if (ScalarThis!=1.0 && ScalarThis !=0 ) 
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
 	    double * A = A_Pointers[i*IncA];
-	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  Scalar * Pointers_[i][j] + A[j] * B_Pointers[i][j];
+	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  ScalarThis * Pointers_[i][j] + A[j] * B_Pointers[i][j];
 	  }
 	  UpdateFlops(3*GlobalLength_*NumVectors_);
 	}
@@ -1365,7 +1365,7 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 	{
 	  for (i = 0; i < NumVectors_; i++) {
 	    double * A = A_Pointers[i*IncA];
-	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] = Scalar * Pointers_[i][j] + ScalarAB * A[j] *
+	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] = ScalarThis * Pointers_[i][j] + ScalarAB * A[j] *
 					      B_Pointers[i][j];
 	    }
 	    UpdateFlops(4*GlobalLength_*NumVectors_);
@@ -1375,15 +1375,15 @@ int Epetra_MultiVector::Multiply(double ScalarAB, const Epetra_MultiVector& A, c
 }
 //=========================================================================
 int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVector& A, const Epetra_MultiVector& B,
-		       double Scalar) {
+		       double ScalarThis) {
   
   int i, j;
   
   // Hadamard product of two MultiVectors: 
-  // this = Scalar * this + ScalarAB * B / A (element-wise)
+  // this = ScalarThis * this + ScalarAB * B / A (element-wise)
   
   if (ScalarAB==0.0) {
-    EPETRA_CHK_ERR(Scale(Scalar));
+    EPETRA_CHK_ERR(Scale(ScalarThis));
     return(0);
   }
 			   
@@ -1397,7 +1397,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
   int IncA = 1;
   if (A.NumVectors() == 1 ) IncA = 0;
 
-    if (Scalar==0.0) {
+    if (ScalarThis==0.0) {
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
@@ -1416,7 +1416,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	  UpdateFlops(2*GlobalLength_*NumVectors_);
 	}
     }
-    else if (Scalar==1.0) {
+    else if (ScalarThis==1.0) {
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
@@ -1435,12 +1435,12 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	    UpdateFlops(3*GlobalLength_*NumVectors_);
 	  }
     }
-    else { // if (Scalar!=1.0 && Scalar !=0 ) 
+    else { // if (ScalarThis!=1.0 && ScalarThis !=0 ) 
       if (ScalarAB==1.0)
 	{
 	  for (i = 0; i < NumVectors_; i++) {
 	    double * A = A_Pointers[i*IncA];
-	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  Scalar * Pointers_[i][j] + B_Pointers[i][j] / A[j];
+	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] =  ScalarThis * Pointers_[i][j] + B_Pointers[i][j] / A[j];
 	  }
 	  UpdateFlops(3*GlobalLength_*NumVectors_);
 	}
@@ -1448,7 +1448,7 @@ int Epetra_MultiVector::ReciprocalMultiply(double ScalarAB, const Epetra_MultiVe
 	{
 	  for (i = 0; i < NumVectors_; i++) {
 	    double * A = A_Pointers[i*IncA];
-	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] = Scalar * Pointers_[i][j] + ScalarAB * 
+	    for (j = 0; j < MyLength_; j++) Pointers_[i][j] = ScalarThis * Pointers_[i][j] + ScalarAB * 
 					      B_Pointers[i][j] / A[j];
 	    }
 	    UpdateFlops(4*GlobalLength_*NumVectors_);
