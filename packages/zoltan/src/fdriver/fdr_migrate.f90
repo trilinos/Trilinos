@@ -101,31 +101,41 @@ type(LB_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
 !  /*
 !   * register migration functions
 !   */
-  if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
+! if (LB_Set_Fn(lb_obj, LB_PRE_MIGRATE_FN_TYPE, migrate_pre_process, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Pre_Migrate_Fn(lb_obj, migrate_pre_process, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, migrate_post_process, &
+! if (LB_Set_Fn(lb_obj, LB_POST_MIGRATE_FN_TYPE, migrate_post_process, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Post_Migrate_Fn(lb_obj, migrate_post_process, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
+! if (LB_Set_Fn(lb_obj, LB_OBJ_SIZE_FN_TYPE, migrate_elem_size, &
+!              mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Obj_Size_Fn(lb_obj, migrate_elem_size, &
                mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
+! if (LB_Set_Fn(lb_obj, LB_PACK_OBJ_FN_TYPE, migrate_pack_elem, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Pack_Obj_Fn(lb_obj, migrate_pack_elem, & 
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
+! if (LB_Set_Fn(lb_obj, LB_UNPACK_OBJ_FN_TYPE, migrate_unpack_elem, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Unpack_Obj_Fn(lb_obj, migrate_unpack_elem, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     migrate_elements = .false.; return

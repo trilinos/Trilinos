@@ -108,34 +108,25 @@ type(PROB_INFO) :: prob
 !   * Set the callback functions
 !   */
 
-  if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, get_num_elements) == LB_FATAL) then
+! if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, get_num_elements) == LB_FATAL) then
+  if (LB_Set_Num_Obj_Fn(lb_obj, get_num_elements) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, get_first_element, &
+! if (LB_Set_Fn(lb_obj, LB_FIRST_OBJ_FN_TYPE, get_first_element, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_First_Obj_Fn(lb_obj, get_first_element, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, get_next_element, &
-                mesh_wrapper) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
-    run_zoltan = .false.
-    return
-  endif
-
-!  /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, get_num_geom) == LB_FATAL) then
-    print *, "fatal:  error returned from LB_Set_Fn()"
-    run_zoltan = .false.
-    return
-  endif
-
-  if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, get_geom, &
+! if (LB_Set_Fn(lb_obj, LB_NEXT_OBJ_FN_TYPE, get_next_element, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Next_Obj_Fn(lb_obj, get_next_element, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
@@ -143,15 +134,34 @@ type(PROB_INFO) :: prob
   endif
 
 !  /* Functions for geometry based algorithms */
-  if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, get_num_edges, &
+! if (LB_Set_Fn(lb_obj, LB_NUM_GEOM_FN_TYPE, get_num_geom) == LB_FATAL) then
+  if (LB_Set_Num_Geom_Fn(lb_obj, get_num_geom) == LB_FATAL) then
+    print *, "fatal:  error returned from LB_Set_Fn()"
+    run_zoltan = .false.
+    return
+  endif
+
+! if (LB_Set_Fn(lb_obj, LB_GEOM_FN_TYPE, get_geom, &
+!                mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Geom_Fn(lb_obj, get_geom, mesh_wrapper) == LB_FATAL) then
+    print *, "fatal:  error returned from LB_Set_Fn()"
+    run_zoltan = .false.
+    return
+  endif
+
+!  /* Functions for geometry based algorithms */
+! if (LB_Set_Fn(lb_obj, LB_NUM_EDGES_FN_TYPE, get_num_edges, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Num_Edges_Fn(lb_obj, get_num_edges, &
                 mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
   endif
 
-  if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, get_edge_list, &
-                mesh_wrapper) == LB_FATAL) then
+! if (LB_Set_Fn(lb_obj, LB_EDGE_LIST_FN_TYPE, get_edge_list, &
+!               mesh_wrapper) == LB_FATAL) then
+  if (LB_Set_Edge_List_Fn(lb_obj, get_edge_list, mesh_wrapper) == LB_FATAL) then
     print *, "fatal:  error returned from LB_Set_Fn()"
     run_zoltan = .false.
     return
