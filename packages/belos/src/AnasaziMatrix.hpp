@@ -8,7 +8,7 @@
 /*!	\class AnasaziMatrix
 
 	\brief Anasazi's templated pure virtual class for constructing the matrix/operator that is
-	used by the eigensolver.
+	used by the block linear solver.
 	
 	A concrete implementation of this class is necessary.  The user can create their own implementation
 	if those supplied are not suitable for their needs.
