@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
    <meta name="sandia.approved" content="SAND99-1377">
    <meta name="author" content="karen devine, kddevin@sandia.gov">
    <title>Zoltan User's Guide:  General Zoltan Interface</title>
@@ -19,7 +19,6 @@
      $Date$
      $Revision$
 -->
-
 </head>
 <body bgcolor="#FFFFFF">
 
@@ -28,32 +27,26 @@
 
 <h2>
 <a NAME="Initialization Functions"></a>General Interface Functions</h2>
-Functions used to initialize and manipulate Zoltan's data structures
-are described below:
-<ul><b>
-<a href="#Zoltan_Initialize">Zoltan_Initialize</a>
-<br><a href="#Zoltan_Create">Zoltan_Create</a>
-<br><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a>
-<br><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a>
-<br><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a>
-<br><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a>
-<br><a href="#Zoltan_Destroy">Zoltan_Destroy</a>
-</b>
-</ul>
-
+Functions used to initialize and manipulate Zoltan's data structures are
+described below:
+<ul><b><a href="#Zoltan_Initialize">Zoltan_Initialize</a></b>
+<br><b><a href="#Zoltan_Create">Zoltan_Create</a></b>
+<br><b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+<br><b><a href="#Zoltan_Set_Param_Vec">Zoltan_Set_Param_Vec</a></b>
+<br><b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+<br><b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>
+<br><b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b></ul>
 <!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Initialize"></a>
+<hr WIDTH="100%"><a NAME="Zoltan_Initialize"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
 
-<td WIDTH="85%">
-int <b>Zoltan_Initialize</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<i>argc</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;**<i>argv</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;float&nbsp;*<i>ver</i>);</td>
+<td WIDTH="85%">int <b>Zoltan_Initialize</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>argc</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char **<i>argv</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; float *<i>ver</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -68,21 +61,21 @@ int <b>Zoltan_Initialize</b> (
 </tr>
 </table>
 
-<hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes 
-MPI for Zoltan. If the application uses MPI, this function
-should be called after calling <b>MPI_Init</b>. If the application does
-not use MPI, this function calls <b>MPI_Init</b> for use by Zoltan.
-This function is called with the <i>argc</i> and <i>argv</i> command-line
-arguments from the main program, which are used if <b>Zoltan_Initialize</b>
-calls <b>MPI_Init</b>. From C,&nbsp; if <b>MPI_Init</b> has already been
-called, the <i>argc</i> and <i>argv</i> arguments may have any value because
-their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
-or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
-<i>ver</i>
-does NOT have to be passed as a keyword argument.
-<p><b>Zoltan_Initialize</b> returns the the Zoltan version number
-so that users can verify which version of the library their application
-is linked to.
+<hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes MPI
+for Zoltan. If the application uses MPI, this function should be called
+after calling <b>MPI_Init</b>. If the application does not use MPI, this
+function calls <b>MPI_Init</b> for use by Zoltan. This function is called
+with the <i>argc</i> and <i>argv</i> command-line arguments from the main
+program, which are used if <b>Zoltan_Initialize</b> calls <b>MPI_Init</b>.
+From C,&nbsp; if <b>MPI_Init</b> has already been called, the <i>argc</i>
+and <i>argv</i> arguments may have any value because their values will
+be ignored.&nbsp; From Fortran, if one of <i>argc</i> or <i>argv</i> is
+omitted, they must both be omitted. If they are omitted,
+<i>ver</i> does
+NOT have to be passed as a keyword argument.
+<p><b>Zoltan_Initialize</b> returns the the Zoltan version number so that
+users can verify which version of the library their application is linked
+to.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -122,20 +115,15 @@ is linked to.
 </tr>
 </table>
 
-<p>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Create"></a>
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Create"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
-<td VALIGN=TOP WIDTH="15%"NOSAVE>C:</td>
+<td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
 
-<td WIDTH="85%">
-struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MPI_Comm&nbsp;<i>communicator</i>);
-</td>
+<td WIDTH="85%">struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; MPI_Comm <i>communicator</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -147,13 +135,12 @@ struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b> (
 </tr>
 </table>
 
-<hr WIDTH="100%">The <b>Zoltan_Create</b> function allocates memory for storage
-of information to be used by Zoltan
-and sets the default values for the information. The pointer
-returned by this function is passed to many subsequent functions.
-An application may allocate more than one <b>Zoltan_Struct</b> data structure;
-for example, an application may use several <b>Zoltan_Struct</b> structures if,
-say, it uses different decompositions with different load-balancing
+<hr WIDTH="100%">The <b>Zoltan_Create</b> function allocates memory for
+storage of information to be used by Zoltan and sets the default values
+for the information. The pointer returned by this function is passed to
+many subsequent functions. An application may allocate more than one <b>Zoltan_Struct</b>
+data structure; for example, an application may use several <b>Zoltan_Struct</b>
+structures if, say, it uses different decompositions with different load-balancing
 techniques.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -166,10 +153,10 @@ techniques.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; communicator</i></td>
 
-<td>The MPI communicator to be used for this Zoltan structure.
-Only those processors included in the communicator participate in Zoltan
-functions. If all processors are to participate, 
-<i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
+<td>The MPI communicator to be used for this Zoltan structure. Only those
+processors included in the communicator participate in Zoltan functions.
+If all processors are to participate, <i>communicator</i> should be <b>MPI_COMM_WORLD</b>
+.</td>
 </tr>
 
 <tr>
@@ -181,29 +168,23 @@ functions. If all processors are to participate,
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *</td>
 
-<td>Pointer to memory for storage of Zoltan information. If an
-error occurs, NULL will be returned in C, or the result will be a nullified
-pointer in Fortran. Any error that occurs in this function is assumed to
-be fatal.</td>
+<td>Pointer to memory for storage of Zoltan information. If an error occurs,
+NULL will be returned in C, or the result will be a nullified pointer in
+Fortran. Any error that occurs in this function is assumed to be fatal.</td>
 </tr>
 </table>
 
-<p>
-
-<!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Set_Param"></a>
+<p><!------------------------------------------------------------------------->
+<hr WIDTH="100%"><a NAME="Zoltan_Set_Param"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">
-int <b>Zoltan_Set_Param</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>param_name</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>new_val</i>);
-</td>
+<td WIDTH="85%">int <b>Zoltan_Set_Param</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char *<i>param_name</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char *<i>new_val</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -216,22 +197,22 @@ int <b>Zoltan_Set_Param</b> (
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Set_Param</b> is used to alter the value of one
-of the parameters used by Zoltan.&nbsp; All Zoltan parameters have reasonable
-default values, but this routine allows a user to provide alternative values
-if desired.
+<hr WIDTH="100%"><b>Zoltan_Set_Param</b> is used to alter the value of
+one of the parameters used by Zoltan.&nbsp; All Zoltan parameters have
+reasonable default values, but this routine allows a user to provide alternative
+values if desired.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
 <td WIDTH="80%"></td>
 </tr>
 
 <tr>
 <td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the Zoltan structure created by 
-<b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by <b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -274,57 +255,53 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <td></td>
 </tr>
 </table>
-
-
 <!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Set_Param_Vec"></a>
+<hr WIDTH="100%"><a NAME="Zoltan_Set_Param_Vec"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">
-int <b>Zoltan_Set_Param_Vec</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>param_name</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char&nbsp;*<i>new_val</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<i>index</i>);
-</td>
+<td WIDTH="85%">int <b>Zoltan_Set_Param_Vec</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char *<i>param_name</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; char *<i>new_val</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; int <i>index</i>);</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_Set_Param_Vec</b>(<i>zz, param_name, new_val</i>)
+<td>FUNCTION <b>Zoltan_Set_Param_Vec</b>(<i>zz, param_name, new_val, index</i>)
 <br>INTEGER(Zoltan_INT) :: Zoltan_Set_Param_Vec
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz
 <br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value
-<br>INTEGER(Zoltan_INT), INTENT(IN) :: index
-</td>
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: index</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Set_Param_Vec</b> is used to alter the value of 
-a vector parameter in Zoltan. A vector parameter is a parameter
-that in addition to a name also has a set of indices, usually starting at 0.
-Each entry (component) may have a different value.
-This routine sets a single entry (component) of a vector parameter.
-If you want all entries (components) of a vector parameter to have
-the same value, set the parameter using <a href="#Zoltan_Set_Param">
-Zoltan_Set_Param</a> as if it were a scalar parameter.
+<hr WIDTH="100%"><b>Zoltan_Set_Param_Vec</b> is used to alter the value
+of a vector parameter in Zoltan. A vector parameter is a parameter that
+has one name but contains multiple values. These values are referenced
+by their indices, usually starting at 0. Each entry (component) may have
+a different value. This routine sets a single entry (component) of a vector
+parameter. If you want all entries (components) of a vector parameter to
+have the same value, set the parameter using <a href="#Zoltan_Set_Param">Zoltan_Set_Param</a>
+as if it were a scalar parameter. If one only sets the values of a subset
+of the indices for a vector parameter, the remaining entries will have
+the default value for that particular parameter.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
 <td WIDTH="80%"></td>
 </tr>
 
 <tr>
 <td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the Zoltan structure created by 
-<b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by <b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -346,9 +323,8 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp; index</i></td>
 
-<td>
-The index of the entry of the vector parameter to be set. The default in Zoltan is that the first entry in a vector has index 0 (C-style indexing).
-</td>
+<td>The index of the entry of the vector parameter to be set. The default
+in Zoltan is that the first entry in a vector has index 0 (C-style indexing).</td>
 </tr>
 
 <tr>
@@ -362,26 +338,19 @@ The index of the entry of the vector parameter to be set. The default in Zoltan 
 
 <td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
 </tr>
-
 </table>
-
-
-
 <!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Set_Fn"></a>
+<hr WIDTH="100%"><a NAME="Zoltan_Set_Fn"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">
-int <b>Zoltan_Set_Fn</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct&nbsp;*</b><i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>ZOLTAN_FN_TYPE&nbsp;</b><i>fn_type</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;(*<i>fn_ptr</i>)(),
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;*<i>data</i>);
-</td>
+<td WIDTH="85%">int <b>Zoltan_Set_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct *</b><i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ZOLTAN_FN_TYPE </b><i>fn_type</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void (*<i>fn_ptr</i>)(),
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -393,19 +362,20 @@ int <b>Zoltan_Set_Fn</b> (
 <br>TYPE(ZOLTAN_FN_TYPE), INTENT(IN) :: fn_type&nbsp;
 <br>EXTERNAL :: fn_ptr&nbsp;
 <br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*)
+or REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*)
+or TYPE(Zoltan_User_Data_<i>x</i>) where <i>x</i> is 1, 2, 3 or 4. See
+the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Set_Fn</b> registers an application-supplied query
-function in the Zoltan structure. All types of query
-functions can be registered through calls to <b>Zoltan_Set_Fn</b>.&nbsp; To
-register functions while maintaining strict type-checking of the <i>fn_ptr</i>
-argument, use <b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.
+<hr WIDTH="100%"><b>Zoltan_Set_Fn</b> registers an application-supplied
+query function in the Zoltan structure. All types of query functions can
+be registered through calls to <b>Zoltan_Set_Fn</b>.&nbsp; To register
+functions while maintaining strict type-checking of the <i>fn_ptr</i> argument,
+use <b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -454,58 +424,57 @@ it may be omitted.</td>
 <td><a href="ug_interface.html#Error Codes">Error code</a>.</td>
 </tr>
 </table>
-
-
 <!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Set_Specific_Fn"></a>
+<hr WIDTH="100%"><a NAME="Zoltan_Set_Specific_Fn"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">
-int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct&nbsp;</b>*<i>zz</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void&nbsp;*<i>data</i>);
-</td>
+<td WIDTH="85%">int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct </b>*<i>zz</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>
+(*<i>fn_ptr</i>)(),&nbsp;
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>(<i>zz, fn_ptr, data</i>)&nbsp;
+<td>FUNCTION <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>(<i>zz, fn_ptr,
+data</i>)&nbsp;
 <br>INTEGER(Zoltan_INT) :: Zoltan_Set_&lt;<i><a href="ug_query.html">zoltan_fn_type</a></i>>_Fn&nbsp;
 <br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>EXTERNAL :: fn_ptr&nbsp;
 <br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
-<p> An interface block for <i>fn_ptr</i> is included in the FUNCTION definition 
+<p>An interface block for <i>fn_ptr</i> is included in the FUNCTION definition
 so that strict type-checking of the registered query function can be done.
-<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
-REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
-where <i>x</i> is 1, 2, 3 or 4. See the section on
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*)
+or REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*)
+or TYPE(Zoltan_User_Data_<i>x</i>) where <i>x</i> is 1, 2, 3 or 4. See
+the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
 <hr WIDTH="100%">The interface functions <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>,
-where <b>&lt;<i><a href="ug_query.html">zoltan_fn_type</a></i>></b> is one
-of the query function types, register specific types of <a href="ug_query.html">application-supplied
-query functions</a> in the Zoltan structure. One interface function
-exists for each type of query function.&nbsp; For example, <b>Zoltan_Set_Num_Geom_Fn</b>
+where <b>&lt;<i><a href="ug_query.html">zoltan_fn_type</a></i>></b> is
+one of the query function types, register specific types of <a href="ug_query.html">application-supplied
+query functions</a> in the Zoltan structure. One interface function exists
+for each type of query function.&nbsp; For example, <b>Zoltan_Set_Num_Geom_Fn</b>
 registers a query function of type <b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>.&nbsp;
 Each query function has an associated <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
 A complete list of these functions is included in <i>include/zoltan.h.</i>
 <p>Query functions can be registered using either <b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 or <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.
-<br><b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn </b>provides strict type checking
-of the <i>fn_ptr</i> argument; the argument's type is specified for each
-<b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
-<b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b> does not provide this strict
-type checking, as the pointer to the registered function is cast to a void
-pointer.
+<br><b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn </b>provides strict type
+checking of the <i>fn_ptr</i> argument; the argument's type is specified
+for each
+<b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>. 
+<b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+does not provide this strict type checking, as the pointer to the registered
+function is cast to a void pointer.
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
@@ -532,8 +501,8 @@ in the name <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; data</i></td>
 
 <td>A pointer to user defined data that will be passed, as an argument,
-to the function pointed to by <i>fn_ptr</i>. In C it may be NULL. In Fortran it
-may be omitted.</td>
+to the function pointed to by <i>fn_ptr</i>. In C it may be NULL. In Fortran
+it may be omitted.</td>
 </tr>
 
 <tr>
@@ -559,24 +528,23 @@ may be omitted.</td>
 
 <td VALIGN=TOP NOSAVE>The interface function
 <br>&nbsp;&nbsp;&nbsp; int <b>Zoltan_Set_Geom_Fn</b>(struct <b>Zoltan_Struct</b>
-*zz, <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> (*fn_ptr)(),<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *data);
+*zz, <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+(*fn_ptr)(),
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+void *data);
 <br>registers an <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 query function.</td>
 </tr>
 </table>
-
 <!------------------------------------------------------------------------->
-<hr WIDTH="100%">
-<a NAME="Zoltan_Destroy"></a>
+<hr WIDTH="100%"><a NAME="Zoltan_Destroy"></a>
 <hr WIDTH="100%">
 <table WIDTH="100%" NOSAVE >
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%">
-void <b>Zoltan_Destroy</b> (
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);</td>
+<td WIDTH="85%">void <b>Zoltan_Destroy</b> (
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> **<i>zz</i>);</td>
 </tr>
 
 <tr NOSAVE>
@@ -587,17 +555,17 @@ void <b>Zoltan_Destroy</b> (
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with a Zoltan
-structure and sets the structure to NULL in C or nullifies the structure
-in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate the import
-and export arrays returned from Zoltan (e.g., the arrays returned from 
-<b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>);
-these arrays can be deallocated through a separate call to 
-<b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
+<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with
+a Zoltan structure and sets the structure to NULL in C or nullifies the
+structure in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate
+the import and export arrays returned from Zoltan (e.g., the arrays returned
+from <b><a href="ug_interface_lb.html#Zoltan_LB_Partition">Zoltan_LB_Partition</a></b>);
+these arrays can be deallocated through a separate call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Part">Zoltan_LB_Free_Part</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Arguments:</b></td>
+
 <td WIDTH="80%"></td>
 </tr>
 
@@ -609,9 +577,7 @@ these arrays can be deallocated through a separate call to
 to be destroyed.&nbsp;</td>
 </tr>
 </table>
-
 <!------------------------------------------------------------------------->
-
 <p>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_interface_lb.html">Next:&nbsp;
 Load-Balancing Functions</a>&nbsp; |&nbsp; <a href="ug_interface.html">Previous:&nbsp;
