@@ -33,7 +33,10 @@
 #        zdrive_comm (or comm, for short)
 #        zdrive_mem  (or mem, for short)
 #        zdrive_dd   (or dd, for short)
+#        zCPPdrive_comm  (C++ comm driver)
+#        zCPPdrive_dd   (C++ dd driver)
 #
+
 ##############################################################################
 
 ##############################################################################
@@ -101,6 +104,10 @@ COMM_TARGET     = zoltan_comm
 
 COMM_DRIVER	= zdrive_comm
 COMM_DRIVER_CSRC= comm_main.c
+
+COMM_DRIVER_CPP     = zCPPdrive_comm
+COMM_DRIVER_CPP_CSRC= comm_main_2.cpp
+
 COMM_DRIVER_LIBS= -L. -l$(COMM_TARGET) -l$(MEM_TARGET) $(MPI_LIBPATH) $(MPI_LIB) 
 COMM_DRIVER_DEP = $(COMM_LIB) $(MEM_LIB)
 
@@ -123,10 +130,13 @@ DD_TARGET	= zoltan_dd
 
 DD_DRIVER	= zdrive_dd
 DD_DRIVER_CSRC	= DD_Main.c
+
+DD_DRIVER_CPP	= zCPPdrive_dd
+DD_DRIVER_CPP_CSRC = DD_Main_2.cpp
+
 DD_DRIVER_LIBS 	= -L. -l$(DD_TARGET) -l$(COMM_TARGET) -l$(MEM_TARGET) \
                   $(MPI_LIBPATH) $(MPI_LIB)
 DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB) $(ID_OBJ)
-
 
 ##############################################################################
 #  Architecture-independent definitions
@@ -135,6 +145,12 @@ DD_DRIVER_DEP  	= $(DD_LIB) $(COMM_LIB) $(MEM_LIB) $(ID_OBJ)
 INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) 
 
 CCOMP		= $(CC) $(INC_PATH) $(CFLAGS) 
+
+ifdef CPPC
+CPPCOMP		= $(CPPC) $(INC_PATH) $(CFLAGS) 
+else
+CPPCOMP		= $(CC) $(INC_PATH) $(CFLAGS) 
+endif
 
 ############################################################################
 #                  LINT DEFINITIONS KDDKDD
@@ -173,6 +189,8 @@ help:
 	@echo  '        '$(COMM_DRIVER)' (or comm, for short)'
 	@echo  '        '$(MEM_DRIVER)' (or mem, for short)'
 	@echo  '        '$(DD_DRIVER)' (or dd, for short)'
+	@echo  '        '$(COMM_DRIVER_CPP)' (C++ comm driver, please define C++ compiler in Config file)'
+	@echo  '        '$(DD_DRIVER_CPP)' (C++ dd driver, please define C++ compiler in Config file)'
 	@echo  ' '
 	@echo  'The file Config/Config.<targetmachine> '
 	@echo  'should exist.  See Config/Config.generic for '
@@ -267,6 +285,22 @@ zdrive_comm comm:
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
 	"DEP_LIBS=$(COMM_DRIVER_DEP)"
+
+zCPPdrive_comm: 
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(COMM_LIB)
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) zdrive_comm 			\
+	"DRIVER_NAME=zdrive_comm"		\
+	"CC=$(CPPCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(COMM_DRIVER_CPP_CSRC:.cpp=.o)" \
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"LNK_LIBS=$(COMM_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(COMM_DRIVER_DEP)"
 	
 $(DD_LIB):
 	@if [ ! -d $(LIB_DIR) ]; 		\
@@ -292,7 +326,6 @@ $(DD_LIB):
 	then cp -f $(OBJ_DIR)/$(DD_LIB) $(LIB_DIR); \
 	fi
 
-
 zdrive_dd dd:
 	$(MAKE) $(MEM_LIB)
 	$(MAKE) $(COMM_LIB)
@@ -305,6 +338,23 @@ zdrive_dd dd:
 	"CC=$(CCOMP)"				\
 	"VPATH=$(SUB_VPATH)"			\
 	"OBJ_FILES=$(DD_DRIVER_CSRC:.c=.o)" 	\
+	"DEFS=$(GDEFINES) $(DEFS)" 		\
+	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
+	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
+	"DEP_LIBS=$(DD_DRIVER_DEP)"
+
+zCPPdrive_dd:
+	$(MAKE) $(MEM_LIB)
+	$(MAKE) $(COMM_LIB)
+	$(MAKE) $(DD_LIB) 
+	@rm -f $(OBJ_DIR)/Makefile
+	@cp Makefile_sub $(OBJ_DIR)/Makefile
+	@cd $(OBJ_DIR); 			\
+	$(MAKE) zCPPdrive_dd 			\
+	"DRIVER_NAME=zCPPdrive_dd"		\
+	"CC=$(CPPCOMP)"				\
+	"VPATH=$(SUB_VPATH)"			\
+	"OBJ_FILES=$(DD_DRIVER_CPP_CSRC:.cpp=.o)" 	\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
 	"ZOLTAN_CONFIG=../$(ZOLTAN_CONFIG)"     \
 	"LNK_LIBS=$(DD_DRIVER_LIBS)"		\
