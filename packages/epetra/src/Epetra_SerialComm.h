@@ -170,10 +170,10 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Epetra_SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally,
+					 using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -183,10 +183,10 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Epetra_SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param PartialMaxs In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial maxs computed locally;
+					 using these Partial Maxs, the max across all processors will be computed.
     \param GlobalMaxs Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of maxs computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -195,10 +195,10 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Epetra_SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
     \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -208,10 +208,10 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //! Epetra_SerialComm Global Min function.
   /*! A copy for a serial communicator.
     \param PartialMins In
-           On entry, contains the list of values, usually partial sums computed locally,
-	   to be summed across all processors.
+           On entry, contains the list of values, usually partial mins computed locally;
+					 using these Partial Mins, the min across all processors will be computed.
     \param GlobalMins Out
-           On exit, contains the list of values summed across all processors.
+           On exit, contains the list of mins computed across all processors.
     \param Count In
            On entry, contains the length of the list of values.
   */
@@ -221,7 +221,7 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
   //@{ \name Parallel Prefix Methods
   //! Epetra_SerialComm Scan Sum function.
   /*! A copy for a serial communicator.
-    \param MyValss In
+    \param MyVals In
            On entry, contains the list of values to be summed across all processors.
     \param ScanSums Out
            On exit, contains the list of values summed across processors 0 through i.
@@ -233,7 +233,7 @@ class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
 
   //! Epetra_SerialComm Scan Sum function.
   /*! A copy for a serial communicator.
-    \param MyValss In
+    \param MyVals In
            On entry, contains the list of values to be summed across all processors.
     \param ScanSums Out
            On exit, contains the list of values summed across processors 0 through i.

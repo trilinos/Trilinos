@@ -226,7 +226,7 @@ class Epetra_Comm {
   /*! Take list of input values from all processors in the communicator, computes the scan sum and returns it 
       to all processors such that processor i contains the sum of values from processor 0 up to and including
 			processor i.
-    \param MyValss In
+    \param MyVals In
            On entry, contains the list of values to be summed across all processors.
     \param ScanSums Out
            On exit, contains the list of values summed across processors 0 through i.
