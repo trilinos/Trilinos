@@ -142,12 +142,11 @@ int main()
     
     // Get the answer
     hopfgrp = solver.getSolutionGroup();
-    const LOCA::LAPACK::Group& soln = 
-      dynamic_cast<const LOCA::LAPACK::Group&>(hopfgrp.getUnderlyingGroup());
+    grp = hopfgrp.getUnderlyingGroup();
 
     // Print the answer
     cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    hopfgrp.printSolution(soln.getParam("alpha"));
+    hopfgrp.printSolution(grp.getParam("alpha"));
 
     // Close output file
     outFile.close();

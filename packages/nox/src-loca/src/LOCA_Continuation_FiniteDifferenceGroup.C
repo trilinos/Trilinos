@@ -54,10 +54,11 @@ LOCA::Continuation::FiniteDifferenceGroup&
 LOCA::Continuation::FiniteDifferenceGroup::operator=(
 		     const LOCA::Continuation::FiniteDifferenceGroup& source)
 {
-  delete derivPtr;
-
-  derivPtr = source.derivPtr->clone();
-
+  if (this != &source) {
+    delete derivPtr;
+  
+    derivPtr = source.derivPtr->clone();
+  }
   return *this;
 }
 
