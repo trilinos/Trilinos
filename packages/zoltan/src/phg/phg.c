@@ -455,7 +455,7 @@ int Zoltan_PHG_Set_2D_Proc_Distrib(
  * If nProc_x and nProc_y both equal -1 on input, compute default.
  * Otherwise, compute valid values and/or return error.
  */
-char *yo = "set_proc_distrib";
+char *yo = "Zoltan_PHG_Set_2D_Proc_Distrib";
 int tmp;
 int ierr = ZOLTAN_OK;
     
@@ -466,11 +466,11 @@ int ierr = ZOLTAN_OK;
     comm->nProc_y = tmp;
     comm->nProc_x = nProc / tmp;
   } else if (nProc_x == -1) {
-    /* nProc_y set by user parameter */
+    comm->nProc_y = nProc_y;
     comm->nProc_x = nProc / nProc_y;
   } else if (nProc_y == -1) {
-    /* nProc_x set by user parameter */
     comm->nProc_y = nProc / nProc_x;
+    comm->nProc_x = nProc_x;
   }
     
   /* Error check */
