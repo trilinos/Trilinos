@@ -502,12 +502,13 @@ ReturnType PetraGenOp<TYPE>::Apply ( const MultiVec<TYPE>& x,
 template <class TYPE> 
 class PetraSymOp : public virtual Operator<TYPE> {
 public:
-  PetraSymOp(const Epetra_Operator& Op );
+  PetraSymOp(const Epetra_Operator& Op, const bool isTrans = false );
   ~PetraSymOp();
   ReturnType Apply ( const MultiVec<TYPE>& x, 
 		     MultiVec<TYPE>& y ) const;
 private:
   const Epetra_Operator& Epetra_Op;
+  bool isTrans_;
 };
 //-------------------------------------------------------------
 //
@@ -518,8 +519,8 @@ private:
 // AnasaziOperator constructors
 //
 template <class TYPE>
-PetraSymOp<TYPE>::PetraSymOp(const Epetra_Operator& Op) 
-  : Epetra_Op(Op)
+PetraSymOp<TYPE>::PetraSymOp(const Epetra_Operator& Op, const bool isTrans) 
+  : Epetra_Op(Op), isTrans_(isTrans)
 {
 }
 
@@ -538,22 +539,32 @@ ReturnType PetraSymOp<TYPE>::Apply ( const MultiVec<TYPE>& x,
 	MultiVec<TYPE> & temp_x = const_cast<MultiVec<TYPE> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-	Epetra_MultiVector* temp_vec = new Epetra_MultiVector( Epetra_Op.OperatorRangeMap(), vec_x->NumVectors() );
+	Epetra_MultiVector* temp_vec = new Epetra_MultiVector( 
+							      (isTrans_) ? Epetra_Op.OperatorDomainMap() 
+							      : Epetra_Op.OperatorRangeMap(), 
+							      vec_x->NumVectors() );
 
 	assert( vec_x!=NULL && vec_y!=NULL && temp_vec!=NULL );
 	//
 	// Need to cast away constness because the member function Apply
 	// is not declared const.
 	//
-	// Compute A*x
+	// Transpose the operator (if isTrans_ = true)
+	if (isTrans_) {
+	  info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( isTrans_ );
+	  if (info!=0) { delete temp_vec; return Failed; }
+	}
+	//
+	// Compute A*x or A'*x 
+	//
 	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *vec_x, *temp_vec );
 	if (info!=0) { delete temp_vec; return Failed; }
-
-	// Transpose the operator
-	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( true );
+	//
+	// Transpose/Un-transpose the operator based on value of isTrans_
+	info=const_cast<Epetra_Operator&>(Epetra_Op).SetUseTranspose( !isTrans_ );
 	if (info!=0) { delete temp_vec; return Failed; }
 
-	// Compute A^T*(A*x)
+	// Compute A^T*(A*x) or A*A^T
 	info=const_cast<Epetra_Operator&>(Epetra_Op).Apply( *temp_vec, *vec_y );
 	if (info!=0) { delete temp_vec; return Failed; }
 
