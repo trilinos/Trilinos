@@ -281,15 +281,16 @@ int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int scale_by_diag)
          if ( diag[i] == 0.0 ) 
          {
             printf("%d : diagonal[%d] == 0.0.\n", comm->ML_mypid, i);
-            exit(1);
+	    /*            exit(1); */
+	    diag[i] = 1.;
          }
          else if ( diag[i] < 0.0 )
          {
             printf("%d : diagonal[%d] = %e < 0.0.\n", comm->ML_mypid, i, diag[i]);
          }
- 
-         diag[i] = 1.0 / sqrt(ML_dabs(diag[i]));
-         /*diag[i] = 1.0 / diag[i];*/
+	 else {
+	   diag[i] = 1.0 / sqrt(ML_dabs(diag[i]));
+	 }
       }
    }
    if (scale_by_diag == ML_FALSE) {
