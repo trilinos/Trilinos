@@ -41,7 +41,7 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 #include "ml_epetra_utils.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "Teuchos_ParameterList.hpp"
 
 /*****************************************************************************/

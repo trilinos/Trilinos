@@ -28,15 +28,15 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
                   ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa ml_read_maxwell \
-                  ml_example_epetra_preconditioner \
-                  ml_example_epetra_preconditioner_2level \
-                  ml_example_epetra_operator \
-                  ml_example_epetra_preconditioner_AztecMSR \
-                  ml_filtering \
-		  ml_example_epetra_preconditioner_vbr \
-		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_analyze \
-		  ml_example_epetra_preconditioner_Maxwell 
+                  ml_example_MultiLevelPreconditioner \
+                  ml_example_MultiLevelPreconditioner_2level \
+                  ml_example_MultiLevelMultiLevelOOperator \
+                  ml_example_MultiLevelPreconditioner_AztecMSR \
+                  ml_example_MultiLevelPreconditioner_filtering \
+		  ml_example_MultiLevelPreconditioner_vbr \
+		  ml_example_MultiLevelPreconditioner_viz \
+		  ml_example_MultiLevelPreconditioner_analyze \
+		  ml_example_MultiLevelPreconditioner_maxwell 
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -45,15 +45,15 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
 		          ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
-                  ml_example_epetra_preconditioner \
-                  ml_example_epetra_preconditioner_2level \
-                  ml_example_epetra_operator \
-                  ml_example_epetra_preconditioner_AztecMSR \
-                  ml_filtering \
-		  ml_example_epetra_preconditioner_vbr \
-		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_analyze \
-		  ml_example_epetra_preconditioner_Maxwell 
+                  ml_example_MultiLevelPreconditioner \
+                  ml_example_MultiLevelPreconditioner_2level \
+                  ml_example_MultiLevelOperator \
+                  ml_example_MultiLevelPreconditioner_AztecMSR \
+                  ml_example_MultiLevelPreconditioner_filtering \
+		  ml_example_MultiLevelPreconditioner_vbr \
+		  ml_example_MultiLevelPreconditioner_viz \
+		  ml_example_MultiLevelPreconditioner_analyze \
+		  ml_example_MultiLevelPreconditioner_maxwell 
 
 endif
 else
@@ -64,15 +64,15 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
 		  ml_two_level_DD \
 		  ml_readfile ml_read_elas ml_recirc \
                   ml_read_salsa \
-                  ml_example_epetra_preconditioner \
-                  ml_example_epetra_preconditioner_2level \
-                  ml_example_epetra_operator \
-                  ml_example_epetra_preconditioner_AztecMSR \
-                  ml_filtering \
-		  ml_example_epetra_preconditioner_vbr \
-		  ml_example_epetra_preconditioner_viz \
-		  ml_example_epetra_preconditioner_analyze \
-		  ml_example_epetra_preconditioner_Maxwell 
+                  ml_example_MultiLevelPreconditioner \
+                  ml_example_MultiLevelPreconditioner_2level \
+                  ml_example_MultiLevelOperator \
+                  ml_example_MultiLevelPreconditioner_AztecMSR \
+                  ml_example_MultiLevelPreconditioner_filtering \
+		  ml_example_MultiLevelPreconditioner_vbr \
+		  ml_example_MultiLevelPreconditioner_viz \
+		  ml_example_MultiLevelPreconditioner_analyze \
+		  ml_example_MultiLevelPreconditioner_maxwell 
 
 endif
 
@@ -102,15 +102,15 @@ ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
-ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
-ml_example_epetra_preconditioner_2level_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_2level.cpp
-ml_example_epetra_operator_SOURCES = $(srcdir)/ml_example_epetra_operator.cpp
-ml_example_epetra_preconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_AztecMSR.cpp
-ml_filtering_SOURCES = $(srcdir)/ml_filtering.cpp
-ml_example_epetra_preconditioner_vbr_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_vbr.cpp
-ml_example_epetra_preconditioner_viz_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_viz.cpp
-ml_example_epetra_preconditioner_analyze_SOURCES= $(srcdir)/ml_example_epetra_preconditioner_analyze.cpp
-ml_example_epetra_preconditioner_Maxwell_SOURCES = $(srcdir)/ml_example_epetra_preconditioner_Maxwell.cpp
+ml_example_MultiLevelPreconditioner_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner.cpp
+ml_example_MultiLevelPreconditioner_2level_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_2level.cpp
+ml_example_MultiLevelOperator_SOURCES = $(srcdir)/ml_example_MultiLevelOperator.cpp
+ml_example_MultiLevelPreconditioner_AztecMSR_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_AztecMSR.cpp
+ml_example_MultiLevelPreconditioner_filtering_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_filtering.cpp
+ml_example_MultiLevelPreconditioner_vbr_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_vbr.cpp
+ml_example_MultiLevelPreconditioner_viz_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_viz.cpp
+ml_example_MultiLevelPreconditioner_analyze_SOURCES= $(srcdir)/ml_example_MultiLevelPreconditioner_analyze.cpp
+ml_example_MultiLevelPreconditioner_maxwell_SOURCES = $(srcdir)/ml_example_MultiLevelPreconditioner_maxwell.cpp
 
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
@@ -282,50 +282,50 @@ ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_LDADD = ${ml_libs} 
-ml_example_epetra_preconditioner_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_LDADD = ${ml_libs} 
+ml_example_MultiLevelPreconditioner_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_2level_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_2level_LDADD = ${ml_libs} 
-ml_example_epetra_preconditioner_2level_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_2level_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_2level_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_2level_LDADD = ${ml_libs} 
+ml_example_MultiLevelPreconditioner_2level_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_AztecMSR_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_AztecMSR_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_AztecMSR_LDADD = ${ml_libs} 
-ml_example_epetra_preconditioner_AztecMSR_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_AztecMSR_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_AztecMSR_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_AztecMSR_LDADD = ${ml_libs} 
+ml_example_MultiLevelPreconditioner_AztecMSR_LINK = ${mllink}
 
-ml_example_epetra_operator_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_operator_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_operator_LDADD = ${ml_libs}
-ml_example_epetra_operator_LINK = ${mllink}
+ml_example_MultiLevelOperator_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelOperator_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelOperator_LDADD = ${ml_libs}
+ml_example_MultiLevelOperator_LINK = ${mllink}
 
-ml_filtering_CPPFLAGS = ${ml_common_include_locations}
-ml_filtering_CXXFLAGS = ${ml_common_include_locations}
-ml_filtering_LDADD = ${ml_libs}
-ml_filtering_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_filtering_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_filtering_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_filtering_LDADD = ${ml_libs}
+ml_example_MultiLevelPreconditioner_filtering_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_vbr_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_vbr_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_vbr_LDADD = ${ml_libs}
-ml_example_epetra_preconditioner_vbr_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_vbr_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_vbr_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_vbr_LDADD = ${ml_libs}
+ml_example_MultiLevelPreconditioner_vbr_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_viz_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_viz_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_viz_LDADD = ${ml_libs}
-ml_example_epetra_preconditioner_viz_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_viz_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_viz_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_viz_LDADD = ${ml_libs}
+ml_example_MultiLevelPreconditioner_viz_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_analyze_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_analyze_LDADD = ${ml_libs}
-ml_example_epetra_preconditioner_analyze_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_analyze_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_analyze_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_analyze_LDADD = ${ml_libs}
+ml_example_MultiLevelPreconditioner_analyze_LINK = ${mllink}
 
-ml_example_epetra_preconditioner_Maxwell_CPPFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_Maxwell_CXXFLAGS = ${ml_common_include_locations}
-ml_example_epetra_preconditioner_Maxwell_LDADD = ${ml_libs}
-ml_example_epetra_preconditioner_Maxwell_LINK = ${mllink}
+ml_example_MultiLevelPreconditioner_maxwell_CPPFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_maxwell_CXXFLAGS = ${ml_common_include_locations}
+ml_example_MultiLevelPreconditioner_maxwell_LDADD = ${ml_libs}
+ml_example_MultiLevelPreconditioner_maxwell_LINK = ${mllink}
 
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}

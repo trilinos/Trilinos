@@ -23,13 +23,12 @@
 #include "AztecOO.h"
 
 // includes required by ML
-#include "ml_epetra_preconditioner.h"
-
 #include "Trilinos_Util_CommandLineParser.h"
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include "ml_epetra_utils.h"
-#include "ml_epetra_operator.h"
+#include "ml_MultiLevelOperator.h"
+#include "Teuchos_ParameterList.hpp"
 
 using namespace ML_Epetra;
 using namespace Teuchos;
@@ -62,8 +61,8 @@ int main(int argc, char *argv[])
   CrsMatrixGallery Gallery("", Comm);
 
   // default values for problem type and size
-  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_2d" ); 
-  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "100" ); 
+  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_1d" ); 
+  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "60" ); 
 
   // initialize MatrixGallery object with options specified in the shell
   Gallery.Set(CLP);
@@ -101,6 +100,8 @@ int main(int argc, char *argv[])
   // select coarsening scheme. 
   ML_Aggregate_Set_CoarsenScheme_Uncoupled(agg_object);
 
+//  ML_Aggregate_Set_DampingFactor(agg_object,0.0);
+
   // generate the hierarchy. We decided to use decreasing ordering;
   // one can also use ML_INCREASING (in this case, you need to replace
   // maxMgLevels-1 with 0 in call to EpetraMatrix2MLMatrix())
@@ -123,6 +124,14 @@ int main(int argc, char *argv[])
   // generate the solver
   ML_Gen_Solver(ml_handle, ML_MGV, maxMgLevels-1, coarsestLevel);
  
+  ML_Operator_Print(&(ml_handle->Rmat[ml_handle->ML_finest_level]),
+	            "R");
+  ML_Operator_PrintSparsity(&(ml_handle->Rmat[ml_handle->ML_finest_level]),
+			    "Rmat", "Rmat",ML_YES,1);
+  ML_Operator_PrintSparsity(&(ml_handle->Pmat[ml_handle->ML_finest_level-1]),
+			    "Pmat", "Pmat",ML_YES,1);
+  ML_Operator_PrintSparsity(&(ml_handle->Amat[ml_handle->ML_finest_level]),
+			    "Amat", "Amat",ML_YES,1);
   // create an Epetra_Operrator based on the previously created
   // hierarchy
   MultiLevelOperator MLPrec(ml_handle, Comm, *Map, *Map);

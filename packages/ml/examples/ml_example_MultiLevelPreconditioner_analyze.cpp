@@ -55,7 +55,7 @@
 // includes required by ML
 
 #include "ml_include.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 using namespace Teuchos;
 using namespace Trilinos_Util;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
   // matrices is `recirc_2d' (advection-diffusion in a box, with
   // recirculating flow). The number of nodes must be a square number
 
-  CrsMatrixGallery Gallery("recirc_2d", Comm);
+  CrsMatrixGallery Gallery("laplace_2d", Comm);
   int ProblemSize = 256;
   Gallery.Set("problem_size", ProblemSize);
   
@@ -141,6 +141,9 @@ int main(int argc, char *argv[])
 
   ML_Epetra::MultiLevelPreconditioner * MLPrec = 
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
+
+  MLPrec->PrintStencil2D(16,16);
+  exit(0);
 
   // =============== //
   // A N A L Y S I S //

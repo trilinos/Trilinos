@@ -56,7 +56,7 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 #include "ml_include.h"
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 
 
 
@@ -161,6 +161,7 @@ int main(int argc, char *argv[])
   MLList.set("viz: enable", true);
   MLList.set("viz: x-coordinates", x_coord);
   MLList.set("viz: y-coordinates", y_coord);
+  MLList.set("viz: print starting solution", true);
 
   // =============================== //
   // end of visualization parameters //

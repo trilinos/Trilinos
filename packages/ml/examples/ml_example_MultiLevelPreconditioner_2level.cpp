@@ -55,7 +55,7 @@
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
 // includes required by ML
-#include "ml_epetra_preconditioner.h"
+#include "ml_MultiLevelPreconditioner.h"
 #include "ml_include.h"
 
 using namespace Teuchos;
