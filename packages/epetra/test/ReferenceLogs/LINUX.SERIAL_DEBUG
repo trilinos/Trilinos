@@ -1,4 +1,4 @@
-Date:  Fri Feb 1 11:38:31 CST 2002
+Date:  Thu Feb 14 11:43:35 CST 2002
 Linux heroux00.albanytel.com 2.4.2-2 #1 Sun Apr 8 20:41:30 EDT 2001 i686 unknown
 ############ cxx_BlockMap_serial.exe ##############
 Epetra::Comm::Processor 0 of 1 total processors
@@ -242,7 +242,7 @@ Iter = 0  Lambda = 2.00092  Residual of A*q - lambda*q = 1.4055
 Iter = 100  Lambda = 3.98962  Residual of A*q - lambda*q = 0.01445
 
 
-Total MFLOPs for first solve = 0
+Total MFLOPs for first solve = 66.4749
 
 
 
@@ -253,7 +253,7 @@ Iter = 0  Lambda = 2.00646  Residual of A*q - lambda*q = 1.41513
 Iter = 100  Lambda = 3.98937  Residual of A*q - lambda*q = 0.0140803
 
 
-Total MFLOPs for transpose solve = 0
+Total MFLOPs for transpose solve = 43.7926
 
 
 
@@ -261,10 +261,10 @@ Increasing the magnitude of first diagonal term and solving again
 
 
 Iter = 0  Lambda = 1.99107  Residual of A*q - lambda*q = 1.41143
-Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 3.88292e-15
+Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 3.29948e-16
 
 
-Total MFLOPs for second solve = 0
+Total MFLOPs for second solve = 66.5207
 
 
 
@@ -272,10 +272,10 @@ Using transpose of matrix and solving again (should give same result).
 
 
 Iter = 0  Lambda = 2.00465  Residual of A*q - lambda*q = 1.41548
-Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 3.88292e-15
+Iter = 100  Lambda = 20.0556  Residual of A*q - lambda*q = 3.29948e-16
 
 
-Total MFLOPs for tranpose of second solve = 0
+Total MFLOPs for tranpose of second solve = 61.6796
 
 
 
@@ -379,7 +379,7 @@ Total MFLOPs for A^T*Y = 0
 
 Total MFLOPs for A*X = 0
 
-Residual = 2.14447e-15
+Residual = 1.04829e-15
 
 ############ cxx_ImportExport_serial.exe ##############
 Processor 0 of 1 is alive.
@@ -709,8 +709,8 @@ Testing MFLOPs
 
 
 Total FLOPs = 1.45807e+07
-Total Time  = 0.213974
-MFLOPs      = 68.1425
+Total Time  = 0.024981
+MFLOPs      = 583.673
 
 
 Testing ostream operator:  Multivector  should be 100-by-2 and print i,j indices
@@ -820,10 +820,36 @@ Epetra::MultiVector         MyPID          Global Index               Value     
 Traceback Mode value = 0
 ############ cxx_Object_serial.exe ##############
 Epetra::Comm::Processor 0 of 1 total processors
-This is the default Epetra_Object Name: Epetra::Object
-This should say "New name for Epetra_Object": New name for Epetra_Object
-Default Traceback Mode value = 2
-Set Traceback Mode value to one less than default = 1
+
+
+This should say Epetra::Object: Epetra::Object
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+Default Traceback Mode value = 1
+Set Traceback Mode value to one less than default = 0
+
+
+
+This should say 1: 1
+
+
+
+This should say New name for Epetra_Object: New name for Epetra_Object
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
+
+This should say New name for Epetra_Object,1: New name for Epetra_Object,1
+
+
 ############ cxx_VbrMatrix_serial.exe ##############
 Processor 0 of 1 is alive.
 
@@ -874,48 +900,44 @@ Rows sorted check OK
 
 NumEntries function check OK
 
-Iter = 0  Lambda = 2.29778  Residual of A*q - lambda*q = 15.6048
-Iter = 99  Lambda = 24.0969  Residual of A*q - lambda*q = 0.0829546
+Iter = 0  Lambda = -1.07072  Residual of A*q - lambda*q = 9.3878
+Iter = 99  Lambda = 16.1803  Residual of A*q - lambda*q = 3.10213e-15
 
 
-Total MFLOPs for first solve = 30.13
-
-***** Power Method did not converge. *****
+Total MFLOPs for first solve = 32.5676
 
 
 
 Using transpose of matrix and solving again (should give same result).
 
 
-Iter = 0  Lambda = 2.29778  Residual of A*q - lambda*q = 15.5636
-Iter = 99  Lambda = 24.1134  Residual of A*q - lambda*q = 0.0772199
+Iter = 0  Lambda = -1.07072  Residual of A*q - lambda*q = 9.40319
+Iter = 99  Lambda = 16.1803  Residual of A*q - lambda*q = 1.14796e-15
 
 
-Total MFLOPs for transpose solve = 26.6003
-
-***** Power Method did not converge. *****
+Total MFLOPs for transpose solve = 33.6198
 
 
 
 Increasing the magnitude of first diagonal term and solving again
 
 
-Iter = 0  Lambda = 2.38022  Residual of A*q - lambda*q = 15.8477
-Iter = 99  Lambda = 89.9021  Residual of A*q - lambda*q = 3.81901e-14
+Iter = 0  Lambda = -0.988289  Residual of A*q - lambda*q = 9.82167
+Iter = 99  Lambda = 89.953  Residual of A*q - lambda*q = 1.80377e-15
 
 
-Total MFLOPs for second solve = 21.158
+Total MFLOPs for second solve = 32.6355
 
 
 
 Using transpose of matrix and solving again (should give same result).
 
 
-Iter = 0  Lambda = 2.38022  Residual of A*q - lambda*q = 15.8116
-Iter = 99  Lambda = 89.9021  Residual of A*q - lambda*q = 2.06752e-14
+Iter = 0  Lambda = -0.988289  Residual of A*q - lambda*q = 9.82945
+Iter = 99  Lambda = 89.953  Residual of A*q - lambda*q = 1.83015e-14
 
 
-Total MFLOPs for tranpose of second solve = 26.521
+Total MFLOPs for tranpose of second solve = 33.7762
 
 
 
@@ -1220,8 +1242,8 @@ Testing MFLOPs
 
 
 Total FLOPs = 2e+06
-Total Time  = 0.028606
-MFLOPs      = 69.9154
+Total Time  = 0.053629
+MFLOPs      = 37.2933
 
 
 Testing ostream operator:  Multivector  should be 100-by-2 and print i,j indices

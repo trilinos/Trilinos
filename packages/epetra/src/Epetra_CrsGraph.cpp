@@ -421,12 +421,15 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow, int Index, int Start, int
   // If we have transformed the column indices, we must map this global Index to local
   if (IndicesAreLocal()) Index = LCID(Index);
 
+  int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
   for (j=0; j< NumIndices; j++) {
-    int j0 = (j+Start)%NumIndices; // Start search at index Start
+    if (j0>=NumIndices) j0 -= NumIndices; // wrap around
+
     if (Indices[j0]==Index) {
       Loc = j0;
       return(true);
     }
+    j0++;
   }
   return(false);
 }
@@ -435,15 +438,20 @@ bool Epetra_CrsGraph::FindGlobalIndexLoc(int LocalRow, int Index, int Start, int
 bool Epetra_CrsGraph::FindMyIndexLoc(int LocalRow, int Index, int Start, int & Loc) {
   int j;
   int NumIndices = NumIndicesPerRow_[LocalRow];
+  int * Indices = Indices_[LocalRow];
 
   // If we have transformed the column indices, we must map this global Index to local
   if (IndicesAreGlobal()) EPETRA_CHK_ERR(-2); // Indices must be local
+
+  int j0 = Start; // Start search at index Start (must be >= 0 and < NumIndices)
   for (j=0; j< NumIndices; j++) {
-    int j0 = (j+Start)%NumIndices; // Start search at index Start
-    if (Indices_[LocalRow][j0]==Index) {
+    if (j0>=NumIndices) j0 -= NumIndices; // wrap around
+ 
+    if (Indices[j0]==Index) {
       Loc = j0;
       return(true);
     }
+    j0++;
   }
   return(false);
 }
