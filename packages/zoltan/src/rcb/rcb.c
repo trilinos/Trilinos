@@ -202,6 +202,8 @@ static int rcb_fn(
   int     num_procs;                /* number of procs in current part */
   int     dim;                      /* which of 3 axes median cut is on */
   int     ierr;                     /* error flag. */
+  int    *proc_list = NULL;         /* temp array for reusing old cuts */
+  int     outgoing;                 /* number of outgoing dots for reuse */
   double *coord = NULL;             /* temp array for median_find */
   double *wgts = NULL;              /* temp array for median_find */
   double  valuehalf;                /* median cut position */
@@ -290,9 +292,6 @@ static int rcb_fn(
   counters[5] = 0;
   counters[6] = 0;
 
-  /* if reuse is turned on, turn on gen_tree since it is needed. */
-  if (reuse) gen_tree = 1;
-
   /* create mark and list arrays for dots */
 
   allocflag = 0;
@@ -320,6 +319,51 @@ static int rcb_fn(
     dotmark = NULL;
     coord = NULL;
     wgts = NULL;
+  }
+
+  /* if reuse is turned on, turn on gen_tree since it is needed. */
+  /* Also, if this is not first time through, send dots to previous proc. */
+  if (reuse) {
+     gen_tree = 1;
+
+     if (treept[0].dim != -1) {
+        /* find previous location of dots */
+        for (outgoing = i = 0; i < dotnum; i++) {
+           ierr = LB_Point_Assign(lb, dotpt[i].X, &dotmark[i]);
+           if (dotmark[i] != proc) outgoing++;
+        }
+
+        if (outgoing)
+           if ((proc_list = (int *) LB_MALLOC(outgoing*sizeof(int))) == NULL) {
+              LB_FREE(&dotmark);
+              LB_FREE(&coord);
+              LB_FREE(&wgts);
+              LB_TRACE_EXIT(lb, yo);
+              return LB_MEMERR;
+           }
+
+        for (dottop = j = i = 0; i < dotnum; i++)
+           if (dotmark[i] != proc)
+              proc_list[j++] = dotmark[i];
+           else
+              dottop++;
+
+        /* move dots */
+        ierr = LB_RB_Send_Dots(lb, &gidpt, &lidpt, &dotpt, dotmark, proc_list,
+                               outgoing, &dotnum, &dotmax, proc, &allocflag,
+                               overalloc, stats, counters, lb->Communicator);
+        if (ierr) {
+           LB_PRINT_ERROR(proc, yo, "Error returned from LB_RB_Send_Dots.");
+           LB_FREE(&proc_list);
+           LB_FREE(&dotmark);
+           LB_FREE(&coord);
+           LB_FREE(&wgts);
+           LB_TRACE_EXIT(lb, yo);
+           return (ierr);
+        }
+
+        if (outgoing) LB_FREE(&proc_list);
+     }
   }
 
   /* create MPI data and function types for box and median */

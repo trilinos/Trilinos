@@ -36,6 +36,10 @@ extern int LB_RB_Send_Outgoing(LB *, LB_ID_PTR *, LB_ID_PTR *,
   struct Dot_Struct **, int *, int *, int *, int *, int, int *, double, int,
   int *, MPI_Comm);
 
+extern int LB_RB_Send_Dots(LB *, LB_ID_PTR *, LB_ID_PTR *,
+  struct Dot_Struct **, int *, int *, int, int *, int *, int, int *, double,
+  int, int *, MPI_Comm);
+
 extern int LB_RB_Return_Arguments(LB *, LB_ID_PTR, LB_ID_PTR, 
   struct Dot_Struct *, int, LB_ID_PTR *, LB_ID_PTR *, int **, int);
 

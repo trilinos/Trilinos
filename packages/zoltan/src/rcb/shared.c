@@ -207,20 +207,11 @@ int LB_RB_Send_Outgoing(
   MPI_Comm local_comm
 )
 {
-/* Routine to send outgoing dots to their new processors. */
+/* Routine to determine new processors for outgoing dots. */
 
   char *yo = "LB_RB_Send_Outgoing";
-  int dotnew;                       /* # of new dots after send/recv */
   int keep, outgoing;               /* message exchange counters */
-  int incoming;                     /* message exchange counters */
-  LB_ID_PTR gidbuf;                 /* communication buffer for global IDs. */
-  LB_ID_PTR lidbuf;                 /* communication buffer for local IDs.  */
-  struct Dot_Struct *dotbuf;        /* communication buffer for dots. */
   int *proc_list = NULL;            /* list of processors to send dots to */
-  struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
-  int message_tag = 32760;          /* message tag */
-  int num_gid_entries = lb->Num_GID;
-  int num_lid_entries = lb->Num_LID;
   int i, ierr;
 
   /* outgoing = number of dots to ship to partner */
@@ -248,6 +239,59 @@ int LB_RB_Send_Outgoing(
     return (ierr);
   }
 
+  ierr = LB_RB_Send_Dots(lb, gidpt, lidpt, dotpt, dotmark, proc_list, outgoing,
+                         dotnum, dotmax, set, allocflag, overalloc, stats,
+                         counters, local_comm);
+
+  if (outgoing) LB_FREE(&proc_list);
+
+  return(ierr);
+}
+
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+int LB_RB_Send_Dots(
+  LB *lb,                           /* Load-balancing structure. */
+  LB_ID_PTR *gidpt,                 /* pointer to Global_IDs array. */
+  LB_ID_PTR *lidpt,                 /* pointer to Local_IDs array.  */
+  struct Dot_Struct **dotpt,        /* pointer to Dots array. */
+  int *dotmark,                     /* which side of median for each dot */
+  int *proc_list,                   /* list of processors to send dots to */
+  int outgoing,                     /* message exchange counters */
+  int *dotnum,                      /* number of dots */
+  int *dotmax,                      /* max # of dots arrays can hold */
+  int  set,                         /* which part processor is in = 0/1 */
+  int *allocflag,                   /* have to re-allocate space */
+  double overalloc,                 /* amount to overallocate by when realloc
+                                       of dot array must be done.
+                                       1.0 = no extra; 1.5 = 50% extra; etc. */
+  int stats,                        /* Print timing & count summary? */
+  int counters[],                   /* diagnostic counts
+                                       0 = # of median iterations
+                                       1 = # of dots sent
+                                       2 = # of dots received
+                                       3 = most dots this proc ever owns
+                                       4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
+                                       6 = # of reallocs of dot array */
+  MPI_Comm local_comm
+)
+{
+/* Routine to send outgoing dots to their new processors. */
+
+  char *yo = "LB_RB_Send_Outgoing";
+  int dotnew;                       /* # of new dots after send/recv */
+  int keep, incoming;               /* message exchange counters */
+  LB_ID_PTR gidbuf;                 /* communication buffer for global IDs. */
+  LB_ID_PTR lidbuf;                 /* communication buffer for local IDs.  */
+  struct Dot_Struct *dotbuf;        /* communication buffer for dots. */
+  struct Comm_Obj *cobj = NULL;     /* pointer for communication object */
+  int message_tag = 32760;          /* message tag */
+  int num_gid_entries = lb->Num_GID;
+  int num_lid_entries = lb->Num_LID;
+  int i, ierr;
+
   incoming = 0;
   ierr = LB_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag,
                         &incoming);
@@ -257,8 +301,6 @@ int LB_RB_Send_Outgoing(
     LB_TRACE_EXIT(lb, yo);
     return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
-
-  if (outgoing) LB_FREE(&proc_list);
 
   /* check if need to malloc more space */
 
