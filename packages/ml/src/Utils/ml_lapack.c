@@ -8144,7 +8144,7 @@ tor
     static integer i, k;
     extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
-	    doublereal *), dlarfg_(integer *, doublereal *, 
+	    doublereal *), MLFORTRAN(dlarfg)(integer *, doublereal *, 
 	    doublereal *, integer *, doublereal *), xerbla_(char *, integer *);
     static doublereal aii;
 
@@ -8179,7 +8179,7 @@ tor
 	i__2 = *n - i + 1;
 /* Computing MIN */
 	i__3 = i + 1;
-	dlarfg_(&i__2, &A(i,i), &A(i,min(i+1,*n)), lda,
+	MLFORTRAN(dlarfg)(&i__2, &A(i,i), &A(i,min(i+1,*n)), lda,
 		 &TAU(i));
 	if (i < *m) {
 
@@ -8189,7 +8189,7 @@ tor
 	    A(i,i) = 1.;
 	    i__2 = *m - i;
 	    i__3 = *n - i + 1;
-	    dlarf_("Right", &i__2, &i__3, &A(i,i), lda, &TAU(i), &
+	    MLFORTRAN(dlarf)("Right", &i__2, &i__3, &A(i,i), lda, &TAU(i), &
 		    A(i+1,i), lda, &WORK(1));
 	    A(i,i) = aii;
 	}
@@ -8297,14 +8297,14 @@ tor
     extern /* Subroutine */ int dgelq2_(integer *, integer *, doublereal *, 
 	    integer *, doublereal *, doublereal *, integer *);
     static integer ib, nb;
-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
 	    integer *, integer *, integer *, doublereal *, integer *, 
 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
 	    integer *);
     static integer nx;
-    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
 	    integer *, integer *, ftnlen, ftnlen);
     static integer ldwork, iws;
 
@@ -8341,7 +8341,7 @@ tor
 
 /*     Determine the block size. */
 
-    nb = ilaenv_(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+    nb = MLFORTRAN(ilaenv)(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
     nbmin = 2;
     nx = 0;
     iws = *m;
@@ -8351,7 +8351,7 @@ tor
    
 
    Computing MAX */
-	i__1 = 0, i__2 = ilaenv_(&c__3, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L,
+	i__1 = 0, i__2 = MLFORTRAN(ilaenv)(&c__3, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L,
 		 1L);
 	nx = max(i__1,i__2);
 	if (nx < k) {
@@ -8369,7 +8369,7 @@ e NB and
 
 		nb = *lwork / ldwork;
 /* Computing MAX */
-		i__1 = 2, i__2 = ilaenv_(&c__2, "DGELQF", " ", m, n, &c_n1, &
+		i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DGELQF", " ", m, n, &c_n1, &
 			c_n1, 6L, 1L);
 		nbmin = max(i__1,i__2);
 	    }
@@ -8400,14 +8400,14 @@ tor
                 H = H(i) H(i+1) . . . H(i+ib-1) */
 
 		i__3 = *n - i + 1;
-		dlarft_("Forward", "Rowwise", &i__3, &ib, &A(i,i), 
+		MLFORTRAN(dlarft)("Forward", "Rowwise", &i__3, &ib, &A(i,i), 
 			lda, &TAU(i), &WORK(1), &ldwork);
 
 /*              Apply H to A(i+ib:m,i:n) from the right */
 
 		i__3 = *m - i - ib + 1;
 		i__4 = *n - i + 1;
-		dlarfb_("Right", "No transpose", "Forward", "Rowwise", &i__3, 
+		MLFORTRAN(dlarfb)("Right", "No transpose", "Forward", "Rowwise", &i__3, 
 			&i__4, &ib, &A(i,i), lda, &WORK(1), &
 			ldwork, &A(i+ib,i), lda, &WORK(ib + 1), &
 			ldwork);
@@ -8580,11 +8580,11 @@ tor
 	    integer *, doublereal *, doublereal *, integer *, integer *), 
 	    dlascl_(char *, integer *, integer *, doublereal *, doublereal *, 
 	    integer *, integer *, doublereal *, integer *, integer *),
-	     dgeqrf_(integer *, integer *, doublereal *, integer *, 
+	     MLFORTRAN(dgeqrf)(integer *, integer *, doublereal *, integer *, 
 	    doublereal *, doublereal *, integer *, integer *), dlaset_(char *,
 	     integer *, integer *, doublereal *, doublereal *, doublereal *, 
 	    integer *), xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
 	    integer *, integer *, ftnlen, ftnlen);
     static integer scllen;
     static doublereal bignum;
@@ -8642,28 +8642,28 @@ tor
 	}
 
 	if (*m >= *n) {
-	    nb = ilaenv_(&c__1, "DGEQRF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+	    nb = MLFORTRAN(ilaenv)(&c__1, "DGEQRF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
 	    if (tpsd) {
 /* Computing MAX */
-		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMQR", "LN", m, nrhs, n, &
+		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", "LN", m, nrhs, n, &
 			c_n1, 6L, 2L);
 		nb = max(i__1,i__2);
 	    } else {
 /* Computing MAX */
-		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMQR", "LT", m, nrhs, n, &
+		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", "LT", m, nrhs, n, &
 			c_n1, 6L, 2L);
 		nb = max(i__1,i__2);
 	    }
 	} else {
-	    nb = ilaenv_(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
+	    nb = MLFORTRAN(ilaenv)(&c__1, "DGELQF", " ", m, n, &c_n1, &c_n1, 6L, 1L);
 	    if (tpsd) {
 /* Computing MAX */
-		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMLQ", "LT", n, nrhs, m, &
+		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", "LT", n, nrhs, m, &
 			c_n1, 6L, 2L);
 		nb = max(i__1,i__2);
 	    } else {
 /* Computing MAX */
-		i__1 = nb, i__2 = ilaenv_(&c__1, "DORMLQ", "LN", n, nrhs, m, &
+		i__1 = nb, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", "LN", n, nrhs, m, &
 			c_n1, 6L, 2L);
 		nb = max(i__1,i__2);
 	    }
@@ -8752,7 +8752,7 @@ tor
 /*        compute QR factorization of A */
 
 	i__1 = *lwork - mn;
-	dgeqrf_(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
+	MLFORTRAN(dgeqrf)(m, n, &A(1,1), lda, &WORK(1), &WORK(mn + 1), &i__1, info)
 		;
 
 /*        workspace at least N, optimally N*NB */
@@ -9786,14 +9786,14 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
 	    integer *, doublereal *, integer *);
     static integer ib, ic, jc, nb, mi, ni;
-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
 	    integer *, integer *, integer *, doublereal *, integer *, 
 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
 	    integer *);
     static integer nq, nw;
-    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
 	    integer *, integer *, ftnlen, ftnlen);
     static logical notran;
     static integer ldwork, iws;
@@ -9860,7 +9860,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     i__3[0] = 1, a__1[0] = side;
     i__3[1] = 1, a__1[1] = trans;
     s_cat(ch__1, a__1, i__3, &c__2, 2L);
-    i__1 = 64, i__2 = ilaenv_(&c__1, "DORMQR", ch__1, m, n, k, &c_n1, 6L, 2L);
+    i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMQR", ch__1, m, n, k, &c_n1, 6L, 2L);
     nb = min(i__1,i__2);
     nbmin = 2;
     ldwork = nw;
@@ -9873,7 +9873,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    i__3[0] = 1, a__1[0] = side;
 	    i__3[1] = 1, a__1[1] = trans;
 	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
-	    i__1 = 2, i__2 = ilaenv_(&c__2, "DORMQR", ch__1, m, n, k, &c_n1, 
+	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMQR", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
 	    nbmin = max(i__1,i__2);
 	}
@@ -9920,7 +9920,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
              H = H(i) H(i+1) . . . H(i+ib-1) */
 
 	    i__4 = nq - i + 1;
-	    dlarft_("Forward", "Columnwise", &i__4, &ib, &A(i,i), 
+	    MLFORTRAN(dlarft)("Forward", "Columnwise", &i__4, &ib, &A(i,i), 
 		    lda, &TAU(i), t, &c__65);
 	    if (left) {
 
@@ -9938,7 +9938,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 /*           Apply H or H' */
 
-	    dlarfb_(side, trans, "Forward", "Columnwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, 
+	    MLFORTRAN(dlarfb)(side, trans, "Forward", "Columnwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, 
 		    &WORK(1), &ldwork);
 /* L10: */
 	}
@@ -10075,14 +10075,14 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    integer *, doublereal *, integer *, doublereal *, doublereal *, 
 	    integer *, doublereal *, integer *);
     static integer ib, ic, jc, nb, mi, ni;
-    extern /* Subroutine */ int dlarfb_(char *, char *, char *, char *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarfb)(char *, char *, char *, char *, 
 	    integer *, integer *, integer *, doublereal *, integer *, 
 	    doublereal *, integer *, doublereal *, integer *, doublereal *, 
 	    integer *);
     static integer nq, nw;
-    extern /* Subroutine */ int dlarft_(char *, char *, integer *, integer *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarft)(char*, char*, integer*, integer*, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *), xerbla_(char *, integer *);
-    extern integer ilaenv_(integer *, char *, char *, integer *, integer *, 
+    extern integer MLFORTRAN(ilaenv)(integer *, char *, char *, integer *, integer *, 
 	    integer *, integer *, ftnlen, ftnlen);
     static logical notran;
     static integer ldwork;
@@ -10151,7 +10151,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     i__3[0] = 1, a__1[0] = side;
     i__3[1] = 1, a__1[1] = trans;
     s_cat(ch__1, a__1, i__3, &c__2, 2L);
-    i__1 = 64, i__2 = ilaenv_(&c__1, "DORMLQ", ch__1, m, n, k, &c_n1, 6L, 2L);
+    i__1 = 64, i__2 = MLFORTRAN(ilaenv)(&c__1, "DORMLQ", ch__1, m, n, k, &c_n1, 6L, 2L);
     nb = min(i__1,i__2);
     nbmin = 2;
     ldwork = nw;
@@ -10164,7 +10164,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 	    i__3[0] = 1, a__1[0] = side;
 	    i__3[1] = 1, a__1[1] = trans;
 	    s_cat(ch__1, a__1, i__3, &c__2, 2L);
-	    i__1 = 2, i__2 = ilaenv_(&c__2, "DORMLQ", ch__1, m, n, k, &c_n1, 
+	    i__1 = 2, i__2 = MLFORTRAN(ilaenv)(&c__2, "DORMLQ", ch__1, m, n, k, &c_n1, 
 		    6L, 2L);
 	    nbmin = max(i__1,i__2);
 	}
@@ -10217,7 +10217,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
              H = H(i) H(i+1) . . . H(i+ib-1) */
 
 	    i__4 = nq - i + 1;
-	    dlarft_("Forward", "Rowwise", &i__4, &ib, &A(i,i), lda,
+	    MLFORTRAN(dlarft)("Forward", "Rowwise", &i__4, &ib, &A(i,i), lda,
 		     &TAU(i), t, &c__65);
 	    if (left) {
 
@@ -10235,7 +10235,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 /*           Apply H or H' */
 
-	    dlarfb_(side, transt, "Forward", "Rowwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, &
+	    MLFORTRAN(dlarfb)(side, transt, "Forward", "Rowwise", &mi, &ni, &ib, &A(i,i), lda, t, &c__65, &C(ic,jc), ldc, &
 		    WORK(1), &ldwork);
 /* L10: */
 	}
@@ -10354,7 +10354,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     /* Local variables */
     static logical left;
     static integer i;
-    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarf)(char *, integer *, integer *, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
 	    doublereal *);
     extern logical lsame_(char *, char *);
@@ -10448,7 +10448,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 	aii = A(i,i);
 	A(i,i) = 1.;
-	dlarf_(side, &mi, &ni, &A(i,i), &c__1, &TAU(i), &C(ic,jc), ldc, &WORK(1));
+	MLFORTRAN(dlarf)(side, &mi, &ni, &A(i,i), &c__1, &TAU(i), &C(ic,jc), ldc, &WORK(1));
 	A(i,i) = aii;
 /* L10: */
     }
@@ -10560,7 +10560,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
     /* Local variables */
     static logical left;
     static integer i;
-    extern /* Subroutine */ int dlarf_(char *, integer *, integer *, 
+    extern /* Subroutine */ int MLFORTRAN(dlarf)(char *, integer *, integer *, 
 	    doublereal *, integer *, doublereal *, doublereal *, integer *, 
 	    doublereal *);
     extern logical lsame_(char *, char *);
@@ -10652,7 +10652,7 @@ doublereal dlange_(char *norm, integer *m, integer *n, doublereal *a, integer
 
 	aii = A(i,i);
 	A(i,i) = 1.;
-	dlarf_(side, &mi, &ni, &A(i,i), lda, &TAU(i), &C(ic,jc), ldc, &WORK(1));
+	MLFORTRAN(dlarf)(side, &mi, &ni, &A(i,i), lda, &TAU(i), &C(ic,jc), ldc, &WORK(1));
 	A(i,i) = aii;
 /* L10: */
     }
