@@ -66,7 +66,7 @@ EXECUTABLE_DIRECTORY=${PWD}/../Obj
 SCRATCH_ROOT_DIRECTORY=/tmp/mlbench_results
 PARALLEL=FALSE
 BATCH=FALSE
-CVS_UPDATE=FALSE                # DON'T CHANGE THIS FOR RIGHT NOW
+CVS_UPDATE=FALSE
 ARCH=PCLINUX
 #
 # CREATING NEW BENCHMARKS
@@ -250,17 +250,51 @@ then
      echo "Cannot do a cvs checkout without ssh key!"
      exit
   fi
- 
+#
+# First verify that there are no conflicts
+#
+  CVSCONFLICTS=FALSE
   cd ${SCRIPT_DIRECTORY}/../..
-  echo "Doing a cvs update of `pwd`/ml..."
-  echo
-  cvs update ml
+  cvs -n update ml >& ttttt
+  uuu=`cat ttttt | egrep -c "^C "`
+  if test `expr ${uuu}` \> 0
+  then
+     CVSCONFLICTS=TRUE
+  fi
+  rm -f ttttt
   cd ${BENCH_ROOT_DIRECTORY}/..
-  echo
-  echo "Doing a cvs update of `pwd`/mlbench..."
-  echo
-  cvs update mlbench
-  cd ${SCRIPT_DIRECTORY}
+  cvs -n update mlbench >& ttttt
+  uuu=`cat ttttt | egrep -c "^C "`
+  if test `expr ${uuu}` \> 0
+  then
+     CVSCONFLICTS=TRUE
+  fi
+  rm -f ttttt
+#
+# If no conflicts, do the checkout
+#
+  if test `expr ${CVSCONFLICTS}` = 'FALSE'
+  then
+    cd ${SCRIPT_DIRECTORY}/../..
+    echo "Doing a cvs update of `pwd`/ml..."
+    echo
+    cvs update ml
+    cd ${BENCH_ROOT_DIRECTORY}/..
+    echo
+    echo "Doing a cvs update of `pwd`/mlbench..."
+    echo
+    cvs update mlbench
+    cd ${SCRIPT_DIRECTORY}
+  else
+    echo
+    echo "**********************************************" 
+    echo "WARNING: Conflicts detected during cvs update"
+    echo "         of either ml or mlbench. Benchmarks "
+    echo "         cancelled!                          "
+    echo "*********************************************" 
+    echo; echo;
+    exit
+  fi
 fi
 #
 #  Check for the benchmark directory containing the 
