@@ -10,3 +10,4 @@ pOctant oct_findOctant(pOctant oct, double coord[3]);
 void    oct_global_dref(void);
 int     oct_subtree_dref(pOctant oct);
 void    oct_terminal_coarsen(pOctant oct);
+void    oct_set_maxregions(int max);

@@ -16,6 +16,7 @@
 static int oct_nref=0;                              /* number of refinements */
 static int oct_ncoarse=0;                           /* number of coarsenings */
 static int IDcount = 0;                            /* renumbering of octants */
+static int MAXOCTREGIONS = 1;
 
 /* static int dimension = 3; */             /* number of dimensions (2 or 3) */
 
@@ -89,12 +90,25 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   msg_endBuffer();
 
   if(lb->Params != NULL) {
-    POC_init(msg_mypid, lb->Params[0]);
-    set_method(lb->Params[1]);
+    if(lb->Params[0] == LB_PARAMS_INIT_VALUE)
+      POC_init(msg_mypid, 3);
+    else
+      POC_init(msg_mypid, lb->Params[0]);
+
+    if(lb->Params[1] == LB_PARAMS_INIT_VALUE)
+      set_method(0);
+    else
+      set_method(lb->Params[1]);
+
+    if(lb->Params[2] == LB_PARAMS_INIT_VALUE)
+      oct_set_maxregions(1);
+    else
+      oct_set_maxregions(lb->Params[2]);
   }
   else {
-    POC_init(msg_mypid, 2);
+    POC_init(msg_mypid, 3);
     set_method(0);
+    oct_set_maxregions(1);
   }
 
   /* create the octree structure */
@@ -123,8 +137,10 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   time1 = MPI_Wtime();
   dfs_migrate(&export_regs, &nsentags, &import_regs, &nrectags, 
 	      &c[2], &c[3], &counters[3], &counters[5]);
+
   fix_tags(&export_tags, &nsentags, &import_tags, &nrectags, 
 	   import_regs, export_regs);
+
   time2 = MPI_Wtime();
   timers[2] = time2 - time1;               /* time took to setup migration */
 
@@ -150,8 +166,13 @@ void oct_init(LB *lb,         /* The load-balancing structure with info for
   MPI_Barrier(MPI_COMM_WORLD);
   timestop = MPI_Wtime();
 
-  if(lb->Params != NULL)
-    print_stats(timestop - timestart, timers, counters, c, lb->Params[2]);
+  if(lb->Params != NULL) {
+    if(lb->Params[3] == LB_PARAMS_INIT_VALUE)
+      print_stats(timestop - timestart, timers, counters, c, 1);
+    else
+      if(lb->Params[3] != 0)
+	print_stats(timestop - timestart, timers, counters, c, lb->Params[3]);
+  }
   else
     print_stats(timestop - timestart, timers, counters, c, 1);
   /*
@@ -442,7 +463,7 @@ void get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   
   /* hack used for sample program since working in 2D -- */
   /* causes problems for refining the octree */
-  if(max[2] == 0)
+  if(max[2] == min[2])
     max[2] = 1.0;
 
   for(i=0; i<3; i++) {
@@ -929,6 +950,17 @@ void oct_terminal_coarsen(pOctant oct) {
       region = region->next;
     }
   }
+}
+
+void oct_set_maxregions(int max)
+{ 
+  if (max < 1) {
+    fprintf(stderr, "Warning oct_set_maxregions(): %s\n",
+	    "illeage input, using default.");
+    MAXOCTREGIONS = 1;
+  }
+  else
+    MAXOCTREGIONS = max; 
 }
 
 #ifdef LGG_MIGOCT

@@ -1,4 +1,3 @@
-#define MAXOCTREGIONS 1              /* maximum number of regions per octant */
 #define MINOCTREGIONS 1              /* minimum number of regions per octant */
 
 extern void    oct_gen_tree_from_input_data(LB *lb, int *c1, int *c2,

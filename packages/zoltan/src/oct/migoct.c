@@ -94,19 +94,21 @@ static void tag_regions(pOctant *octs, int *newpids, int nocts,
   /* find how many objects are being sent */
   count = 0;
   count2 = 0;
+  
   for (i=0; i<nocts; i++) {
     /* if newpids != LB_Proc, the it is being migrated */
     if(POC_isTerminal(octs[i])) {
       (*max_objs) += POC_nRegions(octs[i]);
-      if (newpids[i]!=LB_Proc)
+      if (newpids[i]!=LB_Proc) {
 	count+=POC_nRegions(octs[i]);
+      }
       else {
 	pRegion regions;
 
 	regions = POC_regionlist(octs[i]);
 	while(regions != NULL) {
 	  if(regions->Tag.Proc != LB_Proc)
-	    count2+=POC_nRegions(octs[i]);
+	    count2++;
 	  regions = regions->next;
 	}
       }
@@ -319,7 +321,7 @@ void fix_tags(LB_TAG **export_tags, int *nsentags, LB_TAG **import_tags,
   index = 0;
  /* for each region imported, look at it's origniating processor */
   for(i=0; i<(*nrectags); i++) {
-      new_import[index++] = import_regs[i].Tag;
+    new_import[index++] = import_regs[i].Tag;
   }
   /* setup return pointers */
   *import_tags = new_import;
