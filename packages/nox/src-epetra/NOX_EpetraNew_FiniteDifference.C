@@ -384,7 +384,7 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
   int myMax = map.MaxMyGID(); // Maximum Local ID value
 
   // Compute the RHS at the initial solution
-  computeF(x, fo, NOX::EpetraNew::Interface::Required::Jac);
+  computeF(x, fo, NOX::EpetraNew::Interface::Required::FD_Res);
 
   x_perturb = x;
 
@@ -412,12 +412,12 @@ bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& 
     map.Comm().Broadcast(&eta, 1, broadcastProc); 
 
     // Compute the perturbed RHS
-    computeF(x_perturb,fp, NOX::EpetraNew::Interface::Required::Jac);
+    computeF(x_perturb,fp, NOX::EpetraNew::Interface::Required::FD_Res);
 
     if ( diffType == Centered ) {
       if (map.MyGID(k))
         x_perturb[map.LID(k)] -= 2.0 * eta;  
-      computeF(x_perturb,fm, NOX::EpetraNew::Interface::Required::Jac);
+      computeF(x_perturb,fm, NOX::EpetraNew::Interface::Required::FD_Res);
     }
     
     // Compute the column k of the Jacobian
@@ -469,7 +469,7 @@ createGraphAndJacobian(Interface::Required& i,
   graph = new Epetra_CrsGraph(Copy,map,10);
 
   // Compute the RHS at the initial solution
-  computeF(x, fo, NOX::EpetraNew::Interface::Required::Residual);
+  computeF(x, fo, NOX::EpetraNew::Interface::Required::FD_Res);
 
   // loop over each global unknown
   for (int k = min; k < max+1; k++) {
@@ -487,7 +487,7 @@ createGraphAndJacobian(Interface::Required& i,
     }  
 
     // Compute the perturbed RHS
-    computeF(x_perturb, fp, NOX::EpetraNew::Interface::Required::Residual);
+    computeF(x_perturb, fp, NOX::EpetraNew::Interface::Required::FD_Res);
     
     // Compute the column k of the Jacobian
     Jc.Update(1.0, fp, -1.0, fo, 0.0);
@@ -549,7 +549,7 @@ bool FiniteDifference::computeF(const Epetra_Vector& input,
   
   if (!useGroupForComputeF)
     ok = interface.computeF(input, result, 
-			    NOX::EpetraNew::Interface::Required::Jac);
+			    NOX::EpetraNew::Interface::Required::FD_Res);
   else {
 
     // Get rid of const for NOX::Epetra:Vector Ctor.

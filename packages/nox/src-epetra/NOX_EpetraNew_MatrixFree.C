@@ -158,7 +158,7 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   perturbX.Update(1.0,Y,1.0);
 
   if (!useGroupForComputeF)
-    interface.computeF(perturbX, fp, NOX::EpetraNew::Interface::Required::Jac);
+    interface.computeF(perturbX, fp, NOX::EpetraNew::Interface::Required::MF_Res);
   else{
     NOX::Epetra::Vector noxX(perturbX, NOX::DeepCopy, true);
     groupPtr->setX(noxX);
@@ -230,7 +230,7 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x)
 
   bool ok = false;
   if (!useGroupForComputeF)
-    ok = interface.computeF(x, fo, NOX::EpetraNew::Interface::Required::Jac);
+    ok = interface.computeF(x, fo, NOX::EpetraNew::Interface::Required::MF_Res);
   else {
     NOX::Epetra::Vector noxX(currentX, NOX::DeepCopy, true);
     groupPtr->setX(noxX);
