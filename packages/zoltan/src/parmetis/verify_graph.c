@@ -24,6 +24,11 @@
 /*   1 - verify on-processor part of graph                           */
 /*   2 - verify complete graph (requires communication)              */
 /*                                                                   */
+/* Input parameter output_level specifies the level of verbosity:    */
+/*   0 - suppress warnings                                           */
+/*   1 - print summary of warnings                                   */
+/*   2 - detailed output for each warning                            */
+/*                                                                   */
 /* Output: an error code (the same on all procs)                     */
 /*                                                                   */
 /* Fatal error :                                                     */
@@ -41,11 +46,12 @@
 
 int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj, 
        idxtype *adjncy, idxtype *vwgt, idxtype *adjwgt, 
-       int vwgt_dim, int ewgt_dim, int check_graph, int debug_level)
+       int vwgt_dim, int ewgt_dim, int check_graph, int output_level)
 {
   int i, j, ii, jj, k, kk, num_obj, nedges, ierr;
   int flag, cross_edges, mesg_size, sum, global_sum;
   int nprocs, proc, *proclist, errors, global_errors;
+  int num_zeros, num_selfs, num_duplicates;
   idxtype global_i, global_j;
   idxtype *ptr1, *ptr2;
   char *sendbuf, *recvbuf;
@@ -65,11 +71,13 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   num_obj = vtxdist[proc+1] - vtxdist[proc];
   MPI_Reduce(&num_obj, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
-    LB_PRINT_WARN(proc, yo, "No vertices in graph.");
     ierr = LB_WARN;
+    if (output_level>0)
+      LB_PRINT_WARN(proc, yo, "No vertices in graph.");
   }
 
   /* Verify that vertex weights are non-negative */
+  num_zeros = 0;
   if (vwgt_dim){
     for (i=0; i<num_obj; i++){
        sum = 0;
@@ -84,12 +92,21 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
          sum += vwgt[i*vwgt_dim+k];
        }
        if (sum == 0){
-          if (debug_level>0) {
-            sprintf(msg, "Zero vertex weights for object %d.", i);
+          num_zeros++;
+          if (output_level>1) {
+            sprintf(msg, "Zero vertex (object) weights for object %d.", i);
             LB_PRINT_WARN(proc, yo, msg);
           }
           ierr = LB_WARN;
        }
+    }
+    MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+    if ((proc==0) && (global_sum>0)){
+      ierr = LB_WARN;
+      if (output_level>0){
+        sprintf(msg, "%d objects have zero weights.", global_sum);
+        LB_PRINT_WARN(proc, yo, msg);
+      }
     }
   }
 
@@ -97,11 +114,13 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   nedges = xadj[num_obj];
   MPI_Reduce(&nedges, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
-    LB_PRINT_WARN(proc, yo, "No edges in graph.");
     ierr = LB_WARN;
+    if (output_level>0)
+      LB_PRINT_WARN(proc, yo, "No edges in graph.");
   }
 
   /* Verify that edge weights are non-negative */
+  num_zeros = 0;
   if (ewgt_dim){
     for (j=0; j<nedges; j++){
       sum = 0;
@@ -116,11 +135,21 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
         sum += adjwgt[j*ewgt_dim+k];
       }
       if (sum == 0){
-        if (debug_level>0) {
-          sprintf(msg, "Zero communication weights for edge %d.", j);
+        num_zeros++;
+        if (output_level>1) {
+          sprintf(msg, "Zero edge (communication) weights for edge %d.", j);
           LB_PRINT_WARN(proc, yo, msg);
         }
         ierr = LB_WARN;
+      }
+    }
+
+    MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+    if ((proc==0) && (global_sum>0)){
+      ierr = LB_WARN;
+      if (output_level>0){
+        sprintf(msg, "%d edges have zero weights.", global_sum);
+        LB_PRINT_WARN(proc, yo, msg);
       }
     }
   }
@@ -130,6 +159,8 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
 
   /* First pass: Check on-processor edges and count # off-proc edges */
   cross_edges = 0;
+  num_selfs = 0;
+  num_duplicates = 0;
   for (i=0; i<num_obj; i++){
     global_i = vtxdist[proc]+i;
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
@@ -143,20 +174,20 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
       }
       /* Self edge? */
       if (global_j == global_i){
-        if (debug_level>0){
+        num_selfs++;
+        if (output_level>1){
           sprintf(msg, "Self edge for vertex %d detected.", global_i);
           LB_PRINT_WARN(proc, yo, msg);
         }
-        ierr = LB_WARN;
       }
       /* Duplicate edge? */
       for (kk=xadj[i]; kk<xadj[i+1]; kk++){
         if ((kk != ii) && (adjncy[kk] == adjncy[ii])){
-          if (debug_level>0){
+          num_duplicates++;
+          if (output_level>1){
             sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
             LB_PRINT_WARN(proc, yo, msg);
           }
-          ierr = LB_WARN;
         }
       }
       /* Is global_j a local vertex? */
@@ -193,6 +224,24 @@ int LB_Verify_Graph(MPI_Comm comm, idxtype *vtxdist, idxtype *xadj,
   }
 
 barrier1:
+  /* Sum up warnings so far. */
+  MPI_Reduce(&num_selfs, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  if ((proc==0) && (global_sum>0)){
+    ierr = LB_WARN;
+    if (output_level>0){
+      sprintf(msg, "%d self-edges in graph.", global_sum);
+      LB_PRINT_WARN(proc, yo, msg);
+    }
+  }
+  MPI_Reduce(&num_duplicates, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  if ((proc==0) && (global_sum>0)){
+    ierr = LB_WARN;
+    if (output_level>0){
+      sprintf(msg, "%d duplicate edges in graph.", global_sum);
+      LB_PRINT_WARN(proc, yo, msg);
+    }
+  }
+  
   /* Check if any processor has encountered a fatal error so far */
   errors = 0;
   if (ierr == LB_WARN)
@@ -332,7 +381,7 @@ barrier1:
     return LB_WARN;
   }
   else {
-    if (debug_level && (proc==0)){
+    if (proc==0 && output_level>0){
       if (check_graph == 1)
         printf("ZOLTAN %s: graph is OK locally on each processor\n", yo);
       else /* check_graph >= 2 */
