@@ -106,7 +106,8 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // we should return the test as unconverged until there is a valid 
   // old solution (i.e. the number of iterations is greater than zero).
   int niters = problem.getNumIterations();
-  if (niters == 0) {
+  if (niters == 0) 
+  {
     status = Unconverged;
     value = 1.0e+12;
     return status;
@@ -124,31 +125,28 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // Create the weighting vector u = RTOL |x| + ATOL
   // |x| is evaluated at the old time step
   v->abs(oldsoln.getX());
-  if (atolIsScalar) {    
+  if (atolIsScalar) 
+  {    
     u->init(1.0);
     u->update(rtol, *v, atol);
   }
-  else {
-    *u = *atolVec;
-    u->update(rtol, *v, 1.0);
+  else 
+  {
+    u->update(rtol, *v, 1.0, *atolVec, 0.0);
   }
 
   // v = 1/u (elementwise)
   v->reciprocal(*u);
 
   // u = x - oldx (i.e., the update)
-  u->update(1.0, soln.getX(), -1.0, oldsoln.getX(), 0.0);
+  //TGK - small changes, saves one function call
+  u->update(1.0, x, -1.0, oldsoln.getX(), 0.0);
 
   // u = Cp * u @ v (where @ represents an elementwise multiply)
-  //u->multiply(factor, *u, *v, 0.0);
   u->scale(*v);
-  u->scale(factor);
 
-  // Compute the sum of u^2 then divide by vector length: tmp = u*u/N
-  double tmp = u->dot(*u)/(static_cast<double>(u->length()));
-
-  // Finally, compute the WRMS norm value by taking the sqrt
-  value = sqrt(tmp);
+  // tmp = sqrt (factor * u * u / N)
+  value = u->norm() * sqrt( factor / static_cast<double>(u->length()));
 
   StatusType status1 = Unconverged;
   if (value < tolerance)
@@ -162,10 +160,12 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
   // If it is not then return a "Converged" status
   const Solver::Generic* test = 0;
   test = dynamic_cast<const Solver::LineSearchBased*>(&problem);
-  if (test == 0) {
+  if (test == 0) 
+  {
     status2 = Converged; 
   }
-  else {
+  else 
+  {
     printCriteria2Info = true;
     computedStepSize = (dynamic_cast<const Solver::LineSearchBased*>(&problem))->getStepSize();
     
@@ -175,31 +175,12 @@ StatusType NormWRMS::checkStatus(const Solver::Generic& problem)
 
   // **** Begin check for convergence criteria #3 ****
   
-  StatusType status3 = Unconverged;
-  bool outputListExists = false;
-  const NOX::Parameter::List& p = problem.getParameterList();
+  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").
+    sublist("Output").getParameter("Achieved Tolerance", -1.0);
   
-  // Make sure the output parameter list exists
-  // If so, get the tolerance from it
-  if (p.isParameterSublist("Direction")) {
-    if (p.sublist("Direction").isParameterSublist("Newton")) {
-      if (p.sublist("Direction").sublist("Newton").isParameterSublist("Linear Solver")) {
-	if (p.sublist("Direction").sublist("Newton").sublist("Linear Solver").isParameterSublist("Output")) {
-	
-	  outputListExists = true;
-	  printCriteria3Info = true;
-	
-	  achievedTol = problem.getParameterList().sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").getParameter("Achieved Tolerance", -1.0);
-	
-	  if (achievedTol <= beta)
-	    status3 = Converged;
-	}
-      }
-    }
-  }
-  
-  if (!outputListExists)
-    status3 = Converged;
+  printCriteria3Info = (achievedTol != -1.0);
+  StatusType status3 = (achievedTol <= beta) || (achievedTol == -1.0) ? Converged : Unconverged;
+
 
   // Determine status of test
   if ((status1 == Converged) && 
