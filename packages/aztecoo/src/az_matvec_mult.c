@@ -238,7 +238,7 @@ void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
           if (m1 < 10)
             AZ_dgemv2(m1, n1, val_pntr, x, c_pntr);
           else
-            DGEMV_F77(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
+            DGEMV_F77(CHAR_MACRO(N[0]), &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
                    &ione);
 #endif
 
@@ -251,7 +251,7 @@ void dvbr_sparax_basic(int m, double *val, int *bindx, int *rpntr,
         if (m1 < 10)
           AZ_dgemv2(m1, n1, val_pntr, x, c_pntr);
         else
-          DGEMV_F77(N, &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
+          DGEMV_F77(CHAR_MACRO(N[0]), &m1, &n1, &one, val_pntr, &m1, x, &ione, &one, c_pntr,
                  &ione);
       }
 

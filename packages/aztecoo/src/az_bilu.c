@@ -100,7 +100,7 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
                k = bindx[tk];
                if ( (ipattern[k] != -1) && (k > j) ) {
                   sk = cpntr[k+1] - cpntr[k];
-                  DGEMM_F77(N, N, &si, &sk, &sj, &alpha, 
+                  DGEMM_F77(CHAR_MACRO(N[0]), CHAR_MACRO(N[0]), &si, &sk, &sj, &alpha, 
                          &(val[indx[tj]]), &si, &(val[indx[tk]]), &sj, &beta, 
                          &(val[ipattern[k]]), &si);
 
@@ -118,7 +118,7 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
                  Sub_block[pp++] = temp[ pj*si + pi];
               }
            }
-           DGETRS_F77(T, &sj , &si, &(val[indx[diag_block[j]]]),
+           DGETRS_F77(CHAR_MACRO(T[0]), &sj , &si, &(val[indx[diag_block[j]]]),
                    &sj, &(pivot[cpntr[j]]), Sub_block,
                    &sj, &info);
 
@@ -148,7 +148,7 @@ void AZ_fact_bilu(int Nrows, AZ_MATRIX *matrix, int diag_block[],
          if (k > i) {
             sk = cpntr[k+1] - cpntr[k];
 
-            DGETRS_F77(N, &si , &sk, &(val[indx[diag_block[i]]]),
+            DGETRS_F77(CHAR_MACRO(N[0]), &si , &sk, &(val[indx[diag_block[i]]]),
                     &si, &(pivot[cpntr[i]]), &(val[indx[tk]]),
                     &si, &info);
          }
@@ -208,7 +208,7 @@ void AZ_lower_triang_vbr_solve(int Nrows, int cpntr[], int bpntr[],
          j = bindx[tj];
          sj = cpntr[j+1] - cpntr[j];
          if (j < i) {
-            DGEMV_F77(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
+            DGEMV_F77(CHAR_MACRO(N[0]), &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
                    &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione);
          }
       }
@@ -255,7 +255,7 @@ void AZ_upper_triang_vbr_solve(int Nrows, int cpntr[], int bpntr[], int indx[],
       si = cpntr[i+1]  - cpntr[i];
       i1 = cpntr[i];
 
-      DGETRS_F77(N, &si , &ione, &(val[indx[diag_block[i]]]),
+      DGETRS_F77(CHAR_MACRO(N[0]), &si , &ione, &(val[indx[diag_block[i]]]),
               &si, &(pivot[cpntr[i]]), &(b[i1]),
               &si, &info);
 
@@ -263,7 +263,7 @@ void AZ_upper_triang_vbr_solve(int Nrows, int cpntr[], int bpntr[], int indx[],
          j  = bindx[tj];
          sj = cpntr[j+1] - cpntr[j];
          if (j > i) {
-            DGEMV_F77(N, &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
+            DGEMV_F77(CHAR_MACRO(N[0]), &si, &sj, &minus_one, &(val[indx[tj]]), &si, 
                    &(b[cpntr[j]]), &ione, &one, &(b[i1]), &ione);
          }
       }

@@ -448,7 +448,7 @@ double one = 1.0;
 
             /* Matrix solve */
 
-            DGETRS_F77(None, &m1, &n1, &d3_inv[d_ival], &m1, 
+            DGETRS_F77(CHAR_MACRO(None[0]), &m1, &n1, &d3_inv[d_ival], &m1, 
                     &(ipiv[rpntr[iblk_row]]), &val[ival], &m1, &info);
           }
           ival += itemp;
@@ -480,9 +480,9 @@ double one = 1.0;
        for (iblk_row = 0; iblk_row < m; iblk_row++) {
           m1 = rpntr[iblk_row+1] - rpntr[iblk_row];
           d_ival  = d3_indx[d3_bpntr[iblk_row] - d_bpoff] - d_idoff;
-          DTRMM_F77( Left, Upper, None, None, &m1,
+          DTRMM_F77( CHAR_MACRO(Left[0]), CHAR_MACRO(Upper[0]), CHAR_MACRO(None[0]), CHAR_MACRO(None[0]), &m1,
                   &ione, &one, &d3_inv[d_ival], &m1, &(b[rpntr[iblk_row]]), &m1);
-          DTRMM_F77( Left, Lower, None, Unit, &m1, &ione,
+          DTRMM_F77( CHAR_MACRO(Left[0]), CHAR_MACRO(Lower[0]), CHAR_MACRO(None[0]), CHAR_MACRO(Unit[0]), &m1, &ione,
                   &one, &d3_inv[d_ival], &m1, &(b[rpntr[iblk_row]]), &m1);
           DLASWP_F77( &ione, &(b[rpntr[iblk_row]]), &m1, &ione, &m1, &(ipiv[rpntr[iblk_row]]), &iminus_one );
 
@@ -492,7 +492,7 @@ double one = 1.0;
        for (iblk_row = 0; iblk_row < m; iblk_row++) {
           m1 = rpntr[iblk_row+1] - rpntr[iblk_row];
           d_ival  = d3_indx[d3_bpntr[iblk_row] - d_bpoff] - d_idoff;
-          DGETRS_F77(None, &m1, &ione, &d3_inv[d_ival], &m1, &(ipiv[rpntr[iblk_row]]), 
+          DGETRS_F77(CHAR_MACRO(None[0]), &m1, &ione, &d3_inv[d_ival], &m1, &(ipiv[rpntr[iblk_row]]), 
                   &(b[rpntr[iblk_row]]), &m1, &info);
        }
     }
@@ -744,8 +744,9 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
 
           /* perform a backsolve on L*work' = A' to get 'work' array */
 
-          DTRSM_F77(side, uplo, transa, diag, &m1, &n1, &done, L+idL, &m1, work,
-                 &m1);
+          DTRSM_F77(CHAR_MACRO(side[0]), CHAR_MACRO(uplo[0]), 
+		    CHAR_MACRO(transa[0]), CHAR_MACRO(diag[0]), &m1, &n1, 
+		    &done, L+idL, &m1, work, &m1);
 
           /* need the transpose of the work array */
 
@@ -757,8 +758,9 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
 
           /* perform a backsolve on L*work2 = work */
 
-          DTRSM_F77(side, uplo, transa, diag, &m1, &n1, &done, L+idL, &m1, work,
-                 &m1);
+          DTRSM_F77(CHAR_MACRO(side[0]), CHAR_MACRO(uplo[0]), 
+		    CHAR_MACRO(transa[0]), CHAR_MACRO(diag[0]), &m1, &n1,
+		    &done, L+idL, &m1, work, &m1);
 
           /* copy the transpose of this result into the proper block in 'val' */
 
@@ -775,8 +777,9 @@ void AZ_sym_block_diagonal_scaling(double val[], int indx[], int bindx[],
       /* scale the RHS */
 
       idL = d3_indx[d3_bpntr[iblk_row] - d_bpoff] - d_idoff;
-      DTRSM_F77(side, uplo, transa, diag, &m1, &ione, &done, L+idL, &m1, b+ib,
-             &m1);
+      DTRSM_F77(CHAR_MACRO(side[0]), CHAR_MACRO(uplo[0]), 
+		CHAR_MACRO(transa[0]), CHAR_MACRO(diag[0]), &m1, &ione, &done,
+		L+idL, &m1, b+ib, &m1);
       ib += m1;
     }
 
@@ -2073,7 +2076,7 @@ static void calc_blk_diag_Chol(double *val, int *indx, int *bindx, int *rpntr,
           /* Compute the Cholesky factors for this block */
 
           iL = d_indx[d_bpntr[iblk_row] - *d_bpntr] - *d_indx;
-          DPOTRF_F77(uplo, &m1, L+iL, &m1, &info);
+          DPOTRF_F77(CHAR_MACRO(uplo[0]), &m1, L+iL, &m1, &info);
 
           if (info < 0) {
             (void) fprintf(stderr, "%sERROR: argument %d is illegal\n", yo,

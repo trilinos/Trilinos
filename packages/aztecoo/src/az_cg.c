@@ -161,10 +161,10 @@ double *block;
         printf("Not space to apply vectors in CG\n");
         exit(1);
      }
-     DGEMV_F77(T,&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one);
+     DGEMV_F77(CHAR_MACRO(T[0]),&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one);
      AZ_gdot_vec(kvec_sizes[AZ_Nkept], dots, &(dots[kvec_sizes[AZ_Nkept]]), proc_config);
      for (i = 0; i < kvec_sizes[AZ_Nkept]; i++) dots[i] = dots[i]/ptap[i];
-     DGEMV_F77(T2, &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone, 
+     DGEMV_F77(CHAR_MACRO(T2[0]), &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone, 
             x,  &one);
 
       AZ_free(dots);

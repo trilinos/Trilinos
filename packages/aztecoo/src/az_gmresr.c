@@ -212,14 +212,14 @@ char *T2 = "N";
          for (ii = 0 ; ii < 2 ; ii++ ) {
             dble_tmp = 0.0; mm = i;
             if (N == 0) for (k = 0 ; k < i ; k++) dots[k] = 0.0;
-            DGEMV_F77(T, &N, &mm, &doubleone, CCblock, &NN, CC[i], 
+            DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, CCblock, &NN, CC[i], 
                    &one, &dble_tmp, dots, &one);
 
             AZ_gdot_vec(i, dots, tmp, proc_config);
 
-            DGEMV_F77(T2, &N, &mm, &minusone, CCblock, &NN, dots, 
+            DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, CCblock, &NN, dots, 
                    &one, &doubleone, CC[i], &one);
-            DGEMV_F77(T2, &N, &mm, &minusone, UUblock, &NN, dots,
+            DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, UUblock, &NN, dots,
                    &one, &doubleone, UU[i], &one);
          }
       }

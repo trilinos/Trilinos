@@ -4,6 +4,14 @@
 #include "az_aztec_defs.h"
 #include <string.h>
 
+#ifdef CHAR_MACRO
+#undef CHAR_MACRO
+#endif
+#if defined (INTEL_CXML)
+#define CHAR_MACRO(char_var) &char_var, 1
+#else
+#define CHAR_MACRO(char_var) &char_var
+#endif
 
 /* Define fcd (Fortran az_fcd descriptor) for non-standard situations */
 

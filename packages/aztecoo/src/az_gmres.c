@@ -260,11 +260,11 @@ char *T2 = "N";
          for (ii = 0 ; ii < 2; ii++ ) {
             if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
             dble_tmp = 0.0; mm = i+1;
-            DGEMV_F77(T, &N, &mm, &doubleone, vblock, &aligned_N_total, 
+            DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total, 
                    v[i1], &one, &dble_tmp, dots, &one);
             AZ_gdot_vec(i1, dots, tmp, proc_config);
             for (k = 0; k <= i; k++) hh[k][i] += dots[k];
-            DGEMV_F77(T2, &N, &mm, &minusone, vblock, &aligned_N_total, 
+            DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total, 
                    dots, &one, &doubleone, v[i1], &one);
          }
       }
