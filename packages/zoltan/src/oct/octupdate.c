@@ -435,7 +435,7 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   LB_GID *obj_global_ids; 
   LB_LID *obj_local_ids;
   float *obj_wgts;
-  int i, found, wgtflag;
+  int i, found, wgtflag = 0;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double x;
@@ -443,8 +443,13 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   int ierr = 0;
 
   /* ATTN: wgtflag should be determined by a user-defined option,
-     probably set by LB_Set_Param. For now, deactivate weights. */
-  wgtflag = 0;
+     probably set by LB_Set_Param. For now, read as input parameter. */
+  if (lb->Params != NULL) {
+    if (lb->Params[LB_PARAMS_MAX_SIZE-1] == LB_PARAMS_INIT_VALUE)
+      wgtflag = 0;
+    else
+      wgtflag = lb->Params[LB_PARAMS_MAX_SIZE-1];
+  }
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {

@@ -71,7 +71,7 @@ struct LB_Struct;
  *  method.
  */
 
-#define LB_PARAMS_MAX_SIZE 5
+#define LB_PARAMS_MAX_SIZE 7
 
 /*
  * Error codes for DLB library

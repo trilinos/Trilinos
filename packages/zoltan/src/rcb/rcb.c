@@ -119,7 +119,7 @@ int lb_rcb(
   int     i,ii,j,k;                 /* local variables */
 
   RCB_STRUCT *rcb;                 /* Pointer to data structures for RCB.  */
-  int wgtflag;                     /* (0) do not (1) do use weights.
+  int wgtflag = 0;                 /* (0) do not (1) do use weights.
                                       Multidimensional weights not supported */
   double overalloc;                /* amount to overallocate by when realloc
                                       of dot array must be done.     
@@ -159,31 +159,13 @@ int lb_rcb(
   proc = lb->Proc;
   nprocs = lb->Num_Proc;
 
-  /*
-   *  Build the RCB Data structure and 
-   *  set pointers to information in it.
-   */
-
-  LB_start_time = MPI_Wtime();
-  wgtflag = 0;  /* No weights in this version. Using weights or not
-                   should be set by the user via LB_Set_Param() */
-  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax, wgtflag);
-
-  rcb = (RCB_STRUCT *) (lb->Data_Structure);
-
-  dotpt  = rcb->Dots; 
-  rcbbox = rcb->Box;
-  treept = rcb->Tree_Ptr;
-  LB_end_time = MPI_Wtime();
-  LB_time[0] = LB_end_time - LB_start_time;
-  LB_start_time = LB_end_time;
-
   if (lb->Params == NULL) {
     /* 
      *  No application-specified parameters; use defaults.
      */
     overalloc = RCB_DEFAULT_OVERALLOC;
     reuse = RCB_DEFAULT_REUSE;
+    wgtflag = 0;
   }
   else {
     if (lb->Params[0] == LB_PARAMS_INIT_VALUE)
@@ -195,7 +177,29 @@ int lb_rcb(
       reuse = RCB_DEFAULT_REUSE;
     else
       reuse = lb->Params[1];
+
+    if (lb->Params[LB_PARAMS_MAX_SIZE-1] == LB_PARAMS_INIT_VALUE)
+      wgtflag = 0;
+    else
+      wgtflag = lb->Params[LB_PARAMS_MAX_SIZE-1];
   }
+  /*
+   *  Build the RCB Data structure and 
+   *  set pointers to information in it.
+   */
+
+  LB_start_time = MPI_Wtime();
+  LB_rcb_build_data_structure(lb, &pdotnum, &dotmax, wgtflag);
+
+  rcb = (RCB_STRUCT *) (lb->Data_Structure);
+
+  dotpt  = rcb->Dots; 
+  rcbbox = rcb->Box;
+  treept = rcb->Tree_Ptr;
+  LB_end_time = MPI_Wtime();
+  LB_time[0] = LB_end_time - LB_start_time;
+  LB_start_time = LB_end_time;
+
   
   /* local copies of calling parameters */
 
