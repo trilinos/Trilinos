@@ -41,7 +41,6 @@
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
 #include "Amesos_EpetraBaseSolver.h"
-#include "EpetraExt_Redistor.h"
 #include "Epetra_Util.h"
 
 #define ICNTL(I) icntl[(I)-1]
@@ -50,10 +49,10 @@
 #define INFO(I) info[(I)-1]
 #define RINFOG(I) rinfog[(I)-1]
 
-#ifdef HAVE_AMESOS_SMUMPS
-#define TYPE float
+#ifndef HAVE_AMESOS_SMUMPS
+#define MUMPS_INTERFACE dmumps_c
 #else
-#define TYPE double
+#define MUMPS_INTERFACE smumps_c
 #endif
 
 const int DEF_VALUE_INT = -123456789;
@@ -62,23 +61,15 @@ const double DEF_VALUE_DOUBLE = -123456.789;
 //=============================================================================
 
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
-  Amesos_EpetraBaseSolver(prob),
+  Problem_(&prob),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
-  KeepMatrixDistributed_(true),
   MaxProcs_(-1),
-  MaxProcsInputMatrix_(-4),
-  UseMpiCommSelf_(false),
-  Map_(0),
-  NumMUMPSNonzeros_(0),
-  NumMyMUMPSNonzeros_(0),
-  Col(0),
-  Row(0),
-  Val(0),
-#ifdef HAVE_AMESOS_SMUMPS
-  SVal(0),
-  SVector(0),
-#endif
+  RedistrMap_(0),
+  RedistrMatrix_(0),
+  RedistrImporter_(0),
+  SerialMap_(0),
+  SerialImporter_(0),
   NumSchurComplementRows_(-1),
   SchurComplementRows_(0),
   CrsSchurComplement_(0),
@@ -92,11 +83,6 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   PermIn_(0),
   Maxis_(DEF_VALUE_INT),
   Maxs_(DEF_VALUE_INT),
-  OldMatrix_(0),
-  Redistor_(0),
-  TargetVector_(0),
-  MyPID_(-1),
-  NumProcs_(-1),
   verbose_(1),
   AddToDiag_(0.0),
   AddDiagElement_(false),
@@ -114,15 +100,13 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  Time_(0)
+  Time_(0),
+  MatrixType_(0)
+
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
-#ifndef HAVE_AMESOS_SMUMPS
   MDS.job = -777;
-#else
-  MDS.job = -777;
-#endif
   
   // set to -1 icntl_ and cntl_. The use can override default values by using
   // SetICNTL(pos,value) and SetCNTL(pos,value).
@@ -142,35 +126,54 @@ void Amesos_Mumps::Destroy()
   // destroy instance of the package
   MDS.job = -2;
   
-#ifndef HAVE_AMESOS_SMUMPS
-  if( MyPID_ < MaxProcs_ ) dmumps_c(&MDS);
-#else
-  if( MyPID_ < MaxProcs_ ) smumps_c(&MDS);
-#endif
+  if (Comm().MyPID() < MaxProcs_) 
+    MUMPS_INTERFACE(&MDS);
     
-  if( Redistor_ ) delete Redistor_;
-  if( TargetVector_ ) delete TargetVector_;
-  
-  if( Row ) { delete Row; Row = 0; }
-  if( Col ) { delete Col; Col = 0; }
-  if( Val ) { delete Val; Val = 0; }
-
-#ifdef HAVE_AMESOS_SMUMPS
-  if( SVal ) { delete [] SVal; SVal = 0; }
-  if( SVector ) { delete [] SVector; SVector = 0; }
-#endif
-
-  if( IsComputeSchurComplementOK_ && MyPID_ == 0 ) {
-    delete [] MDS.schur;
+  if (RedistrMap_) {
+    delete RedistrMap_;
+    RedistrMap_ = 0;
   }
 
-  if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
-  MUMPSComm_ = 0;
+  if (RedistrMatrix_) {
+    delete RedistrMatrix_;
+    RedistrMatrix_ = 0;
+  }
 
-  if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
-  if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
+  if (RedistrImporter_) {
+    delete RedistrImporter_;
+    RedistrImporter_ = 0;
+  }
 
-  if( Time_ ) { delete Time_; Time_ = 0; }
+  if (SerialMap_) {
+    delete SerialMap_;
+    SerialMap_ = 0;
+  }
+
+  if (SerialImporter_) {
+    delete SerialImporter_;
+    SerialImporter_ = 0;
+  }
+
+  if (IsComputeSchurComplementOK_ && (Comm().MyPID() == 0)
+      && MDS.schur) {
+    delete [] MDS.schur;
+    MDS.schur = 0;
+  }
+
+  if (MUMPSComm_) {
+    MPI_Comm_free( &MUMPSComm_ );
+    MUMPSComm_ = 0;
+  }
+
+  if( (verbose_ && PrintTiming_) || verbose_ == 2) 
+    PrintTiming();
+  if( (verbose_ && PrintStatus_) || verbose_ == 2) 
+    PrintStatus();
+
+  if (Time_) { 
+    delete Time_; 
+    Time_ = 0; 
+  }
      
   return;
 }
@@ -186,277 +189,57 @@ Amesos_Mumps::~Amesos_Mumps(void)
 
 //=============================================================================
 
-int Amesos_Mumps::ConvertToTriplet()
+int Amesos_Mumps::ConvertToTriplet(const bool OnlyValues)
 {
+
+  Epetra_RowMatrix* ptr;
+  if (Comm().NumProc() == 1)
+    ptr = &Matrix();
+  else {
+    ptr = &RedistrMatrix(true);
+  }
 
   Time_->ResetStartTime();
 
-  // MS // convert to MUMPS format, keeping in distributed form.
-  // MS // This doesn't require the matrix to be shipped to proc 0,
-  // MS // then decomposed and reshipped by MUMPS
 
-  // MS // be sure that those vectors are empty. Allocate them
+  Row.resize(ptr->NumMyNonzeros());
+  Col.resize(ptr->NumMyNonzeros());
+  Val.resize(ptr->NumMyNonzeros());
 
-  if( Row ) delete Row;
-  if( Col ) delete Col;
-  if( Val ) delete Val;
+  int MaxNumEntries = ptr->MaxNumEntries();
+  vector<int> Indices;
+  vector<double> Values;
+  Indices.resize(MaxNumEntries);
+  Values.resize(MaxNumEntries);
 
-  Row = new Epetra_IntSerialDenseVector( NumMyNonzeros()+1);
-  Col = new Epetra_IntSerialDenseVector( NumMyNonzeros()+1 );
-  Val = new Epetra_SerialDenseVector( NumMyNonzeros()+1 );
+  int count = 0;
 
-  NumMyMUMPSNonzeros_ = 0;
-  
-  // MS // retrive already allocated pointers for rows, cols, and vals
-  // MS // Those arrays are allocated and freed by the Amesos_EpetraBaseSolver
-  // MS // class. Note that, if a View method is implemented, those pointers
-  // MS // will change to reflect the action of the View. Otherwise,
-  // MS // the allocated vectors will be used to copy data  
+  for (int i = 0; i < ptr->NumMyRows() ; ++i) {
 
-  int NumIndices;
-  
-  int * RowIndices = GetRowIndices();
-  int * ColIndices = GetColIndices();
-  double * MatrixValues = GetValues();
-  
-  // MS // for CrsA and VbrA, handle the case of IndexBase different from 0
-  // MS // diff is the difference between what we have and what we want 
-  // MS // (1, FORTRAN style)
-  int diff = 1-IndexBase();
-  
-  // MS // do all in terms of BlockRows. This way we can support VBR matrices
+    int GlobalRow = ptr->RowMatrixRowMap().GID(i);
 
-  for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
+    int NumEntries = 0;
+    int ierr;
+    ierr = ptr->ExtractMyRowCopy(i, MaxNumEntries,
+				   NumEntries, &Values[0],
+				   &Indices[0]);
+    AMESOS_CHK_ERR(ierr);
 
-    bool FoundDiagonal = false;
-    int Diag;
-    
-    GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
-
-    for( int i=0 ; i<NumIndices ; ++i ) {
-      if( abs(MatrixValues[i]) >= Threshold_ || true ) {
-	(*Row)[NumMyMUMPSNonzeros_] = RowIndices[i]+diff;
-	(*Col)[NumMyMUMPSNonzeros_] = ColIndices[i]+diff;
-	(*Val)[NumMyMUMPSNonzeros_] = MatrixValues[i];
-	if( MatrixProperty_ == 0 || RowIndices[i] >= ColIndices[i] ) {
-	  if( RowIndices[i] == ColIndices[i] ) {
-	    Diag = RowIndices[i];
-	    FoundDiagonal = true;
-	    (*Val)[NumMyMUMPSNonzeros_] += AddToDiag_;
-	  }
-	  NumMyMUMPSNonzeros_++;
-	}
+    for (int j = 0 ; j < NumEntries ; ++j) {
+      if (OnlyValues == false) {
+	Row[count] = GlobalRow + 1;
+	Col[count] = ptr->RowMatrixColMap().GID(Indices[j]) + 1;
       }
-      // add diagonal element if not found
-      if( AddDiagElement_ && FoundDiagonal == false ) {
-	(*Row)[NumMyMUMPSNonzeros_] = Diag;
-	(*Col)[NumMyMUMPSNonzeros_] = Diag;
-	(*Val)[NumMyMUMPSNonzeros_] = AddToDiag_;
-	NumMyMUMPSNonzeros_++;
-      }
+      Val[count] = Values[j];
+      count++;
     }
   }
 
   ConTime_ == Time_->ElapsedTime(); 
   
-  assert(NumMyMUMPSNonzeros_<=NumMyNonzeros());
+  assert (count <= ptr->NumMyNonzeros());
 
-  // MS // bring matrix to proc zero if required. Note that I first
-  // MS // convert to COO format (locally), then I redistribute COO vectors.
-
-  if( MaxProcsInputMatrix_ != NumProcs_ ) {
-
-    RedistributeMatrix(MaxProcsInputMatrix_);
-    
-  } else {
-
-    NumMUMPSNonzeros_ = NumMyMUMPSNonzeros_;
-
-  }
-
-  return 0;
-
-}
-
-//=============================================================================
-
-void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
-{
-
-  Time_->ResetStartTime();
-  
-  Epetra_IntSerialDenseVector * OldRow = Row;
-  Epetra_IntSerialDenseVector * OldCol = Col;
-  Epetra_SerialDenseVector * OldVal = Val;
-
-  Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);
-
-  int local = NumMUMPSNonzeros_ / NumProcs;
-  if( MyPID_ == 0 ) local += NumMUMPSNonzeros_%NumProcs;
-
-  if( MyPID_ < NumProcs ) NumMUMPSNonzeros_ = local;
-  else                    NumMUMPSNonzeros_ = 0;
-
-  
-  Row = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
-  Col = new Epetra_IntSerialDenseVector(NumMUMPSNonzeros_+1);
-  Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_+1);
-
-  Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
-    
-  Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
-  Epetra_Import OldToNew(NewNnz,OldNnz);
-
-  Epetra_IntVector GOldRow(View,OldNnz,OldRow->Values());
-  Epetra_IntVector GOldCol(View,OldNnz,OldCol->Values());
-  Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
-  
-  Epetra_IntVector GRow(View,NewNnz,Row->Values());
-  Epetra_IntVector GCol(View,NewNnz,Col->Values());
-  Epetra_Vector GVal(View,NewNnz,Val->Values());
-
-  GRow.Import(GOldRow,OldToNew,Insert);
-  GCol.Import(GOldCol,OldToNew,Insert);
-  GVal.Import(GOldVal,OldToNew,Insert);
-
-  if( OldRow ) { delete OldRow; OldRow = 0; }
-  if( OldCol ) { delete OldCol; OldCol = 0; }
-  if( OldVal ) { delete OldVal; OldVal = 0; }
-
-  MatTime_ += Time_->ElapsedTime();
-  
-}
-
-//=============================================================================
-
-void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
-{
-
-  Time_->ResetStartTime();
-  
-  // I suppose that NumMyMUMPSNonzeros_ has been computed
-  // before calling this method.
-
-  Comm().SumAll(&NumMyMUMPSNonzeros_,&NumMUMPSNonzeros_,1);    
-
-  Epetra_SerialDenseVector * OldVal = Val;
-  
-  int local = NumMUMPSNonzeros_ / NumProcs;
-  if( MyPID_ == 0 ) local += NumMUMPSNonzeros_%NumProcs;
-  
-  if( MyPID_ < NumProcs ) NumMUMPSNonzeros_ = local;
-  else                    NumMUMPSNonzeros_ = 0;
-
-  Val = new Epetra_SerialDenseVector(NumMUMPSNonzeros_);
-  
-  Epetra_Map OldNnz(-1,NumMyMUMPSNonzeros_,0,Comm());
-  
-  Epetra_Map NewNnz(-1,NumMUMPSNonzeros_,0,Comm());
-  Epetra_Import OldToNew(NewNnz,OldNnz);
-  
-  Epetra_Vector GOldVal(View,OldNnz,OldVal->Values());
-  
-  Epetra_Vector GVal(View,NewNnz,Val->Values());
-  
-  GVal.Import(GOldVal,OldToNew,Insert);
-  
-  if( OldVal ) { delete OldVal; OldVal = 0; }
-
-  MatTime_ += Time_->ElapsedTime();
-  
-}
-
-//=============================================================================
-
-int Amesos_Mumps::ConvertToTripletValues()
-{
-
-  Time_->ResetStartTime();  
-
-  // MS // convert to MUMPS format, keeping in distributed form.
-  // MS // This doesn't require the matrix to be shipped to proc 0,
-  // MS // then decomposed and reshipped by MUMPS
-
-  // MS // be sure that those vectors are empty. Allocate them
-  
-  if( Val ) delete Val;
-
-  Val = new Epetra_SerialDenseVector( NumMyNonzeros() ) ;  
-
-  int NumMUMPSNonzerosValues = 0;
-  
-  // MS // retrive already allocated pointers for rows, cols, and vals
-  // MS // Those arrays are allocated and freed by the Amesos_EpetraBaseSolver
-  // MS // class. Note that, if a View method is implemented, those pointers
-  // MS // will change to reflect the action of the View. Otherwise,
-  // MS // the allocated vectors will be used to copy data  
-
-  int NumIndices;
-  
-  int * RowIndices = GetRowIndices();
-  int * ColIndices = GetColIndices();
-  double * MatrixValues = GetValues();
-  
-  // MS // do all in terms of BlockRows. This way we can support VBR matrices
-  
-  for( int LocalBlockRow=0; LocalBlockRow<NumMyBlockRows() ; ++LocalBlockRow ) {
-
-    bool FoundDiagonal = false;
-
-    GetRow(LocalBlockRow,NumIndices,RowIndices,ColIndices,MatrixValues);
-    /*    
-    for( int i=0 ; i<NumIndices ; ++i ) {
-      if( abs(MatrixValues[i]) >= Threshold_ ) {
-	
-	(*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
-	NumMUMPSNonzerosValues++;
-      }
-    }
-    */
-
-    for( int i=0 ; i<NumIndices ; ++i ) {
-      if( MatrixProperty_ == 0 || RowIndices[i] >= ColIndices[i] ) { 
-	if( abs(MatrixValues[i]) >= Threshold_ || true ) {
-	  (*Val)[NumMUMPSNonzerosValues] = MatrixValues[i];
-	  if( RowIndices[i] == ColIndices[i] ) {
-	    FoundDiagonal = true;
-	    (*Val)[NumMUMPSNonzerosValues] += AddToDiag_;
-	  }
-	  NumMUMPSNonzerosValues++;
-	}
-      }
-      
-      // add diagonal element if not found
-      if( AddDiagElement_ && FoundDiagonal == false ) {
-	(*Val)[NumMUMPSNonzerosValues++] = AddToDiag_;
-      }
-    }
-    
-  }
-
-  if( NumMUMPSNonzerosValues != NumMyMUMPSNonzeros_ ) {
-     cerr << "Amesos_Mumps ERROR : it appears that matrix has changed\n"
-          << "Amesos_Mumps ERROR : its structure since SymbolicFactorization() has\n"
-	  << "Amesos_Mumps ERROR : called. # nonzeros (sym) = " << NumMyMUMPSNonzeros_ << endl
-	  << "Amesos_Mumps ERROR : called. # nonzeros (num) = " << NumMUMPSNonzerosValues << endl;
-     return -2;
-  }  
-
-  ConTime_ += Time_->ElapsedTime();
-  
-  // MS // bring matrix to proc zero if required
-  
-  if( MaxProcsInputMatrix_ != NumProcs_ ) {
-
-    RedistributeMatrixValues(MaxProcsInputMatrix_);
-
-  } else {
-    
-    NumMUMPSNonzeros_ = NumMyMUMPSNonzeros_;
-
-  }
-
-  return 0;
+  return(0);
 
 }
 
@@ -510,8 +293,10 @@ void Amesos_Mumps::SetICNTLandCNTL()
   MDS.ICNTL(16) = 0;   // Do not perform null space detection
   MDS.ICNTL(17) = 0;   // Unused (null space dimension)
   
-  if( KeepMatrixDistributed_ ) MDS.ICNTL(18)= 3;
-  else                         MDS.ICNTL(18)= 0;
+  if (Comm().NumProc() != 1) 
+    MDS.ICNTL(18)= 3;
+  else
+    MDS.ICNTL(18)= 0;
   
   if ( UseTranspose() )  MDS.ICNTL(9) = 0 ; 
   else                   MDS.ICNTL(9) = 1 ;
@@ -520,7 +305,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
   else                              MDS.ICNTL(19) = 0;
 
   // something to do if the Schur complement is required.
-  if( IsComputeSchurComplementOK_ && MyPID_ == 0 ) {
+  if( IsComputeSchurComplementOK_ && Comm().MyPID() == 0 ) {
     MDS.size_schur = NumSchurComplementRows_;
     MDS.listvar_schur = SchurComplementRows_;
     MDS.schur = new AMESOS_TYPE[NumSchurComplementRows_*NumSchurComplementRows_];
@@ -588,10 +373,6 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   if( ParameterList.isParameter("ComputeTrueResidual") )
     ComputeTrueResidual_ = ParameterList.get("ComputeTrueResidual",false);
 
-  // on how many processes distribute the matrix
-  if( ParameterList.isParameter("MaxProcsMatrix") )
-    MaxProcsInputMatrix_ = ParameterList.get("MaxProcsMatrix",-4);
-
   // define on how many processes matrix should be converted into MUMPS
   // format. (this value must be less than available procs)
   if( ParameterList.isParameter("MaxProcs") )
@@ -605,11 +386,14 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
   if( ParameterList.isParameter("MatrixType") ) {
     string MatrixType;
     MatrixType = ParameterList.get("MatrixType",MatrixType);
-    if( MatrixType == "SPD" )            MatrixProperty_ = 1;
-    else if( MatrixType == "symmetric" ) MatrixProperty_ = 2;
-    else if( MatrixType == "general" )   MatrixProperty_ = 0;
+    if( MatrixType == "SPD" )
+      MatrixType_ = 1;
+    else if( MatrixType == "symmetric" ) 
+      MatrixType_ = 2;
+    else if( MatrixType == "general" )   
+      MatrixType_ = 0;
     else {
-      if( MyPID_ == 0 ) {
+      if( Comm().MyPID() == 0 ) {
 	cerr << "Amesos_Mumps : ERROR" << endl 
 	     << "Amesos_Mumps : MatrixType value not recognized ("
 	     << MatrixType << ")" << endl;
@@ -681,32 +465,30 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
 void Amesos_Mumps::CheckParameters() 
 {
 
-  // FIXME ???
 #ifndef HAVE_AMESOS_MPI_C2F
   MaxProcs_ = -3;
-  MaxProcsInputMatrix_ = -3;
 #endif
 
-  // check parameters and fix values of MaxProcs_ and MaxProcsInputMatrix_
+  // check parameters and fix values of MaxProcs_
 
-  int NumGlobalNonzeros=0, NumRows=0;
+  int NumGlobalNonzeros, NumRows;
   
-  NumGlobalNonzeros = GetMatrix()->NumGlobalNonzeros(); 
-  NumRows = GetMatrix()->NumGlobalRows(); 
+  NumGlobalNonzeros = Matrix().NumGlobalNonzeros(); 
+  NumRows = Matrix().NumGlobalRows(); 
 
   // optimal value for MaxProcs == -1
   
-  int OptNumProcs1 = 1+EPETRA_MAX( NumRows/10000, NumGlobalNonzeros/1000000 );
-  OptNumProcs1 = EPETRA_MIN(NumProcs_,OptNumProcs1 );
+  int OptNumProcs1 = 1 + EPETRA_MAX(NumRows/10000, NumGlobalNonzeros/1000000);
+  OptNumProcs1 = EPETRA_MIN(Comm().NumProc(),OptNumProcs1);
 
   // optimal value for MaxProcs == -2
 
-  int OptNumProcs2 = (int)sqrt(1.0*NumProcs_);
+  int OptNumProcs2 = (int)sqrt(1.0 *  Comm().NumProc());
   if( OptNumProcs2 < 1 ) OptNumProcs2 = 1;
 
   // fix the value of MaxProcs
 
-  switch( MaxProcs_ ) {
+  switch (MaxProcs_) {
   case -1:
     MaxProcs_ = OptNumProcs1;
     break;
@@ -714,39 +496,13 @@ void Amesos_Mumps::CheckParameters()
     MaxProcs_ = OptNumProcs2;
     break;
   case -3:
-    MaxProcs_ = NumProcs_;
+    MaxProcs_ = Comm().NumProc();
     break;
   }
 
-  // fix the value of MaxProcsInputMatrix
-  
-  switch( MaxProcsInputMatrix_ ) {
-  case -1:
-    MaxProcsInputMatrix_ = OptNumProcs1;
-    break;
-  case -2:
-    MaxProcsInputMatrix_ = OptNumProcs2;
-    break;
-  case -3:
-    MaxProcsInputMatrix_ = NumProcs_;
-    break;  
-  case -4:
-    MaxProcsInputMatrix_ = MaxProcs_;
-    break;
-  }
-  
   // few checks
-  if( MaxProcs_ > NumProcs_ ) MaxProcs_ = NumProcs_;
-
-  if( MaxProcsInputMatrix_ > MaxProcs_ ) MaxProcsInputMatrix_ = MaxProcs_;
-
-  // cannot distribute input matrix to this number,
-  // use all the processes instead
-  if( MaxProcsInputMatrix_ > MaxProcs_ ) {
-    MaxProcsInputMatrix_ = MaxProcs_;
-  }
-  
-  if( NumProcs_ == 1 || MaxProcsInputMatrix_ == 1 ) KeepMatrixDistributed_ = false;
+  if (MaxProcs_ > Comm().NumProc()) 
+    MaxProcs_ = Comm().NumProc();
 
   return;
   
@@ -754,88 +510,81 @@ void Amesos_Mumps::CheckParameters()
 
 //=============================================================================
 
-int Amesos_Mumps::PerformSymbolicFactorization()
+int Amesos_Mumps::SymbolicFactorization()
 {
 
-  // erase data if present
-  if( SymbolicFactorizationOK_ && MDS.job != -777 ) {
+  // erase data if present. 
+  if (SymbolicFactorizationOK_ && MDS.job != -777) {
    Destroy();
   }
 
-  if( IsLocal() || UseMpiCommSelf_ ) {
-    // use --with-amesos-mpi-c2f to create sub-communicators
-    // C to FORTRAN communicator is not standard
-#if defined(EPETRA_MPI) && defined(HAVE_AMESOS_MPI_C2F)
-    MPI_Comm MPIC = MPI_COMM_SELF ;
-    MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MPIC ) ;   // Compiled on cygwin but not on Atlantis
-#else
-    MDS.comm_fortran = -987654 ;  // Needed by MUMPS 4.3 
-#endif
+  SymbolicFactorizationOK_ = false;
+  NumericFactorizationOK_ = false;
+
+  if (Time_ == 0) 
+    Time_ = new Epetra_Time(Comm());
+
+  CheckParameters();
+  AMESOS_CHK_ERR(ConvertToTriplet(false));
+
+#if defined(HAVE_MPI) && defined(HAVE_AMESOS_MPI_C2F)
+  if (MaxProcs_ != Comm().NumProc()) {
+
+    if(MUMPSComm_) 
+      MPI_Comm_free(&MUMPSComm_);
+
+    int * ProcsInGroup = new int[MaxProcs_];
+    for (int i = 0 ; i < MaxProcs_ ; ++i) 
+      ProcsInGroup[i] = i;
+
+    MPI_Group OrigGroup, MumpsGroup;
+    MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
+    MPI_Group_incl(OrigGroup, MaxProcs_, ProcsInGroup, &MumpsGroup);
+    MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
+    MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
+
+    delete [] ProcsInGroup;
+
   } else {
-    
-#if defined(EPETRA_MPI) && defined(HAVE_AMESOS_MPI_C2F)
-    if( MaxProcs_ != NumProcs_ ) {
-
-      if( MUMPSComm_ ) MPI_Comm_free( &MUMPSComm_ );
-      
-      int * ProcsInGroup = new int[MaxProcs_];
-      for( int i=0 ; i<MaxProcs_ ; ++i ) ProcsInGroup[i] = i;
-      MPI_Group OrigGroup, MumpsGroup;
-      MPI_Comm_group(MPI_COMM_WORLD, &OrigGroup);
-
-      MPI_Group_incl(OrigGroup, MaxProcs_, ProcsInGroup, &MumpsGroup);
-      
-      MPI_Comm_create(MPI_COMM_WORLD, MumpsGroup, &MUMPSComm_);
-
-      MDS.comm_fortran = (F_INT) MPI_Comm_c2f( MUMPSComm_);
-
-      delete [] ProcsInGroup;
-
-    } else {
-      // use MPI_COMM_WORLD
-      // FIXME: should use the comm in Epetra_MpiComm()
-      MDS.comm_fortran = -987654;  
-    }
-#else
-    MDS.comm_fortran = -987654;
-#endif
+    const Epetra_MpiComm* MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+    assert (MpiComm != 0);
+    MDS.comm_fortran = (F_INT) MPI_Comm_c2f(MpiComm->GetMpiComm());
   }
-  
-  //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;
-  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
+#else
+  // only thing I can do, use MPI_COMM_WORLD.
+  MDS.comm_fortran = -987654;
+#endif
   
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
   MDS.sym = MatrixProperty_;
 
-#ifndef HAVE_AMESOS_SMUMPS
-  if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;   //  Initialize MUMPS
-#else
-  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;   //  Initialize MUMPS
-#endif
-  
-  CheckError();
-  
-  // check the error flag. MUMPS is successful only if
-  //  infog(1) is zereo
-  MDS.n = NumGlobalRows() ;
+  RedistrMatrix(true);
+
+  if (Comm().MyPID() < MaxProcs_) {
+    MUMPS_INTERFACE(&MDS);   //  Initialize MUMPS
+
+    CheckError();
+  }
+
+  MDS.n = Matrix().NumGlobalRows() ;
 
   // fix pointers for nonzero pattern of A. Numerical values
   // will be entered in PerformNumericalFactorization()
-  if( KeepMatrixDistributed_ ) {
+  if (Comm().NumProc() != 1) {
 
-    MDS.nz_loc = NumMUMPSNonzeros_;
-    
-    if( MyPID_ < MaxProcs_ ) {
-      MDS.irn_loc = Row->Values(); 
-      MDS.jcn_loc = Col->Values();
+    MDS.nz_loc = RedistrMatrix().NumMyNonzeros();
+
+    if (Comm().MyPID() < MaxProcs_) {
+      MDS.irn_loc = &Row[0]; 
+      MDS.jcn_loc = &Col[0];
 
     }
   } else {
-    if( MyPID_ == 0 ) {
-      MDS.nz = NumMUMPSNonzeros_;
-      MDS.irn = Row->Values(); 
-      MDS.jcn = Col->Values(); 
+    if (Comm().MyPID() == 0) {
+      MDS.nz = Matrix().NumMyNonzeros();
+      MDS.irn = &Row[0]; 
+      MDS.jcn = &Col[0]; 
     }
   }
 
@@ -849,127 +598,28 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   if( PermIn_ != 0 ) {
     MDS.perm_in = PermIn_;
   }
-  
+
   //  if( Maxis_ != DEF_VALUE_INT ) MDS.maxis = Maxis_;
   //  if( Maxs_ != DEF_VALUE_INT ) MDS.maxs = Maxs_;
-  
+
   MDS.job = 1  ;     // Request symbolic factorization
 
-  SetICNTLandCNTL(); // initialize icntl and cntl. NOTE: I initialize those vectors
-                     // here, and I don't change them anymore. This is not that much
-                     // a limitation, though
+  SetICNTLandCNTL();
 
   // Perform symbolic factorization
 
   Time_->ResetStartTime();
-#ifndef HAVE_AMESOS_SMUMPS
-  if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;
-#else
-  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;
-#endif
-  
+  if (Comm().MyPID() < MaxProcs_) 
+    MUMPS_INTERFACE(&MDS);
+
   SymTime_ += Time_->ElapsedTime();
 
   CheckError();
 
   SymbolicFactorizationOK_ = true ;
-
-  return 0;
-
-}
-
-//=============================================================================
-
-int Amesos_Mumps::PerformNumericFactorization( )
-{
-
-  // set vector for matrix entries. User may have changed it
-  // since PerformSymbolicFactorization() has been called
-
-#ifndef HAVE_AMESOS_SMUMPS
-  if( KeepMatrixDistributed_ ) {
-    if( MyPID_ < MaxProcs_ ) MDS.a_loc = Val->Values();
-  } else {
-    if( MyPID_ == 0 ) {
-      MDS.a = Val->Values();
-    }
-  }
-#else
-  // if SMUMPS is defined, copy the double-precision values contained in Val
-  // into the single precision ones contained in SVal
-#ifdef HAVE_AMESOS_SMUMPS
-  // FIXME: this allocation is probably better somewhere else
-  if( SVal ) delete [] SVal;
-  SVal = new float[Val->Length()+1]; // avoid 0 bytes allocations
-  assert(SVal!=0);
-#endif
-    
-  if( KeepMatrixDistributed_ ) {
-    for( int i=0 ; i<Val->Length() ; ++i ) SVal[i] = (float)((*Val)[i]);
-    if( MyPID_ < MaxProcs_ ) MDS.a_loc = SVal;
-  } else {
-    if( MyPID_ == 0 ) {
-      for( int i=0 ; i<Val->Length() ; ++i ) SVal[i] = (float)((*Val)[i]);
-      MDS.a = SVal;
-    }
-  }
-#endif
-  
-  MDS.job = 2  ;     // Request numeric factorization
-  // Perform numeric factorization
-  Time_->ResetStartTime();
-#ifndef HAVE_AMESOS_SMUMPS
-  if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;
-#else
-  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;
-#endif
-  
-  NumTime_ += Time_->ElapsedTime();
-  
-  CheckError();
-
-  NumericFactorizationOK_ = true;
-
-  return 0;
-}
-
-//=============================================================================
-
-int Amesos_Mumps::SymbolicFactorization()
-{
-
   NumSymbolicFact_++;  
-  
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  MyPID_ = Comm().MyPID();
-  NumProcs_ = Comm().NumProc();
-
-  CheckParameters();
-  
-  // first, gather matrix property using base class
-  // Amesos_EpetraBaseSolver
-
-  Epetra_RowMatrix * Matrix = GetMatrix();
-  assert( Matrix != NULL );
-  if( Matrix != OldMatrix_ ) {
-    // initialize redistor, target map is on proc 0.
-    // Redistor will be used to bring rhs to proc 0, and solution to
-    // all procs
-    EPETRA_CHK_ERR( SetInterface(Matrix) );
-    OldMatrix_ = Matrix;
-    SymbolicFactorizationOK_ = false;
-    NumericFactorizationOK_ = false;
-  }
-
-  // now, create a map, in which all nodes are stored on processor 0.
-  // Also creates import objects. This is done using the base class
-  // Amesos_EpetraRedistributor. NOTE: the following classes return
-  // if they have already been called.  
-
-  EPETRA_CHK_ERR(ConvertToTriplet());
-  EPETRA_CHK_ERR(PerformSymbolicFactorization());
-
   return 0;
+
 }
 
 //=============================================================================
@@ -977,142 +627,101 @@ int Amesos_Mumps::SymbolicFactorization()
 int Amesos_Mumps::NumericFactorization()
 {
 
-  NumNumericFact_++;  
+  NumericFactorizationOK_ = false;
   
-  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
-  
-  // MS // As in SymbolicFactorization. All those functions
-  // MS // returns if they have already been called.
-  
-  Epetra_RowMatrix * Matrix = GetMatrix();
-  assert( Matrix != NULL );  
-  if( Matrix != OldMatrix_ ) {
-    EPETRA_CHK_ERR( SetInterface(Matrix) );
-    OldMatrix_ = Matrix;
-    SymbolicFactorizationOK_ = false;
-    NumericFactorizationOK_ = false;
+  if (SymbolicFactorizationOK_ == false)
+    AMESOS_CHK_ERR(SymbolicFactorization());
+
+  RedistrMatrix(true);
+  AMESOS_CHK_ERR(ConvertToTriplet(true));
+
+#ifndef HAVE_AMESOS_SMUMPS
+  if (Comm().NumProc() != 1) {
+    if (Comm().MyPID() < MaxProcs_) 
+      MDS.a_loc = &Val[0];
+  } else {
+    MDS.a = &Val[0];
+  }
+#else
+  SVal.resize(Val.size());
+
+  if (Comm().MyPID() < MaxProcs_) 
+    for (int i = 0 ; i < Val.size() ; ++i) 
+      SVal[i] = (float)(Val[i]);
+
+  if (Comm().NumProc() != 1) {
+    if (Comm().MyPID() < MaxProcs_) 
+      MDS.a_loc = &SVal[0];
+  } else {
+    MDS.a = &SVal[0];
+  }
+#endif
+
+  // Request numeric factorization 
+  MDS.job = 2;
+  // Perform numeric factorization
+  Time_->ResetStartTime();
+  if (Comm().MyPID() < MaxProcs_) {
+    MUMPS_INTERFACE(&MDS);
   }
 
-  // MS // reship the matrix. User can update numerical values
-  // MS // Should the values remain the same, it is better to use
-  // MS // Solve() and NOT SymbolicFactorization() + NumericFactorization()
-  // MS // + Solve()
+  NumTime_ += Time_->ElapsedTime();
   
-  if( SymbolicFactorizationOK_ == false ) {
-    EPETRA_CHK_ERR( ConvertToTriplet() );
-    EPETRA_CHK_ERR( PerformSymbolicFactorization() );
-  } else {
-    EPETRA_CHK_ERR( ConvertToTripletValues() );
-  }  
-  
-  EPETRA_CHK_ERR( PerformNumericFactorization() );
-  
+  CheckError();
+
+  NumericFactorizationOK_ = true;
+  NumNumericFact_++;  
   return 0;
 }
- 
+
 //=============================================================================
 
 int Amesos_Mumps::Solve()
 { 
 
+  if (NumericFactorizationOK_ == false)
+    AMESOS_CHK_ERR(NumericFactorization());
+
   NumSolve_++;  
   
   if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
 
-  Epetra_RowMatrix * Matrix = GetMatrix();
-  assert( Matrix != NULL );
-  if( Matrix != OldMatrix_ ) {
-    EPETRA_CHK_ERR( SetInterface(Matrix) );
-    OldMatrix_ = Matrix;
-    SymbolicFactorizationOK_ = false;
-    NumericFactorizationOK_ = false;
-  }
-  
-  if( SymbolicFactorizationOK_ == false && NumericFactorizationOK_ == false ) {
+  Epetra_MultiVector* vecX = Problem_->GetLHS() ; 
+  Epetra_MultiVector* vecB = Problem_->GetRHS() ;
+  int NumVectors = vecX->NumVectors();
 
-    // MS // it is the first time the user call something. The
-    // MS // matrix is neither sym fact not num fact
-    // MS // We convert it to COO format, then sym+fact
-    EPETRA_CHK_ERR( ConvertToTriplet() );
-    EPETRA_CHK_ERR( PerformSymbolicFactorization() );
-    EPETRA_CHK_ERR( PerformNumericFactorization() );
+  if ((vecX == 0) || (vecB == 0))
+    AMESOS_CHK_ERR(-1);
 
-  }  else if( NumericFactorizationOK_  == false )  {
+  if (NumVectors != vecB->NumVectors())
+    AMESOS_CHK_ERR(-1);
 
-    // MS // User has already called SymFact, but maybe he changed
-    // MS // the matrix entries. Ww reship the matrix
-    EPETRA_CHK_ERR( ConvertToTripletValues() );
-    EPETRA_CHK_ERR( PerformNumericFactorization() );
-
-  } else {
-
-    // MS // just for comment it out: This case, the user has already
-    // MS // numerically factorized the matrix. We can solve without
-    // MS // shipping the matrix
-    
-  }
-
-  Epetra_MultiVector * vecX = GetLHS() ; 
-  Epetra_MultiVector * vecB = GetRHS() ;
-
-
-  EPETRA_CHK_ERR( UpdateLHS() );
-
-  // create redistor the first time enters here. I suppose that LHS and RHS
-  // (all of them) have the same map.
-  if( IsLocal() == false && UseMpiCommSelf_ == false && Redistor_ == 0 ) {
-    Redistor_ = new EpetraExt_Redistor(vecX->Map(),1);
-    assert( Redistor_ != 0 );
-  }
-  
-  //  Compute the number of right hands sides (and check that X and B have the same shape) 
-
-  if( vecB == NULL || vecX == NULL ) {
-    if( MyPID_ == 0 ) cout << "Amesos_Mumps ERROR : LHS or RHS not set" << endl;
-    return -1;
-  }
-
-  int nrhs = vecX->NumVectors() ;
-  if( nrhs != vecB->NumVectors() ) {
-    if( MyPID_ == 0 ) cout << "Amesos_Mumps ERROR : multivectors LHS or RHS have different sizes" << endl;
-    return -2;
-  }
-
-  // will be used only if IsLocal == false
-  if( IsLocal() == false && UseMpiCommSelf_ == false && TargetVector_ == 0 ) {
-    TargetVector_ = new Epetra_MultiVector(*(Redistor_->TargetMap()),nrhs);
-    assert( TargetVector_ != 0 );
 #ifdef HAVE_AMESOS_SMUMPS
-    // need to allocate space for single-precision solution/rhs
-    if( Comm().MyPID() == 0 ) {
-      SVector = new float[NumGlobalRows()];
-      assert( SVector != 0 );
-    }
-#endif
+  // need to allocate space for single-precision solution/rhs
+  if (Comm().MyPID() == 0) {
+    SVector.resize(Matrix().NumGlobalRows());
   }
+#endif
   
-  // MS // Extract Target versions of X and B. 
-  // MS // NOTE: both Target and distributed version of MUMPS require
-  // MS // rhs to be entirely stored on processor 0. This is because we
-  // MS // still need TargetMap_ also for distributed input
+  if (Comm().NumProc() == 1) {
 
-  if( IsLocal() || UseMpiCommSelf_ ) {
-
-    for ( int j =0 ; j<nrhs; j++ ) {
+    for (int j = 0 ; j < NumVectors; j++) {
 
       Time_->ResetStartTime();
-      MDS.job = 3  ;     // Request solve
+      MDS.job = 3;     // Request solve
 
 #ifndef HAVE_AMESOS_SMUMPS      
-      for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
+      for (int i = 0 ; i < Matrix().NumMyRows() ; ++i) 
+	(*vecX)[j][i] = (*vecB)[j][i];
       MDS.rhs = (*vecX)[j];
-      dmumps_c( &MDS ) ;  // Perform solve
+      MUMPS_INTERFACE(&MDS) ;  // Perform solve
 #else
-      if( SVector == 0 ) SVector = new float[NumGlobalRows()];
-      MDS.rhs = SVector;
-      for( int i=0 ; i<NumMyRows() ; ++i ) SVector[i] = (*vecB)[j][i];
-      smumps_c( &MDS ) ;  // Perform solve
-      for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = SVector[i];
+      for (int i = 0 ; i < Matrix().NumMyRows() ; ++i) 
+	SVector[i] = (float)(*vecB)[j][i];
+      MDS.rhs = &SVector[0];
+      MUMPS_INTERFACE(&MDS) ;  // Perform solve
+      for (int i = 0 ; i < Matrix().NumMyRows() ; ++i) 
+	(*vecX)[j][i] = (double)SVector[i];
 #endif
       SolTime_ += Time_->ElapsedTime();
       
@@ -1121,32 +730,35 @@ int Amesos_Mumps::Solve()
 
   } else {
 
-    // bring rhs to process 0 and take timing for this phase
+    Epetra_MultiVector SerialVector(SerialMap(),NumVectors);
+
     Time_->ResetStartTime();
-    Redistor_->TargetImport( *vecB, *TargetVector_ ) ;
+    AMESOS_CHK_ERR(SerialVector.Import(*vecB,SerialImporter(),Insert));
     VecTime_ += Time_->ElapsedTime();
     
-    for ( int j =0 ; j < nrhs; j++ ) { 
-      if ( MyPID_ == 0 ) {
+    for (int j = 0 ; j < NumVectors; j++) { 
+
+      if (Comm().MyPID() == 0) {
 #ifndef HAVE_AMESOS_SMUMPS
-	MDS.rhs = (*TargetVector_)[j];
+	MDS.rhs = SerialVector[j];
 #else
 	// copy the double-precision into the single-precision SVector
-	for( int i=0 ; i<NumGlobalRows() ; ++i ) SVector[i] = (float)(*TargetVector_)[j][i];
-	MDS.rhs = SVector;
+	for (int i = 0 ; i < Matrix().NumGlobalRows() ; ++i) 
+	  SVector[i] = (float)(SerialVector[j][i]);
+	MDS.rhs = &SVector[0];
 #endif
       }
       // solve the linear system and take time
-      MDS.job = 3  ;     
+      MDS.job = 3;     
       Time_->ResetStartTime();
-#ifndef HAVE_AMESOS_SMUMPS  
-      if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
-#else
-      if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;  // Perform solve
+      if (Comm().MyPID() < MaxProcs_) 
+	MUMPS_INTERFACE(&MDS) ;  // Perform solve
+#ifdef HAVE_AMESOS_SMUMPS  
       // copy back MUMPS' solution into TargetVector, that will be later
       // redistributed using Epetra utilities
-      if( MyPID_ == 0 )
-	for( int i=0 ; i<NumGlobalRows() ; ++i ) (*TargetVector_)[j][i] = (double)SVector[i];
+      if (Comm().MyPID() == 0)
+	for (int i = 0 ; i < Matrix().NumGlobalRows() ; ++i) 
+	  SerialVector[j][i] = (double)SVector[i];
 #endif
       SolTime_ += Time_->ElapsedTime();
       
@@ -1156,20 +768,18 @@ int Amesos_Mumps::Solve()
 
     // ship solution back and take timing
     Time_->ResetStartTime();
-    Redistor_->SourceImport( *vecX, *TargetVector_ ) ;
+    AMESOS_CHK_ERR(vecX->Export(SerialVector,SerialImporter(),Insert));
     VecTime_ += Time_->ElapsedTime();
 
   }
 
-  EPETRA_CHK_ERR( UpdateLHS() );
-
   // compute vector norms
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
     double NormLHS, NormRHS;
-    for( int i=0 ; i<nrhs ; ++i ) {
+    for( int i=0 ; i<NumVectors ; ++i ) {
       assert((*vecX)(i)->Norm2(&NormLHS)==0);
       assert((*vecB)(i)->Norm2(&NormRHS)==0);
-      if( verbose_ && MyPID_ == 0 ) {
+      if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Mumps : vector " << i << ", ||x|| = " << NormLHS
 	     << ", ||b|| = " << NormRHS << endl;
       }
@@ -1179,13 +789,13 @@ int Amesos_Mumps::Solve()
   // compute true residual
   if( ComputeTrueResidual_ == true || verbose_ == 2  ) {
     double Norm;
-    Epetra_MultiVector Ax(vecB->Map(),nrhs);
-    for( int i=0 ; i<nrhs ; ++i ) {
-      (GetMatrix()->Multiply(UseTranspose(), *((*vecX)(i)), Ax));
-      (Ax.Update(1.0, *((*vecB)(i)), -1.0));
+    Epetra_MultiVector Ax(vecB->Map(),NumVectors);
+    for( int i=0 ; i<NumVectors ; ++i ) {
+      (Matrix().Multiply(UseTranspose(), *vecX, Ax));
+      (Ax.Update(1.0, *vecB, -1.0));
       (Ax.Norm2(&Norm));
       
-      if( verbose_ && MyPID_ == 0 ) {
+      if( verbose_ && Comm().MyPID() == 0 ) {
 	cout << "Amesos_Mumps : vector " << i << ", ||Ax - b|| = " << Norm << endl;
       }
     }
@@ -1201,13 +811,13 @@ Epetra_CrsMatrix * Amesos_Mumps::GetCrsSchurComplement()
 
   if( IsComputeSchurComplementOK_ ) {
     
-    if( MyPID_ != 0 ) NumSchurComplementRows_ = 0;
+    if( Comm().MyPID() != 0 ) NumSchurComplementRows_ = 0;
     
     Epetra_Map SCMap(-1,NumSchurComplementRows_, 0, Comm());
 
     CrsSchurComplement_ = new Epetra_CrsMatrix(Copy,SCMap,NumSchurComplementRows_);
 
-    if( MyPID_ == 0 )
+    if( Comm().MyPID() == 0 )
       for( int i=0 ; i<NumSchurComplementRows_ ; ++i ) {
 	for( int j=0 ; j<NumSchurComplementRows_ ; ++j ) {
 	  int pos = i+ j *NumSchurComplementRows_;
@@ -1236,7 +846,7 @@ Epetra_SerialDenseMatrix * Amesos_Mumps::GetDenseSchurComplement()
   
   if( IsComputeSchurComplementOK_ ) {
     
-    if( MyPID_ != 0 ) return 0;
+    if( Comm().MyPID() != 0 ) return 0;
     
     DenseSchurComplement_ = new Epetra_SerialDenseMatrix(NumSchurComplementRows_,
 							NumSchurComplementRows_);
@@ -1266,7 +876,7 @@ int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
   SchurComplementRows_ = SchurComplementRows;
 
   // modify because MUMPS is fortran-driven
-  if( MyPID_ == 0 )
+  if( Comm().MyPID() == 0 )
     for( int i=0 ; i<NumSchurComplementRows ; ++i ) SchurComplementRows_[i]++;
   
   IsComputeSchurComplementOK_ = flag;
@@ -1279,25 +889,24 @@ int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 void Amesos_Mumps::PrintStatus() 
 {
 
-  if( MyPID_ != 0  ) return;
+  if( Comm().MyPID() != 0  ) return;
 
   cout << "----------------------------------------------------------------------------" << endl;
 #ifdef HAVE_AMESOS_SMUMPS
   cout << "Amesos_Mumps : Using single precision" << endl;
 #endif
-  cout << "Amesos_Mumps : Matrix has " << NumGlobalRows() << " rows"
-       << " and " << NumGlobalNonzeros() << " nonzeros" << endl;
+  cout << "Amesos_Mumps : Matrix has " << Matrix().NumGlobalRows() << " rows"
+       << " and " << Matrix().NumGlobalNonzeros() << " nonzeros" << endl;
   cout << "Amesos_Mumps : Nonzero elements per row = "
-       << 1.0*NumGlobalNonzeros()/NumGlobalRows() << endl;
+       << 1.0*Matrix().NumGlobalNonzeros()/Matrix().NumGlobalRows() << endl;
   cout << "Amesos_Mumps : Percentage of nonzero elements = "
-       << 100.0*NumGlobalNonzeros()/(pow(NumGlobalRows(),2.0)) << endl;
+       << 100.0*Matrix().NumGlobalNonzeros()/(pow(Matrix().NumGlobalRows(),2.0)) << endl;
   cout << "Amesos_Mumps : Use transpose = " << UseTranspose_ << endl;
   if( MatrixProperty_ == 0 ) cout << "Amesos_Mumps : Matrix is general unsymmetric" << endl;
   if( MatrixProperty_ == 2 ) cout << "Amesos_Mumps : Matrix is general symmetric" << endl;
   if( MatrixProperty_ == 1 ) cout << "Amesos_Mumps : Matrix is SPD" << endl;
-  cout << "Amesos_Mumps : Available process(es) = " << NumProcs_ << endl;
+  cout << "Amesos_Mumps : Available process(es) = " << Comm().NumProc() << endl;
   cout << "Amesos_Mumps : Using " << MaxProcs_ << " process(es)" << endl;
-  cout << "Amesos_Mumps : Input matrix distributed over " << MaxProcsInputMatrix_ << " process(es)" << endl;
   
   cout << "Amesos_Mumps : Estimated FLOPS for elimination = "
        << MDS.RINFOG(1) << endl;
@@ -1347,59 +956,141 @@ int Amesos_Mumps::SetCNTL(double * cntl)
 void Amesos_Mumps::CheckError() 
 {
   
-  bool Wrong = MDS.INFOG(1) != 0 && MyPID_ < MaxProcs_;
+  bool Wrong = ((MDS.INFOG(1) != 0) || (MDS.INFO(1) != 0))
+               && (Comm().MyPID() < MaxProcs_);
   
   // an error occurred in MUMPS. Print out information and quit.
 
-  if( MyPID_ == 0 && Wrong ) {
+  if (Comm().MyPID() == 0 && Wrong) {
     cerr << "Amesos_Mumps : ERROR" << endl;
     cerr << "Amesos_Mumps : INFOG(1) = " << MDS.INFOG(1) << endl;
     cerr << "Amesos_Mumps : INFOG(2) = " << MDS.INFOG(2) << endl;
   }
   
-  if( MDS.INFO(1) != 0 && Wrong ) {
-    cerr << "Amesos_Mumps : On process " << MyPID_
+  if (MDS.INFO(1) != 0 && Wrong) {
+    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
 	 << ", INFO(1) = " << MDS.INFO(1) << endl;
-    cerr << "Amesos_Mumps : On process " << MyPID_
+    cerr << "Amesos_Mumps : On process " << Comm().MyPID()
 	 << ", INFO(2) = " << MDS.INFO(2) << endl;
   }
 
-  if( Wrong ) exit( EXIT_FAILURE );
+  if (Wrong) 
+    exit(EXIT_FAILURE);
   
 }
 
 // ================================================ ====== ==== ==== == =
-
 void Amesos_Mumps::PrintTiming()
 {
 
-  if( MyPID_ ) return;
-  
+  if( Comm().MyPID() ) return;
+
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
-       << ConTime_ << " (s)" << endl;
-  if( MaxProcsInputMatrix_ != NumProcs_ ) 
+    << ConTime_ << " (s)" << endl;
+  if( MaxProcs_ != Comm().NumProc() ) 
     cout << "Amesos_Mumps : Time to redistribute matrix = "
-	 << MatTime_ << " (s)" << endl;
-  if( ! (IsLocal() || UseMpiCommSelf_) )
-    cout << "Amesos_Mumps : Time to redistribute vectors = "
-       << VecTime_ << " (s)" << endl;
+      << MatTime_ << " (s)" << endl;
+  cout << "Amesos_Mumps : Time to redistribute vectors = "
+    << VecTime_ << " (s)" << endl;
   cout << "Amesos_Mumps : Number of symbolic factorizations = "
-       << NumSymbolicFact_ << endl;
+    << NumSymbolicFact_ << endl;
   cout << "Amesos_Mumps : Time for sym fact = "
-       << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
-       << " (s)" << endl;
+    << SymTime_ << " (s), avg = " << SymTime_/NumSymbolicFact_
+    << " (s)" << endl;
   cout << "Amesos_Mumps : Number of numeric factorizations = "
-       << NumNumericFact_ << endl;
+    << NumNumericFact_ << endl;
   cout << "Amesos_Mumps : Time for num fact = "
-       << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
-       << " (s)" << endl;
+    << NumTime_ << " (s), avg = " << NumTime_/NumNumericFact_
+    << " (s)" << endl;
   cout << "Amesos_Mumps : Number of solve phases = "
-       << NumSolve_ << endl;
+    << NumSolve_ << endl;
   cout << "Amesos_Mumps : Time for solve = "
-       << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
-       << " (s)" << endl;
+    << SolTime_ << " (s), avg = " << SolTime_/NumSolve_
+    << " (s)" << endl;
   cout << "----------------------------------------------------------------------------" << endl;
-   
+
   return;
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_RowMatrix& Amesos_Mumps::Matrix() 
+{
+  Epetra_RowMatrix* Matrix = dynamic_cast<Epetra_RowMatrix*>(Problem_->GetOperator());
+  assert (Matrix != 0);
+  return(*Matrix);
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_Map& Amesos_Mumps::RedistrMap() 
+{
+  assert (Comm().NumProc() != 1);
+  if (RedistrMap_ == 0) {
+    int i = Matrix().NumGlobalRows() / MaxProcs_;
+    if (Comm().MyPID() == 0)
+      i += Matrix().NumGlobalRows() % MaxProcs_;
+    else if (Comm().MyPID() >= MaxProcs_)
+      i = 0;
+
+    RedistrMap_ = new Epetra_Map(Matrix().NumGlobalRows(),i,0,Comm());
+    assert (RedistrMap_ != 0);
+  }
+  return(*RedistrMap_);
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_Import& Amesos_Mumps::RedistrImporter()
+{
+  assert (Comm().NumProc() != 1);
+
+  if (RedistrImporter_ == 0) {
+    RedistrImporter_ = new Epetra_Import(RedistrMap(),Matrix().RowMatrixRowMap());
+    assert (RedistrImporter_ != 0);
+  }
+  return(*RedistrImporter_);
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_RowMatrix& Amesos_Mumps::RedistrMatrix(const bool ImportMatrix)
+{
+  if (Comm().NumProc() == 1)
+    return(Matrix());
+
+  if (ImportMatrix) {
+    delete RedistrMatrix_;
+    RedistrMatrix_ = 0;
+  }
+
+  if (RedistrMatrix_ == 0) {
+    RedistrMatrix_ = new Epetra_CrsMatrix(Copy,RedistrMap(),0);
+    if (ImportMatrix) {
+      int ierr =RedistrMatrix_->Import(Matrix(),RedistrImporter(),Insert);
+      assert (ierr == 0);
+      assert(RedistrMatrix_->FillComplete() == 0);
+    }
+  }
+
+  return(*RedistrMatrix_);
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_Map& Amesos_Mumps::SerialMap()
+{
+  if (SerialMap_ == 0) {
+    int i = Matrix().NumGlobalRows();
+    if (Comm().MyPID()) i = 0;
+    SerialMap_ = new Epetra_Map(-1,i,0,Comm());
+    assert (SerialMap_ != 0);
+  }
+  return(*SerialMap_);
+}
+
+// ================================================ ====== ==== ==== == =
+Epetra_Import& Amesos_Mumps::SerialImporter()
+{ 
+  if (SerialImporter_ == 0) {
+    SerialImporter_ = new Epetra_Import(SerialMap(),Matrix().OperatorDomainMap());
+    assert (SerialImporter_ != 0);
+  }
+  return(*SerialImporter_);
 }

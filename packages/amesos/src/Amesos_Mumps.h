@@ -35,11 +35,13 @@ class Epetra_RowMatrix;
 class Epetra_CrsMatrix;
 class Epetra_VbrMatrix;
 class Epetra_MultiVector;
+#include "Epetra_Import.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
 #include "Epetra_SerialDenseVector.h"
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
 class Amesos_EpetraInterface;
-class EpetraExt_Redistor;
 #include "Epetra_Time.h"
 
 #include "Amesos_ConfigDefs.h"
@@ -50,7 +52,6 @@ class EpetraExt_Redistor;
 #else
 #include "Epetra_Comm.h"
 #endif
-#include "Amesos_EpetraBaseSolver.h"
 
 #ifndef HAVE_AMESOS_SMUMPS
 #define AMESOS_TYPE double
@@ -116,7 +117,7 @@ extern "C" {
   \author Marzio Sala, 9214
   
 */
-class Amesos_Mumps : public Amesos_EpetraBaseSolver { 
+class Amesos_Mumps : public Amesos_BaseSolver { 
 
 public: 
 
@@ -358,25 +359,52 @@ public:
   //! Set CNTL[pos] to value. pos is expressed in FORTRAN style (starting from 1).
   int SetCNTL(int pos, double value);
 
-  void SetUseMpiCommSelf() {
-    UseMpiCommSelf_ = true;
-  }
-
   //@}
   
+  bool MatrixShapeOK() const
+  {
+  bool OK = true;
+
+  if ( GetProblem()->GetOperator()->OperatorRangeMap().NumGlobalPoints() != 
+       GetProblem()->GetOperator()->OperatorDomainMap().NumGlobalPoints() ) OK = false;
+  return OK; 
+}
+
+  
+  //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
+  const Epetra_Comm & Comm() const {return(GetProblem()->GetOperator()->Comm());};
+
+  //! Gets a pointer to the Epetra_LinearProblem.
+  const Epetra_LinearProblem * GetProblem() const { return(Problem_); };
+
 protected:
   
+  //! Gets the matrix type (SPD, symmetric, or general).
+  inline int MatrixType() const
+  {
+    return MatrixType_;
+  }
+
+  //! Returns a reference to the linear system matrix.
+  Epetra_RowMatrix& Matrix();
+
+  //! Returns a reference to the map for redistributed matrix.
+  Epetra_Map& RedistrMap();
+
+  //! Returns a reference for the redistributed importer.
+  Epetra_Import& RedistrImporter();
+  
+  //! Returns a reference to the redistributed matrix, imports it is \c ImportMatrix is true.
+  Epetra_RowMatrix& RedistrMatrix(const bool ImportMatrix = false);
+
+  //! Returns a reference to the map with all elements on process 0.
+  Epetra_Map& SerialMap();
+
+  //! Returns a reference to the importer for SerialMap().
+  Epetra_Import& SerialImporter();
+
   //! Converts to MUMPS format (COO format).
-  int ConvertToTriplet();     
-
-  //! Converts to MUMPS format (for the values only).
-  int ConvertToTripletValues();
-
-  //! Performs the symbolic factorization.      
-  int PerformSymbolicFactorization(); 
-
-  //! Performs the numeric factorization
-  int PerformNumericFactorization(); 
+  int ConvertToTriplet(const bool OnlyValues);     
 
   //! Checks for MUMPS error, prints them if any. See MUMPS' manual.
   void CheckError();
@@ -386,12 +414,6 @@ protected:
   
   void SetICNTLandCNTL();
 
-  //! Redistributed input matrix over the specified number of processes.
-  void RedistributeMatrix(const int NumProcs);
-
-  //! Redistributed matrix values over the specified number of processes.
-  void RedistributeMatrixValues(const int NumProcs);
-  
   //! \c true if SymbolicFactorization has been done
   bool SymbolicFactorizationOK_;
   //! \c true if NumericFactorization has been done
@@ -400,8 +422,6 @@ protected:
   bool IsConvertToTripletOK_;
   //! \c true if the Schur complement has been computed (need to free memory)
   bool IsComputeSchurComplementOK_;
-  //! \c true if only local entries must be considered
-  bool UseMpiCommSelf_;
 
 #ifndef HAVE_AMESOS_SMUMPS  
   //! Mumps data structure for double-precision
@@ -412,43 +432,21 @@ protected:
 #endif
   
   //! row indices of nonzero elements
-  Epetra_IntSerialDenseVector* Row;
+  vector <int> Row;
   //! column indices of nonzero elements
-  Epetra_IntSerialDenseVector* Col;
+  vector<int> Col;
   //! values of nonzero elements
-  Epetra_SerialDenseVector* Val;
+  vector<double> Val;
 
 #ifdef HAVE_AMESOS_SMUMPS
   //! single-precision values of nonzero elements
-  float * SVal;
+  vector<float> SVal;
   //! single-precision solution vector (on host only)
-  float * SVector;
+  vector<float> SVector;
 #endif
   
-  //!  Number of non-zero entries in Problem_->GetOperator()
-  int numentries_;         
-  //!  Number of rows and columns in the Problem_->GetOperator()
-  int NumGlobalElements_;  
-
-  bool  KeepMatrixDistributed_;          /*!< this governs the ICNTL(18) parameter.
-                                            If false, then matrix is redistributed
-                                            to proc 0 before converting it to
-                                            triplet format. Then, MUMPS will take care
-                                            of reditribution. If true, the input
-                                            distributed matrix is passed to MUMPS. */
-
   //! Maximum number of processors in the MUMPS' communicator
   int MaxProcs_;
-  //! Maximum number of processors that contains at least one element of A
-  int MaxProcsInputMatrix_;
-  
-  //! Maps to redistribute from Matrix' Map to MaxProcs_ Map
-  const Epetra_Map * Map_;
-
-  //! actual number of global nonzeros in the matrix
-  int NumMUMPSNonzeros_;
-  //! actual number of local nonzeros in the matrix
-  int NumMyMUMPSNonzeros_;
   
   //! If \c true, solve the problem with AT.
   bool UseTranspose_;
@@ -500,19 +498,9 @@ protected:
   //! Pointer to the Schur complement,as DenseMatrix.
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
-  //! ID of calling process.
-  int MyPID_;
-  //! Number of processes in computation.
-  int NumProcs_;
   //! Output level.
   int verbose_;
   
-  EpetraExt_Redistor * Redistor_;
-  
-  Epetra_RowMatrix * OldMatrix_;
-
-  Epetra_MultiVector * TargetVector_;
-
   //! time to convert to MUMPS format
   double ConTime_;
   //! time for symbolic factorization
@@ -536,6 +524,22 @@ protected:
   //! Used to track timing
   Epetra_Time * Time_;
   
+  //! Pointer to the linear problem to be solved.
+  const Epetra_LinearProblem* Problem_;
+
+  //! Redistributed matrix.
+  Epetra_Map* RedistrMap_;
+  //! Redistributed importer (from Matrix().RowMatrixRowMap() to RedistrMatrix().RowMatrixRowMap()).
+  Epetra_Import* RedistrImporter_;
+  //! Redistributed matrix (only if MaxProcs_ > 1).
+  Epetra_CrsMatrix* RedistrMatrix_;
+  //! Map with all elements on process 0 (for solution and rhs).
+  Epetra_Map* SerialMap_;
+  //! Importer from Matrix.OperatorDomainMap() to SerialMap_.
+  Epetra_Import* SerialImporter_;
+
+  //! Contains the matrix type.
+  int MatrixType_;
 #ifdef EPETRA_MPI
   //! MPI communicator used by MUMPS
   MPI_Comm MUMPSComm_;
