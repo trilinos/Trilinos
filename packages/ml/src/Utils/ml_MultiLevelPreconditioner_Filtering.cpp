@@ -103,8 +103,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
     cout << PrintMsg_ << "\t- tolerance = " << tol << endl;
     cout << PrintMsg_ << "\t- block size = " << BlockSize << endl;
     cout << PrintMsg_ << "\t- length     = " << length << endl;
+#ifdef MARZIO_GGB
     if( FltUseSym ) cout << PrintMsg_ << "\t- using symmetric preconditioner" << endl;
     else            cout << PrintMsg_ << "\t- using a non-symmetric preconditioner" << endl;
+#endif
       
   }    
     
