@@ -320,7 +320,7 @@ MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
 
 // ================================================ ====== ==== ==== == =
 
-/*! The constructor for the Maxwell equations requires three Epetra_RowMatrix's. 
+/*! The constructor for the Maxwell equations requires three Epetra_RowMatrices.
  * Two conditions are required on their maps:
  * - TMatrix.OperatorDomainMap() == NodeMatrix.OperatorRangeMap()
  * - TMatrix.OperatorRangeMap()  == EdgeMatrix.OperatorDomainMap()
@@ -681,6 +681,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   int MaxCreationLevels = NumLevels_;
   if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;
+  
+  ML_Aggregate_Create(&agg_);
+  // FIXME!
+  agg_->keep_agg_information = 1;
 
   if( SolvingMaxwell_ == false ) {
 
@@ -752,12 +756,66 @@ ComputePreconditioner(const bool CheckPreconditioner)
 			  Epetra_ML_comm_wrapper, NumMyRows+N_ghost);
     
     ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], Epetra_ML_matvec);
-    
-  }
+
+    // check whether coarse grid operators should be repartitioned among
+    // processors
+    bool ShouldRepartition = List_.get(Prefix_ + "repartition: enable",false);
+
+    if (ShouldRepartition) {
+
+      string Repartitioner = List_.get(Prefix_ + "repartition: partitioner","Zoltan");
+
+      ML_Repartition_Activate(ml_edges_);
+      ML_Repartition_Activate(ml_nodes_);
+
+      if (Repartitioner == "Zoltan") {
+        // create aggregate structure necessary for repartitioning via Zoltan
+        // (which requires coordinates)
+        ML_Aggregate_Create(&agg_edge_);
+
+        //nodes
+
+        // This copies the coordinates if the aggregation scheme
+        // of at least one level is Zoltan. Coordinates will be
+        // projected for ALL levels independently of the 
+        // aggregation scheme.
+        double * coord = List_.get(Prefix_ + "repartition: Zoltan node coordinates",
+                       (double *)0);
+        ML_Aggregate_Set_NodalCoordinates(ml_nodes_, agg_, coord);
+        int NumDimensions = List_.get(Prefix_ +
+                             "repartition: Zoltan dimensions", 0);
+        ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+
+        double minmax = List_.get(Prefix_ + "repartition: node min max ratio", 1.1);
+        int minperproc = List_.get(Prefix_ + "repartition: node min per proc", 20);
+        ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
+        ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
+        ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
+
+        //edges
+        coord = List_.get(Prefix_ +
+                          "repartition: Zoltan edge coordinates", (double *)0);
+        //FIXME JJH this would be a bug if increasing is ever supported
+        agg_edge_->begin_level = MaxCreationLevels-1; 
+        ML_Aggregate_Set_NodalCoordinates(ml_edges_, agg_edge_, coord);
+        ML_Aggregate_Set_Dimensions(agg_edge_, NumDimensions);
+        minmax = List_.get(Prefix_ + "repartition: edge min max ratio", 1.1);
+        ML_Repartition_Set_LargestMinMaxRatio(ml_edges_,minmax);
+        minperproc = List_.get(Prefix_ + "repartition: edge min per proc", 20);
+        ML_Repartition_Set_MinPerProc(ml_edges_,minperproc);
+        ML_Repartition_Set_Partitioner(ml_edges_,ML_USEZOLTAN);
+      }
+      else if (Repartitioner == "ParMETIS") {
+      }
+      else if (Repartitioner == "Jostle") {
+      }
+      else {
+        if(Comm().MyPID() == 0) cout << "Unrecognized partitioner." << endl;
+      }
+    } //if (ShouldRepartition)
+  } //if( SolvingMaxwell_ ...
   
-  ML_Aggregate_Create(&agg_);
-  // FIXME!
-  agg_->keep_agg_information = 1;
+
 
   /* **********************************************************************
    * visualize aggregate shape and other statistics. 
@@ -982,8 +1040,9 @@ ComputePreconditioner(const bool CheckPreconditioner)
     TMatrixTransposeML_ = ML_Operator_Create(ml_edges_->comm);
     ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
     
-    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_, &ml_nodes_,LevelID_[0],
-						    Direction,agg_,TMatrixML_,TMatrixTransposeML_, 
+    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_edges_,&ml_nodes_,
+                            LevelID_[0], Direction,agg_,agg_edge_,
+                            TMatrixML_,TMatrixTransposeML_, 
 						    &Tmat_array,&Tmat_trans_array, 
 						    ML_YES, 1.5); 
   }
@@ -1538,7 +1597,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
    
        sprintf(parameter,"%saggregation: type (level %d)",
-	       Prefix_.c_str(),LevelID_[level]);
+           Prefix_.c_str(),LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
 
        if( CoarsenScheme == "METIS" )
@@ -1555,109 +1614,111 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
          ML_Aggregate_Set_CoarsenSchemeLevel_Coupled(level,NumLevels_,agg_);
        else {
          if( Comm().MyPID() == 0 ) {
-	   cout << ErrorMsg_ << "specified options ("
-		<< CoarsenScheme << ") not valid. Should be:" << endl;
-	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled>" << endl;
-	 }
-	 exit( EXIT_FAILURE );
-       } 
-   
+           cout << ErrorMsg_ << "specified options ("
+                << CoarsenScheme << ") not valid. Should be:" << endl;
+           cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <Zoltan> /<MIS> / <Uncoupled> / <Coupled>" << endl;
+         }
+         exit( EXIT_FAILURE );
+       }
+
        if( CoarsenScheme == "Zoltan" ) {
          // This copies the coordinates if the aggregation scheme
          // of at least one level is Zoltan. Coordinates will be
          // projected for ALL levels independently of the 
          // aggregation scheme.
-	 double * coord = List_.get(Prefix_ + "aggregation: zoltan coordinates",
-				    (double *)0);
-	 int NumDimensions = List_.get(Prefix_ + "aggregation: zoltan dimensions",
-				    0);
 
-	 ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);
-	 ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+         double * coord = List_.get(Prefix_ + "aggregation: zoltan coordinates",
+                        (double *)0);
+         int NumDimensions = List_.get(Prefix_ +
+                              "aggregation: zoltan dimensions", 0);
+
+         ML_Aggregate_Set_NodalCoordinates(ml_, agg_, coord);
+         ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+
        }
 
        if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ||
-	   CoarsenScheme == "Zoltan" ) {
-         
+           CoarsenScheme == "Zoltan" ) {
+ 
          bool isSet = false;
 
-	 // first look for parameters without any level specification
+         // first look for parameters without any level specification
 
-	 sprintf(parameter,"%saggregation: global aggregates", 
-		 Prefix_.c_str());
-	 if( List_.isParameter(parameter) ){
-	   value = -777; // simply means not set
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-	   }
-	 }
-
-	 sprintf(parameter,"%saggregation: local aggregates", 
-		 Prefix_.c_str());
-	 if( List_.isParameter(parameter) ){
-	   value = -777;
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-       }
+         sprintf(parameter,"%saggregation: global aggregates", 
+             Prefix_.c_str());
+         if( List_.isParameter(parameter) ){
+           value = -777; // simply means not set
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
          }
 
-	 sprintf(parameter,"%saggregation: nodes per aggregate", 
-		 Prefix_.c_str());
-	 if( List_.isParameter(parameter) ){
-	   value = -777;
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-	   }
-	 }
+         sprintf(parameter,"%saggregation: local aggregates", 
+             Prefix_.c_str());
+         if( List_.isParameter(parameter) ){
+           value = -777;
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
+             }
 
-	 // now for level-specific data
+         sprintf(parameter,"%saggregation: nodes per aggregate", 
+             Prefix_.c_str());
+         if( List_.isParameter(parameter) ){
+           value = -777;
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
+         }
 
-	 sprintf(parameter,"%saggregation: global aggregates (level %d)", 
-		 Prefix_.c_str(), LevelID_[level]);
-	 if( List_.isParameter(parameter) ){
-	   value = -777; // simply means not set
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-	   }
-	 }
+         // now for level-specific data
 
-	 sprintf(parameter,"%saggregation: local aggregates (level %d)", 
-		 Prefix_.c_str(), LevelID_[level]);
-	 if( List_.isParameter(parameter) ){
-	   value = -777;
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-	   }
-	 }
+         sprintf(parameter,"%saggregation: global aggregates (level %d)", 
+             Prefix_.c_str(), LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+           value = -777; // simply means not set
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
+         }
 
-	 sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", 
-		 Prefix_.c_str(), LevelID_[level]);
-	 if( List_.isParameter(parameter) ){
-	   value = -777;
-	   value = List_.get(parameter,value);
-	   if( value != -777 ) {
-	     ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-	     isSet = true;
-	   }
-	 }
+         sprintf(parameter,"%saggregation: local aggregates (level %d)", 
+             Prefix_.c_str(), LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+           value = -777;
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
+         }
 
-	 if( isSet == false ) {
-	   // put default values
-	   sprintf(parameter,"%saggregation: local aggregates (level %d)", 
-		   Prefix_.c_str(), LevelID_[level]);
-	   value = List_.get(parameter,1);
-	   ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
-	 }
+         sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", 
+             Prefix_.c_str(), LevelID_[level]);
+         if( List_.isParameter(parameter) ){
+           value = -777;
+           value = List_.get(parameter,value);
+           if( value != -777 ) {
+             ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+             isSet = true;
+           }
+         }
+
+         if( isSet == false ) {
+           // put default values
+           sprintf(parameter,"%saggregation: local aggregates (level %d)", 
+               Prefix_.c_str(), LevelID_[level]);
+           value = List_.get(parameter,1);
+           ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
+         }
 
        } // if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" )
 
