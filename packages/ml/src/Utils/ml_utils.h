@@ -104,6 +104,8 @@
    int    ML_find_index(int key, int list[], int length);
    void   ML_use_param(void *data, int junk);
    void   ML_PauseForDebugger(ML_Comm *comm);
+   void ML_print_line (char *charstr, int ntimes);
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus
