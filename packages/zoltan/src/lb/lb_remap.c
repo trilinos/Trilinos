@@ -748,67 +748,71 @@ char  *yo = "matching_pgm";
 
   limits[0] = limits[1] = *limit;
   Match[0] = match;
-  if (!(Match[1] = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
-   || !(sims     = (double*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(double))) ) {
+  if (hg->nVtx) {
+    if (!(Match[1] = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+     || !(sims     = (double*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(double))) ) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       return ZOLTAN_MEMERR;
-      }
+    }
+  }
+
   for (i = 0; i < hg->nVtx; i++)
-     Match[1][i] = i;
+    Match[1][i] = i;
 
-  for (i = 0; i < hg->nVtx  &&  limits[side] > 0; i++)
-     if (Match[0][i] == i && Match[1][i] == i) {
-        vertex = i;
-        while (vertex > 0 && limits[side] > 0) {
-           max_weight = 0.0;
-           next_vertex = -1;
+  for (i = 0; i < hg->nVtx  &&  limits[side] > 0; i++) {
+    if (Match[0][i] == i && Match[1][i] == i) {
+      vertex = i;
+      while (vertex > 0 && limits[side] > 0) {
+        max_weight = 0.0;
+        next_vertex = -1;
 
-           for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
-              edge = hg->vedge[j];
-              pins = hg->hindex[edge+1] - hg->hindex[edge];
-              weight = 2.0 / ((pins-1)*pins);
-              if (hg->ewgt)
-                 weight *= hg->ewgt[edge];
-              for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
-                 neighbor = hg->hvertex[k];
-                 if (neighbor != vertex && Match[0][neighbor] == neighbor
-                  && Match[1][neighbor]==neighbor)
-                     sims[neighbor] += weight;
-                 }
-              }
         for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
-           edge = hg->vedge[j];
-           for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
-              neighbor = hg->hvertex[k];
-              if (sims[neighbor] > 0.0) {
-                 if (sims[neighbor] > max_weight) {
-                    max_weight = sims[neighbor];
-                    next_vertex = neighbor;
-                    }
-                 sims[neighbor] = 0.0;
-                 }
+          edge = hg->vedge[j];
+          pins = hg->hindex[edge+1] - hg->hindex[edge];
+          weight = 2.0 / ((pins-1)*pins);
+          if (hg->ewgt)
+            weight *= hg->ewgt[edge];
+          for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
+            neighbor = hg->hvertex[k];
+            if (neighbor != vertex && Match[0][neighbor] == neighbor && 
+                Match[1][neighbor]==neighbor)
+               sims[neighbor] += weight;
+          }
+        }
+        for (j = hg->vindex[vertex]; j < hg->vindex[vertex+1]; j++) {
+          edge = hg->vedge[j];
+          for (k = hg->hindex[edge]; k < hg->hindex[edge+1]; k++) {
+            neighbor = hg->hvertex[k];
+            if (sims[neighbor] > 0.0) {
+              if (sims[neighbor] > max_weight) {
+                max_weight = sims[neighbor];
+                next_vertex = neighbor;
               }
-           }
+              sims[neighbor] = 0.0;
+            }
+          }
+        }
 
         if (next_vertex >= 0) {
-           Match[side][vertex] = next_vertex;
-           Match[side][next_vertex] = vertex;
-           limits[side]--;
-           w[side] += max_weight;
-           side = 1-side;
-           }
-        vertex = next_vertex;
+          Match[side][vertex] = next_vertex;
+          Match[side][next_vertex] = vertex;
+          limits[side]--;
+          w[side] += max_weight;
+          side = 1-side;
         }
-     }
+        vertex = next_vertex;
+      }
+    }
+  }
 
   if (w[0] < w[1]) {
-     for (i = 0; i < hg->nVtx; i++)
-        match[i] = Match[1][i];
-     *limit = limits[1];
-     }
+    for (i = 0; i < hg->nVtx; i++)
+      match[i] = Match[1][i];
+    *limit = limits[1];
+  }
   else
-     *limit = limits[0];
+    *limit = limits[0];
 
   Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
   return ZOLTAN_OK;
