@@ -1,0 +1,64 @@
+\section{Epetra\_CrsSingletonFilter class}
+ The Epetra\_CrsSingletonFilter class takes an existing Epetra\_LinearProblem object,
+analyzes it structure and explicitly eliminates singleton rows and columns from the matrix and
+appropriately modifies the RHS and LHS of the linear problem.  The result of this process is a
+reduced system of equations that is itself an Epetra\_LinearProblem object.  The reduced system
+can then be solved using any solver that is understands an Epetra\_LinearProblem.  The 
+solution for the full system is obtained by calling ComputeFullSolution().
+    
+Singleton rows are defined to be rows that have a single nonzero entry in the matrix.
+The equation associated with this row can be explicitly eliminated because it involved
+ only one variable.  For example if row i has a single nonzero value in column j, call 
+it A(i,j), we can explicitly solve for x(j) = b(i)/A(i,j), where b(i) is the ith entry 
+of the RHS and x(j) is the jth entry of the LHS.
+
+Singleton columns are defined to be columns that have a single nonzero entry in the matrix.  The variable associated with this column is fully dependent, meaning that the solution for all other variables does not depend on it.  If this entry is A(i,j) then the ith row and jth column can be removed from the system and x(j) can be solved after the solution for all other variables is determined.
+
+By removing singleton rows and columns, we can often produce a reduced system that is smaller and far less dense, and in general having better numerical properties.
+
+The basic procedure for using this class is as follows:
+\begin{EpetraItemize}
+\item Construct full problem: 
+      Construct and Epetra\_LinearProblem containing the "full" matrix, RHS and LHS.  
+      This is done outside of Epetra\_CrsSingletonFilter class.  Presumably, you have 
+      some reason to believe that this system may contain singletons.
+\item Construct an Epetra\_CrsSingletonFilter instance:  Constructor needs no arguments.
+\item Analyze matrix: 
+      Invoke the Analyze() method, passing in the Epetra\_RowMatrix object from your full 
+      linear problem mentioned in the first step above.
+\item Go/No Go decision to construct reduced problem: 
+      Query the results of the Analyze method using the SingletonsDetected() method.  
+      This method returns "true" if there were singletons found in the matrix.  You can 
+      also query any of the other methods
+      in the Filter Statistics section to determine if you want to proceed with the
+      construction of the reduced system.
+\item Construct reduced problem: 
+     If, in the previous step, you determine that you want to proceed with the
+     construction of the reduced problem, you should next call the 
+     ConstructReducedProblem() method, passing in the full linear problem object from the first
+     step.  This method will use the information from the Analyze() method to construct a
+     reduce problem that has
+     explicitly eliminated the singleton rows, solved for the corresponding LHS values and
+     updated the RHS.  This 
+     step will also remove singleton columns from the reduced system.  Once the solution
+     of the reduced problem is
+     is computed (via any solver that understands an Epetra\_LinearProblem), you should
+     call the ComputeFullSolution()
+     method to compute the LHS values assocaited with the singleton columns.
+\item Solve reduced problem: 
+     Obtain a pointer to the reduced problem using the
+     ReducedProblem() method.  Using the solver of your choice, solve the reduced system.
+\item Compute solution to full problem:  
+     Once the solution the reduced problem is
+     determined, the ComputeFullSolution()
+     method will place the reduced solution values into the appropriate locations of the
+     full solution LHS and then
+     compute the values associated with column singletons.  At this point, you have a
+     complete solution to the original
+     full problem.
+\item Solve a subsequent full problem that differs from the original problem only in
+values: It is often the case that the
+     structure of a problem will be the same for a sequence of linear problems.  In this
+     case, the UpdateReducedProblem(
+
+\end{EpetraItemize}

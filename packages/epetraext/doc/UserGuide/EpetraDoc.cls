@@ -5,14 +5,14 @@
 %%-------------------------------------------------------------------------
 
 %%-------------------------------------------------------------------------
-%% Purpose        : LaTeX class (.cls) file for general Trilinos documents.
+%% Purpose        : LaTeX class (.cls) file for general Epetra documents.
 %% Special Notes  : Under construction - a merge between the original Xyce
 %%                  version hack and the SAND version by Rolf Riesen.
 %% Creator        : Michael A. Heroux, Sandia National Labs
 %%
 %%-------------------------------------------------------------------------
 % ---------------------------------------------------------------------------- %
-% Started with Scott Hutchinsons Xyce cls file and modified for use with Trilinos.
+% Started with Scott Hutchinsons Xyce cls file and modified for use with Epetra.
 %
 % Michael A. Heroux January 28, 2003.
 %
@@ -38,7 +38,7 @@
 
 
 % The version of this file
-\typeout{Using Sandia Trilinos Technical Report class:
+\typeout{Using Sandia Epetra Technical Report class:
   January 28, 2003, v1.00 Michael Heroux}
 \newcommand\SANDreportVersion{2003/01/28 v1.00}
 
@@ -63,7 +63,7 @@
 % We need calc to divide by 3 in setlength
 \RequirePackage{calc}
 
-% Needed for Trilinos
+% Needed for Epetra
 \RequirePackage{color}
 \RequirePackage{eepic}
 \RequirePackage{amssymb}
@@ -81,8 +81,8 @@
 
 
 % Specify what this file provides
-\ProvidesPackage{TrilinosDoc}[\SANDreportVersion]
-\ProvidesFile{TrilinosDoc.cls}[\SANDreportVersion]
+\ProvidesPackage{EpetraDoc}[\SANDreportVersion]
+\ProvidesFile{EpetraDoc.cls}[\SANDreportVersion]
 
 
 % We understand two options: "relax" and "strict".
@@ -140,19 +140,19 @@
   % Do some usage checking
   \ifthenelse{\boolean{SANDnumProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDnum
+    \ClassError{EpetraDoc.cls}{\@backslashchar SANDnum
       not provided}{Insert \@backslashchar SANDnum in the preamble
       of your document}
   }
   \ifthenelse{\boolean{SANDauthorProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDauthor
+    \ClassError{EpetraDoc.cls}{\@backslashchar SANDauthor
       not provided}{Insert \@backslashchar SANDauthor in the preamble
       of your document}
   }
   \ifthenelse{\boolean{SANDprintDateProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDprintDate
+    \ClassError{EpetraDoc.cls}{\@backslashchar SANDprintDate
       not provided}{Insert \@backslashchar SANDprintDate in the
       preamble of your document}
   }
@@ -346,13 +346,13 @@
   % Do some more usage checking
 %   \ifthenelse{\boolean{SANDmainProvided}}   {
 %   }{
-%     \ClassError{TrilinosDoc.cls}{\@backslashchar SANDmain
+%     \ClassError{EpetraDoc.cls}{\@backslashchar SANDmain
 %       not provided}{Add \@backslashchar SANDmain before your
 %       introduction (first) section of your document}
 %   }
 %  \ifthenelse{\boolean{SANDdistributionProvided}}   {
 %  }{
-%    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+%    \ClassError{EpetraDoc.cls}{\@backslashchar SANDdistribution
 %      not provided}{Add \@backslashchar SANDdistribution at the
 %      end of your document}
 %  }
@@ -420,7 +420,7 @@
 \newcommand{\SANDdistInternal}[4]{
   \ifthenelse{\boolean{SANDdistributionProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+    \ClassError{EpetraDoc.cls}{\@backslashchar SANDdistribution
       not (yet) provided}{\@backslashchar SANDdistribution must
       be used before any \@backslashchar SANDdistInternal}
   }
@@ -433,7 +433,7 @@
 \newcommand{\SANDdistExternal}[2]{
   \ifthenelse{\boolean{SANDdistributionProvided}}   {
   }{
-    \ClassError{TrilinosDoc.cls}{\@backslashchar SANDdistribution
+    \ClassError{EpetraDoc.cls}{\@backslashchar SANDdistribution
       not (yet) provided}{\@backslashchar SANDdistribution must
       be used before any \@backslashchar SANDdistExternal}
   }
@@ -616,7 +616,7 @@
 %    \@startsection {section}{1}{\z@}%
     {-3.5ex \@plus -1ex \@minus -.2ex}%
     {2.3ex \@plus.2ex}%
-    {\normalfont\Huge\color{TrilinosTextBlue}}
+    {\normalfont\Huge\color{EpetraTextBlue}}
   }
 
   \renewcommand{\sectionmark}{\markboth%
@@ -638,7 +638,7 @@
   \setcounter{secnumdepth}{2}
 }
 
-% Instead of this, use the Trilinos definition below.
+% Instead of this, use the Epetra definition below.
 %\renewcommand\section{\@startsection {section}{1}{0mm}
 %  {-3.5ex \@plus -1ex \@minus -.2ex}
 %  {2.3ex \@plus.2ex}
@@ -725,7 +725,7 @@
 }
 
 %------------------------------------------------------------------------------
-% Trilinos added stuff
+% Epetra added stuff
 %------------------------------------------------------------------------------
 
 \setlength{\parindent}{0pt}
@@ -737,30 +737,30 @@
 \newcolumntype{Z}{>{\raggedright\arraybackslash}X}
 \newcolumntype{W}{>{\centering\arraybackslash}X}
 
-% Trilinos Colors
- \definecolor{TrilinosBlue}{rgb}{0.498,0.749,1}
- \definecolor{TrilinosDeepBlue}{rgb}{0.4,0.4,0.6}
- \definecolor{TrilinosDarkBlue}{rgb}{0,0,0.5}
- \definecolor{TrilinosTextBlue}{rgb}{0.2,0,0.6}
- \definecolor{TrilinosRed}{rgb}{1,0,0}
- \definecolor{TrilinosDeepRed}{rgb}{0.502,0,0}
+% Epetra Colors
+ \definecolor{EpetraBlue}{rgb}{0.498,0.749,1}
+ \definecolor{EpetraDeepBlue}{rgb}{0.4,0.4,0.6}
+ \definecolor{EpetraDarkBlue}{rgb}{0,0,0.5}
+ \definecolor{EpetraTextBlue}{rgb}{0.2,0,0.6}
+ \definecolor{EpetraRed}{rgb}{1,0,0}
+ \definecolor{EpetraDeepRed}{rgb}{0.502,0,0}
  \definecolor{turquoise}{rgb}{0.5,1,1}
  \definecolor{grey}{rgb}{0.5,0.5,0.5}
  \definecolor{shadecolor}{rgb}{0.753,0.753,0.753}
  \definecolor{pink}{rgb}{1,.6,.8}
 
 % Define strings
-\def\Trilinos{\textsf{\bf Trilinos}}
-\def\TrilinosTM{{\color{TrilinosBlue} \bf
-      \textsf{Trilinos}}\textsuperscript{\tiny{\texttrademark}}}
-\def\TrilinosTitle{\bf
+\def\Epetra{\textsf{\bf Epetra}}
+\def\EpetraTM{{\color{EpetraBlue} \bf
+      \textsf{Epetra}}\textsuperscript{\tiny{\texttrademark}}}
+\def\EpetraTitle{\bf
   {
     \linethickness{6pt}
-    \raggedright{\color{TrilinosDeepBlue}\line(1,0){450}} \\
+    \raggedright{\color{EpetraDeepBlue}\line(1,0){450}} \\
     \vspace{0.125in}
-    \color{TrilinosBlue}
+    \color{EpetraBlue}
     {
-      \textsf{Trilinos}}}\textsuperscript{\small\scalefont{1.1}{\texttrademark}}}
+      \textsf{Epetra}}}\textsuperscript{\small\scalefont{1.1}{\texttrademark}}}
 
 % New commands
 \newcommand{\shadebg}[1]{\begin{shaded}{#1}\end{shaded}}
@@ -784,7 +784,7 @@
 % Heading
 \newcommand{\HeadingC}[1]{%
   \par\vspace{\baselineskip}%
-  {\Large\color{TrilinosTextBlue}#1}%
+  {\Large\color{EpetraTextBlue}#1}%
   \par\vspace{\baselineskip}}
 
 % Examples
@@ -797,19 +797,19 @@
 \newenvironment{vquote}{\begin{quote}\begin{alltt}}
     {\end{alltt}\end{quote}}
 
-% Trilinos itemize environment
-\newenvironment{TrilinosItemize}{%
-  \renewcommand{\labelitemi}{{\color{TrilinosRed}$\blacksquare$}}%
+% Epetra itemize environment
+\newenvironment{EpetraItemize}{%
+  \renewcommand{\labelitemi}{{\color{EpetraRed}$\blacksquare$}}%
   \begin{itemize}}{\end{itemize}}
 
-% Trilinos chapter style
+% Epetra chapter style
 \def\chaptermark#1{}
 \def\sec@hangfrom#1{\setbox\@tempboxa\hbox{#1}%
       \hangindent \z@\noindent\box\@tempboxa}
 
 \def\@chapapp{\chaptername}
 
-%\newcommand{\chapterrulecolor}{TrilinosDeepRed}
+%\newcommand{\chapterrulecolor}{EpetraDeepRed}
 %\newcommand{\chapterrulewidth}{1.6pt}
 %\newcommand{\plainchapterrulewidth}{\z@skip}
 %\def\chapterrule{{\if@fancyplain\let\chapterrulewidth\plainchapterrulewidth\fi
@@ -817,10 +817,10 @@
 
 \def\@makechapterhead#1{{\parindent0pt\raggedright
     \hyphenpenalty \@M
-    \Huge\scalefont{1.45}\color{TrilinosTextBlue}
+    \Huge\scalefont{1.45}\color{EpetraTextBlue}
     \sec@hangfrom{\thechapter.\hspace{1em}}%
     \ignorespaces#1\par
-    \color{TrilinosDeepRed}\vspace{0.5ex}\headrule
+    \color{EpetraDeepRed}\vspace{0.5ex}\headrule
     \ifdim\pagetotal>118pt
       \vskip 24pt
     \else
@@ -875,60 +875,60 @@
 % Chapter Overview style
 \newcommand{\chapteroverview}[2]{%
   \vspace{\baselineskip}%
-  {\Huge\color{TrilinosTextBlue}#1}%
+  {\Huge\color{EpetraTextBlue}#1}%
   \vspace{\baselineskip}\\ #2 \clearpage}
 
-% Trilinos Abstract style
+% Epetra Abstract style
 \renewcommand{\abstractname}%
 {\raggedright\Large Abstract}
-%{\raggedright\Large\color{TrilinosTextBlue} Abstract}
+%{\raggedright\Large\color{EpetraTextBlue} Abstract}
 
-% Trilinos Contents heading style
-%\renewcommand{\contentsname}{\raggedright\Huge\color{TrilinosTextBlue} Contents}
+% Epetra Contents heading style
+%\renewcommand{\contentsname}{\raggedright\Huge\color{EpetraTextBlue} Contents}
 
-% Trilinos List of Figures heading style
-%\renewcommand{\listfigurename}{\raggedright\normalfont\Large\bfseries\color{TrilinosTextBlue}
+% Epetra List of Figures heading style
+%\renewcommand{\listfigurename}{\raggedright\normalfont\Large\bfseries\color{EpetraTextBlue}
 %List of Figures}
 
-% Trilinos section style
+% Epetra section style
 \renewcommand{\section}{\@startsection
   {section}
   {1}
   {-0.25in}
   {1ex plus 0.5ex minus 0.5ex}
   {1ex plus 1ex minus 0ex}
-  {\raggedright\Huge\color{TrilinosTextBlue}}
-%  {\clearpage\raggedright\Huge\color{TrilinosTextBlue}}
+  {\raggedright\Huge\color{EpetraTextBlue}}
+%  {\clearpage\raggedright\Huge\color{EpetraTextBlue}}
 }
 
-% Trilinos subsection style
+% Epetra subsection style
 \renewcommand{\subsection}{\@startsection
   {subsection}
   {2}
   {-0.25in}
   {1ex plus 0.5ex minus 0.5ex}
   {0.5ex plus 1ex minus 0ex}
-  {\raggedright\LARGE\color{TrilinosTextBlue}}
+  {\raggedright\LARGE\color{EpetraTextBlue}}
 }
 
-% Trilinos subsubsection style
+% Epetra subsubsection style
 \renewcommand{\subsubsection}{\@startsection
   {subsubsection}
   {3}
   {-0.25in}
   {0.75ex plus 0.5ex minus 0.5ex}
   {0.5ex plus 0.5ex minus 0ex}
-  {\raggedright\large\color{TrilinosTextBlue}}
+  {\raggedright\large\color{EpetraTextBlue}}
 }
 
-% Trilinos paragraph style
+% Epetra paragraph style
 \renewcommand{\paragraph}{\@startsection
   {paragraph}
   {4}
   {\z@}
   {0ex plus 0.1ex minus 0.1ex}
   {0.3ex plus 0.2ex minus 0ex}
-  {\raggedright\bfseries\large\color{TrilinosTextBlue}}
+  {\raggedright\bfseries\large\color{EpetraTextBlue}}
 }
 
 % Trilinos subparagraph style

@@ -5,26 +5,25 @@
 %%-------------------------------------------------------------------------
 
 %%-------------------------------------------------------------------------
-%% Purpose        : Trilinos Document Template for use when starting a new
-%%                  Trilinos document.
-%% Special Notes  : Graphic files (pdf format) work with pdflatex.  To use
-%%                  LaTeX, we need to use postcript versions.  Not sure why.
+%% Purpose        : User Guide for the Epetra Extension Classes.
 %% Creator        : Michael A. Heroux, Sandia National Labs
-%% Creation Date  : {01/28/2003}
+%% Creation Date  : {03/12/2003}
 %%
 %% Revision Information:
 %% ---------------------
 %%
 %%-------------------------------------------------------------------------
 
-\documentclass[11pt,twoside,titlepage]{TrilinosDoc}
+\documentclass[11pt,twoside,titlepage]{EpetraDoc}
 \usepackage{makeidx,ltxtable, multirow}
+
+
 %\usepackage[hyperindex=true, colorlinks=false]{hyperref}
 %\usepackage{hyperref}
 
-\includeonly{
+%\includeonly{
 % List root name of files (usually chapters) to include if any (remove '%' character)
-}
+%}
 
 %\draft
 
@@ -34,10 +33,10 @@
 %
 \renewcommand{\chaptermark}[1]{\markboth{#1}{}}
 \renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
-\lhead[\fancyplain{}{TrilinosTM{} User's Guide}]%
+\lhead[\fancyplain{}{Epetra{} Extensions User Guide}]%
 {\fancyplain{}{\rightmark}}
 \rhead[\fancyplain{}{\leftmark}]
-{\fancyplain{}{TrilinosTM{} User's Guide}}
+{\fancyplain{}{Epetra{} Extensions User Guide}}
 
 
 
@@ -47,21 +46,21 @@
 %
 % Set the title, author, and date
 %
-\title{\TrilinosTitle{} Solver Framework}
+\title{\Epetra{} Extensions}
 
 \SANDsubtitle{User's Guide, Version 1.0}
 
-\author{Michael A. Heroux}
+\author{Michael A. Heroux and Robert J. Hoekstra}
 
 % ---------------------------------------------------------------------------- %
 % Set some things we need for SAND reports. These are mandatory
 %
 \SANDnum{SAND2003-XXXX}
-\SANDprintDate{Printed February 2003}
+\SANDprintDate{Printed April 2003}
 \SANDauthor{Michael A. Heroux
   Numerical and Applied Mathematics\\[1ex]
-  Others...
-  Other Department}
+  Robert J. Hoekstra
+  Computational Something Group}
 
 
 \begin{document}
@@ -79,19 +78,20 @@
 %\abstract*{Abstract}
 %\HeadingC{Abstract}
 
-This manual describes the use of the \Trilinos{} Solver Framework code
-for solving systems of equations at a variety of abstraction levels.  The
-\Trilinos{} Solver Framework has been written to support, in a
-rigorous manner, the solver needs of the engineering and scientific applications
-at Sandia National Laboratories.  As such, the development has focused on improving the
-capability over the current state-of-the-art in the following areas:
+This manual describes the use of the \Epetra{} Extensions classes.  These classes
+are useful for a variety of purposes but are not considered part of the Epetra core.
+To minimize the size of the core Epetra and reduce the learning curve for new users,
+we have placed the extension classes in a different library.
 
-\begin{TrilinosItemize}
+Classes described in this document are:
+\begin{EpetraItemize}
 
-\item Item 1.
-\item Item 2.
+\item Singleton Filtering:  A class that generates an Epetra\_LinearProblem instance
+from an existing instance, where the new problem has all singleton rows and columns
+removed.
+\item More to come.
 
-\end{TrilinosItemize}
+\end{EpetraItemize}
 
 \end{abstract}
 
@@ -104,22 +104,14 @@ The authors would like to acknowledge ...
 %\section*{Trademarks}
 The information herein is subject to change without notice.\\[1em]
 Copyright \copyright{} 2002 Sandia Corporation.  All rights reserved.\\[1em]
-\TrilinosTM{} Solver Framework and \TrilinosTM{} trademarks of Sandia
+\EpetraTM{} Solver Framework and \EpetraTM{} trademarks of Sandia
 Corporation.\\[1em]
-Silicon Graphics, the Silicon Graphics logo and IRIX are registered trademarks
-of Silicon Graphics, Inc.\\[1em]
-Microsoft, Windows and Windows 2000 are registered trademark of Microsoft
-Corporation.\\[1em]
-Solaris and UltraSPARC are registered trademarks of Sun Microsystems
-Corporation. \\[1em]
-hp and Alpha are registered trademarks of Hewlett-Packard company. \\[1em]
-All other trademarks are property of their respective owners.
 
 \HeadingC{Contacts}
 \label{Contacts}
 %\section*{Contacts}
 Bug Reports \hfill \texttt{http://software.sandia.gov/bugzilla} \\
-Email \hfill \texttt{trilinos-support@software.sandia.gov} \\
+Email \hfill \texttt{epetra-support@software.sandia.gov} \\
 World Wide Web \hfill \texttt{http://software.sandia.gov/trilinos}
 
 \vspace*{\fill}
@@ -147,7 +139,7 @@ World Wide Web \hfill \texttt{http://software.sandia.gov/trilinos}
 %\pagenumbering{arabic}
 
 % Include chapter files (if any) here
-%\include{chapter1}
+\include{SingletonFilters}
 
 %%%
 %%% End of Text
@@ -164,13 +156,6 @@ World Wide Web \hfill \texttt{http://software.sandia.gov/trilinos}
 \cleardoublepage
 %\pdfbookmark[0]{Index}{Index}
 \printindex
-%\include{TrilinosDocTemplate_dist}
+%\include{EpetraDocTemplate_dist}
 
 \end{document}
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:
-
-% END of TrilinosDocTemplate.tex ************
