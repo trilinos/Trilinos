@@ -115,7 +115,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
   }
 
   /* Compute statistics w.r.t. partitions? */
-  compute_part = (zz->Get_Partition != NULL);
+  compute_part = (zz->Get_Partition != NULL || zz->Get_Partition_Multi != NULL);
 
   if (compute_part){
     /* Allocate space. */
@@ -239,44 +239,30 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
         }
         if (compute_part){
           if (nbors_proc[j] == zz->Proc){
-            if ((num_lid_entries==0) || (lid==NULL))
-              p = zz->Get_Partition(zz->Get_Partition_Data,
-                  num_gid_entries, 0,
-                  &(nbors_global[j*num_gid_entries]), NULL, &ierr);
-            else {
-              /* Need to find the right lid to pass to Get_Partition.
-               * For now, look through the gid list and compare
-               * every time. This is very slow, O(n^2), so
-               * in the future we should use a hash table.
-               */
-              found = -1;
-              for (i=0; i<num_obj; i++){
-                if (ZOLTAN_EQ_GID(zz, &(global_ids[i*num_gid_entries]),
-                                  &(nbors_global[j*num_gid_entries]))){
-                  found = i;
-                  break;
-                }
+            /* Need to find the nbors_global ID in global_ids.
+             * For now, look through the global_id list and compare
+             * every time. This is very slow, O(n^2), so
+             * in the future we should use a hash table.
+             */
+            found = -1;
+            for (i=0; i<num_obj; i++){
+              if (ZOLTAN_EQ_GID(zz, &(global_ids[i*num_gid_entries]),
+                                &(nbors_global[j*num_gid_entries]))){
+                found = i;
+                break;
               }
-              if (found<0){
-                /* This should never happen. */
-                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed!");
-                ierr = ZOLTAN_FATAL;
-                goto End;
-              }
-              p = zz->Get_Partition(zz->Get_Partition_Data,
-                  num_gid_entries, num_lid_entries,
-                  &(nbors_global[j*num_gid_entries]), 
-                  &(local_ids[found*num_lid_entries]), &ierr);
             }
+            if (found<0){
+              /* This should never happen. */
+              ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed!");
+              ierr = ZOLTAN_FATAL;
+              goto End;
+            }
+            p = part[found];
           }
           else
             p = -1; /* Assume remote data belong to different partition. */
 
-          if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-                               "Error returned from ZOLTAN_PARTITION_FN");
-            goto End;
-          }
           if (p != part[k]){
             cut_arr[part[k]]++;
             for (i=0; i<zz->Edge_Weight_Dim; i++)
