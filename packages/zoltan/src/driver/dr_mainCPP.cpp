@@ -55,7 +55,11 @@ int main(int argc, char *argv[])
 
 /***************************** BEGIN EXECUTION ******************************/
 
-  /* initialize MPI */
+  /* Initialize MPI */
+
+  // We must use the C bindings to MPI because the C++ bindings are
+  // are not available or not complete on some of our platforms.
+ 
   MPI_Init(&argc, &argv);
 
   /* get some machine information */
@@ -118,9 +122,14 @@ int main(int argc, char *argv[])
   /*
    *  Create a Zoltan structure.  
    *  No exception handling at this time. (C++ wishlist)
+   *  We must dynamically create the object so that we can delete it
+   *  before MPI_Finalize().  (If zz is created on the stack, it will
+   *  be deleted atexit, after MPI_Finalize().  Zoltan_Destroy calls
+   *  MPI functions.)
    */
 
-  Zoltan::Zoltan_Object zz(MPI_COMM_WORLD);
+  Zoltan::Zoltan_Object *zz = NULL;
+  zz = new Zoltan::Zoltan_Object();
 
   /* initialize some variables */
   MESH_INFO  mesh;
@@ -175,14 +184,14 @@ int main(int argc, char *argv[])
   /* broadcast the command info to all of the processor */
   brdcst_cmd_info(Proc, &prob, &pio_info, &mesh);
 
-  if (!setup_zoltan(zz, Proc, &prob, &mesh)) {
+  if (!setup_zoltan(*zz, Proc, &prob, &mesh)) {
     Gen_Error(0, "fatal: Error returned from setup_zoltan\n");
     error_report(Proc);
     print_output = 0;
     goto End;
   }
 
-  zz.Set_Param("DEBUG_MEMORY", "1");
+  zz->Set_Param("DEBUG_MEMORY", "1");
 
   srand(Proc);
 
@@ -218,7 +227,7 @@ int main(int argc, char *argv[])
 #ifdef KDDKDD_COOL_TEST
 /* KDD Cool test of changing number of partitions  */
     sprintf(cmesg, "%d", Num_Proc * iteration);
-    zz.Set_Param("NUM_GLOBAL_PARTITIONS", cmesg);
+    zz->Set_Param("NUM_GLOBAL_PARTITIONS", cmesg);
 #endif
 
     /*
@@ -241,7 +250,7 @@ int main(int argc, char *argv[])
      * now run Zoltan to get a new load balance and perform
      * the migration
      */
-    if (!run_zoltan(zz, Proc, &prob, &mesh, &pio_info)) {
+    if (!run_zoltan(*zz, Proc, &prob, &mesh, &pio_info)) {
       Gen_Error(0, "fatal: Error returned from run_zoltan\n");
       error_report(Proc);
       print_output = 0;
@@ -275,7 +284,8 @@ int main(int argc, char *argv[])
   }
 
 End:
-  if (mesh.dd) zz.DD_Destroy(&(mesh.dd));
+  
+  if (mesh.dd) zz->DD_Destroy(&(mesh.dd));
 
   Zoltan_Object::Memory_Stats();
 
@@ -298,6 +308,8 @@ End:
 
   free_mesh_arrays(&mesh);
   if (prob.params != NULL) free(prob.params);
+
+  delete zz;
 
   MPI_Finalize();
 
