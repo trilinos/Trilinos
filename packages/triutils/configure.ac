@@ -37,7 +37,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(triutils, 1.2d, mheroux@cs.sandia.gov)
+AC_INIT(triutils, 1.2d, maherou@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -193,6 +193,9 @@ AC_CXX_MUTABLE
 AC_CXX_NEW_FOR_SCOPING
 #AC_CXX_STD_IOS_BASE_FMTFLAGS
 AC_CXX_STD_SPRINTF
+
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 # ------------------------------------------------------------------------
 # Specify other directories 
