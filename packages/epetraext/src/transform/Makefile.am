@@ -18,7 +18,8 @@ TRANSFORM_H = \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
         $(srcdir)/EDT_CrsGraph_MapColoring.h \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
-	$(srcdir)/EDT_LinearProblem_StaticCondensation.h
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.h \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.h
 
 TRANSFORM = \
 	$(srcdir)/EDT_CrsGraph_View.cpp \
@@ -28,7 +29,8 @@ TRANSFORM = \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
-	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
 
 BTF_H = \
         $(srddir)/ET_CrsGraph_BTF.h
@@ -112,7 +114,7 @@ endif
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
 
-libepetraext_a_LIBADD = $(EPETRAEXT_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
@@ -144,5 +146,10 @@ nodist_pkgexecinclude_HEADERS =../EpetraExt_config.h
 
 MAINTAINERCLEANFILES = Makefile.in 
 
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+
+MOSTLYERCLEANFILES = $(EPETRA_TEMPLATE_OBJS)
 
 

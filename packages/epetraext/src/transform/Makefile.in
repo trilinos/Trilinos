@@ -85,6 +85,7 @@ MPI_F77_EXISTS = @MPI_F77_EXISTS@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 RANLIB = @RANLIB@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 VERSION = @VERSION@
 XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
@@ -101,7 +102,8 @@ TRANSFORM_H = \
 	$(srcdir)/EDT_CrsGraph_Transpose.h \
         $(srcdir)/EDT_CrsGraph_MapColoring.h \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.h \
-	$(srcdir)/EDT_LinearProblem_StaticCondensation.h
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.h \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.h
 
 
 TRANSFORM = \
@@ -112,7 +114,8 @@ TRANSFORM = \
 	$(srcdir)/EDT_CrsGraph_Transpose.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoring.cpp \
         $(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp \
-	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp \
+        $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
 
 
 BTF_H = \
@@ -193,7 +196,7 @@ AM_CPPFLAGS = -I$(top_builddir)/../epetra/src -I$(top_srcdir)/../epetra/src \
 # be sure to include these, and this is the hack to do it.
 # On alpha-dec machines, the extra .o's are needed for Epetra only.
 # ------------------------------------------------------------------------
-libepetraext_a_LIBADD = $(EPETRAEXT_TEMPLATE_OBJS) $(XTRALDADD)
+libepetraext_a_LIBADD = $(EPETRA_TEMPLATE_OBJS) $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
@@ -224,6 +227,12 @@ nodist_pkgexecinclude_HEADERS = ../EpetraExt_config.h
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
+
+
+# ------------------------------------------------------------------------
+# Files to be deleted by 'make clean'
+# ------------------------------------------------------------------------
+MOSTLYERCLEANFILES = $(EPETRA_TEMPLATE_OBJS)
 subdir = src/transform
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/EpetraExt_config.h
@@ -239,6 +248,7 @@ libepetraext_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
+@HAVE_MPI_TRUE@	EDT_CrsGraph_SymmRCM.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_Zoltan.$(OBJEXT) \
 @HAVE_MPI_TRUE@	EDT_CrsGraph_ZoltanOrder.$(OBJEXT) \
 @HAVE_MPI_TRUE@	Epetra_ZoltanQuery.$(OBJEXT)
@@ -249,7 +259,8 @@ libepetraext_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@	EDT_CrsGraph_Transpose.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoring.$(OBJEXT) \
 @HAVE_MPI_FALSE@	EDT_CrsGraph_MapColoringIndex.$(OBJEXT) \
-@HAVE_MPI_FALSE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT)
+@HAVE_MPI_FALSE@	EDT_LinearProblem_StaticCondensation.$(OBJEXT) \
+@HAVE_MPI_FALSE@	EDT_CrsGraph_SymmRCM.$(OBJEXT)
 libepetraext_a_OBJECTS = $(am_libepetraext_a_OBJECTS)
 
 DEFS = @DEFS@
@@ -261,6 +272,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/EDT_CrsGraph_MapColoring.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Overlap.Po \
+@AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Transpose.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_View.Po \
 @AMDEP_TRUE@	$(DEPDIR)/EDT_CrsGraph_Zoltan.Po \
@@ -331,6 +343,7 @@ EDT_CrsGraph_MapColoringIndex.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_MapColoringIndex.cpp
 EDT_LinearProblem_StaticCondensation.$(OBJEXT): \
 	$(srcdir)/EDT_LinearProblem_StaticCondensation.cpp
+EDT_CrsGraph_SymmRCM.$(OBJEXT): $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
 EDT_CrsGraph_Zoltan.$(OBJEXT): $(srcdir)/EDT_CrsGraph_Zoltan.cpp
 EDT_CrsGraph_ZoltanOrder.$(OBJEXT): \
 	$(srcdir)/EDT_CrsGraph_ZoltanOrder.cpp
@@ -349,6 +362,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_MapColoringIndex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Overlap.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Transpose.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_View.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/EDT_CrsGraph_Zoltan.Po@am__quote@
@@ -468,6 +482,18 @@ EDT_LinearProblem_StaticCondensation.obj: $(srcdir)/EDT_LinearProblem_StaticCond
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.Po' tmpdepfile='$(DEPDIR)/EDT_LinearProblem_StaticCondensation.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_LinearProblem_StaticCondensation.obj `cygpath -w $(srcdir)/EDT_LinearProblem_StaticCondensation.cpp`
+
+EDT_CrsGraph_SymmRCM.o: $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_SymmRCM.cpp' object='EDT_CrsGraph_SymmRCM.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_SymmRCM.o `test -f $(srcdir)/EDT_CrsGraph_SymmRCM.cpp || echo '$(srcdir)/'`$(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+
+EDT_CrsGraph_SymmRCM.obj: $(srcdir)/EDT_CrsGraph_SymmRCM.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_SymmRCM.cpp' object='EDT_CrsGraph_SymmRCM.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.Po' tmpdepfile='$(DEPDIR)/EDT_CrsGraph_SymmRCM.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EDT_CrsGraph_SymmRCM.obj `cygpath -w $(srcdir)/EDT_CrsGraph_SymmRCM.cpp`
 
 EDT_CrsGraph_Zoltan.o: $(srcdir)/EDT_CrsGraph_Zoltan.cpp
 @AMDEP_TRUE@	source='$(srcdir)/EDT_CrsGraph_Zoltan.cpp' object='EDT_CrsGraph_Zoltan.o' libtool=no @AMDEPBACKSLASH@
