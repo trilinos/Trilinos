@@ -462,8 +462,10 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
     double *p_umin, /* smallest entry on the diagonal of U */
     double *p_umax, /* largest entry on the diagonal of U */
 
-    /* workspace, not defined on input or output */
+    /* workspace, not defined on input */
     double X [ ],   /* size n, undefined on input, zero on output */
+
+    /* workspace, not defined on input or output */
     int Stack [ ],  /* size n */
     int Flag [ ],   /* size n */
     int adj_pos [ ],	/* size n */
@@ -664,8 +666,7 @@ int klu_kernel	    /* returns KLU_OK (0) or KLU_OUT_OF_MEMORY (-2) */
 	/* compute the numerical values of the kth column (s = L \ A (:,k)) */
 	/* ------------------------------------------------------------------ */
 
-	lsolve_numeric (n, Lp, Li, Lx, Pinv, nzb, Bi, Bx, X,
-		Ui, up1, up) ; 
+	lsolve_numeric (n, Lp, Li, Lx, Pinv, nzb, Bi, Bx, X, Ui, up1, up) ; 
 
 #ifndef NDEBUG
 	for (p = up-1 ; p >= up1 ; p--)

@@ -475,13 +475,11 @@ int Amesos_Klu::Solve() {
     assert( SerialX->ExtractView( &SerialXvalues, &SerialXlda ) == 0 ) ; 
 
     assert( SerialXlda == NumGlobalElements_ ) ; 
-    
-    vector<double> workspace( NumGlobalElements_ ) ; 
 
     for ( int j =0 ; j < nrhs; j++ ) { 
 
       klu_btf_solve( PrivateKluData_->Symbolic_, PrivateKluData_->Numeric_,
-		     &SerialXvalues[j*SerialXlda], &workspace[0] );
+		     &SerialXvalues[j*SerialXlda] );
     }
   }
     

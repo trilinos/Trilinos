@@ -113,10 +113,8 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
     }
     poff = 0 ;
 
-    /* TODO: only needs to be of size maxblock, not n */
-    /* TODO: no need to set X to zero.  Should already be zero - unless a
-     * prior refactor had an invalid matrix and returned early... */
-    for (k = 0 ; k < n ; k++)
+    /* note that klu_btf_refactor only uses X [0..maxblock-1] */
+    for (k = 0 ; k < maxblock ; k++)
     {
 	X [k] = 0 ;
     }
@@ -136,6 +134,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 	k2 = R [block+1] ;
 	nk = k2 - k1 ;
 	PRINTF (("FACTOR BLOCK %d, k1 %d k2-1 %d nk %d\n", block, k1,k2-1,nk)) ;
+	ASSERT (nk <= maxblock) ;
 
 	if (nk == 1)
 	{
@@ -240,12 +239,14 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		for (up = upend-1 ; up >= upstart ; up--)	/* skip U_kk */
 		{
 		    j = Ui [up] ;
+		    ASSERT (j >= 0 && j < nk) ;
 		    ujk = X [j] ;
 		    X [j] = 0 ;
 		    Ux [up] = ujk ;
 		    pend = Lp [j+1] ;
 		    for (p = Lp [j] + 1 ; p < pend ; p++)
 		    {
+			ASSERT (Li [p] >= 0 && Li [p] < nk) ;
 			X [Li [p]] -= Lx [p] * ujk ;
 		    }
 		}
@@ -264,6 +265,7 @@ int klu_btf_refactor	/* returns KLU_OK or KLU_INVALID */
 		for ( ; p < pend ; p++)
 		{
 		    i = Li [p] ;
+		    ASSERT (i >= 0 && i < nk) ;
 		    Lx [p] = X [i] / ukk ;
 		    X [i] = 0 ;
 		}

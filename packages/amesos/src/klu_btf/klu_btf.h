@@ -66,7 +66,7 @@ typedef struct
     double *Singleton ;	/* singleton values */
 
     double *Rs ;	/* row scaling factors */
-    double *X ;		/* size n workspace, all zero */
+    double *X ;		/* size n workspace */
 
     /* off-diagonal entries */
     int *Offp, *Offi ;
@@ -132,10 +132,7 @@ void klu_btf_solve
     klu_numeric *Numeric,
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B [ ],
-
-    /* workspace of size n, undefined on input and output */
-    double W [ ]
+    double B [ ]
 ) ;
 
 /* -------------------------------------------------------------------------- */
@@ -152,7 +149,7 @@ int klu_btf_scale
     /* outputs, not defined on input */
     double Rs [ ],
     /* workspace, not defined on input or output */
-    int W [ ]		/* size n */
+    int W [ ]		/* size n, if present (can be a NULL pointer) */
 ) ;
 
 /* -------------------------------------------------------------------------- */

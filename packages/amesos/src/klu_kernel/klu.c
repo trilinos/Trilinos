@@ -144,7 +144,8 @@ int klu_factor	/* returns 0 if OK, negative if error */
     double *p_umax,
 
     /* workspace (ignored if NULL) */
-    double *X,	    /* size n double's, if present.  Zero on output */
+    double *X,	    /* size n double's, if present.  undefined on input,
+		       zero on output */
     int *Work	    /* size 5n int's, if present */
 )
 {

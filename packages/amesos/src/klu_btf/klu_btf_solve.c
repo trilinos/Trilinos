@@ -4,6 +4,7 @@
 
 /* Solve Ax=b using the symbolic and numeric objects from klu_btf_analyze and
  * klu_btf_factor.  Note that no iterative refinement is performed.
+ * Uses Numeric->X as workspace (undefined on input and output).
  *
  * TODO:
  *	* add iterative refinement?  
@@ -12,11 +13,6 @@
  *	* add error checking of inputs
  *	* exploit sparsity better.  Note that if b is all zero, this routine
  *	    still takes O(n) time.  Total time is O (n + flop count).
- *
- * Note that the user is required to pass a workspace, W, of size n to this
- * user-callable routine.  This is to avoid the need to malloc and free the
- * workspace each time this routine is called - saving a lot of time if the
- * routine is called with many right-hand-sides.
  */  
 
 #include "klu_btf_internal.h"
@@ -28,15 +24,12 @@ void klu_btf_solve
     klu_numeric *Numeric,
 
     /* right-hand-side on input, overwritten with solution to Ax=b on output */
-    double B [ ],
-
-    /* workspace of size n, undefined on input and output. */
-    double W [ ]
+    double B [ ]
 )
 {
+    double *Singleton, **Lbx, **Ubx, *Offx, *Rs, xk, *X ;
     int k1, k2, nk, k, block, pend, row, n, p, *Q, *R,
 	nblocks, poff, *Pnum, *Offp, *Offi, **Lbp, **Lbi, **Ubp, **Ubi ;
-    double *Singleton, **Lbx, **Ubx, *Offx, *Rs, xk ;
 
     /* ---------------------------------------------------------------------- */
     /* get the contents of the Symbolic object */
@@ -66,6 +59,7 @@ void klu_btf_solve
     Ubi = Numeric->Ubi ;
     Ubx = Numeric->Ubx ;
     Rs = Numeric->Rs ;
+    X = Numeric->X ;
     ASSERT (klu_valid (n, Offp, Offi, Offx)) ;
 
     /* ---------------------------------------------------------------------- */
@@ -75,8 +69,8 @@ void klu_btf_solve
     for (k = 0 ; k < n ; k++)
     {
 	row = Pnum [k] ;
-	W [k] = B [row] / Rs [row] ;
-	PRINTF (("W (%d) = %g scaled and permuted\n", k, W [k])) ;
+	X [k] = B [row] / Rs [row] ;
+	PRINTF (("X (%d) = %g scaled and permuted\n", k, X [k])) ;
     }
 
     /* ---------------------------------------------------------------------- */
@@ -99,8 +93,8 @@ void klu_btf_solve
 	{
 
 	    /* solve the singleton system */
-	    xk = W [k1] / Singleton [block] ;
-	    W [k1] = xk ;
+	    xk = X [k1] / Singleton [block] ;
+	    X [k1] = xk ;
 
 	    /* back-substitution for the off-diagonal entries */
 	    if (xk != 0.0)
@@ -109,7 +103,7 @@ void klu_btf_solve
 		for (p = Offp [k1] ; p < pend ; p++)
 		{
 		    ASSERT (Offi [p] < k1) ;
-		    W [Offi [p]] -= Offx [p] * xk ;
+		    X [Offi [p]] -= Offx [p] * xk ;
 		}
 	    }
 
@@ -120,13 +114,13 @@ void klu_btf_solve
 	    /* solve the block system */
 	    ASSERT (klu_valid (nk, Lbp [block], Lbi [block], Lbx [block])) ;
 	    ASSERT (klu_valid (nk, Ubp [block], Ubi [block], Ubx [block])) ;
-	    klu_lsolve (nk, Lbp [block], Lbi [block], Lbx [block], W + k1) ;
+	    klu_lsolve (nk, Lbp [block], Lbi [block], Lbx [block], X + k1) ;
 #ifndef NDEBUG
-	    for (k = k1 ; k < k2 ; k++) PRINTF (("Lsol W[%d] = %g\n",k,W[k])) ;
+	    for (k = k1 ; k < k2 ; k++) PRINTF (("Lsol X[%d] = %g\n",k,X[k])) ;
 #endif
-	    klu_usolve (nk, Ubp [block], Ubi [block], Ubx [block], W + k1) ;
+	    klu_usolve (nk, Ubp [block], Ubi [block], Ubx [block], X + k1) ;
 #ifndef NDEBUG
-	    for (k = k1 ; k < k2 ; k++) PRINTF (("Usol W[%d] = %g\n",k,W[k])) ;
+	    for (k = k1 ; k < k2 ; k++) PRINTF (("Usol X[%d] = %g\n",k,X[k])) ;
 #endif
 
 	    /* block back-substitution for the off-diagonal entries */
@@ -134,14 +128,14 @@ void klu_btf_solve
 	    {
 		for (k = k1 ; k < k2 ; k++) /* order is not relevant */
 		{
-		    xk = W [k] ;
+		    xk = X [k] ;
 		    if (xk != 0.0)
 		    {
 			pend = Offp [k+1] ;
 			for (p = Offp [k] ; p < pend ; p++)
 			{
 			    ASSERT (Offi [p] < k1) ;
-			    W [Offi [p]] -= Offx [p] * xk ;
+			    X [Offi [p]] -= Offx [p] * xk ;
 			}
 		    }
 		}
@@ -150,17 +144,17 @@ void klu_btf_solve
     }
 
     /* ---------------------------------------------------------------------- */
-    /* permute the result, B = Q*W */
+    /* permute the result, B = Q*X */
     /* ---------------------------------------------------------------------- */
 
 #ifndef NDEBUG
-    for (k = 0 ; k < n ; k++) PRINTF (("W[%d] = %g before Q\n",k,W[k])) ;
+    for (k = 0 ; k < n ; k++) PRINTF (("X[%d] = %g before Q\n",k,X[k])) ;
     for (k = 0 ; k < n ; k++) PRINTF (("Q[%d] = %d\n",k,Q[k])) ;
 #endif
 
     for (k = 0 ; k < n ; k++)
     {
-	B [Q [k]] = W [k] ;
+	B [Q [k]] = X [k] ;
     }
 
 #ifndef NDEBUG

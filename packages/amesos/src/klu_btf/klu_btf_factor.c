@@ -447,8 +447,6 @@ klu_numeric *klu_btf_factor	/* returns NULL if error, or a valid
     Numeric->Ubx = (double **) ALLOCATE (nblocks * sizeof (double *)) ; 
     Numeric->Rs = (double *) ALLOCATE (n * sizeof (double)) ; 
     Numeric->Pinv = (int *) ALLOCATE (n * sizeof (int)) ; 
-
-    /* TODO make X size maxblock */
     Numeric->X = (double *) ALLOCATE (n * sizeof (double)) ; 
 
     /* clear the pointer arrays, so that klu_btf_free_numeric works OK */

@@ -30,8 +30,10 @@ int klu_kernel
     double *p_umin, /* smallest entry on the diagonal of U */
     double *p_umax, /* largest entry on the diagonal of U */
 
+    /* workspace, not defined on input */
+    double X [ ],   /* size n, zero on output */
+
     /* workspace, not defined on input or output */
-    double X [ ],   /* size n */
     int Stack [ ],  /* size n */
     int Flag [ ],   /* size n */
     int adj_pos [ ],	/* size n */
@@ -41,12 +43,18 @@ int klu_kernel
 ) ;
 
 /* ========================================================================== */
-/* make sure debugging is turned off */
+/* make sure debugging and printing is turned off */
 #ifndef NDEBUG
 #define NDEBUG
 #endif
-/* To enable debugging, uncomment this line: 
+#ifndef NPRINT
+#define NPRINT
+#endif
+/* To enable debugging and assertions, uncomment this line: 
 #undef NDEBUG
+*/
+/* To enable diagnostic printing, uncomment this line: 
+#undef NPRINT
 */
 /* ========================================================================== */
 
@@ -106,7 +114,7 @@ int klu_kernel
 #undef PRINTF
 #undef FLIP
 
-#ifndef NDEBUG
+#ifndef NPRINT
 #define PRINTF(s) { printf s ; } ;
 #else
 #define PRINTF(s)

@@ -5,6 +5,8 @@
 /* Scale a matrix.  Can be called by the user, but not needed.
  * This is called by klu_btf_factor and klu_btf_refactor.
  * Returns KLU_OK if the input matrix is valid, KLU_INVALID otherwise.
+ * If the W input argument is non-NULL, then the input matrix is checked for
+ * duplicate entries.
  */
 
 #include "klu_btf_internal.h"
@@ -19,7 +21,7 @@ int klu_btf_scale
     /* outputs, not defined on input */
     double Rs [ ],
     /* workspace, not defined on input or output */
-    int W [ ]		/* size n */
+    int W [ ]		/* size n, can be NULL */
 )
 {
     int row, col, p, pend, check_duplicates ;
