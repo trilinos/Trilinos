@@ -57,7 +57,8 @@ UTIL_H = \
 
 UTIL = \
 	$(srcdir)/Kokkos_Version.cpp \
-	$(srcdir)/Kokkos_dcrsmv.f 
+	$(srcdir)/Kokkos_dcrsmv.f \
+	$(srcdir)/Kokkos_dcrsmm.f 
 
 ENUM_H = 
 

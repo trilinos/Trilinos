@@ -32,6 +32,7 @@
 #include "Kokkos_f77func.hpp"
 
 #   define KOKKOS_DCRSMV_F77                 F77_FUNC_(kokkos_dcrsmv,KOKKOS_DCRSMV)
+#   define KOKKOS_DCRSMM_F77                 F77_FUNC_(kokkos_dcrsmm,KOKKOS_DCRSMM)
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +41,12 @@ extern "C" {
 void PREFIX KOKKOS_DCRSMV_F77(const int *itrans, const int *udiag, const int *numRows, 
 			      const int *numCols, double values[],
 			      int indices[], int profile[], double x[], double y[]);
+
+void PREFIX KOKKOS_DCRSMM_F77(const int *itrans, const int *udiag, const int *numRows, 
+			      const int *numCols, double values[],
+			      int indices[], int profile[], 
+			      double x[], const int *ldx, double y[], const int *ldy,
+			      const int *nrhs);
 
 #ifdef __cplusplus
 }

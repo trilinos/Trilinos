@@ -3,10 +3,10 @@
 *
 *\Documentation
 *
-*\Name: DCRSMV
+*\Name: KOKKOS_DCRSMV
 *
 *\Description:
-*	DCRSMV performs one of the matrix-vector operations
+*	KOKKOS_DCRSMV performs one of the matrix-vector operations
 *
 *    y = A*x or y = A'*x.
 *
@@ -20,7 +20,7 @@
 *    the row index of the corresponding element of A.
 *
 *\Usage:
-*     call sgcmv( itrans, m, n, pntr, indx, val, nnz, x, beta, y, z )
+*     call DCRSMV( itrans, udiag, m, n, val, indx, profile, x, y )
 *
 *
 *
@@ -50,21 +50,20 @@
 *           the matrix a.  n must be at least 0.  The n argument
 *           is unchanged on exit.
 *
-*    pntr   Integer array (input)
-*           On entry, pntr(j) points to the first element of column
-*           j in a.  pntr must have length > = n + 1 and pntr(n+1) must
-*           equal nnz + 1.
-*           pntr is unchanged on exit.
+*    val    real*8 array (input)
+*           On entry, val holds the values of matrix A in packed form as
+*           described above.
+*           The array val is unchanged on exit.
 *
 *    indx   Integer array (input)
 *           On entry, indx holds the row indices of the non-zero
 *           elements in A.  indx must have length > = nnz.
 *           The array indx is unchanged on exit.
 *
-*    val    real*8 array (input)
-*           On entry, val holds the values of matrix A in packed form as
-*           described above.
-*           The array val is unchanged on exit.
+*    profile Integer array (input)
+*           On entry, profile(j) contains the number of entries in the jth row
+*           profile must have length > = n.
+*           profile is unchanged on exit.
 *
 *    x      real*8 array (input)
 *           Real array of dimension at least n when itrans = 0
@@ -72,14 +71,14 @@
 *           must contain the vector operand x.
 *           The argument x is unchanged on exit.
 *
-*    z      real*8 array (output)
+*    y      real*8 array (output)
 *           Real array of dimension at least m when itrans = 0 and
-*           at least n otherwise.  On exit, z contains the result
+*           at least n otherwise.  On exit, y contains the result
 *           vector.
 *
 *\Remarks:
-*    1.  x and z cannot be the same vector.
-*        Unpredictable results will occur if x and z are the same.
+*    1.  x and y cannot be the same vector.
+*        Unpredictable results will occur if x and y are the same.
 *
 *    2.  Although the example below stores the elements of each
 *        column in natural order, this routine makes no assumption
@@ -102,7 +101,7 @@
 *
 *   indx = (  1   2   5   1   2   3   5   2   3   1   5   4 ).
 *
-*                pntr = (1  4  8 10  12  13)
+*                profile = (3  3  2  1  3)
 *
 *    Thus, indx(i) indicates the row position of the ith element
 *    of a and pntr(j) points to the first element of jth column.

@@ -705,14 +705,12 @@ namespace Kokkos {
     updateFlops(costOfMatVec_ * ((double) numVectors));
     return(0);
   }
-  /*
   //==============================================================================
   template<>
   int BaseSparseMultiply<int, double>::apply(const MultiVector<int, double>& x, 
 						    MultiVector<int, double> & y,
 						    bool transA, bool conjA) const {
     if (!haveValues_) return(-1); // Can't compute without values!
-    if (conjA) return(-2); // Unsupported at this time
     if (x.getNumRows()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
     if (y.getNumRows()!=numRows_) return(-4); // Number of rows in A not same as number of rows in x
     int numVectors = x.getNumCols();
@@ -729,54 +727,56 @@ namespace Kokkos {
     double ** xp = x.getValues();
     double ** yp = y.getValues();
 
-    if ((isRowOriented_ && !transA) ||
-	(!isRowOriented_ && transA)) {
-
-      if ((indices[1]-indices[0]==profile[0]) && // indicates classic packed HB storage (can fail)
-	  x.getIsStrided() && (numVectors<6)) {
-	scsrmm2_(&numRows_, &numCols_, *values, *indices, profile, *xp, *yp, &numVectors);
-	if (hasUnitDiagonal_) {
-	  double one = 1.0;
-	  int ione = 1;
-	  int length = numCols_*numVectors;
-	  daxpy_(&length, &one, *xp, &ione, *yp, &ione);
-	}
-	updateFlops(costOfMatVec_ * ((double) numVectors));
-	return(0);
-      }
-
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	for (k=0; k<numVectors; k++) {
-	  double sum = 0.0;
-	  if (hasUnitDiagonal_) 
-	    sum = xp[k][i];
-	  for(j = 0; j < curNumEntries; j++)
-	    sum += curValues[j] * xp[k][curIndices[j]];
-	  yp[k][i] = sum;
-	}
-      }
+    // Special case of classic HB matrix with Fortran compatible multivectors
+    if (hasClassicHbStructure_ && hasClassicHbValues_ && x.getIsStrided() && y.getIsStrided()
+	&& x.getColInc()==1 && y.getColInc()==1) {
+      int itrans = 1;
+      if ((isRowOriented_ && !transA) ||
+	  (!isRowOriented_ && transA)) itrans = 0;
+      int udiag = 0;
+      if (hasUnitDiagonal_) udiag = 1;
+      int ldx = x.getRowInc();
+      int ldy = y.getRowInc();
+      KOKKOS_DCRSMM_F77( &itrans, &udiag, &numRows_, &numCols_, *values, *indices, profile, 
+			 *xp, &ldx, *yp,&ldy , &numVectors );
     }
-    else {
-      
-      if (hasUnitDiagonal_) 
-	for (k=0; k<numVectors; k++)
-	  for(i = 0; i < numRC_; i++)
-	    yp[k][i] = xp[k][i]; // Initialize y for transpose multiply
-      else
-	for (k=0; k<numVectors; k++)
-	  for(i = 0; i < numRC_; i++)
-	    yp[k][i] = 0.0; // Initialize y
-      
-      for(i = 0; i < numRC_; i++) {
-	curNumEntries = *profile++;
-	curIndices = *indices++;
-	curValues  = *values++;
-	for (k=0; k<numVectors; k++) {
-	  for(j = 0; j < curNumEntries; j++)
-	    yp[k][curIndices[j]] += curValues[j] * xp[k][i];
+    else { // General case
+      if ((isRowOriented_ && !transA) ||
+	  (!isRowOriented_ && transA)) {
+	
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  for (k=0; k<numVectors; k++) {
+	    double sum = 0.0;
+	    if (hasUnitDiagonal_) 
+	      sum = xp[k][i];
+	    for(j = 0; j < curNumEntries; j++)
+	      sum += curValues[j] * xp[k][curIndices[j]];
+	    yp[k][i] = sum;
+	  }
+	}
+      }
+      else {
+	
+	if (hasUnitDiagonal_) 
+	  for (k=0; k<numVectors; k++)
+	    for(i = 0; i < numRC_; i++)
+	      yp[k][i] = xp[k][i]; // Initialize y for transpose multiply
+	else
+	  for (k=0; k<numVectors; k++)
+	    for(i = 0; i < numRC_; i++)
+	      yp[k][i] = 0.0; // Initialize y
+	
+	for(i = 0; i < numRC_; i++) {
+	  curNumEntries = *profile++;
+	  curIndices = *indices++;
+	  curValues  = *values++;
+	  for (k=0; k<numVectors; k++) {
+	    for(j = 0; j < curNumEntries; j++)
+	      yp[k][curIndices[j]] += curValues[j] * xp[k][i];
+	  }
 	}
       }
     }
@@ -784,6 +784,5 @@ namespace Kokkos {
     return(0);
   }
 
-  */
 } // namespace Kokkos
 #endif /* KOKKOS_BASESPARSEMULTIPLY_H */

@@ -412,9 +412,9 @@ GenerateHbProblem<OrdinalType, ScalarType>::
     for (i=0; i<numEquations; i++) if (values[i]!=0) delete [] values[i];
     delete [] values;
   }
-  if (pointers!=0) delete pointers;
-  if (allIndices!=0) delete allIndices;
-  if (allValues!=0) delete allValues;
-  if (profiles!=0) delete profiles;
+  if (pointers!=0) delete [] pointers;
+  if (allIndices!=0) delete [] allIndices;
+  if (allValues!=0) delete [] allValues;
+  if (profiles!=0) delete [] profiles;
 }
 #endif /* KOKKOS_TEST_GENERATEHBPROBLEM_H */

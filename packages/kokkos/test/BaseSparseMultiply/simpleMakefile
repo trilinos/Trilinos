@@ -1,12 +1,12 @@
 SRCDIR=../../src
-#CXXFLAGS=-I$(SRCDIR) -O0 -g
-#FFLAGS=-I$(SRCDIR) -O0 -g
-CXXFLAGS=-I$(SRCDIR) -O5 -funroll-all-loops -malign-double
-FFLAGS=-O5 -funroll-all-loops -malign-double
+CXXFLAGS=-I$(SRCDIR) -O0 -g
+FFLAGS=-I$(SRCDIR) -O0 -g
+#CXXFLAGS=-I$(SRCDIR) -O5 -funroll-all-loops -malign-double
+#FFLAGS=-O5 -funroll-all-loops -malign-double
 TARGET=BaseSparseMultiply.exe
 SRC=cxx_main.cpp
 OBJ_EXT=o
-OBJ=$(SRC:.cpp=.$(OBJ_EXT)) Kokkos_dcrsmv.o
+OBJ=$(SRC:.cpp=.$(OBJ_EXT)) Kokkos_dcrsmv.o Kokkos_dcrsmm.o
 
 $(TARGET): $(OBJ)
 	$(CXX) -o $(TARGET) $(OBJ)
@@ -14,6 +14,8 @@ $(TARGET): $(OBJ)
 cxx_main.o: cxx_main.cpp GenerateHbProblem.hpp $(SRCDIR)/*.hpp
 Kokkos_dcrsmv.o: $(SRCDIR)/Kokkos_dcrsmv.f
 	$(FC) -c $(FFLAGS) -o Kokkos_dcrsmv.o $(SRCDIR)/Kokkos_dcrsmv.f
+Kokkos_dcrsmm.o: $(SRCDIR)/Kokkos_dcrsmm.f
+	$(FC) -c $(FFLAGS) -o Kokkos_dcrsmm.o $(SRCDIR)/Kokkos_dcrsmm.f
 
 clean:
 	rm -rf $(OBJ) $(TARGET) *~
