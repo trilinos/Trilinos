@@ -222,8 +222,6 @@ where we also present how to construct a user's defined smoother.
 Advanced usage of \ML\ with {\sc Epetra} objects is reported in
 Section~\ref{sec:advanced}.  Section~\ref{sec:without_Epetra} reports
 how to define matrices in \ML\ format without depending on {\sc epetra}.
-Section~\ref{sec:viz} detailes the (limited) visualization capabilities
-of \ML.
 
 %%%
 %%%
@@ -716,8 +714,9 @@ important methods of this class.
 \end{table}
 
 Input parameters are set via method \verb!set(Name,Value)!, where
-\verb!Name! is a string defining the parameter, and \verb!Value! is the
-specified parameter, that can be any C++ object or pointer. A complete
+\verb!Name! is a string containing the parameter name, and \verb!Value! is the
+specified parameter value, whose type can be any C++ object or pointer. 
+A complete
 list of parameters available for class MultiLevelPreconditioner is
 reported in Section~\ref{sec:list}. 
 
@@ -725,9 +724,9 @@ The parameter list is passed to the constructor, together with a pointer
 to the matrix, and a boolean flag.  If this flag is set to \verb!false!,
 the constructor will not create the multilevel hierarchy until when
 \verb!MLPrec->ComputePreconditioner()!  is called.  The hierarchy can be
-destroyed using \verb!MLPrec->Destroy()!\footnote{We suggest to create
+destroyed using \verb!MLPrec->DestroyPreconditioner()!\footnote{We suggest to create
   the preconditioning object with {\tt new} and to free memory with {\tt
-    delete}. Some MPI calls occur in {\tt Destroy()}, so the user should
+    delete}. Some MPI calls occur in {\tt DestroyPreconditioner()}, so the user should
   not call {\tt MPI\_Finalize()} or delete the communicator used by \ML\
   before the preconditioning object is destroyed.}.
 For instance, the
@@ -745,13 +744,16 @@ user may define a code like:
   // solve the linear system
   ...
   // destroy the previously define preconditioner, and build a new one
-  MLPrec->Destroy();
+  MLPrec->DestroyPreconditioner();
 
   // re-compute the elements of A
   // now re-compute (if required) the preconditioner
   MLPrec->ComputePreconditioner();
 
   // re-solve the linear system
+
+  // .. finally destroy the object
+  delete MLPrec;
 \end{verbatim}
 In this fragment of code, the user defines the \ML\ preconditioner, but
 the preconditioner is created only with the call \verb!ComputePreconditioner()!.
@@ -841,14 +843,16 @@ obtained using
 Note that the input parameter list is {\sl copied} in the
 construction phase, hence later changes to \verb!MLList! will not affect
 the preconditioner. Should the user need to modify parameters in the
-\verb!MLPrec!'s internally stored parameter list, he can get a
+\verb!MLPrec!'s internally stored parameter list, he or she can get a
 reference to the internally stored list:
 %
 \begin{verbatim}
   ParameterList & List = MLPrec->GetList();
 \end{verbatim}
 %
-and then directly modify \verb!List!.\\
+and then directly modify \verb!List!. Method \verb!GetList()! should be used
+carefully, as a change to \verb!List! may modify the behavior of
+\verb!MLPrec!.
 
 %%%
 %%%
@@ -882,7 +886,7 @@ If the finest level is 0, and one has 5 levels, the code will use {\tt
   Uncoupled} for level 0, {\tt METIS} for levels 1 and 2, then {\tt MIS}
 for levels 3 and 4.
 
-In \S\ref{all possible parameters},
+In section~\ref{all possible parameters},
 parameters that can be set differently on individual levels are denoted
 with the symbol $\star$ (that is not part of the parameter name).
 Note that some parameters (e.g., {\tt Uncoupled-MIS} aggregation) correspond to quantities
@@ -904,7 +908,7 @@ be
 \end{verbatim}
 A generic parameter, say \verb!aggregation: type!, will now be defined as
 \begin{verbatim}
-  MLLIst.set("ML: aggregation: type", "METIS");
+  MLList.set("ML: aggregation: type", "METIS");
 \end{verbatim}\\
 
 \noindent
@@ -917,10 +921,11 @@ only if \ML\ has been properly configured. In particular:
 \item \parmetis~aggregation scheme required {\tt --with-ml\_metis
   --enable-epetra} and \newline {\tt --with-ml\_parmetis2x} or
   {\tt --with-ml\_parmetis3x}. 
-\item \amesos~coarse solvers require \verb!--enable-amesos!. Moreover,
+\item \amesos~coarse solvers require \verb!--enable-amesos --enable-epetra --enable-teuchos!. Moreover,
   \amesos~must have been configure to support the requested coarse
   solver. Please refer to the \amesos~documentation for more details;
-\item \ifpack~smoother requires \verb!--enable-ifpack!.
+\item \ifpack~smoother requires \verb!--enable-ifpack --enable-epetra!.
+\item \parasails~smoother requires \verb!--with-ml_parasails!.
 \end{itemize}
 %
 \subsection{Default Parameter Settings for Common Problem Types}
@@ -1099,9 +1104,9 @@ Table \ref{tab:ml:smoother} lists common choices for smoothing options.
   smoother: sweeps} \\
 \verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
 smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
-approximate solutions with \aztecoo (with {\tt smoothers: sweeps}
+approximate solutions with \aztecoo~(with {\tt smoothers: sweeps}
 iterations as smoothers. 
-The \aztecoo vectors \verb!options! and {\tt params} can be set using
+The \aztecoo~vectors \verb!options! and {\tt params} can be set using
 {\tt smoother: Aztec options} and {\tt smoother: Aztec params}. \\
 \verb!MLS! & Use MLS smoother. The polynomial order is specified by {\tt
   \tt smoother: MLS polynomial order}, and the alpha value by {\tt
@@ -1290,7 +1295,7 @@ Damping factor in the coarse solver.}
 
 \subsection{Null Space Detection}
 
-If used in conjuction with Anasazi, \ML~can compute an approximate null space
+If used in conjuction with \anasazi, \ML~can compute an approximate null space
 of the linear operator to precondition. This can be done using the following
 options:
 
@@ -1300,7 +1305,7 @@ options:
   default null space are used (no computation required). If {\tt
     pre-computed}, a pointer to the already-computed null is obtained from
     option {\tt null space: vector}. If {\tt enriched}, \ML~will compute,
-  usign Anasazi, an approximation of the null space of the operator.}
+  usign \anasazi, an approximation of the null space of the operator.}
 
 \choicebox{\tt null space: vectors to compute}{[{\tt int}]. If {\tt null
   space: type} is set to {\tt enriched}, this option indicates the number of
@@ -1311,10 +1316,10 @@ options:
     to the computed null space. Default: {\tt true}.}
 
 \choicebox{\tt eigen-analysis: tolerance}{[{\tt double}] Tolerance for
-  Anasazi. Default: {\tt 0.1}.}
+  \anasazi. Default: {\tt 0.1}.}
 
 \choicebox{\tt eigen-analysis: restart}{[{\tt int}] Number of restarts for
-  Anasazi. Default: {\tt 2}.}
+  \anasazi. Default: {\tt 2}.}
 
 %%% ====================== %%%
 %%% auxiliary matrix stuff %%%
@@ -1333,7 +1338,7 @@ where $\mathbf{x}_i$ represents the coordinates of node $i$.
 This may happen, for instance, when working with strecthed elements. 
 \ML~can be instructed to generate the aggregates using
 matrix~(\ref{eq:discrete_laplacian}), then build the preconditioner using the
-linear system matrix, as done in the following code fragment:
+actual linear system matrix, as done in the following code fragment:
 \begin{verbatim}
 double* x_coord;
 double* y_coord;
@@ -1344,7 +1349,6 @@ MLList.set("aggregation: x-coordinates", x_coord );
 MLList.set("aggregation: y-coordinates", y_coord );
 MLList.set("aggregation: z-coordinates", z_coord );
 MLList.set("aggregation: use auxiliary matrix", true);
-MLList.set("aggregation: use symmetric pattern", true);
 \end{verbatim}
 The double vectors \verb!y_coord! and/or \verb!z_coord! can be set to \verb!0!.
 \verb!x_coord! (and \verb!y_coord! if 2D, and
@@ -1379,12 +1383,15 @@ code create the aggregates using matrix $\theta A + (1 - \theta)L$. Default:
 \subsection{Analyzing the ML preconditioner}
 \label{sec:MLP:analyze}
 
-Multilevel methods require the careful setup of a large variety of parameters,
-from the smoother for each level, to the aggregation scheme, and others.
+A successful multilevel preconditioner require the careful choice
+of a large variety of parameters,
+from each level's smoother, to the aggregation scheme, and a lot of others 
+others.
 Often, for non-standard problems, there is no theory to support this choice.
 Also, sometimes it is difficult to understand which component of the
-multilevel cycle is not properly working. \ML~allows users to (empirically)
-analyze several components of the multilevel cycles, and of the finest-level
+multilevel cycle is not properly working. To thalp to set the multilevel
+components, \ML~offers a set of tools, to (empirically)
+analyze several components of the multilevel cycles, and the finest-level
 matrix.
 
 Two examples are included in the \ML~distribution:
@@ -1451,7 +1458,7 @@ for both serial and parallel runs.
 \subsubsection{Eigenvalue Computations}
 
 \ML~can be used to compute the eigenvalues of the non-preconditioned and
-preconditioned finest-level matrix. In the following fragment of code,
+the preconditioned finest-level matrix. In the following fragment of code,
 we compute all the eigenvalues of the finest-level matrix $A$, and all the
 eigenvalues of $P^{-1}A$, where $P$ is the already computed \ML~preconditioner:
 \begin{verbatim}
@@ -1519,8 +1526,10 @@ AnalyzeMatrixEigenvaluesDense()}, and post-processing with {\tt octave}.}
 Method \verb!AnalyzeMatrixEigenvaluesDense()! can be used only for serial
 runs. Alternatively, methods \verb!AnalyzeMatrixEigenvaluesSparse()! can be
 used to compute the lowest-magnitude and the largest-magnitude of the
-spectrum. This method requires \ML\ to be configured with support for Anasazi
-(see Section~\ref{sec:configure:3pl}). The following options can be used to
+spectrum. This method requires \ML\ to be configured with support for
+\anasazi\
+(see Section~\ref{sec:configure:3pl}). The following options, that must be set
+{\sl before} the construction of the preconditioner, can be used to
 tune the sparse eigensolver:
 
 \smallskip
@@ -1533,20 +1542,20 @@ tune the sparse eigensolver:
   Tolerance for eigensolver. Default =
   {\tt 1e-2}.}
 
-\choicebox{\tt analysis: Anasazi restart}{[{\tt int}]
+\choicebox{\tt analysis: anasazi restart}{[{\tt int}]
   Maximum number of restarts. Default =
 {\tt 2}.}
 
-\choicebox{\tt analysis: Anasazi output}{[{\tt int}]
+\choicebox{\tt analysis: anasazi output}{[{\tt int}]
   Output level, from 0 to 10 
   (10 being verbose). Default = {\tt 0}.}
 
-\choicebox{\tt analysis: print Anasazi status}{[{\tt bool}]
+\choicebox{\tt analysis: print anasazi status}{[{\tt bool}]
   If true!, prints out the status of the eigensolver after
     convergence. Default: {\tt false}.}
 
 This fragment of code computes the eigenvalues of $A$ and $P^{-1}A$ using
-Anasazi:
+\anasazi:
 \begin{verbatim}
   // first compute the eigenvalues of the finest-level matrix A
   MLPrec->AnalyzeMatrixEigenvaluesSparse("A");
@@ -1573,11 +1582,13 @@ with starting solution $e_0 = v$. The code reports on file the real and
 imaginary values of the eigenvalue corresponding to eigenvector $v$, and the
 $||e|| / ||e_0||$. 
 
+The syntax is \verb!AnalyzeSmoothersDense(NumPre, NumPost)!. \verb!NumPre! is the number of pre-smoother applications, and
+\verb!NumPost! the number of post-smoother applications.  
+
 Method \verb!AnalyzeSmoothersDense()! can be used only for serial
 runs. Alternatively, method \verb!AnalyzeSmoothersSparse(NumPre, NumPost)! can
-be used. \verb!NumPre! is the number of pre-smoother applications, and
-\verb!NumPost! the number of post-smoother applications. This
-function reports on the stadard output the following information:
+be used. This
+function reports on the standard output the following information:
 \begin{verbatim}
 Solving Ae = 0, with a random initial guess
 - number of pre-smoother cycle(s) = 5
@@ -1600,7 +1611,8 @@ Postsmoother (level 1, eq 0)            0.982529   0.922668   2.53639
 
 \subsubsection{Analyze the effect of the ML cycle on a random vector} 
 
-Method \verb!AnalyzeCycle()! applies the alread computed \ML~preconditioner to
+Method \verb!AnalyzeCycle(NumCycles)!, where \verb!NumCycles! is the number of
+multilevel cycles to apply, applies the already computed \ML~preconditioner to
 a random vector, and reports on standard output the following informatin:
 \begin{verbatim}
 Solving Ae = 0, with a random initial guess
@@ -1643,38 +1655,39 @@ The following options, to be set {\sl before} calling
 \choicebox{\tt test: tolerance}{[{\tt double}] Tolerance for the Krylov
   solver. Default: {\tt 1e-5}.}
 
-\choicebox{\tt test: Jacobi}{[{\tt bool}] Enable/Disable test with Jacobi
+\choicebox{\tt test: Jacobi}{[{\tt bool}] Enable/disable test with Jacobi
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: Gauss-Seidel}{[{\tt bool}] Enable/Disable test with
+\choicebox{\tt test: Gauss-Seidel}{[{\tt bool}] Enable/disable test with
   Gauss-Seidel
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: symmetric Gauss-Seidel}{[{\tt bool}] Enable/Disable test
+\choicebox{\tt test: symmetric Gauss-Seidel}{[{\tt bool}] Enable/disable test
   with symmetric Gauss-Seidel
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: block Gauss-Seidel}{[{\tt bool}] Enable/Disable test with 
+\choicebox{\tt test: block Gauss-Seidel}{[{\tt bool}] Enable/disable test with 
   block Gauss-Seidel 
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: Aztec}{[{\tt bool}] Enable/Disable test with Aztec
+\choicebox{\tt test: Aztec}{[{\tt bool}] Enable/disable test with \aztecoo\
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: Aztec as solver}{[{\tt bool}] Enable/Disable test with Aztec
-  solver
+\choicebox{\tt test: Aztec as solver}{[{\tt bool}] Enable/disable test with
+  \aztecoo\
+  as a solver
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: ParaSails}{[{\tt bool}] Enable/Disable test with
-  ParaSails
+\choicebox{\tt test: ParaSails}{[{\tt bool}] Enable/disable test with
+  \parasails
   smoother. Default: {\tt true}.}
 
-\choicebox{\tt test: IFPACK}{[{\tt bool}] Enable/Disable test with IFPACK
+\choicebox{\tt test: IFPACK}{[{\tt bool}] Enable/disable test with \ifpack
   smoother. Default: {\tt true}.}
 
 
 An example of  output is reported below. 
-Note that some smoothers (ParaSails, IFPACK)
+Note that some smoothers (\parasails, \ifpack)
 will be tested only if \ML~has been properly configured.
 Note also that \verb!TestSmoothers()! requires \ML~to be configured with option
 \verb!--enable-aztecoo!.
@@ -1783,11 +1796,15 @@ Results can be as reported in figure~\ref{fig:viz:aggr}.
 \subsubsection{Visualizing the effect of the \ML~Preconditioner and Smoothers}
 
 In some cases, it may be useful to visualize the effect of the \ML~preconditioner, or of each level's smoother, on
-a random vector (whose components are contained in the interval$[0.5,1]$), 
+a random vector (whose components are contained in the interval $[0.5,1]$), 
 to understand if there are zones or directions that are not
 affected by the current multilevel preconditioner. This can be easily 
 done with the following code fragment:
 \begin{verbatim}
+double* x_coord;
+double* y_coord;
+// here we define the nodal coordinates...
+
 MLList.set("viz: enable", true);
 MLList.set("viz: x-coordinates", x_coord);
 MLList.set("viz: y-coordinates", y_coord);
@@ -1807,9 +1824,10 @@ MLPrec->VisualizeCycle(10);
 // and 1 step of postsmoother
 MLPrec->VisualizeSmoothers(5,1);
 \end{verbatim}
-(File \verb!ml_example_epetra_preconditioner_viz.cpp! contains the compilable
+(File \verb!ml_example_epetra_preconditioner_viz.cpp! contains the complete
  code.) We note that the parameters must be set {\sl before} calling
-{\tt ComputePreconditioner()}. 
+{\tt ComputePreconditioner()}. See also Section~\ref{sec:MLP:auxiliary} for
+the requirements on the coordinates vectors.
 Results will be written in the following files:
 \begin{itemize}
 \item \verb!before-presmoother-eqX-levelY.xyz! contains the random vector
@@ -1837,7 +1855,7 @@ the application of the ML cycle, for equation \verb!X! at finest level.
 \centering
 \includegraphics[width=7cm]{before_cycle.ps} \hspace{0.5cm}
 \includegraphics[width=7cm]{after_cycle.ps}
-\caption{Starting solution (left) and solution after 10 \ML!cycles (right).}
+\caption{Starting solution (left) and solution after 10 \ML~cycles (right).}
 \label{fig:viz:cycle}
 \end{figure}
 
@@ -1860,6 +1878,9 @@ int EquationID = 0; // for vector problems
 // MLPrec is a pointer to an already created 
 // ML_Epetra::MultiLevelPreconditioner
 MLPrec->PrintStencil2D(Nx,Ny,NodeID, EquationID);
+
+// also valid in this case
+MLPrec->PrintStencil2D(Nx,Ny);
 \end{verbatim}
 If \verb!NodeID == -1!, the code considers a node in the center of the
 computational domain. The result can be something as follows:
@@ -1870,6 +1891,9 @@ computational domain. The result can be something as follows:
                       -1               4              -1
                        0              -1               0
 \end{verbatim}
+
+\clearpage
+\newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Advanced Usage of \ML} \label{high level sample}
