@@ -1610,10 +1610,10 @@ int agg_offset, vertex_offset;
 
    /* some memory free (I am not completely sure about this...) */
 
-   if( recv_list != NULL ) ML_free((void*) recv_list);
-   if( temp_index != NULL ) ML_free((void*) temp_index);
-   if( tem2_index != NULL ) ML_free((void*) tem2_index);
-   if( temp_leng != NULL ) ML_free((void*) temp_leng);
+   if( recv_list != NULL ) ML_free(recv_list);
+   if( temp_index != NULL ) ML_free(temp_index);
+   if( tem2_index != NULL ) ML_free(tem2_index);
+   if( temp_leng != NULL ) ML_free(temp_leng);
 
    /* I'm not sure if I need most of this 'if' code. I just took it from */
    /* Charles ... but I guess that the majority of it is not needed.     */
