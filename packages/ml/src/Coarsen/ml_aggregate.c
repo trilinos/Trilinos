@@ -1041,7 +1041,7 @@ int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix,
    /* original A.                                                            */
 
 #ifdef oldML_repartition
-   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
+   status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs,Amatrix->comm->ML_nprocs);
    
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
@@ -1573,7 +1573,7 @@ int ML_random_global_subset(ML_Operator *Amat, double reduction,
 
 int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
 			  ML_Operator **permutation, ML_Operator **permt,
-			  int num_PDE_eqns)
+			  int num_PDE_eqns, int Nprocs_ToUse)
 			  
 {
 #ifdef throwaway
@@ -1625,8 +1625,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
    if (block_list == NULL)
       pr_error("ML_repartition_matrix: out of space\n");
 
-   the_length = nprocs - 3; /* reduces the number of processors with */
-                            /* points */
+   the_length = Nprocs_ToUse; /* reduces the number of processors with */
+                              /* points */
 
    if (num_PDE_eqns != 1)
      ML_Operator_AmalgamateAndDropWeak(mat, num_PDE_eqns, 0.);
@@ -1642,7 +1642,6 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
    for (i = 0; i < mat->outvec_leng/num_PDE_eqns; i++) 
      for (j = 0; j < num_PDE_eqns; j++)
        dvec[j+i*num_PDE_eqns] = (double) ( block_list[i] + 1);
-
 
    ML_free(block_list);
 
@@ -1950,7 +1949,8 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   ML_Operator_Destroy(&permt_mat);
   perm_mat = ML_Operator_Create(comm);
   ML_Operator_Transpose_byrow(*permt, perm_mat);
-  printf("%d: almost finished %d\n",mypid,perm_mat->outvec_leng);
+  printf("%d: almost finished %d %d\n",mypid,perm_mat->outvec_leng,
+	 perm_mat->invec_leng);
 
   permuted_Amat = ML_Operator_Create(comm);
 
@@ -2126,11 +2126,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   perm_mat->data_destroy = ML_CSR_MSRdata_Destroy;
   permt_mat = ML_Operator_Create(mat->comm);
 
-  ML_Operator_Print(perm_mat,"perm");
-  ML_Operator_Dump(perm_mat, NULL, NULL, "pdump",1);
   ML_Operator_Transpose_byrow(perm_mat,permt_mat);
-  ML_Operator_Print(permt_mat,"permt");
-  ML_Operator_Dump(permt_mat, NULL, NULL, "ptdump",1);
 
   permuted_Amat = ML_Operator_Create(mat->comm);
   ML_rap(perm_mat,mat,permt_mat,permuted_Amat, ML_CSR_MATRIX);
@@ -2161,7 +2157,7 @@ int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag )
   return 0;
 }
 
-
+#define ML_repartition
 
 
 
@@ -2171,7 +2167,7 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
   ML_Operator *Amatrix, *Rmat, *Pmat, *perm, *permt, *newA, *newP, *newR;
   int status, offset1, offset2, j, flag = 0;
   double *new_null;
-  int ml_gmin, ml_gmax;
+  int ml_gmin, ml_gmax, ml_gsum, Nprocs_ToUse;
 
 #ifndef ML_repartition
   return 0;
@@ -2198,11 +2194,21 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 	      ml->LargestMinMaxRatio_repartition))
     flag = 1;
 
+  Nprocs_ToUse = ml->comm->ML_nprocs;
+  if ( (flag == 1) && (ml->MinPerProc_repartition != -1)) {
+    /* compute how many processors to use in the repartitioning */
+    ml_gsum = ML_gsum_int(Amatrix->invec_leng,ml->comm);
+    Nprocs_ToUse = ml_gsum/ml->MinPerProc_repartition;
+    if (Nprocs_ToUse > ml->comm->ML_nprocs)
+      Nprocs_ToUse = ml->comm->ML_nprocs;
+    if (Nprocs_ToUse < 1) Nprocs_ToUse = 1;
+  }
+
   if (flag == 0) return 0;
 
 
 
-  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs);
+  status = ML_repartition_matrix(Amatrix, &newA, &perm, &permt, Amatrix->num_PDEs, Nprocs_ToUse);
    if (status == 0) {
      if (ag->nullspace_vect != NULL) {
        new_null = (double *) ML_allocate(sizeof(double)*ag->nullspace_dim*
@@ -2222,24 +2228,24 @@ int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
        ML_free(new_null);
 
      }
-     ML_Operator_Move2HierarchyAndDestroy_fragile(newA, Amatrix);
+     ML_Operator_Move2HierarchyAndDestroy(&newA, Amatrix);
 
      /* do a mat-mat mult to get the appropriate P for the */
      /* unpartitioned matrix.                              */
 
      newP = ML_Operator_Create(Pmat->comm);
      ML_2matmult(Pmat, permt, newP, ML_CSR_MATRIX); 
-     ML_Operator_Move2HierarchyAndDestroy_fragile(newP, Pmat);
+     ML_Operator_Move2HierarchyAndDestroy(&newP, Pmat);
      
      if (R_is_Ptranspose == ML_TRUE) {
        newR = ML_Operator_Create(Rmat->comm);
        ML_Operator_Transpose(Pmat, newR);
-       ML_Operator_Move2HierarchyAndDestroy_fragile(newR, Rmat);
+       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
      }
      else if (Rmat->getrow->post_comm == NULL) {
        newR = ML_Operator_Create(Rmat->comm);
        ML_2matmult(perm, Rmat, newR, ML_CSR_MATRIX); 
-       ML_Operator_Move2HierarchyAndDestroy_fragile(newR, Rmat);
+       ML_Operator_Move2HierarchyAndDestroy(&newR, Rmat);
      }
      else {
        printf("ML_repartition_Acoarse: 2matmult does not work properly if\n");

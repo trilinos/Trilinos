@@ -332,7 +332,7 @@ extern int ML_random_global_subset(ML_Operator *Amat, double reduction,
                                    int **list, int *length, int num_PDE_eqns);
 extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
                                  ML_Operator **permutation, 
-				 ML_Operator **permt, int num_PDE_eqns);
+				 ML_Operator **permt, int num_PDE_eqns,int);
 extern int ML_repartition_Acoarse(ML *ml, int fine, int coarse, ML_Aggregate *ag,
 				  int R_is_Ptranspose);
 
