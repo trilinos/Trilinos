@@ -110,6 +110,7 @@
                              int *, int *, int *, int , int *, ML_Comm *);
    double ML_gdot(int N, double r[], double z[], ML_Comm *comm);
    double ML_gsum_double(double val, ML_Comm *comm);
+   void   ML_gsum_vec_double(double *vals[], double *vals2[], int, ML_Comm *comm);
    double ML_gmax_double(double val, ML_Comm *comm);
    int    ML_gmax_int(int val, ML_Comm *comm);
    int    ML_find_index(int key, int list[], int length);
