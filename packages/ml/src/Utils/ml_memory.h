@@ -73,6 +73,8 @@ extern char *ML_realloc(void *vptr, unsigned int new_size);
 extern void ML_spit_it_out();
 #endif
 
+extern void ML_mchk(char *ptr,int line);
+
 
 #ifndef ML_CPP
 #ifdef __cplusplus
