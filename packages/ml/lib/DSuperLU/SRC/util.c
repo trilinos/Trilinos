@@ -27,7 +27,7 @@
  */
 SuperLUStat_t SuperLUStat;
 
-superlu_abort_and_exit(char* msg)
+void superlu_abort_and_exit(char* msg)
 {
     fprintf(stderr, msg);
     exit (-1);
