@@ -230,6 +230,11 @@ namespace Teuchos
     */
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* C, const OrdinalType ldc, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
+    /*! \brief Generates an \c m by \c n matrix Q with orthonormal columns which is defined as the first \n columns of a product of \c k elementary reflectors of order \c m, as returned by GEQRF.
+    \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>.
+    */
+    void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const;
+
     /*! \brief Generates a real orthogonal matrix \c Q which is the product of \c ihi-ilo elementary reflectors of order \c n, as returned by GEHRD.  On return \c Q is stored in \c A.
     \note This method is not defined when the ScalarType is \c complex<float> or \c complex<double>.
     */
@@ -452,6 +457,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType, typename ScalarType>
+  void LAPACK<OrdinalType, ScalarType>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    UndefinedLAPACKRoutine<ScalarType>::notDefined();
+  }
+  
+  template<typename OrdinalType, typename ScalarType>
   void LAPACK<OrdinalType, ScalarType>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, ScalarType* A, const OrdinalType lda, const ScalarType* TAU, ScalarType* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     UndefinedLAPACKRoutine<ScalarType>::notDefined();
@@ -484,13 +495,7 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   int LAPACK<OrdinalType, ScalarType>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
   {
-    unsigned int opts_length = OPTS.length();
-    unsigned int name_length = NAME.length();
-#if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
-#else
-    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
-#endif
+    return UndefinedLAPACKRoutine<ScalarType>::notDefined();
   }
  
   template<typename OrdinalType, typename ScalarType>
@@ -562,6 +567,7 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const float* A, const OrdinalType lda, const float* TAU, float* C, const OrdinalType ldc, float* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
@@ -755,6 +761,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, float>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    SORGQR( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
+  template<typename OrdinalType>
   void LAPACK<OrdinalType, float>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, float* A, const OrdinalType lda, const float* TAU, float* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     SORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
@@ -807,11 +819,12 @@ namespace Teuchos
   int LAPACK<OrdinalType, float>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    unsigned int name_length = NAME.length();
+    string temp_NAME = "s" + NAME;
+    unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
 #endif
   }
  
@@ -870,6 +883,7 @@ namespace Teuchos
 
     // Orthogonal matrix routines.
     void ORMQR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
+    void ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
     void ORMHR(const char SIDE, const char TRANS, const OrdinalType m, const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, const double* A, const OrdinalType lda, const double* TAU, double* C, const OrdinalType ldc, double* WORK, const OrdinalType lwork, OrdinalType* info) const;
 
@@ -1063,6 +1077,12 @@ namespace Teuchos
   }
 
   template<typename OrdinalType>
+  void LAPACK<OrdinalType, double>::ORGQR(const OrdinalType m, const OrdinalType n, const OrdinalType k, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
+  {
+    DORGQR( &m, &n, &k, A, &lda, TAU, WORK, &lwork, info);
+  }
+  
+  template<typename OrdinalType>
   void LAPACK<OrdinalType, double>::ORGHR(const OrdinalType n, const OrdinalType ilo, const OrdinalType ihi, double* A, const OrdinalType lda, const double* TAU, double* WORK, const OrdinalType lwork, OrdinalType* info) const
   {
     DORGHR_F77(&n, &ilo, &ihi, A, &lda, TAU, WORK, &lwork, info);
@@ -1115,11 +1135,12 @@ namespace Teuchos
   int LAPACK<OrdinalType, double>::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    unsigned int name_length = NAME.length();
+    string temp_NAME = "d" + NAME;
+    unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
 #endif
   }
  
@@ -1364,11 +1385,12 @@ namespace Teuchos
   int LAPACK<OrdinalType, complex<float> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    unsigned int name_length = NAME.length();
+    string temp_NAME = "c" + NAME;
+    unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
 #endif
   }
 
@@ -1605,11 +1627,12 @@ namespace Teuchos
   int LAPACK<OrdinalType, complex<double> >::ILAENV( const int ispec, const string NAME, const string OPTS, const int N1, const int N2, const int N3, const int N4 ) const
   {
     unsigned int opts_length = OPTS.length();
-    unsigned int name_length = NAME.length();
+    string temp_NAME = "z" + NAME;
+    unsigned int name_length = temp_NAME.length();
 #if defined (INTEL_CXML)
-    return ILAENV_F77(&ispec, &NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
+    return ILAENV_F77(&ispec, &temp_NAME[0], name_length, &OPTS[0], opts_length, &N1, &N2, &N3, &N4 );
 #else
-    return ILAENV_F77(&ispec, &NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
+    return ILAENV_F77(&ispec, &temp_NAME[0], &OPTS[0], &N1, &N2, &N3, &N4, name_length, opts_length );
 #endif
   }
 

@@ -73,6 +73,7 @@
 #define DGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
 #define DHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
 #define DORMQR_F77  F77_FUNC(sormqr,SORMQR)
+#define DORGQR_F77  F77_FUNC(sorgqr,SORGQR)
 #define DORGHR_F77  F77_FUNC(sorghr,SORGHR)
 #define DORMHR_F77  F77_FUNC(sormhr,SORMHR)
 #define DTREVC_F77  F77_FUNC(strevc,STREVC)
@@ -148,6 +149,7 @@
 #define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
+#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
 #define DORMQR_F77  F77_FUNC(dormqr,DORMQR)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
@@ -223,6 +225,7 @@
 #define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
+#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
 #define DORMQR_F77  F77_FUNC(dormqr,DORMQR)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
@@ -324,6 +327,7 @@
 #define DGEHRD_F77  F77_FUNC(dgehrd,DGEHRD)
 #define DHSEQR_F77  F77_FUNC(dhseqr,DHSEQR)
 #define DORGHR_F77  F77_FUNC(dorghr,DORGHR)
+#define DORGQR_F77  F77_FUNC(dorgqr,DORGQR)
 #define DORMHR_F77  F77_FUNC(dormhr,DORMHR)
 #define DORMQR_F77  F77_FUNC(dormqr,DORMQR)
 #define DTREVC_F77  F77_FUNC(dtrevc,DTREVC)
@@ -395,6 +399,7 @@
 #define SGEHRD_F77  F77_FUNC(sgehrd,SGEHRD)
 #define SHSEQR_F77  F77_FUNC(shseqr,SHSEQR)
 #define SORGHR_F77  F77_FUNC(sorghr,SORGHR)
+#define SORGQR_F77  F77_FUNC(sorgqr,SORGQR)
 #define SORMHR_F77  F77_FUNC(sormhr,SORMHR)
 #define SORMQR_F77  F77_FUNC(sormqr,SORMQR)
 #define STREVC_F77  F77_FUNC(strevc,STREVC)
@@ -500,6 +505,7 @@ void PREFIX DHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* il
 void PREFIX DGEES_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, double* a, const int* lda, int*sdim, double* wr, double* wi, double* vs, const int* ldvs, double* work, const int* lwork, int* bwork, int* info);
 void PREFIX DORGHR_F77(const int* n, const int* ilo, const int* ihi, double* a, const int* lda, double* tau, double* work, int* lwork, int* info);
 void PREFIX DORMHR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* ilo, const int* ihi, const double* a, const int* lda, const double* tau, double* c, const int* ldc, double* work, int* lwork, int* info);
+void PREFIX DORGQR_F77(const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* work, const int* lwork, int* info);
 void PREFIX DORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, double* a, const int* lda, const double* tau, double* C, const int* ldc, double* work, const int* lwork, int* info);
 void PREFIX DTREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const double* t, const int* ldt, double* vl, const int* ldvl, double* vr, const int* ldvr, const int* mm, int* m, double* work, int* info); 
 void PREFIX DTREXC_F77(Teuchos_fcd, const int* n, double* t, const int* ldt, double* q, const int* ldq, int* ifst, int* ilst, double* work, int* info);
@@ -515,6 +521,7 @@ void PREFIX SHSEQR_F77(Teuchos_fcd job, Teuchos_fcd, const int* n, const int* il
 void PREFIX SGEES_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, float* a, const int* lda, int* sdim, float* wr, float* wi, float* vs, const int* ldvs, float* work, const int* lwork, int* bwork, int* info);
 void PREFIX SORGHR_F77(const int* n, const int* ilo, const int* ihi, float* a, const int* lda, float* tau, float* work, int* lwork, int* info);
 void PREFIX SORMHR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* ilo, const int* ihi, const float* a, const int* lda, const float* tau, float* c, const int* ldc, float* work, int* lwork, int* info);
+void PREFIX SORGQR_F77(const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* work, const int* lwork, int* info);
 void PREFIX SORMQR_F77(Teuchos_fcd, Teuchos_fcd, const int* m, const int* n, const int* k, float* a, const int* lda, const float* tau, float* C, const int* ldc, float* work, const int* lwork, int* info);
 void PREFIX STREVC_F77(Teuchos_fcd, Teuchos_fcd, int* select, const int* n, const float* t, const int* ldt, float* vl, const int* ldvl, float* vr, const int* ldvr, const int* mm, int* m, float* work, int* info); 
 void PREFIX STREXC_F77(Teuchos_fcd, const int* n, float* t, const int* ldt, float* q, const int* ldq, int* ifst, int* ilst, float* work, int* info);

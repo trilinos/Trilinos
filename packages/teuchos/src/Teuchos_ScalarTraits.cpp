@@ -34,8 +34,9 @@ namespace Teuchos {
 gmp_randclass gmp_rng ( gmp_randinit_default );
 #endif
 
-float  flt_nan = +0.0/sin(0.0);
-double dbl_nan = +0.0/sin(0.0);
+  // This is an intentional computation of NaN.
+  float  flt_nan = +0.0/sin(0.0);
+  double dbl_nan = +0.0/sin(0.0);
 
 } // Teuchos namespace
 
