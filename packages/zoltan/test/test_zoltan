@@ -121,8 +121,8 @@ else
   set zdrive = zdrive
 endif
 if (! -x $zdrive ) then
-  echo "Warning Cannot find executable $zdrive"
-  echo "Will look for ../Obj_"$arch"/zdrive"
+  echo "Warning: Cannot find executable $zdrive;"
+  echo "Will try using ../Obj_"$arch"/zdrive"
   set zdrive = ../Obj_$arch/zdrive
 endif
 if (! -x $zdrive ) then
@@ -132,11 +132,11 @@ endif
 
 # Methods to try
 if ( $no_parmetis ) then
-  set ch_methods = ( rcb rcb-oneproc oct )
-  set nem_methods = ( rcb oct )
+  set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct )
+  set nem_methods = ( rcb irb oct )
 else
-  set ch_methods = ( rcb rcb-oneproc oct partkway partkway-cyclic partgeom diffusion )
-  set nem_methods = ( rcb oct partkway partgeom diffusion )
+  set ch_methods = ( rcb rcb-oneproc irb irb-oneproc oct partkway partkway-cyclic partgeom diffusion )
+  set nem_methods = ( rcb irb oct partkway partgeom diffusion )
 endif
 
 # Set up log file
@@ -189,6 +189,7 @@ if (! $no_chaco ) then
     
           # Run the driver
           $run $np ../$zdrive
+          sleep 1 # Make sure all processes have time to write to disk
     
           # Save and compare output files 
           @ i = 0
