@@ -106,7 +106,8 @@ int Zoltan_RB_find_bisector(
   double *weightlo,     /* weight of lower partition (output) */
   double *weighthi,     /* weight of upper partition (output) */
   double *norm_max,     /* norm of largest partition (output) */
-  int    *dotlist,      /* list of active dots. EBEB: remove this parameter? */
+  int    *dotlist,      /* list of active dots. EBEB: remove this parameter?  
+                                                KDDKDD:  No.  */
   int rectilinear,      /* if 1, all dots with same value on same side of cut*/
   int obj_wgt_comparable /* 1 if object weights are of same units, no scaling */
 )
@@ -153,6 +154,7 @@ int Zoltan_RB_find_bisector(
 
   /* MPI data types and user functions */
 
+  int               med_type_defined = 0;
   MPI_Op            med_op;
   MPI_Datatype      med_type;
   MPI_User_function Zoltan_bisector_merge;
@@ -234,17 +236,9 @@ int Zoltan_RB_find_bisector(
 
   if (dotnum > 0) {
     /* check for illegal NULL pointers */
-    if ((!dots) || (!dotmark)){
+    if ((!dots) || (!dotmark) || (!dotlist)){
       ZOLTAN_PRINT_ERROR(proc, yo, "Required input is NULL.");
       ierr = ZOLTAN_FATAL;
-      goto End;
-    }
-
-    /* Allocate memory. */
-    dotlist = (int *) ZOLTAN_MALLOC(dotnum*sizeof(int));
-    if (!dotlist) {
-      ZOLTAN_PRINT_ERROR(proc, yo, "Insufficient memory.");
-      ierr = ZOLTAN_MEMERR;
       goto End;
     }
 
@@ -313,6 +307,7 @@ int Zoltan_RB_find_bisector(
     MPI_Type_commit(&med_type);
 
     MPI_Op_create(&Zoltan_bisector_merge, 1, &med_op);
+    med_type_defined = 1;
   }
 
 
@@ -930,15 +925,16 @@ int Zoltan_RB_find_bisector(
 
 End:
   /* free all memory */
-  ZOLTAN_FREE(&dotlist);
   ZOLTAN_FREE(&med);
   ZOLTAN_FREE(&medme);
   ZOLTAN_FREE(&localsum);
   ZOLTAN_FREE(&invfraclo);
   if (wtflag) ZOLTAN_FREE(&wgts);
 
-  MPI_Type_free(&med_type);
-  MPI_Op_free(&med_op);
+  if (med_type_defined) {
+    MPI_Type_free(&med_type);
+    MPI_Op_free(&med_op);
+  }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
