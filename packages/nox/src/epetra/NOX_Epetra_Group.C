@@ -219,7 +219,7 @@ const Abstract::Vector& Group::computeNewton(NOX::Parameter::List& p)
 			       &(RHSVector.getEpetraVector()));
 
   // For now, set problem level to hard, moderate, or easy
-  Problem.SetPDL(easy);
+  Problem.SetPDL(hard);
 
   // Create aztec problem
   AztecOO aztec(Problem);
