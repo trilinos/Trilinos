@@ -16,16 +16,15 @@
 static char *cvs_parmetis_part_id = "$Id$";
 #endif
 
-/* #define LB_DEBUG */  /* turn on debug print statements? */
+/* #define LB_DEBUG */   /* turn on debug print statements? */
 
-#include <math.h>
-#include <strings.h>
 #include "lb_const.h"
 #include "lb_util_const.h"
 #include "all_allo_const.h"
 #include "comm_const.h"
 #include "parmetis_const.h"
 #include "params_const.h"
+#include "timer_const.h"
 
 /* ParMetis option defs. These must be identical to the defs
  * in defs.h in the version of ParMetis you are using!
@@ -59,8 +58,8 @@ int LB_ParMetis(
 #else /* !LB_NO_PARMETIS */
   int i, j, ierr, size, flag, offset, hi, row, ndims;
   int num_obj, nedges, sum_edges, max_edges, edgecut;
-  int options[MAX_OPTIONS], *destproc, *nbors_proc;
-  int nsend, nrecv, ewgt_dim, vwgt_dim, wgtflag, numflag;
+  int options[MAX_OPTIONS], *nbors_proc;
+  int nsend, ewgt_dim, vwgt_dim, wgtflag, numflag;
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *adjptr, *vwgt, *adjwgt, *part;
   float  max_wgt, *float_vwgt, *xyz;
@@ -70,7 +69,6 @@ int LB_ParMetis(
   LB_LID *local_ids;
   LB_GID *global_ids, *nbors_global;
   char *sendbuf, *recvbuf, alg[MAX_PARAM_STRING_LEN+1];
-  struct Comm_Obj *plan;
   MPI_Request *request;
   MPI_Status *status;
   double times[5];
@@ -96,7 +94,7 @@ int LB_ParMetis(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  destproc = nbors_proc = NULL;
+  nbors_proc = NULL;
   vtxdist = xadj = adjncy = adjptr = vwgt = adjwgt = part = NULL;
   float_vwgt = xyz = NULL;
   proc_list = proc_nodes = NULL;
@@ -104,7 +102,6 @@ int LB_ParMetis(
   hashtab = NULL;
   hash_nodes = NULL;
   sendbuf = recvbuf = NULL;
-  plan = NULL;
   request = NULL;
   status = NULL;
 
@@ -648,14 +645,10 @@ int LB_ParMetis(
     }
   }
 
-  /* No import data computed */
-  *num_imp = -1;
-
   /* Free space */
   LB_FREE(&part);
   LB_FREE(&local_ids);
   LB_FREE(&global_ids);
-  LB_FREE(&destproc);
   LB_FREE(&vtxdist);
   LB_FREE(&xadj);
   LB_FREE(&adjncy);
@@ -666,7 +659,7 @@ int LB_ParMetis(
 
   /* Output timing results if desired */
   if (get_times){
-    if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics (wall clock):\n");
+    if (lb->Proc==0) printf("\nZoltan/ParMETIS timing statistics:\n");
     LB_Print_Time(lb, times[1]-times[0], "ParMETIS  Pre-processing time  ");
     LB_Print_Time(lb, times[2]-times[1], "ParMETIS  Library time         ");
 /*  LB_Print_Time(lb, times[3]-times[2], "ParMETIS  Post-processing time "); */
