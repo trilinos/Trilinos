@@ -1178,10 +1178,10 @@ Table \ref{tab:ml:smoother} lists common choices for smoothing options.
 \begin{tabular}{ | p{4cm} | p{10cm} | }
 \hline
 \verb!Jacobi! & Point-Jacobi. Damping factor is specified using
-{\tt smoother: dampig factor}, and the number of sweeps with {\tt
+{\tt smoother: damping factor}, and the number of sweeps with {\tt
   smoother: sweeps} \\ 
 \verb!Gauss-Seidel! & Point Gauss-Seidel.  Damping factor is specified using
-{\tt smoother: dampig factor}, and the number of sweeps with {\tt
+{\tt smoother: damping factor}, and the number of sweeps with {\tt
   smoother: sweeps} \\
 \verb!Aztec! & Use \aztecoo's built-in preconditioning functions as
 smoothers. Or, if {\tt smoother: Aztec as solver} is {\tt true},  use
@@ -1452,7 +1452,7 @@ $z$- coordinates, in that order.}
 
 \subsection{Null Space Detection}
 
-If used in conjuction with \anasazi, \ML~can compute an approximate null space
+If used in conjunction with \anasazi, \ML~can compute an approximate null space
 of the linear operator to precondition. This can be done using the following
 options:
 
@@ -1462,7 +1462,7 @@ options:
   default null space are used (no computation required). If {\tt
     pre-computed}, a pointer to the already-computed null is obtained from
     option {\tt null space: vector}. If {\tt enriched}, \ML~will compute,
-  usign \anasazi, an approximation of the null space of the operator.}
+  using \anasazi, an approximation of the null space of the operator.}
 
 \choicebox{\tt null space: vectors to compute}{[{\tt int}]. If {\tt null
   space: type} is set to {\tt enriched}, this option indicates the number of
@@ -1770,7 +1770,7 @@ Postsmoother (level 1, eq 0)            0.982529   0.922668   2.53639
 
 Method \verb!AnalyzeCycle(NumCycles)!, where \verb!NumCycles! is the number of
 multilevel cycles to apply, applies the already computed \ML~preconditioner to
-a random vector, and reports on standard output the following informatin:
+a random vector, and reports on standard output the following information:
 \begin{verbatim}
 Solving Ae = 0, with a random initial guess
 using 5 ML cycle(s).
@@ -2078,7 +2078,7 @@ higher-order discretizations, as long as the user provides the sub-matrix
 that corresponds to just the first-order discretization.
 %% FIXME add paper references
 For more theoretical background and algorithm descriptions, please see
-\cite{HTBGR_2004}.
+\cite{HTBGR_2004,BGHRT_2003}.
 
 \subsection{Notational conventions}\label{maxwell notation}
 For the remainder of the discussion, \Ke\ denotes the matrix corresponding to
@@ -2107,7 +2107,7 @@ The user must provide three matrices:
 %
 \Kn\ is a square, $N_n\times N_n$ matrix, where $N_n$ is the number of nodes in
 the mesh.
-There are two ways to contruct \Kn.
+There are two ways to construct \Kn.
 The first method is to discretize the PDE
 \begin{equation}
    \int_\Omega \sigma u \cdot v + \int_\Omega \nabla u \cdot \nabla v,
@@ -2128,7 +2128,7 @@ $T$ is a rectangular, $N_e\times N_n$ matrix, where $N_e$ is the number of
 edges in the mesh (rows in \Ke) and $N_n$ is the number of nodes in the mesh
 (rows in \Kn).
 Each row of $T$ has at most two entries, a $+1$ and/or a $-1$.
-There are two ways to contruct $T$.
+There are two ways to construct $T$.
 In the first method, 
 it's assumed that the mesh topology is available.
 $T$ can be viewed as a node-edge incidence matrix of the mesh as a
