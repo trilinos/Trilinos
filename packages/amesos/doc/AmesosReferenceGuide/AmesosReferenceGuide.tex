@@ -412,6 +412,15 @@ refer to table~\ref{tab:options}.
   distributed over the specified number of processes. This number must
   be less or equal to {\tt MaxProcs}. See {\tt Maxprocs}.}
 
+\choicebox{\tt OutpuLevel}{If {\tt 0}, no output is printed on the
+  screen. If {\tt 1}, output is reported as specified by other
+  parameters. If {\tt 2}, all output is printed (this is equivalent to
+  {\tt PrintTiming == true}, {\tt PrintStatus == true}, {\tt
+    ComputeVectorNorms == true}, {\tt ComputeTrueResidual == true}).}
+
+\choicebox{\tt DebugLevel}{If {\tt 1}, some debugging information are
+  printed on the screen.}
+
 %\choicebox{\tt Redistribute}{[bool] If true, ..... Default: true.}
 
 \smallskip
@@ -439,9 +448,13 @@ refer to table~\ref{tab:options}.
     $\bullet$  \\
     \tt MaxProcsMatrix & \tt int & -1 & -- & -- & -- & $\bullet$  & --
     \\
-    \tt ComputeVectorNorms & \tt bool & \tt false & -- & -- & -- & $\bullet$
+    \tt ComputeVectorNorms & \tt bool & \tt false & -- & -- & $\bullet$ & $\bullet$
     & -- \\
-    \tt ComputeTrueResidual & \tt bool & \tt false & -- & -- & -- &
+    \tt ComputeTrueResidual & \tt bool & \tt false & -- & -- & $\bullet$ &
+    $\bullet$ & -- \\
+    \tt OutputLevel & \tt int & \tt 1 & -- & -- & $\bullet$ &
+    $\bullet$ & -- \\
+    \tt DebugLevel & \tt int & \tt 0 & -- & -- & $\bullet$ &
     $\bullet$ & -- \\
     \hline
   \end{tabular}
