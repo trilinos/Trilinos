@@ -44,13 +44,16 @@ FiniteElementProblem::FiniteElementProblem(int numGlobalElements, Epetra_Comm& c
     else 
       OverlapMinMyGID = StandardMap->MinMyGID() - 1;
     
-    int OverlapMyGlobalElements[OverlapNumMyElements];
+    int* OverlapMyGlobalElements = new int[OverlapNumMyElements];
     
     for (i = 0; i < OverlapNumMyElements; i ++) 
       OverlapMyGlobalElements[i] = OverlapMinMyGID + i;
     
     OverlapMap = new Epetra_Map(-1, OverlapNumMyElements, 
 			    OverlapMyGlobalElements, 0, *Comm);
+
+    delete [] OverlapMyGlobalElements;
+
   } // End Overlap map construction *************************************
 
   // Construct Linear Objects  
