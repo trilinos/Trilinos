@@ -12,39 +12,63 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "ml_struct.h"
+#include "ml_amesos_wrap.h"
 
 /* ************************************************************************* *
 /* ------------------------------------------------------------------------- */
 /* generate the sparse approximate inverse smoother */
 /* ------------------------------------------------------------------------- */
 
-#define ML_AMESOS
-#ifdef ML_AMESOS
+#ifdef HAVE_ML_AMESOS
 #include "ml_amesos_wrap.h"
+#endif
 
 int ML_Smoother_Amesos(void *sm,int inlen,double x[],int outlen,
                         double rhs[])
 {
-   ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
-   void *Amesos_Handle = smooth_ptr->smoother->data;
 
-   ML_Amesos_Solve( Amesos_Handle, x, rhs ) ;
+#ifdef HAVE_ML_AMESOS
+  ML_Smoother    *smooth_ptr = (ML_Smoother *) sm;
+  void *Amesos_Handle = smooth_ptr->smoother->data;
 
-   return 0;
-}
+  ML_Amesos_Solve( Amesos_Handle, x, rhs ) ;
+#else
+  fprintf( stderr,
+	   "*ML*ERR* you should configure with --with-ml_amesos\n"
+	   "*ML*ERR* to use Amesos as smoother"
+	   "*ERR*ML* (file=%s, line=%d)\n"
+	   __FILE__,
+	   __LINE__ );
+  exit( EXIT_FAILURE );
+#endif
+  return 0;
+
+} /* ML_Smoother_Amesos */
 
 
 void ML_Smoother_Clean_Amesos(void *Amesos_Handle)
 {
 
-   ML_Amesos_Destroy(Amesos_Handle);
-}
+#ifdef HAVE_ML_AMESOS
+  ML_Amesos_Destroy(Amesos_Handle);
+#else
+  fprintf( stderr,
+	   "*ML*ERR* you should configure with --with-ml_amesos\n"
+	   "*ML*ERR* to use Amesos as smoother"
+	   "*ERR*ML* (file=%s, line=%d)\n"
+	   __FILE__,
+	   __LINE__ );
+  exit( EXIT_FAILURE );
 #endif
+  return;
+  
+} /* ML_Smoother_Clean_Amesos */
 
 
-int ML_Gen_Smoother_Amesos(ML *ml, int nl /* parameter list */)
+int ML_Gen_Smoother_Amesos(ML *ml, int nl, int AmesosSolver,
+			   int MaxProcs)
 {
-#ifdef ML_AMESOS
+#ifdef HAVE_ML_AMESOS
    int            (*fun1)(void *, int, double *, int, double *);
 
    void *Amesos_Handle ;
@@ -64,8 +88,7 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl /* parameter list */)
 
      fun1 = ML_Smoother_Amesos;
 
-     printf(" ML_AMESOS      ml = %lx nl=%d ml[].Amat = %lx\n", ml , nl, ml[nl].Amat );
-     status = ML_Amesos_Gen( ml, nl, &Amesos_Handle) ; 
+     status = ML_Amesos_Gen( ml, nl, AmesosSolver, MaxProcs, &Amesos_Handle) ; 
      assert( status == 0 ) ; 
 
      status = ML_Smoother_Set(&(ml->post_smoother[nl]), ML_INTERNAL,
@@ -90,7 +113,4 @@ int ML_Gen_Smoother_Amesos(ML *ml, int nl /* parameter list */)
 #endif
 }
 
-/* ************************************************************************* */
-/* Sparse approximate inverse smoother                                       */
-/* ------------------------------------------------------------------------- */
 

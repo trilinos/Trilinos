@@ -5,13 +5,16 @@
 #include "ml_utils.h"
 #include "ml_xyt.h"
 
-#include "ml_amesos_wrap.h"
 #include "Epetra_Map.h" 
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h" 
 #include "Epetra_LinearProblem.h" 
+#ifdef HAVE_ML_AMESOS
+#include "ml_amesos.h"
+#include "ml_amesos_wrap.h"
+#include "Amesos_BaseSolver.h"
 #include "Amesos_Factory.h" 
-
+#include "AmesosClassType.h"
 
 //  Jonathan - I need to convert an ml to an ML_Operator 
 //  Did I pick off the right ML_Operator?
@@ -34,12 +37,15 @@
    double *SendThisToEMV ; 
    }
 
-int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle)
+int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
+		  int MaxProcs, void **Amesos_Handle)
 {
-  double *global_nodes, *global_rows, colVal[15];
+  double *global_nodes, *global_rows;
+  int  allocated = 15, * colInd = NULL;
+  double * colVal = NULL;
   int *global_rows_as_int, *global_nodes_as_int;
   int    N_nodes, node_offset, row_offset;
-  int colInd[15], ncnt;
+  int    ncnt;
   char str[80];
   ML_Comm *comm;
   int Nnodes_global, Nrows_global;
@@ -107,23 +113,45 @@ int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle)
     global_nodes_as_int[j] = (int) global_nodes[j];
   }
 
-  //
-  //  Ken - Need to improve the efficiency here - Create arrays and make
-  //  a single call to InsertGlobalValues 
-  //
+  // MS // introduced variable allocation for colInd and colVal
+  // MS // improved efficiency in InsertGlobalValues
+  
+  allocated = 1;
+  colInd = new int[allocated];
+  colVal = new double[allocated];
+  int NumNonzeros;
+  int ierr;
   for (int i = 0; i < Nrows; i++) {
-    int j = ML_Operator_Getrow(Ke,1,&i,15,colInd,colVal,&ncnt);
-    //    Amesos_CrsMatrix.InsertGlobalValues( global_rows_as_int[i], ncnt, global_nodes_as_int, 
-    for (int j = 0; j < ncnt; j++) {
-      if (colVal[j] != 0.0) {
-	Amesos_CrsMatrix->InsertGlobalValues( global_rows_as_int[i], 1, 
-					      &(colVal[j]),
-					      &(global_nodes_as_int[colInd[j]]) );
-					    
+    ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
+    if( ierr == 0 ) {
+      while( ierr == 0 ) {
+	delete [] colInd;
+	delete [] colVal;
+	allocated *= 2;
+	colInd = new int[allocated];
+	colVal = new double[allocated];
+	ierr = ML_Operator_Getrow(Ke,1,&i,allocated,colInd,colVal,&ncnt);
       }
     }
+    // MS // check out how many nonzeros we have
+    // MS // NOTE: this may result in a non-symmetric patter for Amesos_CrsMatrix
+    NumNonzeros = 0;
+    for (int j = 0; j < ncnt; j++) {
+      if (colVal[j] != 0.0) {
+	colInd[NumNonzeros] = global_nodes_as_int[colInd[j]];
+	colVal[NumNonzeros] = colVal[j];
+	NumNonzeros++;
+      }
+    }
+    Amesos_CrsMatrix->InsertGlobalValues( global_rows_as_int[i], NumNonzeros, 
+					  colVal, colInd);
   }
 
+  delete [] colInd;
+  delete [] colVal;
+
+  // MS // introduce support for Amesos_BaseFactory to
+  // MS // allow different Amesos_Solvers
   
   assert(Amesos_CrsMatrix->TransformToLocal()==0);
 
@@ -132,14 +160,58 @@ int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle)
 
   AMESOS::Parameter::List ParamList ;
 
+  AMESOS::Parameter::List SluParamList=ParamList.sublist("Superludist");
+
+  // this is specific to Superludist-2.0
+  if( choice == ML_AMESOS_SUPERLUDIST ) {
+    
+    if( MaxProcs == -2 ) {
+      if( Amesos_CrsMatrix->RowMatrixRowMap().LinearMap() == true ) {
+	ParamList.setParameter("Redistribute",false);
+      } else {
+	if( EpetraComm.MyPID() == 0 ) {
+	  cout << "*ML*WRN* in Amesos_Smoother, you can set MaxProcs = -1\n"
+	       << "*ML*WRN* (that is, matrix will not be redistributed)\n"
+	       << "*ML*WRN* ONLY if the matrix map is linear. Now proceeding\n"
+	       << "*ML*WRN* with redistribution of the matrix\n"
+	       << "*ML*WRN* (file " << __FILE__ << ", line "
+	       << __LINE__ << ")\n";
+	}
+      }
+    } else {
+      ParamList.setParameter("Redistribute",true);
+      SluParamList.setParameter("MaxProcesses",MaxProcs);
+    }
+  }
+  
   Amesos_BaseSolver* A_Base;
   
   Amesos_Factory A_Factory;
-  A_Base = A_Factory.Create( AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+
+  switch( choice ) {
+
+  case ML_AMESOS_UMFPACK:
+    if( EpetraComm.MyPID() == 0 )
+      cout << "ML_Gen_Smoother_Amesos : building UMFPACK\n";
+    A_Base = A_Factory.Create( AMESOS_UMFPACK, *Amesos_LinearProblem, ParamList );
+    break;
+
+  case ML_AMESOS_SUPERLUDIST:
+    if( EpetraComm.MyPID() == 0 )
+      cout << "ML_Gen_Smoother_Amesos : building SUPERLUDIST\n";
+    A_Base = A_Factory.Create( AMESOS_SUPERLUDIST, *Amesos_LinearProblem, ParamList );
+    break;
+
+  case ML_AMESOS_KLU:
+  default:
+    if( EpetraComm.MyPID() == 0 )
+      cout << "ML_Gen_Smoother_Amesos : building KLU\n";
+    A_Base = A_Factory.Create( AMESOS_KLU, *Amesos_LinearProblem, ParamList );
+    break;
+  }
   
   A_Base->SymbolicFactorization();
   A_Base->NumericFactorization();
-
 
   ML_free(global_nodes_as_int);
   ML_free(global_rows_as_int);
@@ -163,8 +235,7 @@ int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) {
   Epetra_Vector EV_lhs( View, map, x ) ;
 
   Amesos_LinearProblem->SetRHS( &EV_rhs ) ; 
-  Amesos_LinearProblem->SetLHS( &EV_lhs ) ; 
-
+  Amesos_LinearProblem->SetLHS( &EV_lhs ) ;
 
   A_Base->Solve() ; 
 
@@ -177,12 +248,14 @@ void ML_Amesos_Destroy(void *Amesos_Handle){
   Amesos_LinearProblem = A_Base->GetProblem() ; 
   const Epetra_Operator *EO = Amesos_LinearProblem->GetOperator() ; 
 
-  cout << "In the desctructor" << endl;
-   
-  
   delete Amesos_LinearProblem->GetOperator() ; 
 
   delete Amesos_LinearProblem ;
   delete A_Base ;
 }
 
+#else
+
+int ciao=0;
+
+#endif

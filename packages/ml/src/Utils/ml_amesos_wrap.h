@@ -9,7 +9,8 @@ extern "C" {
 #endif
 #endif
 
-  int ML_Amesos_Gen(ML *ml, int curr_level, void **Amesos_Handle);
+  int ML_Amesos_Gen(ML *ml, int curr_level, int choice,
+		    int MaxProcs, void **Amesos_Handle);
   
   int ML_Amesos_Solve( void *Amesos_Handle, double x[], double rhs[] ) ;
 
