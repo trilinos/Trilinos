@@ -358,19 +358,34 @@ fi
 # Determine libraries needed for linking with Fortran
 AC_F77_LIBRARY_LDFLAGS
 
+#  ----------------------------------------------------
+#  Needs this because Dec handles templates differently
+#  ----------------------------------------------------
+#  Only uncomment the following lines if the package
+#  creates a subdirectory called cxx_repository for
+#  template object files on DEC.  (HINT: try to build on
+#  DEC/CPLANT and see if template-related errors occur)
+
 # -- DEC CXX --
-dnl if test X${target_cpu} = Xalpha && test X${CXX} = Xcxx; then
-dnl    XTRALDADD="cxx_repository/*.o"
-dnl fi
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+ esac
+fi
 
-dnl AC_MSG_CHECKING([for extra object files to be linked])
-dnl if test X$XTRALDADD = X; then
-dnl AC_MSG_RESULT(none)
-dnl else
-dnl AC_MSG_RESULT($XTRALDADD)
-dnl fi
+AC_MSG_CHECKING([for template-specific object files to be linked])
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ AC_MSG_RESULT(none)
+else
+ AC_MSG_RESULT($TRILINOS_TEMPLATE_OBJS)
+fi
 
-AC_SUBST(XTRALDADD)
+AC_SUBST(TRILINOS_TEMPLATE_OBJS)
+
 # ------------------------------------------------------------------------
 # Checks for library functions
 # ------------------------------------------------------------------------
@@ -405,6 +420,8 @@ AC_CONFIG_FILES([
 		test/IlukGraph/Makefile.include
 		test/SetParameters/Makefile
 		test/SetParameters/Makefile.include
+		test/PointPreconditioner/Makefile
+		test/PointPreconditioner/Makefile.include
 		test/AdditiveSchwarz/Makefile
 		test/AdditiveSchwarz/Makefile.include
 		test/CrsAdditiveSchwarz/Makefile

@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_IFPACK_AZTECOO_TRUE HAVE_IFPACK_AZTECOO_FALSE HAVE_IFPACK_TRIUTILS_TRUE HAVE_IFPACK_TRIUTILS_FALSE HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE HAVE_IFPACK_AMESOS_TRUE HAVE_IFPACK_AMESOS_FALSE HAVE_IFPACK_METIS_TRUE HAVE_IFPACK_METIS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS XTRALDADD ac_aux_dir LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO AMTAR install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot MPI_TEMP_CXX MPI_CXX HAVE_MPI_TRUE HAVE_MPI_FALSE MPI_CXX_EXISTS MPI_CC_EXISTS MPI_F77_EXISTS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE F77 FFLAGS ac_ct_F77 RANLIB ac_ct_RANLIB USE_ALTERNATE_AR_TRUE USE_ALTERNATE_AR_FALSE ALTERNATE_AR CXXCPP EGREP HAVE_IFPACK_AZTECOO_TRUE HAVE_IFPACK_AZTECOO_FALSE HAVE_IFPACK_TRIUTILS_TRUE HAVE_IFPACK_TRIUTILS_FALSE HAVE_IFPACK_TEUCHOS_TRUE HAVE_IFPACK_TEUCHOS_FALSE HAVE_IFPACK_AMESOS_TRUE HAVE_IFPACK_AMESOS_FALSE HAVE_IFPACK_METIS_TRUE HAVE_IFPACK_METIS_FALSE BUILD_TESTS_TRUE BUILD_TESTS_FALSE FLIBS BLAS_LIBS LAPACK_LIBS TRILINOS_TEMPLATE_OBJS ac_aux_dir LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -10118,7 +10118,34 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
 
+#  ----------------------------------------------------
+#  Needs this because Dec handles templates differently
+#  ----------------------------------------------------
+#  Only uncomment the following lines if the package
+#  creates a subdirectory called cxx_repository for
+#  template object files on DEC.  (HINT: try to build on
+#  DEC/CPLANT and see if template-related errors occur)
+
 # -- DEC CXX --
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ case $target in
+  alpha*)
+    if test $CXX = cxx; then
+      TRILINOS_TEMPLATE_OBJS="cxx_repository/*.o"
+    fi
+  ;;
+ esac
+fi
+
+echo "$as_me:$LINENO: checking for template-specific object files to be linked" >&5
+echo $ECHO_N "checking for template-specific object files to be linked... $ECHO_C" >&6
+if test "X$TRILINOS_TEMPLATE_OBJS" = "X"; then
+ echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+else
+ echo "$as_me:$LINENO: result: $TRILINOS_TEMPLATE_OBJS" >&5
+echo "${ECHO_T}$TRILINOS_TEMPLATE_OBJS" >&6
+fi
 
 
 
@@ -10144,7 +10171,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-                                                                                                                                                                                                                            ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
+                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile Makefile.export src/Makefile src/Makefile.include test/Makefile test/CrsRiluk/Makefile test/CrsRiluk/Makefile.include test/IlukGraph/Makefile test/IlukGraph/Makefile.include test/SetParameters/Makefile test/SetParameters/Makefile.include test/PointPreconditioner/Makefile test/PointPreconditioner/Makefile.include test/AdditiveSchwarz/Makefile test/AdditiveSchwarz/Makefile.include test/CrsAdditiveSchwarz/Makefile test/CrsAdditiveSchwarz/Makefile.include test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/Makefile test/scripts/weekly/Makefile test/scripts/weekly/mpi/Makefile test/scripts/weekly/serial/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -10791,6 +10818,8 @@ do
   "test/IlukGraph/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/IlukGraph/Makefile.include" ;;
   "test/SetParameters/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile" ;;
   "test/SetParameters/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/SetParameters/Makefile.include" ;;
+  "test/PointPreconditioner/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/PointPreconditioner/Makefile" ;;
+  "test/PointPreconditioner/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/PointPreconditioner/Makefile.include" ;;
   "test/AdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile" ;;
   "test/AdditiveSchwarz/Makefile.include" ) CONFIG_FILES="$CONFIG_FILES test/AdditiveSchwarz/Makefile.include" ;;
   "test/CrsAdditiveSchwarz/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/CrsAdditiveSchwarz/Makefile" ;;
@@ -10978,7 +11007,7 @@ s,@BUILD_TESTS_FALSE@,$BUILD_TESTS_FALSE,;t t
 s,@FLIBS@,$FLIBS,;t t
 s,@BLAS_LIBS@,$BLAS_LIBS,;t t
 s,@LAPACK_LIBS@,$LAPACK_LIBS,;t t
-s,@XTRALDADD@,$XTRALDADD,;t t
+s,@TRILINOS_TEMPLATE_OBJS@,$TRILINOS_TEMPLATE_OBJS,;t t
 s,@ac_aux_dir@,$ac_aux_dir,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t

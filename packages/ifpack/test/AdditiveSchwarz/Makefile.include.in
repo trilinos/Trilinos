@@ -103,8 +103,8 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_TestCrsAdditiveSchwarz_OBJECTS =  \
 	TestCrsAdditiveSchwarz-cxx_main.$(OBJEXT)
 TestCrsAdditiveSchwarz_OBJECTS = $(am_TestCrsAdditiveSchwarz_OBJECTS)
-@HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../triutils/src/libtriutils.a
-am__DEPENDENCIES_2 =
+am__DEPENDENCIES_1 =
+@HAVE_IFPACK_TRIUTILS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../triutils/src/libtriutils.a
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -193,10 +193,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
-XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -250,7 +250,8 @@ TestCrsAdditiveSchwarz_CXXFLAGS = $(IFPACK_INCLUDES)  \
 
 @HAVE_IFPACK_TRIUTILS_FALSE@triutils_lib = 
 @HAVE_IFPACK_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a 
-TestCrsAdditiveSchwarz_LDADD = $(triutils_lib) \
+TestCrsAdditiveSchwarz_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
+ 	$(triutils_lib) \
 	$(IFPACK_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

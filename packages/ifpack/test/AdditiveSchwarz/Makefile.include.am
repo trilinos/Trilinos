@@ -44,7 +44,8 @@ else
 triutils_lib = 
 endif
 
-TestCrsAdditiveSchwarz_LDADD = $(triutils_lib) \
+TestCrsAdditiveSchwarz_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
+ 	$(triutils_lib) \
 	$(IFPACK_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

@@ -167,10 +167,10 @@ RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
+TRILINOS_TEMPLATE_OBJS = @TRILINOS_TEMPLATE_OBJS@
 USE_ALTERNATE_AR_FALSE = @USE_ALTERNATE_AR_FALSE@
 USE_ALTERNATE_AR_TRUE = @USE_ALTERNATE_AR_TRUE@
 VERSION = @VERSION@
-XTRALDADD = @XTRALDADD@
 ac_aux_dir = @ac_aux_dir@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
@@ -416,7 +416,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/src $(distdir)/test/AdditiveSchwarz $(distdir)/test/CrsAdditiveSchwarz $(distdir)/test/CrsRiluk $(distdir)/test/IlukGraph $(distdir)/test/SetParameters
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/src $(distdir)/test/AdditiveSchwarz $(distdir)/test/CrsAdditiveSchwarz $(distdir)/test/CrsRiluk $(distdir)/test/IlukGraph $(distdir)/test/PointPreconditioner $(distdir)/test/SetParameters
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \
