@@ -426,7 +426,7 @@ public:
 	OrdinalType getNumGlobalCols() const {
     if(!data().haveCol_)
       throw reportError("Column distribution not specified.", 3);
-    return(getColDist().getNumGlobalEntries());
+    return(getColumnDist().getNumGlobalEntries());
   }
   
   //! Returns the number of matrix rows owned by the calling image.
@@ -440,7 +440,7 @@ public:
 	OrdinalType getNumMyCols() const {
     if(!data().haveCol_)
       throw reportError("Column distribution not specified.", 3);
-    return(getColDist().getNumMyEntries());
+    return(getColumnDist().getNumMyEntries());
   }
 	
 	//! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
