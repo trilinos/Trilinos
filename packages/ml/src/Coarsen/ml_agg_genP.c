@@ -188,6 +188,22 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
    {
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
+#ifdef newstuff
+      /*
+        Here is the idea:
+        1) build an interpolation operator based on A^T. Save the
+           tentative prolongator.
+        3) transpose it for the restriction as usual.
+        4) clean out the interpolation. Now build the interpolation
+           operator using the existing tentative prolongator and
+           the symmetry option.
+      */
+      if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+        ml->symmetrize_matrix = ML_TRUE;
+        ag->keep_P_tentative = ML_YES;
+        ag->use_transpose = ML_TRUE;
+      }
+#endif
 
       if (internal_or_external == ML_INTERNAL)
       {
@@ -237,6 +253,20 @@ int ML_Gen_MGHierarchy(ML *ml, int fine_level,
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : applying coarsening \n");
       ML_Gen_Restrictor_TransP(ml, level, next);
+
+#ifdef newstuff
+      if (ag->Restriction_smoothagg_transpose == ML_TRUE ) {
+        ag->use_transpose = ML_FALSE;
+        ML_Operator_Clean( &(ml->Pmat[next]) );
+
+        if (internal_or_external == ML_INTERNAL)
+          flag = user_gen_prolongator(ml, level, next,
+                                      (void*)&(ml->Amat[level]),ag);
+        else
+          flag = user_gen_prolongator(ml, level, next, data, ag);
+      }
+
+#endif
 
       if ( ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) 
          printf("ML_Gen_MGHierarchy : Gen_RAP\n");
@@ -551,6 +581,13 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      t3 = ML_Operator_Create(Amat->comm);
      ML_Operator_Add(Amat,t2,t3,ML_CSR_MATRIX,1.);
 #else
+#ifdef newstuff
+     if (ag->use_transpose == ML_TRUE) {
+       t3 = ML_Operator_Create(Amat->comm);
+       ML_Operator_Transpose_byrow(Amat,t3);
+     }
+     else
+#endif
      if (ml->symmetrize_matrix == ML_TRUE) {
        t2 = ML_Operator_Create(Amat->comm);
        ML_Operator_Transpose_byrow(Amat,t2);
@@ -566,6 +603,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
          ML_Krylov_Set_Amatrix(kdata, t3);
 #else
+#ifdef newstuff
+         if (ag->use_transpose ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
+         else
+#endif
 	 if (ml->symmetrize_matrix ==ML_TRUE) ML_Krylov_Set_Amatrix(kdata, t3);
          else ML_Krylov_Set_Amatrix(kdata, Amat);
 #endif
@@ -604,6 +645,10 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
 #ifdef SYMMETRIZE
      widget.Amat   = t3;
 #else
+#ifdef newstuff
+     if (ag->use_transpose == ML_TRUE) widget.Amat   = t3;
+     else
+#endif
      if (ml->symmetrize_matrix == ML_TRUE) widget.Amat   = t3;
      else widget.Amat   = &(ml->Amat[level]);
 #endif
@@ -649,7 +694,8 @@ int ML_AGG_Gen_Prolongator(ML *ml,int level, int clevel, void *data,
      if (t3 != NULL) ML_Operator_Destroy(&t3);
      if (t2 != NULL) ML_Operator_Destroy(&t2);
 #else
-     if (ml->symmetrize_matrix == ML_TRUE) {
+     if ((ml->symmetrize_matrix == ML_TRUE) ||
+         (ag->use_transpose ==ML_TRUE) ) {
        if (t3 != NULL) ML_Operator_Destroy(&t3);
        if (t2 != NULL) ML_Operator_Destroy(&t2);
      }
