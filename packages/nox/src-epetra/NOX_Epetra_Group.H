@@ -221,6 +221,9 @@ public:
   //! Return the userInterface.
   virtual Interface& getUserInterface();
 
+  //! Set a parameter in the user's code.
+  virtual bool setParameter(string param, double value);
+
 protected:
 
   //! resets the isValid flags to false

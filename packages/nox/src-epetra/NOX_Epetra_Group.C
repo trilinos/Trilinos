@@ -761,3 +761,8 @@ string Group::getPrecType()
   return "User Supplied";
 
 }
+
+bool Group::setParameter(string param, double value)
+{
+  return userInterface.setParameter(param, value);
+}

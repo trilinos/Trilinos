@@ -32,6 +32,8 @@
 
 #ifndef NOX_EPETRA_INTERFACE_H
 #define NOX_EPETRA_INTERFACE_H
+
+#include "NOX_Common.H"
   
 // Forward declarations
 class Epetra_Vector;
@@ -71,6 +73,9 @@ public:
 
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   virtual bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& M) = 0;
+
+  //! Sets a parameter in the user's code based on the string passed in.  This is required only for interfacing to LOCA.  
+  virtual bool setParameter(string param, double value) = 0;
 
 };
 } // namespace Epetra

@@ -78,7 +78,9 @@ am__include = @am__include@
 am__quote = @am__quote@
 install_sh = @install_sh@
 
-SUBDIRS = epetra_DS6.5.1 epetra_1Dfem_linear epetra_1Dfem_nonlinear
+SUBDIRS = epetra_DS6.5.1 epetra_1Dfem_linear epetra_1Dfem_nonlinear \
+          epetra_1Dfem_LOCA
+
 subdir = example
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/NOX_Config.h

@@ -83,8 +83,9 @@ public:
     Warning = 0x1,		// 2^0
     OuterIteration = 0x2,	// 2^1
     InnerIteration = 0x4,	// 2^2
-    Parameters = 0xa,		// 2^3
-    Details = 0x10		// 2^4
+    Parameters = 0x8,		// 2^3
+    Details = 0x10,		// 2^4
+    LocaOuterIteration = 0x20   // 2^5
   };
 
 public:

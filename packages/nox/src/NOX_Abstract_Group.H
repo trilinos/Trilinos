@@ -34,6 +34,7 @@
 #define NOX_ABSTRACT_GROUP_H
 
 #include "NOX_Abstract_Vector.H" // for NOX::CopyType
+#include "NOX_Common.H" // for string 
 
 namespace NOX {
 namespace Parameter {
@@ -104,7 +105,7 @@ public:
   /*! 
     \brief If supported, returns true and calculates 
     result = Jacobian * input.  Otherwise, returns false.  
-    Returns false is any errors occur, such as the Jacobian not being
+    Returns false if any errors occur, such as the Jacobian not being
     computed.
   */
   virtual bool applyJacobian(const Vector& input, Vector& result) const = 0;
@@ -182,6 +183,13 @@ public:
   virtual Group* clone(CopyType type = DeepCopy) const = 0;
 
   //@}
+
+  /*! 
+    \brief Set a parameter in the user's code.
+    This method is required only if using the LOCA algorithms.  
+  */
+  virtual bool setParameter(string param, double value) = 0;
+
 
 };
 } // namespace Abstract

@@ -33,6 +33,9 @@ public:
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.
   bool computePreconditioner(const Epetra_Vector& x, Epetra_Operator& y);
 
+  //! Sets a parameter in the user's code.  This is only required for interfacing to LOCA algorithms.
+  bool setParameter(string param, double value);
+
   //! Application Operator: Object that points to the user's evaluation routines.
   /*! This is used to point to the actual routines and to store 
    *  auxiliary data required by the user's application for function/Jacobian

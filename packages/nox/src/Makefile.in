@@ -161,14 +161,16 @@ SOLVER_H = \
 	$(srcdir)/NOX_Solver_Manager.H \
 	$(srcdir)/NOX_Solver_LineSearch.H \
 	$(srcdir)/NOX_Solver_TrustRegion.H \
-	$(srcdir)/NOX_Solver_NonlinearCG.H 
+	$(srcdir)/NOX_Solver_NonlinearCG.H \
+        $(srcdir)/NOX_Solver_LOCA.H 
 
 
 SOLVER = \
 	$(srcdir)/NOX_Solver_Manager.C \
 	$(srcdir)/NOX_Solver_LineSearch.C \
 	$(srcdir)/NOX_Solver_TrustRegion.C \
-	$(srcdir)/NOX_Solver_NonlinearCG.C 
+	$(srcdir)/NOX_Solver_NonlinearCG.C \
+        $(srcdir)/NOX_Solver_LOCA.C 
 
 
 STATUS_H = \
@@ -199,23 +201,6 @@ UTILS = \
 	$(srcdir)/NOX_Utils.C
 
 
-EPETRA_H = \
-	$(srcdir)/NOX_Epetra_Vector.H \
-	$(srcdir)/NOX_Epetra_Group.H \
-	$(srcdir)/NOX_Epetra_SharedJacobian.H \
-        $(srcdir)/NOX_Epetra_MatrixFree.H \
-        $(srcdir)/NOX_Epetra_FiniteDifference.H \
-	$(srcdir)/NOX_Epetra_Interface.H 
-
-
-EPETRA = \
-	$(srcdir)/NOX_Epetra_Vector.C \
-	$(srcdir)/NOX_Epetra_Group.C \
-	$(srcdir)/NOX_Epetra_SharedJacobian.C \
-        $(srcdir)/NOX_Epetra_MatrixFree.C \
-        $(srcdir)/NOX_Epetra_FiniteDifference.C
-
-
 
 # ------------------------------------------------------------------------
 # Nox library specifications
@@ -243,18 +228,6 @@ libnox_a_SOURCES = \
 
 
 # ------------------------------------------------------------------------
-# Noxepetra library specifications
-# ------------------------------------------------------------------------
-@BUILD_NOXEPETRA_TRUE@NOXEPETRA_LIB = libnoxepetra.a
-
-@BUILD_NOXEPETRA_TRUE@NOXEPETRA_H = $(EPETRA_H)
-
-@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_SOURCES = $(EPETRA)
-
-@BUILD_NOXEPETRA_TRUE@libnoxepetra_a_CXXFLAGS = $(TRILINOS_CXXFLAGS)
-
-
-# ------------------------------------------------------------------------
 # For using a special archiver
 # ------------------------------------------------------------------------
 
@@ -263,8 +236,6 @@ libnox_a_SOURCES = \
 # define it manually.
 @USE_ALTERNATE_AR_TRUE@libnox_a_AR = $(ALTERNATE_AR)
 @USE_ALTERNATE_AR_FALSE@libnox_a_AR = $(AR) cru
-@USE_ALTERNATE_AR_TRUE@libnoxepetra_a_AR = $(ALTERNATE_AR)
-@USE_ALTERNATE_AR_FALSE@libnoxepetra_a_AR = $(AR) cru
 
 
 # ------------------------------------------------------------------------
@@ -272,19 +243,18 @@ libnox_a_SOURCES = \
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 libnox_a_LIBADD = $(XTRALDADD)
-libnoxepetra_a_LIBADD = $(XTRALDADD)
 
 
 # ------------------------------------------------------------------------
 # List of all libraries to install in $(libexecdir)
 # ------------------------------------------------------------------------
-lib_LIBRARIES = $(NOX_LIB) $(NOXEPETRA_LIB)
+lib_LIBRARIES = $(NOX_LIB)
 
 
 # ------------------------------------------------------------------------
 # List of all headers to install in $(pkgincludedir)
 # ------------------------------------------------------------------------
-pkginclude_HEADERS = $(NOX_H) $(NOXEPETRA_H)
+pkginclude_HEADERS = $(NOX_H)
 
 
 # ------------------------------------------------------------------------
@@ -320,21 +290,12 @@ am_libnox_a_OBJECTS = NOX_Linesearch_FullStep.$(OBJEXT) \
 	NOX_Parameter_Entry.$(OBJEXT) NOX_Parameter_List.$(OBJEXT) \
 	NOX_Solver_Manager.$(OBJEXT) NOX_Solver_LineSearch.$(OBJEXT) \
 	NOX_Solver_TrustRegion.$(OBJEXT) \
-	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Status_Test.$(OBJEXT) \
-	NOX_Status_AbsResid.$(OBJEXT) NOX_Status_Combo.$(OBJEXT) \
-	NOX_Status_MaxResid.$(OBJEXT) NOX_Status_RelResid.$(OBJEXT) \
-	NOX_Status_MaxIters.$(OBJEXT) NOX_Status_RelUpdate.$(OBJEXT) \
-	NOX_Utils.$(OBJEXT)
+	NOX_Solver_NonlinearCG.$(OBJEXT) NOX_Solver_LOCA.$(OBJEXT) \
+	NOX_Status_Test.$(OBJEXT) NOX_Status_AbsResid.$(OBJEXT) \
+	NOX_Status_Combo.$(OBJEXT) NOX_Status_MaxResid.$(OBJEXT) \
+	NOX_Status_RelResid.$(OBJEXT) NOX_Status_MaxIters.$(OBJEXT) \
+	NOX_Status_RelUpdate.$(OBJEXT) NOX_Utils.$(OBJEXT)
 libnox_a_OBJECTS = $(am_libnox_a_OBJECTS)
-libnoxepetra_a_DEPENDENCIES =
-@BUILD_NOXEPETRA_TRUE@am_libnoxepetra_a_OBJECTS = \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT) \
-@BUILD_NOXEPETRA_TRUE@	libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT)
-@BUILD_NOXEPETRA_FALSE@am_libnoxepetra_a_OBJECTS =
-libnoxepetra_a_OBJECTS = $(am_libnoxepetra_a_OBJECTS)
 
 DEFS = @DEFS@
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I.
@@ -352,6 +313,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Linesearch_Polynomial.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_Entry.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Parameter_List.Po \
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LOCA.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_LineSearch.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_Manager.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Solver_NonlinearCG.Po \
@@ -362,24 +324,19 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_MaxResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelResid.Po \
 @AMDEP_TRUE@	$(DEPDIR)/NOX_Status_RelUpdate.Po \
-@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po $(DEPDIR)/NOX_Utils.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po \
-@AMDEP_TRUE@	$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po
+@AMDEP_TRUE@	$(DEPDIR)/NOX_Status_Test.Po $(DEPDIR)/NOX_Utils.Po
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 CXXFLAGS = @CXXFLAGS@
-DIST_SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
+DIST_SOURCES = $(libnox_a_SOURCES)
 HEADERS = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS)
 
 DIST_COMMON = $(pkgexecinclude_HEADERS) $(pkginclude_HEADERS) \
 	./stamp-h.in Makefile.am Makefile.in NOX_Config.h.in
-SOURCES = $(libnox_a_SOURCES) $(libnoxepetra_a_SOURCES)
+SOURCES = $(libnox_a_SOURCES)
 
 all: NOX_Config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
@@ -463,6 +420,7 @@ NOX_Solver_Manager.$(OBJEXT): $(srcdir)/NOX_Solver_Manager.C
 NOX_Solver_LineSearch.$(OBJEXT): $(srcdir)/NOX_Solver_LineSearch.C
 NOX_Solver_TrustRegion.$(OBJEXT): $(srcdir)/NOX_Solver_TrustRegion.C
 NOX_Solver_NonlinearCG.$(OBJEXT): $(srcdir)/NOX_Solver_NonlinearCG.C
+NOX_Solver_LOCA.$(OBJEXT): $(srcdir)/NOX_Solver_LOCA.C
 NOX_Status_Test.$(OBJEXT): $(srcdir)/NOX_Status_Test.C
 NOX_Status_AbsResid.$(OBJEXT): $(srcdir)/NOX_Status_AbsResid.C
 NOX_Status_Combo.$(OBJEXT): $(srcdir)/NOX_Status_Combo.C
@@ -475,19 +433,6 @@ libnox.a: $(libnox_a_OBJECTS) $(libnox_a_DEPENDENCIES)
 	-rm -f libnox.a
 	$(libnox_a_AR) libnox.a $(libnox_a_OBJECTS) $(libnox_a_LIBADD)
 	$(RANLIB) libnox.a
-libnoxepetra_a-NOX_Epetra_Vector.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_Vector.C
-libnoxepetra_a-NOX_Epetra_Group.$(OBJEXT): $(srcdir)/NOX_Epetra_Group.C
-libnoxepetra_a-NOX_Epetra_SharedJacobian.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_SharedJacobian.C
-libnoxepetra_a-NOX_Epetra_MatrixFree.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_MatrixFree.C
-libnoxepetra_a-NOX_Epetra_FiniteDifference.$(OBJEXT): \
-	$(srcdir)/NOX_Epetra_FiniteDifference.C
-libnoxepetra.a: $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_DEPENDENCIES) 
-	-rm -f libnoxepetra.a
-	$(libnoxepetra_a_AR) libnoxepetra.a $(libnoxepetra_a_OBJECTS) $(libnoxepetra_a_LIBADD)
-	$(RANLIB) libnoxepetra.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT) core *.core
@@ -505,6 +450,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Linesearch_Polynomial.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_Entry.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Parameter_List.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LOCA.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_LineSearch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_Manager.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Solver_NonlinearCG.Po@am__quote@
@@ -517,11 +463,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_RelUpdate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Status_Test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/NOX_Utils.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po@am__quote@
 
 distclean-depend:
 	-rm -rf $(DEPDIR)
@@ -706,6 +647,18 @@ NOX_Solver_NonlinearCG.obj: $(srcdir)/NOX_Solver_NonlinearCG.C
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_NonlinearCG.obj `cygpath -w $(srcdir)/NOX_Solver_NonlinearCG.C`
 
+NOX_Solver_LOCA.o: $(srcdir)/NOX_Solver_LOCA.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_LOCA.C' object='NOX_Solver_LOCA.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_LOCA.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_LOCA.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_LOCA.o `test -f $(srcdir)/NOX_Solver_LOCA.C || echo '$(srcdir)/'`$(srcdir)/NOX_Solver_LOCA.C
+
+NOX_Solver_LOCA.obj: $(srcdir)/NOX_Solver_LOCA.C
+@AMDEP_TRUE@	source='$(srcdir)/NOX_Solver_LOCA.C' object='NOX_Solver_LOCA.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Solver_LOCA.Po' tmpdepfile='$(DEPDIR)/NOX_Solver_LOCA.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Solver_LOCA.obj `cygpath -w $(srcdir)/NOX_Solver_LOCA.C`
+
 NOX_Status_Test.o: $(srcdir)/NOX_Status_Test.C
 @AMDEP_TRUE@	source='$(srcdir)/NOX_Status_Test.C' object='NOX_Status_Test.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Status_Test.Po' tmpdepfile='$(DEPDIR)/NOX_Status_Test.TPo' @AMDEPBACKSLASH@
@@ -801,66 +754,6 @@ NOX_Utils.obj: $(srcdir)/NOX_Utils.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/NOX_Utils.Po' tmpdepfile='$(DEPDIR)/NOX_Utils.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NOX_Utils.obj `cygpath -w $(srcdir)/NOX_Utils.C`
-
-libnoxepetra_a-NOX_Epetra_Vector.o: $(srcdir)/NOX_Epetra_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Vector.C' object='libnoxepetra_a-NOX_Epetra_Vector.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Vector.o `test -f $(srcdir)/NOX_Epetra_Vector.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Vector.C
-
-libnoxepetra_a-NOX_Epetra_Vector.obj: $(srcdir)/NOX_Epetra_Vector.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Vector.C' object='libnoxepetra_a-NOX_Epetra_Vector.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Vector.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Vector.obj `cygpath -w $(srcdir)/NOX_Epetra_Vector.C`
-
-libnoxepetra_a-NOX_Epetra_Group.o: $(srcdir)/NOX_Epetra_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Group.C' object='libnoxepetra_a-NOX_Epetra_Group.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Group.o `test -f $(srcdir)/NOX_Epetra_Group.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_Group.C
-
-libnoxepetra_a-NOX_Epetra_Group.obj: $(srcdir)/NOX_Epetra_Group.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_Group.C' object='libnoxepetra_a-NOX_Epetra_Group.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_Group.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_Group.obj `cygpath -w $(srcdir)/NOX_Epetra_Group.C`
-
-libnoxepetra_a-NOX_Epetra_SharedJacobian.o: $(srcdir)/NOX_Epetra_SharedJacobian.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_SharedJacobian.C' object='libnoxepetra_a-NOX_Epetra_SharedJacobian.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.o `test -f $(srcdir)/NOX_Epetra_SharedJacobian.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_SharedJacobian.C
-
-libnoxepetra_a-NOX_Epetra_SharedJacobian.obj: $(srcdir)/NOX_Epetra_SharedJacobian.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_SharedJacobian.C' object='libnoxepetra_a-NOX_Epetra_SharedJacobian.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_SharedJacobian.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_SharedJacobian.obj `cygpath -w $(srcdir)/NOX_Epetra_SharedJacobian.C`
-
-libnoxepetra_a-NOX_Epetra_MatrixFree.o: $(srcdir)/NOX_Epetra_MatrixFree.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MatrixFree.C' object='libnoxepetra_a-NOX_Epetra_MatrixFree.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MatrixFree.o `test -f $(srcdir)/NOX_Epetra_MatrixFree.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_MatrixFree.C
-
-libnoxepetra_a-NOX_Epetra_MatrixFree.obj: $(srcdir)/NOX_Epetra_MatrixFree.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_MatrixFree.C' object='libnoxepetra_a-NOX_Epetra_MatrixFree.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_MatrixFree.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_MatrixFree.obj `cygpath -w $(srcdir)/NOX_Epetra_MatrixFree.C`
-
-libnoxepetra_a-NOX_Epetra_FiniteDifference.o: $(srcdir)/NOX_Epetra_FiniteDifference.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifference.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifference.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.o `test -f $(srcdir)/NOX_Epetra_FiniteDifference.C || echo '$(srcdir)/'`$(srcdir)/NOX_Epetra_FiniteDifference.C
-
-libnoxepetra_a-NOX_Epetra_FiniteDifference.obj: $(srcdir)/NOX_Epetra_FiniteDifference.C
-@AMDEP_TRUE@	source='$(srcdir)/NOX_Epetra_FiniteDifference.C' object='libnoxepetra_a-NOX_Epetra_FiniteDifference.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@	depfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.Po' tmpdepfile='$(DEPDIR)/libnoxepetra_a-NOX_Epetra_FiniteDifference.TPo' @AMDEPBACKSLASH@
-@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libnoxepetra_a_CXXFLAGS) $(CXXFLAGS) -c -o libnoxepetra_a-NOX_Epetra_FiniteDifference.obj `cygpath -w $(srcdir)/NOX_Epetra_FiniteDifference.C`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 install-pkgexecincludeHEADERS: $(pkgexecinclude_HEADERS)
