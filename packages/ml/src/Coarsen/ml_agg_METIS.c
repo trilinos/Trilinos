@@ -738,10 +738,10 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   
   /* ------------------- that's all folks --------------------------------- */
 
-  ML_free( xadj2 ) ;
-  ML_free( adjncy2 );
-  ML_free( perm );
-  ML_free( iperm );
+  (void)free( (void *)xadj2 ) ;
+  (void)free( (void *) adjncy2 );
+  (void)free( (void *) perm );
+  (void)free( (void *) iperm );
 
   t0 = GetClock() - t0;
 
@@ -914,7 +914,6 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   }
 
   *total_nz = count;
-  /* FIXME: I don't understand any more.. */
   if( ML_Aggregate_Get_UseDropping() == ML_NO ) {
     if( temp == 0 ) {
       fprintf( stderr, "Something wrong here...\n" );
@@ -1197,7 +1196,7 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
     ML_Compute_AggregateGraphRadius( NrowsMETIS, xadj, adjncy, dep,
 				     radius, &NcenterNodes );
     
-    ML_free( dep );
+    (void)free( (void *)dep );
     
   }
 
@@ -1207,13 +1206,13 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   rowi_col = NULL; rowi_val = NULL;
   allocated = 0; 
 
-  if( options != NULL ) ML_free( options );
-  if( wgtflag != NULL ) ML_free( wgtflag );
-  if( adjncy != NULL  ) ML_free( adjncy  );
-  if( xadj != NULL    ) ML_free( xadj    );
-  if( part != NULL    ) ML_free( part    );
-  if( perm != NULL    ) ML_free( perm    );
-  if( nodes_per_aggre != NULL ) ML_free( nodes_per_aggre );
+  if( options != NULL ) (void)free( (void *)options );
+  if( wgtflag != NULL ) (void)free( (void *)wgtflag );
+  if( adjncy != NULL  ) (void)free( (void *)adjncy  );
+  if( xadj != NULL    ) (void)free( (void *)xadj    );
+  if( part != NULL    ) (void)free( (void *)part    );
+  if( perm != NULL    ) (void)free( (void *)perm    );
+  if( nodes_per_aggre != NULL ) (void)free( (void *)nodes_per_aggre );
   
   t0 = GetClock() - t0;
 
