@@ -161,25 +161,24 @@ AC_ARG_ENABLE(mpi,
 AC_ARG_WITH(mpi-cxx,
 [AC_HELP_STRING([--with-mpi-cxx],[use MPI C++ compiler (enables MPI) @<:@mpiCC@:>@])],
 [
-HAVE_PKG_MPI=yes 
-if test X${withval} = Xyes; then
-  MPI_CXX=mpiCC
-else
-  MPI_CXX=${withval}
-fi
-AC_MSG_CHECKING(user-defined MPI C++ compiler)
-AC_MSG_RESULT([${MPI_CXX}])
+  HAVE_PKG_MPI=yes 
+  if test X${withval} = Xyes; then
+    MPI_CXX=mpiCC
+  else
+    MPI_CXX=${withval}
+  fi
+  AC_MSG_CHECKING(user-defined MPI C++ compiler)
+  AC_MSG_RESULT([${MPI_CXX}])
 ]
 )
-
 
 AC_ARG_WITH(mpi,
 [AC_HELP_STRING([--with-mpi=MPIROOT],[use MPI root directory (enables MPI)])],
 [
-HAVE_PKG_MPI=yes
-MPI_DIR=${withval}
-AC_MSG_CHECKING(MPI directory)
-AC_MSG_RESULT([${MPI_DIR}])
+  HAVE_PKG_MPI=yes
+  MPI_DIR=${withval}
+  AC_MSG_CHECKING(MPI directory)
+  AC_MSG_RESULT([${MPI_DIR}])
 ]
 )
 
@@ -187,9 +186,9 @@ AC_MSG_RESULT([${MPI_DIR}])
 AC_ARG_WITH(mpi-libs,
 [AC_HELP_STRING([--with-mpi-libs="LIBS"],[MPI libraries @<:@"-lmpi"@:>@])],
 [
-MPI_LIBS=${withval}
-AC_MSG_CHECKING(user-defined MPI libraries)
-AC_MSG_RESULT([${MPI_LIBS}])
+  MPI_LIBS=${withval}
+  AC_MSG_CHECKING(user-defined MPI libraries)
+  AC_MSG_RESULT([${MPI_LIBS}])
 ]
 )
 
@@ -197,9 +196,9 @@ AC_MSG_RESULT([${MPI_LIBS}])
 AC_ARG_WITH(mpi-incdir,
 [AC_HELP_STRING([--with-mpi-incdir=DIR],[MPI include directory @<:@MPIROOT/include@:>@])],
 [
-MPI_INC=${withval}
-AC_MSG_CHECKING(user-defined MPI includes)
-AC_MSG_RESULT([${MPI_INC}])
+  MPI_INC=${withval}
+  AC_MSG_CHECKING(user-defined MPI includes)
+  AC_MSG_RESULT([${MPI_INC}])
 ]
 )
 
@@ -207,9 +206,9 @@ AC_MSG_RESULT([${MPI_INC}])
 AC_ARG_WITH(mpi-libdir,
 [AC_HELP_STRING([--with-mpi-libdir=DIR],[MPI library directory @<:@MPIROOT/lib@:>@])],
 [
-MPI_LIBDIR=${withval}
-AC_MSG_CHECKING(user-defined MPI library directory)
-AC_MSG_RESULT([${MPI_LIBDIR}])
+  MPI_LIBDIR=${withval}
+  AC_MSG_CHECKING(user-defined MPI library directory)
+  AC_MSG_RESULT([${MPI_LIBDIR}])
 ]
 )
 
@@ -441,13 +440,15 @@ if test "X${HAVE_PKG_MPI}" = "Xyes"; then
      AC_MSG_RESULT(yes)
      AC_DEFINE(HAVE_MPI,,[define that mpi is being used])
     ], 
-    [AC_MSG_RESULT(no)  
+    [
+     AC_MSG_RESULT(no)  
      echo "---"
      echo "Cannot find header file mpi.h."
      echo "Either compile without mpi (no --with-mpi directives)"
      echo "or specify --with-mpi-incdir=<dir>."
      echo "---"
-     AC_MSG_ERROR(cannot find mpi.h)]
+     AC_MSG_ERROR(cannot find mpi.h)
+    ]
   )
 
 fi
@@ -554,49 +555,260 @@ AC_TRY_COMPILE(
 )
 
 # ------------------------------------------------------------------------
-# Request compilation of LAPACK support library
+# Check for MPI library
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(lapack,
-[AC_HELP_STRING([--enable-lapack],[compile noxlapack library])],
-[BUILD_LIBNOXLAPACK=$enableval],
-[BUILD_LIBNOXLAPACK=no]
+if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
+
+  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
+    MPI_LIBDIR="${MPI_DIR}/lib"
+  fi
+
+  if test -n "${MPI_LIBDIR}"; then
+    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
+  fi
+
+  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
+    MPI_LIBS="-lmpi"
+  fi
+
+  if test -n "${MPI_LIBS}"; then
+    LIBS="${MPI_LIBS} ${LIBS}"
+  fi
+
+  AC_LANG_CPLUSPLUS 
+  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
+  AC_TRY_LINK([#include <mpi.h>],
+  [int c; char** v; MPI_Init(&c,&v);],
+  [AC_MSG_RESULT(yes)], 
+  [AC_MSG_RESULT(no)  
+   echo "-----"
+   echo "Cannot link simple MPI program."
+   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
+   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
+   echo "to specify all the specific MPI compile options."
+   echo "-----"
+   AC_MSG_ERROR(MPI cannot link)]
+  )
+
+fi
+
+# ------------------------------------------------------------------------
+# Which Add-Ons To Build
+# ------------------------------------------------------------------------
+
+BUILD_ANY_EXAMPLES=no
+AC_DEFUN(NOX_INTERFACE,
+[
+  
+  AC_ARG_ENABLE(nox$1,
+  [AC_HELP_STRING([--enable-nox-$1],[compile $1 interace libraries])],
+  [ADDON_$1=$enableval],
+  [ADDON_$1=no]
+  )
+  
+  AC_ARG_ENABLE(nox$1-examples,
+  [AC_HELP_STRING([--enable-nox-$1-examples],[compile $1 interface examples])],
+  [ADDON_$1_EXAMPLES=${enableval}],
+  [ADDON_$1_EXAMPLES=no]
+  )
+
+  # Cannot build the examples if we don't build the library
+  if test ${ADDON_$1_EXAMPLES} = yes; then
+     BUILD_ANY_EXAMPLES=yes
+     ADDON_$1=yes;
+  fi
+
+  AC_MSG_CHECKING(whether we should build the $1 interface libraries)
+  AC_MSG_RESULT(${ADDON_$1})
+
+  AC_MSG_CHECKING(whether we should build the $1 interface examples)
+  AC_MSG_RESULT(${ADDON_$1_EXAMPLES})
+
+])
+
+
+# ------------------------------------------------------------------------
+# NOX-LAPACK library?
+# ------------------------------------------------------------------------
+
+NOX_INTERFACE(lapack)
+AM_CONDITIONAL(BUILD_LIBNOXLAPACK, test X${ADDON_lapack} = Xyes)
+AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${ADDON_lapack_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
+# NOX-Epetra library?
+# ------------------------------------------------------------------------
+
+NOX_INTERFACE(epetra)
+AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${ADDON_epetra} = Xyes)
+AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${ADDON_epetra_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
+# NOX-PETSC
+# ------------------------------------------------------------------------
+
+NOX_INTERFACE(petsc)
+AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${ADDON_petsc} = Xyes)
+AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${ADDON_petsc_EXAMPLES} = Xyes)
+
+# ------------------------------------------------------------------------
+# LOCA Library Check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca,
+[AC_HELP_STRING([--enable-loca],[compile the loca library])],
+[BUILD_LIBLOCA=${enableval}],
+[BUILD_LIBLOCA=no]
 )
+AC_MSG_CHECKING(whether we should build the loca library)
+AC_MSG_RESULT([${BUILD_LIBLOCA}])
+AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 
-AC_MSG_CHECKING(whether we should build the noxlapack library)
-AC_MSG_RESULT(${BUILD_LIBNOXLAPACK})
 
 # ------------------------------------------------------------------------
-# Request compilation of Epetra support library
+# LOCA-BLAS Library Check
 # ------------------------------------------------------------------------
 
-AC_ARG_ENABLE(epetra,
-[AC_HELP_STRING([--enable-epetra],[compile noxepetra library])],
-[BUILD_LIBNOXEPETRA=$enableval],
-[BUILD_LIBNOXEPETRA=no]
-)
+dnl AC_ARG_ENABLE(loca-blas,
+dnl [AC_HELP_STRING([--enable-loca-blas],[compile the locablas library])],
+dnl [BUILD_LIBLOCABLAS=${enableval}],
+dnl [BUILD_LIBLOCABLAS=no]
+dnl )
 
-AC_MSG_CHECKING(whether we should build the noxepetra library)
-AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
+dnl # Cannot build the locablas library if we don't build the loca library
+dnl if test X${BUILD_LIBLOCA} != Xyes; then
+dnl    BUILD_LIBLOCABLAS=no
+dnl fi
+
+dnl AC_MSG_CHECKING(whether we should build the locablas library)
+dnl AC_MSG_RESULT([${BUILD_LIBLOCABLAS}])
+dnl AM_CONDITIONAL(BUILD_LIBLOCABLAS, test X${BUILD_LIBLOCABLAS} = Xyes)
+
+AC_MSG_CHECKING(whether we should build the localapack library)
+if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_lapack} = Xyes; then
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_LIBLOCABLAS, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_LIBLOCABLAS, false)
+fi
 
 # ------------------------------------------------------------------------
-# Request compilation of Petsc support library
+# Checks for building loca blas examples 
 # ------------------------------------------------------------------------
 
+dnl AC_ARG_ENABLE(loca-blas-examples,
+dnl [AC_HELP_STRING([--enable-loca-blas-examples],[compile loca blas examples])],
+dnl [BUILD_LOCA_BLAS_EXAMPLES=${enableval}],
+dnl [BUILD_LOCA_BLAS_EXAMPLES=no]
+dnl )
 
-AC_ARG_ENABLE(petsc,
-[AC_HELP_STRING([--enable-petsc],[compile noxpetsc library])],
-[BUILD_LIBNOXPETSC=$enableval],
-[BUILD_LIBNOXPETSC=no]
-)
+dnl # Cannot build the blas examples if we don't build the loca-blas libraries
+dnl if test X${BUILD_LIBLOCABLAS} != Xyes; then
+dnl    BUILD_LOCA_BLAS_EXAMPLES=no
+dnl fi
 
-AC_MSG_CHECKING(whether we should build the noxpetsc library)
-AC_MSG_RESULT(${BUILD_LIBNOXPETSC})
+dnl AC_MSG_CHECKING(whether we should build the locablas examples)
+dnl AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
+dnl AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, test X${BUILD_LOCA_BLAS_EXAMPLES} = Xyes)
+
+
+AC_MSG_CHECKING(whether we should build the loca-lapack examples)
+if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_lapack_EXAMPLES} = Xyes; then
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, false)
+fi
+
+# ------------------------------------------------------------------------
+# LOCA-Epetra Library Check
+# ------------------------------------------------------------------------
+
+dnl AC_ARG_ENABLE(loca-epetra,
+dnl [AC_HELP_STRING([--enable-loca-epetra],[compile the locaepetra library])],
+dnl [BUILD_LIBLOCAEPETRA=${enableval}],
+dnl [BUILD_LIBLOCAEPETRA=no]
+dnl )
+
+dnl # Cannot build the locaepetra library if we don't build the loca library
+dnl if test X${BUILD_LIBLOCA} != Xyes; then
+dnl    BUILD_LIBLOCAEPETRA=no
+dnl fi
+
+AC_MSG_CHECKING(whether we should build the locaepetra library)
+if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra} = Xyes; then
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, false)
+fi
+
+# ------------------------------------------------------------------------
+# Checks for building loca epetra examples 
+# ------------------------------------------------------------------------
+
+dnl AC_ARG_ENABLE(loca-epetra-examples,
+dnl [AC_HELP_STRING([--enable-loca-epetra-examples],[compile loca epetra examples])],
+dnl [BUILD_LOCA_EPETRA_EXAMPLES=${enableval}],
+dnl [BUILD_LOCA_EPETRA_EXAMPLES=no]
+dnl )
+
+dnl # Cannot build the epetra example if we don't build the epetra libraries
+dnl if test X${BUILD_LIBNOXEPETRA} != Xyes; then
+dnl    BUILD_LOCA_EPETRA_EXAMPLES=no
+dnl fi
+dnl if test X${BUILD_LIBLOCAEPETRA} != Xyes; then
+dnl    BUILD_LOCA_EPETRA_EXAMPLES=no
+dnl fi
+
+dnl AC_MSG_CHECKING(whether we should build the locaepetra examples)
+dnl AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
+dnl AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes)
+
+AC_MSG_CHECKING(whether we should build the loca-epetra examples)
+if test X${BUILD_LIBLOCA} = Xyes && test X${ADDON_epetra_EXAMPLES} = Xyes; then
+  AC_MSG_RESULT(yes)
+  AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, true)
+else
+  AC_MSG_RESULT(no)
+  AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, false)
+fi
+
+# ------------------------------------------------------------------------
+# Checks for basic libraries for examples and/or lapack support
+# ------------------------------------------------------------------------
+
+if test ${BUILD_ANY_EXAMPLES} = yes; then
+
+  AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
+  AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+
+  dnl Checks for libraries.
+  AC_F77_LIBRARY_LDFLAGS
+  LIBS=" ${FLIBS} ${LIBS}"
+
+  # Define F77_FUNC - used for correctly munging Fortran function calls
+  AC_F77_WRAPPERS
+
+  # Find valid BLAS
+  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
+
+  # Find valid LAPACK
+  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
+
+fi
 
 # ------------------------------------------------------------------------
 # Trilinos include file check for building noxepetra library
 # ------------------------------------------------------------------------
 
+AC_ARG_WITH(trilinos,
+[AC_HELP_STRING([--with-trilinos],[building inside Trilinos directory structure])],
+[INSIDE_TRILINOS=$withval])
 
 AC_ARG_WITH(epetra-incdir,
 [AC_HELP_STRING([--with-epetra-incdir],[specify location of all epetra header files])],
@@ -689,7 +901,7 @@ AC_DEFUN(TRILINOS_HEADER,
   fi 
 ])
 
-if test X${BUILD_LIBNOXEPETRA} = Xyes; then
+if test X${ADDON_epetra} = Xyes; then
 
   # We have to check for the standard Trilinos headers as well as
   # those created by configure.
@@ -700,279 +912,11 @@ if test X${BUILD_LIBNOXEPETRA} = Xyes; then
   TRILINOS_HEADER(ifpack,Ifpack_config.h)
   TRILINOS_HEADER(ifpack,Ifpack_CrsRiluk.h)
 
-  # Not sure if we still need this!?!
-  if test "X${HAVE_PKG_MPI}" = "Xyes"; then
-    TRILINOS_COMM="MPI"
-  else
-    TRILINOS_COMM="SERIAL"
-  fi
-
-  TRILINOS_CXXFLAGS="-DEPETRA_${TRILINOS_COMM} ${REL_TRILINOS_CPPFLAGS}"
+  TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
 fi
 
 AC_SUBST(TRILINOS_CXXFLAGS)
-
-# ------------------------------------------------------------------------
-# Petsc include file check for building noxpetsc library
-# ------------------------------------------------------------------------
-
-
-AC_ARG_WITH(petsc-incdir,
-[  --with-petsc-incdir     specify location of PETSc header files],
-[petsc_INC=$withval])
-
-
-AC_DEFUN(PETSC_INCLUDE_CHECK,
-[
-  AC_MSG_CHECKING(for $1 include directory)
-  if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/$2; then
-    $1_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${PETSC_DIR}/bmake/common/$2; then
-    $1_INC=${PETSC_DIR}/bmake/common
-    AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${PETSC_DIR}/include/$2; then
-    $1_INC=${PETSC_DIR}/include
-    AC_MSG_RESULT([${$1_INC}])
-  else
-    AC_MSG_RESULT(no)
-    AC_MSG_ERROR([Cannot find $1 include directory containing $2. Make sure PETSC_DIR and PETSC_ARCH are defined.])
-  fi
-
-])
-
-if test X${BUILD_LIBNOXPETSC} = Xyes; then
-
-  PETSC_INCLUDE_CHECK(petsc,petsc.h)
-  PETSC_INCLUDE_CHECK(petsccommon,base)
-  PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
-
-  PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
-
-  AC_SUBST(PETSC_CXXFLAGS)
-
-fi
-
-# ------------------------------------------------------------------------
-# LOCA Library Check
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca,
-[AC_HELP_STRING([--enable-loca],[compile the loca library])],
-[BUILD_LIBLOCA=${enableval}],
-[BUILD_LIBLOCA=no]
-)
-AC_MSG_CHECKING(whether we should build the loca library)
-AC_MSG_RESULT([${BUILD_LIBLOCA}])
-AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
-
-# ------------------------------------------------------------------------
-# LOCA-Epetra Library Check
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca-epetra,
-[AC_HELP_STRING([--enable-loca-epetra],[compile the locaepetra library])],
-[BUILD_LIBLOCAEPETRA=${enableval}],
-[BUILD_LIBLOCAEPETRA=no]
-)
-
-# Cannot build the locaepetra library if we don't build the loca library
-if test X${BUILD_LIBLOCA} != Xyes; then
-   BUILD_LIBLOCAEPETRA=no
-fi
-
-AC_MSG_CHECKING(whether we should build the locaepetra library)
-AC_MSG_RESULT([${BUILD_LIBLOCAEPETRA}])
-AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
-
-# ------------------------------------------------------------------------
-# LOCA-BLAS Library Check
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca-blas,
-[AC_HELP_STRING([--enable-loca-blas],[compile the locablas library])],
-[BUILD_LIBLOCABLAS=${enableval}],
-[BUILD_LIBLOCABLAS=no]
-)
-
-# Cannot build the locablas library if we don't build the loca library
-if test X${BUILD_LIBLOCA} != Xyes; then
-   BUILD_LIBLOCABLAS=no
-fi
-
-AC_MSG_CHECKING(whether we should build the locablas library)
-AC_MSG_RESULT([${BUILD_LIBLOCABLAS}])
-AM_CONDITIONAL(BUILD_LIBLOCABLAS, test X${BUILD_LIBLOCABLAS} = Xyes)
-
-# ------------------------------------------------------------------------
-# Checks for building lapack examples
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(lapack-examples,
-[AC_HELP_STRING([--enable-lapack-examples],[compile lapack examples])],
-[BUILD_LAPACK_EXAMPLES=${enableval}],
-[BUILD_LAPACK_EXAMPLES=no]
-)
-
-# Cannot build the examples if we don't build the library
-if test X${BUILD_LIBNOXLAPACK} != Xyes; then
-   BUILD_LAPACK_EXAMPLES=no
-fi
-
-AC_MSG_CHECKING(whether we should build the lapack examples)
-AC_MSG_RESULT(${BUILD_LAPACK_EXAMPLES})
-
-# ------------------------------------------------------------------------
-# Checks for building epetra examples
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(epetra-examples,
-[AC_HELP_STRING([--enable-epetra-examples],[compile epetra examples])],
-[BUILD_EPETRA_EXAMPLES=${enableval}],
-[BUILD_EPETRA_EXAMPLES=no]
-)
-
-# Cannot build the example if we don't build the library
-if test X${BUILD_LIBNOXEPETRA} != Xyes; then
-   BUILD_EPETRA_EXAMPLES=no
-fi
-
-AC_MSG_CHECKING(whether we should build the noxepetra examples)
-AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
-
-# ------------------------------------------------------------------------
-# Checks for building petsc examples
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(petsc-examples,
-[AC_HELP_STRING([--enable-petsc-examples],[compile petsc examples])],
-[BUILD_PETSC_EXAMPLES=${enableval}],
-[BUILD_PETSC_EXAMPLES=no]
-)
-
-# Cannot build the example if we don't build the library
-if test X${BUILD_LIBNOXPETSC} != Xyes; then
-   BUILD_PETSC_EXAMPLES=no
-fi
-
-AC_MSG_CHECKING(whether we should build the noxpetsc examples)
-AC_MSG_RESULT(${BUILD_PETSC_EXAMPLES})
-
-# ------------------------------------------------------------------------
-# Checks for building loca epetra examples 
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca-epetra-examples,
-[AC_HELP_STRING([--enable-loca-epetra-examples],[compile loca epetra examples])],
-[BUILD_LOCA_EPETRA_EXAMPLES=${enableval}],
-[BUILD_LOCA_EPETRA_EXAMPLES=no]
-)
-
-# Cannot build the epetra example if we don't build the epetra libraries
-if test X${BUILD_LIBNOXEPETRA} != Xyes; then
-   BUILD_LOCA_EPETRA_EXAMPLES=no
-fi
-if test X${BUILD_LIBLOCAEPETRA} != Xyes; then
-   BUILD_LOCA_EPETRA_EXAMPLES=no
-fi
-
-AC_MSG_CHECKING(whether we should build the locaepetra examples)
-AC_MSG_RESULT(${BUILD_LOCA_EPETRA_EXAMPLES})
-
-# ------------------------------------------------------------------------
-# Checks for building loca blas examples 
-# ------------------------------------------------------------------------
-
-AC_ARG_ENABLE(loca-blas-examples,
-[AC_HELP_STRING([--enable-loca-blas-examples],[compile loca blas examples])],
-[BUILD_LOCA_BLAS_EXAMPLES=${enableval}],
-[BUILD_LOCA_BLAS_EXAMPLES=no]
-)
-
-# Cannot build the blas examples if we don't build the loca-blas libraries
-if test X${BUILD_LIBLOCABLAS} != Xyes; then
-   BUILD_LOCA_BLAS_EXAMPLES=no
-fi
-
-AC_MSG_CHECKING(whether we should build the locablas examples)
-AC_MSG_RESULT(${BUILD_LOCA_BLAS_EXAMPLES})
-
-# ------------------------------------------------------------------------
-# Checks for basic libraries for examples and/or lapack support
-# ------------------------------------------------------------------------
-
-if test ${BUILD_LIBNOXLAPACK} = yes ||
-   test ${BUILD_LAPACK_EXAMPLES} = yes ||
-   test ${BUILD_EPETRA_EXAMPLES} = yes || 
-   test ${BUILD_LOCA_EPETRA_EXAMPLES} = yes || 
-   test ${BUILD_LOCA_BLAS_EXAMPLES} = yes; then
-
-  AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-  AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
-
-  dnl Checks for libraries.
-  AC_F77_LIBRARY_LDFLAGS
-  LIBS=" ${FLIBS} ${LIBS}"
-
-  # Define F77_FUNC - used for correctly munging Fortran function calls
-  AC_F77_WRAPPERS
-
-  # Find valid BLAS
-  ACX_BLAS([LIBS="${BLAS_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
-
-  # Find valid LAPACK
-  ACX_LAPACK([LIBS=" ${LAPACK_LIBS} ${LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
-
-fi
-
-# ------------------------------------------------------------------------
-# Checks for LAPACK status 
-# ------------------------------------------------------------------------
-
-AM_CONDITIONAL(BUILD_LIBNOXLAPACK, test X${BUILD_LIBNOXLAPACK} = Xyes)
-AM_CONDITIONAL(BUILD_LAPACK_EXAMPLES, test X${BUILD_LAPACK_EXAMPLES} = Xyes)
-
-# ------------------------------------------------------------------------
-# Check for MPI library
-# ------------------------------------------------------------------------
-
-if test "X${HAVE_PKG_MPI}" = "Xyes" && test X${BUILD_EPETRA_EXAMPLES} = Xyes; then
-
-  if test -n "${MPI_DIR}" && test -z "${MPI_LIBDIR}"; then
-    MPI_LIBDIR="${MPI_DIR}/lib"
-  fi
-
-  if test -n "${MPI_LIBDIR}"; then
-    LDFLAGS="${LDFLAGS} -L${MPI_LIBDIR}"
-  fi
-
-  if test -z "${MPI_LIBS}" && test -n "${MPI_LIBDIR}"; then
-    MPI_LIBS="-lmpi"
-  fi
-
-  if test -n "${MPI_LIBS}"; then
-    LIBS="${MPI_LIBS} ${LIBS}"
-  fi
-
-  AC_LANG_CPLUSPLUS 
-  AC_MSG_CHECKING(whether MPI will link using C++ compiler)
-  AC_TRY_LINK([#include <mpi.h>],
-  [int c; char** v; MPI_Init(&c,&v);],
-  [AC_MSG_RESULT(yes)], 
-  [AC_MSG_RESULT(no)  
-   echo "-----"
-   echo "Cannot link simple MPI program."
-   echo "Try --with-mpi-cxx to specify MPI C++ compile script."
-   echo "Or try --with-mpi-libs, --with-mpi-incdir, --with-mpi-libdir"
-   echo "to specify all the specific MPI compile options."
-   echo "-----"
-   AC_MSG_ERROR(MPI cannot link)]
-  )
-
-fi
 
 # ------------------------------------------------------------------------
 # Checks for Trilinos libraries
@@ -984,10 +928,20 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
   save_LDFLAGS=$LDFLAGS
   done=no
 
-  # First, see if we can link without doing anything
-  AC_LANG_CPLUSPLUS
-  AC_TRY_LINK(,,[done=yes],)
-  LDFLAGS=$save_LDFLAGS
+  # First, see if we're inside Trilinos. 
+  # If so, just assume the libraries will be built later. 
+  if test X$INSIDE_TRILINOS = Xyes; then
+    PWD=`pwd`
+    LDFLAGS="-L$PWD/../$1/src $save_LDFLAGS"
+    done=auto
+  fi
+
+  # Next, see if we can link without doing anything
+  if test $done = no; then
+    AC_LANG_CPLUSPLUS
+    AC_TRY_LINK(,,[done=yes],)
+    LDFLAGS=$save_LDFLAGS
+  fi
 
   # Next try the specified libdir (if any)
    if test $done = no && test -n ${$1_LIBDIR}; then
@@ -1004,7 +958,9 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
   AC_MSG_CHECKING([for $1 library])
   
-  if test $done = yes; then
+  if test $done = auto; then
+    AC_MSG_RESULT(no check - assuming library will be built by Trilinos)
+  elif test $done = yes; then
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -1018,7 +974,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
 
 ])
 
-if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
+if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes; then
 
   # Find the dreaded y12 library
   LIBS="-ly12m ${LIBS}"
@@ -1065,11 +1021,47 @@ if test X${BUILD_EPETRA_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
 fi
 
 # ------------------------------------------------------------------------
-# Checks for TRILINOS status 
+# Petsc include file check for building noxpetsc library
 # ------------------------------------------------------------------------
 
-AM_CONDITIONAL(BUILD_LIBNOXEPETRA, test X${BUILD_LIBNOXEPETRA} = Xyes)
-AM_CONDITIONAL(BUILD_EPETRA_EXAMPLES, test X${BUILD_EPETRA_EXAMPLES} = Xyes)
+
+AC_ARG_WITH(petsc-incdir,
+[  --with-petsc-incdir     specify location of PETSc header files],
+[petsc_INC=$withval])
+
+
+AC_DEFUN(PETSC_INCLUDE_CHECK,
+[
+  AC_MSG_CHECKING(for $1 include directory)
+  if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/$2; then
+    $1_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/bmake/common/$2; then
+    $1_INC=${PETSC_DIR}/bmake/common
+    AC_MSG_RESULT([${$1_INC}])
+  elif test -f ${PETSC_DIR}/include/$2; then
+    $1_INC=${PETSC_DIR}/include
+    AC_MSG_RESULT([${$1_INC}])
+  else
+    AC_MSG_RESULT(no)
+    AC_MSG_ERROR([Cannot find $1 include directory containing $2. Make sure PETSC_DIR and PETSC_ARCH are defined.])
+  fi
+
+])
+
+if test X${ADDON_petsc} = Xyes; then
+
+  PETSC_INCLUDE_CHECK(petsc,petsc.h)
+  PETSC_INCLUDE_CHECK(petsccommon,base)
+  PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
+
+  PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+
+  AC_SUBST(PETSC_CXXFLAGS)
+
+fi
 
 # ------------------------------------------------------------------------
 # Checks for Petsc libraries
@@ -1110,26 +1102,12 @@ AC_DEFUN(PETSC_LIB_CHECK,
     
 ])
     
-if test X${BUILD_PETSC_EXAMPLES} = Xyes; then
+if test X${ADDON_petsc_EXAMPLES} = Xyes; then
   
   # Check for petsc
   PETSC_LIB_CHECK(petsc)
 
 fi
-
-# ------------------------------------------------------------------------
-# Checks for PETSC status 
-# ------------------------------------------------------------------------
-
-AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${BUILD_LIBNOXPETSC} = Xyes)
-AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
-
-# ------------------------------------------------------------------------
-# Checks for LOCA status 
-# ------------------------------------------------------------------------
-
-AM_CONDITIONAL(BUILD_LOCA_EPETRA_EXAMPLES, test X${BUILD_LOCA_EPETRA_EXAMPLES} = Xyes)
-AM_CONDITIONAL(BUILD_LOCA_BLAS_EXAMPLES, test X${BUILD_LOCA_BLAS_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for types
