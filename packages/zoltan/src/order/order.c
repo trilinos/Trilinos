@@ -55,11 +55,15 @@ int Zoltan_Order(
  * Main user-call for ordering.
  * Input:  
  *   zz, a Zoltan structure with appropriate function pointers set.
+ *   gids, a list of global ids or enough space to store such a list
+ *   lids, a list of local ids or enough space to store such a list
  * Output: 
  *   num_gid_entries
  *   num_lid_entries
- *   gids, the ordered list of global ids
- *   lids, the ordered list of local ids
+ *   gids, a list of global ids (filled in if empty on entry)
+ *   lids, a list of local ids (filled in if empty on entry)
+ *   rank, rank[i] is the global rank of gids[i]
+ *   iperm, inverse permutation of rank
  *   order_info, a Zoltan Ordering Struct with additional info.
  * Return values:
  *   Zoltan error code.
@@ -127,13 +131,21 @@ int Zoltan_Order(
   if (opt.use_order_info == 0) order_info = NULL;
 
   /*
+   *  Check that the user has allocated space for the return args. 
+   */
+  if (!(gids && lids && rank && iperm)){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input argument is NULL. Please allocate all required arrays before calling this routine.");
+    ZOLTAN_TRACE_EXIT(zz, yo);
+    return (ZOLTAN_FATAL);
+  }
+
+  /*
    *  Find the selected method.
    */
 
   if (!strcmp(opt.method, "NONE")) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
-      printf("%s Ordering method selected == NONE; no ordering performed\n",
-              yo);
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Ordering method selected == NONE; no ordering performed\n");
 
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);

@@ -25,7 +25,7 @@
 #ifdef ZOLTAN_PARMETIS
 #include "parmetis.h"
 /* We use one METIS function that is not in parmetis.h */
-extern int METIS_NodeND();
+extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
 #else 
 typedef int idxtype; 
 #endif

@@ -258,8 +258,8 @@ int Zoltan_ParMetis_Order(
   if (strcmp(order_opt->method,"PARMETIS")==0)
     strcpy(order_opt->method,"NODEND");
 
-  /* ParMetis only computes the inverse permutation */
-  order_opt->return_args = RETURN_IPERM;
+  /* ParMetis only computes the rank vector */
+  order_opt->return_args = RETURN_RANK;
 
   /* Call ParMetis_Shared */
   return Zoltan_ParMetis_Shared(zz, NULL, &gids, &lids, NULL,
@@ -436,7 +436,6 @@ static int Zoltan_ParMetis_Jostle(
   int get_graph_data, get_geom_data, get_times; 
   idxtype *vtxdist, *xadj, *adjncy, *vwgt, *adjwgt, *part, *part2, *vsize;
   idxtype *sep_sizes;
-  int *tmp_rank;
   int tmp_num_obj, ncon, start_index, compute_order=0;
   float *float_vwgt, *ewgts, *xyz, *imb_tols, *tpwgt; 
   double geom_vec[6];
@@ -469,7 +468,7 @@ static int Zoltan_ParMetis_Jostle(
    * because we free all non-NULL pointers upon errors.
    */
   vtxdist = xadj = adjncy = vwgt = adjwgt = part = NULL;
-  vsize = sep_sizes = tmp_rank = NULL;
+  vsize = sep_sizes = NULL;
   float_vwgt = ewgts = xyz = imb_tols = tpwgt = NULL;
   local_ids = NULL;
   global_ids = NULL;
@@ -543,10 +542,7 @@ static int Zoltan_ParMetis_Jostle(
 
     /* Allocate space for separator sizes */
     sep_sizes = (idxtype *) ZOLTAN_MALLOC(2*num_proc*sizeof(idxtype));
-    /* EB: Temp hack; allocate temp rank array here if local ordering */
-    if (graph_type==LOCAL_GRAPH) 
-      tmp_rank = (int *) ZOLTAN_MALLOC(num_obj*sizeof(int));
-    if ((!sep_sizes) || (graph_type==LOCAL_GRAPH && !tmp_rank)){
+    if (!sep_sizes){
       /* Not enough memory */
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
@@ -914,8 +910,9 @@ static int Zoltan_ParMetis_Jostle(
     }
     else {
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
+      options[0] = 0;  /* Use default options for METIS. */
       METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
-        &numflag, options, part, tmp_rank, &comm);
+        &numflag, options, part, iperm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
   }
@@ -978,8 +975,9 @@ static int Zoltan_ParMetis_Jostle(
     }
     else {
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
+      options[0] = 0;  /* Use default options for METIS. */
       METIS_NodeND (&tmp_num_obj, xadj, adjncy, 
-        &numflag, options, part, tmp_rank, &comm);
+        &numflag, options, part, iperm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
     }
   }
@@ -1037,34 +1035,35 @@ static int Zoltan_ParMetis_Jostle(
  
   if (compute_order){
     /* Ordering */
-    /* ParMetis produces the inverse permutation in Zoltan terms */
+    /* ParMetis produces the rank vector in Zoltan lingo */
 
     /* Check if start_index != 0 */
     if (order_opt && order_opt->start_index)
        start_index = order_opt->start_index;
     else
        start_index = 0;
-    /* Copy from 'part' array to iperm */
-    if (iperm != NULL){
+    /* Copy from 'part' array to rank */
+    if (rank != NULL){
       for (i=0; i<num_obj; i++){
-        iperm[i] = part[i] + start_index;
+        rank[i] = part[i] + start_index;
       }
     }
     else {
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "iperm is NULL, no data returned");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, "rank is NULL, no data returned");
       ierr = ZOLTAN_WARN;
     }
-    /* If we did local ordering via METIS, then we also have the rank. */
-    if (rank && tmp_rank){
+    /* If we did local ordering via METIS, then we also have the inv. perm. */
+    /* EBEB: Assume that local ordering is not used with scatter_graph. */
+    if (graph_type == LOCAL_GRAPH){
       for (i=0; i<num_obj; i++){
-        rank[i] = tmp_rank[i] + start_index;
+        iperm[i] = iperm[i] + start_index;
       }
+      /* EBEB: Return parameter that says we have computed both return args? */
     }
 
     /* Fill in the Zoltan Order Struct */
-    /* EB: For now, discard separator info and rank */ 
+    /* EBEB: For now, discard separator info */ 
     ZOLTAN_FREE(&sep_sizes); 
-    if (tmp_rank) ZOLTAN_FREE(&tmp_rank); 
   }
   else{
     /* Partitioning */

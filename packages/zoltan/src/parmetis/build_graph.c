@@ -269,7 +269,8 @@ int Zoltan_Build_Graph(
     ptr = proc_list;
     (*xadj)[0] = 0;
     jj = 0;
-    nself = 0;      /* Number of self-edges in the graph */
+    nself = 0;       /* Number of self-edges in the graph */
+    cross_edges = 0; /* Number of edges that cross over to a different proc. */
   
     for (i=0; i< num_obj; i++){
       gid_off = i * num_gid_entries;
@@ -318,8 +319,11 @@ int Zoltan_Build_Graph(
           }
         } else {
           /* Inter-processor edge. */
+          cross_edges++;
           /* Skip this edge if local graphs have been requested. */
-          if (graph_type == GLOBAL_GRAPH){
+          if (graph_type == LOCAL_GRAPH)
+            /* do nothing */ ;
+          else {
             /* Check if we already have gid[i] in proc_list with */
             /* the same destination.                             */
             flag = 0;
@@ -378,7 +382,7 @@ int Zoltan_Build_Graph(
       }
       (*xadj)[i+1] = jj; /* NB: We do not count self-edges. */
     }
-    cross_edges = offset;
+    /* Remark: cross_edges == offset when graph_type==GLOBAL_GRAPH */
 
     ZOLTAN_FREE(&plist);
     ZOLTAN_FREE(&nbors_global);
@@ -396,14 +400,19 @@ int Zoltan_Build_Graph(
       }
     }
 
-    /* Sanity check */
-    if ((check_graph >= 1) && ((*xadj)[num_obj] + nself != num_edges)){
+    /* Sanity check for edges. */
+    k = (graph_type == GLOBAL_GRAPH ? num_edges : num_edges - cross_edges);
+    if ((check_graph >= 1) && ((*xadj)[num_obj] + nself != k)){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid input graph. "
               "Something may be wrong with your graph query functions, "
               "or perhaps you found a bug in Zoltan.\n"); 
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, "Invalid input graph.");
     }
-  
+
+    /* Set cross_edges to zero if we threw them out. */
+    if (offset==0)
+      cross_edges = 0;
+
     /* Exchange info between processors to resolve global number 
      * for objects that are off-proc.
      */
