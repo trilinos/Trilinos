@@ -7015,9 +7015,12 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
+#ifdef GREG
+if (Amat->comm->ML_mypid == 0) {
 printf("Deg %d beta %e ratio %e\n",deg,beta,widget->eig_ratio);
-
-
+fflush(stdout);
+}
+#endif
    delta = (beta - alpha)/2.;
    theta = (beta + alpha)/2.;
    s1 = theta/delta;
@@ -7351,6 +7354,7 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   double t1, t2, t3, denom, denom_real, denom_img, numer_real, numer_img, ttti, tttipn, *d1, *d2;
   int status;
   double thenorm;
+  double tmp;
 
   n = outlen/2;
   widget = (struct MLSthing *) smooth_ptr->smoother->data;
@@ -7370,8 +7374,11 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   beta_img  = 1.1*widget->beta_img;    /* frequency errors.    */
   alpha_real= beta_real/(widget->eig_ratio);
   alpha_img = beta_img;
-  printf("deg %d beta real %e img %e ratio %e\n",deg,beta_real,beta_img,widget->eig_ratio);
 
+if (Amat->comm->ML_mypid == 0) {
+  printf("deg %d beta real %e img %e ratio %e\n",deg,beta_real,beta_img,widget->eig_ratio);
+   fflush(stdout);
+}
 
   delta_real = (beta_real - alpha_real)/2.;
   delta_img = (beta_img - alpha_img)/2.;
@@ -7406,7 +7413,6 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 	if (cols[j] == i) tdiag[i] = vals[j];
       if (tdiag[i] == 0.) tdiag[i] = 1.;
     }
-    printf("after loop %d\n",n);
     free(cols); free(vals);
     blockmat->Ke_diag = tdiag;  tdiag = NULL;
   }
@@ -7431,9 +7437,14 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
     blockmat->M_diag = tdiag;  tdiag = NULL;
   }
   d2 = blockmat->M_diag;
+tmp = sqrt(ML_gdot(2*n, x, x, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+printf("x is %e\n", tmp);
 
  if (smooth_ptr->init_guess == ML_NONZERO) {
-    printf("Res is %e\n", sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm)));
+tmp = sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+printf("Res is %e\n", tmp);
    ML_Operator_Apply(Amat, 2*n, x, 2*n, pAux);
    for (i = 0; i < 2*n; i++) {
      dk[i] = rhs[i] - pAux[i];
@@ -7451,7 +7462,9 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
    }
 }
   else { 
-    printf("res is %e\n", sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm)));
+tmp = sqrt(ML_gdot(2*n, rhs, rhs, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+printf("res is %e\n", tmp);
    for (k = 1; k < n+1; k++) {
        denom_real = theta_real*d1[k-1] - theta_img*d2[k-1];
        denom_img  = theta_real*d2[k-1] + theta_img*d1[k-1];
@@ -7463,7 +7476,9 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
        x[k-1] = dk[k-1];
        x[k+n-1] = dk[k+n-1];
      }
-    printf("x is %e\n", sqrt(ML_gdot(2*n, x, x, Amat->comm)));
+tmp = sqrt(ML_gdot(2*n, x, x, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+printf("x is %e\n", tmp);
 }
 for (k = 0; k < deg-1; k++) {
  thenorm = 0.;
@@ -7480,9 +7495,6 @@ for (k = 0; k < deg-1; k++) {
    dtemp2_img  = 2*(rhokp1_img*delta_real-rhokp1_real*delta_img)*t1;
    rhok_real = rhokp1_real;
    rhok_img  = rhokp1_img;
-#ifdef out
-   fprintf(1,'%d: %e\n',k, norm(rhs-pAux));
-#endif
 
    for (i = 1; i <= n; i++) {
     ttti = dtemp1_real*dk[i-1] - dtemp1_img*dk[i+n-1];
@@ -7502,9 +7514,11 @@ thenorm += (tttipn*tttipn);
     x[i  -1] = x[i  -1] + dk[i  -1];
     x[i+n-1] = x[i+n-1] + dk[i+n-1];
    }
-   printf("%d: the norm is %20.13e\n",k,sqrt(thenorm));
+tmp = sqrt(ML_gsum_double(thenorm, Amat->comm));
+if (Amat->comm->ML_mypid == 0) 
+ printf("%d: the norm is %20.13e\n",k,tmp);
   }
- if (deg == 201) exit(1);
+if (Amat->comm->ML_mypid == 0)  fflush(stdout);
   ML_free(dk);
   ML_free(pAux);
   return 0;
