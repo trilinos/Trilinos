@@ -892,3 +892,65 @@ char * ML_memory_check(char *fmt, ... )
    return(NULL);
 #endif
 }
+
+/* returns the maximum allocatable contiguous memory, in Mbytes, using malloc() */
+int ML_MaxAllocatableSize()
+{
+  
+  size_t left_size = 1024;
+  size_t right_size = 1024*1024*1024;
+  size_t max_size;
+  void * ptr;
+  int ok = 0;
+  
+  do {
+
+    max_size = (right_size + left_size)/2;
+    
+    ptr = malloc( max_size );
+    if( ptr == 0 )  right_size = max_size;
+    else {
+      left_size = max_size;
+      free( ptr );
+    }
+
+    
+  } while( right_size - left_size > 16*1024 );
+
+  return (int)(max_size/(1024*1024));
+  
+}
+
+    
+#include "ml_utils.h" 
+/* returns the maximum allocatable memory, in Mbytes, using mallinfo() */
+int ML_MaxMemorySize()
+{ 
+  long int fragments, total_free, largest_free, total_used; 
+  static double start_time = -1.; 
+  double elapsed_time;
+  int percent;
+  
+#ifndef  ML_TFLOP 
+  struct mallinfo M; 
+  int *junk; 
+  static long unsigned int ml_total_mem = 0; 
+#endif 
+  
+#ifdef ML_TFLOP 
+  heap_info(&fragments, &total_free, &largest_free, &total_used);  
+#else
+  /* use system call to get memory used information */ 
+  
+  M = mallinfo(); 
+  fragments = M.ordblks + M.smblks + M.hblks; 
+  total_free = M.fsmblks + M.fordblks; 
+  total_used = M.hblkhd + M.usmblks + M.uordblks; 
+  //  total_free = ml_total_mem - total_used; 
+  largest_free = -1024; 
+#endif 
+  /* convert to Kbytes */ 
+  
+  return( (int)(total_used/(1024*1024)) ); 
+  
+} 
