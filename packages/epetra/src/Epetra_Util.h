@@ -25,6 +25,8 @@
 #ifndef _EPETRA_UTIL_H_
 #define _EPETRA_UTIL_H_
 #include "Epetra_Object.h"
+class Epetra_CrsMatrix;
+class Epetra_MultiVector;
 //! Epetra_Util:  The Epetra Util Wrapper Class.
 /*! The Epetra_Util class is a collection of useful functions that cut across a broad
     set of other classes.  Specifically, sorting is provided by this class.
@@ -169,6 +171,38 @@ int Epetra_Util_insert(T item, int offset, T*& list,
   list = newlist;
   return(0);
 }
+
+//! Harwell-Boeing data extraction routine
+/*! This routine will extract data from an existing Epetra_Crs Matrix, and
+    optionally from related rhs and lhs objects in a form that is compatible with
+    software that requires the Harwell-Boeing data format. The matrix must be passed
+    in, but the RHS and LHS arguments may be set to zero (either or both of them).
+    For each of the LHS or RHS arguments, if non-trivial and contain more than one vector, the
+    vectors must have strided access.  If both LHS and RHS are non-trivial, they must have the
+    same number of vectors.  If the input objects are distributed, the returned matrices will 
+    contain the local part of the matrix and vectors only.
+
+    \param A (In) Epetra_CrsMatrix.
+    \param LHS (In) Left hand side multivector.  Set to zero if none not available or needed.
+    \param RHS (In) Right hand side multivector.  Set to zero if none not available or needed.
+    \param M (Out) Local row dimension of matrix.
+    \param N (Out) Local column dimension of matrix.
+    \param nz (Out) Number of nonzero entries in matrix.
+    \param ptr (Out) Offsets into ind and val arrays pointing to start of each row's data.
+    \param ind (Out) Column indices of the matrix, in compressed form.
+    \param val (Out) Matrix values, in compressed form corresponding to the ind array.
+    \param Nrhs (Out) Number of right/left hand sides found (if any) in RHS and LHS.
+    \param rhs (Out) Fortran-style 2D array of RHS values.
+    \param ldrhs (Out) Stride between columns of rhs.
+    \param lhs (Out) Fortran-style 2D array of LHS values.
+    \param ldrhs (Out) Stride between columns of lhs.
+*/
+int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
+			      Epetra_MultiVector * RHS,
+			      int & M, int & N, int & nz, int * & ptr,
+			      int * & ind, double * & val, int & Nrhs,
+			      double * & rhs, int & ldrhs,
+			      double * & lhs, int & ldlhs);
 
 
 #endif /* _EPETRA_UTIL_H_ */

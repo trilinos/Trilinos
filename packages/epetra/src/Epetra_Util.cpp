@@ -25,6 +25,9 @@
 
 #include "Epetra_Util.h"
 #include "Epetra_Object.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_MultiVector.h"
 
 const double Epetra_Util::chopVal_ = 1.0e-15;
 
@@ -109,3 +112,54 @@ int Epetra_Util_binary_search(int item,
   return(-1);
 }
 
+//=========================================================================
+int Epetra_Util_ExtractHbData(Epetra_CrsMatrix * A, Epetra_MultiVector * LHS,
+			      Epetra_MultiVector * RHS,
+			      int & M, int & N, int & nz, int * & ptr,
+			      int * & ind, double * & val, int & Nrhs,
+			      double * & rhs, int & ldrhs,
+			      double * & lhs, int & ldlhs) {
+
+  int ierr = 0;
+  if (A==0) EPETRA_CHK_ERR(-1); // This matrix is defined
+  if (!A->IndicesAreContiguous()) { // Data must be contiguous for this to work
+    EPETRA_CHK_ERR(A->MakeDataContiguous()); // Call MakeDataContiguous() method on the matrix
+    ierr = 1; // Warn User that we changed the matrix
+  }
+  
+  M = A->NumMyRows();
+  N = A->NumMyCols();
+  nz = A->NumMyNonzeros();
+  val = (*A)[0];        // Dangerous, but cheap and effective way to access first element in 
+  
+  const Epetra_CrsGraph & Graph = A->Graph();
+  ind = Graph[0];  // list of values and indices
+  
+  Nrhs = 0; // Assume no rhs, lhs
+
+  if (RHS!=0) {
+    Nrhs = RHS->NumVectors();
+    if (Nrhs>1)
+    if (!RHS->ConstantStride()) {EPETRA_CHK_ERR(-2)}; // Must have strided vectors
+    ldrhs = RHS->Stride();
+    rhs = (*RHS)[0]; // Dangerous but effective (again)
+  }
+  if (LHS!=0) {
+    int Nlhs = LHS->NumVectors();
+    if (Nlhs!=Nrhs) {EPETRA_CHK_ERR(-3)}; // Must have same number of rhs and lhs
+    if (Nlhs>1)
+    if (!LHS->ConstantStride()) {EPETRA_CHK_ERR(-4)}; // Must have strided vectors
+  ldlhs = LHS->Stride();
+  lhs = (*LHS)[0];
+  }
+  
+  // Finally build ptr vector
+  
+  if (ptr==0) {
+    ptr = new int[M+1];
+    ptr[0] = 0;
+    for (int i=0; i<M; i++) ptr[i+1] = ptr[i] + Graph.NumMyIndices(i);
+  }
+  EPETRA_CHK_ERR(ierr);
+  return(0);
+}
