@@ -274,9 +274,9 @@ namespace Anasazi {
   Eigenproblem<TYPE>::~Eigenproblem(void)
   {
     if (_REvecs) delete _REvecs;
+    if (_REvals) delete [] _REvals;
     if (_IEvecs) delete _IEvecs;
-    if (_REvals) delete _REvals;
-    if (_IEvals) delete _IEvals;
+    if (_IEvals) delete [] _IEvals;
   }
   
   //=============================================================================
@@ -321,8 +321,8 @@ namespace Anasazi {
 	//
 	if (_REvecs) delete _REvecs;
 	if (_IEvecs) delete _IEvecs;
-	if (_REvals) delete _REvals;
-	if (_IEvals) delete _IEvals;
+	if (_REvals) delete [] _REvals;
+	if (_IEvals) delete [] _IEvals;
       }
     }	
 	

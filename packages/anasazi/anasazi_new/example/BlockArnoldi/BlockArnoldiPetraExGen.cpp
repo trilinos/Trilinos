@@ -306,8 +306,10 @@ int main(int argc, char *argv[]) {
 	double total_flops = A.Flops();
 	double MFLOPs = total_flops/elapsed_time/1000000.0;
 #endif
+	// output results to screen
+	MyBlockArnoldi.currentStatus();
 
-	// obtain results directly
+	// obtain eigenvectors directly
 	double* evalr = MyProblem.GetREvals(); 
 
 	// retrieve real and imaginary parts of the eigenvectors
@@ -327,10 +329,6 @@ int main(int argc, char *argv[]) {
 		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/evalr[i])<<endl;
 	}
 
-	// output results to screen
-	MyBlockArnoldi.currentStatus();
-
-
 #ifdef UNIX
 	if (verbose)
 		cout << "\n\nTotal MFLOPs for Arnoldi = " << MFLOPs << " Elapsed Time = "<<  elapsed_time << endl;
@@ -338,7 +336,15 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-	delete &A, &B;
+	delete [] MyGlobalElements;
+	delete [] NumNz;
+	delete [] index;
+	delete [] Indices;
+	delete [] ValuesA;
+	delete [] ValuesB;
+
+	delete &A;
+	delete &B;
 	delete &Map;
 	delete &Comm;
 

@@ -364,6 +364,9 @@ int main(int argc, char *argv[]) {
 	delete [] Values;
 	delete [] Indices;
 	delete [] MyGlobalElements;
+	delete [] index;
+	delete [] normA;
+	delete [] tempnrm;
 
 	delete &A;
 	delete &Map;

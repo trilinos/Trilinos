@@ -133,11 +133,11 @@ namespace Anasazi {
     //@}
   private:
     void QRFactorization( MultiVec<TYPE>&, Teuchos::SerialDenseMatrix<int,TYPE>& );
+    void ComputeSchurForm( const bool apply );
     void SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q );
     void BlockReduction();
     void BlkOrth( MultiVec<TYPE>& Vec_in, const int j );
     void BlkOrthSing( MultiVec<TYPE>& Vec_in, const int j );
-    void ComputeResiduals( const bool );
     void ComputeEvecs();
     void Restart();
     void SetInitBlock();
@@ -467,7 +467,7 @@ namespace Anasazi {
 	_iter += tempsteps;
 	tempsteps = 0;
 	_jstart = _jend;  
-	ComputeResiduals( false );		
+	ComputeSchurForm( false );		
 	_isdecompcurrent = false;
 	// Output current information if necessary
 	if (_om.doOutput(0)) {
@@ -493,12 +493,12 @@ namespace Anasazi {
 	//  compute restart if at end of iterations.
 	//
 	if (_restartiter < _restarts) {
-	  ComputeResiduals( true );  
+	  ComputeSchurForm( true );  
 	  Restart();  
 	  _isdecompcurrent = true;
 	  _restartiter++;
 	} else {
-	  ComputeResiduals( false );
+	  ComputeSchurForm( false );
 	  _restartiter++;
 	  _isdecompcurrent = false;
 	}
@@ -907,6 +907,7 @@ namespace Anasazi {
     delete Q_vec; Q_vec=0;
     delete tptr; tptr=0;
   } // end BlkOrthSing()
+
   
   template<class TYPE>
   void BlockArnoldi<TYPE>::QRFactorization (MultiVec<TYPE>& VecIn, 
@@ -1084,123 +1085,6 @@ namespace Anasazi {
   }
   
   template<class TYPE>
-  void BlockArnoldi<TYPE>::ComputeResiduals( const bool apply ) {
-    //
-    int i=0,j=0;
-    int m = _jstart*_block, n=_jstart*_block;
-    int mm1 = (_jstart-1)*_block;
-    int _nevtemp, _nevtemp2, numimag;
-    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
-    const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
-    Teuchos::SerialDenseMatrix<int,TYPE> Q(n,n);
-    Teuchos::LAPACK<int,TYPE> lapack;
-    Teuchos::BLAS<int,TYPE> blas;
-    //
-    // If we are going to restart then we can overwrite the 
-    // hessenberg matrix with the Schur factorization, else we
-    // will just use a copy of it.  The Schur vectors will be in Q
-    // on return.
-    //
-    if (apply) {
-      Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::View, _hessmatrix, m, n);		
-      SortSchurForm( Hj, Q );
-      //
-      // Determine new offset depending upon placement of conjugate pairs.	
-      //
-      _offset = _maxoffset;
-      for (i=0; i<_maxoffset; i++) {
-	numimag = 0;
-	for (j=0; j<(_nevblock+i)*_block; j++) { 
-	  if (_ritzvals_i[j]!=zero) { numimag++; }; 
-	}
-	if (!(numimag % 2)) { _offset = i; break; }
-      }
-    } else {	
-      //
-      // Create a view into the current hessenberg matrix and make a copy.
-      //
-      Teuchos::SerialDenseMatrix<int,TYPE> Hj(Teuchos::Copy, _hessmatrix, m, n);
-      SortSchurForm( Hj, Q );
-    }
-    // Check the residual error for the Krylov-Schur decomposition.
-    // The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
-    // where HQ = QT is || FB_m^TQ || <= || H_{m+1,m} || || B_m^TQ ||.
-    //
-    // We are only interested in the partial Krylov-Schur decomposition corresponding
-    // to the _nev eigenvalues of interest or the _nevblock*_block number of
-    // eigenvalues we're keeping.
-    //
-    //  Calculate the B matrix for the Krylov-Schur basis F_vec*B^T
-    //
-    if (_jstart < _nevblock+_offset) {
-      _nevtemp = n; _nevtemp2 = n;
-    } else {
-      _nevtemp = (_nevblock+_offset)*_block; _nevtemp2 = _nev;
-    }
-    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
-    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
-    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
-    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, _nevtemp, _block, one, sub_block_hess.values(), sub_block_hess.stride(), 
-	       sub_block_q.values(), sub_block_q.stride(), zero, sub_block_b.values(), _block );
-    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b2(Teuchos::View, sub_block_b, _block, _nevtemp2);
-    //
-    //  Compute approximate ritzresiduals for each eigenvalue and the new scaling factor which
-    //  will provide an approximate 2-norm to scale.
-    //
-    TYPE tempsf; 
-    _scalefactor = lapack.LAPY2(_ritzvals_r[0],_ritzvals_i[0]);
-    for (i=1; i<n; i++) {
-      tempsf = lapack.LAPY2(_ritzvals_r[i],_ritzvals_i[i]);
-      if (tempsf > _scalefactor) _scalefactor = tempsf;
-    }
-    _scalefactor = sqrt(_scalefactor);
-    _schurerror = sub_block_b2.normFrobenius()/_scalefactor;
-
-    for (i=0; i<_nevtemp ; i++) {
-      Teuchos::SerialDenseMatrix<int,TYPE> s(Teuchos::View, sub_block_b, _block, 1, 0, i);
-      _ritzresiduals[i] = blas.NRM2(_block, s.values(), 1)/_scalefactor;
-    }   
-    //
-    //  We are going to restart, so update the Krylov-Schur decomposition.
-    //
-    if (apply) {	
-      //
-      // Update the Krylov basis.  Take into account that deflated blocks
-      // need not be updated.
-      //	
-      int *index = new int[ n ]; assert(index!=NULL);
-      for (i = 0; i < n; i++ ) {
-	index[i] = i;
-      }
-      Teuchos::SerialDenseMatrix<int,TYPE> Qnev(Teuchos::View, Q, n, _nevtemp);
-      MultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
-      MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
-      basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
-      //
-      // Update the Krylov-Schur form (quasi-triangular matrix).
-      //
-      Teuchos::SerialDenseMatrix<int,TYPE> Hjp1(Teuchos::View, _hessmatrix,_block,_nevtemp, _nevtemp );
-      for (i=0; i<_block; i++) {
-	for (j=0; j<_nevtemp; j++) {
-	  Hjp1(i, j) = sub_block_b(i, j);
-	}
-      }      
-      //
-      // Determine whether we need to continue with the computations.
-      //
-      if (_schurerror < _residual_tolerance )
-	{
-	  _exit_flg = true;
-	}
-      
-      delete basistemp;
-      delete basistemp2;
-      delete [] index;
-    }			
-  }
-  
-  
-  template<class TYPE>
   void BlockArnoldi<TYPE>::ComputeEvecs() {
     //
     int i=0,j=0,k=0;
@@ -1363,12 +1247,102 @@ namespace Anasazi {
   }
   
   template<class TYPE>
+  void BlockArnoldi<TYPE>::ComputeSchurForm( const bool apply )
+  {
+    int m = _jstart*_block, n=_jstart*_block;
+    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
+    const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+    Teuchos::BLAS<int,TYPE> blas; 
+    Teuchos::SerialDenseMatrix<int,TYPE> *Hj;
+    Teuchos::SerialDenseMatrix<int,TYPE> Q( n, n );
+
+    if (apply) {
+      Hj = new Teuchos::SerialDenseMatrix<int,TYPE>( Teuchos::View, _hessmatrix, m, n );		
+    } else {	
+      Hj = new Teuchos::SerialDenseMatrix<int,TYPE>( Teuchos::Copy, _hessmatrix, m, n );
+    }
+    //
+    SortSchurForm( *Hj, Q );
+    //
+    if (apply) {
+      //
+      // Necessary variables.
+      //
+      int i=0,j=0       ;
+      int mm1 = (_jstart-1)*_block;
+      int _nevtemp, numimag;
+      //
+      // Determine new offset depending upon placement of conjugate pairs.	
+      // 
+      _offset = _maxoffset;
+      for (i=0; i<_maxoffset; i++) {
+	numimag = 0;
+	for (j=0; j<(_nevblock+i)*_block; j++) { 
+	  if (_ritzvals_i[j]!=zero) { numimag++; }; 
+	}
+	if (!(numimag % 2)) { _offset = i; break; }
+      }
+      _nevtemp = n;
+      if (_jstart > _nevblock+_offset)
+	_nevtemp = (_nevblock+_offset)*_block;
+      //
+      //  We are going to restart, so update the Krylov-Schur decomposition.
+      //
+      if (apply) {	
+	//
+	// Update the Krylov-Schur basis.  
+	//	
+	int *index = new int[ n ]; assert(index!=NULL);
+	for (i = 0; i < n; i++ ) {
+	  index[i] = i;
+	}
+	Teuchos::SerialDenseMatrix<int,TYPE> Qnev(Teuchos::View, Q, n, _nevtemp);
+	MultiVec<TYPE>* basistemp = _basisvecs->CloneView( index, _nevtemp );
+	MultiVec<TYPE>* basistemp2 = _basisvecs->CloneCopy( index, n );
+	basistemp->MvTimesMatAddMv ( one, *basistemp2, Qnev, zero );
+	//
+	// Update the Krylov-Schur quasi-triangular matrix.
+	//
+	Teuchos::SerialDenseMatrix<int,TYPE> Hjp1(Teuchos::View, _hessmatrix,_block,_nevtemp, _nevtemp );
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, _nevtemp, mm1 );
+	Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, _nevtemp );
+	blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, _nevtemp, _block, one, 
+		   sub_block_hess.values(), sub_block_hess.stride(), sub_block_q.values(), 
+		   sub_block_q.stride(), zero, sub_block_b.values(), _block );
+	for (i=0; i<_block; i++) {
+	  for (j=0; j<_nevtemp; j++) {
+	    Hjp1(i, j) = sub_block_b(i, j);
+	  }
+	}      
+	//
+	// Clean up.
+	//
+	delete basistemp;
+	delete basistemp2;
+	delete [] index;
+      }			
+    }
+    //
+    // Determine whether we need to continue with the computations.
+    //
+    if (_schurerror < _residual_tolerance )
+      _exit_flg = true;
+    //
+    // Clean up.
+    //
+    delete Hj;
+  }
+
+  template<class TYPE>
   void BlockArnoldi<TYPE>::SortSchurForm( Teuchos::SerialDenseMatrix<int,TYPE>& H, Teuchos::SerialDenseMatrix<int,TYPE>& Q ) {
     const TYPE zero = Teuchos::ScalarTraits<TYPE>::zero();
+    const TYPE one = Teuchos::ScalarTraits<TYPE>::one();
     Teuchos::LAPACK<int,TYPE> lapack; 
     Teuchos::BLAS<int,TYPE> blas;
     int i, j, info=0;
     int n = H.numRows(), ldh = H.stride(), ldq = Q.stride(); 
+    int m = H.numRows(), mm1 = H.numRows() - _block;
     TYPE* ptr_h = H.values();
     TYPE* ptr_q = Q.values();
     //
@@ -1409,21 +1383,102 @@ namespace Anasazi {
     int *select = new int[ n ];
     int sdim = 0; 
     int *bwork = new int[ n ];
-    char * jobvs = "V";
-    char * sort = "N";
-    lapack.GEES( *jobvs, *sort, select, n, ptr_h, ldh, &sdim,_ritzvals_r,
+    char jobvs = 'V';
+    char sort = 'N';
+    lapack.GEES( jobvs, sort, select, n, ptr_h, ldh, &sdim,_ritzvals_r,
 		 _ritzvals_i, ptr_q, ldq, work, lwork, bwork, &info );
     assert(info==0);
     //
-    // Sort the Ritz values, this also returns the permutation vector in _order so we know
-    // which ones we want. 
+    // Compute new scaling factor which will provide an approximate 2-norm to scale.
+    // NOTE: This will be removed with the advent of a status test.
     //
-    //cout<<"Before sorting the Schur form (H):"<<endl;
-    //H.print(cout);	  
+    TYPE tempsf = zero; 
+    _scalefactor = lapack.LAPY2(_ritzvals_r[0],_ritzvals_i[0]);
+    for (i=1; i<n; i++) {
+      tempsf = lapack.LAPY2(_ritzvals_r[i],_ritzvals_i[i]);
+      if (tempsf > _scalefactor) _scalefactor = tempsf;
+    }
+    _scalefactor = Teuchos::ScalarTraits<TYPE>::squareroot( _scalefactor );
+    //
+    //---------------------------------------------------
+    // Compute the current Ritz residuals for ALL the eigenvalues estimates (Ritz values)
+    //           || Ax - x\theta || = || FB_m^Ts || 
+    //                              = || V_m+1*H_{m+1,m}*B_m^T*s ||
+    //                              = || H_{m+1,m}*B_m^T*s ||
+    //
+    // where V_m is the current Krylov-Schur basis and x = V_m*s
+    // NOTE: This means that s = e_i if the problem is symmetric, else the eigenvectors
+    //       of the Schur form need to be computed.
+    //
+    // First compute H_{m+1,m}*B_m^T, then determine what 's' is.
+    //---------------------------------------------------
+    //
+    // H_{m+1,m}
+    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_hess(Teuchos::View, _hessmatrix, _block, _block, m, mm1);
+    //
+    // Last block rows of Q since the previous B_m is E_m (the last m-block of canonical basis vectors)
+    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_q(Teuchos::View, Q, _block, n, mm1 );
+    //
+    // Compute H_{m+1,m}*B_m^T
+    Teuchos::SerialDenseMatrix<int,TYPE> sub_block_b( _block, n );
+    blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, n, _block, one, 
+	       sub_block_hess.values(), sub_block_hess.stride(), sub_block_q.values(), 
+	       sub_block_q.stride(), zero, sub_block_b.values(), _block );
+    //
+    // Determine what 's' is and compute Ritz residuals.
+    //
+    TYPE* b_ptr = sub_block_b.values();
+    if (_problem.IsSymmetric()) {
+      //
+      // 's' is the i-th canonical basis vector.
+      //
+      for (i=0; i<n ; i++) {
+	//_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1);
+	_ritzresiduals[i] = blas.NRM2(_block, b_ptr + i*_block, 1)/_scalefactor;
+      }   
+    } else {
+      //
+      //  's' is the eigenvector of the block upper triangular, Schur matrix.
+      //
+      char side = 'R';
+      char howmny = 'A';
+      int mm, ldvl = 1;
+      TYPE *vl = new TYPE[ ldvl ];
+      Teuchos::SerialDenseMatrix<int,TYPE> H_temp( H );
+      Teuchos::SerialDenseMatrix<int,TYPE> Q_temp( n, n );
+      Teuchos::SerialDenseMatrix<int,TYPE> S( _block, n );
+      lapack.TREVC( side, howmny, select, n, H_temp.values(), H_temp.stride(), vl, ldvl,
+		  Q_temp.values(), Q_temp.stride(), n, &mm, work, &info );
+      assert(info==0);
+      delete [] vl;
+      //
+      // Compute H_{m+1,m}*B_m^T*S where the i-th column of S is 's' for the i-th Ritz-value
+      //
+      blas.GEMM( Teuchos::NO_TRANS, Teuchos::NO_TRANS, _block, n, _block, one, 
+		 sub_block_b.values(), sub_block_b.stride(), Q_temp.values(), 
+		 Q_temp.stride(), zero, S.values(), S.stride() );
+      TYPE* s_ptr = S.values();
+      for (i=0; i<n ; i++) {
+	//_ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1);
+	_ritzresiduals[i] = blas.NRM2(_block, s_ptr + i*_block, 1)/_scalefactor;
+      }         
+    } 
+    //
+    //---------------------------------------------------
+    // Sort the eigenvalues
+    //---------------------------------------------------
+    //
     if (_problem.IsSymmetric())
       _sm.sort( this, n, _ritzvals_r, _order );
     else
       _sm.sort( this, n, _ritzvals_r, _ritzvals_i, _order );
+    //
+    // Re-sort _ritzresiduals based on _order
+    //
+    TYPE* ritz2 = new TYPE[ n ];
+    for (i=0; i<n; i++) { ritz2[i] = _ritzresiduals[ _order[i] ]; }
+    blas.COPY( n, ritz2, 1, _ritzresiduals, 1 );
+    delete [] ritz2;
     //
     // Copy the nev eigenvalues into the proper vectors
     // NOTE:  If we don't have nev Ritz values, then only n are copied
@@ -1431,12 +1486,49 @@ namespace Anasazi {
     ( n > _nev ? blas.COPY( _nev, _ritzvals_r, 1, _evalr, 1 ) : blas.COPY( n, _ritzvals_r, 1, _evalr, 1 ) );
     if (!_problem.IsSymmetric() )
       ( n > _nev ? blas.COPY( _nev, _ritzvals_i, 1, _evali, 1 ) : blas.COPY( n, _ritzvals_i, 1, _evali, 1 ) );
+    //---------------------------------------------------
+    // Compute Schur decomposition error
     //
+    // The residual for the Schur decomposition A(VQ) = (VQ)T + FB_m^TQ
+    // where HQ = QT is || FB_m^TQ || = || H_{m+1,m}*B_m^TQ ||.
+    // NOTE:  At this point 'sub_block_b' holds this matrix!
+    //
+    // We are only interested in the partial Krylov-Schur decomposition corresponding
+    // to the _nev eigenvalues of interest or the _nevblock*_block number of
+    // eigenvalues we're keeping.
+    // NOTE:  The Schur error is not updated if the Schur decomposition is
+    //        not large enough to compute _nev eigenvalues, else we could accidently
+    //        satisfy a condition for convergence.
+    //---------------------------------------------------
+    //
+    if (_nevblock <= _jstart ) {
+      //
+      _schurerror = zero;
+      if (_problem.IsSymmetric()) {
+	for (i=0; i<_nev; i++) {
+	  _schurerror += _ritzresiduals[i]*_ritzresiduals[i];
+	}
+	_schurerror = Teuchos::ScalarTraits<TYPE>::squareroot( _schurerror );
+      } else {
+	TYPE temp = zero;
+	for (i=0; i<_nev; i++) {
+	  temp = blas.NRM2(_block, b_ptr + i*_block, 1);
+	  _schurerror += temp*temp;
+	}
+	_schurerror = Teuchos::ScalarTraits<TYPE>::squareroot( _schurerror )/_scalefactor;
+      }
+    }
+    //
+    //---------------------------------------------------
     // Reorder real Schur factorization, remember to add one to the indices for the
     // fortran call and determine offset.  The offset is necessary since the TREXC
     // method reorders in a nonsymmetric fashion, thus we use the reordering in
     // a stack-like fashion.  Also take into account conjugate pairs, which may mess
     // up the reordering, since the pair is moved if one of the pair is moved.
+    //---------------------------------------------------
+    //
+    //cout<<"Before sorting the Schur form (H):"<<endl;
+    //H.print(cout);	  
     //
     int _nevtemp = 0;
     char * compq = "V";
@@ -1534,7 +1626,7 @@ namespace Anasazi {
     basistemp->MvTransMv( one, *Z, SchurProj );
     SchurProj.scale( -one );
     SchurProj += Hj;
-    cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter+1 << " is "<< SchurProj.normFrobenius()/_scalefactor<<" (should be small)"<<endl;
+    cout<< "Error in Schur Projection ( || (VQ)^T*A*(VQ) - S || ) at restart " << _restartiter << " is "<< SchurProj.normFrobenius()/_scalefactor<<" (should be small)"<<endl;
   }
   
   
@@ -1564,7 +1656,7 @@ namespace Anasazi {
     MultiVec<TYPE>* Vj = _basisvecs->CloneView(index, m);
     assert(Vj!=NULL);   
     cout << " " << endl;
-    cout << "********Block Arnoldi iteration******** " << j << endl;
+    cout << "********Block Arnoldi iteration******** " << j+1 << endl;
     cout << " " << endl;
     
     const TYPE one=1.0;
@@ -1619,7 +1711,7 @@ namespace Anasazi {
     AVj->MvNorm(ptr_norms);
     
     for ( i=0; i<m; i++ ) { 
-      cout << " Arnoldi relation " << "for column " << i << " is " << Teuchos::ScalarTraits<TYPE>::magnitude(ptr_norms[i])/_scalefactor << endl;  
+      cout << " Arnoldi relation " << "for column " << i << " is " << ptr_norms[i]/_scalefactor << endl;  
     }
     cout << " " << endl;
     
