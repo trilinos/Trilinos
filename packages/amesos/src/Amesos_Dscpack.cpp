@@ -546,12 +546,10 @@ bool Amesos_Dscpack::MatrixShapeOK() const {
 
 
 int Amesos_Dscpack::SymbolicFactorization() {
-  assert( false ) ;   // Not implemented yet ;
   return 0;
 }
 
 int Amesos_Dscpack::NumericFactorization() {
-  assert( false ) ;   // Not implemented yet ;
   return 0;
 }
 

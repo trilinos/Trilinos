@@ -73,6 +73,9 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << "     and Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm)" << endl;
   if (verbose) cout << "*********************************************************" << endl;
 
+  cout << " Epetra_Object::GetTracebackMode() = " << Epetra_Object::GetTracebackMode() << endl ; 
+  EPETRA_CHK_ERR( 1 ) ; 
+
   Epetra_LocalMap *LocalMap = new Epetra_LocalMap(NumMyElements1, IndexBase,
                               Comm);
   Epetra_BlockMap * BlockMap = new Epetra_BlockMap(NumGlobalElements, ElementSize, IndexBase, Comm);

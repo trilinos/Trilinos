@@ -26,7 +26,7 @@ base class.
 Amesos will soon support the following classes:
 <ul> 
 <li> Amesos_Superludist - Interface to Xiaoye Li's SuperLU Distributed memory code with distributed memory input interface. 
-<li> Amesos_Dscpack - Interface to Padma Ragavan's DSCPACK
+<li> Amesos_Dscpack - Interface to Padma Raghavan's DSCPACK
 
 
 </ul>
@@ -92,6 +92,11 @@ optimized BLAS library for you.  </ul>
         Solve flops     3.325800e+04    Mflops      1.18
         REFINEMENT time        0.03     Steps       1
 </pre>
+<li><b>Copyright.</b> It is the intent of the SuperLU team to make
+SuperLU freely available without any copyright restrictions, i.e. not
+even GPL restrictions.  However, as of the last I checked, they still
+included one or two codes that have more restrictive copyrights.  
+
 </ul>
 <li> SuperLU serial
 <ul>
@@ -114,10 +119,78 @@ No of nonzeros in factor U = 1113
 No of nonzeros in L+U = 1927
 L\U MB 0.022    total MB needed 0.042   expansions 0
 </pre>
-</ul>
+
+<li><b>Copyright.</b> It is the intent of the SuperLU team to make
+SuperLU freely available without any copyright restrictions, i.e. not
+even GPL restrictions.  However, as of the last I checked, they still
+included one or two codes that have more restrictive copyrights.  
+
 </ul>
 
-\subsection config Configuring and building Trilinos with Amesos
+<li>DSCPACK 
+<ul>
+<li>Obtain the DSCPACK distribution from <a
+href="http://www.cse.psu.edu/~raghavan/Dscpack">Padma Raghavan's DSCPACK
+web site</a>.  You will have to submit a form asking for a password.
+Dr. Raghavan typically answers within a day - if she does not, let me
+know (kstanley@cs.utk.edu).  
+
+<li> Building DSCPACK
+<p>This is quoted verbatim from the DSCPACK/Readme file:
+<pre>
+To Install
+-----------
+
+cd DSC_LIB
+edit Makefile to provide MPI/BLAS include file paths
+make lib_dbl ( to make double precision version)
+
+cd ..
+edit Makefile to provide MPI/BLAS include file paths
+and libraries 
+make  all  
+     (to make double precision version of all examples)
+</pre>
+<p>Note:  "make Solve1" will not work, use "make all".
+<li>Running an example:
+<p>Type:
+<pre>
+mpirun -np 2 ./Solve1 2 3 4 1 1 1 1 2 1
+</pre>
+<p>Expected output:
+<pre>
+...starting with 2 processors in solver group
+
+...Grid  2X 3X 4, Order 1, Factor 1, Solve  1, RHS 1, Processor 2, 
+ NumLocalNonz = 35
+Stats after Matrix number 1 [1]
+
+_________________________________________________________________________________________________________
+                    P       Type       rank     |A|(K)  #solves         sol-err       count-err          sample
+                    2     TS-LLT         24       0.07        1    0.0000000000    0.0000000000    1.0000000000
+            O-time(s)  S-time(s)  N-time(s)   N-ops(M)  N-rate(M)     |L|(K) SO-time(s)  SO-ops(M) SO-rate(M) 
+       min       0.00       0.00       0.00       0.00       0.52       0.07       0.00       0.00       ----
+       max       0.00       0.00       0.00       0.00       0.55       0.07       0.00       0.00       ----
+   overall       ----       ----       ----       0.00       0.96       0.15       ----       0.00       1.14
+      Memory(Mbytes)        min        max    overall
+            Estimate       0.00  NumLocalNonz = 35
+      0.00       0.01
+            Observed       0.00       0.00       0.01
+      Observed L-mem       0.00       0.00       0.00
+      Observed stack       0.00       0.00       0.00
+        Solve-memory       0.00       0.00       0.00
+
+_________________________________________________________________________________________________________
+</pre>
+
+Refer to the Readme for more complete testing and for an explanation
+of the above execution of Solve1.  There is nothing particular about
+those parameters, many other combinations work.  
+
+<li><b>Copyright.</b>
+</ul>
+
+\section config Configuring and building Trilinos with Amesos
 
 
 You will need to add three switches to your configure invocation script.
@@ -171,6 +244,28 @@ amesos/test directory failed.
 <p>AmesosShortSuperLU.exe, found only in the CVS repository at the moment, tests Amesos with SuperLU serial.  Follow the instruction for testing with SuperLU distributed above, using AmesosShortSuperLU.exe instead of AmesosShortScript.exe.
 
 
+\subsection testdescpack  Testing Amesos with DSCPACK
+
+<pre>
+cd packages/amesos/test
+source AmesosDscpackShort.exe
+echo $status
+</pre>
+
+<ul>
+<li>If the test passes, "echo $status" will return 0 
+<li>Another way to check that this test passed is to compare the number of lines (the first number shown on the line) in each of the following two csh commands.  If this test was successful, OK will be printed once for each call to mpirun that is not in commented out, hence the following two calls to wc will show the same number of lines:
+<pre>
+grep OK SST.summary | wc
+grep mpirun AmesosShortScript.exe | grep -v comment | wc
+</pre>
+</ul>
+
+<p>Note: If AmesosDscpackShort.exe is not in amesos/test, it is likely that the make in the 
+amesos/test directory failed.
+
+<p>AmesosDscpack.exe contains a slightly longer test.
+
 \subsection bugs Known bugs
 
 <ul>
@@ -188,10 +283,16 @@ superlu_dist_2.0.tar for consistency.
 <br><p>
 <li><b>Superludist_2.0 tar file requires --with-amesos-sluddir=/home/somedir/SuperLU_DIST_2.0</b>.  By default, Amesos configuration assumes that you are using superlu_dist_1.0.tar which installs in SuperLU_DIST.  superlu_dist_2.0.tar installs in SuperLU_DIST_2.0.  
 </ul>
-
-
 </ul>
+\section HomePages Amesos Home Pages
 
+<p>The official 
+<a href="http://software.sandia.gov/Trilinos/doc/amesos/doc/html/index.html>Amesos Home Page</a> is kept at Sandia. 
 
+<p>My <a
+href="http://www.cs.utk.edu/~kstanley/amesos/doc/html/index.html">
+UTK Amesos home page</a> may be more up-to-date on occasion.
+
+<p>This page last updated 30 May 2003.
 
 */
