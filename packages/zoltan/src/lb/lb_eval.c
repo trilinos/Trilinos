@@ -45,7 +45,6 @@ int LB_Eval (LB *lb, int print_stats,
  *   cut_wgt   - cut_wgt[0:lb->Obj_Weight_Dim-1] are the cut weights (for each proc)
  *   nboundary - number of boundary objects (for each proc)
  *   nadj      - the number of adjacent procs (for each proc)
- *   ierr      - error code
  *
  * Output parameters will only be returned if they are 
  * not NULL on entry.
@@ -64,6 +63,7 @@ int LB_Eval (LB *lb, int print_stats,
   char msg[256];
   
   LB_TRACE_ENTER(lb, yo);
+
   /* Set default error code */
   ierr = LB_OK;
 
@@ -88,11 +88,10 @@ int LB_Eval (LB *lb, int print_stats,
     local_ids  = (LB_LID *) LB_MALLOC(num_obj * sizeof(LB_LID));
       
     if ((!global_ids) || (!local_ids)){
-      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_TRACE_EXIT(lb, yo);
-      return;
+      return LB_MEMERR;
     }
   }
   
@@ -102,13 +101,12 @@ int LB_Eval (LB *lb, int print_stats,
     vwgts   = (float  *) LB_MALLOC(lb->Obj_Weight_Dim*num_obj * sizeof(float));
     tmp_vwgt = (float *) LB_MALLOC(4*lb->Obj_Weight_Dim * sizeof(float));
     if ((num_obj && !vwgts) || (!tmp_vwgt)){
-      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
       LB_FREE(&tmp_vwgt);
       LB_TRACE_EXIT(lb, yo);
-      return;
+      return LB_MEMERR;
     }
   } 
   
@@ -117,7 +115,7 @@ int LB_Eval (LB *lb, int print_stats,
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
     LB_TRACE_EXIT(lb, yo);
-    return;
+    return ierr;
   }
   
 
@@ -157,7 +155,7 @@ int LB_Eval (LB *lb, int print_stats,
         LB_FREE(&vwgts);
         LB_FREE(&tmp_vwgt);
         LB_TRACE_EXIT(lb, yo);
-        return;
+        return ierr;
       }
       if (nedges>max_edges) max_edges = nedges;
     }
@@ -175,7 +173,6 @@ int LB_Eval (LB *lb, int print_stats,
 
     if ((max_edges && ((!nbors_global) || (!nbors_proc))) || 
         (lb->Comm_Weight_Dim && ((!ewgts) || (!tmp_cutwgt))) || (!proc)){
-      ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
@@ -186,7 +183,7 @@ int LB_Eval (LB *lb, int print_stats,
       LB_FREE(&tmp_cutwgt);
       LB_FREE(&proc);
       LB_TRACE_EXIT(lb, yo);
-      return;
+      return LB_MEMERR;
     }
 
     for (i=0; i<lb->Num_Proc; i++)
@@ -209,7 +206,7 @@ int LB_Eval (LB *lb, int print_stats,
         LB_FREE(&tmp_cutwgt);
         LB_FREE(&proc);
         LB_TRACE_EXIT(lb, yo);
-        return;
+        return ierr;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[k], local_ids[k],
           nbors_global, nbors_proc, lb->Comm_Weight_Dim, ewgts, &ierr);
@@ -224,7 +221,7 @@ int LB_Eval (LB *lb, int print_stats,
         LB_FREE(&tmp_cutwgt);
         LB_FREE(&proc);
         LB_TRACE_EXIT(lb, yo);
-        return;
+        return ierr;
       }
       /* Check for cut edges */
       for (j=0; j<nedges; j++){
