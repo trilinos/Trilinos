@@ -86,7 +86,7 @@ int main()
     stepSizeList.setParameter("Method", "Adaptive");
     stepSizeList.setParameter("Initial Step Size", 0.1);
     stepSizeList.setParameter("Min Step Size", 1.0e-3);
-    stepSizeList.setParameter("Max Step Size", 100.0);
+    stepSizeList.setParameter("Max Step Size", 5.0);
     stepSizeList.setParameter("Aggressiveness", 0.5);
 
     // Set the LOCA Utilities

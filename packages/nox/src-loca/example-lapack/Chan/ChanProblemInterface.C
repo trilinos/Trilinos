@@ -39,7 +39,7 @@ ChanProblemInterface::ChanProblemInterface(int N, double a, double b)  :
   beta(b)
 {
   for (int i=0; i<n; i++) 
-    initialGuess(i) = i*(n-1-i)*alpha/((n-1)*(n-1));
+    initialGuess(i) = i*(n-1-i)*alpha/((n-1)*(n-1)) + 0.001;
 }
 
 const NOX::LAPACK::Vector&
