@@ -38,6 +38,7 @@ static char *cvs_lbuserconsth_id = "$Id$";
  *  more efficient.
  */
 
+#ifdef USE_LID_POINTERS
 /*
  *  LB_GID and LB_LID data type definitions.
  *  For this example, global IDs (LB_GID) are integers and local IDs (LB_LID)
@@ -46,6 +47,11 @@ static char *cvs_lbuserconsth_id = "$Id$";
 
 #define LB_GID int
 #define LB_LID void *
+
+#endif
+
+#define LB_GID int
+#define LB_LID int
 
 /*
  *  Macros to copy LB_GIDs and LB_LIDs.

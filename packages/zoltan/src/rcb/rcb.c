@@ -43,6 +43,7 @@ static char *cvs_rcbc_id = "$Id$";
 #include "lb_const.h"
 #include "rcb_const.h"
 #include "all_allo_const.h"
+#include "par_const.h"
 
 #define MYHUGE 1.0e30
 #define TINY   1.0e-6
@@ -382,8 +383,8 @@ void lb_rcb(
 
     if (RCB_STATS) time2 = MPI_Wtime();
 
-    if (!find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
-                     local_comm, &valuehalf, first_guess)) {
+    if (!LB_find_median(coord, wgts, dotmark, dotnum, proc, fractionlo,
+                        local_comm, &valuehalf, first_guess, &(counters[0]))) {
       fprintf(stderr, "[%d] %s: Error returned from find_median\n", proc, yo);
       return;
     }

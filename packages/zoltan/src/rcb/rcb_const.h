@@ -70,8 +70,5 @@ typedef struct RCB_Struct {
 } RCB_STRUCT;
 
 extern void LB_rcb_build_data_structure(LB *, int *, int *);
-extern int find_median(double *, double *, int *, int, int, double, MPI_Comm,
-                       double *, int);
-
 
 #endif

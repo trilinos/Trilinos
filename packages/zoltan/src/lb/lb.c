@@ -665,7 +665,7 @@ int i;
    */
 
   if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
-    return;
+    return (DLB_OK);
 
   /*
    *  Build processor's list of requests for non-local objs.
