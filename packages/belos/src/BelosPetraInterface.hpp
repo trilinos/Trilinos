@@ -1,10 +1,9 @@
-// File AnasaziPetra.hpp: interface for the AnasaziPetra class.
+// File BelosPetraInterface.hpp: interface for the BelosPetra class.
 //
-#ifndef ANASAZI_PETRA_HPP
-#define ANASAZI_PETRA_HPP
+#ifndef BELOS_PETRA_HPP
+#define BELOS_PETRA_HPP
 
 #include "Epetra_MultiVector.h"
-#include "Epetra_CrsMatrix.h"
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
 #include "Epetra_LocalMap.h"
@@ -13,17 +12,20 @@
 #include "AnasaziMatrix.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziPrecondition.hpp"
+#include "AnasaziReturnType.hpp"
+#include "BelosBlockGmres.hpp"
+#include "BelosBlockCG.hpp"
 
-//--------template class AnasaziPetraVec-------------------------------------
+//--------template class BelosPetraVec-------------------------------------
 template <class TYPE>
-class AnasaziPetraVec : public AnasaziMultiVec<TYPE>, public Epetra_MultiVector {
+class BelosPetraVec : public AnasaziMultiVec<TYPE>, public Epetra_MultiVector {
 public:
 // constructors
-	AnasaziPetraVec(const Epetra_BlockMap&, TYPE *, const int, const int stride=0);
-	AnasaziPetraVec(const Epetra_BlockMap&, const int);
-	AnasaziPetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int NumVecs );
-	AnasaziPetraVec(const Epetra_MultiVector & P_vec);
-	~AnasaziPetraVec();
+	BelosPetraVec(const Epetra_BlockMap&, TYPE *, const int, const int stride=0);
+	BelosPetraVec(const Epetra_BlockMap&, const int);
+	BelosPetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int NumVecs );
+	BelosPetraVec(const Epetra_MultiVector & P_vec);
+	~BelosPetraVec();
 	//
 	//  member functions inherited from AnasaziMultiVec
 	//
@@ -100,46 +102,46 @@ private:
 //////////////////////////////////////////////////////////////////////
 
 template<class TYPE>
-AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_BlockMap& Map, TYPE * array, 
-									   const int numvec, const int stride): 
-						Epetra_MultiVector(Copy, Map, array, stride, numvec) {
-//	cout << "ctor1:AnasaziPetraVec " << this << endl;
+BelosPetraVec<TYPE>::BelosPetraVec(const Epetra_BlockMap& Map, TYPE * array, 
+					   	const int numvec, const int stride)
+	: Epetra_MultiVector(Copy, Map, array, stride, numvec) 
+{
 }
 
 template<class TYPE>
-AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_BlockMap& Map, const int numvec): 
-						Epetra_MultiVector(Map, numvec) {
-//	cout << "ctor2:AnasaziPetraVec " << this << endl;
+BelosPetraVec<TYPE>::BelosPetraVec(const Epetra_BlockMap& Map, const int numvec)
+	: Epetra_MultiVector(Map, numvec) 
+{
 }
 
 template<class TYPE>
-AnasaziPetraVec<TYPE>::AnasaziPetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
-						int index[], int NumVecs ): 
-						Epetra_MultiVector(CV, P_vec, index, NumVecs) {
-//	cout << "ctor3:AnasaziPetraVec " << this << endl;
+BelosPetraVec<TYPE>::BelosPetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, 
+						int index[], int NumVecs ) 
+	: Epetra_MultiVector(CV, P_vec, index, NumVecs) 
+{
 }
 
 template<class TYPE>
-AnasaziPetraVec<TYPE>::AnasaziPetraVec(const Epetra_MultiVector& P_vec): 
-						Epetra_MultiVector(P_vec) {
-//	cout << "ctor4:AnasaziPetraVec " << this << endl;
+BelosPetraVec<TYPE>::BelosPetraVec(const Epetra_MultiVector& P_vec) 
+	: Epetra_MultiVector(P_vec) 
+{
 }
 
 template<class TYPE>
-AnasaziPetraVec<TYPE>::~AnasaziPetraVec() {
-//	cout << "dtor:AnasaziPetraVec " << this << endl;
+BelosPetraVec<TYPE>::~BelosPetraVec() 
+{
 }
 //
 //  member functions inherited from AnasaziMultiVec
 //
 //
 //  Simulating a virtual copy constructor. If we could rely on the co-variance
-//  of virtual functions, we could return a pointer to AnasaziPetraVec<TYPE>
+//  of virtual functions, we could return a pointer to BelosPetraVec<TYPE>
 //  (the derived type) instead of a pointer to the pure virtual base class.
 //
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::Clone ( const int NumVecs ) {
-	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(Map(),NumVecs);
+AnasaziMultiVec<TYPE>* BelosPetraVec<TYPE>::Clone ( const int NumVecs ) {
+	BelosPetraVec * ptr_apv = new BelosPetraVec(Map(),NumVecs);
 	return ptr_apv; // safe upcast.
 }
 	//
@@ -148,28 +150,28 @@ AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::Clone ( const int NumVecs ) {
 	//  copied.
 	//
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneCopy() {
-	AnasaziPetraVec *ptr_apv = new AnasaziPetraVec(*this);
+AnasaziMultiVec<TYPE>* BelosPetraVec<TYPE>::CloneCopy() {
+	BelosPetraVec *ptr_apv = new BelosPetraVec(*this);
 	return ptr_apv; // safe upcast
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneCopy ( int index[], int numvecs ) {
-	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(Copy, *this, index, numvecs );
+AnasaziMultiVec<TYPE>* BelosPetraVec<TYPE>::CloneCopy ( int index[], int numvecs ) {
+	BelosPetraVec * ptr_apv = new BelosPetraVec(Copy, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-AnasaziMultiVec<TYPE>* AnasaziPetraVec<TYPE>::CloneView ( int index[], int numvecs ) {
-	AnasaziPetraVec * ptr_apv = new AnasaziPetraVec(View, *this, index, numvecs );
+AnasaziMultiVec<TYPE>* BelosPetraVec<TYPE>::CloneView ( int index[], int numvecs ) {
+	BelosPetraVec * ptr_apv = new BelosPetraVec(View, *this, index, numvecs );
 	return ptr_apv; // safe upcast.
 }
 
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int numvecs ) 
+void BelosPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int numvecs ) 
 {	
 	int i,j,ind;
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
 	int MyNumVecs = (*this).GetNumberVecs();
 	int VecLength = A.GetVecLength();
 
@@ -186,19 +188,19 @@ void AnasaziPetraVec<TYPE>::SetBlock(AnasaziMultiVec<TYPE>& A, int index[], int 
 }								
 		
 template<class TYPE>
-int AnasaziPetraVec<TYPE>::GetNumberVecs () const {
+int BelosPetraVec<TYPE>::GetNumberVecs () const {
 	return NumVectors();
 }
 
 template<class TYPE>
-int AnasaziPetraVec<TYPE>::GetVecLength () const {
+int BelosPetraVec<TYPE>::GetVecLength () const {
 	return MyLength();
 }
 //
 // *this <- alpha * A * B + beta * (*this)
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A, 
+void BelosPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A, 
 								   AnasaziDenseMatrix<TYPE>& B, TYPE beta ) {
 	int info=0;
 	const int izero=0;
@@ -206,7 +208,7 @@ void AnasaziPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>&
 	Epetra_LocalMap LocalMap(B.getrows(), izero, Map().Comm());
 	Epetra_MultiVector B_Pvec(Copy, LocalMap, B.getarray(), B.getld(), B.getcols());
 
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
 
 	info = Multiply( *trans, *trans, alpha, *A_vec, B_Pvec, beta );
 
@@ -216,14 +218,14 @@ void AnasaziPetraVec<TYPE>::MvTimesMatAddMv ( TYPE alpha, AnasaziMultiVec<TYPE>&
 // *this <- alpha * A + beta * B
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A, 
+void BelosPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A, 
 						   TYPE beta, AnasaziMultiVec<TYPE>& B) {
 	int info=0;
 	const TYPE one =1.0;
 	const TYPE zero = 0.0;
 
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A); assert(A_vec);
-	AnasaziPetraVec *B_vec = dynamic_cast<AnasaziPetraVec *>(&B); assert(B_vec);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A); assert(A_vec);
+	BelosPetraVec *B_vec = dynamic_cast<BelosPetraVec *>(&B); assert(B_vec);
 
 	info = Update( alpha, *A_vec, beta, *B_vec, zero ); assert(info==0);
 }
@@ -231,7 +233,7 @@ void AnasaziPetraVec<TYPE>::MvAddMv ( TYPE alpha , AnasaziMultiVec<TYPE>& A,
 // dense B <- alpha * A^T * (*this)
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
+void BelosPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 									   AnasaziDenseMatrix<TYPE>& B) {
 	int info=0;
 	const int izero=0;
@@ -240,7 +242,7 @@ void AnasaziPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 	char* trans1="T";
 	char* trans2="N";
 
-	AnasaziPetraVec *A_vec = dynamic_cast<AnasaziPetraVec *>(&A);
+	BelosPetraVec *A_vec = dynamic_cast<BelosPetraVec *>(&A);
 
 	if (A_vec) {
 
@@ -255,7 +257,7 @@ void AnasaziPetraVec<TYPE>::MvTransMv ( TYPE alpha, AnasaziMultiVec<TYPE>& A,
 // alpha[i] = norm of i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvNorm ( TYPE * normvec ) {
+void BelosPetraVec<TYPE>::MvNorm ( TYPE * normvec ) {
 	int info=0;
 	if (normvec) {
 		info = Norm2(normvec);
@@ -266,7 +268,7 @@ void AnasaziPetraVec<TYPE>::MvNorm ( TYPE * normvec ) {
 // random vectors in i-th column of (*this)
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvRandom () {
+void BelosPetraVec<TYPE>::MvRandom () {
 	int info=0;
 	info = Random();
 	assert(info==0);
@@ -276,7 +278,7 @@ void AnasaziPetraVec<TYPE>::MvRandom () {
 //
 
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvInit( TYPE alpha )
+void BelosPetraVec<TYPE>::MvInit( TYPE alpha )
 {	
 	int i,j;
 	int MyNumVecs = (*this).GetNumberVecs();
@@ -294,47 +296,47 @@ void AnasaziPetraVec<TYPE>::MvInit( TYPE alpha )
 //  print multivectors
 //
 template<class TYPE>
-void AnasaziPetraVec<TYPE>::MvPrint() {
+void BelosPetraVec<TYPE>::MvPrint() {
 	cout << *this << endl;
 }
 
 ///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraMat-----------------------
+//--------template class BelosPetraMat-----------------------
 template <class TYPE> 
-class AnasaziPetraMat : public AnasaziMatrix<TYPE> {
+class BelosPetraMat : public AnasaziMatrix<TYPE> {
 public:
-	AnasaziPetraMat(const Epetra_CrsMatrix& );
-	~AnasaziPetraMat();
-	void ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
+	BelosPetraMat(const Epetra_Operator& Matrix);
+	~BelosPetraMat();
+	Anasazi_ReturnType ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
+	const Epetra_Operator & GetMatrix () { return(Epetra_Mat); };
 private:
-	const Epetra_CrsMatrix & Epetra_Mat;
+	const Epetra_Operator & Epetra_Mat;
 };
 //-------------------------------------------------------------
 //
-// implementation of the AnasaziPetraMat class.
+// implementation of the BelosPetraMat class.
 //
 ////////////////////////////////////////////////////////////////////
 //
 // AnasaziMatrix constructors
 //
 template <class TYPE>
-AnasaziPetraMat<TYPE>::AnasaziPetraMat(const Epetra_CrsMatrix& Matrix) :
-						Epetra_Mat(Matrix) {
-//	cout << "ctor:AnasaziPetraMat " << this << endl;
-	}
+BelosPetraMat<TYPE>::BelosPetraMat(const Epetra_Operator& Matrix) 
+	: Epetra_Mat(Matrix) 
+{
+}
 
 template <class TYPE>
-AnasaziPetraMat<TYPE>::~AnasaziPetraMat() {
-//	cout << "dtor:AnasaziPetraMat " << this << endl;
-	}
+BelosPetraMat<TYPE>::~BelosPetraMat() 
+{
+}
 //
 // AnasaziMatrix matrix multiply
 //
 template <class TYPE>
-void AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
+Anasazi_ReturnType BelosPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x, 
 					  AnasaziMultiVec<TYPE>& y ) const {
 	int info=0;
-	bool trans=false;
 	AnasaziMultiVec<TYPE> & temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
 	Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
 	Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
@@ -344,97 +346,46 @@ void AnasaziPetraMat<TYPE>::ApplyMatrix ( const AnasaziMultiVec<TYPE>& x,
 	// Need to cast away constness because the member function Multiply
 	// is not declared const.
 	//
-	info=const_cast<Epetra_CrsMatrix&>(Epetra_Mat).Multiply( trans, *vec_x, *vec_y );
+	info=const_cast<Epetra_Operator&>(Epetra_Mat).Apply( *vec_x, *vec_y );
 	assert(info==0);
-	
+	return Ok;	
 }
-///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraPrecMat-----------------------
-template <class TYPE>
-class AnasaziPetraPrecMat : public AnasaziPrecondition<TYPE> {
-public:  
-        AnasaziPetraPrecMat(const Epetra_CrsMatrix& );
-        ~AnasaziPetraPrecMat();
-        void ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
-private:
-        const Epetra_CrsMatrix & Epetra_Precond;
-};
-// 
-// implementation of the AnasaziPetraPrecMat class.
-//
-////////////////////////////////////////////////////////////////////
-//
-// AnasaziPetraPrecMat constructors
-//
-template <class TYPE>
-AnasaziPetraPrecMat<TYPE>::AnasaziPetraPrecMat(const Epetra_CrsMatrix& Matrix) :
-                                                Epetra_Precond(Matrix) {   
-//      cout << "ctor:AnasaziPetraPrecMat " << this << endl;
-        }
-//
-// AnasaziPrecondition matrix multiply
-//
-template <class TYPE>
-AnasaziPetraPrecMat<TYPE>::~AnasaziPetraPrecMat() {
-//	cout << "dtor:AnasaziPetraPrecMat " << this << endl;
-}
-
-template <class TYPE>
-void AnasaziPetraPrecMat<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
-                                                          AnasaziMultiVec<TYPE>& y ) const {
-        int info=0;
-        bool trans=false;
-        AnasaziMultiVec<TYPE> & temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
-        Epetra_MultiVector* vec_x = dynamic_cast<Epetra_MultiVector* >(&temp_x);
-        Epetra_MultiVector* vec_y = dynamic_cast<Epetra_MultiVector* >(&y);
-
-        assert( vec_x || vec_y );
-        if (vec_x && vec_y) {
-                //
-                // Need to cast away constness because the member function Multiply
-                // is not declared const.
-                //
-                info=const_cast<Epetra_CrsMatrix&>(Epetra_Precond).Multiply( trans, *vec_x, *vec_y );
-                assert(info==0);
-        }
-}
-
-#endif 
  
 ///////////////////////////////////////////////////////////////
-//--------template class AnasaziPetraPrecOp--------------------
+//--------template class BelosPetraPrec--------------------
 
 template <class TYPE>
-class AnasaziPetraPrecOp : public AnasaziPrecondition<TYPE> {
+class BelosPetraPrec : public AnasaziPrecondition<TYPE> {
 public:
-        AnasaziPetraPrecOp(const Epetra_Operator& prec);
-        ~AnasaziPetraPrecOp();
+        BelosPetraPrec(const Epetra_Operator& Prec);
+        ~BelosPetraPrec();
         void ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x, AnasaziMultiVec<TYPE>& y ) const;
 private:
-   	const Epetra_Operator& prec_;
+   	const Epetra_Operator& Epetra_Prec;
 };
+//--------------------------------------------------------------
 //
-// implementation of the AnasaziPetraPrecOp class.
+// implementation of the BelosPetraPrec class.
 //
 // Constructor.
 //
 template <class TYPE>
-AnasaziPetraPrecOp<TYPE>::AnasaziPetraPrecOp(const Epetra_Operator& prec) : prec_(prec) {
-//      cout << "ctor:AnasaziPetraPrecOp " << this << endl;
+BelosPetraPrec<TYPE>::BelosPetraPrec(const Epetra_Operator& Prec) : Epetra_Prec(Prec) 
+{
 }
 //
 // Destructor.
 //
 template <class TYPE>
-AnasaziPetraPrecOp<TYPE>::~AnasaziPetraPrecOp() {
-//	cout << "dtor: AnasaziPetraPrecOp "<< this << endl;
+BelosPetraPrec<TYPE>::~BelosPetraPrec() 
+{
 }
 /////////////////////////////////////////////////////////////
 //
-// AnasaziPrecond matrix multiply
+// AnasaziPrecondition Operator application
 //
 template <class TYPE>
-void AnasaziPetraPrecOp<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
+void BelosPetraPrec<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& x,
                                                     AnasaziMultiVec<TYPE>& y) const {
 	int info=0;
 	AnasaziMultiVec<TYPE> & temp_x = const_cast<AnasaziMultiVec<TYPE> &>(x);
@@ -446,8 +397,10 @@ void AnasaziPetraPrecOp<TYPE>::ApplyPrecondition ( const AnasaziMultiVec<TYPE>& 
 	// Need to cast away constness because the member function Multiply
 	// is not declared const.
 	//
-	info=const_cast<Epetra_Operator&>(prec_).ApplyInverse( *vec_x, *vec_y );
+	info=const_cast<Epetra_Operator&>(Epetra_Prec).ApplyInverse( *vec_x, *vec_y );
 	assert(info==0);
 }
 
-// end of file ANASAZI_PETRA_HPP
+// end of file BELOS_PETRA_HPP
+#endif 
+
