@@ -547,6 +547,9 @@ extern int Zoltan_Copy_Obj_List( ZZ *, ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
   ZOLTAN_ID_PTR , ZOLTAN_ID_PTR *,
   int , float *, float **, int *, int **, int *);
 
+extern int Zoltan_Print_Obj_List( ZZ *zz, ZOLTAN_ID_PTR Gids, ZOLTAN_ID_PTR Lids,
+  int wdim, float *Weights, int *Parts, int howMany);
+
 extern int Zoltan_Get_Coordinates(ZZ *, int, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
   int *, double **);
 

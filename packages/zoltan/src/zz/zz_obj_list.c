@@ -286,6 +286,94 @@ Mem_Err:
 
   return ierr;
 }
+/*****************************************************************************/
+/*****************************************************************************/
+/*****************************************************************************/
+
+/* 
+ * For debugging purposes, print out object information.
+ */
+
+int Zoltan_Print_Obj_List(
+  ZZ *zz,
+  ZOLTAN_ID_PTR Gids,
+  ZOLTAN_ID_PTR Lids,
+  int wdim,
+  float *Weights,
+  int *Parts,
+  int howMany
+)
+{
+  int len, i, ierr, j, k, rowSize;
+  char *yo = "Zoltan_Print_Obj_List";
+  int num_obj=0;
+  int lidSize = zz->Num_LID;
+  int gidSize = zz->Num_GID;
+ 
+  if (zz->Get_Num_Obj != NULL) {
+    num_obj = zz->Get_Num_Obj(zz->Get_Num_Obj_Data, &ierr);
+  }
+
+  if (howMany <= 0){
+    len = num_obj;
+  }
+  else if (howMany < num_obj){
+    len = howMany;
+  }
+  else{
+    len = num_obj;
+  }
+
+  if (len > 0){
+    if (Gids && gidSize){
+      printf("Global ID's (1st component only)\n");
+      k = 0;
+      for(i=0; i<len; i++){
+        printf("%d ", Gids[k]); 
+        if (i && (i%10==0)) printf("\n");
+        k += gidSize;
+      }
+      printf("\n");
+    }
+  
+    if (Lids && lidSize){
+      printf("Local ID's (1st component only)\n");
+      k = 0;
+      for(i=0; i<len; i++){
+        printf("%d ", Lids[k]); 
+        if (i && (i%10==0)) printf("\n");
+        k += lidSize;
+      }
+      printf("\n");
+    }
+  
+    if (Weights && wdim){
+      rowSize = 15 / wdim; 
+      printf("Object weights\n");
+      k=0;
+      for(i=0; i<len; i++){
+        printf("(");
+        for (j=0; j<wdim; j++){
+          printf("%f ", Weights[k++]);
+        }
+        printf(") ");
+        if (i && (i%rowSize==0)) printf("\n");
+      }
+      printf("\n");
+    }
+  
+    if (Parts){
+      printf("Partitions\n");
+      for(i=0; i<len; i++){
+        printf("%d ", Parts[i]); 
+        if (i && (i%10==0)) printf("\n");
+      }
+      printf("\n");
+    }
+  }
+
+  return len;
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
