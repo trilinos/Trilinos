@@ -1,0 +1,163 @@
+#!/bin/csh
+
+#@HEADER
+# ************************************************************************
+#
+#                 ML
+#                 Copyright (2004) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Jonathan Hu or Ray Tuminaro ({jhu,rstumin}@sandia.gov.
+#
+# ************************************************************************
+#@HEADER
+
+## For multiple owners, list as "owner1@abc.com, owner2@def.com"
+set OWNERS = "jhu@sandia.gov"
+## For multiple subdirectories, separate by spaces
+set TEST_SUBDIRS = "2d_Poisson"
+
+################################################################################
+# notes
+#
+# - Overview: This script is intended to be very much like mlbench used to be.
+#   A subset of ml/examples get built and run with a variety
+#   of inputs and compared against saved results.  Significant differences mean
+#   an error has occurred.
+#
+# - Invocation: In build area, 'cd ml/test'.
+#               scripts/daily/mpi/TestML_Examples True True
+#               Look at results in ../../../../logLinux.txt
+#
+# - This script will call all *.csh scripts found in TEST_SUBDIRS.
+#
+# - The *.csh scripts build & run test executables based on examples
+#   in ml/examples.
+#
+# - The *.csh test fails if it prints *anything* to stdout or stderror.
+#   (Look in ml/${TEST_SUBDIRS} at the .csh scripts to see how we decide
+#   if a run has failed.)
+#
+# - If a *.csh test fails, it gets called again with the "-v" flag to get
+#   verbose output, which gets emailed to everyone in OWNERS.
+################################################################################
+
+## NOTE: Those wishing to cusomize this script to run test exe's
+## that have already been autotool'ed should read lines beginning with '##'
+
+# $1 - Used only for automated testing.  No action required by script owner.
+#      This parameter names the subdirectory from which the script is being
+#      run.  This assists a developer in figuring out which tests failed.
+# $2 - Indicates if the test is an automated nightly test.  No action required
+#      by script owner.
+
+set error = None
+set AnError = False
+set printexitvalue
+if( "$2" == "True" ) then # $2 is an optional parameter indicating if 
+			  # this is an automated test or not
+    # file2 is the log that is created and put into a results email if 
+    # errors occur.
+    set file2 = ../../../../logMpiErrors.txt
+    rm -f $file2
+    # Echo some important information into the log file to help developers
+    # figure out which tests failed.
+## List the Trilinos package being tested on the following line
+    echo "Package being tested: ML  " >>& $file2
+    echo "Name of subdirectory: " $1 >>& $file2
+    echo "Date: " `eval date` >>& $file2
+    echo `uname -a` >>& $file2
+    #'file' is a shorter log that is retained even if all tests pass.
+    set file = ../../../../log`eval uname`.txt
+    rm -f $file
+## IMPORTANT: Specify the script owner(s) on the following line
+## For one owner type "owner@abc.com", for multiple owners
+## "owner1@abc.com, owner2@def.com"
+    #echo "jhu@sandia.gov" >>& $file
+    echo "${OWNERS}" >>& $file
+    echo "Script owner(s) is listed on the previous line." >>& $file
+## List the Trilinos package being tested on the following line
+    echo "Package being tested: ML  " >>& $file
+    echo "Name of subdirectory: " $1 >>& $file
+    # tempfile and tempfile2 (file3 and file4) are used only in the creation 
+    #of the longer log file (file2).
+    set file3 = tempfile
+    rm -f $file3
+    set file4 = tempfile2
+    rm -f $file4
+else
+    cd ../../../
+    set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
+    rm -f $file
+endif
+echo $file
+echo "Date: " `eval date` > $file
+echo `uname -a` >>& $file
+## Different directory structures will require different setups.
+## This file assumes a structure like that of epetra - exe's live in 
+## a direct subdirectory of 'epetra/test' 
+
+## Keep in mind that file and file2-4 live in 'package_name/test'
+## Also, 'package_name/test' is the current directory
+## It is recommended that all directory changing be done relative to
+## the current directory because scripts live in the source directory,
+## but are invoked from various build directories
+
+## List the subdirectories of 'test' containing test exe's in the foreach loop
+## if directory structure is like that of epetra.
+
+# here, the pwd is ml/test
+#foreach f ( 2d_Poisson )
+foreach f ( ${TEST_SUBDIRS} )
+	cd $f
+	foreach g(*.csh)
+		echo "############" $g "##############" >>& ../$file
+		if( "$2" == "True" ) then
+            # This statement didn't produce anything in file4,
+            # so instead I chose just to pipe directly to file4.
+		    #( $g > ../$file3 ) >>& ../$file4
+		    $g >>& ../$file4
+		    if(! -z ../$file4 ) then
+            # If file4 is not empty, then a test failed.
+			  set AnError = True
+			  #echo "  ******** Test failed ********" >>& ../$file
+			  #echo "############" $g "##############" >>& ../$file2
+			  $g -v >>& ../$file2
+			  cat ../$file4 >> ../$file
+			  rm -f ../$file4
+		    else
+		    # Tests passed
+			  echo "******** Test passed ********" >>& ../$file
+		    endif
+		else
+		# This is not an automated test.
+		    $g -v >>& ../$file
+		endif
+	end
+	cd ..
+end
+
+## At this point, it is assumed that the current directory is
+## 'package_name/test'
+if ( "$2" == "True" ) then
+    rm -f $file3
+    if( "$AnError" != "True" ) then
+	rm -f $file2
+    endif
+endif
