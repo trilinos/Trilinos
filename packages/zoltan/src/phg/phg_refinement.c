@@ -18,12 +18,12 @@ extern "C" {
 
 #include "phypergraph.h"
 
-static ZOLTAN_PHG_LOCAL_REF_FN local_no;
-static ZOLTAN_PHG_LOCAL_REF_FN local_grkway;
+static ZOLTAN_PHG_REFINEMENT_FN local_no;
+static ZOLTAN_PHG_REFINEMENT_FN local_grkway;
 
 /****************************************************************************/
 
-ZOLTAN_PHG_LOCAL_REF_FN *Zoltan_PHG_Set_Local_Ref_Fn(char *str)
+ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 {
   
   if      (!strcasecmp(str, "grkway"))         return local_grkway;
@@ -34,10 +34,10 @@ ZOLTAN_PHG_LOCAL_REF_FN *Zoltan_PHG_Set_Local_Ref_Fn(char *str)
 
 
 /****************************************************************************/
-int Zoltan_PHG_Local (ZZ *zz, PHGraph *hg, int p, Partition part,
+int Zoltan_PHG_Refinement (ZZ *zz, PHGraph *hg, int p, Partition part,
 PHGPartParams *hgp)
 {
-  return hgp->local_ref(zz, hg, p, part, hgp, hgp->bal_tol);
+  return hgp->Refinement(zz, hg, p, part, hgp, hgp->bal_tol);
 }
 
 

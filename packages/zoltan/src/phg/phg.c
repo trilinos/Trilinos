@@ -166,17 +166,17 @@ static int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_LIMIT",     (void*) &hgp->redl);
   Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_METHOD",    (void*) hgp->redm_str);
   Zoltan_Bind_Param(HG_params,"PHG_EDGE_WEIGHT_SCALING", (void*) &hgp->ews);
-  Zoltan_Bind_Param(HG_params,"PHG_GLOBAL_PARTITIONING", (void*) hgp->global_str);
-  Zoltan_Bind_Param(HG_params,"PHG_LOCAL_REFINEMENT",    (void*) hgp->local_str);
+  Zoltan_Bind_Param(HG_params,"PHG_GLOBAL_PARTITIONING", (void*) hgp->serialpartition_str);
+  Zoltan_Bind_Param(HG_params,"PHG_LOCAL_REFINEMENT",    (void*) hgp->refinement_str);
   Zoltan_Bind_Param(HG_params,"PCHECK_GRAPH",          (void*) &hgp->check_graph);
   Zoltan_Bind_Param(HG_params,"PHG_REDUCTION_LOCAL_IMPROVEMENT",
                               (void*) hgp->redmo_str);
 
   /* Set default values */
-  strncpy(hgp->redm_str,   "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->redmo_str,  "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->global_str, "no", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->local_str,  "no", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redm_str,            "no", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->redmo_str,           "no", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->serialpartition_str, "no", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->refinement_str,      "no", MAX_PARAM_STRING_LEN);
   
   hgp->ews = 1;
   hgp->check_graph = 1;

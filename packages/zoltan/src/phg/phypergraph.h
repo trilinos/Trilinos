@@ -35,7 +35,7 @@ extern "C" {
 #define MAX(A,B)  (((A) > (B)) ? (A) : (B))
 
 #define RANDOM_SEED   123456789   /* (time ((time_t*)NULL)) */
-#define EPS           1e-6        /* small value, like machine epsilon */
+#define EPS           1e-6        /* small value, like a machine epsilon */
 
 
 
@@ -68,7 +68,6 @@ typedef int ZOLTAN_PHG_REFINEMENT_FN  (ZZ*, PHGraph*, int, Partition,
 /* do not need separate types here or separate pointers in HGPartParams.  KDD */
 typedef int ZOLTAN_PHG_MATCHING_EWS_FN (ZZ*, PGraph*);
 
-
 /* Parameters to the hypergraph functions */
 struct PHGPartParamsStruct {
   float bal_tol;                       /* Balance tolerance in % of average */
@@ -82,11 +81,11 @@ struct PHGPartParamsStruct {
   ZOLTAN_PHG_MATCHING_FN *matching_opt;  /* Pointers to Matching, Packing and */
   int ews;                               /* type of hyperedge weight scaling */
                         
-  char global_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
-  ZOLTAN_PHG_SERIALPARTITION_FN *global_part;/* pointer to Global partitioning fn */
+  char serialpartition_str[MAX_PARAM_STRING_LEN]; /* Global partitioning string and */
+  ZOLTAN_PHG_SERIALPARTITION_FN *SerialPartition;/* pointer to Global partitioning fn */
 
-  char local_str[MAX_PARAM_STRING_LEN];   /* Local refinement string and */
-  ZOLTAN_PHG_REFINEMENT_FN *local_ref;    /* pointer to Local refinement fn */
+  char refinement_str[MAX_PARAM_STRING_LEN];   /* Local refinement string and */
+  ZOLTAN_PHG_REFINEMENT_FN *Refinement;    /* pointer to Local refinement fn */
 
   int check_graph;      /* Flag indicating whether the input hypergraph should 
                          * be checked for errors. */
@@ -119,11 +118,11 @@ int Zoltan_PHG_Matching (ZZ*, PHGraph*, Matching, PHGPartParams*, int*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 
 /* Coarsening */
-int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Packing, PHGraph*, int*);
+int Zoltan_PHG_Coarsening   (ZZ*, PHGraph*, Matching, PHGraph*, int*);
 
 /* Serial Partitioning functions */
-int Zoltan_PHG_SerialRefinement (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
-ZOLTAN_PHG_GLOBAL_PART_FN *Zoltan_PHG_Set_Global_Part_Fn(char*);
+int Zoltan_PHG_SerialPartition (ZZ*, PHGraph*, int, Partition, PHGPartParams*);
+ZOLTAN_PHG_SERIALPARTITION_FN *Zoltan_PHG_Set_SerialPartition_Fn(char*);
 
 /* Refinement functions */ /* KDD Placeholder for later. */
 int Zoltan_PHG_Refinement (ZZ*, PHGraph*, int, Partition, PHGPartParams*);

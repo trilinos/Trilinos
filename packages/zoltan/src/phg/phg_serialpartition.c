@@ -19,22 +19,22 @@ extern "C" {
 
 #include "phypergraph.h"
 
-static ZOLTAN_PHG_GLOBAL_PART_FN global_ran;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_lin;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_bfs;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_bfsh;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_rbfs;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_rbfsh;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_gr0;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_gr1;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_gr2;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_gr3;
-static ZOLTAN_PHG_GLOBAL_PART_FN global_gr4;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_ran;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_lin;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_bfs;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_bfsh;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_rbfs;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_rbfsh;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_gr0;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_gr1;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_gr2;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_gr3;
+static ZOLTAN_PHG_SERIALPARTITION_FN global_gr4;
 
 
 /****************************************************************************/
 
-ZOLTAN_PHG_GLOBAL_PART_FN *Zoltan_PHG_Set_Global_Part_Fn (char *str)
+ZOLTAN_PHG_SERIALPARTITION_FN *Zoltan_PHG_Set_SerialPartition_Fn (char *str)
 {
   if      (!strcasecmp(str, "ran"))   return global_ran;
   else if (!strcasecmp(str, "lin"))   return global_lin;
@@ -52,15 +52,15 @@ ZOLTAN_PHG_GLOBAL_PART_FN *Zoltan_PHG_Set_Global_Part_Fn (char *str)
 
 /****************************************************************************/
 
-/* Zoltan_PHG_Global computes a global partitioning of a hypergraph.
+/* Zoltan_PHG_SerialPartition computes a global partitioning of a hypergraph.
  * Typically, this routine is called at the bottom level in a
  * multilevel scheme (V-cycle).
  */
 
-int Zoltan_PHG_Global(ZZ *zz, PHGraph *hg, int p, Partition part,
+int Zoltan_PHG_SerialPartition(ZZ *zz, PHGraph *hg, int p, Partition part,
 PHGPartParams *hgp)
 {
-  return hgp->global_part(zz, hg, p, part, hgp);
+  return hgp->SerialPartition(zz, hg, p, part, hgp);
 }
 
 /****************************************************************************/

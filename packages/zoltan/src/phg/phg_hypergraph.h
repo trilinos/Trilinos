@@ -20,6 +20,30 @@ extern "C" {
 #endif
 
 
+typedef struct {
+   int info;    /* primarily for debugging recursive algorithms;initially 0 */
+   int nVtx;    /* number of vertices, |V| */
+   int nEdge;   /* Size of neigh array; 2|E| */
+   int nDim;    /* Number of dimensions for a vertex's coordinate */
+   int VertexWeightDim;  /* number of weight dimensions for a vertex */
+   int EdgeWeightDim;    /* number of weight dimensions for an edge */
+   int redl;             /* Working Reduction limit. */
+
+   int *vtxdist;  /* distributions of vertices to processors, as in ParMETIS.
+                     Vertices vtxdist[n] to vtxdist[n+1]-1 are stored on
+                     processor n.   KDD:  temporary; may change later. */
+
+   /* physical coordinates of each vertex, optional */
+   double *coor; /*  |V| long by CoordinateDim */
+
+   /* arrays with vertex and edge weights */
+   float *vwgt;  /* weights of vertices, |V| long by VtxWeightDim */
+   float *ewgt;  /* weights of hypergraph edges, 2|E| long by EdgeWeightDim */
+
+   /* arrays to look up the neighbors of a vertex */
+   int *nindex;  /* length |V|+1 index to neigh, last is 2|E| */
+   int *neigh;   /* length 2|E|, list of neighbors for each vertex */
+   } PGraph;
   
 typedef struct {
   int info;       /* primarily for debugging recursive algorithms;initially 0 */
