@@ -99,16 +99,17 @@ int main(int argc, char *argv[])
 
     Teuchos::ParameterList List;
     List.set("smoother: type", "symmetric Gauss-Seidel");
-    List.set("smoother: sweeps", 2);
+    List.set("smoother: sweeps", 4);
     List.set("smoother: damping factor", 1.0);
     List.set("coarse: type", "Amesos-KLU");
     List.set("coarse: max size", 32);
     List.set("adapt: max reduction", 0.1);
     List.get("adapt: iters fine", 45);
-    List.get("adapt: iters coarse", 5);
+    List.get("adapt: iters coarse", 25);
+    List.set("aggregation: damping", 1.33);
 
     int NumPDEEqns = 6;
-    int MaxLevels  = 10;
+    int MaxLevels  = 4;
     MultiLevelAdaptiveSA Prec(A, List, NumPDEEqns, MaxLevels);
 
     // ================================================= //
@@ -120,7 +121,7 @@ int main(int argc, char *argv[])
 
     // read the nullspace
     bool ReadKernel = true;
-    int dimNS = 3;
+    int dimNS = 6;
 
     MultiVector NSfine(FineSpace,dimNS);
     Epetra_MultiVector* Epetra_NSfine = 0;
@@ -144,18 +145,25 @@ int main(int argc, char *argv[])
         for (int v = 0 ; v < dimNS ; ++v) 
           NSfine(i, v) = (*Epetra_NSfine)[v][i]; 
     }
-
+    
+    
+    double t2 = GetClock();
     Prec.SetNullSpace(NSfine);
     Prec.Compute();
+    double t3 = GetClock();
 
     cout << "Current candidates = " << NSfine.GetNumVectors() << endl;
     cout << "Enter number of additional candidates = ";
     int NumAdditional;
     cin >> NumAdditional;
+
+    double t0 = GetClock();
     for (int i = 0 ; i < NumAdditional ; ++i) {
       Prec.IncrementNullSpace();
       Prec.Compute();
     }
+    double t1 = GetClock();
+    cout << "Setup time = " << ((t1-t0)+(t3-t2)) << " sec\n";
     
 #if 1
     MultiVector NewNS    = Prec.GetNullSpace();
