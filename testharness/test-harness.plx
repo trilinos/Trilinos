@@ -2066,17 +2066,6 @@ report($SUMMARY);
         
         # MPIGO_CMD ------------------------------------------------------------
         
-        # enforce presence of MPIGO_CMD if MPI_DIR exists
-        if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]
-            && (!defined $options{'MPIGO_CMD'} 
-            || !defined $options{'MPIGO_CMD'}[0])) {
-            my $message = "";
-            $message .= "MPIGO_CMD must be supplied if MPI_DIR is present\n";
-            if (!$flags{p}) { report($CONFIG_ERROR, $message); }
-            printEvent($message);
-            $configError = 1;
-        }
-        
         # enforce only one MPIGO_CMD
         elsif (defined $options{'MPIGO_CMD'}[1]) {
             my $message = "";
