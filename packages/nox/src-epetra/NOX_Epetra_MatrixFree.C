@@ -41,7 +41,11 @@ MatrixFree::MatrixFree(Interface& i, const Epetra_Vector& x) :
   fo(x),
   fp(x),
   epetraMap(0),
-  ownsMap(false)
+  ownsMap(false),
+  lambda(1.0e-6),
+  eta(0.0),
+  userEta(1.0e-6),
+  computeEta(true)
 {
   // Zero out Vectors
   perturbX.PutScalar(0.0);
@@ -101,7 +105,6 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // Compute perturbation constant, eta
   // Taken from LOCA v1.0 manual SAND2002-0396 p. 28 eqn. 2.43
   // eta = lambda*(lambda + 2norm(u)/2norm(x))
-  double lambda = 1.0e-6;
   double solutionNorm = 1.0;
   double vectorNorm = 1.0;
 
@@ -133,7 +136,10 @@ int MatrixFree::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     vectorNorm = 1.0;
   }
 
-  double eta = lambda*(lambda + solutionNorm/vectorNorm);
+  if (computeEta)
+    eta = lambda*(lambda + solutionNorm/vectorNorm);
+  else
+    eta = userEta;
 
   // Compute the perturbed RHS
   perturbX = currentX;
@@ -204,4 +210,25 @@ bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   currentX = x;
 
   return interface.computeF(x, fo, Interface::Jacobian);
+}
+
+void MatrixFree::setLambda(double lambda_)
+{
+  lambda = lambda_;
+}
+ 
+void MatrixFree::setComputePerturbation(bool bVal) 
+{
+  computeEta = bVal;
+}
+
+void MatrixFree::setPerturbation(double eta_)
+{
+  userEta = eta_;
+  computeEta = false;
+}
+
+double MatrixFree::getPerturbation() const
+{
+  return eta;
 }

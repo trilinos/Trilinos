@@ -127,6 +127,18 @@ class MatrixFree : public Epetra_Operator {
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);
  
+  //! Allows the user to change the value of \f$ \lambda \f$ in the perturbation calculation.
+  void setLambda(double lambda_);
+
+  //! Flag that toggles whether MatrixFree should compute the perturbation parameter \f$ \eta \f$ or use a value supplied by the user through setPerturbation().
+  void setComputePerturbation(bool bVal);
+
+  //! Set the perturbation parameter \f$ \eta \f$.
+  void setPerturbation(double eta_);
+  
+  //! Returns the most recently used value of the perturbation parameter \f$ \eta \f$.
+  double getPerturbation() const;
+
 protected:
 
   //! Label for matrix
@@ -156,6 +168,18 @@ protected:
   /*! If the user is using Epetra_BlockMaps, then NOX::Epetra::MatrixFree must create an equivalent Epetra_Map from the Epetra_BlockMap that can be used as the return object of the OperatorDomainMap() and OperatorRangeMap() methods.  This flag tells the destructor whether or not to destroy the Epetra_Map.
    */ 
   bool ownsMap;
+
+  //! Scale factor for eta calculation
+  double lambda;
+
+  //! Perturbation value to use in the directional derivative
+  mutable double eta;
+
+  //! User specified perturbation value to use in the directional derivative.  Set by setPerturbation().
+  double userEta;
+
+  //! Flag that determines if we should calculate eta or use a value set by the user.
+  bool computeEta;
 
 };
 } // namespace Epetra
