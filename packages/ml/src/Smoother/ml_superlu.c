@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */
+/* person and disclaimer.                                               */        
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -27,6 +27,12 @@
 #include "ml_struct.h"
 #include "ml_solver.h"
 
+extern void ML_set_tile( int nprocs, int* tsz, int* stile, int* mtile, int* ltile);
+/*
+extern int heap_info(int*, int*, int*, int*);
+extern int get_heap_info(int*, int*, int*, int*);
+*/
+
 /* ******************************************************************** */
 /* This subroutine calls the SuperLU subroutine to perform LU           */
 /* factorization of a given matrix                                      */
@@ -51,7 +57,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* fetch the sparse matrix and other parameters                  */
    /* ------------------------------------------------------------- */
 
-   if ( ilen != olen )
+   if ( ilen != olen ) 
    {
       printf("SuperLU_Solve error : lengths not matched.\n");
       exit(1);
@@ -68,7 +74,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    /* if factorization has not been done, allocate space for it     */
    /* ------------------------------------------------------------- */
 
-   if ( flag == -999 )
+   if ( flag == -999 ) 
    {
       A = (SuperMatrix *) solver->Mat1;
       if ( A != NULL )
@@ -113,7 +119,7 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
       ML_memory_alloc((void**) &perm_r, 2 * n * sizeof(int), "LU3" );
       solver->int_params1 = perm_r;
       solver->int_params2 = perm_c;
-      permc_spec = 0;
+      permc_spec = 2;
       get_perm_c(permc_spec, A, perm_c);
       ML_memory_alloc((void**) &L, sizeof(SuperMatrix), "LU4" );
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU5" );
@@ -222,11 +228,14 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    double             berr;
    int_t              i, n, nprow, npcol, nprocs; /* short integers */
    int                iam, info, nrhs, color, key;
-   int                mtile, ntile, q, g, l, k, mygroup;
+   int                q, g, l, k, mygroup;
+   int                stile, mtile, ltile, ntile, tsz, tsz2;
    int_t             *usermap;
-   /* dmd In-lining superlu_gridmap */
+   /* In-lining superlu_gridmap */
    MPI_Group mpi_base_group, superlu_grp;
    int                mycol, myrow, j;
+   /* heap info arguments */
+   int fragments, total_free, largest_free, total_used;
 
    /* ------------------------------------------------------------- */
    /* fetch the sparse matrix and other parameters                  */
@@ -282,47 +291,39 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
      solver->gridtiles = NULL;
      return 0;
    } else if ( flag == 0 ) {
-     /*
-      * Group p processes into m=sqrt(p) groups
-      * of n or n+1 processes: p=m * (n or n+1)
-      * Presently only specific numbers
-      * of processors fit:
-      * p = n*n and n={m*m,m*(m+1)}
-      * k=1,2,3,2*2,2*3,3*3,3*4,4*4,...
-      * p=1,4,9, 16, 36, 81,144,256,...
-      * m = mtile, n = ntile
-      */
-     mtile = (int ) sqrt(nprocs);
-     ntile = (int ) nprocs/mtile;
-     q = nprocs - ntile*mtile;
-     if( q != 0 ) {
-       printf("Error:ml_superlu:reduce nprocs to %d\n",ntile*mtile);
-       exit(-1);
-     }
-     /* Each group has nprow * npcol processes */
-     nprow = sqrt(ntile);
-     npcol = ntile/nprow;
-     /* printf("p %d tile %d %d q %d np %d %d\n",nprocs,mtile,ntile,q,nprow,npcol); */
-     if( nprow*npcol != ntile ) {
-       printf("Error:ml_superlu: nprow,npcol %d %d  ntile %d  nprocs %d\n",
-       nprow,npcol,ntile,nprocs);
-       exit(-1);
-     }
-     usermap = (int *) malloc( ntile*sizeof(int_t) );
-     lugrid_tiles = (ML_Lugrid *) malloc( mtile*sizeof(ML_Lugrid) );
-     for( g=q ; g < mtile; g++){
-       k = g*ntile+q;
-       for( l=0; l<ntile; l++){
+     ML_set_tile(nprocs, &tsz ,&stile, &mtile, &ltile);
+     ntile = stile + mtile + ltile;
+     tsz2 = tsz * tsz;
+     usermap = (int_t *) malloc( tsz2*sizeof(int_t) );
+     lugrid_tiles = (ML_Lugrid *) malloc( ntile*sizeof(ML_Lugrid) );
+     k = 0;
+     for( g=0 ; g < ntile; g++){
+       if( g < stile ){
+         tsz2 = (tsz-1)*(tsz-1);
+         nprow = tsz-1;
+         npcol = tsz-1;
+       }else if( g < stile+mtile){
+         tsz2 = tsz*(tsz-1);
+         nprow = tsz;
+         npcol = tsz-1;
+       }else{
+         tsz2 = tsz*tsz;
+         nprow = tsz;
+         npcol = tsz;
+       }
+       for( l=0; l<tsz2; l++){
          usermap[l] = l+k;
          if( iam == l+k ) mygroup = g;
        }
+       k = k + tsz2;
        /* in-lining
-        * superlu_gridmap( MPI_COMM_WORLD, nprow, npcol, usermap, nprow, &((lugrid_tiles[g]).grid));
+        * superlu_gridmap( MPI_COMM_WORLD, 
+        * nprow, npcol, usermap, nprow, &((lugrid_tiles[g]).grid));
         */
        (lugrid_tiles[g]).grid.nprow = nprow;
        (lugrid_tiles[g]).grid.npcol = npcol;
        MPI_Comm_group( MPI_COMM_WORLD, &mpi_base_group );
-       MPI_Group_incl( mpi_base_group, ntile, usermap, &superlu_grp );
+       MPI_Group_incl( mpi_base_group, tsz2, usermap, &superlu_grp );
        MPI_Comm_create( MPI_COMM_WORLD, superlu_grp, &(lugrid_tiles[g].grid.comm) );
        if ( lugrid_tiles[g].grid.comm == MPI_COMM_NULL ) {
          lugrid_tiles[g].grid.comm = MPI_COMM_WORLD;
@@ -341,6 +342,10 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
          lugrid_tiles[g].grid.cscp.Iam = myrow;
        }
      } /* end for group g */
+     if( nprocs != k ){
+        printf("Error nprocs %d  k %d \n", nprocs, k);
+        exit(-1);
+     }
      free (usermap);
      solver->ML_subgroup = mygroup;
      /*
@@ -398,8 +403,21 @@ int SuperLU_Solve(void *vsolver,int ilen,double *x,int olen,double *rhs)
    PStatInit(&stat);
    pdgssvx_ABglobal(optionsptr, A, ScalePermstruct, local_rhs, n, 
                     nrhs, mygrid, LUstruct, &berr, &stat, &info);
-   solver->reuse_flag = 1;
 
+/*
+if( iam == 0 ){
+heap_info(&fragments, &total_free, &largest_free, &total_used);
+printf("memory usage: fragments %d free: total %d, largest %d, total_used %d\n",
+          fragments, total_free, largest_free, total_used);
+}
+*/
+
+   if ( flag == 0 ) {
+      ML_memory_free((void*)&(((NCformat *) A->Store)->rowind));
+      ML_memory_free((void*)&(((NCformat *) A->Store)->colptr));
+      ML_memory_free((void*)&(((NCformat *) A->Store)->nzval));
+   }
+   solver->reuse_flag = 1;
    PStatFree(&stat);
    if( info != 0 ){
      if( iam == 0 )printf("Error: ml_superlu    info = %d\n",info);
@@ -438,7 +456,7 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    A       = (SuperMatrix *) solver->Mat1;
    n       = (int) solver->dble_params1[0];
    flag    = solver->reuse_flag;
-   if ( flag != 0 )
+   if ( flag != 0 ) 
    {
       for ( i = 0; i < n; i++ ) x[i] = rhs[i];
    }
@@ -447,7 +465,7 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    /* if factorization has not been done, allocate space for it     */
    /* ------------------------------------------------------------- */
 
-   if ( flag == 0 )
+   if ( flag == 0 ) 
    {
       ML_memory_alloc((void**) &perm_c, n * sizeof(int), "LU6" );
       ML_memory_alloc((void**) &perm_r, n * sizeof(int), "LU7" );
@@ -459,8 +477,8 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
       ML_memory_alloc((void**) &U, sizeof(SuperMatrix), "LU9" );
       solver->Mat2 = (void *) L;
       solver->Mat3 = (void *) U;
-   }
-   else
+   } 
+   else 
    {
       perm_r = (int *) solver->int_params1;
       perm_c = (int *) solver->int_params2;
@@ -488,3 +506,37 @@ int SuperLU_SolveLocal(void *vsolver, double *x, double *rhs)
    return 0;
 }
 
+/*
+ * An array of processors decomposes into
+ * tiles of three sizes: (n-1)^2 , n (n-1) or n^2.
+ * For any natural numbers, p and n, 
+ * there exist integers i,j,k 
+ * such that 0<=i,j<n and
+ * p = i*(n-1)^2 + j*n*(n-1) + k*n^2
+ *   = (i+j+k)*(n^2) -n*(2*i+j)+i 
+ * If p >= (2*n-1)*(n-1)^2 , then k >= 0 
+ */
+void ML_set_tile( int p, int* n, int* i, int* j, int* k)
+{
+  int q,r,s;
+  double quotient, cuberoot; 
+  if( p > 1) {
+     quotient = (double) p / 2;
+     cuberoot = (double) 1 / 3;
+    *n = floor(pow(quotient,cuberoot));
+  }else
+    *n = 1;
+  /* 
+   * p = q*n + i,  
+   * q = (i+j+k)*n -(2*i+j) = i*(n-2) + (j+k)*n -j
+   */
+  q = floor(p/ *n);
+  *i = p - q * *n;
+  r = q - *i * (*n-2);
+  /* 
+   * r = (j+k)*n - j = s*n -j = k*n + j*(n-1)
+   */
+  s = ceil(r/ *n);
+  *j = s * *n - r;
+  *k = s - *j;
+} /* end of ML_set_tile */
