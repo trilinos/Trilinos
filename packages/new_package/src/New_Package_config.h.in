@@ -74,6 +74,12 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
+/* Define if want to build new_package-examples */
+#undef HAVE_NEW_PACKAGE_EXAMPLES
+
+/* Define if want to build new_package-tests */
+#undef HAVE_NEW_PACKAGE_TESTS
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

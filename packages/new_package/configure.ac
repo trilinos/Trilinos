@@ -275,10 +275,13 @@ AM_CONDITIONAL(HAVE_NEWP_SWAHILI, [test "X$ac_cv_use_newp_swahili" != "Xno"])
 #  #np# - These options can disable the tests and examples of a package.
 #  #np# - Packages that do not have tests or examples should #-out the 
 #  #np# - option(s) that does (do) not apply.
+
 TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, tests, [Build New_Package tests], NEW_PACKAGE_TESTS)
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Build examples for all Trilinos packages (not all packages are sensitive to this option)], EXAMPLES, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( new_package, examples, [Build New_Package examples], NEW_PACKAGE_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_examples" != "Xno")
 
 # ------------------------------------------------------------------------
