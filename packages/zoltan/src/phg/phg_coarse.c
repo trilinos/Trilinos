@@ -54,17 +54,25 @@ int Zoltan_PHG_Coarsening
     if (match[i] < 0)
       ++count;
  
-  if (!(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
-   || !(listgno   = (int*) ZOLTAN_MALLOC (count        * sizeof(int)))
-   || !(listlno   = (int*) ZOLTAN_MALLOC (count        * sizeof(int)))
+  if (hg->nVtx > 0 && hgc->nProc_x > 0 && (
+      !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
    || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
-   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
-   || !(*LevelData= (int*) ZOLTAN_MALLOC (count * 2    * sizeof(int))))   {   
+   || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
      return ZOLTAN_MEMERR;
   }        
-  c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
+  if (count > 0 && (
+      !(listgno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(*LevelData= (int*) ZOLTAN_MALLOC (count * sizeof(int) * 2))))    {   
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     ZOLTAN_TRACE_EXIT (zz, yo);
+     return ZOLTAN_MEMERR;
+  }        
+ 
+  if (hg->nVtx > 0 && hg->VtxWeightDim > 0) 
+     c_hg->vwgt = (float*) ZOLTAN_CALLOC (hg->nVtx * hg->VtxWeightDim,
       sizeof(float));   
  
   for (i = 0; i < hg->nVtx; i++)
@@ -110,7 +118,7 @@ int Zoltan_PHG_Coarsening
 
   /* size and allocate the send buffer */
   size += ((2 + hg->VtxWeightDim) * count);
-  if (!(buffer = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int))))   {  
+  if (size > 0 && !(buffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))  {  
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
     ZOLTAN_TRACE_EXIT (zz, yo);
     return ZOLTAN_MEMERR;
@@ -134,7 +142,7 @@ int Zoltan_PHG_Coarsening
   size = 0;
   for (i = 0; i < hgc->nProc_x; i++)
     size += each_size[i];
-  if (!(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int))))   {
+  if (size > 0 && !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
     ZOLTAN_TRACE_EXIT (zz, yo);
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
@@ -157,17 +165,29 @@ int Zoltan_PHG_Coarsening
     i += ip[i];             /* skip hyperedges */
   }
   
-  if (!(used_edges = (int*) ZOLTAN_CALLOC (hg->nEdge,      sizeof(int)))
-   || !(c_vindex   = (int*) ZOLTAN_MALLOC ((hg->nVtx+1)  * sizeof(int)))
-   || !(c_vedge    = (int*) ZOLTAN_MALLOC (2 * hg->nPins * sizeof(int)))) {
+  if (hg->nEdge>0 && !(used_edges = (int*)ZOLTAN_CALLOC(hg->nEdge,sizeof(int)))){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
   }
-  
+  if (hg->nVtx>0 && !(c_vindex = (int*)ZOLTAN_MALLOC((hg->nVtx+1)*sizeof(int)))){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT (zz, yo);
+      return ZOLTAN_MEMERR;
+  }
+  if (hg->nPins>0 && !(c_vedge = (int*)ZOLTAN_MALLOC (3*hg->nPins*sizeof(int)))){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT (zz, yo);
+      return ZOLTAN_MEMERR;
+  }
+      
   if (hg->EdgeWeightDim > 0) {
-    c_hg->ewgt = (float*) ZOLTAN_MALLOC(hg->nEdge * hg->EdgeWeightDim 
-                                                  * sizeof(float));
+    c_hg->ewgt =(float*)ZOLTAN_MALLOC(hg->nEdge*hg->EdgeWeightDim*sizeof(float));
+    if (c_hg->ewgt == NULL) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+      ZOLTAN_TRACE_EXIT (zz, yo);
+      return ZOLTAN_MEMERR;
+    }    
     for (i = 0; i < hg->nEdge * hg->EdgeWeightDim; i++)
       c_hg->ewgt[i] = hg->ewgt[i];
   }

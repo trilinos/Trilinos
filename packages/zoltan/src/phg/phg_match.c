@@ -260,7 +260,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
   char  *yo = "matching_ipm";
   
   /* compute NLOOP as 1/2 * total vertices/total columns */
-  NDO   = 100;         /* later, it should be % of vertices on processor */  
+  NDO   = MIN (100, 1 + (int) 0.2 * hg->dist_x[hgc->nProc_x]);
   NLOOP = 0.98 * hg->dist_x[hgc->nProc_x] / (2 * hgc->nProc_x * NDO);
        
   /* local slice of global matching array.  It uses local numbering (zero-based)
@@ -272,28 +272,43 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      match[i] = i;
           
   psums = tsums = select = cmatch = each_size = displs = NULL;
-  if (!(psums     = (int*) ZOLTAN_CALLOC (hg->nVtx,      sizeof(int)))
-   || !(tsums     = (int*) ZOLTAN_CALLOC (hg->nVtx,      sizeof(int)))
-   || !(select    = (int*) ZOLTAN_MALLOC (NDO          * sizeof(int)))
-   || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
+  if (hg->nVtx > 0 && (
+      !(psums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
+   || !(tsums     = (int*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(int)))
+   || !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))))     {
+     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+  }
+  if (hgc->nProc_x > 0 && (
+      !(select    = (int*) ZOLTAN_MALLOC (NDO          * sizeof(int)))
    || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))   
-   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int))))  {
+   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
   }
 
   m_vedge = m_vindex = m_gno = m_bestsum = m_bestv = b_gno = b_bestsum = 0;
-  if (!(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 3         * sizeof(int)))
-   || !(m_vindex  = (int*) ZOLTAN_MALLOC ((NDO * hgc->nProc_x+1) * sizeof(int)))
-   || !(m_gno     = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
-   || !(m_bestsum = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
-   || !(m_bestv   = (int*) ZOLTAN_MALLOC  (NDO * hgc->nProc_x    * sizeof(int)))
-   || !(b_gno     = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int)))
-   || !(b_bestsum = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int))))  {
+  if (hg->nPins > 0 && 
+   !(m_vedge   = (int*) ZOLTAN_MALLOC  (hg->nPins * 3 * sizeof(int))))  {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      return ZOLTAN_MEMERR;
      }
-              
+  if (hgc->nProc_x > 0 &&  (
+      !(m_vindex  = (int*)ZOLTAN_MALLOC((NDO * hgc->nProc_x+1) * sizeof(int)))
+   || !(m_gno     = (int*)ZOLTAN_MALLOC (NDO * hgc->nProc_x    * sizeof(int)))
+   || !(m_bestsum = (int*)ZOLTAN_MALLOC (NDO * hgc->nProc_x    * sizeof(int)))
+   || !(m_bestv   = (int*)ZOLTAN_MALLOC (NDO * hgc->nProc_x    * sizeof(int))))){
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+     }
+  if (hg->nVtx > 0 && (
+      !(b_gno     = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int)))
+   || !(b_bestsum = (int*) ZOLTAN_MALLOC  (hg->nVtx          * sizeof(int)))))  {
+     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+     return ZOLTAN_MEMERR;
+     }
+     
+                        
   /* Loop processing NDO vertices per column each pass. Each loop has 4 phases:
    * Phase 1: send NDO vertices for global matching - horizontal communication
    * Phase 2: sum  inner products, find best        - vertical communication
@@ -339,12 +354,17 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      for (i = 1; i < hgc->nProc_x; i++)
        displs[i] = displs[i-1] + each_size[i-1];    /* message displacements */
         
-     if (!(buffer =(char*)ZOLTAN_MALLOC(1+each_size[hgc->myProc_x]*sizeof(int)))
-      || !(rbuffer=(char*)ZOLTAN_MALLOC(1+size * sizeof(int))))    {
+     if (each_size[hgc->myProc_x] > 0
+      && !(buffer =(char*)ZOLTAN_MALLOC(each_size[hgc->myProc_x]*sizeof(int)))){
         ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
      }          
-        
+     if (size > 0
+      && !(rbuffer=(char*) ZOLTAN_MALLOC (size * sizeof(int))))    {
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+     }          
+             
      /* Message is list of <gno, gno's edge count, list of edge gno's> */
      ip = (int*) buffer;
      for (i = 0; i < NDO; i++)   {
@@ -404,8 +424,9 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      /************************ PHASE 3: **************************************/
 
      size = 3 * NDO * hgc->nProc_x;     
-     if (!(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int)*hgc->nProc_x))
-      || !(buffer  = (char*) ZOLTAN_MALLOC (1 + size * sizeof(int))))    {
+     if (size > 0 && (
+         !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int)*hgc->nProc_x))
+      || !(buffer  = (char*) ZOLTAN_MALLOC (size * sizeof(int)))))    {
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
      }  
@@ -445,9 +466,10 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
      
      /************************ PHASE 4: ***************************************/
      
-     size = 2 * NDO * sizeof(int);        
-     if (!(buffer  = (char*) ZOLTAN_MALLOC (1 + size))
-      || !(rbuffer = (char*) ZOLTAN_MALLOC (1 + size * hgc->nProc_x)))  {
+     size = 2 * NDO * sizeof(int);    
+     if (size > 0 && (    
+         !(buffer  = (char*) ZOLTAN_MALLOC (size))
+      || !(rbuffer = (char*) ZOLTAN_MALLOC (size * hgc->nProc_x))))  {
          ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
          return ZOLTAN_MEMERR;
      }  
