@@ -70,7 +70,7 @@ int Zoltan_Order(
   int *vtxdist;
   double start_time, end_time;
   double order_time[2] = {0.0,0.0};
-  char msg[256], method[80];
+  char msg[256];
   int comm[2],gcomm[2]; 
   ZOLTAN_ORDER_FN *Order_fn;
   struct Zoltan_Order_Options opt;
@@ -109,13 +109,13 @@ int Zoltan_Order(
    */
 
   /* Set default parameter values */
-  strcpy(method, "PARMETIS");
-  opt.use_order_info = 0;
+  strcpy(opt.method, "PARMETIS");
   strcpy(opt.order_type, "GLOBAL");
+  opt.use_order_info = 0;
   opt.start_index = 0;
   opt.reorder = 0;
 
-  Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) method);
+  Zoltan_Bind_Param(Order_params, "ORDER_METHOD", (void *) opt.method);
   Zoltan_Bind_Param(Order_params, "ORDER_TYPE",   (void *) opt.order_type);
   Zoltan_Bind_Param(Order_params, "ORDER_START_INDEX", (void *) &opt.start_index);
   Zoltan_Bind_Param(Order_params, "REORDER",      (void *) &opt.reorder);
@@ -130,7 +130,7 @@ int Zoltan_Order(
    *  Find the selected method.
    */
 
-  if (!strcmp(method, "NONE")) {
+  if (!strcmp(opt.method, "NONE")) {
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
       printf("%s Ordering method selected == NONE; no ordering performed\n",
               yo);
@@ -138,10 +138,9 @@ int Zoltan_Order(
     ZOLTAN_TRACE_EXIT(zz, yo);
     return (ZOLTAN_WARN);
   }
-  else if (!strcmp(method, "PARMETIS")) {
+  else if ((!strcmp(opt.method, "PARMETIS")) 
+            || (!strcmp(opt.method, "NODEND"))) {
     Order_fn = Zoltan_ParMetis_Order;
-    /* Set PARMETIS_METHOD to NODEND; needed by Zoltan_ParMetis_Jostle */
-    Zoltan_Set_Param(zz, "PARMETIS_METHOD", "NODEND");
   }
   else {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");

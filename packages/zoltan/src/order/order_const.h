@@ -27,7 +27,7 @@ struct Zoltan_Order_Struct {
   ZOLTAN_ID_PTR gids;           /* ptr to list of global ids */
   ZOLTAN_ID_PTR lids;           /* ptr to list of local ids */
   int *rank;        		/* rank[i] is the rank of gigs[i] */
-  char *method;   		/* Ordering method used */
+  char method[80];   		/* Ordering method used */
   int  num_separators;          /* Optional: # of separators. */
   int *sep_sizes;               /* Optional: Separator sizes. */
 };
@@ -40,7 +40,8 @@ typedef struct Zoltan_Order_Struct ZOS;
  */
 
 struct Zoltan_Order_Options {
-  char order_type[15];		/* In: Ordering is LOCAL or GLOBAL? */
+  char method[80];		/* In: Ordering method. */
+  char order_type[16];		/* In: Ordering is LOCAL or GLOBAL? */
   int start_index;		/* In: Permutations start at 0 or 1? */
   int reorder;			/* In: Permute from existing ordering? */
   int use_order_info;		/* In: Put order info into ZOS? */

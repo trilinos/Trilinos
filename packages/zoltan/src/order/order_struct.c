@@ -51,7 +51,7 @@ int Zoltan_Order_Create(ZOS **order_info, ZZ *zz)
   (*order_info)->num_objects = 0;
   (*order_info)->gids = NULL;
   (*order_info)->lids = NULL;
-  (*order_info)->method = NULL;
+  (*order_info)->method[0] = '\0';
   (*order_info)->num_separators = 0;
   (*order_info)->sep_sizes = NULL;
 

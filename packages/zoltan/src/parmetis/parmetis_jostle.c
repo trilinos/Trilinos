@@ -50,7 +50,7 @@ static PARAM_VARS Graph_params[] = {
 
 /***************  prototypes for internal functions ********************/
 
-/* Zoltan_ParMetis_Shared  should be compiled even when ZOLTAN_PARMETIS 
+/* Zoltan_ParMetis_Shared should be compiled even when ZOLTAN_PARMETIS 
    is not defined so it can return an error.
  */
 static int Zoltan_ParMetis_Shared(
@@ -204,6 +204,11 @@ static int Zoltan_ParMetis_Shared(
     options[OPTION_DBGLVL] = output_level; 
   }
 
+  /* If ordering, use ordering method instead of load-balancing method */
+  if (order_opt && order_opt->method){
+    strcpy(alg, order_opt->method);
+  }
+
   /* Call the real ParMetis interface */
   return Zoltan_ParMetis_Jostle( zz, num_imp, imp_gids, imp_lids,
             imp_procs, num_exp, exp_gids, exp_lids, exp_procs,
@@ -242,6 +247,17 @@ int Zoltan_ParMetis_Order(
   ZOS *order_info       /* Ordering info for this particular ordering */
 )
 {
+  if (!order_opt){
+    /* If for some reason order_opt is NULL, allocate a new ZOOS here. */
+    /* This should really never happen. */
+    order_opt = (ZOOS *) ZOLTAN_MALLOC(sizeof(ZOOS));
+    strcpy(order_opt->method,"PARMETIS");
+  }
+
+  /* If method = PARMETIS, replace with NODEND */
+  if (strcmp(order_opt->method,"PARMETIS")==0)
+    strcpy(order_opt->method,"NODEND");
+
   /* ParMetis only computes the inverse permutation */
   order_opt->return_args = RETURN_IPERM;
 
