@@ -35,22 +35,33 @@
 #include "NOX_BLAS_Wrappers.H"
 
 NOX::LAPACK::Vector::Vector() : 
+  n(0),
   x()		       // initialize an empty vector
 {
 }
 
 
-NOX::LAPACK::Vector::Vector(int n) : 
-  x(n, 0.0)		       // initialize a zero vector of length n
+NOX::LAPACK::Vector::Vector(int N) :
+  n(N),
+  x(N, 0.0)		       // initialize a zero vector of length n
 {
 }
 
-NOX::LAPACK::Vector::Vector(int n, double *v) : 
-  x(v,v+n)		       // initialize a vector of length n from array v
+NOX::LAPACK::Vector::Vector(int N, int na) :
+  n(N),
+  x(na, 0.0)		       // initialize a zero vector of length na
 {
 }
 
-NOX::LAPACK::Vector::Vector(const NOX::LAPACK::Vector& source, NOX::CopyType type) :
+NOX::LAPACK::Vector::Vector(int N, double *v) : 
+  n(N),
+  x(v,v+N)		       // initialize a vector of length n from array v
+{
+}
+
+NOX::LAPACK::Vector::Vector(const NOX::LAPACK::Vector& source, 
+			    NOX::CopyType type) :
+  n(source.n),
   x(source.x)
 {
 }
@@ -59,26 +70,30 @@ NOX::LAPACK::Vector::~Vector()
 {
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(const vector<double>& source)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
+						const vector<double>& source)
 {
   x = source;
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(const NOX::Abstract::Vector& source)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
+					   const NOX::Abstract::Vector& source)
 {
   return operator=(dynamic_cast<const NOX::LAPACK::Vector&>(source));
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(const NOX::LAPACK::Vector& source)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::operator=(
+					   const NOX::LAPACK::Vector& source)
 {
+  n = source.n;
   x = source.x;
   return *this;
 }
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::init(double value)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = value;
   return *this;
 }
@@ -88,82 +103,97 @@ NOX::Abstract::Vector& NOX::LAPACK::Vector::random(bool useSeed, int seed)
   if (useSeed)
     urand.setSeed(seed);
 
-  for (unsigned int i = 0; i < x.size(); i ++) 
+  for (int i = 0; i < n; i ++) 
     x[i] = urand();
 
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(const NOX::Abstract::Vector& base)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(
+					     const NOX::Abstract::Vector& base)
 {
   return abs(dynamic_cast<const NOX::LAPACK::Vector&>(base));
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(const NOX::LAPACK::Vector& base)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::abs(
+					     const NOX::LAPACK::Vector& base)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = fabs(base[i]);
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(const NOX::Abstract::Vector& base)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(
+					    const NOX::Abstract::Vector& base)
 {
   return reciprocal(dynamic_cast<const NOX::LAPACK::Vector&>(base));
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(const NOX::LAPACK::Vector& base)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::reciprocal(
+					    const NOX::LAPACK::Vector& base)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = 1.0 / base[i];
   return *this;
 }
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(double alpha)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i <n; i ++)
     x[i] *= alpha;
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
-				 double gamma)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::update(
+					       double alpha, 
+					       const NOX::Abstract::Vector& a, 
+					       double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::LAPACK::Vector&>(a), gamma);
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::LAPACK::Vector& a, 
-						   double gamma)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::update(
+						 double alpha, 
+						 const NOX::LAPACK::Vector& a, 
+						 double gamma)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = alpha * a[i] + gamma * x[i];
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::Abstract::Vector& a, 
-						   double beta, const NOX::Abstract::Vector& b,
-						   double gamma)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::update(
+					      double alpha, 
+					      const NOX::Abstract::Vector& a, 
+					      double beta, 
+					      const NOX::Abstract::Vector& b,
+					      double gamma)
 {
   return update(alpha, dynamic_cast<const NOX::LAPACK::Vector&>(a), 
 		beta, dynamic_cast<const NOX::LAPACK::Vector&>(b), gamma);
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::update(double alpha, const NOX::LAPACK::Vector& a, 
-						   double beta, const NOX::LAPACK::Vector& b,
-						   double gamma)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::update(
+					       double alpha, 
+					       const NOX::LAPACK::Vector& a, 
+					       double beta, 
+					       const NOX::LAPACK::Vector& b,
+					       double gamma)
 {
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = alpha * a[i] + beta * b[i] + gamma * x[i];
   return *this;
 }
 
-NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::Abstract::Vector& a)
+NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(
+					      const NOX::Abstract::Vector& a)
 {  
   return scale(dynamic_cast<const NOX::LAPACK::Vector&>(a));
 }
 
 NOX::Abstract::Vector& NOX::LAPACK::Vector::scale(const NOX::LAPACK::Vector& a)
 {  
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     x[i] = a[i] * x[i];
   return *this;
 }
@@ -181,7 +211,6 @@ double NOX::LAPACK::Vector::norm(NOX::Abstract::Vector::NormType type) const
     return 0.0;
 
   int i;			// counter
-  int n = x.size();		// size of x
   double value;			// final answer
 
   switch (type) {
@@ -210,12 +239,11 @@ double NOX::LAPACK::Vector::norm(const NOX::Abstract::Vector& weights) const
 
 double NOX::LAPACK::Vector::norm(const NOX::LAPACK::Vector& weights) const
 {
-  if (weights.length() != x.size()) {
+  if (weights.length() != n) {
     cerr << "NOX::LAPACK::Vector::norm - size mismatch for weights vector" << endl;
     throw "NOX::LAPACK Error";
   }
 
-  int n = x.size();		// size of x
   double value = 0;		// final answer
 
   for (int i = 0; i < n; i ++)
@@ -233,27 +261,17 @@ double NOX::LAPACK::Vector::dot(const NOX::Abstract::Vector& y) const
 
 double NOX::LAPACK::Vector::dot(const NOX::LAPACK::Vector& y) const
 {
-  if (y.length() != x.size()) {
+  if (y.length() != n) {
     cerr << "NOX::LAPACK::Vector::dot - size mismatch for y vector" << endl;
     throw "NOX::LAPACK Error";
   }
 
-  int n = x.size();		// size of x
   return DDOT_F77(&n, &x[0], &i_one, &y[0], &i_one);
-  //double d = 0.0;
-  //for (int i=0; i<n; i++) {
-    // cout << "x[" << i << "] = " << x[i] << endl;
-//     cout << "y[" << i << "] = " << y.x[i] << endl;
-//     cout << "x[" << i << "]*y[" << i << "] = " << x[i]*y.x[i] << endl;
-  //d += x[i]*y.x[i];
-    //cout << "d = " << d << endl;
-  //}
-  //return d;
 }
 
 int NOX::LAPACK::Vector::length() const
 {
-  return x.size();
+  return n;
 }
 
 double& NOX::LAPACK::Vector::operator[] (int i)
@@ -279,7 +297,7 @@ const double& NOX::LAPACK::Vector::operator() (int i) const
 ostream& NOX::LAPACK::Vector::leftshift(ostream& stream) const
 {
   stream << "[ ";
-  for (unsigned int i = 0; i < x.size(); i ++)
+  for (int i = 0; i < n; i ++)
     stream << x[i] << " ";
   stream << "]";
   return stream;
@@ -293,4 +311,9 @@ ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v)
 void NOX::LAPACK::Vector::print() const
 {
   cout << *this << endl;
+}
+
+int NOX::LAPACK::Vector::lengthAllocated() const
+{
+  return x.size();
 }

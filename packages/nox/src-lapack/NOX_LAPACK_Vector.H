@@ -64,6 +64,9 @@ namespace NOX {
       //! Construct a zero vector of length n
       Vector(int n);
 
+      //! Construct a zero vector of length n, with allocated length na
+      Vector(int n, int na);
+
       //! Construct a vector of length n from given array
       Vector(int n, double *v);
     
@@ -166,6 +169,9 @@ namespace NOX {
       // derived
       void print() const;
 
+      //! Returns the allocated length of the vector
+      int lengthAllocated() const;
+
     private:
 
       //! Return the i-th element
@@ -173,6 +179,9 @@ namespace NOX {
 
       //! Return the i-th element
       const double& operator[] (int i) const;
+
+      //! The used length of vector
+      int n;
 
       //! The vector owned by this object
       vector<double> x;
