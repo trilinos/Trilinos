@@ -27,7 +27,7 @@
 # ************************************************************************
 #@HEADER
 
-noinst_PROGRAMS = rosenbrock
+noinst_PROGRAMS = rosenbrock broyden
 
 rosenbrock_SOURCES = \
                    $(srcdir)/Rosenbrock.C 
@@ -42,6 +42,17 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src \
                       $(TRILINOS_CXXFLAGS)
 
 rosenbrock_LDADD = $(top_builddir)/src-lapack/libnoxlapack.a \
+		   $(top_builddir)/src/libnox.a \
+		   $(top_builddir)/test/utils/libnoxtestutils.a \
+		   $(LIBS) 
+
+broyden_SOURCES = $(srcdir)/Broyden.C
+
+broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
+
+broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
+
+broyden_LDADD = $(rosenbrock_LDADD)
                    $(top_builddir)/src/libnox.a \
                    $(top_builddir)/test/utils/libnoxtestutils.a \
                    $(LIBS) 
