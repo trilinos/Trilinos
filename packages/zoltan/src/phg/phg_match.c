@@ -96,7 +96,7 @@ End:
  */
 static int matching_loc(ZZ *zz, PHGraph *hg, Matching match)
 {
-    int i, j, *eweight, *adj, *visit, degzero=0, matchcnt=0;
+    int i, j, *eweight=NULL, *adj=NULL, *visit=NULL, degzero=0, matchcnt=0;
     char *yo = "matching_loc";
     PHGComm *hgc=hg->comm;
     struct {
