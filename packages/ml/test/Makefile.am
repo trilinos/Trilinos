@@ -29,6 +29,7 @@
 SUBDIRS = MultiLevelPreconditioner_NonSym    \
 	  MultiLevelPreconditioner_Sym       \
 	  MultiLevelPreconditioner_Maxwell   \
+	  MultiLevelPreconditioner_Aux       \
 	  ML_Operator2Epetra_RowMatrix       \
           Scalability                        \
 	  VerySimple                         \
