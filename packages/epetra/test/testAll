@@ -7,7 +7,7 @@ foreach f (BlockMap Comm CrsGraph CrsMatrix CrsRectMatrix ImportExport Map Multi
 	make
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
-		$g -v >>& ../$file
+		./$g -v >>& ../$file
 	end
 	make clobber
 	cd ..
