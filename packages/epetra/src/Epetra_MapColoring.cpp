@@ -27,6 +27,7 @@
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_MapColoring.h"
+#include "Epetra_Util.h"
 //=============================================================================
 Epetra_MapColoring::Epetra_MapColoring(int * ElementColors, const Epetra_BlockMap& Map,
 				       const int DefaultColor)
@@ -77,13 +78,14 @@ Epetra_MapColoring::~Epetra_MapColoring(){
 }
 
 //=========================================================================
-int Epetra_MapColoring::DeleteLists()const {
+int Epetra_MapColoring::DeleteLists() const {
 
 
   if (ListsAreGenerated_) {
     for (int i=0; i<NumColors_; i++) if (ColorLists_[i]!=0) delete [] ColorLists_[i];
     delete [] ColorLists_;
     delete [] ColorCount_;
+    delete [] ListOfColors_;
     delete ColorIDs_;
     ListItem * CurItem = FirstColor_;
     while (CurItem!=0) {
@@ -92,6 +94,7 @@ int Epetra_MapColoring::DeleteLists()const {
       CurItem = NextItem;
     }
   }
+  ListsAreValid_ = false;
   return(0);
 }
 
@@ -113,6 +116,8 @@ int Epetra_MapColoring::GenerateLists() const {
   int NumMyElements = Map().NumMyElements();
   if (NumMyElements==0) return(0); // Nothing to do
 
+  if (ListsAreValid_) return(0); // Already been here
+
   if (ListsAreGenerated_) DeleteLists();  // Delete any existing lists
 
 
@@ -123,11 +128,15 @@ int Epetra_MapColoring::GenerateLists() const {
 
   // Create hash table that maps color IDs to the integers 0,...NumColors_
   ColorIDs_ = new Epetra_HashTable(NumColors_);
+  ListOfColors_ = new int[NumColors_];
   ListItem * CurItem = FirstColor_;
   for (int i=0; i<NumColors_; i++) {
-    ColorIDs_->Add(CurItem->ItemValue, i);
+    ColorIDs_->Add(CurItem->ItemValue, i); // Create hash table entry
+    ListOfColors_[i] = CurItem->ItemValue; // Put color value in a list of colors
     CurItem = CurItem->NextItem;
   }
+  Epetra_Util util;
+  util.Sort(true, NumColors_, ListOfColors_, 0, 0, 0, 0); // Sort List of colors in ascending order
   // Count the number of IDs of each color
   ColorCount_ = new int[NumColors_];
   for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0;
@@ -136,8 +145,13 @@ int Epetra_MapColoring::GenerateLists() const {
   // Finally build list of IDs grouped by color
   ColorLists_ = new int *[NumColors_];
   for (int i=0; i<NumColors_; i++) ColorLists_[i] = new int[ColorCount_[i]];
-
+  for (int i=0; i<NumColors_; i++) ColorCount_[i] = 0; // Reset so we can use for counting
+  for (int i=0; i<NumMyElements; i++) {
+    int j = ColorIDs_->Get(ElementColors_[i]);
+    ColorLists_[j][ColorCount_[j]++] = i;
+  }
   ListsAreValid_ = true;
+  ListsAreGenerated_ = true;
 
   return(0);
 }
@@ -146,10 +160,10 @@ bool Epetra_MapColoring::InItemList(int ColorValue) const {
   bool ColorFound = false;
   ListItem * CurColor = 0;
   ListItem * NextColor = FirstColor_;
-  while (ColorFound && NextColor!=0) {
+  while (!ColorFound && NextColor!=0) {
     CurColor = NextColor;
     NextColor = CurColor->NextItem;
-    if (ColorValue=CurColor->ItemValue) ColorFound = true;
+    if (ColorValue==CurColor->ItemValue) ColorFound = true;
   }
 
   if (!ColorFound) CurColor->NextItem = new ListItem(ColorValue);
@@ -174,9 +188,12 @@ Epetra_Map * Epetra_MapColoring::GenerateMap(int Color) const {
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
   int NumElements = ColorCount_[arrayIndex];
-  int * ElementIDs = ColorLIDList(Color);
-  Epetra_Map * map = new Epetra_Map(-1, NumElements, ElementIDs, 
+  int * ColorElementLIDs = ColorLIDList(Color);
+  int * ColorElementGIDs = new int[NumElements];
+  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
+  Epetra_Map * map = new Epetra_Map(-1, NumElements, ColorElementGIDs, 
 				    Map().IndexBase(), Map().Comm());
+  delete [] ColorElementGIDs;
   return(map);
 }
 //=========================================================================
@@ -185,17 +202,20 @@ Epetra_BlockMap * Epetra_MapColoring::GenerateBlockMap(int Color) const {
   if (!ListsAreValid_) GenerateLists(); 
   int arrayIndex = ColorIDs_->Get(Color);
   int NumElements = ColorCount_[arrayIndex];
-  int * ColorElementIDs = ColorLIDList(Color);
+  int * ColorElementLIDs = ColorLIDList(Color);
   int * ColorElementSizes = new int[NumElements];
+  int * ColorElementGIDs = new int[NumElements];
+  for (int i=0; i<NumElements; i++) ColorElementGIDs[i] = Map().GID(ColorElementLIDs[i]);
   int * MapElementSizes = Map().ElementSizeList();
 
   for (int i=0; i<NumElements; i++) 
-    ColorElementSizes[i] = MapElementSizes[ColorElementIDs[i]];
+    ColorElementSizes[i] = MapElementSizes[ColorElementLIDs[i]];
 
-  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementIDs, 
+  Epetra_BlockMap * map = new Epetra_BlockMap(-1, NumElements, ColorElementGIDs, 
 					      ColorElementSizes,
 					      Map().IndexBase(), Map().Comm());
 
+  delete [] ColorElementGIDs;
   delete [] ColorElementSizes;
 
   return(map);
@@ -231,6 +251,54 @@ void Epetra_MapColoring::Print(ostream& os) const {
       os << flush; 
     }
 
+    // Do a few global ops to give I/O a chance to complete
+    Map().Comm().Barrier();
+    Map().Comm().Barrier();
+    Map().Comm().Barrier();
+  }
+
+  if (MyPID==0) os 
+    << endl 
+    << " **************************************" << endl
+    << " Coloring information arranged by color" << endl 
+    << " **************************************" << endl
+    << endl;
+  for (int iproc=0; iproc < NumProc; iproc++) {
+    if (MyPID==iproc) {
+      if (NumColors()==0) os << " No colored elements on this processor" << endl;
+      else {
+	os << "Number of colors in map = " << NumColors() << endl
+	   << "Default color           = " << DefaultColor() << endl << endl;
+	if (MyPID==0) {
+	  os.width(8);
+	  os <<  "     MyPID"; os << "    ";
+	  os.width(12);
+	  os <<  "LID  ";
+	  os.width(20);
+	  os <<  "Color  ";
+	  os << endl;
+	}
+	int * MyGlobalElements1 = Map().MyGlobalElements();
+	int * ColorValues = ListOfColors();
+	for (int ii=0; ii<NumColors(); ii++) {
+	  int CV = ColorValues[ii];
+	  int ColorCount = NumElementsWithColor(CV);
+	  int * LIDList = ColorLIDList(CV);
+	  
+	  
+	  for (int i=0; i < ColorCount; i++) {
+	    os.width(10);
+	    os <<  MyPID; os << "    ";
+	    os.width(10);
+	    os << LIDList[i] << "    ";
+	    os.width(20);
+	    os << CV;
+	    os << endl;
+	  }
+	  os << flush; 
+	}
+      }
+    }
     // Do a few global ops to give I/O a chance to complete
     Map().Comm().Barrier();
     Map().Comm().Barrier();

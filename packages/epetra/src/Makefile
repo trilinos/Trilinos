@@ -51,7 +51,8 @@ ALL_EPETRA_CC = \
             Epetra_Vector.cpp \
             Epetra_MpiDistributor.cpp \
             Epetra_SerialDistributor.cpp \
-            Epetra_CrsSingletonFilter.cpp
+            Epetra_CrsSingletonFilter.cpp \
+            Epetra_MapColoring.cpp
 #           Epetra_C_wrappers.cpp Epetra_Fortran_wrappers.cpp
 
 EPETRA_CC = Epetra_SerialComm.cpp \
@@ -80,6 +81,7 @@ EPETRA_CC = Epetra_SerialComm.cpp \
             Epetra_Time.cpp Epetra_Object.cpp Epetra_Util.cpp Epetra_Flops.cpp \
             Epetra_CrsSingletonFilter.cpp \
             Epetra_IntVector.cpp \
+            Epetra_MapColoring.cpp \
             $(EPETRA_EXTRACOMM_CLASS)
 
 EPETRA_F =

@@ -130,6 +130,13 @@ class Epetra_MapColoring: public Epetra_DistObject {
   //! Returns number of colors.
   int NumColors() const {if (!ListsAreValid_) GenerateLists(); return(NumColors_);};
   
+  //! Array of length NumColors() containing List of color values used in this coloring.
+  /*! Color values can be arbitrary integer values.  As a result, a user of a previously
+      constructed MapColoring object may need to know exactly which color values are present.
+      This array contains that information as a sorted list of integer values.
+  */
+  int * ListOfColors() const {if (!ListsAreValid_) GenerateLists(); return(ListOfColors_);};
+  
   //! Returns default color.
   int DefaultColor() const {return(DefaultColor_);};
   
@@ -213,6 +220,7 @@ class Epetra_MapColoring: public Epetra_DistObject {
   mutable Epetra_HashTable * ColorIDs_;
   mutable ListItem * FirstColor_;
   mutable int NumColors_;
+  mutable int * ListOfColors_;
   mutable int * ColorCount_;
   mutable int * ElementColors_;
   mutable int ** ColorLists_;
