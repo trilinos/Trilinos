@@ -153,14 +153,14 @@ bool FiniteDifference::HasNormInf() const
   return jacobian->HasNormInf();
 }
 
-const Epetra_BlockMap& FiniteDifference::DomainMap() const
+const Epetra_Map& FiniteDifference::OperatorDomainMap() const
 {
-  return jacobian->DomainMap();
+  return jacobian->OperatorDomainMap();
 }
 
-const Epetra_BlockMap& FiniteDifference::RangeMap() const
+const Epetra_Map& FiniteDifference::OperatorRangeMap() const
 {
-  return jacobian->RangeMap();
+  return jacobian->OperatorRangeMap();
 }
 
 bool FiniteDifference::Filled() const
@@ -278,19 +278,19 @@ const Epetra_Comm& FiniteDifference::Comm() const
   return jacobian->Comm();
 }
 
-const Epetra_BlockMap& FiniteDifference::BlockRowMap() const
+const Epetra_Map& FiniteDifference::RowMatrixRowMap() const
 {
-  return jacobian->BlockRowMap();
+  return jacobian->RowMatrixRowMap();
 }
 
-const Epetra_BlockMap& FiniteDifference::BlockImportMap() const
+const Epetra_Map& FiniteDifference::RowMatrixColMap() const
 {
-  return jacobian->BlockImportMap();
+  return jacobian->RowMatrixColMap();
 }
   
-const Epetra_Import* FiniteDifference::Importer() const
+const Epetra_Import* FiniteDifference::RowMatrixImporter() const
 {
-  return jacobian->Importer();
+  return jacobian->RowMatrixImporter();
 }
 
 bool FiniteDifference::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)

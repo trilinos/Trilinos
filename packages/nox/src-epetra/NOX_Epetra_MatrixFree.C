@@ -163,14 +163,32 @@ const Epetra_Comm & MatrixFree::Comm() const
 {
   return currentX.Map().Comm();
 }
-const Epetra_BlockMap& MatrixFree::DomainMap() const
+const Epetra_Map& MatrixFree::OperatorDomainMap() const
 {
-  return currentX.Map();
+  const Epetra_BlockMap* bmap = 0;
+  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
+
+  if (bmap == 0) {
+    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorDomainMap() - solution "
+	 << "vector must be an Epetra_Map object!" << endl;
+    throw "NOX Error";
+  }
+
+  return dynamic_cast<const Epetra_Map&>(*bmap);
 }
 
-const Epetra_BlockMap& MatrixFree::RangeMap() const
+const Epetra_Map& MatrixFree::OperatorRangeMap() const
 {
-  return currentX.Map();
+  const Epetra_BlockMap* bmap = 0;
+  bmap = dynamic_cast<const Epetra_Map*>(&currentX.Map());
+
+  if (bmap == 0) {
+    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorRangeMap() - solution "
+	 << "vector must be an Epetra_Map object!" << endl;
+    throw "NOX Error";
+  }
+
+  return dynamic_cast<const Epetra_Map&>(*bmap);
 }
 
 bool MatrixFree::computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)

@@ -25,7 +25,7 @@
 #include "NOX_Epetra_Operator_JacobiPrec.H" 
 
 #include "Epetra_RowMatrix.h"
-#include "Epetra_BlockMap.h"
+#include "Epetra_Map.h"
 
 namespace NOX {
 
@@ -108,14 +108,32 @@ const Epetra_Comm & JacobiPreconditioner::Comm() const
 {
   return diagonalVector.Map().Comm();
 }
-const Epetra_BlockMap& JacobiPreconditioner::DomainMap () const 
-{
-  return diagonalVector.Map();
+const Epetra_Map& JacobiPreconditioner::OperatorDomainMap () const 
+{  
+  const Epetra_BlockMap* bmap = 0;
+  bmap = dynamic_cast<const Epetra_Map*>(&diagonalVector.Map());
+
+  if (bmap == 0) {
+    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorDomainMap() - solution "
+	 << "vector must be an Epetra_Map object!" << endl;
+    throw "NOX Error";
+  }
+
+  return dynamic_cast<const Epetra_Map&>(*bmap);
 }
 
-const Epetra_BlockMap& JacobiPreconditioner::RangeMap () const 
+const Epetra_Map& JacobiPreconditioner::OperatorRangeMap () const 
 {
-  return diagonalVector.Map();
+  const Epetra_BlockMap* bmap = 0;
+  bmap = dynamic_cast<const Epetra_Map*>(&(diagonalVector.Map()));
+
+  if (bmap == 0) {
+    cout << "ERROR: NOX::Epetra::MatrixFree::OperatorRangeMap() - solution "
+	 << "vector must be an Epetra_Map object!" << endl;
+    throw "NOX Error";
+  }
+
+  return dynamic_cast<const Epetra_Map&>(*bmap);
 }
 bool JacobiPreconditioner::compute(const Epetra_Vector& x, 
 				   const Epetra_Operator* jacobianPtr) 

@@ -103,10 +103,10 @@ class FiniteDifference : public Epetra_RowMatrix {
   virtual bool HasNormInf() const;
 
   //!Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  virtual const Epetra_BlockMap & DomainMap() const;
+  virtual const Epetra_Map & OperatorDomainMap() const;
 
   //!Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  virtual const Epetra_BlockMap & RangeMap() const;
+  virtual const Epetra_Map & OperatorRangeMap() const;
 
   //! See Epetra_RowMatrix documentation.
   virtual bool Filled() const;
@@ -178,13 +178,13 @@ class FiniteDifference : public Epetra_RowMatrix {
   virtual const Epetra_Comm & Comm() const;
 
   //! See Epetra_RowMatrix documentation.
-  virtual const Epetra_BlockMap & BlockRowMap() const;
+  virtual const Epetra_Map & RowMatrixRowMap() const;
 
   //! See Epetra_RowMatrix documentation.
-  virtual const Epetra_BlockMap & BlockImportMap() const;
+  virtual const Epetra_Map & RowMatrixColMap() const;
   
   //! See Epetra_RowMatrix documentation.
-  virtual const Epetra_Import * Importer() const;
+  virtual const Epetra_Import * RowMatrixImporter() const;
 
   //! Compute Jacobian given the specified input vector, x. Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);

@@ -70,9 +70,9 @@ class JacobiPreconditioner : public Operator {
 
   virtual const Epetra_Comm & Comm() const;
 
-  virtual const Epetra_BlockMap& DomainMap () const;
+  virtual const Epetra_Map& OperatorDomainMap () const;
 
-  virtual const Epetra_BlockMap& RangeMap () const;
+  virtual const Epetra_Map& OperatorRangeMap () const;
 
   //! takes in the current solution vector and the Jacobian Epetra_Operator.  This function then computes the diagonal and stores it in an Epetra_Vector.
   virtual bool compute(const Epetra_Vector& x, const Epetra_Operator* Jacobian = 0);

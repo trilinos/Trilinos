@@ -22,8 +22,8 @@
  * INFORMATION, APPARATUS, PRODUCT, OR PROCESS DISCLOSED, OR REPRESENTS
  * THAT ITS USE WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS. */
 
-#ifndef _EPETRA_MATRIXFREE_H_
-#define _EPETRA_MATRIXFREE_H_
+#ifndef _NOX_EPETRA_MATRIXFREE_H_
+#define _NOX_EPETRA_MATRIXFREE_H_
 
 #include "Epetra_Comm.h"
 #include "Epetra_Operator.h"	// base class
@@ -124,10 +124,10 @@ class MatrixFree : public Epetra_Operator {
   virtual const Epetra_Comm & Comm() const;
 
   //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  virtual const Epetra_BlockMap& DomainMap () const;
+  virtual const Epetra_Map& OperatorDomainMap () const;
 
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  virtual const Epetra_BlockMap& RangeMap () const;
+  virtual const Epetra_Map& OperatorRangeMap () const;
 
   //! Compute Jacobian given the specified input vector, x.  Returns true if computation was successful.
   virtual bool computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac);

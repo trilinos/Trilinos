@@ -111,10 +111,10 @@ class Operator : public Epetra_Operator {
   virtual const Epetra_Comm & Comm() const = 0;
 
   //! Returns the Epetra_BlockMap object associated with the domain of this matrix operator.
-  virtual const Epetra_BlockMap& DomainMap () const = 0;
+  virtual const Epetra_Map& OperatorDomainMap () const = 0;
 
   //! Returns the Epetra_BlockMap object associated with the range of this matrix operator.
-  virtual const Epetra_BlockMap& RangeMap () const = 0;
+  virtual const Epetra_Map& OperatorRangeMap () const = 0;
 
   //! Compute the Operator given the specified input vector, x. In some cases the compute function may need additional information from an auxiliary operator, so we allow for one to be supplied.  For example, if a preconditioner is implemented that relies on a separate Jacobian matrix, it could take the Jacobian as the second argument and extract the required information.
   virtual bool compute(const Epetra_Vector& x, const Epetra_Operator* J) = 0;
