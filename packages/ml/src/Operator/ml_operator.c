@@ -229,6 +229,8 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->num_PDEs            = original->num_PDEs;
    mat->num_rigid           = original->num_rigid;
    mat->N_total_cols_est    = -1;
+   mat->lambda_max = original->lambda_max;
+   mat->lambda_min = original->lambda_min;
    return 1;
 }
 
