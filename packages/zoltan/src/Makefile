@@ -115,7 +115,7 @@ OCT_INC		= msg_const.h octant_const.h oct_util_const.h \
 		  migreg.h hilbert_const.h
 
 PARAMS_CSRC	= set_param.c assign_param_vals.c check_param.c print_params.c \
-		  key_params.c free_params.c
+		  key_params.c free_params.c bind_param.c 
 PARAMS_INC	= params_const.h
 
 
