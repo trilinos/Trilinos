@@ -349,8 +349,12 @@ adding or editing autoconf-specific files such as configure.ac.
 
 \subsection{Adding and Removing Source Files}
 
+ADDING FILES PRELIMINARILY!!!
+A common misconception 
+
 Commonly a developer needs to add files to or remove files from a Trilinos 
-package.  We outline the steps for adding or removing source files below.  
+package.  We outline the steps for adding or removing source files from a 
+Trilinos package that uses Autotools. 
 The below outline assumes the simple addition or removal of files.  Special 
 situations such as adding header file or library dependencies to 
 a Trilinos package require a more complicated process.
@@ -364,8 +368,11 @@ recent versions are supported.  The supported versions of Autoconf and
 Automake can always be found on software.sandia.gov.
 
 \item Update source code from Trilinos repository
-Obtain the most current version of Trilinos (for the branch being worked on) 
-
+Obtain the most current version of Trilinos (for the branch being worked on).  
+First, cd to the top Trilinos directory, then type
+\begin{verbatim}
+cvs -q update-dP
+\end{verbatim}
 
 \item List new files in/remove obsolete files from Makefile.am
 (describe)
@@ -405,20 +412,17 @@ the non-generated files, bootstrapping should resolve the problem.
 \bullet 
 \item Commit the changes to the Trilinos repository (FIX-UP)
 Once all of the above steps are completed, the final step is to commit the 
-changes to the repository by typing...
+changes to the repository.  Start by typing
 \begin{verbatim}
 cvs commit
 \begin{verbatim}
-Next, look at the list of files that are to be added or modified.  It is 
-easy to inadvertantly commit files.  Perhaps a developer is working on two 
-changes to files in the same package, or has forgotten about an abandoned 
-effort that was never cleaned up.  Finally, enter an appropriate log message, 
+Now, look at the list of files that are to be added or modified.  It is 
+easy to inadvertantly commit files.  It is also easy to forget to add ...
+  Finally, enter an appropriate log message, 
 save the file, and exit the CVS editor.  It is recommended that a developer 
 consider testing the new code...
 
 \end{enumerate}
-
-ADDING FILES PRELIMINARILY!!!
 
 % start reading Mike's stuff at 243
 
