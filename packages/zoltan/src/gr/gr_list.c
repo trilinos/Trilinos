@@ -33,7 +33,7 @@ static void delete_list_entry(LIST_ENTRY **ptr);
 /*****************************************************************************/
 /*****************************************************************************/
 
-void add_to_bucket(LIST_ENTRY **head_list, VERTEX *vertex)
+void LB_add_to_bucket(LIST_ENTRY **head_list, VERTEX *vertex)
 {
 /*
  *  This function creates a new list entry structure and inserts it as the 
@@ -62,14 +62,14 @@ LIST_ENTRY *new;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void remove_from_bucket(LIST_ENTRY **head_list, VERTEX *vertex)
+void LB_remove_from_bucket(LIST_ENTRY **head_list, VERTEX *vertex)
 {
 /*
  *  Routine to remove a vertex from a hash bucket.  It does NOT free the
  *  memory for the vertex.
  */
 
-char *yo = "remove_from_bucket";
+char *yo = "LB_remove_from_bucket";
 LIST_ENTRY *ptr = *head_list;
 
   while (ptr != NULL && ptr->Vertex != vertex) 
@@ -91,7 +91,7 @@ LIST_ENTRY *ptr = *head_list;
 /*****************************************************************************/
 /*****************************************************************************/
 
-VERTEX *search_bucket(LIST_ENTRY *head_list, ID *id)
+VERTEX *LB_search_bucket(LIST_ENTRY *head_list, ID *id)
 {
 /*
  *  Given a bucket, return a pointer to a vertex based on its ID.
@@ -112,7 +112,7 @@ VERTEX *vertex = NULL;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void free_bucket(LIST_ENTRY **head_list) 
+void LB_free_bucket(LIST_ENTRY **head_list) 
 {
 /*
  *  Frees the list representing a hash bucket.  Also frees the 
@@ -125,7 +125,7 @@ LIST_ENTRY *ptr, *next_ptr;
 
   while ((ptr = next_ptr) != NULL) {
     next_ptr = ptr->Next;
-    free_vertex(&(ptr->Vertex));
+    LB_free_vertex(&(ptr->Vertex));
     delete_list_entry(&ptr);
   }
 }

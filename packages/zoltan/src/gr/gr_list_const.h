@@ -23,9 +23,9 @@ static char *cvs_gr_list_const_h = "$Id$";
 
 #include "gr_hash_const.h"
 
-extern void add_to_bucket(LIST_ENTRY **, VERTEX *);
-extern void remove_from_bucket(LIST_ENTRY **, VERTEX *);
-extern VERTEX *search_bucket(LIST_ENTRY *, ID *);
-extern void free_bucket(LIST_ENTRY **);
+extern void LB_add_to_bucket(LIST_ENTRY **, VERTEX *);
+extern void LB_remove_from_bucket(LIST_ENTRY **, VERTEX *);
+extern VERTEX *LB_search_bucket(LIST_ENTRY *, ID *);
+extern void LB_free_bucket(LIST_ENTRY **);
 
 #endif

@@ -25,7 +25,7 @@ static char *cvs_gr_c = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-GRAPH *build_graph_ala_chaco(
+GRAPH *LB_build_graph_ala_chaco(
   int num_vertices,          /* Number of vertices in the processor's graph. */
   int vertex_weights[],      /* Array of vertex weights (ordered in same 
                                 order as vertex_list).                       */
@@ -65,7 +65,7 @@ VERTEX *vertex;
 GRAPH *graph;
 ID vertex_ID;
 
-  graph = new_graph();
+  graph = LB_new_graph();
 
   for (i = 0; i < MAX_DIM; i++) 
     coor[i] = 0.0;
@@ -91,7 +91,7 @@ ID vertex_ID;
       }
     }
 
-    vertex = new_vertex(&vertex_ID, 
+    vertex = LB_new_vertex(&vertex_ID, 
                  (vertex_weights != NULL ?  vertex_weights[i] : 1),
                  start_nbor_list[i+1]-start_i, &(nbor_list[start_i]), 
                  (edge_weights != NULL ? &(edge_weights[start_i]) : NULL), 

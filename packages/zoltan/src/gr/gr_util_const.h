@@ -20,6 +20,6 @@
 static char *cvs_gr_utils_const_h = "$Id$";
 #endif
 
-extern void print_graph(GRAPH *);
+extern void LB_print_graph(GRAPH *);
 
 #endif

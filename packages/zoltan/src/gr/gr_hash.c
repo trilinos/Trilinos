@@ -52,7 +52,7 @@ static HASH_FN hash_function_one;
 /*****************************************************************************/
 /*****************************************************************************/
 
-void initialize_hash_graph(GRAPH *graph)
+void LB_initialize_hash_graph(GRAPH *graph)
 {
 /*
  *  Function that initializes function pointers for graphs implemented as 
@@ -101,7 +101,7 @@ int i;
 int num_buckets = (*table)->Num_Buckets;
 
   for (i = 0; i < num_buckets; i++) 
-    free_bucket(&((*table)->Bucket[i]));
+    LB_free_bucket(&((*table)->Bucket[i]));
 
   safe_free((void **) table);
 }
@@ -120,7 +120,7 @@ int hash_value;
 HASH_TABLE *table = (HASH_TABLE *) (graph->Graph_Data);
   
   hash_value = table->Hash_Fn(id);
-  return(search_bucket(table->Bucket[hash_value], id));
+  return(LB_search_bucket(table->Bucket[hash_value], id));
 }
 
 /*****************************************************************************/
@@ -138,7 +138,7 @@ ID *id = &(vertex->Id);
 HASH_TABLE *table = (HASH_TABLE *) (graph->Graph_Data);
   
   hash_value = table->Hash_Fn(id);
-  add_to_bucket(&(table->Bucket[hash_value]), vertex);
+  LB_add_to_bucket(&(table->Bucket[hash_value]), vertex);
 }
 
 /*****************************************************************************/
@@ -156,7 +156,7 @@ ID *id = &(vertex->Id);
 HASH_TABLE *table = (HASH_TABLE *) (graph->Graph_Data);
 
   hash_value = table->Hash_Fn(id);
-  remove_from_bucket(&(table->Bucket[hash_value]), vertex);
+  LB_remove_from_bucket(&(table->Bucket[hash_value]), vertex);
 }
 
 /*****************************************************************************/

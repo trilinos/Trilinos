@@ -23,7 +23,7 @@ static char *cvs_id_c = "$Id$";
 /*****************************************************************************/
 /*****************************************************************************/
 
-int compare_combo_id(ID *id1, ID *id2) 
+int LB_compare_combo_id(ID *id1, ID *id2) 
 {
 /*
  *  This function compares IDs made up of two integer fields.
@@ -47,7 +47,7 @@ int compare_combo_id(ID *id1, ID *id2)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void assign_combo_id(ID *id1, ID *id2)
+void LB_assign_combo_id(ID *id1, ID *id2)
 {
   (*id1).Proc   = (*id2).Proc;
   (*id1).Number = (*id2).Number;
@@ -57,7 +57,7 @@ void assign_combo_id(ID *id1, ID *id2)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void new_combo_id(ID *id1, int i)
+void LB_new_combo_id(ID *id1, int i)
 {
   (*id1).Proc = Proc;
   (*id1).Number = i;
@@ -67,7 +67,7 @@ void new_combo_id(ID *id1, int i)
 /*****************************************************************************/
 /*****************************************************************************/
 
-void print_combo_id(ID *id)
+void LB_print_combo_id(ID *id)
 {
   printf("(%4d,%4d)", (*id).Proc, (*id).Number);
 }

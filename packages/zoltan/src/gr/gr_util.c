@@ -22,7 +22,7 @@ static char *cvs_gr_utils_c = "$Id$";
 #include "gr_util_const.h"
 #include "id_util_const.h"
 
-void print_graph(GRAPH *graph)
+void LB_print_graph(GRAPH *graph)
 {
 LOOP_CONTROL i; 
 VERTEX *vertex;

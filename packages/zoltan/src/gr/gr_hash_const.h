@@ -27,7 +27,7 @@ static char *cvs_gr_hash_const_h = "$Id$";
  * PROTOTYPES 
  */
 
-extern void initialize_hash_graph(GRAPH *);
+extern void LB_initialize_hash_graph(GRAPH *);
 
 /*
  *  Hash table data structures.

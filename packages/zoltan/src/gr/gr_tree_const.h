@@ -25,7 +25,7 @@ static char *cvs_gr_tree_const_h = "$Id$";
  * PROTOTYPES 
  */
 
-extern void initialize_tree_graph(GRAPH *);
+extern void LB_initialize_tree_graph(GRAPH *);
 
 /*
  *  Tree data structures

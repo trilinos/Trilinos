@@ -62,7 +62,7 @@ static void avl_balance2(TREE **, BOOLEAN *);
 /*****************************************************************************/
 /*****************************************************************************/
 
-void initialize_tree_graph(GRAPH *graph)
+void LB_initialize_tree_graph(GRAPH *graph)
 {
 /*
  *  Function that initializes function pointers for graphs implemented as 
@@ -176,7 +176,7 @@ static void free_tree(TREE **p_root)
   if (*p_root) {
     free_tree(&((*p_root)->Left));
     free_tree(&((*p_root)->Right));
-    free_vertex(&((*p_root)->Vertex));
+    LB_free_vertex(&((*p_root)->Vertex));
     safe_free((void **) p_root);
   }
 }

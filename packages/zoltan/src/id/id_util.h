@@ -22,7 +22,7 @@ static char *cvs_id_util_h = "$Id$";
 
 #include "id_const.h"
 
-ID_UTIL BL_ID_Util = {compare_combo_id, assign_combo_id, 
-                      new_combo_id, print_combo_id};
+ID_UTIL BL_ID_Util = {LB_compare_combo_id, LB_assign_combo_id, 
+                      LB_new_combo_id, LB_print_combo_id};
 
 #endif

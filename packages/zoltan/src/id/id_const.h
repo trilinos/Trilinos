@@ -25,9 +25,9 @@ struct ID_Struct {
   int Number;
 };
 
-extern ID_INT_FN compare_combo_id;
-extern ID_VOID_FN assign_combo_id;
-extern ID_NEW_FN new_combo_id;
-extern ID_PRINT_FN print_combo_id;
+extern ID_INT_FN LB_compare_combo_id;
+extern ID_VOID_FN LB_assign_combo_id;
+extern ID_NEW_FN LB_new_combo_id;
+extern ID_PRINT_FN LB_print_combo_id;
 
 #endif
