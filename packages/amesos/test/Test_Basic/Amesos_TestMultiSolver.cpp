@@ -310,7 +310,7 @@ int Amesos_TestMultiSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
       Teuchos::ParameterList ParamList ;
       Amesos_Dscpack dscpack( Problem ) ; 
       ParamList.set( "MaxProcs", -3 );
-      EPETRA_CHK_ERR( superludist.SetParameters( ParamList ) ); 
+      EPETRA_CHK_ERR( dscpack.SetParameters( ParamList ) ); 
     
       EPETRA_CHK_ERR( dscpack.Solve( ) ); 
 #endif

@@ -262,18 +262,20 @@ int Amesos_Dscpack::PerformSymbolicFactorization()
     MaxProcs_ = Comm().NumProc();
     break;
   }
+    MaxProcs_ = EPETRA_MIN( MaxProcs_, Comm().NumProc());
 
   // MS // here I continue with the old code...
   
 
   DscNumProcs = 1 ; 
   int DscMax = DSC_Analyze( numrows, &Ap[0], &Ai[0], &Replicates[0] );
-  
+
   while ( DscNumProcs * 2 <=EPETRA_MIN( MaxProcs_, DscMax ) )  DscNumProcs *= 2 ;
   
   MyDscRank = -1; 
   DSC_Open0( MyDSCObject, DscNumProcs, &MyDscRank, MPIC ) ; 
   
+
   NumLocalCols = 0 ; // This is for those processes not in the Dsc grid
   if ( MyDscRank >= 0 ) { 
     assert( Comm().MyPID() == MyDscRank ) ; 

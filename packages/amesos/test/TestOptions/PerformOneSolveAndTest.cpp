@@ -115,10 +115,9 @@ int PerformOneSolveAndTest(char* AmesosClass,
     //  We only set transpose if we have to - this allows valgrind to check
     //  that transpose is set to a default value before it is used.
     //
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:120" << endl; 
     if ( transpose ) OUR_CHK_ERR( Abase->SetUseTranspose( transpose ) ); 
-    if (verbose) cout << "PerformOneSolveAndTest.cpp:122" << endl; 
     if (verbose) ParamList.set( "DebugLevel", 1 );
+    if (verbose) ParamList.set( "OutputLevel", 1 );
     OUR_CHK_ERR( Abase->SetParameters( ParamList ) ); 
     OUR_CHK_ERR( Abase->SymbolicFactorization(  ) ); 
     OUR_CHK_ERR( Abase->NumericFactorization(  ) ); 
@@ -365,7 +364,6 @@ int PerformOneSolveAndTest(char* AmesosClass,
     Epetra_Vector Bx2((*BMap)), Bx1((*BMap)), Bx((*BMap)), Bb((*BMap)), Bresidual((*BMap)), Btemp((*BMap));
 
     //
-
 
     //
     //  Factor B
