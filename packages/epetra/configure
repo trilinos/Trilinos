@@ -882,9 +882,11 @@ Optional Features:
                           is no)
   --enable-format_io      Use package-defined IO formatting for output
                           (default is yes)
-  --enable-tests          Build tests for all Trilinos packages (default is
+  --enable-tests          Build tests for all Trilinos packages (not all
+                          packages are sensitive to this option) (default is
                           yes)
-  --enable-examples       Build examples for all Trilinos packages (default is
+  --enable-examples       Build examples for all Trilinos packages (not all
+                          packages are sensitive to this option) (default is
                           yes)
 
 Optional Packages:
@@ -3505,7 +3507,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3508:" \
+echo "$as_me:3510:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5987,7 +5989,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5990: \"$ac_link\") >&5
+(eval echo $as_me:5992: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -6067,7 +6069,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:6070: \"$ac_link\") >&5
+(eval echo $as_me:6072: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8497,7 +8499,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:8500: \"$ac_link\") >&5
+(eval echo $as_me:8502: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -8577,7 +8579,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:8580: \"$ac_link\") >&5
+(eval echo $as_me:8582: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS

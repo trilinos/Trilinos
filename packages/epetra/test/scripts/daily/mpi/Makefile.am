@@ -11,6 +11,9 @@ epetraTestAllMpi_SOURCES = $(srcdir)/epetraTestAllMpi
 
 epetraTestAllMpi$(EXEEXT): $(srcdir)/epetraTestAllMpi
 	cp $(srcdir)/epetraTestAllMpi epetraTestAllMpi$(EXEEXT) 
+else
+
+EXTRA_DIST=epetraTestAllMpi
 
 endif
 

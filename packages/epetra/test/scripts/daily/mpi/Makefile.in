@@ -96,6 +96,8 @@ install_sh = @install_sh@
 @HAVE_MPI_TRUE@noinst_PROGRAMS = epetraTestAllMpi
 
 @HAVE_MPI_TRUE@epetraTestAllMpi_SOURCES = $(srcdir)/epetraTestAllMpi
+
+@HAVE_MPI_FALSE@EXTRA_DIST = epetraTestAllMpi
 subdir = test/scripts/daily/mpi
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Epetra_config.h
