@@ -332,50 +332,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                              IfpackOverlap, LevelID_[level], pre_or_post,
                              IfpackList,*Comm_);
       
-      // omega = -1.0 means compute it through Anasazi, using
-      // 10 iterations and 1e-5 as tolerance
-#ifdef HAVE_ML_ANASAZIzzz
-      if (Omega == -1.0) {
-        // the following is broken
-        //
-        if (Omega == -1.0)
-          IfpackList.set("relaxation: damping factor", 1.0);
-        double LambdaMax;
-        ML_Anasazi_Get_SpectralNorm_Anasazi(&(ml->Amat[LevelID_[level]]),
-                                            &(ml->post_smoother[LevelID_[level]]),
-                                            10, 1e-5, false, false, &LambdaMax);
-
-        // compute optimal damping parameter
-        Omega = 1.0 / LambdaMax;
-        IfpackList.set("relaxation: damping factor", Omega);
-
-        // some crap to re-set the damping parameter
-        if (pre_or_post == ML_PRESMOOTHER || pre_or_post == ML_BOTH) {
-          Ifpack_Preconditioner* Ifp = 
-            (Ifpack_Preconditioner*)(ml->pre_smoother[LevelID_[level]].smoother->data);
-          assert (Ifp != 0);
-          Ifp->SetParameters(IfpackList);
-        }
-        if (pre_or_post == ML_POSTSMOOTHER || pre_or_post == ML_BOTH) {
-          Ifpack_Preconditioner* Ifp = 
-            (Ifpack_Preconditioner*)(ml->post_smoother[LevelID_[level]].smoother->data);
-          assert (Ifp != 0);
-          Ifp->SetParameters(IfpackList);
-        }
-
-        if (verbose_)
-          cout << msg << "new damping parameter = " << Omega 
-               << " (= 1 / " << LambdaMax << ")" << endl; 
-
-        // set to -1 for the next level
-        IfpackList.set("relaxation: damping factor", -1.0);
-#else
-	cerr << ErrorMsg_ << "Please compile with --enable-anasazi" << endl;
-	cerr << ErrorMsg_ << "to use `relaxation: damping factor' == -1.0" << endl;
-	exit(EXIT_FAILURE);
-#endif
-      }
-
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
 	   << ErrorMsg_ << "ML must be configure with --enable-ifpack" << endl
