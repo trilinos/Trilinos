@@ -970,6 +970,12 @@ void ML_2matmult(ML_Operator *Mat1, ML_Operator *Mat2,
                            getrow_comm, &max_per_proc, comm);
    Mat2->getrow->use_loc_glob_map = ML_YES;
 
+   if (max_per_proc == 0 && comm->ML_mypid == 0) {
+     printf("\aERROR: In ML_2matmult, maximum number of local unknowns\n"
+            "\a       on any processor (max_per_proc) is zero !\n");
+     exit(1);
+   }
+
    if (Mat1->getrow->pre_comm != NULL)
       ML_exchange_rows( Mat2, &Mat2comm, Mat1->getrow->pre_comm);
    else Mat2comm = Mat2;
