@@ -73,13 +73,19 @@ namespace LOCA {
        * To use Anasazi for computing eigenvalues, NOX/LOCA must be
        * configured with --enable-loca-anasazi
        */
+      //! Driver for eigensolver, including preprocessing of parameters,
+      //! generating initial vector, calling eigensolver, and post-processing
+      //! of the results.
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(NOX::Parameter::List& params);
 
-     NOX::Abstract::Group::ReturnType  
-     applyAnasaziOperator (NOX::Parameter::List &params, 
-                           const NOX::Abstract::Vector &input, 
-                           NOX::Abstract::Vector &result) const;
+      //! Routine called back to by Anasazi to perform one application
+      //! of the operator. Contains logic for shift-and-invert and
+      //! the generalized Cayley transformation.
+      NOX::Abstract::Group::ReturnType  
+      applyAnasaziOperator (NOX::Parameter::List &params, 
+                            const NOX::Abstract::Vector &input, 
+                            NOX::Abstract::Vector &result) const;
 
     protected:
 
@@ -88,10 +94,20 @@ namespace LOCA {
        * continuation steps
        */
       int eigenvalCounter;
+
+      //! Flag whether the system has a mass matrix, otherwise the identity matrix is used.
       bool hasMassMatrix;
+
+      //! Flag whether the Cayley transformation is used, otherwise Shift-and-Invert is used.
       bool cayley;
+
+      //! The shift (pole) parameter in the Cayley transformation.
       double sigma;
+
+      //! The 'zero' parameter in the Cayley transformation.
       double mu;
+
+      //! The shift (pole) parameter in the shift-and-Invert transformation.
       double shift_;
     };
   } // namespace Continuation

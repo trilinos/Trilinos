@@ -95,7 +95,7 @@ LOCA::EpetraNew::Group::Group(const LOCA::EpetraNew::Group& source,
   LOCA::Abstract::Group(source, type),
   params(source.params),
   userInterface(source.userInterface),
-  interfaceTime(true),
+  interfaceTime(source.interfaceTime),
   tmpVectorPtr2(0),
   scaleVecPtr(NULL)
 {
@@ -273,6 +273,7 @@ LOCA::EpetraNew::Group::setScaleVector(const NOX::Abstract::Vector& s)
 NOX::Abstract::Group::ReturnType
 LOCA::EpetraNew::Group::computeMassMatrix()
 {
+  // Hardwired for matrix-free mode on mass matrix, so this routine does nothing
   if(interfaceTime)
     return NOX::Abstract::Group::Ok;
   else
@@ -283,8 +284,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::EpetraNew::Group::applyMassMatrix(const NOX::Abstract::Vector& input,
                                         NOX::Abstract::Vector& result) const
 {
-
-
+  // For matrix-free mode, call interface for applying mass matrix
   if(interfaceTime){
      const NOX::Epetra::Vector& epetraInput = 
        dynamic_cast<const NOX::Epetra::Vector&>(input);
@@ -305,6 +305,7 @@ LOCA::EpetraNew::Group::isMassMatrix()
 NOX::Abstract::Group::ReturnType
 LOCA::EpetraNew::Group::computeShiftedMatrix(const double& shift)
 {
+  // Hardwired for matrix-free mode, so this routine does nothing
   return NOX::Abstract::Group::Ok;
 }
 
@@ -322,6 +323,9 @@ LOCA::EpetraNew::Group::applyShiftedMatrix(const NOX::Epetra::Vector& epetraInpu
                                            NOX::Epetra::Vector& epetraResult,
                                            const double& shift, bool massMatrix) const
 {
+  // Hardwired for matrix-free mode, so no shifted matrix is available
+  // Create action of shifted matrix in 2 steps
+
   applyJacobian(epetraInput,epetraResult);
 
   if(massMatrix) {

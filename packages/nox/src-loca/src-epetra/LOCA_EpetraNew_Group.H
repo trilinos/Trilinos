@@ -289,15 +289,28 @@ namespace LOCA {
       //! Sets the scale vector.  
       void setScaleVector(const NOX::Abstract::Vector& s);
 
+      /*! 
+       * @name Methods involving Mass and Shifted Matrices for Eigensolver
+       */
+      //@{
+      //! Compute the mass matrix for the system.
+      //! (Currently only has matrix-free implementation.)
       virtual NOX::Abstract::Group::ReturnType computeMassMatrix();
 
+      //! Multiply the mass matrix by a vector.
+      //! (Currently only has matrix-free implementation.)
       virtual NOX::Abstract::Group::ReturnType applyMassMatrix(const NOX::Abstract::Vector& input,
                                                                NOX::Abstract::Vector& result) const;
 
       virtual bool isMassMatrix();
 
+      //! Create a shifted matrix, used as part of the spectral transformation for
+      //! linear stability analysis.
+      //! (Currently only has matrix-free implementation.)
       virtual NOX::Abstract::Group::ReturnType computeShiftedMatrix(const double& shift);
 
+      //! Multiply the shifted matrix by a vector.
+      //! (Currently only has matrix-free implementation.)
       virtual NOX::Abstract::Group::ReturnType applyShiftedMatrix(const NOX::Abstract::Vector& input,
                                                                   NOX::Abstract::Vector& result,
                                                                   const double& shift, bool massMatrix) const;
@@ -306,10 +319,13 @@ namespace LOCA {
                                                                   NOX::Epetra::Vector& result,
                                                                   const double& shift, bool massMatrix) const;
 
+      //! Solve the linear system with the shifted matrix, using the same
+      //! solver and settings as for the Jacobian matrix.
       virtual NOX::Abstract::Group::ReturnType applyShiftedMatrixInverse(const NOX::Abstract::Vector& input,
                                                                          NOX::Abstract::Vector& result,
                                                                          const double& shift, bool massMatrix,
                                                                          NOX::Parameter::List& params) const;
+      //@}
 
       /*! 
        * @name Implementation of LOCA::Bifurcation::TPBord::AbstractGroup virtual methods.

@@ -55,7 +55,8 @@ namespace LOCA {
       /*!
        * This interface is derived from the 
        * NOX::EpetraNew::Interface::Required and additionally provides a 
-       * method for setting problem parameters.
+       * method for accessing a mass matrix. This is needed for linear
+       * stability analysis and Hopf tracking.
       */
       class TimeDependent : public LOCA::EpetraNew::Interface::Required {
 
@@ -68,8 +69,8 @@ namespace LOCA {
 	virtual ~TimeDependent() {};
 
 	/*! 
-	 * \brief Set the parameters in the user's app prior to calling one 
-	 * of the compute functions.
+	 * \brief Call user routine for applying the Mass Matrix to a 
+	 * vector, if using matrix-free mode for mass matrix
 	 */
 	virtual NOX::Abstract::Group::ReturnType 
         applyMassMatrix(const NOX::Epetra::Vector& input,

@@ -315,19 +315,20 @@ LOCA::Continuation::AnasaziGroup::applyAnasaziOperator(NOX::Parameter::List &par
 
   if(cayley)   {
 
-   // First apply shifted matrix to input
+   // First, apply shifted matrix (J - mu M) to input
 
     const double& shift = -1.00*mu;
  
     NOX::Abstract::Vector *result2 = result.clone(NOX::ShapeCopy);
 
-     timeGroup.applyShiftedMatrix(input,*result2,shift,hasMassMatrix);
+    timeGroup.applyShiftedMatrix(input,*result2,shift,hasMassMatrix);
     
-     const double& shift2 = -1.00*sigma;
-      
-     timeGroup.applyShiftedMatrixInverse(*result2,result,shift2,hasMassMatrix,params);
-     delete result2;
-     return NOX::Abstract::Group::Ok;   
+   // Second, apply inverse of shifted matrix (J - sigma M)
+    const double& shift2 = -1.00*sigma;
+
+    timeGroup.applyShiftedMatrixInverse(*result2,result,shift2,hasMassMatrix,params);
+    delete result2;
+    return NOX::Abstract::Group::Ok;   
 }
   else {  
 
@@ -344,6 +345,7 @@ LOCA::Continuation::AnasaziGroup::applyAnasaziOperator(NOX::Parameter::List &par
     
     const NOX::Abstract::Vector *massinput = input2->clone(NOX::DeepCopy);
     
+   // Second, apply inverse of shifted matrix (J - shift_  M)
     timeGroup.applyShiftedMatrixInverse(*massinput,result,omega,hasMassMatrix,params);
 
     delete input2;
