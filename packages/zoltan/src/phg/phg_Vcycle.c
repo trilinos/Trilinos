@@ -135,6 +135,7 @@ int Zoltan_PHG_HPart_Lib (
         for (i = 0; i < hg->nVtx; i++)
             match[i] = i;
           
+        uprintf(hg->comm, "before matching call\n"); 
         /* Calculate matching (packing or grouping) */
         if (hgp->matching)  {
             err = Zoltan_PHG_Matching (zz, hg, match, hgp);
@@ -161,8 +162,10 @@ int Zoltan_PHG_HPart_Lib (
 
         /* heuristic: stop on diminishing returns */
         /* RTHRTH - modify this for parallel version (need global view) */
-        if (c_hg.nVtx > 0.9 * hg->nVtx)
+        if (c_hg.dist_x[hg->comm->nProc_x] > 0.9 * hg->dist_x[hg->comm->nProc_x]) {
             hg->redl = c_hg.redl = c_hg.nVtx;
+            uprintf(hg->comm, "I'm going to break the loop; not enough matching\n");
+        }
 
         ZOLTAN_FREE ((void**) &match);
 

@@ -34,10 +34,37 @@ int Zoltan_PHG_Gno_To_Proc_Block(
 int idx;
 int maxgno = dist_dim[nProc_dim];
 
+  if (maxgno<=0) {
+     printf("ERROR: maxgno=%d nProc_dim=%d dist_dim=[%d,%d,%d]\n", maxgno, nProc_dim, dist_dim[0], dist_dim[1], dist_dim[2]);
+     return 0;
+  }
+   
   idx = gno * nProc_dim / maxgno;
 
-  while (gno < dist_dim[idx]) idx--;
-  while (gno >= dist_dim[idx+1]) idx++;
+   if (!dist_dim) {
+      printf("ERRROR: distdim is NULL\n");
+      return 0;
+   }
+  // printf("UMIT: gno=%d idx = %d\n", gno, idx);
+  while (gno < dist_dim[idx]) {
+    idx--;
+    if (idx<0) {
+       printf("ERROR: idx<0");
+       return 0;
+    }
+       
+    }
+  if (idx+1>nProc_dim) {
+      printf("ERRROR idx+1(%d) > nProc_dim(%d)\n", idx+1, nProc_dim);
+      return 0;
+  }
+  while (gno >= dist_dim[idx+1]) { 
+      idx++;
+   if (idx+1>nProc_dim) {
+      printf("ERRROR idx+1(%d) > nProc_dim(%d)\n", idx+1, nProc_dim);
+      return 0;
+   } 
+    }
 
   return idx;
 }

@@ -328,6 +328,7 @@ static int refine_fm2 (
         return ZOLTAN_FATAL;
     }
     
+    
     if (hg->nEdge == 0)
         return ZOLTAN_OK;
 
