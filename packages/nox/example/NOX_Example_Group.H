@@ -106,6 +106,11 @@ public:
 
   //! See above
   bool applyJacobianTranspose(const Abstract::Vector& input, Abstract::Vector& result) const;
+
+  bool applyJacobianInverse(Parameter::List& params, const Vector& input, Vector& result) const;
+
+  //! See above
+  bool applyJacobianInverse(Parameter::List& params, const Abstract::Vector& input, Abstract::Vector& result) const;
   
   //@}
 

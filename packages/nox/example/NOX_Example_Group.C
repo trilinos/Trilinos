@@ -237,25 +237,10 @@ bool Group::computeNewton(NOX::Parameter::List& p)
     throw "NOX Error";
   }
 
-  // Compute Newton Vector. Must copy jacobianMatrix and xVector into
-  // temporary locations because the dgesv call overwrites them.
-  int one = 1;
-  int n = newtonVector.length();
-  Matrix J(jacobianMatrix);
-  Vector y(fVector);
-  vector<int> ipiv(n,0);
-  int info;
-
-  ::DGESV_F77(&n, &one, &J(0,0), &n, &ipiv[0], &y(0), &n, &info);
-
-  // Copy result into newtonVector
-  newtonVector = y;
+  isValidNewton = applyJacobianInverse(p, fVector, newtonVector);
 
   // Scale soln by -1
   newtonVector.scale(-1.0);
-
-  // Update state
-  isValidNewton = (info == 0);
 
   // Return solution
   return isValidNewton;
@@ -309,6 +294,43 @@ bool Group::applyJacobianTranspose(const Vector& input, Vector& result) const
   }
 
   return true;
+}
+
+bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Abstract::Vector& input, Abstract::Vector& result) const
+{
+  const Vector& exampleinput = dynamic_cast<const Vector&> (input);
+  Vector& exampleresult = dynamic_cast<Vector&> (result);
+  return applyJacobianInverse(params, exampleinput, exampleresult);
+}
+
+bool Group::applyJacobianInverse(NOX::Parameter::List& params, const Vector& input, Vector& result) const
+{
+  if (!isF()) {
+    cerr << "ERROR: NOX::Example::Group::applyJacobianInverse() - invalid F" << endl;
+    throw "NOX Error";
+  }
+
+  if (!isJacobian()) {
+    cerr << "ERROR: NOX::Example::Group::applyJacobianInverse() - invalid Jacobian" << endl;
+    throw "NOX Error";
+  }
+
+  // Compute Newton Vector. Must copy jacobianMatrix and xVector into
+  // temporary locations because the dgesv call overwrites them.
+  int one = 1;
+  int n = newtonVector.length();
+  Matrix J(jacobianMatrix);
+  Vector y(input);
+  vector<int> ipiv(n,0);
+  int info;
+
+  ::DGESV_F77(&n, &one, &J(0,0), &n, &ipiv[0], &y(0), &n, &info);
+
+  // Copy result into newtonVector
+  result = y;
+
+  // Return status
+  return (info == 0);
 }
 
 bool Group::isF() const 
