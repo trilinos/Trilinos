@@ -128,6 +128,47 @@ int ML_AMG_Set_MaxCoarseSize( ML_AMG *amg, int size  )
 }
 
 /* ******************************************************************** */
+/* select AMG scheme (scalar, system (unknown), system (nodal)          */
+/* -------------------------------------------------------------------- */
+
+int ML_AMG_Set_AMGScheme_Scalar( ML_AMG *amg  )
+{
+   if ( amg->ML_id != ML_ID_AMG ) 
+   {
+      printf("ML_AMG_Set_AMGScheme_Scalar : wrong object. \n");
+      exit(-1);
+   }
+   amg->amg_scheme = ML_AMG_SCALAR;
+   return 0;
+}
+
+/* -------------------------------------------------------------------- */
+
+int ML_AMG_Set_AMGScheme_SystemUnknown( ML_AMG *amg  )
+{
+   if ( amg->ML_id != ML_ID_AMG ) 
+   {
+      printf("ML_AMG_Set_AMGScheme_SystemUnknown : wrong object. \n");
+      exit(-1);
+   }
+   amg->amg_scheme = ML_AMG_SYSTEM_UNKNOWN;
+   return 0;
+}
+
+/* -------------------------------------------------------------------- */
+
+int ML_AMG_Set_AMGScheme_SystemNodal( ML_AMG *amg  )
+{
+   if ( amg->ML_id != ML_ID_AMG ) 
+   {
+      printf("ML_AMG_Set_AMGScheme_SystemNodal : wrong object. \n");
+      exit(-1);
+   }
+   amg->amg_scheme = ML_AMG_SYSTEM_NODAL;
+   return 0;
+}
+
+/* ******************************************************************** */
 /* select coarsening scheme                                             */
 /* -------------------------------------------------------------------- */
 
