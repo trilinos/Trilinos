@@ -29,6 +29,7 @@ extern "C" {
  * to local objects (vertices) and a PHGraph as used by the algorithms. */
 
 struct Zoltan_PHGraph {
+  int nObj;                 /* Number of on-processor objects. */
   ZOLTAN_ID_PTR Global_IDs; /* Global IDs for on-processor objects.  */
   ZOLTAN_ID_PTR Local_IDs;  /* Local IDs for on-processor objects.   */
   Partition Parts;          /* Initial partition #s for on-processor objects */

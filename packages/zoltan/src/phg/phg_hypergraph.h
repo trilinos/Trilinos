@@ -52,22 +52,20 @@ typedef struct {
                   /* nProc_x * nProc_y should equal number of processors!     */
   int myProc_x;   /* my processor's row block number in [0,nProc_x-1] */
   int myProc_y;   /* my processor's column block number in [0,nProc_y-1] */
-  int *vtxdist;   /* distributions of vertices to processor blocks. Vertices
-                   * vtxdist[n] to vtxdist[n+1]-1 are stored in colblock n */
-  int *hedgedist; /* distribution of hyperedges to rowblocks as above */                  
-   
-  int global_nVtx;      /* global number of vertices, |V| */
-  int global_nEdge;     /* global number of hyperedges, |E| */
+  int *dist_x;    /* distributions of vertices to processor columns. Vertices
+                   * dist_x[n] to dist_x[n+1]-1 are stored in col block n */
+  int *dist_y;    /* distribution of hyperedges to processor rows as above */                  
   int nVtx;             /* number of vertices on this processor */
   int nEdge;            /* number of hyperedges on this processor */
-  int nInput;           /* number of inputs, |I|, (pins) on this processor */
+  int nNonZero;         /* number of nonzeros (pins) on this processor */
   
-  int nDim;             /* number of coordinate dimensions for a vertex */
   int VertexWeightDim;  /* number of weight dimensions for a vertex */
   int EdgeWeightDim;    /* number of weight dimensions for a hyperedge */
+
   int redl;             /* working reduction limit */
 
   /* physical coordinates of each vertex, optional */
+  int nDim;         /* number of coordinate dimensions for a vertex */
   double *coor;     /* |V| long by CoordinateDim */
 
   /* arrays with vertex and edge weights */

@@ -30,7 +30,7 @@ void Zoltan_PHG_HGraph_Init(
   hgraph->info  = 0;
   hgraph->nVtx  = 0;
   hgraph->nEdge = 0;
-  hgraph->nInput= 0;
+  hgraph->nNonZero= 0;
   hgraph->nDim  = 0;
   hgraph->EdgeWeightDim   = 0;
   hgraph->VertexWeightDim = 0;
@@ -43,7 +43,8 @@ void Zoltan_PHG_HGraph_Init(
   hgraph->hvertex = NULL;
   hgraph->vindex  = NULL;
   hgraph->vedge   = NULL;
-  hgraph->vtxdist = NULL;
+  hgraph->dist_x  = NULL;
+  hgraph->dist_y  = NULL;
   hgraph->vmap    = NULL;
 }
 
@@ -80,9 +81,9 @@ int Zoltan_PHG_HGraph_Free(
 )
 {
   if (hg)
-    Zoltan_Multifree (__FILE__, __LINE__, 9, &hg->coor, &hg->vwgt, &hg->ewgt,
-     &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->vtxdist,
-     &hg->vmap);
+    Zoltan_Multifree (__FILE__, __LINE__, 10, &hg->coor, &hg->vwgt, &hg->ewgt,
+     &hg->hindex, &hg->hvertex, &hg->vindex, &hg->vedge, &hg->dist_x,
+     &hg->dist_y, &hg->vmap);
 
   return ZOLTAN_OK;
 }
@@ -119,8 +120,9 @@ int Zoltan_PHG_Info (
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   printf("--------- PHGraph Information (min/ave/max/tot) ------------------\n");
+  printf("INFO MAY BE WRONG FOR 2D DATA DISTRIBUTION. KDDKDD \n");
   printf("info:%d |V|=%d |E|=%d |P|=%d \n", hg->info, hg->nVtx, hg->nEdge,
-   hg->nInput);
+   hg->nNonZero);
 
   /* print weights */
   if (hg->vwgt) {
@@ -186,10 +188,10 @@ int Zoltan_PHG_Info (
       size_max = MAX(size_max, size);
     }
     printf("Edge sizes       :    %6d    %9.2f %6d    %9d\n", size_min,
-     (float)hg->nInput / hg->nEdge, size_max, hg->nInput);
+     (float)hg->nNonZero / hg->nEdge, size_max, hg->nNonZero);
 
     var = 0.0;
-    mean = (float)hg->nInput / hg->nEdge;
+    mean = (float)hg->nNonZero / hg->nEdge;
     for (i = 0; i < hg->nEdge; i++) {
       temp = (float)(hg->hindex[i+1]-hg->hindex[i]) - mean;
       var += (temp*temp);
@@ -206,10 +208,10 @@ int Zoltan_PHG_Info (
       size_max = MAX(size_max, size);
     }
     printf("Vertex sizes     :    %6d    %9.2f %6d    %9d\n", size_min,
-     (float)hg->nInput / hg->nVtx, size_max, hg->nInput);
+     (float)hg->nNonZero / hg->nVtx, size_max, hg->nNonZero);
 
     var = 0.0;
-    mean = (float)hg->nInput / hg->nVtx;
+    mean = (float)hg->nNonZero / hg->nVtx;
     for (i = 0; i < hg->nVtx; i++) {
       temp = (float)(hg->vindex[i+1]-hg->vindex[i]) - mean;
       var += (temp*temp);
@@ -247,7 +249,7 @@ int Zoltan_PHG_Create_Mirror (
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* determine which data to "mirror" and set corresponding data pointers. */
-  if (hg &&  hg->hindex && (hg->nInput == 0 || hg->hvertex)
+  if (hg &&  hg->hindex && (hg->nNonZero == 0 || hg->hvertex)
    && !hg->vindex && !hg->vedge) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Have hindex; building vindex.");
 
@@ -256,16 +258,16 @@ int Zoltan_PHG_Create_Mirror (
     index     = hg->hindex;
     data      = hg->hvertex;
     outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
-    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nInput  * sizeof(int));
+    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nNonZero  * sizeof(int));
 
-    if (outindex == NULL || (hg->nInput > 0 && outdata == NULL)) {
+    if (outindex == NULL || (hg->nNonZero > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
       return ZOLTAN_MEMERR;
     }
   }
-  else if (hg && hg->vindex && (hg->nInput == 0 || hg->vedge)
+  else if (hg && hg->vindex && (hg->nNonZero == 0 || hg->vedge)
    && !hg->hindex && !hg->hvertex) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Have vindex; building hindex.");
 
@@ -274,9 +276,9 @@ int Zoltan_PHG_Create_Mirror (
     index     = hg->vindex;
     data      = hg->vedge;
     outindex  = hg->hindex  = (int*) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
-    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nInput    * sizeof(int));
+    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nNonZero    * sizeof(int));
 
-    if (outindex == NULL || (hg->nInput > 0 && outdata == NULL)) {
+    if (outindex == NULL || (hg->nNonZero > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT(zz, yo);
@@ -447,22 +449,26 @@ int Zoltan_PHG_Graph_to_HGraph(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  ZOLTAN_PRINT_WARN(zz->Proc, yo, 
+               "THIS ROUTINE IS NOT CORRECT FOR 2D DATA DISTRIBUTION KDDKDD");
+
   Zoltan_PHG_HGraph_Init(hg);
   hg->info  = g->info;
   hg->nVtx  = g->nVtx;
   hg->nEdge = g->nVtx;
   hg->nDim  = g->nDim;
-  hg->nInput = g->nVtx + g->nEdge;
+  hg->nNonZero = g->nVtx + g->nEdge;
   hg->VertexWeightDim = g->VertexWeightDim;
   hg->EdgeWeightDim   = g->EdgeWeightDim;
 
   /* Copy vtxdist array; it is the same for hypergraph as graph. */
+  /* KDDKDD NOT FOR 2D DATA DISTRIBUTION */
   if (g->vtxdist) {
-    if (!(hg->vtxdist = (int *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(int)))) {
+    if (!(hg->dist_x = (int *) ZOLTAN_MALLOC((zz->Num_Proc+1)*sizeof(int)))) {
       err = ZOLTAN_MEMERR;
       goto End;
     }
-    memcpy(hg->vtxdist, g->vtxdist, (zz->Num_Proc+1) * sizeof(int));
+    memcpy(hg->dist_x, g->vtxdist, (zz->Num_Proc+1) * sizeof(int));
   }
 
   /* Copy coordinates from graph to hypergraph */
@@ -489,9 +495,9 @@ int Zoltan_PHG_Graph_to_HGraph(
 
   /* Allocate memory for hypergraph edges */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge arrays");
-  if (hg->nEdge > 0 && hg->nInput > 0)
+  if (hg->nEdge > 0 && hg->nNonZero > 0)
     if (!(hindex  = hg->hindex =(int*)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))
-     || !(hvertex = hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nInput*sizeof(int))) ) {
+     || !(hvertex = hg->hvertex=(int*)ZOLTAN_MALLOC(hg->nNonZero*sizeof(int))) ) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hindex, &hvertex);
       err = ZOLTAN_MEMERR;
       goto End;
@@ -525,8 +531,8 @@ int Zoltan_PHG_Graph_to_HGraph(
   hindex[hg->nEdge] = cnt;
 
   /* Sanity check */
-  if (hg->nInput != cnt) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed: nInput != cnt.");
+  if (hg->nNonZero != cnt) {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Sanity check failed: nNonZero != cnt.");
     err = ZOLTAN_FATAL;
     goto End;
   }

@@ -125,7 +125,7 @@ char *yo = "old_readfile";
     /* allocate storage for hyperedge weights */
     if (code == 1 || code == 11)  {
        *ewgt_dim = (edim > 0) ? edim : 1;
-       *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * (*ewgt_dim) * sizeof(float));     
+       *ewgt = (float*) malloc (*nEdge * (*ewgt_dim) * sizeof(float));     
        if (*ewgt == NULL) {
           fprintf(stderr, "%s Insufficient memory for ewgt.", yo);
           err = ZOLTAN_MEMERR;
@@ -134,8 +134,8 @@ char *yo = "old_readfile";
     }     
           
     /* allocate storage for hypergraph data */    
-    if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-     || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+    if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
+     || !(*vertex = (int*) malloc  (*nInput   * sizeof(int)))) {
          fprintf(stderr, "%s Insufficient memory.", yo);
          err = ZOLTAN_MEMERR;
          goto End;
@@ -185,7 +185,7 @@ char *yo = "old_readfile";
     /* conditionally read nVtx vertex weight vectors */
     if (code == 10 || code == 11) {
        *vwgt_dim = (vdim > 0) ? vdim : 1;
-       *vwgt = (float*) ZOLTAN_MALLOC (*nVtx * (*vwgt_dim) * sizeof(float)); 
+       *vwgt = (float*) malloc (*nVtx * (*vwgt_dim) * sizeof(float)); 
        if (*vwgt == NULL) {
           fprintf(stderr, "%s Insufficient memory for vwgt.", yo);
           err = ZOLTAN_MEMERR;
@@ -286,15 +286,15 @@ char *yo = "patoh_readfile";
              
   /* nEdge HYPEREDGE LINES */
   /* KDD -- This logic is wrong if no pins are specified. */
-  if (!(*index  = (int*) ZOLTAN_MALLOC ((*nEdge+1) * sizeof(int)))
-   || !(*vertex = (int*) ZOLTAN_MALLOC  (*nInput   * sizeof(int)))) {
+  if (!(*index  = (int*) malloc ((*nEdge+1) * sizeof(int)))
+   || !(*vertex = (int*) malloc  (*nInput   * sizeof(int)))) {
     fprintf(stderr, "%s Insufficient memory.", yo);
     err = ZOLTAN_MEMERR;
     goto End;
   }
   if (code == 10 || code == 11) {
     /* KDD -- This logic is wrong if no edges are specified. */
-    *ewgt = (float*) ZOLTAN_MALLOC (*nEdge * sizeof(float));
+    *ewgt = (float*) malloc (*nEdge * sizeof(float));
     if (*ewgt == NULL) {
       fprintf(stderr, "%s Insufficient memory.", yo);
       err = ZOLTAN_MEMERR;

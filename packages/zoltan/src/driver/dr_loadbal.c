@@ -1311,6 +1311,7 @@ int get_num_hg_edges(
   void *data, 
   int *ierr)
 {
+int tmp;
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
@@ -1323,9 +1324,25 @@ int get_num_hg_edges(
   mesh = (MESH_INFO_PTR) data;
   *ierr = ZOLTAN_OK;
 
+#define KDD_UNIQUE_EDGES
+#ifdef KDD_UNIQUE_EDGES
+{ int i;
+  int Proc;
+  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+  /* Each hyperedge is reported to Zoltan only once.
+   * Report edges for which this proc owns the first vertex 
+   */ 
+  tmp = 0;
+  for (i = 0; i < mesh->nhedges; i++)
+    if (mesh->hvertex_proc[mesh->hindex[i]] == Proc) tmp++;
+}
+#else
+  tmp = mesh->nhedges;
+#endif
+
   STOP_CALLBACK_TIMER;
 
-  return mesh->nhedges;
+  return tmp;
 }
 
 /*****************************************************************************/
@@ -1335,6 +1352,7 @@ int get_num_hg_pins(
   void *data, 
   int *ierr)
 {
+  int tmp;
   MESH_INFO_PTR mesh;
 
   START_CALLBACK_TIMER;
@@ -1348,9 +1366,27 @@ int get_num_hg_pins(
 
   *ierr = ZOLTAN_OK;
 
+#define KDD_UNIQUE_EDGES
+#ifdef KDD_UNIQUE_EDGES
+{ int i;
+  int Proc;
+  MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
+  /* Each hyperedge is reported to Zoltan only once. 
+   * Report pins for edges for which this proc owns the first vertex 
+   */
+
+  tmp = 0;
+  for (i = 0; i < mesh->nhedges; i++)
+    if (mesh->hvertex_proc[mesh->hindex[i]] == Proc) 
+      tmp += mesh->hindex[i+1] - mesh->hindex[i];
+}
+#else
+  tmp = mesh->hindex[mesh->nhedges];
+#endif
+
   STOP_CALLBACK_TIMER;
 
-  return mesh->hindex[mesh->nhedges];
+  return tmp;
 }
 
 /*****************************************************************************/
@@ -1370,6 +1406,7 @@ int get_hg_edge_list(
 {
   MESH_INFO_PTR mesh;
   int i, j;
+  int ecnt, pcnt;
   int tmp;
   int gid = num_gid_entries-1;
   int *hindex;
@@ -1387,28 +1424,37 @@ int get_hg_edge_list(
 
   mesh = (MESH_INFO_PTR) data;
   hindex = mesh->hindex;
+#ifndef KDD_UNIQUE_EDGES
   if (nedges != mesh->nhedges) {
     ierr = ZOLTAN_FATAL;
     goto End;
   }
+#endif
 
-  for (i = 0; i < nedges; i++) {
+  pcnt = ecnt = 0;
+  for (i = 0; i < mesh->nhedges; i++) {
+#ifdef KDD_UNIQUE_EDGES
+    if (mesh->hvertex_proc[mesh->hindex[i]] != Proc) 
+      continue;
+#endif
     tmp = hindex[i+1] - hindex[i];
-    edge_sizes[i] = tmp;
+    edge_sizes[ecnt] = tmp;
     for (j = hindex[i]; j < hindex[i+1]; j++) {
-      edge_procs[j] = mesh->hvertex_proc[j];  
-      if (edge_procs[j] == Proc)
-        edge_verts[gid+j*num_gid_entries] = 
+      edge_procs[pcnt] = mesh->hvertex_proc[j];  
+      if (edge_procs[pcnt] == Proc)
+        edge_verts[gid+pcnt*num_gid_entries] = 
                                      mesh->elements[mesh->hvertex[j]].globalID;
       else
-        edge_verts[gid+j*num_gid_entries] = mesh->hvertex[j];
+        edge_verts[gid+pcnt*num_gid_entries] = mesh->hvertex[j];
+      pcnt++;
     }
     for (j = 0; j < ewgt_dim; j++) {
       if (mesh->hewgt_dim >= j)
-        edge_weights[j + i*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
+        edge_weights[j + ecnt*ewgt_dim] = mesh->hewgts[j + i*mesh->hewgt_dim];
       else
-        edge_weights[j + i*ewgt_dim] = 1.0;
+        edge_weights[j + ecnt*ewgt_dim] = 1.0;
     }
+    ecnt++;
   }
 
 End:

@@ -1,7 +1,7 @@
-Decomposition Method 	= hg
+Decomposition Method 	= phg
 Zoltan Parameters	= debug_level=8
 Zoltan Parameters	= num_global_partitions=3
 Zoltan Parameters	= hg_local_refinement=no
-File Type		= Chaco
+File Type		= hypergraph
 File Name		= simple
 Parallel Disk Info	= number=0

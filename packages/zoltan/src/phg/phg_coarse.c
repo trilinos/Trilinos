@@ -53,21 +53,21 @@ int Zoltan_PHG_Coarsening
   c_hg->redl  = hg->redl;
 
 /* RTHRTH:  CHANGES FOR PARALLEL FOR THIS ROUTINE: */  
-/* Assume that the entire column has the matching information at this point */
-/* Process entire match array.  For each entry that is not local and I own, 
-/* (bottom bit of sum of global matched vertices)c
-/* create a message (requesting vertex information) to its processor.
-/* Send all messages using unstructured communications
-/* Process received messages:  create response message with GID, weight, edge list
-/* Use hash table to associate external GIDs with the response information
-/* Scan match array to create LevelMap assuming local matching, packing, grouping but
-/* external vertices may only be matched.
-/* Instead of processing edge list with vertex pins (serial code), process vertex list
-/*  with hyperedge pins. Use same trick to insure each edge is added once.
-/* If vertex is external, use hash lookup to get its info.  Add hyperedge pins and
-/*  sum vertex weights.
-/* Create mirror for opposite information.
-  
+/* Assume that the entire column has the matching information at this point 
+ * Process entire match array.  For each entry that is not local and I own, 
+ * (bottom bit of sum of global matched vertices)c
+ * create a message (requesting vertex information) to its processor.
+ * Send all messages using unstructured communications
+ * Process received messages:  create response message with GID, weight, edge list
+ * Use hash table to associate external GIDs with the response information
+ * Scan match array to create LevelMap assuming local matching, packing, grouping but
+ * external vertices may only be matched.
+ * Instead of processing edge list with vertex pins (serial code), process vertex list
+ *  with hyperedge pins. Use same trick to insure each edge is added once.
+ * If vertex is external, use hash lookup to get its info.  Add hyperedge pins and
+ *  sum vertex weights.
+ * Create mirror for opposite information.
+ */
   
   
   
@@ -108,28 +108,28 @@ int Zoltan_PHG_Coarsening
   if (!(used_vertices = (int*)  ZOLTAN_CALLOC (c_hg->nVtx,    sizeof(int)))
    || !(c_ewgt        = (float*)ZOLTAN_MALLOC (hg->nEdge    * sizeof(float)))
    || !(c_hindex      = (int*)  ZOLTAN_MALLOC ((hg->nEdge+1)* sizeof(int)))
-   || !(c_hvertex     = (int*)  ZOLTAN_MALLOC (hg->nInput   * sizeof(int))) ) {
+   || !(c_hvertex     = (int*)  ZOLTAN_MALLOC (hg->nNonZero * sizeof(int))) ) {
       Zoltan_Multifree (__FILE__, __LINE__, 4, &used_vertices, &c_ewgt,
        &c_hindex, &c_hvertex);
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ZOLTAN_TRACE_EXIT (zz, yo);
       return ZOLTAN_MEMERR;
   }
-  c_hindex[0] = c_hindex[1] = c_hg->nEdge = c_hg->nInput = 0;
+  c_hindex[0] = c_hindex[1] = c_hg->nEdge = c_hg->nNonZero = 0;
   for (i = 0; i < hg->nEdge; i++) {
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++) {
       new_vertex = LevelMap[hg->hvertex[j]];
       if (used_vertices[new_vertex] <= i) {
         used_vertices[new_vertex] = i + 1;
-        c_hvertex[(c_hg->nInput)++] = new_vertex;
+        c_hvertex[(c_hg->nNonZero)++] = new_vertex;
       }
     }
-    if (c_hg->nInput > c_hindex[c_hg->nEdge] + 1) {  /* a new hyperedge */
+    if (c_hg->nNonZero > c_hindex[c_hg->nEdge] + 1) {  /* a new hyperedge */
       c_ewgt[c_hg->nEdge++] = hg->ewgt ? hg->ewgt[i] : 1.0;
-      c_hindex[c_hg->nEdge] = c_hg->nInput;
+      c_hindex[c_hg->nEdge] = c_hg->nNonZero;
     }
     else /* no new hyperedge, because it only covers one vertex */
-      c_hg->nInput = c_hindex[c_hg->nEdge];
+      c_hg->nNonZero = c_hindex[c_hg->nEdge];
   }
   ZOLTAN_FREE((void**) &used_vertices);
 
