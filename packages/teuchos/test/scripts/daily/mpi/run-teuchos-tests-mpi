@@ -43,18 +43,15 @@ my $success = 1;  # Boolean (false=0,true=nonzero)
 my $mpirun;       # stratus="prun -n", any other platform="mpirun -np"
 my $result;       # success=0, failure=nonzero
 #
-# Check to see if we are on Stratus.
-# If so, we need to 'prun' NOT 'mpirun'
+# Check for the mpirun command on this platform, which will
+# be set by the test harness.  If it isn't specified, use 'mpirun'.
 #
-$result = $ENV{"HOSTNAME"};
+$result = $ENV{"TRILINOS_TEST_HARNESS_MPIGO_COMMAND"};
 if (!$result) {
-  $result = $ENV{"HOST"};
+  $result = "mpirun -np";
 }
-if ($result =~ /stratus/) {
-  $mpirun = "prun -n 3 "
-} else {
-  $mpirun = "mpirun -np 3 "
-}
+$mpirun = $result . " 3 ";
+
 #************************************
 # RefCountPtr test
 #************************************
