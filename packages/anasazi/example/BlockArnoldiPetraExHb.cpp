@@ -92,12 +92,11 @@ int main(int argc, char *argv[]) {
 	// Finish up
 	//
 	assert(A.TransformToLocal()==0);
-	//
-	// call the ctor that calls the petra ctor for a matrix
-	//
-	AnasaziPetraMat<double> Amat(A);
-	//
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
+	//
+        //************************************
+        // Start the block Arnoldi iteration
+        //***********************************         
 	//
         //  Variables used for the Block Arnoldi Method
         // 
@@ -109,20 +108,22 @@ int main(int argc, char *argv[]) {
         int step = 5;
         int restarts = 3;
 	//
-	//************************************************************
-	//  Construct initial vector
+        // create a PetraAnasaziVec. Note that the decision to make a view or
+        // or copy is determined by the petra constructor called by AnasaziPetraVec.
+        // This is possible because I pass in arguements needed by petra.
+        AnasaziPetraVec<double> ivec(Map, block);
+        ivec.MvRandom();
+        // call the ctor that calls the petra ctor for a matrix
+        AnasaziPetraMat<double> Amat(A);
+        AnasaziEigenproblem<double> MyProblem(&Amat, &ivec);
 	//
-	AnasaziPetraVec<double> ivec(Map, block);
-	ivec.MvRandom();
-	//
-	//************************************************************
 	//  Initialize the Block Arnoldi solver
 	//
-        Anasazi::BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block,
+        Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block,
                                          which, step, restarts);
 
 	//MyBlockArnoldi.setSymmetric(true);
-        MyBlockArnoldi.setDebugLevel(3);
+        MyBlockArnoldi.setDebugLevel(0);
 
 #ifdef UNIX
         Epetra_Time & timer = *new Epetra_Time(Comm);

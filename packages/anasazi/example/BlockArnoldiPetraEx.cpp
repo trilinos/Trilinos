@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 	// on this processor
 	int * NumNz = new int[NumMyElements];
 
-	// We are building a tridiagonal matrix where each row has (-1 2 -1)
+	// We are building a tridiagonal matrix
 	// So we need 2 off-diagonal terms (except for the first and last equation)
 
 	for (i=0; i<NumMyElements; i++) {
@@ -79,12 +79,12 @@ int main(int argc, char *argv[]) {
 	Epetra_CrsMatrix& A = *new Epetra_CrsMatrix(Copy, Map, NumNz);
 
 	// Diffusion coefficient, can be set by user.
-	double rho = 1.2;  
+	double rho = 100.0;  
 
 	// Add  rows one-at-a-time
 	// Need some vectors to help
 
-	const double one = 2.0;
+	const double one = 1.0;
 	double *Values = new double[2];
 	double h = one /(NumGlobalElements + one);
 	double c = rho*h/ 2.0;
@@ -120,21 +120,21 @@ int main(int argc, char *argv[]) {
 
 	// Finish up
 	assert(A.TransformToLocal()==0);
+	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 
 	//************************************
 	// Start the block Arnoldi iteration
 	//***********************************
-
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
 	int block = 5;
 	int length = 10;
-	int nev = 3;
+	int nev = 5;
 	double tol = 1.0e-8;
 	string which="LM";
-	int step = 5;
-	int restarts = 3;
+	int step = 1;
+	int restarts = 5;
 
 	// create a PetraAnasaziVec. Note that the decision to make a view or
 	// or copy is determined by the petra constructor called by AnasaziPetraVec.
@@ -143,9 +143,10 @@ int main(int argc, char *argv[]) {
 	ivec.MvRandom();
 	// call the ctor that calls the petra ctor for a matrix
 	AnasaziPetraMat<double> Amat(A);
+	AnasaziEigenproblem<double> MyProblem(&Amat, &ivec);
 
 	// initialize the Block Arnoldi solver
-	Anasazi::BlockArnoldi<double> MyBlockArnoldi(Amat, ivec, tol, nev, length, block, 
+	Anasazi::BlockArnoldi<double> MyBlockArnoldi(MyProblem, tol, nev, length, block, 
 						which, step, restarts);
 	
 	// inform the solver that the problem is symmetric
@@ -169,11 +170,15 @@ int main(int argc, char *argv[]) {
 #endif
 
 	// obtain results directly
-	double* resids = MyBlockArnoldi.getResiduals();
-	double* evals = MyBlockArnoldi.getEvals(); 
+	//double* resids = MyBlockArnoldi.getResiduals();
+	double* evalr = MyBlockArnoldi.getEvals(); 
+	double* evali = MyBlockArnoldi.getiEvals();
 
-	AnasaziPetraVec<double> evecs(Map, nev);
-	MyBlockArnoldi.getEvecs( evecs );	
+	// retrieve eigenvectors
+	AnasaziPetraVec<double> evecr(Map, nev);
+	MyBlockArnoldi.getEvecs( evecr );
+	AnasaziPetraVec<double> eveci(Map, nev);
+	MyBlockArnoldi.getiEvecs( eveci );
 
 	// output results to screen
 	//MyBlockArnoldi.currentStatus();
@@ -185,7 +190,7 @@ int main(int argc, char *argv[]) {
 
 
 	// Release all objects
-	delete [] resids, evals;
+	//delete [] resids, evals;
 	delete [] NumNz;
 	delete [] Values;
 	delete [] Indices;
