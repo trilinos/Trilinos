@@ -330,15 +330,17 @@ static int refine_fm2 (ZZ *zz,
 
     MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
     total_weight = weights[0] + weights[1];
-    targetw0 = total_weight * ratio;
+    targetw0 = total_weight * ratio; /* global target weight for part 0 */
 
     max_weight[0] = total_weight * bal_tol *      ratio;
     max_weight[1] = total_weight * bal_tol * (1 - ratio);
 
     lmax_weight[0] = lweights[0] + (max_weight[0] - weights[0]) * ( lweights[0] / weights[0] );
     lmax_weight[1] = lweights[1] + (max_weight[1] - weights[1]) * ( lweights[1] / weights[1] );
-    ltargetw0 = targetw0 * ( lweights[0] / weights[0] );
-
+    ltargetw0 = targetw0 * ( lweights[0] / weights[0] ); /* local target weight */
+    /* Our strategy is to stay close to the current local weight balance.
+       We do not need the same local balance on each proc, as long as
+       we achieve approximate global balance.                            */
 
 #ifdef _DEBUG
     imbal = fabs(weights[0]-targetw0)/targetw0;
@@ -443,14 +445,16 @@ static int refine_fm2 (ZZ *zz,
             printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
 
 
-        /* EBEB: Suggest we let all procs do local FM, then
-           pick the best one in each proc column as the "root"
-           and broadcast those moves to the whole column. 
-           Currently we decide the column root up front. */
+        /* EBEB: Can we let all procs do local FM, then
+           pick the best one in each proc column as the "root"?
+           One difficulty is that "best" depends on what the
+           other processors do, and we can't try all combinations. */
 
-        if (hgc->myProc_y==root.rank) { /* those are the lucky ones; each proc in column-group
-                                 could have compute the same moves concurrently; but for this
-                                 version we'll do in in the root procs and broadcast */
+        if (hgc->myProc_y==root.rank) {
+            /* those are the lucky ones; each proc in column-group
+               could have compute the same moves concurrently; but for this
+               version we'll do it in the root procs and broadcast */
+
             /* Initialize the heaps and fill them with the gain values */
             Zoltan_heap_clear(&heap[from]);  
             for (i = 0; i < hg->nVtx; ++i)
@@ -495,19 +499,6 @@ static int refine_fm2 (ZZ *zz,
                 imbal = fabs(weights[0]-targetw0)/targetw0;
                 limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
 
-                /* UVC: note that in the loop we're only using local imbal; 
-                   hence FM might want to continue to improve local imbalance; 
-                   but it might not be improving the global imbalance at all!
-                   Strangely, if we let FM do this; it seems to be finding 
-                   better local optimums.  So I'll leave it as it is.
-
-                   EBEB: We don't really want good local balance; it is
-                   too restrictive. We should allow local imbalance 
-                   but enforce global balance. I suggest having different
-                   weight target on each processor, derived from partition
-                   assignment from previous level.
-                */
-                
                 if ((cutsize<best_cutsize) || (cutsize==best_cutsize && limbal < best_limbal)) {
 #ifdef _DEBUG2                    
                     printf("%s %4d: %6d (g: %5.1lf), p:%2d W[%4.0lf, %4.0lf] I:%.2lf LW[%4.0lf, %4.0lf] LI:%.2lf C:%.1lf<-- Best\n", uMe(hgc), movecnt, v, gain[v], from, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal, cutsize); /* after move gain is -oldgain */
