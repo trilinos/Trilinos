@@ -1,7 +1,7 @@
 #include "ml_common.h"
 #include "ml_include.h"
 
-#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI)
+#if defined(ML_WITH_EPETRA) && defined(HAVE_ML_ANASAZI) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -455,7 +455,7 @@ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 // ================================================ ====== ==== ==== == =
 
 extern "C" {
-  
+
 int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 					      struct ML_Field_Of_Values * fov )
 {
