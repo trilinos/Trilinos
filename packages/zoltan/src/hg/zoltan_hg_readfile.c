@@ -97,7 +97,7 @@ static int old_readfile (int Proc,
        }
 
     count = sscanf (string, "%d %d %d %d", nVtx, nEdge, nPin, &code) ;
-    if (count <  4)
+    if (count <  3)
        {
        ZOLTAN_PRINT_ERROR (Proc, yo, 
                    "ERROR, first line of file must be: |V| |E| |P| (code)\n") ;
