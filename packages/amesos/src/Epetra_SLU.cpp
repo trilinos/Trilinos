@@ -83,34 +83,17 @@ Epetra_SLU::Epetra_SLU( Epetra_LinearProblem * Problem,
   int n = A_->NumGlobalCols();
 
   /* Create matrix A in the format expected by SuperLU. */
-#ifndef ppc
   dCreate_CompCol_Matrix( &(data_->A), m, n, TotNumNZ_, RowValues_,
 	RowIndices_, ColPointers_, SLU_NC, SLU_D, SLU_GE );
-#else
-  dCreate_CompCol_Matrix( &(data_->A), m, n, TotNumNZ_, RowValues_,
-	RowIndices_, ColPointers_, SLU_NC, SLU_D, SLU_GE );
-#endif
   
   /* Create right-hand side matrix B. */
   double * rhs_x;
   double * rhs_b;
   int LDA_x, LDA_b;
   X_->ExtractView( &rhs_x, &LDA_x );
-  // #ifndef ppc
-#if 1
   dCreate_Dense_Matrix( &(data_->X), m, 1, rhs_x, m, SLU_DN, SLU_D, SLU_GE);
-#else
-  dCreate_Dense_Matrix( &(data_->X), m, 1, rhs_x, m, SLU_DN, SLU_D, SLU_GE);
-  //  dCreate_Dense_Matrix( &(data_->X), m, 1, rhs_x, m, DN, SLU_D, GE);
-#endif
   B_->ExtractView( &rhs_b, &LDA_b );
-  //#ifndef ppc
-#if 1
   dCreate_Dense_Matrix( &(data_->B), m, 1, rhs_b, m, SLU_DN, SLU_D, SLU_GE);
-#else
-  dCreate_Dense_Matrix( &(data_->B), m, 1, rhs_b, m, SLU_DN, SLU_D, SLU_GE);
-  //  dCreate_Dense_Matrix( &(data_->B), m, 1, rhs_b, m, DN, SLU_D, GE);
-#endif
   
   perm_r_ = new int[m];
   perm_c_ = new int[n];
@@ -233,7 +216,9 @@ int Epetra_SLU::Solve( bool Verbose,
     refact = 'Y';
     if( !Factor ) fact = 'F';
   }
-  equed = 'N';
+
+  if( Equil ) equed = 'B';
+  else        equed = 'N';
 
   data_->iparam.diag_pivot_thresh = pivot_thresh;
 
