@@ -1,4 +1,4 @@
-#!/bin/csh -x
+#!/bin/csh
 
 #@HEADER
 # ************************************************************************
@@ -125,15 +125,15 @@ echo `uname -a` >>& $file
 #foreach f ( 2d_Poisson )
 foreach f ( ${TEST_SUBDIRS} )
 	cd ${f}
-    echo "pwd = ${PWD}"
-    echo "directory contents of ${f}:"
-    ls
-	foreach g(*.csh)
+	foreach gg(*.csh)
 		echo "############" $g "##############" >>& ../$file
 		if( "$2" == "True" ) then
             # This statement didn't produce anything in file4,
             # so instead I chose just to pipe directly to file4.
 		    #( $g > ../$file3 ) >>& ../$file4
+
+            # certain OS's don't search the PWD for scripts, so prepend "./"
+            set g = "./"$gg
 		    $g >>& ../$file4
 		    if(! -z ../$file4 ) then
             # If file4 is not empty, then a test failed.
