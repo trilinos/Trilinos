@@ -1832,7 +1832,6 @@ AC_CONFIG_FILES([
 		example-tsf/Makefile
 		src-epetra/Makefile
 		example-epetra/Makefile
-		example-epetra/DS6.5.1/Makefile
 		example-epetra/1Dfem_linear/Makefile
 		example-epetra/1Dfem_nonlinear/Makefile
 		example-epetra/1Dfem_nonlinearColoring/Makefile
@@ -1893,6 +1892,7 @@ AC_CONFIG_FILES([
                 test/epetra/LOCA_Group/Makefile
                 test/epetra/1Dfem/Makefile
                 test/epetra/MultiPhysics/Makefile
+                test/epetra/DS6.5.1/Makefile
                 test/petsc/Makefile
 		])
 

@@ -294,15 +294,15 @@ int main(int argc, char *argv[])
 
   // Create the solver
   NOX::Solver::Manager solver(grp, combo, nlParams);
-  NOX::StatusTest::StatusType status = solver.solve();
+  NOX::StatusTest::StatusType solvStatus = solver.solve();
 
   // Create a print class for controlling output below
   NOX::Utils utils(printParams);
 
   // Check for convergence
-  int ierr = 0;
-  if (status != NOX::StatusTest::Converged) {
-      ierr = 1;
+  int status = 0;
+  if (solvStatus != NOX::StatusTest::Converged) {
+      status = 1;
       if (utils.isPrintProcessAndType(NOX::Utils::Error))
 	cout << "Nonlinear solver failed to converge!" << endl;
   }
@@ -339,5 +339,5 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 #endif
 
-  return ierr;
+  return status;
 }

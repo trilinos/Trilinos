@@ -28,7 +28,7 @@
 #@HEADER
 
 if BUILD_EPETRA_TESTS
-NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem MultiPhysics
+NOX_SUBDIRS = NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1 MultiPhysics
 else
 NOX_SUBDIRS = 
 endif

@@ -108,7 +108,7 @@ if ($run_loca_python == yes) then
 endif
 
 if ($run_epetra == yes) then
-    set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem)
+    set tests_epetra = ($tests_epetra NOX_NewTest NOX_Vector NOX_Group 1Dfem DS6.5.1)
 endif
 if ($run_loca_epetra == yes) then
     set tests_epetra = ($tests_epetra)
