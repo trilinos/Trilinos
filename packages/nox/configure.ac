@@ -799,7 +799,7 @@ AC_DEFUN(TRILINOS_HEADER,
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${$1_INCDIR}; then
+  if test $done = no && test -n "${$1_INCDIR}"; then
     CPPFLAGS="-I${$1_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     AC_TRY_CPP([#include "$2"],
     [ done=yes
@@ -821,7 +821,7 @@ AC_DEFUN(TRILINOS_HEADER,
   fi   
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../$1/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     AC_TRY_CPP([#include "$2"],
     [ done=yes
@@ -833,7 +833,7 @@ AC_DEFUN(TRILINOS_HEADER,
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file $2, part of the $1 package."
+    echo "Cannot preprocess the include file $2, part of the $1 package."
     echo "Try --with-$1-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
@@ -846,11 +846,11 @@ if test X${ADDON_epetra} = Xyes; then
   # We have to check for the standard Trilinos headers as well as
   # those created by configure.
   TRILINOS_HEADER(epetra,Epetra_config.h)
-  TRILINOS_HEADER(epetra,Epetra_Vector.h)
+  TRILINOS_HEADER(epetra,Epetra_DataAccess.h)
   TRILINOS_HEADER(aztecoo,AztecOO_config.h)
-  TRILINOS_HEADER(aztecoo,AztecOO.h)
+  TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h)
   TRILINOS_HEADER(ifpack,Ifpack_config.h)
-  TRILINOS_HEADER(ifpack,Ifpack_CrsRiluk.h)
+  TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h)
 
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
 
@@ -884,7 +884,7 @@ AC_DEFUN(TRILINOS_LIB_CHECK,
   fi
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${$1_LIBDIR}; then
+   if test $done = no && test -n "${$1_LIBDIR}"; then
      LDFLAGS="-L${$1_LIBDIR} $save_LDFLAGS"
      AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
    fi   
@@ -927,7 +927,7 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes || test X${BUILD_LOCA_EPETRA_EXAMPLES} 
   LDFLAGS=$save_LDFLAGS
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${y12m_LIBDIR}; then
+   if test $done = no && test -n "${y12m_LIBDIR}"; then
      LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
      AC_TRY_LINK(,,[done=yes],[LDFLAGS=$save_LDFLAGS])
    fi   

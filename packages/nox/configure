@@ -7198,7 +7198,7 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${epetra_INCDIR}; then
+  if test $done = no && test -n "${epetra_INCDIR}"; then
     CPPFLAGS="-I${epetra_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7274,7 +7274,7 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../epetra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7313,7 +7313,7 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file Epetra_config.h, part of the epetra package."
+    echo "Cannot preprocess the include file Epetra_config.h, part of the epetra package."
     echo "Try --with-epetra-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
@@ -7331,7 +7331,7 @@ echo "$as_me: error: Cannot find epetra include directory containing Epetra_conf
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Epetra_Vector.h"
+#include "Epetra_DataAccess.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7360,12 +7360,12 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${epetra_INCDIR}; then
+  if test $done = no && test -n "${epetra_INCDIR}"; then
     CPPFLAGS="-I${epetra_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Epetra_Vector.h"
+#include "Epetra_DataAccess.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7403,7 +7403,7 @@ rm -f conftest.err conftest.$ac_ext
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Epetra_Vector.h"
+#include "Epetra_DataAccess.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7436,12 +7436,12 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../epetra/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Epetra_Vector.h"
+#include "Epetra_DataAccess.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7475,12 +7475,12 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file Epetra_Vector.h, part of the epetra package."
+    echo "Cannot preprocess the include file Epetra_DataAccess.h, part of the epetra package."
     echo "Try --with-epetra-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find epetra include directory containing Epetra_Vector.h" >&5
-echo "$as_me: error: Cannot find epetra include directory containing Epetra_Vector.h" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find epetra include directory containing Epetra_DataAccess.h" >&5
+echo "$as_me: error: Cannot find epetra include directory containing Epetra_DataAccess.h" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -7522,7 +7522,7 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${aztecoo_INCDIR}; then
+  if test $done = no && test -n "${aztecoo_INCDIR}"; then
     CPPFLAGS="-I${aztecoo_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7598,7 +7598,7 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../aztecoo/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7637,7 +7637,7 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file AztecOO_config.h, part of the aztecoo package."
+    echo "Cannot preprocess the include file AztecOO_config.h, part of the aztecoo package."
     echo "Try --with-aztecoo-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
@@ -7655,7 +7655,7 @@ echo "$as_me: error: Cannot find aztecoo include directory containing AztecOO_co
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "AztecOO.h"
+#include "AztecOO_StatusType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7684,12 +7684,12 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${aztecoo_INCDIR}; then
+  if test $done = no && test -n "${aztecoo_INCDIR}"; then
     CPPFLAGS="-I${aztecoo_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "AztecOO.h"
+#include "AztecOO_StatusType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7727,7 +7727,7 @@ rm -f conftest.err conftest.$ac_ext
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "AztecOO.h"
+#include "AztecOO_StatusType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7760,12 +7760,12 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../aztecoo/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "AztecOO.h"
+#include "AztecOO_StatusType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -7799,12 +7799,12 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file AztecOO.h, part of the aztecoo package."
+    echo "Cannot preprocess the include file AztecOO_StatusType.h, part of the aztecoo package."
     echo "Try --with-aztecoo-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find aztecoo include directory containing AztecOO.h" >&5
-echo "$as_me: error: Cannot find aztecoo include directory containing AztecOO.h" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find aztecoo include directory containing AztecOO_StatusType.h" >&5
+echo "$as_me: error: Cannot find aztecoo include directory containing AztecOO_StatusType.h" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -7846,7 +7846,7 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${ifpack_INCDIR}; then
+  if test $done = no && test -n "${ifpack_INCDIR}"; then
     CPPFLAGS="-I${ifpack_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7922,7 +7922,7 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../ifpack/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -7961,7 +7961,7 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file Ifpack_config.h, part of the ifpack package."
+    echo "Cannot preprocess the include file Ifpack_config.h, part of the ifpack package."
     echo "Try --with-ifpack-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
@@ -7979,7 +7979,7 @@ echo "$as_me: error: Cannot find ifpack include directory containing Ifpack_conf
   cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Ifpack_CrsRiluk.h"
+#include "Ifpack_ScalingType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -8008,12 +8008,12 @@ rm -f conftest.err conftest.$ac_ext
   CPPFLAGS=$save_CPPFLAGS
 
   # Next  try the specified incdir (if any)
-  if test $done = no && test -n ${ifpack_INCDIR}; then
+  if test $done = no && test -n "${ifpack_INCDIR}"; then
     CPPFLAGS="-I${ifpack_INCDIR} $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Ifpack_CrsRiluk.h"
+#include "Ifpack_ScalingType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -8051,7 +8051,7 @@ rm -f conftest.err conftest.$ac_ext
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Ifpack_CrsRiluk.h"
+#include "Ifpack_ScalingType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -8084,12 +8084,12 @@ rm -f conftest.err conftest.$ac_ext
   fi
 
   # Next try the Trilinos source dir
-  if test $done = no && test -n $srcdir; then
+  if test $done = no && test -n "$srcdir"; then
     CPPFLAGS="-I$srcdir/../ifpack/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
     cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
 #include "confdefs.h"
-#include "Ifpack_CrsRiluk.h"
+#include "Ifpack_ScalingType.h"
 _ACEOF
 if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
   (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
@@ -8123,12 +8123,12 @@ rm -f conftest.err conftest.$ac_ext
 
   if test $done = no; then
     echo "------"
-    echo "Cannot find the include file Ifpack_CrsRiluk.h, part of the ifpack package."
+    echo "Cannot preprocess the include file Ifpack_ScalingType.h, part of the ifpack package."
     echo "Try --with-ifpack-incdir=<dir> to specify a single directory or"
     echo "--with-cppflags=\"-I<dir1> -I<dir2>\" for multiple directories."
     echo "------"
-    { { echo "$as_me:$LINENO: error: Cannot find ifpack include directory containing Ifpack_CrsRiluk.h" >&5
-echo "$as_me: error: Cannot find ifpack include directory containing Ifpack_CrsRiluk.h" >&2;}
+    { { echo "$as_me:$LINENO: error: Cannot find ifpack include directory containing Ifpack_ScalingType.h" >&5
+echo "$as_me: error: Cannot find ifpack include directory containing Ifpack_ScalingType.h" >&2;}
    { (exit 1); exit 1; }; }
   fi
 
@@ -8198,7 +8198,7 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
   LDFLAGS=$save_LDFLAGS
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${y12m_LIBDIR}; then
+   if test $done = no && test -n "${y12m_LIBDIR}"; then
      LDFLAGS="-L${y12m_LIBDIR} $save_LDFLAGS"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -8363,7 +8363,7 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
   fi
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${epetra_LIBDIR}; then
+   if test $done = no && test -n "${epetra_LIBDIR}"; then
      LDFLAGS="-L${epetra_LIBDIR} $save_LDFLAGS"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -8531,7 +8531,7 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
   fi
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${ifpack_LIBDIR}; then
+   if test $done = no && test -n "${ifpack_LIBDIR}"; then
      LDFLAGS="-L${ifpack_LIBDIR} $save_LDFLAGS"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
@@ -8699,7 +8699,7 @@ rm -f conftest.$ac_objext conftest$ac_exeext conftest.$ac_ext
   fi
 
   # Next try the specified libdir (if any)
-   if test $done = no && test -n ${aztecoo_LIBDIR}; then
+   if test $done = no && test -n "${aztecoo_LIBDIR}"; then
      LDFLAGS="-L${aztecoo_LIBDIR} $save_LDFLAGS"
      cat >conftest.$ac_ext <<_ACEOF
 #line $LINENO "configure"
