@@ -134,7 +134,10 @@ WITH_CPP_H = \
 	$(srcdir)/AztecOO_Operator.h \
 	$(srcdir)/Epetra_MsrMatrix.h \
 	$(srcdir)/Aztec2Petra.h \
-	$(srcdir)/AZOO_iterate.h 
+	$(srcdir)/AZOO_iterate.h \
+        $(srcdir)/AztecOO_StatusTestCombo.h \
+        $(srcdir)/AztecOO_StatusTestMaxIters.h \
+        $(srcdir)/AztecOO_StatusTestResNorm.h
 
 
 WITH_CPP = \
@@ -142,7 +145,10 @@ WITH_CPP = \
 	$(srcdir)/AztecOO_Operator.cpp \
 	$(srcdir)/Epetra_MsrMatrix.cpp \
 	$(srcdir)/Aztec2Petra.cpp \
-	$(srcdir)/AZOO_iterate.cpp
+	$(srcdir)/AZOO_iterate.cpp \
+        $(srcdir)/AztecOO_StatusTestCombo.cpp \
+        $(srcdir)/AztecOO_StatusTestMaxIters.cpp \
+        $(srcdir)/AztecOO_StatusTestResNorm.cpp
 
 
 ### end option 
@@ -364,21 +370,25 @@ libaztecoo_a_DEPENDENCIES =
 @HAVE_MPI_TRUE@am_libaztecoo_a_OBJECTS = az_comm.$(OBJEXT) \
 @HAVE_MPI_TRUE@	AztecOO.$(OBJEXT) AztecOO_Operator.$(OBJEXT) \
 @HAVE_MPI_TRUE@	Epetra_MsrMatrix.$(OBJEXT) Aztec2Petra.$(OBJEXT) \
-@HAVE_MPI_TRUE@	AZOO_iterate.$(OBJEXT) az_check.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_flop_cnt.$(OBJEXT) az_ilu_util.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_interface.$(OBJEXT) az_matrix_util.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_pad_utils.$(OBJEXT) az_tools.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_util.$(OBJEXT) az_fortran_wrap.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_bilu.$(OBJEXT) az_cg.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_cgs.$(OBJEXT) az_cgstab.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_converge.$(OBJEXT) az_dd_overlap.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_dgemv2.$(OBJEXT) az_dgemv3.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_domain_decomp.$(OBJEXT) az_fix_pt.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_gmres.$(OBJEXT) az_gmresr.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_gsumd_puma.$(OBJEXT) az_icc.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_ilut.$(OBJEXT) az_lu_y12.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_poly.$(OBJEXT) az_qmrcgs.$(OBJEXT) \
-@HAVE_MPI_TRUE@	az_rilu.$(OBJEXT) az_subdomain_solver.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AZOO_iterate.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AztecOO_StatusTestCombo.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AztecOO_StatusTestMaxIters.$(OBJEXT) \
+@HAVE_MPI_TRUE@	AztecOO_StatusTestResNorm.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_tools.$(OBJEXT) az_util.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_fortran_wrap.$(OBJEXT) az_bilu.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_cg.$(OBJEXT) az_cgs.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_cgstab.$(OBJEXT) az_converge.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_dd_overlap.$(OBJEXT) az_dgemv2.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_dgemv3.$(OBJEXT) az_domain_decomp.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_fix_pt.$(OBJEXT) az_gmres.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_gmresr.$(OBJEXT) az_gsumd_puma.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_icc.$(OBJEXT) az_ilut.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_lu_y12.$(OBJEXT) az_poly.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_qmrcgs.$(OBJEXT) az_rilu.$(OBJEXT) \
+@HAVE_MPI_TRUE@	az_subdomain_solver.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_xyce_gmres.$(OBJEXT) az_colperm.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_matvec_mult.$(OBJEXT) \
 @HAVE_MPI_TRUE@	az_old_matvec_mult.$(OBJEXT) \
@@ -391,6 +401,9 @@ libaztecoo_a_DEPENDENCIES =
 @HAVE_MPI_FALSE@	AztecOO.$(OBJEXT) AztecOO_Operator.$(OBJEXT) \
 @HAVE_MPI_FALSE@	Epetra_MsrMatrix.$(OBJEXT) \
 @HAVE_MPI_FALSE@	Aztec2Petra.$(OBJEXT) AZOO_iterate.$(OBJEXT) \
+@HAVE_MPI_FALSE@	AztecOO_StatusTestCombo.$(OBJEXT) \
+@HAVE_MPI_FALSE@	AztecOO_StatusTestMaxIters.$(OBJEXT) \
+@HAVE_MPI_FALSE@	AztecOO_StatusTestResNorm.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_check.$(OBJEXT) az_flop_cnt.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_ilu_util.$(OBJEXT) az_interface.$(OBJEXT) \
 @HAVE_MPI_FALSE@	az_matrix_util.$(OBJEXT) az_pad_utils.$(OBJEXT) \
@@ -426,6 +439,9 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/AZOO_iterate.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Aztec2Petra.Po $(DEPDIR)/AztecOO.Po \
 @AMDEP_TRUE@	$(DEPDIR)/AztecOO_Operator.Po \
+@AMDEP_TRUE@	$(DEPDIR)/AztecOO_StatusTestCombo.Po \
+@AMDEP_TRUE@	$(DEPDIR)/AztecOO_StatusTestMaxIters.Po \
+@AMDEP_TRUE@	$(DEPDIR)/AztecOO_StatusTestResNorm.Po \
 @AMDEP_TRUE@	$(DEPDIR)/Epetra_MsrMatrix.Po $(DEPDIR)/az_bilu.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_cg.Po $(DEPDIR)/az_cgs.Po \
 @AMDEP_TRUE@	$(DEPDIR)/az_cgstab.Po $(DEPDIR)/az_check.Po \
@@ -545,6 +561,11 @@ AztecOO_Operator.$(OBJEXT): $(srcdir)/AztecOO_Operator.cpp
 Epetra_MsrMatrix.$(OBJEXT): $(srcdir)/Epetra_MsrMatrix.cpp
 Aztec2Petra.$(OBJEXT): $(srcdir)/Aztec2Petra.cpp
 AZOO_iterate.$(OBJEXT): $(srcdir)/AZOO_iterate.cpp
+AztecOO_StatusTestCombo.$(OBJEXT): $(srcdir)/AztecOO_StatusTestCombo.cpp
+AztecOO_StatusTestMaxIters.$(OBJEXT): \
+	$(srcdir)/AztecOO_StatusTestMaxIters.cpp
+AztecOO_StatusTestResNorm.$(OBJEXT): \
+	$(srcdir)/AztecOO_StatusTestResNorm.cpp
 az_check.$(OBJEXT): $(srcdir)/az_check.c
 az_flop_cnt.$(OBJEXT): $(srcdir)/az_flop_cnt.c
 az_ilu_util.$(OBJEXT): $(srcdir)/az_ilu_util.c
@@ -604,6 +625,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Aztec2Petra.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO_Operator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO_StatusTestCombo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO_StatusTestMaxIters.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/AztecOO_StatusTestResNorm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/Epetra_MsrMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_bilu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/az_cg.Po@am__quote@
@@ -1239,6 +1263,42 @@ AZOO_iterate.obj: $(srcdir)/AZOO_iterate.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/AZOO_iterate.Po' tmpdepfile='$(DEPDIR)/AZOO_iterate.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AZOO_iterate.obj `cygpath -w $(srcdir)/AZOO_iterate.cpp`
+
+AztecOO_StatusTestCombo.o: $(srcdir)/AztecOO_StatusTestCombo.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestCombo.cpp' object='AztecOO_StatusTestCombo.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestCombo.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestCombo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestCombo.o `test -f $(srcdir)/AztecOO_StatusTestCombo.cpp || echo '$(srcdir)/'`$(srcdir)/AztecOO_StatusTestCombo.cpp
+
+AztecOO_StatusTestCombo.obj: $(srcdir)/AztecOO_StatusTestCombo.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestCombo.cpp' object='AztecOO_StatusTestCombo.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestCombo.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestCombo.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestCombo.obj `cygpath -w $(srcdir)/AztecOO_StatusTestCombo.cpp`
+
+AztecOO_StatusTestMaxIters.o: $(srcdir)/AztecOO_StatusTestMaxIters.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestMaxIters.cpp' object='AztecOO_StatusTestMaxIters.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestMaxIters.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestMaxIters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestMaxIters.o `test -f $(srcdir)/AztecOO_StatusTestMaxIters.cpp || echo '$(srcdir)/'`$(srcdir)/AztecOO_StatusTestMaxIters.cpp
+
+AztecOO_StatusTestMaxIters.obj: $(srcdir)/AztecOO_StatusTestMaxIters.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestMaxIters.cpp' object='AztecOO_StatusTestMaxIters.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestMaxIters.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestMaxIters.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestMaxIters.obj `cygpath -w $(srcdir)/AztecOO_StatusTestMaxIters.cpp`
+
+AztecOO_StatusTestResNorm.o: $(srcdir)/AztecOO_StatusTestResNorm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestResNorm.cpp' object='AztecOO_StatusTestResNorm.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestResNorm.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestResNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestResNorm.o `test -f $(srcdir)/AztecOO_StatusTestResNorm.cpp || echo '$(srcdir)/'`$(srcdir)/AztecOO_StatusTestResNorm.cpp
+
+AztecOO_StatusTestResNorm.obj: $(srcdir)/AztecOO_StatusTestResNorm.cpp
+@AMDEP_TRUE@	source='$(srcdir)/AztecOO_StatusTestResNorm.cpp' object='AztecOO_StatusTestResNorm.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/AztecOO_StatusTestResNorm.Po' tmpdepfile='$(DEPDIR)/AztecOO_StatusTestResNorm.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o AztecOO_StatusTestResNorm.obj `cygpath -w $(srcdir)/AztecOO_StatusTestResNorm.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 
 .f.o:

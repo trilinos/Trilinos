@@ -235,7 +235,10 @@ fi
 
 # Checks for library functions.
 AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
-AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
+#Removed the following line because it caused problems on janus.
+#Also, other libraries check only one function, a standard math
+#lib should have sqrt provided that it has pow.
+#AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 AC_FUNC_MALLOC
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
