@@ -25,12 +25,12 @@ void ML_ARPACK_GGB( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
    
 {
 
-  int i ,  j, level;
+  int level;
 
   /* Eigenvalue definitions */
   int      iparam[11];
-  int      nev, ncv, info, mode, nconv, Fattening;
-  double   tol, tm, tmp_tol;
+  int      nev, ncv, mode, Fattening;
+  double   tol, tm;
   char     bmat[2], which[3];
   ML_Operator *Amat;
   
@@ -107,12 +107,12 @@ void  ML_ARPACK_driver(char which[],
 		       int Debug_Flag, int GGB_alp_flag)
 {
 
-  int        i, j, kk, ldv, lworkl;
+  int        j, kk, ldv, lworkl;
   int        nloc,  nloc2, ido, flag, counter;
   int        count, nconv, ierr, info;
-  int        ipntr[14], m=0;
+  int        ipntr[14];
   int        one = 1, dummy1, dummy2, dummy3, dummy4;
-  double     a1 , a2  , lamR, lamI, time;
+  double     a1 , a2  , lamR, lamI;
   char       string[4];
   double     *v, *workl, *workd, *workev, *d, *resid;         /* Pointers used by ARPACK */  
   int        *select, rvec, *work;
@@ -122,7 +122,7 @@ void  ML_ARPACK_driver(char which[],
   int        comm; /*, mu=0, delta=0, sigma=0; */
 
   
-  FILE       *ifp;
+  /*   FILE       *ifp; */
   ML_Operator *Amat;
 
   /********************************  Begin ************************************/
@@ -209,10 +209,17 @@ void  ML_ARPACK_driver(char which[],
      * or the maximum iterations have been exceeded.
      *****************************************************/
 
+#ifdef HAVE_ML_ARPACK
     dnaupd_(&ido, bmat, &nloc, which, &nev, &tol, resid,
 	    &ncv, v, &ldv, iparam, ipntr, workd, workl,
 	    &lworkl, &info );
-      
+#else
+    fprintf( stderr,
+             "ERROR: ML has not been configured with ARPACK support.\n"
+             "ERROR: Please reconfigure with the option `--with-ml_arpack'\n"
+             "ERROR: (file %s, line %d)\n",
+             __FILE__, __LINE__ );
+#endif
 
     if ( (ido == -1) || (ido == 1) ) {
      
@@ -287,11 +294,19 @@ void  ML_ARPACK_driver(char which[],
 		 work);
     */
    
+#ifdef HAVE_ML_ARPACK
     ml_dneupc__(&rvec, string, select, d, v, &ldv,
 		workev, bmat, &nloc, which, &nev,
 		&tol, resid, &ncv, iparam, ipntr, workd, workl,
 		&lworkl, &ierr, (ftnlen)1, (ftnlen)1, (ftnlen) 2);
-    
+#else
+    fprintf( stderr,
+             "ERROR: ML has not been configured with ARPACK support.\n"
+             "ERROR: Please reconfigure with the option `--with-ml_arpack'\n"
+             "ERROR: (file %s, line %d)\n",
+             __FILE__, __LINE__ );
+#endif
+   
     
     /*----------------------------------------------
       | The real part of the eigenvalue is returned   |
@@ -466,7 +481,16 @@ void  ML_ARPACK_driver(char which[],
      
 	  /*	  cpdmout_(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);*/
 
-     	  ml_c_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+
+#ifdef HAVE_ML_ARPACK
+  	  ml_c_pdmout__(&comm, &dummy1, &nconv, &dummy2, d, &dummy3, &dummy4);
+#else
+          fprintf( stderr,
+                  "ERROR: ML has not been configured with ARPACK support.\n"
+                  "ERROR: Please reconfigure with the option `--with-ml_arpack'\n"
+                  "ERROR: (file %s, line %d)\n",
+                  __FILE__, __LINE__ );
+#endif
 
       }
 
@@ -687,8 +711,8 @@ void  ML_GGBalp (double *NewVec, int nconv, int nloc2, struct ML_Eigenvalue_Stru
   double     *A , *current_vec;
   double     theta, eps= 5.0 ;
 
-  int           m, n, i, j, k;
-  int           nnew, nold, lwork;
+  int           m, i, j, k;
+  int           nnew, nold;
   int           ind =1;
  
 
@@ -754,15 +778,14 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   double     *tau1, *work1, *A1, *B;
   double     theta;
 
-  int         lda, lwork, info, ldv, ldu, ldvt;
-  int         lwork1, info1, ldv1;
+  int         lda, lwork, info, ldu, ldvt;
+  int         lwork1, info1;
 
 
-  int           m, n, i, j, k, one=1;
-  int           nnew;
+  int           m, i, j, k, one=1;
   char          jobu[2], jobvt[2];
 
-  FILE          *fp2, *fp1, *fp;
+  /*  FILE          *fp2, *fp1, *fp;*/
 
   /*******************  begin  ***********************/
 
@@ -814,7 +837,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   dgeqrf_(&m, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);  
   
 
-  if (info !=0 | info1 !=0)  {
+  if ((info !=0)  || (info1 !=0) )  {
     printf("Problem with QR factorization in ML_subspace function dgeqrf_\n");
     exit(-1);
   }
@@ -840,7 +863,7 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
   dorgqr_(&m, &ncols1,&ncols1, A, &lda, tau, work, &lwork, &info);
   dorgqr_(&m, &ncols2, &ncols2, A1, &lda, tau1, work1, &lwork1, &info1);
 
-  if (info !=0 | info1 !=0)  {
+  if ((info !=0)  || (info1 !=0) )  {
     printf("Problem with QR factorization in ML_subspace function dorgqr_\n");
     exit(-1);
   }
@@ -938,12 +961,11 @@ extern double  ML_subspace (int nrows, double *inp1, int ncols1, double *inp2, i
 int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 		     struct ML_CSR_MSRdata *mydata)
 {
-  int            Nrows, Ncols, Nnz, Nnz_per_row, i, level;  
-  int            one = 1, ncv, kk, ggb_flag = 0, count;
-  double        *rhs, *rhs1, *u, *v, lamR, lamI;
-  double         mggb_tol, epsilon= 30.0 , norm, norm1;
-  double         tm, qRq, qRq1, qRq2, theta, theta_max, denum, pi = 3.1415;
-  double         time;
+  int            Nrows, Ncols, Nnz, i, level;  
+  int            ncv, kk, ggb_flag = 0, count;
+  double        *rhs, *rhs1;
+  double         epsilon= 30.0;
+  double         tm, theta;
 
   double        *A, *vec, *dumm ;
 
@@ -1021,7 +1043,7 @@ int  ML_MGGB_angle( struct ML_Eigenvalue_Struct *eigen_struct,ML *ml,
 double  ML_normc (double *real, double *imag, int leng)
 {
 
-  double    rl, im, dum1, dum2;
+  double    rl, dum1, dum2;
   double    norm;
   int       i;
 
