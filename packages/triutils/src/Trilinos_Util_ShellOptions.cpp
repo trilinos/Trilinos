@@ -168,10 +168,10 @@ Trilinos_Util_ShellOptions::Trilinos_Util_ShellOptions(int argc, char *argv[])
 	param = argv[i], value = argv[i+1];
 	SetOption(param,value);
 	++i;
-      } else {
-	param = argv[i], value = "";
-	SetOption(param,value);
       }
+    } else {
+      param = argv[i], value = "";
+      SetOption(param,value);
     }
     
   }

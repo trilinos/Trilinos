@@ -332,7 +332,7 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   Options[4] = "starting_solution";
   Options[5] = "output";
   
-  for( int i=0 ; i<5 ; i++ ) {
+  for( int i=0 ; i<6 ; i++ ) {
     string parameter = "-"+Options[i];    
     if( S.HaveOption(parameter) == true ) {
       string value = S.GetStringOption(parameter);
@@ -351,7 +351,7 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   Options[6] = "mz";
   Options[7] = "num_pde_eqns";
 
-  for(  int i=0 ; i<7 ; i++ ) {
+  for(  int i=0 ; i<8 ; i++ ) {
     string parameter = "-"+Options[i];   
     if( S.HaveOption(parameter) == true ) {
       Set(Options[i],S.GetIntOption(parameter));
@@ -366,7 +366,7 @@ int Trilinos_Util_MatrixGallery::Set(Trilinos_Util_ShellOptions & S)
   Options[4] = "e";
   Options[5] = "f";
   Options[6] = "g";
-  for( int i=0 ; i<6 ; i++ ) {
+  for( int i=0 ; i<7 ; i++ ) {
     string parameter = "-"+Options[i];   
     if( S.HaveOption(parameter) == true ) {
       Set(Options[i],S.GetDoubleOption(parameter));
@@ -1800,7 +1800,7 @@ int Trilinos_Util_MatrixGallery::ComputeResidualVbr(double & residual)
   if( VbrRhs_ == NULL ) CreateVbrRHS();
 
   Epetra_Vector Ax(*BlockMap_);
-  assert(VbrMatrix_->Multiply(false, *VbrExactSolution_, Ax)==0);
+  assert(VbrMatrix_->Multiply(false, *VbrStartingSolution_, Ax)==0);
 
   assert(Ax.Update(1.0, *VbrRhs_, -1.0)==0);
 
