@@ -154,6 +154,11 @@ AC_CHECK_HEADERS([stdlib.h],,)
 AC_CHECK_HEADERS([stdio.h],,)
 AC_CHECK_HEADERS([math.h],,)
 AC_CHECK_HEADERS([malloc.h],,)
+AC_CHECK_HEADERS([string string.h], [break],)
+
+if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
+  AC_MSG_ERROR([[Cannot find string or string.h.  Pliris requires at least one or the other.]])
+fi
 
 if test "X$ac_cv_header_stdlib_h" != "Xyes"; then
   AC_MSG_ERROR([[Cannot find stdlib.h.  This file is required by Pliris.]])

@@ -101,6 +101,15 @@ EXTRA_UTIL =  \
 #        $(srcdir)/malloc.c \
 #        $(srcdir)/my_srand48.c
 
+CORE_H = \
+	$(srcdir)/Pliris_ConfigDefs.h
+
+UTIL = \
+	$(srcdir)/PlirisVersion.cpp
+
+UTIL_H = \
+	$(srcdir)/PlirisVersion.h
+
 EXTRA_EPETRA_COMPAT = \
 	$(srcdir)/Pliris.cpp
 
