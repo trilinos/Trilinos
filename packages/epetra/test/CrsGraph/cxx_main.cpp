@@ -45,10 +45,8 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose);
 
 int main(int argc, char *argv[]) {
   int ierr = 0;
-	int i;
-	int j;
-	int forierr = 0;
-  int NumIndices;
+  int i;
+  int forierr = 0;
   int* Indices;
   bool debug = true;
 
@@ -74,9 +72,11 @@ int main(int argc, char *argv[]) {
   bool verbose = false;
 
   // Check if we should print results to standard out
-  if(argc > 1) 
-		if(argv[1][0]=='-' && argv[1][1]=='v') 
-			verbose = true;
+  if(argc > 1) {
+    if(argv[1][0]=='-' && argv[1][1]=='v') {
+      verbose = true;
+    }
+  }
 
   //char tmp;
   //if (rank==0) cout << "Press any key to continue..."<< endl;
@@ -97,10 +97,7 @@ int main(int argc, char *argv[]) {
   int NumMyEquations = 5;
   int NumGlobalEquations = NumMyEquations*NumProc+EPETRA_MIN(NumProc,3);
   if(MyPID < 3) 
-		NumMyEquations++;
-  int IndexBase = 0;
-  int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalEquations>NumMyEquations);
+    NumMyEquations++;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 
@@ -541,7 +538,8 @@ int checkCopyAndAssignment(Epetra_Comm& Comm, bool verbose) {
 
 //==============================================================================
 int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
-					int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose) {  
+	  int NumGlobalNonzeros1, int* MyGlobalElements, bool verbose)
+{  
 
   int ierr = 0;
 	int i;
@@ -550,7 +548,6 @@ int check(Epetra_CrsGraph& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonze
   int NumGlobalIndices;
   int NumMyIndices;
 	int* MyViewIndices;
-	int* GlobalViewIndices;
   int MaxNumIndices = A.MaxNumIndices();
   int* MyCopyIndices = new int[MaxNumIndices];
   int* GlobalCopyIndices = new int[MaxNumIndices];

@@ -54,7 +54,7 @@ int power_method(bool TransA, Epetra_CrsMatrix& A,
  
 int main(int argc, char *argv[])
 {
-	int ierr = 0, i, j, forierr = 0;
+  int ierr = 0, i, forierr = 0;
   bool debug = false;
 
 #ifdef EPETRA_MPI
@@ -102,10 +102,7 @@ int main(int argc, char *argv[])
   int NumMyEquations = 10000;
   int NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
   if(MyPID < 3) 
-		NumMyEquations++;
-  int IndexBase = 0;
-  int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalEquations > NumMyEquations);
+    NumMyEquations++;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
 

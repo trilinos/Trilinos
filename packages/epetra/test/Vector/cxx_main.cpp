@@ -43,7 +43,7 @@
 
 int main(int argc, char *argv[]) {
 
-  int ierr = 0, i, j;
+  int ierr = 0, i;
 
 #ifdef EPETRA_MPI
 
@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
   if (MyPID < 3) NumMyElements++;
   int IndexBase = 0;
   int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   
   // Test LocalMap constructor
   // and Petra-defined uniform linear distribution constructor
@@ -256,7 +255,6 @@ int main(int argc, char *argv[]) {
     {
       // Test Vector MFLOPS for 2D Dot Product
       int M = 1;
-      int N = 1;
       int K = 1000000;
       Epetra_Map Map2(-1, K, IndexBase, Comm);
       Epetra_LocalMap Map3(M, IndexBase, Comm);

@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
   if (MyPID < 3) NumMyElements++;
   int IndexBase = 0;
   int ElementSize = 7;
-  bool DistributedGlobal = (NumGlobalElements>NumMyElements);
   int NumVectors = 4;
   
   // Test LocalMap constructor

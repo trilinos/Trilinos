@@ -209,12 +209,14 @@ int Epetra_CrsGraph::InsertMyIndices(int Row, int NumIndices, int* Indices) {
 }
 
 // protected ===================================================================
-int Epetra_CrsGraph::InsertIndices(int Row, int NumIndices, int* UserIndices) {
+int Epetra_CrsGraph::InsertIndices(int Row,
+				   int NumIndices,
+				   int* UserIndices)
+{
   SetSorted(false); // No longer in sorted state.
   SetGlobalConstantsComputed(false); // No longer have valid global constants.
 
   int j;
-  int* tmp_Indices;
   int ierr = 0;
 
   if(Row < 0 || Row >= NumMyBlockRows()) 

@@ -150,81 +150,81 @@ Epetra_CrsGraphData::Epetra_CrsGraphData(Epetra_DataAccess CV,
   //cout << "--CRSGD created(rowmap&colmap ctr), addr: " << this << endl; //DATA_DEBUG
 }
 
-/*//=============================================================================
-Epetra_CrsGraphData::Epetra_CrsGraphData(const Epetra_CrsGraphData& CrsGraphData)
-// maps
-: RowMap_(CrsGraphData.RowMap_),
-ColMap_(CrsGraphData.ColMap_),
-DomainMap_(CrsGraphData.DomainMap_),
-RangeMap_(CrsGraphData.RangeMap_),
-// importer & exporter
-Importer_(CrsGraphData.Importer_),
-Exporter_(CrsGraphData.Exporter_),
-// booleans
-HaveColMap_(CrsGraphData.HaveColMap_),
-Filled_(CrsGraphData.Filled_),
-Allocated_(false), //*** not copied from Source
-Sorted_(CrsGraphData.Sorted_),
-StorageOptimized_(false), //*** not copied from Source
-NoRedundancies_(CrsGraphData.NoRedundancies_),
-IndicesAreGlobal_(CrsGraphData.IndicesAreGlobal_),
-IndicesAreLocal_(CrsGraphData.IndicesAreLocal_),
-IndicesAreContiguous_(CrsGraphData.IndicesAreContiguous_), //*** not copied from Source
-LowerTriangular_(CrsGraphData.LowerTriangular_),
-UpperTriangular_(CrsGraphData.UpperTriangular_),
-NoDiagonal_(CrsGraphData.NoDiagonal_),
-GlobalConstantsComputed_(false), //*** not copied from Source
-// ints
-IndexBase_(CrsGraphData.IndexBase_),
-NumGlobalEntries_(CrsGraphData.NumGlobalEntries_),
-NumGlobalBlockRows_(CrsGraphData.NumGlobalBlockRows_),
-NumGlobalBlockCols_(CrsGraphData.NumGlobalBlockCols_),
-NumGlobalBlockDiagonals_(CrsGraphData.NumGlobalBlockDiagonals_),
-NumMyEntries_(CrsGraphData.NumMyEntries_),
-NumMyBlockRows_(CrsGraphData.NumMyBlockRows_),
-NumMyBlockCols_(CrsGraphData.NumMyBlockCols_),
-NumMyBlockDiagonals_(CrsGraphData.NumMyBlockDiagonals_),
-MaxRowDim_(CrsGraphData.MaxRowDim_),
-MaxColDim_(CrsGraphData.MaxColDim_),
-GlobalMaxRowDim_(CrsGraphData.GlobalMaxRowDim_),
-GlobalMaxColDim_(CrsGraphData.GlobalMaxColDim_),
-MaxNumNonzeros_(CrsGraphData.MaxNumNonzeros_),
-GlobalMaxNumNonzeros_(CrsGraphData.GlobalMaxNumNonzeros_),
-NumGlobalNonzeros_(CrsGraphData.NumGlobalNonzeros_),
-NumGlobalRows_(CrsGraphData.NumGlobalRows_),
-NumGlobalCols_(CrsGraphData.NumGlobalCols_),
-NumGlobalDiagonals_(CrsGraphData.NumGlobalDiagonals_),
-NumMyNonzeros_(CrsGraphData.NumMyNonzeros_),
-NumMyRows_(CrsGraphData.NumMyRows_),
-NumMyCols_(CrsGraphData.NumMyCols_),
-NumMyDiagonals_(CrsGraphData.NumMyDiagonals_),
-MaxNumIndices_(CrsGraphData.MaxNumIndices_),
-GlobalMaxNumIndices_(CrsGraphData.GlobalMaxNumIndices_),
-// misc
-Indices_(CrsGraphData.Indices_), //*** new behavior
-IndicesSidekick_(0), //*** not copied from Source
-NumAllocatedIndicesPerRow_(0), //*** not copied from Source
-NumIndicesPerRow_(0), //*** not copied from Source
-All_Indices_(0), //*** not copied from Source
-CV_(Copy) //*** not copied from Source
-{
-// if Importer or Exporter are non-zero, that means the source Graph had created them,
-// and so we need to do that too.
-if(Importer_ != 0) 
-Importer_ = new Epetra_Import(*CrsGraphData.Importer_); // Dereference pointer, and
-if(Exporter_ != 0)                                        // pass that to Import/Export
-Exporter_ = new Epetra_Export(*CrsGraphData.Exporter_); // copy constructor
+// //=============================================================================
+// Epetra_CrsGraphData::Epetra_CrsGraphData(const Epetra_CrsGraphData& CrsGraphData)
+// // maps
+// : RowMap_(CrsGraphData.RowMap_),
+// ColMap_(CrsGraphData.ColMap_),
+// DomainMap_(CrsGraphData.DomainMap_),
+// RangeMap_(CrsGraphData.RangeMap_),
+// // importer & exporter
+// Importer_(CrsGraphData.Importer_),
+// Exporter_(CrsGraphData.Exporter_),
+// // booleans
+// HaveColMap_(CrsGraphData.HaveColMap_),
+// Filled_(CrsGraphData.Filled_),
+// Allocated_(false), //*** not copied from Source
+// Sorted_(CrsGraphData.Sorted_),
+// StorageOptimized_(false), //*** not copied from Source
+// NoRedundancies_(CrsGraphData.NoRedundancies_),
+// IndicesAreGlobal_(CrsGraphData.IndicesAreGlobal_),
+// IndicesAreLocal_(CrsGraphData.IndicesAreLocal_),
+// IndicesAreContiguous_(CrsGraphData.IndicesAreContiguous_), //*** not copied from Source
+// LowerTriangular_(CrsGraphData.LowerTriangular_),
+// UpperTriangular_(CrsGraphData.UpperTriangular_),
+// NoDiagonal_(CrsGraphData.NoDiagonal_),
+// GlobalConstantsComputed_(false), //*** not copied from Source
+// // ints
+// IndexBase_(CrsGraphData.IndexBase_),
+// NumGlobalEntries_(CrsGraphData.NumGlobalEntries_),
+// NumGlobalBlockRows_(CrsGraphData.NumGlobalBlockRows_),
+// NumGlobalBlockCols_(CrsGraphData.NumGlobalBlockCols_),
+// NumGlobalBlockDiagonals_(CrsGraphData.NumGlobalBlockDiagonals_),
+// NumMyEntries_(CrsGraphData.NumMyEntries_),
+// NumMyBlockRows_(CrsGraphData.NumMyBlockRows_),
+// NumMyBlockCols_(CrsGraphData.NumMyBlockCols_),
+// NumMyBlockDiagonals_(CrsGraphData.NumMyBlockDiagonals_),
+// MaxRowDim_(CrsGraphData.MaxRowDim_),
+// MaxColDim_(CrsGraphData.MaxColDim_),
+// GlobalMaxRowDim_(CrsGraphData.GlobalMaxRowDim_),
+// GlobalMaxColDim_(CrsGraphData.GlobalMaxColDim_),
+// MaxNumNonzeros_(CrsGraphData.MaxNumNonzeros_),
+// GlobalMaxNumNonzeros_(CrsGraphData.GlobalMaxNumNonzeros_),
+// NumGlobalNonzeros_(CrsGraphData.NumGlobalNonzeros_),
+// NumGlobalRows_(CrsGraphData.NumGlobalRows_),
+// NumGlobalCols_(CrsGraphData.NumGlobalCols_),
+// NumGlobalDiagonals_(CrsGraphData.NumGlobalDiagonals_),
+// NumMyNonzeros_(CrsGraphData.NumMyNonzeros_),
+// NumMyRows_(CrsGraphData.NumMyRows_),
+// NumMyCols_(CrsGraphData.NumMyCols_),
+// NumMyDiagonals_(CrsGraphData.NumMyDiagonals_),
+// MaxNumIndices_(CrsGraphData.MaxNumIndices_),
+// GlobalMaxNumIndices_(CrsGraphData.GlobalMaxNumIndices_),
+// // misc
+// Indices_(CrsGraphData.Indices_), //*** new behavior
+// IndicesSidekick_(0), //*** not copied from Source
+// NumAllocatedIndicesPerRow_(0), //*** not copied from Source
+// NumIndicesPerRow_(0), //*** not copied from Source
+// All_Indices_(0), //*** not copied from Source
+// CV_(Copy) //*** not copied from Source
+// {
+// // if Importer or Exporter are non-zero, that means the source Graph had created them,
+// // and so we need to do that too.
+// if(Importer_ != 0) 
+// Importer_ = new Epetra_Import(*CrsGraphData.Importer_); // Dereference pointer, and
+// if(Exporter_ != 0)                                        // pass that to Import/Export
+// Exporter_ = new Epetra_Export(*CrsGraphData.Exporter_); // copy constructor
 
-if(Indices_ != 0) {
-Indices_ = new Epetra_IntSerialDenseVector[NumMyBlockRows_];
-for(int i = 0; i < NumMyBlockRows_; i++)
-Indices_[i] = CrsGraphData.Indices_[i];
-}
+// if(Indices_ != 0) {
+// Indices_ = new Epetra_IntSerialDenseVector[NumMyBlockRows_];
+// for(int i = 0; i < NumMyBlockRows_; i++)
+// Indices_[i] = CrsGraphData.Indices_[i];
+// }
 
-// Sidekick is created on demand, so we don't need to create it, even if RHS had it.
+// // Sidekick is created on demand, so we don't need to create it, even if RHS had it.
 
-//cout << "--CRSGD created(cc), addr: " << this << endl; //DATA_DEBUG
-}*/
+// //cout << "--CRSGD created(cc), addr: " << this << endl; //DATA_DEBUG
+// }
 
 //=============================================================================
 Epetra_CrsGraphData::~Epetra_CrsGraphData() {

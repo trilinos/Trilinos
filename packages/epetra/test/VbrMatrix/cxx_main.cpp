@@ -601,7 +601,7 @@ int check(Epetra_VbrMatrix& A,
 
   
   // Test RowMatrix interface implementations
-  int RowDim, NumBlockEntries, * BlockIndices, * ColDims, * LDAs;
+  int RowDim, NumBlockEntries, * BlockIndices;
   Epetra_SerialDenseMatrix ** Values;
   // Get View of last block row
   A.ExtractMyBlockRowView(NumMyBlockRows-1, RowDim, NumBlockEntries,
@@ -633,8 +633,6 @@ int check(Epetra_VbrMatrix& A,
 
     
   int i, j;
-  int NumGlobalBlockEntries;
-  int NumMyBlockEntries;
   int MaxNumBlockEntries = A.MaxNumBlockEntries();
 
   // Pointer Extraction approach
@@ -1035,7 +1033,7 @@ int checkExtractMyRowCopy(Epetra_Comm& comm, bool verbose)
   int len = elemSize*numCols, checkLen;
   double* values = new double[len];
   int* indices = new int[len];
-  int RowDim, numBlockEntries, numIndices;
+  int RowDim, numBlockEntries;
 
   for(i=myFirstRow; i<=myLastRow; ++i) {
     EPETRA_TEST_ERR( A.ExtractGlobalBlockRowPointers(i, numMyRows,

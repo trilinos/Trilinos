@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
   int NumProc = Comm.NumProc();
   if (verbose) cout << Comm <<endl;
 
-  bool verbose1 = verbose;
+  //  bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
   if (verbose && rank!=0) verbose = false;
@@ -438,7 +438,7 @@ int check(Epetra_SerialDenseSolver &solver, double * A1, int LDA1,
 	  double * X1, int LDX1,
 	  bool Transpose, bool verbose) {  
 
-  int i, j;
+  int i;
   bool OK;
   // Test query functions
 

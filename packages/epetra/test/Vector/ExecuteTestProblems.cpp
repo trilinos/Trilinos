@@ -208,7 +208,7 @@ int VectorTests(const Epetra_BlockMap & Map, bool verbose)
 {
   int NumVectors = 1;
   const Epetra_Comm & Comm = Map.Comm();
-  int ierr = 0, i;
+  int ierr = 0;
   double *residual = new double[NumVectors];
   
   Epetra_BLAS BLAS;

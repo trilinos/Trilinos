@@ -54,7 +54,7 @@ int power_method(Epetra_CrsMatrix& A, double & lambda, int niters, double tolera
  
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j;
+  int ierr = 0, i;
 
 #ifdef EPETRA_MPI
 
@@ -99,9 +99,6 @@ int main(int argc, char *argv[])
 	    << " cannot be < number of processors = " << NumProc << endl;
      exit(1);
       }
-
-  // We will use zero based indices
-  int IndexBase = 0;
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.

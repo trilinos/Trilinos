@@ -287,7 +287,7 @@ int  BuildVectorTests (Epetra_Vector & C, const double alpha,
   // A.dotProd (B,dotvec).  Similarly for other routines.
   
   int i,j;
-  double fi, fj;  // Used for casting loop variables to floats
+  double fi;  // Used for casting loop variables to floats
   // Define some useful constants
   
   int A_nrows = A.MyLength();

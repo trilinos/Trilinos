@@ -43,7 +43,7 @@
 
 int main(int argc, char *argv[]) {
 
-  int i, ierr=0, returnierr=0;
+  int i, returnierr=0;
 
 #ifdef EPETRA_MPI
   // Initialize MPI

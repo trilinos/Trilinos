@@ -88,10 +88,6 @@ int main(int argc, char *argv[])
   Epetra_Map XMap(NumGlobalVariables, 0, Comm);
   Epetra_Map& YMap = RowMap;
   
-  int NumMyY = NumMyEquations;
-  int IndexBase = 0;
-  bool DistributedGlobal = (NumGlobalEquations>NumMyEquations);
-
   // Get update list and number of local equations from newly created Map
   int * MyGlobalElements = new int[RowMap.NumMyElements()];
   RowMap.MyGlobalElements(MyGlobalElements);

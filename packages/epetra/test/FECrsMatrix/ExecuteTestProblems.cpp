@@ -308,7 +308,6 @@ int Drumm2(const Epetra_Map& map, bool verbose)
 int Drumm3(const Epetra_Map& map, bool verbose)
 {
   const Epetra_Comm & Comm = map.Comm();
-  int ierr = 0, i;
 
   /* get number of processors and the name of this processor */
 

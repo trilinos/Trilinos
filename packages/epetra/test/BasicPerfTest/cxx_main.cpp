@@ -83,8 +83,7 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
 int main(int argc, char *argv[])
 {
-  int ierr = 0, i, j, forierr = 0;
-  bool debug = false;
+  int ierr = 0, j;
   double elapsed_time;
   double total_flops;
   double MFLOPs;
@@ -113,7 +112,7 @@ int main(int argc, char *argv[])
   comm.SetTracebackMode(0); // This should shut down any error traceback reporting
   if (verbose) cout << comm <<endl;
 
-  bool verbose1 = verbose;
+  //  bool verbose1 = verbose;
 
   // Redefine verbose to only print on PE 0
 
@@ -438,8 +437,6 @@ void GenerateVbrProblem(int nx, int ny, int npoints, int * xoff, int * yoff,
 
   int * indices = new int[npoints];
   double * values = new double[npoints];
-
-  double dnpoints = (double) npoints;
 
   // This section of code creates a vector of random values that will be used to create
   // light-weight dense matrices to pass into the VbrMatrix construction process.

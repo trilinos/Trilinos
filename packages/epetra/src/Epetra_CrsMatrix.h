@@ -64,7 +64,7 @@ create new entries.
 
 <b> Counting Floating Point Operations </b>
 
-Each Epetra_CrsMatrix object keep track of the number
+Each Epetra_CrsMatrix object keeps track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The Flops() function returns this number as a double precision number.  Using this 
 information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
@@ -157,7 +157,7 @@ class Epetra_CrsMatrix: public Epetra_DistObject, public Epetra_CompObject, publ
   
   //@{ \name Insertion/Replace/SumInto methods.
 	
-  //! Initialize all values in the graph of the matrix with constant value.
+  //! Initialize all values in the matrix with constant value.
   /*!
     \param In
 		ScalarConstant - Value to use.
