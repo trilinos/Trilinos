@@ -44,9 +44,6 @@ AztecOO_StatusType AztecOO_StatusTestMaxIters::CheckStatus(int CurrentIter,
   return status_;
 }
 
-AztecOO_StatusType AztecOO_StatusTestMaxIters::GetStatus() const {
-  return status_;
-}
 
 ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
 
@@ -59,12 +56,4 @@ ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
   stream << MaxIters_;
   stream << endl;
  return stream;
-}
-
-int AztecOO_StatusTestMaxIters::GetMaxIters() const {
-  return MaxIters_;
-}
-
-int AztecOO_StatusTestMaxIters::GetNumIters() const {
-  return Niters_;
 }

@@ -87,7 +87,7 @@ class AztecOO_StatusTestCombo: public AztecOO_StatusTest {
   AztecOO_StatusTestCombo(ComboType t, AztecOO_StatusTest& a, AztecOO_StatusTest& b);
 
   //! Add another test to this combination.
-  virtual AztecOO_StatusTestCombo& AddStatusTest(AztecOO_StatusTest& a);
+  AztecOO_StatusTestCombo& AddStatusTest(AztecOO_StatusTest& a);
 
   //! Destructor
   virtual ~AztecOO_StatusTestCombo() {};
@@ -98,7 +98,7 @@ class AztecOO_StatusTestCombo: public AztecOO_StatusTest {
   /*! If this method returns true, then one or more of the AztecOO_StatusTest objects that make up this combined
     test requires the Residual Vector to perform its test.
   */
-  virtual bool ResidualVectorRequired() const;
+  bool ResidualVectorRequired() const;
 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met.  Depending on how the combined test
@@ -119,26 +119,34 @@ class AztecOO_StatusTestCombo: public AztecOO_StatusTest {
 
     \return AztecOO_StatusType: Unconverged, Converged or Failed.
   */
-  virtual AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
+  AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
 				 double CurrentResNormEst,
 				 bool SolutionUpdated);
-  virtual AztecOO_StatusType GetStatus() const;
+  AztecOO_StatusType GetStatus() const {return(status_);};
 
-  virtual ostream& Print(ostream& stream, int indent = 0) const;
+  ostream& Print(ostream& stream, int indent = 0) const;
+
+  //@}
+
+  //@{ \name Methods to access data members.
+
+  //! Returns the maximum number of iterations set in the constructor.
+  ComboType GetComboType() const {return(type_);};
+
   //@}
 protected:
 
   //@{ \name Internal methods.
   //! Use this for checkStatus when this is an OR type combo. Updates status.
-  virtual void OrOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
+  void OrOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
 		    bool SolutionUpdated);
 
   //! Use this for checkStatus when this is an AND type combo. Updates status.
-  virtual void AndOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
+  void AndOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
 		     bool SolutionUpdated);
 
   //! Use this for checkStatus when this is a sequential AND type combo. Updates status.
-  virtual void SeqOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
+  void SeqOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
 		     bool SolutionUpdated);
 
   //! Check whether or not it is safe to add a to the list of

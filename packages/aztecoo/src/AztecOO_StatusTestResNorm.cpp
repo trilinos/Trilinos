@@ -153,11 +153,6 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
   return status_;
 }
 
-AztecOO_StatusType AztecOO_StatusTestResNorm::GetStatus() const
-{
-  return status_;
-}
-
  double AztecOO_StatusTestResNorm::ComputeNorm(const Epetra_Vector & vec, NormType typeofnorm) {
 
    double result = 0.0;
@@ -199,24 +194,4 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
   stream << endl;
     
   return stream;
-}
-
-double AztecOO_StatusTestResNorm::GetTolerance() const
-{
-  return tolerance_;
-}
-
-double AztecOO_StatusTestResNorm::GetTestValue() const
-{
-  return testvalue_;
-}
-
-double AztecOO_StatusTestResNorm::GetResNormValue() const
-{
-  return resvalue_;
-}
-
-double AztecOO_StatusTestResNorm::GetScaledNormValue() const
-{
-  return scalevalue_;
 }

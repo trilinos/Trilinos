@@ -145,6 +145,7 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
   int           N, j;
   double        dots[5], tmp[5], dmax, dtemp;
   int           count = 0, one = 1;
+  int print_info;
 
   /**************************** execution begins ******************************/
 
@@ -401,10 +402,22 @@ void AZ_compute_global_scalars(AZ_MATRIX *Amat,
       AZ_gdot_vec(1, dots, tmp, proc_config);
       *value = dots[0];
     }
- 
+    print_info = -1; /* Never print unless on PE 0 */
+    if (proc_config[AZ_node] == 0) { 
+      if (options[AZ_output]==AZ_none || options[AZ_output]==AZ_warnings)
+	print_info = -1; /* Never print */
+      else if (options[AZ_output]==AZ_last)
+	print_info = 0; /* Print only if converged */
+      else if (options[AZ_output]==AZ_all)
+	print_info = 1; /* Print always */
+      else if (conv_info->iteration%options[AZ_output]==0)
+	print_info = 1; /* print this time */
+      else 
+	print_info = 0; /* Print only if converged */
+    }
     conv_info->conv_function(conv_info->conv_object, conv_info->res_vec_object, 
 			     conv_info->iteration,
-                             r, conv_info->print_info, conv_info->sol_updated,
+                             r, print_info, conv_info->sol_updated,
                              &(conv_info->converged), &(conv_info->isnan), r_norm,
 			     r_avail);
 

@@ -49,7 +49,7 @@ class AztecOO_StatusTestMaxIters: public AztecOO_StatusTest {
   //@{ \name Methods that implement the AztecOO_StatusTest interface.
 
   //! Indicates if residual vector is required by this convergence test: returns false for this class.
-  virtual bool ResidualVectorRequired() const {return(false);} ;
+  bool ResidualVectorRequired() const {return(false);} ;
 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met..
@@ -67,21 +67,21 @@ class AztecOO_StatusTestMaxIters: public AztecOO_StatusTest {
 
     \return StatusType Unconverged if CurrentIter<MaxIters, Failed if CurrentIters>=MaxIters.
   */
-  virtual AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
+  AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
 					 double CurrentResNormEst,
 				 bool SolutionUpdated);
-  virtual AztecOO_StatusType GetStatus() const;
+  AztecOO_StatusType GetStatus() const {return(status_);};
 
-  virtual ostream& Print(ostream& stream, int indent = 0) const;
+  ostream& Print(ostream& stream, int indent = 0) const;
   //@}
   
   //@{ \name Methods to access data members.
 
   //! Returns the maximum number of iterations set in the constructor.
-  virtual int GetMaxIters() const;
+  int GetMaxIters() const {return(MaxIters_);};
 
   //! Returns the current number of iterations from the most recent StatusTest call.
-  virtual int GetNumIters() const;
+  int GetNumIters() const {return(Niters_);};
 
   //@}
 

@@ -103,8 +103,7 @@ bool AztecOO_StatusTestCombo::ResidualVectorRequired() const
 AztecOO_StatusType AztecOO_StatusTestCombo::CheckStatus(int CurrentIter, 
 							      Epetra_MultiVector * CurrentResVector, 
 							      double CurrentResNormEst,  
-							      bool SolutionUpdated)
-{
+							      bool SolutionUpdated) {
   status_ = Unconverged;
 
   if (type_ == OR)
@@ -117,14 +116,9 @@ AztecOO_StatusType AztecOO_StatusTestCombo::CheckStatus(int CurrentIter,
   return status_;
 }
 
-AztecOO_StatusType AztecOO_StatusTestCombo::GetStatus() const
-{
-  return status_;
-}
 
-void AztecOO_StatusTestCombo::OrOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
-			   bool SolutionUpdated)
-{
+void AztecOO_StatusTestCombo::OrOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
+				   double CurrentResNormEst, bool SolutionUpdated) {
 
   bool isFailed = false;
 
@@ -150,8 +144,7 @@ void AztecOO_StatusTestCombo::OrOp(int CurrentIter, Epetra_MultiVector * Current
 }
 
 void AztecOO_StatusTestCombo::AndOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
-			   bool SolutionUpdated)
-{
+				    bool SolutionUpdated) {
   bool isUnconverged = false;
   bool isFailed = false;
 
@@ -184,8 +177,7 @@ void AztecOO_StatusTestCombo::AndOp(int CurrentIter, Epetra_MultiVector * Curren
 }
 
 void AztecOO_StatusTestCombo::SeqOp(int CurrentIter, Epetra_MultiVector * CurrentResVector, double CurrentResNormEst,
-			   bool SolutionUpdated)
-{
+				    bool SolutionUpdated) {
 
   for (std::vector<AztecOO_StatusTest*>::const_iterator i = tests_.begin(); i != tests_.end(); ++i) {
 
@@ -209,8 +201,7 @@ void AztecOO_StatusTestCombo::SeqOp(int CurrentIter, Epetra_MultiVector * Curren
 }
 
 
-ostream& AztecOO_StatusTestCombo::Print(ostream& stream, int indent) const
-{
+ostream& AztecOO_StatusTestCombo::Print(ostream& stream, int indent) const {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   PrintStatus(stream, status_);

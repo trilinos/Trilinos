@@ -160,7 +160,7 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
     QMR will need to explicitly compute this vector if ResidualVectorRequired() returns true, so this is an extra cost for
     these two iterative methods.
   */
-  virtual bool ResidualVectorRequired() const;
+  bool ResidualVectorRequired() const;
 
   //! Check convergence status: Unconverged, Converged, Failed.
   /*! This method checks to see if the convergence criteria are met.  Depending on how the residual test
@@ -179,27 +179,27 @@ class AztecOO_StatusTestResNorm: public AztecOO_StatusTest {
 
     \return AztecOO_StatusType: Unconverged, Converged or Failed.
   */
-  virtual AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
+  AztecOO_StatusType CheckStatus(int CurrentIter, Epetra_MultiVector * CurrentResVector, 
 				 double CurrentResNormEst,
 				 bool SolutionUpdated);
-  virtual AztecOO_StatusType GetStatus() const;
+  AztecOO_StatusType GetStatus() const {return(status_);};
 
-  virtual ostream& Print(ostream& stream, int indent = 0) const;
+  ostream& Print(ostream& stream, int indent = 0) const;
   //@}
 
   //@{ \name Methods to access data members.
 
   //! Returns the value of the tolerance, \f$ \tau \f$, set in the constructor.
-  virtual double GetTolerance() const;
+  double GetTolerance() const {return(tolerance_);};
   
   //! Returns the test value, \f$ \frac{\|r\|}{\sigma} \f$, computed in most recent call to CheckStatus.
-  virtual double GetTestValue() const;
+  double GetTestValue() const {return(testvalue_);};
 
   //! Returns the residual norm value, \f$ \|r\| \f$, computed in most recent call to CheckStatus.
-  virtual double GetResNormValue() const;
+  double GetResNormValue() const {return(resvalue_);};
 
   //! Returns the scaled norm value, \f$ \sigma \f$.
-  virtual double GetScaledNormValue() const;
+  double GetScaledNormValue() const {return(scalevalue_);};
 
   //@}
 

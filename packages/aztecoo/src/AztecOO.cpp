@@ -1074,7 +1074,7 @@ void AztecOO_StatusTest_wrapper(void * conv_test_obj,/* pointer to AztecOO_Statu
   AztecOO_StatusType Status = StatusTest->CheckStatus(iteration, ResidualVector, 
 								  *rnorm, SolutionUpdated);
   
-  if (print_info) StatusTest->Print(cout);
+  if ((Status==Converged && print_info==0) || print_info==1) StatusTest->Print(cout);
   if (StatusTest->ResidualVectorRequired())
     *r_avail = AZ_TRUE;
   else
