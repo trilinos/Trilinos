@@ -1,3 +1,109 @@
+%
+% Part I. 
+% Replicate TrilinosBibliography.bib without the mistakes.
+% If the corrections are not disputed, then
+% the master bibliography will be updated.
+@string{snl = "Sandia National Laboratories"}
+@book{scalapack,
+     title = "{ScaLAPACK} Users' Guide",
+     author = "L. S. Blackford and J. Choi and A. Cleary and E. {D'A}zevedo
+               and J. Demmel and I. Dhillon and J. Dongarra and
+               S. Hammarling and G. Henry and A. Petitet and K. Stanley and
+               D. Walker and R. C. Whaley",
+     publisher = "{SIAM}",
+     year = 1997}
+@Unpublished{Autoconf,
+     author = "Free Software Foundation",
+     key = "Autoconf",
+     title = "Autoconf Home Page",
+     note = "http://www.gnu.org/software/autoconf"}
+
+@Unpublished{Automake,
+     author = "Free Software Foundation",
+     key = "Automake",
+     title = "Automake Home Page",
+     note = "http://www.gnu.org/software /automake"}
+
+@manual{Epetra-Ref-Guide,
+     title = "Epetra Reference Manual",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     edition  = "2.0",
+     note = "http://software.sandia.gov/ 
+             trilinos/packages/epetra/ 
+             doxygen/latex/EpetraReferenceManual.pdf",
+     year = 2002}
+@manual{Ifpack-Ref-Guide,
+     title = "{IFPACK} Reference Manual",
+     author = "M.~A.~Heroux",
+     institution = snl,
+     edition  = "2.0",
+     note = "http://software.sandia.gov/
+             trilinos/packages/ifpack/
+             doxygen/latex/IfpackReferenceManual.pdf",
+     year = 2003}
+
+@techreport{Trilinos-Overview,
+     title = "An Overview of Trilinos",
+     author = "Michael Heroux and Roscoe Bartlett and Vicki Howle and
+     Robert Hoekstra and Jonathan Hu and Tamara Kolda and
+     Richard Lehoucq and Kevin Long and Roger Pawlowski and
+     Eric Phipps and Andrew Salinger and Heidi Thornquist and
+     Ray Tuminaro and James Willenbring and Alan Williams ",
+     institution = snl,
+     number = "SAND2003-2927",
+     year = 2003}
+
+@techreport{ Hu2001,
+     title = "ML 2.0 Smoothed Aggregation User's Guide",
+     author = "Jonathan Hu and Charles Tong and Ray Tuminaro",
+     institution = snl,
+     number = "SAND2001-8028",
+     year = 2001}
+
+@Unpublished{NOX-home-page,
+     author = {Tamara G. Kolda and Roger P. Pawlowski},
+     title = "{NOX} Home Page.",
+     note = "http://software .sandia.gov/nox"}
+@Unpublished{superlu-home-page,
+    Author = "Xiaoye Li and James Demmel",
+   Title   = "{S}uper{LU} home page",
+   Note    = "http://crd.lbl.gov/(tilde) xiaoye/SuperLU/",
+   Year    = "2003"}
+
+@manual{LOCA,
+  author = "A.~G.~Salinger and 
+            N.~M.~Bou-Rabee and 
+            R.~P.~Pawlowski and 
+            E.~D.~Wilkes and 
+            E.~A.~Burroughs and 
+            R.~B.~Lehoucq and 
+            L.~A.~Romero",
+  title = {{LOCA}: {A} Library of Continuation Algorithms -
+           {T}heory and Implementation Manual},
+  institution =  snl,
+  year =     {2001},
+  note =     {{S}AND 2002-0396},
+  address =      {Albuquerque, New Mexico 87185}
+}
+@techreport{MPSalsa-User-Guide,
+     title = "{MPSalsa}: A FINITE ELEMENT COMPUTER PROGRAM FOR REACTING
+              FLOW PROBLEMS {P}ART 2 - {U}SER'S {G}UIDE",
+     author = "A.~G Salinger and K.~D. Devine and G.~L. Hennigan and H.~K. Moffat
+               and S.~A Hutchinson and J.~N. Shadid",
+     institution = snl,
+     number = "SAND96--2331",
+     year = 1996}
+@Unpublished{ML-home-page,
+     author = {Ray S. Tuminaro and Jonathan Hu},
+     title = "{ML} Home Page",
+     note = "http://www.cs.sandia.gov/ (tilde)tuminaro/ML\_Description.html"}
+                                                                                
+
+%
+% Part II. 
+% Items not yet contained in TrilinosBibliography.bib 
+%
 @book{axelsson94iterative,
     author = "O. Axelsson",
     title = "Iterative Solution Methods",
@@ -5,6 +111,17 @@
     address = "Cambridge",
     year = "1994"
 }
+
+@book{Briggs2000,
+    author = "W. L. Briggs and V. E. Henson and S. F. Mc{C}ormick",
+    title = "A multigrid tutorial",
+    publisher = "o",
+    PUBLISHER = "SIAM",
+    ADDRESS = "Philadelphia, PA, USA",
+    EDITION = {2nd},
+    YEAR = 2000,
+}
+
 
 @book{ saad96iterative,
     author = "Y. Saad",
@@ -14,7 +131,6 @@
     isbn = "053494776X",
     year = "1996"
 }
-
 @BOOK { smbg:96,
 AUTHOR = "B. Smith and P. Bj{\o}rstad and William Gropp",
 TITLE = "Domain Decomposition",
@@ -22,7 +138,3 @@ EDITION = {1st},
 PUBLISHER = "Cambridge",
 YEAR = 1996,
 }
-
-
-
-
