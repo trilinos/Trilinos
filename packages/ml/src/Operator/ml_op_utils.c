@@ -2780,7 +2780,10 @@ int ML_Operator_Eigensolver_Dense(ML_Operator* Amat,
   jobvl = 'N'; /* V/N to calculate/not calculate left eigenvectors
                   of matrix H.*/
 
-  jobvr = 'V'; /* As above, but for right eigenvectors. */
+  if (vectors != NULL)
+    jobvr = 'V'; /* As above, but for right eigenvectors. */
+  else
+    jobvr = 'N'; /* As above, but for right eigenvectors. */
 
   lda = n; /* The leading dimension of matrix a. */
 
