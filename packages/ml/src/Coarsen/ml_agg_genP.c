@@ -662,6 +662,11 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    /* ----------------------------------------------------------------- */
    /* compute I - omega D^{-1} A                                        */
    /* ----------------------------------------------------------------- */
+#ifdef RST_MODIF
+   for (i = 0; i < row_lengths[0]; i++) 
+      values[i] *= -widget->omega;
+   values[diag] += 1.;
+#else
 #ifndef MB_MODIF
    if (ML_dabs(diag_val) > 0.0)
    {
@@ -673,6 +678,7 @@ int ML_AGG_JacobiSmoother_Getrows(void *data, int N_requested_rows,
    for (i = 0; i < row_lengths[0]; i++) 
       values[i] *= -widget->omega;
    values[diag] += 1.;
+#endif
 #endif
 
    return(1);
