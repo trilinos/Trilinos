@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
    ML_Init_Amatrix      (ml_object, 0,  129, 129, NULL);
    ML_Set_Amatrix_Getrow(ml_object, 0,  Poisson_getrow, NULL, 129);
    ML_Set_Amatrix_Matvec(ml_object, 0,  Poisson_matvec);
-   ML_Set_PrintLevel(10);
+   ML_Set_PrintLevel(0);
 
    ML_Aggregate_Create(&agg_object);
    ML_Aggregate_Set_MaxCoarseSize(agg_object,1);
@@ -78,15 +78,20 @@ int main(int argc, char *argv[]){
    sol[3] -= 5.040000e+02;
    sol[4] -= 6.250000e+02;
 
+   norm_comp = 0.0;
+   for( i=0 ; i<5 ; ++i ) norm_comp+=sol[i]*sol[i];
+   
+   if (abs(norm_comp-1.0) > 1e-8) {
+     puts("### TEST FAILED");
+     exit(EXIT_FAILURE);
+   }
+
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
 
-   norm_comp = 0.0;
-   for( i=0 ; i<5 ; ++i ) norm_comp+=sol[i]*sol[i];
-   
-   if( abs(norm_comp-1.0) > 1e-8 ) return( EXIT_FAILURE );
-   else                            return( EXIT_SUCCESS );
+  puts("### TEST PASSED");
+  exit( EXIT_SUCCESS );
 }
 
 int Poisson_getrow(ML_Operator *A_data, int N_requested_rows, int requested_rows[],

@@ -42,7 +42,7 @@
 # ************************************************************************
 #@HEADER
 
-SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
+SOURCES = $(TestExamples_SOURCES) $(TestMultiLevelPreconditioner_SOURCES)
 
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
@@ -65,7 +65,8 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = TestMultiLevelPreconditioner$(EXEEXT)
+noinst_PROGRAMS = TestMultiLevelPreconditioner$(EXEEXT) \
+	TestExamples$(EXEEXT)
 subdir = test/scripts/daily/serial
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -98,6 +99,9 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_TestExamples_OBJECTS =
+TestExamples_OBJECTS = $(am_TestExamples_OBJECTS)
+TestExamples_LDADD = $(LDADD)
 am_TestMultiLevelPreconditioner_OBJECTS =
 TestMultiLevelPreconditioner_OBJECTS =  \
 	$(am_TestMultiLevelPreconditioner_OBJECTS)
@@ -107,8 +111,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
-DIST_SOURCES = $(TestMultiLevelPreconditioner_SOURCES)
+SOURCES = $(TestExamples_SOURCES) \
+	$(TestMultiLevelPreconditioner_SOURCES)
+DIST_SOURCES = $(TestExamples_SOURCES) \
+	$(TestMultiLevelPreconditioner_SOURCES)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -243,6 +249,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
+TestExamples_SOURCES = $(srcdir)/TestExamples
 all: all-am
 
 .SUFFIXES:
@@ -403,9 +410,10 @@ uninstall-am: uninstall-info-am
 	mostlyclean-compile mostlyclean-generic pdf pdf-am ps ps-am \
 	uninstall uninstall-am uninstall-info-am
 
-
 TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
 	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
+TestExamples$(EXEEXT): $(srcdir)/TestExamples
+	cp $(srcdir)/TestExamples TestExamples$(EXEEXT) 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

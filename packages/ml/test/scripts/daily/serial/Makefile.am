@@ -28,9 +28,12 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = TestMultiLevelPreconditioner
+noinst_PROGRAMS = TestMultiLevelPreconditioner TestExamples
 
 TestMultiLevelPreconditioner_SOURCES = $(srcdir)/TestMultiLevelPreconditioner
-
 TestMultiLevelPreconditioner$(EXEEXT): $(srcdir)/TestMultiLevelPreconditioner
 	cp $(srcdir)/TestMultiLevelPreconditioner TestMultiLevelPreconditioner$(EXEEXT) 
+
+TestExamples_SOURCES = $(srcdir)/TestExamples
+TestExamples$(EXEEXT): $(srcdir)/TestExamples
+	cp $(srcdir)/TestExamples TestExamples$(EXEEXT) 

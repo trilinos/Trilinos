@@ -63,7 +63,7 @@ if( "$2" == "True" ) then # $2 is an optional parameter indicating if
 #    set file4 = tempfile2
 #    rm -f $file4
 else
-    cd ../../../
+    #cd ../../../
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
@@ -82,52 +82,52 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f ( VerySimple AztecSimple MultiLevelPreconditioner_NonSym MultiLevelPreconditioner_Sym MultiLevelPreconditioner_Maxwell ML_Operator2Epetra_RowMatrix )
-	cd $f
-    touch fakefile.exe
-    set tt = (*.exe)
-    # get rid of spaces
-    set exefiles = `echo ${tt} | sed "s/ //g"`
-    # avoids problem of no executables in subdirectory
-    if ( ${exefiles} != 'fakefile.exe' ) then
-      rm -f fakefile.exe
+cd ../examples
+touch fakefile.exe
+set tt = (*.exe)
+# get rid of spaces
+set exefiles = `echo ${tt} | sed "s/ //g"`
+# avoids problem of no executables in subdirectory
+if ( ${exefiles} != 'fakefile.exe' ) then
+      /bin/rm -f fakefile.exe
 	  foreach g(*.exe)
-                  echo "[TEST]" >>& ../$file
-		  echo "[TEST] ############" $g "##############" >>& ../$file
-                  echo "[TEST]" >>& ../$file
+             if ($g != "ml_example2d.exe" & $g != "ml_example3d.exe" & $g != "mlguide_par.exe" & $g != "ml_read_elas.exe" & $g != "ml_readfile.exe" & $g != "ml_recirc.exe" & $g != "ml_aztecoo.exe"& $g != "ml_read_matrix_AIJ.exe" & $g != "ml_read_salsa.exe") then
+                  echo "[TEST]" >>& $file
+		  echo "[TEST] ############" $g "##############" >>& $file
+                  echo "[TEST]" >>& $file
 		  if( "$2" == "True" ) then
-		      mpirun -np 4 ./$g >>& ../$file
+                    # forget the output now
+		    ./$g >>& /dev/null
                     # run with 1 process		    
 		      if( $status != 0 ) then
 		        # A test failed.
 			    set AnError = True
-			    echo "[TEST] ******** Test w/ 4 proc failed ********" >>& ../$file
-                            echo "[TEST] ******** now re-running with -v option" >>& ../$file
-                            mpirun -np 4 ./$g -v >>& ../$file
-			    echo "[TEST] Errors for script " $g " are listed above." >>& ../$file2
+			    echo "[TEST] ******** Test w/ 1 proc failed ********" >>& $file
+                            echo "[TEST] ******** now re-running with output" >>& $file
+                            ./$g >>& $file
+			    echo "[TEST] Errors for script " $g " are listed above." >>& $file2
 		      else
 		        # Tests passed
-			    echo "[TEST] ******** Test w/ 4 proc passed ********" >>& ../$file
+			    echo "[TEST] ******** Test w/ 1 proc passed ********" >>& $file
 		      endif
 		  else
 		    # This is not an automated test.
-		    ./$g -v >>& ../$file
+		    ./$g >>& $file
 		  endif
+              endif
 	  end
-    else
-      echo "[TEST] *** Test ${f} did not run, no executable found ***" >>& ../$file
-      echo "[TEST] ******** Perhaps a package the test depends on didn't build? ****" >>& ../$file
-      rm -f fakefile.exe
-    endif
-	cd ..
-end
+else
+  echo "[TEST] *** no examples found ***" >>& $file
+  echo "[TEST] *** Perhaps a package the test depends on didn't build? ****" >>& $file
+endif
+/bin/rm -f fakefile.exe
 
 ## At this point, it is assumed that the current directory is
 ## 'package_name/test'
 if ( "$2" == "True" ) then
 #    rm $file3
     if( "$AnError" != "True" ) then
-	rm -f $file2
+	/bin/rm -f $file2
     endif
 endif
 

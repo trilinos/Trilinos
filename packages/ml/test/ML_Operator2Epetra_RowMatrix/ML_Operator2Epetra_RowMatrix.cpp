@@ -151,15 +151,18 @@ int main(int argc, char *argv[])
   for (int i = 0 ; i < NumVectors ; ++i) {
     TotalNorm += Norm2[i];
     if (Norm2[i] > 1e-15) {
+      cout << "### TEST FAILED" << endl;
       ML_EXIT(-2); 
     }
   }
     
   // at this point the test is passed. Some fancy (??) output,
   // and I give up.
-  if (Comm.MyPID() == 0)
+  if (Comm.MyPID() == 0) {
     cout << "Total norm = " << TotalNorm << endl;
-
+    cout << "### TEST PASSED" << endl;
+  }
+    
   // free memory
 
   ML_Destroy(&ml_handle);

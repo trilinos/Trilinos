@@ -58,7 +58,10 @@ int main(int argc, char *argv[])
 #endif
   AZ_set_proc_config(proc_config, COMMUNICATOR);
 
-  ML_Set_PrintLevel(10);   /* set ML's output level: 0 gives least output */
+  ML_Set_PrintLevel(0);
+  if (argc >=2)
+    if (strcmp(argv[1], "-v") == 0)
+      ML_Set_PrintLevel(10);
 
   Partition.Nglobal = Nnodes;
   user_partition(&Partition);
@@ -120,8 +123,14 @@ int main(int argc, char *argv[])
   /* compare iteration number */
   if( proc_config[AZ_node] == 0 ) 
     printf("iterations = %d (expected 13)\n", (int)(status[AZ_its]));
-  if( (int)(status[AZ_its]) != 13 ) return 1;
-  else                              return 0;
+  if( (int)(status[AZ_its]) != 13 ) {
+    printf("### TEST FAILED\n");
+    return 1;
+  }
+  else {
+    printf("### TEST PASSED\n");
+    return 0;
+  }
 }
 
 /* Assign unknowns to processors */

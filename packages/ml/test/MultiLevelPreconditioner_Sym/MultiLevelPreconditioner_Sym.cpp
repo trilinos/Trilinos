@@ -52,8 +52,9 @@
 #include "AztecOO.h"
 
 #include "Trilinos_Util_CrsMatrixGallery.h"
-#include "Trilinos_Util_CommandLineParser.h"
 
+static bool verbose = false;
+static bool ml_verbose = false;
 
 void PrintLine() 
 {
@@ -93,6 +94,11 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   
   AztecOO solver(Problem);
   
+  if (ml_verbose)
+    MLList.set("output", 10);
+  else
+    MLList.set("output", 0);
+
   ML_Epetra::MultiLevelPreconditioner * MLPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   
   // tell AztecOO to use this preconditioner, then solve
@@ -155,6 +161,13 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm Comm;
 #endif
 
+  if (Comm.MyPID() == 0)
+    verbose = true;
+
+  if (argc >= 2)
+    if (strcmp(argv[1], "-v") == 0) 
+      ml_verbose = true;
+
   // initialize the random number generator
 
   srandom((unsigned int)1);
@@ -165,14 +178,9 @@ int main(int argc, char *argv[]) {
   // create linear problem //
   // ===================== //
   
-  CommandLineParser CLP(argc,argv);
-  CrsMatrixGallery Gallery("", Comm);
+  CrsMatrixGallery Gallery("laplace_3d", Comm);
+  Gallery.Set("problem_size", 27000);
   
-  // default values for problem type and size
-  if( CLP.Has("-problem_type") == false ) CLP.Add("-problem_type", "laplace_3d" ); 
-  if( CLP.Has("-problem_size") == false ) CLP.Add("-problem_size", "27000" );
-  
-  Gallery.Set(CLP);
   Epetra_LinearProblem * Problem = Gallery.GetLinearProblem();
 
   int TotalFailed = 0;
@@ -184,109 +192,133 @@ int main(int argc, char *argv[]) {
   // default options for SA //
   // ====================== //
 
-  if( 1 ) {
-    
-    if( Comm.MyPID() == 0 ) PrintLine();
-    
+  if (true) {
+
+    if (verbose) PrintLine();
+
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults("SA",MLList);
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+    if (verbose) {
 #ifdef HAVE_ML_AMESOS
-    // expected iterations
-    switch( NumProcs ) {
-    case 1:
-      if( iters != 16 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 16 iterations, got "
-	       << iters << endl << endl;
+      // expected iterations
+      switch( NumProcs ) {
+      case 1:
+        if( iters != 16 ) {
+          ++TotalFailed;
+          cout << endl << "### TEST FAILED : expecting 16 iterations, got "
+            << iters << endl << endl;
+        }
+        else
+          cout << endl << "### TEST PASSED" << endl << endl;
+        break;
+      case 4:
+        if( iters != 16 ) {
+          ++TotalFailed;
+          cout << endl << "### TEST FAILED : expecting 16 iterations, got "
+            << iters << endl << endl;
+        }
+        else
+          cout << endl << "### TEST PASSED" << endl << endl;
+        break;
       }
-      break;
-    case 4:
-      if( iters != 16 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 16 iterations, got "
-	       << iters << endl << endl;
-      }
-      break;
-    }
+#else
+      cout << "### Cannot check the number of iterations" << endl;
+      cout << "### (no `enable-amesos')" << endl;
+      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
 #endif
+    }
   }
   
   // ============================== //
   // default options for SA, Jacobi //
   // ============================== //
 
-  if( 1 ) {
-    
-    if( Comm.MyPID() == 0 ) PrintLine();
-    
+  if (true) {
+
+    if (verbose) PrintLine();
+
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults("SA",MLList);
     MLList.set("smoother: type", "Jacobi");
 
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+    if (verbose) {
 #ifdef HAVE_ML_AMESOS
-    // expected iterations
-    switch( NumProcs ) {
-    case 1:
-      if( iters != 17 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 17 iterations, got "
-	       << iters << endl << endl;
+      // expected iterations
+      switch( NumProcs ) {
+      case 1:
+        if( iters != 17 ) {
+          ++TotalFailed;
+          cout << endl << "### TEST FAILED : expecting 17 iterations, got "
+            << iters << endl << endl;
+        }
+        else
+          cout << "### TEST PASSED" << endl;
+        break;
+      case 4:
+        if( iters != 17 ) {
+          ++TotalFailed;
+          cout << endl << "### TEST FAILED : expecting 17 iterations, got "
+            << iters << endl << endl;
+        }
+        else
+          cout << "### TEST PASSED" << endl;
+        break;
       }
-      break;
-    case 4:
-      if( iters != 17 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 17 iterations, got "
-	       << iters << endl << endl;
-      }
-      break;
-    }
+#else
+      cout << "### Cannot check the number of iterations" << endl;
+      cout << "### (no `enable-amesos')" << endl;
+      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
 #endif
+    }
   }
 
   // =========================== //
   // default options for SA, MLS //
   // =========================== //
 
-  if( 1 ) {
-    
-    if( Comm.MyPID() == 0 ) PrintLine();
-    
+  if (true) {
+
+    if (verbose) PrintLine();
+
     Teuchos::ParameterList MLList;
     ML_Epetra::SetDefaults("SA",MLList);
     MLList.set("smoother: type", "MLS");
 
     iters = TestMultiLevelPreconditioner("SA", MLList, *Problem, TotalErrorResidual, TotalErrorExactSol );
 
+    if (verbose) {
 #ifdef HAVE_ML_AMESOS
-    // expected iterations
-    switch( NumProcs ) {
-    case 1:
-      if( iters != 14 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 14 iterations, got "
-	       << iters << endl << endl;
+      // expected iterations
+      switch( NumProcs ) {
+      case 1:
+        if( iters != 14 ) {
+          ++TotalFailed;
+            cout << endl << "### TEST FAILED : expecting 14 iterations, got "
+                 << iters << endl << endl;
+        }
+        else
+          cout << "### TEST PASSED" << endl;
+        break;
+      case 4:
+        if( iters != 14 ) {
+          ++TotalFailed;
+            cout << endl << "### TEST FAILED : expecting 14 iterations, got "
+                 << iters << endl << endl;
+        }
+        else
+          cout << "### TEST PASSED" << endl;
+        break;
       }
-      break;
-    case 4:
-      if( iters != 14 ) {
-	++TotalFailed;
-	if( Comm.MyPID() == 0 ) 
-	  cerr << endl << "### TEST FAILED : expecting 14 iterations, got "
-	       << iters << endl << endl;
-      }
-      break;
-    }
+#else
+      cout << "### Cannot check the number of iterations" << endl;
+      cout << "### (no `enable-amesos')" << endl;
+      cout << "### Checking linear system residual only (at the bottom of the file)" << endl;
 #endif
+    }
   }
 
   // ===================== //
@@ -301,15 +333,19 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
+  if (TotalErrorResidual > 1e-8) exit(EXIT_FAILURE);
+
+#ifdef HAVE_ML_AMESOS
+  if (TotalFailed) exit(EXIT_FAILURE);
+#endif
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  if( TotalErrorResidual > 1e-8 ) return(EXIT_FAILURE);
+  if (verbose)
+    cout << "### ALL TESTS PASSED" << endl;
 
-#ifdef HAVE_ML_AMESOS
-  if( TotalFailed ) return( EXIT_FAILURE );
-#endif
   return( EXIT_SUCCESS );
 
 }

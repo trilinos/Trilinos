@@ -72,6 +72,13 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);
 #endif
+
+  bool ml_verbose = false;
+
+  if (argc >= 2)
+    if (strcmp(argv[1], "-v") == 0) 
+      ml_verbose = true;
+
   AZ_set_proc_config(proc_config, COMMUNICATOR);
   ML_Comm * comm;
   ML_Comm_Create( &comm );
@@ -117,6 +124,11 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList MLList;
   ML_Epetra::SetDefaults("maxwell", MLList);
   
+  if (ml_verbose)
+    MLList.set("output", 10);
+  else
+    MLList.set("output", 0);
+
   MLList.set("aggregation: type", "Uncoupled");
   MLList.set("coarse: max size", 30);
   MLList.set("aggregation: threshold", 0.0);
@@ -194,13 +206,19 @@ int main(int argc, char *argv[])
   }
 
   ML_Operator_Destroy(&ML_Tmat);
+
+  if (residual > 1e-5) {
+    cout << "### TEST FAILED" << endl;
+    exit(EXIT_FAILURE);
+  }
+
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
 		
   // check convergence
-  if( residual > 1e-5 ) return(EXIT_FAILURE);
-  else                  return(EXIT_SUCCESS);
+  cout << "### TEST PASSED" << endl;
+  exit(EXIT_SUCCESS);
 		
 }
 
