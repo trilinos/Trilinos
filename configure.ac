@@ -58,6 +58,13 @@ AM_CONDITIONAL(BUILD_NOX, test "X$ac_cv_use_nox" != "Xno")
 TAC_ARG_ENABLE_FEATURE(tsf, [Build TSF], TSF, no)
 AM_CONDITIONAL(BUILD_TSF, test "X$ac_cv_use_tsf" != "Xno")
 
+TAC_ARG_ENABLE_FEATURE(tsfcore, [Build TSFCore], TSFCORE, no)
+AM_CONDITIONAL(BUILD_TSFCORE, test "X$ac_cv_use_tsfcore" != "Xno")
+
+TAC_ARG_ENABLE_FEATURE(tsfcoreutils, [Build TSFCoreUtils], TSFCOREUTILS, no)
+AM_CONDITIONAL(BUILD_TSFCOREUTILS, test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xno")
+
 TAC_ARG_ENABLE_FEATURE(komplex, [Build komplex], KOMPLEX, yes)
 AM_CONDITIONAL(BUILD_KOMPLEX, test "X$ac_cv_use_komplex" != "Xno")
 
@@ -93,6 +100,8 @@ TAC_ARG_ENABLE_FEATURE(epetra, [Build epetra], EPETRA, yes)
 AM_CONDITIONAL(BUILD_EPETRA, test "X$ac_cv_use_epetra" != "Xno" || 
 	test "X$ac_cv_use_ifpack" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xyes" || 
+	test "X$ac_cv_use_tsfcore" != "Xyes" || 
+	test "X$ac_cv_use_tsfcoreutils" != "Xyes" || 
 	test "X$ac_cv_use_amesos" != "Xyes" || 
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
@@ -105,22 +114,16 @@ if test "X$ac_cv_use_y12m" != "Xno"; then
   AC_CONFIG_SUBDIRS([external/y12m])
 fi
 
-# For now, blas and lapck will not be included
-#if test "X$ac_cv_use_reference_blasandlapack" != "Xno"; then
-#  AC_CONFIG_SUBDIRS([external/blas])
-#fi
-
-#if test "X$ac_cv_use_reference_lapack" != "Xno" || 
-#	test "X$ac_cv_use_referenceblasandlapack" != "Xno"; then
-#  AC_CONFIG_SUBDIRS([external/lapack])
-#fi
-
-
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" || 
 	test "X$ac_cv_use_tsf" != "Xno" || 
+	test "X$ac_cv_use_tsfcore" != "Xyes" || 
+	test "X$ac_cv_use_tsfcoreutils" != "Xyes" || 
+	test "X$ac_cv_use_amesos" != "Xyes" || 
 	test "X$ac_cv_use_aztecoo" != "Xno" || 
+	test "X$ac_cv_use_new_package" != "Xyes" || 
+        test "X$ac_cv_use_epetraext" != "Xyes" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/epetra])
 fi
@@ -149,6 +152,15 @@ fi
 
 if test "X$ac_cv_use_tsf" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/TSF])
+fi
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/TSFCore])
+fi
+
+if test "X$ac_cv_use_tsfcore" != "Xno" || 
+	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
+  AC_CONFIG_SUBDIRS([packages/TSFCoreUtils])
 fi
 
 if test "X$ac_cv_use_amesos" != "Xno"; then

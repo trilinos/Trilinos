@@ -269,6 +269,8 @@ ac_subdirs_all="$ac_subdirs_all packages/aztecoo"
 ac_subdirs_all="$ac_subdirs_all packages/komplex"
 ac_subdirs_all="$ac_subdirs_all packages/nox"
 ac_subdirs_all="$ac_subdirs_all packages/TSF"
+ac_subdirs_all="$ac_subdirs_all packages/TSFCore"
+ac_subdirs_all="$ac_subdirs_all packages/TSFCoreUtils"
 ac_subdirs_all="$ac_subdirs_all packages/amesos"
 ac_subdirs_all="$ac_subdirs_all packages/epetraext"
 ac_subdirs_all="$ac_subdirs_all packages/new_package"
@@ -794,6 +796,8 @@ Optional Features:
   --enable-amesos         Build amesos (default is no)
   --enable-nox            Build nox (default is no)
   --enable-tsf            Build TSF (default is no)
+  --enable-tsfcore        Build TSFCore (default is no)
+  --enable-tsfcoreutils   Build TSFCoreUtils (default is no)
   --enable-komplex        Build komplex (default is yes)
   --enable-aztecoo        Build aztecoo (default is yes)
   --enable-ifpack         Build ifpack (default is yes)
@@ -1703,6 +1707,77 @@ else
 fi
 
 
+# Check whether --enable-tsfcore or --disable-tsfcore was given.
+if test "${enable_tsfcore+set}" = set; then
+  enableval="$enable_tsfcore"
+  ac_cv_use_tsfcore=$enableval
+else
+  ac_cv_use_tsfcore=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsfcore" >&5
+echo $ECHO_N "checking whether to use tsfcore... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCORE
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+  BUILD_TSFCORE_TRUE=
+  BUILD_TSFCORE_FALSE='#'
+else
+  BUILD_TSFCORE_TRUE='#'
+  BUILD_TSFCORE_FALSE=
+fi
+
+
+# Check whether --enable-tsfcoreutils or --disable-tsfcoreutils was given.
+if test "${enable_tsfcoreutils+set}" = set; then
+  enableval="$enable_tsfcoreutils"
+  ac_cv_use_tsfcoreutils=$enableval
+else
+  ac_cv_use_tsfcoreutils=no
+fi;
+
+echo "$as_me:$LINENO: checking whether to use tsfcoreutils" >&5
+echo $ECHO_N "checking whether to use tsfcoreutils... $ECHO_C" >&6
+
+if test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_TSFCOREUTILS
+_ACEOF
+
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+
+
+if test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xno"; then
+  BUILD_TSFCOREUTILS_TRUE=
+  BUILD_TSFCOREUTILS_FALSE='#'
+else
+  BUILD_TSFCOREUTILS_TRUE='#'
+  BUILD_TSFCOREUTILS_FALSE=
+fi
+
+
 # Check whether --enable-komplex or --disable-komplex was given.
 if test "${enable_komplex+set}" = set; then
   enableval="$enable_komplex"
@@ -1979,6 +2054,8 @@ fi
 if test "X$ac_cv_use_epetra" != "Xno" ||
 	test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xyes" ||
+	test "X$ac_cv_use_tsfcore" != "Xyes" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xyes" ||
 	test "X$ac_cv_use_amesos" != "Xyes" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
@@ -2000,22 +2077,16 @@ subdirs="$subdirs external/y12m"
 
 fi
 
-# For now, blas and lapck will not be included
-#if test "X$ac_cv_use_reference_blasandlapack" != "Xno"; then
-#  AC_CONFIG_SUBDIRS([external/blas])
-#fi
-
-#if test "X$ac_cv_use_reference_lapack" != "Xno" ||
-#	test "X$ac_cv_use_referenceblasandlapack" != "Xno"; then
-#  AC_CONFIG_SUBDIRS([external/lapack])
-#fi
-
-
 if test "X$ac_cv_use_epetra" != "Xno" || test "X$ac_cv_use_ifpack" != "Xno" ||
 	test "X$ac_cv_use_oldifpack" != "Xno" ||
 	test "X$ac_cv_use_triutils" != "Xno" ||
 	test "X$ac_cv_use_tsf" != "Xno" ||
+	test "X$ac_cv_use_tsfcore" != "Xyes" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xyes" ||
+	test "X$ac_cv_use_amesos" != "Xyes" ||
 	test "X$ac_cv_use_aztecoo" != "Xno" ||
+	test "X$ac_cv_use_new_package" != "Xyes" ||
+        test "X$ac_cv_use_epetraext" != "Xyes" ||
 	test "X$ac_cv_use_komplex" != "Xno"; then
 
 
@@ -2064,6 +2135,21 @@ if test "X$ac_cv_use_tsf" != "Xno"; then
 
 
 subdirs="$subdirs packages/TSF"
+
+fi
+
+if test "X$ac_cv_use_tsfcore" != "Xno"; then
+
+
+subdirs="$subdirs packages/TSFCore"
+
+fi
+
+if test "X$ac_cv_use_tsfcore" != "Xno" ||
+	test "X$ac_cv_use_tsfcoreutils" != "Xno"; then
+
+
+subdirs="$subdirs packages/TSFCoreUtils"
 
 fi
 
@@ -2680,6 +2766,10 @@ s,@BUILD_NOX_TRUE@,$BUILD_NOX_TRUE,;t t
 s,@BUILD_NOX_FALSE@,$BUILD_NOX_FALSE,;t t
 s,@BUILD_TSF_TRUE@,$BUILD_TSF_TRUE,;t t
 s,@BUILD_TSF_FALSE@,$BUILD_TSF_FALSE,;t t
+s,@BUILD_TSFCORE_TRUE@,$BUILD_TSFCORE_TRUE,;t t
+s,@BUILD_TSFCORE_FALSE@,$BUILD_TSFCORE_FALSE,;t t
+s,@BUILD_TSFCOREUTILS_TRUE@,$BUILD_TSFCOREUTILS_TRUE,;t t
+s,@BUILD_TSFCOREUTILS_FALSE@,$BUILD_TSFCOREUTILS_FALSE,;t t
 s,@BUILD_KOMPLEX_TRUE@,$BUILD_KOMPLEX_TRUE,;t t
 s,@BUILD_KOMPLEX_FALSE@,$BUILD_KOMPLEX_FALSE,;t t
 s,@BUILD_AZTECOO_TRUE@,$BUILD_AZTECOO_TRUE,;t t

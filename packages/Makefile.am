@@ -65,6 +65,14 @@ ACLOCAL	= aclocal -I config
 ## #######################################################################
 #SUBDIRS = aztecoo epetra ifpack komplex petra tpetra triutils tsf TSF epetraext
 
+if BUILD_TSFCORE
+TSFCORE_SUBDIR = TSFCore
+endif
+
+if BUILD_TSFCOREUTILS
+TSFCOREUTILS_SUBDIR = TSFCoreUtils
+endif
+
 if BUILD_EPETRAEXT
 EPETRAEXT_SUBDIR = epetraext
 endif
@@ -110,7 +118,8 @@ endif
 ## #np# - Add your subdir, i.e. $(NEW_PACKAGE_SUBDIR) which is defined 
 ## above, to this list
 SUBDIRS = $(EPETRA_SUBDIR) $(TRIUTILS_SUBDIR) $(IFPACK_SUBDIR) \
-	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) $(TSF_SUBDIR) \
+	  $(AZTECOO_SUBDIR) $(KOMPLEX_SUBDIR) $(NOX_SUBDIR) \
+	  $(TSFCOREUTILS_SUBDIR) $(TSFCORE_SUBDIR) $(TSF_SUBDIR) \
 	  $(AMESOS_SUBDIR) $(EPETRAEXT_SUBDIR) $(NEW_PACKAGE_SUBDIR)
 
 
