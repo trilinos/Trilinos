@@ -28,13 +28,13 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = TestCrsAdditiveSchwarz
+noinst_PROGRAMS = TestAdditiveSchwarz
 
-TestCrsAdditiveSchwarz_SOURCES = $(srcdir)/cxx_main.cpp
+TestAdditiveSchwarz_SOURCES = $(srcdir)/cxx_main.cpp
 
-TestCrsAdditiveSchwarz_DEPENDENCIES = $(IFPACK_LIBS)
+TestAdditiveSchwarz_DEPENDENCIES = $(IFPACK_LIBS)
 
-TestCrsAdditiveSchwarz_CXXFLAGS = $(IFPACK_INCLUDES)  \
+TestAdditiveSchwarz_CXXFLAGS = $(IFPACK_INCLUDES)  \
 	-I$(top_srcdir)/../triutils/src \
 	-I$(top_builddir)/../triutils/src
 
@@ -44,7 +44,7 @@ else
 triutils_lib = 
 endif
 
-TestCrsAdditiveSchwarz_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
+TestAdditiveSchwarz_LDADD = $(TRILINOS_TEMPLATE_OBJS) \
  	$(triutils_lib) \
 	$(IFPACK_LIBS) \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)

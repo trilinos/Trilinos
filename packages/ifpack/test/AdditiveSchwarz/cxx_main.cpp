@@ -40,7 +40,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_Jacobi.h"
 #include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_CrsAdditiveSchwarz.h"
+#include "Ifpack_AdditiveSchwarz.h"
 #include "AztecOO.h"
 #include "Ifpack_BlockPreconditioner.h"
 #include "Ifpack_DenseContainer.h"
@@ -62,8 +62,8 @@
 
 using namespace Trilinos_Util;
 
-int TestPreconditioner(string DecType, Epetra_LinearProblem* Problem,
-		       int OverlapLevel = 0)
+bool TestPreconditioner(Epetra_LinearProblem* Problem,
+			int OverlapLevel = 0)
 {
 
   Epetra_MultiVector& RHS = *(Problem->GetRHS());
@@ -71,63 +71,15 @@ int TestPreconditioner(string DecType, Epetra_LinearProblem* Problem,
   LHS.PutScalar(0.0);
 
   Teuchos::ParameterList List;
-  List.set("damping factor", .67);
-  List.set("sweeps",5);
-  List.set("local blocks", 4);
-  List.set("overlap level", OverlapLevel);
-  List.set("print level", 0);
-
   Epetra_RowMatrix* A = Problem->GetMatrix();
-  Epetra_CrsMatrix* CrsA = dynamic_cast<Epetra_CrsMatrix*>(A);
 
-  // explicitly build the overlapping matrix as CRS
-  Epetra_RowMatrix* OverlappingCrsA = 0;
-
-  // build graph for matrix and (possibly) overlapping one
-  Ifpack_Graph* Graph = new Ifpack_Graph_Epetra_RowMatrix(A);
-  Ifpack_Graph* OverlappingGraph = 0;
-
-  Ifpack_Partitioner* Partitioner = 0;
-
-  // CreateOverlappingCrsMatrix returns 0 is overlap is 0, or
-  // only one processor is used.
-  if ((OverlapLevel > 0) && (A->Comm().NumProc() > 1)) {
-
-    OverlappingCrsA = Ifpack_CreateOverlappingCrsMatrix(CrsA,OverlapLevel);
-
-    assert(OverlappingCrsA != 0);
-    OverlappingGraph =  new Ifpack_Graph_Epetra_RowMatrix(OverlappingCrsA);
-
-  }
-  else
-    OverlappingGraph = Graph;
-
-  if (DecType == "Linear")
-    Partitioner = new Ifpack_LinearPartitioner(OverlappingGraph);
-  else if (DecType == "Greedy")
-    Partitioner = new Ifpack_GreedyPartitioner(OverlappingGraph);
-  else if (DecType == "METIS")
-    Partitioner = new Ifpack_METISPartitioner(OverlappingGraph);
-  else
-    IFPACK_CHK_ERR(-1);
-
-  assert (Partitioner != 0);
-  
-  // need to partition the graph of A
-  IFPACK_CHK_ERR(Partitioner->SetParameters(List));
-  IFPACK_CHK_ERR(Partitioner->Compute());
-  List.set("partitioner object", Partitioner);
- 
   Ifpack_Preconditioner* Prec;
   
-  if ((OverlapLevel > 0) && (A->Comm().NumProc() > 1))
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,OverlappingCrsA);
-  else
-    Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A);
-
+  Prec = new Ifpack_AdditiveSchwarz<Ifpack_Amesos>(A,OverlapLevel);
   assert(Prec != 0);
 
   IFPACK_CHK_ERR(Prec->SetParameters(List));
+  IFPACK_CHK_ERR(Prec->Initialize());
   IFPACK_CHK_ERR(Prec->Compute());
 
   // create the AztecOO solver
@@ -151,21 +103,12 @@ int TestPreconditioner(string DecType, Epetra_LinearProblem* Problem,
     cout << "Norm of the true residual = " << TrueResidual << endl;
   }
 
-  if (Graph)
-    delete Graph;
-
-  if ((OverlapLevel > 0) && (A->Comm().NumProc() > 1))
-    delete OverlappingGraph;
-
-  if (OverlappingCrsA)
-    delete OverlappingCrsA;
-  
   delete Prec;
   
   if (TrueResidual < 1e-5)
-    return(0);
+    return(true);
   else
-    return(-1);
+    return(false);
 
 }
 
@@ -186,28 +129,29 @@ int main(int argc, char *argv[])
   Gallery.Set("problem_size", NumPoints);
   Gallery.Set("map_type", "linear");
 
-  // The following methods of CrsMatrixGallery are used to get pointers
-  // to internally stored Epetra_RowMatrix and Epetra_LinearProblem.
-  Epetra_RowMatrix* A = Gallery.GetMatrix();
-  Epetra_CrsMatrix* CrsA = dynamic_cast<Epetra_CrsMatrix*>(A);
   Epetra_LinearProblem* Problem = Gallery.GetLinearProblem();
 
   // test the preconditioner
   int TestPassed = true;
-  for (int overlap = 0 ; overlap < 5 ; overlap++) {
-    if (TestPreconditioner("Linear",Problem,overlap))
+
+  if (Comm.NumProc() == 1) {
+    if (!TestPreconditioner(Problem,0))
       TestPassed = false;
   }
-  
+  else {
+    for (int overlap = 0 ; overlap < 5 ; overlap++) {
+      if (!TestPreconditioner(Problem,overlap))
+	TestPassed = false;
+    }
+  }
+
+  if (!TestPassed)
+    exit(EXIT_FAILURE);
 
 #ifdef HAVE_MPI
   MPI_Finalize() ; 
 #endif
-
-  if (TestPassed)
-    exit(EXIT_SUCCESS);
-  else
-    exit(EXIT_FAILURE);
+  exit(EXIT_SUCCESS);
 }
 
 #else

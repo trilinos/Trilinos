@@ -40,7 +40,6 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_Jacobi.h"
 #include "Ifpack_AdditiveSchwarz.h"
-#include "Ifpack_CrsAdditiveSchwarz.h"
 #include "Ifpack_BlockGaussSeidel.h"
 #include "Ifpack_Jacobi.h"
 #include "Ifpack_GaussSeidel.h"
@@ -90,8 +89,8 @@ bool TestPreconditioner(string PrecType,
   // compute the real residual
 
   double residual, diff;
-  Gallery.ComputeResidual(residual);
-  Gallery.ComputeDiffBetweenStartingAndExactSolutions(diff);
+  Gallery.ComputeResidual(&residual);
+  Gallery.ComputeDiffBetweenStartingAndExactSolutions(&diff);
 
   if( A->Comm().MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
