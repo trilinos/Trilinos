@@ -276,17 +276,24 @@ integer(Zoltan_INT) :: lid
       exp_elem_ptr => search_by_global_id(mesh_data, &
                        export_global_ids(gid+(i-1)*num_gid_entries), exp_elem)
     endif
-    New_Elem_Index(exp_elem) = -1
-    proc_ids(exp_elem) = export_procs(i)
+    if (export_procs(i).ne.proc) then
+!     /* Export is moving to a new processor */
+      New_Elem_Index(exp_elem) = -1
+      proc_ids(exp_elem) = export_procs(i)
+    endif
   end do
 
   do i = 1, num_import
+    if (import_procs(i).ne.proc) then
+!    /* Import is moving from a new processor, not just from a new partition */
 !    /* search for first free location */
-    do j = 0, New_Elem_Index_Size-1
-      if (New_Elem_Index(j) == -1) exit
-    end do
+!    /* search for first free location */
+      do j = 0, New_Elem_Index_Size-1
+        if (New_Elem_Index(j) == -1) exit
+      end do
 
-    New_Elem_Index(j) = import_global_ids(gid+(i-1)*num_gid_entries)
+      New_Elem_Index(j) = import_global_ids(gid+(i-1)*num_gid_entries)
+    endif
   end do
 
 !  /* 
@@ -354,28 +361,29 @@ integer(Zoltan_INT) :: lid
     maxlen = maxlen + Mesh%ecmap_cnt(i)
   end do
 
-!  /*  No communication is being done; don't have to update any more info. */
-  if (maxlen == 0) return
-
-  allocate(send_vec(0:maxlen-1), stat=allocstat)
-  if (allocstat /= 0) then
-    print *, "fatal: insufficient memory"
-    ierr = ZOLTAN_MEMERR
-    return
-  endif
+  if (maxlen > 0) then
+    allocate(send_vec(0:maxlen-1), stat=allocstat)
+    if (allocstat /= 0) then
+      print *, "fatal: insufficient memory"
+      ierr = ZOLTAN_MEMERR
+      return
+    endif
 
 !  /* Load send vector */
 
-  do i = 0, maxlen-1
-    send_vec(i) = proc_ids(Mesh%ecmap_elemids(i))
-  end do
+    do i = 0, maxlen-1
+      send_vec(i) = proc_ids(Mesh%ecmap_elemids(i))
+    end do
+  endif
 
   deallocate(proc_ids)
-  allocate(recv_vec(0:maxlen-1), stat=allocstat)
-  if (allocstat /= 0) then
-    print *, "fatal: insufficient memory"
-    ierr = ZOLTAN_MEMERR
-    return
+  if (maxlen > 0) then
+    allocate(recv_vec(0:maxlen-1), stat=allocstat)
+    if (allocstat /= 0) then
+      print *, "fatal: insufficient memory"
+      ierr = ZOLTAN_MEMERR
+      return
+    endif
   endif
 
 !  /*  Perform boundary exchange */
@@ -537,6 +545,7 @@ type(MESH_INFO), pointer :: mesh_data
 
   if (allocated(New_Elem_Index)) deallocate(New_Elem_Index)
   New_Elem_Index_Size = 0
+
 
   if (.not.build_elem_comm_maps(proc, element)) then
     print *, "Fatal: error rebuilding elem comm maps"
@@ -814,11 +823,6 @@ integer(Zoltan_INT), intent(out) :: ierr
 
   call MPI_Comm_rank(MPI_COMM_WORLD, proc, mpierr)
 
-!  /*
-!   * check if the element array has any space
-!   * if not, allocate some new space
-!   */
-
   mesh_data => data%ptr
   elem => mesh_data%elements
 
@@ -828,6 +832,7 @@ integer(Zoltan_INT), intent(out) :: ierr
     ierr = ZOLTAN_FATAL
     return
   endif
+
 
   current_elem => elem(idx)
 !  /* now put the migrated information into the array */
@@ -863,39 +868,41 @@ integer(Zoltan_INT), intent(out) :: ierr
 
 !  /* copy the adjacency info */
 !  /* globalIDs are received; convert to local IDs when adj elem is local */
-  allocate(current_elem%adj(0:current_elem%adj_len-1), &
-           current_elem%adj_proc(0:current_elem%adj_len-1), stat=allocstat)
-  if (allocstat /= 0) then
-    print *, "fatal: insufficient memory"
-    ierr = ZOLTAN_MEMERR
-    return
-  endif
-  do i =  0, current_elem%adj_len-1
-    current_elem%adj(i) = buf(size + 2*i + 1)
-    current_elem%adj_proc(i) = buf(size + 2*i + 2)
-    if (current_elem%adj(i) /= -1 .and. current_elem%adj_proc(i) == proc) then
-      current_elem%adj(i) = in_list(current_elem%adj(i), &
-                                     New_Elem_Index_Size, New_Elem_Index)
+  if (current_elem%adj_len > 0) then
+    allocate(current_elem%adj(0:current_elem%adj_len-1), &
+             current_elem%adj_proc(0:current_elem%adj_len-1), stat=allocstat)
+    if (allocstat /= 0) then
+      print *, "fatal: insufficient memory"
+      ierr = ZOLTAN_MEMERR
+      return
     endif
-  end do
-  size = size + current_elem%adj_len * 2
+    do i =  0, current_elem%adj_len-1
+      current_elem%adj(i) = buf(size + 2*i + 1)
+      current_elem%adj_proc(i) = buf(size + 2*i + 2)
+      if (current_elem%adj(i) /= -1 .and. current_elem%adj_proc(i) == proc) then
+        current_elem%adj(i) = in_list(current_elem%adj(i), &
+                                       New_Elem_Index_Size, New_Elem_Index)
+      endif
+    end do
+    size = size + current_elem%adj_len * 2
 
 !  /*
 !   * copy the allocated float fields for this element.
 !   */
 
 !  /* copy the edge_wgt data */
-  if (Use_Edge_Wgts) then
-    allocate(current_elem%edge_wgt(0:current_elem%adj_len-1),stat=allocstat)
-    if (allocstat /= 0) then
-      print *, "fatal: insufficient memory"
-      ierr = ZOLTAN_MEMERR
-      return
+    if (Use_Edge_Wgts) then
+      allocate(current_elem%edge_wgt(0:current_elem%adj_len-1),stat=allocstat)
+      if (allocstat /= 0) then
+        print *, "fatal: insufficient memory"
+        ierr = ZOLTAN_MEMERR
+        return
+      endif
+      do i = 0, current_elem%adj_len-1
+        current_elem%edge_wgt(i) = transfer(buf(size+i+1),1.0_Zoltan_FLOAT)
+      end do
+      size = size + current_elem%adj_len
     endif
-    do i = 0, current_elem%adj_len-1
-      current_elem%edge_wgt(i) = transfer(buf(size+i+1),1.0_Zoltan_FLOAT)
-    end do
-    size = size + current_elem%adj_len
   endif
 
 !  /* copy coordinate data */

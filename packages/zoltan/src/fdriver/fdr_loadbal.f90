@@ -75,6 +75,11 @@ type(PROB_INFO) :: prob
   integer(Zoltan_INT) :: num_gid_entries  ! # of array entries in global IDs
   integer(Zoltan_INT) :: num_lid_entries  ! # of array entries in local IDs
   type(Zoltan_User_Data_2) :: mesh_wrapper ! wrapper to pass mesh to query
+  character(8) :: s
+  real(Zoltan_FLOAT), allocatable :: psize(:)
+  integer(Zoltan_INT), allocatable :: partid(:)
+  integer(Zoltan_INT), allocatable :: idx(:)
+  integer(Zoltan_INT) :: nprocs
 
 !/***************************** BEGIN EXECUTION ******************************/
 
@@ -83,6 +88,12 @@ type(PROB_INFO) :: prob
 
 ! make Mesh passable to the callback functions
   mesh_wrapper%ptr => Mesh
+
+! /* Allocate space for arrays. */
+  call MPI_Comm_size(MPI_COMM_WORLD, nprocs, ierr)
+  allocate(psize(nprocs))
+  allocate(partid(nprocs))
+  allocate(idx(nprocs))
 
 !  /*
 !   *  Create a load-balancing object.
@@ -111,6 +122,71 @@ type(PROB_INFO) :: prob
 !  /*
 !   * Set the callback functions
 !   */
+
+  if (Test_Local_Partitions == 1) then
+!   /* Compute Proc partitions for each processor */
+    s(1:1) = achar(Proc/100 + iachar('0'))
+    s(2:2) = achar(Proc/10 + iachar('0'))
+    s(3:3) = achar(modulo(Proc,10) + iachar('0'))
+    s(4:4) = '\n'
+    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+      print *, "fatal:  error returned from Zoltan_Set_Param()"
+      run_zoltan = .false.
+      return
+    endif
+
+  else if (Test_Local_Partitions == 2) then
+!   /* Compute Proc partitions for odd-ranked processors; let remaining
+!    * partitions be in even-ranked processors. */
+   if (modulo(Proc,2) == 1) then
+      s(1:1) = achar(Proc/100 + iachar('0'))
+      s(2:2) = achar(Proc/10 + iachar('0'))
+      s(3:3) = achar(modulo(Proc,10) + iachar('0'))
+      s(4:4) = '\n'
+      if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+        print *, "fatal:  error returned from Zoltan_Set_Param()"
+        run_zoltan = .false.
+        return
+      endif
+    endif
+
+!  else if (Test_Local_Partitions == 3) then
+!!   /* Variable partition sizes, but one partition per proc */
+!    idx(1) = 0
+!    psize(1) = Proc   !/* Partition size = myproc */
+!!   /* Set partition sizes using global numbers. */
+!    call Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, Proc, idx, psize)
+!!   /* Reset partition sizes for upper half of procs. */
+!    if (Proc >= nprocs/2) then
+!      psize(1) = 0.5 + modulo(Proc,2)
+!      call Zoltan_LB_Set_Part_Sizes(zz_obj, 1, 1, Proc, idx, psize)
+!    endif
+!
+!  else if (Test_Local_Partitions == 4) then
+!!   /* Variable number of partitions per proc and variable sizes. */
+!!   /* Request Proc partitions for each processor, of size 1/Proc.  */
+!    s(1:1) = achar(Proc/100 + iachar('0'))
+!    s(2:2) = achar(Proc/10 + iachar('0'))
+!    s(3:3) = achar(modulo(Proc,10) + iachar('0'))
+!    s(4:4) = '\n'
+!    if (Zoltan_Set_Param(zz_obj, "NUM_LOCAL_PARTITIONS", s) == ZOLTAN_FATAL) then
+!      print *, "fatal:  error returned from Zoltan_Set_Param()"
+!      run_zoltan = .false.
+!      return
+!    endif
+!!   /* Each partition size is inverse to the no. of partitions on a proc. */
+!    do i = 1, Proc
+!      partid(i) = i                  !  /* Local partition number */
+!      idx(i) = 0
+!      psize(i) = 1.0/Proc
+!    end do
+!    call Zoltan_LB_Set_Part_Sizes(zz_obj, 0, Proc, partid, idx, psize)
+  endif
+
+! /* Free tenmporary arrays for partition sizes. */
+  deallocate(psize)
+  deallocate(partid)
+  deallocate(idx)
 
 ! if (Zoltan_Set_Fn(zz_obj, ZOLTAN_NUM_OBJ_FN_TYPE, get_num_elements) == ZOLTAN_FATAL) then
   if (Zoltan_Set_Num_Obj_Fn(zz_obj, get_num_elements, &

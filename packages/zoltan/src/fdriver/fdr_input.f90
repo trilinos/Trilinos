@@ -197,7 +197,13 @@ type(PARIO_INFO) :: pio_info
     endif
 
     if (lowercase(trim(command)) == "zdrive test multi") then
-        Test_Multi_Callbacks = iachar(trim(inp_line(index(inp_line,"=")+1:)))
+!       assumes there is one blank between "=" and the input value
+        Test_Multi_Callbacks = iachar(trim(inp_line(index(inp_line,"= ")+2:))) - iachar('0')
+    endif
+
+    if (lowercase(trim(command)) == "test local partitions") then
+!       assumes there is one blank between "=" and the input value
+        Test_Local_Partitions = iachar(trim(inp_line(index(inp_line,"=")+2:))) - iachar('0')
     endif
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -318,6 +324,8 @@ type(PARIO_INFO) :: pio_info
   integer(Zoltan_INT) :: ierr, i
 !/***************************** BEGIN EXECUTION ******************************/
 
+  call MPI_Bcast(Test_Multi_Callbacks, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+  call MPI_Bcast(Test_Local_Partitions, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%dsk_list_cnt, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%rdisk, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
   call MPI_Bcast(pio_info%num_dsk_ctrlrs, 1, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
