@@ -162,7 +162,7 @@ Trilinos provides a set of M4~\cite{M4} macros that can be used by any other
 package that wants to use Autoconf and Automake for configuring and
 building libraries.  These macros perform common configuration tasks such as
 locating a valid LAPACK~\cite{lapack} library, or checking for a user-
-defined MPI C compiler.  The macros can be found in the Trilinos cvs 
+defined MPI C compiler.  The macros can be found in the Trilinos CVS 
 repository in Trilinos/config.  These macros minimize the amount of redudant
  effort in using Autotools, and make it easier to apply a general change to 
 the configure process for all packages.
@@ -178,7 +178,7 @@ test environment.  ({\bf NOTE: Black box testing via TSF is not in
 place at this time}
 	\section{Periodic Testing}
 Trilinos Packages that configure and build using Autotools can easily 
-utilize the the Trilinos testharness.  The testharness performs a cvs update
+utilize the the Trilinos testharness.  The testharness performs a CVS update
 (gets the most recent source code) every night and then builds the libraries
 and runs any tests that have been integrated into the testharness.  
 Currently the testharness only runs on a Linux platform, but it will 
@@ -211,6 +211,8 @@ For those not familiar with CVS, below is a brief discussion covering some
 of the most common CVS commands.  For more information, see the Gnu CVS Home
 Page~\cite{CVS}.
 
+\triangleright Checking Out a Working Copy
+
 To get started, checkout a copy of the development branch of the repository.
 (Releases branches can be obtained by by checking out the appropriate 
 tagged version of the repository.)
@@ -219,6 +221,7 @@ tagged version of the repository.)
 cvs checkout Trilinos
 \end{verbatim}
 
+\triangleright Updating a Woring Copy
 To update after a version has been obtained use the ``update'' command.  
 First, cd to the directory that is to be updated (usually the Trilinos root 
 directory).  Then type:
@@ -234,20 +237,65 @@ The ``-d'' option means to get any new directories.  For example, if a new
 package is added to the repository, but the ``-d'' option is not used, that 
 new package will never appear in the working copy.  However, the first time 
 that the ``-d'' option is used, all of the new package directories will be 
-downloaded, and from that time on, all cvs updates will update the 
+downloaded, and from that time on, all CVS updates will update the 
 directories that were downloaded.  It is good practice to include this 
-option for every cvs update.
+option for every CVS update.
 
-... Decide if this section is worth it, or if people should read the doc.
+... Decide if this section is worth it, or if people should read the doc.  If eexpanded, add info about when to check in, and which branch...
 
-A lot of useful information is accessible via a
-web-based interface package called Bonsai~\cite{Bonsai}.  Features and bug 
-reports are tracked using Bugzilla~\cite{Bugzilla}, and email lists are
-maintained for Trilinos as a whole and for each package through 
-Mailman~\cite{Mailman}.  Support for new packages can easily be added.  All 
+\subsection Bonsai
+A lot of useful information related to CVS history is accessible via a
+web-based interface package called Bonsai~\cite{Bonsai}.  This tool can be 
+found on the web at ``http://software.sandia.gov/bonsai''.  Bonsai gives a 
+developer the ability to view the changes made to the files in the 
+repository.  The tool can be especially useful when trying to figure out which 
+changes may have introduced bugs into a piece of code.  Developers can search 
+for changes based on filename, directory, branch, date, user who made the 
+change, or any combination of these criteria.  The entire revision histories of
+individual files returned in a search can be utilized in finding the source of 
+bugs.  The differences between any two versions of a file may be viewed.  
+
+\subsection Bugzilla
+
+Features and bug reports are tracked using Bugzilla~\cite{Bugzilla}.  Bugzilla 
+can be found on the web at ``http://software.sandia.gov/bugzilla''.  All bugs 
+related to any package of Trilnos that uses Bugzilla should be submitted to 
+Bugzilla.  This even applies to cases in which one developer diagnoses and 
+fixes a bug within a short period of time.  A bug report is still very 
+valuable in this case because it provides an artifact that outlines the 
+problem and explains how the problem was fixed.  
+
+NOTE: In the context of Bugzilla, ``bug'' can refer not only to an error in 
+existing code, but also to a desired enhancement.  For example, a bug report 
+should be submitted to Bugzilla to report a segmentation fault that occurs 
+when using an existing Ifpack preconditioner, and a bug report should also be
+submitted to request a new Ifpack preconditioner.
+
+\subsection Mailman
+
+Email lists are maintained for Trilinos as a whole and for each package 
+through Mailman~\cite{Mailman}.  This tool can be found on the web at 
+``http://software.sandia.gov/mailman/listinfo''.  Support for new packages can 
+easily be added.  Each package usually has four mailing lists.  The mailing 
+lists listed below are to be used for issues relating to all of Trilinos.  The 
+names for the lists pertaining to individual packages follow the same naming 
+scheme, simply replace ``Trilinos'' with the name of the package.  For example 
+the list for Trilnos users is called Trilinos-Users and the email address is 
+\begin{verbatim}trilinos-users@software.sandia.gov\end{verbatim}.  The list 
+for Epetra users is called Epetra-Users and the associated email address is 
+\begin{verbatim}epetra_users@software.sandia.gov\end{verbatim}.
+
+\triangleright **list 4 general types, mention leaders list **
+
+
+
+Tip : lists not sub/supersets of eachother...
+
+**Find out which lists are available to outsiders.**
+All 
 tools are accessible from the main Trilinos website~\cite{Trilinos-home-page}.
 
-
+**Consider an example showing how tools can work together to fix bugs.**
 **(Break this down and talk about how to use the various tools)**
 
 	\chapter{Tools Available to Trilinos Packages}
