@@ -1837,7 +1837,6 @@ AC_CONFIG_FILES([
 		example-epetra/1Dfem_nonlinear/Makefile
 		example-epetra/1Dfem_nonlinearColoring/Makefile
 		example-epetra/1Dtransfem_nonlinear/Makefile
-		example-epetra/Brusselator/Makefile
 		example-epetra/Brusselator_Split/Makefile
 		example-epetra/Brusselator_EpetraNew/Makefile
 		example-epetra/Suite/Makefile
