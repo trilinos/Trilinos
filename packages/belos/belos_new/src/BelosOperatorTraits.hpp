@@ -38,6 +38,9 @@
 #include "BelosOperator.hpp"
 #include "BelosTypes.hpp"
 #include "BelosConfigDefs.hpp"
+#ifdef HAVE_TSFCORE
+#include "TSFCoreLinearOp.hpp"
+#endif
 
 namespace Belos {
 
@@ -60,8 +63,23 @@ public:
   { return Op.ApplyInverse( x, y, trans ); }
 
 };
-  
-  
+
+#ifdef HAVE_TSFCORE
+
+template <class TYPE> 
+class OperatorTraits < TYPE, TSFCore::MultiVector<TYPE>, TSFCore::LinearOp<TYPE> > 
+{
+public:
+
+  ///
+  static ReturnType Apply ( const TSFCore::LinearOp<TYPE>& Op, const TSFCore::MultiVector<TYPE>& x, 
+			    TSFCore::MultiVector<TYPE>& y, ETrans trans=NOTRANS )
+  { Op.apply( trans==NOTRANS ? TSFCore::NOTRANS : TSFCore::TRANS, x, &y ); return Ok; }
+
+};
+
+#endif // HAVE_TSFCORE
+
 } // end Belos namespace
 
 #endif // BELOS_OPERATOR_TRAITS_HPP

@@ -76,13 +76,13 @@
 
 namespace Belos {
 
-template <class TYPE>
-class BlockCG : public IterativeSolver<TYPE> { 
+template <class TYPE, class OP, class MV>
+class BlockCG : public IterativeSolver<TYPE,OP,MV> { 
 public:
   //@{ \name Constructor/Destructor.
   //! %Belos::BlockCG constructor.
-  BlockCG(const RefCountPtr<LinearProblemManager<TYPE> > &lp,
-	  const RefCountPtr<StatusTest<TYPE> > &stest,
+  BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp,
+	  const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
 	  const RefCountPtr<OutputManager<TYPE> > &om);
   
   //! %BlockCG destructor.
@@ -114,7 +114,7 @@ public:
   //! Get a constant reference to the current linear problem.  
   /*! This may include a current solution, if the solver has recently restarted or completed.
    */
-  LinearProblemManager<TYPE>& GetLinearProblem() const { return( *_lp ); }
+  LinearProblemManager<TYPE,OP,MV>& GetLinearProblem() const { return( *_lp ); }
 
   //@} 
   
@@ -136,10 +136,10 @@ private:
   void PrintCGIterInfo(int[], const int);
 
   //! Linear problem manager [ must be passed in by the user ]
-  RefCountPtr<LinearProblemManager<TYPE> > _lp; 
+  RefCountPtr<LinearProblemManager<TYPE,OP,MV> > _lp; 
 
   //! Status test [ must be passed in by the user ]
-  RefCountPtr<StatusTest<TYPE> > _stest; 
+  RefCountPtr<StatusTest<TYPE,OP,MV> > _stest; 
 
   //! Output manager [ must be passed in by the user ]
   RefCountPtr<OutputManager<TYPE> > _om;
@@ -169,9 +169,9 @@ private:
 // Implementation
 //
 
-template <class TYPE>
-BlockCG<TYPE>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE> > &lp,
-		       const RefCountPtr<StatusTest<TYPE> > &stest,
+template <class TYPE, class OP, class MV>
+BlockCG<TYPE,OP,MV>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE,OP,MV> > &lp,
+		       const RefCountPtr<StatusTest<TYPE,OP,MV> > &stest,
 		       const RefCountPtr<OutputManager<TYPE> > &om) : 
   _lp(lp), 
   _stest(stest),
@@ -189,12 +189,12 @@ BlockCG<TYPE>::BlockCG(const RefCountPtr<LinearProblemManager<TYPE> > &lp,
   SetCGBlkTols();
 }
 
-template <class TYPE>
-BlockCG<TYPE>::~BlockCG() 
+template <class TYPE, class OP, class MV>
+BlockCG<TYPE,OP,MV>::~BlockCG() 
 {}
 
-template <class TYPE>
-void BlockCG<TYPE>::SetCGBlkTols() 
+template <class TYPE, class OP, class MV>
+void BlockCG<TYPE,OP,MV>::SetCGBlkTols() 
 {
   const TYPE two = 2.0;
   TYPE eps;
@@ -205,8 +205,8 @@ void BlockCG<TYPE>::SetCGBlkTols()
   _dep_tol = 1/sqrt(two);
 }
 
-template <class TYPE>
-RefCountPtr<const MultiVec<TYPE> > BlockCG<TYPE>::GetNativeResiduals( TYPE *normvec ) const 
+template <class TYPE, class OP, class MV>
+RefCountPtr<const MultiVec<TYPE> > BlockCG<TYPE,OP,MV>::GetNativeResiduals( TYPE *normvec ) const 
 {
   int i;
   int* index = new int[ _blocksize ];
@@ -219,8 +219,8 @@ RefCountPtr<const MultiVec<TYPE> > BlockCG<TYPE>::GetNativeResiduals( TYPE *norm
   return ResidMV;
 }
 
-template <class TYPE>
-void BlockCG<TYPE>::Solve () 
+template <class TYPE, class OP, class MV>
+void BlockCG<TYPE,OP,MV>::Solve () 
 {
   //
   int i, j, k, info, num_ind;
@@ -649,8 +649,8 @@ void BlockCG<TYPE>::Solve ()
 } // end CGSolve()
 //
 
-template<class TYPE>
-bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn, 
+template <class TYPE, class OP, class MV>
+bool BlockCG<TYPE,OP,MV>::QRFactorDef (MultiVec<TYPE>& VecIn, 
 				 Teuchos::SerialDenseMatrix<int,TYPE>& FouierR, 
 				 int cols[], int &num) 
 {
@@ -768,8 +768,8 @@ bool BlockCG<TYPE>::QRFactorDef (MultiVec<TYPE>& VecIn,
 } // end QRFactorDef
 
 
-template<class TYPE>
-void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2) 
+template <class TYPE, class OP, class MV>
+void BlockCG<TYPE,OP,MV>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2) 
 {
   //
   // This routine computes P2^T * A * P1
@@ -806,8 +806,8 @@ void BlockCG<TYPE>::CheckCGOrth(MultiVec<TYPE>& P1, MultiVec<TYPE>& P2)
 //
 
 
-template<class TYPE>
-void BlockCG<TYPE>::PrintCGIterInfo( int ind[], const int indsz )
+template <class TYPE, class OP, class MV>
+void BlockCG<TYPE,OP,MV>::PrintCGIterInfo( int ind[], const int indsz )
 {
   //
   int i;

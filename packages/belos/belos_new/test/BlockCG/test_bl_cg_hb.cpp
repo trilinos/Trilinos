@@ -150,6 +150,11 @@ int main(int argc, char *argv[]) {
 	assert(A.OptimizeStorage()==0);
 	A.SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
+	// Solve using Belos
+	//
+	typedef Belos::Operator<double> OP;
+	typedef Belos::MultiVec<double> MV;
+	//
 	// Construct a Belos::Operator instance through the Petra interface.
 	//
 	Belos::PetraMat<double> Amat( &A );
@@ -170,22 +175,23 @@ int main(int argc, char *argv[]) {
 	//
 	//  Construct an unpreconditioned linear problem instance.
 	//
-	Belos::LinearProblemManager<double> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
+	Belos::LinearProblemManager<double,OP,MV> My_LP( rcp(&Amat,false), rcp(&soln,false), rcp(&rhs,false) );
 	My_LP.SetBlockSize( block );
 	//
 	//*******************************************************************
 	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	Belos::StatusTestMaxIters<double> test1( maxits );
- 	Belos::StatusTestResNorm<double> test2( tol );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+	Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
+ 	Belos::StatusTestResNorm<double,OP,MV> test2( tol );
+	Belos::StatusTestCombo<double,OP,MV> My_Test( Belos::StatusTestCombo<double,OP,MV>::OR, test1, test2 );
 	//
 	Belos::OutputManager<double> My_OM( MyPID );
 	if (verbose)
 	  My_OM.SetVerbosity( 2 );	
 	//
-	Belos::BlockCG<double> MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
+	Belos::BlockCG<double,OP,MV>
+	  MyBlockCG(rcp(&My_LP,false), rcp(&My_Test,false), rcp(&My_OM,false) );
 	//
 	// **********Print out information about problem*******************
 	//

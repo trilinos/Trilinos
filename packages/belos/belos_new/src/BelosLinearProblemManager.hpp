@@ -46,7 +46,7 @@
 
 namespace Belos {
 
-template<class TYPE>
+template <class TYPE, class OP, class MV>
 class LinearProblemManager {
     
   public:
@@ -65,15 +65,15 @@ class LinearProblemManager {
     Preconditioners can be set using the SetLeftPrec() and SetRightPrec() methods, and
     scaling can also be set using the SetLeftScale() and SetRightScale() methods.
   */
-  LinearProblemManager(const RefCountPtr<const Operator<TYPE> > &A, 
-		       const RefCountPtr<MultiVec<TYPE> > &X, 
-		       const RefCountPtr<const MultiVec<TYPE> > &B
+  LinearProblemManager(const RefCountPtr<const OP> &A, 
+		       const RefCountPtr<MV> &X, 
+		       const RefCountPtr<const MV> &B
 		       );
   
   //! Copy Constructor.
   /*! Makes copy of an existing LinearProblemManager instance.
   */
-  LinearProblemManager(const LinearProblemManager<TYPE>& Problem);
+  LinearProblemManager(const LinearProblemManager<TYPE,OP,MV>& Problem);
 
   //! Destructor.
   /*! Completely deletes a LinearProblemManager object.  
@@ -86,27 +86,27 @@ class LinearProblemManager {
   //! Set Operator A of linear problem AX = B.
   /*! Sets a pointer to an Operator.  No copy of the operator is made.
   */
-  void SetOperator(const RefCountPtr<const Operator<TYPE> > &A) { A_ = A; };
+  void SetOperator(const RefCountPtr<const OP> &A) { A_ = A; };
 
   //! Set left-hand-side X of linear problem AX = B.
   /*! Sets a pointer to a MultiVec.  No copy of the object is made.
   */
-  void SetLHS(const RefCountPtr<MultiVec<TYPE> > &X);
+  void SetLHS(const RefCountPtr<MV> &X);
 
   //! Set right-hand-side B of linear problem AX = B.
   /*! Sets a pointer to a MultiVec.  No copy of the object is made.
   */
-  void SetRHS(const RefCountPtr<const MultiVec<TYPE> > &B) { B_ = B; };
+  void SetRHS(const RefCountPtr<const MV> &B) { B_ = B; };
 
   //! Set left preconditioning operator (\c LP) of linear problem AX = B.
   /*! Sets a pointer to an Operator.  No copy of the operator is made.
   */
-  void SetLeftPrec(const RefCountPtr<const Operator<TYPE> > &LP) {  LP_ = LP; Left_Prec_ = true; };
+  void SetLeftPrec(const RefCountPtr<const OP> &LP) {  LP_ = LP; Left_Prec_ = true; };
 
   //! Set right preconditioning operator (\c RP) of linear problem AX = B.
   /*! Sets a pointer to an Operator.  No copy of the operator is made.
   */
-  void SetRightPrec(const RefCountPtr<const Operator<TYPE> > &RP) { RP_ = RP; Right_Prec_ = true; };
+  void SetRightPrec(const RefCountPtr<const OP> &RP) { RP_ = RP; Right_Prec_ = true; };
 
   //! Set the blocksize of the linear problem.  This information is used to set up the linear problem for block solvers.
   void SetBlockSize(int blocksize) { blocksize_ = blocksize; };
@@ -131,7 +131,7 @@ class LinearProblemManager {
     linear problem from having to recompute the residual vector everytime it's asked for if
     the solution hasn't been updated.
   */
-  void SolutionUpdated( const MultiVec<TYPE>* SolnUpdate = 0 );
+  void SolutionUpdated( const MV* SolnUpdate = 0 );
 
   //@}
   
@@ -141,24 +141,24 @@ class LinearProblemManager {
   /*! This is useful for solving the linear system with another right-hand side.  
     The internal flags will be set as if the linear system manager was just initialized.
    */
-  void Reset( const RefCountPtr<MultiVec<TYPE> > &newX = null, const RefCountPtr<const MultiVec<TYPE> > &newB = null );
+  void Reset( const RefCountPtr<MV> &newX = null, const RefCountPtr<const MV> &newB = null );
   //@}
 
   //@{ \name Accessor methods
 
   //! Get a pointer to the operator A.
-  RefCountPtr<const Operator<TYPE> > GetOperator() const { return(A_); };
+  RefCountPtr<const OP> GetOperator() const { return(A_); };
 
   //! Get a pointer to the left-hand side X.
-  RefCountPtr<MultiVec<TYPE> > GetLHS() const { return(X_); };
+  RefCountPtr<MV> GetLHS() const { return(X_); };
 
   //! Get a pointer to the right-hand side B.
-  RefCountPtr<const MultiVec<TYPE> > GetRHS() const { return(B_); };
+  RefCountPtr<const MV> GetRHS() const { return(B_); };
 
   //! Get a pointer to the initial residual vector.
   /*! \note This may be the preconditioned residual, if the linear problem is left-preconditioned.
    */
-  const MultiVec<TYPE>& GetInitResVec();
+  const MV& GetInitResVec();
 
   //! Get a pointer to the current residual vector.
   /*!
@@ -177,7 +177,7 @@ class LinearProblemManager {
         be passed into this method to compute the residual.
    </ul>
    */
-  const MultiVec<TYPE>& GetCurrResVec( const MultiVec<TYPE>* CurrSoln = 0 );
+  const MV& GetCurrResVec( const MV* CurrSoln = 0 );
 
   //! Get a pointer to the current left-hand side (solution) of the linear system.
   /*! This method is called by the solver or any method that is interested in the current linear system
@@ -187,7 +187,7 @@ class LinearProblemManager {
 	<li> If there is no linear system to solve, this method will return a NULL pointer
 	</ol>
   */
-  RefCountPtr<MultiVec<TYPE> > GetCurrLHSVec();
+  RefCountPtr<MV> GetCurrLHSVec();
 
   //! Get a pointer to the current right-hand side of the linear system.
   /*! This method is called by the solver of any method that is interested in the current linear system
@@ -197,13 +197,13 @@ class LinearProblemManager {
 	<li> If there is no linear system to solve, this method will return a NULL pointer
 	</ol>
   */	
-  RefCountPtr<MultiVec<TYPE> > GetCurrRHSVec();
+  RefCountPtr<MV> GetCurrRHSVec();
  
   //! Get a pointer to the left preconditioning operator.
-  RefCountPtr<const Operator<TYPE> > GetLeftPrec() const { return(LP_); };
+  RefCountPtr<const OP> GetLeftPrec() const { return(LP_); };
 
   //! Get a pointer to the right preconditioning operator.
-  RefCountPtr<const Operator<TYPE> > GetRightPrec() const { return(RP_); };
+  RefCountPtr<const OP> GetRightPrec() const { return(RP_); };
 
   //! Get the current blocksize of the linear problem manager.
   int GetBlockSize() const { return( blocksize_ ); };
@@ -249,7 +249,7 @@ class LinearProblemManager {
     <li><tt>GetOperator().get()!=NULL</tt>
     </ul>
   */
-  ReturnType Apply( const MultiVec<TYPE>& x, MultiVec<TYPE>& y );
+  ReturnType Apply( const MV& x, MV& y );
 
   //! Apply ONLY the operator to \c x, returning \c y.
   /*! This application is only of the linear problem operator, no preconditioners are applied.
@@ -259,28 +259,28 @@ class LinearProblemManager {
     <li><tt>GetOperator().get()!=NULL</tt>
     </ul>
   */
-  ReturnType ApplyOp( const MultiVec<TYPE>& x, MultiVec<TYPE>& y );
+  ReturnType ApplyOp( const MV& x, MV& y );
   
   //! Apply ONLY the left preconditioner to \c x, returning \c y.  
   /*! This application is only of the left preconditioner, which may be required for flexible variants
     of Krylov methods.
     \note This will return Undefined if the left preconditioner is not defined for this operator.
    */  
-  ReturnType ApplyLeftPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y );
+  ReturnType ApplyLeftPrec( const MV& x, MV& y );
   
   //! Apply ONLY the right preconditioner to \c x, returning \c y.
   /*! This application is only of the right preconditioner, which may be required for flexible variants
     of Krylov methods.
     \note This will return Undefined if the right preconditioner is not defined for this operator.
    */
-  ReturnType ApplyRightPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y );
+  ReturnType ApplyRightPrec( const MV& x, MV& y );
 
   //! Compute a residual \c R for this operator given a solution \c X, and right-hand side \c B.
   /*! This method will compute the residual for the current linear system if \c X and \c B are null pointers.
     The result will be returned into R.  Otherwise <tt>R = OP(A)X - B</tt> will be computed and returned.
     \note This residual will be a preconditioned residual if the system has a left preconditioner.
   */
-  ReturnType ComputeResVec( MultiVec<TYPE>* R, const MultiVec<TYPE>* X = 0, const MultiVec<TYPE>* B = 0 );
+  ReturnType ComputeResVec( MV* R, const MV* X = 0, const MV* B = 0 );
 
   //@}
 
@@ -290,31 +290,31 @@ class LinearProblemManager {
   void SetUpBlocks();
 
   //! Operator of linear system. 
-  RefCountPtr<const Operator<TYPE> > A_;
+  RefCountPtr<const OP> A_;
 
   //! Solution vector of linear system.
-  RefCountPtr<MultiVec<TYPE> > X_;
+  RefCountPtr<MV> X_;
 
   //! Current solution vector of the linear system.
-  RefCountPtr<MultiVec<TYPE> > CurX_;
+  RefCountPtr<MV> CurX_;
 
   //! Right-hand side of linear system.
-  RefCountPtr<const MultiVec<TYPE> > B_;
+  RefCountPtr<const MV> B_;
 
   //! Current right-hand side of the linear system.
-  RefCountPtr<MultiVec<TYPE> > CurB_;
+  RefCountPtr<MV> CurB_;
 
   //! Current residual of the linear system.
-  RefCountPtr<MultiVec<TYPE> > R_;
+  RefCountPtr<MV> R_;
 
   //! Initial residual of the linear system.
-  RefCountPtr<MultiVec<TYPE> > R0_;
+  RefCountPtr<MV> R0_;
 
   //! Left preconditioning operator of linear system
-  RefCountPtr<const Operator<TYPE> > LP_;  
+  RefCountPtr<const OP> LP_;  
 
   //! Right preconditioning operator of linear system
-  RefCountPtr<const Operator<TYPE> > RP_;
+  RefCountPtr<const OP> RP_;
 
   //! Block size of linear system.
   int blocksize_;
@@ -335,16 +335,16 @@ class LinearProblemManager {
   bool solutionFinal_;
   bool initresidsComputed_;
 
-  typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
-  typedef OperatorTraits<TYPE,MultiVec<TYPE>,Operator<TYPE> >  OPT;
+  typedef MultiVecTraits<TYPE,MV>  MVT;
+  typedef OperatorTraits<TYPE,MV,OP>  OPT;
 };
 
   //--------------------------------------------
   //  Constructor Implementations
   //--------------------------------------------
 
-template<class TYPE>
-LinearProblemManager<TYPE>::LinearProblemManager(void) : 
+template <class TYPE, class OP, class MV>
+LinearProblemManager<TYPE,OP,MV>::LinearProblemManager(void) : 
   blocksize_(1),
   num_to_solve_(0),
   rhs_index_(0),  
@@ -359,10 +359,10 @@ LinearProblemManager<TYPE>::LinearProblemManager(void) :
 {
 }
 
-template<class TYPE>
-LinearProblemManager<TYPE>::LinearProblemManager(const RefCountPtr<const Operator<TYPE> > &A, 
-						 const RefCountPtr<MultiVec<TYPE> > &X, 
-						 const RefCountPtr<const MultiVec<TYPE> > &B
+template <class TYPE, class OP, class MV>
+LinearProblemManager<TYPE,OP,MV>::LinearProblemManager(const RefCountPtr<const OP> &A, 
+						 const RefCountPtr<MV> &X, 
+						 const RefCountPtr<const MV> &B
 						 ) :
   A_(A),
   X_(X),
@@ -382,8 +382,8 @@ LinearProblemManager<TYPE>::LinearProblemManager(const RefCountPtr<const Operato
   R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
 }
 
-template<class TYPE>
-LinearProblemManager<TYPE>::LinearProblemManager(const LinearProblemManager<TYPE>& Problem) :
+template <class TYPE, class OP, class MV>
+LinearProblemManager<TYPE,OP,MV>::LinearProblemManager(const LinearProblemManager<TYPE,OP,MV>& Problem) :
   A_(Problem.A_),
   X_(Problem.X_),
   CurX_(Problem.CurX_),
@@ -407,12 +407,12 @@ LinearProblemManager<TYPE>::LinearProblemManager(const LinearProblemManager<TYPE
 {
 }
 
-template<class TYPE>
-LinearProblemManager<TYPE>::~LinearProblemManager(void)
+template <class TYPE, class OP, class MV>
+LinearProblemManager<TYPE,OP,MV>::~LinearProblemManager(void)
 {}
 
-template<class TYPE>
-void LinearProblemManager<TYPE>::SetUpBlocks()
+template <class TYPE, class OP, class MV>
+void LinearProblemManager<TYPE,OP,MV>::SetUpBlocks()
 {
   // Compute the new block linear system.
   // ( first clean up old linear system )
@@ -449,10 +449,10 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
     MVT::MvRandom(*CurB_);
     R_ = MVT::Clone( *X_, blocksize_);
     //
-    RefCountPtr<const MultiVec<TYPE> > tptr = MVT::CloneView( *B_, index, num_to_solve_);
+    RefCountPtr<const MV> tptr = MVT::CloneView( *B_, index, num_to_solve_);
     MVT::SetBlock( *tptr, &index2[0], num_to_solve_, *CurB_ );
     //
-    RefCountPtr<MultiVec<TYPE> > tptr2 = MVT::CloneView( *X_, index, num_to_solve_);
+    RefCountPtr<MV> tptr2 = MVT::CloneView( *X_, index, num_to_solve_);
     MVT::SetBlock( *tptr2, &index2[0], num_to_solve_, *CurX_ );
   } else { 
     //
@@ -461,7 +461,7 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
     //
     num_to_solve_ = blocksize_;
     CurX_ = MVT::CloneView( *X_, index, num_to_solve_);
-    CurB_ = rcp_const_cast< MultiVec<TYPE> >(MVT::CloneView( *B_, index, num_to_solve_));
+    CurB_ = rcp_const_cast< MV>(MVT::CloneView( *B_, index, num_to_solve_));
     R_ = MVT::Clone( *X_, num_to_solve_ );
     //
   }
@@ -476,15 +476,15 @@ void LinearProblemManager<TYPE>::SetUpBlocks()
   delete [] index; index=0;
 }
 
-template<class TYPE>
-void LinearProblemManager<TYPE>::SetLHS(const RefCountPtr<MultiVec<TYPE> > &X)
+template <class TYPE, class OP, class MV>
+void LinearProblemManager<TYPE,OP,MV>::SetLHS(const RefCountPtr<MV> &X)
 {
   X_ = X; 
   R0_ = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) ); 
 }
 
-template<class TYPE>
-void LinearProblemManager<TYPE>::SetCurrLSVec() 
+template <class TYPE, class OP, class MV>
+void LinearProblemManager<TYPE,OP,MV>::SetCurrLSVec() 
 { 
   int i;
   //
@@ -494,7 +494,7 @@ void LinearProblemManager<TYPE>::SetCurrLSVec()
   if (num_to_solve_ < blocksize_) {
     //
     int * index = new int[num_to_solve_]; assert(index!=NULL);
-    RefCountPtr<MultiVec<TYPE> > tptr;
+    RefCountPtr<MV> tptr;
     //
     // Get a view of the current solutions and correction vector.
     //
@@ -521,14 +521,14 @@ void LinearProblemManager<TYPE>::SetCurrLSVec()
   rhs_index_ += num_to_solve_; 
 }
 
-template<class TYPE>
-void LinearProblemManager<TYPE>::SolutionUpdated( const MultiVec<TYPE>* SolnUpdate )
+template <class TYPE, class OP, class MV>
+void LinearProblemManager<TYPE,OP,MV>::SolutionUpdated( const MV* SolnUpdate )
 { 
   if (SolnUpdate) {
     if (Right_Prec_) {
       //
       // Apply the right preconditioner before computing the current solution.
-      RefCountPtr<MultiVec<TYPE> > TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
+      RefCountPtr<MV> TrueUpdate = MVT::Clone( *SolnUpdate, MVT::GetNumberVecs( *SolnUpdate ) );
       OPT::Apply( *RP_, *SolnUpdate, *TrueUpdate ); 
       MVT::MvAddMv( 1.0, *CurX_, 1.0, *TrueUpdate, *CurX_ ); 
     } else {
@@ -538,8 +538,8 @@ void LinearProblemManager<TYPE>::SolutionUpdated( const MultiVec<TYPE>* SolnUpda
   solutionUpdated_ = true; 
 }
 
-template<class TYPE>
-void LinearProblemManager<TYPE>::Reset( const RefCountPtr<MultiVec<TYPE> > &newX, const RefCountPtr<const MultiVec<TYPE> > &newB )
+template <class TYPE, class OP, class MV>
+void LinearProblemManager<TYPE,OP,MV>::Reset( const RefCountPtr<MV> &newX, const RefCountPtr<const MV> &newB )
 {
   solutionUpdated_ = false;
   solutionFinal_ = true;
@@ -551,8 +551,8 @@ void LinearProblemManager<TYPE>::Reset( const RefCountPtr<MultiVec<TYPE> > &newX
   GetInitResVec();
 }
 
-template<class TYPE>
-const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetInitResVec() 
+template <class TYPE, class OP, class MV>
+const MV& LinearProblemManager<TYPE,OP,MV>::GetInitResVec() 
 {
   // Compute the initial residual if it hasn't been computed
   // and all the components of the linear system are there.
@@ -569,8 +569,8 @@ const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetInitResVec()
   return (*R0_);
 }
 
-template<class TYPE>
-const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetCurrResVec( const MultiVec<TYPE>* CurrSoln ) 
+template <class TYPE, class OP, class MV>
+const MV& LinearProblemManager<TYPE,OP,MV>::GetCurrResVec( const MV* CurrSoln ) 
 {
   // Compute the residual of the current linear system.
   // This should be used if the solution has been updated.
@@ -592,8 +592,8 @@ const MultiVec<TYPE>& LinearProblemManager<TYPE>::GetCurrResVec( const MultiVec<
   return (*R_);
 }
 
-template<class TYPE>
-RefCountPtr<MultiVec<TYPE> > LinearProblemManager<TYPE>::GetCurrLHSVec()
+template <class TYPE, class OP, class MV>
+RefCountPtr<MV> LinearProblemManager<TYPE,OP,MV>::GetCurrLHSVec()
 {
   if (solutionFinal_) {
     solutionFinal_ = false;	// make sure we don't populate the current linear system again.
@@ -602,8 +602,8 @@ RefCountPtr<MultiVec<TYPE> > LinearProblemManager<TYPE>::GetCurrLHSVec()
   return CurX_; 
 }
 
-template<class TYPE>
-RefCountPtr<MultiVec<TYPE> > LinearProblemManager<TYPE>::GetCurrRHSVec()
+template <class TYPE, class OP, class MV>
+RefCountPtr<MV> LinearProblemManager<TYPE,OP,MV>::GetCurrRHSVec()
 {
   if (solutionFinal_) {
     solutionFinal_ = false;	// make sure we don't populate the current linear system again.
@@ -612,14 +612,14 @@ RefCountPtr<MultiVec<TYPE> > LinearProblemManager<TYPE>::GetCurrRHSVec()
   return CurB_;
 }
 
-template<class TYPE>
-ReturnType LinearProblemManager<TYPE>::Apply( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
+template <class TYPE, class OP, class MV>
+ReturnType LinearProblemManager<TYPE,OP,MV>::Apply( const MV& x, MV& y )
 {
-  RefCountPtr<MultiVec<TYPE> > ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
+  RefCountPtr<MV> ytemp = MVT::Clone( y, MVT::GetNumberVecs( y ) );
   //
   // No preconditioning.
   // 
-  if (!Left_Prec_ && !Right_Prec_){ A_->Apply( x, y );}
+  if (!Left_Prec_ && !Right_Prec_){ OPT::Apply( *A_, x, y );}
   //
   // Preconditioning is being done on both sides
   //
@@ -648,8 +648,8 @@ ReturnType LinearProblemManager<TYPE>::Apply( const MultiVec<TYPE>& x, MultiVec<
   return Ok;
 }
 
-template<class TYPE>
-ReturnType LinearProblemManager<TYPE>::ApplyOp( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
+template <class TYPE, class OP, class MV>
+ReturnType LinearProblemManager<TYPE,OP,MV>::ApplyOp( const MV& x, MV& y )
 {
   if (A_.get())
     return ( OPT::Apply( *A_,x, y) );   
@@ -657,8 +657,8 @@ ReturnType LinearProblemManager<TYPE>::ApplyOp( const MultiVec<TYPE>& x, MultiVe
     return Undefined;
 }
 
-template<class TYPE>
-ReturnType LinearProblemManager<TYPE>::ApplyLeftPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
+template <class TYPE, class OP, class MV>
+ReturnType LinearProblemManager<TYPE,OP,MV>::ApplyLeftPrec( const MV& x, MV& y )
 {
   if (Left_Prec_)
     return ( OPT::Apply( *LP_,x, y) );
@@ -666,8 +666,8 @@ ReturnType LinearProblemManager<TYPE>::ApplyLeftPrec( const MultiVec<TYPE>& x, M
     return Undefined;
 }
 
-template<class TYPE>
-ReturnType LinearProblemManager<TYPE>::ApplyRightPrec( const MultiVec<TYPE>& x, MultiVec<TYPE>& y )
+template <class TYPE, class OP, class MV>
+ReturnType LinearProblemManager<TYPE,OP,MV>::ApplyRightPrec( const MV& x, MV& y )
 {
   if (Right_Prec_)
     return ( OPT::Apply( *RP_,x, y) );
@@ -675,14 +675,14 @@ ReturnType LinearProblemManager<TYPE>::ApplyRightPrec( const MultiVec<TYPE>& x, 
     return Undefined;
 }
 
-template<class TYPE>
-ReturnType LinearProblemManager<TYPE>::ComputeResVec( MultiVec<TYPE>* R, const MultiVec<TYPE>* X, const MultiVec<TYPE>* B )
+template <class TYPE, class OP, class MV>
+ReturnType LinearProblemManager<TYPE,OP,MV>::ComputeResVec( MV* R, const MV* X, const MV* B )
 {
   if (X && B) // The entries are specified, so compute the residual of Op(A)X = B
     {
       if (Left_Prec_)
 	{
-	  RefCountPtr<MultiVec<TYPE> > R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
+	  RefCountPtr<MV> R_temp = MVT::Clone( *X, MVT::GetNumberVecs( *X ) );
 	  OPT::Apply( *A_, *X, *R_temp );
 	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B, *R_temp );
 	  OPT::Apply( *LP_, *R_temp, *R );
@@ -698,7 +698,7 @@ ReturnType LinearProblemManager<TYPE>::ComputeResVec( MultiVec<TYPE>* R, const M
     // Later we may want to check to see which multivec is not specified, and use what is specified.
     if (Left_Prec_)
 	{
-	  RefCountPtr<MultiVec<TYPE> > R_temp = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
+	  RefCountPtr<MV> R_temp = MVT::Clone( *X_, MVT::GetNumberVecs( *X_ ) );
 	  OPT::Apply( *A_, *X_, *R_temp );
 	  MVT::MvAddMv( -1.0, *R_temp, 1.0, *B_, *R_temp );
 	  OPT::Apply( *LP_, *R_temp, *R );

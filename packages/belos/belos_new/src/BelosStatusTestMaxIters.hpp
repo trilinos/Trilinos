@@ -46,8 +46,8 @@
 
 namespace Belos {
 
-template<class TYPE>
-class StatusTestMaxIters: public StatusTest<TYPE> {
+template <class TYPE, class OP, class MV>
+class StatusTestMaxIters: public StatusTest<TYPE,OP,MV> {
 
  public:
 
@@ -66,7 +66,7 @@ class StatusTestMaxIters: public StatusTest<TYPE> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE> *iSolver );
+  StatusType CheckStatus(IterativeSolver<TYPE,OP,MV> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -119,8 +119,8 @@ private:
 
 };
 
-  template<class TYPE> 
-  StatusTestMaxIters<TYPE>::StatusTestMaxIters(int maxIters)
+  template <class TYPE, class OP, class MV> 
+  StatusTestMaxIters<TYPE,OP,MV>::StatusTestMaxIters(int maxIters)
   {
     if (maxIters < 1)
       maxIters_ = 1;
@@ -131,8 +131,8 @@ private:
     status_ = Unchecked;
   }
   
-  template<class TYPE>
-  StatusType StatusTestMaxIters<TYPE>::CheckStatus(IterativeSolver<TYPE> *iSolver )
+  template <class TYPE, class OP, class MV>
+  StatusType StatusTestMaxIters<TYPE,OP,MV>::CheckStatus(IterativeSolver<TYPE,OP,MV> *iSolver )
   {
     status_ = Unconverged;
     nIters_ = iSolver->GetNumIters();
@@ -141,15 +141,15 @@ private:
     return status_;
   }
   
-  template<class TYPE>
-  void StatusTestMaxIters<TYPE>::Reset()
+  template <class TYPE, class OP, class MV>
+  void StatusTestMaxIters<TYPE,OP,MV>::Reset()
   {
     nIters_ = 0;
     status_ = Unchecked;
   }    
     
-  template<class TYPE>
-  ostream& StatusTestMaxIters<TYPE>::Print(ostream& os, int indent) const
+  template <class TYPE, class OP, class MV>
+  ostream& StatusTestMaxIters<TYPE,OP,MV>::Print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';

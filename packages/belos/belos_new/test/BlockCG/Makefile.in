@@ -41,6 +41,18 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) Dummy$(EXEEXT)
+@BUILD_TSFCORE_EPETRA_TRUE@am__append_1 = -I$(top_srcdir)/../TSFCore/src/interfaces/Core \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/utilities/Core \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/adapters/epetra \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/adapters/mpi-base \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCore/src/ \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_builddir)/../TSFCore/src \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCoreUtils/src/MoochoUtilities \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCoreUtils/src/RTOpPack \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCoreUtils/src/RTOpStdOps \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_srcdir)/../TSFCoreUtils/src \
+@BUILD_TSFCORE_EPETRA_TRUE@		-I$(top_builddir)/../TSFCoreUtils/src
+
 subdir = test/BlockCG
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -157,6 +169,7 @@ MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX = @MPI_CXX@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
+MPI_TEMP_CXX = @MPI_TEMP_CXX@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -232,7 +245,9 @@ bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src \
+
+# Include paths
+common_include_paths = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../epetra/src \
 		-I$(top_builddir)/../epetra/src \
 		-I$(top_srcdir)/../ifpack/src \
@@ -240,16 +255,12 @@ bl_pcg_hb_CXXFLAGS = -I$(top_srcdir)/src \
 		-I$(top_srcdir)/../triutils/src \
 		-I$(top_builddir)/../triutils/src \
 		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
+		-I$(top_builddir)/../teuchos/src\
+$(am__append_1)
+bl_pcg_hb_CXXFLAGS = $(common_include_paths)
+bl_cg_hb_CXXFLAGS = $(common_include_paths)
 
-bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src \
-		-I$(top_srcdir)/../epetra/src \
-		-I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../triutils/src \
-		-I$(top_builddir)/../triutils/src \
-		-I$(top_srcdir)/../teuchos/src \
-		-I$(top_builddir)/../teuchos/src
-
+# Libraries
 bl_pcg_hb_LDADD = $(top_builddir)/../epetra/src/libepetra.a \
 		$(top_builddir)/../triutils/src/libtriutils.a \
 		$(top_builddir)/../ifpack/src/libifpack.a  \

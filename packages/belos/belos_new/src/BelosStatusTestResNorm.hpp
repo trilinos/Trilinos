@@ -63,8 +63,8 @@
 
 namespace Belos {
 
-template <class TYPE>
-class StatusTestResNorm: public StatusTest<TYPE> {
+template <class TYPE, class OP, class MV>
+class StatusTestResNorm: public StatusTest<TYPE,OP,MV> {
 
  public:
 
@@ -157,7 +157,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
 
     \return StatusType: Unconverged, Converged or Failed.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE>* iSolver);
+  StatusType CheckStatus(IterativeSolver<TYPE,OP,MV>* iSolver);
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -266,12 +266,12 @@ class StatusTestResNorm: public StatusTest<TYPE> {
 
   //@}
 
-  typedef MultiVecTraits<TYPE,MultiVec<TYPE> >  MVT;
+  typedef MultiVecTraits<TYPE,MV>  MVT;
 };
 
 
-  template <class TYPE>
-  StatusTestResNorm<TYPE>::StatusTestResNorm( TYPE Tolerance )
+  template <class TYPE, class OP, class MV>
+  StatusTestResNorm<TYPE,OP,MV>::StatusTestResNorm( TYPE Tolerance )
     : tolerance_(Tolerance),
       restype_(Implicit),
       resnormtype_(TwoNorm),	
@@ -294,16 +294,16 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // the implicit residual vector.
   }
 
-  template <class TYPE>
-  StatusTestResNorm<TYPE>::~StatusTestResNorm() 
+  template <class TYPE, class OP, class MV>
+  StatusTestResNorm<TYPE,OP,MV>::~StatusTestResNorm() 
   {
     if (scalevector_) { delete [] scalevector_; }
     if (resvector_) { delete [] resvector_; }
     if (testvector_) { delete [] testvector_; }
   }
 
-  template <class TYPE>
-  void StatusTestResNorm<TYPE>::Reset() 
+  template <class TYPE, class OP, class MV>
+  void StatusTestResNorm<TYPE,OP,MV>::Reset() 
   {
     if (scalevector_) { delete [] scalevector_; }
     if (resvector_) { delete [] resvector_; }
@@ -315,8 +315,8 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     firstcallCheckStatus_ = true;
   }
 
-  template <class TYPE>
-  int StatusTestResNorm<TYPE>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
+  template <class TYPE, class OP, class MV>
+  int StatusTestResNorm<TYPE,OP,MV>::DefineResForm( ResType TypeOfResidual, NormType TypeOfNorm )
   {    
     assert( firstcallDefineResForm_ );
     firstcallDefineResForm_ = false;
@@ -331,8 +331,8 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     return(0);
   }
 
-  template <class TYPE> 
-  int StatusTestResNorm<TYPE>::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
+  template <class TYPE, class OP, class MV> 
+  int StatusTestResNorm<TYPE,OP,MV>::DefineScaleForm(ScaleType TypeOfScaling, NormType TypeOfNorm,
 					       TYPE ScaleValue )
   {
     
@@ -346,12 +346,12 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     return(0);
   }
 
-  template <class TYPE>
-  StatusType StatusTestResNorm<TYPE>::CheckStatus( IterativeSolver<TYPE>* iSolver )
+  template <class TYPE, class OP, class MV>
+  StatusType StatusTestResNorm<TYPE,OP,MV>::CheckStatus( IterativeSolver<TYPE,OP,MV>* iSolver )
   {
   int i;
   ReturnType ret;
-  LinearProblemManager<TYPE>& lp = iSolver->GetLinearProblem();
+  LinearProblemManager<TYPE,OP,MV>& lp = iSolver->GetLinearProblem();
   // Compute scaling term (done once for each block that's being solved)
   if (firstcallCheckStatus_) {
     //
@@ -362,7 +362,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     cur_blksz_ = lp.GetNumToSolve();
     //
     if (scaletype_== NormOfRHS) {
-      const MultiVec<TYPE>& rhs = *lp.GetRHS();
+      const MV& rhs = *lp.GetRHS();
       numrhs_ = MVT::GetNumberVecs( rhs );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
@@ -370,7 +370,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       MVT::MvNorm( rhs, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfInitRes) {
-      const MultiVec<TYPE> &init_res = lp.GetInitResVec();
+      const MV &init_res = lp.GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
@@ -378,12 +378,12 @@ class StatusTestResNorm: public StatusTest<TYPE> {
       MVT::MvNorm( init_res, scalevector_, scalenormtype_ );
     }
     else if (scaletype_==NormOfPrecInitRes) {
-      const MultiVec<TYPE>& init_res = lp.GetInitResVec();
+      const MV& init_res = lp.GetInitResVec();
       numrhs_ = MVT::GetNumberVecs( init_res );
       scalevector_ = new TYPE[ numrhs_ ];
       resvector_ = new TYPE[ numrhs_ + cur_blksz_ ]; // Might need a little longer vector if numrhs_ % blocksize_ != 0
       testvector_ = new TYPE[ numrhs_ ];
-      RefCountPtr<MultiVec<TYPE> > prec_init_res = MVT::Clone( init_res, numrhs_ );
+      RefCountPtr<MV> prec_init_res = MVT::Clone( init_res, numrhs_ );
       if (lp.ApplyLeftPrec( init_res, *prec_init_res ) != Undefined)
           MVT::MvNorm( *prec_init_res, scalevector_, scalenormtype_ );
       else 
@@ -420,7 +420,7 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // If the residual is returned in multivector form, use the resnormtype to compute the residual norms.
     // Otherwise the native residual is assumed to be stored in the resvector_.
     //
-    RefCountPtr<const MultiVec<TYPE> > residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
+    RefCountPtr<const MV> residMV = iSolver->GetNativeResiduals( resvector_ + cur_rhs_num_ );     
     if ( residMV.get() != NULL ) { 
   	MVT::MvNorm( *residMV, resvector_ + cur_rhs_num_, resnormtype_ );    
     } 
@@ -432,15 +432,15 @@ class StatusTestResNorm: public StatusTest<TYPE> {
     // asking for the true residual from the solver.
     //
     if ( lp.IsSolutionUpdated() ) {
-      const MultiVec<TYPE>& cur_res = lp.GetCurrResVec();
+      const MV& cur_res = lp.GetCurrResVec();
       ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
         return(status_);
       }
     } else {
-      RefCountPtr<const MultiVec<TYPE> > cur_soln = iSolver->GetCurrentSoln();
-      const MultiVec<TYPE> &cur_res = lp.GetCurrResVec( &*cur_soln );
+      RefCountPtr<const MV> cur_soln = iSolver->GetCurrentSoln();
+      const MV &cur_res = lp.GetCurrResVec( &*cur_soln );
       ret = MVT::MvNorm( cur_res, resvector_ + cur_rhs_num_, resnormtype_ );
       if ( ret != Ok ) {
         status_ = Failed;
@@ -483,8 +483,8 @@ class StatusTestResNorm: public StatusTest<TYPE> {
 }
 
 
-template <class TYPE>
-ostream& StatusTestResNorm<TYPE>::Print(ostream& os, int indent) const
+template <class TYPE, class OP, class MV>
+ostream& StatusTestResNorm<TYPE,OP,MV>::Print(ostream& os, int indent) const
 {
   for (int j = 0; j < indent; j ++)
     os << ' ';

@@ -55,6 +55,7 @@ public:
 	PetraVec(Epetra_DataAccess CV, const Epetra_MultiVector& P_vec, int index[], int NumVecs );
 	PetraVec(const Epetra_MultiVector & P_vec);
 	~PetraVec();
+	PetraVec& operator=(const PetraVec& pv) { Epetra_MultiVector::operator=(pv); return *this; }	
 	//
 	//  member functions inherited from MultiVec
 	//

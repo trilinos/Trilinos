@@ -47,8 +47,8 @@
 
 namespace Belos {
 
-template<class TYPE>
-class StatusTestMaxRestarts: public StatusTest<TYPE> {
+template <class TYPE, class OP, class MV>
+class StatusTestMaxRestarts: public StatusTest<TYPE,OP,MV> {
 
  public:
 
@@ -67,7 +67,7 @@ class StatusTestMaxRestarts: public StatusTest<TYPE> {
   /*! This method checks to see if the convergence criteria are met using the current information from the 
     iterative solver.
   */
-  StatusType CheckStatus(IterativeSolver<TYPE> *iSolver );
+  StatusType CheckStatus(IterativeSolver<TYPE,OP,MV> *iSolver );
 
   //! Return the result of the most recent CheckStatus call.
   StatusType GetStatus() const {return(status_);};
@@ -120,8 +120,8 @@ private:
 
 };
 
-  template<class TYPE> 
-  StatusTestMaxRestarts<TYPE>::StatusTestMaxRestarts(int maxRestarts)
+  template <class TYPE, class OP, class MV> 
+  StatusTestMaxRestarts<TYPE,OP,MV>::StatusTestMaxRestarts(int maxRestarts)
   {
     if (maxRestarts < 1)
       maxRestarts_ = 1;
@@ -132,8 +132,8 @@ private:
     status_ = Unchecked;
   }
   
-  template<class TYPE>
-  StatusType StatusTestMaxRestarts<TYPE>::CheckStatus(IterativeSolver<TYPE> *iSolver )
+  template <class TYPE, class OP, class MV>
+  StatusType StatusTestMaxRestarts<TYPE,OP,MV>::CheckStatus(IterativeSolver<TYPE,OP,MV> *iSolver )
   {
     status_ = Unconverged;
     nRestarts_ = iSolver->GetNumRestarts();
@@ -142,15 +142,15 @@ private:
     return status_;
   }
   
-  template<class TYPE>
-  void StatusTestMaxRestarts<TYPE>::Reset()
+  template <class TYPE, class OP, class MV>
+  void StatusTestMaxRestarts<TYPE,OP,MV>::Reset()
   {
     status_ = Unchecked;
     nRestarts_ = 0;
   }
 
-  template<class TYPE>
-  ostream& StatusTestMaxRestarts<TYPE>::Print(ostream& os, int indent) const
+  template <class TYPE, class OP, class MV>
+  ostream& StatusTestMaxRestarts<TYPE,OP,MV>::Print(ostream& os, int indent) const
   {
     for (int j = 0; j < indent; j ++)
       os << ' ';

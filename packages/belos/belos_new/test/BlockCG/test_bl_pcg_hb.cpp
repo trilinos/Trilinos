@@ -210,6 +210,11 @@ int main(int argc, char *argv[]) {
 	}
 	Epetra_Operator& prec = dynamic_cast<Epetra_Operator&>(*ICT);
 	//
+	// Solve using Belos
+	//
+	typedef Belos::Operator<double> OP;
+	typedef Belos::MultiVec<double> MV;
+	//
 	// call the ctor for the preconditioning object
 	//
 	Belos::PetraPrec<double> EpetraOpPrec( &prec );
@@ -222,15 +227,15 @@ int main(int argc, char *argv[]) {
 	//
 	//*****Create Linear Problem for Belos Solver
 	//
-	Belos::LinearProblemManager<double> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
+	Belos::LinearProblemManager<double,OP,MV> My_LP( rcp(&Amat, false), rcp(&soln, false), rcp(&rhs,false) );
 	My_LP.SetLeftPrec( rcp(&EpetraOpPrec, false) );
 	My_LP.SetBlockSize( block );
 	//
 	//*****Create Status Test Class for the Belos Solver
 	//
-        Belos::StatusTestMaxIters<double> test1( maxits );
-        Belos::StatusTestResNorm<double> test2( tol );
-        Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
+        Belos::StatusTestMaxIters<double,OP,MV> test1( maxits );
+        Belos::StatusTestResNorm<double,OP,MV> test2( tol );
+        Belos::StatusTestCombo<double,OP,MV> My_Test( Belos::StatusTestCombo<double,OP,MV>::OR, test1, test2 );
 
 	Belos::OutputManager<double> My_OM( MyPID );
 	if (verbose)
@@ -240,7 +245,8 @@ int main(int argc, char *argv[]) {
 	// *************Start the block CG iteration*************************
 	//*******************************************************************
 	//
-	Belos::BlockCG<double> MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
+	Belos::BlockCG<double,Belos::Operator<double>,Belos::MultiVec<double> >
+	  MyBlockCG( rcp(&My_LP, false), rcp(&My_Test,false), rcp(&My_OM,false));
 	//
 	// **********Print out information about problem*******************
 	//

@@ -48,7 +48,7 @@
 
 namespace Belos {
 
-template<class TYPE>
+template <class TYPE, class OP, class MV>
 class IterativeSolver {
     
   public:
@@ -87,7 +87,7 @@ class IterativeSolver {
       by the calling routine.
     </ol>
   */
-  virtual RefCountPtr<const MultiVec<TYPE> > GetNativeResiduals( TYPE* normvec ) const = 0;
+  virtual RefCountPtr<const MV> GetNativeResiduals( TYPE* normvec ) const = 0;
 
   //! Get the actual residual vectors for the current block of linear systems.
   /*! This may force the solver to compute a current residual for its linear
@@ -98,12 +98,12 @@ class IterativeSolver {
 
     \note The memory of the returned multivector is managed by the calling routine.
   */
-  virtual RefCountPtr<MultiVec<TYPE> > GetCurrentSoln() = 0;
+  virtual RefCountPtr<MV> GetCurrentSoln() = 0;
 
   /*! \brief Get a constant reference to the current linear problem, 
     	which may include a current solution.
   */
-  virtual LinearProblemManager<TYPE>& GetLinearProblem() const = 0;
+  virtual LinearProblemManager<TYPE,OP,MV>& GetLinearProblem() const = 0;
 
   //@}
 
