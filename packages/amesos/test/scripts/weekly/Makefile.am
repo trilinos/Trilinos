@@ -25,5 +25,11 @@
 # 
 # ************************************************************************
 #@HEADER
+if HAVE_MPI
+MPI_SUBDIR = mpi
+else
+SERIAL_SUBDIR = 
+endif
+                                                                                
+SUBDIRS = $(SERIAL_SUBDIR) $(MPI_SUBDIR)
 
-SUBDIRS = daily weekly

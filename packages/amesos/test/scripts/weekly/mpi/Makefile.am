@@ -26,4 +26,28 @@
 # ************************************************************************
 #@HEADER
 
-SUBDIRS = daily weekly
+#
+#  This is a bit confusing because some of these tests were written by Ken Stanley,
+#  while others were written by Marzio Sala.  
+#
+#
+#  TestValgrind.exe runs TestOptions/TestOptions.exe (under valgrind) 
+#
+#
+
+EXEEXT = .exe
+
+
+if HAVE_VALGRIND
+TestValgrind_SOURCES = $(srcdir)/TestValgrind
+
+TestValgrind$(EXEEXT): $(srcdir)/TestValgrind
+	cp $(srcdir)/TestValgrind TestValgrind$(EXEEXT) 
+VALGRIND_TEST = TestValgrind
+else
+VALGRIND_TEST = 
+endif
+
+
+noinst_PROGRAMS = $(VALGRIND_TEST)
+

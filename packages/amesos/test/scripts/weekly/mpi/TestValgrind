@@ -65,7 +65,6 @@ else
     set file = log_mpi_`eval date +%d%b%Y_%H%M%S`
     rm -f $file
 endif
-echo  $file 
 echo "Date: " `eval date` >>& $file
 echo `uname -a` >>& $file
 #

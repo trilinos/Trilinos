@@ -760,6 +760,8 @@ AC_CONFIG_FILES([
 		test/scripts/daily/Makefile
 		test/scripts/daily/mpi/Makefile
 		test/scripts/daily/serial/Makefile
+		test/scripts/weekly/Makefile
+		test/scripts/weekly/mpi/Makefile
 		])
 
 AC_OUTPUT
