@@ -1829,7 +1829,7 @@ void Epetra_MultiVector::Print(ostream& os) const {
 	os << endl;
       }
       for (int i=0; i < NumMyElements1; i++) {
-	for (int ii=0; ii< Map().ElementSize(ii); ii++) {
+	for (int ii=0; ii< Map().ElementSize(i); ii++) {
        int iii;
 	  os.width(10);
 	  os <<  MyPID; os << "    ";
