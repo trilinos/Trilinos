@@ -77,7 +77,7 @@ query function to determine the number of objects on the processor.&nbsp;
 Space for the <i>Dots</i> data structure is allocated through calls to
 <b><a href="dev_util_mem.html#LB_Malloc">LB_MALLOC</a></b>, <a href="dev_lb_types.html#ID alloc"><b>LB_MALLOC_GID_ARRAY</b></a>,
 and <a href="dev_lb_types.html#ID alloc"><b>LB_MALLOC_LID_ARRAY</b></a>.&nbsp; The <i>Dots</i> information is obtained
-through a call to the Zoltan service function <b>LB_Get_Obj_List</b>; this
+through a call to the Zoltan service function <b><a href="dev_services_objlist.html">LB_Get_Obj_List</a></b>; this
 function calls either an <b><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
 or an <b><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
 pair to get the object IDs and weights. The data for each
@@ -130,7 +130,7 @@ yo, "Insufficient memory.");</tt>
 <p><tt>&nbsp; /*</tt>
 <br><tt>&nbsp;&nbsp; *&nbsp; Get list of objects' IDs and weights.</tt>
 <br><tt>&nbsp;&nbsp; */</tt><tt></tt>
-<p><tt>&nbsp; LB_Get_Obj_List(lb, *global_ids, *local_ids, wgtflag, objs_wgt,
+<p><tt>&nbsp; <a href="dev_services_objlist.html">LB_Get_Obj_List</a>(lb, *global_ids, *local_ids, wgtflag, objs_wgt,
 &amp;ierr);</tt>
 <br><tt>&nbsp; if (ierr) {</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; <a href="dev_intro_coding.html#LB_PRINT">LB_PRINT_ERROR</a>(lb->Proc,
