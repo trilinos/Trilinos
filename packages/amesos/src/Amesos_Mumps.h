@@ -52,8 +52,18 @@ class EpetraExt_Redistor;
 #endif
 #include "Amesos_EpetraBaseSolver.h"
 
+#ifndef HAVE_AMESOS_SMUMPS
+#define AMESOS_TYPE double
+#else
+#define AMESOS_TYPE float
+#endif
+
 extern "C" {
+#ifndef HAVE_AMESOS_SMUMPS
 #include "dmumps_c.h"
+#else
+#include "smumps_c.h"
+#endif
 }
 
 //! Amesos_Mumps:  An object-oriented wrapper for Mumps.
@@ -244,20 +254,20 @@ public:
       scaling for columns and rows. \c ColSca and \c RowSca must be defined on the host
       only, and allocated by the user, if the user sets ICNTL(8) = -1.
   */
-  int SetPrecscaling(double * ColSca, double * RowSca )
+  int SetPrecscaling(AMESOS_TYPE * ColSca, AMESOS_TYPE * RowSca )
   {
     ColSca_ = ColSca;
     RowSca_ = RowSca;
     return 0;
   }
 
-  int SetRowScaling(double * RowSca )
+  int SetRowScaling(AMESOS_TYPE * RowSca )
   {
     RowSca_ = RowSca;
     return 0;
   }
 
-  int SetColScaling(double * ColSca )
+  int SetColScaling(AMESOS_TYPE * ColSca )
   {
     ColSca_ = ColSca;
     return 0;
@@ -287,7 +297,7 @@ public:
   }
 
   //! Get the pointer to the RINFO array (defined on all processes).
-  double * GetRINFO() 
+  AMESOS_TYPE * GetRINFO() 
   {
     return (MDS.rinfo);
   }
@@ -299,7 +309,7 @@ public:
   }
 
   //! Get the pointer to the RINFOG array (defined on host only).
-  double * GetRINFOG()
+  AMESOS_TYPE * GetRINFOG()
   {
     return (MDS.rinfog);
   }
@@ -387,9 +397,17 @@ protected:
   bool IsConvertToTripletOK_;
   bool IsComputeSchurComplementOK_;
   bool UseMpiCommSelf_;
-  
-  DMUMPS_STRUC_C MDS ;             // Mumps data structure 
 
+  // AMESOS_SMUMPS is NOT defined by default. If a single-precision solver
+  // is required, the user must define -DAMESOS_SMUMPS as a C++ compiler flag,
+  // and add -lsmumps to LIBS (or --with-libs)
+  // NOTE: Still experimental
+#ifndef HAVE_AMESOS_SMUMPS  
+  DMUMPS_STRUC_C MDS ;             // Mumps data structure 
+#else
+  SMUMPS_STRUC_C MDS ;             // Mumps data structure
+#endif
+  
   //
   //  Row, Col, Val form the triplet representation used by Mumps
   //
@@ -397,6 +415,11 @@ protected:
   Epetra_IntSerialDenseVector * Col;
   Epetra_SerialDenseVector    * Val;
 
+#ifdef HAVE_AMESOS_SMUMPS
+  float * SVal;
+  float * SVector;
+#endif
+  
   int MyPID;               //  Process number (i.e. Comm().MyPID() 
   
   int numentries_;         //  Number of non-zero entries in Problem_->GetOperator()
@@ -438,7 +461,9 @@ protected:
   
   int icntl_[40];                         // to allow users overwrite default settings
   double cntl_[5];                        // as specified by Amesos
-  double * RowSca_, * ColSca_;
+
+  AMESOS_TYPE * RowSca_, * ColSca_;
+
   int * PermIn_;
   int Maxis_, Maxs_;  
 

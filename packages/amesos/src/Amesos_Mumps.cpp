@@ -50,6 +50,12 @@
 #define INFO(I) info[(I)-1]
 #define RINFOG(I) rinfog[(I)-1]
 
+#ifdef HAVE_AMESOS_SMUMPS
+#define TYPE float
+#else
+#define TYPE double
+#endif
+
 const int DEF_VALUE_INT = -123456789;
 const double DEF_VALUE_DOUBLE = -123456.789;
   
@@ -69,6 +75,10 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   Col(0),
   Row(0),
   Val(0),
+#ifdef HAVE_AMESOS_SMUMPS
+  SVal(0),
+  SVector(0),
+#endif
   NumSchurComplementRows_(-1),
   SchurComplementRows_(0),
   CrsSchurComplement_(0),
@@ -109,7 +119,11 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
+#ifndef HAVE_AMESOS_SMUMPS
   MDS.job = -777;
+#else
+  MDS.job = -777;
+#endif
   
   // set to -1 icntl_ and cntl_. The use can override default values by using
   // SetICNTL(pos,value) and SetCNTL(pos,value).
@@ -129,15 +143,24 @@ void Amesos_Mumps::Destroy()
   
   // destroy instance of the package
   MDS.job = -2;
-
-  if( MyPID_ < MaxProcs_ ) dmumps_c(&MDS);
   
+#ifndef HAVE_AMESOS_SMUMPS
+  if( MyPID_ < MaxProcs_ ) dmumps_c(&MDS);
+#else
+  if( MyPID_ < MaxProcs_ ) smumps_c(&MDS);
+#endif
+    
   if( Redistor_ ) delete Redistor_;
   if( TargetVector_ ) delete TargetVector_;
   
   if( Row ) { delete Row; Row = 0; }
   if( Col ) { delete Col; Col = 0; }
   if( Val ) { delete Val; Val = 0; }
+
+#ifdef HAVE_AMESOS_SMUMPS
+  if( SVal ) { delete [] SVal; SVal = 0; }
+  if( SVector ) { delete [] SVector; SVector = 0; }
+#endif
 
   if( IsComputeSchurComplementOK_ && MyPID_ == 0 ) {
     delete [] MDS.schur;
@@ -510,7 +533,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
   if( IsComputeSchurComplementOK_ && MyPID_ == 0 ) {
     MDS.size_schur = NumSchurComplementRows_;
     MDS.listvar_schur = SchurComplementRows_;
-    MDS.schur = new double[NumSchurComplementRows_*NumSchurComplementRows_];
+    MDS.schur = new AMESOS_TYPE[NumSchurComplementRows_*NumSchurComplementRows_];
   }
   
   // retrive user's specified options
@@ -655,13 +678,13 @@ int Amesos_Mumps::SetParameters( Teuchos::ParameterList & ParameterList)
      }
      // Col scaling
      if( MumpsParams.isParameter("ColScaling") ) {
-       double * ColSca = 0;
+       AMESOS_TYPE * ColSca = 0;
        ColSca = MumpsParams.get("ColScaling", ColSca);
        if( ColSca ) SetColScaling(ColSca);
      }
      // Row scaling
      if( MumpsParams.isParameter("RowScaling") ) {
-       double * RowSca = 0;
+       AMESOS_TYPE * RowSca = 0;
        RowSca = MumpsParams.get("RowScaling", RowSca);
        if( RowSca ) SetRowScaling(RowSca);
      }
@@ -801,13 +824,19 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 #endif
   }
   
-  //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
+  //  MDS.comm_fortran = (F_INT) MPIR_FromPointer( MPIC ) ;
+  // Other recommendation from the MUMPS manual - did not compile on Atlantis either
   
   MDS.job = -1  ;     //  Initialization
   MDS.par = 1 ;       //  Host IS involved in computations
   MDS.sym = MatrixProperty_;
 
-  if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;   //  Initialize MUMPS 
+#ifndef HAVE_AMESOS_SMUMPS
+  if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;   //  Initialize MUMPS
+#else
+  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;   //  Initialize MUMPS
+#endif
+  
   CheckError();
   
   // check the error flag. MUMPS is successful only if
@@ -855,8 +884,13 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 
   // Perform symbolic factorization
 
-  Time_->ResetStartTime();  
+  Time_->ResetStartTime();
+#ifndef HAVE_AMESOS_SMUMPS
   if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;
+#else
+  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;
+#endif
+  
   SymTime_ += Time_->ElapsedTime();
 
   CheckError();
@@ -877,6 +911,7 @@ int Amesos_Mumps::PerformNumericFactorization( )
   // set vector for matrix entries. User may have changed it
   // since PerformSymbolicFactorization() has been called
 
+#ifndef HAVE_AMESOS_SMUMPS
   if( KeepMatrixDistributed_ ) {
     if( MyPID_ < MaxProcs_ ) MDS.a_loc = Val->Values();
   } else {
@@ -884,11 +919,36 @@ int Amesos_Mumps::PerformNumericFactorization( )
       MDS.a = Val->Values();
     }
   }
-
+#else
+  // if SMUMPS is defined, copy the double-precision values contained in Val
+  // into the single precision ones contained in SVal
+#ifdef HAVE_AMESOS_SMUMPS
+  // FIXME: this allocation is probably better somewhere else
+  if( SVal ) delete [] SVal;
+  SVal = new float[Val->Length()+1]; // avoid 0 bytes allocations
+  assert(SVal!=0);
+#endif
+    
+  if( KeepMatrixDistributed_ ) {
+    for( int i=0 ; i<Val->Length() ; ++i ) SVal[i] = (float)((*Val)[i]);
+    if( MyPID_ < MaxProcs_ ) MDS.a_loc = SVal;
+  } else {
+    if( MyPID_ == 0 ) {
+      for( int i=0 ; i<Val->Length() ; ++i ) SVal[i] = (float)((*Val)[i]);
+      MDS.a = SVal;
+    }
+  }
+#endif
+  
   MDS.job = 2  ;     // Request numeric factorization
   // Perform numeric factorization
   Time_->ResetStartTime();
+#ifndef HAVE_AMESOS_SMUMPS
   if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;
+#else
+  if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;
+#endif
+  
   NumTime_ += Time_->ElapsedTime();
   
   CheckError();
@@ -1050,6 +1110,13 @@ int Amesos_Mumps::Solve()
   if( IsLocal() == false && UseMpiCommSelf_ == false && TargetVector_ == 0 ) {
     TargetVector_ = new Epetra_MultiVector(*(Redistor_->TargetMap()),nrhs);
     assert( TargetVector_ != 0 );
+#ifdef HAVE_AMESOS_SMUMPS
+    // need to allocate space for single-precision solution/rhs
+    if( Comm().MyPID() == 0 ) {
+      SVector = new float[NumGlobalRows()];
+      assert( SVector != 0 );
+    }
+#endif
   }
   
   // MS // Extract Target versions of X and B. 
@@ -1059,18 +1126,27 @@ int Amesos_Mumps::Solve()
 
   if( IsLocal() || UseMpiCommSelf_ ) {
 
-    if( MyPID_ == 0 ) {
-      for ( int j =0 ; j < nrhs; j++ ) {
-	for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
-	MDS.rhs = (*vecX)[j];
-	MDS.job = 3  ;     // Request solve
-	Time_->ResetStartTime();
-	if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
-	SolTime_ += Time_->ElapsedTime();
-	
-	CheckError();
-      }
+    for ( int j =0 ; j<nrhs; j++ ) {
+
+      Time_->ResetStartTime();
+      MDS.job = 3  ;     // Request solve
+
+#ifndef HAVE_AMESOS_SMUMPS      
+      for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
+      MDS.rhs = (*vecX)[j];
+      dmumps_c( &MDS ) ;  // Perform solve
+#else
+      if( SVector == 0 ) SVector = new float[NumGlobalRows()];
+      MDS.rhs = SVector;
+      for( int i=0 ; i<NumMyRows() ; ++i ) SVector[i] = (*vecB)[j][i];
+      smumps_c( &MDS ) ;  // Perform solve
+      for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = SVector[i];
+#endif
+      SolTime_ += Time_->ElapsedTime();
+      
+      CheckError();
     }
+
   } else {
 
     // bring rhs to process 0 and take timing for this phase
@@ -1080,12 +1156,26 @@ int Amesos_Mumps::Solve()
     
     for ( int j =0 ; j < nrhs; j++ ) { 
       if ( MyPID_ == 0 ) {
+#ifndef HAVE_AMESOS_SMUMPS
 	MDS.rhs = (*TargetVector_)[j];
+#else
+	// copy the double-precision into the single-precision SVector
+	for( int i=0 ; i<NumGlobalRows() ; ++i ) SVector[i] = (float)(*TargetVector_)[j][i];
+	MDS.rhs = SVector;
+#endif
       }
       // solve the linear system and take time
       MDS.job = 3  ;     
       Time_->ResetStartTime();
-      if( MyPID_ < MaxProcs_ )dmumps_c( &MDS ) ;  // Perform solve
+#ifndef HAVE_AMESOS_SMUMPS  
+      if( MyPID_ < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
+#else
+      if( MyPID_ < MaxProcs_ ) smumps_c( &MDS ) ;  // Perform solve
+      // copy back MUMPS' solution into TargetVector, that will be later
+      // redistributed using Epetra utilities
+      if( MyPID_ == 0 )
+	for( int i=0 ; i<NumGlobalRows() ; ++i ) (*TargetVector_)[j][i] = (double)SVector[i];
+#endif
       SolTime_ += Time_->ElapsedTime();
       
       CheckError();
@@ -1149,7 +1239,12 @@ Epetra_CrsMatrix * Amesos_Mumps::GetCrsSchurComplement()
       for( int i=0 ; i<NumSchurComplementRows_ ; ++i ) {
 	for( int j=0 ; j<NumSchurComplementRows_ ; ++j ) {
 	  int pos = i+ j *NumSchurComplementRows_;
+#ifndef HAVE_AMESOS_SMUMPS
 	  CrsSchurComplement_->InsertGlobalValues(i,1,&(MDS.schur[pos]),&j);
+#else
+	  double val = (double)MDS.schur[pos];
+	  CrsSchurComplement_->InsertGlobalValues(i,1,&val,&j);
+#endif
 	}
       }
     
@@ -1215,6 +1310,9 @@ void Amesos_Mumps::PrintStatus()
   if( MyPID_ != 0  ) return;
 
   cout << "----------------------------------------------------------------------------" << endl;
+#ifdef HAVE_AMESOS_SMUMPS
+  cout << "Amesos_Mumps : Using single precision" << endl;
+#endif
   cout << "Amesos_Mumps : Matrix has " << NumGlobalRows() << " rows"
        << " and " << NumGlobalNonzeros() << " nonzeros" << endl;
   cout << "Amesos_Mumps : Nonzero elements per row = "
