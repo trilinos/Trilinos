@@ -53,7 +53,7 @@ namespace Direction {
    <ul>
    <li> "Method" - Name of the direction method. Valid choices are
    <ul> 
-   <li> "%Newton" (NOX::Direction::Newton) [Default]
+   <li> "Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
    <li> "NonlinearCG" (NOX::Direction::NonlinearCG)
    </ul>
@@ -78,6 +78,10 @@ public:
   // derived
   bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
 	       const NOX::Solver::Generic& solver);
+
+  // derived
+  bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
+	       const NOX::Solver::LineSearchBased& solver);
 
 private:
 

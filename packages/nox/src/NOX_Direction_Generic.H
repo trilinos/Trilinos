@@ -41,6 +41,7 @@ class Group;
 }
 namespace Solver {
 class Generic;
+class LineSearchBased;
 }
 namespace Parameter {
 class List;
@@ -90,6 +91,17 @@ public:
   */
   virtual bool compute(NOX::Abstract::Vector& d, NOX::Abstract::Group& g, const NOX::Solver::Generic& s) = 0;
 
+  /*!
+    \brief Same as compute(NOX::Abstract::Vector&, NOX::Abstract::Group&, const NOX::Solver::Generic&)
+
+    Enables direct support for line search based solvers for the
+    purpose of efficiency since the LineSearchBased object has a
+    getStep() function that some directions require.
+
+    If it is not redefined in the derived class, it will just call the
+    compute with the NOX::Solver::Generic argument.
+  */
+  virtual bool compute(NOX::Abstract::Vector& d, NOX::Abstract::Group& g, const NOX::Solver::LineSearchBased& s);
 };
 } // namespace Direction
 } // namespace NOX

@@ -36,13 +36,13 @@
 #include "NOX_Direction_Newton.H"
 #include "NOX_Direction_NonlinearCG.H"
 #include "NOX_Direction_SteepestDescent.H"
-#include "NOX_Direction_QuasiNewton.H"
 
 #ifdef WITH_PRERELEASE
 #include "NOX_Direction_Tensor.H"
 #include "NOX_Direction_ModifiedNewton.H"
+#include "NOX_Direction_QuasiNewton.H"
+#include "NOX_Direction_Broyden.H"
 #endif
-
 
 #include "NOX_Utils.H"
 #include "NOX_Parameter_List.H"
@@ -93,6 +93,8 @@ bool Manager::reset(Parameter::List& params)
       ptr = new ModifiedNewton(params);
     else if (method == "Quasi-Newton")
       ptr = new QuasiNewton(utils, params);
+    else if (method == "Broyden")
+      ptr = new Broyden(utils, params);
 #endif
     else {
       ptr = NULL;
@@ -108,9 +110,23 @@ bool Manager::reset(Parameter::List& params)
 }
 
 bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
-			 const Solver::Generic& solver) 
+		      const Solver::Generic& solver) 
 {
-  if (ptr == NULL) {
+  if (ptr == NULL) 
+  {
+    if (Utils::doPrint(NOX::Utils::Warning)) 
+      cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
+    return false;
+  }
+
+  return ptr->compute(dir, grp, solver);
+}
+
+bool Manager::compute(Abstract::Vector& dir, Abstract::Group& grp, 
+		      const Solver::LineSearchBased& solver) 
+{
+  if (ptr == NULL) 
+  {
     if (Utils::doPrint(NOX::Utils::Warning)) 
       cout << "Calling NOX::Direction::Manager::compute on uninitialized direction" << endl;
     return false;
