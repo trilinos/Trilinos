@@ -24,6 +24,7 @@ extern "C" {
 
 extern int ML_CG_Solve(ML_Krylov *, int, double *, double *);
 extern int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int);
+extern int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int);
 
 
 #ifndef ML_CPP
