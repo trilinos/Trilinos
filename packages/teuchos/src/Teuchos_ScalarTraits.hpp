@@ -144,7 +144,7 @@ namespace Teuchos {
     typedef int magnitudeType;
     static inline bool haveMachineParameters() { return false; };
     // Not defined: eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax()
-    static inline magnitudeType magnitude(int a) { return abs(a); };
+    static inline magnitudeType magnitude(int a) { return ::abs(a); };
     static inline int zero()  { return 0; };
     static inline int one()   { return 1; };
     static inline int conjugate(int x) { return x; };
@@ -152,7 +152,7 @@ namespace Teuchos {
     //static inline int random() { return (-1 + 2*rand()); };  // RAB: This version should be used to be consistent with others
     static inline int random() { return rand(); };             // RAB: This version should be used for an unsigned int, not int
     static inline std::string name() { return "int"; };
-    static inline int squareroot(int x) { return (int) sqrt((double) x); };
+    static inline int squareroot(int x) { return (int) ::sqrt((double) x); };
   };
 
   extern float flt_nan;
@@ -340,7 +340,7 @@ namespace Teuchos {
     static inline void seedrandom(unsigned int s) { srand(s); };
     static inline double random() { double rnd = (double) rand() / RAND_MAX; return (double)(-1.0 + 2.0 * rnd); };
     static inline std::string name() { return "double"; };
-    static inline double squareroot(double x) { return sqrt(x); };
+    static inline double squareroot(double x) { return ::sqrt(x); };
   };
 
 #ifdef HAVE_TEUCHOS_GNU_MP
