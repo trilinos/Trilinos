@@ -268,7 +268,7 @@ int main(int argc, char **argv)
     SparseSolver = MUMPS ; 
   else {
     if (( MyPID == 0 ) ) cerr << "Unknown program: " << Sprogram << endl ; 
-    exit_value = -1 ; 
+    exit( -1 ) ; 
   }
 
   // return ok because I don't want to break the tests

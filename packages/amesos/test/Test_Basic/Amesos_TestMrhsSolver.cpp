@@ -28,12 +28,13 @@
 
 #include "Amesos_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
-#include "Trilinos_Util_ReadTriples2Epetra.h"
-#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
+//#include "Trilinos_Util_ReadTriples2Epetra.h"
+//#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Trilinos_Util.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_LinearProblem.h"
@@ -123,13 +124,16 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  bool NonContiguousMap = false; 
+
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
-	EPETRA_CHK_ERR( 1 ) ; 
+    NonContiguousMap = true; 
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
-						      readb, readxexact) );
+						      readb, readxexact, NonContiguousMap ) );
   } else {
     if ( LastFiveBytes == ".triS" ) { 
+      NonContiguousMap = true; 
       // Call routine to read in symmetric Triplet matrix
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
 							readb, readxexact) );
@@ -159,10 +163,27 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   
   // Create uniform distributed map
   Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
+  Epetra_Map* map_;
+
+  if( NonContiguousMap ) {
+    //
+    //  map gives us NumMyElements and MyFirstElement;
+    //
+    int NumGlobalElements =  readMap->NumGlobalElements();
+    int NumMyElements = map.NumMyElements();
+    int MyFirstElement = map.MinMyGID();
+    vector<int> MapMap_( NumGlobalElements );
+    readMap->MyGlobalElements( &MapMap_[0] ) ;
+    Comm.Broadcast( &MapMap_[0], NumGlobalElements, 0 ) ; 
+    map_ = new Epetra_Map( NumGlobalElements, NumMyElements, &MapMap_[MyFirstElement], 0, Comm);
+  } else {
+    map_ = new Epetra_Map( map ) ; 
+  }
+
 
   // Create Exporter to distribute read-in matrix and vectors
-  Epetra_Export exporter(*readMap, map);
-  Epetra_CrsMatrix A(Copy, map, 0);
+  Epetra_Export exporter(*readMap, *map_);
+  Epetra_CrsMatrix A(Copy, *map_, 0);
 
   Epetra_RowMatrix * passA = 0; 
   Epetra_MultiVector * passx = 0; 
@@ -171,11 +192,11 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   Epetra_MultiVector * passresid = 0;
   Epetra_MultiVector * passtmp = 0;
 
-  Epetra_MultiVector x(map,numsolves);
-  Epetra_MultiVector b(map,numsolves);
-  Epetra_MultiVector xexact(map,numsolves);
-  Epetra_MultiVector resid(map,numsolves);
-  Epetra_MultiVector tmp(map,numsolves);
+  Epetra_MultiVector x(*map_,numsolves);
+  Epetra_MultiVector b(*map_,numsolves);
+  Epetra_MultiVector xexact(*map_,numsolves);
+  Epetra_MultiVector resid(*map_,numsolves);
+  Epetra_MultiVector tmp(*map_,numsolves);
 
 
   Epetra_MultiVector serialx(*readMap,numsolves);
@@ -430,11 +451,12 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 #ifdef HAVE_AMESOS_KLU
     } else if ( SparseSolver == KLU ) { 
       Teuchos::ParameterList ParamList ;
+      //      ParamList.set("OutputLevel",2);
       Amesos_Klu klu( Problem ) ; 
       EPETRA_CHK_ERR( klu.SetUseTranspose( transpose ) ); 
 
       // ParamList.set ("ScaleMethod", 0) ;
-      // klu.SetParameters (ParamList) ;
+      klu.SetParameters (ParamList) ;
 
       bool factor = true; 
       EPETRA_CHK_ERR( klu.SymbolicFactorization(  ) ); 
@@ -446,6 +468,12 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
 	    Epetra_Vector *passx_i = (*passx)(i) ;
 	    Problem.SetLHS( dynamic_cast<Epetra_MultiVector *>(passx_i) ) ;
 	    Problem.SetRHS( dynamic_cast<Epetra_MultiVector *>(passb_i) );
+
+	    Epetra_MultiVector* THISvecX = Problem.GetLHS() ;
+	    Epetra_MultiVector* THISvecB = Problem.GetRHS() ;
+
+	    int NumVectors = THISvecX->NumVectors();
+
 	    EPETRA_CHK_ERR( klu.Solve( ) ); 
 	    factor = false; 
 	    if ( i == 0 ) {
@@ -623,6 +651,7 @@ int Amesos_TestMrhsSolver( Epetra_Comm &Comm, char *matrix_file, int numsolves,
   delete readb;
   delete readxexact;
   delete readMap;
+  delete map_;
 
   Comm.Barrier();
    return 0;

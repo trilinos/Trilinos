@@ -29,9 +29,9 @@
 #include "Amesos_ConfigDefs.h"
 #include "Teuchos_ParameterList.hpp"
 #include <string>
-#include "Trilinos_Util_ReadTriples2Epetra.h"
-#include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
+//  #include "Trilinos_Util_ReadTriples2Epetra.h"
 #include "Trilinos_Util.h"
+//  #include "Trilinos_Util_ReadMatrixMarket2Epetra.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -107,19 +107,13 @@
 //    passA - if ( distributed ) then distributedA else serialA
 //
 //
+
 int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file, 
 		       SparseSolverType SparseSolver,
 		       bool transpose, 
 		       int special, AMESOS_MatrixType matrix_type ) {
 
   int iam = Comm.MyPID() ;
-
-
-
-
-  //  int whatever;
-  //  if ( iam == 0 )  cin >> whatever ; 
-  //  Comm.Barrier();
 
 
   Epetra_Map * readMap;
@@ -132,15 +126,19 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   int FN_Size = FileName.size() ; 
   string LastFiveBytes = FileName.substr( EPETRA_MAX(0,FN_Size-5), FN_Size );
   string LastFourBytes = FileName.substr( EPETRA_MAX(0,FN_Size-4), FN_Size );
+  bool NonContiguousMap = false; 
+
   if ( LastFiveBytes == ".triU" ) { 
     // Call routine to read in unsymmetric Triplet matrix
+    NonContiguousMap = true; 
     EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, false, Comm, readMap, readA, readx, 
-						      readb, readxexact) );
+						      readb, readxexact, NonContiguousMap ) );
   } else {
     if ( LastFiveBytes == ".triS" ) { 
+      NonContiguousMap = true; 
       // Call routine to read in symmetric Triplet matrix
       EPETRA_CHK_ERR( Trilinos_Util_ReadTriples2Epetra( matrix_file, true, Comm, readMap, readA, readx, 
-							readb, readxexact) );
+							readb, readxexact, NonContiguousMap ) );
     } else {
       if (  LastFourBytes == ".mtx" ) { 
 	EPETRA_CHK_ERR( Trilinos_Util_ReadMatrixMarket2Epetra( matrix_file, Comm, readMap, 
@@ -173,25 +171,43 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
 
   // Create uniform distributed map
   Epetra_Map map(readMap->NumGlobalElements(), 0, Comm);
+  Epetra_Map* map_;
 
-  Epetra_CrsMatrix A(Copy, map, 0);
+  if( NonContiguousMap ) {
+    //
+    //  map gives us NumMyElements and MyFirstElement;
+    //
+    int NumGlobalElements =  readMap->NumGlobalElements();
+    int NumMyElements = map.NumMyElements();
+    int MyFirstElement = map.MinMyGID();
+    vector<int> MapMap_( NumGlobalElements );
+    readMap->MyGlobalElements( &MapMap_[0] ) ;
+    Comm.Broadcast( &MapMap_[0], NumGlobalElements, 0 ) ; 
+    map_ = new Epetra_Map( NumGlobalElements, NumMyElements, &MapMap_[MyFirstElement], 0, Comm);
+  } else {
+    map_ = new Epetra_Map( map ) ; 
+  }
+
+
+  Epetra_CrsMatrix A(Copy, *map_, 0);
+
 
   const Epetra_Map &OriginalMap = serialA->RowMatrixRowMap() ; 
   assert( OriginalMap.SameAs(*readMap) ); 
-  Epetra_Export exporter(OriginalMap, map);
-  Epetra_Export exporter2(OriginalMap, map);
-  Epetra_Export MatrixExporter(OriginalMap, map);
-  Epetra_CrsMatrix AwithDiag(Copy, map, 0);
+  Epetra_Export exporter(OriginalMap, *map_);
+  Epetra_Export exporter2(OriginalMap, *map_);
+  Epetra_Export MatrixExporter(OriginalMap, *map_);
+  Epetra_CrsMatrix AwithDiag(Copy, *map_, 0);
 
-  Epetra_Vector x(map);
-  Epetra_Vector b(map);
-  Epetra_Vector xexact(map);
-  Epetra_Vector resid(map);
+  Epetra_Vector x(*map_);
+  Epetra_Vector b(*map_);
+  Epetra_Vector xexact(*map_);
+  Epetra_Vector resid(*map_);
   Epetra_Vector readresid(*readMap);
-  Epetra_Vector tmp(map);
+  Epetra_Vector tmp(*map_);
   Epetra_Vector readtmp(*readMap);
 
-  //  Epetra_Vector xcomp(map);      // X as computed by the solver
+  //  Epetra_Vector xcomp(*map_);      // X as computed by the solver
   bool distribute_matrix = ( matrix_type == AMESOS_Distributed ) ; 
   if ( distribute_matrix ) { 
     // Create Exporter to distribute read-in matrix and vectors
@@ -207,7 +223,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     assert(A.FillComplete()==0);    
     
     //
-    //  Add 0.0 to each diagonal entry to avoid empty diagonal entries;
+    //  Add 0.0 to each diagonal entry to avoid multiplying a matrix with 
+    //  empty diagonal entries
+    //  This has no effect on the matrix passed to Amesos
     //  This is a workaround for Bug #614 
     //
     double zero = 0.0;
@@ -215,7 +233,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     AwithDiag.Export(*serialA, exporter2, Add);
 
     AwithDiag.SetTracebackMode(0);
-    for ( int i = 0 ; i < map.NumGlobalElements(); i++ ) 
+    for ( int i = 0 ; i < map_->NumGlobalElements(); i++ ) 
       if ( AwithDiag.LRID(i) >= 0 ) 
 	AwithDiag.InsertGlobalValues( i, 1, &zero, &i ) ;
     AwithDiag.SetTracebackMode(1);
@@ -227,13 +245,12 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     passA = &A; 
     multiplyA = &AwithDiag; 
 
-    //    cout << " mulitplyA = " << AwithDiag << endl ; 
-
     passx = &x; 
     passb = &b;
     passxexact = &xexact;
     passresid = &resid;
     passtmp = &tmp;
+
   } else { 
 
     passA = serialA; 
@@ -342,7 +359,9 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     } else if ( SparseSolver == KLU ) {
 
 	Teuchos::ParameterList ParamList ;
-	Amesos_Klu A_klu( Problem ) ; 
+	//	ParamList.set("OutputLevel",2);
+	Amesos_Klu A_klu( Problem ); 
+	EPETRA_CHK_ERR( A_klu.SetParameters( ParamList ) ) ; 
 	EPETRA_CHK_ERR( A_klu.SetUseTranspose( transpose ) ); 
 	EPETRA_CHK_ERR( A_klu.SymbolicFactorization(  ) ); 
 	EPETRA_CHK_ERR( A_klu.NumericFactorization(  ) ); 
@@ -396,6 +415,7 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
   delete readb;
   delete readxexact;
   delete readMap;
+  delete map_;
   
   Comm.Barrier();
 

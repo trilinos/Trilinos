@@ -44,10 +44,16 @@ EXEEXT = .exe
 noinst_PROGRAMS = amesos_test \
                   TestBasic
 
-TestBasic_SOURCES = $(srcdir)/TestBasic.csh
+TestBasic_SOURCES = $(srcdir)/In_TestBasic.csh
 
-TestBasic$(EXEEXT): $(srcdir)/TestBasic.csh Matrices
-	cp  $(srcdir)/TestBasic.csh TestBasic.csh
+TestBasic$(EXEEXT): $(srcdir)/In_TestBasic.csh  $(srcdir)/In_AmesosSuperludist.csh  \
+	$(srcdir)/In_AmesosDscpack.csh Matrices
+	cp  $(srcdir)/In_TestBasic.csh TestBasic.csh
+	cp  $(srcdir)/In_AmesosSuperludist.csh AmesosSuperludist.csh 
+	cp  $(srcdir)/In_AmesosDscpack.csh AmesosDscpack.csh 
+	cp  $(srcdir)/In_AmesosSuperlu.csh AmesosSuperlu.csh 
+	cp  $(srcdir)/In_AmesosScalapack.csh AmesosScalapack.csh 
+	cp  $(srcdir)/In_AmesosMumps.csh AmesosMumps.csh 
 
 Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/662_bus.rsa  662_bus_out.rsa                              
@@ -64,6 +70,7 @@ Matrices: $(srcdir)/662_bus.rsa
 	cp  $(srcdir)/In_ImpcolE.rua  ImpcolE.rua                               
 	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua                             
 	cp  $(srcdir)/In_fidapm05.rua  fidapm05.rua                             
+	cp  $(srcdir)/In_SuperLU.triU  SuperLU.triU                               
 	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua                               
 	cp  $(srcdir)/In_SuperLU.rua  SuperLU.rua                               
 	cp  $(srcdir)/In_bcsstk01.mtx bcsstk01.mtx                              
@@ -94,9 +101,12 @@ amesos_test_SOURCES = $(srcdir)/Amesos_TestDriver.cpp \
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src \
 	-I$(top_builddir)/../epetra/src \
 	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
+	-I$(top_srcdir)/../epetraext/src/transform -I$(top_builddir)/../epetraext/src/transform \
+	-I$(top_srcdir)/../epetraext/src -I$(top_builddir)/../epetraext/src \
 	-I$(top_srcdir)/../triutils/src -I$(top_builddir)/../triutils/src 
 
 amesos_test_DEPENDENCIES = \
+	$(top_builddir)/../epetraext/src/libepetraext.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/src/libamesos.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
@@ -108,6 +118,7 @@ amesos_test_CXXFLAGS = -I$(top_srcdir)/src
 #  libamesos.a is loaded twice.  The second time allows umfpack to pick up AMD.
 #
 amesos_test_LDADD = $(top_builddir)/src/libamesos.a \
+	$(top_builddir)/../epetraext/src/libepetraext.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
