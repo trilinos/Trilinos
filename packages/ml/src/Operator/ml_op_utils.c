@@ -2692,7 +2692,7 @@ int ML_Operator_PrintSparsity(ML_Operator* Op, char* title,
       fclose(fp);
     }
 #ifdef ML_MPI
-    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(Op->comm->USR_comm);
 #endif
   }
 
@@ -3173,13 +3173,13 @@ void ML_Operator_Profile(ML_Operator *A, char *appendlabel, int numits)
   }
 
 #ifdef ML_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(A->comm->USR_comm);
 #endif
   t0 = GetClock();
   for (j=0; j<numits; j++) {
     ML_Operator_Apply(A,A->invec_leng,xvec,A->outvec_leng,bvec);
 #ifdef ML_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(A->comm->USR_comm);
 #endif
   }
   ML_Operator_ReportStatistics(A,appendlabel);

@@ -315,7 +315,7 @@ int ML_Comm_GsumInt(ML_Comm *com_ptr, int idata)
    int     i;
 #ifdef ML_MPI
   MPI_Allreduce((void *) &idata,(void *) &i, 1, MPI_INT, MPI_SUM,
-                MPI_COMM_WORLD);
+                com_ptr->USR_comm);
 #else
   i = idata;
 #endif
@@ -1158,7 +1158,7 @@ int ML_Comm_Irecv(void* buf, unsigned int count, int *src,
      if (*src == -59)  ML_avoid_unused_param((void *) &comm);
    }
    if (*src == -1) *src = MPI_ANY_SOURCE;
-   err = MPI_Irecv(buf,(signed int) count,MPI_BYTE,*src,*mid,MPI_COMM_WORLD,request);
+   err = MPI_Irecv(buf,(signed int) count,MPI_BYTE,*src,*mid,comm,request);
 #else
    /* bogus code to avoid warnings */
    if (*mid == -59) {
@@ -1240,7 +1240,7 @@ int ML_Comm_Send(void* buf, unsigned int count, int dest, int mid,
 {
    int err = 0;
 #ifdef ML_MPI
-   err = MPI_Send(buf, (signed int) count, MPI_BYTE, dest, mid, MPI_COMM_WORLD);
+   err = MPI_Send(buf, (signed int) count, MPI_BYTE, dest, mid, comm);
    /* bogus code to avoid warnings */
    if (mid == -59) {
      ML_avoid_unused_param((void *) &comm);
