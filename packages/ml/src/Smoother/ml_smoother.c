@@ -3433,7 +3433,7 @@ void ML_Smoother_Destroy_Schwarz_Data(void *data)
 /* on one level.                                                             */
 /* ************************************************************************ */
 #include "ml_mls.h"
-
+#include "ml_operator_blockmat.h"
 
 #ifdef MatrixProductHiptmair
 
@@ -3453,6 +3453,7 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    int *row_ptr, i, j, k;
    double *val_ptr;
    double *dbl_arg1, *diagonal;
+   struct ML_Operator_blockmat_data *mat_data;
 #ifdef GREG
    struct MLSthing *widget;
 #endif
@@ -3462,7 +3463,8 @@ void *edge_smoother, void **edge_args, void *nodal_smoother, void **nodal_args)
    t0 = GetClock();
 #endif
 
-   Mmat = Amat->sub_matrix1;
+   mat_data = (struct ML_Operator_blockmat_data *) Amat->data;
+   Mmat = mat_data->M_mat;
    dataptr = *data;
    dataptr->Tmat_trans = Tmat_trans;
    dataptr->Tmat = Tmat;
@@ -7013,6 +7015,8 @@ int ML_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 
    beta = 1.1*Amat->lambda_max;   /* try and bracket high */
    alpha = Amat->lambda_max/(widget->eig_ratio);
+printf("Deg %d beta %e ratio %e\n",deg,beta,widget->eig_ratio);
+
 
    delta = (beta - alpha)/2.;
    theta = (beta + alpha)/2.;
@@ -7331,7 +7335,6 @@ int ML_Smoother_MSR_GSbackwardnodamping(void *sm,int inlen,double x[],
 
    return 0;
 }
-#include "ml_operator_blockmat.h"
 int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
 {
 
@@ -7367,6 +7370,8 @@ int ML_complex_Cheby(void *sm, int inlen, double x[], int outlen, double rhs[])
   beta_img  = 1.1*widget->beta_img;    /* frequency errors.    */
   alpha_real= beta_real/(widget->eig_ratio);
   alpha_img = beta_img;
+  printf("deg %d beta real %e img %e ratio %e\n",deg,beta_real,beta_img,widget->eig_ratio);
+
 
   delta_real = (beta_real - alpha_real)/2.;
   delta_img = (beta_img - alpha_img)/2.;
