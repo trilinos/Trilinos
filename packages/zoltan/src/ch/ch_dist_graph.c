@@ -101,10 +101,12 @@ int chaco_dist_graph(
   }
   if (use_vwgts){
     old_vwgts = *vwgts;
-    *vwgts = (int *) malloc(n*sizeof(int));
-    if (*vwgts == NULL) {
-      Gen_Error(0, "fatal: insufficient memory");
-      return 0;
+    if (n > 0) {
+      *vwgts = (int *) malloc(n*sizeof(int));
+      if (*vwgts == NULL) {
+        Gen_Error(0, "fatal: insufficient memory");
+        return 0;
+      }
     }
   }
   if (*ndim > 0) {

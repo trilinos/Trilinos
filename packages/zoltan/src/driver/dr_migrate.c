@@ -207,19 +207,22 @@ ELEM_INFO_PTR elements;
     New_Elem_Index_Size = mesh->elem_array_len;
   New_Elem_Index = (int *) malloc(New_Elem_Index_Size * sizeof(int));
 
-  proc_ids = (int *)  malloc(mesh->num_elems * sizeof(int));
-  change   = (char *) malloc(mesh->num_elems * sizeof(char));
+  if (mesh->num_elems > 0) {
 
-  if (New_Elem_Index == NULL || proc_ids == NULL || change == NULL) {
-    Gen_Error(0, "fatal: insufficient memory");
-    *ierr = LB_MEMERR;
-    return;
-  }
+    proc_ids = (int *)  malloc(mesh->num_elems * sizeof(int));
+    change   = (char *) malloc(mesh->num_elems * sizeof(char));
 
-  for (i = 0; i < mesh->num_elems; i++) {
-    New_Elem_Index[i] = elements[i].globalID;
-    proc_ids[i] = proc;
-    change[i] = 0;
+    if (New_Elem_Index == NULL || proc_ids == NULL || change == NULL) {
+      Gen_Error(0, "fatal: insufficient memory");
+      *ierr = LB_MEMERR;
+      return;
+    }
+
+    for (i = 0; i < mesh->num_elems; i++) {
+      New_Elem_Index[i] = elements[i].globalID;
+      proc_ids[i] = proc;
+      change[i] = 0;
+    }
   }
 
   for (i = mesh->num_elems; i < New_Elem_Index_Size; i++) {

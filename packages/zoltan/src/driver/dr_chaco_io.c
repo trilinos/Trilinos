@@ -69,6 +69,7 @@ int read_chaco_mesh(int Proc,
   int    i, nvtxs, gnvtxs;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL, *vwgts = NULL;
+  int    no_geom = FALSE;
 
   float *ewgts = NULL;
   float *x = NULL, *y = NULL, *z = NULL;
@@ -101,6 +102,7 @@ int read_chaco_mesh(int Proc,
     sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
     fp = fopen(chaco_fname, "r");
     if (fp == NULL) {
+      no_geom = TRUE;
       sprintf(cmesg, "warning:  Could not open Chaco geometry file %s; "
               "no geometry data will be read",
               chaco_fname);
@@ -150,10 +152,11 @@ int read_chaco_mesh(int Proc,
    * Each element has one set of coordinates (i.e., node) if a coords file
    * was provided; zero otherwise. 
    */
-  if (x != NULL)
-    mesh->eb_nnodes[0] = 1;
-  else
+  MPI_Bcast( &no_geom, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (no_geom)
     mesh->eb_nnodes[0] = 0;
+  else
+    mesh->eb_nnodes[0] = 1;
 
   /* allocate space for name */
   mesh->eb_names[0] = (char *) malloc((MAX_STR_LENGTH+1) * sizeof(char));
