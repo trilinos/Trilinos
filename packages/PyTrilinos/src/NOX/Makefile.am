@@ -72,7 +72,7 @@ MAINTAINERCLEANFILES = Makefile.in \
 #  BUILD_TESTS and BUILD_EXAMPLES are defined through the configure.ac file.
 
 SWIG       = swig
-SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -c -python -c++
+SWIG_FLAGS = -I$(top_srcdir)/src/NOX -Wall -python -c++
 
 EPETRA_INC    = -I$(top_srcdir)/../epetra/src
 NOX_INC       = -I$(top_srcdir)/../nox/src

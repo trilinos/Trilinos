@@ -57,23 +57,6 @@
 %ignore Epetra_MapColoring::operator[](int);
 %ignore Epetra_MapColoring::operator[](int) const;
 
-// // Typemap directives
-// %typemap(out) (std::vector<Epetra_IntVector>)
-// {
-//   int numIV = $1.size();
-//   $result = PyTuple_New(numIV);
-//   for (i=0; ++i; i<numIV) {
-//     int numInt = $1[i].MyLength();
-//     PyObject * item = PyTuple_New(numInt);
-//     for (j=0; ++j; j<numInt) {
-//       PyTuple_SetItem(item, j, PyInt_FromLong($1[i][j]));
-//     }
-//     PyTuple_SetItem($result, i, item);
-//     Py_DECREF(item);   // We are done with local reference to item
-//   }
-//   return $result;
-// }
-
 // Epetra interface import
 %import "Epetra_Object.h"
 %import "Epetra_SrcDistObject.h"
