@@ -142,9 +142,9 @@ public:
 
   /*! \brief Create a new %Vector of the same underlying type by
     cloning "this", and return a pointer to the new vector.  */
-  /*! If type is "DeepCopy", then we need to create an exact replica
-    of "this". Otherwise, if type is "CopyShape", we need only
-    replicate the shape of "this". Returns NULL if clone is not
+  /*! If type is \c DeepCopy, then we need to create an exact replica
+    of "this". Otherwise, if type is \c CopyShape, we need only
+    replicate the shape of "this". Returns \c NULL if clone is not
     supported. */
   virtual Vector* clone(CopyType type = DeepCopy) const = 0;
 

@@ -286,9 +286,21 @@ Abstract::Group& Group::operator=(const Group& source)
   return *this;
 }
 
+bool Group::setX(const Abstract::Vector& y) 
+{
+  return setX(dynamic_cast<const Vector&> (y));
+}
+
+bool Group::setX(const Vector& y) 
+{
+  resetIsValid();
+  xVector = y;
+  return true;
+}
+
 bool Group::computeX(const Abstract::Group& grp, 
-					const Abstract::Vector& d, 
-					double step) 
+		     const Abstract::Vector& d, 
+		     double step) 
 {
   // Cast to appropriate type, then call the "native" computeX
   const Group& epetragrp = dynamic_cast<const Group&> (grp);

@@ -205,6 +205,11 @@ public:
   /** @name "Compute" functions. */
   //@{
 
+  virtual bool setX(const Vector& y);
+
+  //! See above
+  virtual bool setX(const Abstract::Vector& y);
+
   virtual bool computeX(const Group& grp, 
 			const Vector& d, 
 			double step);

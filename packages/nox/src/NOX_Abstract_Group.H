@@ -45,15 +45,38 @@ class List;
 namespace NOX { 
 namespace Abstract { 
 
+/*!  \brief %NOX pure abstract interface to a "group"; i.e., a
+  solution vector and the corresponding right hand side (RHS),
+  Jacobian, gradient, and Newton vectors, as well as any shared
+  objects.
+*/
 /*! 
-  \brief %NOX pure abstract interface to a "group"; i.e., a solution
-  vector and the corresponding RHS, Jacobian, gradient, and Newton
-  vectors, as well as any shared objects.
- 
   This class groups together the objects relating to a particular
   solution vector. Each time the solution vector is updated via the
   "computeX" objects, all the previously computed values become
   invalid.
+
+  Recall that our goal is to solve
+  \f[
+  F(x) = \left[ \begin{array}{c} F_1(x) \\ F_2(x) \\ \vdots \\ F_n(x) \\ \end{array} \right] = 0.
+  \f]
+  We may also consider the equivalent optimization problem
+  \f[
+  \min f(x) \equiv \frac{1}{2} F(x)^T F(x).
+  \f]
+
+  We let \f$x\f$ denote the solution (i.e., \b X) associated with this
+  group. The \b RHS is denoted by \f$F \equiv F(x)\f$. The \b Jacobian
+  is denoted by \f$J\f$, and defined by
+  \f[
+  J_{ij} = \frac{\partial F_i}{\partial x_j} (x).
+  \f]
+  The \b Newton \b direction is the solution of
+  \f[
+  Js = -F.
+  \f]
+  The \b gradient (of \f$f\f$) is defined as \f$g \equiv J^T F\f$.
+  
 */
 
 class Group {
@@ -68,28 +91,42 @@ public:
   
   /*! 
     \brief Copies the values of all vectors and any other data in
-    source group to this group.  (May invalidate shared data for
+    the source group to this group.  (May invalidate shared data for
     source group.)
   */
   virtual Group& operator=(const Group& source) = 0;
       
   //@{ \name "Compute" functions.
 
-  //! Compute and return solution vector, x, where this.x = grp.x() + step * d.
+  //! Set the solution vector, x, to y.
+  virtual bool setX(const Vector& y) = 0;
+
+  //! Compute and return solution vector, x, where this.x = grp.x + step * d.
+  /*! Let \f$x\f$ denote this group's solution and \f$\hat x\f$ denote
+    the solution associated with group \c grp. Then we compute 
+    \f[ x = \hat x + \mbox{step} \; d. \f]
+  */
   virtual bool computeX(const Group& grp, const Vector& d, double step) = 0;
 
   //! Compute and return RHS. (Usually also computes and stores norm of RHS.)
+  /*! In other words, return \f$F \equiv F(x)\f$. */
   virtual bool computeRHS() = 0;
 
   //! Compute Jacobian.
+  /*! In other words, compute \f$  J_{ij} = \frac{\partial F_i}{\partial x_j} (x)\f$.
+  */
   virtual bool computeJacobian() = 0;
 
   //! Compute and return gradient.
-  //! Throws an error if RHS and Jacobian have not been computed.
+  //! Returns \c false if RHS and/or Jacobian have not been computed.
+  /*! In other words, return \f$g = J^T F\f$. */
   virtual bool computeGrad() = 0;
 
   //! Compute and return Newton direction, using parameters for nonlinear solve.
-  //! Throws an error if RHS and Jacobian have not been computed.
+  //! Returns \c false if RHS and/or Jacobian have not been computed.
+  /*! Solve \f$Js = -F\f$ for \f$s\f$. The parameter "Tolerance" may
+    be included in the list of parameters - this is the ideal solution
+    tolerance. */
   virtual bool computeNewton(Parameter::List& params) = 0;
 
   //@}
@@ -103,22 +140,31 @@ public:
   //@{
   
   /*! 
-    \brief If supported, returns true and calculates 
-    result = Jacobian * input.  Otherwise, returns false.  
-    Returns false if any errors occur, such as the Jacobian not being
+    \brief If supported, returns \c true and calculates 
+    result = Jacobian * input.  Otherwise, returns \c false.  
+    Returns \c false if any errors occur, such as the Jacobian not being
     computed.
+  */
+  /*! In other words, compute 
+    \f[ \mbox{result} = J \; \mbox{input}. \f]
   */
   virtual bool applyJacobian(const Vector& input, Vector& result) const = 0;
 
   /*! 
-    \brief If supported, returns true and calculates result =
-    Jacobian^T * input.  Otherwise, returns false.  Throws an error if
+    \brief If supported, returns \c true and calculates result =
+    Jacobian^T * input.  Otherwise, returns \c false.  Throws an error if
     the Jacobian has not been computed. 
+  */
+  /*! In other words, compute 
+    \f[ \mbox{result} = J^T \; \mbox{input}. \f]
   */
   virtual bool applyJacobianTranspose(const Vector& input, Vector& result) const = 0;
   
   /*!
     \brief Applies the Jacobian Diagonal to the given input vector.
+  */
+  /*! In other words, compute 
+    \f[ \mbox{result}_i = \frac{1}{J_{ii}} \; \mbox{input}_i \quad \mbox{for } i = 1,\dots,n. \f]
   */
   virtual bool applyJacobianDiagonalInverse(const Vector& input, Vector& result) const = 0;
     
@@ -127,7 +173,7 @@ public:
 
   /** @name "Is" functions.
    
-    Checks to see if various objects have been computed. Returns true
+    Checks to see if various objects have been computed. Returns \c true
     if the corresponding "compute" function has been called since the
     last update to the solution vector (via instantiation or
     computeX).
@@ -135,13 +181,13 @@ public:
 
   //@{
   
-  //! Return true if the RHS is valid.
+  //! Return \c true if the RHS is valid.
   virtual bool isRHS() const = 0;
-  //! Return true if the Jacobian is valid.
+  //! Return \c true if the Jacobian is valid.
   virtual bool isJacobian() const = 0;
-  //! Return true if the gradient is valid.
+  //! Return \c true if the gradient is valid.
   virtual bool isGrad() const = 0;
-  //! Return true if the Newton direction is valid.
+  //! Return \c true if the Newton direction is valid.
   virtual bool isNewton() const = 0;
 
   //@}
@@ -159,7 +205,8 @@ public:
   //! Return right-hand-side (RHS). 
   virtual const Vector& getRHS() const = 0;
 
-  //! Return 2-norm of RHS.
+  //! Return 2-norm of RHS. 
+  /*! In other words, \f[ \sqrt{\sum_{i=1}^n F_i^2} \f] */
   virtual double getNormRHS() const = 0;
 
   //! Return gradient.
@@ -177,9 +224,9 @@ public:
     \brief Create a new %Group of the same derived type as this one by
     cloning this one, and return a pointer to the new group.  
 
-    If type is "DeepCopy", then we need to create an exact replica of
-    "this". Otherwise, if type is "CopyShape", we need only replicate
-    the shape of "this". Returns NULL if clone is not supported.
+    If type is \c DeepCopy, then we need to create an exact replica of
+    "this". Otherwise, if type is \c CopyShape, we need only replicate
+    the shape of "this". Returns \c NULL if clone is not supported.
   */
   virtual Group* clone(CopyType type = DeepCopy) const = 0;
 
