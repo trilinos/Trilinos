@@ -178,19 +178,18 @@ StatusType Stepper::step()
     if (stepNumber > 1)
       curGroupPtr->setPrevX(prevGroupPtr->getX());
 
+    // Compute predictor direction
+    predictor.compute(*prevGroupPtr, *curGroupPtr, *predictorDirection);
+
     // Compute step size
     stepSize = computeStepSize(solverStatus);
     curGroupPtr->setStepSize(stepSize);
-
-    // Compute predictor direction
-    predictor.compute(*prevGroupPtr, *curGroupPtr, *predictorDirection);
 
     // Save previous successful step information
     *prevGroupPtr = *curGroupPtr;
 
     // Set previous solution vector in current solution group
-    if (stepNumber > 1)
-      curGroupPtr->setPrevX(prevGroupPtr->getX());
+    curGroupPtr->setPrevX(prevGroupPtr->getX());
 
     // Take step in predictor direction
     curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
@@ -242,12 +241,13 @@ double Stepper::computeStepSize(StatusType solverStatus)
   
   // Cap the con parameter so we don't go past the final value
   double prevValue = curGroupPtr->getContinuationParameter();
-  if ( (prevValue+stepSize-finalValue)*(prevValue-finalValue) < 0.0) {
-    stepSize = finalValue - prevValue;
+  double dpds = predictorDirection->getParam();
+  if ( (prevValue+stepSize*dpds-finalValue)*(prevValue-finalValue) < 0.0) {
+    stepSize = (finalValue - prevValue)/dpds;
     isLastStep = true;
   }
 
-  if (fabs(prevValue+stepSize-finalValue) <= 1.0e-15*fabs(finalValue))
+  if (fabs(prevValue+stepSize*dpds-finalValue) < 1.0e-15*fabs(finalValue))
     isLastStep = true;
 
   return stepSize;

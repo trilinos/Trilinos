@@ -216,6 +216,7 @@ LOCA::Continuation::NaturalGroup::computeF()
     return res;
   
   fVec.getXVec() = LOCA::Continuation::Group::grpPtr->getF();
+
   fVec.getParam() = xVec.getParam() - prevXVec.getParam() - stepSize;
   
   isValidF = true;
@@ -270,6 +271,10 @@ LOCA::Continuation::NaturalGroup::computeNewton(NOX::Parameter::List& params)
     return res;
 
   newtonVec.scale(-1.0);
+
+  isValidNewton = true;
+
+  //print();
 
   return res;
 }
@@ -490,6 +495,15 @@ LOCA::Continuation::NaturalGroup::print() const
   }
   else
     cout << "fVec not computed" << endl;
+
+  cout << endl;
+
+  if (isValidNewton) {
+    cout << "newtonVec = " << endl;
+    newtonVec.print();
+  }
+  else
+    cout << "newtonVec not computed" << endl;
 
   cout << endl;
 }

@@ -39,7 +39,7 @@ int main()
 {
   int n = 100;
   double alpha = 0.0;
-  double beta = 1.0;
+  double beta = 0.0;
   int maxNewtonIters = 20;
 
   try {
@@ -67,8 +67,8 @@ int main()
 
     // Create the stepper sublist and set the stepper parameters
     NOX::Parameter::List& stepperList = locaParamsList.sublist("Stepper");
-    stepperList.setParameter("Continuation Method", "Natural");
-    //stepperList.setParameter("Continuation Method", "ArcLength");
+    //stepperList.setParameter("Continuation Method", "Natural");
+    stepperList.setParameter("Continuation Method", "ArcLength");
     stepperList.setParameter("Continuation Parameter", "alpha");
     stepperList.setParameter("Initial Value", alpha);
     stepperList.setParameter("Final Value", 5.0);
@@ -82,11 +82,11 @@ int main()
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.setParameter("Method", "Constant");
-    //stepSizeList.setParameter("Method", "Adaptive");
+    //stepSizeList.setParameter("Method", "Constant");
+    stepSizeList.setParameter("Method", "Adaptive");
     stepSizeList.setParameter("Initial Step Size", 0.1);
     stepSizeList.setParameter("Min Step Size", 1.0e-3);
-    stepSizeList.setParameter("Max Step Size", 1.0);
+    stepSizeList.setParameter("Max Step Size", 100.0);
     stepSizeList.setParameter("Aggressiveness", 0.5);
 
     // Set the LOCA Utilities
@@ -102,10 +102,12 @@ int main()
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     NOX::Parameter::List& nlParams = locaParamsList.sublist("Solver");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based");
-    nlParams.setParameter("Output Information", 
-			  NOX::Utils::Details +
-			  NOX::Utils::OuterIteration + 
-			  NOX::Utils::InnerIteration + 
+
+    NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
+    nlPrintParams.setParameter("Output Information", 
+			  // NOX::Utils::Details +
+// 			  NOX::Utils::OuterIteration + 
+// 			  NOX::Utils::InnerIteration + 
 			  NOX::Utils::Warning);
 
     NOX::Parameter::List& dirParams = nlParams.sublist("Direction");

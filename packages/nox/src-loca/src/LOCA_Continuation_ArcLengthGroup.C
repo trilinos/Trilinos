@@ -101,6 +101,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
 
   // Protect against A = A
   if (this != &source) {
+    LOCA::Continuation::Group::operator=(source);
 
     // Delete old values
     delete derivResidualParamPtr;
@@ -111,7 +112,7 @@ LOCA::Continuation::ArcLengthGroup::operator=(const LOCA::Continuation::ArcLengt
     newtonVec = source.newtonVec;
     prevXVec = source.prevXVec;
     arclengthStep = source.arclengthStep;
-    derivResidualParamPtr = derivResidualParamPtr->clone(NOX::DeepCopy);
+    derivResidualParamPtr = source.derivResidualParamPtr->clone(NOX::DeepCopy);
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
@@ -147,6 +148,7 @@ void
 LOCA::Continuation::ArcLengthGroup::setX(const LOCA::Continuation::Vector& y) 
 {
   LOCA::Continuation::Group::grpPtr->setX( y.getXVec() );
+  LOCA::Continuation::Group::grpPtr->setParam(LOCA::Continuation::Group::conParamID, y.getParam());
   xVec = y;
 
   resetIsValid();
@@ -218,9 +220,9 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   
   // Compute xVec-prevXVec;
   LOCA::Continuation::Vector *tmpVec =
-    dynamic_cast<LOCA::Continuation::Vector*>(prevXVec.clone(NOX::DeepCopy));
-  tmpVec->update(1.0, xVec, -1.0);
-
+    dynamic_cast<LOCA::Continuation::Vector*>(xVec.clone(NOX::DeepCopy));
+  tmpVec->update(-1.0, prevXVec, 1.0);
+  
   if (!isTangent()) {
     computeTangent(LOCA::Continuation::Group::linearSolverParams);
   }
@@ -283,14 +285,13 @@ LOCA::Continuation::ArcLengthGroup::computeNewton(NOX::Parameter::List& params)
 
   newtonVec.scale(-1.0);
 
+  isValidNewton = true;
+
   return res;
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params) {
-
-  if (isValidTangent)
-    return NOX::Abstract::Group::Ok;
   
   // Compute tangent vector using base class which assumes |dp/ds| = 1
   NOX::Abstract::Group::ReturnType res =
@@ -303,8 +304,7 @@ LOCA::Continuation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params)
   double& tanP = tangentVec.getParam();
 
   // Compute dp/ds and rescale
-  tanP = tanP/sqrt(1.0 + tanX.dot(tanX));
-  tanX.scale(tanP);
+  tangentVec.scale(1.0/sqrt(1.0 + tanX.dot(tanX)));
 
   return res;
 }
@@ -402,7 +402,7 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   result_param =  (tanX.dot(*a) - input_param) / (tanX.dot(*b) - tanP);
 
   // Compute result_x = a + result_param*b 
-  result_x = result_x.update(1.0, *a, -result_param, *b, 0.0);
+  result_x.update(1.0, *a, -result_param, *b, 0.0);
 
   // Clean up memory
   delete a;
@@ -557,6 +557,15 @@ LOCA::Continuation::ArcLengthGroup::print() const
   }
   else
     cout << "fVec not computed" << endl;
+
+  cout << endl;
+
+  if (isValidNewton) {
+    cout << "newtonVec = " << endl;
+    newtonVec.print();
+  }
+  else
+    cout << "newtonVec not computed" << endl;
 
   cout << endl;
 }

@@ -86,6 +86,8 @@ namespace LOCA {
 
       virtual const LOCA::Abstract::Group& getGroup() const;
 
+      virtual void print() const = 0;
+
     protected:
 
       void resetIsValid();

@@ -96,9 +96,6 @@ LOCA::Continuation::Group::operator=(const LOCA::Continuation::Group& source)
 
 NOX::Abstract::Group::ReturnType
 LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
-
-  if (isValidTangent)
-    return NOX::Abstract::Group::Ok;
   
   // Get references to x, parameter components of tangent vector
   NOX::Abstract::Vector& tanX = tangentVec.getXVec();
@@ -134,8 +131,9 @@ LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
     secantVec.update(1.0, getX(), -1.0);
     
     // Give tangent vector same orientation as secant vector
-    if (secantVec.dot(tangentVec) < 0.0)  
+    if (secantVec.dot(tangentVec) < 0.0) 
       tangentVec.scale(-1.0);
+   
   }
 
   isValidTangent = true;
@@ -152,7 +150,6 @@ LOCA::Continuation::Group::getTangent() const {
 
 void
 LOCA::Continuation::Group::resetIsValid() {
-  isValidTangent = false;
 }
 
 bool
