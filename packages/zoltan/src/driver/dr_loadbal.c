@@ -89,7 +89,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   }
 
   /* set the method */
-  if (LB_Set_Method(lb_obj, prob->method, prob->params) == DLB_FATAL) {
+  if (LB_Set_Method(lb_obj, prob->method) == DLB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Method()\n");
     return 0;
   }
@@ -151,6 +151,11 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
       return 0;
     }
   }
+
+  /* 
+   * If you want to change some parameter values, call LB_Set_Param here.
+   */
+
 
   /*
    * call the load balancer

@@ -124,11 +124,14 @@ int main(int argc, char *argv[])
   pio_info.pexo_fname[0]	= '\0';
 
   prob.method[0]		= '\0';
+/* BAH: need to put new parameter initialization here */
+/*
   if ((error = LB_Initialize_Params_Array(prob.params)) != DLB_OK) {
     Gen_Error(0, "fatal: error returned from LB_Initialize_Params_Array");
     error_report(Proc);
     exit(1);
   }
+*/
   prob.tol			= -1.0;
   prob.read_coord		= 0;
   prob.gen_graph		= 0;
