@@ -328,7 +328,7 @@ static int rcb_fn(
   int breakflag;                    /* flag for exiting loop */
   int *dotmark0 = NULL;             /* temp dotmark array */
   int *dotmark_best = NULL;         /* temp dotmark array */
-  int valuehalf_best;               /* temp valuehalf */
+  double valuehalf_best;            /* temp valuehalf */
   int dim_best= -1;                 /* best cut dimension  */
   double norm_max, norm_best;       /* norm of largest half after bisection */
   double max_box;                   /* largest length of bbox */
@@ -638,7 +638,7 @@ static int rcb_fn(
 
     /* try all cut directions and pick best one. */
     breakflag= 0;
-    norm_best = -1;
+    norm_best = -1.;
     one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
     if (!one_cut_dir){
       if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
@@ -720,7 +720,7 @@ static int rcb_fn(
 
         /* test for better balance */
         if ((!one_cut_dir) && 
-            ((norm_max < norm_best) || (norm_best<0))){
+            ((norm_max < norm_best) || (norm_best<0.))){
           norm_best = norm_max; 
           dim_best = dim;
           for (j=0; j<wgtflag; j++){
