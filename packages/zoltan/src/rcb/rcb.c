@@ -138,7 +138,6 @@ int Zoltan_RCB(
 )
 {
     /* Wrapper routine to set parameter values and call the real rcb. */
-    char *yo = "Zoltan_RCB";
     double overalloc;         /* amount to overallocate by when realloc
                                  of dot array must be done.     
                                  1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -155,7 +154,7 @@ int Zoltan_RCB(
                                  1: xyz,        2: xzy,      3: yzx,
                                  4: yxz,        5: zxy,      6: zyx  */
     int rectilinear_blocks;   /* (0) do (1) don't break ties in find_median */
-    int i, ierr;
+    int ierr;
 
 
     Zoltan_Bind_Param(RCB_params, "RCB_OVERALLOC", (void *) &overalloc);

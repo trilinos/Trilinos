@@ -117,7 +117,6 @@ int Zoltan_RIB(
 )
 {
   /* Wrapper routine to set parameter values and call the real rib. */
-  char *yo = "Zoltan_RIB";
   double overalloc;           /* amount to overallocate by when realloc
                               of dot array must be done.
                               1.0 = no extra; 1.5 = 50% extra; etc. */
@@ -126,7 +125,7 @@ int Zoltan_RIB(
   int stats;                  /* Print timing & count summary? */
   int gen_tree;               /* (0) don't (1) generate whole treept to use
                               later for point and box drop. */
-  int i, ierr;
+  int ierr;
 
   Zoltan_Bind_Param(RIB_params, "RIB_OVERALLOC", (void *) &overalloc);
   Zoltan_Bind_Param(RIB_params, "CHECK_GEOM", (void *) &check_geom);
