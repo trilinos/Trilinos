@@ -80,7 +80,7 @@ typedef struct
     double       *sol;
 } MLI_Solver;
 
-#ifndef ML_CPP |
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
 #endif
