@@ -38,6 +38,11 @@
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (string)
 #include "Epetra_Time.h"        // class data element
+#ifdef HAVE_NOX_ML_EPETRA
+#include "ml_epetra_preconditioner.h"
+#include "NOX_Parameter_Arbitrary.H"
+#include "Teuchos_ParameterList.hpp"
+#endif
 
 // Forward declares
 namespace NOX {
@@ -428,6 +433,14 @@ protected:
   */
   virtual bool createIfpackPreconditioner(NOX::Parameter::List& p) const;
 
+#ifdef HAVE_NOX_ML_EPETRA
+  /*! 
+    \brief 
+    Allocates the objects required for using ML preconditioners
+  */
+  virtual bool createMLPreconditioner(NOX::Parameter::List& p) const;
+#endif
+
   /*! 
     \brief
 
@@ -482,7 +495,7 @@ protected:
 				       SeparateMatrix};
   PreconditionerMatrixSourceType precMatrixSource;
 
-  enum PreconditionerType {None_, AztecOO_, Ifpack_, UserDefined_};
+  enum PreconditionerType {None_, AztecOO_, Ifpack_, ML_, UserDefined_};
   PreconditionerType precAlgorithm;
   
   //! Aztec solver object.
@@ -495,10 +508,17 @@ protected:
   */
   mutable Ifpack_IlukGraph* ifpackGraphPtr;
 
-  /*! \brief Stores the ifpack pareconditioner.
+  /*! \brief Stores the ifpack preconditioner.
     Mutable since the applyRightPreconditioner() is a const method.
   */
   mutable Ifpack_CrsRiluk* ifpackPreconditionerPtr;
+
+#ifdef HAVE_NOX_ML_EPETRA
+  /*! \brief Stores the ml preconditioner.
+    Mutable since the applyRightPreconditioner() is a const method.
+  */
+  mutable ML_Epetra::MultiLevelPreconditioner* MLPreconditionerPtr;
+#endif
 
   //! Scaling object supplied by the user
   NOX::EpetraNew::Scaling* scaling;
@@ -533,6 +553,38 @@ protected:
   mutable double timeApplyJacbianInverse;
 
 };
+
+// This is a temporary helper class to support ML and should be moved after
+// determining where best to put it.
+#ifdef HAVE_NOX_ML_EPETRA
+class TeuchosParamsAsNOXArbitrary : public Parameter::Arbitrary
+{
+public:
+  TeuchosParamsAsNOXArbitrary(const Teuchos::ParameterList& TPlist)
+    { myName = "NOX::Parameter::Arbitrary Wrapper for Teuchos::ParamaterList";
+      teuchosParamsPtr = new Teuchos::ParameterList(TPlist); }
+
+  ~TeuchosParamsAsNOXArbitrary()
+    { delete teuchosParamsPtr; teuchosParamsPtr = 0; }
+
+  Teuchos::ParameterList* getTeuchosParams() const
+    { return teuchosParamsPtr; }
+
+protected:
+
+  TeuchosParamsAsNOXArbitrary* clone() const
+    { return new TeuchosParamsAsNOXArbitrary(*teuchosParamsPtr); }
+
+  const string& getType() const
+    { return myName; }
+
+private:
+  Teuchos::ParameterList* teuchosParamsPtr;
+  string myName;
+
+};
+#endif
+
 
 } // namespace Epetra
 } // namespace NOX

@@ -157,6 +157,11 @@ int main(int argc, char *argv[])
   lsParams.setParameter("Tolerance", 1e-4);  
   //lsParams.setParameter("Preconditioner", "None");
   lsParams.setParameter("Preconditioner", "AztecOO");
+#ifdef HAVE_NOX_ML_EPETRA
+  // Comment out the previous Preconditioner spec and uncomment this line
+  // to turn on ML 
+  lsParams.setParameter("Preconditioner", "ML");
+#endif
   //lsParams.setParameter("Jacobian Operator", "Finite Difference");
   //lsParams.setParameter("Jacobian Operator", "Matrix-Free");
   //lsParams.setParameter("Preconditioner Operator", "Finite Difference");
@@ -191,6 +196,38 @@ int main(int argc, char *argv[])
   //NOX::EpetraNew::Interface::Preconditioner& iPrec = FD;
   //NOX::EpetraNew::LinearSystemAztecOO linSys(printParams, lsParams,
   //				      iReq, iPrec, FD, soln);
+
+#ifdef HAVE_NOX_ML_EPETRA
+  if( lsParams.getParameter("Preconditioner", "None") == "ML" ) {
+    // This Teuchos parameter list is needed for ML
+  
+    // These specifications come straight from the example in 
+    // Trilinos/packages/ml/example/ml_example_epetra_preconditioner.cpp
+  
+    // create a parameter list for ML options
+    Teuchos::ParameterList MLList;
+    // set defaults for classic smoothed aggregation
+    ML_Epetra::SetDefaults("SA",MLList);
+    // maximum number of levels
+    MLList.set("max levels",5);
+    MLList.set("increasing or decreasing","decreasing");
+    // use Uncoupled scheme to create the aggregate,
+    // from level 3 use the better but more expensive MIS
+    MLList.set("aggregation: type", "Uncoupled");
+    MLList.set("aggregation: type (level 3)", "MIS");
+    // smoother is Gauss-Seidel. Example file
+    // ml_example_epetra_preconditioner_2level.cpp shows how to use
+    // AZTEC's preconditioners as smoothers
+    MLList.set("smoother: type","Gauss-Seidel");
+    // use both pre and post smoothing
+    MLList.set("smoother: pre or post", "both");
+    // solve with serial direct solver KLU
+    MLList.set("coarse: type","Amesos_KLU");
+  
+    NOX::EpetraNew::TeuchosParamsAsNOXArbitrary arbitraryMLList(MLList);
+    lsParams.setParameter("ML Teuchos Parameter List", arbitraryMLList);
+  }
+#endif
 
   // **** Ctor #4 - Prec and Jac
   NOX::EpetraNew::Interface::Jacobian& iJac = MF;

@@ -977,6 +977,22 @@ AC_ARG_WITH(epetraext-libdir,
 [AC_HELP_STRING([--with-epetraext-libdir],[specify location of epetraext library])],
 [epetraext_LIBDIR=$withval])
 
+AC_ARG_WITH(nox-epetra-ml,
+[AC_HELP_STRING([--with-nox-epetra-ml],[compile ml support into the noxepetra library])],
+[BUILD_NOX_EPETRA_ML_SUPPORT=${enableval}],
+[BUILD_NOX_EPETRA_ML_SUPPORT=no]
+)
+AC_MSG_CHECKING(whether we should build ml support into the noxepetra library)
+AC_MSG_RESULT([${BUILD_NOX_EPETRA_ML_SUPPORT}])
+
+AC_ARG_WITH(ml-incdir,
+[AC_HELP_STRING([--with-ml-incdir],[specify location of ml header files])],
+[ml_INCDIR=$withval])
+
+AC_ARG_WITH(ml-libdir,
+[AC_HELP_STRING([--with-ml-libdir],[specify location of ml library])],
+[ml_LIBDIR=$withval])
+
 AC_ARG_WITH(aztecoo-incdir,
 [AC_HELP_STRING([--with-aztecoo-incdir],[specify location of all aztecoo header files])],
 [aztecoo_INCDIR=$withval])
@@ -1124,17 +1140,36 @@ if test X${ADDON_epetra} = Xyes; then
   TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
+  TRILINOS_HEADER(ml,ml_config.h,src)
+  TRILINOS_HEADER(ml,ml_config.h.in,src)
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_ConfigDefs.h,src)
     TRILINOS_HEADER(epetraext,EpetraExt_Transform.h,src/transform)
-    #TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
     TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_MapColoring.h,src/coloring)
+  fi
+
+  if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
+    TRILINOS_HEADER(ml,ml_config.h,src)
+    TRILINOS_HEADER(ml,ml_common.h,src/Include)
+    TRILINOS_HEADER(ml,ml_memory.h,src/Utils)
+    TRILINOS_HEADER(ml,ml_comm.h,src/Comm)
+    TRILINOS_HEADER(ml,ml_op_utils.h,src/Operator)
+    TRILINOS_HEADER(ml,ml_check.h,src/Coarsen)
+    TRILINOS_HEADER(ml,ml_mapper.h,src/FEGrid)
+    TRILINOS_HEADER(ml,ml_solver.h,src/Smoother)
+    TRILINOS_HEADER(ml,ml_viz_stats.h,src/Main)
+    TRILINOS_HEADER(ml,ml_krylov.h,src/Krylov)
+    TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
+    TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
+    TRILINOS_HEADER(triutils,Triutils_config.h,src)
+    TRILINOS_HEADER(triutils,Trilinos_Util.h,src)
+    TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
   fi
 
   TRILINOS_CXXFLAGS="${REL_TRILINOS_CPPFLAGS}"
@@ -1225,6 +1260,13 @@ if test X${ADDON_epetra_EXAMPLES} = Xyes ||
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_LIB_CHECK(epetraext,epetraext,src)
     AC_DEFINE(HAVE_NOX_EPETRAEXT,1,[define that epetraext is activated in nox])
+  fi
+
+  if test X${BUILD_NOX_EPETRA_ML_SUPPORT} = Xyes; then
+    TRILINOS_LIB_CHECK(ml,ml,src)
+    TRILINOS_LIB_CHECK(teuchos,teuchos,src)
+    AC_DEFINE(HAVE_NOX_ML_EPETRA,1,[define that ml is activated in nox])
+    AC_DEFINE(HAVE_NOX_TEUCHOS,1,[define that Teuchos is activated in nox])
   fi
 
 fi

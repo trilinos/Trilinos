@@ -71,6 +71,9 @@
 /* define that epetraext is activated in nox */
 #undef HAVE_NOX_EPETRAEXT
 
+/* define that ml is activated in nox */
+#undef HAVE_NOX_ML_EPETRA
+
 /* define that multivector support is activated in nox */
 #undef HAVE_NOX_MULTIVECS
 
