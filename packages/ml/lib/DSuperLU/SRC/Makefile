@@ -38,7 +38,7 @@ ALLAUX = superlu_timer.o lsame.o util.o memory.o get_perm_c.o mmd.o \
 
 SCLAUX = slamch.o
 
-DZLAUX = dlamch.o
+#DZLAUX = dlamch.o
 
 SLUSRC = \
 	sgssv.o sgssvx.o \
@@ -105,7 +105,7 @@ complex16: $(ZLUSRC) $(ALLAUX) $(DZLAUX)
 # Do not optimize this routine   #
 ##################################
 slamch.o: slamch.c ; $(CC) -c $<
-dlamch.o: dlamch.c ; $(CC) -c $<
+#dlamch.o: dlamch.c ; $(CC) -c $<
 
 superlu_timer.o:  superlu_timer.c ; $(CC) -c $<
 
