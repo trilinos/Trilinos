@@ -21,8 +21,8 @@ public:
   //! Constructor with empty label.
   BaseObject() 
   {
-    Label_ = "obj_" + GetString(count);
-    ++count;
+    Label_ = "obj_" + GetString(count_);
+    ++count_;
   }
 
   //! Constructor with given Label.
@@ -54,10 +54,10 @@ private:
   //! Label of this object.
   string Label_;
 
-  static int count;
+  static int count_;
 };
 
-int BaseObject::count = 0;
+int BaseObject::count_ = 0;
 
 std::ostream& operator<< (std::ostream& os, const BaseObject& obj)
 {
