@@ -20,6 +20,10 @@ int main(int argc, char *argv[])
 
   if (Comm.NumProc()!=3) cout << "Must be run on 3 MPI processes." << endl;
 
+  char tmp;
+  if (Comm.MyPID()==0) cout << "Press any key to continue..."<< endl;
+  if (Comm.MyPID()==0) cin >> tmp;
+  Comm.Barrier();
   int NumMyElements = 2;
   Epetra_Map SourceMap(-1, NumMyElements, 0, Comm);
   int NumGlobalElements = SourceMap.NumGlobalElements();

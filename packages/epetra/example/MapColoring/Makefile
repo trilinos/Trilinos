@@ -2,10 +2,9 @@ include $(TRILINOS_HOME)/build/TRILINOS_TARGET_DEFS
 TRILINOS_TARGET = $(TRILINOS_ARCH).$(TRILINOS_COMM)$(TRILINOS_ID)
 include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_TARGET)
 
-DEFINES= -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(EPETRA_COMM) -DIFPACK
+DEFINES= -D$(TRILINOS_ARCH) $(PETRA_ARCH_DEFINES) -D$(EPETRA_COMM)
 
-INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src -I$(TRILINOS_HOME)/packages/aztecoo/src \
-$(EPETRA_INCLUDES) $(IFPACK_INCLUDES) $(TRIUTILS_INCLUDES)
+INCLUDES = $(ARCH_INCLUDES) -I$(TRILINOS_HOME)/packages/epetra/src
 
 CFLAGS=$(ARCH_CFLAGS) $(DEFINES) $(INCLUDES)
 FFLAGS=$(ARCH_FFLAGS) $(DEFINES) $(INCLUDES)
@@ -14,7 +13,7 @@ CCFLAGS=$(CXXFLAGS)
 LDFLAGS=$(ARCH_LDFLAGS)
 
 
-LIB_PATHS= $(LIBTRIUTILS) $(LIBEPETRA) $(LIBAZTECOO) $(LIBIFPACK) $(LIBLAPACK) $(LIBY12M) $(LIBBLAS)
+LIB_PATHS= $(LIBEPETRA) $(LIBLAPACK) $(LIBBLAS)
 
 #=======================================================================
 # Petra test source files
@@ -31,16 +30,16 @@ TEST_F =
 
 TEST_INC = 
 
-TEST_C_OBJ          = $(TEST_C:.c=.$(OBJ_EXT))
-TEST_CXX_OBJ          = $(TEST_CXX:.cpp=.$(OBJ_EXT))
-TEST_F_OBJ          = $(TEST_F:.f=.$(OBJ_EXT))
+TEST_C_OBJ          = $(TEST_C:.c=.o)
+TEST_CXX_OBJ          = $(TEST_CXX:.cpp=.o)
+TEST_F_OBJ          = $(TEST_F:.f=.o)
 
-TARGET_C_MPI = c_mpi.exe
-TARGET_CXX_MPI = cxx_mpi.exe
-TARGET_F_MPI = f_mpi.exe
-TARGET_C_SERIAL = c_serial.exe
-TARGET_CXX_SERIAL = cxx_serial.exe
-TARGET_F_SERIAL = f_serial.exe
+TARGET_C_MPI = c_coloring_mpi.exe
+TARGET_CXX_MPI = cxx_coloring_mpi.exe
+TARGET_F_MPI = f_coloring_mpi.exe
+TARGET_C_SERIAL = c_coloring_serial.exe
+TARGET_CXX_SERIAL = cxx_coloring_serial.exe
+TARGET_F_SERIAL = f_coloring_serial.exe
 
 TARGET_C = $(TARGET_C_$(TRILINOS_COMM))
 TARGET_CXX = $(TARGET_CXX_$(TRILINOS_COMM))
@@ -70,8 +69,8 @@ $(TARGET_F): $(TEST_F_OBJ)
 #include ../../build/depends.petra
 
 clean:
-	@echo "junk" > dummy.$(OBJ_EXT)
-	@rm -f *.$(OBJ_EXT)  *~ $(TARGET_C_MPI) $(TARGET_C_SERIAL) \
+	@echo "junk" > dummy.o
+	@rm -f *.o  *~ $(TARGET_C_MPI) $(TARGET_C_SERIAL) \
                     $(TARGET_CXX_MPI) $(TARGET_CXX_SERIAL) \
                     $(TARGET_F_MPI) $(TARGET_F_SERIAL) 
                      
