@@ -60,11 +60,11 @@ GRAPH *graph;                 /* Data structure for graph to be processed.   */
   read_chaco_graph_stuff(argc[1], &num_vertices, &start_edge_list, &edge_list,
                    &vertex_weights, &edge_weights, &num_dim, &x, &y, &z);
 
-  graph = build_graph_ala_chaco(num_vertices, vertex_weights, 
+  graph = LB_build_graph_ala_chaco(num_vertices, vertex_weights, 
                                 start_edge_list, edge_list, 
                                 edge_weights, num_dim, x, y, z);
 
-  print_graph(graph);
+  LB_print_graph(graph);
 
   graph->Free_Graph(&graph);
 
@@ -107,7 +107,7 @@ int num_edges;
   printf("Reading Chaco graph file...%s\n", name);
   sprintf(filename, "%s.graph", name);
   fp = fopen(filename, "r");
-  chaco_input_graph(fp, filename, start_edge_list, &edge_list_ints,
+  LB_chaco_input_graph(fp, filename, start_edge_list, &edge_list_ints,
                     num_vertices, vertex_weights, edge_weights);
   fclose(fp);
 
@@ -128,7 +128,7 @@ int num_edges;
   printf("Reading Chaco geometry file...%s \n", name);
   sprintf(filename, "%s.coords", name);
   fp = fopen(filename, "r");
-  chaco_input_geom(fp, filename, *num_vertices, num_dim, x, y, z);
+  LB_chaco_input_geom(fp, filename, *num_vertices, num_dim, x, y, z);
 
   fclose(fp);
 }

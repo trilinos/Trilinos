@@ -70,12 +70,12 @@ typedef void  *LOOP_CONTROL;
  *  Prototypes
  ****************************************************************************/
 
-extern GRAPH *new_graph();
-extern GRAPH *build_graph_ala_chaco(int, int *, int *, ID *, 
+extern GRAPH *LB_new_graph();
+extern GRAPH *LB_build_graph_ala_chaco(int, int *, int *, ID *, 
                                     float *, int, float *, float *, float *);
 
-extern VERTEX *new_vertex(ID *, int, int, ID *, float *, int,
+extern VERTEX *LB_new_vertex(ID *, int, int, ID *, float *, int,
                           double *);
 
-extern void free_vertex(VERTEX **);
+extern void LB_free_vertex(VERTEX **);
 #endif
