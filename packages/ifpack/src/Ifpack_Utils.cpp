@@ -1,4 +1,5 @@
 #include "Ifpack_ConfigDefs.h"
+#include "Ifpack_Preconditioner.h"
 #include "Ifpack_Utils.h"
 #include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
@@ -7,6 +8,7 @@
 #include "Epetra_BlockMap.h"
 #include "Epetra_Import.h"
 #include "Epetra_MultiVector.h"
+#include "Epetra_Vector.h"
 #include <vector>
 
 void Ifpack_BreakForDebugger(Epetra_Comm& Comm)
@@ -210,3 +212,21 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
   return(0);
 }
 
+//=============================================================================
+int Ifpack_ComputeCondest(Ifpack_Preconditioner& Prec, 
+			  double & ConditionNumberEstimate) 
+{
+
+  // Create a vector with all values equal to one
+  Epetra_Vector Ones(Prec.OperatorDomainMap());
+  Epetra_Vector OnesResult(Prec.OperatorRangeMap());
+  Ones.PutScalar(1.0);
+
+  // Compute the effect of the solve on the vector of ones
+  IFPACK_CHK_ERR(Prec.ApplyInverse(Ones, OnesResult)); 
+  // Make all values non-negative
+  IFPACK_CHK_ERR(OnesResult.Abs(OnesResult)); 
+  // Get the maximum value across all processors
+  IFPACK_CHK_ERR(OnesResult.MaxValue(&ConditionNumberEstimate)); 
+  return(0);
+}
