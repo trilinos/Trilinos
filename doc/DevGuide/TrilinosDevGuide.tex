@@ -410,7 +410,8 @@ you have.
 
 \item {\bf Sample configure invocation scripts:}
 For a machine that requires additional configure line options, a good 
-place to look for examples is \InlineDirectory{Trilinos/config}.  There are 
+place to look for examples is  \newline
+\InlineDirectory{Trilinos/config}.  There are 
 configure invocation scripts here for various platforms.  These scripts are 
 named using the following naming convention:
 \InlineCommand{arch\_comm\_machine}.
@@ -1309,7 +1310,7 @@ Second, developers can execute a check-in version of the test harness before
 committing changes.  Developers can easily contribute to the coverage of the 
 test harness.  For more information about the test harness see 
 Section~\ref{subsect:TestHarness}.
-}
+\end{enumerate}
 
 
 \subsection{Retirement/Replacement}
@@ -1395,10 +1396,26 @@ solvers and can bring multiple solvers to bear on a single problem.
 TSF is split into several packages.  The most important user-oriented
 classes are TSFCore and TSFExtended:
 \begin{enumerate}
-\item {\bf TSFCore:}
-\item {\bf TSFExtended:}
+\item {\bf TSFCore:} As its name implies, TSFCore contains a small set
+of core classes that are considered essential to almost any abstract
+linear algebra interface.  The primary user classes in TSFCore are
+Vector, MultiVector, LinearOp and VectorSpace. TSFCore is discussed in
+detail in~\cite{TSFCore}.
+\item {\bf TSFExtended:} TSFExtended builds on top of TSFCore and
+includes overloaded operators, block and composite operators, both of
+which support powerful abstraction capabilities.  The Meros package
+relies on TSFExtended to implicitly construct sophisticated
+Schur compliment preconditioners in terms of exising component
+operators with little overhead in time or memory.
 \end{enumerate}
 
+Both TSFCore and TSFExtended are important because they allow
+interfacing and sophisticated use of numerical linear algebra object
+without requiring the user or application to commit to any particular
+concrete linear algebra library.  This approach allows us to leverage
+the investment in sophisticated abstract numerical algorithms across
+many concrete linear algebra libraries and gives application
+developers a single API that provides access to many solver packages.
 
 
 \section{Integrating a Package into Trilinos}
@@ -1633,17 +1650,14 @@ collection of Trilinos packages depend on each other.
 \section{Commonly Used CVS Commands}
 \label{Section:CVS}
 \begin{itemize}
-
-\item[Checking Out a Working Copy]
-
+\item {\bf Checking Out a Working Copy:}
 To get started, checkout a working copy of the development branch from the CVS 
 repository.  (Releases branches can be obtained by by checking out the 
 appropriate tagged version of the repository.  More about this below.)
 
 \DisplayCommand{cvs checkout Trilinos}
 
-\item[Updating a Working Copy]
-
+\item {\bf Updating a Working Copy:}
 To update after a version has been obtained use the \InlineCommand{cvs update} 
 command.  First, cd to the directory that is to be updated (often the 
 Trilinos root directory).  Then type:
@@ -1668,8 +1682,7 @@ repository, but the directory structures will remain if this option is not
 specified.  If an empty directory is needed, simply issue one update 
 command without the ``-P'' and the empty directories will be restored.
 
-\item{Viewing Local Changes}
-
+\item {\bf Viewing Local Changes:}
 After saving changes to a working copy of a branch of the Trilinos repository, 
 the differences between the most recently obtained version of the edited 
 file(s) and the current local version of the file(s) can be viewed using the 
