@@ -6471,7 +6471,20 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
 
       j = bindx[0];
       bindx_ptr = &bindx[j];
+#ifndef rblack
       for (i = 0; i < Nrows; i++) {
+#else
+#ifdef fastrb
+	if (iter == 0) {
+      for (i = 0; i < Nrows; i += 2) 
+	if (val[i] != 0.0) x2[i] = rhs[i]/val[i];
+	}
+	else {
+#endif
+      for (i = 0; i < Nrows; i += 2) {
+	j = bindx[i];              // added for redblack
+	bindx_ptr = &bindx[j];    // added for redblack
+#endif
 	sum =  rhs[i];
 	while (j+10 < bindx[i+1]) {
 	  sum -= (val[j+9]*x2[bindx_ptr[9]] +
@@ -6492,6 +6505,34 @@ int ML_Smoother_MSR_GSforwardnodamping(void *sm,int inlen,double x[],
 	}
 	if (val[i] != 0.0) x2[i] = sum/val[i];
       }
+#ifdef rblack
+#ifdef fastrb
+	}
+#endif
+      for (i = 1; i < Nrows; i += 2) {
+	j = bindx[i];
+	bindx_ptr = &bindx[j];
+	sum =  rhs[i];
+	while (j+10 < bindx[i+1]) {
+	  sum -= (val[j+9]*x2[bindx_ptr[9]] +
+		  val[j+8]*x2[bindx_ptr[8]] +
+		  val[j+7]*x2[bindx_ptr[7]] +
+		  val[j+6]*x2[bindx_ptr[6]] +
+		  val[j+5]*x2[bindx_ptr[5]] +
+		  val[j+4]*x2[bindx_ptr[4]] +
+		  val[j+3]*x2[bindx_ptr[3]] +
+		  val[j+2]*x2[bindx_ptr[2]] +
+		  val[j+1]*x2[bindx_ptr[1]] +
+		  val[j]*x2[*bindx_ptr]);
+	  bindx_ptr += 10;
+	  j += 10;
+	}
+	while (j < bindx[i+1]) {
+	  sum -= val[j++] * x2[*bindx_ptr++];
+	}
+	if (val[i] != 0.0) x2[i] = sum/val[i];
+      }
+#endif
    }
 
    if (getrow_comm != NULL) {
