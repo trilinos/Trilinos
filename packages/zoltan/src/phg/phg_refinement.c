@@ -21,9 +21,10 @@ extern "C" {
 #include "phg.h"
 
 
+#define _DEBUG    
     /*
 
-#define _DEBUG
+
 #define _DEBUG2
 #define _DEBUG3
     */
@@ -45,22 +46,21 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char *str)
 
 /****************************************************************************/
 int Zoltan_PHG_Refinement (ZZ *zz, HGraph *hg, int p, Partition part,
-PHGPartParams *hgp)
+                           PHGPartParams *hgp)
 {
-  return hgp->Refinement(zz, hg, p, part, hgp, hgp->bal_tol);
+    return hgp->Refinement(zz, hg, p, part, hgp, hgp->bal_tol);
 }
 
 
 
 /****************************************************************************/
-static int refine_no (
-  ZZ *zz,     /* Zoltan data structure */
-  HGraph *hg,
-  int p,
-  Partition part,
-  PHGPartParams *hgp,
-  float bal_tol
-)
+static int refine_no (ZZ *zz,     /* Zoltan data structure */
+                      HGraph *hg,
+                      int p,
+                      Partition part,
+                      PHGPartParams *hgp,
+                      float bal_tol
+    )
 {
   return ZOLTAN_OK;
 }
@@ -274,16 +274,16 @@ static void fm2_move_vertex(int v, HGraph *hg, Partition part, float *gain, HEAP
 }
 #endif
 
-static int refine_fm2 (
-  ZZ *zz,
-  HGraph *hg,
-  int p,
-  Partition part,
-  PHGPartParams *hgp,
-  float bal_tol
-)
+static int refine_fm2 (ZZ *zz,
+                       HGraph *hg,
+                       int p,
+                       Partition part,
+                       PHGPartParams *hgp,
+                       float bal_tol
+    )
 {
-    int    i, j,  *pins[2], *lpins[2], *moves=0, *mark=0, *adj=0, round=0, best_cutsizeat, cont;
+    int    i, j,  *pins[2], *lpins[2], *moves=0, *mark=0, *adj=0, passcnt=0;
+    int    best_cutsizeat, cont, successivefails=0;
     double total_weight, ltotal_weight, weights[2], lweights[2], lmax_weight[2];
     double targetw0, ltargetw0, minvw=DBL_MAX;
     double cutsize, best_cutsize, ratio = hg->ratio, best_imbal, best_limbal, imbal, limbal;
@@ -295,28 +295,9 @@ static int refine_fm2 (
         int nPins; 
         int rank;
     } root;
-
+    
     /*    SelectFunc select_func = fm2_select;*/
         
-#ifdef _DEBUG3    
-    FILE *fp;
-    char fname[512];
-
-    sprintf(fname, "uvc-phg-debug.%d.txt", zz->Proc);    
-    fp = fopen(fname, "w");
-    if (!fp) {
-        printf ("failed to open debug file '%s'\n", fname);
-        return ZOLTAN_FATAL;
-    }
-    fprintf(fp, "%s\n", uMe(hgc));
-    fprintf(fp, "H(%d, %d, %d)\n", hg->nVtx, hg->nEdge, hg->nPins);
-    fprintf(fp, "p=%d  bal_tol = %.3f\n PartVec:\n", p, bal_tol);    
-    for (i = 0; i < hg->nVtx; ++i)
-        fprintf(fp, "%d ", part[i]);
-    fprintf(fp, "\n\n");
-    Zoltan_HG_Print(zz, hg, fp, "Refinement");
-    fclose(fp);
-#endif
 
     if (p != 2) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "p!=2 not allowed for phg_fm2.");
@@ -404,12 +385,19 @@ static int refine_fm2 (
         best_limbal = limbal = fabs(lweights[0]-ltargetw0)/ltargetw0;
 
 
+        /* UVCUVC: it looks like instead of moving always from overloaded part,
+           alternating the 'from' part gives better results. Hence it is default
+           in the code */
+#if 1 
+        from = passcnt % 2; 
+#else
         /* decide which way the moves will be in this pass */
         from = (weights[0] < targetw0) ? 1 : 0;
         /* we want to be sure that everybody!!! picks the same source */
         MPI_Bcast(&from, 1, MPI_INT, 0, hgc->Communicator); 
+#endif
         to = 1-from;
-                
+        
 #ifdef _DEBUG
     /* Just for debugging */
         best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
@@ -442,7 +430,7 @@ static int refine_fm2 (
         MPI_Reduce(lgain, gain, hg->nVtx, MPI_FLOAT, MPI_SUM, root.rank, hgc->col_comm);
 
         if (hgp->output_level >= PHG_DEBUG_ALL)        
-            printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), round, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
+            printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
 
 
         /* EBEB: Suggest we let all procs do local FM, then
@@ -584,17 +572,24 @@ static int refine_fm2 (
         MPI_Allreduce(lweights, weights, 2, MPI_DOUBLE, MPI_SUM, hgc->row_comm);
         cont = 0;
         MPI_Allreduce(&best_cutsizeat, &cont, 1, MPI_INT, MPI_LOR, hgc->row_comm);
+
+        /* since we're only moving in one direction; make sure two successive
+           pass didn't produce any improvement before terminating */
+        if (!cont)
+            ++successivefails; 
+        else
+            successivefails = 0; 
 #ifdef _DEBUG
     /* Just for debugging */
         best_cutsize = Zoltan_PHG_hcut_size_total(hgc, hg, part, p);
         imbal = fabs(weights[0]-targetw0)/targetw0;
-        printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), round, cutsize, best_cutsize, weights[0], weights[1], imbal);
+        printf("%s End of Pass %d Comp.Cut=%.2lf RealCut=%.2lf W[%5.0lf, %5.0lf] Imbal=%.2lf\n", uMe(hgc), passcnt, cutsize, best_cutsize, weights[0], weights[1], imbal);
         if (cutsize<best_cutsize) {
             errexit("*** HEY HEY Invalid cut!!!");
         }
         /* debuggging code ends here */
 #endif
-    } while (cont &&  (++round < hgp->fm_loop_limit));
+    } while (successivefails<2 &&  (++passcnt < hgp->fm_loop_limit));
 
     if (hgc->myProc_y==root.rank) { /* only root needs mark, adj, gain and heaps*/
         Zoltan_Multifree(__FILE__,__LINE__, 3, &mark, &adj, &gain);
