@@ -52,7 +52,7 @@ int Zoltan_HSFC_Point_Assign (
       if (scaled[i] < HSFC_EPSILON)         scaled[i] = HSFC_EPSILON;
       if (scaled[i] > 1.0 - HSFC_EPSILON)   scaled[i] = 1.0 - HSFC_EPSILON;
       }
-   fsfc = d->fhsfc (scaled);           /* Note, this is a function call */
+   fsfc = d->fhsfc (zz, scaled);           /* Note, this is a function call */
 
    /* Find partition containing point and return its number */
    p = (Partition *) bsearch (&fsfc, d->final_partition, zz->LB.Num_Global_Parts,

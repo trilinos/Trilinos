@@ -18,44 +18,34 @@ extern "C" {
 #endif
 
 #include "hsfc.h"
+#include <math.h>
+
 
 /* For a detailed description of the following algorithm, please see the
    Developers Guide.  For instructions on use, please see the Users
-   Guide.
+   Guide.  */
 
-   This is a temporary algorithm which suffers a limitation that will
-   be removed in the future.  It is an approximation in the sense that
-   every processor reported is actually in a partition that falls (in part)
-   within the user's input box, but some processors may be missed!  The
-   algorithm places a lattice of points withinn the user's specified box
-   and determines the partition in which each box belongs. A partition may
-   have volume that falls within the box but has no lattice point falling
-   within.  Hence, it may be missed.  */
+static double next_query_2d (ZZ*, double *lquerybox, double *hquerybox, double);
+static double next_query_3d (ZZ*, double *lquerybox, double *hquerybox, double);
 
 
-
-/****************************************************************************/
-
-/* returns list of processors and partitions falling within user's box */
+/* returns list of processors and partitions falling within user's query box */
 int Zoltan_HSFC_Box_Assign (
  ZZ *zz, double xlo, double ylo, double zlo,
          double xhi, double yhi, double zhi,
          int *procs, int *proc_count, int *parts, int *part_count)
    {
-   double     x[3], xintl[3], xinth[3];
-   double     xdelta, ydelta, zdelta;
+   double     xintl[3], xinth[3];         /* low and high bounded query box */
+   double     start_time, end_time;       /* timing information */
    int       *part_array = NULL;
    int       *proc_array = NULL;
-   int        tmp_part;
    HSFC_Data *d;
-   int        n, i, loop, offset;
-   int        oldpartcount = 0;
+   int        n, i, loop;                 /* loop counters */
    int        first_proc, last_proc;
-   const int  MAXLOOP  = 10;
+   double     fsfc, starting;
+   Partition *p;
+   const double FUZZY = 1.0e-9;
    int        err = ZOLTAN_OK;
-   int prime[] = {3, 7, 17, 37, 79, 163, 331, 673, 1361, 2729, 5471, 10949,
-    21911, 43853, 87719, 175447, 350899, 701819, 1403641, 2807303, 5614657,
-    11229331, 22458671, 44917381};
    char *yo = "Zoltan_HSFC_Box_Assign";
 
    ZOLTAN_TRACE_ENTER (zz, yo);
@@ -63,7 +53,9 @@ int Zoltan_HSFC_Box_Assign (
    if (d == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
           "No Decomposition Data available; use KEEP_CUTS parameter.");
+   start_time = Zoltan_Time (zz->Timer);
 
+   /* allocate memory to store results */
    *part_count = *proc_count = 0;
    part_array = (int *) ZOLTAN_MALLOC ((zz->LB.Num_Global_Parts + zz->Num_Proc)
     * sizeof (int));
@@ -72,6 +64,7 @@ int Zoltan_HSFC_Box_Assign (
    proc_array = part_array + zz->LB.Num_Global_Parts;
    memset (part_array, 0, (zz->LB.Num_Global_Parts + zz->Num_Proc)*sizeof (int));
 
+   /* One dimensional case is trival, do it and exit */
    if (d->ndimension == 1) {
       Zoltan_HSFC_Point_Assign (zz, &xlo, NULL, &n);
       Zoltan_HSFC_Point_Assign (zz, &xhi, NULL, &loop);
@@ -80,82 +73,105 @@ int Zoltan_HSFC_Box_Assign (
       goto fini;
       }
 
-   /* set initial resolution at about equal work for each dimension */
-/*   offset = (d->ndimension == 2) ? 2 : 1; */
-offset = (d->ndimension == 2) ? 7 : 5;
+   /* determine intersection of bounding box and dropped box */
+   xintl[0] = (xlo - d->bbox_lo[0]) / d->bbox_extent[0];
+   if      (xintl[0] < FUZZY)       xintl[0] = FUZZY;
+   else if (xintl[0] > 1.0-FUZZY)   xintl[0] = 1.0-FUZZY;
 
-   /* determine intersection of bounding box and dropped box, after scaling */
-   if      (xhi < d->bbox_lo[0])  xintl[0] = xinth[0] = d->bbox_lo[0];
-   else if (xlo > d->bbox_hi[0])  xintl[0] = xinth[0] = d->bbox_hi[0];
-   else {
-        xintl[0] = (d->bbox_lo[0] < xlo) ? xlo           : d->bbox_lo[0];
-        xinth[0] = (d->bbox_hi[0] < xhi) ? d->bbox_hi[0] : xhi;
-        }
+   xinth[0] = (xhi - d->bbox_lo[0]) / d->bbox_extent[0];
+   if      (xinth[0] < FUZZY)       xinth[0] = FUZZY;
+   else if (xinth[0] > 1.0-FUZZY)   xinth[0] = 1.0-FUZZY;
 
-   if      (yhi < d->bbox_lo[1])  xintl[1] = xinth[1] = d->bbox_lo[1];
-   else if (ylo > d->bbox_hi[1])  xintl[1] = xinth[1] = d->bbox_hi[1];
-   else {
-        xintl[1] = (d->bbox_lo[1] < ylo) ? ylo           : d->bbox_lo[1];
-        xinth[1] = (d->bbox_hi[1] < yhi) ? d->bbox_hi[1] : yhi;
-        }
+   xintl[1] = (ylo - d->bbox_lo[1]) / d->bbox_extent[1];
+   if      (xintl[1] < FUZZY)       xintl[1] = FUZZY;
+   else if (xintl[1] > 1.0-FUZZY)   xintl[1] = 1.0-FUZZY;
 
-   if (d->ndimension == 3) {
-      if      (zhi < d->bbox_lo[2])  xintl[2] = xinth[2] = d->bbox_lo[2];
-      else if (zlo > d->bbox_hi[2])  xintl[2] = xinth[2] = d->bbox_hi[2];
-      else {
-           xintl[2] = (d->bbox_lo[2] < zlo) ? zlo           : d->bbox_lo[2];
-           xinth[2] = (d->bbox_hi[2] < zhi) ? d->bbox_hi[2] : zhi;
-           }
-      }
+   xinth[1] = (yhi - d->bbox_lo[1]) / d->bbox_extent[1];
+   if      (xinth[1] < FUZZY)       xinth[1] = FUZZY;
+   else if (xinth[1] > 1.0-FUZZY)   xinth[1] = 1.0-FUZZY;
 
-   for (loop = 0; loop < MAXLOOP; ++loop) {
-      oldpartcount = *part_count;
-      
-      xdelta = (xinth[0] - xintl[0])/ (double) prime[loop + offset];
-      ydelta = (xinth[1] - xintl[1])/ (double) prime[loop + offset];
-      zdelta = (xinth[2] - xintl[2])/ (double) prime[loop + offset];
+   /* application programs need to add "dots" even if query box doesn't actually
+   /* intersect unit cube.  FUZZY forces closest virtual overlap. */
+   if (xinth[0] - xintl[0] < FUZZY)  {
+       xintl[0] -= (FUZZY/2.0);
+       xinth[0] += (FUZZY/2.0);
+       }
 
-      if (xdelta < REFINEMENT_LIMIT)  xdelta = 1.0;
-      if (ydelta < REFINEMENT_LIMIT)  ydelta = 1.0;
-      if (zdelta < REFINEMENT_LIMIT)  zdelta = 1.0;
+   if (xinth[1] - xintl[1] < FUZZY)  {
+       xintl[1] -= (FUZZY/2.0);
+       xinth[1] += (FUZZY/2.0);
+       }
 
-      /* create regular lattice in given box, then look up associated processors */
-      if (d->ndimension == 3) {
-        for     (x[0] = xintl[0]; x[0] <= xinth[0]; x[0] += xdelta)
-          for   (x[1] = xintl[1]; x[1] <= xinth[1]; x[1] += ydelta)
-            for (x[2] = xintl[2]; x[2] <= xinth[2]; x[2] += zdelta)
-                if (Zoltan_HSFC_Point_Assign(zz, x, NULL, &tmp_part) == ZOLTAN_OK)
-                   part_array[tmp_part] = 1;
-        }
+   if (d->ndimension == 2)
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++)  {
+         if (d->final_partition[i].l == d->final_partition[i].r)
+            continue;            /* ignore empty partitions */
 
-      else if (d->ndimension == 2) {
-         for   (x[0] = xintl[0]; x[0] <= xinth[0]; x[0] += xdelta)
-           for (x[1] = xintl[1]; x[1] <= xinth[1]; x[1] += ydelta)
-              if (Zoltan_HSFC_Point_Assign (zz, x, NULL, &tmp_part) == ZOLTAN_OK)
-                  part_array[tmp_part] = 1;
+         /* find next query result in range [0.0, 1.0] */
+         starting = (d->final_partition[i].l == 0.0)
+          ? 0.0 : (d->final_partition[i].l + FUZZY);
+         fsfc = next_query_2d (zz, xintl, xinth, starting);
+         if (fsfc < 0.0)
+            break;               /* done, no more partitions to be found */
+
+         /* Find next nonempty partition entering or already in query region */
+         p = (Partition *) bsearch (&fsfc, d->final_partition,
+          zz->LB.Num_Global_Parts, sizeof (Partition), Zoltan_HSFC_compare);
+         if (p == NULL)
+            ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, can't happen");
+         if (d->final_partition[p->index].l != d->final_partition[p->index].r)
+            part_array [p->index] = 1;         /* mark non empty partitions */
+         i = p->index;
          }
 
-      /* test for early exit */
-      *part_count = 0;
-      for (i = 0; i < zz->LB.Num_Global_Parts; i++)
-         if (part_array[i] > 0)
-            (*part_count)++;
+   if (d->ndimension == 3)  {
+      xintl[2] = (zlo - d->bbox_lo[2]) / d->bbox_extent[2];
+      if      (xintl[2] < 0.0)   xintl[2] = 0.0;
+      else if (xintl[2] > 1.0)   xintl[2] = 1.0;
 
-      if (*part_count == oldpartcount || *part_count == zz->LB.Num_Global_Parts)
-         break;
+      xinth[2] = (zhi - d->bbox_lo[2]) / d->bbox_extent[2];
+      if      (xinth[2] < 0.0)   xinth[2] = 0.0;
+      else if (xinth[2] > 1.0)   xinth[2] = 1.0;
+
+      if (xinth[2] - xintl[2] < FUZZY)  {
+          xintl[2] -= (FUZZY/2.0);
+          xinth[2] += (FUZZY/2.0);
+          }
+
+      for (i = 0; i < zz->LB.Num_Global_Parts; i++)  {
+         if (d->final_partition[i].l == d->final_partition[i].r)
+            continue;                    /* ignore empty partition */
+
+         /* find next query result in range [0.0. 1.0] */
+         starting = (d->final_partition[i].l == 0.0)
+          ? 0.0 : (d->final_partition[i].l + FUZZY);
+         fsfc = next_query_3d (zz, xintl, xinth, starting);
+         if (fsfc < 0.0)
+            break;                       /* done, no more to be found */
+
+         /* Find partition containing point and return its number */
+         p = (Partition *) bsearch (&fsfc, d->final_partition,
+          zz->LB.Num_Global_Parts, sizeof (Partition), Zoltan_HSFC_compare);
+         if (p == NULL)
+            ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, can't happen");
+         if (d->final_partition[p->index].l != d->final_partition[p->index].r)
+            part_array [p->index] = 1;    /* ignore empty partitions */
+         i = p->index;
+         }
       }
 
-   /* move results to user supplied array(s) & hope it(they) is(are) big enough */
+
+   /* move results to user supplied arrays & hope they are big enough */
 fini:
    *part_count = 0;
-   if (parts) {
+   if (parts)  {
       *part_count = 0;
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          if (part_array[i] > 0)
             parts[(*part_count)++] = i;
       }
 
-   if (procs) {
+   if (procs)  {
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          if (part_array[i] > 0) {
             first_proc = Zoltan_LB_Part_To_Proc(zz, i, NULL);
@@ -172,7 +188,6 @@ fini:
                   proc_array[j] = 1;
                }
             }
-
       *proc_count = 0;
       for (i = 0; i < zz->Num_Proc; i++)
          if (proc_array[i] > 0)
@@ -182,7 +197,283 @@ fini:
 free:
    ZOLTAN_FREE (&part_array);
    ZOLTAN_TRACE_EXIT (zz, yo);
+
+   end_time = Zoltan_Time (zz->Timer);
+   if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME && zz->Proc == 0)
+      printf ("HSFC Box Assign time is %.6f seconds\n", end_time - start_time);
+
    return err;
+   }
+
+
+
+/* finds the next partition to enter the query space */
+static double next_query_2d (ZZ *zz, double *lquerybox, double *hquerybox,
+ double s)
+   {
+   int state, newstate, savelevel, prune, backtrack;
+   unsigned int temp, x, y;
+   unsigned int savestate, savequad, savenpt;  /* saved info for backtracking */
+   unsigned int qlox, qloy, qhix, qhiy;        /* query box bounds */
+   unsigned int nptx, npty, keyx, keyy, newnpt;
+   unsigned int start[2], startbits;
+   unsigned int intersect_hi, intersect_lo;
+   double t;
+   int level, quadrant, i;                    /* loop counters */
+   static const int *dk[] = {idata2d,  idata2d  +4, idata2d  +8, idata2d  +12};
+   static const int *st[] = {istate2d, istate2d +4, istate2d +8, istate2d +12};
+   static const MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
+
+   /* convert floating normalized, intersected query box corners to integers */
+   qlox = (unsigned int) (lquerybox[0] * (double) IMAX);
+   qloy = (unsigned int) (lquerybox[1] * (double) IMAX);
+   qhix = (unsigned int) (hquerybox[0] * (double) IMAX);
+   qhiy = (unsigned int) (hquerybox[1] * (double) IMAX);
+
+   /* convert floating minimum query hilbert coordinate to integer */
+   start[1] = (unsigned int) (modf (s * (double) IMAX, &t) * (double) IMAX);
+   start[0] = (unsigned int) t;
+
+   state = 0;
+   prune = 1;
+   backtrack = 1;
+   savelevel = -1;
+   nptx = npty = 0;
+   keyx = keyy = 0;
+
+   /* now loop over each level of hilbert curve refinement */
+   for (level = 0; level < MAXLEVEL; level++)  {
+      if (prune)  {
+         /* get next 2 bits of start for pruning from its shift register */
+         startbits =  start[0] >> 30;                 /* extract top two bits */
+         start[0]  = (start[0] << 2) | (start[1] >> 30);  /* shift hi word */
+         start[1]  =  start[1] << 2;                      /* shift lo word */
+         }
+
+      /* compute current search space intersected with the query region */
+      temp = IMAX >> level;        /* top of range ends in all 1 bits */
+      x = ((nptx | temp) > qhix) ? qhix : (nptx | temp);
+      y = ((npty | temp) > qhiy) ? qhiy : (npty | temp);
+      intersect_hi = (((x >> (30-level)) & 2) | ((y >> (31-level)) & 1));
+
+      temp = ~temp;                /* bottom of range ends in all 0 bits */
+      x = ((nptx & temp) < qlox) ? qlox : (nptx & temp);
+      y = ((npty & temp) < qloy) ? qloy : (npty & temp);
+      intersect_lo = (((x >> (30-level)) & 2) | ((y >> (31-level)) & 1));
+
+      /* loop over subquadrants in hilbert curve order to find lowest that
+         intersects with query region and is larger than start key */
+      for (quadrant = 0; quadrant < 4; quadrant++)  {
+         if  (prune && quadrant < startbits) continue;  /* subtree < startbits */
+         if  (prune && quadrant > startbits) prune = 0; /* stop pruning */
+
+         /* intersection test - subquad intersecting with search/query region */
+         newnpt = *(dk[state] + quadrant);         /* get new 2 bit npt value */
+         if (!((newnpt ^ intersect_hi) & (newnpt ^ intersect_lo)))
+            break;   /* successfully found intersecting quadrant at this level */
+         }
+      newstate = *(st[state] + quadrant);
+
+      /* determine backtracking point, in case backtracking is needed */
+      if (backtrack == 1)
+         for (i = quadrant+1; i < 4; i++)  {
+            /* intersect test - subquad intersecting with search/query region */
+            temp = *(dk[state] + i);               /* get new npt */
+            if (!((temp ^ intersect_hi) & (temp ^ intersect_lo)))  {
+               savelevel = level;
+               savestate = *(st[state] + i);
+               savenpt   = temp;
+               savequad  = i;
+               break;
+               }
+            }
+
+      /* test if this round was successful (quadrant < 4), backtrack if not */
+      if (quadrant == 4)  {
+         if (savelevel == -1)
+            return -1.0;             /* report that no solution is available */
+
+         /* restore all conditions to backtrack point */
+         level    = savelevel;
+         newstate = savestate;
+         newnpt   = savenpt;
+         quadrant = savequad;
+
+         /* discard results below backtrack level */
+         nptx &= ~(IMAX >> savelevel);
+         npty &= ~(IMAX >> savelevel);
+         keyx &= ~(IMAX >> savelevel);
+         keyy &= ~(IMAX >> savelevel);
+
+         prune     = 0;  /* no longer need to prune previous branches */
+         backtrack = 0;  /* only 1 backtrack ever required, now done */
+         }
+
+      /* append current derived key and npoint to cumulative total */
+      keyx |= ((quadrant & 2) << (30-level));
+      keyy |= ((quadrant & 1) << (31-level));
+
+      nptx |= ((newnpt   & 2) << (30-level));
+      npty |= ((newnpt   & 1) << (31-level));
+
+      state  = newstate;
+      }
+
+   /* now convert final derived key to floating point representation and exit */
+   start[0] = start[1] = 0;
+   for (i = 0; i < MAXLEVEL; i++)  {
+      start[0] = (start[0] << 2) | (start[1] >> 30);
+      start[1] = (start[1] << 2) | ((keyx >> (30-i)) & 2)
+                                 | ((keyy >> (31-i)) & 1);
+      }
+   return ldexp ((double) start[0], -24) + ldexp((double) start[1], -56);
+   }
+
+/******************************************************************************/
+
+
+
+static double next_query_3d (ZZ *zz, double *lquerybox, double *hquerybox,
+ double s)
+   {
+   int state, newstate, savelevel, prune, backtrack;
+   unsigned int temp, x, y, z;
+   unsigned int savestate, savequad, savenpt;
+   unsigned int qlox, qloy, qloz, qhix, qhiy, qhiz;
+   unsigned int nptx, npty, nptz, keyx, keyy, keyz, newnpt;
+   unsigned int start[2], startbits;
+   unsigned int intersect_hi, intersect_lo;
+   double t;
+   int level, quadrant, i;
+   static const int *dk[] =
+      {idata3d,     idata3d +8,  idata3d +16, idata3d +24,
+       idata3d +32, idata3d +40, idata3d +48, idata3d +56,
+       idata3d +64, idata3d +72, idata3d +80, idata3d +88};
+   static const int *st[] =
+      {istate3d,     istate3d +8,  istate3d +16, istate3d +24,
+       istate3d +32, istate3d +40, istate3d +48, istate3d +56,
+       istate3d +64, istate3d +72, istate3d +80, istate3d +88};
+   static const MAXLEVEL = 18;  /* only 56 significant bits, 18 per dimension */
+
+   /* convert floating query box corners to integers */
+   qlox = (unsigned int) (lquerybox[0] * (double) IMAX);
+   qloy = (unsigned int) (lquerybox[1] * (double) IMAX);
+   qloz = (unsigned int) (lquerybox[2] * (double) IMAX);
+
+   qhix = (unsigned int) (hquerybox[0] * (double) IMAX);
+   qhiy = (unsigned int) (hquerybox[1] * (double) IMAX);
+   qhiz = (unsigned int) (hquerybox[2] * (double) IMAX);
+
+   /* convert floating minimum query hilbert coordinate to integer */
+   start[1] = (unsigned int) (modf (s * (double) IMAX, &t) * (double) IMAX);
+   start[0] = (unsigned int) t;
+
+   state = 0;
+   prune = 1;
+   backtrack = 1;
+   savelevel = -1;
+   nptx = npty = nptz = 0;
+   keyx = keyy = keyz = 0;
+
+   /* now loop over each level of hilbert curve refinement */
+   for (level = 0; level < MAXLEVEL; level++)  {
+      if (prune)  {
+         /* get next 3 bits of start for pruning, treat as shift register */
+         startbits =  start[0] >> 29;                 /* extract top two bits */
+         start[0]  = (start[0] << 3) | (start[1] >> 29);  /* shift hi word */
+         start[1]  =  start[1] << 3;                      /* shift lo word */
+         }
+
+      /* compute current search space intersected with the query region */
+      temp =  IMAX >> level;        /* top of range ends in all 1 bits */
+      x = ((nptx | temp) > qhix) ? qhix : (nptx | temp);
+      y = ((npty | temp) > qhiy) ? qhiy : (npty | temp);
+      z = ((nptz | temp) > qhiz) ? qhiz : (nptz | temp);
+      intersect_hi = ((x >> (29-level)) & 4) 
+                   | ((y >> (30-level)) & 2)
+                   | ((z >> (31-level)) & 1);
+
+      temp = ~temp;             /* bottom of range ends in all 0 bits */
+      x = ((nptx & temp) < qlox) ? qlox : (nptx & temp);
+      y = ((npty & temp) < qloy) ? qloy : (npty & temp);
+      z = ((nptz & temp) < qloz) ? qloz : (nptz & temp);
+      intersect_lo = ((x >> (29-level)) & 4) 
+                   | ((y >> (30-level)) & 2)
+                   | ((z >> (31-level)) & 1);
+
+      /* loop over subquadrants in hilbert curve order to find lowest that
+         intersects with query region and is larger than start key */
+      for (quadrant = 0; quadrant < 8; quadrant++)  {
+         if  (prune && quadrant < startbits)   continue;   /* subtree < startbits */
+         if  (prune && quadrant > startbits)   prune = 0;  /* pruning not required */
+
+         /* intersection test - subquad intersecting with search/query region */
+         newnpt = *(dk[state] + quadrant);         /* get new 2 bit npt value */
+         if (!((newnpt ^ intersect_hi) & (newnpt ^ intersect_lo)))
+            break;   /* successfully found quadrant at this level */
+         }
+      newstate = *(st[state] + quadrant);
+
+      /* determine backtracking point, in case backtracking is needed */
+      if (backtrack == 1)
+         for (i = quadrant+1; i < 8; i++)  {
+            temp = *(dk[state] + i);         /* get new npt */
+
+            /* intersect test - subquad intersecting with search/query region */
+            if (!((temp ^ intersect_hi) & (temp ^ intersect_lo)))  {
+               savelevel = level;
+               savestate = *(st[state] + i);
+               savenpt   = temp;
+               savequad  = i;
+               break;
+               }
+            }
+
+      /* test if this round was successful (quadrant < 8), backtrack if not */
+      if (quadrant == 8)  {
+         if (savelevel == -1)
+            return -1.0;             /* no solution available, report failure */
+
+         /* restore all conditions to backtrack point */
+         level    = savelevel;
+         newstate = savestate;
+         newnpt   = savenpt;
+         quadrant = savequad;
+
+         /* discard results below backtrack level */
+         nptx &= ~(IMAX >> savelevel);
+         npty &= ~(IMAX >> savelevel);
+         nptz &= ~(IMAX >> savelevel);
+         
+         keyx &= ~(IMAX >> savelevel);
+         keyy &= ~(IMAX >> savelevel);
+         keyz &= ~(IMAX >> savelevel);
+
+         prune     = 0;     /* no longer need to prune previous branches */
+         backtrack = 0;     /* only 1 backtrack ever required, now done */
+         }
+
+      /* append current derived key and npoint to cumulative total */
+      state  = newstate;
+
+      keyx |= ((quadrant & 4) << (29-level));
+      keyy |= ((quadrant & 2) << (30-level));
+      keyz |= ((quadrant & 1) << (31-level));
+
+      nptx |= ((newnpt & 4)   << (29-level));
+      npty |= ((newnpt & 2)   << (30-level));
+      nptz |= ((newnpt & 1)   << (31-level));
+      }
+
+   /* now convert final derived key to floating point representation and exit */
+   start[0] = start[1] = 0;
+   for (i = 0; i < MAXLEVEL; i++)  {
+      start[0] = (start[0] << 3) | (start[1] >> 29);
+      start[1] = (start[1] << 3) | ((keyx >> (29-i)) & 4)
+                                 | ((keyy >> (30-i)) & 2) 
+                                 | ((keyz >> (31-i)) & 1);
+      }
+   return ldexp ((double) start[0], -22) + ldexp((double) start[1], -54);
    }
 
 #ifdef __cplusplus

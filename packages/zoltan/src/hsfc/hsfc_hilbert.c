@@ -6,57 +6,6 @@
  *    $Revision$
  ****************************************************************************/
 
-/* ---------------------------------------------------------------------
-Author:     H. Carter Edwards
-
-Copyright:  Copyright (C) 1997   H. Carter Edwards
-
-Purpose:    Inverse Hilbert Space-Filling Curve maps for 2D and 3D.
-
---------------------------------------------------------------------- */
-
-/*----------------------------------------------------------------------
-Description:
-  Inverse of the Hilbert Space-Filling Curve Map from a 2D or 3D
-domain to the 1D domain.  Two different 2D and 3D domains are
-supported.
-
-For the routines 'Zoltan_HSFC_hsfc2d' and 'Zoltan_HSFC_hsfc3d' 
-the 2D and 3D domains are defined as follows.
-Note that
-  *     0   is the minimum value of an unsigned integer
-  *   ~(0u) is the maximum value of an unsigned integer - all bits set
-thus the 2D and 3D domains are
-  *   [0,~(0u)] x [0,~(0u)]
-  *   [0,~(0u)] x [0,~(0u)] x [0,~(0u)]
-respectively.
-
-For the routines 'Zoltan_HSFC_fhsfc2d' and 'Zoltan_HSFC_fhsfc3d' the 
-2D and 3D domains are defined as:
-  *   [0.0,1.0] x [0.0,1.0]
-  *   [0.0,1.0] x [0.0,1.0] x [0.0,1.0]
-respectively.
-
-The 1D domain is a multiword (array of unsigned integers) key.
-This key is essentially an unsigned integer of an arbitrary
-number of bits.  The most significant bit is the leading bit
-of the first (0th) word of the key.  The least significant
-bit is the trailing bit of the last word.
-
-----------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------
-
-Notes from acbauer:
-The maximum significant keylength (nkey) for 2D is 2 and for 3D is 3.
-Any keylength longer than this will have all zeroes beyond the 
-significant keylength.
-
-The 2D SFC starts at [0.0,0.0] and ends at [0.0,1.0], in the limit of 
-the SFC 
-
-----------------------------------------------------------------------*/
-
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -67,282 +16,204 @@ extern "C" {
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
-#include "hsfc_hilbert_const.h"
+#include "hsfc_hilbert_const.h"  /* contains state tables and documentation */
+#include "hsfc.h"
 
-static void Zoltan_HSFC_hsfc2d(unsigned int coord[], int nkey, unsigned int key[]);
-static void Zoltan_HSFC_hsfc3d(unsigned int coord[], int nkey, unsigned int key[]);
 
-/*--------------------------------------------------------------------*/
-/* 2D Hilbert Space-filling curve */
 
-static void Zoltan_HSFC_hsfc2d(
-  unsigned   coord[] , /* IN: Normalized integer coordinates */
-  int        nkey ,    /* IN: Word length of key */
-  unsigned   key[] )   /* OUT: space-filling curve key */
-{
-  volatile static int init = 0 ;
-  volatile static unsigned char gray_inv[ 2 * 2 ] ;
+/* Given a 1-d coordinate in [0,1], returns it as the Hilbert key) */
+double Zoltan_HSFC_InvHilbert1d (ZZ *zz, double *coord)
+   {
+   return *coord;
+   }
 
-  volatile const unsigned NKey  = ( 2 < nkey ) ? 2 : nkey ;
-  volatile const unsigned NBits = ( MaxBits * NKey ) / 2 ;
 
-  volatile unsigned i ;
-  volatile unsigned char order[2+2] ;
-  volatile unsigned char reflect ;
-  
-  /* GRAY coding */
 
-  if ( ! init ) {
-    volatile unsigned char gray[ 2 * 2 ] ;
-    volatile register unsigned k ;
-    volatile register unsigned j ;
+/* Given x,y coordinates in [0,1]x[0,1], returns the Hilbert key [0,1] */
+double Zoltan_HSFC_InvHilbert2d (ZZ *zz, double *coord)
+   {
+   static const int *d[] = {data2d,  data2d  +4, data2d  +8, data2d  +12};
+   static const int *s[] = {state2d, state2d +4, state2d +8, state2d +12};
 
-    gray[0] = 0 ;
-    for ( k = 1 ; k < sizeof(gray) ; k <<= 1 ) {
-      for ( j = 0 ; j < k ; j++ ) gray[k+j] = k | gray[k-(j+1)] ;
-    }
-    for ( k = 0 ; k < sizeof(gray) ; k++ ) gray_inv[ gray[k] ] = k ;
-    init = 1 ;
-  }
+   int level, err;
+   unsigned int key[2], c[2], temp, state;
+   const int MAXLEVEL = 28; /* 56 bits of significance, 28 per dimension */
+   char *yo = "Zoltan_HSFC_InvHilbert2d";
 
-  /* Zero out the key */
+   /* sanity check for input arguments */
+   if (coord[0] < 0.0 | coord[0] > 1.0 | coord[1] < 0.0 | coord[1] > 1.0)
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
 
-  for ( i = 0 ; i < NKey ; ++i ) key[i] = 0 ;
+   /* convert x,y coordinates to integers in range [0, IMAX] */
+   c[0] = (unsigned int) (coord[0] * (double) IMAX);               /* x */
+   c[1] = (unsigned int) (coord[1] * (double) IMAX);               /* y */
 
-  order[0] = 0 ;
-  order[1] = 1 ;
-  reflect = ( 0 << 0 ) | ( 0 );
+   /* use state tables to convert nested quadrant's coordinates level by level */
+   key[0] = key[1] = 0;
+   state = 0;
+   for (level = 0; level < MAXLEVEL; level++) {
+      temp = ((c[0] >> (30-level)) & 2)    /* extract 2 bits at current level */
+           | ((c[1] >> (31-level)) & 1);
 
-  for ( i = 1 ; i <= NBits ; i++ ) {
-    volatile const unsigned s = MaxBits - i ;
-    volatile const unsigned c = gray_inv[ reflect ^ (
-      ( ( ( coord[0] >> s ) & 01 ) << order[0] ) |
-      ( ( ( coord[1] >> s ) & 01 ) << order[1] ) ) ];
+      /* treat key[] as long shift register, shift in converted coordinate */
+      key[0] = (key[0] << 2) | (key[1] >> 30);
+      key[1] = (key[1] << 2) | *(d[state] + temp);
 
-    volatile const unsigned off   = 2 * i ;                   /* Bit offset */
-    volatile const unsigned which = off / MaxBits ;           /* Which word to update */
-    volatile const unsigned shift = MaxBits - off % MaxBits ; /* Which bits to update */
-
-    /* Set the two bits */
-
-    if ( shift == MaxBits ) { /* Word boundary */
-      key[ which - 1 ] |= c ;
-    }
-    else {
-      key[ which ] |= c << shift ;
-    }
-
-    /* Determine the recursive quadrant */
-
-    switch( c ) {
-    case 3:
-      reflect ^= 03 ;
-    case 0:
-      order[2+0] = order[0] ;
-      order[2+1] = order[1] ;
-      order[0] = order[2+1] ;
-      order[1] = order[2+0] ;
-      break ;
-    }
-  }
-}
-
-/*--------------------------------------------------------------------*/
-/* 3D Hilbert Space-filling curve */
-
-static void Zoltan_HSFC_hsfc3d(
-  unsigned int coord[] , /* IN: Normalized integer coordinates */
-  int          nkey ,    /* IN: Word length of 'key' */
-  unsigned int key[] )   /* OUT: space-filling curve key */
-{
-  static int init = 0 ;
-  static unsigned char gray_inv[ 2*2*2 ] ;
-
-  const unsigned NKey  = ( 3 < nkey ) ? 3 : nkey ;
-  const unsigned NBits = ( MaxBits * NKey ) / 3 ;
-
-  unsigned i ;
-  unsigned char axis[3+3] ;
-  
-  /* GRAY coding */
-
-  if ( ! init ) {
-    unsigned char gray[ 2*2*2 ] ;
-    register unsigned k ;
-    register unsigned j ;
-
-    gray[0] = 0 ;
-    for ( k = 1 ; k < sizeof(gray) ; k <<= 1 ) {
-      for ( j = 0 ; j < k ; j++ ) gray[k+j] = k | gray[k-(j+1)] ;
-    }
-    for ( k = 0 ; k < sizeof(gray) ; k++ ) gray_inv[ gray[k] ] = k ;
-    init = 1 ;
-  }
-
-  /* Zero out the key */
-
-  for ( i = 0 ; i < NKey ; ++i ) key[i] = 0 ;
-
-  axis[0] = 0 << 1 ;
-  axis[1] = 1 << 1 ;
-  axis[2] = 2 << 1 ;
-
-/*  for ( i = 1 ; i <= NBits ; i++ ) {  original code, has error */
-for ( i = 1 ; i < NBits ; i++ ) {       /* new version, RTH 3/18/02 */
-    const unsigned s = MaxBits - i ;
-    const unsigned c = gray_inv[
-      (((( coord[ axis[0] >> 1 ] >> s ) ^ axis[0] ) & 01 ) << 0 ) |
-      (((( coord[ axis[1] >> 1 ] >> s ) ^ axis[1] ) & 01 ) << 1 ) |
-      (((( coord[ axis[2] >> 1 ] >> s ) ^ axis[2] ) & 01 ) << 2 ) ];
-    unsigned n ;
-
-    /* Set the 3bits */
-
-    for ( n = 0 ; n < 3 ; ++n ) {
-      const unsigned bit   = 01 & ( c >> ( 2 - n ) );  /* Bit value  */
-      const unsigned off   = 3 * i + n ;               /* Bit offset */
-      const unsigned which = off / MaxBits ;           /* Which word */
-      const unsigned shift = MaxBits - off % MaxBits ; /* Which bits */
-
-      if ( MaxBits == shift ) { /* Word boundary */
-        key[ which - 1 ] |= bit ;
+      state = *(s[state] + temp);
       }
-      else {
-        key[ which ] |= bit << shift ;
+
+   /* convert 2 part Hilbert key to double and return */
+   return ldexp ((double) key[0], -24)  +  ldexp ((double) key[1], -56);
+   }
+
+
+
+/* Given x,y,z coordinates in [0,1]x[0,1]x[0,1], returns Hilbert key in [0,1] */
+double Zoltan_HSFC_InvHilbert3d (ZZ *zz, double *coord)
+   {
+   static const int *d[] =
+     {data3d,     data3d +8,  data3d +16, data3d +24,
+      data3d +32, data3d +40, data3d +48, data3d +56,
+      data3d +64, data3d +72, data3d +80, data3d +88};
+   static const int *s[] =
+     {state3d,     state3d +8,  state3d +16, state3d +24,
+      state3d +32, state3d +40, state3d +48, state3d +56,
+      state3d +64, state3d +72, state3d +80, state3d +88};
+
+   int level, err;
+   unsigned int key[2], c[3], temp, state;
+   const int MAXLEVEL = 19; /* 56 bits of significance, 18+ per dimension */
+   char *yo = "Zoltan_HSFC_InvHilbert3d";
+
+   /* sanity check for input arguments */
+   if (coord[0] < 0.0 | coord[0] > 1.0 | coord[1] < 0.0 | coord[1] > 1.0
+     | coord[2] < 0.0 | coord[2] > 1.0)
+        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Spatial Coordinates out of range.");
+
+   /* convert x,y,z coordinates to integers in range [0,IMAX] */
+   c[0] = (unsigned int) (coord[0] * (double) IMAX);     /* x */
+   c[1] = (unsigned int) (coord[1] * (double) IMAX);     /* y */
+   c[2] = (unsigned int) (coord[2] * (double) IMAX);     /* z */
+
+   /* use state tables to convert nested quadrant's coordinates level by level */
+   key[0] = key[1] = 0;
+   state = 0;
+   for (level = 0; level < MAXLEVEL; level++) {
+      temp = ((c[0] >> (29-level)) & 4)  /* extract 3 bits at current level */
+           | ((c[1] >> (30-level)) & 2)
+           | ((c[2] >> (31-level)) & 1);
+
+      /* treat key[] as long shift register, shift in converted coordinate */
+      key[0] = (key[0] << 3) |  (key[1] >> 29);
+      key[1] = (key[1] << 3) | *(d[state] + temp);
+
+      state = *(s[state] + temp);
       }
-    }
 
-    /* Determine the recursive quadrant */
-
-    axis[3+0] = axis[0] ;
-    axis[3+1] = axis[1] ;
-    axis[3+2] = axis[2] ;
-
-    switch( c ) {
-    case 0:
-      axis[0] = axis[3+2];
-      axis[1] = axis[3+1];
-      axis[2] = axis[3+0];
-      break ;
-    case 1:
-      axis[0] = axis[3+0];
-      axis[1] = axis[3+2];
-      axis[2] = axis[3+1];
-      break ;
-    case 2:
-      axis[0] = axis[3+0];
-      axis[1] = axis[3+1];
-      axis[2] = axis[3+2];
-      break ;
-    case 3:
-      axis[0] = axis[3+2] ^ 01 ;
-      axis[1] = axis[3+0] ^ 01 ;
-      axis[2] = axis[3+1];
-      break ;
-    case 4:
-      axis[0] = axis[3+2];
-      axis[1] = axis[3+0] ^ 01 ;
-      axis[2] = axis[3+1] ^ 01 ;
-      break ;
-    case 5:
-      axis[0] = axis[3+0];
-      axis[1] = axis[3+1];
-      axis[2] = axis[3+2];
-      break ;
-    case 6:
-      axis[0] = axis[3+0];
-      axis[1] = axis[3+2] ^ 01 ;
-      axis[2] = axis[3+1] ^ 01 ;
-      break ;
-    case 7:
-      axis[0] = axis[3+2] ^ 01 ;
-      axis[1] = axis[3+1];
-      axis[2] = axis[3+0] ^ 01 ;
-      break ;
-    default:
-      exit(-1);
-    }
-  }
-}
-
-/*--------------------------------------------------------------------*/
-
-void Zoltan_HSFC_fhsfc2d(
-  double       coord[] , /* IN: Normalized floating point coordinates */
-  int          nkey ,    /* IN: Word length of key */
-  unsigned int key[] )   /* OUT: space-filling curve key */
-{
-  const unsigned int imax = IScale ;
-  const double c0 = (coord[0] <= 0 ) ? 0.0 : (double) imax * coord[0];
-  const double c1 = (coord[1] <= 0 ) ? 0.0 : (double) imax * coord[1];
-  unsigned int c[2];
-
-/* the following were recoded due to a -m63 -o3 gcc bug!!   */
-/*  c[0] = ((double) imax < c0) ? imax : (unsigned int) c0; */
-/*  c[1] = ((double) imax < c1) ? imax : (unsigned int) c1; */
-
-  if ((double) imax < c0) c[0] = imax;
-  else                    c[0] = (unsigned int) c0;
-
-  if ((double) imax < c1) c[1] = imax;
-  else                    c[1] = (unsigned int) c1;
-
-  Zoltan_HSFC_hsfc2d( c , nkey , key );
-}
-
-void Zoltan_HSFC_fhsfc3d(
-  double     coord[] , /* IN: Normalized floating point coordinates */
-  int        nkey ,    /* IN: Word length of key */
-  unsigned   key[] )   /* OUT: space-filling curve key */
-{
-  const unsigned imax = IScale ;
-  const double c0 = (coord[0] <= 0 ) ? 0.0 : (double) imax * coord[0] ;
-  const double c1 = (coord[1] <= 0 ) ? 0.0 : (double) imax * coord[1] ;
-  const double c2 = (coord[2] <= 0 ) ? 0.0 : (double) imax * coord[2] ;
-  unsigned c[3] ;
-
-/* the following were recoded due to a -m63 -o3 gcc bug!! */
-/*  c[0] = (unsigned) (( imax < c0 ) ? imax : c0 );       */
-/*  c[1] = (unsigned) (( imax < c1 ) ? imax : c1 );       */
-/*  c[2] = (unsigned) (( imax < c2 ) ? imax : c2 );       */
-  
-  if ((double) imax < c0) c[0] = imax;
-  else                    c[0] = (unsigned int) c0;
-
-  if ((double) imax < c1) c[1] = imax;
-  else                    c[1] = (unsigned int) c1;
-
-  if ((double) imax < c2) c[2] = imax;
-  else                    c[2] = (unsigned int) c2;
-
-  Zoltan_HSFC_hsfc3d( c , nkey , key );
-}
-
-
-
-/* The following routines were added by rheaphy for use in hsfc.c */
-
-double Zoltan_HSFC_IHilbert1d (double *coord)
-   {
-   return coord[0] ;
+   /* convert 2 part Hilbert key to double and return */
+   return ldexp ((double) key[0], -25)  +  ldexp ((double) key[1], -57);
    }
 
 
-double Zoltan_HSFC_IHilbert2d (double *coord)
+
+/* Given the Hilbert key, returns it as the coordinate in [0,1] */
+void Zoltan_HSFC_Hilbert1d (ZZ *zz, double *coord, double key)
    {
-   unsigned int key[4] ;       /* dimensioned higher than expected because of old code bug */
-   Zoltan_HSFC_fhsfc2d (coord, 2, key);
-   return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
+   *coord = key;
    }
 
 
-double Zoltan_HSFC_IHilbert3d (double *coord)
+
+/* Given the Hilbert key, returns the 2-d coordinates in [0,1]x[0,1] */
+void Zoltan_HSFC_Hilbert2d (ZZ *zz, double *coord, double key)
    {
-   unsigned int key[4] ;       /* dimensioned higher than expected because of old code bug */
-   Zoltan_HSFC_fhsfc3d (coord, 2, key) ;
-   return ldexp((double) key[0], -32) + ldexp((double) key[1], -64) ;
+   static const int *d[] = {idata2d,  idata2d  +4, idata2d  +8, idata2d  +12};
+   static const int *s[] = {istate2d, istate2d +4, istate2d +8, istate2d +12};
+   int level, state, err;
+   unsigned int c[2], ikey[2], temp;
+   double t;
+   static const MAXLEVEL = 28;  /* only 56 significant bits, 28 per dimension */
+   char *yo = "Zoltan_HSFC_Hilbert2d";
+
+   /* sanity check for input argument */
+   if (key < 0.0 | key > 1.0)
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Hilbert coordinate out of range.");
+
+   ikey[1] = (unsigned int) (modf (key * (double) IMAX, &t) * (double) IMAX);
+   ikey[0] = (unsigned int) t;
+
+   /* use state tables to convert nested quadrant's coordinates level by level */
+   c[0] = c[1] = 0;
+   state = 0;
+   for (level = 0; level < MAXLEVEL; level++) {
+      temp  = *(d[state] + (ikey[0] >> 30));      /* 2 bits: xy */
+      state = *(s[state] + (ikey[0] >> 30));
+
+      c[0] |= ((temp & 2) << (30-level));         /* insert x bit */
+      c[1] |= ((temp & 1) << (31-level));         /* insert y bit */
+
+      /* treating ikey[] as shift register, shift next 2 bits in place */
+      ikey[0] = (ikey[0] << 2) | (ikey[1] >> 30);
+      ikey[1] =  ikey[1] << 2;
+      }
+
+   /* convert integer coordinates to doubles */
+   coord[0] = (double) c[0] / (double) IMAX;      /* x in [0,1] */
+   coord[1] = (double) c[1] / (double) IMAX;      /* y in [0,1] */
    }
+
+
+
+/* Given the Hilbert key, returns the 3-d coordinates in [0,1]x[0,1]x[0,1] */
+void Zoltan_HSFC_Hilbert3d (ZZ *zz, double *coord, double key)
+   {
+   static const int *d[] =
+     {idata3d,      idata3d +8,   idata3d +16,  idata3d +24,
+      idata3d +32,  idata3d +40,  idata3d +48,  idata3d +56,
+      idata3d +64,  idata3d +72,  idata3d +80,  idata3d +88};
+   static const int *s[] =
+     {istate3d,     istate3d +8,  istate3d +16, istate3d +24,
+      istate3d +32, istate3d +40, istate3d +48, istate3d +56,
+      istate3d +64, istate3d +72, istate3d +80, istate3d +88};
+
+   int level, state, err;
+   unsigned int c[3], ikey[3], temp;
+   double t;
+   static const MAXLEVEL = 19;   /* 56 significant bits, 18+ per dimension */
+   char *yo = "Zoltan_HSFC_Hilbert3d";
+
+   /* sanity check for input argument */
+   if (key < 0.0 | key > 1.0)
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Hilbert coordinate out of range.");
+
+   ikey[1] = (unsigned int) (modf (key * (double) IMAX, &t) * (double) IMAX);
+   ikey[0] = (unsigned int) t;
+
+   /* use state tables to convert nested quadrant's coordinates level by level */
+   c[0] = c[1] = c[2] = 0;
+   state = 0;
+   for (level = 0; level < MAXLEVEL; level++) {
+      temp  = *(d[state] + (ikey[0] >> 29));     /* get next 3 bits: xyz */
+      state = *(s[state] + (ikey[0] >> 29));
+
+      c[0] |= ((temp & 4) << (29-level));        /* insert x bit */
+      c[1] |= ((temp & 2) << (30-level));        /* insert y bit */
+      c[2] |= ((temp & 1) << (31-level));        /* insert z bit */
+
+      /* treating ikey[] as shift register, shift next 3 bits in place */
+      ikey[0] = (ikey[0] << 3) | (ikey[1] >> 29);
+      ikey[1] =  ikey[1] << 3;
+      }
+
+   /* convert coordinates to doubles */
+   coord[0] = (double) c[0] / (double) IMAX;     /* x in [0,1] */
+   coord[1] = (double) c[1] / (double) IMAX;     /* y in [0,1] */
+   coord[2] = (double) c[2] / (double) IMAX;     /* z in [0,1] */
+   }
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+

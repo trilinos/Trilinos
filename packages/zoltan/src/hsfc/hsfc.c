@@ -103,6 +103,45 @@ int Zoltan_HSFC(
    *num_export = *num_import = -1;              /* in case of early error exit */
    MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
 
+#ifdef RTHRTH
+if (zz->Proc == 0)
+{
+double x[3], f;
+int i, j;
+for (i = 0; i <= 4; i++)
+   for (j = 0; j <= 4; j++)
+         {
+         x[0] = i * 0.25;
+         x[1] = j * 0.25;
+         f = Zoltan_HSFC_InvHilbert2d(zz, x);
+         printf ("RTHRTH: z %.6f,  x[0] %.6f, x[1] %.6f\n", f, x[0], x[1]);
+         }
+}
+#endif
+
+#ifdef RTHRTH
+for (i = 0; i < 21; i++)
+  {
+  double fsfc, xdelta, xx[3];
+  fsfc = 0.05 * i;
+  Zoltan_HSFC_Hilbert3d (zz, xx, fsfc);
+  xdelta = Zoltan_HSFC_InvHilbert3d (zz, xx);
+  if (zz->Proc == 0)
+     printf ("RTHRTH: 3dTEST: %.6f   %.6f  %9.6f %.6f %.6f %.6f\n", fsfc, xdelta, fsfc-xdelta, xx[0],xx[1],xx[2]);
+  }
+
+for (i = 0; i < 21; i++)
+  {
+  double fsfc, xdelta, xx[3];
+  fsfc = 0.05 * i;
+  Zoltan_HSFC_Hilbert2d (zz, xx, fsfc);
+  xdelta = Zoltan_HSFC_InvHilbert2d (zz, xx);
+  if (zz->Proc == 0)
+     printf ("RTHRTH: 2dTEST: %.6f   %.6f  %9.6f\n", fsfc, xdelta, fsfc-xdelta);
+  }
+#endif
+
+
   /* Check for needed query functions. */
   /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
   if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL)
@@ -209,15 +248,15 @@ int Zoltan_HSFC(
    ZOLTAN_TRACE_DETAIL (zz, yo, "Determined problem bounding box");
 
    /* Save appropriate HSFC function for later use below and in point_assign() */
-   if      (d->ndimension == 1)  d->fhsfc = Zoltan_HSFC_IHilbert1d;
-   else if (d->ndimension == 2)  d->fhsfc = Zoltan_HSFC_IHilbert2d;
-   else if (d->ndimension == 3)  d->fhsfc = Zoltan_HSFC_IHilbert3d;
+   if      (d->ndimension == 1)  d->fhsfc = Zoltan_HSFC_InvHilbert1d;
+   else if (d->ndimension == 2)  d->fhsfc = Zoltan_HSFC_InvHilbert2d;
+   else if (d->ndimension == 3)  d->fhsfc = Zoltan_HSFC_InvHilbert3d;
 
    /* Scale coordinates to bounding box, compute HSFC */
    for (i = 0; i < ndots; i++) {
       for (j = 0; j < d->ndimension; j++)
          out[j] = (dots[i].x[j] - d->bbox_lo[j]) / d->bbox_extent[j];
-      dots[i].fsfc = d->fhsfc (out);      /* Note, this is a function call */
+      dots[i].fsfc = d->fhsfc (zz, out);      /* Note, this is a function call */
       }
 
    /* Initialize grand partition to equally spaced intervals on [0,1] */
@@ -325,7 +364,6 @@ int Zoltan_HSFC(
       grand_partition[0].l        = 0.0;
       grand_partition[pcount-1].r = 1.0;
       } /* end of loop */
-
 
    ZOLTAN_TRACE_DETAIL (zz, yo, "Exited main loop");
    Zoltan_Multifree (__FILE__, __LINE__, 3, &grand_weight, &partition, &delta);

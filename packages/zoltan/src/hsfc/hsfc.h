@@ -79,7 +79,7 @@ typedef struct HSFC_Data {
    double     bbox_extent[3];    /* length of each side of bounding box */
    int        nloops;            /* number of loops for load balancing */
    int        ndimension;        /* number of dimensions in problem (2 or 3) */
-   double    (*fhsfc)(double*);  /* space filling curve function */
+   double    (*fhsfc)(ZZ*, double*);  /* space filling curve function */
    } HSFC_Data;                  /* data preserved for point & box drop later */
 
 
