@@ -61,6 +61,24 @@ rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 # Order matters here!
 rosenbrock_LDADD = -L$(top_builddir)/src -L$(top_builddir)/example -lnoxexample -lnox 
 
+# ------------------------------------------------------------------------
+# For using a special archiver
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: Why is the "else" there?  For some reason, automake
+# fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
+# define it manually.
+
+if USE_ALTERNATE_AR
+
+libnox_a_AR = $(ALTERNATE_AR)
+
+else
+
+libnox_a_AR = $(AR) cru
+
+endif
+
 MAINTAINERCLEANFILES = Makefile.in 
 
 
