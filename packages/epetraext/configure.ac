@@ -484,6 +484,7 @@ AC_CONFIG_FILES([
                 example/Makefile
                 example/inout/Makefile
                 example/zoltan/Makefile
+		example/matlab/Makefile
 		])
 
 AC_OUTPUT()
