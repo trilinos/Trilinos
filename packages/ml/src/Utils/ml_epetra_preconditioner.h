@@ -40,6 +40,10 @@ namespace ML_Epetra
   //! Sets classical smoothed aggregation.
   int SetDefaultsSA(Teuchos::ParameterList & List, char * Prefix = "");
 
+#ifdef HAVE_ML_TRIUTILS
+  //! Add values set in Command Line Parser to the internally stored parameter list object.
+  int Set(Teuchos::ParameterList & List, Trilinos_Util::CommandLineParser & CLP);  
+#endif
 
 //! MultiLevelPreconditioner: An implementation of the Epetra_RowMatrix class.
 /*! MultiLevelPreconditioner class implements Epetra_RowMatrix using a
@@ -381,6 +385,9 @@ private:
   //! Sets prolongator smoother parameters.
   void SetSmoothingDamping();
 
+  //! Sets damping parameter for classical smoothed aggregation.
+  void SetSmoothingDampingClassic();
+  
   //! Prints a line on cout.
   void PrintLine() const;
 

@@ -293,9 +293,15 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
   // FIXME: how to deal with Tmat_array and Tmat_trans_array ???
   // are they useful ???
   
-  if( Label_ ) delete Label_;
+  if( Label_ ) {
+    delete [] Label_;
+    Label_ = 0;
+  }
   
-  if( LevelID_ != 0 ) delete [] LevelID_;
+  if( LevelID_ ) {
+    delete [] LevelID_;
+    LevelID_ = 0;
+  }
   
   // stick data in OutputList
 
@@ -319,7 +325,7 @@ void MultiLevelPreconditioner::Destroy_ML_Preconditioner()
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
     cout << PrintMsg_ << "Construction time             = " << ConstructionTime_ << " (s)" << endl;
     cout << PrintMsg_ << "Time for all applications     = " << TotalTime << " (s)" << endl;
-    cout << PrintMsg_ << "Time for first application    = " << FirstApplicationTime_ << " (s)" << endl;
+    cout << PrintMsg_ << "Time for first application(s) = " << FirstApplicationTime_ << " (s)" << endl;
     cout << PrintMsg_ << "Each of " << NumApplications_
 	 << " applications took " << TotalTime/NumApplications_ << " (s)" << endl;
     PrintLine();
@@ -434,6 +440,163 @@ MultiLevelPreconditioner::MultiLevelPreconditioner( ML_Operator * Operator,
 // ================================================ ====== ==== ==== == =
 
 #ifdef HAVE_ML_TRIUTILS
+int ML_Epetra::Set(Teuchos::ParameterList & List,
+		   Trilinos_Util::CommandLineParser & CLP) 
+{
+ 
+  if( CLP.Has("-ml_defaults") )
+    SetDefaults(CLP.Get("-defaults","DD"),List);
+
+  // general
+  if( CLP.Has("-ml_num_levels") )
+    List.set("max levels",CLP.Get("-ml_num_levels",2));
+  if( CLP.Has("-ml_incr_or_decr" ) )
+      List.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
+  if( CLP.Has("-ml_output" ) )
+      List.set("output",CLP.Get("-ml_output",10));
+  
+  // smoother
+  if( CLP.Has("-ml_smoother_type") )
+    List.set("smoother: type", CLP.Get("-ml_smoother_type","Gauss-Seidel"));
+  
+  if( CLP.Has("-ml_smoother_type_level_0") )
+    List.set("smoother: type (level 0)", CLP.Get("-ml_smoother_type_level_0","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_1") )
+    List.set("smoother: type (level 1)", CLP.Get("-ml_smoother_type_level_1","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_2") )
+    List.set("smoother: type (level 2)", CLP.Get("-ml_smoother_type_level_2","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_3") )
+    List.set("smoother: type (level 3)", CLP.Get("-ml_smoother_type_level_3","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_4") )
+    List.set("smoother: type (level 4)", CLP.Get("-ml_smoother_type_level_4","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_5") )
+    List.set("smoother: type (level 5)", CLP.Get("-ml_smoother_type_level_5","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_6") )
+    List.set("smoother: type (level 6)", CLP.Get("-ml_smoother_type_level_6","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_7") )
+    List.set("smoother: type (level 7)", CLP.Get("-ml_smoother_type_level_7","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_8") )
+    List.set("smoother: type (level 8)", CLP.Get("-ml_smoother_type_level_8","Gauss-Seidel"));
+  if( CLP.Has("-ml_smoother_type_level_9") )
+    List.set("smoother: type (level 9)", CLP.Get("-ml_smoother_type_level_9","Gauss-Seidel"));
+  
+  if( CLP.Has("-ml_smoother_sweeps") )
+    List.set("smoother: sweeps", CLP.Get("-ml_smoother_sweeps",1));
+  if( CLP.Has("-ml_smoother_pre_or_post") )
+    List.set("smoother: pre or post", CLP.Get("-ml_smoother_pre_or_post","both"));
+  if( CLP.Has("-ml_smoother_damping_factor") )
+    List.set("smoother: damping factor", CLP.Get("-ml_smoother_damping_factor",1.0));
+
+  // smoother-advanced
+  if( CLP.Has("-ml_RP_smoothing") )
+    List.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
+  if( CLP.Has("-ml_RP_damping") )
+    List.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","fov-10"));
+
+  // aggregation
+  if( CLP.Has("-ml_aggr_scheme") )
+    List.set("aggregation: type", CLP.Get("-ml_aggr_scheme","Uncoupled"));
+
+  if( CLP.Has("-ml_aggr_scheme_level_0") )
+    List.set("aggregation: type (level 0)", CLP.Get("-ml_aggr_scheme_level_0","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_1") )
+    List.set("aggregation: type (level 1)", CLP.Get("-ml_aggr_scheme_level_1","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_2") )
+    List.set("aggregation: type (level 2)", CLP.Get("-ml_aggr_scheme_level_2","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_3") )
+    List.set("aggregation: type (level 3)", CLP.Get("-ml_aggr_scheme_level_3","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_4") )
+    List.set("aggregation: type (level 4)", CLP.Get("-ml_aggr_scheme_level_4","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_5") )
+    List.set("aggregation: type (level 5)", CLP.Get("-ml_aggr_scheme_level_5","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_6") )
+    List.set("aggregation: type (level 6)", CLP.Get("-ml_aggr_scheme_level_6","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_7") )
+    List.set("aggregation: type (level 7)", CLP.Get("-ml_aggr_scheme_level_7","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_8") )
+    List.set("aggregation: type (level 8)", CLP.Get("-ml_aggr_scheme_level_8","Uncoupled"));
+  if( CLP.Has("-ml_aggr_scheme_level_9") )
+    List.set("aggregation: type (level 9)", CLP.Get("-ml_aggr_scheme_level_9","Uncoupled"));
+
+  if( CLP.Has("-ml_num_nodes_per_aggr") )
+    List.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));
+
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_0") )
+    List.set("aggregation: nodes per aggregate (level 0)", CLP.Get("-ml_num_nodes_per_aggr_level_0",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_1") )
+    List.set("aggregation: nodes per aggregate (level 1)", CLP.Get("-ml_num_nodes_per_aggr_level_1",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_2") )
+    List.set("aggregation: nodes per aggregate (level 2)", CLP.Get("-ml_num_nodes_per_aggr_level_2",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_3") )
+    List.set("aggregation: nodes per aggregate (level 3)", CLP.Get("-ml_num_nodes_per_aggr_level_3",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_4") )
+    List.set("aggregation: nodes per aggregate (level 4)", CLP.Get("-ml_num_nodes_per_aggr_level_4",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_5") )
+    List.set("aggregation: nodes per aggregate (level 5)", CLP.Get("-ml_num_nodes_per_aggr_level_5",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_6") )
+    List.set("aggregation: nodes per aggregate (level 6)", CLP.Get("-ml_num_nodes_per_aggr_level_6",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_7") )
+    List.set("aggregation: nodes per aggregate (level 7)", CLP.Get("-ml_num_nodes_per_aggr_level_7",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_8") )
+    List.set("aggregation: nodes per aggregate (level 8)", CLP.Get("-ml_num_nodes_per_aggr_level_8",512));
+  if( CLP.Has("-ml_num_nodes_per_aggr_level_9") )
+    List.set("aggregation: nodes per aggregate (level 9)", CLP.Get("-ml_num_nodes_per_aggr_level_9",512));
+
+  if( CLP.Has("-ml_num_local_aggr") )
+    List.set("aggregation: local aggregates", CLP.Get("-ml_num_local_aggr",512));
+
+  if( CLP.Has("-ml_num_local_aggr_level_0") )
+    List.set("aggregation: local aggregates (level 0)", CLP.Get("-ml_num_local_aggr_level_0",512));
+  if( CLP.Has("-ml_num_local_aggr_level_1") )
+    List.set("aggregation: local aggregates (level 1)", CLP.Get("-ml_num_local_aggr_level_1",512));
+  if( CLP.Has("-ml_num_local_aggr_level_2") )
+    List.set("aggregation: local aggregates (level 2)", CLP.Get("-ml_num_local_aggr_level_2",512));
+  if( CLP.Has("-ml_num_local_aggr_level_3") )
+    List.set("aggregation: local aggregates (level 3)", CLP.Get("-ml_num_local_aggr_level_3",512));
+  if( CLP.Has("-ml_num_local_aggr_level_4") )
+    List.set("aggregation: local aggregates (level 4)", CLP.Get("-ml_num_local_aggr_level_4",512));
+  if( CLP.Has("-ml_num_local_aggr_level_5") )
+    List.set("aggregation: local aggregates (level 5)", CLP.Get("-ml_num_local_aggr_level_5",512));
+  if( CLP.Has("-ml_num_local_aggr_level_6") )
+    List.set("aggregation: local aggregates (level 6)", CLP.Get("-ml_num_local_aggr_level_6",512));
+  if( CLP.Has("-ml_num_local_aggr_level_7") )
+    List.set("aggregation: local aggregates (level 7)", CLP.Get("-ml_num_local_aggr_level_7",512));
+  if( CLP.Has("-ml_num_local_aggr_level_8") )
+    List.set("aggregation: local aggregates (level 8)", CLP.Get("-ml_num_local_aggr_level_8",512));
+  if( CLP.Has("-ml_num_local_aggr_level_9") )
+    List.set("aggregation: local aggregates (level 9)", CLP.Get("-ml_num_local_aggr_level_9",512));
+
+  if( CLP.Has("-ml_aggr_damping_factor") )
+    List.set("aggregation: damping factor", CLP.Get("-ml_aggr_damping_factor",1.333));
+  if( CLP.Has("-ml_compute_field_of_values") )
+    List.set("aggregation: compute field of values", true);
+  if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
+    List.set("aggregation: compute field of values for non-scaled", true);
+  
+  // coarse
+  if( CLP.Has("-ml_coarse_type") )
+    List.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
+  if( CLP.Has("-ml_coarse_max_procs") ) 
+    List.set("coarse: max processes", CLP.Get("-ml_coarse_max_procs",4));
+
+  // eigen-analysis
+  if( CLP.Has("-ml_eigen_analysis_type") )
+    List.set("eigen-analysis: type", CLP.Get("-ml_eigen_analysis_type","Anorm"));
+  if( CLP.Has("-ml_eigen_analysis_tol") )
+    List.set("eigen-analysis: tolerance", CLP.Get("-ml_eigen_analysis_tol",1e-2));
+  if( CLP.Has("-ml_compute_null_space") )
+    List.set("compute null space", CLP.Has("-ml_compute_null_space"));
+  if( CLP.Has("-ml_null_space_dim") )
+    List.set("null space dimension", CLP.Get("-ml_null_space_dim",1));
+  if( CLP.Has("-ml_add_default_null_space") )
+    List.set("add default null space", CLP.Has("-ml_add_default_null_space"));
+
+  return 0;
+  
+}
+
+// ================================================ ====== ==== ==== == =
+
 MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
 						   Trilinos_Util::CommandLineParser & CLP,
 						   const bool ComputePrec ) :
@@ -446,65 +609,8 @@ MultiLevelPreconditioner::MultiLevelPreconditioner(const Epetra_RowMatrix & RowM
   /* Parse command line to get main options                                 */
   /* ********************************************************************** */
 
-  if( CLP.Has("-ml_defaults") )
-    SetDefaults(CLP.Get("-defaults","DD"),List_);
-
-  // general
-  if( CLP.Has("-ml_num_levels") )
-    List_.set("max levels",CLP.Get("-ml_num_levels",2));
-  if( CLP.Has("-ml_incr_or_decr" ) )
-      List_.set("increasing or decreasing",CLP.Get("-ml_incr_or_decr","increasing"));
-  if( CLP.Has("-ml_output" ) )
-      List_.set("output",CLP.Get("-ml_output",10));
-  
-  // smoother
-  if( CLP.Has("-ml_smoother_type") )
-    List_.set("smoother: type", CLP.Get("-ml_smoother_type","Gauss-Seidel"));
-  if( CLP.Has("-ml_smoother_sweeps") )
-    List_.set("smoother: sweeps", CLP.Get("-ml_smoother_sweeps",1));
-  if( CLP.Has("-ml_smoother_pre_or_post") )
-    List_.set("smoother: pre or post", CLP.Get("-ml_smoother_pre_or_post","both"));
-  if( CLP.Has("-ml_smoother_damping_factor") )
-    List_.set("smoother: damping factor", CLP.Get("-ml_smoother_damping_factor",1.0));
-
-  // smoother-advanced
-  if( CLP.Has("-ml_RP_smoothing") )
-    List_.set("R and P smoothing: type", CLP.Get("-ml_RP_smoothing","classic"));
-  if( CLP.Has("-ml_RP_damping") )
-    List_.set("R and P smoothing: damping", CLP.Get("-ml_RP_damping","classic"));
-
-  // aggregation
-  if( CLP.Has("-ml_num_nodes_per_aggr") )
-    List_.set("aggregation: nodes per aggregate", CLP.Get("-ml_num_nodes_per_aggr",512));
-  if( CLP.Has("-ml_num_local_aggr") )
-    List_.set("aggregation: local aggregates", CLP.Get("-ml_num_local_aggr",512));
-  if( CLP.Has("-ml_aggr_scheme") )
-    List_.set("aggregation: type", CLP.Get("-ml_aggr_scheme","Uncoupled"));
-  if( CLP.Has("-ml_aggr_damping_factor") )
-    List_.set("aggregation: damping factor", CLP.Get("-ml_aggr_damping_factor",1.333));
-  if( CLP.Has("-ml_compute_field_of_values") )
-    List_.set("aggregation: compute field of values", true);
-  if( CLP.Has("-ml_compute_field_of_values_non_scaled") )
-    List_.set("aggregation: compute field of values for non-scaled", true);
-  
-  // coarse
-  if( CLP.Has("-ml_coarse_type") )
-    List_.set("coarse: type", CLP.Get("-ml_coarse_type","Amesos-KLU"));
-  if( CLP.Has("-ml_coarse_max_procs") ) 
-    List_.set("coarse: max processes", CLP.Get("-ml_coarse_max_procs",4));
-
-  // eigen-analysis
-  if( CLP.Has("-ml_eigen_analysis_type") )
-    List_.set("eigen-analysis: type", CLP.Get("-ml_eigen_analysis_type","Anorm"));
-  if( CLP.Has("-ml_eigen_analysis_tol") )
-    List_.set("eigen-analysis: tolerance", CLP.Get("-ml_eigen_analysis_tol",1e-2));
-  if( CLP.Has("-ml_compute_null_space") )
-    List_.set("compute null space", CLP.Has("-ml_compute_null_space"));
-  if( CLP.Has("-ml_null_space_dim") )
-    List_.set("null space dimension", CLP.Get("-ml_null_space_dim",1));
-  if( CLP.Has("-ml_add_default_null_space") )
-    List_.set("add default null space", CLP.Has("-ml_add_default_null_space"));
-  
+  Set(List_,CLP);
+   
   /* ********************************************************************** */
   /* back to normal initialization                                          */
   /* ********************************************************************** */
@@ -534,7 +640,10 @@ void MultiLevelPreconditioner::Initialize()
   NullSpaceToFree_ = 0;
 
   Label_ = 0;
-  LevelID_ = new int[MaxLevels_];
+  LevelID_ = 0;
+
+  ml_ = 0;
+  agg_ = 0;
   
   sprintf(ErrorMsg_,"ERROR (ML_Prec) : ");
   PrintMsg_ = "";
@@ -591,7 +700,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
 
   FirstApplication_ = true;
 
-  if( Label_ ) delete Label_;
+  if( Label_ ) delete [] Label_;
   
   Label_ = new char[80];
   
@@ -626,7 +735,8 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
   
   int FinestLevel;
-  
+
+  LevelID_ = new int[NumLevels_];
   if( IsIncreasing == "increasing" ) {
     FinestLevel = 0;
     for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel+i;
@@ -646,6 +756,8 @@ int MultiLevelPreconditioner::ComputePreconditioner()
     cout << PrintMsg_ << "*** " << endl;
     cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner" << endl;
     cout << PrintMsg_ << "***" << endl;
+    cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
+	 << " rows, distributed over " << Comm().NumProc() << " process(es)" << endl;
     cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
     if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
     else                               cout << PrintMsg_ << "Using decreasing levels. ";
@@ -744,17 +856,17 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* ********************************************************************** */
   /* minor settings                                                         */
   /* ********************************************************************** */
-  
-  int MaxCoarseSize = 50;
-  sprintf(parameter,"%scoarse: max size", Prefix_);
-  MaxCoarseSize = List_.get(parameter, MaxCoarseSize);
-  ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   double Threshold = 0.0;
   sprintf(parameter,"%saggregation: threshold", Prefix_);
   Threshold = List_.get(parameter, Threshold);
   ML_Aggregate_Set_Threshold(agg_,Threshold);
-  
+    
+  int MaxCoarseSize = 50;
+  sprintf(parameter,"%scoarse: max size", Prefix_);
+  MaxCoarseSize = List_.get(parameter, MaxCoarseSize);
+  ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
+
   int ReqAggrePerProc = 128;
   // compatibility with an older version
   sprintf(parameter,"%saggregation: req aggregates per process", Prefix_);
@@ -786,7 +898,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   /* to ML_NO. It does affect METIS and ParMETIS only.                      */
   /* ********************************************************************** */
 
-  bool UseDropping = true;
+  bool UseDropping = false;
   sprintf(parameter,"%saggregation: use dropping", Prefix_);
   UseDropping = List_.get(parameter, UseDropping);
   if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
@@ -1215,8 +1327,8 @@ void MultiLevelPreconditioner::SetSmoothers()
 	cerr << ErrorMsg_ << "Smoother not recognized!" << endl
 	     << ErrorMsg_ << "(file " << __FILE__ << ",line " << __LINE__ << ")" << endl
 	     << ErrorMsg_ << "Now is: " << Smoother << ". It should be: " << endl
-	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel>/<Block Gauss-Seidel> / <MLS>" << endl
-	     << ErrorMsg_ << "<Aztec> / <IFPACK>" << endl;
+	     << ErrorMsg_ << "<Jacobi> / <Gauss-Seidel> / <block Gauss-Seidel> / <MLS>" << endl
+	     << ErrorMsg_ << "<symmetric Gauss-Seidel> / <Aztec> / <IFPACK>" << endl;
       exit( EXIT_FAILURE );
     }
     
@@ -1346,7 +1458,7 @@ void MultiLevelPreconditioner::SetAggregation()
          if( Comm().MyPID() == 0 ) {
 	   cout << ErrorMsg_ << "specified options ("
 		<< CoarsenScheme << ") not valid. Should be:" << endl;
-	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <MIS> / <Uncoupled> / <Coupled> / <Hybrid>" << endl;
+	   cout << ErrorMsg_ << "<METIS> / <ParMETIS> / <MIS> / <Uncoupled> / <Coupled> / <Uncoupled-MIS>" << endl;
 	 }
 	 exit( EXIT_FAILURE );
        } 
@@ -1695,13 +1807,6 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
   Epetra_Time Time(Comm());
   
   char parameter[80];
-  
-  double DampingFactor = 1.333;
-  if( SolvingMaxwell_ ) DampingFactor = 0.0;
-
-  sprintf(parameter,"%saggregation: damping factor", Prefix_);
-  DampingFactor = List_.get(parameter, DampingFactor);
-  ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
 
   /* ********************************************************************** */
   /* Strategies to determine the field-of-values.                           */
@@ -1722,25 +1827,8 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
     /* ********************************************************************** */
     /* For "classical" approach to determine lambda_max only.                 */
     /* ********************************************************************** */
-    
-    sprintf(parameter,"%seigen-analysis: type", Prefix_);
-    string str = List_.get(parameter,"Anorm");
 
-    if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
-    
-    if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-    else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-    else if( str == "Anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
-    else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
-    else {
-      if( Comm().MyPID() == 0 ) {
-	cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
-	     << "(" << str << ")" << endl;
-	cerr << ErrorMsg_ << "It should be: " << endl
-	     << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
-      }
-      exit( EXIT_FAILURE );
-    }
+    SetSmoothingDampingClassic();
     
   } else if( RandPSmoothing == "advanced" ) {
 
@@ -1793,8 +1881,6 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : non-smoothed aggregation" << endl;
 
-      agg_->Restriction_smoothagg_transpose = ML_FALSE;
-      
       field_of_values->choice     =  0;
       field_of_values->poly_order =  0;
       // I don't really need them, smoothing will be set to zero
@@ -1806,13 +1892,16 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[1] =  0.0;
       field_of_values->P_coeff[2] =  0.0;
 
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+
+      agg_->Restriction_smoothagg_transpose = ML_FALSE;      
       
     } else if( DampingType == "almost-non-smoothed" ) {
 
       if( verbose_ )
 	cout << PrintMsg_ << "R and P smoothing : almost non-smoothed aggregation" << endl;
 
-      field_of_values->choice     =  0;
+      field_of_values->choice     =  1;
       field_of_values->poly_order =  0;
       // I don't really need them, smoothing will be set to zero
       field_of_values->R_coeff[0] =  0.000000001;
@@ -1822,11 +1911,14 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[0] =  0.000000001;
       field_of_values->P_coeff[1] =  0.0;
       field_of_values->P_coeff[2] =  0.0;
-      
-    } else if( DampingType == "default" || DampingType == "ray" ) {
 
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+      
+    } else if( DampingType == "fov-1" ) {
+
+      // those are the coefficients proposed by Ray
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using default values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `fov-1' values" << endl;
       
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
@@ -1838,11 +1930,13 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[0] =  1.878;
       field_of_values->P_coeff[1] = -2.515;
       field_of_values->P_coeff[2] =  0.942;
+
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
       
-    } else if( DampingType == "fov" ) {
+    } else if( DampingType == "fov-2" ) {
 
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using fov values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `fov-2' values" << endl;
 
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
@@ -1855,10 +1949,12 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[1] = -2.179;
       field_of_values->P_coeff[2] =  0.101;
 
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+      
     } else if( DampingType == "fov-5" ) {
 
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using fov-5 values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `fov-5' values" << endl;
    
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
@@ -1871,33 +1967,32 @@ void MultiLevelPreconditioner::SetSmoothingDamping()
       field_of_values->P_coeff[1] = -1.4252;
       field_of_values->P_coeff[2] = 0.6627;
 
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+      
     } else if( DampingType == "fov-10" ) {
 
+      // those are Marzio's best values ;^)
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using fov-10 values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `fov-10' values" << endl;
 
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
 
 
       field_of_values->R_coeff[0] = 1.768909e+00;
-field_of_values->R_coeff[1] = -4.132227e+00;
-field_of_values->R_coeff[2] = 2.669318e+00;
-field_of_values->P_coeff[0] = 1.619455e+00;
-field_of_values->P_coeff[1] = -2.347773e+00;
-field_of_values->P_coeff[2] = 8.652273e-01;
-/*
-field_of_values->R_coeff[0] = 2.092364e+00;
-field_of_values->R_coeff[1] = -4.923000e+00;
-field_of_values->R_coeff[2] = 3.129545e+00;
-field_of_values->P_coeff[0] = 1.344545e+00;
-field_of_values->P_coeff[1] = -1.631045e+00;
-field_of_values->P_coeff[2] = 4.234091e-01;
-      */      
+      field_of_values->R_coeff[1] = -4.132227e+00;
+      field_of_values->R_coeff[2] = 2.669318e+00;
+      field_of_values->P_coeff[0] = 1.619455e+00;
+      field_of_values->P_coeff[1] = -2.347773e+00;
+      field_of_values->P_coeff[2] = 8.652273e-01;
+
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+      
     } else if( DampingType == "random" ) {
 
+      // only to play with
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using random values" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `random' values" << endl;
 
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
@@ -1925,35 +2020,27 @@ field_of_values->P_coeff[2] = 4.234091e-01;
 	     << field_of_values->P_coeff[2] << "   (seed = "
 	     << s << ")" << endl;
       }
+
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
       
     } else if( DampingType == "classic" ) {
 
+      // This must be as with classic ML approach.
+      // It can be used to estimate the field of value, tough.
+      
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using `classic'" << endl;
+
+      // First set damping as usual
+      SetSmoothingDampingClassic();
+      
       agg_->Restriction_smoothagg_transpose = ML_FALSE;      
       //      ml_->symmetrize_matrix == ML_TRUE;
 
-      sprintf(parameter,"%seigen-analysis: type", Prefix_);
-      string str = List_.get(parameter,"Anorm");
-
-      if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
-    
-      if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
-      else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
-      else if( str == "Anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
-      else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
-      else {
-	if( Comm().MyPID() == 0 ) {
-	  cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
-	       << "(" << str << ")" << endl;
-	  cerr << ErrorMsg_ << "It should be: " << endl
-	       << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
-	}
-	exit( EXIT_FAILURE );
-      }
-      
     }  else if( DampingType == "classic-use-A" ) {
 
       if( verbose_ )
-	cout << PrintMsg_ << "R and P smoothing : Using 4/3" << endl;
+	cout << PrintMsg_ << "R and P smoothing : Using `classic-use-A'" << endl;
 
       field_of_values->choice     =  2;
       field_of_values->poly_order =  2;
@@ -1966,8 +2053,14 @@ field_of_values->P_coeff[2] = 4.234091e-01;
       field_of_values->P_coeff[1] =  0.0;
       field_of_values->P_coeff[2] =  0.0;
 
-    } else {
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
+      
+    } else if( DampingType == "user-defined") {
+      
+      if( verbose_ )
+	cout << PrintMsg_ << "R and P smoothing : Using `user-defined'" << endl;
 
+      // user may specify each coefficient. Default values as for fov-1
       field_of_values->choice     =  1;
       field_of_values->poly_order =  2;
       
@@ -1979,8 +2072,20 @@ field_of_values->P_coeff[2] = 4.234091e-01;
       field_of_values->P_coeff[0] =  List_.get("R and P smoothing: g_0",  1.878);
       field_of_values->P_coeff[1] =  List_.get("R and P smoothing: g_1", -2.515);
       field_of_values->P_coeff[2] =  List_.get("R and P smoothing: g_2",  0.942);
+
+      ML_Aggregate_Set_DampingFactor(agg_,0.0);
       
-    } 
+    } else {
+
+      if( Comm().MyPID() == 0 ) {
+	cerr << endl;
+	cerr << ErrorMsg_ << "Parameter for `R and P smoothing : damping' not recognized" << endl
+	     << ErrorMsg_ << "It is: `" << DampingType << "'. It should be one of:" << endl
+	     << ErrorMsg_ << "<fov-1> / <fov-2> / <fov-5> / <fov-10> / <user-defined>" << endl;
+      }
+
+      exit( EXIT_FAILURE );
+    }
 
     agg_->field_of_values = (void*) field_of_values;  
 
@@ -1988,10 +2093,12 @@ field_of_values->P_coeff[2] = 4.234091e-01;
 
     if( Comm().MyPID() == 0 ) {
       cerr << endl;
-      cerr << ErrorMsg_ << "Parameter for `R and P smoothing : value for" << endl
-	   << ErrorMsg_ << "`Standard ML procedure' not recognized (" << RandPSmoothing << ")" << endl
-	   << ErrorMsg_ << "NO ACTION PERFORMED !!" << endl << endl;
+      cerr << ErrorMsg_ << "Parameter for `R and P smoothing : type' not recognized" << endl
+	   << ErrorMsg_ << "It is: `" << RandPSmoothing << "'. It should be one of:" << endl
+	   << ErrorMsg_ << "<classic> / <advanced>" << endl;
     }
+    
+    exit( EXIT_FAILURE );
     
   }
 
@@ -2119,7 +2226,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & List, char * Prefix)
   List.set(parameter,"MGV");
 
   sprintf(parameter,"%sprint unused",Prefix);
-  List.set(parameter,0);
+  List.set(parameter,-2);
 
   return 0;
 
@@ -2199,7 +2306,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & List, char * Prefix)
   List.set(parameter,"MGV");
 
   sprintf(parameter,"%sprint unused",Prefix);
-  List.set(parameter,0);
+  List.set(parameter,-2);
 
   return 0;
 
@@ -2285,7 +2392,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & List, char * Prefix_)
   List.set(parameter,"MGV");
 
   sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
+  List.set(parameter,-2);
   
   return 0;
 
@@ -2315,7 +2422,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_)
 
   // aggregation: Uncoupled for first levels, then MIS
   sprintf(parameter,"%saggregation: type",Prefix_);
-  List.set(parameter,"Hybrid");
+  List.set(parameter,"Uncoupled-MIS");
 
   // optimal value for smoothed aggregation
   sprintf(parameter,"%saggregation: damping factor",Prefix_);
@@ -2357,7 +2464,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & List, char * Prefix_)
 
   // print unused parameters on proc 0
   sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
+  List.set(parameter,-2);
 
   return 0;
   
@@ -2421,10 +2528,50 @@ int ML_Epetra::SetDefaultsSA(ParameterList & List, char * Prefix_)
 
   // print unused parameters on proc 0
   sprintf(parameter,"%sprint unused",Prefix_);
-  List.set(parameter,0);
+  List.set(parameter,-2);
   
   return 0;
 
+}
+
+// ============================================================================
+
+void ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
+{
+  
+  char parameter[80];
+  
+  double DampingFactor = 1.333;
+  if( SolvingMaxwell_ ) DampingFactor = 0.0;
+
+  sprintf(parameter,"%saggregation: damping factor", Prefix_);
+  DampingFactor = List_.get(parameter, DampingFactor);
+  ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
+  
+  if( verbose_ ) {
+    cout << PrintMsg_ << "R and P smoothing : P = (I-\\omega A) P_t, R = P^T" << endl;
+    cout << PrintMsg_ << "R and P smoothing : \\omega = " << DampingFactor << "/lambda_max" <<endl;
+  }
+    
+  sprintf(parameter,"%seigen-analysis: type", Prefix_);
+  string str = List_.get(parameter,"Anorm");
+  
+  if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
+  
+  if( str == "cg" )                ML_Aggregate_Set_SpectralNormScheme_Calc(agg_);
+  else if( str == "Anorm" )        ML_Aggregate_Set_SpectralNormScheme_Anorm(agg_);
+  else if( str == "Anasazi" )      ML_Aggregate_Set_SpectralNormScheme_Anasazi(agg_);
+  else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
+  else {
+    if( Comm().MyPID() == 0 ) {
+      cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
+	   << "(" << str << ")" << endl;
+      cerr << ErrorMsg_ << "It should be: " << endl
+	   << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
+    }
+    exit( EXIT_FAILURE );
+  }
+    
 }
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
