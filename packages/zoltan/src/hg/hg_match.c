@@ -32,8 +32,10 @@ static ZOLTAN_HG_MATCHING_FN matching_gm4;  /* greedy edge matching, Lo to Hi we
 static ZOLTAN_HG_MATCHING_FN matching_lhm;  /* locally heaviest matching */
 static ZOLTAN_HG_MATCHING_FN matching_pgm;  /* path growing matching */
 static ZOLTAN_HG_MATCHING_FN matching_aug2; /* post matching optimizer */
+static ZOLTAN_HG_MATCHING_FN matching_ipm;  /* inner product matching */
 
 static double sim (HGraph*, int, int);
+void draw_matrix(HGraph*);
 
 /* static void check_upper_bound_of_matching_weight (Graph*, ZZ*, Matching); */
 /* static int graph_connected_components (int, int*, int*, int);             */
@@ -56,6 +58,7 @@ int found = 1;
   else if (!strcasecmp(hgp->redm_str, "gm4"))  hgp->matching = matching_gm4;
   else if (!strcasecmp(hgp->redm_str, "lhm"))  hgp->matching = matching_lhm;
   else if (!strcasecmp(hgp->redm_str, "pgm"))  hgp->matching = matching_pgm;
+  else if (!strcasecmp(hgp->redm_str, "ipm"))  hgp->matching = matching_ipm;
   else if (!strcasecmp(hgp->redm_str, "no"))   hgp->matching = NULL;
   else                            { found = 0; hgp->matching = NULL;}
 
@@ -655,11 +658,11 @@ float c_ewgt;
    time O(k*|I|) and guarantees an approximation of 1/k. */
    
 
-/* locally heavy matching, graph version                                       */
-/* This is an implimentation of LAM created by Robert Preis, Linear Time       */
-/* 1/2-Approximation Algorithm for Maximum Weighted Matching in General Graphs,*/
-/* Symposium on Theoretical Aspects of Computer Science, STACS 99, C. Meinel,  */
-/* S. Tison (eds.), Springer, LNCS 1563, 1999, 259-269                         */
+/* locally heavy matching, graph version                                      */
+/* This is an implimentation of LAM created by Robert Preis, Linear Time      */
+/* 1/2-Approximation Algorithm for Maximum Weighted Matching in General Graphs*/
+/* Symposium on Theoretical Aspects of Computer Science, STACS 99, C. Meinel, */
+/* S. Tison (eds.), Springer, LNCS 1563, 1999, 259-269                        */
 static int matching_lhm (ZZ *zz, HGraph *hg, Matching match, int *limit)
 {
 int  i, j, *Nindex = NULL, err;
@@ -770,6 +773,124 @@ char  *yo = "matching_pgm";
 
   Zoltan_Multifree (__FILE__, __LINE__, 2, &Match[1], &sims);
   return ZOLTAN_OK;
+}
+
+/*****************************************************************************/
+
+/* inner product matching                                                    */ 
+/* based on Rob Bisseling's implementation in Mondriaan                      */
+/* for each vertex, we match with the unmatched vertex which has the most    */
+/* hyperedges in common with it (ie, the pair with greatest inner product).  */
+
+static int matching_ipm(ZZ *zz, HGraph *hg, Matching match, int *limit)
+{
+    int   i, j, k, v1, v2, vertex, edge, ip, maxip, maxindex, count1, count2;
+    int*  checked;
+    char* yo = "matching_ipm";
+
+    if (!(checked = (int*) ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))) {
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+    }
+    
+    //vertex = 0;
+    //
+    //printf("Debugging info:\nvedges:\n----------\n");
+    //for(i = 0; i < hg->vindex[hg->nVtx]; ++i) {
+    //    printf("%2d ", hg->vedge[i]);
+    //    if(hg->vindex[vertex+1] == i + 1) {
+    //        vertex++;
+    //        printf("\n");
+    //    }
+    //}
+    //printf("\nvindex:\t");
+    //for(i = 0; i < hg->nVtx + 1; ++i)
+    //    printf("%2d ", hg->vindex[i]);
+    //printf("\n\nhvertex\n-------\n");
+    //vertex = 0;
+    //for(i = 0; i < hg->hindex[hg->nEdge]; ++i) {
+    //    printf("%2d ", hg->hvertex[i]);
+    //    if(hg->hindex[vertex+1] == i + 1) {
+    //        vertex++;
+    //        printf("\n");
+    //    }
+    //}
+    //printf("\nhindex:\t");
+    //for(i = 0; i < hg->nEdge + 1; ++i)
+    //    printf("%2d ", hg->hindex[i]);
+    //
+    //printf("\n");
+    //draw_matrix(hg);
+    //printf("\n");
+        
+    for(i = 0; i < hg->nVtx; ++i)
+        checked[i] = -1;
+    
+    /* for every vertex */
+    for (v1 = 0; v1 < hg->nVtx  &&  *limit > 0; v1++) {
+        maxip = 0;
+        maxindex = -1;
+        
+        /* for every hyperedge containing the vertex */
+        for(j = hg->vindex[v1]; match[v1] == v1 && j < hg->vindex[v1+1]; ++j) {
+            edge = hg->vedge[j];
+                
+            /* for every other vertex in the hyperedge */
+            for(k = hg->hindex[edge]; match[v1] == v1 
+                    && k < hg->hindex[edge+1]; ++k) {
+                v2 = hg->hvertex[k];
+                
+                /* ignore matched and previously checked vertices */
+                if(match[v2] != v2 || v1 == v2 || checked[v2] == v1)
+                    continue;
+            
+                /* compute inner product of vertex i with vertex j */
+                ip = 0;
+                count1 = hg->vindex[v1];
+                count2 = hg->vindex[v2];
+                while(count1 < hg->vindex[v1+1] && count2 < hg->vindex[v2+1]) {
+                    if(hg->vedge[count1] == hg->vedge[count2]) {
+                        count1++;
+                        count2++;
+                        ip++;
+                    } else if(hg->vedge[count1] < hg->vedge[count2])
+                        count1++;
+                    else
+                        count2++;
+                } 
+                checked[v2] = v1;
+                
+                //printf("IP of %d with %d is %d\n", v1, v2, ip);
+                
+                /* keep track of best match seen */
+                if(maxip < ip) {
+                    maxip = ip;
+                    maxindex = v2;
+                }
+            }
+        }
+
+        //printf("Done with %d, best match is %d with product %d\n",
+        //        v1, maxindex, maxip);
+
+        /* match i with j having greatest ip */
+        if(maxindex != -1) {
+            match[v1] = maxindex;
+            match[maxindex] = v1;
+            (*limit)--;
+        } 
+    }
+
+    //printf("Final Matching:\n");
+    //for(i = 0; i < hg->nVtx; ++i)
+    //    printf("%2d ",i);
+    //printf("\n");
+    //for(i = 0; i < hg->nVtx; ++i)
+    //    printf("%2d ",match[i]);
+    //printf("\n");
+
+    ZOLTAN_FREE ((void**) &checked);
+    return ZOLTAN_OK;
 }
 
 /*****************************************************************************/
@@ -990,6 +1111,31 @@ static int graph_connected_components (int n, int *ep, int *edge, int Out)
 
 
 /*****************************************************************************/
+
+/* 
+ * draws the sparse matrix representation of a hypergraph, with vertices as
+ * rows and columns as edges.
+ */
+void draw_matrix(HGraph* hg)
+{
+    int position, i, j;
+    
+    for(i = 0; i < hg->nVtx; ++i) {
+        j = position = 0;
+        while(j < hg->nEdge) {
+            if(hg->vedge[hg->vindex[i] + position] == j) {
+                position++;
+                printf("x ");
+            }
+            else
+                printf("0 ");
+            j++;
+        }
+        printf("\n");
+    }
+}
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+
