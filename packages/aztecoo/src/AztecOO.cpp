@@ -759,10 +759,11 @@ int AztecOO::AdaptiveIterate(int MaxIters, int MaxSolveAttempts, double Toleranc
       // keep old residual and solution to see if progress is made (will keep old solution if not)
       oldResid = status_[AZ_r];
       Xold = *X_;
-      // Adjust the tolerance to account for any progress made in the solution
-      // The test for "oldResid>0.0" insures that NaN will be ignored
-      if (options_[AZ_conv]==AZ_r0 && oldResid>0.0) {
-	Tolerance = Tolerance/oldResid;
+      // If a relative residual is being used as a stopping criterion,
+      // adjust the tolerance to account for any progress made in the solution
+      // The test for "status_[AZ_scaled_r]>0.0" insures that NaN will be ignored
+      if (options_[AZ_conv]==AZ_r0 && status_[AZ_scaled_r]>0.0) {
+	Tolerance = Tolerance/status_[AZ_scaled_r];
 	SetAztecParam(AZ_tol, Tolerance);
       }
 
