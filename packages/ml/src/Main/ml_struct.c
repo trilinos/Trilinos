@@ -23,7 +23,7 @@
  * Structure to hold user-selected ML output level.                          *
  * ************************************************************************* */
 
-ML_PrintControl ML_PrintLevel;
+ML_PrintControl ML_PrintLevel = {0};
 
 /* ************************************************************************* */
 /* create and initialize a ML object                                         */
@@ -46,7 +46,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
 #ifdef ML_TIMING
    struct ML_Timing *timing;
 #endif
- 
+
    ML_memory_alloc( (void**) ml_ptr, sizeof(ML), "MLM" );
 
    (*ml_ptr)->ML_finest_level   = -1;
