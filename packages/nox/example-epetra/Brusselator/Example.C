@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
   NOX::Solver::Manager solver(grp, combo, nlParams);
 
   // Initialize time integration parameters
-  int maxTimeSteps = 300;
+  int maxTimeSteps = 10;
   int timeStep = 0;
   double time = 0.;
   double dt = Problem.getdt();
