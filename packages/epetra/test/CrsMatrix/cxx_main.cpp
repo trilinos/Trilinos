@@ -315,6 +315,29 @@ int main(int argc, char *argv[])
 
   if (debug) Comm.Barrier();
 
+  if (verbose) cout << "\n\n*****Testing lccal view constructor" << endl<< endl;
+
+  Epetra_CrsMatrix BV(View, AA.RowMap(), AA.ColMap(), 0);
+
+  forierr = 0;
+  int * Inds;
+  double * Vals;
+  for (i=0; i<NumMyEquations; i++) {
+    forierr += !(AA.ExtractMyRowView(i, NumEntries, Vals, Inds)==0);
+    forierr += !(BV.InsertMyValues(i, NumEntries, Vals, Inds)==0);
+  }
+  BV.TransformToLocal();
+
+  EPETRA_TEST_ERR(check(BV, NumMyEquations, NumGlobalEquations, NumMyEquations, NumGlobalEquations, 
+	       MyGlobalElements, verbose),ierr);
+
+  forierr = 0;
+  for (i=0; i<NumMyEquations; i++) forierr += !(BV.NumGlobalEntries(MyGlobalElements[i])==1);
+  EPETRA_TEST_ERR(forierr,ierr);
+
+  if (verbose) cout << "\n\nNumEntries function check OK" << endl<< endl;
+
+  if (debug) Comm.Barrier();
   if (verbose) cout << "\n\n*****Testing post construction modifications" << endl<< endl;
 
   EPETRA_TEST_ERR(!(B.InsertGlobalValues(0, 1, &dble_one, &One)==-2),ierr);
