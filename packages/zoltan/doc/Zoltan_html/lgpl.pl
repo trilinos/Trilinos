@@ -96,7 +96,7 @@ else {
 # This email will be used to create the database for SNL Tech. Transfer.
 
 $database_mgr = "kddevin\@cs.sandia.gov";
-open(MAIL, "|/usr/lib/sendmail $database_mgr $recipient") || dienow "Unable to send mail.";
+open(MAIL, "|/usr/lib/sendmail -i $database_mgr $recipient") || dienow "Unable to send mail.";
 print MAIL "$pkg|$ul|$in{email}|$in{name}|$in{company}|$in{addr1}|$in{addr2}|$in{city}|$in{state}|$in{zip}|$in{country}|$ENV{'REMOTE_ADDR'}\n\n";
 close MAIL;
 
@@ -120,7 +120,7 @@ print <<ENDHTML;
 <! KDD Turned off alternative link colors in template; the ><! following line was part of the above body command. ><! link="#003366" vlink="#cc0033" alink="#000000"><a NAME="TOP"></a><!---TOP BANNER AREA STARTS HERE--->
 <table BORDER=0 valign="top" >
 <tr VALIGN=TOP>
-<td VALIGN=TOP WIDTH="140" >
+<td VALIGN=TOP WIDTH="140">
 <table BORDER=0 WIDTH="130" valign="top" >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="128"><!--SANDIA LOGO AT TOP LEFT--><a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
