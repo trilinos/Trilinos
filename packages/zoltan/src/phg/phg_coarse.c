@@ -19,7 +19,10 @@ extern "C" {
 #endif
 
 #include "phg.h"
+#include "zoltan_comm.h"
+
 #define PIN_OVER_ALLOC 1.2  /* Overallocate pins by 20% */
+#define PLAN_TAG 32010      /* tag for comm plan */
 
 
 /* Procedure to coarsen a hypergraph based on a matching. All vertices of one
@@ -40,13 +43,16 @@ int Zoltan_PHG_Coarsening
   int    *LevelCnt,
   int   **LevelData)   /* information to reverse coarsenings later */
 {
-  int i, j, vertex, edge, *ip, me, size, count, pincnt=hg->nPins;
+  int i, j, vertex, edge, me, size, count, nrecv, pincnt=hg->nPins;
+  int *ip, *ip_old;
   int *cmatch=NULL, *used_edges=NULL, *c_vindex=NULL, *c_vedge=NULL;
-  int *listgno=NULL, *listlno=NULL, *displs=NULL, *each_size=NULL;
+  int *listgno=NULL, *listlno=NULL,  *listproc=NULL;
+  int *each_size=NULL, *msg_size=NULL;
   float *pwgt;
   char *buffer=NULL, *rbuffer=NULL;
   PHGComm *hgc = hg->comm;
   char *yo = "Zoltan_PHG_Coarsening";
+  struct Zoltan_Comm_Obj  *comm_plan;
  
   ZOLTAN_TRACE_ENTER (zz, yo);  
   Zoltan_HG_HGraph_Init (c_hg);   /* inits working copy of hypergraph info */
@@ -59,7 +65,6 @@ int Zoltan_PHG_Coarsening
  
   if (hg->nVtx > 0 && hgc->nProc_x > 0 && (
       !(cmatch    = (int*) ZOLTAN_MALLOC (hg->nVtx     * sizeof(int)))
-   || !(displs    = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))
    || !(each_size = (int*) ZOLTAN_MALLOC (hgc->nProc_x * sizeof(int)))))  {
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
@@ -68,6 +73,8 @@ int Zoltan_PHG_Coarsening
   if (count > 0 && (
       !(listgno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
    || !(listlno   = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(listproc  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
+   || !(msg_size  = (int*) ZOLTAN_MALLOC (count * sizeof(int)))
    || !(*LevelData= (int*) ZOLTAN_MALLOC (count * sizeof(int) * 2))))    {   
      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
      ZOLTAN_TRACE_EXIT (zz, yo);
@@ -103,6 +110,7 @@ int Zoltan_PHG_Coarsening
       if (proc != me)   {             /* another processor owns this vertex */
         size += hg->vindex[i+1] - hg->vindex[i];  /* send buffer sizing */ 
         listgno[count]   = gx;                    /* listgno of vtx's to send */
+        listproc[count]  = proc;                  /* proc to send to */
         listlno[count++] = i;                     /* lno of my match to gno */
       }
       else   {       
@@ -129,13 +137,13 @@ int Zoltan_PHG_Coarsening
     return ZOLTAN_MEMERR;
   }
 
-  /* EBEB The communication below is based on Allgather and not scalable.
-     We should use the comm plan instead. Perhaps we can save the plan
-     and reuse it in the uncoarsening? (Comm_Do_Reverse) */     
+  /* Use communication plan for unstructured communication. */
         
-  /* Message is list of <gno, gno's edge count, list of edge lno's> */
+  /* Message is list of <gno, vweights, gno's edge count, list of edge lno's> */
+  /* We pack ints and floats into same buffer */
   ip = (int*) buffer;
   for (i = 0; i < count; i++)  {
+    ip_old = ip;
     *ip++ = listgno[i];                            /* destination vertex gno */
     for (j = 0; j < hg->VtxWeightDim; j++) {
        pwgt = (float*) ip++;                               /* vertex weight */
@@ -145,26 +153,35 @@ int Zoltan_PHG_Coarsening
     *ip++ = hg->vindex[listlno[i]+1] - hg->vindex[listlno[i]];      /* count */
     for (j = hg->vindex[listlno[i]]; j < hg->vindex[listlno[i]+1]; j++)
       *ip++ = hg->vedge[j];    
+
+    /* save mesg size in #ints */
+    msg_size[i] = ip - ip_old;
   }    
-  MPI_Allgather (&size, 1, MPI_INT, each_size, 1, MPI_INT, hgc->row_comm);
+
+  /* Create comm plan. */
+  Zoltan_Comm_Create( &comm_plan, count, listproc, hgc->row_comm, PLAN_TAG, 
+                      &nrecv);
   
-  size = 0;
-  for (i = 0; i < hgc->nProc_x; i++)
-    size += each_size[i];
+  /* call Comm_Resize since we have variable-size messages */
+  Zoltan_Comm_Resize( comm_plan, msg_size, PLAN_TAG+1, &size); 
+
+  /* Allocate receive buffer. */
+  /* size is the size of the received data, measured in #ints */
   if (size > 0 && !(rbuffer = (char*) ZOLTAN_MALLOC (size * sizeof(int))))   {
     ZOLTAN_TRACE_EXIT (zz, yo);
     ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Insufficient memory.");
     return ZOLTAN_MEMERR;
   }
 
-  displs[0] = 0;
-  for (i = 1; i < hgc->nProc_x; i++)
-     displs[i] = displs[i-1] + each_size[i-1];
-                
-  MPI_Allgatherv (buffer, each_size[me], MPI_INT, rbuffer, each_size, displs,
-   MPI_INT, hgc->row_comm);            
+  /* Comm_Do sends personalized messages of variable sizes */
+  Zoltan_Comm_Do(comm_plan, PLAN_TAG+2, buffer, sizeof(int), rbuffer);
+
+  /* For now, destroy the plan. It would be better to save it and use
+     it in the reverse for uncoarsening. */
+  Zoltan_Comm_Destroy(&comm_plan);
 
   /* index all received data for rapid lookup */
+  /* EBEB Not clear if this still works with comm plan! */
   ip = (int*) rbuffer;
   for (i = 0; i < size; i++)  {
     if (VTX_TO_PROC_X (hg, ip[i]) == me)
@@ -334,8 +351,8 @@ int Zoltan_PHG_Coarsening
   c_hg->VtxWeightDim  = hg->VtxWeightDim;
   c_hg->EdgeWeightDim = hg->EdgeWeightDim;
   
-  Zoltan_Multifree (__FILE__, __LINE__, 7, &buffer, &rbuffer, &listgno, &listlno,
-   &cmatch, &displs, &each_size);  
+  Zoltan_Multifree (__FILE__, __LINE__, 8, &buffer, &rbuffer, &listgno, &listlno,
+   &cmatch, &listproc, &each_size, &msg_size);  
   ZOLTAN_TRACE_EXIT (zz, yo);
   return Zoltan_HG_Create_Mirror(zz, c_hg);
 }
