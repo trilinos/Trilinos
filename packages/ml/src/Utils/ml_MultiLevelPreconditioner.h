@@ -635,9 +635,6 @@ private:
   //! Sets damping parameter for classical smoothed aggregation.
   int SetSmoothingDampingClassic();
   
-  //! Prints a line on cout.
-  void PrintLine() const;
-
   //! Creates label for this object (printed out by AztecOO)
   int CreateLabel();
 
@@ -724,7 +721,7 @@ private:
   double * NullSpaceToFree_;              
 
   //! All user's defined input data have this prefix
-  char Prefix_[80];
+  string Prefix_;
   //! all cout's have this prefix (default'd in Initialize() )
   string PrintMsg_;
   //! all cerr's have this prefix (default'd in Initialize() )

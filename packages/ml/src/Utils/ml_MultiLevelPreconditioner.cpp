@@ -9,221 +9,13 @@
  *
  */
 
-
 #include "ml_common.h"
 #include "ml_include.h"
-#include "ml_memory.h"
-#include <iomanip>
-
-
-#ifndef ML_CPP
-#ifdef __cplusplus
-extern "C" 
-{
-#endif
-#endif
-
-extern double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
-extern double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
-extern double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
-			   int approx_all_zeros, ML_Comm *comm,
-			   int res_norm_or_not, ML *ml);
-extern double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
-			     int approx_all_zeros, ML_Comm *comm,
-			     int res_norm_or_not, ML *ml);
-extern int ML_Aggregate_Stats_CleanUp_Info( ML *ml, ML_Aggregate *ag);
-extern int ML_Aggregate_Stats_ComputeCoordinates( ML *ml, ML_Aggregate *ag,
-						 double *x, double *y, double *z);
-
-
-  double ML_DD_OneLevel(ML_1Level *curr, double *sol, double *rhs,
-			int approx_all_zeros, ML_Comm *comm,
-			    int res_norm_or_not, ML *ml)
-{
-
-  ML_Smoother * post = curr->post_smoother;
-  ML_Operator * Amat = curr->Amat;
-  int lengf = Amat->outvec_leng;
-
-  for ( int i = 0; i < lengf; i++ ) sol[i] = 0.0;
-  
-  ML_Smoother_Apply(post, lengf, sol, lengf, rhs, approx_all_zeros);
-
-  return 0.0;
-
-} /* ML_DD_OneLevel */
-
-double ML_DD_Additive(ML_1Level *curr, double *sol, double *rhs,
-			  int approx_all_zeros, ML_Comm *comm,
-			  int res_norm_or_not, ML *ml)
-{
-   
-  ML_Operator * Amat = curr->Amat;
-  ML_Operator * Rmat = curr->Rmat;
-  ML_Smoother * post      = curr->post_smoother;
-  int lengf = Amat->outvec_leng;
-  int lengc = Rmat->outvec_leng;
-
-  double * sols = new double[lengf];
-  double * rhs2 = new double[lengc];
-  double * sol2 = new double[lengc];
-
-  for ( int i = 0; i < lengf; i++ ) sols[i] = 0.0, sol[i] = 0.0;
-  for ( int i = 0; i < lengc; i++ ) sol2[i] = 0.0, rhs2[i] = 0.0;
-
-  ML_Smoother_Apply(post, lengf, sol, lengf, rhs, approx_all_zeros);
-
-  ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, rhs, lengc, rhs2);
-
-  ML_Smoother_Apply(Rmat->to->post_smoother, lengc, sol2, lengc, rhs2, ML_NONZERO);
-
-  ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat, lengc, sol2, lengf, sols);
-
-  for ( int i = 0; i < lengf; i++ ) sol[i] += sols[i];
-
-  delete [] sols;
-  delete [] rhs2;
-  delete [] sol2;
-  
-  return 0.0;
-}
-
-
-double ML_DD_Hybrid(ML_1Level *curr, double *sol, double *rhs,
-		    int approx_all_zeros, ML_Comm *comm,
-		    int res_norm_or_not, ML *ml)
-{
-
-  ML_Operator *Amat, *Rmat;
-  ML_Smoother  *post;
-  //  ML_Smoother  *pre;
-  //  ML_CSolve   *csolve;
-  
-  Amat     = curr->Amat;
-  Rmat     = curr->Rmat;
-  //  pre      = curr->pre_smoother;
-  post     = curr->post_smoother;
-  // csolve   = curr->csolve;
-  int lengf    = Amat->outvec_leng;
-  int lengc    = Rmat->outvec_leng;
-
-  double * alpha1 = new double[lengf];
-  double * alpha2 = new double[lengf];
-  double * tmp_c  = new double[lengc];
-  double * tmp2_c = new double[lengc];
-
-  for ( int i = 0; i < lengf ; i++ ) alpha1[i] = 0.0, alpha2[i] = 0.0, sol[i] = 0.0;
-  for ( int i = 0; i < lengc ; i++ ) tmp_c[i]  = 0.0, tmp2_c[i] = 0.0;
-
-  // first step : rhs --> alpha1
-  ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, rhs, lengc, tmp_c);
-  ML_Smoother_Apply(Rmat->to->post_smoother, lengc, tmp2_c, lengc, tmp_c, ML_NONZERO);
-  ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat, lengc, tmp2_c, lengf, alpha1);
-
-  // second step
-  ML_Operator_ApplyAndResetBdryPts(Amat, lengf, alpha1, lengc, sol);
-  for ( int i = 0; i < lengf; i++ ) sol[i] = rhs[i] - sol[i];
-
-  // sol --> alpha2
-  ML_Smoother_Apply(post, lengf, alpha2, lengf, sol, approx_all_zeros);
-  
-  // third step
-
-  for ( int i = 0; i < lengf ; i++ ) alpha1[i] += alpha2[i];
-  for ( int i = 0; i < lengf ; i++ ) alpha2[i] = 0.0, sol[i] = 0.0;
-  
-  ML_Operator_ApplyAndResetBdryPts(Amat, lengf, alpha1, lengc, alpha2);
-  
-  for ( int i = 0; i < lengf; i++ ) alpha2[i] = rhs[i] - alpha2[i] ;
-  //  alpha2 --> sol
-  ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, alpha2, lengc, tmp_c);
-  ML_Smoother_Apply(Rmat->to->post_smoother, lengc, tmp2_c, lengc, tmp_c, ML_NONZERO);
-  ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat, lengc, tmp2_c, lengf, sol);
-  
-  // compose solution
-  for ( int i = 0; i < lengf; i++ ) sol[i] += alpha1[i];
-
-  delete [] alpha1;
-  delete [] alpha2;
-  delete [] tmp_c;
-  delete [] tmp2_c;
-  
-  return 0.0;
-}
-
-
-double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
-		      int approx_all_zeros, ML_Comm *comm,
-		      int res_norm_or_not, ML *ml)
-{
-  ML_Operator *Amat, *Rmat;
-  ML_Smoother *pre,  *post;
-  // ML_CSolve   *csolve;
-  
-  Amat     = curr->Amat;
-  Rmat     = curr->Rmat;
-  pre      = curr->pre_smoother;
-  post     = curr->post_smoother;
-  // csolve   = curr->csolve;
-  int lengf    = Amat->outvec_leng;
-  int lengc    = Rmat->outvec_leng;
-
-  double * alpha1 = new double[lengf];
-  double * alpha2 = new double[lengf];
-  double * tmp_c  = new double[lengc];
-  double * tmp2_c = new double[lengc];
-
-  for ( int i = 0; i < lengf ; i++ ) alpha1[i] = 0.0, alpha2[i] = 0.0, sol[i] = 0.0;
-  for ( int i = 0; i < lengc ; i++ ) tmp_c[i]  = 0.0, tmp2_c[i] = 0.0;
-
-  // first step  
-  ML_Smoother_Apply(pre, lengf, alpha1, lengf, rhs, approx_all_zeros);
-
-  // second step
-  ML_Operator_ApplyAndResetBdryPts(Amat, lengf, alpha1, lengc, sol);
-  for ( int i = 0; i < lengf; i++ ) sol[i] = rhs[i] - sol[i];
-  
-  ML_Operator_ApplyAndResetBdryPts(Rmat, lengf, sol, lengc, tmp_c);
-  ML_Smoother_Apply(Rmat->to->post_smoother, lengc, tmp2_c, lengc, tmp_c, ML_NONZERO);
-
-  ML_Operator_ApplyAndResetBdryPts(Rmat->to->Pmat, lengc, tmp2_c, lengf, alpha2);
-  
-  // third step
-
-  for ( int i = 0; i < lengf ; i++ ) alpha1[i] += alpha2[i];
-  for ( int i = 0; i < lengf ; i++ ) alpha2[i] = 0.0, sol[i] = 0.0;
-  
-  ML_Operator_ApplyAndResetBdryPts(Amat, lengf, alpha1, lengc, alpha2);
-  
-  for ( int i = 0; i < lengf; i++ ) alpha2[i] = rhs[i] - alpha2[i] ;
-  ML_Smoother_Apply(post, lengf, sol, lengf, alpha2, approx_all_zeros);
-  
-  // compose solution
-  for ( int i = 0; i < lengf; i++ ) sol[i] += alpha1[i];
-
-  delete [] alpha1;
-  delete [] alpha2;
-  delete [] tmp_c;
-  delete [] tmp2_c;
-
-  return 0.0;
-}
-
-#ifndef ML_CPP
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
-#endif
-
-
-
-
 
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
+#include "ml_memory.h"
+#include "ml_DD_prec.h"
+#include <iomanip>
 
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
@@ -260,6 +52,7 @@ double ML_DD_Hybrid_2(ML_1Level *curr, double *sol, double *rhs,
 
 using namespace Teuchos;
 
+// ================================================ ====== ==== ==== == =
 void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, int max)
 {
 
@@ -270,19 +63,9 @@ void ML_Epetra::MultiLevelPreconditioner::PrintMem(char *fmt, int min, int avg, 
 }
 
 // ================================================ ====== ==== ==== == =
-
-void ML_Epetra::MultiLevelPreconditioner::PrintLine() const
-{
-  cout << "--------------------------------------------------------------------------------" << endl;
-}
-
-// ================================================ ====== ==== ==== == =
-
 int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 {
 
-  char parameter[80];
-  
   {
     int NumDestroy = OutputList_.get("number of destruction phases", 0);
     OutputList_.set("number of destruction phases", ++NumDestroy);
@@ -346,17 +129,17 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
   // stick data in OutputList
 
-  sprintf(parameter,"%stime: total", Prefix_);
-  OutputList_.set(parameter, FirstApplicationTime_+ApplicationTime_);
+  OutputList_.set(Prefix_ + "time: total",
+		  FirstApplicationTime_+ApplicationTime_);
 
-  sprintf(parameter,"%stime: first application", Prefix_);
-  OutputList_.set(parameter, FirstApplicationTime_);
+  OutputList_.set(Prefix_ + "time: first application",
+		  FirstApplicationTime_);
 
-  sprintf(parameter,"%stime: construction", Prefix_);
-  OutputList_.set(parameter, ConstructionTime_);
+  OutputList_.set(Prefix_ + "time: construction",
+		  ConstructionTime_);
 
-  sprintf(parameter,"%snumber of applications", Prefix_);
-  OutputList_.set(parameter,NumApplications_);
+  OutputList_.set(Prefix_ + "number of applications",
+		  NumApplications_);
 
   int min[ML_MEM_SIZE], max[ML_MEM_SIZE], avg[ML_MEM_SIZE];
   for( int i=0 ; i<ML_MEM_SIZE ; ++i ) avg[i] = 0;
@@ -375,7 +158,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
 
     // print on screen
     
-    PrintLine();
+    ML_print_line("-",78);
     double TotalTime = FirstApplicationTime_ + ApplicationTime_;
     cout << PrintMsg_ << "   ML time information" << endl << endl
 	 << "   1- Construction time             = " << ConstructionTime_ << " (s)" << endl;
@@ -433,7 +216,7 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   }
 
   if (verbose_ && NumApplications_) 
-    PrintLine();
+    ML_print_line("-",78);
     
   if (NullSpaceToFree_ != 0) { 
     delete [] NullSpaceToFree_;  
@@ -501,7 +284,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
   RowMatrixAllocated_(0)
 {
 
-  Prefix_[0] = '\0';
+  Prefix_ = "";
   
   ParameterList NewList;
   List_ = NewList;
@@ -523,7 +306,7 @@ MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
   RowMatrix_(&RowMatrix),
   RowMatrixAllocated_(0)
 {
-  sprintf(Prefix_,"%s",Prefix);
+  Prefix_ = Prefix;
 
   List_ = List;
 
@@ -563,7 +346,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
     ML_CHK_ERRV(-2); // error on discrete grad
   }
 
-  sprintf(Prefix_,"%s",Prefix);
+  Prefix_ = Prefix;
 
   List_ = List;
 
@@ -605,7 +388,7 @@ MultiLevelPreconditioner(ML_Operator * Operator,
 
   // from now on as for the other constructors
   
-  sprintf(Prefix_,"%s",Prefix);
+  Prefix_ = Prefix;
 
   List_ = List;
 
@@ -706,47 +489,38 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
 int ML_Epetra::MultiLevelPreconditioner::ComputeFilteringPreconditioner()
 {
 
-  char parameter[80];
-  
   if (IsComputePreconditionerOK_ == true ){
     DestroyPreconditioner();
   }
 
   // 1.- disable filtering/GGB in ComputePreconditioner()
-  sprintf(parameter,"%sfiltering: enable", Prefix_);
-  List_.set(parameter, false);
+  List_.set(Prefix_ + "filtering: enable", false);
 
   ComputePreconditioner();
 
   // 2.- now enable, and call the function to compute the "bad-modes"
   //     (that is, the bad boys. Go Detroit !!!! Beat LA !!!)
 
-  sprintf(parameter,"%sfiltering: enable", Prefix_);
-  List_.set(parameter, true);
+  List_.set(Prefix_ + "filtering: enable", true);
   
-  sprintf(parameter,"%sfiltering: type", Prefix_);
-  List_.set(parameter, "let ML be my master");
+  List_.set(Prefix_ + "filtering: type", "let ML be my master");
 
   if( NullSpaceToFree_ ) delete [] NullSpaceToFree_; NullSpaceToFree_ = 0;
   int NullSpaceDim = SetFiltering();
   assert( NullSpaceDim > 0 );
   
-  sprintf(parameter,"%snull space: type", Prefix_);
-  List_.set(parameter, "pre-computed");
+  List_.set(Prefix_ + "null space: type", "pre-computed");
 
-  sprintf(parameter,"%snull space: dimension", Prefix_);
-  List_.set(parameter, NullSpaceDim);
+  List_.set(Prefix_ + "null space: dimension", NullSpaceDim);
   
-  sprintf(parameter,"%snull space: vectors", Prefix_);
-  List_.set(parameter, NullSpaceToFree_);
+  List_.set(Prefix_ + "null space: vectors", NullSpaceToFree_);
 
   NullSpaceToFree_ = 0;
   
   DestroyPreconditioner();
 
   // 4.- recompute preconditioner with new options
-  sprintf(parameter,"%sfiltering: enable", Prefix_);
-  List_.set(parameter, false);
+  List_.set(Prefix_ + "filtering: enable", false);
 
   ComputePreconditioner();
 
@@ -811,8 +585,6 @@ ComputePreconditioner(const bool CheckPreconditioner)
     OutputList_.set("number of construction phases", ++NumCompute);
   }
   
-  char parameter[80];
-  
 #ifdef HAVE_MPI
   const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
   AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
@@ -821,26 +593,23 @@ ComputePreconditioner(const bool CheckPreconditioner)
 #endif
 
   // user's defined output message
-  sprintf(parameter,"%soutput prefix", Prefix_);
-  PrintMsg_ = List_.get(parameter,PrintMsg_);
+  PrintMsg_ = List_.get(Prefix_ + "output prefix",PrintMsg_);
   
-  sprintf(parameter,"%smax levels", Prefix_);
-  NumLevels_ = List_.get(parameter,10);  
+  NumLevels_ = List_.get(Prefix_ + "max levels",10);  
 
-  sprintf(parameter,"%soutput", Prefix_);
-  int OutputLevel = List_.get(parameter, 10);  
+  int OutputLevel = List_.get(Prefix_ + "output", 10);  
   ML_Set_PrintLevel(OutputLevel);
 
   verbose_ = (5 < ML_Get_PrintLevel() && ProcConfig_[AZ_node] == 0);
 
-  if( verbose_ ) PrintLine();
+  if( verbose_ ) 
+    ML_print_line("-",78);
   
   FirstApplication_ = true;
 
   int call1 = 0, call2 = 0, call1_used = 0, call2_used = 0;
 
-  sprintf(parameter,"%sanalyze memory", Prefix_);
-  AnalyzeMemory_ = List_.get(parameter, false);  
+  AnalyzeMemory_ = List_.get(Prefix_ + "analyze memory", false);  
 
   if( AnalyzeMemory_ ) {
     memory_[ML_MEM_INITIAL] = ML_MaxAllocatableSize();
@@ -856,8 +625,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // compute how to traverse levels (increasing of descreasing)
   // By default, use ML_INCREASING.
   
-  sprintf(parameter,"%sincreasing or decreasing", Prefix_);
-  string IsIncreasing = List_.get(parameter,"increasing");
+  string IsIncreasing = List_.get(Prefix_ + "increasing or decreasing",
+				  "increasing");
 
   if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
   
@@ -983,8 +752,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
    * visualize aggregate shape and other statistics. 
    * ********************************************************************** */
   
-  sprintf(parameter,"%sviz: enable", Prefix_);
-  bool viz = List_.get(parameter,false);
+  bool viz = List_.get(Prefix_ + "viz: enable",false);
   if( viz == true )
     ML_Aggregate_VizAndStats_Setup(agg_,NumLevels_);
 
@@ -1000,24 +768,20 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* ********************************************************************** */
 
   double Threshold = 0.0;
-  sprintf(parameter,"%saggregation: threshold", Prefix_);
-  Threshold = List_.get(parameter, Threshold);
+  Threshold = List_.get(Prefix_ + "aggregation: threshold", Threshold);
   ML_Aggregate_Set_Threshold(agg_,Threshold);
     
   int MaxCoarseSize = 50;
-  sprintf(parameter,"%scoarse: max size", Prefix_);
-  MaxCoarseSize = List_.get(parameter, MaxCoarseSize);
+  MaxCoarseSize = List_.get(Prefix_ + "coarse: max size", MaxCoarseSize);
   ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
 
   int ReqAggrePerProc = 128;
   // FIXME: delete me???
   // compatibility with an older version
-  sprintf(parameter,"%saggregation: req aggregates per process", Prefix_);
-  if( List_.isParameter(parameter) ) 
-    ReqAggrePerProc = List_.get(parameter, ReqAggrePerProc);
+  if( List_.isParameter(Prefix_ + "aggregation: req aggregates per process") ) 
+    ReqAggrePerProc = List_.get(Prefix_ + "aggregation: req aggregates per proces", ReqAggrePerProc);
   else {
-    sprintf(parameter,"%saggregation: next-level aggregates per process", Prefix_);
-    ReqAggrePerProc = List_.get(parameter, ReqAggrePerProc);
+    ReqAggrePerProc = List_.get(Prefix_ + "aggregation: next-level aggregates per process", ReqAggrePerProc);
   }
 
   if( SolvingMaxwell_ == false ) { 
@@ -1041,8 +805,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* ********************************************************************** */
 
   bool UseDropping = true;
-  sprintf(parameter,"%saggregation: use dropping", Prefix_);
-  UseDropping = List_.get(parameter, UseDropping);
+  UseDropping = List_.get(Prefix_ + "aggregation: use dropping", UseDropping);
   if( UseDropping == true ) ML_Aggregate_Set_UseDropping( ML_YES );
   else                      ML_Aggregate_Set_UseDropping( ML_NO );  
  
@@ -1053,8 +816,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
      
   if( SolvingMaxwell_ == false ) {
     bool UseSymmetrize = false;
-    sprintf(parameter,"%saggregation: symmetrize", Prefix_);
-    UseSymmetrize = List_.get(parameter, UseSymmetrize);
+    UseSymmetrize = List_.get(Prefix_ + "aggregation: symmetrize",
+			      UseSymmetrize);
     if( UseSymmetrize == true ) ML_Set_Symmetrize(ml_, ML_YES );
     else                        ML_Set_Symmetrize(ml_, ML_NO );  
   }
@@ -1103,8 +866,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
 
   if (SolvingMaxwell_ == false) {
 
-    sprintf(parameter,"%saggregation: use auxiliary matrix", Prefix_);
-    bool CreateFakeProblem = List_.get(parameter, false);
+    bool CreateFakeProblem = 
+      List_.get(Prefix_ + "aggregation: use auxiliary matrix", false);
 
     // I use FE matrix because I can set off-process elements. This may
     // help to create symmetric graphs (undirected graphs) from 
@@ -1250,8 +1013,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   /* MATLAB, for instance).                                                 */
   /* ********************************************************************** */
 
-  sprintf(parameter,"%sprint hierarchy", Prefix_);
-  bool PrintHierarchy = List_.get(parameter, false);
+  bool PrintHierarchy = List_.get(Prefix_ + "print hierarchy", false);
   
   if( Comm().NumProc() > 1 && PrintHierarchy == true ) {
     if( Comm().MyPID() == 0 ) {
@@ -1321,8 +1083,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // Compute the rate of convergence (for adaptive preconditioners)         //
   // ====================================================================== //
 
-  sprintf(parameter,"%sadaptive: enable", Prefix_);
-  if( List_.get(parameter, false) == true ) CheckPreconditionerKrylov();
+  if( List_.get(Prefix_ + "adaptive: enable", false) == true ) 
+    CheckPreconditionerKrylov();
   
   if( AnalyzeMemory_ ) {
     memory_[ML_MEM_FINAL] = ML_MaxAllocatableSize();
@@ -1332,9 +1094,8 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
   
   // print unused parameters
-  sprintf(parameter,"%sprint unused", Prefix_);
-  if( List_.isParameter(parameter) ) {
-    int ProcID = List_.get(parameter,-2);
+  if( List_.isParameter(Prefix_ + "print unused") ) {
+    int ProcID = List_.get(Prefix_ + "print unused",-2);
     if( Comm().MyPID() == ProcID || ProcID == -1 ) PrintUnused();
   }
 
@@ -1344,19 +1105,17 @@ ComputePreconditioner(const bool CheckPreconditioner)
   // ===================================================================== //
  
   if (viz == true) {
-    sprintf(parameter,"%sviz: x-coordinates", Prefix_);
-    double * x_coord = List_.get(parameter, (double *)0);
-    sprintf(parameter,"%sviz: y-coordinates", Prefix_);
-    double * y_coord = List_.get(parameter, (double *)0);
-    sprintf(parameter,"%sviz: z-coordinates", Prefix_);
-    double * z_coord = List_.get(parameter, (double *)0);
+    double * x_coord = List_.get(Prefix_ + "viz: x-coordinates", (double *)0);
+    double * y_coord = List_.get(Prefix_ + "viz: y-coordinates", (double *)0);
+    double * z_coord = List_.get(Prefix_ + "viz: z-coordinates", (double *)0);
     ML_Aggregate_Stats_ComputeCoordinates(ml_, agg_,
 					  x_coord, y_coord, z_coord);
   }
 
   /* ------------------- that's all folks --------------------------------- */
 
-  if( verbose_ ) PrintLine();
+  if( verbose_ )
+    ML_print_line("-",78);
 
   ConstructionTime_ += Time.ElapsedTime();
   
@@ -1369,10 +1128,10 @@ ComputePreconditioner(const bool CheckPreconditioner)
 void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 {
   if( Comm().MyPID() == MyPID ) {
-    PrintLine();
+    ML_print_line("-",78);
     cout << PrintMsg_ << "Unused parameters:" << endl;
     PrintUnused();
-    PrintLine();
+    ML_print_line("-",78);
   }
 }
 
@@ -1381,9 +1140,9 @@ void ML_Epetra::MultiLevelPreconditioner::PrintUnused(const int MyPID) const
 void ML_Epetra::MultiLevelPreconditioner::PrintList(int MyPID) 
 {
   if( Comm().MyPID() == MyPID ) {
-    PrintLine();
+    ML_print_line("-",78);
     cout << List_;
-    PrintLine();
+    ML_print_line("-",78);
   }
 }
 
@@ -1653,17 +1412,11 @@ ApplyInverse(const Epetra_MultiVector& X,
 int ML_Epetra::MultiLevelPreconditioner::SetCoarse() 
 {
 
-  char parameter[80];
-
-  sprintf(parameter,"%scoarse: type", Prefix_);
-  string CoarseSolution = List_.get(parameter, "Amesos-KLU");
-  sprintf(parameter,"%scoarse: sweeps", Prefix_);
-  int NumSmootherSteps = List_.get(parameter, 1);
-  sprintf(parameter,"%scoarse: damping factor", Prefix_);
-  double Omega = List_.get(parameter, 0.67);
+  string CoarseSolution = List_.get(Prefix_ + "coarse: type", "Amesos-KLU");
+  int NumSmootherSteps = List_.get(Prefix_ + "coarse: sweeps", 1);
+  double Omega = List_.get(Prefix_ + "coarse: damping factor", 0.67);
     
-  sprintf(parameter,"%scoarse: max processes", Prefix_);
-  int MaxProcs = List_.get(parameter, -1);
+  int MaxProcs = List_.get(Prefix_ + "coarse: max processes", -1);
 
   ML * ml_ptr;
   
@@ -1713,15 +1466,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
   char parameter[80];
   
   int value = -777;
-  sprintf(parameter,"%saggregation: type",Prefix_);
-  string CoarsenScheme = List_.get(parameter,"Uncoupled");
+  string CoarsenScheme = List_.get(Prefix_ + "aggregation: type","Uncoupled");
 
   if ( CoarsenScheme == "Uncoupled-MIS" )
       ML_Aggregate_Set_CoarsenScheme_UncoupledMIS(agg_);
   else {
      for( int level=0 ; level<NumLevels_-1 ; ++level ) {  
    
-       sprintf(parameter,"%saggregation: type (level %d)",Prefix_,LevelID_[level]);
+       sprintf(parameter,"%saggregation: type (level %d)",
+	       Prefix_.c_str(),LevelID_[level]);
        CoarsenScheme = List_.get(parameter,CoarsenScheme);
 
        if( CoarsenScheme == "METIS" )
@@ -1746,83 +1499,90 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
        if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" ) {
          
          bool isSet = false;
-   
-         // first look for parameters without any level specification
-         
-         sprintf(parameter,"%saggregation: global aggregates", Prefix_);
-         if( List_.isParameter(parameter) ){
-       value = -777; // simply means not set
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-         isSet = true;
+
+	 // first look for parameters without any level specification
+
+	 sprintf(parameter,"%saggregation: global aggregates", 
+		 Prefix_.c_str());
+	 if( List_.isParameter(parameter) ){
+	   value = -777; // simply means not set
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
+	   }
+	 }
+
+	 sprintf(parameter,"%saggregation: local aggregates", 
+		 Prefix_.c_str());
+	 if( List_.isParameter(parameter) ){
+	   value = -777;
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
        }
          }
-         
-         sprintf(parameter,"%saggregation: local aggregates", Prefix_);
-         if( List_.isParameter(parameter) ){
-       value = -777;
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-         isSet = true;
-       }
-         }
-         
-         sprintf(parameter,"%saggregation: nodes per aggregate", Prefix_);
-         if( List_.isParameter(parameter) ){
-       value = -777;
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-         isSet = true;
-       }
-         }
-   
-         // now for level-specific data
-   
-         sprintf(parameter,"%saggregation: global aggregates (level %d)", Prefix_, LevelID_[level]);
-         if( List_.isParameter(parameter) ){
-       value = -777; // simply means not set
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
-         isSet = true;
-       }
-         }
-         
-         sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
-         if( List_.isParameter(parameter) ){
-       value = -777;
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
-         isSet = true;
-       }
-         }
-         
-         sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", Prefix_, LevelID_[level]);
-         if( List_.isParameter(parameter) ){
-       value = -777;
-       value = List_.get(parameter,value);
-       if( value != -777 ) {
-         ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
-         isSet = true;
-       }
-         }
-         
-         if( isSet == false ) {
-       // put default values
-       sprintf(parameter,"%saggregation: local aggregates (level %d)", Prefix_, LevelID_[level]);
-       value = List_.get(parameter,1);
-       ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
-         }
-         
+
+	 sprintf(parameter,"%saggregation: nodes per aggregate", 
+		 Prefix_.c_str());
+	 if( List_.isParameter(parameter) ){
+	   value = -777;
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
+	   }
+	 }
+
+	 // now for level-specific data
+
+	 sprintf(parameter,"%saggregation: global aggregates (level %d)", 
+		 Prefix_.c_str(), LevelID_[level]);
+	 if( List_.isParameter(parameter) ){
+	   value = -777; // simply means not set
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_GlobalNumber(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
+	   }
+	 }
+
+	 sprintf(parameter,"%saggregation: local aggregates (level %d)", 
+		 Prefix_.c_str(), LevelID_[level]);
+	 if( List_.isParameter(parameter) ){
+	   value = -777;
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
+	   }
+	 }
+
+	 sprintf(parameter,"%saggregation: nodes per aggregate (level %d)", 
+		 Prefix_.c_str(), LevelID_[level]);
+	 if( List_.isParameter(parameter) ){
+	   value = -777;
+	   value = List_.get(parameter,value);
+	   if( value != -777 ) {
+	     ML_Aggregate_Set_NodesPerAggr(ml_,agg_,LevelID_[level],value );
+	     isSet = true;
+	   }
+	 }
+
+	 if( isSet == false ) {
+	   // put default values
+	   sprintf(parameter,"%saggregation: local aggregates (level %d)", 
+		   Prefix_.c_str(), LevelID_[level]);
+	   value = List_.get(parameter,1);
+	   ML_Aggregate_Set_LocalNumber(ml_,agg_,LevelID_[level],value);
+	 }
+
        } // if( CoarsenScheme == "METIS" || CoarsenScheme == "ParMETIS" )
-       
+
      } /* for */
-     } /* else */
-  
+  } /* else */
+
   return 0;
 }
 
@@ -1831,10 +1591,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetAggregation()
 int ML_Epetra::MultiLevelPreconditioner::SetPreconditioner() 
 {
 
-  char parameter[80];
-  
-  sprintf(parameter,"%sprec type", Prefix_);
-  string str = List_.get(parameter,"MGV");
+  string str = List_.get(Prefix_ + "prec type","MGV");
 
   if( str == "one-level-postsmoothing" ) {
     
@@ -1901,15 +1658,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
 
   Epetra_Time Time(Comm());
   
-  char parameter[80];
-
   /* ********************************************************************** */
   /* Strategies to determine the field-of-values.                           */
   /* almost everything here is experimental ;)                              */
   /* ********************************************************************** */
 
-  sprintf(parameter,"%sR and P smoothing: type", Prefix_);
-  string RandPSmoothing = List_.get(parameter, "classic");
+  string RandPSmoothing = List_.get(Prefix_ + "R and P smoothing: type", 
+				    "classic");
 
   /* start looping over different options */
 
@@ -1942,14 +1697,12 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
     field_of_values->imag_max= -1.0;
     field_of_values->poly_order = 0;
 
-    sprintf(parameter,"%saggregation: compute field of values", Prefix_);
-    if( List_.get(parameter,true) )
+    if( List_.get(Prefix_ + "aggregation: compute field of values",true) )
       field_of_values->compute_field_of_values = ML_YES;
     else
       field_of_values->compute_field_of_values = ML_NO;
     
-    sprintf(parameter,"%saggregation: compute field of values for non-scaled", Prefix_);
-    if( List_.get(parameter,false) )
+    if( List_.get(Prefix_ + "aggreation: compute field of values for non-scaled",false) )
       field_of_values->compute_field_of_values_non_scaled = ML_YES;
     else
       field_of_values->compute_field_of_values_non_scaled = ML_NO;
@@ -2201,13 +1954,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDamping()
 int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
 {
   
-  char parameter[80];
-  
   double DampingFactor = 1.333;
   if( SolvingMaxwell_ ) DampingFactor = 0.0;
 
-  sprintf(parameter,"%saggregation: damping factor", Prefix_);
-  DampingFactor = List_.get(parameter, DampingFactor);
+  DampingFactor = List_.get(Prefix_ + "aggregation: damping factor", 
+			    DampingFactor);
   ML_Aggregate_Set_DampingFactor( agg_, DampingFactor );
   
   if( verbose_ ) {
@@ -2215,8 +1966,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
     cout << PrintMsg_ << "R and P smoothing : \\omega = " << DampingFactor << "/lambda_max" <<endl;
   }
     
-  sprintf(parameter,"%seigen-analysis: type", Prefix_);
-  string str = List_.get(parameter,"Anorm");
+  string str = List_.get(Prefix_ + "eigen-analysis: type","Anorm");
   
   if( verbose_ ) cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << endl;
   
@@ -2226,7 +1976,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
   else if( str == "power-method" ) ML_Aggregate_Set_SpectralNormScheme_PowerMethod(agg_);
   else {
     if( Comm().MyPID() == 0 ) {
-      cerr << ErrorMsg_ << "parameter `" << parameter << "' has an incorrect value"
+      cerr << ErrorMsg_ << "parameter `eigen-analysis: type' has an incorrect value"
 	   << "(" << str << ")" << endl;
       cerr << ErrorMsg_ << "It should be: " << endl
 	   << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << endl;
@@ -2255,12 +2005,6 @@ PrintStencil2D(const int nx, const int ny,
   if (RowMatrix_ == 0) 
     ML_CHK_ERR(-3); // matrix still not set
 
-
-  int MaxPerRow = RowMatrix_->MaxNumEntries();
-  int NumEntriesRow;   // local entries on each row
-  vector<double> Values;  Values.resize(MaxPerRow);
-  vector<int>    Indices; Indices.resize(MaxPerRow);
-  
   // automatically compute NodeID, somewhere in the middle of the grid
   if (NodeID == -1) {
     if (ny == 1) 
@@ -2271,16 +2015,23 @@ PrintStencil2D(const int nx, const int ny,
   
   // need to convert from NodeID (BlockRowID) to PointRowID
   int GID = NodeID * NumPDEEqns_;
-
+  
   int LID = RowMatrix_->RowMatrixRowMap().LID(GID);
 
-  if (LID != -1) {
-    int ierr = RowMatrix_->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
-					    &Values[0], &Indices[0]);
-    if (ierr) 
-      ML_CHK_ERR(-4);
- 
-  }
+  // only processor having this node will go on
+  if (LID == -1)
+    return(0);
+
+  int MaxPerRow = RowMatrix_->MaxNumEntries();
+  int NumEntriesRow;   // local entries on each row
+  vector<double> Values;  Values.resize(MaxPerRow);
+  vector<int>    Indices; Indices.resize(MaxPerRow);
+  
+  int ierr = RowMatrix_->ExtractMyRowCopy(LID, MaxPerRow, NumEntriesRow,
+					  &Values[0], &Indices[0]);
+
+  if (ierr) 
+    ML_CHK_ERR(-4);
 
   // cycle over nonzero elements, look for elements in positions that we
   // can understand
@@ -2293,15 +2044,15 @@ PrintStencil2D(const int nx, const int ny,
     }
   
   // look for the following positions
-  StencilInd(0,0) = NodeID-1-nx;
-  StencilInd(1,0) = NodeID-nx;
-  StencilInd(2,0) = NodeID+1-nx;
-  StencilInd(0,1) = NodeID-1;
-  StencilInd(1,1) = NodeID;
-  StencilInd(2,1) = NodeID+1;
-  StencilInd(0,2) = NodeID-1+nx;
-  StencilInd(1,2) = NodeID+nx;
-  StencilInd(2,2) = NodeID+1+nx;
+  StencilInd(0,0) = RowMatrix_->RowMatrixColMap().LID(NodeID-1-nx);
+  StencilInd(1,0) = RowMatrix_->RowMatrixColMap().LID(NodeID-nx);
+  StencilInd(2,0) = RowMatrix_->RowMatrixColMap().LID(NodeID+1-nx);
+  StencilInd(0,1) = RowMatrix_->RowMatrixColMap().LID(NodeID-1);
+  StencilInd(1,1) = RowMatrix_->RowMatrixColMap().LID(NodeID);
+  StencilInd(2,1) = RowMatrix_->RowMatrixColMap().LID(NodeID+1);
+  StencilInd(0,2) = RowMatrix_->RowMatrixColMap().LID(NodeID-1+nx);
+  StencilInd(1,2) = RowMatrix_->RowMatrixColMap().LID(NodeID+nx);
+  StencilInd(2,2) = RowMatrix_->RowMatrixColMap().LID(NodeID+1+nx);
 
   for( int i=0 ; i<NumEntriesRow ; ++i ) {
     // get only the required equation
@@ -2397,7 +2148,6 @@ int ML_Epetra::MultiLevelPreconditioner::BreakForDebugger()
 // ============================================================================
 int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatrix * & FakeMatrix)
 {
-  char parameter[80];
 
   int NumMyRows = RowMatrix_->NumMyRows();
 
@@ -2415,8 +2165,8 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 
   int NumDimensions = 0;
 
-  sprintf(parameter,"%saggregation: x-coordinates", Prefix_);
-  double * x_coord = List_.get(parameter,(double *)0);
+  double* x_coord = List_.get(Prefix_ + "aggregation: x-coordinates",
+			      (double *)0);
   if( x_coord != 0 ) ++NumDimensions;
 
   // at least x-coordinates myst be not null
@@ -2429,12 +2179,12 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
     ML_CHK_ERR(-2); // wrong parameters
   }
 
-  sprintf(parameter,"%saggregation: y-coordinates", Prefix_);
-  double * y_coord = List_.get(parameter,(double *)0);
+  double * y_coord = List_.get(Prefix_ + "aggregation: y-coordinates",
+			       (double *)0);
   if( y_coord != 0 ) ++NumDimensions;
 
-      sprintf(parameter,"%saggregation: z-coordinates", Prefix_);
-      double * z_coord = List_.get(parameter,(double *)0);
+      double * z_coord = List_.get(Prefix_ + "aggregation: z-coordinates",
+				   (double *)0);
       if( z_coord != 0 ) ++NumDimensions;
 
       // small check to avoid strange behavior
@@ -2444,11 +2194,9 @@ int ML_Epetra::MultiLevelPreconditioner::CreateAuxiliaryMatrix(Epetra_FECrsMatri
 	ML_CHK_ERR(-3); // something went wrong
       }
   
-  sprintf(parameter,"%saggregation: theta", Prefix_);
-  double theta = List_.get(parameter,0.0);
+  double theta = List_.get(Prefix_ + "aggregation: theta",0.0);
 
-  sprintf(parameter,"%saggregation: use symmetric pattern", Prefix_);
-  bool SymmetricPattern = List_.get(parameter,false);
+  bool SymmetricPattern = List_.get(Prefix_ + "aggregation: use symmetric pattern",false);
 
   // usual crap to clutter the output
   if( verbose_ ) {

@@ -26,6 +26,19 @@
 #include "AztecOO.h"
 
 // ============================================================================
+static int SetLHSAndRHS(Epetra_Vector& LHS, Epetra_Vector& RHS,
+			const Epetra_RowMatrix& Matrix)
+{
+  ML_CHK_ERR(LHS.Random());
+
+  ML_CHK_ERR(Matrix.Multiply(false,LHS,RHS));
+
+  ML_CHK_ERR(LHS.PutScalar(0.0));
+
+  return(0);
+
+}
+// ============================================================================
 static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], double time)
 {
 
@@ -160,8 +173,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       assert( yo != 0 );
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -209,8 +221,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       assert( yo != 0 );
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -258,8 +269,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       assert( yo != 0 );
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -306,8 +316,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       assert( yo != 0 );
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -363,8 +372,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       assert( yo != 0 );
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -412,8 +420,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       solver.SetAztecOption(AZ_solver, AZ_GMRESR); 
       solver.SetPrecOperator(yo);
 
-      LHS.PutScalar(0.0);
-      RHS.Random();
+      SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
       solver.Iterate(MaxIters,Tol);
       solver.GetAllAztecStatus(status);
@@ -455,8 +462,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
     assert( yo != 0 );
     solver.SetPrecOperator(yo);
 
-    LHS.PutScalar(0.0);
-    RHS.Random();
+    SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
     solver.Iterate(MaxIters,Tol);
     solver.GetAllAztecStatus(status);
@@ -500,8 +506,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
      
     solver.SetPrecOperator(yo);
 
-    LHS.PutScalar(0.0);
-    RHS.Random();
+    SetLHSAndRHS(LHS, RHS, *RowMatrix_);
 
     solver.Iterate(MaxIters,Tol);
     solver.GetAllAztecStatus(status);

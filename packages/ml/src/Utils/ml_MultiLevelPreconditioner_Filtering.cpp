@@ -62,18 +62,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetFiltering()
 
   int ReturnValue = 0;
   
-  char parameter[80];
   Epetra_Time Time(Comm());
 
   string Pre(Prefix_);
 
-  sprintf(parameter,"%sfiltering: enable", Prefix_);
-  if (List_.get(parameter,false) == false) 
+  if (List_.get(Prefix_ + "filtering: enable",false) == false) 
     return(0);
 
 #ifdef MARZIO_GGB
-  sprintf(parameter,"%sfiltering: use symmetric cycle", Prefix_);
-  bool FltUseSym = List_.get(parameter,false);
+  bool FltUseSym = List_.get(Prefix_ + "filtering: use symmetric cycle",false);
   cerr << "ERROR THIS TO BE DONE..." << endl;
 #endif
 
@@ -536,15 +533,11 @@ bool ML_Epetra::MultiLevelPreconditioner::CheckPreconditionerKrylov()
 
   if( verbose_ ) cout << PrintMsg_ << endl << "\tComputing the rate of convergence..." << endl;
 
-  char parameter[80];
-  sprintf(parameter,"%sadaptive: max iters", Prefix_);
-  int MaxIters = List_.get(parameter,(int)5);
+  int MaxIters = List_.get(Prefix_ + "adaptive: max iters",(int)5);
 
-  sprintf(parameter,"%sadaptive: ratio", Prefix_);
-  double Ratio = List_.get(parameter,(double)0.5);
+  double Ratio = List_.get(Prefix_ + "adaptive: ratio",(double)0.5);
  
-  sprintf(parameter,"%sadaptive: output", Prefix_);
-  int Output = List_.get(parameter,-1);
+  int Output = List_.get(Prefix_ + "adaptive: output",-1);
   
   Epetra_Vector LHS(Map());
   Epetra_Vector RHS(Map());

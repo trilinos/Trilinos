@@ -52,59 +52,59 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   char parameter[80];
   Epetra_Time Time(Comm());
 
-  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
+  sprintf(parameter,"%ssmoother: sweeps", Prefix_.c_str());
   int num_smoother_steps = List_.get(parameter, 1);
 
-  sprintf(parameter,"%ssmoother: damping factor", Prefix_);
+  sprintf(parameter,"%ssmoother: damping factor", Prefix_.c_str());
   double omega = List_.get(parameter,1.0);
 
-  sprintf(parameter,"%ssmoother: pre or post", Prefix_);
+  sprintf(parameter,"%ssmoother: pre or post", Prefix_.c_str());
   int pre_or_post = 0;
   string PreOrPostSmoother = List_.get(parameter,"both");
 
-  sprintf(parameter,"%ssmoother: type", Prefix_);
+  sprintf(parameter,"%ssmoother: type", Prefix_.c_str());
   string Smoother = List_.get(parameter,"Aztec");
 
-  sprintf(parameter,"%ssmoother: Aztec options", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec options", Prefix_.c_str());
   int * SmootherOptionsPtr = NULL;
   SmootherOptionsPtr = List_.get(parameter,SmootherOptionsPtr);
 
-  sprintf(parameter,"%ssmoother: Aztec params", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec params", Prefix_.c_str());
   double * SmootherParamsPtr = NULL;
   SmootherParamsPtr = List_.get(parameter,SmootherParamsPtr);
 
-  sprintf(parameter,"%ssmoother: Aztec as solver", Prefix_);
+  sprintf(parameter,"%ssmoother: Aztec as solver", Prefix_.c_str());
   bool AztecSmootherAsASolver = List_.get(parameter,false);
   int aztec_its;
 
-  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_);
+  sprintf(parameter,"%ssmoother: MLS polynomial order", Prefix_.c_str());
   int MLSPolynomialOrder = List_.get(parameter,3);
 
-  sprintf(parameter,"%ssmoother: MLS alpha",Prefix_);
+  sprintf(parameter,"%ssmoother: MLS alpha",Prefix_.c_str());
   double MLSalpha = List_.get(parameter,30.0);
   
   int SmootherLevels = (NumLevels_>1)?(NumLevels_-1):1;
 
-  sprintf(parameter,"%ssmoother: ParaSails levels",Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails levels",Prefix_.c_str());
   int ParaSailsN = List_.get(parameter,0);
 
   // this can be:
   // 0) nonsymmetric and/or indefinite
   // 1) SPD
   // (The ParaSails manual seems to allow also 2, but not ML)
-  sprintf(parameter,"%ssmoother: ParaSails matrix",Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails matrix",Prefix_.c_str());
   int ParaSailsSym = List_.get(parameter,0);
 
-  sprintf(parameter,"%ssmoother: ParaSails threshold",Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails threshold",Prefix_.c_str());
   double ParaSailsThresh = List_.get(parameter,0.01);
 
-  sprintf(parameter,"%ssmoother: ParaSails filter",Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails filter",Prefix_.c_str());
   double ParaSailsFilter = List_.get(parameter,0.05);
 
-  sprintf(parameter,"%ssmoother: ParaSails load balancing",Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails load balancing",Prefix_.c_str());
   double ParaSailsLB = List_.get(parameter,0.0);
 
-  sprintf(parameter,"%ssmoother: ParaSails factorized", Prefix_);
+  sprintf(parameter,"%ssmoother: ParaSails factorized", Prefix_.c_str());
   int ParaSailsFactorized = List_.get(parameter,0);
 
   // ===================== //
@@ -119,13 +119,13 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 
     // general parameters for more than one smoother
 
-    sprintf(parameter,"%ssmoother: sweeps (level %d)", Prefix_, LevelID_[level] );
+    sprintf(parameter,"%ssmoother: sweeps (level %d)", Prefix_.c_str(), LevelID_[level] );
     num_smoother_steps = List_.get(parameter,num_smoother_steps);
 
-    sprintf(parameter,"%ssmoother: damping factor (level %d)", Prefix_, LevelID_[level] );
+    sprintf(parameter,"%ssmoother: damping factor (level %d)", Prefix_.c_str(), LevelID_[level] );
     omega = List_.get(parameter,omega);
 
-    sprintf(parameter,"%ssmoother: pre or post (level %d)", Prefix_, LevelID_[level] );
+    sprintf(parameter,"%ssmoother: pre or post (level %d)", Prefix_.c_str(), LevelID_[level] );
     PreOrPostSmoother = List_.get(parameter, PreOrPostSmoother);
     
     if( PreOrPostSmoother == "post" ) pre_or_post = ML_POSTSMOOTHER;
@@ -134,7 +134,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
     else 
       cerr << ErrorMsg_ << "smoother not recognized (" << PreOrPostSmoother << ")\n";
     
-    sprintf(parameter,"%ssmoother: type (level %d)", Prefix_, LevelID_[level]);
+    sprintf(parameter,"%ssmoother: type (level %d)", Prefix_.c_str(), LevelID_[level]);
     Smoother = List_.get(parameter,Smoother);
 
     char msg[80];
@@ -205,11 +205,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // AztecOO //
       // ======= //
       
-      sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec options (level %d)", Prefix_.c_str(), LevelID_[level]);
       SmootherOptionsPtr = List_.get(parameter, SmootherOptionsPtr);
-      sprintf(parameter,"%ssmoother: Aztec params (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec params (level %d)", Prefix_.c_str(), LevelID_[level]);
       SmootherParamsPtr = List_.get(parameter, SmootherParamsPtr);
-      sprintf(parameter,"%ssmoother: Aztec as solver (level %d)", Prefix_, LevelID_[level]);
+      sprintf(parameter,"%ssmoother: Aztec as solver (level %d)", Prefix_.c_str(), LevelID_[level]);
       AztecSmootherAsASolver = List_.get(parameter,AztecSmootherAsASolver);
      
       if( AztecSmootherAsASolver == false ) aztec_its = AZ_ONLY_PRECONDITIONER;
@@ -283,27 +283,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // ========= //
 
       sprintf(parameter,"%ssmoother: ParaSails levels (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsN = List_.get(parameter,ParaSailsN);
 
       sprintf(parameter,"%ssmoother: ParaSails matrix (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsSym = List_.get(parameter,ParaSailsSym);
 
       sprintf(parameter,"%ssmoother: ParaSails threshold (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsThresh = List_.get(parameter,ParaSailsThresh);
 
       sprintf(parameter,"%ssmoother: ParaSails filter (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsFilter = List_.get(parameter,ParaSailsFilter);
 
       sprintf(parameter,"%ssmoother: ParaSails load balancing (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsLB = List_.get(parameter,ParaSailsLB);
 
       sprintf(parameter,"%ssmoother: ParaSails factorized (level %d)",
-	      Prefix_, level);
+	      Prefix_.c_str(), level);
       ParaSailsFactorized = List_.get(parameter,ParaSailsFactorized);
 
       if( verbose_ ) 
@@ -386,27 +386,27 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothersMaxwell()
 
   char parameter[80];
   
-  sprintf(parameter,"%ssmoother: sweeps", Prefix_);
+  sprintf(parameter,"%ssmoother: sweeps", Prefix_.c_str());
   int num_smoother_sweeps = List_.get(parameter, 1);
 
-  sprintf(parameter,"%ssmoother: type", Prefix_);
+  sprintf(parameter,"%ssmoother: type", Prefix_.c_str());
   string SmootherType = List_.get(parameter,"MLS");
 
   // get user's defined parameters for nodal smoothing
  
-  sprintf(parameter,"%ssmoother: node: sweeps", Prefix_);
+  sprintf(parameter,"%ssmoother: node: sweeps", Prefix_.c_str());
   int nodal_its = List_.get(parameter, 1);
 
-  sprintf(parameter,"%ssmoother: node: damping factor", Prefix_);
+  sprintf(parameter,"%ssmoother: node: damping factor", Prefix_.c_str());
   double nodal_omega = List_.get(parameter,1.0);
 
 
   // get user's defined parameters for edge smoothing
  
-  sprintf(parameter,"%ssmoother: edge: sweeps", Prefix_);
+  sprintf(parameter,"%ssmoother: edge: sweeps", Prefix_.c_str());
   int edge_its = List_.get(parameter, 1);
 
-  sprintf(parameter,"%ssmoother: edge: damping factor", Prefix_);
+  sprintf(parameter,"%ssmoother: edge: damping factor", Prefix_.c_str());
   double edge_omega = List_.get(parameter,1.0);
 
   // arguments for nodal smoother

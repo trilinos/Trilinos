@@ -57,12 +57,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpaceMaxwell()
 int ML_Epetra::MultiLevelPreconditioner::SetNullSpace() 
 {
 
-  char parameter[80];
-  
   const Epetra_VbrMatrix * VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
   if( VbrMatrix == 0 ) {
-    sprintf(parameter,"%sPDE equations", Prefix_);
-    NumPDEEqns_ = List_.get(parameter, 1);
+    NumPDEEqns_ = List_.get(Prefix_ + "PDE equations", 1);
   }
   else {
     int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
@@ -80,8 +77,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   int NullSpaceDim = NumPDEEqns_;
   double * NullSpacePtr = NULL;
 
-  sprintf(parameter,"%snull space: type", Prefix_);
-  string option = List_.get(parameter, "default vectors");
+  string option = List_.get(Prefix_ + "null space: type", "default vectors");
 
   // to save time, the 1-level case will always use "default vectors"
   if( NumLevels_ == 1 ) option = "default vectors";
@@ -131,10 +127,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     
   } else if( option == "pre-computed" ) {
 
-    sprintf(parameter,"%snull space: dimension", Prefix_);    
-    NullSpaceDim = List_.get(parameter, NumPDEEqns_);
-    sprintf(parameter,"%snull space: vectors", Prefix_);
-    NullSpacePtr = List_.get(parameter, NullSpacePtr);
+    NullSpaceDim = List_.get(Prefix_ + "null space: dimension", NumPDEEqns_);
+    NullSpacePtr = List_.get(Prefix_ + "null space: vectors", NullSpacePtr);
 
     if( NullSpacePtr == 0 ) {
       if( Comm().MyPID() == 0 ) cerr << ErrorMsg_ << "Null space vectors is NULL!" << endl;
@@ -146,8 +140,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   
   } else if( option == "enriched" ) {
 
-    sprintf(parameter,"%snull space: vectors to compute", Prefix_);    
-    NullSpaceDim = List_.get(parameter, 1);
+    NullSpaceDim = List_.get(Prefix_ + "null space: vectors to compute", 1);
 
     // by default, 0 means to compute one eigenvector per equation.
     // This number can be doubled if the imaginary part is added.
@@ -158,13 +151,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
 
     Epetra_Time Time(Comm());
     
-    sprintf(parameter,"%snull space: add default vectors", Prefix_);
-    bool UseDefaultVectors = List_.get(parameter, true);
+    bool UseDefaultVectors = List_.get(Prefix_ + "null space: add default vectors", true);
 
     // NOTE: NullSpaceDim always refers to the number of eigenvectors,
     //       if this flag is true we will keep also the imaginary part
-    sprintf(parameter,"%snull space: add imaginary components", Prefix_);
-    bool UseImaginaryComponents = List_.get(parameter, true);
+    bool UseImaginaryComponents = List_.get(Prefix_ + "null space: add imaginary components", true);
     
     if( verbose_ ) {
       cout << PrintMsg_ << "Enriching null space with " << NullSpaceDim << " vector(s)";
@@ -213,8 +204,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
     
     {
       
-      sprintf(parameter,"%snull space: matrix operation", Prefix_);
-      string opt = List_.get(parameter, "I-A");
+      string opt = List_.get(Prefix_ + "null space: matrix operation", "I-A");
       if( opt == "I-A" ) {
 	AnasaziList.set("eigen-analysis: matrix operation", opt);
 	AnasaziList.set("eigen-analysis: action", "LM");
@@ -323,8 +313,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetNullSpace()
   
   // May need to scale the null space ??
 
-  sprintf(parameter,"%snull space: scaling", Prefix_);
-  double * NullSpaceScaling = List_.get(parameter, (double *)0);
+  double * NullSpaceScaling = List_.get(Prefix_ + "null space: scaling", (double *)0);
 
   if( NullSpaceScaling != 0 ) {
     if( verbose_ ) cout << PrintMsg_ << "Scaling Null Space..." << endl;
@@ -342,49 +331,49 @@ int ML_Epetra::MultiLevelPreconditioner::SetEigenList()
   char parameter[80];
   
   // eigen-analysis:
-  sprintf(parameter,"%seigen-analysis: use symmetric algorithm", Prefix_);
+  sprintf(parameter,"%seigen-analysis: use symmetric algorithm", Prefix_.c_str());
   bool IsSymmetric = List_.get(parameter,false);
     
   if( IsSymmetric ) EigenList_.set("eigen-analysis: symmetric problem",true);
   else              EigenList_.set("eigen-analysis: symmetric problem",false);
 
-  sprintf(parameter,"%seigen-analysis: tolerance", Prefix_);
+  sprintf(parameter,"%seigen-analysis: tolerance", Prefix_.c_str());
   EigenList_.set("eigen-analysis: tolerance", List_.get(parameter, 1e-2));
 
-  sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_);    
+  sprintf(parameter,"%seigen-analysis: use diagonal scaling", Prefix_.c_str());    
   EigenList_.set("eigen-analysis: use diagonal scaling", List_.get(parameter,true));
     
-  sprintf(parameter,"%seigen-analysis: restart", Prefix_);
+  sprintf(parameter,"%seigen-analysis: restart", Prefix_.c_str());
   int itemp = List_.get(parameter, 100);
   EigenList_.set("eigen-analysis: restart", itemp);
 
-  sprintf(parameter,"%seigen-analysis: length", Prefix_);
+  sprintf(parameter,"%seigen-analysis: length", Prefix_.c_str());
   itemp =  List_.get(parameter, 20);
   EigenList_.set("eigen-analysis: length", itemp);
 
   // field of values:
 
-  sprintf(parameter,"%sfield-of-values: tolerance", Prefix_);
+  sprintf(parameter,"%sfield-of-values: tolerance", Prefix_.c_str());
   EigenList_.set("field-of-values: tolerance", List_.get(parameter, 1e-2));
 
-  sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_);    
+  sprintf(parameter,"%sfield-of-values: use diagonal scaling", Prefix_.c_str());    
   EigenList_.set("field-of-values: use diagonal scaling", List_.get(parameter,true));
     
-  sprintf(parameter,"%sfield-of-values: restart", Prefix_);
+  sprintf(parameter,"%sfield-of-values: restart", Prefix_.c_str());
   itemp = List_.get(parameter, 100);
   EigenList_.set("field-of-values: restart", itemp);
 
-  sprintf(parameter,"%sfield-of-values: length", Prefix_);
+  sprintf(parameter,"%sfield-of-values: length", Prefix_.c_str());
   itemp =  List_.get(parameter, 20);
   EigenList_.set("field-of-values: ", itemp);
 
-  sprintf(parameter,"%sfield-of-values: print current status", Prefix_);
+  sprintf(parameter,"%sfield-of-values: print current status", Prefix_.c_str());
   bool btemp =  List_.get(parameter, false);
   EigenList_.set("field-of-values: print current status", btemp);
 
   // general output
   
-  sprintf(parameter,"%soutput", Prefix_);
+  sprintf(parameter,"%soutput", Prefix_.c_str());
   itemp =  List_.get(parameter, 10);
   EigenList_.set("output",itemp);
     
