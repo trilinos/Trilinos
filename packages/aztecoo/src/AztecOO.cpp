@@ -151,6 +151,8 @@ void AztecOO::DeleteMemory() {
 	if (UserMatrixData_!=0) {delete UserMatrixData_; UserMatrixData_ = 0;}
 	if (PrecOperatorData_!=0) {delete PrecOperatorData_; PrecOperatorData_ = 0;}
 	if (PrecMatrixData_!=0) {delete PrecMatrixData_; PrecMatrixData_ = 0;}
+	if (ResidualVector_!=0) {delete ResidualVector_; ResidualVector_ = 0;}
+	if (conv_info_!=0) {AZ_converge_destroy(&conv_info_); conv_info_ = 0;}
 }
 
 //=============================================================================
@@ -163,6 +165,7 @@ int AztecOO::SetAztecDefaults() {
  PrecMatrixData_ = 0;
  X_ = 0;
  B_ = 0;
+ ResidualVector_ = 0;
  
  N_local_ = 0;
  x_LDA_ = 0;
@@ -173,6 +176,8 @@ int AztecOO::SetAztecDefaults() {
  Pmat_ = 0;
  Prec_ = 0;
  Scaling_ = 0;
+ StatusTest_ = 0;
+ conv_info_ = 0;
  
  condest_ = (-1.0); 
  useAdaptiveDefaults_ = true;
@@ -278,7 +283,7 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
     Pmat_ = 0;
   }
 
-	if (PrecMatrixData_!=0) delete PrecMatrixData_;
+  if (PrecMatrixData_!=0) delete PrecMatrixData_;
   PrecMatrixData_ = new MatrixData(PrecMatrix); // Initialize preconditioner matrix data
   SetProcConfig(PrecMatrix->Comm());
   Pmat_ = AZ_matrix_create(N_local_);
@@ -330,6 +335,30 @@ int AztecOO::SetPrecOperator(Epetra_Operator * PrecOperator) {
    else
      AZ_set_precond_print_string(Prec_,label);
    return(0);
+}
+//=============================================================================
+int AztecOO::SetStatusTest(AztecOO_StatusTest * StatusTest) {
+
+  if (StatusTest == 0) EPETRA_CHK_ERR(-1);
+  if (Amat_==0) EPETRA_CHK_ERR(-2); // UserOperator Amat_ must be defined first
+  if (UserOperatorData_->A==0) EPETRA_CHK_ERR(-3); //  ust be defined so we know how to make residual vector
+
+
+  // Create AZ_CONVERGE_STRUCT if needed, associate with Amat
+  if (conv_info_==0) {
+    double dummy; // Need something to pass in to vector constructor, will not be used
+    ResidualVector_ = new Epetra_Vector(View, UserOperatorData_->A->OperatorRangeMap(), &dummy);
+    conv_info_ = AZ_converge_create();
+    conv_info_->scaling = Scaling_;
+    conv_info_->res_vec_object = (void *) ResidualVector_;
+    Amat_->conv_info = conv_info_;
+  }
+  StatusTest_ = StatusTest;
+  options_[AZ_conv] = AZTECOO_conv_test;
+  conv_info_->conv_object = (void *) StatusTest_;
+  conv_info_->conv_function = AztecOO_StatusTest_wrapper; 
+
+  return(0);
 }
 //=============================================================================
 int AztecOO::SetLHS(Epetra_MultiVector * X) {
@@ -1010,4 +1039,55 @@ int Epetra_Aztec_comm_wrapper(double vec[], AZ_MATRIX *Amat) {
   assert(TargetVec->Import(*SourceVec, *(A->RowMatrixImporter()),Insert)==0);
 
   return(1);
+}
+//=============================================================================
+void AztecOO_StatusTest_wrapper(void * conv_test_obj,/* pointer to AztecOO_StatusTest object */
+				void * res_vector_obj, /* pointer to Epetra_Vector res_vector */
+				int iteration,       /* current iteration */
+				double * res_vector, /* current natural residual vector */
+				int print_info,      /* no info print if 0, else  print info */
+				int sol_updated,      /* solution not updated if = 0, else it is
+							 and is consistent with res_vector */
+				int * converged,     /* = 0 on return if not converged, otherwise converged */
+				int * isnan,         /* = 0 on return if not NaN, otherwise NaNs detected */
+				double * rnorm,     /* = current norm on return */ 
+				int * r_avail)     /* If set to AZ_TRUE on return, the residual 
+						       vector is needed
+						       by this convergence on subsequent calls 
+						       and it should be 
+						       supplied by the calling routine */
+{
+
+
+  AztecOO_StatusTest * StatusTest = (AztecOO_StatusTest *) conv_test_obj;
+
+  Epetra_Vector * ResidualVector;
+  if (res_vector==0) 
+    ResidualVector = 0; // No residual vector passed in, so make the Epetra_Vector 0 too
+  else {
+    ResidualVector = (Epetra_Vector *) res_vector_obj; // Otherwise cast the pointer passed in
+    ResidualVector->ResetView(res_vector);
+  }
+
+  bool SolutionUpdated = false;
+  if (sol_updated) SolutionUpdated = true;
+  AztecOO_StatusType Status = StatusTest->CheckStatus(iteration, ResidualVector, 
+								  *rnorm, SolutionUpdated);
+  
+  if (print_info) StatusTest->Print(cout);
+  if (StatusTest->ResidualVectorRequired())
+    *r_avail = AZ_TRUE;
+  else
+    *r_avail = AZ_FALSE;
+
+  if (Status==Unconverged)
+    *converged = 0;
+  else if(Status==Converged)
+    *converged = 1;
+  else if (Status==NaN)
+    *isnan = 1;
+  else
+    *isnan = 1; // Failed, treat same as isnan
+
+  return;
 }

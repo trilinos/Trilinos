@@ -53,7 +53,10 @@ ostream& AztecOO_StatusTestMaxIters::Print(ostream& stream, int indent) const {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   PrintStatus(stream, status_);
-  stream << "Number of Iterations = " << Niters_ << " < " << MaxIters_;
+  stream << "Number of Iterations = ";
+  stream << Niters_;
+  stream << ((Niters_<MaxIters_) ? " < " : ((Niters_==MaxIters_) ? " = " : " > "));
+  stream << MaxIters_;
   stream << endl;
  return stream;
 }

@@ -106,17 +106,18 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
 							      bool SolutionUpdated)
 {
 
+  Epetra_Vector * crv = dynamic_cast<Epetra_Vector *>(CurrentResVector);
   // This section computes the norm of the residual vector
 
   if (restype_==Implicit && resnormtype_==TwoNorm && CurrentResNormEst!=-1.0) 
     resvalue_ = CurrentResNormEst;
-  else if (CurrentResVector==0) { // Cannot proceed because there is no norm est or res vector
+  else if (crv==0) { // Cannot proceed because there is no norm est or res vector
     status_ = Failed;
     return(status_);
   }
   else if (restype_==Explicit && SolutionUpdated) {
     curresvecexplicit_ = true;
-    if (localresvector_==0) localresvector_ = new Epetra_Vector(CurrentResVector->Map());
+    if (localresvector_==0) localresvector_ = new Epetra_Vector(crv->Map());
     // Compute explicit residual
     operator_.Apply(lhs_, *localresvector_);
     localresvector_->Update(1.0, rhs_, -1.0); // localresvector_ = rhs_ - operator_* lhs_
@@ -124,7 +125,7 @@ AztecOO_StatusType AztecOO_StatusTestResNorm::CheckStatus(int CurrentIter,
   }
   else {
     curresvecexplicit_ = false;
-    resvalue_ = ComputeNorm(*((*CurrentResVector)(0)), resnormtype_);
+    resvalue_ = ComputeNorm(*crv, resnormtype_);
   }
 
   if (firstcallCheckStatus_) {
@@ -172,7 +173,7 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     stream << ' ';
   PrintStatus(stream, status_);
     stream << "(";
-  stream << ((resnormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "I-Norm"));
+  stream << ((resnormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm"));
   stream << ((curresvecexplicit_) ? " Exp" : " Imp");
   stream << " Res Vec) ";
   if (scaletype_!=None)
@@ -181,7 +182,7 @@ ostream& AztecOO_StatusTestResNorm::Print(ostream& stream, int indent) const
     stream << " (User Scale)";
   else {
     stream << "(";
-    stream << ((scalenormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "I-Norm"));
+    stream << ((scalenormtype_==OneNorm) ? "1-Norm" : ((resnormtype_==TwoNorm) ? "2-Norm" : "Inf-Norm"));
     if (scaletype_==NormOfInitRes)
       stream << " Res0";
     else

@@ -181,8 +181,8 @@
 #define AZ_TRUE                1
 #define AZ_MAX_POLY_ORDER     10 /* max order for polynomial preconditioners */
 #define AZ_default           -10 /* options[i] = AZ_default ==>
-                                        AZ_check_input() sets options[i] to
-                                        its default value.
+                                    AZ_check_input() sets options[i] to
+                                    its default value.
                                   */
 
 /*******************************************************************************
@@ -269,7 +269,10 @@
 #define AZ_weighted         4 /* ||r||_WRMS                                   */
 #define AZ_expected_values  5 /* ||r||_WRMS with weights taken as |A||x0|     */
 #define AZ_noscaled         6 /* ||r||_2                                      */
-#define AZ_inf_noscaled     7 /* ||r||_infty                                  */                              /* NOTE: AZ_inf_noscaled should be last         */                              /* so that AZ_check_input() works properly.     */
+#define AZTECOO_conv_test   7 /* Convergence test will be done via AztecOO    */
+#define AZ_inf_noscaled     8 /* ||r||_infty                                  */
+/* NOTE: AZ_inf_noscaled should be last         */
+/* so that AZ_check_input() works properly.     */
 
 /*******************************************************************************
  *
@@ -460,19 +463,19 @@
  ******************************************************************************/
 
 #define SIZEOF_MPI_AZCOMM     20
-        /* MPI Communicators are kludged into Aztec's integer proc_config[] */
-        /* array. SIZEOF_MPI_AZComm must be greater or equal to             */
-        /*             sizeof(MPI_AZComm)/sizeof(int).                      */
-        /* If this is not true, an error message will be generated and you  */
-        /* will be asked to change this value.                              */
+/* MPI Communicators are kludged into Aztec's integer proc_config[] */
+/* array. SIZEOF_MPI_AZComm must be greater or equal to             */
+/*             sizeof(MPI_AZComm)/sizeof(int).                      */
+/* If this is not true, an error message will be generated and you  */
+/* will be asked to change this value.                              */
 
 #define AZ_OPTIONS_SIZE       47
 #define AZ_FIRST_USER_OPTION  27 /* User can define up to 20 options
                                     values starting at AZ_FIRST_USER_OPTION */
 /* Begin Aztec 2.1 mheroux mod */
-#define AZ_PARAMS_SIZE         30 
+#define AZ_PARAMS_SIZE         30
 #define AZ_FIRST_USER_PARAM    10 /* User can define up to 20 params
-                                    values starting at AZ_FIRST_USER_PARAM  */
+                                     values starting at AZ_FIRST_USER_PARAM  */
 /* End Aztec 2.1 mheroux mod */
 #define AZ_PROC_SIZE           (6+SIZEOF_MPI_AZCOMM)
 #define AZ_STATUS_SIZE         11

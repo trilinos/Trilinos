@@ -46,7 +46,9 @@ class AztecOO_StatusTestCombo: public AztecOO_StatusTest {
     \brief The test can be either the AND of all the component tests,
     or the OR of all the component tests.
   */
-  enum ComboType {AND, OR};
+  enum ComboType {AND, /*!< Require both subtests to be satisfied. */
+		  OR   /*!< Require one or the other subtests to be satisfied. */
+  };
   //@}
 
   //@{ \name Constructors/destructors.

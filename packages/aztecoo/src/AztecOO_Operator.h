@@ -49,7 +49,6 @@ class AztecOO_Operator: public virtual Epetra_Operator {
     \param In - Number of iterations that should be performed.  \em Exactly this many iteration will be done.
   */
   AztecOO_Operator(AztecOO * solver, int NumIters);
-  //@{ \name Destructor.
     //! Destructor
   ~AztecOO_Operator();
   //@}

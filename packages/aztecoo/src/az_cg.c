@@ -29,12 +29,12 @@
 #include "az_aztec.h"
 #include "az_blas_wrappers.h"
 
-void AZ_pcg_f(double b[], double x[], double weight[], int options[], 
-              double params[], int proc_config[],double status[], 
-              AZ_MATRIX *Amat, AZ_PRECOND *precond, 
+void AZ_pcg_f(double b[], double x[], double weight[], int options[],
+              double params[], int proc_config[],double status[],
+              AZ_MATRIX *Amat, AZ_PRECOND *precond,
               struct AZ_CONVERGE_STRUCT *convergence_info)
 
-/*******************************************************************************
+     /*******************************************************************************
 
   Conjugate Gradient algorithm to solve the symmetric matrix problem Ax = b.
 
@@ -73,7 +73,7 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   Amat:            Structure used to represent the matrix (see file az_aztec.h
                    and Aztec User's Guide).
 
-  precond:         Structure used to represent the preconditionner  
+  precond:         Structure used to represent the preconditionner
                    (see file az_aztec.h and Aztec User's Guide).
 *******************************************************************************/
 
@@ -89,17 +89,17 @@ void AZ_pcg_f(double b[], double x[], double weight[], int options[],
   double       alpha, beta = 0.0, nalpha, true_scaled_r=0.0;
   double      *r, *z, *p, *ap, actual_residual = -1.0;
   double       r_z_dot, r_z_dot_old, p_ap_dot, rec_residual;
-  double       scaled_r_norm, epsilon, brkdown_tol = DBL_EPSILON;
+  double       scaled_r_norm, brkdown_tol = DBL_EPSILON;
   int          *data_org, str_leng, first_time = AZ_TRUE;
   char         label[64],suffix[32], prefix[64];
-  
-double **saveme, *ptap;
-int *kvec_sizes = NULL, current_kept = 0;
-double *dots;
-double doubleone = 1., dzero = 0.;
-char *T = "T";
-char *T2 = "N";
-double *block;
+
+  double **saveme, *ptap;
+  int *kvec_sizes = NULL, current_kept = 0;
+  double *dots;
+  double doubleone = 1., dzero = 0.;
+  char *T = "T";
+  char *T2 = "N";
+  double *block;
 
 
 
@@ -112,23 +112,28 @@ double *block;
   str_leng = 0;
   for (i = 0; i < 16; i++) prefix[str_leng++] = ' ';
   for (i = 0 ; i < options[AZ_recursion_level]; i++ ) {
-     prefix[str_leng++] = ' '; prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
-     prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
+    prefix[str_leng++] = ' '; prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
+    prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
   }
-  prefix[str_leng] = '\0';             
+  prefix[str_leng] = '\0';
 
 
   /* pull needed values out of parameter arrays */
 
   data_org = Amat->data_org;
-  
+
   N            = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
 
   precond_flag = options[AZ_precond];
-  epsilon      = params[AZ_tol];
   proc         = proc_config[AZ_node];
   print_freq   = options[AZ_print_freq];
+
+  /* Initialize some values in convergence info struct */
+  convergence_info->print_info = print_freq;
+  convergence_info->iteration = 0;
+  convergence_info->sol_updated = 1; /* CG always updates solution */
+  convergence_info->epsilon = params[AZ_tol]; /* Test against this */
 
   /* allocate space for necessary vectors */
 
@@ -138,44 +143,44 @@ double *block;
                       /* matvec on paragon. */
 
 
-  
+
   sprintf(label,"z%s",suffix);
-  p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC, 
-			           AZ_SYS, label, &j);
+  p  = (double *) AZ_manage_memory(4*NN*sizeof(double),AZ_ALLOC,
+                                   AZ_SYS, label, &j);
   r  = &(p[1*NN]);
   z  = &(p[2*NN]);
   ap = &(p[3*NN]);
 
   AZ_compute_residual(b, x, r, proc_config, Amat);
 
-  if (options[AZ_apply_kvecs]) { 
-     AZ_compute_global_scalars(Amat, x, b, r,
-                            weight, &rec_residual, &scaled_r_norm, options,
-                            data_org, proc_config, &r_avail,NULL, NULL, &r_z_dot,
-                            convergence_info);
-     AZ_space_for_kvecs(AZ_OLD_ADDRESS, &kvec_sizes, &saveme,
-                        &ptap, options, data_org, suffix,
-                        proc_config[AZ_node], &block);
-     dots = (double *) AZ_allocate(2*kvec_sizes[AZ_Nkept]*sizeof(double));
-     if (dots == NULL) {
-        printf("Not space to apply vectors in CG\n");
-        exit(1);
-     }
-     DGEMV_F77(CHAR_MACRO(T[0]),&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one);
-     AZ_gdot_vec(kvec_sizes[AZ_Nkept], dots, &(dots[kvec_sizes[AZ_Nkept]]), proc_config);
-     for (i = 0; i < kvec_sizes[AZ_Nkept]; i++) dots[i] = dots[i]/ptap[i];
-     DGEMV_F77(CHAR_MACRO(T2[0]), &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone, 
-            x,  &one);
+  if (options[AZ_apply_kvecs]) {
+    AZ_compute_global_scalars(Amat, x, b, r,
+                              weight, &rec_residual, &scaled_r_norm, options,
+                              data_org, proc_config, &r_avail,NULL, NULL, &r_z_dot,
+                              convergence_info);
+    AZ_space_for_kvecs(AZ_OLD_ADDRESS, &kvec_sizes, &saveme,
+                       &ptap, options, data_org, suffix,
+                       proc_config[AZ_node], &block);
+    dots = (double *) AZ_allocate(2*kvec_sizes[AZ_Nkept]*sizeof(double));
+    if (dots == NULL) {
+      printf("Not space to apply vectors in CG\n");
+      exit(1);
+    }
+    DGEMV_F77(CHAR_MACRO(T[0]),&N,&(kvec_sizes[AZ_Nkept]),&doubleone,block,&N, r, &one, &dzero, dots, &one);
+    AZ_gdot_vec(kvec_sizes[AZ_Nkept], dots, &(dots[kvec_sizes[AZ_Nkept]]), proc_config);
+    for (i = 0; i < kvec_sizes[AZ_Nkept]; i++) dots[i] = dots[i]/ptap[i];
+    DGEMV_F77(CHAR_MACRO(T2[0]), &N, &(kvec_sizes[AZ_Nkept]), &doubleone, block, &N, dots, &one, &doubleone,
+              x,  &one);
 
-      AZ_free(dots);
-      AZ_compute_residual(b, x, r, proc_config, Amat);
-     if ((options[AZ_output] != AZ_none) && (proc == 0))
-        printf("\t\tApplied Previous Krylov Vectors ... \n\n");
+    AZ_free(dots);
+    AZ_compute_residual(b, x, r, proc_config, Amat);
+    if ((options[AZ_output] != AZ_none) && (proc == 0))
+      printf("\t\tApplied Previous Krylov Vectors ... \n\n");
   }
-  if (options[AZ_keep_kvecs] > 0) 
-     AZ_space_for_kvecs(AZ_NEW_ADDRESS, &kvec_sizes, &saveme,
-                     &ptap, options, data_org, suffix,
-                     proc_config[AZ_node], &block);
+  if (options[AZ_keep_kvecs] > 0)
+    AZ_space_for_kvecs(AZ_NEW_ADDRESS, &kvec_sizes, &saveme,
+                       &ptap, options, data_org, suffix,
+                       proc_config[AZ_node], &block);
 
 
 
@@ -204,16 +209,18 @@ double *block;
 
   if ((options[AZ_output] != AZ_none) &&
       (options[AZ_output] != AZ_last) &&
-      (options[AZ_output] != AZ_warnings) && (proc == 0))
-   {
-    (void) fprintf(stdout, "%siter:    0           residual = %e\n",
-                   prefix,scaled_r_norm);
-     fflush(stdout);
-   }
+      (options[AZ_output] != AZ_warnings) &&
+      (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0))
+    {
+      (void) fprintf(stdout, "%siter:    0           residual = %e\n",
+                     prefix,scaled_r_norm);
+      fflush(stdout);
+    }
 
-  converged = scaled_r_norm < epsilon;
+  converged = convergence_info->converged;
 
-  for (iter = 1; iter <= options[AZ_max_iter] && !converged; iter++ ) {
+  for (iter = 1; iter <= options[AZ_max_iter] && !converged && !(convergence_info->isnan); iter++ ) {
+    convergence_info->iteration = iter;
 
     /* p  = z + beta * p */
     /* ap = A p          */
@@ -221,12 +228,12 @@ double *block;
     for (i = 0; i < N; i++) p[i] = z[i] + beta * p[i];
     Amat->matvec(p, ap, Amat, proc_config);
 
-    if ((options[AZ_orth_kvecs]) && (kvec_sizes != NULL)) { 
-       for (i = 0; i < current_kept; i++) {
-          alpha = -AZ_gdot(N, ap, saveme[i], proc_config)/ptap[i];
-          DAXPY_F77(&N, &alpha,  saveme[i],  &one, p, &one);
-       }
-       if (current_kept > 0) Amat->matvec(p, ap, Amat, proc_config);
+    if ((options[AZ_orth_kvecs]) && (kvec_sizes != NULL)) {
+      for (i = 0; i < current_kept; i++) {
+        alpha = -AZ_gdot(N, ap, saveme[i], proc_config)/ptap[i];
+        DAXPY_F77(&N, &alpha,  saveme[i],  &one, p, &one);
+      }
+      if (current_kept > 0) Amat->matvec(p, ap, Amat, proc_config);
     }
 
     p_ap_dot = AZ_gdot(N, p, ap, proc_config);
@@ -241,7 +248,7 @@ double *block;
         AZ_scale_true_residual(x, b, ap,
                                weight, &actual_residual, &true_scaled_r,
                                options, data_org, proc_config, Amat,
-			       convergence_info);
+                               convergence_info);
         AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual,
                                   params, true_scaled_r, actual_residual,
                                   options, proc_config);
@@ -260,18 +267,18 @@ double *block;
     DAXPY_F77(&N, &alpha,  p,  &one, x, &one);
 
     if (iter <= options[AZ_keep_kvecs]) {
-       DCOPY_F77(&N, p, &one, saveme[iter-1], &one);
-       ptap[iter-1] = p_ap_dot ;
-       kvec_sizes[AZ_Nkept]++;
-       current_kept = kvec_sizes[AZ_Nkept];
+      DCOPY_F77(&N, p, &one, saveme[iter-1], &one);
+      ptap[iter-1] = p_ap_dot ;
+      kvec_sizes[AZ_Nkept]++;
+      current_kept = kvec_sizes[AZ_Nkept];
     }
-/*
-    else {
-       i = (iter-1)%options[AZ_keep_kvecs];
-       DCOPY_F77(&N, p, &one, saveme[i], &one);
-       ptap[i] = p_ap_dot ;
-    }
-*/
+    /*
+      else {
+      i = (iter-1)%options[AZ_keep_kvecs];
+      DCOPY_F77(&N, p, &one, saveme[i], &one);
+      ptap[i] = p_ap_dot ;
+      }
+    */
     DAXPY_F77(&N, &nalpha, ap, &one, r, &one);
     DCOPY_F77(&N, r, &one, z, &one);
 
@@ -291,8 +298,8 @@ double *block;
 
     if (brkdown_will_occur) {
       AZ_scale_true_residual( x, b, ap,
-                             weight, &actual_residual, &true_scaled_r, options,
-                             data_org, proc_config, Amat,convergence_info);
+                              weight, &actual_residual, &true_scaled_r, options,
+                              data_org, proc_config, Amat,convergence_info);
       AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual,
                                 params, true_scaled_r, actual_residual, options,
                                 proc_config);
@@ -311,20 +318,20 @@ double *block;
         brkdown_tol = 0.1 * fabs(r_z_dot);
     }
 
-    if ( (iter%print_freq == 0) && proc == 0 )
-    {
-      (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
-                     scaled_r_norm);
-       fflush(stdout);
-     }
+    if ( (iter%print_freq == 0) && (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0 )
+      {
+        (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
+                       scaled_r_norm);
+        fflush(stdout);
+      }
 
     /* convergence tests */
 
-    converged = scaled_r_norm < epsilon;
+    converged = convergence_info->converged;
     if (options[AZ_check_update_size] & converged)
-      converged = AZ_compare_update_vs_soln(N, -1.,alpha, p, x, 
-                                           params[AZ_update_reduction], 
-                                           options[AZ_output], proc_config, &first_time);
+      converged = AZ_compare_update_vs_soln(N, -1.,alpha, p, x,
+                                            params[AZ_update_reduction],
+                                            options[AZ_output], proc_config, &first_time);
 
 
     if (converged) {
@@ -332,7 +339,7 @@ double *block;
                              weight, &actual_residual, &true_scaled_r, options,
                              data_org, proc_config, Amat, convergence_info);
 
-      converged = true_scaled_r < params[AZ_tol];
+      converged = convergence_info->converged;
 
 
       /*
@@ -341,7 +348,7 @@ double *block;
        */
 
       if (!converged &&
-          (AZ_get_new_eps(&epsilon, scaled_r_norm, true_scaled_r,
+          (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm, true_scaled_r,
                           proc_config) == AZ_QUIT)) {
 
         /*
@@ -359,12 +366,13 @@ double *block;
 
   iter--;
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
-       && (options[AZ_output] != AZ_warnings) )
-  {
-    (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
-                   scaled_r_norm);
-    fflush(stdout);
-  }
+       && (options[AZ_output] != AZ_warnings) &&
+      (options[AZ_conv]!=AZTECOO_conv_test) )
+    {
+      (void) fprintf(stdout, "%siter: %4d           residual = %e\n", prefix, iter,
+                     scaled_r_norm);
+      fflush(stdout);
+    }
 
   /* check if we exceeded maximum number of iterations */
 

@@ -1621,6 +1621,10 @@ void AZ_terminate_status_print(int situation, int iter, double status[],
     case AZ_weighted:
       (void) fprintf(stdout, "\t||r||_WRMS:\t\t%e\t%e\n", scaled_r_norm, eps);
     break;
+    case AZTECOO_conv_test:
+      (void) fprintf(stdout, "\tUser-defined AztecOO_StatusTest:\t\t%e\t%e\n",
+                     scaled_r_norm, eps);
+    break;
     default:
       (void) fprintf(stderr, "terminate_status: ERROR: convergence test %d "
                      "not implemented\n", conv_flag);

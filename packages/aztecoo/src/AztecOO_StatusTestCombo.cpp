@@ -90,13 +90,13 @@ bool AztecOO_StatusTestCombo::ResidualVectorRequired() const
   // Recursively test this property.
   for (vector<AztecOO_StatusTest * const>::iterator i = tests_.begin(); i != tests_.end(); ++i) {
     
-    AztecOO_StatusTestCombo* ptr = dynamic_cast<AztecOO_StatusTestCombo*>(*i);
+    AztecOO_StatusTest* ptr = dynamic_cast<AztecOO_StatusTest*>(*i);
     if (ptr != NULL)
-      if (!ptr->ResidualVectorRequired())
+      if (ptr->ResidualVectorRequired())
 	return true;
   }
 
-  // Otherwise, it's safe to add a to the list.
+  // Otherwise we don't need residual vector.
   return false;
 }
 

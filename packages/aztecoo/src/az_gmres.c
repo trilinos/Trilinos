@@ -31,10 +31,10 @@
 #include "az_lapack_wrappers.h"
 
 void AZ_pgmres (double b[], double x[],double weight[], int options[],
-	double params[], int proc_config[], double status[], AZ_MATRIX *Amat, 
-	AZ_PRECOND *precond, struct AZ_CONVERGE_STRUCT *convergence_info)
+                double params[], int proc_config[], double status[], AZ_MATRIX *Amat,
+                AZ_PRECOND *precond, struct AZ_CONVERGE_STRUCT *convergence_info)
 
-/*******************************************************************************
+     /*******************************************************************************
 
   This routine uses Saad's restarted Genralized Minimum Residual method to solve
   the nonsymmetric matrix problem Ax = b.
@@ -99,7 +99,7 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   int          precond_flag, print_freq, proc, kspace, first_time = AZ_TRUE;
   double     **v, **hh, *c, *s, *rs, *dots, *tmp, *temp;
   double       *res, init_time = 0.0;
-  double       dble_tmp, r_2norm, first_2norm, epsilon;
+  double       dble_tmp, r_2norm, first_2norm;
   double       rec_residual, scaled_r_norm, true_scaled_r=0.0;
   double       actual_residual = -1.0;
   double       doubleone = 1.0, minusone = -1.0, *dummy = (double *) 0;
@@ -116,21 +116,21 @@ void AZ_pgmres (double b[], double x[],double weight[], int options[],
   double *hhblock, *vblock;
   int kspace_p1,kspace_p2,N_total;
   int aligned_N_total;
-char *T = "T";
-char *T2 = "N";
+  char *T = "T";
+  char *T2 = "N";
 
 
   /**************************** execution begins ******************************/
 
   sprintf(suffix," in gmres%d",options[AZ_recursion_level]);/* set string that will be used */
-                                                           /* for manage_memory label      */
+  /* for manage_memory label      */
   /* set prefix for printing */
 
   str_leng = 0;
   for (i = 0; i < 16; i++) prefix[str_leng++] = ' ';
   for (i = 0 ; i < options[AZ_recursion_level]; i++ ) {
-     prefix[str_leng++] = ' '; prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
-     prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
+    prefix[str_leng++] = ' '; prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
+    prefix[str_leng++] = ' '; prefix[str_leng++] = ' ';
   }
   prefix[str_leng] = '\0';
 
@@ -140,24 +140,30 @@ char *T2 = "N";
 
   N            = data_org[AZ_N_internal] + data_org[AZ_N_border];
   precond_flag = options[AZ_precond];
-  epsilon      = params[AZ_tol];
+
   proc         = proc_config[AZ_node];
   print_freq   = options[AZ_print_freq];
   kspace       = options[AZ_kspace];
+
+  /* Initialize some values in convergence info struct */
+  convergence_info->print_info = print_freq;
+  convergence_info->iteration = 0;
+  convergence_info->sol_updated = 0; /* GMRES seldom updates solution */
+  convergence_info->epsilon = params[AZ_tol];
 
   /* allocate memory for required vectors */
 
   kspace_p2 = kspace + 2;
   kspace_p1 = kspace + 1;
   N_total   = N + data_org[AZ_N_external] + 1;
-			/* +1: make sure everybody allocates something */
+  /* +1: make sure everybody allocates something */
 
   /* Note: temp must be aligned on the Intel Paragon so  */
   /* that the quad load inside the assembly dgemv works. */
 
   sprintf(label,"general%s",suffix);
   temp   = AZ_manage_memory((3*kspace_p2 + 5*kspace_p1 + N_total +
-                            (kspace+1)*kspace_p1)
+                             (kspace+1)*kspace_p1)
                             *sizeof(double),AZ_ALLOC,AZ_SYS,label, &i);
 
   dots   = &(temp[  N_total]);
@@ -181,11 +187,11 @@ char *T2 = "N";
 
   sprintf(label,"vblock%s",suffix);
   vblock = AZ_manage_memory((kspace+1)*aligned_N_total*sizeof(double),AZ_ALLOC,
-			     AZ_SYS,label, &i);
+                            AZ_SYS,label, &i);
 
   for (k = 0; k < kspace+1; k++) {
-     hh[k] = &(hhblock[k*kspace_p1]);
-     v[k]  = &(vblock[k*aligned_N_total]);
+    hh[k] = &(hhblock[k*kspace_p1]);
+    v[k]  = &(vblock[k*aligned_N_total]);
   }
 
 
@@ -198,29 +204,42 @@ char *T2 = "N";
    *     3) r_2norm = <r,r>      corresponding to options[AZ_conv]
    */
 
+
+  /* Change to support AztecOO_StatusTest:
+     Even though AZ_compute_global_scalars can compute r_2norm for us,
+     we want to compute the initial residual prior to calling 
+     this function because we need this value passed in to 
+     AZ_compute_global_scalars in order to be consistent with subsequent calls
+     to the same function later.  
+  */
+  r_2norm = DDOT_F77(&N, v[0], &one, v[0], &one);
+  rec_residual = r_2norm;
+
   AZ_compute_global_scalars(Amat, x, b, v[0],
                             weight, &rec_residual, &scaled_r_norm, options,
-                            data_org, proc_config, &r_avail, v[0], v[0],
-                            &r_2norm, convergence_info);
+                            data_org, proc_config, &r_avail, dummy,
+			    dummy, dummy, convergence_info);
   true_scaled_r = scaled_r_norm;
 
   r_2norm   = sqrt(r_2norm);
-  converged = scaled_r_norm < epsilon;
-  isnan = (!converged && !(scaled_r_norm >= epsilon));
+  converged = convergence_info->converged;
+  isnan = convergence_info->isnan;
 
   if (r_avail) {
     sprintf(label,"res%s",suffix);
     res = AZ_manage_memory(N_total*sizeof(double),AZ_ALLOC,AZ_SYS,label,&i);
   }
   else res = (double *) NULL;
-  
+
 
   if ( (options[AZ_output] != AZ_none) && (options[AZ_output] != AZ_last) &&
-       (options[AZ_output] != AZ_warnings) && (proc == 0) )
+       (options[AZ_output] != AZ_warnings) &&
+       (options[AZ_conv]!=AZTECOO_conv_test) && (proc == 0) )
     (void) fprintf(stdout, "%siter:    0           residual = %e\n",prefix,scaled_r_norm);
 
   iter = 0;
   while (!converged && iter < options[AZ_max_iter] && !isnan) {
+    convergence_info->iteration = iter;
     if (r_avail) DCOPY_F77(&N, v[0], &one, res, &one);
 
     /* v1 = r0/beta */
@@ -234,6 +253,7 @@ char *T2 = "N";
 
     while (i < kspace && !converged && iter < options[AZ_max_iter]) {
       iter++;
+    convergence_info->iteration = iter;
       i1 = i + 1;
 
       /* v_i+1 = A M^-1 v_i */
@@ -241,12 +261,12 @@ char *T2 = "N";
       DCOPY_F77(&N, v[i], &one, temp, &one);
 
       if (iter == 1) init_time = AZ_second();
- 
-    if (precond_flag) precond->prec_function(temp,options,proc_config,params,Amat,precond);
 
-    if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
+      if (precond_flag) precond->prec_function(temp,options,proc_config,params,Amat,precond);
 
-    Amat->matvec(temp, v[i1], Amat, proc_config);
+      if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
+
+      Amat->matvec(temp, v[i1], Amat, proc_config);
 
 
       /* Gram-Schmidt orthogonalization */
@@ -256,17 +276,17 @@ char *T2 = "N";
                                  /* initials that are used to  */
                                  /* describe this: DKSG???     */
 
-         for (k = 0; k <= i; k++) hh[k][i] = 0.0;
-         for (ii = 0 ; ii < 2; ii++ ) {
-            if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
-            dble_tmp = 0.0; mm = i+1;
-            DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total, 
-                   v[i1], &one, &dble_tmp, dots, &one);
-            AZ_gdot_vec(i1, dots, tmp, proc_config);
-            for (k = 0; k <= i; k++) hh[k][i] += dots[k];
-            DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total, 
-                   dots, &one, &doubleone, v[i1], &one);
-         }
+        for (k = 0; k <= i; k++) hh[k][i] = 0.0;
+        for (ii = 0 ; ii < 2; ii++ ) {
+          if (N == 0) for (k = 0; k <= i; k++) dots[k] = 0.0;
+          dble_tmp = 0.0; mm = i+1;
+          DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, vblock, &aligned_N_total,
+                    v[i1], &one, &dble_tmp, dots, &one);
+          AZ_gdot_vec(i1, dots, tmp, proc_config);
+          for (k = 0; k <= i; k++) hh[k][i] += dots[k];
+          DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, vblock, &aligned_N_total,
+                    dots, &one, &doubleone, v[i1], &one);
+        }
       }
       else {                    /* modified */
         for (k = 0; k <= i; k++) {
@@ -318,7 +338,7 @@ char *T2 = "N";
         svbig[i] = cc;
         ijob = 2;
         DLAIC1_F77(&ijob, &i, svsml, &small, vectmp, &vectmp[i], &sestpr, &ss,
-                &cc);
+                   &cc);
         small = sestpr;
         DSCAL_F77(&i, &ss, svsml, &one);
         svsml[i] = cc;
@@ -326,17 +346,17 @@ char *T2 = "N";
 
       if ((small == 0.0) || (dble_tmp  < DBL_EPSILON * r_2norm) ||
           (big/small > params[AZ_ill_cond_thresh]) ) {
-	/* (big/small > 1.0e+11) ) {  This is now a parameter */
+        /* (big/small > 1.0e+11) ) {  This is now a parameter */
 
         /* take most recent solution and get out */
 
         for (k = 0; k < i1; k++) tmp[k] = rs[k];
-        AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp, 
+        AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp,
                       temp, v, Amat, precond, x, &first_time, &converged, kspace);
 
         AZ_scale_true_residual(x, b,
                                v[kspace], weight, &actual_residual,
-                               &true_scaled_r, options, data_org, proc_config, 
+                               &true_scaled_r, options, data_org, proc_config,
                                Amat, convergence_info);
 
         if (dble_tmp  < DBL_EPSILON * r_2norm) i = AZ_breakdown;
@@ -381,21 +401,22 @@ char *T2 = "N";
                                 options, data_org, proc_config, &r_avail, dummy,
                                 dummy, dummy, convergence_info);
 
-      converged = scaled_r_norm < epsilon;
-      isnan = (!converged && !(scaled_r_norm >= epsilon));
+      converged = convergence_info->converged;
+      isnan = convergence_info->isnan;
 
 
-      if ( (iter%print_freq == 0) && proc == 0)
+      if ( (iter%print_freq == 0) &&
+           (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0)
         (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
                        scaled_r_norm);
 
       i++;      /* subspace dim. counter dim(K) = i - 1 */
 
       if (isnan) {
-	AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual, params,
-				  true_scaled_r, actual_residual, options,
-				  proc_config);
-	return;
+        AZ_terminate_status_print(AZ_breakdown, iter, status, rec_residual, params,
+                                  true_scaled_r, actual_residual, options,
+                                  proc_config);
+        return;
       }
       if ( (i == kspace) || converged || iter == options[AZ_max_iter]) {
 
@@ -403,8 +424,8 @@ char *T2 = "N";
 
         for (k = 0; k <= i1; k++) tmp[k] = rs[k];
 
-        AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp, 
-                temp, v, Amat, precond,  x, &first_time, &converged, kspace);
+        AZ_get_x_incr(options, data_org, proc_config, params, i, hh, tmp,
+                      temp, v, Amat, precond,  x, &first_time, &converged, kspace);
 
       }
 
@@ -414,25 +435,28 @@ char *T2 = "N";
 
         AZ_scale_true_residual(x, b,
                                v[kspace], weight, &actual_residual,
-                               &true_scaled_r, options, data_org, proc_config, 
+                               &true_scaled_r, options, data_org, proc_config,
                                Amat, convergence_info);
 
-        converged = true_scaled_r < params[AZ_tol];
+        converged = convergence_info->converged;
 
-        if (!converged && (AZ_get_new_eps(&epsilon, scaled_r_norm,
+        if (!converged && options[AZ_conv]!=AZTECOO_conv_test) {
+
+	  if (AZ_get_new_eps(&(convergence_info->epsilon), scaled_r_norm,
                                           true_scaled_r,
-                                          proc_config) == AZ_QUIT)) {
+                                          proc_config) == AZ_QUIT) {
 
-          /*
-           * Computed residual has converged, actual residual has not converged,
-           * AZ_get_new_eps() has decided that it is time to quit.
-           */
-
-          AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
-                                    true_scaled_r, actual_residual, options,
-                                    proc_config);
-          return;
-        }
+	    /*
+	     * Computed residual has converged, actual residual has not converged,
+	     * AZ_get_new_eps() has decided that it is time to quit.
+	     */
+	    
+	    AZ_terminate_status_print(AZ_loss, iter, status, rec_residual, params,
+				      true_scaled_r, actual_residual, options,
+				      proc_config);
+	    return;
+	  }
+	}
 
         /* restore previous solution */
 
@@ -454,7 +478,7 @@ char *T2 = "N";
   }
 
   if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
-       && (options[AZ_output] != AZ_warnings))
+       && (options[AZ_output] != AZ_warnings) && (options[AZ_conv]!=AZTECOO_conv_test))
     (void) fprintf(stdout, "%siter: %4d           residual = %e\n",prefix,iter,
                    scaled_r_norm);
 
@@ -466,10 +490,10 @@ char *T2 = "N";
     scaled_r_norm = true_scaled_r;
   }
   else if(!isnan) i = AZ_maxits;
-    
-    AZ_terminate_status_print(i, iter, status, rec_residual, params,
-			      scaled_r_norm, actual_residual, options,
-			      proc_config);
+
+  AZ_terminate_status_print(i, iter, status, rec_residual, params,
+                            scaled_r_norm, actual_residual, options,
+                            proc_config);
 
 } /* AZ_pgmres */
 
@@ -479,14 +503,14 @@ char *T2 = "N";
 
 void AZ_get_x_incr(int options[], int data_org[], int
                    proc_config[], double params[], int i, double **hh, double
-                   *rs, double *temp, double **v, AZ_MATRIX *Amat, AZ_PRECOND 
+                   *rs, double *temp, double **v, AZ_MATRIX *Amat, AZ_PRECOND
                    *precond, double x[], int *first_time, int *converged,
-		   int kspace)
+                   int kspace)
 
-/*******************************************************************************
+     /*******************************************************************************
 
   This routine is normally invoked from GMRES and is used to compute the
-  increment to the solution (as well as the new solution) that should be applied as a 
+  increment to the solution (as well as the new solution) that should be applied as a
   result of solving the upper hessenberg system produces by GMRES.
 
   Author:          Ray Tuminaro, SNL, 1422
@@ -571,9 +595,9 @@ void AZ_get_x_incr(int options[], int data_org[], int
 
   precond_flag = options[AZ_precond];
   if (options[AZ_check_update_size] & *converged) {
-     for (j = 0; j < N; j++) temp[j] = v[i][j];
-     if (precond_flag) precond->prec_function(temp,options,proc_config,params, Amat,precond);
-     update_norm = fabs(rs[i]*sqrt(AZ_gdot(N, temp, temp, proc_config)));
+    for (j = 0; j < N; j++) temp[j] = v[i][j];
+    if (precond_flag) precond->prec_function(temp,options,proc_config,params, Amat,precond);
+    update_norm = fabs(rs[i]*sqrt(AZ_gdot(N, temp, temp, proc_config)));
   }
 
   for (j = 0; j < N; j++) temp[j] = 0.0;
@@ -589,15 +613,15 @@ void AZ_get_x_incr(int options[], int data_org[], int
   DAXPY_F77(&N, &doubleone, temp, &one, x, &one);
 
   if (options[AZ_check_update_size] & *converged) {
-     *converged =AZ_compare_update_vs_soln(N,update_norm, rs[i],temp,x,
-                       params[AZ_update_reduction],options[AZ_output],proc_config,first_time);
+    *converged =AZ_compare_update_vs_soln(N,update_norm, rs[i],temp,x,
+                                          params[AZ_update_reduction],options[AZ_output],proc_config,first_time);
 
-     /* restore previous solution */
+    /* restore previous solution */
 
-     if ( (!(*converged)) && (i != kspace) ) {
-        doubleone = -1.;
-        DAXPY_F77(&N, &doubleone, temp, &one, x, &one);
-     }
+    if ( (!(*converged)) && (i != kspace) ) {
+      doubleone = -1.;
+      DAXPY_F77(&N, &doubleone, temp, &one, x, &one);
+    }
   }
 
 } /* AZ_get_x_incr */
