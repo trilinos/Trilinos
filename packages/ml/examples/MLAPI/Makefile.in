@@ -45,7 +45,7 @@ DIST_COMMON = README $(srcdir)/../Makefile-common.include \
 noinst_PROGRAMS = Blackboard$(EXEEXT) PowerMethod$(EXEEXT) \
 	TwoLevelDDAdditive$(EXEEXT) MultiLevel$(EXEEXT) \
 	Richardson$(EXEEXT) AdaptiveSA$(EXEEXT) \
-	NonSymmetricSA$(EXEEXT)
+	AdaptiveSA_Elasticity$(EXEEXT) NonSymmetricSA$(EXEEXT)
 subdir = examples/MLAPI
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -122,14 +122,14 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(AdaptiveSA_SOURCES) $(Blackboard_SOURCES) \
-	$(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) \
-	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
-	$(TwoLevelDDAdditive_SOURCES)
-DIST_SOURCES = $(AdaptiveSA_SOURCES) $(Blackboard_SOURCES) \
-	$(MultiLevel_SOURCES) $(NonSymmetricSA_SOURCES) \
-	$(PowerMethod_SOURCES) $(Richardson_SOURCES) \
-	$(TwoLevelDDAdditive_SOURCES)
+SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
+	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+	$(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) \
+	$(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
+DIST_SOURCES = $(AdaptiveSA_SOURCES) $(AdaptiveSA_Elasticity_SOURCES) \
+	$(Blackboard_SOURCES) $(MultiLevel_SOURCES) \
+	$(NonSymmetricSA_SOURCES) $(PowerMethod_SOURCES) \
+	$(Richardson_SOURCES) $(TwoLevelDDAdditive_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
