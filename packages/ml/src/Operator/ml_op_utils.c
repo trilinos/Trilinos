@@ -281,9 +281,7 @@ int ML_Gen_Restrictor_TransP(ML *ml_handle, int level, int level2)
    int Nghost = 0, Nghost2 = 0;
    int *remap, remap_leng;
    ML_CommInfoOP *c_info, **c2_info;
-   char procname[128];
 
-   sprintf(procname,"p%d",ml_handle->comm->ML_mypid);
 
    /* pull out things from ml_handle */
 
@@ -974,6 +972,13 @@ int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal)
    ML_DVector_GetDataPtr( Amat->diagonal, diagonal);
    return 0;
 }
+/*******************************************************************
+ *  Take an ML_Operator and using getrow() make a new copy of the
+ *  matrix in CSR format using single precision numbers. Then,
+ *  get rid of the data in the old matrix (by calling the 
+ *  data destroy function) and replace the old data with the
+ *  new data.
+ *******************************************************************/
 int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 {
   int i, k, Nrows, Nnz, allocated = 0, *columns = NULL, row_length;
@@ -982,6 +987,11 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
   float  *val_ptr;
   struct ML_CSR_MSRdata *temp;
 
+  return 1;
+  /* Do not do anything if there is no destroy function for    */
+  /* this matrix as we have no way to destroy the old data.    */
+  if ((matrix->data_destroy == NULL) || (matrix->data == NULL))
+    return 1;
 
 
   /* first count how many nonzeros are in the old matrix */
@@ -1037,3 +1047,49 @@ int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix)
 
    return 0;
 }
+
+/*******************************************************************
+ *  Take an ML_Operator single precision CSR matrix in Pmat and use it 
+ *  to implicitly define a transpose matvec that is stored in Rmat. This 
+ *  implies that Rmat will not have a getrow() function ... so it is important
+ *  that this function only be called on matrices where getrow() is
+ *  no longer needed. If there is already data in Rmat, get rid of
+ *  it. 
+ *
+ *  Note: The main tricky thing about this function is that we must
+ *  set up a post commuication data structure. This post communication
+ *  structure is fairly fragile. We also allow for the possibility
+ *  that the post communciation structure is already set up. In
+ *  this case, we leave the existing communication structure in 
+ *  Rmat.
+ *******************************************************************/
+int ML_Operator_ImplicitTranspose(ML_Operator *Rmat, 
+				  ML_Operator *Pmat,
+				  int PostCommAlreadySet)
+{
+  return 1;
+  if ( (Pmat == NULL) || (Rmat == NULL)) return 1;
+
+  if ( Pmat->getrow == NULL) return 1;
+
+  if (Pmat->getrow->external != sCSR_getrows) return 1;
+
+  if (PostCommAlreadySet == ML_FALSE) {
+    if (Rmat->getrow->post_comm != NULL)
+      ML_CommInfoOP_Destroy(&(Rmat->getrow->post_comm));
+    ML_CommInfoOP_TransComm(Pmat->getrow->pre_comm,&(Rmat->getrow->post_comm),
+			    Pmat->invec_leng);
+  }
+
+
+
+  ML_Operator_Set_ApplyFuncData(Rmat,
+				Pmat->outvec_leng,
+				Pmat->invec_leng,
+				ML_INTERNAL,
+				Pmat->data, -1, 
+				sCSR_trans_matvec, 0);
+  Rmat->data_destroy = NULL;
+  return 0;
+}
+
