@@ -29,7 +29,7 @@
 #@HEADER
 
 ## For multiple owners, list as "owner1@abc.com, owner2@def.com"
-set OWNERS = "jhu@sandia.gov"
+set OWNERS = "jhu@sandia.gov, msala@sandia.gov"
 ## For multiple subdirectories, separate by spaces
 set TEST_SUBDIRS = "2d_Poisson"
 
@@ -37,7 +37,7 @@ set TEST_SUBDIRS = "2d_Poisson"
 # notes
 #
 # - Overview: This script is intended to be very much like mlbench used to be.
-#   A subset of ml/examples get built and run with a variety
+#   A subset of ml/examples is built and run with a variety
 #   of inputs and compared against saved results.  Significant differences mean
 #   an error has occurred.
 #
@@ -47,8 +47,7 @@ set TEST_SUBDIRS = "2d_Poisson"
 #
 # - This script will call all *.csh scripts found in TEST_SUBDIRS.
 #
-# - The *.csh scripts build & run test executables based on examples
-#   in ml/examples.
+# - The *.csh scripts run test executables based on examples in ml/examples.
 #
 # - The *.csh test fails if it prints *anything* to stdout or stderror.
 #   (Look in ml/${TEST_SUBDIRS} at the .csh scripts to see how we decide
