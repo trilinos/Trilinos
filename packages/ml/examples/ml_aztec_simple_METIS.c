@@ -73,7 +73,7 @@ struct user_partition_data {
 /*****************************************************************************/
 extern void        user_partition(struct user_partition_data *Partition);
 extern AZ_MATRIX   *user_Kn_build(struct user_partition_data *,
-				  double **, double **, double **);
+				  double **, double **);
 
 #ifdef ML_MPI
 #define COMMUNICATOR   MPI_COMM_WORLD
@@ -103,7 +103,7 @@ int main(int argc, char *argv[])
   AZ_PRECOND   *Pmat = NULL;
   int          proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
   double       params[AZ_PARAMS_SIZE], status[AZ_STATUS_SIZE];
-  double *x = NULL, *y = NULL, *z = NULL;
+  double       *x = NULL, *y = NULL;
   
 
   /* get processor information (id & # of procs) and set ML's printlevel. */
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
   /* Build Kn as Aztec matrices. Use built-in function AZ_ML_Set_Amat()    */
   /* to convert to an ML matrix and put in hierarchy.                      */
 
-  Kn_mat = user_Kn_build( &Partition,&x,&y,&z);
+  Kn_mat = user_Kn_build( &Partition,&x,&y);
   AZ_ML_Set_Amat(ml, MaxMgLevels-1, Partition.Nlocal, 
 		 Partition.Nlocal, Kn_mat, proc_config);
  
@@ -176,23 +176,10 @@ int main(int argc, char *argv[])
   
   coarsest_level = MaxMgLevels - Nlevels;
 
-  /***************************************************************
-  * Set up smoothers for all levels. See paper 'Parallel
-  * Multigrid Smoothing: Polynomial Versus Gauss-Seidel' by Adams,
-  * Brezina, Hu, Tuminaro in JCP'03 for more details.
-  ****************************************************************/
+  /* ********************************************************************** */
+  /* Set up smoother for all levels (here, MLS polynomial smoother)         */
+  /* ********************************************************************** */
 
-  /***************************************************************************/
-  /*      ML_Gen_Smoother_MLS: this corresponds to polynomial relaxation.    */
-  /*      The degree of the polynomial is the last argument.                 */
-  /*      If the degree is '-1', Marian Brezina's MLS polynomial is chosen.  */
-  /*      Otherwise, a Chebyshev polynomial is used over high frequencies    */
-  /*      [ lambda_max/alpha , lambda_max]. Lambda_max is computed by taking */
-  /*      a couple of steps of CG (and then boosting it a little). 'alpha'   */
-  /*      is hardwired in this example to be '30'. Normally, it should be    */
-  /*      the ratio of unknowns in the fine and coarse meshes.               */
-  /*                                                                         */
-  /***************************************************************************/
 
   for (level = MaxMgLevels-1; level > coarsest_level; level--)
     ML_Gen_Smoother_MLS(ml, level, ML_BOTH, 30., 3);
@@ -217,7 +204,7 @@ int main(int argc, char *argv[])
   options[AZ_solver]   = AZ_cg;
   params[AZ_tol]       = tolerance;
   options[AZ_conv]     = AZ_noscaled;
-  options[AZ_max_iter] = 1550;
+  options[AZ_max_iter] = 1550
   
   AZ_set_ML_preconditioner(&Pmat, Kn_mat, ml, options); 
   AZ_iterate(xxx, rhs, options, params, status, proc_config, Kn_mat, Pmat, NULL);
@@ -246,8 +233,8 @@ int main(int argc, char *argv[])
   free(xxx);
   free(rhs);
 
-  if( x != NULL ) free((void*)x);
-  if( y != NULL ) free((void*)y);
+  if( x != NULL ) ML_free( x );
+  if( y != NULL ) ML_free( y );
   
 #ifdef ML_MPI
   MPI_Finalize();
@@ -280,7 +267,7 @@ void user_partition(struct user_partition_data *Partition)
 /*------------------------------------------------------------------*/
 
 AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition,
-			 double **x, double **y, double **z )
+			 double **x, double **y )
 
 {
   int *Kn_bindx;
@@ -335,17 +322,16 @@ AZ_MATRIX *user_Kn_build(struct user_partition_data *Partition,
   AZ_set_MSR(Kn_mat, Kn_bindx, Kn_val, Kn_data_org, 0, NULL, AZ_LOCAL);
 
   size = sizeof(double)*(Nlocal+Partition->Nghost);
-  
-  ML_memory_alloc( (void **) x, size, "x");
-  ML_memory_alloc( (void **) y, size, "y");
-  ML_memory_alloc( (void **) z, size, "z");
+
+  *x = (double *) ML_allocate( size );
+  *y = (double *) ML_allocate( size );
   
   AZ_ML_Build_NodalCoordinates( Partition->Nglobal,
 			  Partition->Nlocal, Kn_data_org[AZ_N_external],
 			  Partition->my_global_ids,
 			  Partition->needed_external_ids,
 			  reordered_glob, reordered_externs,
-			  *x, *y, *z, 2 );
+			  *x, *y, NULL, 2 );
   AZ_free(reordered_glob);
   AZ_free(reordered_externs);
   
