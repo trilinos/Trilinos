@@ -128,32 +128,38 @@ and use of common numerical linear algebra objects such as vectors,
 graphs and matrices.  It is primarily designed for irregular, parallel
 distributed memory computations, but can also be used on serial systems
 with structured data.  This user guide is intended to (i) introduce a new
-user to the basic features of Epetra, and (ii) illustrate the use of
+user to the basic features of Epetra, (ii) discuss in detail Epetra
+object constructors, and (iii) illustrate the use of
 Epetra's advance parallel data repartitioning capabilities to
 experienced users.  This document is not intended as a reference
 manual.  Detailed descriptions of Epetra classes and methods can be
 found online at the Trilinos Project home page~\cite{Trilinos-home-page}.
 
 
-\subsection{Overview of Major Epetra Feautures}
+\subsection{Overview of Major Epetra Classes and Feautures}
+
+Epetra contains many classes and provides a wide spectrum of
+functionality within these classes.  However, there is a relatively
+short list of classes and features that are commonly used.  We discuss
+these here.
 
 \subsubsection{Communication Support}
 Epetra is written to run on parallel, distributed memory computers.  It accomplishes 
 this via its abstract \comm{} class.  \comm{} is a pure virtual class,
 specifying the methods that Epetra needs in order to execute on a
 distributed memory computer.  However, \comm{} provides no
-implementation itself of these methods.  Instead, Epetra contains
+implementation of these methods.  Instead, Epetra contains
 several derived classes that implement the \comm{} interface,
 providing the needed functionality.  In this way, Epetra is not
 explicitly dependent on any one communication library or interface.
 Presently we have three implementations of \comm{}:
 \begin{enumerate}
-\item {\bf \serialcomm{}: } Implements of the \comm{}
-methods to run on a serial computers.  In this case, the majority of
+\item {\bf \serialcomm{}: } Implements the \comm{}
+methods to run on a serial computer.  In this case, the majority of
 the methods have trivial implementations.  However, having the
 \serialcomm{} class allows the rest of Epetra classes to be used
-independently from the type of parallel computer being used,
-including the serial case.
+independently from the type of parallel computer being used and allows
+serial use of Epetra within a parallel application.
 \item {\bf \mpicomm{}: } Uses a user-provided MPI
 communicator to implement the \comm{} methods.  In fact, many of the
 \comm{} methods have a name similar to an existing MPI function.
@@ -200,10 +206,13 @@ unique GID.
 Although there are many classes in Epetra, the core linear algebra classes are the
 vector, graph and matrix classes.  A simple use of Epetra usually
 involves the construction of a single \comm{} object, which is passed
-in to the constructor of a single \map{} object and the result \map{}
+in to the constructor of a single \map{} object and the resulting \map{}
 is then used to construct any number of vector and matrix objects.
 The primary Epetra linear algebra classes are as follows:
 \begin{enumerate}
+\item {\bf \vector{}: } Supports construction and use of distributed
+vectors of double-precision numbers.  Once constructed, \vector{}
+objects can be used in multiple ways.  Common operations
 
 \end{enumerate}
 
