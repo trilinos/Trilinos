@@ -84,7 +84,7 @@
            directories
     [Done] Change setup.py to look in local Trilinos source
            directories for libraries
-    ------ Get test script to work from build directory
+    ------ Get test scripts to work from build directory
     ------ Check for presence of SWIG
     ------ Check for proper SWIG version
     ------ Put in hooks for enabling and disabling modules

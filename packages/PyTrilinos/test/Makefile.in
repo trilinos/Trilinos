@@ -253,6 +253,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
+
+# Define the suite of tests
 TEST_SUITE = testEpetra testEpetraExt testNOX testExample
 all: all-am
 
@@ -406,10 +408,17 @@ uninstall-am: uninstall-info-am
 	mostlyclean-generic pdf pdf-am ps ps-am uninstall uninstall-am \
 	uninstall-info-am
 
-
 check-am: $(TEST_SUITE)
 
+# Set the target dependencies for each test script
+testEpetra:    $(srcdir)/testEpetra.py    $(srcdir)/setpath.py
+testEpetraExt: $(srcdir)/testEpetraExt.py $(srcdir)/setpath.py
+testNOX:       $(srcdir)/testNOX.py       $(srcdir)/setpath.py
+testExample:   $(srcdir)/testExample.py   $(srcdir)/setpath.py
+
+# All the test scripts use the same copy-then-run logic
 test%:
+	cp $^ .
 	./$@.py
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

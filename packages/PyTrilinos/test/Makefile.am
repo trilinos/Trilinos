@@ -96,9 +96,17 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 ## Subdirectories to be make'd recursively
 ## #######################################################################
 
+# Define the suite of tests
 TEST_SUITE = testEpetra testEpetraExt testNOX testExample
-
 check-am: $(TEST_SUITE)
 
+# Set the target dependencies for each test script
+testEpetra:    $(srcdir)/testEpetra.py    $(srcdir)/setpath.py
+testEpetraExt: $(srcdir)/testEpetraExt.py $(srcdir)/setpath.py
+testNOX:       $(srcdir)/testNOX.py       $(srcdir)/setpath.py
+testExample:   $(srcdir)/testExample.py   $(srcdir)/setpath.py
+
+# All the test scripts use the same copy-then-run logic
 test%:
+	cp $^ .
 	./$@.py
