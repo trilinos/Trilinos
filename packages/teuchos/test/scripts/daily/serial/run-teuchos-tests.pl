@@ -18,4 +18,4 @@ my $success = 1;
 my $result;
 $result = system ('./RefCountPtr/RefCountPtr_test.exe');
 $success = 0 if (!$result);
-exit ($success ? 0 : -1 );
+exit ($success ? -1 : 0 );
