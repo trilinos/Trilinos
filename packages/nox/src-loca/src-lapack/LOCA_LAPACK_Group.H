@@ -40,7 +40,7 @@
 
 namespace LOCA {
 
-  //! %LOCA BLAS/%LAPACK support
+  //! %LOCA BLAS/LAPACK support
   namespace LAPACK {
 
     //! Extension of the NOX::LAPACK::Group to LOCA.  
