@@ -158,7 +158,7 @@ UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
 
 ZZ_CSRC		= zz_obj_list.c zz_struct.c \
-		  zz_init.c zz_set_fn.c zz_util.c
+		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c
 ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
 
 ALL_CSRC	= all_allo.c 
@@ -210,7 +210,7 @@ ifdef ZOLTAN_HG
 HG_CSRC 	= hg.c hg_build.c hg_coarse.c hg_global.c \
 		  hg_group.c hg_heap.c hg_local.c hg_sort.c hg_scale.c \
 		  hg_match.c hg_pack.c \
-		  hg_part.c hg_plot.c hg_util.c zoltan_hg_readfile.c
+		  hg_part.c hg_plot.c hg_util.c 
 HG_INC 		= hg.h hypergraph.h
 GDEFINES       += -DZOLTAN_HG
 else
@@ -244,14 +244,16 @@ REFTREE_INC     = reftree_const.h
 DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_util.c dr_exoII_io.c dr_elem.c dr_loadbal.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
-                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c 
+                  dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  \
+                  zoltan_hg_readfile.c
 ifdef ZOLTAN_HG
 DR_CSRC        += dr_hypergraph_io.c
 endif
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
-		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h
+		  dr_elem_util_const.h dr_maps_const.h dr_eval_const.h \
+                  zoltan_hg_readfile_const.h
 
 CH_CSRC		= ch_dist_graph.c ch_input_assign.c ch_input_geom.c \
 		  ch_input_graph.c ch_input_read.c ch_init_dist.c
