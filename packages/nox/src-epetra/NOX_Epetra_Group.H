@@ -418,6 +418,8 @@ public:
   virtual ~Group();
 
   virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+
+  //! See operator=(const NOX::Abstract::Group&);
   virtual NOX::Abstract::Group& operator=(const NOX::Epetra::Group& source);
 
   /** @name "Compute" functions. */
@@ -696,8 +698,10 @@ protected:
   
   //! Determines how the preconditioning is handled. 
   /*! This variable is set in the constructors from the "Preconditioning" parameter in the "Linear Solver" sublist.
-   <li> Key in "Linear Solver" sublist: "Preconditioning"
-   <li> Valid Options:
+
+   Key in "Linear Solver" sublist: "Preconditioning"
+
+   Valid Options:
    <ul>
 
    <li> "None" - no precondtioning is used.
