@@ -26,30 +26,46 @@
 // ***********************************************************************
 // @HEADER
 //
-//  This example computes the eigenvalues of smallest magnitude of the discretized 1D Laplacian
-//  operator using the block Implicitly-Restarted Arnoldi method.  This problem shows the 
-//  construction of an inner-outer iteration using Belos as the linear solver within Anasazi.  
-//  An Ifpack preconditioner is constructed to precondition the linear solver.  This operator 
-//  is discretized using finite elements and constructed as an Epetra matrix, then passed into 
-//  the AnasaziPetraMat to be used in the construction of the Krylov decomposition.  The 
-//  specifics of the block Arnoldi method can be set by the user.
+//  This example computes the eigenvalues of smallest magnitude of the 
+//  discretized 1D Laplacian operator using the block Krylov-Schur method.  
+//  This problem shows the construction of an inner-outer iteration using 
+//  AztecOO as the linear solver within Anasazi.  An Ifpack preconditioner 
+//  is constructed to precondition the linear solver.  This operator is 
+//  discretized using linear finite elements and constructed as an Epetra 
+//  matrix, then passed into the AztecOO solver to perform the shift-invert
+//  operation to be used within the Krylov decomposition.  The specifics 
+//  of the block Krylov-Schur method can be set by the user.
 
-#include "AnasaziBlockKrylovSchur.hpp"
-#include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziBasicSort.hpp"
+// Include autoconfigured header
 #include "AnasaziConfigDefs.hpp"
+
+// Include header for block Krylov-Schur solver
+#include "AnasaziBlockKrylovSchur.hpp"
+
+// Include header to define basic eigenproblem Ax = \lambda*Bx
+#include "AnasaziBasicEigenproblem.hpp"
+
+// Include header to provide basic sorting utility required by block Krylov-Schur method
+#include "AnasaziBasicSort.hpp"
+
+// Include header to provide Anasazi with Epetra adapters
 #include "AnasaziEpetraAdapter.hpp"
-#include "Ifpack_CrsIct.h"
+
+// Include header for Epetra compressed-row storage matrix and linear problem
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_LinearProblem.h"
 
-#include "BelosPetraInterface.hpp"
-#include "BelosEpetraOperator.hpp"
-#include "BelosStatusTestResNorm.hpp"
-#include "BelosStatusTestMaxIters.hpp"
-#include "BelosStatusTestCombo.hpp"
+// Include header for AztecOO solver and solver interface for Epetra_Operator
+#include "AztecOO.h"
+#include "AztecOO_Operator.h"
 
+// Include header for Ifpack incomplete Cholesky preconditioner
+#include "Ifpack_CrsIct.h"
+
+// Include header for Teuchos serial dense matrix
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+// Include selected communicator class and map required by Epetra objects
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #else
@@ -62,13 +78,8 @@ int main(int argc, char *argv[]) {
 	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
-
 	// Initialize MPI
 	MPI_Init(&argc,&argv);
-
-#endif
-
-#ifdef EPETRA_MPI
 	Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
 	Epetra_SerialComm Comm;
@@ -166,14 +177,10 @@ int main(int argc, char *argv[]) {
         }
          
         // Finish up
-        info = A->TransformToLocal();
-	assert( info==0 );
-	info = A->OptimizeStorage();
+        info = A->FillComplete();
 	assert( info==0 );
         A->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
-        info = B->TransformToLocal();
-	assert( info==0 );
-	info = B->OptimizeStorage();
+        info = B->FillComplete();
 	assert( info==0 );
         B->SetTracebackMode(1); // Shutdown Epetra Warning tracebacks
 	//
@@ -198,70 +205,50 @@ int main(int argc, char *argv[]) {
         Teuchos::RefCountPtr<Ifpack_CrsIct> ICT;
         //
         if (Lfill > -1) {
-                ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
-                ICT->SetAbsoluteThreshold(Athresh);
-                ICT->SetRelativeThreshold(Rthresh);
-                int initerr = ICT->InitValues(*A);
-                if (initerr != 0) cout << "InitValues error = " << initerr;
-                info = ICT->Factor();
-		assert( info==0 );
+	  ICT = Teuchos::rcp( new Ifpack_CrsIct(*A, dropTol, Lfill) );
+	  ICT->SetAbsoluteThreshold(Athresh);
+	  ICT->SetRelativeThreshold(Rthresh);
+	  int initerr = ICT->InitValues(*A);
+	  if (initerr != 0) cout << "InitValues error = " << initerr;
+	  info = ICT->Factor();
+	  assert( info==0 );
         } 
         //
         bool transA = false;
         double Cond_Est;
         ICT->Condest(transA, Cond_Est);
         if (verbose) {
-                cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
-                cout << endl;
+	  cout << "Condition number estimate for this preconditoner = " << Cond_Est << endl;
+	  cout << endl;
         } 
 	//
-	//*******************************************************
-	// Set up Belos Block GMRES operator for inner iteration
-	//*******************************************************
+	// *******************************************************
+	// Set up AztecOO GMRES operator for inner iteration
+	// *******************************************************
 	//
-	int blockSize = 3;  // block size used by linear solver and eigensolver [ not required to be the same ]
-        int maxits = NumGlobalElements/blockSize - 1; // maximum number of iterations to run
-        double btol = 1.0e-7;  // relative residual tolerance
-        //
-        // Create the Belos::LinearProblemManager
-        //
-	Belos::PetraMat<double> BelosMat(A.get());
-        Belos::PetraPrec<double> BelosPrec(ICT.get());
-	Belos::LinearProblemManager<double> My_LP;
-	My_LP.SetOperator( &BelosMat );
-	My_LP.SetLeftPrec( &BelosPrec );
-	My_LP.SetBlockSize( blockSize );
+	// Create Epetra linear problem class to solve "Ax = b"
+	Epetra_LinearProblem precProblem;
+	precProblem.SetOperator(A.get());
+	
+	// Create AztecOO solver for solving "Ax = b" using an incomplete cholesky preconditioner
+	AztecOO precSolver(precProblem);
+	precSolver.SetPrecOperator(ICT.get());
+	precSolver.SetAztecOption(AZ_output, AZ_none);
+	precSolver.SetAztecOption(AZ_solver, AZ_cg);
+	
+	// Use AztecOO solver to create the AztecOO_Operator
+	Teuchos::RefCountPtr<AztecOO_Operator> precOperator =
+	  Teuchos::rcp( new AztecOO_Operator(&precSolver, 100) );	
 	//
-	// Create the Belos::StatusTest
-	//
-	Belos::StatusTestMaxIters<double> test1( maxits );
-	Belos::StatusTestResNorm<double> test2( btol );
-	Belos::StatusTestCombo<double> My_Test( Belos::StatusTestCombo<double>::OR, test1, test2 );
-	//
-	// Create the Belos::OutputManager
-	//
-	Belos::OutputManager<double> My_OM( MyPID );
-	//My_OM.SetVerbosity( 2 );
-	//
-	// Create the ParameterList for the Belos Operator
-	// 
-	Teuchos::ParameterList My_List;
-	My_List.set( "Solver", "BlockCG" );
-	My_List.set( "MaxIters", maxits );
-	//
-	// Create the Belos::EpetraOperator
-	//
-	Teuchos::RefCountPtr<Belos::EpetraOperator<double> > BelosOp = 
-	  Teuchos::rcp( new Belos::EpetraOperator<double>(My_LP, My_Test, My_OM, My_List ));
-	//
-	//************************************
+	// ************************************
 	// Start the block Arnoldi iteration
-	//************************************
+	// ************************************
 	//
 	//  Variables used for the Block Arnoldi Method
 	//
 	int nev = 10;
-	int maxBlocks = 20;
+	int blockSize = 1;  
+	int maxBlocks = 3*nev/blockSize;
 	int maxRestarts = 5;
 	int step = 5;
 	double tol = 1.0e-6;
@@ -275,27 +262,27 @@ int main(int argc, char *argv[]) {
 	MyPL.set( "Max Restarts", maxRestarts );
 	MyPL.set( "Tol", tol );
 	MyPL.set( "Step Size", step );
-
+	
 	typedef Anasazi::MultiVec<double> MV;
 	typedef Anasazi::Operator<double> OP;
-
-	// Create a AnasaziEpetraMultiVec for an initial vector to start the solver.
+	
+	// Create an Anasazi::EpetraMultiVec for an initial vector to start the solver.
 	// Note:  This needs to have the same number of columns as the blocksize.
 	Teuchos::RefCountPtr<Anasazi::EpetraMultiVec> ivec = 
 	  Teuchos::rcp( new Anasazi::EpetraMultiVec(Map, blockSize) );
 	ivec->MvRandom();
-    
+	
 	// Call the ctor that calls the petra ctor for a matrix
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Amat = Teuchos::rcp( new Anasazi::EpetraOp(A) );
 	Teuchos::RefCountPtr<Anasazi::EpetraOp> Bmat = Teuchos::rcp( new Anasazi::EpetraOp(B) );
-	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(BelosOp, B, false) );	
-
+	Teuchos::RefCountPtr<Anasazi::EpetraGenOp> Aop = Teuchos::rcp( new Anasazi::EpetraGenOp(precOperator, B) );	
+	
 	Teuchos::RefCountPtr<Anasazi::BasicEigenproblem<double,MV,OP> > MyProblem = 
 	  Teuchos::rcp( new Anasazi::BasicEigenproblem<double,MV,OP>(Aop, Bmat, ivec) );
-
+	
 	// Inform the eigenproblem that the matrix pencil (A,B) is symmetric
 	MyProblem->SetSymmetric(true);
-
+	
 	// Set the number of eigenvalues requested 
 	MyProblem->SetNEV( nev );
 
@@ -315,7 +302,7 @@ int main(int argc, char *argv[]) {
 
 	// Initialize the Block Arnoldi solver
 	Anasazi::BlockKrylovSchur<double,MV,OP> MySolver(MyProblem, MySort, MyOM, MyPL);
-	
+
 	// Solve the problem to the specified tolerances or length
 	returnCode = MySolver.solve();
 
@@ -337,13 +324,22 @@ int main(int argc, char *argv[]) {
 	A->Apply( *evecr, tempvec );
 	tempvec.MvTransMv( 1.0, *evecr, dmatr );
 
-	double compeval = 0.0;
-	cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
-	cout<<"Real Part \t Rayleigh Error"<<endl;
-	for (i=0; i<nev; i++) {
-		compeval = dmatr(i,i);
-		cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
+        if (MyOM->doPrint()) {
+	  double compeval = 0.0;
+	  cout<<"Actual Eigenvalues (obtained by Rayleigh quotient) : "<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	  cout<<"Real Part \t Rayleigh Error"<<endl;
+	  cout<<"------------------------------------------------------"<<endl;
+	  for (i=0; i<nev; i++) {
+		  compeval = dmatr(i,i);
+		  cout<<compeval<<"\t"<<Teuchos::ScalarTraits<double>::magnitude(compeval-one/(*evals)[i])<<endl;
+	  }
+	  cout<<"------------------------------------------------------"<<endl;
 	}
+
+#ifdef EPETRA_MPI
+        MPI_Finalize();
+#endif
 
 	return 0;
 }

@@ -53,13 +53,8 @@ int main(int argc, char *argv[]) {
 	Anasazi::ReturnType returnCode = Anasazi::Ok;
 
 #ifdef EPETRA_MPI
-
 	// Initialize MPI
 	MPI_Init(&argc,&argv);
-
-#endif
-
-#ifdef EPETRA_MPI
 	Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
 	Epetra_SerialComm Comm;
@@ -323,8 +318,6 @@ int main(int argc, char *argv[]) {
 	Teuchos::SerialDenseMatrix<int,double> Bimag(nev,nev), Bimag2(nev,nev);
 	std::vector<double> normA(nev);
 	std::vector<double> tempnrm(nev);
-	cout<<endl<< "Actual Residuals"<<endl;
-	cout<<"------------------------------------------------------"<<endl;
 	Breal.putScalar(0.0); 
 	if (!MyProblem->IsSymmetric())
 	  Bimag.putScalar(0.0);
@@ -361,21 +354,29 @@ int main(int argc, char *argv[]) {
 	    }
 	  }
 	}
-	if (MyProblem->IsSymmetric()) {
-	  cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
+        if (MyOM->doPrint()) {
+	  cout<<endl<< "Actual Residuals"<<endl;
 	  cout<<"------------------------------------------------------"<<endl;
-	  for (i=0; i<nev; i++) {
-	    cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
-	  }  
-	  cout<<"------------------------------------------------------"<<endl;
-	} else {
-	  cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
-	  cout<<"------------------------------------------------------"<<endl;
-	  for (i=0; i<nev; i++) {
-	    cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
-	  }  
-	  cout<<"------------------------------------------------------"<<endl;
-	}	
+	  if (MyProblem->IsSymmetric()) {
+	    cout<<"Real Part"<<"\t"<<"Direct Residual"<<endl;
+	    cout<<"------------------------------------------------------"<<endl;
+	    for (i=0; i<nev; i++) {
+	      cout<< (*evals)[i] << "\t\t"<< normA[i] << endl;
+	    }  
+	    cout<<"------------------------------------------------------"<<endl;
+	  } else {
+	    cout<<"Real Part"<<"\t"<<"Imag Part"<<"\t"<<"Direct Residual"<<endl;
+	    cout<<"------------------------------------------------------"<<endl;
+	    for (i=0; i<nev; i++) {
+	      cout<< (*evals)[i] << "\t\t" << (*evals)[nev + i] << "\t\t"<< normA[i] << endl;
+	    }  
+	    cout<<"------------------------------------------------------"<<endl;
+	  }	
+	}
+
+#ifdef EPETRA_MPI
+  	MPI_Finalize();
+#endif
 
 	return 0;
 }

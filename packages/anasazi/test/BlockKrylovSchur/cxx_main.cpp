@@ -58,13 +58,12 @@ int main(int argc, char *argv[])
   
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
-#endif
-  
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
 #else
+
   Epetra_SerialComm Comm;
+
 #endif
   
   int MyPID = Comm.MyPID();
@@ -151,19 +150,20 @@ int main(int argc, char *argv[])
   Teuchos::RefCountPtr<Anasazi::BasicSort<double, MV, OP> > MySort = 
     Teuchos::rcp( new Anasazi::BasicSort<double, MV, OP>(which) );
   
-  // Create the eigensolver
-  
+  // Create the eigensolver  
   Anasazi::BlockKrylovSchur<double, MV, OP> MySolver(MyProblem, MySort, MyOM, MyPL);
   
   // Solve the problem to the specified tolerances or length
   returnCode = MySolver.solve();
-  if (returnCode != Anasazi::Ok)
+  if (returnCode != Anasazi::Ok) {
+    cout << "The return code for BlockKrylovSchur is : "<< returnCode << endl;
     testFailed = true;
+  }
   
   // Obtain results directly
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
-
+  
   // Check eigenvalues with ModeLaplace
   if (verbose)
     info = testCase->eigenCheck( *evecs, &(*evals)[0], 0 );
@@ -187,6 +187,12 @@ int main(int argc, char *argv[])
     if ( Teuchos::ScalarTraits<double>::magnitude(normvec[i]/(*evals)[i]) > 5.0e-5 )
       testFailed = true;
   }
+
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
 
   if (testFailed)
     return 1;

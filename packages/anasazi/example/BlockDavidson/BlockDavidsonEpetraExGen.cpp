@@ -53,14 +53,9 @@ int main(int argc, char *argv[])
   int i;
   int info = 0;
   
-#ifdef EPETRA_MPI
-  
+#ifdef EPETRA_MPI  
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
-#endif
-  
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
@@ -175,6 +170,10 @@ int main(int argc, char *argv[])
     }
     cout<<"------------------------------------------------------"<<endl;
   }
+
+#ifdef EPETRA_MPI
+  MPI_Finalize();
+#endif
   //
   // Default return value
   //

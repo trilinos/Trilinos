@@ -72,7 +72,7 @@ CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_TRIUTILS_TRUE@am__EXEEXT_1 =  \
 @BUILD_TRIUTILS_TRUE@	BlockKrylovSchurEpetraExHB$(EXEEXT)
-@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_2 = BlockKrylovSchurEpetraExGen$(EXEEXT)
+@BUILD_AZTECOO_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_2 = BlockKrylovSchurEpetraExGen$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockKrylovSchurEpetraEx_OBJECTS =  \
 	BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.$(OBJEXT)
@@ -240,7 +240,7 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-@BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
+@BUILD_AZTECOO_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
 @BUILD_TRIUTILS_TRUE@ANASAZI_BIRAM_EX_HB = BlockKrylovSchurEpetraExHB
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
@@ -250,7 +250,7 @@ BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
 #np# Specify locations of include files within Trilinos, but outside np
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../belos/src -I$(top_builddir)/../belos/src \
+		-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
 		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
 		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
@@ -298,6 +298,8 @@ BlockKrylovSchurEpetraExHB_LDADD = \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -305,8 +307,9 @@ BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGen_LDADD = \
-	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

@@ -3,7 +3,7 @@
 
 EXEEXT = .exe
 
-if BUILD_BELOS
+if BUILD_AZTECOO
 if BUILD_IFPACK
 ANASAZI_BIRAM_EX_SI_IFPACK = BlockKrylovSchurEpetraExGen
 endif
@@ -27,7 +27,7 @@ BlockKrylovSchurEpetraExGen_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGen.cpp
 #np# Add packages that np is dependent on; remove epetra if np does not need it
 
 AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
-		-I$(top_srcdir)/../belos/src -I$(top_builddir)/../belos/src \
+		-I$(top_srcdir)/../aztecoo/src -I$(top_builddir)/../aztecoo/src \
 		-I$(top_srcdir)/../ifpack/src -I$(top_builddir)/../ifpack/src \
 		-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
@@ -73,6 +73,8 @@ BlockKrylovSchurEpetraExHB_LDADD = \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 
 BlockKrylovSchurEpetraExGen_DEPENDENCIES = \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+	$(top_builddir)/../ifpack/src/libifpack.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -80,8 +82,9 @@ BlockKrylovSchurEpetraExGen_CXXFLAGS = -I$(top_srcdir)/src
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGen_LDADD = \
-	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 	$(top_builddir)/../ifpack/src/libifpack.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a \
 	$(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
 

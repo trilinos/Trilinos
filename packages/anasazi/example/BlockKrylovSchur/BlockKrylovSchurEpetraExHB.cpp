@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 	 << "where:" << endl
 	 << "HB_filename        - filename and path of a Harwell-Boeing data set" << endl
 	 << endl;
-    	return(1);
+    	return -1;
 	}
 	//
 	//**********************************************************************
@@ -278,6 +278,9 @@ int main(int argc, char *argv[]) {
 	if (update) delete [] update;
 	if (val) delete [] val;
 
+#ifdef EPETRA_MPI
+  	MPI_Finalize() ;
+#endif
   	return 0;
 
 } // end BlockKrylovSchurEpetraExHb.cpp

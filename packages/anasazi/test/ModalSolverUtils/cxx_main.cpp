@@ -51,13 +51,12 @@ int main(int argc, char *argv[])
   
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
-#endif
-  
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
 #else
+
   Epetra_SerialComm Comm;
+
 #endif
   
   int MyPID = Comm.MyPID();
@@ -471,6 +470,12 @@ int main(int argc, char *argv[])
     }
   }
   
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
+
   // Check to see if any tests have failed
   if (numberFailedTests)
     return numberFailedTests;

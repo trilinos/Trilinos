@@ -47,20 +47,19 @@
 
 int main(int argc, char *argv[]) 
 {
-  int i, j;
+  int i;
   int info = 0;
   
 #ifdef EPETRA_MPI
   
   // Initialize MPI
   MPI_Init(&argc,&argv);
-  
-#endif
-  
-#ifdef EPETRA_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+
 #else
+
   Epetra_SerialComm Comm;
+
 #endif
   
   int MyPID = Comm.MyPID();
@@ -132,14 +131,15 @@ int main(int argc, char *argv[])
   if (info)
     cout << "Anasazi::BasicEigenproblem::SetProblem() returned with code : "<< info << endl;
 
-  // Create the eigensolver
-  
+  // Create the eigensolver  
   Anasazi::BlockDavidson<double, MV, OP> MySolver(MyProblem, MyOM, MyPL);
+  
+  // Solve the problem to the specified tolerances or length
   
   returnCode = MySolver.solve();
   if (returnCode != Anasazi::Ok)
     testFailed = true;
-
+  
   // Get the eigenvalues and eigenvectors from the eigenproblem
   Teuchos::RefCountPtr<std::vector<double> > evals = MyProblem->GetEvals();
   Teuchos::RefCountPtr<Epetra_MultiVector> evecs = MyProblem->GetEvecs();
@@ -164,6 +164,12 @@ int main(int argc, char *argv[])
     if ( Teuchos::ScalarTraits<double>::magnitude(normV[i]/(*evals)[i]) > 5.0e-5 )
       testFailed = true;
   }
+
+#ifdef EPETRA_MPI
+
+  MPI_Finalize() ;
+
+#endif
 
   if (testFailed)
     return 1;
