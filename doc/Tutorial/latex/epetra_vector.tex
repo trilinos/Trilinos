@@ -31,7 +31,7 @@
 
 A vector is a fundamental data structure required by almost all
 numerical methods. Within the Trilinos framework, vectors are usually
-constructed starting from Epetra Classes.
+constructed starting from Epetra classes.
 
 An Epetra vector may store either double-precision values (like the
 solution of a PDE problem, the right-hand side of a linear system, or
@@ -86,7 +86,7 @@ Epetra\_Comm has two basic concrete implementations:
 For most basic applications, the user can create an Epetra\_Comm object
 using the following code fragment:
 \begin{verbatim}
-#include "Epetra_config.h"
+#include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
 #include "Epetra_MpiComm.h"
@@ -182,13 +182,14 @@ class.  \\
 \subsection{Defining a Map}
 \label{sec:map}
 
-Very often, various distributed objects such as matrices or vectors,
-identically distribute elements among the processes.  The distribution
-of elements (or points) is here called a {\sl map}, and its actual
-implementation is given by the Epetra\_Map class (or, more precisely, by
-an Epetra\_BlockMap).  Basically, the class handles the definition of the:
+The distribution of a set of integer labels (or elements) across the
+processes is here called a {\sl map}, and its actual implementation is
+given by the Epetra\_Map class (or, more precisely, by an
+Epetra\_BlockMap, from which Epetra\_Map is derived).  Basically, the
+class handles the definition of the:
 \begin{itemize}
-\item global number of elements (called \verb!NumGlobalElements!);
+\item global number of elements in the set (called
+  \verb!NumGlobalElements!);
 \item local number of elements (called \verb!NumMyElements!);
 \item global numbering of all local elements (an integer vector of size
   \verb!NumMyElements!, called \verb!MyGlobalElements!).
@@ -257,13 +258,15 @@ and for the global ID of local elements, using
 \begin{verbatim}
 int * MyGlobalElements = Map.MyGlobalElements();
 \end{verbatim}
+that returns a pointer to the internally stored global indexing vector,
 or, equivalently,
 \begin{verbatim}
 int MyGlobalElements[NumMyElements];
 Map.MyGlobalElements(MyGlobalElements);
 \end{verbatim}
+that copies in the user's provided array the global indexing. 
 
-\bigskip
+ \bigskip
 
 The class Epetra\_Map is derived from Epetra\_BlockMap. The class keeps
 information that describes the distribution of objects that have block
@@ -373,7 +376,7 @@ Epetra\_BlockMap) with an instruction of type
 Epetra_Vector x(Map);
 \end{verbatim}
 (We shall see that this dependency on Map objects holds for all
-distributed Epetra objects. ) This constructor allocates space for the
+distributed Epetra objects.) This constructor allocates space for the
 vector and sets all the elements to zero. A copy constructor may be used
 as well:
 \begin{verbatim}
@@ -444,8 +447,8 @@ double * z_values;
 z.ExtractView( &z_values );
 for( int i=0 ; i<MyLength ; ++i ) z_values[i] *= 10;
 \end{verbatim}
-Now, modifying the values of \verb!z_values! will affect the internal
-data of the Epetra\_Vector \verb!x!.  An example of the use of
+In this way, modifying the values of \verb!z_values! will affect the
+internal data of the Epetra\_Vector \verb!z!.  An example of the use of
 \verb!ExtractView! is reported in file \newline \TriExe{epetra/ex6.cpp}.
 
 \begin{remark}
@@ -476,7 +479,7 @@ the table.
 \begin{center}
 \begin{tabular}{ | p{15cm} | }
 \hline
-\verb!int NumMyELement()! \\
+\verb!int NumMyELements()! \\
 returns the local vector length on the
 calling processor \\
 \\
@@ -528,10 +531,10 @@ communication. Epetra\_Import and Epetra\_Export are used to construct a
 communication plan that can be called repeatedly by computational
 classes such the Epetra multi-vectors of the Epetra matrices.
 
-Currently, those classes have one constructor, taking two Epetra\_Map or
-Epetra\_BlockMap objects. The first map specifies the global IDs that
-are owned by the calling processor. The second map specifies the global
-IDs of  elements that we want to import later.
+Currently, those classes have one constructor, taking two Epetra\_Map
+(or Epetra\_BlockMap) objects. The first map specifies the global IDs
+that are owned by the calling processor. The second map specifies the
+global IDs of elements that we want to import later.
 
 Using an Epetra\_Import object means that the calling process knows what
 it wants to receive, while an Epetra\_Export object means that it knows

@@ -37,9 +37,9 @@ extensively used in the examples of the later chapters:
 \item the Triutils matrix generator (in \ref{sec:triutils:gallery}).
 \end{itemize}
 %Readers not interested in the examples may decide to skip this chapter.
-Some readers may choose to skip this Chapter because theri application
+Some readers may choose to skip this Chapter because their application
 is their example. However, it does help to find the test matrices
-closest to the ones in their code for severla reasons.  Using
+closest to the ones in their code for several reasons.  Using
 well-chosen matrices, simple but sufficiently close to the final
 application, one can quickly test the performances of a given set of
 algorithms on the problem of interest, using a serial or a parallel
@@ -145,7 +145,7 @@ across the processes using a simple greedy algorithm.
 
 Once all the required parameters have been specified, the user can get a
 pointer to the constructed Epetra\_CrsMatrix, to the exact and starting
-solution, and to the right-hand side (all Epetra\_Vector's):
+solution, and to the right-hand side (both Epetra\_Vector's):
 \begin{verbatim}
 A = Gallery.GetMatrix();
 ExactSolution = Gallery.GetExactSolution();
@@ -217,12 +217,12 @@ If \verb!UseSparse! is true, the matrix is created in sparse format
 
 \medskip
 
-To sum up, the main options review here are:.
+To sum up, the main options reviewed here are:
 
 \vskip .1 in
 
 \choicebox{\tt problem\_type}{[{\tt string}] Specifies the problem
-  type. A list of currently avaialble problems is reported later in this
+  type. A list of currently available problems is reported later in this
   section.}
 
 \choicebox{\tt problem\_size}{[{\tt int}] Size of the problem. Note
@@ -243,6 +243,9 @@ To sum up, the main options review here are:.
   supported by the specific problem).}
 
 \choicebox{\tt my}{[{\tt int}] Number of processes in the y-direction
+  (if supported by the specific problem).}
+
+\choicebox{\tt mz}{[{\tt int}] Number of processes in the z-direction
   (if supported by the specific problem).}
 
 \choicebox{\tt map\_type}{[{\tt string}] Defines the data layout across
@@ -530,7 +533,7 @@ reported in Table~\ref{tab:triutils:vbr}.
   stored right-hand side (as an Epetra\_Vector).} \\
 {\tt GetVrbLinearProblem()} \\
  {Returns a pointer to the internally
-  stored  Epetra\_LinearProblem for the VBR matrix).} \\
+  stored  Epetra\_LinearProblem.} \\
 {\tt GetBlockMap()}\\
  {Returns a pointer to the internally
   stored Epetra\_BlockMap.} \\

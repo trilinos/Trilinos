@@ -56,10 +56,9 @@ Clearly, a full understanding all the functionalities of the Trilinos
 packages requires time.  Each package offers sophisticated features,
 difficult to ``unleash'' at a first sight.  Besides that, a detailed
 description of each Trilinos package is beyond the scope of this
-document. Instead, the tutorial ensures that users have the background
-to make good use of the extensive documentation contained in each
-package. Initially, it is important to understand how to manipulate the
-basic classes, such as vector, matrix and linear system classes.
+document. For these reasons, the goal of this tutorial is to ensure that
+users have the background to make good use of the extensive
+documentation contained in each package.
 %For a
 %successive fine-tuning phase, users still must look through individual
 %package's documentation and examples.
@@ -79,18 +78,17 @@ We will describe the following subset of the Trilinos packages.
   in software development. Here, we present a command line parser and a
   matrix generator, that are used throughout this document to define
   example matrices.
-\item {\bf AztecOO}. This is a linear solve package based on
+\item {\bf AztecOO}. This is a linear solver package based on
   preconditioned Krylov methods. Aztec users will find that AztecOO
   supports all the Aztec interfaces and functionality, and also provides
   significant new functionality.
 \item {\bf IFPACK}. The package performs various incomplete
   factorizations, and is here used with AztecOO.
 \item {\bf Teuchos}. This is a collection of classes that can be
-  essential for advanced code development. A Teuchos class can be used
-  to define ML and Amesos objects.
+  essential for advanced code development.
 \item {\bf ML}. The algebraic multilevel and domain decomposition
   preconditioner package provides scalable preconditioning capabilities
-  for a variety of problem classes. It is here used as a preconditioner
+  for a variety of problems. It is here used as a preconditioner
   for AztecOO solvers.
 \item {\bf Amesos}. The package provides a common interface to certain
   sparse direct linear solvers (generally available outside the Trilinos
@@ -118,7 +116,7 @@ accomplished using Trilinos.
     \\
     \hline
     Templated distributed vectors and sparse matrices: & Tpetra$^\star$
-    & \ref{chap:epetra_mat} \\
+    & -- \\
     \hline
     Distributed sparse matrices:& Epetra & -- \\
     \hline
@@ -135,16 +133,19 @@ accomplished using Trilinos.
     \ref{sec:ml:preconditioner} \\
     \hline
     One-level Schwarz preconditioner (overlapping domain
-    decomposition):& AztecOO, \newline IFPACK & Chapter \ref{chap:ifpack} \\
-    Two-level Schwarz preconditioner, with coarse grid based on
+    decomposition):& AztecOO, \newline IFPACK & Chapter
+    \ref{chap:ifpack} \\
+    \hline
+    Two-level Schwarz preconditioner, with coarse matrix based on
     aggregation:& AztecOO+ML & Section \ref{sec:ml_DD} \\
     \hline
     Systems of nonlinear equations:& NOX & Chapter \ref{chap:nox} \\
+    \hline
     Interface with various direct solvers, as UMFPACK, MUMPS, SuperLU\_DIST
     and ScaLAPACK :& Amesos & Chapter \ref{chap:amesos} \\
     \hline
     Eigenvalue problems for sparse matrices:& Anasazi$^\star$ &
----
+--
 %    Chapter \ref{chap:anasazi} 
     \\
     \hline
@@ -183,7 +184,7 @@ accomplished using Trilinos.
   understand Trilinos, but the functionalities there presented are used
   in this document as a starting point for many examples.  One of the
   classes described in Chapter~\ref{chap:teuchos}, the
-  Teuchos\_ParameterList, is later used in Chapters~\ref{chap:ml} and
+  Teuchos::ParameterList, is later used in Chapters~\ref{chap:ml} and
   \ref{chap:amesos}.  Chapter~\ref{chap:aztecoo} should be read before
   Chapters~\ref{chap:ifpack} and~\ref{chap:ml} (even if both IFPACK and
   ML can be compiled and run without AztecOO).
@@ -229,11 +230,11 @@ http://software.sandia.gov/Trilinos
 \end{verbatim}
 
 Trilinos has been compiled on a variety of architectures, including
-various flavors of Linux, Sun Solaris, SGI Irix, DEC, ASCI Red, and many
-others. Trilinos has been designed to support parallel applications.
-However, it also compiles and runs on serial computers.  Detailed
-comments on the installation, and an exhaustive list of FAQs, may be
-found at the web pages:
+various flavors of Linux, Sun Solaris, SGI Irix, DEC, Mac OS X, ASCI
+Red, and many others. Trilinos has been designed to support parallel
+applications.  However, it also compiles and runs on serial computers.
+Detailed comments on the installation, and an exhaustive list of FAQs,
+may be found at the web pages:
 \begin{verbatim}
 http://software.sandia.gov/Trilinos/installing_manual.html
 http://software.sandia.gov/Trilinos/faq.html
@@ -304,34 +305,34 @@ and delete the \verb!--enable-mpi --with-mpi-compilers! options.
 %%%
 %%%
 
-\subsection{Compiling and Linking a program using Trilinos}
+\subsection{Compiling and Linking a Program Using Trilinos}
 \label{sec:intro_compiling}
 
 In order to compile and link a code that makes use of Trilinos, the user
 may decide to use a Makefile similar to the one reported below.  Suppose
 that our code requires Epetra, AztecOO and IFPACK, and that the
 procedure outlined in Section~\ref{sec:installing} has been followed.
-The UNIX makefile can be as follows (line number are reported for
+The makefile can be as follows (line number are reported for
 reader's convenience):
 \begin{verbatim}
  1: TRILINOS_HOME = /home/msala/Trilinos/
- 2: TRILINOS_ARCH - LINUX_MPI
+ 2: TRILINOS_ARCH = LINUX.MPI
  3: TRILINOS_LIB = $(TRILINOS_HOME)$(TRILINOS_ARCH)
  4: 
  5: include $(TRILINOS_HOME)/build/makefile.$(TRILINOS_ARCH)
  6: 
  7: MY_COMPILER_FLAGS = -DHAVE_CONFIG_H $(CXXFLAGS) -c -g\
- 8:                    -I$(TRILINOS_LIB)/include/
+ 8:                     -I$(TRILINOS_LIB)/include/
  9:
-10: MY_LINKER_FLAGS = $(LDFLAGS) $(TEST_C_OBJ) \
-11:         -L$(TRILINOS_LIB)/lib/ \
-12:         -lifpack -laztecoo -lepetra $(ARCH_LIBS)
+10: MY_LINKER_FLAGS = $(LDFLAGS) \
+11:                  -L$(TRILINOS_LIB)/lib/ \
+12:                  -lifpack -laztecoo -lepetra $(ARCH_LIBS)
 14:
 15: ex1: ex1.cpp
 16:         $(CXX)     ex1.cpp $(MY_COMPILER_FLAGS)
-17:         $(LINKER)  ex1.o   $(MY_LINKER_FLAGS)    -o ex1.exe
+17:         $(LINKER)  ex1.o   $(MY_LINKER_FLAGS) -o ex1.exe
 \end{verbatim}
-Here we assume that the reader knows about UNIX makefiles.  Line 5
+Here we assume that the reader knows about makefiles.  Line 5
 includes basic definitions of Trilinos. (On some architectures, one may
 need to use \verb!gmake! instead of \verb!make!.)  In line 7, the
 variable \verb!HAVE_CONFIG_H! is defined.  This definition is extremely
@@ -440,11 +441,11 @@ institution = "Sandia National Laboratories",
 number = "SAND2003-2952",
 year = 2003}
 
-@techreport{Trilinos-Tutorial-3.1,
+@techreport{Trilinos-Tutorial-4.0,
 title = "{Trilinos 3.1 Tutorial}",
-author = "Marzio Sala and Michael A. Heroux",
+author = "Marzio Sala and Michael A. Heroux and David D. Day",
 institution = "Sandia National Laboratories",
-number = "SAND2004-0154",
+number = "SAND2004-2189",
 year = 2004}
 \end{verbatim}
 The BiBTeX information is available at the web page
@@ -473,15 +474,15 @@ ${TRILINOS_HOME}/packages/<package-name>/doc
 Developers' documentation is written using Doxygen\footnote{Copyright
   \copyright 1997-2003 by Dimitri van Heesch. More information can by
   found at the web address {\tt
-    http://www.stack.nl/~dimitri/doxygen/}.}. The command to create For
-instance, to create the documentation for Epetra are
+    http://www.stack.nl/~dimitri/doxygen/}.}. For instance, to create
+the documentation for Epetra are
 \begin{verbatim}
 $ cd ${TRILINOS_HOME}/packages/epetra/doc
 $ doxygen
 \end{verbatim}
-Generally, both HTML and \LaTeX documentation are created by Doxygen.
+Generally, both HTML and \LaTeX~documentation are created by Doxygen.
 The browser of choice can be used to walk through the HTML
-documentation.  To compile the \LaTeX sources, the commands are:
+documentation.  To compile the \LaTeX~sources, the commands are:
 \begin{verbatim}
 $ cd ${TRILINOS_HOME}/packages/epetra/doc/latex
 $ make

@@ -174,7 +174,7 @@ to Amesos documentation.
 \label{sec:amesos_generic}
 
 All Amesos objects are constructed from the function class
-\verb!Amesos_Factory!.  Amesos\_Factory allows a code to delay the
+\verb!Amesos!.  Amesos allows a code to delay the
 decision about which concrete class to use to implement the
 Amesos\_BaseSolver interface. The main goal of this class is to allow
 the user to select any supported (and enabled at configuration time)
@@ -187,7 +187,7 @@ code\footnote{Using Amesos\_BaseSolver, 3-part libraries header files
 An example of use of this class is as follows. First, the following
 header files must be included:
 \begin{verbatim}
-  #include "Amesos_Factory.h" 
+  #include "Amesos.h" 
   #include "AmesosClassType.h"
 \end{verbatim}
 Then, let \verb!A! be an Epetra\_RowMatrix object (for instance, and
@@ -201,19 +201,19 @@ and to create an Amesos parameter list (which can be empty):
 \begin{verbatim}
   Teuchos::ParameterList ParamList ;
 \end{verbatim}
-Now, let \verb!Choice! be an AmesosClassType variable, with one of the
+Now, let \verb!Choice! be an string, with one of the
 following values: 
 \begin{itemize}
-\item AMESOS\_KLU;
-\item AMESOS\_UMFPACK;
-\item AMESOS\_MUMPS;
-\item AMESOS\_SUPERLUDIST;
-\item AMESOS\_DSCPACK.
+\item {\tt AMesos\_Klu};
+\item {\tt Amesos\_Umfpack};
+\item {\tt Amesos\_Mumps};
+\item {\tt Amesos\_Superludist};
+\item {\tt Amesos\_Scalapack}.
 \end{itemize}
 We can construct an \verb!Amesos_BaseSolver! object as follows:
 \begin{verbatim}
   Amesos_BaseSolver * A_Base;
-  Amesos_Factory A_Factory;
+  Amesos A_Factory;
 
   A_Base = A_Factory.Create(Choice, *Amesos_LinearProblem, 
                             ParamList );
@@ -246,27 +246,18 @@ the solution phase, for instance using
 A common ingredient to all the Amesos classes is the Teuchos parameters'
 list. This object, whose definition requires the input file
 \verb!Teuchos_ParameterList.hpp!, is used to specify the parameters that
-affect the 3-part libraries. For a detailed presentation of Teuchos, we
-refer to~\cite{Teuchos-home-page}. Here, we simply recall that the
-parameters' list can be created as
+affect the 3-part libraries. Here, we simply recall that the parameters'
+list can be created as
 \begin{verbatim}
   Teuchos::ParameterList AmesosList;
 \end{verbatim}
 and parameters can be set as
 \begin{verbatim}
-  AmesosList.setParameter(ParameterName,ParameterValue);
+  AmesosList.set(ParameterName,ParameterValue);
 \end{verbatim}
 Here, \verb!ParameterName! is a string containing the parameter name,
 and \verb!ParameterValue! is any valid C++ object that specifies the
 parameter value (for instance, an integer, a pointer to an array or to
 an object).
 
-Amesos has to level of parameters: 
-\begin{enumerate}
-\item a first level refers to parameters that affect all solvers;
-\item a second level refers to parameters that are specific to a
-  particular solver.
-\end{enumerate}
-
-
-For a detailed list of parameters we refer to the Amesos documentation.
+For a detailed list of parameters we refer to~\cite{Amesos-Reference-Guide}.

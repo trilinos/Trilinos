@@ -192,7 +192,8 @@ As the class  Epetra\_Operator implements several virtual methods, we
 have to specify all those methods in our class. Among them, we are
 interested in the \verb!Apply! method, which may be coded as follows:
 \begin{verbatim}
-int Apply( const Epetra_MultiVector & X, Epetra_MultiVector & Y ) const {
+int Apply( const Epetra_MultiVector & X, 
+           Epetra_MultiVector & Y ) const {
   int Length = X.MyLength();
   
   // need to handle multi-vectors and not only vectors

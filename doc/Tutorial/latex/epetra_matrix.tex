@@ -106,7 +106,7 @@ consider a matrix-matrix product between two rectangular matrices
 int NumRowsA = 2, NumColsA = 2;
 int NumRowsB = 2, NumColsB = 1;
 Epetra_SerialDenseMatrix A, B;
-A.Shape( NumRowsA, NumColsA );
+A.Shape(NumRowsA, NumColsA);
 B.Shape(NumRowsB, NumColsB);
 // ... here set the elements of A and B
 Epetra_SerialDenseMatrix AtimesB;
@@ -115,11 +115,10 @@ double alpha = 1.0, beta = 1.0;
 AtimesB.Multiply('N','N',alpha, A, B, beta);
 cout << AtimesB;
 \end{verbatim}
-\verb!Multiply()! performs the operation $C = \alpha A^{opA} + \beta
-B^{opA}$, where $A$ replaced by $A^T$ if the first input parameter is
-\verb!T!, and $B$ replaced by $B^T$ if the second input parameter is
-\verb!T!.  The corresponding source code file is
-\TriExe{epetra/ex10.cpp}.
+\verb!Multiply()! performs the operation $C = \alpha A + \beta B$, where
+$A$ replaced by $A^T$ if the first input parameter is \verb!T!, and $B$
+replaced by $B^T$ if the second input parameter is \verb!T!.  The
+corresponding source code file is \TriExe{epetra/ex10.cpp}.
 
 \smallskip
 
@@ -144,7 +143,7 @@ interface, then we suggest Epetra\_SerialDenseMatrix..
 
 \smallskip
 
-Given an Epetra\_SerialDenseMatrix and two Epetra\_DSerialDenseVectors
+Given an Epetra\_SerialDenseMatrix and two Epetra\_SerialDenseVectors
 {\tt x} and {\tt b}, the general approach is as follows:
 \begin{verbatim}
 Epetra_SerialDenseSolver Solver();
@@ -299,7 +298,7 @@ distributed operations. \\
 
 \begin{remark}
   Some numerical algorithms require the application of the linear
-  operator only. For this reason, some applications choose not to not
+  operator only. For this reason, some applications choose not to 
   store a given matrix. Epetra can handle this situation using with the
   Epetra\_Operator class; see Section~\ref{sec:operator}.
 \end{remark}
@@ -380,7 +379,7 @@ else
 \end{verbatim}
 We are building a tridiagonal matrix where each row has (-1 2 -1).  Here
 \verb!NumNz[i]! is the number of nonzero terms in the i-th global
-equation on this process (2 off-diagonal terms (except for the first and
+equation on this process (2 off-diagonal terms, except for the first and
 last equation).
 
 Now, the command to create an Epetra\_CsrMatrix is
@@ -393,9 +392,9 @@ need some additional variables: let us call them \verb!Indexes! and
 \verb!Values!. For each row, \verb!Indices! contains global column
 indices, and \verb!Values! the correspondingly values.
 \begin{verbatim}
-double *Values = new double[2];
+double * Values = new double[2];
 Values[0] = -1.0; Values[1] = -1.0;
-int *Indices = new int[2];
+int * Indices = new int[2];
 double two = 2.0;
 int NumEntries;
 
@@ -428,13 +427,14 @@ A.FillComplete();
 \end{verbatim}
 This call to \verb!FillComplete()! will reorganize the internally stored
 data so that each process knows the set of internal, border and external
-elements. Also, the communication pattern is established. As we have
-specified just one map, Epetra considers that the the rows of $A$ are
-distributed among the processes in the same way of the elements of $X$
-and $B$.  Although standard, this approach is only a particular case.
-Epetra allows the user to handle the more general case of a matrix whose
-Map differs from that of $X$ and that of $B$. In fact, each Epetra
-matrix is defined by {\sl four} maps:
+elements for a matrix-vector product of the form $B = AX$. Also, the
+communication pattern is established. As we have specified just one map,
+Epetra considers that the the rows of $A$ are distributed among the
+processes in the same way of the elements of $X$ and $B$.  Although
+standard, this approach is only a particular case.  Epetra allows the
+user to handle the more general case of a matrix whose Map differs from
+that of $X$ and that of $B$. In fact, each Epetra matrix is defined by
+{\sl four} maps:
 \begin{itemize}
 \item Two maps, called RowMap and ColumnMap, define the sets of rows and
   columns of the elements assigned to a given processor. In general, one
@@ -444,9 +444,9 @@ matrix is defined by {\sl four} maps:
     Epetra\_FEVbrMatrix.}. RowMap and ColumnMap define the pattern of
   the matrix, as it is used during the construction. They can be
   obtained using the methods \verb!RowMatrixRowMap()!  and
-  \verb!RowMatrixColMap()! in the Epetra\_RowMatrix class. Usually, the
-  as one does not specify a ColumnMap, it is automatically created by
-  Epetra.  RowMap and ColumnMap can differ.
+  \verb!RowMatrixColMap()! of the Epetra\_RowMatrix class. Usually, as a
+  ColumnMap is not specified, it is automatically created by Epetra.  In
+  general RowMap and ColumnMap can differ.
 \item DomainMap and RangeMap define, instead, the parallel data layout
   of $X$ and $B$, respectively. Note that those two maps can be
   completely different from RowMap and ColumnMap, meaning that a matrix
@@ -499,7 +499,8 @@ derived from Epetra\_RowMatrix.
 
 Example \TriExe{epetra/ex14.cpp} shows the use of some of the methods of
 the Epetra\_CrsMatrix class. The code prints out information about the
-structure of the matrix and its properties.  The output will be as
+structure of the matrix and its properties.  The output will be
+approximatively as
 reported here:
 \begin{verbatim}
 [msala:epetra]> mpirun -np 2 ./ex14
@@ -538,7 +539,7 @@ Other examples for Epetra\_CrsMatrix include:
   lines in order to read the grid information from a file.
 \item Example \TriExe{epetra/ex15.cpp} explains how to export an
   Epetra\_CrsMatrix to file in a MATLAB format.  The output of this
-  example will be as follows:
+  example will be approximatively  as follows:
 \begin{verbatim}
 [msala:epetra]> mpirun -np 2 ./ex15
 A = spalloc(5,5,13);
@@ -560,7 +561,8 @@ A(5,5) = 2;
 \end{verbatim}
   A companion to this example is \newline \TriExe{epetra/ex16.cpp},
   which exports an Epetra\_Vector to MATLAB format. Note also that the
-  package EpetraExt contains several purpose tools for such tasks.
+  package EpetraExt contains several purpose tools to read and write
+  matrices in various formats.
 \end{itemize}
 %%%
 %%%
@@ -581,7 +583,7 @@ equations defined on that block.  This format is quite general, and can
 handle matrices with variable block size, as is done is the following
 example.
 
-First, create a map, containing the distribution of the blocks:
+First, we create a map, containing the distribution of the blocks:
 \begin{verbatim}
 Epetra_Map Map(NumGlobalElements,0,Comm);
 \end{verbatim}
@@ -650,7 +652,8 @@ for( int i=0 ; i<NumMyElements ; ++i ) {
 Note that, with VBR matrices, we have to insert one block at time.  This
 required two more instructions, one to start this process
 (\verb!BeginInsertGlobalValues!), and another one to commit the end of
-submissions (\verb!EndSubmitEntries!).
+submissions (\verb!EndSubmitEntries!). Similar functions to sum and
+replace elements exist as well.
  
 \smallskip
 

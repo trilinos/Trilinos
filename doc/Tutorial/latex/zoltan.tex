@@ -81,13 +81,16 @@ in future versions of Zoltan and EpetraExt. Hypergraph partitioning
 also applies to rectangular matrices, not just square matrices.
 
 \subsection{Installing Zoltan and Configuration}
+
 Zoltaan is not a Trilinos package and must be obtained separately.
 Zoltan is freely available under the LGPL license, and can
 be obtained from the Zoltan home page at 
-\texttt{http://www.cs.sandia.gov/Zoltan}. (If you have access
-to the Trilinos developers cvs repository, you may also  
-get Zoltan from the Trilinos3PL module.)
-Zoltan versions 1.5x are compatible with Trilinos 4.0. 
+
+\texttt{http://www.cs.sandia.gov/Zoltan}. 
+
+(If you have access to the Trilinos developers cvs repository, you may
+also get Zoltan from the Trilinos3PL module.)  Zoltan versions 1.5x are
+compatible with Trilinos 4.0.
 
 We suggest that you install Zoltan together with other 3rd party software 
 for Trilinos. It is helpful to define a shell variable \verb!TRILINOS_3PL! 
@@ -98,24 +101,26 @@ Zoltan has not been autotool'ed so you must manually configure
 Zoltan to your machine. (Sample configuration files for common
 platforms are included in the \verb!Utilities/Config! directory.) 
 
-Before you compile Zoltan, you need to know if you have the ParMetis 
-library installed.
-If you don't have it already, there should be a copy bundled
-with Zoltan. It is also possible that you got ParMetis with
-the ML package in Trilinos. If you can't find it anywhere, 
-download ParMetis from \texttt{http://www-users.cs.umn.edu/$\sim$karypis/metis/parmetis}. Version 3.1 is recommended, though other versions will work, too.
-It is a good idea to put the ParMetis library in the \verb!TRILINOS_3PL!
-as well. You should not build more than one version of ParMetis; multiple versions may cause problems. After building ParMetis, you need to put
-the correct path (for your system) in the relevant Zoltan configuration file
-in the \verb!Utilities/Config! directory. Then you can finally make Zoltan
-by typing \verb!make zoltan!. (See the Zoltan documentation for more details.)
+Before you compile Zoltan, you need to know if you have the ParMetis
+library installed.  ParMetis can be downloaded from \\
+\texttt{http://www-users.cs.umn.edu/$\sim$karypis/metis/parmetis}.
+Version 3.1 is recommended, though other versions will work, too.  It is
+a good idea to put the ParMetis library in the \verb!TRILINOS_3PL!  as
+well. You should not build more than one version of ParMetis; multiple
+versions may cause problems. After building ParMetis, you need to put
+the correct path (for your system) in the relevant Zoltan configuration
+file in the \verb!Utilities/Config! directory. Then you can finally make
+Zoltan by typing \verb!make zoltan!. (See the Zoltan documentation for
+more details.)
 
-After you have built Zoltan, copy the \verb!libzoltan.a! file over to
-your \verb!TRILINOS_3PL/LINUX_MPI/lib! directory. You also
-need to copy the header files in the Zoltan \verb!include! directory
-to \verb!TRILINOS_3PL/LINUX_MPI/include!. 
-Alternatively, leave the header files where they are and add this
-directory to the include path in the Trilinos configure.
+After you have built Zoltan, you may decide to copy the
+\verb!libzoltan.a! file over to your
+\verb!TRILINOS_3PL/LINUX_MPI/lib!~directory (or any other name of your
+choice). You may also need to copy
+the header files in the Zoltan \verb!include! directory to \\
+\verb!TRILINOS_3PL/LINUX_MPI/include!.  Alternatively, leave the library
+and the header files where they are and add these directory to the
+include path and library path in the Trilinos configure.
 
 Next you need to configure Trilinos to use EpetraExt with Zoltan.
 You do this with a command of the type
@@ -130,9 +135,10 @@ You do this with a command of the type
 
 Then type \verb!make! and \verb!make install! as usual.
 
-\section{Load-balancing with Zoltan via EpetraExt}
+\subsection{Load-balancing with Zoltan via EpetraExt}
 Sparse matrix computations can be load-balanced through
-the class \verb!EpetraExt::Zoltan_CrsGraph!. This is
+the class \\
+\verb!EpetraExt::Zoltan_CrsGraph!. This is
 a transform that takes an Epetra\_CrsGraph as input
 and creates a new Epetra\_CrsGraph that is better load-balanced.
 In order to redistribute data, one needs the map of the load-balanced
