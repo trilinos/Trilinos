@@ -27,7 +27,7 @@ static char *cvs_octupdatec_id = "$Id$";
 #include "all_allo_const.h"
 
 /***************************  PROTOTYPES *************************************/
-static void initialize_region(LB *, pRegion *, LB_GID, LB_LID);
+static void initialize_region(LB *, pRegion *, LB_GID, LB_LID, int, float);
 
 /*****************************************************************************/
 /* NOTE: be careful later about region lists for nonterminal octants */
@@ -430,13 +430,17 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   int max_num_objs;
   LB_GID *obj_global_ids; 
   LB_LID *obj_local_ids;
-  int i;
-  int found;
+  float *obj_wgts;
+  int i, found, wgtflag;
   pRegion tmp, ptr;
   COORD global_min, global_max;
   double x;
   double PADDING = 0.0000001;
   int ierr = 0;
+
+  /* ATTN: wgtflag should be determined by a user-defined option,
+     probably set by LB_Set_Param. For now, deactivate weights. */
+  wgtflag = 0;
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
@@ -452,7 +456,9 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                                             1, *num_objs, sizeof(LB_GID));
   obj_local_ids  = (LB_LID *) LB_array_alloc(__FILE__, __LINE__,
                                             1, *num_objs, sizeof(LB_LID));
-  if (!obj_global_ids || !obj_local_ids) {
+  obj_wgts       = (float *) LB_array_alloc(__FILE__, __LINE__,
+                                            1, *num_objs, sizeof(float));
+  if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
     fprintf(stderr, "[%d] Error from %s: Insufficient memory\n", lb->Proc, yo);
     exit(-1);
   }
@@ -467,12 +473,13 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
   if (lb->Get_Obj_List != NULL) {
     lb->Get_Obj_List(lb->Get_Obj_List_Data, obj_global_ids, obj_local_ids,
-                     &ierr);
+                     wgtflag, obj_wgts, &ierr);
     found = TRUE;
   }
   else {
     found = lb->Get_First_Obj(lb->Get_First_Obj_Data, &(obj_global_ids[0]),
-                              &(obj_local_ids[0]), &ierr);
+                              &(obj_local_ids[0]), wgtflag, &(obj_wgts[0]), 
+                              &ierr);
   }
   if (ierr) {
     fprintf(stderr, "[%d] %s: Error returned from user defined "
@@ -481,7 +488,8 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
 
   if(*num_objs > 0 && found) {
-    initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0]);
+    initialize_region(lb, &tmp, obj_global_ids[0], obj_local_ids[0],
+                      wgtflag, obj_wgts[0]);
     *c0 = (float)tmp->Weight;
     vector_set(min, tmp->Coord);
     vector_set(max, tmp->Coord);
@@ -491,7 +499,8 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     if (lb->Get_Obj_List == NULL) {
       found = lb->Get_Next_Obj(lb->Get_Next_Obj_Data, obj_global_ids[i-1],
                                obj_local_ids[i-1], &(obj_global_ids[i]),
-                               &(obj_local_ids[i]), &ierr);
+                               &(obj_local_ids[i]), wgtflag, &(obj_wgts[i]),
+                               &ierr);
       if (ierr) {
         fprintf(stderr, "[%d] %s: Error returned from user defined "
                         "Get_Next_Obj function.\n", lb->Proc, yo);
@@ -504,7 +513,8 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
              "GET_NEXT_OBJ %d\n", *num_objs, i);
       exit(-1);
     }
-    initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i]);
+    initialize_region(lb, &(ptr), obj_global_ids[i], obj_local_ids[i],
+                      wgtflag, obj_wgts[i]);
     *c0 += (float)tmp->Weight;
     /* the following is really a hack, since it has no real basis 
        in vector mathematics.... */
@@ -527,6 +537,7 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
   }
   LB_safe_free((void **) &obj_global_ids);
   LB_safe_free((void **) &obj_local_ids);
+  LB_safe_free((void **) &obj_wgts);
   
   MPI_Allreduce(&(min[0]), &(global_min[0]), 3, 
 		MPI_DOUBLE, MPI_MIN, lb->Communicator);
@@ -559,7 +570,7 @@ void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
  *  global ID, coordinates and weight provided by the application.  
  */
 static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
-                              LB_LID local_id) 
+                              LB_LID local_id, int wgtflag, float wgt) 
 {
   pRegion reg;
   int ierr = 0;
@@ -587,9 +598,8 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   LB_print_sync_end(lb, TRUE);
 #endif
 
-  if (lb->Get_Obj_Weight != NULL)
-    reg->Weight = lb->Get_Obj_Weight(lb->Get_Obj_Weight_Data, global_id,
-                                     local_id, &ierr);
+  if (wgtflag)
+    reg->Weight = wgt;
   else
     reg->Weight = 1;
 
