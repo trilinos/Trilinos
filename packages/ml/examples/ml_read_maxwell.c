@@ -820,13 +820,15 @@ for (i = 0; i < Nlocal_edges; i++) rhs[i] = xxx[i];
 free(xxx);
 
 #ifdef HARDWIRE2D
+  jj = AZ_gsum_int(Nlocal_edges,proc_config);
+
  sum = 0.;
  for (i = 0; i < Nlocal_edges/2; i++) sum += rhs[i];
- sum = -2.*sum/((double) Nlocal_edges);
+ sum = -2.*sum/((double) jj);
  for (i = 0; i < Nlocal_edges/2; i++) rhs[i] += sum;
  sum = 0.;
  for (i = 0; i < Nlocal_edges/2; i++) sum += rhs[i+Nlocal_edges/2];
- sum = -2.*sum/((double) Nlocal_edges);
+ sum = -2.*sum/((double) jj);
  for (i = 0; i < Nlocal_edges/2; i++) rhs[i+Nlocal_edges/2] += sum;
 #endif
   }
