@@ -620,5 +620,6 @@ ostream & operator << (ostream & os,
 		       const Trilinos_Util_ShellOptions & S)
 {
   S.ShowAll();
+  return os;
 }
 
