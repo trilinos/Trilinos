@@ -76,8 +76,8 @@ endif
 # Process input flags
 ##############################################################################
 # Default values for inclusion of methods.
-ZOLTAN_HG = 1
-ZOLTAN_OCT = 1
+ZOLTAN_HG=1
+ZOLTAN_OCT=1
 
 GDEFINES	= 
 
@@ -235,9 +235,7 @@ DR_CSRC		= dr_main.c dr_err.c dr_input.c dr_par_util.c \
 		  dr_migrate.c dr_output.c dr_chaco_io.c dr_random_io.c \
                   dr_elem_util.c dr_maps.c dr_eval.c dr_gnuplot.c  
  
-ifdef ZOLTAN_HG
 DR_CSRC        += dr_hg_io.c dr_hg_readfile.c
-endif
 
 DR_INC		= dr_const.h dr_input_const.h dr_util_const.h \
 		  dr_err_const.h dr_par_util_const.h dr_elem_const.h \
