@@ -8,32 +8,38 @@
 # MS, last modified on Nov-21
 #
 TRILINOS_HOME=${HOME}/Trilinos
-TEST_HOME=${HOME}/Trilinos/packages/ifpack/test/testharness/marzio-laptop
+TEST_HOME=${HOME}/Trilinos/packages/ml/test/testharness/marzio-laptop
 
 # -f  to configure/build/run
 # -tf to run only
 OPT=-f
 cd ${TRILINOS_HOME}/testharness
 
-TEST="basic teuchos metis"
+# delete previous directories
+/bin/rm -rf ${TRILINOS_HOME}/ml-test/
+mkdir ${TRILINOS_HOME}/ml-test
+
+TEST="standalone epetra basic trilinos"
 StartTime=`date`
+lamboot
 for t in $TEST
 do
   echo "========================="
   echo "Testing $t..."
   echo "========================="
   perl test-harness.plx $OPT ${TEST_HOME}/$t-input
-  /bin/rm -rf ${TRILINOS_HOME}/ifpack-test/
-  mkdir ${TRILINOS_HOME}/ifpack-test
-  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/ifpack-test/$t-results/
+  cp -r ${TRILINOS_HOME}/testharness/results ${TRILINOS_HOME}/ml-test/$t-results/
   echo 
   echo "Analyzing results:"
   echo "1) build error files (none is fine):"
-  ls -1 ${TRILINOS_HOME}/ifpack-test/$t-results/ | grep -i error
+  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i error
   echo "2) test failed files (none is fine):"
-  ls -1 ${TRILINOS_HOME}/ifpack-test/$t-results/ | grep -i failed
+  ls -1 ${TRILINOS_HOME}/ml-test/$t-results/ | grep -i failed
+  echo
+  echo
 done
 EndTime=`date`
 echo "Test started on $StartTime,"
 echo "ended on $EndTime"
 lamhalt
+cd -

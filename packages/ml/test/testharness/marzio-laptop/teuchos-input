@@ -1,9 +1,9 @@
-MACHINE_CONFIG_FILE             = ../../packages/ifpack/test/testharness/marzio-laptop/machine
-MACHINE_MPI_CONFIG_FILE         = ../../packages/ifpack/test/testharness/marzio-laptop/machine-mpi
-TRILINOS_CONFIG_FILE            = ../../packages/ifpack/test/testharness/marzio-laptop/teuchos-configure
+MACHINE_CONFIG_FILE             = ../../packages/ml/test/testharness/marzio-laptop/machine
+MACHINE_MPI_CONFIG_FILE         = ../../packages/ml/test/testharness/marzio-laptop/machine-mpi
+TRILINOS_CONFIG_FILE            = ../../packages/ml/test/testharness/marzio-laptop/teuchos-configure
 REPORT_METHOD                   = LOCAL_FILESYSTEM
-SERIAL_DIR                      = ifpack-teuchos-serial
-MPI_DIR                         = ifpack-teuchos-mpi
+SERIAL_DIR                      = ml-teuchos-serial
+MPI_DIR                         = ml-teuchos-mpi
 HOST_FILE                       = <TRILINOS_DIR>/hostfile
 MPI_STARTUP_CMD                 = 
 MPI_SHUTDOWN_CMD                = 

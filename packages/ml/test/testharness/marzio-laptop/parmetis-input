@@ -4,7 +4,7 @@ TRILINOS_CONFIG_FILE            = ../../packages/ml/test/testharness/marzio-lapt
 REPORT_METHOD                   = LOCAL_FILESYSTEM
 # ParMETIS requires MPI
 SERIAL_DIR                      =
-MPI_DIR                         = parmetis-mpi
+MPI_DIR                         = ml-parmetis-mpi
 HOST_FILE                       = <TRILINOS_DIR>/hostfile
 MPI_STARTUP_CMD                 = 
 MPI_SHUTDOWN_CMD                = 
