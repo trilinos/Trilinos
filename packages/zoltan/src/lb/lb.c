@@ -123,7 +123,7 @@ LB *lb;
 
   lb->Method = RCB;    
   lb->LB_Fn = LB_rcb;
-  lb->Debug_Level = 0;
+  lb->Debug_Level = LB_DEBUG_PARAMS;
   lb->Fortran = 0;
   lb->Machine_Desc = NULL;
   lb->Params = NULL;
@@ -410,7 +410,7 @@ int LB_Set_Method(LB *lb, char *method_name)
     return (LB_FATAL);
   }
 
-  if (lb->Proc == 0) {
+  if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS) {
     printf("ZOLTAN Load balancing method = %d (%s)\n", lb->Method, method_name);
   }
 
@@ -487,7 +487,9 @@ int error;    /* Error code */
 double start_time, end_time;
 double lb_time[2] = {0.0,0.0};
 
-  if (lb->Debug_Level > 0 && lb->Proc == 0)
+  LB_TRACE_ENTER(lb, yo);
+
+  if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
     LB_Print_Key_Params(lb);
 
   start_time = LB_Time();
@@ -508,14 +510,17 @@ double lb_time[2] = {0.0,0.0};
    *  communicator.
    */
 
-  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
+    LB_TRACE_EXIT(lb, yo);
     return (LB_OK);
+  }
 
   if (lb->Method == NONE) {
-    if (lb->Proc == 0)
+    if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
       printf("%s Balancing method selected == NONE; no balancing performed\n",
               yo);
 
+    LB_TRACE_EXIT(lb, yo);
     return (LB_WARN);
   }
 
@@ -525,6 +530,7 @@ double lb_time[2] = {0.0,0.0};
 
   LB_perform_error_checking(lb);
 
+  LB_TRACE_DETAIL(lb, yo, "Done error checking");
 
   /*
    *  Construct the heterogenous machine description.
@@ -533,8 +539,11 @@ double lb_time[2] = {0.0,0.0};
   error = LB_Build_Machine_Desc(lb);
 
   if (error == LB_FATAL){
+    LB_TRACE_EXIT(lb, yo);
     return (error);
   }
+
+  LB_TRACE_DETAIL(lb, yo, "Done machine description");
 
   /*
    * Call the actual load-balancing function.
@@ -545,14 +554,17 @@ double lb_time[2] = {0.0,0.0};
           export_local_ids, export_procs);
 
   if (error == LB_FATAL){
-    printf("[%1d] FATAL ERROR: Zoltan returned error code %d\n", 
+    fprintf(stderr, "[%1d] FATAL ERROR: Zoltan returned error code %d\n", 
       lb->Proc, error);
+    LB_TRACE_EXIT(lb, yo);
     return (error);
   }
   else if (error){
-    printf("[%1d] WARNING: Zoltan returned error code %d\n", 
+    fprintf(stderr, "[%1d] WARNING: Zoltan returned error code %d\n", 
       lb->Proc, error);
   }
+
+  LB_TRACE_DETAIL(lb, yo, "Done load balancing");
 
   if (*num_import_objs >= 0)
     MPI_Allreduce(num_import_objs, &gmax, 1, MPI_INT, MPI_MAX, 
@@ -568,7 +580,7 @@ double lb_time[2] = {0.0,0.0};
      *  is needed.
      */
 
-    if (lb->Proc == 0)
+    if (lb->Proc == 0 && lb->Debug_Level >= LB_DEBUG_PARAMS)
       printf("%s No changes to the decomposition due to load-balancing; "
              "no migration is needed.\n", yo);
 
@@ -579,6 +591,7 @@ double lb_time[2] = {0.0,0.0};
 
     *num_import_objs = *num_export_objs = 0;
 
+    LB_TRACE_EXIT(lb, yo);
     return (LB_OK);
   }
 
@@ -613,18 +626,27 @@ double lb_time[2] = {0.0,0.0};
                               import_local_ids, import_procs);
     else{
       /* No map at all available */
-      printf("%s Error: Load-balancing function returned neither import nor "
-             "export data.\n", yo);
+      fprintf(stderr, "%s Error: Load-balancing function returned neither "
+             "import nor export data.\n", yo);
+      LB_TRACE_EXIT(lb, yo);
       return LB_WARN;
     }
   }
 
+  LB_TRACE_DETAIL(lb, yo, "Done building return arguments");
+
   end_time = LB_Time();
   lb_time[0] = end_time - start_time;
 
-  if (lb->Debug_Level > 6) {
+  if (lb->Debug_Level >= LB_DEBUG_LIST) {
     int i;
     LB_Print_Sync_Start(lb, TRUE);
+    printf("ZOLTAN: Objects to be imported to Proc %d\n", lb->Proc);
+    for (i = 0; i < *num_import_objs; i++) {
+      printf("    Obj: %10d  From processor: %4d\n", 
+             (*import_global_ids)[i], (*import_procs)[i]);
+    }
+    printf("\n");
     printf("ZOLTAN: Objects to be exported from Proc %d\n", lb->Proc);
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: %10d  Destination: %4d\n", 
@@ -638,6 +660,8 @@ double lb_time[2] = {0.0,0.0};
    */
 
   if (lb->Migrate.Auto_Migrate) {
+    LB_TRACE_DETAIL(lb, yo, "Begin auto-migration");
+
     start_time = LB_Time();
     LB_Help_Migrate(lb, *num_import_objs, *import_global_ids,
                     *import_local_ids, *import_procs,
@@ -645,16 +669,23 @@ double lb_time[2] = {0.0,0.0};
                     *export_local_ids, *export_procs);
     end_time = LB_Time();
     lb_time[1] = end_time - start_time;
+
+    LB_TRACE_DETAIL(lb, yo, "Done auto-migration");
   }
   
   /* Print timing info */
-  if (lb->Proc == 0) {
-    printf("ZOLTAN Times:  \n");
+  if (lb->Debug_Level >= LB_DEBUG_ZTIME) {
+    if (lb->Proc == 0) {
+      printf("ZOLTAN Times:  \n");
+    }
+    LB_Print_Stats (lb, lb_time[0], "ZOLTAN     Balance:     ");
+    if (lb->Migrate.Auto_Migrate)
+      LB_Print_Stats (lb, lb_time[1], "ZOLTAN     HelpMigrate: ");
   }
-  LB_Print_Stats (lb, lb_time[0], "ZOLTAN     Balance:     ");
-  LB_Print_Stats (lb, lb_time[1], "ZOLTAN     HelpMigrate: ");
 
   *changes = 1;
+
+  LB_TRACE_EXIT(lb, yo);
   if (error)
     return (error);
   else
@@ -711,13 +742,16 @@ int msgtag, msgtag2;        /* Message tags for communication routines */
 int i;
 
 
+  LB_TRACE_ENTER(lb, yo);
   /*
    *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
-  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
+    LB_TRACE_EXIT(lb, yo);
     return (LB_OK);
+  }
 
   /*
    *  Build processor's list of requests for non-local objs.
@@ -728,6 +762,7 @@ int i;
     if (!proc_list) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
     import_objs = (LB_TAG *) LB_MALLOC(num_import*sizeof(LB_TAG));
@@ -735,6 +770,7 @@ int i;
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_FREE(&proc_list);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
 
@@ -752,9 +788,11 @@ int i;
    *  processor has to export to establish the new decomposition.
    */
 
-   msgtag = 32767;
-   LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
-                  lb->Deterministic, num_export);
+  msgtag = 32767;
+  LB_Comm_Create(&comm_plan, num_import, proc_list, lb->Communicator, msgtag,
+                 lb->Deterministic, num_export);
+
+  LB_TRACE_DETAIL(lb, yo, "Done comm create");
 
   /*
    *  Allocate space for the object tags that need to be exported.  Communicate
@@ -768,6 +806,7 @@ int i;
               lb->Proc, yo);
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_global_ids,*num_export,
@@ -777,6 +816,7 @@ int i;
       LB_FREE(&proc_list);
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_local_ids,*num_export,
@@ -787,6 +827,7 @@ int i;
       LB_FREE(&import_objs);
       LB_FREE(&export_objs);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
     if (!LB_Special_Malloc(lb,(void **)export_procs,*num_export,
@@ -798,6 +839,7 @@ int i;
       LB_FREE(&export_objs);
       LB_Special_Free(lb,(void **)export_global_ids,LB_SPECIAL_MALLOC_GID);
       LB_Special_Free(lb,(void **)export_local_ids,LB_SPECIAL_MALLOC_LID);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_MEMERR);
     }
 
@@ -812,6 +854,8 @@ int i;
   msgtag2 = 32766;
   LB_Comm_Do(comm_plan, msgtag2, (char *) import_objs, (int) sizeof(LB_TAG), 
           (char *) export_objs);
+
+  LB_TRACE_DETAIL(lb, yo, "Done comm_do");
 
   /*
    *  Put the exported LB_TAGs into the output format.
@@ -829,6 +873,9 @@ int i;
   
   LB_Comm_Destroy(&comm_plan);
 
+  LB_TRACE_DETAIL(lb, yo, "Done comm destroy");
+
+  LB_TRACE_EXIT(lb, yo);
   return (LB_OK);
 }
 
@@ -895,22 +942,24 @@ COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
 int ierr = 0;
 
+  LB_TRACE_ENTER(lb, yo);
+
   /*
    *  Return if this processor is not in the load-balancing structure's
    *  communicator.
    */
 
-  if (LB_PROC_NOT_IN_COMMUNICATOR(lb))
+  if (LB_PROC_NOT_IN_COMMUNICATOR(lb)) {
+    LB_TRACE_EXIT(lb, yo);
     return (LB_OK);
+  }
 
-  if (lb->Debug_Level > 4)
-    printf("ZOLTAN %d %s Entering HELP_MIGRATE %d %d\n",
-            lb->Proc, yo, num_import, num_export);
 
   if (lb->Migrate.Get_Obj_Size == NULL) {
     fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
            "LB_OBJ_SIZE_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
@@ -918,6 +967,7 @@ int ierr = 0;
     fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
            "LB_PACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
            lb->Proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
@@ -925,6 +975,7 @@ int ierr = 0;
     fprintf(stderr, "ZOLTAN %d %s Error:  Must register an "
          "LB_UNPACK_OBJ_FN_TYPE function to use the migration-help tools.\n",
          lb->Proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
@@ -937,12 +988,12 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Pre_Process function.\n", lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
-
-    if (lb->Debug_Level > 5)
-      printf("ZOLTAN %d %s Done Pre-Process\n", lb->Proc, yo);
   }
+
+  LB_TRACE_DETAIL(lb, yo, "Done pre-processing");
 
   /*
    * For each object, allow space for its LB_GID and its data.
@@ -957,6 +1008,7 @@ int ierr = 0;
   if (ierr) {
     fprintf(stderr, "[%d] %s: Error returned from user defined "
                     "Migrate.Get_Obj_Size function.\n", lb->Proc, yo);
+    LB_TRACE_EXIT(lb, yo);
     return (LB_FATAL);
   }
 
@@ -966,6 +1018,7 @@ int ierr = 0;
     if (!export_buf) {
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
@@ -974,6 +1027,7 @@ int ierr = 0;
       fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",
               lb->Proc, yo);
       LB_FREE(&export_buf);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
@@ -997,11 +1051,14 @@ int ierr = 0;
       if (ierr) {
         fprintf(stderr, "[%d] %s: Error returned from user defined "
                         "Migrate.Pack_Obj function.\n", lb->Proc, yo);
+        LB_TRACE_EXIT(lb, yo);
         return (LB_FATAL);
       }
       tmp += size;
     }
   }
+
+  LB_TRACE_DETAIL(lb, yo, "Done packing objects");
 
   /*
    *  Compute communication map and tmp_import, the number of objs this
@@ -1023,6 +1080,7 @@ int ierr = 0;
               lb->Proc, yo);
       LB_FREE(&export_buf);
       LB_FREE(&proc_list);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
@@ -1043,6 +1101,8 @@ int ierr = 0;
   LB_FREE(&proc_list);
   LB_FREE(&export_buf);
 
+  LB_TRACE_DETAIL(lb, yo, "Done communication");
+
   /*
    *  Unpack the object data.
    */
@@ -1060,12 +1120,15 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Unpack_Obj function.\n", lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
     tmp += size;
   }
 
   LB_FREE(&import_buf);
+
+  LB_TRACE_DETAIL(lb, yo, "Done unpacking objects");
 
   if (lb->Migrate.Post_Process != NULL) {
     lb->Migrate.Post_Process(lb->Migrate.Post_Process_Data,
@@ -1076,17 +1139,14 @@ int ierr = 0;
     if (ierr) {
       fprintf(stderr, "[%d] %s: Error returned from user defined "
                       "Migrate.Post_Process function.\n", lb->Proc, yo);
+      LB_TRACE_EXIT(lb, yo);
       return (LB_FATAL);
     }
 
-    if (lb->Debug_Level > 5)
-      printf("ZOLTAN %d %s Done Post-Process\n", lb->Proc, yo);
+    LB_TRACE_DETAIL(lb, yo, "Done post-processing");
   }
 
-  if (lb->Debug_Level > 4)
-    printf("ZOLTAN %d %s Leaving HELP_MIGRATE %d %d\n",
-            lb->Proc, yo, num_import, num_export);
-
+  LB_TRACE_EXIT(lb, yo);
   return (LB_OK);
 }
 
@@ -1167,6 +1227,7 @@ void LB_Eval (LB *lb, int print_stats,
   LB_LID * local_ids;
   LB_GID *global_ids, *nbors_global;
   
+  LB_TRACE_ENTER(lb, yo);
   /* Set default error code */
   *ierr = LB_OK;
 
@@ -1193,6 +1254,7 @@ void LB_Eval (LB *lb, int print_stats,
       *ierr = LB_MEMERR;
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
+      LB_TRACE_EXIT(lb, yo);
       return;
     }
   }
@@ -1208,6 +1270,7 @@ void LB_Eval (LB *lb, int print_stats,
       LB_FREE(&local_ids);
       LB_FREE(&vwgts);
       LB_FREE(&tmp_wgt);
+      LB_TRACE_EXIT(lb, yo);
       return;
     }
   } 
@@ -1216,6 +1279,7 @@ void LB_Eval (LB *lb, int print_stats,
   if (*ierr == LB_FATAL){
     LB_FREE(&global_ids);
     LB_FREE(&local_ids);
+    LB_TRACE_EXIT(lb, yo);
     return;
   }
   
@@ -1249,12 +1313,13 @@ void LB_Eval (LB *lb, int print_stats,
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, global_ids[i], 
                local_ids[i], ierr);
       if (*ierr){
-        printf("Error in %s: Get_Num_Edges returned error code %d\n", 
+        fprintf(stderr, "Error in %s: Get_Num_Edges returned error code %d\n", 
           yo, *ierr);
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
         LB_FREE(&vwgts);
         LB_FREE(&tmp_wgt);
+        LB_TRACE_EXIT(lb, yo);
         return;
       }
       if (nedges>max_edges) max_edges = nedges;
@@ -1278,6 +1343,7 @@ void LB_Eval (LB *lb, int print_stats,
       LB_FREE(&nbors_proc);
       LB_FREE(&ewgts);
       LB_FREE(&proc);
+      LB_TRACE_EXIT(lb, yo);
       return;
     }
 
@@ -1297,6 +1363,7 @@ void LB_Eval (LB *lb, int print_stats,
         LB_FREE(&nbors_proc);
         LB_FREE(&ewgts);
         LB_FREE(&proc);
+        LB_TRACE_EXIT(lb, yo);
         return;
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, global_ids[i], local_ids[i],
@@ -1310,6 +1377,7 @@ void LB_Eval (LB *lb, int print_stats,
         LB_FREE(&nbors_proc);
         LB_FREE(&ewgts);
         LB_FREE(&proc);
+        LB_TRACE_EXIT(lb, yo);
         return;
       }
       /* Check for cut edges */
@@ -1343,10 +1411,10 @@ void LB_Eval (LB *lb, int print_stats,
   if (print_stats){
     /* Global reduction for object weights. */
     if (lb->Obj_Weight_Dim>0){
-      MPI_Allreduce(tmp_wgt, &tmp_wgt[lb->Obj_Weight_Dim], lb->Obj_Weight_Dim, MPI_FLOAT, MPI_MAX, 
-                    lb->Communicator);
-      MPI_Allreduce(tmp_wgt, &tmp_wgt[2*lb->Obj_Weight_Dim], lb->Obj_Weight_Dim, MPI_FLOAT, 
-                    MPI_SUM, lb->Communicator);
+      MPI_Allreduce(tmp_wgt, &tmp_wgt[lb->Obj_Weight_Dim], lb->Obj_Weight_Dim, 
+                    MPI_FLOAT, MPI_MAX, lb->Communicator);
+      MPI_Allreduce(tmp_wgt, &tmp_wgt[2*lb->Obj_Weight_Dim], lb->Obj_Weight_Dim,
+                    MPI_FLOAT, MPI_SUM, lb->Communicator);
     }
     stats[0] = num_obj;
     stats[1] = cut_weight;
@@ -1366,10 +1434,11 @@ void LB_Eval (LB *lb, int print_stats,
       for (i=0; i<lb->Obj_Weight_Dim; i++)
         printf("%s  Object weight #%1d :  Max = %6.1f, Sum = %7.1f, "
           "Imbal. = %5.3f\n",
-          yo2, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], tmp_wgt[2*lb->Obj_Weight_Dim+i], 
-          (tmp_wgt[2*lb->Obj_Weight_Dim+i] > 0
-            ? tmp_wgt[lb->Obj_Weight_Dim+i]*nproc/tmp_wgt[2*lb->Obj_Weight_Dim+i]
-            : 1.));
+          yo2, i+1, tmp_wgt[lb->Obj_Weight_Dim+i], 
+          tmp_wgt[2*lb->Obj_Weight_Dim+i], 
+          (tmp_wgt[2*lb->Obj_Weight_Dim+i] > 0 
+           ? tmp_wgt[lb->Obj_Weight_Dim+i]*nproc/tmp_wgt[2*lb->Obj_Weight_Dim+i]
+           : 1.));
       printf("%s  No. of objects   :  Max = %6d, Sum = %7d, Imbal. = %5.3f\n",
         yo2, stats[NUM_GSTATS], stats[2*NUM_GSTATS], 
         (stats[2*NUM_GSTATS] > 0
@@ -1415,4 +1484,5 @@ void LB_Eval (LB *lb, int print_stats,
   LB_FREE(&nbors_global);
   LB_FREE(&nbors_proc);
   LB_FREE(&proc);
+  LB_TRACE_EXIT(lb, yo);
 }

@@ -83,6 +83,30 @@ typedef enum LB_Method {
   LB_MAX_METHODS                  /*  This entry should always be last.      */
 } LB_METHOD;
 
+/*
+ *  Define the debug levels allowed.
+ *    LB_DEBUG_NONE = 0           - quiet mode; no debugging information.
+ *    LB_DEBUG_PARAMS = 1         - print values of all parameters used.
+ *    LB_DEBUG_ZTIME = 2          - print Zoltan timing information.
+ *    LB_DEBUG_ATIME = 3          - print algorithm's timing info, if the
+ *                                  algorithm supports this level.
+ *    LB_DEBUG_TRACE_ZERO = 5     - print trace info on processor 0 only.
+ *    LB_DEBUG_TRACE_ALL = 6      - print trace info on all processors.
+ *    LB_DEBUG_TRACE_DETAIL = 7   - print detailed trace info on all processors.
+ *    LB_DEBUG_LIST = 8           - print lists of objects to be imported 
+ *                                  and exported.
+ *    LB_DEBUG_ALL = 10           - print all debug information available.
+ */
+#define LB_DEBUG_NONE 0     
+#define LB_DEBUG_PARAMS 1
+#define LB_DEBUG_ZTIME 2
+#define LB_DEBUG_ATIME 3
+#define LB_DEBUG_TRACE_ZERO 5
+#define LB_DEBUG_TRACE_ALL 6
+#define LB_DEBUG_TRACE_DETAIL 7 
+#define LB_DEBUG_LIST 8
+#define LB_DEBUG_ALL 10
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -375,6 +399,23 @@ struct LB_Struct {
  */
 
 #define LB_PROC_NOT_IN_COMMUNICATOR(lb) ((lb)->Proc == -1) 
+
+/*  
+ *  Print trace information.
+ */
+#define LB_TRACE_ENTER(lb,yo) \
+  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
+     ((lb)->Debug_Level == LB_DEBUG_TRACE_ZERO && (lb)->Proc == 0)) \
+    printf("ZOLTAN (Processor %d) Entering %s\n", (lb)->Proc, (yo));
+
+#define LB_TRACE_EXIT(lb,yo) \
+  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_ALL || \
+     ((lb)->Debug_Level == LB_DEBUG_TRACE_ZERO && (lb)->Proc == 0)) \
+    printf("ZOLTAN (Processor %d) Leaving %s\n", (lb)->Proc, (yo));
+
+#define LB_TRACE_DETAIL(lb,yo,string) \
+  if ((lb)->Debug_Level >= LB_DEBUG_TRACE_DETAIL) \
+    printf("ZOLTAN (Processor %d) %s: %s\n", (lb)->Proc, (yo), (string));
 
 /*
  *  Debugging macro for Tflop architecture.

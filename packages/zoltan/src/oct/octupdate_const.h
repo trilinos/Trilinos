@@ -31,7 +31,7 @@ extern pOctant LB_oct_findId(int i);
 extern pOctant LB_oct_global_insert(LB *, pRegion region);
 extern int     LB_oct_subtree_insert(LB *, pOctant oct, pRegion region);
 
-extern void LB_print_stats(LB *lb, double timetotal, double *timers, 
+extern void LB_oct_print_stats(LB *lb, double timetotal, double *timers, 
                            int *counters, float *c, int STATS_TYPE);
 extern int LB_Set_Octpart_Param(char *name, char *val);
 #endif

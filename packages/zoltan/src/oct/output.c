@@ -18,12 +18,12 @@
 #include "octant_const.h"
 #include "octupdate_const.h"
 
-/* void LB_print_stats()
+/* void LB_oct_print_stats()
  *
  * Prints out statistic on the octree load balancing partitioner 
  */
-void LB_print_stats(LB *lb, double timetotal, double *timers, int *counters,
-                    float *c, int STATS_TYPE)
+void LB_oct_print_stats(LB *lb, double timetotal, double *timers, int *counters,
+                        float *c, int STATS_TYPE)
 {
   int proc,                                /* the processor number */
       nprocs,                              /* total number of processors */

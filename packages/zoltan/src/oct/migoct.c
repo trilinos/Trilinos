@@ -100,6 +100,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 			Region **prev_tags, int *npimtags, float *c2,
 			int *max_objs)
 {
+  char *yo = "tag_regions";
   int i;                /* index counter */
   pRegion regionlist;   /* list of region on this processor */
   int index;            /* index counter */
@@ -116,7 +117,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
 
   /* check for migrating, pointer should not be larger than an int */
   if (sizeof(int)<sizeof(pOctant)) {
-    fprintf(stderr,"tag_regions: Fatal error, sizeof(int)<sizeof(ptr)\n");
+    fprintf(stderr,"OCT %s: Fatal error, sizeof(int)<sizeof(ptr)\n", yo);
     abort();
   }
 
@@ -152,7 +153,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   *npimtags = count2;
   
   if (!export_tags) {
-    fprintf(stderr, "tag_regions: return code reached\n");
+    fprintf(stderr, "OCT %s: return code reached\n", yo);
     return;
   }
 
@@ -161,11 +162,11 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
     mtags = (pRegion) LB_MALLOC((unsigned)count * sizeof(Region));
     export_pids = (int *) LB_MALLOC((unsigned)count * sizeof(int));
     if(export_pids == NULL) {
-      fprintf(stderr, "ERROR: unable to malloc export_pids in tag_regions\n");
+      fprintf(stderr, "OCT ERROR: unable to malloc export_pids in %s\n", yo);
       abort();
     }
     if(mtags == NULL) {
-      fprintf(stderr, "ERROR: unable to malloc mtags in tag_regions\n");
+      fprintf(stderr, "OCT ERROR: unable to malloc mtags in %s\n", yo);
       abort();
     }
   }
@@ -181,8 +182,8 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
     /* allocate some space */
     ptags = (pRegion) LB_MALLOC((unsigned)count2 * sizeof(Region));
     if(ptags == NULL) {
-      fprintf(stderr, "(%d)ERROR: unable to malloc %d ptags in tag_regions\n",
-	      lb->Proc, count2);
+      fprintf(stderr, "OCT (%d)ERROR: unable to malloc %d ptags in %s\n",
+	      lb->Proc, count2, yo);
       abort();
     }
   }
@@ -222,8 +223,7 @@ static void tag_regions(LB *lb, pOctant *octs, int *newpids, int nocts,
   }
   
   if (index!=count) {                                         /* error check */
-    fprintf(stderr, "%s\n",
-	    "ERROR in tag_regions(), inconsistent number of regions.");
+    fprintf(stderr, "OCT ERROR in %s, inconsistent number of regions.", yo);
     abort();
   }
   *c2 = ex_load;
@@ -242,6 +242,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
 			       pRegion *import_tags, pRegion prev_tags,
 			       int npimtags, float *c3)
 {
+  char *yo = "malloc_new_objects";
   int i;                                  /* index counter */
   int nreceives;                          /* number of messages received */
   pRegion imp;                            /* array of tags being imported */
@@ -259,8 +260,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if (nreceives > 0) {
     tmp = (pRegion) LB_MALLOC(nreceives * sizeof(Region));
     if(tmp == NULL) {
-      fprintf(stderr,"ERROR in LB_migreg_migrate_regions: %s\n",
-  	    "cannot allocate memory for import_objs.");
+      fprintf(stderr,"OCT %s ERROR cannot allocate memory for import_objs.",yo);
       abort();
     }
   }
@@ -282,8 +282,7 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
   if((j + npimtags) != 0) {                   /* malloc import array */
     imp = (pRegion) LB_MALLOC((j + npimtags) * sizeof(Region));
     if(imp == NULL) {
-      fprintf(stderr, "ERROR in malloc_new_objects, %s\n",
-	      "unable to malloc import array.");
+      fprintf(stderr, "OCT %s ERROR unable to malloc import array.", yo);
       abort();
     }
   }
@@ -315,8 +314,8 @@ static void malloc_new_objects(LB *lb, int nsentags, pRegion export_tags,
    */
 
   if((*nrectags == 0) && (*import_tags != NULL)) {
-    printf("(%d) ERROR: import tags not empty but no tags received\n",
-	    lb->Proc);
+    fprintf(stderr, "OCT %s (%d) ERROR: import tags not empty but no tags "
+                    "received\n", yo, lb->Proc);
     exit(1);
   }
 
@@ -355,7 +354,7 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
     *import_local_ids  = (LB_LID *) LB_MALLOC(nrectags * sizeof(LB_LID));
     *import_procs      = (int *)   LB_MALLOC(nrectags * sizeof(int));
     if (!(*import_global_ids) || !(*import_local_ids) || !(*import_procs)) {
-      fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
+      fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
       abort();
     }
 
@@ -371,7 +370,7 @@ void LB_fix_tags(LB_GID **import_global_ids, LB_LID **import_local_ids,
   /* KDD -- LB_Compute_Destinations will perform this operation for us. */
   new_export = (LB_TAG *) LB_MALLOC((*nsentags) * sizeof(LB_TAG));
   if(((*nsentags) > 0) && (new_export == NULL)) {
-    fprintf(stderr,"ERROR in %s, unable to allocate space\n", yo);
+    fprintf(stderr,"OCT %s ERROR, unable to allocate space\n", yo);
     abort();
   }
 

@@ -111,20 +111,20 @@ int error = FALSE;            /* error flag                                  */
 
   /* Error checking for parameters */
   if (oct_dim < 2 || oct_dim > 3) {
-    fprintf(stderr, "Error in OCTPART: OCT_DIM must be 2 or 3\n");
+    fprintf(stderr, "OCT Error in OCTPART: OCT_DIM must be 2 or 3\n");
     error = TRUE;
   }
   if (oct_method < 0 || oct_method > 2) {
-    fprintf(stderr, "Error in OCTPART: OCT_METHOD must be 0, 1, or 2\n");
+    fprintf(stderr, "OCT Error in OCTPART: OCT_METHOD must be 0, 1, or 2\n");
     error = TRUE;
   }
   if (oct_granularity < 1) {
-    fprintf(stderr, "Error in OCTPART: OCT_GRANULARITY "
+    fprintf(stderr, "OCT Error in OCTPART: OCT_GRANULARITY "
                     "must be greater than 0\n");
     error = TRUE;
   }
   if (oct_output_level < 1 || oct_output_level > 3) {
-    fprintf(stderr, "Error in OCTPART: OCT_OUTPUT_LEVEL must be 1, 2, or 3\n");
+    fprintf(stderr, "OCT Error in OCTPART: OCT_OUTPUT_LEVEL must be 1, 2, or 3\n");
     error = TRUE;
   }
 
@@ -166,6 +166,7 @@ static int lb_oct_init(
   int oct_wgtflag             /* Flag specifying use of object weights.      */
 ) 
 {
+  char *yo = "lb_oct_init";
   OCT_Global_Info *OCT_info;
   LB_TAG *export_tags;             /* array of LB_TAGS being exported */
   pRegion export_regs;             /* */
@@ -190,6 +191,8 @@ static int lb_oct_init(
 				      3 = most objects this proc ever owns
 				      */
   float  c[4];
+
+  LB_TRACE_ENTER(lb, yo);
 
   MPI_Barrier(lb->Communicator);
   timestart = MPI_Wtime();
@@ -269,7 +272,8 @@ static int lb_oct_init(
   MPI_Barrier(lb->Communicator);
   timestop = MPI_Wtime();
 
-  LB_print_stats(lb, timestop-timestart, timers, counters, c, oct_output_level);
+  LB_oct_print_stats(lb, timestop-timestart, timers, counters, c, 
+                     oct_output_level);
 
   LB_FREE(&export_regs);
   LB_FREE(&import_regs);
@@ -282,6 +286,7 @@ static int lb_oct_init(
   }
 
   /* Temporary return value until error codes are fully implemented. */
+  LB_TRACE_EXIT(lb, yo);
   return(LB_OK);
 }
 
@@ -326,13 +331,13 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
    * The partitioner will probably assign objects to this processor
    */
   if(lb->Get_Num_Obj == NULL) {
-    fprintf(stderr, "%s\n\t%s\n", "Error in octree load balance:",
+    fprintf(stderr, "OCT %s\n\t%s\n", "Error in octree load balance:",
 	    "Must register Get_Num_Local_Objects function");
     abort();
   }
   *c3 = num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
+    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                     "Get_Num_Obj function.\n", lb->Proc, yo);
     exit (-1);
   }
@@ -419,7 +424,7 @@ void LB_oct_gen_tree_from_input_data(LB *lb, int oct_wgtflag, int *c1, int *c2,
   extra = lb->Num_Proc - remainder;/* where to start adding extra octants */
   array = (Map *) LB_MALLOC(hold * sizeof(Map));       /* allocate map array */
   if(array == NULL) {
-    fprintf(stderr, "ERROR on proc %d, could not allocate array map\n",
+    fprintf(stderr, "OCT ERROR on proc %d, could not allocate array map\n",
             lb->Proc);
     abort();
   }
@@ -514,7 +519,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
   *num_objs = lb->Get_Num_Obj(lb->Get_Num_Obj_Data, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
+    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                     "Get_Num_Obj function.\n", lb->Proc, yo);
     exit (-1);
   }
@@ -524,7 +529,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
     obj_local_ids  = (LB_LID *) LB_MALLOC((*num_objs) * sizeof(LB_LID));
     obj_wgts       = (float *) LB_MALLOC((*num_objs) * sizeof(float));
     if (!obj_global_ids || !obj_local_ids || !obj_wgts) {
-      fprintf(stderr, "[%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
+      fprintf(stderr, "OCT [%d] Error from %s: Insufficient memory\n",lb->Proc,yo);
       exit(-1);
     }
     if (wgtflag == 0)
@@ -533,7 +538,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
 
     if(lb->Get_Obj_List == NULL &&
       (lb->Get_First_Obj == NULL || lb->Get_Next_Obj == NULL)) {
-      fprintf(stderr, "Error in octree load balance:  user must declare " 
+      fprintf(stderr, "OCT Error in octree load balance:  user must declare " 
               "function Get_Obj_List or Get_First_Obj/Get_Next_Obj.");
       abort();
     }
@@ -549,7 +554,7 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                                 &ierr);
     }
     if (ierr) {
-      fprintf(stderr, "[%d] %s: Error returned from user defined "
+      fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                       "Get_Obj_List/Get_First_Obj function.\n", lb->Proc, yo);
       exit (-1);
     }
@@ -569,13 +574,13 @@ static void LB_get_bounds(LB *lb, pRegion *ptr1, int *num_objs,
                                  &(obj_local_ids[i]), wgtflag, &(obj_wgts[i]),
                                  &ierr);
         if (ierr) {
-          fprintf(stderr, "[%d] %s: Error returned from user defined "
+          fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                           "Get_Next_Obj function.\n", lb->Proc, yo);
           exit (-1);
         }
       }
       if (!found) {
-        fprintf(stderr, "Error in octree load balance:  number of objects "
+        fprintf(stderr, "OCT Error in octree load balance:  number of objects "
                "declared by LB_NUM_OBJ_FN %d != number obtained by "
                "GET_NEXT_OBJ %d\n", *num_objs, i);
         exit(-1);
@@ -653,7 +658,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
   reg->Coord[0] = reg->Coord[1] = reg->Coord[2] = 0.0;
   lb->Get_Geom(lb->Get_Geom_Data, global_id, local_id, reg->Coord, &ierr);
   if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
+    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                     "Get_Geom function.\n", lb->Proc, yo);
     exit (-1);
   }
@@ -672,7 +677,7 @@ static void initialize_region(LB *lb, pRegion *ret, LB_GID global_id,
     reg->Weight = 1;
 
   if (ierr) {
-    fprintf(stderr, "[%d] %s: Error returned from user defined "
+    fprintf(stderr, "OCT [%d] %s: Error returned from user defined "
                     "Get_Obj_Weight function.\n", lb->Proc, yo);
     exit (-1);
   }
@@ -777,7 +782,7 @@ pOctant LB_oct_global_insert(LB *lb, pRegion region)
   if (oct)
     if (!LB_oct_subtree_insert(lb, oct, region))         /* inserting region */
       {
-	fprintf(stderr,"LB_oct_global_insert: insertion failed\n");
+	fprintf(stderr,"OCT LB_oct_global_insert: insertion failed\n");
 	abort();
       }
 
@@ -902,13 +907,14 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
   /* upper limit of refinement levels */
   /* ATTN: may not be used anymore, but can be put back in if necessary */
   if (count>=10)
-    printf("LB_oct_terminal_refine: bailing out at 10 levels\n");
+    fprintf(stderr, "OCT ERROR: LB_oct_terminal_refine: bailing out at "
+                    "10 levels\n");
   
   oct_nref++;                                /* increment refinement counter */
 
   /* octant should be terminal in order to be refined (subdivided) */
   if (!POC_isTerminal(oct)) {
-    fprintf(stderr,"ref_octant: oct not terminal\n");
+    fprintf(stderr,"OCT ref_octant: oct not terminal\n");
     abort();
   }
 
@@ -957,7 +963,7 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
        * if subdivision of oct was successful, oct should have 8 children; 
        * thus a return value of 0 here is a fatal error
        */
-      fprintf(stderr, "ref_octant: subdivide failed, %d children.\n",
+      fprintf(stderr, "OCT ref_octant: subdivide failed, %d children.\n",
 	      POC_children(oct, child));
       abort();
     }
@@ -968,7 +974,7 @@ void LB_oct_terminal_refine(LB *lb, pOctant oct,int count)
        * if subdivision of oct was successful, oct should have 4 children; 
        * thus a return value of 0 here is a fatal error
        */
-      fprintf(stderr, "ref_octant:subdivide failed, %d children, expected 4\n",
+      fprintf(stderr, "OCT ref_octant:subdivide failed, %d children, expected 4\n",
 	      POC_children(oct, child));
       abort();
     }
@@ -1029,7 +1035,7 @@ static int LB_oct_subtree_dref(OCT_Global_Info *OCT_info,pOctant oct)
     nregions=POC_nRegions(oct);
 
     if (nregions > (MAXOCTREGIONS*2) ) {
-      printf("LB_oct_subtree_dref: warning: too many (%d) regions "
+      fprintf(stderr, "OCT LB_oct_subtree_dref: warning: too many (%d) regions "
 	     "in oct %d (id=%d)\n",POC_nRegions(oct),(int)oct,POC_id(oct));
       return(-1);
     }
@@ -1097,12 +1103,12 @@ static void LB_oct_terminal_coarsen(OCT_Global_Info *OCT_info,pOctant oct)
     /* cannot coarsen if child is off-processor */
     /* if(!POC_local(child)) X */
     if(!POC_local(OCT_info, oct, i)) {          /* cannot be off-processor */
-      fprintf(stderr,"LB_oct_terminal_coarsen: child not local\n");
+      fprintf(stderr,"OCT LB_oct_terminal_coarsen: child not local\n");
       abort();
     }
     
     if(!POC_isTerminal(child)) {
-      fprintf(stderr,"LB_oct_terminal_coarsen: child not terminal\n");
+      fprintf(stderr,"OCT LB_oct_terminal_coarsen: child not terminal\n");
       abort();
     }
     
@@ -1132,7 +1138,7 @@ static void LB_oct_terminal_coarsen(OCT_Global_Info *OCT_info,pOctant oct)
 static void LB_oct_set_maxregions(int max)
 { 
   if (max < 1) {
-    fprintf(stderr, "Warning LB_oct_set_maxregions(): %s\n",
+    fprintf(stderr, "OCT Warning LB_oct_set_maxregions(): %s\n",
 	    "illegal input, using default.");
     MAXOCTREGIONS = 1;
   }
@@ -1204,7 +1210,7 @@ void LB_oct_roots_in_order(pOctant **roots_ret, int *nroots_ret)
       roots=(pOctant *) LB_MALLOC(nroots * sizeof(pOctant));
       rootid=(Rootid *) LB_MALLOC(nroots * sizeof(Rootid));
       if((roots == NULL) || (rootid == NULL)) {
-	fprintf(stderr, "LB_oct_roots_in_order: error in malloc\n");
+	fprintf(stderr, "OCT LB_oct_roots_in_order: error in malloc\n");
 	abort();
       }
     }
