@@ -73,7 +73,7 @@ typedef struct {
   int *vedge;       /* length nPins array containing associated hyperedges */
 
     /* UVCUVC: todo vmap, ratio and redl should be removed from HGraph
-       and some could go to VCycle struct in RCB code */
+       and some could go to VCycle struct in RB code */
   int *vmap;        /* used when recursively dividing for p > 2 */
   double ratio;     /* split when recursively dividing for p > 2 */
   int redl;         /* working reduction limit */
