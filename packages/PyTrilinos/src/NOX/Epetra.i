@@ -1,6 +1,6 @@
 // -*- c++ -*-
 
-%module NOX_Epetra
+%module Epetra
 
 %{
 // Epetra includes
@@ -9,11 +9,13 @@
 #include "Epetra_CompObject.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_DistObject.h"
+#include "Epetra_IntVector.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_NumPyVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsGraph.h"
+#include "Epetra_MapColoring.h"
 
 // NOX includes
 #include "NOX_Abstract_Group.H"
@@ -25,10 +27,11 @@
 #include "NOX_Epetra_Vector.H"
 
 // Local includes
-#include "Callback.h"
-#include "Epetra_VectorHelper.h"
-#include "NumPyWrapper.h"
-#include "PyInterface.h"
+#include "../Callback.h"
+#include "../Epetra_VectorHelper.h"
+#include "../Epetra_NumPyVector.h"
+#include "../NumPyWrapper.h"
+#include "../PyInterface.h"
 
 // Namespace flattening
 using namespace NOX          ;
@@ -39,9 +42,15 @@ using namespace NOX::Epetra  ;
 // Ignore directives
 %ignore *::print(ostream &, int) const;
 %ignore Epetra_CompObject::operator=(const Epetra_CompObject &);
+%ignore Epetra_IntVector::operator=(const Epetra_IntVector &);
+%ignore Epetra_IntVector::operator[](int);
+%ignore Epetra_IntVector::operator[](int) const;
 %ignore Epetra_MultiVector::operator=(const Epetra_MultiVector &);
 %ignore Epetra_MultiVector::operator[](int);
 %ignore Epetra_MultiVector::operator[](int) const;
+%ignore Epetra_CrsGraph::operator[](int);
+%ignore Epetra_CrsGraph::operator[](int) const;
+%ignore Epetra_CrsGraph::operator=(const Epetra_CrsGraph&);
 %ignore Epetra_MapColoring::operator[](int);
 %ignore Epetra_MapColoring::operator[](int) const;
 %ignore NOX::Abstract::Group::operator=(const NOX::Abstract::Group&);
@@ -56,20 +65,26 @@ using namespace NOX::Epetra  ;
 // Rename directives
 %rename(Group_None) NOX::Epetra::Group::None;
 
+// SWIG library includes
+%include "std_vector.i"
+
 // Epetra, EpetraExt and NOX::Abstract imports
 %import "Epetra_BLAS.h"
 %import "Epetra_Object.h"
 %import "Epetra_CompObject.h"
 %import "Epetra_SrcDistObject.h"
 %import "Epetra_DistObject.h"
+%import "Epetra_IntVector.h"
 %import "Epetra_MultiVector.h"
 %import "Epetra_Vector.h"
-%import "Epetra_NumPyVector.h"
 %import "Epetra_Operator.h"
 %import "Epetra_RowMatrix.h"
+%import "Epetra_CrsGraph.h"
+%import "Epetra_MapColoring.h"
 %import "NOX_Abstract_Group.H"
 %import "NOX_Abstract_Vector.H"
-%import "EpetraExt.i"
+%import "../Epetra_NumPyVector.h"
+//%import "../EpetraExt.i"
 
 // NOX interface includes
 using namespace std;
@@ -80,8 +95,8 @@ using namespace std;
 %include "NOX_Epetra_Vector.H"
 
 // Local interface includes
-%include "Callback.h"
-%include "PyInterface.h"
+%include "../Callback.h"
+%include "../PyInterface.h"
 
 // Extensions
 %extend NOX::Epetra::Group {

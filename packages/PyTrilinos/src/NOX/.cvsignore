@@ -2,6 +2,7 @@
 *~
 *_wrap.cxx
 Abstract.py
+Epetra.py
 Parameter.py
 Solver.py
 StatusTest.py
