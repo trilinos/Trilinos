@@ -1,0 +1,27 @@
+SHELL = /bin/sh
+
+OBJS_LIB = \
+	CLOP_solver.o \
+	CLOP_sub.o \
+	CLOP_constraint.o \
+	CLOP_graph.o \
+	sparse_lu.o \
+	EpetraExtCD_MatrixMatrix.o \
+	CRD_utils.o 
+
+CXX = mpiCC
+CXX_INCLUDES = -I./ -I/home/crdohrm/epetra/src
+CXXFLAGS = -g -DEPETRA_MPI
+
+.SUFFIXES: .cpp
+
+.cpp.o:
+	$(CXX) $(CXXFLAGS) $(CXX_INCLUDES) -c $<
+
+lib:${OBJS_LIB} 	
+	ar  cr libclop.a ${OBJS_LIB}
+
+clean:
+	rm -f *.o *.a
+
+
