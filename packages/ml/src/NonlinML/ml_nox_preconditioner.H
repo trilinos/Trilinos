@@ -100,6 +100,7 @@ public:
   // constructor
   explicit ML_Nox_Preconditioner(ML_NOX::Ml_Nox_Fineinterface&    interface,
                                  bool                             matrixfree,
+                                 bool                             matfreelev0,
                                  double                           fd_alpha,
                                  double                           fd_beta,
                                  bool                             fd_centered,
@@ -182,6 +183,10 @@ private:
   bool ML_Nox_compute_Matrixfree_Linearpreconditioner(const Epetra_Vector& xfine);    
   bool ML_Nox_compute_Jacobian_Nonlinearpreconditioner(const Epetra_Vector& xfine);   
   bool ML_Nox_compute_Matrixfree_Nonlinearpreconditioner(const Epetra_Vector& xfine); 
+  Epetra_CrsMatrix* ML_Nox_computeFineLevelJacobian(const Epetra_Vector& x);
+
+  // utils
+  Epetra_CrsGraph* deepcopy_graph(const Epetra_CrsGraph* oldgraph);
   
   // ApplyInverse functions, 
   // depending on type of preconditioner
@@ -205,11 +210,13 @@ private:
   bool                                  usetranspose_;     // use transpose of operator (not supported)
   bool                                  isinit_;           // flag whether preconditioner is valid
   bool                                  ismatrixfree_;     // use Graph or Jacobian in building the preconditioner
+  bool                                  matfreelev0_;
   bool                                  islinearPrec_;     // do standard linear ML-SA-Preconditioner (not matrixfree!)) 
   Epetra_Map                            DomainMap_;        // the operators domain map
   Epetra_Map                            RangeMap_;         // the operators range map
   Epetra_Comm&                          comm_;             // the communicator;
   ML_NOX::Ml_Nox_Fineinterface&         interface_;        // the user interface
+  bool                                  destroyfineJac_;   // flag to indicate this class destroys the fineJac_
   Epetra_CrsMatrix*                     fineJac_;          // fine grid matrix (only used when ismatrixfree_=false)
   int                                   offset_newPrec_;   // how often to recompute the precond from scratch
   int                                   ncalls_NewPrec_;   // how often computePreconditioner is called
@@ -238,7 +245,6 @@ private:
   ML_Epetra::MultiLevelOperator*        ml_linPrec_;       // the linear preconditioner class
 
   // ---matrix-free method--- 
-  // FIXME: is fineGraph_ used anywhere? delete it!
   const Epetra_CrsGraph*                fineGraph_;        // the fine grid graph (only used when ismatrixfree_=true)
   ML_Epetra::CrsGraphWrapper*           ml_graphwrap_;     // in the matrix-free case this wraps the input fine level graph as an Epetra_RowMatrix
   int                                   nmatfreelevel_;    // number of matfreelevels, should be equal to ml_nlevel_

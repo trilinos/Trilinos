@@ -60,7 +60,7 @@ class  Ml_Nox_Fineinterface : public NOX::EpetraNew::Interface::Required,
 public:
 
   Ml_Nox_Fineinterface() 
-  { isnewJacobian_=false; numJacobian_=0; printlevel_=10; t_ = 0.; return;}
+  { isnewJacobian_=false; numJacobian_=0; printlevel_=10; t_ = 0.; ncalls_computeF_=0; return;}
 
   virtual ~Ml_Nox_Fineinterface() {};
 
@@ -76,31 +76,21 @@ public:
 
   // return the Jacobian from the problem
   virtual Epetra_CrsMatrix* getJacobian()  = 0;
-/*
-  {Epetra_CrsMatrix& Jac = problem.getJacobian(); 
-   return(&Jac);}
-*/  
+
   // return the graph from the problem
   virtual const Epetra_CrsGraph* getGraph() = 0;
-/*
-  {const Epetra_CrsGraph& Graph = problem.getGraph();
-   return(&Graph);}
-*/                                     
+
   // return the current solution from the problem
   virtual const Epetra_Vector* getSolution() = 0;
-  //{const Epetra_Vector& vec = problem.getSolution(); return &vec; }                                     
                                
   // return the Map from the problem
   virtual const Epetra_Map& getMap() = 0;
-  //{ return problem.getMap(); }                                     
                                
   // return the Jacobian flag (Jacobian valid or not)
   virtual bool isnewJacobian() = 0;
-  //{ return  (isnewJacobian_); }     
   
   // return the number of Jacobians evaluated so far
   virtual int getnumJacobian() = 0;
-  //{ return (numJacobian_); }                         
 
   // get nullspace
   virtual double* Get_Nullspace(const int nummyrows, const int numpde, 
@@ -114,6 +104,12 @@ public:
   
   // reset the summed time spent in the interface
   void resetsumtime() { t_ = 0.; return; }
+  
+  // get the counted number of calls to computeF
+  int getnumcallscomputeF() { return ncalls_computeF_; }
+  
+  // set number of calls to computeF
+  bool setnumcallscomputeF(int ncalls) { ncalls_computeF_=ncalls; return true; }
 
 private:  
   // don't want copy-ctor and = operator
@@ -150,6 +146,9 @@ public:
 
   // t_ should be used for time measurement 
   double t_;
+  
+  // ncalls is used to count the number of calls to computeF
+  int ncalls_computeF_;
   
 };
 } // namespace ML_NOX

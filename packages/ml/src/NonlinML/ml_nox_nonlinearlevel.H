@@ -113,9 +113,10 @@ public:
        int level, int nlevel, int printlevel, ML* ml, ML_Aggregate* ag,
        Epetra_CrsMatrix** P, ML_NOX::Ml_Nox_Fineinterface& interface,
        Epetra_Comm& comm,  const Epetra_Vector& xfine, bool ismatrixfree,
-       string fsmoothertype, string smoothertype, string coarsesolvetype, 
-       int *nsmooth, double conv_normF, double conv_nupdate, int conv_maxiter,
-       int numPDE, int nullspdim);
+       bool matfreelev0, Epetra_CrsMatrix* Jac,
+       string fsmoothertype, string smoothertype, 
+       string coarsesolvetype, int *nsmooth, double conv_normF, 
+       double conv_nupdate, int conv_maxiter, int numPDE, int nullspdim);
 
   // constructor for case ismatrixfree==true
   explicit ML_Nox_NonlinearLevel(

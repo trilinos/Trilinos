@@ -65,7 +65,7 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
                           ML_Aggregate* ag,Epetra_CrsMatrix** P, 
                           ML_NOX::Ml_Nox_Fineinterface& interface,
                           Epetra_Comm& comm,  const Epetra_Vector& xfine, 
-                          bool ismatrixfree, 
+                          bool ismatrixfree, bool matfreelev0, Epetra_CrsMatrix* Jac,
                           string fsmoothertype, string smoothertype, string coarsesolvetype, 
                           int *nsmooth, double conv_normF, 
                           double conv_nupdate, int conv_maxiter,
@@ -113,9 +113,18 @@ ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel(
    const Epetra_CrsGraph* graph = 0;
    if (level_==0)
    {
+      graph = fineinterface_.getGraph();
       // On fine level this is the fineinterface's Jacobian
-      SmootherA_ = fineinterface_.getJacobian();
-      graph = interface.getGraph();
+      if (matfreelev0==false)
+         SmootherA_ = fineinterface_.getJacobian();
+      else if (matfreelev0==true && Jac)
+         SmootherA_ = Jac;
+      else
+      {
+        cout << "**ERR**: ML_NOX::ML_Nox_NonlinearLevel::ML_Nox_NonlinearLevel:\n"
+             << "**ERR**: something weired happened\n"
+             << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+      }
    }
    else
    {

@@ -60,6 +60,7 @@
 ML_NOX::ML_Nox_Preconditioner::ML_Nox_Preconditioner(
                      ML_NOX::Ml_Nox_Fineinterface&    interface,
                      bool                             matrixfree,
+                     bool                             matfreelev0,
                      double                           fd_alpha,
                      double                           fd_beta,
                      bool                             fd_centered,
@@ -96,12 +97,14 @@ comm_(comm)
 
   // some flags
   ismatrixfree_ = matrixfree;
+  matfreelev0_  = matfreelev0;
   islinearPrec_ = linearPrec;
 
   // default values (some of them derived and not supported)
   usetranspose_        = false;
   isinit_              = false;
   fineJac_             = 0;
+  destroyfineJac_      = false;
   fineGraph_           = 0;
   ml_graphwrap_        = 0;
   ml_linPrec_          = 0;
@@ -129,7 +132,7 @@ comm_(comm)
   ml_block_pde_    = 0;
     
   // check plausibility of matrixfree and linear preconditioner flags
-  if (ismatrixfree_ && islinearPrec_)
+  if (ismatrixfree_ && islinearPrec_ && matfreelev0_==false)
      if (smoothertype=="Jacobi" || coarsesolve=="Jacobi" || 
          finesmoothertype=="Jacobi")
      {
@@ -342,6 +345,10 @@ ML_NOX::ML_Nox_Preconditioner::~ML_Nox_Preconditioner()
   if (ml_block_pde_)
      delete [] ml_block_pde_;
   ml_block_pde_ = 0;
+  
+  if (destroyfineJac_ && fineJac_)
+     delete fineJac_;
+  fineJac_ = 0;
 
   return;
 }
@@ -414,18 +421,34 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
    if (isinit() == false)
    {
       if (comm_.MyPID()==0 && ml_printlevel_ > 0 )
-      cout << "ML: ML_Nox_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+         cout << "ML: ML_Nox_Preconditioner::computePreconditioner: (re)computing ML-Preconditioner\n";
+      
+      // save number of calls to computeF up to now
+      int ncalls = interface_.getnumcallscomputeF();
+      
+      // reset number of calls to computeF to zero to measure number of calls in compPrec()
+      interface_.setnumcallscomputeF(0);
+      
       double t0 = GetClock();
       flag = compPrec(x);
       double t1 = GetClock();
+      
       if (comm_.MyPID()==0 && ml_printlevel_ > 0 )
-      cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
+      {
+         cout << "ML: Setup time for preconditioner: " << (t1-t0) << " sec\n";
+         cout << "ML: Number of calls to fineinterface.computeF() in setup: " 
+              << interface_.getnumcallscomputeF() << endl;
+      }
+      
+      // reset the number of calls to computeF to what it was before
+      interface_.setnumcallscomputeF(ncalls);
+      
       if (flag==true)
          setinit(true);
       else
       {
          cout << "**ERR**: ML_Nox_Preconditioner::computePreconditioner:\n"
-              << "**ERR**: comPrec returned false\n"
+              << "**ERR**: compPrec returned false\n"
               << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
       }
       setinit(true);
@@ -439,7 +462,8 @@ bool ML_NOX::ML_Nox_Preconditioner::computePreconditioner(
 bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
 {
   int i;
-  // check for matrix-free method and get Graph or Jacobian
+
+  // build hierarchy with given Jacobian
   if (ismatrixfree_ == false)
   {
     // check for valid Jacobian, if not, recompute
@@ -450,29 +474,42 @@ bool ML_NOX::ML_Nox_Preconditioner::compPrec(const Epetra_Vector& x)
     fineJac_ = interface_.getJacobian();
     if (fineJac_ == NULL)
     {
-      cout << "**ERR**: ML_Nox_Preconditioner::compPrec:\n";
-      cout << "**ERR**: interface_.getJacobian() returned NULL\n";
-      cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+      cout << "**ERR**: ML_Nox_Preconditioner::compPrec:\n"
+           << "**ERR**: interface_.getJacobian() returned NULL\n"
+           << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
     }
   }
-  else // ismatrixfree_ == true
+
+  // build matrixfree hierachy and probe for all operators
+  else if (ismatrixfree_ == true && matfreelev0_ == false ) 
   {
     // get the graph from the user-interface
     fineGraph_ = interface_.getGraph();
-
     if (fineGraph_ == NULL)
     {
-      cout << "**ERR**: ML_Nox_Preconditioner::compPrec:\n";
-      cout << "**ERR**: interface_.getGraph() returned NULL\n";
-      cout << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
+      cout << "**ERR**: ML_Nox_Preconditioner::compPrec:\n"
+           << "**ERR**: interface_.getGraph() returned NULL\n"
+           << "**ERR**: file/line: " << __FILE__ << "(" << __LINE__ << ")\n"; throw -1;
     } 
+
      // Maybe there exists a ml_graphwrap_ from a previous call?
      if (ml_graphwrap_ != NULL)
        delete ml_graphwrap_;
+
      // this guy wraps an Epetra_CrsGraph as an Epetra_RowMatrix
      // (there exists a ML_Operator - wrapper for an Epetra_RowMatrix
      //  we can then use)
      ml_graphwrap_ = new ML_Epetra::CrsGraphWrapper(*fineGraph_,DomainMap_,RangeMap_,comm_);
+  }
+
+  // probe for operator on level 0 and switch to ismatrixfree_==false
+  else if (ismatrixfree_ == true && matfreelev0_ == true)
+  {
+    fineJac_ = ML_Nox_computeFineLevelJacobian(x);
+    // this class is in charge of destroying the operator fineJac_
+    destroyfineJac_ = true;
+    // turn to ismatrixfree_==false
+    ismatrixfree_ = false;
   }
   
   // check whether ML and ML_Aggregate handles exist and (re)create them
@@ -906,6 +943,72 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Linearprecondition
 /*----------------------------------------------------------------------*
  |  apply inverse of operator (public)                       m.gee 11/04|
  *----------------------------------------------------------------------*/
+Epetra_CrsMatrix* ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian(
+                                                  const Epetra_Vector& x)
+{
+  // make a copy of the graph
+  Epetra_CrsGraph* graph = deepcopy_graph(interface_.getGraph());
+
+  // create coloring of the graph
+  if (ml_printlevel_>0 && comm_.MyPID()==0)
+     cout << "matrixfreeML (level 0): Entering Coloring on level 0\n";
+  double t0 = GetClock();
+  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
+                                  EpetraExt::CrsGraph_MapColoring::GREEDY;
+
+  EpetraExt::CrsGraph_MapColoring* MapColoring = 
+                   new EpetraExt::CrsGraph_MapColoring(algType,0,false,0);
+
+  Epetra_MapColoring* colorMap = &(*MapColoring)(*graph);
+
+  EpetraExt::CrsGraph_MapColoringIndex* colorMapIndex = 
+                      new EpetraExt::CrsGraph_MapColoringIndex(*colorMap);
+                      
+  vector<Epetra_IntVector>* colorcolumns = &(*colorMapIndex)(*graph);
+  double t1 = GetClock();
+  if (ml_printlevel_>0 && comm_.MyPID()==0)
+     cout << "matrixfreeML (level 0): Proc " << comm_.MyPID() <<" Coloring time is " << (t1-t0) << " sec\n";
+  
+  // construct the FiniteDifferenceColoring-Matrix
+  if (ml_printlevel_>0 && comm_.MyPID()==0)
+     cout << "matrixfreeML (level 0): Entering Construction FD-Operator on level 0\n";
+  t0 = GetClock();
+  NOX::EpetraNew::FiniteDifferenceColoring* FD = 
+           new NOX::EpetraNew::FiniteDifferenceColoring(interface_,x,*graph,
+                                                        *colorMap,*colorcolumns,
+                                                        true,false,
+                                                        fd_beta_,fd_alpha_);
+  if (fd_centered_)
+    FD->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
+
+  bool err = FD->computeJacobian(x); 
+  if (err==false)
+  {
+    cout << "**ERR**: ML_NOX::ML_Nox_Preconditioner::ML_Nox_computeFineLevelJacobian:\n"
+         << "**ERR**: NOX::Epetra::FiniteDifferenceColoring returned an error on level 0" 
+         << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
+  }
+
+  t1 = GetClock();
+  if (ml_printlevel_>0 && comm_.MyPID()==0)
+     cout << "matrixfreeML (level 0): Proc " << comm_.MyPID() <<" colored Finite Differencing time is " << (t1-t0) << " sec\n";
+
+  Epetra_CrsMatrix* B = dynamic_cast<Epetra_CrsMatrix*>(&(FD->getUnderlyingMatrix()));                       
+  Epetra_CrsMatrix* A = new Epetra_CrsMatrix(*B);
+  
+  // tidy up
+  delete FD;            FD = 0;
+  delete MapColoring;   MapColoring = 0;
+  delete colorMap;      colorMap = 0;
+  delete colorMapIndex; colorMapIndex = 0;
+  delete colorcolumns;  colorcolumns = 0;
+  
+  return A;
+}
+
+/*----------------------------------------------------------------------*
+ |  apply inverse of operator (public)                       m.gee 11/04|
+ *----------------------------------------------------------------------*/
 int ML_NOX::ML_Nox_Preconditioner::ApplyInverse(
                                         const Epetra_MultiVector& X, 
                                         Epetra_MultiVector& Y) const
@@ -969,6 +1072,34 @@ int ML_NOX::ML_Nox_Preconditioner::SetUseTranspose(bool UseTranspose)
   return(-1); //  the implementation does not support use of transpose
 }
 
+/*----------------------------------------------------------------------*
+ |  make a deep copy of a graph                              m.gee 01/05|
+ |  allocate the new graph                                              |
+ *----------------------------------------------------------------------*/
+Epetra_CrsGraph* ML_NOX::ML_Nox_Preconditioner::deepcopy_graph(const Epetra_CrsGraph* oldgraph)
+{
+   int  i,j,ierr;
+   int  nrows = oldgraph->NumMyRows();
+   int* nIndicesperRow = new int[nrows];
+
+   for (i=0; i<nrows; i++)
+      nIndicesperRow[i] = oldgraph->NumMyIndices(i);
+   Epetra_CrsGraph* graph = new Epetra_CrsGraph(Copy,oldgraph->RowMap(),oldgraph->ColMap(),
+                                                &(nIndicesperRow[0]));
+   delete [] nIndicesperRow;
+   nIndicesperRow = 0;
+   
+   for (i=0; i<nrows; i++)
+   {
+      int  numIndices;
+      int* Indices=0;
+      ierr = oldgraph->ExtractMyRowView(i,numIndices,Indices);
+      ierr = graph->InsertMyIndices(i,numIndices,Indices);
+   }
+
+   graph->TransformToLocal();
+   return graph;
+}                                                     
 
 
 #endif // defined(HAVE_ML_NOX) && defined(HAVE_ML_EPETRA) 

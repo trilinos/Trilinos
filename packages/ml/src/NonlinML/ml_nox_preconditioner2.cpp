@@ -100,11 +100,12 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Jacobian_Nonlinearpreconditio
          numPDE = ml_numPDE_;
       else
          numPDE = 6;
-      if (!nlnLevel_[i]) // create new matrixfree level   
+      if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_,
-                                     ml_fsmoothertype_,ml_smoothertype_,ml_coarsesolve_,
+                                     matfreelev0_,fineJac_,ml_fsmoothertype_,
+                                     ml_smoothertype_,ml_coarsesolve_,
                                      ml_nsmooth_,FAS_normF_,FAS_nupdate_,
                                      3000,numPDE,nullspdim);
       else
@@ -217,7 +218,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
       if (i==ml_coarsestlev_ && ml_coarsesolve_ == "Jacobi")
          isJacobismoother=true;
 
-      if (!(ml_matfreelevel_[i])) // create a new level   
+      if (!(ml_matfreelevel_[i])) // create a new matrixfree level   
          ml_matfreelevel_[i] = new ML_NOX::ML_Nox_MatrixfreeLevel(
                                            i,ml_nlevel_,ml_printlevel_,ml_,
                                            ag_,P,interface_,comm_,xfine,
@@ -255,7 +256,7 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_compute_Matrixfree_Nonlinearprecondit
          numPDE = ml_numPDE_;
       else
          numPDE = 6;
-      if (!nlnLevel_[i]) // create new matrixfree level   
+      if (!nlnLevel_[i]) // create new nonlinear level   
          nlnLevel_[i] = new ML_NOX::ML_Nox_NonlinearLevel(
                                      i,ml_nlevel_,ml_printlevel_,ml_,ag_,P,
                                      interface_,comm_,xfine,ismatrixfree_,
@@ -573,12 +574,22 @@ bool ML_NOX::ML_Nox_Preconditioner::ML_Nox_FAS_cycle1(Epetra_Vector* f, Epetra_V
    if (level > 0 && FAS_presmooth_>0)
    {
       *converged = nlnLevel_[level]->iterate(f,x,FAS_presmooth_);
+      if (*converged)
+      {
+         // for FAS calulate the correction and tidy up
+         x->Update(-1.0,*xbar,1.0);
+         nlnLevel_[level]->setModifiedSystem(false,NULL,NULL);
+         delete fbar;  fbar  = 0;
+         delete xbar;  xbar  = 0;
+         delete fxbar; fxbar = 0;
+         return true;
+      }
    }
    else if (level==0 && FAS_prefinesmooth_>0)
    {
       *converged = nlnLevel_[level]->iterate(f,x,FAS_prefinesmooth_);
       // a converged fine level is enough to be happy....
-      if (level==0 && *converged)
+      if (*converged)
          return true;
    }
    

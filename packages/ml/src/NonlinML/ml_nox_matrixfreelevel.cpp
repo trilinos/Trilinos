@@ -183,14 +183,12 @@ comm_(comm)
 #endif
    // set differencing method
    if (fd_centered_)
-   {
       FD_->setDifferenceMethod(NOX::EpetraNew::FiniteDifferenceColoring::Centered);
-   }
 
    bool err = FD_->computeJacobian(*xc); 
    if (err==false)
    {
-     cout << "**ERR**: ML_Epetra::ML_Nox_MatrixfreeLevel::ML_Nox_MatrixfreeLevel:\n"
+     cout << "**ERR**: ML_NOX::ML_Nox_MatrixfreeLevel::ML_Nox_MatrixfreeLevel:\n"
           << "**ERR**: NOX::Epetra::FiniteDifferenceColoring returned an error on level " 
           << level_ << "\n"
           << "**ERR**: file/line: " << __FILE__ << "/" << __LINE__ << "\n"; throw -1;
