@@ -129,11 +129,13 @@ NOX::StatusTest::StatusType NOX::StatusTest::NormF::getStatus() const
 
 ostream& NOX::StatusTest::NormF::print(ostream& stream, int indent) const
 {
+  NOX::Utils utils;
+
   for (int j = 0; j < indent; j ++)
     stream << ' ';
   stream << status;
-  stream << "F-Norm = " << Utils::sci(normF);
-  stream << " < " << Utils::sci(trueTolerance);
+  stream << "F-Norm = " << utils.sciformat(normF);
+  stream << " < " << utils.sciformat(trueTolerance);
   stream << "\n";
 
   for (int j = 0; j < indent; j ++)

@@ -60,16 +60,15 @@ Combo& Combo::addStatusTest(Generic& a)
 {
   if (isSafe(a))
     tests.push_back(&a);
-  else 
-    if (Utils::doPrint(Utils::Warning)) {
-      const int indent = 2;
-      cout << "\n*** WARNING! ***\n";
-      cout << "This combo test currently consists of the following:\n";
-      this->print(cout, indent);
-      cout << "Unable to add the following test:\n";
-      a.print(cout, indent);
-      cout << "\n";
-    }
+  else {
+    const int indent = 2;
+    cout << "\n*** WARNING! ***\n";
+    cout << "This combo test currently consists of the following:\n";
+    this->print(cout, indent);
+    cout << "Unable to add the following test:\n";
+    a.print(cout, indent);
+    cout << "\n";
+  }
   return *this;
 }
 
