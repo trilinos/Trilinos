@@ -87,16 +87,27 @@ Zoltan Parameters	= RCB_REUSE=0
 # The method to be used can be specified in the chaco options:
 #       initial distribution = <option>
 # where <option> is
-#       linear  -- gives the first n/p vertices to proc 0, the
-#                  next n/p vertices to proc 1, etc.  
-#       cyclic  -- assigns the vertices to processors as one would
-#                  deal cards; i.e., gives the first vertex to proc 0, 
-#                  the second vertex to proc 1, ..., the pth vertex to 
-#                  proc (p-1),the (p+1)th vertex to proc 0, the (p+2)th 
-#                  vertex to proc 1, etc.
+#       linear  -- gives the first n/p objects to proc 0, the
+#                  next n/p objects to proc 1, etc.  
+#       cyclic  -- assigns the objects to processors as one would
+#                  deal cards; i.e., gives the first object to proc 0, 
+#                  the second object to proc 1, ..., the pth object to 
+#                  proc (p-1),the (p+1)th object to proc 0, the (p+2)th 
+#                  object to proc 1, etc.
 # If an initial distribution is not specified, the default is linear.
-# For example,
-#       File Type = chaco, initial distribution = cyclic
+#
+# A second Chaco option is to distribute the objects over a subset
+# of the processors, not all processors. The syntax for this is:
+#       initial procs = k
+# where k is an integer between 1 and the number of processors.
+# The objects will be evenly distributed among the k first
+# processors, using the distribution method optionally specified by 
+# the "initial distribution" option. 
+#
+# Example:
+#     File Type = chaco, initial distribution = cyclic, initial procs = 2
+# will give proc 0 objects 1, 3, 5, ... and proc 1 objects 2, 4, 6, ...
+# while procs 2 and higher get no objects.
 #-----------------------------------------------------------------------------
 File Type		= NemesisI
 
