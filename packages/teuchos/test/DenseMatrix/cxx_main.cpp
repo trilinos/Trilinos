@@ -280,6 +280,19 @@ int main(int argc, char* argv[])
   MultTestHugeATimesHugeB.multiply(NO_TRANS, NO_TRANS, 1, MultTestHugeA, MultTestHugeB, 1);
   numberFailedTests += PrintTestResults("multiply() -- mult. results -- huge * huge", MultTestHugeATimesHugeB, MultTestHugeATimesHugeBExpResult, verbose);
   //
+  //  Check scale methods.
+  //
+  DMatrix ScalTest( 8, 8 );
+  //  Scale the entries by some number, it should still be 0.
+  if (verbose) cout << "scale() -- scale zero matrix by some number ";
+  returnCode = ScalTest.scale( 8.0 );
+  if (ScalTest(2, 3) == 0.0) {
+	if (verbose) cout<< "successful." <<endl;
+  } else {
+	if (verbose) cout<< "unsuccessful." <<endl;
+	numberFailedTests++;
+  }
+  //
   //  Check set methods.
   //
   DMatrix CCC( 5, 5 );
@@ -450,26 +463,26 @@ int main(int argc, char* argv[])
   OpEqTestV3 = OpEqTestV2;
   if (verbose) cout << "operator= -- small(empty) = large(view) ";
   if (OpEqTestV3.length()==3 && OpEqTestV3.values()==OpEqTestV2.values()) {
-    cout<< "successful"<<endl;
+    if (verbose) cout<< "successful"<<endl;
   } else {
-    cout<< "unsuccessful"<<endl;
+    if (verbose) cout<< "unsuccessful"<<endl;
     numberFailedTests++;
   }
   OpEqTestV3 = OpEqTestV1;
   if (verbose) cout << "operator= -- small(view) = large(copy) ";
   if (OpEqTestV3.length()==10 && OpEqTestV3.values()!=OpEqTestV1.values()) {
-    cout<< "successful"<<endl;
+    if (verbose) cout<< "successful"<<endl;
   } else {
-    cout<< "unsuccessful"<<endl;
+    if (verbose) cout<< "unsuccessful"<<endl;
     numberFailedTests++;
   }
   OpEqTestV3.size(5);
   OpEqTestV3 = OpEqTestV1;
   if (verbose) cout << "operator= -- small(copy) = large(copy) ";
   if (OpEqTestV3.length()==10 && OpEqTestV3.values()!=OpEqTestV1.values() && OpEqTestV3[ 9 ]==3.0) {
-    cout<< "successful"<<endl;
+    if (verbose) cout<< "successful"<<endl;
   } else {
-    cout<< "unsuccessful"<<endl;
+    if (verbose) cout<< "unsuccessful"<<endl;
     numberFailedTests++;
   }
 
@@ -477,7 +490,7 @@ int main(int argc, char* argv[])
   OpSumTestV1 += OpEqTestV2;
   if (verbose) cout << "operator+= -- add two vectors of the same size, but different leading dimension ";
   if (OpSumTestV1( 1 )==6.0) {
-    if(verbose) cout<<"successful" <<endl;
+    if (verbose) cout<<"successful" <<endl;
   } else {
     if (verbose) cout<<"unsuccessful"<<endl;
     numberFailedTests++;   
@@ -485,7 +498,7 @@ int main(int argc, char* argv[])
   if (verbose) cout << "operator+= -- add two vectors of different size (nothing should change) ";
   OpSumTestV1 += OpEqTestV1;
   if (OpSumTestV1( 1 )==6.0) {
-    if(verbose) cout<<"successful" <<endl;
+    if (verbose) cout<<"successful" <<endl;
   } else {
     if (verbose) cout<<"unsuccessful"<<endl;
     numberFailedTests++;   
@@ -511,9 +524,14 @@ int main(int argc, char* argv[])
   //
   // If a test failed output the number of failed tests.
   //
-  if(numberFailedTests > 0) cout << "Number of failed tests: " << numberFailedTests << endl;
-
- return 0;
+  if(numberFailedTests > 0) 
+	{ 
+	    if (verbose) {
+		cout << "Number of failed tests: " << numberFailedTests << endl;
+		return -1;
+	    }
+	}
+  return 0;
 }  
 
 template<typename TYPE>
