@@ -198,14 +198,18 @@ RefCountPtr<T>& RefCountPtr<T>::operator=(const RefCountPtr<T>& r_ptr) {
 template<class T>
 inline
 T* RefCountPtr<T>::operator->() const {
+#ifdef _DEBUG
 	assert_not_null();
+#endif
 	return ptr_;
 }
 
 template<class T>
 inline
 T& RefCountPtr<T>::operator*() const {
+#ifdef _DEBUG
 	assert_not_null();
+#endif
 	return *ptr_;
 }
 
@@ -252,12 +256,11 @@ bool RefCountPtr<T>::shares_resource(const RefCountPtr<T>& r_ptr) const {
 	return node_ == r_ptr.node_;
 }
 
-// private
-
 template<class T>
 inline
-void RefCountPtr<T>::assert_not_null() const {
+const RefCountPtr<T>& RefCountPtr<T>::assert_not_null() const {
 	if(!ptr_) PrivateUtilityPack::throw_null(typeid(T).name());
+	return *this;
 }
 
 // very bad public functions

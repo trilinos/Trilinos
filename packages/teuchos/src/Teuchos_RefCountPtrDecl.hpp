@@ -69,13 +69,13 @@ namespace PrivateUtilityPack {
 
 /** \defgroup RefCountPtr_stuff Reference counting smart pointer class for automatic garbage collection.
   
-For carefully written discussion about what this class is and basic
+For a carefully written discussion about what this class is and basic
 details on how to use it see the
 <A HREF="http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf">beginners guide</A>.
 
 <b>Quickstart for <tt>RefCountPtr</tt></b>
  
-Here we present ashort, but fairly comprehensive, quick-start for the
+Here we present a short, but fairly comprehensive, quick-start for the
 use of <tt>RefCountPtr<></tt>.  The use cases described here
 should cover the overwhelming majority of the use instances of
 <tt>RefCountPtr<></tt> in a typical program.
@@ -96,10 +96,13 @@ class E : public D {};
 \endcode
 
 All of the following code examples used in this quickstart are assumed
-to be in the namespace <tt>Teuchos</tt> or have appropriate
-<tt>using Teuchos::...</tt> declarations.  This removes the need to
-explicitly use <tt>Teuchos::</tt> to qualify classes, functions and
-other declarations from the <tt>Teuchos</tt> namespace.
+to be in the namespace <tt>Teuchos</tt> or have appropriate <tt>using
+Teuchos::...</tt> declarations.  This removes the need to explicitly
+use <tt>Teuchos::</tt> to qualify classes, functions and other
+declarations from the <tt>Teuchos</tt> namespace.  Note that some of
+the runtime checks are denoted as "debug runtime checked" which means
+that checking will only be performed in a debug build (that is one
+where the macro _DEBUG is defined at compile time).
 
 <ol>
 
@@ -207,7 +210,7 @@ a_ptr1 = a_ptr2; // Now a_ptr1 and a_ptr2 point to same C object
 
 <ol>
 
-<li> <b>Access to object reference (runtime checked)</b> : <tt>RefCountPtr::operator*()</tt> 
+<li> <b>Access to object reference (debug runtime checked)</b> : <tt>RefCountPtr::operator*()</tt> 
 
 \code
 C &c_ref = *c_ptr;
@@ -219,13 +222,13 @@ C &c_ref = *c_ptr;
 C *c_rptr = c_ptr.get();
 \endcode
 
-<li> <b>Access to object pointer (runtime checked, will not return <tt>NULL</tt>)</b> : <tt>RefCountPtr::operator*()</tt>
+<li> <b>Access to object pointer (debug runtime checked, will not return <tt>NULL</tt>)</b> : <tt>RefCountPtr::operator*()</tt>
 
 \code
 C *c_rptr = &*c_ptr;
 \endcode
 
-<li> <b>Access of object's member (runtime checked)</b> : <tt>RefCountPtr::operator->()</tt>
+<li> <b>Access of object's member (debug runtime checked)</b> : <tt>RefCountPtr::operator->()</tt>
 
 \code
 c_ptr->f();
@@ -342,7 +345,6 @@ class RefCountPtr {
 public:
 	///
 	typedef T	element_type;
-	///
 	/** \brief Initialize <tt>RefCountPtr<T></tt> to NULL.
 	 *
 	 * This allows clients to write code like:
@@ -356,7 +358,6 @@ public:
 	 * and construct to <tt>NULL</tt>
 	 */
 	RefCountPtr( ENull null_arg = null );
-	///
 	/** \brief Initialize from another <tt>RefCountPtr<T></tt> object.
 	 *
 	 * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
@@ -375,7 +376,6 @@ public:
 	 * </ul>
 	 */
 	RefCountPtr(const RefCountPtr<T>& r_ptr);
-	///
 	/** \brief Initialize from another <tt>RefCountPtr<T2></tt> object (implicit conversion only).
 	 *
 	 * This function allows the implicit conversion of smart pointer objects just
@@ -391,7 +391,6 @@ public:
 	 */
 	template<class T2>
 	RefCountPtr(const RefCountPtr<T2>& r_ptr);
-	///
 	/** \brief Removes a reference to a dynamically allocated object and possibly deletes
 	 * the object if owned.
 	 *
@@ -403,7 +402,6 @@ public:
 	 * object is deincremented by one.  If <tt>this->get() == NULL</tt> then nothing happens.
 	 */
 	~RefCountPtr();
-	///
 	/** \brief Copy the pointer to the referenced object and increment the reference count.
 	 *
 	 * If <tt>this->has_ownership() == true</tt> and <tt>this->count() == 1</tt> before this operation
@@ -421,7 +419,6 @@ public:
 	 * </ul>
 	 */
 	RefCountPtr<T>& operator=(const RefCountPtr<T>& r_ptr);
-	///
 	/** \brief Pointer (<tt>-></tt>) access to members of underlying object.
 	 *
 	 * Preconditions:
@@ -430,7 +427,6 @@ public:
 	 * </ul>
 	 */
 	T* operator->() const;
-	///
 	/** \brief Dereference the underlying object.
 	 *
 	 * Preconditions:
@@ -443,7 +439,6 @@ public:
     /** \brief Get the raw C++ pointer to the underlying object.
 	 */
 	T* get() const;
-	///
 	/** \brief Release the ownership of the underlying dynamically allocated object.
 	 *
 	 * After this function is called then the client is responsible for calling
@@ -465,7 +460,6 @@ public:
 	 * @return Returns the value of <tt>this->get()</tt>
 	 */
 	T* release();
-	///
 	/** \brief Return the number of <tt>RefCountPtr<></tt> objects that have a reference
 	 * to the underlying pointer that is being shared.
 	 *
@@ -473,7 +467,6 @@ public:
 	 * Otherwise, this function returns <tt>> 0</tt>.
 	 */
 	int count() const;
-	///
 	/** \brief Give <tt>this</tt> and other <tt>RefCountPtr<></tt> objects ownership 
 	 * of the referenced object <tt>this->get()</tt>.
 	 *
@@ -493,7 +486,6 @@ public:
 	 * </ul>
 	 */
 	void set_has_ownership();
-	///
 	/** \brief Returns true if <tt>this</tt> has ownership of object pointed to by <tt>this->get()</tt> in order to delete it.
 	 *
 	 * See ~RefCountPtr() above.
@@ -504,14 +496,15 @@ public:
 	 * or release() (<tt>false</tt>).
 	 */
 	bool has_ownership() const;
-	///
-	/** \brief Returns true if the the smart pointers share the same resource.
+	/** \brief Returns true if the smart pointers share the same underlying reference-counted object.
 	 *
 	 * This method does more than just check if <tt>this->get() == r_ptr.get()</tt>.
 	 * It also checks to see if the underlying reference counting machinary is the
 	 * same.
 	 */
 	bool shares_resource(const RefCountPtr<T>& r_ptr) const;
+	/** \brief Throws <tt>std::logic_error</tt> if <tt>this->get()==NULL</tt>, otherwise returns reference to <tt>*this</tt>. */
+	const RefCountPtr<T>& assert_not_null() const;
 
 private:
 
@@ -525,11 +518,6 @@ private:
 
 	T       *ptr_;  // NULL if this pointer is null
 	node_t	*node_;	// NULL if this pointer is null
-
-	// /////////////////////////////////////
-	// Private member functions
-
-	void assert_not_null() const;
 
 public:
 #ifndef DOXYGEN_COMPILE
@@ -548,7 +536,6 @@ public:
 
 };	// end class RefCountPtr<...>
 
-///
 /** \brief Create a <tt>RefCountPtr</tt> object properly typed.
  *
  * @param  p  [in] Pointer to an object to be reference counted.
@@ -580,7 +567,6 @@ RefCountPtr<T> rcp( T* p, bool owns_mem
 template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
 #endif
 
-///
 /** \brief Initialize from a raw pointer with a deallocation policy.
  *
  * @param  p       [in] Raw C++ pointer that \c this will represent.
@@ -624,7 +610,6 @@ template<class T> inline RefCountPtr<T> rcp( T* p ) { return rcp(p,true); }
 template<class T, class Dealloc_T>
 RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 
-///
 /** \brief Implicit cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>T2* p2 = p1.get();</tt>) compiles.
@@ -635,7 +620,6 @@ RefCountPtr<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem );
 template<class T2, class T1>
 RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
 
-///
 /** \brief Static cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * The function will compile only if (<tt>static_cast<T2*>(p1.get());</tt>) compiles.
@@ -647,7 +631,6 @@ RefCountPtr<T2> rcp_implicit_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1>
 RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
 
-///
 /** \brief Constant cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * This function will compile only if (<tt>const_cast<T2*>(p1.get());</tt>) compiles.
@@ -655,7 +638,6 @@ RefCountPtr<T2> rcp_static_cast(const RefCountPtr<T1>& p1);
 template<class T2, class T1>
 RefCountPtr<T2> rcp_const_cast(const RefCountPtr<T1>& p1);
 
-///
 /** \brief Dynamic cast of underlying <tt>RefCountPtr</tt> type from <tt>T1*</tt> to <tt>T2*</tt>.
  *
  * @param  p1             [in] The smart pointer casting from
@@ -689,7 +671,6 @@ template<class T2, class T1> inline RefCountPtr<T2> rcp_dynamic_cast( const RefC
 { return rcp_dynamic_cast<T2>(p1,false); }
 #endif
 
-///
 /** \brief Set extra data associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  extra_data
@@ -768,7 +749,6 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCo
 { set_extra_data( extra_data, name, p, force_unique, POST_DESTROY ); }
 #endif
 
-///
 /** \brief Get a non-const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
@@ -788,7 +768,6 @@ inline void set_extra_data( const T1 &extra_data, const std::string& name, RefCo
 template<class T1, class T2>
 T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
 
-///
 /** \brief Get a const reference to extra data associated with a <tt>RefCountPtr</tt> object.
  *
  * @param  p    [in] Smart pointer object that extra data is being extraced from.
@@ -814,7 +793,6 @@ T1& get_extra_data( RefCountPtr<T2>& p, const std::string& name );
 template<class T1, class T2>
 const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 
-///
 /** \brief Return a non-<tt>const</tt> reference to the underlying deallocator object.
  *
  * Preconditions:<ul>
@@ -827,7 +805,6 @@ const T1& get_extra_data( const RefCountPtr<T2>& p, const std::string& name );
 template<class Dealloc_T, class T>
 Dealloc_T& get_dealloc( RefCountPtr<T>& p );
 
-///
 /** \brief Return a <tt>const</tt> reference to the underlying deallocator object.
  *
  * Preconditions:<ul>

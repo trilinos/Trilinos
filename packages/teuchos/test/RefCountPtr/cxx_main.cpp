@@ -264,7 +264,7 @@ int main( int argc, char* argv[] ) {
 
 			// Test assignment functions
 
-			a_ptr1 = rcp_const_cast<A>(ca_ptr1); // Should be okay, assignment to self
+			a_ptr1 = rcp_const_cast<A>(ca_ptr1.assert_not_null()); // Should be okay, assignment to self
 
 #ifdef SHOW_COMPILE_TIME_ERRORS
 			ca_ptr1 = ca_ptr1; // Should not compile since ca_ptr1 is declared constant
