@@ -18,6 +18,7 @@
 // implementation (choosing a block size greater than one).
 //
 //
+//
 #ifndef BLOCK_CG_HPP
 #define BLOCK_CG_HPP
 
