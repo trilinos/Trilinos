@@ -12,6 +12,7 @@
 #include "ml_include.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_IFPACK) && defined(HAVE_ML_TEUCHOS)
 #include "ml_struct.h"
+#include "ml_self.h"
 
 /* ------------------------------------------------------------------------- */
 /* generate the ML's self smoother                                           */

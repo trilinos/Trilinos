@@ -21,9 +21,9 @@ int ML_Smoother_Self(ML_Smoother *sm,int inlen,double x[],int outlen,
 
 void ML_Smoother_Clean_Self(void * Self_Handle);
 
-int ML_Self_Solve(void * Self_Handle, double * x, double * rhs);
+extern int ML_Self_Solve(void * Self_Handle, double * x, double * rhs);
 
-void ML_Self_Destroy(void * Self_Handle);
+extern void ML_Self_Destroy(void * Self_Handle);
 
 #endif
 
