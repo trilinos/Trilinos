@@ -710,7 +710,7 @@ void Amesos_Mumps::CheckParameters()
   int NumGlobalNonzeros=0, NumRows=0;
   
   NumGlobalNonzeros = GetMatrix()->NumGlobalNonzeros(); 
-  NumRows == GetMatrix()->NumGlobalRows(); 
+  NumRows = GetMatrix()->NumGlobalRows(); 
 
   // optimal value for MaxProcs == -1
   
