@@ -248,7 +248,7 @@ int main(int argc, char *argv[])
   /* Use Aztec to build ML matrix representing Tmat.                      */
 
   Tmat = user_T_build (&Edge_Partition, &Node_Partition, 
-  		   &(ml_nodes->Amat[MaxMgLevels-1]),ml_nodes->comm);
+  		   &(ml_nodes->Amat[MaxMgLevels-1]),ml_edges->comm);
 
 #else
   /* Build Ke directly as an ML matrix.                                  */
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 			user_update_ghost_nodes, 
 			Node_Partition.Nlocal + Node_Partition.Nghost);
 
-  Tmat = ML_Operator_Create(ml_nodes->comm);
+  Tmat = ML_Operator_Create(ml_edges->comm);
   user_Tmat_data.edge = &Edge_Partition;
   user_Tmat_data.node = &Node_Partition;
   user_Tmat_data.Kn   = &(ml_nodes->Amat[MaxMgLevels-1]);
@@ -819,8 +819,8 @@ AZ_MATRIX *user_Kn_build(struct user_partition *Node_Partition)
 
 
   Nlocal_nodes = Node_Partition->Nlocal;
-  Kn_bindx = (int    *) malloc((27*Nlocal_nodes+5)*sizeof(int));
-  Kn_val   = (double *) malloc((27*Nlocal_nodes+5)*sizeof(double));
+  Kn_bindx = (int    *) malloc((9*Nlocal_nodes+5)*sizeof(int));
+  Kn_val   = (double *) malloc((9*Nlocal_nodes+5)*sizeof(double));
   Kn_bindx[0] = Nlocal_nodes+1;
 
   nx = (int) sqrt( ((double) Node_Partition->Nglobal) + .00001);
