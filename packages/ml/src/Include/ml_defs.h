@@ -105,6 +105,10 @@
 #define ML_MSR_MATRIX      -201
 #define ML_CSR_MATRIX      -203
 
+/* JJH -- these are message tags */
+#define ML_TAG_BASE        27000
+#define ML_TAG_PRESM       0
+#define ML_TAG_POSTSM      100
 
 #endif
 
