@@ -50,26 +50,26 @@ but to configure for parallel libraries, a user must append '--enable-mpi' to
 the configure line.
 
 	Also, to build all Trilinos libraries, no action is necessary, but to 
-exclude a package, komplex for example, a user must append '--without-komplex' 
+exclude a package, komplex for example, a user must append '--disable-komplex' 
 to the configure line.  It is recommended that users always configure from the 
-Trilinos level and use --without-<package> as necessary, rather than trying to 
+Trilinos level and use --disable-<package> as necessary, rather than trying to 
 configure from a lower level.
 
 NOTE: Ifpack is divided into old and new portions.  Future ifpack developments 
 will replace all of old ifpack, but at this time some users will need to append
-'--with-oldifpack' to the configure line.
+'--enable-oldifpack' to the configure line.
 
-NOTE: The configure process is set up to detect when a --without-<package> 
+NOTE: The configure process is set up to detect when a --disable-<package> 
 command would break a package dependency.  For example, ifpack depends on 
-epetra, so if a user wants to build ifpack, but types --without-epetra, epetra 
+epetra, so if a user wants to build ifpack, but types --disable-epetra, epetra 
 will be configured and built anyway.  However, some of the tests and examples 
-have different dependencies than the core package.  These dependencies have not
-yet been accounted for.  Please submit a bug report for any problems found with
-this matter.
+have different dependencies than the core package.  Not all of these 
+dependencies have been accounted for.  Please submit a bug report for any 
+problems found with this matter.
 
 	To install libraries and header files in a particular location, use 
 --prefix=<dir>.  If this option is used, libraries will be located in 
-<dir>/lib and header files in <dir>/include.
+<dir>/lib and header files in <dir>/include/<package>.
 
 	The second imporant piece of information that a user must provide at 
 this stage is the name and or location of anything that autotools needs and 
@@ -95,9 +95,6 @@ on.  Other uses include id=debug, or opt when those options are completed.
 Users who create scripts for other machines are encouraged to check them into 
 the repository for the benefit of other users.  Users who do not have access to
 the repository can send their scripts to jmwille@sandia.gov.
-
-NOTE: The --with-referenceblasandlapack option has been disabled for now, but 
-will return in a different form in the future.
 
 III. Building
 
