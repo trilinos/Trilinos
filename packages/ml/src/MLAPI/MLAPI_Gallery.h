@@ -37,6 +37,13 @@ namespace MLAPI {
   // ====================================================================== 
   
   Operator ReadMatrix(const char* FileName);
+  
+  // ====================================================================== 
+  //! Creates a recirculation problem in 2D.
+  // ====================================================================== 
+  
+  Operator GetRecirc2D(const int NX, const int NY, const double conv,
+                       const double diff);
 }
 
 #endif // HAVE_ML_MLAPI

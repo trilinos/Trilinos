@@ -37,11 +37,13 @@ public:
   //! Constructs the hierarchy for given Operator and parameters.
   MultiLevelNonSymmetricSA(const Operator FineMatrix, 
                            Teuchos::ParameterList& List,
+                           const string RestrictionType = "classic",
                            const bool ConstructNow = true) :
     IsComputed_(false)
   {
     SetList(List);
     SetMaxLevels(List.get("max levels", 10));
+    SetRestrictionType(RestrictionType);
     if (GetMaxLevels() <= 0)
       ML_THROW("Invalid number of levels, " + GetString(GetMaxLevels()), -1);
 
@@ -83,9 +85,21 @@ public:
   }
 
   //! Returns a reference to the restriction operator of level \c i.
+  inline const Operator& R(const int i) const
+  {
+    return(R_[i]);
+  }
+
+  //! Returns a reference to the restriction operator of level \c i.
   inline Operator& R(const int i)
   {
     return(R_[i]);
+  }
+
+  //! Returns a reference to the operator of level \c i.
+  inline const Operator& A(const int i) const
+  {
+    return(A_[i]);
   }
 
   //! Returns a reference to the operator of level \c i.
@@ -95,9 +109,21 @@ public:
   }
 
   //! Returns a reference to the prolongator operator of level \c i.
+  inline const Operator& P(const int i) const
+  {
+    return(P_[i]);
+  }
+
+  //! Returns a reference to the prolongator operator of level \c i.
   inline Operator& P(const int i) 
   {
     return(P_[i]);
+  }
+
+  //! Returns a reference to the inverse operator of level \c i.
+  inline const InverseOperator& S(const int i) const
+  {
+    return(S_[i]);
   }
 
   //! Returns a reference to the inverse operator of level \c i.
@@ -113,7 +139,7 @@ public:
   }
 
   //! Returns the actual number of levels
-  inline void SetMaxLevels(const int MaxLevels) const
+  inline void SetMaxLevels(const int MaxLevels)
   {
     MaxLevels_ = MaxLevels;
   }
@@ -139,7 +165,7 @@ public:
   //! Returns the prolongator damping factor.
   inline double GetDamping()
   {
-     return(List_.get("aggregation: damping factor", 1.3333));
+    return(List_.get("aggregation: damping factor", 1.3333));
   }
 
   //! Returns the maximum coarse size.
@@ -152,6 +178,18 @@ public:
   inline void SetList(Teuchos::ParameterList& List)
   {
     List_ = List;
+  }
+
+  //! Returns the strategy to be used to build up the restriction.
+  inline string GetRestrictionType() const
+  {
+    return(RestrictionType_);
+  }
+
+  //! Sets the strategy to be used to build up the restriction.
+  inline void SetRestrictionType(const string R)
+  {
+    RestrictionType_ = R;
   }
 
   // @}
@@ -167,8 +205,8 @@ public:
 
     // get parameter from the input list
     MultiVector EmptySpace;
-    MultiVector ThisNS        = List_.get("aggregation: null space", EmptySpace);
-    int         NumPDEEqns    = List_.get("PDE equations", 1);
+    MultiVector ThisNS     = List_.get("aggregation: null space", EmptySpace);
+    int         NumPDEEqns = List_.get("PDE equations", 1);
     
     // build up the default null space
     if (ThisNS.GetNumVectors() == 0) {
@@ -182,30 +220,38 @@ public:
 
     MultiVector NextNS;     // contains the next-level null space
 
+    if (GetPrintLevel()) {
+      cout << endl;
+      ML_print_line("-", 80);
+      cout << "Non-symmetric Smoothed Aggregation" << endl;
+      ML_print_line("-", 80);
+    }
+
     int level;
 
     for (level = 0 ; level < GetMaxLevels() - 1 ; ++level) {
+
+      Operator Ptent;
+      double LambdaMax;
 
       if (level)
         List_.set("PDE equations", ThisNS.GetNumVectors());
 
       List_.set("workspace: current level", level);
 
-      Operator Ptent;
       GetPtent(A(level), List_, ThisNS, Ptent, NextNS);
       ThisNS = NextNS;
       
-      double LambdaMax;
-      if (GetDamping()) {
+      if (GetDamping() != 0.0) {
 
-        LambdaMax = ComputeLambdaMax(A);
+        LambdaMax = ComputeLambdaMax(A(level));
 
-        MultiVector Diag = GetDiagonal(A);
+        MultiVector Diag = GetDiagonal(A(level));
         Diag.Reciprocal();
         Diag.Scale(GetDamping() / LambdaMax);
         Operator Dinv = GetDiagonal(Diag);
-        Operator DinvA = Dinv * A;
-        Operator I = GetIdentity(A.GetDomainSpace(),A.GetRangeSpace());
+        Operator DinvA = Dinv * A(level);
+        Operator I = GetIdentity(A(level).GetDomainSpace(),A(level).GetRangeSpace());
         Operator IminusA = I - DinvA;
         // could be replaced with the following line:
         // IminusA = GetJacobiIterationOperator(A,GetDamping() / LambdaMax);
@@ -220,7 +266,8 @@ public:
         PrintInfo(level, NumPDEEqns, ThisNS.GetNumVectors(),
                   LambdaMax);
 
-      R(level) = GetTranspose(P(level));
+      BuildR(level);
+
       A(level + 1) = GetRAP(R(level),A(level),P(level));
       S(level).Reshape(A(level), GetSmootherType(), List_);
 
@@ -236,7 +283,7 @@ public:
     SetMaxLevels(level + 1);
 
     // set the label
-    SetLabel("SA, L = " + GetString(GetMaxLevels()) +
+    SetLabel("NS-SA, L = " + GetString(GetMaxLevels()) +
              ", smoother = " + GetSmootherType());
 
     if (GetPrintLevel()) PrintInfo(level);
@@ -349,7 +396,7 @@ private:
     return(LambdaMax);
   }
 
-  void ResizeArray()
+  void ResizeArrays()
   {
     A_.resize(GetMaxLevels());
     R_.resize(GetMaxLevels());
@@ -368,8 +415,10 @@ private:
     cout << "number of PDE equations = " << NumPDEEqns << endl;
     cout << "null space dimension    = " << NullSpaceDimension << endl;
     cout << "omega                   = " << GetDamping() << endl;
-    cout << "lambda max              = " << LambdaMax << endl;
-    cout << "damping factor          = " << GetDamping() / LambdaMax << endl;
+    if (LambdaMax != -1.0) {
+      cout << "lambda max              = " << LambdaMax << endl;
+      cout << "damping factor          = " << GetDamping() / LambdaMax << endl;
+    }
     cout << "smoother type           = " << GetSmootherType() << endl;
     cout << "relaxation sweeps       = " << List_.get("smoother: sweeps", 1) << endl;
     cout << "smoother damping        = " << List_.get("smoother: damping factor", 0.67) << endl;
@@ -386,6 +435,19 @@ private:
     ML_print_line("-", 80);
   }
 
+  //! Builds the restriction for level \c level.
+  void BuildR(int level) 
+  {
+    StackPush();
+
+    if (GetRestrictionType() == "classic")
+      R(level) = GetTranspose(P(level));
+    else
+      ML_THROW("Invalid choice (" + GetRestrictionType() + ")", -1);
+
+    StackPop();
+  }
+
   //! Maximum number of levels.
   int MaxLevels_;
   //! Contains the hierarchy of operators.
@@ -400,6 +462,8 @@ private:
   Teuchos::ParameterList List_;
   //! \c true if the hierarchy has been successfully computed, \c false otherwise.
   bool IsComputed_;
+  //! Strategy to define the restriction operator
+  string RestrictionType_;
 
 };
 

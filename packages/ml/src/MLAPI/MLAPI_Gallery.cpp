@@ -198,6 +198,83 @@ Operator ReadMatrix(const char* FileName)
 }
 
 // ====================================================================== 
+Operator GetRecirc2D(const int NX, const int NY, const double conv,
+                     const double diff)
+{
+  double LX = 1.0;    // length of the X-axis
+  double LY = 1.0;    // lenght of the Y-axis
+
+  Space FineSpace(NX * NY);
+
+  DistributedMatrix* MatA = new DistributedMatrix(FineSpace, FineSpace);
+
+  if (GetMyPID() == 0) {
+
+    double HX = LX / (NX + 1);  
+    double HY = LY / (NY + 1);
+
+    for (int ix = 0 ; ix < NX ; ++ix) {
+      for( int iy = 0 ; iy < NY ; ++iy) {
+
+        double X = HX * (ix + 1);
+        double Y = HY * (iy + 1);
+
+        double ConvX =  conv * 4 * X * (X - 1.) *(1. - 2 * Y) / HX;
+        double ConvY = -conv * 4 * Y * (Y - 1.) *(1. - 2 * X) / HY;
+
+        double lower = 0.0, upper = 0.0;
+        double left = 0.0,  right = 0.0, center = 0.0;
+
+        if( ConvX<0 ) {
+          right  += ConvX;
+          center -= ConvX;
+        } else {
+          left   -= ConvX;
+          center += ConvX;
+        }
+
+        if( ConvY<0 ) {
+          upper  += ConvY;
+          center -= ConvY;
+        } else {
+          lower  -= ConvY;
+          center += ConvY;
+        }
+
+        center += diff * 2. / (HX * HX) + diff * 2. / (HY * HY);
+        left   -= diff / (HX * HX);
+        right  -= diff / (HX * HX);
+        lower  -= diff / (HY * HY);
+        upper  -= diff / (HY * HY);
+
+        int row = iy * NX + ix;
+
+        if (ix != 0)
+          MatA->SetElement(row, row - 1, left);
+
+        if (ix != NX - 1)
+          MatA->SetElement(row, row + 1, right);
+
+        if (iy != 0)
+          MatA->SetElement(row, row - NX, lower);
+
+        if (iy != NY - 1)
+          MatA->SetElement(row, row + NX, upper);
+
+        MatA->SetElement(row, row, center);
+      }
+    }
+  }
+
+  MatA->FillComplete();
+
+  // wrap MatA as an Operator
+  Operator A(FineSpace, FineSpace, MatA, true);
+
+  return(A);
+}
+
+// ====================================================================== 
 } // namespace MLAPI
 
 #endif // HAVE_ML_MLAPI

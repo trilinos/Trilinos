@@ -61,7 +61,7 @@ void Krylov(const Operator& A, const MultiVector& LHS,
   else if (type == "fixed point")
     solver.SetAztecOption(AZ_solver, AZ_fixed_pt);
   else
-    ML_THROW("krylov: type has incorrect value )" +
+    ML_THROW("krylov: type has incorrect value (" +
              type + ")", -1);
       
   solver.SetAztecOption(AZ_output, output);
