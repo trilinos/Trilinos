@@ -78,7 +78,7 @@ Amesos_Umfpack::Amesos_Umfpack(const Epetra_LinearProblem &prob ) :
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  Time(Comm())
+  Time_(0)
 {
   
   // MS // move declaration of Problem_ above because I need it
@@ -96,6 +96,8 @@ Amesos_Umfpack::~Amesos_Umfpack(void) {
   if ( Symbolic ) umfpack_di_free_symbolic (&Symbolic) ;
   if ( Numeric ) umfpack_di_free_numeric (&Numeric) ;
 
+  if( Time_ ) delete Time_;
+  
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
   
@@ -105,7 +107,7 @@ int Amesos_Umfpack::ConvertToSerial() {
 
   if( debug_ == 1 ) cout << "Entering `ConvertToSerial()'" << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
@@ -151,7 +153,7 @@ int Amesos_Umfpack::ConvertToSerial() {
     SerialMatrix_ = SerialCrsMatrixA_ ;
   }
 
-  MatTime_ += Time.ElapsedTime();
+  MatTime_ += Time_->ElapsedTime();
   
   return 0;
 } 
@@ -160,7 +162,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
   
   if( debug_ == 1 ) cout << "Entering `ConvertToUmfpackCRS()'" << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   //
   //  Convert matrix to the form that Umfpack expects (Ap, Ai, Aval) 
@@ -191,7 +193,7 @@ int Amesos_Umfpack::ConvertToUmfpackCRS(){
     Ap[MyRow] = Ai_index ; 
   }
 
-  ConTime_ += Time.ElapsedTime();
+  ConTime_ += Time_->ElapsedTime();
   
   return 0;
 }   
@@ -259,7 +261,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
   
-  Time.ResetStartTime();  
+  Time_->ResetStartTime();  
 
   double *Control = (double *) NULL, *Info = (double *) NULL ;
   
@@ -271,7 +273,7 @@ int Amesos_Umfpack::PerformSymbolicFactorization() {
   }
   SymbolicFactorizationOK_ = true ;
 
-  SymTime_ += Time.ElapsedTime();
+  SymTime_ += Time_->ElapsedTime();
 
   return 0;
 }
@@ -280,7 +282,7 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
 
   if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
   
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
 
   if ( iam == 0 ) {
     vector<double> Control(UMFPACK_CONTROL);
@@ -344,7 +346,7 @@ int Amesos_Umfpack::PerformNumericFactorization( ) {
   
   NumericFactorizationOK_ = true ; 
 
-  NumTime_ += Time.ElapsedTime();
+  NumTime_ += Time_->ElapsedTime();
 
   return 0;
 }
@@ -364,7 +366,8 @@ bool Amesos_Umfpack::MatrixShapeOK() const {
 int Amesos_Umfpack::SymbolicFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
-  
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+
   NumSymbolicFact_++;  
 
   ConvertToSerial() ; 
@@ -380,6 +383,7 @@ int Amesos_Umfpack::SymbolicFactorization() {
 int Amesos_Umfpack::NumericFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   NumNumericFact_++;  
 
@@ -399,6 +403,7 @@ int Amesos_Umfpack::NumericFactorization() {
 int Amesos_Umfpack::Solve() { 
 
   if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   NumSolve_++;
 
@@ -448,7 +453,7 @@ int Amesos_Umfpack::Solve() {
   //
   //  Copy B to the serial version of B
   //
-  Time.ResetStartTime(); // track time to broadcast vectors
+  Time_->ResetStartTime(); // track time to broadcast vectors
   
   if ( IsLocal_ ==1 ) { 
     SerialB = vecB ; 
@@ -465,7 +470,7 @@ int Amesos_Umfpack::Solve() {
     SerialX = SerialXextract ; 
   } 
 
-  VecTime_ += Time.ElapsedTime();
+  VecTime_ += Time_->ElapsedTime();
   
   //
   //  Call UMFPACK to perform the solve
@@ -473,7 +478,7 @@ int Amesos_Umfpack::Solve() {
   //  Hence to compute A X = B, we ask UMFPACK to perform A^T X = B and vice versa
   //
 
-  Time.ResetStartTime(); // tract time to solve
+  Time_->ResetStartTime(); // tract time to solve
 
   int SerialBlda, SerialXlda ; 
   int UmfpackRequest = UseTranspose()?UMFPACK_A:UMFPACK_At ;
@@ -518,7 +523,7 @@ int Amesos_Umfpack::Solve() {
     }
   }
     
-  SolTime_ += Time.ElapsedTime();
+  SolTime_ += Time_->ElapsedTime();
   
 #if 0
   Comm().Barrier();
@@ -548,7 +553,7 @@ int Amesos_Umfpack::Solve() {
   //
   //  Copy X back to the original vector
   // 
-  Time.ResetStartTime();  // track time to broadcast vectors
+  Time_->ResetStartTime();  // track time to broadcast vectors
 
   if ( IsLocal_ == 0 ) { 
     const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
@@ -558,7 +563,7 @@ int Amesos_Umfpack::Solve() {
     delete SerialXextract ;
   }
 
-  VecTime_ += Time.ElapsedTime();
+  VecTime_ += Time_->ElapsedTime();
 
 #if 0
   cout << " Here is SerialB " << endl ; 
@@ -611,6 +616,11 @@ void Amesos_Umfpack::PrintStatus()
 {
 
   if( Comm().MyPID() != 0  ) return;
+
+  if( Problem_->GetMatrix() == 0 ) {
+    cerr << "Epetra_LinearProblem.GetMatrix() is NULL !" << endl;
+    return;
+  }
 
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Umfpack : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"

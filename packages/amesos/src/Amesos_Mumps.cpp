@@ -103,7 +103,7 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob ) :
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  Time(Comm())
+  Time_(0)
 {
   // -777 is for me. It means : never called MUMPS, so
   // SymbolicFactorization will not call Destroy();
@@ -147,6 +147,8 @@ void Amesos_Mumps::Destroy()
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
 
+  if( Time_ ) { delete Time_; Time_ = 0; }
+     
   return;
 }
 
@@ -166,7 +168,7 @@ int Amesos_Mumps::ConvertToTriplet()
 
   if( debug_ == 1 ) cout << "Entering `ConvertToTriplet()'" << endl;
   
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
 
   // MS // convert to MUMPS format, keeping in distributed form.
   // MS // This doesn't require the matrix to be shipped to proc 0,
@@ -234,7 +236,7 @@ int Amesos_Mumps::ConvertToTriplet()
     }
   }
 
-  ConTime_ == Time.ElapsedTime(); 
+  ConTime_ == Time_->ElapsedTime(); 
   
   assert(NumMyMUMPSNonzeros_<=NumMyNonzeros());
 
@@ -262,7 +264,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
 
   if( debug_ == 1 ) cout << "Entering `RedistributeMatrix()' ..." << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   Epetra_IntSerialDenseVector * OldRow = Row;
   Epetra_IntSerialDenseVector * OldCol = Col;
@@ -302,7 +304,7 @@ void Amesos_Mumps::RedistributeMatrix(const int NumProcs)
   if( OldCol ) { delete OldCol; OldCol = 0; }
   if( OldVal ) { delete OldVal; OldVal = 0; }
 
-  MatTime_ += Time.ElapsedTime();
+  MatTime_ += Time_->ElapsedTime();
   
 }
 
@@ -313,7 +315,7 @@ void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
 
   if( debug_ == 1 ) cout << "Entering `RedistributeMatrixValues()' ..." << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   // I suppose that NumMyMUMPSNonzeros_ has been computed
   // before calling this method.
@@ -343,7 +345,7 @@ void Amesos_Mumps::RedistributeMatrixValues(const int NumProcs)
   
   if( OldVal ) { delete OldVal; OldVal = 0; }
 
-  MatTime_ += Time.ElapsedTime();
+  MatTime_ += Time_->ElapsedTime();
   
 }
 
@@ -354,7 +356,7 @@ int Amesos_Mumps::ConvertToTripletValues()
 
   if( debug_ == 1 ) cout << "Entering `ConvertToTripletValues()'" << endl;
 
-  Time.ResetStartTime();  
+  Time_->ResetStartTime();  
 
   // MS // convert to MUMPS format, keeping in distributed form.
   // MS // This doesn't require the matrix to be shipped to proc 0,
@@ -425,7 +427,7 @@ int Amesos_Mumps::ConvertToTripletValues()
      return -2;
   }  
 
-  ConTime_ += Time.ElapsedTime();
+  ConTime_ += Time_->ElapsedTime();
   
   // MS // bring matrix to proc zero if required
   
@@ -849,9 +851,9 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 
   // Perform symbolic factorization
 
-  Time.ResetStartTime();  
+  Time_->ResetStartTime();  
   if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
-  SymTime_ += Time.ElapsedTime();
+  SymTime_ += Time_->ElapsedTime();
 
   CheckError();
 
@@ -867,7 +869,7 @@ int Amesos_Mumps::PerformNumericFactorization( )
 {
 
   if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
-
+  
   // set vector for matrix entries. User may have changed it
   // since PerformSymbolicFactorization() has been called
 
@@ -881,9 +883,9 @@ int Amesos_Mumps::PerformNumericFactorization( )
 
   MDS.job = 2  ;     // Request numeric factorization
   // Perform numeric factorization
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;
-  NumTime_ += Time.ElapsedTime();
+  NumTime_ += Time_->ElapsedTime();
   
   CheckError();
 
@@ -900,6 +902,7 @@ int Amesos_Mumps::SymbolicFactorization()
   NumSymbolicFact_++;  
   
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   CheckParameters();
   
@@ -937,7 +940,8 @@ int Amesos_Mumps::NumericFactorization()
   NumNumericFact_++;  
   
   if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
-
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  
   // MS // As in SymbolicFactorization. All those functions
   // MS // returns if they have already been called.
   
@@ -975,6 +979,7 @@ int Amesos_Mumps::Solve()
   NumSolve_++;  
   
   if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
 
   Epetra_RowMatrix * Matrix = GetMatrix();
   assert( Matrix != NULL );
@@ -1053,9 +1058,9 @@ int Amesos_Mumps::Solve()
 	for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
 	MDS.rhs = (*vecX)[j];
 	MDS.job = 3  ;     // Request solve
-	Time.ResetStartTime();
+	Time_->ResetStartTime();
 	if( Comm().MyPID() < MaxProcs_ ) dmumps_c( &MDS ) ;  // Perform solve
-	SolTime_ += Time.ElapsedTime();
+	SolTime_ += Time_->ElapsedTime();
 	
 	CheckError();
       }
@@ -1063,9 +1068,9 @@ int Amesos_Mumps::Solve()
   } else {
 
     // bring rhs to process 0 and take timing for this phase
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     Redistor_->TargetImport( *vecB, *TargetVector_ ) ;
-    VecTime_ += Time.ElapsedTime();
+    VecTime_ += Time_->ElapsedTime();
     
     for ( int j =0 ; j < nrhs; j++ ) { 
       if ( Comm().MyPID() == 0 ) {
@@ -1073,18 +1078,18 @@ int Amesos_Mumps::Solve()
       }
       // solve the linear system and take time
       MDS.job = 3  ;     
-      Time.ResetStartTime();
+      Time_->ResetStartTime();
       if( Comm().MyPID() < MaxProcs_ )dmumps_c( &MDS ) ;  // Perform solve
-      SolTime_ += Time.ElapsedTime();
+      SolTime_ += Time_->ElapsedTime();
       
       CheckError();
 
     }
 
     // ship solution back and take timing
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     Redistor_->SourceImport( *vecX, *TargetVector_ ) ;
-    VecTime_ += Time.ElapsedTime();
+    VecTime_ += Time_->ElapsedTime();
 
   }
 
@@ -1293,7 +1298,7 @@ void Amesos_Mumps::PrintTiming()
 {
   if( Comm().MyPID() ) return;
   
-  cout << "-------------- -------------------------------------------------------------" << endl;
+  cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Mumps : Time to convert matrix to MUMPS format = "
        << ConTime_ << " (s)" << endl;
   if( MaxProcsInputMatrix_ != Comm().NumProc() ) 

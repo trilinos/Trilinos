@@ -333,7 +333,7 @@ revert to their default values.
   double VecTime_;
   double MatTime_;
   double ConTime_;
-  Epetra_Time Time;
+  Epetra_Time * Time_;
   
   int NumSymbolicFact_;
   int NumNumericFact_;
@@ -341,7 +341,6 @@ revert to their default values.
 
   bool ComputeTrueResidual_;
   bool ComputeVectorNorms_;
-
   
 };  // End of  class Amesos_Superludist  
 #endif /* _AMESOS_SUPERLUDIST_H_ */

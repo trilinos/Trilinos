@@ -86,7 +86,7 @@ Amesos_Klu::Amesos_Klu(const Epetra_LinearProblem &prob ) :
   NumSymbolicFact_(0),
   NumNumericFact_(0),
   NumSolve_(0),
-  Time(Comm())
+  Time_(0)
 {
   // MS // move declaration of Problem_ above because I need it
   // MS // set up before calling Comm()
@@ -106,6 +106,8 @@ Amesos_Klu::~Amesos_Klu(void) {
   // print out some information if required by the user
   if( (verbose_ && PrintTiming_) || verbose_ == 2 ) PrintTiming();
   if( (verbose_ && PrintStatus_) || verbose_ == 2 ) PrintStatus();
+
+  if( Time_ ) { delete Time_; Time_ = 0; }
   
 }
 //  See  pre and post conditions in Amesos_Klu.h
@@ -114,7 +116,7 @@ int Amesos_Klu::ConvertToSerial() {
 
   if( debug_ == 1 ) cout << "Entering `ConvertToSerial()'" << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   Epetra_RowMatrix *RowMatrixA = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
   EPETRA_CHK_ERR( RowMatrixA == 0 ) ; 
@@ -167,7 +169,7 @@ int Amesos_Klu::ConvertToSerial() {
     SerialMatrix_ = SerialCrsMatrixA_ ;
   }
 
-  MatTime_ += Time.ElapsedTime();
+  MatTime_ += Time_->ElapsedTime();
 
   return 0;
 } 
@@ -197,7 +199,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
 
   if( debug_ == 1 ) cout << "Entering `ConvertToKluCRSt()'" << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   if ( UseTranspose() ) { 
     Matrix_ = SerialMatrix_ ; 
@@ -259,7 +261,7 @@ int Amesos_Klu::ConvertToKluCRS(bool firsttime){
     Ap[MyRow] = Ai_index ; 
   }
 
-  ConTime_ += Time.ElapsedTime(); 
+  ConTime_ += Time_->ElapsedTime(); 
 
   return 0;
 }   
@@ -328,14 +330,14 @@ int Amesos_Klu::PerformSymbolicFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `PerformSymbolicFactorization()'" << endl;
 
-  Time.ResetStartTime();  
+  Time_->ResetStartTime();  
 
   if ( iam == 0 ) { 
     PrivateKluData_->Symbolic_ = klu_btf_analyze (NumGlobalElements_, &Ap[0], &Ai[0] ) ;
     if ( PrivateKluData_->Symbolic_ == 0 ) EPETRA_CHK_ERR( 1 ) ; 
   }
 
-  SymTime_ += Time.ElapsedTime();
+  SymTime_ += Time_->ElapsedTime();
 
   return 0;
 }
@@ -344,7 +346,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
   
   if( debug_ == 1 ) cout << "Entering `PerformNumericFactorization()'" << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   if ( iam == 0 ) {
 
@@ -356,7 +358,7 @@ int Amesos_Klu::PerformNumericFactorization( ) {
     
   }
 
-  NumTime_ += Time.ElapsedTime();
+  NumTime_ += Time_->ElapsedTime();
 
   return 0;
 }
@@ -376,7 +378,8 @@ bool Amesos_Klu::MatrixShapeOK() const {
 int Amesos_Klu::SymbolicFactorization() {
   
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()'" << endl;
-
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  
   NumSymbolicFact_++;  
   
   ConvertToSerial() ; 
@@ -389,8 +392,9 @@ int Amesos_Klu::SymbolicFactorization() {
 }
 
 int Amesos_Klu::NumericFactorization() {
-
+  
   if( debug_ == 1 ) cout << "Entering `NumericFactorization()'" << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   NumNumericFact_++;
 
@@ -405,7 +409,8 @@ int Amesos_Klu::NumericFactorization() {
 int Amesos_Klu::Solve() { 
 
   if( debug_ == 1 ) cout << "Entering `Solve()'" << endl;
-
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  
   NumSolve_++;
   
   Epetra_MultiVector   *vecX = Problem_->GetLHS() ; 
@@ -435,7 +440,7 @@ int Amesos_Klu::Solve() {
   Epetra_MultiVector *SerialXextract = 0;
   Epetra_MultiVector *SerialBextract = 0;
 
-  Time.ResetStartTime(); // track time to broadcast vectors
+  Time_->ResetStartTime(); // track time to broadcast vectors
   //
   //  Copy B to the serial version of B
   //
@@ -454,7 +459,7 @@ int Amesos_Klu::Solve() {
     SerialX = SerialXextract ; 
   } 
 
-  VecTime_ += Time.ElapsedTime();
+  VecTime_ += Time_->ElapsedTime();
     
   //
   //  Call KLU to perform the solve
@@ -462,7 +467,7 @@ int Amesos_Klu::Solve() {
 
   SerialX->Scale(1.0, *SerialB) ;
 
-  Time.ResetStartTime(); // tract time to solve
+  Time_->ResetStartTime(); // tract time to solve
   
   int SerialXlda ; 
   if ( iam == 0 ) {
@@ -478,14 +483,14 @@ int Amesos_Klu::Solve() {
     }
   }
     
-  SolTime_ += Time.ElapsedTime();
+  SolTime_ += Time_->ElapsedTime();
     
    
   //
   //  Copy X back to the original vector
   // 
 
-  Time.ResetStartTime();  // track time to broadcast vectors
+  Time_->ResetStartTime();  // track time to broadcast vectors
 
   if ( IsLocal_ == 0 ) { 
     const Epetra_Map &OriginalMap = CastCrsMatrixA->RowMap() ; 
@@ -498,7 +503,7 @@ int Amesos_Klu::Solve() {
     assert( SerialXextract == 0 ) ;
   }
 
-  VecTime_ += Time.ElapsedTime();
+  VecTime_ += Time_->ElapsedTime();
 
   // MS // compute vector norms
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
@@ -538,6 +543,11 @@ void Amesos_Klu::PrintStatus()
 
   if( Comm().MyPID() != 0  ) return;
 
+  if( Problem_->GetMatrix() == 0 ) {
+    cerr << "Epetra_LinearProblem.GetMatrix() is NULL !" << endl;
+    return;
+  }
+  
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Klu : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"
        << " and " << Problem_->GetMatrix()->NumGlobalNonzeros() << " nonzeros" << endl;

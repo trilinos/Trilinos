@@ -378,7 +378,7 @@ private:
   int NumNumericFact_;
   int NumSolve_;  
 
-  Epetra_Time Time;
+  Epetra_Time * Time_;
   
 };  // End of  class Amesos_Klu  
 #endif /* _AMESOS_KLU_H_ */

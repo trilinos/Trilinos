@@ -38,7 +38,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 // #include "CrsMatrixTranspose.h"
-#include "Epetra_Time.h"
+#include "Epetra_Time_.h"
 
 int Superludist_NumProcRows( int NumProcs ) {
 #ifdef TFLOP
@@ -97,7 +97,7 @@ Amesos_Superludist::Amesos_Superludist(const Epetra_LinearProblem &prob ) :
     ConTime_(0.0),
     VecTime_(0.0),
     MatTime_(0.0),
-    Time(Comm()),
+    Time_(0),
     NumSymbolicFact_(0),
     NumNumericFact_(0),
     NumSolve_(0),
@@ -116,6 +116,8 @@ Amesos_Superludist::~Amesos_Superludist(void) {
 
   if( PrintTiming_ ) PrintTiming();
   if( PrintStatus_ ) PrintStatus();
+
+  if( Time_ ) delete Time_;
   
   if ( FactorizationDone_ ) {
     SUPERLU_FREE( SuperluA_.Store );
@@ -311,7 +313,7 @@ int Amesos_Superludist::RedistributeA( ) {
 
   if( debug_ == 1 ) cout << "Entering `RedistributeA()' ..." << endl;
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   // Ken, I added two more options to what you did.
   // Your heuristic if the default one (MaxProcs == -1), but for large runs
@@ -417,7 +419,7 @@ int Amesos_Superludist::RedistributeA( ) {
   //  Commented out:  Feb 28th, 2004
   //  UniformMatrix_->Export( *RowMatrixA_, *ExportToDist_, Insert ); 
 
-  MatTime_ += Time.ElapsedTime();
+  MatTime_ += Time_->ElapsedTime();
   
   return 0;
 }
@@ -567,7 +569,7 @@ int Amesos_Superludist::Factor( ) {
     }
   }
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   //
   //  Only those processes in the grid participate from here on
@@ -661,7 +663,7 @@ int Amesos_Superludist::Factor( ) {
     PStatFree(&stat);
   }
 
-  SolTime_ += Time.ElapsedTime();
+  SolTime_ += Time_->ElapsedTime();
   
   return 0;
 }
@@ -698,7 +700,7 @@ int Amesos_Superludist::ReFactor( ) {
   
     if( debug_ == 1 ) cout << "Entering `ReFactor()' ..." << endl;
   
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     
     //
     //  Update Ai_ and Aval_ (while double checking Ap_)
@@ -708,9 +710,9 @@ int Amesos_Superludist::ReFactor( ) {
 	EPETRA_CHK_ERR(-4); 
     }
 
-    MatTime_ += Time.ElapsedTime();
+    MatTime_ += Time_->ElapsedTime();
 
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     
     Epetra_CrsMatrix *SuperluCrs = dynamic_cast<Epetra_CrsMatrix *>(SuperluMat_);
     
@@ -746,9 +748,9 @@ int Amesos_Superludist::ReFactor( ) {
     }
     if( Ap_[ NumMyElements ] != Ai_index ) EPETRA_CHK_ERR(-4); 
 
-    ConTime_ += Time.ElapsedTime();
+    ConTime_ += Time_->ElapsedTime();
 
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     
     if ( iam_ < nprow_ * npcol_ ) {
 	
@@ -772,7 +774,7 @@ int Amesos_Superludist::ReFactor( ) {
       EPETRA_CHK_ERR( info ) ;
     } 
 
-    NumTime_ += Time.ElapsedTime();
+    NumTime_ += Time_->ElapsedTime();
     
     return 0;
 }
@@ -789,6 +791,7 @@ bool Amesos_Superludist::MatrixShapeOK() const {
 int Amesos_Superludist::SymbolicFactorization() {
 
   if( debug_ == 1 ) cout << "Entering `SymbolicFactorization()' ..." << endl;
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
   
   FactorizationOK_ = false ; 
 
@@ -798,7 +801,8 @@ int Amesos_Superludist::SymbolicFactorization() {
 int Amesos_Superludist::NumericFactorization() {
   
   if( debug_ == 1 ) cout << "Entering `NumericFactorizationA()' ..." << endl;
-
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+ 
   NumNumericFact_++;
   
   RowMatrixA_ = dynamic_cast<Epetra_RowMatrix *>(Problem_->GetOperator());
@@ -822,7 +826,8 @@ int Amesos_Superludist::NumericFactorization() {
 int Amesos_Superludist::Solve() { 
 
   if( debug_ == 1 ) cout << "Entering `Solve()' ..." << endl;
-
+  if( Time_ == 0 ) Time_ = new Epetra_Time( Comm() );
+  
   NumSolve_++;
   
   //  NRformat_loc *Astore;
@@ -877,12 +882,12 @@ int Amesos_Superludist::Solve() {
       vecBdistributed_ = new Epetra_MultiVector( *UniformMap_, nrhs ) ; 
     }
 
-    Time.ResetStartTime();
+    Time_->ResetStartTime();
     
     vecXdistributed_->Import( *vecX, *ImportToDistributed_, Insert ) ;
     vecBdistributed_->Import( *vecB, *ImportToDistributed_, Insert ) ;
 
-    VecTime_ += Time.ElapsedTime();
+    VecTime_ += Time_->ElapsedTime();
     
     vecXptr = vecXdistributed_ ; 
     vecBptr = vecBdistributed_ ; 
@@ -902,7 +907,7 @@ int Amesos_Superludist::Solve() {
   for ( int j = 0 ; j < nrhs; j++ )
     for ( int i = 0 ; i < NumMyElements; i++ ) xValues[i+j*ldx] = bValues[i+j*ldb]; 
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   /* Bail out if I do not belong in the grid. */
   if ( iam_ < nprow_ * npcol_ ) {
@@ -934,15 +939,15 @@ int Amesos_Superludist::Solve() {
     PStatFree(&stat);
   }
 
-  SolTime_ += Time.ElapsedTime();
+  SolTime_ += Time_->ElapsedTime();
 
-  Time.ResetStartTime();
+  Time_->ResetStartTime();
   
   if ( Redistribute_ ) { 
     vecX->Import( *vecXptr, *ImportBackToOriginal_, Insert ) ;
   }
 
-  VecTime_ += Time.ElapsedTime();
+  VecTime_ += Time_->ElapsedTime();
 
   // MS // compute vector norms, as done in Amesos_Mumps
   if( ComputeVectorNorms_ == true || verbose_ == 2 ) {
@@ -978,6 +983,11 @@ int Amesos_Superludist::Solve() {
 void Amesos_Superludist::PrintStatus() 
 {
   if( Comm().MyPID() ) return;
+
+  if( Problem_->GetMatrix() == 0 ) {
+    cerr << "Epetra_LinearProblem.GetMatrix() is NULL !" << endl;
+    return;
+  }
   
   cout << "----------------------------------------------------------------------------" << endl;
   cout << "Amesos_Superludist : Matrix has " << Problem_->GetMatrix()->NumGlobalRows() << " rows"

@@ -467,10 +467,9 @@ protected:
   
   int NumSymbolicFact_;
   int NumNumericFact_;
-  int NumSolve_;
-  
+  int NumSolve_;  
 
-  Epetra_Time Time;
+  Epetra_Time * Time_;
   
 #ifdef EPETRA_MPI
   MPI_Comm MUMPSComm_;

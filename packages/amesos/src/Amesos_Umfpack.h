@@ -326,7 +326,7 @@ private:
   int NumNumericFact_;
   int NumSolve_;  
 
-  Epetra_Time Time;
+  Epetra_Time * Time_;
   
 };  // End of  class Amesos_Umfpack  
 #endif /* _AMESOS_UMFPACK_H_ */
