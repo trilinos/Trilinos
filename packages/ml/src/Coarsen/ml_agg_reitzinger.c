@@ -724,9 +724,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
     ML_gsum_vec_int(&Nnz_allgrids,&j,1,ml_nodes->comm);
     ML_gsum_vec_int(&Nnz_finegrid,&j,1,ml_nodes->comm);
 
-    if (Tfine->comm->ML_mypid==0 )
-      printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
+    if (Tfine->comm->ML_mypid==0 ) {
+      if (Nnz_finegrid == 0) 
+	printf("Number of nonzeros on finest grid not given! Complexity not computed!\n");
+      else
+	printf("Multilevel complexity is %e\n",((double) Nnz_allgrids)/
 	     ((double) Nnz_finegrid));
+    }
   }
 
   ML_free(bindx);
