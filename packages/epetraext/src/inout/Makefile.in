@@ -130,7 +130,8 @@ INOUT_H = \
      $(srcdir)/EpetraExt_RowMatrixOut.h \
      $(srcdir)/EpetraExt_MultiVectorOut.h \
      $(srcdir)/EpetraExt_VectorOut.h \
-     $(srcdir)/EpetraExt_BlockMapOut.h
+     $(srcdir)/EpetraExt_BlockMapOut.h \
+     $(srcdir)/EpetraExt_BlockMapIn.h
 
 
 INOUT = \
@@ -138,7 +139,8 @@ INOUT = \
      $(srcdir)/EpetraExt_RowMatrixOut.cpp \
      $(srcdir)/EpetraExt_MultiVectorOut.cpp \
      $(srcdir)/EpetraExt_VectorOut.cpp \
-     $(srcdir)/EpetraExt_BlockMapOut.cpp
+     $(srcdir)/EpetraExt_BlockMapOut.cpp \
+     $(srcdir)/EpetraExt_BlockMapIn.cpp
 
 
 
@@ -228,7 +230,8 @@ libepetraext_inout_a_DEPENDENCIES =
 am__objects_1 = EpetraExt_mmio.$(OBJEXT) \
 	EpetraExt_RowMatrixOut.$(OBJEXT) \
 	EpetraExt_MultiVectorOut.$(OBJEXT) \
-	EpetraExt_VectorOut.$(OBJEXT) EpetraExt_BlockMapOut.$(OBJEXT)
+	EpetraExt_VectorOut.$(OBJEXT) EpetraExt_BlockMapOut.$(OBJEXT) \
+	EpetraExt_BlockMapIn.$(OBJEXT)
 am_libepetraext_inout_a_OBJECTS = $(am__objects_1)
 libepetraext_inout_a_OBJECTS = $(am_libepetraext_inout_a_OBJECTS)
 
@@ -239,7 +242,8 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
-@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/EpetraExt_BlockMapOut.Po \
+@AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/EpetraExt_BlockMapIn.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_BlockMapOut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_MultiVectorOut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_RowMatrixOut.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/EpetraExt_VectorOut.Po \
@@ -304,6 +308,7 @@ EpetraExt_MultiVectorOut.$(OBJEXT): \
 	$(srcdir)/EpetraExt_MultiVectorOut.cpp
 EpetraExt_VectorOut.$(OBJEXT): $(srcdir)/EpetraExt_VectorOut.cpp
 EpetraExt_BlockMapOut.$(OBJEXT): $(srcdir)/EpetraExt_BlockMapOut.cpp
+EpetraExt_BlockMapIn.$(OBJEXT): $(srcdir)/EpetraExt_BlockMapIn.cpp
 libepetraext_inout.a: $(libepetraext_inout_a_OBJECTS) $(libepetraext_inout_a_DEPENDENCIES) 
 	-rm -f libepetraext_inout.a
 	$(libepetraext_inout_a_AR) libepetraext_inout.a $(libepetraext_inout_a_OBJECTS) $(libepetraext_inout_a_LIBADD)
@@ -315,6 +320,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_MultiVectorOut.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_RowMatrixOut.Po@am__quote@
@@ -395,6 +401,18 @@ EpetraExt_BlockMapOut.obj: $(srcdir)/EpetraExt_BlockMapOut.cpp
 @AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_BlockMapOut.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockMapOut.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockMapOut.obj `cygpath -w $(srcdir)/EpetraExt_BlockMapOut.cpp`
+
+EpetraExt_BlockMapIn.o: $(srcdir)/EpetraExt_BlockMapIn.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EpetraExt_BlockMapIn.cpp' object='EpetraExt_BlockMapIn.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_BlockMapIn.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockMapIn.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockMapIn.o `test -f '$(srcdir)/EpetraExt_BlockMapIn.cpp' || echo '$(srcdir)/'`$(srcdir)/EpetraExt_BlockMapIn.cpp
+
+EpetraExt_BlockMapIn.obj: $(srcdir)/EpetraExt_BlockMapIn.cpp
+@AMDEP_TRUE@	source='$(srcdir)/EpetraExt_BlockMapIn.cpp' object='EpetraExt_BlockMapIn.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/EpetraExt_BlockMapIn.Po' tmpdepfile='$(DEPDIR)/EpetraExt_BlockMapIn.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockMapIn.obj `cygpath -w $(srcdir)/EpetraExt_BlockMapIn.cpp`
 CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
