@@ -26,10 +26,10 @@
 //
 //**************************************************************************
 
-#include "LOBPCG.h"
+#include "LOBPCG_light.h"
 
 
-LOBPCG::LOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK, 
+LOBPCG_light::LOBPCG_light(const Epetra_Comm &_Comm, const Epetra_Operator *KK, 
                      const Epetra_Operator *PP, int _blk,
                      double _tol, int _maxIter, int _verb) :
            myVerify(_Comm),
@@ -74,7 +74,7 @@ LOBPCG::LOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
 }
 
 
-LOBPCG::LOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
+LOBPCG_light::LOBPCG_light(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
                      const Epetra_Operator *MM, const Epetra_Operator *PP, int _blk,
                      double _tol, int _maxIter, int _verb,
                      double *_weight) :
@@ -120,7 +120,7 @@ LOBPCG::LOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
 }
 
 
-LOBPCG::~LOBPCG() {
+LOBPCG_light::~LOBPCG_light() {
 
   if (resHistory) {
     delete[] resHistory;
@@ -130,7 +130,7 @@ LOBPCG::~LOBPCG() {
 }
 
 
-int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+int LOBPCG_light::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
 
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
@@ -204,25 +204,18 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
 
   // Define local block vectors
   //
-  // MX = Working vectors (storing M*X if M is specified, else pointing to X)
-  // KX = Working vectors (storing K*X)
-  //
   // R = Residuals
   //
   // H = Preconditioned search space
-  // MH = Working vectors (storing M*H if M is specified, else pointing to H)
-  // KH = Working vectors (storing K*H)
   //
   // P = Search directions
-  // MP = Working vectors (storing M*P if M is specified, else pointing to P)
-  // KP = Working vectors (storing K*P)
 
   int xr = Q.MyLength();
   Epetra_MultiVector X(View, Q, numEigen, blockSize);
   X.Random();
 
   int tmp;
-  tmp = (M == 0) ? 6*blockSize*xr : 9*blockSize*xr;
+  tmp = 3*blockSize*xr;
 
   double *work1 = new (nothrow) double[tmp]; 
   if (work1 == 0) {
@@ -237,31 +230,14 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
 
   double *tmpD = work1;
 
-  Epetra_MultiVector KX(View, Q.Map(), tmpD, xr, blockSize);
-  tmpD = tmpD + xr*blockSize;
-
-  Epetra_MultiVector MX(View, Q.Map(), (M) ? tmpD : X.Values(), xr, blockSize);
-  tmpD = (M) ? tmpD + xr*blockSize : tmpD;
-
   Epetra_MultiVector R(View, Q.Map(), tmpD, xr, blockSize);
   tmpD = tmpD + xr*blockSize;
 
   Epetra_MultiVector H(View, Q.Map(), tmpD, xr, blockSize);
   tmpD = tmpD + xr*blockSize;
 
-  Epetra_MultiVector KH(View, Q.Map(), tmpD, xr, blockSize);
-  tmpD = tmpD + xr*blockSize;
-
-  Epetra_MultiVector MH(View, Q.Map(), (M) ? tmpD : H.Values(), xr, blockSize);
-  tmpD = (M) ? tmpD + xr*blockSize : tmpD;
-
   Epetra_MultiVector P(View, Q.Map(), tmpD, xr, blockSize);
   tmpD = tmpD + xr*blockSize;
-
-  Epetra_MultiVector KP(View, Q.Map(), tmpD, xr, blockSize);
-  tmpD = tmpD + xr*blockSize;
-
-  Epetra_MultiVector MP(View, Q.Map(), (M) ? tmpD : P.Values(), xr, blockSize);
 
   // Define arrays
   //
@@ -329,6 +305,9 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
   int nFound = blockSize;
   int i, j;
 
+  double minNorm = 1000*tolEigenSolve;
+  bool hasNextVectors = false;
+
   if (localVerbose > 0) {
     cout << endl;
     cout << " *|* Problem: ";
@@ -339,7 +318,7 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
     if (Prec)
       cout << " with preconditioner";
     cout << endl;
-    cout << " *|* Algorithm = LOBPCG" << endl;
+    cout << " *|* Algorithm = LOBPCG (Small memory requirements)" << endl;
     cout << " *|* Size of blocks = " << blockSize << endl;
     cout << " *|* Number of requested eigenvalues = " << numEigen << endl;
     cout.precision(2);
@@ -367,44 +346,36 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
       reStart = false;
       localSize = blockSize;
 
-      if (nFound > 0) {
+      hasNextVectors = false;
+      minNorm = 1000*tolEigenSolve;
 
-        Epetra_MultiVector X2(View, X, blockSize-nFound, nFound);
-        Epetra_MultiVector MX2(View, MX, blockSize-nFound, nFound);
-        Epetra_MultiVector KX2(View, KX, blockSize-nFound, nFound);
+      // Apply the mass matrix to X
+      // Note: Use P as work space
+      timeMassOp -= MyWatch.WallTime();
+      if (M)
+        M->Apply(X, P);
+      else
+        memcpy(P.Values(), X.Values(), xr*blockSize*sizeof(double));
+      timeMassOp += MyWatch.WallTime();
+      massOp += blockSize;
 
-        // Apply the mass matrix to X
-        timeMassOp -= MyWatch.WallTime();
-        if (M)
-          M->Apply(X2, MX2);
-        timeMassOp += MyWatch.WallTime();
-        massOp += nFound;
-
-        if (knownEV > 0) {
-          // Orthonormalize X against the known eigenvectors with Gram-Schmidt
-          // Note: Use R as a temporary work space
-          Epetra_MultiVector copyQ(View, Q, 0, knownEV);
-          timeOrtho -= MyWatch.WallTime();
-          info = modalTool.massOrthonormalize(X, MX, M, copyQ, nFound, 1, R.Values());
-          timeOrtho += MyWatch.WallTime();
-          // Exit the code if the orthogonalization did not succeed
-          if (info < 0) {
-            info = -10;
-            if (vectWeight)
-              delete vectWeight;
-            delete[] work1;
-            delete[] work2;
-            return info;
-          }
+      if ((knownEV > 0) && (nFound > 0)) {
+        // Orthonormalize X against the known eigenvectors with Gram-Schmidt
+        // Note: Use R as a temporary work space
+        Epetra_MultiVector copyQ(View, Q, 0, knownEV);
+        timeOrtho -= MyWatch.WallTime();
+        info = modalTool.massOrthonormalize(X, P, M, copyQ, nFound, 1, R.Values());
+        timeOrtho += MyWatch.WallTime();
+        // Exit the code if the orthogonalization did not succeed
+        if (info < 0) {
+          info = -10;
+          if (vectWeight)
+            delete vectWeight;
+          delete[] work1;
+          delete[] work2;
+          return info;
         }
-
-        // Apply the stiffness matrix to X
-        timeStifOp -= MyWatch.WallTime();
-        K->Apply(X2, KX2);
-        timeStifOp += MyWatch.WallTime();
-        stifOp += nFound;
-
-      } // if (nFound > 0)
+      } // if ((knownEV > 0) && (nFound > 0))
 
     } // if ((outerIter == 1) || (reStart == true))
     else {
@@ -423,24 +394,19 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
       // Apply the mass matrix on H
       timeMassOp -= MyWatch.WallTime();
       if (M)
-        M->Apply(H, MH);
+        M->Apply(H, R);
+      else
+        memcpy(R.Values(), H.Values(), xr*blockSize*sizeof(double));
       timeMassOp += MyWatch.WallTime();
       massOp += blockSize;
 
       if (knownEV > 0) {
         // Orthogonalize H against the known eigenvectors
-        // Note: Use R as a temporary work space
         Epetra_MultiVector copyQ(View, Q, 0, knownEV);
         timeOrtho -= MyWatch.WallTime();
-        modalTool.massOrthonormalize(H, MH, M, copyQ, blockSize, 1, R.Values());
+        modalTool.massOrthonormalize(H, R, M, copyQ, blockSize, 1);
         timeOrtho += MyWatch.WallTime();
       }
-
-      // Apply the stiffness matrix to H
-      timeStifOp -= MyWatch.WallTime();
-      K->Apply(H, KH);
-      timeStifOp += MyWatch.WallTime();
-      stifOp += blockSize;
 
       if (localSize == blockSize)
         localSize += blockSize;
@@ -449,36 +415,82 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
 
     // Form "local" mass and stiffness matrices
     // Note: Use S as a temporary workspace
-    timeLocalProj -= MyWatch.WallTime();
-    modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, KX.Values(), xr,
-                              KK, localSize, S);
-    modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, MX.Values(), xr,
-                              MM, localSize, S);
-    if (localSize > blockSize) {
-      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, KH.Values(), xr,
-                                KK + blockSize*localSize, localSize, S);
-      modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, KH.Values(), xr,
-                                KK + blockSize*localSize + blockSize, localSize, S);
-      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, MH.Values(), xr,
+    if (localSize == blockSize) {
+      // P stores M*X
+      timeLocalProj -= MyWatch.WallTime();
+      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, P.Values(), xr,
+                                MM, localSize, S);
+      timeLocalProj += MyWatch.WallTime();
+      // Put K*X in H
+      timeStifOp -= MyWatch.WallTime();
+      K->Apply(X, H);
+      timeStifOp += MyWatch.WallTime();
+      stifOp += blockSize;
+      timeLocalProj -= MyWatch.WallTime();
+      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, H.Values(), xr,
+                                KK, localSize, S);
+      timeLocalProj += MyWatch.WallTime();
+    }
+    else {
+      // Put diagonal matrices in first block
+      timeLocalProj -= MyWatch.WallTime();
+      for (i = 0; i < blockSize; ++i) {
+        memset(KK + i*localSize, 0, i*sizeof(double));
+        KK[i + i*localSize] = theta[i];
+        memset(MM + i*localSize, 0, i*sizeof(double));
+        MM[i + i*localSize] = 1.0;
+      }
+      timeLocalProj += MyWatch.WallTime();
+      // R stores M*H
+      timeLocalProj -= MyWatch.WallTime();
+      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, R.Values(), xr,
                                 MM + blockSize*localSize, localSize, S);
-      modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, MH.Values(), xr,
+      modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, R.Values(), xr,
                                 MM + blockSize*localSize + blockSize, localSize, S);
+      timeLocalProj += MyWatch.WallTime();
+      // Put K*H in R
+      timeStifOp -= MyWatch.WallTime();
+      K->Apply(H, R);
+      timeStifOp += MyWatch.WallTime();
+      stifOp += blockSize;
+      timeLocalProj -= MyWatch.WallTime();
+      modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, R.Values(), xr,
+                                KK + blockSize*localSize, localSize, S);
+      modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, R.Values(), xr,
+                                KK + blockSize*localSize + blockSize, localSize, S);
+      timeLocalProj += MyWatch.WallTime();
       if (localSize > twoBlocks) {
-        modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, KP.Values(), xr,
-                                  KK + twoBlocks*localSize, localSize, S);
-        modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, KP.Values(), xr,
-                                  KK + twoBlocks*localSize + blockSize, localSize, S);
-        modalTool.localProjection(blockSize, blockSize, xr, P.Values(), xr, KP.Values(), xr,
-                                  KK + twoBlocks*localSize + twoBlocks, localSize, S);
-        modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, MP.Values(), xr,
+        // Put M*P in R
+        timeMassOp -= MyWatch.WallTime();
+        if (M)
+          M->Apply(P, R);
+        else
+          memcpy(R.Values(), P.Values(), xr*blockSize*sizeof(double));
+        timeMassOp += MyWatch.WallTime();
+        massOp += blockSize;
+        timeLocalProj -= MyWatch.WallTime();
+        modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, R.Values(), xr,
                                   MM + twoBlocks*localSize, localSize, S);
-        modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, MP.Values(), xr,
+        modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, R.Values(), xr,
                                   MM + twoBlocks*localSize + blockSize, localSize, S);
-        modalTool.localProjection(blockSize, blockSize, xr, P.Values(), xr, MP.Values(), xr,
+        modalTool.localProjection(blockSize, blockSize, xr, P.Values(), xr, R.Values(), xr,
                                   MM + twoBlocks*localSize + twoBlocks, localSize, S);
+        timeLocalProj += MyWatch.WallTime();
+        // Put K*P in R
+        timeStifOp -= MyWatch.WallTime();
+        K->Apply(P, R);
+        timeStifOp += MyWatch.WallTime();
+        stifOp += blockSize;
+        timeLocalProj -= MyWatch.WallTime();
+        modalTool.localProjection(blockSize, blockSize, xr, X.Values(), xr, R.Values(), xr,
+                                  KK + twoBlocks*localSize, localSize, S);
+        modalTool.localProjection(blockSize, blockSize, xr, H.Values(), xr, R.Values(), xr,
+                                  KK + twoBlocks*localSize + blockSize, localSize, S);
+        modalTool.localProjection(blockSize, blockSize, xr, P.Values(), xr, R.Values(), xr,
+                                  KK + twoBlocks*localSize + twoBlocks, localSize, S);
+        timeLocalProj += MyWatch.WallTime();
       } // if (localSize > twoBlocks)
-    } // if (localSize > blockSize)
-    timeLocalProj += MyWatch.WallTime();
+    } // if (localSize == blockSize)
 
     // Perform a spectral decomposition
     timeLocalSolve -= MyWatch.WallTime();
@@ -526,34 +538,94 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
       localSize = twoBlocks;
     }
 
+    // Update the iterate and, if needed, define the next Ritz vectors
+    if (localSize == twoBlocks) {
+      if (minNorm < 10*tolEigenSolve) {
+        timeRestart -= MyWatch.WallTime();
+        int numVec = (numEigen > knownEV + blockSize) ? blockSize : numEigen - knownEV - 1;
+        double *pointerS = S + blockSize*localSize;
+        double *pointerQ = Q.Values() + knownEV*xr;
+        callBLAS.GEMM('N', 'N', xr, numVec, blockSize, 1.0, X.Values(), xr,
+                      pointerS, localSize, 0.0, pointerQ, xr);
+        callBLAS.GEMM('N', 'N', xr, numVec, blockSize, 1.0, H.Values(), xr,
+                      pointerS + blockSize, localSize, 1.0, pointerQ, xr);
+        hasNextVectors = true;
+        timeRestart += MyWatch.WallTime();
+      }
+      timeLocalUpdate -= MyWatch.WallTime();
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr,
+                    S + blockSize, localSize, 0.0, P.Values(), xr);
+      memcpy(R.Values(), X.Values(), xr*blockSize*sizeof(double));
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr,
+                    S, localSize, 0.0, X.Values(), xr);
+      X.Update(1.0, P, 1.0);
+      timeLocalUpdate += MyWatch.WallTime();
+    }
+    if (localSize == threeBlocks) {
+      if (minNorm < 10*tolEigenSolve) {
+        timeRestart -= MyWatch.WallTime();
+        int numVec = (numEigen > knownEV + blockSize) ? blockSize : numEigen - knownEV - 1;
+        double *pointerS = S + blockSize*localSize;
+        double *pointerQ = Q.Values() + knownEV*xr;
+        callBLAS.GEMM('N', 'N', xr, numVec, blockSize, 1.0, X.Values(), xr,
+                      pointerS, localSize, 0.0, pointerQ, xr);
+        // Note: We use the contiguity of [H, P] in the memory
+        callBLAS.GEMM('N', 'N', xr, numVec, twoBlocks, 1.0, H.Values(), xr,
+                      pointerS + blockSize, localSize, 1.0, pointerQ, xr);
+        hasNextVectors = true;
+        timeRestart += MyWatch.WallTime();
+      }
+      timeLocalUpdate -= MyWatch.WallTime();
+      memcpy(R.Values(), P.Values(), xr*blockSize*sizeof(double));
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr,
+                    S + blockSize, localSize, 0.0, P.Values(), xr);
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr,
+                    S + twoBlocks, localSize, 1.0, P.Values(), xr);
+      memcpy(R.Values(), X.Values(), xr*blockSize*sizeof(double));
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr,
+                    S, localSize, 0.0, X.Values(), xr);
+      X.Update(1.0, P, 1.0);
+      timeLocalUpdate += MyWatch.WallTime();
+    }
+
     // Compute the residuals
-    timeResidual -= MyWatch.WallTime();
-    callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, KX.Values(), xr,
-                  S, localSize, 0.0, R.Values(), xr);
-    if (localSize >= twoBlocks) {
-      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, KH.Values(), xr,
-                    S + blockSize, localSize, 1.0, R.Values(), xr);
-      if (localSize == threeBlocks) {
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, KP.Values(), xr,
-                      S + twoBlocks, localSize, 1.0, R.Values(), xr);
-      }
+    if (localSize == blockSize) {
+      timeResidual -= MyWatch.WallTime();
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr, S, blockSize,
+                    0.0, R.Values(), xr);
+      timeResidual += MyWatch.WallTime();
+      timeLocalUpdate -= MyWatch.WallTime();
+      memcpy(H.Values(), X.Values(), xr*blockSize*sizeof(double));
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr, S, blockSize,
+                    0.0, X.Values(), xr);
+      timeLocalUpdate += MyWatch.WallTime();
+      // Note: We scale S
+      timeResidual -= MyWatch.WallTime();
+      for (j = 0; j < blockSize; ++j)
+        callBLAS.SCAL(localSize, theta[j], S + j*localSize);
+      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, -1.0, P.Values(), xr, S, blockSize,
+                    1.0, R.Values(), xr);
+      timeResidual += MyWatch.WallTime();
+      // Note: S is not scaled back to its original value
     }
-    for (j = 0; j < blockSize; ++j)
-      callBLAS.SCAL(localSize, theta[j], S + j*localSize);
-    callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, -1.0, MX.Values(), xr,
-                  S, localSize, 1.0, R.Values(), xr);
-    if (localSize >= twoBlocks) {
-      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, -1.0, MH.Values(), xr,
-                    S + blockSize, localSize, 1.0, R.Values(), xr);
-      if (localSize == threeBlocks) {
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, -1.0, MP.Values(), xr,
-                      S + twoBlocks, localSize, 1.0, R.Values(), xr);
-      }
+    else {
+      timeStifOp -= MyWatch.WallTime();
+      K->Apply(X, R);
+      timeStifOp += MyWatch.WallTime();
+      stifOp += blockSize;
+      timeMassOp -= MyWatch.WallTime();
+      if (M)
+        M->Apply(X, H);
+      else
+        memcpy(H.Values(), X.Values(), xr*blockSize*sizeof(double));
+      timeMassOp += MyWatch.WallTime();
+      massOp += blockSize;
+      timeResidual -= MyWatch.WallTime();
+      for (j = 0; j < blockSize; ++j)
+        callBLAS.AXPY(xr, -theta[j], H.Values() + j*xr, R.Values() + j*xr);
+      timeResidual += MyWatch.WallTime();
     }
-    for (j = 0; j < blockSize; ++j)
-      callBLAS.SCAL(localSize, 1.0/theta[j], S + j*localSize);
-    timeResidual += MyWatch.WallTime();
-    
+
     // Compute the norms of the residuals
     timeNorm -= MyWatch.WallTime();
     if (vectWeight)
@@ -568,6 +640,7 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
       normR[j] = (theta[j] == 0.0) ? normR[j] : normR[j]/theta[j];
       if (normR[j] < tolEigenSolve) 
         nFound += 1;
+      minNorm = (normR[j] < minNorm) ? normR[j] : minNorm;
     }
     timeNorm += MyWatch.WallTime();
 
@@ -602,70 +675,14 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
     }
 
     if (nFound == 0) {
-      // Update the spaces
-      // Note: Use R as a temporary work space
-      timeLocalUpdate -= MyWatch.WallTime();
-      memcpy(R.Values(), X.Values(), xr*blockSize*sizeof(double));
-      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr, S, localSize,
-                    0.0, X.Values(), xr);
-      memcpy(R.Values(), KX.Values(), xr*blockSize*sizeof(double));
-      callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr, S, localSize,
-                    0.0, KX.Values(), xr);
-      if (M) {
-        memcpy(R.Values(), MX.Values(), xr*blockSize*sizeof(double));
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr, S, localSize,
-                      0.0, MX.Values(), xr);
-      }
-      if (localSize == twoBlocks) {
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr, 
-                      S+blockSize, localSize, 0.0, P.Values(), xr);
-        callBLAS.AXPY(xr*blockSize, 1.0, P.Values(), X.Values());
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, KH.Values(), xr, 
-                      S+blockSize, localSize, 0.0, KP.Values(), xr);
-        callBLAS.AXPY(xr*blockSize, 1.0, KP.Values(), KX.Values());
-        if (M) {
-          callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, MH.Values(), xr, 
-                        S+blockSize, localSize, 0.0, MP.Values(), xr);
-          callBLAS.AXPY(xr*blockSize, 1.0, MP.Values(), MX.Values());
-        }
-      } // if (localSize == twoBlocks)
-      if (localSize == threeBlocks) {
-        memcpy(R.Values(), P.Values(), xr*blockSize*sizeof(double));
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr, 
-                      S + twoBlocks, localSize, 0.0, P.Values(), xr);
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, H.Values(), xr, 
-                      S + blockSize, localSize, 1.0, P.Values(), xr);
-        callBLAS.AXPY(xr*blockSize, 1.0, P.Values(), X.Values());
-        memcpy(R.Values(), KP.Values(), xr*blockSize*sizeof(double));
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr,
-                      S + twoBlocks, localSize, 0.0, KP.Values(), xr);
-        callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, KH.Values(), xr,
-                      S + blockSize, localSize, 1.0, KP.Values(), xr);
-        callBLAS.AXPY(xr*blockSize, 1.0, KP.Values(), KX.Values());
-        if (M) {
-          memcpy(R.Values(), MP.Values(), xr*blockSize*sizeof(double));
-          callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, R.Values(), xr,
-                        S + twoBlocks, localSize, 0.0, MP.Values(), xr);
-          callBLAS.GEMM('N', 'N', xr, blockSize, blockSize, 1.0, MH.Values(), xr,
-                        S + blockSize, localSize, 1.0, MP.Values(), xr);
-          callBLAS.AXPY(xr*blockSize, 1.0, MP.Values(), MX.Values());
-        }
-      } // if (localSize == threeBlocks)
-      timeLocalUpdate += MyWatch.WallTime();
-      // Compute the new residuals
-      timeResidual -= MyWatch.WallTime();
-      memcpy(R.Values(), KX.Values(), blockSize*xr*sizeof(double));
-      for (j = 0; j < blockSize; ++j) 
-        callBLAS.AXPY(xr, -theta[j], MX.Values() + j*xr, R.Values() + j*xr);
-      timeResidual += MyWatch.WallTime();
       // When required, monitor some orthogonalities
       if (verbose > 2) {
         if (knownEV == 0) {
-          accuracyCheck(&X, &MX, &R, 0, 0, 0);
+          accuracyCheck(&X, 0, &R, 0, 0, 0);
         }
         else {
           Epetra_MultiVector copyQ(View, Q, 0, knownEV);
-          accuracyCheck(&X, &MX, &R, &copyQ, (localSize>blockSize) ? &H : 0,
+          accuracyCheck(&X, 0, &R, &copyQ, (localSize>blockSize) ? &H : 0,
                         (localSize>twoBlocks) ? &P : 0);
         }
       } // if (verbose > 2)
@@ -674,49 +691,15 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
       continue;
     } // if (nFound == 0)
 
-    // Order the Ritz eigenvectors by putting the converged vectors at the beginning
-    int firstIndex = blockSize;
-    for (j = 0; j < blockSize; ++j) {
-      if (normR[j] >= tolEigenSolve) {
-        firstIndex = j;
-        break;
-      }
-    } // for (j = 0; j < blockSize; ++j)
-    while (firstIndex < nFound) {
-      for (j = firstIndex; j < blockSize; ++j) {
-        if (normR[j] < tolEigenSolve) {
-          // Swap the j-th and firstIndex-th position
-          callFortran.SWAP(localSize, S + j*localSize, 1, S + firstIndex*localSize, 1);
-          callFortran.SWAP(1, theta + j, 1, theta + firstIndex, 1);
-          callFortran.SWAP(1, normR + j, 1, normR + firstIndex, 1);
-          break;
-        }
-      } // for (j = firstIndex; j < blockSize; ++j)
-      for (j = 0; j < blockSize; ++j) {
-        if (normR[j] >= tolEigenSolve) {
-          firstIndex = j;
-          break;
-        }
-      } // for (j = 0; j < blockSize; ++j)
-    } // while (firstIndex < nFound)
-
-    // Copy the converged eigenvalues
-    memcpy(lambda + knownEV, theta, nFound*sizeof(double));
-
-    // Convergence test
+    // Exit the loop if enough vectors have converged
     if (knownEV + nFound >= numEigen) {
-      callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, X.Values(), xr,
-                    S, localSize, 0.0, R.Values(), xr);
-      if (localSize >= twoBlocks) {
-        callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, H.Values(), xr,
-                      S + blockSize, localSize, 1.0, R.Values(), xr);
-        if (localSize == threeBlocks) {
-          callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, P.Values(), xr,
-                        S + twoBlocks, localSize, 1.0, R.Values(), xr);
+      for (j = 0; j < blockSize; ++j) {
+        if (normR[j] < tolEigenSolve) {
+          lambda[knownEV] = theta[j];
+          memcpy(Q.Values() + knownEV*xr, X.Values() + j*xr, xr*sizeof(double)); 
+          knownEV += 1;
         }
       }
-      memcpy(Q.Values() + knownEV*xr, R.Values(), nFound*xr*sizeof(double));
-      knownEV += nFound;
       if (localVerbose == 1) {
         cout << endl;
         cout.precision(2);
@@ -728,65 +711,47 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
         cout << endl;
       }
       break;
-    }
+    } // if (knownEV >= numEigen)
 
-    // Store the converged eigenvalues and eigenvectors
-    callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, X.Values(), xr,
-                  S, localSize, 0.0, Q.Values() + knownEV*xr, xr);
-    if (localSize >= twoBlocks) {
-      callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, H.Values(), xr,
-                    S + blockSize, localSize, 1.0, Q.Values() + knownEV*xr, xr);
-      if (localSize >= threeBlocks)
-        callBLAS.GEMM('N', 'N', xr, nFound, blockSize, 1.0, P.Values(), xr,
-                      S + twoBlocks, localSize, 1.0, Q.Values() + knownEV*xr, xr);
-    }
-    knownEV += nFound;
-
-    // Define the restarting vectors
-    timeRestart -= MyWatch.WallTime();
-    int leftOver = (nevLocal < blockSize + nFound) ? nevLocal - nFound : blockSize;
-    double *Snew = S + nFound*localSize;
-    memcpy(R.Values(), X.Values(), blockSize*xr*sizeof(double));
-    callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, R.Values(), xr,
-                  Snew, localSize, 0.0, X.Values(), xr);
-    memcpy(R.Values(), KX.Values(), blockSize*xr*sizeof(double));
-    callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, R.Values(), xr,
-                  Snew, localSize, 0.0, KX.Values(), xr);
-    if (M) {
-      memcpy(R.Values(), MX.Values(), blockSize*xr*sizeof(double));
-      callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, R.Values(), xr,
-                    Snew, localSize, 0.0, MX.Values(), xr);
-    }
-    if (localSize >= twoBlocks) {
-      callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, H.Values(), xr,
-                    Snew+blockSize, localSize, 1.0, X.Values(), xr);
-      callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, KH.Values(), xr,
-                    Snew+blockSize, localSize, 1.0, KX.Values(), xr);
-      if (M) {
-        callBLAS.GEMM('N','N', xr, leftOver, blockSize, 1.0, MH.Values(), xr,
-                      Snew+blockSize, localSize, 1.0, MX.Values(), xr);
-      }
-      if (localSize >= threeBlocks) {
-        callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, P.Values(), xr,
-                      Snew+twoBlocks, localSize, 1.0, X.Values(), xr);
-        callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, KP.Values(), xr,
-                      Snew+twoBlocks, localSize, 1.0, KX.Values(), xr);
-        if (M) {
-          callBLAS.GEMM('N', 'N', xr, leftOver, blockSize, 1.0, MP.Values(), xr,
-                        Snew+twoBlocks, localSize, 1.0, MX.Values(), xr);
+    // Store the converged eigenpairs and define the new X iterate
+    if (hasNextVectors == true) {
+      // Q stores the next Ritz vectors
+      for (j = 0; j < blockSize; ++j) {
+        if (normR[j] < tolEigenSolve) {
+          lambda[knownEV] = theta[j];
+          callFortran.SWAP(xr, X.Values() + j*xr, 1, Q.Values() + knownEV*xr, 1);
+          knownEV += 1;
         }
       }
-    }
-    if (nevLocal < blockSize + nFound) {
-      // Put new random vectors at the end of the block
-      Epetra_MultiVector Xtmp(View, X, leftOver, blockSize - leftOver);
-      Xtmp.Random();
-    }
-    else {
       nFound = 0;
     }
+    else {
+      for (j = 0; j < blockSize; ++j) {
+        if (normR[j] < tolEigenSolve) {
+          lambda[knownEV] = theta[j];
+          memcpy(Q.Values() + knownEV*xr, X.Values() + j*xr, xr*sizeof(double)); 
+          knownEV += 1;
+        }
+      }
+      // Replace converged vectors with random vectors
+      timeRestart -= MyWatch.WallTime();
+      nFound = 0;
+      for  (j = 0; j < blockSize; ++j) {
+        if (normR[j] >= tolEigenSolve) {
+          if (nFound > 0) 
+            memcpy(X.Values() + (j-nFound)*xr, X.Values() + j*xr, xr*sizeof(double));
+        }
+        else 
+          nFound += 1;
+      }
+      if (nFound > 0) {
+        // Put new random vectors at the end of the block
+        Epetra_MultiVector Xtmp(View, X, blockSize - nFound,  nFound);
+        Xtmp.Random();
+      }
+      timeRestart += MyWatch.WallTime();
+    }
     reStart = true;
-    timeRestart += MyWatch.WallTime();
 
   } // for (outerIter = 1; outerIter <= maxIterEigenSolve; ++outerIter)
   timeOuterLoop += MyWatch.WallTime();
@@ -810,7 +775,7 @@ int LOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int sta
 }
 
 
-void LOBPCG::accuracyCheck(const Epetra_MultiVector *X, const Epetra_MultiVector *MX,
+void LOBPCG_light::accuracyCheck(const Epetra_MultiVector *X, const Epetra_MultiVector *MX,
                        const Epetra_MultiVector *R, const Epetra_MultiVector *Q,
                        const Epetra_MultiVector *H, const Epetra_MultiVector *P) const {
 
@@ -891,7 +856,7 @@ void LOBPCG::accuracyCheck(const Epetra_MultiVector *X, const Epetra_MultiVector
 }
 
 
-void LOBPCG::initializeCounters() {
+void LOBPCG_light::initializeCounters() {
 
   historyCount = 0;
   if (resHistory) {
@@ -926,19 +891,19 @@ void LOBPCG::initializeCounters() {
 }
 
 
-void LOBPCG::algorithmInfo() const {
+void LOBPCG_light::algorithmInfo() const {
 
   int myPid = MyComm.MyPID();
   
   if (myPid ==0) {
-    cout << " Algorithm: LOBPCG (block version) with Cholesky-based local eigensolver\n";
+    cout << " Algorithm: LOBPCG (block version) with storage for 4 blocks of vectors\n";
     cout << " Block Size: " << blockSize << endl;
   }
 
 }
 
 
-void LOBPCG::historyInfo() const {
+void LOBPCG_light::historyInfo() const {
 
   if (resHistory) {
     int j;
@@ -959,7 +924,7 @@ void LOBPCG::historyInfo() const {
 }
 
 
-void LOBPCG::memoryInfo() const {
+void LOBPCG_light::memoryInfo() const {
 
   int myPid = MyComm.MyPID();
 
@@ -987,7 +952,7 @@ void LOBPCG::memoryInfo() const {
 }
 
 
-void LOBPCG::operationInfo() const {
+void LOBPCG_light::operationInfo() const {
 
   int myPid = MyComm.MyPID();
   
@@ -1027,7 +992,7 @@ void LOBPCG::operationInfo() const {
 }
 
 
-void LOBPCG::timeInfo() const {
+void LOBPCG_light::timeInfo() const {
 
   int myPid = MyComm.MyPID();
   

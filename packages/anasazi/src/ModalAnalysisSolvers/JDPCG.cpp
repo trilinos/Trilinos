@@ -115,8 +115,8 @@ JDPCG::~JDPCG() {
 
 
 int JDPCG::jacobiPreconditioner(const Epetra_MultiVector &B, Epetra_MultiVector &PrecB,
-                       int sizeQ, double *invQtMPMQ, int ldQtMPMQ, double *MQ, double *PMQ,
-                       double *work) {
+                       const Epetra_MultiVector *U, const Epetra_MultiVector *V,
+                       double *invQtMPMQ, int ldQtMPMQ, double *PMQ, double *work, double *WS) {
 
   // This routine applies the "projected" preconditioner to the vectors B and stores
   // the result in the vectors PrecB.
@@ -127,44 +127,90 @@ int JDPCG::jacobiPreconditioner(const Epetra_MultiVector &B, Epetra_MultiVector 
   //
   // B = Input vectors
   // PrecB = Preconditioned vectors
+  // V = converged eigenvectors
+  // U = tentative eigenvectors to be corrected.
   //
-  // sizeQ = Number of column vectors in Q
+  // Note: Q = [V, U]
   //
   // invQtMPMQ = Factor form of the matrix Q^t*M*P^{-1}*M*Q (from POTRF)
   // ldQtMPMQ = Leading dimension for invQtMPMQ
   //
-  // MQ = Array to store the column vectors M*Q
-  //      Assumption: MQ has the same distribution than B over the processors
   // PMQ = Array to store the column vectors P^{-1}*M*Q
   //      Assumption: PMQ has the same distribution than B over the processors
   //
-  // work = Workspace array of size 2 * (# of columns in Q) * (# of columns in X) 
+  // work = Workspace array of size 2 * (# of columns in Q) * (# of columns in B) 
+  //
+  // WS = Workspace array of size (# of rows in B) * (# of columns in B)
 
   int info = 0;
 
   int bC = B.NumVectors();
   int bR = B.MyLength();
 
+  // Compute P^{-1} B
   timeCorrectionPrec -= MyWatch.WallTime();
-
-  // Apply (I - P^{-1}MQ ( Q^tMP^{-1}MQ )^{-1} Q^t M) P^{-1}
-
   if (Prec) {
     Prec->ApplyInverse(B, PrecB);
   }
   else {
     memcpy(PrecB.Values(), B.Values(), bR*bC*sizeof(double));
   }
+  timeCorrectionPrec += MyWatch.WallTime();
 
-  callBLAS.GEMM('T', 'N', sizeQ, bC, bR, 1.0, MQ, bR, PrecB.Values(), bR, 
+  int uC = U->NumVectors();
+  int vC = (V) ? V->NumVectors() : 0;
+
+  int sizeQ = uC + vC;
+
+  // Compute Q^t M P^{-t} B
+  callBLAS.GEMM('T', 'N', sizeQ, bC, bR, 1.0, PMQ, bR, B.Values(), bR, 
                 0.0, work + sizeQ*bC, sizeQ);
   MyComm.SumAll(work + sizeQ*bC, work, sizeQ*bC);
 
+  memcpy(work + sizeQ*bC, work, sizeQ*bC*sizeof(double));
+
+  // Compute ( Q^t M P^{-1} M Q )^{-1} Q^t M P^{-t} B
   callLAPACK.POTRS('U', sizeQ, bC, invQtMPMQ, ldQtMPMQ, work, sizeQ, &info);
 
+  // Subtract  P^{-1} M Q ( Q^t M P^{-1} M Q )^{-1} Q^t M P^{-t} B from P^{-t} B
   callBLAS.GEMM('N', 'N', bR, bC, sizeQ, -1.0, PMQ, bR, work, sizeQ, 1.0, PrecB.Values(), bR);
 
-  timeCorrectionPrec += MyWatch.WallTime();
+  Epetra_MultiVector MPB(View, B.Map(), WS, bR, bC);
+  M->Apply(PrecB, MPB);
+
+  // Compute Q^t M PrecB
+  callBLAS.GEMM('T', 'N', uC, bC, bR, 1.0, U->Values(), bR, MPB.Values(), bR, 
+                0.0, work + vC + sizeQ*bC, sizeQ);
+  if (V) {
+    callBLAS.GEMM('T', 'N', vC, bC, bR, 1.0, V->Values(), bR, MPB.Values(), bR, 
+                  0.0, work + sizeQ*bC, sizeQ);
+  }
+  MyComm.SumAll(work + sizeQ*bC, work, sizeQ*bC);
+
+  // Test for second projection
+  double *Mnorm = new double[bC];
+  MPB.Dot(PrecB, Mnorm);
+
+  bool doSecond = false;
+  for (int j = 0; j < bC; ++j) {
+    double tolOrtho = 1.0e-28*Mnorm[j];
+    for (int i = 0; i < sizeQ; ++i) {
+      double tmp = work[i + j*sizeQ];
+      if (tmp*tmp > tolOrtho) {
+        doSecond = true;
+        break;
+      }
+    } 
+    if (doSecond == true) {
+      // Compute ( Q^t M P^{-1} M Q )^{-1} Q^t M PrecB
+      callLAPACK.POTRS('U', sizeQ, bC, invQtMPMQ, ldQtMPMQ, work, sizeQ, &info);
+      // Subtract  P^{-1} M Q ( Q^t M P^{-1} M Q )^{-1} Q^t M PrecB from PrecB
+      callBLAS.GEMM('N', 'N', bR, bC, sizeQ, -1.0, PMQ, bR, work, sizeQ, 1.0, PrecB.Values(), bR);
+      break;
+    }
+  }
+  delete[] Mnorm;
+
   numCorrectionPrec += bC;
 
   return info;
@@ -172,22 +218,26 @@ int JDPCG::jacobiPreconditioner(const Epetra_MultiVector &B, Epetra_MultiVector 
 }
 
 
-int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &U,
-                    double eta, double tolCG, int iterMax, int sizeQ, double *invQtMPMQ,
-                    int ldQtMPMQ, double *MQ, double *PMQ, double *workPrec, double *workPCG,
-                    const Epetra_Vector *vectWeight) {
+int JDPCG::jacobiPCG(Epetra_MultiVector &Rlin, Epetra_MultiVector &Y,
+                     const Epetra_MultiVector *U, const Epetra_MultiVector *V, 
+                     double eta, double tolCG, int iterMax, 
+                     double *invQtMPMQ, int ldQtMPMQ, double *PMQ,
+                     double *workPrec, double *workPCG,
+                     const Epetra_Vector *vectWeight, const Epetra_MultiVector *orthoVec) {
 
   // This routine applies a block PCG algorithm to solve the equation
   //
   //      (I - MQ*Q^t) * ( K - eta * M ) * (I - Q*Q^t*M) Y = X
   //
-  // with (I - MQ*Q^t) * Y = Y
+  // with (I - Q*Q^t*M) * Y = Y
+  // with Q = [V, U]
   // where the preconditioner is given by
   //
   //      (I - MQ*Q^t) * Prec^{-1} * (I - Q*Q^t*M)
   //
-  // X = Input vectors
+  // Rlin = Input vectors
   // Y = Solution vectors
+  // V = converged eigenvectors
   // U = tentative eigenvectors to be corrected.
   //
   // eta = shift for the linear operator
@@ -195,13 +245,9 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
   // tolCG = Tolerance required for convergence
   // iterMax = Maximum number of iterations allowed
   //
-  // sizeQ = Number of column vectors in Q
-  //
   // invQtMPMQ = Factor form of the matrix Q^t*M*P^{-1}*M*Q (from POTRF)
   // ldQtMPMQ = Leading dimension for invQtMPMQ
   //
-  // MQ = Array to store the column vectors M*Q
-  //      Assumption: MQ has the same distribution than B over the processors
   // PMQ = Array to store the column vectors P^{-1}*M*Q
   //      Assumption: PMQ has the same distribution than B over the processors
   //
@@ -210,14 +256,16 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
   //
   // workPCG = Workspace array for the variables in the PCG algorithm
   //           Its size must allow the definition of
+  //           - 5 blocks of (# of columns in X) vectors distributed as X across the processors
   //           - 4 arrays of length (# of columns in X)
   //           - 3 square matrices of size (# of columns in X)
-  //           - 4 blocks of (# of columns in X) vectors distributed as X across the processors
   //
   // vectWeight = Weights for the L^2 norm to compute to check the eigenresiduals
+  //
+  // orthoVec = Space where CG computations are orthogonal to.
 
-  int xrow = X.MyLength();
-  int xcol = X.NumVectors();
+  int xrow = Y.MyLength();
+  int xcol = Y.NumVectors();
 
   int info = 0;
   int localVerbose = verbose*(MyComm.MyPID() == 0);
@@ -250,28 +298,22 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
   double *resNorm = pointer;
   pointer = pointer + xcol;
 
-  // Array to store the residuals of the linear system
-  double *valR = pointer;
-  pointer = pointer + xrow*xcol;
-  Epetra_MultiVector Rlin(View, X.Map(), valR, xrow, xcol);
-
   // Array to store the preconditioned residuals
   double *valZ = pointer;
   pointer = pointer + xrow*xcol;
-  Epetra_MultiVector Z(View, X.Map(), valZ, xrow, xcol);
+  Epetra_MultiVector Z(View, Y.Map(), valZ, xrow, xcol);
 
   // Array to store the search directions
   double *valP = pointer;
   pointer = pointer + xrow*xcol;
-  Epetra_MultiVector P(View, X.Map(), valP, xrow, xcol);
+  Epetra_MultiVector P(View, Y.Map(), valP, xrow, xcol);
 
   // Array to store the image of the search directions
   double *valKP = pointer;
   pointer = pointer + xrow*xcol;
-  Epetra_MultiVector KP(View, X.Map(), valKP, xrow, xcol);
+  Epetra_MultiVector KP(View, Y.Map(), valKP, xrow, xcol);
 
   // Arrays associated to the corrected eigenvectors
-  
   // Array to store the projected stiffness matrix
   double *UtKU = pointer;
   pointer = pointer + xcol*xcol;
@@ -288,18 +330,13 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
   double *oldEig = pointer;
   pointer = pointer + xcol;
   
-  // Array to store the image of the corrected eigenvectors
+  // Array to store the stiffness-image of the corrected eigenvectors
   double *valKU = pointer;
   pointer = pointer + xrow*xcol;
-  Epetra_MultiVector KU(View, X.Map(), valKU, xrow, xcol);
+  Epetra_MultiVector KU(View, Y.Map(), valKU, xrow, xcol);
 
-  // Array to store the image of the corrected eigenvectors
-  double *valMU = pointer;
-  pointer = pointer + xrow*xcol;
-  Epetra_MultiVector MU(View, X.Map(), valMU, xrow, xcol);
-
-  // Set the initial residuals to the right hand sides
-  memcpy(valR, X.Values(), xcol*xrow*sizeof(double));
+  // Array to store the mass-image of the corrected eigenvectors
+  Epetra_MultiVector MU(View, Y.Map(), (M) ? pointer : Z.Values(), xrow, xcol);
 
   // Set the initial guess to zero
   Y.PutScalar(0.0);
@@ -307,6 +344,12 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
   int ii;
   int iter;
   int nFound;
+
+  // Define the size of the "orthogonal" space [V, U]
+  // Note: We assume U is non zero and thus sizeQ is non zero.
+  int sizeQ = 0;
+  sizeQ += (U) ? U->NumVectors() : 0;
+  sizeQ += (V) ? V->NumVectors() : 0;
 
   bool isNegative = false;
 
@@ -328,18 +371,15 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
 
     // Apply the preconditioner
     timePCGPrec -= MyWatch.WallTime();
-    if (sizeQ) {
-      jacobiPreconditioner(Rlin, Z, sizeQ, invQtMPMQ, ldQtMPMQ, MQ, PMQ, workPrec);
-    }
-    else {
-      if (Prec) {
-        Prec->ApplyInverse(Rlin, Z);
-      }
-      else {
-        memcpy(Z.Values(), Rlin.Values(), xrow*xcol*sizeof(double));
-      }
-    }
+    jacobiPreconditioner(Rlin, Z, U, V, invQtMPMQ, ldQtMPMQ, PMQ, workPrec, MU.Values());
     timePCGPrec += MyWatch.WallTime();
+
+    if (orthoVec) {
+      // Note: Use MU as workspace
+      if (M)
+        M->Apply(Z, MU);
+      modalTool.massOrthonormalize(Z, MU, M, *orthoVec, blockSize, 1);
+    }
 
     // Define the new search directions
     if (iter == 1) {
@@ -375,9 +415,14 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
     if (eta != 0.0) {
       // Apply the mass matrix
       // Note: Use Z as a workspace
-      M->Apply(P, Z);
+      if (M) {
+        M->Apply(P, Z);
+        callBLAS.AXPY(xrow*xcol, -eta, Z.Values(), KP.Values());
+      }
+      else {
+        callBLAS.AXPY(xrow*xcol, -eta, P.Values(), KP.Values());
+      }
       numPCGmassOp += xcol;
-      callBLAS.AXPY(xrow*xcol, -eta, Z.Values(), KP.Values());
     }
     timePCGOpMult += MyWatch.WallTime();
 
@@ -412,6 +457,8 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
     if (isNegative == true) {
       if (localVerbose > 0) {
         cout << endl;
+        cout.precision(4);
+        cout.setf(ios::scientific, ios::floatfield);
         cout << " !! Negative eigenvalue in block PCG (" << da[ii] << ") !!\n";
         cout << endl;
       }
@@ -438,10 +485,6 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
     callBLAS.GEMM('N', 'N', xrow, xcol, xcol, 1.0, P.Values(), xrow, coeff, xcol,
                   1.0, Y.Values(), xrow);
 
-    // Update the corrected eigenvectors
-    callBLAS.GEMM('N', 'N', xrow, xcol, xcol, -1.0, P.Values(), xrow, coeff, xcol,
-                  1.0, U.Values(), xrow);
-    
     // Update the residuals for the linear system
     callBLAS.GEMM('N', 'N', xrow, xcol, xcol, -1.0, KP.Values(), xrow, coeff, xcol,
                   1.0, Rlin.Values(), xrow);
@@ -472,24 +515,33 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
       break;
     }
 
-    // Check the residuals for the corrected eigenvectors
-
     timePCGEigCheck -= MyWatch.WallTime();
     
+    // Check the residuals for the corrected eigenvectors
+    // Note: Use Z as workspace to store the corrected vectors
+    Z.Update(1.0, *U, -1.0, Y, 0.0);
+
     // Compute U^t K U
-    K->Apply(U, KU);
+    K->Apply(Z, KU);
     numPCGstifOp += xcol;
-    callBLAS.GEMM('T', 'N', xcol, xcol, xrow, 1.0, U.Values(), xrow, KU.Values(), xrow,
+    callBLAS.GEMM('T', 'N', xcol, xcol, xrow, 1.0, Z.Values(), xrow, KU.Values(), xrow,
                   0.0, workD, xcol);
     MyComm.SumAll(workD, UtKU, xcol*xcol);
 
     // Compute U^t M U
     // Note: Use coeff as storage space
-    M->Apply(U, MU);
-    numPCGmassOp += xcol;
-    callBLAS.GEMM('T', 'N', xcol, xcol, xrow, 1.0, U.Values(), xrow, MU.Values(), xrow,
-                  0.0, workD, xcol);
-    MyComm.SumAll(workD, coeff, xcol*xcol);
+    if (M) {
+      M->Apply(Z, MU);
+      numPCGmassOp += xcol;
+      callBLAS.GEMM('T', 'N', xcol, xcol, xrow, 1.0, Z.Values(), xrow, MU.Values(), xrow,
+                    0.0, workD, xcol);
+      MyComm.SumAll(workD, coeff, xcol*xcol);
+    }
+    else {
+      callBLAS.GEMM('T', 'N', xcol, xcol, xrow, 1.0, Z.Values(), xrow, Z.Values(), xrow,
+                    0.0, workD, xcol);
+      MyComm.SumAll(workD, coeff, xcol*xcol);
+    }
 
     nev = xcol;
     info = modalTool.directSolver(xcol, UtKU, xcol, coeff, xcol, nev, workD, xcol, theta, 0, 
@@ -503,10 +555,12 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
       return info; 
     } // if ((info < 0) || (nev < xcol))
     
-    // Compute the eigen-residual for the corrected vectors
+    // Compute the eigenresiduals for the corrected vectors
     // Note: Use Z as workspace to store the residuals
-    callBLAS.GEMM('N', 'N', xrow, xcol, xcol, 1.0, MU.Values(), xrow, workD, xcol,
-                  0.0, Z.Values(), xrow);
+    if (M) {
+      callBLAS.GEMM('N', 'N', xrow, xcol, xcol, 1.0, MU.Values(), xrow, workD, xcol,
+                    0.0, Z.Values(), xrow);
+    }
     for (ii = 0; ii < xcol; ++ii)
       callBLAS.SCAL(xrow, theta[ii], Z.Values() + ii*xrow);
     callBLAS.GEMM('N', 'N', xrow, xcol, xcol, 1.0, KU.Values(), xrow, workD, xcol,
@@ -549,6 +603,13 @@ int JDPCG::jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiV
 
 int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
+  return JDPCG::reSolve(numEigen, Q, lambda);
+
+}
+
+
+int JDPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
@@ -571,6 +632,10 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   // lambda (array of doubles) = Converged eigenvalues
   //                   At input, it must be of size numEigen + blockSize.
   //                   At exit, the first numEigen locations contain the eigenvalues requested.
+  //
+  // startingEV (integer) = Number of existing converged eigenvectors
+  //                   We assume that the user has check the eigenvectors and
+  //                   their M-orthonormality.
   //
   // Return information on status of computation
   // 
@@ -595,8 +660,8 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   // Check the input parameters
   
-  if (numEigen <= 0) {
-    return 0;
+  if (numEigen <= startingEV) {
+    return startingEV;
   }
 
   int info = myVerify.inputArguments(numEigen, K, M, Prec, Q, minimumSpaceDimension(numEigen));
@@ -633,52 +698,75 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     vectWeight = new Epetra_Vector(View, Q.Map(), normWeight);
   }
 
-  int knownEV = 0;
+  int knownEV = startingEV;
   int localVerbose = verbose*(myPid==0);
 
   // Define local block vectors
   //
-  // MQ = M-times converged eigenvectors + one working block
-  // 
   // PMQ = Preconditioned M-times converged eigenvectors + one working block
   //
   // KX = Working vectors (storing K times one block)
   //
   // R  = Working vectors (storing residuals for one block)
+  //
+  // MX = Working vectors (storing M times one block)
+  //
 
   int xr = Q.MyLength();
   int dimSearch = blockSize*numBlock;
 
   Epetra_MultiVector X(View, Q, 0, dimSearch + blockSize);
-  X.Random();
+  if (knownEV > 0) {
+    Epetra_MultiVector copyX(View, Q, knownEV, blockSize);
+    copyX.Random();
+  }
+  else {
+    X.Random();
+  }
 
-  int tmp;
-  tmp = 2*blockSize*xr;
-  tmp += (M) ? (numEigen + blockSize)*xr : 0;
-  tmp += (Prec) ? (numEigen + blockSize)*xr : 0;
+  int lwork = 0;
+  lwork += (numEigen-startingEV + blockSize)*xr + 2*blockSize*xr;
+  lwork += (M) ? blockSize*xr : 0;
 
-  double *work1 = new (nothrow) double[tmp]; 
-  if (work1 == 0) {
+  // Workspace for PCG
+  lwork += (maxIterLinearSolve > 0) ? 4*xr*blockSize + 6*blockSize + 4*blockSize*blockSize : 0;
+
+  // Workspace for JDCG
+  lwork += blockSize + dimSearch + 2*dimSearch*dimSearch;
+  lwork += 2*(numEigen-startingEV+blockSize)*(numEigen-startingEV+blockSize);
+  lwork += 2*(numEigen-startingEV+blockSize)*blockSize;
+
+  double *work = new (nothrow) double[lwork]; 
+  if (work == 0) {
     if (vectWeight)
       delete vectWeight;
     info = -30;
     return info;
   }
-  memRequested += sizeof(double)*tmp/(1024.0*1024.0);
+  memRequested += sizeof(double)*lwork/(1024.0*1024.0);
 
   highMem = (highMem > currentSize()) ? highMem : currentSize();
 
-  double *tmpD = work1;
-  Epetra_MultiVector KX(View, Q.Map(), tmpD, xr, blockSize);
-  tmpD = tmpD + blockSize*xr;
+  double *tmpD = work;
+
+  Epetra_MultiVector PMQ(View, Q.Map(), tmpD, xr, numEigen-startingEV+blockSize);
+  tmpD = tmpD + (numEigen-startingEV+blockSize)*xr;
 
   Epetra_MultiVector R(View, Q.Map(), tmpD, xr, blockSize);
   tmpD = tmpD + blockSize*xr;
 
-  Epetra_MultiVector MQ(View, Q.Map(), (M) ? tmpD : X.Values(), xr, numEigen+blockSize);
-  tmpD = (M) ? tmpD + (numEigen+blockSize)*xr : tmpD;
+  Epetra_MultiVector KX(View, Q.Map(), tmpD, xr, blockSize);
+  tmpD = tmpD + blockSize*xr;
 
-  Epetra_MultiVector PMQ(View, Q.Map(), (Prec) ? tmpD : MQ.Values(), xr, numEigen+blockSize);
+  Epetra_MultiVector MX(View, Q.Map(), tmpD, xr, blockSize);
+  tmpD = tmpD + blockSize*xr;
+
+  // Note: Use MX as workspace in PCG iterations
+  double *workPCG = 0;
+  if (maxIterLinearSolve > 0) {
+    workPCG = tmpD - blockSize*xr;
+    tmpD = tmpD + 4*xr*blockSize + 6*blockSize + 4*blockSize*blockSize;
+  }
 
   // theta = Store the local eigenvalues (size: dimSearch)
   //
@@ -688,82 +776,47 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   //
   // S = Local eigenvectors              (size: dimSearch x dimSearch)
   // 
-  // QtMPMQ = Projected "preconditioner" (size: (numEigen+blockSize) x (numEigen+blockSize))
+  // QtMPMQ = Projected "preconditioner" (size: (numEigen-startingEV+blockSize) ^ 2)
   //
-  // invQtMPMQ = Inverse of QtMPMQ       (size: (numEigen+blockSize) x (numEigen+blockSize))
+  // invQtMPMQ = Inverse of QtMPMQ       (size: (numEigen-startingEV+blockSize) ^ 2)
   //
-  // tmpArray = Temporary workspace      (size: 2*(numEigen+blockSize) x blockSize)
+  // tmpArray = Temporary workspace      (size: 2*(numEigen-startingEV+blockSize) x blockSize)
 
-  int lwork2 = blockSize + dimSearch + 2*dimSearch*dimSearch;
-  lwork2 += 2*(numEigen+blockSize)*(numEigen+blockSize) + 2*(numEigen+blockSize)*blockSize;
+  double *theta = tmpD;
+  tmpD = tmpD + dimSearch;
 
-  double *work2 = new (nothrow) double[lwork2];
-  if (work2 == 0) {
-    if (vectWeight)
-      delete vectWeight;
-    delete[] work1;
-    info = -30;
-    return info;
-  }
+  double *normR = tmpD;
+  tmpD = tmpD + blockSize;
 
-  highMem = (highMem > currentSize()) ? highMem : currentSize();
-
-  double *pointer = work2;
-
-  double *theta = pointer;
-  pointer = pointer + dimSearch;
-
-  double *normR = pointer;
-  pointer = pointer + blockSize;
-
-  double *KK = pointer;
-  pointer = pointer + dimSearch*dimSearch;
+  double *KK = tmpD;
+  tmpD = tmpD + dimSearch*dimSearch;
   memset(KK, 0, dimSearch*dimSearch*sizeof(double));
 
-  double *S = pointer;
-  pointer = pointer + dimSearch*dimSearch;
+  double *S = tmpD;
+  tmpD = tmpD + dimSearch*dimSearch;
 
-  double *QtMPMQ = pointer;
-  pointer = pointer + (numEigen+blockSize)*(numEigen+blockSize);
-  int ldQtMPMQ = numEigen + blockSize;
+  double *QtMPMQ = tmpD;
+  tmpD = tmpD + (numEigen-startingEV+blockSize)*(numEigen-startingEV+blockSize);
+  int ldQtMPMQ = numEigen - startingEV + blockSize;
 
-  double *invQtMPMQ = pointer;
-  pointer = pointer + (numEigen+blockSize)*(numEigen+blockSize);
+  double *invQtMPMQ = tmpD;
+  tmpD = tmpD + (numEigen-startingEV+blockSize)*(numEigen-startingEV+blockSize);
 
-  double *tmpArray = pointer;
-
-  memRequested += sizeof(double)*lwork2/(1024.0*1024.0);
+  double *tmpArray = tmpD;
 
   // Define an array to store the residuals history
-  if (localVerbose > 1) {
+  if (localVerbose > 2) {
     resHistory = new (nothrow) double[maxIterEigenSolve*blockSize];
     spaceSizeHistory = new (nothrow) int[maxIterEigenSolve];
     iterPCGHistory = new (nothrow) int[maxIterEigenSolve];
     if ((resHistory == 0) || (spaceSizeHistory == 0) || (iterPCGHistory == 0)) {
       if (vectWeight)
         delete vectWeight;
-      delete[] work1;
-      delete[] work2;
+      delete[] work;
       info = -30;
       return info;
     }
     historyCount = 0;
-  }
-
-  // Define workspace for PCG
-  double *workPCG = 0;
-  if (maxIterLinearSolve > 0) {
-    int lworkPCG = 6*xr*blockSize + 6*blockSize + 4*blockSize*blockSize;
-    workPCG = new (nothrow) double[lworkPCG];
-    if (workPCG == 0) {
-      if (vectWeight)
-        delete vectWeight;
-      delete[] work1;
-      delete[] work2;
-      return -30;
-    }
-    memRequested += sizeof(double)*lworkPCG/(1024.0*1024.0);
-    highMem = (highMem > currentSize()) ? highMem : currentSize();
   }
 
   // Miscellaneous definitions
@@ -773,6 +826,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   int i, j;
   int nFound = blockSize;
   int bStart = 0;
+  int offSet = 0;
   numRestart = 0;
 
   double tau = 0.0;
@@ -803,20 +857,27 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << "weighted L2-norm with user-provided weights" << endl;
     else
       cout << "L^2-norm" << endl;
+    if (startingEV > 0)
+      cout << " *|* Input converged eigenvectors = " << startingEV << endl;
     cout << "\n -- Start iterations -- \n";
   }
 
+  int maxBlock = (dimSearch/blockSize) - (knownEV/blockSize);
+
   timeOuterLoop -= MyWatch.WallTime();
-  outerIter = 1;
+  outerIter = 0;
   while (outerIter <= maxIterEigenSolve) {
 
     highMem = (highMem > currentSize()) ? highMem : currentSize();
 
-    Epetra_MultiVector MU(View, MQ, knownEV, blockSize);
-    Epetra_MultiVector PMU(View, PMQ, knownEV, blockSize);
+    Epetra_MultiVector PMX(View, PMQ, knownEV - startingEV, blockSize);
 
     int nb;
-    for (nb = bStart; nb < numBlock; ++nb) {
+    for (nb = bStart; nb < maxBlock; ++nb) {
+
+      outerIter += 1;
+      if (outerIter > maxIterEigenSolve)
+        break;
 
       int localSize = nb*blockSize;
 
@@ -824,7 +885,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
       timeMassOp -= MyWatch.WallTime();
       if (M)
-        M->Apply(Xcurrent, MU);
+        M->Apply(Xcurrent, MX);
       timeMassOp += MyWatch.WallTime();
       massOp += blockSize;
 
@@ -834,18 +895,24 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       if (nb == bStart) {
         if (nFound > 0) {
           if (knownEV == 0) {
-            info = modalTool.massOrthonormalize(Xcurrent, MU, M, Q, nFound, 2, R.Values());
+            info = modalTool.massOrthonormalize(Xcurrent, MX, M, Q, nFound, 2, R.Values());
           }
           else {
-            Epetra_MultiVector copyQ(View, X, 0, knownEV + localSize);
-            info = modalTool.massOrthonormalize(Xcurrent, MU, M, copyQ, nFound, 0, R.Values());
-          }
-        }
+            if (localSize == 0) {
+              Epetra_MultiVector copyQ(View, X, 0, knownEV);
+              info = modalTool.massOrthonormalize(Xcurrent, MX, M, copyQ, nFound, 0, R.Values());
+            }
+            else {
+              Epetra_MultiVector copyQ(View, X, knownEV, localSize);
+              info = modalTool.massOrthonormalize(Xcurrent, MX, M, copyQ, nFound, 0, R.Values());
+            } // if (localSize == 0)
+          } // if (knownEV == 0)
+        } // if (nFound > 0)
         nFound = 0;
       }
       else {
-        Epetra_MultiVector copyQ(View, X, 0, knownEV + localSize);
-        info = modalTool.massOrthonormalize(Xcurrent, MU, M, copyQ, blockSize, 0, R.Values());
+        Epetra_MultiVector copyQ(View, X, knownEV, localSize);
+        info = modalTool.massOrthonormalize(Xcurrent, MX, M, copyQ, blockSize, 0, R.Values());
       }
       timeOrtho += MyWatch.WallTime();
 
@@ -854,8 +921,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         info = -10;
         if (vectWeight)
           delete vectWeight;
-        delete[] work1;
-        delete[] work2;
+        delete[] work;
         if (workPCG)
           delete[] workPCG;
         return info;
@@ -868,10 +934,10 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
       if (verbose > 3) {
         if (knownEV + localSize == 0) 
-          accuracyCheck(&Xcurrent, &MU, 0);
+          accuracyCheck(&Xcurrent, &MX, 0);
         else {
           Epetra_MultiVector copyQ(View, X, 0, knownEV + localSize);
-          accuracyCheck(&Xcurrent, &MU, &copyQ);
+          accuracyCheck(&Xcurrent, &MX, &copyQ);
         }
         if (localVerbose > 0)
           cout << endl;
@@ -931,7 +997,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Apply the mass matrix on the new block
       timeMassOp -= MyWatch.WallTime();
       if (M)
-        M->Apply(KX, MU);
+        M->Apply(KX, MX);
       timeMassOp += MyWatch.WallTime();
       massOp += blockSize;
 
@@ -944,7 +1010,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Form the residuals
       timeResidual -= MyWatch.WallTime();
       for (j = 0; j < blockSize; ++j) {
-        callBLAS.AXPY(xr, -theta[j], MU.Values()+j*xr, R.Values()+j*xr);
+        callBLAS.AXPY(xr, -theta[j], MX.Values()+j*xr, R.Values()+j*xr);
       }
       timeResidual += MyWatch.WallTime();
       residual += blockSize;
@@ -975,12 +1041,12 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         cout << knownEV + nFound << endl;
       }
 
-      if (localVerbose > 1) {
+      if (localVerbose > 2) {
         memcpy(resHistory + blockSize*historyCount, normR, blockSize*sizeof(double));
         spaceSizeHistory[historyCount] = localSize + blockSize;
       }
 
-      if (localVerbose > 3) {
+      if (localVerbose > 1) {
         cout << endl;
         cout.precision(2);
         cout.setf(ios::scientific, ios::floatfield);
@@ -1001,8 +1067,9 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Exit the loop when some vectors have converged
       if (nFound > 0) {
         tolPCG = 1.0;
+        offSet = 0;
         nb += 1;
-        if (localVerbose > 1) {
+        if (localVerbose > 2) {
           iterPCGHistory[historyCount] = 0;
           historyCount += 1;
         }
@@ -1010,8 +1077,8 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       }
 
       // Exit the loop when all positions are filled
-      if ((numBlock > 1) && (nb == numBlock - 1)) {
-        if (localVerbose > 1) {
+      if ((maxBlock > 1) && (nb == maxBlock - 1)) {
+        if (localVerbose > 2) {
           iterPCGHistory[historyCount] = 0;
           historyCount += 1;
         }
@@ -1021,23 +1088,23 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Apply the preconditioner on the new direction
       if (Prec) {
         timePrecOp -= MyWatch.WallTime();
-        Prec->ApplyInverse(MU, PMU);
+        Prec->ApplyInverse(MX, PMX);
         timePrecOp += MyWatch.WallTime();
         precOp += blockSize;
       } // if (Prec)
       else {
-        memcpy(PMU.Values(), MU.Values(), blockSize*sizeof(double));
+        memcpy(PMX.Values(), MX.Values(), xr*blockSize*sizeof(double));
       } // if (Prec)
 
       // Update the upper triangular part of the matrix QtMPMQ
       // Note: Use tmpArray as a workspace
       timeBuildQtMPMQ -= MyWatch.WallTime();
-      int qLength = knownEV + blockSize;
-      callBLAS.GEMM('T', 'N', qLength, blockSize, xr, 1.0, PMQ.Values(), xr, MU.Values(), xr,
+      int qLength = knownEV - startingEV + blockSize;
+      callBLAS.GEMM('T', 'N', qLength, blockSize, xr, 1.0, PMQ.Values(), xr, MX.Values(), xr,
                     0.0, tmpArray + qLength*blockSize, qLength);
       MyComm.SumAll(tmpArray + qLength*blockSize, tmpArray, qLength*blockSize);
       for (j = 0; j < blockSize; ++j) {
-        memcpy(QtMPMQ + (knownEV+j)*ldQtMPMQ, tmpArray + j*qLength,
+        memcpy(QtMPMQ + (knownEV-startingEV+j)*ldQtMPMQ, tmpArray + j*qLength,
                qLength*sizeof(double));
       }
       timeBuildQtMPMQ += MyWatch.WallTime();
@@ -1060,7 +1127,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         // Restart as factorization failed
         if (localVerbose > 0) {
           cout << " Iteration " << outerIter;
-          cout << " - Failure for local factorization";
+          cout << " - Failure for local factorization (" << info << "/" << qLength << ")";
           cout << " - RESTART with new random search";
           cout << endl;
         }
@@ -1072,7 +1139,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         timeRestart += MyWatch.WallTime();
         nFound = blockSize;
         bStart = 0;
-        if (localVerbose > 1) {
+        if (localVerbose > 2) {
           iterPCGHistory[historyCount] = 0;
           historyCount += 1;
         }
@@ -1081,18 +1148,72 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
       // Correction equation
       // Note that the new working block U is stored in KX,
-      // while MQ contains M*U and PMQ contains P^{-1}*M*U
-      Epetra_MultiVector Xnext(View, X, (numBlock == 1) ? knownEV 
+      // while MX contains M*U and PMX contains P^{-1}*M*U
+      Epetra_MultiVector Xnext(View, X, (maxBlock == 1) ? knownEV 
                                                         : knownEV+localSize+blockSize, blockSize);
       if (normR[0] < sqrtTol) 
         eta = theta[0];
       else 
         eta = tau;
 
+      if (verbose > 3) {
+        double maxDotQ = 0.0;
+        if (knownEV > 0) {
+          Epetra_MultiVector copyQ(View, X, 0, knownEV);
+          maxDotQ = myVerify.errorOrthogonality(&copyQ, &R, 0);
+        }
+        double maxDotU = myVerify.errorOrthogonality(&KX, &R, 0);
+        if (myPid == 0) {
+          cout << " >> Orthogonality for the right hand side of the correction equation = ";
+          double tmp = (maxDotU > maxDotQ) ? maxDotU : maxDotQ;
+          cout.precision(4);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << tmp << endl << endl;
+        }
+      }
+
       timeCorrectionSolve -= MyWatch.WallTime();
-      info = jacobiPCG(R, Xnext, KX, eta, tolPCG, maxIterLinearSolve, qLength, invQtMPMQ,
-                       ldQtMPMQ, MQ.Values(), PMQ.Values(), tmpArray, workPCG, vectWeight);
+      if (startingEV > 0) {
+        Epetra_MultiVector startQ(View, X, 0, startingEV);
+        if (knownEV > startingEV) {
+          Epetra_MultiVector copyQ(View, X, startingEV, knownEV - startingEV);
+          info = jacobiPCG(R, Xnext, &KX, &copyQ, eta, tolPCG, maxIterLinearSolve, invQtMPMQ,
+                           ldQtMPMQ, PMQ.Values(), tmpArray, workPCG, vectWeight, &startQ);
+        }
+        else {
+          info = jacobiPCG(R, Xnext, &KX, 0, eta, tolPCG, maxIterLinearSolve, invQtMPMQ,
+                           ldQtMPMQ, PMQ.Values(), tmpArray, workPCG, vectWeight, &startQ);
+        }
+      }
+      else {
+        if (knownEV > 0) {
+          Epetra_MultiVector copyQ(View, X, 0, knownEV);
+          info = jacobiPCG(R, Xnext, &KX, &copyQ, eta, tolPCG, maxIterLinearSolve, invQtMPMQ,
+                           ldQtMPMQ, PMQ.Values(), tmpArray, workPCG, vectWeight);
+        }
+        else {
+          info = jacobiPCG(R, Xnext, &KX, 0, eta, tolPCG, maxIterLinearSolve, invQtMPMQ,
+                           ldQtMPMQ, PMQ.Values(), tmpArray, workPCG, vectWeight);
+        }
+      }
       timeCorrectionSolve += MyWatch.WallTime();
+
+      if (verbose > 3) {
+        double maxDotQ = 0.0;
+        if (knownEV > 0) {
+          Epetra_MultiVector copyQ(View, X, 0, knownEV);
+          maxDotQ = myVerify.errorOrthogonality(&copyQ, &Xnext, M);
+        }
+        double maxDotU = myVerify.errorOrthogonality(&KX, &Xnext, M);
+        if (myPid == 0) {
+          double tmp = (maxDotU > maxDotQ) ? maxDotU : maxDotQ;
+          cout << " >> Orthogonality for the solution of the correction equation = ";
+          cout.precision(4);
+          cout.setf(ios::scientific, ios::floatfield);
+          cout << tmp << endl << endl;
+        }
+      }
+
       numCorrectionSolve += blockSize;
       if (info < 0) {
         if ((info == -1) || (info == -maxIterLinearSolve-1)) {
@@ -1102,7 +1223,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
             cout << " - RESTART with new random search";
             cout << endl;
           }
-          if (localVerbose > 1) {
+          if (localVerbose > 2) {
             iterPCGHistory[historyCount] = -1;
             historyCount += 1;
           }
@@ -1118,14 +1239,14 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
           break;
         } // if ((info == -1) || (info == -iterMax-1))
         else {
-          if (localVerbose > 1) {
+          if (localVerbose > 2) {
             iterPCGHistory[historyCount] = (info < 0) ? -info : info;
             historyCount += 1;
           }
         } // if ((info == -1) || (info == -iterMax-1))
       } // if (info < 0)
       else {
-        if (localVerbose > 1) {
+        if (localVerbose > 2) {
           iterPCGHistory[historyCount] = info;
           historyCount += 1;
         }
@@ -1134,21 +1255,14 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
       tolPCG *= coefDecay;
 
-      if (numBlock == 1) {
-        memcpy(Xcurrent.Values(), KX.Values(), xr*blockSize*sizeof(double));
-      }
-      else {
-        outerIter += 1;
-        if (outerIter > maxIterEigenSolve)
-          break;
+      if (maxBlock == 1) {
+        Xcurrent.Update(1.0, KX, -1.0);
       }
 
-    } // for (nb = bstart; nb < numBlock; ++nb)
+    } // for (nb = bstart; nb < maxBlock; ++nb)
 
     if (outerIter > maxIterEigenSolve)
       break;
-    else
-      outerIter += 1;
 
     if (reStart == true) {
       reStart = false;
@@ -1181,13 +1295,13 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     } // if (knownEV + nFound >= numEigen)
 
     // Treat the particular case of one block
-    if ((numBlock == 1) && (nFound == 0)) {
+    if ((maxBlock == 1) && (nFound == 0)) {
       nFound = blockSize;
       continue;
     }
 
     // Define the restarting space when there is only one block
-    if (numBlock == 1) {
+    if (maxBlock == 1) {
       timeRestart -= MyWatch.WallTime();
       double *Xpointer = X.Values() + (knownEV+nFound)*xr;
       nFound = 0;
@@ -1210,7 +1324,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
     // Define the restarting block when there is more than one block
     int oldCol, newCol;
-    if (numBlock > 1) {
+    if (maxBlock > 1) {
       timeRestart -= MyWatch.WallTime();
       int firstIndex = blockSize;
       for (j = 0; j < blockSize; ++j) {
@@ -1241,7 +1355,7 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       memcpy(lambda + knownEV, theta, nFound*sizeof(double));
 
       // Define the restarting size
-      bStart = (nb > 2) ? nb/2 : 0;
+      bStart = ((nb - offSet) > 2) ? (nb - offSet)/2 : 0;
 
       // Define the restarting space and local stiffness
       memset(KK, 0, nb*blockSize*dimSearch*sizeof(double));
@@ -1262,19 +1376,19 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         Xnext.Random();
       }
       timeRestart += MyWatch.WallTime();
-    } // if (numBlock > 1)
+    } // if (maxBlock > 1)
 
     if (nFound > 0) {
       // Update MQ
       Epetra_MultiVector Qconv(View, X, knownEV, nFound);
-      Epetra_MultiVector MQconv(View, MQ, knownEV, nFound);
+      Epetra_MultiVector MQconv(View, MX, 0, nFound);
       timeMassOp -= MyWatch.WallTime();
       if (M)
         M->Apply(Qconv, MQconv);
       timeMassOp += MyWatch.WallTime();
       massOp += nFound;
       // Update PMQ
-      Epetra_MultiVector PMQconv(View, PMQ, knownEV, nFound);
+      Epetra_MultiVector PMQconv(View, PMQ, knownEV-startingEV, nFound);
       if (Prec) {
         timePrecOp -= MyWatch.WallTime();
         Prec->ApplyInverse(MQconv, PMQconv);
@@ -1286,22 +1400,26 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       }
       // Update QtMPMQ
       // Note: Use tmpArray as workspace
+      int newEV = knownEV - startingEV;
       timeBuildQtMPMQ -= MyWatch.WallTime();
-      callBLAS.GEMM('T', 'N', knownEV + nFound, nFound, xr, 1.0, PMQ.Values(), xr,
-                    MQ.Values()+knownEV*xr, xr, 0.0, QtMPMQ + knownEV*ldQtMPMQ, knownEV+nFound);
-      MyComm.SumAll(QtMPMQ+knownEV*ldQtMPMQ, tmpArray, (knownEV+nFound)*nFound);
+      callBLAS.GEMM('T', 'N', newEV + nFound, nFound, xr, 1.0, PMQ.Values(), xr,
+                    MX.Values(), xr, 0.0, QtMPMQ + newEV*ldQtMPMQ, newEV + nFound);
+      MyComm.SumAll(QtMPMQ + newEV*ldQtMPMQ, tmpArray, (newEV + nFound)*nFound);
       for (j = 0; j < nFound; ++j) {
-        memcpy(QtMPMQ + (knownEV+j)*ldQtMPMQ, tmpArray + j*(knownEV+nFound), 
-               (knownEV+nFound)*sizeof(double));
+        memcpy(QtMPMQ + (newEV+j)*ldQtMPMQ, tmpArray + j*(newEV+nFound), 
+               (newEV+nFound)*sizeof(double));
       }
       timeBuildQtMPMQ += MyWatch.WallTime();
     } // if (nFound > 0)
+    else {
+      offSet += 1;
+    } // if (nFound > 0)
 
     knownEV += nFound;
-    numBlock = (dimSearch/blockSize) - (knownEV/blockSize);
+    maxBlock = (dimSearch/blockSize) - (knownEV/blockSize);
 
     // The value of nFound commands how many vectors will be orthogonalized.
-    if ((numBlock > 1) && (newCol <= oldCol))
+    if ((maxBlock > 1) && (newCol <= oldCol))
       nFound = 0;
 
   } // while (outerIter <= maxIterEigenSolve)
@@ -1309,12 +1427,9 @@ int JDPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   highMem = (highMem > currentSize()) ? highMem : currentSize();
 
   // Clean memory
-  delete[] work1;
-  delete[] work2;
+  delete[] work;
   if (vectWeight)
     delete vectWeight;
-  if (workPCG)
-    delete[] workPCG;
 
   // Sort the eigenpairs
   timePostProce -= MyWatch.WallTime();
@@ -1517,11 +1632,11 @@ void JDPCG::memoryInfo() const {
     cout.setf(ios::fixed, ios::floatfield);
     cout << " Memory requested per processor by the eigensolver   = (EST) ";
     cout.width(6);
-    cout << maxMemRequested << endl;
+    cout << maxMemRequested << " MB " << endl;
     cout << endl;
     cout << " High water mark in eigensolver                      = (EST) ";
     cout.width(6);
-    cout << maxHighMem << endl;
+    cout << maxHighMem << " MB " << endl;
     cout << endl;
   }
 
@@ -1669,9 +1784,12 @@ void JDPCG::timeInfo() const {
     cout << timeCorrectionSolve << " s     ";
     cout.width(5);
     cout << 100*timeCorrectionSolve/timeOuterLoop << " %\n";
-    cout << "            Projected preconditioner : ";
+    cout << "            Mult. Preconditioner     : ";
     cout.width(9);
-    cout << timePCGPrec << " s" << endl;
+    cout << timeCorrectionPrec << " s" << endl;
+    cout << "            Correction of Prec.      : ";
+    cout.width(9);
+    cout << (timePCGPrec - timeCorrectionPrec) << " s" << endl;
     cout << "            Shifted Matrix Mult.     : ";
     cout.width(9);
     cout << timePCGOpMult << " s" << endl;

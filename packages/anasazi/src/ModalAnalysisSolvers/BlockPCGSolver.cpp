@@ -37,15 +37,12 @@ BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *
                  callFortran(),
                  K(KK),
                  Prec(0),
-                 mlPrec(false),
-                 ml_handle(0),
-                 ml_agg(0),
                  vectorPCG(0),
                  tolCG(_tol),
                  iterMax(_iMax),
                  verbose(_verb),
-                 AMG_NLevels(0),
                  workSpace(0),
+                 lWorkSpace(0),
                  numSolve(0),
                  maxIter(0),
                  sumIter(0),
@@ -64,15 +61,12 @@ BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *
                  callFortran(),
                  K(KK),
                  Prec(PP),
-                 mlPrec(false),
-                 ml_handle(0),
-                 ml_agg(0),
                  vectorPCG(0),
                  tolCG(_tol),
                  iterMax(_iMax),
                  verbose(_verb),
-                 AMG_NLevels(0),
                  workSpace(0),
+                 lWorkSpace(0),
                  numSolve(0),
                  maxIter(0),
                  sumIter(0),
@@ -84,14 +78,6 @@ BlockPCGSolver::BlockPCGSolver(const Epetra_Comm &_Comm, const Epetra_Operator *
 
 BlockPCGSolver::~BlockPCGSolver() {
 
-  if ((mlPrec == true) && (Prec)) {
-    delete Prec;
-    Prec = 0;
-    mlPrec = false;
-    ML_Destroy(&ml_handle);
-    ML_Aggregate_Destroy(&ml_agg);
-  }
-
   if (vectorPCG) {
     delete vectorPCG;
     vectorPCG = 0;
@@ -100,64 +86,8 @@ BlockPCGSolver::~BlockPCGSolver() {
   if (workSpace) {
     delete[] workSpace;
     workSpace = 0;
+    lWorkSpace = 0;
   }
-
-}
-
-
-void BlockPCGSolver::setAMGPreconditioner(int smoother, int degree, int numDofs,
-                                          const Epetra_MultiVector *Z) {
-
-  // Note the constness is cast away for ML
-  Epetra_RowMatrix *KK = dynamic_cast<Epetra_RowMatrix*>(const_cast<Epetra_Operator*>(K));
-  if (KK == 0) {
-    cerr << endl;
-    cerr << " !!! For AMG preconditioner, the matrix must be 'Epetra_RowMatrix' object !!!\n";
-    cerr << endl;
-    return;
-  }
-
-  // Generate an ML multilevel preconditioner
-
-  AMG_NLevels = 10;
-
-  ML_Set_PrintLevel(verbose);
-  ML_Create(&ml_handle, AMG_NLevels);
-
-  EpetraMatrix2MLMatrix(ml_handle, 0, KK);
-
-  ML_Aggregate_Create(&ml_agg);
-  ML_Aggregate_Set_MaxCoarseSize(ml_agg, 1);
-  ML_Aggregate_Set_Threshold(ml_agg, 0.0);
-
-  if (Z) {
-    ML_Aggregate_Set_NullSpace(ml_agg, numDofs, Z->NumVectors(), Z->Values(), Z->MyLength());
-  }
-
-  AMG_NLevels = ML_Gen_MGHierarchy_UsingAggregation(ml_handle, 0, ML_INCREASING, ml_agg);
-
-  // Set a smoother for the MG method
-  // Ray recommends to use MLS (polynomial)
-  if (smoother == 1) {
-    int j;
-    for (j = 0; j < AMG_NLevels-1; j++) {
-      ML_Gen_Smoother_MLS(ml_handle, j, ML_BOTH, 30., degree);
-    }
-#if defined(SUPERLU) || defined(DSUPERLU)
-    ML_Gen_CoarseSolverSuperLU(ml_handle, AMG_NLevels-1);
-#endif
-  }
-
-  // Note that Symmetric Gauss Seidel does not parallelize well
-  if (smoother == 2) {
-    ML_Gen_Smoother_SymGaussSeidel(ml_handle, ML_ALL_LEVELS, ML_BOTH, 1, ML_DEFAULT);
-  }
-
-  ML_Gen_Solver(ml_handle, ML_MGV, 0, AMG_NLevels-1);
-
-  mlPrec = true;
-  Prec = new Epetra_ML_Operator(ml_handle, MyComm, K->OperatorDomainMap(), 
-                                K->OperatorDomainMap());
 
 }
 
@@ -165,7 +95,6 @@ void BlockPCGSolver::setAMGPreconditioner(int smoother, int degree, int numDofs,
 void BlockPCGSolver::setPreconditioner(Epetra_Operator *PP) {
 
   Prec = PP;
-  mlPrec = false;
 
 }
 
@@ -185,78 +114,211 @@ int BlockPCGSolver::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector
   if (Y.NumVectors() < xcol)
     return -1;
 
-  // Use AztecOO's PCG for one right-hand side
-  if (xcol == 1) {
-
-    // Define the AztecOO object 
-    if (vectorPCG == 0) {
-      vectorPCG = new AztecOO();
-
-      // Cast away the constness for AztecOO
-      Epetra_Operator *KK = const_cast<Epetra_Operator*>(K);
-      if (dynamic_cast<Epetra_RowMatrix*>(KK) == 0)
-        vectorPCG->SetUserOperator(KK);
-      else
-        vectorPCG->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(KK));
-
-      vectorPCG->SetAztecOption(AZ_max_iter, iterMax);
-      vectorPCG->SetAztecOption(AZ_kspace, iterMax);
-      if (verbose < 3)
-        vectorPCG->SetAztecOption(AZ_output, AZ_last);
-      if (verbose < 2)
-        vectorPCG->SetAztecOption(AZ_output, AZ_none);
-
-      vectorPCG->SetAztecOption(AZ_solver, AZ_cg);
-
-      ////////////////////////////////////////////////
-      //   if (K->HasNormInf()) {
-      //     vectorPCG->SetAztecOption(AZ_precond, AZ_Neumann);
-      //     vectorPCG->SetAztecOption(AZ_poly_ord, 3);
-      //    }
-      ////////////////////////////////////////////////
-
-      if (Prec)
-        vectorPCG->SetPrecOperator(Prec);
-
-    }
-
-    double *valX = X.Values();
-    double *valY = Y.Values();
-
-    int xrow = X.MyLength();
-
-    bool allocated = false;
-    if (valX == valY) {
-      valX = new double[xrow];
-      allocated = true;
-      // Copy valY into valX
-      memcpy(valX, valY, xrow*sizeof(double));
-    }
-
-    Epetra_MultiVector rhs(View, X.Map(), valX, xrow, xcol);
-    vectorPCG->SetRHS(&rhs);
-
-    Y.PutScalar(0.0);
-    vectorPCG->SetLHS(&Y);
-
-    vectorPCG->Iterate(iterMax, tolCG);
-
-    numSolve += xcol;
-
-    int iter = vectorPCG->NumIters();
-    maxIter = (iter > maxIter) ? iter : maxIter;
-    minIter = (iter < minIter) ? iter : minIter;
-    sumIter += iter;
-
-    if (allocated == true)
-      delete[] valX;
-
-    return info;
-
-  } // if (xcol == 1)
+//  // Use AztecOO's PCG for one right-hand side
+//  if (xcol == 1) {
+//
+//    // Define the AztecOO object 
+//    if (vectorPCG == 0) {
+//      vectorPCG = new AztecOO();
+//
+//      // Cast away the constness for AztecOO
+//      Epetra_Operator *KK = const_cast<Epetra_Operator*>(K);
+//      if (dynamic_cast<Epetra_RowMatrix*>(KK) == 0)
+//        vectorPCG->SetUserOperator(KK);
+//      else
+//        vectorPCG->SetUserMatrix(dynamic_cast<Epetra_RowMatrix*>(KK));
+//
+//      vectorPCG->SetAztecOption(AZ_max_iter, iterMax);
+//      //vectorPCG->SetAztecOption(AZ_kspace, iterMax);
+//      vectorPCG->SetAztecOption(AZ_output, AZ_all);
+//      if (verbose < 3)
+//        vectorPCG->SetAztecOption(AZ_output, AZ_last);
+//      if (verbose < 2)
+//        vectorPCG->SetAztecOption(AZ_output, AZ_none);
+//
+//      vectorPCG->SetAztecOption(AZ_solver, AZ_cg);
+//
+//      ////////////////////////////////////////////////
+//      //if (K->HasNormInf()) {
+//      //  vectorPCG->SetAztecOption(AZ_precond, AZ_Neumann);
+//      //  vectorPCG->SetAztecOption(AZ_poly_ord, 3);
+//      //}
+//      ////////////////////////////////////////////////
+//
+//      if (Prec)
+//        vectorPCG->SetPrecOperator(Prec);
+//
+//    }
+//
+//    double *valX = X.Values();
+//    double *valY = Y.Values();
+//
+//    int xrow = X.MyLength();
+//
+//    bool allocated = false;
+//    if (valX == valY) {
+//      valX = new double[xrow];
+//      allocated = true;
+//      // Copy valY into valX
+//      memcpy(valX, valY, xrow*sizeof(double));
+//    }
+//
+//    Epetra_MultiVector rhs(View, X.Map(), valX, xrow, xcol);
+//    vectorPCG->SetRHS(&rhs);
+//
+//    Y.PutScalar(0.0);
+//    vectorPCG->SetLHS(&Y);
+//
+//    vectorPCG->Iterate(iterMax, tolCG);
+//
+//    numSolve += xcol;
+//
+//    int iter = vectorPCG->NumIters();
+//    maxIter = (iter > maxIter) ? iter : maxIter;
+//    minIter = (iter < minIter) ? iter : minIter;
+//    sumIter += iter;
+//
+//    if (allocated == true)
+//      delete[] valX;
+//
+//    return info;
+//
+//  } // if (xcol == 1)
 
   // Use block PCG for multiple right-hand sides
-  info = Solve(X, Y, xcol);
+  info = (xcol == 1) ? Solve(X, Y) : Solve(X, Y, xcol);
+
+  return info;
+
+}
+
+
+int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const {
+
+  int info = 0;
+  int localVerbose = verbose*(MyComm.MyPID() == 0);
+
+  int xr = X.MyLength();
+
+  int wSize = 3*xr;
+
+  if (lWorkSpace < wSize) {
+    if (workSpace)
+      delete[] workSpace;
+    workSpace = new (nothrow) double[wSize];
+    if (workSpace == 0) {
+      info = -1;
+      return info;
+    }
+    lWorkSpace = wSize;
+  } // if (lWorkSpace < wSize)
+
+  double *pointer = workSpace;
+
+  Epetra_Vector r(View, X.Map(), pointer);
+  pointer = pointer + xr;
+
+  Epetra_Vector p(View, X.Map(), pointer);
+  pointer = pointer + xr;
+
+  // Note: Kp and z uses the same memory space
+  Epetra_Vector Kp(View, X.Map(), pointer);
+  Epetra_Vector z(View, X.Map(), pointer);
+
+  double tmp;
+  double initNorm = 0.0, rNorm = 0.0, newRZ = 0.0, oldRZ = 0.0, alpha = 0.0;
+  double tolSquare = tolCG*tolCG;
+
+  memcpy(r.Values(), X.Values(), xr*sizeof(double));
+  tmp = callBLAS.DOT(xr, r.Values(), r.Values());
+  MyComm.SumAll(&tmp, &initNorm, 1);
+
+  Y.PutScalar(0.0);
+
+  if (localVerbose > 1) {
+    cout << endl;
+    cout  << " --- PCG Iterations --- " << endl;
+  }
+
+  int iter;
+  for (iter = 1; iter <= iterMax; ++iter) {
+
+    if (Prec) {
+      Prec->ApplyInverse(r, z);
+    }
+    else {
+      memcpy(z.Values(), r.Values(), xr*sizeof(double));
+    }
+
+    if (iter == 1) {
+      tmp = callBLAS.DOT(xr, r.Values(), z.Values());
+      MyComm.SumAll(&tmp, &newRZ, 1);
+      memcpy(p.Values(), z.Values(), xr*sizeof(double));
+    }
+    else {
+      oldRZ = newRZ;
+      tmp = callBLAS.DOT(xr, r.Values(), z.Values());
+      MyComm.SumAll(&tmp, &newRZ, 1);
+      p.Update(1.0, z, newRZ/oldRZ);
+    }
+
+    K->Apply(p, Kp);
+
+    tmp = callBLAS.DOT(xr, p.Values(), Kp.Values());
+    MyComm.SumAll(&tmp, &alpha, 1);
+    alpha = newRZ/alpha;
+
+    if (alpha <= 0.0) {
+      if (MyComm.MyPID() == 0) {
+        cerr << endl << endl;
+        cerr.precision(4);
+        cerr.setf(ios::scientific, ios::floatfield);
+        cerr << " !!! Non-positive value for p^TKp (" << alpha << ") !!!";
+        cerr << endl << endl;
+      }
+      assert(alpha > 0.0);
+    }
+
+    callBLAS.AXPY(xr, alpha, p.Values(), Y.Values());
+
+    alpha *= -1.0;
+    callBLAS.AXPY(xr, alpha, Kp.Values(), r.Values());
+
+    // Check convergence
+    tmp = callBLAS.DOT(xr, r.Values(), r.Values());
+    MyComm.SumAll(&tmp, &rNorm, 1);
+
+    if (localVerbose > 1) {
+      cout  << "   Iter. " << iter;
+      cout.precision(4);
+      cout.setf(ios::scientific, ios::floatfield);
+      cout << " Residual reduction " << sqrt(rNorm/initNorm) << endl;
+    }
+
+    if (rNorm <= tolSquare*initNorm)
+      break;
+
+  } // for (iter = 1; iter <= iterMax; ++iter)
+
+  if (localVerbose == 1) {
+    cout << endl;
+    cout << " --- End of PCG solve ---" << endl;
+    cout << "   Iter. " << iter;
+    cout.precision(4);
+    cout.setf(ios::scientific, ios::floatfield);
+    cout << " Residual reduction " << sqrt(rNorm/initNorm) << endl;
+    cout << endl;
+  }
+
+  if (localVerbose > 1) {
+    cout << endl;
+  }
+
+  numSolve += 1;
+
+  minIter = (iter < minIter) ? iter : minIter;
+  maxIter = (iter > maxIter) ? iter : maxIter;
+  sumIter += iter;
 
   return info;
 
@@ -290,13 +352,15 @@ int BlockPCGSolver::Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, in
     useY = false;
   }
 
-  if (workSpace == 0){
+  if (lWorkSpace < wSize) {
+    delete[] workSpace;
     workSpace = new (nothrow) double[wSize];
     if (workSpace == 0) {
       info = -1;
       return info;
     }
-  } // if (workSpace == 0)
+    lWorkSpace = wSize;
+  } // if (lWorkSpace < wSize)
 
   double *pointer = workSpace;
 

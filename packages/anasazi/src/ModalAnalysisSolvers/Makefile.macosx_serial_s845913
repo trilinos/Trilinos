@@ -14,41 +14,23 @@ TRILINOS_DEFINES = -D$(TRILINOS_ARCH) -DHAVE_CONFIG_H \
 
 TRILINOS_HOME = /Users/ulhetma/Library/Trilinos
 
-AZTECOO_INCLUDES =    -I$(TRILINOS_HOME)/packages/aztecoo/src \
-                      -I$(TRILINOS_HOME)/MACOSX.SERIAL/packages/aztecoo/src
-EPETRA_INCLUDES =     -I$(TRILINOS_HOME)/packages/epetra/src \
-                      -I$(TRILINOS_HOME)/MACOSX.SERIAL/packages/epetra/src
-IFPACK_INCLUDES =     -I$(TRILINOS_HOME)/packages/ifpack/src \
-                      -I$(TRILINOS_HOME)/MACOSX.SERIAL/packages/ifpack/src
-TRIUTILS_INCLUDES =   -I$(TRILINOS_HOME)/packages/triutils/src \
-                      -I$(TRILINOS_HOME)/MACOSX.SERIAL/packages/triutils/src
-ML_INCLUDES =         -I$(TRILINOS_HOME)/packages/ml/src/Coarsen \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Comm \
-                      -I$(TRILINOS_HOME)/packages/ml/src/FEGrid \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Include \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Krylov \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Main \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Operator \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Smoother \
-                      -I$(TRILINOS_HOME)/packages/ml/src/Utils \
-                      -I$(TRILINOS_HOME)/MACOSX.SERIAL/packages/ml/src
-
-TRILINOS_INCLUDES = $(IFPACK_INCLUDES) $(AZTECOO_INCLUDES) $(ML_INCLUDES) \
-                    $(TRIUTILS_INCLUDES) $(EPETRA_INCLUDES)
+TRILINOS_INCLUDES = -I$(TRILINOS_HOME)/MACOSX.SERIAL/include
 
 ################## Trilinos Libraries ##########################
 
 # The Trilinos build environment will use the following locations for building,
 # storing and using its own libraries
 
-LIBAZTECOO =    $(TRILINOS_HOME)/MACOSX.SERIAL/packages/aztecoo/src/libaztecoo.a
-LIBEPETRA =     $(TRILINOS_HOME)/MACOSX.SERIAL/packages/epetra/src/libepetra.a
-LIBIFPACK =     $(TRILINOS_HOME)/MACOSX.SERIAL/packages/ifpack/src/libifpack.a
-LIBTRIUTILS =   $(TRILINOS_HOME)/MACOSX.SERIAL/packages/triutils/src/libtriutils.a
-LIBML =         $(TRILINOS_HOME)/MACOSX.SERIAL/packages/ml/src/libml.a
+LIBAZTECOO = -laztecoo
+LIBEPETRA = -lepetra
+LIBEPETRAEXT = -lepetraext
+LIBIFPACK = -lifpack
+LIBTRIUTILS = -ltriutils
+LIBML = -lml
 
-TRILINOS_LIBRARIES = $(LIBIFPACK) $(LIBAZTECOO) $(LIBML)\
-                     $(LIBTRIUTILS) $(LIBEPETRA)
+TRILINOS_LIBRARIES = -L$(TRILINOS_HOME)/MACOSX.SERIAL/lib \
+                     $(LIBIFPACK) $(LIBAZTECOO) $(LIBML)\
+                     $(LIBTRIUTILS) $(LIBEPETRAEXT) $(LIBEPETRA)
 
 ############## Machine dependent definitions ##################
 
@@ -56,7 +38,7 @@ TRILINOS_LIBRARIES = $(LIBIFPACK) $(LIBAZTECOO) $(LIBML)\
 ARCH_INCLUDES :=
 
 #Define libraries
-ARCH_LIBRARIES = -lg2c -framework vecLib -lm
+ARCH_LIBRARIES = -framework vecLib -lm -lg2c
 
 #Define compilers
 #Apple Computer, Inc. GCC version 1151, based on gcc version 3.1 20020420 (prerelease)
@@ -98,13 +80,13 @@ DEFINES= $(ARCH_DEFINES) $(TRILINOS_DEFINES) $(EXTERNAL_DEFINES)
 INCLUDES = $(ARCH_INCLUDES) $(TRILINOS_INCLUDES) \
            $(EXTERNAL_INCLUDES)
 
-#CFLAGS= -O $(DEFINES) $(INCLUDES)
-#FFLAGS= -O $(DEFINES) $(INCLUDES)
-#CXXFLAGS = -O $(DEFINES) $(INCLUDES)
+CFLAGS= -O $(DEFINES) $(INCLUDES)
+FFLAGS= -O $(DEFINES) $(INCLUDES)
+CXXFLAGS = -O $(DEFINES) $(INCLUDES)
 
-CFLAGS= -g -ftrapv -ansi -pedantic -Wall -Weffc++ $(DEFINES) $(INCLUDES)
-FFLAGS= -g $(DEFINES) $(INCLUDES)
-CXXFLAGS = -g -ftrapv -ansi -pedantic -Wall -Weffc++ $(DEFINES) $(INCLUDES)
+#CFLAGS= -g -ftrapv -ansi -pedantic -Wall -Weffc++ $(DEFINES) $(INCLUDES)
+#FFLAGS= -g $(DEFINES) $(INCLUDES)
+#CXXFLAGS = -g -ftrapv -ansi -pedantic -Wall -Weffc++ $(DEFINES) $(INCLUDES)
 
 LDFLAGS = $(ARCH_LDFLAGS)
 
@@ -118,15 +100,15 @@ OFILE = mydsaupd.o mydsaup2.o \
         FortranRoutines.o \
         MyMemory.o \
         ModalTools.o CheckingTools.o SortingTools.o \
-        BlockDACG.o BRQMIN.o LOBPCG.o KnyazevLOBPCG.o \
-        ARPACKm3.o ModifiedARPACKm3.o \
+        BlockDACG.o BRQMIN.o \
+        LOBPCG.o LOBPCG_light.o KnyazevLOBPCG.o \
+        ARPACKm1.o ARPACKm3.o ModifiedARPACKm3.o \
         Davidson.o \
-        LinSolvers.o OrthoPack.o Projectors.o JDBSYM.o \
         JDPCG.o \
         BlockPCGSolver.o \
+        AMGOperator.o MyIncompleteChol.o \
         ModeLaplace1DQ1.o ModeLaplace2DQ1.o ModeLaplace3DQ1.o \
-        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o \
-        ModeFileMatrices.o
+        ModeLaplace1DQ2.o ModeLaplace2DQ2.o ModeLaplace3DQ2.o
 
 driver: $(OFILE) driver.o
 	$(LINKER) $(LDFLAGS) $(OFILE) driver.o $(LIB_PATHS) -o driver.serial

@@ -110,6 +110,22 @@ ModifiedARPACKm3::~ModifiedARPACKm3() {
 
 int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
+  return ModifiedARPACKm3::reSolve(numEigen, Q, lambda, 0, 0);
+
+}
+
+
+int ModifiedARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, 
+                              int startingEV) {
+
+  return ModifiedARPACKm3::reSolve(numEigen, Q, lambda, startingEV, 0);
+
+}
+
+
+int ModifiedARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, 
+                              int startingEV, const Epetra_MultiVector *orthoVec) {
+
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
@@ -121,7 +137,8 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
   //
   //                      || Kx - Mx lambda || < tol*lambda
   //
-  // The norm ||.|| is specified by the user through the array normWeight.
+  // The norm ||.|| can be specified by the user through the array normWeight.
+  // By default, the L2 Euclidean norm is used.
   //
   // Note that if M is not specified, then  K X = X Lambda is solved.
   // (using the mode for generalized eigenvalue problem).
@@ -140,6 +157,14 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
   //                   The length of this array is equal to the number of columns in Q.
   //                   At exit, the first numEigen locations contain the eigenvalues requested.
   // 
+  // startingEV (integer) = Number of eigenmodes already stored in Q
+  //                   A linear combination of these vectors is made to define the starting
+  //                   vector, placed in resid.
+  //
+  // orthoVec (Pointer to Epetra_MultiVector) = Space to be orthogonal to
+  //                   The computation is performed in the orthogonal of the space spanned
+  //                   by the columns vectors in orthoVec.
+  //
   // Return information on status of computation
   // 
   // info >=   0 >> Number of converged eigenpairs at the end of computation
@@ -159,8 +184,8 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
   //
   // See ARPACK documentation for the meaning of INFO
 
-  if (numEigen <= 0) {
-    return 0;
+  if (numEigen <= startingEV) {
+    return numEigen;
   }
 
   int info = myVerify.inputArguments(numEigen, K, M, 0, Q, minimumSpaceDimension(numEigen));
@@ -240,6 +265,15 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
 
   highMem = (highMem > currentSize()) ? highMem : currentSize();
 
+  if (startingEV > 0) {
+    // Define the initial starting vector
+    memset(resid, 0, localSize*sizeof(double));
+    for (int jj = 0; jj < startingEV; ++jj)
+      for (int ii = 0; ii < localSize; ++ii)
+         resid[ii] += v[ii + jj*localSize];
+    info = 1;
+  }
+
   iparam[1-1] = 1;
   iparam[3-1] = maxIterEigenSolve;
   iparam[7-1] = 3;
@@ -306,7 +340,7 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
   highMem = (highMem > currentSize()) ? highMem : currentSize();
 
   // Define an array to store the residuals history
-  if (localVerbose > 1) {
+  if (localVerbose > 2) {
     resHistory = new (nothrow) double[maxIterEigenSolve*NCV];
     if (resHistory == 0) {
       if (vectWeight)
@@ -334,11 +368,15 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
     cout.precision(2);
     cout.setf(ios::scientific, ios::floatfield);
     cout << " *|* Tolerance for convergence = " << tolEigenSolve << endl;
+    if (startingEV > 0)
+      cout << " *|* User-defined starting vector (Combination of " << startingEV << " vectors)\n";
     cout << " *|* Norm used for convergence: ";
     if (normWeight)
       cout << "weighted L2-norm with user-provided weights" << endl;
     else
       cout << "L^2-norm" << endl;
+    if (orthoVec)
+      cout << " *|* Size of orthogonal subspace = " << orthoVec->NumVectors() << endl;
     cout << "\n -- Start iterations -- \n";
   }
 
@@ -374,12 +412,38 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
         memcpy(v1.Values(), v3.Values(), localSize*sizeof(double));
       timeMassOp += MyWatch.WallTime();
       massOp += 1;
+      if ((orthoVec) && (verbose > 3)) {
+        // Check the orthogonality
+        double maxDot = myVerify.errorOrthogonality(orthoVec, &v1, 0);
+        if (myPid == 0) {
+          cout << " Maximum Euclidean dot product against orthogonal space (Before Solve) = ";
+          cout << maxDot << endl;
+        }
+      }
       // Solve the stiffness problem
       v2.ResetView(workd + ipntr[1] - 1);
       timeStifOp -= MyWatch.WallTime();
       K->ApplyInverse(v1, v2);
       timeStifOp += MyWatch.WallTime();
       stifOp += 1;
+      // Project the solution vector if needed
+      // Note: Use mvz as workspace
+      if (orthoVec) {
+        Epetra_Vector Mv2(View, v2.Map(), mvz);
+        if (M)
+          M->Apply(v2, Mv2);
+        else
+          memcpy(Mv2.Values(), v2.Values(), localSize*sizeof(double));
+        modalTool.massOrthonormalize(v2, Mv2, M, *orthoVec, 1, 1);
+      }
+      if ((orthoVec) && (verbose > 3)) {
+        // Check the orthogonality
+        double maxDot = myVerify.errorOrthogonality(orthoVec, &v2, M);
+        if (myPid == 0) {
+          cout << " Maximum M-dot product against orthogonal space (After Solve) = ";
+          cout << maxDot << endl;
+        }
+      }
       continue;
     } // if (ido == -1)
 
@@ -387,10 +451,36 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
       // Solve the stiffness problem
       v1.ResetView(workd + ipntr[2] - 1);
       v2.ResetView(workd + ipntr[1] - 1);
+      if ((orthoVec) && (verbose > 3)) {
+        // Check the orthogonality
+        double maxDot = myVerify.errorOrthogonality(orthoVec, &v1, 0);
+        if (myPid == 0) {
+          cout << " Maximum Euclidean dot product against orthogonal space (Before Solve) = ";
+          cout << maxDot << endl;
+        }
+      }
       timeStifOp -= MyWatch.WallTime();
       K->ApplyInverse(v1, v2);
       timeStifOp += MyWatch.WallTime();
       stifOp += 1;
+      // Project the solution vector if needed
+      // Note: Use mvz as workspace
+      if (orthoVec) {
+        Epetra_Vector Mv2(View, v2.Map(), mvz);
+        if (M)
+          M->Apply(v2, Mv2);
+        else
+          memcpy(Mv2.Values(), v2.Values(), localSize*sizeof(double));
+        modalTool.massOrthonormalize(v2, Mv2, M, *orthoVec, 1, 1);
+      }
+      if ((orthoVec) && (verbose > 3)) {
+        // Check the orthogonality
+        double maxDot = myVerify.errorOrthogonality(orthoVec, &v2, M);
+        if (myPid == 0) {
+          cout << " Maximum M-dot product against orthogonal space (After Solve) = ";
+          cout << maxDot << endl;
+        }
+      }
       continue;
     } // if (ido == 1)
 
@@ -466,11 +556,11 @@ int ModifiedARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
         cout << " Iteration " << outerIter;
         cout << " - Number of converged eigenvalues " << iparam[4] << endl;
       }
-      if (localVerbose > 1) {
+      if (localVerbose > 2) {
         memcpy(resHistory + historyCount, normR, NCV*sizeof(double));
         historyCount += NCV;
       }
-      if (localVerbose > 3) {
+      if (localVerbose > 1) {
         cout.precision(2);
         cout.setf(ios::scientific, ios::floatfield);
         for (ii=0; ii < NCV; ++ii) {
@@ -598,11 +688,11 @@ void ModifiedARPACKm3::memoryInfo() const {
     cout.setf(ios::fixed, ios::floatfield);
     cout << " Memory requested per processor by the eigensolver   = (EST) ";
     cout.width(6);
-    cout << maxMemRequested << endl;
+    cout << maxMemRequested << " MB " << endl;
     cout << endl;
     cout << " High water mark in eigensolver                      = (EST) ";
     cout.width(6);
-    cout << maxHighMem << endl;
+    cout << maxHighMem << " MB " << endl;
     cout << endl;
   }
 

@@ -59,6 +59,8 @@ class ARPACKm3 : public ModalAnalysisSolver {
     double tolEigenSolve;
     int maxIterEigenSolve;
 
+    char *which;
+
     int verbose;
 
     double memRequested;
@@ -83,12 +85,20 @@ class ARPACKm3 : public ModalAnalysisSolver {
     ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
               double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
 
+    ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_which,
+              double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
+
     ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, const Epetra_Operator *MM,
               double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
+
+    ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, const Epetra_Operator *MM,
+             char *_which, double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
 
     ~ARPACKm3() { }
 
     int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
+
+    int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
 
     int minimumSpaceDimension(int nev) const         { return nev+1; }
 

@@ -144,6 +144,13 @@ Davidson::~Davidson() {
 
 int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
+  return Davidson::reSolve(numEigen, Q, lambda);
+
+}
+
+
+int Davidson::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
@@ -165,6 +172,10 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   // lambda (array of doubles) = Converged eigenvalues
   //                   At input, it must be of size numEigen + blockSize.
   //                   At exit, the first numEigen locations contain the eigenvalues requested.
+  //
+  // startingEV (integer) = Number of existing converged eigenvectors
+  //                   We assume that the user has check the eigenvectors and 
+  //                   their M-orthonormality.
   //
   // Return information on status of computation
   // 
@@ -188,8 +199,8 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   // Check the input parameters
   
-  if (numEigen <= 0) {
-    return 0;
+  if (numEigen <= startingEV) {
+    return startingEV;
   }
 
   int info = myVerify.inputArguments(numEigen, K, M, Prec, Q, minimumSpaceDimension(numEigen));
@@ -217,7 +228,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     vectWeight = new Epetra_Vector(View, Q.Map(), normWeight);
   }
 
-  int knownEV = 0;
+  int knownEV = startingEV;
   int localVerbose = verbose*(myPid==0);
 
   // Define local block vectors
@@ -231,7 +242,13 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   int dimSearch = blockSize*numBlock;
 
   Epetra_MultiVector X(View, Q, 0, dimSearch + blockSize);
-  X.Random();
+  if (knownEV > 0) {
+    Epetra_MultiVector copyX(View, Q, knownEV, blockSize);
+    copyX.Random();
+  }
+  else {
+    X.Random();
+  }
 
   int tmp;
   tmp = (M == 0) ? 2*blockSize*xr : 3*blockSize*xr;
@@ -299,7 +316,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   double *tmpKK = tmpD;
 
   // Define an array to store the residuals history
-  if (localVerbose > 1) {
+  if (localVerbose > 2) {
     resHistory = new (nothrow) double[maxIterEigenSolve*blockSize];
     spaceSizeHistory = new (nothrow) int[maxIterEigenSolve];
     if ((resHistory == 0) || (spaceSizeHistory == 0)) {
@@ -321,6 +338,9 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   bool criticalExit = false;
 
   int bStart = 0;
+  int offSet = 0;
+  numBlock = (dimSearch/blockSize) - (knownEV/blockSize);
+
   int nFound = blockSize;
   int i, j;
 
@@ -346,17 +366,25 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << "weighted L2-norm with user-provided weights" << endl;
     else
       cout << "L^2-norm" << endl;
+    if (startingEV > 0)
+      cout << " *|* Input converged eigenvectors = " << startingEV << endl;
     cout << "\n -- Start iterations -- \n";
   }
 
+  int maxBlock = (dimSearch/blockSize) - (knownEV/blockSize);
+
   timeOuterLoop -= MyWatch.WallTime();
-  outerIter = 1;
+  outerIter = 0;
   while (outerIter <= maxIterEigenSolve) {
 
     highMem = (highMem > currentSize()) ? highMem : currentSize();
 
     int nb;
-    for (nb = bStart; nb < numBlock; ++nb) {
+    for (nb = bStart; nb < maxBlock; ++nb) {
+
+      outerIter += 1;
+      if (outerIter > maxIterEigenSolve)
+        break;
 
       int localSize = nb*blockSize;
 
@@ -515,7 +543,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       timeNorm += MyWatch.WallTime();
 
       // Store the residual history
-      if (localVerbose > 1) {
+      if (localVerbose > 2) {
         memcpy(resHistory + historyCount*blockSize, normR, blockSize*sizeof(double));
         spaceSizeHistory[historyCount] = localSize + blockSize;
         historyCount += 1;
@@ -529,7 +557,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         cout << knownEV + nFound << endl;
       } // if (localVerbose > 0)
 
-      if (localVerbose > 3) {
+      if (localVerbose > 1) {
         cout << endl;
         cout.precision(2);
         cout.setf(ios::scientific, ios::floatfield);
@@ -550,12 +578,13 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Exit the loop to treat the converged eigenvectors
       if (nFound > 0) {
         nb += 1;
+        offSet = 0;
         break;
       }
 
       // Apply the preconditioner on the residuals
       // Note: Use KX as a workspace
-      if (numBlock == 1) {
+      if (maxBlock == 1) {
         if (Prec) {
           timePrecOp -= MyWatch.WallTime();
           Prec->ApplyInverse(R, Xcurrent);
@@ -569,10 +598,12 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         Xcurrent.Update(1.0, KX, -1.0);
         timeRestart += MyWatch.WallTime();
         break;
-      } // if (numBlock == 1)
+      } // if (maxBlock == 1)
 
-      if (nb == numBlock - 1)
-        continue;
+      if (nb == maxBlock - 1) {
+        nb += 1;
+        break;
+      }
 
       Epetra_MultiVector Xnext(View, X, knownEV+localSize+blockSize, blockSize);
       if (Prec) {
@@ -585,16 +616,10 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
         memcpy(Xnext.Values(), R.Values(), blockSize*xr*sizeof(double));
       }
 
-      outerIter += 1;
-      if (outerIter > maxIterEigenSolve)
-        break;
-
-    } // for (nb = bStart; nb < numBlock; ++nb)
+    } // for (nb = bStart; nb < maxBlock; ++nb)
 
     if (outerIter > maxIterEigenSolve)
       break;
-    else
-      outerIter += 1;
 
     if (reStart == true) {
       reStart = false;
@@ -627,7 +652,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     } // if (knownEV + nFound >= numEigen)
 
     // Treat the particular case of 1 block
-    if (numBlock == 1) {
+    if (maxBlock == 1) {
       if (nFound > 0) {
         double *Xpointer = X.Values() + (knownEV+nFound)*xr;
         nFound = 0;
@@ -651,7 +676,7 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       continue;
     }
 
-    // Define the restarting block when numBlock > 1
+    // Define the restarting block when maxBlock > 1
     if (nFound > 0) {
       int firstIndex = blockSize;
       for (j = 0; j < blockSize; ++j) {
@@ -681,10 +706,10 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       // Copy the converged eigenvalues
       memcpy(lambda + knownEV, theta, nFound*sizeof(double));
 
-    }
+    } // if (nFound > 0)
 
     // Define the restarting size
-    bStart = (nb > 2) ? nb/2 : 0;
+    bStart = ((nb - offSet) > 2) ? (nb - offSet)/2 : 0;
 
     // Define the restarting space and local stiffness
     timeRestart -= MyWatch.WallTime();
@@ -701,8 +726,11 @@ int Davidson::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
                       X.Values()+knownEV*xr, xr, R.Values(), blockSize*xr, &info);
     timeRestart += MyWatch.WallTime();
 
+    if (nFound == 0)
+      offSet += 1;
+
     knownEV += nFound;
-    numBlock = (dimSearch/blockSize) - (knownEV/blockSize);
+    maxBlock = (dimSearch/blockSize) - (knownEV/blockSize);
 
     // Put random vectors if the Rayleigh Ritz vectors are not enough
     newCol = nFound + (bStart+1)*blockSize;
@@ -905,11 +933,11 @@ void Davidson::memoryInfo() const {
     cout.setf(ios::fixed, ios::floatfield);
     cout << " Memory requested per processor by the eigensolver   = (EST) ";
     cout.width(6);
-    cout << maxMemRequested << endl;
+    cout << maxMemRequested << " MB " << endl;
     cout << endl;
     cout << " High water mark in eigensolver                      = (EST) ";
     cout.width(6);
-    cout << maxHighMem << endl;
+    cout << maxHighMem << " MB " << endl;
     cout << endl;
   }
 

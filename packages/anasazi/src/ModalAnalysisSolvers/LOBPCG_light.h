@@ -26,8 +26,8 @@
 //
 //**************************************************************************
 
-#ifndef KNYAZEV_LOBPCG_H
-#define KNYAZEV_LOBPCG_H
+#ifndef LOBPCG_LIGHT_H
+#define LOBPCG_LIGHT_H
 
 #include "Epetra_ConfigDefs.h"
 
@@ -43,7 +43,7 @@
 #include "ModalTools.h"
 #include "SortingTools.h"
 
-class KnyazevLOBPCG : public ModalAnalysisSolver {
+class LOBPCG_light : public ModalAnalysisSolver {
 
   private:
 
@@ -86,37 +86,41 @@ class KnyazevLOBPCG : public ModalAnalysisSolver {
     double timeLocalUpdate;
     double timeMassOp;
     double timeNorm;
+    double timeOrtho;
     double timeOuterLoop;
     double timePostProce;
     double timePrecOp;
     double timeResidual;
+    double timeRestart;
     double timeStifOp;
 
     // Private functions
     void accuracyCheck(const Epetra_MultiVector *X, const Epetra_MultiVector *MX,
-                       const Epetra_MultiVector *R) const;
+                       const Epetra_MultiVector *R, const Epetra_MultiVector *Q,
+                       const Epetra_MultiVector *H, const Epetra_MultiVector *P) const;
 
     // Don't define these functions
-    KnyazevLOBPCG(const KnyazevLOBPCG &ref);
-    KnyazevLOBPCG& operator=(const KnyazevLOBPCG &ref);
+    LOBPCG_light(const LOBPCG_light &ref);
+    LOBPCG_light& operator=(const LOBPCG_light &ref);
 
   public:
 
-    KnyazevLOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
-              const Epetra_Operator *PP,
+    LOBPCG_light(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
+              const Epetra_Operator *PP, int _blk,
               double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
 
-    KnyazevLOBPCG(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
-              const Epetra_Operator *MM, const Epetra_Operator *PP,
+    LOBPCG_light(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
+              const Epetra_Operator *MM, const Epetra_Operator *PP, int _blk,
               double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0, double *_weight = 0);
 
-    ~KnyazevLOBPCG();
+    ~LOBPCG_light();
 
-    int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
+    int solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
+        { return LOBPCG_light::reSolve(numEigen, Q, lambda); }
 
     int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
 
-    int minimumSpaceDimension(int nev) const         { return nev; }
+    int minimumSpaceDimension(int nev) const         { return nev+blockSize; }
 
     void initializeCounters();
 

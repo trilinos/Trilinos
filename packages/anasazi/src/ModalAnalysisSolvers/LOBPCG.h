@@ -115,7 +115,10 @@ class LOBPCG : public ModalAnalysisSolver {
 
     ~LOBPCG();
 
-    int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
+    int solve(int numEigen, Epetra_MultiVector &Q, double *lambda)
+        { return LOBPCG::reSolve(numEigen, Q, lambda); }
+
+    int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
 
     int minimumSpaceDimension(int nev) const         { return nev+blockSize; }
 

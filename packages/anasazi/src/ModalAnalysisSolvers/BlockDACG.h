@@ -118,6 +118,8 @@ class BlockDACG : public ModalAnalysisSolver {
 
     int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
 
+    int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
+
     int minimumSpaceDimension(int nev) const         { return nev+blockSize; }
 
     void initializeCounters();

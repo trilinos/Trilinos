@@ -283,9 +283,9 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
   Epetra_Vector Qj(View, Q.Map(), Q.Values());
 
   double maxUserNorm = 0.0;
-  double minUserNorm = 1.0e+16;
+  double minUserNorm = 1.0e+100;
   double maxL2Norm = 0.0;
-  double minL2Norm = 1.0e+16;
+  double minL2Norm = 1.0e+100;
 
   // Compute the residuals and norms
   int j;
@@ -314,19 +314,23 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout.precision(8);
       cout.setf(ios::scientific, ios::floatfield);
       cout << j+1 << ". " << lambda[j] << " ";
-      if (normWeight)
-        cout << residualUser << " " << residualUser/lambda[j] << " ";
-      cout << residualL2 << " " << residualL2/lambda[j] << " ";
+      if (normWeight) {
+        cout << residualUser << " ";
+        cout << ((lambda[j] == 0.0) ? 0.0 : residualUser/lambda[j]) << " ";
+      }
+      cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
       cout << endl;
     }
 
-    maxL2Norm = (residualL2/lambda[j] > maxL2Norm) ? residualL2/lambda[j] : maxL2Norm;
-    minL2Norm = (residualL2/lambda[j] < minL2Norm) ? residualL2/lambda[j] : minL2Norm;
-    if (normWeight) {
-      maxUserNorm = (residualUser/lambda[j] > maxUserNorm) ? residualUser/lambda[j]
-                                                           : maxUserNorm;
-      minUserNorm = (residualUser/lambda[j] < minUserNorm) ? residualUser/lambda[j]
-                                                           : minUserNorm;
+    if (lambda[j] > 0.0) {
+      maxL2Norm = (residualL2/lambda[j] > maxL2Norm) ? residualL2/lambda[j] : maxL2Norm;
+      minL2Norm = (residualL2/lambda[j] < minL2Norm) ? residualL2/lambda[j] : minL2Norm;
+      if (normWeight) {
+        maxUserNorm = (residualUser/lambda[j] > maxUserNorm) ? residualUser/lambda[j]
+                                                             : maxUserNorm;
+        minUserNorm = (residualUser/lambda[j] < minUserNorm) ? residualUser/lambda[j]
+                                                             : minUserNorm;
+      }
     }
 
   } // for j=0; j<qc; ++j) 
@@ -338,6 +342,99 @@ void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lam
       cout << " >> Maximum scaled user-norm of residuals = " << maxUserNorm << endl;
       cout << endl;
     }
+    cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << endl;
+    cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << endl;
+    cout << endl;
+  }
+
+  if (work)
+    delete[] work;
+
+}
+
+
+void CheckingTools::errorEigenResiduals(const Epetra_MultiVector &Q, double *lambda,
+                                  const Epetra_Operator *K, const Epetra_Operator *M,
+                                  const Epetra_Operator *Msolver) const {
+
+  if ((K == 0) || (lambda == 0) || (Msolver == 0))
+    return;
+
+  int myPid = MyComm.MyPID();
+
+  int qr = Q.MyLength();
+  int qc = Q.NumVectors();
+
+  double *work = new (nothrow) double[2*qr];
+  if (work == 0)
+    return;
+
+  if (myPid == 0) {
+    cout << endl;
+    cout << " --- Norms of residuals for computed eigenmodes ---\n";
+    cout << endl;
+    cout << "        Eigenvalue";
+    cout << "     M^{-1} N.     Sca. M^{-1} N.";
+    cout << "     2-Norm     Scaled 2-Nor.\n";
+  }
+
+  Epetra_Vector KQ(View, Q.Map(), work);
+  Epetra_Vector MQ(View, Q.Map(), work + qr);
+  Epetra_Vector Qj(View, Q.Map(), Q.Values());
+
+  double maxMinvNorm = 0.0;
+  double minMinvNorm = 1.0e+100;
+  double maxL2Norm = 0.0;
+  double minL2Norm = 1.0e+100;
+
+  // Compute the residuals and norms
+  int j;
+  for (j=0; j<qc; ++j) {
+
+    Qj.ResetView(Q.Values() + j*qr);
+    if (M)
+      M->Apply(Qj, MQ);
+    else
+      memcpy(MQ.Values(), Qj.Values(), qr*sizeof(double));
+    K->Apply(Qj, KQ);
+    KQ.Update(-lambda[j], MQ, 1.0);
+
+    double residualL2 = 0.0;
+    KQ.Norm2(&residualL2);
+
+    double residualMinv = 0.0;
+    Msolver->ApplyInverse(KQ, MQ); 
+    KQ.Dot(MQ, &residualMinv);
+    residualMinv = sqrt(fabs(residualMinv));
+
+    if (myPid == 0) {
+      cout << " ";
+      cout.width(4);
+      cout.precision(8);
+      cout.setf(ios::scientific, ios::floatfield);
+      cout << j+1 << ". " << lambda[j] << " ";
+      cout << residualMinv << " ";
+      cout << ((lambda[j] == 0.0) ? 0.0 : residualMinv/lambda[j]) << " ";
+      cout << residualL2 << " " << ((lambda[j] == 0.0) ? 0.0 : residualL2/lambda[j]) << " ";
+      cout << endl;
+    }
+
+    if (lambda[j] > 0.0) {
+      maxL2Norm = (residualL2/lambda[j] > maxL2Norm) ? residualL2/lambda[j] : maxL2Norm;
+      minL2Norm = (residualL2/lambda[j] < minL2Norm) ? residualL2/lambda[j] : minL2Norm;
+      maxMinvNorm = (residualMinv/lambda[j] > maxMinvNorm) ? residualMinv/lambda[j]
+                                                           : maxMinvNorm;
+      minMinvNorm = (residualMinv/lambda[j] < minMinvNorm) ? residualMinv/lambda[j]
+                                                           : minMinvNorm;
+    }
+
+  } // for j=0; j<qc; ++j) 
+
+  if (myPid == 0) {
+    cout << endl;
+    cout << " >> Minimum scaled M^{-1}-norm of residuals = " << minMinvNorm << endl;
+    cout << " >> Maximum scaled M^{-1}-norm of residuals = " << maxMinvNorm << endl;
+    cout << endl;
     cout << " >> Minimum scaled L2 norm of residuals   = " << minL2Norm << endl;
     cout << " >> Maximum scaled L2 norm of residuals   = " << maxL2Norm << endl;
     cout << endl;

@@ -32,9 +32,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_MultiVector.h"
 
-#include "Ifpack_ConfigDefs.h"
-#include "Ifpack_CrsIct.h"
-
 #ifdef EPETRA_MPI
 #include "Epetra_MpiComm.h"
 #include "mpi.h"
@@ -49,15 +46,14 @@
 #include "BRQMIN.h"
 #include "BlockDACG.h"
 #include "LOBPCG.h"
+#include "LOBPCG_light.h"
 #include "KnyazevLOBPCG.h"
 #include "ARPACKm3.h"
 #include "ModifiedARPACKm3.h"
 #include "Davidson.h"
 #include "JDPCG.h"
-#include "JDBSYM.h"
 
 #include "ModalProblem.h"
-#include "ModeFileMatrices.h"
 #include "ModeLaplace1DQ1.h"
 #include "ModeLaplace1DQ2.h"
 #include "ModeLaplace2DQ1.h"
@@ -66,8 +62,11 @@
 #include "ModeLaplace3DQ2.h"
 
 #include "BlockPCGSolver.h"
+#include "AMGOperator.h"
+#include "MyIncompleteChol.h"
 
 const int LOBPCG_CHOL = 1;
+const int LOBPCG_LIGHT = 2;
 const int LOBPCG_AK_CHOL = 3;
 const int ARPACK_ORIG = 5;
 const int ARPACK_RESI = 6;
@@ -75,7 +74,6 @@ const int GALDAVIDSON = 7;
 const int BRQMIN_CHOL = 9;
 const int DACG_CHOL = 11;
 const int JD_PCG = 13;
-const int JD_SYM = 15;
 
 const int NO_PREC = 0;
 const int AMG_POLYNOMIAL = 1;
@@ -106,8 +104,6 @@ int main(int argc, char *argv[]) {
   initMemCounters();
 
   int dimension;
-  char massName[128];
-  char stifName[128];
   double Lx = 1.0, Ly = 1.0, Lz = 1.0;
   int nX=0, nY=0, nZ=0;
   int casePb = 0;
@@ -134,10 +130,6 @@ int main(int argc, char *argv[]) {
       }
       fin >> dimension; fin.getline(buff, 100);
       switch (dimension) {
-        case 0:
-          fin >> stifName; fin.getline(buff, 100);
-          fin >> massName; fin.getline(buff, 100);
-          break;
         case 1:
           fin >> Lx; fin.getline(buff, 100);
           fin >> nX; fin.getline(buff, 100);
@@ -174,14 +166,15 @@ int main(int argc, char *argv[]) {
   // Check the input parameters
   switch (algo) {
     case LOBPCG_CHOL:
+    case LOBPCG_LIGHT:
     case LOBPCG_AK_CHOL:
+    case 4:
     case ARPACK_ORIG:
     case ARPACK_RESI:
     case GALDAVIDSON:
     case BRQMIN_CHOL:
     case DACG_CHOL:
     case JD_PCG:
-    case JD_SYM:
       break;
     default:
       paramStop = true;
@@ -199,13 +192,11 @@ int main(int argc, char *argv[]) {
       break;
   }
 
-  if (dimension != 0) {
-    if ((dimension < 1) && (dimension > 3))
+  if ((dimension < 1) && (dimension > 3))
+    paramStop = true;
+  else {
+    if ((casePb != 1) && (casePb != 2))
       paramStop = true;
-    else {
-      if ((casePb != 1) && (casePb != 2))
-        paramStop = true;
-    }
   }
 
   if (paramStop == true) {
@@ -242,6 +233,7 @@ int main(int argc, char *argv[]) {
       cerr << endl;
       cerr << "Eigensolver flags:" << endl;
       cerr << " 1. LOBPCG (RBL & UH version) with Cholesky-based local eigensolver" << endl;
+      cerr << " 2. LOBPCG (light version) with Cholesky-based local eigensolver" << endl;
       cerr << " 3. LOBPCG (AK version) with Cholesky-based local eigensolver" << endl;
       cerr << " 5. ARPACK (original version)" << endl;
       cerr << " 6. ARPACK (version with user-provided residual)" << endl;
@@ -249,7 +241,6 @@ int main(int argc, char *argv[]) {
       cerr << " 9. BRQMIN with Cholesky-based local eigensolver" << endl;
       cerr << "11. Block DACG with Cholesky-based local eigensolver" << endl;
       cerr << "13. JDCG (Notay's version of Jacobi-Davidson)" << endl;
-      cerr << "15. JDSYM (Geus' version of Jacobi-Davidson)" << endl;
       cerr << endl;
       cerr << "The dimension of search space corresponds to" << endl;
       cerr << " * the block size for LOBPCG (1)" << endl;
@@ -257,7 +248,7 @@ int main(int argc, char *argv[]) {
       cerr << " * one block size for Generalized Davidson (7)" << endl;
       cerr << " * the block size for BRQMIN (9)" << endl;
       cerr << " * the block size for Block DACG (11)" << endl;
-      cerr << " * one block size for Jacobi-Davidson JDCG (13) and JDSYM (15)" << endl;
+      cerr << " * one block size for Jacobi-Davidson JDCG (13)" << endl;
       cerr << endl;
     }
     exit(1);
@@ -266,9 +257,6 @@ int main(int argc, char *argv[]) {
   double highMem = currentSize();
 
   ModalProblem *testCase;
-  if (dimension == 0) {
-    testCase = new ModeFileMatrices(Comm, stifName, massName);
-  }
   if (dimension == 1) {
     if (casePb == 1)
       testCase = new ModeLaplace1DQ1(Comm, Lx, nX);
@@ -314,8 +302,10 @@ int main(int argc, char *argv[]) {
   if (dynamic_cast<ModeLaplace*>(testCase))
     globalMassMin = dynamic_cast<ModeLaplace*>(testCase)->getFirstMassEigenValue();
   else {
+    // Input( Comm, Operator, verbose level, # levels, smoother, parameter, coarse solver)
+    AMGOperator precML(Comm, M, 0, 10, 1, 3, 0);
     BlockPCGSolver linMassSolver(Comm, M, 1e-06, 20);
-    linMassSolver.setAMGPreconditioner(1, 5);
+    linMassSolver.setPreconditioner(&precML);
     ARPACKm3 eigMassSolver(Comm, &linMassSolver, 1e-03, globalSize);
     double *lTmp = new double[6];
     Epetra_MultiVector QQ(Map, 6);
@@ -352,6 +342,7 @@ int main(int argc, char *argv[]) {
   int qSize;
   switch (algo) {
     case LOBPCG_CHOL:
+    case LOBPCG_LIGHT:
       qSize = dimSearch + numEigen;
       break;
     case LOBPCG_AK_CHOL:
@@ -378,9 +369,6 @@ int main(int argc, char *argv[]) {
       numBlock = (numBlock <= 0) ? 1 : numBlock;
       qSize = dimSearch*(numBlock+1);
       break;
-    case JD_SYM:
-      qSize = numEigen;
-      break;
   }
 
   double *vQ = new (nothrow) double[qSize*localSize];
@@ -395,11 +383,12 @@ int main(int argc, char *argv[]) {
   highMem = (highMem > currentSize()) ? highMem : currentSize();
 
   char precLabel[100];
-  BlockPCGSolver *opStiffness = 0;
-  Ifpack_CrsIct *ICT = 0;
+  MyIncompleteChol *ICT = 0;
+  BlockPCGSolver *opStiffness = new BlockPCGSolver(Comm, K, tolCG, maxIterCG, 
+                                                   (verbose) ? verbose-1 : 0);
+  AMGOperator *precML = 0;
   switch (precond) {
     case NO_PREC:
-      opStiffness = new BlockPCGSolver(Comm, K, tolCG, maxIterCG, verbose);
       opStiffness->setPreconditioner(0);
       strcpy(precLabel, " No preconditioner");
       break;
@@ -407,24 +396,21 @@ int main(int argc, char *argv[]) {
       // Use AMG preconditioner with polynomial smoother
       if (param < 1)
         param = 2;
-      opStiffness = new BlockPCGSolver(Comm, K, tolCG, maxIterCG, verbose);
-      opStiffness->setAMGPreconditioner(1, param);
+      precML = new AMGOperator(Comm, K, verbose, 10, 1, param, 0);
+      opStiffness->setPreconditioner(precML);
       strcpy(precLabel, " AMG with polynomial smoother");
       break;
     case AMG_GAUSSSEIDEL:
       // Use AMG preconditioner with Gauss-Seidel smoother
-      opStiffness = new BlockPCGSolver(Comm, K, tolCG, maxIterCG, verbose);
-      opStiffness->setAMGPreconditioner(2, param);
+      precML = new AMGOperator(Comm, K, verbose, 10, 2, param, 0);
+      opStiffness->setPreconditioner(precML);
       strcpy(precLabel, " AMG with Gauss-Seidel smoother");
       break;
     case INC_CHOL:
       // Use incomplete Cholesky with no-fill in
       Epetra_Operator *KOp = const_cast<Epetra_Operator*>(K);
       if (dynamic_cast<Epetra_CrsMatrix*>(KOp)) {
-        Epetra_CrsMatrix *KK = dynamic_cast<Epetra_CrsMatrix*>(KOp);
-        ICT = new Ifpack_CrsIct(*KK, Epetra_MinDouble, KK->GlobalMaxNumEntries() + param);
-        ICT->InitValues(*KK);
-        ICT->Factor();
+        ICT = new MyIncompleteChol(Comm, KOp, Epetra_MinDouble, param);
       }
       else {
         cerr << endl;
@@ -432,7 +418,6 @@ int main(int argc, char *argv[]) {
         cerr << " !!! No preconditioner is used !!!\n";
         cerr << endl;
       }
-      opStiffness = new BlockPCGSolver(Comm, K, tolCG, maxIterCG, verbose);
       opStiffness->setPreconditioner(ICT);
       if (ICT)
         strcpy(precLabel, " Incomplete Cholesky factorization");
@@ -445,6 +430,10 @@ int main(int argc, char *argv[]) {
   switch (algo) {
     case LOBPCG_CHOL:
       mySolver = new LOBPCG(Comm, opStiffness, M, opStiffness->getPreconditioner(),
+                     dimSearch, tol, maxIter, verbose, globalWeight);
+      break;
+    case LOBPCG_LIGHT:
+      mySolver = new LOBPCG_light(Comm, opStiffness, M, opStiffness->getPreconditioner(),
                      dimSearch, tol, maxIter, verbose, globalWeight);
       break;
     case LOBPCG_AK_CHOL:
@@ -472,10 +461,6 @@ int main(int argc, char *argv[]) {
       break;
     case JD_PCG:
       mySolver = new JDPCG(Comm, opStiffness, M, opStiffness->getPreconditioner(),
-                     dimSearch, numBlock, tol, maxIter, maxIterCG, verbose, globalWeight);
-      break;
-    case JD_SYM:
-      mySolver = new JDBSYM(Comm, opStiffness, M, opStiffness->getPreconditioner(),
                      dimSearch, numBlock, tol, maxIter, maxIterCG, verbose, globalWeight);
       break;
   }
@@ -566,13 +551,13 @@ int main(int argc, char *argv[]) {
       cout << endl;
       if (precond == AMG_POLYNOMIAL) {
         cout << " Number of levels for AMG preconditioner: ";
-        cout << opStiffness->getAMG_NLevels() << endl;
+        cout << precML->getAMG_NLevels() << endl;
         cout << " Polynomial degree of AMG preconditioner: " << param << endl;
         cout << endl;
       }
       if (precond == AMG_GAUSSSEIDEL) {
         cout << " Number of levels for AMG preconditioner: ";
-        cout << opStiffness->getAMG_NLevels() << endl;
+        cout << precML->getAMG_NLevels() << endl;
         cout << endl;
       }
       if ((precond == INC_CHOL) && (ICT)) {
@@ -623,6 +608,7 @@ int main(int argc, char *argv[]) {
   // Release all objects
   delete opStiffness;
   delete ICT;
+  delete precML;
   delete mySolver;
   
   delete[] lambda;

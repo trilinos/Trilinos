@@ -26,73 +26,79 @@
 //
 //**************************************************************************
 
-#ifndef MODE_FILE_MATRICES_H
-#define MODE_FILE_MATRICES_H
-
-#include <fstream>
+#ifndef ARPACK_MODE1_H
+#define ARPACK_MODE1_H
 
 #include "Epetra_ConfigDefs.h"
 
 #include "Epetra_Comm.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
 #include "Epetra_Operator.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_Vector.h"
+#include "Epetra_Time.h"
 
-#include "ModalProblem.h"
-
-// Chaco partition routine
-#ifdef _USE_CHACO
-extern "C" {
-  int interface(int, int*, int*, int *, float*, float*, float*, float*, char*,
-                char*, short int*, int, int, int[3], double*, int, int, int, int,
-                int, double, long);
-}
+#ifdef EPETRA_MPI
+#include "Epetra_MpiComm.h"
 #endif
 
-class ModeFileMatrices : public ModalProblem {
+#include "FortranRoutines.h"
+#include "ModalAnalysisSolver.h"
+#include "MyMemory.h"
+#include "CheckingTools.h"
+
+class ARPACKm1 : public ModalAnalysisSolver {
 
   private:
 
+    const CheckingTools myVerify;
+    const FortranRoutines callFortran;
+
     const Epetra_Comm &MyComm;
+    const Epetra_Operator *K;
+    const Epetra_Time MyWatch;
 
-    Epetra_Map *Map;
+    double tolEigenSolve;
+    int maxIterEigenSolve;
 
-    Epetra_Operator *K;
-    Epetra_Operator *M;
+    char *which;
 
-    const char *stiffnessFileName;
-    const char *massFileName;
+    int verbose;
 
-    double kScale;
-    double mScale;
+    double memRequested;
+    double highMem;
 
-    double shift;
+    int orthoOp;
+    int outerIter;
+    int stifOp;
 
-    // Private member functions
-    void preProcess();
-    void fillMatrices();
+    double timeOuterLoop;
+    double timePostProce;
+    double timeStifOp;
 
     // Don't define these functions
-    ModeFileMatrices(const ModeFileMatrices &ref);
-    ModeFileMatrices& operator=(const ModeFileMatrices &ref);
+    ARPACKm1(const ARPACKm1 &ref);
+    ARPACKm1& operator=(const ARPACKm1 &ref);
 
-    public:
+  public:
 
-    ModeFileMatrices(const Epetra_Comm &_Comm, const char *_stif, const char *_mass);
+    ARPACKm1(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
+              double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
 
-    ~ModeFileMatrices();
+    ARPACKm1(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_which,
+              double _tol = 1.0e-08, int _maxIter = 100, int _verb = 0);
 
-    const Epetra_Operator* getStiffness() const { return K; }
-    const Epetra_Operator* getMass()      const { return M; }
+    ~ARPACKm1() { }
 
-    int eigenCheck(const Epetra_MultiVector &Q, double *lambda, double *normWeight) const;
+    int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
 
+    int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
+
+    int minimumSpaceDimension(int nev) const         { return nev+1; }
+
+    void initializeCounters();
+
+    void algorithmInfo() const;
     void memoryInfo() const;
-    void problemInfo() const;
+    void operationInfo() const;
+    void timeInfo() const;
 
 };
 

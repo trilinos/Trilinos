@@ -26,12 +26,16 @@
 //
 //**************************************************************************
 
-#ifndef BLOCK_PCG_SOLVER_H
-#define BLOCK_PCG_SOLVER_H
+#ifndef AMG_OPERATOR_H
+#define AMG_OPERATOR_H
 
 #include "Epetra_ConfigDefs.h"
-
 #include "AztecOO.h"
+
+#include "ml_include.h"
+#include "ml_epetra_operator.h"
+#include "ml_epetra_utils.h"
+#include "ml_agg_METIS.h"
 
 #include "Epetra_BLAS.h"
 #include "Epetra_Comm.h"
@@ -41,52 +45,66 @@
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
 
-#include "FortranRoutines.h"
+#ifndef MACOSX
+#include "singularCoarse.h"
+#endif
 
-
-class BlockPCGSolver : public virtual Epetra_Operator {
+class AMGOperator : public virtual Epetra_Operator {
 
   private:
 
     const Epetra_Comm &MyComm;
     const Epetra_BLAS callBLAS;
     const Epetra_LAPACK callLAPACK;
-    const FortranRoutines callFortran;
 
     const Epetra_Operator *K;
     Epetra_Operator *Prec;
 
-    mutable AztecOO *vectorPCG;
+    const Epetra_MultiVector *Q;
+    double *QtQ;
 
-    double tolCG;
-    int iterMax;
+    int numDofs;
+
+    bool leftProjection;
+    bool rightProjection;
+
+    ML *ml_handle;
+    ML_Aggregate *ml_agg;
+
+    int AMG_NLevels;
+
+    int coarseLocalSize;
+    int coarseGlobalSize;
+
+    double *ZcoarseTZcoarse;
 
     int verbose;
 
-    mutable double *workSpace;
-    mutable int lWorkSpace;
-
-    mutable int numSolve;
-    mutable int maxIter;
-    mutable int sumIter; 
-    mutable int minIter;
+    void preProcess(int maxCoarseSize);
+    void setCoarseSolver_Cycle(int coarseSolver, int cycle);
 
     // Don't define these functions
-    BlockPCGSolver(const BlockPCGSolver &ref);
-    BlockPCGSolver& operator=(const BlockPCGSolver &ref);
+    AMGOperator(const AMGOperator &ref);
+    AMGOperator& operator=(const AMGOperator &ref);
 
   public:
 
-    BlockPCGSolver(const Epetra_Comm& _Com, const Epetra_Operator *KK,
-                   double _tol = 0.0, int _iMax = 0, int _verb = 0);
+    AMGOperator(const Epetra_Comm& _Com, const Epetra_Operator *KK, int verb = 0,
+                int nLevel = 10, int smoother = 1, int param = 2,
+                int coarseSolver = -1, int cycle = 0,
+                int _numDofs = 1, const Epetra_MultiVector *Z = 0);
 
-    BlockPCGSolver(const Epetra_Comm& _Com, const Epetra_Operator *KK,
-                   Epetra_Operator *PP, 
-                   double _tol = 0.0, int _iMax = 0, int _verb = 0);
+    AMGOperator(const Epetra_Comm& _Com, const Epetra_Operator *KK, int verb = 0,
+                int nLevel = 10, int smoother = 1, int *param = 0,
+                int coarseSolver = -1, int cycle = 0,
+                int _numDofs = 1, const Epetra_MultiVector *Z = 0);
 
-    ~BlockPCGSolver();
+    int SetUseLeftProjection(bool proj) { leftProjection = proj; return 0; }
+    int SetUseRightProjection(bool proj) { rightProjection = proj; return 0; }
 
-    char * Label() const { return "Epetra_Operator for Block PCG solver"; };
+    ~AMGOperator();
+
+    char * Label() const { return "Epetra_Operator for AMG preconditioner"; };
 
     bool UseTranspose() const { return (false); };
     int SetUseTranspose(bool UseTranspose) { return 0; };
@@ -102,17 +120,7 @@ class BlockPCGSolver : public virtual Epetra_Operator {
     const Epetra_Map& OperatorDomainMap() const { return K->OperatorDomainMap(); };
     const Epetra_Map& OperatorRangeMap() const { return K->OperatorRangeMap(); };
 
-    int Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
-    int Solve(const Epetra_MultiVector &X, Epetra_MultiVector &Y, int blkSize) const;
-
-    const Epetra_Operator* getPreconditioner() const { return Prec; };
-    void setPreconditioner(Epetra_Operator *PP);
-
-    void setIterMax(int _iMax) { iterMax = (_iMax > 0) ? _iMax : 0; };
-
-    int getMaxIter() const { return maxIter; };
-    double getAvgIter() const { return sumIter/((double) numSolve); };
-    int getMinIter() const { return minIter; };
+    int getAMG_NLevels() const { return AMG_NLevels; };
 
 };
 

@@ -178,17 +178,6 @@ int ModalTools::massOrthonormalize(Epetra_MultiVector &X, Epetra_MultiVector &MX
     double *oldDot = new double[xc];
     MXX.Dot(XX, oldDot);
 
-///////////////////////////
-int zz;
-for (zz = 0; zz < xc; ++zz) {
-  oldDot[zz] = sqrt(oldDot[zz]);
-  double tmp = 1.0/oldDot[zz];
-  XX(zz)->Scale(tmp);
-  if (M)
-    MXX(zz)->Scale(tmp);
-}
-//////////////////////////
-     
     // Define the product Q^T * (M*X)
     double *qTmx = new double[2*qc*xc];
 
@@ -230,8 +219,7 @@ for (zz = 0; zz < xc; ++zz) {
 
       MXX(j)->Dot(*(XX(j)), &newDot);
 
-//      if (kappa*newDot < oldDot[j]) {
-      if (kappa*newDot < 1.0) {
+      if (kappa*newDot < oldDot[j]) {
 
         // Apply another step of classical Gram-Schmidt
         timeQtMult -= MyWatch.WallTime();
@@ -268,14 +256,6 @@ for (zz = 0; zz < xc; ++zz) {
       } // if (kappa*newDot < oldDot[j])
     } // for (j = 0; j < xc; ++j)
 
-///////////////////////////
-for (zz = 0; zz < xc; ++zz) {
-  XX(zz)->Scale(oldDot[zz]);
-  if (M)
-    MXX(zz)->Scale(oldDot[zz]);
-}
-//////////////////////////
-     
     delete[] qTmx;
     delete[] oldDot;
 
@@ -549,7 +529,8 @@ int ModalTools::directSolver(int size, double *KK, int ldK, double *MM, int ldM,
   int lwork = size*NB;
   double *work = new double[lwork];
 
-  double tol = sqrt(eps);
+//  double tol = sqrt(eps);
+  double tol = 1e-12;
 
   switch (esType) {
 

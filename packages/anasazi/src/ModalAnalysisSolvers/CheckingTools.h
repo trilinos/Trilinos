@@ -64,6 +64,10 @@ class CheckingTools {
                              const Epetra_Operator *K, const Epetra_Operator *M,
                              double *normWeight = 0) const;
 
+    void errorEigenResiduals(const Epetra_MultiVector &Q, double *lambda,
+                             const Epetra_Operator *K, const Epetra_Operator *M,
+                             const Epetra_Operator *Msolver) const;
+
     int errorLambda(double *continuous, double *discrete, int numDiscrete, double *lambda,
                     int nev) const;
 

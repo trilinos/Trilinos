@@ -136,6 +136,13 @@ BRQMIN::~BRQMIN() {
 
 int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
+  return BRQMIN::reSolve(numEigen, Q, lambda);
+
+}
+
+
+int BRQMIN::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
@@ -163,6 +170,8 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   //                   At input, it must be of size numEigen + blockSize.
   //                   At exit, the first numEigen locations contain the eigenvalues requested.
   //
+  // startingEV (integer) = Number of existing converged eigenmodes
+  //
   // Return information on status of computation
   // 
   // info >=   0 >> Number of converged eigenpairs at the end of computation
@@ -185,8 +194,8 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   // Check the input parameters
   
-  if (numEigen <= 0) {
-    return 0;
+  if (numEigen <= startingEV) {
+    return startingEV;
   }
 
   int info = myVerify.inputArguments(numEigen, K, M, Prec, Q, numEigen + blockSize);
@@ -201,7 +210,7 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     vectWeight = new Epetra_Vector(View, Q.Map(), normWeight);
   }
 
-  int knownEV = 0;
+  int knownEV = startingEV;
   int localVerbose = verbose*(myPid==0);
 
   // Define local block vectors
@@ -219,6 +228,7 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   int xr = Q.MyLength();
   Epetra_MultiVector X(View, Q, numEigen, blockSize);
+  X.Random();
 
   int tmp;
   tmp = (M == 0) ? 5*blockSize*xr : 7*blockSize*xr;
@@ -298,7 +308,7 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   memRequested += sizeof(double)*lwork2/(1024.0*1024.0);
 
   // Define an array to store the residuals history
-  if (localVerbose > 1) {
+  if (localVerbose > 2) {
     resHistory = new (nothrow) double[maxIterEigenSolve*blockSize];
     if (resHistory == 0) {
       if (vectWeight)
@@ -342,6 +352,8 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << "weighted L2-norm with user-provided weights" << endl;
     else
       cout << "L^2-norm" << endl;
+    if (startingEV > 0)
+      cout << " *|* Input converged eigenvectors = " << startingEV << endl;
     cout << "\n -- Start iterations -- \n";
   }
 
@@ -610,7 +622,7 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     timeNorm += MyWatch.WallTime();
 
     // Store the residual history
-    if (localVerbose > 1) {
+    if (localVerbose > 2) {
       memcpy(resHistory + historyCount*blockSize, normR, blockSize*sizeof(double));
       historyCount += 1;
     }
@@ -621,7 +633,7 @@ int BRQMIN::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << knownEV + nFound << endl;
     }
 
-    if (localVerbose > 3) {
+    if (localVerbose > 1) {
       cout << endl;
       cout.precision(2);
       cout.setf(ios::scientific, ios::floatfield);
@@ -954,11 +966,11 @@ void BRQMIN::memoryInfo() const {
     cout.setf(ios::fixed, ios::floatfield);
     cout << " Memory requested per processor by the eigensolver   = (EST) ";
     cout.width(6);
-    cout << maxMemRequested << endl;
+    cout << maxMemRequested << " MB " << endl;
     cout << endl;
     cout << " High water mark in eigensolver                      = (EST) ";
     cout.width(6);
-    cout << maxHighMem << endl;
+    cout << maxHighMem << " MB " << endl;
     cout << endl;
   }
 

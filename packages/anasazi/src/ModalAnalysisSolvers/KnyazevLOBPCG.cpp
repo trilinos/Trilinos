@@ -128,6 +128,13 @@ KnyazevLOBPCG::~KnyazevLOBPCG() {
 
 int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
+  return KnyazevLOBPCG::reSolve(numEigen, Q, lambda);
+
+}
+
+
+int KnyazevLOBPCG::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+
   // Computes the smallest eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
@@ -157,6 +164,8 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   //                   At input, it must be of size numEigen.
   //                   At exit, the first numEigen locations contain the eigenvalues requested.
   //
+  // startingEV (integer) = Number of existing converged eigenmodes
+  //
   // Return information on status of computation
   // 
   // info >=   0 >> Number of converged eigenpairs at the end of computation
@@ -179,8 +188,8 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   // Check the input parameters
   
-  if (numEigen <= 0) {
-    return 0;
+  if (numEigen <= startingEV) {
+    return startingEV;
   }
 
   int info = myVerify.inputArguments(numEigen, K, M, Prec, Q, numEigen);
@@ -195,7 +204,7 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     vectWeight = new Epetra_Vector(View, Q.Map(), normWeight);
   }
 
-  int knownEV = 0;
+  int knownEV = startingEV;
   int localVerbose = verbose*(myPid==0);
 
   // Define local block vectors
@@ -260,6 +269,23 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
 
   Epetra_MultiVector MP(View, Q.Map(), (M) ? tmpD : P.Values(), xr, numEigen);
 
+  if (startingEV > 0) {
+    // Fill the first vectors of KX and MX
+    Epetra_MultiVector copyX(View, X, 0, startingEV);
+    Epetra_MultiVector copyKX(View, KX, 0, startingEV);
+    timeStifOp -= MyWatch.WallTime();
+    K->Apply(copyX, copyKX); 
+    timeStifOp += MyWatch.WallTime();
+    stifOp += startingEV;
+    timeMassOp -= MyWatch.WallTime();
+    if (M) {
+      Epetra_MultiVector copyMX(View, MX, 0, startingEV);
+      M->Apply(copyX, copyMX); 
+    }
+    timeMassOp += MyWatch.WallTime();
+    massOp += startingEV;
+  }
+
   // Define arrays
   //
   // theta = Store the local eigenvalues (size: numEigen)
@@ -302,7 +328,7 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
   memRequested += sizeof(double)*lwork2/(1024.0*1024.0);
 
   // Define an array to store the residuals history
-  if (localVerbose > 1) {
+  if (localVerbose > 2) {
     resHistory = new (nothrow) double[maxIterEigenSolve*numEigen];
     if (resHistory == 0) {
       if (vectWeight)
@@ -345,6 +371,8 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << "weighted L2-norm with user-provided weights" << endl;
     else
       cout << "L^2-norm" << endl;
+    if (startingEV > 0)
+      cout << " *|* Input converged eigenvectors = " << startingEV << endl;
     cout << "\n -- Start iterations -- \n";
   }
 
@@ -598,7 +626,7 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
     timeNorm += MyWatch.WallTime();
 
     // Store the residual history
-    if (localVerbose > 1) {
+    if (localVerbose > 2) {
       memcpy(resHistory + historyCount, normR, numEigen*sizeof(double));
       historyCount += numEigen;
     }
@@ -609,7 +637,7 @@ int KnyazevLOBPCG::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
       cout << " - Number of converged eigenvectors " << knownEV << endl;
     }
 
-    if (localVerbose > 3) {
+    if (localVerbose > 1) {
       cout << endl;
       cout.precision(2);
       cout.setf(ios::scientific, ios::floatfield);
@@ -832,11 +860,11 @@ void KnyazevLOBPCG::memoryInfo() const {
     cout.setf(ios::fixed, ios::floatfield);
     cout << " Memory requested per processor by the eigensolver   = (EST) ";
     cout.width(6);
-    cout << maxMemRequested << endl;
+    cout << maxMemRequested << " MB " << endl;
     cout << endl;
     cout << " High water mark in eigensolver                      = (EST) ";
     cout.width(6);
-    cout << maxHighMem << endl;
+    cout << maxHighMem << " MB " << endl;
     cout << endl;
   }
 

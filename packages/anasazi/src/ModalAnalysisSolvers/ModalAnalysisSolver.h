@@ -37,6 +37,8 @@ class ModalAnalysisSolver {
 
     virtual int solve(int numEigen, Epetra_MultiVector &Q, double *lambda) = 0;
 
+    virtual int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV=0)=0;
+
     virtual int minimumSpaceDimension(int nev) const  = 0;
 
     virtual void initializeCounters() { }

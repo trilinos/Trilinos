@@ -129,12 +129,14 @@ class JDPCG : public ModalAnalysisSolver {
   protected:
 
     int jacobiPreconditioner(const Epetra_MultiVector &B, Epetra_MultiVector &PrecB,
-                       int sizeQ, double *invQtMPMQ, int ldQtMPMQ, double *MQ, double *PMQ,
-                       double *work);
-    int jacobiPCG(Epetra_MultiVector &X, Epetra_MultiVector &Y, Epetra_MultiVector &U,
-                  double eta, double tolCG, int iterMax, int sizeQ, double *invQtMPMQ,
-                  int ldQtMPMQ, double *MQ, double *PMQ, double *work, double *workSpace,
-                  const Epetra_Vector *vectWeight);
+                       const Epetra_MultiVector *U, const Epetra_MultiVector *Q,
+                       double *invQtMPMQ, int ldQtMPMQ, double *PMQ, double *work, double *WS);
+    int jacobiPCG(Epetra_MultiVector &Rlin, Epetra_MultiVector &Y,
+                  const Epetra_MultiVector *U, const Epetra_MultiVector *Q,
+                  double eta, double tolCG, int iterMax,
+                  double *invQtMPMQ, int ldQtMPMQ, double *PMQ,
+                  double *work, double *workSpace,
+                  const Epetra_Vector *vectWeight, const Epetra_MultiVector *orthoVec = 0);
 
   public:
 
@@ -146,6 +148,8 @@ class JDPCG : public ModalAnalysisSolver {
     ~JDPCG();
 
     int solve(int numEigen, Epetra_MultiVector &Q, double *lambda);
+
+    int reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV = 0);
 
     int minimumSpaceDimension(int nev) const;
 

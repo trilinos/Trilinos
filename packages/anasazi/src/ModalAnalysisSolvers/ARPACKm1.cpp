@@ -26,16 +26,15 @@
 //
 //**************************************************************************
 
-#include "ARPACKm3.h"
+#include "ARPACKm1.h"
 
 
-ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
+ARPACKm1::ARPACKm1(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
                      double _tol, int _maxIter, int _verb) :
            myVerify(_Comm),
            callFortran(),
            MyComm(_Comm),
            K(KK),
-           M(0),
            MyWatch(_Comm),
            tolEigenSolve(_tol),
            maxIterEigenSolve(_maxIter),
@@ -43,11 +42,9 @@ ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
            verbose(_verb),
            memRequested(0.0),
            highMem(0.0),
-           massOp(0),
            orthoOp(0),
            outerIter(0),
            stifOp(0),
-           timeMassOp(0.0),
            timeOuterLoop(0.0),
            timePostProce(0.0),
            timeStifOp(0.0)
@@ -56,13 +53,12 @@ ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
 }
 
 
-ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_which,
+ARPACKm1::ARPACKm1(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_which,
                    double _tol, int _maxIter, int _verb) :
            myVerify(_Comm),
            callFortran(),
            MyComm(_Comm),
            K(KK),
-           M(0),
            MyWatch(_Comm),
            tolEigenSolve(_tol),
            maxIterEigenSolve(_maxIter),
@@ -70,11 +66,9 @@ ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_w
            verbose(_verb),
            memRequested(0.0),
            highMem(0.0),
-           massOp(0),
            orthoOp(0),
            outerIter(0),
            stifOp(0),
-           timeMassOp(0.0),
            timeOuterLoop(0.0),
            timePostProce(0.0),
            timeStifOp(0.0)
@@ -83,83 +77,24 @@ ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK, char *_w
 }
 
 
-ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
-                   const Epetra_Operator *MM,
-                   double _tol, int _maxIter, int _verb) :
-           myVerify(_Comm),
-           callFortran(),
-           MyComm(_Comm),
-           K(KK),
-           M(MM),
-           MyWatch(_Comm),
-           tolEigenSolve(_tol),
-           maxIterEigenSolve(_maxIter),
-           which("LM"),
-           verbose(_verb),
-           memRequested(0.0),
-           highMem(0.0),
-           massOp(0),
-           orthoOp(0),
-           outerIter(0),
-           stifOp(0),
-           timeMassOp(0.0),
-           timeOuterLoop(0.0),
-           timePostProce(0.0),
-           timeStifOp(0.0)
-           {
+int ARPACKm1::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
+
+  return ARPACKm1::reSolve(numEigen, Q, lambda, 0);
 
 }
 
 
-ARPACKm3::ARPACKm3(const Epetra_Comm &_Comm, const Epetra_Operator *KK,
-                   const Epetra_Operator *MM, char *_which,
-                   double _tol, int _maxIter, int _verb) :
-           myVerify(_Comm),
-           callFortran(),
-           MyComm(_Comm),
-           K(KK),
-           M(MM),
-           MyWatch(_Comm),
-           tolEigenSolve(_tol),
-           maxIterEigenSolve(_maxIter),
-           which(_which),
-           verbose(_verb),
-           memRequested(0.0),
-           highMem(0.0),
-           massOp(0),
-           orthoOp(0),
-           outerIter(0),
-           stifOp(0),
-           timeMassOp(0.0),
-           timeOuterLoop(0.0),
-           timePostProce(0.0),
-           timeStifOp(0.0)
-           {
-
-}
-
-
-int ARPACKm3::solve(int numEigen, Epetra_MultiVector &Q, double *lambda) {
-
-  return ARPACKm3::reSolve(numEigen, Q, lambda, 0);
-
-}
-
-
-int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
+int ARPACKm1::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int startingEV) {
 
   // Computes eigenvalues and the corresponding eigenvectors
   // of the generalized eigenvalue problem
   // 
-  //      K X = M X Lambda
+  //      K X = X Lambda
   // 
-  // using ARPACK (mode 3).
+  // using ARPACK (mode 1).
   //
   // The convergence test is provided by ARPACK.
   //
-  // Note that if M is not specified, then  K X = X Lambda is solved.
-  // (using the mode for generalized eigenvalue problem).
-  // 
   // Input variables:
   // 
   // numEigen  (integer) = Number of eigenmodes requested
@@ -185,7 +120,6 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
   // // Failure due to input arguments
   // 
   // info = -  1 >> The stiffness matrix K has not been specified.
-  // info = -  2 >> The maps for the matrix K and the matrix M differ.
   // info = -  3 >> The maps for the matrix K and the preconditioner P differ.
   // info = -  4 >> The maps for the vectors and the matrix K differ.
   // info = -  5 >> Q is too small for the number of eigenvalues requested.
@@ -201,7 +135,7 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
     return numEigen;
   }
 
-  int info = myVerify.inputArguments(numEigen, K, M, 0, Q, minimumSpaceDimension(numEigen));
+  int info = myVerify.inputArguments(numEigen, K, 0, 0, Q, minimumSpaceDimension(numEigen));
   if (info < 0)
     return info;
 
@@ -276,11 +210,10 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
 
   iparam[1-1] = 1;
   iparam[3-1] = maxIterEigenSolve;
-  iparam[7-1] = 3;
+  iparam[7-1] = 1;
 
   // The fourth parameter forces to use the convergence test provided by ARPACK.
   // This requires a customization of ARPACK (provided by R. Lehoucq).
-
   iparam[4-1] = 0;
 
   Epetra_Vector v1(View, Q.Map(), workd);
@@ -300,12 +233,9 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
   if (localVerbose > 0) {
     cout << endl;
     cout << " *|* Problem: ";
-    if (M) 
-      cout << "K*Q = M*Q D ";
-    else
-      cout << "K*Q = Q D ";
+    cout << "K*Q = Q D ";
     cout << endl;
-    cout << " *|* Algorithm = ARPACK (mode 3)" << endl;
+    cout << " *|* Algorithm = ARPACK (mode 1)" << endl;
     cout << " *|* Number of requested eigenvalues = " << numEigen << endl;
     cout.precision(2);
     cout.setf(ios::scientific, ios::floatfield);
@@ -326,60 +256,26 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
 
 #ifdef EPETRA_MPI
     if (MPIComm)
-      callFortran.PSAUPD(MPIComm->Comm(), &ido, 'G', localSize, which, numEigen, tolEigenSolve,
+      callFortran.PSAUPD(MPIComm->Comm(), &ido, 'I', localSize, which, numEigen, tolEigenSolve,
              resid, NCV, v, localSize, iparam, ipntr, workd, workl, lworkl, &info, localVerbose);
     else
-      callFortran.SAUPD(&ido, 'G', localSize, which, numEigen, tolEigenSolve, resid, NCV, v, 
+      callFortran.SAUPD(&ido, 'I', localSize, which, numEigen, tolEigenSolve, resid, NCV, v, 
              localSize, iparam, ipntr, workd, workl, lworkl, &info, localVerbose);
 #else
-    callFortran.SAUPD(&ido, 'G', localSize, which, numEigen, tolEigenSolve, resid, NCV, v,
+    callFortran.SAUPD(&ido, 'I', localSize,  which, numEigen, tolEigenSolve, resid, NCV, v,
              localSize, iparam, ipntr, workd, workl, lworkl, &info, localVerbose);
 #endif
 
-    if (ido == -1) {
-      // Apply the mass matrix      
-      v3.ResetView(workd + ipntr[0] - 1);
-      v1.ResetView(vTmp);
-      timeMassOp -= MyWatch.WallTime();
-      if (M)
-        M->Apply(v3, v1);
-      else
-        memcpy(v1.Values(), v3.Values(), localSize*sizeof(double));
-      timeMassOp += MyWatch.WallTime();
-      massOp += 1;
-      // Solve the stiffness problem
-      v2.ResetView(workd + ipntr[1] - 1);
-      timeStifOp -= MyWatch.WallTime();
-      K->ApplyInverse(v1, v2);
-      timeStifOp += MyWatch.WallTime();
-      stifOp += 1;
-      continue;
-    } // if (ido == -1)
-
-    if (ido == 1) {
-      // Solve the stiffness problem
-      v1.ResetView(workd + ipntr[2] - 1);
-      v2.ResetView(workd + ipntr[1] - 1);
-      timeStifOp -= MyWatch.WallTime();
-      K->ApplyInverse(v1, v2);
-      timeStifOp += MyWatch.WallTime();
-      stifOp += 1;
-      continue;
-    } // if (ido == 1)
-
-    if (ido == 2) {
-      // Apply the mass matrix      
+    if ((ido == 1) || (ido == -1)) {
+      // Apply the matrix
       v1.ResetView(workd + ipntr[0] - 1);
       v2.ResetView(workd + ipntr[1] - 1);
-      timeMassOp -= MyWatch.WallTime();
-      if (M)
-        M->Apply(v1, v2);
-      else
-        memcpy(v2.Values(), v1.Values(), localSize*sizeof(double));
-      timeMassOp += MyWatch.WallTime();
-      massOp += 1;
+      timeStifOp -= MyWatch.WallTime();
+      K->Apply(v1, v2);
+      timeStifOp += MyWatch.WallTime();
+      stifOp += 1;
       continue;
-    } // if (ido == 2)
+    } // if ((ido == 1) || (ido == -1))
 
   } // while (ido != 99)
   timeOuterLoop += MyWatch.WallTime();
@@ -398,15 +294,15 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
     timePostProce -= MyWatch.WallTime();
 #ifdef EPETRA_MPI
     if (MPIComm)
-      callFortran.PSEUPD(MPIComm->Comm(), 1, 'A', select, lambda, v, localSize, sigma, 'G',
+      callFortran.PSEUPD(MPIComm->Comm(), 1, 'A', select, lambda, v, localSize, sigma, 'I',
             localSize, which, numEigen, tolEigenSolve, resid, NCV, v, localSize, iparam, ipntr, 
             workd, workl, lworkl, &info);
     else
-      callFortran.SEUPD(1, 'A', select, lambda, v, localSize, sigma, 'G', localSize, which,
+      callFortran.SEUPD(1, 'A', select, lambda, v, localSize, sigma, 'I', localSize, which,
             numEigen, tolEigenSolve, resid, NCV, v, localSize, iparam, ipntr, workd, workl,
             lworkl, &info);
 #else
-    callFortran.SEUPD(1, 'A', select, lambda, v, localSize, sigma, 'G', localSize, which,
+    callFortran.SEUPD(1, 'A', select, lambda, v, localSize, sigma, 'I', localSize, which,
           numEigen, tolEigenSolve, resid, NCV, v, localSize, iparam, ipntr, workd, workl,
           lworkl, &info);
 #endif
@@ -439,17 +335,15 @@ int ARPACKm3::reSolve(int numEigen, Epetra_MultiVector &Q, double *lambda, int s
 }
 
 
-void ARPACKm3::initializeCounters() {
+void ARPACKm1::initializeCounters() {
 
   memRequested = 0.0;
   highMem = 0.0;
 
-  massOp = 0;
   orthoOp = 0;
   outerIter = 0;
   stifOp = 0;
 
-  timeMassOp = 0.0;
   timeOuterLoop = 0.0;
   timePostProce = 0.0;
   timeStifOp = 0.0;
@@ -457,18 +351,18 @@ void ARPACKm3::initializeCounters() {
 }
 
 
-void ARPACKm3::algorithmInfo() const {
+void ARPACKm1::algorithmInfo() const {
 
   int myPid = MyComm.MyPID();
   
   if (myPid ==0) {
-    cout << " Algorithm: ARPACK (Mode 3)\n";
+    cout << " Algorithm: ARPACK (Mode 1)\n";
   }
 
 }
 
 
-void ARPACKm3::memoryInfo() const {
+void ARPACKm1::memoryInfo() const {
 
   int myPid = MyComm.MyPID();
 
@@ -496,15 +390,12 @@ void ARPACKm3::memoryInfo() const {
 }
 
 
-void ARPACKm3::operationInfo() const {
+void ARPACKm1::operationInfo() const {
 
   int myPid = MyComm.MyPID();
   
   if (myPid == 0) {
     cout << " --- Operations ---\n\n";
-    cout << " Total number of mass matrix multiplications      = ";
-    cout.width(9);
-    cout << massOp << endl;
     cout << " Total number of orthogonalizations               = ";
     cout.width(9);
     cout << orthoOp << endl;
@@ -521,7 +412,7 @@ void ARPACKm3::operationInfo() const {
 }
 
 
-void ARPACKm3::timeInfo() const {
+void ARPACKm1::timeInfo() const {
 
   int myPid = MyComm.MyPID();
   
@@ -532,12 +423,7 @@ void ARPACKm3::timeInfo() const {
     cout << " Total time for outer loop                       = ";
     cout.width(9);
     cout << timeOuterLoop << " s" << endl;
-    cout << "       Time for mass matrix operations           = ";
-    cout.width(9);
-    cout << timeMassOp << " s     ";
-    cout.width(5);
-    cout << 100*timeMassOp/timeOuterLoop << " %\n";
-    cout << "       Time for stiffness matrix solves          = ";
+    cout << "       Time for stiffness matrix                 = ";
     cout.width(9);
     cout << timeStifOp << " s     ";
     cout.width(5);
