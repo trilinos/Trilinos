@@ -211,6 +211,7 @@ int main(int argc, char *argv[]) {
   Map2 = new Epetra_BlockMap(NumGlobalElements,NumMyElements,MyGlobalElements,ElementSizeList1,IndexBase,Comm);
   same = Map2->SameAs(*Map);
   assert(same==false); // ElementSizes are different
+  delete [] ElementSizeList1;
   delete Map2;
 
   same = Map3->SameAs(*Map);

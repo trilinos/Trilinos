@@ -72,7 +72,7 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
   if (Map.MaxElementSize()!=ElementSize) return(-11);
 
   int MaxLID = Map.MaxLID();
-  if (MaxLID!=NumMyElements-1+IndexBase) return(-12);
+  //  if (MaxLID!=NumMyElements-1+IndexBase) return(-12);
 
   int MaxMyGID = (Comm.MyPID()+1)*NumMyElements-1+IndexBase;
   if (Comm.MyPID()>2) MaxMyGID+=3;
@@ -136,6 +136,59 @@ int checkmap(Epetra_BlockMap & Map, int NumGlobalElements, int NumMyElements,
 
   if (!Map.MyLID(Map.LID(MaxMyGID))) return(-33);
   if (Map.MyLID(Map.LID(MaxMyGID+1))) return(-34);
+
+  // Test the FirstPointInElementList methods, begin by testing that they produce identical results
+  int * FirstPointInElementList = new int[NumMyElements+1];
+  Map.FirstPointInElementList(FirstPointInElementList);
+  int * FirstPointInElementList1 = Map.FirstPointInElementList();
+  for (i=0; i<=NumMyElements; i++)
+    if (FirstPointInElementList[i]!=FirstPointInElementList1[i]) return(-35);
+  // Now make sure values are correct
+  if (Map.ConstantElementSize()) {
+    for (i=0; i<=NumMyElements; i++)
+      if (FirstPointInElementList1[i]!=(i*ElementSize)) return(-36);// NOTE:FirstPointInElement[NumMyElements] is not the first point of an element
+  }
+  else {
+    int FirstPoint = 0;
+    for (i=0; i<NumMyElements; i++) {
+      if (FirstPointInElementList1[i]!=FirstPoint) return(-37);
+      FirstPoint += ElementSizeList[i];
+    }
+    if (FirstPointInElementList[NumMyElements] != NumMyPoints) return (-38);// The last entry in the array = the total number of Points on the proc
+  }
+  delete [] FirstPointInElementList;
+
+  // Declare some variables for the FindLocalElementID test
+  int ElementID, Offset;
+  // Test the PointToElementList methods, begin by testing that they produce identical results
+  int * PointToElementList = new int[NumMyPoints];
+  Map.PointToElementList(PointToElementList);
+  int * PointToElementList1 = Map.PointToElementList();
+  for (i=0; i<NumMyPoints; i++)
+    if (PointToElementList1[i] != PointToElementList[i])return(-39);
+  //Now make sure values are correct
+  if (Map.ConstantElementSize()) {
+    for (i=0; i<NumMyElements; i++)
+      for (int j=0; j<ElementSize; j++) {
+	if (PointToElementList[i*ElementSize+j] != i) return (-40);
+	// Test FindLocalElementID method
+	Map.FindLocalElementID(i*ElementSize+j,ElementID,Offset);
+	if (ElementID != i || Offset != j) return (-41);
+      }
+  }
+  else {
+    int MyPointTot = 0; // Keep track of total number of points in all previously completely checked elements
+    for (i=0; i<NumMyElements; i++) {
+      for (int j=0; j<ElementSizeList[i]; j++) {
+	if (PointToElementList[MyPointTot+j] != i) return(-42);
+	// Test FindLocalElementID method
+	Map.FindLocalElementID(MyPointTot+j,ElementID,Offset);
+	if (ElementID != i || Offset != j) return (-43);
+      }
+      MyPointTot += ElementSizeList[i];
+    }
+  }
+  delete [] PointToElementList;
 
   // Check RemoteIDList function (assumes all maps are linear, even if not stored that way)
 
