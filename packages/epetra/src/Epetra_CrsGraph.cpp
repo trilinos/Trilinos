@@ -699,7 +699,6 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   int IncBlockCols = EPETRA_MAX(EPETRA_MIN(NumMyBlockCols_/4,100),10);
   int MaxBlockCols = 0;
   int *ColIndices = 0;
-  //if (DomainMap_->DistributedGlobal()) {
   MaxBlockCols = NumMyBlockCols;
   ColIndices = new int[MaxBlockCols];
   //}
@@ -750,7 +749,7 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   int *PIDList = 0;
   int *SizeList = 0;
   int *RemoteSizeList = 0;
-  bool DoSizes = !DomainMap.ConstantElementSize(); // If not constant element size, then we must exchange
+  bool DoSizes = !RowMap().ConstantElementSize(); // If not constant element size, then we must exchange
       
   if (NumRemote>0) PIDList = new int[NumRemote];
 
@@ -770,23 +769,23 @@ int Epetra_CrsGraph::MakeColMap(const Epetra_BlockMap & DomainMap, const Epetra_
   Util.Sort(true, NumRemote, PIDList, 0, 0, NLists, SortLists);
   delete [] SortLists;
 
-  if (NumRemote>0) delete []PIDList;
+  if (PIDList!=0) delete [] PIDList;
       
-  DomainMap.MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements of import column map
-  if (DoSizes)DomainMap.ElementSizeList(SizeList); // Load ElementSizeList into first NumMyBlockCols elements of import size list
+  RowMap().MyGlobalElements(ColIndices); // Load Global Indices into first NumMyBlockCols elements of import column map
+  if (DoSizes)RowMap().ElementSizeList(SizeList); // Load ElementSizeList into first NumMyBlockCols elements of import size list
 
   // Make Column map with same element sizes as Domain map
-  if (DomainMap.ConstantElementSize()) // Constant Block size map
-    ColMap_ = new Epetra_BlockMap(-1, NewNumMyBlockCols, ColIndices, DomainMap.MaxElementSize(),
-				  DomainMap.IndexBase(), DomainMap.Comm());
+  if (RowMap().ConstantElementSize()) // Constant Block size map
+    ColMap_ = new Epetra_BlockMap(-1, NewNumMyBlockCols, ColIndices, RowMap().MaxElementSize(),
+				  RowMap().IndexBase(), RowMap().Comm());
 
   // Most general case where block size is variable.
   else
     ColMap_ = new Epetra_BlockMap(-1, NewNumMyBlockCols, ColIndices, SizeList,
-				  DomainMap.IndexBase(), DomainMap.Comm());
+				  RowMap().IndexBase(), RowMap().Comm());
 
   delete [] ColIndices; // Delete workspace
-  if (DoSizes && NewNumMyBlockCols>0) delete [] SizeList;
+  if (SizeList!=0) delete [] SizeList;
 
   return(0);
 }
