@@ -423,14 +423,21 @@ int Epetra_CrsMatrix::MergeRedundantEntries() {
     if (NumEntries>0) {
       double * const Values = Values_[i];
       int * const Indices = Indices_[i];
+
       int j0 = 0;
       int jj0 = Indices[j0];
+      int shift = 0;
+
       for (j=1; j<NumEntries; j++) {
 	int jj = Indices[j];
 	if (jj==jj0) {// Check if index is repeated
-	  Values[j0] += Values[j];
-	  for (k=j; k<NumEntries-1; k++) Values[k] = Values[k+1]; // Sum up values
-	  NumEntries--;
+
+	  Values[j0-shift] += Values[j-shift];
+
+	  for (k=j-shift; k<NumEntries-1-shift; k++) {
+            Values[k] = Values[k+1]; // Shift values down
+          }
+          ++shift;
 	}
 	else {
 	  j0=j; // Redefine comparison index value
