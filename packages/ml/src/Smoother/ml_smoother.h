@@ -33,6 +33,7 @@ typedef struct ML_Sm_Hiptmair_Data_Struct ML_Sm_Hiptmair_Data;
 #include "ml_operator.h"
 #include "ml_comminfoop.h"
 #include "ml_csolve.h"
+#include "ml_struct.h"
 #include <math.h>
 
 /* ******************************************************************** */
@@ -152,6 +153,8 @@ struct ML_Sm_Hiptmair_Data_Struct
    double max_eig;
    double omega;
    double output_level;
+   ML    *ml_nodal;
+   ML    *ml_edge;
 };
 
 /* ******************************************************************** */
