@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# Create Aztec Makefiles for specific machines/communication systems.
+#
+#     usage: set_makefiles machine  communication
+#
+#            machine         The target computer. Currently,
+#                            Aztec understands the following
+#                            machines: SUN4, SGI, SGIM4, SGI10K,
+#                            DEC, I860, HP, SUNMOS, NCUBE, SP2,
+#                            T3E, LINUX.
+#
+#            communication   The communication package to use
+#                            with Aztec. Currently, the following
+#                            are understood: SERIAL, I860, MPI,
+#                            NCUBE, SUNMOS.
+#
+if test `expr $#` != `expr 2`
+then
+   echo "usage: set_makefiles machine communication"
+   exit
+fi
+filename="Makefile."$1"."$2
+
+if test -r lib/$filename
+then
+   echo ""
+   echo "   The file 'lib/$filename' already exists (i.e. you"
+   echo "   previously ran 'set_makefiles'). Please remove "
+   echo "   'lib/$filename' if you really want this file to be"
+   echo "   overwritten and try again."
+   echo ""
+else
+   cd lib
+   cp Makefile.template $filename
+   \rm -f temp
+   cat $filename | sed 's/\$(MACHINE)/'$1'/g' > temp
+   \rm -f $filename
+   cat temp     | sed 's/$(COMM)/'$2'/g' > $filename
+   echo "Created Makefile in 'lib' directory"
+   \rm -f temp
+   \rm -f Makefile
+   ln -s $filename Makefile
+   cd ..
+fi
+if test -r app/$filename
+then
+   echo ""
+   echo "   The file 'app/$filename' already exists (i.e. you"
+   echo "   previously ran 'set_makefiles'). Please remove "
+   echo "   'app/$filename' if you really want this file to be"
+   echo "   overwritten and try again."
+   echo ""
+else
+   cd app
+   cp Makefile.template $filename
+   \rm -f temp
+   cat $filename | sed 's/\$(MACHINE)/'$1'/g' > temp
+   \rm -f $filename
+   cat temp     | sed 's/$(COMM)/'$2'/g' > $filename
+   echo "Created Makefile in 'app' directory"
+   \rm -f temp
+   \rm -f Makefile
+   ln -s $filename Makefile
+   cd ..
+fi
