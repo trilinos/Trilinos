@@ -19,6 +19,16 @@ SLUDIST_H =
 SLUDIST =
 endif
 
+if HAVE_AMESOS_DSCPACK
+DSCPACK_H = \
+        $(srcdir)/DscpackOO.h
+DSCPACK = \
+        $(srcdir)/DscpackOO.cpp
+else
+DSCPACK_H =
+DSCPACK =
+endif
+
 if HAVE_AMESOS_SLUD2
 SLUDIST2_H = \
         $(srcdir)/Superludist2_OO.h
@@ -29,7 +39,7 @@ SLUDIST2_H =
 SLUDIST2 =
 endif
 
-if BUILD_SLUSERIAL
+if HAVE_AMESOS_SLUS
 SLUSERIAL_H = \
        $(srcdir)/Epetra_SLU.h
 SLUSERIAL = \
@@ -72,11 +82,11 @@ COMP = \
 # AM_CPPFLAGS = -I$(top_srcdir)/../epetra/src -I$(top_builddir)/../epetra/src \
 #               -I$(top_srcdir)/../../external/slu -I$(top_srcdir)/src/ksparse
 
-if BUILD_SLUSERIAL
-SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
-else
-SLUSERIAL_CPPFLAGS = 
-endif
+# if BUILD_SLUSERIAL
+# SLUSERIAL_CPPFLAGS = -I$(top_srcdir)/../../external/slu
+# else
+# SLUSERIAL_CPPFLAGS = 
+# endif
 
 if BUILD_KUNDERT
 KUNDERT_CPPFLAGS = -I$(top_srcdir)/src/ksparse
@@ -95,6 +105,7 @@ AMESOS_LIB = libamesos.a
 
 
 AMESOS_H = \
+        $(DSCPACK_H) \
         $(SLUDIST_H) \
         $(SLUDIST2_H) \
         $(SLUSERIAL_H) \
@@ -102,6 +113,7 @@ AMESOS_H = \
 	$(COMP_H)
 
 libamesos_a_SOURCES = \
+        $(DSCPACK) \
         $(SLUDIST) \
         $(SLUDIST2) \
         $(SLUSERIAL) \

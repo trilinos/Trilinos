@@ -257,9 +257,11 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, slud2, [Enable Amesos interface support for 
 
 #
 #  Test to see if everything is where it ought to be:
-#    Make sure that supermatrix.h is in the SuperLU serial include directory
-#    Make sure that SuperLU_timer is in the SuperLU serial library
+#    Make sure that supermatrix.h is in the SuperLU distributed include directory
+#    Make sure that SuperLU_timer is in the SuperLU distributed library
 #
+amesos_libs=" " 
+
 if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_LANG_SAVE
   AC_LANG_C
@@ -274,7 +276,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   TAC_ARG_WITH_SUB( amesos, sludlib, [Set SuperLU dist library],  ${tac_with_amesos_sluddir}/libsuperludist.a )
   AC_CHECK_FILE(${tac_with_amesos_sludlib})
 
-  TAC_ARG_WITH_SUB( amesos, sludincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_sluddir}/SRC )
+  TAC_ARG_WITH_SUB( amesos, sludincdir, [Set SuperLU dist include directory],  ${tac_with_amesos_sluddir}/SRC )
   AC_CHECK_FILE(${tac_with_amesos_sludincdir})
 
 #
@@ -286,7 +288,7 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h)
 
   AC_CHECK_FILE(${tac_with_amesos_sludincdir}/supermatrix.h,,
-    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sluincdir, --with-amesos-sluddir or --with-trilinos3pldir]] ))
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_sludincdir} , specify a location using --with-amesos-sludincdir, --with-amesos-sluddir or --with-trilinos3pldir]] ))
 
 
 ##  LDFLAGS="${tac_with_amesos_sludlib} ${LDFLAGS}"
@@ -298,6 +300,8 @@ if test "X$ac_cv_use_amesos_slud" != "Xno"; then
      AC_TRY_LINK_FUNC(SuperLU_timer_,,
       AC_MSG_ERROR([[Cannot find SuperLU Dist library, specify a location using --with-amesos-sludlib, (ex. --with-amesos-sludlib=/home/kstanley/Trilinos3PL/SuperLU_DIST/libsuperludist.a)]]))  
     LIBS="${SAVE_LIBS}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_sludlib}"
+
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, true ) 
 else
   AM_CONDITIONAL(HAVE_AMESOS_SLUD, false ) 
@@ -315,7 +319,125 @@ else
    AM_CONDITIONAL(HAVE_AMESOS_SLUD2, false )  
 fi
 
-AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib}) 
+
+#
+#  --enable-amesos-dscpack, --with-amesos-dscpackdir, --with-amesos-dscpacklib, 
+#    --with-amesos-dscpackincdir
+#
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, dscpack, [Enable Amesos interface support for DSCPACK], 
+		AMESOS_DSCPACK, no)
+
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that dscmain.h is in the directory pointed to by amesos-dscpackincdic
+#    Make sure that DSC_Clock is in the library pointed to by amesos-dscpacklib
+#
+if test "X$ac_cv_use_amesos_dscpack" != "Xno"; then
+  AC_LANG_SAVE
+  AC_LANG_C
+
+  if test "X${HAVE_PKG_MPI}" != "Xyes"; then
+    AC_MSG_ERROR([[Amesos/DscpackOO requires MPI.]])
+  fi
+
+  TAC_ARG_WITH_SUB( amesos, dscpackdir, [Set DSCPACK directory],  ${tac_with_trilinos3pldir}/DSCPACK1.0 )
+  AC_CHECK_FILE(${tac_with_amesos_dscpackdir})
+
+  TAC_ARG_WITH_SUB( amesos, dscpacklib, [Set DSCPACK library],  ${tac_with_amesos_dscpackdir}/DSC_LIB/dsclibdbl.a )
+  AC_CHECK_FILE(${tac_with_amesos_dscpacklib})
+
+  TAC_ARG_WITH_SUB( amesos, dscpackincdir, [Set DSCPACK include directory],  ${tac_with_amesos_dscpackdir}/DSC_LIB )
+  AC_CHECK_FILE(${tac_with_amesos_dscpackincdir})
+
+#
+# This is a bad way to check for dscmain.h, it won't pick supermatrix.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h)
+
+  AC_CHECK_FILE(${tac_with_amesos_dscpackincdir}/dscmain.h,,
+    AC_MSG_ERROR([[Cannot find dscmain.h in ${tac_with_amesos_dscpackincdir} , specify a location using --with-amesos-dscpackincdir, --with-amesos-dscpackdir or --with-trilinos3pldir]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_dscpacklib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_dscpackincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_dscpacklib} ${MPI_LIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(DSC_CloseSolver,,
+      AC_MSG_ERROR([[Cannot find the DSCPACK library, specify a location using --with-amesos-dscpacklib, (ex. --with-amesos-dscpacklib=/home/kstanley/Trilinos3PL/DSCPACK1.0/dsclibdbl.a)]]))  
+    LIBS="${SAVE_LIBS}"
+  AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, true ) 
+  amesos_libs="${amesos_libs} ${tac_with_amesos_dscpacklib}"
+else
+  AM_CONDITIONAL(HAVE_AMESOS_DSCPACK, false ) 
+fi
+
+
+#
+#  --enable-amesos-slus, --with-amesos-slusdir, --with-amesos-sluslib, 
+#    --with-amesos-slusincdir
+#
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, slus, [Enable Amesos interface support for SuperLU Dist], 
+		AMESOS_SLUS, no)
+
+#
+#  Test to see if everything is where it ought to be:
+#    Make sure that supermatrix.h is in the SuperLU serial include directory
+#    Make sure that SuperLU_timer is in the SuperLU serial library
+#
+
+if test "X$ac_cv_use_amesos_slus" != "Xno"; then
+  AC_LANG_SAVE
+  AC_LANG_C
+
+  TAC_ARG_WITH_SUB( amesos, slusdir, [Set SuperLU serial directory],  ${tac_with_trilinos3pldir}/SuperLU )
+  AC_CHECK_FILE(${tac_with_amesos_slusdir})
+
+  TAC_ARG_WITH_SUB( amesos, sluslib, [Set SuperLU serial library],  ${tac_with_amesos_slusdir}/superlu.a )
+  AC_CHECK_FILE(${tac_with_amesos_sluslib})
+
+  TAC_ARG_WITH_SUB( amesos, slusincdir, [Set SuperLU serial include directory],  ${tac_with_amesos_slusdir}/SRC )
+  AC_CHECK_FILE(${tac_with_amesos_slusincdir})
+
+#
+# This is a bad way to check for supermatrix.h, it won't pick supermatrix.h up if
+# it is in the include path, i.e. /usr/include - see tac_arg_check_mpi for a better way
+#
+
+
+  AC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h)
+
+  AC_CHECK_FILE(${tac_with_amesos_slusincdir}/supermatrix.h,,
+    AC_MSG_ERROR([[Cannot find supermatrix.h in ${tac_with_amesos_slusincdir} , specify a location using --with-amesos-slusincdir, --with-amesos-slusdir or --with-trilinos3pldir]] ))
+
+
+##  LDFLAGS="${tac_with_amesos_sluslib} ${LDFLAGS}"
+
+  CXXFLAGS="-I${tac_with_amesos_slusincdir} ${CXXFLAGS}"
+
+    SAVE_LIBS="${LIBS}"
+    LIBS="${tac_with_amesos_sluslib} ${MPI_LIBS} ${LIBS}"
+     AC_TRY_LINK_FUNC(SuperLU_timer_,,
+      AC_MSG_ERROR([[Cannot find SuperLU serial library, specify a location using --with-amesos-sluslib, (ex. --with-amesos-sluslib=/home/kstanley/Trilinos3PL/SuperLU/libsuperlu.a)]]))  
+    LIBS="${SAVE_LIBS}"
+  amesos_libs="${amesos_libs} ${tac_with_amesos_sluslib}"
+
+  AM_CONDITIONAL(HAVE_AMESOS_SLUS, true ) 
+else
+  AM_CONDITIONAL(HAVE_AMESOS_SLUS, false ) 
+fi
+
+
+
+
+
+
+
+AC_SUBST(AMESOS_LIBS,${amesos_libs}) 
 
 
 
@@ -328,12 +450,12 @@ AC_SUBST(AMESOS_LIBS,${tac_with_amesos_sludlib})
 ## )
 ## AM_CONDITIONAL(BUILD_SLUDIST, test X${ADDON_SLUD} = "Xyes")
 
-AC_ARG_ENABLE(amesos-slus,
-[AC_HELP_STRING([--enable-amesos-slus],[compile SuperLU Serial interface])],
-[ADDON_SLUS=$enableval],
-[ADDON_SLUS=yes]
-)
-AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
+## AC_ARG_ENABLE(amesos-slus,
+## [AC_HELP_STRING([--enable-amesos-slus],[compile SuperLU Serial interface])],
+## [ADDON_SLUS=$enableval],
+## [ADDON_SLUS=yes]
+## )
+## AM_CONDITIONAL(BUILD_SLUSERIAL, test X${ADDON_SLUS} = "Xyes")
 
 AC_ARG_ENABLE(amesos-kundert,
 [AC_HELP_STRING([--enable-amesos-kundert],[compile Kundert Sparse])],

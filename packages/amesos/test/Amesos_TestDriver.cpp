@@ -218,6 +218,8 @@ main(int argc, char **argv)
     SparseSolver = Aztec ; 
   else if  ( Sprogram == "KUNDERT" ) 
     SparseSolver = KUNDERT ; 
+  else if  ( Sprogram == "DSCPACK" ) 
+    SparseSolver = DSCPACK ; 
   else if  ( Sprogram == "SuperLUdist" ) 
     SparseSolver = SuperLUdist ; 
   else if  ( Sprogram == "SuperLUdist2" ) 
@@ -299,20 +301,16 @@ main(int argc, char **argv)
 	  << transpose << endl ; 
     exit_value = -1 ; 
   }
-  if ( transpose< 0 ||  transpose > 1) { 
-    if ( verbose ) 
-      cerr << "transpose must be 0 (no trans) or 1" 
-	<< ", it is: "
-	  << transpose << endl ; 
-    exit_value = -1 ; 
-  }
-#if 1
   if ( transpose != 0 && SparseSolver == SPOOLESSERIAL ) { 
     if ( verbose ) 
       cerr << "Our use of SPOOLESSERIAL does not support transpose yet" << endl ;
     exit_value = -1 ; 
   }
-#endif
+  if ( transpose != 0 && SparseSolver == SuperLU ) { 
+    if ( verbose ) 
+      cerr << "Our use of SuperLU serial does not support transpose yet" << endl ;
+    exit_value = -1 ; 
+  }
   if ( transpose != 0 && SparseSolver == KUNDERT ) { 
     if ( verbose ) 
       cerr << "Our use of KUNDERT does not support transpose yet" << endl ;

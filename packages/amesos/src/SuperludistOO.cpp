@@ -270,9 +270,8 @@ int SuperludistOO::Solve(bool factor) {
   Epetra_Import importer( ReplicatedMap, Phase3Matmap );
 
   Epetra_CrsMatrix Phase5Mat(Copy, ReplicatedMap, 0);
-  int Phase5ImportRes = Phase5Mat.Import( *Phase4Mat, importer, Insert);
-  assert( Phase5ImportRes == 0);
-  assert( Phase5Mat.TransformToLocal() == 0 ) ; 
+  EPETRA_CHK_ERR( Phase5Mat.Import( *Phase4Mat, importer, Insert) );
+  EPETRA_CHK_ERR( Phase5Mat.TransformToLocal() ) ; 
 
   assert( Phase5Mat.NumMyRows() == Phase4Mat->NumGlobalRows() ) ;
 

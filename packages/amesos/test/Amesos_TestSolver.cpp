@@ -18,16 +18,21 @@
 #ifdef HAVE_AMESOS_SLUD
 #include "SuperludistOO.h"
 #endif
+#ifdef HAVE_AMESOS_SLUS
+#include "Epetra_SLU.h"
+#endif
 #ifdef HAVE_AMESOS_SLUD2
 #include "Superludist2_OO.h"
 #endif
 #ifdef TEST_AZTEC
 #include "AztecOO.h"
 #endif
+#ifdef HAVE_AMESOS_DSCPACK
+#include "DscpackOO.h"
+#endif
 #if 0 
 #include "UmfpackOO.h"
 #include "SpoolesserialOO.h"
-#include "SuperluserialOO.h"
 #include "TimeMemory.h"
 #include "SparseSolverResult.h"
 #endif
@@ -184,16 +189,10 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
     umfpack.SetTrans( transpose ) ; 
     umfpack.Solve() ; 
 #endif
-#ifdef TEST_SuperLU
+#ifdef HAVE_AMESOS_SLUS
   } else if ( SparseSolver == SuperLU ) { 
-    SuperluserialOO superluserial( (Epetra_RowMatrix *) passA, 
-		       (Epetra_MultiVector *) passx, 
-		       (Epetra_MultiVector *) passb ) ; 
+    Epetra_SLU superluserial( &Problem ) ;
     
-    
-    superluserial.SetPermc( SuperLU_permc ) ; 
-    superluserial.SetTrans( transpose ) ; 
-    superluserial.SetUseDGSSV( special == 0 ) ; 
     superluserial.Solve() ; 
 #endif
 #ifdef HAVE_AMESOS_SLUD
@@ -212,6 +211,14 @@ int Amesos_TestSolver( Epetra_Comm &Comm, char *matrix_file,
       Superludist2_OO superludist2( Problem ) ; 
       superludist2.SetTrans( transpose );  
       EPETRA_CHK_ERR( superludist2.Solve( true ) ); 
+   }
+#endif
+#ifdef HAVE_AMESOS_DSCPACK
+  } else if ( SparseSolver == DSCPACK ) {
+
+    for ( int i = 0; i < 1+special ; i++ ) { 
+      DscpackOO dscpack( Problem ) ; 
+      EPETRA_CHK_ERR( dscpack.Solve( true ) ); 
    }
 #endif
 #ifdef TEST_SPOOLES

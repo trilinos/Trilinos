@@ -11,11 +11,17 @@
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #undef F77_FUNC_
 
+/* Define if want to build amesos-dscpack */
+#undef HAVE_AMESOS_DSCPACK
+
 /* Define if want to build amesos-slud */
 #undef HAVE_AMESOS_SLUD
 
 /* Define if want to build amesos-slud2 */
 #undef HAVE_AMESOS_SLUD2
+
+/* Define if want to build amesos-slus */
+#undef HAVE_AMESOS_SLUS
 
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
