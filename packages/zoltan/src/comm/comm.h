@@ -17,6 +17,8 @@ struct Comm_Obj {
   MPI_Comm comm;             /* duplicated MPI Comm for all communication */
 };
 
+typedef struct Comm_Obj COMM_OBJ;
+
 /* function prototypes */
 
 void comm_do(struct Comm_Obj *, char *, int, char *);

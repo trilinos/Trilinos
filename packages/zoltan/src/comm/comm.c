@@ -6,6 +6,7 @@
 
 #include "mpi.h"
 #include "comm.h"
+#include "all_allo_const.h"
 
 #define MAX(A,B) ((A) > (B)) ? (A) : (B)
 
@@ -32,7 +33,7 @@ void comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* malloc buf for largest send */
 
-  buf = (char *) my_malloc(nsize*plan->nsendmax*sizeof(char));
+  buf = (char *) LB_smalloc(nsize*plan->nsendmax*sizeof(char));
 
 /* send each message, packing buf with needed datums */
 
@@ -59,7 +60,7 @@ void comm_do(struct Comm_Obj *plan,          /* plan from create_comm */
 
 /* free temporary send buffer */
 
-  my_free(buf);
+  LB_safe_free((void **) &buf);
 
 /* wait on all incoming messages */
 
@@ -95,10 +96,10 @@ struct Comm_Obj *comm_create(
 
 /* allocate plan and work vectors */
 
-  plan = (struct Comm_Obj *) my_malloc(sizeof(struct Comm_Obj));
+  plan = (struct Comm_Obj *) LB_smalloc(sizeof(struct Comm_Obj));
 
-  list = (int *) my_malloc(nprocs*sizeof(int));
-  counts = (int *) my_malloc(nprocs*sizeof(int));
+  list = (int *) LB_smalloc(nprocs*sizeof(int));
+  counts = (int *) LB_smalloc(nprocs*sizeof(int));
 
 /* nrecv = # of messages I receive, not including self
    nself = 0 if no data for self, 1 if there is */
@@ -118,10 +119,10 @@ struct Comm_Obj *comm_create(
 
 /* storage for recv info, not including self */
 
-  procs_from = (int *) my_malloc(nrecv*sizeof(int));
-  lengths_from = (int *) my_malloc(nrecv*sizeof(int));
-  request = (MPI_Request *) my_malloc(nrecv*sizeof(MPI_Request));
-  status = (MPI_Status *) my_malloc(nrecv*sizeof(MPI_Status));
+  procs_from = (int *) LB_smalloc(nrecv*sizeof(int));
+  lengths_from = (int *) LB_smalloc(nrecv*sizeof(int));
+  request = (MPI_Request *) LB_smalloc(nrecv*sizeof(MPI_Request));
+  status = (MPI_Status *) LB_smalloc(nrecv*sizeof(MPI_Status));
 
 /* nsend = # of messages I send, not including self */
 
@@ -135,9 +136,9 @@ struct Comm_Obj *comm_create(
 
 /* storage for send info, including self */
 
-  procs_to = (int *) my_malloc((nsend+nself)*sizeof(int));
-  lengths_to = (int *) my_malloc((nsend+nself)*sizeof(int));
-  indices_to = (int *) my_malloc(n*sizeof(int));
+  procs_to = (int *) LB_smalloc((nsend+nself)*sizeof(int));
+  lengths_to = (int *) LB_smalloc((nsend+nself)*sizeof(int));
+  indices_to = (int *) LB_smalloc(n*sizeof(int));
 
 /* set send info in procs_to and lengths_to, including self
    each proc begins with iproc > me, and continues until iproc = me
@@ -195,8 +196,8 @@ struct Comm_Obj *comm_create(
 
 /* free work vectors */
 
-  my_free(counts);
-  my_free(list);
+  LB_safe_free((void **) &counts);
+  LB_safe_free((void **) &list);
     
 /* initialize plan and return it */
 
@@ -231,15 +232,15 @@ void comm_destroy(struct Comm_Obj *plan)
 
 /* free internal arrays */
 
-  my_free(plan->procs_to);
-  my_free(plan->procs_from);
-  my_free(plan->lengths_to);
-  my_free(plan->lengths_from);
-  my_free(plan->indices_to);
+  LB_safe_free((void **) &(plan->procs_to));
+  LB_safe_free((void **) &(plan->procs_from));
+  LB_safe_free((void **) &(plan->lengths_to));
+  LB_safe_free((void **) &(plan->lengths_from));
+  LB_safe_free((void **) &(plan->indices_to));
 
 /* free plan itself */
 
-  my_free(plan);
+  LB_safe_free((void **) &plan);
 }
 
 
