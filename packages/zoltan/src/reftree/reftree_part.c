@@ -738,11 +738,13 @@ static int Zoltan_Reftree_Part_Recursive(ZZ *zz, ZOLTAN_REFTREE *subroot, int *p
 int i;         /* loop counter */
 float newsize; /* size of partition if this subroot gets added to it */
 float eps;     /* imbalance tolerance in units of weight */
+float imb_tol; /* Zoltan imbalance tolerance */
 int ierr;      /* error flag */
 
+  imb_tol = zz->LB.Imbalance_Tol[0];  /* Only one weight currently supported. */
   newsize = *current_size + subroot->summed_weight[0]; /* TEMP SINGLE WEIGHT */
   if (*part != num_part-1)
-    eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+    eps = (imb_tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
   else
     eps = 0.0;
 
@@ -780,9 +782,9 @@ int ierr;      /* error flag */
    */
 
     if (*part != 0)
-      eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part]-cutoff[*part-1])/2.0;
+      eps = (imb_tol - 1.0)*(cutoff[*part]-cutoff[*part-1])/2.0;
     else
-      eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part])/2.0;
+      eps = (imb_tol - 1.0)*(cutoff[*part])/2.0;
 
     if (*current_size >= cutoff[*part] - eps && *part < num_part-1) {
       *part += 1;
@@ -811,14 +813,14 @@ int ierr;      /* error flag */
    */
 
       if (*part != num_part-1)
-        eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+        eps = (imb_tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
       else
         eps = 0.0;
 
       while (newsize > cutoff[*part]+eps && *part < num_part-1) {
         *part += 1;
         if (*part != num_part-1)
-         eps = (zz->LB.Imbalance_Tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
+         eps = (imb_tol - 1.0)*(cutoff[*part+1]-cutoff[*part])/2.0;
         else
          eps = 0.0;
       }
