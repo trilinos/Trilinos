@@ -428,6 +428,8 @@ AC_CONFIG_FILES([
 		test/Container/Makefile.include
 		test/OverlappingRowMatrix/Makefile
 		test/OverlappingRowMatrix/Makefile.include
+		test/CompareWithAztecOO/Makefile
+		test/CompareWithAztecOO/Makefile.include
 		test/scripts/Makefile
           test/scripts/daily/Makefile
           test/scripts/daily/mpi/Makefile
