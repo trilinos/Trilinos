@@ -639,8 +639,8 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
   int i;
   int j;
   int k;
-  int ii;
-  int jj;
+  int ig;
+  int jg, jl;
 
   if(NoRedundancies()) 
     return(0);
@@ -662,17 +662,19 @@ int Epetra_CrsGraph::RemoveRedundantIndices() {
     if(NumIndices > 0) {
       int* const Indices = CrsGraphData_->Indices_[i].Values();
       int j0 = 0;
-      ii = GRID(i);
-      jj = GCID(Indices[0]);
-      if(jj > ii) CrsGraphData_->LowerTriangular_ = false;
-      if(jj < ii) CrsGraphData_->UpperTriangular_ = false;
-      if(jj == ii) diagfound = true;
+      ig = GRID(i);
+      jl = Indices[0];
+      jg = GCID(jl);
+      if(jl > i) CrsGraphData_->LowerTriangular_ = false;
+      if(jl < i) CrsGraphData_->UpperTriangular_ = false;
+      if(jg == ig) diagfound = true;
       for(j = 1; j < NumIndices; j++) {
-	jj = GCID(Indices[j]);
-	if (jj > ii) CrsGraphData_->LowerTriangular_ = false;
-	if (jj < ii) CrsGraphData_->UpperTriangular_ = false;
-	if (jj == ii) diagfound = true;
-	if (jj == GCID(Indices[j0])) { // Check if index is repeated
+	jl = Indices[j];
+	jg = GCID(jl);
+	if (jl > i) CrsGraphData_->LowerTriangular_ = false;
+	if (jl < i) CrsGraphData_->UpperTriangular_ = false;
+	if (jg == ig) diagfound = true;
+	if (jl == Indices[j0]) { // Check if index is repeated
 	  CrsGraphData_->NumIndicesPerRow_[i]--; // Decrement NumIndices count
 	  CrsGraphData_->NumMyNonzeros_ --;
 	  for(k = j; k < NumIndices-1; k++) 
