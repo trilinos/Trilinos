@@ -19,6 +19,7 @@ my %options;                # config-file hash of arrays (keys, lists of values)
 
 # Report variables
 my %summary;                # overall test-harness summary
+my $reportCount;            # count of how many reports have been generated
 my %dependencies;           # package dependencies
 my %emails;                 # packageDirName/regressionEmailPrefix pairs
 my @codes;                  # strings corresponding to error code constants
@@ -71,7 +72,7 @@ prepareBuildDirs();
 run();
 
 # Send summary email
-sendMail($SUMMARY);
+report($SUMMARY);
 
 # Clean Up =====================================================================
 
@@ -143,16 +144,18 @@ mpiShutdown();
 
     sub prepareVariables {    
         
+        $reportCount = "000";
+        
         $codes[$FILE_SYSTEM_ERROR] = "file system error";           
         $codes[$SYSTEM_COMMAND_ERROR] = "system command error";        
         $codes[$CONFIG_ERROR] = "test-harness config error";
-        $codes[$UPDATE_ERROR] = "cvs udate error";
+        $codes[$UPDATE_ERROR] = "cvs update error";
         $codes[$TRILINOS_CONFIGURE_ERROR] = "Trilinos configure error";
         $codes[$TRILINOS_BUILD_ERROR] = "Trilinos build error";
         $codes[$TEST_COMPILE_ERROR] = "test compile error";
         $codes[$TEST_FAILED] = "test failed";
         $codes[$TEST_PASSED] = "test passed";
-        $codes[$SUMMARY] = "test-harness summary";
+        $codes[$SUMMARY] = "summary";
             
         $summary{$FILE_SYSTEM_ERROR} = ();
         $summary{$SYSTEM_COMMAND_ERROR} = ();
@@ -186,8 +189,8 @@ mpiShutdown();
         $emails{"TSFCore"} = "tsf";
         $emails{"TSFCoreUtils"} = "tsf";
         $emails{"TSFExtended"} = "tsf";
-        $emails{"Trilinos"} = "trilinos";
-        $emails{"unknown"} = "trilinos";
+        $emails{"trilinos"} = "trilinos";
+        $emails{"error"} = "trilinos";
         
     } # prepareVariables()
 
@@ -210,7 +213,7 @@ mpiShutdown();
             $command .= "/testharness/temp/update_log.txt 2>&1";
             my $result = system $command;
             if ($result) {
-                sendMail($UPDATE_ERROR);
+                report($UPDATE_ERROR);
                 die " *** error updating Trilinos - aborting test-harness ***\n";
             }
             system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
@@ -232,7 +235,7 @@ mpiShutdown();
             my $command = "$options{'MPI_STARTUP_CMD'}[0]";
             my $commandFailed = system $command; 
             if ($commandFailed) {
-                sendMail($SYSTEM_COMMAND_ERROR, $command);
+                report($SYSTEM_COMMAND_ERROR, $command);
                 print $command;          
                 die " *** error running system command - aborting test-harness ***\n";
             }
@@ -253,12 +256,16 @@ mpiShutdown();
         
         if (!$flags{t}) {
             # delete and recreate mpi dir
-            system "rm -rf $options{'MPI_DIR'}[0]";
-            system "mkdir $options{'MPI_DIR'}[0]";
+            if (defined $options{'MPI_DIR'} && defined $options{'MPI_DIR'}[0]) {
+                system "rm -rf $options{'MPI_DIR'}[0]";
+                system "mkdir $options{'MPI_DIR'}[0]";
+            }
             
             # delete and recreate serial dir
-            system "rm -rf $options{'SERIAL_DIR'}[0]";
-            system "mkdir $options{'SERIAL_DIR'}[0]";
+            if (defined $options{'SERIAL_DIR'} && defined $options{'SERIAL_DIR'}[0]) {
+                system "rm -rf $options{'SERIAL_DIR'}[0]";
+                system "mkdir $options{'SERIAL_DIR'}[0]";
+            }
         }
         
     } # prepareBuildDirs()
@@ -266,7 +273,7 @@ mpiShutdown();
     ############################################################################
     # run()
     #
-    # Core test-harness logic. Calls configure(), build(), test(), and sendMail()
+    # Core test-harness logic. Calls configure(), build(), test(), and report()
     #   - global variables used: yes
     #   - sends mail: yes
     #   - args: 
@@ -306,7 +313,7 @@ mpiShutdown();
                     my $message = "";
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be present\n";
-                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    report($FILE_SYSTEM_ERROR, $message, $comm);
                     print $message;
                     die " *** file missing - aborting test-harness ***\n";
                 } 
@@ -316,7 +323,7 @@ mpiShutdown();
                     my $message = "";
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be readable\n";
-                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    report($FILE_SYSTEM_ERROR, $message, $comm);
                     print $message;
                     die " *** file permission wrong - aborting test-harness ***\n";
                 } 
@@ -326,7 +333,7 @@ mpiShutdown();
                     my $message = "";
                     $message .= "$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/";
                     $message .= "invoke-configure must be executable\n";
-                    sendMail($FILE_SYSTEM_ERROR, $message, $comm);
+                    report($FILE_SYSTEM_ERROR, $message, $comm);
                     print $message;
                     die " *** file permission wrong - aborting test-harness ***\n";
                 }
@@ -339,9 +346,7 @@ mpiShutdown();
                 # configure passed?
                 my $configurePassed = 0;            
                 
-                my $COUNT = 0;
                 while (!$configurePassed && !$quitTrying) {
-                    if (++$COUNT >= 3) { $quitTrying = 1; }
                 
                     # attempt to configure
                     my $configureOutput = configure($buildDir[$j]);
@@ -352,20 +357,27 @@ mpiShutdown();
                         # fix invoke configure
                         my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_configure_log.txt";
                         my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                        my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);               
+                        (my $brokenPackage, my $brokenPackageDir) = fixInvokeConfigure($log, $invokeConfigure);      
+                            
+                        # quit if error fixing invoke-configure
+                        if ($brokenPackage eq "error") {
+                            $quitTrying = 1; 
+                            last; # equivalent to break                          
+                        }       
                         
                         # remove broken package
-                        system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackage";
+                        system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackageDir";
                         
                         print "$comm - Trilinos configuration failed--$brokenPackage broke\n";  
                         
                         # there is no invoke-configure left or it's empty
-                        if (!-f $invokeConfigure || -z $invokeConfigure) {   
+                        if (!-f $invokeConfigure || -z $invokeConfigure) { 
+                            print "$comm - invoke-configure missing or empty\n";   
                             $quitTrying = 1;
                         }
                         
                         # send email
-                        sendMail($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm);
+                        report($TRILINOS_CONFIGURE_ERROR, $brokenPackage, $comm);
                     } 
                     
                     # configure succeeded
@@ -380,7 +392,6 @@ mpiShutdown();
                     my $buildPassed = 0;            
                     
                     while ($configurePassed && !$buildPassed && !$quitTrying) {
-                        if (++$COUNT >= 3) { $quitTrying = 1; }
                     
                         # attempt to build
                         my $buildOutput = build($buildDir[$j]);
@@ -391,15 +402,22 @@ mpiShutdown();
                             # fix invoke configure         
                             my $log = "$options{'TRILINOS_DIR'}[0]/testharness/temp/trilinos_build_log.txt";
                             my $invokeConfigure ="$options{'TRILINOS_DIR'}[0]/$buildDir[$j]/invoke-configure";                    
-                            my $brokenPackage = fixInvokeConfigure($log, $invokeConfigure);
+                            (my $brokenPackage, my $brokenPackageDir) = fixInvokeConfigure($log, $invokeConfigure);
+                            
+                            # quit if error fixing invoke-configure
+                            if ($brokenPackage eq "error") {
+                                $quitTrying = 1; 
+                                last; # equivalent to break                               
+                            }
                             
                             # remove broken package
-                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackage";
+                            system "rm -rf $options{'TRILINOS_DIR'}[0]/$buildDir[$j]/packages/$brokenPackageDir";
                             
                             print "$comm - Trilinos build failed--$brokenPackage broke\n";  
                         
                             # there is no invoke-configure left or it's empty
-                            if (!-f $invokeConfigure || -z $invokeConfigure) {   
+                            if (!-f $invokeConfigure || -z $invokeConfigure) {  
+                                print "$comm - invoke-configure missing or empty\n"; 
                                 $quitTrying = 1;
                             }
                             
@@ -407,7 +425,7 @@ mpiShutdown();
                             $configurePassed = 0;
                             
                             # send email
-                            sendMail($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
+                            report($TRILINOS_BUILD_ERROR, $brokenPackage, $comm); 
                         } 
                         
                         # build succeeded
@@ -416,10 +434,11 @@ mpiShutdown();
                             print "$comm - Trilinos built successfully\n";                  
                         }
                         
-                    } # while (configurePassed && !buildPassed)
+                    } # while ($configurePassed && !$buildPassed && !$quitTrying)
                     
-                } # while (!configurePassed)                       
-            } # if (-t)
+                } # while (!$configurePassed && !$quitTrying)                       
+            } # if (!-t)
+            
             # test -------------------------------------------------------------
             
             # if -n flag absent -- run tests
@@ -466,10 +485,10 @@ mpiShutdown();
                                     
                                     if ($testFailed) {                                               
                                         print "$testNameOnly - Test failed\n";  
-                                        sendMail($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
+                                        report($TEST_FAILED, $testFailed, $comm, $testDir, $potentialScript); 
                                     } else {                                    
                                         print "$testNameOnly - Test passed\n";  
-                                        sendMail($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
+                                        report($TEST_PASSED, $testFailed, $comm, $testDir, $potentialScript);
                                     }
                                     
                                 } # if (executable)
@@ -480,6 +499,7 @@ mpiShutdown();
                 } # foreach $testDir
             } # if (!-n)
             
+            print "\n";
         } # for (buildDirs)                   
     } # run()
 
@@ -513,7 +533,7 @@ mpiShutdown();
                 my $message = "";
                 $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
                 $message .= "/$options{'MACHINE_MPI_CONFIG_FILE'}[0] does not exist\n";
-                sendMail($FILE_SYSTEM_ERROR, $message);
+                report($FILE_SYSTEM_ERROR, $message);
                 print $message;
                 die " *** file missing - aborting test-harness ***\n";
             }   
@@ -534,7 +554,7 @@ mpiShutdown();
             my $message = "";
             $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
             $message .= "/$options{'MACHINE_CONFIG_FILE'}[0] does not exist\n";
-            sendMail($FILE_SYSTEM_ERROR, $message);
+            report($FILE_SYSTEM_ERROR, $message);
             print $message;
             die " *** file missing - aborting test-harness ***\n";
         }   
@@ -554,7 +574,7 @@ mpiShutdown();
             my $message = "";
             $message .= "$options{'TRILINOS_DIR'}[0]/testharness/elements-machine";
             $message .= "/$options{'TRILINOS_CONFIG_FILE'}[0] does not exist\n";
-            sendMail($FILE_SYSTEM_ERROR, $message);
+            report($FILE_SYSTEM_ERROR, $message);
             print $message;
             die " *** file missing - aborting test-harness ***\n";
         }        
@@ -575,7 +595,7 @@ mpiShutdown();
             
             # move invoke-configure file into place
             my $command;                     
-            $command = "mv $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi ";
+            $command = "cp $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-mpi ";
             $command .= "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]/invoke-configure";
             system $command;
             
@@ -594,7 +614,7 @@ mpiShutdown();
             
             # move invoke-configure file into place
             my $command;                     
-            $command = "mv $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial ";
+            $command = "cp $options{'TRILINOS_DIR'}[0]/testharness/temp/invoke-configure-serial ";
             $command .= "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]/invoke-configure";
             system $command;
             
@@ -634,7 +654,7 @@ mpiShutdown();
     	    $file =~ m/.*^Running(.*?)Configure Script/ms;
 	        if (defined $1) { $brokenPackage = $1; }
     	} elsif ($log =~ m/build/) {    	    
-    	    $file =~ m/.*\/packages\/(.*?)\//ms;
+    	    $file =~ m/.*\/packages\/(.*?)'/ms;
 	        if (defined $1) { $brokenPackage = $1; }
         }
 	    
@@ -644,7 +664,8 @@ mpiShutdown();
     	    $brokenPackage = lc($brokenPackage);    # convert to lowercase
             $brokenPackage =~ s/ /_/g;              # convert spaces to underscores
         } else {
-            return "unknown";
+            print "error fixing invoke-configure--can't detect package\n";
+            return ("error", "error");
         }
         
         system "cp $invokeConfigure $invokeConfigure-broken";
@@ -655,6 +676,7 @@ mpiShutdown();
             
         # parse it, extracting lines to keep
         my $newInvokeConfigure = "";
+        my $changeMade = 0;
         while (my $line = <INVOKE_CONFIGURE>) {
             $line =~ s/^\s*//;  # trim leading spaces
             $line =~ s/\s*$//;  # trim trailing spaces
@@ -663,30 +685,46 @@ mpiShutdown();
             my $dropLine = 0;
             my $lastElementIndex = $#{$dependencies{$brokenPackage}};
             for (my $i=0; $i<=$lastElementIndex; $i++) { 
-                if ($line =~ m/$dependencies{$brokenPackage}[$i]/) {
+                if ($line =~ m/$dependencies{$brokenPackage}[$i]/i) {
                     $dropLine = 1;   
                 }   
             }    
             
             # write line if it isn't a dependency
-            if (!$dropLine) {                        
+            if (!$dropLine) {                                        
                 $newInvokeConfigure .= "$line\n";
+            } else {
+                $changeMade = 1;
             }
         } # while ($line)
         close INVOKE_CONFIGURE;
+        
+        if (!$changeMade) {
+            print "error fixing invoke-configure--no changes made ($brokenPackage broke)\n";
+            return ("error", "error");
+        }
+        
+        # prepare new invoke-configure
+        $newInvokeConfigure =~ s/(.*)\\$/$1/s;  # remove last line-continuation
+        chomp ($newInvokeConfigure);            # remove last newline 
         
         # open invoke-configure for writing
         open (INVOKE_CONFIGURE, ">$invokeConfigure")
             or die "can't open $invokeConfigure";
         
         # write new invoke configure
-        chomp ($newInvokeConfigure);        # remove last newline 
-        $newInvokeConfigure =~ s/.*\\$//s;  # remove last line-continuation
         print INVOKE_CONFIGURE $newInvokeConfigure;
-        close INVOKE_CONFIGURE;    
+        close INVOKE_CONFIGURE;      
+                        
+        # create package name corresponding to directory case...grrr...
+        my $brokenPackageDir = $brokenPackage;
+        if ($brokenPackageDir eq "tsf") { $brokenPackageDir = "TSF" }
+        if ($brokenPackageDir eq "tsfcore") { $brokenPackageDir = "TSFCore" }
+        if ($brokenPackageDir eq "tsfcoreutils") { $brokenPackageDir = "TSFCoreUtils" }
+        if ($brokenPackageDir eq "tsfextended") { $brokenPackageDir = "TSFExtended" }
         
         # return broken package name
-        return $brokenPackage;
+        return ($brokenPackage, $brokenPackageDir);
         
     } # fixInvokeConfigure()
 
@@ -771,7 +809,7 @@ mpiShutdown();
     } # mpiShutdown()
     
     ############################################################################
-    # sendMail()
+    # report()
     #
     # This subroutine is called when it is time to send the email - either
     # when the tests are complete or when an error occurs from which the
@@ -785,19 +823,23 @@ mpiShutdown();
     #           $testName   (name of test, if code is test-related)
     #   - returns: 
 
-    sub sendMail {
+    sub report {
         my $code = $_[0];     
         my $message = $_[1];      
         my $comm = $_[2];  
         my $testDir = $_[3];
         my $testName = $_[4];
+        $reportCount++;
         
         # preparation ##########################################################
         
         chdir "$options{'TRILINOS_DIR'}[0]/testharness/";
         
-        use lib "./lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
-        use MIME::Lite;                         # might need Net::SMTP
+        # link to MIME::Lite module
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+            use lib "./lib/MIME-Lite-3.01/lib";     # cvs checkin MIME::Lite
+            use MIME::Lite;                         # might need Net::SMTP
+        }
         
         chdir "$options{'TRILINOS_DIR'}[0]/testharness/temp";
             
@@ -826,140 +868,193 @@ mpiShutdown();
             push (@{$summary{$code}}, $message);
         }         
         if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
-            push (@{$summary{$code}}, $comm);
+            push (@{$summary{$code}}, "$comm ($message broke)");
         }        
         if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
-            push (@{$summary{$code}}, $testName);
+            my $package;                
+    	    $testDir =~ m/packages\/(.*?)\//;
+	        if ($1) { 
+	            $package = $1;
+                push (@{$summary{$code}}, "$comm - $package - $testName");
+            } else {
+                push (@{$summary{$code}}, "$comm - $testName");
+            }
         }
 
-        # compile list of mail recipients --------------------------------------
-        
+        # compile list of mail recipients --------------------------------------        
         my $mailTo = "";
-    
-        # detect default recipients (if enabled)
-        if ($options{'SEND_TO_DEFAULTS'}[0] eq "YES") {
-            
-            # configure/build-related
-            if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
-                my $package = $message;
-                my $packageRegression = "";   
-                if ($emails{$package}) {
-	                $packageRegression = $emails{$package};
-    	            $packageRegression .= "-regression\@software.sandia.gov";
-                    $mailTo .= "$packageRegression, ";
-                } else {
-        	        print "error - unable to detect package regression list\n";
-            	    print "  sending to trilinos-regression instead\n";
-                    $mailTo .= "trilinos-regression\@software.sandia.gov, ";
-        	    }
-            } # if (configure/build-related)
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
         
-            # test-related
-            if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
-        
-                # extract $scriptOwner email from first line of log$hostOS.txt
-                # (note: the name "log$hostOS.txt" is functional--it is written to 
-                # by the test scripts.
-                my $scriptOwner = "";
-                if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
-                    open 
-                    (OWNER, "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") 
-                        or die "$! error trying to open file";
-                    $scriptOwner=<OWNER>;   # read first line (email of script owner is on first line)
-                    chomp $scriptOwner;     # trim newline
-                    close OWNER;
-                }        
+            # detect default recipients (if enabled)
+            if ($options{'SEND_TO_DEFAULTS'}[0] eq "YES") {
                 
-                # script-owner found--append to recipients
-                if ($scriptOwner =~ m/\S+?\@\S+?/i) {    # look for ...@...
-                    $mailTo .= "$scriptOwner, ";
-                } 
-                
-                # script-owner not found, use package regression
-                else {    
-                    my $error = 0;
-                    my $package = "";
-                    my $packageRegression = "";                  
-            	    $testDir =~ m/packages\/(.*?)\//;
-        	        if ($1) { 
-        	            $package = $1; 
-        	        } else { $error = 1; }
-        	        if ($package) { 
-        	            if ($emails{$package}) {
-        	                $packageRegression = $emails{$package};
-            	            $packageRegression .= "-regression\@software.sandia.gov";
-                            $mailTo .= "$packageRegression, ";
-                        } else { $error = 1; }
-            	    } else { $error = 1; }
-            	    if ($error) {
+                # configure/build-related
+                if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
+                    my $package = $message;
+                    my $packageRegression = "";   
+                    if ($emails{$package}) {
+    	                $packageRegression = $emails{$package};
+        	            $packageRegression .= "-regression\@software.sandia.gov";
+                        $mailTo .= "$packageRegression, ";
+                    } else {
             	        print "error - unable to detect package regression list\n";
-            	        print "  sending to trilinos-regression instead\n";
+                	    print "  sending to trilinos-regression instead\n";
                         $mailTo .= "trilinos-regression\@software.sandia.gov, ";
             	    }
-                }            
-            } # if (test-related)            
+                } # if (configure/build-related)
             
-            # summary
-            if ($code == $SUMMARY) {
-                $mailTo .= "trilinos-regression\@software.sandia.gov, ";
+                # test-related
+                if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+            
+                    # extract $scriptOwner email from first line of log$hostOS.txt
+                    # (note: the name "log$hostOS.txt" is functional--it is written to 
+                    # by the test scripts.
+                    my $scriptOwner = "";
+                    if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
+                        open 
+                        (OWNER, "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") 
+                            or die "$! error trying to open file";
+                        $scriptOwner=<OWNER>;   # read first line (email of script owner is on first line)
+                        chomp $scriptOwner;     # trim newline
+                        close OWNER;
+                    }        
+                    
+                    # script-owner found--append to recipients
+                    if ($scriptOwner =~ m/\S+?\@\S+?/i) {    # look for ...@...
+                        $mailTo .= "$scriptOwner, ";
+                    } 
+                    
+                    # script-owner not found, use package regression
+                    else {    
+                        my $error = 0;
+                        my $package = "";
+                        my $packageRegression = "";                  
+                	    $testDir =~ m/packages\/(.*?)\//;
+            	        if ($1) { 
+            	            $package = $1; 
+            	        } else { $error = 1; }
+            	        if ($package) { 
+            	            if ($emails{$package}) {
+            	                $packageRegression = $emails{$package};
+                	            $packageRegression .= "-regression\@software.sandia.gov";
+                                $mailTo .= "$packageRegression, ";
+                            } else { $error = 1; }
+                	    } else { $error = 1; }
+                	    if ($error) {
+                	        print "error - unable to detect package regression list\n";
+                	        print "  sending to trilinos-regression instead\n";
+                            $mailTo .= "trilinos-regression\@software.sandia.gov, ";
+                	    }
+                    }            
+                } # if (test-related)            
+                
+                # summary
+                if ($code == $SUMMARY) {
+                    $mailTo .= "trilinos-regression\@software.sandia.gov, ";
+                } 
+                
+            } # if (SEND_TO_DEFAULTS)
+           
+            # append ALL_EMAILS        
+            my $lastElementIndex = $#{$options{'ALL_EMAILS'}};
+            for (my $i=0; $i<=$lastElementIndex; $i++) {
+                if ($mailTo !~ m/$options{'ALL_EMAILS'}[$i]/i) {
+                    $mailTo .= "$options{'ALL_EMAILS'}[$i], ";
+                } 
+            }
+            
+            # append SUMMARY_EMAIL
+            if ($code == $SUMMARY) { 
+                $lastElementIndex = $#{$options{'SUMMARY_EMAIL'}};
+                for (my $i=0; $i<=$lastElementIndex; $i++) {
+                    if ($mailTo !~ m/$options{'SUMMARY_EMAIL'}[$i]/i) {
+                        $mailTo .= "$options{'SUMMARY_EMAIL'}[$i], ";
+                    }
+                }
             } 
             
-        } # if (SEND_TO_DEFAULTS)
-       
-        # append ALL_EMAILS        
-        my $lastElementIndex = $#{$options{'ALL_EMAILS'}};
-        for (my $i=0; $i<=$lastElementIndex; $i++) {
-            if ($mailTo !~ m/$options{'ALL_EMAILS'}[$i]/i) {
-                $mailTo .= "$options{'ALL_EMAILS'}[$i], ";
-            } 
+            # clean up list of recipients    
+            $mailTo =~ s/^\s*//;        # trim leading spaces
+            $mailTo =~ s/\s*$//;        # trim trailing spaces
+            $mailTo =~ s/,*$//;         # trim trailing comma  
+        
+        } # compile list of mail recipients (if EMAIL)
+
+        # Create email/report ##################################################
+
+        # subject/filename =====================================================
+        
+        my $subject = "";
+        my $filename;
+        
+        # subject (email)
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+            $subject .= "$hostOS - $hostName - ";
+            if (defined $comm) {$subject .= "$comm - ";}
+            if (defined $testName) {$subject .= "$testName - ";}
+            $subject .= $codes[$code];
+        }    
+        
+        # filename (local report)
+        elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
+            if ($options{'REPORT_NAMES'}[0] eq "ORDER") {
+                if (defined $comm) {    
+                    $filename = "$reportCount"."-$comm-$codes[$code]";
+                } else {
+                    $filename = "$reportCount"."-$codes[$code]";
+                }
+            } elsif ($options{'REPORT_NAMES'}[0] eq "EVENT") {   
+                if (defined $comm) {         
+                    $filename = "$comm-$codes[$code]";
+                } else {
+                    $filename = "$codes[$code]";
+                }
+            }            
+        
+            if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
+                $filename .= "($message)";
+            }
+            
+            if ($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+                my $package = "";              
+        	    $testDir =~ m/packages\/(.*?)\//;
+    	        if ($1) { $package = $1; }
+    	        $filename .= "($package-$testName)";
+            }
+            
+            $filename =~ s/ /_/g;       # convert spaces to underscores
+            $filename =~ s/\n//g;       # remove any newlines
+            $filename = lc($filename);  # convert to lowercase
         }
         
-        # append SUMMARY_EMAIL
-        if ($code == $SUMMARY) { 
-            $lastElementIndex = $#{$options{'SUMMARY_EMAIL'}};
-            for (my $i=0; $i<=$lastElementIndex; $i++) {
-                if ($mailTo !~ m/$options{'SUMMARY_EMAIL'}[$i]/i) {
-                    $mailTo .= "$options{'SUMMARY_EMAIL'}[$i], ";
-                }
-            }
-        } 
+        # construct email/report ===============================================    
         
-        # clean up list of recipients    
-        $mailTo =~ s/^\s*//;        # trim leading spaces
-        $mailTo =~ s/\s*$//;        # trim trailing spaces
-        $mailTo =~ s/,*$//;         # trim trailing comma    
-        
-        print "sending email: $mailTo\n"; 
-
-        # Create email #########################################################
-
-        # subject ==============================================================
-        
-        my $subject = "$hostOS - $hostName - ";
-        if (defined $comm) {$subject .= "$comm - ";}
-        if (defined $testName) {$subject .= "$testName - ";}
-        $subject .= $codes[$code];
-        
-        # construct email ======================================================    
-        
+        # initialize email object
         my $email;
-        $email=MIME::Lite->new(
-			From =>     'Trilinos test-harness <trilinos-regression@software.sandia.gov>',
-			To =>       $mailTo,
-			Subject =>  $subject,
-			Type =>     'multipart/mixed'
-		);
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {   
+            $email=MIME::Lite->new(
+    			From =>     'Trilinos test-harness <trilinos-regression@software.sandia.gov>',
+    			To =>       $mailTo,
+    			Subject =>  $subject,
+    			Type =>     'multipart/mixed'
+    		);
+		}
             
         # body =================================================================
         
         my $body = "";
                 
         # header section
-        $body .= "Host OS:          $hostOS\n";
-        $body .= "Host OS Release:  $hostOSRelease\n";
-        $body .= "Host OS Version:  $hostOSVersion\n";
-        $body .= "Host Hardware:    $hostHardware\n";
-        $body .= "Host Name:        $hostName\n";
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+            $body .= "Host OS:          $hostOS\n";}
+        #if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+        #    $body .= "Host OS Release:  $hostOSRelease\n";}    # unnecessary info
+        #if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+        #    $body .= "Host OS Version:  $hostOSVersion\n";}    # unnecessary info
+        #if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+        #    $body .= "Host Hardware:    $hostHardware\n";}     # unnecessary info
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+            $body .= "Host Name:        $hostName\n";}
         if (defined $comm) {
             $body .= "\n";
             $body .= "Comm:             $comm\n";}
@@ -972,11 +1067,11 @@ mpiShutdown();
         $body .= "\n";        
         if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR) {
             $body .= "Result:           $codes[$code] - $message broke\n";
-        } else {
+            $body .= "\n";   
+        } elsif ($code != $SUMMARY) {
             $body .= "Result:           $codes[$code]\n";
-        }
-        
-        $body .= "\n";        
+            $body .= "\n";   
+        }             
         
         # fatal error ----------------------------------------------------------
         if ($code == $FILE_SYSTEM_ERROR || $code == $SYSTEM_COMMAND_ERROR ||
@@ -986,88 +1081,263 @@ mpiShutdown();
             $body .= "FATAL ERROR\n";
             $body .= "\n";       
             $body .= "This error caused the test-harness to quit prematurely. It is\n";
-            $body .= "the sort of errorthat the test-harness is not designed to\n";
-            $body .= "recover from. It is probably either asimple human oversight,\n";
-            $body .= "or once fixed, should not occur again on this machine.\n";    
+            $body .= "the sort of error that the test-harness is not designed to\n";
+            $body .= "recover from. It is probably either a simple human oversight\n";
+            $body .= "or, once fixed, should not occur again on this machine.\n";    
             $body .= "\n";       
-            $body .= "Message/exit status:      $message\n";           
+            $body .= "Message/exit-status:      $message\n";           
             $body .= "\n";        
         }
+        
+        # print the summary hash of arrays -------------------------------------        
+        if ($code == $SUMMARY) {
+            $body .= "------------------------------------------------------------\n";
+            $body .= "Summary: \n";
+            $body .= "\n";        
+            
+            for my $id (reverse sort keys %summary) { 
+                my $lastElementIndex = $#{$summary{$id}}; 
+                $body .= "- $codes[$id] (".($lastElementIndex+1)."): \n";
+                $body .= "\n";
+                if ($lastElementIndex+1 > 0) {
+                    for (my $i=0; $i<=$lastElementIndex; $i++) {
+                        $body .= "    $summary{$id}[$i]\n";
+                    }
+                    $body .= "\n";
+                } 
+            } 
+        } # summary    
         
         # attachments ----------------------------------------------------------
         
         my $attachmentText = "";
-        my $attachment = 0;
+        my $attachmentsExist = 0;                    
         
         # update failed
         if ($code == $UPDATE_ERROR && -f "update_log.txt") {
-            $attachment = 1;
-            $attachmentText .= "    update_log.txt\n";
-            $email->attach(Type=>'TEXT', Path=>'update_log.txt', Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "update_log.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }
         
         # trilinos configure failed
         if ($code == $TRILINOS_CONFIGURE_ERROR && -f "trilinos_configure_log.txt") {
-            $attachment = 1;
-            $attachmentText .= "    trilinos_configure_log.txt\n";
-            $email->attach(Type=>'TEXT', Path=>'trilinos_configure_log.txt', Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "trilinos_configure_log.txt";
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }       
         
         # trilinos build failed
         if ($code == $TRILINOS_BUILD_ERROR && -f "trilinos_build_log.txt") {
-            $attachment = 1;
-            $attachmentText .= "    trilinos_build_log.txt\n";
-            $email->attach(Type=>'TEXT', Path=>'trilinos_build_log.txt', Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "trilinos_build_log.txt";   
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";         
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") {
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }
         
         # test compile failed
         if ($code == $TEST_COMPILE_ERROR && -f "test_compile_log.txt") {
-            $attachment = 1;
-            $attachmentText .= "    test_compile_log.txt\n";
-            $email->attach(Type=>'TEXT', Path=>'test_compile_log.txt', Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "test_compile_log.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }
         
         # parallel test failed
         if (-f "$options{'TRILINOS_DIR'}[0]/logMpiErrors.txt") {   
-            $attachment = 1;
-            $attachmentText .= "    logMpiErrors.txt\n";
-            $email->attach(Type=>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/logMpiErrors.txt", Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "logMpiErrors.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                       
+            }
         }
         
         # serial test failed
         if (-f "$options{'TRILINOS_DIR'}[0]/logErrors.txt") {
-            $attachment = 1;
-            $attachmentText .= "    logErrors.txt\n";
-            $email->attach(Type=>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/logErrors.txt", Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "logErrors.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type=>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }
         
         if (-f "$options{'TRILINOS_DIR'}[0]/log$hostOS.txt") {
-            $attachment = 1;
-            $attachmentText .= "    log$hostOS.txt\n";
-            $email->attach(Type =>'TEXT', Path=>"$options{'TRILINOS_DIR'}[0]/log$hostOS.txt", Disposition=>'attachment');
+            $attachmentsExist = 1;
+            my $log = "log$hostOS.txt";     
+            my $logPath = "$options{'TRILINOS_DIR'}[0]/$log";       
+            if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                $attachmentText .= "    $log\n";
+                $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+            } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                $attachmentText .= appendFile($log, $logPath);                
+            }
         }      
         
-        # invoke-configure
-        my $buildDir = "";
-        if (defined $comm && $comm eq "mpi") {$buildDir = $options{'MPI_DIR'}[0]; }
-        if (defined $comm && $comm eq "serial") {$buildDir = $options{'SERIAL_DIR'}[0]; }
-        my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir/invoke-configure";
+        # invoke-configure attachments -----------------------------------------
         
-        if (($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR)
-            && -f $invokeConfigure."-broken" && ! -z $invokeConfigure."-broken") {
-            $attachment = 1;
-            $attachmentText .= "    invoke-configure-broken\n";
-            $email->attach(Type =>'TEXT', Path=>"$invokeConfigure-broken", Disposition=>'attachment');
-        } 
+        # invoke-configure attachments for the summary email
+        if ($code == $SUMMARY) {
         
-        elsif (!$code == $TRILINOS_CONFIGURE_ERROR && !$code == $TRILINOS_BUILD_ERROR
-            && -f $invokeConfigure && ! -z $invokeConfigure) {
-            $attachment = 1;
-            $attachmentText .= "    invoke-configure\n";
-            $email->attach(Type =>'TEXT', Path=>"$invokeConfigure", Disposition=>'attachment');
-        }
+            # mpi invoke-configures
+            if (defined $options{'MPI_DIR'}[0]) {
+                my $buildPath = "$options{'TRILINOS_DIR'}[0]/$options{'MPI_DIR'}[0]";
+            
+                # at least one configure/build error
+                if (-f "$buildPath/invoke-configure-broken" 
+                    && ! -z "$buildPath/invoke-configure-broken") {
+                    
+                    $attachmentsExist = 1;
+                    
+                    system "mv invoke-configure-mpi invoke-configure-mpi-original";                    
+                    my $log = "invoke-configure-mpi-original";     
+                    my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }                    
+                    
+                    system "cp $buildPath/invoke-configure invoke-configure-mpi-final";
+                    $log = "invoke-configure-mpi-final";     
+                    $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }
+                } 
+                
+                # no configure/build errors
+                else {
+                    $attachmentsExist = 1;
+                    my $log = "invoke-configure-mpi";     
+                    my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }               
+                }
+            }
+            
+            # serial invoke-configures
+            if (defined $options{'SERIAL_DIR'}[0]) {
+                my $buildPath = "$options{'TRILINOS_DIR'}[0]/$options{'SERIAL_DIR'}[0]";
+            
+                # at least one configure/build error
+                if (-f "$buildPath/invoke-configure-broken" 
+                    && ! -z "$buildPath/invoke-configure-broken") {
+                    $attachmentsExist = 1;
+                                        
+                    system "mv invoke-configure-serial invoke-configure-serial-original";
+                    my $log = "invoke-configure-serial-original";     
+                    my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }
+                    
+                    system "cp $buildPath/invoke-configure invoke-configure-serial-final";
+                    $log = "invoke-configure-serial-final";     
+                    $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }
+                } 
+                
+                # no configure/build errors
+                else {
+                    $attachmentsExist = 1;
+                    my $log = "invoke-configure-serial";     
+                    my $logPath = "$options{'TRILINOS_DIR'}[0]/testharness/temp/$log";       
+                    if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                        $attachmentText .= "    $log\n";
+                        $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                    } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                        $attachmentText .= appendFile($log, $logPath);                
+                    }                 
+                }
+            }
+        } # invoke-configure attachments for the summary email
         
-        if ($attachment) {
+        # Trilinos configure/build or test compile/pass/fail email
+        if ($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR 
+            || $code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED) {
+            
+            # build directory
+            my $buildDir = "";
+            if ($comm eq "mpi") { $buildDir = $options{'MPI_DIR'}[0]; }
+            if ($comm eq "serial") { $buildDir = $options{'SERIAL_DIR'}[0]; }
+            my $invokeConfigure = "$options{'TRILINOS_DIR'}[0]/$buildDir/invoke-configure";
+            
+            # configure/build failed--attach broken invoke-configure
+            if (($code == $TRILINOS_CONFIGURE_ERROR || $code == $TRILINOS_BUILD_ERROR)
+                && -f $invokeConfigure."-broken" && ! -z $invokeConfigure."-broken") {
+                $attachmentsExist = 1;
+                my $log = "invoke-configure-broken";     
+                my $logPath = "$invokeConfigure-broken";       
+                if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                    $attachmentText .= "    $log\n";
+                    $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                    $attachmentText .= appendFile($log, $logPath);                
+                }   
+            } 
+            
+            elsif (($code == $TEST_COMPILE_ERROR || $code == $TEST_FAILED || $code == $TEST_PASSED)
+                && -f $invokeConfigure && ! -z $invokeConfigure) {
+                $attachmentsExist = 1;
+                my $log = "invoke-configure";     
+                my $logPath = "$invokeConfigure";       
+                if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {
+                    $attachmentText .= "    $log\n";
+                    $email->attach(Type =>'TEXT', Path=>"$logPath", Disposition=>'attachment');
+                } elsif ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+                    $attachmentText .= appendFile($log, $logPath);                
+                }   
+            }
+        } # Trilinos configure/build or test compile/pass/fail email
+        
+        # append attachment section to email body
+        if ($attachmentsExist) {
             $body .= "------------------------------------------------------------\n";
             $body .= "Attachments: \n";
             $body .= "\n";            
@@ -1097,30 +1367,23 @@ mpiShutdown();
             
             $body .= "\n";        
         }
-        
-        # print the summary hash of arrays -------------------------------------
-        
-        if ($code == $SUMMARY) {
-            $body .= "------------------------------------------------------------\n";
-            $body .= "Summary: \n";
-            
-            for my $id (keys %summary) { 
-                my $lastElementIndex = $#{$summary{$id}}; 
-                $body .= "\n- $codes[$id] (".($lastElementIndex+1)."): \n\n";
-                for my $i (0 .. $lastElementIndex) {
-                    $body .= "    $summary{$id}[$i]\n";
-                }
-            } 
-        }           
 
-        # send email ===========================================================
+        # send email / write report ============================================
         
-        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {        
+        if ($options{'REPORT_METHOD'}[0] eq "EMAIL") {   
+            print "sending email: $mailTo\n";         
     		$email->attach(Type=>'TEXT', Data=>$body);
-            $email->send();
+    		if ($options{'MAIL_METHOD'}[0] eq "sendmail") {
+                $email->send();
+            } elsif ($options{'MAIL_METHOD'}[0] eq "smtp") {
+                $email->send("smtp", $options{'MAIL_METHOD'}[1], Timeout => 30);
+            }                
         } else {
-            print "-- REPRT_METHOD not set to EMAIL - not sending email\n";
-            print "-- other report methods not yet implemented\n";
+            print "generating report: $filename\n"; 
+            open (REPORT, ">$options{'TRILINOS_DIR'}[0]/testharness/results/$filename")
+                or die "can't open $filename";
+            print REPORT $body;
+            close REPORT;            
         }
         
         system "rm -f update_log.txt";
@@ -1130,8 +1393,44 @@ mpiShutdown();
         system "rm -f $options{'TRILINOS_DIR'}[0]/logErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/logMpiErrors.txt";
         system "rm -f $options{'TRILINOS_DIR'}[0]/log$hostOS.txt";
+        if ($code == $SUMMARY) {
+            system "rm -f invoke-configure-mpi";
+            system "rm -f invoke-configure-mpi-original";
+            system "rm -f invoke-configure-mpi-final";
+            system "rm -f invoke-configure-serial";
+            system "rm -f invoke-configure-serial-original";
+            system "rm -f invoke-configure-serial-final";
+        }
                 
-    } # sendMail()
+    } # report()
+    
+    ############################################################################
+    # appendFile()
+    #
+    # Prints Test-Harness usage to standart output and exits.
+    #   - global variables used: no
+    #   - sends mail: no
+    #   - args: $log (file to be appended) $logPath (file with absolute path)
+    #   - returns: 
+
+    sub appendFile {
+        my $log = $_[0];
+        my $logPath = $_[1];
+    
+        my $text = "";
+        $text .= "$log:\n";              
+        $text .= "\n";
+        open (LOG, "<$logPath")
+            or die "can't open $log";
+        undef $/;           # undefine input record separator
+        my $file=<LOG>;     # copy entire file
+        $/ = "\n";          # restore it to default newline
+        close LOG;
+        $text .= "$file\n\n";
+        
+        return $text;
+    
+    } # appendFile()
 
     ############################################################################
     # printHelp()
@@ -1148,19 +1447,26 @@ mpiShutdown();
         print "Usage:  ./testharness.plx -f FILENAME\n";
         print "\n";
         print "Options:\n";
-        print "  -f FILE : Run test harness normally with given test-harness-config file\n";
+        print "  -f FILE  : Run test harness normally with given test-harness-config file\n";
         print "\n";
-        print "  -p FILE : Parse given test-harness-config file and exit. This is useful\n";
-        print "            for catching errors and inconsistencies without running the\n";
-        print "            entire test-harness. (no ouput indicates a valid config file)\n";
+        print "  -nf FILE : Run test harness with given test-harness-config file, but\n";
+        print "             don't run tests (for cross-compiling machines).\n";
         print "\n";
-        print "  -g FILE : Generate template configuration file (with defaults) named \n";
-        print "            FILE and exit\n";
+        print "  -tf FILE : Run test harness with given test-harness-config file, but\n";
+        print "             don't configure and build--only run tests (for cross-\n";
+        print "             compiling machines).\n";
         print "\n";
-        print "  -s      : Omit comments from generated configuration file\n";
-        print "            (must be of the form: -sg FILE) (do not use -gs)\n";
+        print "  -p FILE  : Parse given test-harness-config file and exit. This is useful\n";
+        print "             for catching errors and inconsistencies without running the\n";
+        print "             entire test-harness. (no ouput indicates a valid config file)\n";
         print "\n";
-        print "  -h      : Print this help page and exit\n";
+        print "  -g FILE  : Generate template configuration file (with defaults) named \n";
+        print "             FILE and exit\n";
+        print "\n";
+        print "  -s       : Omit comments from generated configuration file\n";
+        print "             (must be of the form: -sg FILE) (do not use -gs)\n";
+        print "\n";
+        print "  -h       : Print this help page and exit\n";
         print "\n";
         print "Notes:\n";
         print "  - Options with FILE require a filename--absolute or relative to\n";
@@ -1382,6 +1688,12 @@ mpiShutdown();
             push (@{$options{'ALL_EMAILS'}}, "");
         } 
         
+        # create results directory if REPORT_METHOD is LOCAL_FILESYSTEM
+        if ($options{'REPORT_METHOD'}[0] eq "LOCAL_FILESYSTEM") { 
+            system "rm -rf $options{'TRILINOS_DIR'}[0]/testharness/results";
+            system "mkdir $options{'TRILINOS_DIR'}[0]/testharness/results";
+        }
+        
         # print the options hash of arrays -------------------------------------
         #print "\n\%options:\n\n";                       # debugging
         #for my $name (keys %options) {                  # debugging
@@ -1551,10 +1863,27 @@ mpiShutdown();
         if (!$short) {    
             print outFile "\n";  
             print outFile "#-------------------------------------------------------------------------------\n";     
+            print outFile "# Indicate how report text files should be named. ORDER will result in the files\n";
+            print outFile "# being named such that they will sort in the order that they occurred. EVENT\n";
+            print outFile "# will result in the files being named such that they will sort according to\n";
+            print outFile "# the type of event being reported.\n"; 
+            print outFile "#\n";
+            print outFile "# - recognized values: ORDER EVENT\n";
+            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - value required: YES if REPORT_METHOD is set to LOCAL_FILESYSTEM\n";      
+            print outFile "\n";
+        }
+        
+        print outFile "REPORT_NAMES                    = ORDER\n";
+        
+        if (!$short) {    
+            print outFile "\n";  
+            print outFile "#-------------------------------------------------------------------------------\n";     
             print outFile "# Indicate how mail should be sent. The unix program sendmail is the default.\n"; 
             print outFile "#\n";
-            print outFile "# - recognized values: sendmail smtp::<mail_server> \n";
-            print outFile "# - multiple values recognized: NO\n";
+            print outFile "# - recognized values: sendmail\n";
+            print outFile "#                      smtp <mail_server>\n";
+            print outFile "# - multiple values recognized: NO (except \"smtp\" and \"<mail_server>\")\n";
             print outFile "# - value required: YES if REPORT_METHOD is set to EMAIL\n";      
             print outFile "\n";
         }

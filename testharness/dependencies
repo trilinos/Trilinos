@@ -92,7 +92,7 @@ triutils = \
 --enable-tsfcore-aztecoo \
 --enable-belos \
 --enable-amesos \
---with-ml_amesos \
+--with-ml_amesos 
 
 tsf = \
 --enable-tsf \

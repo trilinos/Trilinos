@@ -13,6 +13,15 @@
 
  ./test-harness.plx -f FILENAME		run test-harness with FILENAME config file
 
+ ./test-harness.plx -nf FILENAME	run test harness with given test-harness-
+                                    config file, but don't run tests (for cross-
+                                    compiling machines)
+
+ ./test-harness.plx -tf FILENAME	run test harness with given test-harness-
+                                    config file, but don't configure and build--
+                                    only run tests (for cross-compiling 
+                                    machines)
+
  ./test-harness.plx -p FILENAME		parse FILENAME config file and exit
 
  ./test-harness.plx -g FILENAME		generate commented config file (with 
@@ -32,7 +41,7 @@
 --------------------------------------------------------------------------------
 
 - Programs - 
-  - mv, rm, find, date, uname, configure, make
+  - mv, rm, cp, mkdir, find, date, uname, configure, make
 
 - Perl Modules - 
   - 
