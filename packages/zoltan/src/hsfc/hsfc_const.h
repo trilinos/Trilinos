@@ -24,6 +24,9 @@ extern "C" {
 /* function prototypes */
 
 int  Zoltan_HSFC_Set_Param (char *name, char *val) ;
+int Zoltan_HSFC_Point_Assign (ZZ*, double *x, int *proc, int *part) ;
+/* void Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len, MPI_Datatype*); */
+void Zoltan_HSFC_Free_Structure (ZZ*);
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

@@ -44,23 +44,23 @@ static PARAM_VARS HSFC_params[] =
 /* Zoltan_HSFC - Main routine, Load Balance: Hilbert Space Filling Curve */
 int Zoltan_HSFC(
  ZZ             *zz,
- float          *part_sizes,        /* Input:  Array of size zz->Num_Global_Parts
+ float          *part_sizes,        /* Input: Array of size zz->Num_Global_Parts
                                       containing the percentage of work to be
                                       assigned to each partition. */
- int            *num_import,        /* set to -1 to indicate imports not used */
+ int            *num_import,        /* -1 indicates imports not used */
  ZOLTAN_ID_PTR  *import_gids,       /* ignored */
  ZOLTAN_ID_PTR  *import_lids,       /* ignored */
  int           **import_procs,      /* ignored */
  int           **import_to_part,    /* ignored */
- int            *num_export,        /* number of objects to export to load balance */
+ int            *num_export,        /* number of objects to export to lb */
  ZOLTAN_ID_PTR  *export_gids,       /* list of Global IDs of exported objects */
- ZOLTAN_ID_PTR  *export_lids,       /* optional list: Local IDs of exported objects */
- int           **export_procs,      /* list: corresponding processor destinations */
- int           **export_to_parts    /* list: partition assignments for export */
+ ZOLTAN_ID_PTR  *export_lids,       /* optional: Local IDs of exported objects */
+ int           **export_procs,      /* corresponding processor destinations */
+ int           **export_to_parts    /* partition assignments for export */
 )
    {
    MPI_Op mpi_op;
-   MPI_User_function  Zoltan_HSFC_mpi_sum_max_min;   /* simultaneous SUM, MAX, MIN */
+   MPI_User_function  Zoltan_HSFC_mpi_sum_max_min; /* simultaneous SUM,MAX,MIN */
 
    /* malloc'd arrays that need to be freed before completion */
    Dots      *dots            = NULL;
@@ -73,7 +73,7 @@ int Zoltan_HSFC(
    double    *temp_weight     = NULL;   /* local binning before MPI_Allreduce */
    float     *weights         = NULL;   /* to get original local dots' wt vec */
    float     *target          = NULL;   /* desired weight in each partition */
-   float     *work_fraction   = NULL;   /* percentage of load in each partition */
+   float     *work_fraction   = NULL;   /* % of load in each partition */
    double    *delta           = NULL;   /* refinement interval */
    double    *tsum            = NULL;
    HSFC_Data *d               = NULL;   /* pointer to persistant data storage */
@@ -100,12 +100,12 @@ int Zoltan_HSFC(
    /* begin program with trace, timing, and initializations */
    ZOLTAN_TRACE_ENTER (zz, yo);
    start_time = Zoltan_Time(zz->Timer);
-   *num_export = *num_import = -1;            /* in case of early error exit */
-   MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register user method */
+   *num_export = *num_import = -1;              /* in case of early error exit */
+   MPI_Op_create(&Zoltan_HSFC_mpi_sum_max_min, 1, &mpi_op); /* register method */
 
   /* Check for needed query functions. */
   /* Check only for coordinates; Zoltan_Get_Obj_List will check for others. */
-  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL) 
+  if (zz->Get_Num_Geom == NULL || zz->Get_Geom == NULL)
     ZOLTAN_HSFC_ERROR(ZOLTAN_FATAL,
       "ZOLTAN_NUM_GEOM_FN and ZOLTAN_GEOM_FN must be registered "
       "for HSFC method");
@@ -138,13 +138,13 @@ int Zoltan_HSFC(
 
    /* set dot weights from object weights, if none set to one */
    if (zz->Obj_Weight_Dim > 1)
-      ZOLTAN_PRINT_WARN(zz->Proc, yo, "Only one weight per GID can be processed");
+      ZOLTAN_PRINT_WARN(zz->Proc, yo,"Only one weight per GID can be processed");
    if (zz->Obj_Weight_Dim < 1)
       for (i = 0; i < ndots; i++)
          dots[i].weight = DEFAULT_WEIGHT;
    else
       for (i = 0; i < ndots; i++)
-         dots[i].weight = weights [i * zz->Obj_Weight_Dim];  /* use first dimension only */
+         dots[i].weight = weights [i * zz->Obj_Weight_Dim]; /* 1 dimension only */
    ZOLTAN_FREE (&weights);
 
    /* get dots' coordinates */
@@ -162,8 +162,8 @@ int Zoltan_HSFC(
    partition    =(double*)ZOLTAN_MALLOC(sizeof(double)*zz->LB.Num_Global_Parts);
    delta        =(double*)ZOLTAN_MALLOC(sizeof(double)*zz->LB.Num_Global_Parts);
    tsum         =(double*)ZOLTAN_MALLOC(sizeof(double)*zz->LB.Num_Global_Parts);
-   grand_weight =(double*)ZOLTAN_MALLOC(sizeof(double) * pcount * 3); /* 3=>max,min,sum */
-   temp_weight  =(double*)ZOLTAN_MALLOC(sizeof(double) * pcount * 3); /* 3=>max,min,sum */
+   grand_weight =(double*)ZOLTAN_MALLOC(sizeof(double) * pcount*3);/*max,min,sum*/
+   temp_weight  =(double*)ZOLTAN_MALLOC(sizeof(double) * pcount*3);/*max,min,sum*/
    grand_partition = (Partition*)ZOLTAN_MALLOC (sizeof (Partition) * pcount);
 
    if (target == NULL  ||  partition == NULL  ||  delta == NULL || tsum == NULL
@@ -177,7 +177,7 @@ int Zoltan_HSFC(
       if (work_fraction == NULL)
          ZOLTAN_HSFC_ERROR (ZOLTAN_MEMERR, "Malloc error for work_fraction");
 
-      /* HSFC supports only the first weight; pick out the appropriate part_sizes */
+      /* HSFC supports only the first weight; select the appropriate part_sizes */
       /* entries for the first weight. */
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          work_fraction[i] = part_sizes[i*zz->Obj_Weight_Dim];
@@ -195,7 +195,7 @@ int Zoltan_HSFC(
        }
    err = MPI_Allreduce(in,out,3*d->ndimension,MPI_DOUBLE,mpi_op,zz->Communicator);
    if (err != 0)
-      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Bounding box MPI_Allreduce returned error");
+      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "Bounding box MPI_Allreduce error");
 
    /* Enlarge bounding box to make points on faces become interior (Andy) */
    for (i = 0; i < d->ndimension; i++) {
@@ -231,17 +231,17 @@ int Zoltan_HSFC(
 
    /* This loop is the real guts of the partitioning algorithm */
    for (loop = 0; loop < MAX_LOOPS; loop++) {
-      /* initialize bins, DEFAULT_BIN_MAX is less than any possible max, etc. */
-      for (i = 0;        i <   pcount; i++) temp_weight[i] = 0.0;             /* SUM */
-      for (i =   pcount; i < 2*pcount; i++) temp_weight[i] = DEFAULT_BIN_MAX; /* MAX */
-      for (i = 2*pcount; i < 3*pcount; i++) temp_weight[i] = DEFAULT_BIN_MIN; /* MIN */
+      /* initialize bins, DEFAULT_BIN_MAX is less than any possible max,... */
+      for (i = 0;        i <   pcount; i++) temp_weight[i] = 0.0; /* SUM */
+      for (i =   pcount; i < 2*pcount; i++) temp_weight[i] = DEFAULT_BIN_MAX;
+      for (i = 2*pcount; i < 3*pcount; i++) temp_weight[i] = DEFAULT_BIN_MIN;
 
       /* bin weights, max, min for all dots using current grand partition */
       for (i = 0; i < ndots; i++) {
          if (loop > 0
           && dots[i].fsfc <   grand_partition[dots[i].part].r
           && dots[i].fsfc >=  grand_partition[dots[i].part].l)
-             p = &grand_partition[dots[i].part];     /* short cut if unchanged */
+             p = &grand_partition[dots[i].part];   /* short cut if unchanged */
          else
              p = (Partition*) bsearch (&dots[i].fsfc, grand_partition, pcount,
               sizeof(Partition), Zoltan_HSFC_compare);
@@ -249,11 +249,11 @@ int Zoltan_HSFC(
             ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "BSEARCH RETURNED ERROR");
 
          dots[i].part = p->index;
-         temp_weight [p->index] += dots[i].weight;              /* local weight sum */
+         temp_weight [p->index] += dots[i].weight;             /* local wt sum */
          if (dots[i].fsfc > temp_weight[p->index + pcount])
-            temp_weight [p->index + pcount] = dots[i].fsfc;     /* local hsfc index max */
+            temp_weight [p->index + pcount] = dots[i].fsfc;    /*local indx max*/
          if (dots[i].fsfc < temp_weight[p->index + 2 * pcount])
-            temp_weight [p->index + pcount * 2] = dots[i].fsfc; /* local hsfc index min */
+            temp_weight [p->index + pcount * 2] = dots[i].fsfc;/*local indx min*/
          }
       err = MPI_Allreduce(temp_weight, grand_weight, 3 * pcount, MPI_DOUBLE,
        mpi_op, zz->Communicator);
@@ -280,7 +280,7 @@ int Zoltan_HSFC(
              - grand_weight[i+2*pcount]);
          }
 
-      /* create new partition by summing contiguous bins l to r until target reached */
+      /* create new partition by summing contiguous bins l to r until target */
       for (i = 0; i < pcount; i++)    /* since grand weight modified below */
          temp_weight[i] = grand_weight[i];
       for (k = 0; k < zz->LB.Num_Global_Parts; k++) {
@@ -366,7 +366,7 @@ int Zoltan_HSFC(
          if (k+1 < zz->LB.Num_Global_Parts)
             k++;
          }
-      else  {  /* do not include weight of current grand partition in current sum */
+      else  { /* don't include weight of current grand partition in current sum */
          actual  -= tsum[k];
          desired -= target[k];
 
@@ -384,7 +384,7 @@ int Zoltan_HSFC(
       }
 
    /* if last partition(s) is empty, loop stops w/o setting final_partition(s) */
-   for (i=1; i < zz->LB.Num_Global_Parts; i++)
+   for (i = k; i < zz->LB.Num_Global_Parts; i++)
       if (d->final_partition[i].l == 0.0)
           d->final_partition[i].l = x;
    d->final_partition[zz->LB.Num_Global_Parts-1].r = 1.0;
@@ -399,7 +399,7 @@ int Zoltan_HSFC(
    /* Count the number of objects to export from this processor */
    *num_export = 0;
    for (i = 0; i < ndots; i++) {
-      j = dots[i].part / N;  /* grand_partition is N times final_partition (segments) */
+      j = dots[i].part / N; /* grand_partition is N times final_partition parts*/
       if (dots[i].fsfc <  d->final_partition[j].r
        && dots[i].fsfc >= d->final_partition[j].l)
           p = d->final_partition + j;
@@ -486,8 +486,8 @@ int Zoltan_HSFC(
 
    /* really done now, now free dynamic storage and exit with return status */
    err = ((out_of_tolerance) ? ZOLTAN_WARN : ZOLTAN_OK);
-   if (zz->Proc == 0 && err == ZOLTAN_WARN && zz->Debug_Level > ZOLTAN_DEBUG_NONE)
-      ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user specification");
+   if (zz->Proc == 0 && err == ZOLTAN_WARN && zz->Debug_Level >ZOLTAN_DEBUG_NONE)
+      ZOLTAN_PRINT_WARN (zz->Proc, yo, "HSFC: Imbalance exceeds user limit");
 
 free:
    MPI_Op_free (&mpi_op);
@@ -540,8 +540,8 @@ int Zoltan_HSFC_Set_Param (char *name, char *val)
 
 
 
-/* allows SUM, MAX, MIN on single array (different parts) in one MPI_Allreduce call */
-void Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len,
+/* allows SUM, MAX, MIN on single array in one MPI_Allreduce call */
+void  Zoltan_HSFC_mpi_sum_max_min (void *in, void *inout, int *len,
  MPI_Datatype *datatype)
    {
    int i, count = *len/3;

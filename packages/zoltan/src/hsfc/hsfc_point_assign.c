@@ -31,46 +31,43 @@ int Zoltan_HSFC_Point_Assign (
    int *proc,
    int *part)
    {
-   double     scaled[3] ;
-   double     fsfc ;
-   Partition *p ;
-   int        i ;
-   HSFC_Data *d ;
-   int        err ;
-   const double PI = 3.1415926536 ;
-   char *yo = "Zoltan_HSFC_Point_Assign" ;
+   double     scaled[3];
+   double     fsfc;
+   Partition *p;
+   int        i;
+   HSFC_Data *d;
+   int        err;
+   char *yo = "Zoltan_HSFC_Point_Assign";
 
-   ZOLTAN_TRACE_ENTER (zz, yo) ;
-   d = (HSFC_Data *) zz->LB.Data_Structure ;
+   ZOLTAN_TRACE_ENTER (zz, yo);
+   d = (HSFC_Data *) zz->LB.Data_Structure;
    if (d == NULL)
       ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL,
-       "No Decomposition Data available; use KEEP_CUTS parameter.") ;
+       "No Decomposition Data available; use KEEP_CUTS parameter.");
 
    /* Calculate scaled coordinates, calculate HSFC coordinate */
-   for (i = 0 ; i < d->ndimension ; i++)
-      if ((x[i] < d->bbox_hi[i]) && (x[i] > d->bbox_lo[i]))
-         scaled[i] = (x[i] - d->bbox_lo[i]) / d->bbox_extent[i] ;
-      else
-         scaled[i] = atan(x[i] - (d->bbox_lo[i] + d->bbox_extent[i]/2.0)) / PI
-          + 0.5 ;
-   fsfc = d->fhsfc (scaled) ;           /* Note, this is a function call */
+   for (i = 0; i < d->ndimension; i++)
+      {
+      scaled[i] = (x[i] - d->bbox_lo[i]) / d->bbox_extent[i];
+      if (scaled[i] < HSFC_EPSILON)         scaled[i] = HSFC_EPSILON;
+      if (scaled[i] > 1.0 - HSFC_EPSILON)   scaled[i] = 1.0 - HSFC_EPSILON;
+      }
+   fsfc = d->fhsfc (scaled);           /* Note, this is a function call */
 
    /* Find partition containing point and return its number */
    p = (Partition *) bsearch (&fsfc, d->final_partition, zz->LB.Num_Global_Parts,
-    sizeof (Partition), Zoltan_HSFC_compare) ;
-   if (p == NULL && fsfc <= 1.0 && fsfc >= 0.0)
-       p = &(d->final_partition[zz->LB.Num_Global_Parts - 1]) ;
+    sizeof (Partition), Zoltan_HSFC_compare);
    if (p == NULL)
-      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen") ;
+      ZOLTAN_HSFC_ERROR (ZOLTAN_FATAL, "programming error, shouldn't happen");
    if (part != NULL)
-      *part = p->index ;
+      *part = p->index;
    if (proc != NULL)
       *proc = Zoltan_LB_Part_To_Proc(zz, p->index, NULL);
-   err = ZOLTAN_OK ;
+   err = ZOLTAN_OK;
 
 free:
-   ZOLTAN_TRACE_EXIT (zz, yo) ;
-   return err ;
+   ZOLTAN_TRACE_EXIT (zz, yo);
+   return err;
    }
 
 #ifdef __cplusplus

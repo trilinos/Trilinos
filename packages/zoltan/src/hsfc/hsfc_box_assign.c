@@ -39,7 +39,7 @@ extern "C" {
 /* returns list of processors and partitions falling within user's box */
 int Zoltan_HSFC_Box_Assign (
  ZZ *zz, double xlo, double ylo, double zlo,
-         double xhi, double yhi, double zhi, 
+         double xhi, double yhi, double zhi,
          int *procs, int *proc_count, int *parts, int *part_count)
    {
    double     x[3], xintl[3], xinth[3];
@@ -51,7 +51,7 @@ int Zoltan_HSFC_Box_Assign (
    int        n, i, loop, offset;
    int        oldpartcount = 0;
    int        first_proc, last_proc;
-   const int  MAXLOOP  = 15;
+   const int  MAXLOOP  = 10;
    int        err = ZOLTAN_OK;
    int prime[] = {3, 7, 17, 37, 79, 163, 331, 673, 1361, 2729, 5471, 10949,
     21911, 43853, 87719, 175447, 350899, 701819, 1403641, 2807303, 5614657,
@@ -79,14 +79,14 @@ int Zoltan_HSFC_Box_Assign (
          part_array[i] = 1;
       goto fini;
       }
-   
-   /* set initial resolution at about equal work for each dimension */
-   offset = (d->ndimension == 2) ? 2 : 1;
 
-   /* determine intersection of bounding box and dropped box */
+   /* set initial resolution at about equal work for each dimension */
+/*   offset = (d->ndimension == 2) ? 2 : 1; */
+offset = (d->ndimension == 2) ? 7 : 5;
+
+   /* determine intersection of bounding box and dropped box, after scaling */
    if      (xhi < d->bbox_lo[0])  xintl[0] = xinth[0] = d->bbox_lo[0];
    else if (xlo > d->bbox_hi[0])  xintl[0] = xinth[0] = d->bbox_hi[0];
-
    else {
         xintl[0] = (d->bbox_lo[0] < xlo) ? xlo           : d->bbox_lo[0];
         xinth[0] = (d->bbox_hi[0] < xhi) ? d->bbox_hi[0] : xhi;
@@ -99,16 +99,18 @@ int Zoltan_HSFC_Box_Assign (
         xinth[1] = (d->bbox_hi[1] < yhi) ? d->bbox_hi[1] : yhi;
         }
 
-   if      (zhi < d->bbox_lo[2])  xintl[2] = xinth[2] = d->bbox_lo[2];
-   else if (zlo > d->bbox_hi[2])  xintl[2] = xinth[2] = d->bbox_hi[2];
-   else {
-        xintl[2] = (d->bbox_lo[2] < zlo) ? zlo           : d->bbox_lo[2];
-        xinth[2] = (d->bbox_hi[2] < zhi) ? d->bbox_hi[2] : zhi;
-        }
+   if (d->ndimension == 3) {
+      if      (zhi < d->bbox_lo[2])  xintl[2] = xinth[2] = d->bbox_lo[2];
+      else if (zlo > d->bbox_hi[2])  xintl[2] = xinth[2] = d->bbox_hi[2];
+      else {
+           xintl[2] = (d->bbox_lo[2] < zlo) ? zlo           : d->bbox_lo[2];
+           xinth[2] = (d->bbox_hi[2] < zhi) ? d->bbox_hi[2] : zhi;
+           }
+      }
 
    for (loop = 0; loop < MAXLOOP; ++loop) {
       oldpartcount = *part_count;
-
+      
       xdelta = (xinth[0] - xintl[0])/ (double) prime[loop + offset];
       ydelta = (xinth[1] - xintl[1])/ (double) prime[loop + offset];
       zdelta = (xinth[2] - xintl[2])/ (double) prime[loop + offset];
@@ -116,7 +118,6 @@ int Zoltan_HSFC_Box_Assign (
       if (xdelta < REFINEMENT_LIMIT)  xdelta = 1.0;
       if (ydelta < REFINEMENT_LIMIT)  ydelta = 1.0;
       if (zdelta < REFINEMENT_LIMIT)  zdelta = 1.0;
-
 
       /* create regular lattice in given box, then look up associated processors */
       if (d->ndimension == 3) {
@@ -139,7 +140,8 @@ int Zoltan_HSFC_Box_Assign (
       for (i = 0; i < zz->LB.Num_Global_Parts; i++)
          if (part_array[i] > 0)
             (*part_count)++;
-      if (*part_count == oldpartcount)
+
+      if (*part_count == oldpartcount || *part_count == zz->LB.Num_Global_Parts)
          break;
       }
 
@@ -175,7 +177,6 @@ fini:
       for (i = 0; i < zz->Num_Proc; i++)
          if (proc_array[i] > 0)
             procs[(*proc_count)++] = i;
-
       }
 
 free:
