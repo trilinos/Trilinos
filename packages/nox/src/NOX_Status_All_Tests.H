@@ -38,6 +38,6 @@
 #include "NOX_Status_AbsResid.H"
 #include "NOX_Status_RelResid.H"
 #include "NOX_Status_MaxResid.H"
-
+#include "NOX_Status_MaxIters.H"
 
 #endif

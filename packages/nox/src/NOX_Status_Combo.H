@@ -58,17 +58,17 @@ public:
   //! Destructor
   virtual ~Combo();
 
-  virtual StatusType operator()(const Solver::Generic& problem) const;
+  virtual StatusType operator()(const Solver::Generic& problem);
 
   virtual ostream& print(ostream& stream, int indent = 0) const;
   
 protected:
 
   //! Use this for operator() when this is an OR type combo
-  virtual StatusType orOp(const Solver::Generic& problem) const;
+  virtual void orOp(const Solver::Generic& problem);
 
   //! Use this for operator() when this is an AND type combo
-  virtual StatusType andOp(const Solver::Generic& problem) const;
+  virtual void andOp(const Solver::Generic& problem);
 
   //! Check for repeaters.
   bool isSafe(Test& a);
@@ -78,6 +78,9 @@ protected:
 
   //! Vector of tests
   vector<Test*> tests;
+
+  //! Status
+  StatusType status;
 
 };
 

@@ -41,26 +41,28 @@ using namespace NOX::Status;
 AbsResid::AbsResid(double tolerance)
 {
   tol = tolerance;
+  status = Unconverged;
 }
 
 AbsResid::~AbsResid()
 {
 }
 
-StatusType AbsResid::operator()(const Solver::Generic& problem) const
+StatusType AbsResid::operator()(const Solver::Generic& problem)
 {
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();
   if (normrhs < tol)
-    return Converged;
-  else
-    return Unconverged;
+    status = Converged;
+  return status;
 }
 
 ostream& AbsResid::print(ostream& stream, int indent = 0) const
 {
   for (int j = 0; j < indent; j ++)
     stream << ' ';
-  stream << "Absolute Residual Norm with Tolerance = " << tol << endl;
+  stream << "Absolute Residual Norm with Tolerance < " << tol;
+  stream << " : " << ((status == Unconverged) ? "Unconverged" : "CONVERGED!");
+  stream << endl;
   return stream;
 }

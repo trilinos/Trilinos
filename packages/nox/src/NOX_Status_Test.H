@@ -46,7 +46,7 @@ class Generic;			// forward declaration
 namespace Status {
 
   //! Status type.
-  enum StatusType { Unconverged = 0, Converged = 1, Failed = -1};
+  enum StatusType { Unconverged = 0, Converged = 1, Failed = -1 };
 
 //! Generic status test.
 class Test {
@@ -60,7 +60,7 @@ public:
   virtual ~Test() {};
 
   //! %Test stopping criterion, given a generic problem.
-  virtual StatusType operator()(const Solver::Generic& problem) const = 0;
+  virtual StatusType operator()(const Solver::Generic& problem) = 0;
 
   //! Output formatted description of stopping test to output stream.
   virtual ostream& print(ostream& stream, int indent = 0) const = 0;

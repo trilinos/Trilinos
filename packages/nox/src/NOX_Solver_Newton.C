@@ -184,8 +184,11 @@ void Newton::printUpdate()
   if ((status > 0) && (Utils::doPrint(1)))
     cout << "\n" << "Solution is CONVERGED!" << "\n" << endl;
   
-  if ((status < 0) && (Utils::doPrint(1)))
+  if ((status < 0) && (Utils::doPrint(1))) 
     cout << "\n" << "Nonlinear solver failed." << "\n" << endl;
+
+  if ((status != 0) && (Utils::doPrint(1))) 
+    test.print(cout);
 }
 
 // protected

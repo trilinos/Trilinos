@@ -49,7 +49,7 @@ RelResid::~RelResid()
 {
 }
 
-StatusType RelResid::operator()(const Solver::Generic& problem) const
+StatusType RelResid::operator()(const Solver::Generic& problem)
 {
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = tmp.getNormRHS();

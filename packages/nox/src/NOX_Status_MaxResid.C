@@ -47,7 +47,7 @@ MaxResid::~MaxResid()
 {
 }
 
-StatusType MaxResid::operator()(const Solver::Generic& problem) const
+StatusType MaxResid::operator()(const Solver::Generic& problem)
 {
   const Abstract::Group& tmp = problem.getSolutionGroup();
   double normrhs = (tmp.getRHS()).norm(Abstract::Vector::INF);

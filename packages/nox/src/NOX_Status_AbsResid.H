@@ -50,16 +50,17 @@ public:
   //! Destructor.
   virtual ~AbsResid();
 
-  //! Test stopping criterion, given a generic problem.
-  virtual StatusType operator()(const Solver::Generic& problem) const;
+  virtual StatusType operator()(const Solver::Generic& problem);
 
-  //! Output description of stopping test to output stream
   virtual ostream& print(ostream& stream, int indent = 0) const;
 
 private:
 
   //! Tolerance for convergence.
   double tol;
+
+  //! Status
+  StatusType status;
 
 };
 

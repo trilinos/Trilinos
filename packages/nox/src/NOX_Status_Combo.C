@@ -40,6 +40,7 @@ Combo::Combo(Test& a, ComboType t)
 {
   type = t;
   tests.push_back(&a);
+  status = Unconverged;
 }
 
 Combo& Combo::addTest(Test& a)
@@ -49,7 +50,7 @@ Combo& Combo::addTest(Test& a)
   else 
     if (Utils::doPrint(1)) {
       cout << "\n*** WARNING! ***\n";
-      cout << "This combo tests currently consists of the following:\n";
+      cout << "This combo test currently consists of the following:\n";
       this->print(cout, 2);
       cout << "Unable to add the following test:\n";
       a.print(cout, 2);
@@ -79,43 +80,45 @@ Combo::~Combo()
 {
 }
 
-StatusType Combo::operator()(const Solver::Generic& problem) const
+StatusType Combo::operator()(const Solver::Generic& problem)
 {
   if (type == OR)
-    return orOp(problem);
+    orOp(problem);
   else
-    return andOp(problem);
+    andOp(problem);
+
+  return status;
 }
 
-StatusType Combo::orOp(const Solver::Generic& problem) const
+void Combo::orOp(const Solver::Generic& problem)
 {
-
   for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) {
 
-    StatusType status = (*i)->operator()(problem);
-    if (status != Unconverged) 
-      return status;
+    StatusType s = (*i)->operator()(problem);
+    if (s != Unconverged) {
+      status = s;
+      return;
+    }
 
   }
 
-  return Unconverged;
+  return;
 }
 
-StatusType Combo::andOp(const Solver::Generic& problem) const
+void Combo::andOp(const Solver::Generic& problem)
 {
   vector<Test*>::const_iterator i = tests.begin();
-  StatusType status = (*i)->operator()(problem);
+  StatusType s = (*i)->operator()(problem);
 
-  if (status == Unconverged)
-    return Unconverged;
-
-  StatusType newstatus;
+  if (s == Unconverged)
+    return;
 
   for (; i != tests.end(); ++i) 
-    if (status != (*i)->operator()(problem))
-      return Unconverged;
-
-  return status;
+    if (s != (*i)->operator()(problem))
+      return;
+  
+  status = s;
+  return;
 }
 
 
@@ -125,7 +128,15 @@ ostream& Combo::print(ostream& stream, int indent) const
     stream << ' ';
   stream << "Combo ";
   stream << ((type == OR) ? "OR" : "AND");
-  stream << " Test:" << endl;
+  stream << " Test";
+  stream << " : ";
+  if (status == Unconverged) 
+    stream << "Unconverged";
+  else if (status == Failed)
+    stream << "FAILED!";
+  else
+    stream << "CONVERGED!";
+  stream << " -> " << endl;
 
   for (vector<Test*>::const_iterator i = tests.begin(); i != tests.end(); ++i) 
     (*i)->print(stream, indent+2);
