@@ -97,13 +97,13 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
                       Kn_coarse->outvec_leng, Kn_coarse->comm,
                       ML_OVERWRITE,NULL);
    
-     #ifdef DEBUG_T_BUILD
+#ifdef DEBUG_T_BUILD
      printf("\n\n%d: Kn_coarse->N_nonzeros = %d "
             "Kn_coarse->invec_leng+Nghost = %d\n"
             "Kn_coarse->invec_leng = %d\n\n",
             Kn_coarse->comm->ML_mypid, Kn_coarse->N_nonzeros,
             Kn_coarse->invec_leng+Nghost, Kn_coarse->invec_leng);
-     #endif /* ifdef DEBUG_T_BUILD */
+#endif /* ifdef DEBUG_T_BUILD */
 
      Tcoarse_bindx =(int *)
                     ML_allocate( 2*Kn_coarse->N_nonzeros *sizeof(int) );
@@ -327,7 +327,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      /* MG grid hierarchy.                                               */
      /*------------------------------------------------------------------*/
    
-      #ifdef prepostcheck
+#ifdef prepostcheck
       printf("Checking product Pe * e_i before post-processing\n");
       yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
       fido = (double *) malloc( Pe->invec_leng*sizeof(double));
@@ -393,7 +393,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
       exit(1);
    
-     #endif /* prepostcheck */
+#endif /* prepostcheck */
    
      for (j = 0; j < csr_data->rowptr[Pe->outvec_leng] ; j++)
      {
@@ -441,7 +441,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
 /****************** Check the construction of Pe ***********************/
    
-      #ifdef postprocessscheck
+#ifdef postprocessscheck
       printf("Checking product Pe * e_i\n");
       yyy = (double *) malloc( Pe->outvec_leng*sizeof(double));
       fido = (double *) malloc( Pe->invec_leng*sizeof(double));
@@ -495,14 +495,14 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
    
      fflush(stdout);
      exit(1);
-     #endif /*postprocesscheck*/
+#endif /*postprocesscheck*/
    
      ML_Operator_Set_1Levels(&(ml_edges->Pmat[grid_level]),
                  &(ml_edges->SingleLevel[grid_level]), 
                  &(ml_edges->SingleLevel[grid_level+1]));
      ML_Gen_Restrictor_TransP(ml_edges, grid_level+1, grid_level);
      ML_Gen_AmatrixRAP(ml_edges, grid_level+1, grid_level);
-     #ifdef FREENODALMATRICES
+#ifdef FREENODALMATRICES
      if (grid_level == fine_level-1)
      {
          temp = (struct aztec_context *) ml_nodes->Amat[grid_level+1].data;
@@ -516,7 +516,7 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Operator_Clean(&(ml_nodes->Pmat[grid_level]));
      ML_Operator_Clean(&(ml_nodes->Rmat[grid_level+1]));
      ML_Operator_Clean(&(ml_nodes->Amat[grid_level+1]));
-     #endif /* ifdef FREENODALMATRICES */
+#endif /* ifdef FREENODALMATRICES */
 
      Tfine = Tcoarse;
    
