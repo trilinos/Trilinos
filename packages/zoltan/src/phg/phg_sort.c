@@ -16,6 +16,10 @@
 extern "C" {
 #endif
 
+
+    /* UVC: TODO CHECK why we need sort again? it is already in hg_sort? */
+#if 0
+    
 #include "phg.h"
 
 
@@ -250,7 +254,7 @@ void Zoltan_quicksort_pointer_inc_int_mult (int *sorted, int start, int end,
 
 /****************************************************************************/
 
-
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
