@@ -9,7 +9,9 @@
 
 #define ML_NEWNORM
 #define ML_SCALEIT
-
+/*
+#define ML_JANUS_FORT(iiii) iiii##_
+*/
 #define ML_JANUS_FORT(iiii) iiii
 
 /**************************************************************************/
@@ -188,13 +190,12 @@ char str [80];
   double imag_eigenval;
   double realsav, imagsav;
   char c[10];                    /* arpack option */
+  
 
   /************************* start of execution *****************************/
 
-  fflush(stdout);
-  fflush(stderr);
   MPI_Barrier(MPI_COMM_WORLD);
-  ML_Set_PrintLevel(10);
+  ML_Set_PrintLevel(5);
   Nlocal_edges = *Nedges;
 
   /* fill processor information for Aztec */
@@ -340,17 +341,18 @@ char str [80];
    wrap_grad_greg_data->nsol  = nsolpot;
    wrap_grad_greg_data->proc  = proc;
    wrap_grad_greg_data->Nghost= Nghost_node;
-
+   
    Tmat = ML_Operator_Create(ml_edges->comm);
+   
    ML_Operator_Set_ApplyFuncData(Tmat, *Nnodes, *Nedges, ML_EXTERNAL,
 				 (void *) wrap_grad_greg_data, *Nedges,
 				 ml_grad_matvec_wrap_of_greg, 0);
+   
    ML_Operator_Set_Getrow(Tmat,ML_EXTERNAL,*Nedges,ml_grad_getrow_wrap_of_greg);
-
    ML_CommInfoOP_Generate(&(Tmat->getrow->pre_comm),ml_grad_comm_wrap_of_greg,
 			  wrap_grad_greg_data, ml_edges->comm,Tmat->invec_leng,
 			  Nghost_node);
-
+   
    /* Zero out rows of T that correspond to Dirichlet points */
    /* I think we also zero out columns of Ke                 */
 
@@ -361,6 +363,7 @@ char str [80];
 			colVal,&ncnt);
      if ( ncnt == 1) { mcolpot[i] = 0; Dir_bdry[i] = 1.; }
   }
+   
 #ifdef out
   sprintf(str,"greg_x%d",*proc);
   fp = fopen(str,"w");
@@ -404,7 +407,6 @@ char str [80];
   for (i = 0; i < Nlocal_edges; i++) ERF_x[i] = copy_ERF_x[i];
 
   free(Dir_bdry);
-
 
   /********************************************************************/
   /*                      Set up Tmat_trans                           */
@@ -472,7 +474,9 @@ char str [80];
   global_dude = &(ml_ERF->Amat[MaxMgLevels-1]);
 
 
+  /*
   if (ml_edges->comm->ML_mypid == 0) printf("Skipping calls to Arpack\n");
+  */
 /*  --ARPACK calls follow 
   sprintf(c,"%s","LR");
   io_flag = 0;
@@ -512,8 +516,7 @@ char str [80];
   /* equivalent real system. Instead, we will manually compute the*/
   /* largest eigenvalue of the pieces to estimate the largest     */
   /* eigenvalue of the equivalent real system.                    */
-
-  for (j=ml_edges->ML_finest_level; j>=ml_edges->ML_coarsest_level; j--) {
+  for (j=ml_edges->ML_finest_level; j>ml_edges->ML_coarsest_level; j--) {
 
      block_data = (struct ML_Operator_blockmat_data *) ml_ERF->Amat[j].data;
 
@@ -552,13 +555,12 @@ char str [80];
      ml_ERF->Amat[j].lambda_max     = ml_edges->Amat[j].lambda_max;
      ml_ERF->Amat[j].lambda_max_img = block_data->M_mat->lambda_max;
      if (ml_edges->comm->ML_mypid == 0) {
-       printf("\n\n(lambda_max_real,lambda_max_imag) = %e  %e\n\n",
-              ml_edges->Amat[j].lambda_max, block_data->M_mat->lambda_max);
-       printf("numer = %e, denom = %e\n",ttdiag,tdiag);
+       printf("\n\nlevel %d:  (lambda_max_real,lambda_max_imag) = %e  %e\n\n",
+              j,ml_edges->Amat[j].lambda_max, block_data->M_mat->lambda_max);
+       printf("(level %d) numer = %e, denom = %e\n",j,ttdiag,tdiag);
+       fflush(stdout);
      }
   } /* for j=ml_edges->ML_finest_level... */
-
-
 
   /* Set the Hiptmair subsmoothers */
 
@@ -709,12 +711,12 @@ char str [80];
   fflush(stdout);
 #ifdef ML_NEWNORM
   /* don't scale before applying T-norm */
-  if (ml_edges->comm->ML_mypid == 0) printf("\n\nx :");
   new_norm(Prec, ERF_x, &xnorm);
-  if (ml_edges->comm->ML_mypid == 0) printf("res :");
+  /*if (ml_edges->comm->ML_mypid == 0) printf("\n\nx :  %e\n",xnorm);*/
   new_norm(Prec, vec1, &result);
-  if (ml_edges->comm->ML_mypid == 0) printf("rhs :");
+  /*if (ml_edges->comm->ML_mypid == 0) printf("res :  %e\n",result);*/
   new_norm(Prec, ERF_y, &result1);
+  /*if (ml_edges->comm->ML_mypid == 0) printf("rhs :  %e\n",result1);*/
   if (ml_edges->comm->ML_mypid == 0) printf("\n(|r|_t,|b|_t,x,rr) = %e %e %e %e\n\n",result,result1,xnorm,result/result1);
 #endif
 
