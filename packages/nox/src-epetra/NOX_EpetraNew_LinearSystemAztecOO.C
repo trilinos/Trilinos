@@ -547,7 +547,7 @@ applyJacobianInverse(Parameter::List &p,
 
   // ************* Begin linear system scaling *******************
   if (scaling != 0) {
-    scaling->computeScaling(Problem);
+    //scaling->computeScaling(Problem);
     scaling->scaleLinearSystem(Problem);
 
     if (utils.isPrintProcessAndType(Utils::Details)) {
@@ -718,6 +718,11 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
     return true;
   }
 
+  // Apply Scaling
+  Epetra_LinearProblem Problem(jacPtr, tmpVectorPtr, tmpVectorPtr);
+  if (scaling != 0)
+    scaling->scaleLinearSystem(Problem);
+
   if (utils.isPrintProcessAndType(Utils::LinearSolverDetails))
     cout << "\n       Computing a new precondtioner" << endl;;
 
@@ -759,6 +764,10 @@ createPreconditioner(Epetra_Vector& x, Parameter::List& p,
   }
 
   isPrecConstructed = true; 
+
+  // Unscale the linear system
+  if (scaling != 0)
+    scaling->unscaleLinearSystem(Problem);
 
   return true;
 }
