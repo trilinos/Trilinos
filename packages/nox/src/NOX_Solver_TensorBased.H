@@ -486,10 +486,10 @@ protected:
   NOX::LineSearch::Utils::Slope slopeObj;
 
   //! Counter for number of Jacobian-vector products
-  mutable int multsJv;
+  mutable int numJvMults;
 
   //! Counter for number of "double" Jacobian-vector products
-  mutable int mults2Jv;
+  mutable int numJ2vMults;
 
   //! Pointer to a user defined NOX::Abstract::PrePostOperator object.
   NOX::Parameter::PrePostOperator* prePostOperatorPtr;
