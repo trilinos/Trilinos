@@ -944,7 +944,7 @@ skip_phase1:
           }
 
           if (cFLAG  && (bestsum > TSUM_THRESHOLD))
-            cmatch[bestlno] = gno;
+            match[bestlno] = gno;
           if (!cFLAG && bestsum > TSUM_THRESHOLD)  {
             cmatch[bestlno] = -1;  /* mark pending match to avoid conflicts */
             *mp++ = gno;
@@ -958,7 +958,7 @@ skip_phase1:
     if (cFLAG)   {
       MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm); 
       break;      /* done, no more phases (3 or 4) or rounds */
-      }    
+    }    
 
     
          /************************ PHASE 3: **********************************/
