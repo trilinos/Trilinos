@@ -534,7 +534,8 @@ static int LB_ParMetis_Jostle(
     
     for (i=0; i< num_obj; i++){
       hashtab[i] = NULL;
-      hash_nodes[i].gid = global_ids[i];
+      /* hash_nodes[i].gid = global_ids[i]; */
+      LB_SET_GID(hash_nodes[i].gid,global_ids[i]);
       hash_nodes[i].gno = vtxdist[lb->Proc]+i;
     }
   
@@ -677,7 +678,8 @@ static int LB_ParMetis_Jostle(
             }
           }
           ptr = &proc_list[offset];
-          ptr->my_gid = global_ids[i];
+          /* ptr->my_gid = global_ids[i]; */
+          LB_SET_GID (ptr->my_gid, global_ids[i]);
           ptr->my_gno = hash_lookup(hashtab, global_ids[i], num_obj);
           ptr->nbor_gid = nbors_global[j];
           if (flag)
@@ -1135,8 +1137,10 @@ static int LB_ParMetis_Jostle(
     j = 0;
     for (i=0; i<num_obj; i++){
       if (part[i] != lb->Proc){
-        (*exp_gids)[j] = global_ids[i];
-        (*exp_lids)[j] = local_ids[i];
+        /* (*exp_gids)[j] = global_ids[i]; */
+        LB_SET_GID((*exp_gids)[j],global_ids[i]);
+        /* (*exp_lids)[j] = local_ids[i]; */
+        LB_SET_LID((*exp_lids)[j],local_ids[i]);
         (*exp_procs)[j] = part[i];
         j++;
       }
