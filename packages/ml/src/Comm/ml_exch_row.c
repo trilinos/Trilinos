@@ -844,8 +844,9 @@ void ML_back_to_local(ML_Operator *imatrix, ML_Operator *omatrix,
    ML_Comm *comm;
 
    comm  = imatrix->comm;
-   num_PDEs = imatrix->num_PDEs;
-   omatrix->num_PDEs = num_PDEs;
+   num_PDEs = imatrix->num_rigid;
+   omatrix->num_PDEs  = num_PDEs;
+   omatrix->num_rigid = imatrix->num_rigid;
    lower = max_per_proc*comm->ML_mypid;
    upper = lower + max_per_proc;
 
