@@ -31,6 +31,7 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_sendbytes  = ML_Comm_Send;
    com_ptr->USR_irecvbytes = ML_Comm_Irecv;
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
+   com_ptr->USR_errhandler = NULL;
 
 #ifdef ML_MPI
    MPI_Comm_size(MPI_COMM_WORLD, &(com_ptr->ML_nprocs));
@@ -40,8 +41,10 @@ int ML_Comm_Create( ML_Comm ** com )
    com_ptr->USR_waitbytes  = ML_Comm_Wait;
    com_ptr->USR_comm       = MPI_COMM_WORLD;
 #ifdef ML_CATCH_MPI_ERRORS_IN_DEBUGGER
+   ML_Comm_ErrorHandlerSet(com_ptr->USR_comm, MPI_ERRORS_RETURN);
    /* register the error handling function */
-   ML_Comm_ErrorHandlerCreate(ML_Comm_ErrorHandler, &(com_ptr->USR_errhandler));
+   ML_Comm_ErrorHandlerCreate((USR_ERRHANDLER_FUNCTION *) ML_Comm_ErrorHandler,
+                              &(com_ptr->USR_errhandler));
    /* associate the error handling function with the communicator */
    ML_Comm_ErrorHandlerSet(com_ptr->USR_comm, com_ptr->USR_errhandler);
 #endif
@@ -972,7 +975,8 @@ int ML_Comm_ErrorHandlerSet(USR_COMM comm, USR_ERRHANDLER *errhandler)
 {
    int err = 0;
 #ifdef ML_MPI
-   err = MPI_Errhandler_set(comm, *errhandler);
+   /*err = MPI_Errhandler_set(comm, *errhandler);*/
+   err = USR_ERRHANDLER_SET(comm, *errhandler);
 #endif
    return err;
 }
@@ -981,12 +985,14 @@ int ML_Comm_ErrorHandlerSet(USR_COMM comm, USR_ERRHANDLER *errhandler)
  Wrapper for registration of MPI error-handling function.
 ------------------------------------------------------------------------------*/
 
-int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),
+/*int ML_Comm_ErrorHandlerCreate(void (*fcn)(USR_COMM*,int*),*/
+int ML_Comm_ErrorHandlerCreate(USR_ERRHANDLER_FUNCTION *fcn,
                                USR_ERRHANDLER *errhandler)
 {
    int err = 0;
 #ifdef ML_MPI
-   err = MPI_Errhandler_create(fcn, errhandler);
+   /*err = USR_ERRHANDLER_CREATE(fcn, errhandler);*/
+   err = USR_ERRHANDLER_CREATE(fcn, errhandler);
 #endif
    return err;
 }
@@ -1002,8 +1008,7 @@ int ML_Comm_ErrorHandlerDestroy(USR_ERRHANDLER **errhandler)
   err = MPI_Errhandler_free(*errhandler);
 #endif
   *errhandler = NULL;
-  return err;
-}
+  return err; }
 
 /*------------------------------------------------------------------------------
  ML's very own error-handling routine for MPI.
