@@ -2,8 +2,9 @@
 #include "ExecuteTestProblems.h"
 #include "Epetra_Comm.h"
 #include "Epetra_Vector.h"
-  int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap, int NumVectors,
-		      bool verbose)
+
+int MatrixTests(const Epetra_Map & Map, const Epetra_LocalMap & LocalMap,
+		int NumVectors, bool verbose)
   {
     const Epetra_Comm & Comm = Map.Comm();
     int ierr = 0, i;
@@ -18,6 +19,251 @@
 
     return(ierr);
   }
+
+int Drumm1(const Epetra_Map& map, bool verbose)
+{
+  //Simple 2-element problem (element as in "finite-element") from
+  //Clif Drumm. Two triangular elements, one per processor, as shown
+  //here:
+  //
+  //   *----*
+  //  3|\  2|
+  //   | \  |
+  //   | 0\1|
+  //   |   \|
+  //   *----*
+  //  0    1
+  //
+  //Element 0 on processor 0, element 1 on processor 1.
+  //Processor 0 will own nodes 0,1 and processor 1 will own nodes 2,3.
+  //Each processor will pass a 3x3 element-matrix to Epetra_FECrsMatrix.
+  //After GlobalAssemble(), the matrix should be as follows:
+  //
+  //         row 0: 2  1  0  1
+  //proc 0   row 1: 1  4  1  2
+  //----------------------------------
+  //         row 2: 0  1  2  1
+  //proc 1   row 3: 1  2  1  4
+  //
+
+  int numProcs = map.Comm().NumProc();
+  int localProc = map.Comm().MyPID();
+
+  if (numProcs != 2) return(0);
+
+  int indexBase = 0, ierr;
+
+  if (localProc == 0) {
+    int numMyNodes = 2;
+    int* myNodes = new int[numMyNodes];
+    myNodes[0] = 0;
+    myNodes[1] = 1;
+
+    double* values = new double[9];
+    values[0] = 2.0;
+    values[1] = 1.0;
+    values[2] = 1.0;
+    values[3] = 1.0;
+    values[4] = 2.0;
+    values[5] = 1.0;
+    values[6] = 1.0;
+    values[7] = 1.0;
+    values[8] = 2.0;
+
+    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+
+    delete [] myNodes;
+    numMyNodes = 3;
+    myNodes = new int[numMyNodes];
+    myNodes[0] = 0;
+    myNodes[1] = 1;
+    myNodes[2] = 3;
+
+    int rowLengths = 3;
+    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
+
+    EPETRA_TEST_ERR( A.SumIntoGlobalValues(numMyNodes, myNodes,
+			  numMyNodes, myNodes,
+			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+    A.Print(cout);
+
+    delete [] myNodes;
+    delete [] values;
+  }
+  else {
+    int numMyNodes = 2;
+    int* myNodes = new int[numMyNodes];
+    myNodes[0] = 2;
+    myNodes[1] = 3;
+
+    double* values = new double[9];
+    values[0] = 2.0;
+    values[1] = 1.0;
+    values[2] = 1.0;
+    values[3] = 1.0;
+    values[4] = 2.0;
+    values[5] = 1.0;
+    values[6] = 1.0;
+    values[7] = 1.0;
+    values[8] = 2.0;
+
+    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+
+    int rowLengths = 3;
+    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
+
+    delete [] myNodes;
+    numMyNodes = 3;
+    myNodes = new int[numMyNodes];
+    myNodes[0] = 1;
+    myNodes[1] = 2;
+    myNodes[2] = 3;
+
+    EPETRA_TEST_ERR( A.SumIntoGlobalValues(numMyNodes, myNodes,
+			  numMyNodes, myNodes,
+			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+    A.Print(cout);
+
+    delete [] myNodes;
+    delete [] values;
+  }
+
+  return(0);
+}
+
+int Drumm2(const Epetra_Map& map, bool verbose)
+{
+  //Simple 2-element problem (element as in "finite-element") from
+  //Clif Drumm. Two triangular elements, one per processor, as shown
+  //here:
+  //
+  //   *----*
+  //  3|\  2|
+  //   | \  |
+  //   | 0\1|
+  //   |   \|
+  //   *----*
+  //  0    1
+  //
+  //Element 0 on processor 0, element 1 on processor 1.
+  //Processor 0 will own nodes 0,1,3 and processor 1 will own node 2.
+  //Each processor will pass a 3x3 element-matrix to Epetra_FECrsMatrix.
+  //After GlobalAssemble(), the matrix should be as follows:
+  //
+  //         row 0: 2  1  0  1
+  //proc 0   row 1: 1  4  1  2
+  //         row 2: 0  1  2  1
+  //----------------------------------
+  //proc 1   row 3: 1  2  1  4
+  //
+
+  int numProcs = map.Comm().NumProc();
+  int localProc = map.Comm().MyPID();
+
+  if (numProcs != 2) return(0);
+
+  int indexBase = 0, ierr;
+
+  if (localProc == 0) {
+    int numMyNodes = 3;
+    int* myNodes = new int[numMyNodes];
+    myNodes[0] = 0;
+    myNodes[1] = 1;
+    myNodes[2] = 3;
+
+    double* values = new double[9];
+    values[0] = 2.0;
+    values[1] = 1.0;
+    values[2] = 1.0;
+    values[3] = 1.0;
+    values[4] = 2.0;
+    values[5] = 1.0;
+    values[6] = 1.0;
+    values[7] = 1.0;
+    values[8] = 2.0;
+
+    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+
+    int rowLengths = 3;
+    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
+
+    EPETRA_TEST_ERR( A.SumIntoGlobalValues(numMyNodes, myNodes,
+			  numMyNodes, myNodes,
+			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+    A.Print(cout);
+
+    //now let's make sure we can do a matvec with this matrix.
+    Epetra_Vector x(Map), y(Map);
+    x.PutScalar(1.0);
+    EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
+
+    if (verbose) {
+      cout << "y = A*x, x=1.0's"<<endl;
+    }
+
+    y.Print(cout);
+
+    delete [] myNodes;
+    delete [] values;
+  }
+  else {
+    int numMyNodes = 1;
+    int* myNodes = new int[numMyNodes];
+    myNodes[0] = 2;
+
+    double* values = new double[9];
+    values[0] = 2.0;
+    values[1] = 1.0;
+    values[2] = 1.0;
+    values[3] = 1.0;
+    values[4] = 2.0;
+    values[5] = 1.0;
+    values[6] = 1.0;
+    values[7] = 1.0;
+    values[8] = 2.0;
+
+    Epetra_Map Map(-1, numMyNodes, myNodes, indexBase, map.Comm());
+
+    int rowLengths = 3;
+    Epetra_FECrsMatrix A(Copy, Map, rowLengths);
+
+    delete [] myNodes;
+    numMyNodes = 3;
+    myNodes = new int[numMyNodes];
+    myNodes[0] = 1;
+    myNodes[1] = 2;
+    myNodes[2] = 3;
+
+    EPETRA_TEST_ERR( A.SumIntoGlobalValues(numMyNodes, myNodes,
+			  numMyNodes, myNodes,
+			  values, Epetra_FECrsMatrix::ROW_MAJOR),ierr);
+
+    EPETRA_TEST_ERR( A.GlobalAssemble(), ierr );
+
+    A.Print(cout);
+
+    //now let's make sure we can do a matvec with this matrix.
+    Epetra_Vector x(Map), y(Map);
+    x.PutScalar(1.0);
+    EPETRA_TEST_ERR( A.Multiply(false, x, y), ierr);
+
+    y.Print(cout);
+
+    delete [] myNodes;
+    delete [] values;
+  }
+
+  return(0);
+}
 
 int MultiVectorTests(const Epetra_Map & Map, int NumVectors, bool verbose)
 {
