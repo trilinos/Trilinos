@@ -533,15 +533,16 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     double residualNorm = residualVecPtr->norm();
 
 #if DEBUG_LEVEL > 0
+    double tmpVecNorm = tmpVec.norm();
+    double residualNormRel = residualNorm /
+      solver.getPreviousSolutionGroup().getNormF();
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
     {
-      cout << " Norm of initial guess: " << utils.sciformat(tmpVec.norm(), 6)
+      cout << " Norm of initial guess: " << utils.sciformat(tmpVecNorm, 6)
 	   << endl;
       cout << " initg norm of model residual =   "
 	   << utils.sciformat(residualNorm, 6) << " (abs)     "
-	   << utils.sciformat(residualNorm /
-			      solver.getPreviousSolutionGroup().getNormF(), 6)
-	   << " (rel)" << endl;
+	   << utils.sciformat(residualNormRel, 6) << " (rel)" << endl;
     }
 #endif
 
@@ -591,13 +592,12 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     numJvMults++;
     residualVecPtr->update(-1.0, solver.getPreviousSolutionGroup().getF(),1.0);
     double residualNorm2 = residualVecPtr->norm();
+    double residualNorm2Rel = residualNorm2 /
+      solver.getPreviousSolutionGroup().getNormF();
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
       cout << " jifp norm of model residual =   "
 	   << utils.sciformat(residualNorm2, 6) << " (abs)     "
-	   << utils.sciformat(residualNorm2 /
-			      solver.getPreviousSolutionGroup().getNormF(), 6)
-	   << " (rel)" << endl;
-    
+	   << utils.sciformat(residualNorm2Rel, 6) << " (rel)" << endl;
     //printf(" jifp norm of model residual = %14.6e (abs)   %14.6e (rel)\n",
     //   residualNorm2,
     //   residualNorm2 / solver.getPreviousSolutionGroup().getNormF());
@@ -616,7 +616,6 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
   
 #ifdef CHECK_RESIDUALS
   printDirectionInfo("newtonVec", newtonVec, soln, false);
-  cout << "test\n";
 #endif // CHECK_RESIDUALS
 
   // Continue processing the tensor step, if necessary
@@ -635,12 +634,14 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     double lambdaBar = 1;
     beta = calculateBeta(sctja, 1.0, sctjf, qval, lambdaBar);
 
+    double scVecNorm = scVec.norm();
+    double acVecNorm = acVec.norm();
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
     {
       cout << " sctjf = " << utils.sciformat(sctjf, 6)
 	   << "  sctja = " << utils.sciformat(sctja, 6) << endl;
-      cout << " norm(s) = " << utils.sciformat(scVec.norm(), 6)
-	   << "  norm(a) = " << utils.sciformat(acVecPtr->norm(), 6) << endl;
+      cout << " norm(s) = " << utils.sciformat(scVecNorm, 6)
+	   << "  norm(a) = " << utils.sciformat(acVecNorm, 6) << endl;
     }
     
     //printf(" sctjf = %e  sctja = %e\n", sctjf, sctja);
@@ -672,9 +673,10 @@ NOX::Solver::TensorBased::computeTensorDirection(NOX::Abstract::Group& soln,
     printDirectionInfo("tensorVec", tensorVec, soln, true);
 #endif // CHECK_RESIDUALS
 #if DEBUG_LEVEL > 0
+    double sDotT = tensorVec.dot(scVec), 6);
     if (utils.isPrintProcessAndType(NOX::Utils::Details))
       cout << "Beta = " << utils.sciformat(beta, 6)
-	   << "  std = " << utils.sciformat(tensorVec.dot(scVec), 6)
+	   << "  std = " << utils.sciformat(sDotT, 6)
 	   << "  qval = " << utils.sciformat(qval, 2)
 	   << "  lambdaBar = " << lambdaBar << endl;
     //printf("Beta = %e  std = %e  qval = %.2f   lambdaBar = %f\n",
@@ -768,10 +770,11 @@ NOX::Solver::TensorBased::computeCurvilinearStep(NOX::Abstract::Vector& dir,
   dir.update(lambda - betaFactor, newtonVec, betaFactor, tensorVec, 0.0);
 
 #if DEBUG_LEVEL > 0
+  double sDotD = dir.dot(scVec);
   if (utils.isPrintProcessAndType(NOX::Utils::Details))
   {
     cout << "  beta = " << utils.sciformat(beta, 6)
-	 << "  std = " << utils.sciformat(dir.dot(scVec), 6)
+	 << "  std = " << utils.sciformat(sDotD, 6)
 	 << "  qval = " << qval
 	 << "  lambda = " << lambda
 	 << endl;
@@ -998,8 +1001,12 @@ NOX::Solver::TensorBased::getNormModelResidual(
   if (isTensorModel)
   {
     double beta = scVecPtr->dot(dir);
-    cout << " sc'*dt   = " << utils.sciformat(beta, 6) << endl;
-    cout << " norm(dt) = " << utils.sciformat(dir.norm(), 6) << endl;
+    const double dirNorm = dir.norm();
+    if (utils.isPrintProcessAndType(NOX::Utils::Details))
+    {
+      cout << " sc'*dt   = " << utils.sciformat(beta, 6) << endl;
+      cout << " norm(dt) = " << utils.sciformat(dirNorm, 6) << endl;
+    }
     residualPtr->update(beta*beta, *acVecPtr, 1.0);
   }
 
@@ -1026,17 +1033,19 @@ NOX::Solver::TensorBased::printDirectionInfo(char* dirName,
 					const NOX::Abstract::Group& soln,
 					bool isTensorModel) const
 {
-  double residual = getNormModelResidual(dir, soln, isTensorModel);
-  double fprime = getDirectionalDerivative(dir, soln);
-
   double dirNorm = dir.norm();
+
+  double residual = getNormModelResidual(dir, soln, isTensorModel);
+  double residualRel = residual / soln.getNormF();
+
+  double fprime = getDirectionalDerivative(dir, soln);
   double fprimeRel = fprime / dirNorm;
   
   if (utils.isPrintProcessAndType(NOX::Utils::Details))
   {
     cout << " " << dirName << " norm of model residual =   "
 	 << utils.sciformat(residual, 6) << " (abs)     "
-	 << utils.sciformat(residual / soln.getNormF(), 6) << " (rel)" << endl;
+	 << utils.sciformat(residualRel, 6) << " (rel)" << endl;
     cout << " " << dirName << " directional derivative =  "
 	 << utils.sciformat(fprime, 6) << " (abs)    "
 	 << utils.sciformat(fprimeRel, 6) << " (rel)" << endl;
