@@ -44,6 +44,8 @@ int ML_Aggregate_VizAndStats_Setup( ML_Aggregate *ag, int MaxLevels )
       printf("ML_Set_NumberLocalAggregates_METIS : wrong object. \n");
       exit(-1);
     }
+  ML_Aggregate_KeepInfo(ag, ML_TRUE);
+
 
   info = (ML_Aggregate_Viz_Stats *) ML_allocate(sizeof(ML_Aggregate_Viz_Stats)*(MaxLevels+1) );
   
