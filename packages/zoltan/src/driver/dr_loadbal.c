@@ -103,6 +103,7 @@ int run_zoltan(int Proc, PROB_INFO_PTR prob, ELEM_INFO *elements[])
   /*
    * set the callback functions
    */
+
   if (LB_Set_Fn(lb_obj, LB_NUM_OBJ_FN_TYPE, (void *) get_num_elements,
                 NULL) == DLB_FATAL) {
     Gen_Error(0, "fatal:  error returned from LB_Set_Fn()\n");
@@ -349,8 +350,6 @@ void get_edge_list (void *data, LB_GID global_id, LB_LID local_id,
     if (get_ewgts) {
       if (elem[local_id].edge_wgt == NULL)
         nbor_ewgts[i] = (int) elem[local_id].edge_wgt[i];
-      else /* return uniform weights */
-        nbor_ewgts[i] = 1;
     }
   }
 
