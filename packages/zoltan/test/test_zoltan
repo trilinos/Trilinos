@@ -320,7 +320,7 @@ else
       set nem_methods = ( $nem_methods partkway partgeom diffusion )
     else
       set ch_methods = ( $ch_methods partkway-v$pmversion partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
-      set nem_methods = ( $nem_methods-v$pmversion partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
+      set nem_methods = ( $nem_methods partkway-v$pmversion partgeom-v$pmversion diffusion-v$pmversion )
     endif
   endif
 endif
