@@ -1,3 +1,28 @@
+Welcome to ML.   The ml directory contains the following files:
+
+aclocal.m4                  autoconf file
+autom4te.cache/             autoconf directory
+bootstrap                   autoconf/automake file
+config/                     autoconf m4 macros
+configure                   autoconf file
+configure.ac                autoconf file
+COPYRIGHT                   copyright information
+CVS/
+doc/                        ML documentation
+etc/                        
+examples/                   ML examples
+FAQ
+INSTALL
+installer
+install_packages
+Makefile.am                 automake file
+Makefile.in                 automake file
+ML_revision_history         an (incomplete) history of ML updates
+README                      this file
+src/                        ML source files
+util/                       various utility programs, such as file converters
+
+
 -1) If you want to build ML without any other package, do the following:
 
    a) cd to the ml root directory
@@ -20,8 +45,6 @@
     --enable-ml_newtpe
     --enable-ml_timing
     --enable-ml_flops
-    --with-ml_epetra
-    --with-ml_aztec
     --with-ml_external_mpi_functions
     --with-ml_superlu
 
@@ -48,10 +71,6 @@
     Trilinos/packages/ml directory structure.   Instead, you should make a
     "sandbox" where you configure and build, away from the Trilinos source.
     See the file Trilinos/config/AUTOTOOLS_README for details.
-
-
-1)  If you prefer to build with the old makefile system, look at the INSTALL
-    file for general hints on compiling ML.
 
 
 2)  Look in the doc directory for documentation.

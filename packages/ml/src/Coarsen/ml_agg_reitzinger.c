@@ -26,7 +26,8 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   ML_Operator *Kn_coarse, *Rn_coarse, *Tcoarse, *Pn_coarse;
   ML_Operator *Pe, *Tcoarse_trans, *Tfine;
   char filename[80];
-  FILE *fid1, *fid2;
+  /* FILE *fid1; */
+  FILE *fid2;
 #ifdef LEASTSQ_SERIAL
   ML_Operator *SPn_mat;
 #endif
@@ -58,6 +59,9 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
   ML_CommInfoOP *getrow_comm; 
   int  N_input_vector;
   int  bail_flag;
+
+  int max_matrix_size;
+  int nrows, ncols;
 
   int nzctr;
 
@@ -137,6 +141,35 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
       printf("(level %d) Ke: Global nonzeros = %d, global rows = %d\n",
              fine_level, nz_ptr,i);
   }
+
+  fid2 = fopen("ML_write_matrix_now","r");
+  if (fid2 != NULL) {
+    i = fscanf(fid2,"%d",&max_matrix_size);
+    /* if empty file, print everything */
+    fclose(fid2);
+    if (i==EOF || i==0) {
+       sprintf(filename,"T_%d",fine_level);
+       ML_Operator_Print_UsingGlobalOrdering(Tfine,filename);
+       sprintf(filename,"Kn_%d",fine_level);
+       ML_Operator_Print_UsingGlobalOrdering(&(ml_nodes->Amat[fine_level]),filename);
+    }
+    else {
+      ML_Operator_GetGlobalDimensions(Tfine,&nrows,&ncols);
+      if (nrows < i && ncols < i) {
+        sprintf(filename,"T_%d",fine_level);
+        ML_Operator_Print_UsingGlobalOrdering(Tfine,filename);
+      }
+      ML_Operator_GetGlobalDimensions(&(ml_nodes->Amat[fine_level]),&nrows,&ncols);
+      if (nrows < i && ncols < i) {
+        sprintf(filename,"Kn_%d",fine_level);
+        ML_Operator_Print_UsingGlobalOrdering(&(ml_nodes->Amat[fine_level]),filename);
+      }
+    }
+  }
+
+
+
+
 #ifdef ML_VAMPIR
   VT_end(ml_vt_aggregating_state);
 #endif
@@ -743,15 +776,6 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      csr_data->columns = (int *) realloc(csr_data->columns,
 					   sizeof(int)*nz_ptr); 
 
-     fid1 = fopen("AZ_write_matrix_now","r");
-     fid2 = fopen("ML_write_matrix_now","r");
-     if (fid1 != NULL || fid2 != NULL) {
-        if (fid1 != NULL) fclose(fid1);
-        if (fid2 != NULL) fclose(fid2);
-        sprintf(filename,"Tmat_%d",fine_level-grid_level);
-        ML_Operator_Print(Tcoarse,filename);
-     }
-   
      /********************************************************************/
      /* Fix P and R so that they are not normalized. This is so that we  */
      /* can use a matrix triple product combined with post-processing to */
@@ -1087,6 +1111,45 @@ int  ML_Gen_MGHierarchy_UsingReitzinger(ML *ml_edges, ML* ml_nodes,
      ML_Operator_Apply(Pe, Pe->invec_leng, Pn_vec,
 		       Pe->outvec_leng,vec);
      ML_free(Pn_vec);
+
+     fid2 = fopen("ML_write_matrix_now","r");
+     if (fid2 != NULL) {
+       i = fscanf(fid2,"%d",&max_matrix_size);
+       /* if empty file, print everything */
+       fclose(fid2);
+       if (i==EOF || i==0) {
+         sprintf(filename,"Kn_%d",grid_level);
+         ML_Operator_Print_UsingGlobalOrdering(Kn_coarse,filename);
+         sprintf(filename,"Pn_%d",grid_level);
+         ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,filename);
+         sprintf(filename,"T_%d",grid_level);
+         ML_Operator_Print_UsingGlobalOrdering(Tcoarse,filename);
+         sprintf(filename,"Pe_%d",grid_level);
+         ML_Operator_Print_UsingGlobalOrdering(Pe,filename);
+       }
+       else {
+         ML_Operator_GetGlobalDimensions(Kn_coarse,&nrows,&ncols);
+         if (nrows < i && ncols < i) {
+           sprintf(filename,"Kn_%d",grid_level);
+           ML_Operator_Print_UsingGlobalOrdering(Kn_coarse,filename);
+         }
+         ML_Operator_GetGlobalDimensions(Tcoarse,&nrows,&ncols);
+         if (nrows < i && ncols < i) {
+           sprintf(filename,"T_%d",grid_level);
+           ML_Operator_Print_UsingGlobalOrdering(Tcoarse,filename);
+         }
+         ML_Operator_GetGlobalDimensions(Pn_coarse,&nrows,&ncols);
+         if (nrows < i && ncols < i) {
+           sprintf(filename,"Pn_%d",grid_level);
+           ML_Operator_Print_UsingGlobalOrdering(Pn_coarse,filename);
+         }
+         ML_Operator_GetGlobalDimensions(Pe,&nrows,&ncols);
+         if (nrows < i && ncols < i) {
+           sprintf(filename,"Pe_%d",grid_level);
+           ML_Operator_Print_UsingGlobalOrdering(Pe,filename);
+         }
+       }
+     }
 
      for (i = 0; i < Pe->outvec_leng ; i++) 
        vec[i] = vec[i] - Tfine_Pn_vec[i];

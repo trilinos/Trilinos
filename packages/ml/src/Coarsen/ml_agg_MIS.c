@@ -79,10 +79,10 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    int     *Asqrd_rcvleng= NULL, *Asqrd_sndleng= NULL, *send_list = NULL;
    int     total_recv_leng = 0, total_send_leng = 0, offset, msgtype;
    int     aggr_count, index, mypid, num_PDE_eqns;
-   int     *aggr_index = NULL, *itmp_array = NULL, nullspace_dim;
+   int     *aggr_index = NULL, nullspace_dim;
    int     *dof_accounted_for = NULL;
    int     *sendlist_proc = NULL, Ncoarse, count, *int_buf = NULL;
-   int     *int_buf2, *aggr_stat = NULL, procnum;
+   int     *int_buf2, *aggr_stat = NULL;
    int     index4, *new_send_leng = NULL, new_N_send;
    int     *new_send_neighbors = NULL, *new_send_list = NULL;
    int     max_count, *new_ia = NULL, *new_ja = NULL, new_Nrows;
@@ -98,7 +98,6 @@ int ML_Aggregate_CoarsenMIS( ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    struct ML_CSR_MSRdata *csr_data;
    ML_Aggregate_Comm     *aggr_comm;
    ML_GetrowFunc         *getrow_obj;
-   USR_REQ               *request=NULL;
    ML_Operator           *Asqrd = NULL, *tmatrix;
    struct ML_CSR_MSRdata *temp;
    char                  *vtype, *state, *bdry, *unamalg_bdry;

@@ -186,6 +186,7 @@ int ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(
       exit(-1);
    }
    ag->phase3_agg_creation        = factor;
+   return 0;
 }
 
 /* ************************************************************************* */
@@ -912,11 +913,14 @@ int ML_Aggregate_Scale_NullSpace(ML_Aggregate *ag, double *scale_vect,
 int ML_Aggregate_Coarsen( ML_Aggregate *ag, ML_Operator *Amatrix, 
                           ML_Operator **Pmatrix, ML_Comm *comm)
 {
-   int i=1, ndofs, Ncoarse, coarsen_scheme, j, offset1, offset2, status;
-   int mypid, nprocs;
+   int i=1, ndofs, Ncoarse, coarsen_scheme;
+#ifdef ML_repartition
+   int j, offset1, offset2, status;
    double *new_null;
    ML_Operator *newA = NULL, *permt = NULL, *perm = NULL, *oldA = NULL;
    ML_Operator *newP = NULL, *oldP = NULL;
+#endif
+   int mypid, nprocs;
 
 #ifdef ML_TIMING
    double t0;

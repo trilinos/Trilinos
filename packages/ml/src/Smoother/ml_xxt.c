@@ -724,7 +724,7 @@ void ML_subexchange_bdry(double x[], ML_CommInfoOP *comm_info,
 {
   register double *ptrd;
   double          *ptr_send_list, *ptr_recv_list, *orig_ptr;
-  int              type, N_neighbors, *temp, i, j, k, rtype;
+  int              type, N_neighbors, *temp, i, j, rtype;
   int             proc, sub_proc;
   USR_REQ         *request;
   ML_NeighborList *neighbor;

@@ -469,7 +469,9 @@ static int ML_LocalReorder_with_METIS( int Nrows, int xadj[], int adjncy[] ,
   int bandwidth_orig, bandwidth_perm;
   int mypid = comm->ML_mypid;
   double t0;
+#ifdef HAVE_ML_METIS
   int nbytes, nbytes_max;
+#endif
 #ifdef METIS_DEBUG
   FILE *fp;
   char filename[80];
@@ -758,7 +760,10 @@ static int ML_DecomposeGraph_with_METIS( ML_Operator *Amatrix,
   int i, j,jj,  count, count2, col;
   int Nrows, Nrows_global,NrowsMETIS, N_nonzeros, N_bdry_nodes;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
-  idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
+  idxtype *xadj=NULL, *adjncy=NULL;
+#ifdef HAVE_ML_METIS
+  idxtype *vwgt=NULL, *adjwgt=NULL;
+#endif
   idxtype *part=NULL;
   ML_Comm * comm;
   int allocated = 0;

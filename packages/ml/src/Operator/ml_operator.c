@@ -1547,6 +1547,12 @@ int ML_Operator_GetFlops(ML_Operator *mat)
     return 0;
 }
 
+void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols)
+{
+  *nrows = ML_Comm_GsumInt(A->comm, A->outvec_leng);
+  *ncols = ML_Comm_GsumInt(A->comm, A->invec_leng);
+}
+
 #ifdef WKC
 /* ******************************************************************** */
 /* apply the operator to a vector and apply boundary conditions         */

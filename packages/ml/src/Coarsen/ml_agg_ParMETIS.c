@@ -450,7 +450,12 @@ static int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int i, j,jj,  count;
   int Nrows, Nghosts;
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
-  idxtype *xadj=NULL, *adjncy=NULL, *vwgt=NULL, *adjwgt=NULL;
+  idxtype *xadj=NULL, *adjncy=NULL;
+#if defined(ML_MPI)
+#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+  idxtype *vwgt=NULL, *adjwgt=NULL;
+#endif
+#endif
   idxtype *part=NULL;
   ML_Comm * comm = Amatrix->comm;
   int allocated = 0;

@@ -1967,7 +1967,7 @@ void ML_construct_RP1(void *f_grid, ML_GridFunc *fgrid_fcns,
    ml_big_int fvnum;
    int     com_cnt, cvnum, pnum, *tcv_list, begin, end, rownum, lcnt;
    int     index, proc_cnt, colbase, colend, colcnt, *tmp_ia, *proc_flag;
-   int     ii, *recv_list32;
+   int     *recv_list32;
    int     int_size=sizeof(int), msgtype, fromsize, fromproc;
    int     *fnode_flag, err_flag, ndim, nbytes, *intarray;
    double  *ext2_a, *ext_a, coord[3];

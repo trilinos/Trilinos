@@ -237,6 +237,7 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
      /* define this here so we don't have to include ml_aztec_utils.h */
      /* in ml_struct.c and ml_smoother.c                              */ 
 int ML_Operator_GetFlops(ML_Operator *mat);
+void ML_Operator_GetGlobalDimensions(ML_Operator *A,int *nrows,int *ncols);
 
 #ifdef ML_WITH_EPETRA
 extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);

@@ -1934,7 +1934,7 @@ int ML_BlockDinv(ML_Sm_BGS_Data *BGS_Data, int inlen, double out[]) {
   int nblocks, **perms, blocksize, i, *blocklengths, index;
   double **blockdata, *dtemp;
   char N[2];
-  int k,kk,length;
+  int k,length;
   int maxBlocksize, *aggr_offset, *aggr_group, Nrows;
   int *block_indices;
 

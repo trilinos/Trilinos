@@ -2697,9 +2697,6 @@ static void get_pos2D( int glonum, int nx, int * irow, int  * icol )
 
 static void get_pos3D( int glonum, int nx, int ny, int * ix, int  * iy, int *iz) 
 {
-
-  int g2 = glonum;
-  
   *iz = glonum/(nx*ny);
   glonum -= (*iz)*nx*ny;
   *ix = glonum%nx;
@@ -3053,7 +3050,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   int          num_smoother_steps;
   
   double       omega;
-  double       t0, t1, t2, t3, t4, t5, tS;
+  double       t0, t1, t2, t3, t4;
   int          amesos_solver, max_procs;
 
   char label[80];
@@ -3413,9 +3410,6 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
 
 void MLAZ_Defaults( void )
 {
-
-  int level;
-  
   int options[AZ_OPTIONS_SIZE];
   double params[AZ_PARAMS_SIZE];
 
@@ -3654,11 +3648,11 @@ void MLAZ_Direct_Solve_Amesos( double delta_x[], double resid_vector[],
 			       AZ_MATRIX * Amat, int proc_config[],
 			       int choice, int max_procs ) 
 {
-  int i;
-  
   ML           *ml = NULL;
-  int N_update, Nlevels;
+  int N_update;
+#ifdef HAVE_ML_AMESOS
   void * Amesos_Handle;
+#endif
   
   N_update = Amat->data_org[AZ_N_border] + Amat->data_org[AZ_N_internal];
   

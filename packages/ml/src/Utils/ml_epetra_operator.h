@@ -172,9 +172,9 @@ kSize = WKC) const;
   char * Label_;
 
  private:
+  const Epetra_Comm & Comm_;
   const Epetra_Map & DomainMap_;
   const Epetra_Map & RangeMap_;
-  const Epetra_Comm & Comm_;
   bool  ownership_;
 };
  

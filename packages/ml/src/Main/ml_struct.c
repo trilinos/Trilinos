@@ -5659,7 +5659,7 @@ int ML_build_ggb(ML *ml, void *data)
 void ML_build_ggb_cheap(ML *ml, void *data)
 {
   ML *ml_ggb;
-  int Nrows, Ncols, Nnz, Nnz_per_row, i;
+  int Nrows, Ncols, Nnz;
   ML_Operator *Pmat, *Qtilde;
   struct ML_CSR_MSRdata *csr_data, *mydata;
 
@@ -5724,13 +5724,13 @@ void ML_build_ggb_fat(ML *ml, void *data)
 {
   ML *ml_ggb;
   ML_Aggregate *ag;
-  int  Nrows, Ncols, Nnz, Nnz_per_row, i, N_levels, num_PDE_eqns ;
+  int  Nrows, Ncols, N_levels, num_PDE_eqns ;
   int  coarsest_level;
 
   
   ML_Operator *Amat;
 
-  struct ML_CSR_MSRdata *csr_data, *mydata;
+  struct ML_CSR_MSRdata *mydata;
   mydata   = (struct ML_CSR_MSRdata *) data;
   
   Amat = &(ml->Amat[ml->ML_finest_level]);

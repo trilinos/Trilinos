@@ -2493,7 +2493,6 @@ double ML_gmin_double(double val, ML_Comm *comm)
 /* - label :            matrix will be written in MATLAB format on file */
 /*                      label.m. Note that only ONE file will be created*/
 /*                      containing the ENTIRE operator                  */
-/* - comm :             ML_Comm 
 /* Albuquerque, 30-Oct-03                                               */
 /* ******************************************************************** */
 

@@ -896,7 +896,7 @@ int ML_Comm_GappendInt(ML_Comm *com_ptr, int *vals, int *cur_length,
 /* The modification is done so that the data are arranged according to  */
 /* processor number.                                                    */
 /* This is the same function as ML_Comm_GappendInt, except the          */
-/* parameter vals is of type ml_big_int
+/* parameter vals is of type ml_big_int                                 */
 /*----------------------------------------------------------------------*/
 
 int ML_Comm_GappendBigInt(ML_Comm *com_ptr, ml_big_int *vals, int *cur_length,
