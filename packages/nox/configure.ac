@@ -1140,7 +1140,6 @@ if test X${ADDON_epetra} = Xyes; then
   TRILINOS_HEADER(aztecoo,AztecOO_StatusType.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_config.h,src)
   TRILINOS_HEADER(ifpack,Ifpack_ScalingType.h,src)
-  TRILINOS_HEADER(ml,ml_config.h,src)
 
   if test X${BUILD_NOX_EPETRAEXT_SUPPORT} = Xyes; then
     TRILINOS_HEADER(epetraext,EpetraExt_config.h,src)
