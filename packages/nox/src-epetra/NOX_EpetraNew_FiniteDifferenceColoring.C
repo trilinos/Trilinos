@@ -55,9 +55,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
+                             bool distance1_,
                              double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, beta_, alpha_),
   coloringType(NOX_SERIAL),
+  distance1(distance1_),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -86,9 +88,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
+                             bool distance1_,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, beta_, alpha_),
   coloringType(NOX_SERIAL),
+  distance1(distance1_),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -119,9 +123,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
+                             bool distance1_,
                              double beta_, double alpha_) :
   FiniteDifference(printingParams, i, x, rawGraph_, beta_, alpha_),
   coloringType(NOX_SERIAL),
+  distance1(distance1_),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -151,9 +157,11 @@ FiniteDifferenceColoring::FiniteDifferenceColoring(
                              Epetra_MapColoring& colorMap_,
                              vector<Epetra_IntVector>& columns_,
 			     bool parallelColoring,
+                             bool distance1_,
                              double beta_, double alpha_) :
   FiniteDifference(i, x, rawGraph_, beta_, alpha_),
   coloringType(NOX_SERIAL),
+  distance1(distance1_),
   colorMap(&colorMap_),
   columns(&columns_),
   numColors(colorMap->NumColors()),
@@ -227,10 +235,8 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
   if ( diffType == Backward )
     scaleFactor = -1.0;
 
-  int min = map.MinAllGID();  // Minimum Global ID value
-  int max = map.MaxAllGID();  // Maximum Global ID value
-  int myMin = map.MinMyGID(); // Minimum Local ID value
-  int myMax = map.MaxMyGID(); // Maximum Local ID value
+  int myMin = map.MinMyGID(); // Minimum locally owned GID 
+  int myMax = map.MaxMyGID(); // Maximum locally owned GID
 
   // We need to loop over the largest number of colors on a processor
 
@@ -331,6 +337,11 @@ bool FiniteDifferenceColoring::computeJacobian(const Epetra_Vector& x, Epetra_Op
         if (!map.MyGID(j))
           continue;
         int globalColumnID = (*columns)[k][map.LID(j)];
+
+        // If using distance1 coloring, only allow diagonal fills
+        if( distance1 && (j != globalColumnID) )
+          continue; // Skip off-diagonals
+
         if( globalColumnID >= 0) {
 
           // Now complete the approximation to the derivative by dividing by
