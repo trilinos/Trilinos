@@ -248,6 +248,20 @@ Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
 Zdrive debug level = 1
 
 #-----------------------------------------------------------------------------
+# text output = <integer>
+#
+# This line is optional.  If the integer specified is greater than zero,
+# zdrive produces files listing the partition and processor assignment of
+# each object.  When "text output = 1," P files are generated, where P is
+# the number of processors used for the run.  Files have suffix ".out.P.N",
+# where P is the number of processors and N = 0,...,P-1 is the processor that
+# generated the particular file.
+#
+# Default value is 1.
+#-----------------------------------------------------------------------------
+text output = 1
+
+#-----------------------------------------------------------------------------
 # gnuplot output = <integer>
 #
 # This line is optional.  If the integer specified is greater than zero,
