@@ -869,7 +869,7 @@ int MultiLevelPreconditioner::ComputePreconditioner()
   
   FirstApplication_ = true;
 
-  int call1, call2, call1_used, call2_used;
+  int call1 = 0, call2 = 0, call1_used = 0, call2_used = 0;
 
   sprintf(parameter,"%sanalyze memory", Prefix_);
   AnalyzeMemory_ = List_.get(parameter, false);  
@@ -1305,7 +1305,7 @@ int MultiLevelPreconditioner::ApplyInverse(const Epetra_MultiVector& X,
 					   Epetra_MultiVector& Y) const
 {
 
-  int before, after, before_used, after_used;
+  int before = 0, after = 0, before_used = 0, after_used = 0;
   if( AnalyzeMemory_ ) {
     before = ML_MaxAllocatableSize();
     before_used = ML_MaxMemorySize();
@@ -1460,7 +1460,7 @@ void MultiLevelPreconditioner::SetSmoothers()
   double omega = List_.get(parameter,1.0);
 
   sprintf(parameter,"%ssmoother: pre or post", Prefix_);
-  int pre_or_post;
+  int pre_or_post = 0;
   string PreOrPostSmoother = List_.get(parameter,"post");
 
   sprintf(parameter,"%ssmoother: type", Prefix_);
