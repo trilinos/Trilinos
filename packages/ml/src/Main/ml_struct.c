@@ -959,6 +959,7 @@ int ML_Gen_Smoother_SymGaussSeidelSequential(ML *ml , int nl, int pre_or_post,
 {
    int (*fun)(void *, int, double *, int, double *);
    int start_level, end_level, i, status;
+   char str[80];
 
    if (nl == ML_ALL_LEVELS) { start_level = 0; end_level = ml->ML_num_levels-1;}
    else { start_level = nl; end_level = nl;}
@@ -4421,7 +4422,7 @@ int ML_Gen_CoarseSolverAggregation(ML *ml_handle, int level, ML_Aggregate *ag)
    row_ptr = csr2_mat->mat_ia;
    ML_Init_Amatrix(local_ml,local_nlevels-1,N_local,N_local,(void*) csr2_mat);
    ML_Set_Amatrix_Matvec(local_ml, local_nlevels-1, ML_Matrix_DCSR_Matvec);
-   local_ml->Amat[local_nlevels-1].data_destroy = ML_Matrix_DCSR_Destroy;
+   local_ml->Amat[local_nlevels-1].data_destroy = ( void (*)(void *)) ML_Matrix_DCSR_Destroy;
    local_ml->Amat[local_nlevels-1].N_nonzeros = csr2_mat->mat_ia[N_local];
    ML_Set_Amatrix_Getrow(local_ml,local_nlevels-1,ML_Matrix_DCSR_Getrow,NULL,
                          N_local);
