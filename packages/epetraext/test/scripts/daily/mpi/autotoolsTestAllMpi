@@ -88,7 +88,7 @@ echo `uname -a` >>& $file
 
 ## List the subdirectories of 'test' containing test exe's in the foreach loop
 ## if directory structure is like that of epetra.
-foreach f (BTF Composite MapColoring Overlap Permutation SingletonFilter SymmRCM View Zoltan)
+foreach f (Composite inout MapColoring MatrixMatrix Permutation Transpose)
 	cd $f
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file

@@ -61,17 +61,25 @@ int main(int argc, char *argv[]) {
   Epetra_SerialComm comm;
 #endif
 
-  cout << comm << endl;
-
   int MyPID = comm.MyPID();
 
-  bool verbose = false; 
-  if (MyPID==0) verbose = true;
+  bool verbose = false;
+  bool verbose1 = false; 
+  // Check if we should print results to standard out
+  if (argc > 1) {
+    if ((argv[1][0] == '-') && (argv[1][1] == 'v')) {
+      verbose1 = true;
+      if (MyPID==0) verbose = true;
+    }
+  }
+  if (verbose1) cout << comm << endl;
+
+
 
   // Uncomment the next three lines to debug in mpi mode
-  int tmp;
-  if (MyPID==0) cin >> tmp;
-  comm.Barrier();
+  //int tmp;
+  //if (MyPID==0) cin >> tmp;
+  //comm.Barrier();
 
   Epetra_Map * map;
   Epetra_CrsMatrix * A; 
