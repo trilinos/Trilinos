@@ -325,15 +325,27 @@ class AztecOO {
     {params_[param] = value; return(0);};
 
   //! AztecOO option setting function.
+  /*! Return a pointer to an array (size AZ_OPTIONS_SIZE) of all of the currently set aztec options. 
+   */
+  const int* GetAllAztecOptions() const
+    { return options_; };
+
+  //! AztecOO param setting function.
+  /*! Return a pointer to an array (size AZ_PARAMS_SIZE) of all of the currently set aztec parameters. 
+   */
+  const double* GetAllAztecParams() const
+    { return params_; };
+
+  //! AztecOO option setting function.
   /*! Set all Aztec option values using an existing Aztec options array.
    */
-  int SetAllAztecOptions(int * options)
+  int SetAllAztecOptions(const int * options)
     {for (int i=0; i<AZ_OPTIONS_SIZE; i++) options_[i] = options[i]; return(0);};
 
   //! AztecOO param setting function.
   /*! Set all Aztec parameter values using an existing Aztec params array.
    */
-  int SetAllAztecParams(double * params)
+  int SetAllAztecParams(const double * params)
     {for (int i=0; i<AZ_PARAMS_SIZE; i++) params_[i] = params[i]; return(0);};
   //@}
 
