@@ -1,17 +1,3 @@
-<!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
- ! Copyright (c) 2000, Sandia National Laboratories.                          !
- ! Zoltan is distributed under the GNU Lesser General Public License 2.1.     !
- ! For more info, see the README file in the top-level Zoltan directory.      ! 
- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
->
-<! CVS File Information
-     $RCSfile$
-     $Author$
-     $Date$
-     $Revision$
->
-
 <!doctype html public "-//w3c//dtd html 4.0 transitional//en">
 <html>
 <head>
@@ -25,6 +11,19 @@
    <meta name="keywords" content="Zoltan, dynamic load balancing, parallel computing">
    <meta name="GENERATOR" content="Mozilla/4.7 [en] (X11; U; SunOS 5.7 sun4u) [Netscape]">
    <title>SNL - Zoltan User's Guide</title>
+<!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ ! Zoltan Dynamic Load-Balancing Library for Parallel Applications            !
+ ! Copyright (c) 2000, Sandia National Laboratories.                          !
+ ! Zoltan is distributed under the GNU Lesser General Public License 2.1.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      ! 
+ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+>
+<! CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+>
 <!----CHANGE INFORMATION IN AREAS WITH THIS HEADER---->
 <!----SCROLL DOWN TO FIND OTHER AREAS TO BE CHANGED---->
 <!--------CHANGE THE NAME AFTER THE DASH-------->
@@ -49,14 +48,7 @@
 <table BORDER=0 WIDTH="130" valign="top" >
 <tr VALIGN=TOP>
 <td VALIGN=TOP WIDTH="128"><!--SANDIA LOGO AT TOP LEFT--><a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/snlstkdc.gif" ALT="[Sandia National Laboratories]" BORDER=0 valign="top" height=49 width=126></a>
-<br><!---TOP LEFT NAVIGATION BUTTONS---><a href="http://www.sandia.gov/About.htm"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[About Sandia]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/Solution.htm"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Unique Solutions]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/Working.htm"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Working With Us]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/Contacting.htm"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Contacting Us]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/News.htm"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[News Center]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/search.html"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Search]" BORDER=0 ></a>
-<br><a href="http://www.sandia.gov/Main.html"><img SRC="http://www.sandia.gov/images/1pixel.gif" ALT="[Home]" BORDER=0 ></a>
-<br><img ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
+<p><img ISMAP SRC="http://www.sandia.gov/images/labelNEW.gif" ALT="[navigation panel]" HSPACE=2 BORDER=0 usemap="#shortMap" height=119 width=111></td>
 
 <td><img SRC="http://www.sandia.gov/images/1pixel.gif" BORDER=0 height=1 width=10></td>
 </tr>
@@ -73,8 +65,8 @@
 </tr>
 
 <tr ALIGN=CENTER VALIGN=CENTER>
-<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><font size=+1><a href="../Zoltan.html">Zoltan
-Home Page</a></font></font></b></td>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../../Zoltan_pdf/ug.pdf">PDF
+Version of User's Guide</a></font></b></td>
 </tr>
 
 <tr VALIGN=BOTTOM BGCOLOR="#006699">
@@ -102,8 +94,37 @@ Home Page</a></font></font></b></td>
 </tr>
 
 <tr ALIGN=CENTER VALIGN=CENTER>
-<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><font size=+1><a href="../dev_html/dev.html">Zoltan
-Developer's Guide</a></font></font></b></td>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../Zoltan.html">Zoltan
+Home Page</a></font></b></td>
+</tr>
+
+<tr VALIGN=BOTTOM BGCOLOR="#006699">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+</table>
+&nbsp;</td>
+
+<td VALIGN=TOP WIDTH="20"></td>
+</tr>
+
+<tr VALIGN=TOP>
+<td COLSPAN="2"></td>
+</tr>
+
+<tr ALIGN=LEFT VALIGN=TOP>
+<td VALIGN=TOP WIDTH="114"><!----------- 3rd little turquoise bevel button ------------>
+<table BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="114" BGCOLOR="#00CCFF" >
+<tr VALIGN=TOP BGCOLOR="#99FFFF">
+<td ALIGN=LEFT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+
+<td ALIGN=RIGHT><img SRC="http://www.sandia.gov/images/1pixel.gif" height=1 width=1></td>
+</tr>
+
+<tr ALIGN=CENTER VALIGN=CENTER>
+<td COLSPAN="2"><b><font face="Verdana, Arial, Helvetica"><a href="../dev_html/dev.html">Zoltan
+Developer's Guide</a></font></b></td>
 </tr>
 
 <tr VALIGN=BOTTOM BGCOLOR="#006699">
@@ -224,11 +245,12 @@ and Debugging Levels</a>
 <a href="ug_refs.html">References</a></h4>
 
 <hr WIDTH="100%">[<a href="../Zoltan.html">Zoltan Home Page</a>&nbsp; |
-
-<a href="ug_intro.html">Next:&nbsp; Introduction</a>]&nbsp;<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
+<a href="ug_intro.html">Next:&nbsp;
+Introduction</a>]&nbsp;<!---------MAIN CONTENT AREA ENDS HERE---------><!-- CHANGE CONTACT + E-MAIL, NOTE "SUBJECT" IN E-MAIL CODE --></td>
 </tr>
 </table>
 
-<hr width="100%"><!--Image maps below--><map name="shortMap"><area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></area><area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></area><area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></area><area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></area><area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></area><area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></area><area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area></map><!----------------THIS IS A CHANGE AREA----------------><!----NAME AND DATE OF LAST REVISION SHOULD BE HERE----><!---------------END OF THIS CHANGE AREA--------------->
+<!<hr width="100%">
+<!--Image maps below--><map name="shortMap"><area shape="rect" coords="2,2,108,14"href="http://www.sandia.gov/About.htm"></area><area shape="rect" coords="2,19,108,31"href="http://www.sandia.gov/Solution.htm"></area><area shape="rect" coords="2,36,108,48"href="http://www.sandia.gov/Working.htm"></area><area shape="rect" coords="2,53,108,65"href="http://www.sandia.gov/Contacting.htm"></area><area shape="rect" coords="2,70,108,82"href="http://www.sandia.gov/News.htm"></area><area shape="rect" coords="2,87,108,99"href="http://www.sandia.gov/search.html"></area><area shape="rect" coords="2,104,108,116"href="http://www.sandia.gov/Main.html"></area></map><!----------------THIS IS A CHANGE AREA----------------><!----NAME AND DATE OF LAST REVISION SHOULD BE HERE----><!---------------END OF THIS CHANGE AREA--------------->
 </body>
 </html>
