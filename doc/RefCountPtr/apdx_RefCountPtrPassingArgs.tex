@@ -6,14 +6,16 @@
 The purpose of this section is to explain the reasoning behind the
 idiom recommendations given in Table {}\ref{rcp:tbl:fnc-decl} for how
 to pass objects to and from C++ functions and how
-{}\texttt{Ref\-Count\-Ptr<>} fits in with these idioms.  Many different
-code projects do not follow these idioms.  Usually this is because the
-developers were unaware of these idioms and why they are useful to
-follow.  When thinking about how to use {}\texttt{Ref\-Count\-Ptr<>} one
-should think of a {}\texttt{Ref\-Count\-Ptr<>} object as a raw pointer
-except that while raw pointer objects are usually passed by value to a
-function (which is very efficient) where as a {}\texttt{Ref\-Count\-Ptr<>}
-object should usually be passed by reference (but passing by value is
+{}\texttt{Ref\-Count\-Ptr<>} fits in with these idioms.  First it
+should be stated that many different code projects do not follow these
+idioms.  Usually this is because the developers where unaware of these
+idioms and why they are useful to follow.  When thinking about how to
+use {}\texttt{Ref\-Count\-Ptr<>} the pass references to and from
+functions, one should think of a {}\texttt{Ref\-Count\-Ptr<>} object
+as though it was really just a raw pointer except that while raw
+pointer objects are usually passed by value to a function (which is
+very efficient) a {}\texttt{Ref\-Count\-Ptr<>} object on the other
+hand should usually be passed by reference (but passing by value is
 harmless).
 
 Before getting into great detail as to the why and how of the
@@ -43,22 +45,23 @@ know that {}\texttt{y} is an array of mutable {}\texttt{double}
 objects that may be set or modified.  We also know that {}\texttt{z}
 is a single mutable {}\texttt{double} object that may be changed
 inside of the function.  What the above C++ declarations, however, do
-not tell us is if the arguments {}\texttt{x}, {}\texttt{a},
+not tell us is whether the arguments {}\texttt{x}, {}\texttt{a},
 {}\texttt{y} and {}\texttt{z} are optional (i.e.~a {}\texttt{NULL}
-pointer can be passed in for them) or are required.  We also do not
-now if the mutable objects passed in {}\texttt{y} and {}\texttt{z} are
-only output arguments or are input/output arguments.  This type of
-information must be specified in developer-supplied documentation.
-Note that a required non-mutable object such as {}\texttt{z} could be
-passed using a non-{}\texttt{const} reference, using a
-non-{}\texttt{const} reference for such an argument is usually not
-advised and this issue is described a little later.
+pointer can be passed in for them) or are required (i.e.~a
+non-{}\texttt{NULL} pointer can be passed in for them).  We also do
+not know if the mutable objects passed in {}\texttt{y} and
+{}\texttt{z} are only output arguments or are input/output arguments.
+This type of information must be specified in developer-supplied
+documentation.  Note that while a required single non-mutable object
+such as {}\texttt{z} could be passed using a non-{}\texttt{const}
+reference, using a non-{}\texttt{const} reference for such an argument
+is usually not advised and this issue is addressed a little later.
 
 Note that the above function {}\texttt{foo(...)} involved all
-transitive arguments which is often the case.  Now lets consider the
-use of non-transitive argument types as supported using
-{}\texttt{Ref\-Count\-Ptr<>}.
-%
+transitive (i.e.~only accessed with the function) arguments which is
+often the case.  Now lets consider the use of non-transitive argument
+types as supported using {}\texttt{Ref\-Count\-Ptr<>}.
+
 {\scriptsize\begin{verbatim}
 class SomeClass {
 public:
@@ -77,11 +80,12 @@ private:
   RefCountPtr<std::vector<double> >  y_;
 };
 \end{verbatim}}
-%
+
 {}\noindent{}The above example function
-{}\texttt{SomeClass\-::foo2(...)} is an example a where non-transitive
-argument, {}\texttt{y}, is passed into a function.  In this case, the
-{}\texttt{Ref\-Count\-Ptr<>} argument {}\texttt{y} is delivering a
+{}\texttt{SomeClass\-::foo2(...)} is an example where a non-transitive
+argument, {}\texttt{y}, is passed into a function and is then
+``remembered''.  In this case, the {}\texttt{Ref\-Count\-Ptr<>}
+argument {}\texttt{y} is delivering a
 {}\texttt{std\-::vector<\-double>} object to be used as private data
 for the class object.
 
@@ -89,59 +93,102 @@ for the class object.
 \subsection{Passing non-mutable objects}
 %
 
-Non-mutable objects (i.e.~the state of the objects will not be
-changed) that are passed to a function using a pointer or a reference
-should always be given the {}\texttt{const} modifier.  This both
-serves as documentation and helps the implementor of the function
-avoid accidentaly changing the object.  However, when a small concrete
-object of type {}\texttt{S} (where {}\texttt{S} ise {}\texttt{double}
-or {}\texttt{int} for instance) is being passed it may also be passed
-by value (with or without the {}\texttt{const} modifier as shown in
-the table).  If an concrete object is passed by value, the
-{}\texttt{const} modifier does not in any way affect the client code
-that calls the function.  The {}\texttt{const} modifier only resticts
-the modification of the copied parameter in the function
-implementation.  Some see the use of {}\texttt{const} as a help to
-function implementors while others see this as a unecessary restiction
-on the freedom of the implementation.
+Non-mutable objects (i.e.~objects that are passed into a function and
+are not modified) can be passed by value or by reference (i.e.~through
+a pointer or a reference) and as either single objects or as arrays.
+When non-mutable objects are passed to a function using a pointer or a
+reference, the declaration should always use the {}\texttt{const}
+modifier.  Failure to use the {}\texttt{const} modifier in these cases
+goes against the design of the language.  The use of the
+{}\texttt{const} modifier both serves as documentation and helps the
+implementor of the function avoid accidentally changing the object.
+However, when a small concrete object of type {}\texttt{S} (where
+{}\texttt{S} is a {}\texttt{double} or {}\texttt{int} for instance) is
+being passed it may also be passed by value (with or without the
+{}\texttt{const} modifier as shown in the table).  When a concrete
+object is passed by value, the {}\texttt{const} modifier does not in
+any way affect the client code that calls the function and the
+client's copy of the argument is guaranteed not to be changed (where
+the {}\texttt{const} modifier does not).  The {}\texttt{const}
+modifier only resticts the modification of the copied parameter in the
+function implementation.  Some see the use of {}\texttt{const} as a
+means to help function implementors from making mistakes while others
+see this as a unecessary restiction on the freedom of the function's
+implementation.
 
-ToDo: Discuss the following categories for the cases of concrete
-objects, abstract objects and {}\texttt{Ref\-Count\-Ptr<>} objects for
-concrete and abstract objects:
+When a non-mutable input argument is required, it should be passed by
+value or by {}\texttt{const} reference.  However, wen a non-mutable
+input argument is optional, it must be passed using a pointer since
+this pointer can be allowed to be {}\texttt{NULL}.
 
-\begin{itemize}
-\item Non-mutable objects (required)
-\item Non-mutable objects (optional)
-\item Arrays of non-mutable objects (required and optional)
-\end{itemize}
+Arrays of non-mutable objects should either be passed as an array of
+objects (i.e.~in the case where the type is a small concrete data type
+such as {}\texttt{double}) such as
+
+{\scriptsize\begin{verbatim}
+    S s[]
+\end{verbatim}}
+
+{}\noindent{}or
+
+{\scriptsize\begin{verbatim}
+    const S s[]
+\end{verbatim}}
+
+{}\noindent{}or as an array of {}\texttt{const} object pointers (i.e.~in the case
+where the type is a large object or the type has reference semantics) such as
+
+{\scriptsize\begin{verbatim}
+    const S* s[]
+\end{verbatim}}
+
+Note that the syntax {}\texttt{const S s[]} for passing an array of
+objects is to be preferred over the pointer syntax {}\texttt{const S
+*s}.  This is because that even though the raw pointer syntax is
+perfectly legal and proper C++ usage, this form does not allow one to
+tell if this pointer is supposed to point to a single object or to an
+array of objects and therefore the syntax {}\texttt{const S s[]} is to
+be preferred.
+
+Note that it is possible to pass objects as an array of object
+references such as
+
+{\scriptsize\begin{verbatim}
+    const S& s[]
+\end{verbatim}}
+
+{}\noindent{}but it is generally very difficult to initialze the
+references right when the array is first created (as is required by
+the standard) and therefore it is not recommended to passed objects as
+an array of references but instead to use an array of pointers.
+
+Note that there is no a convenient way to help differentiate whether
+an array of objects being passed to a function is optional or not such
+as is the case with single non-mutable objects.
 
 %
 \subsection{Passing mutable objects}
 %
 
-ToDo: Discuss the following categories for the cases of concrete
-objects, abstract objects and {}\texttt{Ref\-Count\-Ptr<>} objects for
-concrete and abstract objects:
-
-\begin{itemize}
-\item Mutable objects (required)
-\item Mutable objects (optional)
-\item Arrays of mutable objects (required and optional)
-\end{itemize}
+Many of the issues involved with passing mutable objects (i.e.~client
+maintained objects that are modifed within a function) are the same as
+for passing non-mutable objects such as described above but there are
+some differences.  First off, objects that are to have their state
+changed within a function must be passed using a pointer (or a
+reference) and can not be passed by value.
 
 One apparent area of controversy is the issue of whether
 non-\texttt{const} reference or non-\texttt{const} pointer arguments
 should be used for passing mutable objects to a function.  If the
 argument is optional, then the choice is clear and the argument should
 be declared as a non-\texttt{const} pointer.  However, if the argument
-is not optional then some would say that a non-\texttt{const}
-reference should always be used.  Interested readers should note,
-however, that references were added to C++ primarily to support
-operator overloading (see {}\cite[Section 3.7]{ref:design_evol_cpp})
-and also for return values.  If one is writting an overloaded operator
-function that modifies one of its arguments (such as the stream
-insertion and extraction operators {}\texttt{std::istream\&
-operator<<(std::istream
+is required then some would say that a non-\texttt{const} reference
+should always be used.  Interested readers should note, however, that
+references were added to C++ primarily to support operator overloading
+(see {}\cite[Section 3.7]{ref:design_evol_cpp}) and also for return
+values.  If one is writting an overloaded operator function that
+modifies one of its arguments (such as the stream insertion and
+extraction operators {}\texttt{std::istream\& operator<<(std::istream
 \&i, ... )} and {}\texttt{std::ostream\& operator>>(std::ostream \&o,
 ... )} for instance) then a non-\texttt{const} reference argument must
 be used (and note the non-\texttt{const} reference return type as
@@ -156,29 +203,33 @@ mutable objects to functions can be made in this discussion as well
 pointer arguments if there are a lot of objections to this).
 
 However, while references where {}\underline{not} purposefully added
-to the language to support non-\texttt{const} pass-by-reference, there
-are circumstances where using non-\texttt{const} reference arguments
-is to be perfered (ToDo: Give an example).  The appraoch advocated
-here is to prefer non-\texttt{const} pointer arguments in non-operator
-functions unless there is a compelling reason to use a
-non-\texttt{const} reference instead.  Making this determination
-requires experience, taste and in the end is a subjective decision.
+to the language to support non-\texttt{const} pass-by-reference in
+non-operator function, there are circumstances where using
+non-\texttt{const} reference arguments is to be preferred (ToDo: Give
+an example).  The appraoch advocated here is to prefer
+non-\texttt{const} pointer arguments in non-operator functions unless
+there is a compelling reason to use a non-\texttt{const} reference
+instead such as when there is unlikely to be any confusion whether the
+argument is going to be changed.  Making this determination requires
+experience, taste and in the end is a subjective decision.
 
-There is one use case where a pointer to a {}\texttt{Ref\-Count\-Ptr<>}
-object should be passed to a function and that is when the calling
-client code is to aquire a {}\texttt{Ref\-Count\-Ptr<>} to an object held
-by the server code.  When only a single {}\texttt{Ref\-Count\-Ptr<>} is to
-be aquired for a sinlge object, then it usually best to just return
-a {}\texttt{Ref\-Count\-Ptr<>} object from function as its return type
-such as in the case
-%
+While it was stated earlier that {}\texttt{Ref\-Count\-Ptr<>} should
+almost always be passed as {}\texttt{const Ref\-Count\-Ptr<>\&}, there
+is one use case where a pointer to a {}\texttt{Ref\-Count\-Ptr<>}
+object should be passed to a function instead and that is when the
+calling client code is to aquire a {}\texttt{Ref\-Count\-Ptr<>} to an
+object held by the server code.  When only a single
+{}\texttt{Ref\-Count\-Ptr<>} is to be aquired for a sinlge object,
+then it usually best to just return a {}\texttt{Ref\-Count\-Ptr<>}
+object from function as its return type such as in the case
+
 {\scriptsize\begin{verbatim}
 RefCountPtr<Base> createBase(bool someFlag);
 \end{verbatim}}
-%
+
 {}\noindent{}described in Section {}\ref{rcp:sec:extra-data}.
 However, when more than one {}\texttt{Ref\-Count\-Ptr<>} object is to
-be initialized to be given to a client, then one should consider
-passing pointers to the {}\texttt{Ref\-Count\-Ptr<>} objects to a
-function (see the function {}\texttt{setUninitialized()} in Appendix
+be initialized and given to a client, then one should consider passing
+pointers to the {}\texttt{Ref\-Count\-Ptr<>} objects to a function
+(see the function {}\texttt{setUninitialized()} in Appendix
 {}\ref{rcp:apdx:sep-construct-init}).

@@ -51,9 +51,9 @@ RefCountPtr<C>  c_ptr = rcp(&c,false);
 \item {\bf Copy constructor (implicit casting)}
 %
 {\small\begin{verbatim}
-RefCountPtr<C>      c_ptr  = rcp(new C); // No cast
-RefCountPtr<A>      a_ptr  = c_ptr;      // Cast to base class
-RefCountPtr<constA> ca_ptr = a_ptr;      // Cast from non-const to const
+RefCountPtr<C>       c_ptr  = rcp(new C); // No cast
+RefCountPtr<A>       a_ptr  = c_ptr;      // Cast to base class
+RefCountPtr<const A> ca_ptr = a_ptr;      // Cast from non-const to const
 \end{verbatim}}
 %
 \end{enumerate}
@@ -98,7 +98,7 @@ c_ptr->f();
 %
 {\small\begin{verbatim}
 RefCountPtr<const A>  ca_ptr = rcp(new C);
-RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr);
+RefCountPtr<A>        a_ptr  = rcp_const_cast<A>(ca_ptr); // cast away const!
 \end{verbatim}}
 %
 \item {\bf Static cast (no runtime check)}
@@ -111,7 +111,7 @@ RefCountPtr<E>     e_ptr = rcp_static_cast<E>(d_ptr); // Unchecked, unsafe?
 \item {\bf Dynamic cast (rutime checked)}
 %
 {\small\begin{verbatim}
-RefCountPtr<A>     a_ptr  = rcp(new C);                   // Implicit cast
+RefCountPtr<A>     a_ptr  = rcp(new C);
 RefCountPtr<B1>    b1_ptr = rcp_dynamic_cast<B1>(a_ptr);  // Checked, safe!
 RefCountPtr<B2>    b2_ptr = rcp_dynamic_cast<B2>(b1_ptr); // Checked, safe!
 RefCountPtr<C>     c_ptr  = rcp_dynamic_cast<C>(b2_ptr);  // Checked, safe!
@@ -143,7 +143,7 @@ get_extra_data<RefCountPtr<B1> >(a_ptr,ctx)->f();
 \end{verbatim}}
 or
 {\small\begin{verbatim}
-set_extra_data(rcp(new C),"A:B1",&a_ptr,false);              // New access type
+set_extra_data(rcp(new C),"A:B1",&a_ptr,false);  // New access type (replaces old)
 get_extra_data<RefCountPtr<C> >(a_ptr,ctx)->f();
 \end{verbatim}}
 %
