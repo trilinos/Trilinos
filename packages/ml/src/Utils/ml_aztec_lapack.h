@@ -11,4 +11,6 @@
 #define ML_DTRSM_FUNC
 #define ML_DTRMM_FUNC
 #define ML_DGETRS_FUNC
+#define ML_LSAME_FUNC
+#define ML_XERBLA_FUNC
 #endif
