@@ -84,7 +84,6 @@
       <LI>Either login or create a new account
       <LI>Submit your bug report
       </UL>
-  </UL>
 
   \section email Mailing Lists
 
@@ -115,8 +114,6 @@ The following people have contributed code to NOX:
 <li> Brett Bader (Visiting researcher, Summer 2002)
 </ul>
 
-
-
 \section questions For All Other Questions and Comments...
 
 Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sandia.gov).
@@ -131,34 +128,156 @@ Please contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski (rppawlo@sand
 
 Here is a detailed list and explanation of the NOX configuration options.
 
-\section Enable Options
+\section basic_config Basic Options
 
 <ul>
-  <li> \c --enable-debug          compile with debugging
-  <li> \c --enable-opt            compile with optimization
-  <li> \c --enable-epetra         compile noxepetra library
-  <li> \c --enable-petsc          compile noxpetsc library
-  <li> \c --enable-loca           compile the loca library
-  <li> \c --enable-loca-epetra    compile the locaepetra library
-  <li> \c --enable-examples       compile simple examples
-  <li> \c --enable-epetra-examples
-                          compile epetra examples
-  <li> \c --enable-petsc-examples compile petsc examples
-  <li> \c --enable-loca-epetra-examples
-                          compile loca epetra examples
+  <li> \c --enable-debug          
+    <ul>
+      <li> This turns on compiler debugger flags. It has not been fully
+           tested. As an alternate, specify CXXFLAGS on the configure line.
+    </ul>
+  <li> \c --enable-opt            
+    <ul>
+      <li> This turns on compiler optimization flags. It has not been fully
+           tested. As an alternate, specify CXXFLAGS on the configure line.
+    </ul>
+  <li> \c --enable-examples       
+    <ul>
+      <li> Compile simple examples. Only requires the blas and lapack libraries.
+    </ul>
+  <li> \c --with-cppflags
+    <ul>
+      <li> Specify additional preprocessor flags (e.g., "-Dflag -Idir")
+    </ul>
+  <li> \c --with-cxxflags
+    <ul>
+      <li> Specify additional C++ flags
+    </ul>
+  <li> \c --with-ldflags
+    <ul>
+      <li> Specify additional linker flags (e.g., "-Ldir")
+    </ul>
+  <li> \c --with-ar
+    <ul>
+      <li> Specify a special archiver command, the default is "ar cru".
+    </ul>
+
 
 </ul>
 
-\section With Options
+\section mpi_config MPI-Related Options
+
+The NOX library itself has no MPI dependencies. However, the NOX-Epetra
+library and related examples do depend on MPI. 
 
 <ul>
-<li>
+  <li> \c --enable-mpi
+    <ul>
+      <li> Enables MPI mode. Defines HAVE_MPI in the NOX_Config.h
+           file. Will test for the ability to preprocess the MPI header file
+           and may test ability to link with MPI.
+    </ul>
+  <li> \c --with-mpi-cxx
+    <ul>
+      <li> If no argument is specified, uses "mpiCC". Otherwise, uses
+           specified MPI C++ compiler. Automatically enables MPI mode.
+    </ul>
+  <li> \c --with-mpi=MPIROOT
+    <ul>
+      <li> Specify the MPI root directory. Automatically enables MPI mode.
+    </ul>
+  <li> \c --with-mpi-libs="LIBS"
+    <ul>
+      <li> Specify the MPI libraries. 
+           Defaults to \c "-lmpi" if either \c --with-mpi or \c --with-mpi-libdir is specified.
+    </ul>
+  <li> \c --with-mpi-incdir=DIR
+    <ul>
+      <li> Specify the MPI include files location. 
+           Defaults to \c MPIROOT/include if \c --with-mpi is specified. 
+	   If multiple directories must be specified, try \c --with-cppflags="-I<dir1> \c -I<dir2>" instead.
+    </ul>
+  <li> \c --with-mpi-libdir=DIR
+    <ul>
+      <li> Specify the MPI libraries location. 
+           Defaults to \c MPIROOT/lib if \c --with-mpi is specified.
+	   If multiple directories must be specified, try \c --with-ldflags="-L<dir1> \c -L<dir2>" instead.
+    </ul>
+
+
+
+</ul>
+
+\section epetra_options Epetra-Related Options
+
+<ul>
+  <li> \c --enable-epetra         
+    <ul>
+      <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-epetra-examples
+    <ul>
+      <li> Compile epetra examples. 
+           Requires \c --enable-epetra.
+    </ul>
+</ul>
+
+\section loca_config LOCA-Related Options
+
+<ul>
+  <li> \c --enable-loca
+    <ul>
+      <li> Compile the loca library (libloca.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-loca-epetra    
+    <ul>
+      <li> Compile the locaepetra library (liblocaepetra.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-loca-epetra-examples
+    <ul>
+      <li> Compile loca epetra examples. 
+           Requires \c --enable-loca, \c --enable-epetra, and \c --enable-loca-epetra.
+    </ul>
+</ul>
+
+\section petsc_config PETSc-Related Options
+
+<ul>
+  <li> \c --enable-petsc          
+    <ul>
+      <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
+    </ul>
+  <li> \c --enable-petsc-examples 
+    <ul>
+      <li> Compile petsc examples.
+    </ul>
+</ul>
+
+\section developer_config Developer-Related Options
+
+<ul>
+<li>  \c --enable-maintainer-mode 
+  <ul>
+    <li> Enable make rules and dependencies not useful
+         (and sometimes confusing) to the casual installer
+  </ul>
+<li>  \c --enable-prerelease
+  <ul>
+    <li> Compile code that is not included in the nightly release but is part of the CVS repository. 
+         See \ref prerelease.
+  </ul>
 </ul>
 
 */
 
 
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
 /*! \page configuration NOX Configuration and Compliation Instructions
+
+See \ref confoptions
 
 \section section1 Basic Setup
 
@@ -174,11 +293,15 @@ examples. See below for more information on compiling the examples.
 
 \section section2  Generating Documentation
 
+The documentation is available online at 
+<a href="http://software.sandia.gov/nox/">http://software.sandia.gov/nox/</a>.
+
+To generate a local copy of the documentation, you'll need to have Doxygen installed. 
 After running configure, type 
 \verbatim
 make dox
 \endverbatim
-to generate the documentation.
+to generate the documentation. The main page is \c nox/doc/html/index.html.
 
 \section section3 Compiling the Examples
 
@@ -202,10 +325,15 @@ rosenbrock
 \endverbatim
 </ol>
 
+*/
+
+/*
 \section ss1 Building the NOX/Epetra Library
 
 To compile NOX's Epetra library \c libnoxepetra.a, use one
 of the following sets of configuration options.
+
+--- These instructions are out-of-date. They will be updated soon. ---
 
 The following will automatically use the environmental variable 
 \c TRILINOS_HOME
@@ -253,7 +381,7 @@ directories:
 </ul>
 In the above, if \c TRILINOS_TARGET is not defined as an
 environmental variable, configure will define it.
-</ul>
+
 
 \section ss2 Building the NOX/Epetra Examples
 
@@ -387,7 +515,57 @@ setenv LD_LIBRARY_PATH ${PETSC_DIR}/lib/lib${PETSC_BOPT}/${PETSC_ARCH}
 To become a NOX developer, contact Tammy Kolda (tgkolda@sandia.gov) or
 Roger Pawlowski (rppawlo@sandia.gov).
 
-\section cvsrepos CVS Repository for NOX
+The following pages are relevant to developers.
+<ul> 
+<li>\ref cvsrepos
+<li>\ref coding
+<li>\ref prerelease
+</ul>
+
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page prerelease NOX Developer's Guide to Adding New Code to NOX
+
+
+\section prerelease_code Code in Prerelease
+
+To add new code to NOX that should not be distributed with the nightly
+distribution, do the following.
+
+<ol>
+
+<li> Add new \c .C and \c .H files as applicable. The code should be
+     surrounded by a \c WITH_PRERELEASE ifdef as follows.
+\verbatim
+#ifdef WITH_PRERELEASE
+<all code here>
+#endif
+\endverbatim
+
+<li> Add the \c .C and \c .H files to Makefile.am, but make sure the
+     code is specified with the \c nodist option. See
+     nox/src/Makefile.am for an example.
+
+<li> To compile the code, be sure to run configure with the \c --with-prerelease option. 
+
+</ol>
+
+Note that any prerelease code in the CVS repository must still be able
+to compile. The only difference is that this code will not be included
+in the nightly distribution that is posted on the web.
+
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page cvsrepos NOX Developer's Guide to the CVS Repository for NOX
 
 The CVS repository is located on <a
 href="http://software.sandia.gov/>software.sandia.gov</a>. See Paul
@@ -424,7 +602,13 @@ yellow box on the right hand side. Next, choose "Trilinos", then
 <li> \b Querying: Select "nox" as the "Module"
 </ul>
 
-\section coding Coding Guidelines
+*/
+
+/* ************************************************************************ */
+/* ************************************************************************ */
+/* ************************************************************************ */
+
+/*! \page coding NOX Developer's Coding Guidelines
 
 \htmlonly
 Adapted largely from <a
