@@ -43,6 +43,11 @@
 
 AC_INIT(aztecoo, 2.0, mheroux@cs.sandia.gov)
 
+# Hello World!
+echo "----------------------------------------"
+echo "Running AztecOO Configure Script"
+echo "----------------------------------------"
+
 # This is to protect against accidentally specifying the wrong
 # directory with --srcdir.
 
@@ -311,3 +316,8 @@ AC_CONFIG_FILES([
                 example/simple_epetra_aztecoo/Makefile
                 example/AztecOO_UserOpUserMat/Makefile])
 AC_OUTPUT
+
+# Bye World!
+echo "----------------------------------------"
+echo "Finished Running AztecOO Configure Script"
+echo "----------------------------------------"
