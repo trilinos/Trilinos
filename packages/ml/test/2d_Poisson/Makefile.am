@@ -29,6 +29,11 @@
 
 EXEEXT = .exe
 
+# One of the input options for this example is the coarse direct solver KLU.
+# KLU is part of amesos, which in turn needs teuchos.
+if ML_USING_AMESOS
+if ML_USING_TEUCHOS
+
 EXTRA_DIST= 2d_Poisson.csh baseline1 baseline2 baseline3 baseline5 baseline6 baseline7 ml_inputfile1 ml_inputfile2 ml_inputfile3 ml_inputfile5 ml_inputfile6 ml_inputfile7
 
 noinst_PROGRAMS = 2d_Poisson
@@ -103,9 +108,9 @@ ml_common_include_locations = -I$(top_srcdir)/src/Include          \
 ml_libs = $(top_builddir)/src/libml.a        \
                 $(top_builddir)/../aztecoo/src/libaztecoo.a        \
                 ${ifpack_lib} \
-	            $(top_builddir)/../amesos/src/libamesos.a  \
+	            ${amesos_lib} \
                 $(top_builddir)/../epetra/src/libepetra.a \
-	            $(top_builddir)/../teuchos/src/libteuchos.a  \
+	            ${teuchos_lib} \
                 $(LIBS) \
                 $(LAPACK_LIBS)                            \
                 $(BLAS_LIBS)                            \
@@ -117,3 +122,6 @@ mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 2d_Poisson_CXXFLAGS = ${ml_common_include_locations} -DML_BENCHMARK
 2d_Poisson_LDADD = ${ml_libs}
 2d_Poisson_LINK = ${mllink}
+
+endif #if ML_USING_TEUCHOS
+endif #if ML_USING_AMESOS

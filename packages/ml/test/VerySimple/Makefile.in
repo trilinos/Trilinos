@@ -65,7 +65,7 @@ NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
 host_triplet = @host@
-noinst_PROGRAMS = VerySimple$(EXEEXT)
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@noinst_PROGRAMS = VerySimple$(EXEEXT)
 subdir = test/VerySimple
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -97,24 +97,29 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/ml_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_VerySimple_OBJECTS = VerySimple-VerySimple.$(OBJEXT)
+am__VerySimple_SOURCES_DIST = $(srcdir)/VerySimple.c
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am_VerySimple_OBJECTS = VerySimple-VerySimple.$(OBJEXT)
 VerySimple_OBJECTS = $(am_VerySimple_OBJECTS)
-@ML_USING_IFPACK_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
-@ML_USING_AMESOS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_ANASAZI_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a \
-@ML_USING_ANASAZI_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_TEUCHOS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_2 = $(top_builddir)/../amesos/src/libamesos.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_3 = $(top_builddir)/../anasazi/src/libanasazi.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_4 = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_5 = $(top_builddir)/../triutils/src/libtriutils.a
 am__DEPENDENCIES_6 =
-am__DEPENDENCIES_7 = $(top_builddir)/src/libml.a \
-	$(top_builddir)/../aztecoo/src/libaztecoo.a \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
-	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
-	$(am__DEPENDENCIES_5) \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6) \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_6)
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@am__DEPENDENCIES_7 = $(top_builddir)/src/libml.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_1) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_2) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_3) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_4) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_5) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_6) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_6) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_6) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(am__DEPENDENCIES_6)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/src
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -124,7 +129,7 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(VerySimple_SOURCES)
-DIST_SOURCES = $(VerySimple_SOURCES)
+DIST_SOURCES = $(am__VerySimple_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -258,68 +263,63 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-VerySimple_SOURCES = $(srcdir)/VerySimple.c
-VerySimple_DEPENDENCIES = \
-	$(top_builddir)/src/libml.a \
-	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../triutils/src/libtriutils.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a 
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_SOURCES = $(srcdir)/VerySimple.c
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_DEPENDENCIES = \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/src/libml.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../epetra/src/libepetra.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../triutils/src/libtriutils.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@	$(top_builddir)/../teuchos/src/libteuchos.a 
 
-ml_common_include_locations = -I$(top_srcdir)/src/Include          \
-                   -I$(top_srcdir)/src/Coarsen                  \
-                   -I$(top_srcdir)/src/Comm                  \
-                   -I$(top_srcdir)/src/FEGrid                  \
-                   -I$(top_srcdir)/src/Include                  \
-                   -I$(top_srcdir)/src/Krylov                  \
-                   -I$(top_srcdir)/src/Main                  \
-                   -I$(top_srcdir)/src/Operator                  \
-                   -I$(top_srcdir)/src/Smoother                  \
-                   -I$(top_srcdir)/src/Utils                  \
-                   -I$(top_srcdir)/../aztecoo/src            \
-                   -I$(top_builddir)/../aztecoo/src \
-                   -I$(top_srcdir)/../epetra/src            \
-                   -I$(top_builddir)/../epetra/src \
-                   -I$(top_srcdir)/../teuchos/src            \
-                   -I$(top_builddir)/../teuchos/src \
-                   -I$(top_srcdir)/../triutils/src            \
-                   -I$(top_builddir)/../triutils/src
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@ml_common_include_locations = -I$(top_srcdir)/src/Include          \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Coarsen                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Comm                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/FEGrid                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Include                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Krylov                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Main                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Operator                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Smoother                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/src/Utils                  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/../aztecoo/src            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_builddir)/../aztecoo/src \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/../epetra/src            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_builddir)/../epetra/src \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/../teuchos/src            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_builddir)/../teuchos/src \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_srcdir)/../triutils/src            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                   -I$(top_builddir)/../triutils/src
 
-@ML_USING_AMESOS_FALSE@amesos_lib = 
 
 # Amesos require Teuchos
-@ML_USING_AMESOS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
-@ML_USING_AMESOS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@amesos_lib = $(top_builddir)/../amesos/src/libamesos.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
 
-@ML_USING_ANASAZI_FALSE@anasazi_lib = 
 # Anasazi require Teuchos
-@ML_USING_ANASAZI_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
-@ML_USING_ANASAZI_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@anasazi_lib = $(top_builddir)/../anasazi/src/libanasazi.a  \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@             $(top_builddir)/../teuchos/src/libteuchos.a
 
-@ML_USING_TEUCHOS_FALSE@teuchos_lib = 
-@ML_USING_TEUCHOS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
-@ML_USING_TRIUTILS_FALSE@triutils_lib = 
-@ML_USING_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
-@ML_USING_IFPACK_FALSE@ifpack_lib = 
-@ML_USING_IFPACK_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@teuchos_lib = $(top_builddir)/../teuchos/src/libteuchos.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@triutils_lib = $(top_builddir)/../triutils/src/libtriutils.a
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@ifpack_lib = $(top_builddir)/../ifpack/src/libifpack.a
 #
-ml_libs = $(top_builddir)/src/libml.a        \
-                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
-                ${ifpack_lib} \
-                ${amesos_lib} \
-                ${anasazi_lib} \
-                ${teuchos_lib} \
-                ${triutils_lib} \
-                $(top_builddir)/../epetra/src/libepetra.a \
-                $(LIBS) \
-                $(LAPACK_LIBS)                            \
-                $(BLAS_LIBS)                            \
-                $(FLIBS)
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@ml_libs = $(top_builddir)/src/libml.a        \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(top_builddir)/../aztecoo/src/libaztecoo.a        \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                ${ifpack_lib} \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                ${amesos_lib} \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                ${anasazi_lib} \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                ${teuchos_lib} \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                ${triutils_lib} \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(top_builddir)/../epetra/src/libepetra.a \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(LIBS) \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(LAPACK_LIBS)                            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(BLAS_LIBS)                            \
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@                $(FLIBS)
 
-mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-VerySimple_CPPFLAGS = ${ml_common_include_locations}
-VerySimple_CXXFLAGS = ${ml_common_include_locations}
-VerySimple_LDADD = ${ml_libs}
-VerySimple_LINK = ${mllink}
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@mllink = $(CXX) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_CPPFLAGS = ${ml_common_include_locations}
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_CXXFLAGS = ${ml_common_include_locations}
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_LDADD = ${ml_libs}
+@ML_USING_AMESOS_TRUE@@ML_USING_ANASAZI_TRUE@@ML_USING_IFPACK_TRUE@@ML_USING_TEUCHOS_TRUE@@ML_USING_TRIUTILS_TRUE@VerySimple_LINK = ${mllink}
 all: all-am
 
 .SUFFIXES:

@@ -27,6 +27,11 @@
 #@HEADER
 
 EXEEXT = .exe
+if ML_USING_AMESOS
+if ML_USING_ANASAZI
+if ML_USING_TEUCHOS 
+if ML_USING_TRIUTILS
+if ML_USING_IFPACK
 
 noinst_PROGRAMS = MultiLevelPreconditioner_Sym 
 
@@ -106,3 +111,8 @@ MultiLevelPreconditioner_Sym_CPPFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_Sym_CXXFLAGS = ${ml_common_include_locations}
 MultiLevelPreconditioner_Sym_LDADD = ${ml_libs}
 MultiLevelPreconditioner_Sym_LINK = ${mllink}
+endif #if ML_USING_AMESOS
+endif #if ML_USING_ANASAZI
+endif #if ML_USING_TEUCHOS 
+endif #if ML_USING_TRIUTILS
+endif #if ML_USING_IFPACK
