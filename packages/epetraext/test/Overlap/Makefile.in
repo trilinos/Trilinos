@@ -130,7 +130,7 @@ Overlap_test_DEPENDENCIES = \
   $(top_builddir)/../epetra/src/libepetra.a
 
 
-Overlap_test_CXXFLAGS = -I$(top_srcdir)/src/transform \
+Overlap_test_CXXFLAGS = -I$(top_srcdir)/transform/src \
                         -I$(top_builddir)/src \
                         -I$(top_srcdir)/../epetra/src \
                         -I$(top_builddir)/../epetra/src
