@@ -39,7 +39,7 @@ class Epetra_MultiVector;
 class Epetra_IntSerialDenseVector;
 class Epetra_SerialDenseMatrix;
 class Amesos_EpetraInterface;
-class Amesos_EpetraRedistributor;
+class EpetraExt_Redistor;
 
 #include "Amesos_ConfigDefs.h"
 #include "Amesos_BaseSolver.h"
@@ -49,7 +49,7 @@ class Amesos_EpetraRedistributor;
 #else
 #include "Epetra_Comm.h"
 #endif
-#include "Amesos_EpetraRedistributor.h"
+#include "Amesos_EpetraBaseSolver.h"
 
 extern "C" {
 #include "dmumps_c.h"
@@ -68,9 +68,27 @@ extern "C" {
   all direct solvers (although some may ignore them).  However, some
   parameters, in particular tuning parameters, are unique to each
   solver.
-    
+
+  MUMPS will not perform and column permutation on a matrix provided
+  in distributed form.  Amesos_Mumps will match this, allowing
+  column permutation only if the matrix is provided in serial form.
+  This is unfortunate because it is an exception to the general rule
+  that the capability (given adequate memory) of any class
+  implementing the Amesos_BaseSolver base class does not depend on
+  the distribution of the input matrix.  However, neither of the
+  other options are attractive.  Coalescing the matrix to a single
+  process independent of whether column permutation is requested
+  unnecessarily limits the size problem that can be solved.
+  Coalescing the matrix to a single process only when column
+  permutation is requested would cause some problems to run out of memory
+  when column permutation is requested.
+
+
+  \Note This class should be used with MUMPS 4.3 or 4.3.1 (never tested
+  with older versions of MUMPS, and developed with 4.3.1).
+
 */
-class Amesos_Mumps : public Amesos_EpetraRedistributor { 
+class Amesos_Mumps : public Amesos_EpetraBaseSolver { 
 
 public: 
 
@@ -169,8 +187,6 @@ public:
   int Destroy();
   
   //@}
-  
-  //@{ \name Additional methods required to support the Epetra_Operator interface.
 
 #if 0
   //! Returns a character string describing the operator
@@ -200,8 +216,15 @@ public:
   int ComputeSchurComplement(bool flag,
 			     int NumSchurComplementRows, int * SchurComplementRows);
 
+  //! Returns the Sschur complement in an Epetra_CrsMatrix on host only.
+  /*! Returns the Sschur complement in an Epetra_CrsMatrix on host only. Note that
+      no checks are performed to see whether this action is legal or not (that is,
+      if the call comes after the solver has been invocated).
+      Epetra_CrsMatrix must be freed by the user!
+  */
   Epetra_CrsMatrix * GetCrsSchurComplement();
 
+  //! Returns the Schur complement as a SerialDenseMatrix (on host only).
   Epetra_SerialDenseMatrix * GetDenseSchurComplement();
   
   //! Returns the current UseTranspose setting.
@@ -285,10 +308,11 @@ public:
   
   int PrintInformation();
 
-private:  
+private:
+  
   int ConvertToSerial(); 
   /*
-    ConvertToTriplet - Convert matirx to form expected by Mumps: Row, Col, Val
+    ConvertToTriplet - Convert matrix to form expected by Mumps: Row, Col, Val
     Preconditions:
       numentries_, NumGloalElements_ and SerialMatrix_ must be set.
     Postconditions:
@@ -326,6 +350,10 @@ private:
   int PerformNumericFactorization(); 
 
   void SetICNTLandCNTL();
+
+  void SetUseMpiCommSelf() {
+    UseMpiCommSelf_ = true;
+  }
   
  protected:
 
@@ -333,13 +361,14 @@ private:
   bool NumericFactorizationOK_;    // True if NumericFactorization has been done
   bool IsConvertToTripletOK_;
   bool IsComputeSchurComplementOK_;
+  bool UseMpiCommSelf_;
   
   DMUMPS_STRUC_C MDS ;             // Mumps data structure 
 
   //
   //  Row, Col, Val form the triplet representation used by Mumps
   //
-  Epetra_IntSerialDenseVector * Row; // MS // store COO format in epetra vectors
+  Epetra_IntSerialDenseVector * Row; // store COO format in epetra vectors
   Epetra_IntSerialDenseVector * Col;
   Epetra_SerialDenseVector    * Val;
 
@@ -348,36 +377,40 @@ private:
   int numentries_;         //  Number of non-zero entries in Problem_->GetOperator()
   int NumGlobalElements_;  //  Number of rows and columns in the Problem_->GetOperator()
 
-  bool  KeepMatrixDistributed_;          // MS // this governs the ICNTL(18) parameter.
-                                         // MS // If false, then matrix is redistributed
-                                         // MS // to proc 0 before converting it to
-                                         // MS // triplet format. Then, MUMPS will take care
-                                         // MS // of reditribution. If true, the input
-                                         // MS // distributed matrix is passed to MUMPS.
+  bool  KeepMatrixDistributed_;          // this governs the ICNTL(18) parameter.
+                                         // If false, then matrix is redistributed
+                                         // to proc 0 before converting it to
+                                         // triplet format. Then, MUMPS will take care
+                                         // of reditribution. If true, the input
+                                         // distributed matrix is passed to MUMPS.
   
   const Epetra_Map * Map_;
 
-  int NumMUMPSNonzeros_;                  // MS // actual number of nonzeros in the matrix
-  int NumMyMUMPSNonzeros_;                // MS // actual number of nonzeros in the matrix
-  int ErrorMsgLevel_;                     // MS // output level 
+  int NumMUMPSNonzeros_;                  // actual number of nonzeros in the matrix
+  int NumMyMUMPSNonzeros_;                // actual number of nonzeros in the matrix
+  int ErrorMsgLevel_;                     // output level 
   
   bool UseTranspose_;
   
-  int icntl_[40];                         // MS // to allow users overwrite default settings
-  double cntl_[5];                        // MS // as specified by Amesos
+  int icntl_[40];                         // to allow users overwrite default settings
+  double cntl_[5];                        // as specified by Amesos
   double * RowSca_, * ColSca_;
   int * PermIn_;
   int Maxis_, Maxs_;  
 
-  int NumSchurComplementRows_;            // MS // Schur complement section
+  int NumSchurComplementRows_;            // Schur complement section
   int * SchurComplementRows_;
 
   Epetra_CrsMatrix * CrsSchurComplement_;
   Epetra_SerialDenseMatrix * DenseSchurComplement_;
 
   int verbose_;
+
+  EpetraExt_Redistor * Redistor_;
   
   Epetra_RowMatrix * OldMatrix_;
+
+  Epetra_MultiVector * TargetVector_;
   
 };  // End of  class Amesos_Mumps
 

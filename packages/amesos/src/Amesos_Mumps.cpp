@@ -25,55 +25,7 @@
 // 
 // ***********************************************************************
 // @HEADER
-
-  /*
-    Information about MUMPS:
-
-    MUMPS will not perform and column permutation on a matrix provided
-    in distributed form.  Amesos_Mumps will match this, allowing
-    column permutation only if the matrix is provided in serial form.
-    This is unfortunate because it is an exception to the general rule
-    that the capability (given adequate memory) of any class
-    implementing the Amesos_BaseSolver base class does not depend on
-    the distribution of the input matrix.  However, neither of the
-    other options are attractive.  Coalescing the matrix to a single
-    process independent of whether column permutation is requested
-    unnecessarily limits the size problem that can be solved.
-    Coalescing the matrix to a single process only when column
-    permutation is requested would cause some problems to run out of memory
-    when column permutation is requested.
-
-
-
-    Ken, I changed a little bit this class. Now almost all the MUMPS functionality are
-    supported. It is not supported:
-    - matrices in elemental format;
-    - ICNTL values of 1 and 2. In fact:
-      * ICNTL(18) = 3 is the default choice. I think it is the best for parallel
-        applications;
-      * ICTNL(0) can be used as follows: the matrix is given in distributed format
-        by the user, but then he/she sets `SetfitrixDistributed(false)'. The
-	matrix will be converted to COO format, then those vectors are shipped to
-	processor 0, and MUMPS takes are of using the processes.
-    - timing can be obtained using functions GetSymFactTime, GetNumFactTime,
-      and GetSolFactTime()
-
-	
-    NOTES:
-    - This class should be used with MUMPS 4.3 or 4.3.1 (never tested with
-      older versions of MUMPS, and developed with 4.3.1)
-    - Never tested the reuse of symbolic factorization and change of
-      numerical values. In particular the code assumes that the user is
-      doing the right thing (i.e., it is not changing the structure of the
-      matrix)
-    - Still to do: Schur complement should be returned as a VBR matrix
-      if the input matrix is VBR ??
-
-    Marzio Sala, SNL 9214, 24-Jan-03
-
-   */
-
-
+ 
 #include "Amesos_Mumps.h"
 #include "Epetra_Map.h"
 #include "Epetra_Import.h"
@@ -88,8 +40,8 @@
 #include "Epetra_IntVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_SerialDenseMatrix.h"
-#include "Amesos_EpetraInterface.h"
-#include "Amesos_EpetraRedistributor.h"
+#include "Amesos_EpetraBaseSolver.h"
+#include "EpetraExt_Redistor.h"
 
 #define ICNTL(I) icntl[(I)-1]
 #define CNTL(I)  cntl[(I)-1]
@@ -100,12 +52,14 @@
 #define DEF_VALUE_DOUBLE -123456.789
   
 //=============================================================================
+
 Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
-			   const AMESOS::Parameter::List &ParameterList ) :  
-  Amesos_EpetraRedistributor(prob,ParameterList),
+			   const AMESOS::Parameter::List &ParameterList ) :
+  Amesos_EpetraBaseSolver(prob,ParameterList),
   SymbolicFactorizationOK_(false), 
   NumericFactorizationOK_(false),
   KeepMatrixDistributed_(true) ,
+  UseMpiCommSelf_(false),
   Map_(0),
   NumMUMPSNonzeros_(0),
   NumMyMUMPSNonzeros_(0),
@@ -124,6 +78,8 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   Maxis_(DEF_VALUE_INT),
   Maxs_(DEF_VALUE_INT),
   OldMatrix_(0),
+  Redistor_(0),
+  TargetVector_(0),
   verbose_(0)
 {
   // -777 is for me. It means : never called MUMPS, so
@@ -136,6 +92,8 @@ Amesos_Mumps::Amesos_Mumps(const Epetra_LinearProblem &prob,
   for( int i=0 ; i<5 ; ++i ) cntl_[i] = DEF_VALUE_DOUBLE;
 }
 
+//=============================================================================
+
 int Amesos_Mumps::Destroy()
 {
   if( verbose_ == 3 ) cout << "Calling MUMPS with job=-2..." << endl;
@@ -144,10 +102,15 @@ int Amesos_Mumps::Destroy()
   MDS.job = -2;
 
   dmumps_c(&MDS);
+
+  if( Redistor_ ) delete Redistor_;
+  if( TargetVector_ ) delete TargetVector_;
+  
   return 0;
 }
 
 //=============================================================================
+
 Amesos_Mumps::~Amesos_Mumps(void)
 {
 
@@ -164,6 +127,7 @@ Amesos_Mumps::~Amesos_Mumps(void)
 }
 
 //=============================================================================
+
 int Amesos_Mumps::ConvertToTriplet()
 {
 
@@ -188,7 +152,7 @@ int Amesos_Mumps::ConvertToTriplet()
   NumMyMUMPSNonzeros_ = 0;
   
   // MS // retrive already allocated pointers for rows, cols, and vals
-  // MS // Those arrays are allocated and freed by the Amesos_EpetraInterface
+  // MS // Those arrays are allocated and freed by the Amesos_EpetraBaseSolver
   // MS // class. Note that, if a View method is implemented, those pointers
   // MS // will change to reflect the action of the View. Otherwise,
   // MS // the allocated vectors will be used to copy data  
@@ -223,7 +187,8 @@ int Amesos_Mumps::ConvertToTriplet()
 
   assert(NumMyMUMPSNonzeros_<=NumMyNonzeros());
 
-  // MS // bring matrix to proc zero if required
+  // MS // bring matrix to proc zero if required. Note that I first
+  // MS // convert to COO format (locally), then I redistribute COO vectors.
   
   if( KeepMatrixDistributed_ == false ) {
 
@@ -279,6 +244,7 @@ int Amesos_Mumps::ConvertToTriplet()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::ConvertToTripletValues()
 {
 
@@ -299,7 +265,7 @@ int Amesos_Mumps::ConvertToTripletValues()
   int NumMUMPSNonzerosValues = 0;
   
   // MS // retrive already allocated pointers for rows, cols, and vals
-  // MS // Those arrays are allocated and freed by the Amesos_EpetraInterface
+  // MS // Those arrays are allocated and freed by the Amesos_EpetraBaseSolver
   // MS // class. Note that, if a View method is implemented, those pointers
   // MS // will change to reflect the action of the View. Otherwise,
   // MS // the allocated vectors will be used to copy data  
@@ -374,6 +340,7 @@ int Amesos_Mumps::ConvertToTripletValues()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::SetICNTL(int pos, int value)
 {
   // NOTE: suppose first position is 1 (as in FORTRAN)
@@ -387,6 +354,7 @@ int Amesos_Mumps::SetICNTL(int pos, int value)
 }
 
 //=============================================================================
+
 int Amesos_Mumps::SetCNTL(int pos, double value)
 {
   // NOTE: suppose first position is 1 (as in FORTRAN)
@@ -399,6 +367,7 @@ int Amesos_Mumps::SetCNTL(int pos, double value)
 }
 
 //=============================================================================
+
 void Amesos_Mumps::SetICNTLandCNTL()
 {
   
@@ -454,6 +423,7 @@ void Amesos_Mumps::SetICNTLandCNTL()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::ReadParameterList()
 {
 
@@ -471,6 +441,7 @@ int Amesos_Mumps::ReadParameterList()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::PerformSymbolicFactorization()
 {
 
@@ -487,7 +458,7 @@ int Amesos_Mumps::PerformSymbolicFactorization()
   
   Epetra_Time Time(Comm());
 
-  if( IsLocal() ) {
+  if( IsLocal() || UseMpiCommSelf_ ) {
 #ifdef EPETRA_MPI
 #ifndef TFLOP
     MPI_Comm MPIC = MPI_COMM_SELF ;
@@ -564,6 +535,7 @@ int Amesos_Mumps::PerformSymbolicFactorization()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::PerformNumericFactorization( )
 {
   
@@ -595,6 +567,7 @@ int Amesos_Mumps::PerformNumericFactorization( )
 }
 
 //=============================================================================
+
 int Amesos_Mumps::SymbolicFactorization()
 {
 
@@ -602,23 +575,25 @@ int Amesos_Mumps::SymbolicFactorization()
   
   ReadParameterList();  
   
-  // MS // first, gather matrix property using base class
-  // MS // Amesos_EpetraInterface
+  // first, gather matrix property using base class
+  // Amesos_EpetraBaseSolver
 
   Epetra_RowMatrix * Matrix = GetMatrix();
   assert( Matrix != NULL );
   if( Matrix != OldMatrix_ ) {
+    // initialize redistor, target map is on proc 0.
+    // Redistor will be used to bring rhs to proc 0, and solution to
+    // all procs
     EPETRA_CHK_ERR( SetInterface(Matrix) );
-    EPETRA_CHK_ERR( SetRedistributor(1) );
     OldMatrix_ = Matrix;
     SymbolicFactorizationOK_ = false;
     NumericFactorizationOK_ = false;
   }
 
-  // MS // now, create a map, in which all nodes are stored on processor 0.
-  // MS // Also creates import objects. This is done using the base class
-  // MS // Amesos_EpetraRedistributor. NOTE: the following classes return
-  // MS // if they have already been called.  
+  // now, create a map, in which all nodes are stored on processor 0.
+  // Also creates import objects. This is done using the base class
+  // Amesos_EpetraRedistributor. NOTE: the following classes return
+  // if they have already been called.  
 
   EPETRA_CHK_ERR(ConvertToTriplet());
   EPETRA_CHK_ERR(PerformSymbolicFactorization());
@@ -629,6 +604,7 @@ int Amesos_Mumps::SymbolicFactorization()
 }
 
 //=============================================================================
+
 int Amesos_Mumps::NumericFactorization()
 {
 
@@ -643,7 +619,6 @@ int Amesos_Mumps::NumericFactorization()
   assert( Matrix != NULL );  
   if( Matrix != OldMatrix_ ) {
     EPETRA_CHK_ERR( SetInterface(Matrix) );
-    EPETRA_CHK_ERR( SetRedistributor(1) );
     OldMatrix_ = Matrix;
     SymbolicFactorizationOK_ = false;
     NumericFactorizationOK_ = false;
@@ -669,6 +644,7 @@ int Amesos_Mumps::NumericFactorization()
 }
  
 //=============================================================================
+
 int Amesos_Mumps::Solve()
 { 
 
@@ -680,7 +656,6 @@ int Amesos_Mumps::Solve()
   assert( Matrix != NULL );
   if( Matrix != OldMatrix_ ) {
     EPETRA_CHK_ERR( SetInterface(Matrix) );
-    EPETRA_CHK_ERR( SetRedistributor(1) );    
     OldMatrix_ = Matrix;
     SymbolicFactorizationOK_ = false;
     NumericFactorizationOK_ = false;
@@ -714,7 +689,14 @@ int Amesos_Mumps::Solve()
 
   Epetra_MultiVector   *vecX = GetLHS() ; 
   Epetra_MultiVector   *vecB = GetRHS() ;
-      
+
+  // create redistor the first time enters here. I suppose that LHS and RHS
+  // (all of them) have the same map.
+  if( Redistor_ == 0 ) {
+    Redistor_ = new EpetraExt_Redistor(vecX->Map(),1);
+    assert( Redistor_ != 0 );
+  }
+  
   //  Compute the number of right hands sides (and check that X and B have the same shape) 
 
   if( vecB == NULL || vecX == NULL ) {
@@ -729,14 +711,17 @@ int Amesos_Mumps::Solve()
   }
 
   // will be used only if IsLocal == false
-  EPETRA_CHK_ERR( CreateTargetRHS( nrhs ) );
+  if( IsLocal() == false && UseMpiCommSelf_ == false && TargetVector_ == 0 ) {
+    TargetVector_ = new Epetra_MultiVector(*(Redistor_->TargetMap()),nrhs);
+    assert( TargetVector_ != 0 );
+  }
   
   // MS // Extract Target versions of X and B. 
   // MS // NOTE: both Target and distributed version of MUMPS require
   // MS // rhs to be entirely stored on processor 0. This is because we
   // MS // still need TargetMap_ also for distributed input
 
-  if( IsLocal() ) {
+  if( IsLocal() || UseMpiCommSelf_ ) {
     if( Comm().MyPID() == 0 ) {
       for ( int j =0 ; j < nrhs; j++ ) {
 	for( int i=0 ; i<NumMyRows() ; ++i ) (*vecX)[j][i] = (*vecB)[j][i];
@@ -752,11 +737,11 @@ int Amesos_Mumps::Solve()
     }
   } else {
 
-    TargetRHS()->Import( *vecB, *(ImportToTarget()), Insert ) ;
+    Redistor_->TargetImport( *vecB, *TargetVector_ ) ;
 
     for ( int j =0 ; j < nrhs; j++ ) { 
       if ( Comm().MyPID() == 0 ) {
-	MDS.rhs = (*TargetRHS())[j];
+	MDS.rhs = (*TargetVector_)[j];
       }
       MDS.job = 3  ;     // Request solve
       dmumps_c( &MDS ) ;  // Perform solve
@@ -766,7 +751,7 @@ int Amesos_Mumps::Solve()
       if( MDS.INFOG(1) ) return( MDS.INFOG(1) );
     }
 
-    vecX->Import( *(TargetRHS()), *(ImportFromTarget()), Insert ) ;
+    Redistor_->SourceImport( *vecX, *TargetVector_ ) ;
     
   }
   
@@ -781,15 +766,11 @@ int Amesos_Mumps::Solve()
   return(0) ; 
 }
 
+// ================================================ ====== ==== ==== == =
+
 Epetra_CrsMatrix * Amesos_Mumps::GetCrsSchurComplement() 
 {
 
-  // MS // Retrive the SC and put it in an Epetra_CrsMatrix on host only
-  // MS // NOTE: no checks are performed to see whether this action
-  // MS // is legal or not (that is, if the call comes after
-  // MS // the solver has been invocated
-  // MS // NOTE2: This memory must be freed by the user!
-  
   if( IsComputeSchurComplementOK_ ) {
     
     if( Comm().MyPID() != 0 ) NumSchurComplementRows_ = 0;
@@ -815,16 +796,10 @@ Epetra_CrsMatrix * Amesos_Mumps::GetCrsSchurComplement()
   
 }
 
+// ================================================ ====== ==== ==== == =
+
 Epetra_SerialDenseMatrix * Amesos_Mumps::GetDenseSchurComplement() 
 {
-
-  // MS // Retrive the SC and put it in an Epetra_CrsMatrix on host only
-  // MS // NOTE: no checks are performed to see whether this action
-  // MS // is legal or not  (that is, if the call comes after
-  // MS // the solver has been invocated
-  // MS // NOTE2: This memory must be freed by the user!
-  
-  // MS // works only on processor 0, return 0 on the others
   
   if( IsComputeSchurComplementOK_ ) {
     
@@ -848,6 +823,8 @@ Epetra_SerialDenseMatrix * Amesos_Mumps::GetDenseSchurComplement()
   
 }
 
+// ================================================ ====== ==== ==== == =
+
 int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 					 int * SchurComplementRows)
 {
@@ -863,6 +840,8 @@ int Amesos_Mumps::ComputeSchurComplement(bool flag, int NumSchurComplementRows,
 
   return 0;
 }
+
+// ================================================ ====== ==== ==== == =
 
 int Amesos_Mumps::PrintInformation() 
 {
