@@ -201,13 +201,42 @@ int MatlabEngine::PutSerialDenseMatrix(const Epetra_SerialDenseMatrix& A, const 
 
 	return(PutMultiVector(*tempMultiVector, variableName));	
   }
-
-	return(0);
 }
 
 //=============================================================================
 int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, const char* variableName, int proc) {
   mxArray* matlabA = 0;
+  
+    if (proc == 0) {
+	if (Comm_.MyPID() == 0) {
+	  int numRows = A.M();
+	  int numCols = A.N();
+	  
+	  matlabA = mxCreateDoubleMatrix(numRows, numCols, mxREAL);
+
+	  int row;
+	  int col;
+	  double* targetPtr = 0;
+	  int* sourcePtr = 0;
+	  int* source = (int*)A.A();
+	  double* target = (double*)mxGetPr(matlabA);
+	  int source_LDA = A.LDA();
+	  int target_LDA = A.LDA();
+	  for (col = 0; col < numCols; col++) {
+		targetPtr = target + (col * target_LDA);
+		sourcePtr = source + (col * source_LDA);
+		for (row = 0; row < numRows; row++) {
+			*targetPtr++ = *sourcePtr++;
+		}
+	  }
+
+	  if (PutIntoMatlab(Engine_, variableName, matlabA)) {
+		mxDestroyArray(matlabA);
+		return(-1);
+	  }
+	}
+  }
+  else {
   int* numVectors = new int[2];
   if (proc == Comm_.MyPID()) {
 	int* temp = new int[2];
@@ -218,7 +247,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
   else {
 	int* temp = new int[2];
 	temp[0] = 0;
-	temp[0] = 0;
+	temp[1] = 0;
 	Comm_.MaxAll (temp, numVectors, 2);
   }
 
@@ -239,7 +268,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
   }
 
   const Epetra_BlockMap* srcBlockMap = 0;
-  Epetra_IntVector* srcIntVector;
+  Epetra_IntVector* srcIntVector = 0;
   Epetra_IntVector tgIntVector (*tgBlockMap, false);
   if (proc == Comm_.MyPID()) {
 	srcBlockMap = new Epetra_BlockMap(-1, A.LDA(), 1, 0, Comm_);
@@ -248,7 +277,8 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 	srcBlockMap = new Epetra_BlockMap(-1, 0, 1, 0, Comm_);
   }
 
-  Epetra_Import importer (*srcBlockMap, *tgBlockMap);
+  Epetra_Import importer (*tgBlockMap, *srcBlockMap);
+  
   for(int i=0; i < numVectors[0]; i++) {
 	if (proc == Comm_.MyPID()) {
 	  srcIntVector = new Epetra_IntVector(View, *srcBlockMap, (int*)A[i]);
@@ -256,10 +286,8 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 	else {
 	  srcIntVector = new Epetra_IntVector(*srcBlockMap, false);
 	}
-
 	// need to add some error checking for this!
 	tgIntVector.Import(*srcIntVector, importer, Insert);
-
 	if (Comm_.MyPID() == 0) {
 	  targetPtr = target + (i * numRows);
 	  sourcePtr = (int*)tgIntVector.Values();
@@ -273,7 +301,7 @@ int MatlabEngine::PutIntSerialDenseMatrix(const Epetra_IntSerialDenseMatrix& A, 
 	mxDestroyArray(matlabA);
 	return(-1);
   }
-
+}
   mxDestroyArray(matlabA);
   return(0);
 }
@@ -284,6 +312,8 @@ int MatlabEngine::PutBlockMap(const Epetra_BlockMap& blockMap, const char* varia
 }
 
 int MatlabEngine::PutIntoMatlab(Engine* engine, const char* variableName, mxArray* matlabA) {
+  if (Comm_.MyPID() != 0)
+    return(0);
 #ifdef USE_ENGPUTVARIABLE
     return engPutVariable(engine, variableName, matlabA);
 #else
