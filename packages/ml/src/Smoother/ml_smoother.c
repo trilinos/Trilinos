@@ -478,8 +478,6 @@ int ML_Smoother_GaussSeidel(void *sm, int inlen, double x[], int outlen,
    /* set up                                                            */
    /* ----------------------------------------------------------------- */
 
-   printf("Entering GS\n");
-
    Amat = smooth_ptr->my_level->Amat;
    comm = smooth_ptr->my_level->comm;
    Nrows = Amat->getrow->Nrows;
@@ -922,6 +920,18 @@ int ML_Smoother_Hiptmair(void *sm, int inlen, double x[], int outlen,
              sqrt(ML_gdot(Nrows, x, x, Tmat_trans->comm)));
       printf("\t%d: ||res|| = %15.10e\n", Tmat_trans->comm->ML_mypid,
              sqrt(ML_gdot(Nrows,res_edge,res_edge,Tmat_trans->comm)));
+
+      if (Ke_mat->invec_leng < 200)
+      {
+      printf("*** xvec ***\n");
+      for (i=0; i<Ke_mat->invec_leng; i++)
+         printf("(%d) %15.10e\n",i,x[i]);
+      printf("********************\n\n\n");
+      }
+      if (Ke_mat->invec_leng < 75)
+      {
+         ML_Operator_Print(Ke_mat,"Ke_mat");
+      }
 #endif
    
       /****************************
