@@ -187,7 +187,7 @@ char *yo = "old_readfile";
        while (nextstr(f,string) == 1) {
           ++check;
           pin = atoi(string);
-          if (pin <= 0 || pin > *nEdge) {
+          if (pin <= 0 || pin > *nVtx) {
               sprintf(errstr,  "%s ERROR pin %d of hyperedge %d is out of range"
                " [%d,%d]!\n", yo, pin, i, 1, *nVtx);
               fprintf(stderr, errstr);
