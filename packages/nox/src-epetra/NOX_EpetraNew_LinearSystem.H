@@ -51,11 +51,8 @@ class Epetra_Vector;
 namespace NOX {
 namespace EpetraNew {
 
+//! Pure virtual class interface for allowing different linear solvers to be used by the NOX::EpetraNew::Group.  
 class LinearSystem {
-
-protected:
- 
-
 
 public:
   //! Constructor.
@@ -64,30 +61,94 @@ public:
   //! Destructor.
   virtual ~LinearSystem(){};
 
+  /*! 
+    \brief Applies Jacobian to the given input vector and puts the answer in the result.
+
+    Computes 
+    \f[ v = J u, \f]
+    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, 
+    and \f$v\f$ is the result vector.  Returns true if successful.
+  */
   virtual bool applyJacobian(const NOX::Epetra::Vector& input, 
 			     NOX::Epetra::Vector& result) const = 0;
 
+  /*!  
+    \brief Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
+
+    Computes 
+    \f[ v = J^T u, \f]
+    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is the result vector.  Returns true if successful.
+    
+  */
   virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
 				      NOX::Epetra::Vector& result) const = 0;
   
+  /*!
+    \brief Applies the inverse of the Jacobian matrix to the given
+    input vector and puts the answer in result.
+    
+    Computes 
+    \f[ v = J^{-1} u, \f]
+    where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, 
+    and \f$v\f$ is the result vector.
+    
+    The parameter list contains the linear solver options.
+  */
   virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
 				    const NOX::Epetra::Vector &input, 
 				    NOX::Epetra::Vector &result) const = 0;
 
-  virtual bool applyRightPreconditioning(bool useTranspose,
-					 NOX::Parameter::List& params, 
-					 const NOX::Epetra::Vector& input, 
-					 NOX::Epetra::Vector& result) const = 0;
+  /*!
+    \brief Apply right preconditiong to the given input vector
 
-  //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::EpetraNew::Scaling for details on how to specify scaling of the linear system.  
+    Let \f$M\f$ be a right preconditioner for the Jacobian \f$J\f$; in
+    other words, \f$M\f$ is a matrix such that
+    \f[ JM \approx I. \f]
+    
+    Compute
+    \f[ u = M^{-1} v, \f]
+    where \f$u\f$ is the input vector and \f$v\f$ is the result vector.
+    
+    If <em>useTranspose</em> is true, then the transpose of the 
+    preconditioner is applied:  
+    \f[ u = {M^{-1}}^T v, \f]
+    The transpose preconditioner is currently only required for 
+    Tensor methods.
+
+    The parameter list contains the linear solver options.
+  */
+  virtual bool applyRightPreconditioning(bool useTranspose,
+				      NOX::Parameter::List& params, 
+				      const NOX::Epetra::Vector& input, 
+				      NOX::Epetra::Vector& result) const = 0;
+
+  /*! 
+    \brief Sets the diagonal scaling vector(s) used in scaling the linear system.  
+
+    See NOX::EpetraNew::Scaling for details on how to specify scaling 
+    of the linear system.  
+   */
   virtual void resetScaling(NOX::EpetraNew::Scaling& scalingObject) = 0;
 
+  //! Evaluates the Jacobian based on the solution vector x.
   virtual bool computeJacobian(Epetra_Vector& x) = 0;
+ 
+  /*! 
+    \brief Explicitly constructs a preconditioner based on the solution vector x and the parameter list p.  
 
+    The user has the option of recomputing the graph when a new 
+    preconditioner is created. The NOX::EpetraNew::Group controls the
+    isValid flag for the preconditioner and will control when to call this.
+  */
   virtual bool createPreconditioner(Epetra_Vector& x, 
 				    NOX::Parameter::List& p,
 				    bool recomputeGraph) const = 0;
 
+  /*!
+    \brief Deletes the preconditioner. 
+
+    The NOX::EpetraNew::Group controls the isValid flag for the preconditioner and will control when to call this.
+  */
   virtual bool destroyPreconditioner() const = 0;
 };
 

@@ -63,72 +63,41 @@ namespace NOX {
 //! Improved version of the Epetra support class.
 namespace EpetraNew {
 
-//! Concrete implementation of NOX::Epetra::LinearSolver for AztecOO.
 /*! 
 
-This group is set up to use the linear algebra services provided
-through the Trilinos/Epetra package with AztecOO for the linear
-%solver.
+\brief Concrete implementation of NOX::Epetra::LinearSolver for AztecOO.
+
+This solver provides the linear algebra services provided
+through the AztecOO parallel iterative linear %solver.
  
-<B>Supplying a Jacobian %Operator</B>
+The NOX::EpetraNew::LinearSystemAztecOO object provides a flexible
+and efficient way to interface an Epetra based application code
+to the Aztec linear solver.  This class handles construction 
+of both the preconditioners and AztecOO solver.  All options are
+determined through parameter lists and the basic constructors. 
 
+<B>Constructing a Linear System</B>
+There are four different constructors that can be used.  The difference
+between constructors is based on whether the user supplies a 
+Jacobian, a preconditioner, neither or both.  
 
-if using an internally ctor prec - must be a rowmatrix.....
+If a Jacobian is not supplied then this object can create an internally constructed Jacobian based on a Finite Difference or Matrif-Free object.  The user can specify which type of object to use by setting the parameter "Jacbian Operator" in the parameter list.  The choices are "Matrix-Free" or "Finite Difference".
 
+The user can supply their own preconditioner as an Epetra_Operator, or they can supply their own matrix (an Epetra_RowMatrix derived object) that can be used by one of the internal preconditioner libraries (currently aztecoo or ifpack).  If they supply their own preconditioner the object must implement the Epetra_Operator::ApplyInverse method.  This is the method called during the linear solve to introduce preconditoning into aztecoo.  If the user supplies a matrix to be used with an internal preconditioner, it must be derived from the Epetra_RowMatrix class and must implement all functionality.   
+If a Preconditioner is not supplied, then this object can create an internal preconditioner matrix by finite differencing or it can use the Jacobian operator if the Jacobian derives from the Epetra_RowMatrix class.   The user can specify which type of object to use by setting the parameter "Preconditioner Operator" in the parameter list.  The choices are "Use Jacobian" or "Finite Difference".
 
-A linear solve using this class requires at a minimum that the user
-supply a Jacobian object derived from the pure virtual Epetra_Operator
-class.  This does not have to be an explicit matrix since
-Newton-Krylov methods only require the action of the Jacobian on a
-vector (Jy).  The user has five options for providing the
-Epetra_Operator Jacobian.  This operator is passed in to through the
-group constructor.  Depending on the type of object, the user may have
-to implement additional functions in the NOX::Epetra::Interface object
-(the user must always implement the computeF() function) to actually
-fill/evaluate the object at the current solution.  Any additional
-functions are listed below:
+The Jacobian and preconditioner each require an interface to update the objects state with respect to the solution vector and any other parameters.  There are three interfaces that can be implemented, NOX::EpetraNew::Interface::Required,   NOX::EpetraNew::Interface::Jacobian, and NOX::EpetraNew::Interface::Preconditioner.  
 
-  <ul>
-  
-  <li> An Epetra_Operator derived object - For this object the user
-  must implement the computeJacobian() method in the
-  NOX::Epetra::Interface.
+NOX::EpetraNew::Interface::Required supplies the computeF() function so codes can tell NOX what the nonlinear equations are.  This is the minimum requirement to run nox throught the epetra interface.  LinearSolverAztecOO requires this in some constructors so that if a JAcobian or preconditoner is not supplied, it will use computeF to estimate J or M via finite differences or directional derivatives.
 
-  <li> An Epetra_RowMatrix derived object - For this object the user
-  must implement the computeJacobian() method in the
-  NOX::Epetra::Interface.
+NOX::EpetraNew::Interface::Jacobian is used for updating a user supplied Jacobian opertor with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a Jacobian operator.
 
-  <li> A NOX::Epetra::Operator derived object - For this object, the
-  user is not required to implement any additional methods in the
-  NOX::Epetra::Interface.
-
-  <li> A NOX::Epetra::FiniteDifference object - Estimates the entire
-  Jacobian by finite differencing.  For this object, the user is not
-  required to implement any additional methods in the
-  NOX::Epetra::Interface.
-
-  <li> A NOX::Epetra::MatrixFree object - Estimates the action of the
-  Jacobian on a vector via a directional derivative.  This requires
-  minimal memory since no Jacobian is stored.  The Jacobian is stored
-  in an Epetra_CrsMatirx.  This is not optimied and can be very time
-  consuming since a ::Epetra::NOXInterface::computeF() call is made
-  for each unknown. This was meant primarily as a validation tool to
-  ensure Jacobian fills are correct.For this object, the user is not
-  required to implement any additional methods in the
-  NOX::Epetra::Interface.
-
-  </ul>
+NOX::EpetraNew::Interface::Preconditioner is used for updating a user supplied preconditioner opertor/matrix with respect to the solution vector and any other parameters.  It is required only in constructors in which a user supplies a preconditioner operator.
 
 <B>"Linear %Solver" sublist parameters</B>
+A NOX::ParameterList called linearSolverParams is required in the various constructors and during some method calls such as applyJacobianInverse().  Typically, this list is the "Linear %Solver" sublist found in the nox parameter list.  The following parameters can be set in the linear solver sublist and are vaild for the NOX::EpetraNew::LinearSolverAztecOO object:<ul>
 
-A NOX::ParameterList is supplied in the constructor and during calls
-to the NOX::Epetra::Group::computeNewton() and
-NOX::Epetra::Group::applyJacobianInverse().  This parameter list is
-the "Linear %Solver" sublist.  The following parameters can be set in
-the linear Solver sublist for NOX::Epetra::Groups <ul>
-
-<li> "Aztec %Solver" - The following options are valid:
-
+<li> "Aztec %Solver" - Determine the iterative technique used in the solve.  The following options are valid:
   <ul> 
   <li> "GMRES" - Restarted generalized minimal residual (default).
   <li> "CG" - Conjugate gradient.
@@ -139,12 +108,11 @@ the linear Solver sublist for NOX::Epetra::Groups <ul>
   </ul>
 
 <li> "Size of Krylov Subspace" - When using restarted GMRES this sets
-the size of the Krylov subspace (defaults to 300).
+the maximum size of the Krylov subspace (defaults to 300).
  
-<li> "Orthogonalization" - The orthogonalization routine use for the
+<li> "Orthogonalization" - The orthogonalization routine used for the
 Gram-Schmidt orthogonalization procedure in Aztec.  The following
 options are valid:
-
   <ul> 
   <li> "Classical" - (default).
   <li> "Modified" 
@@ -154,7 +122,6 @@ options are valid:
 that is used for determining the convergence of the linear solver.
 See the Aztec 2.1 manual for more information.  The following options
 are valid:
-
   <ul>
   <li> "r0" - (default)
   <li> "rhs"
@@ -163,20 +130,23 @@ are valid:
   <li> "sol"
   </ul>
  
-<li> "Tolerance" - tolerance used by AztecOO to determine if a linear solve has converged.
+<li> "Tolerance" - tolerance used by AztecOO to determine if an iterative linear solve has converged. 
 
 <li> "Ill-Conditioning Threshold" - If the upper hessenberg matrix
 during GMRES generates a condition number greater than this parameter
 value, aztec will exit the linear solve returning the it's current
 solution.  The default is 1.0e11.
- 
 
 <li> "Preconditioner Iterations" - Number of iterations an
 AztecOO_Operator should take when solving the preconditioner.  This is
 only used if an AztecOO preconditioner is used and the solver makes a
-call to NOX::Epetra::Group::applyRightPreconditioning().
+call to NOX::Epetra::Group::applyRightPreconditioning().  This is NOT a
+recomended approach.
 
-<li> "Max Iterations" - maximum number of linear iterations in the linear solve.  Defaults to 
+<li> "Max Iterations" - maximum number of iterations in the 
+linear solve.  Defaults to 
+
+<li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
 
 <li> "Output Frequency" - number of linear solve iterations between
 output of the linear solve residual. Takes an integer, or one of the
@@ -194,75 +164,44 @@ AZ_last.
 multiple options that may depend on the types of Jacobian and 
 preconditioner operators supplied.The valid options are listed
 below:
-
   <ul> 
-  <li> "None" - no preconditioning.  This is the default setting.
-
-  <li> "AztecOO" - An AztecOO preconditioner will be
-  used with the Jacobian matrix being used as the preconditioning
-  matrix.  This requires that the Epetra_Operator supplied for the
-  Jacobian MUST be derived from an Epetra_RowMatrix (NOX will test for
-  this and throw an error if it is not).  AztecOO preconditioners need
-  to know the graph pattern of the matrix.  This means a
-  NOX::Epetra::MatrixFree Jacobian object can NOT be used with this
-  option for preconditioning.
-
-  <li> "AztecOO: User RowMatrix" - An AztecOO preconditioner will be
-  used where the preconditioning matrix is a separate object than the
-  Jacobian.  The Group constructor with separate entries for the
-  Jacobian and preconditioner objects must be used. Since AztecOO
-  preconditioners require matrix information, the preconditioning
-  object (M) must be derived from an Epetra_RowMatix (NOX will test
-  for this and throw an error if it is not).
-
-  <li> "IFPACK: Jacobian Matrix" - An IFPACK preconditioner will be
-  used where the Jacobian matrix is used as the preconditioning
-  matrix.  Since IFPACK preconditioners require matrix information,
-  the Jacobian must be derived from an Epetra_RowMatix (NOX will test
-  for this and throw an error if it is not).
-
-  <li> "IFPACK: User RowMatrix" - An IFPACK preconditioner will be
-  used where the preconditioning matrix is a separate object than the
-  Jacobian.  The Group constructor with separate entries for the
-  Jacobian and preconditioner objects must be used. Since IFPACK
-  preconditioners require matrix information, the preconditioning
-  object (M) must be derived from an Epetra_RowMatix (NOX will test
-  for this and throw an error if it is not).
-
-  <li> "User Supplied %Preconditioner" - The user supplies an
+  <li> "None" - No preconditioning.  (default)
+  <li> "AztecOO" - AztecOO internal preconditioner.  This requires an object that derives from the Epetra_RowMatrix class.  
+  <li> "Ifpack" -  Ifpack internal preconditioner.  This requires an object that derives from the Epetra_RowMatrix class or it can use a Jacobian if the JAcobian derives from an Epetra_RowMatrix.  
+  <li> "User Defined" - The user supplies an
   Epetra_Operator derived class or a NOX::Epetra::Operator derived
-  class.  A vector is preconditioned through calls to the
-  ApplyInverse() function of the Epetra_Operator class.  If an
-  Epetra_Operator is passed in, the user must implement the function
-  computePreconditioner() in the NOX::Epetra::Interface derived class.
-  If a NOX::Epetra::Operator object is passed in, the user does not
-  need to implement the
-  NOX::Epetra::Interface::computePreconditioner() function since the
-  same call is implemented as part of the NOX::Epetra::Preconditioner
-  class.  
+  class.  A vector will be preconditioned through calls to the
+  ApplyInverse() function of the Epetra_Operator class.  
+  </ul>
 
+<li> "Jacobian Operator" - If a constructor is used that does not supply a Jacobian operator, nox will create an internal Jacobian operator.  This flag is ONLY valid in such cases.  This will determine which Operator is used:
+  <ul>
+  <li> "Matrix-Free" - Create a NOX::EpetraNew::MatrixFree object.
+  <li> "Finite Difference" - Create a NOX::EpetraNew::FiniteDifference object.
+  </ul>
 
-</ul>
+<li> "Preconditioner Operator" - If a constructor is used that does not supply a preconditioner operator, nox will create an internal preconditioner operator.  This flag is ONLY valid in such cases.  This will determine which Operator is used:
+  <ul>
+  <li> "Use Jacobian" - Use the Jacobian Operator (it must be an Epetra_RowMatrix derived object).
+  <li> "Finite Difference" - Create a NOX::EpetraNew::FiniteDifference object.
+  </ul>
 
-
-<li> "Aztec %Preconditioner" - If an AztecOO preconditioner is used,
-the type of preconditioner can be set with the flag "Aztec
-Preconditioner" in the "Linear %Solver" sublist (defaults to
-ilu). Currently supported preconditioners and their corresponding
-parameters that can be set in the "Linear %Solver" sublist are shown
+<li> "Aztec %Preconditioner" - If the "Preconditioner" flag is set to "AztecOO" then the specific AztecOO preconditioner is specified with this flag.
+Currently supported preconditioners and their corresponding
+parameters that can be set are shown
 below (See the Aztec 2.1 manual for more information):
 
   <ul>
   <li> "ilu" with additional parameters:
   <ul>
-  <li> "Overlap" - defaults to 0.
-  <li> "Graph Fill" - defaults to 0.
+  <li> "Overlap" - defaults to 0.0
+  <li> "Graph Fill" - defaults to 0.0
   </ul> 
 
   <li> "ilut" with additional parameters:
   <ul>
-  <li> "Overlap" - defaults to 0.
-  <li> "Fill Factor" - defaults to 1.
+  <li> "Overlap" - defaults to 0.0
+  <li> "Fill Factor" - defaults to 1.0
   <li> "Drop Tolerance" - defaults to 1.0e-12
   </ul> 
 
@@ -299,11 +238,11 @@ options are valid:
   <li> "Enabled" 
   </ul>
 
-<li> "Use Adaptive Linear Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".
+<li> "Use Adaptive Linear Solve" - Enables the use of AztecOO's AdaptiveIterate() method instead of calling the Iterate() method.  This causes the preconditioning matrix to be modified to make the linear solves easier. AztecOO will attempt to solve the linear system multiple times now and if the solves are failing it will modify the preconditioner and try again.  Boolean value, defaults to false.  NOTE: This only works for internal Aztec preconditioners!  The "Preconditioning" parameter must be set to "AztecOO: Jacobian Matrix" or "AztecOO: User RowMatrix".  (NOTE: This parameter is currently NOT supported)
 
-<li> "Max Adaptive Solve Iterations" - Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.
+<li> "Max Adaptive Solve Iterations" - (integer) Maximum number of attempts that the linear solver will make when trying to solve a linear system. Defaults to 5.  (NOTE: This parameter is currently NOT supported)
 
-<li> "Zero Initial Guess" - boolean.  Zero out the initial guess for linear solves performed through applyJacobianInverse calls (i.e. zero out the result vector before the linear solve).  Defaults to false.
+<li> "Output Solver Details" - (boolean) Write the output sublist below to the parameter list after each linear solve. default is true.
 
 </ul>
 
@@ -357,9 +296,10 @@ public:
 		      NOX::EpetraNew::Scaling* scalingObject = 0);
 
   //! Constructor with a user supplied Jacobian Operator only.  
-  /*! Either there is no preconditioning or the Jacobian will be used
-    with an internal preconditioner.  linearSolverParams is 
-    the "Linear Solver" sublist of parameter NOX list.
+  /*! Either there is no preconditioning or the preconditioner will be 
+    used/created internally.  The Jacobian (if derived from an 
+    Epetra_RowMatrix class can be used with an internal preconditioner. 
+    See the parameter key "Preconditioner Operator" for more details.
    */
   LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
 		      NOX::Parameter::List& linearSolverParams, 
@@ -371,8 +311,9 @@ public:
 
   //! Constructor with a user supplied Preconditioner Operator only.  
   /*! Jacobian operator will be constructed internally based on the
-    parameter "Jacobian Operator".  Defaults to using a 
-    NOX::EpetraNew::MatrixFree object.
+    parameter "Jacobian Operator" in the parameter list.  See the 
+    parameter key "Jacobian Operator" for more details.  Defaults 
+    to using a NOX::EpetraNew::MatrixFree object.
    */
   LinearSystemAztecOO(NOX::Parameter::List& printingParams, 
 		      NOX::Parameter::List& linearSolverParams, 
@@ -403,27 +344,17 @@ public:
   virtual bool applyJacobianTranspose(const NOX::Epetra::Vector& input, 
 				      NOX::Epetra::Vector& result) const;
   
-  virtual bool applyJacobianInverse(NOX::Parameter::List &params, 
-				    const NOX::Epetra::Vector &input, 
-				    NOX::Epetra::Vector &result) const;
+  virtual bool applyJacobianInverse(NOX::Parameter::List& linearSolverParams, 
+				    const NOX::Epetra::Vector& input, 
+				    NOX::Epetra::Vector& result) const;
 
   virtual bool applyRightPreconditioning(bool useTranspose,
-					 NOX::Parameter::List& params, 
-					 const NOX::Epetra::Vector& input, 
-					 NOX::Epetra::Vector& result) const;
+				   NOX::Parameter::List& linearSolverParams, 
+				   const NOX::Epetra::Vector& input, 
+				   NOX::Epetra::Vector& result) const;
 
-  //virtual void getNormLastLinearSolveResidual(double & residual) const;
-
-  /*! 
-    \brief
-    Computes a precoditioning matrix based on the current solution
-    vector.  It then sets the correct preconditioning object (Operator
-    or Epetra_RowMatrix) in the AztecOO solver object.  The first
-    argument tells the method whether or not to enforce explicit
-    construction of the preconditioner so that it is saved for reuse.
-  */
   virtual bool createPreconditioner(Epetra_Vector& x, 
-				    NOX::Parameter::List& p,
+				    NOX::Parameter::List& linearSolverParams,
 				    bool recomputeGraph) const;
   
   /*! 
@@ -433,6 +364,9 @@ public:
     changes to reset the preconditioner.
   */
   virtual bool destroyPreconditioner() const;
+
+  //! Reset the linear solver parameters
+  virtual void reset(NOX::Parameter::List& linearSolverParams);
 
   //! Sets the diagonal scaling vector(s) used in scaling the linear system.  See NOX::EpetraNew::Scaling for details on how to specify scaling of the linear system.  
   void resetScaling(NOX::EpetraNew::Scaling& scalingObject);
@@ -454,12 +388,11 @@ public:
   //! Preconditioner Epetra_Operator accessor (only the base matrix if using an internal preconditioner - aztecoo or ifpack). 
   virtual const Epetra_Operator& getPrecOperator() const;
 
+  //virtual void getNormLastLinearSolveResidual(double & residual) const;
+
 protected:
 
-  //! Reset the linear solver parameters
-  virtual void reset(NOX::Parameter::List& linearSolverParams);
-
-  //! Set any required Aztec options.
+  //! Parse the parameter list and set the corresponding options in the AztecOO solver onject.
   virtual void setAztecOptions(const NOX::Parameter::List& lsParams, 
 			       AztecOO& aztec) const;
   
