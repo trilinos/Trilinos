@@ -12,25 +12,22 @@
   $Date$
   $Revision$
 >
-
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
 <DIV ALIGN=right>
 <H3>
-<IMG SRC="figures/ug_header.gif" ALT="Zoltan Developer's Guide">
-</H3></DIV>
+<IMG SRC="ug_header.gif" ALT="Zoltan Developer's Guide" ></H3></DIV>
 
 <H2>
 <A NAME="Load-Balancing Functions"></A>Load-Balancing Functions</H2>
 The following functions are the load-balancing interface functions in the
 Zoltan library; their descriptions are included below.
 <BLOCKQUOTE><B><A HREF="#LB_Set_Method">LB_Set_Method</A></B>
-<!--
-<BR><B><A HREF="#LB_Set_Tolerance">LB_Set_Tolerance</A></B>
--->
+<BR><B><A HREF="#LB_Set_Param">LB_Set_Param</A></B>
 <BR><B><A HREF="#LB_Balance">LB_Balance</A></B>
-<BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B></BLOCKQUOTE>
+<BR><B><A HREF="#LB_Free_Data">LB_Free_Data</A></B>
+<BR><B><A HREF="#LB_Destroy_Object">LB_Destroy_Object</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%"><A NAME="LB_Set_Method"></A>int <B>LB_Set_Method</B>(struct
 <B>LB_Struct</B> *<I> lb</I>, char * <I>string</I>);&nbsp;
@@ -38,6 +35,9 @@ Zoltan library; their descriptions are included below.
 technique should be used by the application.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
+</TR>
 
 <TR>
 <TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
@@ -57,18 +57,6 @@ and&nbsp;
 <BR>"NONE" (for no load-balancing).</BLOCKQUOTE>
 </TD>
 </TR>
-
-<!--  Following now obsolete
-<TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; params []&nbsp;</I></TD>
-
-<TD>Array used to set parameters for the load-balancing method. Default
-values are set by a call to <B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>.
-The application specifies desired parameters by overwriting the appropriate
-values of this array. See the individual algorithm descriptions in <A HREF="ug_alg.html#Algorithms">Algorithms</A>
-for descriptions of the parameters for each algorithm.</TD>
-</TR>
--->
 
 <TR>
 <TD><B>Returned Value:</B></TD>
@@ -95,36 +83,42 @@ for descriptions of the parameters for each algorithm.</TD>
 with default parameters is used.</TD>
 </TR>
 </TABLE>
-
-
-<!--
-<P>&nbsp;
-<P>
-<HR WIDTH="100%"><A NAME="LB_Set_Tolerance"></A>int <B>LB_Set_Tolerance</B>(struct
-LB_Struct * <I>lb</I>, double <I>tolerance</I>);&nbsp;
-<HR WIDTH="100%"><B>LB_Set_Tolerance</B> sets the tolerance to which the
-load-balancing algorithm should attempt to balance. For example, if the
-tolerance is set to 0.9, 10% load imbalance between the most heavily loaded
-processor and the average load will be accepted as balanced.
+&nbsp;
+<HR WIDTH="100%"><A NAME="LB_Set_Param"></A>int <B>LB_Set_Param</B>(struct
+<B>LB_Struct</B> *<I> lb</I>, char * <I>param_name</I>, char * <I>new_val</I>);&nbsp;
+<HR WIDTH="100%"><B>LB_Set_Param</B> is used to alter the value of one
+of the parameters used by Zoltan.&nbsp; All Zoltan parameter have reasonable
+default values, but this routine allows a user to provide alternative values
+if desired.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR>
 <TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
-
-<TD></TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
 
 <TD>The load-balancing object created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.</TD>
 </TR>
 
 <TR>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; tolerance</I></TD>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; param_name</I></TD>
 
-<TD>The allowable ratio of the average load per processor to the maximum
-load per processor.</TD>
+<TD>A string containing the name of the parameter to be altered.&nbsp;
+Note that the string is case-insensitive.&nbsp;
+<BR>Also, different load-balancing objects can have different parameter
+values.&nbsp;
+<BR>&nbsp;</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp; new_val</I></TD>
+
+<TD>A string containing the new value for the parameter.&nbsp; Possible
+stings include "3.154", "True", "7" or anything appropriate for the parameter
+being set.&nbsp; As above, the string is case-insensitive.&nbsp;
+<BR>&nbsp;</TD>
 </TR>
 
 <TR>
@@ -140,7 +134,7 @@ load per processor.</TD>
 </TR>
 
 <TR>
-<TD><B>Default:</B></TD>
+<TD></TD>
 
 <TD></TD>
 </TR>
@@ -148,15 +142,10 @@ load per processor.</TD>
 <TR>
 <TD></TD>
 
-<TD><I>tolerance </I>= 1.0; a perfect balance is attempted.</TD>
+<TD></TD>
 </TR>
 </TABLE>
--->
 
-
-<P>&nbsp;
-
-<P>
 <HR WIDTH="100%"><A NAME="LB_Balance"></A>int <B>LB_Balance</B>(struct
 <B>LB_Struct</B> * <I>lb</I>, int * <I>changes</I>, int * <I>num_import</I>,
 <B>LB_GID</B> ** <I>import_global_ids</I>, <B>LB_LID</B> ** <I>import_local_ids</I>,
@@ -260,9 +249,7 @@ IDs of processors that will own the exported objects in the new decomposition
 <TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
 </TR>
 </TABLE>
-
-
-<P>&nbsp;
+&nbsp;
 
 <P>
 <HR WIDTH="100%"><A NAME="LB_Free_Data"></A>int <B>LB_Free_Data</B>(<B>LB_GID</B>
@@ -329,12 +316,35 @@ objects in the new decomposition (i.e., the destination processors).</TD>
 <TR>
 <TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; int</TD>
 
-<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.</TD>
+<TD><A HREF="ug_interface.html#Error Codes">Error code</A>.
+<BR>&nbsp;</TD>
 </TR>
 </TABLE>
 
+<HR WIDTH="100%">
+<A NAME="LB_Destroy_Object"></A>int <B>LB_Destroy_Object</B>
+(struct <B>LB_Struct</B> ** <I>lb</I>);&nbsp;
+<HR WIDTH="100%">
+<B>LB_Destroy_Object</B> frees the memory associated with
+a load balancing object and sets the object to NULL.
+<BR>&nbsp;
+<TABLE WIDTH="100%" >
+<TR>
+<TD VALIGN=TOP WIDTH="20%"><B>Parameters:</B></TD>
 
-<P>&nbsp;
+<TD></TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+
+<TD>A pointer to the address of the load-balancing object,
+created by <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>,
+to be destroyed.
+</TR>
+
+</TABLE>
+&nbsp;
 
 <P>
 <HR WIDTH="100%">[<A HREF="ug.html">Table of Contents</A>&nbsp; |&nbsp;

@@ -169,9 +169,10 @@ Upon return, all array values are set to a default value.</TD>
 
 
 <P>
-<HR WIDTH="100%"><A NAME="LB_Set_Fn"></A>int <B>LB_Set_Fn</B>(struct <B>LB_Struct
-</B>* <I>lb,</I><B>LB_FN_TYPE</B><I>fn_type</I>, void * <I>fn_ptr</I>(),
-void *<I>data</I>);&nbsp;
+<HR WIDTH="100%"><A NAME="LB_Set_Fn">
+  </A>int <B>LB_Set_Fn</B> (struct <B>LB_Struct </B>* <I>lb, 
+  </I><B>LB_FN_TYPE</B> <I>fn_type</I>, void * <I>fn_ptr</I>(),
+  void *<I>data</I>);&nbsp;
 <HR WIDTH="100%"><B>LB_Set_Fn</B> registers an application-supplied query
 function in the load-balancing library. Both load-balancing and migration-help
 functions are registered through calls to <B>LB_Set_Fn</B> .

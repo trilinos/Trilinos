@@ -36,7 +36,11 @@ splitting algorithm until the number of sub-regions equals the number of
 processors. Although this algorithm was first devised to cut into a number
 of sets which is a power of two, the set sizes in a particular cut needn't
 be equal. By adjusting the partition sizes appropriately, any number of
-equally-sized sets can be created.
+equally-sized sets can be created.  If the parallel machine has processors
+with different speeds, unequally-sized sets can also be easily generated.
+The Zoltan implementation of RCB has several parameters which can be
+modified by the
+<B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B> function.
 <BR>&nbsp;
 <BR>&nbsp;
 <TABLE WIDTH="100%" NOSAVE >
@@ -69,12 +73,28 @@ the current RCB invocation.&nbsp;
 <BR>0 = don't use previous cuts; 1 = use previous cuts.</TD>
 </TR>
 
-<TR NOSAVE>
+<TR>
 <TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_WGTFLAG</I></TD>
 
 <TD>Flag to indicate whether to use object weights in the RCB computation.&nbsp;
 <BR>0 = don't use object weights; 1 = use object weights.</TD>
 </TR>
+
+<TR>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_CHECK</I></TD>
+
+<TD>Flag controlling the invocation of input and outpur error checking.&nbsp;
+<BR>0 = don't do checking; 1 = do checking.</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP NOSAVE>&nbsp;&nbsp;<I> RCB_STATS</I></TD>
+
+<TD>Flag controlling the amount of timing and diagnostic output the routine
+produces.&nbsp;
+<BR>0 = no output; 1 = print summary; 2 = print data for each processor.</TD>
+</TR>
+
 
 <TR>
 <TD VALIGN=TOP><B>Default:</B></TD>
@@ -94,10 +114,22 @@ the current RCB invocation.&nbsp;
 <TD><I>RCB_REUSE</I> = 0</TD>
 </TR>
 
-<TR NOSAVE>
-<TD VALIGN=TOP NOSAVE></TD>
+<TR>
+<TD></TD>
 
 <TD><I>RCB_WGTFLAG</I> = 0</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>RCB_CHECK</I> = 1</TD>
+</TR>
+
+<TR>
+<TD></TD>
+
+<TD><I>RCB_STATS</I> = 0</TD>
 </TR>
 
 <TR>
