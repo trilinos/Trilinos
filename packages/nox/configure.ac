@@ -851,16 +851,31 @@ AM_CONDITIONAL(BUILD_LIBNOXPETSC, test X${BUILD_LIBNOXPETSC} = Xyes)
 AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
 
 # ------------------------------------------------------------------------
-# LOCA Stuff
+# LOCA Library Check
 # ------------------------------------------------------------------------
+
 AC_ARG_ENABLE(loca,
-[  --enable-loca           enable loca],
-[BUILD_LOCA=${enableval}],
-[BUILD_LOCA=no]
+[  --enable-loca         compile the loca library],
+[BUILD_LIBLOCA=${enableval}],
+[BUILD_LIBLOCA=no]
 )
-AC_MSG_CHECKING(whether debugging is on)
-AC_MSG_RESULT([${DEBUG}])
-AM_CONDITIONAL(BUILD_LOCA, test X${BUILD_LOCA} = Xyes)
+AC_MSG_CHECKING(whether we should build the loca library)
+AC_MSG_RESULT([${BUILD_LIBLOCA}])
+AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
+
+# ------------------------------------------------------------------------
+# LOCA-Epetra Library Check
+# ------------------------------------------------------------------------
+
+AC_ARG_ENABLE(loca-epetra,
+[  --enable-loca-epetra      compile the locaepetra library],
+[BUILD_LIBLOCAEPETRA=${enableval}],
+[BUILD_LIBLOCAEPETRA=no]
+)
+
+AC_MSG_CHECKING(whether we should build the locaepetra library)
+AC_MSG_RESULT([${BUILD_LIBLOCAEPETRA}])
+AM_CONDITIONAL(BUILD_LIBLOCAEPETRA, test X${BUILD_LIBLOCAEPETRA} = Xyes)
 
 # ------------------------------------------------------------------------
 # Checks for types
