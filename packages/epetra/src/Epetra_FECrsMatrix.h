@@ -137,11 +137,11 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(int numIndices, const int* indices,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Sum a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix, adding them to any coefficients that
@@ -157,12 +157,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(int numRows, const int* rows,
                            int numCols, const int* cols,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Sum C-style table (double-pointer, or list of lists) of coefficients
        into the matrix, adding them to any coefficients that
@@ -214,11 +214,11 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int InsertGlobalValues(int numIndices, const int* indices,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix.
@@ -233,12 +233,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int InsertGlobalValues(int numRows, const int* rows,
                            int numCols, const int* cols,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a C-style table (double-pointer, or list of lists) of coefficients
        into the matrix.
@@ -289,11 +289,11 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(int numIndices, const int* indices,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Copy Fortran-style table (single-dimensional packed-list) of coefficients
        into the matrix, replacing any coefficients that
@@ -310,12 +310,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        @param format Specifies whether the data in 'values' is packed in
        column-major or row-major order. Valid values are
        Epetra_FECrsMatrix::ROW_MAJOR or Epetra_FECrsMatrix::COLUMN_MAJOR. This
-       is an optional parameter, default value is ROW_MAJOR.
+       is an optional parameter, default value is COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(int numRows, const int* rows,
                            int numCols, const int* cols,
                            const double* values,
-                           int format=Epetra_FECrsMatrix::ROW_MAJOR);
+                           int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Copy C-style table (double-pointer, or list of lists) of coefficients
        into the matrix, replacing any coefficients that
@@ -362,10 +362,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.M() and values.N().
 
        @param values Sub-matrix of coefficients. Must be square.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Sum a general sub-matrix into the global matrix.
        For square structurally-symmetric sub-matrices, see the other
@@ -378,11 +380,13 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.N().
 
        @param values Sub-matrix of coefficients.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int SumIntoGlobalValues(const Epetra_IntSerialDenseVector& rows,
 			   const Epetra_IntSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a square structurally-symmetric sub-matrix into the global matrix.
        For non-square sub-matrices, see the other overloading of this method.
@@ -391,10 +395,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.M() and values.N().
 
        @param values Sub-matrix of coefficients. Must be square.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int InsertGlobalValues(const Epetra_IntSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Insert a general sub-matrix into the global matrix.
        For square structurally-symmetric sub-matrices, see the other
@@ -407,11 +413,13 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.N().
 
        @param values Sub-matrix of coefficients.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int InsertGlobalValues(const Epetra_IntSerialDenseVector& rows,
 			   const Epetra_IntSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Use a square structurally-symmetric sub-matrix to replace existing
        values in the global matrix.
@@ -421,10 +429,12 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.M() and values.N().
 
        @param values Sub-matrix of coefficients. Must be square.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& indices,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Use a general sub-matrix into the global matrix to replace existing
        values.
@@ -438,11 +448,13 @@ class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
        as values.N().
 
        @param values Sub-matrix of coefficients.
+
+       @param format Optional format specifier, defaults to COLUMN_MAJOR.
    */
    int ReplaceGlobalValues(const Epetra_IntSerialDenseVector& rows,
 			   const Epetra_IntSerialDenseVector& cols,
 			   const Epetra_SerialDenseMatrix& values,
-			   int format=Epetra_FECrsMatrix::ROW_MAJOR);
+			   int format=Epetra_FECrsMatrix::COLUMN_MAJOR);
 
    /** Gather any overlapping/shared data into the non-overlapping partitioning
       defined by the Map that was passed to this matrix at construction time.

@@ -640,3 +640,93 @@ int four_quads(const Epetra_Comm& Comm, bool preconstruct_graph, bool verbose)
 
   return(0);
 }
+
+int submatrix_formats(const Epetra_Comm& Comm, bool verbose)
+{
+  //
+  //This function simply verifies that the ROW_MAJOR/COLUMN_MAJOR switch works.
+  //
+  int numProcs = Comm.NumProc();
+  int myPID = Comm.MyPID();
+
+  int numLocalElements = 3;
+  int numGlobalElements = numLocalElements*numProcs;
+  int indexBase = 0;
+
+  Epetra_Map map(numGlobalElements, numLocalElements, indexBase, Comm);
+
+  Epetra_FECrsMatrix A(Copy, map, numLocalElements);
+
+  Epetra_IntSerialDenseVector epetra_indices(numLocalElements);
+
+  int firstGlobalElement = numLocalElements*myPID;
+
+  int i, j;
+  for(i=0; i<numLocalElements; ++i) {
+    epetra_indices[i] = firstGlobalElement+i;
+  }
+
+  Epetra_SerialDenseMatrix submatrix(numLocalElements, numLocalElements);
+
+  for(i=0; i<numLocalElements; ++i) {
+    for(j=0; j<numLocalElements; ++j) {
+      submatrix(i,j) = 1.0*(firstGlobalElement+i);
+    }
+  }
+
+  EPETRA_CHK_ERR( A.InsertGlobalValues(epetra_indices, submatrix) );
+
+  EPETRA_CHK_ERR( A.GlobalAssemble() );
+
+  int len = 20;
+  int numIndices;
+  int* indices = new int[len];
+  double* coefs = new double[len];
+
+  for(i=0; i<numLocalElements; ++i) {
+    int row = firstGlobalElement+i;
+
+    EPETRA_CHK_ERR( A.ExtractGlobalRowCopy(row, len, numIndices,
+					   coefs, indices) );
+
+    for(j=0; j<numIndices; ++j) {
+      if (coefs[j] != 1.0*row) {
+	return(-2);
+      }
+    }
+  }
+
+  //now reset submatrix (transposing the i,j indices)
+
+  for(i=0; i<numLocalElements; ++i) {
+    for(j=0; j<numLocalElements; ++j) {
+      submatrix(j,i) = 1.0*(firstGlobalElement+i);
+    }
+  }
+
+  //sum these values into the matrix using the ROW_MAJOR switch, which should
+  //result in doubling what's already there from the above Insert operation.
+
+  EPETRA_CHK_ERR( A.SumIntoGlobalValues(epetra_indices, submatrix,
+					Epetra_FECrsMatrix::ROW_MAJOR) );
+
+  EPETRA_CHK_ERR( A.GlobalAssemble() );
+
+  for(i=0; i<numLocalElements; ++i) {
+    int row = firstGlobalElement+i;
+
+    EPETRA_CHK_ERR( A.ExtractGlobalRowCopy(row, len, numIndices,
+					   coefs, indices) );
+
+    for(j=0; j<numIndices; ++j) {
+      if (coefs[j] != 2.0*row) {
+	return(-3);
+      }
+    }
+  }
+
+  delete [] indices;
+  delete [] coefs;
+
+  return(0);
+}
