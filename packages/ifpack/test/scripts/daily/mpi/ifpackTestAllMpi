@@ -92,13 +92,13 @@ foreach f (CrsRiluk IlukGraph)
 	foreach g(*.exe)
 		echo "############" $g "##############" >>& ../$file
 		if( "$2" == "True" ) then
-		    ( mpirun -np 5 $g > ../$file3 ) >>& ../$file4
+		    ( mpirun -np 3 $g > ../$file3 ) >>& ../$file4
 		    if(! -z ../$file4 ) then
 		    # A test failed.
 			set AnError = True
 			echo "  ******** Test failed ********" >>& ../$file
 			echo "############" $g "##############" >>& ../$file2
-			mpirun -np 5 $g -v >>& ../$file2
+			mpirun -np 3 $g -v >>& ../$file2
 			cat ../$file4 >> ../$file
 			rm -f ../$file4
 		    else
@@ -108,7 +108,7 @@ foreach f (CrsRiluk IlukGraph)
 		    endif
 		else
 		# This is not an automated test.
-		    mpirun -np 5 $g -v >>& ../$file
+		    mpirun -np 3 $g -v >>& ../$file
 		endif
 	end
 	cd ..
