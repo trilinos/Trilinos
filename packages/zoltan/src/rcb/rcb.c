@@ -98,9 +98,13 @@ int LB_rcb(
   LB_LID **import_local_ids,  /* Returned value:  array of local IDs for
                                  non-local objects in this processor's new
                                  decomposition.                              */
-  int **import_procs          /* Returned value:  array of processor IDs for
+  int **import_procs,         /* Returned value:  array of processor IDs for
                                  processors owning the non-local objects in
                                  this processor's new decomposition.         */
+  int *num_export,            /* Not computed, set to -1 */
+  LB_GID **export_global_ids, /* Not computed. */
+  LB_LID **export_local_ids,  /* Not computed. */
+  int **export_procs          /* Not computed. */
 )
 {
     /* Wrapper routine to set parameter values and call the real rcb. */
@@ -135,6 +139,8 @@ int LB_rcb(
     stats = RCB_STATS;
 
     LB_Assign_Param_Vals(lb->Params, RCB_params);
+
+    *num_export = -1;  /* We don't compute the export map. */
 
     return(rcb(lb, num_import, import_global_ids, import_local_ids,
 		 import_procs, overalloc, reuse, wgtflag, check,
