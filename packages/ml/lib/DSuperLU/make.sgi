@@ -31,8 +31,8 @@ ARCH         = ar
 ARCHFLAGS    = cr
 RANLIB       = echo
 
-CC           = cc
-CFLAGS       = -O2
+CC           = cc -r10000 -64
+CFLAGS       = -O2 -r10000 -64
 LOADER       = cc
 LOADOPTS     =
 #

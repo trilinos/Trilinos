@@ -2,6 +2,7 @@ ARCH_FLAGS=-O3 -DUSE_VENDOR_BLAS -DML_S_CMP_FUNC -DML_S_COPY_FUNC -DML_DGETRF_FU
 CC=pgcc -cougar -Mframe -O2 -Knoieee -Mnovintr -Mnostreamall -Mxp
 FC=pgf77 -cougar -Mframe -O2 -Knoieee -Mnovintr -Mnostreamall -Mxp
 LINKER=$(CC)
-ARCH_LIBS= -lm -lkmath -lcmplx -lf
+ARCH_LIBS= -lm -lcsmath -lcmplx -lf
 AR=xar
 RANLIB=touch
+

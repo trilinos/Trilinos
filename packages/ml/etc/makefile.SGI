@@ -3,7 +3,8 @@ FC=f77
 ARCH_FLAGS=-O2 -r10000 -64 -DML_D_SIGN_FUNC -DML_POW_DI_FUNC -DML_S_CMP_FUNC -DML_S_COPY_FUNC
 LINKER=$(FC)
 RANLIB=touch
-#ARCH_LIBS=-lcomplib.sgimath
+ARCH_LIBS=-lcomplib.sgimath
+#ARCH_LIBS=-lcomplib.sgimath /Net/pecos/rf_crew/arch/sgi10k/lib/liby12m.a
 AR=ar
 
 

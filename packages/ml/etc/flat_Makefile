@@ -89,4 +89,4 @@ include ../etc/depends.ml
 
 clean:
 	@echo "junk" > dummy.o
-	@rm -f *.o libml.a $(APPLICATION) core ml_example1d ml_example2d ml_example3d ml_readex mlguide
+	@rm -f *.o libml.a $(APPLICATION) core ml_example1d ml_example2d ml_example3d ml_readex mlguide mlguide_par
