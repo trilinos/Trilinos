@@ -94,6 +94,7 @@ F77 = @F77@
 FLIBS = @FLIBS@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LAPACK_LIBS = @LAPACK_LIBS@
+MAINT = @MAINT@
 MPI_CC_EXISTS = @MPI_CC_EXISTS@
 MPI_CXX_EXISTS = @MPI_CXX_EXISTS@
 MPI_F77_EXISTS = @MPI_F77_EXISTS@
@@ -478,10 +479,10 @@ all: AztecOO_config.h
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp .f .o .obj
-$(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  src/Makefile
-Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
+Makefile: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && \
 	  CONFIG_HEADERS= CONFIG_LINKS= \
 	  CONFIG_FILES=$(subdir)/$@ $(SHELL) ./config.status
@@ -497,7 +498,7 @@ stamp-h: $(srcdir)/AztecOO_config.h.in $(top_builddir)/config.status
 	  && CONFIG_FILES= CONFIG_HEADERS=src/AztecOO_config.h:src/AztecOO_config.h.in \
 	     $(SHELL) ./config.status
 	@mv stamp-hT stamp-h
-$(srcdir)/AztecOO_config.h.in:  $(srcdir)/./stamp-h.in
+$(srcdir)/AztecOO_config.h.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/./stamp-h.in
 	@if test ! -f $@; then \
 		rm -f $(srcdir)/./stamp-h.in; \
 		$(MAKE) $(srcdir)/./stamp-h.in; \

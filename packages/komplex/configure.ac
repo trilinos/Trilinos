@@ -57,6 +57,17 @@ AC_CONFIG_AUX_DIR(config)
 
 AM_CONFIG_HEADER(src/Komplex_config.h:src/Komplex_config.h.in)
 
+# AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
+# default, and changes configure to understand a
+# --enable-maintainer-mode option. --enable-maintainer-mode turns the
+# maintainer-only targets back on. The maintainer-only makefile
+# targets permit end users to clean automatically-generated files such
+# as configure, which means they have to have autoconf and automake
+# installed to repair the damage. AM_MAINTAINER_MODE makes it a bit
+# harder for users to shoot themselves in the foot.
+
+AM_MAINTAINER_MODE
+
 # Define $build, $host, $target, etc
 
 AC_CANONICAL_TARGET
