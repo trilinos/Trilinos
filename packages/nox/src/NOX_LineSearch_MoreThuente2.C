@@ -38,6 +38,8 @@
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
+#include "NOX_Parameter_MeritFunction.H"
+#include "NOX_Parameter_UserNorm.H"
 #include "NOX_Utils.H"
 
 NOX::LineSearch::MoreThuente2::MoreThuente2(const NOX::Utils& u, Parameter::List& params) :
@@ -91,6 +93,24 @@ bool NOX::LineSearch::MoreThuente2::reset(Parameter::List& params)
   }
   useOptimizedSlopeCalc = p.getParameter("Optimize Slope Calculation", false);
 
+  // Check for a user supplied norm
+  userDefinedNorm = false;
+  userNormPtr = 0;
+  if (p.isParameterArbitrary("User Defined Norm")) {
+    userNormPtr = const_cast<NOX::Parameter::UserNorm*>(dynamic_cast<const NOX::Parameter::UserNorm*>(&(p.getArbitraryParameter("User Defined Norm"))));
+    if (userNormPtr != 0)
+      userDefinedNorm = true;
+  }
+
+  // Check for a user supplied merit function
+  userDefinedMeritFunction = false;
+  meritFuncPtr = 0;
+  if (p.isParameterArbitrary("Merit Function")) {
+    meritFuncPtr = const_cast<NOX::Parameter::MeritFunction*>(dynamic_cast<const NOX::Parameter::MeritFunction*>(&(p.getArbitraryParameter("Merit Function"))));  
+    if (meritFuncPtr != 0)
+      userDefinedMeritFunction = true;
+  }
+
   return true;
 }
 
@@ -127,8 +147,15 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
 
   // Compute the initial gradient in the search direction and check
   // that s is a descent direction.
-
-  double dginit = slope.computeSlope(dir, oldgrp);
+  double dginit = 0.0;
+  if (useOptimizedSlopeCalc)
+    dginit = slope.computeSlopeWithOutJac(dir, oldgrp);
+  else {
+    if (userDefinedMeritFunction)
+      dginit = meritFuncPtr->computeSlope(dir, oldgrp);
+    else
+      dginit = slope.computeSlope(dir, oldgrp);
+  }
 
   if (dginit >= 0.0) 
   {
@@ -146,10 +173,16 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
   bool brackt = false;		// has the soln been bracketed?
   bool stage1 = true;		// are we in stage 1?
   int nfev = 0;			// number of function evaluations
-  double finit = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); // initial function value
   double dgtest = ftol * dginit; // f for curvature condition
   double width = stpmax - stpmin; // interval width
   double width1 = 2 * width;	// ???
+
+  // initial function value
+  double finit = 0.0;
+  if (userDefinedMeritFunction)
+    finit = meritFuncPtr->computef(oldgrp);
+  else
+    finit = 0.5 * oldgrp.getNormF() * oldgrp.getNormF(); 
 
   // The variables stx, fx, dgx contain the values of the step,
   // function, and directional derivative at the best step.  The
@@ -225,7 +258,11 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
       throw "NOX Error";
     }
 
-    double f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
+    double f = 0.0;
+    if (userDefinedMeritFunction)
+      f = meritFuncPtr->computef(newgrp);
+    else
+      f = 0.5 * newgrp.getNormF() * newgrp.getNormF();
 
     if (!useOptimizedSlopeCalc) {
 
@@ -248,16 +285,25 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
     string message = "";
 
     double dg = 0.0;
-    if (useOptimizedSlopeCalc)
-      dg = slope.computeSlopeWithOutJac(dir, newgrp);
-    else 
-      dg = slope.computeSlope(dir, newgrp);
+    if (userDefinedMeritFunction) {
+      dg = meritFuncPtr->computeSlope(dir, newgrp);
+    }
+    else {
+      if (useOptimizedSlopeCalc)
+	dg = slope.computeSlopeWithOutJac(dir, newgrp);
+      else 
+	dg = slope.computeSlope(dir, newgrp);
+    }
 
     // Armijo-Goldstein sufficient decrease
     double ftest1 = finit + stp * dgtest;
 
-    // Ared/Pred suffiecient decrease
-    double ftest2 = oldgrp.getNormF() * (1.0 - ftol * (1.0 - eta));
+    // Ared/Pred suffiecient decrease (could use a user defined norm)
+    double ftest2 = 0.0;
+    if (userDefinedNorm)
+      ftest2 = userNormPtr->norm(oldgrp.getF()) * (1.0 - ftol * (1.0 - eta));
+    else 
+      ftest2 = oldgrp.getNormF() * (1.0 - ftol * (1.0 - eta));
 
     // Test for convergence.
 
@@ -284,8 +330,15 @@ int NOX::LineSearch::MoreThuente2::cvsrch(Abstract::Group& newgrp, double& stp,
     bool sufficientDecreaseTest = false;
     if (suffDecrCond == ArmijoGoldstein)
       sufficientDecreaseTest = (f <= ftest1);  // Armijo-Golstein
-    else
-      sufficientDecreaseTest = (newgrp.getNormF() <= ftest2); // Ared/Pred
+    else {
+      double ap_normF = 0.0;
+      if (userDefinedNorm)
+	ap_normF = userNormPtr->norm(newgrp.getF());
+      else
+	ap_normF = newgrp.getNormF();
+
+      sufficientDecreaseTest = (ap_normF <= ftest2); // Ared/Pred
+    }
 
     if ((sufficientDecreaseTest) && (fabs(dg) <= gtol*(-dginit))) 
       info = 1;			// Success!!!!

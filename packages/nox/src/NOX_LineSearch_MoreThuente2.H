@@ -41,10 +41,18 @@
 #include "NOX_LineSearch_Utils_Counters.H"  // data class member
 #include "NOX_LineSearch_Utils_Slope.H"  // data class member
 
+// Forward Declarations
+namespace NOX{
+  namespace Parameter {
+    class UserNorm;
+    class MeritFunction;
+  }
+}
+
 namespace NOX {
 namespace LineSearch {
 
-//! More'-Thuente Line Search modified by Roger Pawlowski.  This is a PRERELEASE version that has been slightly optimized and also supports Homer Walker's work on adjustable forcing terms and Ared/Pred conditions.
+//! More'-Thuente Line Search modified by Roger Pawlowski.  This is a PRERELEASE version that has been slightly optimized and also supports Homer Walker's work on adjustable forcing terms and Ared/Pred conditions.  It also allows for arbitrary merit functions and norms to be supplied by the user.
 /*!
 
   This code is based on the More'-Thuente line search from the 1983
@@ -53,11 +61,13 @@ namespace LineSearch {
   search. The original comments are preserved in the descriptions of
   the individual subroutines. What follows is an updated summary.
 
-  The function we are minimizing is given by
+  The merit function we are minimizing is given by
 
   \f[
   f(x) = 0.5 \|F(x)\|^2
   \f]
+
+  (alternatively the user can define this)
 
   The purpose of the More'-Thuente line search is to find a step which
   satisfies a sufficient decrease condition and a curvature condition.
@@ -107,6 +117,7 @@ namespace LineSearch {
   1. Added the option to use Ared/Pred conditions as describe in Homer Walker's papers.
   2. Added support to use an adjustable forcing term as describe in Homer Walker's papers.
   3. Added the option to use directional derivatives in computing the slope instead of explicitly computing the Jacobian.  This eliminates the need to recompute the Jacobian at each inner iteration of the More'-Thuente algorithm.
+  4. Added the ability to use the NOX::Parameter::UserNorm and NOX::Parameter::MeritFunction objects to supply user defined norms and merit functions to the line search.
 
   <B> Implementation </B> <br>
   This line search can be called via NOX::LineSearch::Manager.
@@ -119,7 +130,7 @@ namespace LineSearch {
  
   - "Sufficient Decrease Condition" - Choice to use for the sufficient decrease condition. Options are "Ared/Pred" or "Armijo-Goldstein" (defaults to "Armijo-Goldstein").<br>
   1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
-  2. "Ared/Pred" conditions: \f$ F(x_{n-1}+ \lambda s) \le  F(x_{n-1})(1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
+  2. "Ared/Pred" conditions: \f$ \| F(x_{n-1}+ \lambda s) \| \le \| F(x_{n-1}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
 
   - "Sufficient Decrease" - The ftol in the sufficient decrease
     condition (defaults to 1.0e-4)
@@ -129,6 +140,15 @@ namespace LineSearch {
 
   - "Optimize Slope Calculation" - Boolean value.  If set to true the value of \f$ s^TJ^TF \f$ is estimated using a directional derivative in a call to NOX::LineSearch::Common::computeSlopeWithOutJac.  If false the slope computation is computed with the NOX::LineSearch::Common::computeSlope method.  Setting this to true eliminates having to compute the Jacobian at each inner iteration of the More'-Thuente line search (defaults to false).  
 
+  - "User Defined Norm" - The user can redefine the norm that is used in the 
+    Ared/Pred sufficient decrease condition by supplying a 
+    NOX::Parameter::UserNorm derived object in the parameter list with 
+    this key.
+
+  - "Merit Function" - The user can supply their own merit function to the
+    line search by supplying a NOX::Parameter::MeritFunction derived object
+    with this key.
+    
   - "Interval Width" - The maximum width of the interval containing
     the minimum of the modified function (defaults to 1.0e-15)
 
@@ -449,6 +469,18 @@ private:
 
   //! If set to true the value of \f$ s^TJ^Tf \f$ is estimated using a directional derivative.  This eliminates having to compute the Jacobian at each inner iteration of the line search.  
   bool useOptimizedSlopeCalc;
+
+  //! Set to true if the user supplied their own definition of the norm through the parameter list using a NOX::Parameter::UserNorm derived class.
+  bool userDefinedNorm;
+
+  //! Set to true if the user supplied their own definition of the merit function through the parameter list using a NOX::Parameter::MeritFunction derived class.
+  bool userDefinedMeritFunction;
+
+  //! Stores a user defined norm.
+  NOX::Parameter::UserNorm* userNormPtr;
+
+  //! Stores a user defined merit function.
+  NOX::Parameter::MeritFunction* meritFuncPtr;
 
 };
 } // namespace LineSearch
