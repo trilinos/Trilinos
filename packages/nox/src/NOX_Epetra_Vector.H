@@ -33,10 +33,10 @@
 #ifndef NOX_EPETRA_VECTOR_H
 #define NOX_EPETRA_VECTOR_H
 
-#include "NOX_Abstract_Vector.H"	// Base Class
+#include "NOX_Abstract_Vector.H" // base class
 
-// External include from Trilinos
-#include "Epetra_Vector.h"
+// Forward declaration
+class Epetra_Vector;
 
 namespace NOX {
 

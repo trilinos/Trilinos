@@ -33,11 +33,17 @@
 #ifndef NOX_SOLVER_GENERIC_H
 #define NOX_SOLVER_GENERIC_H
 
-#include "NOX_Common.H"
-#include "NOX_Parameter_List.H"	
-#include "NOX_Abstract_Group.H"	
-#include "NOX_Status_Test.H" 
-#include "NOX_Utils.H"
+#include "NOX_Status_Test.H" 	// for NOX::StatusType
+
+// Forward declarations
+namespace NOX {
+namespace Parameter {
+class List;
+}
+namespace Abstract {
+class Group;
+}
+}
 
 namespace NOX {
 

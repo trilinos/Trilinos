@@ -33,8 +33,8 @@
 #ifndef NOX_STATUS_TEST_H
 #define NOX_STATUS_TEST_H
 
-#include "NOX_Common.H"
-#include "NOX_Utils.H"
+// Forward declaration
+class ostream;
 
 namespace NOX {
 
@@ -70,8 +70,6 @@ public:
 
 } // namespace Solver
 } // namespace NOX
-
-#include "NOX_Solver_Generic.H"
 
 #endif
 

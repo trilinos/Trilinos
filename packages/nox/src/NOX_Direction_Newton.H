@@ -34,7 +34,7 @@
 #define NOX_DIRECTION_NEWTON_H
 
 #include "NOX_Direction_Generic.H" // base class
-#include "NOX_Parameter_List.H"
+#include "NOX_Parameter_List.H"	   // class data element 
 
 namespace NOX {
 namespace Direction {

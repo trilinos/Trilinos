@@ -33,9 +33,9 @@
 #ifndef NOX_EPETRA_INTERFACE_H
 #define NOX_EPETRA_INTERFACE_H
   
-// External Includes from Trilinos
-#include "Epetra_Vector.h"
-#include "Epetra_RowMatrix.h"
+// Forward declarations
+class Epetra_Vector;
+class Epetra_RowMatrix;
 
 namespace NOX {
 namespace Epetra {

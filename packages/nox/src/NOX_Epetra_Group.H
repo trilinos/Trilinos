@@ -33,12 +33,20 @@
 #ifndef NOX_EPETRA_GROUP_H
 #define NOX_EPETRA_GROUP_H
 
-#include "NOX_Abstract_Group.H"		// base class
-#include "NOX_Epetra_Vector.H"
-#include "NOX_Epetra_Interface.H"
-#include "NOX_Epetra_SharedJacobian.H"
-#include "NOX_Epetra_LinearOperator.H"
-#include "NOX_Parameter_List.H"
+#include "NOX_Abstract_Group.H"	// base class
+#include "NOX_Epetra_Vector.H"	// class data element
+
+// Forward declares
+namespace NOX {
+namespace Epetra {
+class Interface;
+class SharedJacobian;
+class LinearOperator;
+}
+namespace Parameter {
+class List;
+}
+}
 
 namespace NOX {
 namespace Epetra {

@@ -30,7 +30,9 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Common.H"
 #include "NOX_Utils.H"
+#include "NOX_Parameter_List.H"
 
 int NOX::Utils::precision = 3;
 int NOX::Utils::myPID = 0;

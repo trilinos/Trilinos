@@ -11,10 +11,8 @@
 #ifndef _NOX_SOLVER_MANAGER_H
 #define _NOX_SOLVER_MANAGER_H
 
-#include "NOX_Solver_Generic.H"		// base class
-
-#include "NOX_Status_Test.H"
-
+#include "NOX_Solver_Generic.H"	// base class
+#include "NOX_Common.H"		// class data element (string)
 namespace NOX {
 namespace Solver{
 

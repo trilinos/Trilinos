@@ -31,6 +31,7 @@
 //@HEADER
 
 #include "NOX_Epetra_Vector.H"
+#include "Epetra_Vector.h"
 
 using namespace NOX;
 using namespace NOX::Epetra;

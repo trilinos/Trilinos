@@ -1,5 +1,4 @@
-#include <iostream>
-#include <cmath>
+#include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"

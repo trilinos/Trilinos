@@ -33,8 +33,8 @@
 #ifndef NOX_PETRA_SHARED_JACOBIAN_H
 #define NOX_PETRA_SHARED_JACOBIAN_H
 
-// External include from Trilinos
-#include "Epetra_CrsMatrix.h"
+class Epetra_CrsMatrix;
+class Epetra_RowMatrix;
 
 namespace NOX {
 namespace Epetra {

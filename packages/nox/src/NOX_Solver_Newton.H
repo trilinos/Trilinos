@@ -34,8 +34,9 @@
 #define NOX_SOLVER_NEWTON_H
 
 #include "NOX_Solver_Generic.H"	    // base class
-#include "NOX_Linesearch_Manager.H" // line search
-#include "NOX_Direction_Manager.H" // line search
+#include "NOX_Linesearch_Manager.H" // class data element
+#include "NOX_Direction_Manager.H"  // class data element
+#include "NOX_Parameter_List.H"	    // class data element
 
 namespace NOX {
 namespace Solver {

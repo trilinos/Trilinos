@@ -33,11 +33,15 @@
 #ifndef NOX_LINESEARCH_GENERIC_H
 #define NOX_LINESEARCH_GENERIC_H
 
-#include "NOX_Common.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Parameter_List.H"
-#include "NOX_Utils.H"
+namespace NOX {
+namespace Abstract {
+class Vector;
+class Group;
+}
+namespace Parameter {
+class List;
+}
+}
 
 namespace NOX {
 namespace Linesearch {

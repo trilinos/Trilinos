@@ -30,6 +30,7 @@
 // ************************************************************************
 //@HEADER
 
+#include "NOX_Common.H"
 #include "NOX_Direction_SteepestDescent.H" // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"

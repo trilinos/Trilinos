@@ -34,6 +34,8 @@
 #define NOX_LINESEARCH_MANAGER_H
 
 #include "NOX_Linesearch_Generic.H" // base class
+#include "NOX_Common.H"		    // class data element (string)
+
 
 namespace NOX {
 namespace Linesearch {

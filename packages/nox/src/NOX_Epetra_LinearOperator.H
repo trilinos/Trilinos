@@ -11,16 +11,23 @@
 #ifndef _NOX_LINEAR_OPERATOR_H
 #define _NOX_LINEAR_OPERATOR_H
 
-#include "NOX_Parameter_List.H"
-#include "NOX_Epetra_SharedJacobian.H"
-#include "NOX_Epetra_Interface.H"
-#include "NOX_Epetra_MatrixFree.H"
-#include "NOX_Epetra_FiniteDifference.H"
-#include "Epetra_Map.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_LinearProblem.h"
-#include "AztecOO.h"
+#include "NOX_Epetra_Interface.H" // base class
+#include "NOX_Common.H"		  // class data element (string)
+
+// Forward declarations
+namespace NOX {
+namespace Parameter {
+class List;
+}
+namespace Epetra {
+class Vector;
+class Group;
+class SharedJacobian;
+}
+}
+class Epetra_Vector;
+class Epetra_RowMatrix;
+class AztecOO;
 
 namespace NOX {
 namespace Epetra {

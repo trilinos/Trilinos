@@ -33,7 +33,7 @@
 #ifndef NOX_PARAMETER_ENTRY_H
 #define NOX_PARAMETER_ENTRY_H
 
-#include "NOX_Common.H"
+#include "NOX_Common.H"		// class data element (string)
 
 namespace NOX {
 

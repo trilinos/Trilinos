@@ -33,9 +33,6 @@
 #ifndef NOX_ABSTRACT_VECTOR_H
 #define NOX_ABSTRACT_VECTOR_H
 
-#include "NOX_Common.H"		
-#include "NOX_Utils.H"
-
 /*! 
 
   \mainpage %NOX: An Object-Oriented Nonlinear Solver Package

@@ -25,17 +25,18 @@
 #ifndef _EPETRA_MATRIXFREE_H_
 #define _EPETRA_MATRIXFREE_H_
 
+#include "Epetra_RowMatrix.h"	// base class
+
 // Forward Declarations
 class Epetra_Comm;
 class Epetra_Map;
 class Epetra_Import;
 class Epetra_Vector;
-class Epetra_RowMatrix;
 
 namespace NOX {
-  namespace Epetra {
-    class Interface;
-  }
+namespace Epetra {
+class Interface;
+}
 }
 
 namespace NOX {

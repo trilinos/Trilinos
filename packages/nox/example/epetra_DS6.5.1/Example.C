@@ -15,10 +15,15 @@
 #include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
+#include "Epetra_Map.h"
+#include "Epetra_LinearProblem.h"
+#include "AztecOO.h"
 
 // NOX Library
 #include "NOX.H"
 #include "NOX_Epetra.H"
+
 
 // User's application specific files 
 #include "Problem_Interface.H" // Interface file to NOX

@@ -34,7 +34,7 @@
 #define NOX_DIRECTION_MANAGER_H
 
 #include "NOX_Direction_Generic.H" // base class
-#include "NOX_Common.H" // for string
+#include "NOX_Common.H"            // class data element (string)
 
 namespace NOX {
 namespace Direction {
@@ -72,6 +72,7 @@ public:
 		  const Solver::Generic& solver);
 
 private:
+
   //! Method name
   string method;
 

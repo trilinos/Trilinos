@@ -32,6 +32,11 @@
 
 #include "NOX_Linesearch_Manager.H" // class definition
 
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Utils.H"
+
 // All the different line searches
 #include "NOX_Linesearch_FullStep.H"
 #include "NOX_Linesearch_Halving.H"

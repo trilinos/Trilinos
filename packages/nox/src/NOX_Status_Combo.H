@@ -34,7 +34,7 @@
 #define NOX_STATUS_COMBO_H
 
 #include "NOX_Status_Test.H"	// base class
-
+#include "NOX_Common.H"		// class data element (vector)
 namespace NOX {
 namespace Status {
 

@@ -31,6 +31,11 @@
 //@HEADER
 
 #include "NOX_Solver_NonlinearCG.H"	// class definition
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Common.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Utils.H"
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP)
  * fail to find the max and min function.  Therfore we redefine them

@@ -31,6 +31,8 @@
 //@HEADER
 
 #include "NOX_Epetra_SharedJacobian.H" // class definition
+// External include from Trilinos
+#include "Epetra_CrsMatrix.h"
 
 using namespace NOX::Epetra;
 

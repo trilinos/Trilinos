@@ -35,6 +35,7 @@
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"
+#include "NOX_Utils.H"
 
 using namespace NOX;
 using namespace NOX::Direction;

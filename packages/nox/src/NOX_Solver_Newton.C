@@ -31,6 +31,14 @@
 //@HEADER
 
 #include "NOX_Solver_Newton.H"	// class definition
+#include "NOX_Abstract_Vector.H"
+#include "NOX_Abstract_Group.H"
+#include "NOX_Common.H"
+#include "NOX_Parameter_List.H"
+#include "NOX_Utils.H"
+
+using namespace NOX;
+using namespace NOX::Solver;
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
  * fail to find the max and min function.  Therfore we redefine them 
@@ -47,9 +55,6 @@
 #endif
 
 #define min(a,b) ((a)<(b)) ? (a) : (b);
-
-using namespace NOX;
-using namespace NOX::Solver;
 
 Newton::Newton(Abstract::Group& xgrp, Status::Test& t, const Parameter::List& p) :
   solnptr(&xgrp),		// pointer to xgrp
