@@ -60,17 +60,15 @@ rosenbrock_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir
 
 rosenbrock_CXXFLAGS = -I$(top_srcdir)/src
 
-# Be sure to specify the **exact** library you want since others may be elsewhere in the path
 rosenbrock_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
 
 broyden_SOURCES = $(srcdir)/Broyden.C
 
-broyden_DEPENDENCIES = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
+broyden_DEPENDENCIES = $(rosenbrock_DEPENDENCIES)
 
-broyden_CXXFLAGS = -I$(top_srcdir)/src
+broyden_CXXFLAGS = $(rosenbrock_CXXFLAGS)
 
-# Be sure to specify the **exact** library you want since others may be elsewhere in the path
-broyden_LDADD = $(top_builddir)/example/libnoxexample.a $(top_builddir)/src/libnox.a 
+broyden_LDADD = $(rosenbrock_LDADD)
 
 # ------------------------------------------------------------------------
 # For using a special archiver

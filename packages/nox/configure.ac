@@ -511,7 +511,7 @@ AC_MSG_RESULT(${BUILD_LIBNOXEPETRA})
 
 
 AC_ARG_ENABLE(petsc,
-[  --enable-petsc         compile noxpetsc library],
+[  --enable-petsc          compile noxpetsc library],
 [BUILD_LIBNOXPETSC=$enableval],
 [BUILD_LIBNOXPETSC=no]
 )
@@ -637,7 +637,7 @@ AM_CONDITIONAL(BUILD_EXAMPLES, test X${BUILD_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(epetra-examples,
-[  --enable-epetra-examples     compile epetra examples],
+[  --enable-epetra-examples   compile epetra examples],
 [BUILD_EPETRA_EXAMPLES=${enableval}],
 [BUILD_EPETRA_EXAMPLES=no]
 )
@@ -655,7 +655,7 @@ AC_MSG_RESULT(${BUILD_EPETRA_EXAMPLES})
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(petsc-examples,
-[  --enable-petsc-examples     compile petsc examples],
+[  --enable-petsc-examples    compile petsc examples],
 [BUILD_PETSC_EXAMPLES=${enableval}],
 [BUILD_PETSC_EXAMPLES=no]
 )
@@ -681,13 +681,15 @@ if test ${BUILD_EXAMPLES} = yes || test ${BUILD_EPETRA_EXAMPLES} = yes; then
   AC_F77_LIBRARY_LDFLAGS
   LIBS="${LIBS} ${FLIBS}"
 
+  # Define F77_FUNC
+  AC_F77_WRAPPERS
+
   # Find valid BLAS
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dcopy,[cxml blas],,AC_MSG_ERROR([Cannot find BLAS library]))
+  ACX_BLAS([LIBS="${LIBS} ${BLAS_LIBS}"],[AC_MSG_ERROR([Cannot find BLAS library])])
+
 
   # Find valid LAPACK
-  AC_LANG_FORTRAN77
-  AC_SEARCH_LIBS(dgetrs,[cxml lapack complib.sgimath],,AC_MSG_ERROR([Cannot find LAPACK library]))
+  ACX_LAPACK([LIBS="${LIBS} ${LAPACK_LIBS}"],[AC_MSG_ERROR([Cannot find LAPACK library])])
 
 fi
 
@@ -886,7 +888,7 @@ AM_CONDITIONAL(BUILD_PETSC_EXAMPLES, test X${BUILD_PETSC_EXAMPLES} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca,
-[  --enable-loca         compile the loca library],
+[  --enable-loca           compile the loca library],
 [BUILD_LIBLOCA=${enableval}],
 [BUILD_LIBLOCA=no]
 )
@@ -899,7 +901,7 @@ AM_CONDITIONAL(BUILD_LIBLOCA, test X${BUILD_LIBLOCA} = Xyes)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(loca-epetra,
-[  --enable-loca-epetra      compile the locaepetra library],
+[  --enable-loca-epetra    compile the locaepetra library],
 [BUILD_LIBLOCAEPETRA=${enableval}],
 [BUILD_LIBLOCAEPETRA=no]
 )

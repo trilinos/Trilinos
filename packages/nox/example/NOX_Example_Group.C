@@ -33,10 +33,11 @@
 #include "NOX_Common.H"
 #include "NOX_Example_Group.H"	// class definition
 
-extern "C"
+#define DGESV_F77 F77_FUNC(dgesv,DGESV)
+extern "C"  
 {
-  void dgesv_(int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* idb, int* info);
-};
+  void DGESV_F77 (int* n, int* nrhs, double* a, int* lda, int* ipiv, double* b, int* idb, int* info);
+}
 
 using namespace NOX;
 using namespace NOX::Example;
@@ -245,7 +246,7 @@ bool Group::computeNewton(NOX::Parameter::List& p)
   vector<int> ipiv(n,0);
   int info;
 
-  ::dgesv_(&n, &one, &J(0,0), &n, &ipiv[0], &y(0), &n, &info);
+  ::DGESV_F77(&n, &one, &J(0,0), &n, &ipiv[0], &y(0), &n, &info);
 
   // Copy result into newtonVector
   newtonVector = y;
