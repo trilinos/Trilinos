@@ -2789,9 +2789,51 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
   
 }
 
+/* this structure contains the settings for a given level.
+   The maximum number of levels is hardwired. Settings for
+   the coarse levels are here stored as well. */
+
+typedef struct MLAZ_LevelSettings 
+{
+  int smoother;
+  int coarsen_scheme;
+  int num_smoother_steps;
+  int pre_or_post_smoother;
+  int metis_aggregation_property;
+  int metis_aggregation_value;
+  int options[AZ_OPTIONS_SIZE];
+  double params[AZ_PARAMS_SIZE];
+  double status[AZ_STATUS_SIZE];
+  double omega;
+
+} MLAZ_LevelSettings;
+
+/* this structure contains the global settings, and a pointer to
+   each level's settings. Coarse level is defined as ML_COARSE_LEVEL */
+  
+typedef struct MLAZ_Settings
+{
+  
+  int initialized;
+  MLAZ_LevelSettings Level[MLAZ_MAX_LEVELS];
+  int max_levels;
+  int is_problem_symmetric;
+  int print_statistics;
+  int output;
+  double smoothP_damping_factor;
+  double damping_factor;
+  double threshold;
+  int max_coarse_size;
+  
+} MLAZ_Settings;
+
+/* I define data here, so that user doesn't have to define anything */
+static MLAZ_Settings Settings = {0};
+
 /* ======================================================================== */
 /*!
- \brief interface between AZTEC's matrices and option/params and ML
+
+\brief interface between AZTEC's matrices and option/params and ML
 
  The following definition and function declaration as used by
  MLAZ_iterate, which is supposed to replace AZ_iterate in code
@@ -2807,56 +2849,58 @@ void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
    all levels). In output, status will return the status of the outer
    Krylov solver
  - Amat, scaling : AZTEC matrix and scaling structure
- - mlaz_options, mlaz_params : integer and double vector containing the
-   options and params for ML. An (incomplete) list of options and params i
-   is follows:
-   * mlaz_options[MLAZ_max_iter] : max number of iterations for the
-                                   outer Krylov solver
-   * mlaz_options[MLAZ_smoother] : MLAZ_Jacobi
-                                   MLAZ_GaussSeidel
-				   MLAZ_Aztec (default)
-				   MLAZ_BlockGaussSeidel
-				   MLAZ_MLS
-				   MLAZ_SuperLU (only for coarse level)
-  * mlaz_options[MLAZ_max_num_levels] :
-  * mlaz_options[MLAZ_num_pre_smooth_steps] :
-  * mlaz_options[MLAZ_num_post_smooth_steps] :
-  * mlaz_options[MLAZ_coarse_solver] : MLAZ_Jacobi
-                                       MLAZ_GaussSeidel
-				       MLAZ_Aztec
-				       MLAZ_SuperLU
-  * mlaz_options[MLAZ_output] : from 0 to 10, (10 verbose)
-  * mlaz_options[MLAZ_coarsen_scheme] : MLAZ_Uncoupled
-                                        MLAZ_MIS
-					MLAZ_METIS
-					MLAZ_ParMETIS
 
-  * mlaz_options[MLAZ_aggregate_property] : if MLAZ_NumLocalAggregates, 
-                       mlaz_options[MLAZ_aggregate+level] will specify the number
-		       of aggregates on the calling processor. If
-		       mlaz_options[MLAZ_NumGlobalAggregates+level] will
-		       specify the global number of aggregates.
-		       If MLAZ_NumNodesPerAggregate,
-		       mlaz_options[MLAZ_NumGlobalAggregates+level] will
-		       specify how many nodes have to be included in each
-		       aggregate. The use has to set the proper value for
-		       each level (0 being the finest level, up to
-		       mlaz_options[MLAZ_max_num_levels])
+ Solution strategy is specified using the following commands:
 
-  *
-  * mlaz_params[MLAZ_tol] :
-  * mlaz_params[MLAZ_smoothP_damping_factor] :
-  * mlaz_params[MLAZ_omega] : damping factor for Jacobi
-  * mlaz_params[MLAZ_threshold] : dropping factor
+ 1. put default values:
+
+    MLAZ_Default()
+    
+    (Note that all values are internally stored, and no memory has
+    to be allocated by the user.)
+
+ 2. Specify a given choice. For instance,
+
+    MLAZ_Set_Option(option, value) (for int)
+    or
+    MLAZ_Set_Param(param,value) (for double)
+    where option/value can be
+
+    MLAZ_smoother: MLAZ_Jacobi
+                   MLAZ_GaussSeidel
+		   MLAZ_Aztec (default)
+		   MLAZ_BlockGaussSeidel
+		   MLAZ_MLS
+		   MLAZ_SuperLU (only for coarse level)
+
+    MLAZ_max_levels :
+    MLAZ_num_smoother_steps :
+    MLAZ_output : from 0 to 10, (10 verbose)
+    MLAZ_metis_aggregation_property : MLAZ_NumLocalAggregates
+                                    MLAZ_NumGlobalAggregates
+				    MLAZ_NumNodesPerAggregate
+    MLAZ_metis_aggregation_value : 
+    MLAZ_coarsen_scheme : MLAZ_Uncoupled
+                          MLAZ_MIS
+			  MLAZ_METIS
+			  MLAZ_ParMETIS
+			  
+    MLAZ_smoothP_damping_factor :
+    MLAZ_omega] : damping factor for Jacobi
+    MLAZ_threshold : dropping factor
+
+    Settings for each level can be set via
+
+    MLAZ_Set_LevelOption
+    or
+    MLAZ_Set_LevelParam
 */
 /* ------------------------------------------------------------------------ */  
 
-void MLAZ_iterate( double delta_x[], double resid_vector[],
+void MLAZ_Iterate( double delta_x[], double resid_vector[],
 		   int options[], double params[],
 		   double status[], int proc_config[],
-		   AZ_MATRIX *Amat, struct AZ_SCALING *scaling,
-		   int mlaz_options[MLAZ_OPTIONS_SIZE],
-		   double mlaz_params[MLAZ_PARAMS_SIZE] )
+		   AZ_MATRIX *Amat, struct AZ_SCALING *scaling )
 {
 
   int          i, Nlevels, N_update,N_update_blk,num_PDE_eqns;
@@ -2864,7 +2908,9 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
   ML           *ml;
   ML_Aggregate *ag;
   AZ_PRECOND   *ML_Prec = NULL;
-  int          pre_smoother, post_smoother;
+  int          pre_or_post_smoother;
+  int          num_smoother_steps;
+  
   double       omega;
   int          solver_options[AZ_OPTIONS_SIZE];
   double       solver_params[AZ_PARAMS_SIZE];
@@ -2873,19 +2919,23 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
   
   /* ------------------------ execution begins ---------------------------- */
 
+  /* check out whether Settings has been initialized or not.
+     If now, fill with default values */
+
+  if( Settings.initialized != -14 ) {
+    MLAZ_Defaults();
+  }
+  
   t0 = AZ_second();
   
-  MaxMgLevels = mlaz_options[MLAZ_max_num_levels];
-  
-  /* copy input options. ML needs to redifine some of them.                 */
+  MaxMgLevels = Settings.max_levels;
+
+  /* copy input options and params. ML needs to redifine some of them.     */
 
   for( i=0 ; i<AZ_OPTIONS_SIZE ; i++ )  solver_options[i] = options[i];
   for( i=0 ; i<AZ_PARAMS_SIZE ; i++ )   solver_params[i] = params[i];
-  solver_options[AZ_solver]   = mlaz_options[MLAZ_solver];
-  solver_options[AZ_max_iter] = mlaz_options[MLAZ_max_iter];
-  solver_params[AZ_solver]    = mlaz_params[MLAZ_tol];
   
-  ML_Set_PrintLevel(mlaz_options[MLAZ_output]);  
+  ML_Set_PrintLevel(Settings.output);  
 
   /* Create an empty multigrid hierarchy and set the zero                   */
   /* level discretization within this hierarchy to Amatrix                  */
@@ -2918,7 +2968,7 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
   /* lines, as we have to set the number of aggregates                      */
   /* ********************************************************************** */
 
-  switch( mlaz_options[MLAZ_coarsen_scheme] ) {
+  switch( Settings.Level[0].coarsen_scheme ) {
 
   case MLAZ_METIS:
     ML_Aggregate_Set_CoarsenScheme_METIS(ag);
@@ -2940,56 +2990,55 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
     fprintf( stderr,
 	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     mlaz_options[MLAZ_coarsen_scheme],
+	     Settings.Level[0].coarsen_scheme,
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
 
-  } /* switch( mlaz_options[MLAZ_coarsen_scheme] ) */
+  } /* switch */
   
-  if( mlaz_options[MLAZ_coarsen_scheme] == MLAZ_METIS ||
-      mlaz_options[MLAZ_coarsen_scheme] == MLAZ_ParMETIS ) {
+  if( Settings.Level[0].coarsen_scheme == MLAZ_METIS ||
+      Settings.Level[0].coarsen_scheme == MLAZ_ParMETIS ) {
 
-    switch( mlaz_options[MLAZ_aggregate_property] ) {
-      
-    case MLAZ_NumLocalAggregates:     
-      for( i=0 ; i<MaxMgLevels-1 ; i++ )
-	ML_Aggregate_Set_LocalNumber( ml, ag, i,
-				      mlaz_options[MLAZ_aggregates+i] );
-      break;
-      
-    case MLAZ_NumGlobalAggregates:
-      for( i=0 ; i<MaxMgLevels-1 ; i++ )
-	ML_Aggregate_Set_GlobalNumber( ml, ag, i,
-				       mlaz_options[MLAZ_aggregates+i] );
-      break;
-      
-    case MLAZ_NumNodesPerAggregate:
-      for( i=0 ; i<MaxMgLevels-1 ; i++ )
-	ML_Aggregate_Set_NodesPerAggr( ml, ag, i,
-				       mlaz_options[MLAZ_aggregates+i] );
-      break;
-      
-    default:
-      fprintf( stderr,
-	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	       "*ML*ERR* (file %s, line %d)\n",
-	       mlaz_options[MLAZ_aggregate_property],
-	       __FILE__,
-	       __LINE__ );
-      exit( EXIT_FAILURE );
-      
-    }
+    for( i=0 ; i<MaxMgLevels-1 ; i++ ) {
     
+      switch( Settings.Level[i].metis_aggregation_property ) {
+      
+      case MLAZ_NumLocalAggregates:     
+	ML_Aggregate_Set_LocalNumber( ml, ag, i,
+				      Settings.Level[i].metis_aggregation_value );
+      break;
+      
+      case MLAZ_NumGlobalAggregates:
+	ML_Aggregate_Set_GlobalNumber( ml, ag, i,
+				       Settings.Level[i].metis_aggregation_value );
+      break;
+      
+      case MLAZ_NumNodesPerAggregate:
+	ML_Aggregate_Set_NodesPerAggr( ml, ag, i,
+				       Settings.Level[i].metis_aggregation_value );
+	break;
+	
+      default:
+	fprintf( stderr,
+		 "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+		 "*ML*ERR* (file %s, line %d)\n",
+		 Settings.Level[i].metis_aggregation_value,
+		 __FILE__,
+		 __LINE__ );
+	exit( EXIT_FAILURE );
+	
+      } /* switch */
+    } /* for */
   } /* if */
 
   /* ********************************************************************** */
   /* minor settings                                                         */
   /* ********************************************************************** */
 
-  ML_Aggregate_Set_MaxCoarseSize(ag, mlaz_options[MLAZ_max_coarse_size] );
-  ML_Aggregate_Set_Threshold( ag, mlaz_params[MLAZ_threshold] );
-  ML_Aggregate_Set_DampingFactor( ag, mlaz_params[MLAZ_dumping_factor] );
+  ML_Aggregate_Set_MaxCoarseSize(ag, Settings.max_coarse_size );
+  ML_Aggregate_Set_Threshold( ag, Settings.threshold );
+  ML_Aggregate_Set_DampingFactor( ag, Settings.damping_factor );
   
   /************************************************************************/
   /* Build hierarchy using smoothed aggregation.                          */
@@ -3004,97 +3053,98 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
   /* ********************************************************************** */
 
   t2 = AZ_second();
-  
-  pre_smoother  = mlaz_options[MLAZ_num_pre_smooth_steps];
-  post_smoother = mlaz_options[MLAZ_num_post_smooth_steps];
-  omega = mlaz_params[MLAZ_omega];
-  
-  switch( mlaz_options[MLAZ_smoother] ) {
 
-  case MLAZ_Jacobi:
-    ML_Gen_Smoother_Jacobi(ml, ML_ALL_LEVELS, ML_PRESMOOTHER,
-			   pre_smoother, omega);
-    ML_Gen_Smoother_Jacobi(ml, ML_ALL_LEVELS, ML_POSTSMOOTHER,
-			   post_smoother, omega);
-    break;
-
-  case MLAZ_GaussSeidel:
-    ML_Gen_Smoother_GaussSeidel(ml, ML_ALL_LEVELS, ML_PRESMOOTHER,
-				pre_smoother, omega);
-    ML_Gen_Smoother_GaussSeidel(ml, ML_ALL_LEVELS, ML_POSTSMOOTHER,
-				post_smoother, omega);
-    break;
-
-  case MLAZ_BlockGaussSeidel:
-    ML_Gen_Smoother_BlockGaussSeidel(ml, ML_ALL_LEVELS, ML_PRESMOOTHER,
-				     pre_smoother, omega, num_PDE_eqns);
-    ML_Gen_Smoother_BlockGaussSeidel(ml, ML_ALL_LEVELS, ML_POSTSMOOTHER,
-				     post_smoother, omega, num_PDE_eqns);
-    break;
-
-  case MLAZ_MLS:
-    ML_Gen_Smoother_MLS(ml, ML_ALL_LEVELS, ML_PRESMOOTHER, 30., pre_smoother);
-    ML_Gen_Smoother_MLS(ml, ML_ALL_LEVELS, ML_POSTSMOOTHER, 30., pre_smoother);
-    break;
+  for( i=0 ; i<Nlevels-1 ; i++ ) {
     
-  case MLAZ_Aztec:
-    for( i=0 ; i<Nlevels-1 ; i++ ) {
-      ML_Gen_SmootherAztec(ml, i, options, params,
-			   proc_config, smoother_status,
-			   pre_smoother, ML_PRESMOOTHER, NULL); 
-      ML_Gen_SmootherAztec(ml, i, options, params,
-			   proc_config, smoother_status,
-			   post_smoother, ML_POSTSMOOTHER, NULL);
-    }
-    break;
+    num_smoother_steps  = Settings.Level[i].num_smoother_steps;
 
-  default:
-    fprintf( stderr,
-	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
-	     "*ML*ERR* (file %s, line %d)\n",
-	     mlaz_options[MLAZ_smoother],
-	     __FILE__,
-	     __LINE__ );
-    exit( EXIT_FAILURE );
-     
-  } /* switch( mlaz_options[MLAZ_smoother] ) */
+    omega = Settings.Level[i].omega;
+    pre_or_post_smoother = Settings.Level[i].pre_or_post_smoother;
+    
+    switch( Settings.Level[i].smoother ) {
 
+    case MLAZ_Jacobi:
+      ML_Gen_Smoother_Jacobi(ml, i, pre_or_post_smoother,
+			     num_smoother_steps, omega);
+      break;
+
+    case MLAZ_GaussSeidel:
+      ML_Gen_Smoother_GaussSeidel(ml, i, pre_or_post_smoother,
+				  num_smoother_steps, omega);
+      break;
+      
+    case MLAZ_BlockGaussSeidel:
+      ML_Gen_Smoother_BlockGaussSeidel(ml, i, pre_or_post_smoother,
+				       num_smoother_steps, omega, num_PDE_eqns);
+      break;
+
+    case MLAZ_MLS:
+      ML_Gen_Smoother_MLS(ml, i, pre_or_post_smoother, 30.,
+			  num_smoother_steps);
+      break;
+    
+    case MLAZ_Aztec:
+      ML_Gen_SmootherAztec(ml, i, Settings.Level[i].options,
+			   Settings.Level[i].params,
+			   proc_config, Settings.Level[i].status,
+			   num_smoother_steps, pre_or_post_smoother, NULL); 
+      break;
+
+    default:
+      fprintf( stderr,
+	       "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
+	       "*ML*ERR* (file %s, line %d)\n",
+	       Settings.Level[i].smoother,
+	       __FILE__,
+	       __LINE__ );
+      exit( EXIT_FAILURE );
+      
+    } /* switch */
+  } /* for */
+  
   /* ********************************************************************** */
   /* solution of the coarse problem                                         */
   /* ********************************************************************** */
 
-  switch( mlaz_options[MLAZ_coarse_solver] ) {
+  num_smoother_steps  = Settings.Level[MLAZ_COARSE_LEVEL].num_smoother_steps;
+  omega = Settings.Level[MLAZ_COARSE_LEVEL].omega;
+  pre_or_post_smoother = Settings.Level[MLAZ_COARSE_LEVEL].pre_or_post_smoother;
+
+  switch( Settings.Level[MLAZ_COARSE_LEVEL].smoother ) {
     
   case MLAZ_Jacobi:
-    ML_Gen_Smoother_Jacobi(ml, Nlevels-1, ML_BOTH,
-			   pre_smoother, omega);
+    ML_Gen_Smoother_Jacobi(ml, Nlevels-1, pre_or_post_smoother,
+			   num_smoother_steps, omega);
     break;
 
   case MLAZ_GaussSeidel:
-    ML_Gen_Smoother_GaussSeidel(ml, Nlevels-1, ML_BOTH,
-				pre_smoother, omega);
+    ML_Gen_Smoother_GaussSeidel(ml, Nlevels-1, pre_or_post_smoother,
+				num_smoother_steps, omega);
     break;
     
   case MLAZ_Aztec:
-    ML_Gen_SmootherAztec(ml, Nlevels-1, options, params,
-			 proc_config, smoother_status,
-			 pre_smoother, ML_BOTH, NULL); 
+    ML_Gen_SmootherAztec(ml, Nlevels-1,
+			 Settings.Level[MLAZ_COARSE_LEVEL].options,
+			 Settings.Level[MLAZ_COARSE_LEVEL].params,
+			 proc_config,
+			 Settings.Level[MLAZ_COARSE_LEVEL].status,
+			 num_smoother_steps, pre_or_post_smoother, NULL); 
     break;
 
   case MLAZ_SuperLU:
     ML_Gen_CoarseSolverSuperLU( ml, Nlevels-1);
     break;
-
+    
   default:
     fprintf( stderr,
 	     "*ML*ERR* specified options not valid or not yet implemeted (%d)\n"
 	     "*ML*ERR* (file %s, line %d)\n",
-	     mlaz_options[MLAZ_coarse_solver],
+	     Settings.Level[MLAZ_COARSE_LEVEL].smoother,
 	     __FILE__,
 	     __LINE__ );
     exit( EXIT_FAILURE );
     
-  } /* switch( mlaz_options[MLAZ_coarse_solver] ) */
+  } /* switch */
 
   t3 = AZ_second();
   
@@ -3113,38 +3163,210 @@ void MLAZ_iterate( double delta_x[], double resid_vector[],
 
   t5 = AZ_second();
 
-  if( mlaz_options[MLAZ_output] > 0 && proc_config[AZ_node] == 0 ) {
+  if( Settings.output > 0 && proc_config[AZ_node] == 0 ) {
     printf("*ML* time for settings           : %e (s)\n", t1-t0  + t3-t2 );
     printf("*ML* time to build AMG levels    : %e (s)\n", t2-t1);
     printf("*ML* time to build AMG hierarchy : %e (s)\n", t4-t3 );
     printf("*ML* time to solve with Aztec    : %e (s)\n", t5-t4 );
   }
   
-} /* MLAZ_iterate */
+} /* MLAZ_Iterate */
 
-void MLAZ_defaults( int mlaz_options[MLAZ_OPTIONS_SIZE],
-		    double mlaz_params[MLAZ_PARAMS_SIZE] )
+void MLAZ_Defaults( void )
 {
 
-  mlaz_options[MLAZ_max_iter] = 1550;
-  mlaz_options[MLAZ_solver] = AZ_gmres;
-  mlaz_options[MLAZ_smoother] = MLAZ_Aztec;
-  mlaz_options[MLAZ_max_num_levels] = 2;
-  mlaz_options[MLAZ_num_pre_smooth_steps] = AZ_ONLY_PRECONDITIONER;
-  mlaz_options[MLAZ_num_post_smooth_steps] = AZ_ONLY_PRECONDITIONER;
-  mlaz_options[MLAZ_output] = 10;
-  mlaz_options[MLAZ_coarsen_scheme] = MLAZ_METIS;
-  mlaz_options[MLAZ_aggregate_property] = MLAZ_NumLocalAggregates;
-  mlaz_options[MLAZ_aggregates] = 32;
-  mlaz_options[MLAZ_max_coarse_size] = 30;
-  mlaz_options[MLAZ_coarse_solver] = MLAZ_SuperLU;
+  int level;
   
-  mlaz_params[MLAZ_tol] = 1e-5;
-  mlaz_params[MLAZ_smoothP_damping_factor] = 0.0;
-  mlaz_params[MLAZ_dumping_factor] = 4.0/3;
-  mlaz_params[MLAZ_omega] = 0.5;
-  mlaz_params[MLAZ_threshold] = 0.0;
+  int options[AZ_OPTIONS_SIZE];
+  double params[AZ_PARAMS_SIZE];
+
+  Settings.initialized = -14;
+  
+  AZ_defaults(options,params);
+  options[AZ_precond] = AZ_dom_decomp;
+  options[AZ_subdomain_solve] = AZ_ilu;
+  
+  MLAZ_Set_Option(MLAZ_max_levels, 2);
+  MLAZ_Set_Option(MLAZ_max_coarse_size, 30);
+  MLAZ_Set_Option(MLAZ_is_problem_symmetric, MLAZ_no);
+  MLAZ_Set_Option(MLAZ_output, 10);
+
+  MLAZ_Set_Param(MLAZ_smoothP_damping_factor, 0.0);
+  MLAZ_Set_Param(MLAZ_threshold, 0.0);
+
+  /* set all levels with the same values */
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_smoother, MLAZ_Aztec);
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_pre_or_post_smoother, ML_BOTH);
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_num_smoother_steps,
+			AZ_ONLY_PRECONDITIONER);
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_coarsen_scheme, MLAZ_METIS);
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_metis_aggregation_property,
+			MLAZ_NumNodesPerAggregate);
+  MLAZ_Set_LevelOption(MLAZ_ALL, MLAZ_metis_aggregation_value,
+			512);
+  MLAZ_Set_LevelAztecSmoother(MLAZ_ALL,options,params);
+ 
+  /* now some stuff with coarse level */
+  MLAZ_Set_LevelOption(MLAZ_COARSE_LEVEL, MLAZ_smoother, MLAZ_SuperLU);
+    
+  return;
+  
+} /* MLAZ_Defaults */
+
+void MLAZ_Set_Option(int option, int value)
+{
+
+  switch( option ) {
+  case MLAZ_max_levels:
+    Settings.max_levels = value;
+    break;
+
+  case MLAZ_output:
+    Settings.output = value;
+    break;
+
+  case MLAZ_is_problem_symmetric:
+    Settings.is_problem_symmetric = value;
+    break;
+
+
+  case MLAZ_max_coarse_size:
+    Settings.max_coarse_size = value;
+    break;
+
+  default:
+    fprintf( stderr,
+	     "*ERR*ML* input option not valid\n" );
+  }
+
+  return;
+  
+}
+
+void MLAZ_Set_Param(int option ,double value) 
+{
+
+  switch( option ) {
+  case MLAZ_smoothP_damping_factor:
+    Settings.smoothP_damping_factor = value;
+    break;
+
+  case MLAZ_threshold:
+    Settings.threshold = value;
+    break;
+    
+ default:
+    fprintf( stderr,
+	     "*ERR*ML* input param not valid\n" );
+  }
+
+  return;
+  
+} 
+void MLAZ_Set_LevelOption( int level, int option, int value )
+{
+
+  int i;
+  
+  if( level == MLAZ_ALL ) {
+    
+    for( i=0 ; i<MLAZ_MAX_LEVELS ; i++ ) {
+      MLAZ_Set_LevelOption(i,option,value);
+    }
+    
+  } else {
+
+    switch( option ) {
+
+    case MLAZ_smoother:
+      Settings.Level[level].smoother = value;
+      break;
+      
+    case MLAZ_coarsen_scheme:
+      Settings.Level[level].coarsen_scheme = value;
+      break;
+
+    case MLAZ_num_smoother_steps:
+      Settings.Level[level].num_smoother_steps = value;
+      break;
+      
+    case MLAZ_metis_aggregation_property:
+      Settings.Level[level].metis_aggregation_property = value;
+      break;
+      
+    case MLAZ_metis_aggregation_value:
+      Settings.Level[level].metis_aggregation_value = value;
+      break;
+
+    case MLAZ_pre_or_post_smoother:
+      Settings.Level[level].pre_or_post_smoother = value;
+      break;
+      
+    default:
+      fprintf( stderr,
+	       "*ERR*ML* input option not valid\n" );
+    }
+
+  }
   
   return;
   
-} /* MLAZ_defaults */
+}
+   
+void MLAZ_Set_LevelParam(int level,int option, double value)
+{
+
+  int i;
+  
+  if( level == MLAZ_ALL ) {
+    
+    for( i=0 ; i<MLAZ_MAX_LEVELS ; i++ ) {
+      MLAZ_Set_LevelParam(i,option,value);
+    }
+    
+  } else {
+  
+    switch( option ) {
+
+    case MLAZ_omega:
+      Settings.Level[level].omega = value;
+      break;
+      
+    default:
+      fprintf( stderr,
+	       "*ERR*ML* input option not valid\n" );
+    }
+  }
+  
+  return;
+  
+}
+ 
+    
+void MLAZ_Set_LevelAztecSmoother(int level,
+				 int options[], double params[])
+{
+
+  int i;
+
+  if( level == MLAZ_ALL ) {
+
+    for( i=0 ; i<MLAZ_MAX_LEVELS ; i++ ) {
+      MLAZ_Set_LevelAztecSmoother(i,options,params);
+    }
+    
+  } else {
+
+    for( i=0 ; i<AZ_OPTIONS_SIZE ; i++ ) {
+      Settings.Level[level].options[i] = options[i];
+    }
+    
+    for( i=0 ; i<AZ_PARAMS_SIZE ; i++ ) {
+      Settings.Level[level].params[i] = params[i];
+    }
+    
+  }
+  
+  return;
+  
+}

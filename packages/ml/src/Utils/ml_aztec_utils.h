@@ -202,27 +202,25 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
    currently developed for Aztec (one-level prec), to test ML
    preconditioners (based on aggregation). Only a small part
    of ML's functionalities is currently supported. */
-  
-#define MLAZ_OPTIONS_SIZE 50
-#define MLAZ_PARAMS_SIZE 50
 
+#define MLAZ_MAX_LEVELS 30
+#define MLAZ_ALL -1
+#define MLAZ_yes 1
+#define MLAZ_no 0
+#define MLAZ_COARSE_LEVEL (MLAZ_MAX_LEVELS-1)
 /* options */
-#define MLAZ_max_iter               0
-#define MLAZ_smoother               1
-#define MLAZ_max_num_levels         2
-#define MLAZ_num_pre_smooth_steps   3
-#define MLAZ_num_post_smooth_steps  4
-#define MLAZ_coarse_solver          5
-#define MLAZ_refinement_factor      6
+#define MLAZ_smoother          1
+#define MLAZ_max_levels         2
+#define MLAZ_num_smoother_steps     3
 #define MLAZ_output                 7
 #define MLAZ_coarsen_scheme         8
-#define MLAZ_aggregate_property     9
-#define MLAZ_max_coarse_size       10
-#define MLAZ_solver                11
-#define MLAZ_aggregates            30
+#define MLAZ_metis_aggregation_property     9
+#define MLAZ_metis_aggregation_value       10
+#define MLAZ_max_coarse_size       11
+#define MLAZ_is_problem_symmetric  12
+#define MLAZ_pre_or_post_smoother  13
 
-/* values for options */
-/*  MLAZ_smoother and MLAZ_coarse_solve */
+/*  MLAZ_smoother */
 #define MLAZ_Jacobi                 0 /* ML's Jacobi smoother */
 #define MLAZ_GaussSeidel            1 /* ML's GS smoother */
 #define MLAZ_Aztec                  2
@@ -234,27 +232,28 @@ extern void new_norm(AZ_PRECOND *prec, double res[], double *result);
 #define MLAZ_ParMETIS               1
 #define MLAZ_Uncoupled              2
 #define MLAZ_MIS                    3
-/* MLAZ_aggregate_property */
+/* MLAZ_metis_aggregate_property */
 #define MLAZ_NumLocalAggregates        0
 #define MLAZ_NumGlobalAggregates       1
 #define MLAZ_NumNodesPerAggregate 2
 
 /* params */
-#define MLAZ_tol                    0
 #define MLAZ_smoothP_damping_factor 1
 #define MLAZ_omega                  2
 #define MLAZ_threshold              3
 #define MLAZ_dumping_factor         4
 
-extern void MLAZ_defaults( int mlaz_options[MLAZ_OPTIONS_SIZE],
-			   double mlaz_params[MLAZ_PARAMS_SIZE] );
-extern void MLAZ_iterate( double delta_x[], double resid_vector[],
+extern void MLAZ_Defaults( );
+extern void MLAZ_Iterate( double delta_x[], double resid_vector[],
 			  int options[], double params[],
 			  double status[], int proc_config[],
-			  AZ_MATRIX *Amat, struct AZ_SCALING *scaling,
-			  int mlaz_options[MLAZ_OPTIONS_SIZE],
-			  double mlaz_params[MLAZ_PARAMS_SIZE] );
-  
+			  AZ_MATRIX *Amat, struct AZ_SCALING *scaling );
+extern void MLAZ_Set_Option(int, int);
+extern void MLAZ_Set_Param( int,double);
+extern void MLAZ_Set_LevelOption( int level,int option, int value);
+extern void MLAZ_Set_LevelParam( int level, int option, double value);
+extern void MLAZ_Set_LevelAztecSmoother( int level, int options[], double value[]);
+
 #endif
 
 #ifndef ML_CPP
