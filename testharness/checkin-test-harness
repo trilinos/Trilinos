@@ -304,7 +304,7 @@ sub sendemail {
     system "cat logErrors.txt >> summ.txt";
   }
 
-    print SUMM "************************************************\nThe following is the output from the test script listed above (or failed compile attempt).\nPlease note that the -v option was not selected for this log.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called \"summary.txt\".\nSee any attachments listed above for more details.\n*************************************************\n";
+    print SUMM "************************************************\nThe following is the output from the test script listed above (or failed compile attempt).\nPlease note that the -v option was not selected for this log.\n*************************************************\n";
     if (-f "summary.txt") {
 
       system "cat summary.txt >> summ.txt";
@@ -324,7 +324,7 @@ sub sendemail {
       print SUMM "\n";
     }
 
-    print SUMM "*****************************************************\nThe following is the output from the test script listed above.\nPlease note that the -v option was not selected for this log.\nWhile no errors occurred during this test, this log can still be examined to see which tests were run.\nNOTE:Depending on your Mail User Agent (MUA), the test summary will either appear below, or it will be attached as a file called 'summary.txt'\n******************************************************";
+    print SUMM "*****************************************************\nThe following is the output from the test script listed above.\nPlease note that the -v option was not selected for this log.\nWhile no errors occurred during this test, this log can still be examined to see which tests were run.\n******************************************************\n";
 
 system "cat summary.txt >> summ.txt";
   }

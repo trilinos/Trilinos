@@ -1,10 +1,8 @@
 #!/usr/bin/perl -w
-# trilinos-check
+# test-harness
 #
 # Jim Willenbring
 #
-
-### FIND CONFIGURE-SCRIPT rather than indicating where they are???
 
 # The purpose of this file is to automate the process of running existing trilinos serial and
 # parallel test scripts.  A simple way to automate the script is to use cron.  This must be done 
@@ -28,7 +26,6 @@
 # parameters will be attempted, however, it is recommended that a subdir-list file be used.
 
 # Other required files include:
-# mpigo, mpigo_nv - wrappers around mpirun.  These are found in autotest/bin
 ## Add something about MIME here when I figure out exactly what is required.
 
 # Other requirements:
@@ -53,7 +50,7 @@
 #
 ## May want to create a configure file to do this
 
-### Need to redo comments to account for autotools and new directory structure (keep this file in repos) - also note that subdirs must be set up as desired.
+### Need to redo comments to account for autotools and new directory structure - also note that subdirs must be set up as desired.
 ### Try a make dist also to ensure tarballs can be made
 ### This would be a good place to include instructions on how to write scripts.
 # location of the directory in which this file is located
@@ -64,7 +61,7 @@ chomp(my $date=`date`);
 if ($date =~/Sun/) {
   $frequency="weekly";
 }
-print "$frequency\n";
+
 # Set proper location of cvscmd if necessary, otherwise leave it at "cvs"
 my $cvscmd="cvs";
 
@@ -102,7 +99,6 @@ SWITCH: {
 ###  if ($hostos=~/^Linux.+cluster/) {$TRILINOS_ARCH='linux-lam-cluster'; last SWITCH; };
   die "hostos does not match any of the OS choices.\n";
 }
-print "\$hostos=$hostos\n";
 
 # permissions needed?
 #my $permissions=0775;
@@ -175,7 +171,7 @@ else {
 	    $subdirs[$numsubdirs]=$line;
 	    ++$numsubdirs;
 	    chdir"$homedir/$line";
-	    open (SCRIPT, "configure-script") or die "$! error trying to open file";
+	    open (SCRIPT, "invoke-configure") or die "$! error trying to open file";
 	    my $commcheck=<SCRIPT>;
 	    close SCRIPT;
 	    # Check if the configure script indicates a parallel or serial build
@@ -211,8 +207,6 @@ chdir"$homedir";
 system "find packages/ -name test -print > list_of_test_dirs";
 ### May need to append to list_of_test_dirs to account for test
 ### directories in contrib or other directories not in packages/
-### could also search from '.', but then must make sure ALL
-### builddirs are blown away before find'ing.
 
 #
 # Compile the required Trilinos builds for tests determined above
@@ -221,7 +215,7 @@ my $comm="serial";
 my $compileFail=0;
 for (my $i=0; $i<$numsubdirs; $i++) {
   chdir"$homedir/$subdirs[$i]";
-  open (SCRIPT, "configure-script") or die "$! error trying to open file\n$subdirs[$i]/configure-script\n";
+  open (SCRIPT, "invoke-configure") or die "$! error trying to open file\n$subdirs[$i]/invoke-configure\n";
   my $configscript=<SCRIPT>;
   close SCRIPT;
         if ($configscript =~/--enable-mpi/i) {
@@ -230,11 +224,8 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	else {
 	  $comm="serial";
 	}
-#don't do this	$compileFail+=system "mv configure-script ../";
-#don't do this	$compileFail+=system "rm -rf *";
-#don't do this	$compileFail+=system "mv ../configure-script .";
-#Note that the 'configure-script' script must be executable
-	$compileFail+=system "./configure-script >> $homedir/trilinosCompileLog.txt 2>&1";
+#Note that the 'invoke-configure' script must be executable
+	$compileFail+=system "./invoke-configure >> $homedir/trilinosCompileLog.txt 2>&1";
 	$compileFail+=system "make >> $homedir/trilinosCompileLog.txt 2>&1";
 	if ($compileFail) {
 	  # The build process failed, skip associated tests, report the failure
@@ -260,8 +251,6 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	    # Packages excluded below (jpetra, tpetra, etc) do not yet build
 	    # with autotools
 	    unless ($testdirectory=~/^\s+$/ || $testdirectory=~/^$/ || $testdirectory=~/tpetra/ || $testdirectory=~/jpetra/ ) {
-	      chdir "$homedir/$subdirs[$i]";
-	      print "$testdirectory\n";
 	      chdir "$homedir/$subdirs[$i]/$testdirectory";
 
 	      $compileFail=0;
@@ -271,7 +260,6 @@ for (my $i=0; $i<$numsubdirs; $i++) {
 	      close FILELIST;
 	      foreach $potentialscript (@potentialscripts) {
 		if (-x $potentialscript ) {
-		  print "*** $potentialscript ***";
 		  $compileFail+=system "$potentialscript $subdirs[$i] True >> $homedir/testCompileLog.txt 2>&1";
 		  if ($compileFail) {
 		    ++$errorcount;
@@ -348,7 +336,6 @@ sub sendemail {
   # make the 'To' field package specific
   my $to=join ", ", 'jmwille@sandia.gov';
   chomp $scriptowner;
-  print "$scriptowner";
   my $mail_to;
   # A valid email address must contain a '@'
   if ($scriptowner =~/@/i) {
