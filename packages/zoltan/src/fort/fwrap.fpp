@@ -111,6 +111,7 @@ public :: &
    Zoltan_LB_Eval, &
    Zoltan_LB_Free_Part, &
    Zoltan_LB_Free_Data, &
+   Zoltan_LB_Set_Part_Sizes, &
    Zoltan_LB_Point_Assign, &
    Zoltan_LB_Point_PP_Assign, &
    Zoltan_LB_Box_Assign, &
@@ -736,6 +737,21 @@ end function Zfw_LB_Eval
 end interface
 
 interface
+!NAS$ ALIEN "F77 zfw_set_part_sizes"
+function Zfw_LB_Set_Part_Sizes(zz,nbytes,global_part,len,partids,&
+                               wgtidx,partsizes)
+use zoltan_types
+use lb_user_const
+use zoltan_user_data
+implicit none
+integer(Zoltan_INT) :: Zfw_LB_Set_Part_Sizes
+integer(Zoltan_INT), dimension(*) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN nbytes,global_part,len,partids(*),wgtidx(*)
+real(Zoltan_FLOAT) INTENT_IN partsizes(*)
+end function Zfw_LB_Set_Part_Sizes
+end interface
+
+interface
 !NAS$ ALIEN "F77 zfw_point_assign"
 function Zfw_LB_Point_Assign(zz,nbytes,coords,proc)
 use zoltan_types
@@ -1009,6 +1025,10 @@ end interface
 
 interface Zoltan_LB_Free_Data
    module procedure Zf90_LB_Free_Data
+end interface
+
+interface Zoltan_LB_Set_Part_Sizes
+   module procedure Zf90_LB_Set_Part_Sizes
 end interface
 
 interface Zoltan_LB_Point_Assign
@@ -1765,6 +1785,22 @@ if (associated(export_procs)) deallocate(export_procs,stat=stat)
 if (stat /= 0) Zf90_LB_Free_Data = ZOLTAN_WARN
 nullify(export_procs)
 end function Zf90_LB_Free_Data
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+function Zf90_LB_Set_Part_Sizes(zz,global_part,len,partids,wgtidx,partsizes)
+integer(Zoltan_INT) :: Zf90_LB_Set_Part_Sizes
+type(Zoltan_Struct) INTENT_IN zz
+integer(Zoltan_INT) INTENT_IN global_part,len,partids(*),wgtidx(*)
+real(Zoltan_FLOAT) INTENT_IN partsizes(*)
+integer(Zoltan_INT), dimension(Zoltan_PTR_LENGTH) :: zz_addr
+integer(Zoltan_INT) :: nbytes, i
+nbytes = Zoltan_PTR_LENGTH
+do i=1,nbytes
+   zz_addr(i) = ichar(zz%addr%addr(i:i))
+end do
+Zf90_LB_Set_Part_Sizes = Zfw_LB_Set_Part_Sizes(zz_addr,nbytes,global_part,len,&
+                                               partids,wgtidx,partsizes)
+end function Zf90_LB_Set_Part_Sizes
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 function Zf90_LB_Point_Assign(zz,coords,proc)

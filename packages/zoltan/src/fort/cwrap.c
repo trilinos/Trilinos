@@ -63,6 +63,7 @@ extern "C" {
 #define Zfw_Set_Param                  zfw_set_param
 #define Zfw_LB_Partition               zfw_lb_partition
 #define Zfw_LB_Eval                    zfw_lb_eval
+#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign
 #define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign
@@ -112,6 +113,7 @@ extern "C" {
 #define Zfw_Set_Param                  ZFW_SET_PARAM
 #define Zfw_LB_Partition               ZFW_LB_PARTITION
 #define Zfw_LB_Eval                    ZFW_LB_EVAL
+#define Zfw_LB_Set_Part_Sizes          ZFW_LB_SET_PART_SIZES
 #define Zfw_LB_Point_Assign            ZFW_LB_POINT_ASSIGN
 #define Zfw_LB_Point_PP_Assign         ZFW_LB_POINT_PP_ASSIGN
 #define Zfw_LB_Box_Assign              ZFW_LB_BOX_ASSIGN
@@ -160,6 +162,7 @@ extern "C" {
 #define Zfw_Set_Param                  zfw_set_param_
 #define Zfw_LB_Partition               zfw_lb_partition_
 #define Zfw_LB_Eval                    zfw_lb_eval_
+#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes_
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign_
 #define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign_
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign_
@@ -209,6 +212,7 @@ extern "C" {
 #define Zfw_Set_Param                  zfw_set_param__
 #define Zfw_LB_Partition               zfw_lb_partition__
 #define Zfw_LB_Eval                    zfw_lb_eval__
+#define Zfw_LB_Set_Part_Sizes          zfw_lb_set_part_sizes__
 #define Zfw_LB_Point_Assign            zfw_lb_point_assign__
 #define Zfw_LB_Point_PP_Assign         zfw_lb_point_pp_assign__
 #define Zfw_LB_Box_Assign              zfw_lb_box_assign__
@@ -1354,6 +1358,21 @@ int Zfw_LB_Eval(int *addr_lb, int *nbytes, int *print_stats,
 
    return  Zoltan_LB_Eval(lb, *print_stats, loc_nobj, loc_obj_wgt, loc_ncuts, loc_cut_wgt,
            loc_nboundary, loc_nadj);
+}
+
+/*****************************************************************************/
+int Zfw_LB_Set_Part_Sizes(int *addr_lb, int *nbytes, int *global_part, int *len,
+                          int *partids, int *wgtidx, float *partsizes)
+{
+   struct Zoltan_Struct *lb;
+   unsigned char *p;
+   int i;
+   p = (unsigned char *) &lb;
+   for (i=0; i<(*nbytes); i++) {*p = (unsigned char)addr_lb[i]; p++;}
+   Zoltan_Current = lb;
+
+   return Zoltan_LB_Set_Part_Sizes(lb, *global_part, *len, partids, wgtidx,
+                                   partsizes);
 }
 
 /*****************************************************************************/
