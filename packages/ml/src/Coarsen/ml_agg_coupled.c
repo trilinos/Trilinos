@@ -154,7 +154,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    
    for ( i = 0; i < aggr_count; i++ ) aggr_cnt_array[i] = 0;
    nbytes = exp_Nrows * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, nbytes, "ACJ");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &aggr_index, (unsigned int) nbytes, "ACJ");
    else              aggr_index = NULL;
    for ( i = 0; i < exp_Nrows; i++ )
    {
@@ -189,10 +189,10 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    for ( i = 0; i < N_neighbors; i++ ) total_recv_leng += recv_leng[i];
 
    nbytes = total_send_leng * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf, nbytes, "Ag1");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf, (unsigned int) nbytes, "Ag1");
    else              int_buf = NULL;
    nbytes = total_recv_leng * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf2, nbytes, "Ag2");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf2, (unsigned int) nbytes, "Ag2");
    else              int_buf2 = NULL;
 
    offset = 0;
@@ -237,7 +237,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
          max_count = (index > max_count ) ? index : max_count;
       }
       nbytes = ( max_count + 2 ) * sizeof(int);
-      if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf2, nbytes, "Ag3");
+      if ( nbytes > 0 ) ML_memory_alloc((void**)&int_buf2, (unsigned int) nbytes, "Ag3");
       else              int_buf2 = NULL;
 
       /* ---------------------------------------------------------- */
@@ -304,7 +304,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    level = ml_ag->cur_level;
    nbytes = Nrows * sizeof( int );
    if ( nbytes > 0 )
-      ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), nbytes, "ACK");
+     ML_memory_alloc((void**) &(ml_ag->aggr_info[level]), (unsigned int) nbytes, "ACK");
    else
       ml_ag->aggr_info[level] = NULL;
    count = aggr_count;
@@ -360,8 +360,8 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    nbytes = new_N_send * sizeof(int);
    if ( nbytes > 0 )
    {
-      ML_memory_alloc((void**) &new_send_leng, nbytes, "ACL");
-      ML_memory_alloc((void**) &new_send_neighbors, nbytes, "ACM");
+     ML_memory_alloc((void**) &new_send_leng, (unsigned int) nbytes, "ACL");
+     ML_memory_alloc((void**) &new_send_neighbors, (unsigned int) nbytes, "ACM");
       new_N_send = 0;
       for ( i = 0; i < N_neighbors; i++ )
       {
@@ -375,7 +375,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       count = 0;
       for ( i = 0; i < new_N_send; i++ ) count += new_send_leng[i];
       nbytes = count * sizeof(int);
-      ML_memory_alloc((void**) &new_send_list, nbytes, "ACN");
+      ML_memory_alloc((void**) &new_send_list, (unsigned int) nbytes, "ACN");
       offset = 0;
       m = count;
       count = 0;
@@ -426,12 +426,12 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
                 exp_Ncoarse);
    }
    nbytes = ( new_Nrows + 1 ) * sizeof(int);
-   ML_memory_alloc((void**)&(new_ia), nbytes, "ACO");
+   ML_memory_alloc((void**)&(new_ia), (unsigned int) nbytes, "ACO");
    nbytes = new_Nrows * nullspace_dim * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_ja), nbytes, "ACP");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_ja), (unsigned int) nbytes, "ACP");
    else              new_ja = NULL;
    nbytes = new_Nrows * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_val), nbytes, "ACQ");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&(new_val), (unsigned int) nbytes, "ACQ");
    else              new_ja = NULL;
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_val[i] = 0.0;
    for ( i = 0; i < new_Nrows*nullspace_dim; i++ ) new_ja[i] = 0;
@@ -442,7 +442,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
 
    nbytes = Ncoarse * nullspace_dim * nullspace_dim * sizeof(double);
    if ( nbytes > 0 )
-      ML_memory_alloc((void**)&(new_null),nbytes,"ACR");
+     ML_memory_alloc((void**)&(new_null),(unsigned int) nbytes,"ACR");
    else
       new_null = NULL;
    for (i = 0; i < Ncoarse*nullspace_dim*nullspace_dim; i++)
@@ -494,7 +494,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = total_recv_leng * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&comm_val, nbytes, "ACT");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&comm_val, (unsigned int) nbytes, "ACT");
    else              comm_val = NULL;
    for (i = 0; i < total_recv_leng*nullspace_dim; i++) comm_val[i] = 0.0;
    max_agg_size = 0;
@@ -503,15 +503,15 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
       if (aggr_cnt_array[i] > max_agg_size) max_agg_size = aggr_cnt_array[i];
    }
    nbytes = max_agg_size * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&qr_tmp, nbytes, "ACU");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&qr_tmp, (unsigned int) nbytes, "ACU");
    else              qr_tmp = NULL;
    nbytes = nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, nbytes, "ACV");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&tmp_vect, (unsigned int) nbytes, "ACV");
    else              tmp_vect = NULL;
 
    lwork  = nullspace_dim;
    nbytes = nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&work, nbytes, "ACW");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&work, (unsigned int) nbytes, "ACW");
    else              work = NULL;
 
    /* ------------------------------------------------------------- */
@@ -521,10 +521,10 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    if (nullspace_vect != NULL)
    {
       nbytes = total_send_leng * nullspace_dim * sizeof(double);
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf, nbytes,"ACX");
+      if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf, (unsigned int) nbytes,"ACX");
       else              dble_buf = NULL;
       nbytes = total_recv_leng * nullspace_dim * sizeof(double);
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf2, nbytes,"ACY");
+      if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf2, (unsigned int) nbytes,"ACY");
       else              dble_buf2 = NULL;
       length = total_send_leng * nullspace_dim;
       for ( i = 0; i < total_send_leng; i++ )
@@ -717,7 +717,7 @@ int ML_Aggregate_CoarsenCoupled( ML_Aggregate *ml_ag,
    /* ------------------------------------------------------------- */
 
    nbytes = total_send_leng * nullspace_dim * sizeof(double);
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf, nbytes,"ACc");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &dble_buf, (unsigned int) nbytes,"ACc");
    else              dble_buf = NULL;
    msgtype = 24945;
    length = sizeof(double) * nullspace_dim;
@@ -887,7 +887,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ============================================================= */
 
    nbytes = Nrows * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &node_type, nbytes, "Ag4");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &node_type, (unsigned int) nbytes, "Ag4");
    else              node_type = NULL;
    for ( i = 0; i < Nrows; i++ ) node_type[i] = 0; /* all interior */
    for ( i = 0; i < Nrows; i++ ) 
@@ -1032,7 +1032,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    /* ------------------------------------------------------------- */
 
    nbytes = (N_neighbors + 1 ) * sizeof(int);
-   ML_memory_alloc((void**) &sendlist_proc, nbytes, "Aga");
+   ML_memory_alloc((void**) &sendlist_proc, (unsigned int) nbytes, "Aga");
    sendlist_proc[0] = 0;
    for ( i = 1; i <= N_neighbors; i++ )
       sendlist_proc[i] = sendlist_proc[i-1] + recv_leng[i-1];
@@ -1044,7 +1044,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    aggr_count = 0;
    aggr_cnt_leng = Nrows / 5 + 2;
    nbytes = aggr_cnt_leng * sizeof(int);
-   if (nbytes > 0) ML_memory_alloc((void**) &aggr_cnt_array,nbytes,"Agb");
+   if (nbytes > 0) ML_memory_alloc((void**) &aggr_cnt_array, (unsigned int) nbytes,"Agb");
    else            aggr_cnt_array = NULL;
 
    for ( i = 0; i < aggr_cnt_leng; i++ ) aggr_cnt_array[i] = 0;
@@ -1058,8 +1058,8 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    nbytes = exp_Nrows * sizeof( int );
    if ( nbytes > 0 )
    {
-      ML_memory_alloc((void**) &aggr_index, nbytes, "Ag7");
-      ML_memory_alloc((void**) &aggr_stat, nbytes, "Ag8");
+      ML_memory_alloc((void**) &aggr_index, (unsigned int) nbytes, "Ag7");
+      ML_memory_alloc((void**) &aggr_stat, (unsigned int) nbytes, "Ag8");
    } else aggr_index = aggr_stat = NULL;
 
    for ( i = 0; i < Nrows; i++ )
@@ -1080,7 +1080,7 @@ int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *ml_ag, ML_Comm *comm,
    min_agg_size = 2;
    max_neigh_selected = 0;
    phaseAFlag = 1;
-   ML_Aggregate_Form_Aggregates('1', phaseAFlag, Nrows, mat_indx, 
+   ML_Aggregate_Form_Aggregates(1, phaseAFlag, Nrows, mat_indx, 
         aggr_index, aggr_stat, node_type, NULL, order_array, &aggr_count, 
         &aggr_cnt_leng, &aggr_cnt_array, max_length, min_agg_size, 
         max_neigh_selected, N_neighbors, neighbors, send_leng, send_list, 
@@ -1205,7 +1205,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    int    i, j, k, Nrows, nz_cnt, nbytes, *amal_mat_indx, LN_neighbors;
    int    *Lneighbors, *Lsend_leng, *Lrecv_leng, *Lsend_list, *Lrecv_list;
    int    *Aneighbors, *Asend_leng, *Arecv_leng, *Asend_list, *Arecv_list;
-   int    AN_neighbors, total_send_leng, count, label, lcount;
+   int    AN_neighbors, total_send_leng, count, label=-1, lcount;
    int    nblocks, row, amal_count, index;
    int    total_recv_leng, chk_bdry;
    char   *col_entered;
@@ -1227,9 +1227,9 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    nbytes = AN_neighbors * sizeof( int );
    if ( nbytes > 0 )
    {
-      ML_memory_alloc((void**) &Aneighbors, nbytes, "AgA");
-      ML_memory_alloc((void**) &Asend_leng, nbytes, "AgB");
-      ML_memory_alloc((void**) &Arecv_leng, nbytes, "AgC");
+      ML_memory_alloc((void**) &Aneighbors, (unsigned int) nbytes, "AgA");
+      ML_memory_alloc((void**) &Asend_leng, (unsigned int) nbytes, "AgB");
+      ML_memory_alloc((void**) &Arecv_leng, (unsigned int) nbytes, "AgC");
    }
    else
    {
@@ -1244,7 +1244,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    total_send_leng = 0;
    for ( i = 0; i < AN_neighbors; i++ ) total_send_leng += Asend_leng[i];
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &Asend_list, nbytes, "AgD");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &Asend_list, (unsigned int) nbytes, "AgD");
    else              Asend_list = NULL;
    count = 0;
    for ( i = 0; i < AN_neighbors; i++ )
@@ -1256,7 +1256,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    total_recv_leng = 0;
    for ( i = 0; i < AN_neighbors; i++ ) total_recv_leng += Arecv_leng[i];
    nbytes = total_recv_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &Arecv_list, nbytes, "AgE");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &Arecv_list, (unsigned int) nbytes, "AgE");
    else              Arecv_list = NULL;
    count = 0;
    for ( i = 0; i < AN_neighbors; i++ )
@@ -1290,9 +1290,9 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    nbytes = LN_neighbors * sizeof( int );
    if ( nbytes > 0 )
    {
-      ML_memory_alloc((void**) &Lneighbors, nbytes, "AgA");
-      ML_memory_alloc((void**) &Lsend_leng, nbytes, "AgB");
-      ML_memory_alloc((void**) &Lrecv_leng, nbytes, "AgC");
+      ML_memory_alloc((void**) &Lneighbors, (unsigned int) nbytes, "AgA");
+      ML_memory_alloc((void**) &Lsend_leng, (unsigned int) nbytes, "AgB");
+      ML_memory_alloc((void**) &Lrecv_leng, (unsigned int) nbytes, "AgC");
    }
    else
    {
@@ -1330,7 +1330,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    total_send_leng = 0;
    for ( i = 0; i < LN_neighbors; i++ ) total_send_leng += Lsend_leng[i];
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &Lsend_list, nbytes, "AgD");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &Lsend_list, (unsigned int) nbytes, "AgD");
    else              Lsend_list = NULL;
 
    count = lcount = 0;
@@ -1410,7 +1410,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
       }
 
       nbytes = total_recv_leng * sizeof( int );
-      if ( nbytes > 0 ) ML_memory_alloc((void**) &Lrecv_list, nbytes, "AgE");
+      if ( nbytes > 0 ) ML_memory_alloc((void**) &Lrecv_list, (unsigned int) nbytes, "AgE");
       else              Lrecv_list = NULL;
 
       count = lcount = 0;
@@ -1446,7 +1446,7 @@ int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
    /* ------------------------------------------------------------- */
 
    nbytes = (nz_cnt + Nrows + 1) * sizeof( int ); /* probably excessive */
-   ML_memory_alloc((void**) &amal_mat_indx, nbytes, "AgF");
+   ML_memory_alloc((void**) &amal_mat_indx, (unsigned int) nbytes, "AgF");
 
    /* ------------------------------------------------------------- */
    /* start compressing                                             */
@@ -1557,7 +1557,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
       fromproc = neighbors[i];
       length = recv_leng[i] * typeleng;
       if ( length > 0 )
-         comm->USR_irecvbytes(&recvbuf[offset*typeleng],length,&fromproc,
+	comm->USR_irecvbytes(&recvbuf[offset*typeleng],(unsigned int) length,&fromproc,
 #ifdef ML_CPP
                            &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1571,7 +1571,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
    {
       length = send_leng[i] * typeleng;
       if ( length > 0 )
-         comm->USR_sendbytes((void*) &sendbuf[offset*typeleng], length,
+	comm->USR_sendbytes((void*) &sendbuf[offset*typeleng], (unsigned int) length,
                              neighbors[i], msgtype, comm->USR_comm );
       offset += send_leng[i];
    }
@@ -1582,7 +1582,7 @@ int ML_Aggregate_ExchangeStatus(char *recvbuf,char *sendbuf,int N_neighbors,
       length = recv_leng[i] * typeleng;
       msgtype = msgid;
       if ( length > 0 )
-         comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], length, &fromproc,
+	comm->USR_cheapwaitbytes(&recvbuf[offset*typeleng], (unsigned int) length, &fromproc,
 #ifdef ML_CPP
                              &msgtype, comm->USR_comm, &Request[i] );
 #else
@@ -1646,7 +1646,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
 {
    int      i, j, k, m, N_neighbors, *send_leng, *recv_leng, *send_list;
    int      *neighbors, nbytes, total_send_leng, total_recv_leng;
-   int      index, count, count2, label, nprocs, msgtype;
+   int      index, count, count2, label = -1, nprocs, msgtype;
    int      new_N_neighbors, *new_send_leng, *new_send_list;
    int      *new_recv_list, *new_recv_leng, *new_neighbors;
    int      toproc, fromproc, *recv_list; 
@@ -1675,9 +1675,9 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    nbytes = N_neighbors * sizeof( int );
    if ( nbytes > 0 ) 
    {
-      ML_memory_alloc((void**) &neighbors,  nbytes, "CI1");
-      ML_memory_alloc((void**) &send_leng,  nbytes, "CI2");
-      ML_memory_alloc((void**) &recv_leng,  nbytes, "CI3");
+      ML_memory_alloc((void**) &neighbors, (unsigned int) nbytes, "CI1");
+      ML_memory_alloc((void**) &send_leng, (unsigned int) nbytes, "CI2");
+      ML_memory_alloc((void**) &recv_leng, (unsigned int) nbytes, "CI3");
    } 
    else neighbors = send_leng = recv_leng = NULL;
 
@@ -1691,7 +1691,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    for ( i = 0; i < N_neighbors; i++ ) total_send_leng += send_leng[i];
 
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &send_list,nbytes,"CI4");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &send_list, (unsigned int) nbytes,"CI4");
    else              send_list = NULL;
 
    count = 0;
@@ -1705,7 +1705,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    total_recv_leng = 0;
    for ( i = 0; i < N_neighbors; i++ ) total_recv_leng += recv_leng[i];
    nbytes = total_recv_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &recv_list,nbytes,"CI5");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &recv_list, (unsigned int) nbytes,"CI5");
    else              recv_list = NULL;
    count = 0;
    for ( i = 0; i < N_neighbors; i++ )
@@ -1738,8 +1738,8 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    nbytes = new_N_neighbors * sizeof( int );
    if ( nbytes > 0 ) 
    {
-      ML_memory_alloc((void**) &new_neighbors,  nbytes, "CI1");
-      ML_memory_alloc((void**) &new_send_leng,  nbytes, "CI2");
+      ML_memory_alloc((void**) &new_neighbors, (unsigned int) nbytes, "CI1");
+      ML_memory_alloc((void**) &new_send_leng, (unsigned int) nbytes, "CI2");
    } 
    else new_neighbors = new_send_leng = NULL;
 
@@ -1770,7 +1770,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    total_send_leng = 0;
    for (i = 0; i < new_N_neighbors; i++) total_send_leng += new_send_leng[i];
    nbytes = total_send_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**) &new_send_list,nbytes,"CI6");
+   if ( nbytes > 0 ) ML_memory_alloc((void**) &new_send_list, (unsigned int) nbytes,"CI6");
 
    count = count2 = 0;
    for ( i = 0; i < N_neighbors; i++ )
@@ -1802,7 +1802,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    /* ----------------------------------------------------------------- */
 
    nbytes = N_neighbors * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&new_recv_leng, nbytes, "RI1");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&new_recv_leng, (unsigned int) nbytes, "RI1");
    else              new_recv_leng = NULL;
    nbytes = N_neighbors * sizeof(USR_REQ);
    if ( nbytes > 0 ) Request = (USR_REQ *) ML_allocate(nbytes);
@@ -1842,7 +1842,7 @@ int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
    total_recv_leng = 0;
    for (i = 0; i < N_neighbors; i++) total_recv_leng += recv_leng[i];
    nbytes = total_recv_leng * sizeof( int );
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&new_recv_list, nbytes, "RI3");
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&new_recv_list, (unsigned int) nbytes, "RI3");
    else              new_recv_leng = NULL;
    for ( i = 0; i < total_recv_leng; i++ ) new_recv_list[i] = i;
 
@@ -1899,8 +1899,8 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
       nbytes = new_N_rcv * sizeof(int);
       if ( nbytes > 0 )
       {
-         ML_memory_alloc((void**)&new_recv_leng, nbytes, "AGM");
-         ML_memory_alloc((void**)&new_recv_neighbors, nbytes, "AGM");
+         ML_memory_alloc((void**)&new_recv_leng, (unsigned int) nbytes, "AGM");
+         ML_memory_alloc((void**)&new_recv_neighbors, (unsigned int) nbytes, "AGM");
       } else new_recv_leng = new_recv_neighbors = NULL;
       nbytes = new_N_rcv * sizeof(USR_REQ);
       if ( nbytes > 0 ) Request = (USR_REQ *) ML_allocate(nbytes);
@@ -1952,7 +1952,7 @@ int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
 /* form new aggregates                                                       */
 /* ------------------------------------------------------------------------- */
 
-int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows, 
+int ML_Aggregate_Form_Aggregates(int phaseID, int phaseAFlag, int Nrows, 
         int *mat_indx, int *aggr_index, int *aggr_stat, 
         int *node_type, int *node_type2, int *order_array, int *aggr_count_in, 
         int *aggr_cnt_leng_in,
@@ -1961,7 +1961,7 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
         int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
         int *sendlist_proc, ML_Comm *comm, double printflag)
 {
-   int           i, j, k, index, inode, inode2, jnode, mdiff, count;
+   int           i, j, k, index= -1, inode, inode2, jnode, mdiff, count;
    int           mypid, msgtype, procnum, *com_buf, *com_buf2, nready;
    int           nbytes, total_send_leng, total_recv_leng, select_flag;
    int           aggr_count, *aggr_cnt_array, loop_flag, *itmp_array;
@@ -1982,7 +1982,7 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
    aggr_cnt_leng = (*aggr_cnt_leng_in);
    aggr_cnt_array = (*aggr_cnt_array_in);
    nbytes = aggr_cnt_leng * sizeof(int);
-   if ( nbytes > 0 ) ML_memory_alloc((void**)&aggr_cnt_array,nbytes,"AGF"); 
+   if ( nbytes > 0 ) ML_memory_alloc((void**)&aggr_cnt_array, (unsigned int) nbytes,"AGF"); 
    for ( i = 0; i < aggr_count; i++ ) 
       aggr_cnt_array[i] = (*aggr_cnt_array_in)[i];
    if ( nbytes > 0 )
@@ -2205,7 +2205,7 @@ int ML_Aggregate_Form_Aggregates(char phaseID, int phaseAFlag, int Nrows,
                   /* ------------------------------------------------- */
 
 #ifdef ML_AGGR_OUTPUT
-printf("%d : Phase %cA - aggr %4d has ", mypid, phaseID, aggr_count);
+printf("%d : Phase %dA - aggr %4d has ", mypid, phaseID, aggr_count);
 #endif
                   for ( j = 0; j < supernode->length; j++ )
                   {
@@ -2235,7 +2235,7 @@ printf("\n");
                      itmp_array = aggr_cnt_array;
                      aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
                      nbytes = aggr_cnt_leng * sizeof( int );
-                     ML_memory_alloc((void**)&aggr_cnt_array,nbytes,"Agc");
+                     ML_memory_alloc((void**)&aggr_cnt_array, (unsigned int) nbytes,"Agc");
                      for ( k = 0; k < aggr_count; k++ )
                         aggr_cnt_array[k] = itmp_array[k];
                      ML_memory_free((void**)&itmp_array);
@@ -2357,13 +2357,13 @@ printf("\n");
          total_nwaiting = ML_Comm_GsumInt( comm, nwaiting );
          if ( mypid == 0 && printflag < ML_Get_PrintLevel() )
          {
-            printf("Aggregation(CC) : Phase %cA - Iteration        = %d\n",
+            printf("Aggregation(CC) : Phase %dA - Iteration        = %d\n",
                    phaseID, loop_flag);
-            printf("Aggregation(CC) : Phase %cA - nodes aggregated = %d(%d)\n",
+            printf("Aggregation(CC) : Phase %dA - nodes aggregated = %d(%d)\n",
                    phaseID, total_nselected, total_Nrows);
-            printf("Aggregation(CC) : Phase %cA - nodes waiting    = %d\n",
+            printf("Aggregation(CC) : Phase %dA - nodes waiting    = %d\n",
                    phaseID, total_nwaiting);
-            printf("Aggregation(CC) : Phase %cA - total aggregates = %d\n",
+            printf("Aggregation(CC) : Phase %dA - total aggregates = %d\n",
                    phaseID, total_aggr_count);
          }
 
@@ -2446,7 +2446,7 @@ total_nwaiting = 0;
               supernode->length >= min_agg_size )
          {
 #ifdef ML_AGGR_OUTPUT
-printf("%d : Phase %cB - aggr %4d has ", mypid, phaseID, aggr_count);
+printf("%d : Phase %dB - aggr %4d has ", mypid, phaseID, aggr_count);
 #endif
             for ( j = 0; j < supernode->length; j++ )
             {
@@ -2466,7 +2466,7 @@ printf("\n");
                itmp_array = aggr_cnt_array;
                aggr_cnt_leng = aggr_cnt_leng * 6 / 5 + 1;
                nbytes = aggr_cnt_leng * sizeof( int );
-               ML_memory_alloc((void**)&aggr_cnt_array,nbytes,"Agf");
+               ML_memory_alloc((void**)&aggr_cnt_array, (unsigned int) nbytes,"Agf");
                for ( k = 0; k < aggr_count; k++ )
                   aggr_cnt_array[k] = itmp_array[k];
                ML_memory_free((void**)&itmp_array);
@@ -2510,9 +2510,9 @@ printf("\n");
    total_aggr_count = ML_Comm_GsumInt( comm, aggr_count );
    if ( mypid == 0 && printflag < ML_Get_PrintLevel())
    {
-      printf("Aggregation(CC) : Phase %cB - nodes aggregated = %d(%d)\n",
+      printf("Aggregation(CC) : Phase %dB - nodes aggregated = %d(%d)\n",
              phaseID, total_nselected, total_Nrows);
-      printf("Aggregation(CC) : Phase %cB - total aggregates = %d\n",
+      printf("Aggregation(CC) : Phase %dB - total aggregates = %d\n",
              phaseID, total_aggr_count);
    }
 
@@ -2541,8 +2541,8 @@ int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
         int *neighbors, int *send_leng, int *send_list, int *recv_leng, 
         int *recv_list, ML_Comm *comm, double printflag )
 {
-   int          i, k, m, inode, jnode, index, mincount, select_flag;
-   int          length, *int_array, *int_array2, *com_buf;
+   int          i, k, m, inode, jnode, index= -1, mincount, select_flag;
+   int          length, *int_array= NULL, *int_array2= NULL, *com_buf;
    int          total_send_leng, msgtype, mypid, aggr_count, *aggr_cnt_array;
    int          nselected, total_nselected, total_Nrows, total_aggr_count; 
    int          Nrows, nbytes;
@@ -2819,9 +2819,9 @@ int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
    /* ============================================================= */
 
    nbytes = Nrows * sizeof( int );
-   ML_memory_alloc((void**) &bc_array, nbytes, "ABC");
+   ML_memory_alloc((void**) &bc_array, (unsigned int) nbytes, "ABC");
    nbytes = (count + Nrows + 1) * sizeof( int );
-   ML_memory_alloc((void**) &mat_indx, nbytes, "ACG");
+   ML_memory_alloc((void**) &mat_indx, (unsigned int) nbytes, "ACG");
    k = ML_Comm_GsumInt( comm, Nrows);
    m = ML_Comm_GsumInt( comm, count);
 
