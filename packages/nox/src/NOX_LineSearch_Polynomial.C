@@ -67,11 +67,12 @@ bool Polynomial::compute(Abstract::Group& newgrp, double& step,
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
                             // Redefined f(), RH
 
-//   General computation of directional derivative used in curvature condition
-//   Note that for Newton direction, oldfprime = -2.0*oldf
+  // General computation of directional derivative used in curvature condition
+  // Note that for Newton direction, oldfprime = -2.0*oldf
   Abstract::Vector* tmpvecptr = oldgrp.getX().clone(ShapeCopy);
   oldgrp.applyJacobian(dir,*tmpvecptr);
   double oldfprime = tmpvecptr->dot(oldgrp.getF());
+  delete tmpvecptr;
 
   double newf, prevf;
   double tempStep, previousStep;

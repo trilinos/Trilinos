@@ -170,10 +170,10 @@ bool DennisSchnabel::evaluate(FillType f,
       jac[1] = 3.*u[1]*u[1];
       ierr=A->ReplaceGlobalValues(1, 2, jac, column);
     }
-
-    delete [] column;
-    delete [] jac;
   } 
+
+  delete [] column;
+  delete [] jac;
 
   // Sync up processors to be safe
   Comm->Barrier();

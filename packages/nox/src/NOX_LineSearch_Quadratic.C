@@ -74,6 +74,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
   Abstract::Vector* tmpvecptr = oldgrp.getX().clone(ShapeCopy);
   oldgrp.applyJacobian(dir,*tmpvecptr);
   double oldfprime = tmpvecptr->dot(oldgrp.getF());
+  delete tmpvecptr;
 
   double newf, prevf;
   double tempStep, previousStep;
