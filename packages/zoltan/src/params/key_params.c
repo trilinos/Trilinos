@@ -19,7 +19,6 @@
 
 /* 
  * Handle parameter changes for variables stored in LB object.
- * Currently, only example is Imbalance_Tol.
  */
 
 int LB_Set_Key_Param(
@@ -33,6 +32,8 @@ char *val)			/* value of variable */
     PARAM_VARS key_params[] = {
 	{ "IMBALANCE_TOL", NULL, "DOUBLE" },
 	{ "AUTO_MIGRATE", NULL, "INT" },
+	{ "OBJ_WEIGHT_DIM", NULL, "INT" },
+	{ "COMM_WEIGHT_DIM", NULL, "INT" },
 	{ NULL, NULL, NULL } };
 
     status = LB_Check_Param(name, val, key_params, &result, &index);
@@ -51,7 +52,25 @@ char *val)			/* value of variable */
 	lb->Migrate.Auto_Migrate = result.ival;
 	status = 3;		/* Don't add to Params field of LB */
       }
-   }
+      else if (index == 2) {		/* Object weight dim.  */
+	if (result.ival < 0) {
+	    fprintf(stderr, "WARNING: Invalid Obj_Weight_Dim value (%d) "
+		"being set to 0\n", result.ival);
+	    result.ival = 0;
+	}
+	lb->Obj_Weight_Dim = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+      }
+      else if (index == 3) {		/* Communication weight dim.  */
+	if (result.ival < 0) {
+	    fprintf(stderr, "WARNING: Invalid Comm_Weight_Dim value (%d) "
+		"being set to 0\n", result.ival);
+	    result.ival = 0;
+	}
+	lb->Comm_Weight_Dim = result.ival;
+	status = 3;		/* Don't add to Params field of LB */
+      }
+    }
 
     return(status);
 }
