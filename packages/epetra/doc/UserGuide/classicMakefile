@@ -1,6 +1,6 @@
 TARGET=EpetraUserGuide
 
-$(TARGET).pdf: $(TARGET).tex Ex1.tex Ex1a.tex HungCode.tex
+$(TARGET).pdf: $(TARGET).tex Ex1.tex Ex1a.tex HungCode.tex ExMaps.tex
 	pdflatex $(TARGET)
 	bibtex $(TARGET)
 	pdflatex $(TARGET)
@@ -19,5 +19,9 @@ Ex1.tex: ../../example/UG_Ex1/cxx_main.cpp ex_header.txt ex_footer.txt
 
 Ex1a.tex: ../../example/UG_Ex1/power_method.cpp ex_header.txt ex_footer.txt
 	cat ex_header.txt ../../example/UG_Ex1/power_method.cpp ex_footer.txt > Ex1a.tex
+
 HungCode.tex: HungCode.cpp ex_header.txt ex_footer.txt
 	cat ex_header.txt HungCode.cpp ex_footer.txt > HungCode.tex
+
+ExMaps.tex: ../../example/UG_ExMaps/cxx_main.cpp ex_header.txt ex_footer.txt
+	cat ex_header.txt ../../example/UG_ExMaps/cxx_main.cpp ex_footer.txt > ExMaps.tex
