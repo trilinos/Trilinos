@@ -2589,3 +2589,154 @@ int AZ_get_MSR_arrays(ML_Operator *Amat, int **bindx, double **val)
 
 #endif
 
+/* ======================================================================== */
+/*!
+ \file \c az_matgen_create_struct_grid.c
+ 
+ \brief Define the x-, y- and z- coordinates for structured cartesian grids
+ in 1D, 2D, 3D. Those routines can be used in conjuction with
+ \c AZ_matgen_lapl1d, \c AZ_matgen_lapl2d, \c  AZ_matgen_lapl3d.
+
+ \author Marzio Sala, SNL 9214
+
+*/
+/* ------------------------------------------------------------------------ */
+
+static void get_pos2D( int glonum, int nx, int * irow, int  * icol ) 
+{
+
+  *irow = glonum%nx;
+  *icol = glonum/nx;
+  
+}
+
+static void get_pos3D( int glonum, int nx, int ny, int * ix, int  * iy, int *iz) 
+{
+
+  int g2 = glonum;
+  
+  *iz = glonum/(nx*ny);
+  glonum -= (*iz)*nx*ny;
+  *ix = glonum%nx;
+  *iy = glonum/nx;  
+
+}
+
+/* ======================================================================== */
+/*!
+ \brief 
+
+ This function defines the coordinates for 1D/2D/3D problems
+ on the (0,1) interval, the (0,1)x(0,1) square or the
+ (0,1)x(0,1)x(0,1) cube.
+ 
+ Parameter list:
+ - \c N : global dimension of the problem
+ - \c N_update : number of nodes assigned to this processor
+ - \c N_external : number of nodes in the external set
+ - \c update, \c external, \c update_index, \c extern_index: see
+   AZTEC's user guide
+ - \c x, \c y, \c z : double vectors, allocated by the user, of size
+   \c N_update+N_external
+ - \c option : put
+   - 1 grid for 1D problems
+   - 2 grid for 2D problems
+   - 3 grid for 3D problems
+   
+ \note this function works \e only with \c AZ_transform'd matrices
+ 
+*/
+/* ------------------------------------------------------------------------ */
+
+void AZ_ML_Build_NodalCoordinates( int N, int N_update, int N_external,
+				   int update[], int external[],
+				   int update_index[], int extern_index[],
+				   double x[], double y[], double z[],
+				   int option )
+{
+
+  int i, irow, icol, j;
+  int nx, ny, nz;
+  double delta_x, delta_y, delta_z;
+  
+  switch( option ) {
+
+  case 1:
+    delta_x = 1.0/(N-1);
+    break;
+
+  case 2:
+    nx = (int) sqrt(N);
+    ny = (int) sqrt(N);
+    delta_x = 1.0/(nx-1);
+    delta_y = 1.0/(ny-1);
+    break;
+
+  case 3:
+    nx = (int) pow(N,0.3333334);
+    ny = nx;
+    nz = nx;
+    
+    delta_x = 1.0/(nx-1);
+    delta_y = 1.0/(ny-1);
+    delta_z = 1.0/(nz-1);
+    break;
+
+  default:
+    fprintf( stderr,
+             "*MATGEN*ERR* value of option not valid (%d)\n",
+	     option );
+	     exit( EXIT_FAILURE );
+    
+  }
+  
+  /* now build the nodal coordinates for the structured grid */
+  
+  switch( option ) {
+
+  case 1:
+
+    for( i=0 ; i<N_update ; i++ ) {
+      x[update_index[i]]      = delta_x * update[i];
+    }
+    for( i=0 ; i<N_external ; i++ ) {
+      x[extern_index[i]]      = delta_x * external[i];
+    }
+    break;
+    
+  case 2:
+
+    for( i=0 ; i<N_update ; i++ ) {
+      get_pos2D( update[i], nx, &irow, &icol );
+      x[update_index[i]]      = delta_x * irow;
+      y[update_index[i]]      = delta_y * icol;
+    }
+    for( i=0 ; i<N_external ; i++ ) {
+      get_pos2D( external[i], nx, &irow, &icol );
+      x[extern_index[i]]      = delta_x * irow;
+      y[extern_index[i]]      = delta_y * icol;
+    }
+    break;
+    
+  case 3:
+    
+    for( i=0 ; i<N_update ; i++ ) {
+      get_pos3D( update[i], nx, ny, &irow, &icol, &j );
+      x[update_index[i]]      = delta_x * irow;
+      y[update_index[i]]      = delta_y * icol;
+      z[update_index[i]]      = delta_z * j;
+    }
+    for( i=0 ; i<N_external ; i++ ) {
+      get_pos3D( external[i], nx, ny, &irow, &icol, &j );
+      x[extern_index[i]]      = delta_x * irow;
+      y[extern_index[i]]      = delta_y * icol;
+      z[extern_index[i]]      = delta_z * j;
+    }
+    break;
+
+  }
+
+
+  return;
+  
+}
