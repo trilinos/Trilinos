@@ -113,7 +113,7 @@ lib_LIBRARIES = libnoxepetra.a
 
 # List of all headers to install in $(includedir)
 
-include_HEADERS = $(EPETRA_H)
+include_HEADERS = $(EPETRA_H) $(EPETRANEW_H) $(EPETRA_MULTIVECS_H)
 
 endif
 

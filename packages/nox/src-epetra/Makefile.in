@@ -202,7 +202,7 @@ libnoxepetra_a_CXXFLAGS = -I$(top_srcdir)/src $(TRILINOS_CXXFLAGS)
 
 
 # List of all headers to install in $(includedir)
-@BUILD_LIBNOXEPETRA_TRUE@include_HEADERS = $(EPETRA_H)
+@BUILD_LIBNOXEPETRA_TRUE@include_HEADERS = $(EPETRA_H) $(EPETRANEW_H) $(EPETRA_MULTIVECS_H)
 
 
 # ------------------------------------------------------------------------
