@@ -266,7 +266,7 @@ static int matching_ipm (ZZ *zz, HGraph *hg, Matching match)
        
    
   /* determine number of basic matching rounds scaled by number of procs */
-  nrounds = hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * LOOP_FACTOR);
+  nrounds = MAX(1, hg->dist_x[hgc->nProc_x] / (hgc->nProc_x * LOOP_FACTOR));
   ncandidates = hg->nVtx/nrounds/2 + 1;  /* 2: each match removes 2 vertices */
         
   /* allocate storage proportional to number of local vertices */  
