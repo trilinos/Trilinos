@@ -528,7 +528,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
       pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
 
    /* apply grid transfer */
-   if (Op->matvec->ML_id == ML_EXTERNAL)
+      if (Op->matvec->ML_id == ML_EXTERNAL)
         Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
    else Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 
@@ -728,7 +728,8 @@ int ML_amalg_drop_getrow(void *data, int N_requested_rows, int requested_rows[],
       printf("ML_amalg_drop_getrow: Not implemented for > 1 row at a time\n");
       exit(1);
    }
-   temp = (struct amalg_drop *) data;
+   Amat = (ML_Operator *) data;
+   temp = (struct amalg_drop *) ML_Get_MyGetrowData(Amat);
    Amat = temp->Amat;
    block_size   = temp->block_size;
    amalg_getrow = Amat->getrow;
@@ -986,7 +987,7 @@ int ML_Operator_AmalgamateAndDropWeak(ML_Operator *Amat, int block_size,
      Amat->getrow->use_loc_glob_map = ML_NO;
      Amat->getrow->loc_glob_map     = NULL;
      Amat->getrow->row_map          = NULL;
-     ML_Operator_Set_Getrow(Amat, ML_EXTERNAL, 
+     ML_Operator_Set_Getrow(Amat, ML_INTERNAL, 
                             new_data->original_getrow->Nrows/block_size,
                             ML_amalg_drop_getrow);
 
@@ -1602,7 +1603,7 @@ int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen,
         Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
 }
    else {
-Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
+     Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
 }
 
    /* apply boundary condition */
