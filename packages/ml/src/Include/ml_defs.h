@@ -9,7 +9,7 @@
 #define MLFORTRAN(aaa) aaa ## _
 #endif
 
-#define ML_VERSION        ml2_2_0_0
+#define ML_VERSION        ml3_0_0_0
 
 #ifndef MB_MODIF
 #define MB_MODIF

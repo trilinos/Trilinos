@@ -1,30 +1,58 @@
 0)  ML can be built with automake and autoconfig.   For ML-specific flags, at
-the ml directory level, type "./configure --help".
+    the ml directory level, type "./configure --help".  Here are ML specific
+    configure options.
 
-The following items are enabled by default:
+    --enable-ml_multiple_rhs
+    --enable-ml_enrich
+    --enable-ml_newtpe
+    --enable-ml_timing
+    --enable-ml_flops
+    --with-ml_epetra
+    --with-ml_aztec
+    --with-ml_external_mpi_functions
+    --with-ml_superlu
+
+    The following items are enabled by default:
 
         vendor blas & lapack (i.e., not ml's internal versions)
         epetra & aztec support
         the latest Maxwell prolongator improvements
 
-The following items are NOT enabled by default:
+    The following items are NOT enabled by default:
 
         MPI
         SuperLU
 
-1) If you prefer to build with the old makefile system, look at the INSTALL
-file for general hints on compiling ML.
+    Here is an example configure and build line:
 
-2) Look in the doc directory for documentation.
+     > cd /home/jhu/Trilinos/packages/ml
+     > ./configure --with-mpi-compilers=/usr/local/mpich/bin --with-ml_superlu \
+        --with-ldflags="/usr/local/superlu/lib/libsuperlu.a" \
+        --with-incdirs="-I/usr/local/superlu/include"
+     > make
 
-3) There are several Mailing lists that you can sign up for
-   to get information updates about ML. They can be found
-   at the following address: 
+    In general it's not a good idea to configure in the
+    Trilinos/packages/ml directory structure.   Instead, you should make a
+    "sandbox" where you configure and build, away from the Trilinos source.
+    See the file Trilinos/config/AUTOTOOLS_README for details.
+
+
+1)  If you prefer to build with the old makefile system, look at the INSTALL
+    file for general hints on compiling ML.
+
+
+2)  Look in the doc directory for documentation.
+
+
+3)  There are several Mailing lists that you can sign up for
+    to get information updates about ML. They can be found
+    at the following address: 
        http://software.sandia.gov/mailman/listinfo
 
-   For most people, the lists ML-Announce and ML-Users will
-   be of most interest.
+    For most people, the lists ML-Announce and ML-Users will
+    be of most interest.
 
-4) Finally, there is a bugzilla interface for reporting bugs
-   and enhancement requests. This can be found at 
-       http://software.sandia.gov/bugzilla
+
+4)  Finally, there is a bugzilla interface for reporting bugs
+    and enhancement requests. This can be found at 
+        http://software.sandia.gov/bugzilla
