@@ -31,6 +31,9 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   int gid_off, lid_off;
+  LB_ID_PTR lid, next_lid;  /* Temporary pointers to local IDs; used to pass 
+                               NULL to query functions when 
+                               NUM_LID_ENTRIES == 0. */
 
   *ierr = LB_OK;
   if (lb->Get_Obj_List != NULL){
@@ -53,11 +56,14 @@ void LB_Get_Obj_List(LB *lb, LB_ID_PTR global_ids, LB_ID_PTR local_ids,
       while (!(*ierr) && (i<n-1)){ 
         gid_off = i * num_gid_entries;
         lid_off = i * num_lid_entries;
+        lid = (num_lid_entries ? &(local_ids[lid_off]) : NULL);
+        next_lid = (num_lid_entries ? &(local_ids[lid_off+num_lid_entries]) 
+                                    : NULL);
         lb->Get_Next_Obj(lb->Get_Next_Obj_Data, 
                          num_gid_entries, num_lid_entries, 
-                         &(global_ids[gid_off]), &(local_ids[lid_off]), 
+                         &(global_ids[gid_off]), lid, 
                          &(global_ids[gid_off+num_gid_entries]),
-                         &(local_ids[lid_off+num_lid_entries]),
+                         next_lid,
                          wdim, &(objwgts[(i+1)*wdim]), ierr);
         i++;
       }

@@ -58,8 +58,10 @@ int LB_Eval (LB *lb, int print_stats,
   int stats[4*NUM_STATS];
   int *proc, *nbors_proc;
   float *tmp_vwgt, *vwgts, *ewgts, *tmp_cutwgt, nproc;
-  LB_ID_PTR local_ids;
+  LB_ID_PTR local_ids; 
   LB_ID_PTR global_ids, nbors_global;
+  LB_ID_PTR lid;   /* Temporary pointer to a local id; used to pass NULL
+                      pointers to query functions when NUM_LID_ENTRIES = 0. */
   int num_gid_entries = lb->Num_GID;
   int num_lid_entries = lb->Num_LID;
   int gid_off, lid_off;
@@ -90,7 +92,7 @@ int LB_Eval (LB *lb, int print_stats,
     global_ids = LB_MALLOC_GID_ARRAY(lb, num_obj);
     local_ids  = LB_MALLOC_LID_ARRAY(lb, num_obj);
       
-    if ((!global_ids) || (!local_ids)){
+    if ((!global_ids) || (num_lid_entries && !local_ids)){
       LB_FREE(&global_ids);
       LB_FREE(&local_ids);
       LB_TRACE_EXIT(lb, yo);
@@ -147,10 +149,11 @@ int LB_Eval (LB *lb, int print_stats,
        amount of space */
     max_edges = 0;
     for (i=0; i< num_obj; i++){
+      lid = (num_lid_entries > 0 ? &(local_ids[i*num_lid_entries]) : NULL);
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[i*num_gid_entries]), 
-                                 &(local_ids[i*num_lid_entries]), &ierr);
+                                 lid, &ierr);
       if (ierr){
         sprintf(msg, "Get_Num_Edges returned error code %d.", ierr);
         LB_PRINT_ERROR(lb->Proc, yo, msg);
@@ -199,10 +202,11 @@ int LB_Eval (LB *lb, int print_stats,
       flag = 0;
       gid_off = k * num_gid_entries;
       lid_off = k * num_lid_entries;
+      lid = (num_lid_entries > 0 ? &(local_ids[lid_off]) : NULL);
       nedges = lb->Get_Num_Edges(lb->Get_Edge_List_Data, 
                                  num_gid_entries, num_lid_entries,
                                  &(global_ids[gid_off]),
-                                 &(local_ids[lid_off]), &ierr);
+                                 lid, &ierr);
       if (ierr == LB_FATAL){
         LB_FREE(&global_ids);
         LB_FREE(&local_ids);
@@ -218,7 +222,7 @@ int LB_Eval (LB *lb, int print_stats,
       }
       lb->Get_Edge_List(lb->Get_Edge_List_Data, 
                         num_gid_entries, num_lid_entries,
-                        &(global_ids[gid_off]), &(local_ids[lid_off]), 
+                        &(global_ids[gid_off]), lid,
                         nbors_global, nbors_proc, 
                         lb->Comm_Weight_Dim, ewgts, &ierr);
       if (ierr == LB_FATAL){

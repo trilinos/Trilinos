@@ -212,18 +212,20 @@ int ierr = LB_OK;
     return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
   }
 
-  msgtag2--;
-  ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
-                    (int) (sizeof(LB_ID_TYPE)*num_lid_entries), 
-                    (char *) *export_local_ids);
-  if (ierr != COMM_OK && ierr != COMM_WARN) {
-    sprintf(msg, "Error %s returned from LB_Comm_Do.", 
-            (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
-    LB_PRINT_ERROR(lb->Proc, yo, msg);
-    LB_FREE(&proc_list);
-    LB_Comm_Destroy(&comm_plan);
-    LB_TRACE_EXIT(lb, yo);
-    return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+  if (num_lid_entries) {
+    msgtag2--;
+    ierr = LB_Comm_Do(comm_plan, msgtag2, (char *) import_local_ids, 
+                      (int) (sizeof(LB_ID_TYPE)*num_lid_entries), 
+                      (char *) *export_local_ids);
+    if (ierr != COMM_OK && ierr != COMM_WARN) {
+      sprintf(msg, "Error %s returned from LB_Comm_Do.", 
+              (ierr == COMM_MEMERR ? "COMM_MEMERR" : "COMM_FATAL"));
+      LB_PRINT_ERROR(lb->Proc, yo, msg);
+      LB_FREE(&proc_list);
+      LB_Comm_Destroy(&comm_plan);
+      LB_TRACE_EXIT(lb, yo);
+      return (ierr == COMM_MEMERR ? LB_MEMERR : LB_FATAL);
+    }
   }
 
   msgtag2--;
@@ -312,6 +314,8 @@ int i;                   /* loop counter.                                   */
 int tmp_import;          /* number of objects to be imported.               */
 int *proc_list = NULL;   /* list of processors to which this proc exports.  */
 LB_ID_PTR tmp_id = NULL; /* pointer to storage for a global ID in comm buf  */
+LB_ID_PTR lid;           /* temporary pointer to a local ID; used to pass
+                            NULL to query functions when NUM_LID_ENTRIES=0. */
 COMM_OBJ *comm_plan;     /* Object returned by communication routines       */
 int msgtag, msgtag2;     /* Tags for communication routines                 */
 int total_send_size;     /* Total size of outcoming message (in #items)     */
@@ -425,11 +429,11 @@ int ierr = 0;
   total_send_size = 0;
 
   for (i=0; i<num_export; i++){
+    lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
     size = lb->Migrate.Get_Obj_Size(lb->Migrate.Get_Obj_Size_Data, 
                  num_gid_entries, num_lid_entries,
                  &(export_global_ids[i*num_gid_entries]), 
-                 &(export_local_ids[i*num_lid_entries]), 
-                 &ierr);
+                 lid, &ierr);
     if (ierr) {
       LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                       "Migrate.Get_Obj_Size function.");
@@ -484,12 +488,11 @@ int ierr = 0;
       }
 
       /* Pack the object's data */
+      lid = (num_lid_entries ? &(export_local_ids[i*num_lid_entries]) : NULL);
       lb->Migrate.Pack_Obj(lb->Migrate.Pack_Obj_Data, 
                            num_gid_entries, num_lid_entries,
                            &(export_global_ids[i*num_gid_entries]),
-                           &(export_local_ids[i*num_lid_entries]), 
-                           export_procs[i], sizes[i], tmp, 
-                           &ierr);
+                           lid, export_procs[i], sizes[i], tmp, &ierr);
       if (ierr) {
         LB_PRINT_ERROR(lb->Proc, yo, "Error returned from user defined "
                         "Migrate.Pack_Obj function.");

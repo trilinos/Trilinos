@@ -32,7 +32,8 @@
 /****************************************************************************/
 
 /*
- * Default value of LB_ID_TYPE; IDs allocated with LB_MALLOC_GID, LB_MALLOC_LID,
+ * Default value of LB_ID_TYPE; 
+ * IDs allocated with LB_MALLOC_GID, LB_MALLOC_LID,
  * LB_MALLOC_GID_ARRAY or LB_MALLOC_LID_ARRAY are initialized with this value.
  */
 #define LB_ID_DEFAULT 0
@@ -52,17 +53,24 @@
 
 /*
  * Macros for allocating single IDs; IDs are also initialized.
+ * If lb->Num_LID is zero, the macro returns NULL.
  */
 #define LB_MALLOC_GID(lb) LB_Malloc_ID((lb)->Num_GID, __FILE__, __LINE__)
-#define LB_MALLOC_LID(lb) LB_Malloc_ID((lb)->Num_LID, __FILE__, __LINE__)
+#define LB_MALLOC_LID(lb) \
+    ((lb)->Num_LID \
+      ? LB_Malloc_ID((lb)->Num_LID, __FILE__, __LINE__) \
+      : NULL)
 
 /*
  * Macros for allocating arrays of IDs; arrays are also initialized.
+ * If lb->Num_LID is zero, the macro returns NULL.
  */
 #define LB_MALLOC_GID_ARRAY(lb,num_obj) \
     LB_Malloc_ID((num_obj) * (lb)->Num_GID, __FILE__, __LINE__)
 #define LB_MALLOC_LID_ARRAY(lb,num_obj) \
-    LB_Malloc_ID((num_obj) * (lb)->Num_LID, __FILE__, __LINE__)
+    ((lb)->Num_LID \
+       ? LB_Malloc_ID((num_obj) * (lb)->Num_LID, __FILE__, __LINE__) \
+       : NULL)
 
 /*
  * Macros for reallocating arrays of IDs.
@@ -70,7 +78,9 @@
 #define LB_REALLOC_GID_ARRAY(lb,ptr,num_obj) \
   (LB_ID_PTR) LB_REALLOC(ptr, (num_obj) * (lb)->Num_GID * sizeof(LB_ID_TYPE))
 #define LB_REALLOC_LID_ARRAY(lb,ptr,num_obj) \
-  (LB_ID_PTR) LB_REALLOC(ptr, (num_obj) * (lb)->Num_LID * sizeof(LB_ID_TYPE))
+  ((lb)->Num_LID \
+     ? (LB_ID_PTR)LB_REALLOC(ptr,(num_obj)*(lb)->Num_LID*sizeof(LB_ID_TYPE)) \
+     : NULL)
 
 /****************************************************************************/
 /*
