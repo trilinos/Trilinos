@@ -112,7 +112,6 @@ private:
 	int _rhs_iter, _restartiter, _iter;
 	bool _startblock;
 	int _debuglevel, _restart;
-	int _ldupdate, _rowsupdate, _colsupdate;
 	TYPE _dep_tol, _blk_tol, _sing_tol, _blkerror;
 };
 //
@@ -132,7 +131,6 @@ BlockGmres<TYPE>::BlockGmres(Anasazi::Matrix<TYPE> & mat, Anasazi::Precondition<
 							_residual_tolerance(tol), _residerrors(0), _trueresids(0),
 							_update_ary(0),
 							_rhs_iter(0), _restartiter(0), _iter(0),
-							_ldupdate(0), _rowsupdate(0), _colsupdate(0),
 							_startblock(false), _debuglevel(0), _dep_tol(0.75),
 							_blk_tol(5.0e-7), _sing_tol(5.0e-14), _blkerror(1.0){
 	//	cout << "ctor:BlockGmres " << this << endl;
@@ -207,7 +205,6 @@ void BlockGmres<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 	//
 	int i,j;
 	int *index = new int[_blocksize + _numrhs]; assert(index!=NULL);
-	Anasazi::MultiVec<TYPE> *tptr=0, *tptr2=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
 	//
@@ -226,17 +223,16 @@ void BlockGmres<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		for ( i=0;i<_blocksize; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,_blocksize); assert(tptr!=NULL);
+		Anasazi::MultiVec<TYPE> *tptr = _rhs.CloneView(index,_blocksize); assert(tptr!=NULL);
 		rhs_block.MvAddMv(one, *tptr, zero, *tptr);
 		//
 		// Put the next _blocksize of the initial guesses
 		// into the sol_block
 		//
-		tptr = _solutions->CloneView(index,_blocksize); assert(tptr!=NULL);
-		sol_block.MvAddMv(one, *tptr, zero, *tptr);
-		if (tptr) {
-			delete tptr; tptr = 0;
-		}
+		Anasazi::MultiVec<TYPE> *tptr2 = _solutions->CloneView(index,_blocksize); assert(tptr2!=NULL);
+		sol_block.MvAddMv(one, *tptr2, zero, *tptr2);
+		delete tptr; tptr = 0;
+		delete tptr2; tptr2 = 0;
 	}
 	else {
 		// More involved. This is the case where the number of right-hand
@@ -246,42 +242,32 @@ void BlockGmres<TYPE>::SetUpBlocks (Anasazi::MultiVec<TYPE>& sol_block,
 		// the remaining (unsolved) right hand sides into the initial portion
 		// of the right-hand side block.
 		//
+		int *index2 = new int[num_to_solve]; assert(index2!=NULL);
 		rhs_block.MvRandom();
 		//
 		for ( i=0; i<num_to_solve; i++ ) {
 			index[i] = _rhs_iter*_blocksize + i;
 		}
-		tptr = _rhs.CloneView(index,num_to_solve); assert(tptr!=NULL);
+		Anasazi::MultiVec<TYPE> *tptr = _rhs.CloneView(index,num_to_solve); assert(tptr!=NULL);
 		for (i=0; i<num_to_solve; i++) {
-			index[i] = i;
+			index2[i] = i;
 		}
-		tptr2 = rhs_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
-		tptr2->MvAddMv(one, *tptr, zero, *tptr);
+		rhs_block.SetBlock( *tptr, index2, num_to_solve);
 		//
-        	// Fill up the sol_block with zero vectors, then
+		// Fill up the sol_block with zero vectors, then
 		// place the remaining (unsolved) initial guesses into the initial portion
 		// of the sol_block.
 		//
 		sol_block.MvInit( 0.0 );
 		//
-		for ( i=0; i<num_to_solve; i++ ) {
-			index[i] = _rhs_iter*_blocksize + i;
-		}
-        	tptr = _solutions->CloneView(index,num_to_solve); assert(tptr!=NULL);
-		for (i=0; i<num_to_solve; i++) {
-			index[i] = i;
-		}
-		tptr2 = sol_block.CloneView(index, num_to_solve); assert(tptr2!=NULL);
-		tptr2->MvAddMv(one, *tptr, zero, *tptr);
+		Anasazi::MultiVec<TYPE> *tptr2 = _solutions->CloneView(index,num_to_solve); assert(tptr2!=NULL);
+		sol_block.SetBlock( *tptr2, index2, num_to_solve);
 		//
 		// Delete the temporary views
 		//
-		if (tptr) {
-			delete tptr; tptr = 0;
-		}
-		if (tptr2) {
-			delete tptr2; tptr2 = 0;
-		}
+		delete tptr; tptr = 0;
+		delete tptr2; tptr2 = 0;
+		delete [] index2; index2=0;
 	}
 	delete [] index; index=0;
 	//
@@ -359,6 +345,7 @@ void BlockGmres<TYPE>::SetInitGuess(Anasazi::MultiVec<TYPE>& iguess) {
                         _solutions->SetBlock( iguess, index, _numrhs );
                 }
                 _startblock = true;
+		delete [] index; index = 0;
         }
 }
 
@@ -450,11 +437,16 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 	const int izero=0;
 	const TYPE one=1.0;
 	const TYPE zero=0.0;
+	int _ldupdate, _rowsupdate, _colsupdate;
+	int numrhs_to_solve;
 	Anasazi::MultiVec<TYPE> *cur_block_sol=0, *cur_block_rhs=0;
 	Anasazi::MultiVec<TYPE> *U_vec=0, *F_vec=0;
 	int *index = new int[ (_maxits+1)*_blocksize ]; assert(index!=NULL);
 	bool dep_flg = false, exit_flg = false, brkflg = false;
-	
+	//	
+	Anasazi::DenseMatrix<TYPE> rhs((_maxits+1)*_blocksize,_blocksize);
+	TYPE *ptr_rhs = rhs.getarray();
+	int ldrhs = rhs.getld();
 	//
 	// Each pass through the solver solves for _blocksize
 	// right-hand sides.
@@ -462,6 +454,16 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 	// solver required to solve for all right-hand sides	
 	//
 	int max_rhs_iters = (_numrhs+_blocksize-1) / _blocksize;
+	// 
+	// If not provided, set initial guesses to AX = B to random vectors
+	//
+	if (!_startblock) {
+		_solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
+		_solutions->MvRandom();
+		_startblock = true;
+	}
+	cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol!=NULL);
+	cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs!=NULL);
 	//
 	//  Start executable statements. 
 	//
@@ -472,21 +474,9 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			   <<  endl;
 		}
 		brkflg = false;
-		// 
-		// If not provided, set initial guesses to AX = B to random vectors
 		//
-		if (!_startblock) {
-			_solutions = _rhs.Clone(_numrhs); assert(_solutions!=NULL);
-			_solutions->MvRandom();
-			_startblock = true;
-		}
-		//
-		cur_block_sol = _solutions->Clone(_blocksize); assert(cur_block_sol!=NULL);
-		cur_block_rhs = _solutions->Clone(_blocksize); assert(cur_block_rhs!=NULL);
-        //
 		// Compute the number of right-hand sides remaining to be solved 
 		//
-		int numrhs_to_solve;
 		if ( _blocksize < _numrhs ) {
 			numrhs_to_solve = _numrhs - (_rhs_iter * _blocksize);
 		}
@@ -496,7 +486,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 		//
 		// Put the current initial guesses and right-hand sides into current blocks
 		//
-        SetUpBlocks(*cur_block_sol, *cur_block_rhs, numrhs_to_solve);
+        	SetUpBlocks(*cur_block_sol, *cur_block_rhs, numrhs_to_solve);
 		//
 		_blkerror = one;
 		TYPE init_norm = one;
@@ -565,7 +555,10 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				break;
 			}
 			//
-		    TYPE norm_G10 = G10.getfronorm();
+		    	TYPE norm_G10 = G10.getfronorm();
+			TYPE *ptr_G10 = G10.getarray();
+			int ldG10 = _blocksize;			
+
 			if (_restartiter == 0) {
 				init_norm = norm_G10;
 			}
@@ -575,6 +568,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 			for (i=0; i<tsz; i++){
 				_update_ary[i] = zero;
 			}
+			//
 			//
 			// The block error used here is an average residual error over
 		    // the current block. This is set to one to start with since all 
@@ -586,8 +580,6 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				//
 				// Compute a length _maxits block Arnoldi Reduction
 				//    (one step at a time)
-				//
-				Anasazi::DenseMatrix<TYPE> rhs((_iter+2)*_blocksize,_blocksize);
 				//
 				//dep_flg = true;
 				exit_flg = false;
@@ -635,18 +627,14 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				//
 				// Set up least squares problems
 				//
-				TYPE *ptr_rhs = rhs.getarray();
-				TYPE *ptr_G10 = G10.getarray();
-				int ldrhs = rhs.getld();
 				_ldupdate = ldrhs;
-				_rowsupdate = rhs.getrows();
-				_colsupdate = rhs.getcols();
-				int ldG10 = G10.getld();
+				_rowsupdate = (_iter+2)*_blocksize;
+				_colsupdate = _blocksize;
 				for (j=0; j<_blocksize; j++) {
 					for (i=0; i<j+1; i++) {
 						ptr_rhs[i+j*ldrhs] = ptr_G10[i+j*ldG10];
 					}
-					for (i=j+1; i<rhs.getrows(); i++) {
+					for (i=j+1; i<(_maxits+1)*_blocksize; i++) {
 						ptr_rhs[i+j*ldrhs] = zero;
 					}
 				}
@@ -682,7 +670,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				//
 				for (j=0; j<_colsupdate; j++){
 					for (i=0; i<_rowsupdate; i++){
-						_update_ary[i+j*_rowsupdate] = ptr_rhs[i+j*_rowsupdate];
+						_update_ary[i+j*_rowsupdate] = ptr_rhs[i+j*ldrhs];
 					}
 				}
 				//
@@ -692,7 +680,7 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 				for (j=0; j<_blocksize; j++ ) {
 					_residerrors[_rhs_iter*_blocksize+j] = zero;
 					for (i=(_iter+1)*_blocksize; i<(_iter+2)*_blocksize; i++ ) {
-						_residerrors[_rhs_iter*_blocksize+j] += pow(ptr_rhs[i+j*rhs.getld()],2);
+						_residerrors[_rhs_iter*_blocksize+j] += pow(ptr_rhs[i+j*ldrhs],2);
 					}
 					_residerrors[_rhs_iter*_blocksize+j] = sqrt(_residerrors[_rhs_iter*_blocksize+j]);
 					//
@@ -763,16 +751,16 @@ void BlockGmres<TYPE>::Solve (bool vb) {
 	    // Insert the current block of solutions into _solutions so we can
 		// continue if we have more right-hand sides to solve for
 	    //
-        ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);
+        	ExtractCurSolnBlock(*cur_block_sol, numrhs_to_solve);
 		//
 		//**************Free heap space**************
-		//
-		if (cur_block_sol) {delete cur_block_sol; cur_block_sol=0;}
-		if (cur_block_rhs) {delete cur_block_rhs; cur_block_rhs=0;}
 		//
 	} // end for (_rhs_iter =0;...)
 	//
 	if (index) {delete [] index; index=0;}
+	if (cur_block_sol) {delete cur_block_sol; cur_block_sol=0;}
+	if (cur_block_rhs) {delete cur_block_rhs; cur_block_rhs=0;}
+	//
 	//
 } // end Solve()
 
@@ -1369,6 +1357,7 @@ bool BlockGmres<TYPE>::QRFactorAug(Anasazi::MultiVec<TYPE>& VecIn,
 	} // end for (j=0; j<nb; j++)
 	//
 	delete [] index;
+	delete tptr; tptr = 0;
 	return flg;
 	//
 } // end QRFactorAug()
@@ -1557,3 +1546,5 @@ void BlockGmres<TYPE>::CheckGmresResids(Anasazi::MultiVec<TYPE> & x, Anasazi::Mu
 } // end namespace Belos
 #endif
 // End of file BelosBlockGmres.hpp
+
+

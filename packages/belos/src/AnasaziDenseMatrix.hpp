@@ -159,10 +159,11 @@ DenseMatrix<TYPE>::DenseMatrix(const DenseMatrix& A):
 		_endp1 = _array + _ld*_cols;
 		if (_array) {
 			int i,j;
+			int ldA = A.getld();
 			TYPE* ptr=A.getarray();
 			for (j=0;j<_cols;j++) {
 				for (i=0;i<_ld;i++) {
-					_array[i+j*_ld] = ptr[i+j*A.getld()];
+					_array[i+j*_ld] = ptr[i+j*ldA];
 				}
 			}
 		}
@@ -313,4 +314,5 @@ void DenseMatrix<TYPE>::print() {
 } //end namespace Anasazi
 #endif
 // End of file AnsaziDenseMatrix.hpp
+
 
