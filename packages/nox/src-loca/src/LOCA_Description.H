@@ -1,6 +1,3 @@
-// $Id$ 
-// $Source$ 
-
 //@HEADER
 // ************************************************************************
 // 
@@ -30,56 +27,16 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef LOCA_PREDICTOR_GENERIC_H
-#define LOCA_PREDICTOR_GENERIC_H
-
-#include "NOX_Abstract_Group.H"  // for ReturnType, Parameter::List
-
-// Forward declarations
-namespace LOCA {
-  namespace Continuation {
-    class Vector;
-    class Group;
-  }
-}
-
-namespace LOCA {
-
-  //! %Predictor direction strategies
-  namespace Predictor {
-    
-    //! %Generic predictor direction interface.
-    /*! 
-      %Generic interface for computing a predictor for continuation.
-    */
-    class Generic {
-
-    public:
-
-      //! Constructor. 
-      /*! 
-	Constructors of derived objects should look like reset.
-      */
-      Generic() {};
-
-      //! Destructor
-      virtual ~Generic() {};
-
-      //! Reset parameters
-      virtual NOX::Abstract::Group::ReturnType 
-      reset(NOX::Parameter::List& params) = 0;
+/*! 
+  \mainpage %LOCA:  Library of Continuation Algorithms
   
-      /*! 
-	\brief Compute the predictor direction given the current and
-	previous solution groups.
-      */
-      virtual NOX::Abstract::Group::ReturnType 
-      compute(LOCA::Continuation::Group& prevGroup,
-	      LOCA::Continuation::Group& curGroup,
-	      LOCA::Continuation::Vector& result) = 0;
+  %LOCA is short for "Library of Continuation Algorithms". Its 
+  objective is to compute families of solutions to:
+  \f[
+  F(x,p)=0.
+  \f]
+  where \f$F:\Re^n\times\Re^m\rightarrow\Re^n\f$.  %LOCA is designed to be
+  used with the <a href="../../../doc/html/index.html">NOX</a> nonlinear solver package.
 
-    };
-  } // namespace Predictor
-} // namespace LOCA
+*/
 
-#endif

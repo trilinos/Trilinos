@@ -32,7 +32,7 @@
 
 #include "LOCA_LAPACK_Group.H"	// class definition
 
-LOCA::LAPACK::Group::Group(Interface& interface) : 
+LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface) : 
   NOX::LAPACK::Group(interface), 
   locaProblemInterface(interface), 
   params(),
@@ -41,7 +41,7 @@ LOCA::LAPACK::Group::Group(Interface& interface) :
   computeScaleVec();  // use default method for computing scale vector
 }
 
-LOCA::LAPACK::Group::Group(Interface& interface, 
+LOCA::LAPACK::Group::Group(LOCA::LAPACK::Interface& interface, 
 			   const NOX::LAPACK::Vector& s) : 
   NOX::LAPACK::Group(interface), 
   locaProblemInterface(interface), 
@@ -50,7 +50,8 @@ LOCA::LAPACK::Group::Group(Interface& interface,
 {
 }
 
-LOCA::LAPACK::Group::Group::Group(const Group& source, NOX::CopyType type) : 
+LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source, 
+			   NOX::CopyType type) : 
   NOX::LAPACK::Group(source,type), 
   locaProblemInterface(source.locaProblemInterface), 
   params(source.params),

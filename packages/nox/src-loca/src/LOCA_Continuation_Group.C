@@ -39,8 +39,8 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
 				 NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone(NOX::DeepCopy))),
     conParamID(paramID),
-    tangentVec(grp.getX(), 0.0),
-    isValidTangent(false),
+    predictorVec(grp.getX(), 0.0),
+    isValidPredictor(false),
     linearSolverParams(linSolverParams),
     scaleVec(grp.getScaleVec(), 
 	     params.getParameter("Initial Scale Factor", 1.0))
@@ -53,8 +53,8 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
 				 NOX::Parameter::List& params)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(grp.clone(NOX::DeepCopy))),
     conParamID(0),
-    tangentVec(grp.getX(), 0.0),
-    isValidTangent(false),
+    predictorVec(grp.getX(), 0.0),
+    isValidPredictor(false),
     linearSolverParams(linSolverParams),
     scaleVec(grp.getScaleVec(), 
 	     params.getParameter("Initial Scale Factor", 1.0))
@@ -66,8 +66,8 @@ LOCA::Continuation::Group::Group(const LOCA::Abstract::Group& grp,
 LOCA::Continuation::Group::Group(const Group& source, NOX::CopyType type)
   : grpPtr(dynamic_cast<LOCA::Abstract::Group*>(source.grpPtr->clone(type))),
     conParamID(source.conParamID),
-    tangentVec(source.tangentVec),
-    isValidTangent(source.isValidTangent),
+    predictorVec(source.predictorVec),
+    isValidPredictor(source.isValidPredictor),
     linearSolverParams(source.linearSolverParams),
     scaleVec(source.scaleVec)
 {
@@ -93,8 +93,8 @@ LOCA::Continuation::Group::operator=(const LOCA::Continuation::Group& source)
     // Copy values
     grpPtr = dynamic_cast<LOCA::Abstract::Group*>(source.grpPtr->clone(type));
     conParamID = source.conParamID;
-    tangentVec = source.tangentVec;
-    isValidTangent = source.isValidTangent;
+    predictorVec = source.predictorVec;
+    isValidPredictor = source.isValidPredictor;
     linearSolverParams = source.linearSolverParams;
     scaleVec = source.scaleVec;
   }
@@ -106,8 +106,8 @@ NOX::Abstract::Group::ReturnType
 LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
   
   // Get references to x, parameter components of tangent vector
-  NOX::Abstract::Vector& tanX = tangentVec.getXVec();
-  double& tanP = tangentVec.getParam();
+  NOX::Abstract::Vector& tanX = predictorVec.getXVec();
+  double& tanP = predictorVec.getParam();
 
   // Compute Jacobian
   NOX::Abstract::Group::ReturnType res = computeJacobian();
@@ -139,21 +139,38 @@ LOCA::Continuation::Group::computeTangent(NOX::Parameter::List& params) {
     secantVec.update(1.0, getX(), -1.0);
     
     // Give tangent vector same orientation as secant vector
-    if (scaledDotProduct(secantVec, tangentVec) < 0.0) 
-      tangentVec.scale(-1.0);
+    if (scaledDotProduct(secantVec, predictorVec) < 0.0) 
+      predictorVec.scale(-1.0);
    
   }
 
-  isValidTangent = true;
+  isValidPredictor = true;
 
   delete dfdpVec;
 
   return res;
 }
 
+NOX::Abstract::Group::ReturnType
+LOCA::Continuation::Group::computeSecant() {
+
+  if (isPrevXVec()) {
+    predictorVec = getPrevX();
+    predictorVec.update(1.0, getX(), -1.0);
+  }
+  else {
+    predictorVec.init(0.0);
+    predictorVec.getParam() = 1.0;
+  }
+
+  isValidPredictor = true;
+
+  return NOX::Abstract::Group::Ok;
+}
+
 const LOCA::Continuation::Vector&
-LOCA::Continuation::Group::getTangent() const {
-  return tangentVec;
+LOCA::Continuation::Group::getPredictorDirection() const {
+  return predictorVec;
 }
 
 void
@@ -161,8 +178,8 @@ LOCA::Continuation::Group::resetIsValid() {
 }
 
 bool
-LOCA::Continuation::Group::isTangent() const {
-  return isValidTangent;
+LOCA::Continuation::Group::isPredictorDirection() const {
+  return isValidPredictor;
 }
 
 void

@@ -36,89 +36,134 @@
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 #include "NOX_Abstract_Vector.H"  // Base class
 
-//! Nonlinear solvers package namespace
 namespace LOCA {
 
-class MultiVector : public NOX::Abstract::Vector {
+  /*! 
+    \brief Implemenatation of the NOX::Abstract::Vector class for extended
+    vectors comprised of an arbitrary number of vectors and scalars.
+  */
+  /*!
+    Many continuation and bifurcation calculations can be viewed as the
+    solution to an extended set of equations.  For example, calculating 
+    a turning point can be viewed as computing a solution to 
+    \f$G(z) = 0\f$ where \f$z = [x, n, p]\in\Re^{2n+1}\f$ and 
+    \f[
+       G(z) = \left[
+              \begin{array}{c}
+	        F(x,p) \\
+		Jn \\
+		n^Tn-1
+	      \end{array}
+              \right]
+    \f]
+    The extended vector \f$z\f$ is comprised of the two vectors \f$x\f$ and 
+    \f$n\f$ as well as the scalar \f$p\f$.  The %MultiVector class provides
+    an implementation of the NOX::Abstract::Vector interface for such 
+    extended vectors.  It stores an array of pointers to 
+    NOX::Abstract::Vector's as well as an array of scalars using the 
+    STL vector class.
 
-public:
+    The implementations of the NOX::Abstract::Vector methods are defined
+    in terms of the implementations of each stored abstract vector.
+  */
+
+  class MultiVector : public NOX::Abstract::Vector {
+
+  public:
   
-  //! %MultiVector constructor.
-  MultiVector(const vector< NOX::Abstract::Vector* > vv,
-	      const vector< double > vs);
+    //! %MultiVector constructor.
+    MultiVector(const vector< NOX::Abstract::Vector* > vv,
+		const vector< double > vs);
 
-  //! %Copy constructor.
-  MultiVector(const MultiVector& source, NOX::CopyType type = NOX::DeepCopy);
+    //! Copy constructor.
+    MultiVector(const MultiVector& source, NOX::CopyType type = NOX::DeepCopy);
 
-  //! %Vector destructor.
-  virtual ~MultiVector();
+    //! Vector destructor.
+    virtual ~MultiVector();
 
-  virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+    //! Assignment operator
+    virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
   
-  virtual MultiVector& operator=(const MultiVector& y);
+    //! Assignment operator
+    virtual MultiVector& operator=(const MultiVector& y);
 
-  virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
+    //! Clone function.  Applies clone to each stored vector
+    virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-  virtual NOX::Abstract::Vector& init(double gamma);
+    //! NOX::Abstract::Vector init function. Initializes each stored vector and scalar
+    virtual NOX::Abstract::Vector& init(double gamma);
 
-  virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
+    //! NOX::Abstract::Vector abs function.  Compues absolute value of each stored vector and scalar
+    virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
 
-  virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
+    //! NOX::Abstract::Vector reciprocal function.  Computes reciprocal of each stored vector and scalar
+    virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
 
-  virtual NOX::Abstract::Vector& scale(double gamma);
+    //! NOX::Abstract::Vector scale function.  Scales each stored vector and scalar
+    virtual NOX::Abstract::Vector& scale(double gamma);
 
-  virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
+    //! NOX::Abstract::Vector scale function.  Scales each stored vector and scalar
+    virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
 
-  virtual NOX::Abstract::Vector& update(double alpha,
-                                        const NOX::Abstract::Vector& a,
-                                        double gamma = 0.0);
+    //! NOX::Abstract::Vector update function.  Applies vector update to each stored vector and scalar
+    virtual NOX::Abstract::Vector& update(double alpha,
+					  const NOX::Abstract::Vector& a,
+					  double gamma = 0.0);
+    
+    //! NOX::Abstract::Vector update function.  Applies vector update to each stored vector and scalar
+    virtual NOX::Abstract::Vector& update(double alpha,
+					  const NOX::Abstract::Vector& a, 
+					  double beta,
+					  const NOX::Abstract::Vector& b, 
+					  double gamma = 0.0);
 
-  virtual NOX::Abstract::Vector& update(double alpha,
-                         const NOX::Abstract::Vector& a, double beta,
-                         const NOX::Abstract::Vector& b, double gamma = 0.0);
+    //! NOX::Abstract::Vector norm function.  Computes norm of each stored vector and combines to compute appropriate norm
+    virtual double norm(NormType type = TwoNorm) const;
 
-  virtual double norm(NormType type = TwoNorm) const;
+    //! NOX::Abstract::Vector weighted norm function.  Computes weighted norm of each stored vector and combines to compute appropriate norm
+    virtual double norm(const NOX::Abstract::Vector& weights) const;
 
-  virtual double norm(const NOX::Abstract::Vector& weights) const;
-
-  virtual double dot(const NOX::Abstract::Vector& y) const;
+    //! NOX::Abstract::Vector dot function.  Computes dot product of each stored vector and combines to compute dot product
+    virtual double dot(const NOX::Abstract::Vector& y) const;
   
-  virtual int length() const;
+    //! NOX::Abstract::Vector length function.  Computes sum of lengths of stored vectors plus number of scalars
+    virtual int length() const;
+    
+    //! NOX::Abstract::Vector print function.  For debugging purposes
+    virtual void print() const;
 
-  virtual void print() const;
+    //! Sets the ith vector
+    virtual void setVector(int i, const NOX::Abstract::Vector& v);
 
-  //! Sets the ith vector
-  virtual void setVector(int i, const NOX::Abstract::Vector& v);
+    //! Sets the ith scalar
+    virtual void setScalar(int i, double s);
 
-  //! Sets the ith scalar
-  virtual void setScalar(int i, double s);
+    //! Returns const reference to the ith vector
+    virtual const NOX::Abstract::Vector& getVector(int i) const;
 
-  //! Returns const reference to the ith vector
-  virtual const NOX::Abstract::Vector& getVector(int i) const;
+    //! Returns reference to the ith vector
+    virtual NOX::Abstract::Vector& getVector(int i);
 
-  //! Returns reference to the ith vector
-  virtual NOX::Abstract::Vector& getVector(int i);
+    //! Returns copy of the ith scalar
+    virtual double getScalar(int i) const;
 
-  //! Returns copy of the ith scalar
-  virtual double getScalar(int i) const;
+    //! Returns reference to the ith scalar
+    virtual double& getScalar(int i);
 
-  //! Returns reference to the ith scalar
-  virtual double& getScalar(int i);
+  protected:
 
-protected:
+    //! %MultiVector constructor.
+    MultiVector(int nvecs, int nscalars);
 
-  //! %MultiVector constructor.
-  MultiVector(int nvecs, int nscalars);
+  protected:
 
-protected:
+    //! Array of vector pointers
+    vector< NOX::Abstract::Vector* > vectorPtrs;
 
-  //! Array of vector points
-  vector< NOX::Abstract::Vector* > vectorPtrs;
+    //! Array of doubles
+    vector< double > scalars;
 
-  //! Array of doubles
-  vector< double > scalars;
-
-}; // class MultiVector
+  }; // class MultiVector
 } // namespace LOCA
 
 #endif

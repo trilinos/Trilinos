@@ -46,6 +46,15 @@ namespace LOCA {
 namespace LOCA {
   namespace LAPACK {
 
+    /*!
+      \brief Implements the LOCA::Abstract::DataOutput interface for LAPACK 
+      turning point groups.
+    */
+    /*!
+      LAPACK turning point group data is saved by writing the solution vector,
+      null vector, and parameters to a file stream in ASCII form with all 
+      components on one line followed by a new line character.
+    */
     class TPDataOutput : public LOCA::Abstract::DataOutput {
 
     public: 
@@ -55,12 +64,19 @@ namespace LOCA {
       //! Destructor
       virtual ~TPDataOutput();
       
+      //! Assignment operator
       virtual Abstract::DataOutput& operator = (const Abstract::DataOutput& source);
+      //! Assignment operator
       virtual TPDataOutput& operator = (const TPDataOutput& source);
+
+      //! Save group data to a file
       virtual void saveGroupData(const Abstract::Group& grp);
+
+      //! Save group data to a file
       virtual void saveGroupData(const LOCA::Bifurcation::TPBordGroup& grp);
 
     protected:
+       //! File stream to write data to
       fstream& file;
     };
   } // namespace LAPACK

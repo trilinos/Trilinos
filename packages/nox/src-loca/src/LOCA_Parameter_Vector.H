@@ -35,7 +35,6 @@
 
 #include "NOX_Common.H"  // for <iostream>, <vector>, and <string>
 
-//! Nonlinear solvers package namespace
 namespace LOCA {
 
 /*! 
@@ -117,8 +116,10 @@ public:
 
 protected:
 
-  //! Pointer to vector owned by this object
+  //! Parameter values
   vector<double> x;
+
+  //! Parameter names
   vector<string> l;
 
 };

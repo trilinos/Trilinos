@@ -35,48 +35,59 @@
 
 #include "LOCA_MultiVector.H"  // Base class
 
-//! Nonlinear solvers package namespace
 namespace LOCA {
 
-//! %NOX  bifurcation vector and group
-namespace Continuation {
+  namespace Continuation {
 
-class Vector : public LOCA::MultiVector {
+    /*! 
+      \brief %Vector class to hold solution vectors, %Newton vectors, etc.
+      for continuation equations.
+    */
+    /*! 
+       This class uses the LOCA::MultiVector implementation to store the
+       solution and parameter components of the continuation vector
+       and merely provides an interface for naming which components of the
+       multivector these quantities correspond to.
+    */
+    class Vector : public LOCA::MultiVector {
 
-public:
+    public:
   
-  //! %Vector constructor.
-  Vector(const NOX::Abstract::Vector& xVec, double param);
+      //! Constructor.
+      Vector(const NOX::Abstract::Vector& xVec, double param);
 
-  //! %Copy constructor.
-  Vector(const Vector& source, NOX::CopyType type = NOX::DeepCopy);
+      //! Copy constructor.
+      Vector(const Vector& source, NOX::CopyType type = NOX::DeepCopy);
 
-  //! %Vector destructor.
-  virtual ~Vector();
+      //! Destructor.
+      virtual ~Vector();
 
-  virtual Vector& operator=(const Vector& y);
+      //! Assignment operator
+      virtual Vector& operator=(const Vector& y);
 
-  virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+      //! Assignment operator
+      virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
 
-  virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      //! Assignment operator
+      virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-  //! Sets the %ArcLengthVector by setting its two components 
-  virtual void setVec(const NOX::Abstract::Vector& xVec, double param);
+      //! Sets the continuation vector by setting its two components 
+      virtual void setVec(const NOX::Abstract::Vector& xVec, double param);
 
-  //! Returns the solution vector component of extended vector
-  virtual const NOX::Abstract::Vector& getXVec() const;
+      //! Returns the solution vector component of extended vector
+      virtual const NOX::Abstract::Vector& getXVec() const;
 
-  //! Get %Arclength parameter
-  virtual double getParam() const;
+      //! Returns the parameter component of extended vector
+      virtual double getParam() const;
 
-  //! Returns the solution vector component of extended vector
-  virtual NOX::Abstract::Vector& getXVec();
+      //! Returns the solution vector component of extended vector
+      virtual NOX::Abstract::Vector& getXVec();
 
-  //! Get %Arclength parameter
-  virtual double& getParam();
+      //! Returns the parameter component of extended vector
+      virtual double& getParam();
 
-}; // class Vector
-} // namespace Continuation
+    }; // class Vector
+  } // namespace Continuation
 } // namespace LOCA
 
 #endif

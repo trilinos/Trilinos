@@ -48,124 +48,97 @@ namespace LOCA {
   class ParameterVector;
 }
 
+//! Library of continuation algorithms namespace
 namespace LOCA { 
-namespace Abstract { 
 
-/*!  \brief %NOX pure abstract interface to a "group"; i.e., a
-  solution vector and the corresponding F-vector, Jacobian matrix,
-  gradient vector, and Newton vector.
-*/
-/*! 
-  This class groups together the objects relating to a particular
-  solution vector. Each time the solution vector is updated via the
-  "computeX" objects, all the previously computed values become
-  invalid.
+  //! %LOCA abstract interface namespace
+  namespace Abstract { 
 
-  Recall that our goal is to solve
-  \f[
-  F(x) = \left[ \begin{array}{c} F_1(x) \\ F_2(x) \\ \vdots \\ F_n(x) \\ \end{array} \right] = 0.
-  \f]
-  We may also consider the equivalent optimization problem
-  \f[
-  \min f(x) \equiv \frac{1}{2} F(x)^T F(x).
-  \f]
+    /*!  \brief %LOCA abstract interface to a group, derived from the 
+      NOX::Abstract::Group.  %LOCA %abstract groups provide the interface 
+      necessary to perform continuation, i.e., compute families of solutions to
+      \f$ F(x,p) = 0 \f$.
+    */
+    /*! 
+      Concrete implemenations of this interface must provide implementations of
+      all of the methods in the NOX::Abstract::Group interface as well as the
+      parameter and scale vector setting/retrieval methods.
+    */
 
-  The \b Jacobian
-  is denoted by \f$J\f$, and defined by
-  \f[
-  J_{ij} = \frac{\partial F_i}{\partial x_j} (x).
-  \f]
-  The \b Newton \b direction is the solution of
-  \f[
-  Js = -F.
-  \f]
-  The \b gradient (of \f$f\f$) is defined as \f$g \equiv J^T F\f$.
+    class Group : public virtual NOX::Abstract::Group {
+
+    public:
   
-*/
-
-class Group : public virtual NOX::Abstract::Group {
-
-public:
-  
-  //! Constructor.
-  Group(const DerivUtils& deriv = DerivUtils());
+      //! Default constructor.
+      Group(const DerivUtils& deriv = DerivUtils());
  
-  Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
+      //! Copy constructor
+      Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
-  //! Destructor.
-  virtual ~Group();
+      //! Destructor.
+      virtual ~Group();
   
-  /*! 
-    \brief Copies the values of all vectors and any other data in
-    the source group to this group.  (May invalidate shared data for
-    source group.)
-  */
-  virtual Group& operator=(const Group& source);
-     
-  /*! 
-    \brief Create a new %Group of the same derived type as this one by
-    cloning this one, and return a pointer to the new group.  
+      //! Assignment operator
+      virtual Group& operator=(const Group& source);
 
-    If type is \c DeepCopy, then we need to create an exact replica of
-    "this". Otherwise, if type is \c ShapeCopy, we need only replicate
-    the shape of "this". Returns \c NULL if clone is not supported.
-  */
-//  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      //! Generic routine for applying Nic method to solve near-singular system
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseNic(NOX::Parameter::List& params,
+			      const NOX::Abstract::Vector& input,
+			      const NOX::Abstract::Vector& approxNullVec,
+			      const NOX::Abstract::Vector& JacApproxNullVec,
+			      NOX::Abstract::Vector& result) const;
 
-  //! Generic routine for applying Nic method to solve near-singular system
-  virtual NOX::Abstract::Group::ReturnType
-  applyJacobianInverseNic(NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector& input,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector& result) const;
+      //! Generic routine for applying Nic method to solve near-singular system
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseNicDay(NOX::Parameter::List& params,
+				 const NOX::Abstract::Vector& input,
+				 const NOX::Abstract::Vector& approxNullVec,
+				 const NOX::Abstract::Vector& JacApproxNullVec,
+				 NOX::Abstract::Vector& result) const;
 
-  //! Generic routine for applying Nic method to solve near-singular system
-  virtual NOX::Abstract::Group::ReturnType
-  applyJacobianInverseNicDay(NOX::Parameter::List& params,
-                          const NOX::Abstract::Vector& input,
-                          const NOX::Abstract::Vector& approxNullVec,
-                          const NOX::Abstract::Vector& JacApproxNullVec,
-                          NOX::Abstract::Vector& result) const;
+      //! Generic routine for applying Iterative Refinement for solving near-singular system
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverseItRef(NOX::Parameter::List& params,
+				const NOX::Abstract::Vector& input,
+				NOX::Abstract::Vector& result) const;
 
-  //! Generic routine for applying Iterative Refinement for solving near-singular system
-  virtual NOX::Abstract::Group::ReturnType
-  applyJacobianInverseItRef(NOX::Parameter::List& params,
-                            const NOX::Abstract::Vector& input,
-                            NOX::Abstract::Vector& result) const;
+      //! Set the parameter vector in the group to p (pVector = p).  
+      virtual void setParams(const ParameterVector& p) = 0;
 
-  //! Set the parameter list in the group to p (pVector = p).  
-  virtual void setParams(const ParameterVector& p) = 0;
+      //! Return a const reference to the ParameterVector owned by the group. 
+      virtual const ParameterVector& getParams() const = 0;
 
-  //! Return a const reference to the ParameterVector owned by the group. 
-  virtual const ParameterVector& getParams() const = 0;
+      //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val) = 0;
 
-  //! Set parameter indexed by paramID
-  virtual void setParam(int paramID, double val) = 0;
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const = 0;
 
-  //! Return copy of parameter indexed by paramID
-  virtual double getParam(int paramID) const = 0;
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val) = 0;
 
-  //! Set parameter indexed by paramID
-  virtual void setParam(string paramID, double val) = 0;
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const = 0;
 
-  //! Return copy of parameter indexed by paramID
-  virtual double getParam(string paramID) const = 0;
+      //! Compute \f$dF/dp\f$ using DerivUtils derivative object
+      virtual NOX::Abstract::Group::ReturnType
+      computeDfDp(int paramID, NOX::Abstract::Vector& result);
 
-  virtual NOX::Abstract::Group::ReturnType
-  computeDfDp(int paramID, NOX::Abstract::Vector& result);
+      //! For debugging purposes only
+      virtual void print() const = 0;
 
-  virtual void print() const = 0;
+      //! Set scale vector
+      virtual void setScaleVec(const NOX::Abstract::Vector& s) = 0;
 
-  //! Set, get, and compute scale vector
-  virtual void setScaleVec(const NOX::Abstract::Vector& s) = 0;
-  virtual const NOX::Abstract::Vector& getScaleVec() const = 0;
+      //! Get scale vector
+      virtual const NOX::Abstract::Vector& getScaleVec() const = 0;
   
-protected:
-  DerivUtils* derivPtr;
-  NOX::Abstract::Group* scaleVecPtr;
-};
-} // namespace Abstract
+    protected:
+      //! Pointer to current DerivUtils derivative computation object
+      DerivUtils* derivPtr;
+    };
+  } // namespace Abstract
 } // namespace LOCA
 
 #endif

@@ -43,8 +43,14 @@ namespace LOCA {
 namespace LOCA {
   namespace LAPACK {
 
-    /*! \brief Virtual interface for NOX::LAPACK::Group to provide a
-      link to the external code for RHS and Jacobian fills. */
+    /*! 
+      \brief Virtual interface for LOCA::LAPACK::Group to provide a
+      link to the external code for RHS and Jacobian fills. 
+    */
+    /*!
+      This interface is derived from the NOX::LAPACK::Interface and 
+      and additionally provides a method for setting problem parameters.
+    */
     class Interface : public NOX::LAPACK::Interface {
 
     public:
@@ -55,7 +61,7 @@ namespace LOCA {
       //! Destructor
       virtual ~Interface() {}
 
-      //! Set the bifurcation/continuation parameter list in the group.
+      //! Set the problem parameters
       virtual void setParams(const ParameterVector& p) = 0;
 
     };

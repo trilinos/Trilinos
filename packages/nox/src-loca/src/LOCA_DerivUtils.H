@@ -41,34 +41,37 @@ namespace LOCA {
   }
 }
 
-//! Stability Analysis package namespace
 namespace LOCA {
 
 /*! 
-  \brief %LOCA's pure abstract vector interface for vectors that are
-  used by the NLS solver.  Derived from the NOX::Abstract::Vector class.
+  \brief %LOCA's generic derivative computation class to compute various
+  derivatives via finite differencing.
 
-  The documentation throughout assumes that \f$x\f$ denotes "this"
-  vector, \f$x_i\f$ is the i-th component (or entry) of \f$x\f$, and
-  \f$n\f$ is the length of \f$x\f$.
-
-  \author Roger Pawlowski (SNL 9233)
+  The %DerivUtils class provides generic methods to compute the following
+  derivatives:
+  \f[
+      \frac{\partial F}{\partial p},\quad\frac{\partial Jn}{\partial p},\quad\frac{\partial Jn}{\partial x}a
+  \f]
+  where \f$J = \partial F/\partial x\f$ and \f$n\f$, \f$a\f$ are vectors.  These quantities are calculate by finite differencing.
+  
 */
 
 class DerivUtils {
 
 public:
   
-  //! %DerivUtils constructor.
+  /*! \brief Default constructor.  perturb is the relative perturbation size 
+    used in differencing calculations. */
   DerivUtils(double perturb = 1.0e-6);
 
-  //! %Copy constructor.
+  //! Copy constructor.
   DerivUtils(const DerivUtils&);
 
-  //! %DerivUtils destructor.
+  //! Destructor.
   virtual ~DerivUtils();
 
-  //! %DerivUtils clone function
+  /*! \brief Cloning function.  Creates a copy of the %DerivUtils object 
+    of the same type. */
   virtual DerivUtils* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
   //! Compute derivative of f with respect to parameter, identified by param_id
@@ -142,6 +145,7 @@ protected:
 
 protected:
 
+  //! Relative perturbation size using in differencing calculations.
   double perturb;
 
 }; // class DerivUtils

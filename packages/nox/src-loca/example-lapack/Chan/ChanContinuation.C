@@ -53,11 +53,16 @@ int main()
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("scale",scale);
+
+    // Create scaling vector
+    NOX::LAPACK::Vector s(n);
+    s.init(1.0);
+    //s.init(1.0/ sqrt((double) n));
   
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    LOCA::LAPACK::Group grp(chan);
+    LOCA::LAPACK::Group grp(chan, s);
     grp.setParams(p);
 
     // Create DataOutput object to save intermediate continuation points
@@ -77,18 +82,20 @@ int main()
     stepperList.setParameter("Initial Value", alpha);
     stepperList.setParameter("Max Value", 5.0/scale);
     stepperList.setParameter("Min Value", 0.0/scale);
-    stepperList.setParameter("Max Continuation Steps", 100);
+    stepperList.setParameter("Max Steps", 100);
     stepperList.setParameter("Max Nonlinear Iterations", maxNewtonIters);
     stepperList.setParameter("Goal g", 0.5);
-    //stepperList.setParameter("Max dp/ds", 1.0e8);
-    stepperList.setParameter("Max g", 0.8);
+    stepperList.setParameter("Max g", 0.7);
     stepperList.setParameter("Initial Scale Factor", 1.0);
     stepperList.setParameter("Min Scale Factor", 1.0e-3);
+    stepperList.setParameter("Min Tangent Factor", -1.0);
+    stepperList.setParameter("Tangent Factor Exponent",1.0);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
     //predictorList.setParameter("Method", "Constant");
     predictorList.setParameter("Method", "Tangent");
+    //predictorList.setParameter("Method", "Secant");
 
     // Create step size sublist
     NOX::Parameter::List& stepSizeList = locaParamsList.sublist("Step Size");
@@ -116,7 +123,7 @@ int main()
 
     NOX::Parameter::List& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.setParameter("Output Information", 
-			  // NOX::Utils::Details +
+			 //  NOX::Utils::Details +
 // 			  NOX::Utils::OuterIteration + 
 // 			  NOX::Utils::InnerIteration + 
 			  NOX::Utils::Warning);
@@ -133,9 +140,9 @@ int main()
     LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
 
     // Solve the nonlinear system
-    NOX::StatusTest::StatusType status = stepper.solve();
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != NOX::StatusTest::Converged)
+    if (status != LOCA::Abstract::Iterator::Finished)
       cout << "Stepper failed to converge!" << endl;
 
     // Get the final solution from the solver

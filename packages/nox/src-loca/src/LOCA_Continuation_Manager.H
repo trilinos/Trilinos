@@ -48,6 +48,26 @@ namespace LOCA {
 
   namespace Continuation {
 
+    /*! 
+      \brief A manager class for creating different continuation groups.
+    */
+    /*!
+      The parameters passed to the constructor or reset should specify
+      the "Method", as described below, as well as any additional
+      parameters for that particular method.
+ 
+      <ul>
+      <li> "Method" - Name of the continuation method. Valid choices are
+      <ul> 
+      <li> "%Natural" (LOCA::Continuation::NaturalGroup) [Default]
+      <li> "%Arc Length" (LOCA::Continuation::ArcLengthGroup) 
+      </ul>
+      </ul>
+
+      Call the createContinuationGroup to instantiate a continuation group
+      of the appropriate type.
+    */  
+
     class Manager {
 
     public:
@@ -62,18 +82,27 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& p);
   
+      //! Creates continuation group for given method
       virtual LOCA::Continuation::Group* 
       createContinuationGroup(const LOCA::Abstract::Group& grp, 
 			      const NOX::Parameter::List& linSolverParams);
 
+      //! Returns method name
       const string& getMethod() const;
 
+      //! Returns continuation parameter id (string)
       const string& getConParamID() const;
 
     protected:
+
+      //! Stores continuation method name
       string method;
+      
+      //! Stores continuation parameter id (string)
       string conParamID;
-      NOX::Parameter::List params;
+
+      //! Stores parameter list
+      NOX::Parameter::List* paramsPtr;
     };
   } // namespace Predictor
 } // namespace LOCA

@@ -40,6 +40,14 @@ namespace LOCA {
 
   namespace Predictor {
 
+    //! %Constant predictor computation class
+    /*! 
+      This class computes the constant predictor direction given by a 
+      vector of zeros for the solution vector component and 1 for the 
+      parameter component.  When used with natural continuation, this
+      corresponds to what is commonly referred to as zero'th order
+      continuation.
+    */
     class Constant : public LOCA::Predictor::Generic {
 
     public:
@@ -51,9 +59,13 @@ namespace LOCA {
       virtual ~Constant();
 
       //! Reset parameters
+      /*!
+	There are now parameters for the secant predictor calculation.
+      */
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Computes the constant predictor as described above.
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,

@@ -112,9 +112,9 @@ int main()
     LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
 
     // Solve the nonlinear system
-    NOX::StatusTest::StatusType status = stepper.solve();
+    LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status != NOX::StatusTest::Converged)
+    if (status != LOCA::Abstract::Iterator::Finished)
       cout << "Stepper failed to converge!" << endl;
 
     // Get the final solution from the solver

@@ -52,12 +52,13 @@ LOCA::Predictor::Secant::compute(LOCA::Continuation::Group& prevGroup,
 				 LOCA::Continuation::Group& curGroup,
 				 LOCA::Continuation::Vector& result) 
 {
-  result = 
-    dynamic_cast<const LOCA::Continuation::Vector&>(curGroup.getX());
-  result.update(-1.0, prevGroup.getX(), 1.0);
+  NOX::Abstract::Group::ReturnType res;
 
-  // Scale secant vector to have unit length
-  result.scale(1.0/result.norm());
+  res = curGroup.computeSecant();
+  if (res != LOCA::Abstract::Group::Ok)
+    return res;
+  
+  result = curGroup.getPredictorDirection();
 
-  return NOX::Abstract::Group::Ok;
+  return res;
 }

@@ -43,6 +43,17 @@ namespace LOCA {
 namespace LOCA { 
   namespace Abstract { 
 
+    /*!
+      \brief %LOCA abstract interface for saving group data at each step
+      of a continuation run.
+    */
+    /*!
+      Right now this is just a temporary fix of the general problem of
+      saving group data in an efficient and flexible manner.
+
+      An object of this type can be instantiated for the case when no 
+      saving of data is necessary.
+    */
     class DataOutput  {
 
     public:
@@ -53,6 +64,7 @@ namespace LOCA {
       //! Destructor.
       virtual ~DataOutput() {};
   
+      //! Save the data in the group grp
       virtual void saveGroupData(const Group& grp) {}
 
     };

@@ -201,9 +201,9 @@ int main(int argc, char *argv[])
   // Create the stepper  
   LOCA::Abstract::DataOutput dataOut;
   LOCA::Stepper stepper(grp, combo, locaParamsList, dataOut);
-  NOX::StatusTest::StatusType status = stepper.solve();
+  LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-  if (status != NOX::StatusTest::Converged)
+  if (status != LOCA::Abstract::Iterator::Finished)
     if (MyPID==0) 
       cout << "Stepper failed to converge!" << endl;
 

@@ -62,7 +62,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::StepSize::Constant::compute(LOCA::Continuation::Group& curGroup,
 				  const LOCA::Continuation::Vector& predictor,
 				  const NOX::Solver::Generic& solver,
-				  const NOX::StatusTest::StatusType& solverStatus,
+				  const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 				  const LOCA::Stepper& stepper,
 				  double& stepSize) 
 {
@@ -81,8 +81,7 @@ LOCA::StepSize::Constant::compute(LOCA::Continuation::Group& curGroup,
     stepSize = prevStepSize;
 
     // A failed nonlinear solve cuts the step size in half
-    if ((solverStatus == NOX::StatusTest::Failed) 
-	|| (solverStatus == NOX::StatusTest::Unconverged)) {
+    if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
       stepSize = prevStepSize * 0.5;    
     }
   }

@@ -35,246 +35,249 @@
 
 #include "LOCA_Continuation_Group.H"
 
-//! Nonlinear solvers package namespace
 namespace LOCA { 
 
-//! %NOX  bifurcation vector and group
-namespace Continuation { 
+  namespace Continuation { 
 
-class ArcLengthGroup : public LOCA::Continuation::Group {
+    /*! 
+      \brief Concrete implementation of a LOCA::Continuation::Group for 
+      pseudo arc-length continuation.
+    */
+    /*!
+      Pseudo arc-length continuation corresponds to a continuation equation
+      \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ with \f$g\f$ given by
+      \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=(x-x^\ast)^Tv_x + (p-p^\ast) v_p - \Delta s\f$
+      where \f$v_x\f$, \f$v_p\f$ are the solution and  parameter components 
+      of the predictor direction \f$v\f$ respectively.
+      This corresponds geometrically to constraining the nonlinear solver 
+      steps used in calculating \f$F(x,p)=0\f$ to be orthogonal to the 
+      predictor direction \f$v\f$.
 
-public:
+      This group is a complete implementation of a NOX::Abstract::Group
+      for the extended set of equations \f$F = 0\f$, \f$g = 0\f$ and defines
+      all relevant methods for this set of equations (computeF, 
+      computeJacobian, computeNewton, etc).
+    */
+
+    class ArcLengthGroup : public LOCA::Continuation::Group {
+
+    public:
   
-  //! Constructor to set the base group, and derivative objects.
-  ArcLengthGroup(const Abstract::Group& g, int paramID,
-		 const NOX::Parameter::List& linSolverParams,
-		 NOX::Parameter::List& params);
-  ArcLengthGroup(const Abstract::Group& g, string paramID,
-		 const NOX::Parameter::List& linSolverParams,
-		 NOX::Parameter::List& params);
+      //! Constructor with integer continuation parameter id
+      ArcLengthGroup(const Abstract::Group& g, int paramID,
+		     const NOX::Parameter::List& linSolverParams,
+		     NOX::Parameter::List& params);
 
-  //! Copy constructor.
-  ArcLengthGroup(const ArcLengthGroup& source, NOX::CopyType type = NOX::DeepCopy);
+      //! Constructor with string continuation parameter id
+      ArcLengthGroup(const Abstract::Group& g, string paramID,
+		     const NOX::Parameter::List& linSolverParams,
+		     NOX::Parameter::List& params);
 
-  //! Destructor.
-  virtual ~ArcLengthGroup();
+      //! Copy constructor.
+      ArcLengthGroup(const ArcLengthGroup& source, NOX::CopyType type = NOX::DeepCopy);
+
+      //! Destructor.
+      virtual ~ArcLengthGroup();
   
-  /*! 
-    \brief Copies the values of all vectors and any other data in
-    the source group to this group.  (May invalidate shared data for
-    source group.)
-  */
-  virtual LOCA::Continuation::Group& 
-  operator=(const LOCA::Continuation::Group& source);
+      //! Assignment operator
+      virtual LOCA::Continuation::Group& 
+      operator=(const LOCA::Continuation::Group& source);
 
-  virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
-  virtual ArcLengthGroup& operator=(const ArcLengthGroup& source);
+      //! Assignment operator
+      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+
+      //! Assignment operator
+      virtual ArcLengthGroup& operator=(const ArcLengthGroup& source);
      
-  /*! 
-    \brief Create a new %Group of the same derived type as this one by
-    cloning this one, and return a pointer to the new group.  
+      //! Cloning function
+      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-    If type is \c DeepCopy, then we need to create an exact replica of
-    "this". Otherwise, if type is \c ShapeCopy, we need only replicate
-    the shape of "this". Returns \c NULL if clone is not supported.
-  */
-  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      //! Set step size for continuation constraint equation
+      virtual void setStepSize(double deltaS);
 
-  //! Set step size for continuation constraint equation
-  virtual void setStepSize(double deltaS);
+      //@{ \name "Compute" functions.
 
-  //@{ \name "Compute" functions.
+      //! Set the solution vector to y.
+      virtual void setX(const NOX::Abstract::Vector& y);
 
-  //! Set the solution vector, x, to y.
-  virtual void setX(const NOX::Abstract::Vector& y);
-  virtual void setX(const LOCA::Continuation::Vector& y);
+      //! Set the solution vector to y.
+      virtual void setX(const LOCA::Continuation::Vector& y);
 
-  //! Set the previous solution vector, x_old, to y.
-  virtual void setPrevX(const NOX::Abstract::Vector& y);
-  virtual void setPrevX(const LOCA::Continuation::Vector& y);
+      //! Set the previous solution vector to y.
+      virtual void setPrevX(const NOX::Abstract::Vector& y);
 
-  //! Gets the previous solution vector
-  virtual const LOCA::Continuation::Vector& getPrevX() const;
+      //! Set the previous solution vector to y.
+      virtual void setPrevX(const LOCA::Continuation::Vector& y);
 
-  virtual bool isPrevXVec() const;
+      //! Gets the previous solution vector
+      virtual const LOCA::Continuation::Vector& getPrevX() const;
 
-  //! Compute and return solution vector, x, where this.x = grp.x + step * d.
-  virtual void computeX(const NOX::Abstract::Group& g, 
-			const NOX::Abstract::Vector& d,
-			double step);
-  virtual void computeX(const ArcLengthGroup& g, 
-			const LOCA::Continuation::Vector& d,
-			double step);
+      //! Returns true if the previous solution vector has been set
+      virtual bool isPrevXVec() const;
+
+      //! Compute and return solution vector, x, where this.x = grp.x + step * d.
+      virtual void computeX(const NOX::Abstract::Group& g, 
+			    const NOX::Abstract::Vector& d,
+			    double step);
+
+      //! Compute and return solution vector, x, where this.x = grp.x + step * d.
+      virtual void computeX(const ArcLengthGroup& g, 
+			    const LOCA::Continuation::Vector& d,
+			    double step);
   
-  //! Compute and return F(x). 
-  virtual NOX::Abstract::Group::ReturnType computeF();
+      //! Compute extended continuation equations 
+      virtual NOX::Abstract::Group::ReturnType computeF();
 
-  //! Compute Jacobian.
-  virtual NOX::Abstract::Group::ReturnType computeJacobian();
+      //! Compute extended continuation jacobian
+      virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
-  //! Compute and return gradient.
-  virtual NOX::Abstract::Group::ReturnType computeGradient();
+      //! Gradient is not defined for this system
+      virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-  //! Compute and return Newton direction, using parameters for nonlinear solve
-  virtual NOX::Abstract::Group::ReturnType 
-  computeNewton(NOX::Parameter::List& params);
+      //! Compute Newton direction for extended continuation system
+      virtual NOX::Abstract::Group::ReturnType 
+      computeNewton(NOX::Parameter::List& params);
 
-  //! Compute tangent direction
-  virtual NOX::Abstract::Group::ReturnType
-  computeTangent(NOX::Parameter::List& params);
+      //! Overloaded Compute tangent from LOCA::Continuation::Group
+      virtual NOX::Abstract::Group::ReturnType
+      computeTangent(NOX::Parameter::List& params);
 
-  //@}
+      //@}
 
-  /** @name Jacobian operations.
+      /** @name Jacobian operations. */
+
+      //@{
+  
+     //! Applies Jacobian for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobian(const NOX::Abstract::Vector& input, 
+		    NOX::Abstract::Vector& result) const;
+
+      //! Jacobian transpose not defined for this system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianTranspose(const NOX::Abstract::Vector& input, 
+			     NOX::Abstract::Vector& result) const;
+
+      //! Applies Jacobian inverse for extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyJacobianInverse(NOX::Parameter::List& params, 
+			   const NOX::Abstract::Vector& input, 
+			   NOX::Abstract::Vector& result) const;
+
+      //! Apply right preconditiong for the extended system
+      virtual NOX::Abstract::Group::ReturnType 
+      applyRightPreconditioning(NOX::Parameter::List& params,
+				const NOX::Abstract::Vector& input, 
+				NOX::Abstract::Vector& result) const;
+      //@}
+
+      /** @name "Is" functions.
    
-    Operations using the Jacobian matrix. These may not be defined in
-    matrix-free scenarios.
-  */
+      Checks to see if various objects have been computed. Returns \c true
+      if the corresponding "compute" function has been called since the
+      last update to the solution vector (via instantiation or
+      computeX).
+      */
 
-  //@{
+      //@{
   
-  //! Applies Jacobian to the given input vector and puts the answer in the result.
-  virtual NOX::Abstract::Group::ReturnType 
-  applyJacobian(const NOX::Abstract::Vector& input, 
-		NOX::Abstract::Vector& result) const;
+      //! Return \c true if extended residual is valid.
+      virtual bool isF() const;
 
-  //! Applies Jacobian-Transpose to the given input vector and puts the answer in the result.
-  virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-			 NOX::Abstract::Vector& result) const;
+      //! Return \c true if the extended Jacobian is valid.
+      virtual bool isJacobian() const;
+      
+      //! Always returns false
+      virtual bool isGradient() const;
+      
+      //! Return \c true if the extended Newton direction is valid
+      virtual bool isNewton() const;
+      //@}
 
-  /*!
-    \brief Applies the inverse of the Jacobian matrix to the given input vector.
-  */
-  virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianInverse(NOX::Parameter::List& params, 
-		       const NOX::Abstract::Vector& input, 
-		       NOX::Abstract::Vector& result) const;
-
-  //! Apply right preconditiong to the given input vector
-  virtual NOX::Abstract::Group::ReturnType 
-  applyRightPreconditioning(NOX::Parameter::List& params,
-			    const NOX::Abstract::Vector& input, 
-			    NOX::Abstract::Vector& result) const;
-  //@}
-
-  /** @name "Is" functions.
+      /** @name "Get" functions.
    
-    Checks to see if various objects have been computed. Returns \c true
-    if the corresponding "compute" function has been called since the
-    last update to the solution vector (via instantiation or
-    computeX).
-  */
+      Note that these function do not check whether or not the vectors
+      are valid. Must use the "Is" functions for that purpose.
+      */
+      //@{ 
 
-  //@{
+      //! Return extended solution vector.  
+      virtual const NOX::Abstract::Vector& getX() const;
+
+      //! Return extended residual
+      virtual const NOX::Abstract::Vector& getF() const;
+
+      //! Return 2-norm of extended residual. 
+      virtual double getNormF() const;
+
+      //! Gradient is never valid
+      virtual const NOX::Abstract::Vector& getGradient() const;
+
+      //! Return extended Newton direction.
+      virtual const NOX::Abstract::Vector& getNewton() const;
+
+      //! Returns 2-norm of extended Newton solve residual
+      virtual double getNormNewtonSolveResidual() const;
+
+      //@}
+
+      //! Sets the continuation parameter value
+      virtual void setContinuationParameter(double val);
+
+      //! Prints the group
+      virtual void print() const;
+
+      //! Calculates scale factor as described in the loca v1.0 manual
+      virtual void recalculateScaleFactor(double dpds);
+
+    protected:
+
+      //! Resets all isValid flags
+      void resetIsValid();
+
+    protected:
   
-  //! Return \c true if F is valid.
-  virtual bool isF() const;
-  //! Return \c true if the Jacobian is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isJacobian() const;
-  //! Return \c true if the gradient is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isGradient() const;
-  //! Return \c true if the Newton direction is valid.
-  /*! \note If not defined in derived object, returns \c false. */
-  virtual bool isNewton() const;
-  //@}
+      //! Stores the arclength solution vector
+      LOCA::Continuation::Vector xVec;
 
-  /** @name "Get" functions.
-   
-    Note that these function do not check whether or not the vectors
-    are valid. Must use the "Is" functions for that purpose.
-  */
-  //@{ 
+      //! Stores the arclength residual vector
+      LOCA::Continuation::Vector fVec;
 
-  //! Return solution vector.  
-  virtual const NOX::Abstract::Vector& getX() const;
+      //! Stores the arclength Newton vector
+      LOCA::Continuation::Vector newtonVec;
 
-  //! Return F(x)
-  virtual const NOX::Abstract::Vector& getF() const;
+      //! Stores the previous arclength solution vector
+      LOCA::Continuation::Vector prevXVec;
 
-  //! Return 2-norm of F(x). 
-  /*! In other words, \f[ \sqrt{\sum_{i=1}^n F_i^2} \f] */
-  virtual double getNormF() const;
+      //! Stores the derivative of the solution residual w.r.t. arcparam
+      NOX::Abstract::Vector* derivResidualParamPtr;
 
-  //! Return gradient.
-  virtual const NOX::Abstract::Vector& getGradient() const;
+      //! Stores the parameter index
+      double arclengthStep;
 
-  //! Return Newton direction.
-  virtual const NOX::Abstract::Vector& getNewton() const;
+      //! Is residual vector valid
+      bool isValidF;
 
-  /*!
-    \brief Return the norm of the Newton solve residual.
-  
-    This is the error in the linear model for the particular Newton step.
-    In other words, 
+      //! Is Jacobian matrix valid
+      bool isValidJacobian;
 
-    \f[ ||Js - (-F)||_2 \f] 
+      //! Is Newton vector valid
+      bool isValidNewton;
 
-    where \f$J\f$ is the Jacobian calculated by computeJacobian(),
-    \f$s\f$ is the Newton step calculated by computeNewton(), and
-    \f$F\f$ is the function value calulated by computeF().
+      //! Is previous solution vector valid
+      bool isValidPrevXVec;
 
-    \note Returns -1 if there is an error in calculating the linear residual.
-  */
-  virtual double getNormNewtonSolveResidual() const;
+      //! Goal value of dp/ds squared
+      double gGoal;
 
-  //@}
+      //! Minimum value for dp/ds for which rescaling is applied
+      double gMax;
 
-  virtual void setContinuationParameter(double val);
+      //! Maximum value of scale factor
+      double thetaMin;
 
-  virtual void print() const;
-
-  virtual void recalculateScaleFactor(double dpds);
-
-protected:
-
-  void resetIsValid();
-
-protected:
-  
-  //! Stores the arclength solution vector
-  LOCA::Continuation::Vector xVec;
-
-  //! Stores the arclength residual vector
-  LOCA::Continuation::Vector fVec;
-
-  //! Stores the arclength Newton vector
-  LOCA::Continuation::Vector newtonVec;
-
-  //! Stores the previous arclength solution vector
-  LOCA::Continuation::Vector prevXVec;
-
-  //! Stores the derivative of the solution residual w.r.t. arcparam
-  NOX::Abstract::Vector* derivResidualParamPtr;
-
-  //! Stores the parameter index
-  double arclengthStep;
-
-  //! Is residual vector valid
-  bool isValidF;
-
-  //! Is Jacobian matrix valid
-  bool isValidJacobian;
-
-  //! Is Newton vector valid
-  bool isValidNewton;
-
-  //! Is previous solution vector valid
-  bool isValidPrevXVec;
-
-  //! Goal value of dp/ds squared
-  double gGoal;
-
-  //! Minimum value for dp/ds for which rescaling is applied
-  double gMax;
-
-  //! Maximum value of scale factor
-  double thetaMin;
-
-};
-} // namespace Bifurcation
+    };
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

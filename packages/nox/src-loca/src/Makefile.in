@@ -119,11 +119,13 @@ install_sh = @install_sh@
 
 LOCA_ABSTRACT_H = \
         $(srcdir)/LOCA_Abstract_Group.H \
-	$(srcdir)/LOCA_Abstract_DataOutput.H
+	$(srcdir)/LOCA_Abstract_DataOutput.H \
+	$(srcdir)/LOCA_Abstract_Iterator.H
 
 
 LOCA_ABSTRACT = \
-        $(srcdir)/LOCA_Abstract_Group.C
+        $(srcdir)/LOCA_Abstract_Group.C \
+	$(srcdir)/LOCA_Abstract_Iterator.C
 
 
 LOCA_UTILS_H = \
@@ -290,6 +292,7 @@ LIBRARIES = $(lib_LIBRARIES)
 
 libloca_a_DEPENDENCIES =
 am_libloca_a_OBJECTS = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
+	libloca_a-LOCA_Abstract_Iterator.$(OBJEXT) \
 	libloca_a-LOCA_Utils.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
 	libloca_a-LOCA_MultiVector.$(OBJEXT) \
@@ -318,6 +321,7 @@ LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@DEP_FILES = $(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po \
@@ -394,6 +398,8 @@ uninstall-libLIBRARIES:
 clean-libLIBRARIES:
 	-test -z "$(lib_LIBRARIES)" || rm -f $(lib_LIBRARIES)
 libloca_a-LOCA_Abstract_Group.$(OBJEXT): $(srcdir)/LOCA_Abstract_Group.C
+libloca_a-LOCA_Abstract_Iterator.$(OBJEXT): \
+	$(srcdir)/LOCA_Abstract_Iterator.C
 libloca_a-LOCA_Utils.$(OBJEXT): $(srcdir)/LOCA_Utils.C
 libloca_a-LOCA_Parameter_Vector.$(OBJEXT): \
 	$(srcdir)/LOCA_Parameter_Vector.C
@@ -440,6 +446,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Continuation_ArcLengthGroup.Po@am__quote@
@@ -486,6 +493,18 @@ libloca_a-LOCA_Abstract_Group.obj: $(srcdir)/LOCA_Abstract_Group.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Group.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Group.obj `cygpath -w $(srcdir)/LOCA_Abstract_Group.C`
+
+libloca_a-LOCA_Abstract_Iterator.o: $(srcdir)/LOCA_Abstract_Iterator.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Abstract_Iterator.C' object='libloca_a-LOCA_Abstract_Iterator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Iterator.o `test -f $(srcdir)/LOCA_Abstract_Iterator.C || echo '$(srcdir)/'`$(srcdir)/LOCA_Abstract_Iterator.C
+
+libloca_a-LOCA_Abstract_Iterator.obj: $(srcdir)/LOCA_Abstract_Iterator.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_Abstract_Iterator.C' object='libloca_a-LOCA_Abstract_Iterator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_Abstract_Iterator.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_Abstract_Iterator.obj `cygpath -w $(srcdir)/LOCA_Abstract_Iterator.C`
 
 libloca_a-LOCA_Utils.o: $(srcdir)/LOCA_Utils.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Utils.C' object='libloca_a-LOCA_Utils.o' libtool=no @AMDEPBACKSLASH@

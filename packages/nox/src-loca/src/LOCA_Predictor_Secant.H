@@ -40,6 +40,13 @@ namespace LOCA {
 
   namespace Predictor {
 
+    //! %Secant predictor computation class
+    /*! 
+      This class computes the predictor direction given by the secant
+      vector to the continuation curve.  The secant vector calculation
+      is implemented by the computeSecant method
+      of the LOCA::Continuation::Group class.
+    */
     class Secant : public LOCA::Predictor::Generic {
 
     public:
@@ -50,10 +57,14 @@ namespace LOCA {
       //! Destructor
       virtual ~Secant();
 
-      //! Reset parameters
+      //! Reset parameters.
+      /*!
+	There are now parameters for the secant predictor calculation.
+      */
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Computes the secant predictor by calling curGroup.computeSecant().
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,

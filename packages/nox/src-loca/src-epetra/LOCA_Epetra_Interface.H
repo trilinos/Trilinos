@@ -46,32 +46,31 @@ namespace LOCA {
 }
 
 namespace LOCA {
-namespace Epetra {
+  namespace Epetra {
 
-  /*! \brief Used by LOCA::Epetra::Group to provide a link to the
-   *  external code for RHS and Jacobian fills ()if needed. */
-  /*! At a minimum the user must supply a computeF().  
-   * If the user is supplying their own Epetra_RowMatrix for the Jacobian,
-   * then they must supply a computeJacobian().  If computeJacobian is
-   * not supplied, a Matrix-Free or Finite Differencing Epetra_RowMatrix
-   * can be used in NOX.  Preconditioning functions are only  needed 
-   * if the user wishes to supply their own preconditioner.  Otherwise
-   * Aztec has built-in preconditioners to use.  */
-class Interface : public NOX::Epetra::Interface {
+    /*! \brief 
+      Used by LOCA::Epetra::Group to provide a link to the
+      external code for RHS and Jacobian fills ()if needed. 
+    */
+    /*!
+      This interface is derived from the NOX::Epetra::Interface and 
+      and additionally provides a method for setting problem parameters.
+    */
+    class Interface : public NOX::Epetra::Interface {
 
-public:
+    public:
  
-  //! Constructor
-  Interface() {};
+      //! Constructor
+      Interface() {};
 
-  //! Destructor
-  virtual ~Interface() {};
+      //! Destructor
+      virtual ~Interface() {};
 
-  //! Set the parameters in the user's app prior to calling one of the compute functions.
-  virtual void setParameters(const ParameterVector& p) = 0;
+      //! Set the parameters in the user's app prior to calling one of the compute functions.
+      virtual void setParameters(const ParameterVector& p) = 0;
 
-};
-} // namespace Epetra
+    };
+  } // namespace Epetra
 } // namespace LOCA
 
 #endif

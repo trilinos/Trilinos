@@ -30,6 +30,7 @@
 // ************************************************************************
 //@HEADER
 #include "LOCA_Stepper.H"    // class definition
+#include "NOX_StatusTest_Generic.H"
 
 // LOCA Includes
 #include "LOCA_Utils.H"		      // for static function doPrint
@@ -37,9 +38,6 @@
 #include "LOCA_Continuation_Group.H"
 #include "LOCA_Continuation_NaturalGroup.H"
 #include "LOCA_Continuation_ArcLengthGroup.H"   //
-
-using namespace LOCA;
-using namespace NOX::StatusTest;
 
 /* Some compilers (in particular the SGI and ASCI Red - TFLOP) 
  * fail to find the max and min function.  Therfore we redefine them 
@@ -56,237 +54,112 @@ using namespace NOX::StatusTest;
 #define min(a,b) ((a)<(b)) ? (a) : (b);
 
 
-Stepper::Stepper(LOCA::Abstract::Group& initialGuess, 
-		 NOX::StatusTest::Generic& t,
-		 NOX::Parameter::List& p,
-		 LOCA::Abstract::DataOutput& dataOut) :
-  conGroupManager(p.sublist("Stepper")),
+LOCA::Stepper::Stepper(LOCA::Abstract::Group& initialGuess, 
+		       NOX::StatusTest::Generic& t,
+		       NOX::Parameter::List& p,
+		       LOCA::Abstract::DataOutput& dataOut) :
+  LOCA::Abstract::Iterator(),
+  conGroupManagerPtr(NULL),
   curGroupPtr(NULL),
   prevGroupPtr(NULL),
-  statusTestPtr(&t),
+  statusTestPtr(NULL),
   solverPtr(NULL),
-  predictor(p.sublist("Predictor")),
-  predictorDirection(NULL),
-  stepSizeManager(p.sublist("Step Size")),
-  dataOutput(dataOut),
+  predictorManagerPtr(NULL),
+  curPredictorPtr(NULL),
+  prevPredictorPtr(NULL),
+  stepSizeManagerPtr(NULL),
+  dataOutputPtr(NULL),
   paramList()
 {
   // Initialize the utilities
-  Utils::setUtils(paramList.sublist("Utilities"));
-  paramList = p;
-  init(initialGuess);
+  Utils::setUtils(p.sublist("Utilities"));
+  reset(initialGuess, t, p, dataOut);
 }
 
-Stepper::Stepper(const Stepper& s) :
-  dataOutput(s.dataOutput),
-  solverPtr(s.solverPtr),
-  conGroupManager(s.conGroupManager),
-  predictor(s.predictor),
-  stepSizeManager(s.stepSizeManager)
-{ //Copy constructor declared private since it is not expected to be neeeded.
-}
-
-Stepper::~Stepper() 
+LOCA::Stepper::Stepper(const LOCA::Stepper& s) :
+  LOCA::Abstract::Iterator(s),
+  conGroupManagerPtr(NULL),
+  curGroupPtr(NULL),
+  prevGroupPtr(NULL),
+  dataOutputPtr(s.dataOutputPtr),
+  statusTestPtr(s.statusTestPtr),
+  paramList(s.paramList),
+  solverPtr(NULL),
+  predictorManagerPtr(NULL),
+  curPredictorPtr(NULL),
+  prevPredictorPtr(NULL),
+  stepSizeManagerPtr(NULL),
+  startValue(s.startValue),
+  maxValue(s.maxValue),
+  minValue(s.minValue),
+  stepSize(s.stepSize),
+  maxNonlinearSteps(s.maxNonlinearSteps),
+  isLastStep(s.isLastStep),
+  tangentFactor(s.tangentFactor),
+  minTangentFactor(s.minTangentFactor),
+  tangentFactorExponent(s.tangentFactorExponent)
 { 
+  conGroupManagerPtr = 
+    new LOCA::Continuation::Manager(*s.conGroupManagerPtr);
+  curGroupPtr = 
+    dynamic_cast<LOCA::Continuation::Group*>(s.curGroupPtr->clone());
+  prevGroupPtr = 
+    dynamic_cast<LOCA::Continuation::Group*>(s.prevGroupPtr->clone());
+  predictorManagerPtr = 
+    new LOCA::Predictor::Manager(*s.predictorManagerPtr);
+  curPredictorPtr = 
+    dynamic_cast<LOCA::Continuation::Vector*>(s.curPredictorPtr->clone());
+  prevPredictorPtr = 
+    dynamic_cast<LOCA::Continuation::Vector*>(s.prevPredictorPtr->clone());
+  stepSizeManagerPtr = 
+    new LOCA::StepSize::Manager(*s.stepSizeManagerPtr);
+  // Right now this doesn't work because we can't copy the solver
+}
+
+LOCA::Stepper::~Stepper() 
+{ 
+  delete conGroupManagerPtr;
   delete curGroupPtr;
   delete prevGroupPtr;
-  delete predictorDirection;
+  delete predictorManagerPtr;
+  delete curPredictorPtr;
+  delete prevPredictorPtr;
+  delete stepSizeManagerPtr;
   delete solverPtr;
 }
 
-bool Stepper::reset(LOCA::Abstract::Group& initialGuess,
-		    NOX::StatusTest::Generic& t,
-		    const NOX::Parameter::List& p) 
+bool 
+LOCA::Stepper::reset(LOCA::Abstract::Group& initialGuess,
+		     NOX::StatusTest::Generic& t,
+		     NOX::Parameter::List& p,
+		     LOCA::Abstract::DataOutput& dataOut) 
 {
   delete curGroupPtr;
   delete prevGroupPtr;
-  delete predictorDirection;
+  delete curPredictorPtr;
+  delete prevPredictorPtr;
+
   statusTestPtr = &t;
   paramList = p;
+  dataOutputPtr = &dataOut;
 
-  return init(initialGuess);
-}
+  // Get stepper sublist
+  NOX::Parameter::List& stepperList = paramList.sublist("Stepper");
 
-StatusType Stepper::getStatus()
-{
-  return stepperStatus;
-}
+  // Reset base class
+  LOCA::Abstract::Iterator::reset(stepperList);
 
-StatusType Stepper::solve()
-{
-  // Perform solve of initial conditions
-  solverStatus = Unconverged;
-  solverStatus = solverPtr->solve();
-
-  stepperStatus = checkStepperStatus();
-
-  // Set up continuation groups
-  const LOCA::Abstract::Group& solnGrp = 
-    dynamic_cast<const LOCA::Abstract::Group&>(solverPtr->getSolutionGroup());
-  curGroupPtr = 
-    conGroupManager.createContinuationGroup(solnGrp, paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"));
-  prevGroupPtr = 
-    dynamic_cast<LOCA::Continuation::Group*>(curGroupPtr->clone());
-
-  // If nonlinear solve failed, return (this must be done after continuation 
-  // groups are created so Stepper::getSolutionGroup() functions correctly.
-  if (stepperStatus != Unconverged) 
-    return stepperStatus;
-
-  stepNumber = 1;
-  numTotalSteps = 1;
-  dataOutput.saveGroupData(getSolutionGroup());
-
-  // Initialize predictor direction
-  predictorDirection = 
-    dynamic_cast<LOCA::Continuation::Vector*>(curGroupPtr->getX().clone(NOX::ShapeCopy));
-
-  // Create new solver using new continauation groups
-  delete solverPtr;
-  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
-				       paramList.sublist("Solver"));
-
-  while (stepperStatus == Unconverged) {
-    stepperStatus = step();
-  }
-
-  // Get last solution
-  *curGroupPtr 
-    = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
-
-  return stepperStatus;
-}
-
-StatusType Stepper::step()
-{
-  stepperStatus = Unconverged;
- 
-  if (solverStatus == Failed) {
-
-    *curGroupPtr = *prevGroupPtr;
-
-    stepSize = computeStepSize(Failed);
-    curGroupPtr->setStepSize(stepSize);
-
-    // Set previous solution vector in current solution group
-    curGroupPtr->setPrevX(prevGroupPtr->getX());
-
-    // Take (reduced) step in predictor direction, which must be still valid
-    curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
-
-  }
-  else {
-
-    // Set previous solution vector in current solution group
-    if (stepNumber > 1)
-      curGroupPtr->setPrevX(prevGroupPtr->getX());
-
-    // Compute predictor direction
-    predictor.compute(*prevGroupPtr, *curGroupPtr, *predictorDirection);
-
-    // Compute step size
-    stepSize = computeStepSize(solverStatus);
-
-    //if (stepSize > 1.5e6)
-    //  stepSize /= 2.0;
-
-    curGroupPtr->setStepSize(stepSize);
-
-    // Save previous successful step information
-    *prevGroupPtr = *curGroupPtr;
-
-    // Set previous solution vector in current solution group
-    curGroupPtr->setPrevX(prevGroupPtr->getX());
-
-    // Take step in predictor direction
-    curGroupPtr->computeX(*prevGroupPtr, *predictorDirection, stepSize);
-  }
-
-  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
-
-  return nonlinearSolve();
-}
-
-StatusType Stepper::nonlinearSolve()
-{
-  printStartStep();
-  
-  solverStatus = Unconverged;
-  solverStatus = solverPtr->solve();
-  
-  if (solverStatus == Failed) {
-    numFailedSteps += 1;
-    printEndStep(solverStatus);
-  }
-  else  {
-
-    dataOutput.saveGroupData(getSolutionGroup());
-
-    // Get solution
-    *curGroupPtr 
-       = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
-    printEndStep(solverStatus);
-
-    stepNumber += 1;
-
-    // Recalculate scale factor
-    //curGroupPtr->recalculateScaleFactor();
-  }
-  
-  // See if we went past bounds for parameter
-  if ( curGroupPtr->getContinuationParameter() >= maxValue*(1.0 - 1.0e-15) || 
-       curGroupPtr->getContinuationParameter() <= minValue*(1.0 + 1.0e-15) )
-    isLastStep = true;
-  
-  numTotalSteps += 1;
-
-  stepperStatus = checkStepperStatus();
-
-  return stepperStatus;
-}
-
-double Stepper::computeStepSize(StatusType solverStatus)
-{
-  NOX::Abstract::Group::ReturnType res = 
-    stepSizeManager.compute(*curGroupPtr, *predictorDirection, *solverPtr, 
-			    solverStatus, *this, stepSize);
-
-  if (res == NOX::Abstract::Group::Failed)
-    stepperStatus = Failed;
-  
-  // Cap the con parameter so we don't go past bounds
-  double prevValue = curGroupPtr->getContinuationParameter();
-  double dpds = predictorDirection->getParam();
-  if ( (prevValue+stepSize*dpds > maxValue*(1.0 - 1.0e-15)) ) {
-    stepSize = (maxValue - prevValue)/dpds;
-    isLastStep = true;
-  }
-  if ( (prevValue+stepSize*dpds < minValue*(1.0 + 1.0e-15)) ) {
-    stepSize = (minValue - prevValue)/dpds;
-    isLastStep = true;
-  }
-
-  return stepSize;
-}
-
-const LOCA::Abstract::Group& Stepper::getSolutionGroup() const
-{
-  return curGroupPtr->getGroup();
-}
-
-const NOX::Parameter::List& Stepper::getParameterList() const
-{
-  return paramList;
-}
-
-bool Stepper::init(LOCA::Abstract::Group& initialGuess)
-{ 
-  // Get a reference to the parameter stepper sublist from the Solver.
-  const NOX::Parameter::List& p = paramList.sublist("Stepper");
+  // Reset group, predictor, step-size managers
+  conGroupManagerPtr = 
+    new LOCA::Continuation::Manager(stepperList);
+  predictorManagerPtr = 
+    new LOCA::Predictor::Manager(paramList.sublist("Predictor"));
+  stepSizeManagerPtr = 
+    new LOCA::StepSize::Manager(paramList.sublist("Step Size"));
 
   // Get the continuation parameter starting value
-  if (p.isParameter("Initial Value"))
-    startValue = p.getParameter("Initial Value", 0.0);
+  if (stepperList.isParameter("Initial Value"))
+    startValue = stepperList.getParameter("Initial Value", 0.0);
   else {
     cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
 	 << "\"Initial Value\" of continuation param is not set!" << endl;
@@ -294,15 +167,15 @@ bool Stepper::init(LOCA::Abstract::Group& initialGuess)
   }
   
   // Get the max and min values of the continuation parameter
-  if (p.isParameter("Max Value"))
-    maxValue = p.getParameter("Max Value", 0.0);
+  if (stepperList.isParameter("Max Value"))
+    maxValue = stepperList.getParameter("Max Value", 0.0);
   else {
     cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
 	 << "\"Maximum Value\" of continuation param is not set!" << endl;
     throw "LOCA Error";
   }
-  if (p.isParameter("Min Value"))
-    minValue = p.getParameter("Min Value", 0.0);
+  if (stepperList.isParameter("Min Value"))
+    minValue = stepperList.getParameter("Min Value", 0.0);
   else {
     cout << "ERROR: LOCA::Stepper::Stepper::resetStepperMembers() - "
 	 << "\"Minimum Value\" of continuation param is not set!" << endl;
@@ -312,15 +185,13 @@ bool Stepper::init(LOCA::Abstract::Group& initialGuess)
 
   // Get the initial values or use their defaults
   stepSize = 0.0;
-  stepNumber = 0;                    
-  numFailedSteps = 0;
-  numTotalSteps = 0;
-  maxNonlinearSteps = p.getParameter("Max Nonlinear Iterations", 15);
-  maxConSteps = p.getParameter("Max Continuation Steps", 100);
+  maxNonlinearSteps = stepperList.getParameter("Max Nonlinear Iterations", 15);
 
-  stepperStatus = Unconverged;
-  solverStatus = Unconverged;
   isLastStep = false;
+  tangentFactor = 1.0;
+  minTangentFactor = stepperList.getParameter("Min Tangent Factor",0.1);
+  tangentFactorExponent = 
+    stepperList.getParameter("Tangent Factor Exponent",1.0);
 
   // Create solver using initial conditions
   solverPtr = new NOX::Solver::Manager(initialGuess, *statusTestPtr, 
@@ -334,58 +205,252 @@ bool Stepper::init(LOCA::Abstract::Group& initialGuess)
   return true;
 }
 
-int Stepper::getNumContinuationSteps() const
-{
-  return stepNumber;
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Stepper::start() {
+  NOX::StatusTest::StatusType solverStatus;
+
+  // Perform solve of initial conditions
+  solverStatus = solverPtr->solve();
+
+  // Set up continuation groups
+  const LOCA::Abstract::Group& solnGrp = 
+    dynamic_cast<const LOCA::Abstract::Group&>(solverPtr->getSolutionGroup());
+  curGroupPtr = 
+    conGroupManagerPtr->createContinuationGroup(solnGrp, paramList.sublist("Solver").sublist("Direction").sublist("Linear Solver"));
+
+  curGroupPtr->setStepSize(stepSize);
+
+  prevGroupPtr = 
+    dynamic_cast<LOCA::Continuation::Group*>(curGroupPtr->clone());
+
+  // If nonlinear solve failed, return (this must be done after continuation 
+  // groups are created so Stepper::getSolutionGroup() functions correctly.
+  if (solverStatus != NOX::StatusTest::Converged)
+    return LOCA::Abstract::Iterator::Failed;
+
+  dataOutputPtr->saveGroupData(getSolutionGroup());
+
+  // Initialize predictor direction
+  curPredictorPtr = 
+    dynamic_cast<LOCA::Continuation::Vector*>(curGroupPtr->getX().clone(NOX::ShapeCopy));
+
+  // Compute predictor direction
+  predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
+
+  prevPredictorPtr = 
+    dynamic_cast<LOCA::Continuation::Vector*>(curPredictorPtr->clone());
+
+  // Create new solver using new continuation groups
+  delete solverPtr;
+  solverPtr = new NOX::Solver::Manager(*curGroupPtr, *statusTestPtr, 
+				       paramList.sublist("Solver"));
+
+  return LOCA::Abstract::Iterator::NotFinished;
 }
 
-int Stepper::getNumFailedSteps() const
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Stepper::finish()
 {
-  return numFailedSteps;
+  // Get last solution
+  *curGroupPtr 
+    = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
+
+  return LOCA::Abstract::Iterator::Finished;
 }
 
-int Stepper::getNumTotalSteps() const
+LOCA::Abstract::Iterator::StepStatus
+LOCA::Stepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  return numTotalSteps;
+  if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful) {
+
+    // Restore previous step information
+    *curGroupPtr = *prevGroupPtr;
+  }
+  else {
+
+    // Save previous successful step information
+    *prevGroupPtr = *curGroupPtr;
+  }
+  
+  // Compute step size
+  stepStatus = computeStepSize(stepStatus, stepSize);
+
+  // Set step size in current solution group
+  curGroupPtr->setStepSize(stepSize);
+
+  // Set previous solution vector in current solution group
+  curGroupPtr->setPrevX(prevGroupPtr->getX());
+
+  // Take step in predictor direction
+  curGroupPtr->computeX(*prevGroupPtr, *curPredictorPtr, stepSize);
+
+  // Reset solver to compute new solution
+  solverPtr->reset(*curGroupPtr, *statusTestPtr, paramList.sublist("Solver"));
+
+  return stepStatus;
+}
+  
+LOCA::Abstract::Iterator::StepStatus
+LOCA::Stepper::compute(LOCA::Abstract::Iterator::StepStatus stepStatus) 
+{
+  NOX::StatusTest::StatusType solverStatus;
+
+  printStartStep();
+
+  solverStatus = solverPtr->solve();
+
+  if (solverStatus == NOX::StatusTest::Failed) {
+    printEndStep(LOCA::Abstract::Iterator::Unsuccessful);
+    return LOCA::Abstract::Iterator::Unsuccessful;
+  }
+
+  // Get solution
+  *curGroupPtr 
+    = dynamic_cast<const LOCA::Continuation::Group&>(solverPtr->getSolutionGroup());
+
+  printEndStep(LOCA::Abstract::Iterator::Successful);
+
+  dataOutputPtr->saveGroupData(getSolutionGroup());
+
+  return LOCA::Abstract::Iterator::Successful;
 }
 
-void Stepper::printInitializationInfo()
+LOCA::Abstract::Iterator::StepStatus
+LOCA::Stepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  if (stepStatus == LOCA::Abstract::Iterator::Unsuccessful)
+    return stepStatus;
+
+  *prevPredictorPtr = *curPredictorPtr;
+
+  predictorManagerPtr->compute(*prevGroupPtr, *curGroupPtr, *curPredictorPtr);
+
+  //tangentFactor = curPredictorPtr->dot(*prevPredictorPtr) 
+  //  / (curPredictorPtr->norm() * prevPredictorPtr->norm());
+
+  //tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
+  //						*prevPredictorPtr) 
+  // / (curPredictorPtr->norm() * prevPredictorPtr->norm());
+
+  tangentFactor = curGroupPtr->scaledDotProduct(*curPredictorPtr, 
+						*prevPredictorPtr) / 
+    sqrt(curGroupPtr->scaledDotProduct(*curPredictorPtr, *curPredictorPtr) * 
+	 curGroupPtr->scaledDotProduct(*prevPredictorPtr, *prevPredictorPtr));
+
+  cout << "LOCA::Stepper::postprocess():  tangentFactor = "
+       << tangentFactor << endl;
+
+  if (tangentFactor < minTangentFactor)
+    return LOCA::Abstract::Iterator::Unsuccessful;
+
+  return stepStatus;
+}
+
+LOCA::Abstract::Iterator::IteratorStatus
+LOCA::Stepper::stop(LOCA::Abstract::Iterator::StepStatus stepStatus)
+{
+  if (stepStatus == LOCA::Abstract::Iterator::Successful) {
+    
+    double value = curGroupPtr->getContinuationParameter();
+
+    // See if we went past bounds for parameter
+    if ( value >= maxValue*(1.0 - 1.0e-15) || 
+	 value <= minValue*(1.0 + 1.0e-15) )
+    return LOCA::Abstract::Iterator::Finished;
+
+    // Check to see if we hit final parameter value
+    if (isLastStep)
+      return LOCA::Abstract::Iterator::Finished;
+
+  }
+
+  // Check to see if max number of steps has been reached
+  if (LOCA::Abstract::Iterator::numTotalSteps >= LOCA::Abstract::Iterator::maxSteps) 
+    return LOCA::Abstract::Iterator::Failed;
+
+  return LOCA::Abstract::Iterator::NotFinished;
+}
+
+LOCA::Abstract::Iterator::StepStatus
+LOCA::Stepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
+			       double& stepSize)
+{
+  NOX::Abstract::Group::ReturnType res = 
+    stepSizeManagerPtr->compute(*curGroupPtr, *curPredictorPtr, *solverPtr, 
+				stepStatus, *this, stepSize);
+
+  if (res == NOX::Abstract::Group::Failed)
+    return LOCA::Abstract::Iterator::Unsuccessful;
+
+  stepSize *= powf(tangentFactor, tangentFactorExponent);
+  
+  // Cap the con parameter so we don't go past bounds
+  double prevValue = curGroupPtr->getContinuationParameter();
+  double dpds = curPredictorPtr->getParam();
+  if ( (prevValue+stepSize*dpds > maxValue*(1.0 - 1.0e-15)) ) {
+    stepSize = (maxValue - prevValue)/dpds;
+    isLastStep = true;
+  }
+  if ( (prevValue+stepSize*dpds < minValue*(1.0 + 1.0e-15)) ) {
+    stepSize = (minValue - prevValue)/dpds;
+    isLastStep = true;
+  }
+
+  return LOCA::Abstract::Iterator::Successful;
+}
+
+const LOCA::Abstract::Group& 
+LOCA::Stepper::getSolutionGroup() const
+{
+  return curGroupPtr->getGroup();
+}
+
+const NOX::Parameter::List& 
+LOCA::Stepper::getParameterList() const
+{
+  return paramList;
+}
+
+void 
+LOCA::Stepper::printInitializationInfo()
 {  
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << endl << Utils::fill(72, '~') << endl;
     cout << "Beginning Continuation Run \n" 
-	 << "Stepper Method:             " << conGroupManager.getMethod() << "\n"
+	 << "Stepper Method:             " << conGroupManagerPtr->getMethod() << "\n"
 	 << "Initial Parameter Value = " << startValue << "\n"
 	 << "Maximum Parameter Value = " << maxValue << "\n"
 	 << "Minimum Parameter Value = " << minValue << "\n"
-	 << "Maximum Number of Continuation Steps = " << maxConSteps 
+	 << "Maximum Number of Continuation Steps = " << LOCA::Abstract::Iterator::maxSteps 
 	 << endl;
     cout << Utils::fill(72, '~') << endl << endl;
   }
 }
  
-void Stepper::printStartStep()
+void 
+LOCA::Stepper::printStartStep()
 {  
   if (Utils::doPrint(Utils::StepperIteration)) {
     cout << "\n" << Utils::fill(72, '~') << "\n";
     cout << "Start of Continuation Step " << stepNumber << endl;
-    cout << "Continuation Method: " << conGroupManager.getMethod() << endl;
-    cout << "Continuation Parameter: " << conGroupManager.getConParamID()
+    cout << "Continuation Method: " << conGroupManagerPtr->getMethod() << endl;
+    cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
 	 << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
     cout << "Current step size  = " << stepSize << "   "
-	 << "Previous step size = " << stepSizeManager.getPrevStepSize() << endl;
+	 << "Previous step size = " << stepSizeManagerPtr->getPrevStepSize() << endl;
     cout << Utils::fill(72, '~') << "\n" << endl;
   }
 }
 
-void Stepper::printEndStep(StatusType& solverStatus)
+void 
+LOCA::Stepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  if (solverStatus != Failed) {
+  if (stepStatus == LOCA::Abstract::Iterator::Successful) {
     // Print results of successful continuation step
     if (Utils::doPrint(Utils::StepperIteration)) {
       cout << "\n" << Utils::fill(72, '~') << "\n";
       cout << "End of  Continuation Step " << stepNumber << endl;
-      cout << "Continuation Parameter: " << conGroupManager.getConParamID()
+      cout << "Continuation Parameter: " << conGroupManagerPtr->getConParamID()
 	   << " = " << curGroupPtr->getContinuationParameter() << " from " << prevGroupPtr->getContinuationParameter() << endl;
       cout << "--> Step Converged in "
            << solverPtr->getNumIterations() <<" Nonlinear Solver Iterations!\n";
@@ -407,27 +472,9 @@ void Stepper::printEndStep(StatusType& solverStatus)
   }
 }
 
-void Stepper::printEndInfo()
+void 
+LOCA::Stepper::printEndInfo()
 {
 
 }
 
-StatusType Stepper::checkStepperStatus()
-{
-  if ((solverStatus != Converged) && (stepperStatus == Failed))
-    return Failed;
-
-  // Check to see if we hit final parameter value
-  if ((solverStatus == Converged) && isLastStep)
-    return Converged;
-
-  // Check to see if max number of steps has been reached
-  if (numTotalSteps == maxConSteps) 
-    return Failed;
-
-  // Check to see if the initial solve (step=0) failed
-  // if (stepNumber == 0) 
-  //  return Failed;
-
-  return Unconverged;
-}

@@ -39,6 +39,20 @@ namespace LOCA {
 
   namespace StepSize {
 
+    //! %Manager for step size control strategies
+    /*! 
+      The parameters passed to the constructor or reset should specify
+      the "Method", as described below, as well as any additional
+      parameters for that particular method.
+ 
+      <ul>
+      <li> "Method" - Name of the step size control method. Valid choices are
+      <ul> 
+      <li> "%Constant" (LOCA::StepSize::Constant) [Default]
+      <li> "%Adaptive" (LOCA::StepSize::Adaptive) 
+      </ul>
+      </ul>
+    */  
     class Manager : public LOCA::StepSize::Generic {
 
     public:
@@ -53,20 +67,26 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Computes step size based on step size control method
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& curGroup,
 	      const LOCA::Continuation::Vector& predictor,
 	      const NOX::Solver::Generic& solver,
-	      const NOX::StatusTest::StatusType& solverStatus,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,
 	      double& stepSize);
 
+      //! Returns step size control method
       const string& getMethod() const;
 
+      //! Returns previous step size
       virtual double getPrevStepSize() const;
 
     protected:
+      //! Stores step size control method name
       string method;
+
+      //! Stores pointer to current step size control object
       LOCA::StepSize::Generic *stepSizePtr;
 
     };

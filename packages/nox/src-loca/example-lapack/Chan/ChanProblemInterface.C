@@ -41,7 +41,8 @@ ChanProblemInterface::ChanProblemInterface(int N, double a, double b,
   scale(s)
 {
   for (int i=0; i<n; i++) 
-    initialGuess(i) = i*(n-1-i)*scale*alpha/((n-1)*(n-1)) + 0.001;
+    initialGuess(i) = 
+      i*(n-1-i)*source_param(alpha, scale)/((n-1)*(n-1)) + 0.001;
 }
 
 const NOX::LAPACK::Vector&
@@ -58,7 +59,7 @@ ChanProblemInterface::computeF(NOX::LAPACK::Vector& f,
   f(n-1) = x(n-1) - beta;
   for (int i=1; i<n-1; i++)
     f(i) = (x(i-1) - 2*x(i) + x(i+1))*(n-1)*(n-1) 
-      + scale*alpha*source_term(x(i));
+      + source_param(alpha, scale)*source_term(x(i));
   
   return true;
 }
@@ -72,7 +73,7 @@ ChanProblemInterface::computeJacobian(NOX::LAPACK::Matrix& J,
   for (int i=1; i<n-1; i++) {
     J(i,i-1) = (n-1)*(n-1);
     J(i,i+1) = J(i,i-1);
-    J(i,i) = -2.*J(i,i-1) + scale*alpha*source_deriv(x(i));
+    J(i,i) = -2.*J(i,i-1) + source_param(alpha, scale)*source_deriv(x(i));
   }
   return true;
 }
@@ -93,4 +94,12 @@ double
 ChanProblemInterface::source_deriv(double x) {
   double y = 1. + 0.01*x*x;
   return (1. + x - 0.01*x*x)/(y*y);
+}
+
+double 
+ChanProblemInterface::source_param(double a, double s) {
+  double as = a*s;
+
+  //return as / (1.0 + 0.01*as*as);
+  return as;
 }

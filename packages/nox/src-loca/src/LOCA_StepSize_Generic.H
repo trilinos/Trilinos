@@ -34,7 +34,7 @@
 #define LOCA_STEPSIZE_GENERIC_H
 
 #include "NOX_Abstract_Group.H"  // for ReturnType, Parameter::List
-#include "NOX_StatusTest_Generic.H" // For StatusTest
+#include "LOCA_Abstract_Iterator.H" // for StepStatus
 
 // Forward declarations
 namespace NOX {
@@ -52,13 +52,21 @@ namespace LOCA {
 
 namespace LOCA {
 
+  //! Step size control strategies
   namespace StepSize {
 
+    //! %Generic step size control interface.
+    /*! 
+      %Generic interface for computing a step size.
+    */
     class Generic {
 
     public:
 
       //! Constructor. 
+      /*! 
+	Constructors of derived objects should look like reset.
+      */
       Generic() {};
 
       //! Destructor
@@ -68,14 +76,22 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params) = 0;
   
+      /*! 
+	\brief Compute the step size.
+      */
+      /*!
+	Returns NOX::Abstract::Group::Failed if the computed step size
+	fails certain criteria (e.g., if it is too small)
+      */
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& curGroup,
 	      const LOCA::Continuation::Vector& predictor,
 	      const NOX::Solver::Generic& solver,
-	      const NOX::StatusTest::StatusType& solverStatus,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,
 	      double& stepSize) = 0;
 
+      //! Return the previous step size
       virtual double getPrevStepSize() const = 0;
 
     };

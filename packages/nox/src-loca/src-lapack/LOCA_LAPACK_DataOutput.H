@@ -46,6 +46,14 @@ namespace LOCA {
 namespace LOCA {
   namespace LAPACK {
 
+    /*!
+      \brief Implements the LOCA::Abstract::DataOutput interface for LAPACK groups.
+    */
+    /*!
+      LAPACK group data is saved by writing the solution vector and parameters
+      to a file stream in ASCII form with all solution vector components and 
+      parameters on one line followed by a new line character.
+    */
     class DataOutput : public LOCA::Abstract::DataOutput {
 
     public: 
@@ -55,12 +63,19 @@ namespace LOCA {
       //! Destructor
       virtual ~DataOutput();
       
+      //! Assignment operator
       virtual Abstract::DataOutput& operator = (const Abstract::DataOutput& source);
+      //! Assignment operator
       virtual DataOutput& operator = (const DataOutput& source);
+
+      //! Save group data to a file
       virtual void saveGroupData(const Abstract::Group& grp);
+
+      //! Save group data to a file
       virtual void saveGroupData(const Group& grp);
 
     protected:
+      //! File stream to write data to
       fstream& file;
     };
   } // namespace LAPACK

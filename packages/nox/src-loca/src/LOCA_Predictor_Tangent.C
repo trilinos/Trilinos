@@ -60,7 +60,7 @@ LOCA::Predictor::Tangent::compute(LOCA::Continuation::Group& prevGroup,
   if (res != LOCA::Abstract::Group::Ok)
     return res;
   
-  result = curGroup.getTangent();
+  result = curGroup.getPredictorDirection();
 
   return res;
 }

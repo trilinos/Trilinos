@@ -54,130 +54,166 @@ namespace LOCA {
 }
 
 namespace LOCA {
-namespace Epetra {
+  namespace Epetra {
 
-//! Concrete implementation of LOCA::Abstract::Group for %Trilinos/%Epetra.
-/*! This group is set up to use the linear algebra services provided through the Trilinos/Epetra package with AztecOO for the linear %solver. 
- */
+    //! Concrete implementation of LOCA::Abstract::Group for %Trilinos/%Epetra.
+    /*! 
+      This group is set up to use the linear algebra services provided 
+      through the Trilinos/Epetra package with AztecOO for the linear %solver. 
 
-class Group : public NOX::Epetra::Group, public LOCA::Abstract::Group {
+      This class is derived both from the NOX::Epetra::Group and
+      LOCA::Abstract::Group classes and therefore inherits the implementation
+      of the NOX::Abstract::Group interface provided by NOX::Epetra::Group.
+      
+      This class additionally stores a ParameterVector params and a scaling
+      vector (NOX::Epetra::Vector) scaleVec and implements the pure virtual
+      methods of the LOCA::Abstract::Group class.  
 
-public:
-  //! Constructor with Jacobian Operator only.  
-  /*! Either there is no preconditioning or the Jacobian will be used
-   * for preconditioning.  An Epetra_Operator must be supplied for 
-   * the Jacobian even in Matrix-Free mode. linearSolverParams is 
-   * the "Linear Solver" sublist of parameter list.
-   */
-  Group(NOX::Parameter::List& printParams, 
-	NOX::Parameter::List& linearSolverParams, Interface& i, 
- 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J);
+      The computeF() and computeJacobian() methods of the NOX::Epetra::Group
+      parent class are overloaded here.  They both set the entire contents
+      of the parameter vector in the problem interface before calling the
+      NOX::Epetra::Group computeF() and computeJacobian().
+    */
 
-  //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
-  //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
-  Group(NOX::Parameter::List& printParams, 
-	NOX::Parameter::List& linearSolverParams, Interface& i, 
- 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
-	Epetra_Operator& M);
+    class Group : public NOX::Epetra::Group, public LOCA::Abstract::Group {
 
-  Group(NOX::Parameter::List& printParams, 
-	NOX::Parameter::List& linearSolverParams, Interface& i, 
- 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J,
-	const NOX::Epetra::Vector& s);
+    public:
+      //! Constructor with Jacobian Operator only.  
+      /*! Either there is no preconditioning or the Jacobian will be used
+       * for preconditioning.  An Epetra_Operator must be supplied for 
+       * the Jacobian even in Matrix-Free mode. linearSolverParams is 
+       * the "Linear Solver" sublist of parameter list.
+       *
+       * The scaling vector is set to a default of all one's
+       */
+      Group(NOX::Parameter::List& printParams, 
+	    NOX::Parameter::List& linearSolverParams, Interface& i, 
+	    const ParameterVector& p, NOX::Epetra::Vector& x, 
+	    Epetra_Operator& J);
 
-  Group(NOX::Parameter::List& printParams, 
-	NOX::Parameter::List& linearSolverParams, Interface& i, 
- 	const ParameterVector& p, NOX::Epetra::Vector& x, Epetra_Operator& J, 
-	Epetra_Operator& M, const NOX::Epetra::Vector& s);
+      //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
+      /*! 
+	linearSolverParams is the "Linear %Solver" sublist of parameter list.
+	The scaling vector is set to a default of all one's
+      */
+      Group(NOX::Parameter::List& printParams, 
+	    NOX::Parameter::List& linearSolverParams, Interface& i, 
+	    const ParameterVector& p, NOX::Epetra::Vector& x, 
+	    Epetra_Operator& J, 
+	    Epetra_Operator& M);
 
-  /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
-    valid shared Jacobian and shared preconditioning matrix. */
-  Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
+      //! Constructor with Jacobian Operator only.  
+      /*! Either there is no preconditioning or the Jacobian will be used
+       * for preconditioning.  An Epetra_Operator must be supplied for 
+       * the Jacobian even in Matrix-Free mode. linearSolverParams is 
+       * the "Linear Solver" sublist of parameter list.
+       */
+      Group(NOX::Parameter::List& printParams, 
+	    NOX::Parameter::List& linearSolverParams, Interface& i, 
+	    const ParameterVector& p, NOX::Epetra::Vector& x, 
+	    Epetra_Operator& J,
+	    const NOX::Epetra::Vector& s);
 
-  //! Destructor.
-  virtual ~Group();
+      
+      //! Constructor with a separate Jacobian (J) and %Preconditioner (M).  
+      //! linearSolverParams is the "Linear %Solver" sublist of parameter list.
+      Group(NOX::Parameter::List& printParams, 
+	    NOX::Parameter::List& linearSolverParams, Interface& i, 
+	    const ParameterVector& p, NOX::Epetra::Vector& x, 
+	    Epetra_Operator& J, 
+	    Epetra_Operator& M, const NOX::Epetra::Vector& s);
 
-  virtual Group& operator=(const Group& source);
-  //! See above.
-  virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
-  //! See above.
-  virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+      /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
+	valid shared Jacobian and shared preconditioning matrix. */
+      Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
-  //! Set the bifurcation/continuation parameter list in the group.
-  virtual void setParams(const ParameterVector& p);
+      //! Destructor.
+      virtual ~Group();
 
-  //! Set parameter indexed by paramID
-  virtual void setParam(int paramID, double val);
+      //! Assignment operator
+      virtual Group& operator=(const Group& source);
+
+      //! See above.
+      virtual NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+
+      //! See above.
+      virtual LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+
+      //! Cloning function
+      virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
+
+      //! Overloaded computeF()
+      /*!
+	Calls LOCA::Epetra::Interface::setParams before evalulating F.
+      */
+      virtual NOX::Abstract::Group::ReturnType 
+      computeF();
+
+      //! Overloaded computeJacobian()
+      /*!
+	Calls LOCA::Epetra::Interface::setParams before evalulating J.
+      */
+      virtual NOX::Abstract::Group::ReturnType 
+      computeJacobian();
+
+      //! Set the parameters
+      virtual void setParams(const ParameterVector& p);
+
+      //! Set parameter indexed by paramID
+      virtual void setParam(int paramID, double val);
   
-  //! Set parameter indexed by paramID
-  virtual void setParam(string paramID, double val);
+      //! Set parameter indexed by paramID
+      virtual void setParam(string paramID, double val);
 
-  /** @name "Compute" functions. */
-  //@{
+      //! Return a const reference to the ParameterVector owned by the group. 
+      const LOCA::ParameterVector& getParams() const;
 
-  virtual NOX::Abstract::Group::ReturnType 
-  computeF();
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(int paramID) const;
 
-  virtual NOX::Abstract::Group::ReturnType 
-  computeJacobian();
+      //! Return copy of parameter indexed by paramID
+      virtual double getParam(string paramID) const;
 
-  //@}
+      //! Return the userInterface.
+      virtual NOX::Epetra::Interface& getUserInterface();
 
-  /** @name "Get" functions 
-   *
-   * Note that these function do not check whether or not the vectors
-   * are valid. Must use the "Is" functions for that purpose. */
-  //@{
+      virtual void print() const {}
 
-  //! Return a const reference to the ParameterVector owned by the group. 
-  const LOCA::ParameterVector& getParams() const;
+      //! Set the scale vector
+      virtual void setScaleVec(const NOX::Abstract::Vector& s);
 
-  //! Return copy of parameter indexed by paramID
-  virtual double getParam(int paramID) const;
+      //! Set the scale vector
+      void setScaleVec(const NOX::Epetra::Vector& s);
 
-  //! Return copy of parameter indexed by paramID
-  virtual double getParam(string paramID) const;
+      //! Get the scale vector
+      virtual const NOX::Abstract::Vector& getScaleVec() const;
 
-  //@}
-
-  virtual NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
-
-  //! Return the userInterface.
-  virtual NOX::Epetra::Interface& getUserInterface();
-
-  virtual void print() const {}
-
-  //! Set and get scale vector
-  virtual void setScaleVec(const NOX::Abstract::Vector& s);
-  void setScaleVec(const NOX::Epetra::Vector& s);
-  virtual const NOX::Abstract::Vector& getScaleVec() const;
-
-protected:
+    protected:
   
-  //! Compute a default scale vector
-  void computeScaleVec();
+      //! Compute a default scale vector (vector of all one's)
+      void computeScaleVec();
 
-protected:
+    protected:
 
-  //! Parameter vector
-  LOCA::ParameterVector params;
+      //! Parameter vector
+      LOCA::ParameterVector params;
 
-  /** @name Additional Shared Operators */
-  //@{
-  //! Pointer to shared mass matrix 
-  //NOX::Epetra::SharedOperator* sharedMassMatrixPtr;
+      /** @name Additional Shared Operators */
+      //@{
+      //! Pointer to shared mass matrix 
+      //NOX::Epetra::SharedOperator* sharedMassMatrixPtr;
 
-  //@}
+      //@}
 
-  //! Reference to the user supplied interface functions
-  Interface& userInterface;
+      //! Reference to the user supplied interface functions
+      Interface& userInterface;
 
-  //! Scale vector
-  NOX::Epetra::Vector scaleVec;
+      //! Scale vector
+      NOX::Epetra::Vector scaleVec;
 
-};
+    };
 
-} // namespace Epetra
+  } // namespace Epetra
 } // namespace LOCA
 
 

@@ -39,6 +39,21 @@ namespace LOCA {
 
   namespace Predictor {
 
+    //! %Manager for all predictor direction computations
+    /*! 
+      The parameters passed to the constructor or reset should specify
+      the "Method", as described below, as well as any additional
+      parameters for that particular method.
+ 
+      <ul>
+      <li> "Method" - Name of the predictor direction method. Valid choices are
+      <ul> 
+      <li> "%Constant" (LOCA::Predictor::Constant) [Default]
+      <li> "%Tangent" (LOCA::Predictor::Tangent) 
+      <li> "%Secant" (LOCA::Predictor::Secant) 
+      </ul>
+      </ul>
+    */  
     class Manager : public LOCA::Predictor::Generic {
 
     public:
@@ -53,15 +68,20 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Computes predictor based on predictor method parameter
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,
 	      LOCA::Continuation::Vector& result);
 
+      //! Returns current predictor method
       const string& getMethod() const;
 
     protected:
+      //! Stores predictor method name
       string method;
+
+      //! Stores pointer to current predictor object
       LOCA::Predictor::Generic *predictorPtr;
 
     };

@@ -35,71 +35,73 @@
 
 #include "LOCA_MultiVector.H"  // Base class
 
-//! Nonlinear solvers package namespace
 namespace LOCA {
 
-//! %NOX  bifurcation vector and group
-namespace Bifurcation {
+  namespace Bifurcation {
 
-/*! 
-  \brief %LOCA's pure abstract vector interface for vectors that are
-  used by the NLS solver.  Derived from the NOX::Abstract::Vector class.
+    /*! 
+      \brief %Vector class to hold solution vectors, %Newton vectors, etc.
+      for turning point equations.
+    */
+    /*! 
+       This class uses the LOCA::MultiVector implementation to store the
+       solution, null, and parameter components of the turning point vector
+       and merely provides an interface for naming which components of the
+       multivector these quantities correspond to.
+    */
 
-  The documentation throughout assumes that \f$x\f$ denotes "this"
-  vector, \f$x_i\f$ is the i-th component (or entry) of \f$x\f$, and
-  \f$n\f$ is the length of \f$x\f$.
+    class TPBordVector : public LOCA::MultiVector {
 
-  \author Roger Pawlowski (SNL 9233)
-*/
-
-class TPBordVector : public LOCA::MultiVector {
-
-public:
+    public:
   
-  //! %Vector constructor.
-  TPBordVector(const NOX::Abstract::Vector& xVec,
-	       const NOX::Abstract::Vector& nullVec,
- 	       double bifParam);
+      //! %Constructor.
+      TPBordVector(const NOX::Abstract::Vector& xVec,
+		   const NOX::Abstract::Vector& nullVec,
+		   double bifParam);
 
-  //! %Copy constructor.
-  TPBordVector(const TPBordVector& source, NOX::CopyType type = NOX::DeepCopy);
+      //! Copy constructor.
+      TPBordVector(const TPBordVector& source, NOX::CopyType type = NOX::DeepCopy);
 
-  //! %Vector destructor.
-  virtual ~TPBordVector();
+      //! Destructor.
+      virtual ~TPBordVector();
 
-  virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+      //! Assignment operator
+      virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
 
-  virtual LOCA::MultiVector& operator=(const LOCA::MultiVector& y);
+      //! Assignment operator
+      virtual LOCA::MultiVector& operator=(const LOCA::MultiVector& y);
   
-  virtual TPBordVector& operator=(const TPBordVector& y);
+      //! Assignment operator
+      virtual TPBordVector& operator=(const TPBordVector& y);
 
-  virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
+      //! Cloning function
+      virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-  //! Sets the %TPBordVector by setting its three components 
-  virtual void setVec(const NOX::Abstract::Vector& xVec,
-                      const NOX::Abstract::Vector& nullVec,
-                      double bifPar);
+      //! Sets the %TPBordVector by setting its three components 
+      virtual void setVec(const NOX::Abstract::Vector& xVec,
+			  const NOX::Abstract::Vector& nullVec,
+			  double bifPar);
 
-  //! Returns the solution vector component of extended vector
-  virtual const NOX::Abstract::Vector& getXVec() const;
+      //! Returns the solution vector component of extended vector
+      virtual const NOX::Abstract::Vector& getXVec() const;
 
-  //! Returns the null vector component of extended vector
-  virtual const NOX::Abstract::Vector& getNullVec() const;
+      //! Returns the null vector component of extended vector
+      virtual const NOX::Abstract::Vector& getNullVec() const;
 
-  //! Get %Bifurcation parameter
-  virtual double getBifParam() const;
+      //! Get %Bifurcation parameter
+      virtual double getBifParam() const;
 
-  //! Returns the solution vector component of extended vector
-  virtual NOX::Abstract::Vector& getXVec();
+      //! Returns the solution vector component of extended vector
+      virtual NOX::Abstract::Vector& getXVec();
 
-  //! Returns the null vector component of extended vector
-  virtual NOX::Abstract::Vector& getNullVec();
+      //! Returns the null vector component of extended vector
+      virtual NOX::Abstract::Vector& getNullVec();
 
-  //! Get %Bifurcation parameter
-  virtual double& getBifParam();
+      //! Get %Bifurcation parameter
+      virtual double& getBifParam();
 
-}; // class Vector
-} // namespace Bifurcation
+    }; // class Vector
+  } // namespace Bifurcation
 } // namespace LOCA
 
 #endif

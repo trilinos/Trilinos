@@ -1,0 +1,173 @@
+// $Id$ 
+// $Source$ 
+
+//@HEADER
+// ************************************************************************
+// 
+//            NOX: An Object-Oriented Nonlinear Solver Package
+//                 Copyright (2002) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2, or (at your option)
+// any later version.
+//   
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// General Public License for more details.
+//   
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+// 
+// Questions? Contact Tammy Kolda (tgkolda@sandia.gov) or Roger Pawlowski
+// (rppawlo@sandia.gov).
+// 
+// ************************************************************************
+//@HEADER
+
+#ifndef LOCA_ABSTRACT_ITERATOR_H
+#define LOCA_ABSTRACT_ITERATOR_H
+
+namespace NOX {
+  namespace Parameter {
+    class List;
+  }
+}
+
+namespace LOCA {
+
+  namespace Abstract {
+
+    /*!
+      \brief An abstract interface for implementing iteration.
+    */
+    /*!
+      The %LOCA::Abstract::Iterator defines an interface for implementing
+      many kinds of iterative processes.  In %LOCA, this is used to implement
+      the %Stepper which computes points along a continuation curve.
+
+      Many iterative processes can be abstracted in the following manner:
+
+      <ul>
+      <li> Initialize iteration (start)
+      <li> Compute iteration (iterate)
+           <ul> 
+           <li> while iterator is not finished
+                <ul>
+                <li> preprocess step (preprocess)
+                <li> compute step (compute)
+	        <li> postprocess step (posprocess)
+	        <li> check iterator status (stop)
+	        </ul>
+            </ul>
+      <li> Finalize iteration (finish)
+      </ul>
+
+      The run method of the iterator implements this iterative process with
+      start, finish, preprocess, compute and postprocess left as pure 
+      virtual methods to be implemented for the specific iterative process.  
+
+      The iterator has one parameter, "Max Steps" (default 100) giving the
+      maximum number of steps the iterator should take.  The default
+      implementation of stop only stops the iterator when this maximum
+      number of steps has been reached.
+    */
+    class Iterator {
+
+    public:
+
+      //! Enumerated type for status of the iterator
+      enum IteratorStatus {
+	Finished = 1,
+	Failed = 0,
+	NotFinished = -1
+      };
+
+      //! Enumerated type for status of each step of iterator
+      enum StepStatus {
+	Successful = 1,
+	Unsuccessful = 0
+      };
+
+      //! Constructor 
+      Iterator(NOX::Parameter::List& p);
+
+      //! Copy Constructor
+      Iterator(const Iterator& it);
+
+      //! Destructor
+      virtual ~Iterator();
+
+      //! Reset the iterator to start a new iteration
+      virtual bool reset(NOX::Parameter::List& p);
+
+      //! Return the status of the iterator
+      virtual IteratorStatus getIteratorStatus() const;
+
+      //! Returns the number of accepted steps
+      virtual int getStepNumber() const;
+
+      //! Returns the number of failed steps
+      virtual int getNumFailedSteps() const;
+
+      //! Returns the total number of steps attempted
+      virtual int getNumTotalSteps() const;
+
+      //! Run the iterator
+      virtual IteratorStatus run();
+
+    protected:
+
+      //! Constructor 
+      Iterator();
+
+      //! Perform iteration
+      virtual IteratorStatus iterate();
+
+      //! Check stopping criteria
+      virtual IteratorStatus stop(StepStatus);
+
+      //! Intialize iterator
+      virtual IteratorStatus start() = 0;
+
+      //! Finalize iterator
+      virtual IteratorStatus finish() = 0;
+
+      //! Preprocess step
+      virtual StepStatus preprocess(StepStatus) = 0;
+
+      //! Compute step
+      virtual StepStatus compute(StepStatus) = 0;
+
+      //! Postprocess step
+      virtual StepStatus postprocess(StepStatus) = 0;
+
+    protected:
+
+      //! Current step number of continuation algorithm (does not include failed steps).
+      int stepNumber;                    
+
+      //! Number of continuation steps that have failed.
+      int numFailedSteps;
+
+      //! Total number of steps attempeted (includes failed and successful steps).
+      int numTotalSteps;
+
+      //! Maximum number of continuation steps to take. Defaults to 100.
+      int maxSteps;
+
+      //! Current status of the iterator
+      IteratorStatus iteratorStatus;
+  
+    };
+
+  } // end namespace Abstract
+} // end namespace LOCA
+
+#endif
+

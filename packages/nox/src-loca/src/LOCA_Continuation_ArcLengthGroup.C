@@ -236,15 +236,15 @@ LOCA::Continuation::ArcLengthGroup::computeF()
   LOCA::Continuation::Vector *tmpVec =
     dynamic_cast<LOCA::Continuation::Vector*>(xVec.clone(NOX::DeepCopy));
   tmpVec->update(-1.0, prevXVec, 1.0);
-  
-  if (!isTangent()) {
-    res = computeTangent(LOCA::Continuation::Group::linearSolverParams);
-    if (res != NOX::Abstract::Group::Ok)
-      return res;
+
+  if (!isPredictorDirection()) {
+    cerr << "LOCA::Continuation::ArcLengthGroup::computeF() called " 
+	 << "with invalid predictor vector." << endl;
+    return NOX::Abstract::Group::Failed;
   }
   
   fVec.getParam() =  
-    scaledDotProduct(tangentVec, *tmpVec) - arclengthStep;
+    scaledDotProduct(predictorVec, *tmpVec) - arclengthStep;
 
   delete tmpVec;
   
@@ -316,16 +316,23 @@ LOCA::Continuation::ArcLengthGroup::computeTangent(NOX::Parameter::List& params)
     return res;
 
   // Estimate dpds
-  double dpds = 1.0/sqrt(scaledDotProduct(tangentVec, tangentVec));
+  double dpds = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
 
   // Recompute scale factor
   recalculateScaleFactor(dpds);
 
   // Calculate new dpds using new scale factor
-  dpds = 1.0/sqrt(scaledDotProduct(tangentVec, tangentVec));
+  dpds = 1.0/sqrt(scaledDotProduct(predictorVec, predictorVec));
+
+  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
+       << "dpds = " << dpds << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
+       << "scaleFactor = " << scaleVec.getParam() << endl;
+  cout << "LOCA::Continuation::ArcLengthGroup::computeTangent():  "
+       << "g = " << scaleVec.getParam()*dpds << endl;
 
   // Compute dp/ds and rescale
-  tangentVec.scale(dpds);
+  predictorVec.scale(dpds);
 
   return res;
 }
@@ -359,14 +366,14 @@ LOCA::Continuation::ArcLengthGroup::applyJacobian(const NOX::Abstract::Vector& i
 
   // if tangent vector hasn't been computed, we are stuck since this is
   // a const method
-  if (!isTangent()) {
+  if (!isPredictorDirection()) {
     cerr << "LOCA::Continuation::ArcLengthGroup::applyJacobian() called " 
-	 << "with invalid tangent vector." << endl;
+	 << "with invalid predictor vector." << endl;
     return NOX::Abstract::Group::Failed;
   }
 
   // compute dx/ds x + dp/ds p
-  result_param = scaledDotProduct(tangentVec, c_input);
+  result_param = scaledDotProduct(predictorVec, c_input);
 
   return res;
 }
@@ -413,11 +420,11 @@ LOCA::Continuation::ArcLengthGroup::applyJacobianInverse(NOX::Parameter::List& p
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  // Get x, param components of tangent vector
+  // Get x, param components of predictor vector
   const NOX::Abstract::Vector& tanX =  
-    LOCA::Continuation::Group::tangentVec.getXVec();
+    LOCA::Continuation::Group::predictorVec.getXVec();
   double tanP = 
-    LOCA::Continuation::Group::tangentVec.getParam();
+    LOCA::Continuation::Group::predictorVec.getParam();
 
   // Compute result_param
   const NOX::Abstract::Vector& s 
@@ -474,11 +481,11 @@ LOCA::Continuation::ArcLengthGroup::applyRightPreconditioning(NOX::Parameter::Li
   if (res != NOX::Abstract::Group::Ok)
     return res;
 
-  // Get x, param components of tangent vector
+  // Get x, param components of predictor vector
   const NOX::Abstract::Vector& tanX =  
-    LOCA::Continuation::Group::tangentVec.getXVec();
+    LOCA::Continuation::Group::predictorVec.getXVec();
   double tanP = 
-    LOCA::Continuation::Group::tangentVec.getParam();
+    LOCA::Continuation::Group::predictorVec.getParam();
 
   // Compute result_param
   const NOX::Abstract::Vector&s 
@@ -625,12 +632,17 @@ LOCA::Continuation::ArcLengthGroup::recalculateScaleFactor(double dpds) {
   double thetaOld = getScaleFactor();
   double g = dpds*thetaOld;
 
-  if (g > gMax) {
+  static bool isFirstIt = false;
+
+  if (g > gMax || isFirstIt) {
     double thetaNew;
     
     thetaNew = gGoal/dpds * sqrt( (1.0 - g*g) / (1.0 - gGoal*gGoal) ); 
 
     setScaleFactor(thetaNew);
+
+    if (isFirstIt)
+      isFirstIt = false;
   }
 
 }

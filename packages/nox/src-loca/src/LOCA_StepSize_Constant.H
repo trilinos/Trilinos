@@ -39,6 +39,20 @@ namespace LOCA {
 
   namespace StepSize {
 
+    //! %Constant step size control strategy
+    /*!
+      This class implements a roughly constant step size control strategy.
+      If the previous step was sucessful, the new step size is set equal
+      to the old, otherwise the step size is cut in half.
+
+      The parameters used by this class supplied in the constructor or reset
+      method are:
+      <ul>
+      <li> "Max Step Size" - Largest valid step size (Default 1.0e+12)
+      <li> "Min Step Size" - Smallest valid step size (Default 1.0e-12)
+      <li> "Initial Step Size" - Initial step size (Default 1.0)
+      </ul>
+    */
     class Constant : public LOCA::StepSize::Generic {
 
     public:
@@ -49,29 +63,52 @@ namespace LOCA {
       //! Destructor
       virtual ~Constant();
 
-      //! Reset parameters
+      //! Reset parameters given above
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Compute the step size as described above
+      /*! 
+	Returns NOX::Abstract::Group::Failed if the computed step size is
+	smaller than the minimum step size
+      */
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& curGroup,
 	      const LOCA::Continuation::Vector& predictor,
 	      const NOX::Solver::Generic& solver,
-	      const NOX::StatusTest::StatusType& solverStatus,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,
 	      double& stepSize);
 
       virtual double getPrevStepSize() const;
 
     protected:
+
+      /*! 
+	\brief Clip the computed step size to the bounds given by the 
+	maximum and minimum step sizes
+      */
+      /*! 
+	Returns NOX::Abstract::Group::Failed if the computed step size is
+	smaller than the minimum step size
+      */
       virtual NOX::Abstract::Group::ReturnType 
       clipStepSize(double& stepSize);
 
     protected:
+      //! Maximum step size
       double maxStepSize;
+
+      //! Minimum step size
       double minStepSize;
+
+      //! Initial step size
       double startStepSize;
+
+      //! Previous step size
       double prevStepSize;
+
+      //! Flag indicating if this is the first step
       bool isFirstStep;
     };
   } // namespace StepSize

@@ -77,7 +77,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::StepSize::Manager::compute(LOCA::Continuation::Group& curGroup,
 				 const LOCA::Continuation::Vector& predictor,
 				 const NOX::Solver::Generic& solver,
-				 const NOX::StatusTest::StatusType& solverStatus,
+				 const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 				 const LOCA::Stepper& stepper,
 				 double& stepSize) 
 {
@@ -86,7 +86,7 @@ LOCA::StepSize::Manager::compute(LOCA::Continuation::Group& curGroup,
     return NOX::Abstract::Group::Failed;
   }
 
-  return stepSizePtr->compute(curGroup, predictor, solver, solverStatus, 
+  return stepSizePtr->compute(curGroup, predictor, solver, stepStatus, 
 			      stepper, stepSize);
 }
 

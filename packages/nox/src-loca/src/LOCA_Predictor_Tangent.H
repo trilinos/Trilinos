@@ -40,6 +40,13 @@ namespace LOCA {
 
   namespace Predictor {
 
+    //! %Tangent predictor computation class
+    /*! 
+      This class computes the predictor direction given by the tangent
+      vector to the continuation curve.  The tangent vector calculation
+      is implemented by the computeTangent method
+      of the LOCA::Continuation::Group class.
+    */
     class Tangent : public LOCA::Predictor::Generic {
 
     public:
@@ -50,16 +57,23 @@ namespace LOCA {
       //! Destructor
       virtual ~Tangent();
 
-      //! Reset parameters
+      //! Reset parameters.
+      /*!
+	The parameters are eventually passed to the 
+	LOCA::Continuation::Group::computeTangent method and therefore should
+	be the parameters for the linear solver.
+      */
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Computes the tangent predictor by calling curGroup.computeTangent().
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& prevGroup,
 	      LOCA::Continuation::Group& curGroup,
 	      LOCA::Continuation::Vector& result);
 
     protected:
+      //! Stores parameter list for computeTangent call.
       NOX::Parameter::List parameters;
 
     };

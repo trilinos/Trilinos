@@ -39,6 +39,28 @@ namespace LOCA {
 
   namespace StepSize {
 
+    //! %Adaptive step size control strategy
+    /*!
+      This class implements an adaptive step size control strategy derived
+      from the strategy implemented in the LOCA::StepSize::Constant class.
+      If the previous step was unsucessful, the step size is cut in half as
+      in the constant strategy, but if the step was sucessful this strategy
+      increases the step size based on the number of nonlinear solver 
+      iterations required in the previous step.  In particular, the new
+      step size \f$\Delta s_{new}\f$ is given by
+      \f[
+         \Delta s_{new} = \Delta s_{old}\left(1 + a\left(\frac{N_{max} - N}{N_{max} -1}\right)^2\right)
+      \f]
+      where \f$a\in[0,1]\f$ is an aggressiveness factor, \f$N\f$ is the 
+      number of nonlinear solver iterations in the previous step, and
+      \f$N_{max}\f$ is the maximum number of nonlinear solver iterations.
+
+      The parameters used by this class supplied in the constructor or reset
+      method are the same as used by the Constant class in addition to:
+      <ul>
+      <li> "Aggressiveness" - Aggressiveness factor \f$a\f$ (Default 0.0)
+      </ul>
+    */
     class Adaptive : public LOCA::StepSize::Constant {
 
     public:
@@ -53,15 +75,21 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       reset(NOX::Parameter::List& params);
   
+      //! Compute the step size as described above
+      /*! 
+	Returns NOX::Abstract::Group::Failed if the computed step size is
+	smaller than the minimum step size
+      */
       virtual NOX::Abstract::Group::ReturnType 
       compute(LOCA::Continuation::Group& curGroup,
 	      const LOCA::Continuation::Vector& predictor,
 	      const NOX::Solver::Generic& solver,
-	      const NOX::StatusTest::StatusType& solverStatus,
+	      const LOCA::Abstract::Iterator::StepStatus& stepStatus,
 	      const LOCA::Stepper& stepper,
 	      double& stepSize);
 
     protected:
+      //! Stores the aggressiveness factor \f$a\f$
       double agrValue;
     };
   } // namespace StepSize

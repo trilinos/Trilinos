@@ -39,17 +39,35 @@
 #include "LOCA_LAPACK_Interface.H"      // class data element
 
 namespace LOCA {
+
+  //! %LOCA BLAS/%LAPACK support
   namespace LAPACK {
 
+    //! Extension of the NOX::LAPACK::Group to LOCA.  
+    /*!
+      This class is derived both from the NOX::LAPACK::Group and
+      LOCA::Abstract::Group classes and therefore inherits the implementation
+      of the NOX::Abstract::Group interface provided by NOX::LAPACK::Group.
+
+      This class additionally stores a ParameterVector params and a scaling
+      vector (NOX::LAPACK::Vector) scaleVec and implements the pure virtual
+      methods of the LOCA::Abstract::Group class.  
+
+      The computeF() and computeJacobian() methods of the NOX::LAPACK::Group
+      parent class are overloaded here.  They both set the entire contents
+      of the parameter vector in the problem interface before calling the
+      NOX::LAPACK::Group computeF() and computeJacobian().
+    */
+    
     class Group : public NOX::LAPACK::Group, public LOCA::Abstract::Group {
 
     public:
 
-      //! Constructor
-      Group(Interface& i);
+      //! Constructor with default scaling vector set to all one's
+      Group(LOCA::LAPACK::Interface& i);
 
-      //! Constructor
-      Group(Interface& i, const NOX::LAPACK::Vector& s);
+      //! Constructor with specified scaling vector
+      Group(LOCA::LAPACK::Interface& i, const NOX::LAPACK::Vector& s);
 
       //! Copy constructor
       Group(const LOCA::LAPACK::Group& source, 
@@ -58,21 +76,37 @@ namespace LOCA {
       //! Destructor.
       ~Group();
 
+      //! Assignment operator
       NOX::Abstract::Group& operator=(const NOX::Abstract::Group& source);
+
+      //! Assignment operator
       LOCA::Abstract::Group& operator=(const LOCA::Abstract::Group& source);
+
+      //! Assignment operator
       NOX::LAPACK::Group& operator=(const NOX::LAPACK::Group& source);
+
+      //! Assignment operator
       LOCA::LAPACK::Group& operator=(const LOCA::LAPACK::Group& source);
 
+      //! Cloning function
       NOX::Abstract::Group* clone(NOX::CopyType type = NOX::DeepCopy) const;
 
+      //! Overloaded computeF()
+      /*!
+	Calls LOCA::LAPACK::Interface::setParams before evalulating F.
+      */
       NOX::Abstract::Group::ReturnType computeF();
 
+      //! Overloaded computeJacobian()
+      /*!
+	Calls LOCA::LAPACK::Interface::setParams before evalulating J.
+      */
       NOX::Abstract::Group::ReturnType computeJacobian();
 
-      //! Set the bifurcation/continuation parameter list in the group.
+      //! Set the parameter vector
       void setParams(const LOCA::ParameterVector& p);
 
-      //! Return a const reference to the ParameterVector owned by the group. 
+      //! Return a const reference to the parameter vector owned by the group. 
       const LOCA::ParameterVector& getParams() const;
 
       //! Set parameter indexed by paramID
@@ -90,19 +124,28 @@ namespace LOCA {
       //! Print out the group
       void print() const;
 
-      //! Set and get scale vector
+      //! Set scale vector
       virtual void setScaleVec(const NOX::Abstract::Vector& s);
+
+      //! Set scale vector
       void setScaleVec(const NOX::LAPACK::Vector& s);
+
+      //! Get scale vector
       virtual const NOX::Abstract::Vector& getScaleVec() const;
 
     protected:
 
-      //! Compute a default scale vector
+      //! Compute a default scale vector (vector of all one's)
       void computeScaleVec();
 
     protected:
-      Interface& locaProblemInterface; 
+      //! Referece to current problem
+      LOCA::LAPACK::Interface& locaProblemInterface;
+
+      //! vector of parameters
       ParameterVector params;
+
+      //! Scaling vector
       NOX::LAPACK::Vector scaleVec;
     };
 
