@@ -161,12 +161,15 @@ int main(int argc, char *argv[])
 
   // Create the convergence tests
   NOX::Status::AbsResid absresid(1.0e-6);
+  NOX::Status::Combo combo1(absresid, NOX::Status::Combo::AND);
   NOX::Status::RelResid relresid(grp.getNormRHS(), 1.0e-2);
-  NOX::Status::Combo combo(absresid, NOX::Status::Combo::OR);
-  combo.addTest(relresid);
+  combo1.addTest(relresid);
+  NOX::Status::MaxResid maxresid(1.0e-10);
+  NOX::Status::Combo combo2(maxresid, NOX::Status::Combo::OR);
+  combo2.addTest(combo1);
 
   // Create the method
-  NOX::Solver::Newton newton(grp, combo, nlParams);
+  NOX::Solver::Newton newton(grp, combo2, nlParams);
   NOX::Status::StatusType status = newton.solve();
 
   // End Nonlinear Solver **************************************
