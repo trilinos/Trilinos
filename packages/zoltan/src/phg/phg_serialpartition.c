@@ -50,7 +50,7 @@ static ZOLTAN_PHG_COARSEPARTITION_FN* CoarsePartitionFns[] =
 static int local_coarse_partitioner(ZZ *, HGraph *, int, float *, Partition,
   PHGPartParams *, ZOLTAN_PHG_COARSEPARTITION_FN *);
 
-static void pick_best(ZZ*, PHGPartParams*, PHGComm*, HGraph*, int, int, int*);
+static void pick_best(ZZ*, PHGPartParams*, PHGComm*, HGraph*, int, int, int*, float*);
 
 /****************************************************************************/
 
@@ -89,8 +89,9 @@ char *str, *str2;
 
 /****************************************************************************/
 
-#define NUM_PART_KEEP 5            /* No. of partition vectors to keep. 
-                                      Only partially implemented so far. */
+#define NUM_PART_KEEP 1            /* No. of partition vectors to keep; 
+                                      must be at least 1! Currently only the
+                                      best partition vector is used. */
 
 int Zoltan_PHG_CoarsePartition(
   ZZ *zz, 
@@ -123,7 +124,7 @@ int *spart = NULL;             /* Partition vectors for shg. */
 int *new_part = NULL;          /* Ptr to new partition vector. */
 float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
-float bal, worst_cut;
+float worst_cut;
 static int timer_cpart=-1, timer_gather=-1;
 
   if (hgp->use_timers > 1) {
@@ -234,7 +235,7 @@ static int timer_cpart=-1, timer_gather=-1;
                                     sizeof(int));
     bestvals = (float *) ZOLTAN_MALLOC((NUM_PART_KEEP+1)*sizeof(int)); 
     if ((!spart) || (!bestvals)) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -265,14 +266,17 @@ static int timer_cpart=-1, timer_gather=-1;
 
       /* Decide if candidate is in the top tier or not. */
       /* Selection criteria should be the same as in pick_best()! */
-      bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); 
+
+      /* bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, new_part); */
+      /* For now, we ignore balance as all our methods produce reasonable balances. */
+      
       bestvals[new_cand] = Zoltan_PHG_Compute_ConCut(shg->comm, 
              shg, new_part, numPart);
       if (i<NUM_PART_KEEP)
         new_cand = i+1;
       else {
-        /* find worst partition vector */
-        /* possible optimization: keep bestvals sorted */
+        /* find worst partition vector, to overwrite it */
+        /* future optimization: keep bestvals sorted */
         worst = 0;
         worst_cut = bestvals[0];
         for (j=1; j<NUM_PART_KEEP+1; j++){
@@ -290,12 +294,15 @@ static int timer_cpart=-1, timer_gather=-1;
     for (i=0; i<shg->nVtx; i++){
       new_part[i] = spart[NUM_PART_KEEP*(shg->nVtx)+i];
     }
+    /* Also update bestvals */
+    bestvals[new_cand] = bestvals[NUM_PART_KEEP];
 
     /* Evaluate and select the best. */
     /* For now, only pick the best one, in the future we pick the k best. */
 
     pick_best(zz, hgp, phg->comm, shg, numPart, 
-              MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart);
+              MIN(NUM_PART_KEEP, hgp->num_coarse_iter), spart,
+              bestvals);
   
     if (phg->comm->nProc > 1) {
       /* Map gathered partition back to 2D distribution */
@@ -1037,12 +1044,14 @@ static int coarse_part_gr4 (ZZ *zz, HGraph *hg, int p, float *part_sizes,
 /*****************************************************************************/
 static void pick_best(
   ZZ *zz, 
-  PHGPartParams *hgp,  /* Input:  parameters to use.  */
+  PHGPartParams *hgp,  
   PHGComm *phg_comm,
   HGraph *shg, 
   int numPart,
   int numLocalCandidates,
-  int *spart
+  int *spart,     /* On input: All candidate partition vectors concatenated.
+                     On output: Best partition vectors concatenated. */
+  float *cutvals  /* Reuse cut values if available */
 )
 {
 /* Routine to select the best of multiple serial partitions and broadcast
@@ -1057,20 +1066,30 @@ int i, mybest;
 float cut, bal;
 
   /* find best local partition */
+  /* for now, only look at cuts not balance. */
 
   mybest = 0;
-  local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart);
-  local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart);
+  /* local[0].val = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart); */
+  local[0].val = bal = 0.0; /* balance */
+  if (cutvals)
+    local[1].val = cutvals[0];
+  else
+    local[1].val = Zoltan_PHG_Compute_ConCut(shg->comm, shg, spart, numPart);
   local[0].rank = local[1].rank = phg_comm->myProc;
 
   /* What do we say is "best"?   For now, say lowest cut size. */
   for (i=1; i<numLocalCandidates; i++){
-    bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); 
-    cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, 
+    /* bal = Zoltan_PHG_Compute_Balance(zz, shg, numPart, spart+i*(shg->nVtx)); */
+
+    if (cutvals)
+      cut = cutvals[i];
+    else
+      cut = Zoltan_PHG_Compute_ConCut(shg->comm, shg, 
              spart+i*(shg->nVtx), numPart);
+
     if (cut < local[1].val){
       mybest = i;
-      local[0].val = bal;
+      local[0].val = bal;  /* currently not used */
       local[1].val = cut;
     }
   }
