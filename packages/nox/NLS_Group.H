@@ -28,11 +28,6 @@
 
 class NLS_Group {
 
-private: 
-
-  //! Disallow copy operator
-  virtual NLS_Group& operator=(const NLS_Group& copyFrom) {};
-
 protected:
   //! NLS_Group constructor
   NLS_Group() {};
@@ -43,30 +38,30 @@ public:
   virtual ~NLS_Group() {};
 
   //! Copies the values of all vectors in source group to this group
-  virtual NLS_Group& copy(const NLS_Group& source) = 0;
+  virtual NLS_Group& copy(const NLS_Group& copyFrom) = 0;
   
   //@{ \name "Compute" functions
 
   //! Compute and return solution vector, x, where this.x = grp.x() + step * d
-  virtual NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
+  virtual const NLS_Vector& computeX(const NLS_Group& grp, const NLS_Vector& d, double step) = 0;
 
   //! Compute and return RHS
-  virtual NLS_Vector& computeRHS() = 0;
+  virtual const NLS_Vector& computeRHS() = 0;
 
   //! Compute Jacobian
   virtual void computeJacobian() = 0;
 
   //! Compute and return gradient 
   //! Throws an error if RHS and Jacobian have not been computed 
-  virtual NLS_Vector& computeGrad() = 0;
+  virtual const NLS_Vector& computeGrad() = 0;
 
   //! Compute and return Newton direction 
   //! Throws an error if RHS and Jacobian have not been computed 
-  virtual NLS_Vector& computeNewton() = 0;
+  virtual const NLS_Vector& computeNewton() = 0;
 
   //! Compute and return Newton direction, using specified parameters for nonlinear solve
   //! Throws an error if RHS and Jacobian have not been computed 
-  virtual NLS_Vector& computeNewton(NLS_ParameterList& params) = 0;
+  virtual const NLS_Vector& computeNewton(NLS_ParameterList& params) = 0;
 
   //@}
 
@@ -91,29 +86,24 @@ public:
   //! Getting a pointer to the solution vector could allow users to change
   //! its value without using computeX().  This breaks the isRHS(), 
   //! isJacobian(), isGrad(), and isNewton() functions. 
-  virtual NLS_Vector& getX() const = 0;
+  virtual const NLS_Vector& getX() const = 0;
 
   //! Return rhs (throws an error if RHS has not been computed)
-  virtual NLS_Vector& getRHS() const = 0;
+  virtual const NLS_Vector& getRHS() const = 0;
 
   //! Return gradient (throws an error if gradient has not been computed)
-  virtual NLS_Vector& getGrad() const = 0;
+  virtual const NLS_Vector& getGrad() const = 0;
 
   //! Return Newton direction (throws an error if newton direction has not been computed)
-  virtual NLS_Vector& getNewton() const = 0;
+  virtual const NLS_Vector& getNewton() const = 0;
 
   //@}
 
 
   //@{ \name Creating new NLS_Groups
 
-  //! Create a \b new NLS_Group by copying this one. 
-  //! Returns a pointer to the new group.
-  /*! The flag "newJacobian" determines if the Jacobian associated with
-   *  the new group should be a deep copy (true) or point to a 
-   *  Jacobian owned by the source NLS_Group (false).
-   */ 
-  virtual NLS_Group* newcopy(bool newJacobian=false) = 0;
+  //! Create a \b new NLS_Group of the same derived type as this one
+  virtual NLS_Group* newGroup() const = 0;
 
   //@}
   
