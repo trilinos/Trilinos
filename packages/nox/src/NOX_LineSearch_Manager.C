@@ -55,14 +55,16 @@ using namespace NOX::LineSearch;
 Manager::Manager(const NOX::Utils& u, NOX::Parameter::List& params) :
   utils(u),
   method(""),
-  ptr(NULL)
+  ptr(NULL),
+  isOwned(false)
 {
   reset(params);
 }
 
 Manager::~Manager()
 {
-  delete ptr;
+  if (isOwned)
+    delete ptr;
 }
 
 bool Manager::reset(Parameter::List& params)
@@ -73,7 +75,10 @@ bool Manager::reset(Parameter::List& params)
     
     method = newmethod;
     
-    delete ptr;
+    if (isOwned) {
+      delete ptr;
+      ptr = NULL;
+    }
     
     if (method == "Full Step")
       ptr = new FullStep(params);
@@ -93,6 +98,27 @@ bool Manager::reset(Parameter::List& params)
     else if (method == "More'-Thuente2")
       ptr = new MoreThuente2(utils, params);
 #endif
+    else if ((method == "User Defined") && 
+	     (params.isParameterArbitrary("User Defined Direction"))) {
+
+      const NOX::LineSearch::Generic* tmpPtr = 
+	dynamic_cast<const NOX::LineSearch::Generic*>
+	(&(params.getArbitraryParameter("User Defined Line Search")));
+      
+      ptr = NULL;
+      ptr = const_cast<NOX::LineSearch::Generic*>(tmpPtr);
+
+      if (ptr == NULL) {
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
+	  cout << "NOX::LineSearch::Manager::reset() - Failed to dynamic_cast "
+	       << "arbitrary parameter in \"User Defined Line Search\" into "
+	       << "a NOX::LineSearch::Generic object!" << endl;
+	  throw "NOX Error";
+	}
+
+      }
+      isOwned = false;  
+    }
     else {
       ptr = NULL;
       cout << "ERROR: NOX::LineSearch::Manager - invalid choice \"" 

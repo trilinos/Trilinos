@@ -56,7 +56,11 @@ namespace Direction {
    <li> "Newton" (NOX::Direction::Newton) [Default]
    <li> "Steepest Descent" (NOX::Direction::SteepestDescent)
    <li> "NonlinearCG" (NOX::Direction::NonlinearCG)
+   <li> "User Defined" (user can pass their own direction through the parameter list as a NOX::Parameter::Arbitrary derived object)
    </ul>
+
+   <li> "User Defined Direction" - an object derived from the NOX::Parameter::Arbitrary and NOX::Direction::Generic objects that allows the user to define their own direction object.  Will only be used if the "Method" is set to "User Defined".
+
    </ul>
  */  
 class Manager : public Generic {
@@ -85,14 +89,17 @@ public:
 
 private:
 
-  //! Printing Utils
+  //! Printing Utils.
   const NOX::Utils& utils;
 
-  //! Method name
+  //! Method name.
   string method;
 
-  //! Pointer to actual direction calculation method
+  //! Pointer to actual direction calculation method.
   NOX::Direction::Generic* ptr;
+
+  //! Boolean that determines if the direction object is created/owned by the manager.  If so it will be deleted by the manager.
+  bool isOwned;
 
 };
 } // namespace Direction

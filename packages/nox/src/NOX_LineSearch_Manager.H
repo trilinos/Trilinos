@@ -56,7 +56,11 @@ namespace LineSearch {
    <li> "%Polynomial" (NOX::LineSearch::Polynomial)
    <li> "More'-Thuente" (NOX::LineSearch::MoreThuente)
    <li> "Secant" (NOX::LineSearch::Secant)
+   <li> "User Defined" (user can pass their own line search through the parameter list as a NOX::Parameter::Arbitrary derived object)
    </ul>
+
+   <li> "User Defined Line Search" - an object derived from the NOX::Parameter::Arbitrary and NOX::Line Search::Generic objects that allows the user to define their own line search object.  Will only be used if the "Method" is set to "User Defined".
+
    </ul>
  */  
 class Manager : public Generic {
@@ -86,6 +90,9 @@ private:
 
   //! Pointer to method
   NOX::LineSearch::Generic* ptr;
+
+  //! Boolean that determines if the line search object is created/owned by the manager.  If so it will be deleted by the manager.
+  bool isOwned;
 
 };
 } // namespace LineSearch

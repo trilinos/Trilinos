@@ -53,21 +53,24 @@ using namespace NOX::Direction;
 Manager::Manager(const NOX::Utils& u) :
   utils(u),
   method(""),
-  ptr(NULL)
+  ptr(NULL),
+  isOwned(false)
 {
 }
 
 Manager::Manager(const NOX::Utils& u, Parameter::List& params) :
   utils(u),
   method(""),
-  ptr(NULL)
+  ptr(NULL),
+  isOwned(false)
 {
   reset(params);
 }
 
 Manager::~Manager()
 {
-  delete ptr;
+  if (isOwned)
+    delete ptr;
 }
 
 bool Manager::reset(Parameter::List& params)
@@ -78,7 +81,12 @@ bool Manager::reset(Parameter::List& params)
     
     method = newmethod;
     
-    delete ptr;
+    if (isOwned) {
+      delete ptr;
+      ptr = NULL;
+    }
+
+    isOwned = true;
     
     if (method == "Newton")
       ptr = new Newton(utils, params);
@@ -96,6 +104,27 @@ bool Manager::reset(Parameter::List& params)
     else if (method == "Broyden")
       ptr = new Broyden(utils, params);
 #endif
+    else if ((method == "User Defined") && 
+	     (params.isParameterArbitrary("User Defined Direction"))) {
+
+      const NOX::Direction::Generic* tmpPtr = 
+	dynamic_cast<const NOX::Direction::Generic*>
+	(&(params.getArbitraryParameter("User Defined Direction")));
+      
+      ptr = NULL;
+      ptr = const_cast<NOX::Direction::Generic*>(tmpPtr);
+
+      if (ptr == NULL) {
+	if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
+	  cout << "NOX::Direction::Manager::reset() - Failed to dynamic_cast "
+	       << "arbitrary parameter in \"User Defined Direction\" into "
+	       << "a NOX::Direction::Generic object!" << endl;
+	  throw "NOX Error";
+	}
+
+      }
+      isOwned = false;  
+    }
     else {
       ptr = NULL;
       if (utils.isPrintProcessAndType(NOX::Utils::Warning)) {
