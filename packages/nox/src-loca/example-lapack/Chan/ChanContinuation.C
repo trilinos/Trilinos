@@ -65,7 +65,7 @@ int main()
     // be initialized to contain the default initial guess for the
     // specified problem.
     LOCA::LAPACK::Group grp(chan);
-    //LOCA::LAPACK::Group grp(chan, n, n, 2*n, 2*n);
+    
     grp.setParams(p);
 
     // Create parameter list
@@ -90,6 +90,7 @@ int main()
     stepperList.setParameter("Min Scale Factor", 1.0e-8);
     stepperList.setParameter("Min Tangent Factor", -1.0);
     stepperList.setParameter("Tangent Factor Exponent",1.0);
+    stepperList.setParameter("Compute Eigenvalues",false);
 
     // Create predictor sublist
     NOX::Parameter::List& predictorList = locaParamsList.sublist("Predictor");
@@ -104,7 +105,6 @@ int main()
     stepSizeList.setParameter("Initial Step Size", 0.1/scale);
     stepSizeList.setParameter("Min Step Size", 1.0e-3/scale);
     stepSizeList.setParameter("Max Step Size", 10.0/scale);
-    //stepSizeList.setParameter("Max Step Size", 1.0);
     stepSizeList.setParameter("Aggressiveness", 0.5);
 
     // Set the LOCA Utilities
@@ -112,7 +112,7 @@ int main()
     locaUtilsList.setParameter("Output Information", 
 			       LOCA::Utils::Warning +
 			       LOCA::Utils::StepperIteration +
-			       LOCA::Utils::StepperDetails +
+   			       LOCA::Utils::StepperDetails +
 			       LOCA::Utils::Solver +
 			       LOCA::Utils::Parameters +
 			       LOCA::Utils::SolverDetails);
@@ -128,33 +128,23 @@ int main()
 			  NOX::Utils::InnerIteration + 
 			  NOX::Utils::Warning);
 
-    //NOX::Parameter::List& dirParams = nlParams.sublist("Direction");
-    //NOX::Parameter::List& lsParams = dirParams.sublist("Linear Solver");
-
     // Set up the status tests
     NOX::StatusTest::NormF normF(1.0e-8);
-    LOCA::StatusTest::Wrapper wrappedNormF(normF);
-    LOCA::Continuation::StatusTest::ParameterResidualNorm paramResid(1.0e-8,
-								     1.0e-8,
-								     1.0);
     NOX::StatusTest::MaxIters maxIters(maxNewtonIters);
-    NOX::StatusTest::Combo comboAND(NOX::StatusTest::Combo::AND, 
-				    wrappedNormF, 
-				    paramResid);
     NOX::StatusTest::Combo comboOR(NOX::StatusTest::Combo::OR, 
-				    comboAND, 
-				    maxIters);
+				   normF, 
+				   maxIters);
 
     // Create the stepper  
     LOCA::Stepper stepper(grp, comboOR, paramList);
 
-    // Solve the nonlinear system
+    // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     if (status != LOCA::Abstract::Iterator::Finished)
       cout << "Stepper failed to converge!" << endl;
 
-    // Get the final solution from the solver
+    // Get the final solution from the stepper
     const LOCA::LAPACK::Group& finalGroup = 
       dynamic_cast<const LOCA::LAPACK::Group&>(stepper.getSolutionGroup());
     const NOX::LAPACK::Vector& finalSolution = 
@@ -171,6 +161,9 @@ int main()
     outFile.close();
   }
 
+  catch (string& s) {
+    cout << s << endl;
+  }
   catch (char *s) {
     cout << s << endl;
   }
