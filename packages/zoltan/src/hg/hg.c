@@ -384,7 +384,7 @@ static int Zoltan_HG_Initialize_Params(
   strncpy(hgp->global_str, "gr0",  MAX_PARAM_STRING_LEN);
   strncpy(hgp->local_str,  "fm2",  MAX_PARAM_STRING_LEN);
   hgp->ews = 0;
-  hgp->check_graph = 1;
+  hgp->check_graph = 0;
   hgp->bal_tol = zz->LB.Imbalance_Tol[0];
   hgp->redl = zz->LB.Num_Global_Parts;
   hgp->output_level = HG_DEBUG_LIST;
