@@ -33,7 +33,7 @@
 #ifndef LOCA_BIFURCATION_TPBORDVECTOR_H
 #define LOCA_BIFURCATION_TPBORDVECTOR_H
 
-#include "NOX_Abstract_Vector.H"  // Base class
+#include "LOCA_MultiVector.H"  // Base class
 
 //! Nonlinear solvers package namespace
 namespace LOCA {
@@ -52,7 +52,7 @@ namespace Bifurcation {
   \author Roger Pawlowski (SNL 9233)
 */
 
-class TPBordVector : public NOX::Abstract::Vector {
+class TPBordVector : public LOCA::MultiVector {
 
 public:
   
@@ -62,44 +62,18 @@ public:
  	       double bifParam);
 
   //! %Copy constructor.
-  TPBordVector(const TPBordVector& source);
+  TPBordVector(const TPBordVector& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! %Vector destructor.
   virtual ~TPBordVector();
 
-  virtual NOX::Abstract::Vector& init(double gamma);
-
-  virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
-
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
+
+  virtual LOCA::MultiVector& operator=(const LOCA::MultiVector& y);
   
   virtual TPBordVector& operator=(const TPBordVector& y);
 
-  virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
-
-  virtual NOX::Abstract::Vector& scale(double gamma);
-
-  virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
-
-  virtual NOX::Abstract::Vector& update(double alpha,
-                                        const NOX::Abstract::Vector& a,
-                                        double gamma = 0.0);
-
-  virtual NOX::Abstract::Vector& update(double alpha,
-                         const NOX::Abstract::Vector& a, double beta,
-                         const NOX::Abstract::Vector& b, double gamma = 0.0);
-
   virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
-
-  virtual double norm(NormType type = TwoNorm) const;
-
-  virtual double norm(const NOX::Abstract::Vector& weights) const;
-
-  virtual double dot(const NOX::Abstract::Vector& y) const;
-  
-  virtual int length() const;
-
-  virtual bool print() const;
 
   //! Sets the %TPBordVector by setting its three components 
   virtual void setVec(const NOX::Abstract::Vector& xVec,
@@ -123,17 +97,6 @@ public:
 
   //! Get %Bifurcation parameter
   virtual double& getBifParam();
-
-protected:
-
-  //! Solution vector
-  NOX::Abstract::Vector* xVectorPtr;
-
-  //! null vector
-  NOX::Abstract::Vector* nullVectorPtr;
-
-  //! %Bifurcation parameter that's part of the augmented solution vector
-  double bifParam;
 
 }; // class Vector
 } // namespace Bifurcation

@@ -66,12 +66,14 @@ LOCA_STEPPER = \
 	$(srcdir)/LOCA_StepperArclength.C
 
 LOCA_BIFURCATION_H = \
+	$(srcdir)/LOCA_MultiVector.H \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
         $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
         $(srcdir)/LOCA_Bifurcation_ArcLengthVector.H \
         $(srcdir)/LOCA_Bifurcation_ArcLengthGroup.H
 
 LOCA_BIFURCATION = \
+	$(srcdir)/LOCA_MultiVector.C \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
         $(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
         $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C \

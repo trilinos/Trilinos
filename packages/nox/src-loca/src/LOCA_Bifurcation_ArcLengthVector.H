@@ -33,7 +33,7 @@
 #ifndef LOCA_BIFURCATION_TPBORDVECTOR_H
 #define LOCA_BIFURCATION_TPBORDVECTOR_H
 
-#include "NOX_Abstract_Vector.H"  // Base class
+#include "LOCA_MultiVector.H"  // Base class
 
 //! Nonlinear solvers package namespace
 namespace LOCA {
@@ -41,18 +41,7 @@ namespace LOCA {
 //! %NOX  bifurcation vector and group
 namespace Bifurcation {
 
-/*! 
-  \brief %LOCA's pure abstract vector interface for vectors that are
-  used by the NLS solver.  Derived from the NOX::Abstract::Vector class.
-
-  The documentation throughout assumes that \f$x\f$ denotes "this"
-  vector, \f$x_i\f$ is the i-th component (or entry) of \f$x\f$, and
-  \f$n\f$ is the length of \f$x\f$.
-
-  \author Roger Pawlowski (SNL 9233)
-*/
-
-class ArcLengthVector : public NOX::Abstract::Vector {
+class ArcLengthVector : public LOCA::MultiVector {
 
 public:
   
@@ -61,44 +50,16 @@ public:
    	          double arcParam);
 
   //! %Copy constructor.
-  ArcLengthVector(const ArcLengthVector& source);
+  ArcLengthVector(const ArcLengthVector& source, NOX::CopyType type = NOX::DeepCopy);
 
   //! %Vector destructor.
   virtual ~ArcLengthVector();
-
-  virtual NOX::Abstract::Vector& init(double gamma);
-
-  virtual NOX::Abstract::Vector& abs(const NOX::Abstract::Vector& y);
 
   virtual LOCA::Bifurcation::ArcLengthVector& operator=(const LOCA::Bifurcation::ArcLengthVector& y);
 
   virtual NOX::Abstract::Vector& operator=(const NOX::Abstract::Vector& y);
 
-  virtual NOX::Abstract::Vector& reciprocal(const NOX::Abstract::Vector& y);
-
-  virtual NOX::Abstract::Vector& scale(double gamma);
-
-  virtual NOX::Abstract::Vector& scale(const NOX::Abstract::Vector& a);
-
-  virtual NOX::Abstract::Vector& update(double alpha,
-                                        const NOX::Abstract::Vector& a,
-                                        double gamma = 0.0);
-
-  virtual NOX::Abstract::Vector& update(double alpha,
-                         const NOX::Abstract::Vector& a, double beta,
-                         const NOX::Abstract::Vector& b, double gamma = 0.0);
-
   virtual NOX::Abstract::Vector* clone(NOX::CopyType type = NOX::DeepCopy) const;
-
-  virtual double norm(NormType type = TwoNorm) const;
-
-  virtual double norm(const NOX::Abstract::Vector& weights) const;
-
-  virtual double dot(const NOX::Abstract::Vector& y) const;
-  
-  virtual int length() const;
-
-  virtual bool print() const;
 
   //! Sets the %ArcLengthVector by setting its two components 
   virtual void setVec(const NOX::Abstract::Vector& xVec,
@@ -115,14 +76,6 @@ public:
 
   //! Get %Arclength parameter
   virtual double& getArcParam();
-
-protected:
-
-  //! Solution vector
-  NOX::Abstract::Vector* xVectorPtr;
-
-  //! %Arclength parameter that's part of the augmented solution vector
-  double arcParam;
 
 }; // class Vector
 } // namespace Bifurcation

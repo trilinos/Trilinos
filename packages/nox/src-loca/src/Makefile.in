@@ -154,6 +154,7 @@ LOCA_STEPPER = \
 
 
 LOCA_BIFURCATION_H = \
+	$(srcdir)/LOCA_MultiVector.H \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.H \
         $(srcdir)/LOCA_Bifurcation_TPBordGroup.H \
         $(srcdir)/LOCA_Bifurcation_ArcLengthVector.H \
@@ -161,6 +162,7 @@ LOCA_BIFURCATION_H = \
 
 
 LOCA_BIFURCATION = \
+	$(srcdir)/LOCA_MultiVector.C \
         $(srcdir)/LOCA_Bifurcation_TPBordVector.C \
         $(srcdir)/LOCA_Bifurcation_TPBordGroup.C \
         $(srcdir)/LOCA_Bifurcation_ArcLengthVector.C \
@@ -250,6 +252,7 @@ am_libloca_a_OBJECTS = libloca_a-LOCA_Abstract_Group.$(OBJEXT) \
 	libloca_a-LOCA_Parameter_Vector.$(OBJEXT) \
 	libloca_a-LOCA_Stepper.$(OBJEXT) \
 	libloca_a-LOCA_StepperArclength.$(OBJEXT) \
+	libloca_a-LOCA_MultiVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT) \
 	libloca_a-LOCA_Bifurcation_ArcLengthVector.$(OBJEXT) \
@@ -269,6 +272,7 @@ depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po \
+@AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_MultiVector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_Stepper.Po \
 @AMDEP_TRUE@	$(DEPDIR)/libloca_a-LOCA_StepperArclength.Po \
@@ -336,6 +340,7 @@ libloca_a-LOCA_Parameter_Vector.$(OBJEXT): \
 libloca_a-LOCA_Stepper.$(OBJEXT): $(srcdir)/LOCA_Stepper.C
 libloca_a-LOCA_StepperArclength.$(OBJEXT): \
 	$(srcdir)/LOCA_StepperArclength.C
+libloca_a-LOCA_MultiVector.$(OBJEXT): $(srcdir)/LOCA_MultiVector.C
 libloca_a-LOCA_Bifurcation_TPBordVector.$(OBJEXT): \
 	$(srcdir)/LOCA_Bifurcation_TPBordVector.C
 libloca_a-LOCA_Bifurcation_TPBordGroup.$(OBJEXT): \
@@ -362,6 +367,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordGroup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Bifurcation_TPBordVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_DerivUtils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_MultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Parameter_Vector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_Stepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/libloca_a-LOCA_StepperArclength.Po@am__quote@
@@ -441,6 +447,18 @@ libloca_a-LOCA_StepperArclength.obj: $(srcdir)/LOCA_StepperArclength.C
 @AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_StepperArclength.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_StepperArclength.TPo' @AMDEPBACKSLASH@
 @AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_StepperArclength.obj `cygpath -w $(srcdir)/LOCA_StepperArclength.C`
+
+libloca_a-LOCA_MultiVector.o: $(srcdir)/LOCA_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_MultiVector.C' object='libloca_a-LOCA_MultiVector.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_MultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_MultiVector.o `test -f $(srcdir)/LOCA_MultiVector.C || echo '$(srcdir)/'`$(srcdir)/LOCA_MultiVector.C
+
+libloca_a-LOCA_MultiVector.obj: $(srcdir)/LOCA_MultiVector.C
+@AMDEP_TRUE@	source='$(srcdir)/LOCA_MultiVector.C' object='libloca_a-LOCA_MultiVector.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/libloca_a-LOCA_MultiVector.Po' tmpdepfile='$(DEPDIR)/libloca_a-LOCA_MultiVector.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libloca_a_CXXFLAGS) $(CXXFLAGS) -c -o libloca_a-LOCA_MultiVector.obj `cygpath -w $(srcdir)/LOCA_MultiVector.C`
 
 libloca_a-LOCA_Bifurcation_TPBordVector.o: $(srcdir)/LOCA_Bifurcation_TPBordVector.C
 @AMDEP_TRUE@	source='$(srcdir)/LOCA_Bifurcation_TPBordVector.C' object='libloca_a-LOCA_Bifurcation_TPBordVector.o' libtool=no @AMDEPBACKSLASH@
