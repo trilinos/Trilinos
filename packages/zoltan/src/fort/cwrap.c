@@ -479,13 +479,9 @@ int LB_fw_Initialize(float *ver)
    int result;
    myArgc = 1;
    myArgv = (char **) LB_MALLOC((myArgc+1)*sizeof(char *));
-   myArgv[0] = (char *) LB_MALLOC(8*sizeof(char));
    myArgv[0] = "unknown";
    myArgv[1] = NULL;
    result = LB_Initialize(myArgc,myArgv,ver);
-/* TEMP should myArgv be freed or kept? */
-/* KDD -- try freeing it */
-   LB_FREE(&(myArgv[0]));
    LB_FREE(&myArgv);
    return result;
 }

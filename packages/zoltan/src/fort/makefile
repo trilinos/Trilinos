@@ -34,7 +34,7 @@ $(ZOD)/cwrap.o: cwrap.c
 
 $(ZOD)/sppr: sppr.f90
 	$(LOCAL_F90) -o $(ZOD)/sppr sppr.f90
-	/bin/mv *.vo $(ZOD)
+	/bin/mv *.mod $(ZOD)
 
 clean:
 	rm -f $(ZOD)/*.f90 $(ZOD)/*.mod debug V* $(ZOD)/*.vo \
