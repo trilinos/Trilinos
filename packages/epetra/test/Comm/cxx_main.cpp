@@ -1,8 +1,7 @@
 // Epetra_Comm Test routine
-
 #ifdef EPETRA_MPI
-#include "Epetra_MpiComm.h"
 #include <mpi.h>
+#include "Epetra_MpiComm.h"
 #endif
 #include "Epetra_SerialComm.h"
 
@@ -465,6 +464,8 @@ int main(int argc, char *argv[]) {
   if (verbose) cout << endl << "GatherAll (type double) test passed!" << endl << endl;// If test gets to here the test passed, only output on one node
   petracomm.Barrier();
 
+  delete [] dInputs;
+  delete [] iInputs;
 #endif
 
   // Test serial interface first

@@ -107,9 +107,3 @@ Epetra_Directory * Epetra_SerialComm:: CreateDirectory(const Epetra_BlockMap & m
 }
  //=============================================================================
 Epetra_SerialComm::~Epetra_SerialComm()  {}
-//=============================================================================
-void Epetra_SerialComm::Print(ostream & os) const
-{
-  os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors"; 
-  return;
-}
