@@ -1,4 +1,4 @@
---with-libs=/local/homes/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
+--with-libs="/local/homes/jmwille/Trilinos3PL/DSCPACK1.0/DSC_LIB/dsclibdbl.a
 /local/homes/jmwille/Trilinos3PL/SuperLU/libsuperlu.a"
 --with-incdirs="-I/local/homes/jmwille/Trilinos3PL/DSCPACK1.0
 -I/local/homes/jmwille/Trilinos3PL/SuperLU/SRC"
