@@ -136,13 +136,15 @@ $(srcdir)/Utils/ml_amesos_wrap.h \
 $(srcdir)/Utils/ml_ifpack.h \
 $(srcdir)/Utils/ml_ifpack_wrap.h \
 $(srcdir)/Utils/ml_epetra_preconditioner.h \
-$(srcdir)/Utils/ml_anasazi.h
-
+$(srcdir)/Utils/ml_anasazi.h \
+$(srcdir)/Utils/ml_epetra.h \
+$(srcdir)/Utils/ml_MultiLevelOperator.h \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.h \
+$(srcdir)/Utils/ml_RowMatrix.h
 
 UTIL = \
 $(srcdir)/Utils/ml_rbm.c \
 $(srcdir)/Utils/ml_aztec_utils.c       $(srcdir)/Utils/ml_read_utils.c \
-$(srcdir)/Utils/ml_epetra_operator.cpp \
 $(srcdir)/Utils/ml_twogrid_analysis.c \
 $(srcdir)/Utils/ml_epetra_utils.cpp \
 $(srcdir)/Utils/ml_utils.c             $(srcdir)/Utils/ml_intlist.c \
@@ -163,7 +165,10 @@ $(srcdir)/Utils/ml_MultiLevelPreconditioner_Viz.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Analyze.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_Test.cpp \
 $(srcdir)/Utils/ml_MultiLevelPreconditioner_CLP.cpp \
-$(srcdir)/Utils/ml_anasazi.cpp
+$(srcdir)/Utils/ml_anasazi.cpp \
+$(srcdir)/Utils/ml_MultiLevelOperator.cpp \
+$(srcdir)/Utils/ml_MultiLevelPreconditioner.cpp \
+$(srcdir)/Utils/ml_RowMatrix.cpp
 
 
 ENUM_H = 
