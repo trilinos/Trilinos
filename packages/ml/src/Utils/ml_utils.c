@@ -1396,12 +1396,14 @@ void ML_splitup_big_msg(int num_neighbors, char *ibuffer, char *obuffer,
 
   /* Determine if splitting of messages is necessary */
 
+  /* Too big for message buffers */
+  /*  10/31/03  This code causes setup scaling problems.  You should only
+       uncomment it if you're encountering MPI buffer overflow problems. */
+  /*
   if (max_buffer_size > (int) (ML_MAX_MSG_BUFF_SIZE / (2 * element_size))) {
-
-     /* Too big for message buffers */
-
      split_up = ML_TRUE;
   }
+  */
 
   if (split_up == ML_TRUE) {
 
