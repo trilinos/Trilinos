@@ -27,6 +27,8 @@
 // @HEADER
 
 #include "Tpetra_ConfigDefs.hpp" // for <iostream> and <stdlib>
+#include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include "Tpetra_Import.hpp"
 #include "Tpetra_ElementSpace.hpp"
 #include "Tpetra_Version.hpp"
