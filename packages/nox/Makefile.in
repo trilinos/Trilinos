@@ -274,7 +274,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-SUBDIRS = doc src src-lapack src-epetra src-petsc src-belos \
+SUBDIRS = doc src src-lapack src-epetra src-tsf src-petsc src-belos \
           example-lapack example-epetra example-petsc example-belos \
           src-loca \
           test
