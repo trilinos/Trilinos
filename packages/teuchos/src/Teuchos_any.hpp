@@ -4,7 +4,6 @@
 #ifndef TEUCHOS_ANY_HPP
 #define TEUCHOS_ANY_HPP
 
-#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_TestForException.hpp"
 
 //
