@@ -1,9 +1,5 @@
 # @HEADER
 # @HEADER
 
-if BUILD_BELOS_TESTS
-BELOS_TEST_SUBDIRS = BlockCG BlockGmres
-endif
-
-SUBDIRS = scripts $(BELOS_TEST_SUBDIRS)
+SUBDIRS = scripts BlockCG BlockGmres
 

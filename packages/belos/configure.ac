@@ -203,11 +203,9 @@ TAC_ARG_CHECK_FEATURE_SUB(tsfcore, epetra, TSFCORE_EPETRA)
 AM_CONDITIONAL(BUILD_TSFCORE_EPETRA, test "X$ac_cv_use_tsfcore" != "Xno" &&
 					test "X$ac_cv_use_tsfcore_epetra" != "Xno")
 				
-TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages], TESTS, yes)
-AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_tests" != "Xno")
-
-TAC_ARG_ENABLE_FEATURE_SUB( belos, tests, [Build Belos tests], BELOS_TESTS, yes)
-AM_CONDITIONAL(BUILD_BELOS_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno"])
+TAC_ARG_ENABLE_FEATURE(tests, [Build tests for all Trilinos packages (not all packages are sensitive to this option)], TESTS, yes)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( belos, tests, [Build Belos tests], BELOS_TESTS)
+AM_CONDITIONAL(BUILD_TESTS, [test "X$ac_cv_use_belos_tests" != "Xno" ])
 
 # ------------------------------------------------------------------------
 # Specify other directories 
