@@ -38,6 +38,9 @@ namespace Abstract {
 class Vector;
 class Group;
 }
+namespace Solver {
+class Generic;
+}
 namespace Parameter {
 class List;
 }
@@ -67,11 +70,26 @@ public:
   //! Reset parameters
   virtual bool reset(Parameter::List& params) = 0;
   
-  //! Perform a line search from oldgrp along dirction dir. 
-  //! Update newgrp = oldgrp + step * dir.
-  virtual bool compute(Abstract::Group& newgrp, double& step,
-			  const Abstract::Group& oldgrp, 
-			  const Abstract::Vector& dir) = 0;
+  //! Perform a line search from the old solution along dirction dir. 
+  /*!
+
+    Our variables denote the following:
+    
+    - \f$x\f$ results from applying Abstract::Group::getX() to \c grp
+    - \f$\alpha\f$ is \c step,
+    - \f$\hat x\f$ results from applying (Solver::Generic::getPreviousSolutionGroup()).getX() to s
+    - \f$d\f$ denotes \c dir.
+
+    The goal is to compute a step, \f$\alpha\f$ such that
+    \f[
+    x = \hat x + \alpha d
+    \f]
+    satisfies the conditions of the line search.
+   */
+  virtual bool compute(Abstract::Group& grp, 
+		       double& step,
+		       const Abstract::Vector& dir, 
+		       const Solver::Generic& s) = 0;
 
 };
 } // namespace LineSearch

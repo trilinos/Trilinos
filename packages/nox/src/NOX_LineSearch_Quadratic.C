@@ -35,6 +35,7 @@
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
@@ -63,9 +64,11 @@ bool Quadratic::reset(Parameter::List& params)
 }
 
 bool Quadratic::compute(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
+			const Abstract::Vector& dir,
+			const Solver::Generic& s) 
 {
 
+  const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
                             // Redefined f(), RH
 
@@ -89,7 +92,7 @@ bool Quadratic::compute(Abstract::Group& newgrp, double& step,
 
   // Following lines will be used with Homer Walker's new stuff
   // Compute forcing term, eta if a Newton solve was used
-  //double eta = oldgrp.getNewtonSolveResidual();
+  //double eta = oldgrp.getNormNewtonSolveResidual();
   //if (Utils::doPrint(Utils::Details)) {
   //  cout << "2-norm of linear model, ||Js+f|| = " << eta << endl;
   //}

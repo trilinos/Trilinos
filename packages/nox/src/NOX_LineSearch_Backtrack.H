@@ -82,8 +82,8 @@ public:
 
   // derived
   bool compute(Abstract::Group& newgrp, double& step, 
-		  const Abstract::Group& oldgrp, 
-		  const Abstract::Vector& dir) ;
+	       const Abstract::Vector& dir,
+	       const Solver::Generic& s);
   
 private:
 
@@ -95,19 +95,19 @@ private:
 private:
 
    //! Minimum step length (i.e., when we give up)
-  double minstep;
+  double minStep;
  
  //! Default step
-  double defaultstep;
+  double defaultStep;
 
   //! Default step for linesearch failure
-  double recoverystep;
+  double recoveryStep;
 
   //! Maximum number of iterations
-  int maxiters;
+  int maxIters;
   
   //! Norm used in simple decrease condition
-  NOX::Abstract::Vector::NormType normtype;
+  NOX::Abstract::Vector::NormType normType;
 
 };
 } // namespace LineSearch

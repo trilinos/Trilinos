@@ -35,6 +35,7 @@
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
@@ -62,9 +63,11 @@ bool Secant::reset(Parameter::List& params)
 
 bool Secant::compute(Abstract::Group& newgrp, 
 		     double& step, 
-	             const Abstract::Group& oldgrp, 
-		     const Abstract::Vector& dir) 
+		     const Abstract::Vector& dir,
+		     const Solver::Generic& s) 
 {
+
+  const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
 
   double oldf = 0.5*oldgrp.getNormF()*oldgrp.getNormF();  
   double oldfprime = dir.dot(oldgrp.getF()); 

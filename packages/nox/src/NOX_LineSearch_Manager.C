@@ -95,9 +95,10 @@ bool Manager::reset(Parameter::List& params)
 }
 
 bool Manager::compute(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
+		      const Abstract::Vector& dir,
+		      const Solver::Generic& s) 
 {
-  return ptr->compute(newgrp, step, oldgrp, dir);
+  return ptr->compute(newgrp, step, dir, s);
 }
 
 

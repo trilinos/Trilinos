@@ -72,7 +72,8 @@ public:
 
   // derived
   bool compute(Abstract::Group& newgrp, double& step, 
-		  const Abstract::Group& oldgrp, const Abstract::Vector& dir) ;
+	       const Abstract::Vector& dir,
+	       const Solver::Generic& s) ;
 
 private:
   //! Method name

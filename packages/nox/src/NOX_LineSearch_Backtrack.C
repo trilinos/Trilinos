@@ -35,6 +35,7 @@
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
@@ -53,17 +54,17 @@ Backtrack::~Backtrack()
 
 bool Backtrack::reset(Parameter::List& params)
 { 
-  minstep = params.getParameter("Minimum Step", 1.0e-12);
-  defaultstep = params.getParameter("Default Step", 1.0);
-  recoverystep = params.getParameter("Recovery Step", defaultstep);
-  maxiters = params.getParameter("Max Iters", 100);
+  minStep = params.getParameter("Minimum Step", 1.0e-12);
+  defaultStep = params.getParameter("Default Step", 1.0);
+  recoveryStep = params.getParameter("Recovery Step", defaultStep);
+  maxIters = params.getParameter("Max Iters", 100);
 
   const string tmp = params.getParameter("Decrease Condition", "Max Norm");
   
   if (tmp == "Max Norm")
-    normtype = NOX::Abstract::Vector::MaxNorm;
+    normType = NOX::Abstract::Vector::MaxNorm;
   else if (tmp == "Two Norm")
-    normtype = NOX::Abstract::Vector::TwoNorm;
+    normType = NOX::Abstract::Vector::TwoNorm;
   else {
     cout << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" << tmp 
 	 << "\" for \"Decrease Condition\"" << endl;
@@ -75,61 +76,63 @@ bool Backtrack::reset(Parameter::List& params)
 
 double Backtrack::getNormF(const Abstract::Group& grp) const
 {
-  return (normtype == NOX::Abstract::Vector::MaxNorm) ? 
-    grp.getF().norm(normtype) : grp.getNormF();
+  return (normType == NOX::Abstract::Vector::MaxNorm) ? 
+    grp.getF().norm(normType) : grp.getNormF();
 }
 
-bool Backtrack::compute(Abstract::Group& newgrp, double& step, 
-			 const Abstract::Group& oldgrp, const Abstract::Vector& dir) 
+bool Backtrack::compute(Abstract::Group& grp, double& step, 
+			const Abstract::Vector& dir,
+			const Solver::Generic& s)
 {
-  double oldf = getNormF(oldgrp);
-  double newf;
-  bool isfailed = false;
+  const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
+  double oldF = getNormF(oldGrp);
+  double newF;
+  bool isFailed = false;
 
-  step = defaultstep;
-  newgrp.computeX(oldgrp, dir, step);
-  newgrp.computeF();    
-  newf = getNormF(newgrp);
-  int niters = 1;
+  step = defaultStep;
+  grp.computeX(oldGrp, dir, step);
+  grp.computeF();    
+  newF = getNormF(grp);
+  int nIters = 1;
 
   if (Utils::doPrint(Utils::InnerIteration)) {
    cout << "\n" << Utils::fill(72) << "\n" << "-- Backtrack Line Search -- \n";
   }
-  while ((newf >= oldf) && (!isfailed)) {
+  while ((newF >= oldF) && (!isFailed)) {
 
     if (Utils::doPrint(Utils::InnerIteration)) {
-      cout << setw(3) << niters << ":";
+      cout << setw(3) << nIters << ":";
       cout << " step = " << Utils::sci(step);
-      cout << " oldf = " << Utils::sci(oldf);
-      cout << " newf = " << Utils::sci(newf);
+      cout << " oldF = " << Utils::sci(oldF);
+      cout << " newF = " << Utils::sci(newF);
       cout << endl;
     }
 
-    niters ++;
+    nIters ++;
     step = step * 0.5;
 
-    if ((step < minstep) || (niters > maxiters)) {
-      isfailed = true;
-      step = recoverystep;
+    if ((step < minStep) || (nIters > maxIters)) {
+      isFailed = true;
+      step = recoveryStep;
     }
 
-    newgrp.computeX(oldgrp, dir, step);
-    newgrp.computeF();    
-    newf = getNormF(newgrp);
+    grp.computeX(oldGrp, dir, step);
+    grp.computeF();    
+    newF = getNormF(grp);
   } 
 
   if (Utils::doPrint(Utils::InnerIteration)) {
-    cout << setw(3) << niters << ":";
+    cout << setw(3) << nIters << ":";
     cout << " step = " << Utils::sci(step);
-    cout << " oldf = " << Utils::sci(oldf);
-    cout << " newf = " << Utils::sci(newf);
-    if (isfailed)
+    cout << " oldF = " << Utils::sci(oldF);
+    cout << " newF = " << Utils::sci(newF);
+    if (isFailed)
       cout << " (USING RECOVERY STEP!)" << endl;
     else
       cout << " (STEP ACCEPTED!)" << endl;
     cout << Utils::fill(72) << "\n" << endl;
   }
 
-  return (!isfailed);
+  return (!isFailed);
 }
 

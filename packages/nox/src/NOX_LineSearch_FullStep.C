@@ -35,6 +35,7 @@
 #include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
+#include "NOX_Solver_Generic.H"
 #include "NOX_Parameter_List.H"
 #include "NOX_Utils.H"
 
@@ -58,11 +59,13 @@ bool FullStep::reset(Parameter::List& params)
   return true;
 }
 
-bool FullStep::compute(Abstract::Group& newgrp, double& step, 
-			  const Abstract::Group& oldgrp, const Abstract::Vector& dir)
+bool FullStep::compute(Abstract::Group& grp, double& step, 
+		       const Abstract::Vector& dir,
+		       const Solver::Generic& s)
 {
   step = fullstep;
-  newgrp.computeX(oldgrp, dir, step);
+  const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
+  grp.computeX(oldGrp, dir, step);
   return true;
 }
 
