@@ -42,7 +42,7 @@
 \headheight=12.45pt
 
 
-\title{Amesos Reference Guide}
+\title{Amesos 1.0 Reference Guide}
 \SANDnum{SAND2004-XXX}
 \SANDauthor{
 Marzio Sala, Ken Stanley
@@ -76,7 +76,8 @@ Oberlin OH 44074
 
 \begin{abstract}
   
-  This document described the main functinalities of the Amesos package
+  This document described the main functinalities of the Amesos package,
+  version 1.0
   (part of Trilinos).
   
   Amesos provides an object-oriented interface to several direct sparse
@@ -154,7 +155,8 @@ carefully check copyright and licensing of those third-party codes.
 Please refer to the web page or the documentation of each particular
 package for details.
 
-Amesos contains several classes. The classes covered in this guide are: 
+Amesos contains several classes, as reported in table~\ref{tab:classes}.
+The classes covered in this guide are:
 \begin{itemize}
 \item \verb!Amesos_KLU!: Interface to Amesos's internal solver
   KLU, described in Section~\ref{sec:klu}.
@@ -173,6 +175,30 @@ Amesos contains several classes. The classes covered in this guide are:
 %    does {\sl not} contain interfaces to LAPACK routines.  Other
 %    Trilinos packages already offer those routines.}.
 \end{itemize}
+
+\begin{table}[tbhp]
+  \centering
+  \begin{tabular}{| l | l l l | }
+    \hline
+    Class &   &  & Interface to \\
+    \hline
+    \tt Amesos\_Klu          & serial & unsym & KLU \\
+    \tt Amesos\_Umfpack      & serial & unsym & UMFPACK 4.3 \\
+    \tt Amesos\_Superlu      & serial & unsym & SuperLU 3.0 \\
+    \tt  Amesos\_Superludist  & parallel & unsym & SuperLU\_DIST 2.0 \\
+    \tt Amesos\_Mumps        & parallel & SPD, sym, unsym & MUMPS 4.3.1 \\
+    \tt Amesos\_Scalapack    & parallel & unsym & ScaLAPACK \\
+    \hline
+  \end{tabular}
+  \caption{Supported interfaces. ``serial'' means that the supported
+    direct solver will be used on process 0 (also for distributed linear
+    systems; Amesos will take care of data redistribution), and
+    ``parallel'' that a subset or all the processes in the current
+    communicator will be used by the solver. ``unsym'' means general unsymmetric
+    matrix, ``sym'' symmetric matrix, ``SPD'' symmetric positive definite.}
+  \label{tab:classes}
+\end{table}
+
 
 All the Amesos classes are derived from a base class mode,
 \verb!Amesos_BaseSolver!. This abstract interface provides the basic
@@ -268,14 +294,15 @@ $TRILINOS_HOME/packages/amesos/configure --help
     & $\bullet$ & $\bullet$ \\
     SGI 64 & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & -- \\
     DEC/Alpha & MPI & $\bullet$ & $\bullet$ & -- & -- & -- \\
+    MAC OS X/G4 & MPICH & $\bullet$ & -- & -- & -- & -- \\
 %    SUN/Solaris & MPI & -- & -- & -- & -- \\
     Sandia Cplant & MPI & $\bullet$ & $\bullet$ & $\bullet$ & $\bullet$ & -- \\
     ASCI Red & MPI & $\bullet$ & $\bullet$ & $\bullet$ & -- & -- \\
     \hline
   \end{tabular}
   \caption{Supported architectures for various interfaces. 
-  `$\bullet$' means that the interface can successfully compiled, 
-  `--' means that it cannot, or that has not been tried.}
+  `$\bullet$' means that the interface has been successfully compiled, 
+  `--' means that it has not been tested.}
   \label{tab:arch}
 \end{sidewaystable}
 
@@ -334,16 +361,7 @@ We need to define a linear problem,
   Amesos_LinearProblem->SetOperator( A ) ; 
 \end{verbatim}
 Now, let \verb!Choice! be a char array variable, with one of the
-following values: 
-\begin{itemize}
-\item {\tt Amesos\_Klu};
-\item {\tt Amesos\_Umfpack};
-\item {\tt Amesos\_Mumps};
-\item {\tt Amesos\_Superlu};
-\item {\tt Amesos\_Superludist};
-\item {\tt Amesos\_Scalapack}.
-\item {\tt Amesos\_Dscpack}.
-\end{itemize}
+ values reported in the first column of table~\ref{tab:classes}.
 We can construct an \verb!Amesos_BaseSolver! object as follows:
 \begin{verbatim}
   Amesos_BaseSolver * A_Base;
@@ -437,6 +455,11 @@ refer to table~\ref{tab:options}.
   system~(\ref{eq:linear_system}). Otherwise, solve the linear system
   with the transpose matrix $A^T$.}
 
+\vskip .1in \choicebox{\tt MatrixType}{Set it to {\tt SPD} if the matrix
+  is symmetric positive definite, to {\tt symmetric} if symmetric, and
+  to {\tt general} is the matrix is general unsymmetric. Only the MUMPS
+  interface can take advantage of {\tt SPD} and {\tt symmetric}. }
+
 \choicebox{\tt Threshold}{Drop all elements whose absolute
   value is below the specified threshold.}
 
@@ -494,6 +517,8 @@ refer to table~\ref{tab:options}.
     \hline
     \tt UseTranspose & \tt bool & \tt false & $\bullet$ & $\bullet$ & -- & $\bullet$
     & $\bullet$ \\
+    \tt MatrixType & \tt string & \tt \tt general & -- & -- & -- & $\bullet$
+    & -- \\
     \tt Threshold & \tt double & \tt 0.0 & -- & -- & -- & $\bullet$ & --
     \\
     \tt AddZeroToDiag & \tt bool & \tt false & -- & -- & $\bullet$ &
@@ -544,7 +569,7 @@ spaces are important, and that parameters' list is case sensitive!
 \label{sec:klu}
 
 KLU is a serial, unblocked code ideal for getting started, and for very
-sparse matrices, such as circuit matrces.
+sparse matrices, such as circuit matrices.
 
 KLU is Tim Davis' implementation of Gilbert-Peierl's left-looking sparse
 partial pivoting algorithm, with Eisenstat and Liu's symmetric pruning.
