@@ -358,7 +358,9 @@ int Zoltan_HG_Check (
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  if (!hg->hindex || !hg->hvertex || !hg->vindex || !hg->vedge) {
+  if (!hg->hindex || !hg->vindex || 
+      (hg->nPins && (!hg->vedge || !hg->hvertex))) {
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "NULL arrays found");
     err = ZOLTAN_WARN;
     goto End;
   }
@@ -440,8 +442,12 @@ int Zoltan_HG_Check (
         /* for each vertex of current hyperedge get index to hyperedges */
         if (hg->vedge[k] == iedge)    /* does it match with original edge? */
           break;
-      if (k == hg->vindex[hg->hvertex[j]+1])  /* if no match was found then */
-        return ZOLTAN_WARN;                  /* failure, else keep on */
+      if (k == hg->vindex[hg->hvertex[j]+1]) { 
+        /* if no match was found then failure, else keep on */
+        ZOLTAN_PRINT_WARN(zz->Proc, yo, "Inconsistent hvertex/vedge");
+        err = ZOLTAN_WARN;                    
+        break;
+      }
     }
 
 End:
@@ -453,19 +459,20 @@ End:
 
 
 /****************************************************************************/
-/* Routine to print hypergraph weights and edges. Assumes serial execution;
- * put inside Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End for parallel
- * programs. */
 void Zoltan_HG_Print(
   ZZ *zz,
   HGraph *hg,
   FILE *fp
 )
 {
-  int i, j;
-  int num_vwgt;
-  int num_ewgt;
-  char *yo = "Zoltan_HG_Print";
+/* Routine to print hypergraph weights and edges. Assumes serial execution;
+ * put inside Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End for parallel
+ * programs. 
+ */
+int i, j;
+int num_vwgt;
+int num_ewgt;
+char *yo = "Zoltan_HG_Print";
 
   if (hg == NULL)
     return;

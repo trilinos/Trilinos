@@ -97,6 +97,8 @@ extern int Zoltan_HG_Graph_Free   (Graph*);
 extern void Zoltan_HG_HGraph_Init (HGraph*);
 extern int Zoltan_HG_HGraph_Free  (HGraph*);
 extern int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
+extern void Zoltan_HG_Mirror(int, int*, int*, int, int*, int*);
+
 extern int Zoltan_HG_Info         (ZZ*, HGraph*);
 extern int Zoltan_HG_Check        (ZZ*, HGraph*);
 extern int Zoltan_HG_HGraph_to_Graph(ZZ*, HGraph*, Graph*);

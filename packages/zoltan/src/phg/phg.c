@@ -409,7 +409,7 @@ void Zoltan_PHG_HGraph_Print(
   /* Print Vertex Info */
   fprintf (fp, "%s Proc %d\n", yo, zz->Proc);
   fprintf (fp, "Vertices (GID, LID, index)\n");
-  for (i = 0; i < hg->nVtx; i++) {
+  for (i = 0; i < zoltan_hg->nObj; i++) {
     fprintf(fp, "(");
     ZOLTAN_PRINT_GID(zz, &zoltan_hg->Global_IDs[i * num_gid]);
     fprintf(fp, ", ");

@@ -1,0 +1,14 @@
+Decomposition Method 	= phg
+Zoltan Parameters	= obj_weight_dim=1
+#Zoltan Parameters	= phg_nproc_x=1
+#Zoltan Parameters	= debug_memory=2
+#Zoltan Parameters	= num_global_partitions=8
+Zoltan Parameters	= num_global_partitions=2
+Zoltan Parameters	= phg_refinement=no
+Zoltan Parameters	= phg_reduction_method=no
+Zoltan Parameters	= phg_coarse_partitioning=gr1
+#Zoltan Parameters	= phg_coarse_partitioning=ran
+File Type		= hypergraph
+File Name		= vwgt
+Parallel Disk Info	= number=0
+zdrive debug level = 0

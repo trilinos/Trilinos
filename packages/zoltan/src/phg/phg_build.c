@@ -198,14 +198,26 @@ struct application_input {     /* Data provided by application callbacks. */
                                        hyperedges. */
   int *pin_gno;                     /* Global numbers in range [0,GnVtx-1]
                                        for pins. */
+  int *vtx_gno;                     /* Global numbers in range [0,GnVtx-1]
+                                       for vertices.  app.vtx_gno[i] is
+                                       global number for GID[i]. */
+  int *edge_gno;                    /* Global numbers in range [0,GnEdge-1]
+                                       for edges.  app.edge[i] is
+                                       global number for this proc's edge i. */
   int *vtxdist;                     /* Distribution of vertices
                                        across original owning processors;
                                        # vtxs on proc i == 
                                        vtxdist[i+1] - vtxdist[i]. */
+                                    /* KDDKDD Needed only for linear initial
+                                       2D distribution; can remove if use other
+                                       initial distribution. */
   int *edgedist;                    /* Distribution of edges
                                        across original owning processors;
                                        # edges on proc i == 
                                        edgedist[i+1] - edgedist[i]. */
+                                    /* KDDKDD Needed only for linear initial
+                                       2D distribution; can remove if use other
+                                       initial distribution. */
   float *vwgt;                      /* Vertex weights. */
   float *ewgt;                      /* Edge weights. */
 } app;
@@ -214,9 +226,8 @@ struct Hash_Node *hash_nodes = NULL;  /* Hash table variables for mapping   */
 struct Hash_Node **hash_tab = NULL;   /* GIDs to global numbering system.   */
 ZOLTAN_COMM_OBJ *plan;
 
-int i, j, cnt;
+int i, j, cnt, dim;
 int msg_tag = 30000;
-int numwgts = 0;
 int ierr = ZOLTAN_OK;
 int nProc = zz->Num_Proc;
 int nRequests;
@@ -231,7 +242,9 @@ int *nonzeros = NULL;
 int *tmp = NULL;
 int *hindex = NULL, *hvertex = NULL;
 int *dist_x = NULL, *dist_y = NULL;
-int nEdge, nVtx;
+int nEdge, nVtx, nwgt = 0;
+int nrecv, *recv_gno = NULL; 
+float *recv_wgts = NULL;
 
 ZOLTAN_ID_PTR global_ids;
 int num_gid_entries = zz->Num_GID;
@@ -243,12 +256,22 @@ int myProc_x = phg->comm->myProc_x;
 int myProc_y = phg->comm->myProc_y;
 
 float frac_x, frac_y;
+float *tmpwgts = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /**************************************************/
   /* Obtain vertex information from the application */
   /**************************************************/
+
+  app.edge_sizes = NULL;
+  app.pins = NULL;
+  app.pin_procs = NULL;
+  app.pin_gno = NULL;
+  app.vtxdist = NULL;
+  app.edgedist = NULL;
+  app.vwgt = NULL;
+  app.ewgt = NULL;
 
   ierr = Zoltan_Get_Obj_List(zz, &(zhg->nObj), &(zhg->Global_IDs),
                              &(zhg->Local_IDs), 
@@ -260,14 +283,6 @@ float frac_x, frac_y;
   }
 
   app.nVtx = zhg->nObj;
-  app.edge_sizes = NULL;
-  app.pins = NULL;
-  app.pin_procs = NULL;
-  app.pin_gno = NULL;
-  app.vtxdist = NULL;
-  app.edgedist = NULL;
-  app.vwgt = NULL;
-  app.ewgt = NULL;
 
   /* Build app.vtxdist as in Zoltan_Build_Graph. */
 
@@ -303,15 +318,19 @@ float frac_x, frac_y;
                                                     sizeof(struct Hash_Node));
     hash_tab = (struct Hash_Node **) ZOLTAN_MALLOC(app.nVtx *
                                                    sizeof(struct Hash_Node *));
-    if (!hash_nodes || !hash_tab) MEMORY_ERROR;
+    app.vtx_gno = (int *) ZOLTAN_MALLOC(app.nVtx * sizeof(int));
+    if (!hash_nodes || !hash_tab || !app.vtx_gno) MEMORY_ERROR;
 
     global_ids = zhg->Global_IDs;
 
     /* Assign consecutive numbers based on the order of the ids */
+    /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
+     * KDDKDD  change the way vtx_gno values are assigned. */
+
     for (i=0; i< app.nVtx; i++) {
       hash_tab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
-      hash_nodes[i].gno = app.vtxdist[zz->Proc]+i;
+      hash_nodes[i].gno = app.vtx_gno[i] =  app.vtxdist[zz->Proc]+i;
     }
 
     for (i=0; i< app.nVtx; i++){
@@ -347,15 +366,16 @@ float frac_x, frac_y;
   }
 
   if (app.nEdge > 0) {
-    numwgts = app.nEdge * zz->Edge_Weight_Dim;
+    nwgt = app.nEdge * zz->Edge_Weight_Dim;
     app.pins = ZOLTAN_MALLOC_GID_ARRAY(zz, app.nPins);
     app.edge_sizes = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
     app.pin_procs = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
     app.pin_gno = (int *) ZOLTAN_MALLOC(app.nPins * sizeof(int));
-    if (numwgts) 
-      app.ewgt = (float *) ZOLTAN_MALLOC(numwgts * sizeof(float));
-    if (!app.pins || !app.edge_sizes || !app.pin_procs || !app.pin_gno ||
-        (numwgts && !app.ewgt)) MEMORY_ERROR;
+    app.edge_gno = (int *) ZOLTAN_MALLOC(app.nEdge * sizeof(int));
+    if (nwgt) 
+      app.ewgt = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+    if (!app.pins || !app.edge_sizes || !app.pin_procs || !app.pin_gno  ||
+        !app.edge_gno || (nwgt && !app.ewgt)) MEMORY_ERROR;
 
     ierr = zz->Get_HG_Edge_List(zz->Get_HG_Edge_List_Data, num_gid_entries,
                                 zz->Edge_Weight_Dim, app.nEdge, app.nPins,
@@ -387,6 +407,12 @@ float frac_x, frac_y;
   app.edgedist[0] = 0;
   app.GnEdge = app.edgedist[nProc];
 
+  /* Assign global numbers to edges. */
+  /* KDDKDD  For different (e.g., randomized) initial 2D distributions, 
+   * KDDKDD  change the way edge_gno values are assigned. */
+  for (i = 0; i < app.nEdge; i++)
+    app.edge_gno[i] = app.edgedist[zz->Proc] + i;
+   
   /* 
    * Obtain the global num in range 0 .. (total_num_vtx-1) 
    * for each vertex pin.
@@ -458,7 +484,7 @@ float frac_x, frac_y;
   cnt = 0; 
   for (i = 0; i < app.nEdge; i++) {
     /* processor row for the edge */
-    edge_gno = app.edgedist[zz->Proc] + i;
+    edge_gno = app.edge_gno[i];
     edge_Proc_y = EDGE_TO_PROC_Y(phg, edge_gno);
 
     for (j = 0; j < app.edge_sizes[i]; j++) {
@@ -523,13 +549,10 @@ float frac_x, frac_y;
   phg->nVtx = nVtx;
   phg->nEdge = nEdge;
   phg->nPins = nnz;
+  phg->VtxWeightDim = zz->Obj_Weight_Dim;
+  phg->EdgeWeightDim = zz->Edge_Weight_Dim;
   phg->hindex = hindex;
   phg->hvertex = hvertex;
-
-  /*
-   * KDDKDD -- Not yet handling vertex and edge weights.
-   * KDDKDD -- What should be done with them?
-   */
 
   ierr = Zoltan_HG_Create_Mirror(zz, phg);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
@@ -537,38 +560,156 @@ float frac_x, frac_y;
     goto End;
   }
 
-  if (zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS && phg->comm->nProc_x > 1) {
+  /* Send vertex weights, if any. */
 
-    /*
-     *  Create plan mapping GIDs to their GNOs' processors
-     *  within the row communicator.  This plan will be used at the end
-     *  to create return lists.
+  if (phg->comm->nProc_x > 1 &&  
+      (phg->VtxWeightDim || zz->LB.Return_Lists != ZOLTAN_LB_NO_LISTS)) {
+
+    /* Need a communication plan maping GIDs to their GNOs processors
+     * within a row communicator.  The plan is used to send vertex weights
+     * to the 2D distribution and/or to create return lists after partitioning
      */
 
     for (i = 0; i < app.nVtx; i++)
-      proclist[i] = VTX_TO_PROC_X(phg, app.vtxdist[zz->Proc]+i);
+      proclist[i] = VTX_TO_PROC_X(phg, app.vtx_gno[i]);
       
     msg_tag++;
     ierr = Zoltan_Comm_Create(&(zhg->VtxPlan), app.nVtx, proclist, 
-                              phg->comm->row_comm, msg_tag, &i);
+                              phg->comm->row_comm, msg_tag, &nrecv);
   }
 
+  if (phg->VtxWeightDim || phg->EdgeWeightDim) {
+    nwgt = MAX(phg->nVtx * phg->VtxWeightDim, phg->nEdge * phg->EdgeWeightDim);
+    tmpwgts = (float *) ZOLTAN_MALLOC(nwgt * sizeof(float));
+    if (nwgt && !tmpwgts) MEMORY_ERROR;
+  }
+
+  if (phg->VtxWeightDim) {
+    dim = phg->VtxWeightDim;
+    for (i = 0; i < phg->nVtx; i++) tmpwgts[i] = 0;
+    nwgt = phg->nVtx * dim;
+    phg->vwgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
+    if (nwgt && !phg->vwgt) 
+      MEMORY_ERROR;
+
+    if (phg->comm->nProc_x == 1)  {
+      for (i = 0; i < app.nVtx; i++) {
+        idx = app.vtx_gno[i];
+        for (j = 0; j < dim; j++)
+          tmpwgts[idx * dim + j] = app.vwgt[i * dim + j];
+      }
+    }
+    else {
+      
+      recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+      recv_wgts = (float *) ZOLTAN_MALLOC(nrecv * dim * sizeof(float));
+      if (nrecv && (!recv_gno || !recv_wgts)) MEMORY_ERROR;
+
+      /* Use plan to send weights to the appropriate proc_x. */
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vtx_gno, 
+                            sizeof(int), (char *) recv_gno);
+
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(zhg->VtxPlan, msg_tag, (char *) app.vwgt, 
+                            dim*sizeof(float), (char *) recv_wgts);
+      
+      for (i = 0; i < nrecv; i++) {
+        idx = VTX_GNO_TO_LNO(phg, recv_gno[i]);
+        for (j = 0; j < dim; j++) 
+          tmpwgts[idx * dim + j] = recv_wgts[i * dim + j];
+      }
+
+      ZOLTAN_FREE(&recv_gno); 
+      ZOLTAN_FREE(&recv_wgts);
+    }
+
+    /* Need to gather weights for all vertices within column 
+     * to all processors within column.
+     */
+
+    MPI_Allreduce(tmpwgts, phg->vwgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                  phg->comm->col_comm);
+  }
+
+  if (zhg->VtxPlan && zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 
+    /* Don't need the plan long-term; destroy it now. */
+    Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+
+  /*  Send edge weights, if any */
+
+  if (phg->EdgeWeightDim) {
+    dim = phg->EdgeWeightDim;
+    for (i = 0; i < phg->nEdge; i++) tmpwgts[i] = 0;
+    nwgt = phg->nEdge * dim;
+    phg->ewgt = (float *) ZOLTAN_CALLOC(nwgt, sizeof(float));
+    if (nwgt && !phg->ewgt)
+      MEMORY_ERROR;
+
+    if (phg->comm->nProc_y == 1) {
+      for (i = 0; i < app.nEdge; i++) {
+        idx = app.edge_gno[i];
+        for (j = 0; j < dim; j++)
+          tmpwgts[idx * dim + j] = app.ewgt[i*dim + j];
+      }
+    }
+    else {
+      for (i = 0; i < app.nEdge; i++)
+        proclist[i] = EDGE_TO_PROC_Y(phg, app.edge_gno[i]);
+      
+      msg_tag++;
+      ierr = Zoltan_Comm_Create(&plan, app.nEdge, proclist, 
+                                phg->comm->col_comm, msg_tag, &nrecv);
+
+      recv_gno = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+      recv_wgts = (float *) ZOLTAN_MALLOC(nrecv * dim * sizeof(float));
+      if (nrecv && (!recv_gno || !recv_wgts)) MEMORY_ERROR;
+
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.edge_gno, sizeof(int),
+                            (char *) recv_gno);
+
+      msg_tag++;
+      ierr = Zoltan_Comm_Do(plan, msg_tag, (char *) app.ewgt, 
+                            dim*sizeof(float), (char *) recv_wgts);
+
+      Zoltan_Comm_Destroy(&plan);
+
+      for (i = 0; i < nrecv; i++) {
+        idx = EDGE_GNO_TO_LNO(phg, recv_gno[i]);
+        for (j = 0; j < dim; j++) 
+          tmpwgts[idx * dim + j] = recv_wgts[i * dim + j];
+      }
+      ZOLTAN_FREE(&recv_gno); 
+      ZOLTAN_FREE(&recv_wgts);
+    }
+
+    /* Need to gather weights for all edges within row 
+     * to all processors within row.
+     */
+
+    MPI_Allreduce(tmpwgts, phg->ewgt, nwgt, MPI_FLOAT, MPI_MAX, 
+                  phg->comm->row_comm);
+  }
 
 End:
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     Zoltan_HG_HGraph_Free(phg);
   }
   
-  Zoltan_Multifree(__FILE__, __LINE__, 9,  &app.pins, 
-                                           &app.edge_sizes, 
-                                           &app.pin_procs, 
-                                           &app.pin_gno, 
-                                           &app.vwgt,
-                                           &app.ewgt,
-                                           &app.vtxdist,
-                                           &hash_nodes,
-                                           &hash_tab);
+  Zoltan_Multifree(__FILE__, __LINE__, 11,  &app.pins, 
+                                            &app.edge_sizes, 
+                                            &app.pin_procs, 
+                                            &app.pin_gno, 
+                                            &app.vwgt,
+                                            &app.ewgt,
+                                            &app.vtxdist,
+                                            &app.vtx_gno,
+                                            &app.edge_gno,
+                                            &hash_nodes,
+                                            &hash_tab);
   ZOLTAN_FREE(&tmp);
+  ZOLTAN_FREE(&tmpwgts);
   ZOLTAN_FREE(&nonzeros);
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendbuf);
