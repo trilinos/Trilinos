@@ -176,6 +176,7 @@ int ierr = ZOLTAN_OK;
   strcpy(hgp->global_str, "lin");
   strcpy(hgp->local_str, "hc");
   hgp->check_graph = 1;
+  hgp->bal_tol = zz->LB.Imbalance_Tol;
 
   /* Get application values of parameters. */
   Zoltan_Assign_Param_Vals(zz->Params, HG_params, zz->Debug_Level, zz->Proc,

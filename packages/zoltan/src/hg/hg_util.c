@@ -566,11 +566,13 @@ int ierr = ZOLTAN_OK;
 
   /* Allocate memory for hypergraph edges */
   ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge arrays");
-  if (!(hindex = hg->hindex=(int *)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
-      !(hvertex = hg->hvertex=(int *)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
-  { ierr = ZOLTAN_MEMERR;
-    goto End;
-  }
+  if (hg->nEdge > 0 && hg->nPin > 0)
+    if (!(hindex = hg->hindex=(int *)ZOLTAN_MALLOC((hg->nEdge+1)*sizeof(int)))||
+        !(hvertex = hg->hvertex=(int *)ZOLTAN_MALLOC(hg->nPin*sizeof(int)))    )
+    { ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+
 /* at the moment, the hyperedge weight will be constant !
   if (g->ewgt) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Allocating edge weights");
