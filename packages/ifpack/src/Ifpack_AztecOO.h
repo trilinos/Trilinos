@@ -160,7 +160,7 @@ Ifpack_AztecOO<T>::~Ifpack_AztecOO()
     delete Prec_;
 }
 
-#include "Ifpack_LocalRowMatrix.h"
+#include "Ifpack_LocalFilter.h"
 //==============================================================================
 template<class T>
 int Ifpack_AztecOO<T>::SetParameters(Teuchos::ParameterList& List)
@@ -168,8 +168,8 @@ int Ifpack_AztecOO<T>::SetParameters(Teuchos::ParameterList& List)
 
   Problem_ = new Epetra_LinearProblem;
   //FIXME
-  Ifpack_LocalRowMatrix* LocalMatrix_ = new
-    Ifpack_LocalRowMatrix(Matrix_);
+  Ifpack_LocalFilter* LocalMatrix_ = new
+    Ifpack_LocalFilter(Matrix_);
   Problem_->SetOperator(LocalMatrix_);
   Solver_ = new AztecOO(*Problem_);
 

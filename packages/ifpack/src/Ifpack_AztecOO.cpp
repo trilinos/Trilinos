@@ -11,7 +11,7 @@
 #include "Epetra_RowMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Ifpack_LocalRowMatrix.h"
+#include "Ifpack_LocalFilter.h"
 // FIXME
 #include "Ifpack_Jacobi.h"
 
