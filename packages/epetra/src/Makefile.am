@@ -254,7 +254,7 @@ pkginclude_HEADERS = $(EPETRA_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/epetra
 nodist_pkgexecinclude_HEADERS = Epetra_config.h
 
 # ------------------------------------------------------------------------

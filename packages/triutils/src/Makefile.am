@@ -176,7 +176,7 @@ pkginclude_HEADERS = $(TRIUTILS_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/triutils
 nodist_pkgexecinclude_HEADERS = Triutils_config.h
 
 # ------------------------------------------------------------------------

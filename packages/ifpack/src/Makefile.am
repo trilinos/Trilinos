@@ -205,7 +205,7 @@ pkginclude_HEADERS = $(IFPACK_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/ifpack
 nodist_pkgexecinclude_HEADERS = Ifpack_config.h
 
 # ------------------------------------------------------------------------

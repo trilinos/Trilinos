@@ -265,7 +265,7 @@ pkginclude_HEADERS = $(AZTECOO_H)
 # not a default installation directory, so we had to create it
 # special.
 
-pkgexecincludedir = $(exec_prefix)/include
+pkgexecincludedir = $(exec_prefix)/include/aztecoo
 nodist_pkgexecinclude_HEADERS = AztecOO_config.h
 
 # ------------------------------------------------------------------------
