@@ -23,13 +23,11 @@
 <A NAME="Initialization Example"></A>Initialization Example</H2>
 Before computing new decompositions using Zoltan, an application must initialize
 the load-balancing library. This initialization is accomplished through
-calls to <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>,
-<B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>
-and<B> <A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
+calls to <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
+and <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
 In the <A HREF="#Init Example Fig">figure</A> below, an example of the
 initialization calling sequence is shown. In this example, <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
 is called using the <I>argc</I> and <I>argv</I> arguments to the main program.
-The parameters array is set to default values through a call to <B><A HREF="ug_interface_init.html#LB_Initialize_Params_Array">LB_Initialize_Params_Array</A></B>.
 Then a load-balancing object is returned by the call to <B><A HREF="ug_interface_init.html#LB_Create_Object">LB_Create_Object</A></B>.
 In this example, all processors will be involved in load balancing, as
 <B>MPI_COMM_WORLD</B> is passed as the communicator to be used by the load-balancing

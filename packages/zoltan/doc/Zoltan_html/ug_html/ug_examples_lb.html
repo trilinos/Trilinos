@@ -23,14 +23,15 @@
 <A NAME="Load-Balancing Example"></A>Load-Balancing Example</H2>
 An example of the typical calling sequence for load balancing using Zoltan
 in a finite element application is shown in the <A HREF="#LB Example Fig">figure</A>
-below. An application first selects a load-balancing algorithm; in the
-example, the choice of algorithm and its parameters are read from an application
-input file and sent to the load-balancing library through a call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+below. An application first selects a load-balancing algorithm through a
+call to <B><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
 Appropriate query functions are then registered with the load-balancing
 library through a series of calls to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A></B>.
 In the example, a geometric algorithm, such as RCB, is assumed. Application
 query functions returning lists and coordinates of nodes of the finite
-element mesh are registered. After some computation, load balancing is
+element mesh are registered. Next, some parameter values are set by calls
+to <B><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A></B>.
+After some computation, load balancing is
 invoked by calling <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
 The results of the load balancing include the number of nodes to be imported
 and exported to the processor, lists of global and local IDs of the imported
@@ -44,6 +45,8 @@ in this <A HREF="#LB Example Fig">figure</A> but will be addressed in the
 is completed, the arrays of information about imported and exported nodes
 returned by <B><A HREF="ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
 are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>.
+Finally, when the application is all finished with the load balancing operations,
+it calls <B><A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A></B>.
 <BR>&nbsp;
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
@@ -54,8 +57,8 @@ are freed by a call to <B><A HREF="ug_interface_lb.html#LB_Free_Data">LB_Free_Da
 *exp_global_ids;</TT>&nbsp;
 <BR><TT><A HREF="ug_usage.html#Macro defs">LB_LID</A> *imp_local_ids, *exp_local_ids;</TT>&nbsp;
 
-<P><TT>/* <I>Set load-balancing method and parameters.</I> */</TT>&nbsp;
-<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method, &amp;(lb_params[0]);</TT>&nbsp;
+<P><TT>/* <I>Set load-balancing method.</I> */</TT>&nbsp;
+<BR><TT>read_load_balancing_info_from_input_file(&amp;lb_method);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A>(lb,
 lb_method, &amp;(lb_params[0]));</TT>&nbsp;
 
@@ -68,6 +71,12 @@ user_return_coords, NULL);</TT>&nbsp;
 user_return_num_node, NULL);</TT>&nbsp;
 <BR><TT><A HREF="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</A>(lb, <A HREF="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A>,
 user_return_owned_nodes, NULL);</TT>&nbsp;
+
+<P><TT>/* <I>Reset some load-balancing parameters.</I> */</TT>&nbsp;
+<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
+"imbalance_tol", "0.1");</TT>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</A>(lb, 
+"RCB_Reuse", "TRUE");</TT>
 
 <P><TT>/* <I>Perform computations</I> */</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
@@ -83,7 +92,13 @@ user_return_owned_nodes, NULL);</TT>&nbsp;
 &amp;imp_local_ids, &amp;imp_procs,&nbsp;</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &amp;exp_global_ids, &amp;exp_local_ids,
 &amp;exp_procs);&nbsp;</TT>&nbsp;
-<BR><TT>...</TT></TD>
+<BR><TT>...</TT>
+<BR><TT><A HREF="ug_interface_lb.html#LB_Destroy_Object">LB_Destroy_Object</A>
+(&amp;lb);
+
+<BR><TT>...</TT>
+
+</TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Typical calling sequence for performing load balancing
