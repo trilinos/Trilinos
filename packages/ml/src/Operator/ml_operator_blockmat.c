@@ -79,7 +79,11 @@ int ML_Operator_blockmat_comm( double *x, void *data)
   for (i = 0; i < N_Ke ; i++) temp[i] = x[i];
   for (i = 0; i < Nghost; i++) temp[i+N_Ke] = x[2*N_Ke+2*i];
 
+#ifdef ML_CPP
+  ML_exchange_bdry(temp, (ML_CommInfoOP *)ML_Operator_blockmat_data->Ke_comm_data, N_Ke,mat->comm,
+#else
   ML_exchange_bdry(temp, ML_Operator_blockmat_data->Ke_comm_data, N_Ke,mat->comm,
+#endif
                    ML_OVERWRITE,NULL);
 
   for (i = 0; i < N_Ke ; i++) x[i] = temp[i];
@@ -91,7 +95,11 @@ int ML_Operator_blockmat_comm( double *x, void *data)
   for (i = 0; i < N_Ke ; i++) temp[i] = x[i+N_Ke];
   for (i = 0; i < Nghost; i++) temp[i+N_Ke] = x[2*N_Ke+2*i + 1];
 
+#ifdef ML_CPP
+  ML_exchange_bdry(temp, (ML_CommInfoOP *)ML_Operator_blockmat_data->Ke_comm_data, N_Ke,mat->comm,
+#else
   ML_exchange_bdry(temp, ML_Operator_blockmat_data->Ke_comm_data, N_Ke,mat->comm,
+#endif
                    ML_OVERWRITE,NULL);
 
   for (i = 0; i < N_Ke ; i++) x[i+N_Ke] = temp[i];

@@ -1509,3 +1509,113 @@ int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat,
 
   return 0;	
 }
+
+
+
+
+#ifdef WKC
+/* ******************************************************************** */
+/* apply the operator to a vector and apply boundary conditions         */
+/************************************************************************/
+// NOT BLOCKED ZZZZZZ
+#include "ml_epetra_utils.h"
+int ML_Operator_ApplyAndResetBdryPts(ML_Operator *Op, int inlen, 
+                      Epetra_MultiVector &ep_din, int olen, 
+                      Epetra_MultiVector &ep_dout )
+{
+
+   double ** pp_din;
+   double ** pp_dout;
+   ep_din.ExtractView ( &pp_din );
+   ep_dout.ExtractView ( &pp_dout );
+
+   for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK ++ ) {
+      double *din = pp_din[KK];
+      double *dout = pp_dout[KK];
+
+ 
+
+   int i, length, *list;
+#ifdef ML_TIMING
+   double t0;
+
+   t0 = GetClock();
+#endif
+   if (Op->matvec->ML_id == ML_EMPTY) 
+      pr_error("ML_Operator_ApplyAndRestBdryPts : matvec not defined.\n");
+
+   /* apply grid transfer */
+   if (Op->matvec->ML_id == ML_EXTERNAL)
+{
+        Op->matvec->external((void*)Op->data, inlen, din, olen, dout);
+}
+   else {
+Op->matvec->internal((void*)Op,       inlen, din, olen, dout);
+}
+
+   /* apply boundary condition */
+
+   ML_BdryPts_Get_Dirichlet_Grid_Info(Op->to->BCs, &length, &list);
+   for ( i = 0; i < length; i++ ) dout[list[i]] = 0.0;
+#ifdef ML_TIMING
+   Op->apply_time += (GetClock() - t0);
+#endif
+
+   }
+   return 0;
+}
+
+/* ******************************************************************** */
+/* apply the operator to a vector                                       */
+/************************************************************************/
+int ML_Operator_Apply(ML_Operator *Op, int inlen, Epetra_MultiVector &ep_din, 
+                      int olen, Epetra_MultiVector &ep_dout )
+{
+
+#ifdef ML_TIMING
+   double t0;
+
+   t0 = GetClock();
+#endif
+
+   double ** pp_din;
+   double ** pp_dout;
+   ep_din.ExtractView ( &pp_din );
+   ep_dout.ExtractView ( &pp_dout );
+
+   if (Op->matvec->ML_id == ML_EMPTY)
+      pr_error("ML_Operator_Apply error : matvec not defined\n");
+
+
+   if (Op->matvec->ML_id == ML_EXTERNAL) {
+      if ( (void *)Op->matvec->external == (void *)Epetra_ML_matvec )
+// WKC  Call the new blocked function!!
+         Epetra_ML_matvec_WKC ( Op->data, inlen, (double *)&ep_din, olen,
+                                (double *)&ep_dout );
+
+      else
+         for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
+            double *din = pp_din[KK];
+            double *dout = pp_dout[KK];
+
+            Op->matvec->external(Op->data, inlen, din, olen, dout);
+         }
+   } else { 
+      if ( (void *)Op->matvec->internal == (void *) MSR_matvec )
+         MSR_matvec_WKC ( Op , inlen , (double *)&ep_din , olen , (double *)&ep_dout );
+      else
+
+         for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
+            double *din = pp_din[KK];
+            double *dout = pp_dout[KK];
+
+            Op->matvec->internal(Op,       inlen, din, olen, dout);
+         }
+   }
+#ifdef ML_TIMING
+   Op->apply_time += (GetClock() - t0);
+#endif
+   return 0;
+}
+
+#endif

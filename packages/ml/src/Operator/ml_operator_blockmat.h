@@ -35,8 +35,10 @@ struct ML_Operator_blockmat_data {
   double *vals;
 };
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_Operator_blockmat_matvec(void *, int , double *, int, double *);
@@ -50,8 +52,10 @@ extern void  ML_Operator_blockmatdata_Destroy(void *data);
 extern int ML_Operator_blockmat_set_M_mat_destroy(ML_Operator *blockmat,
 						  int yes_or_no);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 

@@ -54,8 +54,10 @@ typedef struct ML_Matrix_DCSR_Struct
 
 #include "ml_operator.h"
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 
@@ -85,6 +87,12 @@ extern int MSR_getrows(void *data, int N_requested_rows, int requested_rows[],
                        int row_lengths[]);
 
 extern int MSR_matvec(void *Amat, int, double p[], int, double ap[]);
+
+#ifdef WKC
+// WKC -- double * happen to be Epetra_MultiVectors in cognito
+extern int MSR_matvec_WKC(void *Amat, int, double *p, int, double *ap);
+#endif
+
 extern int CSR_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int CSR_ones_matvec(void *Amat, int, double p[], int, double ap[]);
 extern int localCSR_matvec(void *Amat_in, int ilen, double p[], int olen, 
@@ -109,8 +117,10 @@ extern int  ML_Matrix_DCSR_Set_Comm(ML_Matrix_DCSR*,ML_CommInfoOP*,ML_Comm*);
 extern int  ML_Matrix_DCSR_Getrow(void*,int,int*,int,int*,double*,int*);
 extern int  ML_Matrix_DCSR_Matvec(void*,int,double*,int,double*);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 #endif
 

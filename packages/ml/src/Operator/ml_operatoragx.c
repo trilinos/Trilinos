@@ -249,7 +249,11 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
       comm->USR_irecvbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
-                           comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */
@@ -304,7 +308,11 @@ int ML_OperatorAGX_Restrict(void *vop, int inlen, double *din, int outlen,
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
       comm->USR_waitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
-                           comm->USR_comm, (void *) &Request[i]);
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */
@@ -443,7 +451,11 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
       comm->USR_irecvbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */
@@ -495,7 +507,11 @@ int ML_OperatorAGX_Prolongate(void *vop, int inlen, double *din,
       pid   = recv_proc[i];
       index = recv_leng[i] * step;
       comm->USR_waitbytes((void*) &(recv_buf[index]), leng, &pid, &mtype, 
-                           comm->USR_comm, (void *) &Request[i] );
+#ifdef ML_CPP
+                           comm->USR_comm, &Request[i]);
+#else
+                           comm->USR_comm, (void *)&Request[i]);
+#endif
    }
 
    /* ----------------------------------------------------------------- */

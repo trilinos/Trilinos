@@ -13,8 +13,10 @@
 #ifndef __MLMATRIX__
 #define __MLMATRIX__
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int oldML_Mdfy_Prolongator_DirBdry(ML *, int , double *, double *);
@@ -36,8 +38,11 @@ extern int eye_getrows(void *data, int N_requested_rows, int requested_rows[],
 		       int row_lengths[]);
 extern	int eye_matvec(void *Amat_in, int ilen, double p[], int olen, double ap[]);
 extern	int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
+
+#ifndef ML_CPP
 #ifdef __cplusplus
   }
+#endif
 #endif
 
 #endif

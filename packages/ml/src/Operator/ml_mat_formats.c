@@ -925,3 +925,100 @@ int ML_MSR2CSR(struct ML_CSR_MSRdata *csr_data, int Nrows, int *Ncolumns)
   *Ncolumns = Ncols;
   return 0;
 }
+
+
+#ifdef WKC
+// WKC -- note that the double * coming in are really Epetra_MultiVectors
+
+/*********************************************************************/
+/* matvec in MSR format                                              */
+/*********************************************************************/
+int MSR_matvec_WKC(void *Amat_in, int ilen, double *ep_p, int olen, double *ep_ap)
+{
+   int i, j, Nrows, *bindx;
+   double            **big_p;
+   double            *p2, *val, *sum;
+   struct ML_CSR_MSRdata *temp;
+   ML_CommInfoOP     *getrow_comm;
+   ML_Operator       *Amat;
+   ML_Comm           *comm;
+   int *bindx_ptr;
+
+   Amat  = (ML_Operator *) Amat_in;
+   comm  = Amat->comm;
+   Nrows = Amat->matvec->Nrows;
+   if ( ilen != olen && ilen != Nrows ) {
+      printf("MSR_matvec error : lengths not matched.\n");
+      exit(1);
+   }
+   temp  = (struct ML_CSR_MSRdata *) Amat->data;
+   val   = temp->values;
+   bindx = temp->columns;
+
+   Epetra_MultiVector &X ( *(Epetra_MultiVector *)ep_p );
+   Epetra_MultiVector &Y ( *(Epetra_MultiVector *)ep_ap );
+   double **pp_p;
+   double **pp_ap;
+   X.ExtractView ( &pp_p );
+   Y.ExtractView ( &pp_ap );
+
+   getrow_comm= Amat->getrow->pre_comm;
+   if (getrow_comm != NULL) {
+      big_p = new double *[X.NumVectors()];
+   for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
+      big_p[KK] = (double *) ML_allocate((Nrows+getrow_comm->minimum_vec_size+1)*
+                                  sizeof(double));
+      for (i = 0; i < Nrows; i++) big_p[KK][i] = pp_p[KK][i];
+      ML_exchange_bdry(big_p[KK],getrow_comm, Nrows, comm, ML_OVERWRITE,NULL);
+   }
+   }
+   else {
+    big_p = pp_p;
+   }
+
+// This could be blocked,  ZZZZ
+// Weird blocking scheme already
+   sum = new double [X.NumVectors()];
+  j = bindx[0];
+  bindx_ptr = &bindx[j];
+  for (i = 0; i < Nrows; i++) {
+  for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
+      p2 = big_p[KK];
+    sum[KK] =  val[i]*p2[i];
+    while (j+10 < bindx[i+1]) {
+      sum[KK] += val[j+9]*p2[bindx_ptr[9]] +
+	val[j+8]*p2[bindx_ptr[8]] +
+	val[j+7]*p2[bindx_ptr[7]] +
+	val[j+6]*p2[bindx_ptr[6]] +
+	val[j+5]*p2[bindx_ptr[5]] +
+	val[j+4]*p2[bindx_ptr[4]] +
+	val[j+3]*p2[bindx_ptr[3]] +
+	val[j+2]*p2[bindx_ptr[2]] +
+	val[j+1]*p2[bindx_ptr[1]] +
+	val[j]*p2[*bindx_ptr];
+      bindx_ptr += 10;
+      j += 10;
+    }
+    while (j < bindx[i+1]) {
+      sum[KK] += val[j++] * p2[*bindx_ptr++];
+    }
+    Y[KK][i] = sum[KK];
+  }
+  }
+
+  delete [] sum;
+
+  if (getrow_comm != NULL) {
+     for (i = 0; i < Nrows; i++) 
+     for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
+       X[KK][i] = big_p[KK][i];
+     }
+     for ( int KK = 0 ; KK != X.NumVectors() ; KK++ ) {
+        ML_free ( big_p[KK] );
+     }
+     delete [] big_p;
+  }
+  return(1);
+}
+
+#endif

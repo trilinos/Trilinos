@@ -57,9 +57,11 @@ typedef struct ML_OperatorAGX_Struct
 /* functions to manipulate the Operator structure                       */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
 {
+#endif
 #endif
 
 extern int ML_OperatorAGX_Clean_Getrows(ML_Operator **);
@@ -78,8 +80,10 @@ extern int ML_OperatorAGX_Getcols(void *data, int N_requested_rows,
 extern int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
         ML_Operator *Pmat);
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

@@ -33,6 +33,10 @@ typedef struct ML_GetrowFunc_Struct ML_GetrowFunc;
 #include "ml_operatoragx.h"
 #include "ml_vec.h"
 
+#ifdef WKC
+#include <Epetra_MultiVector.h>
+#endif
+
 /* -------------------------------------------------------------------- */
 /* data structure used to store pointers to functions such as matvec    */
 /* used by the operator class.                                          */
@@ -137,8 +141,10 @@ struct amalg_drop {
 /* ******************************************************************** */
 /* ******************************************************************** */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern int ML_Operator_BlockPartition(ML_Operator *matrix, int nLocalNd, 
@@ -175,10 +181,24 @@ extern int ML_Operator_Getrow(ML_Operator *, int, int *, int, int *,
 extern int ML_Operator_Get_Diag(ML_Operator *Amat, int length, double **diag);
 
 extern int ML_Operator_Apply(ML_Operator *, int, double *, int, double *);
+
+#ifdef WKC
+// WKC -- ADDED HEADER
+extern int ML_Operator_Apply(ML_Operator *, int, Epetra_MultiVector &, 
+                             int, Epetra_MultiVector & );
+#endif
+
+
 extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, double *,
                                             int olen, double *);
 extern int ML_Operator_Add(ML_Operator *A, ML_Operator *B, ML_Operator *C,
 			   int matrix_type, double scalar);
+#ifdef WKC
+// WKC -- ADDED HEADER
+extern int ML_Operator_ApplyAndResetBdryPts(ML_Operator *, int, 
+                     Epetra_MultiVector &, int olen, Epetra_MultiVector &);
+#endif
+
 extern int ML_Operator_Move2HierarchyAndDestroy_fragile(ML_Operator *newmat, 
 							ML_Operator *hier);
 
@@ -217,8 +237,10 @@ extern int AZ_get_MSR_arrays(ML_Operator *, int **bindx, double **val);
 extern int ML_Epetra_CRSinsert(ML_Operator *, int, int *, double *, int);
 #endif
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #endif

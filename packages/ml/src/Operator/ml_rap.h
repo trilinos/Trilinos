@@ -21,8 +21,10 @@
 /* external function proto-types                                        */
 /* -------------------------------------------------------------------- */
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
+#endif
 #endif
 
 extern void ML_convert_data_org(ML_Operator *mat, int d_org[], int *rcv,
@@ -95,8 +97,10 @@ extern int ML_determine_Brows(int start, int *end, ML_Operator *Amatrix,
 
 
 
+#ifndef ML_CPP
 #ifdef __cplusplus
 }
+#endif
 #endif
 
 #define ML_matrix_type         0
