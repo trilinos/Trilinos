@@ -111,6 +111,7 @@ AM_CONDITIONAL(BUILD_TEUCHOS, test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_tsfextended" != "Xno" || 
         test "X$ac_cv_use_loca" != "Xno" ||
  	test "X$ac_cv_use_belos" != "Xno" || 
+	test "X$ac_cv_use_amesos" != "Xno" || 
 	test "X$ac_cv_use_anasazi" != "Xno") 
 
 TAC_ARG_ENABLE_DEFAULT_FEATURE(ml, [Build ml], ML)
@@ -127,6 +128,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
  	test "X$ac_cv_use_tsfcore" != "Xno" ||
 	test "X$ac_cv_use_tsfcoreutils" != "Xno" ||
         test "X$ac_cv_use_loca" != "Xno" ||
+	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
 	test "X$ac_cv_use_belos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/teuchos])
