@@ -37,8 +37,16 @@ typedef struct tagVCycle {
                                      from i. */
     int               LevelCnt;   /* 2 * count of external vertices matched to
                                      vertices owned by this proc. */
-                                  /* # of negative values in LevelMap. */
-    int               LevelSndCnt;
+                                  /* # of negative values in LevelMap. 
+                                     Number of external vertices being
+                                     combined into coarse vertices on this
+                                     processor */
+    int               LevelSndCnt; /* number of vertices being returned by
+                                      by the Zoltan_comm_do_reverse(). Used to
+                                      establish the receive buffer size. 
+                                      Number of vertices I own that are being
+                                      combined into a coarse vertex on another
+                                      processor. */
     int              *LevelData;  /* buffer for external vertex information  */
                                   /* LevelData size  = LevelCnt
                                      LevelCnt/2 pairs of (my_lno, external_gno)
