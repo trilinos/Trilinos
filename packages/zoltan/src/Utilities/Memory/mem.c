@@ -531,8 +531,9 @@ int       Zoltan_Malloc_Num()
 
 int Zoltan_Memory_Usage (int type)
    {
-   if      (type == ZOLTAN_MEM_STAT_TOTAL)    return memory_usage.total ;
-   else    (type == ZOLTAN_MEM_STAT_MAXIMUM)  return memory_usage.maximum ;
+   if      (type == ZOLTAN_MEM_STAT_TOTAL)
+      return memory_usage.total ;
+   return memory_usage.maximum ;
    }
 
 /*****************************************************************************/
