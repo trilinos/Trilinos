@@ -178,7 +178,7 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
 
 
     //! If FillComplete() has been called, this query returns true, otherwise it returns false.
-    bool Filled() const;
+    bool Filled() const {return(true);};
 
     //! If matrix is lower triangular, this query returns true, otherwise it returns false.
     bool LowerTriangular() const {return(false);};
@@ -337,6 +337,7 @@ class Epetra_MsrMatrix: public Epetra_Object, public Epetra_CompObject, public v
     Epetra_BlockMap * RangeMap_;
     Epetra_BlockMap * ImportMap_;
     Epetra_Import * Importer_;
+    mutable Epetra_MultiVector * ImportVector_;
  
     int NumGlobalNonzeros_;
     int NumMyNonzeros_;

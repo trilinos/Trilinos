@@ -41,7 +41,10 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
     proc_config_(proc_config),
     Values_(0),
     Indices_(0),
-    MaxNumEntries_(-1)
+    ImportVector_(0),
+    MaxNumEntries_(-1),
+    NormInf_(-1.0),
+    NormOne_(-1.0)
 {
 #ifdef AZTEC_MPI
   MPI_Comm * mpicomm = (MPI_Comm * ) AZ_get_comm(proc_config);
@@ -53,7 +56,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
     throw Comm_->ReportError("AZ_matrix_type must be AZ_MSR_MATRIX", -1);
   int * bindx = Amat->bindx;
   double * val = Amat->val;
-  int NumMyRows_ = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
+  NumMyRows_ = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
   int NumExternal = Amat->data_org[AZ_N_external];
   NumMyCols_ = NumMyRows_ + NumExternal;
   NumMyNonzeros_ = bindx[NumMyRows_] - bindx[0] + NumMyRows_;
@@ -81,6 +84,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
 }
 //==============================================================================
 Epetra_MsrMatrix::~Epetra_MsrMatrix(){
+  if (ImportVector_!=0) delete ImportVector_;
   delete Importer_;
   delete ImportMap_;
   delete DomainMap_;
@@ -94,7 +98,7 @@ int Epetra_MsrMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, do
 					 int * Indices) const 
 {
   int tmpNumEntries;
-  int err = Amat_->getrow(Indices, Values, &tmpNumEntries, Amat_, 1, &Row, Length);
+  int err = AZ_MSR_getrow(Indices, Values, &tmpNumEntries, Amat_, 1, &Row, Length);
   NumEntries = tmpNumEntries;
   return(err-1);
 }
@@ -125,6 +129,14 @@ int Epetra_MsrMatrix::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_
   double ** yptrs;
   X.ExtractView(&xptrs);
   Y.ExtractView(&yptrs);
+  if (Importer()!=0) {
+    if (ImportVector_!=0) {
+      if (ImportVector_->NumVectors()!=NumVectors) { delete ImportVector_; ImportVector_= 0;}
+    }
+    if (ImportVector_==0) ImportVector_ = new Epetra_MultiVector(BlockImportMap(),NumVectors); // Create import vector if needed
+    ImportVector_->Import(X, *Importer(), Insert);
+    ImportVector_->ExtractView(&xptrs);
+  }
   for (int i=0; i<NumVectors; i++)
     Amat_->matvec(xptrs[i], yptrs[i], Amat_, proc_config_);
   
@@ -159,7 +171,7 @@ int Epetra_MsrMatrix::GetRow(int Row) const {
       Indices_ = new int[MaxNumEntries_];
     }
   }
-  ExtractMyRowCopy(Row, MaxNumEntries_, NumEntries, Values_, Indices_);
+  Epetra_MsrMatrix::ExtractMyRowCopy(Row, MaxNumEntries_, NumEntries, Values_, Indices_);
   
   return(NumEntries); // Not implemented
 }
@@ -217,7 +229,7 @@ int Epetra_MsrMatrix::InvColSums(Epetra_Vector& x) const {
   for (i=0; i < NumMyCols_; i++) (*xp)[i] = 0.0;
 
   for (i=0; i < NumMyRows_; i++) {
-    int NumEntries(i);// Copies ith row of matrix into Values_ and Indices_
+    int NumEntries = GetRow(i);// Copies ith row of matrix into Values_ and Indices_
     for (j=0; j < NumEntries; j++) (*xp)[Indices_[j]] += fabs(Values_[j]);
   }
 
