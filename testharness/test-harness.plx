@@ -301,7 +301,7 @@ report($SUMMARY);
                 printEvent("updating...\n\n");
                 my $result = system $command;
                 if ($result) {
-                    report($UPDATE_ERROR);
+                    report($UPDATE_ERROR, $codes{$UPDATE_ERROR});
                     die " *** error updating Trilinos - aborting test-harness ***\n";
                 }
                 system "rm -f $options{'TRILINOS_DIR'}[0]/testharness/temp/update_log.txt";
