@@ -200,6 +200,17 @@ class Transform
 
   NewTypePtr      newObj_;
 
+ private:
+  Transform(const Transform<T,U>& src)
+    :origObj_(src.origObj_), newObj_(src.newObj_) {}
+
+  Transform<T,U>& operator=(const Transform<T,U>& src)
+    {
+      //not currently supported
+      abort();
+      return(*this);
+    }
+
 }; // end class Transform
 
 template<typename T,typename U>
