@@ -157,7 +157,7 @@ SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb oct hg \
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory
 
-ZZ_CSRC		= zz_obj_list.c zz_struct.c \
+ZZ_CSRC		= zz_coord.c zz_obj_list.c zz_struct.c \
 		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c
 ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h
 
