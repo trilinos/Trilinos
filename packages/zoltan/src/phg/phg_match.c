@@ -141,29 +141,56 @@ static int matching_local(ZZ *zz, HGraph *hg, Matching match)
     
 /* local inner product matching among vertices in each proc column */
 /* code adapted from serial matching_ipm method */
+#define MAX_NNZ 50  /* Max number of nonzeros to store for each inner product */
 static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 {
-    int   i, j, k, v1, v2, edge, maxip, maxindex;
-    int   matchcount=0;
+    int   i, j, k, v1, v2, edge, best_vertex;
+    int   matchcount=0, nadj, dense_comm;
+    float maxip;
+    int   *adj=NULL;
     int   *order=NULL;
     float *lips, *gips; /* local and global inner products */
+    float *ptr;
+    char  *sendbuf, *recvbuf; /* comm buffers */
     char  *yo = "matching_col_ipm";
     PHGComm *hgc = hg->comm;  
 
     lips = gips = NULL;
+    sendbuf = recvbuf = NULL;
 
     if (!(lips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
      || !(gips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float)))
+     || !(adj =  (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int))) 
      || !(order = (int*)  ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))){
-        Zoltan_Multifree(__FILE__, __LINE__, 3, &lips, &gips, &order);
+        Zoltan_Multifree(__FILE__, __LINE__, 4, &lips, &gips, &adj, &order);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         return ZOLTAN_MEMERR;
     }
     
     for (i = 0; i < hg->nVtx; i++){
-        lips[i] = 0;
+        lips[i] = gips[i] = .0;
         order[i] = i;
     }
+
+    dense_comm = (hg->nVtx < 2*MAX_NNZ);
+
+    if (!dense_comm){
+
+      /* allocate buffers */
+      if (!(sendbuf = (char*) ZOLTAN_MALLOC(2*MAX_NNZ * sizeof(float)))) {
+        ZOLTAN_FREE(&sendbuf);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+      }
+      if (hgc->myProc_y==0 &&
+        !(recvbuf = (char*) ZOLTAN_MALLOC(2*MAX_NNZ*hgc->nProc_y* sizeof(float)))) {
+        ZOLTAN_FREE(&sendbuf);
+        ZOLTAN_FREE(&recvbuf);
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
+        return ZOLTAN_MEMERR;
+      }
+    }
+
 
     /* random node visit order */
     /* other options may be added later */
@@ -175,6 +202,8 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
 
         if (match[v1] != v1)
             continue;
+
+        nadj = 0;  /* number of neighbors */
 
         /* for every hyperedge containing the vertex */
         for (i = hg->vindex[v1]; i < hg->vindex[v1+1]; i++) {
@@ -188,31 +217,112 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
                      row swapping goes here
                 } 
                 */
+                if (lips[v2]==0.0)   /* v2 is a new neighbor */
+                    adj[nadj++] = v2;
                 lips[v2] += (hg->ewgt ? hg->ewgt[edge] : 1.0);
             }
         }
 
         /* sum up local inner products along proc column */
-        /* for now, sum up i.p. value for all vertices; this is slow! */
         /* to do: 1) ignore vertices already matched 
                   2) use sparse communication for a chunk of vertices */
-        MPI_Allreduce(lips, gips, hg->nVtx, MPI_FLOAT, MPI_SUM, hgc->col_comm);              
-        /* now choose the vector with greatest inner product */
-        /* all processors in a column should get the same answer */
-        maxip = 0;
-        maxindex = -1;
-        for (i = 0; i < hg->nVtx; i++) {
-            v2 = i;
-            if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
-                maxip = gips[v2];
-                maxindex = v2;
-            }
-            lips[v2] = gips[v2] = 0;   /* clear for next iteration */
+
+        /* printf("[%1d] Debug: %d out of %d entries are nonzero\n", 
+          zz->Proc, nadj, hg->nVtx); */
+
+        if (dense_comm){
+          /* dense communication */
+          MPI_Reduce(lips, gips, hg->nVtx, MPI_FLOAT, MPI_SUM, 0,
+            hgc->col_comm);              
+          /* clear lips array for next iter  */
+          for (i = 0; i < hg->nVtx; i++) {
+            lips[i] = 0.0;
+          }
         }
+        else {
+          /* sparse communication */
+          /* we send partial inner products to root row */
+
+          /* pack data into send buffer */
+          ptr = (float *) sendbuf;
+          if (nadj <= MAX_NNZ){
+            for (i=0; i<MIN(nadj,MAX_NNZ); i++){
+              *ptr++ = (float) adj[i];
+              *ptr++ = lips[adj[i]];
+            }
+            if (i<MAX_NNZ-1)
+              *ptr++ = -1.0;
+          }
+          else {
+            /* pick highest values if too many nonzeros */
+            /* naive algorithm to find top MAX_NNZ values */ 
+            for (i=0; i<MAX_NNZ; i++){
+              maxip = 0.0;
+              for (j=0; j<nadj; j++){
+                if (lips[adj[j]]>maxip){
+                  best_vertex = adj[j];
+                  maxip = lips[best_vertex];
+                  lips[best_vertex] = 0.0;
+                }
+              }
+              *ptr++ = (float) best_vertex;
+              *ptr++ = maxip;
+            }
+          }
+
+          /* send partial inner product values to root row */
+          MPI_Gather (sendbuf, 2*MAX_NNZ, MPI_FLOAT, recvbuf,
+           2*MAX_NNZ, MPI_FLOAT, 0, hgc->col_comm);
+
+          /* root unpacks data into gips array */
+          if (hgc->myProc_y==0){
+            nadj = 0;
+            ptr = (float *) recvbuf;
+            for (i=0; i<hgc->nProc_y; i++){
+              for (j=0; j<MAX_NNZ; j++){
+                v2 = *ptr++;
+                if (v2<0) break; /* skip to data from next proc */
+                if (gips[v2]==0.0)
+                  adj[nadj++] = v2;
+                gips[v2] += *ptr++;
+              }
+            }
+          }
+        }
+
+        /* now choose the vector with greatest inner product */
+        /* do only on root proc, then broadcast to column */
+        if (hgc->myProc_y==0){
+          maxip = 0;
+          best_vertex = -1;
+          if (dense_comm){
+            for (i = 0; i < hg->nVtx; i++) {
+              v2 = i;
+              if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+                  maxip = gips[v2];
+                  best_vertex = v2;
+              }
+            }
+          }
+          else { /* sparse */
+            for (i = 0; i < nadj; i++) {
+              v2 = adj[i];
+              if (gips[v2] > maxip && v2 != v1 && match[v2] == v2) {
+                  maxip = gips[v2];
+                  best_vertex = v2;
+              }
+              lips[v2] = gips[v2] = .0; /* clear arrays for next iter */
+            }
+          }
+        } 
+
+        /* broadcast the winner, best_vertex */
+        MPI_Bcast(&best_vertex, 1, MPI_INT, 0, hgc->col_comm);
+
         /* match if inner product > 0 */
-        if (maxindex > -1 && maxip > 0) {
-            match[v1] = maxindex;
-            match[maxindex] = v1;
+        if (best_vertex > -1) {
+            match[v1] = best_vertex;
+            match[best_vertex] = v1;
             matchcount++;
         } 
         
@@ -229,7 +339,12 @@ static int matching_col_ipm(ZZ *zz, HGraph *hg, Matching match)
     printf("\n");
     */
 
-    Zoltan_Multifree(__FILE__, __LINE__, 3, &lips, &gips, &order);
+
+    if (!dense_comm){
+      ZOLTAN_FREE(&sendbuf);
+      ZOLTAN_FREE(&recvbuf);
+    }
+    Zoltan_Multifree(__FILE__, __LINE__, 4, &lips, &gips, &adj, &order);
     return ZOLTAN_OK;
 }
 
