@@ -18,6 +18,9 @@
 #include "MLAPI_MultiVector.h"
 #include "MLAPI_Operator.h"
 #include "Ifpack_Utils.h"
+#ifdef MB_MODIF_QR
+#include "ml_qr_fix.h"
+#endif
 
 using namespace std;
 
@@ -39,7 +42,13 @@ Operator GetRAP(const Operator& R, const Operator& A,
 
   result = ML_Operator_Create (Rmat->comm);
 
-  ML_rap(Rmat, Amat, Pmat, result, GetMatrixType());
+/* The fixing of coarse matrix only works if it is in MSR format */
+   int myMatrixType = ML_MSR_MATRIX;
+   ML_rap(Rmat, Amat, Pmat, result, myMatrixType);
+   result->num_PDEs = Pmat->num_PDEs;
+#ifdef  MB_MODIF_QR
+   ML_fixCoarseMtx(result, myMatrixType);
+#endif/*MB_MODIF_QR*/
 
   Operator op(P.GetDomainSpace(),P.GetDomainSpace(), result);
   return(op);
