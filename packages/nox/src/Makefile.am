@@ -31,11 +31,84 @@
 
 
 # ------------------------------------------------------------------------
+# List of all libraries to install in $(libexecdir)
+# ------------------------------------------------------------------------
+
+lib_LIBRARIES = libnox.a
+
+# ------------------------------------------------------------------------
+# Nox library specifications
+# ------------------------------------------------------------------------
+
+
+libnox_a_SOURCES = \
+	$(ABSTRACT) \
+	$(LINESEARCH) \
+	$(DIRECTION) \
+	$(PARAMETER) \
+	$(SOLVER) \
+	$(STATUSTEST) \
+	$(UTILS) 
+
+nodist_libnox_a_sources = \
+	$(PRERELEASE)
+
+# ------------------------------------------------------------------------
+# List of all headers to install in $(pkgincludedir)
+# ------------------------------------------------------------------------
+
+pkginclude_HEADERS = \
+	$(srcdir)/NOX.H \
+	$(srcdir)/NOX_Common.H \
+	$(ABSTRACT_H) \
+	$(LINESEARCH_H) \
+	$(DIRECTION_H) \
+	$(PARAMETER_H) \
+	$(SOLVER_H) \
+	$(STATUSTEST_H) \
+	$(UTILS_H) 
+
+# ------------------------------------------------------------------------
+# Extra stuff to be included in the distribution
+# ------------------------------------------------------------------------
+
+EXTRA_DIST = \
+	$(srcdir)/NOX_Description.H 
+
+# ------------------------------------------------------------------------
+# Special stuff to install in our special $(pkgexecincludedir)
+# ------------------------------------------------------------------------
+
+# SPECIAL NOTE: NOX_Config.h is a machine-dependent file, so we need
+# to install it in the machine-dependent directory. However, that is
+# not a default installation directory, so we had to create it
+# special.
+
+pkgexecincludedir = $(exec_prefix)/include/nox
+nodist_pkgexecinclude_HEADERS = NOX_Config.h
+
+# ------------------------------------------------------------------------
+# Parts of the code that are not ready to be included in nightly release
+# ------------------------------------------------------------------------
+
+if BUILD_PRERELEASE
+
+PRERELEASE_H = \
+	$(srcdir)/NOX_Direction_QuasiNewton.H
+ 
+
+PRERELEASE = \
+	$(srcdir)/NOX_Direction_QuasiNewton.C
+
+endif
+
+# ------------------------------------------------------------------------
 # For each category, create two variables - NAME and NAME_H. The
 # second is the list of headers to be installed, i.e., any header that
 # might someday be needed by some other code outside NOX. The first is
 # the list of all source and any other header files.
 # ------------------------------------------------------------------------
+
 ABSTRACT = \
 	$(srcdir)/NOX_Abstract_Vector.C  \
 	$(srcdir)/NOX_Abstract_Group.C
@@ -69,14 +142,14 @@ DIRECTION_H = \
 	$(srcdir)/NOX_Direction_Newton.H \
 	$(srcdir)/NOX_Direction_NonlinearCG.H \
 	$(srcdir)/NOX_Direction_Tensor.H \
-	$(srcdir)/NOX_Direction_SteepestDescent.H
+	$(srcdir)/NOX_Direction_SteepestDescent.H 
 
 DIRECTION = \
 	$(srcdir)/NOX_Direction_Manager.C \
 	$(srcdir)/NOX_Direction_Newton.C \
 	$(srcdir)/NOX_Direction_NonlinearCG.C \
 	$(srcdir)/NOX_Direction_Tensor.C \
-	$(srcdir)/NOX_Direction_SteepestDescent.C
+	$(srcdir)/NOX_Direction_SteepestDescent.C 
 
 PARAMETER_H = \
 	$(srcdir)/NOX_Parameter_Entry.H \
@@ -121,34 +194,6 @@ UTILS_H = \
 UTILS = \
 	$(srcdir)/NOX_Utils.C
 
-# ------------------------------------------------------------------------
-# Nox library specifications
-# ------------------------------------------------------------------------
-
-NOX_LIB = libnox.a
-
-NOX_H = \
-	$(srcdir)/NOX.H \
-	$(srcdir)/NOX_Description.H \
-	$(srcdir)/NOX_Common.H \
-	$(ABSTRACT_H) \
-	$(LINESEARCH_H) \
-	$(DIRECTION_H) \
-	$(PARAMETER_H) \
-	$(SOLVER_H) \
-	$(STATUSTEST_H) \
-	$(UTILS_H) 
-
-
-libnox_a_SOURCES = \
-	$(ABSTRACT) \
-	$(LINESEARCH) \
-	$(DIRECTION) \
-	$(PARAMETER) \
-	$(SOLVER) \
-	$(STATUSTEST) \
-	$(UTILS) 
-
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -176,30 +221,6 @@ endif
 libnox_a_LIBADD = $(CXXREPOS)
 
 # ------------------------------------------------------------------------
-# List of all libraries to install in $(libexecdir)
-# ------------------------------------------------------------------------
-
-lib_LIBRARIES = $(NOX_LIB)
-
-# ------------------------------------------------------------------------
-# List of all headers to install in $(pkgincludedir)
-# ------------------------------------------------------------------------
-
-pkginclude_HEADERS = $(NOX_H)
-
-# ------------------------------------------------------------------------
-# Special stuff to install in our special $(pkgexecincludedir)
-# ------------------------------------------------------------------------
-
-# SPECIAL NOTE: NOX_Config.h is a machine-dependent file, so we need
-# to install it in the machine-dependent directory. However, that is
-# not a default installation directory, so we had to create it
-# special.
-
-pkgexecincludedir = $(exec_prefix)/include/nox
-nodist_pkgexecinclude_HEADERS = NOX_Config.h
-
-# ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 
@@ -211,9 +232,6 @@ MAINTAINERCLEANFILES = Makefile.in
 
 MOSTLYCLEANFILES = $(CXXREPOS)
 
-# ------------------------------------------------------------------------
-# Need to NOT distribute NOX_Config.h
-# ------------------------------------------------------------------------
 
 
 
