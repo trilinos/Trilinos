@@ -40,8 +40,9 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Ifpack_PointRelaxation.h"
 #include "Ifpack_BlockRelaxation.h"
-#include "Ifpack_DenseContainer.h"
+#include "Ifpack_SparseContainer.h"
 #include "Ifpack_AdditiveSchwarz.h"
+#include "Ifpack_Amesos.h"
 #include "AztecOO.h"
 
 using namespace Trilinos_Util;
@@ -71,7 +72,7 @@ int CompareBlockOverlap(CrsMatrixGallery& Gallery, int Overlap)
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > Prec(A);
+  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -110,7 +111,7 @@ int CompareBlockSizes(string PrecType,
   RHS.PutScalar(1.0);
   LHS.PutScalar(0.0);
 
-  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > Prec(A);
+  Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Prec(A);
   Prec.SetParameters(List);
   Prec.Compute();
 
@@ -189,7 +190,7 @@ bool ComparePointAndBlock(string PrecType,
     RHS.PutScalar(1.0);
     LHS.PutScalar(0.0);
 
-    Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_DenseContainer> > Block(A);
+    Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation<Ifpack_SparseContainer<Ifpack_Amesos> > > Block(A);
     Block.SetParameters(List);
     Block.Compute();
 

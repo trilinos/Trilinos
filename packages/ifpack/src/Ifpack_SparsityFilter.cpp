@@ -13,12 +13,12 @@ Ifpack_SparsityFilter::Ifpack_SparsityFilter(Epetra_RowMatrix* Matrix,
 					     int AllowedEntries, 
 					     int AllowedBandwidth) :
   A_(*Matrix),
+  MaxNumEntries_(0),
+  MaxNumEntriesA_(0),
   AllowedBandwidth_(AllowedBandwidth),
   AllowedEntries_(AllowedEntries),
-  NumRows_(0),
-  MaxNumEntries_(0),
   NumNonzeros_(0),
-  MaxNumEntriesA_(0)
+  NumRows_(0)
 {
   // use this filter only on serial matrices
   if (A_.Comm().NumProc() != 1) {

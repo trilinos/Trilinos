@@ -193,6 +193,7 @@ private:
   Epetra_RowMatrix& A_;
   //! Maximum entries in each row.
   int MaxNumEntries_;
+  int MaxNumEntriesA_;
 
   //! Maximum allowed bandwidth.
   int AllowedBandwidth_;
@@ -211,7 +212,6 @@ private:
 
   int NumRows_;
   vector<int> NumEntries_;
-  int MaxNumEntriesA_;
 
 };
 

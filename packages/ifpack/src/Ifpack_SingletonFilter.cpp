@@ -12,14 +12,14 @@
 //==============================================================================
 Ifpack_SingletonFilter::Ifpack_SingletonFilter(Epetra_RowMatrix* Matrix) :
   A_(*Matrix),
+  NumSingletons_(0),
+  NumRows_(0),
   NumRowsA_(0),
   MaxNumEntries_(0),
   MaxNumEntriesA_(0),
-  NumRows_(0),
   NumNonzeros_(0),
-  Diagonal_(0),
-  NumSingletons_(0),
-  Map_(0)
+  Map_(0),
+  Diagonal_(0)
 {
   // use this filter only on serial matrices
   if (A_.Comm().NumProc() != 1) {

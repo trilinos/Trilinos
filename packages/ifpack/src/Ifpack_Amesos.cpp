@@ -218,7 +218,7 @@ double Ifpack_Amesos::NormInf() const
 }
 
 //==============================================================================
-char * Ifpack_Amesos::Label() const
+const char* Ifpack_Amesos::Label() const
 {
   return((char*)Label_.c_str());
 }
