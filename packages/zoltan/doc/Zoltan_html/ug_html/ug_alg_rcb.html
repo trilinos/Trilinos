@@ -46,7 +46,7 @@ of two, the set sizes in a particular cut needn't be equal. By adjusting
 the partition sizes appropriately, any number of equally-sized sets can
 be created. If the parallel machine has processors with different speeds,
 sets with nonuniform sizes can also be easily generated. The Zoltan implementation
-of RCB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
+of RCB has several parameters which can be modified by the <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 function.
 <br>&nbsp;
 <br>&nbsp;
@@ -101,8 +101,8 @@ produces.&nbsp;
 <td>Should information about the cuts determining the RCB decomposition
 be retained? It costs a bit of time to do so, but this information is necessary
 if application wants to add more objects to the decomposition via calls
-to <b><a href="ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</a></b>
-or to <b><a href="ug_interface_augment.html#LB_Box_Assign">LB_Box_Assign</a></b>.&nbsp;
+to <b><a href="ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</a></b>
+or to <b><a href="ug_interface_augment.html#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</a></b>.&nbsp;
 <br>0 = don't keep cuts; 1 = keep cuts.</td>
 </tr>
 
@@ -200,27 +200,27 @@ cut.&nbsp;
 <tr>
 <td></td>
 
-<td><b><a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b></td>
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-or <b><a href="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 pair</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><b><a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b></td>
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b></td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b></td>
+<td><b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b></td>
 </tr>
 </table>
 

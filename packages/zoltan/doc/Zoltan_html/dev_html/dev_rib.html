@@ -48,8 +48,8 @@ repeated until the desired number of subdomains is reached.
 <P>The communication of objects being divided is handled by the same routine
 as is used by <B><A HREF="dev_rcb.html">RCB</A></B>.  For applications which
 wish to add more objects to the decomposition at a later time
-(e.g., through <a href="../ug_html/ug_interface_augment.html#LB_Box_Assign"><b>LB_Box_Assign</b></a> or
-<a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>), 
+(e.g., through <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> or
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>), 
 information to
 do this can be retained during the decomposition phase.  This information is
 kept if the parameter <a href="../ug_html/ug_alg_rib.html">KEEP_CUTS</a> is set during the decomposition.
@@ -83,7 +83,7 @@ Parameters</H3>
 
 <P>The parameters used by RIB and their default values are described in the
 <a href="../ug_html/ug_alg_rib.html">RIB</a> section of the <B><A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the <b>LB_Set_RIB_Param</b> subroutine
+Guide</A></B>.  These can be set by use of the <b>Zoltan_Set_RIB_Param</b> subroutine
 in the file <i>rcb/rib.c</i>.
  
 <BR>&nbsp;
@@ -91,7 +91,7 @@ in the file <i>rcb/rib.c</i>.
 <H3>
 Main Routine</H3>
 
-<P>The main routine for RIB is <b>LB_rib</b> in the file <i>rcb/rib.c</i>.
+<P>The main routine for RIB is <b>Zoltan_RIB</b> in the file <i>rcb/rib.c</i>.
 
 <BR>&nbsp;
 <BR>&nbsp;

@@ -29,45 +29,45 @@
 <h2>
 <a NAME="Timing"></a>Timing Routines</h2>
 To assist in performance measurements and profiling, several timing routines
-are included in the Zoltan library. The main timer function, <a href="#LB_Time"><b>LB_Time</b></a>,
+are included in the Zoltan library. The main timer function, <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>,
 provides access to at least two portable timers: one CPU clock and one
 wall clock.
 <p>The routines included in the utility are listed below.
-<blockquote><b><a href="#LB_Time">LB_Time</a></b>: Returns the time (in
+<blockquote><b><a href="#Zoltan_Time">Zoltan_Time</a></b>: Returns the time (in
 seconds) after some fixed reference point in time.
-<br><b><a href="#LB_Time_Resolution">LB_Time_Resolution</a></b>:&nbsp;
+<br><b><a href="#Zoltan_Time_Resolution">Zoltan_Time_Resolution</a></b>:&nbsp;
 The resolution of the specified timer.</blockquote>
 Currently, the following timers are supported:
 <ul>
 <li>
-<i>LB_TIME_WALL </i>: wall-clock time. <br>
+<i>ZOLTAN_TIME_WALL </i>: wall-clock time. <br>
 On most systems, this timer calls MPI_Wtime.</li>
 
 <li>
-<i>LB_TIME_CPU&nbsp;</i> : cpu time.<br>
+<i>ZOLTAN_TIME_CPU&nbsp;</i> : cpu time.<br>
 On most systems, this timer
 calls the ANSI C function clock(). Note that this timer may roll over at
-just 36 minutes. <a href="#LB_Time"><b>LB_Time</b></a> attempts to keep track of the number of roll-overs
-but this feature will work only if <a href="#LB_Time"><b>LB_Time</b></a> is called at least once during
+just 36 minutes. <a href="#Zoltan_Time"><b>Zoltan_Time</b></a> attempts to keep track of the number of roll-overs
+but this feature will work only if <a href="#Zoltan_Time"><b>Zoltan_Time</b></a> is called at least once during
 every period between roll-overs.</li>
 </ul>
 
 Within Zoltan, it is recommended to select which timer to use by setting the
 <a href="../ug_html/ug_alg.html#TIMER">TIMER</a> 
-general parameter via <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+general parameter via <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 The default value of <a href="../ug_html/ug_alg.html#TIMER">TIMER</a> is <i>wall</i>.&nbsp; Zoltan stores an
-integer representation of the selected timing method in <i>lb->Timer</i>.  
-This value should be passed to <a href="#LB_Time"><b>LB_Time</b></a>, 
-as in <a href="#LB_Time"><b>LB_Time</b></a>(<i>lb->Timer</i>).
+integer representation of the selected timing method in <i>zz->Timer</i>.  
+This value should be passed to <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>, 
+as in <a href="#Zoltan_Time"><b>Zoltan_Time</b></a>(<i>zz->Timer</i>).
 <br>&nbsp;
 <p>
 <hr>
-<hr><a NAME="LB_Time"></a>double <b>LB_Time</b>(int <i>timer</i>);&nbsp;
+<hr><a NAME="Zoltan_Time"></a>double <b>Zoltan_Time</b>(int <i>timer</i>);&nbsp;
 <hr>
-<p><b>LB_Time</b> returns the time in seconds, measured from some fixed
+<p><b>Zoltan_Time</b> returns the time in seconds, measured from some fixed
 reference time. Note that the time is <i>not </i>synchronized among different
 processors or processes. The time may be either CPU time or wall-clock
-time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+time. The timer is selected through <b><a href="../ug_html/ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -99,11 +99,11 @@ indicates an error.</td>
 
 <p>
 <hr>
-<hr><a NAME="LB_Time_Resolution"></a>double <b>LB_Time_Resolution</b>(int
+<hr><a NAME="Zoltan_Time_Resolution"></a>double <b>Zoltan_Time_Resolution</b>(int
 <i>timer</i>)
 ;&nbsp;
 <hr>
-<br><b>LB_Time_Resolution</b> returns the resolution of the current timer.
+<br><b>Zoltan_Time_Resolution</b> returns the resolution of the current timer.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -140,16 +140,16 @@ of page</a> for a list of valid values.</td>
 <br>Here is a simple example for how to use the timer routines:
 <tt>
 <ul>double t0, t1, t2;
-<br>LB_Set_Param(lb, "TIMER", "wall");
-<br>t0 = LB_Time(lb->Timer);
+<br>Zoltan_Set_Param(zz, "TIMER", "wall");
+<br>t0 = Zoltan_Time(zz->Timer);
 <br>/* code segment 1&nbsp; */
-<br>t1 = LB_Time(lb->Timer);
+<br>t1 = Zoltan_Time(zz->Timer);
 <br>/* code segment 2&nbsp; */
-<br>t2 = LB_Time(lb->Timer);
+<br>t2 = Zoltan_Time(zz->Timer);
 <br>/* Print timing results */
-<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t1-t0, "Time for part 1:");
-<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t2-t1, "Time for part 2:");
-<br>LB_Print_Stats(lb->Communicator, lb->Debug_Proc, t2-t0, "Total time :");</ul>
+<br>Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, t1-t0, "Time for part 1:");
+<br>Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, t2-t1, "Time for part 2:");
+<br>Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, t2-t0, "Total time :");</ul>
 </tt>
 
 <hr WIDTH="100%">

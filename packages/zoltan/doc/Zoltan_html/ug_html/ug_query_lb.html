@@ -33,28 +33,28 @@ in the Zoltan library. No single algorithm uses all the query functions;
 the <a href="ug_alg.html">algorithm descriptions</a> indicate which query
 functions are required by individual algorithms.
 <blockquote><a href="#General Functions">General Functions</a>
-<blockquote><b><a href="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b>
-<br><b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-<br><b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>
-<br><b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
-<br><b><a href="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</a></b>
-<br><b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>
-<br><b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>
-<br><b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b></blockquote>
 <a href="#Geometry-based Functions">Geometry-Based Functions</a>
-<blockquote><b><a href="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>
-<br><b><a href="#LB_GEOM_FN">LB_GEOM_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
+<br><b><a href="#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b></blockquote>
 <a href="#Graph-based Functions">Graph-Based Functions</a>
-<blockquote><b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b>
-<br><b><a href="#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b>
+<br><b><a href="#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></b></blockquote>
 <a href="#Tree-based Functions">Tree-Based Functions</a>
-<blockquote><b><a href="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</a></b>
-<br><b><a href="#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</a></b>
-<br><b><a href="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</a></b>
-<br><b><a href="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</a></b>
-<br><b><a href="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</a></b>
-<br><b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>
-<br><b><a href="#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
+<br><b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>
+<br><b><a href="#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a></b></blockquote>
 </blockquote>
 
 <hr><hr>
@@ -66,7 +66,7 @@ functions are required by individual algorithms.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_OBJ_FN"></a>typedef int <b>LB_NUM_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);</td>
 </tr>
@@ -75,25 +75,25 @@ int&nbsp;*<i>ierr</i>);</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>FUNCTION <b><i>Get_Num_Obj</i></b>(<i>data, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_OBJ_FN</b> query function returns the number
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_OBJ_FN</b> query function returns the number
 of objects to be balanced that are currently assigned to the processor.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -134,12 +134,12 @@ of objects to be balanced that are currently assigned to the processor.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_OBJ_LIST_FN"></a>typedef void<b> LB_OBJ_LIST_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_OBJ_LIST_FN"></a>typedef void<b> ZOLTAN_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>obj_wgts</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -151,26 +151,26 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_OBJ_LIST_FN</b> query function fills two (three
+<hr WIDTH="100%">An <b>ZOLTAN_OBJ_LIST_FN</b> query function fills two (three
 if weights are used) arrays with information about the objects currently
 assigned to the processor. Both arrays are allocated (and subsequently
-freed) by the load-balancing library using a query to an <b><a href="#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b>
-query function to get the array size. For many algorithms, either an <b>LB_OBJ_LIST_FN</b>
-query function or an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+freed) by the load-balancing library using a query to an <b><a href="#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b>
+query function to get the array size. For many algorithms, either an <b>ZOLTAN_OBJ_LIST_FN</b>
+query function or an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -179,7 +179,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_OBJ_LIST_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_OBJ_LIST_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -253,12 +253,12 @@ may be NULL.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_FIRST_OBJ_FN"></a>typedef int <b>LB_FIRST_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>first_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -269,32 +269,32 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_First_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, first_global_id, first_local_id,
 wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_First_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_First_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_FIRST_OBJ_FN</b> query function initializes an
+<hr WIDTH="100%">An <b>ZOLTAN_FIRST_OBJ_FN</b> query function initializes an
 iteration over objects assigned to the processor. It returns the global
 and local IDs of the first object on the processor. Subsequent calls to
-an <b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b> query function iterate
+an <b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b> query function iterate
 over and return other objects assigned to the processor. This query-function
 pair frees the application from having to build an array of objects (as
-in <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>) and allows the
+in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>) and allows the
 load-balancing routines to obtain only as much information about objects
-as they need. For many algorithms, either an <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-query function or an <b>LB_FIRST_OBJ_FN</b><i>/</i><b><a href="#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+as they need. For many algorithms, either an <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or an <b>ZOLTAN_FIRST_OBJ_FN</b><i>/</i><b><a href="#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -303,7 +303,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_FIRST_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_FIRST_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -395,14 +395,14 @@ of the first object.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NEXT_OBJ_FN"></a>typedef int <b>LB_NEXT_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_OBJ_FN</b>
 (void&nbsp;*<i>&nbsp;data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
 int&nbsp;<i>wgt_dim,</i>
 float&nbsp;*<i>next_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -413,33 +413,33 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_Next_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, next_global_id,
 next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Next_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Next_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NEXT_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">An <b>ZOLTAN_NEXT_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor, returns
 the next object assigned to the processor. The first object of the iteration
-is provided by an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>
+is provided by an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>)
+to build an array of objects (as in <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
-about objects as they need. For many algorithms, either an <b><a href="#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-query function or an <b><a href="#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b>LB_NEXT_OBJ_FN</b>
+about objects as they need. For many algorithms, either an <b><a href="#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+query function or an <b><a href="#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_OBJ_FN</b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -448,7 +448,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NEXT_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NEXT_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -552,7 +552,7 @@ of the next object.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_BORDER_OBJ_FN"></a>typedef int <b>LB_NUM_BORDER_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>nbor_proc</i>, 
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -562,19 +562,19 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>FUNCTION <b><i>Get_Num_Border_Obj</i></b>(<i>data, nbor_proc, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Border_Obj
+<br>INTEGER(Zoltan_INT) :: Get_Num_Border_Obj
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_BORDER_OBJ_FN</b> query function returns
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_BORDER_OBJ_FN</b> query function returns
 the number of objects sharing a processor subdomain border (in the communication
 graph of the application) with a given processor.
 <br>&nbsp;
@@ -582,7 +582,7 @@ graph of the application) with a given processor.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_BORDER_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_BORDER_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -631,13 +631,13 @@ should be returned.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_BORDER_OBJ_LIST_FN"></a>typedef void <b>LB_BORDER_OBJ_LIST_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_BORDER_OBJ_LIST_FN"></a>typedef void <b>ZOLTAN_BORDER_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>obj_wgts</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -649,28 +649,28 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Border_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, global_ids,
 local_ids, wgt_dim, obj_wgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_BORDER_OBJ_LIST_FN</b> query function fills two
+<hr WIDTH="100%">An <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function fills two
 arrays with information about the objects currently assigned to the processor
 that share a processor subdomain border (in the communication graph of
 the application) with a given processor. Both arrays are allocated (and
-subsequently freed) by the load-balancing library using a query to an <b><a href="#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</a></b>
+subsequently freed) by the load-balancing library using a query to an <b><a href="#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a></b>
 query function to get the array size. For certain load-balancing algorithms,
-either an <b>LB_BORDER_OBJ_LIST_FN</b> query function or an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
+either an <b>ZOLTAN_BORDER_OBJ_LIST_FN</b> query function or an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -679,7 +679,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_BORDER_OBJ_LIST_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_BORDER_OBJ_LIST_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -762,13 +762,13 @@ If <i>wgt_dim=0,</i> <i>obj_wgts</i> is undefined and may be NULL.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_FIRST_BORDER_OBJ_FN"></a>typedef int <b>LB_FIRST_BORDER_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>, 
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>first_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>first_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -779,35 +779,35 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_First_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, nbor_proc, first_global_id,
 first_local_id, wgt_dim, first_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_First_Border_Obj
+<br>INTEGER(Zoltan_INT) :: Get_First_Border_Obj
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: first_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: first_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_FIRST_BORDER_OBJ_FN</b> query function initializes
+<hr WIDTH="100%">An <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b> query function initializes
 an iteration over objects assigned to the processor that share a processor
 subdomain border with a given processor. It returns the global and local
 IDs of the first object on the processor along the specified subdomain
-border. Subsequent calls to an <b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
+border. Subsequent calls to an <b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
 query function iterate over and return other objects along the requested
 subdomain border. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>)
+to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
 about objects as they need. For some load-balancing algorithms, either
-an <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b> query
-function or an <b>LB_FIRST_BORDER_OBJ_FN</b>/<b><a href="#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a></b>
+an <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
+function or an <b>ZOLTAN_FIRST_BORDER_OBJ_FN</b>/<b><a href="#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a></b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -816,7 +816,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_FIRST_BORDER_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_FIRST_BORDER_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -915,15 +915,15 @@ of the first object along the processor border.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NEXT_BORDER_OBJ_FN"></a>typedef int <b>LB_NEXT_BORDER_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_BORDER_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
 (void&nbsp;*<i>data</i>, 
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 int&nbsp;<i>nbor_proc</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>next_obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -934,36 +934,36 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_Next_Border_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 nbor_proc, next_global_id, next_local_id, wgt_dim, next_obj_wgt, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Next_Border_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Next_Border_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: nbor_proc&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: nbor_proc&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: next_obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NEXT_BORDER_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">An <b>ZOLTAN_NEXT_BORDER_OBJ_FN</b> query function is an iterator
 function which, when given an object assigned to the processor and a neighboring
 processor ID, returns the next object assigned to the processor that shares
 a subdomain border with the neighboring processor. The first object of
-the iteration is provided by an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>
+the iteration is provided by an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>
 query function. This query-function pair frees the application from having
-to build an array of objects (as in <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b>)
+to build an array of objects (as in <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b>)
 and allows the load-balancing routines to obtain only as much information
 about objects as they need. For some load-balancing algorithms, either
-an <b><a href="#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a></b> query
-function or an <b><a href="#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a></b>/<b>LB_NEXT_BORDER_OBJ_FN</b>
+an <b><a href="#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a></b> query
+function or an <b><a href="#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a></b>/<b>ZOLTAN_NEXT_BORDER_OBJ_FN</b>
 query-function pair must be registered to allow the load-balancing library
 to obtain needed object information; however, both query options need not
 be provided.
@@ -972,7 +972,7 @@ be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NEXT_BORDER_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NEXT_BORDER_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1086,7 +1086,7 @@ of the next object along the processor border.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_GEOM_FN"></a>typedef int <b>LB_NUM_GEOM_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_GEOM_FN"></a>typedef int <b>ZOLTAN_NUM_GEOM_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1095,21 +1095,21 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>FUNCTION <b><i>Get_Num_Geom</i></b>(<i>data, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Geom&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Geom&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_GEOM_FN</b> query function returns the number
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_GEOM_FN</b> query function returns the number
 of values needed to express the geometry of an object. For example, for
 a two-dimensional mesh-based application, (<i>x</i>,<i>y</i>) coordinates
-are needed to describe an object's geometry; thus the <b>LB_NUM_GEOM_FN</b>
+are needed to describe an object's geometry; thus the <b>ZOLTAN_NUM_GEOM_FN</b>
 query function should return the value of two. For a similar three-dimensional
 application, the return value should be three.
 <br>&nbsp;
@@ -1117,7 +1117,7 @@ application, the return value should be three.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_GEOM_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_GEOM_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1158,12 +1158,12 @@ application, the return value should be three.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_GEOM_FN"></a>typedef void <b>LB_GEOM_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_GEOM_FN"></a>typedef void <b>ZOLTAN_GEOM_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 double&nbsp;*<i>geom_vec</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1174,29 +1174,29 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Geom</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id, geom_vec,
 ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>REAL(LB_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>REAL(Zoltan_DOUBLE), INTENT(OUT), DIMENSION(*) :: geom_vec&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_GEOM_FN</b> query function returns a vector of
+<hr WIDTH="100%">An <b>ZOLTAN_GEOM_FN</b> query function returns a vector of
 geometry values for a given object. The geometry vector is allocated by
-the load-balancing library to be of the size returned by an <b><a href="#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>
+the load-balancing library to be of the size returned by an <b><a href="#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_GEOM_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_GEOM_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1263,12 +1263,12 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_EDGES"></a>typedef int <b>LB_NUM_EDGES_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_EDGES"></a>typedef int <b>ZOLTAN_NUM_EDGES_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -1277,21 +1277,21 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_Num_Edges</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Edges&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Edges&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_EDGES_FN</b> query function returns the number
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_EDGES_FN</b> query function returns the number
 of edges for a given object in the communication graph of the application
 (i.e., the number of objects with which the given object must share information).
 <br>&nbsp;
@@ -1299,7 +1299,7 @@ of edges for a given object in the communication graph of the application
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_EDGES_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_EDGES_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1371,13 +1371,13 @@ returned.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_EDGE_LIST_FN"></a>typedef void <b>LB_EDGE_LIST_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_EDGE_LIST_FN"></a>typedef void <b>ZOLTAN_EDGE_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>nbor_global_id</i>,
 int&nbsp;*<i>nbor_procs</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>ewgts</i>,
@@ -1390,34 +1390,34 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Edge_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 nbor_global_id, nbor_procs, wgt_dim, ewgts, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: nbor_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: ewgts&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_EDGE_LIST_FN</b> query function returns lists
+<hr WIDTH="100%">An <b>ZOLTAN_EDGE_LIST_FN</b> query function returns lists
 of global IDs, processor IDs, and optionally edge weights for objects sharing
 an edge with a given object (i.e., objects that must share information
 with the given object). The arrays for the returned neighbor lists are
 allocated by the load-balancing library; their size is determined by a
-call to an <b><a href="#LB_NUM_EDGES">LB_NUM_EDGES_FN</a></b> query function.
+call to an <b><a href="#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a></b> query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_EDGE_LIST_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_EDGE_LIST_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1508,7 +1508,7 @@ return value of <i>ewgts </i>is undefined and may be NULL.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_COARSE_OBJ_FN"></a>typedef int <b>LB_NUM_COARSE_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_NUM_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -1517,25 +1517,25 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
 <td>FUNCTION <b><i>Get_Num_Coarse_Obj</i></b>(<i>data, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Coarse_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_COARSE_OBJ_FN</b> query function returns
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_COARSE_OBJ_FN</b> query function returns
 the number of objects (elements) in the initial coarse grid.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_COARSE_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_COARSE_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1576,12 +1576,12 @@ the number of objects (elements) in the initial coarse grid.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_COARSE_OBJ_LIST_FN"></a>typedef void <b>LB_COARSE_OBJ_LIST_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_COARSE_OBJ_LIST_FN"></a>typedef void <b>ZOLTAN_COARSE_OBJ_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_ids</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_ids</i>,
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
 int&nbsp;*<i>vertices</i>,
@@ -1597,21 +1597,21 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Coarse_Obj_List</i></b>(<i>data, num_gid_entries, num_lid_entries, global_ids, local_ids,
 assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
 in_vertex, out_vertex&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: in_order, ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: in_order, ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_COARSE_OBJ_LIST_FN</b> query function returns
+<hr WIDTH="100%">An <b>ZOLTAN_COARSE_OBJ_LIST_FN</b> query function returns
 lists of global IDs, local IDs, vertices, and order information for all
 objects (elements) of the initial coarse grid. The vertices are a designation
 on the local processor of the vertices such that if two elements share
@@ -1620,14 +1620,14 @@ The user may choose to provide the order in which the elements should be
 traversed or have Zoltan determine the order. If the user provides the
 order, then entry and exit vertices for a path through the elements may
 also be provided. The arrays for the returned values are allocated by the
-load-balancing library; their size is determined by a call to an <b><a href="#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</a></b>
+load-balancing library; their size is determined by a call to an <b><a href="#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_COARSE_OBJ_LIST_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_COARSE_OBJ_LIST_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1709,7 +1709,7 @@ each element in the user provided traversal. It is required only if the
 user is providing the order for the coarse grid objects (i.e., <i>in_order</i>==1)
 and allowing Zoltan to select the order of the children in at least one
 invocation of
-<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
 </tr>
 
 <tr>
@@ -1734,12 +1734,12 @@ element in the user provided traversal. The same provisions hold as for
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_FIRST_COARSE_OBJ_FN"></a>typedef int <b>LB_FIRST_COARSE_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_FIRST_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
 int&nbsp;*<i>vertices</i>,
@@ -1754,26 +1754,26 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_First_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 assigned, num_vert, vertices, in_order, in_vertex, out_vertex, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_First_Coarse_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_First_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vert, in_order, in_vertex,
 out_vertex, ierr&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_FIRST_COARSE_OBJ_FN</b> query function initializes
+<hr WIDTH="100%">An <b>ZOLTAN_FIRST_COARSE_OBJ_FN</b> query function initializes
 an iteration over the objects of the initial coarse grid. It returns the
 global ID, local ID, vertices, and order information for the first object
-(element) of the initial coarse grid. Subsequent calls to an <b><a href="#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</a></b>
+(element) of the initial coarse grid. Subsequent calls to an <b><a href="#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a></b>
 iterate over and return other objects from the coarse grid. The vertices
 are a designation on the local processor of the vertices such that if two
 elements share a vertex then the same integer designates that vertex in
@@ -1786,7 +1786,7 @@ may also be provided.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_FIRST_COARSE_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_FIRST_COARSE_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -1865,7 +1865,7 @@ which they should be traversed, or 0 if Zoltan should determine the order.</td>
 user provided traversal. It is required only if the user is providing the
 order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
 Zoltan to select the order of the children in at least one invocation of
-<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
 </tr>
 
 <tr>
@@ -1909,14 +1909,14 @@ object in the coarse grid.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NEXT_COARSE_OBJ_FN"></a>typedef int <b>LB_NEXT_COARSE_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NEXT_COARSE_OBJ_FN"></a>typedef int <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_global_id</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>next_local_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_global_id</i>, 
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>next_local_id</i>, 
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
 int&nbsp;*<i>vertices</i>,
@@ -1931,35 +1931,35 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>FUNCTION <b><i>Get_Next_Coarse_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 next_global_id, next_local_id,
 assigned, num_vert, vertices, in_vertex, out_vertex, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Next_Coarse_Obj&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Next_Coarse_Obj&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: next_local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: assigned, num_vertex, in_vertex, out_vertex,
 ierr&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: vertices&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NEXT_COARSE_OBJ_FN</b> query function is an iterator
+<hr WIDTH="100%">An <b>ZOLTAN_NEXT_COARSE_OBJ_FN</b> query function is an iterator
 function that returns the next object in the initial coarse grid. initializes
 an iteration over the objects of the initial coarse grid. The first object
-of the iteration is provided by an <b><a href="#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</a></b>
+of the iteration is provided by an <b><a href="#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NEXT_COARSE_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NEXT_COARSE_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -2043,7 +2043,7 @@ to interior nodes of the tree.</td>
 user provided traversal. It is required only if the user is providing the
 order for the coarse grid objects (i.e., <i>in_order</i>==1) and allowing
 Zoltan to select the order of the children in at least one invocation of
-<b><a href="#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a></b>.</td>
+<b><a href="#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a></b>.</td>
 </tr>
 
 <tr>
@@ -2087,12 +2087,12 @@ object in the coarse grid.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_NUM_CHILD_FN"></a>typedef int <b>LB_NUM_CHILD_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_NUM_CHILD_FN"></a>typedef int <b>ZOLTAN_NUM_CHILD_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -2101,21 +2101,21 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 
 <td>FUNCTION <b><i>Get_Num_Child</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Get_Num_Child&nbsp;
+<br>INTEGER(Zoltan_INT) :: Get_Num_Child&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_NUM_CHILD_FN</b> query function returns the number
+<hr WIDTH="100%">An <b>ZOLTAN_NUM_CHILD_FN</b> query function returns the number
 of children of the element with the given global and local IDs. If the
 element has not been refined, the number of children is 0.
 <br>&nbsp;
@@ -2123,7 +2123,7 @@ element has not been refined, the number of children is 0.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_NUM_CHILD_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_NUM_CHILD_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -2192,18 +2192,18 @@ the parameter <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_CHILD_LIST_FN"></a>typedef void <b>LB_CHILD_LIST_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_CHILD_LIST_FN"></a>typedef void <b>ZOLTAN_CHILD_LIST_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>parent_gid</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>parent_lid</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>child_gids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>child_lids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>parent_gid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>parent_lid</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>child_gids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>child_lids</i>,
 int&nbsp;*<i>assigned</i>,
 int&nbsp;*<i>num_vert</i>,
 int&nbsp;*<i>vertices</i>,
-<b>LB_REF_TYPE</b>&nbsp;*<i>ref_type</i>,
+<b>ZOLTAN_REF_TYPE</b>&nbsp;*<i>ref_type</i>,
 int&nbsp;*<i>in_vertex</i>,
 int&nbsp;*<i>out_vertex</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -2216,23 +2216,23 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 child_gids, child_lids, assigned, num_vert, vertices, ref_type, in_vertex,
 out_vertex, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: parent_gid&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: parent_lid&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: parent_gid&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: parent_lid&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: child_gids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: child_lids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: assigned, num_vert, vertices,
 in_vertex, out_vertex&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ref_type, ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_CHILD_LIST_FN</b> query function returns lists
+<hr WIDTH="100%">An <b>ZOLTAN_CHILD_LIST_FN</b> query function returns lists
 of global IDs, local IDs, vertices, and order information for all children
 of a refined element. The vertices are a designation on the local processor
 of the vertices such that if two elements share a vertex then the same
@@ -2242,14 +2242,14 @@ determine the order based on the type of element refinement used to create
 the children. If the user provides the order, then entry and exit vertices
 for a path through the elements may also be provided. The arrays for the
 returned values are allocated by the load-balancing library; their size
-is determined by a call to an <b><a href="#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</a></b>
+is determined by a call to an <b><a href="#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a></b>
 query function.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_CHILD_LIST_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_CHILD_LIST_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -2339,26 +2339,26 @@ The values currently supported are:</td>
 <tr>
 <td></td>
 
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_TRI_BISECT</i> Bisection of triangles.</td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_TRI_BISECT</i> Bisection of triangles.</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_QUAD_QUAD</i> Quadrasection of quadrilaterals.</td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_QUAD_QUAD</i> Quadrasection of quadrilaterals.</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_OTHER_REF</i> All other forms of
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_OTHER_REF</i> All other forms of
 refinement.</td>
 </tr>
 
 <tr>
 <td></td>
 
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>LB_IN_ORDER</i> Traverse the children
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>ZOLTAN_IN_ORDER</i> Traverse the children
 in the order in which they are provided.</td>
 </tr>
 
@@ -2368,7 +2368,7 @@ in the order in which they are provided.</td>
 <td>Upon return, an array containing the vertex through which to enter
 each element in the user provided traversal. It is required only if the
 user is providing the order for the children of this element (i.e.,
-<i>ref_type</i>==<i>LB_IN_ORDER</i>)
+<i>ref_type</i>==<i>ZOLTAN_IN_ORDER</i>)
 but does not provide the order for the children of at least one of those
 children.</td>
 </tr>
@@ -2395,12 +2395,12 @@ element in the user provided traversal. The same provisions hold as for
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_CHILD_WEIGHT_FN"></a>typedef void<b> LB_CHILD_WEIGHT_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_CHILD_WEIGHT_FN"></a>typedef void<b> ZOLTAN_CHILD_WEIGHT_FN</b>
 (void&nbsp;*<i>data</i>,
 int&nbsp;<i>num_gid_entries</i>,
 int&nbsp;<i>num_lid_entries</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>global_id</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;<i>local_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>global_id</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;<i>local_id</i>,
 int&nbsp;<i>wgt_dim</i>,
 float&nbsp;*<i>obj_wgt</i>,
 int&nbsp;*<i>ierr</i>);&nbsp;</td>
@@ -2412,21 +2412,21 @@ int&nbsp;*<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Get_Child_Weight</i></b>(<i>data, num_gid_entries, num_lid_entries, global_id, local_id,
 wgt_dim, obj_wgt, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: wgt_dim&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: wgt_dim&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(*) :: obj_wgt&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_CHILD_WEIGHT_FN</b> query function returns the
+<hr WIDTH="100%">An <b>ZOLTAN_CHILD_WEIGHT_FN</b> query function returns the
 weight of an object. Interior nodes of the refinement tree as well as the
 leaves are allowed to have weights.
 <br>&nbsp;
@@ -2434,7 +2434,7 @@ leaves are allowed to have weights.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_CHILD_WEIGHT_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_CHILD_WEIGHT_FN_TYPE</b></td>
 </tr>
 
 <tr>

@@ -36,15 +36,15 @@ versions with the developers' own versions.
 
 <P>On Sandia's MPCRL LAN (building 980), CVS is accessed through the following
 path:
-<BLOCKQUOTE>/Net/proj/zoltan/arch/solaris/bin/cvs&nbsp; for Sun workstations
+<BLOCKQUOTE>/Net/local/proj/zoltan/arch/solaris/bin/cvs&nbsp; for Sun workstations
 running Solaris.
 </BLOCKQUOTE>
 Developers must set the CVSROOT environment variable to the repository
 directory:
-<BLOCKQUOTE>setenv CVSROOT /Net/proj/zoltan/CVS</BLOCKQUOTE>
+<BLOCKQUOTE>setenv CVSROOT /Net/local/proj/zoltan/CVS</BLOCKQUOTE>
 To get a working copy of the Zoltan software, the CVS check-out facility
 is used:
-<BLOCKQUOTE>cvs checkout Zoltan</BLOCKQUOTE>
+<BLOCKQUOTE>cvs checkout -P Zoltan</BLOCKQUOTE>
 Other useful CVS commands update a developer's working directory, merging
 the developer's changes with those in the repository:
 <BLOCKQUOTE>cvs update</BLOCKQUOTE>

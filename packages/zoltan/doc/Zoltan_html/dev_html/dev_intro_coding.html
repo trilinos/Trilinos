@@ -61,7 +61,7 @@ should be included in most source files of the load-balancing library.
 The use of global variables is highly discouraged in the load-balancing
 library. In limited cases, static global variables can be tolerated within
 a source file of an algorithm. However, developers should keep in mind
-that several load-balancing structures may be used by an application, with
+that several Zoltan structures may be used by an application, with
 each structure using the same algorithm. Thus, global variables set by one
 instance of load balancing may be reset by other instances, causing errors
 in the algorithms. Global variable names may also conflict with variables
@@ -73,9 +73,9 @@ Structures</A> for ideas on avoiding the use of global variables.
 <H3>
 <A NAME="functions"></A>Function Names</H3>
 In order to avoid name conflicts with applications and other libraries,
-all non-static functions should be prepended with <B>LB_</B><I>.</I>&nbsp; As a general
+all non-static functions should be prepended with <B>Zoltan_</B><I>.</I>&nbsp; As a general
 rule, each new word in a function name should be capitalized (for example,
-<b>LB_Help_Migrate</b>). 
+<b>Zoltan_Help_Migrate</b>). 
 Internal Zoltan functions do not have to follow these rules.
 
 <H3>
@@ -105,7 +105,7 @@ Memory Management in Zoltan Load-Balancing Algorithms</a> for more
 information. <p>
 
 One of the few data types specified for use in the Zoltan interface is the
-<a href="../ug_html/ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>
+<a href="../ug_html/ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>
 type used for global and local object identifiers (IDs).  Macros simplifying
 and providing error checking for 
 <a href="dev_lb_types.html">ID allocation and manipulation</a>
@@ -116,7 +116,7 @@ are provided.
 <A NAME="return"></A>Errors, Warnings, and Return Codes</H3>
 If an error or warning occurs in the Zoltan library, 
 a message should be printed to
-<i>stderr</i> (using one of the <a href="#LB_PRINT">printing macros</a> below),
+<i>stderr</i> (using one of the <a href="#ZOLTAN_PRINT">printing macros</a> below),
 all memory allocated in the current function should be freed, and
 an <a href="../ug_html/ug_interface.html#Error Codes">error code</a> should be returned. 
 The Zoltan library should never "exit";
@@ -128,9 +128,9 @@ of Zoltan.
 Efforts are underway to bring existing code up-to-date, and to follow this
 rule in all future development.
 <BR>&nbsp;
-<hr><a NAME="LB_PRINT"></a>
-<b>LB_PRINT_ERROR</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
-<b>LB_PRINT_WARN</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<hr><a NAME="ZOLTAN_PRINT"></a>
+<b>ZOLTAN_PRINT_ERROR</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
+<b>ZOLTAN_PRINT_WARN</b>(int <i>processor_number</i>, char *<i>function_name</i>, char *<i>message</i>)<br>
 <hr>
 Macros for printing error and warning messages in Zoltan.  The macros are
 defined in <i>lb/lb_const.h</i>.

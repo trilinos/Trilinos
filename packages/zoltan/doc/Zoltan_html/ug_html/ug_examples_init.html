@@ -30,27 +30,27 @@
 <A NAME="Initialization Example"></A>Initialization Example</H2>
 Before computing new decompositions using Zoltan, an application must initialize
 the load-balancing library. This initialization is accomplished through
-calls to <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
-and <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.
+calls to <B><A HREF="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</A></B>
+and <B><A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A></B>.
 In the <A HREF="#Init Example Fig">figure</A> below, an example of the
-initialization calling sequence is shown. In this example, <B><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A></B>
+initialization calling sequence is shown. In this example, <B><A HREF="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</A></B>
 is called using the <I>argc</I> and <I>argv</I> arguments to the main program.
-Then a pointer to a load-balancing structure is returned by the call to 
-<B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.
+Then a pointer to a Zoltan structure is returned by the call to 
+<B><A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A></B>.
 In this example, all processors will be involved in load balancing, as
 <B>MPI_COMM_WORLD</B> is passed as the communicator to be used by the load-balancing
 routines.
 <BR>&nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR NOSAVE>
-<TD NOSAVE><A NAME="Init Example Fig"></A><TT>/* Initialize the LB library
+<TD NOSAVE><A NAME="Init Example Fig"></A><TT>/* Initialize the Zoltan library
 */</TT>&nbsp;
-<BR><TT>struct LB_Struct *lb;</TT>&nbsp;
+<BR><TT>struct Zoltan_Struct *zz;</TT>&nbsp;
 <BR><TT>float version;</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
-<BR><TT><A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(argc,
+<BR><TT><A HREF="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</A>(argc,
 argv, &amp;version);</TT>&nbsp;&nbsp;
-<BR><TT>lb = <A HREF="ug_interface_init.html#LB_Create">LB_Create</A>(MPI_COMM_WORLD);</TT></TD>
+<BR><TT>zz = <A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A>(MPI_COMM_WORLD);</TT></TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Typical calling sequence for initialization of
@@ -60,14 +60,14 @@ the Zoltan library.</I></CAPTION>
 
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR NOSAVE>
-<TD NOSAVE><TT>! Initialize the LB library</TT>&nbsp;
-<BR><TT>type(LB_Struct), pointer :: lb</TT>&nbsp;
-<BR><TT>real(lb_float) version</TT>&nbsp;
-<BR><TT>integer(lb_int) ierr</TT>&nbsp;
+<TD NOSAVE><TT>! Initialize the Zoltan library</TT>&nbsp;
+<BR><TT>type(Zoltan_Struct), pointer :: zz</TT>&nbsp;
+<BR><TT>real(Zoltan_FLOAT) version</TT>&nbsp;
+<BR><TT>integer(Zoltan_INT) ierr</TT>&nbsp;
 <BR><TT>...</TT>&nbsp;
-<BR><TT>ierr = <A HREF="ug_interface_init.html#LB_Initialize">LB_Initialize</A>(version)
+<BR><TT>ierr = <A HREF="ug_interface_init.html#Zoltan_Initialize">Zoltan_Initialize</A>(version)
 ! without argc and argv</TT>&nbsp;&nbsp;
-<BR><TT>lb => <A HREF="ug_interface_init.html#LB_Create">LB_Create</A>(MPI_COMM_WORLD)</TT></TD>
+<BR><TT>zz => <A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A>(MPI_COMM_WORLD)</TT></TD>
 </TR>
 
 <CAPTION ALIGN=BOTTOM><I>Fortran version of initialization

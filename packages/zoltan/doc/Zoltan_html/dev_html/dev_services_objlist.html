@@ -32,42 +32,42 @@ Most algorithms in Zoltan obtain information about all objects located on
 a processor.  
 To provide this information, an application can register
 either an 
-<b><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function
 or an
-<b><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>
 /
-<b><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query function pair.
 Algorithms can call these query functions to obtain object information.
 <p>
 However, because this operation is common to many algorithms, Zoltan provides a
 single function that can be called from an algorithm to obtain a list of object
-IDs and weights (if appropriate).  This function, <b>LB_Get_Obj_List</b>, 
+IDs and weights (if appropriate).  This function, <b>Zoltan_Get_Obj_List</b>, 
 provides a uniform method of calling
 the registered query functions supplied by the application.  Its use simplifies
 new algorithm development and code maintenance in Zoltan.
 An example of its use can be found in <i>rcb/shared.c</i>.
 <p>
 <hr>
-<hr><a NAME="LB_Get_Obj_List"></a>void<b> LB_Get_Obj_List</b>(
-struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b> *<i>lb</i>, 
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b> <i>global_ids</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b> <i>local_ids</i>,
+<hr><a NAME="Zoltan_Get_Obj_List"></a>void<b> Zoltan_Get_Obj_List</b>(
+struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b> *<i>zz</i>, 
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>global_ids</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b> <i>local_ids</i>,
 int <i>wdim</i>,
 float *<i>objwgts</i>, 
 int *<i>ierr</i>);
 <hr>
-<b>LB_Get_Obj_List</b> returns arrays of global and local IDs (and object
+<b>Zoltan_Get_Obj_List</b> returns arrays of global and local IDs (and object
 weights, if 
 <b><a href="../ug_html/ug_alg.html#General_Parameters">OBJ_WEIGHT_DIM</a></b> 
 is not zero) for all objects on a processor.
  It is a convenient function that frees algorithm developers from calling an
-<b><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function
 or an
-<b><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/
-<b><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/
+<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 query function pair directly.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE>
@@ -78,10 +78,10 @@ query function pair directly.
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>lb</i></td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>zz</i></td>
 
-<td>A pointer to the load-balancing structure created by 
-<b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<td>A pointer to the Zoltan structure created by 
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -132,14 +132,14 @@ return value of objwgts is undefined and may be NULL.
 <tr>
 <td></td>
 
-<td><b><a href="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a></b></td>
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
 </tr>
 
 <tr>
 <td></td>
 
-<td><b><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-or <b><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></b>
+<td><b><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+or <b><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a></b>/<b><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></b>
 pair</td>
 </tr>
 

@@ -43,7 +43,7 @@ The structure of the code is as follows: Each package
 (<a href="http://www-users.cs.umn.edu/~karypis/metis/parmetis/">ParMETIS</a>,
 <a href="http://www.gre.ac.uk/jostle">Jostle</a>)
 has its own wrapper routine that performs initialization and sets parameters.
-The main routine is <b>LB_ParMetis_Jostle,</b> which constructs an appropriate
+The main routine is <b>Zoltan_ParMetis_Jostle,</b> which constructs an appropriate
 graph data structure using Zoltan's query functions. After the graph structure
 has been constructed, the appropriate library is called and the import/export
 list is created and returned.
@@ -62,7 +62,7 @@ the total number of objects. The construction of the local (on-processor)
 part of the graph is straightforward. When an edge goes between objects
 that reside on different processors, global communication is required.
 We use Zoltan's unstructured communication library for this. A hash function
-(<a href="dev_services_hash.html"><b>LB_Hash</b></a>) is used to efficiently map global IDs to integers. 
+(<a href="dev_services_hash.html"><b>Zoltan_Hash</b></a>) is used to efficiently map global IDs to integers. 
 The graph construction algorithm has parallel complexity
 <i>O(max<sub>j</sub> {n<sub>j</sub>+m<sub>j</sub>+p})</i>, where
 <i>n<sub>j</sub></i> is the number of objects on processor j, 
@@ -82,7 +82,7 @@ Note that for multidimensional weights, each weight component is scaled independ
 <p>Currently Zoltan constructs and discards the entire graph structure
 every time a graph-based method (ParMETIS or Jostle) is called. Incremental
 update of the graph structure may be supported in the future.
-<p>The graph construction code in <b>LB_ParMetis_Jostle </b>can also be
+<p>The graph construction code in <b>Zoltan_ParMetis_Jostle </b>can also be
 used to interface with other graph-based algorithms. Please contact the
 <a href="mailto:zoltan@cs.sandia.gov">Zoltan developers</a> if you have a parallel partitioning 
 or load-balancing code and would like assistance with interfacing it to Zoltan.
@@ -128,16 +128,16 @@ arrays are local.
 <h3>
 Parameters</h3>
 Zoltan supports the most common parameters in ParMETIS and Jostle. These
-parameters are parsed in the package-specific wrapper routine (<b>LB_ParMetis</b>
-or <b>LB_Jostle</b>) and later passed on to the desired library via <b>LB_ParMetis_Jostle</b>.
+parameters are parsed in the package-specific wrapper routine (<b>Zoltan_ParMetis</b>
+or <b>Zoltan_Jostle</b>) and later passed on to the desired library via <b>Zoltan_ParMetis_Jostle</b>.
 <p>In addition, Zoltan has one graph parameter of its own: <a href="../ug_html/ug_alg_parmetis.html">CHECK_GRAPH</a>.
-This parameter is set in <b>LB_ParMetis_Jostle</b> and specifies the amount
+This parameter is set in <b>Zoltan_ParMetis_Jostle</b> and specifies the amount
 of verification that is performed on the constructed graph. For example, it
 is required that the graph is symmetric and that the weights are non-negative.
 <h3>
 Main routine</h3>
-The main routine is <b>LB_ParMetis_Jostle</b> but it should always be accessed
-through either <b>LB_ParMetis</b> or <b>LB_Jostle</b>.
+The main routine is <b>Zoltan_ParMetis_Jostle</b> but it should always be accessed
+through either <b>Zoltan_ParMetis</b> or <b>Zoltan_Jostle</b>.
 <p>
 <hr WIDTH="100%">
 <br>[<a href="dev.html">Table of Contents</a>&nbsp; |&nbsp; <a href="dev_reftree.html">Next:&nbsp;

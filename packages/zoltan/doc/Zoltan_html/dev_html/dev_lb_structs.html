@@ -28,27 +28,27 @@
 
 <h2>
 <a NAME="interface_structs"></a>Data Structures</h2>
-The <b>LB_Struct</b> data structure is the main data structure for interfacing
+The <b>Zoltan_Struct</b> data structure is the main data structure for interfacing
 between the load-balancing library and the application. The application
-creates an <b>LB_Struct</b> data structure through a call to <b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.
+creates an <b>Zoltan_Struct</b> data structure through a call to <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.
 Fields of the data structure are then set through calls from the application
-to load-balancing interface routines such as <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
-and <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.
-The fields of the <b>LB_Struct</b> data structure are listed and described
-in the <a href="#LB_Struct">table</a> below. See the <a href="../ug_html/ug.html">Zoltan
-User's Guide</a> for descriptions of the function types used in the <b>LB_Struct</b>.
-<p>An <b>LB_Struct</b> data structure <i>lb</i> is passed from the application
-to the load-balancing library in the call to <b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
+to load-balancing interface routines such as <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
+and <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.
+The fields of the <b>Zoltan_Struct</b> data structure are listed and described
+in the <a href="#Zoltan_Struct">table</a> below. See the <a href="../ug_html/ug.html">Zoltan
+User's Guide</a> for descriptions of the function types used in the <b>Zoltan_Struct</b>.
+<p>An <b>Zoltan_Struct</b> data structure <i>zz</i> is passed from the application
+to the load-balancing library in the call to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 This data structure is passed to the individual load-balancing routines.
-The <i>lb->Data_Structure</i> pointer field should point to the main data
+The <i>zz->Data_Structure</i> pointer field should point to the main data
 structures of the particular load-balancing algorithm so that the data
-structures may be preserved for future calls to <b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+structures may be preserved for future calls to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 and so that separate instances of the same load-balancing algorithm (with
-different <b>LB_Struct</b> structures) can be used by the application.
+different <b>Zoltan_Struct</b> structures) can be used by the application.
 <br>&nbsp;
 <center><table BORDER WIDTH="90%" NOSAVE >
 <tr>
-<th><a NAME="LB_Struct"></a>Fields of LB_Struct</th>
+<th><a NAME="Zoltan_Struct"></a>Fields of Zoltan_Struct</th>
 
 <th>Description</th>
 </tr>
@@ -56,21 +56,21 @@ different <b>LB_Struct</b> structures) can be used by the application.
 <tr>
 <td VALIGN=TOP>MPI_Comm <i>Communicator</i></td>
 
-<td>The MPI communicator to be used by the load-balancing structure; set
+<td>The MPI communicator to be used by the Zoltan structure; set
 by
-<b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>int <i>Proc</i></td>
 
-<td>The rank of the processor within <i>Communicator</i>; set in <b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<td>The rank of the processor within <i>Communicator</i>; set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>int <i>Num_Proc</i></td>
 
-<td>The number of processors in <i>Communicator</i>; set in <b><a href="../ug_html/ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<td>The number of processors in <i>Communicator</i>; set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -79,7 +79,7 @@ by
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">global ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
 </td>
 </tr>
@@ -90,7 +90,7 @@ for <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>.
 <td>The number of array entries used to represent a 
 <a href="dev_lb_types.html">local ID</a>.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>.
 </td>
 </tr>
@@ -110,21 +110,21 @@ from Fortran.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>LB_METHOD <i>Method</i></td>
+<td VALIGN=TOP>ZOLTAN_LB_METHOD <i>Method</i></td>
 
 <td>An enumerated type designating which load-balancing algorithm should
-be used with this load-balancing structure; set by <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.</td>
+be used with this Zoltan structure; set by <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>LB_FN *<i> LB_Fn</i></td>
 
 <td>A pointer to the load-balancing function specified by <i>Method</i>;
-set in <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.</td>
+set in <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>LB_PARAM *<i> Params</i></td>
+<td VALIGN=TOP>ZOLTAN_PARAM *<i> Params</i></td>
 
 <td>A linked list of string pairs. The first item in each pair is the name
 of a modifiable parameter. The second string is the new value the parameter
@@ -138,7 +138,7 @@ for different LB structures to have different parameter settings.</td>
 
 <td>The degree of load balance which is considered acceptable.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 </tr>
 
@@ -147,7 +147,7 @@ for <a href="../ug_html/ug_alg.html#IMBALANCE_TOL">IMBALANCE_TOL</a>.</td>
 
 <td>Flag indicating whether algorithms used should be forced to be deterministic;
 used to obtain completely reproducible results.&nbsp; Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 </tr>
 
@@ -156,7 +156,7 @@ for <a href="../ug_html/ug_alg.html#DETERMINISTIC">DETERMINISTIC</a>.</td>
 
 <td>Number of weights per object to be used in load balancing.
 &nbsp; Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 </tr>
 
@@ -165,16 +165,16 @@ for <a href="../ug_html/ug_alg.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a>.</td>
 
 <td>For graph algorithms, number of weights per edge to be used in load
 balancing.  Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#COMM_WEIGHT_DIM">COMM_WEIGHT_DIM</a>.</td>
 </tr>
 <tr>
 <td VALIGN=TOP>int <i>Return_Lists</i></td>
 
 <td>A flag indicating whether the application wants import and/or export
-lists returned by <a href="../ug_html/ug_interface_lb.html#LB_Balance"><b>LB_Balance</b></a>.
+lists returned by <a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 </tr>
 
@@ -183,7 +183,7 @@ for <a href="../ug_html/ug_alg.html#RETURN_LISTS">RETURN_LISTS</a>.</td>
 
 <td>  Timer type that is currently active.
 Set via a call to
-<b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+<b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#TIMER">TIMER</a>.</td>
 </tr>
 <tr>
@@ -194,360 +194,360 @@ pointer is cast by the algorithm to the appropriate data type.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a>
 *<i> Get_Num_Edges</i></td>
 
 <td>A pointer to an application-registered function that returns the number
-of edges associated with a given object. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Edges_Fn</a></b>.</td>
+of edges associated with a given object. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Edges_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Edges_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Edges</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Edges_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Edges</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Edges_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a>
 *<i> Get_Edge_List</i></td>
 
 <td>A pointer to an application-registered function that returns a given
-object's neighbors along its edges. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Edge_List_Fn</a></b>.</td>
+object's neighbors along its edges. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Edge_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Edge_List_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Edge_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Edge_List_Fn</a></b>.</td>
+pointed to by <i>Get_Edge_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Edge_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a>
 *<i> Get_Num_Geom</i></td>
 
 <td>A pointer to an application-registered function that returns the number
 of geometry values needed to describe the positions of objects. Set in
-<b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Geom_Fn</a></b>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Geom_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Geom_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Geom</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Geom_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Geom</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Geom_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a>
 *<i> Get_Geom</i></td>
 
 <td>A pointer to an application-registered function that returns a given
-object's geometry information (e.g., coordinates). Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Geom_Fn</a></b>.</td>
+object's geometry information (e.g., coordinates). Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Geom_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Geom_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Geom</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Geom_Fn</a></b>.</td>
+pointed to by <i>Get_Geom</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Geom_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a>
 *<i> Get_Num_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the number
-of objects assigned to the processor before load balancing. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Obj_Fn</a></b>.</td>
+of objects assigned to the processor before load balancing. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a>
 *<i> Get_Obj_List</i></td>
 
 <td>A pointer to an application-registered function that returns arrays
-of objects assigned to the processor before load balancing. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Obj_List_Fn</a></b>.</td>
+of objects assigned to the processor before load balancing. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Obj_List_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Obj_List_Fn</a></b>.</td>
+pointed to by <i>Get_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a>
 *<i> Get_First_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the first
 object assigned to the processor before load balancing. Used with <i>Get_Next_Obj</i>
-as an iterator over all objects. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Obj_Fn</a></b>.</td>
+as an iterator over all objects. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_First_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_First_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_First_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a>
 *<i> Get_Next_Obj</i></td>
 
 <td>A pointer to an application-registered function that, given an object
 assigned to the processor, returns the next object assigned to the processor
 before load balancing. Used with <i>Get_First_Obj</i> as an iterator over
-all objects. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Obj_Fn</a></b>.</td>
+all objects. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Next_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Next_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Next_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_BORDER_OBJ_FN">LB_NUM_BORDER_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_BORDER_OBJ_FN">ZOLTAN_NUM_BORDER_OBJ_FN</a>
 *<i> Get_Num_Border_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the number
-of objects sharing a subdomain border with a given processor. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Border_Obj_Fn</a></b>.</td>
+of objects sharing a subdomain border with a given processor. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Border_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Border_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_BORDER_OBJ_LIST_FN">LB_BORDER_OBJ_LIST_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_BORDER_OBJ_LIST_FN">ZOLTAN_BORDER_OBJ_LIST_FN</a>
 *<i> Get_Border_Obj_List</i></td>
 
 <td>A pointer to an application-registered function that returns arrays
 of objects that share a subdomain border with a given processor. Set in
-<b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Border_Obj_List_Fn</a></b>.</td>
+<b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Border_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Border_Obj_List_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Border_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Border_Obj_List_Fn</a></b>.</td>
+pointed to by <i>Get_Border_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Border_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_FIRST_BORDER_OBJ_FN">LB_FIRST_BORDER_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_BORDER_OBJ_FN">ZOLTAN_FIRST_BORDER_OBJ_FN</a>
 *<i> Get_First_Border_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the first
 object sharing a subdomain border with a given processor. Used with <i>Get_Next_Border_Obj</i>
-as an iterator over objects along borders. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Border_Obj_Fn</a></b>.</td>
+as an iterator over objects along borders. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_First_Border_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_First_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Border_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_First_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NEXT_BORDER_OBJ_FN">LB_NEXT_BORDER_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_BORDER_OBJ_FN">ZOLTAN_NEXT_BORDER_OBJ_FN</a>
 *<i> Get_Next_Border_Obj</i></td>
 
 <td>A pointer to an application-registered function that, given an object,
 returns the next object sharing a subdomain border with a given processor.
 Used with <i>Get_First_Border_Obj</i> as an iterator over objects along
-borders. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Border_Obj_Fn</a></b>.</td>
+borders. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Next_Border_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Next_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Border_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Next_Border_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Border_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_COARSE_OBJ_FN">LB_NUM_COARSE_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_COARSE_OBJ_FN">ZOLTAN_NUM_COARSE_OBJ_FN</a>
 *<i> Get_Num_Coarse_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the number
-of objects in the initial coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Coarse_Obj_Fn</a></b>.</td>
+of objects in the initial coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Coarse_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Coarse_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_COARSE_OBJ_LIST_FN">LB_COARSE_OBJ_LIST_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_COARSE_OBJ_LIST_FN">ZOLTAN_COARSE_OBJ_LIST_FN</a>
 *<i> Get_Coarse_Obj_List</i></td>
 
 <td>A pointer to an application-registered function that returns arrays
-of objects in the initial coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Coarse_Obj_List_Fn</a></b>.</td>
+of objects in the initial coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Coarse_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Coarse_Obj_List_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Coarse_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Coarse_Obj_List_Fn</a></b>.</td>
+pointed to by <i>Get_Coarse_Obj_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Coarse_Obj_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_FIRST_COARSE_OBJ_FN">LB_FIRST_COARSE_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_FIRST_COARSE_OBJ_FN">ZOLTAN_FIRST_COARSE_OBJ_FN</a>
 *<i> Get_First_Coarse_Obj</i></td>
 
 <td>A pointer to an application-registered function that returns the first
 object of the initial coarse grid. Used with <i>Get_Next_Coarse_Obj</i>
-as an iterator over all objects in the coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Coarse_Obj_Fn</a></b>.</td>
+as an iterator over all objects in the coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_First_Coarse_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_First_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_First_Coarse_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_First_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_First_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NEXT_COARSE_OBJ_FN">LB_NEXT_COARSE_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NEXT_COARSE_OBJ_FN">ZOLTAN_NEXT_COARSE_OBJ_FN</a>
 *<i> Get_Next_Coarse_Obj</i></td>
 
 <td>A pointer to an application-registered function that, given an object
 in the initial coarse grid, returns the next object in the coarse grid.
 Used with <i>Get_First_Coarse_Obj</i> as an iterator over all objects in
-the coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Coarse_Obj_Fn</a></b>.</td>
+the coarse grid. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Next_Coarse_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Next_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Next_Coarse_Obj_Fn</a></b>.</td>
+pointed to by <i>Get_Next_Coarse_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Next_Coarse_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_NUM_CHILD_FN">LB_NUM_CHILD_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_NUM_CHILD_FN">ZOLTAN_NUM_CHILD_FN</a>
 *<i> Get_Num_Child</i></td>
 
 <td>A pointer to an application-registered function that returns the number
-of refinement children of an object. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Child_Fn</a></b>.</td>
+of refinement children of an object. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Child_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Num_Child_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Num_Child</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Num_Child_Fn</a></b>.</td>
+pointed to by <i>Get_Num_Child</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Num_Child_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_CHILD_LIST_FN">LB_CHILD_LIST_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_CHILD_LIST_FN">ZOLTAN_CHILD_LIST_FN</a>
 *<i> Get_Child_List</i></td>
 
 <td>A pointer to an application-registered function that returns arrays
-of objects that are refinement children of a given object. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Child_List_Fn</a></b>.</td>
+of objects that are refinement children of a given object. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Child_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Child_List_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Child_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Child_List_Fn</a></b>.</td>
+pointed to by <i>Get_Child_List</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Child_List_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#LB_CHILD_WEIGHT_FN">LB_CHILD_WEIGHT_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_lb.html#ZOLTAN_CHILD_WEIGHT_FN">ZOLTAN_CHILD_WEIGHT_FN</a>
 *<i> Get_Child_Weight</i></td>
 
 <td>A pointer to an application-registered function that returns the weight
-of an object. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Child_Weight_Fn</a></b>.</td>
+of an object. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Child_Weight_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Child_Weight_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Child_Weight</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Child_Weight_Fn</a></b>.</td>
+pointed to by <i>Get_Child_Weight</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Child_Weight_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>LB_MIGRATE <i>Migrate</i></td>
+<td VALIGN=TOP>ZOLTAN_MIGRATE <i>Migrate</i></td>
 
 <td>A structure with data used by the migration tools. See the <a href="#Migrate_Fields">table</a>
 below.</td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Fields of the </i><b>LB_Struct</b><i> data structure.</i></caption>
+<caption ALIGN=BOTTOM><i>Fields of the </i><b>Zoltan_Struct</b><i> data structure.</i></caption>
 </table></center>
 
-<p>Each <b>LB_Struct</b> data structure has an <b>LB_Migrate</b> sub-structure.
-The <b>LB_Migrate</b> structure contains data used by the migration tools,
+<p>Each <b>Zoltan_Struct</b> data structure has an <b>ZOLTAN_MIGRATE</b> sub-structure.
+The <b>ZOLTAN_MIGRATE</b> structure contains data used by the migration tools,
 including pointers to object packing and unpacking routines. These pointers
-are set through the load-balancing interface routine <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-and are used in <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>.
-The fields of the <b>LB_Migrate</b> structure are listed and described
+are set through the load-balancing interface routine <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+and are used in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+The fields of the <b>ZOLTAN_MIGRATE</b> structure are listed and described
 in in the following <a href="#Migrate_Fields">table</a>.
 <br>&nbsp;
 <center><table BORDER WIDTH="90%" NOSAVE >
 <tr>
-<th><a NAME="Migrate_Fields"></a>Fields of LB_Migrate</th>
+<th><a NAME="Migrate_Fields"></a>Fields of ZOLTAN_MIGRATE</th>
 
 <th>Description</th>
 </tr>
@@ -557,132 +557,132 @@ in in the following <a href="#Migrate_Fields">table</a>.
 
 <td>A flag indicating whether the load-balancing library should perform
 auto-migration for the application. If true, the load-balancing library
-calls <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+calls <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 to move objects to their new processors; if false, data migration is left
-to the user. Set in <b><a href="dev_services_params.html#LB_Set_Param">LB_Set_Param</a></b>
+to the user. Set in <b><a href="dev_services_params.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 for <a href="../ug_html/ug_alg.html#AUTO_MIGRATE">AUTO_MIGRATE</a>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a>
 *<i> Pre_Migrate</i></td>
 
 <td>A pointer to an application-registered function that performs pre-processing
-for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-before data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pre_Migrate_Fn</a></b>.</td>
+for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+before data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Pre_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Pre_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pre_Migrate_Fn</a></b>.</td>
+pointed to by <i>Pre_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pre_Migrate_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a>
 *<i> Mid_Migrate</i></td>
 
 <td>A pointer to an application-registered function that performs processing
-between the packing and unpacking operations in <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>.
-Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Mid_Migrate_Fn</a></b>.</td>
+between the packing and unpacking operations in <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.
+Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Mid_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Mid_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Mid_Migrate_Fn</a></b>.</td>
+pointed to by <i>Mid_Migrate</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Mid_Migrate_Fn</a></b>.</td>
 </tr>
 
 <tr NOSAVE>
-<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_query_mig.html#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</a>
+<td VALIGN=TOP NOSAVE><a href="../ug_html/ug_query_mig.html#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a>
 *<i>Post_Migrate</i></td>
 
 <td>A pointer to an application-registered function that performs post-processing
-for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-after data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Post_Migrate_Fn</a></b>.</td>
+for data migration. The function is called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+after data migration is performed. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_Fn</a></b>.</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>void *<i>Post_Migrate_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Post_Migrate</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Post_Migrate_Fn</a></b>.&nbsp;</td>
+pointed to by <i>Post_Migrate</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Post_Migrate_Fn</a></b>.&nbsp;</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a>
 *<i> Get_Obj_Size</i></td>
 
 <td>A pointer to an application-registered function that returns the size
-(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>.&nbsp;
-Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Obj_Size_Fn</a></b>.</td>
+(in bytes) of data objects to be migrated. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>.&nbsp;
+Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Get_Obj_Size_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Get_Obj_Size</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Obj_Size_Fn</a></b>.</td>
+pointed to by <i>Get_Obj_Size</i>.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Obj_Size_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a>
 *<i> Pack_Obj</i></td>
 
 <td>A pointer to an application-registered function that packs all data
 for a given object into a communication buffer provided by the migration
-tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-for each object to be exported.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pack_Obj_Fn</a></b>.</td>
+tools in preparation for data-migration communication. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+for each object to be exported.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Pack_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Pack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Pack_Obj_Fn</a></b>.</td>
+pointed to by <i>Pack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Pack_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a>
+<td VALIGN=TOP><a href="../ug_html/ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a>
 *<i> Unpack_Obj</i></td>
 
 <td>A pointer to an application-registered function that unpacks all data
 for a given object from a communication buffer after the communication
-for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-for each imported object.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Unpack_Obj_Fn</a></b>.</td>
+for data migration is completed. Called by <b><a href="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+for each imported object.&nbsp; Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP>void <i>*Unpack_Obj_Data</i></td>
 
 <td>A pointer to data provided by the user that will be passed to the function
-pointed to by <i>Unpack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="../ug_html/ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_Unpack_Obj_Fn</a></b>.</td>
+pointed to by <i>Unpack_Obj</i>. Set in <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="../ug_html/ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_Unpack_Obj_Fn</a></b>.</td>
 </tr>
 
-<caption ALIGN=BOTTOM><i>Fields of the </i><b>LB_Migrate</b><i> data structure.</i></caption>
+<caption ALIGN=BOTTOM><i>Fields of the </i><b>ZOLTAN_MIGRATE</b><i> data structure.</i></caption>
 </table></center>
 
 <p>For each pointer to an application registered function in the
-<b>LB_Struct</b>
-and <b>LB_Migrate</b> data structures there is also a pointer to a Fortran
-application registered function, of the form LB_FUNCNAME_FORT_FN *<i>Get_Funcname_Fort</i>.
+<b>Zoltan_Struct</b>
+and <b>ZOLTAN_MIGRATE</b> data structures there is also a pointer to a Fortran
+application registered function, of the form ZOLTAN_FUNCNAME_FORT_FN *<i>Get_Funcname_Fort</i>.
 These are for use within the Fortran interface. The load-balancing routines
 should invoke the usual application registered function regardless of whether
-the load balancing structure was created from C or Fortran.
+the Zoltan structure was created from C or Fortran.
 
 
 

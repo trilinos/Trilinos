@@ -40,17 +40,17 @@ Two categories of query functions are used by the library:
 In each category, a variety of query functions can be registered by the
 user. The query functions have a function type, describing their purpose
 to the load-balancing library.&nbsp; Functions can be registered with a
-load-balancing structure in two ways:&nbsp; through calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or through calls to query-function-specific functions <b><a href="ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.&nbsp;
-When a function is registered through a call to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,
-its function type is passed in the <i>fn_type</i> argument. When <b><a href="ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>
+Zoltan structure in two ways:&nbsp; through calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or through calls to query-function-specific functions <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
+When a function is registered through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
+its function type is passed in the <i>fn_type</i> argument. When <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>
 is used to register functions, the type of the function is implicit in
 the <i>fn_ptr</i> argument.&nbsp; Each function description below includes
 both its function type and function prototype.
 <p>Some algorithms in the load-balancing library require that certain query
 functions be registered by the application; for example, geometric partitioning
 algorithms such as Recursive Coordinate Bisection (RCB) require that an
-<b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 be registered. When a default value is specified below, the query function
 type is optional; if a function of that type is not registered, the default
 values are used. Details of which query functions are required by particular
@@ -70,8 +70,8 @@ query routines can subsequently use the local ID to index directly into
 the local storage array. See <a href="ug_usage.html#Data Types for Object IDs">Data
 Types for Object IDs</a> for a description of global and local IDs. All
 of the functions have, as their first argument, a pointer to data that
-is passed to the load-balancing library through <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b><a href="ug_interface_init.html#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.&nbsp;
+is passed to the load-balancing library through <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b><a href="ug_interface_init.html#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.&nbsp;
 This data is not used by the load-balancing library. A different set of
 data can be supplied for each registered function. For example, if the
 local ID is an index into an array of data structures, then the data pointer

@@ -29,20 +29,20 @@
 <H2>
 <A NAME="parallel_compute"></A>Parallel Computing Routines</H2>
 Parallel computing utilities are described in this section.
-<BLOCKQUOTE><B><A HREF="#LB_Print_Sync_Start">LB_Print_Sync_Start</A></B>
-/ <B><A HREF="#LB_Print_Sync_End">LB_Print_Sync_End</A></B>:&nbsp; provide
+<BLOCKQUOTE><B><A HREF="#Zoltan_Print_Sync_Start">Zoltan_Print_Sync_Start</A></B>
+/ <B><A HREF="#Zoltan_Print_Sync_End">Zoltan_Print_Sync_End</A></B>:&nbsp; provide
 synchronization of processors for I/O (with <A HREF="#print_sync_example">example</A>).
-<BR><B><A HREF="#LB_Print_Stats">LB_Print_Stats</A></B> : print statistics
+<BR><B><A HREF="#Zoltan_Print_Stats">Zoltan_Print_Stats</A></B> : print statistics
 about a parallel variable.</BLOCKQUOTE>
 
 <hr>
-<HR><A NAME="LB_Print_Sync_Start"></A>void <B>LB_Print_Sync_Start</B>(struct
-<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B> *<I>lb</I>,
+<HR><A NAME="Zoltan_Print_Sync_Start"></A>void <B>Zoltan_Print_Sync_Start</B>(struct
+<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
 
-<P>The <B>LB_Print_Sync_Start</B> function is adapted from work of John
-Shadid for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#LB_Print_Sync_End">LB_Print_Sync_End</A></B>,
+<P>The <B>Zoltan_Print_Sync_Start</B> function is adapted from work of John
+Shadid for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#Zoltan_Print_Sync_End">Zoltan_Print_Sync_End</A></B>,
 it provides synchronization so that one processor in the load-balancing
 communicator can complete its I/O before the next processor begins its
 I/O. This synchronization utility is useful for debugging algorithms, as
@@ -50,11 +50,11 @@ it allows the output from processors to be produced in an organized manner.
 It is, however, a serializing process, and thus, does not scale well to
 large number of processors.
 
-<P><B>LB_Print_Sync_Start</B> should called by each processor in the MPI
-communicator before the desired I/O is performed. <B><A HREF="#LB_Print_Sync_End">LB_Print_Sync_End</A></B>
+<P><B>Zoltan_Print_Sync_Start</B> should called by each processor in the MPI
+communicator before the desired I/O is performed. <B><A HREF="#Zoltan_Print_Sync_End">Zoltan_Print_Sync_End</A></B>
 is called by each processor after the I/O is performed. No communication
-can be performed between calls to <B>LB_Print_Sync_Start</B> and <B><A HREF="#LB_Print_Sync_End">LB_Print_Sync_End</A></B>.
-See the <A HREF="#print_sync_example">example</A> below for usage of <B>LB_Print_Sync_Start</B>.
+can be performed between calls to <B>Zoltan_Print_Sync_Start</B> and <B><A HREF="#Zoltan_Print_Sync_End">Zoltan_Print_Sync_End</A></B>.
+See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_Print_Sync_Start</B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
@@ -64,7 +64,7 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>LB_Print
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>lb</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
 
 <TD>The load-balancing data structure used in the invocation of the load-balancing
 routines.</TD>
@@ -82,13 +82,13 @@ line is printed; no line is printed otherwise.</TD>
 
 <P>
 <hr>
-<HR><A NAME="LB_Print_Sync_End"></A>void <B>LB_Print_Sync_End</B>(struct
-<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B> *<I>lb</I>,
+<HR><A NAME="Zoltan_Print_Sync_End"></A>void <B>Zoltan_Print_Sync_End</B>(struct
+<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B> *<I>zz</I>,
 int <I>do_print_line</I>);&nbsp;
 <HR>
 
-<P>The <B>LB_Print_Sync_End </B>function is adapted from work of John Shadid
-for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#LB_Print_Sync_Start">LB_Print_Sync_Start</A></B>,
+<P>The <B>Zoltan_Print_Sync_End </B>function is adapted from work of John Shadid
+for the MPSalsa project at Sandia National Laboratories. With <B><A HREF="#Zoltan_Print_Sync_Start">Zoltan_Print_Sync_Start</A></B>,
 it provides synchronization so that one processor in the load-balancing
 communicator can complete its I/O before the next processor begins its
 I/O. This synchronization utility is useful for debugging algorithms, as
@@ -96,12 +96,12 @@ it allows the output from processors to be produced in an organized manner.
 It is, however, a serializing process, and thus, does not scale well to
 large number of processors.
 
-<P><B><A HREF="#LB_Print_Sync_Start">LB_Print_Sync_Start</A></B> should
+<P><B><A HREF="#Zoltan_Print_Sync_Start">Zoltan_Print_Sync_Start</A></B> should
 called by each processor in the MPI communicator before the desired I/O
-is performed. <B>LB_Print_Sync_End</B> is called by each processor after
+is performed. <B>Zoltan_Print_Sync_End</B> is called by each processor after
 the I/O is performed. No communication can be performed between calls to
-<B><A HREF="#LB_Print_Sync_Start">LB_Print_Sync_Start</A></B> and <B>LB_Print_Sync_End</B>.
-See the <A HREF="#print_sync_example">example</A> below for usage of <B>LB_Print_Sync_End</B>.
+<B><A HREF="#Zoltan_Print_Sync_Start">Zoltan_Print_Sync_Start</A></B> and <B>Zoltan_Print_Sync_End</B>.
+See the <A HREF="#print_sync_example">example</A> below for usage of <B>Zoltan_Print_Sync_End</B>.
 <BR>&nbsp;
 <TABLE WIDTH="100%" >
 <TR VALIGN=TOP>
@@ -111,7 +111,7 @@ See the <A HREF="#print_sync_example">example</A> below for usage of <B>LB_Print
 </TR>
 
 <TR>
-<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>lb</I></TD>
+<TD VALIGN=TOP>&nbsp;&nbsp;&nbsp; <I>zz</I></TD>
 
 <TD>The load-balancing data structure used in the invocation of the load-balancing
 routines.</TD>
@@ -126,13 +126,13 @@ line is printed; no line is printed otherwise.</TD>
 </TR>
 </TABLE>
 <hr>
-<HR WIDTH="100%"><A NAME="LB_Print_Stats"></A>void <B>LB_Print_Stats</B>(MPI_Comm <i>comm</i>, int <i>debug_proc</i>,
+<HR WIDTH="100%"><A NAME="Zoltan_Print_Stats"></A>void <B>Zoltan_Print_Stats</B>(MPI_Comm <i>comm</i>, int <i>debug_proc</i>,
 double <i>x</i>, char <i>*msg</i>);
 <BR>
 <HR WIDTH="100%">
-<BR>LB_Print_Stats is a very simple routine that computes the maximum and
+<BR>Zoltan_Print_Stats is a very simple routine that computes the maximum and
 sum of the variable <I>x</I> over all processors associated with the load-balancing
-structure <I>lb</I>. It also computes and prints the imbalance
+structure <I>zz</I>. It also computes and prints the imbalance
 of <I>x</I>, that is, the maximum value divided by the average minus one.
 If <I>x </I>has the same value on all processors, the imbalance is zero.
 <p>
@@ -171,30 +171,30 @@ If <I>x </I>has the same value on all processors, the imbalance is zero.
 <HR WIDTH="100%">
 <H4>
 
-<HR WIDTH="100%"><A NAME="print_sync_example"></A><B>Example Using LB_Print_Sync_Start/LB_Print_Sync_End</B></H4>
+<HR WIDTH="100%"><A NAME="print_sync_example"></A><B>Example Using Zoltan_Print_Sync_Start/Zoltan_Print_Sync_End</B></H4>
 &nbsp;
 <CENTER><TABLE BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <TR>
 <TD><TT>...</TT>&nbsp;
-<BR><TT>if (lb->Debug_Level >= LB_DEBUG_ALL) {</TT>&nbsp;
+<BR><TT>if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL) {</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; int i;</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; LB_Print_Sync_Start(lb, TRUE);</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_Start(zz, TRUE);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; printf("Zoltan: Objects to be exported from Proc
-%d\n", lb->Proc);</TT>&nbsp;
+%d\n", zz->Proc);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; for (i = 0; i &lt; *num_export_objs; i++) {</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("&nbsp;&nbsp;&nbsp;
 Obj: ");</tt>
-<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; LB_PRINT_GID(lb, &((*export_global_ids)[i*lb->Num_GID]));
+<BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ZOLTAN_PRINT_GID(zz, &((*export_global_ids)[i*zz->Num_GID]));
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf(" Destination: %4d\n",</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (*export_procs)[i]);</TT>&nbsp;
 <BR><TT>&nbsp;&nbsp;&nbsp; }</TT>&nbsp;
-<BR><TT>&nbsp;&nbsp;&nbsp; LB_Print_Sync_End(lb, TRUE);</TT>&nbsp;
+<BR><TT>&nbsp;&nbsp;&nbsp; Zoltan_Print_Sync_End(zz, TRUE);</TT>&nbsp;
 <BR><TT>}</TT></TD>
 </TR>
 
-<CAPTION ALIGN=BOTTOM><I>Example usage of LB_Print_Sync_Start and LB_Print_Sync_End
-to synchronize output among processors.&nbsp; (Taken from LB_Balance in
+<CAPTION ALIGN=BOTTOM><I>Example usage of Zoltan_Print_Sync_Start and Zoltan_Print_Sync_End
+to synchronize output among processors.&nbsp; (Taken from Zoltan_LB_Balance in
 lb/lb_balance.c.)</I></CAPTION>
 </TABLE></CENTER>
 &nbsp;

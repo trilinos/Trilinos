@@ -43,7 +43,7 @@ respectively, of the <a href="ug_examples.html#Examples of Library Usage">Exampl
 of Library Usage</a>.
 <h2>
 <a NAME="Error Codes"></a>Error Codes</h2>
-All interface functions, with the exception of <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+All interface functions, with the exception of <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
 return an error code to the application. The possible return codes are
 defined in <i>lb/lbi_const.h</i> and Fortran 
 <a href="ug_fortran_api.html#fortran ug api zoltan module">module zoltan</a>, 
@@ -61,26 +61,26 @@ of Zoltan will be improved in future releases.
 <br>&nbsp;
 <center><table BORDER WIDTH="90%" >
 <tr>
-<td VALIGN=TOP><i>LB_OK</i></td>
+<td VALIGN=TOP><i>ZOLTAN_OK</i></td>
 
 <td ALIGN=LEFT>Function returned without warnings or errors.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>LB_WARN&nbsp;</i></td>
+<td VALIGN=TOP><i>ZOLTAN_WARN&nbsp;</i></td>
 
 <td>Function returned with warnings. The application will probably be able
 to continue to run.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>LB_FATAL&nbsp;</i></td>
+<td VALIGN=TOP><i>ZOLTAN_FATAL&nbsp;</i></td>
 
 <td>A fatal error occured within the Zoltan library.</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>LB_MEMERR</i></td>
+<td VALIGN=TOP><i>ZOLTAN_MEMERR</i></td>
 
 <td>An error occurred while allocating memory. When this error occurs,
 the library frees any allocated memory and returns control to the application.

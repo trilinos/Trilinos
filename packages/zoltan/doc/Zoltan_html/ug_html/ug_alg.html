@@ -37,7 +37,7 @@ in the Zoltan library:
 <br><a href="ug_alg_jostle.html">Jostle (JOSTLE)</a>
 <br><a href="ug_alg_oct.html">Octree Partitioning (OCTPART)</a>
 <br><a href="ug_alg_reftree.html">Refinement Tree Based Partitioning (REFTREE)</a></blockquote>
-The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
+The parenthetical string is the input argument for <b><a href="ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
 to enable the corresponding method.
 <p><a href="#General_Parameters">Parameters
 </a>and
@@ -50,7 +50,7 @@ and Devine</a>].
 <h3>
 <a NAME="General_Parameters"></a><b>General Parameters</b></h3>
 The behavior of each load-balancing method is controlled by several parameters
-which can be set by calls to <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+which can be set by calls to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 Many of the parameters are specific to individual partitioning algorithms,
 and are listed in the descriptions of the individual algorithms.&nbsp;
 However, several have meaning across multiple algorithms. These more general
@@ -83,7 +83,7 @@ local identifier (ID). Values greater than or equal to zero are accepted.&nbsp;<
 <td NOSAVE><a NAME="RETURN_LISTS"></a>&nbsp;&nbsp;&nbsp; <i>RETURN_LISTS</i></td>
 
 <td>The lists returned by calls to 
-<a href="ug_interface_lb.html#LB_Balance"><b>LB_Balance</b></a>.
+<a href="ug_interface_lb.html#Zoltan_LB_Balance"><b>Zoltan_LB_Balance</b></a>.
 Valid values are "IMPORT" (to return only information about objects to be 
 imported to a processor), "EXPORT" (to return only information about objects
 to be exported from a processor), "ALL" (to return both import and export 
@@ -164,7 +164,7 @@ even under identical operating conditions.</td>
 <td NOSAVE><i>&nbsp;&nbsp;&nbsp; <a name="AUTO_MIGRATE"></a>AUTO_MIGRATE</i></td>
 
 <td>If this value is set to TRUE (non-zero), Zoltan will automatically
-perform the data migration during calls to <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>.
+perform the data migration during calls to <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>.
 A full discussion of automatic migration can be found in the description
 of the <a href="ug_interface_mig.html">migration interface functions</a>.&nbsp;</td>
 </tr>
@@ -291,7 +291,7 @@ memory-allocation should be kept by Zoltan's <a href="../dev_html/dev_util_mem.h
 <h3>
 <a NAME="Debug Levels in Zoltan"></a>Debugging Levels in Zoltan</h3>
 The <i>DEBUG_LEVEL</i> parameter determines how much debugging information
-is printed to <i>stdout</i> by Zoltan.&nbsp; It is set by a call to <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.&nbsp;
+is printed to <i>stdout</i> by Zoltan.&nbsp; It is set by a call to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.&nbsp;
 Higher values of<i> DEBUG_LEVEL</i> produce more output and can slow down
 Zoltan's computations, especially when the output is printed by one processor
 at a time.&nbsp; The least output is produced when <i>DEBUG_LEVEL</i> =
@@ -322,7 +322,7 @@ This synchronization requires all processors to use the same value of <i>DEBUG_L
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp; 1</td>
 
-<td NOSAVE>Values of all parameters set by <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>
+<td NOSAVE>Values of all parameters set by <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
 and used by the load-balancing method.</td>
 </tr>
 

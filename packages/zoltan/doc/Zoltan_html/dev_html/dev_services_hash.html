@@ -31,16 +31,16 @@ Hash Function</h2>
 Zoltan provides a hash function for global and local IDs. The hash function
 computes a non-negative integer value in a certain range<i> </i>from an
 ID.
-<blockquote><b><a href="#LB_Hash">LB_Hash</a></b>&nbsp; : hash a global
+<blockquote><b><a href="#Zoltan_Hash">Zoltan_Hash</a></b>&nbsp; : hash a global
 or local ID into non-negative integers</blockquote>
 
 <hr>
-<hr><a NAME="LB_Hash"></a>unsigned int<b> LB_Hash</b>(
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR
+<hr><a NAME="Zoltan_Hash"></a>unsigned int<b> Zoltan_Hash</b>(
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR
 </a></b><i>key</i>,
 int <i>num_id_entries</i>, unsigned int <i>n</i>);&nbsp;
 <hr>
-<b>LB_Hash </b>computes a hash value for a global or local ID. Note
+<b>Zoltan_Hash </b>computes a hash value for a global or local ID. Note
 that this hash function has been optimized for 32-bit integer systems,
 but should&nbsp; work on any machine. The current implementation uses a
 simple multiplicative hash function based on Don Knuth's golden ratio method;

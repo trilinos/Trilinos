@@ -36,9 +36,9 @@ by the Fortran 90 compiler), and the application can use Zoltan's Fortran
 provides details of the Fortran 90 code that must be added.
 
 <P>When building the Zoltan library, use the file 
-<I>fort/lb_user_const.f90</I> for <I>lb_user_const.f90</I>.
+<I>fort/zoltan_user_data.f90</I> for <I>zoltan_user_data.f90</I>.
 This assumes that DATA in a
-call to <B><A HREF="ug_interface_init.html#LB_Set_Fn">LB_SET_FN</A></B>
+call to <B><A HREF="ug_interface_init.html#Zoltan_Set_Fn">ZOLTAN_SET_FN</A></B>
 is either omitted (you can omit arguments that are labeled OPTIONAL in
 the Fortran API) or an array of type INTEGER, REAL or DOUBLE PRECISION
 (REAL*4 and REAL*8 might be acceptable). If a more complicated set of data
@@ -51,31 +51,31 @@ or function) that calls a Zoltan routine must begin with the statement
 and this should be the first statement after the program, subroutine or
 function statement (before the declarations).
 
-<P>The pointer to the load-balancing structure returned by <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>
+<P>The pointer to the Zoltan structure returned by <B><A HREF="ug_interface_init.html#Zoltan_Create">ZOLTAN_CREATE</A></B>
 should be declared as
-<UL>TYPE(LB_STRUCT), POINTER :: LB</UL>
-(you can use a name other than LB if you wish).
+<UL>TYPE(ZOLTAN_STRUCT), POINTER :: ZZ</UL>
+(you can use a name other than ZZ if you wish).
 
 <P>To create the structure, use a pointer assignment statement with the call
-to <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>:
-<UL>LB => <B><A HREF="ug_interface_init.html#LB_Create">LB_CREATE</A></B>(COMMUNICATOR)</UL>
+to <B><A HREF="ug_interface_init.html#Zoltan_Create">ZOLTAN_CREATE</A></B>:
+<UL>ZZ => <B><A HREF="ug_interface_init.html#Zoltan_Create">ZOLTAN_CREATE</A></B>(COMMUNICATOR)</UL>
 Note that the assignment operator is "=>".
-If LB is used in more than one procedure, then put it in a COMMON block.
+If ZZ is used in more than one procedure, then put it in a COMMON block.
 It cannot be passed as an argument unless the procedure interfaces are
 made "explicit." (Let's not go there.)
 
-<P>The six import and export arrays passed to <B><A HREF="ug_interface_lb.html#LB_Balance">LB_BALANCE</A></B>
+<P>The six import and export arrays passed to <B><A HREF="ug_interface_lb.html#Zoltan_LB_Balance">ZOLTAN_LB_BALANCE</A></B>
 (and other procedures) must be pointers. They should be declared as, for
 example,
 <UL>INTEGER, POINTER :: IMPORT_GLOBAL_IDS(:)</UL>
 Note that the double colon after POINTER is required, and the dimension
 must be declared as "(:)" with a colon.
-Like LB, if they are used in more than one procedure, pass them through
+Like ZZ, if they are used in more than one procedure, pass them through
 a COMMON block, not as an argument.
 
 <P>Except in the unlikely event that the default kinds of intrinsic types
 do not match the C intrinsic types, you do not have to use the kind type
-parameters <B>LB_INT</B>, etc. It is also not necessary to include the
+parameters <B>Zoltan_INT</B>, etc. It is also not necessary to include the
 INTENT attribute in the declarations of the query functions, so they can
 be simplified to, for example,
 <UL>SUBROUTINE GET_OBJ_LIST(DATA, GLOBAL_IDS, LOCAL_IDS, WGT_DIM, OBJ_WGTS,

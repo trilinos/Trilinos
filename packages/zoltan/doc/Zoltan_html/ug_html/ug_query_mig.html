@@ -30,13 +30,13 @@
 <a NAME="Migration Query Functions"></a>Migration Query Functions</h2>
 The following query functions must be registered to use any of the migration
 tools described in <a href="ug_interface_mig.html">Migration Functions</a>:
-<blockquote><b><a href="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a></b>
-<br><b><a href="#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a></b>
-<br><b><a href="#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
+<br><b><a href="#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a></b>
+<br><b><a href="#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a></b></blockquote>
 Optional, additional query functions for migration may also be registered:
-<blockquote><b><a href="#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN</a></b>
-<br><b><a href="#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN</a></b>
-<br><b><a href="#LB_POST_MIGRATE_FN">LB_POST_MIGRATE_FN</a></b></blockquote>
+<blockquote><b><a href="#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN</a></b>
+<br><b><a href="#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN</a></b>
+<br><b><a href="#ZOLTAN_POST_MIGRATE_FN">ZOLTAN_POST_MIGRATE_FN</a></b></blockquote>
 
 <hr WIDTH="100%">
 <hr WIDTH="100%">
@@ -44,10 +44,10 @@ Optional, additional query functions for migration may also be registered:
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_OBJ_SIZE_FN"></a>typedef int <b>LB_OBJ_SIZE_FN</b>(void
+<td WIDTH="85%"><a NAME="ZOLTAN_OBJ_SIZE_FN"></a>typedef int <b>ZOLTAN_OBJ_SIZE_FN</b>(void
 *<i> data</i>, int <i>num_gid_entries</i>,&nbsp; int <i>num_lid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_id,</i> <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>local_id,</i> int *i<i>err</i>);
 <br>&nbsp;</td>
 </tr>
@@ -57,20 +57,20 @@ Optional, additional query functions for migration may also be registered:
 
 <td>FUNCTION <b><i>Obj_Size</i></b>(<i>data, num_gid_entries,&nbsp; num_lid_entries</i>,
 <i>global_id, local_id, ierr</i>)&nbsp;
-<br>INTEGER(LB_INT) :: Obj_Size&nbsp;
+<br>INTEGER(Zoltan_INT) :: Obj_Size&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id,&nbsp; local_id
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id,&nbsp; local_id
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_OBJ_SIZE_FN</b> query function returns the size
+<hr WIDTH="100%">An <b>ZOLTAN_OBJ_SIZE_FN</b> query function returns the size
 (in bytes) of the data buffer that is needed to pack all of a single object's
 data.
 <br>&nbsp;
@@ -78,7 +78,7 @@ data.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_OBJ_SIZE_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_OBJ_SIZE_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -147,10 +147,10 @@ ID.&nbsp; This value is the maximum value over all processors of the parameter
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_PACK_OBJ_FN"></a>typedef void <b>LB_PACK_OBJ_FN</b> (void
+<td WIDTH="85%"><a NAME="ZOLTAN_PACK_OBJ_FN"></a>typedef void <b>ZOLTAN_PACK_OBJ_FN</b> (void
 *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<i>global_id</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>global_id</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>local_id</i>, int <i>dest_proc</i>, int <i>size</i>, char *<i>buf</i>,
 int *<i>ierr</i>);&nbsp;</td>
 </tr>
@@ -161,33 +161,33 @@ int *<i>ierr</i>);&nbsp;</td>
 <td>SUBROUTINE <b><i>Pack_Obj</i></b>(<i>data, num_gid_entries, num_lid_entries,
 global_id, local_id, dest_proc, size, buf, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(IN) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: dest_proc, size&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: local_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: dest_proc, size&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_PACK_OBJ_FN</b> query function allows the application
+<hr WIDTH="100%">An <b>ZOLTAN_PACK_OBJ_FN</b> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object into a communication buffer. The object's data can then be sent
 to another processor as part of data migration. It may also perform other
 operations, such as removing the object from the processor's data structure.
-This routine is called by <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+This routine is called by <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 for each object to be sent to another processor.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_PACK_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PACK_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -241,7 +241,7 @@ is being sent)</td>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; size</i></td>
 
 <td>The size (in bytes) of the communication buffer for the specified object
-(as returned by the <b><a href="#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a></b>
+(as returned by the <b><a href="#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a></b>
 query function).</td>
 </tr>
 
@@ -266,9 +266,9 @@ data should be packed.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_UNPACK_OBJ_FN"></a>typedef void <b>LB_UNPACK_OBJ_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_UNPACK_OBJ_FN"></a>typedef void <b>ZOLTAN_UNPACK_OBJ_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>global_id</i>, int <i>size</i>, char *<i>buf</i>, int *<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -278,26 +278,26 @@ data should be packed.</td>
 <td>SUBROUTINE <b><i>Unpack_Obj</i></b>(<i>data, num_gid_entries, global_id,
 size, buf, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: size&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: global_id&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: size&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: buf&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_UNPACK_OBJ_FN</b> query function allows the application
+<hr WIDTH="100%">An <b>ZOLTAN_UNPACK_OBJ_FN</b> query function allows the application
 to tell the load-balancing library how to copy all needed data for a given
 object from a communication buffer into the application's data structure.
 This operation is needed as the final step of importing objects during
 data migration. The query function may also perform other computation,
 such as building request lists for related data. This routine is called
-by <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+by <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 for each object to be received by the processor. (Note: a local ID for
 the object is not included in this function, as the local ID is local to
 the exporting, not the importing, processor.)
@@ -306,7 +306,7 @@ the exporting, not the importing, processor.)
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_UNPACK_OBJ_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_UNPACK_OBJ_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -360,14 +360,14 @@ buffer.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_PRE_MIGRATE_FN"></a>typedef void <b>LB_PRE_MIGRATE_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_PRE_MIGRATE_FN"></a>typedef void <b>ZOLTAN_PRE_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -378,31 +378,31 @@ int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_I
 num_import, import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_PRE_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">An <b>ZOLTAN_PRE_MIGRATE_FN</b> query function performs any
 pre-processing desired by the application. If it is registered, it is called
-at the beginning of the <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-routine. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+at the beginning of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 are made available for use in the pre-processing routine.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_PRE_MIGRATE_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_PRE_MIGRATE_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -504,7 +504,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No pre-processing is done if an <b>LB_PRE_MIGRATE_FN</b> is not registered.</td>
+<td>No pre-processing is done if an <b>ZOLTAN_PRE_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 
@@ -515,14 +515,14 @@ destination processors.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_MID_MIGRATE_FN"></a>typedef void <b>LB_MID_MIGRATE_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_MID_MIGRATE_FN"></a>typedef void <b>ZOLTAN_MID_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -533,26 +533,26 @@ int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_I
 num_import, import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_MID_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">An <b>ZOLTAN_MID_MIGRATE_FN</b> query function performs any
 processing desired by the application between the packing and unpacking
 of objects being migrated. If it is registered, it is called after export
-objects are packed in <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>;
-imported objects are unpacked after the <b>LB_MID_MIGRATE_FN</b> query
-function is called. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+objects are packed in <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>;
+imported objects are unpacked after the <b>ZOLTAN_MID_MIGRATE_FN</b> query
+function is called. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 are made available for use in the processing routine.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -561,7 +561,7 @@ are made available for use in the processing routine.
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_MID_MIGRATE_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_MID_MIGRATE_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -663,7 +663,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No processing is done if an <b>LB_MID_MIGRATE_FN</b> is not registered.</td>
+<td>No processing is done if an <b>ZOLTAN_MID_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 
@@ -674,14 +674,14 @@ destination processors.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_POST_MIGRATE_FN"></a>typedef void <b>LB_POST_MIGRATE_FN</b>
+<td WIDTH="85%"><a NAME="ZOLTAN_POST_MIGRATE_FN"></a>typedef void <b>ZOLTAN_POST_MIGRATE_FN</b>
 (void *<i>data</i>, int <i>num_gid_entries</i>, int <i>num_lid_entries</i>,
-int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_global_ids</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>import_local_ids</i>, int *<i>import_procs</i>, int <i>num_export</i>,
-<b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<i>export_global_ids</i>, <b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>export_local_ids</i>, int *<i>export_procs</i>, int *<i>ierr</i>);&nbsp;</td>
 </tr>
 
@@ -692,31 +692,31 @@ int <i>num_import</i>, <b><a href="ug_usage.html#Data Types for Object IDs">LB_I
 num_import, import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs, ierr</i>)&nbsp;
 <br>&lt;<i>type-data</i>>, INTENT(INOUT) :: data&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: ierr&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries, num_lid_entries&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), DIMENSION(*) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: ierr&nbsp;
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">An <b>LB_POST_MIGRATE_FN</b> query function performs any
+<hr WIDTH="100%">An <b>ZOLTAN_POST_MIGRATE_FN</b> query function performs any
 post-processing desired by the application. If it is registered, it is
-called at the end of the <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
-routine. The arguments passed to <b><a href="ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</a></b>
+called at the end of the <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
+routine. The arguments passed to <b><a href="ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b>
 are made available for use in the post-processing routine.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
 <td VALIGN=TOP WIDTH="20%"><b>Function Type:</b></td>
 
-<td WIDTH="80%"><b>LB_POST_MIGRATE_FN_TYPE</b></td>
+<td WIDTH="80%"><b>ZOLTAN_POST_MIGRATE_FN_TYPE</b></td>
 </tr>
 
 <tr>
@@ -818,7 +818,7 @@ destination processors.</td>
 <tr>
 <td VALIGN=TOP></td>
 
-<td>No post-processing is done if an <b>LB_POST_MIGRATE_FN</b> is not registered.</td>
+<td>No post-processing is done if an <b>ZOLTAN_POST_MIGRATE_FN</b> is not registered.</td>
 </tr>
 </table>
 

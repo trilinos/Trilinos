@@ -59,14 +59,14 @@ number of objects that the rest of the processors have in its set, then
 that processor will not receive any objects.  Thus each processor may send
 and receive objects from several (or no) processors in the other set.  The
 process of determining which outgoing objects are sent to which processors
-is determined in the subroutine <B>LB_Create_Proc_List</B>.  Once this new
+is determined in the subroutine <B>Zoltan_Create_Proc_List</B>.  Once this new
 distribution of objects is determined, the
 <B><A HREF="dev_util_comm.html">unstructured communication package</A></B> in
 Zoltan is used to determine which processors are going to receive which
 objects and actually move the objects.
 
 <P>For applications that wish to add more objects to the decomposition
-at a later time (e.g., through <a href="../ug_html/ug_interface_augment.html#LB_Box_Assign"><b>LB_Box_Assign</b></a> or <a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>), information to do this can be retained during the
+at a later time (e.g., through <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Box_Assign"><b>Zoltan_LB_Box_Assign</b></a> or <a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>), information to do this can be retained during the
 decomposition phase.  This information is kept if the parameter <a href="../ug_html/ug_alg_rcb.html">KEEP_CUTS</a>
 is set during the decomposition (see the <a href="../ug_html/ug_alg_rcb.html">RCB section</a> in the
 <B><A HREF="../ug_html/ug.html">Zoltan User's Guide</A></B>).
@@ -112,7 +112,7 @@ RCB decomposition to generate an "initial guess" at the new decomposition.
 For problems that change little between invocations of RCB, using <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a>
 can reduce the amount of data movement in RCB, improving the performance
 of the algorithm.  When <a href="../ug_html/ug_alg_rcb.html">RCB_REUSE</a> is true,the coordinates of all objects obtained through query functions are passed through
-<a href="../ug_html/ug_interface_augment.html#LB_Point_Assign"><b>LB_Point_Assign</b></a>
+<a href="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign"><b>Zoltan_LB_Point_Assign</b></a>
 to determine their processor assignment in the previous RCB decomposition.
 The information for the objects is then sent to the new processor assignments
 using the <a href="dev_util_comm.html">unstructured communication utilities</a>
@@ -144,7 +144,7 @@ Parameters</H3>
 
 <P>The parameters used by RCB and their default values are described in the
 <a href="../ug_html/ug_alg_rcb.html">RCB section</a> of the <B><A HREF="../ug_html/ug.html">Zoltan User's
-Guide</A></B>.  These can be set by use of the <b>LB_Set_RCB_Param</b> subroutine
+Guide</A></B>.  These can be set by use of the <b>Zoltan_Set_RCB_Param</b> subroutine
 in the file <i>rcb/rcb.c</i>.
  
 <BR>&nbsp;
@@ -152,7 +152,7 @@ in the file <i>rcb/rcb.c</i>.
 <H3>
 Main Routine</H3>
 
-<P>The main routine for RCB is <b>LB_rcb</b> in the file <i>rcb/rcb.c</i>.
+<P>The main routine for RCB is <b>Zoltan_RCB</b> in the file <i>rcb/rcb.c</i>.
 
 <BR>&nbsp;
 <BR>&nbsp;

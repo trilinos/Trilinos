@@ -68,7 +68,7 @@ may optionally register their own (first) hash function to take
 advantage of their knowledge of their global ID naming scheme and the
 global ID's neighboring processors. See the documentation for
 <a href="#DD_Set_Hash_Fn">Zoltan_DD_Set_Hash_Fn</a> for more information.
-If no user hash function is registered, Zoltan's LB_Hash will be used. This
+If no user hash function is registered, Zoltan's Zoltan_Hash will be used. This
 module's design was strongly influenced by the paper  "Communication
 Support for Adaptive Computation" by Pinar and Hendrickson.
 <p>
@@ -176,7 +176,7 @@ Message to eliminate all traces of selected global IDs.
 <tr><td></td><td>DD_Find_local</td></tr>
 <tr><td></td><td>DD_Remove_Local</td></tr>
 <tr><td></td><td>DD_Hash2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-// renamed copy of LB_Hash for second hash</td></tr>
+// renamed copy of Zoltan_Hash for second hash</td></tr>
 <tr><td>&nbsp;</td></tr>
 <tr><td><b>Files in directory Utilities/DDirectory</b>:</td>
 <td>DD_Const.h&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -291,9 +291,9 @@ to free the previously saved MPI comm.
 <hr><hr>
 <a NAME="DD_Update"></a>int <b>Zoltan_DD_Update</b>
 (Zoltan_DD_Directory *<i>dd</i>,
-LB_ID_PTR <i>gid</i>,
-LB_ID_PTR <i>lid</i>,
-LB_ID_PTR <i>user</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
+ZOLTAN_ID_PTR <i>lid</i>,
+ZOLTAN_ID_PTR <i>user</i>,
 int *<i>partition</i>,
 int <i>count</i>);
 <hr>
@@ -349,9 +349,9 @@ if the updates represent the same owner for a global ID.
 <hr>
 <a NAME="DD_Find"></a>int <b>Zoltan_DD_Find</b>
 (Zoltan_DD_DDirectory *<i>dd</i>,
-LB_ID_PTR <i>gid</i>,
-LB_ID_PTR <i>lid</i>,
-LB_ID_PTR <i>data</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
+ZOLTAN_ID_PTR <i>lid</i>,
+ZOLTAN_ID_PTR <i>data</i>,
 int *<i>partition</i>,
 int <i>count</i>,
 int *<i>owner</i>);
@@ -392,7 +392,7 @@ being used.
 <hr><hr>
 <a NAME="DD_Remove"></a>int <b>Zoltan_DD_Remove</b>
 (Zoltan_DD_Directory *<i>dd</i>,
-LB_ID_PTR <i>gid</i>,
+ZOLTAN_ID_PTR <i>gid</i>,
 int <i>count</i>);
 <hr>
 Zoltan_DD_Remove() takes a list of global_IDs and removes all of
@@ -421,21 +421,21 @@ their information from the distributed directory.
 <hr><hr>
 <a NAME="DD_Set_Hash_Fn"></a>void <b>Zoltan_DD_Set_Hash_Fn</b>
 (Zoltan_DD_Directory *<i>dd</i>,
-unsigned int (*<i>hash</i>) (LB_ID_PTR, int, unsigned int));
+unsigned int (*<i>hash</i>) (ZOLTAN_ID_PTR, int, unsigned int));
 <hr>
 Enables the user to register a new hash function for the distributed
 directory. (If this routine is not called, the default hash function
-LB_Hash() will be used automatically.)  This hash function determines
+Zoltan_Hash() will be used automatically.)  This hash function determines
 which processor maintains the distributed directory entry for a given
 global ID.  Inexperienced users do not need this routine.
 <p>
 Experienced users may elect to create their own hash function based on
 their knowledge of their global ID naming scheme.  The user's hash
-function must have calling arguments compatible with LB_Hash().
+function must have calling arguments compatible with Zoltan_Hash().
 Consider that a user has defined a hash function, myhash, as<br>
 <p>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
- unsigned int myhash(LB_ID_PTR gid, int length, unsigned int naverage)<br>
+ unsigned int myhash(ZOLTAN_ID_PTR gid, int length, unsigned int naverage)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 {<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;

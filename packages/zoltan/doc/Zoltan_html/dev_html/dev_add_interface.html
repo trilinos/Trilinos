@@ -46,18 +46,18 @@ interface will then build the lists requested by
 <p>
 A new algorithm must be added to the load-balancing interface for use
 in
-<b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
-An entry for the new algorithm must be added to the enumerated type <b>LB_Method</b>
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
+An entry for the new algorithm must be added to the enumerated type <b>Zoltan_LB_Method</b>
 in <i>lb/lb_const.h</i>. An external <b><a href="dev_add_lb.html">LB_FN</a></b>
 prototype for the load-balancing function must also be added to <i>lb/lb_const.h</i>;
-see the prototype for function <i>LB_rcb</i> as an example. A character
+see the prototype for function <i>Zoltan_RCB</i> as an example. A character
 string describing the new algorithm should be chosen to be used as application
-input to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>.
+input to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.
 In 
-<b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>,
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>,
 a test for this string should be added
-and the <i>Method</i> and <i>LB_Fn</i> fields of the <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
-passed to <b><a href="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</a></b>
+and the <i>Method</i> and <i>LB_Fn</i> fields of the <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+passed to <b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
 should be set to the new enumerated type value and new load-balancing function
 pointer.
 <br>&nbsp;

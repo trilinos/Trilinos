@@ -30,12 +30,12 @@
 <a NAME="Load-Balancing Functions"></a>Load-Balancing Functions</h2>
 The following functions are the load-balancing interface functions in the
 Zoltan library; their descriptions are included below.
-<blockquote><b><a href="#LB_Set_Method">LB_Set_Method</a></b>
-<br><b><a href="#LB_Set_Param">LB_Set_Param</a></b>
-<br><b><a href="#LB_Balance">LB_Balance</a></b>
-<br><b><a href="#LB_Eval">LB_Eval</a></b>
-<br><b><a href="#LB_Free_Data">LB_Free_Data</a></b>
-<br><b><a href="#LB_Destroy">LB_Destroy</a></b></blockquote>
+<blockquote><b><a href="#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>
+<br><b><a href="#Zoltan_Set_Param">Zoltan_Set_Param</a></b>
+<br><b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
+<br><b><a href="#Zoltan_LB_Eval">Zoltan_LB_Eval</a></b>
+<br><b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>
+<br><b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b></blockquote>
 
 <hr WIDTH="100%">
 <hr WIDTH="100%">
@@ -43,22 +43,22 @@ Zoltan library; their descriptions are included below.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Set_Method"></a>int <b>LB_Set_Method</b>
-(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+<td WIDTH="85%"><a NAME="Zoltan_LB_Set_Method"></a>int <b>Zoltan_LB_Set_Method</b>
+(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 char&nbsp;*<i>string</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Set_Method</b>(<i>lb</i>, <i>string</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Set_Method&nbsp;
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<td>FUNCTION <b>Zoltan_LB_Set_Method</b>(<i>zz</i>, <i>string</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Set_Method&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>CHARACTER(LEN=*), INTENT(IN) :: string&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Set_Method</b> is used to specify which load-balancing
+<hr WIDTH="100%"><b>Zoltan_LB_Set_Method</b> is used to specify which load-balancing
 algorithm should be used by the application.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -68,9 +68,9 @@ algorithm should be used by the application.
 </tr>
 
 <tr>
-<td><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -113,7 +113,7 @@ partitioning</a>), and&nbsp;
 <tr>
 <td></td>
 
-<td>If <b>LB_Set_Method</b> is not called, <a href="ug_alg_rcb.html#RCB">RCB</a>
+<td>If <b>Zoltan_LB_Set_Method</b> is not called, <a href="ug_alg_rcb.html#RCB">RCB</a>
 is used.</td>
 </tr>
 </table>
@@ -124,8 +124,8 @@ is used.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Set_Param"></a>int <b>LB_Set_Param</b>
-(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+<td WIDTH="85%"><a NAME="Zoltan_Set_Param"></a>int <b>Zoltan_Set_Param</b>
+(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 char&nbsp;*<i>param_name</i>,
 char&nbsp;*<i>new_val</i>);&nbsp;</td>
 </tr>
@@ -133,14 +133,14 @@ char&nbsp;*<i>new_val</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Set_Param</b>(<i>lb, param_name, new_val</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Set_Param&nbsp;
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<td>FUNCTION <b>Zoltan_Set_Param</b>(<i>zz, param_name, new_val</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Set_Param&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>CHARACTER(LEN=*), INTENT(IN) :: param_name, new_value&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Set_Param</b> is used to alter the value of one
+<hr WIDTH="100%"><b>Zoltan_Set_Param</b> is used to alter the value of one
 of the parameters used by Zoltan.&nbsp; All Zoltan parameters have reasonable
 default values, but this routine allows a user to provide alternative values
 if desired.
@@ -152,9 +152,9 @@ if desired.
 </tr>
 
 <tr>
-<td><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -204,44 +204,44 @@ being set. As above, the string is case-insensitive.&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Balance"></a>int <b>LB_Balance</b>
-(struct&nbsp;<b>LB_Struct</b>&nbsp;*<i>lb</i>,
+<td WIDTH="85%"><a NAME="Zoltan_LB_Balance"></a>int <b>Zoltan_LB_Balance</b>
+(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 int&nbsp;*<i>changes</i>,
 int&nbsp;*<i>num_gid_entries</i>,
 int&nbsp;*<i>num_lid_entries</i>,
 int&nbsp;*<i>num_import</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
 int&nbsp;**<i>import_procs</i>,
 int&nbsp;*<i>num_export</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
 int&nbsp;**<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Balance</b>(<i>lb, changes, num_gid_entries, num_lid_entries,
+<td>FUNCTION <b>Zoltan_LB_Balance</b>(<i>zz, changes, num_gid_entries, num_lid_entries,
 num_import, import_global_ids, import_local_ids, import_procs, num_export,
 export_global_ids, export_local_ids, export_procs</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Balance&nbsp;
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Balance&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>LOGICAL, INTENT(OUT) :: changes&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
-<br>INTEGER(LB_INT), INTENT(OUT) :: num_import, num_export&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_gid_entries, num_lid_entries
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Balance</b> invokes the load-balancing routine specified
-by <b><a href="#LB_Set_Method">LB_Set_Method</a></b>.  Results of the 
+<hr WIDTH="100%"><b>Zoltan_LB_Balance</b> invokes the load-balancing routine specified
+by <b><a href="#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</a></b>.  Results of the 
 partitioning are returned in lists of objects to be imported and exported.
 These arrays are allocated in Zoltan; applications should not allocate these
-arrays before calling <b>LB_Balance</b>.  The arrays are later freed through
-calls to <a href="#LB_Free_Data"><b>LB_Free_Data</b></a>.
+arrays before calling <b>Zoltan_LB_Balance</b>.  The arrays are later freed through
+calls to <a href="#Zoltan_LB_Free_Data"><b>Zoltan_LB_Free_Data</b></a>.
 <br>&nbsp;
 <table WIDTH="100%" NOSAVE >
 <tr>
@@ -250,9 +250,9 @@ calls to <a href="#LB_Free_Data"><b>LB_Free_Data</b></a>.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure, created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
 to be used in this invocation of the load-balancing routine.</td>
 </tr>
 
@@ -374,8 +374,8 @@ IDs of processors that will own the exported objects in the new decomposition
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Eval"></a>int <b>LB_Eval</b>
-(struct&nbsp;<b>LB_struct</b>&nbsp;*<i>lb</i>,
+<td WIDTH="85%"><a NAME="Zoltan_LB_Eval"></a>int <b>Zoltan_LB_Eval</b>
+(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;*<i>zz</i>,
 int&nbsp;<i>print_stats</i>,
 int&nbsp;*<i>nobj</i>,
 float&nbsp;*o<i>bj_wgt</i>,
@@ -388,20 +388,20 @@ int&nbsp;*<i>nadj</i>);&nbsp;</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Eval</b>(<i>lb, print_stats,&nbsp; nobj, obj_wgt, ncuts,
+<td>FUNCTION <b>Zoltan_LB_Eval</b>(<i>zz, print_stats,&nbsp; nobj, obj_wgt, ncuts,
 cut_wgt, nboundary, nadj</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Eval
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Eval
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>LOGICAL, INTENT(IN) :: print_stats&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT), OPTIONAL :: nobj, ncuts, nboundary, nadj
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
+<br>INTEGER(Zoltan_INT), INTENT(OUT), OPTIONAL :: nobj, ncuts, nboundary, nadj
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(vwgt_dim), OPTIONAL :: obj_wgt&nbsp;
+<br>REAL(Zoltan_FLOAT), INTENT(OUT), DIMENSION(ewgt_dim), OPTIONAL :: cut_wgt&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Eval </b>evaluates the quality of a decomposition.
+<hr WIDTH="100%"><b>Zoltan_LB_Eval </b>evaluates the quality of a decomposition.
 Some quality metrics
-are available only if the graph query functions have been registered. <b>LB_Eval
+are available only if the graph query functions have been registered. <b>Zoltan_LB_Eval
 </b>may
 either print a summary of the results to <i>stdout</i> or return the results
 in the output parameters.
@@ -413,9 +413,9 @@ in the output parameters.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure.</td>
+<td>Pointer to the Zoltan structure.</td>
 </tr>
 
 <tr>
@@ -488,15 +488,15 @@ the communication graph.</td>
 <br>&nbsp;&nbsp;&nbsp;&nbsp; Required:</td>
 
 <td NOSAVE>
-<br><a href="ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</a>
-<br><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a> or <a href="ug_query_lb.html#LB_FIRST_OBJ_FN">LB_FIRST_OBJ_FN</a>/<a href="ug_query_lb.html#LB_NEXT_OBJ_FN">LB_NEXT_OBJ_FN</a></td>
+<br><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a>
+<br><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a> or <a href="ug_query_lb.html#ZOLTAN_FIRST_OBJ_FN">ZOLTAN_FIRST_OBJ_FN</a>/<a href="ug_query_lb.html#ZOLTAN_NEXT_OBJ_FN">ZOLTAN_NEXT_OBJ_FN</a></td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
 <td>&nbsp;&nbsp;&nbsp;&nbsp; Optional:</td>
 
-<td NOSAVE><a href="ug_query_lb.html#LB_NUM_EDGES">LB_NUM_EDGES_FN</a>
-<br><a href="ug_query_lb.html#LB_EDGE_LIST_FN">LB_EDGE_LIST_FN</a></td>
+<td NOSAVE><a href="ug_query_lb.html#ZOLTAN_NUM_EDGES">ZOLTAN_NUM_EDGES_FN</a>
+<br><a href="ug_query_lb.html#ZOLTAN_EDGE_LIST_FN">ZOLTAN_EDGE_LIST_FN</a></td>
 </tr>
 </table>
 An output parameter is returned only if the input value of that parameter
@@ -514,35 +514,35 @@ The same principle holds for <i>cut_wgt.</i>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Free_Data"></a>int <b>LB_Free_Data</b>
-(<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
+<td WIDTH="85%"><a NAME="Zoltan_LB_Free_Data"></a>int <b>Zoltan_LB_Free_Data</b>
+(<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>import_local_ids</i>,
 int&nbsp;**<i>import_procs</i>, 
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs"><b>LB_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs"><b>ZOLTAN_ID_PTR</b></a>&nbsp;*<i>export_local_ids</i>,
 int&nbsp;**<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Free_Data</b>(<i>import_global_ids, import_local_ids,
+<td>FUNCTION <b>Zoltan_LB_Free_Data</b>(<i>import_global_ids, import_local_ids,
 import_procs, export_global_ids, export_local_ids, export_procs</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Free_Data&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_LB_Free_Data&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;
 </td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Free_Data</b> frees the memory allocated by the
-Zoltan to return the results of <b><a href="#LB_Balance">LB_Balance</a></b> or
-<b><a href="ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>.
+<hr WIDTH="100%"><b>Zoltan_LB_Free_Data</b> frees the memory allocated by the
+Zoltan to return the results of <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b> or
+<b><a href="ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>.
 Memory pointed to by the arguments is freed and the arguments are set to
 NULL in C or nullified in Fortran. NULL arguments may be passed to 
-<b>LB_Free_Data</b>.  Note that this function does not destroy the
-load-balancing data structure itself; it is deallocated through a call to <b><a href="#LB_Destroy">LB_Destroy</a></b>.
+<b>Zoltan_LB_Free_Data</b>.  Note that this function does not destroy the
+load-balancing data structure itself; it is deallocated through a call to <b><a href="#Zoltan_Destroy">Zoltan_Destroy</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -607,23 +607,23 @@ objects in the new decomposition (i.e., the destination processors).</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Destroy"></a>void <b>LB_Destroy</b>
-(struct&nbsp;<b>LB_Struct</b>&nbsp;**<i>lb</i>);&nbsp;</td>
+<td WIDTH="85%"><a NAME="Zoltan_Destroy"></a>void <b>Zoltan_Destroy</b>
+(struct&nbsp;<b>Zoltan_Struct</b>&nbsp;**<i>zz</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>SUBROUTINE <b>LB_Destroy</b>(<i>lb</i>)&nbsp;
-<br>TYPE(LB_Struct), POINTER :: lb&nbsp;</td>
+<td>SUBROUTINE <b>Zoltan_Destroy</b>(<i>zz</i>)&nbsp;
+<br>TYPE(Zoltan_Struct), POINTER :: zz&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Destroy</b> frees the memory associated with a load-balancing
+<hr WIDTH="100%"><b>Zoltan_Destroy</b> frees the memory associated with a load-balancing
 structure and sets the structure to NULL in C or nullifies the structure
-in Fortran. Note that <b>LB_Destroy</b> does not deallocate the import
-and export arrays returned from <b><a href="#LB_Balance">LB_Balance</a></b>;
-these arrays can be deallocated through a separate call to <b><a href="#LB_Free_Data">LB_Free_Data</a></b>.
+in Fortran. Note that <b>Zoltan_Destroy</b> does not deallocate the import
+and export arrays returned from <b><a href="#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>;
+these arrays can be deallocated through a separate call to <b><a href="#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -632,10 +632,10 @@ these arrays can be deallocated through a separate call to <b><a href="#LB_Free_
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>A pointer to the address of the load-balancing structure, created by
-<b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+<td>A pointer to the address of the Zoltan structure, created by
+<b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
 to be destroyed.&nbsp;</td>
 </tr>
 </table>

@@ -73,31 +73,31 @@ variables and constants that will be passed to a Zoltan procedure:
 <tr>
 <td>int</td>
 
-<td>INTEGER(KIND=LB_INT)</td>
+<td>INTEGER(KIND=Zoltan_INT)</td>
 </tr>
 
 <tr>
 <td>float</td>
 
-<td>REAL(KIND=LB_FLOAT)</td>
+<td>REAL(KIND=Zoltan_FLOAT)</td>
 </tr>
 
 <tr>
 <td>double</td>
 
-<td>REAL(KIND=LB_DOUBLE)&nbsp;</td>
+<td>REAL(KIND=Zoltan_DOUBLE)&nbsp;</td>
 </tr>
 </table></center>
 
 <p>Note that "KIND=" is optional in declaration statements. The kind number
-for constants can be attached to the constant, e.g., 1.0_LB_DOUBLE.
+for constants can be attached to the constant, e.g., 1.0_Zoltan_DOUBLE.
 <br>&nbsp;
 <h3>
 <a NAME="fortran ug api structures"></a>Structures</h3>
-For any struct in the C interface to Zoltan, e.g. <b><a href="../dev_html/dev_lb_structs.html#LB_Struct">LB_Struct</a></b>,
+For any struct in the C interface to Zoltan, e.g. <b><a href="../dev_html/dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>,
 there is a corresponding derived type in the Fortran interface. Variables
 of this type are declared as demonstrated below:
-<ul>TYPE(LB_Struct) :: lb</ul>
+<ul>TYPE(Zoltan_Struct) :: zz</ul>
 In the Fortran interface, the internal components of the derived type are
 PRIVATE and not accessible to the application. However, the application
 simply passes these variables around, and never needs to access the internal
@@ -113,51 +113,51 @@ types for their IDs can convert between their data types and Zoltan's in
 the <a href="ug_query.html">application-registered query functions</a>.
 <h3>
 <a NAME="fortran ug api query"></a>Query function data</h3>
-<b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b> allows
+<b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b> allows
 the application to pass a pointer to data that will subsequently be passed
 to the query function being registered. From Fortran this is an optional
 argument, or can be one of several types. In the simplest cases, an intrinsic
 array containing the data will be sufficient. For these cases, data can
-be an assumed size array of type INTEGER(LB_INT), REAL(LB_FLOAT) or REAL(LB_DOUBLE).
+be an assumed size array of type INTEGER(Zoltan_INT), REAL(Zoltan_FLOAT) or REAL(Zoltan_DOUBLE).
 When the argument is omitted in the call to the registration function, a
 data argument will still be passed to the query function.  This should be
-declared as an assumed size array of type INTEGER(LB_INT) and never used.
+declared as an assumed size array of type INTEGER(Zoltan_INT) and never used.
 
 <p>For more complicated situations, the application may need to pass data
 in a user-defined type. The strong type checking of Fortran does not allow
 passing an arbitrary type without modifying the Fortran interface for each
 desired type. So the Fortran interface provides a type to be used for this
-purpose, <b>LB_User_Data_1</b>. Since different types of data may need
+purpose, <b>Zoltan_User_Data_1</b>. Since different types of data may need
 to be passed to different query functions, four such types are provided,
 using the numerals 1, 2, 3 and 4 as the last character in the name of the
-type. These types are defined by the application in <i>lb_user_const.f90</i>.
+type. These types are defined by the application in <i>zoltan_user_data.f90</i>.
 If not needed, they must be defined, but can be almost empty as in
-<i>fort/lb_user_const.f90</i>.
+<i>fort/zoltan_user_data.f90</i>.
 <p>The application may use these types in any appropriate way. If desired,
 it can define these types to contain the application's data and use the
 type throughout the application. But it is anticipated that in most cases,
-the desired type already exists in the application, and the <b>LB_User_Data_x</b>
+the desired type already exists in the application, and the <b>Zoltan_User_Data_x</b>
 types will be used as "wrapper types," containing one or more pointers
 to the existing types. For example,
 <ul>TYPE mesh
 <ul>! an existing data type with whatever defines a mesh</ul>
 END TYPE mesh
-<p>TYPE LB_User_Data_2
+<p>TYPE Zoltan_User_Data_2
 <ul>TYPE(mesh), POINTER :: ptr</ul>
-END TYPE LB_User_Data_2</ul>
-The application would then set the pointer to the data before calling LB_Set_Fn:
+END TYPE Zoltan_User_Data_2</ul>
+The application would then set the pointer to the data before calling Zoltan_Set_Fn:
 <ul>TYPE(mesh) :: meshdata
-<br>TYPE(LB_User_Data_2) :: query_data
-<br>TYPE(LB_Struct) :: lb
-<br>INTEGER(LB_INT), EXTERNAL :: num_obj_func ! not required for module
+<br>TYPE(Zoltan_User_Data_2) :: query_data
+<br>TYPE(Zoltan_Struct) :: zz
+<br>INTEGER(Zoltan_INT), EXTERNAL :: num_obj_func ! not required for module
 procedures
 <p>query_data%ptr => meshdata
-<br>ierr = LB_Set_Fn(lb,LB_NUM_OBJ_FN_TYPE,num_obj_func,query_data)</ul>
-Note that the existing data type must be available when <b>LB_User_Data_x</b>
-is defined. Therefore it must be defined either in<i> lb_user_const.f90</i>
-or in a module that is compiled before <i>lb_user_const.f90</i> and <b>USE</b>d
-by MODULE<i> lb_user_const</i>. For an example that uses a wrapper type,
-see <i>fdriver/lb_user_const.f90</i>.
+<br>ierr = Zoltan_Set_Fn(zz,ZOLTAN_NUM_OBJ_FN_TYPE,num_obj_func,query_data)</ul>
+Note that the existing data type must be available when <b>Zoltan_User_Data_x</b>
+is defined. Therefore it must be defined either in<i> zoltan_user_data.f90</i>
+or in a module that is compiled before <i>zoltan_user_data.f90</i> and <b>USE</b>d
+by MODULE<i> zoltan_user_data</i>. For an example that uses a wrapper type,
+see <i>fdriver/zoltan_user_data.f90</i>.
 <p>
 <hr WIDTH="100%">
 <br>[<a href="ug.html">Table of Contents</a>&nbsp; |&nbsp; <a href="ug_fortran_77.html">Next:&nbsp;

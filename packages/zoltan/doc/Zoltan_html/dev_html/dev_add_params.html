@@ -42,14 +42,14 @@ NULL), and its type.</li>
 
 <li>
 In the method source code, bind the parameter to a local variable through
-<b><a href="dev_services_params.html#LB_Bind_Param">LB_Bind_Param</a></b>.
-Make sure you do this before <b><a href="dev_services_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals
+<b><a href="dev_services_params.html#Zoltan_Bind_Param">Zoltan_Bind_Param</a></b>.
+Make sure you do this before <b><a href="dev_services_params.html#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals
 </a></b>is
 invoked.</li>
 
 <li>
 Update the parameter function for the method in question. This routine
-is typically called <b>LB_Set_</b><i>Method</i><b>_Param</b><i>. </i>This
+is typically called <b>Zoltan_Set_</b><i>Method</i><b>_Param</b><i>. </i>This
 routine checks if a given string is a valid parameter for that method.
 It may also verify the values.</li>
 </ul>
@@ -57,18 +57,18 @@ When you add a new method to Zoltan, you also need to:
 <ul>
 <li>
 Write a parameter function for your method that checks whether a given
-string and value is a valid parameter pair for your method. See <b>LB_Set_RCB_Param</b>
+string and value is a valid parameter pair for your method. See <b>Zoltan_Set_RCB_Param</b>
 in <i>rcb/rcb.c</i> for an example.</li>
 
 <li>
-Let your method access the parameters via <b><a href="dev_services_params.html#LB_Bind_Param">LB_Bind_Param
+Let your method access the parameters via <b><a href="dev_services_params.html#Zoltan_Bind_Param">Zoltan_Bind_Param
 </a></b>and
-<b><a href="dev_services_params.html#LB_Assign_Param_Vals">LB_Assign_Param_Vals</a></b>.</li>
+<b><a href="dev_services_params.html#Zoltan_Assign_Param_Vals">Zoltan_Assign_Param_Vals</a></b>.</li>
 
 <li>
 Change the parameter function array in <i>params/set_params.c</i> to include
 your parameter function. Simply add a new entry to the static array that
-looks like: <i>static LB_SET_PARAM_FN * Param_func[] = {...}</i>.</li>
+looks like: <i>static ZOLTAN_SET_PARAM_FN * Param_func[] = {...}</i>.</li>
 
 <li>
 Make sure your method uses the <a href="../ug_html/ug_alg.html#General_Parameters">key

@@ -59,7 +59,7 @@ Decomposition Method	= rcb
 #
 # This line is used to to specify parameter values to overwrite the default
 # parameter values used in Zoltan.  These parameters will be passed to Zoltan
-# through calls to LB_Set_Param(). Parameters are set by entries consisting
+# through calls to Zoltan_Set_Param(). Parameters are set by entries consisting
 # of pairs of strings "<parameter string>=<value string>". 
 # The <parameter string> should be a string that is recognized by the
 # particular load-balancing method being used.
@@ -230,7 +230,7 @@ Parallel File Location	= root=/pfs/io_, subdir=mmstjohn
 #
 # 	0   --  No debug output is produced.
 #	1   --  Evaluation of the initial and final partition is done
-#               through calls to driver_eval and LB_Eval.
+#               through calls to driver_eval and Zoltan_LB_Eval.
 #	2   --  Function call traces through major driver functions are
 #               printed.
 #       3   --  Generate output files of initial distribution.

@@ -30,27 +30,27 @@
 <A NAME="new_implementation"></A>Load-Balancing Function Implementation</H2>
 The new load-balancing algorithm should be implemented as an <B>LB_FN</B>.
 The type definition for an <B>LB_FN</B> is in <I>lb/lb_const.h</I> and
-is described below. When the new algorithm is selected in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>,
-the <I>LB_Fn</I> field of the <B>LB_Struct</B> is set to point to the <B>LB_FN</B>
+is described below. When the new algorithm is selected in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>,
+the <I>LB_Fn</I> field of the <B>Zoltan_Struct</B> is set to point to the <B>LB_FN</B>
 function for the new algorithm. This pointer is then used in invoking load
-balancing in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>.
+balancing in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>.
 <BR>&nbsp;
 
 <P>
 <hr>
 <HR>typedef int <B>LB_FN</B>
-(struct&nbsp;<B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>&nbsp;*<I>lb</I>,
+(struct&nbsp;<B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>&nbsp;*<I>zz</I>,
 int&nbsp;*<I>num_import</I>,
-<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>import_global_ids</I>,
-<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>import_local_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_global_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>import_local_ids</I>,
 int&nbsp;**<I>import_procs</I>,
 int&nbsp;*<I>num_export</I>,
-<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>export_global_ids</I>,
-<B><A HREF="dev_lb_types.html">LB_ID_PTR</A></B>&nbsp;*<I>export_local_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_global_ids</I>,
+<B><A HREF="dev_lb_types.html">ZOLTAN_ID_PTR</A></B>&nbsp;*<I>export_local_ids</I>,
 int&nbsp;**<I>export_procs</I>);&nbsp;
 <HR>
 <BR>The <B>LB_FN</B> function type describes the arguments passed to a
-load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+load-balancing function. The input to the function is an <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 containing pointers to application-registered functions to be used in the
 load-balancing algorithm. The remaining arguments are output parameters
 listing the objects to be imported or exported to the processor in the
@@ -76,9 +76,9 @@ interface will then build the lists requested by
 </TR>
 
 <TR VALIGN=TOP>
-<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<TD VALIGN=TOP><I>&nbsp;&nbsp;&nbsp; zz</I></TD>
 
-<TD>A pointer to the <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+<TD>A pointer to the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 to be used in the load-balancing algorithm.</TD>
 </TR>
 
@@ -96,7 +96,7 @@ has been computed and the import arrays should be ignored.</TD>
 <TD>Upon return, an array of <I>num_import</I> global IDs
 of objects to be imported to the processor for the new decomposition.
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
 </TR>
 
@@ -106,7 +106,7 @@ If this array is non-null, it must be allocated by
 <TD>Upon return, an array of <I>num_import</I> local IDs
 of objects to be imported to the processor for the new decomposition.
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
 </TR>
 
@@ -117,7 +117,7 @@ If this array is non-null, it must be allocated by
 IDs of processors owning (in the old decomposition) the objects to be imported
 for the new decomposition.
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
 </TR>
 
@@ -135,7 +135,7 @@ has been computed and the export arrays should be ignored.</TD>
 <TD>Upon return, an array of <I>num_export</I> global IDs
 of objects to be exported from the processor for the new decomposition.
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
 </TR>
 
@@ -145,7 +145,7 @@ If this array is non-null, it must be allocated by
 <TD>Upon return, an array of <I>num_export</I> local IDs
 of objects to be exported from the processor for the new decomposition.
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </TD>
 </TR>
 
@@ -156,7 +156,7 @@ If this array is non-null, it must be allocated by
 processor IDs of processors owning (in the old decomposition) the objects
 to be exported for the new decomposition.&nbsp;
 If this array is non-null, it must be allocated by 
-<b><a href="dev_add_memory.html#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<b><a href="dev_add_memory.html#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 </td>
 </TR>
 

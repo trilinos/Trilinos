@@ -32,8 +32,8 @@ Zoltan uses a <a href="dev_util_mem.html">memory management
 package</a> to simplify debugging of memory problems. 
 It is strongly recommended that load-balancing algorithm
 developers use the routines in this package, such as 
-<a href="dev_util_mem.html#LB_Malloc"><b>LB_MALLOC</b> </a>and
-<b><a href="dev_util_mem.html#LB_Free">LB_FREE</a></b>, instead
+<a href="dev_util_mem.html#Zoltan_Malloc"><b>ZOLTAN_MALLOC</b> </a>and
+<b><a href="dev_util_mem.html#Zoltan_Free">ZOLTAN_FREE</a></b>, instead
 of the standard C routines for most memory management.
 <p>
 Macros that simplify the <a href="dev_lb_types.html#ID alloc">allocation of global and local identifiers (IDs)</a>
@@ -44,39 +44,39 @@ error checking for the allocations and, thus, their use is highly recommended.
 <p>When a dynamic structure needs to be returned to the application,
 special memory allocation routines are needed.&nbsp; For example, the import
 and export lists of data to migrate are returned to an application from
-<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 and 
-<b><a href="../ug_html/ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>.
+<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>.
 There are two special routines for managing memory for such situations,
-called <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b> and <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
+called <b><a href="#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b> and <b><a href="#Zoltan_Special_Free">Zoltan_Special_Free</a></b>.
 Algorithms must use these functions to maintain compatibility with both
 C and Fortran90 applications; these special routines manage memory in a
 way that is compatible with both languages.
 <p>Some load-balancing algorithms may contain persistent data structures,
 that is, data structures that are preserved between calls to the load-balancing
-routine. The <i>lb</i> structure contains a field 
-<a href="dev_add_struct.html"><i>lb->Data_Structure</i></a>
-for this purpose, allowing multiple load-balancing structures to preserve
+routine. The <i>zz</i> structure contains a field 
+<a href="dev_add_struct.html"><i>zz->Data_Structure</i></a>
+for this purpose, allowing multiple Zoltan structures to preserve
 their own decomposition data. The developer should write a function that
-frees this data structure.&nbsp; Use <b>LB_RCB_Free_Structure </b>as an
+frees this data structure.&nbsp; Use <b>Zoltan_RCB_Free_Structure </b>as an
 example.
 <p>
-<hr><a NAME="LB_Special_Malloc"></a>int <b>LB_Special_Malloc</b>(struct
-<b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
-*<i>lb</i>, void **<i>array</i>, int <i>size</i>, <b>LB_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
+<hr><a NAME="Zoltan_Special_Malloc"></a>int <b>Zoltan_Special_Malloc</b>(struct
+<b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+*<i>zz</i>, void **<i>array</i>, int <i>size</i>, <b>ZOLTAN_SPECIAL_MALLOC_TYPE</b><i>type</i>);&nbsp;
 <hr>
-<p>The <b>LB_Special_Malloc</b> routine allocates memory for the result arrays
+<p>The <b>Zoltan_Special_Malloc</b> routine allocates memory for the result arrays
 of 
-<b><a href="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+<b><a href="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 and 
-<b><a href="../ug_html/ug_interface_mig.html#LB_Compute_Destinations">LB_Compute_Destinations</a></b>:
+<b><a href="../ug_html/ug_interface_mig.html#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>:
 <i>import_global_ids</i>, <i>import_local_ids</i>, <i>import_procs</i>,
 <i>export_global_ids</i>,
 <i>export_local_ids</i>
 and <i>export_procs</i>. Since these arrays are returned to the application,
-they must be allocated by <b>LB_Special_Malloc</b> to insure they are allocated
-by the same language as the application. Memory allocated by <b>LB_Special_Malloc</b>
-must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
+they must be allocated by <b>Zoltan_Special_Malloc</b> to insure they are allocated
+by the same language as the application. Memory allocated by <b>Zoltan_Special_Malloc</b>
+must be deallocated by <b><a href="#Zoltan_Special_Free">Zoltan_Special_Free</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr VALIGN=TOP>
@@ -86,9 +86,9 @@ must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>The load balancing structure currently in use.</td>
+<td>The Zoltan structure currently in use.</td>
 </tr>
 
 <tr>
@@ -96,7 +96,7 @@ must be deallocated by <b><a href="#LB_Special_Free">LB_Special_Free</a></b>.
 
 <td>
 Upon return, a pointer to the allocated space.
-Usually of type int** or <b><a href="dev_lb_types.html">LB_ID_PTR</a></b>*.
+Usually of type int** or <b><a href="dev_lb_types.html">ZOLTAN_ID_PTR</a></b>*.
 </td>
 </tr>
 
@@ -109,9 +109,9 @@ Usually of type int** or <b><a href="dev_lb_types.html">LB_ID_PTR</a></b>*.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
 
-<td>The type of array to allocate. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
-<b>LB_SPECIAL_MALLOC_GID</b>
-or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.
+<td>The type of array to allocate. Must be one of <b>ZOLTAN_SPECIAL_MALLOC_INT</b>,
+<b>ZOLTAN_SPECIAL_MALLOC_GID</b>
+or <b>ZOLTAN_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.
 </td>
 </tr>
 
@@ -138,9 +138,9 @@ or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.htm
 
 <td>
 <tt>
-ierr = <b>LB_Special_Malloc</b>(<i>lb</i>, (void **)<i>import_gid</i>,
+ierr = <b>Zoltan_Special_Malloc</b>(<i>zz</i>, (void **)<i>import_gid</i>,
 <i>num_import</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>LB_SPECIAL_MALLOC_GID</b>);
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ZOLTAN_SPECIAL_MALLOC_GID</b>);
 </tt>
 </td>
 </tr>
@@ -155,10 +155,10 @@ and returns a pointer to the allocated space in <i>import_gid</i>.
 </table>
 
 <p>
-<hr><a NAME="LB_Special_Free"></a>int <b>LB_Special_Free</b>(struct <b><a href="dev_lb_structs.html#LB_Struct">LB_Struct</a></b>
-*<i>lb</i>, void **<i>array</i>,<b> LB_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
+<hr><a NAME="Zoltan_Special_Free"></a>int <b>Zoltan_Special_Free</b>(struct <b><a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a></b>
+*<i>zz</i>, void **<i>array</i>,<b> ZOLTAN_SPECIAL_MALLOC_TYPE</b> <i>type</i>);&nbsp;
 <hr>
-<p><b>LB_Special_Free</b> frees memory allocated by <b><a href="#LB_Special_Malloc">LB_Special_Malloc</a></b>.
+<p><b>Zoltan_Special_Free</b> frees memory allocated by <b><a href="#Zoltan_Special_Malloc">Zoltan_Special_Malloc</a></b>.
 The array pointer is set to NULL upon return.
 <br>&nbsp;
 <table WIDTH="100%" >
@@ -169,9 +169,9 @@ The array pointer is set to NULL upon return.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>The load balancing structure currently in use.</td>
+<td>The Zoltan structure currently in use.</td>
 </tr>
 
 <tr>
@@ -183,9 +183,9 @@ The array pointer is set to NULL upon return.
 <tr>
 <td VALIGN=TOP>&nbsp;&nbsp;&nbsp; <i>type</i></td>
 
-<td>The type of the array. Must be one of <b>LB_SPECIAL_MALLOC_INT</b>,
-<b>LB_SPECIAL_MALLOC_GID</b>
-or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.</td>
+<td>The type of the array. Must be one of <b>ZOLTAN_SPECIAL_MALLOC_INT</b>,
+<b>ZOLTAN_SPECIAL_MALLOC_GID</b>
+or <b>ZOLTAN_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.html">global IDs</a> and <a href="dev_lb_types.html">local IDs</a>, respectively.</td>
 </tr>
 
 <tr>
@@ -211,8 +211,8 @@ or <b>LB_SPECIAL_MALLOC_LID</b> for processor numbers, <a href="dev_lb_types.htm
 
 <td>
 <tt>
-ierr = <b>LB_Special_Free</b>(<i>lb</i>, (void **)<i>import_gid</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>LB_SPECIAL_MALLOC_GID</b>);
+ierr = <b>Zoltan_Special_Free</b>(<i>zz</i>, (void **)<i>import_gid</i>,
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <b>ZOLTAN_SPECIAL_MALLOC_GID</b>);
 </tt>
 </td>
 </tr>

@@ -35,18 +35,18 @@ that use the load-balancing library. It is also included in <I>lb/lb_const.h</I>
 which should be included by all load-balancing library files to provide
 access to the load-balancing data structures described above.
 
-<P>In <I>lb/lbi_const.h</I>, the enumerated type <B>LB_FN_TYPE</B> defines
-the application query function types (e.g., <B><A HREF="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN_TYPE</A></B>
-and <B><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</A></B>).
-The interface query routines (e.g., <B><A HREF="../ug_html/ug_query_lb.html#LB_NUM_OBJ_FN">LB_NUM_OBJ_FN</A></B>
-and <B><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</A></B>)
+<P>In <I>lb/lbi_const.h</I>, the enumerated type <B>ZOLTAN_FN_TYPE</B> defines
+the application query function types (e.g., <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN_TYPE</A></B>
+and <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</A></B>).
+The interface query routines (e.g., <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</A></B>
+and <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</A></B>)
 and their argument lists are defined as C type definitions (typedef). These
 type definitions are used by the application developer to implement the
 query functions needed for the application to use the load-balancing library.
 
 <P>Prototypes for the load-balancing and migration interface functions
-(e.g., <B><A HREF="../ug_html/ug_interface_lb.html#LB_Balance">LB_Balance</A></B>
-and <B><A HREF="../ug_html/ug_interface_mig.html#LB_Help_Migrate">LB_Help_Migrate</A></B>)
+(e.g., <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</A></B>
+and <B><A HREF="../ug_html/ug_interface_mig.html#Zoltan_Help_Migrate">Zoltan_Help_Migrate</A></B>)
 are also included in <I>lb/lbi_const.h</I>. Interface functions are called
 by the application to register functions, select a load-balancing method,
 invoke load balancing and migrate data.

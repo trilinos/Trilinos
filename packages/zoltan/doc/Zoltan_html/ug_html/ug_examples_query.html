@@ -30,7 +30,7 @@
 <a NAME="Query-Function Example"></a>Query-Function Examples</h2>
 Examples of query functions provided by a simple application are included
 below.&nbsp; The load-balancing examples include a simple implementation
-of <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a> </b>and <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+of <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a> </b>and <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query functions and variants of the simple implementation that exploit
 local identifiers and data pointers.&nbsp; Migration examples for packing
 and unpacking objects are also included.&nbsp;&nbsp; Robust error checking
@@ -77,8 +77,8 @@ examples are included <a href="#query example data types">below</a>.
 <br><tt>! <i>A node consists of its 3D coordinates and</i></tt>
 <br><tt>! <i>an ID number that is unique across all processors.</i></tt>
 <br><tt>type Node_Type&nbsp;&nbsp;</tt>
-<br><tt>&nbsp; real(lb_double) :: Coordinates(3)&nbsp;</tt>
-<br><tt>&nbsp; integer(lb_int) :: Global_ID_Num&nbsp;</tt>
+<br><tt>&nbsp; real(Zoltan_DOUBLE) :: Coordinates(3)&nbsp;</tt>
+<br><tt>&nbsp; integer(Zoltan_INT) :: Global_ID_Num&nbsp;</tt>
 <br><tt>end type Node_Type</tt>
 <br><tt>&nbsp;</tt>
 <p><tt>!<i> Mesh data structure.</i>&nbsp;</tt>
@@ -86,7 +86,7 @@ examples are included <a href="#query example data types">below</a>.
 <br><tt>! <i>the number of nodes owned by the processor.</i></tt>
 <br><tt>type Mesh_Type&nbsp;</tt>
 <br><tt>&nbsp; type(Node_Type) :: Nodes(MAX_NODES)&nbsp;</tt>
-<br><tt>&nbsp; integer(lb_int) :: Number_Owned&nbsp;</tt>
+<br><tt>&nbsp; integer(Zoltan_INT) :: Number_Owned&nbsp;</tt>
 <br><tt>end type Mesh_Type</tt>
 <br>&nbsp;</td>
 </tr>
@@ -96,16 +96,16 @@ examples are included <a href="#query example data types">below</a>.
 
 <h3>
 <a NAME="lb_query_example"></a>Load-Balancing Query Function Examples</h3>
-In the following examples, <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
-and <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN </a></b>query functions
+In the following examples, <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+and <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN </a></b>query functions
 are implemented for an application using the mesh and node data structures
 described <a href="#query example data types">above</a>.&nbsp; Dynamic
 load-balancing is performed on the nodes of the mesh.
-<p>Through a call to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,
-the function <i>user_return_owned_nodes</i> is registered as the <b><a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN</a></b>
+<p>Through a call to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
+the function <i>user_return_owned_nodes</i> is registered as the <b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
 query function.&nbsp; It returns&nbsp; global and local identifiers for
 each node owned by a processor.
-<p>The function <i>user_return_coords</i> is registered as an&nbsp; <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
+<p>The function <i>user_return_coords</i> is registered as an&nbsp; <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 query function.&nbsp; Given the global and local identifiers for a node,
 this function returns the node's coordinates.&nbsp; All the examples exploit
 the local identifier to quickly locate nodal data.&nbsp; If such an identifier
@@ -124,7 +124,7 @@ shown in <font color="#FF0000">red</font>.
 <a NAME="basic_query_example"></a>Basic Example</h4>
 In the simplest example, the query functions access the application data
 through a global data structure (<i>Mesh</i>) representing the mesh.&nbsp;
-In the calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>,
+In the calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>,
 no pointers to application data are registered with the query function
 (i.e., the <i>data</i> pointer is not used).&nbsp;&nbsp; A node's local
 identifier is an integer representing the index in the <i>Mesh.Nodes</i>
@@ -144,9 +144,9 @@ file</i> */&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
 one integer each. */</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
 */</tt>
@@ -154,19 +154,19 @@ one integer each. */</i></tt>
 functions;</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>the global Mesh data structure will be
 used.</i> */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_return_coords, NULL);&nbsp;&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_return_owned_nodes, NULL);&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>}&nbsp;</tt>
 <p><tt>void user_return_owned_nodes(void *data,&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;global_ids, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;global_ids, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;local_ids,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
 <br><tt>{&nbsp;</tt>
@@ -181,11 +181,11 @@ used.</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i*num_lid_entries]
 = i;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; }&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;&nbsp;</tt>
 <br><tt>}&nbsp;</tt>
 <p><tt>void user_return_coords(void *data,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;global_id, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> local_id,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)&nbsp;</tt>
 <br><tt>{&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>use local_id to index into the Nodes array.</i>
@@ -193,7 +193,7 @@ used.</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = Mesh.Nodes[local_id[0]].Coordinates[0];&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = Mesh.Nodes[local_id[0]].Coordinates[1];&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = Mesh.Nodes[local_id[0]].Coordinates[2];&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;&nbsp;</tt>
 <br><tt>}</tt></td>
 </tr>
 
@@ -215,21 +215,21 @@ file</i>&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
 one integer each.&nbsp;</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Do not register a data pointer with the
 functions;</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>the global Mesh data structure will be
 used.</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>,</tt>
 
 <tt>user_return_coords)&nbsp;&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
 
 <tt>user_return_owned_nodes)&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
@@ -239,12 +239,12 @@ used.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
 <br><tt>use Global_Mesh_Data&nbsp;</tt>
-<br><tt>integer(lb_int) :: data(1) ! dummy declaration, do not use</tt>
-<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
-<br><tt>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</tt>
-<br><tt>integer(lb_int), intent(in) :: wgt_dim</tt>
-<br><tt>real(lb_float), intent(out) :: obj_wgts(*)</tt>
-<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt>integer(Zoltan_INT) :: data(1) ! dummy declaration, do not use</tt>
+<br><tt>integer(Zoltan_INT), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: global_ids(*), local_ids(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(in) :: wgt_dim</tt>
+<br><tt>real(Zoltan_FLOAT), intent(out) :: obj_wgts(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: ierr</tt>
 <br><tt>integer i&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>return global node numbers as global_ids.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>return index into Nodes array for local_ids.</i>&nbsp;&nbsp;</tt>
@@ -254,21 +254,21 @@ used.</i></tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
 = i&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = ZOLTAN_OK&nbsp;</tt>
 <br><tt>end subroutine&nbsp;</tt>
 <p><tt>subroutine user_return_coords(data, num_gid_entries, num_lid_entries,
 &amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; global_id, local_id, geom_vec, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
 <br><tt>use Global_Mesh_Data&nbsp;</tt>
-<br><tt>integer(lb_int) :: data(1) ! dummy declaration, do not use</tt>
-<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
-<br><tt>integer(lb_int), intent(in) :: global_id(*), local_id(*)</tt>
-<br><tt>real(lb_double), intent(out) :: geom_vec(*)</tt>
-<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt>integer(Zoltan_INT) :: data(1) ! dummy declaration, do not use</tt>
+<br><tt>integer(Zoltan_INT), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)</tt>
+<br><tt>real(Zoltan_DOUBLE), intent(out) :: geom_vec(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: ierr</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>use local_id to index into the Nodes array.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id(1))%Coordinates&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = ZOLTAN_OK&nbsp;</tt>
 <br><tt>end subroutine</tt></td>
 </tr>
 
@@ -282,7 +282,7 @@ In this example, the address of a local mesh data structure is registered
 with the query functions for use by those functions.&nbsp; This change
 eliminates the need for a global mesh data structure in the application.&nbsp;
 The address of the local data structure is included as an argument in calls
-to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;
+to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.&nbsp;
 This address is then used in <i>user_return_owned_nodes</i> and <i>user_return_coords</i>
 to provide data for these routines.&nbsp; It is cast to the <i><a href="#query example data types">Mesh_Type</a></i>
 data type and accessed with local identifiers as in the <a href="#basic_query_example">Basic
@@ -293,9 +293,9 @@ structure that can be accessed by the query functions.&nbsp; It can also
 be used for load balancing on different data objects.&nbsp; For example,
 if an application had more than one mesh, load balancing could be performed
 separately on each mesh without having different query routines for each
-mesh.&nbsp; Calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
+mesh.&nbsp; Calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 would define which mesh should be balanced, and the query routines would
-access the mesh currently designated by the <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>
+access the mesh currently designated by the <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
 calls.
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
@@ -311,27 +311,27 @@ file</i> */</tt>
 <br><tt>...</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>Indicate that local and global IDs are
 one integer each. */</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; /* <i>Register load-balancing query functions.</i>
 */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i><font color="#FF0000">Register the address
 of mesh as the data pointer.</font></i> */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_return_coords, <font color="#FF0000">&amp;mesh</font>);&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_return_owned_nodes, <font color="#FF0000">&amp;mesh</font>);&nbsp;</tt>
 <br><tt>...</tt>
 <br><tt>}</tt>
 <p><tt>void user_return_owned_nodes(void *data,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_ids, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>&nbsp;local_ids,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> global_ids, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>&nbsp;local_ids,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int wgt_dim, float *obj_wgts,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int *ierr)&nbsp;</tt>
 <br><tt>{</tt>
@@ -351,11 +351,11 @@ of mesh as the data pointer.</font></i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids[i*num_lid_entries]
 = i;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; }</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;</tt>
 <br><tt>}</tt>
 <p><tt>void user_return_coords(void *data,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> local_id,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; double *geom_vec, int *ierr)</tt>
 <br><tt>{</tt>
 <p><tt><font color="#FF0000">/* <i>cast data pointer to type Mesh_Type.</i>
@@ -367,7 +367,7 @@ of mesh as the data pointer.</font></i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[0] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[0]</font>;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[1] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[1]</font>;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec[2] = <font color="#FF0000">ptr->Nodes[local_id[0]].Coordinates[2]</font>;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;</tt>
 <br><tt>}</tt></td>
 </tr>
 
@@ -379,13 +379,13 @@ the application-defined data pointer.</i></caption>
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
 <td><a NAME="query Fortran example three"></a><tt>/* <i>included in file
-lb_user_const.f90</i> */</tt>
+zoltan_user_data.f90</i> */</tt>
 <br><tt><font color="#FF0000">! <i>User defined data type as wrapper for
 Mesh</i></font></tt>
-<br><tt><font color="#FF0000">type LB_User_Data_1</font></tt>
+<br><tt><font color="#FF0000">type Zoltan_User_Data_1</font></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp; type(Mesh_type), pointer ::
 ptr</font></tt>
-<br><tt><font color="#FF0000">end type LB_User_Data_1</font></tt>
+<br><tt><font color="#FF0000">end type Zoltan_User_Data_1</font></tt>
 <p>
 <hr WIDTH="100%"><tt>! <i>in application's program file</i>&nbsp;</tt>
 <p><tt>program query_example_3&nbsp;</tt>
@@ -393,25 +393,25 @@ ptr</font></tt>
 <br><tt><font color="#FF0000">!<i> declare a local mesh data structure
 and a User_Data to point to it.</i></font></tt>
 <br><tt><font color="#FF0000">type(Mesh_Type), target :: mesh</font></tt>
-<br><tt><font color="#FF0000">type(LB_User_Data_1) data</font></tt>
+<br><tt><font color="#FF0000">type(Zoltan_User_Data_1) data</font></tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; ! <i>Indicate that local and global IDs are
 one integer each.&nbsp;</i></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>", "1");</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>(lb,
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>(zz,
 "<a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>", "1");</tt><tt></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>Register load-balancing query functions.</i></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; ! <i>Use the User_Data
 variable to pass the mesh data
 </i></font></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; data%ptr => mesh</font></tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN_TYPE</a>,</tt>
 
 <tt>user_return_coords<font color="#FF0000">, data</font>)&nbsp;&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_lb.html#LB_OBJ_LIST_FN">LB_OBJ_LIST_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN_TYPE</a>,</tt>
 
 <tt>user_return_owned_nodes<font color="#FF0000">,</font> </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <font color="#FF0000">data</font>)&nbsp;&nbsp;</tt>
@@ -421,12 +421,12 @@ variable to pass the mesh data
 <br><tt>&nbsp;&nbsp;&nbsp; num_gid_entries, num_lid_entries, &amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; global_ids, local_ids, wgt_dim, obj_wgts, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
-<br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
-<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
-<br><tt>integer(lb_int), intent(out) :: global_ids(*), local_ids(*)</tt>
-<br><tt>integer(lb_int), intent(in) :: wgt_dim</tt>
-<br><tt>real(lb_float), intent(out) :: obj_wgts(*)</tt>
-<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt><font color="#FF0000">type(Zoltan_User_Data_1) :: data</font></tt>
+<br><tt>integer(Zoltan_INT), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: global_ids(*), local_ids(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(in) :: wgt_dim</tt>
+<br><tt>real(Zoltan_FLOAT), intent(out) :: obj_wgts(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: ierr</tt>
 <br><tt>integer i&nbsp;</tt>
 <br><tt><font color="#FF0000">type(Mesh_Type), pointer :: Mesh</font></tt>
 <p><tt><font color="#FF0000">&nbsp;&nbsp; ! <i>extract the mesh from the
@@ -440,23 +440,23 @@ User_Data argument</i></font></tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; local_ids(1+(i-1)*num_lid_entries)
 = i&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; end do&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = ZOLTAN_OK&nbsp;</tt>
 <br><tt>end subroutine&nbsp;</tt>
 <p><tt>subroutine user_return_coords(data, global_id, local_id, &amp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp; geom_vec, ierr)&nbsp;</tt>
 <br><tt>use zoltan&nbsp;</tt>
-<br><tt><font color="#FF0000">type(LB_User_Data_1) :: data</font></tt>
-<br><tt>integer(lb_int), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
-<br><tt>integer(lb_int), intent(in) :: global_id(*), local_id(*)</tt>
-<br><tt>real(lb_double), intent(out) :: geom_vec(*)</tt>
-<br><tt>integer(lb_int), intent(out) :: ierr</tt>
+<br><tt><font color="#FF0000">type(Zoltan_User_Data_1) :: data</font></tt>
+<br><tt>integer(Zoltan_INT), intent(in)&nbsp;::&nbsp;num_gid_entries, num_lid_entries</tt>
+<br><tt>integer(Zoltan_INT), intent(in) :: global_id(*), local_id(*)</tt>
+<br><tt>real(Zoltan_DOUBLE), intent(out) :: geom_vec(*)</tt>
+<br><tt>integer(Zoltan_INT), intent(out) :: ierr</tt>
 <br><tt><font color="#FF0000">type(Mesh_Type), pointer :: Mesh</font></tt>
 <p><tt><font color="#FF0000">&nbsp;&nbsp; ! <i>extract the mesh from the
 User_Data argument</i></font></tt>
 <br><tt><font color="#FF0000">&nbsp;&nbsp;&nbsp; Mesh => data%ptr</font></tt>
 <p><tt>&nbsp;&nbsp;&nbsp; ! <i>use local_id to index into the Nodes array.</i>&nbsp;&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; geom_vec(1:3) = Mesh%Nodes(local_id(1))%Coordinates&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; ierr = LB_OK&nbsp;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; ierr = ZOLTAN_OK&nbsp;</tt>
 <br><tt>end subroutine</tt></td>
 </tr>
 
@@ -473,7 +473,7 @@ Simple migration query functions for the <a href="#basic_query_example">Basic
 Example</a> are included<a href="#query example four"> below</a>.&nbsp;
 These functions are used by the migration tools to move nodes among the
 processors.&nbsp; The functions <i>user_size_node</i>, <i>user_pack_node</i>,
-and <i>user_unpack_node</i> are registered through calls to <b><a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a></b>.&nbsp;
+and <i>user_unpack_node</i> are registered through calls to <b><a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>.&nbsp;
 Query function <i>user_size_node</i> returns the size (in bytes) of data
 representing a single node.&nbsp; Query function <i>user_pack_node</i>
 copies a given node's data into the communication buffer<i> buf</i>.&nbsp;
@@ -482,9 +482,9 @@ the communication buffer <i>buf</i> into the <i>Mesh.Nodes</i> array on
 its new processor.
 <p>These query routines are simple because the application does not dynamically
 allocate memory for each node.&nbsp; Such dynamic allocation would have
-to be accounted for in the <a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN</a>,
-<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN</a>,
-and <a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a> routines.&nbsp;
+to be accounted for in the <a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN</a>,
+<a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN</a>,
+and <a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN</a> routines.&nbsp;
 <br>&nbsp;
 <center><table BORDER=2 COLS=1 WIDTH="90%" NOSAVE >
 <tr>
@@ -497,40 +497,40 @@ and <a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN</a> routines.&
 functions;</i> */</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; /* <i>the global Mesh data structure will be
 used.</i> */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_size_node, NULL);&nbsp;&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_pack_node, NULL);&nbsp;</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#LB_Set_Fn">LB_Set_Fn</a>(lb,
-<a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</a>,</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_interface_init.html#Zoltan_Set_Fn">Zoltan_Set_Fn</a>(zz,
+<a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</a>,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 (void (*)()) user_unpack_node, NULL);&nbsp;&nbsp;</tt>
 <br><tt>...&nbsp;</tt>
 <br><tt>}&nbsp;</tt>
 <p><tt>int user_size_node(void *data, </tt>
 <br><tt>&nbsp;&nbsp;&nbsp; int num_gid_entries, int num_lid_entries,</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id, int *ierr)</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> local_id, int *ierr)</tt>
 <br><tt>{</tt>
 <br><tt>/* <i>Return the size of data associated with one node.</i> */</tt>
 <br><tt>/* <i>This case is simple because all nodes have the same size.</i> */</tt>
-<br><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; return(sizeof(struct Node_Type));</tt>
 <br><tt>}</tt>
 <p><tt>void user_pack_node(void *data, </tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
 int num_gid_entries, int num_lid_entries,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> local_id,&nbsp;</tt>
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> global_id, <a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> local_id,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
 int dest_proc, int size, char *buf, int *ierr)&nbsp;</tt>
 <br><tt>{</tt>
 <br><tt>/* Copy<i> the specified node's data into buffer buf.</i> */</tt>
 <br><tt>struct Node_Type *node_buf = (struct Node_Type *) buf;</tt>
-<p><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<p><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[0] = Mesh.Nodes[local_id[0]].Coordinates[0];</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[1] = Mesh.Nodes[local_id[0]].Coordinates[1];</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; node_buf->Coordinates[2] = Mesh.Nodes[local_id[0]].Coordinates[2];</tt>
@@ -538,14 +538,14 @@ int dest_proc, int size, char *buf, int *ierr)&nbsp;</tt>
 <br><tt>}</tt>
 <p><tt>void user_unpack_node(void *data, int num_gid_entries,</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> global_id, int size,&nbsp;</tt>
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> global_id, int size,&nbsp;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp;&nbsp;
 char *buf, int *ierr)</tt>
 <br><tt>{</tt>
 <br><tt>/* <i>Copy the node data in buf into the Mesh data structure. </i>*/</tt>
 <br><tt>int i;</tt>
 <br><tt>struct Node_Type *node_buf = (struct Node_Type *) buf;</tt>
-<p><tt>&nbsp;&nbsp;&nbsp; *ierr = LB_OK;</tt>
+<p><tt>&nbsp;&nbsp;&nbsp; *ierr = ZOLTAN_OK;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; i = Mesh.Number_Owned;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; Mesh.Number_Owned = Mesh.Number_Owned + 1;</tt>
 <br><tt>&nbsp;&nbsp;&nbsp; Mesh.Nodes[i].Coordinates[0] = node_buf->Coordinates[0];</tt>

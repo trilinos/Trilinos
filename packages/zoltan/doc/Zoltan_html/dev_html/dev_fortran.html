@@ -58,7 +58,7 @@ API definitions in the <A HREF="../ug_html/ug.html">Zoltan User's Guide</A>.
 All structures in the API have a corresponding user-defined type in the
 Fortran interface. If a new structure is added, then modifications will
 be required to <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>. In these
-files, search for <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>
+files, search for <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>
 and "do like it does."
 
 <P>An explanation of how structures are handled may help. The Fortran user-defined
@@ -66,12 +66,12 @@ type for the structure simply contains the address of the structure, i.e.,
 the C pointer returned by a call to create the structure. Note that the
 user does not have access to the components of the structure, and can only
 pass the structure to functions. Within the Fortran structure, the
-address is stored in a variable of type(<B>LB_PTR</B>), which is a character
+address is stored in a variable of type(<B>Zoltan_PTR</B>), which is a character
 string containing one character for each byte of the address. This gives
 the best guarantee of portability under the Fortran and C standards. Also,
 to insure portability of passing character strings, the character string
 is converted to an array of integers before passing it between Fortran
-and C. The process of doing this is most easily seen by looking at <B><A HREF="../ug_html/ug_interface_lb.html#LB_Destroy">LB_Destroy</A></B>,
+and C. The process of doing this is most easily seen by looking at <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_Destroy">Zoltan_Destroy</A></B>,
 which has little else to clutter the code.
 <H3>
 <A NAME="fortran dev modifications"></A>Modifications to an existing Zoltan
@@ -79,7 +79,7 @@ interface function</H3>
 If the argument list or return type of a user-callable function in Zoltan
 changes, the same changes must be made in the Fortran interface routines.
 This involves changes in two files: <I>fort/fwrap.fpp</I> and <I>fort/cwrap.c</I>.
-In these files, search for the function name with the prefix <B>LB_ </B>omitted,
+In these files, search for the function name with the prefix <B>Zoltan_ </B>omitted,
 and modify the argument list, argument declarations, return type, and call
 to the C library function as appropriate. When adding a new argument, if
 there is not already an argument of the same type,&nbsp; look at another
@@ -94,10 +94,10 @@ Adding a new function involves changes to the two files <I>fort/fwrap.fpp</I>
 and <I>fort/cwrap.c</I>. Perhaps the easiest way to add a new function
 to these files is to pick some existing function, search for all occurrences
 of it, and use that code as a guide for the implementation of the interface
-for the new function. <B><A HREF="../ug_html/ug_interface_augment.html#LB_Point_Assign">LB_Point_Assign</A></B>
+for the new function. <B><A HREF="../ug_html/ug_interface_augment.html#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
 is a nice minimal function to use as an example. Use a case insensitive
-search on the name of the function without the <B>LB_</B> prefix, for example
-<B>point_assig</B>n.
+search on the name of the function without the <B>Zoltan_LB_</B> prefix, for example
+<B>point_assign</B>.
 
 <P>Here are the items in <I>fwrap.fpp</I>:
 <UL>
@@ -108,7 +108,7 @@ of public entities.</LI>
 <LI>
 interface for the C wrapper: Copy one of these and modify the function
 name, argument list and declarations for the new function. The name is
-of the form <B>LB_fw_Point_Assign</B> (fw stands for Fortran wrapper).</LI>
+of the form <B>Zfw_LB_Point_Assign</B> (fw stands for Fortran wrapper).</LI>
 
 <LI>
 generic interface: This assigns the function name to be a generic name
@@ -116,46 +116,46 @@ for one or more module procedures.</LI>
 
 <LI>
 module procedure(s): These are the Fortran-side wrapper functions. Usually
-there is one module procedure of the form <B>f90LB_Point_Assign</B>. If
+there is one module procedure of the form <B>Zf90_LB_Point_Assign</B>. If
 one argument can have more than one type passed to it (for example, it
 is type void in the C interface), then there must be one module procedure
 for each type that can be passed. These are distinguished by appending
 a digit to the end of the module procedure name. If n arguments can have
-more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>
+more than one type, then n digits are appended. See <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A></B>
 for example. Generally the module procedure just calls the C-side wrapper
 function,<B> </B>but in some cases it may need to coerce data to a different
-type (e.g., <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>),
-or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#LB_Free_Data">LB_Free_Data</A></B>).</LI>
+type (e.g., <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>),
+or may actually do real work (e.g., <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</A></B>).</LI>
 
 <BR>&nbsp;</UL>
 Here are the items in <I>cwrap.c</I>:
 <UL>
 <LI>
 name mangling: These are macros to convert the function name from the case
-sensitive C name (for example, <B>LB_fw_Point_Assign</B>) to the mangled
+sensitive C name (for example, <B>Zfw_LB_Point_Assign</B>) to the mangled
 name produced by the Fortran compiler. There are four of these for each
 function:</LI>
 
 <UL>
 <LI>
-lowercase (<B>lb_fw_point_assign</B>),</LI>
+lowercase (<B>zfw_lb_point_assign</B>),</LI>
 
 <LI>
-uppercase (<B>LB_FW_POINT_ASSIGN</B>),</LI>
+uppercase (<B>ZFW_LB_POINT_ASSIGN</B>),</LI>
 
 <LI>
-lowercase with underscore (<B>lb_fw_point_assign_</B>), and</LI>
+lowercase with underscore (<B>zfw_lb_point_assign_</B>), and</LI>
 
 <LI>
 lower case with double underscore (<B>lb_fw_point_assign__</B> but the
 second underscore is appended only if the name already contains an underscore,
-which will always be the case for names starting with <B>LB_</B>).</LI>
+which will always be the case for names starting with <B>Zfw_</B>).</LI>
 </UL>
 
 <LI>
 C-side wrapper function: Usually this just calls the Zoltan library function
 after coercing the form of the data (for example, constructing the pointer
-to <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A> </B>and call-by-reference
+to <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A> </B>and call-by-reference
 to call-by-value conversions).</LI>
 </UL>
 
@@ -168,11 +168,11 @@ for interface functions, and possibly also<I> lb/lb_const.h</I> and <I>lb/lbi_co
 <P>Here are the places query functions appear in <I>fwrap.fpp</I>:
 <UL>
 <LI>
-public statement for the <B><A HREF="dev_lb_interface.html#interface_fns">LB_FN_TYPE</A></B>
+public statement for the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
 argument: These are identical to the C enumerated type.</LI>
 
 <LI>
-definition of the <B><A HREF="dev_lb_interface.html#interface_fns">LB_FN_TYPE</A></B>
+definition of the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
 arguments: There are two groups of these, one containing subroutines (void
 functions) and one containing functions (int functions). Put the new symbol
 in the right category. The value assigned to the new symbol must agree
@@ -184,12 +184,12 @@ Here are the places query functions appear in <I>cwrap.c</I>:
 reverse wrappers: These are the query functions that are actually called
 by the Zoltan library routines when the query function was registered from
 Fortran. They are just wrappers to call the registered Fortran routine,
-coercing argument types as necessary. Look at <B>LB_Num_Edges_Fort_Wrapper</B>
+coercing argument types as necessary. Look at <B>Zoltan_Num_Edges_Fort_Wrapper</B>
 for an example.</LI>
 
 <LI>
-<B>LB_fw_Set_Fn</B>: This has a switch based on the value of the <B><A HREF="dev_lb_interface.html#interface_fns">LB_FN_TYPE</A></B>
-argument to set the Fortran query function and wrapper in the <B><A HREF="dev_lb_structs.html#LB_Struct">LB_Struct</A></B>.</LI>
+<B>Zfw_Set_Fn</B>: This has a switch based on the value of the <B><A HREF="dev_lb_interface.html#interface_fns">ZOLTAN_FN_TYPE</A></B>
+argument to set the Fortran query function and wrapper in the <B><A HREF="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</A></B>.</LI>
 </UL>
 In <I>lb/lb_const.h</I>, if a new field is added to the structures for
 a new query function, it should be added in both C and Fortran forms. In
@@ -199,7 +199,7 @@ it should be added in both C and Fortran forms. See these files for examples.
 <A NAME="fortran dev enum"></A>Enumerated types and defined constants</H3>
 Enumerated types and defined constants that the application uses as the
 value for an arguments must be placed in<I> fwrap.fpp</I> with the same
-value. See <B><A HREF="../ug_html/ug_interface.html#Error Codes">LB_OK</A></B>
+value. See <B><A HREF="../ug_html/ug_interface.html#Error Codes">ZOLTAN_OK</A></B>
 for an example.&nbsp;
 <HR WIDTH="100%">
 <BR>[<A HREF="dev.html">Table of Contents</A>&nbsp; |&nbsp; <A HREF="dev_future.html">Next:&nbsp;

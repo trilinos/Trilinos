@@ -35,8 +35,8 @@ only the
 <A HREF="ug_alg_rcb.html">RCB</A> and
 <a href="ug_alg_rib.html">RIB</a> 
 algorithms.
-<BLOCKQUOTE><B><A HREF="#LB_Point_Assign">LB_Point_Assign</A></B>
-<BR><B><A HREF="#LB_Box_Assign">LB_Box_Assign</A></B></BLOCKQUOTE>
+<BLOCKQUOTE><B><A HREF="#Zoltan_LB_Point_Assign">Zoltan_LB_Point_Assign</A></B>
+<BR><B><A HREF="#Zoltan_LB_Box_Assign">Zoltan_LB_Box_Assign</A></B></BLOCKQUOTE>
 
 <HR WIDTH="100%">
 <HR WIDTH="100%">
@@ -44,23 +44,23 @@ algorithms.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD WIDTH="85%"><A NAME="LB_Point_Assign"></A>int <B>LB_Point_Assign</B> (struct <B>LB_Struct</B>
-* <I>lb</I>, double * <I>coords</I>, int * <I>proc</I>);&nbsp;
+<TD WIDTH="85%"><A NAME="Zoltan_LB_Point_Assign"></A>int <B>Zoltan_LB_Point_Assign</B> (struct <B>Zoltan_Struct</B>
+* <I>zz</I>, double * <I>coords</I>, int * <I>proc</I>);&nbsp;
 <BR>&nbsp;</TD>
 </TR>
 
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> FUNCTION <B>LB_Point_Assign</B>(<I>lb, coords, proc</I>)&nbsp;
-<BR> INTEGER(LB_INT) :: LB_Point_Assign&nbsp;
-<BR> TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR> REAL(LB_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
-<BR> INTEGER(LB_INT), INTENT(OUT) :: proc&nbsp;</TD>
+<TD> FUNCTION <B>Zoltan_LB_Point_Assign</B>(<I>zz, coords, proc</I>)&nbsp;
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Point_Assign&nbsp;
+<BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<BR> REAL(Zoltan_DOUBLE), DIMENSION(*), INTENT(IN) :: coords&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: proc&nbsp;</TD>
 </TR>
 </TABLE>
 
-<HR WIDTH="100%"><B>LB_Point_Assign</B> is used to determine to which processor
+<HR WIDTH="100%"><B>Zoltan_LB_Point_Assign</B> is used to determine to which processor
 a new point should be assigned. It is applicable only to geometrically
 generated decompositions (currently only 
 <A HREF="ug_alg_rcb.html">RCB</A> and
@@ -77,9 +77,9 @@ owns it can be determined.
 </TR>
 
 <TR>
-<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<TD><I>&nbsp;&nbsp;&nbsp; zz</I></TD>
 
-<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
+<TD>Pointer to the Zoltan structure created by <B><A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A></B>.</TD>
 </TR>
 
 <TR>
@@ -113,8 +113,8 @@ owns it can be determined.
 <TR NOSAVE>
 <TD VALIGN=TOP NOSAVE>C:</TD>
 
-<TD WIDTH="85%"><A NAME="LB_Box_Assign"></A>int <B>LB_Box_Assign</B> (struct <B>LB_Struct</B>
-*<I> lb</I>, double <I>xmin</I>, double <I>ymin</I>, double <I>zmin</I>,
+<TD WIDTH="85%"><A NAME="Zoltan_LB_Box_Assign"></A>int <B>Zoltan_LB_Box_Assign</B> (struct <B>Zoltan_Struct</B>
+*<I> zz</I>, double <I>xmin</I>, double <I>ymin</I>, double <I>zmin</I>,
 double <I>xmax</I>, double <I>ymax</I>, double <I>zmax</I>, int * <I>procs</I>,
 int * <I>numprocs</I>);&nbsp;&nbsp;
 <BR>&nbsp;</TD>
@@ -123,28 +123,28 @@ int * <I>numprocs</I>);&nbsp;&nbsp;
 <TR NOSAVE>
 <TD VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</TD>
 
-<TD> FUNCTION <B>LB_Box_Assign</B>(<I>lb, xmin, ymin, zmin, xmax, ymax,
+<TD> FUNCTION <B>Zoltan_LB_Box_Assign</B>(<I>zz, xmin, ymin, zmin, xmax, ymax,
 zmax, procs, numprocs</I>)&nbsp;
-<BR> INTEGER(LB_INT) :: LB_Box_Assign&nbsp;
-<BR> TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<BR> REAL(LB_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
-<BR> INTEGER(LB_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
-<BR> INTEGER(LB_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
+<BR> INTEGER(Zoltan_INT) :: Zoltan_LB_Box_Assign&nbsp;
+<BR> TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<BR> REAL(Zoltan_DOUBLE), INTENT(IN) :: xmin, ymin, zmin, xmax, ymax, zmax&nbsp;
+<BR> INTEGER(Zoltan_INT), DIMENSION(*), INTENT(OUT) ::procs&nbsp;
+<BR> INTEGER(Zoltan_INT), INTENT(OUT) :: numprocs&nbsp;</TD>
 </TR>
 </TABLE>
 
 <HR WIDTH="100%">In many settings, it is useful to know which processors
-might need to know about an extended geometric object. <B>LB_Box_Assign</B>
+might need to know about an extended geometric object. <B>Zoltan_LB_Box_Assign</B>
 addresses this problem. Given a geometric decomposition of space (currently
 only 
 <A HREF="ug_alg_rcb.html">RCB</A> and
 <a href="ug_alg_rib.html">RIB</a> are
 supported), and given an axis-aligned box around the geometric
-object, <B>LB_Box_Assign</B> determines which processors own geometry that
+object, <B>Zoltan_LB_Box_Assign</B> determines which processors own geometry that
 intersects the box. To use this routine, the parameter <B>KEEP_CUTS</B>
 must be set to TRUE when the decomposition is generated. This parameter
 will cause the recursive sequence of geometric cuts to be saved, which
-is necessary for <B>LB_Box_Assign</B> to do its job.
+is necessary for <B>Zoltan_LB_Box_Assign</B> to do its job.
 <BR>&nbsp;
 
 <P>&nbsp;
@@ -155,9 +155,9 @@ is necessary for <B>LB_Box_Assign</B> to do its job.
 </TR>
 
 <TR>
-<TD><I>&nbsp;&nbsp;&nbsp; lb</I></TD>
+<TD><I>&nbsp;&nbsp;&nbsp; zz</I></TD>
 
-<TD>Pointer to the load-balancing structure created by <B><A HREF="ug_interface_init.html#LB_Create">LB_Create</A></B>.</TD>
+<TD>Pointer to the Zoltan structure created by <B><A HREF="ug_interface_init.html#Zoltan_Create">Zoltan_Create</A></B>.</TD>
 </TR>
 
 <TR>

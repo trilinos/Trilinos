@@ -48,7 +48,7 @@ be required in the new solve; any greater number probably indicates a problem
 with migration of the solution vector.
 
 <P>After the second solve, the load-balancing library is invoked again
-after registering an <B><A HREF="../ug_html/ug_query_lb.html#LB_OBJ_WEIGHT_FN">LB_OBJ_WEIGHT_FN</A></B>
+after registering an <B><A HREF="../ug_html/ug_query_lb.html#ZOLTAN_OBJ_WEIGHT_FN">ZOLTAN_OBJ_WEIGHT_FN</A></B>
 query function. Thus, load-balancing is performed this time using object
 weights. In the current implementation, nodal weights are determined arbitrarily
 by the nodal coordinates. To see the values to which the weights are set,
@@ -60,8 +60,8 @@ the node's row of the matrix, can (and probably should) be implemented.
 
 <P>The load-balancing query functions and all data migration functions
 are implemented in <I>rf/rf_dlb.c</I> and <I>rf/rf_dlb_const.h</I>. Data
-types for global and local object IDs are defined in <I>rf/rf_dlb_user_const.h</I>;
-this file should be copied to <I>lb/lb_user_const.h</I> before compiling
+types for global and local object IDs are defined in <I>rf/rf_dzoltan_user_data.h</I>;
+this file should be copied to <I>lb/zoltan_user_data.h</I> before compiling
 the load-balancing library. Global IDs are integers representing global
 node or element numbers. Local IDs are pointers to nodes or elements. Calls
 to load-balancing library functions are currently in <I>rf/rf_salsa.c</I>
@@ -82,7 +82,7 @@ Assuming the load-balancing library's CVS distribution is in a directory
 named <I>DLB</I> in the same directory as MPSalsa's CVS distribution, these
 lines should be changed to
 <BLOCKQUOTE>SUBVPATH=../rf ../el ../md ../ps ../pe ../ds ../../DLB/lb
-<BR>SUBINCPATH=-I../rf -I../el -I../md -I../ps -I../pe -I../ds -I../../DLB/lb</BLOCKQUOTE>
+<BR>SUBINCPATH=-I../rf -I../el -I../md -I../ps -I../pe -I../ds -I../../DLB/zz</BLOCKQUOTE>
 Commented versions of these lines are included in the top-level Makefile.
 
 <P>In lower-level MPSalsa Makefiles, the DLB flags should be activated
@@ -112,12 +112,12 @@ section for RCB load balancing is included in the <A HREF="#salsa input fig">fig
 below. The <I>Function Name</I> specification states that the <I>LB_set_up
 </I>function receives three <I>FN_DATA</I> data lines. The first data line
 contains a string that specifies the name of the load-balancing method
-to be used in the call to <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+to be used in the call to <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>.
 The string <I>NONE</I> is a valid option on this line if no balancing is
 desired.
 
 <P>The second data line contains the floating-point parameters to be passed
-to the load-balancing library in <B><A HREF="../ug_html/ug_interface_lb.html#LB_Set_Method">LB_Set_Method</A></B>.
+to the load-balancing library in <B><A HREF="../ug_html/ug_interface_lb.html#Zoltan_LB_Set_Method">Zoltan_LB_Set_Method</A></B>.
 These parameters must be listed in the order that the load-balancing method
 would expect them. If a <I>FLOAT</I> <I>FN_DATA</I> line is not included,
 the default load-balancing parameters are used.
@@ -155,7 +155,7 @@ to select RCB&nbsp;load balancing.</I></CAPTION>
 
 <P>Some example MPSalsa problems that use the load balancing library are
 in the directory
-<BLOCKQUOTE>/Net/pecos/rf_crew/people/kddevin/ex/lb</BLOCKQUOTE>
+<BLOCKQUOTE>/Net/pecos/rf_crew/people/kddevin/ex/zz</BLOCKQUOTE>
 MPSalsa input files are typically named <I>in.*</I> or <I>input.*</I>.
 Refer to the <A HREF="dev_refs.html#MPSalsa">MPSalsa User's Guide</A> for
 more details on running MPSalsa.

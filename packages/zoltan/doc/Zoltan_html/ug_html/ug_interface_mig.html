@@ -30,20 +30,20 @@
 <a NAME="Migration Functions"></a>Migration Functions</h2>
 If requested, Zoltan can automatically transfer an application's data between
 processors to realize the new decomposition. This functionality will be
-performed as part of the call to <b><a href="ug_interface_lb.html#LB_Balance">LB_Balance</a></b>
+performed as part of the call to <b><a href="ug_interface_lb.html#Zoltan_LB_Balance">Zoltan_LB_Balance</a></b>
 if the <b><a href="ug_alg.html#General_Parameters">AUTO_MIGRATE</a></b>
-parameter is set to TRUE (nonzero) via a call to <b><a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a></b>.
+parameter is set to TRUE (nonzero) via a call to <b><a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a></b>.
 This approach is effective for when the data to be moved is relatively
 simple. For more complicated data movement, the application can leave <b><a href="ug_alg.html#General_Parameters">AUTO_MIGRATE</a></b>
-FALSE and call <b><a href="#LB_Help_Migrate">LB_Help_Migrate</a></b> itself.
+FALSE and call <b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b> itself.
 In either case, <a href="ug_query_mig.html#Migration Query Functions">routines
 to pack and unpack object data</a> must be provided by the application.
 See the <a href="ug_examples_mig.html#Migration Example">Migration Examples</a>
 for examples with and without auto-migration.
 <p>The following functions are the migration interface functions. Their
 detailed descriptions can be found below.
-<blockquote><b><a href="#LB_Compute_Destinations">LB_Compute_Destinations</a></b>
-<br><b><a href="#LB_Help_Migrate">LB_Help_Migrate</a></b></blockquote>
+<blockquote><b><a href="#Zoltan_Compute_Destinations">Zoltan_Compute_Destinations</a></b>
+<br><b><a href="#Zoltan_Help_Migrate">Zoltan_Help_Migrate</a></b></blockquote>
 
 <hr WIDTH="100%">
 <hr WIDTH="100%">
@@ -51,41 +51,41 @@ detailed descriptions can be found below.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Compute_Destinations"></a>int <b>LB_Compute_Destinations</b>
-(struct <b>LB_Struct</b> *<i>lb</i>, int <i>num_import</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>import_local_ids</i>, 
+<td WIDTH="85%"><a NAME="Zoltan_Compute_Destinations"></a>int <b>Zoltan_Compute_Destinations</b>
+(struct <b>Zoltan_Struct</b> *<i>zz</i>, int <i>num_import</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_local_ids</i>, 
 int *<i>import_procs</i>, int *<i>num_export</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>
 *<i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a>
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a>
 *<i>export_local_ids</i>, int **<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Compute_Destinations</b>(<i>lb,&nbsp; num_import, import_global_ids,
+<td>FUNCTION <b>Zoltan_Compute_Destinations</b>(<i>zz,&nbsp; num_import, import_global_ids,
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Compute_Destinations&nbsp;
-<br>TYPE(LB_Struct),INTENT(IN) :: lb&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_import&nbsp;
-<br>INTEGER(LB_INT), INTENT(OUT) :: num_export&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+<br>INTEGER(Zoltan_INT) :: Zoltan_Compute_Destinations&nbsp;
+<br>TYPE(Zoltan_Struct),INTENT(IN) :: zz&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(OUT) :: num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Compute_Destinations</b> computes the inverse communication
+<hr WIDTH="100%"><b>Zoltan_Compute_Destinations</b> computes the inverse communication
 map needed to export data. That is, given, for each processor, a list of
-non-local objects assigned to the processor, <b>LB_Compute_Destinations</b>
+non-local objects assigned to the processor, <b>Zoltan_Compute_Destinations</b>
 computes the list of objects each processor needs to export to other processors
 to satisfy their assignments of non-local objects.  The export lists are 
 allocated in Zoltan; they should not be allocated by the application before
-calling <b>LB_Compute_Destinations</b>.  These lists can be freed through a 
-call to <b><a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a></b>.
+calling <b>Zoltan_Compute_Destinations</b>.  These lists can be freed through a 
+call to <b><a href="ug_interface_lb.html#Zoltan_LB_Free_Data">Zoltan_LB_Free_Data</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -95,9 +95,9 @@ call to <b><a href="ug_interface_lb.html#LB_Free_Data">LB_Free_Data</a></b>.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure, created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
 to be used in this invocation of the migration routine.</td>
 </tr>
 
@@ -179,8 +179,8 @@ IDs of processors that need the sent objects (i.e., the destination processors).
 
 <p>Note that the number of global and local ID entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
-set using <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>
-before calling <b>LB_Compute_Destinations</b>. All processors must have
+set using <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
+before calling <b>Zoltan_Compute_Destinations</b>. All processors must have
 the same values for these two parameters.
 <p>
 <hr WIDTH="100%">
@@ -189,44 +189,44 @@ the same values for these two parameters.
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Help_Migrate"></a>int <b>LB_Help_Migrate</b> (struct <b>LB_Struct</b>
-*<i>lb</i>, int <i>num_import</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>import_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>import_local_ids</i>,
+<td WIDTH="85%"><a NAME="Zoltan_Help_Migrate"></a>int <b>Zoltan_Help_Migrate</b> (struct <b>Zoltan_Struct</b>
+*<i>zz</i>, int <i>num_import</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>import_local_ids</i>,
 int *<i>import_procs</i>, int <i>num_export</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>export_global_ids</i>,
-<a href="ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a> <i>export_local_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_global_ids</i>,
+<a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a> <i>export_local_ids</i>,
 int *<i>export_procs</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Help_Migrate</b>(<i>lb, num_import, import_global_ids,
+<td>FUNCTION <b>Zoltan_Help_Migrate</b>(<i>zz, num_import, import_global_ids,
 import_local_ids, import_procs, num_export, export_global_ids, export_local_ids,
 export_procs</i>)
-<br>INTEGER(LB_INT) :: LB_Help_Migrate&nbsp;
-<br>TYPE(LB_Struct),INTENT(IN) :: lb&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN) :: num_import, num_export&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
-<br>INTEGER(LB_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
+<br>INTEGER(Zoltan_INT) :: Zoltan_Help_Migrate&nbsp;
+<br>TYPE(Zoltan_Struct),INTENT(IN) :: zz&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN) :: num_import, num_export&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_global_ids, export_global_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_local_ids, export_local_ids&nbsp;
+<br>INTEGER(Zoltan_INT), POINTER, DIMENSION(:) :: import_procs, export_procs&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Help_Migrate</b> takes lists of objects to be sent
+<hr WIDTH="100%"><b>Zoltan_Help_Migrate</b> takes lists of objects to be sent
 to other processors, along with the destinations of those objects, and
 performs the operations necessary to send the data associated with those
-objects to their destinations. If a migration pre-processing routine (<b><a href="ug_query_mig.html#LB_PRE_MIGRATE_FN">LB_PRE_MIGRATE_FN_TYPE</a></b>)
-is specified, <b>LB_Help_Migrate</b> first calls that function. It then
-calls an application-registered function (<b><a href="ug_query_mig.html#LB_OBJ_SIZE_FN">LB_OBJ_SIZE_FN_TYPE</a></b>)
+objects to their destinations. If a migration pre-processing routine (<b><a href="ug_query_mig.html#ZOLTAN_PRE_MIGRATE_FN">ZOLTAN_PRE_MIGRATE_FN_TYPE</a></b>)
+is specified, <b>Zoltan_Help_Migrate</b> first calls that function. It then
+calls an application-registered function (<b><a href="ug_query_mig.html#ZOLTAN_OBJ_SIZE_FN">ZOLTAN_OBJ_SIZE_FN_TYPE</a></b>)
 to obtain the size of a migrating object's data. For each object, it calls
-an application-registered packing routine (<b><a href="ug_query_mig.html#LB_PACK_OBJ_FN">LB_PACK_OBJ_FN_TYPE</a></b>)
+an application-registered packing routine (<b><a href="ug_query_mig.html#ZOLTAN_PACK_OBJ_FN">ZOLTAN_PACK_OBJ_FN_TYPE</a></b>)
 to load communication buffers. It communicates the buffers to the destination
-processors. If a migration mid-processing routine (<b><a href="ug_query_mig.html#LB_MID_MIGRATE_FN">LB_MID_MIGRATE_FN_TYPE</a></b>)
-is registered, <b>LB_Help_Migrate</b> calls it after the communication.
+processors. If a migration mid-processing routine (<b><a href="ug_query_mig.html#ZOLTAN_MID_MIGRATE_FN">ZOLTAN_MID_MIGRATE_FN_TYPE</a></b>)
+is registered, <b>Zoltan_Help_Migrate</b> calls it after the communication.
 Finally, for each object received, it calls an application-registered unpacking
-routine (<b><a href="ug_query_mig.html#LB_UNPACK_OBJ_FN">LB_UNPACK_OBJ_FN_TYPE</a></b>)
+routine (<b><a href="ug_query_mig.html#ZOLTAN_UNPACK_OBJ_FN">ZOLTAN_UNPACK_OBJ_FN_TYPE</a></b>)
 to move the data from the received communication buffer into the new processor's
 data structures.
 <br>&nbsp;
@@ -237,9 +237,9 @@ data structures.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure, created by <b><a href="ug_interface_init.html#LB_Create">LB_Create</a></b>,
+<td>Pointer to the Zoltan structure, created by <b><a href="ug_interface_init.html#Zoltan_Create">Zoltan_Create</a></b>,
 to be used in this invocation of the migration routine.</td>
 </tr>
 
@@ -321,8 +321,8 @@ that need the sent objects (i.e., the destination processors).</td>
 
 <p>Note that the number of global and local ID entries (<a href="ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and <a href="ug_alg.html#NUM_LID_ENTRIES">NUM_LID_ENTRIES</a>) should be
-set using <a href="ug_interface_lb.html#LB_Set_Param">LB_Set_Param</a>
-before calling <b>LB_Help_Migrate</b>. All processors must have the same
+set using <a href="ug_interface_lb.html#Zoltan_Set_Param">Zoltan_Set_Param</a>
+before calling <b>Zoltan_Help_Migrate</b>. All processors must have the same
 values for these two parameters.
 <br>
 <hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_query.html">Next:&nbsp;

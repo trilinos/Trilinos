@@ -30,10 +30,10 @@
 <a NAME="Initialization Functions"></a>Initialization Functions</h2>
 Functions used to initialize the library and load-balancing data structures
 are described below:
-<ul><a href="#LB_Initialize">LB_Initialize</a>
-<br><a href="#LB_Create">LB_Create</a>
-<br><a href="#LB_Set_Fn">LB_Set_Fn</a>
-<br><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></ul>
+<ul><a href="#Zoltan_Initialize">Zoltan_Initialize</a>
+<br><a href="#Zoltan_Create">Zoltan_Create</a>
+<br><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a>
+<br><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></ul>
 
 <hr WIDTH="100%">
 <hr WIDTH="100%">
@@ -41,7 +41,7 @@ are described below:
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Initialize"></a>int <b>LB_Initialize</b>
+<td WIDTH="85%"><a NAME="Zoltan_Initialize"></a>int <b>Zoltan_Initialize</b>
 (int&nbsp;<i>argc</i>,
 char&nbsp;**<i>argv</i>,
 float&nbsp;*<i>ver</i>);</td>
@@ -50,28 +50,28 @@ float&nbsp;*<i>ver</i>);</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Initialize</b>( <i>argc</i>, <i>argv</i>,
+<td>FUNCTION <b>Zoltan_Initialize</b>( <i>argc</i>, <i>argv</i>,
 <i>ver</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Initialize&nbsp;
-<br>INTEGER(LB_INT), INTENT(IN), OPTIONAL :: argc&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Initialize&nbsp;
+<br>INTEGER(Zoltan_INT), INTENT(IN), OPTIONAL :: argc&nbsp;
 <br>CHARACTER(LEN=*), DIMENSION(*), INTENT(IN), OPTIONAL :: argv&nbsp;
-<br>REAL(LB_FLOAT), INTENT(OUT) :: ver&nbsp;</td>
+<br>REAL(Zoltan_FLOAT), INTENT(OUT) :: ver&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">The <b>LB_Initialize</b> function initializes values needed
+<hr WIDTH="100%">The <b>Zoltan_Initialize</b> function initializes values needed
 in the load-balancing tools. If the application uses MPI, this function
 should be called after calling <b>MPI_Init</b>. If the application does
 not use MPI, this function calls <b>MPI_Init</b> for use by the load balancer.
 This function is called with the <i>argc</i> and <i>argv</i> command-line
-arguments from the main program, which are used if <b>LB_Initialize</b>
+arguments from the main program, which are used if <b>Zoltan_Initialize</b>
 calls <b>MPI_Init</b>. From C,&nbsp; if <b>MPI_Init</b> has already been
 called, the <i>argc</i> and <i>argv</i> arguments may have any value because
 their values will be ignored.&nbsp; From Fortran, if one of <i>argc</i>
 or <i>argv</i> is omitted, they must both be omitted. If they are omitted,
 <i>ver</i>
 does NOT have to be passed as a keyword argument.
-<p><b>LB_Initialize</b> returns the version of the dynamic load-balancing
+<p><b>Zoltan_Initialize</b> returns the version of the dynamic load-balancing
 library so that users can verify which version of the library their application
 is linked to.
 <br>&nbsp;
@@ -120,24 +120,24 @@ is linked to.
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%"NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Create"></a>struct <b>LB_Struct</b> *<b>LB_Create</b>
+<td WIDTH="85%"><a NAME="Zoltan_Create"></a>struct <b>Zoltan_Struct</b> *<b>Zoltan_Create</b>
 (MPI_Comm&nbsp;<i>communicator</i>);&nbsp;</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Create</b>(<i>communicator</i>)&nbsp;
-<br>TYPE(LB_Struct), pointer :: LB_Create&nbsp;
+<td>FUNCTION <b>Zoltan_Create</b>(<i>communicator</i>)&nbsp;
+<br>TYPE(Zoltan_Struct), pointer :: Zoltan_Create&nbsp;
 <br>INTEGER, INTENT(IN) :: communicator&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">The <b>LB_Create</b> function allocates memory for storage
+<hr WIDTH="100%">The <b>Zoltan_Create</b> function allocates memory for storage
 of load-balancing information to be used by the load-balancing library
 and sets the default values for the load- balancing information. The pointer
 returned by this function is passed to many subsequent load-balancing functions.
-An application may allocate more than one <b>LB_Struct</b> data structure
+An application may allocate more than one <b>Zoltan_Struct</b> data structure
 if, say, it uses different decompositions with different load-balancing
 techniques.
 <br>&nbsp;
@@ -151,7 +151,7 @@ techniques.
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; communicator</i></td>
 
-<td>The MPI communicator to be used for this load-balancing structure.
+<td>The MPI communicator to be used for this Zoltan structure.
 Only those processors included in the communicator participate in load
 balancing. If all processors currently used by the application are to participate
 in load balancing, <i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
@@ -164,7 +164,7 @@ in load balancing, <i>communicator</i> should be <b>MPI_COMM_WORLD</b> .</td>
 </tr>
 
 <tr>
-<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>LB_Struct</b> *</td>
+<td VALIGN=TOP>&nbsp;&nbsp;&nbsp; struct <b>Zoltan_Struct</b> *</td>
 
 <td>Pointer to memory for storage of load-balancing information. If an
 error occurs, NULL will be returned in C, or the result will be a nullified
@@ -180,9 +180,9 @@ be fatal.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Set_Fn"></a>int <b>LB_Set_Fn</b>
-(struct&nbsp;<b>LB_Struct&nbsp;*</b><i>lb</i>,
-<b>LB_FN_TYPE&nbsp;</b><i>fn_type</i>,
+<td WIDTH="85%"><a NAME="Zoltan_Set_Fn"></a>int <b>Zoltan_Set_Fn</b>
+(struct&nbsp;<b>Zoltan_Struct&nbsp;*</b><i>zz</i>,
+<b>ZOLTAN_FN_TYPE&nbsp;</b><i>fn_type</i>,
 void&nbsp;(*<i>fn_ptr</i>)(),
 void&nbsp;*<i>data</i>);</td>
 </tr>
@@ -190,25 +190,25 @@ void&nbsp;*<i>data</i>);</td>
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Set_Fn</b>(<i>lb, fn_type, fn_ptr, data</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Set_Fn&nbsp;
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
-<br>TYPE(LB_Fn_Type), INTENT(IN) :: fn_type&nbsp;
+<td>FUNCTION <b>Zoltan_Set_Fn</b>(<i>zz, fn_type, fn_ptr, data</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Set_Fn&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
+<br>TYPE(ZOLTAN_FN_TYPE), INTENT(IN) :: fn_type&nbsp;
 <br>EXTERNAL :: fn_ptr&nbsp;
 <br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%"><b>LB_Set_Fn</b> registers an application-supplied query
-function in the load-balancing structure. Both load-balancing and migration
-functions can be registered through calls to <b>LB_Set_Fn</b>.&nbsp; To
+<hr WIDTH="100%"><b>Zoltan_Set_Fn</b> registers an application-supplied query
+function in the Zoltan structure. Both load-balancing and migration
+functions can be registered through calls to <b>Zoltan_Set_Fn</b>.&nbsp; To
 register functions while maintaining strict type-checking of the <i>fn_ptr</i>
-argument, use <b><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn</a></b>.
+argument, use <b><a href="#Zoltan_Set_Specific_Fn">Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</a></b>.
 <br>&nbsp;
 <table WIDTH="100%" >
 <tr>
@@ -218,10 +218,10 @@ argument, use <b><a href="#LB_Set_Specific_Fn">LB_Set_&lt;<i>lb_fn_type</i>>_Fn<
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure created by
-<b><a href="#LB_Create">LB_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by
+<b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
@@ -264,44 +264,44 @@ it may be omitted.</td>
 <tr NOSAVE>
 <td VALIGN=TOP NOSAVE>C:</td>
 
-<td WIDTH="85%"><a NAME="LB_Set_Specific_Fn"></a>int <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>
-(struct&nbsp;<b>LB_Struct&nbsp;</b>*<i>lb</i>,
-&lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
+<td WIDTH="85%"><a NAME="Zoltan_Set_Specific_Fn"></a>int <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>
+(struct&nbsp;<b>Zoltan_Struct&nbsp;</b>*<i>zz</i>,
+&lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>&nbsp;(*<i>fn_ptr</i>)(), 
 void&nbsp;*<i>data</i>);</td>
 </tr>
 
 <tr NOSAVE>
 <td VALIGN=TOP WIDTH="15%" NOSAVE>FORTRAN:</td>
 
-<td>FUNCTION <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>(<i>lb, fn_ptr, data</i>)&nbsp;
-<br>INTEGER(LB_INT) :: LB_Set_&lt;<i><a href="ug_query.html">lb_fn_type</a></i>>_Fn&nbsp;
-<br>TYPE(LB_Struct), INTENT(IN) :: lb&nbsp;
+<td>FUNCTION <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>(<i>zz, fn_ptr, data</i>)&nbsp;
+<br>INTEGER(Zoltan_INT) :: Zoltan_Set_&lt;<i><a href="ug_query.html">zoltan_fn_type</a></i>>_Fn&nbsp;
+<br>TYPE(Zoltan_Struct), INTENT(IN) :: zz&nbsp;
 <br>EXTERNAL :: fn_ptr&nbsp;
 <br>&lt;<i>type-data</i>>, OPTIONAL :: data&nbsp;
 <p> An interface block for <i>fn_ptr</i> is included in the FUNCTION definition 
 so that strict type-checking of the registered query function can be done.
-<p>&lt;<i>type-data</i>> can be any of INTEGER(LB_INT), DIMENSION(*) or
-REAL(LB_FLOAT), DIMENSION(*) or REAL(LB_DOUBLE), DIMENSION(*) or TYPE(LB_User_Data_<i>x</i>)
+<p>&lt;<i>type-data</i>> can be any of INTEGER(Zoltan_INT), DIMENSION(*) or
+REAL(Zoltan_FLOAT), DIMENSION(*) or REAL(Zoltan_DOUBLE), DIMENSION(*) or TYPE(Zoltan_User_Data_<i>x</i>)
 where <i>x</i> is 1, 2, 3 or 4. See the section on
 <a href="ug_fortran_api.html#fortran ug api query">Fortran
 query functions</a> for an explanation.&nbsp;</td>
 </tr>
 </table>
 
-<hr WIDTH="100%">The interface functions <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>,
-where <b>&lt;<i><a href="ug_query.html">lb_fn_type</a></i>></b> is one
+<hr WIDTH="100%">The interface functions <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>,
+where <b>&lt;<i><a href="ug_query.html">zoltan_fn_type</a></i>></b> is one
 of the query function types, register specific types of <a href="ug_query.html">application-supplied
-query functions</a> in the load-balancing structure. One interface function
-exists for each type of query function.&nbsp; For example, <b>LB_Set_Num_Geom_Fn</b>
-registers a query function of type <b><a href="ug_query_lb.html#LB_NUM_GEOM_FN">LB_NUM_GEOM_FN</a></b>.&nbsp;
-Each load-balancing and migration query function has an associated <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.&nbsp;
+query functions</a> in the Zoltan structure. One interface function
+exists for each type of query function.&nbsp; For example, <b>Zoltan_Set_Num_Geom_Fn</b>
+registers a query function of type <b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b>.&nbsp;
+Each load-balancing and migration query function has an associated <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
 A complete list of these functions is included in <i>lb/lbi_const.h.</i>
-<p>Query functions can be registered using either <b><a href="#LB_Set_Fn">LB_Set_Fn</a></b>
-or <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.
-<br><b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn </b>provides strict type checking
+<p>Query functions can be registered using either <b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b>
+or <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.
+<br><b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn </b>provides strict type checking
 of the <i>fn_ptr</i> argument; the argument's type is specified for each
-<b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.&nbsp;
-<b><a href="#LB_Set_Fn">LB_Set_Fn</a></b> does not provide this strict
+<b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.&nbsp;
+<b><a href="#Zoltan_Set_Fn">Zoltan_Set_Fn</a></b> does not provide this strict
 type checking, as the pointer to the registered function is cast to a void
 pointer.
 <table WIDTH="100%" NOSAVE >
@@ -312,18 +312,18 @@ pointer.
 </tr>
 
 <tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; lb</i></td>
+<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; zz</i></td>
 
-<td>Pointer to the load-balancing structure created by
-<b><a href="#LB_Create">LB_Create</a></b>.</td>
+<td>Pointer to the Zoltan structure created by
+<b><a href="#Zoltan_Create">Zoltan_Create</a></b>.</td>
 </tr>
 
 <tr>
 <td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; fn_ptr</i></td>
 
 <td>A pointer to the application-supplied query function being registered.&nbsp;
-The type of the pointer matches &lt;<b><i><a href="ug_query.html">lb_fn_type</a></i></b>>
-in the name <b>LB_Set_&lt;<i>lb_fn_type</i>>_Fn</b>.</td>
+The type of the pointer matches &lt;<b><i><a href="ug_query.html">zoltan_fn_type</a></i></b>>
+in the name <b>Zoltan_Set_&lt;<i>zoltan_fn_type</i>>_Fn</b>.</td>
 </tr>
 
 <tr>
@@ -356,10 +356,10 @@ may be omitted.</td>
 <td VALIGN=TOP NOSAVE></td>
 
 <td VALIGN=TOP NOSAVE>The interface function
-<br>&nbsp;&nbsp;&nbsp; int <b>LB_Set_Geom_Fn</b>(struct <b>LB_Struct</b>
-*lb, <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b> (*fn_ptr)(),<br>
+<br>&nbsp;&nbsp;&nbsp; int <b>Zoltan_Set_Geom_Fn</b>(struct <b>Zoltan_Struct</b>
+*zz, <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b> (*fn_ptr)(),<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; void *data);
-<br>registers an <b><a href="ug_query_lb.html#LB_GEOM_FN">LB_GEOM_FN</a></b>
+<br>registers an <b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
 query function.</td>
 </tr>
 </table>

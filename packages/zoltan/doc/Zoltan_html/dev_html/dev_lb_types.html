@@ -48,7 +48,7 @@ Zoltan stores each global and local ID as an array of unsigned integers.
 Arrays of IDs are passed to the application as a one-dimensional array
 of unsigned integers with size
 <i>number_of_IDs</i> * <i>number_of_entries_per_ID</i>.
-A type definition <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+A type definition <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 (in <i>lb/lbi_const.h</i>) points to an ID or array of IDs. The number
 of array entries per ID can be set by the application using the <a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 and
@@ -64,25 +64,25 @@ IDs requested is zero.
 <br>&nbsp;
 <table BORDER WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_MALLOC_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>);</td>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_MALLOC_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>);</td>
 
 <td>Allocates and returns a pointer to a single global ID.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_MALLOC_LID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>);</td>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_MALLOC_LID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>);</td>
 
 <td>Allocates and returns a pointer to a single local ID.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_MALLOC_GID_ARRAY</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, int <i>n</i>);</td>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_MALLOC_GID_ARRAY</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, int <i>n</i>);</td>
 
 <td>Allocates and returns a pointer to an array of <i>n</i> global IDs,
 where the index into the array for the <i>i<sup>th</sup></i> global ID
@@ -90,9 +90,9 @@ is <i>i</i>*<a href="../ug_html/ug_alg.html#NUM_GID_ENTRIES">NUM_GID_ENTRIES</a>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_MALLOC_LID_ARRAY</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, int <i>n</i>);</td>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_MALLOC_LID_ARRAY</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, int <i>n</i>);</td>
 
 <td>Allocates and returns a pointer to an array of <i>n</i> local IDs,
 where the index into the array for the <i>i<sup>th</sup></i> local ID is
@@ -100,9 +100,9 @@ where the index into the array for the <i>i<sup>th</sup></i> local ID is
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_REALLOC_GID_ARRAY</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb,</i> <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_REALLOC_GID_ARRAY</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz,</i> <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>ptr</i>, int <i>n</i>);</td>
 
 <td>Reallocates and returns a pointer to an array of<i> n</i> global IDs,
@@ -110,9 +110,9 @@ replacing the current array pointed to by<i> ptr</i>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
-<b>LB_REALLOC_LID_ARRAY</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb,</i> <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE><b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
+<b>ZOLTAN_REALLOC_LID_ARRAY</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz,</i> <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>ptr</i>, int <i>n</i>);</td>
 
 <td>Reallocates and returns a pointer to an array of<i> n</i> local IDs,
@@ -131,78 +131,78 @@ their use is highly recommended.
 <br>&nbsp;
 <table BORDER WIDTH="100%" NOSAVE >
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>void<b> LB_INIT_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
+<td NOSAVE>void<b> ZOLTAN_INIT_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
 
 <td>Initializes all entries of the global ID <i>id</i> to zero; <i>id</i>&nbsp;
-must be allocated before calling <b>LB_INIT_GID</b>.</td>
+must be allocated before calling <b>ZOLTAN_INIT_GID</b>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>void<b> LB_INIT_LID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
+<td NOSAVE>void<b> ZOLTAN_INIT_LID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
 
 <td>Initializes all entries of the local ID <i>id</i> to zero; <i>id</i>&nbsp;
-must be allocated before calling <b>LB_INIT_LID</b>.</td>
+must be allocated before calling <b>ZOLTAN_INIT_LID</b>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>void<b> LB_SET_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>tgt</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE>void<b> ZOLTAN_SET_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>tgt</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>src</i>);</td>
 
 <td>Copies the global ID <i>src</i> into the global ID <i>tgt</i>.&nbsp;
-Both <i>src</i> and <i>tgt</i> must be allocated before calling <b>LB_SET_LID</b>.</td>
+Both <i>src</i> and <i>tgt</i> must be allocated before calling <b>ZOLTAN_SET_LID</b>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>void<b> LB_SET_LID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>tgt</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE>void<b> ZOLTAN_SET_LID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>tgt</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>src</i>);</td>
 
 <td>Copies the local ID <i>src</i> into the local ID <i>tgt</i>.&nbsp;
-Both <i>src</i> and <i>tgt</i> must be allocated before calling <b>LB_SET_LID</b>.</td>
+Both <i>src</i> and <i>tgt</i> must be allocated before calling <b>ZOLTAN_SET_LID</b>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>int<b> LB_EQ_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>a</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE>int<b> ZOLTAN_EQ_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>a</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>b</i>);</td>
 
 <td>Returns TRUE if global ID<i> a</i> is equal to global ID <i>b</i>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>int<b> LB_LT_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>a</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE>int<b> ZOLTAN_LT_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>a</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>b</i>);</td>
 
 <td>Returns TRUE if global ID<i> a</i> is less than global ID <i>b.</i></td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>int<b> LB_GT_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>a</i>,
-<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>
+<td NOSAVE>int<b> ZOLTAN_GT_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>a</i>,
+<b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>
 <i>b</i>);</td>
 
 <td>Returns TRUE if global ID<i> a</i> is greater than global ID <i>b.</i></td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td NOSAVE>void<b> LB_PRINT_GID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
+<td NOSAVE>void<b> ZOLTAN_PRINT_GID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
 
 <td>Prints all entries of a single global ID <i>id</i>.</td>
 </tr>
 
 <tr VALIGN=TOP NOSAVE>
-<td>void<b> LB_PRINT_LID</b>(<a href="dev_lb_structs.html#LB_Struct">LB_Struct</a>
-*<i>lb</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">LB_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
+<td>void<b> ZOLTAN_PRINT_LID</b>(<a href="dev_lb_structs.html#Zoltan_Struct">Zoltan_Struct</a>
+*<i>zz</i>, <b><a href="../ug_html/ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR</a></b>&nbsp;<i>id</i>);</td>
 
 <td NOSAVE>Prints all entries of a single local ID <i>id</i>.</td>
 </tr>
