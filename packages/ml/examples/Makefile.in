@@ -105,7 +105,8 @@ install_sh = @install_sh@
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  mlaz_example \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@		  ml_two_level_DD \
 @HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@		  ml_readfile ml_read_elas ml_recirc \
-@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa \
+@HAVE_MPI_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example_epetra_preconditioner
 
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -113,7 +114,8 @@ install_sh = @install_sh@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@		  mlaz_example \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@		  ml_two_level_DD \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@		          ml_readfile ml_read_elas ml_recirc \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@                  ml_example_epetra_preconditioner
 
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -121,7 +123,8 @@ install_sh = @install_sh@
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@		  mlaz_example \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@		  ml_two_level_DD \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_readfile ml_read_elas ml_recirc \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa ml_read_maxwell
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_read_salsa ml_read_maxwell \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@                  ml_example_epetra_preconditioner
 
 @HAVE_MPI_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = mlguide mlguide_par
 
@@ -145,6 +148,7 @@ mlguide_par_SOURCES = $(srcdir)/mlguide_par.c
 @ML_STANDALONE_MODE_FALSE@ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 @ML_STANDALONE_MODE_FALSE@ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 
 
@@ -262,6 +266,11 @@ mlguide_par_LINK = ${mllink}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LDADD = ${ml_libs}
 @ML_STANDALONE_MODE_FALSE@ml_read_salsa_LINK = ${mllink}
+
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_LDADD = ${ml_libs}
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_LINK = ${mllink}
+
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LDADD = ${ml_libs}
 @ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@ml_read_maxwell_LINK = ${mllink}
@@ -286,7 +295,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT)
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT)
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@noinst_PROGRAMS = \
@@ -304,7 +314,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
+@HAVE_MPI_FALSE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
@@ -324,7 +335,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_readfile$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_FALSE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT)
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@noinst_PROGRAMS = \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_TRUE@	mlguide_par$(EXEEXT)
@@ -345,7 +357,8 @@ CONFIG_CLEAN_FILES =
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_elas$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_recirc$(EXEEXT) \
 @HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_salsa$(EXEEXT) \
-@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT)
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_read_maxwell$(EXEEXT) \
+@HAVE_MPI_TRUE@@ML_BENCHMARKING_TRUE@@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 
 @ML_STANDALONE_MODE_FALSE@am_ml_aztec_simple_OBJECTS = \
@@ -412,6 +425,16 @@ ml_example3d_OBJECTS = $(am_ml_example3d_OBJECTS)
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
 @ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
 ml_example3d_LDFLAGS =
+@ML_STANDALONE_MODE_FALSE@am_ml_example_epetra_preconditioner_OBJECTS = \
+@ML_STANDALONE_MODE_FALSE@	ml_example_epetra_preconditioner.$(OBJEXT)
+ml_example_epetra_preconditioner_OBJECTS = \
+	$(am_ml_example_epetra_preconditioner_OBJECTS)
+@ML_STANDALONE_MODE_TRUE@ml_example_epetra_preconditioner_DEPENDENCIES =
+@ML_STANDALONE_MODE_FALSE@ml_example_epetra_preconditioner_DEPENDENCIES = \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/src/libml.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../aztecoo/src/libaztecoo.a \
+@ML_STANDALONE_MODE_FALSE@	$(top_builddir)/../epetra/src/libepetra.a
+ml_example_epetra_preconditioner_LDFLAGS =
 @ML_STANDALONE_MODE_FALSE@am_ml_read_elas_OBJECTS = \
 @ML_STANDALONE_MODE_FALSE@	ml_read_elas-ml_read_elas.$(OBJEXT)
 ml_read_elas_OBJECTS = $(am_ml_read_elas_OBJECTS)
@@ -513,6 +536,7 @@ am__depfiles_maybe = depfiles
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example2d-ml_example2d.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_example3d-ml_example3d.Po \
+@AMDEP_TRUE@	./$(DEPDIR)/ml_example_epetra_preconditioner.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_elas-ml_read_elas.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po \
 @AMDEP_TRUE@	./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po \
@@ -528,23 +552,30 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CFLAGS = @CFLAGS@
+CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
+	-o $@
+CXXFLAGS = @CXXFLAGS@
 DIST_SOURCES = $(ml_aztec_simple_SOURCES) \
 	$(ml_aztec_simple_METIS_SOURCES) \
 	$(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) \
 	$(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) \
-	$(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) \
-	$(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) \
-	$(ml_readfile_SOURCES) $(ml_recirc_SOURCES) \
-	$(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) \
-	$(mlaz_example_SOURCES) $(mlguide_SOURCES) \
-	$(mlguide_par_SOURCES)
+	$(ml_example3d_SOURCES) \
+	$(ml_example_epetra_preconditioner_SOURCES) \
+	$(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) \
+	$(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) \
+	$(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) \
+	$(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) \
+	$(mlguide_SOURCES) $(mlguide_par_SOURCES)
 DIST_COMMON = Makefile.am Makefile.in
-SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
+SOURCES = $(ml_aztec_simple_SOURCES) $(ml_aztec_simple_METIS_SOURCES) $(ml_aztec_simple_ParMETIS_SOURCES) $(ml_example1d_SOURCES) $(ml_example1dGS_SOURCES) $(ml_example2d_SOURCES) $(ml_example3d_SOURCES) $(ml_example_epetra_preconditioner_SOURCES) $(ml_read_elas_SOURCES) $(ml_read_maxwell_SOURCES) $(ml_read_salsa_SOURCES) $(ml_readfile_SOURCES) $(ml_recirc_SOURCES) $(ml_simple_max_SOURCES) $(ml_two_level_DD_SOURCES) $(mlaz_example_SOURCES) $(mlguide_SOURCES) $(mlguide_par_SOURCES)
 
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 	cd $(top_srcdir) && \
 	  $(AUTOMAKE) --foreign  examples/Makefile
@@ -583,6 +614,11 @@ ml_example3d-ml_example3d.$(OBJEXT): $(srcdir)/ml_example3d.c
 ml_example3d$(EXEEXT): $(ml_example3d_OBJECTS) $(ml_example3d_DEPENDENCIES) 
 	@rm -f ml_example3d$(EXEEXT)
 	$(ml_example3d_LINK) $(ml_example3d_LDFLAGS) $(ml_example3d_OBJECTS) $(ml_example3d_LDADD) $(LIBS)
+ml_example_epetra_preconditioner.$(OBJEXT): \
+	$(srcdir)/ml_example_epetra_preconditioner.cpp
+ml_example_epetra_preconditioner$(EXEEXT): $(ml_example_epetra_preconditioner_OBJECTS) $(ml_example_epetra_preconditioner_DEPENDENCIES) 
+	@rm -f ml_example_epetra_preconditioner$(EXEEXT)
+	$(ml_example_epetra_preconditioner_LINK) $(ml_example_epetra_preconditioner_LDFLAGS) $(ml_example_epetra_preconditioner_OBJECTS) $(ml_example_epetra_preconditioner_LDADD) $(LIBS)
 ml_read_elas-ml_read_elas.$(OBJEXT): $(srcdir)/ml_read_elas.c
 ml_read_elas$(EXEEXT): $(ml_read_elas_OBJECTS) $(ml_read_elas_DEPENDENCIES) 
 	@rm -f ml_read_elas$(EXEEXT)
@@ -637,6 +673,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example1dGS-ml_example1dGS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example2d-ml_example2d.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example3d-ml_example3d.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_example_epetra_preconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_elas-ml_read_elas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_maxwell-ml_read_maxwell.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ml_read_salsa-ml_read_salsa.Po@am__quote@
@@ -867,6 +904,31 @@ mlguide_par-mlguide_par.obj: $(srcdir)/mlguide_par.c
 @AMDEP_TRUE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(mlguide_par_CFLAGS) $(CFLAGS) -c -o mlguide_par-mlguide_par.obj `cygpath -w $(srcdir)/mlguide_par.c`
 CCDEPMODE = @CCDEPMODE@
+
+.cpp.o:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `test -f '$<' || echo '$(srcdir)/'`$<
+
+.cpp.obj:
+@AMDEP_TRUE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/$*.Po' tmpdepfile='$(DEPDIR)/$*.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXXCOMPILE) -c -o $@ `cygpath -w $<`
+
+ml_example_epetra_preconditioner.o: $(srcdir)/ml_example_epetra_preconditioner.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ml_example_epetra_preconditioner.cpp' object='ml_example_epetra_preconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_example_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_example_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_epetra_preconditioner.o `test -f '$(srcdir)/ml_example_epetra_preconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/ml_example_epetra_preconditioner.cpp
+
+ml_example_epetra_preconditioner.obj: $(srcdir)/ml_example_epetra_preconditioner.cpp
+@AMDEP_TRUE@	source='$(srcdir)/ml_example_epetra_preconditioner.cpp' object='ml_example_epetra_preconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@	depfile='$(DEPDIR)/ml_example_epetra_preconditioner.Po' tmpdepfile='$(DEPDIR)/ml_example_epetra_preconditioner.TPo' @AMDEPBACKSLASH@
+@AMDEP_TRUE@	$(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ml_example_epetra_preconditioner.obj `cygpath -w $(srcdir)/ml_example_epetra_preconditioner.cpp`
+CXXDEPMODE = @CXXDEPMODE@
 uninstall-info-am:
 
 ETAGS = etags

@@ -27,7 +27,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  mlaz_example \
 		  ml_two_level_DD \
                   ml_readfile ml_read_elas ml_recirc \
-                  ml_read_salsa ml_read_maxwell
+                  ml_read_salsa ml_read_maxwell \
+                  ml_example_epetra_preconditioner
 else
 noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
                   ml_example1dGS ml_example2d ml_example3d ml_simple_max \
@@ -35,7 +36,8 @@ noinst_PROGRAMS = mlguide mlguide_par ml_aztec_simple ml_example1d \
 		  mlaz_example \
 		  ml_two_level_DD \
 		          ml_readfile ml_read_elas ml_recirc \
-                  ml_read_salsa
+                  ml_read_salsa \
+                  ml_example_epetra_preconditioner
 endif
 else
 noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
@@ -44,7 +46,8 @@ noinst_PROGRAMS = mlguide ml_aztec_simple ml_example1d \
                   mlaz_example \
 		  ml_two_level_DD \
 		  ml_readfile ml_read_elas ml_recirc \
-                  ml_read_salsa
+                  ml_read_salsa \
+                  ml_example_epetra_preconditioner
 endif
 
 endif
@@ -70,6 +73,7 @@ ml_readfile_SOURCES = $(srcdir)/ml_readfile.c
 ml_read_elas_SOURCES = $(srcdir)/ml_read_elas.c
 ml_recirc_SOURCES = $(srcdir)/ml_recirc.c
 ml_read_salsa_SOURCES = $(srcdir)/ml_read_salsa.c
+ml_example_epetra_preconditioner_SOURCES = $(srcdir)/ml_example_epetra_preconditioner.cpp
 if ML_BENCHMARKING
 ml_read_maxwell_SOURCES = $(srcdir)/ml_read_maxwell.c
 endif
@@ -194,6 +198,11 @@ ml_recirc_LINK = ${mllink}
 ml_read_salsa_CFLAGS = ${ml_common_include_locations}
 ml_read_salsa_LDADD = ${ml_libs}
 ml_read_salsa_LINK = ${mllink}
+
+ml_example_epetra_preconditioner_CPPFLAGS = ${ml_common_include_locations}
+ml_example_epetra_preconditioner_LDADD = ${ml_libs}
+ml_example_epetra_preconditioner_LINK = ${mllink}
+
 if ML_BENCHMARKING
 ml_read_maxwell_CFLAGS = ${ml_common_include_locations}
 ml_read_maxwell_LDADD = ${ml_libs}
